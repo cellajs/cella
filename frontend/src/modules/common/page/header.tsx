@@ -1,13 +1,13 @@
 import { Link } from '@tanstack/react-router';
-import { config } from 'config';
+import { type Entity, config } from 'config';
 import { ChevronRight, Home, Loader2 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import useScrollTo from '~/hooks/use-scroll-to';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
-import { PageCover } from '~/modules/common/page-cover';
+import { PageCover } from '~/modules/common/page/cover';
+import type { MinimumEntityItem } from '~/modules/general/types';
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbSeparator } from '~/modules/ui/breadcrumb';
 import { baseEntityRoutes } from '~/nav-config';
-import type { Entity, MinimumEntityItem } from '~/types/common';
 
 // PageHeaderProps Interface
 interface PageHeaderProps {
@@ -52,7 +52,7 @@ const PageHeader = ({ title, id, isAdmin, thumbnailUrl, bannerUrl, type, panel, 
     <div className="relative">
       <PageCover type={type} id={id} url={bannerUrl} canUpdate={isAdmin} />
 
-      <div className="absolute flex bottom-0 w-full h-16 bg-background/50 backdrop-blur-sm px-1 py-1" ref={scrollToRef}>
+      <div className="absolute flex bottom-0 w-full h-16 bg-background/50 backdrop-blur-xs px-1 py-1" ref={scrollToRef}>
         <AvatarWrap
           className={type === 'user' ? 'h-24 w-24 -mt-12 text-2xl ml-2 mr-3 border-bg border-opacity-50 border-2 rounded-full' : 'm-2'}
           type={type}
@@ -63,7 +63,7 @@ const PageHeader = ({ title, id, isAdmin, thumbnailUrl, bannerUrl, type, panel, 
 
         <div className="flex py-2 flex-col truncate pl-1">
           {/* Page title */}
-          <h1 className="md:text-xl -mt-0.5 md:-mt-1 truncate leading-6 font-semibold">{title}</h1>
+          <h1 className="md:text-xl max-sm:-mt-0.5 truncate leading-6 font-semibold">{title}</h1>
 
           {/* Breadcrumb */}
           <Breadcrumb>

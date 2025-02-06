@@ -2,11 +2,12 @@ import { z } from 'zod';
 
 import { createSelectSchema } from 'drizzle-zod';
 import { membershipsTable } from '#/db/schema/memberships';
-import { contextEntityTypeSchema, idOrSlugSchema, idsQuerySchema } from '#/utils/schema/common-schemas';
+import { contextEntityTypeSchema, idOrSlugSchema } from '#/utils/schema/common-schemas';
 import { userSchema } from '../users/schema';
 
 const membershipTableSchema = createSelectSchema(membershipsTable);
 
+// TODO what happens here?
 export const membershipSchema = membershipTableSchema.extend({
   archived: z.boolean(),
   muted: z.boolean(),
@@ -14,10 +15,9 @@ export const membershipSchema = membershipTableSchema.extend({
   modifiedAt: z.string().nullable(),
 });
 
-export const createMembershipBodySchema = z.object({
-  emails: userSchema.shape.email.array().min(1),
+export const createMembershipsBodySchema = z.object({
+  emails: userSchema.shape.email.array().min(1).max(50),
   role: membershipSchema.shape.role,
-  parentEntity: z.object({ idOrSlug: idOrSlugSchema, entity: contextEntityTypeSchema }).optional(),
 });
 
 export const updateMembershipBodySchema = z.object({
@@ -27,14 +27,10 @@ export const updateMembershipBodySchema = z.object({
   order: z.number().optional(),
 });
 
-const baseMembersQuerySchema = z.object({
+export const baseMembersQuerySchema = z.object({
   idOrSlug: idOrSlugSchema,
   entityType: contextEntityTypeSchema,
 });
-
-export const createMembershipQuerySchema = baseMembersQuerySchema;
-
-export const deleteMembersQuerySchema = baseMembersQuerySchema.extend(idsQuerySchema.shape);
 
 export const membershipInfoSchema = z.object(
   membershipTableSchema.omit({
@@ -42,6 +38,7 @@ export const membershipInfoSchema = z.object(
     createdBy: true,
     modifiedAt: true,
     modifiedBy: true,
+    tokenId: true,
     userId: true,
     type: true,
   }).shape,

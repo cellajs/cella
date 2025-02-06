@@ -1,3 +1,4 @@
+import type { ContextEntity } from 'config';
 import { Info } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { type ReactNode, useState } from 'react';
@@ -10,8 +11,8 @@ import { MenuSheetItemsEdit } from '~/modules/navigation/menu-sheet/items-edit-l
 import { MenuSheetItems } from '~/modules/navigation/menu-sheet/items-list';
 import { SectionArchiveButton } from '~/modules/navigation/menu-sheet/section-archive-button';
 import { MenuSectionButton } from '~/modules/navigation/menu-sheet/section-button';
+import type { UserMenu, UserMenuItem } from '~/modules/users/types';
 import { useNavigationStore } from '~/store/navigation';
-import type { ContextEntity, UserMenu, UserMenuItem } from '~/types/common';
 
 interface MenuSheetSectionProps {
   data: UserMenuItem[];

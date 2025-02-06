@@ -1,11 +1,13 @@
+import type { ContextEntity } from 'config';
 import { organizationsTable } from '#/db/schema/organizations';
 import { usersTable } from '#/db/schema/users';
 import { attachmentsTable } from './db/schema/attachments';
-import type { ContextEntity, ContextEntityIdFields } from './types/common';
 
-export type EntityTables = (typeof entityTables)[keyof typeof entityTables];
+export type EntityTableNames = (typeof entityTables)[keyof typeof entityTables]['_']['name'];
 
-export type EntityTableNames = EntityTables['_']['name'];
+export type ContextEntityIdFields = {
+  [K in keyof typeof entityIdFields]: K extends ContextEntity ? (typeof entityIdFields)[K] : never;
+}[keyof typeof entityIdFields];
 
 export type MenuSection = {
   name: (typeof menuSections)[number]['name'];
@@ -15,6 +17,7 @@ export type MenuSection = {
     parentField: ContextEntityIdFields;
   };
 };
+
 export type MenuSectionName = MenuSection['name'];
 
 // Define entities and their tables

@@ -1,9 +1,9 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useNavigate, useSearch } from '@tanstack/react-router';
-import { emailPasswordBodySchema } from 'backend/modules/auth/schema';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import type * as z from 'zod';
+import { emailPasswordBodySchema } from '#/modules/auth/schema';
 
 import { Button, SubmitButton } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '~/modules/ui/form';
@@ -13,10 +13,10 @@ import { useMutation } from '@tanstack/react-query';
 import { config } from 'config';
 import { ArrowRight, ChevronDown } from 'lucide-react';
 import type { ApiError } from '~/lib/api';
+import { signIn } from '~/modules/auth/api';
 import { RequestPasswordDialog } from '~/modules/auth/request-password-dialog';
 import { AuthenticateRoute } from '~/routes/auth';
 import { useUserStore } from '~/store/user';
-import { signIn } from './api';
 
 const formSchema = emailPasswordBodySchema;
 
@@ -85,7 +85,7 @@ export const SignInForm = ({ email, resetSteps, emailEnabled }: Props) => {
         </Button>
       </h1>
       {emailEnabled && (
-        <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-4 !mt-0">
+        <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-4 mt-0!">
           <FormField
             control={form.control}
             name="email"

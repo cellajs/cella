@@ -1,8 +1,8 @@
+import type { Entity } from 'config';
 import { eq, inArray, or } from 'drizzle-orm';
 import type { PgTableWithColumns } from 'drizzle-orm/pg-core';
 import { db } from '#/db/db';
 import { entityTables } from '#/entity-config';
-import type { Entity } from '#/types/common';
 
 export type EntityModel<T extends Entity> = (typeof entityTables)[T]['$inferSelect'];
 
@@ -47,7 +47,7 @@ export async function resolveEntities<T extends Entity>(entityType: T, ids: Arra
   if (!Array.isArray(ids) || !ids.length) throw new Error(`Missing or invalid query identifiers for entity: ${entityType}`);
 
   // Query for multiple entities by IDs
-  const entities = await db.select().from(table).where(inArray(table.columns.id, ids));
+  const entities = await db.select().from(table).where(inArray(table.id, ids));
 
   return entities as Array<EntityModel<T>>;
 }

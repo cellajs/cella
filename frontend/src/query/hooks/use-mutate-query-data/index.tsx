@@ -1,4 +1,5 @@
 import type { QueryKey } from '@tanstack/react-query';
+import type { ContextEntity, Entity, ProductEntity } from 'config';
 import { queryClient } from '~/lib/router';
 import { isInfiniteQueryData, isQueryData } from '~/query/helpers/mutate-query';
 import {
@@ -8,7 +9,6 @@ import {
   isArbitraryQueryData,
 } from '~/query/hooks/use-mutate-query-data/helpers';
 import type { ContextEntityData, EntityData, ItemData, QueryDataActions, UseMutateQueryDataReturn } from '~/query/hooks/use-mutate-query-data/types';
-import type { ContextEntity, Entity, ProductEntity } from '~/types/common';
 
 // Overload signatures
 export function useMutateQueryData(
@@ -18,6 +18,18 @@ export function useMutateQueryData(
 ): UseMutateQueryDataReturn;
 export function useMutateQueryData(passedQueryKey: QueryKey): UseMutateQueryDataReturn;
 
+/**
+ * Custom hook for mutating query data in the cache (create, update, updateMembership, and remove actions).
+ *
+ * This hook provides functions to perform mutations on data associated with a query.
+ * The create, update, updateMembership, and remove actions actions modify the cache
+ * and can invalidate other queries based on the provided `invalidateKeyGetter`.
+ *
+ * @param passedQueryKey - Key of the query whose data will be mutated
+ * @param invalidateKeyGetter - A function that returns a query key to invalidate when an action occurs
+ * @param useInvalidateOnActions - Optional, Array of actions for which queries should be invalidated
+ *
+ */
 export function useMutateQueryData(
   passedQueryKey: QueryKey,
   invalidateKeyGetter?: (item: ItemData) => QueryKey,

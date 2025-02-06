@@ -1,4 +1,5 @@
 import { onlineManager } from '@tanstack/react-query';
+import type { Entity } from 'config';
 import { Upload } from 'lucide-react';
 import { Suspense, memo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -7,7 +8,6 @@ import { dispatchCustomEvent } from '~/lib/custom-events';
 import { dialog } from '~/modules/common/dialoger/state';
 import { createToast } from '~/modules/common/toaster';
 import { Button } from '~/modules/ui/button';
-import { type Entity, UploadType } from '~/types/common';
 import { numberToColorClass } from '~/utils/number-to-color-class';
 
 // Lazy load the upload component
@@ -39,18 +39,7 @@ const PageCover = memo(({ type, id, canUpdate, url }: PageCoverProps) => {
         <UploadUppy
           isPublic={true}
           organizationId={id}
-          uploadType={UploadType.Organization}
-          uppyOptions={{
-            restrictions: {
-              maxFileSize: 10 * 1024 * 1024, // 10MB
-              maxNumberOfFiles: 1,
-              allowedFileTypes: ['.jpg', '.jpeg', '.png'],
-              minFileSize: null,
-              maxTotalFileSize: 10 * 1024 * 1024, // 100MB
-              minNumberOfFiles: null,
-              requiredMetaFields: [],
-            },
-          }}
+          uploadType="organization"
           plugins={['webcam', 'image-editor']}
           imageMode="cover"
           callback={(result) => {

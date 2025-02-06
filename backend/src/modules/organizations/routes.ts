@@ -8,7 +8,7 @@ import {
   successWithPaginationSchema,
   successWithoutDataSchema,
 } from '#/utils/schema/common-responses';
-import { booleanQuerySchema, entityParamSchema, idsQuerySchema } from '#/utils/schema/common-schemas';
+import { booleanQuerySchema, entityParamSchema, idsBodySchema } from '#/utils/schema/common-schemas';
 import {
   createOrganizationBodySchema,
   getOrganizationsQuerySchema,
@@ -38,7 +38,7 @@ class OrganizationRoutesConfig {
     },
     responses: {
       200: {
-        description: 'Organization was createRouteConfigd',
+        description: 'Organization was created',
         content: {
           'application/json': {
             schema: successWithDataSchema(organizationWithMembershipSchema),
@@ -94,7 +94,7 @@ class OrganizationRoutesConfig {
         description: 'Organization was updated',
         content: {
           'application/json': {
-            schema: successWithDataSchema(organizationWithMembershipSchema),
+            schema: successWithDataSchema(organizationSchema),
           },
         },
       },
@@ -164,7 +164,9 @@ class OrganizationRoutesConfig {
     summary: 'Delete organizations',
     description: 'Delete organizations by ids.',
     request: {
-      query: idsQuerySchema,
+      body: {
+        content: { 'application/json': { schema: idsBodySchema } },
+      },
     },
     responses: {
       200: {

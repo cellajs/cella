@@ -25,7 +25,15 @@ const isAuthStrategy = (strategy: string): strategy is (typeof allSupportedStrat
 // Validate auth strategy
 const validateAuthStrategy = (strategy: string) => (isAuthStrategy(strategy) ? strategy : null);
 
-// Set user session (sign in user)
+/**
+ * Sets a user session and stores it in the database.
+ * Generates a session token, records device information, and optionally associates an admin user for impersonation.
+ *
+ * @param ctx - Request/response context.
+ * @param userId - ID of the user being signed in.
+ * @param strategy - The authentication strategy `'impersonation' | 'regular'`.
+ * @param adminUserId - Optional , id of the admin user if the session is an impersonation.
+ */
 export const setUserSession = async (ctx: Context, userId: UserModel['id'], strategy: string, adminUserId?: UserModel['id']) => {
   // Get device information
   const device = deviceInfo(ctx);
@@ -59,7 +67,7 @@ export const setUserSession = async (ctx: Context, userId: UserModel['id'], stra
   const timeSpan = strategy === 'impersonation' ? new TimeSpan(1, 'h') : new TimeSpan(1, 'w');
 
   // Set session cookie
-  await setAuthCookie(ctx, 'session', sessionToken, timeSpan);
+  await setAuthCookie(ctx, 'session', hashedSessionToken, timeSpan);
 
   // If it's an impersonation session, we only log event
   if (strategy === 'impersonation') logEvent('Impersonation started', { user: userId, strategy: 'impersonation' });
@@ -71,24 +79,27 @@ export const setUserSession = async (ctx: Context, userId: UserModel['id'], stra
   }
 };
 
-// Validate session and return session & user
+/**
+ * Validates a session by checking the provided session token.
+ *
+ * @param sessionToken - Hashed session token to validate.
+ * @returns The session and user data if valid, otherwise null.
+ */
 export const validateSession = async (sessionToken: string) => {
-  const hashedSessionToken = encodeHexLowerCase(sha256(new TextEncoder().encode(sessionToken)));
-
   const [result] = await db
     .select({ session: sessionsTable, user: safeUserSelect })
     .from(sessionsTable)
-    .where(eq(sessionsTable.token, hashedSessionToken))
+    .where(eq(sessionsTable.token, sessionToken))
     .innerJoin(usersTable, eq(sessionsTable.userId, usersTable.id));
 
-  // If session is not found, for example due to a new hash method, return null
+  // If no result is found, return null session and user
   if (!result) return { session: null, user: null };
 
   const { session } = result;
 
-  // If session is expired, invalidate it
+  // Check if the session has expired and invalidate it if so
   if (isExpiredDate(session.expiresAt)) {
-    await invalidateSession(session.id);
+    await invalidateSessionById(session.id);
     return { session: null, user: null };
   }
 
@@ -101,7 +112,6 @@ export const invalidateUserSessions = async (userId: UserModel['id']) => {
 };
 
 // Invalidate single session with session id
-export const invalidateSession = async (id: string) => {
-  const hashedSessionId = encodeHexLowerCase(sha256(new TextEncoder().encode(id)));
-  await db.delete(sessionsTable).where(eq(sessionsTable.token, hashedSessionId));
+export const invalidateSessionById = async (id: string) => {
+  await db.delete(sessionsTable).where(eq(sessionsTable.id, id));
 };

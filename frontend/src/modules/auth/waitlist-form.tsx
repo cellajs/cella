@@ -1,9 +1,9 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useNavigate } from '@tanstack/react-router';
-import { createRequestSchema } from 'backend/modules/requests/schema';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import type * as z from 'zod';
+import { createRequestSchema } from '#/modules/requests/schema';
 
 import { onlineManager } from '@tanstack/react-query';
 import { config } from 'config';
@@ -84,7 +84,7 @@ export const WaitlistForm = ({ email, buttonContent, emailField, dialog: isDialo
               <FormControl>
                 <Input
                   {...field}
-                  className="block xs:min-w-80 w-full py-6 h-14 px-8 rounded-full border border-gray-400/40 bg-background/50 text-base/6 ring-4 ring-primary/10 transition focus:border-gray-400 focus:outline-none focus-visible:ring-primary/20"
+                  className="block xs:min-w-80 w-full py-6 h-14 px-8 rounded-full border border-gray-400/40 bg-background/50 text-base/6 ring-4 ring-primary/10 transition focus:border-gray-400 focus:outline-hidden focus-visible:ring-primary/20"
                   type="email"
                   disabled={!emailField}
                   readOnly={!emailField}

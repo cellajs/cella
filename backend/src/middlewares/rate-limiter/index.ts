@@ -28,26 +28,32 @@ export const slowOptions = {
   blockDuration: 60 * 60 * 3, // Block for 3 hours
 };
 
-// Rate limit error response
+// Rate limit Error response
 const rateLimitError = (ctx: Context, limitState: RateLimiterRes, rateLimitKey: string) => {
   ctx.header('Retry-After', getRetryAfter(limitState.msBeforeNext));
   return errorResponse(ctx, 429, 'too_many_requests', 'warn', undefined, { rateLimitKey });
 };
 
-/*
- * This file contains the implementation of a rate limiter middleware, which supports multiple modes.
+/**
+ * Rate Limiter Middleware for API routes to control the rate of requests based on different modes and identifiers.
+ *
  * It uses the `rate-limiter-flexible` library to limit the number of requests.
- * https://github.com/animir/node-rate-limiter-flexible#readme
  *
  * The 'limit' mode consumes points for each failed/successful request.
  * The 'success' mode decreases the available points on successful requests only.
  * The 'fail' decreases points on failed requests only.
  * The 'failseries' decreases points on consecutive failed requests: it resets the rate limit on a successful request.
  *
- * Each mode runs a slow brute force instance in parallel to the rate limiter instance itself.
- * This is to prevent attackers from slowly trying to access data in a larger timeframe (24h).
+ * Each mode ALSO runs a slow brute force instance (duration 24h) in parallel to the rate limiter instance itself.
+ * This is to prevent attackers from slowly trying to access data in a larger timeframe.
+ *
+ * @param mode - Rate limit mode that dictates how rate limiting is applied.
+ * @param key - The key to identify the user or entity being rate-limited (e.g., user ID, email).
+ * @param identifiers - `("ip" | "email")[]` A list of identifiers to consider when generating rate limit key.
+ * @param options - Optional custom configuration for rate limiting.
+ * @returns Middleware handler for rate limiting.
+ * @link https://github.com/animir/node-rate-limiter-flexible#readme
  */
-
 const rateLimiter = (mode: RateLimitMode, key: string, identifiers: RateLimitIdentifier[], options?: RateLimitOptions): MiddlewareHandler<Env> => {
   const limiter = getRateLimiterInstance({ ...defaultOptions, ...options, keyPrefix: `${key}_${mode}` });
   const slowLimiter = getRateLimiterInstance({ ...slowOptions, keyPrefix: `${key}_${mode}:slow` });
@@ -70,7 +76,7 @@ const rateLimiter = (mode: RateLimitMode, key: string, identifiers: RateLimitIde
     // If already rate limited, return 429
     if (limitState !== null && limitState.consumedPoints > limiter.points) return rateLimitError(ctx, limitState, rateLimitKey);
 
-    // If slowly brute forcing, return 429
+    // If slow brute forcing, return 429
     if (slowLimitState !== null && slowLimitState.consumedPoints > slowLimiter.points) return rateLimitError(ctx, slowLimitState, rateLimitKey);
 
     // If the rate limit mode is 'limit', consume points without blocking unless the limit is reached
@@ -117,14 +123,22 @@ const rateLimiter = (mode: RateLimitMode, key: string, identifiers: RateLimitIde
   };
 };
 
-// Email spam limit for endpoints where emails are sent to others. Max 10 requests per hour. For sign up with password, reset password, public requests etc.
+/**
+ * Email spam limit for endpoints where emails are sent to others. Max 10 requests per hour. For sign up with password, reset password, public requests etc.
+ */
 export const spamLimiter = rateLimiter('success', 'spam', ['ip'], { points: 10, blockDuration: 60 * 60 });
 
-// Email enumeration limiter to prevent users from guessing emails. Blocks IP for 30 min after 5 consecutive failed requests in 1 hour
+/**
+ * Email enumeration limiter to prevent users from guessing emails. Blocks IP for 30 min after 5 consecutive failed requests in 1 hour
+ */
 export const emailEnumLimiter = rateLimiter('failseries', 'email_enum', ['ip']);
 
-// Password limiter to prevent users from guessing passwords. Blocks user sign in for 30 min after 5 consecutive failed requests in 1 hour
+/**
+ * Password limiter to prevent users from guessing passwords. Blocks user sign in for 30 min after 5 consecutive failed requests in 1 hour
+ */
 export const passwordLimiter = rateLimiter('failseries', 'password', ['ip', 'email']);
 
-// Prevent brute force attacks by systemmatically trying tokens or secrets. Blocks IP for 30 minutes after 5 consecutive failed requests in 1 hour
+/**
+ * Prevent brute force attacks by systemmatically trying tokens or secrets. Blocks IP for 30 minutes after 5 consecutive failed requests in 1 hour
+ */
 export const tokenLimiter = rateLimiter('failseries', 'token', ['ip']);

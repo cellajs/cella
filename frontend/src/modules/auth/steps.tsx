@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { CheckEmailForm } from '~/modules/auth/check-email-form';
 import { SignInForm } from '~/modules/auth/sign-in-form';
 import { SignUpForm } from '~/modules/auth/sign-up-form';
@@ -8,16 +8,14 @@ import { useSearch } from '@tanstack/react-router';
 import { config } from 'config';
 import { useTranslation } from 'react-i18next';
 import { checkToken } from '~/modules/auth/api';
+import AuthNotice from '~/modules/auth/notice';
 import OauthOptions from '~/modules/auth/oauth-options';
+import type { Step } from '~/modules/auth/types';
 import { WaitlistForm } from '~/modules/auth/waitlist-form';
+import Spinner from '~/modules/common/spinner';
 import { AuthenticateRoute } from '~/routes/auth';
 import { useUserStore } from '~/store/user';
-import type { TokenData } from '~/types/common';
 import { shouldShowDivider } from '~/utils';
-import Spinner from '../common/spinner';
-import AuthNotice from './auth-notice';
-
-export type Step = 'checkEmail' | 'signIn' | 'signUp' | 'inviteOnly' | 'waitlist';
 
 const enabledStrategies: readonly string[] = config.enabledAuthenticationStrategies;
 const emailEnabled = enabledStrategies.includes('password') || enabledStrategies.includes('passkey');
@@ -53,15 +51,16 @@ const AuthSteps = () => {
       return checkToken({ id: tokenId, type: 'invitation' });
     },
     enabled: !!tokenId && !!token,
-    select: (data: TokenData | undefined) => {
-      if (!data) return;
-      setEmail(data.email);
-      setStep(data.userId ? 'signIn' : 'signUp');
-      return data;
-    },
   };
 
   const { data: tokenData, isLoading, error } = useQuery(tokenQueryOptions);
+
+  useEffect(() => {
+    if (tokenData) {
+      setEmail(tokenData.email);
+      setStep(tokenData.userId ? 'signIn' : 'signUp');
+    }
+  }, [tokenData]);
 
   if (isLoading) return <Spinner className="h-10 w-10" />;
   if (error) return <AuthNotice error={error} />;

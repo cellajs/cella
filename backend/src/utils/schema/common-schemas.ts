@@ -22,7 +22,15 @@ export const idOrSlugSchema = idSchema.or(slugSchema);
 
 export const tokenSchema = z.object({ token: z.string() });
 
-export const idsQuerySchema = z.object({ ids: z.union([z.string(), z.array(z.string())]) });
+export const idsBodySchema = z.object({
+  ids: z
+    .array(z.string())
+    .min(1)
+    .max(50)
+    .refine((ids) => ids.length <= 50, {
+      message: 'The number of items cannot exceed 50',
+    }),
+});
 
 export const languageSchema = constructZodLiteralUnionType(config.languages.map((lang) => z.literal(lang.value)));
 
@@ -42,7 +50,7 @@ export const errorSchema = z.object({
   message: z.string(),
   type: z.string(),
   status: z.number(),
-  severity: z.enum(['debug', 'log', 'info', 'warn', 'error']),
+  severity: z.enum(config.severityLevels),
   entityType: entityTypeSchema.optional(),
   logId: z.string().optional(),
   path: z.string().optional(),
@@ -111,8 +119,6 @@ export const nameSchema = z
   .min(2)
   .max(100)
   .refine(
-    (s) =>
-      /^[\p{L}\d\-. '&()]+$/u.test(s) && // Validate allowed characters
-      /^[a-z0-9].*[a-z0-9]$/i.test(s), // Ensure starts and ends with alphanumeric
-    "Name may only contain letters, numbers, spaces and these characters: .'-&()",
+    (s) => /^[\p{L}\d\-., '&()]+$/u.test(s), // Allow any order of the allowed characters
+    "Name may only contain letters, numbers, spaces, and these characters: .,'-&()",
   );

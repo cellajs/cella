@@ -1,18 +1,15 @@
-import { useTranslation } from 'react-i18next';
-import type { User } from '~/types/common';
-
 import { Link, useNavigate } from '@tanstack/react-router';
-import { config } from 'config';
 import { UserRoundCheck } from 'lucide-react';
 import { useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import CheckboxColumn from '~/modules/common/data-table/checkbox-column';
-import type { ColumnOrColumnGroup } from '~/modules/common/data-table/columns-view';
 import HeaderCell from '~/modules/common/data-table/header-cell';
-import { renderSelect } from '~/modules/common/data-table/select-column';
+import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 import ImpersonateRow from '~/modules/users/table/impersonate-row';
 import UpdateRow from '~/modules/users/table/update-row';
+import type { User } from '~/modules/users/types';
 import { dateShort } from '~/utils/date-short';
 
 export const useColumns = (callback: (users: User[]) => void) => {
@@ -90,13 +87,7 @@ export const useColumns = (callback: (users: User[]) => void) => {
         visible: !isMobile,
         width: 100,
         renderHeaderCell: HeaderCell,
-        renderCell: ({ row }) => <div className="inline-flex items-center gap-1 relative group h-full w-full">{t(`common:${row.role}`)}</div>,
-        renderEditCell: ({ row, onRowChange }) =>
-          renderSelect({
-            row,
-            onRowChange,
-            options: config.rolesByType.systemRoles,
-          }),
+        renderCell: ({ row }) => <div>{t(`common:${row.role}`)}</div>,
       },
       {
         key: 'createdAt',

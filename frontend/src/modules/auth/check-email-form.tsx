@@ -1,8 +1,8 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { emailBodySchema } from 'backend/modules/auth/schema';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import type * as z from 'zod';
+import { emailBodySchema } from '#/modules/auth/schema';
 
 import { SubmitButton } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '~/modules/ui/form';
@@ -12,8 +12,8 @@ import { useMutation } from '@tanstack/react-query';
 import { config } from 'config';
 import { ArrowRight } from 'lucide-react';
 import type { ApiError } from '~/lib/api';
-import type { Step } from '~/modules/auth/auth-steps';
-import { checkEmail } from './api';
+import { checkEmail } from '~/modules/auth/api';
+import type { Step } from '~/modules/auth/types';
 
 const formSchema = emailBodySchema;
 

@@ -52,9 +52,9 @@ const attachmentsRoutes = app
     return res;
   })
   /*
-   * Create attachment
+   * Create one or more attachments
    */
-  .openapi(attachmentsRoutesConfig.createAttachment, async (ctx) => {
+  .openapi(attachmentsRoutesConfig.createAttachments, async (ctx) => {
     const newAttachments = ctx.req.valid('json');
 
     const organization = getContextOrganization();
@@ -157,7 +157,7 @@ const attachmentsRoutes = app
    * Delete attachments
    */
   .openapi(attachmentsRoutesConfig.deleteAttachments, async (ctx) => {
-    const { ids } = ctx.req.valid('query');
+    const { ids } = ctx.req.valid('json');
 
     const memberships = getContextMemberships();
 

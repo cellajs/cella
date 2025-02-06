@@ -1,5 +1,4 @@
 import { createRoute, useParams } from '@tanstack/react-router';
-import { membersQuerySchema } from 'backend/modules/general/schema';
 import { Suspense, lazy } from 'react';
 import { z } from 'zod';
 import { offlineFetch, offlineFetchInfinite } from '~/lib/query-client';
@@ -8,9 +7,10 @@ import { attachmentsQueryOptions } from '~/modules/attachments/query';
 import ErrorNotice from '~/modules/common/error-notice';
 import { membersQueryOptions } from '~/modules/memberships/query';
 import { organizationQueryOptions } from '~/modules/organizations/query';
+import { membersQuerySchema } from '#/modules/general/schema';
 
+import type { Organization as OrganizationType } from '~/modules/organizations/types';
 import { AppRoute } from '~/routes/general';
-import type { Organization as OrganizationType } from '~/types/common';
 import { noDirectAccess } from '~/utils/no-direct-access';
 import { attachmentsQuerySchema } from '#/modules/attachments/schema';
 

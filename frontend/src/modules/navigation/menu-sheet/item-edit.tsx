@@ -12,7 +12,7 @@ import { createToast } from '~/modules/common/toaster';
 import { updateMembership as baseUpdateMembership } from '~/modules/memberships/api';
 import { updateMenuItem } from '~/modules/navigation/menu-sheet/helpers/menu-operations';
 import { Button } from '~/modules/ui/button';
-import type { UserMenuItem } from '~/types/common';
+import type { UserMenuItem } from '~/modules/users/types';
 
 interface MenuItemEditProps {
   item: UserMenuItem;
@@ -70,7 +70,7 @@ export const MenuItemEdit = ({ item }: MenuItemEditProps) => {
       layoutId={`sheet-menu-item-${item.id}`}
       data-subitem={!item.submenu}
       data-archived={item.membership.archived}
-      className="group/optionsItem flex relative items-center h-14 w-full p-0 pr-2 justify-start rounded focus:outline-none
+      className="group/optionsItem flex relative items-center h-14 w-full p-0 pr-2 justify-start rounded focus:outline-hidden
         ring-inset ring-muted/25 focus-visible:ring-foreground hover:bg-accent/50 hover:text-accent-foreground ring-1 data-[archived=false]:cursor-grab
         group-data-[submenu=false]/menuOptions:h-12"
     >

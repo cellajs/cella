@@ -1,7 +1,7 @@
 import type { AvatarProps } from '@radix-ui/react-avatar';
+import type { Entity } from 'config';
 import { memo, useMemo } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '~/modules/ui/avatar';
-import type { Entity } from '~/types/common';
 import { cn } from '~/utils/cn';
 import { numberToColorClass } from '~/utils/number-to-color-class';
 

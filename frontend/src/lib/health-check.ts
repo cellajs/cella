@@ -1,4 +1,13 @@
-// Health check utility to check if backend is up and running again
+/**
+ * Health check to verify if the backend is online.
+ *
+ * @param url - URL to check.
+ * @param maxDelay - Maximum delay in seconds (default 600).
+ * @param factor - Delay increase factor (default 1.5).
+ * @param maxAttempts - Max attempts before failure (default 10).
+ *
+ * @returns Promise<boolean> - True if the server responds, otherwise false.
+ */
 export const healthCheck = async (
   url: string,
   maxDelay = 600, // Maximum 10 minutes

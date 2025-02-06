@@ -8,11 +8,12 @@ import TableCount from '~/modules/common/data-table/table-count';
 import { FilterBarActions, FilterBarContent, TableFilterBar } from '~/modules/common/data-table/table-filter-bar';
 import { TableHeaderContainer } from '~/modules/common/data-table/table-header-container';
 import TableSearch from '~/modules/common/data-table/table-search';
+import type { BaseTableHeaderProps, BaseTableMethods } from '~/modules/common/data-table/types';
 import { FocusView } from '~/modules/common/focus-view';
 import type { RequestsSearch } from '~/modules/requests/table';
+import type { Request } from '~/modules/requests/types';
 import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
-import type { BaseTableHeaderProps, BaseTableMethods, Request } from '~/types/common';
 
 type RequestsTableHeaderBarProps = BaseTableMethods &
   BaseTableHeaderProps<Request, RequestsSearch> & {
@@ -35,7 +36,7 @@ export const RequestsTableHeaderBar = ({
 }: RequestsTableHeaderBarProps) => {
   const { t } = useTranslation();
 
-  const selectedToWaitlist = useMemo(() => selected.filter((r) => r.type === 'waitlist' && !r.requestPending), [selected]);
+  const selectedToWaitlist = useMemo(() => selected.filter((r) => r.type === 'waitlist' && !r.tokenId), [selected]);
   const selectedContact = useMemo(() => selected.filter((r) => r.type !== 'waitlist'), [selected]);
 
   const isFiltered = !!q;

@@ -3,7 +3,6 @@ import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
 import { type InviteMemberProps, inviteMembers } from '~/modules/memberships/api';
 
-import { idOrSlugSchema } from 'backend/utils/schema/common-schemas';
 import { config } from 'config';
 import { Send } from 'lucide-react';
 import { useMemo } from 'react';
@@ -14,10 +13,10 @@ import { dialog } from '~/modules/common/dialoger/state';
 import SelectRoleRadio from '~/modules/common/form-fields/select-role-radio';
 import { QueryCombobox } from '~/modules/common/query-combobox';
 import { createToast } from '~/modules/common/toaster';
+import type { EntityPage } from '~/modules/general/types';
 import { Badge } from '~/modules/ui/badge';
 import { Button, SubmitButton } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
-import type { EntityPage } from '~/types/common';
 
 interface Props {
   entity?: EntityPage;
@@ -30,13 +29,12 @@ const InviteSearchForm = ({ entity, callback, dialog: isDialog }: Props) => {
   const { t } = useTranslation();
   if (!entity) return null;
 
-  // TODO
   const formSchema = z.object({
     emails: z
       .array(z.string().email(t('backend:invalid.email')))
       .min(1, { message: t('backend:invalid.min_items', { items_count: 'one', item: 'email' }) }),
     role: z.enum(config.rolesByType.entityRoles).optional(),
-    idOrSlug: idOrSlugSchema.optional(),
+    idOrSlug: z.string().optional(),
   });
 
   type FormValues = z.infer<typeof formSchema>;
@@ -60,7 +58,6 @@ const InviteSearchForm = ({ entity, callback, dialog: isDialog }: Props) => {
         ...values,
         idOrSlug: entity.id,
         entityType: entity.entity || 'organization',
-        parentEntity: entity.parentEntity,
         orgIdOrSlug: entity.organizationId || entity.id,
       } as InviteMemberProps);
     },

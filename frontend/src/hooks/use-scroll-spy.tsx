@@ -5,6 +5,16 @@ type IntersectionEntry = {
   ratio: number;
 };
 
+/**
+ * Custom hook to track which section is currently visible in the viewport.
+ * It uses Intersection Observer to monitor the visibility of sections based on their IDs.
+ *
+ * @param sectionIds - Array of section IDs to track and observe.
+ *
+ * @returns An object containing the `currentSection` state, which represents the section
+ * that is currently in view or has the highest visibility ratio.
+ */
+
 export const useScrollSpy = ({ sectionIds = [] }: { sectionIds: string[] }) => {
   const observer = useRef<IntersectionObserver | null>(null);
 
@@ -64,7 +74,7 @@ export const useScrollSpy = ({ sectionIds = [] }: { sectionIds: string[] }) => {
 
         // If more than one fully intersects
       } else if (fullyIntersecting.length > 1) {
-        newSection = fullyIntersecting[0]; // First one if scrolling up
+        newSection = fullyIntersecting[0];
 
         // If none fully intersect, use highest ratio
       } else if (entriesArray.find(({ ratio }) => ratio > 0)) {

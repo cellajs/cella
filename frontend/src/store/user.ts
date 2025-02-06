@@ -3,17 +3,15 @@ import { create } from 'zustand';
 import { createJSONStorage, devtools, persist } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
 import { i18n } from '~/lib/i18n';
-import type { MeUser, User } from '~/types/common';
-
-type PartialUser = Partial<MeUser>;
+import type { MeUser, User } from '~/modules/users/types';
 
 interface UserState {
-  user: MeUser;
-  lastUser: PartialUser | null;
-  clearLastUser: () => void;
-  setUser: (user: MeUser) => void;
-  setUserWithoutSetLastUser: (user: MeUser) => void;
-  updateUser: (user: User) => void;
+  user: MeUser; // Current user data
+  lastUser: Partial<MeUser> | null; // Last signed-out user's data (email, name, passkey, id, slug)
+  clearLastUser: () => void; // Resets the `lastUser` to null.
+  setUser: (user: MeUser) => void; // Sets current user and updates lastUser
+  setUserWithoutSetLastUser: (user: MeUser) => void; // Sets user without updating lastUser (used for impersonation)
+  updateUser: (user: User) => void; // Updates current user and adjusts lastUser
 }
 
 export const useUserStore = create<UserState>()(

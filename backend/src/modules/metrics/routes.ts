@@ -30,7 +30,7 @@ class MetricsRoutesConfig {
     guard: isPublicAccess,
     tags: ['metrics'],
     summary: 'Get public counts',
-    description: 'Get a count of all entities (ie. users, organizations).',
+    description: 'Get a count of all entities (ie. users, organizations). 1 minute in-memory cache.',
     responses: {
       200: {
         description: 'Public counts',

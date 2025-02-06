@@ -6,9 +6,9 @@ import { t } from 'i18next';
 import { queryClient } from '~/lib/router';
 import { createToast } from '~/modules/common/toaster';
 import { membersKeys } from '~/modules/memberships/query';
+import type { Member, Membership } from '~/modules/memberships/types';
 import { formatUpdatedData, getCancelingRefetchQueries, getQueries, getQueryItems, handleNoOldData } from '~/query/helpers/mutate-query';
 import type { ContextProp, InfiniteQueryData, QueryData } from '~/query/types';
-import type { Member, Membership } from '~/types/common';
 
 type MemberQueryData = QueryData<Member>;
 type InfiniteMemberQueryData = InfiniteQueryData<Member>;
@@ -16,19 +16,17 @@ type MemberContextProp = ContextProp<Member, string | null>;
 
 const limit = config.requestLimits.members;
 
-export const useMemberUpdateMutation = () => {
-  return useMutation<Membership, Error, UpdateMembershipProp>({
+export const useMemberUpdateMutation = () =>
+  useMutation<Membership, Error, UpdateMembershipProp>({
     mutationKey: membersKeys.update(),
     mutationFn: updateMembership,
   });
-};
 
-export const useMembersDeleteMutation = () => {
-  return useMutation<void, Error, RemoveMembersProps>({
+export const useMembersDeleteMutation = () =>
+  useMutation<void, Error, RemoveMembersProps>({
     mutationKey: membersKeys.delete(),
     mutationFn: removeMembers,
   });
-};
 
 const onError = (_: Error, __: UpdateMembershipProp & RemoveMembersProps, context?: MemberContextProp[]) => {
   if (context?.length) {
@@ -41,9 +39,9 @@ const onError = (_: Error, __: UpdateMembershipProp & RemoveMembersProps, contex
 queryClient.setMutationDefaults(membersKeys.update(), {
   mutationFn: updateMembership,
   onSuccess: async (updatedMembership, { idOrSlug, entityType, orgIdOrSlug }) => {
+    // Get affected queries
     const exactKey = membersKeys.table({ idOrSlug, entityType, orgIdOrSlug });
     const similarKey = membersKeys.similar({ idOrSlug, entityType, orgIdOrSlug });
-
     const queries = getQueries<Member>(exactKey, similarKey);
 
     for (const query of queries) {
@@ -56,8 +54,10 @@ queryClient.setMutationDefaults(membersKeys.update(), {
       }
       queryClient.setQueryData<InfiniteMemberQueryData | MemberQueryData>(activeKey, (oldData) => {
         if (!oldData) return oldData;
+
         const prevItems = getQueryItems(oldData);
         const updatedData = updateMembers(prevItems, updatedMembership);
+
         return formatUpdatedData(oldData, updatedData, limit);
       });
     }
@@ -70,23 +70,27 @@ queryClient.setMutationDefaults(membersKeys.delete(), {
   onMutate: async (variables) => {
     const { ids, idOrSlug, entityType, orgIdOrSlug } = variables;
 
-    const context: MemberContextProp[] = [];
+    const context: MemberContextProp[] = []; // previous query data for rollback if an error occurs
+
+    // Get affected queries
     const exactKey = membersKeys.table({ idOrSlug, entityType, orgIdOrSlug });
     const similarKey = membersKeys.similar({ idOrSlug, entityType, orgIdOrSlug });
-
     const queries = await getCancelingRefetchQueries<Member>(exactKey, similarKey);
 
+    // Iterate over affected queries and optimistically update cache
     for (const [queryKey, previousData] of queries) {
-      // Optimistically update to the new value
-      if (previousData) {
-        queryClient.setQueryData<InfiniteMemberQueryData | MemberQueryData>(queryKey, (old) => {
-          if (!old) return handleNoOldData(previousData);
-          const prevItems = getQueryItems(old);
-          const updatedMemberships = deletedMembers(prevItems, ids);
-          return formatUpdatedData(old, updatedMemberships, limit, -ids.length);
-        });
-      }
-      context.push([queryKey, previousData, null]);
+      if (!previousData) continue;
+
+      queryClient.setQueryData<InfiniteMemberQueryData | MemberQueryData>(queryKey, (old) => {
+        if (!old) return handleNoOldData(previousData);
+
+        const prevItems = getQueryItems(old);
+        const updatedMemberships = deletedMembers(prevItems, ids);
+
+        return formatUpdatedData(old, updatedMemberships, limit, -ids.length);
+      });
+
+      context.push([queryKey, previousData, null]); // Store previous data for rollback if needed
     }
 
     return context;

@@ -1,4 +1,4 @@
-import { and, eq, ilike, inArray, or, sql } from 'drizzle-orm';
+import { and, eq, ilike, inArray, or } from 'drizzle-orm';
 import { mailer } from '#/lib/mailer';
 import { SystemInviteEmail, type SystemInviteEmailProps } from '../../../emails/system-invite';
 
@@ -13,7 +13,6 @@ import { membershipSelect, membershipsTable } from '#/db/schema/memberships';
 import { requestsTable } from '#/db/schema/requests';
 import { tokensTable } from '#/db/schema/tokens';
 import { usersTable } from '#/db/schema/users';
-import { getUserBy, getUsersByConditions } from '#/db/util';
 import { entityIdFields, entityTables } from '#/entity-config';
 import { type Env, getContextMemberships, getContextUser } from '#/lib/context';
 import { errorResponse } from '#/lib/errors';
@@ -21,6 +20,7 @@ import { i18n } from '#/lib/i18n';
 import { isAuthenticated } from '#/middlewares/guard';
 import { logEvent } from '#/middlewares/logger/log-event';
 import { verifyUnsubscribeToken } from '#/modules/users/helpers/unsubscribe-token';
+import { getUserBy, getUsersByConditions } from '#/modules/users/helpers/utils';
 import { nanoid } from '#/utils/nanoid';
 import { prepareStringForILikeFilter } from '#/utils/sql';
 import { TimeSpan, createDate } from '#/utils/time-span';
@@ -74,16 +74,16 @@ const generalRoutes = app
     const { emails } = ctx.req.valid('json');
     const user = getContextUser();
 
-    // Static
     const lng = user.language;
     const senderName = user.name;
     const senderThumbnailUrl = user.thumbnailUrl;
     const subject = i18n.t('backend:email.system_invite.subject', { lng, appName: config.name });
 
-    const targets = await getUsersByConditions([inArray(usersTable.email, emails)]);
-
     // Filter out existing users
-    const recipientEmails = emails.filter((email) => !targets.some((target) => target.email === email));
+    const existingUsers = await getUsersByConditions([inArray(usersTable.email, emails)]);
+    const recipientEmails = emails.filter((email) => !existingUsers.some((u) => u.email === email));
+
+    //TODO we should also filter for recent invitation tokens that could exist for these emails
 
     // Stop if no recipients
     if (recipientEmails.length === 0) return errorResponse(ctx, 400, 'no_recipients', 'warn');
@@ -100,25 +100,15 @@ const generalRoutes = app
     // Batch insert tokens
     const insertedTokens = await db.insert(tokensTable).values(tokens).returning();
 
-    // Update requests table for all emails
-    await db
-      .update(requestsTable)
-      .set({ token: sql`tokens_table.id` }) // Using raw SQL to reference token
-      .from(tokensTable)
-      .where(
-        and(
-          inArray(requestsTable.email, recipientEmails),
-          eq(requestsTable.type, 'waitlist'),
-          eq(tokensTable.email, requestsTable.email), // Join tokensTable for correct token mapping
-        ),
-      );
+    // Remove waitlist request - if found - because users are explicitly invited
+    await db.delete(requestsTable).where(and(inArray(requestsTable.email, recipientEmails), eq(requestsTable.type, 'waitlist')));
 
     // Prepare emails
     const recipients = insertedTokens.map((tokenRecord) => ({
       email: tokenRecord.email,
       lng: lng,
       name: slugFromEmail(tokenRecord.email),
-      systemInvitelink: `${config.frontendUrl}/auth/authenticate?token=${tokenRecord.token}&tokenId=${tokenRecord.id}`,
+      systemInviteLink: `${config.frontendUrl}/auth/authenticate?token=${tokenRecord.token}&tokenId=${tokenRecord.id}`,
     }));
 
     type Recipient = (typeof recipients)[number];
@@ -163,7 +153,7 @@ const generalRoutes = app
     return ctx.json({ success: true }, 200);
   })
   /*
-   * Get suggestions
+   * Get entity search suggestions
    */
   .openapi(generalRoutesConfig.getSuggestionsConfig, async (ctx) => {
     const { q, type } = ctx.req.valid('query');
@@ -179,6 +169,7 @@ const generalRoutes = app
     const entityTypes = type ? [type] : config.pageEntityTypes;
 
     // Array to hold queries for concurrent execution
+    // TODO move to a helpers file?
     const queries = entityTypes
       .map((entityType) => {
         const table = entityTables[entityType];
@@ -236,7 +227,7 @@ const generalRoutes = app
     return ctx.json({ success: true, data: { items, total: items.length } }, 200);
   })
   /*
-   * Unsubscribe a user by token
+   * Unsubscribe a user by token from receiving newsletters
    */
   .openapi(generalRoutesConfig.unsubscribeUser, async (ctx) => {
     const { token } = ctx.req.valid('query');

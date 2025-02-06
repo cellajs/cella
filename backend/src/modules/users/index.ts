@@ -4,10 +4,10 @@ import { OpenAPIHono } from '@hono/zod-openapi';
 import { coalesce, db } from '#/db/db';
 import { membershipsTable } from '#/db/schema/memberships';
 import { safeUserSelect, usersTable } from '#/db/schema/users';
-import { getUsersByConditions } from '#/db/util';
 import { type Env, getContextMemberships, getContextUser } from '#/lib/context';
 import { type ErrorType, createError, errorResponse } from '#/lib/errors';
 import { logEvent } from '#/middlewares/logger/log-event';
+import { getUsersByConditions } from '#/modules/users/helpers/utils';
 import { getOrderColumn } from '#/utils/order-column';
 import { prepareStringForILikeFilter } from '#/utils/sql';
 import { checkSlugAvailable } from '../general/helpers/check-slug';
@@ -86,7 +86,7 @@ const usersRoutes = app
    * Delete users
    */
   .openapi(usersRoutesConfig.deleteUsers, async (ctx) => {
-    const { ids } = ctx.req.valid('query');
+    const { ids } = ctx.req.valid('json');
     const user = getContextUser();
 
     // Convert the user ids to an array
@@ -176,7 +176,7 @@ const usersRoutes = app
     const [targetUser] = await getUsersByConditions([or(eq(usersTable.id, idOrSlug), eq(usersTable.slug, idOrSlug))]);
     if (!targetUser) return errorResponse(ctx, 404, 'not_found', 'warn', 'user', { user: idOrSlug });
 
-    const { email, bannerUrl, firstName, lastName, language, newsletter, thumbnailUrl, slug, role } = ctx.req.valid('json');
+    const { bannerUrl, firstName, lastName, language, newsletter, thumbnailUrl, slug } = ctx.req.valid('json');
 
     // Check if slug is available
     if (slug && slug !== targetUser.slug) {
@@ -187,7 +187,6 @@ const usersRoutes = app
     const [updatedUser] = await db
       .update(usersTable)
       .set({
-        email,
         bannerUrl,
         firstName,
         lastName,
@@ -195,7 +194,6 @@ const usersRoutes = app
         newsletter,
         thumbnailUrl,
         slug,
-        role,
         name: [firstName, lastName].filter(Boolean).join(' ') || slug,
         modifiedAt: new Date(),
         modifiedBy: user.id,

@@ -7,7 +7,6 @@ import { AvatarWrap, type AvatarWrapProps } from '~/modules/common/avatar-wrap';
 import { dialog } from '~/modules/common/dialoger/state';
 import { createToast } from '~/modules/common/toaster';
 import { Button } from '~/modules/ui/button';
-import { UploadType } from '~/types/common';
 
 const UploadUppy = lazyWithPreload(() => import('~/modules/attachments/upload/upload-uppy'));
 
@@ -27,19 +26,8 @@ export const UploadAvatar = ({ type, id, name, url, setUrl }: UploadAvatarProps)
     dialog(
       <Suspense>
         <UploadUppy
-          isPublic={true}
-          uploadType={UploadType.Personal}
-          uppyOptions={{
-            restrictions: {
-              maxFileSize: 10 * 1024 * 1024, // 10MB
-              maxNumberOfFiles: 1,
-              allowedFileTypes: ['.jpg', '.jpeg', '.png'],
-              minFileSize: null,
-              maxTotalFileSize: 10 * 1024 * 1024, // 10MB
-              minNumberOfFiles: null,
-              requiredMetaFields: [],
-            },
-          }}
+          isPublic
+          uploadType="personal"
           plugins={['webcam', 'image-editor']}
           imageMode="avatar"
           callback={(result) => {

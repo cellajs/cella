@@ -10,7 +10,7 @@ const DeviceFrame = ({ type, inView, renderCarousel }: DeviceFrameProps) => {
   switch (type) {
     case 'tablet':
       return (
-        <div className="relative mx-auto border-gray-300 bg-gray-300 border-[.88rem] rounded-[2.5rem] aspect-[3/4]">
+        <div className="relative mx-auto border-gray-300 bg-gray-300 border-[.88rem] rounded-[2.5rem] aspect-3/4">
           <div className="h-8 w-1 bg-gray-300 dark:bg-gray-800 absolute -start-4 top-20 rounded-s-lg" />
           <div className="h-12 w-1 bg-gray-300 dark:bg-gray-800 absolute -start-4 top-32 rounded-s-lg" />
           <div className="h-12 w-1 bg-gray-300 dark:bg-gray-800 absolute -start-4 top-44 rounded-s-lg" />
@@ -31,7 +31,7 @@ const DeviceFrame = ({ type, inView, renderCarousel }: DeviceFrameProps) => {
       );
     case 'mobile':
       return (
-        <div className="relative mx-auto border-gray-300 dark:border-gray-700 border-[.6rem] rounded-[1.5rem] h-[32rem] sm:h-[40rem] aspect-[9/16]">
+        <div className="relative mx-auto border-gray-300 dark:border-gray-700 border-[.6rem] rounded-[1.5rem] h-[32rem] sm:h-[40rem] aspect-9/16">
           <div className="h-8 w-[.19rem] bg-gray-200 dark:bg-gray-800 absolute -start-3 top-20 rounded-s-lg" />
           <div className="h-12 w-[.19rem] bg-gray-200 dark:bg-gray-800 absolute -start-3 top-32 rounded-s-lg" />
           <div className="h-12 w-[.19rem] bg-gray-200 dark:bg-gray-800 absolute -start-3 top-44 rounded-s-lg" />

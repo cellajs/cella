@@ -1,5 +1,5 @@
 import { useMutation } from '@tanstack/react-query';
-import { config } from 'config';
+import { type Entity, config } from 'config';
 import { Undo } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import type { Control } from 'react-hook-form';
@@ -10,7 +10,6 @@ import { useOnlineManager } from '~/hooks/use-online-manager';
 import InputFormField from '~/modules/common/form-fields/input';
 import { checkSlugAvailable } from '~/modules/general/api';
 import { Button } from '~/modules/ui/button';
-import type { Entity } from '~/types/common';
 
 interface SlugFieldProps {
   // biome-ignore lint/suspicious/noExplicitAny: <explanation>

@@ -1,6 +1,6 @@
 import { menuSections } from '~/menu-config';
+import type { UserMenu, UserMenuItem } from '~/modules/users/types';
 import { useNavigationStore } from '~/store/navigation';
-import type { UserMenu, UserMenuItem } from '~/types/common';
 
 const useTransformOnMenuItems = (transform: (items: UserMenuItem[]) => UserMenuItem[]) => {
   const { menu } = useNavigationStore.getState();
@@ -15,7 +15,14 @@ const useTransformOnMenuItems = (transform: (items: UserMenuItem[]) => UserMenuI
   useNavigationStore.setState({ menu: updatedMenu });
 };
 
-// Adding new item on local store user's menu
+/**
+ * Adds a new menu item to the user's navigation menu.
+ * If the `parentSlug` is provided, the new item will be added under the parent menu item.
+ *
+ * @param newEntity - New menu item to be added.
+ * @param sectionName - Name of section in the menu where the item will be added.
+ * @param parentSlug - Slug of the parent item, if the new item should be a submenu (optional).
+ */
 export const addMenuItem = (newEntity: UserMenuItem, sectionName: keyof UserMenu, parentSlug?: string) => {
   const menu = useNavigationStore.getState().menu;
 
@@ -41,6 +48,12 @@ export const addMenuItem = (newEntity: UserMenuItem, sectionName: keyof UserMenu
   });
 };
 
+/**
+ * Updates an existing menu item with new properties.
+ *
+ * @param updatedEntity - Menu item with updated properties.
+ * @returns Transformed menu with  updated item.
+ */
 export const updateMenuItem = (updatedEntity: UserMenuItem) => {
   const update = (items: UserMenuItem[]): UserMenuItem[] => {
     return items.map((item) => {
@@ -67,6 +80,12 @@ export const updateMenuItem = (updatedEntity: UserMenuItem) => {
   return useTransformOnMenuItems(update); // use update on every menu item by storage type from menu config
 };
 
+/**
+ * Deletes a menu item from the user's navigation menu.
+ *
+ * @param itemId - ID of the menu item to be deleted.
+ * @returns Transformed menu with the item removed.
+ */
 export const deleteMenuItem = (itemId: string) => {
   const remove = (items: UserMenuItem[]): UserMenuItem[] =>
     items

@@ -113,12 +113,22 @@ export const getQueries = <T>(exactQueryKey: QueryKey, similarQueryKey?: QueryKe
   return exactQuery;
 };
 
-// Retrieves query data by a given query key
+/**
+ * Retrieves query data for a given query key.
+ *
+ * @param passedQueryKey - Query key to search for similar queries.
+ * @returns An array with query key and its corresponding data.
+ */
 const getExact = <T>(passedQueryKey: QueryKey): [QueryKey, InfiniteQueryData<T> | QueryData<T> | undefined][] => {
   return [[passedQueryKey, queryClient.getQueryData<InfiniteQueryData<T> | QueryData<T>>(passedQueryKey)]];
 };
 
-// Retrieves queries that are similar to given query key
+/**
+ * Retrieves queries similar to the given query key.
+ *
+ * @param passedQueryKey - Query key to search for similar queries.
+ * @returns An array of matching query keys and their corresponding data.
+ */
 export const getSimilarQueries = <T>(passedQueryKey: QueryKey): [QueryKey, InfiniteQueryData<T> | QueryData<T> | undefined][] => {
   return queryClient.getQueriesData<InfiniteQueryData<T> | QueryData<T>>({
     queryKey: passedQueryKey,

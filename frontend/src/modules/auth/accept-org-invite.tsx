@@ -5,12 +5,13 @@ import { useMutation, useQuery } from '@tanstack/react-query';
 import { config } from 'config';
 import { Ban, Check } from 'lucide-react';
 import { toast } from 'sonner';
+import { acceptOrgInvite, checkToken } from '~/modules/auth/api';
+import AuthNotice from '~/modules/auth/notice';
 import Spinner from '~/modules/common/spinner';
 import { SubmitButton, buttonVariants } from '~/modules/ui/button';
+import { getAndSetMenu } from '~/modules/users/helpers';
 import { AcceptOrgInviteRoute } from '~/routes/auth';
 import { cn } from '~/utils/cn';
-import { acceptOrgInvite, checkToken } from './api';
-import AuthNotice from './auth-notice';
 
 // Accept organization invitation when user is signed in
 const AcceptOrgInvite = () => {
@@ -27,6 +28,7 @@ const AcceptOrgInvite = () => {
   } = useMutation({
     mutationFn: acceptOrgInvite,
     onSuccess: () => {
+      getAndSetMenu();
       toast.success(t('common:invitation_accepted'));
       navigate({ to: tokenData?.organizationSlug ? `/${tokenData.organizationSlug}` : config.defaultRedirectPath });
     },

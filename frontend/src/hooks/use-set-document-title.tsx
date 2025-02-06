@@ -6,7 +6,12 @@ const isPWAInstalled = () => {
   return window.matchMedia('(display-mode: standalone)').matches;
 };
 
-// Custom hook for setting document title
+/**
+ * Custom hook to set the document title based on the current route matches.
+ * It gathers the page titles from route data and updates the document title dynamically.
+ * If the app is installed as a PWA, the app name is omitted from the title.
+ *
+ */
 export const useSetDocumentTitle = () => {
   const matches = useMatches();
 

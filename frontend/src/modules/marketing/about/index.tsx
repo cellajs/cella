@@ -18,9 +18,9 @@ import Showcase from '~/modules/marketing/about/showcase';
 // import Pricing from '~/modules/marketing/about/pricing';
 import Why from '~/modules/marketing/about/why';
 
+import CallToAction from '~/modules/marketing/about/call-to-action';
 import '~/modules/marketing/about/glow-button.css';
 import { Input } from '~/modules/ui/input';
-import CallToAction from './call-to-action';
 
 interface AboutSectionProps {
   section: string;
@@ -75,7 +75,7 @@ const About = () => {
             <Input
               readOnly
               value="pnpm create @cellajs/cella"
-              className="block w-96 py-6 h-14 px-8 font-light text-sm font-mono rounded-full border border-transparent bg-background ring-4 ring-primary/10 transition focus:border-gray-500 focus:outline-none focus-visible:ring-primary/20"
+              className="block w-96 py-6 h-14 px-8 font-light text-sm font-mono rounded-full border border-transparent bg-background ring-4 ring-primary/10 transition focus:border-gray-500 focus:outline-hidden focus-visible:ring-primary/20"
             />
             {copied && (
               <div className="absolute font-mono top-2.5 text-sm left-8 text-left bg-background right-2 py-2 rounded-full">copied! bon voyage 🚀</div>

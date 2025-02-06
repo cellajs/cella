@@ -1,10 +1,10 @@
-import type { Request } from '~/types/common';
+import type { Request } from '~/modules/requests/types';
 
 import { useMutation } from '@tanstack/react-query';
 import { DeleteForm } from '~/modules/common/delete-form';
 import { dialog } from '~/modules/common/dialoger/state';
-import { deleteRequests } from './api';
-import { requestsKeys } from './query';
+import { deleteRequests } from '~/modules/requests/api';
+import { requestsKeys } from '~/modules/requests/query';
 
 interface Props {
   requests: Request[];

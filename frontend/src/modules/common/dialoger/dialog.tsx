@@ -1,7 +1,7 @@
 import { type DialogT, dialog as dialogState } from '~/modules/common/dialoger/state';
+import { dropdowner } from '~/modules/common/dropdowner/state';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '~/modules/ui/dialog';
 import { cn } from '~/utils/cn';
-import { dropdowner } from '../dropdowner/state';
 
 type CustomInteractOutsideEvent = CustomEvent<{ originalEvent: PointerEvent | FocusEvent }>;
 
@@ -54,7 +54,7 @@ export default function StandardDialog({ dialog, removeDialog }: DialogProp) {
       {container && containerBackdrop && (
         <div
           className={cn(
-            'fixed inset-0 z-[100] bg-background/75 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0',
+            'fixed inset-0 z-100 bg-background/75 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0',
             containerBackdropClassName,
           )}
         />

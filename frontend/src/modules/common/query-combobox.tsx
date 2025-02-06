@@ -61,19 +61,19 @@ export function QueryCombobox({ onChange, value }: { value: string[]; onChange: 
       <PopoverTrigger asChild>
         <div
           ref={ref}
-          className="rounded-md w-full flex relative items-center flex-wrap gap-1 border border-input bg-background active:!translate-y-0 hover:transparent p-2 cursor-pointer"
+          className="rounded-md w-full flex relative items-center flex-wrap gap-1 border border-input bg-background active:translate-y-0! hover:transparent p-2 cursor-pointer"
         >
           {value?.length ? (
             value?.map((el) => (
               <Badge
                 variant="secondary"
                 key={el}
-                className="data-[disabled]:bg-muted-foreground data-[disabled]:text-muted data-[disabled]:hover:bg-muted-foreground data-[fixed]:bg-muted-foreground data-[fixed]:text-muted data-[fixed]:hover:bg-muted-foreground"
+                className="data-disabled:bg-muted-foreground data-disabled:text-muted data-disabled:hover:bg-muted-foreground data-fixed:bg-muted-foreground data-fixed:text-muted data-fixed:hover:bg-muted-foreground"
               >
                 {el}
                 <button
                   type="button"
-                  className="py-1 m-[-.25rem] ml-1 rounded-full outline-none sm:ring-offset-background focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                  className="py-1 m-[-.25rem] ml-1 rounded-full outline-hidden sm:ring-offset-background focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                   onClick={(e) => {
                     e.preventDefault();
                     e.stopPropagation();

@@ -2,6 +2,7 @@ import { getRandomValues } from 'node:crypto';
 import { OpenAPIHono } from '@hono/zod-openapi';
 import { encodeBase64 } from '@oslojs/encoding';
 import { OAuth2RequestError, generateCodeVerifier, generateState } from 'arctic';
+import type { EnabledOauthProvider } from 'config';
 import { config } from 'config';
 import { and, eq, or } from 'drizzle-orm';
 import slugify from 'slugify';
@@ -11,7 +12,6 @@ import { passkeysTable } from '#/db/schema/passkeys';
 import { sessionsTable } from '#/db/schema/sessions';
 import { tokensTable } from '#/db/schema/tokens';
 import { type UserModel, usersTable } from '#/db/schema/users';
-import { getUserBy, getUsersByConditions } from '#/db/util';
 import { type Env, getContextToken, getContextUser } from '#/lib/context';
 import { errorRedirect, errorResponse } from '#/lib/errors';
 import { i18n } from '#/lib/i18n';
@@ -27,7 +27,7 @@ import {
   microsoftAuth,
   type microsoftUserProps,
 } from '#/modules/auth/helpers/oauth-providers';
-import type { EnabledOauthProvider } from '#/types/common';
+import { getUserBy, getUsersByConditions } from '#/modules/users/helpers/utils';
 import { nanoid } from '#/utils/nanoid';
 import { TimeSpan, createDate, isExpiredDate } from '#/utils/time-span';
 // TODO shorten this import
@@ -45,7 +45,7 @@ import {
   updateExistingUser,
 } from './helpers/oauth';
 import { parseAndValidatePasskeyAttestation, verifyPassKeyPublic } from './helpers/passkey';
-import { invalidateSession, invalidateUserSessions, setUserSession, validateSession } from './helpers/session';
+import { invalidateSessionById, invalidateUserSessions, setUserSession, validateSession } from './helpers/session';
 import { handleCreateUser } from './helpers/user';
 import { sendVerificationEmail } from './helpers/verify-email';
 import authRoutesConfig from './routes';
@@ -421,16 +421,6 @@ const authRoutes = app
     //   sectionName: menuSections.find((el) => el.entityType === orgMembership.type)?.name,
     // };
 
-    // // SSE with organization data, to update user's menu
-    // sendSSEToUsers([user.id], 'add_entity', newMenuItem);
-
-    // // SSE to to update members queries
-    // sendSSEToUsers(
-    //   memberships.map(({ userId }) => userId).filter((id) => id !== user.id),
-    //   'member_accept_invite',
-    //   { id: organization.id, slug: organization.slug },
-    // );
-
     // if (membershipInfo) {
     //   const { parentEntity: parentInfo, targetEntity: targetInfo } = membershipInfo;
     //   const { entity: targetEntityType, idOrSlug: targetIdOrSlug } = targetInfo;
@@ -445,22 +435,6 @@ const authRoutes = app
     //     parentEntity ? insertMembership({ user, role, entity: parentEntity }) : Promise.resolve(null),
     //     insertMembership({ user, role, entity: targetEntity, parentEntity }),
     //   ]);
-
-    //   if (createdParentMembership && parentEntity) {
-    //     // SSE with parentEntity data, to update user's menu
-    //     sendSSEToUsers([user.id], 'add_entity', {
-    //       newItem: { ...parentEntity, membership: createdParentMembership },
-    //       sectionName: menuSections.find((el) => el.entityType === parentEntity.entity)?.name,
-    //     });
-    //   }
-
-    //   // SSE with entity data, to update user's menu
-    //   sendSSEToUsers([user.id], 'add_entity', {
-    //     newItem: { ...targetEntity, membership: createdMembership },
-    //     sectionName: menuSections.find((el) => el.entityType === targetEntity.entity)?.name,
-    //     ...(parentEntity && { parentSlug: parentEntity.slug }),
-    //   });
-    // }
 
     return ctx.json({ success: true }, 200);
   })
@@ -495,16 +469,19 @@ const authRoutes = app
     const { session } = await validateSession(sessionToken);
 
     if (session) {
-      await invalidateSession(session.id);
+      await invalidateSessionById(session.id);
       if (session.adminUserId) {
         const sessions = await db.select().from(sessionsTable).where(eq(sessionsTable.userId, session.adminUserId));
         const [lastSession] = sessions.sort((a, b) => b.expiresAt.getTime() - a.expiresAt.getTime());
 
-        const adminsLastSession = await validateSession(lastSession.id);
+        const adminsLastSession = await validateSession(lastSession.token);
+
         if (!adminsLastSession.session) {
           deleteAuthCookie(ctx, 'session');
           return errorResponse(ctx, 401, 'unauthorized', 'warn');
         }
+        const expireTimeSpan = new TimeSpan(lastSession.expiresAt.getTime() - Date.now(), 'ms');
+        await setAuthCookie(ctx, 'session', lastSession.token, expireTimeSpan);
       }
     } else deleteAuthCookie(ctx, 'session');
     logEvent('Admin user signed out from impersonate to his own account', { user: session?.adminUserId || 'na' });
@@ -524,7 +501,7 @@ const authRoutes = app
 
     // Find session & invalidate
     const { session } = await validateSession(sessionToken);
-    if (session) await invalidateSession(session.id);
+    if (session) await invalidateSessionById(session.id);
 
     // Delete session cookie
     deleteAuthCookie(ctx, 'session');
@@ -670,7 +647,6 @@ const authRoutes = app
     } catch (error) {
       // Handle invalid credentials
       if (error instanceof OAuth2RequestError) {
-        // t('error:invalid_credentials.text')
         return errorResponse(ctx, 401, 'invalid_credentials', 'warn', undefined, { strategy });
       }
 

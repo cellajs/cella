@@ -1,9 +1,9 @@
 import { createRouteConfig } from '#/lib/route-config';
 import { isAuthenticated } from '#/middlewares/guard';
 import { errorResponses, successWithDataSchema, successWithErrorsSchema, successWithoutDataSchema } from '#/utils/schema/common-responses';
-import { idsQuerySchema } from '#/utils/schema/common-schemas';
-import { updateUserBodySchema, updatedUserSchema } from '../users/schema';
-import { leaveEntityQuerySchema, meUserSchema, userMenuSchema } from './schema';
+import { idsBodySchema } from '#/utils/schema/common-schemas';
+import { updateUserBodySchema, userSchema } from '../users/schema';
+import { leaveEntityQuerySchema, meAuthInfoSchema, userMenuSchema } from './schema';
 
 class MeRoutesConfig {
   public getSelf = createRouteConfig({
@@ -12,13 +12,33 @@ class MeRoutesConfig {
     guard: isAuthenticated,
     tags: ['me'],
     summary: 'Get self',
-    description: 'Get the current user (self). It includes a `counts` object and a list of `sessions`.',
+    description: 'Get the current user (self). It includes a `counts` object.',
     responses: {
       200: {
         description: 'User',
         content: {
           'application/json': {
-            schema: successWithDataSchema(meUserSchema),
+            schema: successWithDataSchema(userSchema),
+          },
+        },
+      },
+      ...errorResponses,
+    },
+  });
+
+  public getSelfAuthData = createRouteConfig({
+    method: 'get',
+    path: '/auth',
+    guard: isAuthenticated,
+    tags: ['me'],
+    summary: 'Get self auth data',
+    description: 'Get the current user (self). It includes sessions, oauth accounts and sign in options.',
+    responses: {
+      200: {
+        description: 'User sign-up info',
+        content: {
+          'application/json': {
+            schema: successWithDataSchema(meAuthInfoSchema),
           },
         },
       },
@@ -37,9 +57,7 @@ class MeRoutesConfig {
       body: {
         content: {
           'application/json': {
-            schema: updateUserBodySchema.omit({
-              role: true,
-            }),
+            schema: updateUserBodySchema,
           },
         },
       },
@@ -49,7 +67,7 @@ class MeRoutesConfig {
         description: 'User',
         content: {
           'application/json': {
-            schema: successWithDataSchema(updatedUserSchema),
+            schema: successWithDataSchema(userSchema),
           },
         },
       },
@@ -104,10 +122,13 @@ class MeRoutesConfig {
     guard: isAuthenticated,
     tags: ['me'],
     summary: 'Terminate sessions',
-    description: 'Terminate all sessions of the current user, except for current session.',
+    description: 'Terminate sessions of the current user by list of ids.',
     request: {
-      query: idsQuerySchema,
+      body: {
+        content: { 'application/json': { schema: idsBodySchema } },
+      },
     },
+
     responses: {
       200: {
         description: 'Success',

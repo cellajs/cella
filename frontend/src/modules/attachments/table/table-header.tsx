@@ -2,16 +2,17 @@ import { Trash, Upload, XSquare } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useTranslation } from 'react-i18next';
 import type { AttachmentSearch, AttachmentsTableProps } from '~/modules/attachments/table';
-import { openUploadDialog } from '~/modules/attachments/table/helpers';
+import { openAttachmentsUploadDialog } from '~/modules/attachments/table/helpers';
+import type { Attachment } from '~/modules/attachments/types';
 import ColumnsView from '~/modules/common/data-table/columns-view';
 import TableCount from '~/modules/common/data-table/table-count';
 import { FilterBarActions, FilterBarContent, TableFilterBar } from '~/modules/common/data-table/table-filter-bar';
 import { TableHeaderContainer } from '~/modules/common/data-table/table-header-container';
 import TableSearch from '~/modules/common/data-table/table-search';
+import type { BaseTableHeaderProps, BaseTableMethods } from '~/modules/common/data-table/types';
 import { FocusView } from '~/modules/common/focus-view';
 import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
-import type { Attachment, BaseTableHeaderProps, BaseTableMethods } from '~/types/common';
 
 type AttachmentsTableHeaderProps = AttachmentsTableProps &
   BaseTableMethods &
@@ -36,6 +37,7 @@ export const AttachmentsTableHeader = ({
 
   const isFiltered = !!q;
   const isAdmin = organization.membership?.role === 'admin';
+  const showUpload = canUpload && !isFiltered && isAdmin;
 
   // Drop selected rows on search
   const onSearch = (searchString: string) => {
@@ -82,10 +84,8 @@ export const AttachmentsTableHeader = ({
               </Button>
             </>
           ) : (
-            canUpload &&
-            !isFiltered &&
-            isAdmin && (
-              <Button asChild onClick={() => openUploadDialog(organization.id)}>
+            showUpload && (
+              <Button asChild onClick={() => openAttachmentsUploadDialog(organization.id)}>
                 <motion.button transition={{ duration: 0.1 }} layoutId="attachments-filter-bar-button">
                   <motion.span layoutId="attachments-filter-bar-icon">
                     <Upload size={16} />

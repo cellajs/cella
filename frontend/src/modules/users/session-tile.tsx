@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
 import { Card, CardContent } from '~/modules/ui/card';
-import type { Session } from '~/types/common';
+import type { Session } from '~/modules/users/types';
 import { dateShort } from '~/utils/date-short';
 
 interface SessionTileProps {
@@ -47,15 +47,7 @@ export const SessionTile = ({ session, deleteMySessions, isPending }: SessionTil
           </div>
         </div>
         {!session.isCurrent && (
-          <Button
-            variant="plain"
-            size="sm"
-            className="text-sm ml-auto"
-            disabled={isPending}
-            onClick={() => {
-              deleteMySessions([session.id]);
-            }}
-          >
+          <Button variant="plain" size="sm" className="text-sm ml-auto" disabled={isPending} onClick={() => deleteMySessions([session.id])}>
             <ZapOff size={16} />
             <span className="ml-1 max-md:hidden">{t('common:terminate')}</span>
           </Button>

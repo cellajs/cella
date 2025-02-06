@@ -3,7 +3,7 @@ import { isAuthenticated, isPublicAccess, systemGuard } from '#/middlewares/guar
 import { isNoBot } from '#/middlewares/is-no-bot';
 import { spamLimiter } from '#/middlewares/rate-limiter';
 import { errorResponses, successWithDataSchema, successWithPaginationSchema, successWithoutDataSchema } from '#/utils/schema/common-responses';
-import { idsQuerySchema } from '#/utils/schema/common-schemas';
+import { idsBodySchema } from '#/utils/schema/common-schemas';
 import { createRequestSchema, getRequestsQuerySchema, requestSchema } from './schema';
 
 class RequestsRoutesConfig {
@@ -68,7 +68,9 @@ class RequestsRoutesConfig {
     summary: 'Delete requests',
     description: 'Delete requests by ids.',
     request: {
-      query: idsQuerySchema,
+      body: {
+        content: { 'application/json': { schema: idsBodySchema } },
+      },
     },
     responses: {
       200: {

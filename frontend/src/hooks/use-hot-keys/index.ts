@@ -1,12 +1,24 @@
 import * as React from 'react';
 
-import { type HotkeyItem, getHotkeyMatcher, shouldFireEvent } from '~/hooks/use-hot-keys-helpers';
+import { type HotkeyItem, getHotkeyMatcher, shouldFireEvent } from '~/hooks/use-hot-keys/helpers';
 
-// Custom hook for handling global hotkeys
+/**
+ * Hook to handle global keyboard shortcuts.
+ *
+ * @param hotkeys - Array of hotkey definitions ([key combination, handler function, options]).
+ * @param tagsToIgnore - Elements where hotkeys should be ignored(default `['INPUT', 'TEXTAREA', 'SELECT', 'BUTTON', 'A']`).
+ * @param triggerOnContentEditable - Whether hotkeys should trigger in content-editable elements(default `false`0.
+ *
+ * @example
+ * useHotkeys([
+ *   ['ctrl + s', (event) => console.log('Save triggered')],
+ *   ['ESC', (event) => console.log('Escape pressed')],
+ * ]);
+ */
 export function useHotkeys(
   hotkeys: HotkeyItem[],
   tagsToIgnore: string[] = ['INPUT', 'TEXTAREA', 'SELECT', 'BUTTON', 'A'], // HTML tags to ignore
-  triggerOnContentEditable = false, // Whether to trigger hotkeys in content editable elements
+  triggerOnContentEditable = false,
 ) {
   React.useEffect(() => {
     const keydownListener = (event: KeyboardEvent) => {

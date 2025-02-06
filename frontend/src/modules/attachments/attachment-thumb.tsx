@@ -1,7 +1,7 @@
 import type React from 'react';
 import { useMemo } from 'react';
-import FilePlaceholder from './file-placeholder';
-import { useLocalFile } from './use-local-file';
+import FilePlaceholder from '~/modules/attachments/file-placeholder';
+import { useLocalFile } from '~/modules/attachments/use-local-file';
 
 interface AttachmentThumbProps {
   url: string;

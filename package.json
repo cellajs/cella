@@ -25,6 +25,7 @@
     "seed": "pnpm --filter backend seed",
     "check": "pnpm dlx @biomejs/biome check .",
     "check:types": "pnpm -r --parallel check:types",
+    "ts:perf": "pnpm -r --parallel ts:perf",
     "check:fix": "pnpm dlx @biomejs/biome check --write .",
     "build": "pnpm -r --parallel clean && pnpm -r --parallel build",
     "build:dev": "pnpm -r _-parallel build:dev",
@@ -41,7 +42,7 @@
     "rimraf": "^6.0.1",
     "tsx": "^4.19.2",
     "typescript": "^5.7.3",
-    "vitest": "^3.0.4"
+    "vitest": "^3.0.5"
   },
   "packageManager": "pnpm@9.1.2",
   "dependencies": {

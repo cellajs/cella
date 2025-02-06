@@ -4,8 +4,9 @@ import { createJSONStorage, devtools, persist } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
 
 interface GeneralState {
-  offlineAccess: boolean;
-  toggleOfflineAccess: () => void;
+  offlineAccess: boolean; // Offline access mode status
+
+  toggleOfflineAccess: () => void; // Toggles the offline access state
 }
 
 export const useGeneralStore = create<GeneralState>()(

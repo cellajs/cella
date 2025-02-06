@@ -24,11 +24,6 @@ export const userSchema = z.object({
   counts: z.object({ memberships: z.number() }),
 });
 
-export const updatedUserSchema = z.object({
-  ...userSchema.shape,
-  ...signUpInfo.shape,
-});
-
 export const limitedUserSchema = createSelectSchema(usersTable, {
   email: z.string().email(),
 }).pick({
@@ -51,7 +46,6 @@ export const userUnsubscribeQuerySchema = z.object({
 });
 
 export const updateUserBodySchema = createInsertSchema(usersTable, {
-  email: z.string().email(),
   firstName: nameSchema.nullable(),
   lastName: nameSchema.nullable(),
   slug: validSlugSchema,
@@ -59,7 +53,6 @@ export const updateUserBodySchema = createInsertSchema(usersTable, {
   bannerUrl: imageUrlSchema.nullable(),
 })
   .pick({
-    email: true,
     bannerUrl: true,
     firstName: true,
     lastName: true,
@@ -67,6 +60,5 @@ export const updateUserBodySchema = createInsertSchema(usersTable, {
     newsletter: true,
     thumbnailUrl: true,
     slug: true,
-    role: true,
   })
   .partial();

@@ -5,6 +5,9 @@ import { del, get, set } from 'idb-keyval';
 import { queryClientConfig } from '~/lib/query-client';
 import { routeTree } from '~/routes';
 
+/**
+ * Handle online status
+ */
 function handleOnlineStatus() {
   onlineManager.setOnline(navigator.onLine);
 }
@@ -14,8 +17,11 @@ window.addEventListener('offline', handleOnlineStatus);
 
 handleOnlineStatus();
 
-// Set up a QueryClient instance
-// https://tanstack.com/query/latest/docs/reference/QueryClient
+/**
+ * Our queryClient instance
+ *
+ * @link https://tanstack.com/query/latest/docs/reference/QueryClient
+ */
 export const queryClient = new QueryClient({
   mutationCache: new MutationCache(queryClientConfig),
   queryCache: new QueryCache(queryClientConfig),
@@ -35,6 +41,9 @@ export const queryClient = new QueryClient({
   },
 });
 
+/**
+ * Create an IndexedDB persister for react-query
+ */
 function createIDBPersister(idbValidKey: IDBValidKey = 'reactQuery') {
   return {
     persistClient: async (client: PersistedClient) => {
@@ -51,9 +60,14 @@ function createIDBPersister(idbValidKey: IDBValidKey = 'reactQuery') {
 
 export const persister = createIDBPersister();
 
-// Set up a Router instance
-// https://tanstack.com/router/latest/docs/framework/react/api/router/createRouterFunction
+/**
+ * Our Router instance
+ *
+ * @link https://tanstack.com/router/latest/docs/framework/react/api/router/createRouterFunction
+ */
 const router = createRouter({
+  scrollRestoration: true,
+  scrollRestorationBehavior: 'instant',
   routeTree,
   // notFoundRoute,
   defaultPreload: false,

@@ -5,9 +5,9 @@ import type React from 'react';
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useOnlineManager } from '~/hooks/use-online-manager';
+import type { UploadedUppyFile } from '~/lib/imado';
 import UploadUppy from '~/modules/attachments/upload/upload-uppy';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '~/modules/ui/dialog';
-import { UploadType, type UploadedUppyFile } from '~/types/common';
 
 const basicBlockTypes = {
   image: {
@@ -53,18 +53,13 @@ const UppyFilePanel: React.FC<UppyFilePanelProps & FilePanelProps> = ({ onCreate
           <DialogDescription className="hidden" />
         </DialogHeader>
         <UploadUppy
-          isPublic={true}
-          uploadType={UploadType.Personal}
-          uppyOptions={{
-            restrictions: {
-              maxFileSize: 10 * 1024 * 1024, // 10MB
-              maxNumberOfFiles: 1,
-              allowedFileTypes: basicBlockTypes[type].allowedFileTypes,
-              minFileSize: null,
-              maxTotalFileSize: 10 * 1024 * 1024, // 10MB
-              minNumberOfFiles: null,
-              requiredMetaFields: [],
-            },
+          isPublic
+          uploadType="personal"
+          restrictions={{
+            maxFileSize: 10 * 1024 * 1024, // 10MB
+            maxNumberOfFiles: 1,
+            allowedFileTypes: basicBlockTypes[type].allowedFileTypes,
+            maxTotalFileSize: 10 * 1024 * 1024, // 10MB
           }}
           plugins={basicBlockTypes[type].plugins}
           imageMode="attachment"

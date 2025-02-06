@@ -1,18 +1,17 @@
 import { and, asc, eq } from 'drizzle-orm';
+import type { z } from 'zod';
 
+import type { EnabledOauthProvider } from 'config';
 import { db } from '#/db/db';
 import { usersTable } from '#/db/schema/users';
 import { type ErrorType, createError, errorResponse } from '#/lib/errors';
 import { logEvent } from '#/middlewares/logger/log-event';
-import type { EnabledOauthProvider } from '#/types/common';
-import { invalidateSession, invalidateUserSessions } from '../auth/helpers/session';
+import { invalidateSessionById, invalidateUserSessions, validateSession } from '../auth/helpers/session';
 import { checkSlugAvailable } from '../general/helpers/check-slug';
 import { transformDatabaseUserWithCount } from '../users/helpers/transform-database-user';
 import meRoutesConfig from './routes';
 
 import { OpenAPIHono } from '@hono/zod-openapi';
-import { sha256 } from '@oslojs/crypto/sha2';
-import { encodeHexLowerCase } from '@oslojs/encoding';
 import { config } from 'config';
 import { membershipSelect, membershipsTable } from '#/db/schema/memberships';
 import { oauthAccountsTable } from '#/db/schema/oauth-accounts';
@@ -21,9 +20,12 @@ import { type MenuSection, entityIdFields, entityTables, menuSections } from '#/
 import { type Env, getContextMemberships, getContextUser } from '#/lib/context';
 import { resolveEntity } from '#/lib/entity';
 import { sendSSEToUsers } from '#/lib/sse';
-import type { MenuItem, UserMenu } from '#/types/common';
 import { deleteAuthCookie, getAuthCookie } from '../auth/helpers/cookie';
 import { getUserSessions } from './helpers/get-sessions';
+import type { menuItemSchema, userMenuSchema } from './schema';
+
+type UserMenu = z.infer<typeof userMenuSchema>;
+type MenuItem = z.infer<typeof menuItemSchema>;
 
 const app = new OpenAPIHono<Env>();
 
@@ -36,32 +38,31 @@ const meRoutes = app
     const user = getContextUser();
     const memberships = getContextMemberships();
 
-    const passkey = await db.select().from(passkeysTable).where(eq(passkeysTable.userEmail, user.email));
+    // Update last visit date
+    await db.update(usersTable).set({ lastStartedAt: new Date() }).where(eq(usersTable.id, user.id));
 
-    // List enabled identity providers
-    const oauthAccounts = await db
-      .select({ providerId: oauthAccountsTable.providerId })
-      .from(oauthAccountsTable)
-      .where(eq(oauthAccountsTable.userId, user.id));
+    return ctx.json({ success: true, data: transformDatabaseUserWithCount(user, memberships.length) }, 200);
+  })
+  /*
+   * Get current user auth info
+   */
+  .openapi(meRoutesConfig.getSelfAuthData, async (ctx) => {
+    const user = getContextUser();
+
+    const getPasskey = db.select().from(passkeysTable).where(eq(passkeysTable.userEmail, user.email));
+    const getOAuth = db.select({ providerId: oauthAccountsTable.providerId }).from(oauthAccountsTable).where(eq(oauthAccountsTable.userId, user.id));
+
+    const [passkeys, oauthAccounts, sessions] = await Promise.all([getPasskey, getOAuth, getUserSessions(ctx, user.id)]);
 
     const validOAuthAccounts = oauthAccounts
       .map((el) => el.providerId)
       .filter((provider): provider is EnabledOauthProvider => config.enabledOauthProviders.includes(provider as EnabledOauthProvider));
 
-    // Update last visit date
-    await db.update(usersTable).set({ lastStartedAt: new Date() }).where(eq(usersTable.id, user.id));
-
-    // Prepare data
-    const data = {
-      ...transformDatabaseUserWithCount(user, memberships.length),
-      oauth: validOAuthAccounts,
-      passkey: !!passkey.length,
-      sessions: await getUserSessions(user.id, ctx),
-    };
-
-    return ctx.json({ success: true, data }, 200);
+    return ctx.json({ success: true, data: { oauth: validOAuthAccounts, passkey: !!passkeys.length, sessions } }, 200);
   })
-  // Your main function
+  /*
+   * Get current user menu
+   */
   .openapi(meRoutesConfig.getUserMenu, async (ctx) => {
     const user = getContextUser();
     const memberships = getContextMemberships();
@@ -147,22 +148,21 @@ const meRoutes = app
    * Terminate a session
    */
   .openapi(meRoutesConfig.deleteSessions, async (ctx) => {
-    const { ids } = ctx.req.valid('query');
+    const { ids } = ctx.req.valid('json');
 
     const sessionIds = Array.isArray(ids) ? ids : [ids];
 
-    const currentSessionId = await getAuthCookie(ctx, 'session');
-    const hashedCurrentSessionId = currentSessionId ? encodeHexLowerCase(sha256(new TextEncoder().encode(currentSessionId))) : '';
+    const currentSessionToken = (await getAuthCookie(ctx, 'session')) || '';
+    const { session } = await validateSession(currentSessionToken);
 
     const errors: ErrorType[] = [];
 
     await Promise.all(
       sessionIds.map(async (id) => {
         try {
-          if (id === hashedCurrentSessionId) {
-            deleteAuthCookie(ctx, 'session');
-          }
-          await invalidateSession(id);
+          if (session && id === session.id) deleteAuthCookie(ctx, 'session');
+
+          await invalidateSessionById(id);
         } catch (error) {
           errors.push(createError(ctx, 404, 'not_found', 'warn', undefined, { session: id }));
         }
@@ -180,7 +180,7 @@ const meRoutes = app
 
     if (!user) return errorResponse(ctx, 404, 'not_found', 'warn', 'user', { user: 'self' });
 
-    const { email, bannerUrl, firstName, lastName, language, newsletter, thumbnailUrl, slug } = ctx.req.valid('json');
+    const { bannerUrl, firstName, lastName, language, newsletter, thumbnailUrl, slug } = ctx.req.valid('json');
 
     if (slug && slug !== user.slug) {
       const slugAvailable = await checkSlugAvailable(slug);
@@ -190,7 +190,6 @@ const meRoutes = app
     const [updatedUser] = await db
       .update(usersTable)
       .set({
-        email,
         bannerUrl,
         firstName,
         lastName,
@@ -205,27 +204,7 @@ const meRoutes = app
       .where(eq(usersTable.id, user.id))
       .returning();
 
-    const passkey = await db.select().from(passkeysTable).where(eq(passkeysTable.userEmail, updatedUser.email));
-
-    const oauthAccounts = await db
-      .select({
-        providerId: oauthAccountsTable.providerId,
-      })
-      .from(oauthAccountsTable)
-      .where(eq(oauthAccountsTable.userId, user.id));
-
-    const validOAuthAccounts = oauthAccounts
-      .map((el) => el.providerId)
-      .filter((provider): provider is EnabledOauthProvider => config.enabledOauthProviders.includes(provider as EnabledOauthProvider));
-    logEvent('User updated', { user: updatedUser.id });
-
-    const data = {
-      ...transformDatabaseUserWithCount(updatedUser, memberships.length),
-      oauth: validOAuthAccounts,
-      passkey: !!passkey.length,
-    };
-
-    return ctx.json({ success: true, data }, 200);
+    return ctx.json({ success: true, data: transformDatabaseUserWithCount(updatedUser, memberships.length) }, 200);
   })
   /*
    * Delete current user (self)

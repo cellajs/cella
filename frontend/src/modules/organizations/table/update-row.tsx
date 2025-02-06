@@ -1,9 +1,9 @@
-import { useTranslation } from 'react-i18next';
-import UpdateOrganizationForm from '~/modules/organizations/update-organization-form';
-import type { Organization } from '~/types/common';
-
 import { Pencil } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+
 import { sheet } from '~/modules/common/sheeter/state';
+import type { Organization } from '~/modules/organizations/types';
+import UpdateOrganizationForm from '~/modules/organizations/update-organization-form';
 import { Button } from '~/modules/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '~/modules/ui/card';
 

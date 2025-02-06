@@ -8,13 +8,13 @@ import { useTranslation } from 'react-i18next';
 import useSearchParams from '~/hooks/use-search-params';
 import RemoveAttachmentsForm from '~/modules/attachments/table/remove-attachments-form';
 import { AttachmentsTableHeader } from '~/modules/attachments/table/table-header';
+import type { Attachment } from '~/modules/attachments/types';
 import { MainAlert } from '~/modules/common/alerter';
-import type { ColumnOrColumnGroup } from '~/modules/common/data-table/columns-view';
 import { useSortColumns } from '~/modules/common/data-table/sort-columns';
+import type { BaseTableMethods, ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 import { dialog } from '~/modules/common/dialoger/state';
-import { createToast } from '~/modules/common/toaster';
+import type { Organization } from '~/modules/organizations/types';
 import type { attachmentsSearchSchema } from '~/routes/organizations';
-import type { Attachment, BaseTableMethods, Organization } from '~/types/common';
 import { arraysHaveSameElements } from '~/utils';
 
 const BaseDataTable = lazy(() => import('~/modules/attachments/table/table'));
@@ -56,19 +56,11 @@ const AttachmentsTable = ({ organization, canUpload = true, isSheet = false }: A
   };
 
   const openRemoveDialog = () => {
-    dialog(
-      <RemoveAttachmentsForm
-        organizationId={organization.id}
-        dialog
-        callback={() => createToast(t('common:success.delete_resources', { resources: t('common:attachments') }), 'success')}
-        attachments={selected}
-      />,
-      {
-        className: 'max-w-xl',
-        title: t('common:remove_resource', { resource: t('common:attachment').toLowerCase() }),
-        description: t('common:confirm.delete_resources', { resources: t('common:attachments').toLowerCase() }),
-      },
-    );
+    dialog(<RemoveAttachmentsForm organizationId={organization.id} dialog attachments={selected} />, {
+      className: 'max-w-xl',
+      title: t('common:remove_resource', { resource: t('common:attachment').toLowerCase() }),
+      description: t('common:confirm.delete_resources', { resources: t('common:attachments').toLowerCase() }),
+    });
   };
 
   return (

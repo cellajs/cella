@@ -1,22 +1,24 @@
-import { onlineManager } from '@tanstack/react-query';
+import { onlineManager, useMutation } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
 import { config } from 'config';
 import { Check, UserRoundX } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { createToast } from '~/modules/common/toaster';
+import type { Organization } from '~/modules/organizations/types';
 import { Button } from '~/modules/ui/button';
 import { Command, CommandGroup, CommandItem, CommandList } from '~/modules/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '~/modules/ui/popover';
-import { useLeaveEntityMutation } from '~/modules/users/query-mutations';
-import type { Organization } from '~/types/common';
+import { leaveEntity } from '~/modules/users/api';
 
 const LeaveButton = ({ organization }: { organization: Organization }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [openPopover, setOpenPopover] = useState(false);
 
-  const { mutate: leave } = useLeaveEntityMutation();
+  const { mutate: _leaveEntity } = useMutation({
+    mutationFn: leaveEntity,
+  });
 
   const onLeave = () => {
     if (!onlineManager.isOnline()) return createToast(t('common:action.offline.text'), 'warning');
@@ -24,7 +26,7 @@ const LeaveButton = ({ organization }: { organization: Organization }) => {
       idOrSlug: organization.slug,
       entityType: 'organization' as const,
     };
-    leave(queryParams, {
+    _leaveEntity(queryParams, {
       onSuccess: () => {
         createToast(t('common:success.you_left_organization'), 'success');
         navigate({ to: config.defaultRedirectPath, replace: true });

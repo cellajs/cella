@@ -1,11 +1,17 @@
 import { t } from 'i18next';
 import { Suspense } from 'react';
+import type { UploadedUppyFile } from '~/lib/imado';
 import { useAttachmentCreateMutation } from '~/modules/attachments/query-mutations';
 import UploadUppy from '~/modules/attachments/upload/upload-uppy';
 import { dialog } from '~/modules/common/dialoger/state';
-import { UploadType, type UploadedUppyFile } from '~/types/common';
 import { nanoid } from '~/utils/nanoid';
 
+/**
+ * Utility function to format bytes into human-readable format
+ *
+ * @param bytes The size in bytes
+ * @returns Nicely formatted size
+ */
 export const formatBytes = (bytes: string): string => {
   const parsedBytes = Number(bytes);
 
@@ -20,12 +26,15 @@ export const formatBytes = (bytes: string): string => {
   return `${formattedSize} ${sizes[index]}`;
 };
 
-// Open the upload dialog
-export const openUploadDialog = (organizationId: string) => {
-  const maxAttachmentsUpload = 20;
+const maxNumberOfFiles = 20;
+const maxTotalFileSize = 10 * 1024 * 1024 * maxNumberOfFiles; // for maxNumberOfFiles files at 10MB max each
 
-  const UploadDialog = () => {
-    const { mutate: createAttachment } = useAttachmentCreateMutation();
+/**
+ * Open the upload dialog
+ */
+export const openAttachmentsUploadDialog = (organizationId: string) => {
+  const UploadDialog = ({ organizationId }: { organizationId: string }) => {
+    const { mutate: createAttachments } = useAttachmentCreateMutation();
 
     const handleCallback = (result: UploadedUppyFile[]) => {
       const attachments = result.map((a) => ({
@@ -37,25 +46,15 @@ export const openUploadDialog = (organizationId: string) => {
         organizationId,
       }));
 
-      createAttachment({ attachments, organizationId });
+      createAttachments({ attachments, orgIdOrSlug: organizationId });
       dialog.remove(true, 'upload-attachment');
     };
 
     return (
       <UploadUppy
-        isPublic={true}
-        uploadType={UploadType.Personal}
-        uppyOptions={{
-          restrictions: {
-            maxFileSize: 10 * 1024 * 1024, // 10MB
-            maxNumberOfFiles: maxAttachmentsUpload,
-            allowedFileTypes: ['*/*'],
-            minFileSize: null,
-            maxTotalFileSize: 10 * 1024 * 1024 * maxAttachmentsUpload, // for maxAttachmentsUpload files at 10MB max each
-            minNumberOfFiles: null,
-            requiredMetaFields: [],
-          },
-        }}
+        isPublic
+        uploadType="personal"
+        restrictions={{ maxNumberOfFiles, allowedFileTypes: ['*/*'], maxTotalFileSize }}
         plugins={['webcam', 'image-editor', 'screen-capture', 'audio']}
         imageMode="attachment"
         callback={handleCallback}
@@ -65,13 +64,13 @@ export const openUploadDialog = (organizationId: string) => {
 
   dialog(
     <Suspense>
-      <UploadDialog />
+      <UploadDialog organizationId={organizationId} />
     </Suspense>,
     {
       id: 'upload-attachment',
       drawerOnMobile: false,
       title: t('common:upload_item', { item: t('common:attachments').toLowerCase() }),
-      description: t('common:upload_multiple.text', { item: t('common:attachments').toLowerCase(), count: maxAttachmentsUpload }),
+      description: t('common:upload_multiple.text', { item: t('common:attachments').toLowerCase(), count: maxNumberOfFiles }),
       className: 'md:max-w-xl',
     },
   );

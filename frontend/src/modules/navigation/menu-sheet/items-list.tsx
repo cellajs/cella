@@ -1,9 +1,10 @@
+import type { ContextEntity } from 'config';
 import { Plus } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { MenuSheetItem } from '~/modules/navigation/menu-sheet/item';
 import { Button } from '~/modules/ui/button';
+import type { UserMenuItem } from '~/modules/users/types';
 import { useNavigationStore } from '~/store/navigation';
-import type { ContextEntity, UserMenuItem } from '~/types/common';
-import { MenuSheetItem } from './item';
 
 interface MenuSheetItemsProps {
   data: UserMenuItem[];

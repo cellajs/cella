@@ -8,15 +8,18 @@ import { Trans, useTranslation } from 'react-i18next';
 import useSearchParams from '~/hooks/use-search-params';
 import { useUserSheet } from '~/hooks/use-user-sheet';
 import { useSortColumns } from '~/modules/common/data-table/sort-columns';
+import type { BaseTableMethods } from '~/modules/common/data-table/types';
 import { dialog } from '~/modules/common/dialoger/state';
 import { createToast } from '~/modules/common/toaster';
+import type { EntityPage } from '~/modules/general/types';
 import { getMembers } from '~/modules/memberships/api';
 import { useColumns } from '~/modules/memberships/members-table/columns';
 import { MembersTableHeader } from '~/modules/memberships/members-table/table-header';
 import RemoveMembersForm from '~/modules/memberships/remove-member-form';
+import type { Member } from '~/modules/memberships/types';
+import type { OrganizationInvites } from '~/modules/organizations/types';
 import InviteUsers from '~/modules/users/invite-users';
 import type { membersSearchSchema } from '~/routes/organizations';
-import type { BaseTableMethods, EntityPage, Member, OrganizationInvites } from '~/types/common';
 import { arraysHaveSameElements } from '~/utils';
 
 const BaseDataTable = lazy(() => import('~/modules/memberships/members-table/table'));
@@ -69,7 +72,7 @@ const MembersTable = ({ entity, invites, isSheet = false }: MembersTableProps) =
     dialog(<InviteUsers entity={entity} mode={null} dialog />, {
       id: `user-invite-${entity.id}`,
       drawerOnMobile: false,
-      className: 'w-auto shadow-none relative z-[60] max-w-4xl',
+      className: 'w-auto shadow-none relative z-60 max-w-4xl',
       container,
       containerBackdrop: true,
       containerBackdropClassName: 'z-50',

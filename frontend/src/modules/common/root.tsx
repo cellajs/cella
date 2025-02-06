@@ -1,4 +1,4 @@
-import { Outlet, ScrollRestoration } from '@tanstack/react-router';
+import { Outlet } from '@tanstack/react-router';
 import { config } from 'config';
 import { Suspense } from 'react';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
@@ -27,7 +27,6 @@ function Root() {
 
   return (
     <TooltipProvider disableHoverableContent delayDuration={300} skipDelayDuration={0}>
-      <ScrollRestoration />
       <Outlet />
       <ReloadPrompt />
       <Toaster richColors toastOptions={{ className: 'max-sm:mb-16' }} position={toastPosition} />

@@ -5,7 +5,6 @@ import { z } from 'zod';
 import { type SystemInviteProps, invite as inviteSystem } from '~/modules/general/api';
 import { type InviteMemberProps, inviteMembers } from '~/modules/memberships/api';
 
-import { idOrSlugSchema } from 'backend/utils/schema/common-schemas';
 import { config } from 'config';
 import { Send } from 'lucide-react';
 import type { UseFormProps } from 'react-hook-form';
@@ -16,10 +15,10 @@ import SelectRoleRadio from '~/modules/common/form-fields/select-role-radio';
 import { MultiEmail } from '~/modules/common/multi-email';
 import { useStepper } from '~/modules/common/stepper/use-stepper';
 import { createToast } from '~/modules/common/toaster';
+import type { EntityPage } from '~/modules/general/types';
 import { Badge } from '~/modules/ui/badge';
 import { Button, SubmitButton } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
-import type { EntityPage } from '~/types/common';
 
 interface Props {
   entity?: EntityPage;
@@ -33,13 +32,12 @@ const InviteEmailForm = ({ entity, callback, dialog: isDialog, children }: Props
   const { t } = useTranslation();
   const { nextStep } = useStepper();
 
-  // TODO
   const formSchema = z.object({
     emails: z
       .array(z.string().email(t('backend:invalid.email')))
       .min(1, { message: t('backend:invalid.min_items', { items_count: 'one', item: 'email' }) }),
     role: z.enum(config.rolesByType.allRoles),
-    idOrSlug: idOrSlugSchema.optional(),
+    idOrSlug: z.string().optional(),
   });
 
   type FormValues = z.infer<typeof formSchema>;
@@ -65,7 +63,6 @@ const InviteEmailForm = ({ entity, callback, dialog: isDialog, children }: Props
         ...values,
         idOrSlug: entity.id,
         entityType: entity.entity,
-        parentEntity: entity.parentEntity,
         orgIdOrSlug: entity.organizationId || entity.id,
       } as InviteMemberProps);
     },

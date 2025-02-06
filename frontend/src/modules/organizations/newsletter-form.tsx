@@ -2,7 +2,6 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useTranslation } from 'react-i18next';
 import type { z } from 'zod';
 
-import { sendNewsletterBodySchema } from 'backend/modules/organizations/schema';
 import { Info, Send } from 'lucide-react';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import BlockNoteContent from '~/modules/common/form-fields/blocknote-content';
@@ -10,18 +9,19 @@ import SelectRoles from '~/modules/common/form-fields/select-roles';
 import { sheet } from '~/modules/common/sheeter/state';
 import { Button, SubmitButton } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
+import { sendNewsletterBodySchema } from '#/modules/organizations/schema';
 
 import '@blocknote/shadcn/style.css';
-import '~/modules/common/blocknote/app-specific-custom/styles.css';
-import '~/modules/common/blocknote/styles.css';
 import type { CheckedState } from '@radix-ui/react-checkbox';
 import { useMutation } from '@tanstack/react-query';
 import { useState } from 'react';
-import { MainAlert } from '../common/alerter';
-import InputFormField from '../common/form-fields/input';
-import { createToast } from '../common/toaster';
-import { Checkbox } from '../ui/checkbox';
-import { sendNewsletter } from './api';
+import { MainAlert } from '~/modules/common/alerter';
+import '~/modules/common/blocknote/app-specific-custom/styles.css';
+import '~/modules/common/blocknote/styles.css';
+import InputFormField from '~/modules/common/form-fields/input';
+import { createToast } from '~/modules/common/toaster';
+import { sendNewsletter } from '~/modules/organizations/api';
+import { Checkbox } from '~/modules/ui/checkbox';
 
 interface NewsletterFormProps {
   organizationIds: string[];

@@ -1,20 +1,21 @@
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 import { z } from 'zod';
-import { idsQuerySchema, nameSchema, paginationQuerySchema } from '#/utils/schema/common-schemas';
+import { nameSchema, paginationQuerySchema } from '#/utils/schema/common-schemas';
 import { attachmentsTable } from '../../db/schema/attachments';
 
-export const createAttachmentSchema = z.array(
-  createInsertSchema(attachmentsTable).omit({
-    name: true,
-    entity: true,
-    modifiedAt: true,
-    modifiedBy: true,
-    createdAt: true,
-    createdBy: true,
-  }),
-);
-
-export const deleteAttachmentsQuerySchema = idsQuerySchema;
+export const createAttachmentsSchema = z
+  .array(
+    createInsertSchema(attachmentsTable).omit({
+      name: true,
+      entity: true,
+      modifiedAt: true,
+      modifiedBy: true,
+      createdAt: true,
+      createdBy: true,
+    }),
+  )
+  .min(1)
+  .max(50);
 
 export const updateAttachmentBodySchema = createInsertSchema(attachmentsTable, {
   name: nameSchema,

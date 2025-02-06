@@ -53,7 +53,6 @@ This document describes the high-level architecture of Cella.
 │   │   ├── middlewares       Hono middlewares
 │   │   ├── modules           Modular distribution of routes, schemas etc
 │   │   ├── permissions       Setup of your authorization layer
-│   │   └── types             Split between common and app-specific
 │   │   └── utils             Generic functions
 ├── config                    Shared config: default, development, production
 ├── frontend                  Frontend SPA
@@ -65,7 +64,6 @@ This document describes the high-level architecture of Cella.
 │   │   ├── modules           Modular distribution of components
 │   │   ├── routes            Code-based routes
 │   │   ├── store             Zustand data stores
-│   │   ├── types             Split between common and app-specific
 │   │   ├── utils             Generic functions
 ├── info                      General info
 ├── locales                   Translations

@@ -9,7 +9,6 @@ import { mailer } from '#/lib/mailer';
 
 import { tokensTable } from '#/db/schema/tokens';
 import { safeUserSelect, usersTable } from '#/db/schema/users';
-import { getUsersByConditions } from '#/db/util';
 import { entityIdFields, menuSections } from '#/entity-config';
 import { type Env, getContextMemberships, getContextOrganization, getContextUser } from '#/lib/context';
 import { resolveEntity } from '#/lib/entity';
@@ -17,6 +16,7 @@ import { type ErrorType, createError, errorResponse } from '#/lib/errors';
 import { i18n } from '#/lib/i18n';
 import { sendSSEToUsers } from '#/lib/sse';
 import { logEvent } from '#/middlewares/logger/log-event';
+import { getUsersByConditions } from '#/modules/users/helpers/utils';
 import { getValidEntity } from '#/permissions/get-valid-entity';
 import { memberCountsQuery } from '#/utils/counts';
 import { nanoid } from '#/utils/nanoid';
@@ -36,14 +36,14 @@ const membershipsRoutes = app
    * Invite members to an entity such as an organization
    */
   // TODO simplify this, put parts in helper functions
-  .openapi(membershipRouteConfig.createMembership, async (ctx) => {
+  .openapi(membershipRouteConfig.createMemberships, async (ctx) => {
     const { idOrSlug, entityType } = ctx.req.valid('query');
 
     // Allowed to invite members to an entity when user has update permission on the entity
     const { entity, isAllowed } = await getValidEntity(entityType, 'update', idOrSlug);
     if (!entity || !isAllowed) return errorResponse(ctx, 403, 'forbidden', 'warn', entityType);
 
-    const { emails, role, parentEntity: parentEntityInfo } = ctx.req.valid('json');
+    const { emails, role } = ctx.req.valid('json');
 
     const organization = getContextOrganization();
     const user = getContextUser();
@@ -52,13 +52,7 @@ const membershipsRoutes = app
     const normalizedEmails = emails.map((email) => email.toLowerCase());
 
     // Query existing memberships and users
-    const [allOrgMemberships, existingUsers] = await Promise.all([
-      db
-        .select()
-        .from(membershipsTable)
-        .where(and(eq(membershipsTable.organizationId, organization.id), eq(membershipsTable.type, 'organization'))),
-      getUsersByConditions([inArray(usersTable.email, normalizedEmails)]),
-    ]);
+    const existingUsers = await getUsersByConditions([inArray(usersTable.email, normalizedEmails)]);
 
     // Maps to store memberships by existing user
     const organizationMembershipsByUser = new Map<string, MembershipModel>();
@@ -131,26 +125,28 @@ const membershipsRoutes = app
             (entity.entity !== 'organization' && organizationMembership) || (entity.entity === 'organization' && existingUser.id === user.id);
 
           if (instantCreateMembership) {
-            const parentEntity = parentEntityInfo ? await resolveEntity(parentEntityInfo.entity, parentEntityInfo.idOrSlug) : null;
+            // const parentEntity = parentEntityInfo ? await resolveEntity(parentEntityInfo.entity, parentEntityInfo.idOrSlug) : null;
 
-            const [createdParentMembership, createdMembership] = await Promise.all([
-              parentEntity ? insertMembership({ user: existingUser, role, entity: parentEntity }) : Promise.resolve(null),
-              insertMembership({ user: existingUser, role, entity: entity, parentEntity }),
+            // TODO-entitymap map over entityIdFields
+            const [createdMembership] = await Promise.all([
+              // parentEntity ? insertMembership({ user: existingUser, role, entity: parentEntity }) : Promise.resolve(null),
+              insertMembership({ user: existingUser, role, entity: entity }),
             ]);
 
-            if (parentEntity && createdParentMembership) {
-              // SSE with parentEntity data, to update user's menu
-              sendSSEToUsers([existingUser.id], 'add_entity', {
-                newItem: { ...parentEntity, membership: createdParentMembership },
-                sectionName: menuSections.find((el) => el.entityType === parentEntity.entity)?.name,
-              });
-            }
+            // if (parentEntity && createdParentMembership) {
+            //   // SSE with parentEntity data, to update user's menu
+            //   sendSSEToUsers([existingUser.id], 'add_entity', {
+            //     newItem: { ...parentEntity, membership: createdParentMembership },
+            //     sectionName: menuSections.find((el) => el.entityType === parentEntity.entity)?.name,
+            //   });
+            // }
 
             // SSE with entity data, to update user's menu
             sendSSEToUsers([existingUser.id], 'add_entity', {
               newItem: { ...entity, membership: createdMembership },
               sectionName: menuSections.find((el) => el.entityType === entity.entity)?.name,
-              ...(parentEntity && { parentSlug: parentEntity.slug }),
+              // TODO-entitymap map over entityIdFields
+              // ...(parentEntity && { parentSlug: parentEntity.slug }),
             });
             // Add email to the invitation list for sending an organization invite to another user
           } else emailsToSendInvitation.push({ email: existingUser.email, userId: existingUser.id });
@@ -174,12 +170,6 @@ const membershipsRoutes = app
       role,
       userId,
       organizationId: organization.id,
-      ...(entity.entity !== 'organization' && {
-        membershipInfo: {
-          targetEntity: { idOrSlug: entity.id, entity: entity.entity },
-          parentEntity: parentEntityInfo,
-        },
-      }),
     }));
 
     // Batch insert tokens
@@ -210,15 +200,6 @@ const membershipsRoutes = app
     // Log event for user invitation
     logEvent('Users invited to organization', { organization: organization.id });
 
-    if (emailsToSendInvitation.length > 0) {
-      // SSE to update organizations invite info
-      sendSSEToUsers(
-        allOrgMemberships.map(({ userId }) => userId),
-        'new_member_invite',
-        { id: organization.id, slug: organization.slug },
-      );
-    }
-
     return ctx.json({ success: true }, 200);
   })
   /*
@@ -226,7 +207,8 @@ const membershipsRoutes = app
    * When user is allowed to delete entity, they can delete memberships too
    */
   .openapi(membershipRouteConfig.deleteMemberships, async (ctx) => {
-    const { entityType, ids, idOrSlug } = ctx.req.valid('query');
+    const { entityType, idOrSlug } = ctx.req.valid('query');
+    const { ids } = ctx.req.valid('json');
 
     const { entity, isAllowed } = await getValidEntity(entityType, 'delete', idOrSlug);
     if (!entity) return errorResponse(ctx, 404, 'not_found', 'warn', entityType);

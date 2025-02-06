@@ -1,7 +1,12 @@
 import { config } from 'config';
 import { resolveEntity } from '#/lib/entity';
 
-// Check if a slug is available in any of the entities
+/**
+ * Checks if a slug is available across all entity types. Resolves the availability of the slug for each entity.
+ *
+ * @param slug - The slug to check for availability.
+ * @returns Boolean(true if available, false if taken).
+ */
 export const checkSlugAvailable = async (slug: string) => {
   const entities = config.pageEntityTypes;
 

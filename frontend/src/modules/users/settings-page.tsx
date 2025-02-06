@@ -7,7 +7,7 @@ import { ExpandableList } from '~/modules/common/expandable-list';
 import { Button } from '~/modules/ui/button';
 import { useUserStore } from '~/store/user';
 
-import { onlineManager } from '@tanstack/react-query';
+import { onlineManager, useMutation } from '@tanstack/react-query';
 import { config } from 'config';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -16,12 +16,12 @@ import { requestPasswordEmail } from '~/modules/auth/api';
 import { mapOauthProviders } from '~/modules/auth/oauth-options';
 import { AsideAnchor } from '~/modules/common/aside-anchor';
 import HelpText from '~/modules/common/help-text';
-import { PageAside } from '~/modules/common/page-aside';
+import { PageAside } from '~/modules/common/page/aside';
 import StickyBox from '~/modules/common/sticky-box';
 import { createToast } from '~/modules/common/toaster';
+import { deleteMySessions } from '~/modules/users/api';
 import DeleteSelf from '~/modules/users/delete-self';
 import { deletePasskey, passkeyRegistration } from '~/modules/users/helpers';
-import { useTerminateSessionsMutation } from '~/modules/users/query-mutations';
 import { SessionTile } from '~/modules/users/session-tile';
 import UpdateUserForm from '~/modules/users/update-user-form';
 import { useThemeStore } from '~/store/theme';
@@ -45,7 +45,18 @@ const UserSettingsPage = () => {
   const invertClass = mode === 'dark' ? 'invert' : '';
 
   // Terminate one or all sessions
-  const { mutate: deleteMySessions, isPending } = useTerminateSessionsMutation();
+  const { mutate: _deleteMySessions, isPending } = useMutation({
+    mutationFn: deleteMySessions,
+    onSuccess(_, variables) {
+      useUserStore.setState((state) => {
+        state.user.sessions = state.user.sessions.filter((session) => !variables.includes(session.id));
+      });
+      createToast(
+        variables.length === 1 ? t('common:success.session_terminated', { id: variables[0] }) : t('common:success.sessions_terminated'),
+        'success',
+      );
+    },
+  });
 
   // Request a password reset email
   const requestResetPasswordClick = () => {
@@ -82,7 +93,7 @@ const UserSettingsPage = () => {
 
   const onDeleteSession = (ids: string[]) => {
     if (!onlineManager.isOnline()) return createToast(t('common:action.offline.text'), 'warning');
-    deleteMySessions(ids);
+    _deleteMySessions(ids);
   };
 
   const authenticateWithProvider = (provider: (typeof mapOauthProviders)[number]) => {
@@ -95,7 +106,7 @@ const UserSettingsPage = () => {
   return (
     <div className="container md:flex md:flex-row my-4 md:mt-8 mx-auto gap-4 ">
       <div className="max-md:hidden mx-auto md:min-w-48 md:w-[30%] md:mt-2">
-        <StickyBox className="z-10 max-md:!block">
+        <StickyBox className="z-10 max-md:block!">
           <SimpleHeader className="p-3" heading="common:settings" text="common:settings.text" />
           <PageAside tabs={tabs} className="py-2" />
         </StickyBox>

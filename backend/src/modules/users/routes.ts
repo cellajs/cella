@@ -1,7 +1,7 @@
 import { createRouteConfig } from '#/lib/route-config';
 import { isAuthenticated, systemGuard } from '#/middlewares/guard';
 import { errorResponses, successWithDataSchema, successWithErrorsSchema, successWithPaginationSchema } from '#/utils/schema/common-responses';
-import { entityParamSchema, idsQuerySchema } from '#/utils/schema/common-schemas';
+import { entityParamSchema, idsBodySchema } from '#/utils/schema/common-schemas';
 import { updateUserBodySchema, userSchema, usersQuerySchema } from './schema';
 
 class UsersRoutesConfig {
@@ -36,7 +36,9 @@ class UsersRoutesConfig {
     summary: 'Delete users',
     description: 'Delete users from system by list of ids.',
     request: {
-      query: idsQuerySchema,
+      body: {
+        content: { 'application/json': { schema: idsBodySchema } },
+      },
     },
     responses: {
       200: {

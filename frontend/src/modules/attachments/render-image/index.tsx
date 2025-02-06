@@ -2,10 +2,10 @@ import { Grab, Hand, Minus, Plus, RefreshCw, RotateCwSquare } from 'lucide-react
 import type React from 'react';
 import { forwardRef, useEffect, useRef, useState } from 'react';
 import { dispatchCustomEvent } from '~/lib/custom-events';
+import ImageViewer from '~/modules/attachments/render-image/image-viewer';
+import { TooltipButton } from '~/modules/common/tooltip-button';
 import { Button } from '~/modules/ui/button';
 import { cn } from '~/utils/cn';
-import { TooltipButton } from '../../common/tooltip-button';
-import ImageViewer from './image-viewer';
 
 type RenderImageProps = {
   image: string;
@@ -95,7 +95,7 @@ const RenderImage = forwardRef<HTMLImageElement, RenderImageProps>(
     return (
       <>
         {showButtons && (
-          <div className="absolute z-20 flex items-center justify-center left-[calc(50vw-6.5rem)] bottom-3 gap-0 rounded-md text-sm shadow-sm bg-transparent ring-offset-background">
+          <div className="absolute z-20 flex items-center justify-center left-[calc(50vw-6.5rem)] bottom-3 gap-0 rounded-md text-sm shadow-xs bg-transparent ring-offset-background">
             <ControlButton tooltipContent="Zoom in" onClick={zoomIn} icon={<Plus size={14} />} className="rounded-l-md border-r-0 " />
             <ControlButton tooltipContent="Zoom out" onClick={zoomOut} icon={<Minus size={14} />} className="border-r-0 " />
             <ControlButton tooltipContent="Rotate right" onClick={rotateRight} icon={<RotateCwSquare size={14} />} className="border-r-0 " />

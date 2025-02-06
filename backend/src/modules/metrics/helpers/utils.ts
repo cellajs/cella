@@ -1,3 +1,11 @@
+/**
+ * Parses Prometheus-style metrics from a text string, extracting labels and their values
+ * for a specified metric name.
+ *
+ * @param text - Raw metrics text, typically exported from Prometheus.
+ * @param metricName - The name of the metric to search for in the text.
+ * @returns An array of objects representing the labels of each metric, with the labels as key-value pairs.
+ */
 export const parsePromMetrics = (text: string, metricName: string): Record<string, string | number>[] => {
   // Split the text into lines, trim each line, and keep only the ones starting with the metricName
   const lines = text

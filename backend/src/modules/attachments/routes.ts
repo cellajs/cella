@@ -4,24 +4,24 @@ import { createRouteConfig } from '#/lib/route-config';
 import { hasOrgAccess, isAuthenticated, isPublicAccess } from '#/middlewares/guard';
 
 import { z } from 'zod';
-import { idOrSlugSchema, idSchema } from '#/utils/schema/common-schemas';
-import { attachmentSchema, attachmentsQuerySchema, createAttachmentSchema, deleteAttachmentsQuerySchema, updateAttachmentBodySchema } from './schema';
+import { idOrSlugSchema, idSchema, idsBodySchema } from '#/utils/schema/common-schemas';
+import { attachmentSchema, attachmentsQuerySchema, createAttachmentsSchema, updateAttachmentBodySchema } from './schema';
 
 class AttachmentRoutesConfig {
-  public createAttachment = createRouteConfig({
+  public createAttachments = createRouteConfig({
     method: 'post',
     path: '/',
     guard: [isAuthenticated, hasOrgAccess],
     tags: ['attachments'],
-    summary: 'Create attachment',
-    description: 'Create a new attachment.',
+    summary: 'Create attachments',
+    description: 'Create one or more new attachments.',
     request: {
       params: z.object({ orgIdOrSlug: idOrSlugSchema }),
       body: {
         required: true,
         content: {
           'application/json': {
-            schema: createAttachmentSchema,
+            schema: createAttachmentsSchema,
           },
         },
       },
@@ -133,7 +133,9 @@ class AttachmentRoutesConfig {
     description: 'Delete attachments by their ids',
     request: {
       params: z.object({ orgIdOrSlug: idOrSlugSchema }),
-      query: deleteAttachmentsQuerySchema,
+      body: {
+        content: { 'application/json': { schema: idsBodySchema } },
+      },
     },
     responses: {
       200: {

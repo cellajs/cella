@@ -16,6 +16,13 @@ const observabilityRequestsCounter = new Counter({
   labelNames: metricsConfig.requestsTotal.labelNames,
 });
 
+/**
+ * Middleware that tracks request metrics for observability purposes, such as request count and request duration.
+ * It increments a counter for each incoming request and records the duration of each request.
+ *
+ * @param ctx - Request/response context.
+ * @param next - The next middleware or route handler to call after this middleware completes its work.
+ */
 export const observabilityMiddleware: MiddlewareHandler = async (ctx, next) => {
   const start = Date.now();
 

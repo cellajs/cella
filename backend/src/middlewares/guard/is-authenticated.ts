@@ -6,6 +6,15 @@ import { errorResponse } from '#/lib/errors';
 import { deleteAuthCookie, getAuthCookie } from '#/modules/auth/helpers/cookie';
 import { validateSession } from '#/modules/auth/helpers/session';
 
+/**
+ * Middleware to ensure that the user is authenticated by checking the session cookie.
+ * It also sets `user` and `memberships` in the context for further use.
+ * If no valid session is found, it responds with a 401 error.
+ *
+ * @param ctx - Request/response context.
+ * @param next - The next middleware or route handler to call if authentication succeeds.
+ * @returns Error response or undefined if the user is allowed to proceed.
+ */
 export async function isAuthenticated(ctx: Context, next: Next): Promise<Response | undefined> {
   // Get session id from cookie
   const sessionToken = await getAuthCookie(ctx, 'session');
@@ -28,7 +37,6 @@ export async function isAuthenticated(ctx: Context, next: Next): Promise<Respons
   ctx.set('user', user);
 
   // Fetch user's memberships from the database
-  // TODO: should these be scoped to the current organization if it is in a scoped endpoint?
   const memberships = await db.select(membershipSelect).from(membershipsTable).where(eq(membershipsTable.userId, user.id));
   ctx.set('memberships', memberships);
 

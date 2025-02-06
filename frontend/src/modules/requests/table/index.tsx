@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import type { z } from 'zod';
 import useSearchParams from '~/hooks/use-search-params';
 import { useSortColumns } from '~/modules/common/data-table/sort-columns';
+import type { BaseTableMethods } from '~/modules/common/data-table/types';
 import { dialog } from '~/modules/common/dialoger/state';
 import { createToast } from '~/modules/common/toaster';
 import { invite } from '~/modules/general/api';
@@ -12,9 +13,9 @@ import DeleteRequests from '~/modules/requests/delete-requests';
 import { requestsKeys } from '~/modules/requests/query';
 import { useColumns } from '~/modules/requests/table/columns';
 import { RequestsTableHeaderBar } from '~/modules/requests/table/table-header';
+import type { Request } from '~/modules/requests/types';
 import { useMutateQueryData } from '~/query/hooks/use-mutate-query-data';
 import { RequestsTableRoute, type requestSearchSchema } from '~/routes/system';
-import type { BaseTableMethods, Request } from '~/types/common';
 import { arraysHaveSameElements } from '~/utils';
 
 const BaseDataTable = lazy(() => import('~/modules/requests/table/table'));
@@ -77,7 +78,6 @@ const RequestsTable = () => {
 
     // add random token value so state it table changes
     const updatedWaitLists = waitlistRequests.map((req) => {
-      req.requestPending = true;
       return req;
     });
 

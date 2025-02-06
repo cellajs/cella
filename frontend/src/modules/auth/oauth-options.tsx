@@ -1,15 +1,14 @@
 import { useNavigate, useSearch } from '@tanstack/react-router';
-import { config } from 'config';
+import { type EnabledOauthProvider, config } from 'config';
 import { Fingerprint } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { githubSignInUrl, googleSignInUrl, microsoftSignInUrl } from '~/modules/auth/api';
-import type { Step } from '~/modules/auth/auth-steps';
+import type { Step } from '~/modules/auth/types';
 import { Button } from '~/modules/ui/button';
 import { passkeyAuth } from '~/modules/users/helpers';
 import { AuthenticateRoute } from '~/routes/auth';
 import { useThemeStore } from '~/store/theme';
-import type { EnabledOauthProvider } from '~/types/common';
 
 export const mapOauthProviders = [
   { id: 'github', name: 'Github', url: githubSignInUrl },
@@ -82,7 +81,7 @@ const OauthOptions = ({ email, actionType = 'signIn', showPasskey = false }: Oau
                 data-provider={provider}
                 src={`/static/images/${provider.toLowerCase()}-icon.svg`}
                 alt={provider}
-                className="w-4 h-4 mr-1 group-data-[mode=dark]:data-[provider=github]:invert"
+                className="w-4 h-4 mr-1 data-[provider=github]:group-data-[mode=dark]:invert"
                 loading="lazy"
               />
               <span>{actionType === 'signIn' ? t('common:sign_in') : t('common:sign_up')}</span>
