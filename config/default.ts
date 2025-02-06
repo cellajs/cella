@@ -150,6 +150,9 @@ export const config = {
 
   /**
    * Request limits for lists
+   *
+   * By default, BE common-schemas enforce a maximum limit of 1000 items via `limitRefine`.
+   * if some of requested limit need to exceed 1000, make sure to adjust `limitRefine` accordingly.
    */
   requestLimits: {
     default: 40,
