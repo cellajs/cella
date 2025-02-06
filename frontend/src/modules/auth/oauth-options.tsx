@@ -39,7 +39,7 @@ const OauthOptions = ({ email, actionType = 'signIn', showPasskey = false }: Oau
 
   const [loading, setLoading] = useState(false);
 
-  const redirectPath = redirect ?? config.defaultRedirectPath;
+  const redirectPath = redirect?.startsWith('/') ? redirect : config.defaultRedirectPath;
 
   const successCallback = () => {
     navigate({ to: redirectPath, replace: true });
