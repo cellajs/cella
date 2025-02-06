@@ -27,8 +27,6 @@ interface WaitlistFormProps {
   callback?: () => void;
 }
 
-// TODO also use in route to access directly?
-// TODO, bit many props?
 export const WaitlistForm = ({ email, buttonContent, emailField, dialog: isDialog, changeEmail, callback }: WaitlistFormProps) => {
   const { t } = useTranslation();
   const navigate = useNavigate();

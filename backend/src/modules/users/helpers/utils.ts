@@ -8,6 +8,8 @@ type UnsafeQuery = typeof usersTable;
 type SafeField = Extract<keyof SafeQuery, keyof SafeQuery['_']['columns']>;
 type UnsafeField = Extract<keyof UnsafeQuery, keyof UnsafeQuery['_']['columns']>;
 
+type SelectType = 'unsafe' | 'safe' | 'limited';
+
 // Overload signatures
 export function getUserBy(field: SafeField, value: string): Promise<UserModel | null>;
 export function getUserBy(field: UnsafeField, value: string, type: 'unsafe'): Promise<UnsafeUserModel | null>;
@@ -22,8 +24,12 @@ export function getUserBy(field: UnsafeField, value: string, type: 'unsafe'): Pr
  *              - undefined defaults to the safe user fields.
  * @returns A promise that resolves to a `UserModel`, `UnsafeUserModel`, or `null` if no user is found.
  */
-export async function getUserBy(field: SafeField | UnsafeField, value: string, type?: 'unsafe'): Promise<UserModel | UnsafeUserModel | null> {
-  const select = type === 'unsafe' ? usersTable : safeUserSelect;
+export async function getUserBy(
+  field: SafeField | UnsafeField,
+  value: string,
+  type: SelectType = 'safe',
+): Promise<UserModel | UnsafeUserModel | null> {
+  const select = getSelect(type);
 
   // Execute a database query to select the user based on the given field and value.
   const [result] = await db.select({ user: select }).from(usersTable).where(eq(usersTable[field], value));
@@ -48,7 +54,7 @@ export function getUsersByConditions(whereArray: (SQL<unknown> | undefined)[], t
  */
 export async function getUsersByConditions(
   whereArray: (SQL<unknown> | undefined)[],
-  type?: 'unsafe' | 'limited',
+  type?: SelectType,
 ): Promise<UserModel[] | UnsafeUserModel[] | LimitedUserModel[]> {
   const select = getSelect(type);
 
@@ -62,7 +68,7 @@ export async function getUsersByConditions(
 }
 
 // Helper function to determine the select value
-function getSelect(type?: 'unsafe' | 'limited') {
+function getSelect(type?: SelectType) {
   if (type === 'unsafe') return usersTable;
   if (type === 'limited') return baseLimitedUserSelect;
   return safeUserSelect;

@@ -148,18 +148,10 @@ export const getUserMenu = async () => {
 /**
  * Update current user details. Updates currently authenticated user information.
  *
- * TODO: too detailed, consider sharing schema or type
- *  @param params.email - Optional, email address.
- *  @param params.slug - Optional, URL-friendly string.
- *  @param params.firstName - Optional, first name.
- *  @param params.lastName -Optional, last name.
- *  @param params.language - Optional, preferred language.
- *  @param params.bannerUrl -  Optional, URL for banner image.
- *  @param params.thumbnailUrl - Optional, URL for thumbnail image.
- *  @param params.newsletter - Optional, subscription to the newsletter.
+ *  @param params User data to update.
  *  @returns The updated user data.
  */
-export const updateSelf = async (params: Omit<UpdateUserParams, 'role'>) => {
+export const updateSelf = async (params: UpdateUserParams) => {
   const response = await meClient.index.$put({
     json: params,
   });

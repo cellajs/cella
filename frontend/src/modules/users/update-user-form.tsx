@@ -136,7 +136,7 @@ const UpdateUserForm = ({ user, callback, sheet: isSheet, hiddenFields, children
           />
         )}
 
-        <div className="flex-col flex gap-2">
+        <div id="email-form-item-container" className="flex-col flex gap-2">
           <FormLabel>{t('common:email')}</FormLabel>
           <FormControl>
             <Input value={user.email} autoComplete="off" disabled />

@@ -190,7 +190,7 @@ const attachmentsRoutes = app
     // let createdByUser: UserModel | undefined;
 
     // if (task.createdBy) {
-    //   [createdByUser] = await db.select().from(usersTable).where(eq(usersTable.id, task.createdBy));
+    //   createdByUser = await getUserBy('id', task.createdBy);
     // }
 
     // const coverStream = await generateCover({

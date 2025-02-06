@@ -28,7 +28,7 @@ const Onboarding = ({ onboarding = 'start', onboardingToStepper }: OnboardingPro
   const [steps, setSteps] = useState(onDefaultBoardingSteps);
   const [organization, setOrganization] = useState<Organization | null>(null);
 
-  const animateClass = `transition-all will-change-transform duration-500 ease-out ${hasStarted ? 'opacity-1' : 'opacity-0 scale-95 translate-y-4'}`;
+  const animateClass = `transition-all will-change-transform duration-500 ease-out ${hasStarted ? 'opacity-100' : 'opacity-0 scale-95 translate-y-4'}`;
 
   const onCreateOrganization = (organization: Organization) => {
     setOrganization(organization);
@@ -43,7 +43,7 @@ const Onboarding = ({ onboarding = 'start', onboardingToStepper }: OnboardingPro
       <div className="mt-auto mb-auto w-full">
         {onboarding === 'start' && <OnboardingStart onboardingToStepper={onboardingToStepper} />}
         {onboarding === 'stepper' && (
-          <div className={cn('mx-auto mt-8 flex flex-col justify-center gap-4 px-4 py-8 sm:w-10/12 max-w-3xl', animateClass)}>
+          <div className={cn('mx-auto mt-0 flex flex-col justify-center gap-4 px-4 py-8 sm:w-10/12 max-w-3xl', animateClass)}>
             <Stepper initialStep={0} steps={steps} orientation="vertical">
               {steps.map(({ description, label, id }) => (
                 <Step key={label} label={label}>
@@ -53,8 +53,7 @@ const Onboarding = ({ onboarding = 'start', onboardingToStepper }: OnboardingPro
                     </CardHeader>
                     <CardContent>
                       {id === 'profile' && (
-                        //  TODO make hiddenhields type safe
-                        <UpdateUserForm user={user} hiddenFields={['email', 'newsletter', 'slug']}>
+                        <UpdateUserForm user={user} hiddenFields={['email', 'newsletter', 'slug', 'language']}>
                           <StepperFooter />
                         </UpdateUserForm>
                       )}

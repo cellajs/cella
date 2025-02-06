@@ -51,7 +51,6 @@ export const routeTree = rootRoute.addChildren([
 
 declare module '@tanstack/react-router' {
   interface StaticDataRouteOption {
-    showedDesktopNavButtons?: NavItemId[];
-    showedMobileNavButtons?: NavItemId[];
+    floatingNavButtons?: NavItemId[];
   }
 }
