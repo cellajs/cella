@@ -22,6 +22,7 @@ import { logEvent } from '#/middlewares/logger/log-event';
 import { verifyUnsubscribeToken } from '#/modules/users/helpers/unsubscribe-token';
 import { getUserBy, getUsersByConditions } from '#/modules/users/helpers/utils';
 import { nanoid } from '#/utils/nanoid';
+import { encodeLowerCased } from '#/utils/oslo';
 import { prepareStringForILikeFilter } from '#/utils/sql';
 import { TimeSpan, createDate } from '#/utils/time-span';
 import { env } from '../../../env';
@@ -89,13 +90,16 @@ const generalRoutes = app
     if (recipientEmails.length === 0) return errorResponse(ctx, 400, 'no_recipients', 'warn');
 
     // Generate tokens
-    const tokens = recipientEmails.map((email) => ({
-      token: nanoid(40),
-      type: 'invitation' as const,
-      email: email.toLowerCase(),
-      createdBy: user.id,
-      expiresAt: createDate(new TimeSpan(7, 'd')),
-    }));
+    const tokens = recipientEmails.map((email) => {
+      const hashedToken = encodeLowerCased(nanoid());
+      return {
+        token: hashedToken,
+        type: 'invitation' as const,
+        email: email.toLowerCase(),
+        createdBy: user.id,
+        expiresAt: createDate(new TimeSpan(7, 'd')),
+      };
+    });
 
     // Batch insert tokens
     const insertedTokens = await db.insert(tokensTable).values(tokens).returning();

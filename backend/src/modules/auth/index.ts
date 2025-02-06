@@ -29,6 +29,7 @@ import {
 } from '#/modules/auth/helpers/oauth-providers';
 import { getUserBy, getUsersByConditions } from '#/modules/users/helpers/utils';
 import { nanoid } from '#/utils/nanoid';
+import { encodeLowerCased } from '#/utils/oslo';
 import { TimeSpan, createDate, isExpiredDate } from '#/utils/time-span';
 // TODO shorten this import
 import { CreatePasswordEmail, type CreatePasswordEmailProps } from '../../../emails/create-password';
@@ -169,13 +170,13 @@ const authRoutes = app
     // Delete previous
     await db.delete(tokensTable).where(and(eq(tokensTable.userId, user.id), eq(tokensTable.type, 'email_verification')));
 
-    // TODO store hashed token
     const token = nanoid(40);
+    const hashedToken = encodeLowerCased(token);
 
     const [tokenRecord] = await db
       .insert(tokensTable)
       .values({
-        token: token,
+        token: hashedToken,
         type: 'email_verification',
         userId: user.id,
         email: user.email,
@@ -229,13 +230,13 @@ const authRoutes = app
     // Delete old token if exists
     await db.delete(tokensTable).where(and(eq(tokensTable.userId, user.id), eq(tokensTable.type, 'password_reset')));
 
-    // TODO store hashed token
     const token = nanoid(40);
+    const hashedToken = encodeLowerCased(token);
 
     const [tokenRecord] = await db
       .insert(tokensTable)
       .values({
-        token: token,
+        token: hashedToken,
         type: 'password_reset',
         userId: user.id,
         email,

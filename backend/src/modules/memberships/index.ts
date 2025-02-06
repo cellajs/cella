@@ -21,6 +21,7 @@ import { getValidEntity } from '#/permissions/get-valid-entity';
 import { memberCountsQuery } from '#/utils/counts';
 import { nanoid } from '#/utils/nanoid';
 import { getOrderColumn } from '#/utils/order-column';
+import { encodeLowerCased } from '#/utils/oslo';
 import { prepareStringForILikeFilter } from '#/utils/sql';
 import { TimeSpan, createDate } from '#/utils/time-span';
 import { MemberInviteEmail, type MemberInviteEmailProps } from '../../../emails/member-invite';
@@ -161,16 +162,20 @@ const membershipsRoutes = app
     if (emailsToSendInvitation.length === 0) return errorResponse(ctx, 400, 'no_recipients', 'warn');
 
     // Generate tokens
-    const tokens = emailsToSendInvitation.map(({ email, userId }) => ({
-      token: nanoid(40),
-      type: 'invitation' as const,
-      email: email.toLowerCase(),
-      createdBy: user.id,
-      expiresAt: createDate(new TimeSpan(7, 'd')),
-      role,
-      userId,
-      organizationId: organization.id,
-    }));
+    const tokens = emailsToSendInvitation.map(({ email, userId }) => {
+      const hashedToken = encodeLowerCased(nanoid());
+
+      return {
+        token: hashedToken,
+        type: 'invitation' as const,
+        email: email.toLowerCase(),
+        createdBy: user.id,
+        expiresAt: createDate(new TimeSpan(7, 'd')),
+        role,
+        userId,
+        organizationId: organization.id,
+      };
+    });
 
     // Batch insert tokens
     const insertedTokens = await db.insert(tokensTable).values(tokens).returning();
