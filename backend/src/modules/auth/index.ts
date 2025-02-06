@@ -4,7 +4,7 @@ import { encodeBase64 } from '@oslojs/encoding';
 import { OAuth2RequestError, generateCodeVerifier, generateState } from 'arctic';
 import type { EnabledOauthProvider } from 'config';
 import { config } from 'config';
-import { and, eq, or } from 'drizzle-orm';
+import { and, desc, eq, or } from 'drizzle-orm';
 import slugify from 'slugify';
 import { db } from '#/db/db';
 import { type OrganizationModel, organizationsTable } from '#/db/schema/organizations';
@@ -457,34 +457,33 @@ const authRoutes = app
     return ctx.json({ success: true }, 200);
   })
   /*
-   * TODO simplify: Stop impersonation
+   * Stop impersonation
    */
   .openapi(authRoutesConfig.stopImpersonation, async (ctx) => {
-    const sessionToken = await getAuthCookie(ctx, 'session');
-
-    if (!sessionToken) {
-      deleteAuthCookie(ctx, 'session');
-      return errorResponse(ctx, 401, 'unauthorized', 'warn');
-    }
+    const sessionToken = deleteAuthCookie(ctx, 'session');
+    if (!sessionToken) return errorResponse(ctx, 401, 'unauthorized', 'warn');
 
     const { session } = await validateSession(sessionToken);
+    if (!session) return errorResponse(ctx, 401, 'unauthorized', 'warn');
 
-    if (session) {
-      await invalidateSessionById(session.id);
-      if (session.adminUserId) {
-        const sessions = await db.select().from(sessionsTable).where(eq(sessionsTable.userId, session.adminUserId));
-        const [lastSession] = sessions.sort((a, b) => b.expiresAt.getTime() - a.expiresAt.getTime());
+    await invalidateSessionById(session.id);
+    if (session.adminUserId) {
+      const [adminsLastSession] = await db
+        .select()
+        .from(sessionsTable)
+        .where(eq(sessionsTable.userId, session.adminUserId))
+        .orderBy(desc(sessionsTable.expiresAt))
+        .limit(1);
 
-        const adminsLastSession = await validateSession(lastSession.token);
-
-        if (!adminsLastSession.session) {
-          deleteAuthCookie(ctx, 'session');
-          return errorResponse(ctx, 401, 'unauthorized', 'warn');
-        }
-        const expireTimeSpan = new TimeSpan(lastSession.expiresAt.getTime() - Date.now(), 'ms');
-        await setAuthCookie(ctx, 'session', lastSession.token, expireTimeSpan);
+      if (isExpiredDate(adminsLastSession.expiresAt)) {
+        await invalidateSessionById(adminsLastSession.id);
+        return errorResponse(ctx, 401, 'unauthorized', 'warn');
       }
-    } else deleteAuthCookie(ctx, 'session');
+
+      const expireTimeSpan = new TimeSpan(adminsLastSession.expiresAt.getTime() - Date.now(), 'ms');
+      await setAuthCookie(ctx, 'session', adminsLastSession.token, expireTimeSpan);
+    }
+
     logEvent('Admin user signed out from impersonate to his own account', { user: session?.adminUserId || 'na' });
 
     return ctx.json({ success: true }, 200);
