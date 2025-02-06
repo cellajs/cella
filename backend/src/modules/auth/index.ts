@@ -580,7 +580,9 @@ const authRoutes = app
       const userId = await getAuthCookie(ctx, 'oauth_connect_user_id');
 
       // Check if oauth account already exists
-      handleExistingOauthAccount(ctx, strategy, String(githubUser.id), userId || '', redirectExistingUserUrl);
+      const existingStatus = await handleExistingOauthAccount(ctx, strategy, String(githubUser.id), userId || '');
+      if (existingStatus === 'mismatch') return errorRedirect(ctx, 'oauth_mismatch', 'warn');
+      if (existingStatus === 'auth') return ctx.redirect(redirectExistingUserUrl, 302);
 
       // Get user emails from github
       const githubUserEmailsResponse = await fetch('https://api.github.com/user/emails', {
@@ -689,7 +691,9 @@ const authRoutes = app
       const userId = await getAuthCookie(ctx, 'oauth_connect_user_id');
 
       // Check if oauth account already exists
-      handleExistingOauthAccount(ctx, strategy, user.sub, userId || '', redirectExistingUserUrl);
+      const existingStatus = await handleExistingOauthAccount(ctx, strategy, user.sub, userId || '');
+      if (existingStatus === 'mismatch') return errorRedirect(ctx, 'oauth_mismatch', 'warn');
+      if (existingStatus === 'auth') return ctx.redirect(redirectExistingUserUrl, 302);
 
       // TODO: handle token  Check if user has an invite token
       const inviteToken = await getAuthCookie(ctx, 'oauth_invite_token');
@@ -783,7 +787,9 @@ const authRoutes = app
       const userId = await getAuthCookie(ctx, 'oauth_connect_user_id');
 
       // Check if oauth account already exists
-      handleExistingOauthAccount(ctx, strategy, user.sub, userId || '', redirectExistingUserUrl);
+      const existingStatus = await handleExistingOauthAccount(ctx, strategy, user.sub, userId || '');
+      if (existingStatus === 'mismatch') return errorRedirect(ctx, 'oauth_mismatch', 'warn');
+      if (existingStatus === 'auth') return ctx.redirect(redirectExistingUserUrl, 302);
 
       // TODO: handle token  Check if user has an invite token
       const inviteToken = await getAuthCookie(ctx, 'oauth_invite_token');

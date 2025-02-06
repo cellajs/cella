@@ -19,11 +19,11 @@ import UnsavedBadge from '~/modules/common/unsaved-badge';
 import { Button, SubmitButton } from '~/modules/ui/button';
 import { Checkbox } from '~/modules/ui/checkbox';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
+import { Input } from '~/modules/ui/input';
 import { useUpdateUserMutation } from '~/modules/users/query';
 import type { User } from '~/modules/users/types';
 import { useUserStore } from '~/store/user';
 import { cleanUrl } from '~/utils/clean-url';
-import { Input } from '../ui/input';
 
 interface UpdateUserFormProps {
   user: User;

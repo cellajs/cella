@@ -61,23 +61,21 @@ export const createOauthSession = async (
   return ctx.redirect(url.toString(), 302);
 };
 
-// Insert oauth account into db
+// Check if oauth account already exists
 export const handleExistingOauthAccount = async (
   ctx: Context,
   oauthProvider: EnabledOauthProvider,
   oauthProviderId: string,
   currentUserId: string,
-  redirectUrl: string,
-) => {
+): Promise<'auth' | 'mismatch' | null> => {
   const [existingOauthAccount] = await findOauthAccount(oauthProvider, oauthProviderId);
-  if (existingOauthAccount) {
-    // If the account is linked to another user, return an error
-    if (currentUserId && existingOauthAccount.userId !== currentUserId) return errorRedirect(ctx, 'oauth_mismatch', 'warn');
+  if (!existingOauthAccount) return null;
+  // If the account is linked to another user, return an error
+  if (currentUserId && existingOauthAccount.userId !== currentUserId) return 'mismatch';
 
-    // Otherwise, set the session and redirect
-    await setUserSession(ctx, existingOauthAccount.userId, oauthProvider);
-    return ctx.redirect(redirectUrl, 302);
-  }
+  // Otherwise, set the session and redirect
+  await setUserSession(ctx, existingOauthAccount.userId, oauthProvider);
+  return 'auth';
 };
 
 // Clear oauth session

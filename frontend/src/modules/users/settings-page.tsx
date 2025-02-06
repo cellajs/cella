@@ -99,8 +99,8 @@ const UserSettingsPage = () => {
   const authenticateWithProvider = (provider: (typeof mapOauthProviders)[number]) => {
     if (!onlineManager.isOnline()) return createToast(t('common:action.offline.text'), 'warning');
 
-    // Proceed to OAuth URL with redirect and connect=true
-    window.location.href = `${provider.url}?connect=true&redirect=${encodeURIComponent(window.location.href)}`;
+    // Proceed to OAuth URL with redirect and connect
+    window.location.href = `${provider.url}?connect=${user.id}&redirect=${encodeURIComponent(window.location.href)}`;
   };
 
   return (
