@@ -8,6 +8,13 @@
       "when": 1738618006759,
       "tag": "0000_big_warbound",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1738845275361,
+      "tag": "0001_nifty_sphinx",
+      "breakpoints": true
     }
   ]
 }
