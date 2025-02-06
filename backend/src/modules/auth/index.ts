@@ -39,8 +39,8 @@ import { deleteAuthCookie, getAuthCookie, setAuthCookie } from './helpers/cookie
 import {
   clearOauthSession,
   createOauthSession,
-  findOauthAccount,
   getOauthRedirectUrl,
+  handleExistingOauthAccount,
   slugFromEmail,
   splitFullName,
   updateExistingUser,
@@ -580,14 +580,7 @@ const authRoutes = app
       const userId = await getAuthCookie(ctx, 'oauth_connect_user_id');
 
       // Check if oauth account already exists
-      // TODO this is same for all oauth providers, handle existingOauthAccount for this?
-      const [existingOauthAccount] = await findOauthAccount(strategy, String(githubUser.id));
-      if (existingOauthAccount) {
-        // Redirect if already assigned to another user
-        if (userId && existingOauthAccount.userId !== userId) return errorRedirect(ctx, 'oauth_mismatch', 'warn');
-        await setUserSession(ctx, existingOauthAccount.userId, strategy);
-        return ctx.redirect(redirectExistingUserUrl, 302);
-      }
+      handleExistingOauthAccount(ctx, strategy, String(githubUser.id), userId || '', redirectExistingUserUrl);
 
       // Get user emails from github
       const githubUserEmailsResponse = await fetch('https://api.github.com/user/emails', {
@@ -696,13 +689,7 @@ const authRoutes = app
       const userId = await getAuthCookie(ctx, 'oauth_connect_user_id');
 
       // Check if oauth account already exists
-      const [existingOauthAccount] = await findOauthAccount(strategy, user.sub);
-      if (existingOauthAccount) {
-        // Redirect if already assigned to another user
-        if (userId && existingOauthAccount.userId !== userId) return errorRedirect(ctx, 'oauth_mismatch', 'warn');
-        await setUserSession(ctx, existingOauthAccount.userId, strategy);
-        return ctx.redirect(redirectExistingUserUrl, 302);
-      }
+      handleExistingOauthAccount(ctx, strategy, user.sub, userId || '', redirectExistingUserUrl);
 
       // TODO: handle token  Check if user has an invite token
       const inviteToken = await getAuthCookie(ctx, 'oauth_invite_token');
@@ -796,13 +783,7 @@ const authRoutes = app
       const userId = await getAuthCookie(ctx, 'oauth_connect_user_id');
 
       // Check if oauth account already exists
-      const [existingOauthAccount] = await findOauthAccount(strategy, user.sub);
-      if (existingOauthAccount) {
-        // Redirect if already assigned to another user
-        if (userId && existingOauthAccount.userId !== userId) return errorRedirect(ctx, 'oauth_mismatch', 'warn');
-        await setUserSession(ctx, existingOauthAccount.userId, strategy);
-        return ctx.redirect(redirectExistingUserUrl, 302);
-      }
+      handleExistingOauthAccount(ctx, strategy, user.sub, userId || '', redirectExistingUserUrl);
 
       // TODO: handle token  Check if user has an invite token
       const inviteToken = await getAuthCookie(ctx, 'oauth_invite_token');
