@@ -1,4 +1,4 @@
-import { and, eq, ilike, inArray, or } from 'drizzle-orm';
+import { and, eq, ilike, inArray, isNull, lt, or } from 'drizzle-orm';
 import { mailer } from '#/lib/mailer';
 import { SystemInviteEmail, type SystemInviteEmailProps } from '../../../emails/system-invite';
 
@@ -80,11 +80,28 @@ const generalRoutes = app
     const senderThumbnailUrl = user.thumbnailUrl;
     const subject = i18n.t('backend:email.system_invite.subject', { lng, appName: config.name });
 
-    // Filter out existing users
-    const existingUsers = await getUsersByConditions([inArray(usersTable.email, emails)]);
-    const recipientEmails = emails.filter((email) => !existingUsers.some((u) => u.email === email));
+    // Query to filter out invitations on same email
+    const existingInvitesQuery = db
+      .select()
+      .from(tokensTable)
+      .where(
+        and(
+          inArray(tokensTable.email, emails),
+          eq(tokensTable.type, 'invitation'),
+          // Make sure its a system invitation
+          isNull(tokensTable.organizationId),
+          isNull(tokensTable.role),
+          lt(tokensTable.expiresAt, new Date()),
+        ),
+      );
 
-    //TODO we should also filter for recent invitation tokens that could exist for these emails
+    const [existingUsers, existingInvites] = await Promise.all([getUsersByConditions([inArray(usersTable.email, emails)]), existingInvitesQuery]);
+
+    // Create a set of emails from both existing users and invitations
+    const existingEmails = new Set([...existingUsers.map((user) => user.email), ...existingInvites.map((invite) => invite.email)]);
+
+    // Filter out emails that already user or has invitations
+    const recipientEmails = emails.filter((email) => !existingEmails.has(email));
 
     // Stop if no recipients
     if (recipientEmails.length === 0) return errorResponse(ctx, 400, 'no_recipients', 'warn');
