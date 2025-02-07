@@ -3,22 +3,9 @@ import { organizationsTable } from '#/db/schema/organizations';
 import { usersTable } from '#/db/schema/users';
 import { attachmentsTable } from './db/schema/attachments';
 
-export type EntityTableNames = (typeof entityTables)[keyof typeof entityTables]['_']['name'];
-
-export type ContextEntityIdFields = {
-  [K in keyof typeof entityIdFields]: K extends ContextEntity ? (typeof entityIdFields)[K] : never;
-}[keyof typeof entityIdFields];
-
-export type MenuSection = {
-  name: (typeof menuSections)[number]['name'];
-  entityType: ContextEntity;
-  submenu?: {
-    entityType: ContextEntity;
-    parentField: ContextEntityIdFields;
-  };
-};
-
-export type MenuSectionName = MenuSection['name'];
+/**
+ * Configuration
+ */
 
 // Define entities and their tables
 export const entityTables = {
@@ -34,12 +21,44 @@ export const entityIdFields = {
   attachment: 'attachmentId',
 } as const;
 
-// Define entities in user menu
-// Supports submenus by adding a submenu property
-// ie. submenu: { name: 'workspaces', entityType: 'workspace', parentField: 'organizationId' }
-export const menuSections = [
+export const entityRelations = [
   {
-    name: 'organizations',
-    entityType: 'organization',
+    menuSectionName: 'organizations',
+    entity: 'organization',
   } as const,
-];
+] satisfies UsageEntityRelations[];
+
+/**
+ * Usage  Types
+ */
+
+type EntityWithSubEntity = {
+  subEntity: ContextEntity; // When subEntity is ContextEntity
+  dependentHierarchy: boolean; // dependentHierarchy is required
+};
+
+type EntityWithoutSubEntity = {
+  subEntity?: undefined; // subEntity is absent
+  dependentHierarchy?: never; // dependentHierarchy must not be present
+};
+
+type UsageEntityRelations = {
+  menuSectionName: string;
+  entity: ContextEntity;
+} & (EntityWithSubEntity | EntityWithoutSubEntity);
+
+/**
+ * Export Types
+ */
+
+export type EntityTableNames = (typeof entityTables)[keyof typeof entityTables]['_']['name'];
+
+export type ContextEntityIdFields = {
+  [K in keyof typeof entityIdFields]: K extends ContextEntity ? (typeof entityIdFields)[K] : never;
+}[keyof typeof entityIdFields];
+
+export type EntityRelations = Omit<UsageEntityRelations, 'menuSectionName'> & {
+  menuSectionName: (typeof entityRelations)[number]['menuSectionName'];
+};
+
+export type MenuSectionName = EntityRelations['menuSectionName'];

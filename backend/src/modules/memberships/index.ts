@@ -9,7 +9,7 @@ import { mailer } from '#/lib/mailer';
 
 import { tokensTable } from '#/db/schema/tokens';
 import { safeUserSelect, usersTable } from '#/db/schema/users';
-import { entityIdFields, menuSections } from '#/entity-config';
+import { entityIdFields, entityRelations } from '#/entity-config';
 import { type Env, getContextMemberships, getContextOrganization, getContextUser } from '#/lib/context';
 import { resolveEntity } from '#/lib/entity';
 import { type ErrorType, createError, errorResponse } from '#/lib/errors';
@@ -144,7 +144,7 @@ const membershipsRoutes = app
             // SSE with entity data, to update user's menu
             sendSSEToUsers([existingUser.id], 'add_entity', {
               newItem: { ...entity, membership: createdMembership },
-              sectionName: menuSections.find((el) => el.entityType === entity.entity)?.name,
+              sectionName: entityRelations.find((el) => el.entity === entity.entity)?.menuSectionName,
               // TODO-entitymap map over entityIdFields
               // ...(parentEntity && { parentSlug: parentEntity.slug }),
             });

@@ -16,7 +16,7 @@ import { config } from 'config';
 import { membershipSelect, membershipsTable } from '#/db/schema/memberships';
 import { oauthAccountsTable } from '#/db/schema/oauth-accounts';
 import { passkeysTable } from '#/db/schema/passkeys';
-import { type MenuSection, entityIdFields, entityTables, menuSections } from '#/entity-config';
+import { type EntityRelations, entityIdFields, entityRelations, entityTables } from '#/entity-config';
 import { type Env, getContextMemberships, getContextUser } from '#/lib/context';
 import { resolveEntity } from '#/lib/entity';
 import { sendSSEToUsers } from '#/lib/sse';
@@ -68,10 +68,10 @@ const meRoutes = app
     const memberships = getContextMemberships();
 
     // Fetch function for each menu section, including handling submenus
-    const fetchMenuItemsForSection = async (section: MenuSection) => {
+    const fetchMenuItemsForSection = async (section: EntityRelations) => {
       let submenu: MenuItem[] = [];
-      const mainTable = entityTables[section.entityType];
-      const mainEntityIdField = entityIdFields[section.entityType];
+      const mainTable = entityTables[section.entity];
+      const mainEntityIdField = entityIdFields[section.entity];
 
       const entity = await db
         .select({
@@ -86,14 +86,14 @@ const meRoutes = app
           membership: membershipSelect,
         })
         .from(mainTable)
-        .where(and(eq(membershipsTable.userId, user.id), eq(membershipsTable.type, section.entityType)))
+        .where(and(eq(membershipsTable.userId, user.id), eq(membershipsTable.type, section.entity)))
         .orderBy(asc(membershipsTable.order))
         .innerJoin(membershipsTable, eq(membershipsTable[mainEntityIdField], mainTable.id));
 
       // If the section has a submenu, fetch the submenu items
-      if (section.submenu) {
-        const subTable = entityTables[section.submenu.entityType];
-        const subEntityIdField = entityIdFields[section.submenu.entityType];
+      if (section.subEntity) {
+        const subTable = entityTables[section.subEntity];
+        const subEntityIdField = entityIdFields[section.subEntity];
 
         submenu = await db
           .select({
@@ -108,32 +108,29 @@ const meRoutes = app
             membership: membershipSelect,
           })
           .from(subTable)
-          .where(and(eq(membershipsTable.userId, user.id), eq(membershipsTable.type, section.submenu.entityType)))
+          .where(and(eq(membershipsTable.userId, user.id), eq(membershipsTable.type, section.subEntity)))
           .orderBy(asc(membershipsTable.order))
           .innerJoin(membershipsTable, eq(membershipsTable[subEntityIdField], subTable.id));
       }
 
       return entity.map((entity) => ({
         ...entity,
-        submenu: submenu.filter((p) => {
-          const parentField = section.submenu?.parentField;
-          return parentField ? p.membership[parentField] === entity.id : false;
-        }),
+        submenu: submenu.filter((p) => p.membership[mainEntityIdField] === entity.id),
       }));
     };
 
     // Build the menu data asynchronously
     const data = async () => {
-      const result = await menuSections.reduce(
+      const result = await entityRelations.reduce(
         async (accPromise, section) => {
           const acc = await accPromise;
           if (!memberships.length) {
-            acc[section.name] = [];
+            acc[section.menuSectionName] = [];
             return acc;
           }
 
           // Fetch menu items for the current section
-          acc[section.name] = await fetchMenuItemsForSection(section);
+          acc[section.menuSectionName] = await fetchMenuItemsForSection(section);
           return acc;
         },
         Promise.resolve({} as UserMenu),
