@@ -1,4 +1,4 @@
-import { and, eq, ilike, inArray, or } from 'drizzle-orm';
+import { and, eq, ilike, inArray, isNull, lt, or } from 'drizzle-orm';
 import { mailer } from '#/lib/mailer';
 import { SystemInviteEmail, type SystemInviteEmailProps } from '../../../emails/system-invite';
 
@@ -22,6 +22,7 @@ import { logEvent } from '#/middlewares/logger/log-event';
 import { verifyUnsubscribeToken } from '#/modules/users/helpers/unsubscribe-token';
 import { getUserBy, getUsersByConditions } from '#/modules/users/helpers/utils';
 import { nanoid } from '#/utils/nanoid';
+import { encodeLowerCased } from '#/utils/oslo';
 import { prepareStringForILikeFilter } from '#/utils/sql';
 import { TimeSpan, createDate } from '#/utils/time-span';
 import { env } from '../../../env';
@@ -79,23 +80,43 @@ const generalRoutes = app
     const senderThumbnailUrl = user.thumbnailUrl;
     const subject = i18n.t('backend:email.system_invite.subject', { lng, appName: config.name });
 
-    // Filter out existing users
-    const existingUsers = await getUsersByConditions([inArray(usersTable.email, emails)]);
-    const recipientEmails = emails.filter((email) => !existingUsers.some((u) => u.email === email));
+    // Query to filter out invitations on same email
+    const existingInvitesQuery = db
+      .select()
+      .from(tokensTable)
+      .where(
+        and(
+          inArray(tokensTable.email, emails),
+          eq(tokensTable.type, 'invitation'),
+          // Make sure its a system invitation
+          isNull(tokensTable.organizationId),
+          isNull(tokensTable.role),
+          lt(tokensTable.expiresAt, new Date()),
+        ),
+      );
 
-    //TODO we should also filter for recent invitation tokens that could exist for these emails
+    const [existingUsers, existingInvites] = await Promise.all([getUsersByConditions([inArray(usersTable.email, emails)]), existingInvitesQuery]);
+
+    // Create a set of emails from both existing users and invitations
+    const existingEmails = new Set([...existingUsers.map((user) => user.email), ...existingInvites.map((invite) => invite.email)]);
+
+    // Filter out emails that already user or has invitations
+    const recipientEmails = emails.filter((email) => !existingEmails.has(email));
 
     // Stop if no recipients
     if (recipientEmails.length === 0) return errorResponse(ctx, 400, 'no_recipients', 'warn');
 
     // Generate tokens
-    const tokens = recipientEmails.map((email) => ({
-      token: nanoid(40),
-      type: 'invitation' as const,
-      email: email.toLowerCase(),
-      createdBy: user.id,
-      expiresAt: createDate(new TimeSpan(7, 'd')),
-    }));
+    const tokens = recipientEmails.map((email) => {
+      const hashedToken = encodeLowerCased(nanoid());
+      return {
+        token: hashedToken,
+        type: 'invitation' as const,
+        email: email.toLowerCase(),
+        createdBy: user.id,
+        expiresAt: createDate(new TimeSpan(7, 'd')),
+      };
+    });
 
     // Batch insert tokens
     const insertedTokens = await db.insert(tokensTable).values(tokens).returning();

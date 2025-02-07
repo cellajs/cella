@@ -11,8 +11,8 @@ import { type HotkeyItem, getHotkeyMatcher, shouldFireEvent } from '~/hooks/use-
  *
  * @example
  * useHotkeys([
- *   ['ctrl + s', (event) => console.log('Save triggered')],
- *   ['ESC', (event) => console.log('Escape pressed')],
+ *   ['ctrl + s', (event) => console.info('Save triggered')],
+ *   ['ESC', (event) => console.info('Escape pressed')],
  * ]);
  */
 export function useHotkeys(

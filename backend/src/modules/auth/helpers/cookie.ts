@@ -55,10 +55,11 @@ export const getAuthCookie = async (ctx: Context, name: CookieName) => {
  *
  * @param ctx - Request/response context.
  * @param name - Cookie name.
+ * @returns Deleted value
  */
 export const deleteAuthCookie = (ctx: Context, name: CookieName) => {
   const versionedName = `${config.slug}-${name}-${config.cookieVersion}`;
-  deleteCookie(ctx, versionedName, {
+  return deleteCookie(ctx, versionedName, {
     path: '/',
     secure: isProduction,
     domain: isProduction ? config.domain : undefined,
