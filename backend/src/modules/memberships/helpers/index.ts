@@ -1,5 +1,5 @@
 import type { ContextEntity } from 'config';
-import { and, eq, inArray, max } from 'drizzle-orm';
+import { eq, max } from 'drizzle-orm';
 import { db } from '#/db/db';
 import { type MembershipModel, membershipSelect, membershipsTable } from '#/db/schema/memberships';
 import { entityIdFields, entityRelations } from '#/entity-config';
@@ -86,15 +86,6 @@ export const insertMembership = async <T extends BaseEntityModel>({
   logEvent(`User added to ${entity.entity}`, { user: userId, id: entity.id }); // Log event
 
   return result;
-};
-
-export const getMembershipsByUserIds = (entityId: string, entityType: ContextEntity, userIds: string[]) => {
-  const idField = entityIdFields[entityType];
-
-  return db
-    .select()
-    .from(membershipsTable)
-    .where(and(eq(membershipsTable[idField], entityId), eq(membershipsTable.type, entityType), inArray(membershipsTable.userId, userIds)));
 };
 
 export const getAssociatedEntityDetails = <T extends ContextEntity>(entity: EntityModel<T>) => {

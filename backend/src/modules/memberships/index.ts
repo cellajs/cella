@@ -26,7 +26,7 @@ import { prepareStringForILikeFilter } from '#/utils/sql';
 import { TimeSpan, createDate } from '#/utils/time-span';
 import { MemberInviteEmail, type MemberInviteEmailProps } from '../../../emails/member-invite';
 import { slugFromEmail } from '../auth/helpers/oauth';
-import { getAssociatedEntityDetails, getMembershipsByUserIds, insertMembership } from './helpers';
+import { getAssociatedEntityDetails, insertMembership } from './helpers';
 import membershipRouteConfig from './routes';
 
 const app = new OpenAPIHono<Env>();
@@ -61,12 +61,11 @@ const membershipsRoutes = app
     const existingUsers = await getUsersByConditions([inArray(usersTable.email, normalizedEmails)]);
     const userIds = existingUsers.map(({ id }) => id);
 
-    // Fetch existing memberships for the organization, target entity, and main entity (if applicable)
-    const [organizationMemberships, targetMemberships, associatedEntityMemberships] = await Promise.all([
-      getMembershipsByUserIds(organization.id, 'organization', userIds),
-      getMembershipsByUserIds(entityId, entityType, userIds),
-      associatedEntityId && associatedEntityType ? getMembershipsByUserIds(associatedEntityId, associatedEntityType, userIds) : Promise.resolve([]),
-    ]);
+    // Fetch all existing memberships by organizationId
+    const memberships = await db
+      .select()
+      .from(membershipsTable)
+      .where(and(eq(membershipsTable.organizationId, organization.id), inArray(membershipsTable.userId, userIds)));
 
     // Map for lookup of existing users by email
     const existingUsersByEmail = new Map(existingUsers.map((eu) => [eu.email, eu]));
@@ -78,12 +77,12 @@ const membershipsRoutes = app
         const { id: userId, email } = existingUser;
 
         // Check if the user is already a member of the target entity
-        const hasTargetMembership = targetMemberships.some(({ userId: id }) => id === userId);
+        const hasTargetMembership = memberships.some(({ userId: id, type }) => id === userId && type === entityType);
         if (hasTargetMembership) return logEvent(`User already member of ${entityType}`, { user: userId, id: entityId });
 
         // Check if the user has a membership in the main entity and organization
-        const hasAssociatedMembership = associatedEntityMemberships.some(({ userId: id }) => id === userId);
-        const hasOrgMembership = organizationMemberships.some(({ userId: id }) => id === userId);
+        const hasAssociatedMembership = memberships.some(({ userId: id, type }) => id === userId && type === associatedEntityType);
+        const hasOrgMembership = memberships.some(({ userId: id, type }) => id === userId && type === 'organization');
 
         // Determine if membership should be created instantly
         const instantCreateMembership = (entityType !== 'organization' && hasOrgMembership) || (user.role === 'admin' && userId === user.id);
