@@ -5,6 +5,7 @@ import { Trans, useTranslation } from 'react-i18next';
 import { Button } from '~/modules/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/modules/ui/card';
 
+import { useSuspenseQuery } from '@tanstack/react-query';
 import { config } from 'config';
 import { toast } from 'sonner';
 import { AsideAnchor } from '~/modules/common/aside-anchor';
@@ -12,8 +13,8 @@ import { dialog } from '~/modules/common/dialoger/state';
 import { PageAside } from '~/modules/common/page/aside';
 import StickyBox from '~/modules/common/sticky-box';
 import DeleteOrganizations from '~/modules/organizations/delete-organizations';
+import { organizationQueryOptions } from '~/modules/organizations/query';
 import Subscription from '~/modules/organizations/subscription';
-import type { Organization } from '~/modules/organizations/types';
 import UpdateOrganizationForm from '~/modules/organizations/update-organization-form';
 import { OrganizationSettingsRoute } from '~/routes/organizations';
 
@@ -23,10 +24,15 @@ const tabs = [
   { id: 'delete-organization', label: 'common:delete_resource', resource: 'common:organization' },
 ];
 
-const OrganizationSettings = ({ organization }: { organization: Organization }) => {
+const OrganizationSettings = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { idOrSlug } = useParams({ from: OrganizationSettingsRoute.id });
+
+  const orgQueryOptions = organizationQueryOptions(idOrSlug);
+  const { data: organization, isError } = useSuspenseQuery(orgQueryOptions);
+
+  if (!organization || isError) return null;
 
   const openDeleteDialog = () => {
     dialog(
