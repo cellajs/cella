@@ -1,9 +1,10 @@
 import type { ContextEntity, Entity } from 'config';
-import { and, eq, max } from 'drizzle-orm';
+import { and, eq, inArray, max } from 'drizzle-orm';
 import { db } from '#/db/db';
 import { type InsertMembershipModel, type MembershipModel, membershipSelect, membershipsTable } from '#/db/schema/memberships';
 import type { UserModel } from '#/db/schema/users';
-import { entityIdFields } from '#/entity-config';
+import { entityIdFields, entityRelations } from '#/entity-config';
+import type { EntityModel } from '#/lib/entity';
 import { logEvent } from '#/middlewares/logger/log-event';
 
 type BaseEntityModel<T extends Entity> = {
@@ -17,19 +18,27 @@ interface Props<T> {
   role: MembershipModel['role'];
   entity: T;
   createdBy?: UserModel['id'];
+  tokenId?: string | null;
 }
 
 /**
  * Inserts a new membership for a user, assigning it the next available order number.
  * The membership can be linked to an entity and optionally to a parent entity.
  *
- * @param user - User to be added to the membership.
- * @param role - Role of user within the entity.
- * @param entity - Entity to which membership belongs.
- * @param createdBy - The user who created the membership (defaults to the current user).
+ * @param info.user - User to be added to membership.
+ * @param info.role - Role of user within entity.
+ * @param info.entity - Entity to which membership belongs.
+ * @param info.createdBy - Optional, user who created membership (default: current user).
+ * @param info.tokenId - Id of a token if it's and invite membership (default: null).
  * @returns The newly inserted membership record.
  */
-export const insertMembership = async <T extends BaseEntityModel<ContextEntity>>({ user, role, entity, createdBy = user.id }: Props<T>) => {
+export const insertMembership = async <T extends BaseEntityModel<ContextEntity>>({
+  user,
+  role,
+  entity,
+  createdBy = user.id,
+  tokenId = null,
+}: Props<T>) => {
   // Get the max order number
   const [{ maxOrder }] = await db
     .select({
@@ -44,6 +53,8 @@ export const insertMembership = async <T extends BaseEntityModel<ContextEntity>>
     userId: user.id,
     role,
     createdBy,
+    tokenId,
+    activatedAt: tokenId ? null : new Date(),
     order: maxOrder ? maxOrder + 1 : 1,
   };
   // If inserted membership is not organization
@@ -85,4 +96,25 @@ export const activateMembership = async (userId: string, entityType: ContextEnti
   logEvent(`User membership in ${result.entity} activated`, { user: result.userId, id: result[entityIdField] });
 
   return result;
+};
+
+export const getMembershipsByUserIds = (entityId: string, entityType: ContextEntity, userIds: string[]) => {
+  const idField = entityIdFields[entityType];
+
+  return db
+    .select()
+    .from(membershipsTable)
+    .where(and(eq(membershipsTable[idField], entityId), eq(membershipsTable.type, entityType), inArray(membershipsTable.userId, userIds)));
+};
+
+export const getMainEntityDetails = <T extends ContextEntity>(entity: EntityModel<T>) => {
+  const mainEntityRelation = entityRelations.find((el) => el.subEntity === entity.entity && el.dependentHierarchy);
+
+  if (!mainEntityRelation) return { mainEntityType: null, mainEntityIdField: null, mainEntityId: null };
+
+  const { entity: mainEntityType } = mainEntityRelation;
+  const mainEntityIdField = entityIdFields[mainEntityType] ?? null;
+  const mainEntityId = mainEntityIdField && mainEntityIdField in entity ? (entity[mainEntityIdField] as string) : null;
+
+  return { mainEntityType, mainEntityIdField, mainEntityId };
 };

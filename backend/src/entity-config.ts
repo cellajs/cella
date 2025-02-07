@@ -25,6 +25,8 @@ export const entityRelations = [
   {
     menuSectionName: 'organizations',
     entity: 'organization',
+    subEntity: undefined,
+    dependentHierarchy: undefined,
   } as const,
 ] satisfies UsageEntityRelations[];
 
