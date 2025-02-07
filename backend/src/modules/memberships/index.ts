@@ -1,5 +1,5 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
-import { and, count, eq, ilike, inArray, or } from 'drizzle-orm';
+import { and, count, eq, ilike, inArray, isNotNull, isNull, or } from 'drizzle-orm';
 
 import { db } from '#/db/db';
 import { membershipSelect, membershipsTable } from '#/db/schema/memberships';
@@ -300,7 +300,12 @@ const membershipsRoutes = app
       .from(usersTable)
       .where(or(...$or))
       .as('users');
-    const membersFilters = [eq(membershipsTable[entityIdField], entity.id), eq(membershipsTable.type, entityType)];
+    const membersFilters = [
+      eq(membershipsTable[entityIdField], entity.id),
+      eq(membershipsTable.type, entityType),
+      isNull(membershipsTable.tokenId),
+      isNotNull(membershipsTable.activatedAt),
+    ];
 
     if (role) membersFilters.push(eq(membershipsTable.role, role));
 
