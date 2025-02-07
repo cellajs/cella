@@ -15,6 +15,13 @@
       "when": 1738845275361,
       "tag": "0001_nifty_sphinx",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1738921405100,
+      "tag": "0002_confused_texas_twister",
+      "breakpoints": true
     }
   ]
 }

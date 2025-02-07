@@ -1,5 +1,5 @@
 import type { ContextEntity, Entity } from 'config';
-import { eq, max } from 'drizzle-orm';
+import { and, eq, max } from 'drizzle-orm';
 import { db } from '#/db/db';
 import { type InsertMembershipModel, type MembershipModel, membershipSelect, membershipsTable } from '#/db/schema/memberships';
 import type { UserModel } from '#/db/schema/users';
@@ -60,6 +60,29 @@ export const insertMembership = async <T extends BaseEntityModel<ContextEntity>>
 
   // Log
   logEvent(`User added to ${entity.entity}`, { user: user.id, id: entity.id });
+
+  return result;
+};
+
+/**
+ * Activates a user's membership by clearing the associated token and setting the activation timestamp.
+ * The membership is linked to a specific entity type and entity ID.
+ *
+ * @param userId - User ID whose membership is being activated.
+ * @param entityType - Entity type associated with membership.
+ * @param entityId - Entity ID where the membership exists.
+ * @returns Updated membership.
+ */
+export const activateMembership = async (userId: string, entityType: ContextEntity, entityId: string) => {
+  const entityIdField = entityIdFields[entityType];
+
+  const [result] = await db
+    .update(membershipsTable)
+    .set({ tokenId: null, activatedAt: new Date() })
+    .where(and(eq(membershipsTable.userId, userId), eq(membershipsTable[entityIdField], entityId), eq(membershipsTable.type, entityType)));
+
+  // Log
+  logEvent(`User membership in ${result.entity} activated`, { user: result.userId, id: result[entityIdField] });
 
   return result;
 };

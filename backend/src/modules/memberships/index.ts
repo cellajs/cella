@@ -25,7 +25,7 @@ import { prepareStringForILikeFilter } from '#/utils/sql';
 import { TimeSpan, createDate } from '#/utils/time-span';
 import { MemberInviteEmail, type MemberInviteEmailProps } from '../../../emails/member-invite';
 import { slugFromEmail } from '../auth/helpers/oauth';
-import { insertMembership } from './helpers/insert-membership';
+import { insertMembership } from './helpers';
 import membershipRouteConfig from './routes';
 
 const app = new OpenAPIHono<Env>();
