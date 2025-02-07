@@ -52,7 +52,7 @@ const organizationsRoutes = app
     logEvent('Organization created', { organization: createdOrganization.id });
 
     // Insert membership
-    const createdMembership = await insertMembership({ user, role: 'admin', entity: createdOrganization });
+    const createdMembership = await insertMembership({ userId: user.id, role: 'admin', entity: createdOrganization });
 
     const data = {
       ...createdOrganization,
