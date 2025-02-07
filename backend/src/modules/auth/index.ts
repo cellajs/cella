@@ -4,7 +4,7 @@ import { encodeBase64 } from '@oslojs/encoding';
 import { OAuth2RequestError, generateCodeVerifier, generateState } from 'arctic';
 import type { EnabledOauthProvider } from 'config';
 import { config } from 'config';
-import { and, eq, or } from 'drizzle-orm';
+import { and, desc, eq, or } from 'drizzle-orm';
 import slugify from 'slugify';
 import { db } from '#/db/db';
 import { type OrganizationModel, organizationsTable } from '#/db/schema/organizations';
@@ -29,6 +29,7 @@ import {
 } from '#/modules/auth/helpers/oauth-providers';
 import { getUserBy, getUsersByConditions } from '#/modules/users/helpers/utils';
 import { nanoid } from '#/utils/nanoid';
+import { encodeLowerCased } from '#/utils/oslo';
 import { TimeSpan, createDate, isExpiredDate } from '#/utils/time-span';
 // TODO shorten this import
 import { CreatePasswordEmail, type CreatePasswordEmailProps } from '../../../emails/create-password';
@@ -38,8 +39,8 @@ import { deleteAuthCookie, getAuthCookie, setAuthCookie } from './helpers/cookie
 import {
   clearOauthSession,
   createOauthSession,
-  findOauthAccount,
   getOauthRedirectUrl,
+  handleExistingOauthAccount,
   slugFromEmail,
   splitFullName,
   updateExistingUser,
@@ -169,13 +170,13 @@ const authRoutes = app
     // Delete previous
     await db.delete(tokensTable).where(and(eq(tokensTable.userId, user.id), eq(tokensTable.type, 'email_verification')));
 
-    // TODO store hashed token
     const token = nanoid(40);
+    const hashedToken = encodeLowerCased(token);
 
     const [tokenRecord] = await db
       .insert(tokensTable)
       .values({
-        token: token,
+        token: hashedToken,
         type: 'email_verification',
         userId: user.id,
         email: user.email,
@@ -229,13 +230,13 @@ const authRoutes = app
     // Delete old token if exists
     await db.delete(tokensTable).where(and(eq(tokensTable.userId, user.id), eq(tokensTable.type, 'password_reset')));
 
-    // TODO store hashed token
     const token = nanoid(40);
+    const hashedToken = encodeLowerCased(token);
 
     const [tokenRecord] = await db
       .insert(tokensTable)
       .values({
-        token: token,
+        token: hashedToken,
         type: 'password_reset',
         userId: user.id,
         email,
@@ -456,34 +457,33 @@ const authRoutes = app
     return ctx.json({ success: true }, 200);
   })
   /*
-   * TODO simplify: Stop impersonation
+   * Stop impersonation
    */
   .openapi(authRoutesConfig.stopImpersonation, async (ctx) => {
-    const sessionToken = await getAuthCookie(ctx, 'session');
-
-    if (!sessionToken) {
-      deleteAuthCookie(ctx, 'session');
-      return errorResponse(ctx, 401, 'unauthorized', 'warn');
-    }
+    const sessionToken = deleteAuthCookie(ctx, 'session');
+    if (!sessionToken) return errorResponse(ctx, 401, 'unauthorized', 'warn');
 
     const { session } = await validateSession(sessionToken);
+    if (!session) return errorResponse(ctx, 401, 'unauthorized', 'warn');
 
-    if (session) {
-      await invalidateSessionById(session.id);
-      if (session.adminUserId) {
-        const sessions = await db.select().from(sessionsTable).where(eq(sessionsTable.userId, session.adminUserId));
-        const [lastSession] = sessions.sort((a, b) => b.expiresAt.getTime() - a.expiresAt.getTime());
+    await invalidateSessionById(session.id);
+    if (session.adminUserId) {
+      const [adminsLastSession] = await db
+        .select()
+        .from(sessionsTable)
+        .where(eq(sessionsTable.userId, session.adminUserId))
+        .orderBy(desc(sessionsTable.expiresAt))
+        .limit(1);
 
-        const adminsLastSession = await validateSession(lastSession.token);
-
-        if (!adminsLastSession.session) {
-          deleteAuthCookie(ctx, 'session');
-          return errorResponse(ctx, 401, 'unauthorized', 'warn');
-        }
-        const expireTimeSpan = new TimeSpan(lastSession.expiresAt.getTime() - Date.now(), 'ms');
-        await setAuthCookie(ctx, 'session', lastSession.token, expireTimeSpan);
+      if (isExpiredDate(adminsLastSession.expiresAt)) {
+        await invalidateSessionById(adminsLastSession.id);
+        return errorResponse(ctx, 401, 'unauthorized', 'warn');
       }
-    } else deleteAuthCookie(ctx, 'session');
+
+      const expireTimeSpan = new TimeSpan(adminsLastSession.expiresAt.getTime() - Date.now(), 'ms');
+      await setAuthCookie(ctx, 'session', adminsLastSession.token, expireTimeSpan);
+    }
+
     logEvent('Admin user signed out from impersonate to his own account', { user: session?.adminUserId || 'na' });
 
     return ctx.json({ success: true }, 200);
@@ -580,14 +580,9 @@ const authRoutes = app
       const userId = await getAuthCookie(ctx, 'oauth_connect_user_id');
 
       // Check if oauth account already exists
-      // TODO this is same for all oauth providers, handle existingOauthAccount for this?
-      const [existingOauthAccount] = await findOauthAccount(strategy, String(githubUser.id));
-      if (existingOauthAccount) {
-        // Redirect if already assigned to another user
-        if (userId && existingOauthAccount.userId !== userId) return errorRedirect(ctx, 'oauth_mismatch', 'warn');
-        await setUserSession(ctx, existingOauthAccount.userId, strategy);
-        return ctx.redirect(redirectExistingUserUrl, 302);
-      }
+      const existingStatus = await handleExistingOauthAccount(ctx, strategy, String(githubUser.id), userId || '');
+      if (existingStatus === 'mismatch') return errorRedirect(ctx, 'oauth_mismatch', 'warn');
+      if (existingStatus === 'auth') return ctx.redirect(redirectExistingUserUrl, 302);
 
       // Get user emails from github
       const githubUserEmailsResponse = await fetch('https://api.github.com/user/emails', {
@@ -696,13 +691,9 @@ const authRoutes = app
       const userId = await getAuthCookie(ctx, 'oauth_connect_user_id');
 
       // Check if oauth account already exists
-      const [existingOauthAccount] = await findOauthAccount(strategy, user.sub);
-      if (existingOauthAccount) {
-        // Redirect if already assigned to another user
-        if (userId && existingOauthAccount.userId !== userId) return errorRedirect(ctx, 'oauth_mismatch', 'warn');
-        await setUserSession(ctx, existingOauthAccount.userId, strategy);
-        return ctx.redirect(redirectExistingUserUrl, 302);
-      }
+      const existingStatus = await handleExistingOauthAccount(ctx, strategy, user.sub, userId || '');
+      if (existingStatus === 'mismatch') return errorRedirect(ctx, 'oauth_mismatch', 'warn');
+      if (existingStatus === 'auth') return ctx.redirect(redirectExistingUserUrl, 302);
 
       // TODO: handle token  Check if user has an invite token
       const inviteToken = await getAuthCookie(ctx, 'oauth_invite_token');
@@ -796,13 +787,9 @@ const authRoutes = app
       const userId = await getAuthCookie(ctx, 'oauth_connect_user_id');
 
       // Check if oauth account already exists
-      const [existingOauthAccount] = await findOauthAccount(strategy, user.sub);
-      if (existingOauthAccount) {
-        // Redirect if already assigned to another user
-        if (userId && existingOauthAccount.userId !== userId) return errorRedirect(ctx, 'oauth_mismatch', 'warn');
-        await setUserSession(ctx, existingOauthAccount.userId, strategy);
-        return ctx.redirect(redirectExistingUserUrl, 302);
-      }
+      const existingStatus = await handleExistingOauthAccount(ctx, strategy, user.sub, userId || '');
+      if (existingStatus === 'mismatch') return errorRedirect(ctx, 'oauth_mismatch', 'warn');
+      if (existingStatus === 'auth') return ctx.redirect(redirectExistingUserUrl, 302);
 
       // TODO: handle token  Check if user has an invite token
       const inviteToken = await getAuthCookie(ctx, 'oauth_invite_token');

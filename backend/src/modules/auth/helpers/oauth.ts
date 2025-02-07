@@ -4,8 +4,8 @@ import { oauthAccountsTable } from '#/db/schema/oauth-accounts';
 import { type UserModel, usersTable } from '#/db/schema/users';
 import { setUserSession, validateSession } from './session';
 
-import { config } from 'config';
 import type { EnabledOauthProvider } from 'config';
+import { config } from 'config';
 import slugify from 'slugify';
 import { db } from '#/db/db';
 import { errorRedirect, errorResponse } from '#/lib/errors';
@@ -59,6 +59,23 @@ export const createOauthSession = async (
   logEvent('User redirected', { strategy: provider });
 
   return ctx.redirect(url.toString(), 302);
+};
+
+// Check if oauth account already exists
+export const handleExistingOauthAccount = async (
+  ctx: Context,
+  oauthProvider: EnabledOauthProvider,
+  oauthProviderId: string,
+  currentUserId: string,
+): Promise<'auth' | 'mismatch' | null> => {
+  const [existingOauthAccount] = await findOauthAccount(oauthProvider, oauthProviderId);
+  if (!existingOauthAccount) return null;
+  // If the account is linked to another user, return an error
+  if (currentUserId && existingOauthAccount.userId !== currentUserId) return 'mismatch';
+
+  // Otherwise, set the session and redirect
+  await setUserSession(ctx, existingOauthAccount.userId, oauthProvider);
+  return 'auth';
 };
 
 // Clear oauth session
