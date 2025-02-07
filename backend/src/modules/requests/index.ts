@@ -3,12 +3,12 @@ import { type SQL, and, count, eq, ilike, inArray } from 'drizzle-orm';
 import { OpenAPIHono } from '@hono/zod-openapi';
 import { db } from '#/db/db';
 import { type RequestsModel, requestsTable } from '#/db/schema/requests';
-import { usersTable } from '#/db/schema/users';
 import type { Env } from '#/lib/context';
 import { errorResponse } from '#/lib/errors';
 import { sendSlackMessage } from '#/lib/notification';
 import { getOrderColumn } from '#/utils/order-column';
 import { prepareStringForILikeFilter } from '#/utils/sql';
+import { getUserBy } from '../users/helpers/utils';
 import requestsRoutesConfig from './routes';
 
 // These requests are only allowed to be created if user has none yet
@@ -25,8 +25,8 @@ const requestsRoutes = app
     const { email, type, message } = ctx.req.valid('json');
 
     if (type === 'waitlist') {
-      const [existingRequest] = await db.select().from(usersTable).where(eq(usersTable.email, email)).limit(1);
-      if (existingRequest) return errorResponse(ctx, 400, 'request_email_is_user', 'info');
+      const existingUser = await getUserBy('email', email);
+      if (existingUser) return errorResponse(ctx, 400, 'request_email_is_user', 'info');
     }
 
     // Check if not duplicate for unique requests

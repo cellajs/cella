@@ -28,7 +28,7 @@ export const TextEffect: React.FC<TextEffectProps> = ({ text, className = '' }) 
       animate={isInView ? 'show' : ''}
       variants={variants}
       viewport={{ once: true }}
-      className={cn('text-xl text-center sm:text-4xl font-bold tracking-tighter md:text-6xl md:leading-[4rem]', className)}
+      className={cn('text-xl text-center font-medium sm:text-4xl md:text-5xl md:leading-[4rem]', className)}
     >
       {letters.map((word, i) => (
         // biome-ignore lint/suspicious/noArrayIndexKey: <explanation>

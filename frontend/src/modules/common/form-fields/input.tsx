@@ -4,7 +4,9 @@ import { FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessa
 import { Input } from '~/modules/ui/input';
 import { Textarea } from '~/modules/ui/textarea';
 
-//TODO: can this be refactored?
+//TODO: can this be refactored into separate components for textarea and input, and also get rid of subcomponent and prefix?
+// subcomponent and prefix are only used by the slug field, so lets make a third component for that.
+
 interface Props<TFieldValues extends FieldValues> {
   control: Control<TFieldValues>;
   name: Path<TFieldValues>;

@@ -233,7 +233,7 @@ const generalRoutes = app
     const { token } = ctx.req.valid('query');
 
     // Check if token exists
-    const user = await getUserBy('unsubscribeToken', token);
+    const user = await getUserBy('unsubscribeToken', token, 'unsafe');
     if (!user) return errorResponse(ctx, 404, 'not_found', 'warn', 'user');
 
     // Verify token

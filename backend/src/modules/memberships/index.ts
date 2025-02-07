@@ -348,7 +348,7 @@ const membershipsRoutes = app
     }
 
     const usersQuery = db
-      .select()
+      .select({ user: safeUserSelect })
       .from(usersTable)
       .where(or(...$or))
       .as('users');

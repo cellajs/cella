@@ -5,7 +5,7 @@ import type { Context } from 'hono';
 import { db } from '#/db/db';
 import { supportedOauthProviders } from '#/db/schema/oauth-accounts';
 import { type SessionModel, sessionsTable } from '#/db/schema/sessions';
-import { type UnsafeUserModel, type UserModel, safeUserSelect, usersTable } from '#/db/schema/users';
+import { type UserModel, safeUserSelect, usersTable } from '#/db/schema/users';
 import { logEvent } from '#/middlewares/logger/log-event';
 import { nanoid } from '#/utils/nanoid';
 import { TimeSpan, createDate, isExpiredDate } from '#/utils/time-span';
@@ -103,7 +103,7 @@ export const validateSession = async (sessionToken: string) => {
     return { session: null, user: null };
   }
 
-  return result satisfies { session: SessionModel; user: UnsafeUserModel };
+  return result satisfies { session: SessionModel; user: UserModel };
 };
 
 // Invalidate all sessions based on user id

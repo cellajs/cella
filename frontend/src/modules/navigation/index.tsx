@@ -31,16 +31,11 @@ const AppNav = () => {
 
   const { setLoading, setFocusView, navSheetOpen, setNavSheetOpen } = useNavigationStore();
 
-  const showedNavButtons = useMemo(() => {
-    const desktop = router.state.matches.flatMap((el) => el.staticData.showedDesktopNavButtons || []);
-    const mobile = router.state.matches.flatMap((el) => el.staticData.showedMobileNavButtons || []);
-    return isMobile ? mobile : desktop;
-  }, [router.state.matches, isMobile]);
-
   const renderedItems = useMemo(() => {
-    const itemsIds = showedNavButtons.length ? showedNavButtons : baseNavItems;
+    const floatingNavButtons = router.state.matches.flatMap((el) => el.staticData.floatingNavButtons || []);
+    const itemsIds = floatingNavButtons.length && isMobile ? floatingNavButtons : baseNavItems;
     return navItems.filter(({ id }) => itemsIds.includes(id));
-  }, [showedNavButtons]);
+  }, [router.state.matches, isMobile]);
 
   const showFloatingNav = renderedItems.length > 0 && renderedItems.length <= 2;
 
