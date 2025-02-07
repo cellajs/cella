@@ -76,16 +76,21 @@ const membershipsRoutes = app
       existingUsers.map(async (existingUser) => {
         const { id: userId, email } = existingUser;
 
+        // Filter memberships for current user
+        const userMemberships = memberships.filter(({ userId: id }) => id === userId);
+
         // Check if the user is already a member of the target entity
-        const hasTargetMembership = memberships.some(({ userId: id, type }) => id === userId && type === entityType);
+        const hasTargetMembership = userMemberships.some(({ type }) => type === entityType);
         if (hasTargetMembership) return logEvent(`User already member of ${entityType}`, { user: userId, id: entityId });
 
-        // Check if the user has a membership in the main entity and organization
-        const hasAssociatedMembership = memberships.some(({ userId: id, type }) => id === userId && type === associatedEntityType);
-        const hasOrgMembership = memberships.some(({ userId: id, type }) => id === userId && type === 'organization');
+        // Check for associated memberships and organization memberships
+        const hasAssociatedMembership = userMemberships.some(({ type }) => type === associatedEntityType);
+        const hasOrgMembership = userMemberships.some(({ type }) => type === 'organization');
 
         // Determine if membership should be created instantly
         const instantCreateMembership = (entityType !== 'organization' && hasOrgMembership) || (user.role === 'admin' && userId === user.id);
+
+        // If not instant, add to invite list
         if (!instantCreateMembership) return emailsToInvite.push({ email, userId });
 
         await insertMembership({ userId: existingUser.id, role, entity, addAssociatedMembership: hasAssociatedMembership });
