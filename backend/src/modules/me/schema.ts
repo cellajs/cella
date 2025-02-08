@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 import { config } from 'config';
-import { type MenuSectionName, menuSections } from '#/entity-config';
+import { type MenuSectionName, entityRelations } from '#/entity-config';
 import { contextEntityTypeSchema, idOrSlugSchema, idSchema, imageUrlSchema, nameSchema, slugSchema } from '#/utils/schema/common-schemas';
 import { membershipInfoSchema } from '../memberships/schema';
 import { signUpInfo } from '../users/schema';
@@ -51,9 +51,9 @@ export const menuItemsSchema = z.array(
 
 // Create a menu schema based on menu sections in entity-config
 export const userMenuSchema = z.object(
-  menuSections.reduce(
-    (acc, section) => {
-      acc[section.name] = menuItemsSchema;
+  entityRelations.reduce(
+    (acc, { menuSectionName }) => {
+      acc[menuSectionName] = menuItemsSchema;
       return acc;
     },
     {} as Record<MenuSectionName, typeof menuItemsSchema>,

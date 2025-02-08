@@ -1,38 +1,39 @@
 import { config } from 'config';
-import { type PgColumn, type PgVarcharBuilderInitial, boolean, doublePrecision, pgTable, timestamp, varchar } from 'drizzle-orm/pg-core';
+import { boolean, doublePrecision, timestamp, varchar } from 'drizzle-orm/pg-core';
 import { usersTable } from '#/db/schema/users';
-import { type ContextEntityIdFields, entityIdFields, entityTables } from '#/entity-config';
+import type { DynamicColumn } from '#/db/types';
+import { createDynamicTable, generateContextEntityDynamicFields } from '#/db/utils';
+import { type ContextEntityIdFields, entityIdFields } from '#/entity-config';
 import { nanoid } from '#/utils/nanoid';
 import { tokensTable } from './tokens';
 
 const roleEnum = config.rolesByType.entityRoles;
 
-export const membershipsTable = createDynamicMembershipTable();
+const { organizationId, ...additionalColumns } = generateContextEntityDynamicFields();
+
+const baseColumns = {
+  id: varchar().primaryKey().$defaultFn(nanoid),
+  type: varchar({ enum: config.contextEntityTypes }).notNull(),
+  userId: varchar()
+    .notNull()
+    .references(() => usersTable.id, { onDelete: 'cascade' }),
+  role: varchar({ enum: roleEnum }).notNull().default('member'),
+  tokenId: varchar().references(() => tokensTable.id, { onDelete: 'cascade' }),
+  activatedAt: timestamp(),
+  createdAt: timestamp().defaultNow().notNull(),
+  createdBy: varchar().references(() => usersTable.id, { onDelete: 'set null' }),
+  modifiedAt: timestamp(),
+  modifiedBy: varchar().references(() => usersTable.id, { onDelete: 'set null' }),
+  archived: boolean().default(false).notNull(),
+  muted: boolean().default(false).notNull(),
+  order: doublePrecision().notNull(),
+  organizationId: organizationId.notNull(),
+};
 
 // Create dynamic membership table
-function createDynamicMembershipTable() {
-  const { organizationId, ...rest } = generateDynamicFields();
-  return pgTable('memberships', {
-    id: varchar().primaryKey().$defaultFn(nanoid),
-    type: varchar({ enum: config.contextEntityTypes }).notNull(),
-    userId: varchar()
-      .notNull()
-      .references(() => usersTable.id, { onDelete: 'cascade' }),
-    role: varchar({ enum: roleEnum }).notNull().default('member'),
-    createdAt: timestamp().defaultNow().notNull(),
-    createdBy: varchar().references(() => usersTable.id, { onDelete: 'set null' }),
-    modifiedAt: timestamp(),
-    modifiedBy: varchar().references(() => usersTable.id, { onDelete: 'set null' }),
-    archived: boolean().default(false).notNull(),
-    muted: boolean().default(false).notNull(),
-    order: doublePrecision().notNull(),
-    tokenId: varchar().references(() => tokensTable.id, { onDelete: 'set null' }),
-    organizationId: organizationId.notNull(),
-    ...rest,
-  });
-}
+export const membershipsTable = createDynamicTable('memberships', baseColumns, additionalColumns);
 
-// Dynamic part of the select based on contextEntityTypes that you can set in entity config
+// Dynamic part of the select based on contextEntityTypes that you can set in config
 const membershipDynamicSelect = config.contextEntityTypes
   .filter((e) => e !== 'organization')
   .reduce(
@@ -58,34 +59,10 @@ export const membershipSelect = {
   ...membershipDynamicSelect,
 };
 
-// Helper function for dynamic fields generation
-function generateDynamicFields() {
-  return config.contextEntityTypes.reduce(
-    (fields, entityType) => {
-      const fieldTable = entityTables[entityType];
-      const fieldName = entityIdFields[entityType];
-      // Add the dynamic field with optional constraints
-      fields[fieldName] = varchar().references(() => fieldTable.id, { onDelete: 'cascade' });
-      return fields;
-    },
-    {} as Record<ContextEntityIdFields, PgVarcharBuilderInitial<'', [string, ...string[]], undefined>>,
-  );
-}
-type MembershipDynamicColumn = PgColumn<{
+type MembershipDynamicColumn = Omit<DynamicColumn, 'name' | 'tableName'> & {
   name: Exclude<ContextEntityIdFields, 'organizationId'>;
   tableName: 'memberships';
-  dataType: 'string';
-  columnType: 'PgVarchar';
-  data: string;
-  driverParam: string;
-  notNull: false;
-  hasDefault: false;
-  isPrimaryKey: false;
-  isAutoincrement: false;
-  hasRuntimeDefault: false;
-  enumValues: [string, ...string[]];
-  baseColumn: never;
-  generated: undefined;
-}>;
+};
+
 export type MembershipModel = typeof membershipsTable.$inferSelect;
 export type InsertMembershipModel = typeof membershipsTable.$inferInsert;

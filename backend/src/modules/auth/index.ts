@@ -7,7 +7,8 @@ import { config } from 'config';
 import { and, desc, eq, or } from 'drizzle-orm';
 import slugify from 'slugify';
 import { db } from '#/db/db';
-import { type OrganizationModel, organizationsTable } from '#/db/schema/organizations';
+import { membershipsTable } from '#/db/schema/memberships';
+import { organizationsTable } from '#/db/schema/organizations';
 import { passkeysTable } from '#/db/schema/passkeys';
 import { sessionsTable } from '#/db/schema/sessions';
 import { tokensTable } from '#/db/schema/tokens';
@@ -31,10 +32,8 @@ import { getUserBy, getUsersByConditions } from '#/modules/users/helpers/utils';
 import { nanoid } from '#/utils/nanoid';
 import { encodeLowerCased } from '#/utils/oslo';
 import { TimeSpan, createDate, isExpiredDate } from '#/utils/time-span';
-// TODO shorten this import
 import { CreatePasswordEmail, type CreatePasswordEmailProps } from '../../../emails/create-password';
 import { EmailVerificationEmail, type EmailVerificationEmailProps } from '../../../emails/email-verification';
-import { insertMembership } from '../memberships/helpers/insert-membership';
 import { deleteAuthCookie, getAuthCookie, setAuthCookie } from './helpers/cookie';
 import {
   clearOauthSession,
@@ -371,8 +370,8 @@ const authRoutes = app
    * Accept org invite token for signed in users
    */
   .openapi(authRoutesConfig.acceptOrgInvite, async (ctx) => {
-    const token = getContextToken();
     const user = getContextUser();
+    const token = getContextToken();
 
     // Make sure its an organization invitation
     if (!token.organizationId || !token.role) return errorResponse(ctx, 401, 'invalid_token', 'warn');
@@ -380,62 +379,14 @@ const authRoutes = app
     // Make sure correct user accepts invitation (for example another user could have a sessions and click on email invite of another user)
     if (user.id !== token.userId) return errorResponse(ctx, 401, 'user_mismatch', 'warn');
 
-    // Delete token
+    // Activate memberships
+    await db
+      .update(membershipsTable)
+      .set({ tokenId: null, activatedAt: new Date() })
+      .where(and(eq(membershipsTable.tokenId, token.id)));
+
+    // Delete token after all activation, since tokenId is cascaded in membershipTable
     await db.delete(tokensTable).where(eq(tokensTable.id, token.id));
-
-    // // Extract role and membershipInfo from token, ensuring proper types
-    // // TODO can this endpoint be simplified?
-    // const { role, membershipInfo } = token as {
-    //   role: MembershipModel['role'];
-    //   membershipInfo?: typeof token.membershipInfo;
-    // };
-
-    const [organization]: (OrganizationModel | undefined)[] = await db
-      .select()
-      .from(organizationsTable)
-      .where(and(eq(organizationsTable.id, token.organizationId)))
-      .limit(1);
-
-    // if (!organization) return errorResponse(ctx, 404, 'not_found', 'warn', 'organization', { organization: token.organizationId });
-
-    // const memberships = await db
-    //   .select()
-    //   .from(membershipsTable)
-    //   .where(and(eq(membershipsTable.organizationId, organization.id), eq(membershipsTable.type, 'organization')));
-
-    // const existingMembership = memberships.find(({ userId }) => userId === user.id);
-
-    // if (existingMembership && existingMembership.role !== role && !membershipInfo) {
-    //   await db
-    //     .update(membershipsTable)
-    //     .set({ role })
-    //     .where(and(eq(membershipsTable.organizationId, organization.id), eq(membershipsTable.userId, user.id)));
-
-    //   return ctx.json({ success: true }, 200);
-    // }
-
-    // Insert organization membership
-    await insertMembership({ user, role: token.role, entity: organization });
-
-    // const newMenuItem = {
-    //   newItem: { ...organization, membership: orgMembership },
-    //   sectionName: menuSections.find((el) => el.entityType === orgMembership.type)?.name,
-    // };
-
-    // if (membershipInfo) {
-    //   const { parentEntity: parentInfo, targetEntity: targetInfo } = membershipInfo;
-    //   const { entity: targetEntityType, idOrSlug: targetIdOrSlug } = targetInfo;
-
-    //   const targetEntity = await resolveEntity(targetEntityType, targetIdOrSlug);
-    //   // Resolve parentEntity if provided
-    //   const parentEntity = parentInfo ? await resolveEntity(parentInfo.entity, parentInfo.idOrSlug) : null;
-
-    //   if (!targetEntity) return errorResponse(ctx, 404, 'not_found', 'warn', targetEntityType, { [targetEntityType]: targetIdOrSlug });
-
-    //   const [createdParentMembership, createdMembership] = await Promise.all([
-    //     parentEntity ? insertMembership({ user, role, entity: parentEntity }) : Promise.resolve(null),
-    //     insertMembership({ user, role, entity: targetEntity, parentEntity }),
-    //   ]);
 
     return ctx.json({ success: true }, 200);
   })

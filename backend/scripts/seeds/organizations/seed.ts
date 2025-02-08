@@ -114,6 +114,7 @@ export const organizationsSeed = async () => {
         role: faker.helpers.arrayElement(['admin', 'member']),
         createdAt: faker.date.past(),
         order: organizationsCount * 10,
+        activatedAt: faker.date.past(),
       };
     });
 
@@ -130,6 +131,7 @@ export const organizationsSeed = async () => {
         role: faker.helpers.arrayElement(['admin', 'member']),
         createdAt: faker.date.past(),
         order: adminMembershipsOrder,
+        activatedAt: faker.date.past(),
       });
       adminMembershipsOrder = adminMembershipsOrder + 10;
       adminOrganizationsCount++; // Increment the counter

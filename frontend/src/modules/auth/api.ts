@@ -1,6 +1,5 @@
 import { config } from 'config';
 import { clientConfig, handleResponse } from '~/lib/api';
-import type { TokenModel } from '#/db/schema/tokens';
 import { authHc } from '#/modules/auth/hc';
 
 export const client = authHc(config.backendUrl, clientConfig);
@@ -10,7 +9,7 @@ export const githubSignInUrl = client.github.$url().href;
 export const googleSignInUrl = client.google.$url().href;
 export const microsoftSignInUrl = client.microsoft.$url().href;
 
-type TokenType = { token: string };
+type TokenType = (typeof config.tokenTypes)[number];
 type SignUpProps = Parameters<(typeof client)['sign-up']['$post']>['0']['json'];
 
 /**
@@ -38,7 +37,7 @@ export const signUp = async (body: SignUpProps) => {
  * @param password - Password to set for user.
  * @returns A boolean indicating success of the sign-up process.
  */
-export const signUpWithToken = async ({ email, password, token }: TokenType & SignUpProps) => {
+export const signUpWithToken = async ({ email, password, token }: { token: string } & SignUpProps) => {
   const response = await client['sign-up'][':token'].$post({
     param: { token },
     json: { email, password },
@@ -68,7 +67,7 @@ export const checkEmail = async (email: string) => {
  *
  * @param token - Verification token received by user.
  */
-export const verifyEmail = async ({ token }: TokenType) => {
+export const verifyEmail = async ({ token }: { token: string }) => {
   const response = await client['verify-email'][':token'].$post({
     param: { token },
   });
@@ -142,7 +141,7 @@ export const requestPasswordEmail = async (email: string) => {
  * @param token - Token for verifying password creation.
  * @param password - Password to set.
  */
-export const createPassword = async ({ token, password }: TokenType & { password: string }) => {
+export const createPassword = async ({ token, password }: { token: string; password: string }) => {
   const response = await client['create-password'][':token'].$post({
     param: { token },
     json: { password },
@@ -158,7 +157,7 @@ export const createPassword = async ({ token, password }: TokenType & { password
  * @param type - Type of the token (`"email_verification" | "password_reset" | "invitation"`).
  * @returns Token data
  */
-export const checkToken = async ({ id, type }: { id: string; type: TokenModel['type'] }) => {
+export const checkToken = async ({ id, type }: { id: string; type: TokenType }) => {
   const response = await client['check-token'][':id'].$post({
     param: { id },
     query: { type },
@@ -174,7 +173,7 @@ export const checkToken = async ({ id, type }: { id: string; type: TokenModel['t
  * @param token - Invitation token to accept.
  * @returns A boolean indicating success of invitation accept.
  */
-export const acceptOrgInvite = async ({ token }: TokenType) => {
+export const acceptOrgInvite = async ({ token }: { token: string }) => {
   const response = await client['accept-invite'][':token'].$post({
     param: { token },
   });
