@@ -16,6 +16,7 @@ import Spinner from '~/modules/common/spinner';
 import { AuthenticateRoute } from '~/routes/auth';
 import { useUserStore } from '~/store/user';
 import { shouldShowDivider } from '~/utils';
+import PasskeyOption from './passkey-option';
 
 const enabledStrategies: readonly string[] = config.enabledAuthenticationStrategies;
 const emailEnabled = enabledStrategies.includes('password') || enabledStrategies.includes('passkey');
@@ -86,7 +87,8 @@ const AuthSteps = () => {
               <span className="text-muted-foreground px-2">{t('common:or')}</span>
             </div>
           )}
-          <OauthOptions email={email} actionType={step} showPasskey={hasPasskey && enabledStrategies.includes('passkey')} />
+          {hasPasskey && enabledStrategies.includes('passkey') && <PasskeyOption email={email} actionType={step} />}
+          {enabledStrategies.includes('oauth') && <OauthOptions actionType={step} />}
         </>
       )}
     </>

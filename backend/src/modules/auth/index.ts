@@ -32,7 +32,6 @@ import { getUserBy, getUsersByConditions } from '#/modules/users/helpers/utils';
 import { nanoid } from '#/utils/nanoid';
 import { encodeLowerCased } from '#/utils/oslo';
 import { TimeSpan, createDate, isExpiredDate } from '#/utils/time-span';
-// TODO shorten this import
 import { CreatePasswordEmail, type CreatePasswordEmailProps } from '../../../emails/create-password';
 import { EmailVerificationEmail, type EmailVerificationEmailProps } from '../../../emails/email-verification';
 import { deleteAuthCookie, getAuthCookie, setAuthCookie } from './helpers/cookie';

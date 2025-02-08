@@ -9,6 +9,7 @@ export type LimitedUser = z.infer<typeof limitedUserSchema>;
 export type Session = UserAuthInfo['sessions'][number];
 type UserAuthInfo = z.infer<typeof meAuthInfoSchema>;
 
+// TODO store User and auth info separately?
 export type MeUser = User & UserAuthInfo;
 export type UserMenu = Extract<InferResponseType<(typeof meClient.menu)['$get']>, { data: unknown }>['data'];
 export type UserMenuItem = UserMenu[keyof UserMenu][number];

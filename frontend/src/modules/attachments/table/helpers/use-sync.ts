@@ -10,7 +10,6 @@ import { useOnlineManager } from '~/hooks/use-online-manager';
 import { attachmentsQueryOptions } from '~/modules/attachments/query';
 import type { Attachment } from '~/modules/attachments/types';
 import { objectKeys } from '~/utils/object';
-import { attachmentsTableColumns } from '#/db/schema/attachments';
 
 type RawAttachment = {
   id: string;
@@ -24,6 +23,22 @@ type RawAttachment = {
   modified_by: string;
 };
 
+const attachmentsTableColumns: { [k: string]: string } = {
+  id: 'id',
+  name: 'name',
+  filename: 'filename',
+  content_type: 'contentType',
+  size: 'size',
+  entity: 'entity',
+  url: 'url',
+  created_at: 'createdAt',
+  created_by: 'createdBy',
+  modified_at: 'modifiedAt',
+  modified_by: 'modifiedBy',
+  organization_id: 'organizationId',
+};
+
+// TODO use comments in this file and explain code better
 const parseRawAttachment = (rawAttachment: RawAttachment): Attachment => {
   const columnEntries = Object.entries(attachmentsTableColumns);
   const attachment = {} as unknown as Attachment;
