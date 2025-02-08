@@ -106,10 +106,13 @@ export const config = {
   // OAuth providers
   enabledOauthProviders: ['github'] as const,
 
+  // Token types
+  tokenTypes: ['email_verification', 'password_reset', 'invitation'] as const,
+
   // Optional settings
   has: {
     pwa: true, // Progressive Web App support for preloading static assets and offline support
-    sync: false, // Realtime updates and sync using Electric Sync
+    sync: true, // Realtime updates and sync using Electric Sync
     registrationEnabled: true, // Allow users to sign up. If disabled, the app is by invitation only
     waitlist: false, // Suggest a waitlist for unknown emails when sign up is disabled,
     imado: true, // Imado fully configured, if false, files will be stored in local browser (indexedDB)
@@ -150,6 +153,9 @@ export const config = {
 
   /**
    * Request limits for lists
+   *
+   * By default, BE common-schemas enforce a maximum limit of 1000 items via `limitRefine`.
+   * if some of requested limit need to exceed 1000, make sure to adjust `limitRefine` accordingly.
    */
   requestLimits: {
     default: 40,

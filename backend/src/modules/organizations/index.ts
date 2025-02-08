@@ -13,7 +13,7 @@ import { mailer } from '#/lib/mailer';
 import { sendSSEToUsers } from '#/lib/sse';
 import { logEvent } from '#/middlewares/logger/log-event';
 import { checkSlugAvailable } from '#/modules/general/helpers/check-slug';
-import { insertMembership } from '#/modules/memberships/helpers/insert-membership';
+import { insertMembership } from '#/modules/memberships/helpers';
 import { getValidEntity } from '#/permissions/get-valid-entity';
 import { splitByAllowance } from '#/permissions/split-by-allowance';
 import { memberCountsQuery } from '#/utils/counts';
@@ -52,7 +52,7 @@ const organizationsRoutes = app
     logEvent('Organization created', { organization: createdOrganization.id });
 
     // Insert membership
-    const createdMembership = await insertMembership({ user, role: 'admin', entity: createdOrganization });
+    const createdMembership = await insertMembership({ userId: user.id, role: 'admin', entity: createdOrganization });
 
     const data = {
       ...createdOrganization,

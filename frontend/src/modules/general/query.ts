@@ -10,7 +10,6 @@ import { getSuggestions } from '~/modules/general/api';
  * @param entity - Optional, entity filter to narrow the search results.
  * @returns Query options
  */
-// TODO: can we benefit from cache?
 export const searchQueryOptions = (searchQuery: string, entity?: PageEntity | undefined) =>
   queryOptions({
     queryKey: ['search', searchQuery],

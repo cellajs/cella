@@ -1,13 +1,12 @@
-import { sha256 } from '@oslojs/crypto/sha2';
-import { encodeHexLowerCase } from '@oslojs/encoding';
 import { eq } from 'drizzle-orm';
 import type { Context } from 'hono';
 import { db } from '#/db/db';
 import { supportedOauthProviders } from '#/db/schema/oauth-accounts';
 import { type SessionModel, sessionsTable } from '#/db/schema/sessions';
-import { type UnsafeUserModel, type UserModel, safeUserSelect, usersTable } from '#/db/schema/users';
+import { type UserModel, safeUserSelect, usersTable } from '#/db/schema/users';
 import { logEvent } from '#/middlewares/logger/log-event';
 import { nanoid } from '#/utils/nanoid';
+import { encodeLowerCased } from '#/utils/oslo';
 import { TimeSpan, createDate, isExpiredDate } from '#/utils/time-span';
 import { setAuthCookie } from './cookie';
 import { deviceInfo } from './device-info';
@@ -43,7 +42,7 @@ export const setUserSession = async (ctx: Context, userId: UserModel['id'], stra
 
   // Generate encoded session id
   const sessionToken = nanoid(40);
-  const hashedSessionToken = encodeHexLowerCase(sha256(new TextEncoder().encode(sessionToken)));
+  const hashedSessionToken = encodeLowerCased(sessionToken);
 
   // TODO find a way to not include adminUserId in session, but encrypt it in the cookie?
   const session = {
@@ -103,7 +102,7 @@ export const validateSession = async (sessionToken: string) => {
     return { session: null, user: null };
   }
 
-  return result satisfies { session: SessionModel; user: UnsafeUserModel };
+  return result satisfies { session: SessionModel; user: UserModel };
 };
 
 // Invalidate all sessions based on user id

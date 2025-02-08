@@ -48,7 +48,6 @@ export const getContextOrganization = () => {
  *
  * @returns An array of `MembershipModel` objects for the current user.
  */
-// TODO: currently not scoped for organization contexts?
 export const getContextMemberships = () => {
   return getContext<Env>().var.memberships;
 };

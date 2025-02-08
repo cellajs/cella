@@ -97,7 +97,7 @@ export const useScrollSpy = ({ sectionIds = [] }: { sectionIds: string[] }) => {
     return () => {
       observer.current?.disconnect();
     };
-  }, [sectionIds]);
+  }, [sectionIds, currentSection]);
 
   return { currentSection };
 };

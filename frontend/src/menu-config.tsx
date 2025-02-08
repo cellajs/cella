@@ -1,4 +1,4 @@
-import type { SectionItem } from '~/modules/navigation/menu-sheet';
+import type { SectionItem } from '~/modules/navigation/types';
 import CreateOrganizationForm from '~/modules/organizations/create-organization-form';
 
 // Here you declare menu sections

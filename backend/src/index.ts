@@ -1,5 +1,7 @@
 import { serve } from '@hono/node-server';
 
+import chalk from 'chalk';
+import { config } from 'config';
 import { migrate as pgMigrate } from 'drizzle-orm/node-postgres/migrator';
 import type { PgliteDatabase } from 'drizzle-orm/pglite';
 import { migrate as pgliteMigrate } from 'drizzle-orm/pglite/migrator';
@@ -8,10 +10,6 @@ import ascii from '#/utils/ascii';
 import { env } from '../env';
 import docs from './lib/docs';
 import app from './routes';
-
-// Set i18n instance before starting server
-import chalk from 'chalk';
-import { config } from 'config';
 import './lib/i18n';
 // import { sdk } from './tracing';
 

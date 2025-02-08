@@ -66,14 +66,18 @@ export const failWithErrorSchema = z.object({
 });
 
 const offsetRefine = (value: string | undefined) => Number(value) >= 0;
-const limitRefine = (value: string | undefined) => Number(value) > 0;
+const limitRefine = (value: string | undefined) => Number(value) > 0 && Number(value) <= 1000;
 
 export const paginationQuerySchema = z.object({
   q: z.string().optional(),
   sort: z.enum(['createdAt']).default('createdAt').optional(),
   order: z.enum(['asc', 'desc']).default('asc').optional(),
   offset: z.string().default('0').optional().refine(offsetRefine, 'Must be number greater or equal to 0'),
-  limit: z.string().default('50').optional().refine(limitRefine, 'Must be number greater than 0'),
+  limit: z
+    .string()
+    .default(`${config.requestLimits.default}`)
+    .optional()
+    .refine(limitRefine, 'Must be a number greater than 0 and less than or equal to 1000'),
 });
 
 export const validSlugSchema = z

@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { type MenuSectionName, menuSections } from '#/entity-config';
+import { type MenuSectionName, entityRelations } from '#/entity-config';
 import { idSchema, passwordSchema } from '#/utils/schema/common-schemas';
 import { menuItemSchema } from '../me/schema';
 import { userSchema } from '../users/schema';
@@ -40,7 +40,7 @@ export const signInResponse = z.object({
 
 export const passkeyChallengeQuerySchema = z.object({ challengeBase64: z.string() });
 
-const sectionNames = menuSections.map((section) => section.name) as [MenuSectionName];
+const sectionNames = entityRelations.map(({ menuSectionName }) => menuSectionName) as [MenuSectionName];
 
 export const acceptOrgInviteResponseSchema = z
   .object({

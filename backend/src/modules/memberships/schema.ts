@@ -7,8 +7,11 @@ import { userSchema } from '../users/schema';
 
 const membershipTableSchema = createSelectSchema(membershipsTable);
 
-// TODO what happens here?
-export const membershipSchema = membershipTableSchema.extend({
+export const membershipSchema = z.object({
+  ...membershipTableSchema.omit({
+    activatedAt: true,
+    tokenId: true,
+  }).shape,
   archived: z.boolean(),
   muted: z.boolean(),
   createdAt: z.string(),
@@ -39,6 +42,7 @@ export const membershipInfoSchema = z.object(
     modifiedAt: true,
     modifiedBy: true,
     tokenId: true,
+    activatedAt: true,
     userId: true,
     type: true,
   }).shape,

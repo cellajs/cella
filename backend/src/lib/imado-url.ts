@@ -16,7 +16,6 @@ interface ImadoUrlConfig {
   cloudfrontPrivateKey: string;
 }
 
-// TODO why is all this not used?
 class ImadoUrl {
   private config: ImadoUrlConfig;
 

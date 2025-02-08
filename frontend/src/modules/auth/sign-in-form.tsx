@@ -54,8 +54,10 @@ export const SignInForm = ({ email, resetSteps, emailEnabled }: Props) => {
     onSuccess: (emailVerified) => {
       if (!emailVerified) return navigate({ to: '/auth/email-verification', replace: true });
 
+      const redirectPath = redirect?.startsWith('/') ? redirect : config.defaultRedirectPath;
+
       if (token && tokenId) return navigate({ to: '/invitation/$token', params: { token }, search: { tokenId }, replace: true });
-      navigate({ to: redirect || config.defaultRedirectPath, replace: true });
+      navigate({ to: redirectPath, replace: true });
     },
     onError: (error: ApiError) => {
       if (error?.status === 404) return resetSteps();

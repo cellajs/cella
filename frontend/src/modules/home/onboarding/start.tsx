@@ -12,8 +12,8 @@ export const OnboardingStart = ({ onboardingToStepper }: OnboardingStartProps) =
   const { t } = useTranslation();
 
   return (
-    <div className="flex flex-col items-center text-center mx-auto space-y-6 p-4 max-w-3xl">
-      <h1 className="text-3xl font-bold">{t('common:onboarding_welcome', { appName: config.name })}</h1>
+    <div className="flex flex-col items-center text-center mx-auto space-y-6 p-8 max-w-3xl">
+      <h1 className="text-2xl font-bold">{t('common:onboarding_welcome', { appName: config.name })}</h1>
       <div className="text-xl text-foreground/90 md:text-2xl font-light leading-7 pb-8">
         <TextEffect text={t('common:onboarding_welcome.text', { appName: config.name })} />
       </div>
