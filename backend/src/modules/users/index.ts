@@ -3,7 +3,7 @@ import { and, count, eq, ilike, inArray, or } from 'drizzle-orm';
 import { OpenAPIHono } from '@hono/zod-openapi';
 import { coalesce, db } from '#/db/db';
 import { membershipsTable } from '#/db/schema/memberships';
-import { safeUserSelect, usersTable } from '#/db/schema/users';
+import { usersTable } from '#/db/schema/users';
 import { type Env, getContextMemberships, getContextUser } from '#/lib/context';
 import { type ErrorType, createError, errorResponse } from '#/lib/errors';
 import { logEvent } from '#/middlewares/logger/log-event';
@@ -11,6 +11,7 @@ import { getUsersByConditions } from '#/modules/users/helpers/utils';
 import { getOrderColumn } from '#/utils/order-column';
 import { prepareStringForILikeFilter } from '#/utils/sql';
 import { checkSlugAvailable } from '../general/helpers/check-slug';
+import { userSelect } from './helpers/select';
 import { getUserMembershipsCount, transformDatabaseUserWithCount } from './helpers/transform-database-user';
 import usersRoutesConfig from './routes';
 
@@ -64,7 +65,7 @@ const usersRoutes = app
 
     const usersQuery = db
       .select({
-        user: safeUserSelect,
+        user: userSelect,
         counts: {
           memberships: coalesce(membershipCounts.count, 0),
         },

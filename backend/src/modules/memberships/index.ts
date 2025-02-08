@@ -2,13 +2,13 @@ import { OpenAPIHono } from '@hono/zod-openapi';
 import { and, count, eq, ilike, inArray, isNotNull, isNull, or } from 'drizzle-orm';
 
 import { db } from '#/db/db';
-import { membershipSelect, membershipsTable } from '#/db/schema/memberships';
+import { membershipsTable } from '#/db/schema/memberships';
 
 import { config } from 'config';
 import { mailer } from '#/lib/mailer';
 
 import { tokensTable } from '#/db/schema/tokens';
-import { safeUserSelect, usersTable } from '#/db/schema/users';
+import { usersTable } from '#/db/schema/users';
 import { entityIdFields } from '#/entity-config';
 import { type Env, getContextMemberships, getContextOrganization, getContextUser } from '#/lib/context';
 import { resolveEntity } from '#/lib/entity';
@@ -26,7 +26,9 @@ import { prepareStringForILikeFilter } from '#/utils/sql';
 import { TimeSpan, createDate } from '#/utils/time-span';
 import { MemberInviteEmail, type MemberInviteEmailProps } from '../../../emails/member-invite';
 import { slugFromEmail } from '../auth/helpers/oauth';
+import { userSelect } from '../users/helpers/select';
 import { getAssociatedEntityDetails, insertMembership } from './helpers';
+import { membershipSelect } from './helpers/select';
 import membershipRouteConfig from './routes';
 
 const app = new OpenAPIHono<Env>();
@@ -300,7 +302,7 @@ const membershipsRoutes = app
     }
 
     const usersQuery = db
-      .select({ user: safeUserSelect })
+      .select({ user: userSelect })
       .from(usersTable)
       .where(or(...$or))
       .as('users');
@@ -337,7 +339,7 @@ const membershipsRoutes = app
 
     const membersQuery = db
       .select({
-        user: safeUserSelect,
+        user: userSelect,
         membership: membershipSelect,
         counts: {
           memberships: membershipCount.members,

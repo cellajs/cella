@@ -1,7 +1,7 @@
 import type { PgColumn, PgVarcharBuilderInitial } from 'drizzle-orm/pg-core';
 import type { ContextEntityIdFields } from '#/entity-config';
 
-export type DynamicColumn = PgColumn<{
+export type GeneratedColumn = PgColumn<{
   name: ContextEntityIdFields;
   tableName: string;
   dataType: 'string';

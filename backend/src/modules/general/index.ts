@@ -9,7 +9,7 @@ import jwt from 'jsonwebtoken';
 import { OpenAPIHono } from '@hono/zod-openapi';
 import { EventName, Paddle } from '@paddle/paddle-node-sdk';
 import { db } from '#/db/db';
-import { membershipSelect, membershipsTable } from '#/db/schema/memberships';
+import { membershipsTable } from '#/db/schema/memberships';
 import { requestsTable } from '#/db/schema/requests';
 import { tokensTable } from '#/db/schema/tokens';
 import { usersTable } from '#/db/schema/users';
@@ -27,6 +27,7 @@ import { prepareStringForILikeFilter } from '#/utils/sql';
 import { TimeSpan, createDate } from '#/utils/time-span';
 import { env } from '../../../env';
 import { slugFromEmail } from '../auth/helpers/oauth';
+import { membershipSelect } from '../memberships/helpers/select';
 import { checkSlugAvailable } from './helpers/check-slug';
 import generalRoutesConfig from './routes';
 

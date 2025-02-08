@@ -13,7 +13,7 @@ import meRoutesConfig from './routes';
 
 import { OpenAPIHono } from '@hono/zod-openapi';
 import { config } from 'config';
-import { membershipSelect, membershipsTable } from '#/db/schema/memberships';
+import { membershipsTable } from '#/db/schema/memberships';
 import { oauthAccountsTable } from '#/db/schema/oauth-accounts';
 import { passkeysTable } from '#/db/schema/passkeys';
 import { type EntityRelations, entityIdFields, entityRelations, entityTables } from '#/entity-config';
@@ -21,6 +21,7 @@ import { type Env, getContextMemberships, getContextUser } from '#/lib/context';
 import { resolveEntity } from '#/lib/entity';
 import { sendSSEToUsers } from '#/lib/sse';
 import { deleteAuthCookie, getAuthCookie } from '../auth/helpers/cookie';
+import { membershipSelect } from '../memberships/helpers/select';
 import { getUserSessions } from './helpers/get-sessions';
 import type { menuItemSchema, userMenuSchema } from './schema';
 

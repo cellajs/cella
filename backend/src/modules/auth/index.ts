@@ -53,8 +53,6 @@ import authRoutesConfig from './routes';
 const enabledStrategies: readonly string[] = config.enabledAuthenticationStrategies;
 const enabledOauthProviders: readonly string[] = config.enabledOauthProviders;
 
-export const supportedOauthProviders = ['github', 'google', 'microsoft'] as const;
-
 // Scopes for OAuth providers
 const githubScopes = ['user:email'];
 const googleScopes = ['profile', 'email'];

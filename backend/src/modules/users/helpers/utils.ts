@@ -1,14 +1,15 @@
 import { type SQL, and, eq } from 'drizzle-orm';
 import { db } from '#/db/db';
-import { type LimitedUserModel, type UnsafeUserModel, type UserModel, baseLimitedUserSelect, safeUserSelect, usersTable } from '#/db/schema/users';
+import { type UnsafeUserModel, type UserModel, usersTable } from '#/db/schema/users';
+import { userSelect } from './select';
 
-type SafeQuery = typeof safeUserSelect;
+type SafeQuery = typeof userSelect;
 type UnsafeQuery = typeof usersTable;
 
 type SafeField = Extract<keyof SafeQuery, keyof SafeQuery['_']['columns']>;
 type UnsafeField = Extract<keyof UnsafeQuery, keyof UnsafeQuery['_']['columns']>;
 
-type SelectType = 'unsafe' | 'safe' | 'limited';
+type SelectType = 'unsafe' | 'safe';
 
 // Overload signatures
 export function getUserBy(field: SafeField, value: string): Promise<UserModel | null>;
@@ -40,22 +41,17 @@ export async function getUserBy(
 // Overload signatures
 export function getUsersByConditions(whereArray: (SQL<unknown> | undefined)[]): Promise<UserModel[]>;
 export function getUsersByConditions(whereArray: (SQL<unknown> | undefined)[], type: 'unsafe'): Promise<UnsafeUserModel[]>;
-export function getUsersByConditions(whereArray: (SQL<unknown> | undefined)[], type: 'limited'): Promise<LimitedUserModel[]>;
 
 /**
  * Fetch users based on multiple conditions, with optional support for unsafe or limited data queries.
  *
  * @param whereArray - An array of drizzle filter and conditional operators, combined using the `and` operator to apply the conditions.
- * @param type (optional) - can be 'unsafe', 'limited', or undefined. Determines which user fields to return:
+ * @param type (default 'safe') Determines which user fields to return:
  *               - 'unsafe' returns the full users table,
- *               - 'limited' returns limited user data,
- *               - undefined defaults to the safe user fields.
+ *               - safe omits sensitive fields such as hashedPassword and unsubscribeToken.
  * @returns A promise that resolves to an array of `UserModel`s, `UnsafeUserModel`s, or `LimitedUserModel`s based on the `type`.
  */
-export async function getUsersByConditions(
-  whereArray: (SQL<unknown> | undefined)[],
-  type?: SelectType,
-): Promise<UserModel[] | UnsafeUserModel[] | LimitedUserModel[]> {
+export async function getUsersByConditions(whereArray: (SQL<unknown> | undefined)[], type?: SelectType): Promise<UserModel[] | UnsafeUserModel[]> {
   const select = getSelect(type);
 
   // Execute a database query to select users based on the conditions in 'whereArray'.
@@ -70,6 +66,5 @@ export async function getUsersByConditions(
 // Helper function to determine the select value
 function getSelect(type?: SelectType) {
   if (type === 'unsafe') return usersTable;
-  if (type === 'limited') return baseLimitedUserSelect;
-  return safeUserSelect;
+  return userSelect;
 }

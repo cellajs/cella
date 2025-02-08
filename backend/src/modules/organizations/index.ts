@@ -1,6 +1,6 @@
 import { type SQL, and, count, eq, getTableColumns, ilike, inArray, sql } from 'drizzle-orm';
 import { db } from '#/db/db';
-import { membershipSelect, membershipsTable } from '#/db/schema/memberships';
+import { membershipsTable } from '#/db/schema/memberships';
 import { organizationsTable } from '#/db/schema/organizations';
 
 import { OpenAPIHono } from '@hono/zod-openapi';
@@ -20,6 +20,7 @@ import { memberCountsQuery } from '#/utils/counts';
 import { getOrderColumn } from '#/utils/order-column';
 import { prepareStringForILikeFilter } from '#/utils/sql';
 import { NewsletterEmail, type NewsletterEmailProps } from '../../../emails/newsletter';
+import { membershipSelect } from '../memberships/helpers/select';
 import organizationRoutesConfig from './routes';
 
 const app = new OpenAPIHono<Env>();

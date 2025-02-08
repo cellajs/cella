@@ -3,7 +3,6 @@ import { nanoid } from '#/utils/nanoid';
 import { tokensTable } from './tokens';
 
 const requestTypeEnum = ['waitlist', 'newsletter', 'contact'] as const;
-export type RequestType = (typeof requestTypeEnum)[number];
 
 export const requestsTable = pgTable(
   'requests',
@@ -18,5 +17,5 @@ export const requestsTable = pgTable(
   (table) => [index('requests_emails').on(table.email.desc()), index('requests_created_at').on(table.createdAt.desc())],
 );
 
-export type RequestsModel = typeof requestsTable.$inferSelect;
+export type RequestModel = typeof requestsTable.$inferSelect;
 export type InsertRequestModel = typeof requestsTable.$inferInsert;

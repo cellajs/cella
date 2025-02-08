@@ -2,7 +2,7 @@ import { type SQL, and, count, eq, ilike, inArray } from 'drizzle-orm';
 
 import { OpenAPIHono } from '@hono/zod-openapi';
 import { db } from '#/db/db';
-import { type RequestsModel, requestsTable } from '#/db/schema/requests';
+import { type RequestModel, requestsTable } from '#/db/schema/requests';
 import type { Env } from '#/lib/context';
 import { errorResponse } from '#/lib/errors';
 import { sendSlackMessage } from '#/lib/notification';
@@ -12,7 +12,7 @@ import { getUserBy } from '../users/helpers/utils';
 import requestsRoutesConfig from './routes';
 
 // These requests are only allowed to be created if user has none yet
-const uniqueRequests: RequestsModel['type'][] = ['waitlist', 'newsletter'];
+const uniqueRequests: RequestModel['type'][] = ['waitlist', 'newsletter'];
 
 const app = new OpenAPIHono<Env>();
 

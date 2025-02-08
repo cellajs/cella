@@ -1,10 +1,11 @@
 import type { ContextEntity } from 'config';
 import { eq, max } from 'drizzle-orm';
 import { db } from '#/db/db';
-import { type MembershipModel, membershipSelect, membershipsTable } from '#/db/schema/memberships';
+import { type MembershipModel, membershipsTable } from '#/db/schema/memberships';
 import { entityIdFields, entityRelations } from '#/entity-config';
 import type { EntityModel } from '#/lib/entity';
 import { logEvent } from '#/middlewares/logger/log-event';
+import { membershipSelect } from './select';
 
 type BaseEntityModel = EntityModel<ContextEntity> & {
   organizationId?: string;

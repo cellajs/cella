@@ -1,5 +1,5 @@
 import { z } from '@hono/zod-openapi';
-import { tokenTypeEnum } from '#/db/schema/tokens';
+import { config } from 'config';
 import { createRouteConfig } from '#/lib/route-config';
 import { isAuthenticated, isPublicAccess, systemGuard } from '#/middlewares/guard';
 import { hasValidToken } from '#/middlewares/has-valid-token';
@@ -368,7 +368,7 @@ class AuthLayoutRoutesConfig {
       'This endpoint is used to check if a token is still valid. It is used to provide direct user feedback on the validity of tokens such as reset password and invitation.',
     request: {
       params: z.object({ id: idSchema }),
-      query: z.object({ type: z.enum(tokenTypeEnum) }),
+      query: z.object({ type: z.enum(config.tokenTypes) }),
     },
     responses: {
       200: {
