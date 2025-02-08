@@ -3,7 +3,7 @@ import { isAuthenticated, isPublicAccess, systemGuard } from '#/middlewares/guar
 import { errorResponses, successWithDataSchema } from '#/utils/schema/common-responses';
 import { metricsSchema, publicCountsSchema } from './schema';
 
-class MetricsRoutesConfig {
+class MetricRouteConfig {
   public getMetrics = createRouteConfig({
     method: 'get',
     path: '/',
@@ -44,4 +44,4 @@ class MetricsRoutesConfig {
     },
   });
 }
-export default new MetricsRoutesConfig();
+export default new MetricRouteConfig();

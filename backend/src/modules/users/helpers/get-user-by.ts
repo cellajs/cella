@@ -16,7 +16,7 @@ export function getUserBy(field: SafeField, value: string): Promise<UserModel | 
 export function getUserBy(field: UnsafeField, value: string, type: 'unsafe'): Promise<UnsafeUserModel | null>;
 
 /**
- * Fetch a user based on a field and value, with optional support for UnsafeUserModel.
+ * Fetch a user based on a field and value.
  *
  * @param field - The field to search by.
  * @param value - The value to search for in the specified field.
@@ -30,7 +30,7 @@ export async function getUserBy(
   value: string,
   type: SelectType = 'safe',
 ): Promise<UserModel | UnsafeUserModel | null> {
-  const select = getSelect(type);
+  const select = type === 'unsafe' ? usersTable : userSelect;
 
   // Execute a database query to select the user based on the given field and value.
   const [result] = await db.select({ user: select }).from(usersTable).where(eq(usersTable[field], value));
@@ -52,7 +52,7 @@ export function getUsersByConditions(whereArray: (SQL<unknown> | undefined)[], t
  * @returns A promise that resolves to an array of `UserModel`s, `UnsafeUserModel`s, or `LimitedUserModel`s based on the `type`.
  */
 export async function getUsersByConditions(whereArray: (SQL<unknown> | undefined)[], type?: SelectType): Promise<UserModel[] | UnsafeUserModel[]> {
-  const select = getSelect(type);
+  const select = type === 'unsafe' ? usersTable : userSelect;
 
   // Execute a database query to select users based on the conditions in 'whereArray'.
   const result = await db
@@ -61,10 +61,4 @@ export async function getUsersByConditions(whereArray: (SQL<unknown> | undefined
     .where(and(...whereArray));
 
   return result.map((el) => el.user);
-}
-
-// Helper function to determine the select value
-function getSelect(type?: SelectType) {
-  if (type === 'unsafe') return usersTable;
-  return userSelect;
 }

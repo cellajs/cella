@@ -7,22 +7,21 @@ import { usersTable } from '#/db/schema/users';
 import { type Env, getContextMemberships, getContextUser } from '#/lib/context';
 import { type ErrorType, createError, errorResponse } from '#/lib/errors';
 import { logEvent } from '#/middlewares/logger/log-event';
-import { getUsersByConditions } from '#/modules/users/helpers/utils';
+import { getUsersByConditions } from '#/modules/users/helpers/get-user-by';
 import { getOrderColumn } from '#/utils/order-column';
 import { prepareStringForILikeFilter } from '#/utils/sql';
 import { checkSlugAvailable } from '../general/helpers/check-slug';
 import { userSelect } from './helpers/select';
 import { getUserMembershipsCount, transformDatabaseUserWithCount } from './helpers/transform-database-user';
-import usersRoutesConfig from './routes';
+import usersRouteConfig from './routes';
 
 const app = new OpenAPIHono<Env>();
 
-// User endpoints
 const usersRoutes = app
   /*
    * Get list of users
    */
-  .openapi(usersRoutesConfig.getUsers, async (ctx) => {
+  .openapi(usersRouteConfig.getUsers, async (ctx) => {
     const { q, sort, order, offset, limit, role } = ctx.req.valid('query');
 
     const memberships = db
@@ -86,7 +85,7 @@ const usersRoutes = app
   /*
    * Delete users
    */
-  .openapi(usersRoutesConfig.deleteUsers, async (ctx) => {
+  .openapi(usersRouteConfig.deleteUsers, async (ctx) => {
     const { ids } = ctx.req.valid('json');
     const user = getContextUser();
 
@@ -137,7 +136,7 @@ const usersRoutes = app
   /*
    * Get a user by id or slug
    */
-  .openapi(usersRoutesConfig.getUser, async (ctx) => {
+  .openapi(usersRouteConfig.getUser, async (ctx) => {
     const { idOrSlug } = ctx.req.valid('param');
     const user = getContextUser();
     const memberships = getContextMemberships();
@@ -169,7 +168,7 @@ const usersRoutes = app
   /*
    * Update a user by id or slug
    */
-  .openapi(usersRoutesConfig.updateUser, async (ctx) => {
+  .openapi(usersRouteConfig.updateUser, async (ctx) => {
     const { idOrSlug } = ctx.req.valid('param');
 
     const user = getContextUser();

@@ -6,7 +6,7 @@ import { errorResponses, successWithDataSchema, successWithPaginationSchema, suc
 import { idsBodySchema } from '#/utils/schema/common-schemas';
 import { createRequestSchema, getRequestsQuerySchema, requestSchema } from './schema';
 
-class RequestsRoutesConfig {
+class RequestRouteConfig {
   public createRequest = createRouteConfig({
     method: 'post',
     path: '/',
@@ -85,4 +85,4 @@ class RequestsRoutesConfig {
     },
   });
 }
-export default new RequestsRoutesConfig();
+export default new RequestRouteConfig();

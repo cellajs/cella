@@ -5,7 +5,7 @@ import { idsBodySchema } from '#/utils/schema/common-schemas';
 import { updateUserBodySchema, userSchema } from '../users/schema';
 import { leaveEntityQuerySchema, meAuthInfoSchema, userMenuSchema } from './schema';
 
-class MeRoutesConfig {
+class MeRouteConfig {
   public getSelf = createRouteConfig({
     method: 'get',
     path: '/',
@@ -187,4 +187,4 @@ class MeRoutesConfig {
     },
   });
 }
-export default new MeRoutesConfig();
+export default new MeRouteConfig();

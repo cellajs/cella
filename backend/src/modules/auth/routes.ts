@@ -18,7 +18,7 @@ import {
   signInResponse,
 } from './schema';
 
-class AuthLayoutRoutesConfig {
+class AuthLayoutRouteConfig {
   public startImpersonation = createRouteConfig({
     method: 'get',
     path: '/impersonation/start',
@@ -621,4 +621,4 @@ class AuthLayoutRoutesConfig {
   });
 }
 
-export default new AuthLayoutRoutesConfig();
+export default new AuthLayoutRouteConfig();

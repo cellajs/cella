@@ -18,7 +18,7 @@ import {
   updateOrganizationBodySchema,
 } from './schema';
 
-class OrganizationRoutesConfig {
+class OrganizationRouteConfig {
   public createOrganization = createRouteConfig({
     method: 'post',
     path: '/',
@@ -181,4 +181,4 @@ class OrganizationRoutesConfig {
     },
   });
 }
-export default new OrganizationRoutesConfig();
+export default new OrganizationRouteConfig();

@@ -6,14 +6,20 @@ import type { OrganizationModel } from '#/db/schema/organizations';
 import type { TokenModel } from '#/db/schema/tokens';
 import type { UserModel } from '#/db/schema/users';
 
-// Access node server bindings
-// https://hono.dev/docs/getting-started/nodejs#access-the-raw-node-js-apis
+/**
+ * Set node server bindings.
+ *
+ * @link https://hono.dev/docs/getting-started/nodejs#access-the-raw-node-js-apis
+ */
 type Bindings = HttpBindings & {
   /* ... */
 };
 
-// Define the context environment
-// https://hono.dev/docs/middleware/builtin/context-storage#usage
+/**
+ * Define the context environment.
+ *
+ * @link https://hono.dev/docs/middleware/builtin/context-storage#usage
+ */
 export type Env = {
   Variables: {
     user: UserModel;
@@ -35,7 +41,7 @@ export const getContextUser = () => {
 
 /**
  * Access the current organization that the request is scoped to.
- * This includes both the organization and its associated membership.
+ * This includes both the organization and the membership of current user.
  *
  * @returns The `OrganizationModel` along with its associated `MembershipModel`.
  */
@@ -53,7 +59,7 @@ export const getContextMemberships = () => {
 };
 
 /**
- * Access the current authentication token associated with the user.
+ * Access authentication token associated with the current user.
  *
  * @returns The `TokenModel` object that represents the user's authentication token.
  */

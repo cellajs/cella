@@ -36,8 +36,7 @@ export const mailer = {
     recipients: R[],
     replyTo?: string,
   ) {
-    // TODO batch with typescript batch lib
-    //  Put in background job if large
+    // In future, batch these in background job if large
     for (const recipient of recipients) {
       const templateProps: T & R = {
         ...staticProps,

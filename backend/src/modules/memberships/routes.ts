@@ -13,7 +13,7 @@ import { idOrSlugSchema, idSchema, idsBodySchema } from '#/utils/schema/common-s
 import { membersQuerySchema, membersSchema } from '../general/schema';
 import { baseMembersQuerySchema, createMembershipsBodySchema, membershipSchema, updateMembershipBodySchema } from './schema';
 
-class MembershipRoutesConfig {
+class MembershipRouteConfig {
   public createMemberships = createRouteConfig({
     method: 'post',
     path: '/',
@@ -128,4 +128,4 @@ class MembershipRoutesConfig {
     },
   });
 }
-export default new MembershipRoutesConfig();
+export default new MembershipRouteConfig();

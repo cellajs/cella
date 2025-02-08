@@ -1,13 +1,11 @@
-import { errorResponses, successWithDataSchema, successWithErrorsSchema, successWithPaginationSchema } from '#/utils/schema/common-responses';
-
+import { z } from 'zod';
 import { createRouteConfig } from '#/lib/route-config';
 import { hasOrgAccess, isAuthenticated, isPublicAccess } from '#/middlewares/guard';
-
-import { z } from 'zod';
+import { errorResponses, successWithDataSchema, successWithErrorsSchema, successWithPaginationSchema } from '#/utils/schema/common-responses';
 import { idOrSlugSchema, idSchema, idsBodySchema } from '#/utils/schema/common-schemas';
 import { attachmentSchema, attachmentsQuerySchema, createAttachmentsSchema, updateAttachmentBodySchema } from './schema';
 
-class AttachmentRoutesConfig {
+class AttachmentRouteConfig {
   public createAttachments = createRouteConfig({
     method: 'post',
     path: '/',
@@ -208,4 +206,4 @@ class AttachmentRoutesConfig {
     },
   });
 }
-export default new AttachmentRoutesConfig();
+export default new AttachmentRouteConfig();

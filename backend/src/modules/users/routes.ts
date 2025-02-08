@@ -4,7 +4,7 @@ import { errorResponses, successWithDataSchema, successWithErrorsSchema, success
 import { entityParamSchema, idsBodySchema } from '#/utils/schema/common-schemas';
 import { updateUserBodySchema, userSchema, usersQuerySchema } from './schema';
 
-class UsersRoutesConfig {
+class UserRouteConfig {
   public getUsers = createRouteConfig({
     method: 'get',
     path: '/',
@@ -106,4 +106,4 @@ class UsersRoutesConfig {
     },
   });
 }
-export default new UsersRoutesConfig();
+export default new UserRouteConfig();

@@ -7,7 +7,7 @@ import { pageEntityTypeSchema, slugSchema } from '#/utils/schema/common-schemas'
 import { userUnsubscribeQuerySchema } from '../users/schema';
 import { inviteBodySchema, suggestionsSchema } from './schema';
 
-class GeneralRoutesConfig {
+class GeneralRouteConfig {
   public unsubscribeUser = createRouteConfig({
     method: 'get',
     path: '/unsubscribe',
@@ -175,4 +175,4 @@ class GeneralRoutesConfig {
     },
   });
 }
-export default new GeneralRoutesConfig();
+export default new GeneralRouteConfig();
