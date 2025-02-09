@@ -3,6 +3,7 @@ import { boolean, foreignKey, index, pgTable, timestamp, varchar } from 'drizzle
 import { nanoid } from '#/utils/nanoid';
 
 const roleEnum = config.rolesByType.systemRoles;
+const languagesEnum = config.languages;
 
 export const usersTable = pgTable(
   'users',
@@ -19,9 +20,7 @@ export const usersTable = pgTable(
     lastName: varchar(),
     email: varchar().notNull().unique(),
     emailVerified: boolean().notNull().default(false),
-    language: varchar({ enum: ['en', 'nl'] })
-      .notNull()
-      .default(config.defaultLanguage),
+    language: varchar({ enum: languagesEnum }).notNull().default(config.defaultLanguage),
     bannerUrl: varchar(),
     thumbnailUrl: varchar(),
     newsletter: boolean().notNull().default(false),

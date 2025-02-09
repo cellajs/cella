@@ -1,6 +1,5 @@
 import { config } from 'config';
 import { z } from 'zod';
-import { constructZodLiteralUnionType } from '../zod';
 
 export const passwordSchema = z.string().min(8).max(100);
 
@@ -12,7 +11,7 @@ export const pageEntityTypeSchema = z.enum(config.pageEntityTypes);
 
 export const contextEntityTypeSchema = z.enum(config.contextEntityTypes);
 
-// export const productTypeSchema = z.enum(config.productEntityTypes);
+export const productTypeSchema = z.enum(config.productEntityTypes);
 
 export const idSchema = z.string();
 
@@ -20,7 +19,11 @@ export const slugSchema = z.string();
 
 export const idOrSlugSchema = idSchema.or(slugSchema);
 
+export const languageSchema = z.enum(config.languages);
+
 export const tokenSchema = z.object({ token: z.string() });
+
+export const imageUrlSchema = z.string();
 
 export const idsBodySchema = z.object({
   ids: z
@@ -32,7 +35,11 @@ export const idsBodySchema = z.object({
     }),
 });
 
-export const languageSchema = constructZodLiteralUnionType(config.languages.map((lang) => z.literal(lang.value)));
+export const entityParamSchema = z.object({ idOrSlug: idOrSlugSchema });
+
+export const entityInOrgParamSchema = z.object({ idOrSlug: idOrSlugSchema, orgIdOrSlug: idOrSlugSchema });
+
+export const productParamSchema = z.object({ id: idSchema, orgIdOrSlug: idOrSlugSchema });
 
 export const validUrlSchema = z.string().refine((url: string) => url.startsWith('https'), 'URL must start with https://');
 
@@ -41,7 +48,7 @@ export const booleanQuerySchema = z
   .default('false')
   .transform((v) => v === true || v === 'true');
 
-export const imageUrlSchema = z
+export const validImageUrlSchema = z
   .string()
   .url()
   .refine((url) => new URL(url).search === '', 'Search params not allowed');
@@ -58,11 +65,6 @@ export const errorSchema = z.object({
   timestamp: z.string().optional(),
   usr: z.string().optional(),
   org: z.string().optional(),
-});
-
-export const failWithErrorSchema = z.object({
-  success: z.boolean().default(false),
-  error: errorSchema,
 });
 
 const offsetRefine = (value: string | undefined) => Number(value) >= 0;
@@ -103,20 +105,6 @@ export const validDomainsSchema = z
       .transform((str) => str.toLowerCase().trim()),
   )
   .optional();
-
-export const entityParamSchema = z.object({ idOrSlug: idOrSlugSchema });
-
-export const entityInOrgParamSchema = z.object({ idOrSlug: idOrSlugSchema, orgIdOrSlug: idOrSlugSchema });
-
-export const productParamSchema = z.object({ id: idSchema, orgIdOrSlug: idOrSlugSchema });
-
-export const membershipsCountSchema = z.object({
-  memberships: z.object({
-    admins: z.number(),
-    members: z.number(),
-    total: z.number(),
-  }),
-});
 
 export const nameSchema = z
   .string()

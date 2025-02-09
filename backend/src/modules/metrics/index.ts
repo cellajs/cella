@@ -7,7 +7,7 @@ import { register } from 'prom-client';
 import { entityTables } from '#/entity-config';
 import type { Env } from '#/lib/context';
 import { metricsConfig } from '#/middlewares/observability/config';
-import { calculateRequestsPerMinute, parsePromMetrics } from '#/modules/metrics/helpers/utils';
+import { calculateRequestsPerMinute, parsePromMetrics } from '#/modules/metrics/helpers';
 import { TimeSpan } from '#/utils/time-span';
 import metricsRouteConfig from './routes';
 

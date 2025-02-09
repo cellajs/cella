@@ -3,7 +3,7 @@ import { z } from 'zod';
 
 import { config } from 'config';
 import { usersTable } from '#/db/schema/users';
-import { imageUrlSchema, nameSchema, paginationQuerySchema, validSlugSchema } from '#/utils/schema/common-schemas';
+import { nameSchema, paginationQuerySchema, validImageUrlSchema, validSlugSchema } from '#/utils/schema/common-schemas';
 
 export const signUpInfo = z.object({ oauth: z.array(z.enum(config.enabledOauthProviders)), passkey: z.boolean() });
 
@@ -49,8 +49,8 @@ export const updateUserBodySchema = createInsertSchema(usersTable, {
   firstName: nameSchema.nullable(),
   lastName: nameSchema.nullable(),
   slug: validSlugSchema,
-  thumbnailUrl: imageUrlSchema.nullable(),
-  bannerUrl: imageUrlSchema.nullable(),
+  thumbnailUrl: validImageUrlSchema.nullable(),
+  bannerUrl: validImageUrlSchema.nullable(),
 })
   .pick({
     bannerUrl: true,

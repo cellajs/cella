@@ -62,7 +62,6 @@ export const insertMembership = async <T extends BaseEntityModel>({
 
   // Insert associated entity membership first (if applicable)
   if (addAssociatedMembership && associatedEntityId && associatedEntityType) {
-    console.log('associated');
     await db
       .insert(membershipsTable)
       .values({

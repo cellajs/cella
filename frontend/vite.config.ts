@@ -28,6 +28,9 @@ export default defineConfig(() => {
       host: '0.0.0.0',
       port: Number(frontendUrl.port),
       strictPort: true,
+      watch: {
+        ignored: ['**/backend/**'], // Prevent restarts
+      },
     },
     build: {
       rollupOptions: {

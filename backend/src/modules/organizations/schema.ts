@@ -4,12 +4,11 @@ import { config } from 'config';
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 import { organizationsTable } from '#/db/schema/organizations';
 import {
-  imageUrlSchema,
   languageSchema,
-  membershipsCountSchema,
   nameSchema,
   paginationQuerySchema,
   validDomainsSchema,
+  validImageUrlSchema,
   validSlugSchema,
   validUrlSchema,
 } from '#/utils/schema/common-schemas';
@@ -27,11 +26,20 @@ export const invitesSchema = z.array(
   }),
 );
 
+export const membershipsCountSchema = z.object({
+  memberships: z.object({
+    admins: z.number(),
+    members: z.number(),
+    total: z.number(),
+  }),
+});
+
 export const organizationSchema = z.object({
   ...createSelectSchema(organizationsTable).shape,
   createdAt: z.string(),
   modifiedAt: z.string().nullable(),
-  languages: z.array(languageSchema),
+  defaultLanguage: languageSchema,
+  languages: z.array(languageSchema).min(1),
   emailDomains: z.array(z.string()),
   authStrategies: z.array(z.string()),
   membership: membershipInfoSchema.nullable(),
@@ -57,13 +65,14 @@ export const updateOrganizationBodySchema = createInsertSchema(organizationsTabl
   slug: validSlugSchema,
   name: nameSchema,
   shortName: nameSchema.nullable(),
-  languages: z.array(languageSchema).optional(),
+  languages: z.array(languageSchema).min(1),
+  defaultLanguage: languageSchema.optional(),
   emailDomains: validDomainsSchema,
   authStrategies: z.array(z.string()).optional(),
   websiteUrl: validUrlSchema.nullable(),
-  thumbnailUrl: imageUrlSchema.nullable(),
-  bannerUrl: imageUrlSchema.nullable(),
-  logoUrl: imageUrlSchema.nullable(),
+  thumbnailUrl: validImageUrlSchema.nullable(),
+  bannerUrl: validImageUrlSchema.nullable(),
+  logoUrl: validImageUrlSchema.nullable(),
 })
   .pick({
     slug: true,

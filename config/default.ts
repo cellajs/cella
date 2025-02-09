@@ -126,10 +126,7 @@ export const config = {
   /**
    * Language options
    */
-  languages: [
-    { value: 'en', label: 'English' },
-    { value: 'nl', label: 'Nederlands' },
-  ] as const,
+  languages: ['en', 'nl'] as const,
 
   /**
    * All entity types used in the app
@@ -152,7 +149,7 @@ export const config = {
   productEntityTypes: ['attachment'] as const,
 
   /**
-   * Request limits for lists
+   * Default request limits for lists
    *
    * By default, BE common-schemas enforce a maximum limit of 1000 items via `limitRefine`.
    * if some of requested limit need to exceed 1000, make sure to adjust `limitRefine` accordingly.
@@ -165,11 +162,18 @@ export const config = {
     requests: 40,
     attachments: 40,
   },
+  /**
+   * Roles on system and entity level.
+   */
+  rolesByType: {
+    systemRoles: ['user', 'admin'] as const,
+    entityRoles: ['member', 'admin'] as const,
+    allRoles: ['user', 'member', 'admin'] as const,
+  },
 
-  // Roles on system and entity level.
-  rolesByType: { systemRoles: ['user', 'admin'] as const, entityRoles: ['member', 'admin'] as const, allRoles: ['user', 'member', 'admin'] as const },
-
-  // Company details
+  /**
+   * Company details.
+   */
   company: {
     name: 'CellaJS',
     shortName: 'Cella',
@@ -191,18 +195,27 @@ export const config = {
     },
   },
 
-  // Error handling
+  /**
+   * Error handling.
+   */
   severityLevels: ['debug', 'log', 'info', 'warn', 'error'] as const,
 
-  // UI settings
+  /**
+   * UI settings.
+   */
   navLogoAnimation: 'animate-spin-slow',
 
-  // Common countries
+  /**
+   * Common countries.
+   */
   common: {
     countries: ['fr', 'de', 'nl', 'ua', 'us', 'gb'],
     timezones: [],
   },
 
+  /**
+   * Uppy file uploader settings.
+   */
   uppy: {
     defaultRestrictions: {
       maxFileSize: 10 * 1024 * 1024, // 10MB

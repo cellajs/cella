@@ -65,7 +65,7 @@ const CreateOrganizationForm: React.FC<CreateOrganizationFormProps> = ({
 
   const { mutate, isPending } = useOrganizationCreateMutation();
 
-  // Update dialog title with unsaved changes
+  // TODO can be extracted to a hook?
   useEffect(() => {
     if (form.unsavedChanges) {
       const targetDialog = dialog.get('create-organization');

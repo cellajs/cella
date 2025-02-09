@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { createRouteConfig } from '#/lib/route-config';
 import { hasOrgAccess, isAuthenticated, isPublicAccess } from '#/middlewares/guard';
 import { errorResponses, successWithDataSchema, successWithErrorsSchema, successWithPaginationSchema } from '#/utils/schema/common-responses';
-import { idOrSlugSchema, idSchema, idsBodySchema } from '#/utils/schema/common-schemas';
+import { idOrSlugSchema, idSchema, idsBodySchema, productParamSchema } from '#/utils/schema/common-schemas';
 import { attachmentSchema, attachmentsQuerySchema, createAttachmentsSchema, updateAttachmentBodySchema } from './schema';
 
 class AttachmentRouteConfig {
@@ -71,10 +71,7 @@ class AttachmentRouteConfig {
     summary: 'Get attachment',
     description: 'Get an attachment by id.',
     request: {
-      params: z.object({
-        orgIdOrSlug: idOrSlugSchema.optional(),
-        id: idSchema,
-      }),
+      params: productParamSchema,
     },
     responses: {
       200: {

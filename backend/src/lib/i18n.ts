@@ -13,7 +13,7 @@ const initOptions: InitOptions = {
   resources: locales,
   debug: config.debug,
   ns: ['backend', 'common', 'error'],
-  supportedLngs: config.languages.map((lng) => lng.value),
+  supportedLngs: config.languages,
   load: 'languageOnly',
   fallbackLng: config.defaultLanguage,
   defaultNS: 'backend',
