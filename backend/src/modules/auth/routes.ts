@@ -4,8 +4,8 @@ import { createRouteConfig } from '#/lib/route-config';
 import { isAuthenticated, isPublicAccess, systemGuard } from '#/middlewares/guard';
 import { hasValidToken } from '#/middlewares/has-valid-token';
 import { emailEnumLimiter, passwordLimiter, spamLimiter, tokenLimiter } from '#/middlewares/rate-limiter';
-import { errorResponses, successWithDataSchema, successWithoutDataSchema } from '#/utils/schema/common-responses';
-import { cookieSchema, idSchema, passwordSchema, tokenSchema } from '#/utils/schema/common-schemas';
+import { cookieSchema, idSchema, passwordSchema, tokenParamSchema } from '#/utils/schema/common';
+import { errorResponses, successWithDataSchema, successWithoutDataSchema } from '#/utils/schema/responses';
 import {
   checkTokenSchema,
   emailBodySchema,
@@ -142,7 +142,7 @@ class AuthLayoutRouteConfig {
     description: 'Sign up with email and password to accept system or organization invitation.',
     security: [],
     request: {
-      params: tokenSchema,
+      params: tokenParamSchema,
       body: {
         content: {
           'application/json': {
@@ -212,7 +212,7 @@ class AuthLayoutRouteConfig {
     description: 'Verify email address by token from the verification email. Receive a user session when successful.',
     security: [],
     request: {
-      params: tokenSchema,
+      params: tokenParamSchema,
     },
     responses: {
       200: {
@@ -393,7 +393,7 @@ class AuthLayoutRouteConfig {
     summary: 'Accept invitation',
     description: 'Accept invitation token',
     request: {
-      params: tokenSchema,
+      params: tokenParamSchema,
     },
     responses: {
       200: {

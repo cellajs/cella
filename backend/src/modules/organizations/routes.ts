@@ -1,14 +1,14 @@
 import { z } from 'zod';
 import { createRouteConfig } from '#/lib/route-config';
 import { isAuthenticated, systemGuard } from '#/middlewares/guard';
+import { booleanQuerySchema, entityParamSchema, idsBodySchema } from '#/utils/schema/common';
 import {
   errorResponses,
   successWithDataSchema,
   successWithErrorsSchema,
   successWithPaginationSchema,
   successWithoutDataSchema,
-} from '#/utils/schema/common-responses';
-import { booleanQuerySchema, entityParamSchema, idsBodySchema } from '#/utils/schema/common-schemas';
+} from '#/utils/schema/responses';
 import {
   createOrganizationBodySchema,
   getOrganizationsQuerySchema,

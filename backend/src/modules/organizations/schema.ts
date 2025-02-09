@@ -5,13 +5,13 @@ import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 import { organizationsTable } from '#/db/schema/organizations';
 import {
   languageSchema,
-  nameSchema,
   paginationQuerySchema,
   validDomainsSchema,
   validImageUrlSchema,
+  validNameSchema,
   validSlugSchema,
   validUrlSchema,
-} from '#/utils/schema/common-schemas';
+} from '#/utils/schema/common';
 import { membershipInfoSchema } from '../memberships/schema';
 
 export const invitesSchema = z.array(
@@ -50,7 +50,7 @@ export const organizationSchema = z.object({
 export const organizationWithMembershipSchema = organizationSchema.extend({ membership: membershipInfoSchema });
 
 export const createOrganizationBodySchema = z.object({
-  name: nameSchema,
+  name: validNameSchema,
   slug: validSlugSchema,
 });
 
@@ -63,8 +63,8 @@ export const sendNewsletterBodySchema = z.object({
 
 export const updateOrganizationBodySchema = createInsertSchema(organizationsTable, {
   slug: validSlugSchema,
-  name: nameSchema,
-  shortName: nameSchema.nullable(),
+  name: validNameSchema,
+  shortName: validNameSchema.nullable(),
   languages: z.array(languageSchema).min(1),
   defaultLanguage: languageSchema.optional(),
   emailDomains: validDomainsSchema,

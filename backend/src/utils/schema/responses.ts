@@ -1,6 +1,7 @@
 import type { createRoute } from '@hono/zod-openapi';
+import { config } from 'config';
 import { z } from 'zod';
-import { errorSchema } from './common-schemas';
+import { entityTypeSchema } from './common';
 
 /**
  * Type alias for the responses parameter of createRoute.
@@ -10,9 +11,7 @@ type Responses = Parameters<typeof createRoute>[0]['responses'];
 /**
  * Schema for a successful response without data.
  */
-export const successWithoutDataSchema = z.object({
-  success: z.boolean(),
-});
+export const successWithoutDataSchema = z.object({ success: z.boolean() });
 
 /**
  * Schema for a successful response with data.
@@ -32,6 +31,23 @@ export const successWithPaginationSchema = <T extends z.ZodTypeAny>(schema: T) =
       total: z.number(),
     }),
   });
+
+/**
+ * Schema for error responses
+ */
+export const errorSchema = z.object({
+  message: z.string(), // Error message
+  type: z.string(), // Error type identifier
+  status: z.number(), // HTTP status code
+  severity: z.enum(config.severityLevels), // Severity level
+  entityType: entityTypeSchema.optional(), // Optional related entity type
+  logId: z.string().optional(), // Optional log identifier
+  path: z.string().optional(), // Optional request path
+  method: z.string().optional(), // Optional HTTP method
+  timestamp: z.string().optional(), // Optional timestamp
+  usr: z.string().optional(), // Optional user identifier
+  org: z.string().optional(), // Optional organization identifier
+});
 
 /**
  * Schema for a successful response with errors.

@@ -1,7 +1,7 @@
 import { createRouteConfig } from '#/lib/route-config';
 import { isAuthenticated } from '#/middlewares/guard';
-import { errorResponses, successWithDataSchema, successWithErrorsSchema, successWithoutDataSchema } from '#/utils/schema/common-responses';
-import { idsBodySchema } from '#/utils/schema/common-schemas';
+import { idsBodySchema } from '#/utils/schema/common';
+import { errorResponses, successWithDataSchema, successWithErrorsSchema, successWithoutDataSchema } from '#/utils/schema/responses';
 import { updateUserBodySchema, userSchema } from '../users/schema';
 import { leaveEntityQuerySchema, meAuthInfoSchema, userMenuSchema } from './schema';
 

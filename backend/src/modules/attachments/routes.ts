@@ -1,8 +1,8 @@
 import { z } from 'zod';
 import { createRouteConfig } from '#/lib/route-config';
 import { hasOrgAccess, isAuthenticated, isPublicAccess } from '#/middlewares/guard';
-import { errorResponses, successWithDataSchema, successWithErrorsSchema, successWithPaginationSchema } from '#/utils/schema/common-responses';
-import { idOrSlugSchema, idSchema, idsBodySchema, productParamSchema } from '#/utils/schema/common-schemas';
+import { idInOrgParamSchema, idSchema, idsBodySchema, inOrgParamSchema } from '#/utils/schema/common';
+import { errorResponses, successWithDataSchema, successWithErrorsSchema, successWithPaginationSchema } from '#/utils/schema/responses';
 import { attachmentSchema, attachmentsQuerySchema, createAttachmentsSchema, updateAttachmentBodySchema } from './schema';
 
 class AttachmentRouteConfig {
@@ -14,7 +14,7 @@ class AttachmentRouteConfig {
     summary: 'Create attachments',
     description: 'Create one or more new attachments.',
     request: {
-      params: z.object({ orgIdOrSlug: idOrSlugSchema }),
+      params: inOrgParamSchema,
       body: {
         required: true,
         content: {
@@ -46,9 +46,7 @@ class AttachmentRouteConfig {
     description: 'Get attachments for an organization.',
     request: {
       query: attachmentsQuerySchema,
-      params: z.object({
-        orgIdOrSlug: idOrSlugSchema.optional(),
-      }),
+      params: inOrgParamSchema,
     },
     responses: {
       200: {
@@ -71,7 +69,7 @@ class AttachmentRouteConfig {
     summary: 'Get attachment',
     description: 'Get an attachment by id.',
     request: {
-      params: productParamSchema,
+      params: idInOrgParamSchema,
     },
     responses: {
       200: {
@@ -89,15 +87,12 @@ class AttachmentRouteConfig {
   public updateAttachment = createRouteConfig({
     method: 'put',
     path: '/{id}',
-    guard: [isAuthenticated],
+    guard: [isAuthenticated, hasOrgAccess],
     tags: ['attachments'],
     summary: 'Update attachment',
     description: 'Update attachment by id.',
     request: {
-      params: z.object({
-        orgIdOrSlug: idOrSlugSchema.optional(),
-        id: idSchema,
-      }),
+      params: idInOrgParamSchema,
       body: {
         content: {
           'application/json': {
@@ -127,9 +122,13 @@ class AttachmentRouteConfig {
     summary: 'Delete attachments',
     description: 'Delete attachments by their ids',
     request: {
-      params: z.object({ orgIdOrSlug: idOrSlugSchema }),
+      params: inOrgParamSchema,
       body: {
-        content: { 'application/json': { schema: idsBodySchema } },
+        content: {
+          'application/json': {
+            schema: idsBodySchema,
+          },
+        },
       },
     },
     responses: {
@@ -153,7 +152,7 @@ class AttachmentRouteConfig {
     summary: 'Shape proxy',
     description: 'Get shape proxy for attachment.',
     request: {
-      params: z.object({ orgIdOrSlug: idOrSlugSchema }),
+      params: inOrgParamSchema,
     },
     responses: {
       200: {

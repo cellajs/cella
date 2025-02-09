@@ -1,6 +1,6 @@
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 import { z } from 'zod';
-import { nameSchema, paginationQuerySchema } from '#/utils/schema/common-schemas';
+import { paginationQuerySchema, validNameSchema } from '#/utils/schema/common';
 import { attachmentsTable } from '../../db/schema/attachments';
 
 export const createAttachmentsSchema = z
@@ -18,7 +18,7 @@ export const createAttachmentsSchema = z
   .max(50);
 
 export const updateAttachmentBodySchema = createInsertSchema(attachmentsTable, {
-  name: nameSchema,
+  name: validNameSchema,
 })
   .pick({
     name: true,
