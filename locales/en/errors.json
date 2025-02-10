@@ -85,7 +85,7 @@
   "password_reset_not_found": "Can't reset password",
   "password_reset_not_found.text": "The token is used or doesn't exist. Use forgot password to request a new one.",
   "email_verification_not_found": "Can't verify email",
-  "email_verification_not_found.text": "The token is used or doesn't exist. Use forgot password to verify.",
+  "email_verification_not_found.text": "The token is used or doesn't exist. ",
   "invitation_not_found": "Invitation not found",
   "invitation_not_found.text": "The token is used or doesn't exist. Please contact us to receive a new invitation.",
   "password_reset_expired": "Password reset token has expired",

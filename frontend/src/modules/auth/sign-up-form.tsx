@@ -143,6 +143,7 @@ export const LegalNotice = ({ email }: { email: string }) => {
 
     dialog(dialogComponent, {
       className: 'md:max-w-3xl mb-10 px-6',
+      drawerOnMobile: false,
     });
   };
 

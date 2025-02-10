@@ -5,11 +5,11 @@ import { useTranslation } from 'react-i18next';
 import * as z from 'zod';
 import { Button, SubmitButton } from '~/modules/ui/button';
 
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useMutation } from '@tanstack/react-query';
 import { config } from 'config';
 import { ArrowRight } from 'lucide-react';
 import { Suspense, lazy } from 'react';
-import { checkToken, createPassword } from '~/modules/auth/api';
+import { createPassword } from '~/modules/auth/api';
 import AuthNotice from '~/modules/auth/notice';
 import { RequestPasswordDialog } from '~/modules/auth/request-password-dialog';
 import Spinner from '~/modules/common/spinner';
@@ -17,6 +17,7 @@ import { createToast } from '~/modules/common/toaster';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '~/modules/ui/form';
 import { Input } from '~/modules/ui/input';
 import { CreatePasswordWithTokenRoute } from '~/routes/auth';
+import { useTokenCheck } from './use-token-check';
 
 const PasswordStrength = lazy(() => import('~/modules/auth/password-strength'));
 
@@ -28,6 +29,8 @@ const CreatePasswordForm = () => {
 
   const { token } = useParams({ from: CreatePasswordWithTokenRoute.id });
   const { tokenId } = useSearch({ from: CreatePasswordWithTokenRoute.id });
+
+  const { data, isLoading, error } = useTokenCheck('email_verification', tokenId);
 
   // Reset password & sign in
   const {
@@ -54,17 +57,6 @@ const CreatePasswordForm = () => {
     const { password } = values;
     _createPassword({ token, password });
   };
-
-  // Check token id first
-  const tokenQueryOptions = {
-    queryKey: [],
-    queryFn: async () => {
-      if (!tokenId || !token) return;
-      return checkToken({ id: tokenId, type: 'password_reset' });
-    },
-  };
-
-  const { data, isLoading, error } = useQuery(tokenQueryOptions);
 
   if (isLoading) return <Spinner className="h-10 w-10" />;
 

@@ -73,8 +73,6 @@ export const usersQueryOptions = ({ q = '', sort: initialSort, order: initialOrd
   return infiniteQueryOptions({
     queryKey,
     initialPageParam: 0,
-    refetchOnWindowFocus: false,
-    retry: 1,
     queryFn: async ({ pageParam: page, signal }) => await getUsers({ page, q, sort, order, role, limit, offset: page * limit }, signal),
     getNextPageParam: (_lastPage, allPages) => allPages.length,
   });

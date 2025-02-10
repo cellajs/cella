@@ -41,7 +41,7 @@ export const setUserSession = async (ctx: Context, userId: UserModel['id'], stra
   // Validate auth strategy
   const authStrategy = strategy === 'impersonation' ? null : validateAuthStrategy(strategy);
 
-  // Generate encoded session id
+  // Generate session token and store the hashed version in db
   const sessionToken = nanoid(40);
   const hashedSessionToken = encodeLowerCased(sessionToken);
 
@@ -66,8 +66,8 @@ export const setUserSession = async (ctx: Context, userId: UserModel['id'], stra
   // Set expiration time span
   const timeSpan = strategy === 'impersonation' ? new TimeSpan(1, 'h') : new TimeSpan(1, 'w');
 
-  // Set session cookie
-  await setAuthCookie(ctx, 'session', hashedSessionToken, timeSpan);
+  // Set session cookie with the unhashed version
+  await setAuthCookie(ctx, 'session', sessionToken, timeSpan);
 
   // If it's an impersonation session, we only log event
   if (strategy === 'impersonation') logEvent('Impersonation started', { user: userId, strategy: 'impersonation' });
@@ -86,10 +86,12 @@ export const setUserSession = async (ctx: Context, userId: UserModel['id'], stra
  * @returns The session and user data if valid, otherwise null.
  */
 export const validateSession = async (sessionToken: string) => {
+  const hashedSessionToken = encodeLowerCased(sessionToken);
+
   const [result] = await db
     .select({ session: sessionsTable, user: userSelect })
     .from(sessionsTable)
-    .where(eq(sessionsTable.token, sessionToken))
+    .where(eq(sessionsTable.token, hashedSessionToken))
     .innerJoin(usersTable, eq(sessionsTable.userId, usersTable.id));
 
   // If no result is found, return null session and user

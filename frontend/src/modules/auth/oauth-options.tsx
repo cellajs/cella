@@ -36,15 +36,12 @@ const OauthOptions = ({ actionType = 'signIn' }: OauthOptionsProps) => {
   const [loading, setLoading] = useState(false);
 
   const redirectPath = redirect?.startsWith('/') ? redirect : config.defaultRedirectPath;
+  const actionText = actionType === 'signIn' ? t('common:sign_in') : actionType === 'signUp' ? t('common:sign_up') : t('common:continue');
 
-  const authenticateWithProvider = async (provider: EnabledOauthProvider) => {
+  const authenticateWithProvider = async (url: string) => {
     setLoading(true);
 
-    // Map provider data
-    const providerData = mapOauthProviders.find((p) => p.id === provider);
-    if (!providerData) return;
-
-    let providerUrl = `${providerData.url}?redirect=${redirectPath}`;
+    let providerUrl = `${url}?redirect=${redirectPath}`;
     if (token) providerUrl += `&token=${token}`;
 
     window.location.assign(providerUrl);
@@ -55,6 +52,10 @@ const OauthOptions = ({ actionType = 'signIn' }: OauthOptionsProps) => {
   return (
     <div data-mode={mode} className="group flex flex-col space-y-2">
       {config.enabledOauthProviders.map((provider) => {
+        // Map provider data
+        const providerData = mapOauthProviders.find((p) => p.id === provider);
+        if (!providerData) return;
+
         return (
           <Button
             loading={loading}
@@ -62,17 +63,18 @@ const OauthOptions = ({ actionType = 'signIn' }: OauthOptionsProps) => {
             type="button"
             variant="outline"
             className="gap-1"
-            onClick={() => authenticateWithProvider(provider)}
+            onClick={() => authenticateWithProvider(providerData.url)}
           >
             <img
               data-provider={provider}
-              src={`/static/images/${provider.toLowerCase()}-icon.svg`}
+              src={`/static/images/${provider}-icon.svg`}
               alt={provider}
               className="w-4 h-4 mr-1 data-[provider=github]:group-data-[mode=dark]:invert"
               loading="lazy"
             />
-            <span>{actionType === 'signIn' ? t('common:sign_in') : t('common:sign_up')}</span>
-            <span>{t('common:with').toLowerCase()}</span> <span className="capitalize">{provider}</span>
+            <span>
+              {actionText} {t('common:with').toLowerCase()} {t(providerData.name)}
+            </span>
           </Button>
         );
       })}

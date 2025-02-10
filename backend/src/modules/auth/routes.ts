@@ -360,12 +360,11 @@ class AuthLayoutRouteConfig {
   public checkToken = createRouteConfig({
     method: 'post',
     path: '/check-token/{id}',
-    middleware: [tokenLimiter],
     guard: isPublicAccess,
     tags: ['auth'],
     summary: 'Token validation check',
     description:
-      'This endpoint is used to check if a token is still valid. It is used to provide direct user feedback on the validity of tokens such as reset password and invitation.',
+      'This endpoint is used to check if a token is still valid. It is used to provide direct user feedback on tokens such as reset password and invitation.',
     request: {
       params: z.object({ id: idSchema }),
       query: z.object({ type: z.enum(config.tokenTypes) }),

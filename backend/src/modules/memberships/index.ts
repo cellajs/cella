@@ -21,7 +21,6 @@ import { getValidEntity } from '#/permissions/get-valid-entity';
 import { memberCountsQuery } from '#/utils/counts';
 import { nanoid } from '#/utils/nanoid';
 import { getOrderColumn } from '#/utils/order-column';
-import { encodeLowerCased } from '#/utils/oslo';
 import { prepareStringForILikeFilter } from '#/utils/sql';
 import { TimeSpan, createDate } from '#/utils/time-span';
 import { MemberInviteEmail, type MemberInviteEmailProps } from '../../../emails/member-invite';
@@ -109,7 +108,7 @@ const membershipsRoutes = app
     // Generate invitation tokens
     const tokens = emailsToInvite.map(({ email, userId }) => ({
       id: nanoid(),
-      token: encodeLowerCased(nanoid()), // unique hashed token
+      token: nanoid(40), // unique hashed token
       type: 'invitation' as const,
       email,
       createdBy: user.id,
