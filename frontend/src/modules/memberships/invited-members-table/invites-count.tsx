@@ -16,13 +16,7 @@ export const InvitedMembers = ({ entity }: InvitedMembersTableProps) => {
 
   // Fetching data
   queryClient
-    .fetchInfiniteQuery(
-      invitedMembersQueryOptions({
-        idOrSlug: entity.slug,
-        entityType,
-        orgIdOrSlug: organizationId,
-      }),
-    )
+    .ensureInfiniteQueryData(invitedMembersQueryOptions({ idOrSlug: entity.slug, entityType, orgIdOrSlug: organizationId }))
     .then((data) => setTotal(data.pages[0].total));
 
   const openInfoSheet = () => {

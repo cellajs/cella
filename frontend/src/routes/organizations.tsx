@@ -5,7 +5,7 @@ import { offlineFetch, offlineFetchInfinite } from '~/lib/query-client';
 import { queryClient } from '~/lib/router';
 import { attachmentsQueryOptions } from '~/modules/attachments/query';
 import ErrorNotice from '~/modules/common/error-notice';
-import { membersQueryOptions } from '~/modules/memberships/query';
+import { invitedMembersQueryOptions, membersQueryOptions } from '~/modules/memberships/query';
 import { organizationQueryOptions } from '~/modules/organizations/query';
 
 import type { Organization as OrganizationType } from '~/modules/organizations/types';
@@ -40,8 +40,8 @@ export const OrganizationRoute = createRoute({
 
     // Prevents unnecessary fetches(runs when user enters page)
     if (cause !== 'enter') {
-      const { id: organizationId } = await queryClient.ensureQueryData(queryOptions);
-      return { orgIdOrSlug: organizationId };
+      const { id: organizationId, membership } = await queryClient.ensureQueryData(queryOptions);
+      return { orgIdOrSlug: organizationId, isAdmin: membership?.role === 'admin' };
     }
 
     const organization = await offlineFetch<OrganizationType>(queryOptions);
@@ -65,11 +65,15 @@ export const OrganizationMembersRoute = createRoute({
   staticData: { pageTitle: 'members', isAuth: true },
   getParentRoute: () => OrganizationRoute,
   loaderDeps: ({ search: { q, sort, order, role } }) => ({ q, sort, order, role }),
-  loader: ({ cause, params: { idOrSlug }, deps: { q, sort, order, role }, context: { orgIdOrSlug } }) => {
+  loader: ({ cause, params: { idOrSlug }, deps: { q, sort, order, role }, context: { orgIdOrSlug, isAdmin } }) => {
     // Prevents unnecessary fetches(runs when user enters page)
     if (cause !== 'enter') return;
 
     const entityType = 'organization';
+    if (isAdmin) {
+      offlineFetchInfinite(invitedMembersQueryOptions({ idOrSlug, entityType, orgIdOrSlug }));
+    }
+
     const queryOptions = membersQueryOptions({ idOrSlug, orgIdOrSlug, entityType, q, sort, order, role });
     return offlineFetchInfinite(queryOptions);
   },
