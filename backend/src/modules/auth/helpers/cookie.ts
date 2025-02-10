@@ -3,7 +3,7 @@ import type { Context } from 'hono';
 import { deleteCookie, getCookie, getSignedCookie, setCookie, setSignedCookie } from 'hono/cookie';
 import type { CookieOptions } from 'hono/utils/cookie';
 import type { TimeSpan } from '#/utils/time-span';
-import { env } from '../../../../env';
+import { env } from '../../../env';
 
 const isProduction = config.mode === 'production';
 

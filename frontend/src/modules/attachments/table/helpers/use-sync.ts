@@ -5,7 +5,7 @@ import { queryClient } from '~/lib/router';
 
 import type { AttachmentInfiniteQueryData } from '~/modules/attachments/query-mutations';
 
-import { env } from '~/../env';
+import { env } from '~/env';
 import { useOnlineManager } from '~/hooks/use-online-manager';
 import { attachmentsQueryOptions } from '~/modules/attachments/query';
 import type { Attachment } from '~/modules/attachments/types';

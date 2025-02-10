@@ -7,7 +7,7 @@ import type { PgliteDatabase } from 'drizzle-orm/pglite';
 import { migrate as pgliteMigrate } from 'drizzle-orm/pglite/migrator';
 import { db } from '#/db/db';
 import ascii from '#/utils/ascii';
-import { env } from '../env';
+import { env } from './env';
 import docs from './lib/docs';
 import app from './routes';
 import './lib/i18n';

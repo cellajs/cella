@@ -13,6 +13,6 @@
     }
   },
 
-  "include": ["src/**/*", "vite.config.ts", "../config/*", "../backend/**/*", "../locales/*", "env.ts"],
+  "include": ["src/**/*", "vite.config.ts", "../config/*", "../backend/**/*", "../locales/*"],
   "exclude": ["**/node_modules", "**/dist", "**/.*/"]
 }

@@ -4,7 +4,7 @@ import Backend from 'i18next-http-backend';
 import { initReactI18next } from 'react-i18next';
 
 import { config } from 'config';
-import { env } from '~/../env';
+import { env } from '~/env';
 import locales from '~/lib/i18n-locales';
 
 export type { ParseKeys } from 'i18next';

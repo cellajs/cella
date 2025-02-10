@@ -7,8 +7,8 @@
   },
   "scripts": {
     "quick": "cross-env PGLITE=true tsx scripts/quick.ts && cross-env PGLITE=true pnpm dev",
-    "start": "tsx dist/index.js",
-    "dev": "cross-env PRECOMPILE=true pnpm ts:compile && cross-env NODE_ENV=development tsx --watch-path=src src/index.ts",
+    "start": "cross-env NODE_ENV=production tsx dist/index.js",
+    "dev": "pnpm ts:compile && cross-env NODE_ENV=development tsx --watch-path=src src/index.ts",
     "check:types": "tsc --pretty",
     "ts:compile": "tsc -b tsconfig.precompile.json --pretty",
     "ts:perf": "rm -rf dist && tsc --extendedDiagnostics",
@@ -35,6 +35,7 @@
   "dependencies": {
     "@aws-sdk/cloudfront-signer": "^3.734.0",
     "@cellajs/permission-manager": "^0.1.0",
+    "@dotenv-run/core": "^1.3.6",
     "@electric-sql/pglite": "^0.2.16",
     "@hono/node-server": "^1.13.8",
     "@hono/sentry": "^1.2.0",

@@ -1,7 +1,7 @@
 import { MailService } from '@sendgrid/mail';
 import { config } from 'config';
 import { render } from 'jsx-email';
-import { env } from '../../env';
+import { env } from '../env';
 
 const sendgrid = new MailService();
 // Check if the API key is set

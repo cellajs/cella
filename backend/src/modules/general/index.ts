@@ -25,7 +25,7 @@ import { nanoid } from '#/utils/nanoid';
 import { encodeLowerCased } from '#/utils/oslo';
 import { prepareStringForILikeFilter } from '#/utils/sql';
 import { TimeSpan, createDate } from '#/utils/time-span';
-import { env } from '../../../env';
+import { env } from '../../env';
 import { slugFromEmail } from '../auth/helpers/oauth';
 import { membershipSelect } from '../memberships/helpers/select';
 import { checkSlugAvailable } from './helpers/check-slug';
@@ -53,7 +53,7 @@ const generalRoutes = app
         public: isPublic === 'true',
         imado: !!env.AWS_S3_UPLOAD_ACCESS_KEY_ID,
       },
-      env.TUS_UPLOAD_API_SECRET,
+      env.TUS_SECRET,
     );
 
     return ctx.json({ success: true, data: token }, 200);

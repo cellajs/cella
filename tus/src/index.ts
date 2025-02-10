@@ -3,7 +3,7 @@ import { env } from '../env';
 import { ImadoTus } from './imado-tus';
 
 const tus = ImadoTus({
-  secret: env.TUS_UPLOAD_API_SECRET,
+  secret: env.TUS_SECRET,
   serverOptions: {
     respectForwardedHeaders: true,
   },

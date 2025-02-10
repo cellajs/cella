@@ -42,6 +42,9 @@ importers:
       '@cellajs/permission-manager':
         specifier: ^0.1.0
         version: 0.1.0(@swc/core@1.7.26)(jiti@2.4.2)(postcss@8.5.1)(tsx@4.19.2)(yaml@2.7.0)
+      '@dotenv-run/core':
+        specifier: ^1.3.6
+        version: 1.3.6
       '@electric-sql/pglite':
         specifier: ^0.2.16
         version: 0.2.16
@@ -1620,6 +1623,9 @@ packages:
   '@dot/log@0.1.5':
     resolution: {integrity: sha512-ECraEVJWv2f2mWK93lYiefUkphStVlKD6yKDzisuoEmxuLKrxO9iGetHK2DoEAkj7sxjE886n0OUVVCUx0YPNg==}
     engines: {node: '>=18'}
+
+  '@dotenv-run/core@1.3.6':
+    resolution: {integrity: sha512-lVfZc2DWu2P2rKyjrLDN9dw0gKHaFmNMdnrb7peoFv+LUmMxvp9QrWTzU585dU1z2Jj93a2Y3X2T890hAj+mcw==}
 
   '@drizzle-team/brocli@0.10.2':
     resolution: {integrity: sha512-z33Il7l5dKjUgGULTqBsQBQwckHh5AbIuxhdsIxDDiZAzBOrZO6q9ogcWC65kU382AfynTfgNumVcNIjuIua6w==}
@@ -6748,6 +6754,10 @@ packages:
   dot-prop@8.0.2:
     resolution: {integrity: sha512-xaBe6ZT4DHPkg0k4Ytbvn5xoxgpG0jOS1dYxSOwAHPuNLjP3/OzN0gH55SrLqpx8cBfSaVt91lXYkApjb+nYdQ==}
     engines: {node: '>=16'}
+
+  dotenv-expand@10.0.0:
+    resolution: {integrity: sha512-GopVGCpVS1UKH75VKHGuQFqS1Gusej0z4FyQkPdwjil2gNIv+LNsqBlboOzpJFZKVT95GkCyWJbBSdFEFUWI2A==}
+    engines: {node: '>=12'}
 
   dotenv-expand@8.0.3:
     resolution: {integrity: sha512-SErOMvge0ZUyWd5B0NXMQlDkN+8r+HhVUsxgOO7IoPDOdDRD2JjExpN6y3KnFR66jsJMwSn1pqIivhU5rcJiNg==}
@@ -12468,6 +12478,13 @@ snapshots:
       loglevelnext: 6.0.0
       p-defer: 3.0.0
 
+  '@dotenv-run/core@1.3.6':
+    dependencies:
+      chalk: 4.1.2
+      dotenv: 16.4.7
+      dotenv-expand: 10.0.0
+      find-up: 5.0.0
+
   '@drizzle-team/brocli@0.10.2': {}
 
   '@electric-sql/client@1.0.0-beta.3':
@@ -17425,6 +17442,8 @@ snapshots:
   dot-prop@8.0.2:
     dependencies:
       type-fest: 3.13.1
+
+  dotenv-expand@10.0.0: {}
 
   dotenv-expand@8.0.3: {}
 
