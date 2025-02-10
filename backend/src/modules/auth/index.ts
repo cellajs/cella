@@ -385,9 +385,11 @@ const authRoutes = app
     return ctx.json({ success: true }, 200);
   })
   /*
-   * TODO simplify: Start impersonation
+   * Start impersonation
    */
   .openapi(authRouteConfig.startImpersonation, async (ctx) => {
+    const { targetUserId } = ctx.req.valid('query');
+
     const user = getContextUser();
     const sessionToken = await getAuthCookie(ctx, 'session');
 
@@ -396,8 +398,9 @@ const authRoutes = app
       return errorResponse(ctx, 401, 'unauthorized', 'warn');
     }
 
-    const { targetUserId } = ctx.req.valid('query');
     await setUserSession(ctx, targetUserId, 'impersonation', user.id);
+
+    logEvent('Started impersonation', { admin: user.id, user: targetUserId });
 
     return ctx.json({ success: true }, 200);
   })
@@ -429,7 +432,7 @@ const authRoutes = app
       await setAuthCookie(ctx, 'session', adminsLastSession.token, expireTimeSpan);
     }
 
-    logEvent('Admin user signed out from impersonate to his own account', { user: session?.adminUserId || 'na' });
+    logEvent('Stopped impersonation', { admin: session.adminUserId || 'na', user: session.userId });
 
     return ctx.json({ success: true }, 200);
   })

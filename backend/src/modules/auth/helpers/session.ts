@@ -69,14 +69,13 @@ export const setUserSession = async (ctx: Context, userId: UserModel['id'], stra
   // Set session cookie with the unhashed version
   await setAuthCookie(ctx, 'session', sessionToken, timeSpan);
 
-  // If it's an impersonation session, we only log event
-  if (strategy === 'impersonation') logEvent('Impersonation started', { user: userId, strategy: 'impersonation' });
-  else {
-    // Update last sign in date
-    const lastSignInAt = new Date();
-    await db.update(usersTable).set({ lastSignInAt }).where(eq(usersTable.id, userId));
-    logEvent('User signed in', { user: userId, strategy });
-  }
+  // If it's an impersonation session, we can stop here
+  if (strategy === 'impersonation') return;
+
+  // Update last sign in date
+  const lastSignInAt = new Date();
+  await db.update(usersTable).set({ lastSignInAt }).where(eq(usersTable.id, userId));
+  logEvent('User signed in', { user: userId, strategy });
 };
 
 /**
