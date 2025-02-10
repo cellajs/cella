@@ -8,7 +8,7 @@
   "scripts": {
     "quick": "cross-env PGLITE=true tsx scripts/quick.ts && cross-env PGLITE=true pnpm dev",
     "start": "cross-env NODE_ENV=production tsx dist/index.js",
-    "dev": "cross-env PRECOMPILE=true pnpm ts:compile && cross-env NODE_ENV=development tsx --watch-path=src src/index.ts",
+    "dev": "pnpm ts:compile && cross-env NODE_ENV=development tsx --watch-path=src src/index.ts",
     "check:types": "tsc --pretty",
     "ts:compile": "tsc -b tsconfig.precompile.json --pretty",
     "ts:perf": "rm -rf dist && tsc --extendedDiagnostics",

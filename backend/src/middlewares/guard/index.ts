@@ -10,7 +10,7 @@ import { eq, or } from 'drizzle-orm';
 import { db } from '#/db/db';
 import { organizationsTable } from '#/db/schema/organizations';
 import { getIp } from '#/utils/get-ip';
-import { env } from './../../../env';
+import { env } from '../../env';
 
 const allowList = env.REMOTE_SYSTEM_ACCESS_IP.split(',') || [];
 

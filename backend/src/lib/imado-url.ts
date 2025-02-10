@@ -1,5 +1,5 @@
 import { config } from 'config';
-import { env } from '../../env';
+import { env } from '../env';
 
 import { getSignedUrl as cloudfrontGetSignedUrl } from '@aws-sdk/cloudfront-signer';
 

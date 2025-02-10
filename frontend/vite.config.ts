@@ -12,7 +12,7 @@ import { createHtmlPlugin } from 'vite-plugin-html';
 import { VitePWA } from 'vite-plugin-pwa';
 import { viteStaticCopy } from 'vite-plugin-static-copy';
 import { config } from '../config';
-import { env } from './env';
+import { env } from './src/env';
 // import { TanStackRouterVite } from '@tanstack/router-plugin/vite'
 
 const ReactCompilerConfig = {

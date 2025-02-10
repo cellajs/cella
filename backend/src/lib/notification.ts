@@ -1,7 +1,7 @@
 import { ChatProviderIdEnum, Novu } from '@novu/node';
 import { config } from 'config';
 import { logEvent } from '#/middlewares/logger/log-event';
-import { env } from '../../env';
+import { env } from '../env';
 
 /**
  * Send a Slack message to the chosen channel using Novu API.

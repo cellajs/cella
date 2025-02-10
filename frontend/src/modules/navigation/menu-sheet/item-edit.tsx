@@ -3,7 +3,7 @@ import { Archive, ArchiveRestore, Bell, BellOff } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-import { env } from '~/../env';
+import { env } from '~/env';
 import { useMutation } from '~/hooks/use-mutations';
 import { dispatchCustomEvent } from '~/lib/custom-events';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';

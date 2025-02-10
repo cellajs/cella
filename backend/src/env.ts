@@ -21,7 +21,7 @@ export const env = createEnv({
     DATABASE_URL: z.string().url(),
     NODE_ENV: z.union([z.literal('development'), z.literal('production'), z.literal('test')]),
     PORT: z.string().optional(),
-    UNSUBSCRIBE_TOKEN_SECRET: z.string(),
+    UNSUBSCRIBE_SECRET: z.string(),
 
     ARGON_SECRET: z.string(),
     COOKIE_SECRET: z.string(),
@@ -51,7 +51,7 @@ export const env = createEnv({
     AWS_S3_UPLOAD_SECRET_ACCESS_KEY: z.string().default(''),
     AWS_CLOUDFRONT_KEY_ID: z.string().default(''),
     AWS_CLOUDFRONT_PRIVATE_KEY: z.string().default(''),
-    TUS_UPLOAD_API_SECRET: z.string().default('very_secret'),
+    TUS_SECRET: z.string().default('very_secret'),
   },
   runtimeEnv: process.env,
   emptyStringAsUndefined: true,

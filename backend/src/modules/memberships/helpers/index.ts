@@ -95,7 +95,8 @@ export const getAssociatedEntityDetails = <T extends ContextEntity>(entity: Enti
 
   const { entity: associatedEntityType } = associatedEntityRelation;
   const associatedEntityIdField = entityIdFields[associatedEntityType] ?? null;
-  const associatedEntityId = associatedEntityIdField && associatedEntityIdField in entity ? (entity[associatedEntityIdField] as string) : null;
+  const associatedEntityId =
+    associatedEntityIdField && associatedEntityIdField in entity ? (entity[associatedEntityIdField as keyof typeof entity] as string) : null;
 
   return { associatedEntityType, associatedEntityIdField, associatedEntityId };
 };

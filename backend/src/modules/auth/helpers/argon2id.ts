@@ -1,5 +1,5 @@
 import { hash, verify } from '@node-rs/argon2';
-import { env } from '../../../../env';
+import { env } from '../../../env';
 /**
  * Hashes a password using argon2id with a secret for enhanced security.
  * https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html#argon2id
