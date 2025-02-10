@@ -1,8 +1,8 @@
 pre-commit:
-  parallel: true
   commands:
-    type-check:
-      run: pnpm run check:types
     check:
-      glob: "*.{js,ts,cjs,mjs,d.cts,d.mts,jsx,tsx,json,jsonc}"
+      glob: '*.{js,ts,cjs,mjs,d.cts,d.mts,jsx,tsx,json,jsonc}'
       run: pnpm dlx @biomejs/biome check --write --no-errors-on-unmatched --files-ignore-unknown=true {staged_files} && git update-index --again
+    type-check:
+      run: pnpm --filter backend ts:compile && pnpm check:types
+  parallel: true
