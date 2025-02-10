@@ -11,7 +11,7 @@
     "start": "cross-env NODE_ENV=production pnpm preview",
     "check:types": "tsc --pretty",
     "ts:perf": "rm -rf tsconfig.tsbuildinfo && cross-env NODE_ENV=development tsc --noEmit --extendedDiagnostics",
-    "build": "tsc && vite build",
+    "build": "cross-env NODE_ENV=production vite build",
     "build:dev": "cross-env NODE_ENV=development vite build --mode development",
     "preview": "vite preview --port 3000",
     "preview:dev": "cross-env NODE_ENV=development vite preview --port 3000"
