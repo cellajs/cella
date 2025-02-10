@@ -1,10 +1,10 @@
-import '~/index.css';
-
+import { RouterProvider } from '@tanstack/react-router';
 import { StrictMode } from 'react';
 import ReactDOM from 'react-dom/client';
 import { ThemeManager } from '~/modules/common/theme-manager';
 
-import { RouterProvider } from '@tanstack/react-router';
+// Import tailwindcss
+import '~/index.css';
 
 // Boot with i18n & dayjs
 import '~/lib/dayjs';

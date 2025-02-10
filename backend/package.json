@@ -10,11 +10,12 @@
     "start": "tsx dist/index.js",
     "dev": "cross-env NODE_ENV=development tsx --watch-path=src src/index.ts",
     "check:types": "tsc --pretty",
-    "ts:perf": "rm -rf tsconfig.tsbuildinfo && cross-env NODE_ENV=development tsc --noEmit --extendedDiagnostics",
+    "ts:compile": "tsc -b --pretty",
+    "ts:perf": "rm -rf dist && tsc --extendedDiagnostics",
     "build": "cross-env NODE_ENV=production tsup",
     "build:dev": "tsup",
     "docker:up": "docker compose --env-file .env up",
-    "sentry:sourcemaps": "sentry-cli sourcemaps inject --org cella --project backend ./dist && sentry-cli sourcemaps upload --org cella --project backend ./dist",
+    "sentry:sourcemaps": "sentry-cli sourcemaps inject --org cella --project backend dist && sentry-cli sourcemaps upload --org cella --project backend dist",
     "build:sourcemaps": "cross-env NODE_ENV=production tsup && pnpm sentry:sourcemaps",
     "seed:user": "tsx scripts/seeds/user/index.ts",
     "seed:organizations": "tsx scripts/seeds/organizations/index.ts",
@@ -26,9 +27,9 @@
     "generate": "pnpm generate:pg",
     "push": "drizzle-kit push",
     "studio": "drizzle-kit studio --config drizzle.config.ts",
-    "emails:build": "email build ./emails",
+    "emails:build": "email build emails",
     "emails:create": "email create",
-    "emails:preview": "email preview ./emails",
+    "emails:preview": "email preview emails",
     "test": "pnpm vitest"
   },
   "dependencies": {
@@ -102,6 +103,7 @@
     "typescript": "^5.7.3"
   },
   "exports": {
-    "development": "./src/"
-  }
+    "types": "./dist/src/index.d.ts"
+  },
+  "types": "./dist/src/index.d.ts"
 }

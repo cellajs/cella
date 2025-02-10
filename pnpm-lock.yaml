@@ -473,6 +473,9 @@ importers:
       '@vis.gl/react-google-maps':
         specifier: 1.5.0
         version: 1.5.0(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
+      backend:
+        specifier: workspace:*
+        version: link:../backend
       canvas-confetti:
         specifier: ^1.9.3
         version: 1.9.3
@@ -2627,6 +2630,7 @@ packages:
 
   '@evilmartians/lefthook@1.10.10':
     resolution: {integrity: sha512-MRIA0zJzUBbmcbecI7QjI08li4ffpmZ6DeVydEiZSg0vSx5mElEMEjDEjkI60eSV0XOm7LRbQKz2rfW6NqH8Cw==}
+    cpu: [x64, arm64, ia32]
     os: [darwin, linux, win32]
     hasBin: true
 
@@ -5962,9 +5966,9 @@ packages:
     resolution: {integrity: sha512-bN798gFfQX+viw3R7yrGWRqnrN2oRkEkUjjl4JNn4E8GxxbjtG3FbrEIIY3l8/hrwUwIeCZvi4QuOTP4MErVug==}
     engines: {node: '>=12'}
 
-  ansis@3.10.0:
-    resolution: {integrity: sha512-hxDKLYT7hy3Y4sF3HxI926A3urzPxi73mZBB629m9bCVF+NyKNxbwCqqm+C/YrGPtxLwnl6d8/ZASCsz6SyvJA==}
-    engines: {node: '>=16'}
+  ansis@3.11.0:
+    resolution: {integrity: sha512-OlSPH4qeWPQwjtshijNY8wP+qpsEdd6M8sX6kyC9/JwSMztIANR4lHBeTDFNTQSAGj0Ax95W+iG/n2n7gYdp8A==}
+    engines: {node: '>=14'}
 
   any-promise@1.3.0:
     resolution: {integrity: sha512-7UvmKalWRt1wgjL1RrGxoSJW/0QZFIegpeGvZG9kjp8vrRu55XTHbwnqq2GpXm9uLbcuhxm3IqX9OB4MZR1b2A==}
@@ -11666,7 +11670,7 @@ snapshots:
   '@babel/helper-module-imports@7.25.9':
     dependencies:
       '@babel/traverse': 7.26.8
-      '@babel/types': 7.26.8
+      '@babel/types': 7.26.0
     transitivePeerDependencies:
       - supports-color
 
@@ -15942,7 +15946,7 @@ snapshots:
     dependencies:
       '@babel/generator': 7.26.8
       '@babel/parser': 7.26.8
-      ansis: 3.10.0
+      ansis: 3.11.0
       diff: 7.0.0
 
   '@tanstack/store@0.7.0': {}
@@ -16631,7 +16635,7 @@ snapshots:
 
   ansi-styles@6.2.1: {}
 
-  ansis@3.10.0: {}
+  ansis@3.11.0: {}
 
   any-promise@1.3.0: {}
 
