@@ -9,7 +9,7 @@ const OrgMembersTable = () => {
   const { data: organization } = useQuery(organizationQueryOptions(idOrSlug));
 
   if (!organization) return;
-  return <MembersTable entity={organization} invites={organization.invites} />;
+  return <MembersTable entity={organization} />;
 };
 
 export default OrgMembersTable;

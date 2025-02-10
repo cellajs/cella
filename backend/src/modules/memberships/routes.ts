@@ -10,8 +10,16 @@ import {
   successWithPaginationSchema,
   successWithoutDataSchema,
 } from '#/utils/schema/responses';
-import { membersQuerySchema, membersSchema } from '../general/schema';
-import { baseMembersQuerySchema, createMembershipsBodySchema, membershipSchema, updateMembershipBodySchema } from './schema';
+import {
+  baseMembersQuerySchema,
+  createMembershipsBodySchema,
+  invitedMembersQuerySchema,
+  invitedMembersSchema,
+  membersQuerySchema,
+  membersSchema,
+  membershipSchema,
+  updateMembershipBodySchema,
+} from './schema';
 
 class MembershipRouteConfig {
   public createMemberships = createRouteConfig({
@@ -111,9 +119,7 @@ class MembershipRouteConfig {
     description: 'Get members of a context entity by id or slug. It returns members (users) with their membership.',
     request: {
       query: membersQuerySchema,
-      params: z.object({
-        orgIdOrSlug: idOrSlugSchema.optional(),
-      }),
+      params: z.object({ orgIdOrSlug: idOrSlugSchema.optional() }),
     },
     responses: {
       200: {
@@ -121,6 +127,30 @@ class MembershipRouteConfig {
         content: {
           'application/json': {
             schema: successWithPaginationSchema(membersSchema),
+          },
+        },
+      },
+      ...errorResponses,
+    },
+  });
+
+  public getInvitedMembers = createRouteConfig({
+    method: 'get',
+    path: '/invited-members',
+    guard: [isAuthenticated, hasOrgAccess],
+    tags: ['memberships'],
+    summary: 'Get list of invited members',
+    description: 'Get invited members of a context entity by id or slug. It returns invite info.',
+    request: {
+      query: invitedMembersQuerySchema,
+      params: z.object({ orgIdOrSlug: idOrSlugSchema.optional() }),
+    },
+    responses: {
+      200: {
+        description: 'Invited members',
+        content: {
+          'application/json': {
+            schema: successWithPaginationSchema(invitedMembersSchema),
           },
         },
       },

@@ -160,3 +160,71 @@ export const getMembers = async (
   const json = await handleResponse(response);
   return json.data;
 };
+
+// Combined type
+export type GetInvitedMembersParams = RequiredGetMembersParams &
+  Omit<Parameters<(typeof client)['invited-members']['$get']>['0']['query'], 'limit' | 'offset'> & {
+    limit?: number;
+    offset?: number;
+    page?: number;
+  };
+
+/**
+ * Get a list of invited members in an entity with pagination and filters
+ *
+ * @param param.idOrSlug - ID or slug of entity.
+ * @param param.entityType - Type of entity.
+ * @param param.orgIdOrSlug - Organization ID or slug associated with the entity.
+ * @param param.q - Optional search query to filter results.
+ * @param param.sort - Field to sort by (defaults to 'id').
+ * @param param.order - Sort order `'asc' | 'desc'` (defaults to 'asc').
+ * @param param.role - Optional Role `"admin" | "member"` to filter results.
+ * @param param.page - Page number.
+ * @param param.limit - Maximum number of invited members per page (defaults to `config.requestLimits.invitedMembers`).
+ * @param param.offset - Optional offset.
+ * @param signal - Optional abort signal for cancelling the request.
+ * @returns A paginated list of invited members.
+ */
+export const getInvitedMembers = async (
+  {
+    idOrSlug,
+    orgIdOrSlug,
+    entityType,
+    q,
+    sort = 'createdAt',
+    order = 'asc',
+    role,
+    page = 0,
+    limit = config.requestLimits.invitedMembers,
+    offset,
+  }: GetInvitedMembersParams,
+  signal?: AbortSignal,
+) => {
+  const response = await client['invited-members'].$get(
+    {
+      query: {
+        idOrSlug,
+        entityType,
+        q,
+        sort,
+        order,
+        offset: typeof offset === 'number' ? String(offset) : String(page * limit),
+        limit: String(limit),
+        role,
+      },
+      param: { orgIdOrSlug },
+    },
+    {
+      fetch: (input: RequestInfo | URL, init?: RequestInit) => {
+        return fetch(input, {
+          ...init,
+          credentials: 'include',
+          signal,
+        });
+      },
+    },
+  );
+
+  const json = await handleResponse(response);
+  return json.data;
+};

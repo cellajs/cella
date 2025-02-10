@@ -11,10 +11,9 @@ import TableSearch from '~/modules/common/data-table/table-search';
 import type { BaseTableHeaderProps, BaseTableMethods } from '~/modules/common/data-table/types';
 import { FocusView } from '~/modules/common/focus-view';
 import SelectRole from '~/modules/common/form-fields/select-role';
+import { InvitedMembers } from '~/modules/memberships/invited-members-table/invites-count';
 import type { MemberSearch, MembersTableProps } from '~/modules/memberships/members-table/';
 import type { Member } from '~/modules/memberships/types';
-import { InvitedUsers } from '~/modules/organizations/invites/invites-count';
-import type { OrganizationInvites } from '~/modules/organizations/types';
 import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
 import { nanoid } from '~/utils/nanoid';
@@ -23,7 +22,6 @@ type MembersTableHeaderProps = MembersTableProps &
   BaseTableMethods &
   BaseTableHeaderProps<Member, MemberSearch> & {
     role: MemberSearch['role'];
-    invites?: OrganizationInvites[];
     openInviteDialog: (container: HTMLElement | null) => void;
     openRemoveDialog: () => void;
     fetchExport: (limit: number) => Promise<Member[]>;
@@ -34,7 +32,6 @@ export const MembersTableHeader = ({
   total,
   selected,
   q,
-  invites,
   setSearch,
   role,
   columns,
@@ -118,7 +115,7 @@ export const MembersTableHeader = ({
             )}
             {selected.length === 0 && (
               <TableCount count={total} type="member" isFiltered={isFiltered} onResetFilters={onResetFilters}>
-                {invites && <InvitedUsers invites={invites} />}
+                {isAdmin && <InvitedMembers entity={entity} />}
               </TableCount>
             )}
           </FilterBarActions>

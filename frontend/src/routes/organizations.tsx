@@ -7,12 +7,12 @@ import { attachmentsQueryOptions } from '~/modules/attachments/query';
 import ErrorNotice from '~/modules/common/error-notice';
 import { membersQueryOptions } from '~/modules/memberships/query';
 import { organizationQueryOptions } from '~/modules/organizations/query';
-import { membersQuerySchema } from '#/modules/general/schema';
 
 import type { Organization as OrganizationType } from '~/modules/organizations/types';
 import { AppRoute } from '~/routes/general';
 import { noDirectAccess } from '~/utils/no-direct-access';
 import { attachmentsQuerySchema } from '#/modules/attachments/schema';
+import { invitedMembersQuerySchema, membersQuerySchema } from '#/modules/memberships/schema';
 
 //Lazy-loaded components
 const OrganizationPage = lazy(() => import('~/modules/organizations/organization-page'));
@@ -24,6 +24,8 @@ const OrganizationSettings = lazy(() => import('~/modules/organizations/organiza
 export const membersSearchSchema = membersQuerySchema
   .pick({ q: true, sort: true, order: true, role: true })
   .extend({ sheetId: z.string().optional() });
+
+export const invitedMembersSearchSchema = invitedMembersQuerySchema.pick({ q: true, sort: true, order: true, role: true });
 
 export const attachmentsSearchSchema = attachmentsQuerySchema.pick({ q: true, sort: true, order: true }).extend({
   attachmentPreview: z.string().optional(),

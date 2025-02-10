@@ -14,18 +14,6 @@ import {
 } from '#/utils/schema/common';
 import { membershipInfoSchema } from '../memberships/schema';
 
-export const invitesSchema = z.array(
-  z.object({
-    id: z.string(),
-    email: z.string(),
-    name: z.string().nullable(),
-    role: z.enum(config.rolesByType.entityRoles).nullable(),
-    expiresAt: z.string(),
-    createdAt: z.string(),
-    createdBy: z.string().nullable(),
-  }),
-);
-
 export const membershipsCountSchema = z.object({
   memberships: z.object({
     admins: z.number(),
@@ -43,7 +31,6 @@ export const organizationSchema = z.object({
   emailDomains: z.array(z.string()),
   authStrategies: z.array(z.string()),
   membership: membershipInfoSchema.nullable(),
-  invites: invitesSchema.optional(),
   counts: membershipsCountSchema,
 });
 
