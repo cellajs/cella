@@ -5,10 +5,12 @@ dotenv.config({ path: './backend/.env' });
 
 // Install lefthook as part of prepare script
 if (process.env.NODE_ENV === 'development') {
-  console.info('Installing lefthook & Biome VSCode extension.');
+  console.info('Preparing the development environment: Installing Lefthook, Biome VSCode extension, and compiling TypeScript.');
 
   try {
-    execSync('lefthook install && code --install-extension biomejs.biome', { stdio: 'inherit' });
+    execSync('pnpm --filter backend ts:compile && lefthook install && code --install-extension biomejs.biome', {
+      stdio: 'inherit',
+    });
   } catch (error) {
     console.error('Error occurred during the prepare script:', error.message);
   }
