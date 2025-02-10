@@ -3,11 +3,6 @@ import { membershipsTable } from '#/db/schema/memberships';
 import type { GeneratedColumn } from '#/db/types';
 import { type ContextEntityIdFields, entityIdFields } from '#/entity-config';
 
-type MembershipGeneratedColumn = Omit<GeneratedColumn, 'name' | 'tableName'> & {
-  name: Exclude<ContextEntityIdFields, 'organizationId'>;
-  tableName: 'memberships';
-};
-
 // Dynamic part of the select based on contextEntityTypes that you can set in config
 const membershipDynamicSelect = config.contextEntityTypes
   .filter((e) => e !== 'organization')
@@ -18,7 +13,7 @@ const membershipDynamicSelect = config.contextEntityTypes
       if (Object.prototype.hasOwnProperty.call(membershipsTable, fieldName)) fields[fieldName] = membershipsTable[fieldName];
       return fields;
     },
-    {} as Record<Exclude<ContextEntityIdFields, 'organizationId'>, MembershipGeneratedColumn>,
+    {} as Record<Exclude<ContextEntityIdFields, 'organizationId'>, GeneratedColumn>,
   );
 
 // Merge the static and dynamic select fields
