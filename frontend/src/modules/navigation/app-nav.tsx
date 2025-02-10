@@ -20,7 +20,9 @@ const AppNav = () => {
 
   const { setLoading, setFocusView, navSheetOpen, setNavSheetOpen } = useNavigationStore();
 
-  // TODO this rerenders on every route change
+  // TODO this rerenders on every route change, maybe we can instead always render both and just hide the one that is not needed
+  // We might still rerender floatingNavBar on every route change, but it will be less expensive, because it is less used
+  // And it wont rerender the whole appNav if properly split, just the floatingNavBar
   const renderedItems = useMemo(() => {
     const floatingButtonIdsInRoute = router.state.matches.flatMap((el) => el.staticData.floatingNavButtons || []);
     return navItems.filter(({ id, type }) => {
