@@ -2,18 +2,18 @@ import { z } from '@hono/zod-openapi';
 
 import { createRouteConfig } from '#/lib/route-config';
 import { hasOrgAccess, isAuthenticated } from '#/middlewares/guard';
+import { idInOrgParamSchema, idOrSlugSchema, idsBodySchema, inOrgParamSchema } from '#/utils/schema/common';
 import {
   errorResponses,
   successWithDataSchema,
   successWithErrorsSchema,
   successWithPaginationSchema,
   successWithoutDataSchema,
-} from '#/utils/schema/common-responses';
-import { idOrSlugSchema, idSchema, idsBodySchema } from '#/utils/schema/common-schemas';
+} from '#/utils/schema/responses';
 import { membersQuerySchema, membersSchema } from '../general/schema';
 import { baseMembersQuerySchema, createMembershipsBodySchema, membershipSchema, updateMembershipBodySchema } from './schema';
 
-class MembershipRoutesConfig {
+class MembershipRouteConfig {
   public createMemberships = createRouteConfig({
     method: 'post',
     path: '/',
@@ -23,7 +23,7 @@ class MembershipRoutesConfig {
     description: 'Invite members to an entity such as an organization.',
     request: {
       query: baseMembersQuerySchema,
-      params: z.object({ orgIdOrSlug: idOrSlugSchema }),
+      params: inOrgParamSchema,
       body: {
         content: {
           'application/json': {
@@ -53,7 +53,7 @@ class MembershipRoutesConfig {
     summary: 'Delete memberships',
     description: 'Delete memberships by their ids. This will remove the membership but not delete any user(s).',
     request: {
-      params: z.object({ orgIdOrSlug: idOrSlugSchema }),
+      params: inOrgParamSchema,
       query: baseMembersQuerySchema,
       body: {
         content: { 'application/json': { schema: idsBodySchema } },
@@ -80,7 +80,7 @@ class MembershipRoutesConfig {
     summary: 'Update membership',
     description: 'Update role, muted, or archived status in a membership.',
     request: {
-      params: z.object({ orgIdOrSlug: idOrSlugSchema, id: idSchema }),
+      params: idInOrgParamSchema,
       body: {
         content: {
           'application/json': {
@@ -128,4 +128,4 @@ class MembershipRoutesConfig {
     },
   });
 }
-export default new MembershipRoutesConfig();
+export default new MembershipRouteConfig();

@@ -9,7 +9,7 @@ import {
   pageEntityTypeSchema,
   paginationQuerySchema,
   slugSchema,
-} from '#/utils/schema/common-schemas';
+} from '#/utils/schema/common';
 import { membershipInfoSchema } from '../memberships/schema';
 import { userSchema } from '../users/schema';
 
@@ -17,6 +17,7 @@ export const inviteBodySchema = z.object({
   emails: userSchema.shape.email.array().min(1).max(50),
 });
 
+// TODO very alike minimum entity schema
 export const entitySuggestionSchema = z.object({
   slug: slugSchema,
   id: idSchema,
@@ -26,8 +27,6 @@ export const entitySuggestionSchema = z.object({
   entity: pageEntityTypeSchema,
   membership: membershipInfoSchema,
 });
-
-export type Suggestion = z.infer<typeof entitySuggestionSchema>;
 
 export const suggestionsSchema = z.object({
   items: z.array(entitySuggestionSchema),

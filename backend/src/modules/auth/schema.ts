@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { type MenuSectionName, entityRelations } from '#/entity-config';
-import { idSchema, passwordSchema } from '#/utils/schema/common-schemas';
+import { idSchema, passwordSchema } from '#/utils/schema/common';
 import { menuItemSchema } from '../me/schema';
 import { userSchema } from '../users/schema';
 

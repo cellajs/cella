@@ -1,10 +1,16 @@
 {
   "extends": "../tsconfig.json",
   "compilerOptions": {
+    "noEmit": false,
+
     /* Bundler mode */
     "jsx": "react-jsx",
 
     /* Build */
+    "declaration": true,
+    "declarationMap": true,
+    "emitDeclarationOnly": true,
+    "outDir": "./dist",
     "rootDir": "./",
     "tsBuildInfoFile": "./dist/.tsbuildinfo",
     "sourceMap": true,

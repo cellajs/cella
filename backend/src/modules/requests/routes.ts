@@ -2,11 +2,11 @@ import { createRouteConfig } from '#/lib/route-config';
 import { isAuthenticated, isPublicAccess, systemGuard } from '#/middlewares/guard';
 import { isNoBot } from '#/middlewares/is-no-bot';
 import { spamLimiter } from '#/middlewares/rate-limiter';
-import { errorResponses, successWithDataSchema, successWithPaginationSchema, successWithoutDataSchema } from '#/utils/schema/common-responses';
-import { idsBodySchema } from '#/utils/schema/common-schemas';
+import { idsBodySchema } from '#/utils/schema/common';
+import { errorResponses, successWithDataSchema, successWithPaginationSchema, successWithoutDataSchema } from '#/utils/schema/responses';
 import { createRequestSchema, getRequestsQuerySchema, requestSchema } from './schema';
 
-class RequestsRoutesConfig {
+class RequestRouteConfig {
   public createRequest = createRouteConfig({
     method: 'post',
     path: '/',
@@ -85,4 +85,4 @@ class RequestsRoutesConfig {
     },
   });
 }
-export default new RequestsRoutesConfig();
+export default new RequestRouteConfig();

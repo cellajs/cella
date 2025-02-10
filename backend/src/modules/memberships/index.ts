@@ -2,13 +2,13 @@ import { OpenAPIHono } from '@hono/zod-openapi';
 import { and, count, eq, ilike, inArray, isNotNull, isNull, or } from 'drizzle-orm';
 
 import { db } from '#/db/db';
-import { membershipSelect, membershipsTable } from '#/db/schema/memberships';
+import { membershipsTable } from '#/db/schema/memberships';
 
 import { config } from 'config';
 import { mailer } from '#/lib/mailer';
 
 import { tokensTable } from '#/db/schema/tokens';
-import { safeUserSelect, usersTable } from '#/db/schema/users';
+import { usersTable } from '#/db/schema/users';
 import { entityIdFields } from '#/entity-config';
 import { type Env, getContextMemberships, getContextOrganization, getContextUser } from '#/lib/context';
 import { resolveEntity } from '#/lib/entity';
@@ -16,7 +16,7 @@ import { type ErrorType, createError, errorResponse } from '#/lib/errors';
 import { i18n } from '#/lib/i18n';
 import { sendSSEToUsers } from '#/lib/sse';
 import { logEvent } from '#/middlewares/logger/log-event';
-import { getUsersByConditions } from '#/modules/users/helpers/utils';
+import { getUsersByConditions } from '#/modules/users/helpers/get-user-by';
 import { getValidEntity } from '#/permissions/get-valid-entity';
 import { memberCountsQuery } from '#/utils/counts';
 import { nanoid } from '#/utils/nanoid';
@@ -26,17 +26,18 @@ import { prepareStringForILikeFilter } from '#/utils/sql';
 import { TimeSpan, createDate } from '#/utils/time-span';
 import { MemberInviteEmail, type MemberInviteEmailProps } from '../../../emails/member-invite';
 import { slugFromEmail } from '../auth/helpers/oauth';
+import { userSelect } from '../users/helpers/select';
 import { getAssociatedEntityDetails, insertMembership } from './helpers';
-import membershipRouteConfig from './routes';
+import { membershipSelect } from './helpers/select';
+import membershipsRouteConfig from './routes';
 
 const app = new OpenAPIHono<Env>();
 
-// Membership endpoints
 const membershipsRoutes = app
   /*
    * Invite members to an entity such as an organization
    */
-  .openapi(membershipRouteConfig.createMemberships, async (ctx) => {
+  .openapi(membershipsRouteConfig.createMemberships, async (ctx) => {
     const { emails, role } = ctx.req.valid('json');
     const { idOrSlug, entityType: passedEntityType } = ctx.req.valid('query');
 
@@ -158,7 +159,7 @@ const membershipsRoutes = app
    * Delete memberships to remove users from entity
    * When user is allowed to delete entity, they can delete memberships too
    */
-  .openapi(membershipRouteConfig.deleteMemberships, async (ctx) => {
+  .openapi(membershipsRouteConfig.deleteMemberships, async (ctx) => {
     const { entityType, idOrSlug } = ctx.req.valid('query');
     const { ids } = ctx.req.valid('json');
 
@@ -213,7 +214,7 @@ const membershipsRoutes = app
   /*
    * Update user membership
    */
-  .openapi(membershipRouteConfig.updateMembership, async (ctx) => {
+  .openapi(membershipsRouteConfig.updateMembership, async (ctx) => {
     const { id: membershipId } = ctx.req.valid('param');
     const { role, archived, muted, order } = ctx.req.valid('json');
 
@@ -284,7 +285,7 @@ const membershipsRoutes = app
   /*
    * Get members by entity id/slug and type
    */
-  .openapi(membershipRouteConfig.getMembers, async (ctx) => {
+  .openapi(membershipsRouteConfig.getMembers, async (ctx) => {
     const { idOrSlug, entityType, q, sort, order, offset, limit, role } = ctx.req.valid('query');
 
     const entity = await resolveEntity(entityType, idOrSlug);
@@ -300,7 +301,7 @@ const membershipsRoutes = app
     }
 
     const usersQuery = db
-      .select({ user: safeUserSelect })
+      .select({ user: userSelect })
       .from(usersTable)
       .where(or(...$or))
       .as('users');
@@ -337,7 +338,7 @@ const membershipsRoutes = app
 
     const membersQuery = db
       .select({
-        user: safeUserSelect,
+        user: userSelect,
         membership: membershipSelect,
         counts: {
           memberships: membershipCount.members,

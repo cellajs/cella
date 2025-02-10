@@ -23,12 +23,17 @@ export const AuthLayoutRoute = createRoute({
 
 export const AuthenticateRoute = createRoute({
   path: '/auth/authenticate',
-  validateSearch: z.object({ redirect: z.string().optional(), token: z.string().optional(), tokenId: z.string().optional() }),
+  validateSearch: z.object({
+    redirect: z.string().optional(),
+    token: z.string().optional(),
+    tokenId: z.string().optional(),
+    fromRoot: z.boolean().optional(),
+  }),
   staticData: { pageTitle: 'Authenticate', isAuth: false },
   getParentRoute: () => AuthLayoutRoute,
   beforeLoad: async ({ cause, search }) => {
     // Only check auth if entering to prevent loop
-    if (cause !== 'enter' || search.redirect) return;
+    if (cause !== 'enter' || search.fromRoot) return;
 
     // If stored user, redirect to home
     const storedUser = useUserStore.getState().user;

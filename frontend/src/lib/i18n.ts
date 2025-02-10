@@ -17,7 +17,7 @@ const initOptions: InitOptions = {
   debug: env.VITE_DEBUG_I18N,
   ns: ['common', 'app', 'about', 'error'],
   partialBundledLanguages: true,
-  supportedLngs: config.languages.map((lng) => lng.value),
+  supportedLngs: config.languages,
   load: 'languageOnly',
   fallbackLng: config.defaultLanguage,
   interpolation: {

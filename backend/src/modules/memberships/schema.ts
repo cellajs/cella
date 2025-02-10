@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 import { createSelectSchema } from 'drizzle-zod';
 import { membershipsTable } from '#/db/schema/memberships';
-import { contextEntityTypeSchema, idOrSlugSchema } from '#/utils/schema/common-schemas';
+import { contextEntityTypeSchema, idOrSlugSchema } from '#/utils/schema/common';
 import { userSchema } from '../users/schema';
 
 const membershipTableSchema = createSelectSchema(membershipsTable);

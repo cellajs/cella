@@ -1,10 +1,10 @@
 import { config } from 'config';
 import { timestamp, varchar } from 'drizzle-orm/pg-core';
 import { usersTable } from '#/db/schema/users';
-import { createDynamicTable, generateContextEntityDynamicFields } from '#/db/utils';
+import { generateContextEntityFields, generateTable } from '#/db/utils';
 import { nanoid } from '#/utils/nanoid';
 
-export const tokenTypeEnum = config.tokenTypes;
+const tokenTypeEnum = config.tokenTypes;
 const roleEnum = config.rolesByType.entityRoles;
 
 const baseColumns = {
@@ -18,9 +18,10 @@ const baseColumns = {
   createdBy: varchar().references(() => usersTable.id, { onDelete: 'set null' }),
   expiresAt: timestamp({ withTimezone: true, mode: 'date' }).notNull(),
 };
-const additionalColumns = generateContextEntityDynamicFields();
 
-export const tokensTable = createDynamicTable('tokens', baseColumns, additionalColumns);
+// Generate entity id columns based on entity-config
+const additionalColumns = generateContextEntityFields();
+export const tokensTable = generateTable('tokens', baseColumns, additionalColumns);
 
 export type TokenModel = typeof tokensTable.$inferSelect;
 export type InsertTokenModel = typeof tokensTable.$inferInsert;

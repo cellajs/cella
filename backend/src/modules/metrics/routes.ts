@@ -1,9 +1,9 @@
 import { createRouteConfig } from '#/lib/route-config';
 import { isAuthenticated, isPublicAccess, systemGuard } from '#/middlewares/guard';
-import { errorResponses, successWithDataSchema } from '#/utils/schema/common-responses';
+import { errorResponses, successWithDataSchema } from '#/utils/schema/responses';
 import { metricsSchema, publicCountsSchema } from './schema';
 
-class MetricsRoutesConfig {
+class MetricRouteConfig {
   public getMetrics = createRouteConfig({
     method: 'get',
     path: '/',
@@ -44,4 +44,4 @@ class MetricsRoutesConfig {
     },
   });
 }
-export default new MetricsRoutesConfig();
+export default new MetricRouteConfig();

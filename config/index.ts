@@ -31,7 +31,7 @@ export type EnabledOauthProvider = (typeof _default.enabledOauthProviders)[numbe
 /**
  * Language options
  */
-export type Language = (typeof _default.languages)[number]['value'];
+export type Language = (typeof _default.languages)[number];
 
 /**
  * Theme options

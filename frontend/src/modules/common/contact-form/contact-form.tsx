@@ -55,7 +55,7 @@ const ContactForm = ({ dialog: isDialog }: { dialog?: boolean }) => {
     });
   };
 
-  // Update dialog title with unsaved changes
+  // TODO can be extracted to a hook?
   useEffect(() => {
     if (form.unsavedChanges) {
       const targetDialog = dialog.get('contact-form');

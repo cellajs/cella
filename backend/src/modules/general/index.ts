@@ -9,7 +9,7 @@ import jwt from 'jsonwebtoken';
 import { OpenAPIHono } from '@hono/zod-openapi';
 import { EventName, Paddle } from '@paddle/paddle-node-sdk';
 import { db } from '#/db/db';
-import { membershipSelect, membershipsTable } from '#/db/schema/memberships';
+import { membershipsTable } from '#/db/schema/memberships';
 import { requestsTable } from '#/db/schema/requests';
 import { tokensTable } from '#/db/schema/tokens';
 import { usersTable } from '#/db/schema/users';
@@ -19,16 +19,17 @@ import { errorResponse } from '#/lib/errors';
 import { i18n } from '#/lib/i18n';
 import { isAuthenticated } from '#/middlewares/guard';
 import { logEvent } from '#/middlewares/logger/log-event';
+import { getUserBy, getUsersByConditions } from '#/modules/users/helpers/get-user-by';
 import { verifyUnsubscribeToken } from '#/modules/users/helpers/unsubscribe-token';
-import { getUserBy, getUsersByConditions } from '#/modules/users/helpers/utils';
 import { nanoid } from '#/utils/nanoid';
 import { encodeLowerCased } from '#/utils/oslo';
 import { prepareStringForILikeFilter } from '#/utils/sql';
 import { TimeSpan, createDate } from '#/utils/time-span';
 import { env } from '../../../env';
 import { slugFromEmail } from '../auth/helpers/oauth';
+import { membershipSelect } from '../memberships/helpers/select';
 import { checkSlugAvailable } from './helpers/check-slug';
-import generalRoutesConfig from './routes';
+import generalRouteConfig from './routes';
 
 const paddle = new Paddle(env.PADDLE_API_KEY || '');
 
@@ -36,12 +37,11 @@ const app = new OpenAPIHono<Env>();
 
 export const streams = new Map<string, SSEStreamingApi>();
 
-// General endpoints
 const generalRoutes = app
   /*
    * Get upload token
    */
-  .openapi(generalRoutesConfig.getUploadToken, async (ctx) => {
+  .openapi(generalRouteConfig.getUploadToken, async (ctx) => {
     const user = getContextUser();
     const { public: isPublic, organization } = ctx.req.valid('query');
 
@@ -61,7 +61,7 @@ const generalRoutes = app
   /*
    * Check if slug is available
    */
-  .openapi(generalRoutesConfig.checkSlug, async (ctx) => {
+  .openapi(generalRouteConfig.checkSlug, async (ctx) => {
     const { slug } = ctx.req.valid('json');
 
     const slugAvailable = await checkSlugAvailable(slug);
@@ -71,7 +71,7 @@ const generalRoutes = app
   /*
    * Invite users to system
    */
-  .openapi(generalRoutesConfig.createInvite, async (ctx) => {
+  .openapi(generalRouteConfig.createInvite, async (ctx) => {
     const { emails } = ctx.req.valid('json');
     const user = getContextUser();
 
@@ -145,7 +145,7 @@ const generalRoutes = app
   /*
    * Paddle webhook
    */
-  .openapi(generalRoutesConfig.paddleWebhook, async (ctx) => {
+  .openapi(generalRouteConfig.paddleWebhook, async (ctx) => {
     const signature = ctx.req.header('paddle-signature');
     const rawRequestBody = String(ctx.req.raw.body);
 
@@ -176,7 +176,7 @@ const generalRoutes = app
   /*
    * Get entity search suggestions
    */
-  .openapi(generalRoutesConfig.getSuggestionsConfig, async (ctx) => {
+  .openapi(generalRouteConfig.getSuggestionsConfig, async (ctx) => {
     const { q, type } = ctx.req.valid('query');
 
     const user = getContextUser();
@@ -250,7 +250,7 @@ const generalRoutes = app
   /*
    * Unsubscribe a user by token from receiving newsletters
    */
-  .openapi(generalRoutesConfig.unsubscribeUser, async (ctx) => {
+  .openapi(generalRouteConfig.unsubscribeUser, async (ctx) => {
     const { token } = ctx.req.valid('query');
 
     // Check if token exists

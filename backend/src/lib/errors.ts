@@ -5,7 +5,7 @@ import type { z } from 'zod';
 
 import type { Entity, Severity } from 'config';
 import { logEvent, logtail } from '#/middlewares/logger/log-event';
-import type { errorSchema } from '#/utils/schema/common-schemas';
+import type { errorSchema } from '#/utils/schema/responses';
 import { getContextOrganization, getContextUser } from './context';
 import { i18n } from './i18n';
 import type locales from './i18n-locales';

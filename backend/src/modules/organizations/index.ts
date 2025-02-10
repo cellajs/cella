@@ -1,6 +1,6 @@
 import { type SQL, and, count, eq, getTableColumns, ilike, inArray, sql } from 'drizzle-orm';
 import { db } from '#/db/db';
-import { membershipSelect, membershipsTable } from '#/db/schema/memberships';
+import { membershipsTable } from '#/db/schema/memberships';
 import { organizationsTable } from '#/db/schema/organizations';
 
 import { OpenAPIHono } from '@hono/zod-openapi';
@@ -20,16 +20,16 @@ import { memberCountsQuery } from '#/utils/counts';
 import { getOrderColumn } from '#/utils/order-column';
 import { prepareStringForILikeFilter } from '#/utils/sql';
 import { NewsletterEmail, type NewsletterEmailProps } from '../../../emails/newsletter';
-import organizationRoutesConfig from './routes';
+import { membershipSelect } from '../memberships/helpers/select';
+import organizationsRouteConfig from './routes';
 
 const app = new OpenAPIHono<Env>();
 
-// Organization endpoints
 const organizationsRoutes = app
   /*
    * Create organization
    */
-  .openapi(organizationRoutesConfig.createOrganization, async (ctx) => {
+  .openapi(organizationsRouteConfig.createOrganization, async (ctx) => {
     const { name, slug } = ctx.req.valid('json');
     const user = getContextUser();
 
@@ -65,7 +65,7 @@ const organizationsRoutes = app
   /*
    * Get list of organizations
    */
-  .openapi(organizationRoutesConfig.getOrganizations, async (ctx) => {
+  .openapi(organizationsRouteConfig.getOrganizations, async (ctx) => {
     const { q, sort, order, offset, limit } = ctx.req.valid('query');
     const user = getContextUser();
 
@@ -119,7 +119,7 @@ const organizationsRoutes = app
   /*
    * Update an organization by id or slug
    */
-  .openapi(organizationRoutesConfig.updateOrganization, async (ctx) => {
+  .openapi(organizationsRouteConfig.updateOrganization, async (ctx) => {
     const { idOrSlug } = ctx.req.valid('param');
 
     const { entity: organization, isAllowed, membership } = await getValidEntity('organization', 'update', idOrSlug);
@@ -174,7 +174,7 @@ const organizationsRoutes = app
   /*
    * Get organization by id or slug
    */
-  .openapi(organizationRoutesConfig.getOrganization, async (ctx) => {
+  .openapi(organizationsRouteConfig.getOrganization, async (ctx) => {
     const { idOrSlug } = ctx.req.valid('param');
 
     const { entity: organization, isAllowed, membership } = await getValidEntity('organization', 'read', idOrSlug);
@@ -210,7 +210,7 @@ const organizationsRoutes = app
   /*
    * Delete organizations by ids
    */
-  .openapi(organizationRoutesConfig.deleteOrganizations, async (ctx) => {
+  .openapi(organizationsRouteConfig.deleteOrganizations, async (ctx) => {
     const { ids } = ctx.req.valid('json');
 
     const memberships = getContextMemberships();
@@ -250,7 +250,7 @@ const organizationsRoutes = app
   /*
    * Send newsletter to one or more roles members of one or more organizations
    */
-  .openapi(organizationRoutesConfig.sendNewsletter, async (ctx) => {
+  .openapi(organizationsRouteConfig.sendNewsletter, async (ctx) => {
     const { organizationIds, subject, content, roles } = ctx.req.valid('json');
     const { toSelf } = ctx.req.valid('query');
 
