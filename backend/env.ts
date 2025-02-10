@@ -1,9 +1,17 @@
+import { env as dotenv } from '@dotenv-run/core';
 import { createEnv } from '@t3-oss/env-core';
-import { config as dotenvConfig } from 'dotenv';
+import { config } from 'config';
 import { z } from 'zod';
 
-dotenvConfig();
+dotenv({
+  root: '../..',
+  verbose: config.debug,
+  files: ['.env'],
+});
 
+/**
+ * Environment variables validated with zod
+ */
 export const env = createEnv({
   server: {
     PGLITE: z
