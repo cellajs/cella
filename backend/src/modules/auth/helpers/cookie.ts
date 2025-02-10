@@ -46,6 +46,7 @@ export const setAuthCookie = async (ctx: Context, name: CookieName, content: str
  */
 export const getAuthCookie = async (ctx: Context, name: CookieName) => {
   const versionedName = `${config.slug}-${name}-${config.cookieVersion}`;
+
   const content = isProduction ? await getSignedCookie(ctx, env.COOKIE_SECRET, versionedName) : getCookie(ctx, versionedName);
   return content;
 };
@@ -59,6 +60,7 @@ export const getAuthCookie = async (ctx: Context, name: CookieName) => {
  */
 export const deleteAuthCookie = (ctx: Context, name: CookieName) => {
   const versionedName = `${config.slug}-${name}-${config.cookieVersion}`;
+
   return deleteCookie(ctx, versionedName, {
     path: '/',
     secure: isProduction,

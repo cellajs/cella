@@ -39,8 +39,6 @@ export const requestsQueryOptions = ({
   return infiniteQueryOptions({
     queryKey,
     initialPageParam: 0,
-    retry: 1,
-    refetchOnWindowFocus: false,
     queryFn: async ({ pageParam: page, signal }) => await getRequests({ page, q, sort, order, limit, offset: page * limit }, signal),
     getNextPageParam: (_lastPage, allPages) => allPages.length,
   });

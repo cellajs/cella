@@ -9,7 +9,7 @@
     "quick": "cross-env VITE_QUICK=true pnpm dev",
     "dev": "cross-env NODE_ENV=development vite --mode development && node --trace-warnings",
     "start": "cross-env NODE_ENV=production pnpm preview",
-    "check:types": "tsc --pretty",
+    "check": "tsc --pretty",
     "ts:perf": "rm -rf tsconfig.tsbuildinfo && cross-env NODE_ENV=development tsc --noEmit --extendedDiagnostics",
     "build": "cross-env NODE_ENV=production vite build",
     "build:dev": "cross-env NODE_ENV=development vite build --mode development",

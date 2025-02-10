@@ -1,17 +1,17 @@
+import { useMutation } from '@tanstack/react-query';
 import { Link, useNavigate, useParams, useSearch } from '@tanstack/react-router';
-import { useTranslation } from 'react-i18next';
-
-import { useMutation, useQuery } from '@tanstack/react-query';
 import { config } from 'config';
 import { Ban, Check } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-import { acceptOrgInvite, checkToken } from '~/modules/auth/api';
+import { acceptOrgInvite } from '~/modules/auth/api';
 import AuthNotice from '~/modules/auth/notice';
 import Spinner from '~/modules/common/spinner';
 import { SubmitButton, buttonVariants } from '~/modules/ui/button';
 import { getAndSetMenu } from '~/modules/users/helpers';
 import { AcceptOrgInviteRoute } from '~/routes/auth';
 import { cn } from '~/utils/cn';
+import { useTokenCheck } from './use-token-check';
 
 // Accept organization invitation when user is signed in
 const AcceptOrgInvite = () => {
@@ -20,6 +20,8 @@ const AcceptOrgInvite = () => {
 
   const { token } = useParams({ from: AcceptOrgInviteRoute.id });
   const { tokenId } = useSearch({ from: AcceptOrgInviteRoute.id });
+
+  const { data, isLoading, error } = useTokenCheck('invitation', tokenId);
 
   const {
     mutate: _acceptOrgInvite,
@@ -30,7 +32,7 @@ const AcceptOrgInvite = () => {
     onSuccess: () => {
       getAndSetMenu();
       toast.success(t('common:invitation_accepted'));
-      navigate({ to: tokenData?.organizationSlug ? `/${tokenData.organizationSlug}` : config.defaultRedirectPath });
+      navigate({ to: data?.organizationSlug ? `/${data.organizationSlug}` : config.defaultRedirectPath });
     },
   });
 
@@ -39,28 +41,16 @@ const AcceptOrgInvite = () => {
     _acceptOrgInvite({ token });
   };
 
-  // Set up query options to check token
-  const tokenQueryOptions = {
-    queryKey: [],
-    queryFn: async () => {
-      if (!tokenId || !token) return;
-      return checkToken({ id: tokenId, type: 'invitation' });
-    },
-  };
-
-  // Fetch token data on mount
-  const { data: tokenData, isLoading, error } = useQuery(tokenQueryOptions);
-
   if (isLoading) return <Spinner className="h-10 w-10" />;
   if (error || acceptInviteError) return <AuthNotice error={error || acceptInviteError} />;
-  if (!tokenData) return null;
+  if (!data) return null;
 
   return (
     <>
       <h1 className="text-2xl text-center">{t('common:accept_invite')}</h1>
-      <p className="font-light mb-4">{t('common:accept_invite_text', { email: tokenData.email, organization: tokenData.organizationName })}</p>
+      <p className="font-light mb-4">{t('common:accept_invite_text', { email: data.email, organization: data.organizationName })}</p>
 
-      {tokenData.email && (
+      {data.email && (
         <div className="space-y-4">
           <SubmitButton loading={isPending} className="w-full" onClick={onSubmit}>
             <Check size={16} className="mr-2" />

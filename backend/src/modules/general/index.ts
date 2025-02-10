@@ -22,7 +22,6 @@ import { logEvent } from '#/middlewares/logger/log-event';
 import { getUserBy, getUsersByConditions } from '#/modules/users/helpers/get-user-by';
 import { verifyUnsubscribeToken } from '#/modules/users/helpers/unsubscribe-token';
 import { nanoid } from '#/utils/nanoid';
-import { encodeLowerCased } from '#/utils/oslo';
 import { prepareStringForILikeFilter } from '#/utils/sql';
 import { TimeSpan, createDate } from '#/utils/time-span';
 import { env } from '../../env';
@@ -108,9 +107,9 @@ const generalRoutes = app
 
     // Generate tokens
     const tokens = recipientEmails.map((email) => {
-      const hashedToken = encodeLowerCased(nanoid());
+      const token = nanoid(40);
       return {
-        token: hashedToken,
+        token,
         type: 'invitation' as const,
         email: email.toLowerCase(),
         createdBy: user.id,

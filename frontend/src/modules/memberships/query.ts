@@ -50,8 +50,6 @@ export const membersQueryOptions = ({
   return infiniteQueryOptions({
     queryKey,
     initialPageParam: 0,
-    retry: 1,
-    refetchOnWindowFocus: false,
     queryFn: async ({ pageParam: page, signal }) =>
       await getMembers({ page, q, sort, order, role, limit, idOrSlug, orgIdOrSlug, entityType, offset: page * limit }, signal),
     getNextPageParam: (_lastPage, allPages) => allPages.length,
@@ -91,8 +89,6 @@ export const invitedMembersQueryOptions = ({
   return infiniteQueryOptions({
     queryKey,
     initialPageParam: 0,
-    retry: 1,
-    refetchOnWindowFocus: false,
     queryFn: async ({ pageParam: page, signal }) =>
       await getInvitedMembers({ page, q, sort, order, role, limit, idOrSlug, orgIdOrSlug, entityType, offset: page * limit }, signal),
     getNextPageParam: (_lastPage, allPages) => allPages.length,

@@ -9,7 +9,7 @@ export const githubSignInUrl = client.github.$url().href;
 export const googleSignInUrl = client.google.$url().href;
 export const microsoftSignInUrl = client.microsoft.$url().href;
 
-type TokenType = (typeof config.tokenTypes)[number];
+export type TokenType = (typeof config.tokenTypes)[number];
 type SignUpProps = Parameters<(typeof client)['sign-up']['$post']>['0']['json'];
 
 /**

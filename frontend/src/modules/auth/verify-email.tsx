@@ -1,7 +1,7 @@
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useMutation } from '@tanstack/react-query';
 import { useNavigate, useParams, useSearch } from '@tanstack/react-router';
 import { config } from 'config';
-import { Check, Mail } from 'lucide-react';
+import { ArrowRight, Check, Mail } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { sendVerificationEmail, verifyEmail } from '~/modules/auth/api';
 import AuthNotice from '~/modules/auth/notice';
@@ -9,6 +9,7 @@ import Spinner from '~/modules/common/spinner';
 import { createToast } from '~/modules/common/toaster';
 import { Button } from '~/modules/ui/button';
 import { VerifyEmailWithTokenRoute } from '~/routes/auth';
+import { useTokenCheck } from './use-token-check';
 
 const VerifyEmail = () => {
   const { t } = useTranslation();
@@ -17,43 +18,55 @@ const VerifyEmail = () => {
   const { token } = useParams({ from: VerifyEmailWithTokenRoute.id });
   const { tokenId } = useSearch({ from: VerifyEmailWithTokenRoute.id });
 
+  const { data, isLoading, error } = useTokenCheck('email_verification', tokenId);
+
+  // Verify email with token
+  const { mutate: verify, isPending: isVerifying } = useMutation({
+    mutationFn: () => verifyEmail({ token }),
+    onSuccess: () => {
+      createToast(t('common:success.email_verified'), 'success');
+      navigate({ to: config.welcomeRedirectPath });
+    },
+  });
+
   // Resend verification email
-  const { mutate, isPending, isSuccess } = useMutation({
+  const {
+    mutate: resendVerification,
+    isPending,
+    isSuccess,
+  } = useMutation({
     mutationFn: () => sendVerificationEmail({ tokenId }),
     onSuccess: () => {
       createToast(t('common:success.sent_verification_email'), 'success');
     },
   });
 
-  // Set up query to verify email
-  // On success, redirect to welcome page
-  const tokenQueryOptions = {
-    queryKey: [],
-    queryFn: async () => {
-      if (!token) return;
-      return verifyEmail({ token });
-    },
-    onSuccess: () => {
-      createToast(t('common:success.email_verified'), 'success');
-      navigate({ to: config.welcomeRedirectPath });
-    },
-  };
+  // Checking token by id
+  if (isLoading || isVerifying) return <Spinner className="h-10 w-10" />;
 
-  // Verify email directly
-  const { isLoading, error } = useQuery(tokenQueryOptions);
-
-  if (isLoading) return <Spinner className="h-10 w-10" />;
+  // Check token failed
   if (error)
     return (
       <AuthNotice error={error}>
-        <Button size="lg" onClick={() => mutate()} disabled={isSuccess} loading={isPending}>
-          {isSuccess ? <Check size={16} /> : <Mail size={16} />}
-          {isSuccess ? t('common:resend_sent') : t('common:resend_email')}
-        </Button>
+        {/* Show resend option if possible */}
+        {error.status && ![404, 429].includes(error.status) && (
+          <Button size="lg" onClick={() => resendVerification()} className="flex gap-2" disabled={isSuccess} loading={isPending}>
+            {isSuccess ? <Check size={16} /> : <Mail size={16} />}
+            {isSuccess ? t('common:resend_sent') : t('common:resend_email')}
+          </Button>
+        )}
       </AuthNotice>
     );
 
-  return null;
+  return (
+    <div className="text-center">
+      <h1 className="text-2xl">{t('common:verify_email', { email: data?.email })}</h1>
+      <Button size="lg" onClick={() => verify()} className="mt-6" loading={isVerifying}>
+        {t('common:verify_signin')}
+        <ArrowRight size={16} className="ml-2" />
+      </Button>
+    </div>
+  );
 };
 
 export default VerifyEmail;

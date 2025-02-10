@@ -30,7 +30,6 @@ import {
 } from '#/modules/auth/helpers/oauth-providers';
 import { getUserBy, getUsersByConditions } from '#/modules/users/helpers/get-user-by';
 import { nanoid } from '#/utils/nanoid';
-import { encodeLowerCased } from '#/utils/oslo';
 import { TimeSpan, createDate, isExpiredDate } from '#/utils/time-span';
 import { CreatePasswordEmail, type CreatePasswordEmailProps } from '../../../emails/create-password';
 import { EmailVerificationEmail, type EmailVerificationEmailProps } from '../../../emails/email-verification';
@@ -167,12 +166,11 @@ const authRoutes = app
     await db.delete(tokensTable).where(and(eq(tokensTable.userId, user.id), eq(tokensTable.type, 'email_verification')));
 
     const token = nanoid(40);
-    const hashedToken = encodeLowerCased(token);
 
     const [tokenRecord] = await db
       .insert(tokensTable)
       .values({
-        token: hashedToken,
+        token,
         type: 'email_verification',
         userId: user.id,
         email: user.email,
@@ -227,12 +225,11 @@ const authRoutes = app
     await db.delete(tokensTable).where(and(eq(tokensTable.userId, user.id), eq(tokensTable.type, 'password_reset')));
 
     const token = nanoid(40);
-    const hashedToken = encodeLowerCased(token);
 
     const [tokenRecord] = await db
       .insert(tokensTable)
       .values({
-        token: hashedToken,
+        token,
         type: 'password_reset',
         userId: user.id,
         email,
@@ -388,9 +385,11 @@ const authRoutes = app
     return ctx.json({ success: true }, 200);
   })
   /*
-   * TODO simplify: Start impersonation
+   * Start impersonation
    */
   .openapi(authRouteConfig.startImpersonation, async (ctx) => {
+    const { targetUserId } = ctx.req.valid('query');
+
     const user = getContextUser();
     const sessionToken = await getAuthCookie(ctx, 'session');
 
@@ -399,8 +398,9 @@ const authRoutes = app
       return errorResponse(ctx, 401, 'unauthorized', 'warn');
     }
 
-    const { targetUserId } = ctx.req.valid('query');
     await setUserSession(ctx, targetUserId, 'impersonation', user.id);
+
+    logEvent('Started impersonation', { admin: user.id, user: targetUserId });
 
     return ctx.json({ success: true }, 200);
   })
@@ -432,7 +432,7 @@ const authRoutes = app
       await setAuthCookie(ctx, 'session', adminsLastSession.token, expireTimeSpan);
     }
 
-    logEvent('Admin user signed out from impersonate to his own account', { user: session?.adminUserId || 'na' });
+    logEvent('Stopped impersonation', { admin: session.adminUserId || 'na', user: session.userId });
 
     return ctx.json({ success: true }, 200);
   })

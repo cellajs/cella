@@ -393,5 +393,7 @@
   "resend_sent": "Check your inbox ",
   "success.sent_verification_email": "Open your inbox to verify your account!",
   "test_email.text": "This email will only be sent to yourself when you send it. The newsletter form will not close.",
-  "send_test_email": "Send test email"
+  "send_test_email": "Send test email",
+  "verify_email": "Complete verification of {{email}}",
+  "verify_signin": "Verify & sign in"
 }

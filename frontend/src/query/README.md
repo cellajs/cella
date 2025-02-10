@@ -71,8 +71,6 @@ export const attachmentsQueryOptions = ({ orgIdOrSlug, q = "", sort: initialSort
   return infiniteQueryOptions({
     queryKey,
     initialPageParam: 0,
-    retry: 1,
-    refetchOnWindowFocus: false,
     queryFn: async ({ pageParam: page, signal }) => await getAttachments({ page, q, sort, order, limit, orgIdOrSlug, offset: page * limit }, signal),
     getNextPageParam: (_lastPage, allPages) => allPages.length
   });

@@ -47,6 +47,7 @@ export const CheckEmailForm = ({ setStep, emailEnabled }: CheckEmailProps) => {
       else if (config.has.waitlist) nextStep = 'waitlist';
 
       if (error.status === 404) return setStep(nextStep, form.getValues('email'));
+      return null;
     },
   });
 
