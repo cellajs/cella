@@ -4,8 +4,7 @@ import { oauthAccountsTable } from '#/db/schema/oauth-accounts';
 import { type UserModel, usersTable } from '#/db/schema/users';
 import { setUserSession, validateSession } from './session';
 
-import type { EnabledOauthProvider } from 'config';
-import { config } from 'config';
+import { type EnabledOauthProvider, config } from 'config';
 import slugify from 'slugify';
 import { db } from '#/db/db';
 import { errorRedirect, errorResponse } from '#/lib/errors';
