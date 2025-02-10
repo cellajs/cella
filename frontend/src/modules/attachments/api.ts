@@ -19,7 +19,7 @@ export type CreateAttachmentParams = { attachments: Parameters<(typeof client.in
  *   - `organizationId`: Organization id to associate the attachment with.
  *   - `id`: An optional ID for the attachment (if not provided, a new ID will be generated).
  *
- * @param organizationId - Organization ID, used to check permissions and associate the attachment
+ * @param orgIdOrSlug - Organization ID or slug, to check permissions attachment
  * @returns The created attachment data.
  */
 export const createAttachments = async ({ attachments, orgIdOrSlug }: CreateAttachmentParams) => {
