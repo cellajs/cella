@@ -6,7 +6,7 @@ import { contextEntityTypeSchema, idOrSlugSchema, idSchema, imageUrlSchema, name
 import { membershipInfoSchema } from '../memberships/schema';
 import { signUpInfo } from '../users/schema';
 
-// TODO use db schema?
+// TODO use session db schema?
 export const sessionsSchema = z.object({
   sessions: z.array(
     z.object({

@@ -33,7 +33,7 @@ export const successWithPaginationSchema = <T extends z.ZodTypeAny>(schema: T) =
   });
 
 /**
- * Schema for error responses
+ * Schema for errors in a response.
  */
 export const errorSchema = z.object({
   message: z.string(), // Error message

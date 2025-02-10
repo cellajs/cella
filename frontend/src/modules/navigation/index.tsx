@@ -1,6 +1,5 @@
 import { onlineManager } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
-import type { LucideProps } from 'lucide-react';
 import { useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
@@ -11,18 +10,8 @@ import { sheet } from '~/modules/common/sheeter/state';
 import { createToast } from '~/modules/common/toaster';
 import BarNav from '~/modules/navigation/bar-nav';
 import FloatingNav from '~/modules/navigation/floating-nav';
-import { type NavItemId, baseNavItems, navItems } from '~/nav-config';
+import { type NavItem, navItems } from '~/nav-config';
 import { useNavigationStore } from '~/store/navigation';
-
-export type NavItem = {
-  id: NavItemId;
-  icon: React.ElementType<LucideProps>;
-  sheet?: React.ReactNode;
-  dialog?: React.ReactNode;
-  event?: string;
-  href?: string;
-  mirrorOnMobile?: boolean;
-};
 
 const AppNav = () => {
   const { t } = useTranslation();
@@ -31,10 +20,13 @@ const AppNav = () => {
 
   const { setLoading, setFocusView, navSheetOpen, setNavSheetOpen } = useNavigationStore();
 
+  // TODO this rerenders on every route change
   const renderedItems = useMemo(() => {
-    const floatingNavButtons = router.state.matches.flatMap((el) => el.staticData.floatingNavButtons || []);
-    const itemsIds = floatingNavButtons.length && isMobile ? floatingNavButtons : baseNavItems;
-    return navItems.filter(({ id }) => itemsIds.includes(id));
+    const floatingButtonIdsInRoute = router.state.matches.flatMap((el) => el.staticData.floatingNavButtons || []);
+    return navItems.filter(({ id, type }) => {
+      if (floatingButtonIdsInRoute.length && isMobile) return floatingButtonIdsInRoute.includes(id);
+      return type === 'base';
+    });
   }, [router.state.matches, isMobile]);
 
   const showFloatingNav = renderedItems.length > 0 && renderedItems.length <= 2;

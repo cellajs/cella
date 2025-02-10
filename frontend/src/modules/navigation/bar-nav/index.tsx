@@ -1,8 +1,8 @@
 import { config } from 'config';
 import { Fragment, Suspense, lazy } from 'react';
 import useMounted from '~/hooks/use-mounted';
-import type { NavItem } from '~/modules/navigation';
 import { BarNavButton } from '~/modules/navigation/bar-nav/button';
+import type { NavItem } from '~/nav-config';
 import { useNavigationStore } from '~/store/navigation';
 import { useThemeStore } from '~/store/theme';
 import { cn } from '~/utils/cn';

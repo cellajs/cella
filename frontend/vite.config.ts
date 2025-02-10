@@ -24,6 +24,7 @@ export default defineConfig(() => {
   const frontendUrl = new URL(config.frontendUrl);
 
   const viteConfig = {
+    logLevel: 'info',
     server: {
       host: '0.0.0.0',
       port: Number(frontendUrl.port),

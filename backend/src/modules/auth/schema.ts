@@ -1,7 +1,5 @@
 import { z } from 'zod';
-import { type MenuSectionName, entityRelations } from '#/entity-config';
 import { idSchema, passwordSchema } from '#/utils/schema/common';
-import { menuItemSchema } from '../me/schema';
 import { userSchema } from '../users/schema';
 
 export const emailPasswordBodySchema = z.object({
@@ -34,20 +32,12 @@ export const emailBodySchema = z.object({
   email: userSchema.shape.email,
 });
 
-export const signInResponse = z.object({
+/** Response schema if successfully signed in */
+export const signInSchema = z.object({
   emailVerified: z.boolean(),
 });
 
 export const passkeyChallengeQuerySchema = z.object({ challengeBase64: z.string() });
-
-const sectionNames = entityRelations.map(({ menuSectionName }) => menuSectionName) as [MenuSectionName];
-
-export const acceptOrgInviteResponseSchema = z
-  .object({
-    newItem: menuItemSchema,
-    sectionName: z.enum(sectionNames),
-  })
-  .optional();
 
 export const oauthQuerySchema = z.object({
   redirect: z.string().optional(),

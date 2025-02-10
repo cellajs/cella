@@ -15,7 +15,7 @@ import {
   passkeyRegistrationBodySchema,
   passkeyVerificationBodySchema,
   sendVerificationEmailBodySchema,
-  signInResponse,
+  signInSchema,
 } from './schema';
 
 class AuthLayoutRouteConfig {
@@ -349,7 +349,7 @@ class AuthLayoutRouteConfig {
         }),
         content: {
           'application/json': {
-            schema: successWithDataSchema(signInResponse),
+            schema: successWithDataSchema(signInSchema),
           },
         },
       },

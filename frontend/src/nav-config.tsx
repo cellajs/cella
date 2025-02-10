@@ -1,10 +1,9 @@
-import { Home, Menu, Search, User } from 'lucide-react';
+import { Home, type LucideProps, Menu, Search, User } from 'lucide-react';
 
 import { AccountSheet } from '~/modules/navigation/account-sheet';
 import { MenuSheet } from '~/modules/navigation/menu-sheet';
 
 import type { FooterLinkProps } from '~/modules/common/main-footer';
-import type { NavItem } from '~/modules/navigation';
 import { AppSearch, type SuggestionSection, type SuggestionType } from '~/modules/navigation/search';
 import type { UserMenuItem } from '~/modules/users/types';
 
@@ -19,19 +18,28 @@ export const baseEntityRoutes = {
 /**
  * Declare navigation items/buttons ids for main navigation bar
  *
- * TODO confusing as the relation with navItems is not clear, type should be derived from baseNavItems? or a merge of hidden and visible items?
+ * Type `base` if for buttons in the main navigation bar, `floating` is for floating buttons
  */
-export const baseNavItems: NavItemId[] = ['menu', 'home', 'search', 'account'];
-export type NavItemId = 'menu' | 'home' | 'search' | 'account' | 'stop_impersonation';
+
+export type NavItem = {
+  id: string;
+  icon: React.ElementType<LucideProps>;
+  type: 'base' | 'floating';
+  sheet?: React.ReactNode;
+  dialog?: React.ReactNode;
+  event?: string;
+  href?: string;
+  mirrorOnMobile?: boolean;
+};
 
 /**
- * Declare all of your main navigation items, visible in the main navigation bar
+ * Declare all of your main navigation items, visible in main navigation bar or as floating buttons on mobile
  */
 export const navItems: NavItem[] = [
-  { id: 'menu', icon: Menu, sheet: <MenuSheet /> },
-  { id: 'home', icon: Home, href: '/home' },
-  { id: 'search', icon: Search, dialog: <AppSearch /> },
-  { id: 'account', icon: User, sheet: <AccountSheet />, mirrorOnMobile: true },
+  { id: 'menu', type: 'base', icon: Menu, sheet: <MenuSheet /> },
+  { id: 'home', type: 'base', icon: Home, href: '/home' },
+  { id: 'search', type: 'base', icon: Search, dialog: <AppSearch /> },
+  { id: 'account', type: 'base', icon: User, sheet: <AccountSheet />, mirrorOnMobile: true },
 ];
 
 /**
