@@ -32,16 +32,17 @@ export const attachmentsSearchSchema = attachmentsQuerySchema.pick({ q: true, so
 export const OrganizationRoute = createRoute({
   path: '/$idOrSlug',
   staticData: { pageTitle: 'Organization', isAuth: true },
-  beforeLoad: async ({ location, params: { idOrSlug } }) => {
+  beforeLoad: async ({ location, cause, params: { idOrSlug } }) => {
     noDirectAccess(location.pathname, idOrSlug, '/members');
+    const queryOptions = organizationQueryOptions(idOrSlug);
 
-    // Apply custom staleTime to prevent refetch on tab changes within 1 minute
-    const queryOptions = {
-      ...organizationQueryOptions(idOrSlug),
-      staleTime: 1000 * 60, // 1 minute
-    };
+    // Prevents unnecessary fetches(runs when user enters page)
+    if (cause !== 'enter') {
+      const { id: organizationId } = await queryClient.ensureQueryData(queryOptions);
+      return { orgIdOrSlug: organizationId };
+    }
 
-    const organization = await offlineFetch<OrganizationType>(queryOptions, false); // Disable refetching when online (handled by staleTime)
+    const organization = await offlineFetch<OrganizationType>(queryOptions);
     return { orgIdOrSlug: organization?.id || idOrSlug };
   },
   getParentRoute: () => AppRoute,
@@ -62,7 +63,10 @@ export const OrganizationMembersRoute = createRoute({
   staticData: { pageTitle: 'members', isAuth: true },
   getParentRoute: () => OrganizationRoute,
   loaderDeps: ({ search: { q, sort, order, role } }) => ({ q, sort, order, role }),
-  loader: ({ params: { idOrSlug }, deps: { q, sort, order, role }, context: { orgIdOrSlug } }) => {
+  loader: ({ cause, params: { idOrSlug }, deps: { q, sort, order, role }, context: { orgIdOrSlug } }) => {
+    // Prevents unnecessary fetches(runs when user enters page)
+    if (cause !== 'enter') return;
+
     const entityType = 'organization';
     const queryOptions = membersQueryOptions({ idOrSlug, orgIdOrSlug, entityType, q, sort, order, role });
     return offlineFetchInfinite(queryOptions);
