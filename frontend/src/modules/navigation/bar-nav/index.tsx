@@ -46,7 +46,7 @@ const BarNav = ({ items, onClick }: { items: NavItem[]; onClick: (index: number)
           );
         })}
       </ul>
-      <div className="max-sm:hidden">
+      <div className="max-sm:hidden p-2">
         <Suspense>{DebugToolbars ? <DebugToolbars /> : null}</Suspense>
         <StopImpersonation />
       </div>

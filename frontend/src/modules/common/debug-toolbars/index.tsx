@@ -1,6 +1,5 @@
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { TanStackRouterDevtools } from '@tanstack/router-devtools';
-import useMounted from '~/hooks/use-mounted';
 import { Button } from '~/modules/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '~/modules/ui/dropdown-menu';
 import '~/modules/common/debug-toolbars/style.css';
@@ -21,8 +20,6 @@ const debugOptions: DebugItem[] = [
 ];
 
 const DebugToolbars = () => {
-  const { hasStarted } = useMounted();
-
   const debugToggle = (item: DebugItem) => {
     if (item.url) return window.open(item.url);
     if (!item.parent || !item.element) return;
@@ -38,26 +35,22 @@ const DebugToolbars = () => {
     <>
       <TanStackRouterDevtools />
       <ReactQueryDevtools client={queryClient} />
-      <div
-        className={`transition-transform ease-out'
-          ${!hasStarted && 'sm:-translate-x-full'}`}
-      >
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" aria-label="toggle debug toolbar">
-              🐞
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent side="right" align="end" sideOffset={24} className="w-48 z-300">
-            {debugOptions.map((item) => (
-              <DropdownMenuItem key={item.id} onClick={() => debugToggle(item)}>
-                <span className="mr-2">{item.icon}</span>
-                <span>{item.id}</span>
-              </DropdownMenuItem>
-            ))}
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
+
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="ghost" className="w-12 h-12" aria-label="toggle debug toolbar">
+            🐞
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent side="right" align="end" sideOffset={24} className="w-48 z-300">
+          {debugOptions.map((item) => (
+            <DropdownMenuItem key={item.id} onClick={() => debugToggle(item)}>
+              <span className="mr-2">{item.icon}</span>
+              <span>{item.id}</span>
+            </DropdownMenuItem>
+          ))}
+        </DropdownMenuContent>
+      </DropdownMenu>
     </>
   );
 };

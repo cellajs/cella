@@ -1,5 +1,6 @@
 import { useNavigate } from '@tanstack/react-router';
 import { config } from 'config';
+import { UserX } from 'lucide-react';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
@@ -25,7 +26,11 @@ const StopImpersonation = () => {
 
   if (currentSession?.type !== 'impersonation') return null;
 
-  return <Button onClick={stopImpersonation} />;
+  return (
+    <Button variant="ghost" className="w-12 h-12" onClick={stopImpersonation}>
+      <UserX size="20" strokeWidth="1.5" />
+    </Button>
+  );
 };
 
 export default StopImpersonation;
