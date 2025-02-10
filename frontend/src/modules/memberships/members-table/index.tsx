@@ -17,7 +17,6 @@ import { useColumns } from '~/modules/memberships/members-table/columns';
 import { MembersTableHeader } from '~/modules/memberships/members-table/table-header';
 import RemoveMembersForm from '~/modules/memberships/remove-member-form';
 import type { Member } from '~/modules/memberships/types';
-import type { OrganizationInvites } from '~/modules/organizations/types';
 import InviteUsers from '~/modules/users/invite-users';
 import type { membersSearchSchema } from '~/routes/organizations';
 import { arraysHaveSameElements } from '~/utils';
@@ -30,10 +29,9 @@ export type MemberSearch = z.infer<typeof membersSearchSchema>;
 export interface MembersTableProps {
   entity: EntityPage;
   isSheet?: boolean;
-  invites?: OrganizationInvites[];
 }
 
-const MembersTable = ({ entity, invites, isSheet = false }: MembersTableProps) => {
+const MembersTable = ({ entity, isSheet = false }: MembersTableProps) => {
   const { t } = useTranslation();
 
   const { search, setSearch } = useSearchParams<MemberSearch>({ saveDataInSearch: !isSheet });
@@ -117,7 +115,6 @@ const MembersTable = ({ entity, invites, isSheet = false }: MembersTableProps) =
         entity={entity}
         total={total}
         selected={selected}
-        invites={invites}
         q={q ?? ''}
         role={role}
         setSearch={setSearch}

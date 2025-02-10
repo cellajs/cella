@@ -4,7 +4,7 @@ import { useMemo, useState } from 'react';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import HeaderCell from '~/modules/common/data-table/header-cell';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
-import type { OrganizationInvites } from '~/modules/organizations/types';
+import type { InvitedMemberInfo } from '~/modules/memberships/types';
 import { dateShort } from '~/utils/date-short';
 
 export const useColumns = () => {
@@ -12,11 +12,11 @@ export const useColumns = () => {
   const isMobile = useBreakpoints('max', 'sm');
 
   const columns = useMemo(() => {
-    const cols: ColumnOrColumnGroup<OrganizationInvites>[] = [
+    const cols: ColumnOrColumnGroup<InvitedMemberInfo>[] = [
       {
         key: 'email',
         name: t('common:email'),
-        sortable: false,
+        sortable: true,
         visible: true,
         renderHeaderCell: HeaderCell,
         renderCell: ({ row }) => row.email,
@@ -25,7 +25,7 @@ export const useColumns = () => {
       {
         key: 'role',
         name: t('common:role'),
-        sortable: false,
+        sortable: true,
         visible: true,
         renderHeaderCell: HeaderCell,
         renderCell: ({ row }) => (
@@ -67,5 +67,5 @@ export const useColumns = () => {
     return cols;
   }, []);
 
-  return useState<ColumnOrColumnGroup<OrganizationInvites>[]>(columns);
+  return useState<ColumnOrColumnGroup<InvitedMemberInfo>[]>(columns);
 };

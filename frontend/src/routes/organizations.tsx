@@ -5,14 +5,14 @@ import { offlineFetch, offlineFetchInfinite } from '~/lib/query-client';
 import { queryClient } from '~/lib/router';
 import { attachmentsQueryOptions } from '~/modules/attachments/query';
 import ErrorNotice from '~/modules/common/error-notice';
-import { membersQueryOptions } from '~/modules/memberships/query';
+import { invitedMembersQueryOptions, membersQueryOptions } from '~/modules/memberships/query';
 import { organizationQueryOptions } from '~/modules/organizations/query';
-import { membersQuerySchema } from '#/modules/general/schema';
 
 import type { Organization as OrganizationType } from '~/modules/organizations/types';
 import { AppRoute } from '~/routes/general';
 import { noDirectAccess } from '~/utils/no-direct-access';
 import { attachmentsQuerySchema } from '#/modules/attachments/schema';
+import { invitedMembersQuerySchema, membersQuerySchema } from '#/modules/memberships/schema';
 
 //Lazy-loaded components
 const OrganizationPage = lazy(() => import('~/modules/organizations/organization-page'));
@@ -24,6 +24,8 @@ const OrganizationSettings = lazy(() => import('~/modules/organizations/organiza
 export const membersSearchSchema = membersQuerySchema
   .pick({ q: true, sort: true, order: true, role: true })
   .extend({ sheetId: z.string().optional() });
+
+export const invitedMembersSearchSchema = invitedMembersQuerySchema.pick({ q: true, sort: true, order: true, role: true });
 
 export const attachmentsSearchSchema = attachmentsQuerySchema.pick({ q: true, sort: true, order: true }).extend({
   attachmentPreview: z.string().optional(),
@@ -38,8 +40,8 @@ export const OrganizationRoute = createRoute({
 
     // Prevents unnecessary fetches(runs when user enters page)
     if (cause !== 'enter') {
-      const { id: organizationId } = await queryClient.ensureQueryData(queryOptions);
-      return { orgIdOrSlug: organizationId };
+      const { id: organizationId, membership } = await queryClient.ensureQueryData(queryOptions);
+      return { orgIdOrSlug: organizationId, isAdmin: membership?.role === 'admin' };
     }
 
     const organization = await offlineFetch<OrganizationType>(queryOptions);
@@ -63,11 +65,15 @@ export const OrganizationMembersRoute = createRoute({
   staticData: { pageTitle: 'members', isAuth: true },
   getParentRoute: () => OrganizationRoute,
   loaderDeps: ({ search: { q, sort, order, role } }) => ({ q, sort, order, role }),
-  loader: ({ cause, params: { idOrSlug }, deps: { q, sort, order, role }, context: { orgIdOrSlug } }) => {
+  loader: ({ cause, params: { idOrSlug }, deps: { q, sort, order, role }, context: { orgIdOrSlug, isAdmin } }) => {
     // Prevents unnecessary fetches(runs when user enters page)
     if (cause !== 'enter') return;
 
     const entityType = 'organization';
+    if (isAdmin) {
+      offlineFetchInfinite(invitedMembersQueryOptions({ idOrSlug, entityType, orgIdOrSlug }));
+    }
+
     const queryOptions = membersQueryOptions({ idOrSlug, orgIdOrSlug, entityType, q, sort, order, role });
     return offlineFetchInfinite(queryOptions);
   },
