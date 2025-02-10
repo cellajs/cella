@@ -5,14 +5,14 @@ import { offlineFetch, offlineFetchInfinite } from '~/lib/query-client';
 import { queryClient } from '~/lib/router';
 import { attachmentsQueryOptions } from '~/modules/attachments/query';
 import ErrorNotice from '~/modules/common/error-notice';
-import { membersQueryOptions } from '~/modules/memberships/query';
+import { invitedMembersQueryOptions, membersQueryOptions } from '~/modules/memberships/query';
 import { organizationQueryOptions } from '~/modules/organizations/query';
-import { membersQuerySchema } from '#/modules/general/schema';
 
 import type { Organization as OrganizationType } from '~/modules/organizations/types';
 import { AppRoute } from '~/routes/general';
 import { noDirectAccess } from '~/utils/no-direct-access';
 import { attachmentsQuerySchema } from '#/modules/attachments/schema';
+import { invitedMembersQuerySchema, membersQuerySchema } from '#/modules/memberships/schema';
 
 //Lazy-loaded components
 const OrganizationPage = lazy(() => import('~/modules/organizations/organization-page'));
@@ -25,6 +25,8 @@ export const membersSearchSchema = membersQuerySchema
   .pick({ q: true, sort: true, order: true, role: true })
   .extend({ sheetId: z.string().optional() });
 
+export const invitedMembersSearchSchema = invitedMembersQuerySchema.pick({ q: true, sort: true, order: true, role: true });
+
 export const attachmentsSearchSchema = attachmentsQuerySchema.pick({ q: true, sort: true, order: true }).extend({
   attachmentPreview: z.string().optional(),
 });
@@ -32,16 +34,17 @@ export const attachmentsSearchSchema = attachmentsQuerySchema.pick({ q: true, so
 export const OrganizationRoute = createRoute({
   path: '/$idOrSlug',
   staticData: { pageTitle: 'Organization', isAuth: true },
-  beforeLoad: async ({ location, params: { idOrSlug } }) => {
+  beforeLoad: async ({ location, cause, params: { idOrSlug } }) => {
     noDirectAccess(location.pathname, idOrSlug, '/members');
+    const queryOptions = organizationQueryOptions(idOrSlug);
 
-    // Apply custom staleTime to prevent refetch on tab changes within 1 minute
-    const queryOptions = {
-      ...organizationQueryOptions(idOrSlug),
-      staleTime: 1000 * 60, // 1 minute
-    };
+    // Prevents unnecessary fetches(runs when user enters page)
+    if (cause !== 'enter') {
+      const { id: organizationId, membership } = await queryClient.ensureQueryData(queryOptions);
+      return { orgIdOrSlug: organizationId, isAdmin: membership?.role === 'admin' };
+    }
 
-    const organization = await offlineFetch<OrganizationType>(queryOptions, false); // Disable refetching when online (handled by staleTime)
+    const organization = await offlineFetch<OrganizationType>(queryOptions);
     return { orgIdOrSlug: organization?.id || idOrSlug };
   },
   getParentRoute: () => AppRoute,
@@ -62,8 +65,15 @@ export const OrganizationMembersRoute = createRoute({
   staticData: { pageTitle: 'members', isAuth: true },
   getParentRoute: () => OrganizationRoute,
   loaderDeps: ({ search: { q, sort, order, role } }) => ({ q, sort, order, role }),
-  loader: ({ params: { idOrSlug }, deps: { q, sort, order, role }, context: { orgIdOrSlug } }) => {
+  loader: ({ cause, params: { idOrSlug }, deps: { q, sort, order, role }, context: { orgIdOrSlug, isAdmin } }) => {
+    // Prevents unnecessary fetches(runs when user enters page)
+    if (cause !== 'enter') return;
+
     const entityType = 'organization';
+    if (isAdmin) {
+      offlineFetchInfinite(invitedMembersQueryOptions({ idOrSlug, entityType, orgIdOrSlug }));
+    }
+
     const queryOptions = membersQueryOptions({ idOrSlug, orgIdOrSlug, entityType, q, sort, order, role });
     return offlineFetchInfinite(queryOptions);
   },

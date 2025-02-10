@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import useMounted from '~/hooks/use-mounted';
-import type { NavItem } from '~/modules/navigation';
 import FloatingNavButton from '~/modules/navigation/floating-nav/button';
+import type { NavItem } from '~/nav-config';
 
 const FloatingNav = ({ items, onClick }: { items: NavItem[]; onClick: (index: number) => void }) => {
   const isMobile = useBreakpoints('max', 'sm');

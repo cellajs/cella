@@ -4,8 +4,11 @@ import { organizationQueryOptions } from '~/modules/organizations/query';
 
 import type { UserMenuItem } from '~/modules/users/types';
 
-// This function returns queries that need to be prefetched based on the entity of the item.
-// It is used to prefetch data for each unarchived item in user menu if offlineAccess is enabled, allowing the app to have necessary data while offline.
+/**
+ * This function returns queries that need to be prefetched based on the entity of the item.
+ *
+ * It is used to prefetch data for each unarchived item in user menu if offlineAccess is enabled, allowing the app to have necessary data while offline.
+ */
 export const queriesToMap = (item: UserMenuItem) => {
   const orgIdOrSlug = item.organizationId ?? item.id;
 

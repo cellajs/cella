@@ -73,6 +73,7 @@ const NewsletterForm = ({ organizationIds }: NewsletterFormProps) => {
 
         <BlockNoteContent control={form.control} name="content" required label={t('common:message')} blocknoteId="blocknote-newsletter" />
 
+        {/* TODO so many aria-required? */}
         <FormField
           control={form.control}
           name="roles"

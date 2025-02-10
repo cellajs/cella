@@ -3,8 +3,9 @@ import type { Context } from 'hono';
 import { db } from '#/db/db';
 import { supportedOauthProviders } from '#/db/schema/oauth-accounts';
 import { type SessionModel, sessionsTable } from '#/db/schema/sessions';
-import { type UserModel, safeUserSelect, usersTable } from '#/db/schema/users';
+import { type UserModel, usersTable } from '#/db/schema/users';
 import { logEvent } from '#/middlewares/logger/log-event';
+import { userSelect } from '#/modules/users/helpers/select';
 import { nanoid } from '#/utils/nanoid';
 import { encodeLowerCased } from '#/utils/oslo';
 import { TimeSpan, createDate, isExpiredDate } from '#/utils/time-span';
@@ -86,7 +87,7 @@ export const setUserSession = async (ctx: Context, userId: UserModel['id'], stra
  */
 export const validateSession = async (sessionToken: string) => {
   const [result] = await db
-    .select({ session: sessionsTable, user: safeUserSelect })
+    .select({ session: sessionsTable, user: userSelect })
     .from(sessionsTable)
     .where(eq(sessionsTable.token, sessionToken))
     .innerJoin(usersTable, eq(sessionsTable.userId, usersTable.id));

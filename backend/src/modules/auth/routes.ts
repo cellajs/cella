@@ -1,11 +1,11 @@
 import { z } from '@hono/zod-openapi';
-import { tokenTypeEnum } from '#/db/schema/tokens';
+import { config } from 'config';
 import { createRouteConfig } from '#/lib/route-config';
 import { isAuthenticated, isPublicAccess, systemGuard } from '#/middlewares/guard';
 import { hasValidToken } from '#/middlewares/has-valid-token';
 import { emailEnumLimiter, passwordLimiter, spamLimiter, tokenLimiter } from '#/middlewares/rate-limiter';
-import { errorResponses, successWithDataSchema, successWithoutDataSchema } from '#/utils/schema/common-responses';
-import { cookieSchema, idSchema, passwordSchema, tokenSchema } from '#/utils/schema/common-schemas';
+import { cookieSchema, idSchema, passwordSchema, tokenParamSchema } from '#/utils/schema/common';
+import { errorResponses, successWithDataSchema, successWithoutDataSchema } from '#/utils/schema/responses';
 import {
   checkTokenSchema,
   emailBodySchema,
@@ -15,10 +15,10 @@ import {
   passkeyRegistrationBodySchema,
   passkeyVerificationBodySchema,
   sendVerificationEmailBodySchema,
-  signInResponse,
+  signInSchema,
 } from './schema';
 
-class AuthLayoutRoutesConfig {
+class AuthLayoutRouteConfig {
   public startImpersonation = createRouteConfig({
     method: 'get',
     path: '/impersonation/start',
@@ -142,7 +142,7 @@ class AuthLayoutRoutesConfig {
     description: 'Sign up with email and password to accept system or organization invitation.',
     security: [],
     request: {
-      params: tokenSchema,
+      params: tokenParamSchema,
       body: {
         content: {
           'application/json': {
@@ -212,7 +212,7 @@ class AuthLayoutRoutesConfig {
     description: 'Verify email address by token from the verification email. Receive a user session when successful.',
     security: [],
     request: {
-      params: tokenSchema,
+      params: tokenParamSchema,
     },
     responses: {
       200: {
@@ -349,7 +349,7 @@ class AuthLayoutRoutesConfig {
         }),
         content: {
           'application/json': {
-            schema: successWithDataSchema(signInResponse),
+            schema: successWithDataSchema(signInSchema),
           },
         },
       },
@@ -368,7 +368,7 @@ class AuthLayoutRoutesConfig {
       'This endpoint is used to check if a token is still valid. It is used to provide direct user feedback on the validity of tokens such as reset password and invitation.',
     request: {
       params: z.object({ id: idSchema }),
-      query: z.object({ type: z.enum(tokenTypeEnum) }),
+      query: z.object({ type: z.enum(config.tokenTypes) }),
     },
     responses: {
       200: {
@@ -393,7 +393,7 @@ class AuthLayoutRoutesConfig {
     summary: 'Accept invitation',
     description: 'Accept invitation token',
     request: {
-      params: tokenSchema,
+      params: tokenParamSchema,
     },
     responses: {
       200: {
@@ -621,4 +621,4 @@ class AuthLayoutRoutesConfig {
   });
 }
 
-export default new AuthLayoutRoutesConfig();
+export default new AuthLayoutRouteConfig();

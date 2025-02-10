@@ -4,6 +4,9 @@
     /* Bundler mode */
     "jsx": "react-jsx",
 
+    /* Build */
+    "rootDir": "./",
+    "tsBuildInfoFile": "./dist/.tsbuildinfo",
     "sourceMap": true,
     "inlineSources": true,
 
@@ -19,6 +22,6 @@
       "#/*": ["./src/*"]
     }
   },
-  "include": ["src/**/*", "drizzle.config.ts", "env.ts", "emails", "scripts", "tests"],
+  "include": ["src/**/*", "drizzle.config.ts", "env.ts", "emails", "scripts"],
   "exclude": ["**/node_modules", "**/dist", "**/.*/"]
 }

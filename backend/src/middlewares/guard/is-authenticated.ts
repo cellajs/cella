@@ -1,10 +1,11 @@
 import { eq } from 'drizzle-orm';
 import type { Context, Next } from 'hono';
 import { db } from '#/db/db';
-import { membershipSelect, membershipsTable } from '#/db/schema/memberships';
+import { membershipsTable } from '#/db/schema/memberships';
 import { errorResponse } from '#/lib/errors';
 import { deleteAuthCookie, getAuthCookie } from '#/modules/auth/helpers/cookie';
 import { validateSession } from '#/modules/auth/helpers/session';
+import { membershipSelect } from '#/modules/memberships/helpers/select';
 
 /**
  * Middleware to ensure that the user is authenticated by checking the session cookie.

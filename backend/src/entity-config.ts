@@ -21,12 +21,43 @@ export const entityIdFields = {
   attachment: 'attachmentId',
 } as const;
 
+/*
+  Define entity relationships.
+  This configuration also helps in creating user menu.
+
+  - `subEntity` must be one of `ContextEntityTypes` if used.
+  - `dependentHierarchy` is required when `subEntity` is set. It determines whether membership should be connected through associated  entity.
+  - For sub-entities, ensure that database schema includes a column `${entity}Id` (e.g., `projectId`, `teamId`) that references associated `entity`.
+
+  Example configuration:
+  1. Base config - {
+    menuSectionName: 'departments',
+    entity: 'department'
+  }.
+  2. Submenu without hierarchy - {
+    menuSectionName: 'projects',
+    entity: 'project',
+    subEntity: 'task',                 
+    dependentHierarchy: false // No hierarchy needed between project and task
+  }.
+  3. Submenu with hierarchy - {
+    menuSectionName: 'teams',
+    entity: 'team',
+    subEntity: 'defender',
+    dependentHierarchy: true // Hierarchical relationship between team and defender role
+  } or {
+    menuSectionName: 'teams',
+    entity: 'team',
+    subEntity: 'forward',
+    dependentHierarchy: true // Hierarchical relationship between team and forward role
+  }
+*/
 export const entityRelations = [
   {
-    menuSectionName: 'organizations',
+    menuSectionName: 'organizations', // Name of menu section
     entity: 'organization',
     subEntity: undefined,
-    dependentHierarchy: undefined,
+    dependentHierarchy: undefined, // Indicates that the sub-entity requires a hierarchy dependency
   } as const,
 ] satisfies UsageEntityRelations[];
 

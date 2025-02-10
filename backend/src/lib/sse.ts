@@ -13,7 +13,7 @@ const sendSSE = (userId: string, eventName: string, data: Record<string, unknown
 };
 
 /**
- * Sends a Server-Sent Event (SSE) to multiple users.
+ * Send Server-Sent Events (SSE) to multiple users.
  * This function calls `sendSSE` for each user in the `userIds` array, sending the same event
  * and data to each user.
  *

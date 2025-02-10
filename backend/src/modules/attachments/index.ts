@@ -1,10 +1,10 @@
-import { db } from '#/db/db';
-
 import { OpenAPIHono } from '@hono/zod-openapi';
-import { config } from 'config';
 import { type SQL, and, count, eq, ilike, inArray } from 'drizzle-orm';
 import { html } from 'hono/html';
 import { stream } from 'hono/streaming';
+
+import { config } from 'config';
+import { db } from '#/db/db';
 import { attachmentsTable } from '#/db/schema/attachments';
 import { type Env, getContextMemberships, getContextOrganization, getContextUser } from '#/lib/context';
 import { type ErrorType, createError, errorResponse } from '#/lib/errors';
@@ -12,7 +12,7 @@ import { logEvent } from '#/middlewares/logger/log-event';
 import { splitByAllowance } from '#/permissions/split-by-allowance';
 import { getOrderColumn } from '#/utils/order-column';
 import { prepareStringForILikeFilter } from '#/utils/sql';
-import attachmentsRoutesConfig from './routes';
+import attachmentsRouteConfig from './routes';
 
 const app = new OpenAPIHono<Env>();
 
@@ -21,7 +21,7 @@ const attachmentsRoutes = app
   /*
    * Proxy to electric
    */
-  .openapi(attachmentsRoutesConfig.shapeProxy, async (ctx) => {
+  .openapi(attachmentsRouteConfig.shapeProxy, async (ctx) => {
     const url = new URL(ctx.req.url);
 
     // Constuct the upstream URL
@@ -54,7 +54,7 @@ const attachmentsRoutes = app
   /*
    * Create one or more attachments
    */
-  .openapi(attachmentsRoutesConfig.createAttachments, async (ctx) => {
+  .openapi(attachmentsRouteConfig.createAttachments, async (ctx) => {
     const newAttachments = ctx.req.valid('json');
 
     const organization = getContextOrganization();
@@ -70,14 +70,13 @@ const attachmentsRoutes = app
     const createdAttachments = await db.insert(attachmentsTable).values(fixedNewAttachments).returning();
 
     logEvent(`${createdAttachments.length} attachments have been created`);
-    // Store the created attachment
 
     return ctx.json({ success: true, data: createdAttachments }, 200);
   })
   /*
    * Get attachments
    */
-  .openapi(attachmentsRoutesConfig.getAttachments, async (ctx) => {
+  .openapi(attachmentsRouteConfig.getAttachments, async (ctx) => {
     const { q, sort, order, offset, limit } = ctx.req.valid('query');
 
     const organization = getContextOrganization();
@@ -114,9 +113,9 @@ const attachmentsRoutes = app
     return ctx.json({ success: true, data: { items: attachments, total } }, 200);
   })
   /*
-   * Get attachment
+   * Get attachment by id
    */
-  .openapi(attachmentsRoutesConfig.getAttachment, async (ctx) => {
+  .openapi(attachmentsRouteConfig.getAttachment, async (ctx) => {
     const { id } = ctx.req.valid('param');
 
     const organization = getContextOrganization();
@@ -131,9 +130,9 @@ const attachmentsRoutes = app
     return ctx.json({ success: true, data: attachment }, 200);
   })
   /*
-   * Update an organization by id or slug
+   * Update an attachment by id
    */
-  .openapi(attachmentsRoutesConfig.updateAttachment, async (ctx) => {
+  .openapi(attachmentsRouteConfig.updateAttachment, async (ctx) => {
     const { id } = ctx.req.valid('param');
     const user = getContextUser();
 
@@ -154,9 +153,9 @@ const attachmentsRoutes = app
     return ctx.json({ success: true, data: updatedAttachment }, 200);
   })
   /*
-   * Delete attachments
+   * Delete attachments by ids
    */
-  .openapi(attachmentsRoutesConfig.deleteAttachments, async (ctx) => {
+  .openapi(attachmentsRouteConfig.deleteAttachments, async (ctx) => {
     const { ids } = ctx.req.valid('json');
 
     const memberships = getContextMemberships();
@@ -180,7 +179,7 @@ const attachmentsRoutes = app
 
     return ctx.json({ success: true, errors: errors }, 200);
   })
-  .openapi(attachmentsRoutesConfig.getAttachmentCover, async (ctx) => {
+  .openapi(attachmentsRouteConfig.getAttachmentCover, async (ctx) => {
     const { id } = ctx.req.valid('param');
 
     const [attachment] = await db.select().from(attachmentsTable).where(eq(attachmentsTable.id, id));
@@ -206,7 +205,7 @@ const attachmentsRoutes = app
       await stream.pipe({} as any);
     });
   })
-  .openapi(attachmentsRoutesConfig.redirectToAttachment, async (ctx) => {
+  .openapi(attachmentsRouteConfig.redirectToAttachment, async (ctx) => {
     const { id } = ctx.req.valid('param');
 
     const [attachment] = await db.select().from(attachmentsTable).where(eq(attachmentsTable.id, id));

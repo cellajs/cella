@@ -1,9 +1,9 @@
 import { config } from 'config';
 import { boolean, foreignKey, index, pgTable, timestamp, varchar } from 'drizzle-orm/pg-core';
 import { nanoid } from '#/utils/nanoid';
-import { omitKeys } from '#/utils/omit';
 
 const roleEnum = config.rolesByType.systemRoles;
+const languagesEnum = config.languages;
 
 export const usersTable = pgTable(
   'users',
@@ -20,9 +20,7 @@ export const usersTable = pgTable(
     lastName: varchar(),
     email: varchar().notNull().unique(),
     emailVerified: boolean().notNull().default(false),
-    language: varchar({ enum: ['en', 'nl'] })
-      .notNull()
-      .default(config.defaultLanguage),
+    language: varchar({ enum: languagesEnum }).notNull().default(config.defaultLanguage),
     bannerUrl: varchar(),
     thumbnailUrl: varchar(),
     newsletter: boolean().notNull().default(false),
@@ -46,26 +44,6 @@ export const usersTable = pgTable(
   ],
 );
 
-export const safeUserSelect = omitKeys(usersTable, config.sensitiveFields);
-
-const detailedFields = [
-  'firstName',
-  'lastName',
-  'emailVerified',
-  'language',
-  'newsletter',
-  'lastSeenAt',
-  'lastStartedAt',
-  'lastSignInAt',
-  'createdAt',
-  'modifiedAt',
-  'modifiedBy',
-  'role',
-] as const;
-
-export const baseLimitedUserSelect = omitKeys(safeUserSelect, detailedFields);
-
 export type UnsafeUserModel = typeof usersTable.$inferSelect;
 export type InsertUserModel = typeof usersTable.$inferInsert;
 export type UserModel = Omit<UnsafeUserModel, (typeof config.sensitiveFields)[number]>;
-export type LimitedUserModel = Omit<UserModel, (typeof detailedFields)[number]>;

@@ -9,11 +9,11 @@ import { logEvent } from '#/middlewares/logger/log-event';
 import { invalidateSessionById, invalidateUserSessions, validateSession } from '../auth/helpers/session';
 import { checkSlugAvailable } from '../general/helpers/check-slug';
 import { transformDatabaseUserWithCount } from '../users/helpers/transform-database-user';
-import meRoutesConfig from './routes';
+import meRouteConfig from './routes';
 
 import { OpenAPIHono } from '@hono/zod-openapi';
 import { config } from 'config';
-import { membershipSelect, membershipsTable } from '#/db/schema/memberships';
+import { membershipsTable } from '#/db/schema/memberships';
 import { oauthAccountsTable } from '#/db/schema/oauth-accounts';
 import { passkeysTable } from '#/db/schema/passkeys';
 import { type EntityRelations, entityIdFields, entityRelations, entityTables } from '#/entity-config';
@@ -21,6 +21,7 @@ import { type Env, getContextMemberships, getContextUser } from '#/lib/context';
 import { resolveEntity } from '#/lib/entity';
 import { sendSSEToUsers } from '#/lib/sse';
 import { deleteAuthCookie, getAuthCookie } from '../auth/helpers/cookie';
+import { membershipSelect } from '../memberships/helpers/select';
 import { getUserSessions } from './helpers/get-sessions';
 import type { menuItemSchema, userMenuSchema } from './schema';
 
@@ -29,12 +30,11 @@ type MenuItem = z.infer<typeof menuItemSchema>;
 
 const app = new OpenAPIHono<Env>();
 
-// Me (self) endpoints
 const meRoutes = app
   /*
    * Get current user
    */
-  .openapi(meRoutesConfig.getSelf, async (ctx) => {
+  .openapi(meRouteConfig.getSelf, async (ctx) => {
     const user = getContextUser();
     const memberships = getContextMemberships();
 
@@ -46,7 +46,7 @@ const meRoutes = app
   /*
    * Get current user auth info
    */
-  .openapi(meRoutesConfig.getSelfAuthData, async (ctx) => {
+  .openapi(meRouteConfig.getSelfAuthData, async (ctx) => {
     const user = getContextUser();
 
     const getPasskey = db.select().from(passkeysTable).where(eq(passkeysTable.userEmail, user.email));
@@ -63,7 +63,7 @@ const meRoutes = app
   /*
    * Get current user menu
    */
-  .openapi(meRoutesConfig.getUserMenu, async (ctx) => {
+  .openapi(meRouteConfig.getUserMenu, async (ctx) => {
     const user = getContextUser();
     const memberships = getContextMemberships();
 
@@ -144,7 +144,7 @@ const meRoutes = app
   /*
    * Terminate a session
    */
-  .openapi(meRoutesConfig.deleteSessions, async (ctx) => {
+  .openapi(meRouteConfig.deleteSessions, async (ctx) => {
     const { ids } = ctx.req.valid('json');
 
     const sessionIds = Array.isArray(ids) ? ids : [ids];
@@ -171,7 +171,7 @@ const meRoutes = app
   /*
    * Update current user (self)
    */
-  .openapi(meRoutesConfig.updateSelf, async (ctx) => {
+  .openapi(meRouteConfig.updateSelf, async (ctx) => {
     const user = getContextUser();
     const memberships = getContextMemberships();
 
@@ -206,7 +206,7 @@ const meRoutes = app
   /*
    * Delete current user (self)
    */
-  .openapi(meRoutesConfig.deleteSelf, async (ctx) => {
+  .openapi(meRouteConfig.deleteSelf, async (ctx) => {
     const user = getContextUser();
 
     // Check if user exists
@@ -225,7 +225,7 @@ const meRoutes = app
   /*
    * Delete current user (self) entity membership
    */
-  .openapi(meRoutesConfig.leaveEntity, async (ctx) => {
+  .openapi(meRouteConfig.leaveEntity, async (ctx) => {
     const user = getContextUser();
     if (!user) return errorResponse(ctx, 404, 'not_found', 'warn', 'user', { user: 'self' });
 
@@ -249,7 +249,7 @@ const meRoutes = app
   /*
    * TODO? here? Also create then..? Delete passkey of self
    */
-  .openapi(meRoutesConfig.deletePasskey, async (ctx) => {
+  .openapi(meRouteConfig.deletePasskey, async (ctx) => {
     const user = getContextUser();
 
     await db.delete(passkeysTable).where(eq(passkeysTable.userEmail, user.email));

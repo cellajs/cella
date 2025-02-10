@@ -8,6 +8,7 @@ export type EntityModel<T extends Entity> = (typeof entityTables)[T]['$inferSele
 
 /**
  * Resolves entity based on ID or Slug and sets the context accordingly.
+ *
  * @param entityType - The type of the entity.
  * @param idOrSlug - The unique identifier (ID or Slug) of the entity.
  */
@@ -32,8 +33,9 @@ export async function resolveEntity<T extends Entity>(entityType: T, idOrSlug: s
 
 /**
  * Resolves entities based on their IDs and sets the context accordingly.
+ *
  * @param entityType - The type of the entity.
- * @param ids - An array of unique identifiers (IDs) of the entities.
+ * @param ids - An array of unique identifiers (IDs) of entities to resolve.
  */
 export async function resolveEntities<T extends Entity>(entityType: T, ids: Array<string>): Promise<Array<EntityModel<T>>> {
   // Get the corresponding table for the entity type

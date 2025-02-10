@@ -8,10 +8,11 @@
     "jsx": "react-jsx",
 
     "paths": {
-      "#/*": ["../backend/src/*"],
-      "~/*": ["./src/*"]
+      "~/*": ["./src/*"],
+      "#/*": ["../backend/dist/src/*"]
     }
   },
+
   "include": ["src/**/*", "vite.config.ts", "../config/*", "../backend/**/*", "../locales/*", "env.ts"],
   "exclude": ["**/node_modules", "**/dist", "**/.*/"]
 }

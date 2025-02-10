@@ -2,10 +2,11 @@ import { z } from 'zod';
 
 import { config } from 'config';
 import { type MenuSectionName, entityRelations } from '#/entity-config';
-import { contextEntityTypeSchema, idOrSlugSchema, idSchema, imageUrlSchema, nameSchema, slugSchema } from '#/utils/schema/common-schemas';
+import { contextEntityTypeSchema, idOrSlugSchema, idSchema, imageUrlSchema, nameSchema, slugSchema } from '#/utils/schema/common';
 import { membershipInfoSchema } from '../memberships/schema';
 import { signUpInfo } from '../users/schema';
 
+// TODO use session db schema?
 export const sessionsSchema = z.object({
   sessions: z.array(
     z.object({
@@ -16,6 +17,7 @@ export const sessionsSchema = z.object({
       deviceType: z.enum(['desktop', 'mobile']),
       deviceOs: z.string().nullish(),
       browser: z.string().nullish(),
+      //TODO use enum from config?
       authStrategy: z.enum(['github', 'google', 'microsoft', 'password', 'passkey']).nullish(),
       type: z.enum(['regular', 'impersonation']),
       expiresAt: z.string(),
@@ -30,9 +32,11 @@ export const meAuthInfoSchema = z.object({
   ...sessionsSchema.shape,
 });
 
+// TODO this is also minimum entity schema?
 export const menuItemSchema = z.object({
   slug: slugSchema,
   id: idSchema,
+  // TODO always timestamp but not here?
   createdAt: z.date(),
   modifiedAt: z.date().nullable(),
   name: nameSchema,

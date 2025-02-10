@@ -1,15 +1,13 @@
 import { config } from 'config';
 import { boolean, doublePrecision, timestamp, varchar } from 'drizzle-orm/pg-core';
 import { usersTable } from '#/db/schema/users';
-import type { DynamicColumn } from '#/db/types';
-import { createDynamicTable, generateContextEntityDynamicFields } from '#/db/utils';
-import { type ContextEntityIdFields, entityIdFields } from '#/entity-config';
+import { generateContextEntityFields, generateTable } from '#/db/utils';
 import { nanoid } from '#/utils/nanoid';
 import { tokensTable } from './tokens';
 
 const roleEnum = config.rolesByType.entityRoles;
 
-const { organizationId, ...additionalColumns } = generateContextEntityDynamicFields();
+const { organizationId, ...otherEntityIdColumns } = generateContextEntityFields();
 
 const baseColumns = {
   id: varchar().primaryKey().$defaultFn(nanoid),
@@ -30,39 +28,8 @@ const baseColumns = {
   organizationId: organizationId.notNull(),
 };
 
-// Create dynamic membership table
-export const membershipsTable = createDynamicTable('memberships', baseColumns, additionalColumns);
-
-// Dynamic part of the select based on contextEntityTypes that you can set in entity config
-const membershipDynamicSelect = config.contextEntityTypes
-  .filter((e) => e !== 'organization')
-  .reduce(
-    (fields, entityType) => {
-      const fieldName = entityIdFields[entityType];
-      // Ensure the field exists on the table
-      if (Object.prototype.hasOwnProperty.call(membershipsTable, fieldName)) fields[fieldName] = membershipsTable[fieldName];
-      return fields;
-    },
-    {} as Record<Exclude<ContextEntityIdFields, 'organizationId'>, MembershipDynamicColumn>,
-  );
-
-// Merge the static and dynamic select fields
-export const membershipSelect = {
-  id: membershipsTable.id,
-  role: membershipsTable.role,
-  archived: membershipsTable.archived,
-  muted: membershipsTable.muted,
-  order: membershipsTable.order,
-  type: membershipsTable.type,
-  userId: membershipsTable.userId,
-  organizationId: membershipsTable.organizationId,
-  ...membershipDynamicSelect,
-};
-
-type MembershipDynamicColumn = Omit<DynamicColumn, 'name' | 'tableName'> & {
-  name: Exclude<ContextEntityIdFields, 'organizationId'>;
-  tableName: 'memberships';
-};
+// Generate entity id columns based on entity-config
+export const membershipsTable = generateTable('memberships', baseColumns, otherEntityIdColumns);
 
 export type MembershipModel = typeof membershipsTable.$inferSelect;
 export type InsertMembershipModel = typeof membershipsTable.$inferInsert;

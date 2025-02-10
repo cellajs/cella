@@ -4,13 +4,14 @@ import { useTranslation } from 'react-i18next';
 import type { z } from 'zod';
 import { updateUserBodySchema } from '#/modules/users/schema';
 
+import { config } from 'config';
 import type { UseFormProps } from 'react-hook-form';
 import { useBeforeUnload } from '~/hooks/use-before-unload';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import useHideElementsById from '~/hooks/use-hide-elements-by-id';
 import AvatarFormField from '~/modules/common/form-fields/avatar';
 import InputFormField from '~/modules/common/form-fields/input';
-import { SelectLanguage } from '~/modules/common/form-fields/language-selector';
+import { SelectLanguage } from '~/modules/common/form-fields/select-language';
 import { SlugFormField } from '~/modules/common/form-fields/slug';
 import { sheet } from '~/modules/common/sheeter/state';
 import { useStepper } from '~/modules/common/stepper/use-stepper';
@@ -89,7 +90,7 @@ const UpdateUserForm = ({ user, callback, sheet: isSheet, hiddenFields, children
     });
   };
 
-  // Update sheet title with unsaved changes
+  // TODO can be extracted to a hook?
   useEffect(() => {
     if (form.unsavedChanges) {
       const targetSheet = sheet.get('update-user');
@@ -147,7 +148,7 @@ const UpdateUserForm = ({ user, callback, sheet: isSheet, hiddenFields, children
         <FormField
           control={form.control}
           name="language"
-          render={({ field: { onChange } }) => (
+          render={({ field }) => (
             <FormItem name="language">
               <FormLabel>
                 {t('common:language')}
@@ -155,7 +156,7 @@ const UpdateUserForm = ({ user, callback, sheet: isSheet, hiddenFields, children
               </FormLabel>
               <FormDescription>{t('common:placeholder.select_language')}</FormDescription>
               <FormControl>
-                <SelectLanguage name="language" onChange={onChange} />
+                <SelectLanguage options={[...config.languages]} value={field.value ?? config.defaultLanguage} onChange={field.onChange} />
               </FormControl>
               <FormMessage />
             </FormItem>

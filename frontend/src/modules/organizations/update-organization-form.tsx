@@ -1,7 +1,7 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { config } from 'config';
 import { isValidElement, useEffect } from 'react';
-import { type UseFormProps, useWatch } from 'react-hook-form';
+import type { UseFormProps } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import type { z } from 'zod';
 import { updateOrganizationBodySchema } from '#/modules/organizations/schema';
@@ -11,8 +11,9 @@ import { useFormWithDraft } from '~/hooks/use-draft-form';
 import AvatarFormField from '~/modules/common/form-fields/avatar';
 import DomainsFormField from '~/modules/common/form-fields/domains';
 import InputFormField from '~/modules/common/form-fields/input';
-import { SelectLanguage, SelectLanguages } from '~/modules/common/form-fields/language-selector';
 import SelectCountry from '~/modules/common/form-fields/select-country';
+import { SelectLanguage } from '~/modules/common/form-fields/select-language';
+import { SelectLanguages } from '~/modules/common/form-fields/select-languages';
 import SelectTimezone from '~/modules/common/form-fields/select-timezone';
 import { SlugFormField } from '~/modules/common/form-fields/slug';
 import { sheet } from '~/modules/common/sheeter/state';
@@ -74,26 +75,11 @@ const UpdateOrganizationForm = ({ organization, callback, sheet: isSheet }: Prop
     );
   };
 
-  const languages = useWatch({
-    control: form.control,
-    name: 'languages',
-  }) as string[];
-
-  const defaultLanguage = useWatch({
-    control: form.control,
-    name: 'defaultLanguage',
-  });
-
-  useEffect(() => {
-    if (languages && ((defaultLanguage && !languages.includes(defaultLanguage)) || !defaultLanguage)) {
-      form.setValue('defaultLanguage', languages[0]);
-    }
-  }, [languages, defaultLanguage]);
-
   const setImageUrl = (url: string | null) => {
     form.setValue('thumbnailUrl', url, { shouldDirty: true });
   };
 
+  // TODO can be extracted to a hook?
   useEffect(() => {
     if (form.unsavedChanges) {
       const targetSheet = sheet.get('update-organization');
@@ -149,14 +135,14 @@ const UpdateOrganizationForm = ({ organization, callback, sheet: isSheet }: Prop
         <FormField
           control={form.control}
           name="languages"
-          render={({ field: { onChange } }) => (
+          render={({ field }) => (
             <FormItem name="languages">
               <FormLabel>
                 {t('common:languages')}
                 <span className="ml-1 opacity-50">*</span>
               </FormLabel>
               <FormControl>
-                <SelectLanguages onChange={onChange} />
+                <SelectLanguages value={field.value ?? []} onChange={field.onChange} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -165,23 +151,25 @@ const UpdateOrganizationForm = ({ organization, callback, sheet: isSheet }: Prop
         <FormField
           control={form.control}
           name="defaultLanguage"
-          render={({ field: { onChange } }) => (
-            <FormItem name="defaultLanguage">
-              <FormLabel>
-                {t('common:default_language')}
-                <span className="ml-1 opacity-50">*</span>
-              </FormLabel>
-              <FormDescription>{t('common:default_language.text')}</FormDescription>
-              <FormControl>
-                <SelectLanguage
-                  name="defaultLanguage"
-                  onChange={onChange}
-                  disabledItemFunction={(value) => !form.getValues('languages')?.includes(value)}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
+          render={({ field }) => {
+            // If defaultLanguage is not selected languages, set first language
+            const languages = form.getValues('languages') || [];
+            const correctValue = field.value && languages.includes(field.value) ? field.value : languages[0] || config.defaultLanguage;
+
+            return (
+              <FormItem name="defaultLanguage">
+                <FormLabel>
+                  {t('common:default_language')}
+                  <span className="ml-1 opacity-50">*</span>
+                </FormLabel>
+                <FormDescription>{t('common:default_language.text')}</FormDescription>
+                <FormControl>
+                  <SelectLanguage options={form.getValues('languages') || []} value={correctValue} onChange={(val) => field.onChange(val)} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            );
+          }}
         />
         <FormField
           control={form.control}

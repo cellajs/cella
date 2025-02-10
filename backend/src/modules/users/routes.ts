@@ -1,10 +1,10 @@
 import { createRouteConfig } from '#/lib/route-config';
 import { isAuthenticated, systemGuard } from '#/middlewares/guard';
-import { errorResponses, successWithDataSchema, successWithErrorsSchema, successWithPaginationSchema } from '#/utils/schema/common-responses';
-import { entityParamSchema, idsBodySchema } from '#/utils/schema/common-schemas';
+import { entityParamSchema, idsBodySchema } from '#/utils/schema/common';
+import { errorResponses, successWithDataSchema, successWithErrorsSchema, successWithPaginationSchema } from '#/utils/schema/responses';
 import { updateUserBodySchema, userSchema, usersQuerySchema } from './schema';
 
-class UsersRoutesConfig {
+class UserRouteConfig {
   public getUsers = createRouteConfig({
     method: 'get',
     path: '/',
@@ -106,4 +106,4 @@ class UsersRoutesConfig {
     },
   });
 }
-export default new UsersRoutesConfig();
+export default new UserRouteConfig();

@@ -7,21 +7,20 @@ import { register } from 'prom-client';
 import { entityTables } from '#/entity-config';
 import type { Env } from '#/lib/context';
 import { metricsConfig } from '#/middlewares/observability/config';
-import { calculateRequestsPerMinute, parsePromMetrics } from '#/modules/metrics/helpers/utils';
+import { calculateRequestsPerMinute, parsePromMetrics } from '#/modules/metrics/helpers';
 import { TimeSpan } from '#/utils/time-span';
-import MetricsRoutesConfig from './routes';
+import metricsRouteConfig from './routes';
 
 const app = new OpenAPIHono<Env>();
 
 // Store public counts in memory with a 1-minute cache
 const publicCountsCache = new Map<string, { data: Record<string, number>; expiresAt: number }>();
 
-// Metric endpoints
 const metricRoutes = app
   /*
    * Get metrics
    */
-  .openapi(MetricsRoutesConfig.getMetrics, async (ctx) => {
+  .openapi(metricsRouteConfig.getMetrics, async (ctx) => {
     const metrics = await register.metrics();
 
     // get count metrics
@@ -36,7 +35,7 @@ const metricRoutes = app
   /*
    * Get public counts with caching
    */
-  .openapi(MetricsRoutesConfig.getPublicCounts, async (ctx) => {
+  .openapi(metricsRouteConfig.getPublicCounts, async (ctx) => {
     const cacheKey = 'publicCounts';
     const cached = publicCountsCache.get(cacheKey);
 
