@@ -12,6 +12,7 @@ const baseColumns = {
   token: varchar().notNull(),
   type: varchar({ enum: tokenTypeEnum }).notNull(),
   email: varchar().notNull(),
+  entity: varchar({ enum: config.contextEntityTypes }),
   role: varchar({ enum: roleEnum }),
   userId: varchar().references(() => usersTable.id, { onDelete: 'cascade' }),
   createdAt: timestamp().defaultNow().notNull(),

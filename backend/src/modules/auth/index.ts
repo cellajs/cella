@@ -126,12 +126,10 @@ const authRoutes = app
     }
 
     // Delete token to not needed anymore (if no membership invitation)
-    if (!validToken.organizationId) await db.delete(tokensTable).where(eq(tokensTable.id, validToken.id));
+    if (!validToken.entity) await db.delete(tokensTable).where(eq(tokensTable.id, validToken.id));
 
     const hashedPassword = await hashPassword(password);
     const slug = slugFromEmail(validToken.email);
-
-    console.log('validToken', validToken);
 
     // Create user & send verification email
     const newUser = {
@@ -370,7 +368,7 @@ const authRoutes = app
     const token = getContextToken();
 
     // Make sure its an organization invitation
-    if (!token.organizationId || !token.role) return errorResponse(ctx, 401, 'invalid_token', 'warn');
+    if (!token.entity) return errorResponse(ctx, 401, 'invalid_token', 'warn');
 
     // Make sure correct user accepts invitation (for example another user could have a sessions and click on email invite of another user)
     if (user.id !== token.userId) return errorResponse(ctx, 401, 'user_mismatch', 'warn');

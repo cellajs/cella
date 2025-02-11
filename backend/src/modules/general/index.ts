@@ -88,8 +88,7 @@ const generalRoutes = app
           inArray(tokensTable.email, emails),
           eq(tokensTable.type, 'invitation'),
           // Make sure its a system invitation
-          isNull(tokensTable.organizationId),
-          isNull(tokensTable.role),
+          isNull(tokensTable.entity),
           lt(tokensTable.expiresAt, new Date()),
         ),
       );

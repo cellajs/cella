@@ -115,6 +115,7 @@ const membershipsRoutes = app
       expiresAt: createDate(new TimeSpan(7, 'd')),
       role,
       userId,
+      entity: entityType,
       [targetEntityIdField]: entityId,
       ...(associatedEntityIdField && associatedEntityId && { [associatedEntityIdField]: associatedEntityId }), // Include associated entity if applicable
       ...(entityType !== 'organization' && { organizationId: organization.id }), // Add org ID if not an organization
@@ -406,7 +407,14 @@ const membershipsRoutes = app
         createdBy: tokensTable.createdBy,
       })
       .from(tokensTable)
-      .where(and(eq(tokensTable[entityIdField], entity.id), eq(tokensTable.organizationId, organization.id), eq(tokensTable.type, 'invitation')))
+      .where(
+        and(
+          eq(tokensTable.type, 'invitation'),
+          eq(tokensTable.entity, entity.entity),
+          eq(tokensTable[entityIdField], entity.id),
+          eq(tokensTable.organizationId, organization.id),
+        ),
+      )
       .leftJoin(usersTable, eq(usersTable.id, tokensTable.userId))
       .orderBy(orderColumn);
 
