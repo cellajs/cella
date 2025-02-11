@@ -9,7 +9,6 @@
 
     /* Build */
     "rootDir": "./",
-    "tsBuildInfoFile": "./dist/.tsbuildinfo",
     "sourceMap": true,
     "inlineSources": true,
 

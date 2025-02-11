@@ -18,7 +18,6 @@ import { sendSSEToUsers } from '#/lib/sse';
 import { logEvent } from '#/middlewares/logger/log-event';
 import { getUsersByConditions } from '#/modules/users/helpers/get-user-by';
 import { getValidEntity } from '#/permissions/get-valid-entity';
-import { memberCountsQuery } from '#/utils/counts';
 import { nanoid } from '#/utils/nanoid';
 import { getOrderColumn } from '#/utils/order-column';
 import { prepareStringForILikeFilter } from '#/utils/sql';
@@ -320,8 +319,6 @@ const membershipsRoutes = app
       .where(and(...membersFilters))
       .as('memberships');
 
-    const membershipCount = memberCountsQuery(null, 'userId');
-
     const orderColumn = getOrderColumn(
       {
         id: usersTable.id,
@@ -336,30 +333,19 @@ const membershipsRoutes = app
       order,
     );
 
+    // TODO can this be optimized?
     const membersQuery = db
-      .select({
-        user: userSelect,
-        membership: membershipSelect,
-        counts: {
-          memberships: membershipCount.members,
-        },
-      })
+      .select({ user: userSelect, membership: membershipSelect })
       .from(usersQuery)
       .innerJoin(memberships, eq(usersTable.id, memberships.userId))
-      .leftJoin(membershipCount, eq(usersTable.id, membershipCount.id))
       .orderBy(orderColumn);
 
     const [{ total }] = await db.select({ total: count() }).from(membersQuery.as('memberships'));
 
     const result = await membersQuery.limit(Number(limit)).offset(Number(offset));
 
-    const members = await Promise.all(
-      result.map(async ({ user, membership, counts }) => ({
-        ...user,
-        membership,
-        counts,
-      })),
-    );
+    // Map the result to include membership properties
+    const members = await Promise.all(result.map(async ({ user, membership }) => ({ ...user, membership })));
 
     return ctx.json({ success: true, data: { items: members, total } }, 200);
   })
@@ -380,32 +366,20 @@ const membershipsRoutes = app
 
     const entityIdField = entityIdFields[entity.entity];
 
-    const orderColumn = getOrderColumn(
-      {
-        id: tokensTable.id,
-        name: usersTable.name,
-        email: tokensTable.email,
-        role: tokensTable.role,
-        expiresAt: tokensTable.expiresAt,
-        createdAt: tokensTable.createdAt,
-        createdBy: tokensTable.createdBy,
-      },
-      sort,
-      tokensTable.createdAt,
-      order,
-    );
+    const invitedMemberSelect = {
+      id: tokensTable.id,
+      name: usersTable.name,
+      email: tokensTable.email,
+      role: tokensTable.role,
+      expiresAt: tokensTable.expiresAt,
+      createdAt: tokensTable.createdAt,
+      createdBy: tokensTable.createdBy,
+    };
 
-    // TODO create select schema or use existing schema?
+    const orderColumn = getOrderColumn(invitedMemberSelect, sort, tokensTable.createdAt, order);
+
     const invitedMembersQuery = db
-      .select({
-        id: tokensTable.id,
-        name: usersTable.name,
-        email: tokensTable.email,
-        role: tokensTable.role,
-        expiresAt: tokensTable.expiresAt,
-        createdAt: tokensTable.createdAt,
-        createdBy: tokensTable.createdBy,
-      })
+      .select(invitedMemberSelect)
       .from(tokensTable)
       .where(
         and(

@@ -15,7 +15,7 @@ import { checkSlugAvailable } from '#/modules/general/helpers/check-slug';
 import { insertMembership } from '#/modules/memberships/helpers';
 import { getValidEntity } from '#/permissions/get-valid-entity';
 import { splitByAllowance } from '#/permissions/split-by-allowance';
-import { memberCountsQuery } from '#/utils/counts';
+import { getMemberCounts, getMemberCountsQuery } from '#/utils/counts';
 import { getOrderColumn } from '#/utils/order-column';
 import { prepareStringForILikeFilter } from '#/utils/sql';
 import { NewsletterEmail, type NewsletterEmailProps } from '../../../emails/newsletter';
@@ -92,7 +92,7 @@ const organizationsRoutes = app
       order,
     );
 
-    const countsQuery = memberCountsQuery('organization', 'organizationId');
+    const countsQuery = getMemberCountsQuery('organization');
 
     const organizations = await db
       .select({
@@ -102,8 +102,9 @@ const organizationsRoutes = app
           memberships: sql<{
             admins: number;
             members: number;
+            pending: number;
             total: number;
-          }>`json_build_object('admins', ${countsQuery.admins}, 'members', ${countsQuery.members}, 'total', ${countsQuery.members})`,
+          }>`json_build_object('admins', ${countsQuery.admins}, 'members', ${countsQuery.members}, 'pending', ${countsQuery.pending}, 'total', ${countsQuery.members})`,
         },
       })
       .from(organizationsQuery.as('organizations'))
@@ -157,7 +158,7 @@ const organizationsRoutes = app
 
     logEvent('Organization updated', { organization: updatedOrganization.id });
 
-    const memberCounts = await memberCountsQuery('organization', 'organizationId', organization.id);
+    const memberCounts = await getMemberCounts('organization', organization.id);
 
     // Prepare data
     const data = {
@@ -180,7 +181,7 @@ const organizationsRoutes = app
     if (!organization) return errorResponse(ctx, 404, 'not_found', 'warn', 'organization');
     if (!isAllowed) return errorResponse(ctx, 403, 'forbidden', 'warn', 'organization');
 
-    const memberCounts = await memberCountsQuery('organization', 'organizationId', organization.id);
+    const memberCounts = await getMemberCounts('organization', organization.id);
 
     const counts = { memberships: memberCounts };
     const data = { ...organization, membership, counts };
