@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 import { createSelectSchema } from 'drizzle-zod';
 import { requestsTable } from '#/db/schema/requests';
-import { paginationQuerySchema } from '#/utils/schema/common-schemas';
+import { paginationQuerySchema } from '#/utils/schema/common';
 
 export const requestSchema = z.object({
   ...createSelectSchema(requestsTable).shape,
@@ -20,9 +20,3 @@ export const getRequestsQuerySchema = paginationQuerySchema.merge(
     sort: z.enum(['id', 'email', 'type', 'createdAt']).default('createdAt').optional(),
   }),
 );
-
-export const feedbackLetterBodySchema = z.object({
-  emails: z.array(z.string().min(1).email()),
-  subject: z.string(),
-  content: z.string(),
-});

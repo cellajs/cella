@@ -1,5 +1,4 @@
 import { createRoute, useParams } from '@tanstack/react-router';
-import { membersQuerySchema } from 'backend/modules/general/schema';
 import { Suspense, lazy } from 'react';
 import { z } from 'zod';
 import { offlineFetch, offlineFetchInfinite } from '~/lib/query-client';
@@ -8,13 +7,12 @@ import { attachmentsQueryOptions } from '~/modules/attachments/query';
 import ErrorNotice from '~/modules/common/error-notice';
 import { membersQueryOptions } from '~/modules/memberships/query';
 import { organizationQueryOptions } from '~/modules/organizations/query';
-import { baseEntityRoutes } from '~/nav-config';
 
+import type { Organization as OrganizationType } from '~/modules/organizations/types';
 import { AppRoute } from '~/routes/general';
-import type { Organization as OrganizationType } from '~/types/common';
 import { noDirectAccess } from '~/utils/no-direct-access';
-import type { ErrorType } from '#/lib/errors';
 import { attachmentsQuerySchema } from '#/modules/attachments/schema';
+import { invitedMembersQuerySchema, membersQuerySchema } from '#/modules/memberships/schema';
 
 //Lazy-loaded components
 const OrganizationPage = lazy(() => import('~/modules/organizations/organization-page'));
@@ -27,22 +25,30 @@ export const membersSearchSchema = membersQuerySchema
   .pick({ q: true, sort: true, order: true, role: true })
   .extend({ sheetId: z.string().optional() });
 
+export const invitedMembersSearchSchema = invitedMembersQuerySchema.pick({ sort: true, order: true });
+
 export const attachmentsSearchSchema = attachmentsQuerySchema.pick({ q: true, sort: true, order: true }).extend({
   attachmentPreview: z.string().optional(),
 });
 
 export const OrganizationRoute = createRoute({
-  path: baseEntityRoutes.organization,
+  path: '/$idOrSlug',
   staticData: { pageTitle: 'Organization', isAuth: true },
-  beforeLoad: async ({ location, params: { idOrSlug } }) => {
+  beforeLoad: async ({ location, cause, params: { idOrSlug } }) => {
     noDirectAccess(location.pathname, idOrSlug, '/members');
-    // to be able to use it in child routes as context
     const queryOptions = organizationQueryOptions(idOrSlug);
-    const organization = (await offlineFetch(queryOptions)) as OrganizationType | undefined;
-    return { organization };
+
+    // Prevents unnecessary fetches(runs when user enters page)
+    if (cause !== 'enter') {
+      const { id: organizationId, membership } = await queryClient.ensureQueryData(queryOptions);
+      return { orgIdOrSlug: organizationId, isAdmin: membership?.role === 'admin' };
+    }
+
+    const organization = await offlineFetch<OrganizationType>(queryOptions);
+    return { orgIdOrSlug: organization?.id || idOrSlug };
   },
   getParentRoute: () => AppRoute,
-  errorComponent: ({ error }) => <ErrorNotice error={error as ErrorType} />,
+  errorComponent: ({ error }) => <ErrorNotice level="app" error={error} />,
   component: () => {
     const { idOrSlug } = useParams({ from: OrganizationRoute.id });
     return (
@@ -59,9 +65,12 @@ export const OrganizationMembersRoute = createRoute({
   staticData: { pageTitle: 'members', isAuth: true },
   getParentRoute: () => OrganizationRoute,
   loaderDeps: ({ search: { q, sort, order, role } }) => ({ q, sort, order, role }),
-  loader: ({ params: { idOrSlug }, deps: { q, sort, order, role }, context }) => {
+  loader: ({ cause, params: { idOrSlug }, deps: { q, sort, order, role }, context: { orgIdOrSlug } }) => {
+    // Prevents unnecessary fetches(runs when user enters page)
+    if (cause !== 'enter') return;
+
     const entityType = 'organization';
-    const orgIdOrSlug = context.organization?.id || idOrSlug;
+
     const queryOptions = membersQueryOptions({ idOrSlug, orgIdOrSlug, entityType, q, sort, order, role });
     return offlineFetchInfinite(queryOptions);
   },
@@ -78,8 +87,7 @@ export const OrganizationAttachmentsRoute = createRoute({
   staticData: { pageTitle: 'attachments', isAuth: true },
   getParentRoute: () => OrganizationRoute,
   loaderDeps: ({ search: { q, sort, order } }) => ({ q, sort, order }),
-  loader: ({ params: { idOrSlug }, deps: { q, sort, order }, context }) => {
-    const orgIdOrSlug = context.organization?.id || idOrSlug;
+  loader: ({ deps: { q, sort, order }, context: { orgIdOrSlug } }) => {
     const queryOptions = attachmentsQueryOptions({ orgIdOrSlug, q, sort, order });
     return offlineFetchInfinite(queryOptions);
   },
@@ -101,16 +109,9 @@ export const OrganizationSettingsRoute = createRoute({
   path: '/settings',
   staticData: { pageTitle: 'settings', isAuth: true },
   getParentRoute: () => OrganizationRoute,
-  component: () => {
-    const { idOrSlug } = useParams({ from: OrganizationSettingsRoute.id });
-    const orgQueryOptions = organizationQueryOptions(idOrSlug);
-    const organization: OrganizationType | undefined = queryClient.getQueryData(orgQueryOptions.queryKey);
-
-    if (!organization) return;
-    return (
-      <Suspense>
-        <OrganizationSettings organization={organization} />
-      </Suspense>
-    );
-  },
+  component: () => (
+    <Suspense>
+      <OrganizationSettings />
+    </Suspense>
+  ),
 });

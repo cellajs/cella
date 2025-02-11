@@ -1,6 +1,11 @@
 import { useEffect } from 'react';
 
-// Custom hook for focusing an element by id
+/**
+ * Hook to focus an element by its ID.
+ *
+ * @param id - The ID of the element to focus.
+ *
+ */
 const useFocusById = (id: string) => {
   useEffect(() => {
     const element = document.getElementById(id);

@@ -1,6 +1,6 @@
 {
-  "id": "7dbcd0d1-aee0-4c98-b0bb-523fb1a2abf1",
-  "prevId": "f9ab7262-683f-420e-b7cb-31bf121650bc",
+  "id": "313a1345-0428-4635-8806-c4914ef53ce2",
+  "prevId": "759a1d53-7107-4e6f-9ce7-3d3cc2d10237",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -161,6 +161,12 @@
           "notNull": true,
           "default": "'member'"
         },
+        "token_id": {
+          "name": "token_id",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
         "created_at": {
           "name": "created_at",
           "type": "timestamp",
@@ -221,6 +227,19 @@
           "tableTo": "users",
           "columnsFrom": [
             "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "memberships_token_id_tokens_id_fk": {
+          "name": "memberships_token_id_tokens_id_fk",
+          "tableFrom": "memberships",
+          "tableTo": "tokens",
+          "columnsFrom": [
+            "token_id"
           ],
           "columnsTo": [
             "id"
@@ -644,6 +663,12 @@
           "primaryKey": false,
           "notNull": true
         },
+        "token_id": {
+          "name": "token_id",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
         "created_at": {
           "name": "created_at",
           "type": "timestamp",
@@ -684,7 +709,21 @@
           "with": {}
         }
       },
-      "foreignKeys": {},
+      "foreignKeys": {
+        "requests_token_id_tokens_id_fk": {
+          "name": "requests_token_id_tokens_id_fk",
+          "tableFrom": "requests",
+          "tableTo": "tokens",
+          "columnsFrom": [
+            "token_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "policies": {},
@@ -699,6 +738,12 @@
           "name": "id",
           "type": "varchar",
           "primaryKey": true,
+          "notNull": true
+        },
+        "token": {
+          "name": "token",
+          "type": "varchar",
+          "primaryKey": false,
           "notNull": true
         },
         "user_id": {
@@ -826,6 +871,12 @@
           "primaryKey": true,
           "notNull": true
         },
+        "token": {
+          "name": "token",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
         "type": {
           "name": "type",
           "type": "varchar",
@@ -836,7 +887,7 @@
           "name": "email",
           "type": "varchar",
           "primaryKey": false,
-          "notNull": false
+          "notNull": true
         },
         "role": {
           "name": "role",
@@ -846,12 +897,6 @@
         },
         "user_id": {
           "name": "user_id",
-          "type": "varchar",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "organization_id": {
-          "name": "organization_id",
           "type": "varchar",
           "primaryKey": false,
           "notNull": false
@@ -874,6 +919,12 @@
           "type": "timestamp with time zone",
           "primaryKey": false,
           "notNull": true
+        },
+        "organization_id": {
+          "name": "organization_id",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
         }
       },
       "indexes": {},
@@ -884,19 +935,6 @@
           "tableTo": "users",
           "columnsFrom": [
             "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
-        "tokens_organization_id_organizations_id_fk": {
-          "name": "tokens_organization_id_organizations_id_fk",
-          "tableFrom": "tokens",
-          "tableTo": "organizations",
-          "columnsFrom": [
-            "organization_id"
           ],
           "columnsTo": [
             "id"
@@ -915,6 +953,19 @@
             "id"
           ],
           "onDelete": "set null",
+          "onUpdate": "no action"
+        },
+        "tokens_organization_id_organizations_id_fk": {
+          "name": "tokens_organization_id_organizations_id_fk",
+          "tableFrom": "tokens",
+          "tableTo": "organizations",
+          "columnsFrom": [
+            "organization_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
           "onUpdate": "no action"
         }
       },
@@ -989,12 +1040,6 @@
           "primaryKey": false,
           "notNull": true,
           "default": false
-        },
-        "bio": {
-          "name": "bio",
-          "type": "varchar",
-          "primaryKey": false,
-          "notNull": false
         },
         "language": {
           "name": "language",

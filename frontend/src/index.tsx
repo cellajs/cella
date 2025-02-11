@@ -1,10 +1,10 @@
-import '~/index.css';
-
+import { RouterProvider } from '@tanstack/react-router';
 import { StrictMode } from 'react';
 import ReactDOM from 'react-dom/client';
 import { ThemeManager } from '~/modules/common/theme-manager';
 
-import { RouterProvider } from '@tanstack/react-router';
+// Import tailwindcss
+import '~/index.css';
 
 // Boot with i18n & dayjs
 import '~/lib/dayjs';
@@ -15,8 +15,8 @@ if (!root) throw new Error('Root element not found');
 
 import router from '~/lib/router';
 import { initSentry } from '~/lib/sentry';
+import { QueryClientProvider } from '~/query';
 import { renderAscii } from '~/utils/ascii';
-import { QueryClientProvider } from './query';
 
 // Render ASCII logo in console
 renderAscii();

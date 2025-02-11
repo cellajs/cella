@@ -9,10 +9,10 @@ import { Suspense, lazy, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
-import { createToast } from '~/lib/toasts';
 import InputFormField from '~/modules/common/form-fields/input';
+import { createToast } from '~/modules/common/toaster';
 import UnsavedBadge from '~/modules/common/unsaved-badge';
-import { useCreateRequestsMutation } from '~/modules/requests/query-mutations';
+import { useCreateRequestMutation } from '~/modules/requests/query';
 import { Button, SubmitButton } from '~/modules/ui/button';
 import { Form } from '~/modules/ui/form';
 import { useUserStore } from '~/store/user';
@@ -26,7 +26,7 @@ const ContactForm = ({ dialog: isDialog }: { dialog?: boolean }) => {
   const { user } = useUserStore();
   const isMediumScreen = useBreakpoints('min', 'md');
 
-  const formSchema = createRequestSchema.extend({ name: z.string().min(2, t('common:error.name_required')).default('') });
+  const formSchema = createRequestSchema.extend({ name: z.string().min(2, t('error:name_required')).default('') });
 
   type FormValues = z.infer<typeof formSchema>;
 
@@ -40,7 +40,7 @@ const ContactForm = ({ dialog: isDialog }: { dialog?: boolean }) => {
     isDialog && dialog.remove();
   };
 
-  const { mutate: createRequest } = useCreateRequestsMutation();
+  const { mutate: createRequest } = useCreateRequestMutation();
 
   const onSubmit: SubmitHandler<FormValues> = (body) => {
     createRequest(body, {
@@ -50,12 +50,12 @@ const ContactForm = ({ dialog: isDialog }: { dialog?: boolean }) => {
         form.reset();
       },
       onError: () => {
-        createToast(t('common:error.reported_try_later'), 'error');
+        createToast(t('error:reported_try_later'), 'error');
       },
     });
   };
 
-  // Update dialog title with unsaved changes
+  // TODO can be extracted to a hook?
   useEffect(() => {
     if (form.unsavedChanges) {
       const targetDialog = dialog.get('contact-form');

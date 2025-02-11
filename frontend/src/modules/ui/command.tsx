@@ -45,7 +45,7 @@ const CommandInput = React.forwardRef<HTMLInputElement, CommandInputProps & Zero
   ({ className, wrapClassName, isSearching = false, value, clearValue, ...props }, ref) => (
     <div className={cn('flex items-center group border-b px-3 relative', wrapClassName)} cmdk-input-wrapper="">
       {isSearching ? (
-        <Spinner className="mr-2 group-[.text-lg]:w-5 h-auto shrink-0" inline noDelay />
+        <Spinner className="mr-2 group-[.text-lg]:w-5 h-auto shrink-0" noDelay />
       ) : (
         <Search size={16} className="mr-2 group-[.text-lg]:w-5 h-auto shrink-0" style={{ opacity: value ? 1 : 0.5 }} />
       )}
@@ -54,7 +54,7 @@ const CommandInput = React.forwardRef<HTMLInputElement, CommandInputProps & Zero
         value={value}
         ref={ref}
         className={cn(
-          'flex h-10 w-full border-0 rounded-md bg-transparent pr-5 py-3 text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50',
+          'flex h-10 w-full border-0 rounded-md bg-transparent pr-5 py-3 text-sm outline-hidden placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50',
           className,
         )}
         {...props}
@@ -105,7 +105,7 @@ const CommandItem = React.forwardRef<React.ComponentRef<typeof CommandPrimitive.
     <CommandPrimitive.Item
       ref={ref}
       className={cn(
-        'relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none aria-selected:bg-accent aria-selected:text-accent-foreground data-[aria-disabled]:pointer-events-none data-[aria-disabled]:opacity-50',
+        'relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-hidden aria-selected:bg-accent aria-selected:text-accent-foreground data-aria-disabled:pointer-events-none data-aria-disabled:opacity-50',
         className,
       )}
       {...props}

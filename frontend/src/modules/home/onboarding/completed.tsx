@@ -3,10 +3,10 @@ import { Undo } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { sheet } from '~/modules/common/sheeter/state';
+import { Confetti } from '~/modules/home/onboarding/confetti';
 import { onBoardingFinishCallback } from '~/modules/home/onboarding/onboarding-config';
 import { MenuSheet } from '~/modules/navigation/menu-sheet';
 import { useNavigationStore } from '~/store/navigation';
-import { Confetti } from './confetti';
 
 export const OnboardingCompleted = () => {
   const { t } = useTranslation();
@@ -32,7 +32,7 @@ export const OnboardingCompleted = () => {
           side: 'left',
           modal: false,
           className:
-            'fixed sm:z-[80] inset-0 left-16 p-0 backdrop-blur-sm max-w-80 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0',
+            'fixed sm:z-80 inset-0 left-16 p-0 backdrop-blur-xs max-w-80 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0',
         });
         onBoardingFinishCallback();
       },
@@ -41,7 +41,7 @@ export const OnboardingCompleted = () => {
   }, []);
 
   return (
-    <div className="min-w-full h-screen flex flex-col items-center justify-center text-center mx-auto space-y-6 p-4 relative z-[1] max-w-3xl">
+    <div className="min-w-full h-screen flex flex-col items-center justify-center text-center mx-auto space-y-6 p-4 relative z-1 max-w-3xl">
       {isExploding && <Confetti fire />}
 
       {finishedOnboarding && (

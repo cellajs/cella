@@ -25,7 +25,7 @@ const Pricing = () => {
       });
     }
     if (action === 'sign_in') {
-      navigate({ to: '/auth/sign-in', replace: true });
+      navigate({ to: '/auth/authenticate', replace: true });
     }
     if (action === 'waitlist_request') {
       dialog(<WaitlistForm email="" dialog emailField />, {

@@ -1,6 +1,18 @@
 import dayjs from 'dayjs';
 
-// Format a date to a relative time
+/**
+ * Formats a date into a relative time format.
+ *
+ * The formatting depends on the difference between the given date and the current date:
+ * - Today, "Today, H:mm".
+ * - Yesterday, "Yesterday, H:mm".
+ * - Previous week, the day of the week and time, e.g. "Monday, H:mm".
+ * - Last 3 months, the date in the format "MMM D, H:mm".
+ * - Otherwise, the full date in the format "MMM D, YYYY".
+ *
+ * @param date - The date to format. Can be a string, Date object, or null.
+ * @returns A formatted string representing the relative time or the full date.
+ */
 export function dateShort(date?: string | null | Date) {
   if (!date) return '-';
 

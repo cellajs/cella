@@ -3,13 +3,14 @@ import { forwardRef, memo, useEffect, useImperativeHandle } from 'react';
 import type { RowsChangeData } from 'react-data-grid';
 import { useTranslation } from 'react-i18next';
 import { queryClient } from '~/lib/router';
-import { createToast } from '~/lib/toasts';
 import { DataTable } from '~/modules/common/data-table';
+import type { BaseTableMethods, BaseTableProps } from '~/modules/common/data-table/types';
+import { createToast } from '~/modules/common/toaster';
 import type { MemberSearch, MembersTableProps } from '~/modules/memberships/members-table';
 import { membersKeys, membersQueryOptions } from '~/modules/memberships/query';
-import { useMembersUpdateMutation } from '~/modules/memberships/query-mutations';
+import { useMemberUpdateMutation } from '~/modules/memberships/query-mutations';
+import type { Member } from '~/modules/memberships/types';
 import { useDataFromSuspenseInfiniteQuery } from '~/query/hooks/use-data-from-query';
-import type { BaseTableMethods, BaseTableProps, Member } from '~/types/common';
 
 type BaseDataTableProps = MembersTableProps &
   BaseTableProps<Member, MemberSearch> & {
@@ -40,7 +41,7 @@ const BaseDataTable = memo(
         }),
       );
 
-    const updateMemberMembership = useMembersUpdateMutation();
+    const updateMemberMembership = useMemberUpdateMutation();
 
     // Update rows
     const onRowsChange = (changedRows: Member[], { indexes, column }: RowsChangeData<Member>) => {

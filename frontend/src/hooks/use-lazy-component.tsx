@@ -1,6 +1,12 @@
 import { type ComponentType, type LazyExoticComponent, lazy, useEffect, useState } from 'react';
 
-// Load a component lazily and with a delay
+/**
+ * Lazily loads a component after a specified delay.
+ *
+ * @param importFunc - Function returning a promise for the component.
+ * @param delay - Delay in milliseconds before loading.
+ * @returns Lazily loaded component.
+ */
 // biome-ignore lint/suspicious/noExplicitAny: Any component can be included
 function useLazyComponent<T extends ComponentType<any>>(importFunc: () => Promise<{ default: T }>, delay: number): LazyExoticComponent<T> | null {
   const [Component, setComponent] = useState<LazyExoticComponent<T> | null>(null);

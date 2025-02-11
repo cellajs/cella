@@ -1,12 +1,12 @@
-import { config } from 'config';
+import { type Language, config } from 'config';
+import { useTranslation } from 'react-i18next';
 import { i18n } from '~/lib/i18n';
-import { createToast } from '~/lib/toasts';
 import CountryFlag from '~/modules/common/country-flag';
+import { createToast } from '~/modules/common/toaster';
 import { Button } from '~/modules/ui/button';
 import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuTrigger } from '~/modules/ui/dropdown-menu';
 import { updateSelf } from '~/modules/users/api';
 import { useUserStore } from '~/store/user';
-import type { Language } from '~/types/common';
 
 interface Props {
   size?: number;
@@ -15,8 +15,11 @@ interface Props {
 }
 
 const UserLanguage = ({ align = 'end', className = '' }: Props) => {
+  const { t } = useTranslation();
+
   const { user, updateUser } = useUserStore();
   const language = i18n.resolvedLanguage || i18n.language;
+
   const changeLanguage = (lng: Language) => {
     if (!user) return;
     updateSelf({ language: lng }).then((res) => {
@@ -34,17 +37,17 @@ const UserLanguage = ({ align = 'end', className = '' }: Props) => {
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align={align} className="w-48">
-        {config.languages.map((item) => (
+        {config.languages.map((lang) => (
           <DropdownMenuCheckboxItem
-            key={item.value}
-            checked={language === item.value}
+            key={lang}
+            checked={language === lang}
             onCheckedChange={() => {
-              if (item.value === 'nl') createToast('NL (Dutch) language will be available upon release.', 'info');
-              changeLanguage(item.value);
+              if (lang === 'nl') createToast('NL (Dutch) language will be available upon release.', 'info');
+              changeLanguage(lang);
             }}
           >
-            <CountryFlag countryCode={item.value} imgType="png" />
-            <span className="ml-2">{item.label}</span>
+            <CountryFlag countryCode={lang} imgType="png" />
+            <span className="ml-2">{t(`common:${language}`)}</span>
           </DropdownMenuCheckboxItem>
         ))}
       </DropdownMenuContent>

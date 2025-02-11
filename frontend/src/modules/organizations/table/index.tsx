@@ -5,20 +5,21 @@ import { useMutateQueryData } from '~/query/hooks/use-mutate-query-data';
 import { config } from 'config';
 import { useTranslation } from 'react-i18next';
 import useSearchParams from '~/hooks/use-search-params';
-import { createToast } from '~/lib/toasts';
 import { useSortColumns } from '~/modules/common/data-table/sort-columns';
+import type { BaseTableMethods } from '~/modules/common/data-table/types';
 import { dialog } from '~/modules/common/dialoger/state';
 import { SheetTabs } from '~/modules/common/sheet-tabs';
 import { sheet } from '~/modules/common/sheeter/state';
+import { createToast } from '~/modules/common/toaster';
 import { getOrganizations } from '~/modules/organizations/api';
 import DeleteOrganizations from '~/modules/organizations/delete-organizations';
-import OrganizationsNewsletterDraft from '~/modules/organizations/newsletter-draft';
-import OrganizationsNewsletterForm from '~/modules/organizations/newsletter-form';
+import NewsletterDraft from '~/modules/organizations/newsletter-draft';
+import NewsletterForm from '~/modules/organizations/newsletter-form';
 import { organizationsKeys } from '~/modules/organizations/query';
 import { useColumns } from '~/modules/organizations/table/columns';
 import { OrganizationsTableHeader } from '~/modules/organizations/table/table-header';
+import type { Organization } from '~/modules/organizations/types';
 import { OrganizationsTableRoute, type organizationsSearchSchema } from '~/routes/system';
-import type { BaseTableMethods, Organization } from '~/types/common';
 import { arraysHaveSameElements } from '~/utils';
 
 const BaseDataTable = lazy(() => import('~/modules/organizations/table/table'));
@@ -75,26 +76,20 @@ const OrganizationsTable = () => {
   };
 
   const openNewsletterSheet = () => {
+    const ids = selected.map((o) => o.id);
     const newsletterTabs = [
-      {
-        id: 'write',
-        label: 'common:write',
-        element: <OrganizationsNewsletterForm sheet organizationIds={selected.map((o) => o.id)} dropSelectedOrganization={clearSelection} />,
-      },
-
-      {
-        id: 'preview',
-        label: 'common:preview',
-        element: <OrganizationsNewsletterDraft />,
-      },
+      { id: 'write', label: 'common:write', element: <NewsletterForm organizationIds={ids} /> },
+      { id: 'preview', label: 'common:preview', element: <NewsletterDraft /> },
     ];
+
     sheet.create(<SheetTabs tabs={newsletterTabs} />, {
       className: 'max-w-full lg:max-w-4xl',
       title: t('common:newsletter'),
       description: t('common:newsletter.text'),
-      id: 'org-newsletter-form',
+      id: 'newsletter-sheet',
       scrollableOverlay: true,
       side: 'right',
+      removeCallback: clearSelection,
     });
   };
 

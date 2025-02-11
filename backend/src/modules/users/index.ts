@@ -1,29 +1,27 @@
 import { and, count, eq, ilike, inArray, or } from 'drizzle-orm';
 
+import { OpenAPIHono } from '@hono/zod-openapi';
 import { coalesce, db } from '#/db/db';
-import { auth } from '#/db/lucia';
 import { membershipsTable } from '#/db/schema/memberships';
-import { safeUserSelect, usersTable } from '#/db/schema/users';
-import { getUsersByConditions } from '#/db/util';
-import { getContextUser, getMemberships } from '#/lib/context';
+import { usersTable } from '#/db/schema/users';
+import { type Env, getContextMemberships, getContextUser } from '#/lib/context';
 import { type ErrorType, createError, errorResponse } from '#/lib/errors';
 import { logEvent } from '#/middlewares/logger/log-event';
-import { CustomHono } from '#/types/common';
+import { getUsersByConditions } from '#/modules/users/helpers/get-user-by';
 import { getOrderColumn } from '#/utils/order-column';
 import { prepareStringForILikeFilter } from '#/utils/sql';
-import { removeSessionCookie } from '../auth/helpers/cookies';
 import { checkSlugAvailable } from '../general/helpers/check-slug';
+import { userSelect } from './helpers/select';
 import { getUserMembershipsCount, transformDatabaseUserWithCount } from './helpers/transform-database-user';
-import usersRoutesConfig from './routes';
+import usersRouteConfig from './routes';
 
-const app = new CustomHono();
+const app = new OpenAPIHono<Env>();
 
-// User endpoints
 const usersRoutes = app
   /*
    * Get list of users
    */
-  .openapi(usersRoutesConfig.getUsers, async (ctx) => {
+  .openapi(usersRouteConfig.getUsers, async (ctx) => {
     const { q, sort, order, offset, limit, role } = ctx.req.valid('query');
 
     const memberships = db
@@ -66,7 +64,7 @@ const usersRoutes = app
 
     const usersQuery = db
       .select({
-        user: safeUserSelect,
+        user: userSelect,
         counts: {
           memberships: coalesce(membershipCounts.count, 0),
         },
@@ -87,8 +85,8 @@ const usersRoutes = app
   /*
    * Delete users
    */
-  .openapi(usersRoutesConfig.deleteUsers, async (ctx) => {
-    const { ids } = ctx.req.valid('query');
+  .openapi(usersRouteConfig.deleteUsers, async (ctx) => {
+    const { ids } = ctx.req.valid('json');
     const user = getContextUser();
 
     // Convert the user ids to an array
@@ -111,14 +109,14 @@ const usersRoutes = app
       const userId = target.id;
 
       if (user.role !== 'admin' && user.id !== userId) {
-        errors.push(createError(ctx, 403, 'delete_forbidden', 'warn', 'user', { user: userId }));
+        errors.push(createError(ctx, 403, 'delete_resource_forbidden', 'warn', 'user', { user: userId }));
         return false;
       }
 
       return true;
     });
 
-    // If the user doesn't have permission to delete any of the users, return an error
+    // Ifuser doesn't have permission to delete, return error
     if (allowedTargets.length === 0) {
       return ctx.json({ success: false, errors: errors }, 200);
     }
@@ -131,26 +129,17 @@ const usersRoutes = app
       ),
     );
 
-    // Send SSE events for the users that were deleted
-    for (const { id } of allowedTargets) {
-      // Invalidate the user's sessions if the user is deleting themselves
-      if (user.id === id) {
-        await auth.invalidateUserSessions(user.id);
-        removeSessionCookie(ctx);
-      }
-
-      logEvent('User deleted', { user: id });
-    }
+    logEvent('Users deleted');
 
     return ctx.json({ success: true, errors: errors }, 200);
   })
   /*
    * Get a user by id or slug
    */
-  .openapi(usersRoutesConfig.getUser, async (ctx) => {
-    const idOrSlug = ctx.req.param('idOrSlug');
+  .openapi(usersRouteConfig.getUser, async (ctx) => {
+    const { idOrSlug } = ctx.req.valid('param');
     const user = getContextUser();
-    const memberships = getMemberships();
+    const memberships = getContextMemberships();
 
     if (idOrSlug === user.id || idOrSlug === user.slug) {
       return ctx.json({ success: true, data: transformDatabaseUserWithCount(user, memberships.length) }, 200);
@@ -179,7 +168,7 @@ const usersRoutes = app
   /*
    * Update a user by id or slug
    */
-  .openapi(usersRoutesConfig.updateUser, async (ctx) => {
+  .openapi(usersRouteConfig.updateUser, async (ctx) => {
     const { idOrSlug } = ctx.req.valid('param');
 
     const user = getContextUser();
@@ -187,7 +176,7 @@ const usersRoutes = app
     const [targetUser] = await getUsersByConditions([or(eq(usersTable.id, idOrSlug), eq(usersTable.slug, idOrSlug))]);
     if (!targetUser) return errorResponse(ctx, 404, 'not_found', 'warn', 'user', { user: idOrSlug });
 
-    const { email, bannerUrl, bio, firstName, lastName, language, newsletter, thumbnailUrl, slug, role } = ctx.req.valid('json');
+    const { bannerUrl, firstName, lastName, language, newsletter, thumbnailUrl, slug } = ctx.req.valid('json');
 
     // Check if slug is available
     if (slug && slug !== targetUser.slug) {
@@ -198,16 +187,13 @@ const usersRoutes = app
     const [updatedUser] = await db
       .update(usersTable)
       .set({
-        email,
         bannerUrl,
-        bio,
         firstName,
         lastName,
         language,
         newsletter,
         thumbnailUrl,
         slug,
-        role,
         name: [firstName, lastName].filter(Boolean).join(' ') || slug,
         modifiedAt: new Date(),
         modifiedBy: user.id,

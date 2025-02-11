@@ -5,12 +5,12 @@ import StepperFooter from '~/modules/home/onboarding/footer';
 import { onDefaultBoardingSteps } from '~/modules/home/onboarding/onboarding-config';
 import { OnboardingStart } from '~/modules/home/onboarding/start';
 import CreateOrganizationForm from '~/modules/organizations/create-organization-form';
+import type { Organization } from '~/modules/organizations/types';
 import { Card, CardContent, CardDescription, CardHeader } from '~/modules/ui/card';
 import InviteUsers from '~/modules/users/invite-users';
 import UpdateUserForm from '~/modules/users/update-user-form';
 import { useNavigationStore } from '~/store/navigation';
 import { useUserStore } from '~/store/user';
-import type { Organization } from '~/types/common';
 import { cn } from '~/utils/cn';
 
 export type OnboardingStates = 'start' | 'stepper' | 'completed';
@@ -28,7 +28,7 @@ const Onboarding = ({ onboarding = 'start', onboardingToStepper }: OnboardingPro
   const [steps, setSteps] = useState(onDefaultBoardingSteps);
   const [organization, setOrganization] = useState<Organization | null>(null);
 
-  const animateClass = `transition-all will-change-transform duration-500 ease-out ${hasStarted ? 'opacity-1' : 'opacity-0 scale-95 translate-y-4'}`;
+  const animateClass = `transition-all will-change-transform duration-500 ease-out ${hasStarted ? 'opacity-100' : 'opacity-0 scale-95 translate-y-4'}`;
 
   const onCreateOrganization = (organization: Organization) => {
     setOrganization(organization);
@@ -43,7 +43,7 @@ const Onboarding = ({ onboarding = 'start', onboardingToStepper }: OnboardingPro
       <div className="mt-auto mb-auto w-full">
         {onboarding === 'start' && <OnboardingStart onboardingToStepper={onboardingToStepper} />}
         {onboarding === 'stepper' && (
-          <div className={cn('mx-auto mt-8 flex flex-col justify-center gap-4 px-4 py-8 sm:w-10/12 max-w-3xl', animateClass)}>
+          <div className={cn('mx-auto mt-0 flex flex-col justify-center gap-4 px-4 py-8 sm:w-10/12 max-w-3xl', animateClass)}>
             <Stepper initialStep={0} steps={steps} orientation="vertical">
               {steps.map(({ description, label, id }) => (
                 <Step key={label} label={label}>
@@ -53,7 +53,7 @@ const Onboarding = ({ onboarding = 'start', onboardingToStepper }: OnboardingPro
                     </CardHeader>
                     <CardContent>
                       {id === 'profile' && (
-                        <UpdateUserForm user={user} hiddenFields={['email', 'bio', 'newsletter', 'slug']}>
+                        <UpdateUserForm user={user} hiddenFields={['email', 'newsletter', 'slug', 'language']}>
                           <StepperFooter />
                         </UpdateUserForm>
                       )}

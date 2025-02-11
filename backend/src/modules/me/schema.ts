@@ -1,38 +1,42 @@
 import { z } from 'zod';
 
 import { config } from 'config';
-import { type MenuSectionName, menuSections } from '#/entity-config';
-import { contextEntityTypeSchema, idOrSlugSchema, idSchema, imageUrlSchema, nameSchema, slugSchema } from '#/utils/schema/common-schemas';
+import { type MenuSectionName, entityRelations } from '#/entity-config';
+import { contextEntityTypeSchema, idOrSlugSchema, idSchema, imageUrlSchema, nameSchema, slugSchema } from '#/utils/schema/common';
 import { membershipInfoSchema } from '../memberships/schema';
-import { userSchema } from '../users/schema';
+import { signUpInfo } from '../users/schema';
 
-export const sessionSchema = z.object({
-  id: idSchema,
-  createdAt: z.string(),
-  deviceName: z.string().nullish(),
-  userId: idSchema,
-  deviceType: z.enum(['desktop', 'mobile']),
-  deviceOs: z.string().nullish(),
-  browser: z.string().nullish(),
-  authStrategy: z.enum(['github', 'google', 'microsoft', 'password', 'passkey']).nullish(),
-  type: z.enum(['regular', 'impersonation']),
-  expiresAt: z.string(),
-  adminUserId: idSchema.nullish(),
-});
-
-export const signUpInfo = z.object({ oauth: z.array(z.enum(config.enabledOauthProviders)), passkey: z.boolean() });
-export const meUserSchema = userSchema.extend({
-  sessions: sessionSchema
-    .extend({
+// TODO use session db schema?
+export const sessionsSchema = z.object({
+  sessions: z.array(
+    z.object({
+      id: idSchema,
+      createdAt: z.string(),
+      deviceName: z.string().nullish(),
+      userId: idSchema,
+      deviceType: z.enum(['desktop', 'mobile']),
+      deviceOs: z.string().nullish(),
+      browser: z.string().nullish(),
+      //TODO use enum from config?
+      authStrategy: z.enum(['github', 'google', 'microsoft', 'password', 'passkey']).nullish(),
+      type: z.enum(['regular', 'impersonation']),
+      expiresAt: z.string(),
+      adminUserId: idSchema.nullish(),
       isCurrent: z.boolean(),
-    })
-    .array(),
-  ...signUpInfo.shape,
+    }),
+  ),
 });
 
+export const meAuthInfoSchema = z.object({
+  ...signUpInfo.shape,
+  ...sessionsSchema.shape,
+});
+
+// TODO this is also minimum entity schema?
 export const menuItemSchema = z.object({
   slug: slugSchema,
   id: idSchema,
+  // TODO always timestamp but not here?
   createdAt: z.date(),
   modifiedAt: z.date().nullable(),
   name: nameSchema,
@@ -41,8 +45,6 @@ export const menuItemSchema = z.object({
   membership: membershipInfoSchema,
   organizationId: membershipInfoSchema.shape.organizationId.optional(),
 });
-
-export type MenuItem = z.infer<typeof menuItemSchema>;
 
 export const menuItemsSchema = z.array(
   z.object({
@@ -53,16 +55,14 @@ export const menuItemsSchema = z.array(
 
 // Create a menu schema based on menu sections in entity-config
 export const userMenuSchema = z.object(
-  menuSections.reduce(
-    (acc, section) => {
-      acc[section.name] = menuItemsSchema;
+  entityRelations.reduce(
+    (acc, { menuSectionName }) => {
+      acc[menuSectionName] = menuItemsSchema;
       return acc;
     },
     {} as Record<MenuSectionName, typeof menuItemsSchema>,
   ),
 );
-
-export type UserMenu = z.infer<typeof userMenuSchema>;
 
 export const leaveEntityQuerySchema = z.object({
   idOrSlug: idOrSlugSchema,

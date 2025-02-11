@@ -7,13 +7,14 @@ import TableCount from '~/modules/common/data-table/table-count';
 import { FilterBarActions, FilterBarContent, TableFilterBar } from '~/modules/common/data-table/table-filter-bar';
 import { TableHeaderContainer } from '~/modules/common/data-table/table-header-container';
 import TableSearch from '~/modules/common/data-table/table-search';
+import type { BaseTableHeaderProps, BaseTableMethods } from '~/modules/common/data-table/types';
 import { dialog } from '~/modules/common/dialoger/state';
 import { FocusView } from '~/modules/common/focus-view';
 import CreateOrganizationForm from '~/modules/organizations/create-organization-form';
 import type { OrganizationsSearch } from '~/modules/organizations/table';
+import type { Organization } from '~/modules/organizations/types';
 import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
-import type { BaseTableHeaderProps, BaseTableMethods, Organization } from '~/types/common';
 
 type OrganizationsTableHeaderProps = BaseTableMethods &
   BaseTableHeaderProps<Organization, OrganizationsSearch> & {

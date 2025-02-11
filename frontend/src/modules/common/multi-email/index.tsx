@@ -313,15 +313,15 @@ export function MultiEmail(props: MultiEmailProps) {
               variant="secondary"
               key={email}
               className={cn(
-                'data-[disabled]:bg-muted-foreground data-[disabled]:text-muted data-[disabled]:hover:bg-muted-foreground',
-                'data-[fixed]:bg-muted-foreground data-[fixed]:text-muted data-[fixed]:hover:bg-muted-foreground',
+                'data-disabled:bg-muted-foreground data-disabled:text-muted data-disabled:hover:bg-muted-foreground',
+                'data-fixed:bg-muted-foreground data-fixed:text-muted data-fixed:hover:bg-muted-foreground',
               )}
             >
               {email}
               <button
                 type="button"
                 className={cn(
-                  'py-1 m-[-.25rem] ml-1 rounded-full outline-none sm:ring-offset-background focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
+                  'py-1 m-[-.25rem] ml-1 rounded-full outline-hidden sm:ring-offset-background focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
                 )}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') {
@@ -354,7 +354,7 @@ export function MultiEmail(props: MultiEmailProps) {
           onKeyUp={handleOnKeyup}
           className={cn(
             inputClassName,
-            'ml-1 grow placeholder:text-muted-foreground w-auto outline-none !bg-transparent border-0 inline-block leading-none py-1',
+            'ml-1 grow placeholder:text-muted-foreground w-auto outline-hidden bg-transparent! border-0 inline-block leading-none py-1',
           )}
           autoComplete={autoComplete}
         />

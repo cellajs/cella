@@ -7,16 +7,18 @@ import { config } from 'config';
 import { Trans, useTranslation } from 'react-i18next';
 import useSearchParams from '~/hooks/use-search-params';
 import { useUserSheet } from '~/hooks/use-user-sheet';
-import { createToast } from '~/lib/toasts';
 import { useSortColumns } from '~/modules/common/data-table/sort-columns';
+import type { BaseTableMethods } from '~/modules/common/data-table/types';
 import { dialog } from '~/modules/common/dialoger/state';
+import { createToast } from '~/modules/common/toaster';
+import type { EntityPage } from '~/modules/general/types';
 import { getMembers } from '~/modules/memberships/api';
 import { useColumns } from '~/modules/memberships/members-table/columns';
 import { MembersTableHeader } from '~/modules/memberships/members-table/table-header';
 import RemoveMembersForm from '~/modules/memberships/remove-member-form';
+import type { Member } from '~/modules/memberships/types';
 import InviteUsers from '~/modules/users/invite-users';
 import type { membersSearchSchema } from '~/routes/organizations';
-import type { BaseTableMethods, EntityPage, Member, OrganizationInvitesInfo } from '~/types/common';
 import { arraysHaveSameElements } from '~/utils';
 
 const BaseDataTable = lazy(() => import('~/modules/memberships/members-table/table'));
@@ -27,10 +29,9 @@ export type MemberSearch = z.infer<typeof membersSearchSchema>;
 export interface MembersTableProps {
   entity: EntityPage;
   isSheet?: boolean;
-  invitesInfo?: OrganizationInvitesInfo[];
 }
 
-const MembersTable = ({ entity, invitesInfo, isSheet = false }: MembersTableProps) => {
+const MembersTable = ({ entity, isSheet = false }: MembersTableProps) => {
   const { t } = useTranslation();
 
   const { search, setSearch } = useSearchParams<MemberSearch>({ saveDataInSearch: !isSheet });
@@ -69,7 +70,7 @@ const MembersTable = ({ entity, invitesInfo, isSheet = false }: MembersTableProp
     dialog(<InviteUsers entity={entity} mode={null} dialog />, {
       id: `user-invite-${entity.id}`,
       drawerOnMobile: false,
-      className: 'w-auto shadow-none relative z-[60] max-w-4xl',
+      className: 'w-auto shadow-none relative z-60 max-w-4xl',
       container,
       containerBackdrop: true,
       containerBackdropClassName: 'z-50',
@@ -114,7 +115,6 @@ const MembersTable = ({ entity, invitesInfo, isSheet = false }: MembersTableProp
         entity={entity}
         total={total}
         selected={selected}
-        invitesInfo={invitesInfo}
         q={q ?? ''}
         role={role}
         setSearch={setSearch}

@@ -15,6 +15,7 @@
   --rdg-font-size: 0.888rem;
   --rdg-selection-color: hsl(var(--ring));
 
+  border: none;
   grid-template-rows: none !important;
 }
 
@@ -28,6 +29,8 @@
   display: flex;
   align-items: center;
   min-height: var(--rdg-header-row-height);
+  border-inline-end: none;
+  border-block-end: none;
 }
 
 .rdg-cell:not([role="columnheader"]) {
@@ -36,4 +39,16 @@
 
 .rdg-cell.rdg-expand-cell {
   border-top-color: transparent;
+}
+
+.rdg-cell[aria-selected="true"]:not([aria-readonly="true"]) {
+  background: var(--rdg-row-selected-hover-background-color);
+}
+
+.rdg-cell:not([role="columnheader"]):not([aria-readonly="true"]):hover:after {
+  content: "✎";
+  display: block;
+  position: absolute;
+  top: 0.25rem;
+  right: 0.5rem;
 }

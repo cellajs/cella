@@ -1,31 +1,94 @@
 import { and, eq } from 'drizzle-orm';
 import type { Context } from 'hono';
-import { getCookie } from 'hono/cookie';
 import { oauthAccountsTable } from '#/db/schema/oauth-accounts';
-import { type InsertUserModel, usersTable } from '#/db/schema/users';
-import { setCookie, setSessionCookie } from './cookies';
+import { type UserModel, usersTable } from '#/db/schema/users';
+import { setUserSession, validateSession } from './session';
 
-import { config } from 'config';
-import type { User } from 'lucia';
+import { type EnabledOauthProvider, config } from 'config';
 import slugify from 'slugify';
 import { db } from '#/db/db';
+import { errorRedirect, errorResponse } from '#/lib/errors';
 import { logEvent } from '#/middlewares/logger/log-event';
-import type { OauthProviderOptions } from '#/types/common';
+import { TimeSpan } from '#/utils/time-span';
+import { type CookieName, deleteAuthCookie, getAuthCookie, setAuthCookie } from './cookie';
 import { sendVerificationEmail } from './verify-email';
 
-// Create a session before redirecting to oauth provider
-export const createSession = (ctx: Context, provider: string, state: string, codeVerifier?: string, redirect?: string) => {
-  setCookie(ctx, 'oauth_state', state);
+const cookieExpires = new TimeSpan(5, 'm');
 
-  if (codeVerifier) setCookie(ctx, 'oauth_code_verifier', codeVerifier);
-  if (redirect) setCookie(ctx, 'oauth_redirect', redirect);
+/**
+ * Creates an OAuth session by setting the necessary cookies and ensuring session validity before redirecting to the OAuth provider.
+ *
+ * @param ctx - Request/response context.
+ * @param provider - OAuth provider (e.g., Google, GitHub, Microsoft).
+ * @param url - URL of the OAuth provider's authorization endpoint.
+ * @param state - OAuth state parameter to prevent CSRF attacks.
+ * @param codeVerifier - Optional, code verifier for PKCE.
+ * @param redirect - Optional, URL to redirect the user to after OAuth.
+ * @param connect - Optional, user ID to connect the OAuth account to.
+ * @param token - Optional, invitation token for the OAuth process.
+ * @returns Redirect response to the OAuth provider's authorization URL.
+ */
+export const createOauthSession = async (
+  ctx: Context,
+  provider: string,
+  url: URL,
+  state: string,
+  codeVerifier?: string,
+  redirect?: string,
+  connect?: string,
+  token?: string,
+) => {
+  setAuthCookie(ctx, 'oauth_state', state, cookieExpires);
+  // If connecting oauth account to user, make sure same user is logged in
+  if (connect) {
+    const sessionToken = await getAuthCookie(ctx, 'session');
+    if (!sessionToken) return errorResponse(ctx, 401, 'no_session', 'warn');
+    const { user } = await validateSession(sessionToken);
+    if (user?.id !== connect) return errorResponse(ctx, 404, 'user_mismatch', 'warn');
+  }
+
+  // If sign up is disabled, stop early if no token or connect
+  if (!config.has.registrationEnabled && !token && !connect) return errorRedirect(ctx, 'sign_up_restricted', 'warn');
+
+  if (codeVerifier) await setAuthCookie(ctx, 'oauth_code_verifier', codeVerifier, cookieExpires);
+  if (redirect) await setAuthCookie(ctx, 'oauth_redirect', redirect, cookieExpires);
+  if (connect) await setAuthCookie(ctx, 'oauth_connect_user_id', connect, cookieExpires);
+  if (token) await setAuthCookie(ctx, 'oauth_invite_token', token, cookieExpires);
 
   logEvent('User redirected', { strategy: provider });
+
+  return ctx.redirect(url.toString(), 302);
+};
+
+// Check if oauth account already exists
+export const handleExistingOauthAccount = async (
+  ctx: Context,
+  oauthProvider: EnabledOauthProvider,
+  oauthProviderId: string,
+  currentUserId: string,
+): Promise<'auth' | 'mismatch' | null> => {
+  const [existingOauthAccount] = await findOauthAccount(oauthProvider, oauthProviderId);
+  if (!existingOauthAccount) return null;
+  // If the account is linked to another user, return an error
+  if (currentUserId && existingOauthAccount.userId !== currentUserId) return 'mismatch';
+
+  // Otherwise, set the session and redirect
+  await setUserSession(ctx, existingOauthAccount.userId, oauthProvider);
+  return 'auth';
+};
+
+// Clear oauth session
+export const clearOauthSession = (ctx: Context) => {
+  const cookies: CookieName[] = ['oauth_state', 'oauth_code_verifier', 'oauth_redirect', 'oauth_connect_user_id', 'oauth_invite_token'];
+  for (const cookie of cookies) {
+    deleteAuthCookie(ctx, cookie);
+  }
 };
 
 // Get redirect URL from cookie or use default
-export const getRedirectUrl = (ctx: Context, firstSignIn?: boolean): string => {
-  const redirectCookie = getCookie(ctx, 'oauth_redirect');
+export const getOauthRedirectUrl = async (ctx: Context, firstSignIn?: boolean) => {
+  const redirectCookie = await getAuthCookie(ctx, 'oauth_redirect');
+
   const redirectCookieUrl = redirectCookie ? decodeURIComponent(redirectCookie) : '';
   let redirectPath = config.defaultRedirectPath;
 
@@ -34,17 +97,17 @@ export const getRedirectUrl = (ctx: Context, firstSignIn?: boolean): string => {
     redirectPath = redirectCookieUrl;
   }
 
-  if (firstSignIn) redirectPath = config.firstSignInRedirectPath;
+  if (firstSignIn) redirectPath = config.welcomeRedirectPath;
   return config.frontendUrl + redirectPath;
 };
 
 // Insert oauth account into db
-export const insertOauthAccount = async (userId: string, providerId: OauthProviderOptions, providerUserId: string) => {
+export const insertOauthAccount = async (userId: string, providerId: EnabledOauthProvider, providerUserId: string) => {
   await db.insert(oauthAccountsTable).values({ providerId, providerUserId, userId });
 };
 
 // Find oauth account in db
-export const findOauthAccount = async (providerId: OauthProviderOptions, providerUserId: string) => {
+export const findOauthAccount = async (providerId: EnabledOauthProvider, providerUserId: string) => {
   return db
     .select()
     .from(oauthAccountsTable)
@@ -64,14 +127,14 @@ export const splitFullName = (name: string) => {
 };
 
 interface Params {
-  providerUser: Pick<InsertUserModel, 'thumbnailUrl' | 'bio' | 'firstName' | 'lastName' | 'id' | 'email'>;
-  isEmailVerified: boolean;
+  providerUser: Pick<UserModel, 'thumbnailUrl' | 'firstName' | 'lastName' | 'id' | 'email'>;
+  emailVerified: boolean;
   redirectUrl: string;
 }
 
 // Update existing user
-export const updateExistingUser = async (ctx: Context, existingUser: User, providerId: OauthProviderOptions, params: Params) => {
-  const { providerUser, isEmailVerified, redirectUrl } = params;
+export const updateExistingUser = async (ctx: Context, existingUser: UserModel, providerId: EnabledOauthProvider, params: Params) => {
+  const { providerUser, emailVerified, redirectUrl } = params;
 
   await insertOauthAccount(existingUser.id, providerId, providerUser.id);
 
@@ -80,20 +143,20 @@ export const updateExistingUser = async (ctx: Context, existingUser: User, provi
     .update(usersTable)
     .set({
       thumbnailUrl: existingUser.thumbnailUrl || providerUser.thumbnailUrl,
-      bio: existingUser.bio || providerUser.bio,
-      emailVerified: isEmailVerified,
+      emailVerified,
       firstName: existingUser.firstName || providerUser.firstName,
       lastName: existingUser.lastName || providerUser.lastName,
     })
     .where(eq(usersTable.id, existingUser.id));
 
   // Send verification email if not verified and redirect to verify page
-  if (!isEmailVerified) {
-    sendVerificationEmail(providerUser.email.toLowerCase());
-
-    return ctx.redirect(`${config.frontendUrl}/auth/verify-email`, 302);
+  if (!emailVerified) {
+    sendVerificationEmail(providerUser.id);
+    return ctx.redirect(`${config.frontendUrl}/auth/email-verification`, 302);
   }
 
-  await setSessionCookie(ctx, existingUser.id, providerId.toLowerCase());
+  // Sign in user
+  await setUserSession(ctx, existingUser.id, providerId);
+
   return ctx.redirect(redirectUrl, 302);
 };

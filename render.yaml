@@ -19,11 +19,13 @@ services:
     envVars:
       - key: DATABASE_URL
         sync: false
-      - key: UNSUBSCRIBE_TOKEN_SECRET
+      - key: UNSUBSCRIBE_SECRET
         sync: false
       - key: ARGON_SECRET
         sync: false
-      - key: TUS_UPLOAD_API_SECRET
+      - key: TUS_SECRET
+        sync: false
+      - key: COOKIE_SECRET
         sync: false
       - key: AWS_CLOUDFRONT_KEY_ID
         sync: false
@@ -45,7 +47,7 @@ services:
     previews:
       generation: manual
     envVars:
-      - key: TUS_UPLOAD_API_SECRET
+      - key: TUS_SECRET
         sync: false
       - key: AWS_S3_UPLOAD_ACCESS_KEY_ID
         sync: false

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
+import { type SheetT, sheet as sheetState } from '~/modules/common/sheeter/state';
 import StickyBox from '~/modules/common/sticky-box';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '~/modules/ui/sheet';
-import { type SheetT, sheet as sheetState } from './state';
 
 export interface SheetProp {
   sheet: SheetT;

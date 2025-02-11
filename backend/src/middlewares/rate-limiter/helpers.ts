@@ -1,7 +1,7 @@
 import { type IRateLimiterPostgresOptions, RateLimiterMemory, RateLimiterPostgres } from 'rate-limiter-flexible';
 
-import { env } from '#/../env';
 import { db } from '#/db/db';
+import { env } from '#/env';
 import { defaultOptions } from '#/middlewares/rate-limiter';
 
 // Get instance of rate limiter with correct store

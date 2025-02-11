@@ -1,14 +1,7 @@
 import { config } from 'config';
 
-// Get a color class based on an id
-export const numberToColorClass = (id?: string) => {
-  if (!id) return 'bg-gray-300';
-  const index = generateNumber(id) || 0;
-  return config.placeholderColors[index];
-};
-
 // Generate a number from a string (ie. to choose a color)
-export function generateNumber(id: string) {
+function generateNumber(id: string) {
   if (!id) return null;
 
   for (let i = id.length - 1; i >= 0; i--) {
@@ -22,3 +15,10 @@ export function generateNumber(id: string) {
   }
   return null;
 }
+
+// Get a color class based on an id
+export const numberToColorClass = (id?: string) => {
+  if (!id) return 'bg-gray-300';
+  const index = generateNumber(id) || 0;
+  return config.placeholderColors[index];
+};

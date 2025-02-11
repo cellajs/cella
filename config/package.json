@@ -2,6 +2,7 @@
   "name": "config",
   "type": "module",
   "exports": {
-    ".": "./index.ts"
+    ".": "./index.ts",
+    "./types": "./types.ts"
   }
 }

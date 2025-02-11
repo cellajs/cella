@@ -3,11 +3,11 @@ import { combine } from '@atlaskit/pragmatic-drag-and-drop/combine';
 import { draggable, dropTargetForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { DropIndicator } from '~/modules/common/drop-indicator';
-import { isPageData } from '~/modules/navigation/menu-sheet';
+import { isPageData } from '~/modules/navigation/menu-sheet/helpers';
 import { MenuItemEdit } from '~/modules/navigation/menu-sheet/item-edit';
 import { MenuSheetItemsEdit } from '~/modules/navigation/menu-sheet/items-edit-list';
 import { SectionArchiveButton } from '~/modules/navigation/menu-sheet/section-archive-button';
-import type { UserMenuItem } from '~/types/common';
+import type { UserMenuItem } from '~/modules/users/types';
 import { getDraggableItemData } from '~/utils/drag-drop';
 
 interface MenuItemEditWrapperProps {

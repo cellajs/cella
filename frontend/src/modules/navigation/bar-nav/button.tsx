@@ -7,8 +7,8 @@ import { useUserStore } from '~/store/user';
 import { useTranslation } from 'react-i18next';
 
 import { TooltipButton } from '~/modules/common/tooltip-button';
-import type { NavItem } from '~/modules/navigation';
 import AppNavLoader from '~/modules/navigation/bar-nav/loader';
+import type { NavItem } from '~/nav-config';
 
 interface BarNavButtonProps {
   navItem: NavItem;

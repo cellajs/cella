@@ -3,7 +3,7 @@ import ReactDOM from 'react-dom';
 import { type DropDownT, dropdownerState } from '~/modules/common/dropdowner/state';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from '~/modules/ui/dropdown-menu';
 
-export function DropDowner() {
+export function Dropdowner() {
   const [dropdown, setDropdown] = useState<DropDownT | null>(null);
 
   const dropdownContainerRef = React.useRef<HTMLDivElement | null>(null);

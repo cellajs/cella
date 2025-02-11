@@ -1,20 +1,18 @@
-import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { ContextEntity, DraggableItemData, UserMenu, UserMenuItem } from '~/types/common';
-
-import { useNavigationStore } from '~/store/navigation';
-
 import { autoScrollForElements } from '@atlaskit/pragmatic-drag-and-drop-auto-scroll/element';
 import { type Edge, extractClosestEdge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge';
 import { combine } from '@atlaskit/pragmatic-drag-and-drop/combine';
 import { monitorForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
 import { config } from 'config';
-import { type LucideProps, Search } from 'lucide-react';
+import { Info, Search } from 'lucide-react';
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { dispatchCustomEvent } from '~/lib/custom-events';
+import { menuSections } from '~/menu-config';
+import { MainAlert } from '~/modules/common/alerter';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { updateMembership } from '~/modules/memberships/api';
-import { getRelativeItemOrder } from '~/modules/navigation/menu-sheet/helpers';
+import { getRelativeItemOrder, isPageData } from '~/modules/navigation/menu-sheet/helpers';
 import { updateMenuItem } from '~/modules/navigation/menu-sheet/helpers/menu-operations';
 import { MenuSheetItem } from '~/modules/navigation/menu-sheet/item';
 import { OfflineAccessSwitch } from '~/modules/navigation/menu-sheet/offline-access-switch';
@@ -22,23 +20,8 @@ import { MenuSheetSearchInput } from '~/modules/navigation/menu-sheet/search-inp
 import { MenuSheetSection } from '~/modules/navigation/menu-sheet/section';
 import { ScrollArea } from '~/modules/ui/scroll-area';
 import { Switch } from '~/modules/ui/switch';
-import { menuSections } from '~/nav-config';
-
-export type PageDraggableItemData = DraggableItemData<UserMenuItem> & { type: 'menuItem' };
-
-export const isPageData = (data: Record<string | symbol, unknown>): data is PageDraggableItemData => {
-  return data.dragItem === true && typeof data.order === 'number' && data.type === 'menuItem';
-};
-
-export type SectionItem = {
-  name: keyof UserMenu;
-  entityType: ContextEntity;
-  label: string;
-  createForm?: React.ReactNode;
-  submenu?: SectionItem;
-  icon?: React.ElementType<LucideProps>;
-  description?: string;
-};
+import type { UserMenuItem } from '~/modules/users/types';
+import { useNavigationStore } from '~/store/navigation';
 
 export const MenuSheet = memo(() => {
   const { t } = useTranslation();
@@ -157,6 +140,11 @@ export const MenuSheet = memo(() => {
                     {t('common:nested_menu')}
                   </label>
                 </div>
+              )}
+              {pwaEnabled && (
+                <MainAlert id="offline_access" variant="plain" Icon={Info}>
+                  {t('common:offline_access.text')}
+                </MainAlert>
               )}
             </div>
           </>

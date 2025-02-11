@@ -18,13 +18,13 @@ const CallToAction = () => {
 
   return (
     <div className="mx-auto grid max-w-4xl">
-      <p className="text-center text-3xl leading-10 mb-6">{t('about:call_to_action')}</p>
+      <p className="text-center text-4xl leading-[3rem] mb-6">{t('about:call_to_action')}</p>
       <div className="z-10 mx-auto mt-6 mb-12">
         <Button
           variant="ghost"
           size="xl"
           onClick={handleContactUs}
-          className="glow-button bg-background/95 px-20 !rounded-full relative hover:!bg-background active:bg-background"
+          className="glow-button bg-background/95 px-20 rounded-full! relative hover:bg-background! active:bg-background"
           aria-label="Contact"
         >
           {t('common:contact_us')}

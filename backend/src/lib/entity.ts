@@ -1,18 +1,21 @@
+import type { Entity } from 'config';
 import { eq, inArray, or } from 'drizzle-orm';
+import type { PgTableWithColumns } from 'drizzle-orm/pg-core';
 import { db } from '#/db/db';
 import { entityTables } from '#/entity-config';
-import type { Entity } from '#/types/common';
 
 export type EntityModel<T extends Entity> = (typeof entityTables)[T]['$inferSelect'];
 
 /**
  * Resolves entity based on ID or Slug and sets the context accordingly.
+ *
  * @param entityType - The type of the entity.
  * @param idOrSlug - The unique identifier (ID or Slug) of the entity.
  */
 export async function resolveEntity<T extends Entity>(entityType: T, idOrSlug: string): Promise<EntityModel<T> | undefined>;
 export async function resolveEntity<T extends Entity>(entityType: T, idOrSlug: string) {
-  const table = entityTables[entityType];
+  // biome-ignore lint/suspicious/noExplicitAny: TODO
+  const table = entityTables[entityType] as PgTableWithColumns<any>;
 
   // Return early if table is not available
   if (!table) throw new Error(`Invalid entity: ${entityType}`);
@@ -30,12 +33,14 @@ export async function resolveEntity<T extends Entity>(entityType: T, idOrSlug: s
 
 /**
  * Resolves entities based on their IDs and sets the context accordingly.
+ *
  * @param entityType - The type of the entity.
- * @param ids - An array of unique identifiers (IDs) of the entities.
+ * @param ids - An array of unique identifiers (IDs) of entities to resolve.
  */
 export async function resolveEntities<T extends Entity>(entityType: T, ids: Array<string>): Promise<Array<EntityModel<T>>> {
   // Get the corresponding table for the entity type
-  const table = entityTables[entityType];
+  // biome-ignore lint/suspicious/noExplicitAny: TODO
+  const table = entityTables[entityType] as PgTableWithColumns<any>;
 
   // Return early if table is not available
   if (!table) throw new Error(`Invalid entity: ${entityType}`);

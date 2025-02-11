@@ -1,9 +1,9 @@
 import { createRouteConfig } from '#/lib/route-config';
 import { isAuthenticated, isPublicAccess, systemGuard } from '#/middlewares/guard';
-import { errorResponses, successWithDataSchema } from '#/utils/schema/common-responses';
+import { errorResponses, successWithDataSchema } from '#/utils/schema/responses';
 import { metricsSchema, publicCountsSchema } from './schema';
 
-class MetricsRoutesConfig {
+class MetricRouteConfig {
   public getMetrics = createRouteConfig({
     method: 'get',
     path: '/',
@@ -30,7 +30,7 @@ class MetricsRoutesConfig {
     guard: isPublicAccess,
     tags: ['metrics'],
     summary: 'Get public counts',
-    description: 'Get a count of all entities (ie. users, organizations).',
+    description: 'Get a count of all entities (ie. users, organizations). 1 minute in-memory cache.',
     responses: {
       200: {
         description: 'Public counts',
@@ -44,4 +44,4 @@ class MetricsRoutesConfig {
     },
   });
 }
-export default new MetricsRoutesConfig();
+export default new MetricRouteConfig();

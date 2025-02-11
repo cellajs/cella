@@ -4,10 +4,10 @@ import { Minus, Plus, X } from 'lucide-react';
 import { useState } from 'react';
 import { ErrorBoundary } from 'react-error-boundary';
 import { useTranslation } from 'react-i18next';
+import ErrorNotice from '~/modules/common/error-notice';
 import { Button } from '~/modules/ui/button';
 import { useThemeStore } from '~/store/theme';
 import Logo from '/static/logo/logo-icon-only.svg';
-import ErrorNotice from '../error-notice';
 
 type MapConfig = {
   id: string;
@@ -91,7 +91,9 @@ const ContactFormMap = () => {
 
   if (config.company.coordinates && config.googleMapsKey)
     return (
-      <ErrorBoundary fallbackRender={({ error, resetErrorBoundary }) => <ErrorNotice error={error} resetErrorBoundary={resetErrorBoundary} />}>
+      <ErrorBoundary
+        fallbackRender={({ error, resetErrorBoundary }) => <ErrorNotice level="app" error={error} resetErrorBoundary={resetErrorBoundary} />}
+      >
         <div className="w-full h-full md:pb-12 md:px-4 overflow-hidden">
           <APIProvider apiKey={config.googleMapsKey} libraries={['marker']}>
             <GMap

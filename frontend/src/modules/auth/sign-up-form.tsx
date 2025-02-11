@@ -1,37 +1,61 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useNavigate } from '@tanstack/react-router';
-import { authBodySchema } from 'backend/modules/auth/schema';
+import { useNavigate, useSearch } from '@tanstack/react-router';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import type * as z from 'zod';
+import { emailPasswordBodySchema } from '#/modules/auth/schema';
 
+import { useMutation } from '@tanstack/react-query';
 import { config } from 'config';
 import { ArrowRight, ChevronDown } from 'lucide-react';
-import { Suspense, lazy, useEffect } from 'react';
-import { useSignUpMutation } from '~/modules/auth/query-mutations';
+import { Suspense, lazy } from 'react';
+import { signUp, signUpWithToken } from '~/modules/auth/api';
+import type { TokenData } from '~/modules/auth/types';
 import { dialog } from '~/modules/common/dialoger/state';
 import Spinner from '~/modules/common/spinner';
 import { Button, SubmitButton } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '~/modules/ui/form';
 import { Input } from '~/modules/ui/input';
-import type { TokenData } from '~/types/common';
-import type { TokenType } from './api';
+import { AuthenticateRoute } from '~/routes/auth';
 
 const PasswordStrength = lazy(() => import('~/modules/auth/password-strength'));
 const LegalText = lazy(() => import('~/modules/marketing/legal-texts'));
 
-const formSchema = authBodySchema;
+const formSchema = emailPasswordBodySchema;
 
-export const SignUpForm = ({
-  tokenData,
-  email,
-  resetToInitialStep,
-}: { tokenData: (TokenData & TokenType) | null; email: string; resetToInitialStep: () => void }) => {
+interface Props {
+  tokenData: TokenData | undefined;
+  email: string;
+  resetSteps: () => void;
+  emailEnabled: boolean;
+}
+
+export const SignUpForm = ({ tokenData, email, resetSteps, emailEnabled }: Props) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
 
-  const { mutate: signUp, isPending } = useSignUpMutation();
+  const { token, tokenId } = useSearch({ from: AuthenticateRoute.id });
 
+  // Handle basic sign up
+  const { mutate: _signUp, isPending } = useMutation({
+    mutationFn: signUp,
+    onSuccess: () => {
+      navigate({ to: '/auth/email-verification', replace: true });
+    },
+  });
+
+  // Handle sign up with token to accept invitation
+  const { mutate: _signUpWithToken, isPending: isPendingWithToken } = useMutation({
+    mutationFn: signUpWithToken,
+    onSuccess: () => {
+      // Redirect to organization invitation page if there is a membership invitation
+      const isMemberInvitation = tokenData?.organizationSlug && token && tokenId;
+      if (isMemberInvitation) return navigate({ to: '/invitation/$token', replace: true, params: { token }, search: { tokenId } });
+      return navigate({ to: config.welcomeRedirectPath, replace: true });
+    },
+  });
+
+  // Create form
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -40,40 +64,23 @@ export const SignUpForm = ({
     },
   });
 
-  const onSubmit = (values: z.infer<typeof formSchema>) => {
-    signUp(
-      {
-        ...values,
-        token: tokenData?.token,
-      },
-      {
-        onSuccess: () => {
-          const to = tokenData ? '/auth/invite/$token' : '/auth/verify-email';
-
-          navigate({
-            to,
-            replace: true,
-            params: {
-              token: tokenData?.token,
-            },
-          });
-        },
-      },
-    );
+  // Handle submit action
+  const onSubmit = (formValues: z.infer<typeof formSchema>) => {
+    if (token && tokenId) return _signUpWithToken({ ...formValues, token });
+    _signUp({ ...formValues });
   };
-
-  useEffect(() => {
-    if (tokenData?.email) {
-      form.setValue('email', tokenData.email);
-    }
-  }, [tokenData]);
 
   return (
     <Form {...form}>
       <h1 className="text-2xl text-center">
-        {tokenData ? t('common:invite_create_account') : `${t('common:create_resource', { resource: t('common:account').toLowerCase() })}?`} <br />
+        {tokenData?.organizationSlug
+          ? t('common:invite_accept_proceed')
+          : tokenData
+            ? t('common:invite_create_account')
+            : `${t('common:create_resource', { resource: t('common:account').toLowerCase() })}?`}{' '}
+        <br />
         {!tokenData && (
-          <Button variant="ghost" onClick={resetToInitialStep} className="font-light mt-2 text-xl">
+          <Button variant="ghost" onClick={resetSteps} className="font-light mt-2 text-xl">
             {email}
             <ChevronDown size={16} className="ml-2" />
           </Button>
@@ -82,42 +89,44 @@ export const SignUpForm = ({
 
       <LegalNotice email={email} />
 
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-        <FormField
-          control={form.control}
-          name="email"
-          render={({ field }) => (
-            <FormItem className="hidden">
-              <FormControl>
-                <Input {...field} type="email" disabled={true} readOnly={true} placeholder={t('common:email')} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="password"
-          render={({ field }) => (
-            // Custom css due to html injection by browser extensions
-            <FormItem className="gap-0">
-              <FormControl>
-                <div className="relative">
-                  <Input type="password" autoFocus placeholder={t('common:new_password')} autoComplete="new-password" {...field} />
-                  <Suspense>
-                    <PasswordStrength password={form.getValues('password') || ''} minLength={8} />
-                  </Suspense>
-                </div>
-              </FormControl>
-              <FormMessage className="mt-2" />
-            </FormItem>
-          )}
-        />
-        <SubmitButton loading={isPending} className="w-full">
-          {t('common:sign_up')}
-          <ArrowRight size={16} className="ml-2" />
-        </SubmitButton>
-      </form>
+      {emailEnabled && (
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <FormField
+            control={form.control}
+            name="email"
+            render={({ field }) => (
+              <FormItem className="hidden">
+                <FormControl>
+                  <Input {...field} type="email" disabled={true} readOnly={true} placeholder={t('common:email')} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="password"
+            render={({ field }) => (
+              // Custom css due to html injection by browser extensions
+              <FormItem className="gap-0">
+                <FormControl>
+                  <div className="relative">
+                    <Input type="password" autoFocus placeholder={t('common:new_password')} autoComplete="new-password" {...field} />
+                    <Suspense>
+                      <PasswordStrength password={form.getValues('password') || ''} minLength={8} />
+                    </Suspense>
+                  </div>
+                </FormControl>
+                <FormMessage className="mt-2" />
+              </FormItem>
+            )}
+          />
+          <SubmitButton loading={isPending || isPendingWithToken} className="w-full">
+            {t('common:sign_up')}
+            <ArrowRight size={16} className="ml-2" />
+          </SubmitButton>
+        </form>
+      )}
     </Form>
   );
 };
@@ -127,13 +136,14 @@ export const LegalNotice = ({ email }: { email: string }) => {
 
   const openDialog = (mode: 'terms' | 'privacy') => () => {
     const dialogComponent = (
-      <Suspense fallback={<Spinner />}>
+      <Suspense fallback={<Spinner className="mt-[40vh] h-10 w-10" />}>
         <LegalText textFor={mode} />
       </Suspense>
     );
 
     dialog(dialogComponent, {
       className: 'md:max-w-3xl mb-10 px-6',
+      drawerOnMobile: false,
     });
   };
 

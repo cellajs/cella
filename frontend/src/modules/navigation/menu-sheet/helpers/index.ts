@@ -1,5 +1,7 @@
 import type { Edge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/dist/types/types';
-import type { ContextEntity, UserMenu, UserMenuItem } from '~/types/common';
+import type { ContextEntity } from 'config';
+import type { PageDraggableItemData } from '~/modules/navigation/types';
+import type { UserMenu, UserMenuItem } from '~/modules/users/types';
 
 const sortAndFilterMenu = (data: UserMenuItem[], entityType: ContextEntity, archived: boolean, reverse = false): UserMenuItem[] => {
   return (
@@ -13,6 +15,10 @@ const sortAndFilterMenu = (data: UserMenuItem[], entityType: ContextEntity, arch
         return reverse ? orderB - orderA : orderA - orderB;
       })
   );
+};
+
+export const isPageData = (data: Record<string | symbol, unknown>): data is PageDraggableItemData => {
+  return data.dragItem === true && typeof data.order === 'number' && data.type === 'menuItem';
 };
 
 export const getRelativeItemOrder = (

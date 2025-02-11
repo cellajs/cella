@@ -1,18 +1,15 @@
-import { useTranslation } from 'react-i18next';
-import type { User } from '~/types/common';
-
 import { Link, useNavigate } from '@tanstack/react-router';
-import { config } from 'config';
 import { UserRoundCheck } from 'lucide-react';
 import { useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import CheckboxColumn from '~/modules/common/data-table/checkbox-column';
-import type { ColumnOrColumnGroup } from '~/modules/common/data-table/columns-view';
 import HeaderCell from '~/modules/common/data-table/header-cell';
-import { renderSelect } from '~/modules/common/data-table/select-column';
+import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 import ImpersonateRow from '~/modules/users/table/impersonate-row';
 import UpdateRow from '~/modules/users/table/update-row';
+import type { User } from '~/modules/users/types';
 import { dateShort } from '~/utils/date-short';
 
 export const useColumns = (callback: (users: User[]) => void) => {
@@ -73,12 +70,12 @@ export const useColumns = (callback: (users: User[]) => void) => {
         name: t('common:email'),
         sortable: true,
         visible: !isMobile,
-        renderHeaderCell: HeaderCell,
         minWidth: 140,
+        renderHeaderCell: HeaderCell,
         renderCell: ({ row, tabIndex }) => {
           return (
             <a href={`mailto:${row.email}`} tabIndex={tabIndex} className="truncate hover:underline underline-offset-4 outline-0 ring-0 font-light">
-              {row.email || '-'}
+              {row.email || <span className="text-muted">-</span>}
             </a>
           );
         },
@@ -88,39 +85,34 @@ export const useColumns = (callback: (users: User[]) => void) => {
         name: t('common:role'),
         sortable: true,
         visible: !isMobile,
-        renderHeaderCell: HeaderCell,
-        renderCell: ({ row }) => <div className="inline-flex items-center gap-1 relative group h-full w-full">{t(`common:${row.role}`)}</div>,
         width: 100,
-        renderEditCell: ({ row, onRowChange }) =>
-          renderSelect({
-            row,
-            onRowChange,
-            options: config.rolesByType.systemRoles,
-          }),
+        renderHeaderCell: HeaderCell,
+        renderCell: ({ row }) => <div>{t(`common:${row.role}`)}</div>,
       },
       {
         key: 'createdAt',
         name: t('common:created_at'),
         sortable: true,
         visible: !isMobile,
-        renderHeaderCell: HeaderCell,
-        renderCell: ({ row }) => dateShort(row.createdAt),
         minWidth: 180,
+        renderHeaderCell: HeaderCell,
+        renderCell: ({ row }) => (row.createdAt ? dateShort(row.createdAt) : <span className="text-muted">-</span>),
       },
       {
         key: 'lastSeenAt',
         name: t('common:last_seen_at'),
         sortable: true,
         visible: !isMobile,
-        renderHeaderCell: HeaderCell,
-        renderCell: ({ row }) => dateShort(row.lastSeenAt),
         minWidth: 180,
+        renderHeaderCell: HeaderCell,
+        renderCell: ({ row }) => (row.lastSeenAt ? dateShort(row.lastSeenAt) : <span className="text-muted">-</span>),
       },
       {
         key: 'membershipCount',
         name: 'Memberships',
         sortable: false,
         visible: !isMobile,
+        width: 140,
         renderHeaderCell: HeaderCell,
         renderCell: ({ row }) => (
           <>
@@ -128,7 +120,6 @@ export const useColumns = (callback: (users: User[]) => void) => {
             {row.counts?.memberships | 0}
           </>
         ),
-        width: 140,
       },
     ];
 

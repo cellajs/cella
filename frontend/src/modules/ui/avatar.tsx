@@ -24,7 +24,7 @@ const AvatarFallback = React.forwardRef<
 ));
 AvatarFallback.displayName = AvatarPrimitive.Fallback.displayName;
 
-const avatarBadgeVariants = cva('absolute w-4 h-4 rounded-full bg-background flex items-stretch justify-stretch [&>*]:grow [&>*]:rounded-full', {
+const avatarBadgeVariants = cva('absolute w-4 h-4 rounded-full bg-background flex items-stretch justify-stretch *:grow *:rounded-full', {
   variants: {
     position: {
       bottomLeft: 'bottom-0 -left-1',
@@ -122,7 +122,7 @@ const AvatarOverflowIndicator = React.forwardRef<HTMLSpanElement, React.HTMLAttr
     return (
       <span
         ref={ref}
-        className={cn('relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-background shadow-sm', className)}
+        className={cn('relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-background shadow-xs', className)}
         {...props}
       >
         +{count - limit}

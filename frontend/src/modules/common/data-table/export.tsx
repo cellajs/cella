@@ -3,12 +3,12 @@ import { useTranslation } from 'react-i18next';
 import { useOnlineManager } from '~/hooks/use-online-manager';
 import { exportToCsv, exportToPdf } from '~/lib/export';
 import router from '~/lib/router';
-import { createToast } from '~/lib/toasts';
+import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
+import { createToast } from '~/modules/common/toaster';
 import { TooltipButton } from '~/modules/common/tooltip-button';
 import { Button } from '~/modules/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '~/modules/ui/dropdown-menu';
 import { useThemeStore } from '~/store/theme';
-import type { ColumnOrColumnGroup } from './columns-view';
 
 interface Props<TData> {
   filename: string;
@@ -34,7 +34,7 @@ const Export = <R extends Record<string, any>>({ filename, columns, selectedRows
   };
 
   const exportSelected = async (type: 'csv' | 'pdf') => {
-    if (!selectedRows) return createToast(t('common:error.no_selected_rows'), 'warning');
+    if (!selectedRows) return createToast(t('error:no_selected_rows'), 'warning');
     const filenameWithExtension = `${filename}.${type}`;
 
     if (type === 'csv') return exportToCsv(columns, selectedRows, filenameWithExtension);

@@ -1,28 +1,29 @@
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 import { z } from 'zod';
 
-import { config } from 'config';
+import { type EnabledOauthProvider, config } from 'config';
 import { usersTable } from '#/db/schema/users';
-import { imageUrlSchema, nameSchema, paginationQuerySchema, validSlugSchema } from '#/utils/schema/common-schemas';
+import { paginationQuerySchema, validImageUrlSchema, validNameSchema, validSlugSchema } from '#/utils/schema/common';
 
-export const userSchema = createSelectSchema(usersTable, {
+const enabledOauthProvidersEnum = z.enum(config.enabledOauthProviders as unknown as [EnabledOauthProvider]);
+export const signUpInfo = z.object({ oauth: z.array(enabledOauthProvidersEnum), passkey: z.boolean() });
+
+export const baseUserSchema = createSelectSchema(usersTable, {
   email: z.string().email(),
   lastSeenAt: z.string().nullable(),
   lastStartedAt: z.string().nullable(),
   lastSignInAt: z.string().nullable(),
   createdAt: z.string(),
   modifiedAt: z.string().nullable(),
-})
-  .omit({
-    hashedPassword: true,
-    unsubscribeToken: true,
-  })
-  .setKey(
-    'counts',
-    z.object({
-      memberships: z.number(),
-    }),
-  );
+}).omit({
+  hashedPassword: true,
+  unsubscribeToken: true,
+});
+
+export const userSchema = z.object({
+  ...baseUserSchema.shape,
+  counts: z.object({ memberships: z.number() }),
+});
 
 export const limitedUserSchema = createSelectSchema(usersTable, {
   email: z.string().email(),
@@ -46,23 +47,19 @@ export const userUnsubscribeQuerySchema = z.object({
 });
 
 export const updateUserBodySchema = createInsertSchema(usersTable, {
-  email: z.string().email(),
-  firstName: nameSchema,
-  lastName: nameSchema,
+  firstName: validNameSchema.nullable(),
+  lastName: validNameSchema.nullable(),
   slug: validSlugSchema,
-  thumbnailUrl: imageUrlSchema,
-  bannerUrl: imageUrlSchema,
+  thumbnailUrl: validImageUrlSchema.nullable(),
+  bannerUrl: validImageUrlSchema.nullable(),
 })
   .pick({
-    email: true,
     bannerUrl: true,
-    bio: true,
     firstName: true,
     lastName: true,
     language: true,
     newsletter: true,
     thumbnailUrl: true,
     slug: true,
-    role: true,
   })
   .partial();

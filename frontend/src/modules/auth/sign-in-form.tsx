@@ -1,39 +1,45 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useNavigate, useSearch } from '@tanstack/react-router';
-import { authBodySchema } from 'backend/modules/auth/schema';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import type * as z from 'zod';
+import { emailPasswordBodySchema } from '#/modules/auth/schema';
 
 import { Button, SubmitButton } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '~/modules/ui/form';
 import { Input } from '~/modules/ui/input';
 
+import { useMutation } from '@tanstack/react-query';
 import { config } from 'config';
 import { ArrowRight, ChevronDown } from 'lucide-react';
-import { useEffect } from 'react';
-import type { TokenType } from '~/modules/auth/api';
-import { useSignInMutation } from '~/modules/auth/query-mutations';
-import { ResetPasswordRequest } from '~/modules/auth/reset-password/dialog';
-import { SignInRoute } from '~/routes/auth';
+import type { ApiError } from '~/lib/api';
+import { signIn } from '~/modules/auth/api';
+import { RequestPasswordDialog } from '~/modules/auth/request-password-dialog';
+import { AuthenticateRoute } from '~/routes/auth';
 import { useUserStore } from '~/store/user';
-import type { TokenData } from '~/types/common';
 
-const formSchema = authBodySchema;
+const formSchema = emailPasswordBodySchema;
 
-export const SignInForm = ({
-  tokenData,
-  email,
-  resetToInitialStep,
-}: { tokenData: (TokenData & TokenType) | null; email: string; resetToInitialStep: () => void }) => {
+const enabledStrategies: readonly string[] = config.enabledAuthenticationStrategies;
+
+interface Props {
+  email: string;
+  resetSteps: () => void;
+  emailEnabled: boolean;
+}
+
+// Either simply sign in with password or sign in with token to also accept organization invitation
+export const SignInForm = ({ email, resetSteps, emailEnabled }: Props) => {
   const { t } = useTranslation();
+
   const navigate = useNavigate();
   const { lastUser, clearLastUser } = useUserStore();
 
-  const { redirect } = useSearch({ from: SignInRoute.id });
+  const isMobile = window.innerWidth < 640;
 
-  const enabledStrategies: readonly string[] = config.enabledAuthenticationStrategies;
+  const { redirect, token, tokenId } = useSearch({ from: AuthenticateRoute.id });
 
+  // Set up form
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -42,94 +48,94 @@ export const SignInForm = ({
     },
   });
 
-  const { mutate: signIn, isPending } = useSignInMutation();
+  // Handle sign in
+  const { mutate: _signIn, isPending } = useMutation({
+    mutationFn: signIn,
+    onSuccess: (emailVerified) => {
+      if (!emailVerified) return navigate({ to: '/auth/email-verification', replace: true });
+
+      const redirectPath = redirect?.startsWith('/') ? redirect : config.defaultRedirectPath;
+
+      if (token && tokenId) return navigate({ to: '/invitation/$token', params: { token }, search: { tokenId }, replace: true });
+      navigate({ to: redirectPath, replace: true });
+    },
+    onError: (error: ApiError) => {
+      if (error?.status === 404) return resetSteps();
+
+      if (error.type !== 'invalid_password') return;
+      document.getElementById('password-field')?.focus();
+      form.reset(form.getValues());
+    },
+  });
 
   const onSubmit = (values: z.infer<typeof formSchema>) => {
-    const token = tokenData?.token;
-    signIn(
-      { ...values, token },
-      {
-        onSuccess: (emailVerified) => {
-          // Redirect to the invite page if token is present
-          // Otherwise, redirect to a redirect URL or to home
-          const verifiedUserTo = tokenData ? '/auth/invite/$token' : redirect || config.defaultRedirectPath;
-          const params = { token: tokenData?.token };
-
-          navigate({ to: emailVerified ? verifiedUserTo : '/auth/verify-email', params, replace: true });
-        },
-        onError: (error) => {
-          if (error.type !== 'invalid_password') return;
-          document.getElementById('password-field')?.focus();
-          form.reset(form.getValues());
-        },
-      },
-    );
+    _signIn({ ...values });
   };
 
-  const cancel = () => {
+  const resetAuth = () => {
     clearLastUser();
-    resetToInitialStep();
+    resetSteps();
   };
-
-  useEffect(() => {
-    if (tokenData?.email) form.setValue('email', tokenData.email);
-  }, [tokenData]);
 
   return (
     <Form {...form}>
       <h1 className="text-2xl text-center">
-        {tokenData ? t('common:invite_sign_in') : lastUser ? t('common:welcome_back') : t('common:sign_in_as')} <br />
-        {!tokenData && (
-          <Button variant="ghost" onClick={cancel} className="font-light mt-2 text-xl">
-            {email}
-            <ChevronDown size={16} className="ml-2" />
-          </Button>
-        )}
+        {token ? t('common:invite_sign_in') : lastUser ? t('common:welcome_back') : t('common:sign_in_as')} <br />
+        <Button variant="ghost" onClick={resetAuth} disabled={!!token} className="font-light mt-2 text-xl">
+          {email}
+          {!token && <ChevronDown size={16} className="ml-2" />}
+        </Button>
       </h1>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-4 !mt-0">
-        <FormField
-          control={form.control}
-          name="email"
-          render={({ field }) => (
-            <FormItem className="hidden">
-              <FormControl>
-                <Input {...field} disabled type="email" autoComplete="off" placeholder={t('common:email')} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        {enabledStrategies.includes('password') && (
-          <>
-            <FormField
-              control={form.control}
-              name="password"
-              render={({ field }) => (
-                // Custom css due to html injection by browser extensions
-                <FormItem className="gap-0">
-                  <FormControl>
-                    <Input
-                      type="password"
-                      id="password-field"
-                      autoFocus
-                      {...field}
-                      autoComplete="current-password"
-                      placeholder={t('common:password')}
-                    />
-                  </FormControl>
-                  <FormMessage className="mt-2" />
-                </FormItem>
-              )}
-            />
+      {emailEnabled && (
+        <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-4 mt-0!">
+          <FormField
+            control={form.control}
+            name="email"
+            render={({ field }) => (
+              <FormItem className="hidden">
+                <FormControl>
+                  <Input {...field} disabled type="email" autoComplete="off" placeholder={t('common:email')} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          {enabledStrategies.includes('password') && (
+            <>
+              <FormField
+                control={form.control}
+                name="password"
+                render={({ field }) => (
+                  // Custom css due to html injection by browser extensions
+                  <FormItem className="gap-0">
+                    <FormControl>
+                      <Input
+                        type="password"
+                        id="password-field"
+                        autoFocus={!isMobile}
+                        {...field}
+                        autoComplete="current-password"
+                        placeholder={t('common:password')}
+                      />
+                    </FormControl>
+                    <FormMessage className="mt-2" />
+                  </FormItem>
+                )}
+              />
 
-            <SubmitButton loading={isPending} className="w-full">
-              {t('common:sign_in')}
-              <ArrowRight size={16} className="ml-2" />
-            </SubmitButton>
-            <ResetPasswordRequest email={email} />
-          </>
-        )}
-      </form>
+              <SubmitButton loading={isPending} className="w-full">
+                {t('common:sign_in')}
+                <ArrowRight size={16} className="ml-2" />
+              </SubmitButton>
+              <RequestPasswordDialog email={email}>
+                <Button variant="ghost" size="sm" className="w-full font-normal">
+                  {t('common:forgot_password')}
+                </Button>
+              </RequestPasswordDialog>
+            </>
+          )}
+        </form>
+      )}
     </Form>
   );
 };

@@ -1,5 +1,5 @@
 import type { AvatarProps } from '@radix-ui/react-avatar';
-import type { Entity } from 'backend/types/common';
+import type { Entity } from 'config';
 import { memo, useMemo } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '~/modules/ui/avatar';
 import { cn } from '~/utils/cn';

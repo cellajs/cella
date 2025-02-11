@@ -92,7 +92,7 @@ export const ImadoTus = (opts: TusOptions) => {
           directory: './files',
         }),
         async onUploadCreate(_, res, upload) {
-          console.info('Upload created:', upload);
+          console.debug('Upload created:', upload);
           const contentType = extractContentType(upload) ?? null;
           const metadata = { ...upload.metadata, contentType };
           return { res, metadata };
@@ -117,6 +117,14 @@ export const ImadoTus = (opts: TusOptions) => {
             console.error('Invalid token', error);
             throw { status_code: 401, body: 'Invalid token' };
           }
+        },
+        async onUploadFinish(_, res, upload) {
+          console.debug('Upload finished:', upload);
+          return { res };
+        },
+        async onResponseError(req, res, err) {
+          console.error('Error:', err);
+          return { status_code: 500, body: 'TUS Server Error' };
         },
       },
       opts.credentials,

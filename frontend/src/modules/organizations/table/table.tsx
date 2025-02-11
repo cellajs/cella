@@ -4,15 +4,16 @@ import { forwardRef, memo, useEffect, useImperativeHandle } from 'react';
 import type { RowsChangeData } from 'react-data-grid';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-import { createToast } from '~/lib/toasts';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { DataTable } from '~/modules/common/data-table';
+import type { BaseTableMethods, BaseTableProps } from '~/modules/common/data-table/types';
+import { createToast } from '~/modules/common/toaster';
 import { inviteMembers } from '~/modules/memberships/api';
 import { organizationsQueryOptions } from '~/modules/organizations/query';
 import type { OrganizationsSearch } from '~/modules/organizations/table';
+import type { Organization } from '~/modules/organizations/types';
 import { useDataFromSuspenseInfiniteQuery } from '~/query/hooks/use-data-from-query';
 import { useUserStore } from '~/store/user';
-import type { BaseTableMethods, BaseTableProps, Organization } from '~/types/common';
 
 type BaseDataTableProps = BaseTableProps<Organization, OrganizationsSearch>;
 
@@ -46,7 +47,7 @@ const BaseDataTable = memo(
           orgIdOrSlug: organization.id,
         })
           .then(() => toast.success(t('common:success.role_updated')))
-          .catch(() => toast.error(t('common:error.error')));
+          .catch(() => toast.error(t('error:error')));
       }
 
       setRows(changedRows);

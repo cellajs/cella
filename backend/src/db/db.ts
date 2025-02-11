@@ -1,6 +1,6 @@
 import { type NodePgClient, drizzle as pgDrizzle } from 'drizzle-orm/node-postgres';
 import { drizzle as pgliteDrizzle } from 'drizzle-orm/pglite';
-import { env } from '#/../env';
+import { env } from '#/env';
 
 import type { PGlite } from '@electric-sql/pglite';
 import { config } from 'config';

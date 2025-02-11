@@ -1,5 +1,6 @@
-import type { AppCustomEventMap } from '~/types/app';
-import type { ContextEntity, Entity, Membership } from '~/types/common';
+import type { ContextEntity, Entity } from 'config';
+import type { AppCustomEventMap } from '~/lib/custom-events/app-types';
+import type { Membership } from '~/modules/memberships/types';
 
 export type CombinedCustomEventMap = AppCustomEventMap & {
   toggleCarouselDrag: CustomEvent<boolean>;

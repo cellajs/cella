@@ -1,5 +1,14 @@
 import { JSDOM } from 'jsdom';
 
+/**
+ * Updates HTML by replacing elements with 'data-url' attributes based on their content type.
+ * - For images, sets the 'src' attribute.
+ * - For videos and audio, sets the 'src' attribute.
+ * - For files, wraps the element in a link and sets the 'href' and 'download' attributes.
+ *
+ * @param passedHTML - The HTML string to be updated.
+ * @returns The updated HTML string.
+ */
 export const updateBlocknoteHTML = (passedHTML: string): string => {
   // Parse the HTML string with JSDOM
   const dom = new JSDOM(passedHTML);

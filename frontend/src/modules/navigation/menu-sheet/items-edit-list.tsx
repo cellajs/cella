@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { MenuItemEditWrapper } from '~/modules/navigation/menu-sheet/item-edit-wrapper';
+import type { UserMenuItem } from '~/modules/users/types';
 import { useNavigationStore } from '~/store/navigation';
-import type { UserMenuItem } from '~/types/common';
 
 export const MenuSheetItemsEdit = ({ data, shownOption }: { data: UserMenuItem[]; shownOption: 'archived' | 'unarchive' }) => {
   const { t } = useTranslation();

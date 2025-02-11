@@ -1,28 +1,28 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { updateUserBodySchema } from 'backend/modules/users/schema';
-import { useEffect, useMemo } from 'react';
+import { isValidElement, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { z } from 'zod';
-import AvatarFormField from '~/modules/common/form-fields/avatar';
-import type { User } from '~/types/common';
+import { updateUserBodySchema } from '#/modules/users/schema';
 
-import { useBeforeUnload } from '~/hooks/use-before-unload';
-import { Button, SubmitButton } from '~/modules/ui/button';
-import { Checkbox } from '~/modules/ui/checkbox';
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
-
-import { isValidElement } from 'react';
+import { config } from 'config';
 import type { UseFormProps } from 'react-hook-form';
+import { useBeforeUnload } from '~/hooks/use-before-unload';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import useHideElementsById from '~/hooks/use-hide-elements-by-id';
-import { createToast } from '~/lib/toasts';
+import AvatarFormField from '~/modules/common/form-fields/avatar';
 import InputFormField from '~/modules/common/form-fields/input';
-import { SelectLanguage } from '~/modules/common/form-fields/language-selector';
+import { SelectLanguage } from '~/modules/common/form-fields/select-language';
 import { SlugFormField } from '~/modules/common/form-fields/slug';
 import { sheet } from '~/modules/common/sheeter/state';
 import { useStepper } from '~/modules/common/stepper/use-stepper';
+import { createToast } from '~/modules/common/toaster';
 import UnsavedBadge from '~/modules/common/unsaved-badge';
-import { useUpdateUserMutation } from '~/modules/users/query-mutations';
+import { Button, SubmitButton } from '~/modules/ui/button';
+import { Checkbox } from '~/modules/ui/checkbox';
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
+import { Input } from '~/modules/ui/input';
+import { useUpdateUserMutation } from '~/modules/users/query';
+import type { User } from '~/modules/users/types';
 import { useUserStore } from '~/store/user';
 import { cleanUrl } from '~/utils/clean-url';
 
@@ -60,7 +60,6 @@ const UpdateUserForm = ({ user, callback, sheet: isSheet, hiddenFields, children
         thumbnailUrl: cleanUrl(user.thumbnailUrl),
         firstName: user.firstName,
         lastName: user.lastName,
-        bio: user.bio,
         email: user.email,
         language: user.language,
         newsletter: user.newsletter,
@@ -91,7 +90,7 @@ const UpdateUserForm = ({ user, callback, sheet: isSheet, hiddenFields, children
     });
   };
 
-  // Update sheet title with unsaved changes
+  // TODO can be extracted to a hook?
   useEffect(() => {
     if (form.unsavedChanges) {
       const targetSheet = sheet.get('update-user');
@@ -138,21 +137,18 @@ const UpdateUserForm = ({ user, callback, sheet: isSheet, hiddenFields, children
           />
         )}
 
-        <InputFormField
-          inputClassName="border"
-          control={form.control}
-          value={user.email}
-          name="email"
-          label={t('common:email')}
-          type="email"
-          disabled
-          required
-        />
-        <InputFormField inputClassName="border" control={form.control} name="bio" label={t('common:bio')} type="textarea" />
+        <div id="email-form-item-container" className="flex-col flex gap-2">
+          <FormLabel>{t('common:email')}</FormLabel>
+          <FormControl>
+            <Input value={user.email} autoComplete="off" disabled />
+          </FormControl>
+          <FormMessage />
+        </div>
+
         <FormField
           control={form.control}
           name="language"
-          render={({ field: { onChange } }) => (
+          render={({ field }) => (
             <FormItem name="language">
               <FormLabel>
                 {t('common:language')}
@@ -160,7 +156,7 @@ const UpdateUserForm = ({ user, callback, sheet: isSheet, hiddenFields, children
               </FormLabel>
               <FormDescription>{t('common:placeholder.select_language')}</FormDescription>
               <FormControl>
-                <SelectLanguage name="language" onChange={onChange} />
+                <SelectLanguage options={[...config.languages]} value={field.value ?? config.defaultLanguage} onChange={field.onChange} />
               </FormControl>
               <FormMessage />
             </FormItem>

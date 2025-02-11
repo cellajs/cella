@@ -5,7 +5,11 @@ interface MeasureResult<T extends Element> {
   bounds: DOMRectReadOnly;
 }
 
-// Hook to measure the size of an element
+/**
+ * Hook to measure the size of an element.
+ *
+ * @returns ref to attach to the element and its bounds (width, height, etc.).
+ */
 export const useMeasure = <T extends Element = Element>(): MeasureResult<T> => {
   const ref = useRef<T>(null);
   const [bounds, setBounds] = useState<DOMRectReadOnly>(new DOMRectReadOnly());

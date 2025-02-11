@@ -3,7 +3,6 @@ import { SuggestionMenuController } from '@blocknote/react';
 
 import { getSlashMenuItems } from '~/modules/common/blocknote/blocknote-config';
 import { slashMenu } from '~/modules/common/blocknote/custom-slash-menu/custom-slash-menu';
-
 import { getSortedSlashMenuItems } from '~/modules/common/blocknote/helpers';
 import type { BasicBlockTypes, CellaCustomBlockTypes, CustomBlockNoteSchema } from '~/modules/common/blocknote/types';
 

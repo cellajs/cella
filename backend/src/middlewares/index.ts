@@ -1,17 +1,18 @@
 import { sentry } from '@hono/sentry';
+import { OpenAPIHono } from '@hono/zod-openapi';
 import { config } from 'config';
 import { bodyLimit } from 'hono/body-limit';
 import { compress } from 'hono/compress';
 import { cors } from 'hono/cors';
 import { csrf } from 'hono/csrf';
 import { secureHeaders } from 'hono/secure-headers';
+import type { Env } from '#/lib/context';
 import { errorResponse } from '#/lib/errors';
 import { observabilityMiddleware } from '#/middlewares/observability/';
-import { CustomHono } from '#/types/common';
 import { logEvent } from './logger/log-event';
 import { logger } from './logger/logger';
 
-const app = new CustomHono();
+const app = new OpenAPIHono<Env>();
 
 // Secure headers
 app.use('*', secureHeaders());

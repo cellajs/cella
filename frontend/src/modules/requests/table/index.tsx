@@ -3,19 +3,19 @@ import { Suspense, lazy, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { z } from 'zod';
 import useSearchParams from '~/hooks/use-search-params';
-import { createToast } from '~/lib/toasts';
 import { useSortColumns } from '~/modules/common/data-table/sort-columns';
+import type { BaseTableMethods } from '~/modules/common/data-table/types';
 import { dialog } from '~/modules/common/dialoger/state';
+import { createToast } from '~/modules/common/toaster';
 import { invite } from '~/modules/general/api';
-import { deleteRequests, getRequests } from '~/modules/requests/api';
+import { getRequests } from '~/modules/requests/api';
 import DeleteRequests from '~/modules/requests/delete-requests';
-import { openFeedbackLetterSheet } from '~/modules/requests/helpers';
 import { requestsKeys } from '~/modules/requests/query';
 import { useColumns } from '~/modules/requests/table/columns';
 import { RequestsTableHeaderBar } from '~/modules/requests/table/table-header';
+import type { Request } from '~/modules/requests/types';
 import { useMutateQueryData } from '~/query/hooks/use-mutate-query-data';
 import { RequestsTableRoute, type requestSearchSchema } from '~/routes/system';
-import type { BaseTableMethods, Request } from '~/types/common';
 import { arraysHaveSameElements } from '~/utils';
 
 const BaseDataTable = lazy(() => import('~/modules/requests/table/table'));
@@ -53,12 +53,6 @@ const RequestsTable = () => {
     if (dataTableRef.current) dataTableRef.current.clearSelection();
   };
 
-  const openNewsletterSheet = () => {
-    const requests = selected.filter((request) => request.type !== 'waitlist');
-    const emails = requests.map((request) => request.email);
-    openFeedbackLetterSheet(emails, clearSelection);
-  };
-
   const openRemoveDialog = () => {
     dialog(
       <DeleteRequests
@@ -79,20 +73,23 @@ const RequestsTable = () => {
   };
 
   const openInviteDialog = async () => {
-    const waitlistRequests = selected.filter((request) => request.type === 'waitlist');
-    const emails = waitlistRequests.map((request) => request.email);
-    const requestIds = waitlistRequests.map((request) => request.id);
+    const waitlistRequests = selected.filter(({ type }) => type === 'waitlist');
+    const emails = waitlistRequests.map(({ email }) => email);
+
+    // add random token value so state it table changes
+    const updatedWaitLists = waitlistRequests.map((req) => {
+      return req;
+    });
 
     try {
       // Send invite to users
       await invite({ emails, role: 'user' });
       createToast(t('common:success.user_invited'), 'success');
 
-      // TODO: decide delete requests or change status to 'processed'
-      await deleteRequests(requestIds);
-      mutateQuery.remove(waitlistRequests);
+      mutateQuery.update(updatedWaitLists);
+      clearSelection();
     } catch (error) {
-      createToast(t('common:error.bad_request_action'), 'error');
+      createToast(t('error:bad_request_action'), 'error');
     }
   };
 
@@ -113,7 +110,6 @@ const RequestsTable = () => {
         clearSelection={clearSelection}
         openRemoveDialog={openRemoveDialog}
         openInviteDialog={openInviteDialog}
-        openNewsletterSheet={openNewsletterSheet}
         fetchExport={fetchExport}
       />
       <Suspense>

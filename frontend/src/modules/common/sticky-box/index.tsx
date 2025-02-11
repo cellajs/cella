@@ -362,17 +362,33 @@ export const useStickyBox = ({ offsetTop = 0, offsetBottom = 0, bottom = false, 
     if (!node || !stickyProp) return;
     const unsubs: UnsubList = [];
     setup(node, unsubs, { offsetBottom, offsetTop, bottom, enabled });
+
+    let lastIsSticky = false; // Store last known sticky state
+    let ticking = false;
+
     const handleScroll = () => {
-      const isStickyNow = calculateIsSticky(node, offsetTop, offsetBottom, bottom);
-      setIsSticky(isStickyNow);
+      if (!ticking) {
+        ticking = true;
+        requestAnimationFrame(() => {
+          const isStickyNow = calculateIsSticky(node, offsetTop, offsetBottom, bottom);
+
+          if (isStickyNow !== lastIsSticky) {
+            setIsSticky(isStickyNow); // Only update state if value changed
+            lastIsSticky = isStickyNow;
+          }
+
+          ticking = false;
+        });
+      }
     };
+
     const calculateIsSticky = (el: HTMLElement, offsetTop: number, offsetBottom: number, bottom: boolean) => {
       const rect = el.getBoundingClientRect();
-      const isStickyNow = bottom ? rect.bottom <= window.innerHeight - offsetBottom : rect.top <= offsetTop;
-      return isStickyNow;
+      return bottom ? rect.bottom <= window.innerHeight - offsetBottom : rect.top <= offsetTop;
     };
-    window.addEventListener('scroll', handleScroll);
-    handleScroll();
+
+    window.addEventListener('scroll', handleScroll, passiveArg);
+    handleScroll(); // Initial check
 
     return () => {
       // biome-ignore lint/complexity/noForEach: <explanation>

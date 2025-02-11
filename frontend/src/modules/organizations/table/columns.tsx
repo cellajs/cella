@@ -1,17 +1,17 @@
-import { useTranslation } from 'react-i18next';
-import type { Organization } from '~/types/common';
-
 import { Link } from '@tanstack/react-router';
 import { config } from 'config';
 import { Shield, UserRound } from 'lucide-react';
 import { useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import CheckboxColumn from '~/modules/common/data-table/checkbox-column';
-import type { ColumnOrColumnGroup } from '~/modules/common/data-table/columns-view';
 import HeaderCell from '~/modules/common/data-table/header-cell';
 import { renderSelect } from '~/modules/common/data-table/select-column';
+import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 import UpdateRow from '~/modules/organizations/table/update-row';
+import type { Organization } from '~/modules/organizations/types';
 import { dateShort } from '~/utils/date-short';
 
 export const useColumns = (callback: (organizations: Organization[]) => void) => {
@@ -54,9 +54,9 @@ export const useColumns = (callback: (organizations: Organization[]) => void) =>
         name: t('common:your_role'),
         sortable: false,
         visible: !isMobile,
-        renderHeaderCell: HeaderCell,
-        renderCell: ({ row }) => (row.membership?.role ? t(`common:${row.membership.role}`) : 'Not a member'),
         width: 120,
+        renderHeaderCell: HeaderCell,
+        renderCell: ({ row }) => (row.membership?.role ? t(`common:${row.membership.role}`) : <span className="text-muted">-</span>),
         renderEditCell: ({ row, onRowChange }) =>
           renderSelect({
             row,
@@ -69,24 +69,25 @@ export const useColumns = (callback: (organizations: Organization[]) => void) =>
         name: t('common:subscription'),
         sortable: false,
         visible: !isMobile,
-        renderHeaderCell: HeaderCell,
-        renderCell: () => '-',
         minWidth: 140,
+        renderHeaderCell: HeaderCell,
+        renderCell: () => <span className="text-muted">-</span>,
       },
       {
         key: 'createdAt',
         name: t('common:created_at'),
         sortable: true,
         visible: !isMobile,
-        renderHeaderCell: HeaderCell,
-        renderCell: ({ row }) => dateShort(row.createdAt),
         minWidth: 180,
+        renderHeaderCell: HeaderCell,
+        renderCell: ({ row }) => (row.createdAt ? dateShort(row.createdAt) : <span className="text-muted">-</span>),
       },
       {
         key: 'memberCount',
         name: t('common:members'),
         sortable: false,
         visible: !isMobile,
+        width: 140,
         renderHeaderCell: HeaderCell,
         renderCell: ({ row }) => (
           <>
@@ -94,13 +95,13 @@ export const useColumns = (callback: (organizations: Organization[]) => void) =>
             {row.counts.memberships.members}
           </>
         ),
-        width: 140,
       },
       {
         key: 'adminCount',
         name: t('common:admins'),
         sortable: false,
         visible: !isMobile,
+        width: 140,
         renderHeaderCell: HeaderCell,
         renderCell: ({ row }) => (
           <>
@@ -108,7 +109,6 @@ export const useColumns = (callback: (organizations: Organization[]) => void) =>
             {row.counts.memberships.admins}
           </>
         ),
-        width: 140,
       },
     ];
 

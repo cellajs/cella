@@ -1,6 +1,17 @@
 import { config } from 'config';
 import { Building2, Cloud, Github, Users } from 'lucide-react';
 
+export const features = [
+  { icon: 'hono' },
+  { icon: 'react' },
+  { icon: 'drizzle' },
+  { icon: 'shadcn' },
+  { icon: 'openapi' },
+  { icon: 'vite' },
+  { icon: 'tanstack' },
+  { icon: 'electric' },
+];
+
 export const socials = [
   { title: 'BlueSky', href: config.company.blueskyUrl, icon: Cloud },
   { title: 'GitHub', href: config.company.githubUrl, icon: Github },
@@ -11,7 +22,7 @@ export const footerSections = [
     title: 'common:product',
     links: [
       { title: 'common:about', href: '/about' },
-      { title: 'common:sign_up', href: '/auth/sign-in' },
+      { title: 'common:sign_up', href: '/auth/authenticate' },
     ],
   },
   {

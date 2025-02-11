@@ -1,13 +1,14 @@
+import { z } from 'zod';
 import { createRouteConfig } from '#/lib/route-config';
 import { isAuthenticated, systemGuard } from '#/middlewares/guard';
+import { booleanQuerySchema, entityParamSchema, idsBodySchema } from '#/utils/schema/common';
 import {
   errorResponses,
   successWithDataSchema,
   successWithErrorsSchema,
   successWithPaginationSchema,
   successWithoutDataSchema,
-} from '#/utils/schema/common-responses';
-import { entityParamSchema, idsQuerySchema } from '#/utils/schema/common-schemas';
+} from '#/utils/schema/responses';
 import {
   createOrganizationBodySchema,
   getOrganizationsQuerySchema,
@@ -17,7 +18,7 @@ import {
   updateOrganizationBodySchema,
 } from './schema';
 
-class OrganizationRoutesConfig {
+class OrganizationRouteConfig {
   public createOrganization = createRouteConfig({
     method: 'post',
     path: '/',
@@ -37,7 +38,7 @@ class OrganizationRoutesConfig {
     },
     responses: {
       200: {
-        description: 'Organization was createRouteConfigd',
+        description: 'Organization was created',
         content: {
           'application/json': {
             schema: successWithDataSchema(organizationWithMembershipSchema),
@@ -93,7 +94,7 @@ class OrganizationRoutesConfig {
         description: 'Organization was updated',
         content: {
           'application/json': {
-            schema: successWithDataSchema(organizationWithMembershipSchema),
+            schema: successWithDataSchema(organizationSchema),
           },
         },
       },
@@ -124,7 +125,7 @@ class OrganizationRoutesConfig {
     },
   });
 
-  public sendNewsletterEmail = createRouteConfig({
+  public sendNewsletter = createRouteConfig({
     method: 'post',
     path: '/send-newsletter',
     guard: [isAuthenticated, systemGuard],
@@ -132,6 +133,7 @@ class OrganizationRoutesConfig {
     summary: 'Newsletter for members',
     description: 'Sends to requested organizations members, a newsletter.',
     request: {
+      query: z.object({ toSelf: booleanQuerySchema }),
       body: {
         required: true,
         content: {
@@ -162,7 +164,9 @@ class OrganizationRoutesConfig {
     summary: 'Delete organizations',
     description: 'Delete organizations by ids.',
     request: {
-      query: idsQuerySchema,
+      body: {
+        content: { 'application/json': { schema: idsBodySchema } },
+      },
     },
     responses: {
       200: {
@@ -177,4 +181,4 @@ class OrganizationRoutesConfig {
     },
   });
 }
-export default new OrganizationRoutesConfig();
+export default new OrganizationRouteConfig();

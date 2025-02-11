@@ -2,25 +2,27 @@ import { z } from '@hono/zod-openapi';
 
 import { createRouteConfig } from '#/lib/route-config';
 import { hasOrgAccess, isAuthenticated } from '#/middlewares/guard';
+import { idInOrgParamSchema, idOrSlugSchema, idsBodySchema, inOrgParamSchema } from '#/utils/schema/common';
 import {
   errorResponses,
   successWithDataSchema,
   successWithErrorsSchema,
   successWithPaginationSchema,
   successWithoutDataSchema,
-} from '#/utils/schema/common-responses';
-import { idOrSlugSchema, idSchema } from '#/utils/schema/common-schemas';
-import { membersQuerySchema, membersSchema } from '../general/schema';
+} from '#/utils/schema/responses';
 import {
-  createMembershipBodySchema,
-  createMembershipQuerySchema,
-  deleteMembersQuerySchema,
+  baseMembersQuerySchema,
+  createMembershipsBodySchema,
+  invitedMembersQuerySchema,
+  invitedMembersSchema,
+  membersQuerySchema,
+  membersSchema,
   membershipSchema,
   updateMembershipBodySchema,
 } from './schema';
 
-class MembershipRoutesConfig {
-  public createMembership = createRouteConfig({
+class MembershipRouteConfig {
+  public createMemberships = createRouteConfig({
     method: 'post',
     path: '/',
     guard: [isAuthenticated, hasOrgAccess],
@@ -28,12 +30,12 @@ class MembershipRoutesConfig {
     summary: 'Invite members',
     description: 'Invite members to an entity such as an organization.',
     request: {
-      query: createMembershipQuerySchema,
-      params: z.object({ orgIdOrSlug: idOrSlugSchema }),
+      query: baseMembersQuerySchema,
+      params: inOrgParamSchema,
       body: {
         content: {
           'application/json': {
-            schema: createMembershipBodySchema,
+            schema: createMembershipsBodySchema,
           },
         },
       },
@@ -59,8 +61,11 @@ class MembershipRoutesConfig {
     summary: 'Delete memberships',
     description: 'Delete memberships by their ids. This will remove the membership but not delete any user(s).',
     request: {
-      params: z.object({ orgIdOrSlug: idOrSlugSchema }),
-      query: deleteMembersQuerySchema,
+      params: inOrgParamSchema,
+      query: baseMembersQuerySchema,
+      body: {
+        content: { 'application/json': { schema: idsBodySchema } },
+      },
     },
     responses: {
       200: {
@@ -83,7 +88,7 @@ class MembershipRoutesConfig {
     summary: 'Update membership',
     description: 'Update role, muted, or archived status in a membership.',
     request: {
-      params: z.object({ orgIdOrSlug: idOrSlugSchema, id: idSchema }),
+      params: idInOrgParamSchema,
       body: {
         content: {
           'application/json': {
@@ -114,9 +119,7 @@ class MembershipRoutesConfig {
     description: 'Get members of a context entity by id or slug. It returns members (users) with their membership.',
     request: {
       query: membersQuerySchema,
-      params: z.object({
-        orgIdOrSlug: idOrSlugSchema.optional(),
-      }),
+      params: z.object({ orgIdOrSlug: idOrSlugSchema.optional() }),
     },
     responses: {
       200: {
@@ -130,5 +133,29 @@ class MembershipRoutesConfig {
       ...errorResponses,
     },
   });
+
+  public getInvitedMembers = createRouteConfig({
+    method: 'get',
+    path: '/invited-members',
+    guard: [isAuthenticated, hasOrgAccess],
+    tags: ['memberships'],
+    summary: 'Get list of invited members',
+    description: 'Get invited members of a context entity by id or slug. It returns invite info.',
+    request: {
+      query: invitedMembersQuerySchema,
+      params: inOrgParamSchema,
+    },
+    responses: {
+      200: {
+        description: 'Invited members',
+        content: {
+          'application/json': {
+            schema: successWithPaginationSchema(invitedMembersSchema),
+          },
+        },
+      },
+      ...errorResponses,
+    },
+  });
 }
-export default new MembershipRoutesConfig();
+export default new MembershipRouteConfig();

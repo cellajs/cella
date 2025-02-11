@@ -1,5 +1,3 @@
-import type { Attachment } from '~/types/common';
-
 import { config } from 'config';
 import type { TFunction } from 'i18next';
 import { CopyCheckIcon, CopyIcon, Download } from 'lucide-react';
@@ -7,9 +5,10 @@ import useDownloader from 'react-use-downloader';
 import { useCopyToClipboard } from '~/hooks/use-copy-to-clipboard';
 import AttachmentThumb from '~/modules/attachments/attachment-thumb';
 import { formatBytes } from '~/modules/attachments/table/helpers';
+import type { Attachment } from '~/modules/attachments/types';
 import CheckboxColumn from '~/modules/common/data-table/checkbox-column';
-import type { ColumnOrColumnGroup } from '~/modules/common/data-table/columns-view';
 import HeaderCell from '~/modules/common/data-table/header-cell';
+import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 import { Button } from '~/modules/ui/button';
 import { Input } from '~/modules/ui/input';
 import { dateShort } from '~/utils/date-short';
@@ -112,7 +111,7 @@ export const useColumns = (
       renderHeaderCell: HeaderCell,
       renderCell: ({ row, tabIndex }) => (
         <span tabIndex={tabIndex} className="group-hover:underline underline-offset-4 truncate font-light">
-          {row.filename || '-'}
+          {row.filename || <span className="text-muted">-</span>}
         </span>
       ),
     },
@@ -124,9 +123,10 @@ export const useColumns = (
       renderHeaderCell: HeaderCell,
       minWidth: 140,
       renderCell: ({ row, tabIndex }) => {
+        if (!row.contentType) return <span className="text-muted">-</span>;
         return (
           <span tabIndex={tabIndex} className="font-light">
-            {row.contentType || '-'}
+            {row.contentType}
           </span>
         );
       },
@@ -136,18 +136,18 @@ export const useColumns = (
       name: t('common:size'),
       sortable: false,
       visible: !isMobile,
+      width: 100,
       renderHeaderCell: HeaderCell,
       renderCell: ({ row }) => <div className="inline-flex items-center gap-1 relative font-light group h-full w-full">{formatBytes(row.size)}</div>,
-      width: 100,
     },
     {
       key: 'createdAt',
       name: t('common:created_at'),
       sortable: true,
       visible: !isSheet && !isMobile,
-      renderHeaderCell: HeaderCell,
-      renderCell: ({ row }) => dateShort(row.createdAt),
       minWidth: 180,
+      renderHeaderCell: HeaderCell,
+      renderCell: ({ row }) => (row.createdAt ? dateShort(row.createdAt) : <span className="text-muted">-</span>),
     },
   ];
 

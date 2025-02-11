@@ -3,7 +3,7 @@ import { db } from '#/db/db';
 import { usersTable } from '#/db/schema/users';
 
 import chalk from 'chalk';
-import { hashPasswordWithArgon } from '#/modules/auth/helpers/argon2id';
+import { hashPassword } from '#/modules/auth/helpers/argon2id';
 import { generateUnsubscribeToken } from '#/modules/users/helpers/unsubscribe-token';
 
 export const adminUser = {
@@ -14,11 +14,12 @@ export const adminUser = {
 
 // Seed an admin user to access app first time
 export const userSeed = async () => {
+  if (config.mode === 'production') return console.warn('In production mode, skipping seed');
+
   const usersInTable = await db.select().from(usersTable).limit(1);
 
   if (usersInTable.length > 0) {
-    console.info('Users table is not empty, skipping seed');
-    return;
+    return console.warn('Users table is not empty, skipping seed');
   }
 
   await db
@@ -32,7 +33,7 @@ export const userSeed = async () => {
       slug: 'admin-user',
       role: 'admin',
       unsubscribeToken: generateUnsubscribeToken(adminUser.email),
-      hashedPassword: await hashPasswordWithArgon(adminUser.password),
+      hashedPassword: await hashPassword(adminUser.password),
     })
     .onConflictDoNothing();
 

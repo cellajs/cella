@@ -1,48 +1,41 @@
-import { and, eq, ilike, inArray, or } from 'drizzle-orm';
-import { setCookie } from 'hono/cookie';
-
-import { EventName, Paddle } from '@paddle/paddle-node-sdk';
+import { and, eq, ilike, inArray, isNull, lt, or } from 'drizzle-orm';
+import { mailer } from '#/lib/mailer';
+import { SystemInviteEmail, type SystemInviteEmailProps } from '../../../emails/system-invite';
 
 import { config } from 'config';
 import { type SSEStreamingApi, streamSSE } from 'hono/streaming';
 import jwt from 'jsonwebtoken';
-import { render } from 'jsx-email';
-import { generateId } from 'lucia';
-import { TimeSpan, createDate, isWithinExpirationDate } from 'oslo';
 
-import { InviteSystemEmail } from '../../../emails/system-invite';
-import { env } from '../../../env';
-
+import { OpenAPIHono } from '@hono/zod-openapi';
+import { EventName, Paddle } from '@paddle/paddle-node-sdk';
 import { db } from '#/db/db';
-import { getContextUser, getMemberships } from '#/lib/context';
-import { emailSender } from '#/lib/mailer';
-
-import { type MembershipModel, membershipSelect, membershipsTable } from '#/db/schema/memberships';
-import { type OrganizationModel, organizationsTable } from '#/db/schema/organizations';
-import { type TokenModel, tokensTable } from '#/db/schema/tokens';
+import { membershipsTable } from '#/db/schema/memberships';
+import { requestsTable } from '#/db/schema/requests';
+import { tokensTable } from '#/db/schema/tokens';
 import { usersTable } from '#/db/schema/users';
-import { getUserBy } from '#/db/util';
-import { entityIdFields, entityTables, menuSections } from '#/entity-config';
-import { resolveEntity } from '#/lib/entity';
+import { entityIdFields, entityTables } from '#/entity-config';
+import { type Env, getContextMemberships, getContextUser } from '#/lib/context';
 import { errorResponse } from '#/lib/errors';
 import { i18n } from '#/lib/i18n';
-import { sendSSEToUsers } from '#/lib/sse';
 import { isAuthenticated } from '#/middlewares/guard';
 import { logEvent } from '#/middlewares/logger/log-event';
+import { getUserBy, getUsersByConditions } from '#/modules/users/helpers/get-user-by';
 import { verifyUnsubscribeToken } from '#/modules/users/helpers/unsubscribe-token';
-import { CustomHono } from '#/types/common';
+import { nanoid } from '#/utils/nanoid';
 import { prepareStringForILikeFilter } from '#/utils/sql';
-import { insertMembership } from '../memberships/helpers/insert-membership';
+import { TimeSpan, createDate } from '#/utils/time-span';
+import { env } from '../../env';
+import { slugFromEmail } from '../auth/helpers/oauth';
+import { membershipSelect } from '../memberships/helpers/select';
 import { checkSlugAvailable } from './helpers/check-slug';
 import generalRouteConfig from './routes';
 
 const paddle = new Paddle(env.PADDLE_API_KEY || '');
 
-const app = new CustomHono();
+const app = new OpenAPIHono<Env>();
 
 export const streams = new Map<string, SSEStreamingApi>();
 
-// General endpoints
 const generalRoutes = app
   /*
    * Get upload token
@@ -59,7 +52,7 @@ const generalRoutes = app
         public: isPublic === 'true',
         imado: !!env.AWS_S3_UPLOAD_ACCESS_KEY_ID,
       },
-      env.TUS_UPLOAD_API_SECRET,
+      env.TUS_SECRET,
     );
 
     return ctx.json({ success: true, data: token }, 200);
@@ -75,206 +68,78 @@ const generalRoutes = app
     return ctx.json({ success: slugAvailable }, 200);
   })
   /*
-   * Check token (token validation)
-   */
-  .openapi(generalRouteConfig.checkToken, async (ctx) => {
-    const { token } = ctx.req.valid('json');
-
-    // Check if token exists
-    const [tokenRecord] = await db
-      .select()
-      .from(tokensTable)
-      .where(and(eq(tokensTable.id, token)));
-    if (!tokenRecord) return errorResponse(ctx, 404, 'not_found', 'warn');
-
-    // const user = await getUserBy('email', tokenRecord.email);
-    // if (!user) return errorResponse(ctx, 404, 'not_found', 'warn', 'user');
-
-    // For reset token: check if token has valid user
-    // if (tokenRecord.type === 'password_reset') {
-    //   const user = await getUserBy('email', tokenRecord.email);
-    //   if (!user) return errorResponse(ctx, 404, 'not_found', 'warn', 'user');
-    // }
-
-    // For system invitation token: check if user email is not already in the system
-    // if (tokenRecord.type === 'system_invitation') {
-    //   const user = await getUserBy('email', tokenRecord.email);
-    //   if (user) return errorResponse(ctx, 409, 'email_exists', 'error');
-    // }
-
-    const data = {
-      type: tokenRecord.type,
-      email: tokenRecord.email || '',
-      organizationName: '',
-      organizationSlug: '',
-    };
-
-    if (tokenRecord.type === 'membership_invitation' && tokenRecord.organizationId) {
-      const [organization] = await db.select().from(organizationsTable).where(eq(organizationsTable.id, tokenRecord.organizationId));
-      data.organizationName = organization.name;
-      data.organizationSlug = organization.slug;
-    }
-
-    return ctx.json({ success: true, data }, 200);
-  })
-  /*
-   * Invite users to the system
+   * Invite users to system
    */
   .openapi(generalRouteConfig.createInvite, async (ctx) => {
-    const { emails, role } = ctx.req.valid('json');
+    const { emails } = ctx.req.valid('json');
     const user = getContextUser();
 
-    for (const email of emails) {
-      const targetUser = await getUserBy('email', email.toLowerCase());
+    const lng = user.language;
+    const senderName = user.name;
+    const senderThumbnailUrl = user.thumbnailUrl;
+    const subject = i18n.t('backend:email.system_invite.subject', { lng, appName: config.name });
 
-      const token = generateId(40);
-      await db.insert(tokensTable).values({
-        id: token,
-        type: 'system_invitation',
-        userId: targetUser?.id,
-        email: email.toLowerCase(),
-        role,
-        createdBy: user.id,
-        expiresAt: createDate(new TimeSpan(7, 'd')),
-      });
-
-      const emailHtml = await render(
-        InviteSystemEmail({
-          userName: targetUser?.name,
-          userThumbnailUrl: targetUser?.thumbnailUrl,
-          userLanguage: targetUser?.language || user.language,
-          inviteBy: user.name,
-          token,
-        }),
-      );
-      logEvent('User invited on system level');
-
-      emailSender
-        .send(
-          config.senderIsReceiver ? user.email : email.toLowerCase(),
-          i18n.t('backend:email.subject.invitation_to_system', { lng: config.defaultLanguage, appName: config.name }),
-          emailHtml,
-          user.email,
-        )
-        .catch((error) => {
-          if (error instanceof Error) {
-            logEvent('Error sending email', { error: error.message }, 'error');
-          }
-        });
-    }
-
-    return ctx.json({ success: true }, 200);
-  })
-  /*
-   * Accept invite token
-   */
-  .openapi(generalRouteConfig.acceptInvite, async (ctx) => {
-    const verificationToken = ctx.req.valid('param').token;
-    const { oauth } = ctx.req.valid('json');
-
-    const [token]: (TokenModel | undefined)[] = await db
+    // Query to filter out invitations on same email
+    const existingInvitesQuery = db
       .select()
       .from(tokensTable)
-      .where(and(eq(tokensTable.id, verificationToken)))
-      .limit(1);
+      .where(
+        and(
+          inArray(tokensTable.email, emails),
+          eq(tokensTable.type, 'invitation'),
+          // Make sure its a system invitation
+          isNull(tokensTable.organizationId),
+          isNull(tokensTable.role),
+          lt(tokensTable.expiresAt, new Date()),
+        ),
+      );
 
-    if (!token || !token.email || !token.role || !isWithinExpirationDate(token.expiresAt)) {
-      return errorResponse(ctx, 401, 'invalid_token_or_expired', 'warn');
-    }
-    // Delete token
-    await db.delete(tokensTable).where(eq(tokensTable.id, verificationToken));
-    // If it is a system invitation, update user role
-    if (token.type === 'system_invitation') {
-      if (oauth) setCookie(ctx, 'oauth_invite_token', token.id);
+    const [existingUsers, existingInvites] = await Promise.all([getUsersByConditions([inArray(usersTable.email, emails)]), existingInvitesQuery]);
 
-      return ctx.json({ success: true }, 200);
-    }
+    // Create a set of emails from both existing users and invitations
+    const existingEmails = new Set([...existingUsers.map((user) => user.email), ...existingInvites.map((invite) => invite.email)]);
 
-    if (!token.organizationId) return errorResponse(ctx, 401, 'invalid_token', 'warn');
+    // Filter out emails that already user or has invitations
+    const recipientEmails = emails.filter((email) => !existingEmails.has(email));
 
-    // check if user exists
-    const user = await getUserBy('email', token.email);
-    if (!user) return errorResponse(ctx, 404, 'not_found', 'warn', 'user', { email: token.email });
+    // Stop if no recipients
+    if (recipientEmails.length === 0) return errorResponse(ctx, 400, 'no_recipients', 'warn');
 
-    // Extract role and membershipInfo from the token, ensuring proper types
-    const { role, membershipInfo } = token as {
-      role: MembershipModel['role'];
-      membershipInfo?: typeof token.membershipInfo;
-    };
+    // Generate tokens
+    const tokens = recipientEmails.map((email) => {
+      const token = nanoid(40);
+      return {
+        token,
+        type: 'invitation' as const,
+        email: email.toLowerCase(),
+        createdBy: user.id,
+        expiresAt: createDate(new TimeSpan(7, 'd')),
+      };
+    });
 
-    const [organization]: (OrganizationModel | undefined)[] = await db
-      .select()
-      .from(organizationsTable)
-      .where(and(eq(organizationsTable.id, token.organizationId)))
-      .limit(1);
+    // Batch insert tokens
+    const insertedTokens = await db.insert(tokensTable).values(tokens).returning();
 
-    if (!organization) return errorResponse(ctx, 404, 'not_found', 'warn', 'organization', { organization: token.organizationId });
+    // Remove waitlist request - if found - because users are explicitly invited
+    await db.delete(requestsTable).where(and(inArray(requestsTable.email, recipientEmails), eq(requestsTable.type, 'waitlist')));
 
-    const memberships = await db
-      .select()
-      .from(membershipsTable)
-      .where(and(eq(membershipsTable.organizationId, organization.id), eq(membershipsTable.type, 'organization')));
+    // Prepare emails
+    const recipients = insertedTokens.map((tokenRecord) => ({
+      email: tokenRecord.email,
+      lng: lng,
+      name: slugFromEmail(tokenRecord.email),
+      systemInviteLink: `${config.frontendUrl}/auth/authenticate?token=${tokenRecord.token}&tokenId=${tokenRecord.id}`,
+    }));
 
-    const existingMembership = memberships.find(({ userId }) => userId === user.id);
+    type Recipient = (typeof recipients)[number];
 
-    if (existingMembership && existingMembership.role !== role && !membershipInfo) {
-      await db
-        .update(membershipsTable)
-        .set({ role })
-        .where(and(eq(membershipsTable.organizationId, organization.id), eq(membershipsTable.userId, user.id)));
+    // Send invitation
+    const staticProps = { senderName, senderThumbnailUrl, subject, lng };
+    await mailer.prepareEmails<SystemInviteEmailProps, Recipient>(SystemInviteEmail, staticProps, recipients, user.email);
 
-      return ctx.json({ success: true }, 200);
-    }
+    logEvent('Users invited on system level');
 
-    // Insert organization membership
-    const orgMembership = await insertMembership({ user, role, entity: organization });
-
-    const newMenuItem = {
-      newItem: { ...organization, membership: orgMembership },
-      sectionName: menuSections.find((el) => el.entityType === orgMembership.type)?.name,
-    };
-
-    // SSE with organization data, to update user's menu
-    sendSSEToUsers([user.id], 'add_entity', newMenuItem);
-    // SSE to to update members queries
-    sendSSEToUsers(
-      memberships.map(({ userId }) => userId).filter((id) => id !== user.id),
-      'member_accept_invite',
-      { id: organization.id, slug: organization.slug },
-    );
-
-    if (membershipInfo) {
-      const { parentEntity: parentInfo, targetEntity: targetInfo } = membershipInfo;
-      const { entity: targetEntityType, idOrSlug: targetIdOrSlug } = targetInfo;
-
-      const targetEntity = await resolveEntity(targetEntityType, targetIdOrSlug);
-      // Resolve parentEntity if provided
-      const parentEntity = parentInfo ? await resolveEntity(parentInfo.entity, parentInfo.idOrSlug) : null;
-
-      if (!targetEntity) return errorResponse(ctx, 404, 'not_found', 'warn', targetEntityType, { [targetEntityType]: targetIdOrSlug });
-
-      const [createdParentMembership, createdMembership] = await Promise.all([
-        parentEntity ? insertMembership({ user, role, entity: parentEntity }) : Promise.resolve(null),
-        insertMembership({ user, role, entity: targetEntity, parentEntity }),
-      ]);
-
-      if (createdParentMembership && parentEntity) {
-        // SSE with parentEntity data, to update user's menu
-        sendSSEToUsers([user.id], 'add_entity', {
-          newItem: { ...parentEntity, membership: createdParentMembership },
-          sectionName: menuSections.find((el) => el.entityType === parentEntity.entity)?.name,
-        });
-      }
-
-      // SSE with entity data, to update user's menu
-      sendSSEToUsers([user.id], 'add_entity', {
-        newItem: { ...targetEntity, membership: createdMembership },
-        sectionName: menuSections.find((el) => el.entityType === targetEntity.entity)?.name,
-        ...(parentEntity && { parentSlug: parentEntity.slug }),
-      });
-    }
-
-    return ctx.json({ success: true, data: newMenuItem }, 200);
+    return ctx.json({ success: true }, 200);
   })
   /*
    * Paddle webhook
@@ -308,13 +173,13 @@ const generalRoutes = app
     return ctx.json({ success: true }, 200);
   })
   /*
-   * Get suggestions
+   * Get entity search suggestions
    */
   .openapi(generalRouteConfig.getSuggestionsConfig, async (ctx) => {
     const { q, type } = ctx.req.valid('query');
 
     const user = getContextUser();
-    const memberships = getMemberships();
+    const memberships = getContextMemberships();
 
     // Retrieve organizationIds
     const organizationIds = memberships.filter((el) => el.type === 'organization').map((el) => String(el.organizationId));
@@ -324,6 +189,7 @@ const generalRoutes = app
     const entityTypes = type ? [type] : config.pageEntityTypes;
 
     // Array to hold queries for concurrent execution
+    // TODO move to a helpers file?
     const queries = entityTypes
       .map((entityType) => {
         const table = entityTables[entityType];
@@ -381,18 +247,18 @@ const generalRoutes = app
     return ctx.json({ success: true, data: { items, total: items.length } }, 200);
   })
   /*
-   * Unsubscribe a user by token
+   * Unsubscribe a user by token from receiving newsletters
    */
   .openapi(generalRouteConfig.unsubscribeUser, async (ctx) => {
     const { token } = ctx.req.valid('query');
 
     // Check if token exists
-    const user = await getUserBy('unsubscribeToken', token);
+    const user = await getUserBy('unsubscribeToken', token, 'unsafe');
     if (!user) return errorResponse(ctx, 404, 'not_found', 'warn', 'user');
 
     // Verify token
     const isValid = verifyUnsubscribeToken(user.email, token);
-    if (!isValid) return errorResponse(ctx, 401, 'Token verification failed', 'warn', 'user');
+    if (!isValid) return errorResponse(ctx, 401, 'unsubscribe_failed', 'warn', 'user');
 
     // Update user
     await db.update(usersTable).set({ newsletter: false }).where(eq(usersTable.id, user.id));

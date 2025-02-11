@@ -1,63 +1,71 @@
-import { useNavigate, useParams } from '@tanstack/react-router';
-import { useEffect } from 'react';
+import { useMutation } from '@tanstack/react-query';
+import { useNavigate, useParams, useSearch } from '@tanstack/react-router';
+import { config } from 'config';
+import { ArrowRight, Check, Mail } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { toast } from 'sonner';
-import { useOnlineManager } from '~/hooks/use-online-manager';
-import { createToast } from '~/lib/toasts';
-import type { TokenType } from '~/modules/auth/api';
-import AuthPage from '~/modules/auth/auth-page';
-import { useVerifyEmailMutation } from '~/modules/auth/query-mutations';
+import { sendVerificationEmail, verifyEmail } from '~/modules/auth/api';
+import AuthNotice from '~/modules/auth/notice';
+import Spinner from '~/modules/common/spinner';
+import { createToast } from '~/modules/common/toaster';
 import { Button } from '~/modules/ui/button';
+import { VerifyEmailWithTokenRoute } from '~/routes/auth';
+import { useTokenCheck } from './use-token-check';
 
 const VerifyEmail = () => {
   const { t } = useTranslation();
-  //Strict false is needed because the component is used in two places, one of which does not include parameters
-  const { token }: TokenType = useParams({ strict: false });
   const navigate = useNavigate();
-  const { isOnline } = useOnlineManager();
 
-  const { mutate: verifyEmail, error } = useVerifyEmailMutation();
+  const { token } = useParams({ from: VerifyEmailWithTokenRoute.id });
+  const { tokenId } = useSearch({ from: VerifyEmailWithTokenRoute.id });
 
-  const onSuccess = () => {
-    toast.success(t('common:success.email_verified'));
-    navigate({ to: '/welcome' });
-  };
+  const { data, isLoading, error } = useTokenCheck('email_verification', tokenId);
 
-  const resendEmail = () => {
-    if (!isOnline) return createToast(t('common:action.offline.text'), 'warning');
-    verifyEmail({ token, resend: true }, { onSuccess });
-  };
+  // Verify email with token
+  const { mutate: verify, isPending: isVerifying } = useMutation({
+    mutationFn: () => verifyEmail({ token }),
+    onSuccess: () => {
+      createToast(t('common:success.email_verified'), 'success');
+      navigate({ to: config.welcomeRedirectPath });
+    },
+  });
 
-  useEffect(() => {
-    if (!token) return;
-    verifyEmail({ token }, { onSuccess });
-  }, []);
+  // Resend verification email
+  const {
+    mutate: resendVerification,
+    isPending,
+    isSuccess,
+  } = useMutation({
+    mutationFn: () => sendVerificationEmail({ tokenId }),
+    onSuccess: () => {
+      createToast(t('common:success.sent_verification_email'), 'success');
+    },
+  });
 
-  if (token) {
-    if (error) {
-      return (
-        <AuthPage>
-          <div className="text-center">
-            <h1 className="text-2xl">{t('common:error.unable_to_verify')}</h1>
-            <p className="font-light mt-4">{t('common:error.token_invalid_request_new')}</p>
-            <Button className="mt-8" onClick={resendEmail}>
-              {t('common:resend_email')}
-            </Button>
-          </div>
-        </AuthPage>
-      );
-    }
+  // Checking token by id
+  if (isLoading || isVerifying) return <Spinner className="h-10 w-10" />;
 
-    return null;
-  }
+  // Check token failed
+  if (error)
+    return (
+      <AuthNotice error={error}>
+        {/* Show resend option if possible */}
+        {error.status && ![404, 429].includes(error.status) && (
+          <Button size="lg" onClick={() => resendVerification()} className="flex gap-2" disabled={isSuccess} loading={isPending}>
+            {isSuccess ? <Check size={16} /> : <Mail size={16} />}
+            {isSuccess ? t('common:resend_sent') : t('common:resend_email')}
+          </Button>
+        )}
+      </AuthNotice>
+    );
 
   return (
-    <AuthPage>
-      <div className="text-center">
-        <h1 className="text-2xl">{t('common:almost_there')}</h1>
-        <p className="font-light mt-4">{t(`common:${isOnline ? 'verify_email_notice.text' : 'offline.text'}`)}</p>
-      </div>
-    </AuthPage>
+    <div className="text-center">
+      <h1 className="text-2xl">{t('common:verify_email', { email: data?.email })}</h1>
+      <Button size="lg" onClick={() => verify()} className="mt-6" loading={isVerifying}>
+        {t('common:verify_signin')}
+        <ArrowRight size={16} className="ml-2" />
+      </Button>
+    </div>
   );
 };
 

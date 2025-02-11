@@ -18,7 +18,7 @@ export const CountryFlag = ({ countryCode, className, imgType = 'svg', width = 1
   if (!isOnline) return null;
   return (
     <img
-      className={cn('inline overflow-hidden shadow-sm', className)}
+      className={cn('inline overflow-hidden shadow-xs', className)}
       {...props}
       src={flagUrl}
       alt={`Flag of ${countryCode.toUpperCase()}`}

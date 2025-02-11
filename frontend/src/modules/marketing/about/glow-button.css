@@ -27,7 +27,7 @@
 
 button.glow-button:after {
   filter: blur(4px) opacity(0.5);
- }
+}
 
 button.glow-button:active::after {
   position: absolute;

@@ -1,7 +1,13 @@
 import { useEffect, useState } from 'react';
 import router from '~/lib/router';
 
-// Custom hook to track route changes
+/**
+ * Custom hook to track route changes.
+ *
+ * @returns:
+ * - `hasChanged`: boolean value indicating if the route has changed
+ * - `toLocation`: new location's pathname
+ */
 export const useRouteChange = () => {
   const [hasChanged, setHasChanged] = useState(false);
   const [toLocation, setToLocation] = useState('');

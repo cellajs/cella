@@ -5,8 +5,6 @@ export default {
   name: 'Cella DEVELOPMENT',
   debug: false,
 
-  // senderIsReceiver: true,
-
   domain: '',
   frontendUrl: 'https://localhost:3000',
   backendUrl: 'https://localhost:4000',

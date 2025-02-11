@@ -1,6 +1,7 @@
-import { Outlet, ScrollRestoration } from '@tanstack/react-router';
+import { Outlet } from '@tanstack/react-router';
 import { config } from 'config';
 import { Suspense } from 'react';
+import { useBreakpoints } from '~/hooks/use-breakpoints';
 
 import useLazyComponent from '~/hooks/use-lazy-component'; // Adjust the import path accordingly
 import { useOnlineManager } from '~/hooks/use-online-manager';
@@ -12,6 +13,9 @@ import { TooltipProvider } from '~/modules/ui/tooltip';
 
 function Root() {
   const { isOnline } = useOnlineManager();
+  const isMobile = useBreakpoints('max', 'sm');
+
+  const toastPosition = isMobile ? 'top-center' : 'bottom-right';
 
   useSetDocumentTitle();
   // Lazy load
@@ -23,12 +27,10 @@ function Root() {
 
   return (
     <TooltipProvider disableHoverableContent delayDuration={300} skipDelayDuration={0}>
-      <ScrollRestoration />
       <Outlet />
       <ReloadPrompt />
-      <Toaster richColors toastOptions={{ className: 'max-sm:mb-16' }} />
+      <Toaster richColors toastOptions={{ className: 'max-sm:mb-16' }} position={toastPosition} />
       <DownAlert />
-
       <Suspense fallback={null}>{GleapSupport ? <GleapSupport /> : null}</Suspense>
     </TooltipProvider>
   );

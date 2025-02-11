@@ -22,62 +22,46 @@ export const CustomDragHandleButton = <
   BSchema extends BlockSchema = DefaultBlockSchema,
   I extends InlineContentSchema = DefaultInlineContentSchema,
   S extends StyleSchema = DefaultStyleSchema,
->(
-  props: CustomDragHandleButtonProps<BSchema, I, S>,
-) => {
+>({
+  hasDropDown = false,
+  position = 'top',
+  dragHandleMenu: DragHandleContent = DragHandleMenu,
+  blockDragStart,
+  blockDragEnd,
+  freezeMenu,
+  unfreezeMenu,
+  block,
+}: CustomDragHandleButtonProps<BSchema, I, S>) => {
   // biome-ignore lint/style/noNonNullAssertion: req by author
   const Components = useComponentsContext()!;
 
-  const Content = props.dragHandleMenu || DragHandleMenu;
-
   // Wrapper to match the signature of onDragStart
-  const handleDragStart = (e: React.DragEvent<Element>) => {
-    if (props.blockDragStart) {
-      const eventData = {
-        dataTransfer: e.dataTransfer,
-        clientY: e.clientY,
-      };
-      props.blockDragStart(eventData, props.block);
-    }
+  const handleDragStart = ({ dataTransfer, clientY }: React.DragEvent) => {
+    blockDragStart?.({ dataTransfer, clientY }, block);
   };
 
   // Prevent form submission when clicking the drag handle button
-  const handleButtonClick = (e: React.MouseEvent) => {
-    e.preventDefault();
+  const handleButtonClick = (e: React.MouseEvent) => e.preventDefault();
+
+  // Common button properties
+  const baseButtonProps = {
+    onDragStart: handleDragStart,
+    onDragEnd: blockDragEnd,
+    className: 'bn-button',
+    icon: <GripVertical size={22} data-test="dragHandle" />,
   };
 
   return (
-    <Components.Generic.Menu.Root
-      onOpenChange={(open: boolean) => {
-        if (open) props.freezeMenu();
-        else props.unfreezeMenu();
-      }}
-      position={props.position}
-    >
-      {props.hasDropDown ? (
+    <Components.Generic.Menu.Root onOpenChange={(open: boolean) => (open ? freezeMenu() : unfreezeMenu())} position={position}>
+      {hasDropDown ? (
         <Components.Generic.Menu.Trigger>
-          <Components.SideMenu.Button
-            label="Open side menu"
-            draggable={true}
-            onDragStart={handleDragStart}
-            onDragEnd={props.blockDragEnd}
-            className={'bn-button'}
-            icon={<GripVertical size={22} data-test="dragHandle" />}
-          />
+          <Components.SideMenu.Button {...baseButtonProps} label="Open side menu" draggable />
         </Components.Generic.Menu.Trigger>
       ) : (
-        <Components.SideMenu.Button
-          onClick={handleButtonClick}
-          label="Drag button"
-          draggable={true}
-          onDragStart={handleDragStart}
-          onDragEnd={props.blockDragEnd}
-          className={'bn-button'}
-          icon={<GripVertical size={22} data-test="dragHandle" />}
-        />
+        <Components.SideMenu.Button {...baseButtonProps} onClick={handleButtonClick} label="Drag button" draggable />
       )}
 
-      <Content block={props.block} />
+      <DragHandleContent block={block} />
     </Components.Generic.Menu.Root>
   );
 };

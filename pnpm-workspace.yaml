@@ -1,7 +1,8 @@
 packages:
   - 'backend'
-  - 'frontend'
-  - 'locales'
-  - 'tus'
   - 'config'
   - 'cli/*'
+  - 'frontend'
+  - 'locales'
+  - 'studio'
+  - 'tus'

@@ -149,7 +149,7 @@ const FormDescription = React.forwardRef<HTMLParagraphElement, React.HTMLAttribu
 
     // EDIT: This is customized to allow for collapsible descriptions
     return (
-      <div ref={ref} id={formDescriptionId} className={cn('text-muted-foreground font-light relative !-mt-2 text-sm', className)} {...props}>
+      <div ref={ref} id={formDescriptionId} className={cn('text-muted-foreground font-light relative -mt-2! text-sm', className)} {...props}>
         <div className="flex justify-between">
           <Button
             type="button"

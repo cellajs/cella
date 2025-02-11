@@ -1,246 +1,1884 @@
 [
-  { "name": "Afghanistan", "code": "AF" },
-  { "name": "Åland Islands", "code": "AX" },
-  { "name": "Albania", "code": "AL" },
-  { "name": "Algeria", "code": "DZ" },
-  { "name": "American Samoa", "code": "AS" },
-  { "name": "Andorra", "code": "AD" },
-  { "name": "Angola", "code": "AO" },
-  { "name": "Anguilla", "code": "AI" },
-  { "name": "Antarctica", "code": "AQ" },
-  { "name": "Antigua and Barbuda", "code": "AG" },
-  { "name": "Argentina", "code": "AR" },
-  { "name": "Armenia", "code": "AM" },
-  { "name": "Aruba", "code": "AW" },
-  { "name": "Australia", "code": "AU" },
-  { "name": "Austria", "code": "AT" },
-  { "name": "Azerbaijan", "code": "AZ" },
-  { "name": "Bahamas", "code": "BS" },
-  { "name": "Bahrain", "code": "BH" },
-  { "name": "Bangladesh", "code": "BD" },
-  { "name": "Barbados", "code": "BB" },
-  { "name": "Belarus", "code": "BY" },
-  { "name": "Belgium", "code": "BE" },
-  { "name": "Belize", "code": "BZ" },
-  { "name": "Benin", "code": "BJ" },
-  { "name": "Bermuda", "code": "BM" },
-  { "name": "Bhutan", "code": "BT" },
-  { "name": "Bolivia", "code": "BO" },
-  { "name": "Bosnia and Herzegovina", "code": "BA" },
-  { "name": "Botswana", "code": "BW" },
-  { "name": "Bouvet Island", "code": "BV" },
-  { "name": "Brazil", "code": "BR" },
-  { "name": "British Indian Ocean Territory", "code": "IO" },
-  { "name": "Brunei Darussalam", "code": "BN" },
-  { "name": "Bulgaria", "code": "BG" },
-  { "name": "Burkina Faso", "code": "BF" },
-  { "name": "Burundi", "code": "BI" },
-  { "name": "Cambodia", "code": "KH" },
-  { "name": "Cameroon", "code": "CM" },
-  { "name": "Canada", "code": "CA" },
-  { "name": "Cape Verde", "code": "CV" },
-  { "name": "Cayman Islands", "code": "KY" },
-  { "name": "Central African Republic", "code": "CF" },
-  { "name": "Chad", "code": "TD" },
-  { "name": "Chile", "code": "CL" },
-  { "name": "China", "code": "CN" },
-  { "name": "Christmas Island", "code": "CX" },
-  { "name": "Cocos (Keeling) Islands", "code": "CC" },
-  { "name": "Colombia", "code": "CO" },
-  { "name": "Comoros", "code": "KM" },
-  { "name": "Congo", "code": "CG" },
-  { "name": "Congo, The Democratic Republic of the", "code": "CD" },
-  { "name": "Cook Islands", "code": "CK" },
-  { "name": "Costa Rica", "code": "CR" },
-  { "name": "Cote D'Ivoire", "code": "CI" },
-  { "name": "Croatia", "code": "HR" },
-  { "name": "Cuba", "code": "CU" },
-  { "name": "Cyprus", "code": "CY" },
-  { "name": "Czech Republic", "code": "CZ" },
-  { "name": "Denmark", "code": "DK" },
-  { "name": "Djibouti", "code": "DJ" },
-  { "name": "Dominica", "code": "DM" },
-  { "name": "Dominican Republic", "code": "DO" },
-  { "name": "Ecuador", "code": "EC" },
-  { "name": "Egypt", "code": "EG" },
-  { "name": "El Salvador", "code": "SV" },
-  { "name": "Equatorial Guinea", "code": "GQ" },
-  { "name": "Eritrea", "code": "ER" },
-  { "name": "Estonia", "code": "EE" },
-  { "name": "Ethiopia", "code": "ET" },
-  { "name": "Falkland Islands (Malvinas)", "code": "FK" },
-  { "name": "Faroe Islands", "code": "FO" },
-  { "name": "Fiji", "code": "FJ" },
-  { "name": "Finland", "code": "FI" },
-  { "name": "France", "code": "FR" },
-  { "name": "French Guiana", "code": "GF" },
-  { "name": "French Polynesia", "code": "PF" },
-  { "name": "French Southern Territories", "code": "TF" },
-  { "name": "Gabon", "code": "GA" },
-  { "name": "Gambia", "code": "GM" },
-  { "name": "Georgia", "code": "GE" },
-  { "name": "Germany", "code": "DE" },
-  { "name": "Ghana", "code": "GH" },
-  { "name": "Gibraltar", "code": "GI" },
-  { "name": "Greece", "code": "GR" },
-  { "name": "Greenland", "code": "GL" },
-  { "name": "Grenada", "code": "GD" },
-  { "name": "Guadeloupe", "code": "GP" },
-  { "name": "Guam", "code": "GU" },
-  { "name": "Guatemala", "code": "GT" },
-  { "name": "Guernsey", "code": "GG" },
-  { "name": "Guinea", "code": "GN" },
-  { "name": "Guinea-Bissau", "code": "GW" },
-  { "name": "Guyana", "code": "GY" },
-  { "name": "Haiti", "code": "HT" },
-  { "name": "Heard Island and Mcdonald Islands", "code": "HM" },
-  { "name": "Holy See (Vatican City State)", "code": "VA" },
-  { "name": "Honduras", "code": "HN" },
-  { "name": "Hong Kong", "code": "HK" },
-  { "name": "Hungary", "code": "HU" },
-  { "name": "Iceland", "code": "IS" },
-  { "name": "India", "code": "IN" },
-  { "name": "Indonesia", "code": "ID" },
-  { "name": "Iran, Islamic Republic Of", "code": "IR" },
-  { "name": "Iraq", "code": "IQ" },
-  { "name": "Ireland", "code": "IE" },
-  { "name": "Isle of Man", "code": "IM" },
-  { "name": "Israel", "code": "IL" },
-  { "name": "Italy", "code": "IT" },
-  { "name": "Jamaica", "code": "JM" },
-  { "name": "Japan", "code": "JP" },
-  { "name": "Jersey", "code": "JE" },
-  { "name": "Jordan", "code": "JO" },
-  { "name": "Kazakhstan", "code": "KZ" },
-  { "name": "Kenya", "code": "KE" },
-  { "name": "Kiribati", "code": "KI" },
-  { "name": "Korea, Democratic People'S Republic of", "code": "KP" },
-  { "name": "Korea, Republic of", "code": "KR" },
-  { "name": "Kuwait", "code": "KW" },
-  { "name": "Kyrgyzstan", "code": "KG" },
-  { "name": "Lao People'S Democratic Republic", "code": "LA" },
-  { "name": "Latvia", "code": "LV" },
-  { "name": "Lebanon", "code": "LB" },
-  { "name": "Lesotho", "code": "LS" },
-  { "name": "Liberia", "code": "LR" },
-  { "name": "Libyan Arab Jamahiriya", "code": "LY" },
-  { "name": "Liechtenstein", "code": "LI" },
-  { "name": "Lithuania", "code": "LT" },
-  { "name": "Luxembourg", "code": "LU" },
-  { "name": "Macao", "code": "MO" },
-  { "name": "Macedonia, The Former Yugoslav Republic of", "code": "MK" },
-  { "name": "Madagascar", "code": "MG" },
-  { "name": "Malawi", "code": "MW" },
-  { "name": "Malaysia", "code": "MY" },
-  { "name": "Maldives", "code": "MV" },
-  { "name": "Mali", "code": "ML" },
-  { "name": "Malta", "code": "MT" },
-  { "name": "Marshall Islands", "code": "MH" },
-  { "name": "Martinique", "code": "MQ" },
-  { "name": "Mauritania", "code": "MR" },
-  { "name": "Mauritius", "code": "MU" },
-  { "name": "Mayotte", "code": "YT" },
-  { "name": "Mexico", "code": "MX" },
-  { "name": "Micronesia, Federated States of", "code": "FM" },
-  { "name": "Moldova, Republic of", "code": "MD" },
-  { "name": "Monaco", "code": "MC" },
-  { "name": "Mongolia", "code": "MN" },
-  { "name": "Montserrat", "code": "MS" },
-  { "name": "Morocco", "code": "MA" },
-  { "name": "Mozambique", "code": "MZ" },
-  { "name": "Myanmar", "code": "MM" },
-  { "name": "Namibia", "code": "NA" },
-  { "name": "Nauru", "code": "NR" },
-  { "name": "Nepal", "code": "NP" },
-  { "name": "Netherlands", "code": "NL" },
-  { "name": "Netherlands Antilles", "code": "AN" },
-  { "name": "New Caledonia", "code": "NC" },
-  { "name": "New Zealand", "code": "NZ" },
-  { "name": "Nicaragua", "code": "NI" },
-  { "name": "Niger", "code": "NE" },
-  { "name": "Nigeria", "code": "NG" },
-  { "name": "Niue", "code": "NU" },
-  { "name": "Norfolk Island", "code": "NF" },
-  { "name": "Northern Mariana Islands", "code": "MP" },
-  { "name": "Norway", "code": "NO" },
-  { "name": "Oman", "code": "OM" },
-  { "name": "Pakistan", "code": "PK" },
-  { "name": "Palau", "code": "PW" },
-  { "name": "Palestinian Territory, Occupied", "code": "PS" },
-  { "name": "Panama", "code": "PA" },
-  { "name": "Papua New Guinea", "code": "PG" },
-  { "name": "Paraguay", "code": "PY" },
-  { "name": "Peru", "code": "PE" },
-  { "name": "Philippines", "code": "PH" },
-  { "name": "Pitcairn", "code": "PN" },
-  { "name": "Poland", "code": "PL" },
-  { "name": "Portugal", "code": "PT" },
-  { "name": "Puerto Rico", "code": "PR" },
-  { "name": "Qatar", "code": "QA" },
-  { "name": "Reunion", "code": "RE" },
-  { "name": "Romania", "code": "RO" },
-  { "name": "Russian Federation", "code": "RU" },
-  { "name": "RWANDA", "code": "RW" },
-  { "name": "Saint Helena", "code": "SH" },
-  { "name": "Saint Kitts and Nevis", "code": "KN" },
-  { "name": "Saint Lucia", "code": "LC" },
-  { "name": "Saint Pierre and Miquelon", "code": "PM" },
-  { "name": "Saint Vincent and the Grenadines", "code": "VC" },
-  { "name": "Samoa", "code": "WS" },
-  { "name": "San Marino", "code": "SM" },
-  { "name": "Sao Tome and Principe", "code": "ST" },
-  { "name": "Saudi Arabia", "code": "SA" },
-  { "name": "Senegal", "code": "SN" },
-  { "name": "Serbia", "code": "RS" },
-  { "name": "Montenegro", "code": "ME" },
-  { "name": "Seychelles", "code": "SC" },
-  { "name": "Sierra Leone", "code": "SL" },
-  { "name": "Singapore", "code": "SG" },
-  { "name": "Slovakia", "code": "SK" },
-  { "name": "Slovenia", "code": "SI" },
-  { "name": "Solomon Islands", "code": "SB" },
-  { "name": "Somalia", "code": "SO" },
-  { "name": "South Africa", "code": "ZA" },
-  { "name": "South Georgia and the South Sandwich Islands", "code": "GS" },
-  { "name": "Spain", "code": "ES" },
-  { "name": "Sri Lanka", "code": "LK" },
-  { "name": "Sudan", "code": "SD" },
-  { "name": "Suriname", "code": "SR" },
-  { "name": "Svalbard and Jan Mayen", "code": "SJ" },
-  { "name": "Swaziland", "code": "SZ" },
-  { "name": "Sweden", "code": "SE" },
-  { "name": "Switzerland", "code": "CH" },
-  { "name": "Syrian Arab Republic", "code": "SY" },
-  { "name": "Taiwan, Province of China", "code": "TW" },
-  { "name": "Tajikistan", "code": "TJ" },
-  { "name": "Tanzania, United Republic of", "code": "TZ" },
-  { "name": "Thailand", "code": "TH" },
-  { "name": "Timor-Leste", "code": "TL" },
-  { "name": "Togo", "code": "TG" },
-  { "name": "Tokelau", "code": "TK" },
-  { "name": "Tonga", "code": "TO" },
-  { "name": "Trinidad and Tobago", "code": "TT" },
-  { "name": "Tunisia", "code": "TN" },
-  { "name": "Turkey", "code": "TR" },
-  { "name": "Turkmenistan", "code": "TM" },
-  { "name": "Turks and Caicos Islands", "code": "TC" },
-  { "name": "Tuvalu", "code": "TV" },
-  { "name": "Uganda", "code": "UG" },
-  { "name": "Ukraine", "code": "UA" },
-  { "name": "United Arab Emirates", "code": "AE" },
-  { "name": "United Kingdom", "code": "GB" },
-  { "name": "United States", "code": "US" },
-  { "name": "United States Minor Outlying Islands", "code": "UM" },
-  { "name": "Uruguay", "code": "UY" },
-  { "name": "Uzbekistan", "code": "UZ" },
-  { "name": "Vanuatu", "code": "VU" },
-  { "name": "Venezuela", "code": "VE" },
-  { "name": "Viet Nam", "code": "VN" },
-  { "name": "Virgin Islands, British", "code": "VG" },
-  { "name": "Virgin Islands, U.S.", "code": "VI" },
-  { "name": "Wallis and Futuna", "code": "WF" },
-  { "name": "Western Sahara", "code": "EH" },
-  { "name": "Yemen", "code": "YE" },
-  { "name": "Zambia", "code": "ZM" },
-  { "name": "Zimbabwe", "code": "ZW" }
+  {
+    "capital": "Oranjestad",
+    "code": "AW",
+    "latlng": [12.5, -69.96666666],
+    "name": "Aruba",
+    "timezones": ["America/Aruba"]
+  },
+  {
+    "capital": "Kabul",
+    "code": "AF",
+    "latlng": [33, 65],
+    "name": "Afghanistan",
+    "timezones": ["Asia/Kabul"]
+  },
+  {
+    "capital": "Luanda",
+    "code": "AO",
+    "latlng": [-12.5, 18.5],
+    "name": "Angola",
+    "timezones": ["Africa/Luanda"]
+  },
+  {
+    "capital": "The Valley",
+    "code": "AI",
+    "latlng": [18.25, -63.16666666],
+    "name": "Anguilla",
+    "timezones": ["America/Anguilla"]
+  },
+  {
+    "capital": "Mariehamn",
+    "code": "AX",
+    "latlng": [60.116667, 19.9],
+    "name": "\u00c5land Islands",
+    "timezones": ["Europe/Mariehamn"]
+  },
+  {
+    "capital": "Tirana",
+    "code": "AL",
+    "latlng": [41, 20],
+    "name": "Albania",
+    "timezones": ["Europe/Tirane"]
+  },
+  {
+    "capital": "Andorra la Vella",
+    "code": "AD",
+    "latlng": [42.5, 1.5],
+    "name": "Andorra",
+    "timezones": ["Europe/Andorra"]
+  },
+  {
+    "capital": "Abu Dhabi",
+    "code": "AE",
+    "latlng": [24, 54],
+    "name": "United Arab Emirates",
+    "timezones": ["Asia/Dubai"]
+  },
+  {
+    "capital": "Buenos Aires",
+    "code": "AR",
+    "latlng": [-34, -64],
+    "name": "Argentina",
+    "timezones": [
+      "America/Argentina/Buenos_Aires",
+      "America/Argentina/Cordoba",
+      "America/Argentina/Salta",
+      "America/Argentina/Jujuy",
+      "America/Argentina/Tucuman",
+      "America/Argentina/Catamarca",
+      "America/Argentina/La_Rioja",
+      "America/Argentina/San_Juan",
+      "America/Argentina/Mendoza",
+      "America/Argentina/San_Luis",
+      "America/Argentina/Rio_Gallegos",
+      "America/Argentina/Ushuaia"
+    ]
+  },
+  {
+    "capital": "Yerevan",
+    "code": "AM",
+    "latlng": [40, 45],
+    "name": "Armenia",
+    "timezones": ["Asia/Yerevan"]
+  },
+  {
+    "capital": "Pago Pago",
+    "code": "AS",
+    "latlng": [-14.33333333, -170],
+    "name": "American Samoa",
+    "timezones": ["Pacific/Pago_Pago"]
+  },
+  {
+    "capital": null,
+    "code": "AQ",
+    "latlng": [-90, 0],
+    "name": "Antarctica",
+    "timezones": [
+      "Antarctica/McMurdo",
+      "Antarctica/Casey",
+      "Antarctica/Davis",
+      "Antarctica/DumontDUrville",
+      "Antarctica/Mawson",
+      "Antarctica/Palmer",
+      "Antarctica/Rothera",
+      "Antarctica/Syowa",
+      "Antarctica/Troll",
+      "Antarctica/Vostok"
+    ]
+  },
+  {
+    "capital": "Port-aux-Fran\u00e7ais",
+    "code": "TF",
+    "latlng": [-49.25, 69.167],
+    "name": "French Southern and Antarctic Lands",
+    "timezones": ["Indian/Kerguelen"]
+  },
+  {
+    "capital": "Saint John's",
+    "code": "AG",
+    "latlng": [17.05, -61.8],
+    "name": "Antigua and Barbuda",
+    "timezones": ["America/Antigua"]
+  },
+  {
+    "capital": "Canberra",
+    "code": "AU",
+    "latlng": [-27, 133],
+    "name": "Australia",
+    "timezones": [
+      "Australia/Lord_Howe",
+      "Antarctica/Macquarie",
+      "Australia/Hobart",
+      "Australia/Currie",
+      "Australia/Melbourne",
+      "Australia/Sydney",
+      "Australia/Broken_Hill",
+      "Australia/Brisbane",
+      "Australia/Lindeman",
+      "Australia/Adelaide",
+      "Australia/Darwin",
+      "Australia/Perth",
+      "Australia/Eucla"
+    ]
+  },
+  {
+    "capital": "Vienna",
+    "code": "AT",
+    "latlng": [47.33333333, 13.33333333],
+    "name": "Austria",
+    "timezones": ["Europe/Vienna"]
+  },
+  {
+    "capital": "Baku",
+    "code": "AZ",
+    "latlng": [40.5, 47.5],
+    "name": "Azerbaijan",
+    "timezones": ["Asia/Baku"]
+  },
+  {
+    "capital": "Bujumbura",
+    "code": "BI",
+    "latlng": [-3.5, 30],
+    "name": "Burundi",
+    "timezones": ["Africa/Bujumbura"]
+  },
+  {
+    "capital": "Brussels",
+    "code": "BE",
+    "latlng": [50.83333333, 4],
+    "name": "Belgium",
+    "timezones": ["Europe/Brussels"]
+  },
+  {
+    "capital": "Porto-Novo",
+    "code": "BJ",
+    "latlng": [9.5, 2.25],
+    "name": "Benin",
+    "timezones": ["Africa/Porto-Novo"]
+  },
+  {
+    "capital": "Ouagadougou",
+    "code": "BF",
+    "latlng": [13, -2],
+    "name": "Burkina Faso",
+    "timezones": ["Africa/Ouagadougou"]
+  },
+  {
+    "capital": "Dhaka",
+    "code": "BD",
+    "latlng": [24, 90],
+    "name": "Bangladesh",
+    "timezones": ["Asia/Dhaka"]
+  },
+  {
+    "capital": "Sofia",
+    "code": "BG",
+    "latlng": [43, 25],
+    "name": "Bulgaria",
+    "timezones": ["Europe/Sofia"]
+  },
+  {
+    "capital": "Manama",
+    "code": "BH",
+    "latlng": [26, 50.55],
+    "name": "Bahrain",
+    "timezones": ["Asia/Bahrain"]
+  },
+  {
+    "capital": "Nassau",
+    "code": "BS",
+    "latlng": [24.25, -76],
+    "name": "Bahamas",
+    "timezones": ["America/Nassau"]
+  },
+  {
+    "capital": "Sarajevo",
+    "code": "BA",
+    "latlng": [44, 18],
+    "name": "Bosnia and Herzegovina",
+    "timezones": ["Europe/Sarajevo"]
+  },
+  {
+    "capital": "Gustavia",
+    "code": "BL",
+    "latlng": [18.5, -63.41666666],
+    "name": "Saint Barth\u00e9lemy",
+    "timezones": ["America/St_Barthelemy"]
+  },
+  {
+    "capital": "Minsk",
+    "code": "BY",
+    "latlng": [53, 28],
+    "name": "Belarus",
+    "timezones": ["Europe/Minsk"]
+  },
+  {
+    "capital": "Belmopan",
+    "code": "BZ",
+    "latlng": [17.25, -88.75],
+    "name": "Belize",
+    "timezones": ["America/Belize"]
+  },
+  {
+    "capital": "Hamilton",
+    "code": "BM",
+    "latlng": [32.33333333, -64.75],
+    "name": "Bermuda",
+    "timezones": ["Atlantic/Bermuda"]
+  },
+  {
+    "capital": "Sucre",
+    "code": "BO",
+    "latlng": [-17, -65],
+    "name": "Bolivia",
+    "timezones": ["America/La_Paz"]
+  },
+  {
+    "capital": "Bras\u00edlia",
+    "code": "BR",
+    "latlng": [-10, -55],
+    "name": "Brazil",
+    "timezones": [
+      "America/Noronha",
+      "America/Belem",
+      "America/Fortaleza",
+      "America/Recife",
+      "America/Araguaina",
+      "America/Maceio",
+      "America/Bahia",
+      "America/Sao_Paulo",
+      "America/Campo_Grande",
+      "America/Cuiaba",
+      "America/Santarem",
+      "America/Porto_Velho",
+      "America/Boa_Vista",
+      "America/Manaus",
+      "America/Eirunepe",
+      "America/Rio_Branco"
+    ]
+  },
+  {
+    "capital": "Bridgetown",
+    "code": "BB",
+    "latlng": [13.16666666, -59.53333333],
+    "name": "Barbados",
+    "timezones": ["America/Barbados"]
+  },
+  {
+    "capital": "Bandar Seri Begawan",
+    "code": "BN",
+    "latlng": [4.5, 114.66666666],
+    "name": "Brunei",
+    "timezones": ["Asia/Brunei"]
+  },
+  {
+    "capital": "Thimphu",
+    "code": "BT",
+    "latlng": [27.5, 90.5],
+    "name": "Bhutan",
+    "timezones": ["Asia/Thimphu"]
+  },
+  {
+    "capital": null,
+    "code": "BV",
+    "latlng": [-54.43333333, 3.4],
+    "name": "Bouvet Island",
+    "timezones": ["Europe/Oslo"]
+  },
+  {
+    "capital": "Gaborone",
+    "code": "BW",
+    "latlng": [-22, 24],
+    "name": "Botswana",
+    "timezones": ["Africa/Gaborone"]
+  },
+  {
+    "capital": "Bangui",
+    "code": "CF",
+    "latlng": [7, 21],
+    "name": "Central African Republic",
+    "timezones": ["Africa/Bangui"]
+  },
+  {
+    "capital": "Ottawa",
+    "code": "CA",
+    "latlng": [60, -95],
+    "name": "Canada",
+    "timezones": [
+      "America/St_Johns",
+      "America/Halifax",
+      "America/Glace_Bay",
+      "America/Moncton",
+      "America/Goose_Bay",
+      "America/Blanc-Sablon",
+      "America/Toronto",
+      "America/Nipigon",
+      "America/Thunder_Bay",
+      "America/Iqaluit",
+      "America/Pangnirtung",
+      "America/Atikokan",
+      "America/Winnipeg",
+      "America/Rainy_River",
+      "America/Resolute",
+      "America/Rankin_Inlet",
+      "America/Regina",
+      "America/Swift_Current",
+      "America/Edmonton",
+      "America/Cambridge_Bay",
+      "America/Yellowknife",
+      "America/Inuvik",
+      "America/Creston",
+      "America/Dawson_Creek",
+      "America/Fort_Nelson",
+      "America/Vancouver",
+      "America/Whitehorse",
+      "America/Dawson"
+    ]
+  },
+  {
+    "capital": "West Island",
+    "code": "CC",
+    "latlng": [-12.5, 96.83333333],
+    "name": "Cocos (Keeling) Islands",
+    "timezones": ["Indian/Cocos"]
+  },
+  {
+    "capital": "Bern",
+    "code": "CH",
+    "latlng": [47, 8],
+    "name": "Switzerland",
+    "timezones": ["Europe/Zurich"]
+  },
+  {
+    "capital": "Santiago",
+    "code": "CL",
+    "latlng": [-30, -71],
+    "name": "Chile",
+    "timezones": ["America/Santiago", "Pacific/Easter"]
+  },
+  {
+    "capital": "Beijing",
+    "code": "CN",
+    "latlng": [35, 105],
+    "name": "China",
+    "timezones": ["Asia/Shanghai", "Asia/Urumqi"]
+  },
+  {
+    "capital": "Yamoussoukro",
+    "code": "CI",
+    "latlng": [8, -5],
+    "name": "Ivory Coast",
+    "timezones": ["Africa/Abidjan"]
+  },
+  {
+    "capital": "Yaound\u00e9",
+    "code": "CM",
+    "latlng": [6, 12],
+    "name": "Cameroon",
+    "timezones": ["Africa/Douala"]
+  },
+  {
+    "capital": "Kinshasa",
+    "code": "CD",
+    "latlng": [0, 25],
+    "name": "DR Congo",
+    "timezones": ["Africa/Kinshasa", "Africa/Lubumbashi"]
+  },
+  {
+    "capital": "Brazzaville",
+    "code": "CG",
+    "latlng": [-1, 15],
+    "name": "Republic of the Congo",
+    "timezones": ["Africa/Brazzaville"]
+  },
+  {
+    "capital": "Avarua",
+    "code": "CK",
+    "latlng": [-21.23333333, -159.76666666],
+    "name": "Cook Islands",
+    "timezones": ["Pacific/Rarotonga"]
+  },
+  {
+    "capital": "Bogot\u00e1",
+    "code": "CO",
+    "latlng": [4, -72],
+    "name": "Colombia",
+    "timezones": ["America/Bogota"]
+  },
+  {
+    "capital": "Moroni",
+    "code": "KM",
+    "latlng": [-12.16666666, 44.25],
+    "name": "Comoros",
+    "timezones": ["Indian/Comoro"]
+  },
+  {
+    "capital": "Praia",
+    "code": "CV",
+    "latlng": [16, -24],
+    "name": "Cape Verde",
+    "timezones": ["Atlantic/Cape_Verde"]
+  },
+  {
+    "capital": "San Jos\u00e9",
+    "code": "CR",
+    "latlng": [10, -84],
+    "name": "Costa Rica",
+    "timezones": ["America/Costa_Rica"]
+  },
+  {
+    "capital": "Havana",
+    "code": "CU",
+    "latlng": [21.5, -80],
+    "name": "Cuba",
+    "timezones": ["America/Havana"]
+  },
+  {
+    "capital": "Willemstad",
+    "code": "CW",
+    "latlng": [12.116667, -68.933333],
+    "name": "Cura\u00e7ao",
+    "timezones": ["America/Curacao"]
+  },
+  {
+    "capital": "Flying Fish Cove",
+    "code": "CX",
+    "latlng": [-10.5, 105.66666666],
+    "name": "Christmas Island",
+    "timezones": ["Indian/Christmas"]
+  },
+  {
+    "capital": "George Town",
+    "code": "KY",
+    "latlng": [19.5, -80.5],
+    "name": "Cayman Islands",
+    "timezones": ["America/Cayman"]
+  },
+  {
+    "capital": "Nicosia",
+    "code": "CY",
+    "latlng": [35, 33],
+    "name": "Cyprus",
+    "timezones": ["Asia/Nicosia"]
+  },
+  {
+    "capital": "Prague",
+    "code": "CZ",
+    "latlng": [49.75, 15.5],
+    "name": "Czech Republic",
+    "timezones": ["Europe/Prague"]
+  },
+  {
+    "capital": "Berlin",
+    "code": "DE",
+    "latlng": [51, 9],
+    "name": "Germany",
+    "timezones": ["Europe/Berlin", "Europe/Busingen"]
+  },
+  {
+    "capital": "Djibouti",
+    "code": "DJ",
+    "latlng": [11.5, 43],
+    "name": "Djibouti",
+    "timezones": ["Africa/Djibouti"]
+  },
+  {
+    "capital": "Roseau",
+    "code": "DM",
+    "latlng": [15.41666666, -61.33333333],
+    "name": "Dominica",
+    "timezones": ["America/Dominica"]
+  },
+  {
+    "capital": "Copenhagen",
+    "code": "DK",
+    "latlng": [56, 10],
+    "name": "Denmark",
+    "timezones": ["Europe/Copenhagen"]
+  },
+  {
+    "capital": "Santo Domingo",
+    "code": "DO",
+    "latlng": [19, -70.66666666],
+    "name": "Dominican Republic",
+    "timezones": ["America/Santo_Domingo"]
+  },
+  {
+    "capital": "Algiers",
+    "code": "DZ",
+    "latlng": [28, 3],
+    "name": "Algeria",
+    "timezones": ["Africa/Algiers"]
+  },
+  {
+    "capital": "Quito",
+    "code": "EC",
+    "latlng": [-2, -77.5],
+    "name": "Ecuador",
+    "timezones": ["America/Guayaquil", "Pacific/Galapagos"]
+  },
+  {
+    "capital": "Cairo",
+    "code": "EG",
+    "latlng": [27, 30],
+    "name": "Egypt",
+    "timezones": ["Africa/Cairo"]
+  },
+  {
+    "capital": "Asmara",
+    "code": "ER",
+    "latlng": [15, 39],
+    "name": "Eritrea",
+    "timezones": ["Africa/Asmara"]
+  },
+  {
+    "capital": "El Aai\u00fan",
+    "code": "EH",
+    "latlng": [24.5, -13],
+    "name": "Western Sahara",
+    "timezones": ["Africa/El_Aaiun"]
+  },
+  {
+    "capital": "Madrid",
+    "code": "ES",
+    "latlng": [40, -4],
+    "name": "Spain",
+    "timezones": ["Europe/Madrid", "Africa/Ceuta", "Atlantic/Canary"]
+  },
+  {
+    "capital": "Tallinn",
+    "code": "EE",
+    "latlng": [59, 26],
+    "name": "Estonia",
+    "timezones": ["Europe/Tallinn"]
+  },
+  {
+    "capital": "Addis Ababa",
+    "code": "ET",
+    "latlng": [8, 38],
+    "name": "Ethiopia",
+    "timezones": ["Africa/Addis_Ababa"]
+  },
+  {
+    "capital": "Helsinki",
+    "code": "FI",
+    "latlng": [64, 26],
+    "name": "Finland",
+    "timezones": ["Europe/Helsinki"]
+  },
+  {
+    "capital": "Suva",
+    "code": "FJ",
+    "latlng": [-18, 175],
+    "name": "Fiji",
+    "timezones": ["Pacific/Fiji"]
+  },
+  {
+    "capital": "Stanley",
+    "code": "FK",
+    "latlng": [-51.75, -59],
+    "name": "Falkland Islands",
+    "timezones": ["Atlantic/Stanley"]
+  },
+  {
+    "capital": "Paris",
+    "code": "FR",
+    "latlng": [46, 2],
+    "name": "France",
+    "timezones": ["Europe/Paris"]
+  },
+  {
+    "capital": "T\u00f3rshavn",
+    "code": "FO",
+    "latlng": [62, -7],
+    "name": "Faroe Islands",
+    "timezones": ["Atlantic/Faroe"]
+  },
+  {
+    "capital": "Palikir",
+    "code": "FM",
+    "latlng": [6.91666666, 158.25],
+    "name": "Micronesia",
+    "timezones": ["Pacific/Chuuk", "Pacific/Pohnpei", "Pacific/Kosrae"]
+  },
+  {
+    "capital": "Libreville",
+    "code": "GA",
+    "latlng": [-1, 11.75],
+    "name": "Gabon",
+    "timezones": ["Africa/Libreville"]
+  },
+  {
+    "capital": "London",
+    "code": "GB",
+    "latlng": [54, -2],
+    "name": "United Kingdom",
+    "timezones": ["Europe/London"]
+  },
+  {
+    "capital": "Tbilisi",
+    "code": "GE",
+    "latlng": [42, 43.5],
+    "name": "Georgia",
+    "timezones": ["Asia/Tbilisi"]
+  },
+  {
+    "capital": "St. Peter Port",
+    "code": "GG",
+    "latlng": [49.46666666, -2.58333333],
+    "name": "Guernsey",
+    "timezones": ["Europe/Guernsey"]
+  },
+  {
+    "capital": "Accra",
+    "code": "GH",
+    "latlng": [8, -2],
+    "name": "Ghana",
+    "timezones": ["Africa/Accra"]
+  },
+  {
+    "capital": "Gibraltar",
+    "code": "GI",
+    "latlng": [36.13333333, -5.35],
+    "name": "Gibraltar",
+    "timezones": ["Europe/Gibraltar"]
+  },
+  {
+    "capital": "Conakry",
+    "code": "GN",
+    "latlng": [11, -10],
+    "name": "Guinea",
+    "timezones": ["Africa/Conakry"]
+  },
+  {
+    "capital": "Basse-Terre",
+    "code": "GP",
+    "latlng": [16.25, -61.583333],
+    "name": "Guadeloupe",
+    "timezones": ["America/Guadeloupe"]
+  },
+  {
+    "capital": "Banjul",
+    "code": "GM",
+    "latlng": [13.46666666, -16.56666666],
+    "name": "Gambia",
+    "timezones": ["Africa/Banjul"]
+  },
+  {
+    "capital": "Bissau",
+    "code": "GW",
+    "latlng": [12, -15],
+    "name": "Guinea-Bissau",
+    "timezones": ["Africa/Bissau"]
+  },
+  {
+    "capital": "Malabo",
+    "code": "GQ",
+    "latlng": [2, 10],
+    "name": "Equatorial Guinea",
+    "timezones": ["Africa/Malabo"]
+  },
+  {
+    "capital": "Athens",
+    "code": "GR",
+    "latlng": [39, 22],
+    "name": "Greece",
+    "timezones": ["Europe/Athens"]
+  },
+  {
+    "capital": "St. George's",
+    "code": "GD",
+    "latlng": [12.11666666, -61.66666666],
+    "name": "Grenada",
+    "timezones": ["America/Grenada"]
+  },
+  {
+    "capital": "Nuuk",
+    "code": "GL",
+    "latlng": [72, -40],
+    "name": "Greenland",
+    "timezones": ["America/Godthab", "America/Danmarkshavn", "America/Scoresbysund", "America/Thule"]
+  },
+  {
+    "capital": "Guatemala City",
+    "code": "GT",
+    "latlng": [15.5, -90.25],
+    "name": "Guatemala",
+    "timezones": ["America/Guatemala"]
+  },
+  {
+    "capital": "Cayenne",
+    "code": "GF",
+    "latlng": [4, -53],
+    "name": "French Guiana",
+    "timezones": ["America/Cayenne"]
+  },
+  {
+    "capital": "Hag\u00e5t\u00f1a",
+    "code": "GU",
+    "latlng": [13.46666666, 144.78333333],
+    "name": "Guam",
+    "timezones": ["Pacific/Guam"]
+  },
+  {
+    "capital": "Georgetown",
+    "code": "GY",
+    "latlng": [5, -59],
+    "name": "Guyana",
+    "timezones": ["America/Guyana"]
+  },
+  {
+    "capital": "City of Victoria",
+    "code": "HK",
+    "latlng": [22.267, 114.188],
+    "name": "Hong Kong",
+    "timezones": ["Asia/Hong_Kong"]
+  },
+  {
+    "capital": "Tegucigalpa",
+    "code": "HN",
+    "latlng": [15, -86.5],
+    "name": "Honduras",
+    "timezones": ["America/Tegucigalpa"]
+  },
+  {
+    "capital": "Zagreb",
+    "code": "HR",
+    "latlng": [45.16666666, 15.5],
+    "name": "Croatia",
+    "timezones": ["Europe/Zagreb"]
+  },
+  {
+    "capital": "Port-au-Prince",
+    "code": "HT",
+    "latlng": [19, -72.41666666],
+    "name": "Haiti",
+    "timezones": ["America/Port-au-Prince"]
+  },
+  {
+    "capital": "Budapest",
+    "code": "HU",
+    "latlng": [47, 20],
+    "name": "Hungary",
+    "timezones": ["Europe/Budapest"]
+  },
+  {
+    "capital": "Jakarta",
+    "code": "ID",
+    "latlng": [-5, 120],
+    "name": "Indonesia",
+    "timezones": ["Asia/Jakarta", "Asia/Pontianak", "Asia/Makassar", "Asia/Jayapura"]
+  },
+  {
+    "capital": "Douglas",
+    "code": "IM",
+    "latlng": [54.25, -4.5],
+    "name": "Isle of Man",
+    "timezones": ["Europe/Isle_of_Man"]
+  },
+  {
+    "capital": "New Delhi",
+    "code": "IN",
+    "latlng": [20, 77],
+    "name": "India",
+    "timezones": ["Asia/Kolkata"]
+  },
+  {
+    "capital": "Diego Garcia",
+    "code": "IO",
+    "latlng": [-6, 71.5],
+    "name": "British Indian Ocean Territory",
+    "timezones": ["Indian/Chagos"]
+  },
+  {
+    "capital": "Dublin",
+    "code": "IE",
+    "latlng": [53, -8],
+    "name": "Ireland",
+    "timezones": ["Europe/Dublin"]
+  },
+  {
+    "capital": "Tehran",
+    "code": "IR",
+    "latlng": [32, 53],
+    "name": "Iran",
+    "timezones": ["Asia/Tehran"]
+  },
+  {
+    "capital": "Baghdad",
+    "code": "IQ",
+    "latlng": [33, 44],
+    "name": "Iraq",
+    "timezones": ["Asia/Baghdad"]
+  },
+  {
+    "capital": "Reykjavik",
+    "code": "IS",
+    "latlng": [65, -18],
+    "name": "Iceland",
+    "timezones": ["Atlantic/Reykjavik"]
+  },
+  {
+    "capital": "Jerusalem",
+    "code": "IL",
+    "latlng": [31.47, 35.13],
+    "name": "Israel",
+    "timezones": ["Asia/Jerusalem"]
+  },
+  {
+    "capital": "Rome",
+    "code": "IT",
+    "latlng": [42.83333333, 12.83333333],
+    "name": "Italy",
+    "timezones": ["Europe/Rome"]
+  },
+  {
+    "capital": "Kingston",
+    "code": "JM",
+    "latlng": [18.25, -77.5],
+    "name": "Jamaica",
+    "timezones": ["America/Jamaica"]
+  },
+  {
+    "capital": "Saint Helier",
+    "code": "JE",
+    "latlng": [49.25, -2.16666666],
+    "name": "Jersey",
+    "timezones": ["Europe/Jersey"]
+  },
+  {
+    "capital": "Amman",
+    "code": "JO",
+    "latlng": [31, 36],
+    "name": "Jordan",
+    "timezones": ["Asia/Amman"]
+  },
+  {
+    "capital": "Tokyo",
+    "code": "JP",
+    "latlng": [36, 138],
+    "name": "Japan",
+    "timezones": ["Asia/Tokyo"]
+  },
+  {
+    "capital": "Astana",
+    "code": "KZ",
+    "latlng": [48, 68],
+    "name": "Kazakhstan",
+    "timezones": ["Asia/Almaty", "Asia/Qyzylorda", "Asia/Aqtobe", "Asia/Aqtau", "Asia/Oral"]
+  },
+  {
+    "capital": "Nairobi",
+    "code": "KE",
+    "latlng": [1, 38],
+    "name": "Kenya",
+    "timezones": ["Africa/Nairobi"]
+  },
+  {
+    "capital": "Bishkek",
+    "code": "KG",
+    "latlng": [41, 75],
+    "name": "Kyrgyzstan",
+    "timezones": ["Asia/Bishkek"]
+  },
+  {
+    "capital": "Phnom Penh",
+    "code": "KH",
+    "latlng": [13, 105],
+    "name": "Cambodia",
+    "timezones": ["Asia/Phnom_Penh"]
+  },
+  {
+    "capital": "South Tarawa",
+    "code": "KI",
+    "latlng": [1.41666666, 173],
+    "name": "Kiribati",
+    "timezones": ["Pacific/Tarawa", "Pacific/Enderbury", "Pacific/Kiritimati"]
+  },
+  {
+    "capital": "Basseterre",
+    "code": "KN",
+    "latlng": [17.33333333, -62.75],
+    "name": "Saint Kitts and Nevis",
+    "timezones": ["America/St_Kitts"]
+  },
+  {
+    "capital": "Seoul",
+    "code": "KR",
+    "latlng": [37, 127.5],
+    "name": "South Korea",
+    "timezones": ["Asia/Seoul"]
+  },
+  {
+    "capital": "Pristina",
+    "code": "XK",
+    "latlng": [42.666667, 21.166667],
+    "name": "Kosovo",
+    "timezones": ["Europe/Belgrade"]
+  },
+  {
+    "capital": "Kuwait City",
+    "code": "KW",
+    "latlng": [29.5, 45.75],
+    "name": "Kuwait",
+    "timezones": ["Asia/Kuwait"]
+  },
+  {
+    "capital": "Vientiane",
+    "code": "LA",
+    "latlng": [18, 105],
+    "name": "Laos",
+    "timezones": ["Asia/Vientiane"]
+  },
+  {
+    "capital": "Beirut",
+    "code": "LB",
+    "latlng": [33.83333333, 35.83333333],
+    "name": "Lebanon",
+    "timezones": ["Asia/Beirut"]
+  },
+  {
+    "capital": "Monrovia",
+    "code": "LR",
+    "latlng": [6.5, -9.5],
+    "name": "Liberia",
+    "timezones": ["Africa/Monrovia"]
+  },
+  {
+    "capital": "Tripoli",
+    "code": "LY",
+    "latlng": [25, 17],
+    "name": "Libya",
+    "timezones": ["Africa/Tripoli"]
+  },
+  {
+    "capital": "Castries",
+    "code": "LC",
+    "latlng": [13.88333333, -60.96666666],
+    "name": "Saint Lucia",
+    "timezones": ["America/St_Lucia"]
+  },
+  {
+    "capital": "Vaduz",
+    "code": "LI",
+    "latlng": [47.26666666, 9.53333333],
+    "name": "Liechtenstein",
+    "timezones": ["Europe/Vaduz"]
+  },
+  {
+    "capital": "Colombo",
+    "code": "LK",
+    "latlng": [7, 81],
+    "name": "Sri Lanka",
+    "timezones": ["Asia/Colombo"]
+  },
+  {
+    "capital": "Maseru",
+    "code": "LS",
+    "latlng": [-29.5, 28.5],
+    "name": "Lesotho",
+    "timezones": ["Africa/Maseru"]
+  },
+  {
+    "capital": "Vilnius",
+    "code": "LT",
+    "latlng": [56, 24],
+    "name": "Lithuania",
+    "timezones": ["Europe/Vilnius"]
+  },
+  {
+    "capital": "Luxembourg",
+    "code": "LU",
+    "latlng": [49.75, 6.16666666],
+    "name": "Luxembourg",
+    "timezones": ["Europe/Luxembourg"]
+  },
+  {
+    "capital": "Riga",
+    "code": "LV",
+    "latlng": [57, 25],
+    "name": "Latvia",
+    "timezones": ["Europe/Riga"]
+  },
+  {
+    "capital": null,
+    "code": "MO",
+    "latlng": [22.16666666, 113.55],
+    "name": "Macau",
+    "timezones": ["Asia/Macau"]
+  },
+  {
+    "capital": "Marigot",
+    "code": "MF",
+    "latlng": [18.08333333, -63.95],
+    "name": "Saint Martin",
+    "timezones": ["America/Marigot"]
+  },
+  {
+    "capital": "Rabat",
+    "code": "MA",
+    "latlng": [32, -5],
+    "name": "Morocco",
+    "timezones": ["Africa/Casablanca"]
+  },
+  {
+    "capital": "Monaco",
+    "code": "MC",
+    "latlng": [43.73333333, 7.4],
+    "name": "Monaco",
+    "timezones": ["Europe/Monaco"]
+  },
+  {
+    "capital": "Chi\u0219in\u0103u",
+    "code": "MD",
+    "latlng": [47, 29],
+    "name": "Moldova",
+    "timezones": ["Europe/Chisinau"]
+  },
+  {
+    "capital": "Antananarivo",
+    "code": "MG",
+    "latlng": [-20, 47],
+    "name": "Madagascar",
+    "timezones": ["Indian/Antananarivo"]
+  },
+  {
+    "capital": "Mal\u00e9",
+    "code": "MV",
+    "latlng": [3.25, 73],
+    "name": "Maldives",
+    "timezones": ["Indian/Maldives"]
+  },
+  {
+    "capital": "Mexico City",
+    "code": "MX",
+    "latlng": [23, -102],
+    "name": "Mexico",
+    "timezones": [
+      "America/Mexico_City",
+      "America/Cancun",
+      "America/Merida",
+      "America/Monterrey",
+      "America/Matamoros",
+      "America/Mazatlan",
+      "America/Chihuahua",
+      "America/Ojinaga",
+      "America/Hermosillo",
+      "America/Tijuana",
+      "America/Bahia_Banderas"
+    ]
+  },
+  {
+    "capital": "Majuro",
+    "code": "MH",
+    "latlng": [9, 168],
+    "name": "Marshall Islands",
+    "timezones": ["Pacific/Majuro", "Pacific/Kwajalein"]
+  },
+  {
+    "capital": "Skopje",
+    "code": "MK",
+    "latlng": [41.83333333, 22],
+    "name": "Macedonia",
+    "timezones": ["Europe/Skopje"]
+  },
+  {
+    "capital": "Bamako",
+    "code": "ML",
+    "latlng": [17, -4],
+    "name": "Mali",
+    "timezones": ["Africa/Bamako"]
+  },
+  {
+    "capital": "Valletta",
+    "code": "MT",
+    "latlng": [35.83333333, 14.58333333],
+    "name": "Malta",
+    "timezones": ["Europe/Malta"]
+  },
+  {
+    "capital": "Naypyidaw",
+    "code": "MM",
+    "latlng": [22, 98],
+    "name": "Myanmar",
+    "timezones": ["Asia/Rangoon"]
+  },
+  {
+    "capital": "Podgorica",
+    "code": "ME",
+    "latlng": [42.5, 19.3],
+    "name": "Montenegro",
+    "timezones": ["Europe/Podgorica"]
+  },
+  {
+    "capital": "Ulan Bator",
+    "code": "MN",
+    "latlng": [46, 105],
+    "name": "Mongolia",
+    "timezones": ["Asia/Ulaanbaatar", "Asia/Hovd", "Asia/Choibalsan"]
+  },
+  {
+    "capital": "Saipan",
+    "code": "MP",
+    "latlng": [15.2, 145.75],
+    "name": "Northern Mariana Islands",
+    "timezones": ["Pacific/Saipan"]
+  },
+  {
+    "capital": "Maputo",
+    "code": "MZ",
+    "latlng": [-18.25, 35],
+    "name": "Mozambique",
+    "timezones": ["Africa/Maputo"]
+  },
+  {
+    "capital": "Nouakchott",
+    "code": "MR",
+    "latlng": [20, -12],
+    "name": "Mauritania",
+    "timezones": ["Africa/Nouakchott"]
+  },
+  {
+    "capital": "Plymouth",
+    "code": "MS",
+    "latlng": [16.75, -62.2],
+    "name": "Montserrat",
+    "timezones": ["America/Montserrat"]
+  },
+  {
+    "capital": "Fort-de-France",
+    "code": "MQ",
+    "latlng": [14.666667, -61],
+    "name": "Martinique",
+    "timezones": ["America/Martinique"]
+  },
+  {
+    "capital": "Port Louis",
+    "code": "MU",
+    "latlng": [-20.28333333, 57.55],
+    "name": "Mauritius",
+    "timezones": ["Indian/Mauritius"]
+  },
+  {
+    "capital": "Lilongwe",
+    "code": "MW",
+    "latlng": [-13.5, 34],
+    "name": "Malawi",
+    "timezones": ["Africa/Blantyre"]
+  },
+  {
+    "capital": "Kuala Lumpur",
+    "code": "MY",
+    "latlng": [2.5, 112.5],
+    "name": "Malaysia",
+    "timezones": ["Asia/Kuala_Lumpur", "Asia/Kuching"]
+  },
+  {
+    "capital": "Mamoudzou",
+    "code": "YT",
+    "latlng": [-12.83333333, 45.16666666],
+    "name": "Mayotte",
+    "timezones": ["Indian/Mayotte"]
+  },
+  {
+    "capital": "Windhoek",
+    "code": "NA",
+    "latlng": [-22, 17],
+    "name": "Namibia",
+    "timezones": ["Africa/Windhoek"]
+  },
+  {
+    "capital": "Noum\u00e9a",
+    "code": "NC",
+    "latlng": [-21.5, 165.5],
+    "name": "New Caledonia",
+    "timezones": ["Pacific/Noumea"]
+  },
+  {
+    "capital": "Niamey",
+    "code": "NE",
+    "latlng": [16, 8],
+    "name": "Niger",
+    "timezones": ["Africa/Niamey"]
+  },
+  {
+    "capital": "Kingston",
+    "code": "NF",
+    "latlng": [-29.03333333, 167.95],
+    "name": "Norfolk Island",
+    "timezones": ["Pacific/Norfolk"]
+  },
+  {
+    "capital": "Abuja",
+    "code": "NG",
+    "latlng": [10, 8],
+    "name": "Nigeria",
+    "timezones": ["Africa/Lagos"]
+  },
+  {
+    "capital": "Managua",
+    "code": "NI",
+    "latlng": [13, -85],
+    "name": "Nicaragua",
+    "timezones": ["America/Managua"]
+  },
+  {
+    "capital": "Alofi",
+    "code": "NU",
+    "latlng": [-19.03333333, -169.86666666],
+    "name": "Niue",
+    "timezones": ["Pacific/Niue"]
+  },
+  {
+    "capital": "Amsterdam",
+    "code": "NL",
+    "latlng": [52.5, 5.75],
+    "name": "Netherlands",
+    "timezones": ["Europe/Amsterdam"]
+  },
+  {
+    "capital": "Oslo",
+    "code": "NO",
+    "latlng": [62, 10],
+    "name": "Norway",
+    "timezones": ["Europe/Oslo"]
+  },
+  {
+    "capital": "Kathmandu",
+    "code": "NP",
+    "latlng": [28, 84],
+    "name": "Nepal",
+    "timezones": ["Asia/Kathmandu"]
+  },
+  {
+    "capital": "Yaren",
+    "code": "NR",
+    "latlng": [-0.53333333, 166.91666666],
+    "name": "Nauru",
+    "timezones": ["Pacific/Nauru"]
+  },
+  {
+    "capital": "Wellington",
+    "code": "NZ",
+    "latlng": [-41, 174],
+    "name": "New Zealand",
+    "timezones": ["Pacific/Auckland", "Pacific/Chatham"]
+  },
+  {
+    "capital": "Muscat",
+    "code": "OM",
+    "latlng": [21, 57],
+    "name": "Oman",
+    "timezones": ["Asia/Muscat"]
+  },
+  {
+    "capital": "Islamabad",
+    "code": "PK",
+    "latlng": [30, 70],
+    "name": "Pakistan",
+    "timezones": ["Asia/Karachi"]
+  },
+  {
+    "capital": "Panama City",
+    "code": "PA",
+    "latlng": [9, -80],
+    "name": "Panama",
+    "timezones": ["America/Panama"]
+  },
+  {
+    "capital": "Adamstown",
+    "code": "PN",
+    "latlng": [-25.06666666, -130.1],
+    "name": "Pitcairn Islands",
+    "timezones": ["Pacific/Pitcairn"]
+  },
+  {
+    "capital": "Lima",
+    "code": "PE",
+    "latlng": [-10, -76],
+    "name": "Peru",
+    "timezones": ["America/Lima"]
+  },
+  {
+    "capital": "Manila",
+    "code": "PH",
+    "latlng": [13, 122],
+    "name": "Philippines",
+    "timezones": ["Asia/Manila"]
+  },
+  {
+    "capital": "Ngerulmud",
+    "code": "PW",
+    "latlng": [7.5, 134.5],
+    "name": "Palau",
+    "timezones": ["Pacific/Palau"]
+  },
+  {
+    "capital": "Port Moresby",
+    "code": "PG",
+    "latlng": [-6, 147],
+    "name": "Papua New Guinea",
+    "timezones": ["Pacific/Port_Moresby", "Pacific/Bougainville"]
+  },
+  {
+    "capital": "Warsaw",
+    "code": "PL",
+    "latlng": [52, 20],
+    "name": "Poland",
+    "timezones": ["Europe/Warsaw"]
+  },
+  {
+    "capital": "San Juan",
+    "code": "PR",
+    "latlng": [18.25, -66.5],
+    "name": "Puerto Rico",
+    "timezones": ["America/Puerto_Rico"]
+  },
+  {
+    "capital": "Pyongyang",
+    "code": "KP",
+    "latlng": [40, 127],
+    "name": "North Korea",
+    "timezones": ["Asia/Pyongyang"]
+  },
+  {
+    "capital": "Lisbon",
+    "code": "PT",
+    "latlng": [39.5, -8],
+    "name": "Portugal",
+    "timezones": ["Europe/Lisbon", "Atlantic/Madeira", "Atlantic/Azores"]
+  },
+  {
+    "capital": "Asunci\u00f3n",
+    "code": "PY",
+    "latlng": [-23, -58],
+    "name": "Paraguay",
+    "timezones": ["America/Asuncion"]
+  },
+  {
+    "capital": "Ramallah",
+    "code": "PS",
+    "latlng": [31.9, 35.2],
+    "name": "Palestine",
+    "timezones": ["Asia/Gaza", "Asia/Hebron"]
+  },
+  {
+    "capital": "Papeet\u0113",
+    "code": "PF",
+    "latlng": [-15, -140],
+    "name": "French Polynesia",
+    "timezones": ["Pacific/Tahiti", "Pacific/Marquesas", "Pacific/Gambier"]
+  },
+  {
+    "capital": "Doha",
+    "code": "QA",
+    "latlng": [25.5, 51.25],
+    "name": "Qatar",
+    "timezones": ["Asia/Qatar"]
+  },
+  {
+    "capital": "Saint-Denis",
+    "code": "RE",
+    "latlng": [-21.15, 55.5],
+    "name": "R\u00e9union",
+    "timezones": ["Indian/Reunion"]
+  },
+  {
+    "capital": "Bucharest",
+    "code": "RO",
+    "latlng": [46, 25],
+    "name": "Romania",
+    "timezones": ["Europe/Bucharest"]
+  },
+  {
+    "capital": "Moscow",
+    "code": "RU",
+    "latlng": [60, 100],
+    "name": "Russia",
+    "timezones": [
+      "Europe/Kaliningrad",
+      "Europe/Moscow",
+      "Europe/Simferopol",
+      "Europe/Volgograd",
+      "Europe/Kirov",
+      "Europe/Astrakhan",
+      "Europe/Samara",
+      "Europe/Ulyanovsk",
+      "Asia/Yekaterinburg",
+      "Asia/Omsk",
+      "Asia/Novosibirsk",
+      "Asia/Barnaul",
+      "Asia/Tomsk",
+      "Asia/Novokuznetsk",
+      "Asia/Krasnoyarsk",
+      "Asia/Irkutsk",
+      "Asia/Chita",
+      "Asia/Yakutsk",
+      "Asia/Khandyga",
+      "Asia/Vladivostok",
+      "Asia/Ust-Nera",
+      "Asia/Magadan",
+      "Asia/Sakhalin",
+      "Asia/Srednekolymsk",
+      "Asia/Kamchatka",
+      "Asia/Anadyr"
+    ]
+  },
+  {
+    "capital": "Kigali",
+    "code": "RW",
+    "latlng": [-2, 30],
+    "name": "Rwanda",
+    "timezones": ["Africa/Kigali"]
+  },
+  {
+    "capital": "Riyadh",
+    "code": "SA",
+    "latlng": [25, 45],
+    "name": "Saudi Arabia",
+    "timezones": ["Asia/Riyadh"]
+  },
+  {
+    "capital": "Khartoum",
+    "code": "SD",
+    "latlng": [15, 30],
+    "name": "Sudan",
+    "timezones": ["Africa/Khartoum"]
+  },
+  {
+    "capital": "Dakar",
+    "code": "SN",
+    "latlng": [14, -14],
+    "name": "Senegal",
+    "timezones": ["Africa/Dakar"]
+  },
+  {
+    "capital": "Singapore",
+    "code": "SG",
+    "latlng": [1.36666666, 103.8],
+    "name": "Singapore",
+    "timezones": ["Asia/Singapore"]
+  },
+  {
+    "capital": "King Edward Point",
+    "code": "GS",
+    "latlng": [-54.5, -37],
+    "name": "South Georgia",
+    "timezones": ["Atlantic/South_Georgia"]
+  },
+  {
+    "capital": "Longyearbyen",
+    "code": "SJ",
+    "latlng": [78, 20],
+    "name": "Svalbard and Jan Mayen",
+    "timezones": ["Arctic/Longyearbyen"]
+  },
+  {
+    "capital": "Honiara",
+    "code": "SB",
+    "latlng": [-8, 159],
+    "name": "Solomon Islands",
+    "timezones": ["Pacific/Guadalcanal"]
+  },
+  {
+    "capital": "Freetown",
+    "code": "SL",
+    "latlng": [8.5, -11.5],
+    "name": "Sierra Leone",
+    "timezones": ["Africa/Freetown"]
+  },
+  {
+    "capital": "San Salvador",
+    "code": "SV",
+    "latlng": [13.83333333, -88.91666666],
+    "name": "El Salvador",
+    "timezones": ["America/El_Salvador"]
+  },
+  {
+    "capital": "City of San Marino",
+    "code": "SM",
+    "latlng": [43.76666666, 12.41666666],
+    "name": "San Marino",
+    "timezones": ["Europe/San_Marino"]
+  },
+  {
+    "capital": "Mogadishu",
+    "code": "SO",
+    "latlng": [10, 49],
+    "name": "Somalia",
+    "timezones": ["Africa/Mogadishu"]
+  },
+  {
+    "capital": "Saint-Pierre",
+    "code": "PM",
+    "latlng": [46.83333333, -56.33333333],
+    "name": "Saint Pierre and Miquelon",
+    "timezones": ["America/Miquelon"]
+  },
+  {
+    "capital": "Belgrade",
+    "code": "RS",
+    "latlng": [44, 21],
+    "name": "Serbia",
+    "timezones": ["Europe/Belgrade"]
+  },
+  {
+    "capital": "Juba",
+    "code": "SS",
+    "latlng": [7, 30],
+    "name": "South Sudan",
+    "timezones": ["Africa/Juba"]
+  },
+  {
+    "capital": "S\u00e3o Tom\u00e9",
+    "code": "ST",
+    "latlng": [1, 7],
+    "name": "S\u00e3o Tom\u00e9 and Pr\u00edncipe",
+    "timezones": ["Africa/Sao_Tome"]
+  },
+  {
+    "capital": "Paramaribo",
+    "code": "SR",
+    "latlng": [4, -56],
+    "name": "Suriname",
+    "timezones": ["America/Paramaribo"]
+  },
+  {
+    "capital": "Bratislava",
+    "code": "SK",
+    "latlng": [48.66666666, 19.5],
+    "name": "Slovakia",
+    "timezones": ["Europe/Bratislava"]
+  },
+  {
+    "capital": "Ljubljana",
+    "code": "SI",
+    "latlng": [46.11666666, 14.81666666],
+    "name": "Slovenia",
+    "timezones": ["Europe/Ljubljana"]
+  },
+  {
+    "capital": "Stockholm",
+    "code": "SE",
+    "latlng": [62, 15],
+    "name": "Sweden",
+    "timezones": ["Europe/Stockholm"]
+  },
+  {
+    "capital": "Lobamba",
+    "code": "SZ",
+    "latlng": [-26.5, 31.5],
+    "name": "Swaziland",
+    "timezones": ["Africa/Mbabane"]
+  },
+  {
+    "capital": "Philipsburg",
+    "code": "SX",
+    "latlng": [18.033333, -63.05],
+    "name": "Sint Maarten",
+    "timezones": ["America/Lower_Princes"]
+  },
+  {
+    "capital": "Victoria",
+    "code": "SC",
+    "latlng": [-4.58333333, 55.66666666],
+    "name": "Seychelles",
+    "timezones": ["Indian/Mahe"]
+  },
+  {
+    "capital": "Damascus",
+    "code": "SY",
+    "latlng": [35, 38],
+    "name": "Syria",
+    "timezones": ["Asia/Damascus"]
+  },
+  {
+    "capital": "Cockburn Town",
+    "code": "TC",
+    "latlng": [21.75, -71.58333333],
+    "name": "Turks and Caicos Islands",
+    "timezones": ["America/Grand_Turk"]
+  },
+  {
+    "capital": "N'Djamena",
+    "code": "TD",
+    "latlng": [15, 19],
+    "name": "Chad",
+    "timezones": ["Africa/Ndjamena"]
+  },
+  {
+    "capital": "Lom\u00e9",
+    "code": "TG",
+    "latlng": [8, 1.16666666],
+    "name": "Togo",
+    "timezones": ["Africa/Lome"]
+  },
+  {
+    "capital": "Bangkok",
+    "code": "TH",
+    "latlng": [15, 100],
+    "name": "Thailand",
+    "timezones": ["Asia/Bangkok"]
+  },
+  {
+    "capital": "Dushanbe",
+    "code": "TJ",
+    "latlng": [39, 71],
+    "name": "Tajikistan",
+    "timezones": ["Asia/Dushanbe"]
+  },
+  {
+    "capital": "Fakaofo",
+    "code": "TK",
+    "latlng": [-9, -172],
+    "name": "Tokelau",
+    "timezones": ["Pacific/Fakaofo"]
+  },
+  {
+    "capital": "Ashgabat",
+    "code": "TM",
+    "latlng": [40, 60],
+    "name": "Turkmenistan",
+    "timezones": ["Asia/Ashgabat"]
+  },
+  {
+    "capital": "Dili",
+    "code": "TL",
+    "latlng": [-8.83333333, 125.91666666],
+    "name": "Timor-Leste",
+    "timezones": ["Asia/Dili"]
+  },
+  {
+    "capital": "Nuku'alofa",
+    "code": "TO",
+    "latlng": [-20, -175],
+    "name": "Tonga",
+    "timezones": ["Pacific/Tongatapu"]
+  },
+  {
+    "capital": "Port of Spain",
+    "code": "TT",
+    "latlng": [11, -61],
+    "name": "Trinidad and Tobago",
+    "timezones": ["America/Port_of_Spain"]
+  },
+  {
+    "capital": "Tunis",
+    "code": "TN",
+    "latlng": [34, 9],
+    "name": "Tunisia",
+    "timezones": ["Africa/Tunis"]
+  },
+  {
+    "capital": "Ankara",
+    "code": "TR",
+    "latlng": [39, 35],
+    "name": "Turkey",
+    "timezones": ["Europe/Istanbul"]
+  },
+  {
+    "capital": "Funafuti",
+    "code": "TV",
+    "latlng": [-8, 178],
+    "name": "Tuvalu",
+    "timezones": ["Pacific/Funafuti"]
+  },
+  {
+    "capital": "Taipei",
+    "code": "TW",
+    "latlng": [23.5, 121],
+    "name": "Taiwan",
+    "timezones": ["Asia/Taipei"]
+  },
+  {
+    "capital": "Dodoma",
+    "code": "TZ",
+    "latlng": [-6, 35],
+    "name": "Tanzania",
+    "timezones": ["Africa/Dar_es_Salaam"]
+  },
+  {
+    "capital": "Kampala",
+    "code": "UG",
+    "latlng": [1, 32],
+    "name": "Uganda",
+    "timezones": ["Africa/Kampala"]
+  },
+  {
+    "capital": "Kiev",
+    "code": "UA",
+    "latlng": [49, 32],
+    "name": "Ukraine",
+    "timezones": ["Europe/Kiev", "Europe/Uzhgorod", "Europe/Zaporozhye"]
+  },
+  {
+    "capital": null,
+    "code": "UM",
+    "latlng": [19.2911437, 166.618332],
+    "name": "United States Minor Outlying Islands",
+    "timezones": ["Pacific/Johnston", "Pacific/Midway", "Pacific/Wake"]
+  },
+  {
+    "capital": "Montevideo",
+    "code": "UY",
+    "latlng": [-33, -56],
+    "name": "Uruguay",
+    "timezones": ["America/Montevideo"]
+  },
+  {
+    "capital": "Washington D.C.",
+    "code": "US",
+    "latlng": [38, -97],
+    "name": "United States",
+    "timezones": [
+      "America/New_York",
+      "America/Detroit",
+      "America/Kentucky/Louisville",
+      "America/Kentucky/Monticello",
+      "America/Indiana/Indianapolis",
+      "America/Indiana/Vincennes",
+      "America/Indiana/Winamac",
+      "America/Indiana/Marengo",
+      "America/Indiana/Petersburg",
+      "America/Indiana/Vevay",
+      "America/Chicago",
+      "America/Indiana/Tell_City",
+      "America/Indiana/Knox",
+      "America/Menominee",
+      "America/North_Dakota/Center",
+      "America/North_Dakota/New_Salem",
+      "America/North_Dakota/Beulah",
+      "America/Denver",
+      "America/Boise",
+      "America/Phoenix",
+      "America/Los_Angeles",
+      "America/Anchorage",
+      "America/Juneau",
+      "America/Sitka",
+      "America/Metlakatla",
+      "America/Yakutat",
+      "America/Nome",
+      "America/Adak",
+      "Pacific/Honolulu"
+    ]
+  },
+  {
+    "capital": "Tashkent",
+    "code": "UZ",
+    "latlng": [41, 64],
+    "name": "Uzbekistan",
+    "timezones": ["Asia/Samarkand", "Asia/Tashkent"]
+  },
+  {
+    "capital": "Vatican City",
+    "code": "VA",
+    "latlng": [41.9, 12.45],
+    "name": "Vatican City",
+    "timezones": ["Europe/Vatican"]
+  },
+  {
+    "capital": "Kingstown",
+    "code": "VC",
+    "latlng": [13.25, -61.2],
+    "name": "Saint Vincent and the Grenadines",
+    "timezones": ["America/St_Vincent"]
+  },
+  {
+    "capital": "Caracas",
+    "code": "VE",
+    "latlng": [8, -66],
+    "name": "Venezuela",
+    "timezones": ["America/Caracas"]
+  },
+  {
+    "capital": "Road Town",
+    "code": "VG",
+    "latlng": [18.431383, -64.62305],
+    "name": "British Virgin Islands",
+    "timezones": ["America/Tortola"]
+  },
+  {
+    "capital": "Charlotte Amalie",
+    "code": "VI",
+    "latlng": [18.35, -64.933333],
+    "name": "United States Virgin Islands",
+    "timezones": ["America/St_Thomas"]
+  },
+  {
+    "capital": "Hanoi",
+    "code": "VN",
+    "latlng": [16.16666666, 107.83333333],
+    "name": "Vietnam",
+    "timezones": ["Asia/Ho_Chi_Minh"]
+  },
+  {
+    "capital": "Port Vila",
+    "code": "VU",
+    "latlng": [-16, 167],
+    "name": "Vanuatu",
+    "timezones": ["Pacific/Efate"]
+  },
+  {
+    "capital": "Mata-Utu",
+    "code": "WF",
+    "latlng": [-13.3, -176.2],
+    "name": "Wallis and Futuna",
+    "timezones": ["Pacific/Wallis"]
+  },
+  {
+    "capital": "Apia",
+    "code": "WS",
+    "latlng": [-13.58333333, -172.33333333],
+    "name": "Samoa",
+    "timezones": ["Pacific/Apia"]
+  },
+  {
+    "capital": "Sana'a",
+    "code": "YE",
+    "latlng": [15, 48],
+    "name": "Yemen",
+    "timezones": ["Asia/Aden"]
+  },
+  {
+    "capital": "Pretoria",
+    "code": "ZA",
+    "latlng": [-29, 24],
+    "name": "South Africa",
+    "timezones": ["Africa/Johannesburg"]
+  },
+  {
+    "capital": "Lusaka",
+    "code": "ZM",
+    "latlng": [-15, 30],
+    "name": "Zambia",
+    "timezones": ["Africa/Lusaka"]
+  },
+  {
+    "capital": "Harare",
+    "code": "ZW",
+    "latlng": [-20, 30],
+    "name": "Zimbabwe",
+    "timezones": ["Africa/Harare"]
+  }
 ]

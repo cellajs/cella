@@ -5,12 +5,12 @@ import { useEffect, useState } from 'react';
 import useDownloader from 'react-use-downloader';
 import { useEventListener } from '~/hooks/use-event-listener';
 import { AttachmentRender } from '~/modules/attachments/attachment-render';
+import FilePlaceholder from '~/modules/attachments/file-placeholder';
 import { openAttachmentDialog } from '~/modules/attachments/helpers';
 import { dialog } from '~/modules/common/dialoger/state';
+import { Button } from '~/modules/ui/button';
 import { Carousel as BaseCarousel, CarouselContent, CarouselDots, CarouselItem, CarouselNext, CarouselPrevious } from '~/modules/ui/carousel';
 import { cn } from '~/utils/cn';
-import { Button } from '../ui/button';
-import FilePlaceholder from './file-placeholder';
 
 interface CarouselPropsBase {
   slide?: number;
@@ -83,7 +83,7 @@ const AttachmentsCarousel = ({ slides = [], isDialog = false, slide = 0, saveInS
       }}
     >
       {slides[current] && isDialog && (
-        <div className="fixed z-10 top-0 left-0 w-full flex gap-2 p-3 text-center sm:text-left bg-background/60 backdrop-blur-sm">
+        <div className="fixed z-10 top-0 left-0 w-full flex gap-2 p-3 text-center sm:text-left bg-background/60 backdrop-blur-xs">
           {slides[current].name && (
             <h2 className="text-base tracking-tight flex ml-1 items-center gap-2 leading-6 h-6">
               {slides[current].fileType && <FilePlaceholder fileType={slides[current].fileType} iconSize={16} strokeWidth={2} />}

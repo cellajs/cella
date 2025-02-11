@@ -1,9 +1,9 @@
 import { config } from 'config';
-import { env } from '../../env';
+import { env } from '../env';
 
 import { getSignedUrl as cloudfrontGetSignedUrl } from '@aws-sdk/cloudfront-signer';
 
-export type ImadoUrlParams = {
+type ImadoUrlParams = {
   width?: number;
   height?: number;
   quality?: number;
@@ -16,7 +16,7 @@ interface ImadoUrlConfig {
   cloudfrontPrivateKey: string;
 }
 
-export class ImadoUrl {
+class ImadoUrl {
   private config: ImadoUrlConfig;
 
   constructor(config: ImadoUrlConfig) {

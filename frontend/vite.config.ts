@@ -1,29 +1,40 @@
 import path from 'node:path';
+
 import MillionLint from '@million/lint';
 import terser from '@rollup/plugin-terser';
 import { sentryVitePlugin } from '@sentry/vite-plugin';
 import { type UserConfig, defineConfig } from 'vite';
-import { config } from '../config';
-import { env } from './env';
 
 // import { TanStackRouterVite } from '@tanstack/router-plugin/vite'
 // import { visualizer } from 'rollup-plugin-visualizer';
+import tailwindcss from '@tailwindcss/vite';
 import basicSsl from '@vitejs/plugin-basic-ssl';
 import react from '@vitejs/plugin-react';
 import { createHtmlPlugin } from 'vite-plugin-html';
 import mkcert from 'vite-plugin-mkcert';
 import { VitePWA } from 'vite-plugin-pwa';
 import { viteStaticCopy } from 'vite-plugin-static-copy';
+import { config } from '../config';
+import { env } from './src/env';
+// import { TanStackRouterVite } from '@tanstack/router-plugin/vite'
+
+const ReactCompilerConfig = {
+  /* ... */
+};
 
 // https://vitejs.dev/config/
 export default defineConfig(() => {
   const frontendUrl = new URL(config.frontendUrl);
 
   const viteConfig = {
+    logLevel: 'info',
     server: {
       host: '0.0.0.0',
       port: Number(frontendUrl.port),
       strictPort: true,
+      watch: {
+        ignored: ['**/backend/**'], // Prevent restarts
+      },
     },
     build: {
       rollupOptions: {
@@ -44,7 +55,12 @@ export default defineConfig(() => {
     },
     plugins: [
       // TanStackRouterVite(),
-      react(),
+      react({
+        babel: {
+          plugins: [['babel-plugin-react-compiler', ReactCompilerConfig]],
+        },
+      }),
+      tailwindcss(),
       config.sentSentrySourceMaps
         ? sentryVitePlugin({
             disable: config.mode === 'development',

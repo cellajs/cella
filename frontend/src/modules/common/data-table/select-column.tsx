@@ -3,7 +3,9 @@ import type { config } from 'config';
 import { useTranslation } from 'react-i18next';
 import { Select, SelectContent, SelectItem, SelectValue } from '~/modules/ui/select';
 
-import type { Member, Organization, User } from '~/types/common';
+import type { Member } from '~/modules/memberships/types';
+import type { Organization } from '~/modules/organizations/types';
+import type { User } from '~/modules/users/types';
 
 export const renderSelect = <TRow extends User | Member | Organization>({
   row,
@@ -30,7 +32,7 @@ export const renderSelect = <TRow extends User | Member | Organization>({
       <SelectTrigger className="h-8 border-none p-2 text-xs tracking-wider">
         <SelectValue placeholder={role} />
       </SelectTrigger>
-      <SelectContent sideOffset={-41} alignOffset={-5} className="!duration-0">
+      <SelectContent sideOffset={-41} alignOffset={-5} className="duration-0!">
         {options.map((option) => (
           <SelectItem key={option} value={option}>
             {t(option)}

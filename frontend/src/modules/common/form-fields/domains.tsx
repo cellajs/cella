@@ -13,18 +13,21 @@ type Props = {
 
 const DomainsFormField = ({ control, label, description, required }: Props) => {
   const { t } = useTranslation();
+
   const { getValues } = useFormContext();
   const formValue = getValues('emailDomains');
+
   const [fieldActive, setFieldActive] = useState(false);
   const [domains, setDomains] = useState<Tag[]>(formValue.map((dom: string) => ({ id: dom, text: dom })));
   const [currentValue, setCurrentValue] = useState('');
-  const checkValidDomain = (domain: string) => {
-    return /^(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}$/i.test(domain.trim());
-  };
 
   const checkValidInput = (value: string) => {
     if (!value || value.trim().length < 2) return true;
     return checkValidDomain(value);
+  };
+
+  const checkValidDomain = (domain: string) => {
+    return /^(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}$/i.test(domain.trim());
   };
 
   useEffect(() => {

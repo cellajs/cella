@@ -11,9 +11,9 @@ export const config = {
   electricUrl: 'https://electric.cellajs.com',
 
   defaultRedirectPath: '/home',
-  firstSignInRedirectPath: '/welcome',
+  welcomeRedirectPath: '/welcome',
 
-  aboutUrl: '/about',
+  aboutUrl: 'https://cellajs.com/about',
   statusUrl: 'https://status.cellajs.com',
   productionUrl: 'https://cellajs.com',
 
@@ -23,10 +23,12 @@ export const config = {
 
   supportEmail: 'support@cellajs.com',
   notificationsEmail: 'notifications@cellajs.com',
-  senderIsReceiver: false,
 
   debug: false,
   maintenance: false,
+
+  // Reset version when changing cookie structure
+  cookieVersion: 'v1',
 
   // Which scripts to run when seeding the database
   seedScripts: ['pnpm run seed:user', 'pnpm run seed:organizations'],
@@ -104,36 +106,54 @@ export const config = {
   // OAuth providers
   enabledOauthProviders: ['github'] as const,
 
+  // Token types
+  tokenTypes: ['email_verification', 'password_reset', 'invitation'] as const,
+
   // Optional settings
   has: {
     pwa: true, // Progressive Web App support for preloading static assets and offline support
     sync: true, // Realtime updates and sync using Electric Sync
     registrationEnabled: true, // Allow users to sign up. If disabled, the app is by invitation only
     waitlist: false, // Suggest a waitlist for unknown emails when sign up is disabled,
-    imado: false, // Imado fully configured, if false, files will be stored in local browser (indexedDB)
+    imado: true, // Imado fully configured, if false, files will be stored in local browser (indexedDB)
   },
 
-  // Languages
+  /**
+   * Default language
+   */
   defaultLanguage: 'en' as const,
 
-  languages: [
-    { value: 'en', label: 'English' },
-    { value: 'nl', label: 'Nederlands' },
-  ] as const,
+  /**
+   * Language options
+   */
+  languages: ['en', 'nl'] as const,
 
-  // All entity types
+  /**
+   * All entity types used in the app
+   */
   entityTypes: ['user', 'organization', 'attachment'] as const,
 
-  // Page entity types (pages with memberships + users)
+  /**
+   * Page entity types (pages with memberships + users)
+   */
   pageEntityTypes: ['user', 'organization'] as const,
 
-  // Context entity types (memberships)
+  /**
+   * Context entity types (memberships)
+   */
   contextEntityTypes: ['organization'] as const,
 
-  // Product entity types (no memberships)
+  /**
+   * Product entity types (mostly content)
+   */
   productEntityTypes: ['attachment'] as const,
 
-  // Request limits
+  /**
+   * Default request limits for lists
+   *
+   * By default, BE common-schemas enforce a maximum limit of 1000 items via `limitRefine`.
+   * if some of requested limit need to exceed 1000, make sure to adjust `limitRefine` accordingly.
+   */
   requestLimits: {
     default: 40,
     users: 100,
@@ -141,12 +161,20 @@ export const config = {
     organizations: 40,
     requests: 40,
     attachments: 40,
+    invitedMembers: 20,
+  },
+  /**
+   * Roles on system and entity level.
+   */
+  rolesByType: {
+    systemRoles: ['user', 'admin'] as const,
+    entityRoles: ['member', 'admin'] as const,
+    allRoles: ['user', 'member', 'admin'] as const,
   },
 
-  // Roles on system and entity level.
-  rolesByType: { systemRoles: ['user', 'admin'] as const, entityRoles: ['member', 'admin'] as const, allRoles: ['user', 'member', 'admin'] as const },
-
-  // Company details
+  /**
+   * Company details.
+   */
   company: {
     name: 'CellaJS',
     shortName: 'Cella',
@@ -170,13 +198,34 @@ export const config = {
     },
   },
 
-  // UI settings
+  /**
+   * Error handling.
+   */
+  severityLevels: ['debug', 'log', 'info', 'warn', 'error'] as const,
+
+  /**
+   * UI settings.
+   */
   navLogoAnimation: 'animate-spin-slow',
 
-  // Common countries
+  /**
+   * Common countries.
+   */
   common: {
     countries: ['fr', 'de', 'nl', 'ua', 'us', 'gb'],
     timezones: [],
+  },
+
+  /**
+   * Uppy file uploader settings.
+   */
+  uppy: {
+    defaultRestrictions: {
+      maxFileSize: 10 * 1024 * 1024, // 10MB
+      maxNumberOfFiles: 1,
+      allowedFileTypes: ['.jpg', '.jpeg', '.png'],
+      maxTotalFileSize: 100 * 1024 * 1024, // 100MB
+    },
   },
 };
 

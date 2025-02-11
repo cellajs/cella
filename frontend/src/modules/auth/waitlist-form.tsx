@@ -1,42 +1,37 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useNavigate } from '@tanstack/react-router';
-import { createRequestSchema } from 'backend/modules/requests/schema';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import type * as z from 'zod';
+import { createRequestSchema } from '#/modules/requests/schema';
 
 import { onlineManager } from '@tanstack/react-query';
 import { config } from 'config';
 import { ArrowRight, ChevronDown } from 'lucide-react';
-import { createToast } from '~/lib/toasts';
 import { LegalNotice } from '~/modules/auth/sign-up-form';
 import { dialog } from '~/modules/common/dialoger/state';
-import { useCreateRequestsMutation } from '~/modules/requests/query-mutations';
+import { createToast } from '~/modules/common/toaster';
+import { useCreateRequestMutation } from '~/modules/requests/query';
 import { Button, SubmitButton } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '~/modules/ui/form';
 import { Input } from '~/modules/ui/input';
 
 const formSchema = createRequestSchema;
 
-export const WaitlistForm = ({
-  email,
-  buttonContent,
-  emailField,
-  dialog: isDialog,
-  changeEmail,
-  callback,
-}: {
+interface WaitlistFormProps {
   email: string;
   buttonContent?: string | React.ReactNode;
   emailField?: boolean;
   dialog?: boolean;
   changeEmail?: () => void;
   callback?: () => void;
-}) => {
+}
+
+export const WaitlistForm = ({ email, buttonContent, emailField, dialog: isDialog, changeEmail, callback }: WaitlistFormProps) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
 
-  const { mutate: createRequest, isPending } = useCreateRequestsMutation();
+  const { mutate: createRequest, isPending } = useCreateRequestMutation();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -52,10 +47,7 @@ export const WaitlistForm = ({
 
     createRequest(body, {
       onSuccess: () => {
-        navigate({
-          to: '/about',
-          replace: true,
-        });
+        navigate({ to: '/about', replace: true });
         createToast(t('common:success.waitlist_request', { appName: config.name }), 'success');
         if (isDialog) dialog.remove();
         callback?.();
@@ -90,7 +82,7 @@ export const WaitlistForm = ({
               <FormControl>
                 <Input
                   {...field}
-                  className="block xs:min-w-80 w-full py-6 h-14 px-8 rounded-full border border-gray-400/40 bg-background/50 text-base/6 ring-4 ring-primary/10 transition focus:border-gray-400 focus:outline-none focus-visible:ring-primary/20"
+                  className="block xs:min-w-80 w-full py-6 h-14 px-8 rounded-full border border-gray-400/40 bg-background/50 text-base/6 ring-4 ring-primary/10 transition focus:border-gray-400 focus:outline-hidden focus-visible:ring-primary/20"
                   type="email"
                   disabled={!emailField}
                   readOnly={!emailField}

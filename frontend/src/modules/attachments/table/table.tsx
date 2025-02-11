@@ -11,13 +11,13 @@ import { useAttachmentUpdateMutation } from '~/modules/attachments/query-mutatio
 import type { AttachmentSearch, AttachmentsTableProps } from '~/modules/attachments/table';
 import { useColumns } from '~/modules/attachments/table/columns';
 import { useSync } from '~/modules/attachments/table/helpers/use-sync';
+import type { Attachment } from '~/modules/attachments/types';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { DataTable } from '~/modules/common/data-table';
-import type { ColumnOrColumnGroup } from '~/modules/common/data-table/columns-view';
+import type { BaseTableMethods, BaseTableProps, ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 import { dialog } from '~/modules/common/dialoger/state';
 import { useDataFromSuspenseInfiniteQuery } from '~/query/hooks/use-data-from-query';
 import { useUserStore } from '~/store/user';
-import type { Attachment, BaseTableMethods, BaseTableProps } from '~/types/common';
 
 type BaseDataTableProps = AttachmentsTableProps &
   BaseTableProps<Attachment, AttachmentSearch> & {

@@ -1,10 +1,13 @@
 import { ChatProviderIdEnum, Novu } from '@novu/node';
 import { config } from 'config';
 import { logEvent } from '#/middlewares/logger/log-event';
-import { env } from '../../env';
+import { env } from '../env';
 
-// Send a Slack message to the chosen channel using Novu API.
-// https://github.com/novuhq/novu
+/**
+ * Send a Slack message to the chosen channel using Novu API.
+ *
+ * @link https://github.com/novuhq/novu
+ */
 export const sendSlackMessage = async (requestFor: string, email: string) => {
   try {
     if (!env.NOVU_API_KEY) return logEvent('Novu API key is not provided.');
@@ -36,6 +39,7 @@ export const sendSlackMessage = async (requestFor: string, email: string) => {
 
     return logEvent('Slack message delivered');
   } catch (err) {
+    console.error(err);
     return logEvent('Slack message failed');
   }
 };

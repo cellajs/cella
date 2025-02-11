@@ -1,30 +1,41 @@
 import { CancelledError, type FetchInfiniteQueryOptions, type FetchQueryOptions, onlineManager } from '@tanstack/react-query';
 import i18next from 'i18next';
+import { ZodError } from 'zod';
 import { ApiError } from '~/lib/api';
 import { i18n } from '~/lib/i18n';
 import router, { queryClient } from '~/lib/router';
 import { flushStoresAndCache } from '~/modules/auth/sign-out';
+import { createToast } from '~/modules/common/toaster';
 import { useAlertStore } from '~/store/alert';
-import { createToast } from './toasts';
 
-// Fallback messages for common errors
+/**
+ * Fallback messages for common 400 errors
+ */
 const fallbackMessages = (t: (typeof i18n)['t']) => ({
-  400: t('common:error.bad_request_action'),
-  401: t('common:error.unauthorized_action'),
-  403: t('common:error.forbidden_action'),
-  404: t('common:error.not_found'),
-  429: t('common:error.too_many_requests'),
+  400: t('error:bad_request_action'),
+  401: t('error:unauthorized_action'),
+  403: t('error:forbidden_action'),
+  404: t('error:not_found'),
+  429: t('error:too_many_requests'),
 });
 
-export const onError = (error: Error) => {
+/**
+ * Global error handler for API requests.
+ * Handles network errors, API errors, and redirects to the sign-in page if the user is not authenticated.
+ * @param error - The error object.
+ */
+export const onError = (error: Error | ApiError) => {
   // Ignore cancellation error
   if (error instanceof CancelledError) {
     return console.debug('Ignoring CancelledError');
   }
 
   // Handle network error (e.g., connection refused)
-  if (error instanceof Error && error.message === 'Failed to fetch') {
-    createToast(i18n.t('common:error.network_error'), 'error');
+  if (error instanceof Error && error.message === 'Failed to fetch') createToast(i18n.t('error:network_error'), 'error');
+
+  // TODO scale reaction on ZodErrors
+  if (error instanceof ZodError) {
+    for (const err of error.issues) createToast(err.message, 'error');
   }
 
   if (error instanceof ApiError) {
@@ -41,22 +52,20 @@ export const onError = (error: Error) => {
 
     // Translate, try most specific first
     const errorMessage =
-      error.entityType && i18next.exists(`common:error.resource_${error.type}`)
-        ? i18n.t(`error.resource_${error.type}`, { resource: i18n.t(error.entityType) })
-        : error.type && i18next.exists(`common:error.${error.type}`)
-          ? i18n.t(`common:error.${error.type}`)
+      error.entityType && i18next.exists(`error:resource_${error.type}`)
+        ? i18n.t(`error:resource_${error.type}`, { resource: i18n.t(error.entityType) })
+        : error.type && i18next.exists(`error:${error.type}`)
+          ? i18n.t(`error:${error.type}`)
           : fallback[statusCode as keyof typeof fallback];
 
     // Show toast
-    if (error.severity === 'info') createToast(errorMessage || error.message, 'info');
-    else createToast(errorMessage || error.message, 'error');
+    const toastType = error.severity === 'error' ? 'error' : error.severity === 'warn' ? 'warning' : 'info';
+    createToast(errorMessage || error.message, toastType);
 
     // Redirect to sign-in page if the user is not authenticated (unless already on /auth/*)
     if (statusCode === 401 && !location.pathname.startsWith('/auth/')) {
-      // Redirect to sign-in page if the user is not authenticated (except for /me)
-      const redirectOptions: { to: string; replace: boolean; search?: { redirect: string } } = {
-        to: '/auth/sign-in',
-        replace: true,
+      const redirectOptions: { to: string; search?: { redirect: string } } = {
+        to: '/auth/authenticate',
       };
 
       // Save the current path as a redirect
@@ -75,35 +84,53 @@ const onSuccess = () => {
   useAlertStore.getState().setDownAlert(null);
 };
 
+/**
+ * Function to fetch data with offline support. If online, it will attempt to fetch data and perform a background revalidation.
+ * If offline, it will attempt to return cached data. If there is an error during the fetch,
+ * it will fall back to cached data if available.
+ *
+ * @param options - Fetch query options that define the query behavior, including the query key and parameters.
+ * @param refetchIfOnline - Optional, flag to control refetching online (default: `true`).
+ * @returns Returns query data or undefined.
+ */
 // biome-ignore lint/suspicious/noExplicitAny: any is used to infer the type of the options
-export const offlineFetch = async (options: FetchQueryOptions<any, any, any, any>) => {
-  const cachedData = queryClient.getQueryData(options.queryKey);
+export const offlineFetch = async <T>(options: FetchQueryOptions<any, any, any, any>, refetchIfOnline = true): Promise<T | undefined> => {
+  const { queryKey } = options;
+  const cachedData = queryClient.getQueryData<T>(queryKey);
 
-  // If offline, return cached data or undefined if no cache exists
+  // If offline, return cached data if available
   if (!onlineManager.isOnline()) return cachedData ?? undefined;
 
   try {
-    // If online, fetch data (background revalidation)
+    // Remove cached queries to trigger re-fetch if online
+    if (refetchIfOnline) queryClient.removeQueries({ queryKey, exact: true });
     return queryClient.fetchQuery(options);
   } catch (error) {
-    // Fallback to cached data if available
-    return cachedData ?? undefined;
+    return cachedData ?? undefined; // Fallback to cached data if available
   }
 };
 
+/**
+ * Function to fetch infinite data. If online, fetches the query even if there is cached. If offline or an error occurs, it tries to get the cached data.
+ *
+ * @param options - Fetch infinite query options that define the query behavior and parameters,
+ * including the query key and other settings.
+ * @param refetchIfOnline - Optional, flag to control refetching online (default: `true`).
+ * @returns Returns query data or undefined.
+ */
 // biome-ignore lint/suspicious/noExplicitAny: any is used to infer the type of the options
-export const offlineFetchInfinite = async (options: FetchInfiniteQueryOptions<any, any, any, any, any>) => {
-  const cachedData = queryClient.getQueryData(options.queryKey);
+export const offlineFetchInfinite = async (options: FetchInfiniteQueryOptions<any, any, any, any, any>, refetchIfOnline = true) => {
+  const { queryKey } = options;
+  const cachedData = queryClient.getQueryData(queryKey);
 
-  // If offline, return cached data or undefined if no cache exists
+  // If offline, return cached data if available
   if (!onlineManager.isOnline()) return cachedData ?? undefined;
 
   try {
-    // If online, fetch data (background revalidation)
+    if (refetchIfOnline) queryClient.removeQueries({ queryKey, exact: true });
     return queryClient.fetchInfiniteQuery(options);
   } catch (error) {
-    // Fallback to cached data if available
-    return cachedData ?? undefined;
+    return cachedData ?? undefined; // Fallback to cached data if available
   }
 };
 

@@ -7,12 +7,13 @@ import TableCount from '~/modules/common/data-table/table-count';
 import { FilterBarActions, FilterBarContent, TableFilterBar } from '~/modules/common/data-table/table-filter-bar';
 import { TableHeaderContainer } from '~/modules/common/data-table/table-header-container';
 import TableSearch from '~/modules/common/data-table/table-search';
+import type { BaseTableHeaderProps, BaseTableMethods } from '~/modules/common/data-table/types';
 import { FocusView } from '~/modules/common/focus-view';
 import SelectRole from '~/modules/common/form-fields/select-role';
 import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
 import type { UsersSearch } from '~/modules/users/table';
-import type { BaseTableHeaderProps, BaseTableMethods, User } from '~/types/common';
+import type { User } from '~/modules/users/types';
 
 type UsersTableHeaderProps = BaseTableMethods &
   BaseTableHeaderProps<User, UsersSearch> & {

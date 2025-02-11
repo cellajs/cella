@@ -1,27 +1,25 @@
-import { errorResponses, successWithDataSchema, successWithErrorsSchema, successWithPaginationSchema } from '#/utils/schema/common-responses';
-
+import { z } from 'zod';
 import { createRouteConfig } from '#/lib/route-config';
 import { hasOrgAccess, isAuthenticated, isPublicAccess } from '#/middlewares/guard';
+import { idInOrgParamSchema, idSchema, idsBodySchema, inOrgParamSchema } from '#/utils/schema/common';
+import { errorResponses, successWithDataSchema, successWithErrorsSchema, successWithPaginationSchema } from '#/utils/schema/responses';
+import { attachmentSchema, attachmentsQuerySchema, createAttachmentsSchema, updateAttachmentBodySchema } from './schema';
 
-import { z } from 'zod';
-import { idOrSlugSchema, idSchema } from '#/utils/schema/common-schemas';
-import { attachmentSchema, attachmentsQuerySchema, createAttachmentSchema, deleteAttachmentsQuerySchema, updateAttachmentBodySchema } from './schema';
-
-class AttachmentRoutesConfig {
-  public createAttachment = createRouteConfig({
+class AttachmentRouteConfig {
+  public createAttachments = createRouteConfig({
     method: 'post',
     path: '/',
     guard: [isAuthenticated, hasOrgAccess],
     tags: ['attachments'],
-    summary: 'Create attachment',
-    description: 'Create a new attachment.',
+    summary: 'Create attachments',
+    description: 'Create one or more new attachments.',
     request: {
-      params: z.object({ orgIdOrSlug: idOrSlugSchema }),
+      params: inOrgParamSchema,
       body: {
         required: true,
         content: {
           'application/json': {
-            schema: createAttachmentSchema,
+            schema: createAttachmentsSchema,
           },
         },
       },
@@ -48,9 +46,7 @@ class AttachmentRoutesConfig {
     description: 'Get attachments for an organization.',
     request: {
       query: attachmentsQuerySchema,
-      params: z.object({
-        orgIdOrSlug: idOrSlugSchema.optional(),
-      }),
+      params: inOrgParamSchema,
     },
     responses: {
       200: {
@@ -73,10 +69,7 @@ class AttachmentRoutesConfig {
     summary: 'Get attachment',
     description: 'Get an attachment by id.',
     request: {
-      params: z.object({
-        orgIdOrSlug: idOrSlugSchema.optional(),
-        id: idSchema,
-      }),
+      params: idInOrgParamSchema,
     },
     responses: {
       200: {
@@ -94,15 +87,12 @@ class AttachmentRoutesConfig {
   public updateAttachment = createRouteConfig({
     method: 'put',
     path: '/{id}',
-    guard: [isAuthenticated],
+    guard: [isAuthenticated, hasOrgAccess],
     tags: ['attachments'],
     summary: 'Update attachment',
     description: 'Update attachment by id.',
     request: {
-      params: z.object({
-        orgIdOrSlug: idOrSlugSchema.optional(),
-        id: idSchema,
-      }),
+      params: idInOrgParamSchema,
       body: {
         content: {
           'application/json': {
@@ -132,8 +122,14 @@ class AttachmentRoutesConfig {
     summary: 'Delete attachments',
     description: 'Delete attachments by their ids',
     request: {
-      params: z.object({ orgIdOrSlug: idOrSlugSchema }),
-      query: deleteAttachmentsQuerySchema,
+      params: inOrgParamSchema,
+      body: {
+        content: {
+          'application/json': {
+            schema: idsBodySchema,
+          },
+        },
+      },
     },
     responses: {
       200: {
@@ -156,7 +152,7 @@ class AttachmentRoutesConfig {
     summary: 'Shape proxy',
     description: 'Get shape proxy for attachment.',
     request: {
-      params: z.object({ orgIdOrSlug: idOrSlugSchema }),
+      params: inOrgParamSchema,
     },
     responses: {
       200: {
@@ -170,7 +166,7 @@ class AttachmentRoutesConfig {
     method: 'get',
     path: '/{id}/link',
     tags: ['attachments'],
-    guard: [isPublicAccess],
+    guard: isPublicAccess,
     summary: 'Redirect to attachment',
     description: 'Redirect to attachment by id.',
     request: {
@@ -189,7 +185,7 @@ class AttachmentRoutesConfig {
   public getAttachmentCover = createRouteConfig({
     method: 'get',
     path: '/{id}/cover',
-    guard: [isPublicAccess],
+    guard: isPublicAccess,
     tags: ['attachments'],
     summary: 'Get attachment cover',
     description: 'Get attachment cover image by id.',
@@ -206,4 +202,4 @@ class AttachmentRoutesConfig {
     },
   });
 }
-export default new AttachmentRoutesConfig();
+export default new AttachmentRouteConfig();

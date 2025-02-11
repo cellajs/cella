@@ -1,7 +1,20 @@
+import type { Entity, Severity } from 'config';
 import type { ClientResponse } from 'hono/client';
-import type { ErrorType } from '#/lib/errors';
-import type { Entity } from '#/types/common';
+import type { ClientErrorStatusCode, ServerErrorStatusCode } from 'hono/utils/http-status';
+import { ZodError } from 'zod';
 
+type HttpErrorStatus = ClientErrorStatusCode | ServerErrorStatusCode;
+
+/**
+ * Handles an API response, parsing the JSON and throwing an error if necessary.
+ *
+ * If the response is successful, it returns the parsed JSON. If the response contains an error,
+ * it throws an `ApiError` with the error details. Otherwise, it throws a generic error.
+ *
+ * @param response - Client response object to handle.
+ * @returns Parsed JSON from response.
+ * @throws ApiError for expected errors, generic error for unknown issues.
+ */
 // biome-ignore lint/suspicious/noExplicitAny: any is used to allow any type of response
 export const handleResponse = async <T extends Record<string, any>, U extends ClientResponse<T, number, 'json'>>(response: U) => {
   const json = await response.json();
@@ -10,7 +23,11 @@ export const handleResponse = async <T extends Record<string, any>, U extends Cl
     return json as Awaited<ReturnType<Extract<U, { status: 200 }>['json']>>;
   }
 
-  if ('error' in json) throw new ApiError(json.error);
+  if ('error' in json) {
+    // TODO figure out why `instance of ZodError` doesn't recognize err
+    if (json.error.name === 'ZodError') throw new ZodError(json.error.issues);
+    throw new ApiError(json.error);
+  }
   throw new Error('Unknown error');
 };
 
@@ -24,10 +41,10 @@ export const clientConfig = {
 
 // Custom error class to handle API errors
 export class ApiError extends Error {
-  status: string | number;
+  status: HttpErrorStatus;
   type?: string;
   entityType?: Entity;
-  severity?: string;
+  severity?: Severity;
   logId?: string;
   path?: string;
   method?: string;
@@ -35,7 +52,7 @@ export class ApiError extends Error {
   usr?: string;
   org?: string;
 
-  constructor(error: ErrorType) {
+  constructor(error: ApiError) {
     super(error.message);
     this.status = error.status;
     this.type = error.type;

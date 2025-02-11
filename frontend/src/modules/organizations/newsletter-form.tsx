@@ -1,112 +1,116 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import type React from 'react';
 import { useTranslation } from 'react-i18next';
 import type { z } from 'zod';
 
-import { sendNewsletterBodySchema } from 'backend/modules/organizations/schema';
-import { Send } from 'lucide-react';
-import { toast } from 'sonner';
+import { Info, Send } from 'lucide-react';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import BlockNoteContent from '~/modules/common/form-fields/blocknote-content';
+import SelectRoles from '~/modules/common/form-fields/select-roles';
 import { sheet } from '~/modules/common/sheeter/state';
-import { useSendNewsLetterMutation } from '~/modules/organizations/query-mutations';
 import { Button, SubmitButton } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
-import { Input } from '~/modules/ui/input';
+import { sendNewsletterBodySchema } from '#/modules/organizations/schema';
 
 import '@blocknote/shadcn/style.css';
+import type { CheckedState } from '@radix-ui/react-checkbox';
+import { useMutation } from '@tanstack/react-query';
+import { useState } from 'react';
+import { MainAlert } from '~/modules/common/alerter';
 import '~/modules/common/blocknote/app-specific-custom/styles.css';
 import '~/modules/common/blocknote/styles.css';
+import InputFormField from '~/modules/common/form-fields/input';
+import { createToast } from '~/modules/common/toaster';
+import { sendNewsletter } from '~/modules/organizations/api';
+import { Checkbox } from '~/modules/ui/checkbox';
 
 interface NewsletterFormProps {
   organizationIds: string[];
-  dropSelectedOrganization?: () => void;
-  sheet?: boolean;
 }
 
 const formSchema = sendNewsletterBodySchema;
 
 type FormValues = z.infer<typeof formSchema>;
 
-const OrganizationsNewsletterForm: React.FC<NewsletterFormProps> = ({ organizationIds, sheet: isSheet, dropSelectedOrganization }) => {
+const NewsletterForm = ({ organizationIds }: NewsletterFormProps) => {
   const { t } = useTranslation();
 
-  const form = useFormWithDraft<FormValues>('send-org-newsletter', {
+  const [testOnly, setTestOnly] = useState<CheckedState>(false);
+
+  // Create form
+  const form = useFormWithDraft<FormValues>('newsletter', {
     resolver: zodResolver(formSchema),
     defaultValues: {
-      organizationIds: organizationIds,
+      organizationIds,
       subject: '',
+      roles: [],
       content: '',
     },
   });
 
-  const { mutate: sendNewsletter, isPending } = useSendNewsLetterMutation();
+  // Send newsletter
+  const { mutate: _sendNewsletter, isPending } = useMutation({
+    mutationFn: sendNewsletter,
+    onSuccess: () => {
+      if (testOnly) return createToast(t('common:success.test_email'), 'success');
+      form.reset();
+      createToast(t('common:success.create_newsletter'), 'success');
+      sheet.remove('newsletter-sheet');
+    },
+  });
 
   const onSubmit = (body: FormValues) => {
-    sendNewsletter(body, {
-      onSuccess: () => {
-        form.reset();
-        toast.success(t('common:success.create_newsletter'));
-        dropSelectedOrganization?.();
-        if (isSheet) sheet.remove('org-newsletter-form');
-      },
-    });
+    _sendNewsletter({ body, toSelf: !!testOnly });
   };
 
-  const cancel = () => {
-    form.reset();
-  };
-
-  // default value in blocknote <p class="bn-inline-content"></p> so check if there it's only one
-  const isDirty = () => {
-    const { dirtyFields } = form.formState;
-    const fieldsKeys = Object.keys(dirtyFields);
-    if (fieldsKeys.length === 0) return false;
-    if (fieldsKeys.includes('content') && fieldsKeys.length === 1) {
-      const content = form.getValues('content');
-      const parser = new DOMParser();
-      const doc = parser.parseFromString(content, 'text/html');
-      const emptyPElements = Array.from(doc.querySelectorAll('p.bn-inline-content'));
-
-      // Check if any <p> element has non-empty text content
-      return emptyPElements.some((el) => el.textContent && el.textContent.trim() !== '');
-    }
-    return true;
-  };
+  const cancel = () => form.reset();
 
   if (form.loading) return null;
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} id="newsletter-editor-container" className="space-y-6 pb-8 h-max">
+      <form onSubmit={form.handleSubmit(onSubmit)} id="newsletter-form" className="space-y-6 pb-8 h-max">
+        <InputFormField control={form.control} name="subject" placeholder={t('common:placeholder.subject')} label={t('common:subject')} required />
+
+        <BlockNoteContent control={form.control} name="content" required label={t('common:message')} blocknoteId="blocknote-newsletter" />
+
+        {/* TODO so many aria-required? */}
         <FormField
           control={form.control}
-          name="subject"
+          name="roles"
           render={({ field }) => (
-            <FormItem>
-              <FormLabel>{t('common:subject')}</FormLabel>
-              <FormControl>
-                <Input {...field} />
+            <FormItem aria-required="true">
+              <FormLabel aria-required="true">{t('common:roles')}</FormLabel>
+              <FormControl aria-required="true">
+                <SelectRoles {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
 
-        <BlockNoteContent control={form.control} name="content" required label={t('common:message')} blocknoteId="blocknote-org-newsletter" />
+        {testOnly && (
+          <MainAlert id="test-email" variant="plain" Icon={Info}>
+            {t('common:test_email.text')}
+          </MainAlert>
+        )}
 
-        <div className="flex flex-col sm:flex-row gap-2">
-          <SubmitButton disabled={!isDirty()} loading={isPending}>
+        <div className="flex flex-col sm:flex-row gap-2 items-center">
+          <SubmitButton loading={isPending}>
             <Send size={16} className="mr-2" />
-            {t('common:send')}
+            {testOnly ? t('common:send_test_email') : t('common:send')}
           </SubmitButton>
-          <Button type="reset" variant="secondary" className={isDirty() ? '' : 'invisible'} aria-label="Cancel" onClick={cancel}>
+          <Button type="reset" variant="secondary" aria-label={t('common:cancel')} onClick={cancel}>
             {t('common:cancel')}
           </Button>
+
+          <Checkbox id="testOnly" checked={testOnly} onCheckedChange={(value) => setTestOnly(value)} className="w-4 h-4 ml-4" />
+          <label htmlFor="testOnly" className="items-center text-sm">
+            {t('common:test_email')}
+          </label>
         </div>
       </form>
     </Form>
   );
 };
 
-export default OrganizationsNewsletterForm;
+export default NewsletterForm;

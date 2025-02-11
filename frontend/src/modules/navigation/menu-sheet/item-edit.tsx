@@ -3,16 +3,16 @@ import { Archive, ArchiveRestore, Bell, BellOff } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-import { env } from '~/../env';
+import { env } from '~/env';
 import { useMutation } from '~/hooks/use-mutations';
 import { dispatchCustomEvent } from '~/lib/custom-events';
-import { createToast } from '~/lib/toasts';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import Spinner from '~/modules/common/spinner';
+import { createToast } from '~/modules/common/toaster';
 import { updateMembership as baseUpdateMembership } from '~/modules/memberships/api';
 import { updateMenuItem } from '~/modules/navigation/menu-sheet/helpers/menu-operations';
 import { Button } from '~/modules/ui/button';
-import type { UserMenuItem } from '~/types/common';
+import type { UserMenuItem } from '~/modules/users/types';
 
 interface MenuItemEditProps {
   item: UserMenuItem;
@@ -21,7 +21,7 @@ interface MenuItemEditProps {
 export const MenuItemEdit = ({ item }: MenuItemEditProps) => {
   const { t } = useTranslation();
   // Directly create the mutation to avoid lazy loading for MenuItemEdit,
-  // since useMembersUpdateMutation relies on queryClient.
+  // since useMemberUpdateMutation relies on queryClient.
   const { mutate: updateMembership, status } = useMutation({
     mutationFn: baseUpdateMembership,
     onMutate: ({ archived, muted }) => {
@@ -70,7 +70,7 @@ export const MenuItemEdit = ({ item }: MenuItemEditProps) => {
       layoutId={`sheet-menu-item-${item.id}`}
       data-subitem={!item.submenu}
       data-archived={item.membership.archived}
-      className="group/optionsItem flex relative items-center h-14 w-full p-0 pr-2 justify-start rounded focus:outline-none
+      className="group/optionsItem flex relative items-center h-14 w-full p-0 pr-2 justify-start rounded focus:outline-hidden
         ring-inset ring-muted/25 focus-visible:ring-foreground hover:bg-accent/50 hover:text-accent-foreground ring-1 data-[archived=false]:cursor-grab
         group-data-[submenu=false]/menuOptions:h-12"
     >
@@ -79,7 +79,6 @@ export const MenuItemEdit = ({ item }: MenuItemEditProps) => {
           <Spinner
             className="p-1 m-2 text-black opacity-50 h-10 w-10 group-data-[submenu=false]/menuOptions:my-2 group-data-[submenu=false]/menuOptions:mx-3
             group-data-[submenu=false]/menuOptions:p-1 group-data-[submenu=false]/menuOptions:h-8 group-data-[submenu=false]/menuOptions:w-8"
-            inline
           />
         </div>
       )}

@@ -8,20 +8,20 @@ import TableCount from '~/modules/common/data-table/table-count';
 import { FilterBarActions, FilterBarContent, TableFilterBar } from '~/modules/common/data-table/table-filter-bar';
 import { TableHeaderContainer } from '~/modules/common/data-table/table-header-container';
 import TableSearch from '~/modules/common/data-table/table-search';
+import type { BaseTableHeaderProps, BaseTableMethods } from '~/modules/common/data-table/types';
 import { FocusView } from '~/modules/common/focus-view';
 import SelectRole from '~/modules/common/form-fields/select-role';
+import { InvitedMembers } from '~/modules/memberships/invited-members-table/invites-count';
 import type { MemberSearch, MembersTableProps } from '~/modules/memberships/members-table/';
-import { InvitedUsers } from '~/modules/organizations/invites/invites-count';
+import type { Member } from '~/modules/memberships/types';
 import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
-import type { BaseTableHeaderProps, BaseTableMethods, Member, OrganizationInvitesInfo } from '~/types/common';
 import { nanoid } from '~/utils/nanoid';
 
 type MembersTableHeaderProps = MembersTableProps &
   BaseTableMethods &
   BaseTableHeaderProps<Member, MemberSearch> & {
     role: MemberSearch['role'];
-    invitesInfo?: OrganizationInvitesInfo[];
     openInviteDialog: (container: HTMLElement | null) => void;
     openRemoveDialog: () => void;
     fetchExport: (limit: number) => Promise<Member[]>;
@@ -32,7 +32,6 @@ export const MembersTableHeader = ({
   total,
   selected,
   q,
-  invitesInfo,
   setSearch,
   role,
   columns,
@@ -49,6 +48,8 @@ export const MembersTableHeader = ({
   const isFiltered = role !== undefined || !!q;
   const isAdmin = entity.membership?.role === 'admin';
   const entityType = entity.entity;
+  // TODO use actual count from entity.counts.members.pending
+  const pendingCount = 2;
 
   // Drop selected Rows on search
   const onSearch = (searchString: string) => {
@@ -116,14 +117,14 @@ export const MembersTableHeader = ({
             )}
             {selected.length === 0 && (
               <TableCount count={total} type="member" isFiltered={isFiltered} onResetFilters={onResetFilters}>
-                {invitesInfo && <InvitedUsers invitesInfo={invitesInfo} />}
+                {isAdmin && !isFiltered && <InvitedMembers entity={entity} total={pendingCount} />}
               </TableCount>
             )}
           </FilterBarActions>
           <div className="sm:grow" />
           <FilterBarContent className="max-sm:animate-in max-sm:slide-in-from-left max-sm:fade-in max-sm:duration-300">
             <TableSearch value={q} setQuery={onSearch} />
-            <SelectRole entityType={entityType} value={role === undefined ? 'all' : role} onChange={onRoleChange} className="h-10 sm:min-w-32" />
+            <SelectRole entity value={role === undefined ? 'all' : role} onChange={onRoleChange} className="h-10 sm:min-w-32" />
           </FilterBarContent>
         </TableFilterBar>
 

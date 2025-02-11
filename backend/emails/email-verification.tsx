@@ -1,50 +1,38 @@
-import { Section, Text } from 'jsx-email';
+import { Text } from 'jsx-email';
 
 import { config } from 'config';
 import { i18n } from '../src/lib/i18n';
 
+import type { BasicTemplateType } from '../src/lib/mailer';
 import { AppLogo } from './components/app-logo';
 import { EmailContainer } from './components/container';
+import { EmailBody } from './components/email-body';
 import { EmailButton } from './components/email-button';
+import { EmailHeader } from './components/email-header';
 import { Footer } from './components/footer';
-import type { BasicTemplateType } from './types';
 
-const baseUrl = config.frontendUrl;
 const appName = config.name;
 
-interface Props extends BasicTemplateType {
+export interface EmailVerificationEmailProps extends BasicTemplateType {
   verificationLink: string;
 }
 
-export const VerificationEmail = ({ userLanguage: lng, verificationLink = baseUrl }: Props) => {
+export const EmailVerificationEmail = ({ lng, verificationLink }: EmailVerificationEmailProps) => {
   return (
-    <EmailContainer
-      previewText={i18n.t('backend:email.please_verify_email', { appName, lng })}
-      bodyStyle={{
-        padding: '0.625rem 0',
-      }}
-      containerStyle={{
-        padding: '3rem',
-        fontWeight: 300,
-        color: '#404040',
-        lineHeight: '1.5',
-        width: '32rem',
-      }}
-    >
-      <Section
-        style={{
-          borderRadius: '0.75rem',
-          borderWidth: '1px',
-          borderStyle: 'solid',
-          borderColor: '#eaeaea',
-          padding: '1.5rem',
-          marginTop: '2rem',
-        }}
-      >
-        <Text>{i18n.t('backend:email.verification_text_1', { lng, appName })}</Text>
+    <EmailContainer previewText={i18n.t('backend:email.email_verification.preview', { appName, lng })}>
+      <EmailHeader headerText={i18n.t('backend:email.email_verification.preview', { appName, lng })} />
+      <EmailBody>
+        <Text>
+          <span
+            // biome-ignore lint/security/noDangerouslySetInnerHtml: <explanation>
+            dangerouslySetInnerHTML={{
+              __html: i18n.t('backend:email.email_verification.text', { lng, appName }),
+            }}
+          />
+        </Text>
 
         <EmailButton ButtonText={i18n.t('common:verify_my_email', { lng })} href={verificationLink} />
-      </Section>
+      </EmailBody>
       <AppLogo />
       <Footer />
     </EmailContainer>
@@ -52,4 +40,4 @@ export const VerificationEmail = ({ userLanguage: lng, verificationLink = baseUr
 };
 
 // Template export
-export const Template = VerificationEmail;
+export const Template = EmailVerificationEmail;
