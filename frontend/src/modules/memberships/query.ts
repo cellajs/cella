@@ -65,7 +65,6 @@ export const membersQueryOptions = ({
  * @param param.entityType - Type of entity.
  * @param param.orgIdOrSlug - ID or slug of organization based of witch entity created.
  * @param param.q - Optional search query to filter invited members by (default is an empty string).
- * @param param.role - Role of the invited members to filter by.
  * @param param.sort - Field to sort by (default is 'createdAt').
  * @param param.order - Order of sorting (default is 'desc').
  * @param param.limit - Number of items per page (default is configured in `config.requestLimits.invitedMembers`).
@@ -78,19 +77,18 @@ export const invitedMembersQueryOptions = ({
   q = '',
   sort: initialSort,
   order: initialOrder,
-  role,
   limit = config.requestLimits.invitedMembers,
 }: GetInvitedMembersParams) => {
   const sort = initialSort || 'createdAt';
   const order = initialOrder || 'desc';
 
-  const queryKey = membersKeys.invitesTable({ idOrSlug, entityType, orgIdOrSlug, q, sort, order, role });
+  const queryKey = membersKeys.invitesTable({ idOrSlug, entityType, orgIdOrSlug, q, sort, order });
 
   return infiniteQueryOptions({
     queryKey,
     initialPageParam: 0,
     queryFn: async ({ pageParam: page, signal }) =>
-      await getInvitedMembers({ page, q, sort, order, role, limit, idOrSlug, orgIdOrSlug, entityType, offset: page * limit }, signal),
+      await getInvitedMembers({ page, q, sort, order, limit, idOrSlug, orgIdOrSlug, entityType, offset: page * limit }, signal),
     getNextPageParam: (_lastPage, allPages) => allPages.length,
   });
 };

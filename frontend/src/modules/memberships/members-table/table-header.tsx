@@ -48,6 +48,8 @@ export const MembersTableHeader = ({
   const isFiltered = role !== undefined || !!q;
   const isAdmin = entity.membership?.role === 'admin';
   const entityType = entity.entity;
+  // TODO use actual count from entity.counts.members.pending
+  const pendingCount = 2;
 
   // Drop selected Rows on search
   const onSearch = (searchString: string) => {
@@ -115,7 +117,7 @@ export const MembersTableHeader = ({
             )}
             {selected.length === 0 && (
               <TableCount count={total} type="member" isFiltered={isFiltered} onResetFilters={onResetFilters}>
-                {isAdmin && <InvitedMembers entity={entity} />}
+                {isAdmin && !isFiltered && <InvitedMembers entity={entity} total={pendingCount} />}
               </TableCount>
             )}
           </FilterBarActions>

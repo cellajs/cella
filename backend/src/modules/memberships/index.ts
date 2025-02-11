@@ -366,7 +366,10 @@ const membershipsRoutes = app
    * Get invited members by entity id/slug and type
    */
   .openapi(membershipsRouteConfig.getInvitedMembers, async (ctx) => {
-    const { idOrSlug, entityType, q, sort, order, offset, limit, role } = ctx.req.valid('query');
+    const { idOrSlug, entityType, sort, order, offset, limit } = ctx.req.valid('query');
+
+    // Scope request to organization
+    const organization = getContextOrganization();
 
     const { entity, isAllowed, membership } = await getValidEntity(entityType, 'read', idOrSlug);
 
@@ -375,17 +378,6 @@ const membershipsRoutes = app
     if (!membership || membership.role !== 'admin') return errorResponse(ctx, 403, 'forbidden', 'warn', entityType);
 
     const entityIdField = entityIdFields[entity.entity];
-
-    // Build search filters
-    const $or = [];
-    if (q) {
-      const query = prepareStringForILikeFilter(q);
-      $or.push(ilike(usersTable.name, query), ilike(usersTable.email, query));
-    }
-
-    const filters = [eq(membershipsTable[entityIdField], entity.id), eq(membershipsTable.type, entityType)];
-
-    if (role) filters.push(eq(membershipsTable.role, role));
 
     const orderColumn = getOrderColumn(
       {
@@ -414,7 +406,7 @@ const membershipsRoutes = app
         createdBy: tokensTable.createdBy,
       })
       .from(tokensTable)
-      .where(and(eq(tokensTable[entityIdField], entity.id), eq(tokensTable.type, 'invitation')))
+      .where(and(eq(tokensTable[entityIdField], entity.id), eq(tokensTable.organizationId, organization.id), eq(tokensTable.type, 'invitation')))
       .leftJoin(usersTable, eq(usersTable.id, tokensTable.userId))
       .orderBy(orderColumn);
 

@@ -1,49 +1,10 @@
 import TableCount from '~/modules/common/data-table/table-count';
-import { FilterBarActions, FilterBarContent, TableFilterBar } from '~/modules/common/data-table/table-filter-bar';
 import { TableHeaderContainer } from '~/modules/common/data-table/table-header-container';
-import TableSearch from '~/modules/common/data-table/table-search';
-import type { BaseTableHeaderProps, BaseTableMethods } from '~/modules/common/data-table/types';
-import SelectRole from '~/modules/common/form-fields/select-role';
-import type { InvitesInfoSearch } from '~/modules/memberships/invited-members-table';
-import type { InvitedMemberInfo } from '~/modules/memberships/types';
 
-type InvitesInfoTableHeaderProps = BaseTableMethods &
-  BaseTableHeaderProps<InvitedMemberInfo, InvitesInfoSearch> & { role: InvitesInfoSearch['role'] };
-
-export const InvitesInfoHeader = ({ total, q, role, setSearch, clearSelection }: InvitesInfoTableHeaderProps) => {
-  const isFiltered = !!q || !!role;
-
-  // Drop selected Rows on search
-  const onSearch = (searchString: string) => {
-    clearSelection();
-    setSearch({ q: searchString });
-  };
-  // Drop selected Rows on role change
-  const onRoleChange = (role?: string) => {
-    clearSelection();
-    setSearch({ role: role === 'all' ? undefined : (role as InvitesInfoSearch['role']) });
-  };
-
-  const onResetFilters = () => {
-    setSearch({ q: '', role: undefined });
-    clearSelection();
-  };
-
+export const InvitedMembersHeader = ({ total }: { total: number | undefined }) => {
   return (
     <TableHeaderContainer>
-      {/* Filter bar */}
-      <TableFilterBar onResetFilters={onResetFilters} isFiltered={isFiltered}>
-        <FilterBarActions>
-          <TableCount count={total} type="invite" isFiltered={isFiltered} onResetFilters={onResetFilters} />
-        </FilterBarActions>
-
-        <div className="sm:grow" />
-
-        <FilterBarContent>
-          <SelectRole value={role === undefined ? 'all' : role} onChange={onRoleChange} className="h-10 sm:min-w-32" entity />
-          <TableSearch value={q} setQuery={onSearch} />
-        </FilterBarContent>
-      </TableFilterBar>
+      <TableCount count={total} type="invite" />
     </TableHeaderContainer>
   );
 };

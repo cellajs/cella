@@ -131,6 +131,8 @@ const authRoutes = app
     const hashedPassword = await hashPassword(password);
     const slug = slugFromEmail(validToken.email);
 
+    console.log('validToken', validToken);
+
     // Create user & send verification email
     const newUser = {
       id: userId,
@@ -293,7 +295,7 @@ const authRoutes = app
   })
   /*
    * Sign in with email and password
-   * Attention: sign in is also used to accept organization invitations (when signed out),
+   * Attention: sign in is also used to accept organization invitations (when signed out & user exists),
    * after signing in, we proceed to accept the invitation.
    */
   .openapi(authRouteConfig.signIn, async (ctx) => {

@@ -79,6 +79,7 @@ const attachmentsRoutes = app
   .openapi(attachmentsRouteConfig.getAttachments, async (ctx) => {
     const { q, sort, order, offset, limit } = ctx.req.valid('query');
 
+    // Scope request to organization
     const organization = getContextOrganization();
 
     // Filter at least by valid organization
@@ -118,6 +119,7 @@ const attachmentsRoutes = app
   .openapi(attachmentsRouteConfig.getAttachment, async (ctx) => {
     const { id } = ctx.req.valid('param');
 
+    // Scope the attachment to organization
     const organization = getContextOrganization();
 
     const [attachment] = await db

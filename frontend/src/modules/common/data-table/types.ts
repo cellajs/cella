@@ -19,7 +19,7 @@ export type BaseTableMethods = {
 };
 
 export type BaseTableQueryVariables<T extends { q?: unknown; sort?: unknown; order?: unknown }> = {
-  q: T['q'] | undefined;
+  q?: T['q'] | undefined;
   sort: T['sort'] | undefined;
   order: T['order'] | undefined;
   limit: number | undefined;

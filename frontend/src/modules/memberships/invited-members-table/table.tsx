@@ -4,13 +4,12 @@ import { useTranslation } from 'react-i18next';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { DataTable } from '~/modules/common/data-table';
 import type { BaseTableMethods, BaseTableProps } from '~/modules/common/data-table/types';
-import type { InvitedMembersTableProps, InvitesInfoSearch } from '~/modules/memberships/invited-members-table';
+import type { InvitedMembersSearch, InvitedMembersTableProps } from '~/modules/memberships/invited-members-table';
 import { invitedMembersQueryOptions } from '~/modules/memberships/query';
-import type { InvitedMemberInfo } from '~/modules/memberships/types';
+import type { InvitedMember } from '~/modules/memberships/types';
 import { useDataFromSuspenseInfiniteQuery } from '~/query/hooks/use-data-from-query';
 
-type BaseDataTableProps = InvitedMembersTableProps &
-  BaseTableProps<InvitedMemberInfo, InvitesInfoSearch> & { queryVars: { role: InvitesInfoSearch['role'] } };
+type BaseDataTableProps = InvitedMembersTableProps & BaseTableProps<InvitedMember, InvitedMembersSearch>;
 
 const BaseDataTable = memo(
   forwardRef<BaseTableMethods, BaseDataTableProps>(({ entity, columns, queryVars, updateCounts, sortColumns, setSortColumns }, ref) => {
@@ -18,8 +17,9 @@ const BaseDataTable = memo(
 
     const entityType = entity.entity;
     const organizationId = entity.organizationId || entity.id;
+
     // Extract query variables and set defaults
-    const { q, sort, order, role, limit } = queryVars;
+    const { sort, order, limit } = queryVars;
 
     // Query invited members
     const { rows, totalCount, isLoading, isFetching, error, fetchNextPage } = useDataFromSuspenseInfiniteQuery(
@@ -27,10 +27,8 @@ const BaseDataTable = memo(
         idOrSlug: entity.slug,
         entityType,
         orgIdOrSlug: organizationId,
-        q,
         sort,
         order,
-        role,
         limit,
       }),
     );
@@ -43,7 +41,7 @@ const BaseDataTable = memo(
     }));
 
     return (
-      <DataTable<InvitedMemberInfo>
+      <DataTable<InvitedMember>
         {...{
           columns: columns.filter((column) => column.visible),
           rows,
@@ -54,12 +52,8 @@ const BaseDataTable = memo(
           isLoading,
           isFetching,
           enableVirtualization: false,
-          isFiltered: !!q || !!role,
           limit,
-          // selectedRows,
-          // onRowsChange,
           fetchMore: fetchNextPage,
-          // onSelectedRowsChange: setSelectedRows,
           sortColumns,
           onSortColumnsChange: setSortColumns,
           NoRowsComponent: <ContentPlaceholder Icon={Bird} title={t('common:no_resource_yet', { resource: t('common:invites').toLowerCase() })} />,

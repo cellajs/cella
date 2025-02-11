@@ -3,5 +3,5 @@ import type { invitedMembersSchema, membersSchema, membershipInfoSchema, members
 
 export type Member = z.infer<typeof membersSchema>;
 export type Membership = z.infer<typeof membershipSchema>;
-export type InvitedMemberInfo = z.infer<typeof invitedMembersSchema>;
+export type InvitedMember = z.infer<typeof invitedMembersSchema>;
 export type MinimumMembershipInfo = z.infer<typeof membershipInfoSchema>;

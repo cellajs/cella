@@ -83,7 +83,7 @@
   "documentation": "Documentation",
   "draft": "Draft",
   "edit": "Edit",
-  "edit_attachment.text": "Double-click on a cell in the 'Name' column to edit an attachment name.",
+  "edit_attachment.text": "Double-click on a cell in the 'Name' column to edit an attachment name. Changes will be auto-saved.",
   "edit_resource": "Edit {{resource}}",
   "email": "Email",
   "email_domains": "Email domains",
@@ -395,5 +395,6 @@
   "test_email.text": "This email will only be sent to yourself when you send it. The newsletter form will not close.",
   "send_test_email": "Send test email",
   "verify_email": "Complete verification of {{email}}",
-  "verify_signin": "Verify & sign in"
+  "verify_signin": "Verify & sign in",
+  "pending": "Pending"
 }
