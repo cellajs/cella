@@ -10,7 +10,6 @@ import { PublicLayout } from '~/modules/common/public-layout';
 import { Root } from '~/modules/common/root';
 import Spinner from '~/modules/common/spinner';
 import { meQueryOptions, menuQueryOptions } from '~/modules/users/query';
-import UnsubscribePage from '~/modules/users/unsubscribe-page';
 import { useUserStore } from '~/store/user';
 
 // Lazy load main App component, which is behind authentication
@@ -99,11 +98,4 @@ export const ErrorNoticeRoute = createRoute({
   staticData: { pageTitle: 'Error', isAuth: false },
   getParentRoute: () => PublicRoute,
   component: () => <ErrorNotice level="public" />,
-});
-
-export const UnsubscribeRoute = createRoute({
-  path: '/unsubscribe',
-  staticData: { pageTitle: 'Unsubscribe', isAuth: false },
-  getParentRoute: () => PublicRoute,
-  component: () => <UnsubscribePage />,
 });

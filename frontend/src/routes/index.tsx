@@ -7,9 +7,10 @@ import {
   EmailVerificationRoute,
   RequestPasswordRoute,
   SignOutRoute,
+  UnsubscribedRoute,
   VerifyEmailWithTokenRoute,
 } from '~/routes/auth';
-import { AppRoute, ErrorNoticeRoute, PublicRoute, UnsubscribeRoute, rootRoute } from '~/routes/general';
+import { AppRoute, ErrorNoticeRoute, PublicRoute, rootRoute } from '~/routes/general';
 import { HomeAliasRoute, HomeRoute, WelcomeRoute } from '~/routes/home';
 import { AboutRoute, AccessibilityRoute, ContactRoute, LegalRoute } from '~/routes/marketing';
 import { OrganizationAttachmentsRoute, OrganizationMembersRoute, OrganizationRoute, OrganizationSettingsRoute } from '~/routes/organizations';
@@ -19,7 +20,6 @@ import { UserProfileRoute, UserSettingsRoute } from '~/routes/users';
 export const routeTree = rootRoute.addChildren([
   PublicRoute.addChildren([
     AboutRoute,
-    UnsubscribeRoute,
     ContactRoute,
     LegalRoute,
     AccessibilityRoute,
@@ -32,6 +32,7 @@ export const routeTree = rootRoute.addChildren([
       CreatePasswordWithTokenRoute,
       EmailVerificationRoute,
       VerifyEmailWithTokenRoute,
+      UnsubscribedRoute,
     ]),
   ]),
   AppRoute.addChildren([

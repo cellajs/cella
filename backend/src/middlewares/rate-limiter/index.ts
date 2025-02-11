@@ -141,4 +141,4 @@ export const passwordLimiter = rateLimiter('failseries', 'password', ['ip', 'ema
 /**
  * Prevent brute force attacks by systemmatically trying tokens or secrets. Blocks IP for 30 minutes after 5 consecutive failed requests in 1 hour
  */
-export const tokenLimiter = rateLimiter('failseries', 'token', ['ip']);
+export const tokenLimiter = (tokenType: string) => rateLimiter('failseries', `token_${tokenType}`, ['ip']);

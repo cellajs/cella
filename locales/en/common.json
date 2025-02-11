@@ -362,7 +362,7 @@
   "unmute": "Unmute",
   "unsaved_changes": "Unsaved changes",
   "unselected": "Unselected",
-  "unsubscribe_text": "We have updated your account settings so you will no longer receive newsletter at {{email}}. You can opt back in to receiving the newslettter by changing your settings anytime.",
+  "unsubscribe_text": "Our newsletter will not be sent to {{email}}. You can opt back in by changing your settings.",
   "unsubscribe_title": "Unsubscribed successfully",
   "update": "Update",
   "update_member": "Update member",
