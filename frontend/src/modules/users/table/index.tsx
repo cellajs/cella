@@ -8,7 +8,7 @@ import { useUserSheet } from '~/hooks/use-user-sheet';
 import { useSortColumns } from '~/modules/common/data-table/sort-columns';
 import type { BaseTableMethods } from '~/modules/common/data-table/types';
 import { dialog } from '~/modules/common/dialoger/state';
-import { createToast } from '~/modules/common/toaster';
+import { toaster } from '~/modules/common/toaster';
 import DeleteUsers from '~/modules/users/delete-users';
 import InviteUsers from '~/modules/users/invite-users';
 import { usersKeys } from '~/modules/users/query';
@@ -79,7 +79,7 @@ const UsersTable = () => {
         users={selected}
         callback={(users) => {
           mutateQuery.remove(users);
-          createToast(t('common:success.delete_resources', { resources: t('common:users') }), 'success');
+          toaster(t('common:success.delete_resources', { resources: t('common:users') }), 'success');
         }}
       />,
       {

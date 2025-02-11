@@ -9,7 +9,7 @@ import { useTranslation } from 'react-i18next';
 
 import { dispatchCustomEvent } from '~/lib/custom-events';
 import { menuSections } from '~/menu-config';
-import { MainAlert } from '~/modules/common/alerter';
+import { AlertWrap } from '~/modules/common/alert-wrap';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { updateMembership } from '~/modules/memberships/api';
 import { getRelativeItemOrder, isPageData } from '~/modules/navigation/menu-sheet/helpers';
@@ -107,7 +107,7 @@ export const MenuSheet = memo(() => {
       <div data-search={!!searchTerm} className="group/menu p-3 min-h-[calc(100vh-0.5rem)] flex flex-col">
         <MenuSheetSearchInput menu={menu} searchTerm={searchTerm} setSearchTerm={setSearchTerm} searchResultsChange={setSearchResults} />
 
-        <div className="search-results mt-3 group-data-[search=false]/menu:hidden">
+        <div className="mt-3 flex flex-col gap-1 group-data-[search=false]/menu:hidden">
           {searchResultsListItems().length > 0 ? (
             searchResultsListItems()
           ) : (
@@ -142,9 +142,9 @@ export const MenuSheet = memo(() => {
                 </div>
               )}
               {pwaEnabled && (
-                <MainAlert id="offline_access" variant="plain" Icon={Info}>
+                <AlertWrap id="offline_access" variant="plain" Icon={Info}>
                   {t('common:offline_access.text')}
-                </MainAlert>
+                </AlertWrap>
               )}
             </div>
           </>

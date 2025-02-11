@@ -8,7 +8,7 @@ import { useMutation } from '~/hooks/use-mutations';
 import { dispatchCustomEvent } from '~/lib/custom-events';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import Spinner from '~/modules/common/spinner';
-import { createToast } from '~/modules/common/toaster';
+import { toaster } from '~/modules/common/toaster';
 import { updateMembership as baseUpdateMembership } from '~/modules/memberships/api';
 import { updateMenuItem } from '~/modules/navigation/menu-sheet/helpers/menu-operations';
 import { Button } from '~/modules/ui/button';
@@ -43,7 +43,7 @@ export const MenuItemEdit = ({ item }: MenuItemEditProps) => {
       updateMenuItem(updatedEntity);
       // To be able to update, add a listener to manipulate data that has been changed in the menu(like mute or archive entities )
       dispatchCustomEvent('menuEntityChange', { entity: item.entity, membership: updatedMembership });
-      if (toastMessage) createToast(toastMessage, 'success');
+      if (toastMessage) toaster(toastMessage, 'success');
     },
   });
   const handleUpdateMembershipKey = (key: 'archive' | 'mute') => {

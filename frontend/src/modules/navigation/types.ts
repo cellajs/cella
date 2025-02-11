@@ -1,4 +1,4 @@
 import type { UserMenuItem } from '~/modules/users/types';
-import type { DraggableItemData } from '~/utils/drag-drop';
+import type { DraggableItemData } from '~/utils/get-draggable-item-data';
 
-export type PageDraggableItemData = DraggableItemData<UserMenuItem> & { type: 'menuItem' };
+export type PageDraggableItemData = DraggableItemData<UserMenuItem, 'menuItem'>;

@@ -63,7 +63,6 @@ export const membersSchema = z.object({
 export const invitedMembersQuerySchema = paginationQuerySchema.extend({
   ...baseMembersQuerySchema.shape,
   sort: z.enum(['email', 'role', 'expiresAt', 'createdAt', 'createdBy']).default('createdAt').optional(),
-  role: z.enum(config.rolesByType.entityRoles).default('member').optional(),
 });
 
 export const invitedMembersSchema = z.object({

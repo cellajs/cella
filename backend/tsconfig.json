@@ -1,12 +1,14 @@
 {
   "extends": "../tsconfig.json",
   "compilerOptions": {
+    "noEmit": true,
+    "allowImportingTsExtensions": true,
+
     /* Bundler mode */
     "jsx": "react-jsx",
 
     /* Build */
     "rootDir": "./",
-    "tsBuildInfoFile": "./dist/.tsbuildinfo",
     "sourceMap": true,
     "inlineSources": true,
 

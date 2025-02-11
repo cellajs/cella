@@ -1,7 +1,7 @@
 import { config } from 'config';
 import { useTranslation } from 'react-i18next';
 import { sheet } from '~/modules/common/sheeter/state';
-import { createToast } from '~/modules/common/toaster';
+import { toaster } from '~/modules/common/toaster';
 import { Switch } from '~/modules/ui/switch';
 import { useGeneralStore } from '~/store/general';
 import { useNavigationStore } from '~/store/navigation';
@@ -14,7 +14,7 @@ export const OfflineAccessSwitch = () => {
   const onCheckedChange = (isOffline: boolean) => {
     // setTimeout is used to show the toast after the switch is toggled (QueryProvider updates)
     setTimeout(() => {
-      createToast(t(`common:offline_access_${isOffline ? 'on' : 'off'}.text`, { appName: config.name }), 'info');
+      toaster(t(`common:offline_access_${isOffline ? 'on' : 'off'}.text`, { appName: config.name }), 'info');
     }, 0);
 
     toggleOfflineAccess();

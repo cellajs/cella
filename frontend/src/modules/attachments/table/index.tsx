@@ -9,7 +9,7 @@ import useSearchParams from '~/hooks/use-search-params';
 import RemoveAttachmentsForm from '~/modules/attachments/table/remove-attachments-form';
 import { AttachmentsTableHeader } from '~/modules/attachments/table/table-header';
 import type { Attachment } from '~/modules/attachments/types';
-import { MainAlert } from '~/modules/common/alerter';
+import { AlertWrap } from '~/modules/common/alert-wrap';
 import { useSortColumns } from '~/modules/common/data-table/sort-columns';
 import type { BaseTableMethods, ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 import { dialog } from '~/modules/common/dialoger/state';
@@ -92,9 +92,9 @@ const AttachmentsTable = ({ organization, canUpload = true, isSheet = false }: A
               }}
               style={{ overflow: 'hidden' }}
             >
-              <MainAlert id="edit_attachment" variant="plain" Icon={Info}>
+              <AlertWrap id="edit_attachment" variant="plain" Icon={Info}>
                 {t('common:edit_attachment.text')}
-              </MainAlert>
+              </AlertWrap>
             </motion.div>
           )}
         </AnimatePresence>

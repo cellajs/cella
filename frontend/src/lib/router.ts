@@ -3,7 +3,7 @@ import type { PersistedClient, Persister } from '@tanstack/react-query-persist-c
 import { createRouter } from '@tanstack/react-router';
 import { del, get, set } from 'idb-keyval';
 import { queryClientConfig } from '~/lib/query-client';
-import { routeTree } from '~/routes';
+import { routeTree } from '~/routes/route-tree';
 
 /**
  * Handle online status

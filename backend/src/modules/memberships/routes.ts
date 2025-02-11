@@ -143,7 +143,7 @@ class MembershipRouteConfig {
     description: 'Get invited members of a context entity by id or slug. It returns invite info.',
     request: {
       query: invitedMembersQuerySchema,
-      params: z.object({ orgIdOrSlug: idOrSlugSchema.optional() }),
+      params: inOrgParamSchema,
     },
     responses: {
       200: {

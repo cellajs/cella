@@ -10,7 +10,7 @@ import { config } from 'config';
 import { ArrowRight, ChevronDown } from 'lucide-react';
 import { LegalNotice } from '~/modules/auth/sign-up-form';
 import { dialog } from '~/modules/common/dialoger/state';
-import { createToast } from '~/modules/common/toaster';
+import { toaster } from '~/modules/common/toaster';
 import { useCreateRequestMutation } from '~/modules/requests/query';
 import { Button, SubmitButton } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '~/modules/ui/form';
@@ -43,12 +43,12 @@ export const WaitlistForm = ({ email, buttonContent, emailField, dialog: isDialo
   });
 
   const onSubmit = (body: z.infer<typeof formSchema>) => {
-    if (!onlineManager.isOnline()) return createToast(t('common:action.offline.text'), 'warning');
+    if (!onlineManager.isOnline()) return toaster(t('common:action.offline.text'), 'warning');
 
     createRequest(body, {
       onSuccess: () => {
         navigate({ to: '/about', replace: true });
-        createToast(t('common:success.waitlist_request', { appName: config.name }), 'success');
+        toaster(t('common:success.waitlist_request', { appName: config.name }), 'success');
         if (isDialog) dialog.remove();
         callback?.();
       },

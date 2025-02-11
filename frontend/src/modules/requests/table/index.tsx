@@ -6,7 +6,7 @@ import useSearchParams from '~/hooks/use-search-params';
 import { useSortColumns } from '~/modules/common/data-table/sort-columns';
 import type { BaseTableMethods } from '~/modules/common/data-table/types';
 import { dialog } from '~/modules/common/dialoger/state';
-import { createToast } from '~/modules/common/toaster';
+import { toaster } from '~/modules/common/toaster';
 import { invite } from '~/modules/general/api';
 import { getRequests } from '~/modules/requests/api';
 import DeleteRequests from '~/modules/requests/delete-requests';
@@ -58,7 +58,7 @@ const RequestsTable = () => {
       <DeleteRequests
         requests={selected}
         callback={(requests) => {
-          createToast(t('common:success.delete_resources', { resources: t('common:requests') }), 'success');
+          toaster(t('common:success.delete_resources', { resources: t('common:requests') }), 'success');
           mutateQuery.remove(requests);
         }}
         dialog
@@ -84,12 +84,12 @@ const RequestsTable = () => {
     try {
       // Send invite to users
       await invite({ emails, role: 'user' });
-      createToast(t('common:success.user_invited'), 'success');
+      toaster(t('common:success.user_invited'), 'success');
 
       mutateQuery.update(updatedWaitLists);
       clearSelection();
     } catch (error) {
-      createToast(t('error:bad_request_action'), 'error');
+      toaster(t('error:bad_request_action'), 'error');
     }
   };
 

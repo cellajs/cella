@@ -1,9 +1,9 @@
 import { z } from '@hono/zod-openapi';
 import { config } from 'config';
 import { createRouteConfig } from '#/lib/route-config';
-import { isAuthenticated, isPublicAccess, systemGuard } from '#/middlewares/guard';
+import { hasSystemAccess, isAuthenticated, isPublicAccess } from '#/middlewares/guard';
 import { hasValidToken } from '#/middlewares/has-valid-token';
-import { emailEnumLimiter, passwordLimiter, spamLimiter, tokenLimiter } from '#/middlewares/rate-limiter';
+import { emailEnumLimiter, passwordLimiter, spamLimiter, tokenLimiter } from '#/middlewares/rate-limiter/limiters';
 import { cookieSchema, idSchema, passwordSchema, tokenParamSchema } from '#/utils/schema/common';
 import { errorResponses, successWithDataSchema, successWithoutDataSchema } from '#/utils/schema/responses';
 import {
@@ -22,7 +22,7 @@ class AuthLayoutRouteConfig {
   public startImpersonation = createRouteConfig({
     method: 'get',
     path: '/impersonation/start',
-    guard: [isAuthenticated, systemGuard],
+    guard: [isAuthenticated, hasSystemAccess],
     tags: ['auth'],
     summary: 'Start impersonating',
     description: 'System admin impersonates a selected user by id by receiving a special impersonation session.',
@@ -206,7 +206,7 @@ class AuthLayoutRouteConfig {
     method: 'post',
     path: '/verify-email/{token}',
     guard: isPublicAccess,
-    middleware: [tokenLimiter, hasValidToken('email_verification')],
+    middleware: [tokenLimiter('email_verification'), hasValidToken('email_verification')],
     tags: ['auth'],
     summary: 'Verify email by token',
     description: 'Verify email address by token from the verification email. Receive a user session when successful.',
@@ -262,7 +262,7 @@ class AuthLayoutRouteConfig {
     method: 'post',
     path: '/create-password/{token}',
     guard: isPublicAccess,
-    middleware: [tokenLimiter, hasValidToken('password_reset')],
+    middleware: [tokenLimiter('password_reset'), hasValidToken('password_reset')],
     tags: ['auth'],
     summary: 'Create password by token',
     description: 'Submit new password and directly receive a user session.',
@@ -294,7 +294,7 @@ class AuthLayoutRouteConfig {
     method: 'post',
     path: '/passkey-verification',
     guard: isPublicAccess,
-    middleware: [tokenLimiter],
+    middleware: [tokenLimiter('passkey')],
     tags: ['auth'],
     summary: 'Verify passkey',
     description: 'Verify passkey by checking the validity of signature with public key.',
@@ -387,7 +387,7 @@ class AuthLayoutRouteConfig {
     method: 'post',
     path: '/accept-invite/{token}',
     guard: [isAuthenticated],
-    middleware: [tokenLimiter, hasValidToken('invitation')],
+    middleware: [tokenLimiter('invitation'), hasValidToken('invitation')],
     tags: ['auth'],
     summary: 'Accept invitation',
     description: 'Accept invitation token',
@@ -432,7 +432,7 @@ class AuthLayoutRouteConfig {
     method: 'get',
     path: '/github/callback',
     guard: isPublicAccess,
-    middleware: [tokenLimiter],
+    middleware: [tokenLimiter('github')],
     tags: ['auth'],
     summary: 'Callback for GitHub',
     description: 'Callback to receive authorization and basic user data from Github.',
@@ -480,7 +480,7 @@ class AuthLayoutRouteConfig {
     method: 'post',
     path: '/passkey-registration',
     guard: isPublicAccess,
-    middleware: [tokenLimiter],
+    middleware: [isAuthenticated],
     tags: ['auth'],
     summary: 'Register passkey',
     description:
@@ -534,7 +534,7 @@ class AuthLayoutRouteConfig {
     method: 'get',
     path: '/google/callback',
     guard: isPublicAccess,
-    middleware: [tokenLimiter],
+    middleware: [tokenLimiter('google')],
     tags: ['auth'],
     summary: 'Callback for Google',
     description: 'Callback to receive authorization and basic user data from Google.',
@@ -579,7 +579,7 @@ class AuthLayoutRouteConfig {
     method: 'get',
     path: '/microsoft/callback',
     guard: isPublicAccess,
-    middleware: [tokenLimiter],
+    middleware: [tokenLimiter('microsoft')],
     tags: ['auth'],
     summary: 'Callback for Microsoft',
     description: 'Callback to receive authorization and basic user data from Microsoft.',

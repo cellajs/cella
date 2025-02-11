@@ -10,7 +10,7 @@ import type { BaseTableMethods } from '~/modules/common/data-table/types';
 import { dialog } from '~/modules/common/dialoger/state';
 import { SheetTabs } from '~/modules/common/sheet-tabs';
 import { sheet } from '~/modules/common/sheeter/state';
-import { createToast } from '~/modules/common/toaster';
+import { toaster } from '~/modules/common/toaster';
 import { getOrganizations } from '~/modules/organizations/api';
 import DeleteOrganizations from '~/modules/organizations/delete-organizations';
 import NewsletterDraft from '~/modules/organizations/newsletter-draft';
@@ -61,7 +61,7 @@ const OrganizationsTable = () => {
       <DeleteOrganizations
         organizations={selected}
         callback={(organizations) => {
-          createToast(t('common:success.delete_resources', { resources: t('common:organizations') }), 'success');
+          toaster(t('common:success.delete_resources', { resources: t('common:organizations') }), 'success');
           mutateQuery.remove(organizations);
         }}
         dialog

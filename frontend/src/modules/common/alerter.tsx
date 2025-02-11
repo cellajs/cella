@@ -1,5 +1,5 @@
 import { alertsConfig } from '~/alert-config';
-import { type AlertContextMode, MainAlert } from '~/modules/common/alerter';
+import { type AlertContextMode, AlertWrap } from '~/modules/common/alert-wrap';
 import { useAlertStore } from '~/store/alert';
 
 const Alerter = ({ mode }: { mode: AlertContextMode }) => {
@@ -13,9 +13,9 @@ const Alerter = ({ mode }: { mode: AlertContextMode }) => {
         if (!modes.includes(mode)) return null;
 
         return (
-          <MainAlert key={id} id={id} modes={modes} {...alertProps}>
+          <AlertWrap key={id} id={id} modes={modes} {...alertProps}>
             {children}
-          </MainAlert>
+          </AlertWrap>
         );
       })}
     </>

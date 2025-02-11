@@ -88,8 +88,7 @@ const generalRoutes = app
           inArray(tokensTable.email, emails),
           eq(tokensTable.type, 'invitation'),
           // Make sure its a system invitation
-          isNull(tokensTable.organizationId),
-          isNull(tokensTable.role),
+          isNull(tokensTable.entity),
           lt(tokensTable.expiresAt, new Date()),
         ),
       );
@@ -263,7 +262,7 @@ const generalRoutes = app
     // Update user
     await db.update(usersTable).set({ newsletter: false }).where(eq(usersTable.id, user.id));
 
-    const redirectUrl = `${config.frontendUrl}/unsubscribe`;
+    const redirectUrl = `${config.frontendUrl}/auth/unsubscribed`;
     return ctx.redirect(redirectUrl, 302);
   })
   /*

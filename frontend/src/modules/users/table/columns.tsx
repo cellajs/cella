@@ -1,5 +1,4 @@
 import { Link, useNavigate } from '@tanstack/react-router';
-import { UserRoundCheck } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
@@ -106,20 +105,6 @@ export const useColumns = (callback: (users: User[]) => void) => {
         minWidth: 180,
         renderHeaderCell: HeaderCell,
         renderCell: ({ row }) => (row.lastSeenAt ? dateShort(row.lastSeenAt) : <span className="text-muted">-</span>),
-      },
-      {
-        key: 'membershipCount',
-        name: 'Memberships',
-        sortable: false,
-        visible: !isMobile,
-        width: 140,
-        renderHeaderCell: HeaderCell,
-        renderCell: ({ row }) => (
-          <>
-            <UserRoundCheck className="mr-2 opacity-50" size={16} />
-            {row.counts?.memberships | 0}
-          </>
-        ),
       },
     ];
 

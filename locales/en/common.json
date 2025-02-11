@@ -83,7 +83,7 @@
   "documentation": "Documentation",
   "draft": "Draft",
   "edit": "Edit",
-  "edit_attachment.text": "Double-click on a cell in the 'Name' column to edit an attachment name.",
+  "edit_attachment.text": "Double-click on a cell in the 'Name' column to edit an attachment name. Changes will be auto-saved.",
   "edit_resource": "Edit {{resource}}",
   "email": "Email",
   "email_domains": "Email domains",
@@ -362,7 +362,7 @@
   "unmute": "Unmute",
   "unsaved_changes": "Unsaved changes",
   "unselected": "Unselected",
-  "unsubscribe_text": "We have updated your account settings so you will no longer receive newsletter at {{email}}. You can opt back in to receiving the newslettter by changing your settings anytime.",
+  "unsubscribe_text": "Our newsletter will not be sent to {{email}}. You can opt back in by changing your settings.",
   "unsubscribe_title": "Unsubscribed successfully",
   "update": "Update",
   "update_member": "Update member",
@@ -395,5 +395,6 @@
   "test_email.text": "This email will only be sent to yourself when you send it. The newsletter form will not close.",
   "send_test_email": "Send test email",
   "verify_email": "Complete verification of {{email}}",
-  "verify_signin": "Verify & sign in"
+  "verify_signin": "Verify & sign in",
+  "pending": "Pending"
 }

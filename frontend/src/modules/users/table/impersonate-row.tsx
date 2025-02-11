@@ -4,7 +4,7 @@ import { VenetianMask } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { impersonationStart } from '~/modules/auth/api';
-import { createToast } from '~/modules/common/toaster';
+import { toaster } from '~/modules/common/toaster';
 import { Button } from '~/modules/ui/button';
 import { getAndSetMe, getAndSetMenu } from '~/modules/users/helpers';
 import type { MeUser, User } from '~/modules/users/types';
@@ -28,7 +28,7 @@ const ImpersonateRow = ({ user, tabIndex }: Props) => {
       toast.success(t('common:success.impersonated'));
       navigate({ to: config.defaultRedirectPath, replace: true });
     } catch (error) {
-      createToast(t('error:impersonation_failed'), 'error');
+      toaster(t('error:impersonation_failed'), 'error');
       console.error(error);
     }
   };

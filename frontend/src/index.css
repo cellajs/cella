@@ -169,4 +169,15 @@
   #root {
     @apply flex flex-col min-h-full;
   }
+
+  /* Hide elements for focus view  */
+  .focus-view #app-content-inner *:not(.focus-view-container, .focus-view-container *) {
+    display: none !important;
+  }  
+
+  /* Hide tanstack devtools button */
+  .tsqd-open-btn-container,
+  .TanStackRouterDevtools > button {
+    display: none !important;
+  }
 }

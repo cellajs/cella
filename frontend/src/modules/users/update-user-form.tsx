@@ -15,7 +15,7 @@ import { SelectLanguage } from '~/modules/common/form-fields/select-language';
 import { SlugFormField } from '~/modules/common/form-fields/slug';
 import { sheet } from '~/modules/common/sheeter/state';
 import { useStepper } from '~/modules/common/stepper/use-stepper';
-import { createToast } from '~/modules/common/toaster';
+import { toaster } from '~/modules/common/toaster';
 import UnsavedBadge from '~/modules/common/unsaved-badge';
 import { Button, SubmitButton } from '~/modules/ui/button';
 import { Checkbox } from '~/modules/ui/checkbox';
@@ -80,8 +80,8 @@ const UpdateUserForm = ({ user, callback, sheet: isSheet, hiddenFields, children
       onSuccess: (updatedUser) => {
         if (isSelf) {
           updateUser(updatedUser);
-          createToast(t('common:success.profile_updated'), 'success');
-        } else createToast(t('common:success.update_item', { item: t('common:user') }), 'success');
+          toaster(t('common:success.profile_updated'), 'success');
+        } else toaster(t('common:success.update_item', { item: t('common:user') }), 'success');
         form.reset(updatedUser);
         if (isSheet) sheet.remove('update-user');
         nextStep?.();

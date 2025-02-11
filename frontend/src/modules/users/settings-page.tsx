@@ -18,7 +18,7 @@ import { AsideAnchor } from '~/modules/common/aside-anchor';
 import HelpText from '~/modules/common/help-text';
 import { PageAside } from '~/modules/common/page/aside';
 import StickyBox from '~/modules/common/sticky-box';
-import { createToast } from '~/modules/common/toaster';
+import { toaster } from '~/modules/common/toaster';
 import { deleteMySessions } from '~/modules/users/api';
 import DeleteSelf from '~/modules/users/delete-self';
 import { deletePasskey, passkeyRegistration } from '~/modules/users/helpers';
@@ -51,7 +51,7 @@ const UserSettingsPage = () => {
       useUserStore.setState((state) => {
         state.user.sessions = state.user.sessions.filter((session) => !variables.includes(session.id));
       });
-      createToast(
+      toaster(
         variables.length === 1 ? t('common:success.session_terminated', { id: variables[0] }) : t('common:success.sessions_terminated'),
         'success',
       );
@@ -60,7 +60,7 @@ const UserSettingsPage = () => {
 
   // Request a password reset email
   const requestResetPasswordClick = () => {
-    if (!onlineManager.isOnline()) return createToast(t('common:action.offline.text'), 'warning');
+    if (!onlineManager.isOnline()) return toaster(t('common:action.offline.text'), 'warning');
 
     try {
       setDisabledResetPassword(true);
@@ -92,12 +92,12 @@ const UserSettingsPage = () => {
   };
 
   const onDeleteSession = (ids: string[]) => {
-    if (!onlineManager.isOnline()) return createToast(t('common:action.offline.text'), 'warning');
+    if (!onlineManager.isOnline()) return toaster(t('common:action.offline.text'), 'warning');
     _deleteMySessions(ids);
   };
 
   const authenticateWithProvider = (provider: (typeof mapOauthProviders)[number]) => {
-    if (!onlineManager.isOnline()) return createToast(t('common:action.offline.text'), 'warning');
+    if (!onlineManager.isOnline()) return toaster(t('common:action.offline.text'), 'warning');
 
     // Proceed to OAuth URL with redirect and connect
     window.location.href = `${provider.url}?connect=${user.id}&redirect=${encodeURIComponent(window.location.href)}`;

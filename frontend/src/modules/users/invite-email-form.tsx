@@ -14,7 +14,7 @@ import { dialog } from '~/modules/common/dialoger/state';
 import SelectRoleRadio from '~/modules/common/form-fields/select-role-radio';
 import { MultiEmail } from '~/modules/common/multi-email';
 import { useStepper } from '~/modules/common/stepper/use-stepper';
-import { createToast } from '~/modules/common/toaster';
+import { toaster } from '~/modules/common/toaster';
 import type { EntityPage } from '~/modules/general/types';
 import { Badge } from '~/modules/ui/badge';
 import { Button, SubmitButton } from '~/modules/ui/button';
@@ -70,7 +70,7 @@ const InviteEmailForm = ({ entity, callback, dialog: isDialog, children }: Props
       form.reset(undefined, { keepDirtyValues: true });
       nextStep?.();
       if (isDialog) dialog.remove();
-      createToast(t('common:success.user_invited'), 'success');
+      toaster(t('common:success.user_invited'), 'success');
       callback?.();
     },
   });

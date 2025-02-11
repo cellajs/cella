@@ -1,11 +1,12 @@
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 import { z } from 'zod';
 
-import { config } from 'config';
+import { type EnabledOauthProvider, config } from 'config';
 import { usersTable } from '#/db/schema/users';
 import { paginationQuerySchema, validImageUrlSchema, validNameSchema, validSlugSchema } from '#/utils/schema/common';
 
-export const signUpInfo = z.object({ oauth: z.array(z.enum(config.enabledOauthProviders)), passkey: z.boolean() });
+const enabledOauthProvidersEnum = z.enum(config.enabledOauthProviders as unknown as [EnabledOauthProvider]);
+export const signUpInfo = z.object({ oauth: z.array(enabledOauthProvidersEnum), passkey: z.boolean() });
 
 export const baseUserSchema = createSelectSchema(usersTable, {
   email: z.string().email(),
@@ -21,7 +22,6 @@ export const baseUserSchema = createSelectSchema(usersTable, {
 
 export const userSchema = z.object({
   ...baseUserSchema.shape,
-  counts: z.object({ memberships: z.number() }),
 });
 
 export const limitedUserSchema = createSelectSchema(usersTable, {

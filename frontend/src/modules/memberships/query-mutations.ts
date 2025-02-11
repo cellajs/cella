@@ -4,7 +4,7 @@ import { type RemoveMembersProps, type UpdateMembershipProp, removeMembers, upda
 import { config } from 'config';
 import { t } from 'i18next';
 import { queryClient } from '~/lib/router';
-import { createToast } from '~/modules/common/toaster';
+import { toaster } from '~/modules/common/toaster';
 import { membersKeys } from '~/modules/memberships/query';
 import type { Member, Membership } from '~/modules/memberships/types';
 import { formatUpdatedData, getCancelingRefetchQueries, getQueries, getQueryItems, handleNoOldData } from '~/query/helpers/mutate-query';
@@ -95,7 +95,7 @@ queryClient.setMutationDefaults(membersKeys.delete(), {
 
     return context;
   },
-  onSuccess: () => createToast(t('common:success.delete_members'), 'success'),
+  onSuccess: () => toaster(t('common:success.delete_members'), 'success'),
   onError,
 });
 

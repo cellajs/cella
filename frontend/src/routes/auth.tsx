@@ -3,12 +3,13 @@ import { config } from 'config';
 import { z } from 'zod';
 import { queryClient } from '~/lib/router';
 import AcceptOrgInvite from '~/modules/auth/accept-org-invite';
+import AuthPage from '~/modules/auth/auth-layout';
 import CreatePasswordForm from '~/modules/auth/create-password-form';
 import EmailVerification from '~/modules/auth/email-verification';
-import AuthPage from '~/modules/auth/page';
 import { RequestPasswordForm } from '~/modules/auth/request-password-form';
 import SignOut from '~/modules/auth/sign-out';
 import AuthSteps from '~/modules/auth/steps';
+import Unsubscribed from '~/modules/auth/unsubscribed';
 import VerifyEmail from '~/modules/auth/verify-email';
 import { meQueryOptions } from '~/modules/users/query';
 import { PublicRoute } from '~/routes/general';
@@ -88,6 +89,13 @@ export const AcceptOrgInviteRoute = createRoute({
     }
   },
   component: () => <AcceptOrgInvite />,
+});
+
+export const UnsubscribedRoute = createRoute({
+  path: '/auth/unsubscribed',
+  staticData: { pageTitle: 'Unsubscribed', isAuth: false },
+  getParentRoute: () => AuthLayoutRoute,
+  component: () => <Unsubscribed />,
 });
 
 export const SignOutRoute = createRoute({

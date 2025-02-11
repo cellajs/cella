@@ -1,6 +1,6 @@
 import { Outlet } from '@tanstack/react-router';
 import { ErrorBoundary } from 'react-error-boundary';
-import Alerter from '~/modules/common/alerter/alerter';
+import Alerter from '~/modules/common/alerter';
 import { Dialoger } from '~/modules/common/dialoger';
 import { Dropdowner } from '~/modules/common/dropdowner';
 import ErrorNotice from '~/modules/common/error-notice';

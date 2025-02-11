@@ -8,28 +8,28 @@ interface TableCountProps {
 
   type: string;
   isFiltered?: boolean;
-  onResetFilters: () => void;
+  onResetFilters?: () => void;
   children?: ReactNode;
 }
-
+/**
+ * Displays the count of items in a table
+ */
 const TableCount = ({ count = 0, type, isFiltered, children, onResetFilters }: TableCountProps) => {
   const { t } = useTranslation();
 
   return (
-    <div className="max-sm:hidden text-muted-foreground text-sm  flex items-center gap-3 pr-2">
+    <div className="max-sm:hidden text-muted-foreground text-sm flex items-center gap-2">
       {isFiltered && (
         <Button variant="ghost" onClick={onResetFilters} className="max-sm:hidden">
           <FilterX size={16} className="mr-1" />
           {t('common:clear')}
         </Button>
       )}
-      <div className="flex flex-col gap-1 w-max md:flex-row md:gap-3">
-        <div className="pointer-events-none">
-          {new Intl.NumberFormat('de-DE').format(count)} {t(`common:${type}${count === 1 ? '' : 's'}`).toLowerCase()}
-          {isFiltered && ` ${t('common:found')}`}
-        </div>
-        {children}
+      <div>
+        {new Intl.NumberFormat('de-DE').format(count)} {t(`common:${type}${count === 1 ? '' : 's'}`).toLowerCase()}
+        {isFiltered && ` ${t('common:found')}`}
       </div>
+      {children}
     </div>
   );
 };

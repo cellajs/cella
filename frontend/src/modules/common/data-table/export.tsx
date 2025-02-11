@@ -4,7 +4,7 @@ import { useOnlineManager } from '~/hooks/use-online-manager';
 import { exportToCsv, exportToPdf } from '~/lib/export';
 import router from '~/lib/router';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
-import { createToast } from '~/modules/common/toaster';
+import { toaster } from '~/modules/common/toaster';
 import { TooltipButton } from '~/modules/common/tooltip-button';
 import { Button } from '~/modules/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '~/modules/ui/dropdown-menu';
@@ -25,7 +25,7 @@ const Export = <R extends Record<string, any>>({ filename, columns, selectedRows
   const mode = useThemeStore.getState().mode;
 
   const exportDefault = async (type: 'csv' | 'pdf') => {
-    if (!isOnline) return createToast(t('common:action.offline.text'), 'warning');
+    if (!isOnline) return toaster(t('common:action.offline.text'), 'warning');
     const rows = await fetchRows(1000);
     const filenameWithExtension = `${filename}.${type}`;
 
@@ -34,12 +34,12 @@ const Export = <R extends Record<string, any>>({ filename, columns, selectedRows
   };
 
   const exportSelected = async (type: 'csv' | 'pdf') => {
-    if (!selectedRows) return createToast(t('error:no_selected_rows'), 'warning');
+    if (!selectedRows) return toaster(t('error:no_selected_rows'), 'warning');
     const filenameWithExtension = `${filename}.${type}`;
 
     if (type === 'csv') return exportToCsv(columns, selectedRows, filenameWithExtension);
 
-    if (!isOnline) createToast(t('common:action.offline.text'), 'warning');
+    if (!isOnline) toaster(t('common:action.offline.text'), 'warning');
     return exportToPdf(columns, selectedRows, filenameWithExtension, router.state.location.pathname, mode);
   };
 

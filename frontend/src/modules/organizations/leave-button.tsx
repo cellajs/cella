@@ -4,7 +4,7 @@ import { config } from 'config';
 import { Check, UserRoundX } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { createToast } from '~/modules/common/toaster';
+import { toaster } from '~/modules/common/toaster';
 import type { Organization } from '~/modules/organizations/types';
 import { Button } from '~/modules/ui/button';
 import { Command, CommandGroup, CommandItem, CommandList } from '~/modules/ui/command';
@@ -21,14 +21,14 @@ const LeaveButton = ({ organization }: { organization: Organization }) => {
   });
 
   const onLeave = () => {
-    if (!onlineManager.isOnline()) return createToast(t('common:action.offline.text'), 'warning');
+    if (!onlineManager.isOnline()) return toaster(t('common:action.offline.text'), 'warning');
     const queryParams = {
       idOrSlug: organization.slug,
       entityType: 'organization' as const,
     };
     _leaveEntity(queryParams, {
       onSuccess: () => {
-        createToast(t('common:success.you_left_organization'), 'success');
+        toaster(t('common:success.you_left_organization'), 'success');
         navigate({ to: config.defaultRedirectPath, replace: true });
       },
     });

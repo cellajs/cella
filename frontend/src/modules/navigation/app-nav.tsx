@@ -7,7 +7,7 @@ import { useHotkeys } from '~/hooks/use-hot-keys';
 import router from '~/lib/router';
 import { dialog } from '~/modules/common/dialoger/state';
 import { sheet } from '~/modules/common/sheeter/state';
-import { createToast } from '~/modules/common/toaster';
+import { toaster } from '~/modules/common/toaster';
 import BarNav from '~/modules/navigation/bar-nav';
 import FloatingNav from '~/modules/navigation/floating-nav';
 import { type NavItem, navItems } from '~/nav-config';
@@ -36,7 +36,7 @@ const AppNav = () => {
   const navButtonClick = (navItem: NavItem) => {
     // If it has a dialog, open it
     if (navItem.dialog) {
-      if (!onlineManager.isOnline()) return createToast(t('common:action.offline.text'), 'warning');
+      if (!onlineManager.isOnline()) return toaster(t('common:action.offline.text'), 'warning');
 
       return dialog(navItem.dialog, {
         id: navItem.id,

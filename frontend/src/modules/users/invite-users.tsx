@@ -2,7 +2,7 @@ import { AtSign, ChevronRight, Info, Search } from 'lucide-react';
 import { AnimatePresence, MotionConfig, motion } from 'motion/react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { MainAlert } from '~/modules/common/alerter';
+import { AlertWrap } from '~/modules/common/alert-wrap';
 import { dialog } from '~/modules/common/dialoger/state';
 import type { EntityPage } from '~/modules/general/types';
 import { ToggleGroup, ToggleGroupItem } from '~/modules/ui/toggle-group';
@@ -85,9 +85,9 @@ const InviteUsers = ({ entity, callback, dialog: isDialog, mode, children }: Inv
         )}
         {inviteMode && (
           <motion.div key="invite-form" initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="flex flex-col gap-4">
-            <MainAlert id={`invite_${inviteMode}`} variant="success" Icon={Info}>
+            <AlertWrap id={`invite_${inviteMode}`} variant="success" Icon={Info}>
               {t(inviteMode === 'email' ? 'common:explain.invite_email.text' : 'common:explain.invite_search.text')}
-            </MainAlert>
+            </AlertWrap>
             {inviteMode === 'email' ? (
               <InviteEmailForm entity={entity} callback={callback} dialog={isDialog}>
                 {children}

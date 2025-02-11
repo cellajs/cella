@@ -3,7 +3,7 @@ import { onlineManager } from '@tanstack/react-query';
 import { config } from 'config';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { createToast } from '~/modules/common/toaster';
+import { toaster } from '~/modules/common/toaster';
 import type { Organization } from '~/modules/organizations/types';
 import { Button } from '~/modules/ui/button';
 
@@ -18,7 +18,7 @@ const Subscription = ({ organization }: { organization: Organization }) => {
 
   // Callback to open a checkout
   const openCheckout = (priceId: string) => {
-    if (!onlineManager.isOnline()) return createToast(t('common:action.offline.text'), 'warning');
+    if (!onlineManager.isOnline()) return toaster(t('common:action.offline.text'), 'warning');
 
     paddle?.Checkout.open({
       items: [{ priceId, quantity: 1 }],

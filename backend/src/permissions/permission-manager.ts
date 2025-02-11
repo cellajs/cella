@@ -42,7 +42,6 @@ class AdaptedMembershipAdapter extends MembershipAdapter {
    * @param memberships - Array of raw membership data.
    * @returns Array of adapted Membership objects.
    */
-
   // biome-ignore lint/suspicious/noExplicitAny: The format of the membership object may vary.
   adapt(memberships: any[]): Membership[] {
     return memberships.map((m) => ({

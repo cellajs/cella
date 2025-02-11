@@ -15,11 +15,11 @@ import '@blocknote/shadcn/style.css';
 import type { CheckedState } from '@radix-ui/react-checkbox';
 import { useMutation } from '@tanstack/react-query';
 import { useState } from 'react';
-import { MainAlert } from '~/modules/common/alerter';
+import { AlertWrap } from '~/modules/common/alert-wrap';
 import '~/modules/common/blocknote/app-specific-custom/styles.css';
 import '~/modules/common/blocknote/styles.css';
 import InputFormField from '~/modules/common/form-fields/input';
-import { createToast } from '~/modules/common/toaster';
+import { toaster } from '~/modules/common/toaster';
 import { sendNewsletter } from '~/modules/organizations/api';
 import { Checkbox } from '~/modules/ui/checkbox';
 
@@ -51,9 +51,9 @@ const NewsletterForm = ({ organizationIds }: NewsletterFormProps) => {
   const { mutate: _sendNewsletter, isPending } = useMutation({
     mutationFn: sendNewsletter,
     onSuccess: () => {
-      if (testOnly) return createToast(t('common:success.test_email'), 'success');
+      if (testOnly) return toaster(t('common:success.test_email'), 'success');
       form.reset();
-      createToast(t('common:success.create_newsletter'), 'success');
+      toaster(t('common:success.create_newsletter'), 'success');
       sheet.remove('newsletter-sheet');
     },
   });
@@ -89,9 +89,9 @@ const NewsletterForm = ({ organizationIds }: NewsletterFormProps) => {
         />
 
         {testOnly && (
-          <MainAlert id="test-email" variant="plain" Icon={Info}>
+          <AlertWrap id="test-email" variant="plain" Icon={Info}>
             {t('common:test_email.text')}
-          </MainAlert>
+          </AlertWrap>
         )}
 
         <div className="flex flex-col sm:flex-row gap-2 items-center">

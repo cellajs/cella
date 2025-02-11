@@ -5,7 +5,7 @@ import type { RowsChangeData } from 'react-data-grid';
 import { useTranslation } from 'react-i18next';
 import { DataTable } from '~/modules/common/data-table';
 import type { BaseTableMethods, BaseTableProps } from '~/modules/common/data-table/types';
-import { createToast } from '~/modules/common/toaster';
+import { toaster } from '~/modules/common/toaster';
 import { useUpdateUserMutation, usersKeys, usersQueryOptions } from '~/modules/users/query';
 import type { UsersSearch } from '~/modules/users/table';
 import type { User } from '~/modules/users/types';
@@ -34,7 +34,7 @@ const BaseDataTable = memo(
 
     // Update user role
     const onRowsChange = (changedRows: User[], { indexes, column }: RowsChangeData<User>) => {
-      if (!onlineManager.isOnline()) return createToast(t('common:action.offline.text'), 'warning');
+      if (!onlineManager.isOnline()) return toaster(t('common:action.offline.text'), 'warning');
       for (const index of indexes)
         if (column.key === 'role') {
           const newUser = changedRows[index];
@@ -42,9 +42,9 @@ const BaseDataTable = memo(
           updateUserRole(updateInfo, {
             onSuccess: (updatedUser) => {
               mutateQuery.update([updatedUser]);
-              createToast(t('common:success.update_item', { item: t('common:role') }), 'success');
+              toaster(t('common:success.update_item', { item: t('common:role') }), 'success');
             },
-            onError: () => createToast('Error updating role', 'error'),
+            onError: () => toaster('Error updating role', 'error'),
           });
         }
       setRows(changedRows);

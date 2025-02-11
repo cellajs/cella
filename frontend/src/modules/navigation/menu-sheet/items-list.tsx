@@ -41,7 +41,7 @@ export const MenuSheetItems = ({ data, type, shownOption, createDialog, classNam
     return (
       <>
         {filteredItems.map((item) => (
-          <li className={item.submenu?.length && !hideSubmenu ? 'relative submenu-section' : ''} key={item.id}>
+          <li className={item.submenu?.length && !hideSubmenu ? 'relative submenu-section my-1' : 'my-1'} key={item.id}>
             <MenuSheetItem item={item} className={className} />
             {/* Submenu below */}
             {!item.membership.archived && !!item.submenu?.length && !hideSubmenu && (

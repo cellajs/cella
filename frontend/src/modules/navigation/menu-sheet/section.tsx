@@ -4,7 +4,7 @@ import { AnimatePresence, motion } from 'motion/react';
 import { type ReactNode, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
-import { MainAlert } from '~/modules/common/alerter';
+import { AlertWrap } from '~/modules/common/alert-wrap';
 import { dialog } from '~/modules/common/dialoger/state';
 import { sheet } from '~/modules/common/sheeter/state';
 import { MenuSheetItemsEdit } from '~/modules/navigation/menu-sheet/items-edit-list';
@@ -34,7 +34,7 @@ export const MenuSheetSection = ({ data, sectionType, sectionLabel, entityType, 
   const archivedSectionType = `${sectionType}-archived`;
   const isArchivedVisible = activeSections?.[archivedSectionType] ?? true;
   const isSectionVisible = activeSections?.[sectionType] ?? true;
-  const inactiveCount = data.filter((i) => i.membership.archived).length;
+  const archivedCount = data.filter((i) => i.membership.archived).length;
 
   const createDialog = () => {
     if (isMobile) sheet.remove('nav-sheet');
@@ -77,9 +77,9 @@ export const MenuSheetSection = ({ data, sectionType, sectionLabel, entityType, 
             }}
             style={{ overflow: 'hidden' }}
           >
-            <MainAlert id="menu_management" variant="plain" Icon={Info}>
+            <AlertWrap id="menu_management" variant="plain" Icon={Info}>
               {t('common:configure_menu.text')}
-            </MainAlert>
+            </AlertWrap>
           </motion.div>
         )}
       </AnimatePresence>
@@ -99,8 +99,8 @@ export const MenuSheetSection = ({ data, sectionType, sectionLabel, entityType, 
               <MenuSheetItems type={entityType} data={data} shownOption="unarchive" createDialog={createDialog} />
             )}
             {!!data.length && (
-              <div className="group/archived" data-has-inactive={!!inactiveCount} data-submenu={false} data-archived-visible={isArchivedVisible}>
-                {(!!inactiveCount || isEditing) && <SectionArchiveButton archiveToggleClick={archiveToggleClick} inactiveCount={inactiveCount} />}
+              <div className="group/archived" data-has-archived={!!archivedCount} data-submenu={false} data-archived-visible={isArchivedVisible}>
+                {(!!archivedCount || isEditing) && <SectionArchiveButton archiveToggleClick={archiveToggleClick} archivedCount={archivedCount} />}
                 <AnimatePresence initial={false}>
                   {isArchivedVisible && (
                     <motion.ul

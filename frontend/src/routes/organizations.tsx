@@ -5,7 +5,7 @@ import { offlineFetch, offlineFetchInfinite } from '~/lib/query-client';
 import { queryClient } from '~/lib/router';
 import { attachmentsQueryOptions } from '~/modules/attachments/query';
 import ErrorNotice from '~/modules/common/error-notice';
-import { invitedMembersQueryOptions, membersQueryOptions } from '~/modules/memberships/query';
+import { membersQueryOptions } from '~/modules/memberships/query';
 import { organizationQueryOptions } from '~/modules/organizations/query';
 
 import type { Organization as OrganizationType } from '~/modules/organizations/types';
@@ -25,7 +25,7 @@ export const membersSearchSchema = membersQuerySchema
   .pick({ q: true, sort: true, order: true, role: true })
   .extend({ sheetId: z.string().optional() });
 
-export const invitedMembersSearchSchema = invitedMembersQuerySchema.pick({ q: true, sort: true, order: true, role: true });
+export const invitedMembersSearchSchema = invitedMembersQuerySchema.pick({ sort: true, order: true });
 
 export const attachmentsSearchSchema = attachmentsQuerySchema.pick({ q: true, sort: true, order: true }).extend({
   attachmentPreview: z.string().optional(),
@@ -65,14 +65,11 @@ export const OrganizationMembersRoute = createRoute({
   staticData: { pageTitle: 'members', isAuth: true },
   getParentRoute: () => OrganizationRoute,
   loaderDeps: ({ search: { q, sort, order, role } }) => ({ q, sort, order, role }),
-  loader: ({ cause, params: { idOrSlug }, deps: { q, sort, order, role }, context: { orgIdOrSlug, isAdmin } }) => {
+  loader: ({ cause, params: { idOrSlug }, deps: { q, sort, order, role }, context: { orgIdOrSlug } }) => {
     // Prevents unnecessary fetches(runs when user enters page)
     if (cause !== 'enter') return;
 
     const entityType = 'organization';
-    if (isAdmin) {
-      offlineFetchInfinite(invitedMembersQueryOptions({ idOrSlug, entityType, orgIdOrSlug }));
-    }
 
     const queryOptions = membersQueryOptions({ idOrSlug, orgIdOrSlug, entityType, q, sort, order, role });
     return offlineFetchInfinite(queryOptions);

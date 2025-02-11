@@ -10,7 +10,7 @@ import { cn } from '~/utils/cn';
 
 export type AlertContextMode = 'public' | 'app';
 
-export type MainAlert = {
+export type AlertWrap = {
   className?: string;
   id: string;
   modes?: AlertContextMode[];
@@ -20,7 +20,7 @@ export type MainAlert = {
   variant?: VariantProps<typeof alertVariants>['variant'];
 };
 
-export const MainAlert = ({ id, Icon, children, className = '', title = '', variant = 'default' }: MainAlert) => {
+export const AlertWrap = ({ id, Icon, children, className = '', title = '', variant = 'default' }: AlertWrap) => {
   const { t } = useTranslation();
   const { alertsSeen, setAlertSeen, downAlert } = useAlertStore();
   const showAlert = !alertsSeen.includes(id);

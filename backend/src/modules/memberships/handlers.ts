@@ -18,7 +18,6 @@ import { sendSSEToUsers } from '#/lib/sse';
 import { logEvent } from '#/middlewares/logger/log-event';
 import { getUsersByConditions } from '#/modules/users/helpers/get-user-by';
 import { getValidEntity } from '#/permissions/get-valid-entity';
-import { memberCountsQuery } from '#/utils/counts';
 import { nanoid } from '#/utils/nanoid';
 import { getOrderColumn } from '#/utils/order-column';
 import { prepareStringForILikeFilter } from '#/utils/sql';
@@ -115,6 +114,7 @@ const membershipsRoutes = app
       expiresAt: createDate(new TimeSpan(7, 'd')),
       role,
       userId,
+      entity: entityType,
       [targetEntityIdField]: entityId,
       ...(associatedEntityIdField && associatedEntityId && { [associatedEntityIdField]: associatedEntityId }), // Include associated entity if applicable
       ...(entityType !== 'organization' && { organizationId: organization.id }), // Add org ID if not an organization
@@ -319,8 +319,6 @@ const membershipsRoutes = app
       .where(and(...membersFilters))
       .as('memberships');
 
-    const membershipCount = memberCountsQuery(null, 'userId');
-
     const orderColumn = getOrderColumn(
       {
         id: usersTable.id,
@@ -335,30 +333,19 @@ const membershipsRoutes = app
       order,
     );
 
+    // TODO can this be optimized?
     const membersQuery = db
-      .select({
-        user: userSelect,
-        membership: membershipSelect,
-        counts: {
-          memberships: membershipCount.members,
-        },
-      })
+      .select({ user: userSelect, membership: membershipSelect })
       .from(usersQuery)
       .innerJoin(memberships, eq(usersTable.id, memberships.userId))
-      .leftJoin(membershipCount, eq(usersTable.id, membershipCount.id))
       .orderBy(orderColumn);
 
     const [{ total }] = await db.select({ total: count() }).from(membersQuery.as('memberships'));
 
     const result = await membersQuery.limit(Number(limit)).offset(Number(offset));
 
-    const members = await Promise.all(
-      result.map(async ({ user, membership, counts }) => ({
-        ...user,
-        membership,
-        counts,
-      })),
-    );
+    // Map the result to include membership properties
+    const members = await Promise.all(result.map(async ({ user, membership }) => ({ ...user, membership })));
 
     return ctx.json({ success: true, data: { items: members, total } }, 200);
   })
@@ -366,7 +353,10 @@ const membershipsRoutes = app
    * Get invited members by entity id/slug and type
    */
   .openapi(membershipsRouteConfig.getInvitedMembers, async (ctx) => {
-    const { idOrSlug, entityType, q, sort, order, offset, limit, role } = ctx.req.valid('query');
+    const { idOrSlug, entityType, sort, order, offset, limit } = ctx.req.valid('query');
+
+    // Scope request to organization
+    const organization = getContextOrganization();
 
     const { entity, isAllowed, membership } = await getValidEntity(entityType, 'read', idOrSlug);
 
@@ -376,45 +366,29 @@ const membershipsRoutes = app
 
     const entityIdField = entityIdFields[entity.entity];
 
-    // Build search filters
-    const $or = [];
-    if (q) {
-      const query = prepareStringForILikeFilter(q);
-      $or.push(ilike(usersTable.name, query), ilike(usersTable.email, query));
-    }
+    const invitedMemberSelect = {
+      id: tokensTable.id,
+      name: usersTable.name,
+      email: tokensTable.email,
+      role: tokensTable.role,
+      expiresAt: tokensTable.expiresAt,
+      createdAt: tokensTable.createdAt,
+      createdBy: tokensTable.createdBy,
+    };
 
-    const filters = [eq(membershipsTable[entityIdField], entity.id), eq(membershipsTable.type, entityType)];
+    const orderColumn = getOrderColumn(invitedMemberSelect, sort, tokensTable.createdAt, order);
 
-    if (role) filters.push(eq(membershipsTable.role, role));
-
-    const orderColumn = getOrderColumn(
-      {
-        id: tokensTable.id,
-        name: usersTable.name,
-        email: tokensTable.email,
-        role: tokensTable.role,
-        expiresAt: tokensTable.expiresAt,
-        createdAt: tokensTable.createdAt,
-        createdBy: tokensTable.createdBy,
-      },
-      sort,
-      tokensTable.createdAt,
-      order,
-    );
-
-    // TODO create select schema or use existing schema?
     const invitedMembersQuery = db
-      .select({
-        id: tokensTable.id,
-        name: usersTable.name,
-        email: tokensTable.email,
-        role: tokensTable.role,
-        expiresAt: tokensTable.expiresAt,
-        createdAt: tokensTable.createdAt,
-        createdBy: tokensTable.createdBy,
-      })
+      .select(invitedMemberSelect)
       .from(tokensTable)
-      .where(and(eq(tokensTable[entityIdField], entity.id), eq(tokensTable.type, 'invitation')))
+      .where(
+        and(
+          eq(tokensTable.type, 'invitation'),
+          eq(tokensTable.entity, entity.entity),
+          eq(tokensTable[entityIdField], entity.id),
+          eq(tokensTable.organizationId, organization.id),
+        ),
+      )
       .leftJoin(usersTable, eq(usersTable.id, tokensTable.userId))
       .orderBy(orderColumn);
 

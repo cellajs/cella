@@ -1,5 +1,6 @@
 import type { ContextEntity } from 'config';
 import type { MembershipModel } from '#/db/schema/memberships';
+import { entityIdFields } from '#/entity-config';
 import { getContextMemberships, getContextUser } from '../lib/context';
 import { type EntityModel, resolveEntity } from '../lib/entity';
 import permissionManager, { type PermittedAction } from './permission-manager';
@@ -29,13 +30,7 @@ export const getValidEntity = async <T extends ContextEntity>(
 }> => {
   const entity = (await resolveEntity(entityType, idOrSlug)) || null;
 
-  if (!entity) {
-    return {
-      entity: null,
-      isAllowed: false,
-      membership: null,
-    };
-  }
+  if (!entity) return { entity: null, isAllowed: false, membership: null };
 
   const user = getContextUser();
   const memberships = getContextMemberships();
@@ -46,8 +41,9 @@ export const getValidEntity = async <T extends ContextEntity>(
   const isAllowed = permissionManager.isPermissionAllowed(memberships, action, entity) || isSystemAdmin;
   if (!isAllowed) return { entity: null, isAllowed: false, membership: null };
 
-  // TODO: can we make this dynamic? Find membership for entity
-  const membership = memberships.find((m) => entity && [m.organizationId].includes(entity.id) && m.type === entityType) || null;
+  // Find membership for entity
+  const entityIdField = entityIdFields[entity.entity];
+  const membership = memberships.find((m) => m[entityIdField] === entity.id && m.type === entityType) || null;
 
   return { entity, isAllowed, membership };
 };

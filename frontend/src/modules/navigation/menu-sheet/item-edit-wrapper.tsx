@@ -1,6 +1,7 @@
 import { type Edge, attachClosestEdge, extractClosestEdge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge';
 import { combine } from '@atlaskit/pragmatic-drag-and-drop/combine';
 import { draggable, dropTargetForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
+import type { Entity } from 'config';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { DropIndicator } from '~/modules/common/drop-indicator';
 import { isPageData } from '~/modules/navigation/menu-sheet/helpers';
@@ -8,7 +9,9 @@ import { MenuItemEdit } from '~/modules/navigation/menu-sheet/item-edit';
 import { MenuSheetItemsEdit } from '~/modules/navigation/menu-sheet/items-edit-list';
 import { SectionArchiveButton } from '~/modules/navigation/menu-sheet/section-archive-button';
 import type { UserMenuItem } from '~/modules/users/types';
-import { getDraggableItemData } from '~/utils/drag-drop';
+import { getDraggableItemData } from '~/utils/get-draggable-item-data';
+
+type DragDropData = { item: UserMenuItem; itemType: Entity };
 
 interface MenuItemEditWrapperProps {
   item: UserMenuItem;
@@ -18,6 +21,7 @@ interface MenuItemEditWrapperProps {
   isSubmenuArchivedVisible?: boolean;
   toggleSubmenuVisibility: (id: string) => void;
 }
+
 export const MenuItemEditWrapper = ({
   item,
   unarchiveItems,
@@ -30,7 +34,7 @@ export const MenuItemEditWrapper = ({
   const [closestEdge, setClosestEdge] = useState<Edge | null>(null);
 
   const handleCanDrop = useCallback(
-    (sourceData: Record<string | symbol, unknown>) => {
+    (sourceData: DragDropData) => {
       return (
         isPageData(sourceData) &&
         sourceData.item.id !== item.id &&
@@ -55,8 +59,7 @@ export const MenuItemEditWrapper = ({
       }),
       dropTargetForElements({
         element,
-        // allow drop if both have sum menu or both have not
-        canDrop: ({ source }) => handleCanDrop(source.data),
+        canDrop: ({ source }) => handleCanDrop(source.data as DragDropData),
         getIsSticky: () => true,
         getData: ({ input }) =>
           attachClosestEdge(data, {
@@ -77,7 +80,7 @@ export const MenuItemEditWrapper = ({
         <MenuItemEdit item={item} />
         {!item.membership.archived && !!item.submenu?.length && !hideSubmenu && (
           <div
-            data-has-inactive={!!item.submenu.filter((i) => i.membership.archived).length}
+            data-has-archived={!!item.submenu.filter((i) => i.membership.archived).length}
             data-submenu={true}
             data-archived-visible={isSubmenuArchivedVisible}
             className="group/archived"
@@ -87,7 +90,7 @@ export const MenuItemEditWrapper = ({
             </ul>
             <SectionArchiveButton
               archiveToggleClick={() => toggleSubmenuVisibility(item.id)}
-              inactiveCount={item.submenu.filter((i) => i.membership.archived).length}
+              archivedCount={item.submenu.filter((i) => i.membership.archived).length}
             />
             {isSubmenuArchivedVisible && (
               <ul>

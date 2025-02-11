@@ -6,7 +6,7 @@ import { useTranslation } from 'react-i18next';
 import { sendVerificationEmail, verifyEmail } from '~/modules/auth/api';
 import AuthNotice from '~/modules/auth/notice';
 import Spinner from '~/modules/common/spinner';
-import { createToast } from '~/modules/common/toaster';
+import { toaster } from '~/modules/common/toaster';
 import { Button } from '~/modules/ui/button';
 import { VerifyEmailWithTokenRoute } from '~/routes/auth';
 import { useTokenCheck } from './use-token-check';
@@ -24,7 +24,7 @@ const VerifyEmail = () => {
   const { mutate: verify, isPending: isVerifying } = useMutation({
     mutationFn: () => verifyEmail({ token }),
     onSuccess: () => {
-      createToast(t('common:success.email_verified'), 'success');
+      toaster(t('common:success.email_verified'), 'success');
       navigate({ to: config.welcomeRedirectPath });
     },
   });
@@ -37,7 +37,7 @@ const VerifyEmail = () => {
   } = useMutation({
     mutationFn: () => sendVerificationEmail({ tokenId }),
     onSuccess: () => {
-      createToast(t('common:success.sent_verification_email'), 'success');
+      toaster(t('common:success.sent_verification_email'), 'success');
     },
   });
 
