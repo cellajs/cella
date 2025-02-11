@@ -1,12 +1,15 @@
-import { config } from 'config';
 import type { EnabledOauthProvider } from 'config';
+import { config } from 'config';
 import { eq } from 'drizzle-orm';
 import type { Context } from 'hono';
 import { db } from '#/db/db';
 import { tokensTable } from '#/db/schema/tokens';
 import { type InsertUserModel, usersTable } from '#/db/schema/users';
+import { entityIdFields } from '#/entity-config';
+import { resolveEntity } from '#/lib/entity';
 import { errorResponse } from '#/lib/errors';
 import { logEvent } from '#/middlewares/logger/log-event';
+import { insertMembership } from '#/modules/memberships/helpers';
 import { generateUnsubscribeToken } from '#/modules/users/helpers/unsubscribe-token';
 import { nanoid } from '#/utils/nanoid';
 import { checkSlugAvailable } from '../../general/helpers/check-slug';
@@ -58,8 +61,8 @@ export const handleCreateUser = async ({ ctx, newUser, redirectUrl, provider, to
     // If a provider is passed, insert oauth account
     if (provider) await insertOauthAccount(user.id, provider.id, provider.userId);
 
-    // If signing up with token, update it with new user id
-    if (tokenId) await db.update(tokensTable).set({ userId: user.id }).where(eq(tokensTable.id, tokenId));
+    // If signing up with token, update it with new user id and insert membership if applicable
+    if (tokenId) await handleTokenUpdate(user.id, tokenId);
 
     // If email is not verified, send verification email. Otherwise, sign in user
     if (!user.emailVerified) sendVerificationEmail(user.id);
@@ -80,6 +83,35 @@ export const handleCreateUser = async ({ ctx, newUser, redirectUrl, provider, to
       const strategy = provider ? provider.id : 'password';
       const errorMessage = error.message;
       logEvent('Error creating user', { strategy, errorMessage }, 'error');
+    }
+
+    throw error;
+  }
+};
+
+const handleTokenUpdate = async (userId: string, tokenId: string) => {
+  try {
+    // Update the token with the new userId
+    const [token] = await db.update(tokensTable).set({ userId }).where(eq(tokensTable.id, tokenId)).returning();
+
+    const { entity: entityType, role } = token;
+    // Validate if the token has an entityType and role (must be a membership invite)
+    if (!entityType || !role) throw new Error('Token is not a valid membership invite.');
+
+    const entityIdField = entityIdFields[entityType];
+    // Validate if the token contains the required entity ID field
+    if (!token[entityIdField]) throw new Error(`Token is missing entity ID field for ${entityType}.`);
+
+    const entity = await resolveEntity(entityType, token[entityIdField]);
+    // If the entity cannot be found, throw an error
+    if (!entity) throw new Error(`Unable to resolve entity (${entityType}) using the token's entity ID.`);
+
+    // Insert membership for user into entity
+    await insertMembership({ userId, role, entity, tokenId });
+  } catch (error) {
+    if (error instanceof Error) {
+      const errorMessage = error.message;
+      logEvent('Error inserting membership from token data', { userId, tokenId, errorMessage }, 'error');
     }
 
     throw error;
