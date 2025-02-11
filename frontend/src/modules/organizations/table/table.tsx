@@ -7,7 +7,7 @@ import { toast } from 'sonner';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { DataTable } from '~/modules/common/data-table';
 import type { BaseTableMethods, BaseTableProps } from '~/modules/common/data-table/types';
-import { createToast } from '~/modules/common/toaster';
+import { toaster } from '~/modules/common/toaster';
 import { inviteMembers } from '~/modules/memberships/api';
 import { organizationsQueryOptions } from '~/modules/organizations/query';
 import type { OrganizationsSearch } from '~/modules/organizations/table';
@@ -30,7 +30,7 @@ const BaseDataTable = memo(
       useDataFromSuspenseInfiniteQuery(organizationsQueryOptions({ q, sort, order, limit }));
 
     const onRowsChange = async (changedRows: Organization[], { column, indexes }: RowsChangeData<Organization>) => {
-      if (!onlineManager.isOnline()) return createToast(t('common:action.offline.text'), 'warning');
+      if (!onlineManager.isOnline()) return toaster(t('common:action.offline.text'), 'warning');
 
       if (column.key !== 'role') return setRows(changedRows);
 

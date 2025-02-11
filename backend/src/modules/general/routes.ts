@@ -1,7 +1,7 @@
 import { z } from '@hono/zod-openapi';
 import { createRouteConfig } from '#/lib/route-config';
-import { isAuthenticated, isPublicAccess, systemGuard } from '#/middlewares/guard';
-import { tokenLimiter } from '#/middlewares/rate-limiter';
+import { hasSystemAccess, isAuthenticated, isPublicAccess } from '#/middlewares/guard';
+import { tokenLimiter } from '#/middlewares/rate-limiter/limiters';
 import { pageEntityTypeSchema, slugSchema } from '#/utils/schema/common';
 import { errorResponses, successWithDataSchema, successWithoutDataSchema } from '#/utils/schema/responses';
 import { userUnsubscribeQuerySchema } from '../users/schema';
@@ -93,7 +93,7 @@ class GeneralRouteConfig {
   public createInvite = createRouteConfig({
     method: 'post',
     path: '/invite',
-    guard: [isAuthenticated, systemGuard],
+    guard: [isAuthenticated, hasSystemAccess],
     tags: ['general'],
     summary: 'Invite to system',
     description: 'Invite one or more users to system by email address.',

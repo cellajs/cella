@@ -1,10 +1,10 @@
-import type { Context, MiddlewareHandler } from 'hono';
+import type { MiddlewareHandler } from 'hono';
 import type { RateLimiterMemory, RateLimiterPostgres } from 'rate-limiter-flexible';
 import { RateLimiterRes } from 'rate-limiter-flexible';
 
 import type { Env } from '#/lib/context';
 import { errorResponse } from '#/lib/errors';
-import { getRateLimiterInstance, getRetryAfter } from '#/middlewares/rate-limiter/helpers';
+import { getRateLimiterInstance, rateLimitError } from '#/middlewares/rate-limiter/helpers';
 import { getIp } from '#/utils/get-ip';
 
 type RateLimitMode = 'limit' | 'success' | 'fail' | 'failseries';
@@ -28,12 +28,6 @@ export const slowOptions = {
   blockDuration: 60 * 60 * 3, // Block for 3 hours
 };
 
-// Rate limit Error response
-const rateLimitError = (ctx: Context, limitState: RateLimiterRes, rateLimitKey: string) => {
-  ctx.header('Retry-After', getRetryAfter(limitState.msBeforeNext));
-  return errorResponse(ctx, 429, 'too_many_requests', 'warn', undefined, { rateLimitKey });
-};
-
 /**
  * Rate Limiter Middleware for API routes to control the rate of requests based on different modes and identifiers.
  *
@@ -54,7 +48,12 @@ const rateLimitError = (ctx: Context, limitState: RateLimiterRes, rateLimitKey: 
  * @returns Middleware handler for rate limiting.
  * @link https://github.com/animir/node-rate-limiter-flexible#readme
  */
-const rateLimiter = (mode: RateLimitMode, key: string, identifiers: RateLimitIdentifier[], options?: RateLimitOptions): MiddlewareHandler<Env> => {
+export const rateLimiter = (
+  mode: RateLimitMode,
+  key: string,
+  identifiers: RateLimitIdentifier[],
+  options?: RateLimitOptions,
+): MiddlewareHandler<Env> => {
   const limiter = getRateLimiterInstance({ ...defaultOptions, ...options, keyPrefix: `${key}_${mode}` });
   const slowLimiter = getRateLimiterInstance({ ...slowOptions, keyPrefix: `${key}_${mode}:slow` });
 
@@ -122,23 +121,3 @@ const rateLimiter = (mode: RateLimitMode, key: string, identifiers: RateLimitIde
     }
   };
 };
-
-/**
- * Email spam limit for endpoints where emails are sent to others. Max 10 requests per hour. For sign up with password, reset password, public requests etc.
- */
-export const spamLimiter = rateLimiter('success', 'spam', ['ip'], { points: 10, blockDuration: 60 * 60 });
-
-/**
- * Email enumeration limiter to prevent users from guessing emails. Blocks IP for 30 min after 5 consecutive failed requests in 1 hour
- */
-export const emailEnumLimiter = rateLimiter('failseries', 'email_enum', ['ip']);
-
-/**
- * Password limiter to prevent users from guessing passwords. Blocks user sign in for 30 min after 5 consecutive failed requests in 1 hour
- */
-export const passwordLimiter = rateLimiter('failseries', 'password', ['ip', 'email']);
-
-/**
- * Prevent brute force attacks by systemmatically trying tokens or secrets. Blocks IP for 30 minutes after 5 consecutive failed requests in 1 hour
- */
-export const tokenLimiter = (tokenType: string) => rateLimiter('failseries', `token_${tokenType}`, ['ip']);

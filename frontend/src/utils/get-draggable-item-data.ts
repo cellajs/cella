@@ -1,9 +1,8 @@
 import type { Entity } from 'config';
-import type { DraggableItemType } from '~/utils/drag-drop/app-type';
 
 // Drag and drop data
-export type DraggableItemData<T> = {
-  type: string;
+export type DraggableItemData<T, D extends string> = {
+  type: D;
   item: T;
   itemType: Entity;
   dragItem: true;
@@ -24,6 +23,6 @@ export type DraggableItemData<T> = {
  *
  * @returns An object containing the item data for DnD functionality.
  */
-export const getDraggableItemData = <T>(item: T, itemOrder: number, type: DraggableItemType, itemType: Entity): DraggableItemData<T> => {
-  return { dragItem: true, item, order: itemOrder, type, itemType: itemType };
+export const getDraggableItemData = <T, D extends string>(item: T, itemOrder: number, type: D, itemType: Entity): DraggableItemData<T, D> => {
+  return { dragItem: true, item, order: itemOrder, type, itemType };
 };

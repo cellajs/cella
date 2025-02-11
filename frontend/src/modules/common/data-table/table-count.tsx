@@ -11,7 +11,9 @@ interface TableCountProps {
   onResetFilters?: () => void;
   children?: ReactNode;
 }
-
+/**
+ * Displays the count of items in a table
+ */
 const TableCount = ({ count = 0, type, isFiltered, children, onResetFilters }: TableCountProps) => {
   const { t } = useTranslation();
 

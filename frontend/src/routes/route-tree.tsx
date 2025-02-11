@@ -17,6 +17,9 @@ import { OrganizationAttachmentsRoute, OrganizationMembersRoute, OrganizationRou
 import { MetricsRoute, OrganizationsTableRoute, RequestsTableRoute, SystemRoute, UsersTableRoute } from '~/routes/system';
 import { UserProfileRoute, UserSettingsRoute } from '~/routes/users';
 
+/**
+ * The route tree for the entire app
+ */
 export const routeTree = rootRoute.addChildren([
   PublicRoute.addChildren([
     AboutRoute,

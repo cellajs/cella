@@ -59,7 +59,7 @@ export function useMutateQueryData(
     }
   }
 
-  // Overloaded functions for action
+  // Overload functions for action
   function create(items: ItemData[]): void;
   function create(items: ContextEntityData[], entity: ContextEntity, keyToOperateIn?: string): void;
   function create(items: EntityData[], entity: ProductEntity, keyToOperateIn: string): void;

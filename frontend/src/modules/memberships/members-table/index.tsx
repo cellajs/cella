@@ -11,7 +11,7 @@ import { queryClient } from '~/lib/router';
 import { useSortColumns } from '~/modules/common/data-table/sort-columns';
 import type { BaseTableMethods } from '~/modules/common/data-table/types';
 import { dialog } from '~/modules/common/dialoger/state';
-import { createToast } from '~/modules/common/toaster';
+import { toaster } from '~/modules/common/toaster';
 import type { EntityPage } from '~/modules/general/types';
 import { getMembers } from '~/modules/memberships/api';
 import { useColumns } from '~/modules/memberships/members-table/columns';
@@ -67,7 +67,7 @@ const MembersTable = ({ entity: baseEntity, isSheet = false }: MembersTableProps
   useUserSheet({ sheetId, organizationId });
 
   const openInviteDialog = (container?: HTMLElement | null) => {
-    if (!onlineManager.isOnline()) return createToast(t('common:action.offline.text'), 'warning');
+    if (!onlineManager.isOnline()) return toaster(t('common:action.offline.text'), 'warning');
 
     dialog(<InviteUsers entity={entity} mode={null} dialog callback={handleNewInvites} />, {
       id: `user-invite-${entity.id}`,

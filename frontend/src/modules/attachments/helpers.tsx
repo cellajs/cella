@@ -2,7 +2,7 @@ import { onlineManager } from '@tanstack/react-query';
 import { t } from 'i18next';
 import AttachmentsCarousel from '~/modules/attachments/carousel';
 import { type DialogT, dialog } from '~/modules/common/dialoger/state';
-import { createToast } from '~/modules/common/toaster';
+import { toaster } from '~/modules/common/toaster';
 
 export type CarouselAttachment = { src: string; filename?: string; name?: string; fileType?: string };
 
@@ -12,7 +12,7 @@ export const openAttachmentDialog = (
   saveInSearchParams = false,
   dialogOptions?: Omit<DialogT, 'id'>,
 ) => {
-  if (!onlineManager.isOnline()) return createToast(t('common:action.offline.text'), 'warning');
+  if (!onlineManager.isOnline()) return toaster(t('common:action.offline.text'), 'warning');
 
   const { removeCallback } = dialogOptions || {};
   dialog(

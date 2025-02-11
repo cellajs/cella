@@ -1,7 +1,7 @@
 import { createRouteConfig } from '#/lib/route-config';
-import { isAuthenticated, isPublicAccess, systemGuard } from '#/middlewares/guard';
+import { hasSystemAccess, isAuthenticated, isPublicAccess } from '#/middlewares/guard';
 import { isNoBot } from '#/middlewares/is-no-bot';
-import { spamLimiter } from '#/middlewares/rate-limiter';
+import { spamLimiter } from '#/middlewares/rate-limiter/limiters';
 import { idsBodySchema } from '#/utils/schema/common';
 import { errorResponses, successWithDataSchema, successWithPaginationSchema, successWithoutDataSchema } from '#/utils/schema/responses';
 import { createRequestSchema, getRequestsQuerySchema, requestSchema } from './schema';
@@ -40,7 +40,7 @@ class RequestRouteConfig {
   public getRequests = createRouteConfig({
     method: 'get',
     path: '/',
-    guard: [isAuthenticated, systemGuard],
+    guard: [isAuthenticated, hasSystemAccess],
     tags: ['requests'],
     summary: 'Get list of requests',
     description: 'Get list of requests on system level for waitlist, submit contact form or to join newsletter.',
@@ -63,7 +63,7 @@ class RequestRouteConfig {
   public deleteRequests = createRouteConfig({
     method: 'delete',
     path: '/',
-    guard: [isAuthenticated, systemGuard],
+    guard: [isAuthenticated, hasSystemAccess],
     tags: ['requests'],
     summary: 'Delete requests',
     description: 'Delete requests by ids.',

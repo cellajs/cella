@@ -13,6 +13,7 @@ interface Props {
 export const SheetTabs = ({ tabs }: Props) => {
   const layoutId = useMemo(() => nanoid(), []);
   const { t } = useTranslation();
+
   const [currentPage, setCurrentPage] = useState(tabs[0]);
 
   const renderPage = () => currentPage.element;

@@ -5,7 +5,7 @@ import { decodeBase64, encodeBase64 } from '@oslojs/encoding';
 import { type QueryKey, onlineManager } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { authenticateWithPasskey, getChallenge, registerPasskey } from '~/modules/auth/api';
-import { createToast } from '~/modules/common/toaster';
+import { toaster } from '~/modules/common/toaster';
 import { deletePasskey as baseRemovePasskey, getSelf, getSelfAuthInfo, getUserMenu } from '~/modules/users/api';
 import type { LimitedUser } from '~/modules/users/types';
 import { getQueryItems } from '~/query/helpers/mutate-query';
@@ -21,7 +21,7 @@ import { useUserStore } from '~/store/user';
  * @throws Error if passkey creation fails or if the response is unexpected.
  */
 export const passkeyRegistration = async () => {
-  if (!onlineManager.isOnline()) return createToast(t('common:action.offline.text'), 'warning');
+  if (!onlineManager.isOnline()) return toaster(t('common:action.offline.text'), 'warning');
 
   const user = useUserStore.getState().user;
 
@@ -130,7 +130,7 @@ export const passkeyAuth = async (userEmail: string, callback?: () => void) => {
  * @throws Error if there is an issue with removing the passkey.
  */
 export const deletePasskey = async () => {
-  if (!onlineManager.isOnline()) return createToast(t('common:action.offline.text'), 'warning');
+  if (!onlineManager.isOnline()) return toaster(t('common:action.offline.text'), 'warning');
 
   try {
     const result = await baseRemovePasskey();

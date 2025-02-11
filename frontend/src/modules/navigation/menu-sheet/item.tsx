@@ -3,7 +3,7 @@ import { Link, useParams } from '@tanstack/react-router';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
-import { createToast } from '~/modules/common/toaster';
+import { toaster } from '~/modules/common/toaster';
 import type { UserMenuItem } from '~/modules/users/types';
 import { getEntityRoute } from '~/nav-config';
 import { useGeneralStore } from '~/store/general';
@@ -34,13 +34,13 @@ export const MenuSheetItem = ({ item, className, searchResults }: MenuSheetItemP
     <Link
       disabled={!canAccess}
       onClick={() => {
-        if (!canAccess) createToast(t('common:show_archived.offline.text'), 'warning');
+        if (!canAccess) toaster(t('common:show_archived.offline.text'), 'warning');
       }}
       data-subitem={!searchResults && !item.submenu}
       data-active={isActive}
       resetScroll={false}
       className={cn(
-        'relative group/menuItem h-14 w-full flex my-1 cursor-pointer items-start justify-start space-x-1 rounded p-0 focus:outline-hidden ring-2 ring-inset ring-transparent focus-visible:ring-foreground hover:bg-accent/50 hover:text-accent-foreground data-[subitem=true]:h-12 data-[active=true]:ring-transparent data-[active=true]:bg-accent',
+        'relative group/menuItem h-14 w-full flex cursor-pointer items-start justify-start space-x-1 rounded p-0 focus:outline-hidden ring-2 ring-inset ring-transparent focus-visible:ring-foreground hover:bg-accent/50 hover:text-accent-foreground data-[subitem=true]:h-12 data-[active=true]:ring-transparent data-[active=true]:bg-accent',
         className,
       )}
       aria-label={item.name}

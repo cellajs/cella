@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { createRouteConfig } from '#/lib/route-config';
-import { isAuthenticated, systemGuard } from '#/middlewares/guard';
+import { hasSystemAccess, isAuthenticated } from '#/middlewares/guard';
 import { booleanQuerySchema, entityParamSchema, idsBodySchema } from '#/utils/schema/common';
 import {
   errorResponses,
@@ -52,7 +52,7 @@ class OrganizationRouteConfig {
   public getOrganizations = createRouteConfig({
     method: 'get',
     path: '/',
-    guard: [isAuthenticated, systemGuard],
+    guard: [isAuthenticated, hasSystemAccess],
     tags: ['organizations'],
     summary: 'Get list of organizations',
     description: 'Get list of organizations. Currently only available to system admins.',
@@ -128,7 +128,7 @@ class OrganizationRouteConfig {
   public sendNewsletter = createRouteConfig({
     method: 'post',
     path: '/send-newsletter',
-    guard: [isAuthenticated, systemGuard],
+    guard: [isAuthenticated, hasSystemAccess],
     tags: ['organizations'],
     summary: 'Newsletter for members',
     description: 'Sends to requested organizations members, a newsletter.',

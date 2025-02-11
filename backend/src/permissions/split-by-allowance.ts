@@ -28,6 +28,7 @@ export const splitByAllowance = async (action: PermittedAction, entityType: Enti
 
   for (const entity of entities) {
     const isAllowed = permissionManager.isPermissionAllowed(memberships, action, entity);
+
     if (!isAllowed && user.role !== 'admin') {
       disallowedIds.push(entity.id);
     } else {

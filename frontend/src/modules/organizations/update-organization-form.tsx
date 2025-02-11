@@ -17,7 +17,7 @@ import { SelectLanguages } from '~/modules/common/form-fields/select-languages';
 import SelectTimezone from '~/modules/common/form-fields/select-timezone';
 import { SlugFormField } from '~/modules/common/form-fields/slug';
 import { sheet } from '~/modules/common/sheeter/state';
-import { createToast } from '~/modules/common/toaster';
+import { toaster } from '~/modules/common/toaster';
 import UnsavedBadge from '~/modules/common/unsaved-badge';
 import { useOrganizationUpdateMutation } from '~/modules/organizations/query';
 import type { Organization } from '~/modules/organizations/types';
@@ -68,7 +68,7 @@ const UpdateOrganizationForm = ({ organization, callback, sheet: isSheet }: Prop
         onSuccess: (updatedOrganization) => {
           if (isSheet) sheet.remove('update-organization');
           form.reset(updatedOrganization);
-          createToast(t('common:success.update_resource', { resource: t('common:organization') }), 'success');
+          toaster(t('common:success.update_resource', { resource: t('common:organization') }), 'success');
           callback?.(updatedOrganization);
         },
       },

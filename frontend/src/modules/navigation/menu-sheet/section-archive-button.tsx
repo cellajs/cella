@@ -5,17 +5,17 @@ import { Button } from '~/modules/ui/button';
 
 interface SectionArchiveButtonProps {
   archiveToggleClick: () => void;
-  inactiveCount: number;
+  archivedCount: number;
 }
 
-export const SectionArchiveButton = ({ archiveToggleClick, inactiveCount }: SectionArchiveButtonProps) => {
+export const SectionArchiveButton = ({ archiveToggleClick, archivedCount }: SectionArchiveButtonProps) => {
   const { t } = useTranslation();
 
   return (
     <motion.div layout>
       <Button
         onClick={archiveToggleClick}
-        disabled={inactiveCount < 1}
+        disabled={archivedCount < 1}
         variant="secondary"
         className="w-full group mb-1 cursor-pointer bg-background p-0 transition duration-300 focus-visible:outline-hidden ring-inset focus-visible:ring-offset-0 focus-visible:ring-foreground hover:bg-accent/50 hover:text-accent-foreground
         group-data-[submenu=true]/archived:h-8"
@@ -29,7 +29,7 @@ export const SectionArchiveButton = ({ archiveToggleClick, inactiveCount }: Sect
             className="inline-block px-2 py-1 font-light text-xs text-muted-foreground 
           group-data-[archived-visible=true]/archived:hidden"
           >
-            {inactiveCount}
+            {archivedCount}
           </span>
         </div>
         <div className="px-3">

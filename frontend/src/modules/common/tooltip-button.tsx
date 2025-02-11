@@ -13,6 +13,9 @@ interface TooltipButtonProps extends React.ComponentPropsWithoutRef<typeof Toolt
   portal?: boolean;
 }
 
+/**
+ * A button that displays a tooltip when hovered.
+ */
 export const TooltipButton = React.forwardRef<HTMLDivElement, TooltipButtonProps>(
   ({ children, toolTipContent, disabled, side = 'bottom', sideOffset = 8, className, hideWhenDetached, portal = true, ...props }, ref) => {
     if (disabled) return children;

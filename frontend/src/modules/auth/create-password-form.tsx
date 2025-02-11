@@ -13,7 +13,7 @@ import { createPassword } from '~/modules/auth/api';
 import AuthNotice from '~/modules/auth/notice';
 import { RequestPasswordDialog } from '~/modules/auth/request-password-dialog';
 import Spinner from '~/modules/common/spinner';
-import { createToast } from '~/modules/common/toaster';
+import { toaster } from '~/modules/common/toaster';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '~/modules/ui/form';
 import { Input } from '~/modules/ui/input';
 import { CreatePasswordWithTokenRoute } from '~/routes/auth';
@@ -40,7 +40,7 @@ const CreatePasswordForm = () => {
   } = useMutation({
     mutationFn: createPassword,
     onSuccess: () => {
-      createToast(t('common:success.password_reset'), 'success');
+      toaster(t('common:success.password_reset'), 'success');
       navigate({ to: config.defaultRedirectPath });
     },
   });

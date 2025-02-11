@@ -5,7 +5,7 @@ import type { Membership } from '~/modules/memberships/types';
 export type CombinedCustomEventMap = AppCustomEventMap & {
   toggleCarouselDrag: CustomEvent<boolean>;
   updateEntityCover: CustomEvent<{ bannerUrl: string; entity: Entity }>;
-  //  event  to manipulate data that has been changed in the menu
+  // Event to manipulate data that has been changed in the menu
   menuEntityChange: CustomEvent<{ membership: Membership; entity: ContextEntity }>;
 };
 

@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { queryClient } from '~/lib/router';
 import { DataTable } from '~/modules/common/data-table';
 import type { BaseTableMethods, BaseTableProps } from '~/modules/common/data-table/types';
-import { createToast } from '~/modules/common/toaster';
+import { toaster } from '~/modules/common/toaster';
 import type { MemberSearch, MembersTableProps } from '~/modules/memberships/members-table';
 import { membersKeys, membersQueryOptions } from '~/modules/memberships/query';
 import { useMemberUpdateMutation } from '~/modules/memberships/query-mutations';
@@ -45,7 +45,7 @@ const BaseDataTable = memo(
 
     // Update rows
     const onRowsChange = (changedRows: Member[], { indexes, column }: RowsChangeData<Member>) => {
-      if (!onlineManager.isOnline()) return createToast(t('common:action.offline.text'), 'warning');
+      if (!onlineManager.isOnline()) return toaster(t('common:action.offline.text'), 'warning');
 
       if (column.key !== 'role') return setRows(changedRows);
 
@@ -56,11 +56,11 @@ const BaseDataTable = memo(
           {
             onSuccess(data, variables, context) {
               queryClient.getMutationDefaults(membersKeys.update()).onSuccess?.(data, variables, context);
-              createToast(t('common:success.update_item', { item: t('common:role') }), 'success');
+              toaster(t('common:success.update_item', { item: t('common:role') }), 'success');
             },
             onError(error, variables, context) {
               queryClient.getMutationDefaults(membersKeys.update()).onError?.(error, variables, context);
-              createToast('Error updating role', 'error');
+              toaster('Error updating role', 'error');
             },
           },
         );

@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { lazyWithPreload } from 'react-lazy-with-preload';
 import { AvatarWrap, type AvatarWrapProps } from '~/modules/common/avatar-wrap';
 import { dialog } from '~/modules/common/dialoger/state';
-import { createToast } from '~/modules/common/toaster';
+import { toaster } from '~/modules/common/toaster';
 import { Button } from '~/modules/ui/button';
 
 const UploadUppy = lazyWithPreload(() => import('~/modules/attachments/upload/upload-uppy'));
@@ -21,7 +21,7 @@ export const UploadAvatar = ({ type, id, name, url, setUrl }: UploadAvatarProps)
 
   // Open the upload dialog
   const openUploadDialog = () => {
-    if (!onlineManager.isOnline()) return createToast(t('common:action.offline.text'), 'warning');
+    if (!onlineManager.isOnline()) return toaster(t('common:action.offline.text'), 'warning');
 
     dialog(
       <Suspense>

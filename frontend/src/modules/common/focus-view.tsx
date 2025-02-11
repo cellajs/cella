@@ -3,13 +3,11 @@ import type React from 'react';
 import { useTranslation } from 'react-i18next';
 import useBodyClass from '~/hooks/use-body-class';
 import { sheet } from '~/modules/common/sheeter/state';
-import { createToast } from '~/modules/common/toaster';
+import { toaster } from '~/modules/common/toaster';
 import { TooltipButton } from '~/modules/common/tooltip-button';
 import { Button } from '~/modules/ui/button';
 import { useNavigationStore } from '~/store/navigation';
 import { cn } from '~/utils/cn';
-
-import '~/modules/common/focus-view/style.css';
 
 interface FocusViewProps {
   className?: string;
@@ -21,7 +19,7 @@ export const FocusView = ({ className = '', iconOnly }: FocusViewProps) => {
   const { focusView, setFocusView, setNavSheetOpen } = useNavigationStore();
 
   const toggleFocus = () => {
-    createToast(focusView ? t('common:left_focus.text') : t('common:entered_focus.text'), 'success');
+    toaster(focusView ? t('common:left_focus.text') : t('common:entered_focus.text'), 'success');
     setFocusView(!focusView);
     sheet.remove('nav-sheet');
     setNavSheetOpen(null);

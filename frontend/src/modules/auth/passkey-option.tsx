@@ -30,8 +30,9 @@ const PassKeyOption = ({ email, actionType = 'signIn' }: PassKeyOptionProps) => 
     <div data-mode={mode} className="group flex flex-col space-y-2">
       <Button type="button" onClick={() => passkeyAuth(email, successCallback)} variant="plain" className="w-full gap-1.5">
         <Fingerprint size={16} />
-        <span>{actionType === 'signIn' ? t('common:sign_in') : t('common:sign_up')}</span>
-        <span>{t('common:with').toLowerCase()}</span> <span>{t('common:passkey').toLowerCase()}</span>
+        <span>
+          {actionType === 'signIn' ? t('common:sign_in') : t('common:sign_up')} {t('common:with').toLowerCase()} {t('common:passkey').toLowerCase()}
+        </span>
       </Button>
     </div>
   );

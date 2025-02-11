@@ -5,7 +5,8 @@ import { persister, queryClient } from '~/lib/router';
 import { meQueryOptions, menuQueryOptions } from '~/modules/users/query';
 import type { UserMenuItem } from '~/modules/users/types';
 import { queriesToMap } from '~/offline-config';
-import { prefetchQuery, waitFor } from '~/query/helpers';
+import { prefetchQuery } from '~/query/helpers/prefetch-query';
+import { waitFor } from '~/query/helpers/wait-for';
 import { useGeneralStore } from '~/store/general';
 import { useUserStore } from '~/store/user';
 

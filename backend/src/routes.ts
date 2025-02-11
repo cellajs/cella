@@ -1,12 +1,12 @@
-import attachmentsRoutes from '#/modules/attachments';
-import authRoutes from '#/modules/auth';
-import generalRoutes from '#/modules/general';
-import meRoutes from '#/modules/me';
-import membershipsRoutes from '#/modules/memberships';
-import metricRoutes from '#/modules/metrics';
-import organizationsRoutes from '#/modules/organizations';
-import requestsRoutes from '#/modules/requests';
-import usersRoutes from '#/modules/users';
+import attachmentsRoutes from '#/modules/attachments/handlers';
+import authRoutes from '#/modules/auth/handlers';
+import generalRoutes from '#/modules/general/handlers';
+import meRoutes from '#/modules/me/handlers';
+import membershipsRoutes from '#/modules/memberships/handlers';
+import metricRoutes from '#/modules/metrics/handlers';
+import organizationsRoutes from '#/modules/organizations/handlers';
+import requestsRoutes from '#/modules/requests/handlers';
+import usersRoutes from '#/modules/users/handlers';
 import baseApp from './server';
 
 // Define backend routes of your app

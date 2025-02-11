@@ -4,7 +4,7 @@ import { useMutation } from '~/hooks/use-mutations';
 import { queryClient } from '~/lib/router';
 import { DeleteForm } from '~/modules/common/delete-form';
 import { dialog } from '~/modules/common/dialoger/state';
-import { createToast } from '~/modules/common/toaster';
+import { toaster } from '~/modules/common/toaster';
 import { deleteUsers } from '~/modules/users/api';
 import { usersKeys } from '~/modules/users/query';
 import type { User } from '~/modules/users/types';
@@ -32,7 +32,7 @@ const DeleteUsers = ({ users, callback, dialog: isDialog }: Props) => {
   });
 
   const onDelete = () => {
-    if (!onlineManager.isOnline()) return createToast(t('common:action.offline.text'), 'warning');
+    if (!onlineManager.isOnline()) return toaster(t('common:action.offline.text'), 'warning');
 
     const idsToDelete = users.map((user) => user.id);
     _deleteUsers(idsToDelete);

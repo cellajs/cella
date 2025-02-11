@@ -30,7 +30,9 @@ const setThemeColor = (passedTheme: Theme) => {
   themeStyleTag.innerHTML = `.theme-base { --primary: ${hslColor}; }`;
 };
 
-// This component is used to set the theme and mode classes on the root element
+/**
+ * This component is used to set the theme and mode classes on the root element
+ */
 export const ThemeManager = () => {
   useEffect(() => {
     useThemeStore.subscribe(({ mode }) => {

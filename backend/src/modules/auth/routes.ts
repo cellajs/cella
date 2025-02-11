@@ -1,9 +1,9 @@
 import { z } from '@hono/zod-openapi';
 import { config } from 'config';
 import { createRouteConfig } from '#/lib/route-config';
-import { isAuthenticated, isPublicAccess, systemGuard } from '#/middlewares/guard';
+import { hasSystemAccess, isAuthenticated, isPublicAccess } from '#/middlewares/guard';
 import { hasValidToken } from '#/middlewares/has-valid-token';
-import { emailEnumLimiter, passwordLimiter, spamLimiter, tokenLimiter } from '#/middlewares/rate-limiter';
+import { emailEnumLimiter, passwordLimiter, spamLimiter, tokenLimiter } from '#/middlewares/rate-limiter/limiters';
 import { cookieSchema, idSchema, passwordSchema, tokenParamSchema } from '#/utils/schema/common';
 import { errorResponses, successWithDataSchema, successWithoutDataSchema } from '#/utils/schema/responses';
 import {
@@ -22,7 +22,7 @@ class AuthLayoutRouteConfig {
   public startImpersonation = createRouteConfig({
     method: 'get',
     path: '/impersonation/start',
-    guard: [isAuthenticated, systemGuard],
+    guard: [isAuthenticated, hasSystemAccess],
     tags: ['auth'],
     summary: 'Start impersonating',
     description: 'System admin impersonates a selected user by id by receiving a special impersonation session.',

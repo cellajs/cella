@@ -13,8 +13,8 @@ import {
 } from '~/modules/attachments/api';
 import { attachmentsKeys } from '~/modules/attachments/query';
 import type { Attachment } from '~/modules/attachments/types';
-import { createToast } from '~/modules/common/toaster';
-import { compareQueryKeys } from '~/query/helpers';
+import { toaster } from '~/modules/common/toaster';
+import { compareQueryKeys } from '~/query/helpers/compare-query-keys';
 import { formatUpdatedData, getCancelingRefetchQueries, getQueries, getQueryItems, handleNoOldData } from '~/query/helpers/mutate-query';
 import type { ContextProp, InfiniteQueryData, QueryData } from '~/query/types';
 import { nanoid } from '~/utils/nanoid';
@@ -203,6 +203,6 @@ queryClient.setMutationDefaults(attachmentsKeys.delete(), {
 
     return context;
   },
-  onSuccess: () => createToast(t('common:success.delete_resources', { resources: t('common:attachments') }), 'success'),
+  onSuccess: () => toaster(t('common:success.delete_resources', { resources: t('common:attachments') }), 'success'),
   onError,
 });

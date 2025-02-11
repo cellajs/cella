@@ -1,9 +1,9 @@
 import { config } from 'config';
 import { t } from 'i18next';
 import { Info } from 'lucide-react';
-import type { MainAlert } from '~/modules/common/alerter';
+import type { AlertWrap } from '~/modules/common/alert-wrap';
 
-const alerts: MainAlert[] = [];
+const alerts: AlertWrap[] = [];
 
 // Explain how to sign in using test account
 if (config.mode === 'development') {

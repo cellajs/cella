@@ -1,5 +1,5 @@
 import { createRouteConfig } from '#/lib/route-config';
-import { isAuthenticated, systemGuard } from '#/middlewares/guard';
+import { hasSystemAccess, isAuthenticated } from '#/middlewares/guard';
 import { entityParamSchema, idsBodySchema } from '#/utils/schema/common';
 import { errorResponses, successWithDataSchema, successWithErrorsSchema, successWithPaginationSchema } from '#/utils/schema/responses';
 import { updateUserBodySchema, userSchema, usersQuerySchema } from './schema';
@@ -8,7 +8,7 @@ class UserRouteConfig {
   public getUsers = createRouteConfig({
     method: 'get',
     path: '/',
-    guard: [isAuthenticated, systemGuard],
+    guard: [isAuthenticated, hasSystemAccess],
     tags: ['users'],
     summary: 'Get list of users',
     description: 'Get a list of users on system level.',
@@ -31,7 +31,7 @@ class UserRouteConfig {
   public deleteUsers = createRouteConfig({
     method: 'delete',
     path: '/',
-    guard: [isAuthenticated, systemGuard],
+    guard: [isAuthenticated, hasSystemAccess],
     tags: ['users'],
     summary: 'Delete users',
     description: 'Delete users from system by list of ids.',
@@ -79,7 +79,7 @@ class UserRouteConfig {
   public updateUser = createRouteConfig({
     method: 'put',
     path: '/{idOrSlug}',
-    guard: [isAuthenticated, systemGuard],
+    guard: [isAuthenticated, hasSystemAccess],
     tags: ['users'],
     summary: 'Update user',
     description: 'Update a user by id or slug.',

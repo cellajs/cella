@@ -8,7 +8,7 @@ import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { useOnlineManager } from '~/hooks/use-online-manager';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { MainFooter } from '~/modules/common/main-footer';
-import { createToast } from '~/modules/common/toaster';
+import { toaster } from '~/modules/common/toaster';
 import { buttonVariants } from '~/modules/ui/button';
 import { ScrollArea } from '~/modules/ui/scroll-area';
 import { useUserStore } from '~/store/user';
@@ -31,7 +31,7 @@ const AccountButton: React.FC<AccountButtonProps> = ({ offlineAccess, isOnline, 
     <Link
       disabled={isDisabled}
       onClick={() => {
-        if (isDisabled) createToast(t('common:action.offline.text'), 'warning');
+        if (isDisabled) toaster(t('common:action.offline.text'), 'warning');
       }}
       data-sign-out={id === 'btn-signout'}
       id={id}

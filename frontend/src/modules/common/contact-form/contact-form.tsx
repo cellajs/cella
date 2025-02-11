@@ -10,7 +10,7 @@ import { useTranslation } from 'react-i18next';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import InputFormField from '~/modules/common/form-fields/input';
-import { createToast } from '~/modules/common/toaster';
+import { toaster } from '~/modules/common/toaster';
 import UnsavedBadge from '~/modules/common/unsaved-badge';
 import { useCreateRequestMutation } from '~/modules/requests/query';
 import { Button, SubmitButton } from '~/modules/ui/button';
@@ -45,12 +45,12 @@ const ContactForm = ({ dialog: isDialog }: { dialog?: boolean }) => {
   const onSubmit: SubmitHandler<FormValues> = (body) => {
     createRequest(body, {
       onSuccess: () => {
-        createToast(t('common:message_sent.text'), 'success');
+        toaster(t('common:message_sent.text'), 'success');
         if (isDialog) dialog.remove();
         form.reset();
       },
       onError: () => {
-        createToast(t('error:reported_try_later'), 'error');
+        toaster(t('error:reported_try_later'), 'error');
       },
     });
   };
