@@ -1,7 +1,7 @@
 import { and, count, eq, ilike, inArray, or } from 'drizzle-orm';
 
 import { OpenAPIHono } from '@hono/zod-openapi';
-import { coalesce, db } from '#/db/db';
+import { db } from '#/db/db';
 import { membershipsTable } from '#/db/schema/memberships';
 import { usersTable } from '#/db/schema/users';
 import { type Env, getContextMemberships, getContextUser } from '#/lib/context';
@@ -12,7 +12,7 @@ import { getOrderColumn } from '#/utils/order-column';
 import { prepareStringForILikeFilter } from '#/utils/sql';
 import { checkSlugAvailable } from '../general/helpers/check-slug';
 import { userSelect } from './helpers/select';
-import { getUserMembershipsCount, transformDatabaseUserWithCount } from './helpers/transform-database-user';
+import { transformDbUser } from './helpers/transform-database-user';
 import usersRouteConfig from './routes';
 
 const app = new OpenAPIHono<Env>();
@@ -63,12 +63,7 @@ const usersRoutes = app
     if (role) filters.push(eq(usersTable.role, role));
 
     const usersQuery = db
-      .select({
-        user: userSelect,
-        counts: {
-          memberships: coalesce(membershipCounts.count, 0),
-        },
-      })
+      .select({ user: userSelect })
       .from(usersTable)
       .where(filters.length > 0 ? and(...filters) : undefined)
       .orderBy(orderColumn)
@@ -78,7 +73,7 @@ const usersRoutes = app
 
     const result = await usersQuery.limit(Number(limit)).offset(Number(offset));
 
-    const items = result.map(({ user, counts }) => transformDatabaseUserWithCount(user, counts.memberships));
+    const items = result.map(({ user }) => transformDbUser(user));
 
     return ctx.json({ success: true, data: { items, total } }, 200);
   })
@@ -142,7 +137,7 @@ const usersRoutes = app
     const memberships = getContextMemberships();
 
     if (idOrSlug === user.id || idOrSlug === user.slug) {
-      return ctx.json({ success: true, data: transformDatabaseUserWithCount(user, memberships.length) }, 200);
+      return ctx.json({ success: true, data: transformDbUser(user) }, 200);
     }
 
     const [targetUser] = await getUsersByConditions([or(eq(usersTable.id, idOrSlug), eq(usersTable.slug, idOrSlug))]);
@@ -160,10 +155,7 @@ const usersRoutes = app
 
     if (user.role !== 'admin' && !jointMembership) return errorResponse(ctx, 403, 'forbidden', 'warn', 'user', { user: targetUser.id });
 
-    // Get target user's membership count
-    const targetUserMembershipsCount = await getUserMembershipsCount(targetUser.id);
-
-    return ctx.json({ success: true, data: transformDatabaseUserWithCount(targetUser, targetUserMembershipsCount) }, 200);
+    return ctx.json({ success: true, data: transformDbUser(targetUser) }, 200);
   })
   /*
    * Update a user by id or slug
@@ -203,10 +195,7 @@ const usersRoutes = app
 
     logEvent('User updated', { user: updatedUser.id });
 
-    // Get the user's membership count
-    const memberships = await getUserMembershipsCount(updatedUser.id);
-
-    return ctx.json({ success: true, data: transformDatabaseUserWithCount(updatedUser, memberships) }, 200);
+    return ctx.json({ success: true, data: transformDbUser(updatedUser) }, 200);
   });
 
 export default usersRoutes;

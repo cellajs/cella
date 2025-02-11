@@ -22,7 +22,6 @@ export const baseUserSchema = createSelectSchema(usersTable, {
 
 export const userSchema = z.object({
   ...baseUserSchema.shape,
-  counts: z.object({ memberships: z.number() }),
 });
 
 export const limitedUserSchema = createSelectSchema(usersTable, {

@@ -18,7 +18,6 @@ import { sendSSEToUsers } from '#/lib/sse';
 import { logEvent } from '#/middlewares/logger/log-event';
 import { getUsersByConditions } from '#/modules/users/helpers/get-user-by';
 import { getValidEntity } from '#/permissions/get-valid-entity';
-import { memberCountsQuery } from '#/utils/counts';
 import { nanoid } from '#/utils/nanoid';
 import { getOrderColumn } from '#/utils/order-column';
 import { prepareStringForILikeFilter } from '#/utils/sql';
@@ -319,8 +318,6 @@ const membershipsRoutes = app
       .where(and(...membersFilters))
       .as('memberships');
 
-    const membershipCount = memberCountsQuery(null, 'userId');
-
     const orderColumn = getOrderColumn(
       {
         id: usersTable.id,
@@ -335,17 +332,14 @@ const membershipsRoutes = app
       order,
     );
 
+    // TODO can this be optimized?
     const membersQuery = db
       .select({
         user: userSelect,
         membership: membershipSelect,
-        counts: {
-          memberships: membershipCount.members,
-        },
       })
       .from(usersQuery)
       .innerJoin(memberships, eq(usersTable.id, memberships.userId))
-      .leftJoin(membershipCount, eq(usersTable.id, membershipCount.id))
       .orderBy(orderColumn);
 
     const [{ total }] = await db.select({ total: count() }).from(membersQuery.as('memberships'));
@@ -353,10 +347,9 @@ const membershipsRoutes = app
     const result = await membersQuery.limit(Number(limit)).offset(Number(offset));
 
     const members = await Promise.all(
-      result.map(async ({ user, membership, counts }) => ({
+      result.map(async ({ user, membership }) => ({
         ...user,
         membership,
-        counts,
       })),
     );
 
