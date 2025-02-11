@@ -29,9 +29,9 @@ export const TO_CLEAN: string[] = [
 
 // Files to copy/paste after downloading
 export const TO_COPY: Record<string, string> = {
-  './backend/.env.example': './backend/.env',
-  './frontend/.env.example': './frontend/.env',
-  './tus/.env.example': './tus/.env',
+  './backend/.env.example': './backend/src/.env',
+  './frontend/.env.example': './frontend/src/.env',
+  './tus/.env.example': './tus/src/.env',
   './info/QUICKSTART.md': 'README.md',
 };
 
