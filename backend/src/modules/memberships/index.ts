@@ -334,10 +334,7 @@ const membershipsRoutes = app
 
     // TODO can this be optimized?
     const membersQuery = db
-      .select({
-        user: userSelect,
-        membership: membershipSelect,
-      })
+      .select({ user: userSelect, membership: membershipSelect })
       .from(usersQuery)
       .innerJoin(memberships, eq(usersTable.id, memberships.userId))
       .orderBy(orderColumn);
@@ -346,12 +343,8 @@ const membershipsRoutes = app
 
     const result = await membersQuery.limit(Number(limit)).offset(Number(offset));
 
-    const members = await Promise.all(
-      result.map(async ({ user, membership }) => ({
-        ...user,
-        membership,
-      })),
-    );
+    // Map the result to include membership properties
+    const members = await Promise.all(result.map(async ({ user, membership }) => ({ ...user, membership })));
 
     return ctx.json({ success: true, data: { items: members, total } }, 200);
   })
@@ -372,32 +365,20 @@ const membershipsRoutes = app
 
     const entityIdField = entityIdFields[entity.entity];
 
-    const orderColumn = getOrderColumn(
-      {
-        id: tokensTable.id,
-        name: usersTable.name,
-        email: tokensTable.email,
-        role: tokensTable.role,
-        expiresAt: tokensTable.expiresAt,
-        createdAt: tokensTable.createdAt,
-        createdBy: tokensTable.createdBy,
-      },
-      sort,
-      tokensTable.createdAt,
-      order,
-    );
+    const invitedMemberSelect = {
+      id: tokensTable.id,
+      name: usersTable.name,
+      email: tokensTable.email,
+      role: tokensTable.role,
+      expiresAt: tokensTable.expiresAt,
+      createdAt: tokensTable.createdAt,
+      createdBy: tokensTable.createdBy,
+    };
 
-    // TODO create select schema or use existing schema?
+    const orderColumn = getOrderColumn(invitedMemberSelect, sort, tokensTable.createdAt, order);
+
     const invitedMembersQuery = db
-      .select({
-        id: tokensTable.id,
-        name: usersTable.name,
-        email: tokensTable.email,
-        role: tokensTable.role,
-        expiresAt: tokensTable.expiresAt,
-        createdAt: tokensTable.createdAt,
-        createdBy: tokensTable.createdBy,
-      })
+      .select(invitedMemberSelect)
       .from(tokensTable)
       .where(and(eq(tokensTable[entityIdField], entity.id), eq(tokensTable.organizationId, organization.id), eq(tokensTable.type, 'invitation')))
       .leftJoin(usersTable, eq(usersTable.id, tokensTable.userId))

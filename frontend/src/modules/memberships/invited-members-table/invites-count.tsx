@@ -6,8 +6,11 @@ import { Button } from '~/modules/ui/button';
 
 const InvitedMembersTable = lazy(() => import('~/modules/memberships/invited-members-table'));
 
-export const InvitedMembers = ({ entity, total }: InvitedMembersTableProps & { total: number | undefined }) => {
+export const InvitedMembers = ({ entity }: InvitedMembersTableProps) => {
   const { t } = useTranslation();
+
+  // @ts-ignore TODO: Fix this
+  const total = entity.counts.memberships.pending;
 
   const openSheet = () => {
     sheet.create(

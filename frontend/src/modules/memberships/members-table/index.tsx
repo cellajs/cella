@@ -7,6 +7,7 @@ import { config } from 'config';
 import { Trans, useTranslation } from 'react-i18next';
 import useSearchParams from '~/hooks/use-search-params';
 import { useUserSheet } from '~/hooks/use-user-sheet';
+import { queryClient } from '~/lib/router';
 import { useSortColumns } from '~/modules/common/data-table/sort-columns';
 import type { BaseTableMethods } from '~/modules/common/data-table/types';
 import { dialog } from '~/modules/common/dialoger/state';
@@ -17,6 +18,7 @@ import { useColumns } from '~/modules/memberships/members-table/columns';
 import { MembersTableHeader } from '~/modules/memberships/members-table/table-header';
 import RemoveMembersForm from '~/modules/memberships/remove-member-form';
 import type { Member } from '~/modules/memberships/types';
+import { organizationsKeys } from '~/modules/organizations/query';
 import InviteUsers from '~/modules/users/invite-users';
 import type { membersSearchSchema } from '~/routes/organizations';
 import { arraysHaveSameElements } from '~/utils';
@@ -31,21 +33,21 @@ export interface MembersTableProps {
   isSheet?: boolean;
 }
 
-const MembersTable = ({ entity, isSheet = false }: MembersTableProps) => {
+const MembersTable = ({ entity: baseEntity, isSheet = false }: MembersTableProps) => {
   const { t } = useTranslation();
 
   const { search, setSearch } = useSearchParams<MemberSearch>({ saveDataInSearch: !isSheet });
 
   const dataTableRef = useRef<BaseTableMethods | null>(null);
-  const organizationId = entity.organizationId || entity.id;
-  const isAdmin = entity.membership?.role === 'admin';
+  const organizationId = baseEntity.organizationId || baseEntity.id;
+  const isAdmin = baseEntity.membership?.role === 'admin';
 
   const { q, role, sort, order, sheetId } = search;
   const limit = LIMIT;
 
-  // State for selected and total counts
   const [total, setTotal] = useState<number | undefined>(undefined);
   const [selected, setSelected] = useState<Member[]>([]);
+  const [entity, setEntity] = useState<EntityPage>(baseEntity);
 
   // Update total and selected counts
   const updateCounts = (newSelected: Member[], newTotal: number) => {
@@ -67,7 +69,7 @@ const MembersTable = ({ entity, isSheet = false }: MembersTableProps) => {
   const openInviteDialog = (container?: HTMLElement | null) => {
     if (!onlineManager.isOnline()) return createToast(t('common:action.offline.text'), 'warning');
 
-    dialog(<InviteUsers entity={entity} mode={null} dialog />, {
+    dialog(<InviteUsers entity={entity} mode={null} dialog callback={handleNewInvites} />, {
       id: `user-invite-${entity.id}`,
       drawerOnMobile: false,
       className: 'w-auto shadow-none relative z-60 max-w-4xl',
@@ -92,6 +94,17 @@ const MembersTable = ({ entity, isSheet = false }: MembersTableProps) => {
           }}
         />
       ),
+    });
+  };
+
+  const handleNewInvites = () => {
+    queryClient.setQueryData(organizationsKeys.single(entity.slug), (oldEntity: EntityPage) => {
+      if (!oldEntity) return oldEntity;
+      const newEntity = { ...oldEntity };
+      // @ts-ignore TODO: Fix this
+      newEntity.counts.memberships.pending += 1;
+      setEntity(newEntity);
+      return newEntity;
     });
   };
 
