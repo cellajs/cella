@@ -9,6 +9,6 @@ type SectionsSchema = {
   description?: string;
 };
 
-export const menuSectionsSchemas: Record<ContextEntity, SectionsSchema> = {
+export const menuSectionsSchemas: Partial<Record<ContextEntity, SectionsSchema>> = {
   organization: { createForm: <CreateOrganizationForm replaceToCreatedOrg dialog />, label: 'common:organizations' },
 };

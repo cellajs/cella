@@ -23,7 +23,7 @@ export function getUserBy(field: UnsafeField, value: string, type: 'unsafe'): Pr
  * @param type(optional) - can be 'unsafe' or undefined. Determines which user fields to return:
  *              - 'unsafe' returns the full users table,
  *              - undefined defaults to the safe user fields.
- * @returns A promise that resolves to a `UserModel`, `UnsafeUserModel`, or `null` if no user is found.
+ * @returns A promise that resolves to a UserModel, UnsafeUserModel, or `null` if no user is found.
  */
 export async function getUserBy(
   field: SafeField | UnsafeField,
@@ -49,7 +49,7 @@ export function getUsersByConditions(whereArray: (SQL<unknown> | undefined)[], t
  * @param type (default 'safe') Determines which user fields to return:
  *               - 'unsafe' returns the full users table,
  *               - safe omits sensitive fields such as hashedPassword and unsubscribeToken.
- * @returns A promise that resolves to an array of `UserModel`s, `UnsafeUserModel`s, or `LimitedUserModel`s based on the `type`.
+ * @returns A promise that resolves to an array of UserModel or UnsafeUserModel based on the `type`.
  */
 export async function getUsersByConditions(whereArray: (SQL<unknown> | undefined)[], type?: SelectType): Promise<UserModel[] | UnsafeUserModel[]> {
   const select = type === 'unsafe' ? usersTable : userSelect;

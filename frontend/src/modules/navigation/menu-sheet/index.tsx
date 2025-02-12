@@ -44,22 +44,25 @@ export const MenuSheet = memo(() => {
   }, [searchResults]);
 
   const renderedSections = useMemo(() => {
-    return entityRelations.map(({ menuSectionName, entity: entityType }) => {
-      const menuData = menu[menuSectionName];
-      const menuSection = menuSectionsSchemas[entityType];
+    return entityRelations
+      .map(({ menuSectionName, entity: entityType }) => {
+        const menuData = menu[menuSectionName];
+        const menuSection = menuSectionsSchemas[entityType];
+        if (!menuSection) return null;
 
-      return (
-        <MenuSheetSection
-          entityType={entityType}
-          key={menuSectionName}
-          sectionLabel={menuSection.label}
-          sectionType={menuSectionName}
-          createForm={menuSection.createForm}
-          data={menuData}
-          description={menuSection.description}
-        />
-      );
-    });
+        return (
+          <MenuSheetSection
+            entityType={entityType}
+            key={menuSectionName}
+            sectionLabel={menuSection.label}
+            sectionType={menuSectionName}
+            createForm={menuSection.createForm}
+            data={menuData}
+            description={menuSection.description}
+          />
+        );
+      })
+      .filter((el) => el !== null);
   }, [menu]);
 
   // monitoring drop event
