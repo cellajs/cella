@@ -3,9 +3,9 @@ import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import useMounted from '~/hooks/use-mounted';
-import { menuSections } from '~/menu-config';
 import { Input } from '~/modules/ui/input';
 import type { UserMenu, UserMenuItem } from '~/modules/users/types';
+import { entityRelations } from '#/entity-config';
 
 interface MenuSheetSearchProps {
   menu: UserMenu;
@@ -33,7 +33,7 @@ export const MenuSheetSearchInput = ({ menu, searchTerm, setSearchTerm, searchRe
           return isMatch ? [item, ...filteredSubmenu] : filteredSubmenu;
         });
 
-      return menuSections.flatMap((section) => filterItems(menu[section.name]));
+      return entityRelations.flatMap(({ menuSectionName }) => filterItems(menu[menuSectionName]));
     };
     searchResultsChange(filterResults());
   }, [searchTerm, menu]);

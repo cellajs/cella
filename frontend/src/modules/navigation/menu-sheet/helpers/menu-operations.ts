@@ -1,13 +1,13 @@
-import { menuSections } from '~/menu-config';
 import type { UserMenu, UserMenuItem } from '~/modules/users/types';
 import { useNavigationStore } from '~/store/navigation';
+import { entityRelations } from '#/entity-config';
 
 const useTransformOnMenuItems = (transform: (items: UserMenuItem[]) => UserMenuItem[]) => {
   const { menu } = useNavigationStore.getState();
 
-  const updatedMenu = menuSections.reduce(
-    (acc, { name }) => {
-      if (menu[name]) acc[name] = transform(menu[name]);
+  const updatedMenu = entityRelations.reduce(
+    (acc, { menuSectionName }) => {
+      if (menu[menuSectionName]) acc[menuSectionName] = transform(menu[menuSectionName]);
       return acc;
     },
     {} as Record<keyof UserMenu, UserMenuItem[]>,
