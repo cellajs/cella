@@ -115,7 +115,7 @@ export const config = {
     sync: true, // Realtime updates and sync using Electric Sync
     registrationEnabled: true, // Allow users to sign up. If disabled, the app is by invitation only
     waitlist: false, // Suggest a waitlist for unknown emails when sign up is disabled,
-    imado: true, // Imado fully configured, if false, files will be stored in local browser (indexedDB)
+    imado: false, // Imado fully configured, if false, files will be stored in local browser (indexedDB)
   },
 
   /**

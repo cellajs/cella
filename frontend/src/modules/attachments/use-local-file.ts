@@ -1,24 +1,40 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { LocalFileStorage } from '~/modules/attachments/local-file-storage';
+import { useBlobStore } from '~/store/blob'; // Import the Zustand store
 
-// Fetch file from IndexedDB and return a Blob URL
+/**
+ *
+ * @param key Key used to get the file from indexedDB
+ * @param fileType
+ * @returns
+ */
 export const useLocalFile = (key: string, fileType?: string): string => {
+  // We use the Zustand store to get and set the blob URL after LocalFileStorage has created it. It also revokes the URL user closes the browser tab.
+  const { getBlobUrl, setBlobUrl } = useBlobStore();
+
+  // State
   const [fileUrl, setFileUrl] = useState<string>('');
+  const isMounted = useRef(true);
 
   useEffect(() => {
-    let isMounted = true;
-    let currentFileUrl = '';
+    isMounted.current = true;
+    const cachedUrl = getBlobUrl(key);
 
+    // If the URL is already cached in Blob store, we can use it directly
+    if (cachedUrl) {
+      setFileUrl(cachedUrl);
+      return;
+    }
+
+    // Fetch the file from indexedDB and create a blob URL
     const fetchFile = async () => {
       try {
-        // Retrieve the file using LocalFileStorage
         const file = await LocalFileStorage.getFile(key);
-
-        if (file && isMounted) {
-          // Convert file data to a Blob URL
+        if (file && isMounted.current) {
           const blob = new Blob([file.data], { type: fileType || 'application/octet-stream' });
-          currentFileUrl = URL.createObjectURL(blob);
-          setFileUrl(currentFileUrl);
+          const newUrl = URL.createObjectURL(blob);
+          setBlobUrl(key, newUrl);
+          setFileUrl(newUrl);
         }
       } catch (error) {
         console.error('Error fetching file from FileStorage:', error);
@@ -28,13 +44,9 @@ export const useLocalFile = (key: string, fileType?: string): string => {
     fetchFile();
 
     return () => {
-      isMounted = false;
-      if (currentFileUrl) {
-        // Revoke the Blob URL to free up memory
-        URL.revokeObjectURL(currentFileUrl);
-      }
+      isMounted.current = false;
     };
-  }, [key, fileType]);
+  }, [key, fileType, getBlobUrl, setBlobUrl]);
 
   return fileUrl;
 };

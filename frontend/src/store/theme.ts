@@ -5,7 +5,7 @@ import { immer } from 'zustand/middleware/immer';
 
 export type Mode = 'light' | 'dark';
 
-interface ThemeState {
+interface ThemeStoreState {
   mode: Mode; // Current color mode (default to system preference)
   theme: Theme; // Selected theme ('none' for default)
 
@@ -17,12 +17,12 @@ interface ThemeState {
 const browserMode = window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
 
 // Default state values
-const initStore: Pick<ThemeState, 'mode' | 'theme'> = {
+const initStore: Pick<ThemeStoreState, 'mode' | 'theme'> = {
   mode: browserMode,
   theme: 'none',
 };
 
-export const useThemeStore = create<ThemeState>()(
+export const useThemeStore = create<ThemeStoreState>()(
   devtools(
     immer(
       persist(

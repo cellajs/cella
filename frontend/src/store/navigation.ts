@@ -6,7 +6,7 @@ import { entityRelations } from '#/entity-config';
 
 import type { UserMenu } from '~/modules/users/types';
 
-interface NavigationState {
+interface NavigationStoreState {
   recentSearches: string[]; // Recent search (from AppSearch),
   setRecentSearches: (searchValue: string[]) => void; // Updates recent searches
 
@@ -47,7 +47,7 @@ const initialMenuState: UserMenu = entityRelations.reduce((acc, { menuSectionNam
 
 interface InitStore
   extends Pick<
-    NavigationState,
+    NavigationStoreState,
     | 'recentSearches'
     | 'keepMenuOpen'
     | 'hideSubmenu'
@@ -74,7 +74,7 @@ const initStore: InitStore = {
   finishedOnboarding: false,
 };
 
-export const useNavigationStore = create<NavigationState>()(
+export const useNavigationStore = create<NavigationStoreState>()(
   devtools(
     immer(
       persist(

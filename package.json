@@ -4,7 +4,7 @@
   "private": false,
   "license": "MIT",
   "repository": "https://github.com/cellajs/cella",
-  "description": "Cella is a TypeScript template to create web apps with sync and offline capabilities.",
+  "description": "Cella is a TypeScript template to create powerful web apps with sync and offline capabilities.",
   "keywords": ["template", "monorepo", "fullstack", "typescript", "hono", "drizzle", "shadcn", "postgres", "react", "vite", "pwa"],
   "author": "CellaJS <info@cellajs.com>",
   "homepage": "https://cellajs.com",
