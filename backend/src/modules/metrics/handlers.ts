@@ -8,10 +8,12 @@ import { entityTables } from '#/entity-config';
 import type { Env } from '#/lib/context';
 import { metricsConfig } from '#/middlewares/observability/config';
 import { calculateRequestsPerMinute, parsePromMetrics } from '#/modules/metrics/helpers';
+import defaultHook from '#/utils/default-hook';
 import { TimeSpan } from '#/utils/time-span';
 import metricsRouteConfig from './routes';
 
-const app = new OpenAPIHono<Env>();
+// Set default hook to catch validation errors
+const app = new OpenAPIHono<Env>({ defaultHook });
 
 // Store public counts in memory with a 1-minute cache
 const publicCountsCache = new Map<string, { data: Record<string, number>; expiresAt: number }>();

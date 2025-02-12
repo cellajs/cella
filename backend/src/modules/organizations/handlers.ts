@@ -13,16 +13,18 @@ import { sendSSEToUsers } from '#/lib/sse';
 import { logEvent } from '#/middlewares/logger/log-event';
 import { checkSlugAvailable } from '#/modules/general/helpers/check-slug';
 import { insertMembership } from '#/modules/memberships/helpers';
+import { membershipSelect } from '#/modules/memberships/helpers/select';
 import { getValidEntity } from '#/permissions/get-valid-entity';
 import { splitByAllowance } from '#/permissions/split-by-allowance';
 import { getMemberCounts, getMemberCountsQuery } from '#/utils/counts';
+import defaultHook from '#/utils/default-hook';
 import { getOrderColumn } from '#/utils/order-column';
 import { prepareStringForILikeFilter } from '#/utils/sql';
 import { NewsletterEmail, type NewsletterEmailProps } from '../../../emails/newsletter';
-import { membershipSelect } from '../memberships/helpers/select';
 import organizationsRouteConfig from './routes';
 
-const app = new OpenAPIHono<Env>();
+// Set default hook to catch validation errors
+const app = new OpenAPIHono<Env>({ defaultHook });
 
 const organizationsRoutes = app
   /*

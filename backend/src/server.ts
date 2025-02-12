@@ -5,12 +5,8 @@ import { config } from 'config';
 import type { Env } from '#/lib/context';
 import { errorResponse } from './lib/errors';
 import middlewares from './middlewares/app';
-import defaultHook from './utils/default-hook';
 
-// Set default hook to catch validation errors
-const baseApp = new OpenAPIHono<Env>({
-  defaultHook,
-});
+const baseApp = new OpenAPIHono<Env>();
 
 // Redirect favicon
 baseApp.get('/favicon.ico', (c) => c.redirect(`${config.frontendUrl}/static/favicon.ico`, 301));

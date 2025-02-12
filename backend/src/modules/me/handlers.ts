@@ -20,6 +20,7 @@ import { type EntityRelations, entityIdFields, entityRelations, entityTables } f
 import { type Env, getContextMemberships, getContextUser } from '#/lib/context';
 import { resolveEntity } from '#/lib/entity';
 import { sendSSEToUsers } from '#/lib/sse';
+import defaultHook from '#/utils/default-hook';
 import { deleteAuthCookie, getAuthCookie } from '../auth/helpers/cookie';
 import { membershipSelect } from '../memberships/helpers/select';
 import { getUserSessions } from './helpers/get-sessions';
@@ -28,7 +29,8 @@ import type { menuItemSchema, userMenuSchema } from './schema';
 type UserMenu = z.infer<typeof userMenuSchema>;
 type MenuItem = z.infer<typeof menuItemSchema>;
 
-const app = new OpenAPIHono<Env>();
+// Set default hook to catch validation errors
+const app = new OpenAPIHono<Env>({ defaultHook });
 
 const meRoutes = app
   /*
