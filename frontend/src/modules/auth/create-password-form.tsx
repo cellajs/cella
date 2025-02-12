@@ -31,6 +31,7 @@ const CreatePasswordForm = () => {
   const { tokenId } = useSearch({ from: CreatePasswordWithTokenRoute.id });
 
   const { data, isLoading, error } = useTokenCheck('email_verification', tokenId);
+  const isMobile = window.innerWidth < 640;
 
   // Reset password & sign in
   const {
@@ -90,7 +91,7 @@ const CreatePasswordForm = () => {
             <FormItem>
               <FormControl>
                 <div className="relative">
-                  <Input type="password" autoFocus placeholder={t('common:new_password')} autoComplete="new-password" {...field} />
+                  <Input type="password" autoFocus={!isMobile} placeholder={t('common:new_password')} autoComplete="new-password" {...field} />
                   <Suspense>
                     <PasswordStrength password={form.getValues('password')} minLength={8} />
                   </Suspense>

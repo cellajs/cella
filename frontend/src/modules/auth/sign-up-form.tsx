@@ -36,6 +36,8 @@ export const SignUpForm = ({ tokenData, email, resetSteps, emailEnabled }: Props
 
   const { token, tokenId } = useSearch({ from: AuthenticateRoute.id });
 
+  const isMobile = window.innerWidth < 640;
+
   // Handle basic sign up
   const { mutate: _signUp, isPending } = useMutation({
     mutationFn: signUp,
@@ -97,7 +99,7 @@ export const SignUpForm = ({ tokenData, email, resetSteps, emailEnabled }: Props
             render={({ field }) => (
               <FormItem className="hidden">
                 <FormControl>
-                  <Input {...field} type="email" disabled={true} readOnly={true} placeholder={t('common:email')} />
+                  <Input {...field} type="email" autoFocus={!isMobile} disabled={true} readOnly={true} placeholder={t('common:email')} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
