@@ -29,6 +29,7 @@ import {
   type microsoftUserProps,
 } from '#/modules/auth/helpers/oauth-providers';
 import { getUserBy, getUsersByConditions } from '#/modules/users/helpers/get-user-by';
+import defaultHook from '#/utils/default-hook';
 import { nanoid } from '#/utils/nanoid';
 import { TimeSpan, createDate, isExpiredDate } from '#/utils/time-span';
 import { CreatePasswordEmail, type CreatePasswordEmailProps } from '../../../emails/create-password';
@@ -63,7 +64,8 @@ function isOAuthEnabled(provider: EnabledOauthProvider): boolean {
   return enabledOauthProviders.includes(provider);
 }
 
-const app = new OpenAPIHono<Env>();
+// Set default hook to catch validation errors
+const app = new OpenAPIHono<Env>({ defaultHook });
 
 const authRoutes = app
   /*

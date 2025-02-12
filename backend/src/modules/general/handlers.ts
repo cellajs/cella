@@ -21,6 +21,7 @@ import { isAuthenticated } from '#/middlewares/guard';
 import { logEvent } from '#/middlewares/logger/log-event';
 import { getUserBy, getUsersByConditions } from '#/modules/users/helpers/get-user-by';
 import { verifyUnsubscribeToken } from '#/modules/users/helpers/unsubscribe-token';
+import defaultHook from '#/utils/default-hook';
 import { nanoid } from '#/utils/nanoid';
 import { prepareStringForILikeFilter } from '#/utils/sql';
 import { TimeSpan, createDate } from '#/utils/time-span';
@@ -32,7 +33,8 @@ import generalRouteConfig from './routes';
 
 const paddle = new Paddle(env.PADDLE_API_KEY || '');
 
-const app = new OpenAPIHono<Env>();
+// Set default hook to catch validation errors
+const app = new OpenAPIHono<Env>({ defaultHook });
 
 export const streams = new Map<string, SSEStreamingApi>();
 

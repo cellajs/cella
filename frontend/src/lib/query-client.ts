@@ -1,6 +1,5 @@
 import { CancelledError, type FetchInfiniteQueryOptions, type FetchQueryOptions, onlineManager } from '@tanstack/react-query';
 import i18next from 'i18next';
-import { ZodError } from 'zod';
 import { ApiError } from '~/lib/api';
 import { i18n } from '~/lib/i18n';
 import router, { queryClient } from '~/lib/router';
@@ -19,6 +18,19 @@ const fallbackMessages = (t: (typeof i18n)['t']) => ({
   429: t('error:too_many_requests'),
 });
 
+const getErrorMessage = (error: ApiError) => {
+  const statusCode = Number(error.status);
+  const fallback = fallbackMessages(i18n.t);
+
+  if (error.entityType && i18next.exists(`error:resource_${error.type}`)) {
+    return i18n.t(`error:resource_${error.type}`, { resource: i18n.t(error.entityType) });
+  }
+  if (error.type && i18next.exists(`error:${error.type}`)) return i18n.t(`error:${error.type}`);
+  if (error.message) return error.message;
+
+  return fallback[statusCode as keyof typeof fallback] || 'Unknown error occurred';
+};
+
 /**
  * Global error handler for API requests.
  * Handles network errors, API errors, and redirects to the sign-in page if the user is not authenticated.
@@ -33,11 +45,6 @@ export const onError = (error: Error | ApiError) => {
   // Handle network error (e.g., connection refused)
   if (error instanceof Error && error.message === 'Failed to fetch') toaster(i18n.t('error:network_error'), 'error');
 
-  // TODO scale reaction on ZodErrors
-  if (error instanceof ZodError) {
-    for (const err of error.issues) toaster(err.message, 'error');
-  }
-
   if (error instanceof ApiError) {
     const statusCode = Number(error.status);
 
@@ -48,15 +55,8 @@ export const onError = (error: Error | ApiError) => {
     // Abort if /me or /me/menu, it should fail silently
     if (error.path && ['/me', '/me/menu'].includes(error.path)) return;
 
-    const fallback = fallbackMessages(i18n.t);
-
     // Translate, try most specific first
-    const errorMessage =
-      error.entityType && i18next.exists(`error:resource_${error.type}`)
-        ? i18n.t(`error:resource_${error.type}`, { resource: i18n.t(error.entityType) })
-        : error.type && i18next.exists(`error:${error.type}`)
-          ? i18n.t(`error:${error.type}`)
-          : fallback[statusCode as keyof typeof fallback];
+    const errorMessage = getErrorMessage(error);
 
     // Show toast
     const toastType = error.severity === 'error' ? 'error' : error.severity === 'warn' ? 'warning' : 'info';
