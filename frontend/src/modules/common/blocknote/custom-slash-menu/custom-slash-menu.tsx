@@ -9,7 +9,7 @@ export const slashMenu = (
   indexedItemCount: number,
   originalItemCount: number,
 ) => {
-  const { items, selectedIndex, onItemClick } = props;
+  const { items, loadingState, selectedIndex, onItemClick } = props;
   const itemRefs = useRef<(HTMLDivElement | null)[]>([]);
   const isMobile = useBreakpoints('max', 'sm');
 
@@ -43,9 +43,12 @@ export const slashMenu = (
   };
 
   useEffect(() => {
+    //ensure that all items loaded
+    if (loadingState !== 'loaded') return;
+
     window.addEventListener('keydown', handleKeyPress);
     return () => window.removeEventListener('keydown', handleKeyPress);
-  }, []);
+  }, [loadingState]);
 
   // to be able to use in sheet
   useEffect(() => {

@@ -60,7 +60,7 @@ export function ResetBlockTypeItem({ editor, props: { block }, allowedTypes }: R
   return (
     <>
       {fullItems.map(({ title, type, icon, onClick }) => {
-        const isSelected = block.type === type || (block.type === 'heading' && title.includes(block.props.level.toString()));
+        const isSelected = block.type === 'heading' ? title.includes(block.props.level.toString()) : block.type === type;
         return (
           <Components.Generic.Menu.Item className="bn-menu-item" key={title} onClick={onClick} icon={icon} checked={isSelected}>
             {title}
