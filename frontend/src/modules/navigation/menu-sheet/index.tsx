@@ -6,9 +6,10 @@ import { config } from 'config';
 import { Info, Search } from 'lucide-react';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { entityRelations } from '#/entity-config';
 
 import { dispatchCustomEvent } from '~/lib/custom-events';
-import { menuSections } from '~/menu-config';
+import { menuSectionsSchemas } from '~/menu-config';
 import { AlertWrap } from '~/modules/common/alert-wrap';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { updateMembership } from '~/modules/memberships/api';
@@ -43,21 +44,25 @@ export const MenuSheet = memo(() => {
   }, [searchResults]);
 
   const renderedSections = useMemo(() => {
-    return menuSections.map((section) => {
-      const menuSection = menu[section.name];
+    return entityRelations
+      .map(({ menuSectionName, entity: entityType }) => {
+        const menuData = menu[menuSectionName];
+        const menuSection = menuSectionsSchemas[entityType];
+        if (!menuSection) return null;
 
-      return (
-        <MenuSheetSection
-          entityType={section.entityType}
-          key={section.name}
-          sectionLabel={section.label}
-          sectionType={section.name}
-          createForm={section.createForm}
-          data={menuSection}
-          description={section.description}
-        />
-      );
-    });
+        return (
+          <MenuSheetSection
+            entityType={entityType}
+            key={menuSectionName}
+            sectionLabel={menuSection.label}
+            sectionType={menuSectionName}
+            createForm={menuSection.createForm}
+            data={menuData}
+            description={menuSection.description}
+          />
+        );
+      })
+      .filter((el) => el !== null);
   }, [menu]);
 
   // monitoring drop event
@@ -133,7 +138,7 @@ export const MenuSheet = memo(() => {
                 </label>
               </div>
               {pwaEnabled && <OfflineAccessSwitch />}
-              {menuSections.some((el) => el.submenu) && (
+              {entityRelations.some(({ subEntity }) => subEntity) && (
                 <div className="flex items-center gap-4 ml-1">
                   <Switch size="xs" id="hideSubmenu" checked={hideSubmenu} onCheckedChange={toggleHideSubmenu} ria-label={t('common:nested_menu')} />
                   <label htmlFor="hideSubmenu" className="cursor-pointer select-none text-sm font-medium leading-none">

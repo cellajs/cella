@@ -8,6 +8,7 @@ import { type Env, getContextMemberships, getContextUser } from '#/lib/context';
 import { type ErrorType, createError, errorResponse } from '#/lib/errors';
 import { logEvent } from '#/middlewares/logger/log-event';
 import { getUsersByConditions } from '#/modules/users/helpers/get-user-by';
+import defaultHook from '#/utils/default-hook';
 import { getOrderColumn } from '#/utils/order-column';
 import { prepareStringForILikeFilter } from '#/utils/sql';
 import { checkSlugAvailable } from '../general/helpers/check-slug';
@@ -15,7 +16,8 @@ import { userSelect } from './helpers/select';
 import { transformDbUser } from './helpers/transform-database-user';
 import usersRouteConfig from './routes';
 
-const app = new OpenAPIHono<Env>();
+// Set default hook to catch validation errors
+const app = new OpenAPIHono<Env>({ defaultHook });
 
 const usersRoutes = app
   /*

@@ -79,6 +79,7 @@ const AttachmentsTable = ({ organization, canUpload = true, isSheet = false }: A
         canUpload={canUpload}
       />
       <div>
+        {/* Explainer alert box */}
         <AnimatePresence initial={false}>
           {!!total && (
             <motion.div

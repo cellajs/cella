@@ -3,7 +3,7 @@ import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
 
-interface DraftState {
+interface DraftStoreState {
   forms: Record<string, unknown>; // Draft forms
 
   setForm<T>(key: string, value: T): void; // Saves or updates a form draft
@@ -12,7 +12,7 @@ interface DraftState {
   clearForms(): void; // Clears all stored drafts
 }
 
-export const useDraftStore = create<DraftState>()(
+export const useDraftStore = create<DraftStoreState>()(
   immer(
     persist(
       (set, get) => ({

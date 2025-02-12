@@ -8,6 +8,7 @@ interface UseUserSheetProps {
   organizationId?: string;
 }
 
+// TODO: can we get rid of the timeouts? Can we perhaps use put a permanent entity sheet that is available to render entities and access it via search params routing?
 /**
  * Custom hook to manage user sheet modal.
  * It creates and removes a user sheet based on the provided `sheetId`.

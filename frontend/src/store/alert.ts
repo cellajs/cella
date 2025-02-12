@@ -5,7 +5,7 @@ import { immer } from 'zustand/middleware/immer';
 
 type DownLevels = 'maintenance' | 'offline' | null;
 
-interface AlertState {
+interface AlertStoreState {
   alertsSeen: string[]; // Seen alert IDs (to prevent duplicate notifications)
   downAlert: DownLevels; // Down alert type
 
@@ -16,9 +16,9 @@ interface AlertState {
 }
 
 // Initial store state, using config to determine maintenance mode
-const initStore: Pick<AlertState, 'alertsSeen' | 'downAlert'> = { downAlert: config.maintenance ? 'maintenance' : null, alertsSeen: [] };
+const initStore: Pick<AlertStoreState, 'alertsSeen' | 'downAlert'> = { downAlert: config.maintenance ? 'maintenance' : null, alertsSeen: [] };
 
-export const useAlertStore = create<AlertState>()(
+export const useAlertStore = create<AlertStoreState>()(
   devtools(
     immer(
       persist(

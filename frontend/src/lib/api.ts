@@ -1,7 +1,6 @@
 import type { Entity, Severity } from 'config';
 import type { ClientResponse } from 'hono/client';
 import type { ClientErrorStatusCode, ServerErrorStatusCode } from 'hono/utils/http-status';
-import { ZodError } from 'zod';
 
 type HttpErrorStatus = ClientErrorStatusCode | ServerErrorStatusCode;
 
@@ -19,15 +18,10 @@ type HttpErrorStatus = ClientErrorStatusCode | ServerErrorStatusCode;
 export const handleResponse = async <T extends Record<string, any>, U extends ClientResponse<T, number, 'json'>>(response: U) => {
   const json = await response.json();
 
-  if (response.ok) {
-    return json as Awaited<ReturnType<Extract<U, { status: 200 }>['json']>>;
-  }
+  if (response.ok) return json as Awaited<ReturnType<Extract<U, { status: 200 }>['json']>>;
 
-  if ('error' in json) {
-    // TODO figure out why `instance of ZodError` doesn't recognize err
-    if (json.error.name === 'ZodError') throw new ZodError(json.error.issues);
-    throw new ApiError(json.error);
-  }
+  if ('error' in json) throw new ApiError(json.error);
+
   throw new Error('Unknown error');
 };
 

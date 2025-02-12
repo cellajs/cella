@@ -20,7 +20,6 @@ export const baseEntityRoutes = {
  *
  * Type `base` if for buttons in the main navigation bar, `floating` is for floating buttons
  */
-
 export type NavItem = {
   id: string;
   icon: React.ElementType<LucideProps>;

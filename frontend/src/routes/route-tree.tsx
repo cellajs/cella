@@ -17,6 +17,9 @@ import { OrganizationAttachmentsRoute, OrganizationMembersRoute, OrganizationRou
 import { MetricsRoute, OrganizationsTableRoute, RequestsTableRoute, SystemRoute, UsersTableRoute } from '~/routes/system';
 import { UserProfileRoute, UserSettingsRoute } from '~/routes/users';
 
+//App-specific route imports here
+//...
+
 /**
  * The route tree for the entire app
  */
@@ -45,7 +48,8 @@ export const routeTree = rootRoute.addChildren([
     SystemRoute.addChildren([UsersTableRoute, OrganizationsTableRoute, RequestsTableRoute, MetricsRoute]),
     UserProfileRoute,
     UserSettingsRoute,
-    // App specific routes here
+
+    // App-specific routes here
     // ...
 
     // Org routes on bottom because of slug directly after root path

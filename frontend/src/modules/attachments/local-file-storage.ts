@@ -1,8 +1,11 @@
 import { clear, del, get, keys, set } from 'idb-keyval';
 import type { LocalFile } from '~/lib/imado';
 
-// Store files in IndexedDB when user is offline or when Imado is not configured
-// https://github.com/jakearchibald/idb-keyval
+/**
+ * Store files in IndexedDB when user is offline or when Imado is not configured
+ *
+ * @link https://github.com/jakearchibald/idb-keyval
+ */
 export const LocalFileStorage = {
   async addFiles(fileMap: Record<string, LocalFile>): Promise<void> {
     console.debug('Saving multiple files');

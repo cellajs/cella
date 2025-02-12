@@ -2,11 +2,11 @@ import { config } from 'config';
 import { create } from 'zustand';
 import { createJSONStorage, devtools, persist } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
-import { menuSections } from '~/menu-config';
+import { entityRelations } from '#/entity-config';
 
 import type { UserMenu } from '~/modules/users/types';
 
-interface NavigationState {
+interface NavigationStoreState {
   recentSearches: string[]; // Recent search (from AppSearch),
   setRecentSearches: (searchValue: string[]) => void; // Updates recent searches
 
@@ -40,16 +40,14 @@ interface NavigationState {
 }
 
 // Defines the initial menu structure, excluding submenu items
-const initialMenuState: UserMenu = menuSections
-  .filter((el) => !el.submenu)
-  .reduce((acc, section) => {
-    acc[section.name] = [];
-    return acc;
-  }, {} as UserMenu);
+const initialMenuState: UserMenu = entityRelations.reduce((acc, { menuSectionName }) => {
+  acc[menuSectionName] = [];
+  return acc;
+}, {} as UserMenu);
 
 interface InitStore
   extends Pick<
-    NavigationState,
+    NavigationStoreState,
     | 'recentSearches'
     | 'keepMenuOpen'
     | 'hideSubmenu'
@@ -76,7 +74,7 @@ const initStore: InitStore = {
   finishedOnboarding: false,
 };
 
-export const useNavigationStore = create<NavigationState>()(
+export const useNavigationStore = create<NavigationStoreState>()(
   devtools(
     immer(
       persist(

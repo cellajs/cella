@@ -6,6 +6,7 @@ import { type RequestModel, requestsTable } from '#/db/schema/requests';
 import type { Env } from '#/lib/context';
 import { errorResponse } from '#/lib/errors';
 import { sendSlackMessage } from '#/lib/notification';
+import defaultHook from '#/utils/default-hook';
 import { getOrderColumn } from '#/utils/order-column';
 import { prepareStringForILikeFilter } from '#/utils/sql';
 import { getUserBy } from '../users/helpers/get-user-by';
@@ -14,7 +15,8 @@ import requestsRouteConfig from './routes';
 // These requests are only allowed to be created if user has none yet
 const uniqueRequests: RequestModel['type'][] = ['waitlist', 'newsletter'];
 
-const app = new OpenAPIHono<Env>();
+// Set default hook to catch validation errors
+const app = new OpenAPIHono<Env>({ defaultHook });
 
 const requestsRoutes = app
   /*

@@ -40,9 +40,12 @@ export const AttachmentRender = ({
     // Use direct URL for static images
     if (sanitizedSource.startsWith('/static/')) return sanitizedSource;
 
-    // Use either remote URL or local URL pointing to indedexedDB
+    // Use either remote URL or local URL pointing to indexedDB
     return sanitizedSource.startsWith('http') ? sanitizedSource : localUrl;
   }, [sanitizedSource, localUrl]);
+
+  // We might have to wait for local file to be fetched
+  if (!url) return <Spinner className="mt-[40vh]" />;
 
   return (
     <div className={containerClassName}>

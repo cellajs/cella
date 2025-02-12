@@ -18,6 +18,7 @@ import { sendSSEToUsers } from '#/lib/sse';
 import { logEvent } from '#/middlewares/logger/log-event';
 import { getUsersByConditions } from '#/modules/users/helpers/get-user-by';
 import { getValidEntity } from '#/permissions/get-valid-entity';
+import defaultHook from '#/utils/default-hook';
 import { nanoid } from '#/utils/nanoid';
 import { getOrderColumn } from '#/utils/order-column';
 import { prepareStringForILikeFilter } from '#/utils/sql';
@@ -29,7 +30,8 @@ import { getAssociatedEntityDetails, insertMembership } from './helpers';
 import { membershipSelect } from './helpers/select';
 import membershipsRouteConfig from './routes';
 
-const app = new OpenAPIHono<Env>();
+// Set default hook to catch validation errors
+const app = new OpenAPIHono<Env>({ defaultHook });
 
 const membershipsRoutes = app
   /*

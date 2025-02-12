@@ -5,7 +5,7 @@ import { immer } from 'zustand/middleware/immer';
 import { i18n } from '~/lib/i18n';
 import type { MeUser, User } from '~/modules/users/types';
 
-interface UserState {
+interface UserStoreState {
   user: MeUser; // Current user data
   lastUser: Partial<MeUser> | null; // Last signed-out user's data (email, name, passkey, id, slug)
   clearLastUser: () => void; // Resets the `lastUser` to null.
@@ -14,7 +14,7 @@ interface UserState {
   updateUser: (user: User) => void; // Updates current user and adjusts lastUser
 }
 
-export const useUserStore = create<UserState>()(
+export const useUserStore = create<UserStoreState>()(
   devtools(
     persist(
       immer((set) => ({
