@@ -28,7 +28,7 @@ export const useMembersDeleteMutation = () =>
     mutationFn: removeMembers,
   });
 
-const onError = (_: Error, __: UpdateMembershipProp & RemoveMembersProps, context?: MemberContextProp[]) => {
+const onError = (_: Error, __: UpdateMembershipProp | RemoveMembersProps, context?: MemberContextProp[]) => {
   if (context?.length) {
     for (const [queryKey, previousData] of context) {
       queryClient.setQueryData(queryKey, previousData);

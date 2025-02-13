@@ -4,6 +4,7 @@
   "body_too_large.text": "The request body is too large. Please try again later or contact support.",
   "contact_mistake": "If you believe this to be a mistake, please contact support.",
   "create_resource": "{{resource}} could not be created",
+  "delete_resource": "{{resource}} could not be deleted",
   "delete_resource_forbidden": "Not allowed to delete this {{resource}}",
   "delete_resource_forbidden.text": "You do not have enough permission to delete this {{resource}}.",
   "delete_resources": "{{resources}} could not be deleted",
