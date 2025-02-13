@@ -15,7 +15,7 @@ import { attachmentsKeys } from '~/modules/attachments/query';
 import type { Attachment } from '~/modules/attachments/types';
 import { toaster } from '~/modules/common/toaster';
 import { compareQueryKeys } from '~/query/helpers/compare-query-keys';
-import { formatUpdatedData, getCancelingRefetchQueries, getQueries, getQueryItems, handleNoOldData } from '~/query/helpers/mutate-query';
+import { formatUpdatedData, getCancelingRefetchQueries, getQueries, getQueryItems } from '~/query/helpers/mutate-query';
 import type { ContextProp, InfiniteQueryData, QueryData } from '~/query/types';
 import { nanoid } from '~/utils/nanoid';
 
@@ -90,7 +90,7 @@ queryClient.setMutationDefaults(attachmentsKeys.create(), {
       if (!previousData) continue;
 
       queryClient.setQueryData<AttachmentInfiniteQueryData | AttachmentQueryData>(queryKey, (oldData) => {
-        if (!oldData) return handleNoOldData(oldData); // Handle missing data
+        if (!oldData) return oldData;
 
         const prevItems = getQueryItems(oldData);
         const updatedItems = [...newAttachments, ...prevItems];
@@ -114,7 +114,7 @@ queryClient.setMutationDefaults(attachmentsKeys.create(), {
       const [activeKey] = query;
 
       queryClient.setQueryData<AttachmentInfiniteQueryData | AttachmentQueryData>(activeKey, (oldData) => {
-        if (!oldData) return handleNoOldData(oldData);
+        if (!oldData) return oldData;
 
         const prevItems = getQueryItems(oldData);
 
@@ -156,7 +156,7 @@ queryClient.setMutationDefaults(attachmentsKeys.update(), {
       if (!previousData) continue;
 
       queryClient.setQueryData<AttachmentInfiniteQueryData | AttachmentQueryData>(queryKey, (oldData) => {
-        if (!oldData) return handleNoOldData(oldData); // Handle missing data
+        if (!oldData) return oldData; // Handle missing data
 
         const prevItems = getQueryItems(oldData);
         const updatedItems = prevItems.map((item) => (item.id === variables.id ? { ...item, ...variables } : item));
@@ -179,7 +179,7 @@ queryClient.setMutationDefaults(attachmentsKeys.update(), {
     for (const query of queries) {
       const [activeKey] = query;
       queryClient.setQueryData<AttachmentInfiniteQueryData | AttachmentQueryData>(activeKey, (oldData) => {
-        if (!oldData) return handleNoOldData(oldData); // Handle no old data
+        if (!oldData) return oldData;
 
         const prevItems = getQueryItems(oldData);
 
@@ -214,7 +214,7 @@ queryClient.setMutationDefaults(attachmentsKeys.delete(), {
       if (!previousData) continue;
 
       queryClient.setQueryData<AttachmentInfiniteQueryData | AttachmentQueryData>(queryKey, (oldData) => {
-        if (!oldData) return handleNoOldData(oldData); // Handle case where old data is missing
+        if (!oldData) return oldData;
 
         const prevItems = getQueryItems(oldData);
         const updatedItems = prevItems.filter((item) => !ids.includes(item.id));

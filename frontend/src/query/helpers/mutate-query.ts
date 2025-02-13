@@ -30,13 +30,13 @@ export function formatUpdatedData<T>(
   if (isQueryData(prevData)) return { total: prevData.total + addToTotal, items: updatedData };
 
   // Determine the effective limit without modifying the function parameter
-  const pageItemsLimit = limit ?? (prevData.pages.length > 1 ? prevData.pages[0].items.length : undefined);
+  const pageItemsLimit = limit ?? (prevData.pages.length > 1 ? prevData.pages[0].items.length : null);
 
   // If no effective limit, return all updated data in a single page
   if (!pageItemsLimit) {
     return {
       ...prevData,
-      pages: [{ total: prevData.pages[0].total + addToTotal, items: updatedData }],
+      pages: [{ total: prevData.pages[0]?.total ?? 0 + addToTotal, items: updatedData }],
     };
   }
   // InfiniteQueryData, split the updatedData by the limit and update the pages
@@ -53,19 +53,6 @@ export function formatUpdatedData<T>(
     })),
   };
 }
-
-/**
- * Handles the case where there is no previous data, returning an empty structure
- * for either regular or infinite query data.
- * @param previousData- Previous query data, which can be undefined or either QueryData or InfiniteQueryData.
- * @returns - An empty structure for the query data.
- */
-export const handleNoOldData = <T>(previousData: QueryData<T> | InfiniteQueryData<T> | undefined) => {
-  const pages = { items: [], total: 0 };
-  // Return empty structure depending on whether the data is of type QueryData or InfiniteQueryData
-  if (isQueryData(previousData)) return pages;
-  if (isInfiniteQueryData(previousData)) return { pageParams: [0], pages: [pages] };
-};
 
 export const isQueryData = <T>(data: unknown): data is QueryData<T> => {
   return typeof data === 'object' && data !== null && 'items' in data && 'total' in data;
