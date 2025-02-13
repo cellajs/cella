@@ -1,6 +1,7 @@
 import { QueryClientProvider as BaseQueryClientProvider } from '@tanstack/react-query';
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
 import { useEffect } from 'react';
+import { useOnlineManager } from '~/hooks/use-online-manager';
 import { persister, queryClient } from '~/lib/router';
 import { meQueryOptions, menuQueryOptions } from '~/modules/users/query';
 import type { UserMenuItem } from '~/modules/users/types';
@@ -22,6 +23,7 @@ const GC_TIME = 24 * 60 * 60 * 1000; // 24 hours
 
 export const QueryClientProvider = ({ children }: { children: React.ReactNode }) => {
   const { user } = useUserStore();
+  const { isOnline } = useOnlineManager();
   const { offlineAccess } = useGeneralStore();
   const { setPausedMutations, getPausedMutations, clearPausedMutations } = useMutationsStore();
 
@@ -69,30 +71,35 @@ export const QueryClientProvider = ({ children }: { children: React.ReactNode })
   }, [offlineAccess, user]);
 
   useEffect(() => {
-    console.info('App is back online, resuming paused mutations...');
     const pausedMutations = getPausedMutations();
     if (!pausedMutations.length) return;
+    console.info('App is back online, resuming paused mutations...');
 
     for (const mutation of pausedMutations) {
       const { mutationKey, variables, context } = mutation;
       const defaultMutation = queryClient.getMutationDefaults(mutationKey);
+
       if (!defaultMutation.mutationFn) continue;
+
+      // Retry the mutation with stored variables and context
       defaultMutation
-        .mutationFn(mutation.variables)
+        .mutationFn(variables)
         .then((data) => defaultMutation.onSuccess?.(data, variables, context))
         .catch((err) => defaultMutation.onError?.(err, variables, context));
     }
+
+    // Clear stored mutations and refresh queries
     clearPausedMutations();
     queryClient.invalidateQueries();
   }, []);
 
   useEffect(() => {
+    if (!isOnline) return;
     // Listen to mutation cache changes
     const unsubscribe = queryClient.getMutationCache().subscribe((mutationEvent) => {
       const mutation = mutationEvent.mutation;
-
-      // If the app is offline and a mutation is paused, save it
-      if (mutation && !navigator.onLine && 'action' in mutationEvent && mutationEvent.action.type === 'pause' && mutation.options.mutationKey) {
+      // Store paused mutations if the app is offline
+      if (mutation && 'action' in mutationEvent && mutationEvent.action.type === 'pause' && mutation.options.mutationKey) {
         setPausedMutations({
           mutationKey: mutation.options.mutationKey,
           variables: mutation.state.variables,
@@ -100,10 +107,8 @@ export const QueryClientProvider = ({ children }: { children: React.ReactNode })
         });
       }
     });
-
-    // Cleanup the subscription when the component unmounts
-    return () => unsubscribe();
-  }, []);
+    return () => unsubscribe(); // Cleanup
+  }, [isOnline]);
 
   if (!offlineAccess) return <BaseQueryClientProvider client={queryClient}>{children}</BaseQueryClientProvider>;
 
