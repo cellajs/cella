@@ -8,6 +8,7 @@ import { queriesToMap } from '~/offline-config';
 import { prefetchQuery } from '~/query/helpers/prefetch-query';
 import { waitFor } from '~/query/helpers/wait-for';
 import { useGeneralStore } from '~/store/general';
+import { useMutationsStore } from '~/store/mutations';
 import { useUserStore } from '~/store/user';
 
 const queryMutationFileImports = import.meta.glob('~/modules/**/query-mutations.ts');
@@ -22,6 +23,7 @@ const GC_TIME = 24 * 60 * 60 * 1000; // 24 hours
 export const QueryClientProvider = ({ children }: { children: React.ReactNode }) => {
   const { user } = useUserStore();
   const { offlineAccess } = useGeneralStore();
+  const { setPausedMutations, getPausedMutations, clearPausedMutations } = useMutationsStore();
 
   useEffect(() => {
     // Exit early if offline access is disabled or no stored user is available
@@ -66,19 +68,47 @@ export const QueryClientProvider = ({ children }: { children: React.ReactNode })
     };
   }, [offlineAccess, user]);
 
+  useEffect(() => {
+    console.info('App is back online, resuming paused mutations...');
+    const pausedMutations = getPausedMutations();
+    if (!pausedMutations.length) return;
+
+    for (const mutation of pausedMutations) {
+      const { mutationKey, variables, context } = mutation;
+      const defaultMutation = queryClient.getMutationDefaults(mutationKey);
+      if (!defaultMutation.mutationFn) continue;
+      defaultMutation
+        .mutationFn(mutation.variables)
+        .then((data) => defaultMutation.onSuccess?.(data, variables, context))
+        .catch((err) => defaultMutation.onError?.(err, variables, context));
+    }
+    clearPausedMutations();
+    queryClient.invalidateQueries();
+  }, []);
+
+  useEffect(() => {
+    // Listen to mutation cache changes
+    const unsubscribe = queryClient.getMutationCache().subscribe((mutationEvent) => {
+      const mutation = mutationEvent.mutation;
+
+      // If the app is offline and a mutation is paused, save it
+      if (mutation && !navigator.onLine && 'action' in mutationEvent && mutationEvent.action.type === 'pause' && mutation.options.mutationKey) {
+        setPausedMutations({
+          mutationKey: mutation.options.mutationKey,
+          variables: mutation.state.variables,
+          context: mutation.state.context,
+        });
+      }
+    });
+
+    // Cleanup the subscription when the component unmounts
+    return () => unsubscribe();
+  }, []);
+
   if (!offlineAccess) return <BaseQueryClientProvider client={queryClient}>{children}</BaseQueryClientProvider>;
 
   return (
-    <PersistQueryClientProvider
-      client={queryClient}
-      persistOptions={{ persister }}
-      onSuccess={() => {
-        // resume mutations after initial restore from localStorage was successful
-        queryClient.resumePausedMutations().then(() => {
-          queryClient.invalidateQueries();
-        });
-      }}
-    >
+    <PersistQueryClientProvider client={queryClient} persistOptions={{ persister }}>
       {children}
     </PersistQueryClientProvider>
   );
