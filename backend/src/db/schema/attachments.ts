@@ -1,6 +1,6 @@
 import { pgTable, timestamp, varchar } from 'drizzle-orm/pg-core';
 import { nanoid } from '#/utils/nanoid';
-import { organizationsTable } from './organizations';
+import { attachmentRelationsColumns } from '../attachments-schema-config';
 import { usersTable } from './users';
 
 export const attachmentsTable = pgTable('attachments', {
@@ -21,11 +21,7 @@ export const attachmentsTable = pgTable('attachments', {
   modifiedBy: varchar().references(() => usersTable.id, {
     onDelete: 'set null',
   }),
-  organizationId: varchar()
-    .notNull()
-    .references(() => organizationsTable.id, {
-      onDelete: 'cascade',
-    }),
+  ...attachmentRelationsColumns,
 });
 
 export type AttachmentModel = typeof attachmentsTable.$inferSelect;

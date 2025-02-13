@@ -67,6 +67,7 @@ export const config = {
     'frontend/package.json',
     'backend/package.json',
     'backend/drizzle/*',
+    'backend/src/db/attachments-schema-config.ts',
     'backend/scripts/seeds/data/*',
     'backend/src/routes.ts',
     'backend/src/entity-config.ts',
