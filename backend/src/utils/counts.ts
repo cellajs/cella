@@ -1,4 +1,4 @@
-import { type ContextEntity, config } from 'config';
+import { type ContextEntity, type ProductEntity, config } from 'config';
 import { count, eq, sql } from 'drizzle-orm';
 import { db } from '#/db/db';
 import { membershipsTable } from '#/db/schema/memberships';
@@ -54,6 +54,22 @@ export function getMemberCounts(entity: ContextEntity, id: string) {
     .then((rows) => rows[0] || { admins: 0, members: 0, pending: 0, total: 0 });
 }
 
+// Define a mapped type to check if 'organizationId' exists in each table
+type EntityWithTargetId = {
+  [K in ProductEntity | ContextEntity]: (typeof entityIdFields)[ContextEntity] extends keyof (typeof entityTables)[K] ? K : never;
+};
+
+// This will filter out 'never' types and give us only valid types
+type ValidEntityTypes = Extract<EntityWithTargetId[ProductEntity | ContextEntity], string>;
+
+// Define the type guard function for filtering
+const hasTargetEntityId = (
+  entityType: ProductEntity | ContextEntity,
+  idField: (typeof entityIdFields)[ContextEntity],
+): entityType is ValidEntityTypes => {
+  return idField in entityTables[entityType];
+};
+
 /**
  * Retrieves the count of related entities(Context and Product) for a specific entity based on its ID.
  *
@@ -68,8 +84,11 @@ export const getEntityCounts = async (entity: ContextEntity, entityId: string) =
   // Array to hold the individual count queries
   const countQueries = [];
 
+  // Use the filter with the type guard
+  const validEntityTypes = allEntityTypes.filter((entityType) => hasTargetEntityId(entityType, entityIdField));
+
   // Loop through each entity type and create the corresponding count query
-  for (const entityType of allEntityTypes) {
+  for (const entityType of validEntityTypes) {
     const table = entityTables[entityType];
 
     // Skip if the table doesn't have the required entity ID field
@@ -79,7 +98,7 @@ export const getEntityCounts = async (entity: ContextEntity, entityId: string) =
       .select({ [entityType]: count() })
       .from(table)
       .where(eq(table[entityIdField], entityId))
-      .then((rows) => rows[0] || { [entityType]: 0 });
+      .then((rows) => rows[0] || { [entityType]: 0 }) as unknown as Record<(typeof validEntityTypes)[number], number>;
 
     countQueries.push(countQuery);
   }
@@ -87,11 +106,14 @@ export const getEntityCounts = async (entity: ContextEntity, entityId: string) =
   const queryResults = await Promise.all(countQueries);
 
   // Transform the array of results into an object with entity type counts
-  const entityCounts = queryResults.reduce((acc, resultRow) => {
-    const [[entityType, count]] = Object.entries(resultRow);
-    acc[entityType] = count;
-    return acc;
-  }, {});
+  const entityCounts = queryResults.reduce(
+    (acc, resultRow) => {
+      const [[entityType, count]] = Object.entries(resultRow) as [[(typeof validEntityTypes)[number], number]];
+      acc[entityType] = count;
+      return acc;
+    },
+    {} as Record<(typeof validEntityTypes)[number], number>,
+  );
 
   return entityCounts;
 };
