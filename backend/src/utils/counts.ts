@@ -54,50 +54,29 @@ export function getMemberCounts(entity: ContextEntity, id: string) {
     .then((rows) => rows[0] || { admins: 0, members: 0, pending: 0, total: 0 });
 }
 
-// Define a mapped type to check if 'organizationId' exists in each table
-type EntityWithTargetId = {
-  [K in ProductEntity | ContextEntity]: (typeof entityIdFields)[ContextEntity] extends keyof (typeof entityTables)[K] ? K : never;
-};
-
-// This will filter out 'never' types and give us only valid types
-type ValidEntityTypes = Extract<EntityWithTargetId[ProductEntity | ContextEntity], string>;
-
-// Define the type guard function for filtering
-const hasTargetEntityId = (
-  entityType: ProductEntity | ContextEntity,
-  idField: (typeof entityIdFields)[ContextEntity],
-): entityType is ValidEntityTypes => {
-  return idField in entityTables[entityType];
-};
-
 /**
- * Retrieves the count of related entities(Context and Product) for a specific entity based on its ID.
+ * Retrieves the count of related entities(Context and Product) for organization based on its ID.
  *
- * @param entity The entity type (ContextEntity) for which to retrieve related entity counts.
- * @param entityId The unique ID of the entity whose related entity counts are being fetched.
+ * @param organizationId The unique ID of the entity whose related entity counts are being fetched.
  * @returns An object mapping each entity type to its corresponding count value.
  */
-export const getEntityCounts = async (entity: ContextEntity, entityId: string) => {
-  const entityIdField = entityIdFields[entity];
+export const getOrganizationCounts = async (organizationId: string) => {
   const allEntityTypes = [...config.productEntityTypes, ...config.contextEntityTypes];
 
   // Array to hold the individual count queries
   const countQueries = [];
 
   // Use the filter with the type guard
-  const validEntityTypes = allEntityTypes.filter((entityType) => hasTargetEntityId(entityType, entityIdField));
+  const validEntityTypes = allEntityTypes.filter(hasOrganizationId);
 
   // Loop through each entity type and create the corresponding count query
   for (const entityType of validEntityTypes) {
     const table = entityTables[entityType];
 
-    // Skip if the table doesn't have the required entity ID field
-    if (!(entityIdField in table)) continue;
-
     const countQuery = db
       .select({ [entityType]: count() })
       .from(table)
-      .where(eq(table[entityIdField], entityId))
+      .where(eq(table.organizationId, organizationId))
       .then((rows) => rows[0] || { [entityType]: 0 }) as unknown as Record<(typeof validEntityTypes)[number], number>;
 
     countQueries.push(countQuery);
@@ -116,4 +95,17 @@ export const getEntityCounts = async (entity: ContextEntity, entityId: string) =
   );
 
   return entityCounts;
+};
+
+// Define a mapped type to check if 'organizationId' exists in each table
+type EntityWithTargetId = {
+  [K in ProductEntity | ContextEntity]: 'organizationId' extends keyof (typeof entityTables)[K] ? K : never;
+};
+
+// This will filter out 'never' types and give us only valid types
+type ValidEntityTypes = Extract<EntityWithTargetId[ProductEntity | ContextEntity], string>;
+
+// Define the type guard function for filtering
+const hasOrganizationId = (entityType: ProductEntity | ContextEntity): entityType is ValidEntityTypes => {
+  return 'organizationId' in entityTables[entityType];
 };
