@@ -1,8 +1,8 @@
-import type { ContextEntity } from 'config';
+import { type ContextEntity, config } from 'config';
 import { count, eq, sql } from 'drizzle-orm';
 import { db } from '#/db/db';
 import { membershipsTable } from '#/db/schema/memberships';
-import { entityIdFields } from '#/entity-config';
+import { entityIdFields, entityTables } from '#/entity-config';
 
 type EntityIdColumnNames = keyof (typeof membershipsTable)['_']['columns'];
 
@@ -27,8 +27,8 @@ export const getMemberCountsQuery = (entity: ContextEntity) => {
       total: count().as('total'), // Fixed alias to avoid confusion
     })
     .from(membershipsTable)
-    .groupBy(entityIdColumn)
     .where(eq(membershipsTable.type, entity))
+    .groupBy(entityIdColumn)
     .as('counts');
 };
 
@@ -53,3 +53,45 @@ export function getMemberCounts(entity: ContextEntity, id: string) {
     .where(eq(query.id, id))
     .then((rows) => rows[0] || { admins: 0, members: 0, pending: 0, total: 0 });
 }
+
+/**
+ * Retrieves the count of related entities(Context and Product) for a specific entity based on its ID.
+ *
+ * @param entity The entity type (ContextEntity) for which to retrieve related entity counts.
+ * @param entityId The unique ID of the entity whose related entity counts are being fetched.
+ * @returns An object mapping each entity type to its corresponding count value.
+ */
+export const getEntityCounts = async (entity: ContextEntity, entityId: string) => {
+  const entityIdField = entityIdFields[entity];
+  const allEntityTypes = [...config.productEntityTypes, ...config.contextEntityTypes];
+
+  // Array to hold the individual count queries
+  const countQueries = [];
+
+  // Loop through each entity type and create the corresponding count query
+  for (const entityType of allEntityTypes) {
+    const table = entityTables[entityType];
+
+    // Skip if the table doesn't have the required entity ID field
+    if (!(entityIdField in table)) continue;
+
+    const countQuery = db
+      .select({ [entityType]: count() })
+      .from(table)
+      .where(eq(table[entityIdField], entityId))
+      .then((rows) => rows[0] || { [entityType]: 0 });
+
+    countQueries.push(countQuery);
+  }
+
+  const queryResults = await Promise.all(countQueries);
+
+  // Transform the array of results into an object with entity type counts
+  const entityCounts = queryResults.reduce((acc, resultRow) => {
+    const [[entityType, count]] = Object.entries(resultRow);
+    acc[entityType] = count;
+    return acc;
+  }, {});
+
+  return entityCounts;
+};
