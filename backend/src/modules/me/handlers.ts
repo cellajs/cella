@@ -1,4 +1,4 @@
-import { and, asc, eq } from 'drizzle-orm';
+import { and, asc, eq, inArray } from 'drizzle-orm';
 import type { z } from 'zod';
 
 import type { EnabledOauthProvider } from 'config';
@@ -65,12 +65,22 @@ const meRoutes = app
    * Get current user relevant entities
    */
   .openapi(meRouteConfig.getSelfEntities, async (ctx) => {
-    const user = getContextUser();
+    const memberships = getContextMemberships();
+
+    const membershipMap = new Map(
+      memberships.map((membership) => {
+        const entityIdField = entityIdFields[membership.type];
+        return [membership[entityIdField], membership];
+      }),
+    );
+    // Get only IDs the user is a member of
+    const userEntityIds = Array.from(membershipMap.keys());
+
+    if (userEntityIds.length === 0) return ctx.json({ success: true, data: [] }, 200);
 
     const queries = config.contextEntityTypes
       .map((entityType) => {
         const table = entityTables[entityType];
-        const entityIdField = entityIdFields[entityType];
         if (!table) return null;
 
         // Base selection setup including membership details
@@ -83,20 +93,21 @@ const meRoutes = app
           bannerUrl: table.bannerUrl,
         };
 
-        // Execute the query using inner join with memberships table
-        return db
-          .select({
-            ...baseSelect,
-            membership: membershipSelect,
-          })
-          .from(table)
-          .innerJoin(membershipsTable, and(eq(table.id, membershipsTable[entityIdField]), eq(membershipsTable.type, entityType)))
-          .where(and(eq(membershipsTable.userId, user.id), eq(membershipsTable[entityIdField], table.id)))
-          .groupBy(table.id, membershipsTable.id); // Group by entity ID for distinct results
+        // Fetch entities that match the user’s memberships
+        return db.select(baseSelect).from(table).where(inArray(table.id, userEntityIds)); // No need for INNER JOIN!
       })
-      .filter((el) => el !== null); // Filter out null values if any entity type is invalid
+      .filter((el) => el !== null);
 
-    const data = (await Promise.all(queries)).flat();
+    const entities = (await Promise.all(queries)).flat();
+
+    // Filter out entities without a valid membership
+    const data = entities
+      .map((entity) => {
+        const membership = membershipMap.get(entity.id);
+        if (!membership) return null;
+        return { ...entity, membership };
+      })
+      .filter((el) => el !== null);
 
     return ctx.json({ success: true, data }, 200);
   })
