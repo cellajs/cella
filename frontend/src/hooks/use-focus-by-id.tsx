@@ -6,6 +6,7 @@ import { useEffect } from 'react';
  * @param id - The ID of the element to focus.
  *
  */
+// TODO not used or in raak?
 const useFocusById = (id: string) => {
   useEffect(() => {
     const element = document.getElementById(id);

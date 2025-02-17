@@ -6,6 +6,7 @@ import * as React from 'react';
  * Resets the overflow style when the component using this hook is unmounted.
  */
 // @see https://usehooks.com/useLockBodyScroll.
+// TODO not used or only in raak?
 export function useLockBody() {
   React.useLayoutEffect((): (() => void) => {
     const originalStyle: string = window.getComputedStyle(document.body).overflow;
