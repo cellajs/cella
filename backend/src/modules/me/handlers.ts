@@ -1,4 +1,4 @@
-import { and, asc, eq } from 'drizzle-orm';
+import { and, asc, eq, inArray } from 'drizzle-orm';
 import type { z } from 'zod';
 
 import type { EnabledOauthProvider } from 'config';
@@ -62,6 +62,56 @@ const meRoutes = app
     return ctx.json({ success: true, data: { oauth: validOAuthAccounts, passkey: !!passkeys.length, sessions } }, 200);
   })
   /*
+   * Get current user relevant entities
+   */
+  .openapi(meRouteConfig.getSelfEntities, async (ctx) => {
+    const memberships = getContextMemberships();
+
+    const membershipMap = new Map(
+      memberships.map((membership) => {
+        const entityIdField = entityIdFields[membership.type];
+        return [membership[entityIdField], membership];
+      }),
+    );
+
+    // Get IDs user is member of
+    const userEntityIds = Array.from(membershipMap.keys());
+
+    if (userEntityIds.length === 0) return ctx.json({ success: true, data: [] }, 200);
+
+    const queries = config.contextEntityTypes
+      .map((entityType) => {
+        const table = entityTables[entityType];
+        if (!table) return null;
+
+        return db
+          .select({
+            id: table.id,
+            slug: table.slug,
+            name: table.name,
+            entity: table.entity,
+            thumbnailUrl: table.thumbnailUrl,
+            bannerUrl: table.bannerUrl,
+          })
+          .from(table)
+          .where(inArray(table.id, userEntityIds));
+      })
+      .filter((el) => el !== null);
+
+    // Fetch entities that match the user’s memberships
+    const entities = (await Promise.all(queries)).flat();
+
+    const data = entities
+      .map((entity) => {
+        const membership = membershipMap.get(entity.id);
+        if (!membership) return null;
+        return { ...entity, membership };
+      })
+      .filter((el) => el !== null);
+
+    return ctx.json({ success: true, data }, 200);
+  })
+  /*
    * Get current user menu
    */
   .openapi(meRouteConfig.getUserMenu, async (ctx) => {
@@ -96,26 +146,34 @@ const meRoutes = app
         const subTable = entityTables[section.subEntity];
         const subEntityIdField = entityIdFields[section.subEntity];
 
-        submenu = await db
-          .select({
-            slug: subTable.slug,
-            id: subTable.id,
-            createdAt: subTable.createdAt,
-            modifiedAt: subTable.modifiedAt,
-            organizationId: membershipSelect.organizationId,
-            name: subTable.name,
-            entity: subTable.entity,
-            thumbnailUrl: subTable.thumbnailUrl,
-            membership: membershipSelect,
-          })
-          .from(subTable)
-          .where(and(eq(membershipsTable.userId, user.id), eq(membershipsTable.type, section.subEntity)))
-          .orderBy(asc(membershipsTable.order))
-          .innerJoin(membershipsTable, eq(membershipsTable[subEntityIdField], subTable.id));
+        submenu = (
+          await db
+            .select({
+              slug: subTable.slug,
+              id: subTable.id,
+              createdAt: subTable.createdAt,
+              modifiedAt: subTable.modifiedAt,
+              organizationId: membershipSelect.organizationId,
+              name: subTable.name,
+              entity: subTable.entity,
+              thumbnailUrl: subTable.thumbnailUrl,
+              membership: membershipSelect,
+            })
+            .from(subTable)
+            .where(and(eq(membershipsTable.userId, user.id), eq(membershipsTable.type, section.subEntity)))
+            .orderBy(asc(membershipsTable.order))
+            .innerJoin(membershipsTable, eq(membershipsTable[subEntityIdField], subTable.id))
+        ).map((entity) => ({
+          ...entity,
+          createdAt: entity.createdAt.toISOString(),
+          modifiedAt: entity.modifiedAt?.toISOString() ?? null,
+        }));
       }
 
       return entity.map((entity) => ({
         ...entity,
+        createdAt: entity.createdAt.toISOString(),
+        modifiedAt: entity.modifiedAt?.toISOString() ?? null,
         submenu: submenu.filter((p) => p.membership[mainEntityIdField] === entity.id),
       }));
     };

@@ -3,7 +3,7 @@ import { isAuthenticated } from '#/middlewares/guard';
 import { idsBodySchema } from '#/utils/schema/common';
 import { errorResponses, successWithDataSchema, successWithErrorsSchema, successWithoutDataSchema } from '#/utils/schema/responses';
 import { updateUserBodySchema, userSchema } from '../users/schema';
-import { leaveEntityQuerySchema, meAuthInfoSchema, userMenuSchema } from './schema';
+import { leaveEntityQuerySchema, meAuthInfoSchema, meRelativeEntitiesSchema, userMenuSchema } from './schema';
 
 class MeRouteConfig {
   public getSelf = createRouteConfig({
@@ -39,6 +39,26 @@ class MeRouteConfig {
         content: {
           'application/json': {
             schema: successWithDataSchema(meAuthInfoSchema),
+          },
+        },
+      },
+      ...errorResponses,
+    },
+  });
+
+  public getSelfEntities = createRouteConfig({
+    method: 'get',
+    path: '/entities',
+    guard: isAuthenticated,
+    tags: ['me'],
+    summary: 'Get relevant entities for self.',
+    description: 'Get relevant entities that current user (self) is member of.',
+    responses: {
+      200: {
+        description: 'Entities info',
+        content: {
+          'application/json': {
+            schema: successWithDataSchema(meRelativeEntitiesSchema),
           },
         },
       },
