@@ -12,8 +12,10 @@ import {
 import {
   createOrganizationBodySchema,
   getOrganizationsQuerySchema,
+  membershipsCountSchema,
   organizationSchema,
   organizationWithMembershipSchema,
+  relatedEntitiesCountSchema,
   sendNewsletterBodySchema,
   updateOrganizationBodySchema,
 } from './schema';
@@ -117,7 +119,9 @@ class OrganizationRouteConfig {
         description: 'Organization',
         content: {
           'application/json': {
-            schema: successWithDataSchema(organizationSchema),
+            schema: successWithDataSchema(
+              organizationSchema.extend({ counts: z.object({ ...membershipsCountSchema.shape, ...relatedEntitiesCountSchema.shape }) }),
+            ),
           },
         },
       },

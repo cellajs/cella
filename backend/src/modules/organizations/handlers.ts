@@ -16,7 +16,7 @@ import { insertMembership } from '#/modules/memberships/helpers';
 import { membershipSelect } from '#/modules/memberships/helpers/select';
 import { getValidEntity } from '#/permissions/get-valid-entity';
 import { splitByAllowance } from '#/permissions/split-by-allowance';
-import { getMemberCounts, getMemberCountsQuery } from '#/utils/counts';
+import { getMemberCounts, getMemberCountsQuery, getRelatedEntityCounts } from '#/utils/counts';
 import defaultHook from '#/utils/default-hook';
 import { getOrderColumn } from '#/utils/order-column';
 import { prepareStringForILikeFilter } from '#/utils/sql';
@@ -184,8 +184,9 @@ const organizationsRoutes = app
     if (!isAllowed) return errorResponse(ctx, 403, 'forbidden', 'warn', 'organization');
 
     const memberCounts = await getMemberCounts('organization', organization.id);
+    const relatedEntitiesCounts = await getRelatedEntityCounts('organization', organization.id);
 
-    const counts = { memberships: memberCounts };
+    const counts = { memberships: memberCounts, ...relatedEntitiesCounts };
     const data = { ...organization, membership, counts };
 
     return ctx.json({ success: true, data }, 200);
