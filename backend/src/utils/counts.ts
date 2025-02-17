@@ -1,5 +1,5 @@
 import { type ContextEntity, type ProductEntity, config } from 'config';
-import { count, eq, sql } from 'drizzle-orm';
+import { type SQL, count, eq, sql } from 'drizzle-orm';
 import { db } from '#/db/db';
 import { membershipsTable } from '#/db/schema/memberships';
 import { entityIdFields, entityTables } from '#/entity-config';
@@ -63,38 +63,36 @@ export function getMemberCounts(entity: ContextEntity, id: string) {
 export const getOrganizationCounts = async (organizationId: string) => {
   const allEntityTypes = [...config.productEntityTypes, ...config.contextEntityTypes];
 
-  // Array to hold the individual count queries
-  const countQueries = [];
-
-  // Use the filter with the type guard
+  // Filter out entity types that do not have an 'organizationId'
   const validEntityTypes = allEntityTypes.filter(hasOrganizationId);
+  const firstTableTable = entityTables[validEntityTypes[0]];
 
-  // Loop through each entity type and create the corresponding count query
-  for (const entityType of validEntityTypes) {
-    const table = entityTables[entityType];
-
-    const countQuery = db
-      .select({ [entityType]: count() })
-      .from(table)
-      .where(eq(table.organizationId, organizationId))
-      .then((rows) => rows[0] || { [entityType]: 0 }) as unknown as Record<(typeof validEntityTypes)[number], number>;
-
-    countQueries.push(countQuery);
-  }
-
-  const queryResults = await Promise.all(countQueries);
-
-  // Transform the array of results into an object with entity type counts
-  const entityCounts = queryResults.reduce(
-    (acc, resultRow) => {
-      const [[entityType, count]] = Object.entries(resultRow) as [[(typeof validEntityTypes)[number], number]];
-      acc[entityType] = count;
+  // Each field will be an alias of the computed count, based on organizationId
+  const countFields = validEntityTypes.reduce(
+    (acc, entityType) => {
+      const table = entityTables[entityType];
+      // Count rows where organizationId matches, and alias it by entity type name
+      acc[entityType] = count(sql`CASE WHEN ${table.organizationId} = ${organizationId} THEN 1 END`).as(entityType);
       return acc;
     },
-    {} as Record<(typeof validEntityTypes)[number], number>,
+    {} as Record<ValidEntityTypes, SQL.Aliased<number>>,
   );
 
-  return entityCounts;
+  // Start the query by selecting the count fields from the base table
+  let query = db.select(countFields).from(firstTableTable).where(eq(firstTableTable.organizationId, organizationId));
+
+  // add a LEFT JOIN on the corresponding table
+  for (let i = 1; i < validEntityTypes.length; i++) {
+    const entityType = validEntityTypes[i];
+    const table = entityTables[entityType];
+    // Join on table for current entity
+    query = query.leftJoin(table, eq(table.organizationId, organizationId));
+  }
+
+  const result = await query;
+
+  // return result, or a default object with counts set to 0
+  return result[0] || Object.fromEntries(validEntityTypes.map((type) => [type, 0]));
 };
 
 // Define a mapped type to check if 'organizationId' exists in each table
