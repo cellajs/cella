@@ -10,12 +10,7 @@ import { waitFor } from '~/query/helpers/wait-for';
 import { useGeneralStore } from '~/store/general';
 import { useUserStore } from '~/store/user';
 
-const queryMutationFileImports = import.meta.glob('~/modules/**/query-mutations.ts');
-
-// Dynamically import each query mutation file sequentially
-(async () => {
-  for (const importQueryMutation of Object.values(queryMutationFileImports)) await importQueryMutation();
-})();
+import '~/query/mutation-import-config';
 
 const GC_TIME = 24 * 60 * 60 * 1000; // 24 hours
 
@@ -74,9 +69,7 @@ export const QueryClientProvider = ({ children }: { children: React.ReactNode })
       persistOptions={{ persister }}
       onSuccess={() => {
         // resume mutations after initial restore from localStorage was successful
-        queryClient.resumePausedMutations().then(() => {
-          queryClient.invalidateQueries();
-        });
+        queryClient.resumePausedMutations().then(() => queryClient.invalidateQueries());
       }}
     >
       {children}

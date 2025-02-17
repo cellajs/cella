@@ -10,6 +10,7 @@ import { useCallback, useEffect } from 'react';
  * @param onKeyPress - Callback function that runs when key is pressed.
  * @param enable - Boolean that enables or disables the listener (default is `true`).
  */
+// TODO not used or only in raak?
 export const useKeyPress = (targetKey: string, onKeyPress: (event: KeyboardEvent) => void, enable = true): void => {
   const handleKeyPress = useCallback(
     (event: KeyboardEvent) => {
