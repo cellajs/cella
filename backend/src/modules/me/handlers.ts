@@ -73,7 +73,8 @@ const meRoutes = app
         return [membership[entityIdField], membership];
       }),
     );
-    // Get only IDs the user is a member of
+
+    // Get IDs user is member of
     const userEntityIds = Array.from(membershipMap.keys());
 
     if (userEntityIds.length === 0) return ctx.json({ success: true, data: [] }, 200);
@@ -83,24 +84,23 @@ const meRoutes = app
         const table = entityTables[entityType];
         if (!table) return null;
 
-        // Base selection setup including membership details
-        const baseSelect = {
-          id: table.id,
-          slug: table.slug,
-          name: table.name,
-          entity: table.entity,
-          thumbnailUrl: table.thumbnailUrl,
-          bannerUrl: table.bannerUrl,
-        };
-
-        // Fetch entities that match the user’s memberships
-        return db.select(baseSelect).from(table).where(inArray(table.id, userEntityIds)); // No need for INNER JOIN!
+        return db
+          .select({
+            id: table.id,
+            slug: table.slug,
+            name: table.name,
+            entity: table.entity,
+            thumbnailUrl: table.thumbnailUrl,
+            bannerUrl: table.bannerUrl,
+          })
+          .from(table)
+          .where(inArray(table.id, userEntityIds));
       })
       .filter((el) => el !== null);
 
+    // Fetch entities that match the user’s memberships
     const entities = (await Promise.all(queries)).flat();
 
-    // Filter out entities without a valid membership
     const data = entities
       .map((entity) => {
         const membership = membershipMap.get(entity.id);
