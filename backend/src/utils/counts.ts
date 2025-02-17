@@ -64,7 +64,7 @@ export const getOrganizationCounts = async (organizationId: string) => {
   const allEntityTypes = [...config.productEntityTypes, ...config.contextEntityTypes];
 
   // Filter out entity types that do not have an 'organizationId'
-  const validEntityTypes = allEntityTypes.filter(hasOrganizationId);
+  const validEntityTypes = allEntityTypes.filter((entityType) => hasField(entityType, 'organizationId'));
   const firstTableTable = entityTables[validEntityTypes[0]];
 
   // Each field will be an alias of the computed count, based on organizationId
@@ -75,7 +75,7 @@ export const getOrganizationCounts = async (organizationId: string) => {
       acc[entityType] = count(sql`CASE WHEN ${table.organizationId} = ${organizationId} THEN 1 END`).as(entityType);
       return acc;
     },
-    {} as Record<ValidEntityTypes, SQL.Aliased<number>>,
+    {} as Record<ValidEntityTypes<'organizationId'>, SQL.Aliased<number>>,
   );
 
   // Start the query by selecting the count fields from the base table
@@ -95,15 +95,16 @@ export const getOrganizationCounts = async (organizationId: string) => {
   return result[0] || Object.fromEntries(validEntityTypes.map((type) => [type, 0]));
 };
 
-// Define a mapped type to check if 'organizationId' exists in each table
-type EntityWithTargetId = {
-  [K in ProductEntity | ContextEntity]: 'organizationId' extends keyof (typeof entityTables)[K] ? K : never;
-};
+// Define a mapped type to check if field name passed as 'T' exists in each table and filter out 'never' types
+type ValidEntityTypes<T extends string> = Extract<
+  {
+    [K in ProductEntity | ContextEntity]: T extends keyof (typeof entityTables)[K] ? K : never;
+  }[ProductEntity | ContextEntity],
+  string
+>;
 
-// This will filter out 'never' types and give us only valid types
-type ValidEntityTypes = Extract<EntityWithTargetId[ProductEntity | ContextEntity], string>;
-
-// Define the type guard function for filtering
-const hasOrganizationId = (entityType: ProductEntity | ContextEntity): entityType is ValidEntityTypes => {
-  return 'organizationId' in entityTables[entityType];
+// Generic type guard function for filtering based on a dynamic field name 'T'
+const hasField = <T extends string>(entityType: ProductEntity | ContextEntity, field: T): entityType is ValidEntityTypes<T> => {
+  const table = entityTables[entityType];
+  return field in table;
 };
