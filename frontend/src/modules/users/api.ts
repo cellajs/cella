@@ -134,6 +134,18 @@ export const getSelfAuthInfo = async () => {
 };
 
 /**
+ * Get relevant entities that current user (self) is member of.
+ *
+ * @returns Current user relevant entities(LimitedEntity with MinimumMembershipInfo ).
+ */
+export const getSelfEntities = async () => {
+  const response = await meClient.entities.$get();
+
+  const json = await handleResponse(response);
+  return json.data;
+};
+
+/**
  * Get current user menu. Retrieves menu associated with currently authenticated user.
  *
  * @returns The user menu data.

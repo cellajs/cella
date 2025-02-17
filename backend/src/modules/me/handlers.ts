@@ -62,6 +62,45 @@ const meRoutes = app
     return ctx.json({ success: true, data: { oauth: validOAuthAccounts, passkey: !!passkeys.length, sessions } }, 200);
   })
   /*
+   * Get current user relevant entities
+   */
+  .openapi(meRouteConfig.getSelfEntities, async (ctx) => {
+    const user = getContextUser();
+
+    const queries = config.contextEntityTypes
+      .map((entityType) => {
+        const table = entityTables[entityType];
+        const entityIdField = entityIdFields[entityType];
+        if (!table) return null;
+
+        // Base selection setup including membership details
+        const baseSelect = {
+          id: table.id,
+          slug: table.slug,
+          name: table.name,
+          entity: table.entity,
+          thumbnailUrl: table.thumbnailUrl,
+          bannerUrl: table.bannerUrl,
+        };
+
+        // Execute the query using inner join with memberships table
+        return db
+          .select({
+            ...baseSelect,
+            membership: membershipSelect,
+          })
+          .from(table)
+          .innerJoin(membershipsTable, and(eq(table.id, membershipsTable[entityIdField]), eq(membershipsTable.type, entityType)))
+          .where(and(eq(membershipsTable.userId, user.id), eq(membershipsTable[entityIdField], table.id)))
+          .groupBy(table.id, membershipsTable.id); // Group by entity ID for distinct results
+      })
+      .filter((el) => el !== null); // Filter out null values if any entity type is invalid
+
+    const data = (await Promise.all(queries)).flat();
+
+    return ctx.json({ success: true, data }, 200);
+  })
+  /*
    * Get current user menu
    */
   .openapi(meRouteConfig.getUserMenu, async (ctx) => {
@@ -96,26 +135,34 @@ const meRoutes = app
         const subTable = entityTables[section.subEntity];
         const subEntityIdField = entityIdFields[section.subEntity];
 
-        submenu = await db
-          .select({
-            slug: subTable.slug,
-            id: subTable.id,
-            createdAt: subTable.createdAt,
-            modifiedAt: subTable.modifiedAt,
-            organizationId: membershipSelect.organizationId,
-            name: subTable.name,
-            entity: subTable.entity,
-            thumbnailUrl: subTable.thumbnailUrl,
-            membership: membershipSelect,
-          })
-          .from(subTable)
-          .where(and(eq(membershipsTable.userId, user.id), eq(membershipsTable.type, section.subEntity)))
-          .orderBy(asc(membershipsTable.order))
-          .innerJoin(membershipsTable, eq(membershipsTable[subEntityIdField], subTable.id));
+        submenu = (
+          await db
+            .select({
+              slug: subTable.slug,
+              id: subTable.id,
+              createdAt: subTable.createdAt,
+              modifiedAt: subTable.modifiedAt,
+              organizationId: membershipSelect.organizationId,
+              name: subTable.name,
+              entity: subTable.entity,
+              thumbnailUrl: subTable.thumbnailUrl,
+              membership: membershipSelect,
+            })
+            .from(subTable)
+            .where(and(eq(membershipsTable.userId, user.id), eq(membershipsTable.type, section.subEntity)))
+            .orderBy(asc(membershipsTable.order))
+            .innerJoin(membershipsTable, eq(membershipsTable[subEntityIdField], subTable.id))
+        ).map((entity) => ({
+          ...entity,
+          createdAt: entity.createdAt.toISOString(),
+          modifiedAt: entity.modifiedAt?.toISOString() ?? null,
+        }));
       }
 
       return entity.map((entity) => ({
         ...entity,
+        createdAt: entity.createdAt.toISOString(),
+        modifiedAt: entity.modifiedAt?.toISOString() ?? null,
         submenu: submenu.filter((p) => p.membership[mainEntityIdField] === entity.id),
       }));
     };
