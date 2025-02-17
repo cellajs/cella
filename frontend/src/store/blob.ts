@@ -54,8 +54,17 @@ export const useBlobStore = create<BlobStoreState>()(
           blobUrls: Array.from(state.blobUrls.entries()), // Store as serializable array
         }),
         onRehydrateStorage: () => (state) => {
+          if (!state) return; // Skip if no state
+
           if (state?.blobUrls && Array.isArray(state.blobUrls)) {
-            state.blobUrls = new Map(state.blobUrls); // Convert back to Map
+            try {
+              state.blobUrls = new Map(state.blobUrls); // Convert back to Map
+            } catch (error) {
+              console.error('Failed to restore blobUrls from storage:', error);
+              state.blobUrls = new Map(); // Fallback to empty Map
+            }
+          } else {
+            state.blobUrls = new Map(); // Ensure it's always a Map
           }
         },
       },
