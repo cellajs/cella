@@ -15,7 +15,7 @@ import { attachmentsKeys } from '~/modules/attachments/query';
 import type { Attachment } from '~/modules/attachments/types';
 import { toaster } from '~/modules/common/toaster';
 import { compareQueryKeys } from '~/query/helpers/compare-query-keys';
-import { formatUpdatedData, getCancelingRefetchQueries, getQueries, getQueryItems, handleNoOldData } from '~/query/helpers/mutate-query';
+import { formatUpdatedData, getCancelingRefetchQueries, getQueries, getQueryItems } from '~/query/helpers/mutate-query';
 import type { ContextProp, InfiniteQueryData, QueryData } from '~/query/types';
 import { nanoid } from '~/utils/nanoid';
 
@@ -32,7 +32,7 @@ export const useAttachmentCreateMutation = () =>
   });
 
 export const useAttachmentUpdateMutation = () =>
-  useMutation<boolean, Error, UpdateAttachmentParams>({
+  useMutation<Attachment, Error, UpdateAttachmentParams>({
     mutationKey: attachmentsKeys.update(),
     mutationFn: updateAttachment,
   });
@@ -43,13 +43,13 @@ export const useAttachmentDeleteMutation = () =>
     mutationFn: deleteAttachments,
   });
 
-const onError = (_: Error, __: CreateAttachmentParams & UpdateAttachmentParams & DeleteAttachmentsParams, context?: AttachmentContextProp[]) => {
+const handleError = (action: 'create' | 'update' | 'delete' | 'deleteMany', context?: AttachmentContextProp[]) => {
   if (context?.length) {
-    for (const [queryKey, previousData] of context) {
-      queryClient.setQueryData(queryKey, previousData);
-    }
+    for (const [queryKey, previousData] of context) queryClient.setQueryData(queryKey, previousData);
   }
-  toast.error(t('error:create_resource', { resource: t('common:attachment') }));
+
+  if (action === 'deleteMany') toast.error(t('error:delete_resources', { resource: t('common:attachments') }));
+  else toast.error(t(`error:${action}_resource`, { resource: t('common:attachment') }));
 };
 
 queryClient.setMutationDefaults(attachmentsKeys.create(), {
@@ -90,7 +90,7 @@ queryClient.setMutationDefaults(attachmentsKeys.create(), {
       if (!previousData) continue;
 
       queryClient.setQueryData<AttachmentInfiniteQueryData | AttachmentQueryData>(queryKey, (oldData) => {
-        if (!oldData) return handleNoOldData(oldData); // Handle missing data
+        if (!oldData) return oldData;
 
         const prevItems = getQueryItems(oldData);
         const updatedItems = [...newAttachments, ...prevItems];
@@ -114,9 +114,11 @@ queryClient.setMutationDefaults(attachmentsKeys.create(), {
       const [activeKey] = query;
 
       queryClient.setQueryData<AttachmentInfiniteQueryData | AttachmentQueryData>(activeKey, (oldData) => {
-        if (!oldData) return handleNoOldData(oldData);
+        if (!oldData) return oldData;
 
         const prevItems = getQueryItems(oldData);
+
+        // Get optimisticIds
         const [_, __, optimisticIds] = context.find(([key]) => compareQueryKeys(key, activeKey)) ?? [];
         const ids = optimisticIds || [];
 
@@ -133,8 +135,7 @@ queryClient.setMutationDefaults(attachmentsKeys.create(), {
     }
     toast.success(t('common:success.create_resources', { resources: t('common:attachments') }));
   },
-
-  onError,
+  onError: (_, __, context) => handleError('create', context),
 });
 
 queryClient.setMutationDefaults(attachmentsKeys.update(), {
@@ -155,7 +156,7 @@ queryClient.setMutationDefaults(attachmentsKeys.update(), {
       if (!previousData) continue;
 
       queryClient.setQueryData<AttachmentInfiniteQueryData | AttachmentQueryData>(queryKey, (oldData) => {
-        if (!oldData) return handleNoOldData(oldData); // Handle missing data
+        if (!oldData) return oldData; // Handle missing data
 
         const prevItems = getQueryItems(oldData);
         const updatedItems = prevItems.map((item) => (item.id === variables.id ? { ...item, ...variables } : item));
@@ -169,8 +170,31 @@ queryClient.setMutationDefaults(attachmentsKeys.update(), {
 
     return context;
   },
+  onSuccess: async (updatedAttachment, { orgIdOrSlug }, context) => {
+    // Get affected queries
+    const exactKey = attachmentsKeys.table({ orgIdOrSlug });
+    const similarKey = attachmentsKeys.similar({ orgIdOrSlug });
+    const queries = getQueries<Attachment>(exactKey, similarKey);
 
-  onError,
+    for (const query of queries) {
+      const [activeKey] = query;
+      queryClient.setQueryData<AttachmentInfiniteQueryData | AttachmentQueryData>(activeKey, (oldData) => {
+        if (!oldData) return oldData;
+
+        const prevItems = getQueryItems(oldData);
+
+        // Get optimisticIds
+        const [_, __, optimisticIds] = context.find(([key]) => compareQueryKeys(key, activeKey)) ?? [];
+        const ids = optimisticIds || [];
+
+        // Replace optimistic items with the updated attachment
+        const updatedAttachments = prevItems.map((item) => (ids.includes(item.id) ? { ...item, ...updatedAttachment } : item));
+
+        return formatUpdatedData(oldData, updatedAttachments);
+      });
+    }
+  },
+  onError: (_, __, context) => handleError('update', context),
 });
 
 queryClient.setMutationDefaults(attachmentsKeys.delete(), {
@@ -190,7 +214,7 @@ queryClient.setMutationDefaults(attachmentsKeys.delete(), {
       if (!previousData) continue;
 
       queryClient.setQueryData<AttachmentInfiniteQueryData | AttachmentQueryData>(queryKey, (oldData) => {
-        if (!oldData) return handleNoOldData(oldData); // Handle case where old data is missing
+        if (!oldData) return oldData;
 
         const prevItems = getQueryItems(oldData);
         const updatedItems = prevItems.filter((item) => !ids.includes(item.id));
@@ -204,5 +228,5 @@ queryClient.setMutationDefaults(attachmentsKeys.delete(), {
     return context;
   },
   onSuccess: () => toaster(t('common:success.delete_resources', { resources: t('common:attachments') }), 'success'),
-  onError,
+  onError: (_, { ids }, context) => handleError(ids.length > 1 ? 'deleteMany' : 'delete', context),
 });

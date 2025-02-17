@@ -31,6 +31,8 @@ export const WaitlistForm = ({ email, buttonContent, emailField, dialog: isDialo
   const { t } = useTranslation();
   const navigate = useNavigate();
 
+  const isMobile = window.innerWidth < 640;
+
   const { mutate: createRequest, isPending } = useCreateRequestMutation();
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -84,6 +86,7 @@ export const WaitlistForm = ({ email, buttonContent, emailField, dialog: isDialo
                   {...field}
                   className="block xs:min-w-80 w-full py-6 h-14 px-8 rounded-full border border-gray-400/40 bg-background/50 text-base/6 ring-4 ring-primary/10 transition focus:border-gray-400 focus:outline-hidden focus-visible:ring-primary/20"
                   type="email"
+                  autoFocus={!isMobile}
                   disabled={!emailField}
                   readOnly={!emailField}
                   placeholder={t('common:email')}

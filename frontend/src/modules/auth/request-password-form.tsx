@@ -11,6 +11,9 @@ import { dialog } from '~/modules/common/dialoger/state';
 
 export const RequestPasswordForm = ({ email = '' }: { email?: string }) => {
   const { t } = useTranslation();
+
+  const isMobile = window.innerWidth < 640;
+
   const [emailValue, setEmailValue] = useState(email);
 
   // Send create/reset password email
@@ -30,7 +33,7 @@ export const RequestPasswordForm = ({ email = '' }: { email?: string }) => {
       <Input
         type="email"
         id="reset-email-field"
-        autoFocus
+        autoFocus={!isMobile}
         className="mb-4"
         placeholder={t('common:email')}
         defaultValue={email} // Set the default value instead of value

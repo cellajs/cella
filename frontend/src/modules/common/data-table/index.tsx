@@ -1,7 +1,7 @@
 import { config } from 'config';
 import { Search } from 'lucide-react';
 import { type Key, type ReactNode, useEffect, useRef, useState } from 'react';
-import DataGrid, { type CellClickArgs, type CellMouseEvent, type RenderRowProps, type RowsChangeData, type SortColumn } from 'react-data-grid';
+import { type CellClickArgs, type CellMouseEvent, DataGrid, type RenderRowProps, type RowsChangeData, type SortColumn } from 'react-data-grid';
 import { useTranslation } from 'react-i18next';
 import { useInView } from 'react-intersection-observer';
 

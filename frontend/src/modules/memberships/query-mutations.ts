@@ -7,7 +7,7 @@ import { queryClient } from '~/lib/router';
 import { toaster } from '~/modules/common/toaster';
 import { membersKeys } from '~/modules/memberships/query';
 import type { Member, Membership } from '~/modules/memberships/types';
-import { formatUpdatedData, getCancelingRefetchQueries, getQueries, getQueryItems, handleNoOldData } from '~/query/helpers/mutate-query';
+import { formatUpdatedData, getCancelingRefetchQueries, getQueries, getQueryItems } from '~/query/helpers/mutate-query';
 import type { ContextProp, InfiniteQueryData, QueryData } from '~/query/types';
 
 type MemberQueryData = QueryData<Member>;
@@ -28,7 +28,7 @@ export const useMembersDeleteMutation = () =>
     mutationFn: removeMembers,
   });
 
-const onError = (_: Error, __: UpdateMembershipProp & RemoveMembersProps, context?: MemberContextProp[]) => {
+const onError = (_: Error, __: UpdateMembershipProp | RemoveMembersProps, context?: MemberContextProp[]) => {
   if (context?.length) {
     for (const [queryKey, previousData] of context) {
       queryClient.setQueryData(queryKey, previousData);
@@ -81,13 +81,13 @@ queryClient.setMutationDefaults(membersKeys.delete(), {
     for (const [queryKey, previousData] of queries) {
       if (!previousData) continue;
 
-      queryClient.setQueryData<InfiniteMemberQueryData | MemberQueryData>(queryKey, (old) => {
-        if (!old) return handleNoOldData(previousData);
+      queryClient.setQueryData<InfiniteMemberQueryData | MemberQueryData>(queryKey, (oldData) => {
+        if (!oldData) return oldData;
 
-        const prevItems = getQueryItems(old);
+        const prevItems = getQueryItems(oldData);
         const updatedMemberships = deletedMembers(prevItems, ids);
 
-        return formatUpdatedData(old, updatedMemberships, limit, -ids.length);
+        return formatUpdatedData(oldData, updatedMemberships, limit, -ids.length);
       });
 
       context.push([queryKey, previousData, null]); // Store previous data for rollback if needed

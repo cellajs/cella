@@ -112,7 +112,7 @@ export const updateAttachment = async ({ orgIdOrSlug, id, ...params }: UpdateAtt
   });
 
   const json = await handleResponse(response);
-  return json.success;
+  return json.data;
 };
 
 export type DeleteAttachmentsParams = Parameters<(typeof client)['index']['$delete']>['0']['json'] & {

@@ -1,5 +1,5 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
-import { type SQL, and, count, eq, ilike, inArray } from 'drizzle-orm';
+import { type SQL, and, count, eq, ilike, inArray, or } from 'drizzle-orm';
 import { html } from 'hono/html';
 import { stream } from 'hono/streaming';
 
@@ -88,7 +88,8 @@ const attachmentsRoutes = app
     const filters: SQL[] = [eq(attachmentsTable.organizationId, organization.id)];
 
     if (q) {
-      filters.push(ilike(attachmentsTable.filename, prepareStringForILikeFilter(q)));
+      const query = prepareStringForILikeFilter(q);
+      filters.push(or(ilike(attachmentsTable.filename, query), ilike(attachmentsTable.name, query)) as SQL);
     }
 
     const orderColumn = getOrderColumn(
