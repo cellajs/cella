@@ -59,7 +59,7 @@ const organizationsRoutes = app
     const data = {
       ...createdOrganization,
       membership: createdMembership,
-      counts: { memberships: { admins: 1, members: 1, total: 1 } },
+      counts: { membership: { admin: 1, member: 1, total: 1 } },
     };
 
     return ctx.json({ success: true, data }, 200);
@@ -102,12 +102,12 @@ const organizationsRoutes = app
         ...getTableColumns(organizationsTable),
         membership: membershipSelect,
         counts: {
-          memberships: sql<{
-            admins: number;
-            members: number;
+          membership: sql<{
+            admin: number;
+            member: number;
             pending: number;
             total: number;
-          }>`json_build_object('admins', ${countsQuery.admins}, 'members', ${countsQuery.members}, 'pending', ${countsQuery.pending}, 'total', ${countsQuery.members})`,
+          }>`json_build_object('admin', ${countsQuery.admin}, 'member', ${countsQuery.member}, 'pending', ${countsQuery.pending}, 'total', ${countsQuery.member})`,
         },
       })
       .from(organizationsQuery.as('organizations'))
@@ -168,7 +168,7 @@ const organizationsRoutes = app
       ...updatedOrganization,
       membership,
       counts: {
-        memberships: memberCounts,
+        membership: memberCounts,
       },
     };
 
@@ -187,7 +187,7 @@ const organizationsRoutes = app
     const memberCounts = await getMemberCounts('organization', organization.id);
     const relatedEntitiesCounts = await getRelatedEntityCounts('organization', organization.id);
 
-    const counts = { memberships: memberCounts, ...relatedEntitiesCounts };
+    const counts = { membership: memberCounts, ...relatedEntitiesCounts };
     const data = { ...organization, membership, counts };
 
     return ctx.json({ success: true, data }, 200);

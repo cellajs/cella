@@ -16,9 +16,9 @@ import {
 import { membershipInfoSchema } from '../memberships/schema';
 
 export const membershipsCountSchema = z.object({
-  memberships: z.object({
-    admins: z.number(),
-    members: z.number(),
+  membership: z.object({
+    admin: z.number(),
+    member: z.number(),
     total: z.number(),
   }),
 });
