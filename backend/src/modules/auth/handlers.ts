@@ -38,6 +38,7 @@ import { deleteAuthCookie, getAuthCookie, setAuthCookie } from './helpers/cookie
 import {
   clearOauthSession,
   createOauthSession,
+  getOauthInviteToken,
   getOauthRedirectUrl,
   handleExistingOauthAccount,
   slugFromEmail,
@@ -528,11 +529,12 @@ const authRoutes = app
 
       // Check if it's account link
       const userId = await getAuthCookie(ctx, 'oauth_connect_user_id');
+      const { tokenId, tokenRedirectUrl } = (await getOauthInviteToken(ctx)) ?? {};
 
       // Check if oauth account already exists
       const existingStatus = await handleExistingOauthAccount(ctx, strategy, String(githubUser.id), userId || '');
       if (existingStatus === 'mismatch') return errorRedirect(ctx, 'oauth_mismatch', 'warn');
-      if (existingStatus === 'auth') return ctx.redirect(redirectExistingUserUrl, 302);
+      if (existingStatus === 'auth') return ctx.redirect(tokenRedirectUrl ?? redirectExistingUserUrl, 302);
 
       // Get user emails from github
       const githubUserEmailsResponse = await fetch('https://api.github.com/user/emails', {
@@ -547,9 +549,6 @@ const authRoutes = app
       const slug = slugify(githubUser.login, { lower: true, strict: true });
       const { firstName, lastName } = splitFullName(githubUser.name || slug);
 
-      // TODO: handle token  Check if user has an invite token
-      const inviteToken = await getAuthCookie(ctx, 'oauth_invite_token');
-
       const userEmail = primaryEmail.email.toLowerCase();
 
       // Check if user already exists
@@ -557,7 +556,7 @@ const authRoutes = app
       const [existingUser] = await getUsersByConditions(conditions);
 
       if (existingUser) {
-        const emailVerified = existingUser.emailVerified || !!inviteToken || primaryEmail.verified;
+        const emailVerified = existingUser.emailVerified || !!tokenId || primaryEmail.verified;
         return await updateExistingUser(ctx, existingUser, strategy, {
           providerUser: {
             id: String(githubUser.id),
@@ -566,12 +565,12 @@ const authRoutes = app
             firstName,
             lastName,
           },
-          redirectUrl: redirectExistingUserUrl,
+          redirectUrl: tokenRedirectUrl ?? redirectExistingUserUrl,
           emailVerified,
         });
       }
 
-      const redirectNewUserUrl = await getOauthRedirectUrl(ctx, true);
+      const redirectNewUserUrl = tokenRedirectUrl ?? (await getOauthRedirectUrl(ctx, true));
       // Create new user and oauth account
       // TODO can we simplify this?
       const newUser = {
@@ -583,11 +582,13 @@ const authRoutes = app
         firstName,
         lastName,
       };
+
       return await handleCreateUser({
         ctx,
         redirectUrl: redirectNewUserUrl,
         provider: { id: strategy, userId: String(githubUser.id) },
         newUser,
+        tokenId,
       });
     } catch (error) {
       // Handle invalid credentials

@@ -7,9 +7,10 @@ import { setUserSession, validateSession } from './session';
 import { type EnabledOauthProvider, config } from 'config';
 import slugify from 'slugify';
 import { db } from '#/db/db';
+import { tokensTable } from '#/db/schema/tokens';
 import { errorRedirect, errorResponse } from '#/lib/errors';
 import { logEvent } from '#/middlewares/logger/log-event';
-import { TimeSpan } from '#/utils/time-span';
+import { TimeSpan, isExpiredDate } from '#/utils/time-span';
 import { type CookieName, deleteAuthCookie, getAuthCookie, setAuthCookie } from './cookie';
 import { sendVerificationEmail } from './verify-email';
 
@@ -159,4 +160,19 @@ export const updateExistingUser = async (ctx: Context, existingUser: UserModel, 
   await setUserSession(ctx, existingUser.id, providerId);
 
   return ctx.redirect(redirectUrl, 302);
+};
+
+export const getOauthInviteToken = async (ctx: Context) => {
+  const inviteToken = await getAuthCookie(ctx, 'oauth_invite_token');
+
+  if (!inviteToken) return null;
+
+  // Check if token exists
+  const [tokenRecord] = await db.select().from(tokensTable).where(eq(tokensTable.token, inviteToken));
+
+  if (!tokenRecord) throw new Error('invitation_not_found');
+  if (isExpiredDate(tokenRecord.expiresAt)) throw new Error('invitation_expired');
+  if (tokenRecord.type !== 'invitation') throw new Error('invalid_token');
+
+  return { tokenId: tokenRecord.id, tokenRedirectUrl: `${config.frontendUrl}/invitation/${tokenRecord.token}?tokenId=${tokenRecord.id}` };
 };
