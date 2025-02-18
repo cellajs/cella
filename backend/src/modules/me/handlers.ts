@@ -75,7 +75,7 @@ const meRoutes = app
     );
 
     // Get IDs user is member of
-    const userEntityIds = Array.from(membershipMap.keys());
+    const userEntityIds = Array.from(membershipMap.keys()).filter((el) => el !== null);
 
     if (userEntityIds.length === 0) return ctx.json({ success: true, data: [] }, 200);
 
