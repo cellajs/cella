@@ -75,7 +75,7 @@ export function getMemberCounts(entity: ContextEntity, id: string) {
 export const getRelatedEntityCounts = async (
   entity: ContextEntity,
   entityId: string,
-  countConditions: Partial<Record<'organization' | 'attachment', SQL>> = {},
+  countConditions: Partial<Record<ProductEntity | ContextEntity, SQL>> = {},
 ) => {
   // Get the ID field based on entity
   const entityIdField = entityIdFields[entity];
