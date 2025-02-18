@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { config } from 'config';
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 import { organizationsTable } from '#/db/schema/organizations';
-import { type ValidEntityTypes, hasField } from '#/utils/counts';
+import type { ValidEntityTypes } from '#/utils/counts';
 import {
   languageSchema,
   paginationQuerySchema,
@@ -23,7 +23,8 @@ export const membershipsCountSchema = z.object({
   }),
 });
 
-const validEntityTypes = [...config.productEntityTypes, ...config.contextEntityTypes].filter((type) => hasField(type, 'organizationId'));
+// TODO hotfix because the hasField function causes frontend schema import issues
+const validEntityTypes = [...config.productEntityTypes] as const;
 export const relatedEntitiesCountSchema = z.object(
   validEntityTypes.reduce(
     (acc, key) => {
