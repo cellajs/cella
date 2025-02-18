@@ -18,6 +18,8 @@ const ORGANIZATIONS_COUNT = 100;
 const MEMBERS_COUNT = 100;
 const SYSTEM_ADMIN_MEMBERSHIP_COUNT = 10;
 
+const pastIsoDate = () => faker.date.past().toISOString();
+
 // Seed organizations with data
 export const organizationsSeed = async () => {
   console.info(' ');
@@ -47,7 +49,7 @@ export const organizationsSeed = async () => {
       color: faker.internet.color(),
       chatSupport: faker.datatype.boolean(),
       country: faker.location.country(),
-      createdAt: faker.date.past(),
+      createdAt: pastIsoDate(),
       logoUrl: faker.image.url(),
       thumbnailUrl: null,
     };
@@ -96,7 +98,7 @@ export const organizationsSeed = async () => {
         hashedPassword,
         slug,
         avatarUrl: null,
-        createdAt: faker.date.past(),
+        createdAt: pastIsoDate(),
       };
     });
 
@@ -112,9 +114,9 @@ export const organizationsSeed = async () => {
         organizationId: organization.id,
         type: 'organization',
         role: faker.helpers.arrayElement(['admin', 'member']),
-        createdAt: faker.date.past(),
+        createdAt: pastIsoDate(),
         order: organizationsCount * 10,
-        activatedAt: faker.date.past(),
+        activatedAt: pastIsoDate(),
       };
     });
 
@@ -129,9 +131,9 @@ export const organizationsSeed = async () => {
         type: 'organization',
         archived: faker.datatype.boolean(0.5),
         role: faker.helpers.arrayElement(['admin', 'member']),
-        createdAt: faker.date.past(),
+        createdAt: pastIsoDate(),
         order: adminMembershipsOrder,
-        activatedAt: faker.date.past(),
+        activatedAt: pastIsoDate(),
       });
       adminMembershipsOrder = adminMembershipsOrder + 10;
       adminOrganizationsCount++; // Increment the counter

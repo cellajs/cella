@@ -8,7 +8,6 @@ import { type ErrorType, createError, errorResponse } from '#/lib/errors';
 import { logEvent } from '#/middlewares/logger/log-event';
 import { invalidateSessionById, invalidateUserSessions, validateSession } from '../auth/helpers/session';
 import { checkSlugAvailable } from '../general/helpers/check-slug';
-import { transformDbUser } from '../users/helpers/transform-database-user';
 import meRouteConfig from './routes';
 
 import { OpenAPIHono } from '@hono/zod-openapi';
@@ -21,6 +20,7 @@ import { type Env, getContextMemberships, getContextUser } from '#/lib/context';
 import { resolveEntity } from '#/lib/entity';
 import { sendSSEToUsers } from '#/lib/sse';
 import defaultHook from '#/utils/default-hook';
+import { getIsoDate } from '#/utils/iso-date';
 import { deleteAuthCookie, getAuthCookie } from '../auth/helpers/cookie';
 import { membershipSelect } from '../memberships/helpers/select';
 import { getUserSessions } from './helpers/get-sessions';
@@ -40,9 +40,9 @@ const meRoutes = app
     const user = getContextUser();
 
     // Update last visit date
-    await db.update(usersTable).set({ lastStartedAt: new Date() }).where(eq(usersTable.id, user.id));
+    await db.update(usersTable).set({ lastStartedAt: getIsoDate() }).where(eq(usersTable.id, user.id));
 
-    return ctx.json({ success: true, data: transformDbUser(user) }, 200);
+    return ctx.json({ success: true, data: user }, 200);
   })
   /*
    * Get current user auth info
@@ -75,7 +75,7 @@ const meRoutes = app
     );
 
     // Get IDs user is member of
-    const userEntityIds = Array.from(membershipMap.keys());
+    const userEntityIds = Array.from(membershipMap.keys()).filter((el) => el !== null);
 
     if (userEntityIds.length === 0) return ctx.json({ success: true, data: [] }, 200);
 
@@ -146,34 +146,26 @@ const meRoutes = app
         const subTable = entityTables[section.subEntity];
         const subEntityIdField = entityIdFields[section.subEntity];
 
-        submenu = (
-          await db
-            .select({
-              slug: subTable.slug,
-              id: subTable.id,
-              createdAt: subTable.createdAt,
-              modifiedAt: subTable.modifiedAt,
-              organizationId: membershipSelect.organizationId,
-              name: subTable.name,
-              entity: subTable.entity,
-              thumbnailUrl: subTable.thumbnailUrl,
-              membership: membershipSelect,
-            })
-            .from(subTable)
-            .where(and(eq(membershipsTable.userId, user.id), eq(membershipsTable.type, section.subEntity)))
-            .orderBy(asc(membershipsTable.order))
-            .innerJoin(membershipsTable, eq(membershipsTable[subEntityIdField], subTable.id))
-        ).map((entity) => ({
-          ...entity,
-          createdAt: entity.createdAt.toISOString(),
-          modifiedAt: entity.modifiedAt?.toISOString() ?? null,
-        }));
+        submenu = await db
+          .select({
+            slug: subTable.slug,
+            id: subTable.id,
+            createdAt: subTable.createdAt,
+            modifiedAt: subTable.modifiedAt,
+            organizationId: membershipSelect.organizationId,
+            name: subTable.name,
+            entity: subTable.entity,
+            thumbnailUrl: subTable.thumbnailUrl,
+            membership: membershipSelect,
+          })
+          .from(subTable)
+          .where(and(eq(membershipsTable.userId, user.id), eq(membershipsTable.type, section.subEntity)))
+          .orderBy(asc(membershipsTable.order))
+          .innerJoin(membershipsTable, eq(membershipsTable[subEntityIdField], subTable.id));
       }
 
       return entity.map((entity) => ({
         ...entity,
-        createdAt: entity.createdAt.toISOString(),
-        modifiedAt: entity.modifiedAt?.toISOString() ?? null,
         submenu: submenu.filter((p) => p.membership[mainEntityIdField] === entity.id),
       }));
     };
@@ -253,13 +245,13 @@ const meRoutes = app
         thumbnailUrl,
         slug,
         name: [firstName, lastName].filter(Boolean).join(' ') || slug,
-        modifiedAt: new Date(),
+        modifiedAt: getIsoDate(),
         modifiedBy: user.id,
       })
       .where(eq(usersTable.id, user.id))
       .returning();
 
-    return ctx.json({ success: true, data: transformDbUser(updatedUser) }, 200);
+    return ctx.json({ success: true, data: updatedUser }, 200);
   })
   /*
    * Delete current user (self)

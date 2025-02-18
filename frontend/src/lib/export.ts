@@ -100,9 +100,9 @@ export async function exportToPdf<R extends Row>(
 // Format data for a single row based on column configuration
 const formatRowData = <R extends Row>(row: R, column: Column) => {
   // Handle special cases
-  if ((column.key === 'adminCount' || column.key === 'memberCount') && 'counts' in row && 'memberships' in row.counts) {
-    const key = column.key.replace('Count', 's');
-    return row.counts.memberships[key];
+  if ((column.key === 'adminCount' || column.key === 'memberCount') && 'counts' in row && 'membership' in row.counts) {
+    const key = column.key.replace('Count', '');
+    return row.counts.membership[key];
   }
   const date = dayjs(row[column.key]);
   if (date.isValid()) {

@@ -45,7 +45,7 @@ export const useColumns = (callback: (organizations: Organization[]) => void) =>
         visible: true,
         width: 32,
         renderCell: ({ row, tabIndex }) => {
-          if (row.counts.memberships.admins > 0 || row.counts.memberships.members > 0)
+          if (row.counts.membership.admin > 0 || row.counts.membership.member > 0)
             return <UpdateRow organization={row} tabIndex={tabIndex} callback={callback} />;
         },
       },
@@ -92,7 +92,7 @@ export const useColumns = (callback: (organizations: Organization[]) => void) =>
         renderCell: ({ row }) => (
           <>
             <UserRound className="mr-2 opacity-50" size={16} />
-            {row.counts.memberships.members}
+            {row.counts.membership.member}
           </>
         ),
       },
@@ -106,7 +106,7 @@ export const useColumns = (callback: (organizations: Organization[]) => void) =>
         renderCell: ({ row }) => (
           <>
             <Shield className="mr-2 opacity-50" size={16} />
-            {row.counts.memberships.admins}
+            {row.counts.membership.admin}
           </>
         ),
       },

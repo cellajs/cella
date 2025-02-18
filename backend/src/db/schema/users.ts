@@ -24,11 +24,11 @@ export const usersTable = pgTable(
     bannerUrl: varchar(),
     thumbnailUrl: varchar(),
     newsletter: boolean().notNull().default(false),
-    lastSeenAt: timestamp(), // last time a GET request has been made in last 5 minutes
-    lastStartedAt: timestamp(), // last time GET me
-    lastSignInAt: timestamp(), // last time user went through authentication flow
-    createdAt: timestamp().defaultNow().notNull(),
-    modifiedAt: timestamp(),
+    lastSeenAt: timestamp({ mode: 'string' }), // last time a GET request has been made in last 5 minutes
+    lastStartedAt: timestamp({ mode: 'string' }), // last time GET me
+    lastSignInAt: timestamp({ mode: 'string' }), // last time user went through authentication flow
+    createdAt: timestamp({ mode: 'string' }).defaultNow().notNull(),
+    modifiedAt: timestamp({ mode: 'string' }),
     modifiedBy: varchar(),
     role: varchar({ enum: roleEnum }).notNull().default('user'),
   },

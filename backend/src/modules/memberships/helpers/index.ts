@@ -5,6 +5,7 @@ import { type MembershipModel, membershipsTable } from '#/db/schema/memberships'
 import { entityIdFields, entityRelations } from '#/entity-config';
 import type { EntityModel } from '#/lib/entity';
 import { logEvent } from '#/middlewares/logger/log-event';
+import { getIsoDate } from '#/utils/iso-date';
 import { membershipSelect } from './select';
 
 type BaseEntityModel = EntityModel<ContextEntity> & {
@@ -56,7 +57,7 @@ export const insertMembership = async <T extends BaseEntityModel>({
     role,
     createdBy,
     tokenId,
-    activatedAt: tokenId ? null : new Date(),
+    activatedAt: tokenId ? null : getIsoDate(),
     order: maxOrder ? maxOrder + 1 : 1,
   };
 

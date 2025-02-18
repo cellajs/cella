@@ -6,6 +6,7 @@ import { type SessionModel, sessionsTable } from '#/db/schema/sessions';
 import { type UserModel, usersTable } from '#/db/schema/users';
 import { logEvent } from '#/middlewares/logger/log-event';
 import { userSelect } from '#/modules/users/helpers/select';
+import { getIsoDate } from '#/utils/iso-date';
 import { nanoid } from '#/utils/nanoid';
 import { encodeLowerCased } from '#/utils/oslo';
 import { TimeSpan, createDate, isExpiredDate } from '#/utils/time-span';
@@ -73,7 +74,7 @@ export const setUserSession = async (ctx: Context, userId: UserModel['id'], stra
   if (strategy === 'impersonation') return;
 
   // Update last sign in date
-  const lastSignInAt = new Date();
+  const lastSignInAt = getIsoDate();
   await db.update(usersTable).set({ lastSignInAt }).where(eq(usersTable.id, userId));
   logEvent('User signed in', { user: userId, strategy });
 };

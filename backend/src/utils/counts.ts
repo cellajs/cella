@@ -21,8 +21,8 @@ export const getMemberCountsQuery = (entity: ContextEntity) => {
   return db
     .select({
       id: entityIdColumn,
-      admins: count(sql`CASE WHEN ${membershipsTable.activatedAt} IS NOT NULL AND ${membershipsTable.role} = 'admin' THEN 1 END`).as('admins'),
-      members: count(sql`CASE WHEN ${membershipsTable.activatedAt} IS NOT NULL AND ${membershipsTable.role} = 'member' THEN 1 END`).as('members'),
+      admin: count(sql`CASE WHEN ${membershipsTable.activatedAt} IS NOT NULL AND ${membershipsTable.role} = 'admin' THEN 1 END`).as('admin'),
+      member: count(sql`CASE WHEN ${membershipsTable.activatedAt} IS NOT NULL AND ${membershipsTable.role} = 'member' THEN 1 END`).as('member'),
       pending: count(sql`CASE WHEN ${membershipsTable.activatedAt} IS NULL THEN 1 END`).as('pending'),
       total: count().as('total'), // Fixed alias to avoid confusion
     })
@@ -44,14 +44,14 @@ export function getMemberCounts(entity: ContextEntity, id: string) {
 
   return db
     .select({
-      admins: query.admins,
-      members: query.members,
+      admin: query.admin,
+      member: query.member,
       pending: query.pending,
       total: query.total,
     })
     .from(query)
     .where(eq(query.id, id))
-    .then((rows) => rows[0] || { admins: 0, members: 0, pending: 0, total: 0 });
+    .then((rows) => rows[0] || { admin: 0, member: 0, pending: 0, total: 0 });
 }
 
 /**
@@ -75,7 +75,7 @@ export function getMemberCounts(entity: ContextEntity, id: string) {
 export const getRelatedEntityCounts = async (
   entity: ContextEntity,
   entityId: string,
-  countConditions: Partial<Record<'organization' | 'attachment', SQL>> = {},
+  countConditions: Partial<Record<ProductEntity | ContextEntity, SQL>> = {},
 ) => {
   // Get the ID field based on entity
   const entityIdField = entityIdFields[entity];
@@ -129,7 +129,7 @@ export type ValidEntityTypes<T extends string> = Extract<
 >;
 
 // Generic type guard function for filtering based on a dynamic field name 'T'
-export const hasField = <T extends string>(entityType: ProductEntity | ContextEntity, field: T): entityType is ValidEntityTypes<T> => {
+const hasField = <T extends string>(entityType: ProductEntity | ContextEntity, field: T): entityType is ValidEntityTypes<T> => {
   const table = entityTables[entityType];
   return field in table;
 };

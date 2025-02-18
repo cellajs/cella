@@ -16,19 +16,21 @@ import {
 import { membershipInfoSchema } from '../memberships/schema';
 
 export const membershipsCountSchema = z.object({
-  memberships: z.object({
-    admins: z.number(),
-    members: z.number(),
+  membership: z.object({
+    admin: z.number(),
+    member: z.number(),
     total: z.number(),
   }),
 });
 
-// TODO hotfix because the hasField function causes frontend schema import issues
-const validEntityTypes = [...config.productEntityTypes] as const;
+/** Type assertion to avoid "ReferenceError: Buffer is not defined" when using `hasField`.
+ * Redundant fields will be filtered out in `getRelatedEntityCounts`.
+ */
+//TODO: find way to fix ?
 export const relatedEntitiesCountSchema = z.object(
-  validEntityTypes.reduce(
+  [...config.productEntityTypes, ...config.contextEntityTypes].reduce(
     (acc, key) => {
-      acc[key] = z.number();
+      acc[key as ValidEntityTypes<'organizationId'>] = z.number();
       return acc;
     },
     {} as Record<ValidEntityTypes<'organizationId'>, z.ZodNumber>,
