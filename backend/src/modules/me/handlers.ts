@@ -8,7 +8,6 @@ import { type ErrorType, createError, errorResponse } from '#/lib/errors';
 import { logEvent } from '#/middlewares/logger/log-event';
 import { invalidateSessionById, invalidateUserSessions, validateSession } from '../auth/helpers/session';
 import { checkSlugAvailable } from '../general/helpers/check-slug';
-import { transformDbUser } from '../users/helpers/transform-database-user';
 import meRouteConfig from './routes';
 
 import { OpenAPIHono } from '@hono/zod-openapi';
@@ -40,9 +39,9 @@ const meRoutes = app
     const user = getContextUser();
 
     // Update last visit date
-    await db.update(usersTable).set({ lastStartedAt: new Date() }).where(eq(usersTable.id, user.id));
+    await db.update(usersTable).set({ lastStartedAt: new Date().toISOString() }).where(eq(usersTable.id, user.id));
 
-    return ctx.json({ success: true, data: transformDbUser(user) }, 200);
+    return ctx.json({ success: true, data: user }, 200);
   })
   /*
    * Get current user auth info
@@ -253,13 +252,13 @@ const meRoutes = app
         thumbnailUrl,
         slug,
         name: [firstName, lastName].filter(Boolean).join(' ') || slug,
-        modifiedAt: new Date(),
+        modifiedAt: new Date().toISOString(),
         modifiedBy: user.id,
       })
       .where(eq(usersTable.id, user.id))
       .returning();
 
-    return ctx.json({ success: true, data: transformDbUser(updatedUser) }, 200);
+    return ctx.json({ success: true, data: updatedUser }, 200);
   })
   /*
    * Delete current user (self)

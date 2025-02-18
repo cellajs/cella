@@ -8,25 +8,16 @@ import { paginationQuerySchema, validImageUrlSchema, validNameSchema, validSlugS
 const enabledOauthProvidersEnum = z.enum(config.enabledOauthProviders as unknown as [EnabledOauthProvider]);
 export const signUpInfo = z.object({ oauth: z.array(enabledOauthProvidersEnum), passkey: z.boolean() });
 
-export const baseUserSchema = createSelectSchema(usersTable, {
+const userTableSchema = createSelectSchema(usersTable, {
   email: z.string().email(),
-  lastSeenAt: z.string().nullable(),
-  lastStartedAt: z.string().nullable(),
-  lastSignInAt: z.string().nullable(),
-  createdAt: z.string(),
-  modifiedAt: z.string().nullable(),
 }).omit({
   hashedPassword: true,
   unsubscribeToken: true,
 });
 
-export const userSchema = z.object({
-  ...baseUserSchema.shape,
-});
+export const userSchema = z.object({ ...userTableSchema.shape });
 
-export const limitedUserSchema = createSelectSchema(usersTable, {
-  email: z.string().email(),
-}).pick({
+export const limitedUserSchema = userTableSchema.pick({
   id: true,
   name: true,
   email: true,

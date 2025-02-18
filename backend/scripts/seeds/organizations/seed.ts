@@ -96,7 +96,7 @@ export const organizationsSeed = async () => {
         hashedPassword,
         slug,
         avatarUrl: null,
-        createdAt: faker.date.past(),
+        createdAt: faker.date.past().toISOString(),
       };
     });
 
