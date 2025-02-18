@@ -9,6 +9,7 @@ import { type ErrorType, createError, errorResponse } from '#/lib/errors';
 import { logEvent } from '#/middlewares/logger/log-event';
 import { getUsersByConditions } from '#/modules/users/helpers/get-user-by';
 import defaultHook from '#/utils/default-hook';
+import { getIsoDate } from '#/utils/iso-date';
 import { getOrderColumn } from '#/utils/order-column';
 import { prepareStringForILikeFilter } from '#/utils/sql';
 import { checkSlugAvailable } from '../general/helpers/check-slug';
@@ -188,7 +189,7 @@ const usersRoutes = app
         thumbnailUrl,
         slug,
         name: [firstName, lastName].filter(Boolean).join(' ') || slug,
-        modifiedAt: new Date().toISOString(),
+        modifiedAt: getIsoDate(),
         modifiedBy: user.id,
       })
       .where(eq(usersTable.id, targetUser.id))

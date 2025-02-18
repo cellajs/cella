@@ -18,6 +18,7 @@ import { getValidEntity } from '#/permissions/get-valid-entity';
 import { splitByAllowance } from '#/permissions/split-by-allowance';
 import { getMemberCounts, getMemberCountsQuery, getRelatedEntityCounts } from '#/utils/counts';
 import defaultHook from '#/utils/default-hook';
+import { getIsoDate } from '#/utils/iso-date';
 import { getOrderColumn } from '#/utils/order-column';
 import { prepareStringForILikeFilter } from '#/utils/sql';
 import { NewsletterEmail, type NewsletterEmailProps } from '../../../emails/newsletter';
@@ -142,7 +143,7 @@ const organizationsRoutes = app
       .update(organizationsTable)
       .set({
         ...updatedFields,
-        modifiedAt: new Date(),
+        modifiedAt: getIsoDate(),
         modifiedBy: user.id,
       })
       .where(eq(organizationsTable.id, organization.id))
