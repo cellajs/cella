@@ -40,6 +40,7 @@ import {
   createOauthSession,
   getOauthRedirectUrl,
   handleExistingOauthAccount,
+  handleInvitationToken,
   slugFromEmail,
   splitFullName,
   updateExistingUser,
@@ -464,24 +465,14 @@ const authRoutes = app
    * Github authentication
    */
   .openapi(authRouteConfig.githubSignIn, async (ctx) => {
-    const { redirect, connect, token } = ctx.req.valid('query');
+    const { connect } = ctx.req.valid('query');
 
     const state = generateState();
     const url = githubAuth.createAuthorizationURL(state, githubScopes);
 
-    let tokenId = null;
-    let redirectUrl = redirect;
+    const { redirectUrl, tokenId, error } = await handleInvitationToken(ctx);
 
-    if (token) {
-      const [tokenRecord] = await db.select().from(tokensTable).where(eq(tokensTable.token, token));
-
-      if (!tokenRecord) return errorResponse(ctx, 404, 'invitation_not_found', 'warn');
-      if (isExpiredDate(tokenRecord.expiresAt)) return errorResponse(ctx, 403, 'invalid_token', 'warn');
-      if (tokenRecord.type !== 'invitation') return errorResponse(ctx, 400, 'invalid_token', 'warn');
-
-      redirectUrl = `${config.frontendUrl}/invitation/${tokenRecord.token}?tokenId=${tokenRecord.id}`;
-      tokenId = tokenRecord.id;
-    }
+    if (error) return ctx.json({ success: false, error }, error.status as 400 | 403 | 404);
 
     return await createOauthSession(ctx, 'github', url, state, '', redirectUrl, connect, tokenId);
   })
@@ -489,25 +480,15 @@ const authRoutes = app
    * Google authentication
    */
   .openapi(authRouteConfig.googleSignIn, async (ctx) => {
-    const { redirect, connect, token } = ctx.req.valid('query');
+    const { connect } = ctx.req.valid('query');
 
     const state = generateState();
     const codeVerifier = generateCodeVerifier();
     const url = googleAuth.createAuthorizationURL(state, codeVerifier, googleScopes);
 
-    let tokenId = null;
-    let redirectUrl = redirect;
+    const { redirectUrl, tokenId, error } = await handleInvitationToken(ctx);
 
-    if (token) {
-      const [tokenRecord] = await db.select().from(tokensTable).where(eq(tokensTable.token, token));
-
-      if (!tokenRecord) return errorResponse(ctx, 404, 'invitation_not_found', 'warn');
-      if (isExpiredDate(tokenRecord.expiresAt)) return errorResponse(ctx, 403, 'invalid_token', 'warn');
-      if (tokenRecord.type !== 'invitation') return errorResponse(ctx, 400, 'invalid_token', 'warn');
-
-      redirectUrl = `${config.frontendUrl}/invitation/${tokenRecord.token}?tokenId=${tokenRecord.id}`;
-      tokenId = tokenRecord.id;
-    }
+    if (error) return ctx.json({ success: false, error }, error.status as 400 | 403 | 404);
 
     return await createOauthSession(ctx, 'google', url, state, codeVerifier, redirectUrl, connect, tokenId);
   })
@@ -515,25 +496,15 @@ const authRoutes = app
    * Microsoft authentication
    */
   .openapi(authRouteConfig.microsoftSignIn, async (ctx) => {
-    const { redirect, connect, token } = ctx.req.valid('query');
+    const { connect } = ctx.req.valid('query');
 
     const state = generateState();
     const codeVerifier = generateCodeVerifier();
     const url = microsoftAuth.createAuthorizationURL(state, codeVerifier, microsoftScopes);
 
-    let tokenId = null;
-    let redirectUrl = redirect;
+    const { redirectUrl, tokenId, error } = await handleInvitationToken(ctx);
 
-    if (token) {
-      const [tokenRecord] = await db.select().from(tokensTable).where(eq(tokensTable.token, token));
-
-      if (!tokenRecord) return errorResponse(ctx, 404, 'invitation_not_found', 'warn');
-      if (isExpiredDate(tokenRecord.expiresAt)) return errorResponse(ctx, 403, 'invalid_token', 'warn');
-      if (tokenRecord.type !== 'invitation') return errorResponse(ctx, 400, 'invalid_token', 'warn');
-
-      redirectUrl = `${config.frontendUrl}/invitation/${tokenRecord.token}?tokenId=${tokenRecord.id}`;
-      tokenId = tokenRecord.id;
-    }
+    if (error) return ctx.json({ success: false, error }, error.status as 400 | 403 | 404);
 
     return await createOauthSession(ctx, 'microsoft', url, state, codeVerifier, redirectUrl, connect, tokenId);
   })
