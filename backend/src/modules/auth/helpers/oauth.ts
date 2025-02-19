@@ -61,21 +61,28 @@ export const createOauthSession = async (
   return ctx.redirect(url.toString(), 302);
 };
 
-// Check if oauth account already exists
-export const handleExistingOauthAccount = async (
+// Handle the OAuth account flow and determine the next action
+export const handleOauthAccountFlow = async (
   ctx: Context,
   oauthProvider: EnabledOauthProvider,
   oauthProviderId: string,
   currentUserId: string,
-): Promise<'auth' | 'mismatch' | null> => {
-  const [existingOauthAccount] = await findOauthAccount(oauthProvider, oauthProviderId);
-  if (!existingOauthAccount) return null;
-  // If the account is linked to another user, return an error
-  if (currentUserId && existingOauthAccount.userId !== currentUserId) return 'mismatch';
+): Promise<'auth' | 'invite_auth' | 'mismatch' | 'invite' | 'firstSignIn'> => {
+  // Retrieve the existing OAuth account linked to the provider and the invite token from the cookie
+  const [[existingAccount], inviteToken] = await Promise.all([
+    findOauthAccount(oauthProvider, oauthProviderId),
+    getAuthCookie(ctx, 'oauth_invite_token'),
+  ]);
+
+  // No existing account found, check if invite
+  if (!existingAccount) return inviteToken ? 'invite' : 'firstSignIn';
+
+  // Existing account is linked to a different user → Mismatch
+  if (currentUserId && existingAccount.userId !== currentUserId) return 'mismatch';
 
   // Otherwise, set the session and redirect
-  await setUserSession(ctx, existingOauthAccount.userId, oauthProvider);
-  return 'auth';
+  await setUserSession(ctx, existingAccount.userId, oauthProvider);
+  return inviteToken ? 'invite_auth' : 'auth';
 };
 
 // Clear oauth session
@@ -86,20 +93,36 @@ export const clearOauthSession = (ctx: Context) => {
   }
 };
 
-// Get redirect URL from cookie or use default
-export const getOauthRedirectUrl = async (ctx: Context, firstSignIn?: boolean) => {
+export const getOauthFlowInfo = async (
+  ctx: Context,
+  action: 'auth' | 'invite_auth' | 'firstSignIn' | 'invite' = 'auth',
+): Promise<{ redirectUrl: string; tokenId?: string }> => {
   const redirectCookie = await getAuthCookie(ctx, 'oauth_redirect');
-
   const redirectCookieUrl = redirectCookie ? decodeURIComponent(redirectCookie) : '';
-  let redirectPath = config.defaultRedirectPath;
 
-  if (redirectCookie) {
-    if (redirectCookieUrl.startsWith('http')) return decodeURIComponent(redirectCookie);
-    redirectPath = redirectCookieUrl;
+  if (redirectCookieUrl.startsWith('http')) return { redirectUrl: redirectCookieUrl };
+
+  let redirectPath = redirectCookieUrl || config.defaultRedirectPath;
+
+  if (action === 'firstSignIn') redirectPath = config.welcomeRedirectPath;
+
+  if (action === 'invite' || action === 'invite_auth') {
+    const inviteToken = await getAuthCookie(ctx, 'oauth_invite_token');
+    if (inviteToken) {
+      const [tokenRecord] = await db.select().from(tokensTable).where(eq(tokensTable.token, inviteToken));
+
+      if (!tokenRecord) throw new Error('invitation_not_found');
+      if (isExpiredDate(tokenRecord.expiresAt)) throw new Error('invitation_expired');
+      if (tokenRecord.type !== 'invitation') throw new Error('invalid_token');
+
+      return {
+        redirectUrl: `${config.frontendUrl}/invitation/${tokenRecord.token}?tokenId=${tokenRecord.id}`,
+        tokenId: tokenRecord.id,
+      };
+    }
   }
 
-  if (firstSignIn) redirectPath = config.welcomeRedirectPath;
-  return config.frontendUrl + redirectPath;
+  return { redirectUrl: config.frontendUrl + redirectPath };
 };
 
 // Insert oauth account into db
@@ -160,19 +183,4 @@ export const updateExistingUser = async (ctx: Context, existingUser: UserModel, 
   await setUserSession(ctx, existingUser.id, providerId);
 
   return ctx.redirect(redirectUrl, 302);
-};
-
-export const getOauthInviteToken = async (ctx: Context) => {
-  const inviteToken = await getAuthCookie(ctx, 'oauth_invite_token');
-
-  if (!inviteToken) return null;
-
-  // Check if token exists
-  const [tokenRecord] = await db.select().from(tokensTable).where(eq(tokensTable.token, inviteToken));
-
-  if (!tokenRecord) throw new Error('invitation_not_found');
-  if (isExpiredDate(tokenRecord.expiresAt)) throw new Error('invitation_expired');
-  if (tokenRecord.type !== 'invitation') throw new Error('invalid_token');
-
-  return { tokenId: tokenRecord.id, tokenRedirectUrl: `${config.frontendUrl}/invitation/${tokenRecord.token}?tokenId=${tokenRecord.id}` };
 };

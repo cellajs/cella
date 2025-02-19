@@ -38,9 +38,8 @@ import { deleteAuthCookie, getAuthCookie, setAuthCookie } from './helpers/cookie
 import {
   clearOauthSession,
   createOauthSession,
-  getOauthInviteToken,
-  getOauthRedirectUrl,
-  handleExistingOauthAccount,
+  getOauthFlowInfo,
+  handleOauthAccountFlow,
   slugFromEmail,
   splitFullName,
   updateExistingUser,
@@ -515,8 +514,6 @@ const authRoutes = app
       return errorResponse(ctx, 401, 'invalid_state', 'warn', undefined, { strategy });
     }
 
-    const redirectExistingUserUrl = await getOauthRedirectUrl(ctx);
-
     try {
       const githubValidation = await githubAuth.validateAuthorizationCode(code);
       const accessToken = githubValidation.accessToken();
@@ -529,12 +526,14 @@ const authRoutes = app
 
       // Check if it's account link
       const userId = await getAuthCookie(ctx, 'oauth_connect_user_id');
-      const { tokenId, tokenRedirectUrl } = (await getOauthInviteToken(ctx)) ?? {};
 
-      // Check if oauth account already exists
-      const existingStatus = await handleExistingOauthAccount(ctx, strategy, String(githubUser.id), userId || '');
-      if (existingStatus === 'mismatch') return errorRedirect(ctx, 'oauth_mismatch', 'warn');
-      if (existingStatus === 'auth') return ctx.redirect(tokenRedirectUrl ?? redirectExistingUserUrl, 302);
+      // Determine next flow action
+      const nextAction = await handleOauthAccountFlow(ctx, strategy, String(githubUser.id), userId || '');
+      if (nextAction === 'mismatch') return errorRedirect(ctx, 'oauth_mismatch', 'warn');
+
+      // Get redirectURL based of nextAction and tokenId if it's an invite
+      const { redirectUrl, tokenId } = await getOauthFlowInfo(ctx, nextAction);
+      if (nextAction === 'auth' || nextAction === 'invite_auth') return ctx.redirect(redirectUrl, 302);
 
       // Get user emails from github
       const githubUserEmailsResponse = await fetch('https://api.github.com/user/emails', {
@@ -565,12 +564,11 @@ const authRoutes = app
             firstName,
             lastName,
           },
-          redirectUrl: tokenRedirectUrl ?? redirectExistingUserUrl,
+          redirectUrl,
           emailVerified,
         });
       }
 
-      const redirectNewUserUrl = tokenRedirectUrl ?? (await getOauthRedirectUrl(ctx, true));
       // Create new user and oauth account
       // TODO can we simplify this?
       const newUser = {
@@ -585,7 +583,7 @@ const authRoutes = app
 
       return await handleCreateUser({
         ctx,
-        redirectUrl: redirectNewUserUrl,
+        redirectUrl,
         provider: { id: strategy, userId: String(githubUser.id) },
         newUser,
         tokenId,
@@ -626,8 +624,6 @@ const authRoutes = app
       return errorResponse(ctx, 401, 'invalid_state', 'warn', undefined, { strategy });
     }
 
-    const redirectExistingUserUrl = await getOauthRedirectUrl(ctx);
-
     try {
       const googleValidation = await googleAuth.validateAuthorizationCode(code, storedCodeVerifier);
       const accessToken = googleValidation.accessToken();
@@ -641,13 +637,13 @@ const authRoutes = app
       // Check if it's account link
       const userId = await getAuthCookie(ctx, 'oauth_connect_user_id');
 
-      // Check if oauth account already exists
-      const existingStatus = await handleExistingOauthAccount(ctx, strategy, user.sub, userId || '');
-      if (existingStatus === 'mismatch') return errorRedirect(ctx, 'oauth_mismatch', 'warn');
-      if (existingStatus === 'auth') return ctx.redirect(redirectExistingUserUrl, 302);
+      // Determine next flow action
+      const nextAction = await handleOauthAccountFlow(ctx, strategy, user.sub, userId || '');
+      if (nextAction === 'mismatch') return errorRedirect(ctx, 'oauth_mismatch', 'warn');
 
-      // TODO: handle token  Check if user has an invite token
-      const inviteToken = await getAuthCookie(ctx, 'oauth_invite_token');
+      // Get redirectURL based of nextAction and tokenId if it's an invite
+      const { redirectUrl, tokenId } = await getOauthFlowInfo(ctx, nextAction);
+      if (nextAction === 'auth' || nextAction === 'invite_auth') return ctx.redirect(redirectUrl, 302);
 
       const userEmail = user.email.toLowerCase();
 
@@ -664,12 +660,10 @@ const authRoutes = app
             firstName: user.given_name,
             lastName: user.family_name,
           },
-          redirectUrl: redirectExistingUserUrl,
-          emailVerified: existingUser.emailVerified || !!inviteToken || user.email_verified,
+          redirectUrl,
+          emailVerified: existingUser.emailVerified || !!tokenId || user.email_verified,
         });
       }
-
-      const redirectNewUserUrl = await getOauthRedirectUrl(ctx, true);
       // Create new user and oauth account
       const newUser = {
         slug: slugFromEmail(userEmail),
@@ -682,9 +676,10 @@ const authRoutes = app
       };
       return await handleCreateUser({
         ctx,
-        redirectUrl: redirectNewUserUrl,
+        redirectUrl,
         provider: { id: strategy, userId: user.sub },
         newUser,
+        tokenId,
       });
     } catch (error) {
       // Handle invalid credentials
@@ -722,8 +717,6 @@ const authRoutes = app
       return errorResponse(ctx, 401, 'invalid_state', 'warn', undefined, { strategy });
     }
 
-    const redirectExistingUserUrl = await getOauthRedirectUrl(ctx);
-
     try {
       const microsoftValidation = await microsoftAuth.validateAuthorizationCode(code, storedCodeVerifier);
       const accessToken = microsoftValidation.accessToken();
@@ -737,13 +730,13 @@ const authRoutes = app
       // Check if it's account link
       const userId = await getAuthCookie(ctx, 'oauth_connect_user_id');
 
-      // Check if oauth account already exists
-      const existingStatus = await handleExistingOauthAccount(ctx, strategy, user.sub, userId || '');
-      if (existingStatus === 'mismatch') return errorRedirect(ctx, 'oauth_mismatch', 'warn');
-      if (existingStatus === 'auth') return ctx.redirect(redirectExistingUserUrl, 302);
+      // Determine next flow action
+      const nextAction = await handleOauthAccountFlow(ctx, strategy, user.sub, userId || '');
+      if (nextAction === 'mismatch') return errorRedirect(ctx, 'oauth_mismatch', 'warn');
 
-      // TODO: handle token  Check if user has an invite token
-      const inviteToken = await getAuthCookie(ctx, 'oauth_invite_token');
+      // Get redirectURL based of nextAction and tokenId if it's an invite
+      const { redirectUrl, tokenId } = await getOauthFlowInfo(ctx, nextAction);
+      if (nextAction === 'auth' || nextAction === 'invite_auth') return ctx.redirect(redirectUrl, 302);
 
       const userEmail = user.email?.toLowerCase();
       if (!userEmail) return errorResponse(ctx, 401, 'no_email_found', 'warn', undefined);
@@ -761,12 +754,11 @@ const authRoutes = app
             firstName: user.given_name,
             lastName: user.family_name,
           },
-          redirectUrl: redirectExistingUserUrl,
-          emailVerified: existingUser.emailVerified || !!inviteToken,
+          redirectUrl,
+          emailVerified: existingUser.emailVerified || !!tokenId,
         });
       }
 
-      const redirectNewUserUrl = await getOauthRedirectUrl(ctx, true);
       // Create new user and oauth account
       // TODO how to shorten this?
       const newUser = {
@@ -782,8 +774,9 @@ const authRoutes = app
       return await handleCreateUser({
         ctx,
         newUser,
-        redirectUrl: redirectNewUserUrl,
+        redirectUrl,
         provider: { id: strategy, userId: user.sub },
+        tokenId,
       });
     } catch (error) {
       // Handle invalid credentials
