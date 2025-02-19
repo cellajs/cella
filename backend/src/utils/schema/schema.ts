@@ -29,3 +29,5 @@ export const mapMenuSectionsSchema = <T extends ZodTypeAny>(getSchemaForTable: (
     ),
   );
 };
+
+export const sessionCookieContentSchema = z.object({ sessionToken: z.string(), adminUserId: z.string().optional() });

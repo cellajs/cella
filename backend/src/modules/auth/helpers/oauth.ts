@@ -2,7 +2,7 @@ import { and, eq } from 'drizzle-orm';
 import type { Context } from 'hono';
 import { oauthAccountsTable } from '#/db/schema/oauth-accounts';
 import { type UserModel, usersTable } from '#/db/schema/users';
-import { setUserSession, validateSession } from './session';
+import { getParsedSessionCookie, setUserSession, validateSession } from './session';
 
 import { type EnabledOauthProvider, config } from 'config';
 import slugify from 'slugify';
@@ -41,9 +41,10 @@ export const createOauthSession = async (
   setAuthCookie(ctx, 'oauth_state', state, cookieExpires);
   // If connecting oauth account to user, make sure same user is logged in
   if (connect) {
-    const sessionToken = await getAuthCookie(ctx, 'session');
-    if (!sessionToken) return errorResponse(ctx, 401, 'no_session', 'warn');
-    const { user } = await validateSession(sessionToken);
+    const sessionData = await getParsedSessionCookie(ctx);
+    if (!sessionData) return errorResponse(ctx, 401, 'no_session', 'warn');
+
+    const { user } = await validateSession(sessionData.sessionToken);
     if (user?.id !== connect) return errorResponse(ctx, 404, 'user_mismatch', 'warn');
   }
 

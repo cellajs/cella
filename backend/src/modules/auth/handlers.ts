@@ -46,7 +46,7 @@ import {
   updateExistingUser,
 } from './helpers/oauth';
 import { parseAndValidatePasskeyAttestation, verifyPassKeyPublic } from './helpers/passkey';
-import { invalidateSessionById, invalidateUserSessions, setUserSession, validateSession } from './helpers/session';
+import { getParsedSessionCookie, invalidateSessionById, invalidateUserSessions, setUserSession, validateSession } from './helpers/session';
 import { handleCreateUser } from './helpers/user';
 import { sendVerificationEmail } from './helpers/verify-email';
 import authRouteConfig from './routes';
@@ -394,9 +394,9 @@ const authRoutes = app
     const { targetUserId } = ctx.req.valid('query');
 
     const user = getContextUser();
-    const sessionToken = await getAuthCookie(ctx, 'session');
+    const sessionData = await getParsedSessionCookie(ctx);
 
-    if (!sessionToken) {
+    if (!sessionData) {
       deleteAuthCookie(ctx, 'session');
       return errorResponse(ctx, 401, 'unauthorized', 'warn');
     }
@@ -411,18 +411,19 @@ const authRoutes = app
    * Stop impersonation
    */
   .openapi(authRouteConfig.stopImpersonation, async (ctx) => {
-    const sessionToken = deleteAuthCookie(ctx, 'session');
-    if (!sessionToken) return errorResponse(ctx, 401, 'unauthorized', 'warn');
+    const sessionData = await getParsedSessionCookie(ctx, true);
+    if (!sessionData) return errorResponse(ctx, 401, 'unauthorized', 'warn');
 
+    const { sessionToken, adminUserId } = sessionData;
     const { session } = await validateSession(sessionToken);
     if (!session) return errorResponse(ctx, 401, 'unauthorized', 'warn');
 
     await invalidateSessionById(session.id);
-    if (session.adminUserId) {
+    if (adminUserId) {
       const [adminsLastSession] = await db
         .select()
         .from(sessionsTable)
-        .where(eq(sessionsTable.userId, session.adminUserId))
+        .where(eq(sessionsTable.userId, adminUserId))
         .orderBy(desc(sessionsTable.expiresAt))
         .limit(1);
 
@@ -432,10 +433,11 @@ const authRoutes = app
       }
 
       const expireTimeSpan = new TimeSpan(adminsLastSession.expiresAt.getTime() - Date.now(), 'ms');
-      await setAuthCookie(ctx, 'session', adminsLastSession.token, expireTimeSpan);
+      const cookieContent = JSON.stringify({ sessionToken: adminsLastSession.token });
+      await setAuthCookie(ctx, 'session', cookieContent, expireTimeSpan);
     }
 
-    logEvent('Stopped impersonation', { admin: session.adminUserId || 'na', user: session.userId });
+    logEvent('Stopped impersonation', { admin: adminUserId || 'na', user: session.userId });
 
     return ctx.json({ success: true }, 200);
   })
@@ -443,15 +445,15 @@ const authRoutes = app
    * Sign out
    */
   .openapi(authRouteConfig.signOut, async (ctx) => {
-    const sessionToken = await getAuthCookie(ctx, 'session');
+    const sessionData = await getParsedSessionCookie(ctx);
 
-    if (!sessionToken) {
+    if (!sessionData) {
       deleteAuthCookie(ctx, 'session');
       return errorResponse(ctx, 401, 'unauthorized', 'warn');
     }
 
     // Find session & invalidate
-    const { session } = await validateSession(sessionToken);
+    const { session } = await validateSession(sessionData.sessionToken);
     if (session) await invalidateSessionById(session.id);
 
     // Delete session cookie
