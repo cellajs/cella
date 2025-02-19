@@ -7,10 +7,9 @@ import { setUserSession, validateSession } from './session';
 import { type EnabledOauthProvider, config } from 'config';
 import slugify from 'slugify';
 import { db } from '#/db/db';
-import { tokensTable } from '#/db/schema/tokens';
 import { errorRedirect, errorResponse } from '#/lib/errors';
 import { logEvent } from '#/middlewares/logger/log-event';
-import { TimeSpan, isExpiredDate } from '#/utils/time-span';
+import { TimeSpan } from '#/utils/time-span';
 import { type CookieName, deleteAuthCookie, getAuthCookie, setAuthCookie } from './cookie';
 import { sendVerificationEmail } from './verify-email';
 
@@ -37,7 +36,7 @@ export const createOauthSession = async (
   codeVerifier?: string,
   redirect?: string,
   connect?: string,
-  token?: string,
+  token?: string | null,
 ) => {
   setAuthCookie(ctx, 'oauth_state', state, cookieExpires);
   // If connecting oauth account to user, make sure same user is logged in
@@ -61,28 +60,21 @@ export const createOauthSession = async (
   return ctx.redirect(url.toString(), 302);
 };
 
-// Handle the OAuth account flow and determine the next action
-export const handleOauthAccountFlow = async (
+// Check if oauth account already exists
+export const handleExistingOauthAccount = async (
   ctx: Context,
   oauthProvider: EnabledOauthProvider,
   oauthProviderId: string,
   currentUserId: string,
-): Promise<'auth' | 'invite_auth' | 'mismatch' | 'invite' | 'firstSignIn'> => {
-  // Retrieve the existing OAuth account linked to the provider and the invite token from the cookie
-  const [[existingAccount], inviteToken] = await Promise.all([
-    findOauthAccount(oauthProvider, oauthProviderId),
-    getAuthCookie(ctx, 'oauth_invite_token'),
-  ]);
-
-  // No existing account found, check if invite
-  if (!existingAccount) return inviteToken ? 'invite' : 'firstSignIn';
-
-  // Existing account is linked to a different user → Mismatch
-  if (currentUserId && existingAccount.userId !== currentUserId) return 'mismatch';
+): Promise<'auth' | 'mismatch' | null> => {
+  const [existingOauthAccount] = await findOauthAccount(oauthProvider, oauthProviderId);
+  if (!existingOauthAccount) return null;
+  // If the account is linked to another user, return an error
+  if (currentUserId && existingOauthAccount.userId !== currentUserId) return 'mismatch';
 
   // Otherwise, set the session and redirect
-  await setUserSession(ctx, existingAccount.userId, oauthProvider);
-  return inviteToken ? 'invite_auth' : 'auth';
+  await setUserSession(ctx, existingOauthAccount.userId, oauthProvider);
+  return 'auth';
 };
 
 // Clear oauth session
@@ -93,36 +85,20 @@ export const clearOauthSession = (ctx: Context) => {
   }
 };
 
-export const getOauthFlowInfo = async (
-  ctx: Context,
-  action: 'auth' | 'invite_auth' | 'firstSignIn' | 'invite' = 'auth',
-): Promise<{ redirectUrl: string; tokenId?: string }> => {
+// Get redirect URL from cookie or use default
+export const getOauthRedirectUrl = async (ctx: Context, firstSignIn?: boolean) => {
   const redirectCookie = await getAuthCookie(ctx, 'oauth_redirect');
+
   const redirectCookieUrl = redirectCookie ? decodeURIComponent(redirectCookie) : '';
+  let redirectPath = config.defaultRedirectPath;
 
-  if (redirectCookieUrl.startsWith('http')) return { redirectUrl: redirectCookieUrl };
-
-  let redirectPath = redirectCookieUrl || config.defaultRedirectPath;
-
-  if (action === 'firstSignIn') redirectPath = config.welcomeRedirectPath;
-
-  if (action === 'invite' || action === 'invite_auth') {
-    const inviteToken = await getAuthCookie(ctx, 'oauth_invite_token');
-    if (inviteToken) {
-      const [tokenRecord] = await db.select().from(tokensTable).where(eq(tokensTable.token, inviteToken));
-
-      if (!tokenRecord) throw new Error('invitation_not_found');
-      if (isExpiredDate(tokenRecord.expiresAt)) throw new Error('invitation_expired');
-      if (tokenRecord.type !== 'invitation') throw new Error('invalid_token');
-
-      return {
-        redirectUrl: `${config.frontendUrl}/invitation/${tokenRecord.token}?tokenId=${tokenRecord.id}`,
-        tokenId: tokenRecord.id,
-      };
-    }
+  if (redirectCookie) {
+    if (redirectCookieUrl.startsWith('http')) return decodeURIComponent(redirectCookie);
+    redirectPath = redirectCookieUrl;
   }
 
-  return { redirectUrl: config.frontendUrl + redirectPath };
+  if (firstSignIn) redirectPath = config.welcomeRedirectPath;
+  return config.frontendUrl + redirectPath;
 };
 
 // Insert oauth account into db

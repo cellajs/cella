@@ -38,8 +38,8 @@ import { deleteAuthCookie, getAuthCookie, setAuthCookie } from './helpers/cookie
 import {
   clearOauthSession,
   createOauthSession,
-  getOauthFlowInfo,
-  handleOauthAccountFlow,
+  getOauthRedirectUrl,
+  handleExistingOauthAccount,
   slugFromEmail,
   splitFullName,
   updateExistingUser,
@@ -469,7 +469,21 @@ const authRoutes = app
     const state = generateState();
     const url = githubAuth.createAuthorizationURL(state, githubScopes);
 
-    return await createOauthSession(ctx, 'github', url, state, '', redirect, connect, token);
+    let tokenId = null;
+    let redirectUrl = redirect;
+
+    if (token) {
+      const [tokenRecord] = await db.select().from(tokensTable).where(eq(tokensTable.token, token));
+
+      if (!tokenRecord) return errorResponse(ctx, 404, 'invitation_not_found', 'warn');
+      if (isExpiredDate(tokenRecord.expiresAt)) return errorResponse(ctx, 403, 'invalid_token', 'warn');
+      if (tokenRecord.type !== 'invitation') return errorResponse(ctx, 400, 'invalid_token', 'warn');
+
+      redirectUrl = `${config.frontendUrl}/invitation/${tokenRecord.token}?tokenId=${tokenRecord.id}`;
+      tokenId = tokenRecord.id;
+    }
+
+    return await createOauthSession(ctx, 'github', url, state, '', redirectUrl, connect, tokenId);
   })
   /*
    * Google authentication
@@ -481,7 +495,21 @@ const authRoutes = app
     const codeVerifier = generateCodeVerifier();
     const url = googleAuth.createAuthorizationURL(state, codeVerifier, googleScopes);
 
-    return await createOauthSession(ctx, 'google', url, state, codeVerifier, redirect, connect, token);
+    let tokenId = null;
+    let redirectUrl = redirect;
+
+    if (token) {
+      const [tokenRecord] = await db.select().from(tokensTable).where(eq(tokensTable.token, token));
+
+      if (!tokenRecord) return errorResponse(ctx, 404, 'invitation_not_found', 'warn');
+      if (isExpiredDate(tokenRecord.expiresAt)) return errorResponse(ctx, 403, 'invalid_token', 'warn');
+      if (tokenRecord.type !== 'invitation') return errorResponse(ctx, 400, 'invalid_token', 'warn');
+
+      redirectUrl = `${config.frontendUrl}/invitation/${tokenRecord.token}?tokenId=${tokenRecord.id}`;
+      tokenId = tokenRecord.id;
+    }
+
+    return await createOauthSession(ctx, 'google', url, state, codeVerifier, redirectUrl, connect, tokenId);
   })
   /*
    * Microsoft authentication
@@ -493,7 +521,21 @@ const authRoutes = app
     const codeVerifier = generateCodeVerifier();
     const url = microsoftAuth.createAuthorizationURL(state, codeVerifier, microsoftScopes);
 
-    return await createOauthSession(ctx, 'microsoft', url, state, codeVerifier, redirect, connect, token);
+    let tokenId = null;
+    let redirectUrl = redirect;
+
+    if (token) {
+      const [tokenRecord] = await db.select().from(tokensTable).where(eq(tokensTable.token, token));
+
+      if (!tokenRecord) return errorResponse(ctx, 404, 'invitation_not_found', 'warn');
+      if (isExpiredDate(tokenRecord.expiresAt)) return errorResponse(ctx, 403, 'invalid_token', 'warn');
+      if (tokenRecord.type !== 'invitation') return errorResponse(ctx, 400, 'invalid_token', 'warn');
+
+      redirectUrl = `${config.frontendUrl}/invitation/${tokenRecord.token}?tokenId=${tokenRecord.id}`;
+      tokenId = tokenRecord.id;
+    }
+
+    return await createOauthSession(ctx, 'microsoft', url, state, codeVerifier, redirectUrl, connect, tokenId);
   })
   /*
    * Github authentication callback
@@ -527,13 +569,13 @@ const authRoutes = app
       // Check if it's account link
       const userId = await getAuthCookie(ctx, 'oauth_connect_user_id');
 
-      // Determine next flow action
-      const nextAction = await handleOauthAccountFlow(ctx, strategy, String(githubUser.id), userId || '');
-      if (nextAction === 'mismatch') return errorRedirect(ctx, 'oauth_mismatch', 'warn');
+      // Check if oauth account already exists
+      const existingStatus = await handleExistingOauthAccount(ctx, strategy, String(githubUser.id), userId || '');
+      if (existingStatus === 'mismatch') return errorRedirect(ctx, 'oauth_mismatch', 'warn');
 
-      // Get redirectURL based of nextAction and tokenId if it's an invite
-      const { redirectUrl, tokenId } = await getOauthFlowInfo(ctx, nextAction);
-      if (nextAction === 'auth' || nextAction === 'invite_auth') return ctx.redirect(redirectUrl, 302);
+      // Get redirectUrl based of existingStatus
+      const redirectUrl = await getOauthRedirectUrl(ctx, existingStatus === null);
+      if (existingStatus === 'auth') return ctx.redirect(redirectUrl, 302);
 
       // Get user emails from github
       const githubUserEmailsResponse = await fetch('https://api.github.com/user/emails', {
@@ -548,6 +590,8 @@ const authRoutes = app
       const slug = slugify(githubUser.login, { lower: true, strict: true });
       const { firstName, lastName } = splitFullName(githubUser.name || slug);
 
+      const inviteToken = await getAuthCookie(ctx, 'oauth_invite_token');
+
       const userEmail = primaryEmail.email.toLowerCase();
 
       // Check if user already exists
@@ -555,7 +599,7 @@ const authRoutes = app
       const [existingUser] = await getUsersByConditions(conditions);
 
       if (existingUser) {
-        const emailVerified = existingUser.emailVerified || !!tokenId || primaryEmail.verified;
+        const emailVerified = existingUser.emailVerified || !!inviteToken || primaryEmail.verified;
         return await updateExistingUser(ctx, existingUser, strategy, {
           providerUser: {
             id: String(githubUser.id),
@@ -586,7 +630,7 @@ const authRoutes = app
         redirectUrl,
         provider: { id: strategy, userId: String(githubUser.id) },
         newUser,
-        tokenId,
+        tokenId: inviteToken ? inviteToken : null,
       });
     } catch (error) {
       // Handle invalid credentials
@@ -637,13 +681,15 @@ const authRoutes = app
       // Check if it's account link
       const userId = await getAuthCookie(ctx, 'oauth_connect_user_id');
 
-      // Determine next flow action
-      const nextAction = await handleOauthAccountFlow(ctx, strategy, user.sub, userId || '');
-      if (nextAction === 'mismatch') return errorRedirect(ctx, 'oauth_mismatch', 'warn');
+      // Check if oauth account already exists
+      const existingStatus = await handleExistingOauthAccount(ctx, strategy, user.sub, userId || '');
+      if (existingStatus === 'mismatch') return errorRedirect(ctx, 'oauth_mismatch', 'warn');
 
-      // Get redirectURL based of nextAction and tokenId if it's an invite
-      const { redirectUrl, tokenId } = await getOauthFlowInfo(ctx, nextAction);
-      if (nextAction === 'auth' || nextAction === 'invite_auth') return ctx.redirect(redirectUrl, 302);
+      // Get redirectUrl based of existingStatus
+      const redirectUrl = await getOauthRedirectUrl(ctx, existingStatus === null);
+      if (existingStatus === 'auth') return ctx.redirect(redirectUrl, 302);
+
+      const inviteToken = await getAuthCookie(ctx, 'oauth_invite_token');
 
       const userEmail = user.email.toLowerCase();
 
@@ -661,9 +707,10 @@ const authRoutes = app
             lastName: user.family_name,
           },
           redirectUrl,
-          emailVerified: existingUser.emailVerified || !!tokenId || user.email_verified,
+          emailVerified: existingUser.emailVerified || !!inviteToken || user.email_verified,
         });
       }
+
       // Create new user and oauth account
       const newUser = {
         slug: slugFromEmail(userEmail),
@@ -674,12 +721,13 @@ const authRoutes = app
         firstName: user.given_name,
         lastName: user.family_name,
       };
+
       return await handleCreateUser({
         ctx,
         redirectUrl,
         provider: { id: strategy, userId: user.sub },
         newUser,
-        tokenId,
+        tokenId: inviteToken ? inviteToken : null,
       });
     } catch (error) {
       // Handle invalid credentials
@@ -730,13 +778,15 @@ const authRoutes = app
       // Check if it's account link
       const userId = await getAuthCookie(ctx, 'oauth_connect_user_id');
 
-      // Determine next flow action
-      const nextAction = await handleOauthAccountFlow(ctx, strategy, user.sub, userId || '');
-      if (nextAction === 'mismatch') return errorRedirect(ctx, 'oauth_mismatch', 'warn');
+      // Check if oauth account already exists
+      const existingStatus = await handleExistingOauthAccount(ctx, strategy, user.sub, userId || '');
+      if (existingStatus === 'mismatch') return errorRedirect(ctx, 'oauth_mismatch', 'warn');
 
-      // Get redirectURL based of nextAction and tokenId if it's an invite
-      const { redirectUrl, tokenId } = await getOauthFlowInfo(ctx, nextAction);
-      if (nextAction === 'auth' || nextAction === 'invite_auth') return ctx.redirect(redirectUrl, 302);
+      // Get redirectUrl based of existingStatus
+      const redirectUrl = await getOauthRedirectUrl(ctx, existingStatus === null);
+      if (existingStatus === 'auth') return ctx.redirect(redirectUrl, 302);
+
+      const inviteToken = await getAuthCookie(ctx, 'oauth_invite_token');
 
       const userEmail = user.email?.toLowerCase();
       if (!userEmail) return errorResponse(ctx, 401, 'no_email_found', 'warn', undefined);
@@ -755,7 +805,7 @@ const authRoutes = app
             lastName: user.family_name,
           },
           redirectUrl,
-          emailVerified: existingUser.emailVerified || !!tokenId,
+          emailVerified: existingUser.emailVerified || !!inviteToken,
         });
       }
 
@@ -776,7 +826,7 @@ const authRoutes = app
         newUser,
         redirectUrl,
         provider: { id: strategy, userId: user.sub },
-        tokenId,
+        tokenId: inviteToken ? inviteToken : null,
       });
     } catch (error) {
       // Handle invalid credentials
