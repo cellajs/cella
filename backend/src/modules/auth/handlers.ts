@@ -30,6 +30,7 @@ import {
 } from '#/modules/auth/helpers/oauth-providers';
 import { getUserBy, getUsersByConditions } from '#/modules/users/helpers/get-user-by';
 import defaultHook from '#/utils/default-hook';
+import { getIsoDate } from '#/utils/iso-date';
 import { nanoid } from '#/utils/nanoid';
 import { TimeSpan, createDate, isExpiredDate } from '#/utils/time-span';
 import { CreatePasswordEmail, type CreatePasswordEmailProps } from '../../../emails/create-password';
@@ -379,7 +380,7 @@ const authRoutes = app
     // Activate memberships
     await db
       .update(membershipsTable)
-      .set({ tokenId: null, activatedAt: new Date() })
+      .set({ tokenId: null, activatedAt: getIsoDate() })
       .where(and(eq(membershipsTable.tokenId, token.id)));
 
     // Delete token after all activation, since tokenId is cascaded in membershipTable

@@ -102,7 +102,7 @@ const MembersTable = ({ entity: baseEntity, isSheet = false }: MembersTableProps
       if (!oldEntity) return oldEntity;
       const newEntity = { ...oldEntity };
       // @ts-ignore TODO: Fix this
-      newEntity.counts.memberships.pending += 1;
+      newEntity.counts.membership.pending += 1;
       setEntity(newEntity);
       return newEntity;
     });

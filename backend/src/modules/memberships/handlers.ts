@@ -401,13 +401,7 @@ const membershipsRoutes = app
 
     const [{ total }] = await db.select({ total: count() }).from(invitedMembersQuery.as('invites'));
 
-    const result = await invitedMembersQuery.limit(Number(limit)).offset(Number(offset));
-
-    const items = result.map(({ expiresAt, createdAt, ...rest }) => ({
-      ...rest,
-      expiresAt: expiresAt.toISOString(),
-      createdAt: createdAt.toISOString(),
-    }));
+    const items = await invitedMembersQuery.limit(Number(limit)).offset(Number(offset));
 
     return ctx.json({ success: true, data: { items, total } }, 200);
   });
