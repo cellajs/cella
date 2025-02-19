@@ -6,7 +6,7 @@ import { db } from '#/db/db';
 import { usersTable } from '#/db/schema/users';
 import { type ErrorType, createError, errorResponse } from '#/lib/errors';
 import { logEvent } from '#/middlewares/logger/log-event';
-import { invalidateSessionById, invalidateUserSessions, validateSession } from '../auth/helpers/session';
+import { getParsedSessionCookie, invalidateSessionById, invalidateUserSessions, validateSession } from '../auth/helpers/session';
 import { checkSlugAvailable } from '../general/helpers/check-slug';
 import meRouteConfig from './routes';
 
@@ -21,7 +21,7 @@ import { resolveEntity } from '#/lib/entity';
 import { sendSSEToUsers } from '#/lib/sse';
 import defaultHook from '#/utils/default-hook';
 import { getIsoDate } from '#/utils/iso-date';
-import { deleteAuthCookie, getAuthCookie } from '../auth/helpers/cookie';
+import { deleteAuthCookie } from '../auth/helpers/cookie';
 import { membershipSelect } from '../memberships/helpers/select';
 import { getUserSessions } from './helpers/get-sessions';
 import type { menuItemSchema, userMenuSchema } from './schema';
@@ -200,8 +200,9 @@ const meRoutes = app
 
     const sessionIds = Array.isArray(ids) ? ids : [ids];
 
-    const currentSessionToken = (await getAuthCookie(ctx, 'session')) || '';
-    const { session } = await validateSession(currentSessionToken);
+    const currentSessionData = await getParsedSessionCookie(ctx);
+
+    const { session } = currentSessionData ? await validateSession(currentSessionData.sessionToken) : {};
 
     const errors: ErrorType[] = [];
 

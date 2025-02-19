@@ -3,7 +3,6 @@ import type { Context } from 'hono';
 import { db } from '#/db/db';
 import { sessionsTable } from '#/db/schema/sessions';
 import { getParsedSessionCookie } from '#/modules/auth/helpers/session';
-import { encodeLowerCased } from '#/utils/oslo';
 
 // TODO find a safer way to show sessions, a fixed schema
 /**
@@ -19,10 +18,8 @@ export const getUserSessions = async (ctx: Context, userId: string) => {
 
   if (!sessionData) return [];
 
-  const hashedSessionToken = encodeLowerCased(sessionData.sessionToken);
-
   // Destructure/remove token from response
-  const preparedSessions = sessions.map(({ token, ...session }) => ({ ...session, isCurrent: hashedSessionToken === token }));
+  const preparedSessions = sessions.map(({ token, ...session }) => ({ ...session, isCurrent: sessionData.sessionToken === token }));
 
   return preparedSessions;
 };

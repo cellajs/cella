@@ -67,7 +67,7 @@ export const setUserSession = async (ctx: Context, userId: UserModel['id'], stra
   // Set expiration time span
   const timeSpan = strategy === 'impersonation' ? new TimeSpan(1, 'h') : new TimeSpan(1, 'w');
 
-  const cookieContent = JSON.stringify({ sessionToken, adminUserId });
+  const cookieContent = JSON.stringify({ sessionToken: hashedSessionToken, adminUserId });
   // Set session cookie with the unhashed version
   await setAuthCookie(ctx, 'session', cookieContent, timeSpan);
 
@@ -86,9 +86,7 @@ export const setUserSession = async (ctx: Context, userId: UserModel['id'], stra
  * @param sessionToken - Hashed session token to validate.
  * @returns The session and user data if valid, otherwise null.
  */
-export const validateSession = async (sessionToken: string) => {
-  const hashedSessionToken = encodeLowerCased(sessionToken);
-
+export const validateSession = async (hashedSessionToken: string) => {
   const [result] = await db
     .select({ session: sessionsTable, user: userSelect })
     .from(sessionsTable)
