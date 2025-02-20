@@ -1,4 +1,4 @@
-import { type SQL, and, eq } from 'drizzle-orm';
+import { type SQL, and, eq, getTableColumns } from 'drizzle-orm';
 import { db } from '#/db/db';
 import { type UnsafeUserModel, type UserModel, usersTable } from '#/db/schema/users';
 import { userSelect } from './select';
@@ -33,9 +33,12 @@ export async function getUserBy(
   const select = type === 'unsafe' ? usersTable : userSelect;
 
   // Execute a database query to select the user based on the given field and value.
-  const [result] = await db.select({ user: select }).from(usersTable).where(eq(usersTable[field], value));
+  const [result] = await db
+    .select({ ...getTableColumns(select) })
+    .from(usersTable)
+    .where(eq(usersTable[field], value));
 
-  return result?.user ?? null;
+  return result ?? null;
 }
 
 // Overload signatures
@@ -55,10 +58,8 @@ export async function getUsersByConditions(whereArray: (SQL<unknown> | undefined
   const select = type === 'unsafe' ? usersTable : userSelect;
 
   // Execute a database query to select users based on the conditions in 'whereArray'.
-  const result = await db
-    .select({ user: select })
+  return await db
+    .select({ ...getTableColumns(select) })
     .from(usersTable)
     .where(and(...whereArray));
-
-  return result.map((el) => el.user);
 }
