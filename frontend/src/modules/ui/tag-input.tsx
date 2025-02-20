@@ -5,6 +5,8 @@ import { Button } from '~/modules/ui/button';
 import { Input } from '~/modules/ui/input';
 import { cn } from '~/utils/cn';
 
+import { RefreshCw } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { toaster } from '~/modules/common/toaster';
 import { Badge, type badgeVariants } from '~/modules/ui/badge';
 
@@ -21,7 +23,7 @@ interface TagInputStyleClassesProps {
   clearAllButton?: string;
 }
 
-export interface TagInputProps extends OmittedInputProps {
+interface TagInputProps extends OmittedInputProps {
   tags: string[];
   setTags: React.Dispatch<React.SetStateAction<string[]>>;
 
@@ -92,13 +94,14 @@ const TagInput = React.forwardRef<HTMLInputElement, TagInputProps>((props, ref) 
     validateTag,
   } = props;
 
+  const { t } = useTranslation();
   const inputRef = React.useRef<HTMLInputElement>(null);
   const [activeTagIndex, setActiveTagIndex] = React.useState<number | null>(null);
   const [inputValue, setInputValue] = React.useState('');
   const [tagCount, setTagCount] = React.useState(Math.max(0, tags.length));
 
-  if (maxTags !== undefined && maxTags < 0) {
-    console.warn('maxTags and minTags cannot be less than 0');
+  if (maxTags !== undefined && maxTags < 1) {
+    console.warn('maxTags cannot be less than 1');
     return null;
   }
 
@@ -236,18 +239,17 @@ const TagInput = React.forwardRef<HTMLInputElement, TagInputProps>((props, ref) 
   };
 
   const handleClearAll = () => {
-    if (!onClearAll) {
-      setActiveTagIndex(-1);
-      setTags([]);
-      return;
-    }
+    setTags([]);
+    setTagCount(0);
+    setActiveTagIndex(null);
+
     onClearAll?.();
   };
 
   const truncatedTags = truncate ? tags.map((tag) => (tag.length > truncate ? `${tag.substring(0, truncate)}...` : tag)) : tags;
 
   return (
-    <div className="w-full flex" ref={ref}>
+    <div className="w-full flex flex-col relative" ref={ref}>
       <div
         className={cn(
           'flex flex-wrap items-center gap-2 p-2 w-full rounded-md text-sm file:border-0 file:bg-transparent file:text-sm file:font-medium',
@@ -292,14 +294,18 @@ const TagInput = React.forwardRef<HTMLInputElement, TagInputProps>((props, ref) 
       </div>
 
       {showCount && (
-        <div className="inline-flex items-center space-x-1 text-muted-foreground text-sm mt-1 ml-auto">
-          <span>{tagCount}</span>
-          {maxTags && <span>{`/ ${maxTags}`}</span>}
-        </div>
+        <Badge
+          size="micro"
+          className={`inline-flex items-center justify-center absolute -top-1 p-0 z-100 text-[10px]  ${maxTags ? '-right-2 w-5' : ' -right-1 w-4'}`}
+        >
+          {tagCount}
+          {maxTags && `/${maxTags}`}
+        </Badge>
       )}
       {showClearAllButton && (
-        <Button type="button" onClick={handleClearAll} className={cn('mt-2', styleClasses?.clearAllButton)}>
-          Clear All
+        <Button type="button" onClick={handleClearAll} className={cn('flex items-center gap-1 mt-2', styleClasses?.clearAllButton)}>
+          {t('common:clear_all')}
+          <RefreshCw size={16} />
         </Button>
       )}
     </div>
