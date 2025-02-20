@@ -56,7 +56,7 @@ export interface TagInputProps extends OmittedInputProps {
   validateTag?: (tag: string) => boolean;
 }
 
-const TagInput = React.forwardRef<HTMLInputElement, TagInputProps>((props, _) => {
+const TagInput = React.forwardRef<HTMLInputElement, TagInputProps>((props, ref) => {
   const {
     tags,
     setTags,
@@ -247,7 +247,7 @@ const TagInput = React.forwardRef<HTMLInputElement, TagInputProps>((props, _) =>
   const truncatedTags = truncate ? tags.map((tag) => (tag.length > truncate ? `${tag.substring(0, truncate)}...` : tag)) : tags;
 
   return (
-    <div className="w-full flex">
+    <div className="w-full flex" ref={ref}>
       <div
         className={cn(
           'flex flex-wrap items-center gap-2 p-2 w-full rounded-md text-sm file:border-0 file:bg-transparent file:text-sm file:font-medium',
