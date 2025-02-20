@@ -8,9 +8,8 @@ import { cn } from '~/utils/cn';
 import { toaster } from '~/modules/common/toaster';
 import { Badge, type badgeVariants } from '~/modules/ui/badge';
 
-export enum Delimiter {
+enum Delimiter {
   Comma = ',',
-  Enter = 'Enter',
 }
 
 type OmittedInputProps = Omit<React.InputHTMLAttributes<HTMLInputElement>, 'placeholder' | 'size' | 'value'>;
@@ -161,7 +160,7 @@ const TagInput = React.forwardRef<HTMLInputElement, TagInputProps>((props, _) =>
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === delimiter || e.key === Delimiter.Enter) {
+    if (e.key === delimiter || (e.key === 'Enter' && (e.ctrlKey || e.metaKey))) {
       e.preventDefault();
       const newTag = inputValue.trim();
 
@@ -222,6 +221,10 @@ const TagInput = React.forwardRef<HTMLInputElement, TagInputProps>((props, _) =>
           e.preventDefault();
           setActiveTagIndex(tags.length - 1);
           break;
+        case 'Enter': {
+          if (activeTagIndex && onTagClick) onTagClick(tags[activeTagIndex]);
+          break;
+        }
       }
     }
   };
@@ -264,6 +267,7 @@ const TagInput = React.forwardRef<HTMLInputElement, TagInputProps>((props, _) =>
             tagListClasses: cn(styleClasses?.tagList, tagListPlacement === 'inside' && tags.length < 1 && 'hidden'),
             tagClasses: styleClasses?.tag,
           }}
+          activeTagIndex={activeTagIndex}
         />
         <Input
           ref={inputRef}
@@ -303,7 +307,7 @@ const TagInput = React.forwardRef<HTMLInputElement, TagInputProps>((props, _) =>
 });
 
 type TagListProps = Pick<TagInputProps, 'tags' | 'badgeVariants' | 'direction' | 'onTagClick'> & {
-  isActiveTag?: boolean;
+  activeTagIndex: null | number;
   classStyleProps: {
     tagListClasses: TagInputStyleClassesProps['tagList'];
     tagClasses: TagInputStyleClassesProps['tag'];
@@ -311,7 +315,7 @@ type TagListProps = Pick<TagInputProps, 'tags' | 'badgeVariants' | 'direction' |
   onRemoveTag: (id: string) => void;
 };
 
-const TagList: React.FC<TagListProps> = ({ tags, direction, classStyleProps, onTagClick, onRemoveTag, isActiveTag, badgeVariants }) => {
+const TagList: React.FC<TagListProps> = ({ tags, direction, classStyleProps, onTagClick, onRemoveTag, activeTagIndex, badgeVariants }) => {
   return (
     <div
       className={cn(
@@ -323,12 +327,12 @@ const TagList: React.FC<TagListProps> = ({ tags, direction, classStyleProps, onT
         classStyleProps.tagListClasses,
       )}
     >
-      {tags.map((tag) => (
+      {tags.map((tag, index) => (
         <Badge
           key={tag}
           {...badgeVariants}
           className={cn(
-            { 'justify-between w-full': direction === 'column', 'ring-ring ring-offset-2 ring-2 ring-offset-background': isActiveTag },
+            { 'justify-between w-full': direction === 'column', 'ring-ring ring-offset-2 ring-2 ring-offset-background': index === activeTagIndex },
             classStyleProps.tagClasses?.body,
           )}
           onClick={() => onTagClick?.(tag)}
