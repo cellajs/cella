@@ -84,7 +84,6 @@
     "dompurify": "^3.2.4",
     "embla-carousel-autoplay": "^8.5.2",
     "embla-carousel-react": "^8.5.2",
-    "emblor": "^1.4.7",
     "gleap": "^14.2.7",
     "hono": "4.7.0",
     "i18next": "^24.2.2",

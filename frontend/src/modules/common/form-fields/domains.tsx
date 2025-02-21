@@ -1,8 +1,8 @@
-import { type Tag, TagInput } from 'emblor';
 import { useEffect, useState } from 'react';
 import { type Control, useFormContext } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
+import { TagInput } from '~/modules/ui/tag-input';
 
 type Props = {
   control: Control;
@@ -18,7 +18,7 @@ const DomainsFormField = ({ control, label, description, required }: Props) => {
   const formValue = getValues('emailDomains');
 
   const [fieldActive, setFieldActive] = useState(false);
-  const [domains, setDomains] = useState<Tag[]>(formValue.map((dom: string) => ({ id: dom, text: dom })));
+  const [domains, setDomains] = useState<string[]>(formValue.map((dom: string) => dom));
   const [currentValue, setCurrentValue] = useState('');
 
   const checkValidInput = (value: string) => {
@@ -30,9 +30,7 @@ const DomainsFormField = ({ control, label, description, required }: Props) => {
     return /^(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}$/i.test(domain.trim());
   };
 
-  useEffect(() => {
-    setDomains(formValue.map((dom: string) => ({ id: dom, text: dom })));
-  }, [formValue]);
+  useEffect(() => setDomains(formValue.map((dom: string) => dom)), [formValue]);
 
   return (
     <FormField
@@ -49,10 +47,11 @@ const DomainsFormField = ({ control, label, description, required }: Props) => {
             <FormControl>
               <TagInput
                 inputProps={{ value: currentValue }}
+                tagListPlacement="inside"
                 onInputChange={(newValue) => setCurrentValue(newValue)}
                 onFocus={() => setFieldActive(true)}
                 onBlur={() => {
-                  if (checkValidDomain(currentValue)) setDomains((prev) => [...prev, { id: currentValue, text: currentValue }]);
+                  if (checkValidDomain(currentValue)) setDomains((prev) => [...prev, currentValue]);
                   setCurrentValue('');
                   setFieldActive(false);
                 }}
@@ -60,19 +59,24 @@ const DomainsFormField = ({ control, label, description, required }: Props) => {
                 minLength={4}
                 placeholder={t('common:placeholder.email_domains')}
                 tags={domains}
-                allowDuplicates={false}
                 setTags={(newTags) => {
                   setDomains(newTags);
-                  if (Array.isArray(newTags)) onChange(newTags.map((tag) => tag.text));
+                  if (Array.isArray(newTags)) onChange(newTags.map((tag) => tag));
                   setCurrentValue('');
                 }}
                 validateTag={checkValidDomain}
-                activeTagIndex={null}
-                setActiveTagIndex={() => {}}
                 styleClasses={{
-                  input: 'px-1 py-0 h-[1.38rem] shadow-none',
-                  tag: { body: 'h-7 py-0 rounded-full -m-1 gap-1', closeButton: 'h-6 mr-0.5 w-6 ring-inset focus-visible:ring-2 p-0 rounded-full' },
-                  inlineTagsContainer: `${fieldActive ? (!checkValidInput(currentValue) ? 'ring-2 focus-visible:ring-2 ring-red-500 focus-visible:ring-red-500' : 'max-sm:ring-offset-0  max-sm:ring-transparent ring-2 ring-offset-2 ring-white') : ''}`,
+                  tag: {
+                    body: 'pr-0 gap-0.5',
+                    closeButton: 'h-6 w-6 ring-inset focus-visible:ring-2 p-0 rounded-full hover:bg-transparent cursor-pointer',
+                  },
+                  input: `${
+                    fieldActive
+                      ? !checkValidInput(currentValue)
+                        ? 'ring-2 focus-visible:ring-2 ring-red-500 focus-visible:ring-red-500'
+                        : 'max-sm:ring-offset-0  max-sm:ring-transparent ring-2 ring-offset-2 ring-white'
+                      : ''
+                  }`,
                 }}
               />
             </FormControl>
