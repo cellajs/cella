@@ -8,7 +8,7 @@ import type { z } from 'zod';
 import { createOrganizationBodySchema } from '#/modules/organizations/schema';
 
 import { useNavigate } from '@tanstack/react-router';
-import { useEffect, useMemo } from 'react';
+import { isValidElement, useMemo } from 'react';
 import { toast } from 'sonner';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import { isDialog as checkDialog, dialog } from '~/modules/common/dialoger/state';
@@ -57,27 +57,24 @@ const CreateOrganizationForm: React.FC<CreateOrganizationFormProps> = ({
     [],
   );
 
-  const form = useFormWithDraft<FormValues>('create-organization', formOptions);
+  const dialogTitleUpdate = () => {
+    const targetDialog = dialog.get('create-organization');
+    if (!targetDialog || !checkDialog(targetDialog) || !isValidElement(targetDialog.title)) return;
+
+    // Check if the title's type is a function (React component) and not a string
+    const { type: titleType } = targetDialog.title;
+    if (typeof titleType !== 'function' || titleType.name === 'UnsavedBadge') return;
+
+    dialog.update('create-organization', { title: <UnsavedBadge title={targetDialog?.title} /> });
+  };
+
+  const form = useFormWithDraft<FormValues>('create-organization', { formOptions, onUnsavedChanges: dialogTitleUpdate });
 
   // Watch to update slug field
   const name = useWatch({ control: form.control, name: 'name' });
   const mutateQuery = useMutateQueryData(organizationsKeys.list());
 
   const { mutate, isPending } = useOrganizationCreateMutation();
-
-  // TODO can be extracted to a hook?
-  useEffect(() => {
-    if (form.unsavedChanges) {
-      const targetDialog = dialog.get('create-organization');
-      if (targetDialog && checkDialog(targetDialog)) {
-        dialog.update('create-organization', {
-          title: <UnsavedBadge title={targetDialog?.title} />,
-        });
-      }
-      return;
-    }
-    dialog.reset('create-organization');
-  }, [form.unsavedChanges]);
 
   const onSubmit = (values: FormValues) => {
     mutate(values, {

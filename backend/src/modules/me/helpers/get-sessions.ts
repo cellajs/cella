@@ -16,10 +16,8 @@ export const getUserSessions = async (ctx: Context, userId: string) => {
   const sessions = await db.select().from(sessionsTable).where(eq(sessionsTable.userId, userId));
   const sessionData = await getParsedSessionCookie(ctx);
 
-  if (!sessionData) return [];
-
   // Destructure/remove token from response
-  const preparedSessions = sessions.map(({ token, ...session }) => ({ ...session, isCurrent: sessionData.sessionToken === token }));
+  const preparedSessions = sessions.map(({ token, ...session }) => ({ ...session, isCurrent: sessionData?.sessionToken === token }));
 
   return preparedSessions;
 };

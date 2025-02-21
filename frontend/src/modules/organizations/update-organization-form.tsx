@@ -1,6 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { config } from 'config';
-import { isValidElement, useEffect } from 'react';
+import { isValidElement } from 'react';
 import type { UseFormProps } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import type { z } from 'zod';
@@ -56,7 +56,19 @@ const UpdateOrganizationForm = ({ organization, callback, sheet: isSheet }: Prop
     },
   };
 
-  const form = useFormWithDraft<FormValues>(`update-organization-${organization.id}`, formOptions);
+  const sheetTitleUpdate = () => {
+    const targetSheet = sheet.get('update-organization');
+
+    if (!targetSheet || !isValidElement(targetSheet.title)) return;
+    // Check if the title's type is a function (React component) and not a string
+    const { type: titleType } = targetSheet.title;
+
+    if (typeof titleType !== 'function' || titleType.name === 'UnsavedBadge') return;
+
+    sheet.update('update-organization', { title: <UnsavedBadge title={targetSheet?.title} /> });
+  };
+
+  const form = useFormWithDraft<FormValues>(`update-organization-${organization.id}`, { formOptions, onUnsavedChanges: sheetTitleUpdate });
 
   // Prevent data loss
   useBeforeUnload(form.formState.isDirty);
@@ -78,23 +90,6 @@ const UpdateOrganizationForm = ({ organization, callback, sheet: isSheet }: Prop
   const setImageUrl = (url: string | null) => {
     form.setValue('thumbnailUrl', url, { shouldDirty: true });
   };
-
-  // TODO can be extracted to a hook?
-  useEffect(() => {
-    if (form.unsavedChanges) {
-      const targetSheet = sheet.get('update-organization');
-
-      if (!targetSheet || !isValidElement(targetSheet.title)) return;
-      // Check if the title's type is a function (React component) and not a string
-      const { type: titleType } = targetSheet.title;
-
-      if (typeof titleType !== 'function' || titleType.name === 'UnsavedBadge') return;
-
-      sheet.update('update-organization', {
-        title: <UnsavedBadge title={targetSheet?.title} />,
-      });
-    }
-  }, [form.unsavedChanges]);
 
   return (
     <Form {...form}>
