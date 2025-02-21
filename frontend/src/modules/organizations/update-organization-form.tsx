@@ -91,6 +91,7 @@ const UpdateOrganizationForm = ({ organization, callback, sheet: isSheet }: Prop
     form.setValue('thumbnailUrl', url, { shouldDirty: true });
   };
 
+  if (form.loading) return null;
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
