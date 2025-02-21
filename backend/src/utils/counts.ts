@@ -129,7 +129,7 @@ export type ValidEntityTypes<T extends string> = Extract<
 >;
 
 // Generic type guard function for filtering based on a dynamic field name 'T'
-const hasField = <T extends string>(entityType: ProductEntity | ContextEntity, field: T): entityType is ValidEntityTypes<T> => {
+export const hasField = <T extends string>(entityType: ProductEntity | ContextEntity, field: T): entityType is ValidEntityTypes<T> => {
   const table = entityTables[entityType];
   return field in table;
 };

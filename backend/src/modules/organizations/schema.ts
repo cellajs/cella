@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { config } from 'config';
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 import { organizationsTable } from '#/db/schema/organizations';
-import type { ValidEntityTypes } from '#/utils/counts';
+import { type ValidEntityTypes, hasField } from '#/utils/counts';
 import {
   languageSchema,
   paginationQuerySchema,
@@ -23,19 +23,22 @@ export const membershipsCountSchema = z.object({
   }),
 });
 
-/** Type assertion to avoid "ReferenceError: Buffer is not defined" when using `hasField`.
- * Redundant fields will be filtered out in `getRelatedEntityCounts`.
+/**
+ * Example schema demonstrating how to retrieve related entity counts.
+ * It dynamically constructs a Zod schema for entities that reference an `organizationId` in their table.
  */
-//TODO: find way to fix ?
-export const relatedEntitiesCountSchema = z.object(
-  [...config.productEntityTypes, ...config.contextEntityTypes].reduce(
-    (acc, key) => {
-      acc[key as ValidEntityTypes<'organizationId'>] = z.number();
-      return acc;
-    },
-    {} as Record<ValidEntityTypes<'organizationId'>, z.ZodNumber>,
-  ),
-);
+export const organizationRelatedEntitiesCountSchema = () => {
+  const filteredEntities = [...config.productEntityTypes, ...config.contextEntityTypes].filter((type) => hasField(type, 'organizationId'));
+  return z.object(
+    filteredEntities.reduce(
+      (acc, key) => {
+        acc[key] = z.number();
+        return acc;
+      },
+      {} as Record<ValidEntityTypes<'organizationId'>, z.ZodNumber>,
+    ),
+  );
+};
 
 export const organizationSchema = z.object({
   ...createSelectSchema(organizationsTable).shape,
