@@ -11,6 +11,7 @@ import { errorRedirect, errorResponse } from '#/lib/errors';
 import { logEvent } from '#/middlewares/logger/log-event';
 import { TimeSpan } from '#/utils/time-span';
 import { type CookieName, deleteAuthCookie, getAuthCookie, setAuthCookie } from './cookie';
+import type { githubUserEmailProps, githubUserProps, googleUserProps, microsoftUserProps } from './oauth-providers';
 import { sendVerificationEmail } from './verify-email';
 
 const cookieExpires = new TimeSpan(5, 'm');
@@ -160,4 +161,41 @@ export const updateExistingUser = async (ctx: Context, existingUser: UserModel, 
   await setUserSession(ctx, existingUser.id, providerId);
 
   return ctx.redirect(redirectUrl, 302);
+};
+
+export const transformSocialUserData = (user: googleUserProps | microsoftUserProps) => {
+  if (!user.email) throw new Error('no_email_found');
+
+  const email = user.email.toLowerCase();
+
+  return {
+    id: user.sub,
+    slug: slugFromEmail(email),
+    email,
+    name: user.name,
+    emailVerified: 'email_verified' in user ? user.email_verified : false,
+    thumbnailUrl: user.picture,
+    firstName: user.given_name,
+    lastName: user.family_name,
+  };
+};
+
+export const transformGithubUserData = (user: githubUserProps, emails: githubUserEmailProps[]) => {
+  const primaryEmail = emails.find((email) => email.primary);
+  if (!primaryEmail) throw new Error('no_email_found');
+
+  const email = primaryEmail.email.toLowerCase();
+  const slug = slugify(user.login, { lower: true, strict: true });
+  const { firstName, lastName } = splitFullName(user.name || slug);
+
+  return {
+    id: String(user.id),
+    slug,
+    email,
+    name: user.name || user.login,
+    emailVerified: primaryEmail.verified,
+    thumbnailUrl: user.avatar_url,
+    firstName,
+    lastName,
+  };
 };
