@@ -100,7 +100,6 @@ export const useOrganizationUpdateMutation = () => {
     mutationFn: updateOrganization,
     onSuccess: (updatedOrganization, { idOrSlug }) => {
       queryClient.setQueryData(organizationsKeys.single(idOrSlug), updatedOrganization);
-      queryClient.invalidateQueries({ queryKey: organizationsKeys.one });
     },
   });
 };
