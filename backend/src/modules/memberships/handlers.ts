@@ -122,20 +122,25 @@ const membershipsRoutes = app
       ...(entityType !== 'organization' && { organizationId: organization.id }), // Add org ID if not an organization
     }));
 
-    // Generate inactive tokens
-    const inactiveMemberships = tokens.map(({ id: tokenId, userId }) => {
-      if (!userId) return Promise.resolve();
-      return insertMembership({ userId, role, entity, tokenId });
-    });
+    // Insert tokens first
+    const insertedTokens = await db
+      .insert(tokensTable)
+      .values(tokens)
+      .returning({ tokenId: tokensTable.id, userId: tokensTable.userId, email: tokensTable.email, token: tokensTable.token });
 
-    // Batch insert tokens and inactive memberships
-    const [insertedTokens] = await Promise.all([db.insert(tokensTable).values(tokens).returning(), inactiveMemberships]);
+    // Generate inactive memberships after tokens are inserted
+    const inactiveMemberships = insertedTokens
+      .filter(({ userId }) => userId !== null)
+      .map(({ tokenId, userId }) => insertMembership({ userId: userId as string, role, entity, tokenId }));
+
+    // Wait for all memberships to be inserted
+    await Promise.all(inactiveMemberships);
 
     // Prepare and send invitation emails
-    const recipients = insertedTokens.map((tokenRecord) => ({
-      email: tokenRecord.email,
-      name: slugFromEmail(tokenRecord.email),
-      memberInviteLink: `${config.frontendUrl}/invitation/${tokenRecord.token}?tokenId=${tokenRecord.id}`,
+    const recipients = insertedTokens.map(({ email, tokenId, token }) => ({
+      email,
+      name: slugFromEmail(email),
+      memberInviteLink: `${config.frontendUrl}/invitation/${token}?tokenId=${tokenId}`,
     }));
 
     const emailProps = {

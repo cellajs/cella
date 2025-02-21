@@ -1,4 +1,4 @@
-import { and, asc, eq, inArray } from 'drizzle-orm';
+import { and, asc, eq, inArray, isNotNull } from 'drizzle-orm';
 import type { z } from 'zod';
 
 import type { EnabledOauthProvider } from 'config';
@@ -139,7 +139,7 @@ const meRoutes = app
         .from(mainTable)
         .where(and(eq(membershipsTable.userId, user.id), eq(membershipsTable.type, section.entity)))
         .orderBy(asc(membershipsTable.order))
-        .innerJoin(membershipsTable, eq(membershipsTable[mainEntityIdField], mainTable.id));
+        .innerJoin(membershipsTable, and(eq(membershipsTable[mainEntityIdField], mainTable.id), isNotNull(membershipsTable.activatedAt)));
 
       // If the section has a submenu, fetch the submenu items
       if (section.subEntity) {

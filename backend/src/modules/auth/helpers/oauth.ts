@@ -7,9 +7,10 @@ import { setUserSession, validateSession } from './session';
 import { type EnabledOauthProvider, config } from 'config';
 import slugify from 'slugify';
 import { db } from '#/db/db';
-import { errorRedirect, errorResponse } from '#/lib/errors';
+import { tokensTable } from '#/db/schema/tokens';
+import { createError, errorRedirect, errorResponse } from '#/lib/errors';
 import { logEvent } from '#/middlewares/logger/log-event';
-import { TimeSpan } from '#/utils/time-span';
+import { TimeSpan, isExpiredDate } from '#/utils/time-span';
 import { type CookieName, deleteAuthCookie, getAuthCookie, setAuthCookie } from './cookie';
 import { sendVerificationEmail } from './verify-email';
 
@@ -36,7 +37,7 @@ export const createOauthSession = async (
   codeVerifier?: string,
   redirect?: string,
   connect?: string,
-  token?: string,
+  token?: string | null,
 ) => {
   setAuthCookie(ctx, 'oauth_state', state, cookieExpires);
   // If connecting oauth account to user, make sure same user is logged in
@@ -159,4 +160,23 @@ export const updateExistingUser = async (ctx: Context, existingUser: UserModel, 
   await setUserSession(ctx, existingUser.id, providerId);
 
   return ctx.redirect(redirectUrl, 302);
+};
+
+export const handleInvitationToken = async (ctx: Context) => {
+  const token = ctx.req.query('token');
+  const redirect = ctx.req.query('redirect');
+
+  if (!token) return { tokenId: null, redirectUrl: redirect, error: null };
+
+  const [tokenRecord] = await db.select().from(tokensTable).where(eq(tokensTable.token, token));
+
+  if (!tokenRecord) return { tokenId: null, redirectUrl: redirect, error: createError(ctx, 404, 'invitation_not_found', 'warn') };
+  if (isExpiredDate(tokenRecord.expiresAt)) return { tokenId: null, redirectUrl: redirect, error: createError(ctx, 403, 'expired_token', 'warn') };
+  if (tokenRecord.type !== 'invitation') return { tokenId: null, redirectUrl: redirect, error: createError(ctx, 400, 'invalid_token', 'warn') };
+
+  return {
+    tokenId: tokenRecord.id,
+    redirectUrl: `${config.frontendUrl}/invitation/${tokenRecord.token}?tokenId=${tokenRecord.id}`,
+    error: null,
+  };
 };
