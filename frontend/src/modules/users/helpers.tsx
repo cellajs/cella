@@ -4,9 +4,9 @@ import { t } from 'i18next';
 import { decodeBase64, encodeBase64 } from '@oslojs/encoding';
 import { type QueryKey, onlineManager } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { authenticateWithPasskey, getChallenge, registerPasskey } from '~/modules/auth/api';
+import { authenticateWithPasskey, getPasskeyChallenge } from '~/modules/auth/api';
 import { toaster } from '~/modules/common/toaster';
-import { deletePasskey as baseRemovePasskey, getSelf, getSelfAuthInfo, getUserMenu } from '~/modules/users/api';
+import { deletePasskey as baseRemovePasskey, createPasskey, getSelf, getSelfAuthInfo, getSelfMenu } from '~/modules/users/api';
 import type { LimitedUser } from '~/modules/users/types';
 import { getQueryItems } from '~/query/helpers/mutate-query';
 import type { InfiniteQueryData, QueryData } from '~/query/types';
@@ -27,7 +27,7 @@ export const passkeyRegistration = async () => {
 
   try {
     // Random bytes generated on each attempt.
-    const { challengeBase64 } = await getChallenge();
+    const { challengeBase64 } = await getPasskeyChallenge();
 
     // random ID for the authenticator
     const userId = new Uint8Array(20);
@@ -68,7 +68,7 @@ export const passkeyRegistration = async () => {
       clientDataJSON: encodeBase64(new Uint8Array(response.clientDataJSON)),
     };
 
-    const result = await registerPasskey(credentialData);
+    const result = await createPasskey(credentialData);
 
     if (!result) toast.error(t('error:passkey_add_failed'));
 
@@ -95,7 +95,7 @@ export const passkeyRegistration = async () => {
 export const passkeyAuth = async (userEmail: string, callback?: () => void) => {
   try {
     // Random bytes generated on each attempt
-    const { challengeBase64 } = await getChallenge();
+    const { challengeBase64 } = await getPasskeyChallenge();
 
     const credential = await navigator.credentials.get({
       publicKey: {
@@ -173,7 +173,7 @@ export const getAndSetUserAuthInfo = async () => {
  * @returns The menu data.
  */
 export const getAndSetMenu = async () => {
-  const menu = await getUserMenu();
+  const menu = await getSelfMenu();
   useNavigationStore.setState({ menu });
   return menu;
 };

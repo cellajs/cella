@@ -2,7 +2,11 @@ import { config } from 'config';
 import { logEvent } from '#/middlewares/logger/log-event';
 import authRouteConfig from '../routes';
 
-// TODO, how to make this more type safe?
+/**
+ * Trigger the backend to send a verification email to the user.
+ *
+ * @param userId
+ */
 export const sendVerificationEmail = (userId: string) => {
   try {
     fetch(config.backendAuthUrl + authRouteConfig.sendVerificationEmail.path, {

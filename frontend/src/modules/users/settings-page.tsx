@@ -178,7 +178,7 @@ const UserSettingsPage = ({ userAuthInfo }: { userAuthInfo: UserAuthInfo }) => {
                 </div>
               )}
               <div className="flex max-sm:flex-col gap-2 mb-6">
-                <Button key="registerPasskey" type="button" variant="plain" onClick={passkeyRegistration}>
+                <Button key="createPasskey" type="button" variant="plain" onClick={passkeyRegistration}>
                   <KeyRound className="w-4 h-4 mr-2" />
                   {userAuthInfo.passkey ? t('common:reset_passkey') : `${t('common:add')} ${t('common:new_passkey').toLowerCase()}`}
                 </Button>

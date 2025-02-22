@@ -150,7 +150,7 @@ export const getSelfEntities = async () => {
  *
  * @returns The user menu data.
  */
-export const getUserMenu = async () => {
+export const getSelfMenu = async () => {
   const response = await meClient.menu.$get();
 
   const json = await handleResponse(response);
@@ -191,6 +191,22 @@ export const deleteMySessions = async (sessionIds: string[]) => {
   });
 
   await handleResponse(response);
+};
+
+type RegisterPasskeyProp = Parameters<(typeof meClient)['passkey-registration']['$post']>['0']['json'];
+
+/**
+ * Create a passkey for current user
+ *
+ * @param data - Passkey registration data.
+ * @returns A boolean indicating success of the passkey registration.
+ */
+export const createPasskey = async (data: RegisterPasskeyProp) => {
+  const apiResponse = await meClient['passkey-registration'].$post({
+    json: data,
+  });
+  const json = await handleResponse(apiResponse);
+  return json.success;
 };
 
 /**

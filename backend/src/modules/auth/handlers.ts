@@ -46,8 +46,8 @@ import { CreatePasswordEmail, type CreatePasswordEmailProps } from '../../../ema
 import { EmailVerificationEmail, type EmailVerificationEmailProps } from '../../../emails/email-verification';
 import { deleteAuthCookie, getAuthCookie, setAuthCookie } from './helpers/cookie';
 import { handleInvitationToken } from './helpers/oauth';
-import { parseAndValidatePasskeyAttestation, verifyPassKeyPublic } from './helpers/passkey';
-import { getParsedSessionCookie, invalidateSessionById, invalidateUserSessions, setUserSession, validateSession } from './helpers/session';
+import { verifyPassKeyPublic } from './helpers/passkey';
+import { getParsedSessionCookie, invalidateSessionById, setUserSession, validateSession } from './helpers/session';
 import { handleCreateUser } from './helpers/user';
 import { sendVerificationEmail } from './helpers/verify-email';
 import authRouteConfig from './routes';
@@ -279,10 +279,6 @@ const authRoutes = app
     const user = await getUserBy('id', token.userId);
     // If the user is not found or the email is different from the token email
     if (!user || user.email !== token.email) return errorResponse(ctx, 404, 'not_found', 'warn', 'user', { userId: token.userId });
-
-    // Clear all sessions
-    // TODO delete cookie too?
-    await invalidateUserSessions(user.id);
 
     // Hash password
     const hashedPassword = await hashPassword(password);
@@ -765,22 +761,6 @@ const authRoutes = app
     return ctx.json({ challengeBase64 }, 200);
   })
   /*
-   * Passkey registration
-   */
-  .openapi(authRouteConfig.registerPasskey, async (ctx) => {
-    const { attestationObject, clientDataJSON, userEmail } = ctx.req.valid('json');
-
-    const challengeFromCookie = await getAuthCookie(ctx, 'passkey_challenge');
-    if (!challengeFromCookie) return errorResponse(ctx, 401, 'invalid_credentials', 'error');
-
-    const { credentialId, publicKey } = parseAndValidatePasskeyAttestation(clientDataJSON, attestationObject, challengeFromCookie);
-
-    // Save public key in the database
-    await db.insert(passkeysTable).values({ userEmail, credentialId, publicKey });
-
-    return ctx.json({ success: true }, 200);
-  })
-  /*
    * Verify passkey
    */
   .openapi(authRouteConfig.verifyPasskey, async (ctx) => {
@@ -788,7 +768,6 @@ const authRoutes = app
     const strategy = 'passkey';
 
     // Retrieve user and challenge record
-    // TODO why use email to find user?
     const user = await getUserBy('email', userEmail.toLowerCase());
     if (!user) return errorResponse(ctx, 404, 'not_found', 'warn', 'user', { strategy });
 

@@ -15,12 +15,6 @@ export const checkTokenSchema = z.object({
   organizationId: z.string().optional(),
 });
 
-export const passkeyRegistrationBodySchema = z.object({
-  userEmail: z.string(),
-  attestationObject: z.string(),
-  clientDataJSON: z.string(),
-});
-
 export const passkeyVerificationBodySchema = z.object({
   clientDataJSON: z.string(),
   authenticatorData: z.string(),

@@ -14,7 +14,6 @@ export const sessionsTable = pgTable('sessions', {
     .default('desktop'),
   deviceOs: varchar(),
   browser: varchar(),
-  // TODO use enum from config?
   authStrategy: varchar({
     enum: ['github', 'google', 'microsoft', 'password', 'passkey'],
   }),

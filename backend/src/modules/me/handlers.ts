@@ -21,7 +21,8 @@ import { resolveEntity } from '#/lib/entity';
 import { sendSSEToUsers } from '#/lib/sse';
 import defaultHook from '#/utils/default-hook';
 import { getIsoDate } from '#/utils/iso-date';
-import { deleteAuthCookie } from '../auth/helpers/cookie';
+import { deleteAuthCookie, getAuthCookie } from '../auth/helpers/cookie';
+import { parseAndValidatePasskeyAttestation } from '../auth/helpers/passkey';
 import { membershipSelect } from '../memberships/helpers/select';
 import { getUserSessions } from './helpers/get-sessions';
 import type { menuItemSchema, userMenuSchema } from './schema';
@@ -114,7 +115,7 @@ const meRoutes = app
   /*
    * Get current user menu
    */
-  .openapi(meRouteConfig.getUserMenu, async (ctx) => {
+  .openapi(meRouteConfig.getSelfMenu, async (ctx) => {
     const user = getContextUser();
     const memberships = getContextMemberships();
 
@@ -278,7 +279,6 @@ const meRoutes = app
    */
   .openapi(meRouteConfig.leaveEntity, async (ctx) => {
     const user = getContextUser();
-    if (!user) return errorResponse(ctx, 404, 'not_found', 'warn', 'user', { user: 'self' });
 
     const { entityType, idOrSlug } = ctx.req.valid('query');
 
@@ -298,7 +298,23 @@ const meRoutes = app
     return ctx.json({ success: true }, 200);
   })
   /*
-   * TODO? here? Also create then..? Delete passkey of self
+   * Create Passkey of self
+   */
+  .openapi(meRouteConfig.createPasskey, async (ctx) => {
+    const { attestationObject, clientDataJSON, userEmail } = ctx.req.valid('json');
+
+    const challengeFromCookie = await getAuthCookie(ctx, 'passkey_challenge');
+    if (!challengeFromCookie) return errorResponse(ctx, 401, 'invalid_credentials', 'error');
+
+    const { credentialId, publicKey } = parseAndValidatePasskeyAttestation(clientDataJSON, attestationObject, challengeFromCookie);
+
+    // Save public key in the database
+    await db.insert(passkeysTable).values({ userEmail, credentialId, publicKey });
+
+    return ctx.json({ success: true }, 200);
+  })
+  /*
+   * Delete passkey of self
    */
   .openapi(meRouteConfig.deletePasskey, async (ctx) => {
     const user = getContextUser();

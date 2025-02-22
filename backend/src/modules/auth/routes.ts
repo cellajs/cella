@@ -12,7 +12,6 @@ import {
   emailPasswordBodySchema,
   oauthQuerySchema,
   passkeyChallengeQuerySchema,
-  passkeyRegistrationBodySchema,
   passkeyVerificationBodySchema,
   sendVerificationEmailBodySchema,
   signInSchema,
@@ -469,39 +468,6 @@ class AuthLayoutRouteConfig {
         content: {
           'application/json': {
             schema: passkeyChallengeQuerySchema,
-          },
-        },
-      },
-      ...errorResponses,
-    },
-  });
-
-  public registerPasskey = createRouteConfig({
-    method: 'post',
-    path: '/passkey-registration',
-    guard: isPublicAccess,
-    middleware: [isAuthenticated],
-    tags: ['auth'],
-    summary: 'Register passkey',
-    description:
-      'The server associates the public key and the credential ID with the user for future authentication flows and checks the validity of the operation by verifying the signed challenge with the public key.',
-    security: [],
-    request: {
-      body: {
-        required: true,
-        content: {
-          'application/json': {
-            schema: passkeyRegistrationBodySchema,
-          },
-        },
-      },
-    },
-    responses: {
-      200: {
-        description: 'Passkey created',
-        content: {
-          'application/json': {
-            schema: successWithoutDataSchema,
           },
         },
       },
