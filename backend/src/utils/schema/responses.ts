@@ -1,10 +1,7 @@
 import type { createRoute } from '@hono/zod-openapi';
 import { config } from 'config';
 import { z } from 'zod';
-import type { HttpErrorStatus } from '#/lib/errors';
-import { numberEnum } from '../zod';
 import { entityTypeSchema } from './common';
-import { errorDescriptions } from './error-info';
 
 /**
  * Type alias for the responses parameter of createRoute.
@@ -35,14 +32,13 @@ export const successWithPaginationSchema = <T extends z.ZodTypeAny>(schema: T) =
     }),
   });
 
-const httpErrorStatusCodes = Object.keys(errorDescriptions).map((key) => Number(key)) as HttpErrorStatus[];
 /**
  * Schema for errors in a response.
  */
 export const errorSchema = z.object({
   message: z.string(), // Error message
   type: z.string(), // Error type identifier
-  status: z.number().superRefine(numberEnum(httpErrorStatusCodes)), // HTTP status code
+  status: z.number(), // HTTP status code
   severity: z.enum(config.severityLevels), // Severity level
   entityType: entityTypeSchema.optional(), // Optional related entity type
   logId: z.string().optional(), // Optional log identifier
@@ -71,16 +67,47 @@ export const failWithErrorSchema = z.object({
 });
 
 /**
- * Set of error responses with descriptions and schemas. Based of `errorDescriptions`
+ * Set of common error responses with descriptions and schemas.  Includes: 400, 401, 403, 404, 429.
  */
-export const errorResponses = Object.keys(errorDescriptions).reduce(
-  (acc, key) => {
-    const code = Number(key) as HttpErrorStatus;
-    acc[code] = {
-      description: errorDescriptions[code],
-      content: { 'application/json': { schema: failWithErrorSchema } },
-    };
-    return acc;
+export const errorResponses = {
+  400: {
+    description: 'Bad request: problem processing request.',
+    content: {
+      'application/json': {
+        schema: failWithErrorSchema,
+      },
+    },
   },
-  {} as Record<HttpErrorStatus, { description: string; content: Record<string, { schema: typeof failWithErrorSchema }> }>,
-) satisfies Responses;
+  401: {
+    description: 'Unauthorized: authentication required.',
+    content: {
+      'application/json': {
+        schema: failWithErrorSchema,
+      },
+    },
+  },
+  403: {
+    description: 'Forbidden: insufficient permissions.',
+    content: {
+      'application/json': {
+        schema: failWithErrorSchema,
+      },
+    },
+  },
+  404: {
+    description: 'Not found: resource does not exist.',
+    content: {
+      'application/json': {
+        schema: failWithErrorSchema,
+      },
+    },
+  },
+  429: {
+    description: 'Rate limit: too many requests.',
+    content: {
+      'application/json': {
+        schema: failWithErrorSchema,
+      },
+    },
+  },
+} satisfies Responses;

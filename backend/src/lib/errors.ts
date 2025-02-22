@@ -1,9 +1,9 @@
 import { config } from 'config';
 import type { Context } from 'hono';
+import type { ClientErrorStatusCode, ServerErrorStatusCode } from 'hono/utils/http-status';
 import type { z } from 'zod';
 
 import type { Entity, Severity } from 'config';
-import type { ClientErrorStatusCode, ServerErrorStatusCode } from 'hono/utils/http-status';
 import { logEvent, logtail } from '#/middlewares/logger/log-event';
 import type { errorSchema } from '#/utils/schema/responses';
 import { getContextOrganization, getContextUser } from './context';
@@ -99,7 +99,7 @@ export const errorResponse = (
 ) => {
   const error: ErrorType = createError(ctx, status, type, severity, entityType, eventData, err);
 
-  return ctx.json({ success: false, error }, error.status);
+  return ctx.json({ success: false, error }, status as 400); // TODO: Review type assertion (as 400)
 };
 
 /**
