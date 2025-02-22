@@ -1,4 +1,5 @@
 import { useNavigate } from '@tanstack/react-router';
+import { config } from 'config';
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { queryClient } from '~/lib/router';
@@ -18,6 +19,7 @@ export const flushStoresAndCache = () => {
   useUserStore.setState({ user: null as unknown as MeUser });
   useDraftStore.getState().clearForms();
   useNavigationStore.getState().clearNavigationStore();
+  sessionStorage.removeItem(`${config.slug}-impersonating`);
 };
 
 // Sign out user and clear all stores and query cache

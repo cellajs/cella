@@ -3,7 +3,7 @@ import { create } from 'zustand';
 import { createJSONStorage, devtools, persist } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
 
-type DownLevels = 'maintenance' | 'offline' | null;
+type DownLevels = 'maintenance' | 'auth_unavailable' | 'offline' | null;
 
 interface AlertStoreState {
   alertsSeen: string[]; // Seen alert IDs (to prevent duplicate notifications)

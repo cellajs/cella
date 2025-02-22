@@ -122,6 +122,8 @@
   "in_waitlist": "{{appName}} will soon contact you for early access!",
   "invitation_accepted": "Invitation has successfully been accepted",
   "invite": "Invite",
+  "auth_unavailable.text": "Authentication service is unreachable. Please try again later.",
+  "auth_unavailable": "Limited availability",
   "invite_by_email": "Invite with email addresses",
   "invite_by_name": "Invite by searching for users",
   "invite_accept_proceed": "Sign up to proceed",

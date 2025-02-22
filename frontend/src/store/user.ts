@@ -3,14 +3,16 @@ import { create } from 'zustand';
 import { createJSONStorage, devtools, persist } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
 import { i18n } from '~/lib/i18n';
-import type { MeUser, User } from '~/modules/users/types';
+import type { MeUser, User, UserAuthInfo } from '~/modules/users/types';
 
 interface UserStoreState {
   user: MeUser; // Current user data
+  passkey: UserAuthInfo['passkey']; // Current user's passkey
+  oauth: UserAuthInfo['oauth']; // Current user's oauth options
   lastUser: Partial<MeUser> | null; // Last signed-out user's data (email, name, passkey, id, slug)
   clearLastUser: () => void; // Resets the `lastUser` to null.
   setUser: (user: MeUser) => void; // Sets current user and updates lastUser
-  setUserWithoutSetLastUser: (user: MeUser) => void; // Sets user without updating lastUser (used for impersonation)
+  setUserAuthInfo: (data: Partial<UserAuthInfo>) => void; // Sets current user auth info
   updateUser: (user: User) => void; // Updates current user and adjusts lastUser
 }
 
@@ -19,6 +21,8 @@ export const useUserStore = create<UserStoreState>()(
     persist(
       immer((set) => ({
         user: null as unknown as MeUser,
+        oauth: [] as UserAuthInfo['oauth'],
+        passkey: false,
         lastUser: null,
         clearLastUser: () => {
           set((state) => {
@@ -37,17 +41,8 @@ export const useUserStore = create<UserStoreState>()(
               name: user.name,
               id: user.id,
               slug: user.slug,
-              passkey: state.user.passkey,
             },
           }));
-
-          i18n.changeLanguage(user.language || 'en');
-        },
-        // Used for impersonation to prevent an admin from being added as the last user
-        setUserWithoutSetLastUser: (user) => {
-          set((state) => {
-            state.user = user;
-          });
 
           i18n.changeLanguage(user.language || 'en');
         },
@@ -59,11 +54,16 @@ export const useUserStore = create<UserStoreState>()(
               name: user.name,
               id: user.id,
               slug: user.slug,
-              passkey: user.passkey,
             };
           });
 
           i18n.changeLanguage(user.language || 'en');
+        },
+        setUserAuthInfo: (data) => {
+          set((state) => {
+            state.passkey = data.passkey ?? state.passkey;
+            state.oauth = data.oauth ?? state.oauth;
+          });
         },
       })),
       {
@@ -71,6 +71,8 @@ export const useUserStore = create<UserStoreState>()(
         name: `${config.slug}-user`,
         partialize: (state) => ({
           user: state.user,
+          oauth: state.oauth,
+          passkey: state.passkey,
           lastUser: state.lastUser,
         }),
         storage: createJSONStorage(() => localStorage),
