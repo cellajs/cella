@@ -45,10 +45,10 @@ const AuthSteps = () => {
   const { data, isLoading, error } = useTokenCheck('invitation', tokenId, !!(token && tokenId));
 
   useEffect(() => {
-    if (data) {
-      setEmail(data.email);
-      setStep(data.userId ? 'signIn' : 'signUp');
-    }
+    if (!data) return;
+
+    setEmail(data.email);
+    setStep(data.userId ? 'signIn' : 'signUp');
   }, [data]);
 
   if (isLoading) return <Spinner className="h-10 w-10" />;

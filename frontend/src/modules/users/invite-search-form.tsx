@@ -50,7 +50,7 @@ const InviteSearchForm = ({ entity, callback, dialog: isDialog }: Props) => {
     [],
   );
 
-  const form = useFormWithDraft<FormValues>(`invite-users${entity ? `-${entity?.id}` : ''}`, formOptions);
+  const form = useFormWithDraft<FormValues>(`invite-users${entity ? `-${entity?.id}` : ''}`, { formOptions });
 
   const { mutate: invite, isPending } = useMutation({
     mutationFn: (values: FormValues) => {

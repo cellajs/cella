@@ -11,6 +11,7 @@ import { attachmentsQueryOptions } from '~/modules/attachments/query';
 import type { Attachment } from '~/modules/attachments/types';
 import { objectKeys } from '~/utils/object';
 
+// Type definition for raw attachment data received from DataBase
 type RawAttachment = {
   id: string;
   filename: string;
@@ -23,6 +24,7 @@ type RawAttachment = {
   modified_by: string;
 };
 
+// Mapping of raw attachment keys to Attachment table type keys
 const attachmentsTableColumns: { [k: string]: string } = {
   id: 'id',
   name: 'name',
@@ -38,7 +40,7 @@ const attachmentsTableColumns: { [k: string]: string } = {
   organization_id: 'organizationId',
 };
 
-// TODO use comments in this file and explain code better
+// Parses raw attachment data into the Attachment type
 const parseRawAttachment = (rawAttachment: RawAttachment): Attachment => {
   const columnEntries = Object.entries(attachmentsTableColumns);
   const attachment = {} as unknown as Attachment;
@@ -51,6 +53,7 @@ const parseRawAttachment = (rawAttachment: RawAttachment): Attachment => {
   return attachment;
 };
 
+// Configures ShapeStream options for real-time syncing of attachments
 const attachmentShape = (organizationId: string): ShapeStreamOptions => ({
   url: new URL(`/${organizationId}/attachments/shape-proxy`, config.backendUrl).href,
   params: { where: `organization_id = '${organizationId}'` },
@@ -66,15 +69,20 @@ const attachmentShape = (organizationId: string): ShapeStreamOptions => ({
     }),
 });
 
+// Custom hook to sync attachments in real-time for a specific organization
 export const useSync = (organizationId: string) => {
   const { isOnline } = useOnlineManager();
 
   useEffect(() => {
+    // Exit if offline, sync is disabled, or in quick mode
     if (!isOnline || !config.has.sync || env.VITE_QUICK) return;
 
+    // Initialize ShapeStream to listen for changes
     const shapeStream = new ShapeStream<RawAttachment>(attachmentShape(organizationId));
+    // Get attachments queryKey to update query on DB changes
     const queryKey = attachmentsQueryOptions({ orgIdOrSlug: organizationId }).queryKey;
 
+    // Handle new attachment insert
     const handleInsert = (newAttachment: Attachment) => {
       queryClient.setQueryData<AttachmentInfiniteQueryData>(queryKey, (data) => {
         if (!data) return;
@@ -93,14 +101,15 @@ export const useSync = (organizationId: string) => {
       });
     };
 
+    // Handle attachment update
     const handleUpdate = (updatedAttachment: Attachment) => {
       queryClient.setQueryData(queryKey, (data) => {
         if (!data) return;
         const { id } = updatedAttachment;
 
-        // Update items in each page and adjust the total
+        // Update matching attachment in each page
         const pages = data.pages.map(({ items, total }) => ({
-          items: items.map((attachment) => (attachment.id === id ? { ...attachment, updatedAttachment } : attachment)),
+          items: items.map((attachment) => (attachment.id === id ? { ...attachment, ...updatedAttachment } : attachment)),
           total,
         }));
 
@@ -108,10 +117,12 @@ export const useSync = (organizationId: string) => {
       });
     };
 
+    // Handle attachment deletion in attachment query
     const handleDelete = (attachmentId: string) => {
       queryClient.setQueryData<AttachmentInfiniteQueryData>(queryKey, (data) => {
         if (!data) return;
-        // Update items in each page and adjust the total
+
+        // Remove the attachment and adjust total
         const pages = data.pages.map(({ items, total }) => ({
           items: items.filter((item) => item.id !== attachmentId),
           total: total - 1,
@@ -121,19 +132,22 @@ export const useSync = (organizationId: string) => {
       });
     };
 
+    // Subscribe to ShapeStream for real-time updates
     const unsubscribe = shapeStream.subscribe((messages) => {
-      // avoid initial load
+      // Avoid triggering on initial load
       if (shapeStream.isLoading()) return;
 
+      //Filter out only operation messages(create, update, delete)
       const operationMessages = messages.filter((m) => m.headers.operation);
 
       for (const message of operationMessages) {
-        // to avoid trigger on messages without values
+        // Skip messages without value
         if (!('value' in message) || !message.value) continue;
 
         const { value } = message as ChangeMessage<RawAttachment>;
         const parsedAttachment = parseRawAttachment(value);
 
+        // Handle operations based on message type
         switch (message.headers.operation) {
           case 'insert':
             handleInsert(parsedAttachment);

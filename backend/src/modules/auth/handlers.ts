@@ -5,7 +5,6 @@ import { OAuth2RequestError, generateCodeVerifier, generateState } from 'arctic'
 import type { EnabledOauthProvider } from 'config';
 import { config } from 'config';
 import { and, desc, eq, or } from 'drizzle-orm';
-import slugify from 'slugify';
 import { db } from '#/db/db';
 import { membershipsTable } from '#/db/schema/memberships';
 import { organizationsTable } from '#/db/schema/organizations';
@@ -19,6 +18,16 @@ import { i18n } from '#/lib/i18n';
 import { mailer } from '#/lib/mailer';
 import { logEvent } from '#/middlewares/logger/log-event';
 import { hashPassword, verifyPasswordHash } from '#/modules/auth/helpers/argon2id';
+import {
+  clearOauthSession,
+  createOauthSession,
+  getOauthRedirectUrl,
+  handleExistingOauthAccount,
+  slugFromEmail,
+  transformGithubUserData,
+  transformSocialUserData,
+  updateExistingUser,
+} from '#/modules/auth/helpers/oauth';
 import {
   githubAuth,
   type githubUserEmailProps,
@@ -36,18 +45,9 @@ import { TimeSpan, createDate, isExpiredDate } from '#/utils/time-span';
 import { CreatePasswordEmail, type CreatePasswordEmailProps } from '../../../emails/create-password';
 import { EmailVerificationEmail, type EmailVerificationEmailProps } from '../../../emails/email-verification';
 import { deleteAuthCookie, getAuthCookie, setAuthCookie } from './helpers/cookie';
-import {
-  clearOauthSession,
-  createOauthSession,
-  getOauthRedirectUrl,
-  handleExistingOauthAccount,
-  handleInvitationToken,
-  slugFromEmail,
-  splitFullName,
-  updateExistingUser,
-} from './helpers/oauth';
+import { handleInvitationToken } from './helpers/oauth';
 import { parseAndValidatePasskeyAttestation, verifyPassKeyPublic } from './helpers/passkey';
-import { invalidateSessionById, invalidateUserSessions, setUserSession, validateSession } from './helpers/session';
+import { getParsedSessionCookie, invalidateSessionById, invalidateUserSessions, setUserSession, validateSession } from './helpers/session';
 import { handleCreateUser } from './helpers/user';
 import { sendVerificationEmail } from './helpers/verify-email';
 import authRouteConfig from './routes';
@@ -395,9 +395,9 @@ const authRoutes = app
     const { targetUserId } = ctx.req.valid('query');
 
     const user = getContextUser();
-    const sessionToken = await getAuthCookie(ctx, 'session');
+    const sessionData = await getParsedSessionCookie(ctx);
 
-    if (!sessionToken) {
+    if (!sessionData) {
       deleteAuthCookie(ctx, 'session');
       return errorResponse(ctx, 401, 'unauthorized', 'warn');
     }
@@ -412,18 +412,19 @@ const authRoutes = app
    * Stop impersonation
    */
   .openapi(authRouteConfig.stopImpersonation, async (ctx) => {
-    const sessionToken = deleteAuthCookie(ctx, 'session');
-    if (!sessionToken) return errorResponse(ctx, 401, 'unauthorized', 'warn');
+    const sessionData = await getParsedSessionCookie(ctx, true);
+    if (!sessionData) return errorResponse(ctx, 401, 'unauthorized', 'warn');
 
+    const { sessionToken, adminUserId } = sessionData;
     const { session } = await validateSession(sessionToken);
     if (!session) return errorResponse(ctx, 401, 'unauthorized', 'warn');
 
     await invalidateSessionById(session.id);
-    if (session.adminUserId) {
+    if (adminUserId) {
       const [adminsLastSession] = await db
         .select()
         .from(sessionsTable)
-        .where(eq(sessionsTable.userId, session.adminUserId))
+        .where(eq(sessionsTable.userId, adminUserId))
         .orderBy(desc(sessionsTable.expiresAt))
         .limit(1);
 
@@ -433,10 +434,11 @@ const authRoutes = app
       }
 
       const expireTimeSpan = new TimeSpan(adminsLastSession.expiresAt.getTime() - Date.now(), 'ms');
-      await setAuthCookie(ctx, 'session', adminsLastSession.token, expireTimeSpan);
+      const cookieContent = JSON.stringify({ sessionToken: adminsLastSession.token });
+      await setAuthCookie(ctx, 'session', cookieContent, expireTimeSpan);
     }
 
-    logEvent('Stopped impersonation', { admin: session.adminUserId || 'na', user: session.userId });
+    logEvent('Stopped impersonation', { admin: adminUserId || 'na', user: session.userId });
 
     return ctx.json({ success: true }, 200);
   })
@@ -444,15 +446,15 @@ const authRoutes = app
    * Sign out
    */
   .openapi(authRouteConfig.signOut, async (ctx) => {
-    const sessionToken = await getAuthCookie(ctx, 'session');
+    const sessionData = await getParsedSessionCookie(ctx);
 
-    if (!sessionToken) {
+    if (!sessionData) {
       deleteAuthCookie(ctx, 'session');
       return errorResponse(ctx, 401, 'unauthorized', 'warn');
     }
 
     // Find session & invalidate
-    const { session } = await validateSession(sessionToken);
+    const { session } = await validateSession(sessionData.sessionToken);
     if (session) await invalidateSessionById(session.id);
 
     // Delete session cookie
@@ -537,12 +539,13 @@ const authRoutes = app
         headers: { Authorization: `Bearer ${accessToken}` },
       });
       const githubUser: githubUserProps = await githubUserResponse.json();
+      const provider = { id: strategy, userId: String(githubUser.id) };
 
       // Check if it's account link
       const userId = await getAuthCookie(ctx, 'oauth_connect_user_id');
 
       // Check if oauth account already exists
-      const existingStatus = await handleExistingOauthAccount(ctx, strategy, String(githubUser.id), userId || '');
+      const existingStatus = await handleExistingOauthAccount(ctx, strategy, provider.userId, userId || '');
       if (existingStatus === 'mismatch') return errorRedirect(ctx, 'oauth_mismatch', 'warn');
 
       // Get redirectUrl based of existingStatus
@@ -553,57 +556,27 @@ const authRoutes = app
       const githubUserEmailsResponse = await fetch('https://api.github.com/user/emails', {
         headers: { Authorization: `Bearer ${accessToken}` },
       });
-
       const githubUserEmails: githubUserEmailProps[] = await githubUserEmailsResponse.json();
 
-      const primaryEmail = githubUserEmails.find((email) => email.primary);
-      if (!primaryEmail) return errorResponse(ctx, 401, 'no_email_found', 'warn');
-
-      const slug = slugify(githubUser.login, { lower: true, strict: true });
-      const { firstName, lastName } = splitFullName(githubUser.name || slug);
+      const transformedUser = transformGithubUserData(githubUser, githubUserEmails);
 
       const inviteToken = await getAuthCookie(ctx, 'oauth_invite_token');
 
-      const userEmail = primaryEmail.email.toLowerCase();
-
       // Check if user already exists
-      const conditions = [or(eq(usersTable.email, userEmail), ...(userId ? [eq(usersTable.id, userId)] : []))];
+      const conditions = [or(eq(usersTable.email, transformedUser.email), ...(userId ? [eq(usersTable.id, userId)] : []))];
       const [existingUser] = await getUsersByConditions(conditions);
 
       if (existingUser) {
-        const emailVerified = existingUser.emailVerified || !!inviteToken || primaryEmail.verified;
+        const { slug, name, emailVerified, ...providerUser } = transformedUser;
         return await updateExistingUser(ctx, existingUser, strategy, {
-          providerUser: {
-            id: String(githubUser.id),
-            email: userEmail,
-            thumbnailUrl: githubUser.avatar_url,
-            firstName,
-            lastName,
-          },
+          providerUser,
           redirectUrl,
-          emailVerified,
+          emailVerified: existingUser.emailVerified || !!inviteToken || emailVerified,
         });
       }
 
       // Create new user and oauth account
-      // TODO can we simplify this?
-      const newUser = {
-        slug: slugify(githubUser.login, { lower: true, strict: true }),
-        email: userEmail,
-        name: githubUser.name || githubUser.login,
-        thumbnailUrl: githubUser.avatar_url,
-        emailVerified: primaryEmail.verified,
-        firstName,
-        lastName,
-      };
-
-      return await handleCreateUser({
-        ctx,
-        redirectUrl,
-        provider: { id: strategy, userId: String(githubUser.id) },
-        newUser,
-        tokenId: inviteToken ? inviteToken : null,
-      });
+      return await handleCreateUser({ ctx, newUser: transformedUser, redirectUrl, provider });
     } catch (error) {
       // Handle invalid credentials
       if (error instanceof OAuth2RequestError) {
@@ -648,13 +621,15 @@ const authRoutes = app
       const response = await fetch('https://openidconnect.googleapis.com/v1/userinfo', {
         headers: { Authorization: `Bearer ${accessToken}` },
       });
-      const user: googleUserProps = await response.json();
+
+      const googleUser: googleUserProps = await response.json();
+      const provider = { id: strategy, userId: googleUser.sub };
 
       // Check if it's account link
       const userId = await getAuthCookie(ctx, 'oauth_connect_user_id');
 
       // Check if oauth account already exists
-      const existingStatus = await handleExistingOauthAccount(ctx, strategy, user.sub, userId || '');
+      const existingStatus = await handleExistingOauthAccount(ctx, strategy, provider.userId, userId || '');
       if (existingStatus === 'mismatch') return errorRedirect(ctx, 'oauth_mismatch', 'warn');
 
       // Get redirectUrl based of existingStatus
@@ -663,44 +638,23 @@ const authRoutes = app
 
       const inviteToken = await getAuthCookie(ctx, 'oauth_invite_token');
 
-      const userEmail = user.email.toLowerCase();
+      const transformedUser = transformSocialUserData(googleUser);
 
       // Check if user already exists
-      const conditions = [or(eq(usersTable.email, userEmail), ...(userId ? [eq(usersTable.id, userId)] : []))];
+      const conditions = [or(eq(usersTable.email, transformedUser.email), ...(userId ? [eq(usersTable.id, userId)] : []))];
       const [existingUser] = await getUsersByConditions(conditions);
 
       if (existingUser) {
+        const { slug, name, emailVerified, ...providerUser } = transformedUser;
         return await updateExistingUser(ctx, existingUser, strategy, {
-          providerUser: {
-            id: user.sub,
-            email: userEmail,
-            thumbnailUrl: user.picture,
-            firstName: user.given_name,
-            lastName: user.family_name,
-          },
+          providerUser,
           redirectUrl,
-          emailVerified: existingUser.emailVerified || !!inviteToken || user.email_verified,
+          emailVerified: existingUser.emailVerified || !!inviteToken || emailVerified,
         });
       }
 
       // Create new user and oauth account
-      const newUser = {
-        slug: slugFromEmail(userEmail),
-        email: userEmail,
-        name: user.given_name,
-        emailVerified: user.email_verified,
-        thumbnailUrl: user.picture,
-        firstName: user.given_name,
-        lastName: user.family_name,
-      };
-
-      return await handleCreateUser({
-        ctx,
-        redirectUrl,
-        provider: { id: strategy, userId: user.sub },
-        newUser,
-        tokenId: inviteToken ? inviteToken : null,
-      });
+      return await handleCreateUser({ ctx, newUser: transformedUser, redirectUrl, provider });
     } catch (error) {
       // Handle invalid credentials
       if (error instanceof OAuth2RequestError) {
@@ -745,13 +699,15 @@ const authRoutes = app
       const response = await fetch('https://graph.microsoft.com/oidc/userinfo', {
         headers: { Authorization: `Bearer ${accessToken}` },
       });
-      const user: microsoftUserProps = await response.json();
+
+      const microsoftUser: microsoftUserProps = await response.json();
+      const provider = { id: strategy, userId: microsoftUser.sub };
 
       // Check if it's account link
       const userId = await getAuthCookie(ctx, 'oauth_connect_user_id');
 
       // Check if oauth account already exists
-      const existingStatus = await handleExistingOauthAccount(ctx, strategy, user.sub, userId || '');
+      const existingStatus = await handleExistingOauthAccount(ctx, strategy, provider.userId, userId || '');
       if (existingStatus === 'mismatch') return errorRedirect(ctx, 'oauth_mismatch', 'warn');
 
       // Get redirectUrl based of existingStatus
@@ -760,46 +716,23 @@ const authRoutes = app
 
       const inviteToken = await getAuthCookie(ctx, 'oauth_invite_token');
 
-      const userEmail = user.email?.toLowerCase();
-      if (!userEmail) return errorResponse(ctx, 401, 'no_email_found', 'warn', undefined);
+      const transformedUser = transformSocialUserData(microsoftUser);
 
       // Check if user already exists
-      const conditions = [or(eq(usersTable.email, userEmail), ...(userId ? [eq(usersTable.id, userId)] : []))];
+      const conditions = [or(eq(usersTable.email, transformedUser.email), ...(userId ? [eq(usersTable.id, userId)] : []))];
       const [existingUser] = await getUsersByConditions(conditions);
 
       if (existingUser) {
+        const { slug, name, emailVerified, ...providerUser } = transformedUser;
         return await updateExistingUser(ctx, existingUser, strategy, {
-          providerUser: {
-            id: user.sub,
-            email: userEmail,
-            thumbnailUrl: user.picture,
-            firstName: user.given_name,
-            lastName: user.family_name,
-          },
+          providerUser,
           redirectUrl,
           emailVerified: existingUser.emailVerified || !!inviteToken,
         });
       }
 
       // Create new user and oauth account
-      // TODO how to shorten this?
-      const newUser = {
-        slug: slugFromEmail(userEmail),
-        email: userEmail,
-        emailVerified: false,
-        name: user.given_name,
-        thumbnailUrl: user.picture,
-        firstName: user.given_name,
-        lastName: user.family_name,
-      };
-
-      return await handleCreateUser({
-        ctx,
-        newUser,
-        redirectUrl,
-        provider: { id: strategy, userId: user.sub },
-        tokenId: inviteToken ? inviteToken : null,
-      });
+      return await handleCreateUser({ ctx, newUser: transformedUser, redirectUrl, provider });
     } catch (error) {
       // Handle invalid credentials
       if (error instanceof OAuth2RequestError) {

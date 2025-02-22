@@ -1,5 +1,5 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
-import { and, count, eq, ilike, inArray, isNotNull, isNull, or } from 'drizzle-orm';
+import { and, count, eq, getTableColumns, ilike, inArray, isNotNull, isNull, or } from 'drizzle-orm';
 
 import { db } from '#/db/db';
 import { membershipsTable } from '#/db/schema/memberships';
@@ -300,17 +300,8 @@ const membershipsRoutes = app
     const entityIdField = entityIdFields[entity.entity];
 
     // Build search filters
-    const $or = [];
-    if (q) {
-      const query = prepareStringForILikeFilter(q);
-      $or.push(ilike(usersTable.name, query), ilike(usersTable.email, query));
-    }
+    const $or = q ? [ilike(usersTable.name, prepareStringForILikeFilter(q)), ilike(usersTable.email, prepareStringForILikeFilter(q))] : [];
 
-    const usersQuery = db
-      .select({ user: userSelect })
-      .from(usersTable)
-      .where(or(...$or))
-      .as('users');
     const membersFilters = [
       eq(membershipsTable[entityIdField], entity.id),
       eq(membershipsTable.type, entityType),
@@ -320,12 +311,6 @@ const membershipsRoutes = app
 
     if (role) membersFilters.push(eq(membershipsTable.role, role));
 
-    const memberships = db
-      .select()
-      .from(membershipsTable)
-      .where(and(...membersFilters))
-      .as('memberships');
-
     const orderColumn = getOrderColumn(
       {
         id: usersTable.id,
@@ -333,28 +318,27 @@ const membershipsRoutes = app
         email: usersTable.email,
         createdAt: usersTable.createdAt,
         lastSeenAt: usersTable.lastSeenAt,
-        role: memberships.role,
+        role: membershipsTable.role,
       },
       sort,
       usersTable.id,
       order,
     );
 
-    // TODO can this be optimized?
     const membersQuery = db
-      .select({ user: userSelect, membership: membershipSelect })
-      .from(usersQuery)
-      .innerJoin(memberships, eq(usersTable.id, memberships.userId))
-      .orderBy(orderColumn);
+      .select({
+        ...getTableColumns(userSelect),
+        membership: membershipSelect,
+      })
+      .from(usersTable)
+      .innerJoin(membershipsTable, eq(membershipsTable.userId, usersTable.id))
+      .where(and(...membersFilters, or(...$or)));
 
     const [{ total }] = await db.select({ total: count() }).from(membersQuery.as('memberships'));
 
-    const result = await membersQuery.limit(Number(limit)).offset(Number(offset));
+    const items = await membersQuery.orderBy(orderColumn).limit(Number(limit)).offset(Number(offset));
 
-    // Map the result to include membership properties
-    const members = await Promise.all(result.map(async ({ user, membership }) => ({ ...user, membership })));
-
-    return ctx.json({ success: true, data: { items: members, total } }, 200);
+    return ctx.json({ success: true, data: { items, total } }, 200);
   })
   /*
    * Get invited members by entity id/slug and type

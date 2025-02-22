@@ -2,7 +2,7 @@ import { and, eq } from 'drizzle-orm';
 import type { Context } from 'hono';
 import { oauthAccountsTable } from '#/db/schema/oauth-accounts';
 import { type UserModel, usersTable } from '#/db/schema/users';
-import { setUserSession, validateSession } from './session';
+import { getParsedSessionCookie, setUserSession, validateSession } from './session';
 
 import { type EnabledOauthProvider, config } from 'config';
 import slugify from 'slugify';
@@ -12,6 +12,7 @@ import { createError, errorRedirect, errorResponse } from '#/lib/errors';
 import { logEvent } from '#/middlewares/logger/log-event';
 import { TimeSpan, isExpiredDate } from '#/utils/time-span';
 import { type CookieName, deleteAuthCookie, getAuthCookie, setAuthCookie } from './cookie';
+import type { githubUserEmailProps, githubUserProps, googleUserProps, microsoftUserProps } from './oauth-providers';
 import { sendVerificationEmail } from './verify-email';
 
 const cookieExpires = new TimeSpan(5, 'm');
@@ -42,9 +43,10 @@ export const createOauthSession = async (
   setAuthCookie(ctx, 'oauth_state', state, cookieExpires);
   // If connecting oauth account to user, make sure same user is logged in
   if (connect) {
-    const sessionToken = await getAuthCookie(ctx, 'session');
-    if (!sessionToken) return errorResponse(ctx, 401, 'no_session', 'warn');
-    const { user } = await validateSession(sessionToken);
+    const sessionData = await getParsedSessionCookie(ctx);
+    if (!sessionData) return errorResponse(ctx, 401, 'no_session', 'warn');
+
+    const { user } = await validateSession(sessionData.sessionToken);
     if (user?.id !== connect) return errorResponse(ctx, 404, 'user_mismatch', 'warn');
   }
 
@@ -115,7 +117,12 @@ export const findOauthAccount = async (providerId: EnabledOauthProvider, provide
     .where(and(eq(oauthAccountsTable.providerId, providerId), eq(oauthAccountsTable.providerUserId, providerUserId)));
 };
 
-// Create slug from email
+/**
+ * Create slug from email
+ *
+ * @param email
+ * @returns A slug based on the email address
+ */
 export const slugFromEmail = (email: string) => {
   const [alias] = email.split('@');
   return slugify(alias, { lower: true, strict: true });
@@ -133,7 +140,14 @@ interface Params {
   redirectUrl: string;
 }
 
-// Update existing user
+/**
+ * Update existing user
+ *
+ * @param ctx - Request/response context
+ * @param existingUser - Existing user model
+ * @param providerId - OAuth provider ID
+ * @param params - Parameters for updating the user
+ */
 export const updateExistingUser = async (ctx: Context, existingUser: UserModel, providerId: EnabledOauthProvider, params: Params) => {
   const { providerUser, emailVerified, redirectUrl } = params;
 
@@ -162,6 +176,12 @@ export const updateExistingUser = async (ctx: Context, existingUser: UserModel, 
   return ctx.redirect(redirectUrl, 302);
 };
 
+/**
+ * Handle invitation token helper
+ *
+ * @param ctx
+ * @returns Object with token ID, redirect URL, and error
+ */
 export const handleInvitationToken = async (ctx: Context) => {
   const token = ctx.req.query('token');
   const redirect = ctx.req.query('redirect');
@@ -178,5 +198,42 @@ export const handleInvitationToken = async (ctx: Context) => {
     tokenId: tokenRecord.id,
     redirectUrl: `${config.frontendUrl}/invitation/${tokenRecord.token}?tokenId=${tokenRecord.id}`,
     error: null,
+  };
+};
+
+export const transformSocialUserData = (user: googleUserProps | microsoftUserProps) => {
+  if (!user.email) throw new Error('no_email_found');
+
+  const email = user.email.toLowerCase();
+
+  return {
+    id: user.sub,
+    slug: slugFromEmail(email),
+    email,
+    name: user.name,
+    emailVerified: 'email_verified' in user ? user.email_verified : false,
+    thumbnailUrl: user.picture,
+    firstName: user.given_name,
+    lastName: user.family_name,
+  };
+};
+
+export const transformGithubUserData = (user: githubUserProps, emails: githubUserEmailProps[]) => {
+  const primaryEmail = emails.find((email) => email.primary);
+  if (!primaryEmail) throw new Error('no_email_found');
+
+  const email = primaryEmail.email.toLowerCase();
+  const slug = slugify(user.login, { lower: true, strict: true });
+  const { firstName, lastName } = splitFullName(user.name || slug);
+
+  return {
+    id: String(user.id),
+    slug,
+    email,
+    name: user.name || user.login,
+    emailVerified: primaryEmail.verified,
+    thumbnailUrl: user.avatar_url,
+    firstName,
+    lastName,
   };
 };

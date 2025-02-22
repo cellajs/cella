@@ -2,21 +2,26 @@ import { useEffect, useState } from 'react';
 import { type FieldPath, type FieldValues, type UseFormProps, type UseFormReturn, useForm } from 'react-hook-form';
 import { useDraftStore } from '~/store/draft';
 
+// TODO make unsaved changes when form get dirty?
 /**
  * useFormWithDraft
  *
  * This hook manages form state with draft-saving support. It automatically
- * restores saved drafts on mount and
+ * restores saved drafts on mount and tracks unsaved changes.
  *
  * @param formId - A unique identifier for the form draft storage.
- * @param props - Optional props for `useForm()`.
+ * @param opt - Optional configuration:
+ *   - `formOptions`: Props passed to `useForm()` from react-hook-form.
+ *   - `onUnsavedChanges`: Callback triggered when unsaved changes are detected.
  *
  * @returns - Returns form methods along with:
  *  - `unsavedChanges`: `true` if the form has unsaved changes.
  *  - `loading`: `true` while restoring draft data.
  *
  * @example
- * const form = useFormWithDraft<MyFormType>('my-form');
+ * const form = useFormWithDraft<MyFormType>('my-form', {
+ *   onUnsavedChanges: () => console.log('Unsaved changes detected!')
+ * });
  *
  * return (
  *   <form onSubmit={form.handleSubmit(onSubmit)}>
@@ -33,12 +38,16 @@ export function useFormWithDraft<
   TTransformedValues extends TFieldValues = TFieldValues,
 >(
   formId: string,
-  props?: UseFormProps<TFieldValues, TContext>,
+  opt?: {
+    formOptions?: UseFormProps<TFieldValues, TContext>;
+    onUnsavedChanges?: () => void;
+  },
 ): UseFormReturn<TFieldValues, TContext, TTransformedValues> & {
   unsavedChanges: boolean;
   loading: boolean;
 } {
-  const form = useForm<TFieldValues, TContext, TTransformedValues>(props);
+  const { formOptions, onUnsavedChanges } = opt || {};
+  const form = useForm<TFieldValues, TContext, TTransformedValues>(formOptions);
   const getForm = useDraftStore((state) => state.getForm);
   const setForm = useDraftStore((state) => state.setForm);
   const resetForm = useDraftStore((state) => state.resetForm);
@@ -50,6 +59,7 @@ export function useFormWithDraft<
     const values = getForm<TFieldValues>(formId);
 
     if (values) {
+      onUnsavedChanges?.();
       setUnsavedChanges(true);
       for (const [key, value] of Object.entries(values)) {
         form.setValue(key as FieldPath<TFieldValues>, value);
@@ -63,7 +73,9 @@ export function useFormWithDraft<
   useEffect(() => {
     if (form.formState.isDirty) {
       const values = Object.fromEntries(Object.entries(allFields).filter(([_, value]) => value !== undefined));
-      if (Object.keys(values).length > 0) return setForm(formId, values);
+      if (Object.keys(values).length > 0) {
+        return setForm(formId, values);
+      }
     }
 
     if (unsavedChanges) {
