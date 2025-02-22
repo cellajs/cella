@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { config } from 'config';
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 import { organizationsTable } from '#/db/schema/organizations';
+import type { ValidEntityTypes } from '#/utils/counts';
 import {
   languageSchema,
   paginationQuerySchema,
@@ -15,12 +16,26 @@ import {
 import { membershipInfoSchema } from '../memberships/schema';
 
 export const membershipsCountSchema = z.object({
-  memberships: z.object({
-    admins: z.number(),
-    members: z.number(),
+  membership: z.object({
+    admin: z.number(),
+    member: z.number(),
     total: z.number(),
   }),
 });
+
+/** Type assertion to avoid "ReferenceError: Buffer is not defined" when using `hasField`.
+ * Redundant fields will be filtered out in `getRelatedEntityCounts`.
+ */
+//TODO: find way to fix ?
+export const relatedEntitiesCountSchema = z.object(
+  [...config.productEntityTypes, ...config.contextEntityTypes].reduce(
+    (acc, key) => {
+      acc[key as ValidEntityTypes<'organizationId'>] = z.number();
+      return acc;
+    },
+    {} as Record<ValidEntityTypes<'organizationId'>, z.ZodNumber>,
+  ),
+);
 
 export const organizationSchema = z.object({
   ...createSelectSchema(organizationsTable).shape,
@@ -43,7 +58,7 @@ export const createOrganizationBodySchema = z.object({
 
 export const sendNewsletterBodySchema = z.object({
   organizationIds: z.array(z.string()),
-  roles: z.array(z.enum(config.rolesByType.entityRoles)),
+  roles: z.array(z.enum(config.rolesByType.entityRoles)).min(1, { message: 'Role selection is required' }),
   subject: z.string(),
   content: z.string(),
 });

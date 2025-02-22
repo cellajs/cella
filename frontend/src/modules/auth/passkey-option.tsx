@@ -13,7 +13,6 @@ interface PassKeyOptionProps {
   email: string;
 }
 
-// TODO: split passkeyAuth into separate file
 const PassKeyOption = ({ email, actionType = 'signIn' }: PassKeyOptionProps) => {
   const { t } = useTranslation();
   const navigate = useNavigate();

@@ -240,10 +240,9 @@ const generalRoutes = app
           .groupBy(table.id, membershipsTable.id) // Group by entity ID for distinct results
           .limit(10);
       })
-      .filter(Boolean); // Filter out null values if any entity type is invalid
+      .filter((el) => el !== null); // Filter out null values if any entity type is invalid
 
-    const results = await Promise.all(queries);
-    const items = results.flat().filter((item) => item !== null);
+    const items = (await Promise.all(queries)).flat();
 
     return ctx.json({ success: true, data: { items, total: items.length } }, 200);
   })

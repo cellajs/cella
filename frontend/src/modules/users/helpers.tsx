@@ -4,9 +4,9 @@ import { t } from 'i18next';
 import { decodeBase64, encodeBase64 } from '@oslojs/encoding';
 import { type QueryKey, onlineManager } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { authenticateWithPasskey, getChallenge, registerPasskey } from '~/modules/auth/api';
+import { authenticateWithPasskey, getPasskeyChallenge } from '~/modules/auth/api';
 import { toaster } from '~/modules/common/toaster';
-import { deletePasskey as baseRemovePasskey, getSelf, getSelfAuthInfo, getUserMenu } from '~/modules/users/api';
+import { deletePasskey as baseRemovePasskey, createPasskey, getSelf, getSelfAuthInfo, getSelfMenu } from '~/modules/users/api';
 import type { LimitedUser } from '~/modules/users/types';
 import { getQueryItems } from '~/query/helpers/mutate-query';
 import type { InfiniteQueryData, QueryData } from '~/query/types';
@@ -27,7 +27,7 @@ export const passkeyRegistration = async () => {
 
   try {
     // Random bytes generated on each attempt.
-    const { challengeBase64 } = await getChallenge();
+    const { challengeBase64 } = await getPasskeyChallenge();
 
     // random ID for the authenticator
     const userId = new Uint8Array(20);
@@ -68,12 +68,12 @@ export const passkeyRegistration = async () => {
       clientDataJSON: encodeBase64(new Uint8Array(response.clientDataJSON)),
     };
 
-    const result = await registerPasskey(credentialData);
+    const result = await createPasskey(credentialData);
 
     if (!result) toast.error(t('error:passkey_add_failed'));
 
     toast.success(t('common:success.passkey_added'));
-    useUserStore.getState().setUser({ ...user, passkey: true });
+    useUserStore.getState().setUserAuthInfo({ passkey: true });
   } catch (error) {
     // On cancel throws error NotAllowedError
     console.error('Error during passkey registration:', error);
@@ -95,7 +95,7 @@ export const passkeyRegistration = async () => {
 export const passkeyAuth = async (userEmail: string, callback?: () => void) => {
   try {
     // Random bytes generated on each attempt
-    const { challengeBase64 } = await getChallenge();
+    const { challengeBase64 } = await getPasskeyChallenge();
 
     const credential = await navigator.credentials.get({
       publicKey: {
@@ -136,7 +136,7 @@ export const deletePasskey = async () => {
     const result = await baseRemovePasskey();
     if (result) {
       toast.success(t('common:success.passkey_removed'));
-      useUserStore.getState().setUser({ ...useUserStore.getState().user, passkey: false });
+      useUserStore.getState().setUserAuthInfo({ passkey: false });
     } else toast.error(t('error:passkey_remove_failed'));
   } catch (error) {
     console.error('Error removing passkey:', error);
@@ -152,13 +152,19 @@ export const deletePasskey = async () => {
  */
 export const getAndSetMe = async () => {
   const user = await getSelf();
-  const authInfo = await getSelfAuthInfo();
-  const currentSession = authInfo.sessions.find((s) => s.isCurrent);
-  // if impersonation session don't change the last user
-  if (currentSession?.type === 'impersonation') useUserStore.getState().setUserWithoutSetLastUser({ ...user, ...authInfo });
-  else useUserStore.getState().setUser({ ...user, ...authInfo });
+  useUserStore.getState().setUser(user);
+  return user;
+};
 
-  return { ...user, ...authInfo };
+/**
+ * Retrieves the current user's authentication information and updates the user store.
+ *
+ * @returns The data object.
+ */
+export const getAndSetUserAuthInfo = async () => {
+  const authInfo = await getSelfAuthInfo();
+  useUserStore.getState().setUserAuthInfo(authInfo);
+  return authInfo;
 };
 
 /**
@@ -167,7 +173,7 @@ export const getAndSetMe = async () => {
  * @returns The menu data.
  */
 export const getAndSetMenu = async () => {
-  const menu = await getUserMenu();
+  const menu = await getSelfMenu();
   useNavigationStore.setState({ menu });
   return menu;
 };

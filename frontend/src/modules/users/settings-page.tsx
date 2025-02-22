@@ -25,6 +25,7 @@ import { deletePasskey, passkeyRegistration } from '~/modules/users/helpers';
 import { SessionTile } from '~/modules/users/session-tile';
 import UpdateUserForm from '~/modules/users/update-user-form';
 import { useThemeStore } from '~/store/theme';
+import type { UserAuthInfo } from './types';
 
 const tabs = [
   { id: 'general', label: 'common:general' },
@@ -33,13 +34,15 @@ const tabs = [
   { id: 'delete-account', label: 'common:delete_account' },
 ];
 
-const UserSettingsPage = () => {
+const UserSettingsPage = ({ userAuthInfo }: { userAuthInfo: UserAuthInfo }) => {
   const { user } = useUserStore();
   const { mode } = useThemeStore();
   const { t } = useTranslation();
 
-  const sessionsWithoutCurrent = useMemo(() => user.sessions.filter((session) => !session.isCurrent), [user.sessions]);
-  const sessions = Array.from(user.sessions).sort((a) => (a.isCurrent ? -1 : 1));
+  const [allSessions, setAllSessions] = useState(userAuthInfo.sessions);
+
+  const sessionsWithoutCurrent = useMemo(() => allSessions.filter((session) => !session.isCurrent), [allSessions]);
+  const sessions = Array.from(allSessions).sort((a) => (a.isCurrent ? -1 : 1));
 
   const [disabledResetPassword, setDisabledResetPassword] = useState(false);
   const invertClass = mode === 'dark' ? 'invert' : '';
@@ -48,9 +51,9 @@ const UserSettingsPage = () => {
   const { mutate: _deleteMySessions, isPending } = useMutation({
     mutationFn: deleteMySessions,
     onSuccess(_, variables) {
-      useUserStore.setState((state) => {
-        state.user.sessions = state.user.sessions.filter((session) => !variables.includes(session.id));
-      });
+      if (!allSessions.length) return;
+      setAllSessions(allSessions.filter((session) => !variables.includes(session.id)));
+
       toaster(
         variables.length === 1 ? t('common:success.session_terminated', { id: variables[0] }) : t('common:success.sessions_terminated'),
         'success',
@@ -168,18 +171,18 @@ const UserSettingsPage = () => {
                 <p className="font-semibold">{t('common:passkey')}</p>
               </HelpText>
 
-              {user.passkey && (
+              {userAuthInfo.passkey && (
                 <div className="flex items-center gap-2 mb-6">
                   <Check size={18} className="text-success" />
                   <span>{t('common:passkey_registered')}</span>
                 </div>
               )}
               <div className="flex max-sm:flex-col gap-2 mb-6">
-                <Button key="registerPasskey" type="button" variant="plain" onClick={passkeyRegistration}>
+                <Button key="createPasskey" type="button" variant="plain" onClick={passkeyRegistration}>
                   <KeyRound className="w-4 h-4 mr-2" />
-                  {user.passkey ? t('common:reset_passkey') : `${t('common:add')} ${t('common:new_passkey').toLowerCase()}`}
+                  {userAuthInfo.passkey ? t('common:reset_passkey') : `${t('common:add')} ${t('common:new_passkey').toLowerCase()}`}
                 </Button>
-                {user.passkey && (
+                {userAuthInfo.passkey && (
                   <Button key="deletePasskey" type="button" variant="ghost" onClick={deletePasskey}>
                     <Trash2 className="w-4 h-4 mr-2" />
                     <span>{t('common:remove')}</span>
@@ -195,7 +198,7 @@ const UserSettingsPage = () => {
                 {config.enabledOauthProviders.map((id) => {
                   const provider = mapOauthProviders.find((provider) => provider.id === id);
                   if (!provider) return;
-                  if (user.oauth.includes(id))
+                  if (userAuthInfo.oauth.includes(id))
                     return (
                       <div key={provider.id} className="flex items-center justify-center py-2 px-3 gap-2 border rounded-md">
                         <img

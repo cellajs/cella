@@ -1,30 +1,17 @@
 import { z } from 'zod';
 
-import { config } from 'config';
+import { createSelectSchema } from 'drizzle-zod';
+import { sessionsTable } from '#/db/schema/sessions';
 import { type MenuSectionName, entityRelations } from '#/entity-config';
-import { contextEntityTypeSchema, idOrSlugSchema, idSchema, imageUrlSchema, nameSchema, slugSchema } from '#/utils/schema/common';
+import { contextEntityTypeSchema, idOrSlugSchema } from '#/utils/schema/common';
+import { limitEntitySchema } from '../general/schema';
 import { membershipInfoSchema } from '../memberships/schema';
 import { signUpInfo } from '../users/schema';
 
-// TODO use session db schema?
+const sessionSchema = createSelectSchema(sessionsTable);
+
 export const sessionsSchema = z.object({
-  sessions: z.array(
-    z.object({
-      id: idSchema,
-      createdAt: z.string(),
-      deviceName: z.string().nullish(),
-      userId: idSchema,
-      deviceType: z.enum(['desktop', 'mobile']),
-      deviceOs: z.string().nullish(),
-      browser: z.string().nullish(),
-      //TODO use enum from config?
-      authStrategy: z.enum(['github', 'google', 'microsoft', 'password', 'passkey']).nullish(),
-      type: z.enum(['regular', 'impersonation']),
-      expiresAt: z.string(),
-      adminUserId: idSchema.nullish(),
-      isCurrent: z.boolean(),
-    }),
-  ),
+  sessions: z.array(sessionSchema.omit({ token: true }).extend({ createdAt: z.string(), expiresAt: z.string(), isCurrent: z.boolean() })),
 });
 
 export const meAuthInfoSchema = z.object({
@@ -32,16 +19,11 @@ export const meAuthInfoSchema = z.object({
   ...sessionsSchema.shape,
 });
 
-// TODO this is also minimum entity schema?
-export const menuItemSchema = z.object({
-  slug: slugSchema,
-  id: idSchema,
-  // TODO always timestamp but not here?
-  createdAt: z.date(),
-  modifiedAt: z.date().nullable(),
-  name: nameSchema,
-  thumbnailUrl: imageUrlSchema.nullish(),
-  entity: z.enum(config.contextEntityTypes),
+export const meRelativeEntitiesSchema = z.array(limitEntitySchema.extend({ membership: membershipInfoSchema }));
+
+export const menuItemSchema = limitEntitySchema.omit({ bannerUrl: true }).extend({
+  createdAt: z.string(),
+  modifiedAt: z.string().nullable(),
   membership: membershipInfoSchema,
   organizationId: membershipInfoSchema.shape.organizationId.optional(),
 });
@@ -63,6 +45,12 @@ export const userMenuSchema = z.object(
     {} as Record<MenuSectionName, typeof menuItemsSchema>,
   ),
 );
+
+export const passkeyRegistrationBodySchema = z.object({
+  userEmail: z.string(),
+  attestationObject: z.string(),
+  clientDataJSON: z.string(),
+});
 
 export const leaveEntityQuerySchema = z.object({
   idOrSlug: idOrSlugSchema,

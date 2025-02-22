@@ -1,5 +1,5 @@
 import { config } from 'config';
-import { CloudOff, Construction, X } from 'lucide-react';
+import { AlertTriangle, CloudOff, Construction, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
 import { useOnlineManager } from '~/hooks/use-online-manager';
@@ -9,6 +9,24 @@ import { Button } from '~/modules/ui/button';
 import { useAlertStore } from '~/store/alert';
 import { useGeneralStore } from '~/store/general';
 
+const downAlertConfig = {
+  offline: {
+    icon: CloudOff,
+    titleKey: 'common:offline',
+    textKey: 'common:offline.text',
+  },
+  maintenance: {
+    icon: Construction,
+    titleKey: 'common:maintenance_mode',
+    textKey: 'common:maintenance_mode.text',
+  },
+  auth_unavailable: {
+    icon: AlertTriangle,
+    titleKey: 'common:auth_unavailable',
+    textKey: 'common:auth_unavailable.text',
+  },
+} as const;
+
 export const DownAlert = () => {
   const { t } = useTranslation();
   const { downAlert, setDownAlert } = useAlertStore();
@@ -16,7 +34,6 @@ export const DownAlert = () => {
   const { isOnline } = useOnlineManager();
   const [isNetworkAlertClosed, setIsNetworkAlertClosed] = useState(false);
 
-  // Check if the user is offline or online and handle accordingly
   useEffect(() => {
     (async () => {
       if (isOnline && downAlert === 'offline') {
@@ -39,19 +56,23 @@ export const DownAlert = () => {
     setIsNetworkAlertClosed(true);
   };
 
-  const offlineText = offlineAccess ? (
-    <Trans
-      i18nKey="common:offline_access.offline"
-      t={t}
-      components={{
-        site_anchor: <button type="button" className="underline" onClick={cancelAlert} />,
-      }}
-    />
-  ) : (
-    t('common:offline.text')
-  );
+  if (!downAlert) return null;
 
-  if (!downAlert) return <></>;
+  const alertConfig = downAlertConfig[downAlert] || downAlertConfig.offline;
+  const Icon = alertConfig.icon;
+
+  const alertText =
+    downAlert === 'offline' && offlineAccess ? (
+      <Trans
+        i18nKey="common:offline_access.offline"
+        t={t}
+        components={{
+          site_anchor: <button type="button" className="underline" onClick={cancelAlert} />,
+        }}
+      />
+    ) : (
+      t(alertConfig.textKey)
+    );
 
   return (
     <div className="fixed z-2000 pointer-events-auto max-sm:bottom-20 bottom-4 left-4 right-4 border-0 justify-center">
@@ -59,12 +80,12 @@ export const DownAlert = () => {
         <Button variant="ghost" size="sm" className="absolute top-2 right-2" onClick={cancelAlert}>
           <X size={16} />
         </Button>
-        {downAlert === 'maintenance' ? <Construction size={16} /> : <CloudOff size={16} />}
+        <Icon size={16} />
 
         <AlertDescription className="pr-8 font-light">
-          <strong>{downAlert === 'maintenance' ? t('common:maintenance_mode') : t('common:offline')}</strong>
+          <strong>{t(alertConfig.titleKey)}</strong>
           <span className="mx-2">&#183;</span>
-          <span className="max-sm:hidden">{downAlert === 'maintenance' ? t('common:maintenance_mode.text') : offlineText}</span>
+          <span className="max-sm:hidden">{alertText}</span>
           <button type="button" className="inline-block sm:hidden font-semibold" onClick={cancelAlert}>
             {t('common:continue')}
           </button>

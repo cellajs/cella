@@ -134,11 +134,23 @@ export const getSelfAuthInfo = async () => {
 };
 
 /**
+ * Get relevant entities that current user (self) is member of.
+ *
+ * @returns Current user relevant entities(LimitedEntity with MinimumMembershipInfo ).
+ */
+export const getSelfEntities = async () => {
+  const response = await meClient.entities.$get();
+
+  const json = await handleResponse(response);
+  return json.data;
+};
+
+/**
  * Get current user menu. Retrieves menu associated with currently authenticated user.
  *
  * @returns The user menu data.
  */
-export const getUserMenu = async () => {
+export const getSelfMenu = async () => {
   const response = await meClient.menu.$get();
 
   const json = await handleResponse(response);
@@ -179,6 +191,22 @@ export const deleteMySessions = async (sessionIds: string[]) => {
   });
 
   await handleResponse(response);
+};
+
+type RegisterPasskeyProp = Parameters<(typeof meClient)['passkey-registration']['$post']>['0']['json'];
+
+/**
+ * Create a passkey for current user
+ *
+ * @param data - Passkey registration data.
+ * @returns A boolean indicating success of the passkey registration.
+ */
+export const createPasskey = async (data: RegisterPasskeyProp) => {
+  const apiResponse = await meClient['passkey-registration'].$post({
+    json: data,
+  });
+  const json = await handleResponse(apiResponse);
+  return json.success;
 };
 
 /**

@@ -1,5 +1,5 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
-import { and, count, eq, ilike, inArray, isNotNull, isNull, or } from 'drizzle-orm';
+import { and, count, eq, getTableColumns, ilike, inArray, isNotNull, isNull, or } from 'drizzle-orm';
 
 import { db } from '#/db/db';
 import { membershipsTable } from '#/db/schema/memberships';
@@ -122,20 +122,25 @@ const membershipsRoutes = app
       ...(entityType !== 'organization' && { organizationId: organization.id }), // Add org ID if not an organization
     }));
 
-    // Generate inactive tokens
-    const inactiveMemberships = tokens.map(({ id: tokenId, userId }) => {
-      if (!userId) return Promise.resolve();
-      return insertMembership({ userId, role, entity, tokenId });
-    });
+    // Insert tokens first
+    const insertedTokens = await db
+      .insert(tokensTable)
+      .values(tokens)
+      .returning({ tokenId: tokensTable.id, userId: tokensTable.userId, email: tokensTable.email, token: tokensTable.token });
 
-    // Batch insert tokens and inactive memberships
-    const [insertedTokens] = await Promise.all([db.insert(tokensTable).values(tokens).returning(), inactiveMemberships]);
+    // Generate inactive memberships after tokens are inserted
+    const inactiveMemberships = insertedTokens
+      .filter(({ userId }) => userId !== null)
+      .map(({ tokenId, userId }) => insertMembership({ userId: userId as string, role, entity, tokenId }));
+
+    // Wait for all memberships to be inserted
+    await Promise.all(inactiveMemberships);
 
     // Prepare and send invitation emails
-    const recipients = insertedTokens.map((tokenRecord) => ({
-      email: tokenRecord.email,
-      name: slugFromEmail(tokenRecord.email),
-      memberInviteLink: `${config.frontendUrl}/invitation/${tokenRecord.token}?tokenId=${tokenRecord.id}`,
+    const recipients = insertedTokens.map(({ email, tokenId, token }) => ({
+      email,
+      name: slugFromEmail(email),
+      memberInviteLink: `${config.frontendUrl}/invitation/${token}?tokenId=${tokenId}`,
     }));
 
     const emailProps = {
@@ -295,17 +300,8 @@ const membershipsRoutes = app
     const entityIdField = entityIdFields[entity.entity];
 
     // Build search filters
-    const $or = [];
-    if (q) {
-      const query = prepareStringForILikeFilter(q);
-      $or.push(ilike(usersTable.name, query), ilike(usersTable.email, query));
-    }
+    const $or = q ? [ilike(usersTable.name, prepareStringForILikeFilter(q)), ilike(usersTable.email, prepareStringForILikeFilter(q))] : [];
 
-    const usersQuery = db
-      .select({ user: userSelect })
-      .from(usersTable)
-      .where(or(...$or))
-      .as('users');
     const membersFilters = [
       eq(membershipsTable[entityIdField], entity.id),
       eq(membershipsTable.type, entityType),
@@ -315,12 +311,6 @@ const membershipsRoutes = app
 
     if (role) membersFilters.push(eq(membershipsTable.role, role));
 
-    const memberships = db
-      .select()
-      .from(membershipsTable)
-      .where(and(...membersFilters))
-      .as('memberships');
-
     const orderColumn = getOrderColumn(
       {
         id: usersTable.id,
@@ -328,28 +318,27 @@ const membershipsRoutes = app
         email: usersTable.email,
         createdAt: usersTable.createdAt,
         lastSeenAt: usersTable.lastSeenAt,
-        role: memberships.role,
+        role: membershipsTable.role,
       },
       sort,
       usersTable.id,
       order,
     );
 
-    // TODO can this be optimized?
     const membersQuery = db
-      .select({ user: userSelect, membership: membershipSelect })
-      .from(usersQuery)
-      .innerJoin(memberships, eq(usersTable.id, memberships.userId))
-      .orderBy(orderColumn);
+      .select({
+        ...getTableColumns(userSelect),
+        membership: membershipSelect,
+      })
+      .from(usersTable)
+      .innerJoin(membershipsTable, eq(membershipsTable.userId, usersTable.id))
+      .where(and(...membersFilters, or(...$or)));
 
     const [{ total }] = await db.select({ total: count() }).from(membersQuery.as('memberships'));
 
-    const result = await membersQuery.limit(Number(limit)).offset(Number(offset));
+    const items = await membersQuery.orderBy(orderColumn).limit(Number(limit)).offset(Number(offset));
 
-    // Map the result to include membership properties
-    const members = await Promise.all(result.map(async ({ user, membership }) => ({ ...user, membership })));
-
-    return ctx.json({ success: true, data: { items: members, total } }, 200);
+    return ctx.json({ success: true, data: { items, total } }, 200);
   })
   /*
    * Get invited members by entity id/slug and type
@@ -396,13 +385,7 @@ const membershipsRoutes = app
 
     const [{ total }] = await db.select({ total: count() }).from(invitedMembersQuery.as('invites'));
 
-    const result = await invitedMembersQuery.limit(Number(limit)).offset(Number(offset));
-
-    const items = result.map(({ expiresAt, createdAt, ...rest }) => ({
-      ...rest,
-      expiresAt: expiresAt.toISOString(),
-      createdAt: createdAt.toISOString(),
-    }));
+    const items = await invitedMembersQuery.limit(Number(limit)).offset(Number(offset));
 
     return ctx.json({ success: true, data: { items, total } }, 200);
   });

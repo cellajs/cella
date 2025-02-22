@@ -4,7 +4,7 @@ import type { ApiError } from '~/lib/api';
 import { queryClient } from '~/lib/router';
 
 import { type GetUsersParams, type UpdateUserParams, getUser, getUsers, updateSelf, updateUser } from '~/modules/users/api';
-import { getAndSetMe, getAndSetMenu } from '~/modules/users/helpers';
+import { getAndSetMe, getAndSetMenu, getAndSetUserAuthInfo } from '~/modules/users/helpers';
 import type { User } from '~/modules/users/types';
 import { useUserStore } from '~/store/user';
 
@@ -17,6 +17,7 @@ export const usersKeys = {
   many: ['users'] as const,
   list: () => [...usersKeys.many, 'list'] as const,
   table: (filters?: GetUsersParams) => [...usersKeys.list(), filters] as const,
+  // TODO is it useful to have the below as a cache key? Are there any queries that would use the cache?
   leaveEntity: () => [...usersKeys.one, 'leave'] as const,
   update: () => [...usersKeys.one, 'update'] as const,
   delete: () => [...usersKeys.one, 'delete'] as const,
@@ -46,6 +47,14 @@ export const userQueryOptions = (idOrSlug: string) => queryOptions({ queryKey: u
  * @returns Query options.
  */
 export const meQueryOptions = (retry = 0) => queryOptions({ queryKey: meKeys.all, queryFn: getAndSetMe, retry });
+
+/**
+ * Query options for fetching the authentication information of the current authenticated user.
+ *
+ * @param retry - The number of retry attempts on failure.
+ * @returns Query options.
+ */
+export const userAuthQueryOptions = (retry = 0) => queryOptions({ queryKey: [], queryFn: getAndSetUserAuthInfo, retry });
 
 /**
  * Query options for fetching the current authenticated user's menu.

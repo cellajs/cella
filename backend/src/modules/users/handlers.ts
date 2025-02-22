@@ -1,4 +1,4 @@
-import { and, count, eq, ilike, inArray, or } from 'drizzle-orm';
+import { and, count, eq, getTableColumns, ilike, inArray, or } from 'drizzle-orm';
 
 import { OpenAPIHono } from '@hono/zod-openapi';
 import { db } from '#/db/db';
@@ -9,11 +9,11 @@ import { type ErrorType, createError, errorResponse } from '#/lib/errors';
 import { logEvent } from '#/middlewares/logger/log-event';
 import { getUsersByConditions } from '#/modules/users/helpers/get-user-by';
 import defaultHook from '#/utils/default-hook';
+import { getIsoDate } from '#/utils/iso-date';
 import { getOrderColumn } from '#/utils/order-column';
 import { prepareStringForILikeFilter } from '#/utils/sql';
 import { checkSlugAvailable } from '../general/helpers/check-slug';
 import { userSelect } from './helpers/select';
-import { transformDbUser } from './helpers/transform-database-user';
 import usersRouteConfig from './routes';
 
 // Set default hook to catch validation errors
@@ -65,7 +65,7 @@ const usersRoutes = app
     if (role) filters.push(eq(usersTable.role, role));
 
     const usersQuery = db
-      .select({ user: userSelect })
+      .select({ ...getTableColumns(userSelect) })
       .from(usersTable)
       .where(filters.length > 0 ? and(...filters) : undefined)
       .orderBy(orderColumn)
@@ -73,9 +73,7 @@ const usersRoutes = app
 
     const [{ total }] = await db.select({ total: count() }).from(usersQuery.as('users'));
 
-    const result = await usersQuery.limit(Number(limit)).offset(Number(offset));
-
-    const items = result.map(({ user }) => transformDbUser(user));
+    const items = await usersQuery.limit(Number(limit)).offset(Number(offset));
 
     return ctx.json({ success: true, data: { items, total } }, 200);
   })
@@ -139,7 +137,7 @@ const usersRoutes = app
     const memberships = getContextMemberships();
 
     if (idOrSlug === user.id || idOrSlug === user.slug) {
-      return ctx.json({ success: true, data: transformDbUser(user) }, 200);
+      return ctx.json({ success: true, data: user }, 200);
     }
 
     const [targetUser] = await getUsersByConditions([or(eq(usersTable.id, idOrSlug), eq(usersTable.slug, idOrSlug))]);
@@ -157,7 +155,7 @@ const usersRoutes = app
 
     if (user.role !== 'admin' && !jointMembership) return errorResponse(ctx, 403, 'forbidden', 'warn', 'user', { user: targetUser.id });
 
-    return ctx.json({ success: true, data: transformDbUser(targetUser) }, 200);
+    return ctx.json({ success: true, data: targetUser }, 200);
   })
   /*
    * Update a user by id or slug
@@ -189,7 +187,7 @@ const usersRoutes = app
         thumbnailUrl,
         slug,
         name: [firstName, lastName].filter(Boolean).join(' ') || slug,
-        modifiedAt: new Date(),
+        modifiedAt: getIsoDate(),
         modifiedBy: user.id,
       })
       .where(eq(usersTable.id, targetUser.id))
@@ -197,7 +195,7 @@ const usersRoutes = app
 
     logEvent('User updated', { user: updatedUser.id });
 
-    return ctx.json({ success: true, data: transformDbUser(updatedUser) }, 200);
+    return ctx.json({ success: true, data: updatedUser }, 200);
   });
 
 export default usersRoutes;

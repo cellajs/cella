@@ -197,29 +197,10 @@ export const signOut = () => client['sign-out'].$get();
  *
  * @returns The challenge data for passkey authentication.
  */
-export const getChallenge = async () => {
+export const getPasskeyChallenge = async () => {
   const response = await client['passkey-challenge'].$get();
   const json = await handleResponse(response);
   return json;
-};
-
-type RegisterPasskeyProp = Parameters<(typeof client)['passkey-registration']['$post']>['0']['json'];
-
-/**
- * Register a passkey for a user
- *
- * @param data - Passkey registration data.
- * @param data.userEmail - Email address of the user.
- * @param data.attestationObject - Attestation object from the WebAuthn response.
- * @param data.clientDataJSON - Client data JSON from the WebAuthn response.
- * @returns A boolean indicating success of the passkey registration.
- */
-export const registerPasskey = async (data: RegisterPasskeyProp) => {
-  const apiResponse = await client['passkey-registration'].$post({
-    json: data,
-  });
-  const json = await handleResponse(apiResponse);
-  return json.success;
 };
 
 type AuthWithPasskeyProp = Parameters<(typeof client)['passkey-verification']['$post']>['0']['json'];

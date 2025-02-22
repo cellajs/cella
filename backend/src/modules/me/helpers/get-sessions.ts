@@ -2,8 +2,7 @@ import { eq } from 'drizzle-orm';
 import type { Context } from 'hono';
 import { db } from '#/db/db';
 import { sessionsTable } from '#/db/schema/sessions';
-import { getAuthCookie } from '#/modules/auth/helpers/cookie';
-import { encodeLowerCased } from '#/utils/oslo';
+import { getParsedSessionCookie } from '#/modules/auth/helpers/session';
 
 // TODO find a safer way to show sessions, a fixed schema
 /**
@@ -15,11 +14,10 @@ import { encodeLowerCased } from '#/utils/oslo';
  */
 export const getUserSessions = async (ctx: Context, userId: string) => {
   const sessions = await db.select().from(sessionsTable).where(eq(sessionsTable.userId, userId));
-  const sessionToken = (await getAuthCookie(ctx, 'session')) || '';
-  const hashedSessionToken = encodeLowerCased(sessionToken);
+  const sessionData = await getParsedSessionCookie(ctx);
 
   // Destructure/remove token from response
-  const preparedSessions = sessions.map(({ token, ...session }) => ({ ...session, isCurrent: hashedSessionToken === token }));
+  const preparedSessions = sessions.map(({ token, ...session }) => ({ ...session, isCurrent: sessionData?.sessionToken === token }));
 
   return preparedSessions;
 };

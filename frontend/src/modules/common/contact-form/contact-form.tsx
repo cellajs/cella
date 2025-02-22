@@ -1,11 +1,11 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 
 import { Mail, MessageSquare, Send, User } from 'lucide-react';
-import type { SubmitHandler } from 'react-hook-form';
+import type { SubmitHandler, UseFormProps } from 'react-hook-form';
 import * as z from 'zod';
 import { isDialog as checkDialog, dialog } from '~/modules/common/dialoger/state';
 
-import { Suspense, lazy, useEffect } from 'react';
+import { Suspense, isValidElement, lazy, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
@@ -30,10 +30,26 @@ const ContactForm = ({ dialog: isDialog }: { dialog?: boolean }) => {
 
   type FormValues = z.infer<typeof formSchema>;
 
-  const form = useFormWithDraft<FormValues>('contact-form', {
-    resolver: zodResolver(formSchema),
-    defaultValues: { name: user?.name || '', email: user?.email || '', message: '', type: 'contact' },
-  });
+  const formOptions: UseFormProps<FormValues> = useMemo(
+    () => ({
+      resolver: zodResolver(formSchema),
+      defaultValues: { name: user?.name || '', email: user?.email || '', message: '', type: 'contact' },
+    }),
+    [],
+  );
+
+  const dialogTitleUpdate = () => {
+    const targetDialog = dialog.get('contact-form');
+    if (!targetDialog || !checkDialog(targetDialog) || !isValidElement(targetDialog.title)) return;
+
+    // Check if the title's type is a function (React component) and not a string
+    const { type: titleType } = targetDialog.title;
+    if (typeof titleType !== 'function' || titleType.name === 'UnsavedBadge') return;
+
+    dialog.update('contact-form', { title: <UnsavedBadge title={targetDialog?.title} /> });
+  };
+
+  const form = useFormWithDraft<FormValues>('contact-form', { formOptions, onUnsavedChanges: dialogTitleUpdate });
 
   const cancel = () => {
     form.reset();
@@ -54,20 +70,6 @@ const ContactForm = ({ dialog: isDialog }: { dialog?: boolean }) => {
       },
     });
   };
-
-  // TODO can be extracted to a hook?
-  useEffect(() => {
-    if (form.unsavedChanges) {
-      const targetDialog = dialog.get('contact-form');
-      if (targetDialog && checkDialog(targetDialog)) {
-        dialog.update('contact-form', {
-          title: <UnsavedBadge title={targetDialog?.title} />,
-        });
-      }
-      return;
-    }
-    dialog.reset('contact-form');
-  }, [form.unsavedChanges]);
 
   return (
     <div className="flex w-full gap-8 flex-col md:flex-row">

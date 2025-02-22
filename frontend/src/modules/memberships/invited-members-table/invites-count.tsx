@@ -10,7 +10,7 @@ export const InvitedMembers = ({ entity }: InvitedMembersTableProps) => {
   const { t } = useTranslation();
 
   // @ts-ignore TODO: Fix this
-  const total = entity.counts.memberships.pending;
+  const total = entity.counts.membership.pending;
 
   const openSheet = () => {
     sheet.create(

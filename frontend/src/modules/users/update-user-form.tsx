@@ -1,5 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { isValidElement, useEffect, useMemo } from 'react';
+import { isValidElement, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { z } from 'zod';
 import { updateUserBodySchema } from '#/modules/users/schema';
@@ -68,7 +68,18 @@ const UpdateUserForm = ({ user, callback, sheet: isSheet, hiddenFields, children
     [],
   );
 
-  const form = useFormWithDraft<FormValues>(`update-user-${user.id}`, formOptions);
+  const sheetTitleUpdate = () => {
+    const targetSheet = sheet.get('update-user');
+
+    if (!targetSheet || !isValidElement(targetSheet.title)) return;
+    // Check if the title's type is a function (React component) and not a string
+    const { type: titleType } = targetSheet.title;
+
+    if (typeof titleType !== 'function' || titleType.name === 'UnsavedBadge') return;
+    sheet.update('update-user', { title: <UnsavedBadge title={targetSheet.title} /> });
+  };
+
+  const form = useFormWithDraft<FormValues>(`update-user-${user.id}`, { formOptions, onUnsavedChanges: sheetTitleUpdate });
 
   // Prevent data loss
   useBeforeUnload(form.formState.isDirty);
@@ -89,22 +100,6 @@ const UpdateUserForm = ({ user, callback, sheet: isSheet, hiddenFields, children
       },
     });
   };
-
-  // TODO can be extracted to a hook?
-  useEffect(() => {
-    if (form.unsavedChanges) {
-      const targetSheet = sheet.get('update-user');
-
-      if (!targetSheet || !isValidElement(targetSheet.title)) return;
-      // Check if the title's type is a function (React component) and not a string
-      const { type: titleType } = targetSheet.title;
-
-      if (typeof titleType !== 'function' || titleType.name === 'UnsavedBadge') return;
-      sheet.update('update-user', {
-        title: <UnsavedBadge title={targetSheet.title} />,
-      });
-    }
-  }, [form.unsavedChanges]);
 
   const setImageUrl = (url: string | null) => {
     form.setValue('thumbnailUrl', url, { shouldDirty: true });

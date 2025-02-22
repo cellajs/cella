@@ -2,27 +2,27 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useTranslation } from 'react-i18next';
 import type { z } from 'zod';
 
-import { Info, Send } from 'lucide-react';
-import { useFormWithDraft } from '~/hooks/use-draft-form';
-import BlockNoteContent from '~/modules/common/form-fields/blocknote-content';
-import SelectRoles from '~/modules/common/form-fields/select-roles';
-import { sheet } from '~/modules/common/sheeter/state';
-import { Button, SubmitButton } from '~/modules/ui/button';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
-import { sendNewsletterBodySchema } from '#/modules/organizations/schema';
-
-import '@blocknote/shadcn/style.css';
 import type { CheckedState } from '@radix-ui/react-checkbox';
 import { useMutation } from '@tanstack/react-query';
-import { useState } from 'react';
+import { Info, Send } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import type { UseFormProps } from 'react-hook-form';
+import { useFormWithDraft } from '~/hooks/use-draft-form';
 import { AlertWrap } from '~/modules/common/alert-wrap';
+import { sendNewsletterBodySchema } from '#/modules/organizations/schema';
 import '~/modules/common/blocknote/app-specific-custom/styles.css';
 import '~/modules/common/blocknote/styles.css';
+import BlockNoteContent from '~/modules/common/form-fields/blocknote-content';
 import InputFormField from '~/modules/common/form-fields/input';
+import SelectRoles from '~/modules/common/form-fields/select-roles';
+import { sheet } from '~/modules/common/sheeter/state';
 import { toaster } from '~/modules/common/toaster';
 import { sendNewsletter } from '~/modules/organizations/api';
+import { Button, SubmitButton } from '~/modules/ui/button';
 import { Checkbox } from '~/modules/ui/checkbox';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
 
+import '@blocknote/shadcn/style.css';
 interface NewsletterFormProps {
   organizationIds: string[];
 }
@@ -36,16 +36,16 @@ const NewsletterForm = ({ organizationIds }: NewsletterFormProps) => {
 
   const [testOnly, setTestOnly] = useState<CheckedState>(false);
 
+  const formOptions: UseFormProps<FormValues> = useMemo(
+    () => ({
+      resolver: zodResolver(formSchema),
+      defaultValues: { organizationIds, subject: '', roles: [], content: '' },
+    }),
+    [],
+  );
+
   // Create form
-  const form = useFormWithDraft<FormValues>('newsletter', {
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      organizationIds,
-      subject: '',
-      roles: [],
-      content: '',
-    },
-  });
+  const form = useFormWithDraft<FormValues>('newsletter', { formOptions });
 
   // Send newsletter
   const { mutate: _sendNewsletter, isPending } = useMutation({
@@ -73,14 +73,13 @@ const NewsletterForm = ({ organizationIds }: NewsletterFormProps) => {
 
         <BlockNoteContent control={form.control} name="content" required label={t('common:message')} blocknoteId="blocknote-newsletter" />
 
-        {/* TODO so many aria-required? */}
         <FormField
           control={form.control}
           name="roles"
           render={({ field }) => (
-            <FormItem aria-required="true">
-              <FormLabel aria-required="true">{t('common:roles')}</FormLabel>
-              <FormControl aria-required="true">
+            <FormItem>
+              <FormLabel>{t('common:roles')}</FormLabel>
+              <FormControl>
                 <SelectRoles {...field} />
               </FormControl>
               <FormMessage />

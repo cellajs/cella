@@ -1,16 +1,10 @@
-import type { ContextEntity } from 'config';
+import type { z } from 'zod';
 import type { MinimumMembershipInfo } from '~/modules/memberships/types';
+import type { limitEntitySchema } from '#/modules/general/schema';
 
-export type MinimumEntityItem = {
-  id: string;
-  entity: ContextEntity;
-  slug: string;
-  name: string;
-  thumbnailUrl: string | null;
-  bannerUrl: string | null;
-};
+export type LimitedEntity = z.infer<typeof limitEntitySchema>;
 
-export type EntityPage = MinimumEntityItem & {
+export type EntityPage = LimitedEntity & {
   organizationId?: string | null;
   membership: MinimumMembershipInfo | null;
 };

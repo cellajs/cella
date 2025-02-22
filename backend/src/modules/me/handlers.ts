@@ -1,4 +1,4 @@
-import { and, asc, eq } from 'drizzle-orm';
+import { and, asc, eq, inArray, isNotNull } from 'drizzle-orm';
 import type { z } from 'zod';
 
 import type { EnabledOauthProvider } from 'config';
@@ -6,9 +6,8 @@ import { db } from '#/db/db';
 import { usersTable } from '#/db/schema/users';
 import { type ErrorType, createError, errorResponse } from '#/lib/errors';
 import { logEvent } from '#/middlewares/logger/log-event';
-import { invalidateSessionById, invalidateUserSessions, validateSession } from '../auth/helpers/session';
+import { getParsedSessionCookie, invalidateSessionById, invalidateUserSessions, validateSession } from '../auth/helpers/session';
 import { checkSlugAvailable } from '../general/helpers/check-slug';
-import { transformDbUser } from '../users/helpers/transform-database-user';
 import meRouteConfig from './routes';
 
 import { OpenAPIHono } from '@hono/zod-openapi';
@@ -21,7 +20,9 @@ import { type Env, getContextMemberships, getContextUser } from '#/lib/context';
 import { resolveEntity } from '#/lib/entity';
 import { sendSSEToUsers } from '#/lib/sse';
 import defaultHook from '#/utils/default-hook';
+import { getIsoDate } from '#/utils/iso-date';
 import { deleteAuthCookie, getAuthCookie } from '../auth/helpers/cookie';
+import { parseAndValidatePasskeyAttestation } from '../auth/helpers/passkey';
 import { membershipSelect } from '../memberships/helpers/select';
 import { getUserSessions } from './helpers/get-sessions';
 import type { menuItemSchema, userMenuSchema } from './schema';
@@ -40,9 +41,9 @@ const meRoutes = app
     const user = getContextUser();
 
     // Update last visit date
-    await db.update(usersTable).set({ lastStartedAt: new Date() }).where(eq(usersTable.id, user.id));
+    await db.update(usersTable).set({ lastStartedAt: getIsoDate() }).where(eq(usersTable.id, user.id));
 
-    return ctx.json({ success: true, data: transformDbUser(user) }, 200);
+    return ctx.json({ success: true, data: user }, 200);
   })
   /*
    * Get current user auth info
@@ -62,9 +63,59 @@ const meRoutes = app
     return ctx.json({ success: true, data: { oauth: validOAuthAccounts, passkey: !!passkeys.length, sessions } }, 200);
   })
   /*
+   * Get current user relevant entities
+   */
+  .openapi(meRouteConfig.getSelfEntities, async (ctx) => {
+    const memberships = getContextMemberships();
+
+    const membershipMap = new Map(
+      memberships.map((membership) => {
+        const entityIdField = entityIdFields[membership.type];
+        return [membership[entityIdField], membership];
+      }),
+    );
+
+    // Get IDs user is member of
+    const userEntityIds = Array.from(membershipMap.keys()).filter((el) => el !== null);
+
+    if (userEntityIds.length === 0) return ctx.json({ success: true, data: [] }, 200);
+
+    const queries = config.contextEntityTypes
+      .map((entityType) => {
+        const table = entityTables[entityType];
+        if (!table) return null;
+
+        return db
+          .select({
+            id: table.id,
+            slug: table.slug,
+            name: table.name,
+            entity: table.entity,
+            thumbnailUrl: table.thumbnailUrl,
+            bannerUrl: table.bannerUrl,
+          })
+          .from(table)
+          .where(inArray(table.id, userEntityIds));
+      })
+      .filter((el) => el !== null);
+
+    // Fetch entities that match the user’s memberships
+    const entities = (await Promise.all(queries)).flat();
+
+    const data = entities
+      .map((entity) => {
+        const membership = membershipMap.get(entity.id);
+        if (!membership) return null;
+        return { ...entity, membership };
+      })
+      .filter((el) => el !== null);
+
+    return ctx.json({ success: true, data }, 200);
+  })
+  /*
    * Get current user menu
    */
-  .openapi(meRouteConfig.getUserMenu, async (ctx) => {
+  .openapi(meRouteConfig.getSelfMenu, async (ctx) => {
     const user = getContextUser();
     const memberships = getContextMemberships();
 
@@ -89,7 +140,7 @@ const meRoutes = app
         .from(mainTable)
         .where(and(eq(membershipsTable.userId, user.id), eq(membershipsTable.type, section.entity)))
         .orderBy(asc(membershipsTable.order))
-        .innerJoin(membershipsTable, eq(membershipsTable[mainEntityIdField], mainTable.id));
+        .innerJoin(membershipsTable, and(eq(membershipsTable[mainEntityIdField], mainTable.id), isNotNull(membershipsTable.activatedAt)));
 
       // If the section has a submenu, fetch the submenu items
       if (section.subEntity) {
@@ -150,8 +201,9 @@ const meRoutes = app
 
     const sessionIds = Array.isArray(ids) ? ids : [ids];
 
-    const currentSessionToken = (await getAuthCookie(ctx, 'session')) || '';
-    const { session } = await validateSession(currentSessionToken);
+    const currentSessionData = await getParsedSessionCookie(ctx);
+
+    const { session } = currentSessionData ? await validateSession(currentSessionData.sessionToken) : {};
 
     const errors: ErrorType[] = [];
 
@@ -195,13 +247,13 @@ const meRoutes = app
         thumbnailUrl,
         slug,
         name: [firstName, lastName].filter(Boolean).join(' ') || slug,
-        modifiedAt: new Date(),
+        modifiedAt: getIsoDate(),
         modifiedBy: user.id,
       })
       .where(eq(usersTable.id, user.id))
       .returning();
 
-    return ctx.json({ success: true, data: transformDbUser(updatedUser) }, 200);
+    return ctx.json({ success: true, data: updatedUser }, 200);
   })
   /*
    * Delete current user (self)
@@ -227,7 +279,6 @@ const meRoutes = app
    */
   .openapi(meRouteConfig.leaveEntity, async (ctx) => {
     const user = getContextUser();
-    if (!user) return errorResponse(ctx, 404, 'not_found', 'warn', 'user', { user: 'self' });
 
     const { entityType, idOrSlug } = ctx.req.valid('query');
 
@@ -247,7 +298,23 @@ const meRoutes = app
     return ctx.json({ success: true }, 200);
   })
   /*
-   * TODO? here? Also create then..? Delete passkey of self
+   * Create Passkey of self
+   */
+  .openapi(meRouteConfig.createPasskey, async (ctx) => {
+    const { attestationObject, clientDataJSON, userEmail } = ctx.req.valid('json');
+
+    const challengeFromCookie = await getAuthCookie(ctx, 'passkey_challenge');
+    if (!challengeFromCookie) return errorResponse(ctx, 401, 'invalid_credentials', 'error');
+
+    const { credentialId, publicKey } = parseAndValidatePasskeyAttestation(clientDataJSON, attestationObject, challengeFromCookie);
+
+    // Save public key in the database
+    await db.insert(passkeysTable).values({ userEmail, credentialId, publicKey });
+
+    return ctx.json({ success: true }, 200);
+  })
+  /*
+   * Delete passkey of self
    */
   .openapi(meRouteConfig.deletePasskey, async (ctx) => {
     const user = getContextUser();

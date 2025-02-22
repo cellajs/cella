@@ -3,7 +3,7 @@ import { isAuthenticated } from '#/middlewares/guard';
 import { idsBodySchema } from '#/utils/schema/common';
 import { errorResponses, successWithDataSchema, successWithErrorsSchema, successWithoutDataSchema } from '#/utils/schema/responses';
 import { updateUserBodySchema, userSchema } from '../users/schema';
-import { leaveEntityQuerySchema, meAuthInfoSchema, userMenuSchema } from './schema';
+import { leaveEntityQuerySchema, meAuthInfoSchema, meRelativeEntitiesSchema, passkeyRegistrationBodySchema, userMenuSchema } from './schema';
 
 class MeRouteConfig {
   public getSelf = createRouteConfig({
@@ -39,6 +39,26 @@ class MeRouteConfig {
         content: {
           'application/json': {
             schema: successWithDataSchema(meAuthInfoSchema),
+          },
+        },
+      },
+      ...errorResponses,
+    },
+  });
+
+  public getSelfEntities = createRouteConfig({
+    method: 'get',
+    path: '/entities',
+    guard: isAuthenticated,
+    tags: ['me'],
+    summary: 'Get relevant entities for self.',
+    description: 'Get relevant entities that current user (self) is member of.',
+    responses: {
+      200: {
+        description: 'Entities info',
+        content: {
+          'application/json': {
+            schema: successWithDataSchema(meRelativeEntitiesSchema),
           },
         },
       },
@@ -95,7 +115,7 @@ class MeRouteConfig {
     },
   });
 
-  public getUserMenu = createRouteConfig({
+  public getSelfMenu = createRouteConfig({
     method: 'get',
     path: '/menu',
     guard: isAuthenticated,
@@ -156,6 +176,38 @@ class MeRouteConfig {
     responses: {
       200: {
         description: 'Passkey removed',
+        content: {
+          'application/json': {
+            schema: successWithoutDataSchema,
+          },
+        },
+      },
+      ...errorResponses,
+    },
+  });
+
+  public createPasskey = createRouteConfig({
+    method: 'post',
+    path: '/passkey-registration',
+    guard: isAuthenticated,
+    tags: ['auth'],
+    summary: 'Create passkey',
+    description:
+      'The server associates the public key and the credential ID with the user for future authentication flows and checks the validity of the operation by verifying the signed challenge with the public key.',
+    security: [],
+    request: {
+      body: {
+        required: true,
+        content: {
+          'application/json': {
+            schema: passkeyRegistrationBodySchema,
+          },
+        },
+      },
+    },
+    responses: {
+      200: {
+        description: 'Passkey created',
         content: {
           'application/json': {
             schema: successWithoutDataSchema,

@@ -1,15 +1,18 @@
 import { eq } from 'drizzle-orm';
 import type { Context } from 'hono';
+import type { z } from 'zod';
 import { db } from '#/db/db';
 import { supportedOauthProviders } from '#/db/schema/oauth-accounts';
 import { type SessionModel, sessionsTable } from '#/db/schema/sessions';
 import { type UserModel, usersTable } from '#/db/schema/users';
 import { logEvent } from '#/middlewares/logger/log-event';
 import { userSelect } from '#/modules/users/helpers/select';
+import { getIsoDate } from '#/utils/iso-date';
 import { nanoid } from '#/utils/nanoid';
 import { encodeLowerCased } from '#/utils/oslo';
+import { sessionCookieContentSchema } from '#/utils/schema/schema';
 import { TimeSpan, createDate, isExpiredDate } from '#/utils/time-span';
-import { setAuthCookie } from './cookie';
+import { deleteAuthCookie, getAuthCookie, setAuthCookie } from './cookie';
 import { deviceInfo } from './device-info';
 
 // The authentication strategies supported by cella
@@ -45,12 +48,10 @@ export const setUserSession = async (ctx: Context, userId: UserModel['id'], stra
   const sessionToken = nanoid(40);
   const hashedSessionToken = encodeLowerCased(sessionToken);
 
-  // TODO find a way to not include adminUserId in session, but encrypt it in the cookie?
   const session = {
     token: hashedSessionToken,
     userId,
     type: strategy === 'impersonation' ? ('impersonation' as const) : ('regular' as const),
-    adminUserId: strategy === 'impersonation' ? (adminUserId ?? null) : null,
     deviceName: device.name,
     deviceType: device.type,
     deviceOs: device.os,
@@ -66,14 +67,15 @@ export const setUserSession = async (ctx: Context, userId: UserModel['id'], stra
   // Set expiration time span
   const timeSpan = strategy === 'impersonation' ? new TimeSpan(1, 'h') : new TimeSpan(1, 'w');
 
+  const cookieContent = JSON.stringify({ sessionToken: hashedSessionToken, adminUserId });
   // Set session cookie with the unhashed version
-  await setAuthCookie(ctx, 'session', sessionToken, timeSpan);
+  await setAuthCookie(ctx, 'session', cookieContent, timeSpan);
 
   // If it's an impersonation session, we can stop here
   if (strategy === 'impersonation') return;
 
   // Update last sign in date
-  const lastSignInAt = new Date();
+  const lastSignInAt = getIsoDate();
   await db.update(usersTable).set({ lastSignInAt }).where(eq(usersTable.id, userId));
   logEvent('User signed in', { user: userId, strategy });
 };
@@ -84,9 +86,7 @@ export const setUserSession = async (ctx: Context, userId: UserModel['id'], stra
  * @param sessionToken - Hashed session token to validate.
  * @returns The session and user data if valid, otherwise null.
  */
-export const validateSession = async (sessionToken: string) => {
-  const hashedSessionToken = encodeLowerCased(sessionToken);
-
+export const validateSession = async (hashedSessionToken: string) => {
   const [result] = await db
     .select({ session: sessionsTable, user: userSelect })
     .from(sessionsTable)
@@ -115,4 +115,27 @@ export const invalidateUserSessions = async (userId: UserModel['id']) => {
 // Invalidate single session with session id
 export const invalidateSessionById = async (id: string) => {
   await db.delete(sessionsTable).where(eq(sessionsTable.id, id));
+};
+
+export const getParsedSessionCookie = async (
+  ctx: Context,
+  deleteAfterAttempt = false,
+): Promise<z.infer<typeof sessionCookieContentSchema> | null> => {
+  try {
+    // Retrieve session cookie data
+    const sessionData = await getAuthCookie(ctx, 'session');
+
+    // If no session data, return null
+    if (!sessionData) return null;
+
+    // Parse the session data from the string
+    const parsedData = JSON.parse(sessionData);
+
+    // Validate the parsed data using the schema
+    return sessionCookieContentSchema.parse(parsedData);
+  } catch (error) {
+    return null;
+  } finally {
+    if (deleteAfterAttempt) deleteAuthCookie(ctx, 'session');
+  }
 };

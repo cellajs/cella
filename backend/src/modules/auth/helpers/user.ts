@@ -22,7 +22,7 @@ interface HandleCreateUserProps {
   newUser: Omit<InsertUserModel, 'unsubscribeToken'>;
   redirectUrl?: string;
   provider?: { id: EnabledOauthProvider; userId: string };
-  tokenId?: string;
+  tokenId?: string | null;
 }
 
 /**

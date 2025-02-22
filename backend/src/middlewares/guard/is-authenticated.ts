@@ -4,8 +4,8 @@ import { db } from '#/db/db';
 import { membershipsTable } from '#/db/schema/memberships';
 import { usersTable } from '#/db/schema/users';
 import { errorResponse } from '#/lib/errors';
-import { deleteAuthCookie, getAuthCookie } from '#/modules/auth/helpers/cookie';
-import { validateSession } from '#/modules/auth/helpers/session';
+import { deleteAuthCookie } from '#/modules/auth/helpers/cookie';
+import { getParsedSessionCookie, validateSession } from '#/modules/auth/helpers/session';
 import { membershipSelect } from '#/modules/memberships/helpers/select';
 import { TimeSpan } from '#/utils/time-span';
 
@@ -20,16 +20,16 @@ import { TimeSpan } from '#/utils/time-span';
  */
 export async function isAuthenticated(ctx: Context, next: Next): Promise<Response | undefined> {
   // Get session id from cookie
-  const sessionToken = await getAuthCookie(ctx, 'session');
+  const sessionData = await getParsedSessionCookie(ctx);
 
   // If no session id is found (or its corrupted/deprecated), remove session cookie
-  if (!sessionToken) {
+  if (!sessionData) {
     deleteAuthCookie(ctx, 'session');
     return errorResponse(ctx, 401, 'no_session', 'warn');
   }
 
   // Validate session
-  const { session, user } = await validateSession(sessionToken);
+  const { session, user } = await validateSession(sessionData.sessionToken);
 
   // If session validation fails or user not found, remove cookie
   if (!session || !user) {
@@ -39,9 +39,9 @@ export async function isAuthenticated(ctx: Context, next: Next): Promise<Respons
 
   // Update user last seen date
   if (ctx.req.method === 'GET') {
-    const lastSeenAt = new Date();
-    const shouldUpdate = !user.lastSeenAt || user.lastSeenAt.getTime() < lastSeenAt.getTime() - new TimeSpan(5, 'm').milliseconds();
-    if (shouldUpdate) await db.update(usersTable).set({ lastSeenAt }).where(eq(usersTable.id, user.id)).returning();
+    const newLastSeenAt = new Date();
+    const shouldUpdate = !user.lastSeenAt || new Date(user.lastSeenAt).getTime() < newLastSeenAt.getTime() - new TimeSpan(5, 'm').milliseconds();
+    if (shouldUpdate) await db.update(usersTable).set({ lastSeenAt: newLastSeenAt.toISOString() }).where(eq(usersTable.id, user.id)).returning();
   }
 
   ctx.set('user', user);
