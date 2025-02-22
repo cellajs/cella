@@ -9,7 +9,7 @@ import ErrorNotice from '~/modules/common/error-notice';
 import { PublicLayout } from '~/modules/common/public-layout';
 import { Root } from '~/modules/common/root';
 import Spinner from '~/modules/common/spinner';
-import { meQueryOptions, menuQueryOptions } from '~/modules/users/query';
+import { meQueryOptions } from '~/modules/users/query';
 import { useUserStore } from '~/store/user';
 
 // Lazy load main App component, which is behind authentication
@@ -40,8 +40,6 @@ export const PublicRoute = createRoute({
 
       // Fetch and set user and userAuth data to User store(with support of offline access)
       await offlineFetch(meQueryOptions());
-      // Fetch and set user menu to navigation store(with support of offline access)
-      await offlineFetch(menuQueryOptions());
     } catch (error) {
       if (error instanceof Error) {
         Sentry.captureException(error);
@@ -68,8 +66,6 @@ export const AppRoute = createRoute({
 
       // Fetch and set user and userAuth data to User store(with support of offline access)
       await offlineFetch(meQueryOptions());
-      // Fetch and set user menu to navigation store(with support of offline access)
-      await offlineFetch(menuQueryOptions());
     } catch (error) {
       if (error instanceof Error) {
         Sentry.captureException(error);

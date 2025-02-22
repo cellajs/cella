@@ -3,7 +3,8 @@ import { createRoute, useParams } from '@tanstack/react-router';
 import { Suspense, lazy } from 'react';
 import { queryClient } from '~/lib/router';
 import ErrorNotice from '~/modules/common/error-notice';
-import { userQueryOptions } from '~/modules/users/query';
+import Spinner from '~/modules/common/spinner';
+import { userAuthQueryOptions, userQueryOptions } from '~/modules/users/query';
 import { AppRoute } from '~/routes/general';
 
 const UserProfilePage = lazy(() => import('~/modules/users/profile-page'));
@@ -30,9 +31,13 @@ export const UserSettingsRoute = createRoute({
   path: '/settings',
   staticData: { pageTitle: 'Settings', isAuth: true },
   getParentRoute: () => AppRoute,
-  component: () => (
-    <Suspense>
-      <UserSettingsPage />
-    </Suspense>
-  ),
+  loader: async () => queryClient.ensureQueryData(userAuthQueryOptions()),
+  component: () => {
+    const { data: userAuthInfo } = useSuspenseQuery(userAuthQueryOptions());
+    return (
+      <Suspense fallback={<Spinner className="mt-[40vh] h-10 w-10" />}>
+        <UserSettingsPage userAuthInfo={userAuthInfo} />
+      </Suspense>
+    );
+  },
 });

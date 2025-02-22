@@ -73,7 +73,7 @@ export const passkeyRegistration = async () => {
     if (!result) toast.error(t('error:passkey_add_failed'));
 
     toast.success(t('common:success.passkey_added'));
-    useUserStore.getState().setUser({ ...user, passkey: true });
+    useUserStore.getState().setUserAuthInfo({ passkey: true });
   } catch (error) {
     // On cancel throws error NotAllowedError
     console.error('Error during passkey registration:', error);
@@ -136,7 +136,7 @@ export const deletePasskey = async () => {
     const result = await baseRemovePasskey();
     if (result) {
       toast.success(t('common:success.passkey_removed'));
-      useUserStore.getState().setUser({ ...useUserStore.getState().user, passkey: false });
+      useUserStore.getState().setUserAuthInfo({ passkey: false });
     } else toast.error(t('error:passkey_remove_failed'));
   } catch (error) {
     console.error('Error removing passkey:', error);
@@ -152,13 +152,19 @@ export const deletePasskey = async () => {
  */
 export const getAndSetMe = async () => {
   const user = await getSelf();
-  const authInfo = await getSelfAuthInfo();
-  const currentSession = authInfo.sessions.find((s) => s.isCurrent);
-  // if impersonation session don't change the last user
-  if (currentSession?.type === 'impersonation') useUserStore.getState().setUserWithoutSetLastUser({ ...user, ...authInfo });
-  else useUserStore.getState().setUser({ ...user, ...authInfo });
+  useUserStore.getState().setUser(user);
+  return user;
+};
 
-  return { ...user, ...authInfo };
+/**
+ * Retrieves the current user's authentication information and updates the user store.
+ *
+ * @returns The data object.
+ */
+export const getAndSetUserAuthInfo = async () => {
+  const authInfo = await getSelfAuthInfo();
+  useUserStore.getState().setUserAuthInfo(authInfo);
+  return authInfo;
 };
 
 /**

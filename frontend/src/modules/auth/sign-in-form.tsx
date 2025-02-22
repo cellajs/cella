@@ -31,13 +31,12 @@ interface Props {
 // Either simply sign in with password or sign in with token to also accept organization invitation
 export const SignInForm = ({ email, resetSteps, emailEnabled }: Props) => {
   const { t } = useTranslation();
-
   const navigate = useNavigate();
+
   const { lastUser, clearLastUser } = useUserStore();
+  const { redirect, token, tokenId } = useSearch({ from: AuthenticateRoute.id });
 
   const isMobile = window.innerWidth < 640;
-
-  const { redirect, token, tokenId } = useSearch({ from: AuthenticateRoute.id });
 
   // Set up form
   const form = useForm<z.infer<typeof formSchema>>({
@@ -63,7 +62,7 @@ export const SignInForm = ({ email, resetSteps, emailEnabled }: Props) => {
       if (error?.status === 404) return resetSteps();
 
       if (error.type !== 'invalid_password') return;
-      document.getElementById('password-field')?.focus();
+      if (!isMobile) document.getElementById('password-field')?.focus();
       form.reset(form.getValues());
     },
   });

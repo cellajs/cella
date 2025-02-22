@@ -21,13 +21,13 @@ const emailEnabled = enabledStrategies.includes('password') || enabledStrategies
 
 const AuthSteps = () => {
   const { t } = useTranslation();
-  const { lastUser } = useUserStore();
+  const { lastUser, passkey } = useUserStore();
 
   const { token, tokenId } = useSearch({ from: AuthenticateRoute.id });
 
   const [step, setStep] = useState<Step>(!token && lastUser?.email ? 'signIn' : 'checkEmail');
   const [email, setEmail] = useState((!token && lastUser?.email) || '');
-  const [hasPasskey, setHasPasskey] = useState(!token && !!lastUser?.passkey);
+  const [hasPasskey, setHasPasskey] = useState(!token && !!passkey);
 
   // Update step and email to proceed after email is checked
   const handleSetStep = (step: Step, email: string) => {
