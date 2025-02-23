@@ -6,7 +6,7 @@ import { queryClient } from '~/lib/router';
 import { DataTable } from '~/modules/common/data-table';
 import type { BaseTableMethods, BaseTableProps } from '~/modules/common/data-table/types';
 import { toaster } from '~/modules/common/toaster';
-import type { MemberSearch, MembersTableProps } from '~/modules/memberships/members-table';
+import type { MemberSearch, MembersTableProps } from '~/modules/memberships/members-table/table-wrapper';
 import { membersKeys, membersQueryOptions } from '~/modules/memberships/query';
 import { useMemberUpdateMutation } from '~/modules/memberships/query-mutations';
 import type { Member } from '~/modules/memberships/types';

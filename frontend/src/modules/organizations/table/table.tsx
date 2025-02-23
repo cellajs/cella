@@ -10,7 +10,7 @@ import type { BaseTableMethods, BaseTableProps } from '~/modules/common/data-tab
 import { toaster } from '~/modules/common/toaster';
 import { inviteMembers } from '~/modules/memberships/api';
 import { organizationsQueryOptions } from '~/modules/organizations/query';
-import type { OrganizationsSearch } from '~/modules/organizations/table';
+import type { OrganizationsSearch } from '~/modules/organizations/table/table-wrapper';
 import type { Organization } from '~/modules/organizations/types';
 import { useDataFromSuspenseInfiniteQuery } from '~/query/hooks/use-data-from-query';
 import { useUserStore } from '~/store/user';

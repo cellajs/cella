@@ -3,10 +3,12 @@ import type { SortColumn } from 'react-data-grid';
 type Sort = SortColumn['columnKey'];
 type Order = 'asc' | 'desc';
 
-// Get sort and order of column for datatable
 // biome-ignore lint/suspicious/noExplicitAny: <explanation>
 type SetSearch = (newValues: any) => void;
 
+/**
+ * Get sort and order of column for datatable
+ */
 export const useSortColumns = (sort: Sort | undefined, order: Order | undefined, setSearch: SetSearch) => {
   // If sort and order are defined, set sortColumns
   let sortColumns: SortColumn[] = [];

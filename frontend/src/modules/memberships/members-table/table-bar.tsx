@@ -3,41 +3,51 @@ import { motion } from 'motion/react';
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import ColumnsView from '~/modules/common/data-table/columns-view';
+import Export from '~/modules/common/data-table/export';
+import { TableBarContainer } from '~/modules/common/data-table/table-bar-container';
 import TableCount from '~/modules/common/data-table/table-count';
 import { FilterBarActions, FilterBarContent, TableFilterBar } from '~/modules/common/data-table/table-filter-bar';
-import { TableHeaderContainer } from '~/modules/common/data-table/table-header-container';
 import TableSearch from '~/modules/common/data-table/table-search';
-import type { BaseTableHeaderProps, BaseTableMethods } from '~/modules/common/data-table/types';
+import type { BaseTableBarProps, BaseTableMethods } from '~/modules/common/data-table/types';
 import { FocusView } from '~/modules/common/focus-view';
 import SelectRole from '~/modules/common/form-fields/select-role';
+import { InvitedMembers } from '~/modules/memberships/invited-members-table/invites-count';
+import type { MemberSearch, MembersTableProps } from '~/modules/memberships/members-table/table-wrapper';
+import type { Member } from '~/modules/memberships/types';
 import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
-import type { UsersSearch } from '~/modules/users/table';
-import type { User } from '~/modules/users/types';
+import { nanoid } from '~/utils/nanoid';
 
-type UsersTableHeaderProps = BaseTableMethods &
-  BaseTableHeaderProps<User, UsersSearch> & {
-    role: UsersSearch['role'];
+type MembersTableBarProps = MembersTableProps &
+  BaseTableMethods &
+  BaseTableBarProps<Member, MemberSearch> & {
+    role: MemberSearch['role'];
     openInviteDialog: (container: HTMLElement | null) => void;
     openRemoveDialog: () => void;
+    fetchExport: (limit: number) => Promise<Member[]>;
   };
 
-export const UsersTableHeader = ({
+export const MembersTableBar = ({
+  entity,
   total,
   selected,
   q,
-  role,
   setSearch,
+  role,
   columns,
   setColumns,
+  isSheet = false,
+  fetchExport,
   clearSelection,
   openInviteDialog,
   openRemoveDialog,
-}: UsersTableHeaderProps) => {
+}: MembersTableBarProps) => {
   const { t } = useTranslation();
   const containerRef = useRef(null);
 
   const isFiltered = role !== undefined || !!q;
+  const isAdmin = entity.membership?.role === 'admin';
+  const entityType = entity.entity;
 
   // Drop selected Rows on search
   const onSearch = (searchString: string) => {
@@ -47,7 +57,7 @@ export const UsersTableHeader = ({
   // Drop selected Rows on role change
   const onRoleChange = (role?: string) => {
     clearSelection();
-    setSearch({ role: role === 'all' ? undefined : (role as UsersSearch['role']) });
+    setSearch({ role: role === 'all' ? undefined : (role as MemberSearch['role']) });
   };
 
   const onResetFilters = () => {
@@ -56,9 +66,9 @@ export const UsersTableHeader = ({
   };
 
   return (
-    <>
-      <TableHeaderContainer>
-        {/* Table filter bar */}
+    <div>
+      <TableBarContainer>
+        {/* Table Filter Bar */}
         <TableFilterBar onResetFilters={onResetFilters} isFiltered={isFiltered}>
           <FilterBarActions>
             {selected.length > 0 ? (
@@ -69,7 +79,8 @@ export const UsersTableHeader = ({
                     <motion.span layoutId="members-filter-bar-icon">
                       <Trash size={16} />
                     </motion.span>
-                    <span className="ml-1 max-xs:hidden">{t('common:delete')}</span>
+
+                    <span className="ml-1 max-xs:hidden">{entity.id ? t('common:remove') : t('common:delete')}</span>
                   </motion.button>
                 </Button>
 
@@ -84,15 +95,17 @@ export const UsersTableHeader = ({
                     exit={{ x: -20, opacity: 0 }}
                   >
                     <XSquare size={16} />
-                    <span className="ml-1">{t('common:clear')}</span>{' '}
+                    <span className="ml-1">{t('common:clear')}</span>
                   </motion.button>
                 </Button>
               </>
             ) : (
-              !isFiltered && (
-                <Button asChild onClick={() => openInviteDialog(containerRef.current)}>
-                  <motion.button transition={{ duration: 0.1 }} layoutId="members-filter-bar-button">
-                    <motion.span layoutId="members-filter-bar-icon">
+              !isFiltered &&
+              isAdmin && (
+                //TODO mb rework sheet to find a way use dialog with ref in sheet
+                <Button asChild onClick={() => openInviteDialog(isSheet ? null : containerRef.current)}>
+                  <motion.button transition={{ duration: 0.1 }} layoutId={nanoid()} initial={false}>
+                    <motion.span>
                       <Mail size={16} />
                     </motion.span>
                     <span className="ml-1">{t('common:invite')}</span>
@@ -100,26 +113,33 @@ export const UsersTableHeader = ({
                 </Button>
               )
             )}
-            {selected.length === 0 && <TableCount count={total} type="member" isFiltered={isFiltered} onResetFilters={onResetFilters} />}
+            {selected.length === 0 && (
+              <TableCount count={total} type="member" isFiltered={isFiltered} onResetFilters={onResetFilters}>
+                {isAdmin && !isFiltered && <InvitedMembers entity={entity} />}
+              </TableCount>
+            )}
           </FilterBarActions>
-
           <div className="sm:grow" />
-
           <FilterBarContent className="max-sm:animate-in max-sm:slide-in-from-left max-sm:fade-in max-sm:duration-300">
             <TableSearch value={q} setQuery={onSearch} />
-            <SelectRole value={role === undefined ? 'all' : role} onChange={onRoleChange} className="h-10 sm:min-w-32" />
+            <SelectRole entity value={role === undefined ? 'all' : role} onChange={onRoleChange} className="h-10 sm:min-w-32" />
           </FilterBarContent>
         </TableFilterBar>
 
-        {/* Columns view */}
+        {/* Columns view dropdown */}
         <ColumnsView className="max-lg:hidden" columns={columns} setColumns={setColumns} />
 
-        {/* Focus view */}
-        <FocusView iconOnly />
-      </TableHeaderContainer>
+        {/* Export */}
+        {!isSheet && (
+          <Export className="max-lg:hidden" filename={`${entityType} members`} columns={columns} selectedRows={selected} fetchRows={fetchExport} />
+        )}
 
-      {/* Container for embedded dialog */}
+        {/* Focus view */}
+        {!isSheet && <FocusView iconOnly />}
+      </TableBarContainer>
+
+      {/* Container ref to embed dialog */}
       <div ref={containerRef} />
-    </>
+    </div>
   );
 };

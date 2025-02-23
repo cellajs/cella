@@ -13,7 +13,7 @@ import DeleteUsers from '~/modules/users/delete-users';
 import InviteUsers from '~/modules/users/invite-users';
 import { usersKeys } from '~/modules/users/query';
 import { useColumns } from '~/modules/users/table/columns';
-import { UsersTableHeader } from '~/modules/users/table/table-header';
+import { UsersTableBar } from '~/modules/users/table/table-bar';
 import type { User } from '~/modules/users/types';
 import { useMutateQueryData } from '~/query/hooks/use-mutate-query-data';
 import { UsersTableRoute, type usersSearchSchema } from '~/routes/system';
@@ -96,7 +96,7 @@ const UsersTable = () => {
 
   return (
     <div className="flex flex-col gap-4 h-full">
-      <UsersTableHeader
+      <UsersTableBar
         total={total}
         selected={selected}
         q={q ?? ''}

@@ -15,7 +15,7 @@ import { toaster } from '~/modules/common/toaster';
 import type { EntityPage } from '~/modules/general/types';
 import { getMembers } from '~/modules/memberships/api';
 import { useColumns } from '~/modules/memberships/members-table/columns';
-import { MembersTableHeader } from '~/modules/memberships/members-table/table-header';
+import { MembersTableBar } from '~/modules/memberships/members-table/table-bar';
 import RemoveMembersForm from '~/modules/memberships/remove-member-form';
 import type { Member } from '~/modules/memberships/types';
 import { organizationsKeys } from '~/modules/organizations/query';
@@ -124,7 +124,7 @@ const MembersTable = ({ entity: baseEntity, isSheet = false }: MembersTableProps
 
   return (
     <div className="flex flex-col gap-4 h-full">
-      <MembersTableHeader
+      <MembersTableBar
         entity={entity}
         total={total}
         selected={selected}

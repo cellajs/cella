@@ -3,27 +3,27 @@ import { Mailbox, Plus, Trash, XSquare } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import ColumnsView from '~/modules/common/data-table/columns-view';
 import Export from '~/modules/common/data-table/export';
+import { TableBarContainer } from '~/modules/common/data-table/table-bar-container';
 import TableCount from '~/modules/common/data-table/table-count';
 import { FilterBarActions, FilterBarContent, TableFilterBar } from '~/modules/common/data-table/table-filter-bar';
-import { TableHeaderContainer } from '~/modules/common/data-table/table-header-container';
 import TableSearch from '~/modules/common/data-table/table-search';
-import type { BaseTableHeaderProps, BaseTableMethods } from '~/modules/common/data-table/types';
+import type { BaseTableBarProps, BaseTableMethods } from '~/modules/common/data-table/types';
 import { dialog } from '~/modules/common/dialoger/state';
 import { FocusView } from '~/modules/common/focus-view';
 import CreateOrganizationForm from '~/modules/organizations/create-organization-form';
-import type { OrganizationsSearch } from '~/modules/organizations/table';
+import type { OrganizationsSearch } from '~/modules/organizations/table/table-wrapper';
 import type { Organization } from '~/modules/organizations/types';
 import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
 
-type OrganizationsTableHeaderProps = BaseTableMethods &
-  BaseTableHeaderProps<Organization, OrganizationsSearch> & {
+type OrganizationsTableBarProps = BaseTableMethods &
+  BaseTableBarProps<Organization, OrganizationsSearch> & {
     openRemoveDialog: () => void;
     openNewsletterSheet: () => void;
     fetchExport: (limit: number) => Promise<Organization[]>;
   };
 
-export const OrganizationsTableHeader = ({
+export const OrganizationsTableBar = ({
   total,
   selected,
   q,
@@ -34,7 +34,7 @@ export const OrganizationsTableHeader = ({
   openNewsletterSheet,
   clearSelection,
   fetchExport,
-}: OrganizationsTableHeaderProps) => {
+}: OrganizationsTableBarProps) => {
   const { t } = useTranslation();
 
   const isFiltered = !!q;
@@ -50,7 +50,7 @@ export const OrganizationsTableHeader = ({
   };
 
   return (
-    <TableHeaderContainer>
+    <TableBarContainer>
       {/* Filter bar */}
       <TableFilterBar onResetFilters={onResetFilters} isFiltered={isFiltered}>
         <FilterBarActions>
@@ -105,6 +105,6 @@ export const OrganizationsTableHeader = ({
 
       {/* Focus view */}
       <FocusView iconOnly />
-    </TableHeaderContainer>
+    </TableBarContainer>
   );
 };

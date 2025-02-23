@@ -17,7 +17,7 @@ import { invitedMembersQuerySchema, membersQuerySchema } from '#/modules/members
 //Lazy-loaded components
 const OrganizationPage = lazy(() => import('~/modules/organizations/organization-page'));
 const OrgMembersTable = lazy(() => import('~/modules/organizations/organization-members-table'));
-const AttachmentsTable = lazy(() => import('~/modules/attachments/table'));
+const AttachmentsTable = lazy(() => import('~/modules/attachments/table/table-wrapper'));
 const OrganizationSettings = lazy(() => import('~/modules/organizations/organization-settings'));
 
 // Search query schema

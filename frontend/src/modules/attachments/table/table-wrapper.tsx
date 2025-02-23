@@ -7,7 +7,7 @@ import { AnimatePresence, motion } from 'motion/react';
 import { useTranslation } from 'react-i18next';
 import useSearchParams from '~/hooks/use-search-params';
 import RemoveAttachmentsForm from '~/modules/attachments/table/remove-attachments-form';
-import { AttachmentsTableHeader } from '~/modules/attachments/table/table-header';
+import { AttachmentsTableBar } from '~/modules/attachments/table/table-bar';
 import type { Attachment } from '~/modules/attachments/types';
 import { AlertWrap } from '~/modules/common/alert-wrap';
 import { useSortColumns } from '~/modules/common/data-table/sort-columns';
@@ -65,7 +65,7 @@ const AttachmentsTable = ({ organization, canUpload = true, isSheet = false }: A
 
   return (
     <div className="flex flex-col gap-4 h-full">
-      <AttachmentsTableHeader
+      <AttachmentsTableBar
         organization={organization}
         total={total}
         selected={selected}

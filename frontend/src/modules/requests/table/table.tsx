@@ -5,7 +5,7 @@ import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { DataTable } from '~/modules/common/data-table';
 import type { BaseTableMethods, BaseTableProps } from '~/modules/common/data-table/types';
 import { requestsQueryOptions } from '~/modules/requests/query';
-import type { RequestsSearch } from '~/modules/requests/table';
+import type { RequestsSearch } from '~/modules/requests/table/table-wrapper';
 import type { Request } from '~/modules/requests/types';
 import { useDataFromSuspenseInfiniteQuery } from '~/query/hooks/use-data-from-query';
 
