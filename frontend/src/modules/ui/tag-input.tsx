@@ -12,6 +12,7 @@ import { Badge, type badgeVariants } from '~/modules/ui/badge';
 
 enum Delimiter {
   Comma = ',',
+  Enter = 'Enter',
 }
 
 type OmittedInputProps = Omit<React.InputHTMLAttributes<HTMLInputElement>, 'placeholder' | 'size' | 'value'>;
@@ -69,7 +70,7 @@ const TagInput = React.forwardRef<HTMLInputElement, TagInputProps>((props, ref) 
     placeholder,
     placeholderWhenFull = 'Max tags reached',
 
-    delimiter = Delimiter.Comma,
+    delimiter = Delimiter.Enter,
     truncate,
     minLength,
     maxLength,
@@ -147,6 +148,8 @@ const TagInput = React.forwardRef<HTMLInputElement, TagInputProps>((props, ref) 
   };
 
   const handleInputBlur = (event: React.FocusEvent<HTMLInputElement>) => {
+    if (activeTagIndex) setActiveTagIndex(null);
+
     if (addTagsOnBlur && inputValue.trim()) {
       const newTag = inputValue.trim();
 
@@ -163,79 +166,80 @@ const TagInput = React.forwardRef<HTMLInputElement, TagInputProps>((props, ref) 
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === delimiter || (e.key === 'Enter' && (e.ctrlKey || e.metaKey))) {
-      e.preventDefault();
-      const newTag = inputValue.trim();
+    const { key } = e;
+    const trimmedInput = inputValue.trim();
+    const hasInput = trimmedInput.length > 0;
 
-      const errorMessage = newTagValidation(newTag);
+    // Adding a new tag
+    if ((key === delimiter || key === 'Enter') && hasInput) {
+      e.preventDefault();
+
+      const errorMessage = newTagValidation(trimmedInput);
       if (errorMessage) return toaster(errorMessage, 'warning');
 
-      if (newTag) {
-        setTags([...tags, newTag]);
-        onTagAdd?.(newTag);
-        setTagCount((prevTagCount) => prevTagCount + 1);
-      }
+      setTags([...tags, trimmedInput]);
+      onTagAdd?.(trimmedInput);
+      setTagCount((prevTagCount) => prevTagCount + 1);
       setInputValue('');
-    } else {
-      switch (e.key) {
-        case 'Delete':
-          if (activeTagIndex !== null) {
-            e.preventDefault();
-            const newTags = [...tags];
-            newTags.splice(activeTagIndex, 1);
-            setTags(newTags);
+      return;
+    }
 
-            setActiveTagIndex((prevIndex) => (prevIndex === null || prevIndex === 0 ? 0 : prevIndex - 1));
-            setTagCount((prevTagCount) => prevTagCount - 1);
-            onTagRemove?.(tags[activeTagIndex]);
-          }
+    if (!hasInput) {
+      if (key === 'Backspace' && tags.length) {
+        e.preventDefault();
+        removeTagByIndex(Number(tags[tags.length - 1]));
+        return;
+      }
+      if (key === 'ArrowRight') {
+        e.preventDefault();
+        setActiveTagIndex((prev) => (prev === null || prev + 1 >= tags.length ? 0 : prev + 1));
+        return;
+      }
+      if (key === 'ArrowLeft') {
+        e.preventDefault();
+        setActiveTagIndex((prev) => (prev === null || prev === 0 ? tags.length - 1 : prev - 1));
+        return;
+      }
+    }
+
+    if (activeTagIndex !== null) {
+      e.preventDefault();
+      switch (key) {
+        case 'Escape':
+          setActiveTagIndex(null);
+          break;
+        case 'Delete':
+          removeTagByIndex(activeTagIndex);
           break;
         case 'Backspace':
-          if (activeTagIndex !== null) {
-            e.preventDefault();
-            const newTags = [...tags];
-            newTags.splice(activeTagIndex, 1);
-            setTags(newTags);
-
-            setActiveTagIndex((prevIndex) => (prevIndex === null || prevIndex === 0 ? 0 : prevIndex - 1));
-            setTagCount((prevTagCount) => prevTagCount - 1);
-            onTagRemove?.(tags[activeTagIndex]);
-          }
-          break;
-        case 'ArrowRight':
-          e.preventDefault();
-          setActiveTagIndex((prevIndex) => {
-            if (prevIndex === null) return 0;
-            return prevIndex + 1 >= tags.length ? 0 : prevIndex + 1;
-          });
-          break;
-        case 'ArrowLeft':
-          e.preventDefault();
-          setActiveTagIndex((prevIndex) => {
-            if (prevIndex === null) return tags.length - 1;
-            return prevIndex === 0 ? tags.length - 1 : prevIndex - 1;
-          });
+          removeTagByIndex(activeTagIndex);
           break;
         case 'Home':
-          e.preventDefault();
           setActiveTagIndex(0);
           break;
         case 'End':
-          e.preventDefault();
           setActiveTagIndex(tags.length - 1);
           break;
-        case 'Enter': {
-          if (activeTagIndex && onTagClick) onTagClick(tags[activeTagIndex]);
+        case 'Enter':
+          onTagClick?.(tags[activeTagIndex]);
           break;
-        }
       }
     }
   };
 
+  const removeTagByIndex = (index: number) => {
+    const newTags = [...tags];
+    const removedTag = newTags.splice(index, 1)[0];
+
+    removeTag(removedTag);
+  };
+
   const removeTag = (TagToRemove: string) => {
     setTags(tags.filter((tag) => tag !== TagToRemove));
-    onTagRemove?.(tags.find((tag) => tag === TagToRemove) || '');
     setTagCount((prevTagCount) => prevTagCount - 1);
+    onTagRemove?.(tags.find((tag) => tag === TagToRemove) || '');
+
+    if (activeTagIndex) setActiveTagIndex(activeTagIndex === 0 ? 0 : activeTagIndex - 1);
   };
 
   const handleClearAll = () => {
