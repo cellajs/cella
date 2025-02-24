@@ -1,7 +1,6 @@
-import { pgTable, varchar } from 'drizzle-orm/pg-core';
+import { pgTable, timestamp, varchar } from 'drizzle-orm/pg-core';
 import { nanoid } from '#/utils/nanoid';
 import { attachmentRelationsColumns } from '../attachments-schema-config';
-import { timestampsColumn } from '../utils';
 import { usersTable } from './users';
 
 export const attachmentsTable = pgTable('attachments', {
@@ -14,11 +13,11 @@ export const attachmentsTable = pgTable('attachments', {
     .notNull()
     .default('attachment'),
   url: varchar().notNull(),
-  createdAt: timestampsColumn.createdAt,
+  createdAt: timestamp({ mode: 'string' }).defaultNow().notNull(),
+  modifiedAt: timestamp({ mode: 'string' }),
   createdBy: varchar().references(() => usersTable.id, {
     onDelete: 'set null',
   }),
-  modifiedAt: timestampsColumn.modifiedAt,
   modifiedBy: varchar().references(() => usersTable.id, {
     onDelete: 'set null',
   }),
