@@ -6,7 +6,7 @@ import { tokensTable } from './tokens';
 
 export const emailsTable = pgTable('emails', {
   id: varchar().primaryKey().$defaultFn(nanoid),
-  email: varchar().notNull(),
+  email: varchar().notNull().unique(),
   verified: boolean().notNull().default(false),
   tokenId: varchar().references(() => tokensTable.id, { onDelete: 'cascade' }),
   userId: varchar()

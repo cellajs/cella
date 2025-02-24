@@ -131,14 +131,7 @@ const authRoutes = app
     const slug = slugFromEmail(validToken.email);
 
     // Create user & send verification email
-    const newUser = {
-      id: userId,
-      slug,
-      name: slug,
-      email: validToken.email,
-      emailVerified: true,
-      hashedPassword,
-    };
+    const newUser = { id: userId, slug, name: slug, email: validToken.email, hashedPassword };
 
     return await handleCreateUser({ ctx, newUser, tokenId: validToken.id });
   })
@@ -565,10 +558,20 @@ const authRoutes = app
 
       const transformedUser = transformGithubUserData(githubUser, githubUserEmails);
 
-      const inviteToken = await getAuthCookie(ctx, 'oauth_invite_token');
+      const inviteTokenId = await getAuthCookie(ctx, 'oauth_invite_token');
+
+      const [tokenInfo]: ({ userId: string | null } | undefined)[] = inviteTokenId
+        ? await db.select({ userId: tokensTable.userId }).from(tokensTable).where(eq(tokensTable.id, inviteTokenId))
+        : [];
 
       // Check if user already exists
-      const conditions = [or(eq(usersTable.email, transformedUser.email), ...(userId ? [eq(usersTable.id, userId)] : []))];
+      const conditions = [
+        or(
+          eq(usersTable.email, transformedUser.email),
+          ...(userId ? [eq(usersTable.id, userId)] : []),
+          ...(tokenInfo?.userId ? [eq(usersTable.id, tokenInfo.userId)] : []),
+        ),
+      ];
       const [existingUser] = await getUsersByConditions(conditions);
 
       if (existingUser) {
@@ -576,10 +579,9 @@ const authRoutes = app
         return await updateExistingUser(ctx, existingUser, strategy, {
           providerUser,
           redirectUrl,
-          emailVerified: !!inviteToken || emailVerified,
+          emailVerified: !!inviteTokenId || emailVerified,
         });
       }
-
       // Create new user and oauth account
       return await handleCreateUser({ ctx, newUser: transformedUser, redirectUrl, provider });
     } catch (error) {
@@ -641,12 +643,22 @@ const authRoutes = app
       const redirectUrl = await getOauthRedirectUrl(ctx, existingStatus === null);
       if (existingStatus === 'auth') return ctx.redirect(redirectUrl, 302);
 
-      const inviteToken = await getAuthCookie(ctx, 'oauth_invite_token');
-
       const transformedUser = transformSocialUserData(googleUser);
 
+      const inviteTokenId = await getAuthCookie(ctx, 'oauth_invite_token');
+
+      const [tokenInfo]: ({ userId: string | null } | undefined)[] = inviteTokenId
+        ? await db.select({ userId: tokensTable.userId }).from(tokensTable).where(eq(tokensTable.id, inviteTokenId))
+        : [];
+
       // Check if user already exists
-      const conditions = [or(eq(usersTable.email, transformedUser.email), ...(userId ? [eq(usersTable.id, userId)] : []))];
+      const conditions = [
+        or(
+          eq(usersTable.email, transformedUser.email),
+          ...(userId ? [eq(usersTable.id, userId)] : []),
+          ...(tokenInfo?.userId ? [eq(usersTable.id, tokenInfo.userId)] : []),
+        ),
+      ];
       const [existingUser] = await getUsersByConditions(conditions);
 
       if (existingUser) {
@@ -654,7 +666,7 @@ const authRoutes = app
         return await updateExistingUser(ctx, existingUser, strategy, {
           providerUser,
           redirectUrl,
-          emailVerified: !!inviteToken || emailVerified,
+          emailVerified: !!inviteTokenId || emailVerified,
         });
       }
 
@@ -719,12 +731,22 @@ const authRoutes = app
       const redirectUrl = await getOauthRedirectUrl(ctx, existingStatus === null);
       if (existingStatus === 'auth') return ctx.redirect(redirectUrl, 302);
 
-      const inviteToken = await getAuthCookie(ctx, 'oauth_invite_token');
-
       const transformedUser = transformSocialUserData(microsoftUser);
 
+      const inviteTokenId = await getAuthCookie(ctx, 'oauth_invite_token');
+
+      const [tokenInfo]: ({ userId: string | null } | undefined)[] = inviteTokenId
+        ? await db.select({ userId: tokensTable.userId }).from(tokensTable).where(eq(tokensTable.id, inviteTokenId))
+        : [];
+
       // Check if user already exists
-      const conditions = [or(eq(usersTable.email, transformedUser.email), ...(userId ? [eq(usersTable.id, userId)] : []))];
+      const conditions = [
+        or(
+          eq(usersTable.email, transformedUser.email),
+          ...(userId ? [eq(usersTable.id, userId)] : []),
+          ...(tokenInfo?.userId ? [eq(usersTable.id, tokenInfo.userId)] : []),
+        ),
+      ];
       const [existingUser] = await getUsersByConditions(conditions);
 
       if (existingUser) {
@@ -732,7 +754,7 @@ const authRoutes = app
         return await updateExistingUser(ctx, existingUser, strategy, {
           providerUser,
           redirectUrl,
-          emailVerified: !!inviteToken,
+          emailVerified: !!inviteTokenId,
         });
       }
 
