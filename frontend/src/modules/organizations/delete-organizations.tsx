@@ -21,9 +21,8 @@ const DeleteOrganizations = ({ organizations, callback, dialog: isDialog }: Prop
       {
         onSuccess: () => {
           for (const organization of organizations) {
-            queryClient.invalidateQueries({
-              queryKey: organizationsKeys.single(organization.id),
-            });
+            queryClient.invalidateQueries({ queryKey: organizationsKeys.single(organization.id) });
+            queryClient.invalidateQueries({ queryKey: organizationsKeys.single(organization.slug) });
             deleteMenuItem(organization.id);
           }
           if (isDialog) dialog.remove();

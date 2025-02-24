@@ -75,7 +75,7 @@ const UpdateOrganizationForm = ({ organization, callback, sheet: isSheet }: Prop
 
   const onSubmit = (json: FormValues) => {
     mutate(
-      { idOrSlug: organization.id, json },
+      { idOrSlug: organization.slug, json },
       {
         onSuccess: (updatedOrganization) => {
           if (isSheet) sheet.remove('update-organization');
