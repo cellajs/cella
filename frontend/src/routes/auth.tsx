@@ -1,7 +1,6 @@
 import { createRoute, redirect } from '@tanstack/react-router';
 import { config } from 'config';
 import { z } from 'zod';
-import { queryClient } from '~/lib/router';
 import AcceptOrgInvite from '~/modules/auth/accept-org-invite';
 import AuthPage from '~/modules/auth/auth-layout';
 import CreatePasswordForm from '~/modules/auth/create-password-form';
@@ -12,6 +11,7 @@ import AuthSteps from '~/modules/auth/steps';
 import Unsubscribed from '~/modules/auth/unsubscribed';
 import VerifyEmail from '~/modules/auth/verify-email';
 import { meQueryOptions } from '~/modules/users/query';
+import { queryClient } from '~/query/query-client';
 import { PublicRoute } from '~/routes/general';
 import { useUserStore } from '~/store/user';
 

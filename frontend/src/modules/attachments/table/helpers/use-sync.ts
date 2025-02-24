@@ -1,7 +1,7 @@
 import { type ChangeMessage, ShapeStream, type ShapeStreamOptions } from '@electric-sql/client';
 import { config } from 'config';
 import { useEffect } from 'react';
-import { queryClient } from '~/lib/router';
+import { queryClient } from '~/query/query-client';
 
 import type { AttachmentInfiniteQueryData } from '~/modules/attachments/query-mutations';
 

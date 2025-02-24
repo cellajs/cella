@@ -1,12 +1,12 @@
 import { createRoute, useParams } from '@tanstack/react-router';
 import { Suspense, lazy } from 'react';
 import { z } from 'zod';
-import { offlineFetch, offlineFetchInfinite } from '~/lib/query-client';
-import { queryClient } from '~/lib/router';
 import { attachmentsQueryOptions } from '~/modules/attachments/query';
 import ErrorNotice from '~/modules/common/error-notice';
 import { membersQueryOptions } from '~/modules/memberships/query';
 import { organizationQueryOptions } from '~/modules/organizations/query';
+import { offlineFetch, offlineFetchInfinite } from '~/query/hybrid-fetch';
+import { queryClient } from '~/query/query-client';
 
 import type { Organization as OrganizationType } from '~/modules/organizations/types';
 import { AppRoute } from '~/routes/general';

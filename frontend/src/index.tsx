@@ -15,7 +15,7 @@ if (!root) throw new Error('Root element not found');
 
 import router from '~/lib/router';
 import { initSentry } from '~/lib/sentry';
-import { QueryClientProvider } from '~/query';
+import { QueryClientProvider } from '~/query/provider';
 import { renderAscii } from '~/utils/ascii';
 
 // Render ASCII logo in console

@@ -1,5 +1,5 @@
 import type { QueryKey } from '@tanstack/react-query';
-import { queryClient } from '~/lib/router';
+import { queryClient } from '~/query/query-client';
 import type { InfiniteQueryData, QueryData } from '~/query/types';
 
 /**

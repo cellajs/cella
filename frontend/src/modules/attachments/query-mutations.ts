@@ -2,7 +2,6 @@ import { useMutation } from '@tanstack/react-query';
 import { config } from 'config';
 import { t } from 'i18next';
 import { toast } from 'sonner';
-import { queryClient } from '~/lib/router';
 import {
   type CreateAttachmentParams,
   type DeleteAttachmentsParams,
@@ -16,6 +15,7 @@ import type { Attachment } from '~/modules/attachments/types';
 import { toaster } from '~/modules/common/toaster';
 import { compareQueryKeys } from '~/query/helpers/compare-query-keys';
 import { formatUpdatedData, getCancelingRefetchQueries, getQueries, getQueryItems } from '~/query/helpers/mutate-query';
+import { queryClient } from '~/query/query-client';
 import type { ContextProp, InfiniteQueryData, QueryData } from '~/query/types';
 import { nanoid } from '~/utils/nanoid';
 
@@ -64,7 +64,7 @@ queryClient.setMutationDefaults(attachmentsKeys.create(), {
     for (const attachment of attachments) {
       const optimisticId = attachment.id || nanoid();
 
-      // Make newAttachment satisfied Attachment type for optimistic update
+      // Make newAttachment satisfy Attachment type for optimistic update
       const newAttachment: Attachment = {
         ...attachment,
         name: attachment.filename.split('.').slice(0, -1).join('.'),

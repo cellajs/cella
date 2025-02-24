@@ -1,12 +1,12 @@
 import { createRoute } from '@tanstack/react-router';
 import { Suspense, lazy } from 'react';
 import { z } from 'zod';
-import { queryClient } from '~/lib/router';
 import ErrorNotice from '~/modules/common/error-notice';
 import SystemPage from '~/modules/general/system-page';
 import { organizationsQueryOptions } from '~/modules/organizations/query';
 import { requestsQueryOptions } from '~/modules/requests/query';
 import { usersQueryOptions } from '~/modules/users/query';
+import { queryClient } from '~/query/query-client';
 import { getOrganizationsQuerySchema } from '#/modules/organizations/schema';
 import { getRequestsQuerySchema } from '#/modules/requests/schema';
 import { usersQuerySchema } from '#/modules/users/schema';

@@ -4,12 +4,13 @@ import { createRootRouteWithContext, createRoute, redirect } from '@tanstack/rea
 import { config } from 'config';
 import { Suspense, lazy } from 'react';
 import { z } from 'zod';
-import { offlineFetch, onError } from '~/lib/query-client';
 import ErrorNotice from '~/modules/common/error-notice';
 import { PublicLayout } from '~/modules/common/public-layout';
 import { Root } from '~/modules/common/root';
 import Spinner from '~/modules/common/spinner';
 import { meQueryOptions } from '~/modules/users/query';
+import { offlineFetch } from '~/query/hybrid-fetch';
+import { onError } from '~/query/on-error';
 import { useUserStore } from '~/store/user';
 
 // Lazy load main App component, which is behind authentication

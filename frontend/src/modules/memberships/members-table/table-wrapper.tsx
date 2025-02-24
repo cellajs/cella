@@ -7,7 +7,6 @@ import { config } from 'config';
 import { Trans, useTranslation } from 'react-i18next';
 import useSearchParams from '~/hooks/use-search-params';
 import { useUserSheet } from '~/hooks/use-user-sheet';
-import { queryClient } from '~/lib/router';
 import { useSortColumns } from '~/modules/common/data-table/sort-columns';
 import type { BaseTableMethods } from '~/modules/common/data-table/types';
 import { dialog } from '~/modules/common/dialoger/state';
@@ -20,6 +19,7 @@ import RemoveMembersForm from '~/modules/memberships/remove-member-form';
 import type { Member } from '~/modules/memberships/types';
 import { organizationsKeys } from '~/modules/organizations/query';
 import InviteUsers from '~/modules/users/invite-users';
+import { queryClient } from '~/query/query-client';
 import type { membersSearchSchema } from '~/routes/organizations';
 import { arraysHaveSameElements } from '~/utils';
 
