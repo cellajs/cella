@@ -8,6 +8,7 @@ import { and, desc, eq, or } from 'drizzle-orm';
 import { db } from '#/db/db';
 import { emailsTable } from '#/db/schema/emails';
 import { membershipsTable } from '#/db/schema/memberships';
+import { oauthAccountsTable } from '#/db/schema/oauth-accounts';
 import { organizationsTable } from '#/db/schema/organizations';
 import { passkeysTable } from '#/db/schema/passkeys';
 import { sessionsTable } from '#/db/schema/sessions';
@@ -575,6 +576,13 @@ const authRoutes = app
       const [existingUser] = await getUsersByConditions(conditions);
 
       if (existingUser) {
+        const haveOauth = await db
+          .select()
+          .from(oauthAccountsTable)
+          .where(and(eq(oauthAccountsTable.userId, existingUser.id), eq(oauthAccountsTable.providerId, provider.id)));
+
+        if (haveOauth.length) return errorRedirect(ctx, 'oauth_merge_error', 'error');
+
         const { slug, name, emailVerified, ...providerUser } = transformedUser;
         return await updateExistingUser(ctx, existingUser, strategy, {
           providerUser,
@@ -662,6 +670,13 @@ const authRoutes = app
       const [existingUser] = await getUsersByConditions(conditions);
 
       if (existingUser) {
+        const haveOauth = await db
+          .select()
+          .from(oauthAccountsTable)
+          .where(and(eq(oauthAccountsTable.userId, existingUser.id), eq(oauthAccountsTable.providerId, provider.id)));
+
+        if (haveOauth.length) return errorRedirect(ctx, 'oauth_merge_error', 'error');
+
         const { slug, name, emailVerified, ...providerUser } = transformedUser;
         return await updateExistingUser(ctx, existingUser, strategy, {
           providerUser,
@@ -750,6 +765,13 @@ const authRoutes = app
       const [existingUser] = await getUsersByConditions(conditions);
 
       if (existingUser) {
+        const haveOauth = await db
+          .select()
+          .from(oauthAccountsTable)
+          .where(and(eq(oauthAccountsTable.userId, existingUser.id), eq(oauthAccountsTable.providerId, provider.id)));
+
+        if (haveOauth.length) return errorRedirect(ctx, 'oauth_merge_error', 'error');
+
         const { slug, name, emailVerified, ...providerUser } = transformedUser;
         return await updateExistingUser(ctx, existingUser, strategy, {
           providerUser,
