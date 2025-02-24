@@ -1,6 +1,6 @@
 import { pgTable, primaryKey, varchar } from 'drizzle-orm/pg-core';
 import { usersTable } from '#/db/schema/users';
-import { timestampsColumn } from '../utils';
+import { timestampsColumn } from '#/db/utils/timestamp-columns';
 
 export const supportedOauthProviders = ['github', 'google', 'microsoft'] as const;
 

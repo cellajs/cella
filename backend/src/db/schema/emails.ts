@@ -1,7 +1,7 @@
 import { boolean, pgTable, timestamp, varchar } from 'drizzle-orm/pg-core';
 import { usersTable } from '#/db/schema/users';
+import { timestampsColumn } from '#/db/utils/timestamp-columns';
 import { nanoid } from '#/utils/nanoid';
-import { timestampsColumn } from '../utils';
 import { tokensTable } from './tokens';
 
 export const emailsTable = pgTable('emails', {

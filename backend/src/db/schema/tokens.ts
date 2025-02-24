@@ -1,7 +1,9 @@
 import { config } from 'config';
 import { varchar } from 'drizzle-orm/pg-core';
 import { usersTable } from '#/db/schema/users';
-import { generateContextEntityFields, generateTable, timestampsColumn } from '#/db/utils';
+import { generateContextEntityFields } from '#/db/utils/context-columns-generation';
+import { generateTable } from '#/db/utils/table-generation';
+import { timestampsColumn } from '#/db/utils/timestamp-columns';
 import { nanoid } from '#/utils/nanoid';
 
 const tokenTypeEnum = config.tokenTypes;

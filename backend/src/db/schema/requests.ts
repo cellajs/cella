@@ -1,6 +1,6 @@
 import { index, pgTable, varchar } from 'drizzle-orm/pg-core';
+import { timestampsColumn } from '#/db/utils/timestamp-columns';
 import { nanoid } from '#/utils/nanoid';
-import { timestampsColumn } from '../utils';
 import { tokensTable } from './tokens';
 
 const requestTypeEnum = ['waitlist', 'newsletter', 'contact'] as const;

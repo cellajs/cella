@@ -1,7 +1,8 @@
 import { type Language, config } from 'config';
-import { boolean, index, json, pgTable, timestamp, varchar } from 'drizzle-orm/pg-core';
+import { boolean, index, json, pgTable, varchar } from 'drizzle-orm/pg-core';
 import { usersTable } from '#/db/schema/users';
 import { nanoid } from '#/utils/nanoid';
+import { timestampsColumn } from '../utils/timestamp-columns';
 
 const languagesEnum = config.languages;
 
@@ -29,9 +30,9 @@ export const organizationsTable = pgTable(
     welcomeText: varchar(),
     authStrategies: json().$type<string[]>().notNull().default([]),
     chatSupport: boolean().notNull().default(false),
+    createdAt: timestampsColumn.createdAt,
     createdBy: varchar().references(() => usersTable.id, { onDelete: 'set null' }),
-    createdAt: timestamp({ mode: 'string' }).defaultNow().notNull(),
-    modifiedAt: timestamp({ mode: 'string' }),
+    modifiedAt: timestampsColumn.modifiedAt,
     modifiedBy: varchar().references(() => usersTable.id, { onDelete: 'set null' }),
   },
   (table) => [index('organizations_name_index').on(table.name.desc()), index('organizations_created_at_index').on(table.createdAt.desc())],
