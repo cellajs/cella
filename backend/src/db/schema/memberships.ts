@@ -1,7 +1,7 @@
 import { config } from 'config';
 import { boolean, doublePrecision, timestamp, varchar } from 'drizzle-orm/pg-core';
 import { usersTable } from '#/db/schema/users';
-import { generateContextEntityFields, generateTable } from '#/db/utils';
+import { generateContextEntityFields, generateTable, timestampsColumn } from '#/db/utils';
 import { nanoid } from '#/utils/nanoid';
 import { tokensTable } from './tokens';
 
@@ -18,9 +18,9 @@ const baseColumns = {
   role: varchar({ enum: roleEnum }).notNull().default('member'),
   tokenId: varchar().references(() => tokensTable.id, { onDelete: 'cascade' }),
   activatedAt: timestamp({ mode: 'string' }),
-  createdAt: timestamp({ mode: 'string' }).defaultNow().notNull(),
+  createdAt: timestampsColumn.createdAt,
   createdBy: varchar().references(() => usersTable.id, { onDelete: 'set null' }),
-  modifiedAt: timestamp(),
+  modifiedAt: timestampsColumn.modifiedAt,
   modifiedBy: varchar().references(() => usersTable.id, { onDelete: 'set null' }),
   archived: boolean().default(false).notNull(),
   muted: boolean().default(false).notNull(),

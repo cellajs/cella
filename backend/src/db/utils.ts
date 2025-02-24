@@ -1,5 +1,5 @@
 import { config } from 'config';
-import { type PgColumnBuilderBase, pgTable, varchar } from 'drizzle-orm/pg-core';
+import { type PgColumnBuilderBase, pgTable, timestamp, varchar } from 'drizzle-orm/pg-core';
 import type { ContextEntityColumns } from '#/db/types';
 import { entityIdFields, entityTables } from '#/entity-config';
 
@@ -41,3 +41,9 @@ export const generateContextEntityFields = () =>
 
     return fields;
   }, {} as ContextEntityColumns);
+
+export const timestampsColumn = {
+  createdAt: timestamp({ mode: 'string' }).defaultNow().notNull(),
+  modifiedAt: timestamp({ mode: 'string' }),
+  expiresAt: timestamp({ withTimezone: true, mode: 'date' }).notNull(),
+};

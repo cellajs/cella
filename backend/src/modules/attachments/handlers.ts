@@ -11,6 +11,7 @@ import { type ErrorType, createError, errorResponse } from '#/lib/errors';
 import { logEvent } from '#/middlewares/logger/log-event';
 import { splitByAllowance } from '#/permissions/split-by-allowance';
 import defaultHook from '#/utils/default-hook';
+import { getIsoDate } from '#/utils/iso-date';
 import { getOrderColumn } from '#/utils/order-column';
 import { prepareStringForILikeFilter } from '#/utils/sql';
 import attachmentsRouteConfig from './routes';
@@ -147,7 +148,7 @@ const attachmentsRoutes = app
       .update(attachmentsTable)
       .set({
         ...updatedFields,
-        modifiedAt: new Date(),
+        modifiedAt: getIsoDate(),
         modifiedBy: user.id,
       })
       .where(eq(attachmentsTable.id, id))

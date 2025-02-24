@@ -1,7 +1,7 @@
 import { config } from 'config';
-import { timestamp, varchar } from 'drizzle-orm/pg-core';
+import { varchar } from 'drizzle-orm/pg-core';
 import { usersTable } from '#/db/schema/users';
-import { generateContextEntityFields, generateTable } from '#/db/utils';
+import { generateContextEntityFields, generateTable, timestampsColumn } from '#/db/utils';
 import { nanoid } from '#/utils/nanoid';
 
 const tokenTypeEnum = config.tokenTypes;
@@ -15,9 +15,9 @@ const baseColumns = {
   entity: varchar({ enum: config.contextEntityTypes }),
   role: varchar({ enum: roleEnum }),
   userId: varchar().references(() => usersTable.id, { onDelete: 'cascade' }),
-  createdAt: timestamp().defaultNow().notNull(),
+  createdAt: timestampsColumn.createdAt,
   createdBy: varchar().references(() => usersTable.id, { onDelete: 'set null' }),
-  expiresAt: timestamp({ withTimezone: true, mode: 'date' }).notNull(),
+  expiresAt: timestampsColumn.expiresAt,
 };
 
 // Generate entity id columns based on entity-config

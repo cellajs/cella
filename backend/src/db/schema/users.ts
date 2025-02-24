@@ -1,6 +1,7 @@
 import { config } from 'config';
 import { boolean, foreignKey, index, pgTable, timestamp, varchar } from 'drizzle-orm/pg-core';
 import { nanoid } from '#/utils/nanoid';
+import { timestampsColumn } from '../utils';
 
 const roleEnum = config.rolesByType.systemRoles;
 const languagesEnum = config.languages;
@@ -27,8 +28,8 @@ export const usersTable = pgTable(
     lastSeenAt: timestamp({ mode: 'string' }), // last time a GET request has been made in last 5 minutes
     lastStartedAt: timestamp({ mode: 'string' }), // last time GET me
     lastSignInAt: timestamp({ mode: 'string' }), // last time user went through authentication flow
-    createdAt: timestamp({ mode: 'string' }).defaultNow().notNull(),
-    modifiedAt: timestamp({ mode: 'string' }),
+    createdAt: timestampsColumn.createdAt,
+    modifiedAt: timestampsColumn.modifiedAt,
     modifiedBy: varchar(),
     role: varchar({ enum: roleEnum }).notNull().default('user'),
   },
