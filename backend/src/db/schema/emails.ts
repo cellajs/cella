@@ -7,13 +7,13 @@ import { tokensTable } from './tokens';
 export const emailsTable = pgTable('emails', {
   id: varchar().primaryKey().$defaultFn(nanoid),
   email: varchar().notNull(),
-  verified: boolean().default(false).notNull(),
-  createdAt: timestampsColumn.createdAt,
-  verifiedAt: timestamp({ mode: 'string' }),
+  verified: boolean().notNull().default(false),
   tokenId: varchar().references(() => tokensTable.id, { onDelete: 'cascade' }),
   userId: varchar()
     .notNull()
     .references(() => usersTable.id, { onDelete: 'cascade' }),
+  createdAt: timestampsColumn.createdAt,
+  verifiedAt: timestamp({ mode: 'string' }),
 });
 
 export type EmailsModel = typeof emailsTable.$inferSelect;

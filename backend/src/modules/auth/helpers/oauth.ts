@@ -7,9 +7,11 @@ import { getParsedSessionCookie, setUserSession, validateSession } from './sessi
 import { type EnabledOauthProvider, config } from 'config';
 import slugify from 'slugify';
 import { db } from '#/db/db';
+import { emailsTable } from '#/db/schema/emails';
 import { tokensTable } from '#/db/schema/tokens';
 import { createError, errorRedirect, errorResponse } from '#/lib/errors';
 import { logEvent } from '#/middlewares/logger/log-event';
+import { getIsoDate } from '#/utils/iso-date';
 import { TimeSpan, isExpiredDate } from '#/utils/time-span';
 import { type CookieName, deleteAuthCookie, getAuthCookie, setAuthCookie } from './cookie';
 import type { githubUserEmailProps, githubUserProps, googleUserProps, microsoftUserProps } from './oauth-providers';
@@ -158,7 +160,6 @@ export const updateExistingUser = async (ctx: Context, existingUser: UserModel, 
     .update(usersTable)
     .set({
       thumbnailUrl: existingUser.thumbnailUrl || providerUser.thumbnailUrl,
-      emailVerified,
       firstName: existingUser.firstName || providerUser.firstName,
       lastName: existingUser.lastName || providerUser.lastName,
     })
@@ -169,6 +170,8 @@ export const updateExistingUser = async (ctx: Context, existingUser: UserModel, 
     sendVerificationEmail(providerUser.id);
     return ctx.redirect(`${config.frontendUrl}/auth/email-verification`, 302);
   }
+
+  await db.update(emailsTable).set({ verified: true, verifiedAt: getIsoDate() }).where(eq(emailsTable.email, providerUser.email));
 
   // Sign in user
   await setUserSession(ctx, existingUser.id, providerId);

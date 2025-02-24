@@ -6,6 +6,7 @@ import type { EnabledOauthProvider } from 'config';
 import { config } from 'config';
 import { and, desc, eq, or } from 'drizzle-orm';
 import { db } from '#/db/db';
+import { emailsTable } from '#/db/schema/emails';
 import { membershipsTable } from '#/db/schema/memberships';
 import { organizationsTable } from '#/db/schema/organizations';
 import { passkeysTable } from '#/db/schema/passkeys';
@@ -102,13 +103,7 @@ const authRoutes = app
     const slug = slugFromEmail(email);
 
     // Create user & send verification email
-    const newUser = {
-      slug,
-      name: slug,
-      email: email,
-      emailVerified: false,
-      hashedPassword,
-    };
+    const newUser = { slug, name: slug, email, hashedPassword };
 
     return await handleCreateUser({ ctx, newUser });
   })
@@ -183,6 +178,14 @@ const authRoutes = app
       })
       .returning();
 
+    await db
+      .insert(emailsTable)
+      .values({ email: user.email, userId: user.id, tokenId: tokenRecord.id })
+      .onConflictDoUpdate({
+        target: emailsTable.email,
+        set: { tokenId: tokenRecord.id },
+      });
+
     // Send email
     const lng = user.language;
     const verificationLink = `${config.frontendUrl}/auth/verify-email/${token}?tokenId=${tokenRecord.id}`;
@@ -209,7 +212,7 @@ const authRoutes = app
     await db.delete(tokensTable).where(eq(tokensTable.id, token.id));
 
     // Set email verified
-    await db.update(usersTable).set({ emailVerified: true }).where(eq(usersTable.id, token.userId));
+    await db.update(emailsTable).set({ verified: true, verifiedAt: getIsoDate() }).where(eq(emailsTable.tokenId, token.id));
 
     // Sign in user
     await setUserSession(ctx, token.userId, 'email_verification');
@@ -284,7 +287,10 @@ const authRoutes = app
     const hashedPassword = await hashPassword(password);
 
     // update user password and set email verified
-    await db.update(usersTable).set({ hashedPassword, emailVerified: true }).where(eq(usersTable.id, user.id));
+    await Promise.all([
+      db.update(usersTable).set({ hashedPassword }).where(eq(usersTable.id, user.id)),
+      db.update(emailsTable).set({ verified: true, verifiedAt: getIsoDate() }).where(eq(emailsTable.email, user.email)),
+    ]);
 
     // Sign in user
     await setUserSession(ctx, user.id, 'password_reset');
@@ -305,7 +311,12 @@ const authRoutes = app
       return errorResponse(ctx, 400, 'forbidden_strategy', 'warn', undefined, { strategy });
     }
 
-    const user = await getUserBy('email', email.toLowerCase(), 'unsafe');
+    const loweredEmail = email.toLowerCase();
+
+    const [user, [emailInfo]] = await Promise.all([
+      getUserBy('email', loweredEmail, 'unsafe'),
+      db.select().from(emailsTable).where(eq(emailsTable.email, loweredEmail)),
+    ]);
 
     // If user is not found or doesn't have password
     if (!user) return errorResponse(ctx, 404, 'not_found', 'warn', 'user');
@@ -315,14 +326,12 @@ const authRoutes = app
     const validPassword = await verifyPasswordHash(user.hashedPassword, password);
     if (!validPassword) return errorResponse(ctx, 403, 'invalid_password', 'warn');
 
-    const emailVerified = user.emailVerified;
-
     // If email is not verified, send verification email
-    if (!emailVerified) sendVerificationEmail(user.id);
+    if (!emailInfo.verified) sendVerificationEmail(user.id);
     // Sign in user
     else await setUserSession(ctx, user.id, 'password');
 
-    return ctx.json({ success: true, data: { emailVerified } }, 200);
+    return ctx.json({ success: true, data: { emailVerified: emailInfo.verified } }, 200);
   })
   /*
    * Check token (token validation)
@@ -567,7 +576,7 @@ const authRoutes = app
         return await updateExistingUser(ctx, existingUser, strategy, {
           providerUser,
           redirectUrl,
-          emailVerified: existingUser.emailVerified || !!inviteToken || emailVerified,
+          emailVerified: !!inviteToken || emailVerified,
         });
       }
 
@@ -645,7 +654,7 @@ const authRoutes = app
         return await updateExistingUser(ctx, existingUser, strategy, {
           providerUser,
           redirectUrl,
-          emailVerified: existingUser.emailVerified || !!inviteToken || emailVerified,
+          emailVerified: !!inviteToken || emailVerified,
         });
       }
 
@@ -723,7 +732,7 @@ const authRoutes = app
         return await updateExistingUser(ctx, existingUser, strategy, {
           providerUser,
           redirectUrl,
-          emailVerified: existingUser.emailVerified || !!inviteToken,
+          emailVerified: !!inviteToken,
         });
       }
 

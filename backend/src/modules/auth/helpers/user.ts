@@ -23,6 +23,7 @@ interface HandleCreateUserProps {
   redirectUrl?: string;
   provider?: { id: EnabledOauthProvider; userId: string };
   tokenId?: string | null;
+  emailVerified?: boolean;
 }
 
 /**
@@ -35,9 +36,10 @@ interface HandleCreateUserProps {
  * @param redirectUrl - Optional, URL to redirect the user to after successful sign-up.
  * @param provider - Optional, OAuth provider data for linking the user.
  * @param tokenId - Optional, token ID to associate with the new user.
+ * @param emailVerified - Optional, new user email verified.
  * @returns Error response or Redirect response or Response
  */
-export const handleCreateUser = async ({ ctx, newUser, redirectUrl, provider, tokenId }: HandleCreateUserProps) => {
+export const handleCreateUser = async ({ ctx, newUser, redirectUrl, provider, tokenId, emailVerified }: HandleCreateUserProps) => {
   // Check if slug is available
   const slugAvailable = await checkSlugAvailable(newUser.slug);
 
@@ -49,8 +51,7 @@ export const handleCreateUser = async ({ ctx, newUser, redirectUrl, provider, to
       .values({
         slug: slugAvailable ? newUser.slug : `${newUser.slug}-${nanoid(5)}`,
         firstName: newUser.firstName,
-        emailVerified: newUser.emailVerified,
-        email: userEmail.toLowerCase(),
+        email: userEmail,
         name: newUser.name,
         unsubscribeToken: generateUnsubscribeToken(userEmail),
         language: config.defaultLanguage,
@@ -65,7 +66,7 @@ export const handleCreateUser = async ({ ctx, newUser, redirectUrl, provider, to
     if (tokenId) await handleTokenUpdate(user.id, tokenId);
 
     // If email is not verified, send verification email. Otherwise, sign in user
-    if (!user.emailVerified) sendVerificationEmail(user.id);
+    if (!emailVerified) sendVerificationEmail(user.id);
     else await setUserSession(ctx, user.id, provider?.id || 'password');
 
     // Redirect to URL if provided

@@ -20,7 +20,6 @@ export const usersTable = pgTable(
     firstName: varchar(),
     lastName: varchar(),
     email: varchar().notNull().unique(),
-    emailVerified: boolean().notNull().default(false),
     language: varchar({ enum: languagesEnum }).notNull().default(config.defaultLanguage),
     bannerUrl: varchar(),
     thumbnailUrl: varchar(),
