@@ -5,7 +5,7 @@ import { attachmentsQueryOptions } from '~/modules/attachments/query';
 import ErrorNotice from '~/modules/common/error-notice';
 import { membersQueryOptions } from '~/modules/memberships/query';
 import { organizationQueryOptions } from '~/modules/organizations/query';
-import { offlineFetch, offlineFetchInfinite } from '~/query/hybrid-fetch';
+import { hybridFetch, hybridFetchInfinite } from '~/query/hybrid-fetch';
 import { queryClient } from '~/query/query-client';
 
 import type { Organization as OrganizationType } from '~/modules/organizations/types';
@@ -44,7 +44,7 @@ export const OrganizationRoute = createRoute({
       return { orgIdOrSlug: organizationId, isAdmin: membership?.role === 'admin' };
     }
 
-    const organization = await offlineFetch<OrganizationType>(queryOptions);
+    const organization = await hybridFetch<OrganizationType>(queryOptions);
     return { orgIdOrSlug: organization?.id || idOrSlug };
   },
   getParentRoute: () => AppRoute,
@@ -72,7 +72,7 @@ export const OrganizationMembersRoute = createRoute({
     const entityType = 'organization';
 
     const queryOptions = membersQueryOptions({ idOrSlug, orgIdOrSlug, entityType, q, sort, order, role });
-    return offlineFetchInfinite(queryOptions);
+    return hybridFetchInfinite(queryOptions);
   },
   component: () => (
     <Suspense>
@@ -89,7 +89,7 @@ export const OrganizationAttachmentsRoute = createRoute({
   loaderDeps: ({ search: { q, sort, order } }) => ({ q, sort, order }),
   loader: ({ deps: { q, sort, order }, context: { orgIdOrSlug } }) => {
     const queryOptions = attachmentsQueryOptions({ orgIdOrSlug, q, sort, order });
-    return offlineFetchInfinite(queryOptions);
+    return hybridFetchInfinite(queryOptions);
   },
   component: () => {
     const { idOrSlug } = useParams({ from: OrganizationAttachmentsRoute.id });

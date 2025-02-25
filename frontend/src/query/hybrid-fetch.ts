@@ -11,7 +11,7 @@ import { queryClient } from './query-client';
  * @returns Returns query data or undefined.
  */
 // biome-ignore lint/suspicious/noExplicitAny: any is used to infer the type of the options
-export const offlineFetch = async <T>(options: FetchQueryOptions<any, any, any, any>, refetchIfOnline = true): Promise<T | undefined> => {
+export const hybridFetch = async <T>(options: FetchQueryOptions<any, any, any, any>, refetchIfOnline = true): Promise<T | undefined> => {
   const { queryKey } = options;
   const cachedData = queryClient.getQueryData<T>(queryKey);
 
@@ -36,7 +36,7 @@ export const offlineFetch = async <T>(options: FetchQueryOptions<any, any, any, 
  * @returns Returns query data or undefined.
  */
 // biome-ignore lint/suspicious/noExplicitAny: any is used to infer the type of the options
-export const offlineFetchInfinite = async (options: FetchInfiniteQueryOptions<any, any, any, any, any>, refetchIfOnline = true) => {
+export const hybridFetchInfinite = async (options: FetchInfiniteQueryOptions<any, any, any, any, any>, refetchIfOnline = true) => {
   const { queryKey } = options;
   const cachedData = queryClient.getQueryData(queryKey);
 

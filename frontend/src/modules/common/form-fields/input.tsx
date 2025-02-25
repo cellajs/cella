@@ -78,11 +78,11 @@ const InputFormField = <TFieldValues extends FieldValues>({
                 placeholder={placeholder}
                 onFocus={onFocus}
                 readOnly={readOnly}
-                autoResize={type === 'textarea'}
                 autoFocus={autoFocus}
                 defaultValue={defaultValue}
                 value={value || formFieldValue || ''}
                 disabled={disabled}
+                {...(type === 'textarea' ? { autoResize: true } : {})}
                 {...rest}
               />
             </div>
