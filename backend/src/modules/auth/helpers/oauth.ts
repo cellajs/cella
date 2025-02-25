@@ -1,4 +1,4 @@
-import { and, eq } from 'drizzle-orm';
+import { and, eq, or } from 'drizzle-orm';
 import type { Context } from 'hono';
 import { oauthAccountsTable } from '#/db/schema/oauth-accounts';
 import { type UserModel, usersTable } from '#/db/schema/users';
@@ -11,6 +11,7 @@ import { emailsTable } from '#/db/schema/emails';
 import { tokensTable } from '#/db/schema/tokens';
 import { createError, errorRedirect, errorResponse } from '#/lib/errors';
 import { logEvent } from '#/middlewares/logger/log-event';
+import { getUsersByConditions } from '#/modules/users/helpers/get-user-by';
 import { getIsoDate } from '#/utils/iso-date';
 import { TimeSpan, isExpiredDate } from '#/utils/time-span';
 import { type CookieName, deleteAuthCookie, getAuthCookie, setAuthCookie } from './cookie';
@@ -70,7 +71,7 @@ export const handleExistingOauthAccount = async (
   ctx: Context,
   oauthProvider: EnabledOauthProvider,
   oauthProviderId: string,
-  currentUserId: string,
+  currentUserId: string | null,
 ): Promise<'auth' | 'mismatch' | null> => {
   const [existingOauthAccount] = await findOauthAccount(oauthProvider, oauthProviderId);
   if (!existingOauthAccount) return null;
@@ -210,6 +211,54 @@ export const handleInvitationToken = async (ctx: Context) => {
   };
 };
 
+/**
+ * Retrieve OAuth cookies (user ID and invite token) from the request context.
+ *
+ * @param  ctx - Hono context ojb.
+ * @returns - An object containing `userId` and `inviteTokenId`, both or either can be null.
+ */
+export const getOauthCookies = async (ctx: Context) => {
+  const [userId, inviteTokenId] = await Promise.all([getAuthCookie(ctx, 'oauth_connect_user_id'), getAuthCookie(ctx, 'oauth_invite_token')]);
+
+  return { userId: userId || null, inviteTokenId: inviteTokenId || null };
+};
+
+/**
+ * Find an existing user based on their email, user ID, or token ID.
+ * This utility checks if a user already exists in the system based on one or more conditions.
+ *
+ * @param email - Email of  user to search for.
+ * @param userId - User ID to search for (optional).
+ * @param tokenId - Invite token ID to search for (optional).
+ * @returns - Existing user or null if not found.
+ */
+export const findExistingUser = async (email: string, userId: string | null, tokenId: string | null): Promise<UserModel | null> => {
+  const tokenUserId = tokenId
+    ? await db
+        .select({ userId: tokensTable.userId })
+        .from(tokensTable)
+        .where(eq(tokensTable.id, tokenId))
+        .then(([result]) => result.userId)
+    : null;
+
+  const conditions = or(
+    eq(usersTable.email, email),
+    ...(userId ? [eq(usersTable.id, userId)] : []),
+    ...(tokenUserId ? [eq(usersTable.id, tokenUserId)] : []),
+  );
+
+  const [existingUser] = await getUsersByConditions([conditions]);
+  return existingUser || null;
+};
+
+/**
+ * Transform social media user data (Google or Microsoft) into a standardized user object.
+ * This helper formats the data received from the OAuth provider into a uniform user object.
+ *
+ * @param user - User data from OAuth provider (Google or Microsoft).
+ * @returns  - Formatted user object.
+ * @throws - If no email is found in user data.
+ */
 export const transformSocialUserData = (user: googleUserProps | microsoftUserProps) => {
   if (!user.email) throw new Error('no_email_found');
 
@@ -227,6 +276,15 @@ export const transformSocialUserData = (user: googleUserProps | microsoftUserPro
   };
 };
 
+/**
+ * Transform GitHub user data into a standardized user object.
+ * This helper formats the data received from GitHub and fetches the user's primary email.
+ *
+ * @param user - User data from GitHub.
+ * @param emails - List of emails associated with GitHub user.
+ * @returns - Formatted user object.
+ * @throws - If no email is found in user data.
+ */
 export const transformGithubUserData = (user: githubUserProps, emails: githubUserEmailProps[]) => {
   const primaryEmail = emails.find((email) => email.primary);
   if (!primaryEmail) throw new Error('no_email_found');
