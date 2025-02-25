@@ -1,6 +1,6 @@
 import type React from 'react';
 
-export type DropDownT = {
+export type DropdownT = {
   id: number | string;
   trigger?: HTMLElement;
   refocus?: boolean;
@@ -10,30 +10,30 @@ export type DropDownT = {
   modal?: boolean;
 };
 
-export type DropDownToRemove = {
+export type DropdownToRemove = {
   id: number | string;
   remove: true;
   refocus?: boolean;
 };
 
-export type ExternalDropDown = Omit<DropDownT, 'id' | 'content'> & {
+export type ExternalDropdown = Omit<DropdownT, 'id' | 'content'> & {
   id?: number | string;
 };
 
-const isDropDown = (dropdowner: DropDownT | DropDownToRemove): dropdowner is DropDownT => {
+const isDropdown = (dropdowner: DropdownT | DropdownToRemove): dropdowner is DropdownT => {
   return !('remove' in dropdowner);
 };
 
 class Observer {
-  subscribers: ((dropdowner: DropDownT | DropDownToRemove) => void)[];
-  dropdowner: DropDownT | null;
+  subscribers: ((dropdowner: DropdownT | DropdownToRemove) => void)[];
+  dropdowner: DropdownT | null;
 
   constructor() {
     this.subscribers = [];
     this.dropdowner = null;
   }
 
-  subscribe = (subscriber: (dropdowner: DropDownT | DropDownToRemove) => void) => {
+  subscribe = (subscriber: (dropdowner: DropdownT | DropdownToRemove) => void) => {
     this.subscribers.push(subscriber);
     if (this.dropdowner) subscriber(this.dropdowner);
 
@@ -42,12 +42,12 @@ class Observer {
     };
   };
 
-  publish = (data: DropDownT | DropDownToRemove) => {
-    this.dropdowner = isDropDown(data) ? data : null;
+  publish = (data: DropdownT | DropdownToRemove) => {
+    this.dropdowner = isDropdown(data) ? data : null;
     for (const subscriber of this.subscribers) subscriber(data);
   };
 
-  set = (data: DropDownT) => {
+  set = (data: DropdownT) => {
     this.publish(data);
   };
 
@@ -59,27 +59,27 @@ class Observer {
     return this.dropdowner ? this.dropdowner.id === id : false;
   };
 
-  updateOpenDropDown = (data: Partial<DropDownT>) => {
+  updateOpenDropdown = (data: Partial<DropdownT>) => {
     if (!this.dropdowner) return;
 
-    const updatedDropDown = { ...this.dropdowner, ...data };
-    this.dropdowner = updatedDropDown;
-    this.publish(updatedDropDown);
+    const updatedDropdown = { ...this.dropdowner, ...data };
+    this.dropdowner = updatedDropdown;
+    this.publish(updatedDropdown);
   };
 
-  getOpenDropDown = () => {
+  getOpenDropdown = () => {
     return this.dropdowner;
   };
 }
 
 export const dropdownerState = new Observer();
 
-const dropdownerFunction = (content: React.ReactNode, data?: ExternalDropDown) => {
+const dropdownerFunction = (content: React.ReactNode, data?: ExternalDropdown) => {
   const id = data?.id || 1;
 
   //if exist close
-  const existingDropDown = dropdownerState.get(id);
-  if (existingDropDown) {
+  const existingDropdown = dropdownerState.get(id);
+  if (existingDropdown) {
     dropdownerState.remove();
     return null;
   }
@@ -99,6 +99,6 @@ const dropdownerFunction = (content: React.ReactNode, data?: ExternalDropDown) =
 export const dropdowner = Object.assign(dropdownerFunction, {
   remove: dropdownerState.remove,
   get: dropdownerState.get,
-  getOpenDropDown: dropdownerState.getOpenDropDown,
-  updateOpenDropDown: dropdownerState.updateOpenDropDown,
+  getOpenDropdown: dropdownerState.getOpenDropdown,
+  updateOpenDropdown: dropdownerState.updateOpenDropdown,
 });

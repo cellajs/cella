@@ -36,7 +36,7 @@ export default function StandardDialog({ dialog, removeDialog }: DialogProp) {
   };
 
   const handleInteractOutside = (event: CustomInteractOutsideEvent) => {
-    const dropDown = dropdowner.getOpenDropDown();
+    const dropDown = dropdowner.getOpenDropdown();
 
     // Check if there is an open dropdown and if it is not modal
     if (dropDown && !dropDown.modal) event.preventDefault();

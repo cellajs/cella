@@ -14,7 +14,7 @@ type CustomDragHandleButtonProps<
   I extends InlineContentSchema = DefaultInlineContentSchema,
   S extends StyleSchema = DefaultStyleSchema,
 > = Omit<SideMenuProps<BSchema, I, S>, 'addBlock'> & {
-  hasDropDown?: boolean;
+  hasDropdown?: boolean;
   position?: 'left' | 'right' | 'top' | 'bottom';
 };
 
@@ -23,7 +23,7 @@ export const CustomDragHandleButton = <
   I extends InlineContentSchema = DefaultInlineContentSchema,
   S extends StyleSchema = DefaultStyleSchema,
 >({
-  hasDropDown = false,
+  hasDropdown = false,
   position = 'top',
   dragHandleMenu: DragHandleContent = DragHandleMenu,
   blockDragStart,
@@ -53,7 +53,7 @@ export const CustomDragHandleButton = <
 
   return (
     <Components.Generic.Menu.Root onOpenChange={(open: boolean) => (open ? freezeMenu() : unfreezeMenu())} position={position}>
-      {hasDropDown ? (
+      {hasDropdown ? (
         <Components.Generic.Menu.Trigger>
           <Components.SideMenu.Button {...baseButtonProps} label="Open side menu" draggable />
         </Components.Generic.Menu.Trigger>
