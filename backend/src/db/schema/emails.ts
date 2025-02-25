@@ -8,7 +8,7 @@ export const emailsTable = pgTable('emails', {
   id: varchar().primaryKey().$defaultFn(nanoid),
   email: varchar().notNull().unique(),
   verified: boolean().notNull().default(false),
-  tokenId: varchar().references(() => tokensTable.id, { onDelete: 'cascade' }),
+  tokenId: varchar().references(() => tokensTable.id, { onDelete: 'set null' }),
   userId: varchar()
     .notNull()
     .references(() => usersTable.id, { onDelete: 'cascade' }),
