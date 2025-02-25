@@ -37,7 +37,7 @@ const BaseDataTable = memo(
       const { q, sort, order, limit } = queryVars;
 
       const isAdmin = organization.membership?.role === 'admin' || user?.role === 'admin';
-      const isMobile = useBreakpoints('max', 'sm');
+      const isMobile = useBreakpoints('max', 'sm', false);
 
       const removeCallback = () => {
         navigate({
@@ -84,6 +84,7 @@ const BaseDataTable = memo(
         setRows(changedRows);
       };
 
+      // TODO: why is this table setting columns in a useEffect and why here and not in wrapper, like all other tables?
       useEffect(() => setColumns(useColumns(t, isMobile, isAdmin, isSheet, openDialog)), [isAdmin, openDialog]);
 
       useEffect(() => {

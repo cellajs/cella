@@ -16,7 +16,7 @@ interface MenuSheetItemsProps {
 
 export const MenuSheetItems = ({ data, type, shownOption, createDialog, className }: MenuSheetItemsProps) => {
   const { t } = useTranslation();
-  const { hideSubmenu } = useNavigationStore();
+  const hideSubmenu = useNavigationStore((state) => state.hideSubmenu);
 
   const renderNoItems = () =>
     createDialog ? (
