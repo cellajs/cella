@@ -1,5 +1,6 @@
-import { pgTable, timestamp, varchar } from 'drizzle-orm/pg-core';
+import { pgTable, varchar } from 'drizzle-orm/pg-core';
 import { usersTable } from '#/db/schema/users';
+import { timestampsColumn } from '#/db/utils/timestamp-columns';
 import { nanoid } from '#/utils/nanoid';
 
 export const sessionsTable = pgTable('sessions', {
@@ -22,8 +23,8 @@ export const sessionsTable = pgTable('sessions', {
   })
     .notNull()
     .default('regular'),
-  createdAt: timestamp().defaultNow().notNull(),
-  expiresAt: timestamp({ withTimezone: true, mode: 'date' }).notNull(),
+  createdAt: timestampsColumn.createdAt,
+  expiresAt: timestampsColumn.expiresAt,
 });
 
 export type SessionModel = typeof sessionsTable.$inferSelect;

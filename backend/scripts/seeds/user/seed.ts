@@ -2,7 +2,9 @@ import { config } from 'config';
 import { db } from '#/db/db';
 import { usersTable } from '#/db/schema/users';
 
+import { faker } from '@faker-js/faker';
 import chalk from 'chalk';
+import { emailsTable } from '#/db/schema/emails';
 import { hashPassword } from '#/modules/auth/helpers/argon2id';
 import { generateUnsubscribeToken } from '#/modules/users/helpers/unsubscribe-token';
 
@@ -22,20 +24,30 @@ export const userSeed = async () => {
     return console.warn('Users table is not empty, skipping seed');
   }
 
-  await db
-    .insert(usersTable)
-    .values({
-      id: adminUser.id,
-      email: adminUser.email,
-      emailVerified: true,
-      name: 'Admin User',
-      language: config.defaultLanguage,
-      slug: 'admin-user',
-      role: 'admin',
-      unsubscribeToken: generateUnsubscribeToken(adminUser.email),
-      hashedPassword: await hashPassword(adminUser.password),
-    })
-    .onConflictDoNothing();
+  await Promise.all([
+    db
+      .insert(usersTable)
+      .values({
+        id: adminUser.id,
+        email: adminUser.email,
+        name: 'Admin User',
+        language: config.defaultLanguage,
+        slug: 'admin-user',
+        role: 'admin',
+        unsubscribeToken: generateUnsubscribeToken(adminUser.email),
+        hashedPassword: await hashPassword(adminUser.password),
+      })
+      .onConflictDoNothing(),
+    db
+      .insert(emailsTable)
+      .values({
+        email: adminUser.email,
+        userId: adminUser.id,
+        verified: true,
+        verifiedAt: faker.date.past().toISOString(),
+      })
+      .onConflictDoNothing(),
+  ]);
 
   console.info(' ');
   console.info(
