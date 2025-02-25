@@ -18,7 +18,7 @@ export const attachmentsTable = pgTable('attachments', {
   createdBy: varchar().references(() => usersTable.id, {
     onDelete: 'set null',
   }),
-  modifiedAt: timestampsColumn.modifiedAt,
+  modifiedAt: timestampsColumn.baseString,
   modifiedBy: varchar().references(() => usersTable.id, {
     onDelete: 'set null',
   }),
