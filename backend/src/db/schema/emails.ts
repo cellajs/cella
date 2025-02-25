@@ -1,4 +1,4 @@
-import { boolean, pgTable, varchar } from 'drizzle-orm/pg-core';
+import { boolean, pgTable, timestamp, varchar } from 'drizzle-orm/pg-core';
 import { usersTable } from '#/db/schema/users';
 import { timestampsColumn } from '#/db/utils/timestamp-columns';
 import { nanoid } from '#/utils/nanoid';
@@ -13,7 +13,7 @@ export const emailsTable = pgTable('emails', {
     .notNull()
     .references(() => usersTable.id, { onDelete: 'cascade' }),
   createdAt: timestampsColumn.createdAt,
-  verifiedAt: timestampsColumn.baseString,
+  verifiedAt: timestamp({ mode: 'string' }),
 });
 
 export type EmailsModel = typeof emailsTable.$inferSelect;

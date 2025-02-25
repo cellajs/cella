@@ -32,7 +32,7 @@ export const organizationsTable = pgTable(
     chatSupport: boolean().notNull().default(false),
     createdAt: timestampsColumn.createdAt,
     createdBy: varchar().references(() => usersTable.id, { onDelete: 'set null' }),
-    modifiedAt: timestampsColumn.baseString,
+    modifiedAt: timestampsColumn.modifiedAt,
     modifiedBy: varchar().references(() => usersTable.id, { onDelete: 'set null' }),
   },
   (table) => [index('organizations_name_index').on(table.name.desc()), index('organizations_created_at_index').on(table.createdAt.desc())],

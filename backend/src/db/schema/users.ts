@@ -1,5 +1,5 @@
 import { config } from 'config';
-import { boolean, foreignKey, index, pgTable, varchar } from 'drizzle-orm/pg-core';
+import { boolean, foreignKey, index, pgTable, timestamp, varchar } from 'drizzle-orm/pg-core';
 import { nanoid } from '#/utils/nanoid';
 import { timestampsColumn } from '../utils/timestamp-columns';
 
@@ -25,10 +25,10 @@ export const usersTable = pgTable(
     thumbnailUrl: varchar(),
     newsletter: boolean().notNull().default(false),
     createdAt: timestampsColumn.createdAt,
-    modifiedAt: timestampsColumn.baseString,
-    lastSeenAt: timestampsColumn.baseString, // last time a GET request has been made in last 5 minutes
-    lastStartedAt: timestampsColumn.baseString, // last time GET me
-    lastSignInAt: timestampsColumn.baseString, // last time user went through authentication flow
+    modifiedAt: timestampsColumn.modifiedAt,
+    lastSeenAt: timestamp({ mode: 'string' }), // last time a GET request has been made in last 5 minutes
+    lastStartedAt: timestamp({ mode: 'string' }), // last time GET me
+    lastSignInAt: timestamp({ mode: 'string' }), // last time user went through authentication flow
     modifiedBy: varchar(),
     role: varchar({ enum: roleEnum }).notNull().default('user'),
   },
