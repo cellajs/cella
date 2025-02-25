@@ -553,10 +553,12 @@ const authRoutes = app
       if (existingStatus === 'mismatch') return errorRedirect(ctx, 'oauth_mismatch', 'warn');
 
       // Get redirect URL based on existingStatus
-      const redirectUrl = await getOauthRedirectUrl(ctx, existingStatus === null);
+      const redirectUrl = await getOauthRedirectUrl(ctx, existingStatus === null && !inviteTokenId);
       if (existingStatus === 'auth') return ctx.redirect(redirectUrl, 302);
 
       const transformedUser = transformGithubUserData(githubUser, githubUserEmails);
+
+      const emailVerified = transformedUser.emailVerified || !!inviteTokenId;
 
       const existingUser = await findExistingUser(transformedUser.email, userId, inviteTokenId);
 
@@ -567,12 +569,8 @@ const authRoutes = app
           .where(and(eq(oauthAccountsTable.userId, existingUser.id), eq(oauthAccountsTable.providerId, provider.id)));
 
         if (!existingOauth) {
-          const { slug, name, emailVerified, ...providerUser } = transformedUser;
-          return await updateExistingUser(ctx, existingUser, strategy, {
-            providerUser,
-            redirectUrl,
-            emailVerified: !!inviteTokenId || emailVerified,
-          });
+          const { slug, name, emailVerified: transformVerified, ...providerUser } = transformedUser;
+          return await updateExistingUser(ctx, existingUser, strategy, { providerUser, redirectUrl, emailVerified });
         }
         if (existingOauth.providerUserId !== provider.userId) return errorRedirect(ctx, 'oauth_merge_error', 'error');
 
@@ -580,7 +578,7 @@ const authRoutes = app
       }
 
       // Create new user and OAuth account
-      return await handleCreateUser({ ctx, newUser: transformedUser, redirectUrl, provider, tokenId: inviteTokenId });
+      return await handleCreateUser({ ctx, newUser: transformedUser, redirectUrl, provider, emailVerified, tokenId: inviteTokenId });
     } catch (error) {
       // Handle invalid credentials
       if (error instanceof OAuth2RequestError) {
@@ -633,10 +631,12 @@ const authRoutes = app
       if (existingStatus === 'mismatch') return errorRedirect(ctx, 'oauth_mismatch', 'warn');
 
       // Get redirectUrl based of existingStatus
-      const redirectUrl = await getOauthRedirectUrl(ctx, existingStatus === null);
+      const redirectUrl = await getOauthRedirectUrl(ctx, existingStatus === null && !inviteTokenId);
       if (existingStatus === 'auth') return ctx.redirect(redirectUrl, 302);
 
       const transformedUser = transformSocialUserData(googleUser);
+
+      const emailVerified = transformedUser.emailVerified || !!inviteTokenId;
 
       const existingUser = await findExistingUser(transformedUser.email, userId, inviteTokenId);
 
@@ -647,12 +647,8 @@ const authRoutes = app
           .where(and(eq(oauthAccountsTable.userId, existingUser.id), eq(oauthAccountsTable.providerId, provider.id)));
 
         if (!existingOauth) {
-          const { slug, name, emailVerified, ...providerUser } = transformedUser;
-          return await updateExistingUser(ctx, existingUser, strategy, {
-            providerUser,
-            redirectUrl,
-            emailVerified: !!inviteTokenId || emailVerified,
-          });
+          const { slug, name, emailVerified: transformVerified, ...providerUser } = transformedUser;
+          return await updateExistingUser(ctx, existingUser, strategy, { providerUser, redirectUrl, emailVerified });
         }
         if (existingOauth.providerUserId !== provider.userId) return errorRedirect(ctx, 'oauth_merge_error', 'error');
 
@@ -660,7 +656,7 @@ const authRoutes = app
       }
 
       // Create new user and oauth account
-      return await handleCreateUser({ ctx, newUser: transformedUser, redirectUrl, provider, tokenId: inviteTokenId });
+      return await handleCreateUser({ ctx, newUser: transformedUser, emailVerified, redirectUrl, provider, tokenId: inviteTokenId });
     } catch (error) {
       // Handle invalid credentials
       if (error instanceof OAuth2RequestError) {
@@ -712,10 +708,12 @@ const authRoutes = app
       if (existingStatus === 'mismatch') return errorRedirect(ctx, 'oauth_mismatch', 'warn');
 
       // Get redirectUrl based of existingStatus
-      const redirectUrl = await getOauthRedirectUrl(ctx, existingStatus === null);
+      const redirectUrl = await getOauthRedirectUrl(ctx, existingStatus === null && !inviteTokenId);
       if (existingStatus === 'auth') return ctx.redirect(redirectUrl, 302);
 
       const transformedUser = transformSocialUserData(microsoftUser);
+
+      const emailVerified = transformedUser.emailVerified || !!inviteTokenId;
 
       const existingUser = await findExistingUser(transformedUser.email, userId, inviteTokenId);
 
@@ -726,12 +724,8 @@ const authRoutes = app
           .where(and(eq(oauthAccountsTable.userId, existingUser.id), eq(oauthAccountsTable.providerId, provider.id)));
 
         if (!existingOauth) {
-          const { slug, name, emailVerified, ...providerUser } = transformedUser;
-          return await updateExistingUser(ctx, existingUser, strategy, {
-            providerUser,
-            redirectUrl,
-            emailVerified: !!inviteTokenId,
-          });
+          const { slug, name, emailVerified: transformVerified, ...providerUser } = transformedUser;
+          return await updateExistingUser(ctx, existingUser, strategy, { providerUser, redirectUrl, emailVerified });
         }
         if (existingOauth.providerUserId !== provider.userId) return errorRedirect(ctx, 'oauth_merge_error', 'error');
 
@@ -739,7 +733,7 @@ const authRoutes = app
       }
 
       // Create new user and oauth account
-      return await handleCreateUser({ ctx, newUser: transformedUser, redirectUrl, provider, tokenId: inviteTokenId });
+      return await handleCreateUser({ ctx, newUser: transformedUser, redirectUrl, provider, emailVerified, tokenId: inviteTokenId });
     } catch (error) {
       // Handle invalid credentials
       if (error instanceof OAuth2RequestError) {

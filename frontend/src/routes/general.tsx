@@ -21,7 +21,6 @@ const errorSearchSchema = z.object({
   severity: z.enum(['warn', 'error']).optional(),
 });
 
-//
 export const rootRoute = createRootRouteWithContext<{ queryClient: QueryClient }>()({
   staticData: { pageTitle: '', isAuth: false },
   component: () => <Root />,
