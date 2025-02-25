@@ -7,7 +7,7 @@ export const env = createEnv({
       .string()
       .default('false')
       .transform((v) => v === 'true'),
-    VITE_MILLION_LINT: z
+    VITE_REACT_SCAN: z
       .string()
       .default('false')
       .transform((v) => v === 'true'),
