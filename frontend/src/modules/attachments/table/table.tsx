@@ -8,9 +8,9 @@ import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { openAttachmentDialog } from '~/modules/attachments/helpers';
 import { attachmentsQueryOptions } from '~/modules/attachments/query';
 import { useAttachmentUpdateMutation } from '~/modules/attachments/query-mutations';
-import type { AttachmentSearch, AttachmentsTableProps } from '~/modules/attachments/table';
 import { useColumns } from '~/modules/attachments/table/columns';
 import { useSync } from '~/modules/attachments/table/helpers/use-sync';
+import type { AttachmentSearch, AttachmentsTableProps } from '~/modules/attachments/table/table-wrapper';
 import type { Attachment } from '~/modules/attachments/types';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { DataTable } from '~/modules/common/data-table';
@@ -37,7 +37,7 @@ const BaseDataTable = memo(
       const { q, sort, order, limit } = queryVars;
 
       const isAdmin = organization.membership?.role === 'admin' || user?.role === 'admin';
-      const isMobile = useBreakpoints('max', 'sm');
+      const isMobile = useBreakpoints('max', 'sm', false);
 
       const removeCallback = () => {
         navigate({
@@ -84,6 +84,7 @@ const BaseDataTable = memo(
         setRows(changedRows);
       };
 
+      // TODO: why is this table setting columns in a useEffect and why here and not in wrapper, like all other tables?
       useEffect(() => setColumns(useColumns(t, isMobile, isAdmin, isSheet, openDialog)), [isAdmin, openDialog]);
 
       useEffect(() => {

@@ -3,11 +3,11 @@ import { type RemoveMembersProps, type UpdateMembershipProp, removeMembers, upda
 
 import { config } from 'config';
 import { t } from 'i18next';
-import { queryClient } from '~/lib/router';
 import { toaster } from '~/modules/common/toaster';
 import { membersKeys } from '~/modules/memberships/query';
 import type { Member, Membership } from '~/modules/memberships/types';
 import { formatUpdatedData, getCancelingRefetchQueries, getQueries, getQueryItems } from '~/query/helpers/mutate-query';
+import { queryClient } from '~/query/query-client';
 import type { ContextProp, InfiniteQueryData, QueryData } from '~/query/types';
 
 type MemberQueryData = QueryData<Member>;

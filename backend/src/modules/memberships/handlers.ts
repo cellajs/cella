@@ -19,6 +19,7 @@ import { logEvent } from '#/middlewares/logger/log-event';
 import { getUsersByConditions } from '#/modules/users/helpers/get-user-by';
 import { getValidEntity } from '#/permissions/get-valid-entity';
 import defaultHook from '#/utils/default-hook';
+import { getIsoDate } from '#/utils/iso-date';
 import { nanoid } from '#/utils/nanoid';
 import { getOrderColumn } from '#/utils/order-column';
 import { prepareStringForILikeFilter } from '#/utils/sql';
@@ -274,7 +275,7 @@ const membershipsRoutes = app
         ...(muted !== undefined && { muted }),
         ...(archived !== undefined && { archived }),
         modifiedBy: user.id,
-        modifiedAt: new Date(),
+        modifiedAt: getIsoDate(),
       })
       .where(and(eq(membershipsTable.id, membershipId)))
       .returning();

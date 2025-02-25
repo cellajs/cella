@@ -1,6 +1,5 @@
 import path from 'node:path';
 
-import MillionLint from '@million/lint';
 import terser from '@rollup/plugin-terser';
 import { sentryVitePlugin } from '@sentry/vite-plugin';
 import tailwindcss from '@tailwindcss/vite';
@@ -12,7 +11,6 @@ import { createHtmlPlugin } from 'vite-plugin-html';
 import { VitePWA } from 'vite-plugin-pwa';
 import { viteStaticCopy } from 'vite-plugin-static-copy';
 import { config } from '../config';
-import { env } from './src/env';
 // import { TanStackRouterVite } from '@tanstack/router-plugin/vite'
 
 const ReactCompilerConfig = {
@@ -149,7 +147,6 @@ export default defineConfig(() => {
       },
     }),
   );
-  if (env.VITE_MILLION_LINT) viteConfig.plugins?.push([MillionLint.vite()]);
   if (config.frontendUrl.includes('https')) viteConfig.plugins?.push([basicSsl()]);
   return viteConfig;
 });

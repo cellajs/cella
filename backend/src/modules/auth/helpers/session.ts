@@ -57,7 +57,7 @@ export const setUserSession = async (ctx: Context, userId: UserModel['id'], stra
     deviceOs: device.os,
     browser: device.browser,
     authStrategy,
-    createdAt: new Date(),
+    createdAt: getIsoDate(),
     expiresAt: createDate(new TimeSpan(1, 'w')), // 1 week from now
   };
 

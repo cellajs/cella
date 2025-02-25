@@ -3,6 +3,7 @@ import { config } from 'config';
 import { eq } from 'drizzle-orm';
 import type { Context } from 'hono';
 import { db } from '#/db/db';
+import { emailsTable } from '#/db/schema/emails';
 import { tokensTable } from '#/db/schema/tokens';
 import { type InsertUserModel, usersTable } from '#/db/schema/users';
 import { entityIdFields } from '#/entity-config';
@@ -11,6 +12,7 @@ import { errorResponse } from '#/lib/errors';
 import { logEvent } from '#/middlewares/logger/log-event';
 import { insertMembership } from '#/modules/memberships/helpers';
 import { generateUnsubscribeToken } from '#/modules/users/helpers/unsubscribe-token';
+import { getIsoDate } from '#/utils/iso-date';
 import { nanoid } from '#/utils/nanoid';
 import { checkSlugAvailable } from '../../general/helpers/check-slug';
 import { insertOauthAccount } from './oauth';
@@ -23,6 +25,7 @@ interface HandleCreateUserProps {
   redirectUrl?: string;
   provider?: { id: EnabledOauthProvider; userId: string };
   tokenId?: string | null;
+  emailVerified?: boolean;
 }
 
 /**
@@ -35,9 +38,10 @@ interface HandleCreateUserProps {
  * @param redirectUrl - Optional, URL to redirect the user to after successful sign-up.
  * @param provider - Optional, OAuth provider data for linking the user.
  * @param tokenId - Optional, token ID to associate with the new user.
+ * @param emailVerified - Optional, new user email verified.
  * @returns Error response or Redirect response or Response
  */
-export const handleCreateUser = async ({ ctx, newUser, redirectUrl, provider, tokenId }: HandleCreateUserProps) => {
+export const handleCreateUser = async ({ ctx, newUser, redirectUrl, provider, tokenId, emailVerified }: HandleCreateUserProps) => {
   // Check if slug is available
   const slugAvailable = await checkSlugAvailable(newUser.slug);
 
@@ -49,8 +53,7 @@ export const handleCreateUser = async ({ ctx, newUser, redirectUrl, provider, to
       .values({
         slug: slugAvailable ? newUser.slug : `${newUser.slug}-${nanoid(5)}`,
         firstName: newUser.firstName,
-        emailVerified: newUser.emailVerified,
-        email: userEmail.toLowerCase(),
+        email: userEmail,
         name: newUser.name,
         unsubscribeToken: generateUnsubscribeToken(userEmail),
         language: config.defaultLanguage,
@@ -64,9 +67,12 @@ export const handleCreateUser = async ({ ctx, newUser, redirectUrl, provider, to
     // If signing up with token, update it with new user id and insert membership if applicable
     if (tokenId) await handleTokenUpdate(user.id, tokenId);
 
-    // If email is not verified, send verification email. Otherwise, sign in user
-    if (!user.emailVerified) sendVerificationEmail(user.id);
-    else await setUserSession(ctx, user.id, provider?.id || 'password');
+    // If email is not verified, send verification email. Otherwise, create verified email record and  sign in user
+    if (!emailVerified) sendVerificationEmail(user.id);
+    else {
+      await db.insert(emailsTable).values({ email: user.email, userId: user.id, verified: true, verifiedAt: getIsoDate() });
+      await setUserSession(ctx, user.id, provider?.id || 'password');
+    }
 
     // Redirect to URL if provided
     if (redirectUrl) return ctx.redirect(redirectUrl, 302);
@@ -89,7 +95,7 @@ export const handleCreateUser = async ({ ctx, newUser, redirectUrl, provider, to
   }
 };
 
-const handleTokenUpdate = async (userId: string, tokenId: string) => {
+export const handleTokenUpdate = async (userId: string, tokenId: string) => {
   try {
     // Update the token with the new userId
     const [token] = await db.update(tokensTable).set({ userId }).where(eq(tokensTable.id, tokenId)).returning();

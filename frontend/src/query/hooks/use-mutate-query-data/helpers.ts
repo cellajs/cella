@@ -1,6 +1,5 @@
 import type { QueryKey } from '@tanstack/react-query';
 import type { Entity } from 'config';
-import { queryClient } from '~/lib/router';
 import type {
   ArbitraryEntityQueryData,
   ContextEntityData,
@@ -10,6 +9,7 @@ import type {
   ItemData,
   QueryDataActions,
 } from '~/query/hooks/use-mutate-query-data/types';
+import { queryClient } from '~/query/query-client';
 
 /**
  * Determines if the given data matches the structure of ArbitraryEntityQueryData.

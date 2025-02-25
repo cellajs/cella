@@ -16,7 +16,7 @@ import { dateShort } from '~/utils/date-short';
 
 export const useColumns = (callback: (organizations: Organization[]) => void) => {
   const { t } = useTranslation();
-  const isMobile = useBreakpoints('max', 'sm');
+  const isMobile = useBreakpoints('max', 'sm', false);
 
   const columns = useMemo(() => {
     const cols: ColumnOrColumnGroup<Organization>[] = [

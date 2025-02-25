@@ -1,26 +1,26 @@
 import { Trash, Upload, XSquare } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useTranslation } from 'react-i18next';
-import type { AttachmentSearch, AttachmentsTableProps } from '~/modules/attachments/table';
 import { openAttachmentsUploadDialog } from '~/modules/attachments/table/helpers';
+import type { AttachmentSearch, AttachmentsTableProps } from '~/modules/attachments/table/table-wrapper';
 import type { Attachment } from '~/modules/attachments/types';
 import ColumnsView from '~/modules/common/data-table/columns-view';
+import { TableBarContainer } from '~/modules/common/data-table/table-bar-container';
 import TableCount from '~/modules/common/data-table/table-count';
 import { FilterBarActions, FilterBarContent, TableFilterBar } from '~/modules/common/data-table/table-filter-bar';
-import { TableHeaderContainer } from '~/modules/common/data-table/table-header-container';
 import TableSearch from '~/modules/common/data-table/table-search';
-import type { BaseTableHeaderProps, BaseTableMethods } from '~/modules/common/data-table/types';
+import type { BaseTableBarProps, BaseTableMethods } from '~/modules/common/data-table/types';
 import { FocusView } from '~/modules/common/focus-view';
 import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
 
-type AttachmentsTableHeaderProps = AttachmentsTableProps &
+type AttachmentsTableBarProps = AttachmentsTableProps &
   BaseTableMethods &
-  BaseTableHeaderProps<Attachment, AttachmentSearch> & {
+  BaseTableBarProps<Attachment, AttachmentSearch> & {
     openRemoveDialog: () => void;
   };
 
-export const AttachmentsTableHeader = ({
+export const AttachmentsTableBar = ({
   organization,
   total,
   selected,
@@ -32,7 +32,7 @@ export const AttachmentsTableHeader = ({
   openRemoveDialog,
   isSheet = false,
   canUpload = true,
-}: AttachmentsTableHeaderProps) => {
+}: AttachmentsTableBarProps) => {
   const { t } = useTranslation();
 
   const isFiltered = !!q;
@@ -51,7 +51,7 @@ export const AttachmentsTableHeader = ({
   };
 
   return (
-    <TableHeaderContainer>
+    <TableBarContainer>
       {/* Filter bar */}
       <TableFilterBar onResetFilters={onResetFilters} isFiltered={isFiltered}>
         <FilterBarActions>
@@ -108,6 +108,6 @@ export const AttachmentsTableHeader = ({
 
       {/* Focus view */}
       {!isSheet && <FocusView iconOnly />}
-    </TableHeaderContainer>
+    </TableBarContainer>
   );
 };

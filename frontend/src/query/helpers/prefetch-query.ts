@@ -1,6 +1,6 @@
 import { type UseInfiniteQueryOptions, type UseQueryOptions, onlineManager } from '@tanstack/react-query';
 
-import { queryClient } from '~/lib/router';
+import { queryClient } from '~/query/query-client';
 import type { InferType } from '~/query/types';
 
 // biome-ignore lint/suspicious/noExplicitAny: any is used to infer the type of the options

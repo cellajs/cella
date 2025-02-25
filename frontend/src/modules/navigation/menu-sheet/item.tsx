@@ -1,5 +1,5 @@
 import { onlineManager } from '@tanstack/react-query';
-import { Link, useParams } from '@tanstack/react-router';
+import { Link } from '@tanstack/react-router';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
@@ -18,10 +18,6 @@ interface MenuSheetItemProps {
 export const MenuSheetItem = ({ item, className, searchResults }: MenuSheetItemProps) => {
   const { t } = useTranslation();
 
-  //Strict false is needed because sheet menu can be open at any route
-  const currentIdOrSlug = useParams({ strict: false, select: (p) => p.idOrSlug });
-  const isActive = currentIdOrSlug === item.slug || currentIdOrSlug === item.id;
-
   // Build route path for the entity
   const { params, path } = useMemo(() => getEntityRoute(item), [item]);
 
@@ -37,12 +33,13 @@ export const MenuSheetItem = ({ item, className, searchResults }: MenuSheetItemP
         if (!canAccess) toaster(t('common:show_archived.offline.text'), 'warning');
       }}
       data-subitem={!searchResults && !item.submenu}
-      data-active={isActive}
       resetScroll={false}
       className={cn(
         'relative group/menuItem h-14 w-full flex cursor-pointer items-start justify-start space-x-1 rounded p-0 focus:outline-hidden ring-2 ring-inset ring-transparent focus-visible:ring-foreground hover:bg-accent/50 hover:text-accent-foreground data-[subitem=true]:h-12 data-[active=true]:ring-transparent data-[active=true]:bg-accent',
         className,
       )}
+      activeOptions={{ exact: false, includeHash: false }}
+      activeProps={{ 'data-active': true }}
       aria-label={item.name}
       to={path}
       params={params}

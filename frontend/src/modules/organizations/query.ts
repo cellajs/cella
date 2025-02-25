@@ -2,7 +2,6 @@ import { infiniteQueryOptions, queryOptions, useMutation } from '@tanstack/react
 import { config } from 'config';
 
 import type { ApiError } from '~/lib/api';
-import { queryClient } from '~/lib/router';
 import {
   type CreateOrganizationParams,
   type GetOrganizationsParams,
@@ -14,6 +13,7 @@ import {
   updateOrganization,
 } from '~/modules/organizations/api';
 import type { Organization, OrganizationWithMembership } from '~/modules/organizations/types';
+import { queryClient } from '~/query/query-client';
 
 /**
  * Keys for organizations related queries. These keys help to uniquely identify different query.

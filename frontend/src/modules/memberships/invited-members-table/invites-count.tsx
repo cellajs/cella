@@ -1,10 +1,10 @@
 import { Suspense, lazy } from 'react';
 import { useTranslation } from 'react-i18next';
 import { sheet } from '~/modules/common/sheeter/state';
-import type { InvitedMembersTableProps } from '~/modules/memberships/invited-members-table';
+import type { InvitedMembersTableProps } from '~/modules/memberships/invited-members-table/table-wrapper';
 import { Button } from '~/modules/ui/button';
 
-const InvitedMembersTable = lazy(() => import('~/modules/memberships/invited-members-table'));
+const InvitedMembersTable = lazy(() => import('~/modules/memberships/invited-members-table/table-wrapper'));
 
 export const InvitedMembers = ({ entity }: InvitedMembersTableProps) => {
   const { t } = useTranslation();

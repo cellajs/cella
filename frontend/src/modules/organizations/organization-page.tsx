@@ -37,7 +37,7 @@ const OrganizationPage = () => {
     const { bannerUrl, entity } = e.detail;
     if (entity !== organization.entity) return;
     mutate(
-      { idOrSlug: organization.id, json: { bannerUrl } },
+      { idOrSlug: organization.slug, json: { bannerUrl } },
       {
         onSuccess: () => toast.success(t('common:success.upload_cover')),
         onError: () => toast.error(t('error:image_upload_failed')),

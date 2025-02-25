@@ -27,7 +27,7 @@ export const MenuSectionButton = ({
   toggleIsEditing,
 }: MenuSectionButtonProps) => {
   const { t } = useTranslation();
-  const { toggleSection } = useNavigationStore();
+  const toggleSection = useNavigationStore((state) => state.toggleSection);
 
   return (
     <StickyBox className="z-10">

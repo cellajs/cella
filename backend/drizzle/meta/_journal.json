@@ -36,6 +36,27 @@
       "when": 1739976100994,
       "tag": "0004_third_lady_mastermind",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1740402114188,
+      "tag": "0005_green_warbird",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1740405435147,
+      "tag": "0006_common_talon",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1740494451961,
+      "tag": "0007_gorgeous_monster_badoon",
+      "breakpoints": true
     }
   ]
 }

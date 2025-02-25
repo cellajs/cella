@@ -1,15 +1,14 @@
-import { Check, KeyRound, Send, Trash2, ZapOff } from 'lucide-react';
+import { Check, KeyRound, Send, Trash2 } from 'lucide-react';
 import { SimpleHeader } from '~/modules/common/simple-header';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/modules/ui/card';
 
 import { dialog } from '~/modules/common/dialoger/state';
-import { ExpandableList } from '~/modules/common/expandable-list';
 import { Button } from '~/modules/ui/button';
 import { useUserStore } from '~/store/user';
 
-import { onlineManager, useMutation } from '@tanstack/react-query';
+import { onlineManager } from '@tanstack/react-query';
 import { config } from 'config';
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { requestPasswordEmail } from '~/modules/auth/api';
@@ -19,12 +18,11 @@ import HelpText from '~/modules/common/help-text';
 import { PageAside } from '~/modules/common/page/aside';
 import StickyBox from '~/modules/common/sticky-box';
 import { toaster } from '~/modules/common/toaster';
-import { deleteMySessions } from '~/modules/users/api';
 import DeleteSelf from '~/modules/users/delete-self';
 import { deletePasskey, passkeyRegistration } from '~/modules/users/helpers';
-import { SessionTile } from '~/modules/users/session-tile';
 import UpdateUserForm from '~/modules/users/update-user-form';
 import { useThemeStore } from '~/store/theme';
+import SessionsList from './sessions-list';
 import type { UserAuthInfo } from './types';
 
 const tabs = [
@@ -39,27 +37,8 @@ const UserSettingsPage = ({ userAuthInfo }: { userAuthInfo: UserAuthInfo }) => {
   const { mode } = useThemeStore();
   const { t } = useTranslation();
 
-  const [allSessions, setAllSessions] = useState(userAuthInfo.sessions);
-
-  const sessionsWithoutCurrent = useMemo(() => allSessions.filter((session) => !session.isCurrent), [allSessions]);
-  const sessions = Array.from(allSessions).sort((a) => (a.isCurrent ? -1 : 1));
-
   const [disabledResetPassword, setDisabledResetPassword] = useState(false);
   const invertClass = mode === 'dark' ? 'invert' : '';
-
-  // Terminate one or all sessions
-  const { mutate: _deleteMySessions, isPending } = useMutation({
-    mutationFn: deleteMySessions,
-    onSuccess(_, variables) {
-      if (!allSessions.length) return;
-      setAllSessions(allSessions.filter((session) => !variables.includes(session.id)));
-
-      toaster(
-        variables.length === 1 ? t('common:success.session_terminated', { id: variables[0] }) : t('common:success.sessions_terminated'),
-        'success',
-      );
-    },
-  });
 
   // Request a password reset email
   const requestResetPasswordClick = () => {
@@ -92,11 +71,6 @@ const UserSettingsPage = ({ userAuthInfo }: { userAuthInfo: UserAuthInfo }) => {
         description: t('common:confirm.delete_account', { email: user.email }),
       },
     );
-  };
-
-  const onDeleteSession = (ids: string[]) => {
-    if (!onlineManager.isOnline()) return toaster(t('common:action.offline.text'), 'warning');
-    _deleteMySessions(ids);
   };
 
   const authenticateWithProvider = (provider: (typeof mapOauthProviders)[number]) => {
@@ -134,28 +108,7 @@ const UserSettingsPage = ({ userAuthInfo }: { userAuthInfo: UserAuthInfo }) => {
               <CardDescription>{t('common:sessions.text')}</CardDescription>
             </CardHeader>
             <CardContent>
-              {sessionsWithoutCurrent.length > 0 && (
-                <Button
-                  className="max-xs:w-full"
-                  variant="plain"
-                  size="sm"
-                  disabled={isPending}
-                  onClick={() => onDeleteSession(sessionsWithoutCurrent.map((session) => session.id))}
-                >
-                  <ZapOff size={16} className="mr-2" />
-                  {t('common:terminate_all')}
-                </Button>
-              )}
-              <div className="flex flex-col mt-4 gap-2">
-                <ExpandableList
-                  items={sessions}
-                  renderItem={(session) => (
-                    <SessionTile session={session} key={session.id} deleteMySessions={onDeleteSession} isPending={isPending} />
-                  )}
-                  initialDisplayCount={3}
-                  expandText="common:more_sessions"
-                />
-              </div>
+              <SessionsList userAuthInfo={userAuthInfo} />
             </CardContent>
           </Card>
         </AsideAnchor>
