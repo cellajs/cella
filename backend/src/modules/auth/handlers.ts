@@ -204,11 +204,11 @@ const authRoutes = app
     const token = getContextToken();
     if (!token || !token.userId) return errorResponse(ctx, 400, 'invalid_request', 'warn');
 
-    // Delete token to prevent reuse
-    await db.delete(tokensTable).where(eq(tokensTable.id, token.id));
-
     // Set email verified
     await db.update(emailsTable).set({ verified: true, verifiedAt: getIsoDate() }).where(eq(emailsTable.tokenId, token.id));
+
+    // Delete token to prevent reuse
+    await db.delete(tokensTable).where(eq(tokensTable.id, token.id));
 
     // Sign in user
     await setUserSession(ctx, token.userId, 'email_verification');

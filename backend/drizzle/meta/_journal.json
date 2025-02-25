@@ -50,6 +50,13 @@
       "when": 1740405435147,
       "tag": "0006_common_talon",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1740494451961,
+      "tag": "0007_gorgeous_monster_badoon",
+      "breakpoints": true
     }
   ]
 }
