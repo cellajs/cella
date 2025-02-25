@@ -6,7 +6,7 @@ import type { EnabledOauthProvider } from 'config';
 import { config } from 'config';
 import { and, desc, eq, gt, isNotNull, sql } from 'drizzle-orm';
 import { db } from '#/db/db';
-import { emailsTable } from '#/db/schema/emails';
+import { type EmailsModel, emailsTable } from '#/db/schema/emails';
 import { membershipsTable } from '#/db/schema/memberships';
 import { oauthAccountsTable } from '#/db/schema/oauth-accounts';
 import { organizationsTable } from '#/db/schema/organizations';
@@ -389,11 +389,13 @@ const authRoutes = app
     // Make sure its an organization invitation
     if (!token.entity) return errorResponse(ctx, 401, 'invalid_token', 'warn');
 
-    const [emailInfo] = await db.select().from(emailsTable).where(eq(emailsTable.email, token.email));
-    // Make sure correct user accepts invitation (for example another user could have a sessions and click on email invite of another user)
-    if (user.id !== token.userId && emailInfo.userId !== user.id) return errorResponse(ctx, 401, 'user_mismatch', 'warn');
+    const [emailInfo]: (EmailsModel | undefined)[] = await db.select().from(emailsTable).where(eq(emailsTable.email, token.email));
+    // Ensure correct user is accepting the invitation
+    if (user.id !== token.userId && emailInfo?.userId !== user.id) return errorResponse(ctx, 401, 'user_mismatch', 'warn');
 
-    if (emailInfo.userId === user.id && user.id !== token.userId) await handleTokenUpdate(user.id, token.id);
+    // If user ID matches email info update the token
+    if (user.id !== token.userId && emailInfo?.userId === user.id) await handleTokenUpdate(user.id, token.id);
+
     // Activate memberships
     await db
       .update(membershipsTable)
