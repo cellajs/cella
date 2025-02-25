@@ -3,6 +3,7 @@ import { config } from 'config';
 import { eq } from 'drizzle-orm';
 import type { Context } from 'hono';
 import { db } from '#/db/db';
+import { emailsTable } from '#/db/schema/emails';
 import { tokensTable } from '#/db/schema/tokens';
 import { type InsertUserModel, usersTable } from '#/db/schema/users';
 import { entityIdFields } from '#/entity-config';
@@ -11,6 +12,7 @@ import { errorResponse } from '#/lib/errors';
 import { logEvent } from '#/middlewares/logger/log-event';
 import { insertMembership } from '#/modules/memberships/helpers';
 import { generateUnsubscribeToken } from '#/modules/users/helpers/unsubscribe-token';
+import { getIsoDate } from '#/utils/iso-date';
 import { nanoid } from '#/utils/nanoid';
 import { checkSlugAvailable } from '../../general/helpers/check-slug';
 import { insertOauthAccount } from './oauth';
@@ -65,9 +67,12 @@ export const handleCreateUser = async ({ ctx, newUser, redirectUrl, provider, to
     // If signing up with token, update it with new user id and insert membership if applicable
     if (tokenId) await handleTokenUpdate(user.id, tokenId);
 
-    // If email is not verified, send verification email. Otherwise, sign in user
+    // If email is not verified, send verification email. Otherwise, create verified email record and  sign in user
     if (!emailVerified) sendVerificationEmail(user.id);
-    else await setUserSession(ctx, user.id, provider?.id || 'password');
+    else {
+      await db.insert(emailsTable).values({ email: user.email, userId: user.id, verified: true, verifiedAt: getIsoDate() });
+      await setUserSession(ctx, user.id, provider?.id || 'password');
+    }
 
     // Redirect to URL if provided
     if (redirectUrl) return ctx.redirect(redirectUrl, 302);
