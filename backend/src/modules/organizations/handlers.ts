@@ -137,8 +137,8 @@ const organizationsRoutes = app
     const emailDomains = updatedFields.emailDomains;
 
     if (emailDomains) {
-      const isDomainsValid = !emailDomains.some((domain) => emailProviders.includes(domain));
-      if (isDomainsValid) return errorResponse(ctx, 422, 'invalid_domain', 'warn', 'organization');
+      const isDomainsValid = emailDomains.some((domain) => emailProviders.includes(domain));
+      if (!isDomainsValid) return errorResponse(ctx, 422, 'invalid_domain', 'warn', 'organization');
     }
 
     if (slug && slug !== organization.slug) {
