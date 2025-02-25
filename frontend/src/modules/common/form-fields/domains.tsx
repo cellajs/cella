@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { type Control, useFormContext } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
+import emailProviders from '~/../../restricted-email-providers.json';
 import { FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
 import { TagInput } from '~/modules/ui/tag-input';
 
@@ -27,7 +28,15 @@ const DomainsFormField = ({ control, label, description, required }: Props) => {
   };
 
   const checkValidDomain = (domain: string) => {
-    return /^(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}$/i.test(domain.trim());
+    const trimDomain = domain.trim();
+    // Regex to check if domain follows valid format
+    const regexTest = /^(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}$/i.test(trimDomain);
+
+    // Check if domain is in restricted list of email providers
+    const restrictDomainsTest = emailProviders.some((provider) => provider === trimDomain);
+
+    // Return true if valid domain and not restricted, false otherwise
+    return regexTest && !restrictDomainsTest;
   };
 
   useEffect(() => setDomains(formValue.map((dom: string) => dom)), [formValue]);

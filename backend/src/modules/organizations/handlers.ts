@@ -5,6 +5,7 @@ import { organizationsTable } from '#/db/schema/organizations';
 
 import { OpenAPIHono } from '@hono/zod-openapi';
 import { config } from 'config';
+import emailProviders from '#/../../restricted-email-providers.json';
 import { usersTable } from '#/db/schema/users';
 import { type Env, getContextMemberships, getContextUser } from '#/lib/context';
 import { type ErrorType, createError, errorResponse } from '#/lib/errors';
@@ -133,6 +134,12 @@ const organizationsRoutes = app
 
     const updatedFields = ctx.req.valid('json');
     const slug = updatedFields.slug;
+    const emailDomains = updatedFields.emailDomains;
+
+    if (emailDomains) {
+      const isDomainsValid = !emailDomains.some((domain) => emailProviders.includes(domain));
+      if (isDomainsValid) return errorResponse(ctx, 422, 'invalid_domain', 'warn', 'organization');
+    }
 
     if (slug && slug !== organization.slug) {
       const slugAvailable = await checkSlugAvailable(slug);

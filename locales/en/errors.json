@@ -43,6 +43,8 @@
   "invalid_state": "Invalid state",
   "invalid_state.text": "Could not complete the authentication process.",
   "invalid_token": "Invalid token",
+  "invalid_domain": "Domain name is invalid",
+  "invalid_domain.text": "One of the domains you provided isn`t permitted. Please check and try again.",
   "invitation_expired": "Invitation has expired",
   "invitation_expired.text": "The token you provided has expired. Please contact us to receive a new invitation.",
   "invitation_not_found": "Invitation not found",
