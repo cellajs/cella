@@ -95,7 +95,7 @@ export const handleCreateUser = async ({ ctx, newUser, redirectUrl, provider, to
   }
 };
 
-const handleTokenUpdate = async (userId: string, tokenId: string) => {
+export const handleTokenUpdate = async (userId: string, tokenId: string) => {
   try {
     // Update the token with the new userId
     const [token] = await db.update(tokensTable).set({ userId }).where(eq(tokensTable.id, tokenId)).returning();

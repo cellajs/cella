@@ -171,7 +171,13 @@ export const updateExistingUser = async (ctx: Context, existingUser: UserModel, 
     return ctx.redirect(`${config.frontendUrl}/auth/email-verification`, 302);
   }
 
-  await db.update(emailsTable).set({ verified: true, verifiedAt: getIsoDate() }).where(eq(emailsTable.email, providerUser.email));
+  await db
+    .insert(emailsTable)
+    .values({ email: providerUser.email, userId: existingUser.id, verified: true, verifiedAt: getIsoDate() })
+    .onConflictDoUpdate({
+      target: emailsTable.email,
+      set: { userId: existingUser.id, verifiedAt: getIsoDate(), verified: true },
+    });
 
   // Sign in user
   await setUserSession(ctx, existingUser.id, providerId);
