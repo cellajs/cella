@@ -23,9 +23,9 @@ const VerifyEmail = () => {
   // Verify email with token
   const { mutate: verify, isPending: isVerifying } = useMutation({
     mutationFn: () => verifyEmail({ token }),
-    onSuccess: () => {
+    onSuccess: (redirectPath) => {
       toaster(t('common:success.email_verified'), 'success');
-      navigate({ to: config.welcomeRedirectPath });
+      navigate({ to: redirectPath || config.welcomeRedirectPath });
     },
   });
 

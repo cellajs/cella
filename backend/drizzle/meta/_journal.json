@@ -50,6 +50,13 @@
       "when": 1740405435147,
       "tag": "0006_common_talon",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1740493619228,
+      "tag": "0007_true_amazoness",
+      "breakpoints": true
     }
   ]
 }

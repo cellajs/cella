@@ -1,9 +1,10 @@
 import type { EnabledOauthProvider } from 'config';
 import { config } from 'config';
-import { eq } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 import type { Context } from 'hono';
 import { db } from '#/db/db';
 import { emailsTable } from '#/db/schema/emails';
+import { organizationsTable } from '#/db/schema/organizations';
 import { tokensTable } from '#/db/schema/tokens';
 import { type InsertUserModel, usersTable } from '#/db/schema/users';
 import { entityIdFields } from '#/entity-config';
@@ -14,6 +15,7 @@ import { insertMembership } from '#/modules/memberships/helpers';
 import { generateUnsubscribeToken } from '#/modules/users/helpers/unsubscribe-token';
 import { getIsoDate } from '#/utils/iso-date';
 import { nanoid } from '#/utils/nanoid';
+import { TimeSpan, createDate } from '#/utils/time-span';
 import { checkSlugAvailable } from '../../general/helpers/check-slug';
 import { insertOauthAccount } from './oauth';
 import { setUserSession } from './session';
@@ -66,6 +68,39 @@ export const handleCreateUser = async ({ ctx, newUser, redirectUrl, provider, to
 
     // If signing up with token, update it with new user id and insert membership if applicable
     if (tokenId) await handleTokenUpdate(user.id, tokenId);
+    if (!tokenId) {
+      const organizations = await db.select().from(organizationsTable).where(sql`jsonb_array_length(${organizationsTable.emailDomains}::jsonb) > 0`);
+
+      for (const organization of organizations) {
+        const isEmailMatching = organization.emailDomains.some((domain) => user.email.endsWith(`@${domain}`));
+        if (isEmailMatching) {
+          const [insertedToken] = await db
+            .insert(tokensTable)
+            .values({
+              token: nanoid(40), // unique hashed token
+              type: 'invitation' as const,
+              email: user.email,
+              createdBy: user.id,
+              expiresAt: createDate(new TimeSpan(7, 'd')),
+              role: 'member' as const,
+              userId: user.id,
+              entity: 'organization',
+              organizationId: organization.id,
+            })
+            .returning({ tokenId: tokensTable.id, token: tokensTable.token });
+          insertMembership({ userId: user.id, role: 'member', entity: organization, tokenId: insertedToken.tokenId });
+
+          if (emailVerified) {
+            await db.insert(emailsTable).values({ email: user.email, userId: user.id, verified: true, verifiedAt: getIsoDate() });
+            await setUserSession(ctx, user.id, provider?.id || 'password');
+            return ctx.redirect(`${config.frontendUrl}/invitation/${insertedToken.token}?tokenId=${insertedToken.tokenId}`, 302);
+          }
+
+          sendVerificationEmail(user.id);
+          return ctx.json({ success: true }, 200);
+        }
+      }
+    }
 
     // If email is not verified, send verification email. Otherwise, create verified email record and  sign in user
     if (!emailVerified) sendVerificationEmail(user.id);

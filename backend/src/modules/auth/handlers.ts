@@ -4,7 +4,7 @@ import { encodeBase64 } from '@oslojs/encoding';
 import { OAuth2RequestError, generateCodeVerifier, generateState } from 'arctic';
 import type { EnabledOauthProvider } from 'config';
 import { config } from 'config';
-import { and, desc, eq } from 'drizzle-orm';
+import { and, desc, eq, gt, isNotNull, sql } from 'drizzle-orm';
 import { db } from '#/db/db';
 import { emailsTable } from '#/db/schema/emails';
 import { membershipsTable } from '#/db/schema/memberships';
@@ -204,16 +204,30 @@ const authRoutes = app
     const token = getContextToken();
     if (!token || !token.userId) return errorResponse(ctx, 400, 'invalid_request', 'warn');
 
+    // Set email verified
+    await db.update(emailsTable).set({ verified: true, verifiedAt: getIsoDate() }).where(eq(emailsTable.tokenId, token.id));
+
     // Delete token to prevent reuse
     await db.delete(tokensTable).where(eq(tokensTable.id, token.id));
 
-    // Set email verified
-    await db.update(emailsTable).set({ verified: true, verifiedAt: getIsoDate() }).where(eq(emailsTable.tokenId, token.id));
+    const [inviteToken] = await db
+      .select()
+      .from(tokensTable)
+      .where(
+        and(
+          eq(tokensTable.userId, token.userId),
+          eq(tokensTable.type, 'invitation'),
+          isNotNull(tokensTable.entity),
+          gt(tokensTable.expiresAt, sql`NOW()`),
+        ),
+      )
+      .limit(1);
 
     // Sign in user
     await setUserSession(ctx, token.userId, 'email_verification');
 
-    return ctx.json({ success: true }, 200);
+    const redirectUrl = inviteToken ? `/invitation/${inviteToken.token}?tokenId=${inviteToken.id}` : null;
+    return ctx.json({ success: true, data: { redirectUrl } }, 200);
   })
   /*
    * Request reset password email
