@@ -4,7 +4,7 @@ import { encodeBase64 } from '@oslojs/encoding';
 import { OAuth2RequestError, generateCodeVerifier, generateState } from 'arctic';
 import type { EnabledOauthProvider } from 'config';
 import { config } from 'config';
-import { and, desc, eq, gt, isNotNull, sql } from 'drizzle-orm';
+import { and, desc, eq, gt, sql } from 'drizzle-orm';
 import { db } from '#/db/db';
 import { type EmailsModel, emailsTable } from '#/db/schema/emails';
 import { membershipsTable } from '#/db/schema/memberships';
@@ -214,14 +214,7 @@ const authRoutes = app
     const [inviteToken] = await db
       .select()
       .from(tokensTable)
-      .where(
-        and(
-          eq(tokensTable.userId, token.userId),
-          eq(tokensTable.type, 'invitation'),
-          isNotNull(tokensTable.entity),
-          gt(tokensTable.expiresAt, sql`NOW()`),
-        ),
-      )
+      .where(and(eq(tokensTable.userId, token.userId), eq(tokensTable.type, 'domain_invitation'), gt(tokensTable.expiresAt, sql`NOW()`)))
       .limit(1);
 
     // Sign in user

@@ -70,35 +70,35 @@ export const handleCreateUser = async ({ ctx, newUser, redirectUrl, provider, to
     if (tokenId) await handleTokenUpdate(user.id, tokenId);
     if (!tokenId) {
       const organizations = await db.select().from(organizationsTable).where(sql`jsonb_array_length(${organizationsTable.emailDomains}::jsonb) > 0`);
+      const organization = organizations.find((org) => org.emailDomains.some((domain) => user.email.endsWith(`@${domain}`)));
 
-      for (const organization of organizations) {
-        const isEmailMatching = organization.emailDomains.some((domain) => user.email.endsWith(`@${domain}`));
-        if (isEmailMatching) {
-          const [insertedToken] = await db
-            .insert(tokensTable)
-            .values({
-              token: nanoid(40), // unique hashed token
-              type: 'invitation' as const,
-              email: user.email,
-              createdBy: user.id,
-              expiresAt: createDate(new TimeSpan(7, 'd')),
-              role: 'member' as const,
-              userId: user.id,
-              entity: 'organization',
-              organizationId: organization.id,
-            })
-            .returning({ tokenId: tokensTable.id, token: tokensTable.token });
-          insertMembership({ userId: user.id, role: 'member', entity: organization, tokenId: insertedToken.tokenId });
+      if (organization) {
+        const [insertedToken] = await db
+          .insert(tokensTable)
+          .values({
+            token: nanoid(40), // unique hashed token
+            type: 'domain_invitation' as const,
+            email: user.email,
+            createdBy: user.id,
+            expiresAt: createDate(new TimeSpan(7, 'd')),
+            role: 'member' as const,
+            userId: user.id,
+            entity: 'organization',
+            organizationId: organization.id,
+          })
+          .returning({ tokenId: tokensTable.id, token: tokensTable.token });
+        insertMembership({ userId: user.id, role: 'member', entity: organization, tokenId: insertedToken.tokenId });
 
-          if (emailVerified) {
-            await db.insert(emailsTable).values({ email: user.email, userId: user.id, verified: true, verifiedAt: getIsoDate() });
-            await setUserSession(ctx, user.id, provider?.id || 'password');
-            return ctx.redirect(`${config.frontendUrl}/invitation/${insertedToken.token}?tokenId=${insertedToken.tokenId}`, 302);
-          }
-
-          sendVerificationEmail(user.id);
-          return ctx.json({ success: true }, 200);
+        if (emailVerified) {
+          await db.insert(emailsTable).values({ email: user.email, userId: user.id, verified: true, verifiedAt: getIsoDate() });
+          await setUserSession(ctx, user.id, provider?.id || 'password');
+          return ctx.redirect(`${config.frontendUrl}/invitation/${insertedToken.token}?tokenId=${insertedToken.tokenId}`, 302);
         }
+
+        sendVerificationEmail(user.id);
+        // Redirect to URL if provided
+        if (redirectUrl) return ctx.redirect(redirectUrl, 302);
+        return ctx.json({ success: true }, 200);
       }
     }
 

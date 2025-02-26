@@ -107,7 +107,7 @@ export const config = {
   enabledOauthProviders: ['github'] as const,
 
   // Token types
-  tokenTypes: ['email_verification', 'password_reset', 'invitation'] as const,
+  tokenTypes: ['email_verification', 'password_reset', 'invitation', 'domain_invitation'] as const,
 
   // Optional settings
   has: {
