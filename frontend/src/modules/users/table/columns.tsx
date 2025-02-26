@@ -13,7 +13,7 @@ import { dateShort } from '~/utils/date-short';
 
 export const useColumns = (callback: (users: User[]) => void) => {
   const { t } = useTranslation();
-  const isMobile = useBreakpoints('max', 'sm');
+  const isMobile = useBreakpoints('max', 'sm', false);
   const navigate = useNavigate();
 
   const columns = useMemo(() => {

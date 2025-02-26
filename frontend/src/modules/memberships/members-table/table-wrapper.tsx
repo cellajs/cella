@@ -7,7 +7,6 @@ import { config } from 'config';
 import { Trans, useTranslation } from 'react-i18next';
 import useSearchParams from '~/hooks/use-search-params';
 import { useUserSheet } from '~/hooks/use-user-sheet';
-import { queryClient } from '~/lib/router';
 import { useSortColumns } from '~/modules/common/data-table/sort-columns';
 import type { BaseTableMethods } from '~/modules/common/data-table/types';
 import { dialog } from '~/modules/common/dialoger/state';
@@ -15,11 +14,12 @@ import { toaster } from '~/modules/common/toaster';
 import type { EntityPage } from '~/modules/general/types';
 import { getMembers } from '~/modules/memberships/api';
 import { useColumns } from '~/modules/memberships/members-table/columns';
-import { MembersTableHeader } from '~/modules/memberships/members-table/table-header';
+import { MembersTableBar } from '~/modules/memberships/members-table/table-bar';
 import RemoveMembersForm from '~/modules/memberships/remove-member-form';
 import type { Member } from '~/modules/memberships/types';
 import { organizationsKeys } from '~/modules/organizations/query';
 import InviteUsers from '~/modules/users/invite-users';
+import { queryClient } from '~/query/query-client';
 import type { membersSearchSchema } from '~/routes/organizations';
 import { arraysHaveSameElements } from '~/utils';
 
@@ -124,7 +124,7 @@ const MembersTable = ({ entity: baseEntity, isSheet = false }: MembersTableProps
 
   return (
     <div className="flex flex-col gap-4 h-full">
-      <MembersTableHeader
+      <MembersTableBar
         entity={entity}
         total={total}
         selected={selected}

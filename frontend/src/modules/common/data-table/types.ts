@@ -25,7 +25,7 @@ export type BaseTableQueryVariables<T extends { q?: unknown; sort?: unknown; ord
   limit: number | undefined;
 };
 
-export type BaseTableHeaderProps<T, K> = {
+export type BaseTableBarProps<T, K> = {
   total: number | undefined;
   selected: T[];
   q: string;

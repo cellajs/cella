@@ -1,12 +1,12 @@
 import { createRoute } from '@tanstack/react-router';
 import { Suspense, lazy } from 'react';
 import { z } from 'zod';
-import { queryClient } from '~/lib/router';
 import ErrorNotice from '~/modules/common/error-notice';
 import SystemPage from '~/modules/general/system-page';
 import { organizationsQueryOptions } from '~/modules/organizations/query';
 import { requestsQueryOptions } from '~/modules/requests/query';
 import { usersQueryOptions } from '~/modules/users/query';
+import { queryClient } from '~/query/query-client';
 import { getOrganizationsQuerySchema } from '#/modules/organizations/schema';
 import { getRequestsQuerySchema } from '#/modules/requests/schema';
 import { usersQuerySchema } from '#/modules/users/schema';
@@ -15,9 +15,9 @@ import { AppRoute } from '~/routes/general';
 import { noDirectAccess } from '~/utils/no-direct-access';
 
 // Lazy-loaded route components
-const OrganizationsTable = lazy(() => import('~/modules/organizations/table'));
-const UsersTable = lazy(() => import('~/modules/users/table'));
-const RequestsTable = lazy(() => import('~/modules/requests/table'));
+const OrganizationsTable = lazy(() => import('~/modules/organizations/table/table-wrapper'));
+const UsersTable = lazy(() => import('~/modules/users/table/table-wrapper'));
+const RequestsTable = lazy(() => import('~/modules/requests/table/table-wrapper'));
 const RequestsPerMinute = lazy(() => import('~/modules/metrics/requests-per-minute'));
 
 // Search query schemas

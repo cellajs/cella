@@ -49,16 +49,12 @@ if (typeof window !== 'undefined') {
  * Optimized breakpoint hook with shared state.
  * Prevents multiple instances from causing unnecessary state updates.
  */
-export const useBreakpoints = (
-  mustBe: 'min' | 'max',
-  breakpoint: keyof typeof breakpoints,
-  enableReactivity = true, // ✅ Reactivity flag
-) => {
+export const useBreakpoints = (mustBe: 'min' | 'max', breakpoint: keyof typeof breakpoints, enableReactivity = true) => {
   const [breakpointState, setBreakpointState] = useState(currentBreakpoint);
 
   useEffect(() => {
     if (!enableReactivity) {
-      return () => {}; // ✅ Always return a function (empty cleanup function)
+      return () => {};
     }
 
     const update = (bp: string) => setBreakpointState(bp);

@@ -4,30 +4,30 @@ import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import ColumnsView from '~/modules/common/data-table/columns-view';
 import Export from '~/modules/common/data-table/export';
+import { TableBarContainer } from '~/modules/common/data-table/table-bar-container';
 import TableCount from '~/modules/common/data-table/table-count';
 import { FilterBarActions, FilterBarContent, TableFilterBar } from '~/modules/common/data-table/table-filter-bar';
-import { TableHeaderContainer } from '~/modules/common/data-table/table-header-container';
 import TableSearch from '~/modules/common/data-table/table-search';
-import type { BaseTableHeaderProps, BaseTableMethods } from '~/modules/common/data-table/types';
+import type { BaseTableBarProps, BaseTableMethods } from '~/modules/common/data-table/types';
 import { FocusView } from '~/modules/common/focus-view';
 import SelectRole from '~/modules/common/form-fields/select-role';
 import { InvitedMembers } from '~/modules/memberships/invited-members-table/invites-count';
-import type { MemberSearch, MembersTableProps } from '~/modules/memberships/members-table/';
+import type { MemberSearch, MembersTableProps } from '~/modules/memberships/members-table/table-wrapper';
 import type { Member } from '~/modules/memberships/types';
 import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
 import { nanoid } from '~/utils/nanoid';
 
-type MembersTableHeaderProps = MembersTableProps &
+type MembersTableBarProps = MembersTableProps &
   BaseTableMethods &
-  BaseTableHeaderProps<Member, MemberSearch> & {
+  BaseTableBarProps<Member, MemberSearch> & {
     role: MemberSearch['role'];
     openInviteDialog: (container: HTMLElement | null) => void;
     openRemoveDialog: () => void;
     fetchExport: (limit: number) => Promise<Member[]>;
   };
 
-export const MembersTableHeader = ({
+export const MembersTableBar = ({
   entity,
   total,
   selected,
@@ -41,7 +41,7 @@ export const MembersTableHeader = ({
   clearSelection,
   openInviteDialog,
   openRemoveDialog,
-}: MembersTableHeaderProps) => {
+}: MembersTableBarProps) => {
   const { t } = useTranslation();
   const containerRef = useRef(null);
 
@@ -67,7 +67,7 @@ export const MembersTableHeader = ({
 
   return (
     <div>
-      <TableHeaderContainer>
+      <TableBarContainer>
         {/* Table Filter Bar */}
         <TableFilterBar onResetFilters={onResetFilters} isFiltered={isFiltered}>
           <FilterBarActions>
@@ -136,7 +136,7 @@ export const MembersTableHeader = ({
 
         {/* Focus view */}
         {!isSheet && <FocusView iconOnly />}
-      </TableHeaderContainer>
+      </TableBarContainer>
 
       {/* Container ref to embed dialog */}
       <div ref={containerRef} />

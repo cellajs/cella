@@ -14,7 +14,7 @@ export const CustomSideMenu = ({
     sideMenu={(props) => (
       <SideMenu {...props}>
         <CustomDragHandleButton
-          hasDropDown={sideMenuOpenOnTypes.includes(props.block.type as BasicBlockTypes | CellaCustomBlockTypes)}
+          hasDropdown={sideMenuOpenOnTypes.includes(props.block.type as BasicBlockTypes | CellaCustomBlockTypes)}
           dragHandleMenu={(props) => (
             <>
               {sideMenuOpenOnTypes.includes(props.block.type as BasicBlockTypes | CellaCustomBlockTypes) ? (

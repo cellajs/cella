@@ -6,7 +6,7 @@ import { useSortColumns } from '~/modules/common/data-table/sort-columns';
 import type { BaseTableMethods } from '~/modules/common/data-table/types';
 import type { EntityPage } from '~/modules/general/types';
 import { useColumns } from '~/modules/memberships/invited-members-table/columns';
-import { InvitedMembersHeader } from '~/modules/memberships/invited-members-table/table-header';
+import { InvitedMembersTableBar } from '~/modules/memberships/invited-members-table/table-bar';
 import type { InvitedMember } from '~/modules/memberships/types';
 import type { invitedMembersSearchSchema } from '~/routes/organizations';
 import { arraysHaveSameElements } from '~/utils';
@@ -43,7 +43,7 @@ export const InvitedMembersTable = ({ entity }: InvitedMembersTableProps) => {
 
   return (
     <div className="flex flex-col gap-4 h-full">
-      <InvitedMembersHeader total={total} />
+      <InvitedMembersTableBar total={total} />
       <BaseDataTable
         ref={dataTableRef}
         entity={entity}

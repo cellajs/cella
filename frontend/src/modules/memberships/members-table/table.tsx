@@ -2,15 +2,16 @@ import { onlineManager } from '@tanstack/react-query';
 import { forwardRef, memo, useEffect, useImperativeHandle } from 'react';
 import type { RowsChangeData } from 'react-data-grid';
 import { useTranslation } from 'react-i18next';
-import { queryClient } from '~/lib/router';
 import { DataTable } from '~/modules/common/data-table';
+import { tablePropsAreEqual } from '~/modules/common/data-table/table-props-are-equal';
 import type { BaseTableMethods, BaseTableProps } from '~/modules/common/data-table/types';
 import { toaster } from '~/modules/common/toaster';
-import type { MemberSearch, MembersTableProps } from '~/modules/memberships/members-table';
+import type { MemberSearch, MembersTableProps } from '~/modules/memberships/members-table/table-wrapper';
 import { membersKeys, membersQueryOptions } from '~/modules/memberships/query';
 import { useMemberUpdateMutation } from '~/modules/memberships/query-mutations';
 import type { Member } from '~/modules/memberships/types';
 import { useDataFromSuspenseInfiniteQuery } from '~/query/hooks/use-data-from-query';
+import { queryClient } from '~/query/query-client';
 
 type BaseDataTableProps = MembersTableProps &
   BaseTableProps<Member, MemberSearch> & {
@@ -104,6 +105,7 @@ const BaseDataTable = memo(
       />
     );
   }),
+  tablePropsAreEqual,
 );
 
 export default BaseDataTable;

@@ -4,25 +4,25 @@ import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import ColumnsView from '~/modules/common/data-table/columns-view';
 import Export from '~/modules/common/data-table/export';
+import { TableBarContainer } from '~/modules/common/data-table/table-bar-container';
 import TableCount from '~/modules/common/data-table/table-count';
 import { FilterBarActions, FilterBarContent, TableFilterBar } from '~/modules/common/data-table/table-filter-bar';
-import { TableHeaderContainer } from '~/modules/common/data-table/table-header-container';
 import TableSearch from '~/modules/common/data-table/table-search';
-import type { BaseTableHeaderProps, BaseTableMethods } from '~/modules/common/data-table/types';
+import type { BaseTableBarProps, BaseTableMethods } from '~/modules/common/data-table/types';
 import { FocusView } from '~/modules/common/focus-view';
-import type { RequestsSearch } from '~/modules/requests/table';
+import type { RequestsSearch } from '~/modules/requests/table/table-wrapper';
 import type { Request } from '~/modules/requests/types';
 import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
 
-type RequestsTableHeaderBarProps = BaseTableMethods &
-  BaseTableHeaderProps<Request, RequestsSearch> & {
+type RequestsTableBarProps = BaseTableMethods &
+  BaseTableBarProps<Request, RequestsSearch> & {
     openInviteDialog: () => void;
     openRemoveDialog: () => void;
     fetchExport: (limit: number) => Promise<Request[]>;
   };
 
-export const RequestsTableHeaderBar = ({
+export const RequestsTableBar = ({
   total,
   selected,
   q,
@@ -33,7 +33,7 @@ export const RequestsTableHeaderBar = ({
   openInviteDialog,
   openRemoveDialog,
   fetchExport,
-}: RequestsTableHeaderBarProps) => {
+}: RequestsTableBarProps) => {
   const { t } = useTranslation();
 
   const selectedToWaitlist = useMemo(() => selected.filter((r) => r.type === 'waitlist' && !r.tokenId), [selected]);
@@ -52,7 +52,7 @@ export const RequestsTableHeaderBar = ({
   };
 
   return (
-    <TableHeaderContainer>
+    <TableBarContainer>
       {/* Filter bar */}
       <TableFilterBar onResetFilters={onResetFilters} isFiltered={isFiltered}>
         <FilterBarActions>
@@ -101,6 +101,6 @@ export const RequestsTableHeaderBar = ({
 
       {/* Focus view */}
       <FocusView iconOnly />
-    </TableHeaderContainer>
+    </TableBarContainer>
   );
 };

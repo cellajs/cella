@@ -1,7 +1,7 @@
 import { infiniteQueryOptions, queryOptions, useMutation } from '@tanstack/react-query';
 import { config } from 'config';
 import type { ApiError } from '~/lib/api';
-import { queryClient } from '~/lib/router';
+import { queryClient } from '~/query/query-client';
 
 import { type GetUsersParams, type UpdateUserParams, getUser, getUsers, updateSelf, updateUser } from '~/modules/users/api';
 import { getAndSetMe, getAndSetMenu, getAndSetUserAuthInfo } from '~/modules/users/helpers';
@@ -43,26 +43,23 @@ export const userQueryOptions = (idOrSlug: string) => queryOptions({ queryKey: u
 /**
  * Query options for fetching the current authenticated user's data.
  *
- * @param retry - The number of retry attempts on failure.
  * @returns Query options.
  */
-export const meQueryOptions = (retry = 0) => queryOptions({ queryKey: meKeys.all, queryFn: getAndSetMe, retry });
+export const meQueryOptions = () => queryOptions({ queryKey: meKeys.all, queryFn: getAndSetMe });
 
 /**
  * Query options for fetching the authentication information of the current authenticated user.
  *
- * @param retry - The number of retry attempts on failure.
  * @returns Query options.
  */
-export const userAuthQueryOptions = (retry = 0) => queryOptions({ queryKey: [], queryFn: getAndSetUserAuthInfo, retry });
+export const userAuthQueryOptions = () => queryOptions({ queryKey: [], queryFn: getAndSetUserAuthInfo, staleTime: 0 });
 
 /**
  * Query options for fetching the current authenticated user's menu.
  *
- * @param retry - The number of retry attempts on failure.
  * @returns Query options.
  */
-export const menuQueryOptions = (retry = 0) => queryOptions({ queryKey: ['menu'], queryFn: getAndSetMenu, retry });
+export const menuQueryOptions = () => queryOptions({ queryKey: ['menu'], queryFn: getAndSetMenu });
 
 /**
  * Infinite query options to get a paginated list of users.

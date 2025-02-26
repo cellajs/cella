@@ -12,7 +12,7 @@ import { getRequests } from '~/modules/requests/api';
 import DeleteRequests from '~/modules/requests/delete-requests';
 import { requestsKeys } from '~/modules/requests/query';
 import { useColumns } from '~/modules/requests/table/columns';
-import { RequestsTableHeaderBar } from '~/modules/requests/table/table-header';
+import { RequestsTableBar } from '~/modules/requests/table/table-bar';
 import type { Request } from '~/modules/requests/types';
 import { useMutateQueryData } from '~/query/hooks/use-mutate-query-data';
 import { RequestsTableRoute, type requestSearchSchema } from '~/routes/system';
@@ -100,7 +100,7 @@ const RequestsTable = () => {
 
   return (
     <div className="flex flex-col gap-4 h-full">
-      <RequestsTableHeaderBar
+      <RequestsTableBar
         total={total}
         selected={selected}
         columns={columns}

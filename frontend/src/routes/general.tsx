@@ -1,15 +1,16 @@
 import * as Sentry from '@sentry/react';
 import { type QueryClient, onlineManager } from '@tanstack/react-query';
-import { createRootRouteWithContext, createRoute, redirect } from '@tanstack/react-router';
+import { createRootRouteWithContext, createRoute, defer, redirect } from '@tanstack/react-router';
 import { config } from 'config';
 import { Suspense, lazy } from 'react';
 import { z } from 'zod';
-import { offlineFetch, onError } from '~/lib/query-client';
 import ErrorNotice from '~/modules/common/error-notice';
 import { PublicLayout } from '~/modules/common/public-layout';
 import { Root } from '~/modules/common/root';
 import Spinner from '~/modules/common/spinner';
-import { meQueryOptions } from '~/modules/users/query';
+import { meQueryOptions, menuQueryOptions } from '~/modules/users/query';
+import { hybridFetch } from '~/query/hybrid-fetch';
+import { onError } from '~/query/on-error';
 import { useUserStore } from '~/store/user';
 
 // Lazy load main App component, which is behind authentication
@@ -20,7 +21,6 @@ const errorSearchSchema = z.object({
   severity: z.enum(['warn', 'error']).optional(),
 });
 
-//
 export const rootRoute = createRootRouteWithContext<{ queryClient: QueryClient }>()({
   staticData: { pageTitle: '', isAuth: false },
   component: () => <Root />,
@@ -38,8 +38,8 @@ export const PublicRoute = createRoute({
     try {
       console.debug('Fetch me & menu in while entering public page ', location.pathname);
 
-      // Fetch and set user and userAuth data to User store(with support of offline access)
-      await offlineFetch(meQueryOptions());
+      // Fetch and set user
+      await hybridFetch(meQueryOptions());
     } catch (error) {
       if (error instanceof Error) {
         Sentry.captureException(error);
@@ -64,8 +64,14 @@ export const AppRoute = createRoute({
     try {
       console.debug('Fetch me & menu while entering app ', location.pathname);
 
-      // Fetch and set user and userAuth data to User store(with support of offline access)
-      await offlineFetch(meQueryOptions());
+      // Fetch and set user
+      const user = await hybridFetch(meQueryOptions());
+
+      // Defer menu loading (won't block rendering)
+      if (user)
+        return {
+          menuData: defer(hybridFetch(menuQueryOptions())),
+        };
     } catch (error) {
       if (error instanceof Error) {
         Sentry.captureException(error);

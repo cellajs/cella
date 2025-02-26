@@ -2,14 +2,15 @@ import { useMutation } from '@tanstack/react-query';
 import { type Entity, config } from 'config';
 import { Undo } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import type { Control } from 'react-hook-form';
-import { useFormContext, useWatch } from 'react-hook-form';
+import { type Control, useFormContext, useWatch } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import slugify from 'slugify';
+import { useMeasure } from '~/hooks/use-measure';
 import { useOnlineManager } from '~/hooks/use-online-manager';
-import InputFormField from '~/modules/common/form-fields/input';
 import { checkSlugAvailable } from '~/modules/general/api';
 import { Button } from '~/modules/ui/button';
+import { FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
+import { Input } from '~/modules/ui/input';
 
 interface SlugFieldProps {
   // biome-ignore lint/suspicious/noExplicitAny: <explanation>
@@ -28,7 +29,17 @@ export const SlugFormField = ({ control, label, previousSlug, description, nameV
   const [isDeviating, setDeviating] = useState(false);
   const [isSlugAvailable, setSlugAvailable] = useState<'available' | 'blank' | 'notAvailable'>('blank');
 
+  const prefix = `${config.frontendUrl.replace(/^https?:\/\//, '')}/${type === 'organization' ? '' : `${type}s/`}`;
+
+  const inputClassName = `${isSlugAvailable !== 'blank' && 'ring-2 focus-visible:ring-2'}
+                          ${isSlugAvailable === 'available' && 'ring-green-500 focus-visible:ring-green-500'}
+                          ${isSlugAvailable === 'notAvailable' && 'ring-red-500 focus-visible:ring-red-500'}`;
+
   const form = useFormContext<{ slug: string }>();
+  const { setFocus } = useFormContext();
+
+  const prefixMeasure = useMeasure<HTMLButtonElement>();
+  const revertMeasure = useMeasure<HTMLDivElement>();
 
   // Watch to check if slug availability
   const slug = useWatch({ control: form.control, name: 'slug' });
@@ -75,29 +86,60 @@ export const SlugFormField = ({ control, label, previousSlug, description, nameV
     form.resetField('slug');
   };
 
+  const prefixClick = () => {
+    setFocus('slug');
+  };
+
+  const getStyle = () => ({
+    paddingLeft: `${prefixMeasure.bounds.width + 14}px`,
+    paddingRight: `${revertMeasure.bounds.width + 14}px`,
+  });
+
   return (
-    <InputFormField
+    <FormField
       control={control}
-      name={'slug'}
-      inputClassName={`
-        ${isSlugAvailable === 'available' ? 'ring-2 focus-visible:ring-2 ring-green-500  focus-visible:ring-green-500' : ''} 
-        ${isSlugAvailable === 'notAvailable' ? 'ring-2 focus-visible:ring-2 ring-red-500 focus-visible:ring-red-500' : ''}`}
-      onFocus={() => setDeviating(true)}
-      label={label}
-      prefix={`${config.frontendUrl.replace(/^https?:\/\//, '')}/${type === 'organization' ? '' : `${type}s/`}`}
-      description={description}
-      required
-      subComponent={
-        previousSlug &&
-        previousSlug !== slug && (
-          <div id="slug-subComponent" className="absolute inset-y-1 right-1 flex justify-end">
-            <Button variant="ghost" size="sm" aria-label={t('common:revert_handle')} onClick={revertSlug} className="h-full">
-              <Undo size={16} /> <span className="max-sm:hidden ml-1">{t('common:revert_to')}</span>
-              <strong className="max-sm:hidden ml-1">{previousSlug}</strong>
-            </Button>
-          </div>
-        )
-      }
+      name="slug"
+      render={({ field: { value: formFieldValue, ...rest } }) => (
+        <FormItem name="slug">
+          <FormLabel>
+            {label}
+            <span className="ml-1 opacity-50">*</span>
+          </FormLabel>
+          {description && <FormDescription>{description}</FormDescription>}
+          <FormControl>
+            <div className="relative flex w-full items-center ">
+              <button
+                ref={prefixMeasure.ref}
+                type="button"
+                tabIndex={-1}
+                id="slug-prefix"
+                onClick={prefixClick}
+                className="absolute font-light left-3 text-xs"
+                style={{ opacity: formFieldValue ? 1 : 0.5 }}
+              >
+                {prefix}
+              </button>
+
+              <Input
+                className={inputClassName}
+                style={getStyle()}
+                type={type}
+                onFocus={() => setDeviating(true)}
+                value={formFieldValue || ''}
+                {...rest}
+              />
+              {previousSlug && previousSlug !== slug && (
+                <div ref={revertMeasure.ref} id="slug-revert" className="absolute inset-y-1 right-1 flex justify-end">
+                  <Button variant="ghost" size="sm" aria-label={t('common:revert_handle')} onClick={revertSlug} className="h-full">
+                    <Undo size={16} /> <span className="max-sm:hidden ml-1">{t('common:revert')}</span>
+                  </Button>
+                </div>
+              )}
+            </div>
+          </FormControl>
+          <FormMessage />
+        </FormItem>
+      )}
     />
   );
 };

@@ -3,26 +3,26 @@ import { motion } from 'motion/react';
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import ColumnsView from '~/modules/common/data-table/columns-view';
+import { TableBarContainer } from '~/modules/common/data-table/table-bar-container';
 import TableCount from '~/modules/common/data-table/table-count';
 import { FilterBarActions, FilterBarContent, TableFilterBar } from '~/modules/common/data-table/table-filter-bar';
-import { TableHeaderContainer } from '~/modules/common/data-table/table-header-container';
 import TableSearch from '~/modules/common/data-table/table-search';
-import type { BaseTableHeaderProps, BaseTableMethods } from '~/modules/common/data-table/types';
+import type { BaseTableBarProps, BaseTableMethods } from '~/modules/common/data-table/types';
 import { FocusView } from '~/modules/common/focus-view';
 import SelectRole from '~/modules/common/form-fields/select-role';
 import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
-import type { UsersSearch } from '~/modules/users/table';
+import type { UsersSearch } from '~/modules/users/table/table-wrapper';
 import type { User } from '~/modules/users/types';
 
-type UsersTableHeaderProps = BaseTableMethods &
-  BaseTableHeaderProps<User, UsersSearch> & {
+type UsersTableBarProps = BaseTableMethods &
+  BaseTableBarProps<User, UsersSearch> & {
     role: UsersSearch['role'];
     openInviteDialog: (container: HTMLElement | null) => void;
     openRemoveDialog: () => void;
   };
 
-export const UsersTableHeader = ({
+export const UsersTableBar = ({
   total,
   selected,
   q,
@@ -33,7 +33,7 @@ export const UsersTableHeader = ({
   clearSelection,
   openInviteDialog,
   openRemoveDialog,
-}: UsersTableHeaderProps) => {
+}: UsersTableBarProps) => {
   const { t } = useTranslation();
   const containerRef = useRef(null);
 
@@ -57,7 +57,7 @@ export const UsersTableHeader = ({
 
   return (
     <>
-      <TableHeaderContainer>
+      <TableBarContainer>
         {/* Table filter bar */}
         <TableFilterBar onResetFilters={onResetFilters} isFiltered={isFiltered}>
           <FilterBarActions>
@@ -116,7 +116,7 @@ export const UsersTableHeader = ({
 
         {/* Focus view */}
         <FocusView iconOnly />
-      </TableHeaderContainer>
+      </TableBarContainer>
 
       {/* Container for embedded dialog */}
       <div ref={containerRef} />

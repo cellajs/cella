@@ -6,11 +6,12 @@ import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { DataTable } from '~/modules/common/data-table';
+import { tablePropsAreEqual } from '~/modules/common/data-table/table-props-are-equal';
 import type { BaseTableMethods, BaseTableProps } from '~/modules/common/data-table/types';
 import { toaster } from '~/modules/common/toaster';
 import { inviteMembers } from '~/modules/memberships/api';
 import { organizationsQueryOptions } from '~/modules/organizations/query';
-import type { OrganizationsSearch } from '~/modules/organizations/table';
+import type { OrganizationsSearch } from '~/modules/organizations/table/table-wrapper';
 import type { Organization } from '~/modules/organizations/types';
 import { useDataFromSuspenseInfiniteQuery } from '~/query/hooks/use-data-from-query';
 import { useUserStore } from '~/store/user';
@@ -92,5 +93,7 @@ const BaseDataTable = memo(
       />
     );
   }),
+  tablePropsAreEqual,
 );
+
 export default BaseDataTable;

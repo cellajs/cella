@@ -17,8 +17,7 @@ const StepperFooter = ({
 }) => {
   const { nextStep, prevStep, isOptionalStep, hasCompletedAllSteps, activeStep } = useStepper();
   const { t } = useTranslation();
-  const { menu } = useNavigationStore();
-  const { setFinishedOnboarding } = useNavigationStore();
+  const { menu, setFinishedOnboarding } = useNavigationStore();
   const hasOrganizations = menu.organizations.length > 0;
 
   // Ask to confirm

@@ -17,7 +17,7 @@ import NewsletterDraft from '~/modules/organizations/newsletter-draft';
 import NewsletterForm from '~/modules/organizations/newsletter-form';
 import { organizationsKeys } from '~/modules/organizations/query';
 import { useColumns } from '~/modules/organizations/table/columns';
-import { OrganizationsTableHeader } from '~/modules/organizations/table/table-header';
+import { OrganizationsTableBar } from '~/modules/organizations/table/table-bar';
 import type { Organization } from '~/modules/organizations/types';
 import { OrganizationsTableRoute, type organizationsSearchSchema } from '~/routes/system';
 import { arraysHaveSameElements } from '~/utils';
@@ -100,7 +100,7 @@ const OrganizationsTable = () => {
 
   return (
     <div className="flex flex-col gap-4 h-full">
-      <OrganizationsTableHeader
+      <OrganizationsTableBar
         total={total}
         selected={selected}
         columns={columns}

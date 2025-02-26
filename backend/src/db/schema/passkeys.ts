@@ -1,5 +1,6 @@
-import { pgTable, timestamp, varchar } from 'drizzle-orm/pg-core';
+import { pgTable, varchar } from 'drizzle-orm/pg-core';
 import { usersTable } from '#/db/schema/users';
+import { timestampsColumn } from '#/db/utils/timestamp-columns';
 import { nanoid } from '#/utils/nanoid';
 
 export const passkeysTable = pgTable('passkeys', {
@@ -9,7 +10,7 @@ export const passkeysTable = pgTable('passkeys', {
     .references(() => usersTable.email, { onDelete: 'cascade' }),
   credentialId: varchar().notNull(),
   publicKey: varchar().notNull(),
-  createdAt: timestamp().defaultNow().notNull(),
+  createdAt: timestampsColumn.createdAt,
 });
 
 export type PasskeyModel = typeof passkeysTable.$inferSelect;
