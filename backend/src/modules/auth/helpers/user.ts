@@ -24,7 +24,7 @@ import { sendVerificationEmail } from './verify-email';
 interface HandleCreateUserProps {
   ctx: Context;
   newUser: Omit<InsertUserModel, 'unsubscribeToken'>;
-  redirectUrl?: string;
+  redirectUrl?: string | null;
   provider?: { id: EnabledOauthProvider; userId: string };
   tokenId?: string | null;
   emailVerified?: boolean;

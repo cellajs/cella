@@ -136,7 +136,8 @@ const authRoutes = app
     // Create user & send verification email
     const newUser = { id: userId, slug, name: slug, email: validToken.email, hashedPassword };
 
-    return await handleCreateUser({ ctx, newUser, tokenId: validToken.id });
+    const redirectUrl = validToken.entity ? `${config.frontendUrl}/invitation/${validToken.token}?tokenId=${validToken.id}` : null;
+    return await handleCreateUser({ ctx, newUser, redirectUrl, emailVerified: true, tokenId: validToken.id });
   })
   /*
    * Send verification email, also used to resend verification email.
@@ -227,6 +228,7 @@ const authRoutes = app
     await setUserSession(ctx, token.userId, 'email_verification');
 
     const redirectUrl = inviteToken ? `/invitation/${inviteToken.token}?tokenId=${inviteToken.id}` : null;
+
     return ctx.json({ success: true, data: { redirectUrl } }, 200);
   })
   /*

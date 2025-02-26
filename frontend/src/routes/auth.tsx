@@ -34,7 +34,7 @@ export const AuthenticateRoute = createRoute({
   getParentRoute: () => AuthLayoutRoute,
   beforeLoad: async ({ cause, search }) => {
     // Only check auth if entering to prevent loop
-    if (cause !== 'enter' || search.fromRoot) return;
+    if (cause !== 'enter' || search.fromRoot || (search.token && search.tokenId)) return;
 
     // If stored user, redirect to home
     const storedUser = useUserStore.getState().user;
