@@ -150,8 +150,8 @@ const organizationsRoutes = app
             WHERE domain = ANY (${sql.raw(formattedEmailDomains)})
           )
         `);
-
-      if (alreadyExists || isDomainsInValid) return errorResponse(ctx, 422, 'invalid_domain', 'warn', 'organization');
+      // TODO: create 2 different error messages for the 2 cases
+      if (alreadyExists.length || isDomainsInValid) return errorResponse(ctx, 422, 'invalid_domain', 'warn', 'organization');
     }
 
     if (slug && slug !== organization.slug) {
