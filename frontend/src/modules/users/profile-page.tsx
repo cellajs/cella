@@ -62,7 +62,7 @@ const UserProfilePage = ({ user, sheet, orgIdOrSlug }: { user: LimitedUser; shee
         }
       />
       <Suspense>
-        <div className="container">
+        <div className="container py-2">
           <ProfilePageContent orgIdOrSlug={orgIdOrSlug} userId={user.id} sheet={sheet} />
         </div>
       </Suspense>

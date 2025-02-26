@@ -118,7 +118,5 @@
   "unsupported_oauth.text": "This authentication provider is currently not supported. Please use another authentication method.",
   "update_resource": "{{resource}} could not be updated. Try again later.",
   "user_mismatch": "User mismatch",
-  "user_mismatch.text": "The user you are trying to access is not the same as the one authenticated.",
-  "domain_invitation_expired": "Invitation to org by domain has expired",
-  "domain_invitation_not_found": "Invitation to org by domain not found"
+  "user_mismatch.text": "The user you are trying to access is not the same as the one authenticated."
 }

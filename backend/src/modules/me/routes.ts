@@ -1,7 +1,9 @@
+import { z } from 'zod';
 import { createRouteConfig } from '#/lib/route-config';
 import { isAuthenticated } from '#/middlewares/guard';
-import { idsBodySchema } from '#/utils/schema/common';
+import { idOrSlugSchema, idsBodySchema } from '#/utils/schema/common';
 import { errorResponses, successWithDataSchema, successWithErrorsSchema, successWithoutDataSchema } from '#/utils/schema/responses';
+import { limitEntitySchema } from '../general/schema';
 import { updateUserBodySchema, userSchema } from '../users/schema';
 import { leaveEntityQuerySchema, meAuthInfoSchema, meRelativeEntitiesSchema, passkeyRegistrationBodySchema, userMenuSchema } from './schema';
 
@@ -229,6 +231,69 @@ class MeRouteConfig {
     responses: {
       200: {
         description: 'Passkey removed',
+        content: {
+          'application/json': {
+            schema: successWithoutDataSchema,
+          },
+        },
+      },
+      ...errorResponses,
+    },
+  });
+
+  public domainOrganizations = createRouteConfig({
+    method: 'get',
+    path: '/domain-organizations',
+    guard: isAuthenticated,
+    tags: ['me'],
+    summary: 'Get domain organizations',
+    description: 'Get organizations with witch current user emails have same domain.',
+    security: [],
+    responses: {
+      200: {
+        description: 'List of organizations',
+        content: {
+          'application/json': {
+            schema: successWithDataSchema(z.array(limitEntitySchema)),
+          },
+        },
+      },
+      ...errorResponses,
+    },
+  });
+
+  public joinByDomain = createRouteConfig({
+    method: 'post',
+    path: '/join-by-domain/{idOrSlug}',
+    guard: [isAuthenticated],
+    tags: ['me'],
+    summary: 'Join to suggested by domain organization ',
+    description: 'Join to organization that match one of user emails domain.',
+    request: { params: z.object({ idOrSlug: idOrSlugSchema }) },
+    responses: {
+      200: {
+        description: 'Joined to organization',
+        content: {
+          'application/json': {
+            schema: successWithoutDataSchema,
+          },
+        },
+      },
+      ...errorResponses,
+    },
+  });
+
+  public declineByDomain = createRouteConfig({
+    method: 'post',
+    path: '/decline-by-domain/{idOrSlug}',
+    guard: [isAuthenticated],
+    tags: ['me'],
+    summary: 'Decline organization suggestion by domain',
+    description: 'Decline organization suggestion that match one of user emails domain.',
+    request: { params: z.object({ idOrSlug: idOrSlugSchema }) },
+    responses: {
+      200: {
+        description: 'Decline suggestion',
         content: {
           'application/json': {
             schema: successWithoutDataSchema,

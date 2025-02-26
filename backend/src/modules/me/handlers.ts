@@ -1,4 +1,4 @@
-import { and, asc, eq, inArray, isNotNull } from 'drizzle-orm';
+import { and, asc, eq, inArray, isNotNull, isNull, sql } from 'drizzle-orm';
 import type { z } from 'zod';
 
 import type { EnabledOauthProvider } from 'config';
@@ -12,8 +12,10 @@ import meRouteConfig from './routes';
 
 import { OpenAPIHono } from '@hono/zod-openapi';
 import { config } from 'config';
+import { emailsTable } from '#/db/schema/emails';
 import { membershipsTable } from '#/db/schema/memberships';
 import { oauthAccountsTable } from '#/db/schema/oauth-accounts';
+import { organizationsTable } from '#/db/schema/organizations';
 import { passkeysTable } from '#/db/schema/passkeys';
 import { type EntityRelations, entityIdFields, entityRelations, entityTables } from '#/entity-config';
 import { type Env, getContextMemberships, getContextUser } from '#/lib/context';
@@ -23,6 +25,7 @@ import defaultHook from '#/utils/default-hook';
 import { getIsoDate } from '#/utils/iso-date';
 import { deleteAuthCookie, getAuthCookie } from '../auth/helpers/cookie';
 import { parseAndValidatePasskeyAttestation } from '../auth/helpers/passkey';
+import { insertMembership } from '../memberships/helpers';
 import { membershipSelect } from '../memberships/helpers/select';
 import { getUserSessions } from './helpers/get-sessions';
 import type { menuItemSchema, userMenuSchema } from './schema';
@@ -320,6 +323,122 @@ const meRoutes = app
     const user = getContextUser();
 
     await db.delete(passkeysTable).where(eq(passkeysTable.userEmail, user.email));
+
+    return ctx.json({ success: true }, 200);
+  })
+  /*
+   * Get list of suggested organizations based of self emails domain */
+  .openapi(meRouteConfig.domainOrganizations, async (ctx) => {
+    const user = getContextUser();
+
+    const emails = await db
+      .select()
+      .from(emailsTable)
+      .where(and(eq(emailsTable.userId, user.id), eq(emailsTable.verified, true), isNull(emailsTable.domainInvite)));
+
+    // Extract email domains and format them as an array of strings
+    const emailDomains = emails.map(({ email }) => email.split('@')[1]);
+
+    // Query to get organizations where the email domain matches
+    const organizations = await db
+      .select({
+        id: organizationsTable.id,
+        entity: organizationsTable.entity,
+        slug: organizationsTable.slug,
+        name: organizationsTable.name,
+        thumbnailUrl: organizationsTable.thumbnailUrl,
+      })
+      .from(organizationsTable)
+      .where(
+        and(
+          sql`
+      EXISTS (
+        SELECT 1 
+        FROM jsonb_array_elements_text(${organizationsTable.emailDomains}::jsonb) AS domain
+        WHERE domain = ANY (${sql.raw(`ARRAY[${emailDomains.map((email) => `'${email}'`).join(', ')}]::text[]`)})
+        )
+        `,
+          isNull(membershipsTable.id),
+        ),
+      )
+      .leftJoin(
+        membershipsTable,
+        and(
+          eq(membershipsTable.userId, user.id),
+          eq(membershipsTable.type, 'organization'),
+          eq(membershipsTable.organizationId, organizationsTable.id),
+        ),
+      );
+
+    return ctx.json({ success: true, data: organizations }, 200);
+  })
+  /*
+   * Join to organization by domain
+   */
+  .openapi(meRouteConfig.joinByDomain, async (ctx) => {
+    const { idOrSlug } = ctx.req.valid('param');
+
+    const user = getContextUser();
+
+    const organization = await resolveEntity('organization', idOrSlug);
+    if (!organization) return errorResponse(ctx, 404, 'not_found', 'warn', 'organization');
+
+    const emails = await db
+      .select()
+      .from(emailsTable)
+      .where(and(eq(emailsTable.userId, user.id), eq(emailsTable.verified, true), isNull(emailsTable.domainInvite)));
+
+    // Check if any of the user's email domains match the organization's allowed domains
+    const emailInfoWithMatchingDomain = emails.filter(({ email }) => {
+      const emailDomain = email.split('@')[1];
+      return organization.emailDomains.includes(emailDomain);
+    });
+
+    const matchingEmails = emailInfoWithMatchingDomain.map(({ email }) => email);
+
+    // Check if any of the user's email domains match the organization's allowed domains
+    if (matchingEmails.length === 0) return errorResponse(ctx, 403, 'forbidden', 'warn', 'organization');
+
+    await insertMembership({ userId: user.id, role: 'member', entity: organization });
+
+    await db
+      .update(emailsTable)
+      .set({ domainInvite: 'accepted' })
+      .where(and(eq(emailsTable.userId, user.id), inArray(emailsTable.email, matchingEmails)));
+
+    return ctx.json({ success: true }, 200);
+  })
+  /*
+   * Decline suggestion  by domain
+   */
+  .openapi(meRouteConfig.declineByDomain, async (ctx) => {
+    const { idOrSlug } = ctx.req.valid('param');
+
+    const user = getContextUser();
+
+    const organization = await resolveEntity('organization', idOrSlug);
+    if (!organization) return errorResponse(ctx, 404, 'not_found', 'warn', 'organization');
+
+    const emails = await db
+      .select()
+      .from(emailsTable)
+      .where(and(eq(emailsTable.userId, user.id), eq(emailsTable.verified, true), isNull(emailsTable.domainInvite)));
+
+    // Check if any of the user's email domains match the organization's allowed domains
+    const emailInfoWithMatchingDomain = emails.filter(({ email }) => {
+      const emailDomain = email.split('@')[1];
+      return organization.emailDomains.includes(emailDomain);
+    });
+
+    const matchingEmails = emailInfoWithMatchingDomain.map(({ email }) => email);
+
+    // Check if any of the user's email domains match the organization's allowed domains
+    if (matchingEmails.length === 0) return errorResponse(ctx, 403, 'forbidden', 'warn', 'organization');
+
+    await db
+      .update(emailsTable)
+      .set({ domainInvite: 'rejected' })
+      .where(and(eq(emailsTable.userId, user.id), inArray(emailsTable.email, matchingEmails)));
 
     return ctx.json({ success: true }, 200);
   });

@@ -218,7 +218,7 @@ class AuthLayoutRouteConfig {
         description: 'Verified & session given',
         content: {
           'application/json': {
-            schema: successWithDataSchema(z.object({ redirectUrl: z.string().nullish() })),
+            schema: successWithoutDataSchema,
           },
         },
       },

@@ -238,3 +238,23 @@ export const leaveEntity = async (query: LeaveEntityQuery) => {
   const json = await handleResponse(response);
   return json.success;
 };
+
+export const domainSuggestedOrganizations = async () => {
+  const response = await meClient['domain-organizations'].$get();
+
+  const json = await handleResponse(response);
+  return json.data;
+};
+
+export const joinByDomain = async ({ idOrSlug }: { idOrSlug: string }) => {
+  const response = await meClient['join-by-domain'][':idOrSlug'].$post({ param: { idOrSlug } });
+
+  const json = await handleResponse(response);
+  return json.success;
+};
+export const declineByDomain = async ({ idOrSlug }: { idOrSlug: string }) => {
+  const response = await meClient['decline-by-domain'][':idOrSlug'].$post({ param: { idOrSlug } });
+
+  const json = await handleResponse(response);
+  return json.success;
+};

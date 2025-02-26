@@ -4,7 +4,7 @@ import { encodeBase64 } from '@oslojs/encoding';
 import { OAuth2RequestError, generateCodeVerifier, generateState } from 'arctic';
 import type { EnabledOauthProvider } from 'config';
 import { config } from 'config';
-import { and, desc, eq, gt, sql } from 'drizzle-orm';
+import { and, desc, eq } from 'drizzle-orm';
 import { db } from '#/db/db';
 import { type EmailsModel, emailsTable } from '#/db/schema/emails';
 import { membershipsTable } from '#/db/schema/memberships';
@@ -211,18 +211,10 @@ const authRoutes = app
     // Delete token to prevent reuse
     await db.delete(tokensTable).where(eq(tokensTable.id, token.id));
 
-    const [inviteToken] = await db
-      .select()
-      .from(tokensTable)
-      .where(and(eq(tokensTable.userId, token.userId), eq(tokensTable.type, 'domain_invitation'), gt(tokensTable.expiresAt, sql`NOW()`)))
-      .limit(1);
-
     // Sign in user
     await setUserSession(ctx, token.userId, 'email_verification');
 
-    const redirectUrl = inviteToken ? `/invitation/${inviteToken.token}?tokenId=${inviteToken.id}` : null;
-
-    return ctx.json({ success: true, data: { redirectUrl } }, 200);
+    return ctx.json({ success: true }, 200);
   })
   /*
    * Request reset password email
@@ -377,6 +369,7 @@ const authRoutes = app
   /*
    * Accept org invite token for signed in users
    */
+  //TODO (rename, replace(memberships))? could we use it with other entities invite?
   .openapi(authRouteConfig.acceptOrgInvite, async (ctx) => {
     const user = getContextUser();
     const token = getContextToken();

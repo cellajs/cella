@@ -14,6 +14,7 @@ export const emailsTable = pgTable('emails', {
     .references(() => usersTable.id, { onDelete: 'cascade' }),
   createdAt: timestampsColumn.createdAt,
   verifiedAt: timestamp({ mode: 'string' }),
+  domainInvite: varchar({ enum: ['rejected', 'accepted'] }),
 });
 
 export type EmailsModel = typeof emailsTable.$inferSelect;

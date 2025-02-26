@@ -73,7 +73,7 @@ export const verifyEmail = async ({ token }: { token: string }) => {
   });
 
   const json = await handleResponse(response);
-  return json.data.redirectUrl;
+  return json.success;
 };
 
 type SignInProps = Parameters<(typeof client)['sign-in']['$post']>['0']['json'];
