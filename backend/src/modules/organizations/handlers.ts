@@ -137,8 +137,21 @@ const organizationsRoutes = app
     const emailDomains = updatedFields.emailDomains;
 
     if (emailDomains) {
+      // Convert emailDomains into a PostgreSQL-compatible array
+      const formattedEmailDomains = `ARRAY[${emailDomains.map((d) => `'${d}'`).join(', ')}]::text[]`;
+
       const isDomainsInValid = emailDomains.some((domain) => emailProviders.includes(domain));
-      if (isDomainsInValid) return errorResponse(ctx, 422, 'invalid_domain', 'warn', 'organization');
+      const alreadyExists = await db
+        .select()
+        .from(organizationsTable)
+        .where(sql`
+          EXISTS (
+            SELECT 1 FROM jsonb_array_elements_text(${organizationsTable.emailDomains}::jsonb) AS domain
+            WHERE domain = ANY (${sql.raw(formattedEmailDomains)})
+          )
+        `);
+
+      if (alreadyExists || isDomainsInValid) return errorResponse(ctx, 422, 'invalid_domain', 'warn', 'organization');
     }
 
     if (slug && slug !== organization.slug) {
@@ -171,13 +184,7 @@ const organizationsRoutes = app
     const memberCounts = await getMemberCounts('organization', organization.id);
 
     // Prepare data
-    const data = {
-      ...updatedOrganization,
-      membership,
-      counts: {
-        membership: memberCounts,
-      },
-    };
+    const data = { ...updatedOrganization, membership, counts: { membership: memberCounts } };
 
     return ctx.json({ success: true, data }, 200);
   })
