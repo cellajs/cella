@@ -11,19 +11,21 @@ import { useNavigationStore } from '~/store/navigation';
 export const OnboardingCompleted = () => {
   const { t } = useTranslation();
   const { menu, setSectionsDefault, finishedOnboarding } = useNavigationStore();
+
   const [isExploding, _] = useState(true);
   const effectRan = useRef(false);
 
   useEffect(() => {
     // If already run, exit
-    if (effectRan.current || finishedOnboarding) return;
+    if (effectRan.current) return;
     effectRan.current = true;
     const sortedOrganizations = [...menu.organizations].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
     const lastCreatedOrganization = sortedOrganizations[0];
 
+    onBoardingFinishCallback();
+
     if (!lastCreatedOrganization) return;
 
-    onBoardingFinishCallback();
     setSectionsDefault();
     setTimeout(
       () => {
@@ -34,7 +36,6 @@ export const OnboardingCompleted = () => {
           className:
             'fixed sm:z-80 inset-0 left-16 p-0 backdrop-blur-xs max-w-80 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0',
         });
-        onBoardingFinishCallback();
       },
       finishedOnboarding ? 500 : 4000,
     );
