@@ -59,11 +59,10 @@ const CreateOrganizationForm: React.FC<CreateOrganizationFormProps> = ({
 
   const dialogTitleUpdate = () => {
     const targetDialog = dialog.get('create-organization');
-    if (!targetDialog || !checkDialog(targetDialog) || !isValidElement(targetDialog.title)) return;
+    if (!targetDialog || !checkDialog(targetDialog)) return;
 
     // Check if the title's type is a function (React component) and not a string
-    const { type: titleType } = targetDialog.title;
-    if (typeof titleType !== 'function' || titleType.name === 'UnsavedBadge') return;
+    if (isValidElement(targetDialog.title) && targetDialog.title.type === UnsavedBadge) return;
 
     dialog.update('create-organization', { title: <UnsavedBadge title={targetDialog?.title} /> });
   };
