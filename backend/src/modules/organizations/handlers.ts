@@ -59,7 +59,7 @@ const organizationsRoutes = app
     const data = {
       ...createdOrganization,
       membership: createdMembership,
-      counts: { membership: { admin: 1, member: 1, total: 1 } },
+      counts: { membership: { admin: 1, member: 1, total: 1, pending: 0 } },
     };
 
     return ctx.json({ success: true, data }, 200);
@@ -218,7 +218,7 @@ const organizationsRoutes = app
       .where(and(eq(membershipsTable.type, 'organization'), inArray(membershipsTable.organizationId, allowedIds)));
 
     // Delete the organizations
-    // await db.delete(organizationsTable).where(inArray(organizationsTable.id, allowedIds));
+    await db.delete(organizationsTable).where(inArray(organizationsTable.id, allowedIds));
 
     // Send SSE events to all members of organizations that were deleted
     for (const id of allowedIds) {

@@ -70,13 +70,10 @@ const UpdateUserForm = ({ user, callback, sheet: isSheet, hiddenFields, children
 
   const sheetTitleUpdate = () => {
     const targetSheet = sheet.get('update-user');
-
-    if (!targetSheet || !isValidElement(targetSheet.title)) return;
     // Check if the title's type is a function (React component) and not a string
-    const { type: titleType } = targetSheet.title;
+    if (!targetSheet || (isValidElement(targetSheet.title) && targetSheet.title.type === UnsavedBadge)) return;
 
-    if (typeof titleType !== 'function' || titleType.name === 'UnsavedBadge') return;
-    sheet.update('update-user', { title: <UnsavedBadge title={targetSheet.title} /> });
+    sheet.update('update-user', { title: <UnsavedBadge title={targetSheet?.title} /> });
   };
 
   const form = useFormWithDraft<FormValues>(`update-user-${user.id}`, { formOptions, onUnsavedChanges: sheetTitleUpdate });

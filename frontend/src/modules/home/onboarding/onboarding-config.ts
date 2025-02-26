@@ -1,7 +1,7 @@
 import { config } from 'config';
 import { t } from 'i18next';
 import type { StepItem } from '~/modules/common/stepper/types';
-import { useNavigationStore } from '~/store/navigation';
+import { useDraftStore } from '~/store/draft';
 import { useUserStore } from '~/store/user';
 
 export const onDefaultBoardingSteps: StepItem[] = [
@@ -22,6 +22,6 @@ export const onDefaultBoardingSteps: StepItem[] = [
 
 // Add the options you want to execute when onboarding is finished
 export const onBoardingFinishCallback = () => {
-  // For example, in this callback, the onboarding state is set to 'finished' for the current user
-  useNavigationStore.setState({ finishedOnboarding: true });
+  // For example, clears all draft forms
+  useDraftStore.setState({ forms: {} });
 };

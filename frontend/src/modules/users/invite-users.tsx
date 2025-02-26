@@ -11,7 +11,7 @@ import InviteSearchForm from '~/modules/users/invite-search-form';
 
 interface InviteUsersProps {
   entity?: EntityPage;
-  callback?: () => void;
+  callback?: (emails: string[]) => void;
   dialog?: boolean;
   mode?: string | null;
   children?: React.ReactNode;

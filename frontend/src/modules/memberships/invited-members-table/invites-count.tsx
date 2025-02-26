@@ -9,8 +9,7 @@ const InvitedMembersTable = lazy(() => import('~/modules/memberships/invited-mem
 export const InvitedMembers = ({ entity }: InvitedMembersTableProps) => {
   const { t } = useTranslation();
 
-  // @ts-ignore TODO: Fix this
-  const total = entity.counts.membership.pending;
+  const total = entity.counts?.membership.pending;
 
   const openSheet = () => {
     sheet.create(

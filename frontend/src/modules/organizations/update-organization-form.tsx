@@ -59,11 +59,9 @@ const UpdateOrganizationForm = ({ organization, callback, sheet: isSheet }: Prop
   const sheetTitleUpdate = () => {
     const targetSheet = sheet.get('update-organization');
 
-    if (!targetSheet || !isValidElement(targetSheet.title)) return;
+    if (!targetSheet) return;
     // Check if the title's type is a function (React component) and not a string
-    const { type: titleType } = targetSheet.title;
-
-    if (typeof titleType !== 'function' || titleType.name === 'UnsavedBadge') return;
+    if (!targetSheet || (isValidElement(targetSheet.title) && targetSheet.title.type === UnsavedBadge)) return;
 
     sheet.update('update-organization', { title: <UnsavedBadge title={targetSheet?.title} /> });
   };

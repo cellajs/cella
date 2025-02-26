@@ -97,12 +97,12 @@ const MembersTable = ({ entity: baseEntity, isSheet = false }: MembersTableProps
     });
   };
 
-  const handleNewInvites = () => {
+  const handleNewInvites = (emails: string[]) => {
     queryClient.setQueryData(organizationsKeys.single(entity.slug), (oldEntity: EntityPage) => {
       if (!oldEntity) return oldEntity;
       const newEntity = { ...oldEntity };
-      // @ts-ignore TODO: Fix this
-      newEntity.counts.membership.pending += 1;
+      if (newEntity.counts?.membership) newEntity.counts.membership.pending += emails.length;
+
       setEntity(newEntity);
       return newEntity;
     });
