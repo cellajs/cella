@@ -20,7 +20,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 
 interface Props {
   entity?: EntityPage;
-  callback?: () => void;
+  callback?: (emails: string[]) => void;
   dialog?: boolean;
 }
 
@@ -61,11 +61,11 @@ const InviteSearchForm = ({ entity, callback, dialog: isDialog }: Props) => {
         orgIdOrSlug: entity.organizationId || entity.id,
       } as InviteMemberProps);
     },
-    onSuccess: () => {
+    onSuccess: (_, { emails }) => {
       form.reset(undefined, { keepDirtyValues: true });
       if (isDialog) dialog.remove();
       toaster(t('common:success.user_invited'), 'success');
-      callback?.();
+      callback?.(emails);
     },
   });
 

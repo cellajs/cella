@@ -19,6 +19,7 @@ export const membershipsCountSchema = z.object({
   membership: z.object({
     admin: z.number(),
     member: z.number(),
+    pending: z.number(),
     total: z.number(),
   }),
 });

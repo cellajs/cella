@@ -1,7 +1,8 @@
 import { type ContextEntity, type ProductEntity, config } from 'config';
-import { type SQL, type SQLWrapper, count, eq, sql } from 'drizzle-orm';
+import { type SQL, type SQLWrapper, and, count, eq, isNull, sql } from 'drizzle-orm';
 import { db } from '#/db/db';
 import { membershipsTable } from '#/db/schema/memberships';
+import { tokensTable } from '#/db/schema/tokens';
 import { entityIdFields, entityTables } from '#/entity-config';
 
 type EntityIdColumnNames = keyof (typeof membershipsTable)['_']['columns'];
@@ -15,20 +16,37 @@ type EntityIdColumnNames = keyof (typeof membershipsTable)['_']['columns'];
  * @returns Query object that can be executed
  */
 export const getMemberCountsQuery = (entity: ContextEntity) => {
-  const entityIdColumn = membershipsTable[entityIdFields[entity] as EntityIdColumnNames];
+  const targetEntityIdField = entityIdFields[entity];
+  const entityIdColumn = membershipsTable[targetEntityIdField as EntityIdColumnNames];
   if (!entityIdColumn) throw new Error(`Entity ${entity} does not have an ID column defined`);
+
+  // Subquery to count pending invitations
+  const inviteCountSubquery = db
+    .select({
+      id: tokensTable[targetEntityIdField],
+      invites: count().as('invites'),
+    })
+    .from(tokensTable)
+    .where(and(eq(tokensTable.entity, entity), eq(tokensTable.type, 'invitation'), isNull(tokensTable.userId)))
+    .groupBy(tokensTable[targetEntityIdField])
+    .as('invites');
 
   return db
     .select({
       id: entityIdColumn,
       admin: count(sql`CASE WHEN ${membershipsTable.activatedAt} IS NOT NULL AND ${membershipsTable.role} = 'admin' THEN 1 END`).as('admin'),
       member: count(sql`CASE WHEN ${membershipsTable.activatedAt} IS NOT NULL AND ${membershipsTable.role} = 'member' THEN 1 END`).as('member'),
-      pending: count(sql`CASE WHEN ${membershipsTable.activatedAt} IS NULL THEN 1 END`).as('pending'),
+      pending:
+        sql<number>`CAST(${count(sql`CASE WHEN ${membershipsTable.activatedAt} IS NULL THEN 1 END`)} + COALESCE(${inviteCountSubquery.invites}, 0) AS INTEGER)`.as(
+          'pending',
+        ),
+
       total: count().as('total'), // Fixed alias to avoid confusion
     })
     .from(membershipsTable)
+    .leftJoin(inviteCountSubquery, eq(entityIdColumn, inviteCountSubquery.id))
     .where(eq(membershipsTable.type, entity))
-    .groupBy(entityIdColumn)
+    .groupBy(entityIdColumn, inviteCountSubquery.invites)
     .as('counts');
 };
 
