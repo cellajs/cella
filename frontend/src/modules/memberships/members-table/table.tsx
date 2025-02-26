@@ -3,6 +3,7 @@ import { forwardRef, memo, useEffect, useImperativeHandle } from 'react';
 import type { RowsChangeData } from 'react-data-grid';
 import { useTranslation } from 'react-i18next';
 import { DataTable } from '~/modules/common/data-table';
+import { tablePropsAreEqual } from '~/modules/common/data-table/table-props-are-equal';
 import type { BaseTableMethods, BaseTableProps } from '~/modules/common/data-table/types';
 import { toaster } from '~/modules/common/toaster';
 import type { MemberSearch, MembersTableProps } from '~/modules/memberships/members-table/table-wrapper';
@@ -104,6 +105,7 @@ const BaseDataTable = memo(
       />
     );
   }),
+  tablePropsAreEqual,
 );
 
 export default BaseDataTable;

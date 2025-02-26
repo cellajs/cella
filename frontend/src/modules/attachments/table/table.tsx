@@ -14,6 +14,7 @@ import type { AttachmentSearch, AttachmentsTableProps } from '~/modules/attachme
 import type { Attachment } from '~/modules/attachments/types';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { DataTable } from '~/modules/common/data-table';
+import { tablePropsAreEqual } from '~/modules/common/data-table/table-props-are-equal';
 import type { BaseTableMethods, BaseTableProps, ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 import { dialog } from '~/modules/common/dialoger/state';
 import { useDataFromSuspenseInfiniteQuery } from '~/query/hooks/use-data-from-query';
@@ -138,6 +139,7 @@ const BaseDataTable = memo(
       );
     },
   ),
+  tablePropsAreEqual,
 );
 
 export default BaseDataTable;

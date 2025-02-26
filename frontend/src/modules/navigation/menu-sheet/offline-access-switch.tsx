@@ -9,7 +9,7 @@ import { useNavigationStore } from '~/store/navigation';
 export const OfflineAccessSwitch = () => {
   const { t } = useTranslation();
   const { offlineAccess, toggleOfflineAccess } = useGeneralStore();
-  const { setNavSheetOpen } = useNavigationStore();
+  const setNavSheetOpen = useNavigationStore((state) => state.setNavSheetOpen);
 
   const onCheckedChange = (isOffline: boolean) => {
     // setTimeout is used to show the toast after the switch is toggled (QueryProvider updates)
