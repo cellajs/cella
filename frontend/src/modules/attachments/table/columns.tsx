@@ -21,7 +21,7 @@ export const useColumns = (
   openDialog: (slide: number) => void,
 ) => {
   const columns: ColumnOrColumnGroup<Attachment>[] = [
-    ...(isAdmin ? [CheckboxColumn] : []),
+    CheckboxColumn,
     {
       key: 'thumbnail',
       name: '',
