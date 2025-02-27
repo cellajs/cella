@@ -6,7 +6,7 @@ import type { EnabledOauthProvider } from 'config';
 import { config } from 'config';
 import { and, desc, eq } from 'drizzle-orm';
 import { db } from '#/db/db';
-import { emailsTable } from '#/db/schema/emails';
+import { type EmailsModel, emailsTable } from '#/db/schema/emails';
 import { membershipsTable } from '#/db/schema/memberships';
 import { oauthAccountsTable } from '#/db/schema/oauth-accounts';
 import { organizationsTable } from '#/db/schema/organizations';
@@ -157,6 +157,13 @@ const authRoutes = app
     // Check if user exists
     if (!user) return errorResponse(ctx, 404, 'not_found', 'warn', 'user');
 
+    const [emailInUse]: (EmailsModel | undefined)[] = await db
+      .select()
+      .from(emailsTable)
+      .where(and(eq(emailsTable.email, user.email), eq(emailsTable.verified, true)));
+
+    if (emailInUse) return errorResponse(ctx, 409, 'email_exists', 'warn', 'user');
+
     // Delete previous
     await db.delete(tokensTable).where(and(eq(tokensTable.userId, user.id), eq(tokensTable.type, 'email_verification')));
 
@@ -179,7 +186,11 @@ const authRoutes = app
       .values({ email: user.email, userId: user.id, tokenId: tokenRecord.id })
       .onConflictDoUpdate({
         target: emailsTable.email,
-        set: { tokenId: tokenRecord.id },
+        where: eq(emailsTable.verified, false), // Only update if NOT verified
+        set: {
+          tokenId: tokenRecord.id,
+          userId: user.id,
+        },
       });
 
     // Send email
@@ -205,7 +216,10 @@ const authRoutes = app
     if (!token || !token.userId) return errorResponse(ctx, 400, 'invalid_request', 'warn');
 
     // Set email verified
-    await db.update(emailsTable).set({ verified: true, verifiedAt: getIsoDate() }).where(eq(emailsTable.tokenId, token.id));
+    await db
+      .update(emailsTable)
+      .set({ verified: true, verifiedAt: getIsoDate() })
+      .where(and(eq(emailsTable.tokenId, token.id), eq(emailsTable.userId, token.userId), eq(emailsTable.email, token.email)));
 
     // Delete token to prevent reuse
     await db.delete(tokensTable).where(eq(tokensTable.id, token.id));
