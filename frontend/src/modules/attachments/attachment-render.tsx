@@ -1,3 +1,4 @@
+import { config } from 'config';
 import DOMPurify from 'dompurify';
 import { Suspense, lazy, useMemo } from 'react';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
@@ -34,20 +35,21 @@ export const AttachmentRender = ({
   const isMobile = useBreakpoints('max', 'sm');
 
   const sanitizedSource = DOMPurify.sanitize(source);
-  const { localUrl, error } = useLocalFile(sanitizedSource, type);
+  const { localUrl, localFileError } = useLocalFile(sanitizedSource, type);
 
   const url = useMemo(() => {
     // Use direct URL for static images
     if (sanitizedSource.startsWith('/static/')) return sanitizedSource;
 
     // Use either remote URL or local URL pointing to indexedDB
+    // TODO change to startsWith(config.publicCDNUrl)
     return sanitizedSource.startsWith('http') ? sanitizedSource : localUrl;
   }, [sanitizedSource, localUrl]);
 
-  if (error) {
+  if (!source.startsWith(config.publicCDNUrl) && localFileError) {
     return (
       <div className="flex flex-col items-center justify-center h-full w-full bg-background text-muted-foreground">
-        <div className="text-center my-8 text-sm text-red-500">{error}</div>
+        <div className="text-center my-8 text-sm text-red-500">{localFileError}</div>
       </div>
     );
   }

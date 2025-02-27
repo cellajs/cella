@@ -91,7 +91,7 @@ const AttachmentsCarousel = ({ slides = [], isDialog = false, slide = 0, saveInS
             </h2>
           )}
           <div className="grow" />
-
+          {/*  TODO change to startsWith(config.publicCDNUrl) */}
           {slides[current].src.startsWith('http') && (
             <Button
               variant="ghost"
@@ -103,6 +103,7 @@ const AttachmentsCarousel = ({ slides = [], isDialog = false, slide = 0, saveInS
             </Button>
           )}
 
+          {/*  TODO change to startsWith(config.publicCDNUrl) */}
           {slides[current].src.startsWith('http') && (
             <Button
               variant="ghost"

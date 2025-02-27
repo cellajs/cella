@@ -1,6 +1,6 @@
 import { Link, useNavigate } from '@tanstack/react-router';
 import { config } from 'config';
-import { CopyCheckIcon, CopyIcon, Download } from 'lucide-react';
+import { Cloud, CopyCheckIcon, CopyIcon, Download, HardDrive } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import useDownloader from 'react-use-downloader';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
@@ -64,6 +64,18 @@ export const useColumns = (isAdmin: boolean, isSheet: boolean) => {
       }),
     },
     {
+      key: 'storeType',
+      name: t('common:store'),
+      visible: true,
+      sortable: false,
+      width: 32,
+      renderCell: ({ row }) => (
+        <div className="flex items-center h-full w-full">
+          {row.url.startsWith(config.publicCDNUrl) ? <Cloud size={16} /> : <HardDrive size={16} />}
+        </div>
+      ),
+    },
+    {
       key: 'url',
       name: '',
       visible: true,
@@ -71,6 +83,7 @@ export const useColumns = (isAdmin: boolean, isSheet: boolean) => {
       width: 32,
       renderCell: ({ row, tabIndex }) => {
         const { copyToClipboard, copied } = useCopyToClipboard();
+        // TODO change to startsWith(config.publicCDNUrl)
         if (!row.url.startsWith('http')) return <span className="text-muted">-</span>;
 
         const shareLink = `${config.backendUrl}/${row.organizationId}/attachments/${row.id}/link`;
@@ -96,6 +109,7 @@ export const useColumns = (isAdmin: boolean, isSheet: boolean) => {
       width: 32,
       renderCell: ({ row, tabIndex }) => {
         const { download } = useDownloader();
+        // TODO change to startsWith(config.publicCDNUrl)
         if (!row.url.startsWith('http')) return <span className="text-muted">-</span>;
         return (
           <Button
