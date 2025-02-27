@@ -123,10 +123,14 @@ export const useSync = (organizationId: string) => {
         if (!data) return;
 
         // Remove the attachment and adjust total
-        const pages = data.pages.map(({ items, total }) => ({
-          items: items.filter((item) => item.id !== attachmentId),
-          total: total - 1,
-        }));
+        const pages = data.pages.map(({ items, total }) => {
+          const newItems = items.filter((item) => item.id !== attachmentId);
+          const difference = newItems.length - items.length;
+          return {
+            items: newItems,
+            total: total - difference,
+          };
+        });
 
         return { pages, pageParams: data.pageParams };
       });
