@@ -20,8 +20,7 @@ const AttachmentThumb: React.FC<AttachmentThumbProps> = ({ url: baseUrl, content
   }, [baseUrl, localUrl]);
 
   const renderIcon = () => {
-    if (!url) return;
-    if (contentType.includes('image'))
+    if (url && contentType.includes('image'))
       return <img src={url} draggable="false" alt={name} className="h-8 w-8 bg-muted rounded-md object-cover" loading="lazy" decoding="async" />;
     return <FilePlaceholder fileType={contentType} />;
   };
