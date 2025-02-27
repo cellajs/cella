@@ -10,7 +10,7 @@ interface AttachmentThumbProps {
 }
 
 const AttachmentThumb: React.FC<AttachmentThumbProps> = ({ url: baseUrl, contentType, name }) => {
-  const localUrl = useLocalFile(baseUrl, contentType);
+  const { localUrl } = useLocalFile(baseUrl, contentType);
 
   // Use either remote URL or local URL
   const url = useMemo(() => {

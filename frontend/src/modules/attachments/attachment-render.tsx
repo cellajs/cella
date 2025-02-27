@@ -34,7 +34,7 @@ export const AttachmentRender = ({
   const isMobile = useBreakpoints('max', 'sm');
 
   const sanitizedSource = DOMPurify.sanitize(source);
-  const localUrl = useLocalFile(sanitizedSource, type);
+  const { localUrl, error } = useLocalFile(sanitizedSource, type);
 
   const url = useMemo(() => {
     // Use direct URL for static images
@@ -44,8 +44,13 @@ export const AttachmentRender = ({
     return sanitizedSource.startsWith('http') ? sanitizedSource : localUrl;
   }, [sanitizedSource, localUrl]);
 
-  // We might have to wait for local file to be fetched
-  if (!url) return <Spinner className="mt-[40vh]" />;
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full w-full bg-background text-muted-foreground">
+        <div className="text-center my-8 text-sm text-red-500">{error}</div>
+      </div>
+    );
+  }
 
   return (
     <div className={containerClassName}>
