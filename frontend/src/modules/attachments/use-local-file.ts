@@ -31,7 +31,10 @@ export const useLocalFile = (key: string, fileType?: string): { localUrl: string
     const fetchFile = async () => {
       try {
         const file = await LocalFileStorage.getFile(key);
-        if (!file) setError('File not found');
+        if (!file)
+          setError(
+            'File not found. The file is stored locally in the browser where it was originally loaded and might not be accessible in other browsers or devices.',
+          );
         if (file && isMounted.current) {
           const blob = new Blob([file.data], { type: fileType || 'application/octet-stream' });
           const newUrl = URL.createObjectURL(blob);
