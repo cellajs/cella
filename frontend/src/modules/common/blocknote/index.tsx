@@ -61,7 +61,7 @@ type BlockNoteProps = {
   | {
       // filePanel and allowedFileBlockTypes req to add together
       filePanel: (props: FilePanelProps) => React.ReactElement;
-      allowedFileBlockTypes: BasicFileBlockTypes[];
+      allowedFileBlockTypes?: BasicFileBlockTypes[];
     }
   | {
       // if neither is provided, it allows the omission of both
@@ -83,11 +83,11 @@ export const BlockNote = ({
   altClickOpensPreview = false,
   // allow default types
   allowedBlockTypes = allowedTypes,
-  // allow default filetypes
-  allowedFileBlockTypes = allowedFileTypes,
   members,
-  updateData,
   filePanel,
+  // allow default filetypes
+  allowedFileBlockTypes = filePanel ? allowedFileTypes : [],
+  updateData,
   onChange,
   onEscapeClick,
   onEnterClick,
