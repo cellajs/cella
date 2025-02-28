@@ -67,10 +67,14 @@ const BaseDataTable = memo(
       if (!attachmentPreview) return dialog.remove(true, 'attachment-file-preview');
       if (!rows || rows.length === 0) return;
 
-      const slides = rows.map((el) => ({ src: el.url, filename: el.filename, name: el.name, fileType: el.contentType }));
+      const slides = rows.map(({ url, filename, name, contentType, groupId }) => ({ src: url, filename, name, fileType: contentType, groupId }));
       const slideIndex = slides.findIndex((slide) => slide.src === attachmentPreview);
       // If the slide exists in the slides array, reopen the dialog
-      if (slideIndex !== -1) openAttachmentDialog(slideIndex, slides, true, { removeCallback });
+      if (slideIndex !== -1) {
+        const targetSlide = slides[slideIndex];
+        const groupSlides = targetSlide.groupId ? slides.filter(({ groupId }) => groupId === targetSlide.groupId) : [targetSlide];
+        openAttachmentDialog(slideIndex, groupSlides, true, { removeCallback });
+      }
     }, [attachmentPreview, rows]);
 
     // Expose methods via ref using useImperativeHandle

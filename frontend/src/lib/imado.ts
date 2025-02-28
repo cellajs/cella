@@ -3,8 +3,8 @@ import Tus from '@uppy/tus';
 import { config } from 'config';
 import { getUploadToken } from '~/modules/general/api';
 
-import '@uppy/core/dist/style.min.css';
 import { onlineManager } from '@tanstack/react-query';
+import '@uppy/core/dist/style.min.css';
 import { LocalFileStorage } from '~/modules/attachments/local-file-storage';
 import type { UploadUppyProps } from '~/modules/attachments/upload/upload-uppy';
 import { nanoid } from '~/utils/nanoid';
@@ -13,7 +13,7 @@ export type UppyMeta = { public?: boolean; contentType?: string };
 
 export type LocalFile = UppyFile<UppyMeta, UppyBody>;
 
-export type UploadedUppyFile = { file: UppyFile<UppyMeta, UppyBody>; url: string };
+export type UploadedUppyFile = { file: LocalFile; url: string };
 
 // biome-ignore lint/complexity/noBannedTypes: no other way to define this type
 export type UppyBody = {};
@@ -27,8 +27,8 @@ const readJwt = (token: string) => JSON.parse(atob(token.split('.')[1]));
 
 interface ImadoOptions extends UploadParams {
   statusEventHandler?: {
-    onFileEditorComplete?: (file: UppyFile<UppyMeta, UppyBody>) => void;
-    onUploadStart?: (uploadId: string, files: UppyFile<UppyMeta, UppyBody>[]) => void;
+    onFileEditorComplete?: (file: LocalFile) => void;
+    onUploadStart?: (uploadId: string, files: LocalFile[]) => void;
     onError?: (error: Error) => void;
     onComplete?: (mappedResult: UploadedUppyFile[], result: UploadResult<UppyMeta, UppyBody>) => void;
   };
@@ -60,7 +60,7 @@ export async function ImadoUppy(
   }
 
   // Prepare files for offline storage
-  const prepareFilesForOffline = async (files: { [key: string]: UppyFile<UppyMeta, UppyBody> }) => {
+  const prepareFilesForOffline = async (files: { [key: string]: LocalFile }) => {
     console.warn('Files will be stored offline in indexedDB.');
 
     // Save to local storage asynchronously
@@ -123,17 +123,17 @@ export async function ImadoUppy(
 
       let mappedResult: UploadedUppyFile[] = [];
 
-      if (result.successful && canUpload) {
+      if (result.successful && result.successful.length > 0) {
+        const rootUrl = opts.public ? config.publicCDNUrl : config.privateCDNUrl;
+
         mappedResult = result.successful.map((file) => {
-          const rootUrl = opts.public ? config.publicCDNUrl : config.privateCDNUrl;
+          if (!canUpload) return { file, url: file.id };
+          // Case canUpload
           const { sub } = readJwt(token);
           const uploadKey = file.uploadURL?.split('/').pop();
           const url = new URL(`${rootUrl}/${sub}/${uploadKey}`);
+
           return { file, url: url.toString() };
-        });
-      } else if (result.successful && !canUpload) {
-        mappedResult = result.successful.map((file) => {
-          return { file, url: file.id };
         });
       }
       opts.statusEventHandler?.onComplete?.(mappedResult, result);

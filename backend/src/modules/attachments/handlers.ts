@@ -12,6 +12,7 @@ import { logEvent } from '#/middlewares/logger/log-event';
 import { splitByAllowance } from '#/permissions/split-by-allowance';
 import defaultHook from '#/utils/default-hook';
 import { getIsoDate } from '#/utils/iso-date';
+import { nanoid } from '#/utils/nanoid';
 import { getOrderColumn } from '#/utils/order-column';
 import { prepareStringForILikeFilter } from '#/utils/sql';
 import attachmentsRouteConfig from './routes';
@@ -62,11 +63,13 @@ const attachmentsRoutes = app
 
     const organization = getContextOrganization();
     const user = getContextUser();
+    const groupId = newAttachments.length > 1 ? nanoid() : null;
 
     const fixedNewAttachments = newAttachments.map((el) => ({
       ...el,
       name: el.filename.split('.').slice(0, -1).join('.'),
       createdBy: user.id,
+      groupId,
       organizationId: organization.id,
     }));
 
