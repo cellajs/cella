@@ -42,8 +42,7 @@ export const AttachmentRender = ({
     if (sanitizedSource.startsWith('/static/')) return sanitizedSource;
 
     // Use either remote URL or local URL pointing to indexedDB
-    // TODO change to startsWith(config.publicCDNUrl)
-    return sanitizedSource.startsWith('http') ? sanitizedSource : localUrl;
+    return sanitizedSource.startsWith(config.publicCDNUrl) ? sanitizedSource : localUrl;
   }, [sanitizedSource, localUrl]);
 
   if (!source.startsWith(config.publicCDNUrl) && localFileError) {

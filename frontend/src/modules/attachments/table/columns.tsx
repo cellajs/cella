@@ -83,8 +83,7 @@ export const useColumns = (isAdmin: boolean, isSheet: boolean) => {
       width: 32,
       renderCell: ({ row, tabIndex }) => {
         const { copyToClipboard, copied } = useCopyToClipboard();
-        // TODO change to startsWith(config.publicCDNUrl)
-        if (!row.url.startsWith('http')) return <span className="text-muted">-</span>;
+        if (!row.url.startsWith(config.publicCDNUrl)) return <span className="text-muted">-</span>;
 
         const shareLink = `${config.backendUrl}/${row.organizationId}/attachments/${row.id}/link`;
         return (
@@ -109,8 +108,7 @@ export const useColumns = (isAdmin: boolean, isSheet: boolean) => {
       width: 32,
       renderCell: ({ row, tabIndex }) => {
         const { download } = useDownloader();
-        // TODO change to startsWith(config.publicCDNUrl)
-        if (!row.url.startsWith('http')) return <span className="text-muted">-</span>;
+        if (!row.url.startsWith(config.publicCDNUrl)) return <span className="text-muted">-</span>;
         return (
           <Button
             variant="cell"
