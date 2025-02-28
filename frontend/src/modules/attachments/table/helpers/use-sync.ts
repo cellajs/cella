@@ -74,8 +74,8 @@ export const useSync = (organizationId: string) => {
   const { isOnline } = useOnlineManager();
 
   useEffect(() => {
-    // Exit if offline, sync is disabled, or in quick mode
-    if (!isOnline || !config.has.sync || env.VITE_QUICK) return;
+    // Exit if offline, sync is disabled, imado upload is disabled, or in quick mode
+    if (!isOnline || !config.has.sync || !config.has.imado || env.VITE_QUICK) return;
 
     // Initialize ShapeStream to listen for changes
     const shapeStream = new ShapeStream<RawAttachment>(attachmentShape(organizationId));

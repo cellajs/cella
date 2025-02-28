@@ -1,5 +1,5 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
-import { type SQL, and, count, eq, ilike, inArray, or } from 'drizzle-orm';
+import { type SQL, and, count, eq, ilike, inArray, like, notIlike, or } from 'drizzle-orm';
 import { html } from 'hono/html';
 import { stream } from 'hono/streaming';
 
@@ -81,11 +81,22 @@ const attachmentsRoutes = app
   .openapi(attachmentsRouteConfig.getAttachments, async (ctx) => {
     const { q, sort, order, offset, limit } = ctx.req.valid('query');
 
+    const user = getContextUser();
     // Scope request to organization
     const organization = getContextOrganization();
 
     // Filter at least by valid organization
-    const filters: SQL[] = [eq(attachmentsTable.organizationId, organization.id)];
+    const filters: SQL[] = [
+      eq(attachmentsTable.organizationId, organization.id),
+      ...(!config.has.imado
+        ? [
+            or(
+              and(eq(attachmentsTable.createdBy, user.id), notIlike(attachmentsTable.url, `${config.publicCDNUrl}%`)),
+              like(attachmentsTable.url, `${config.publicCDNUrl}%`),
+            ) as SQL,
+          ]
+        : []),
+    ];
 
     if (q) {
       const query = prepareStringForILikeFilter(q);
