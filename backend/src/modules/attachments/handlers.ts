@@ -6,9 +6,10 @@ import { stream } from 'hono/streaming';
 import { config } from 'config';
 import { db } from '#/db/db';
 import { attachmentsTable } from '#/db/schema/attachments';
-import { type Env, getContextOrganization, getContextUser } from '#/lib/context';
-import { errorResponse } from '#/lib/errors';
+import { type Env, getContextMemberships, getContextOrganization, getContextUser } from '#/lib/context';
+import { type ErrorType, createError, errorResponse } from '#/lib/errors';
 import { logEvent } from '#/middlewares/logger/log-event';
+import { splitByAllowance } from '#/permissions/split-by-allowance';
 import defaultHook from '#/utils/default-hook';
 import { getIsoDate } from '#/utils/iso-date';
 import { getOrderColumn } from '#/utils/order-column';
@@ -174,28 +175,26 @@ const attachmentsRoutes = app
   .openapi(attachmentsRouteConfig.deleteAttachments, async (ctx) => {
     const { ids } = ctx.req.valid('json');
 
-    // const memberships = getContextMemberships();
+    const memberships = getContextMemberships();
 
     // Convert the ids to an array
     const toDeleteIds = Array.isArray(ids) ? ids : [ids];
 
     if (!toDeleteIds.length) return errorResponse(ctx, 400, 'invalid_request', 'warn', 'attachment');
 
-    // TODO create in permission manager a method to check if the user can delete linked entities ?
-    // Because for now it's use the same permission as for membership like if I can't delete organization then I can't delete attachment
-    // const { allowedIds, disallowedIds } = await splitByAllowance('delete', 'attachment', toDeleteIds, memberships);
+    const { allowedIds, disallowedIds } = await splitByAllowance('delete', 'attachment', toDeleteIds, memberships);
 
     // Map errors for disallowed ids
-    // const errors: ErrorType[] = disallowedIds.map((id) => createError(ctx, 404, 'not_found', 'warn', 'attachment', { attachment: id }));
+    const errors: ErrorType[] = disallowedIds.map((id) => createError(ctx, 404, 'not_found', 'warn', 'attachment', { attachment: id }));
 
-    // if (!allowedIds.length) return errorResponse(ctx, 403, 'forbidden', 'warn', 'attachment');
+    if (!allowedIds.length) return errorResponse(ctx, 403, 'forbidden', 'warn', 'attachment');
 
     // Delete the attachments
-    await db.delete(attachmentsTable).where(inArray(attachmentsTable.id, toDeleteIds));
+    await db.delete(attachmentsTable).where(inArray(attachmentsTable.id, allowedIds));
 
-    logEvent('Attachments deleted', { ids: toDeleteIds.join() });
+    logEvent('Attachments deleted', { ids: allowedIds.join() });
 
-    return ctx.json({ success: true, errors: [] }, 200);
+    return ctx.json({ success: true, errors }, 200);
   })
   .openapi(attachmentsRouteConfig.getAttachmentCover, async (ctx) => {
     const { id } = ctx.req.valid('param');
