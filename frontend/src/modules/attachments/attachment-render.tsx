@@ -45,7 +45,7 @@ export const AttachmentRender = ({
     return sanitizedSource.startsWith(config.publicCDNUrl) ? sanitizedSource : localUrl;
   }, [sanitizedSource, localUrl]);
 
-  if (!source.startsWith(config.publicCDNUrl) && localFileError) {
+  if (sanitizedSource === localUrl && localFileError) {
     return (
       <div className="flex flex-col items-center justify-center h-full w-full bg-background text-muted-foreground">
         <div className="text-center my-8 text-sm text-red-500">{localFileError}</div>
