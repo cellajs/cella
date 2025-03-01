@@ -1,12 +1,12 @@
 import Audio from '@uppy/audio';
-import type { Uppy, UppyFile, UppyOptions } from '@uppy/core';
+import type { Uppy, UppyOptions } from '@uppy/core';
 import ImageEditor, { type ImageEditorOptions } from '@uppy/image-editor';
 import { Dashboard } from '@uppy/react';
 import ScreenCapture from '@uppy/screen-capture';
 import Webcam, { type WebcamOptions } from '@uppy/webcam';
 import { config } from 'config';
 import { useEffect, useState } from 'react';
-import { ImadoUppy, type UppyBody, type UppyMeta } from '~/lib/imado';
+import { ImadoUppy, type UploadedUppyFile, type UppyBody, type UppyMeta } from '~/lib/imado';
 import { getImageEditorOptions } from '~/modules/attachments/upload/image-editor-options';
 import { useThemeStore } from '~/store/theme';
 
@@ -24,12 +24,7 @@ export interface UploadUppyProps {
   restrictions?: Partial<UppyOptions<UppyMeta, UppyBody>['restrictions']>;
   imageMode?: 'cover' | 'avatar' | 'attachment';
   organizationId?: string;
-  callback?: (
-    result: {
-      file: UppyFile<UppyMeta, UppyBody>;
-      url: string;
-    }[],
-  ) => void;
+  callback?: (result: UploadedUppyFile[]) => void;
 }
 
 const uppyRestrictions = config.uppy.defaultRestrictions;

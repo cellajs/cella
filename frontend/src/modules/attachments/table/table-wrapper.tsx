@@ -6,15 +6,17 @@ import { Info } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { useTranslation } from 'react-i18next';
 import useSearchParams from '~/hooks/use-search-params';
+import { useColumns } from '~/modules/attachments/table/columns';
 import RemoveAttachmentsForm from '~/modules/attachments/table/remove-attachments-form';
 import { AttachmentsTableBar } from '~/modules/attachments/table/table-bar';
 import type { Attachment } from '~/modules/attachments/types';
 import { AlertWrap } from '~/modules/common/alert-wrap';
 import { useSortColumns } from '~/modules/common/data-table/sort-columns';
-import type { BaseTableMethods, ColumnOrColumnGroup } from '~/modules/common/data-table/types';
+import type { BaseTableMethods } from '~/modules/common/data-table/types';
 import { dialog } from '~/modules/common/dialoger/state';
 import type { Organization } from '~/modules/organizations/types';
 import type { attachmentsSearchSchema } from '~/routes/organizations';
+import { useUserStore } from '~/store/user';
 import { arraysHaveSameElements } from '~/utils';
 
 const BaseDataTable = lazy(() => import('~/modules/attachments/table/table'));
@@ -29,9 +31,11 @@ export interface AttachmentsTableProps {
 
 const AttachmentsTable = ({ organization, canUpload = true, isSheet = false }: AttachmentsTableProps) => {
   const { t } = useTranslation();
+  const user = useUserStore((state) => state.user);
   const { search, setSearch } = useSearchParams<AttachmentSearch>({ saveDataInSearch: !isSheet });
 
   const dataTableRef = useRef<BaseTableMethods | null>(null);
+  const isAdmin = organization.membership?.role === 'admin' || user?.role === 'admin';
 
   // Table state
   const { q, sort, order } = search;
@@ -48,7 +52,7 @@ const AttachmentsTable = ({ organization, canUpload = true, isSheet = false }: A
   };
 
   // Build columns
-  const [columns, setColumns] = useState<ColumnOrColumnGroup<Attachment>[]>([]);
+  const [columns, setColumns] = useState(useColumns(isAdmin, isSheet));
   const { sortColumns, setSortColumns } = useSortColumns(sort, order, setSearch);
 
   const clearSelection = () => {
@@ -104,7 +108,6 @@ const AttachmentsTable = ({ organization, canUpload = true, isSheet = false }: A
             organization={organization}
             ref={dataTableRef}
             columns={columns}
-            setColumns={setColumns}
             queryVars={{ q, sort, order, limit }}
             updateCounts={updateCounts}
             isSheet={isSheet}

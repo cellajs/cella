@@ -1,7 +1,9 @@
+import { Link, useNavigate } from '@tanstack/react-router';
 import { config } from 'config';
-import type { TFunction } from 'i18next';
-import { CopyCheckIcon, CopyIcon, Download } from 'lucide-react';
+import { Cloud, CopyCheckIcon, CopyIcon, Download, HardDrive } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import useDownloader from 'react-use-downloader';
+import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { useCopyToClipboard } from '~/hooks/use-copy-to-clipboard';
 import AttachmentThumb from '~/modules/attachments/attachment-thumb';
 import { formatBytes } from '~/modules/attachments/table/helpers';
@@ -13,32 +15,38 @@ import { Button } from '~/modules/ui/button';
 import { Input } from '~/modules/ui/input';
 import { dateShort } from '~/utils/date-short';
 
-export const useColumns = (
-  t: TFunction<'translation', undefined>,
-  isMobile: boolean,
-  isAdmin: boolean,
-  isSheet: boolean,
-  openDialog: (slide: number) => void,
-) => {
+export const useColumns = (isAdmin: boolean, isSheet: boolean) => {
+  const { t } = useTranslation();
+  const isMobile = useBreakpoints('max', 'sm', false);
+  const navigate = useNavigate();
+
   const columns: ColumnOrColumnGroup<Attachment>[] = [
-    ...(isAdmin ? [CheckboxColumn] : []),
+    CheckboxColumn,
     {
       key: 'thumbnail',
       name: '',
       visible: true,
       sortable: false,
       width: 32,
-      renderCell: ({ row: { url, filename, contentType }, rowIdx, tabIndex }) => (
-        <Button
-          variant="cell"
-          size="icon"
-          className="h-full w-full"
+      renderCell: ({ row: { url, filename, contentType }, tabIndex }) => (
+        <Link
+          id={`attachment-cell-${url}`}
+          to={url}
           tabIndex={tabIndex}
-          onClick={() => openDialog(rowIdx)}
-          aria-label={`View ${filename}`}
+          className="flex space-x-2 items-center outline-0 ring-0 group"
+          onClick={(e) => {
+            if (e.metaKey || e.ctrlKey) return;
+            e.preventDefault();
+            navigate({
+              to: '.',
+              replace: true,
+              resetScroll: false,
+              search: (prev) => ({ ...prev, attachmentPreview: url }),
+            });
+          }}
         >
           <AttachmentThumb url={url} name={filename} contentType={contentType} />
-        </Button>
+        </Link>
       ),
     },
     {
@@ -56,6 +64,18 @@ export const useColumns = (
       }),
     },
     {
+      key: 'storeType',
+      name: t('common:store'),
+      visible: true,
+      sortable: false,
+      width: 32,
+      renderCell: ({ row }) => (
+        <div className="flex items-center h-full w-full">
+          {row.url.startsWith(config.publicCDNUrl) ? <Cloud size={16} /> : <HardDrive size={16} />}
+        </div>
+      ),
+    },
+    {
       key: 'url',
       name: '',
       visible: true,
@@ -63,7 +83,7 @@ export const useColumns = (
       width: 32,
       renderCell: ({ row, tabIndex }) => {
         const { copyToClipboard, copied } = useCopyToClipboard();
-        if (!row.url.startsWith('http')) return <span className="text-muted">-</span>;
+        if (!row.url.startsWith(config.publicCDNUrl)) return <span className="text-muted">-</span>;
 
         const shareLink = `${config.backendUrl}/${row.organizationId}/attachments/${row.id}/link`;
         return (
@@ -88,7 +108,7 @@ export const useColumns = (
       width: 32,
       renderCell: ({ row, tabIndex }) => {
         const { download } = useDownloader();
-        if (!row.url.startsWith('http')) return <span className="text-muted">-</span>;
+        if (!row.url.startsWith(config.publicCDNUrl)) return <span className="text-muted">-</span>;
         return (
           <Button
             variant="cell"

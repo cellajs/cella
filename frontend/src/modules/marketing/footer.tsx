@@ -24,7 +24,7 @@ function FooterLinks() {
 
             <ul className="mt-4 text-sm text-white/90">
               {section.links.map((link) => {
-                const target = link.href.startsWith('http') ? '_blank' : '_self';
+                const target = link.href.startsWith(config.publicCDNUrl) ? '_blank' : '_self';
                 return (
                   <li key={link.title} className="mt-4">
                     <Link to={link.href} target={target} className="underline-offset-4 transition hover:underline">
