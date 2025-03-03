@@ -1,11 +1,13 @@
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 import { z } from 'zod';
-import { paginationQuerySchema, validNameSchema } from '#/utils/schema/common';
+import { paginationQuerySchema } from '#/utils/schema/common';
 import { attachmentsTable } from '../../db/schema/attachments';
+
+const attachmentsInsertSchema = createInsertSchema(attachmentsTable);
 
 export const createAttachmentsSchema = z
   .array(
-    createInsertSchema(attachmentsTable).omit({
+    attachmentsInsertSchema.omit({
       name: true,
       entity: true,
       modifiedAt: true,
@@ -17,11 +19,10 @@ export const createAttachmentsSchema = z
   .min(1)
   .max(50);
 
-export const updateAttachmentBodySchema = createInsertSchema(attachmentsTable, {
-  name: validNameSchema,
-})
+export const updateAttachmentBodySchema = attachmentsInsertSchema
   .pick({
     name: true,
+    url: true,
   })
   .partial();
 

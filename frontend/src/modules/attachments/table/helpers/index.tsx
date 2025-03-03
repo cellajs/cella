@@ -38,7 +38,7 @@ export const openAttachmentsUploadDialog = (organizationId: string) => {
 
     const handleCallback = (result: UploadedUppyFile[]) => {
       const attachments = result.map(({ file, url }) => ({
-        id: nanoid(),
+        id: file.id || nanoid(),
         url,
         size: String(file.size || 0),
         contentType: file.type,
