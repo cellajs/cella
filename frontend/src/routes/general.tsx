@@ -33,7 +33,7 @@ export const PublicRoute = createRoute({
   getParentRoute: () => rootRoute,
   component: () => <PublicLayout />,
   beforeLoad: async ({ location, cause }) => {
-    if (cause !== 'enter') return;
+    if (cause !== 'enter' || location.pathname === '/sign-out') return;
 
     try {
       console.debug('Fetch me & menu in while entering public page ', location.pathname);

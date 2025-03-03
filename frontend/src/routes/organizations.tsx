@@ -29,6 +29,7 @@ export const invitedMembersSearchSchema = invitedMembersQuerySchema.pick({ sort:
 
 export const attachmentsSearchSchema = attachmentsQuerySchema.pick({ q: true, sort: true, order: true }).extend({
   attachmentPreview: z.string().optional(),
+  groupId: z.string().optional(),
 });
 
 export const OrganizationRoute = createRoute({
@@ -87,7 +88,10 @@ export const OrganizationAttachmentsRoute = createRoute({
   staticData: { pageTitle: 'attachments', isAuth: true },
   getParentRoute: () => OrganizationRoute,
   loaderDeps: ({ search: { q, sort, order } }) => ({ q, sort, order }),
-  loader: ({ deps: { q, sort, order }, context: { orgIdOrSlug } }) => {
+  loader: ({ cause, deps: { q, sort, order }, context: { orgIdOrSlug } }) => {
+    // Prevents unnecessary fetches(runs when user enters page)
+    if (cause !== 'enter') return;
+
     const queryOptions = attachmentsQueryOptions({ orgIdOrSlug, q, sort, order });
     return hybridFetchInfinite(queryOptions);
   },

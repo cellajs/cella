@@ -1,11 +1,10 @@
+import { config } from 'config';
 import DOMPurify from 'dompurify';
 import { Suspense } from 'react';
 import type { Control } from 'react-hook-form';
-
-import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
-
 import UppyFilePanel from '~/modules/attachments/upload/blocknote-upload-panel';
 import { BlockNote } from '~/modules/common/blocknote';
+import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
 
 import '@blocknote/shadcn/style.css';
 import '~/modules/common/blocknote/app-specific-custom/styles.css';
@@ -51,9 +50,13 @@ const BlockNoteContent = ({ blocknoteId, control, label, name, required, disable
                   onChange={sanitizedOnChange}
                   updateData={sanitizedOnChange}
                   className="min-h-20 pl-10 pr-6 p-3 border rounded-md"
-                  allowedFileBlockTypes={['image', 'file']}
                   allowedBlockTypes={['emoji', 'heading', 'paragraph', 'codeBlock']}
-                  filePanel={(props) => <UppyFilePanel {...props} />}
+                  {...(config.has.imado
+                    ? {
+                        allowedFileBlockTypes: ['image', 'file'],
+                        filePanel: (props) => <UppyFilePanel {...props} />,
+                      }
+                    : ({} as { allowedFileBlockTypes?: never; filePanel?: never }))}
                 />
               </Suspense>
             </FormControl>

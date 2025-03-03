@@ -2,6 +2,12 @@ import { toast } from 'sonner';
 
 const toastMap = new Map<string, string | number>();
 
+/**
+ * Show a toast message
+ * @param text
+ * @param type
+ * @param options Pass an id to update an existing toast
+ */
 export const toaster = (
   text: string,
   type: 'success' | 'error' | 'info' | 'warning' | 'default' = 'default',

@@ -40,9 +40,6 @@ export const relatedEntitiesCountSchema = z.object(
 
 export const organizationSchema = z.object({
   ...createSelectSchema(organizationsTable).shape,
-  createdAt: z.string(),
-  modifiedAt: z.string().nullable(),
-  defaultLanguage: languageSchema,
   languages: z.array(languageSchema).min(1),
   emailDomains: z.array(z.string()),
   authStrategies: z.array(z.string()),

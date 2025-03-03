@@ -57,6 +57,13 @@
       "when": 1740494451961,
       "tag": "0007_gorgeous_monster_badoon",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1740734436345,
+      "tag": "0008_jittery_kat_farrell",
+      "breakpoints": true
     }
   ]
 }

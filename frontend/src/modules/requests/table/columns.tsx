@@ -17,7 +17,7 @@ export const useColumns = () => {
     const cols: ColumnOrColumnGroup<Request>[] = [
       CheckboxColumn,
       {
-        key: 'requestType',
+        key: 'type',
         name: t('common:request_type'),
         sortable: true,
         visible: true,

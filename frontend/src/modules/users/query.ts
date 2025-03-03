@@ -17,8 +17,6 @@ export const usersKeys = {
   many: ['users'] as const,
   list: () => [...usersKeys.many, 'list'] as const,
   table: (filters?: GetUsersParams) => [...usersKeys.list(), filters] as const,
-  // TODO is it useful to have the below as a cache key? Are there any queries that would use the cache?
-  leaveEntity: () => [...usersKeys.one, 'leave'] as const,
   update: () => [...usersKeys.one, 'update'] as const,
   delete: () => [...usersKeys.one, 'delete'] as const,
 };

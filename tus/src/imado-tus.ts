@@ -100,9 +100,7 @@ export const ImadoTus = (opts: TusOptions) => {
         async onIncomingRequest(req: http.IncomingMessage, _res: http.ServerResponse) {
           const auth = req.headers.authorization;
 
-          if (!auth) {
-            throw { status_code: 401, body: 'Unauthorized' };
-          }
+          if (!auth) throw { status_code: 401, body: 'Unauthorized' };
 
           try {
             const token = auth.split(' ')[1];
@@ -112,7 +110,7 @@ export const ImadoTus = (opts: TusOptions) => {
             // const secret = await db.query('SELECT secret FROM users WHERE id = $1', [sub]);
 
             // Verify secret and token, will throw error if invalid
-            await jwt.verify(token, opts.secret);
+            jwt.verify(token, opts.secret);
           } catch (error) {
             console.error('Invalid token', error);
             throw { status_code: 401, body: 'Invalid token' };
@@ -122,7 +120,7 @@ export const ImadoTus = (opts: TusOptions) => {
           console.debug('Upload finished:', upload);
           return { res };
         },
-        async onResponseError(req, res, err) {
+        async onResponseError(_, __, err) {
           console.error('Error:', err);
           return { status_code: 500, body: 'TUS Server Error' };
         },

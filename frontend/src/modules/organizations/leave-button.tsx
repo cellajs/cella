@@ -16,16 +16,12 @@ const LeaveButton = ({ organization }: { organization: Organization }) => {
   const navigate = useNavigate();
   const [openPopover, setOpenPopover] = useState(false);
 
-  const { mutate: _leaveEntity } = useMutation({
-    mutationFn: leaveEntity,
-  });
+  const { mutate: _leaveEntity } = useMutation({ mutationFn: leaveEntity });
 
   const onLeave = () => {
     if (!onlineManager.isOnline()) return toaster(t('common:action.offline.text'), 'warning');
-    const queryParams = {
-      idOrSlug: organization.slug,
-      entityType: 'organization' as const,
-    };
+    const queryParams = { idOrSlug: organization.slug, entityType: 'organization' as const };
+
     _leaveEntity(queryParams, {
       onSuccess: () => {
         toaster(t('common:success.you_left_organization'), 'success');

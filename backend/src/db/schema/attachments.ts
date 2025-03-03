@@ -6,6 +6,7 @@ import { usersTable } from './users';
 
 export const attachmentsTable = pgTable('attachments', {
   id: varchar().primaryKey().$defaultFn(nanoid),
+  groupId: varchar(),
   name: varchar().notNull().default('attachment'),
   filename: varchar().notNull(),
   contentType: varchar().notNull(),

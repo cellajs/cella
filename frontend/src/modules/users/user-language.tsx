@@ -7,18 +7,20 @@ import { Button } from '~/modules/ui/button';
 import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuTrigger } from '~/modules/ui/dropdown-menu';
 import { updateSelf } from '~/modules/users/api';
 import { useUserStore } from '~/store/user';
+import { cn } from '~/utils/cn';
 
 interface Props {
   size?: number;
   align?: 'start' | 'end';
-  className?: string;
+  triggerClassName?: string;
+  contentClassName?: string;
 }
 
-const UserLanguage = ({ align = 'end', className = '' }: Props) => {
+const UserLanguage = ({ align = 'end', triggerClassName = '', contentClassName = '' }: Props) => {
   const { t } = useTranslation();
 
   const { user, updateUser } = useUserStore();
-  const language = i18n.resolvedLanguage || i18n.language;
+  const language = user?.language || i18n.resolvedLanguage || i18n.language;
 
   const changeLanguage = (lng: Language) => {
     if (!user) return;
@@ -32,11 +34,11 @@ const UserLanguage = ({ align = 'end', className = '' }: Props) => {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon" className={className} aria-label="Change language">
+        <Button variant="ghost" size="icon" className={triggerClassName} aria-label="Change language">
           <span className="font-light">{language.toUpperCase()}</span>
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align={align} className="w-48">
+      <DropdownMenuContent align={align} className={cn('w-48', contentClassName)}>
         {config.languages.map((lang) => (
           <DropdownMenuCheckboxItem
             key={lang}
@@ -47,7 +49,7 @@ const UserLanguage = ({ align = 'end', className = '' }: Props) => {
             }}
           >
             <CountryFlag countryCode={lang} imgType="png" />
-            <span className="ml-2">{t(`common:${language}`)}</span>
+            <span className="ml-2">{t(`common:${lang}`)}</span>
           </DropdownMenuCheckboxItem>
         ))}
       </DropdownMenuContent>

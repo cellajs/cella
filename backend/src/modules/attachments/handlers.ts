@@ -1,5 +1,5 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
-import { type SQL, and, count, eq, ilike, inArray, or } from 'drizzle-orm';
+import { type SQL, and, count, eq, ilike, inArray, like, notIlike, or } from 'drizzle-orm';
 import { html } from 'hono/html';
 import { stream } from 'hono/streaming';
 
@@ -12,6 +12,7 @@ import { logEvent } from '#/middlewares/logger/log-event';
 import { splitByAllowance } from '#/permissions/split-by-allowance';
 import defaultHook from '#/utils/default-hook';
 import { getIsoDate } from '#/utils/iso-date';
+import { nanoid } from '#/utils/nanoid';
 import { getOrderColumn } from '#/utils/order-column';
 import { prepareStringForILikeFilter } from '#/utils/sql';
 import attachmentsRouteConfig from './routes';
@@ -62,11 +63,13 @@ const attachmentsRoutes = app
 
     const organization = getContextOrganization();
     const user = getContextUser();
+    const groupId = newAttachments.length > 1 ? nanoid() : null;
 
     const fixedNewAttachments = newAttachments.map((el) => ({
       ...el,
       name: el.filename.split('.').slice(0, -1).join('.'),
       createdBy: user.id,
+      groupId,
       organizationId: organization.id,
     }));
 
@@ -82,11 +85,22 @@ const attachmentsRoutes = app
   .openapi(attachmentsRouteConfig.getAttachments, async (ctx) => {
     const { q, sort, order, offset, limit } = ctx.req.valid('query');
 
+    const user = getContextUser();
     // Scope request to organization
     const organization = getContextOrganization();
 
     // Filter at least by valid organization
-    const filters: SQL[] = [eq(attachmentsTable.organizationId, organization.id)];
+    const filters: SQL[] = [
+      eq(attachmentsTable.organizationId, organization.id),
+      ...(!config.has.imado
+        ? [
+            or(
+              and(eq(attachmentsTable.createdBy, user.id), notIlike(attachmentsTable.url, `${config.publicCDNUrl}%`)),
+              like(attachmentsTable.url, `${config.publicCDNUrl}%`),
+            ) as SQL,
+          ]
+        : []),
+    ];
 
     if (q) {
       const query = prepareStringForILikeFilter(q);
@@ -183,7 +197,7 @@ const attachmentsRoutes = app
 
     logEvent('Attachments deleted', { ids: allowedIds.join() });
 
-    return ctx.json({ success: true, errors: errors }, 200);
+    return ctx.json({ success: true, errors }, 200);
   })
   .openapi(attachmentsRouteConfig.getAttachmentCover, async (ctx) => {
     const { id } = ctx.req.valid('param');
@@ -217,7 +231,7 @@ const attachmentsRoutes = app
     const [attachment] = await db.select().from(attachmentsTable).where(eq(attachmentsTable.id, id));
     if (!attachment) return errorResponse(ctx, 404, 'not_found', 'warn', 'attachment');
 
-    const redirectUrl = `${config.frontendUrl}/${attachment.organizationId}/attachment/${id}`;
+    const redirectUrl = `${config.frontendUrl}/${attachment.organizationId}/attachments?attachmentPreview=${attachment.url}`;
 
     return ctx.html(html`
       <!doctype html>

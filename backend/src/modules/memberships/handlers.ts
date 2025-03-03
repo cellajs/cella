@@ -105,7 +105,7 @@ const membershipsRoutes = app
     for (const email of normalizedEmails) if (!existingUsersByEmail.has(email)) emailsToInvite.push({ email, userId: null });
 
     // Stop if no recipients
-    if (emailsToInvite.length === 0) return errorResponse(ctx, 400, 'no_recipients', 'warn'); // Stop if no recipients
+    if (emailsToInvite.length === 0) return ctx.json({ success: true }, 200); // Stop if no recipients to send invites
 
     // Generate invitation tokens
     const tokens = emailsToInvite.map(({ email, userId }) => ({

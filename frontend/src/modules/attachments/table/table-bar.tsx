@@ -36,8 +36,7 @@ export const AttachmentsTableBar = ({
   const { t } = useTranslation();
 
   const isFiltered = !!q;
-  const isAdmin = organization.membership?.role === 'admin';
-  const showUpload = canUpload && !isFiltered && isAdmin;
+  const showUpload = canUpload && !isFiltered;
 
   // Drop selected rows on search
   const onSearch = (searchString: string) => {

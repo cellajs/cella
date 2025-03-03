@@ -3,17 +3,19 @@ import Tus from '@uppy/tus';
 import { config } from 'config';
 import { getUploadToken } from '~/modules/general/api';
 
-import '@uppy/core/dist/style.min.css';
 import { onlineManager } from '@tanstack/react-query';
+import '@uppy/core/dist/style.min.css';
+import { t } from 'i18next';
 import { LocalFileStorage } from '~/modules/attachments/local-file-storage';
 import type { UploadUppyProps } from '~/modules/attachments/upload/upload-uppy';
+import { toaster } from '~/modules/common/toaster';
 import { nanoid } from '~/utils/nanoid';
 
 export type UppyMeta = { public?: boolean; contentType?: string };
 
 export type LocalFile = UppyFile<UppyMeta, UppyBody>;
 
-export type UploadedUppyFile = { file: UppyFile<UppyMeta, UppyBody>; url: string };
+export type UploadedUppyFile = { file: LocalFile; url: string };
 
 // biome-ignore lint/complexity/noBannedTypes: no other way to define this type
 export type UppyBody = {};
@@ -23,12 +25,20 @@ export interface UploadParams {
   organizationId?: string;
 }
 
-const readJwt = (token: string) => JSON.parse(atob(token.split('.')[1]));
+export const readJwt = (token: string) => JSON.parse(atob(token.split('.')[1]));
+
+export const getTusConfig = (token: string) => {
+  return {
+    endpoint: config.tusUrl,
+    removeFingerprintOnSuccess: true,
+    headers: { authorization: `Bearer ${token}` },
+  };
+};
 
 interface ImadoOptions extends UploadParams {
   statusEventHandler?: {
-    onFileEditorComplete?: (file: UppyFile<UppyMeta, UppyBody>) => void;
-    onUploadStart?: (uploadId: string, files: UppyFile<UppyMeta, UppyBody>[]) => void;
+    onFileEditorComplete?: (file: LocalFile) => void;
+    onUploadStart?: (uploadId: string, files: LocalFile[]) => void;
     onError?: (error: Error) => void;
     onComplete?: (mappedResult: UploadedUppyFile[], result: UploadResult<UppyMeta, UppyBody>) => void;
   };
@@ -60,11 +70,11 @@ export async function ImadoUppy(
   }
 
   // Prepare files for offline storage
-  const prepareFilesForOffline = async (files: { [key: string]: UppyFile<UppyMeta, UppyBody> }) => {
+  const prepareFilesForOffline = async (files: { [key: string]: LocalFile }) => {
     console.warn('Files will be stored offline in indexedDB.');
 
-    // Save to local storage asynchronously
-    await LocalFileStorage.addFiles(files);
+    // Save to local storage uppy options & files
+    await LocalFileStorage.addImadoRetry({ options: { ...uppyOptions, ...opts, type }, fileMap: files });
 
     // Prepare successful files for manual `complete` event
     const successfulFiles = Object.values(files);
@@ -74,9 +84,7 @@ export async function ImadoUppy(
   // Initialize Uppy
   const imadoUppy = new Uppy({
     ...uppyOptions,
-    meta: {
-      public: opts.public,
-    },
+    meta: { public: opts.public },
     onBeforeUpload: (files) => {
       if (!canUpload) {
         prepareFilesForOffline(files).then((successfulFiles) => {
@@ -101,10 +109,12 @@ export async function ImadoUppy(
       return file;
     },
   })
-    .use(Tus, {
-      endpoint: config.tusUrl,
-      removeFingerprintOnSuccess: true,
-      headers: { authorization: `Bearer ${token}` },
+    .use(Tus, getTusConfig(token))
+    .on('files-added', () => {
+      if (onlineManager.isOnline() && !config.has.imado) toaster(t('common:file_upload_warning'), 'warning');
+    })
+    .on('files-added', () => {
+      if (onlineManager.isOnline() && !config.has.imado) toaster(t('common:file_upload_warning'), 'warning');
     })
     .on('file-editor:complete', (file) => {
       console.info('File editor complete:', file);
@@ -123,17 +133,17 @@ export async function ImadoUppy(
 
       let mappedResult: UploadedUppyFile[] = [];
 
-      if (result.successful && canUpload) {
+      if (result.successful && result.successful.length > 0) {
+        const rootUrl = opts.public ? config.publicCDNUrl : config.privateCDNUrl;
+
         mappedResult = result.successful.map((file) => {
-          const rootUrl = opts.public ? config.publicCDNUrl : config.privateCDNUrl;
+          if (!canUpload) return { file, url: file.id };
+          // Case canUpload
           const { sub } = readJwt(token);
           const uploadKey = file.uploadURL?.split('/').pop();
           const url = new URL(`${rootUrl}/${sub}/${uploadKey}`);
+
           return { file, url: url.toString() };
-        });
-      } else if (result.successful && !canUpload) {
-        mappedResult = result.successful.map((file) => {
-          return { file, url: file.id };
         });
       }
       opts.statusEventHandler?.onComplete?.(mappedResult, result);

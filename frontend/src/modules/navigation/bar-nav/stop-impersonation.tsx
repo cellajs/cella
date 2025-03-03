@@ -6,22 +6,23 @@ import { toast } from 'sonner';
 import { impersonationStop } from '~/modules/auth/api';
 import { Button } from '~/modules/ui/button';
 import { getAndSetMe, getAndSetMenu } from '~/modules/users/helpers';
+import { useGeneralStore } from '~/store/general';
 
 const StopImpersonation = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
 
-  const isImpersonating = sessionStorage.getItem(`${config.slug}-impersonating`);
+  const { impersonating, setImpersonating } = useGeneralStore();
 
   const stopImpersonation = async () => {
     await impersonationStop();
+    setImpersonating(false);
     await Promise.all([getAndSetMe(), getAndSetMenu()]);
-    sessionStorage.removeItem(`${config.slug}-impersonating`);
     navigate({ to: config.defaultRedirectPath, replace: true });
     toast.success(t('common:success.stopped_impersonation'));
   };
 
-  if (!isImpersonating) return null;
+  if (!impersonating) return null;
 
   return (
     <Button variant="ghost" className="w-12 h-12" onClick={stopImpersonation}>

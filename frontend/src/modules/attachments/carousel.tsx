@@ -1,4 +1,5 @@
 import { useLocation, useNavigate } from '@tanstack/react-router';
+import { config } from 'config';
 import Autoplay from 'embla-carousel-autoplay';
 import { Download, ExternalLink, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
@@ -91,8 +92,7 @@ const AttachmentsCarousel = ({ slides = [], isDialog = false, slide = 0, saveInS
             </h2>
           )}
           <div className="grow" />
-
-          {slides[current].src.startsWith('http') && (
+          {slides[current].src.startsWith(config.publicCDNUrl) && (
             <Button
               variant="ghost"
               size="icon"
@@ -103,7 +103,7 @@ const AttachmentsCarousel = ({ slides = [], isDialog = false, slide = 0, saveInS
             </Button>
           )}
 
-          {slides[current].src.startsWith('http') && (
+          {slides[current].src.startsWith(config.publicCDNUrl) && (
             <Button
               variant="ghost"
               size="icon"

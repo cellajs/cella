@@ -13,10 +13,6 @@ export const membershipSchema = z.object({
     activatedAt: true,
     tokenId: true,
   }).shape,
-  archived: z.boolean(),
-  muted: z.boolean(),
-  createdAt: z.string(),
-  modifiedAt: z.string().nullable(),
 });
 
 export const createMembershipsBodySchema = z.object({

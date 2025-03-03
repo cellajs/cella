@@ -61,6 +61,10 @@ queryClient.setMutationDefaults(attachmentsKeys.create(), {
     const optimisticIds: string[] = []; // IDs of optimistically updated items
     const newAttachments: Attachment[] = [];
 
+    // If multiple attachments, create a groupId for optimistically update to associate them.
+    // BE will assign final groupId during attachment creation.
+    const groupId = attachments.length > 1 ? nanoid() : null;
+
     for (const attachment of attachments) {
       const optimisticId = attachment.id || nanoid();
 
@@ -74,6 +78,7 @@ queryClient.setMutationDefaults(attachmentsKeys.create(), {
         createdBy: null,
         modifiedAt: new Date().toISOString(),
         modifiedBy: null,
+        groupId,
       };
 
       newAttachments.push(newAttachment);
