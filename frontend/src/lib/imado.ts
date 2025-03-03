@@ -113,6 +113,9 @@ export async function ImadoUppy(
     .on('files-added', () => {
       if (onlineManager.isOnline() && !config.has.imado) toaster(t('common:file_upload_warning'), 'warning');
     })
+    .on('files-added', () => {
+      if (onlineManager.isOnline() && !config.has.imado) toaster(t('common:file_upload_warning'), 'warning');
+    })
     .on('file-editor:complete', (file) => {
       console.info('File editor complete:', file);
       opts.statusEventHandler?.onFileEditorComplete?.(file);
