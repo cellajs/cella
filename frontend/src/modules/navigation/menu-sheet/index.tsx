@@ -89,6 +89,9 @@ export const MenuSheet = memo(() => {
           const edge: Edge | null = extractClosestEdge(targetData);
           const newOrder = getRelativeItemOrder(menu, sourceItem.entity, sourceItem.membership.archived, sourceItem.id, targetData.order, edge);
 
+          // Exit early if order remains the same
+          if (targetData.order === sourceItem.membership.order || newOrder === sourceItem.membership.order) return;
+
           const updatedMembership = await updateMembership({
             id: sourceItem.membership.id,
             order: newOrder,
