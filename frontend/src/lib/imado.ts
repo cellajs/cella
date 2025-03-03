@@ -25,7 +25,15 @@ export interface UploadParams {
   organizationId?: string;
 }
 
-const readJwt = (token: string) => JSON.parse(atob(token.split('.')[1]));
+export const readJwt = (token: string) => JSON.parse(atob(token.split('.')[1]));
+
+export const getTusConfig = (token: string) => {
+  return {
+    endpoint: config.tusUrl,
+    removeFingerprintOnSuccess: true,
+    headers: { authorization: `Bearer ${token}` },
+  };
+};
 
 interface ImadoOptions extends UploadParams {
   statusEventHandler?: {
@@ -65,8 +73,8 @@ export async function ImadoUppy(
   const prepareFilesForOffline = async (files: { [key: string]: LocalFile }) => {
     console.warn('Files will be stored offline in indexedDB.');
 
-    // Save to local storage asynchronously
-    await LocalFileStorage.addFiles(files);
+    // Save to local storage uppy options & files
+    await LocalFileStorage.addImadoRetry({ options: { ...uppyOptions, ...opts, type }, fileMap: files });
 
     // Prepare successful files for manual `complete` event
     const successfulFiles = Object.values(files);
@@ -76,9 +84,7 @@ export async function ImadoUppy(
   // Initialize Uppy
   const imadoUppy = new Uppy({
     ...uppyOptions,
-    meta: {
-      public: opts.public,
-    },
+    meta: { public: opts.public },
     onBeforeUpload: (files) => {
       if (!canUpload) {
         prepareFilesForOffline(files).then((successfulFiles) => {
@@ -103,10 +109,9 @@ export async function ImadoUppy(
       return file;
     },
   })
-    .use(Tus, {
-      endpoint: config.tusUrl,
-      removeFingerprintOnSuccess: true,
-      headers: { authorization: `Bearer ${token}` },
+    .use(Tus, getTusConfig(token))
+    .on('files-added', () => {
+      if (onlineManager.isOnline() && !config.has.imado) toaster(t('common:file_upload_warning'), 'warning');
     })
     .on('files-added', () => {
       if (onlineManager.isOnline() && !config.has.imado) toaster(t('common:file_upload_warning'), 'warning');
