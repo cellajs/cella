@@ -31,8 +31,8 @@ const InviteSearchForm = ({ entity, callback, dialog: isDialog }: Props) => {
 
   const formSchema = z.object({
     emails: z
-      .array(z.string().email(t('backend:invalid.email')))
-      .min(1, { message: t('backend:invalid.min_items', { items_count: 'one', item: 'email' }) }),
+      .array(z.string().email(t('common:invalid.email')))
+      .min(1, { message: t('common:invalid.min_items', { items_count: 'one', item: 'email' }) }),
     role: z.enum(config.rolesByType.entityRoles).optional(),
     idOrSlug: z.string().optional(),
   });

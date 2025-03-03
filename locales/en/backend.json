@@ -20,17 +20,5 @@
   "email.system_invite.subject": "Invitation",
   "email.system_invite.text": "You have been invited to <strong>{{appName}}</strong> by {{senderName}}.",
   "email.system_invite.title": "Join <strong>{{appName}}</strong>",
-  "email.unsubscribe": "Unsubscribe",
-  "invalid.color": "Color may only contain letters, numbers & starts with #",
-  "invalid.domain": "Domain must not contain @, no special chars and at least one dot (.) in between.",
-  "invalid.email": "Invalid email address.",
-  "invalid.image_url": "Search params not allowed",
-  "invalid.max_length": "{{prefix}} be at most {{length}} characters.",
-  "invalid.min_items": "Please add at least {{items_count}} {{item}} to the list.",
-  "invalid.min_length_greater": "Must be greater than {{length}}",
-  "invalid.min_length_greater_or_eq": "Must be greater or equal to {{length}}",
-  "invalid.name": "Name may only contain letters, numbers, spaces and these characters: ,.'-",
-  "invalid.slug": "Slug may only contain alphanumeric characters or up to three hyphens, and cannot begin or end with a hyphen.",
-  "invalid.url": "URL must start with https://",
-  "required": "This field is required."
+  "email.unsubscribe": "Unsubscribe"
 }
