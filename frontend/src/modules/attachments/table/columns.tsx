@@ -1,6 +1,6 @@
 import { Link, useNavigate } from '@tanstack/react-router';
 import { config } from 'config';
-import { Cloud, CopyCheckIcon, CopyIcon, Download, HardDrive } from 'lucide-react';
+import { Cloud, CloudOff, CopyCheckIcon, CopyIcon, Download } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import useDownloader from 'react-use-downloader';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
@@ -33,7 +33,7 @@ export const useColumns = (isAdmin: boolean, isSheet: boolean) => {
           id={`attachment-cell-${url}`}
           to={url}
           tabIndex={tabIndex}
-          className="flex space-x-2 items-center outline-0 ring-0 group"
+          className="flex space-x-2 items-center justify-center outline-0 ring-0 group w-full h-full"
           onClick={(e) => {
             if (e.metaKey || e.ctrlKey) return;
             e.preventDefault();
@@ -65,13 +65,13 @@ export const useColumns = (isAdmin: boolean, isSheet: boolean) => {
     },
     {
       key: 'storeType',
-      name: t('common:store'),
+      name: '',
       visible: true,
       sortable: false,
       width: 32,
       renderCell: ({ row }) => (
         <div className="flex items-center h-full w-full">
-          {row.url.startsWith(config.publicCDNUrl) ? <Cloud size={16} /> : <HardDrive size={16} />}
+          {row.url.startsWith(config.publicCDNUrl) ? <Cloud className="text-success" size={16} /> : <CloudOff className="opacity-50" size={16} />}
         </div>
       ),
     },
@@ -83,7 +83,7 @@ export const useColumns = (isAdmin: boolean, isSheet: boolean) => {
       width: 32,
       renderCell: ({ row, tabIndex }) => {
         const { copyToClipboard, copied } = useCopyToClipboard();
-        if (!row.url.startsWith(config.publicCDNUrl)) return <span className="text-muted">-</span>;
+        if (!row.url.startsWith(config.publicCDNUrl)) return <div className="text-muted text-center w-full">-</div>;
 
         const shareLink = `${config.backendUrl}/${row.organizationId}/attachments/${row.id}/link`;
         return (
@@ -108,7 +108,7 @@ export const useColumns = (isAdmin: boolean, isSheet: boolean) => {
       width: 32,
       renderCell: ({ row, tabIndex }) => {
         const { download } = useDownloader();
-        if (!row.url.startsWith(config.publicCDNUrl)) return <span className="text-muted">-</span>;
+        if (!row.url.startsWith(config.publicCDNUrl)) return <div className="text-muted text-center w-full">-</div>;
         return (
           <Button
             variant="cell"
@@ -158,7 +158,9 @@ export const useColumns = (isAdmin: boolean, isSheet: boolean) => {
       visible: !isMobile,
       width: 100,
       renderHeaderCell: HeaderCell,
-      renderCell: ({ row }) => <div className="inline-flex items-center gap-1 relative font-light group h-full w-full">{formatBytes(row.size)}</div>,
+      renderCell: ({ row }) => (
+        <div className="inline-flex items-center gap-1 relative font-light group h-full w-full opacity-50">{formatBytes(row.size)}</div>
+      ),
     },
     {
       key: 'createdAt',

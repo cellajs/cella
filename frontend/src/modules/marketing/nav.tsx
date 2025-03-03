@@ -66,12 +66,12 @@ export function MarketingNav({ onHandleMismatch }: { onHandleMismatch?: (target:
               to="/about"
               hash=""
               replace={location.pathname === '/about'}
-              className="md:ml-2 sm:mr-2 md:mr-4 hover:opacity-90 active:scale-95 relative"
+              className="md:ml-2 sm:mr-2 md:mr-4 pr-4 hover:opacity-90 active:scale-95 relative"
               aria-label="Go to about page"
             >
               <Logo height={36} />
 
-              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" className="absolute top-0 -right-4">
+              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" className="absolute top-0 right-0">
                 <title>We support Ukraine</title>
                 <g fill="none">
                   <path

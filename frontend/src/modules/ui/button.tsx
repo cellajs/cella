@@ -25,9 +25,9 @@ const buttonVariants = cva(
         link: 'text-primary underline-offset-4 hover:underline',
         // Add more variants here
         darkSuccess: 'bg-green-700 text-white hover:bg-green-700/80',
-        cell: 'text-regular underline-offset-4 hover:underline ring-offset-transparent! ring-transparent! opacity-75 hover:opacity-100',
+        cell: 'text-regular underline-offset-4 hover:underline focus-visible:ring-offset-transparent focus-visible:ring-transparent opacity-75 hover:opacity-100',
         plain: 'text-primary bg-primary/5 border border-primary/30 hover:bg-primary/10 hover:border-primary/50',
-        input: 'border border-input bg-background active:translate-y-0! hover:transparent',
+        input: 'border border-input bg-background [&:not(.absolute)]:active:translate-y-0 hover:transparent',
         none: 'bg-transparent border-none',
       },
       size: {
