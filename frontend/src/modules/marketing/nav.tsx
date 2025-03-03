@@ -92,7 +92,7 @@ export function MarketingNav({ onHandleMismatch }: { onHandleMismatch?: (target:
           <div className={`gap-2 px-2 flex items-center transition-opacity duration-300 ease-in-out ${showSheet ? 'opacity-0' : 'max-sm:delay-700'}`}>
             <UserLanguage />
 
-            <UserTheme className="max-xs:hidden mr-2" />
+            <UserTheme buttonClassName="max-xs:hidden mr-2" />
 
             <Button
               variant="ghost"
@@ -129,7 +129,7 @@ export function MarketingNav({ onHandleMismatch }: { onHandleMismatch?: (target:
           >
             <div className="flex justify-between mb-4">
               <HamburgerButton className="items-start -ml-2 mt-3 opacity-0!" isOpen={showSheet} toggle={setShowSheet} />
-              <UserTheme className="absolute top-5 right-5 xs:hidden" />
+              <UserTheme buttonClassName="absolute top-5 right-5 xs:hidden" />
             </div>
             {renderNavItems()}
             <Button

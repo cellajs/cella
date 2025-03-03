@@ -18,11 +18,16 @@ export const renderSelect = <TRow extends User | Member | Organization>({
 }) => {
   const { t } = useTranslation();
 
+  // SetTimeout to avoid flushSync was called from inside a lifecycle method
   const onChooseValue = (value: string) => {
     // Member | Organization type
-    if ('membership' in row) return onRowChange({ ...row, membership: { ...row.membership, role: value } }, true);
+    if ('membership' in row) {
+      return setTimeout(() => onRowChange({ ...row, membership: { ...row.membership, role: value } }, true));
+    }
     // User type
-    if ('role' in row) onRowChange({ ...row, role: value } as TRow, true);
+    if ('role' in row) {
+      return setTimeout(() => onRowChange({ ...row, role: value } as TRow, true));
+    }
   };
 
   // Determine role based on type
