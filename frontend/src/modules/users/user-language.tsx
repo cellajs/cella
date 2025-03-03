@@ -47,7 +47,7 @@ const UserLanguage = ({ align = 'end', className = '' }: Props) => {
             }}
           >
             <CountryFlag countryCode={lang} imgType="png" />
-            <span className="ml-2">{t(`common:${language}`)}</span>
+            <span className="ml-2">{t(`common:${lang}`)}</span>
           </DropdownMenuCheckboxItem>
         ))}
       </DropdownMenuContent>
