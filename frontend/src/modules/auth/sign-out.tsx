@@ -1,5 +1,5 @@
 import { useNavigate } from '@tanstack/react-router';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { signOut } from '~/modules/auth/api';
 import { toaster } from '~/modules/common/toaster';
@@ -9,10 +9,6 @@ import { useDraftStore } from '~/store/draft';
 import { useGeneralStore } from '~/store/general';
 import { useNavigationStore } from '~/store/navigation';
 import { useUserStore } from '~/store/user';
-
-export const signOutUser = async () => {
-  await signOut();
-};
 
 export const flushStoresAndCache = () => {
   queryClient.clear();
@@ -27,19 +23,29 @@ export const flushStoresAndCache = () => {
 };
 
 // Sign out user and clear all stores and query cache
-const SignOut = () => {
+export const SignOut = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const signOutTriggeredRef = useRef(false);
 
   useEffect(() => {
-    signOutUser().then(() => {
-      flushStoresAndCache();
-      toaster(t('common:success.signed_out'), 'success');
-      navigate({ to: '/about', replace: true });
-    });
+    if (signOutTriggeredRef.current) return;
+
+    signOutTriggeredRef.current = true;
+
+    const performSignOut = async () => {
+      try {
+        await signOut();
+        flushStoresAndCache();
+        toaster(t('common:success.signed_out'), 'success');
+        navigate({ to: '/about', replace: true });
+      } catch (error) {
+        toaster(t('common:error.signed_out_failed'), 'error');
+      }
+    };
+
+    performSignOut();
   }, []);
 
   return null;
 };
-
-export default SignOut;
