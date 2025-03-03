@@ -6,7 +6,6 @@ import { paginationQuerySchema } from '#/utils/schema/common';
 
 export const requestSchema = z.object({
   ...createSelectSchema(requestsTable).shape,
-  createdAt: z.string(),
 });
 
 export const createRequestSchema = z.object({

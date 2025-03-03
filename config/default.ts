@@ -17,7 +17,7 @@ export const config = {
   statusUrl: 'https://status.cellajs.com',
   productionUrl: 'https://cellajs.com',
 
-  description: 'Intuitive TypeScript template to build web apps with a sync engine. MIT licensed.',
+  description: 'Cella is a comprehensive TypeScript template to build web apps with sync engine. MIT licensed.',
   keywords:
     'starter kit, fullstack, monorepo, typescript, hono, honojs, drizzle, shadcn, react, postgres, pwa, offline, instant updates, realtime data, sync engine',
 

@@ -27,8 +27,6 @@ export const updateAttachmentBodySchema = createInsertSchema(attachmentsTable, {
 
 export const attachmentSchema = z.object({
   ...createSelectSchema(attachmentsTable).shape,
-  createdAt: z.string(),
-  modifiedAt: z.string().nullable(),
 });
 
 export const attachmentsQuerySchema = paginationQuerySchema.extend({
