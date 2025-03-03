@@ -5,8 +5,10 @@ import { getUploadToken } from '~/modules/general/api';
 
 import { onlineManager } from '@tanstack/react-query';
 import '@uppy/core/dist/style.min.css';
+import { t } from 'i18next';
 import { LocalFileStorage } from '~/modules/attachments/local-file-storage';
 import type { UploadUppyProps } from '~/modules/attachments/upload/upload-uppy';
+import { toaster } from '~/modules/common/toaster';
 import { nanoid } from '~/utils/nanoid';
 
 export type UppyMeta = { public?: boolean; contentType?: string };
@@ -105,6 +107,9 @@ export async function ImadoUppy(
       endpoint: config.tusUrl,
       removeFingerprintOnSuccess: true,
       headers: { authorization: `Bearer ${token}` },
+    })
+    .on('files-added', () => {
+      if (onlineManager.isOnline() && !config.has.imado) toaster(t('common:file_upload_warning'), 'warning');
     })
     .on('file-editor:complete', (file) => {
       console.info('File editor complete:', file);

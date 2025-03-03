@@ -104,6 +104,7 @@
   "filename": "Filename",
   "filter": "Filter",
   "first_name": "First name",
+  "file_upload_warning": "Files are currently being stored in IndexedDB for preview purposes. Please enable 'imado' in the config for proper functionality and file handling.",
   "focus_view": "Focus view",
   "for": "for",
   "forgot_password": "Forgot password",
