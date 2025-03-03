@@ -1,10 +1,8 @@
 import { forwardRef, memo, useEffect, useImperativeHandle } from 'react';
 
-import { useNavigate, useSearch } from '@tanstack/react-router';
 import { Paperclip } from 'lucide-react';
 import type { RowsChangeData } from 'react-data-grid';
 import { useTranslation } from 'react-i18next';
-import { openAttachmentDialog } from '~/modules/attachments/helpers';
 import { attachmentsQueryOptions } from '~/modules/attachments/query';
 import { useAttachmentUpdateMutation } from '~/modules/attachments/query-mutations';
 import { useSync } from '~/modules/attachments/table/helpers/use-sync';
@@ -14,7 +12,6 @@ import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { DataTable } from '~/modules/common/data-table';
 import { tablePropsAreEqual } from '~/modules/common/data-table/table-props-are-equal';
 import type { BaseTableMethods, BaseTableProps } from '~/modules/common/data-table/types';
-import { dialog } from '~/modules/common/dialoger/state';
 import { useDataFromSuspenseInfiniteQuery } from '~/query/hooks/use-data-from-query';
 
 type BaseDataTableProps = AttachmentsTableProps & BaseTableProps<Attachment, AttachmentSearch>;
@@ -22,16 +19,10 @@ type BaseDataTableProps = AttachmentsTableProps & BaseTableProps<Attachment, Att
 const BaseDataTable = memo(
   forwardRef<BaseTableMethods, BaseDataTableProps>(({ organization, columns, queryVars, updateCounts, sortColumns, setSortColumns }, ref) => {
     const { t } = useTranslation();
-    const navigate = useNavigate();
-    const { attachmentPreview } = useSearch({ strict: false });
 
     useSync(organization.id);
 
     const { q, sort, order, limit } = queryVars;
-
-    const removeCallback = () => {
-      navigate({ to: '.', replace: true, resetScroll: false, search: (prev) => ({ ...prev, attachmentPreview: undefined }) });
-    };
 
     // Query attachments
     const { rows, selectedRows, setRows, setSelectedRows, totalCount, isLoading, isFetching, error, fetchNextPage } =
@@ -61,21 +52,6 @@ const BaseDataTable = memo(
         totalCount,
       );
     }, [selectedRows, rows, totalCount]);
-
-    // Reopen dialog after reload if the attachmentPreview parameter exists
-    useEffect(() => {
-      if (!attachmentPreview) return dialog.remove(true, 'attachment-file-preview');
-      if (!rows || rows.length === 0) return;
-
-      const slides = rows.map(({ url, filename, name, contentType, groupId }) => ({ src: url, filename, name, fileType: contentType, groupId }));
-      const slideIndex = slides.findIndex((slide) => slide.src === attachmentPreview);
-      // If the slide exists in the slides array, reopen the dialog
-      if (slideIndex !== -1) {
-        const targetSlide = slides[slideIndex];
-        const groupSlides = targetSlide.groupId ? slides.filter(({ groupId }) => groupId === targetSlide.groupId) : [targetSlide];
-        openAttachmentDialog(slideIndex, groupSlides, true, { removeCallback });
-      }
-    }, [attachmentPreview, rows]);
 
     // Expose methods via ref using useImperativeHandle
     useImperativeHandle(ref, () => ({

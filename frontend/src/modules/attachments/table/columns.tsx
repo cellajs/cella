@@ -28,7 +28,7 @@ export const useColumns = (isAdmin: boolean, isSheet: boolean) => {
       visible: true,
       sortable: false,
       width: 32,
-      renderCell: ({ row: { url, filename, contentType }, tabIndex }) => (
+      renderCell: ({ row: { url, filename, contentType, groupId }, tabIndex }) => (
         <Link
           id={`attachment-cell-${url}`}
           to={url}
@@ -41,7 +41,7 @@ export const useColumns = (isAdmin: boolean, isSheet: boolean) => {
               to: '.',
               replace: true,
               resetScroll: false,
-              search: (prev) => ({ ...prev, attachmentPreview: url }),
+              search: (prev) => ({ ...prev, attachmentPreview: url, groupId: groupId || undefined }),
             });
           }}
         >

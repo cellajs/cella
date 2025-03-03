@@ -5,6 +5,7 @@ import type { z } from 'zod';
 import { Info } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { useTranslation } from 'react-i18next';
+import { useAttachmentDialog } from '~/hooks/use-attachment-dialog';
 import useSearchParams from '~/hooks/use-search-params';
 import { useColumns } from '~/modules/attachments/table/columns';
 import RemoveAttachmentsForm from '~/modules/attachments/table/remove-attachments-form';
@@ -38,7 +39,7 @@ const AttachmentsTable = ({ organization, canUpload = true, isSheet = false }: A
   const isAdmin = organization.membership?.role === 'admin' || user?.role === 'admin';
 
   // Table state
-  const { q, sort, order } = search;
+  const { q, sort, order, attachmentPreview, groupId } = search;
   const limit = LIMIT;
 
   // State for selected and total counts
@@ -66,6 +67,8 @@ const AttachmentsTable = ({ organization, canUpload = true, isSheet = false }: A
       description: t('common:confirm.delete_resources', { resources: t('common:attachments').toLowerCase() }),
     });
   };
+
+  useAttachmentDialog({ orgIdOrSlug: organization.id, attachmentPreview, groupId });
 
   return (
     <div className="flex flex-col gap-4 h-full">
