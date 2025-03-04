@@ -1,4 +1,4 @@
-import { Suspense, lazy, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import type { z } from 'zod';
 import { useMutateQueryData } from '~/query/hooks/use-mutate-query-data';
 
@@ -17,12 +17,12 @@ import NewsletterDraft from '~/modules/organizations/newsletter-draft';
 import NewsletterForm from '~/modules/organizations/newsletter-form';
 import { organizationsKeys } from '~/modules/organizations/query';
 import { useColumns } from '~/modules/organizations/table/columns';
+import BaseDataTable from '~/modules/organizations/table/table';
 import { OrganizationsTableBar } from '~/modules/organizations/table/table-bar';
 import type { Organization } from '~/modules/organizations/types';
 import { OrganizationsTableRoute, type organizationsSearchSchema } from '~/routes/system';
 import { arraysHaveSameElements } from '~/utils';
 
-const BaseDataTable = lazy(() => import('~/modules/organizations/table/table'));
 const LIMIT = config.requestLimits.organizations;
 
 export type OrganizationsSearch = z.infer<typeof organizationsSearchSchema>;
@@ -112,16 +112,14 @@ const OrganizationsTable = () => {
         openNewsletterSheet={openNewsletterSheet}
         fetchExport={fetchExport}
       />
-      <Suspense>
-        <BaseDataTable
-          ref={dataTableRef}
-          columns={columns}
-          queryVars={{ q, sort, order, limit }}
-          updateCounts={updateCounts}
-          sortColumns={sortColumns}
-          setSortColumns={setSortColumns}
-        />
-      </Suspense>
+      <BaseDataTable
+        ref={dataTableRef}
+        columns={columns}
+        queryVars={{ q, sort, order, limit }}
+        updateCounts={updateCounts}
+        sortColumns={sortColumns}
+        setSortColumns={setSortColumns}
+      />
     </div>
   );
 };

@@ -10,7 +10,7 @@ import { toaster } from '~/modules/common/toaster';
 import { useUpdateUserMutation, usersKeys, usersQueryOptions } from '~/modules/users/query';
 import type { UsersSearch } from '~/modules/users/table/table-wrapper';
 import type { User } from '~/modules/users/types';
-import { useDataFromSuspenseInfiniteQuery } from '~/query/hooks/use-data-from-query';
+import { useDataFromInfiniteQuery } from '~/query/hooks/use-data-from-query';
 import { useMutateQueryData } from '~/query/hooks/use-mutate-query-data';
 
 type BaseDataTableProps = BaseTableProps<User, UsersSearch> & {
@@ -25,8 +25,9 @@ const BaseDataTable = memo(
     const { q, role, sort, order, limit } = queryVars;
 
     // Query users
-    const { rows, selectedRows, setRows, setSelectedRows, totalCount, isLoading, isFetching, error, fetchNextPage } =
-      useDataFromSuspenseInfiniteQuery(usersQueryOptions({ q, sort, order, role, limit }));
+    const { rows, selectedRows, setRows, setSelectedRows, totalCount, isLoading, isFetching, error, fetchNextPage } = useDataFromInfiniteQuery(
+      usersQueryOptions({ q, sort, order, role, limit }),
+    );
 
     const mutateQuery = useMutateQueryData(usersKeys.list(), (item) => usersKeys.single(item.id), ['update']);
 

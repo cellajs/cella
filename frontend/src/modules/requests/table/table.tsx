@@ -7,7 +7,7 @@ import type { BaseTableMethods, BaseTableProps } from '~/modules/common/data-tab
 import { requestsQueryOptions } from '~/modules/requests/query';
 import type { RequestsSearch } from '~/modules/requests/table/table-wrapper';
 import type { Request } from '~/modules/requests/types';
-import { useDataFromSuspenseInfiniteQuery } from '~/query/hooks/use-data-from-query';
+import { useDataFromInfiniteQuery } from '~/query/hooks/use-data-from-query';
 
 type BaseRequestsTableProps = BaseTableProps<Request, RequestsSearch>;
 
@@ -19,8 +19,9 @@ const BaseRequestsTable = memo(
     const { q, sort, order, limit } = queryVars;
 
     // Query requests
-    const { rows, selectedRows, setRows, setSelectedRows, totalCount, isLoading, isFetching, error, fetchNextPage } =
-      useDataFromSuspenseInfiniteQuery(requestsQueryOptions({ q, sort, order, limit }));
+    const { rows, selectedRows, setRows, setSelectedRows, totalCount, isLoading, isFetching, error, fetchNextPage } = useDataFromInfiniteQuery(
+      requestsQueryOptions({ q, sort, order, limit }),
+    );
 
     const onRowsChange = async (changedRows: Request[]) => setRows(changedRows);
 

@@ -13,7 +13,7 @@ import { inviteMembers } from '~/modules/memberships/api';
 import { organizationsQueryOptions } from '~/modules/organizations/query';
 import type { OrganizationsSearch } from '~/modules/organizations/table/table-wrapper';
 import type { Organization } from '~/modules/organizations/types';
-import { useDataFromSuspenseInfiniteQuery } from '~/query/hooks/use-data-from-query';
+import { useDataFromInfiniteQuery } from '~/query/hooks/use-data-from-query';
 import { useUserStore } from '~/store/user';
 
 type BaseDataTableProps = BaseTableProps<Organization, OrganizationsSearch>;
@@ -27,8 +27,9 @@ const BaseDataTable = memo(
     const { q, sort, order, limit } = queryVars;
 
     // Query organizations
-    const { rows, selectedRows, setRows, setSelectedRows, totalCount, isLoading, isFetching, error, fetchNextPage } =
-      useDataFromSuspenseInfiniteQuery(organizationsQueryOptions({ q, sort, order, limit }));
+    const { rows, selectedRows, setRows, setSelectedRows, totalCount, isLoading, isFetching, error, fetchNextPage } = useDataFromInfiniteQuery(
+      organizationsQueryOptions({ q, sort, order, limit }),
+    );
 
     const onRowsChange = async (changedRows: Organization[], { column, indexes }: RowsChangeData<Organization>) => {
       if (!onlineManager.isOnline()) return toaster(t('common:action.offline.text'), 'warning');

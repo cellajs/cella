@@ -7,7 +7,7 @@ import type { BaseTableMethods, BaseTableProps } from '~/modules/common/data-tab
 import type { InvitedMembersSearch, InvitedMembersTableProps } from '~/modules/memberships/invited-members-table/table-wrapper';
 import { invitedMembersQueryOptions } from '~/modules/memberships/query';
 import type { InvitedMember } from '~/modules/memberships/types';
-import { useDataFromSuspenseInfiniteQuery } from '~/query/hooks/use-data-from-query';
+import { useDataFromInfiniteQuery } from '~/query/hooks/use-data-from-query';
 
 type BaseDataTableProps = InvitedMembersTableProps & BaseTableProps<InvitedMember, InvitedMembersSearch>;
 
@@ -22,7 +22,7 @@ const BaseDataTable = memo(
     const { sort, order, limit } = queryVars;
 
     // Query invited members
-    const { rows, totalCount, isLoading, isFetching, error, fetchNextPage } = useDataFromSuspenseInfiniteQuery(
+    const { rows, totalCount, isLoading, isFetching, error, fetchNextPage } = useDataFromInfiniteQuery(
       invitedMembersQueryOptions({
         idOrSlug: entity.slug,
         entityType,

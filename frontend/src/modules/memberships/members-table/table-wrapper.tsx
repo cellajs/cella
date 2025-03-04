@@ -1,4 +1,4 @@
-import { Suspense, lazy, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 
 import type { z } from 'zod';
 
@@ -14,6 +14,7 @@ import { toaster } from '~/modules/common/toaster';
 import type { EntityPage } from '~/modules/general/types';
 import { getMembers } from '~/modules/memberships/api';
 import { useColumns } from '~/modules/memberships/members-table/columns';
+import BaseDataTable from '~/modules/memberships/members-table/table';
 import { MembersTableBar } from '~/modules/memberships/members-table/table-bar';
 import RemoveMembersForm from '~/modules/memberships/remove-member-form';
 import type { Member } from '~/modules/memberships/types';
@@ -22,8 +23,6 @@ import InviteUsers from '~/modules/users/invite-users';
 import { queryClient } from '~/query/query-client';
 import type { membersSearchSchema } from '~/routes/organizations';
 import { arraysHaveSameElements } from '~/utils';
-
-const BaseDataTable = lazy(() => import('~/modules/memberships/members-table/table'));
 
 const LIMIT = config.requestLimits.members;
 
@@ -139,17 +138,15 @@ const MembersTable = ({ entity: baseEntity, isSheet = false }: MembersTableProps
         openInviteDialog={openInviteDialog}
         isSheet={isSheet}
       />
-      <Suspense>
-        <BaseDataTable
-          entity={entity}
-          ref={dataTableRef}
-          columns={columns}
-          queryVars={{ q, role, sort, order, limit }}
-          updateCounts={updateCounts}
-          sortColumns={sortColumns}
-          setSortColumns={setSortColumns}
-        />
-      </Suspense>
+      <BaseDataTable
+        entity={entity}
+        ref={dataTableRef}
+        columns={columns}
+        queryVars={{ q, role, sort, order, limit }}
+        updateCounts={updateCounts}
+        sortColumns={sortColumns}
+        setSortColumns={setSortColumns}
+      />
     </div>
   );
 };

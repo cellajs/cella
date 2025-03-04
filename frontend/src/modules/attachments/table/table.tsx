@@ -12,7 +12,7 @@ import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { DataTable } from '~/modules/common/data-table';
 import { tablePropsAreEqual } from '~/modules/common/data-table/table-props-are-equal';
 import type { BaseTableMethods, BaseTableProps } from '~/modules/common/data-table/types';
-import { useDataFromSuspenseInfiniteQuery } from '~/query/hooks/use-data-from-query';
+import { useDataFromInfiniteQuery } from '~/query/hooks/use-data-from-query';
 
 type BaseDataTableProps = AttachmentsTableProps & BaseTableProps<Attachment, AttachmentSearch>;
 
@@ -25,8 +25,9 @@ const BaseDataTable = memo(
     const { q, sort, order, limit } = queryVars;
 
     // Query attachments
-    const { rows, selectedRows, setRows, setSelectedRows, totalCount, isLoading, isFetching, error, fetchNextPage } =
-      useDataFromSuspenseInfiniteQuery(attachmentsQueryOptions({ orgIdOrSlug: organization.id, q, sort, order, limit }));
+    const { rows, selectedRows, setRows, setSelectedRows, totalCount, isLoading, isFetching, error, fetchNextPage } = useDataFromInfiniteQuery(
+      attachmentsQueryOptions({ orgIdOrSlug: organization.id, q, sort, order, limit }),
+    );
 
     const attachmentUpdateMutation = useAttachmentUpdateMutation();
     // Update rows

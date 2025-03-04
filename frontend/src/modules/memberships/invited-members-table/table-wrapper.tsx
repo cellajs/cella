@@ -1,17 +1,16 @@
 import { config } from 'config';
-import { lazy, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import type { z } from 'zod';
 import useSearchParams from '~/hooks/use-search-params';
 import { useSortColumns } from '~/modules/common/data-table/sort-columns';
 import type { BaseTableMethods } from '~/modules/common/data-table/types';
 import type { EntityPage } from '~/modules/general/types';
 import { useColumns } from '~/modules/memberships/invited-members-table/columns';
+import BaseDataTable from '~/modules/memberships/invited-members-table/table';
 import { InvitedMembersTableBar } from '~/modules/memberships/invited-members-table/table-bar';
 import type { InvitedMember } from '~/modules/memberships/types';
 import type { invitedMembersSearchSchema } from '~/routes/organizations';
 import { arraysHaveSameElements } from '~/utils';
-
-const BaseDataTable = lazy(() => import('~/modules/memberships/invited-members-table/table'));
 
 export type InvitedMembersSearch = z.infer<typeof invitedMembersSearchSchema>;
 

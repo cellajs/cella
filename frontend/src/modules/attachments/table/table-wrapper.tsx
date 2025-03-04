@@ -1,5 +1,5 @@
 import { config } from 'config';
-import { Suspense, lazy, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import type { z } from 'zod';
 
 import { Info } from 'lucide-react';
@@ -9,6 +9,7 @@ import { useAttachmentDialog } from '~/hooks/use-attachment-dialog';
 import useSearchParams from '~/hooks/use-search-params';
 import { useColumns } from '~/modules/attachments/table/columns';
 import RemoveAttachmentsForm from '~/modules/attachments/table/remove-attachments-form';
+import BaseDataTable from '~/modules/attachments/table/table';
 import { AttachmentsTableBar } from '~/modules/attachments/table/table-bar';
 import type { Attachment } from '~/modules/attachments/types';
 import { AlertWrap } from '~/modules/common/alert-wrap';
@@ -20,7 +21,6 @@ import type { attachmentsSearchSchema } from '~/routes/organizations';
 import { useUserStore } from '~/store/user';
 import { arraysHaveSameElements } from '~/utils';
 
-const BaseDataTable = lazy(() => import('~/modules/attachments/table/table'));
 const LIMIT = config.requestLimits.attachments;
 
 export type AttachmentSearch = z.infer<typeof attachmentsSearchSchema>;
@@ -106,19 +106,17 @@ const AttachmentsTable = ({ organization, canUpload = true, isSheet = false }: A
             </motion.div>
           )}
         </AnimatePresence>
-        <Suspense>
-          <BaseDataTable
-            organization={organization}
-            ref={dataTableRef}
-            columns={columns}
-            queryVars={{ q, sort, order, limit }}
-            updateCounts={updateCounts}
-            isSheet={isSheet}
-            canUpload={canUpload}
-            sortColumns={sortColumns}
-            setSortColumns={setSortColumns}
-          />
-        </Suspense>
+        <BaseDataTable
+          organization={organization}
+          ref={dataTableRef}
+          columns={columns}
+          queryVars={{ q, sort, order, limit }}
+          updateCounts={updateCounts}
+          isSheet={isSheet}
+          canUpload={canUpload}
+          sortColumns={sortColumns}
+          setSortColumns={setSortColumns}
+        />
       </div>
     </div>
   );

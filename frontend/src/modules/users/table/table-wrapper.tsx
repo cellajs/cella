@@ -1,6 +1,6 @@
 import { useSearch } from '@tanstack/react-router';
 import { config } from 'config';
-import { Suspense, lazy, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { z } from 'zod';
 import useSearchParams from '~/hooks/use-search-params';
@@ -13,13 +13,13 @@ import DeleteUsers from '~/modules/users/delete-users';
 import InviteUsers from '~/modules/users/invite-users';
 import { usersKeys } from '~/modules/users/query';
 import { useColumns } from '~/modules/users/table/columns';
+import BaseDataTable from '~/modules/users/table/table';
 import { UsersTableBar } from '~/modules/users/table/table-bar';
 import type { User } from '~/modules/users/types';
 import { useMutateQueryData } from '~/query/hooks/use-mutate-query-data';
 import { UsersTableRoute, type usersSearchSchema } from '~/routes/system';
 import { arraysHaveSameElements } from '~/utils';
 
-const BaseDataTable = lazy(() => import('~/modules/users/table/table'));
 const LIMIT = config.requestLimits.users;
 
 export type UsersSearch = z.infer<typeof usersSearchSchema>;
@@ -108,16 +108,14 @@ const UsersTable = () => {
         openRemoveDialog={openRemoveDialog}
         openInviteDialog={openInviteDialog}
       />
-      <Suspense>
-        <BaseDataTable
-          updateCounts={updateCounts}
-          ref={dataTableRef}
-          columns={columns}
-          queryVars={{ q, role, sort, order, limit }}
-          sortColumns={sortColumns}
-          setSortColumns={setSortColumns}
-        />
-      </Suspense>
+      <BaseDataTable
+        updateCounts={updateCounts}
+        ref={dataTableRef}
+        columns={columns}
+        queryVars={{ q, role, sort, order, limit }}
+        sortColumns={sortColumns}
+        setSortColumns={setSortColumns}
+      />
     </div>
   );
 };

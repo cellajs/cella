@@ -10,7 +10,7 @@ import type { MemberSearch, MembersTableProps } from '~/modules/memberships/memb
 import { membersKeys, membersQueryOptions } from '~/modules/memberships/query';
 import { useMemberUpdateMutation } from '~/modules/memberships/query-mutations';
 import type { Member } from '~/modules/memberships/types';
-import { useDataFromSuspenseInfiniteQuery } from '~/query/hooks/use-data-from-query';
+import { useDataFromInfiniteQuery } from '~/query/hooks/use-data-from-query';
 import { queryClient } from '~/query/query-client';
 
 type BaseDataTableProps = MembersTableProps &
@@ -28,19 +28,18 @@ const BaseDataTable = memo(
     const { q, role, sort, order, limit } = queryVars;
 
     // Query members
-    const { rows, selectedRows, setRows, setSelectedRows, totalCount, isLoading, isFetching, error, fetchNextPage } =
-      useDataFromSuspenseInfiniteQuery(
-        membersQueryOptions({
-          idOrSlug: entity.slug,
-          entityType,
-          orgIdOrSlug: organizationId,
-          q,
-          sort,
-          order,
-          role,
-          limit,
-        }),
-      );
+    const { rows, selectedRows, setRows, setSelectedRows, totalCount, isLoading, isFetching, error, fetchNextPage } = useDataFromInfiniteQuery(
+      membersQueryOptions({
+        idOrSlug: entity.slug,
+        entityType,
+        orgIdOrSlug: organizationId,
+        q,
+        sort,
+        order,
+        role,
+        limit,
+      }),
+    );
 
     const updateMemberMembership = useMemberUpdateMutation();
 
@@ -80,6 +79,7 @@ const BaseDataTable = memo(
     useImperativeHandle(ref, () => ({
       clearSelection: () => setSelectedRows(new Set<string>()),
     }));
+    console.log('🚀 ~ isLoading:', isLoading);
 
     return (
       <DataTable<Member>
