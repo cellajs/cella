@@ -1,6 +1,6 @@
 import { t } from 'i18next';
 import { Suspense } from 'react';
-import type { UploadedUppyFile } from '~/lib/imado';
+import type { UploadedUppyFile } from '~/lib/imado/types';
 import { useAttachmentCreateMutation, useAttachmentDeleteMutation } from '~/modules/attachments/query-mutations';
 import UploadUppy from '~/modules/attachments/upload/upload-uppy';
 import { dialog } from '~/modules/common/dialoger/state';

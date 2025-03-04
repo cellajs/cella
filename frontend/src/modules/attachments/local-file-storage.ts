@@ -1,5 +1,5 @@
 import { clear, del, delMany, get, keys, set, setMany, values } from 'idb-keyval';
-import type { LocalFile } from '~/lib/imado';
+import type { LocalFile } from '~/lib/imado/types';
 import type { UploadUppyProps } from './upload/upload-uppy';
 
 type ImageMode = NonNullable<UploadUppyProps['imageMode']>;
