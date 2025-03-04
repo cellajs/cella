@@ -34,17 +34,19 @@ export const attachmentsQueryOptions = ({
   q = '',
   sort: initialSort,
   order: initialOrder,
+  groupId,
   limit = config.requestLimits.attachments,
 }: GetAttachmentsParams) => {
   const sort = initialSort || 'createdAt';
   const order = initialOrder || 'desc';
 
-  const queryKey = attachmentsKeys.table({ orgIdOrSlug, q, sort, order });
+  const queryKey = attachmentsKeys.table({ orgIdOrSlug, q, sort, order, groupId });
 
   return infiniteQueryOptions({
     queryKey,
     initialPageParam: 0,
-    queryFn: async ({ pageParam: page, signal }) => await getAttachments({ page, q, sort, order, limit, orgIdOrSlug, offset: page * limit }, signal),
+    queryFn: async ({ pageParam: page, signal }) =>
+      await getAttachments({ page, q, sort, order, limit, groupId, orgIdOrSlug, offset: page * limit }, signal),
     getNextPageParam: (_lastPage, allPages) => allPages.length,
   });
 };

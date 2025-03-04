@@ -179,7 +179,7 @@ export async function ImadoUppy(
           });
 
           const ids = (await LocalFileStorage.listValues()).filter(({ meta }) => meta.imageMode === imageMode).map((el) => el.id);
-          for (const id of ids) await LocalFileStorage.removeFile(id);
+          await LocalFileStorage.removeFiles(ids);
           console.info('🗑️ Successfully uploaded files removed from IndexedDB.');
 
           opts.statusEventHandler?.onRetryComplete?.(mappedResult, ids);
