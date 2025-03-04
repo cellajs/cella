@@ -1,7 +1,7 @@
 import { t } from 'i18next';
 import { Suspense } from 'react';
 import type { UploadedUppyFile } from '~/lib/imado';
-import { useAttachmentCreateMutation } from '~/modules/attachments/query-mutations';
+import { useAttachmentCreateMutation, useAttachmentDeleteMutation } from '~/modules/attachments/query-mutations';
 import UploadUppy from '~/modules/attachments/upload/upload-uppy';
 import { dialog } from '~/modules/common/dialoger/state';
 import { nanoid } from '~/utils/nanoid';
@@ -35,6 +35,7 @@ const maxTotalFileSize = 10 * 1024 * 1024 * maxNumberOfFiles; // for maxNumberOf
 export const openAttachmentsUploadDialog = (organizationId: string) => {
   const UploadDialog = ({ organizationId }: { organizationId: string }) => {
     const { mutate: createAttachments } = useAttachmentCreateMutation();
+    const { mutate: deleteAttachments } = useAttachmentDeleteMutation();
 
     const handleCallback = (result: UploadedUppyFile[]) => {
       const attachments = result.map(({ file, url }) => ({
@@ -50,6 +51,12 @@ export const openAttachmentsUploadDialog = (organizationId: string) => {
       dialog.remove(true, 'upload-attachment');
     };
 
+    const handleRetryCallback = async (result: UploadedUppyFile[], ids: string[]) => {
+      handleCallback(result);
+
+      deleteAttachments({ orgIdOrSlug: organizationId, ids });
+    };
+
     return (
       <UploadUppy
         isPublic
@@ -58,6 +65,7 @@ export const openAttachmentsUploadDialog = (organizationId: string) => {
         plugins={['webcam', 'image-editor', 'screen-capture', 'audio']}
         imageMode="attachment"
         callback={handleCallback}
+        onRetryCallback={handleRetryCallback}
       />
     );
   };

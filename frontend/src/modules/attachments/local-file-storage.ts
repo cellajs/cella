@@ -1,12 +1,10 @@
-import type { UppyOptions } from '@uppy/core';
-import { clear, del, get, getMany, keys, set, setMany } from 'idb-keyval';
-import type { LocalFile, UppyBody, UppyMeta } from '~/lib/imado';
-import type { UploadUppyProps } from '~/modules/attachments/upload/upload-uppy';
-import { nanoid } from '~/utils/nanoid';
+import { clear, del, delMany, get, keys, set, setMany, values } from 'idb-keyval';
+import type { LocalFile } from '~/lib/imado';
+import type { UploadUppyProps } from './upload/upload-uppy';
 
-type ImadoRetryOptions = UppyOptions<UppyMeta, UppyBody> & { type: UploadUppyProps['uploadType']; organizationId?: string };
+type ImageMode = NonNullable<UploadUppyProps['imageMode']>;
 
-type ImadoRetryProps = { options: ImadoRetryOptions; fileMap: Record<string, LocalFile> };
+type StoredFiles = LocalFile & { meta: LocalFile['meta'] & { imageMode: ImageMode } };
 
 /**
  * Store files in IndexedDB when user is offline or when Imado is not configured
@@ -14,30 +12,21 @@ type ImadoRetryProps = { options: ImadoRetryOptions; fileMap: Record<string, Loc
  * @link https://github.com/jakearchibald/idb-keyval
  */
 export const LocalFileStorage = {
-  async addImadoRetry({ options, fileMap }: ImadoRetryProps): Promise<void> {
-    try {
-      const key = `imado-retry-${nanoid()}`;
-      // Remove non-serializable properties
-      const serializableOptions = JSON.parse(JSON.stringify(options));
-
-      await set(key, { options: serializableOptions, fileMap });
-
-      await this.addFiles(fileMap);
-    } catch (error) {
-      console.error('Failed to save multiple files:', error);
-    }
-  },
-
-  async addFiles(fileMap: Record<string, LocalFile>): Promise<void> {
+  async addFiles(imageMode: ImageMode, fileMap: Record<string, LocalFile>): Promise<void> {
     console.debug('Saving multiple files');
     try {
-      await setMany(Object.entries(fileMap));
+      const updatedFileMap: [IDBValidKey, StoredFiles][] = Object.entries(fileMap).map(([key, file]) => [
+        key,
+        { ...file, meta: { ...file.meta, imageMode } },
+      ]);
+
+      await setMany(updatedFileMap);
     } catch (error) {
       console.error('Failed to save multiple files:', error);
     }
   },
 
-  async addFile(key: string, file: LocalFile): Promise<void> {
+  async addFile(key: string, file: StoredFiles): Promise<void> {
     console.debug(`Saving file with key: ${key}`);
     try {
       await set(key, file);
@@ -46,24 +35,12 @@ export const LocalFileStorage = {
     }
   },
 
-  async getFile(key: string): Promise<LocalFile | undefined> {
+  async getFile(key: string): Promise<StoredFiles | undefined> {
     console.debug(`Retrieving file with key: ${key}`);
     try {
-      return await get<LocalFile>(key);
+      return await get<StoredFiles>(key);
     } catch (error) {
       console.error(`Failed to retrieve file (${key}):`, error);
-      return undefined;
-    }
-  },
-
-  async getRetryOptions(): Promise<ImadoRetryProps[] | undefined> {
-    console.debug('Retrieving retry options');
-    try {
-      const storedKeys = await this.listKeys();
-      const retryUploadKeys = storedKeys.filter((key) => key.startsWith('imado-retry-'));
-      return await getMany<ImadoRetryProps>(retryUploadKeys);
-    } catch (error) {
-      console.error('Failed to retrieve retry options:', error);
       return undefined;
     }
   },
@@ -74,6 +51,15 @@ export const LocalFileStorage = {
       await del(key);
     } catch (error) {
       console.error(`Failed to delete file (${key}):`, error);
+    }
+  },
+
+  async removeFiles(keys: string[]): Promise<void> {
+    console.debug('Deleting files');
+    try {
+      await delMany(keys);
+    } catch (error) {
+      console.error('Failed to delete files:', error);
     }
   },
 
@@ -92,6 +78,16 @@ export const LocalFileStorage = {
       return await keys();
     } catch (error) {
       console.error('Failed to list keys:', error);
+      return [];
+    }
+  },
+
+  async listValues(): Promise<StoredFiles[]> {
+    console.debug('Listing all file values');
+    try {
+      return await values();
+    } catch (error) {
+      console.error('Failed to list values:', error);
       return [];
     }
   },

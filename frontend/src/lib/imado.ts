@@ -41,6 +41,7 @@ interface ImadoOptions extends UploadParams {
     onUploadStart?: (uploadId: string, files: LocalFile[]) => void;
     onError?: (error: Error) => void;
     onComplete?: (mappedResult: UploadedUppyFile[], result: UploadResult<UppyMeta, UppyBody>) => void;
+    onRetryComplete?: (mappedResult: UploadedUppyFile[], localStoreIds: string[]) => void;
   };
 }
 /**
@@ -55,6 +56,7 @@ interface ImadoOptions extends UploadParams {
  */
 export async function ImadoUppy(
   type: UploadUppyProps['uploadType'],
+  imageMode: NonNullable<UploadUppyProps['imageMode']>,
   uppyOptions: UppyOptions<UppyMeta, UppyBody>,
   opts: ImadoOptions = { public: false, organizationId: undefined },
 ): Promise<Uppy> {
@@ -73,13 +75,22 @@ export async function ImadoUppy(
   const prepareFilesForOffline = async (files: { [key: string]: LocalFile }) => {
     console.warn('Files will be stored offline in indexedDB.');
 
-    // Save to local storage uppy options & files
-    await LocalFileStorage.addImadoRetry({ options: { ...uppyOptions, ...opts, type }, fileMap: files });
+    // Save to local storage files
+    await LocalFileStorage.addFiles(imageMode, files);
 
     // Prepare successful files for manual `complete` event
     const successfulFiles = Object.values(files);
     return successfulFiles;
   };
+
+  const onBeforeFileAdded = (file: UppyFile<UppyMeta, UppyBody>) => {
+    // Simplify id and add contentType to meta
+    file.id = nanoid();
+    file.meta = { ...file.meta, contentType: file.type };
+    return file;
+  };
+
+  const rootUrl = opts.public ? config.publicCDNUrl : config.privateCDNUrl;
 
   // Initialize Uppy
   const imadoUppy = new Uppy({
@@ -94,25 +105,13 @@ export async function ImadoUppy(
           });
         });
 
-        return false; // Block upload
+        return config.has.imado; // Block upload if no imado
       }
-
       return true; // Allow upload if `canUpload` is true
     },
-    onBeforeFileAdded: (file) => {
-      // Simplify id and add contentType to meta
-      file.id = nanoid();
-      file.meta = {
-        ...file.meta,
-        contentType: file.type,
-      };
-      return file;
-    },
+    onBeforeFileAdded,
   })
     .use(Tus, getTusConfig(token))
-    .on('files-added', () => {
-      if (onlineManager.isOnline() && !config.has.imado) toaster(t('common:file_upload_warning'), 'warning');
-    })
     .on('files-added', () => {
       if (onlineManager.isOnline() && !config.has.imado) toaster(t('common:file_upload_warning'), 'warning');
     })
@@ -134,8 +133,6 @@ export async function ImadoUppy(
       let mappedResult: UploadedUppyFile[] = [];
 
       if (result.successful && result.successful.length > 0) {
-        const rootUrl = opts.public ? config.publicCDNUrl : config.privateCDNUrl;
-
         mappedResult = result.successful.map((file) => {
           if (!canUpload) return { file, url: file.id };
           // Case canUpload
@@ -147,7 +144,47 @@ export async function ImadoUppy(
         });
       }
       opts.statusEventHandler?.onComplete?.(mappedResult, result);
-    });
+    })
+    .on('is-offline', () => {
+      if (config.has.imado) imadoUppy.pauseAll();
+    })
+    .on('is-online', async () => {
+      if (!config.has.imado) return;
+      const imadoToken = (await getUploadToken(type, { public: opts.public, organizationId: opts.organizationId })) || '';
 
+      const files = imadoUppy.getFiles();
+      imadoUppy.destroy();
+      if (files.length < 1) return;
+
+      const retryImadoUppy = new Uppy({
+        ...uppyOptions,
+        meta: { public: opts.public },
+        onBeforeFileAdded,
+      }).use(Tus, getTusConfig(imadoToken));
+
+      const validFiles = files.map((file) => ({ ...file, name: file.name || `${file.type}-${file.id}` }));
+      retryImadoUppy.addFiles(validFiles);
+
+      retryImadoUppy.upload().then(async (result) => {
+        if (!result) return;
+        let mappedResult: UploadedUppyFile[] = [];
+
+        if (result.successful && result.successful.length > 0) {
+          mappedResult = result.successful.map((file) => {
+            const { sub } = readJwt(imadoToken);
+            const uploadKey = file.uploadURL?.split('/').pop();
+            const url = new URL(`${rootUrl}/${sub}/${uploadKey}`);
+
+            return { file, url: url.toString() };
+          });
+
+          const ids = (await LocalFileStorage.listValues()).filter(({ meta }) => meta.imageMode === imageMode).map((el) => el.id);
+          for (const id of ids) await LocalFileStorage.removeFile(id);
+          console.info('🗑️ Successfully uploaded files removed from IndexedDB.');
+
+          opts.statusEventHandler?.onRetryComplete?.(mappedResult, ids);
+        }
+      });
+    });
   return imadoUppy;
 }

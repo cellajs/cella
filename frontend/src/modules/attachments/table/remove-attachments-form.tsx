@@ -13,11 +13,9 @@ interface Props {
 const RemoveAttachmentsForm = ({ attachments, organizationId, callback, dialog: isDialog }: Props) => {
   const { mutate: deleteAttachments, isPending } = useAttachmentDeleteMutation();
 
-  const onRemove = () => {
-    deleteAttachments({
-      orgIdOrSlug: organizationId,
-      ids: attachments.map((a) => a.id),
-    });
+  const onRemove = async () => {
+    deleteAttachments({ ids: attachments.map(({ id }) => id), orgIdOrSlug: organizationId });
+
     if (isDialog) dialog.remove();
     callback?.(attachments);
   };
