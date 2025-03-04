@@ -19,7 +19,6 @@ import { dialog } from '~/modules/common/dialoger/state';
 import type { Organization } from '~/modules/organizations/types';
 import type { attachmentsSearchSchema } from '~/routes/organizations';
 import { useUserStore } from '~/store/user';
-import { arraysHaveSameElements } from '~/utils';
 
 const LIMIT = config.requestLimits.attachments;
 
@@ -33,9 +32,10 @@ export interface AttachmentsTableProps {
 const AttachmentsTable = ({ organization, canUpload = true, isSheet = false }: AttachmentsTableProps) => {
   const { t } = useTranslation();
   const user = useUserStore((state) => state.user);
-  const { search, setSearch } = useSearchParams<AttachmentSearch>({ saveDataInSearch: !isSheet });
 
+  const { search, setSearch } = useSearchParams<AttachmentSearch>({ saveDataInSearch: !isSheet });
   const dataTableRef = useRef<BaseTableMethods | null>(null);
+
   const isAdmin = organization.membership?.role === 'admin' || user?.role === 'admin';
 
   // Table state
@@ -45,12 +45,6 @@ const AttachmentsTable = ({ organization, canUpload = true, isSheet = false }: A
   // State for selected and total counts
   const [total, setTotal] = useState<number | undefined>(undefined);
   const [selected, setSelected] = useState<Attachment[]>([]);
-
-  // Update total and selected counts
-  const updateCounts = (newSelected: Attachment[], newTotal: number) => {
-    if (newTotal !== total) setTotal(newTotal);
-    if (!arraysHaveSameElements(selected, newSelected)) setSelected(newSelected);
-  };
 
   // Build columns
   const [columns, setColumns] = useState(useColumns(isAdmin, isSheet));
@@ -111,11 +105,12 @@ const AttachmentsTable = ({ organization, canUpload = true, isSheet = false }: A
           ref={dataTableRef}
           columns={columns}
           queryVars={{ q, sort, order, limit }}
-          updateCounts={updateCounts}
           isSheet={isSheet}
           canUpload={canUpload}
           sortColumns={sortColumns}
           setSortColumns={setSortColumns}
+          setTotal={setTotal}
+          setSelected={setSelected}
         />
       </div>
     </div>

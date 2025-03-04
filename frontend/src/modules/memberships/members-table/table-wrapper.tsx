@@ -22,7 +22,6 @@ import { organizationsKeys } from '~/modules/organizations/query';
 import InviteUsers from '~/modules/users/invite-users';
 import { queryClient } from '~/query/query-client';
 import type { membersSearchSchema } from '~/routes/organizations';
-import { arraysHaveSameElements } from '~/utils';
 
 const LIMIT = config.requestLimits.members;
 
@@ -36,23 +35,19 @@ const MembersTable = ({ entity: baseEntity, isSheet = false }: MembersTableProps
   const { t } = useTranslation();
 
   const { search, setSearch } = useSearchParams<MemberSearch>({ saveDataInSearch: !isSheet });
-
   const dataTableRef = useRef<BaseTableMethods | null>(null);
+
   const organizationId = baseEntity.organizationId || baseEntity.id;
   const isAdmin = baseEntity.membership?.role === 'admin';
 
+  // Table state
   const { q, role, sort, order, sheetId } = search;
   const limit = LIMIT;
 
+  // State for selected, total counts and entity
   const [total, setTotal] = useState<number | undefined>(undefined);
   const [selected, setSelected] = useState<Member[]>([]);
   const [entity, setEntity] = useState<EntityPage>(baseEntity);
-
-  // Update total and selected counts
-  const updateCounts = (newSelected: Member[], newTotal: number) => {
-    if (newTotal !== total) setTotal(newTotal);
-    if (!arraysHaveSameElements(selected, newSelected)) setSelected(newSelected);
-  };
 
   // Build columns
   const [columns, setColumns] = useColumns(isAdmin, isSheet);
@@ -143,9 +138,10 @@ const MembersTable = ({ entity: baseEntity, isSheet = false }: MembersTableProps
         ref={dataTableRef}
         columns={columns}
         queryVars={{ q, role, sort, order, limit }}
-        updateCounts={updateCounts}
         sortColumns={sortColumns}
         setSortColumns={setSortColumns}
+        setTotal={setTotal}
+        setSelected={setSelected}
       />
     </div>
   );

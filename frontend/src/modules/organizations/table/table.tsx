@@ -19,7 +19,7 @@ import { useUserStore } from '~/store/user';
 type BaseDataTableProps = BaseTableProps<Organization, OrganizationsSearch>;
 
 const BaseDataTable = memo(
-  forwardRef<BaseTableMethods, BaseDataTableProps>(({ columns, queryVars, updateCounts, sortColumns, setSortColumns }, ref) => {
+  forwardRef<BaseTableMethods, BaseDataTableProps>(({ columns, queryVars, sortColumns, setSortColumns, setTotal, setSelected }, ref) => {
     const { t } = useTranslation();
     const { user } = useUserStore();
 
@@ -55,16 +55,16 @@ const BaseDataTable = memo(
       setRows(changedRows);
     };
 
-    useEffect(() => {
-      updateCounts(
-        rows.filter((row) => selectedRows.has(row.id)),
-        totalCount,
-      );
-    }, [selectedRows, rows, totalCount]);
+    const onSelectedRowsChange = (value: Set<string>) => {
+      setSelectedRows(value);
+      setSelected(rows.filter((row) => value.has(row.id)));
+    };
+
+    useEffect(() => setTotal(totalCount), [totalCount]);
 
     // Expose methods via ref using useImperativeHandle
     useImperativeHandle(ref, () => ({
-      clearSelection: () => setSelectedRows(new Set<string>()),
+      clearSelection: () => onSelectedRowsChange(new Set<string>()),
     }));
 
     return (

@@ -17,7 +17,6 @@ import { RequestsTableBar } from '~/modules/requests/table/table-bar';
 import type { Request } from '~/modules/requests/types';
 import { useMutateQueryData } from '~/query/hooks/use-mutate-query-data';
 import { RequestsTableRoute, type requestSearchSchema } from '~/routes/system';
-import { arraysHaveSameElements } from '~/utils';
 
 const LIMIT = config.requestLimits.requests;
 
@@ -38,12 +37,6 @@ const RequestsTable = () => {
   // State for selected and total counts
   const [total, setTotal] = useState<number | undefined>(undefined);
   const [selected, setSelected] = useState<Request[]>([]);
-
-  // Update total and selected counts
-  const updateCounts = (newSelected: Request[], newTotal: number | undefined) => {
-    if (newTotal !== total) setTotal(newTotal);
-    if (!arraysHaveSameElements(selected, newSelected)) setSelected(newSelected);
-  };
 
   // Build columns
   const [columns, setColumns] = useColumns();
@@ -116,9 +109,10 @@ const RequestsTable = () => {
         ref={dataTableRef}
         columns={columns}
         queryVars={{ q, sort, order, limit }}
-        updateCounts={updateCounts}
         sortColumns={sortColumns}
         setSortColumns={setSortColumns}
+        setTotal={setTotal}
+        setSelected={setSelected}
       />
     </div>
   );

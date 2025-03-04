@@ -19,7 +19,7 @@ type BaseDataTableProps = MembersTableProps &
   };
 
 const BaseDataTable = memo(
-  forwardRef<BaseTableMethods, BaseDataTableProps>(({ entity, columns, queryVars, sortColumns, setSortColumns, updateCounts }, ref) => {
+  forwardRef<BaseTableMethods, BaseDataTableProps>(({ entity, columns, queryVars, sortColumns, setSortColumns, setTotal, setSelected }, ref) => {
     const { t } = useTranslation();
     const entityType = entity.entity;
     const organizationId = entity.organizationId || entity.id;
@@ -68,18 +68,17 @@ const BaseDataTable = memo(
       setRows(changedRows);
     };
 
-    useEffect(() => {
-      updateCounts(
-        rows.filter((row) => selectedRows.has(row.id)),
-        totalCount,
-      );
-    }, [selectedRows, rows, totalCount]);
+    const onSelectedRowsChange = (value: Set<string>) => {
+      setSelectedRows(value);
+      setSelected(rows.filter((row) => value.has(row.id)));
+    };
+
+    useEffect(() => setTotal(totalCount), [totalCount]);
 
     // Expose methods via ref using useImperativeHandle
     useImperativeHandle(ref, () => ({
-      clearSelection: () => setSelectedRows(new Set<string>()),
+      clearSelection: () => onSelectedRowsChange(new Set<string>()),
     }));
-    console.log('🚀 ~ isLoading:', isLoading);
 
     return (
       <DataTable<Member>
@@ -98,7 +97,7 @@ const BaseDataTable = memo(
           fetchMore: fetchNextPage,
           isFiltered: role !== undefined || !!q,
           selectedRows,
-          onSelectedRowsChange: setSelectedRows,
+          onSelectedRowsChange,
           sortColumns,
           onSortColumnsChange: setSortColumns,
         }}

@@ -12,7 +12,7 @@ import { useDataFromInfiniteQuery } from '~/query/hooks/use-data-from-query';
 type BaseRequestsTableProps = BaseTableProps<Request, RequestsSearch>;
 
 const BaseRequestsTable = memo(
-  forwardRef<BaseTableMethods, BaseRequestsTableProps>(({ columns, queryVars, updateCounts, sortColumns, setSortColumns }, ref) => {
+  forwardRef<BaseTableMethods, BaseRequestsTableProps>(({ columns, queryVars, sortColumns, setSortColumns, setTotal, setSelected }, ref) => {
     const { t } = useTranslation();
 
     // Extract query variables and set defaults
@@ -25,16 +25,16 @@ const BaseRequestsTable = memo(
 
     const onRowsChange = async (changedRows: Request[]) => setRows(changedRows);
 
-    useEffect(() => {
-      updateCounts(
-        rows.filter((row) => selectedRows.has(row.id)),
-        totalCount,
-      );
-    }, [selectedRows, rows, totalCount]);
+    const onSelectedRowsChange = (value: Set<string>) => {
+      setSelectedRows(value);
+      setSelected(rows.filter((row) => value.has(row.id)));
+    };
+
+    useEffect(() => setTotal(totalCount), [totalCount]);
 
     // Expose methods via ref using useImperativeHandle
     useImperativeHandle(ref, () => ({
-      clearSelection: () => setSelectedRows(new Set<string>()),
+      clearSelection: () => onSelectedRowsChange(new Set<string>()),
     }));
 
     return (

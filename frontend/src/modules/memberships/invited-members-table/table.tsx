@@ -9,10 +9,10 @@ import { invitedMembersQueryOptions } from '~/modules/memberships/query';
 import type { InvitedMember } from '~/modules/memberships/types';
 import { useDataFromInfiniteQuery } from '~/query/hooks/use-data-from-query';
 
-type BaseDataTableProps = InvitedMembersTableProps & BaseTableProps<InvitedMember, InvitedMembersSearch>;
+type BaseDataTableProps = InvitedMembersTableProps & Omit<BaseTableProps<InvitedMember, InvitedMembersSearch>, 'setSelected'>;
 
 const BaseDataTable = memo(
-  forwardRef<BaseTableMethods, BaseDataTableProps>(({ entity, columns, queryVars, updateCounts, sortColumns, setSortColumns }, ref) => {
+  forwardRef<BaseTableMethods, BaseDataTableProps>(({ entity, columns, queryVars, sortColumns, setSortColumns, setTotal }, ref) => {
     const { t } = useTranslation();
 
     const entityType = entity.entity;
@@ -33,7 +33,7 @@ const BaseDataTable = memo(
       }),
     );
 
-    useEffect(() => updateCounts([], totalCount), [totalCount]);
+    useEffect(() => setTotal(totalCount), [totalCount]);
 
     // Expose methods via ref using useImperativeHandle
     useImperativeHandle(ref, () => ({
