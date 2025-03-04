@@ -53,7 +53,7 @@ export const MenuSheetItem = ({ item, className, searchResults }: MenuSheetItemP
       />
       <div className="truncate grow py-2 flex flex-col justify-center pr-2 text-left">
         <div
-          className={`truncate leading-5 transition-all group-hover/menuItem:delay-300 duration-200 ease-in-out ${!searchResults && 'pt-2.5'} sm:group-hover/menuItem:pt-0! text-base group-data-[subitem=true]/menuItem:text-sm
+          className={`truncate leading-5 transition-all group-hover/menuItem:delay-300 duration-200 ease-in-out ${!searchResults && 'pt-2.5 group-data-[subitem=true]/menuItem:pt-1.5'} sm:group-hover/menuItem:pt-0! text-base group-data-[subitem=true]/menuItem:text-sm
             sm:group-data-[subitem=true]/menuItem:-my-0.5 sm:group-data-[subitem=true]/menuItem:pt-1`}
         >
           {item.name}
