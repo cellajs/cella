@@ -175,6 +175,15 @@
     display: none !important;
   }
 
+  /* Floating nav should hide default nav  */
+  .floating-nav #bar-nav {
+    display: none !important;
+  }
+
+  .floating-nav #return-nav {
+    display: flex !important;
+  }
+
   /* Hide tanstack devtools button */
   .tsqd-open-btn-container,
   .TanStackRouterDevtools > button {

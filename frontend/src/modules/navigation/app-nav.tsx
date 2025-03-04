@@ -1,6 +1,6 @@
 import { onlineManager } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
-import { useEffect, useMemo } from 'react';
+import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { useHotkeys } from '~/hooks/use-hot-keys';
@@ -18,17 +18,10 @@ const AppNav = () => {
   const navigate = useNavigate();
   const isMobile = useBreakpoints('max', 'sm');
 
-  const { setLoading, setFocusView, navSheetOpen, setNavSheetOpen } = useNavigationStore();
-
-  const renderedItems = useMemo(() => {
-    const floatingButtonIdsInRoute = router.state.matches.flatMap((el) => el.staticData.floatingNavButtons || []);
-    return navItems.filter(({ id, type }) => {
-      if (floatingButtonIdsInRoute.length && isMobile) return floatingButtonIdsInRoute.includes(id);
-      return type === 'base';
-    });
-  }, [router.state.matches, isMobile]);
-
-  const showFloatingNav = renderedItems.length > 0 && renderedItems.length <= 2;
+  const setFocusView = useNavigationStore.getState().setFocusView;
+  const setLoading = useNavigationStore.getState().setLoading;
+  const navSheetOpen = useNavigationStore((state) => state.navSheetOpen);
+  const setNavSheetOpen = useNavigationStore.getState().setNavSheetOpen;
 
   const navButtonClick = (navItem: NavItem) => {
     // If it has a dialog, open it
@@ -77,23 +70,24 @@ const AppNav = () => {
     });
   };
 
-  const clickNavItem = (index: number) => {
+  const clickNavItem = (id: NavItem['id']) => {
     // If the nav item is already open, close it
-    const id = renderedItems[index].id;
     if (id === navSheetOpen && sheet.get('nav-sheet')?.open) {
       setNavSheetOpen(null);
       sheet.update('nav-sheet', { open: false });
       return;
     }
 
-    navButtonClick(renderedItems[index]);
+    const item = navItems.filter((item) => item.id === id)[0];
+
+    navButtonClick(item);
   };
 
   useHotkeys([
-    ['Shift + A', () => clickNavItem(3)],
-    ['Shift + F', () => clickNavItem(2)],
-    ['Shift + H', () => clickNavItem(1)],
-    ['Shift + M', () => clickNavItem(0)],
+    ['Shift + A', () => clickNavItem('account')],
+    ['Shift + F', () => clickNavItem('search')],
+    ['Shift + H', () => clickNavItem('home')],
+    ['Shift + M', () => clickNavItem('menu')],
   ]);
 
   useEffect(() => {
@@ -115,8 +109,12 @@ const AppNav = () => {
     });
   }, []);
 
-  const NavComponent = showFloatingNav ? FloatingNav : BarNav;
-  return <NavComponent items={renderedItems} onClick={clickNavItem} />;
+  return (
+    <>
+      <FloatingNav onClick={clickNavItem} />
+      <BarNav onClick={clickNavItem} />
+    </>
+  );
 };
 
 export default AppNav;
