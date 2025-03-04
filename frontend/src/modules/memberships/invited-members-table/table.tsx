@@ -7,12 +7,12 @@ import type { BaseTableMethods, BaseTableProps } from '~/modules/common/data-tab
 import type { InvitedMembersSearch, InvitedMembersTableProps } from '~/modules/memberships/invited-members-table/table-wrapper';
 import { invitedMembersQueryOptions } from '~/modules/memberships/query';
 import type { InvitedMember } from '~/modules/memberships/types';
-import { useDataFromSuspenseInfiniteQuery } from '~/query/hooks/use-data-from-query';
+import { useDataFromInfiniteQuery } from '~/query/hooks/use-data-from-query';
 
-type BaseDataTableProps = InvitedMembersTableProps & BaseTableProps<InvitedMember, InvitedMembersSearch>;
+type BaseDataTableProps = InvitedMembersTableProps & Omit<BaseTableProps<InvitedMember, InvitedMembersSearch>, 'setSelected'>;
 
 const BaseDataTable = memo(
-  forwardRef<BaseTableMethods, BaseDataTableProps>(({ entity, columns, queryVars, updateCounts, sortColumns, setSortColumns }, ref) => {
+  forwardRef<BaseTableMethods, BaseDataTableProps>(({ entity, columns, queryVars, sortColumns, setSortColumns, setTotal }, ref) => {
     const { t } = useTranslation();
 
     const entityType = entity.entity;
@@ -22,7 +22,7 @@ const BaseDataTable = memo(
     const { sort, order, limit } = queryVars;
 
     // Query invited members
-    const { rows, totalCount, isLoading, isFetching, error, fetchNextPage } = useDataFromSuspenseInfiniteQuery(
+    const { rows, totalCount, isLoading, isFetching, error, fetchNextPage } = useDataFromInfiniteQuery(
       invitedMembersQueryOptions({
         idOrSlug: entity.slug,
         entityType,
@@ -33,7 +33,7 @@ const BaseDataTable = memo(
       }),
     );
 
-    useEffect(() => updateCounts([], totalCount), [totalCount]);
+    useEffect(() => setTotal(totalCount), [totalCount]);
 
     // Expose methods via ref using useImperativeHandle
     useImperativeHandle(ref, () => ({

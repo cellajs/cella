@@ -1,5 +1,5 @@
 import { config } from 'config';
-import { Suspense, lazy, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import type { z } from 'zod';
 
 import { Info } from 'lucide-react';
@@ -9,6 +9,7 @@ import { useAttachmentDialog } from '~/hooks/use-attachment-dialog';
 import useSearchParams from '~/hooks/use-search-params';
 import { useColumns } from '~/modules/attachments/table/columns';
 import RemoveAttachmentsForm from '~/modules/attachments/table/remove-attachments-form';
+import BaseDataTable from '~/modules/attachments/table/table';
 import { AttachmentsTableBar } from '~/modules/attachments/table/table-bar';
 import type { Attachment } from '~/modules/attachments/types';
 import { AlertWrap } from '~/modules/common/alert-wrap';
@@ -18,9 +19,7 @@ import { dialog } from '~/modules/common/dialoger/state';
 import type { Organization } from '~/modules/organizations/types';
 import type { attachmentsSearchSchema } from '~/routes/organizations';
 import { useUserStore } from '~/store/user';
-import { arraysHaveSameElements } from '~/utils';
 
-const BaseDataTable = lazy(() => import('~/modules/attachments/table/table'));
 const LIMIT = config.requestLimits.attachments;
 
 export type AttachmentSearch = z.infer<typeof attachmentsSearchSchema>;
@@ -33,9 +32,10 @@ export interface AttachmentsTableProps {
 const AttachmentsTable = ({ organization, canUpload = true, isSheet = false }: AttachmentsTableProps) => {
   const { t } = useTranslation();
   const user = useUserStore((state) => state.user);
-  const { search, setSearch } = useSearchParams<AttachmentSearch>({ saveDataInSearch: !isSheet });
 
+  const { search, setSearch } = useSearchParams<AttachmentSearch>({ saveDataInSearch: !isSheet });
   const dataTableRef = useRef<BaseTableMethods | null>(null);
+
   const isAdmin = organization.membership?.role === 'admin' || user?.role === 'admin';
 
   // Table state
@@ -45,12 +45,6 @@ const AttachmentsTable = ({ organization, canUpload = true, isSheet = false }: A
   // State for selected and total counts
   const [total, setTotal] = useState<number | undefined>(undefined);
   const [selected, setSelected] = useState<Attachment[]>([]);
-
-  // Update total and selected counts
-  const updateCounts = (newSelected: Attachment[], newTotal: number) => {
-    if (newTotal !== total) setTotal(newTotal);
-    if (!arraysHaveSameElements(selected, newSelected)) setSelected(newSelected);
-  };
 
   // Build columns
   const [columns, setColumns] = useState(useColumns(isAdmin, isSheet));
@@ -106,19 +100,18 @@ const AttachmentsTable = ({ organization, canUpload = true, isSheet = false }: A
             </motion.div>
           )}
         </AnimatePresence>
-        <Suspense>
-          <BaseDataTable
-            organization={organization}
-            ref={dataTableRef}
-            columns={columns}
-            queryVars={{ q, sort, order, limit }}
-            updateCounts={updateCounts}
-            isSheet={isSheet}
-            canUpload={canUpload}
-            sortColumns={sortColumns}
-            setSortColumns={setSortColumns}
-          />
-        </Suspense>
+        <BaseDataTable
+          organization={organization}
+          ref={dataTableRef}
+          columns={columns}
+          queryVars={{ q, sort, order, limit }}
+          isSheet={isSheet}
+          canUpload={canUpload}
+          sortColumns={sortColumns}
+          setSortColumns={setSortColumns}
+          setTotal={setTotal}
+          setSelected={setSelected}
+        />
       </div>
     </div>
   );

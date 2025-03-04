@@ -13,13 +13,13 @@ import { inviteMembers } from '~/modules/memberships/api';
 import { organizationsQueryOptions } from '~/modules/organizations/query';
 import type { OrganizationsSearch } from '~/modules/organizations/table/table-wrapper';
 import type { Organization } from '~/modules/organizations/types';
-import { useDataFromSuspenseInfiniteQuery } from '~/query/hooks/use-data-from-query';
+import { useDataFromInfiniteQuery } from '~/query/hooks/use-data-from-query';
 import { useUserStore } from '~/store/user';
 
 type BaseDataTableProps = BaseTableProps<Organization, OrganizationsSearch>;
 
 const BaseDataTable = memo(
-  forwardRef<BaseTableMethods, BaseDataTableProps>(({ columns, queryVars, updateCounts, sortColumns, setSortColumns }, ref) => {
+  forwardRef<BaseTableMethods, BaseDataTableProps>(({ columns, queryVars, sortColumns, setSortColumns, setTotal, setSelected }, ref) => {
     const { t } = useTranslation();
     const { user } = useUserStore();
 
@@ -27,8 +27,9 @@ const BaseDataTable = memo(
     const { q, sort, order, limit } = queryVars;
 
     // Query organizations
-    const { rows, selectedRows, setRows, setSelectedRows, totalCount, isLoading, isFetching, error, fetchNextPage } =
-      useDataFromSuspenseInfiniteQuery(organizationsQueryOptions({ q, sort, order, limit }));
+    const { rows, selectedRows, setRows, setSelectedRows, totalCount, isLoading, isFetching, error, fetchNextPage } = useDataFromInfiniteQuery(
+      organizationsQueryOptions({ q, sort, order, limit }),
+    );
 
     const onRowsChange = async (changedRows: Organization[], { column, indexes }: RowsChangeData<Organization>) => {
       if (!onlineManager.isOnline()) return toaster(t('common:action.offline.text'), 'warning');
@@ -54,16 +55,16 @@ const BaseDataTable = memo(
       setRows(changedRows);
     };
 
-    useEffect(() => {
-      updateCounts(
-        rows.filter((row) => selectedRows.has(row.id)),
-        totalCount,
-      );
-    }, [selectedRows, rows, totalCount]);
+    const onSelectedRowsChange = (value: Set<string>) => {
+      setSelectedRows(value);
+      setSelected(rows.filter((row) => value.has(row.id)));
+    };
+
+    useEffect(() => setTotal(totalCount), [totalCount]);
 
     // Expose methods via ref using useImperativeHandle
     useImperativeHandle(ref, () => ({
-      clearSelection: () => setSelectedRows(new Set<string>()),
+      clearSelection: () => onSelectedRowsChange(new Set<string>()),
     }));
 
     return (

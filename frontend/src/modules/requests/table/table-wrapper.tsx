@@ -1,5 +1,5 @@
 import { config } from 'config';
-import { Suspense, lazy, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { z } from 'zod';
 import useSearchParams from '~/hooks/use-search-params';
@@ -12,13 +12,12 @@ import { getRequests } from '~/modules/requests/api';
 import DeleteRequests from '~/modules/requests/delete-requests';
 import { requestsKeys } from '~/modules/requests/query';
 import { useColumns } from '~/modules/requests/table/columns';
+import BaseDataTable from '~/modules/requests/table/table';
 import { RequestsTableBar } from '~/modules/requests/table/table-bar';
 import type { Request } from '~/modules/requests/types';
 import { useMutateQueryData } from '~/query/hooks/use-mutate-query-data';
 import { RequestsTableRoute, type requestSearchSchema } from '~/routes/system';
-import { arraysHaveSameElements } from '~/utils';
 
-const BaseDataTable = lazy(() => import('~/modules/requests/table/table'));
 const LIMIT = config.requestLimits.requests;
 
 export type RequestsSearch = z.infer<typeof requestSearchSchema>;
@@ -38,12 +37,6 @@ const RequestsTable = () => {
   // State for selected and total counts
   const [total, setTotal] = useState<number | undefined>(undefined);
   const [selected, setSelected] = useState<Request[]>([]);
-
-  // Update total and selected counts
-  const updateCounts = (newSelected: Request[], newTotal: number | undefined) => {
-    if (newTotal !== total) setTotal(newTotal);
-    if (!arraysHaveSameElements(selected, newSelected)) setSelected(newSelected);
-  };
 
   // Build columns
   const [columns, setColumns] = useColumns();
@@ -112,16 +105,15 @@ const RequestsTable = () => {
         openInviteDialog={openInviteDialog}
         fetchExport={fetchExport}
       />
-      <Suspense>
-        <BaseDataTable
-          ref={dataTableRef}
-          columns={columns}
-          queryVars={{ q, sort, order, limit }}
-          updateCounts={updateCounts}
-          sortColumns={sortColumns}
-          setSortColumns={setSortColumns}
-        />
-      </Suspense>
+      <BaseDataTable
+        ref={dataTableRef}
+        columns={columns}
+        queryVars={{ q, sort, order, limit }}
+        sortColumns={sortColumns}
+        setSortColumns={setSortColumns}
+        setTotal={setTotal}
+        setSelected={setSelected}
+      />
     </div>
   );
 };
