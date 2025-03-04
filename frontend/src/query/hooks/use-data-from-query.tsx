@@ -29,6 +29,7 @@ export const useDataFromInfiniteQuery = <T extends { id: string } = { id: string
   const [selectedRows, setSelectedRows] = useState(new Set<string>());
   const [totalCount, setTotalCount] = useState(0);
 
+  // TODO: this seems to cause a cancelledError when returning to a page with infinite query in organizations page
   const queryResult = useInfiniteQuery({ ...options, placeholderData: (prevData) => prevData });
 
   useEffect(() => {
