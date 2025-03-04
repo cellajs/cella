@@ -6,8 +6,6 @@ import { deleteSelf } from '~/modules/users/api';
 import { usersKeys } from '~/modules/users/query';
 import type { User } from '~/modules/users/types';
 import { queryClient } from '~/query/query-client';
-import { useAlertStore } from '~/store/alert';
-import { useNavigationStore } from '~/store/navigation';
 import { useUserStore } from '~/store/user';
 
 interface Props {
@@ -18,9 +16,7 @@ interface Props {
 const DeleteSelf = ({ callback, dialog: isDialog }: Props) => {
   const navigate = useNavigate();
 
-  const { user, clearLastUser } = useUserStore();
-  const { clearNavigationStore } = useNavigationStore();
-  const { clearAlertStore } = useAlertStore();
+  const { user } = useUserStore();
 
   const { mutate: _deleteSelf, isPending } = useMutation({
     mutationFn: deleteSelf,
@@ -29,12 +25,7 @@ const DeleteSelf = ({ callback, dialog: isDialog }: Props) => {
         queryKey: usersKeys.single(user.id),
       });
 
-      // Clear all user data
-      clearLastUser();
-      clearNavigationStore();
-      clearAlertStore();
-
-      navigate({ to: '/sign-out', replace: true });
+      navigate({ to: '/sign-out', replace: true, search: { force: true } });
       if (isDialog) dialog.remove();
       callback?.(user);
     },

@@ -29,7 +29,7 @@ const OrganizationPage = () => {
   const { data: organization } = useSuspenseQuery(orgQueryOptions);
 
   const isAdmin = organization.membership?.role === 'admin' || user?.role === 'admin';
-  const tabs = isAdmin ? organizationTabs : organizationTabs.slice(0, 1);
+  const tabs = isAdmin ? organizationTabs : organizationTabs.slice(0, 2);
 
   const { mutate } = useOrganizationUpdateMutation();
 

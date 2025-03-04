@@ -9,9 +9,6 @@ import { useMemo, useState } from 'react';
 import type { UseFormProps } from 'react-hook-form';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import { AlertWrap } from '~/modules/common/alert-wrap';
-import { sendNewsletterBodySchema } from '#/modules/organizations/schema';
-import '~/modules/common/blocknote/app-specific-custom/styles.css';
-import '~/modules/common/blocknote/styles.css';
 import BlockNoteContent from '~/modules/common/form-fields/blocknote-content';
 import InputFormField from '~/modules/common/form-fields/input';
 import SelectRoles from '~/modules/common/form-fields/select-roles';
@@ -21,8 +18,11 @@ import { sendNewsletter } from '~/modules/organizations/api';
 import { Button, SubmitButton } from '~/modules/ui/button';
 import { Checkbox } from '~/modules/ui/checkbox';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
+import { sendNewsletterBodySchema } from '#/modules/organizations/schema';
 
 import '@blocknote/shadcn/style.css';
+import '~/modules/common/blocknote/app-specific-custom/styles.css';
+import '~/modules/common/blocknote/styles.css';
 interface NewsletterFormProps {
   organizationIds: string[];
 }

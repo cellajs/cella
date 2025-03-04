@@ -3,6 +3,7 @@ import { useBreakpoints } from '~/hooks/use-breakpoints';
 import StandardDialog from '~/modules/common/dialoger/dialog';
 import DrawerDialog from '~/modules/common/dialoger/drawer';
 import { DialogState, type DialogT, type DialogToRemove } from '~/modules/common/dialoger/state';
+import { sheet } from '../sheeter/state';
 
 export function Dialoger() {
   const [dialogs, setDialogs] = useState<DialogT[]>([]);
@@ -26,6 +27,9 @@ export function Dialoger() {
       if ('remove' in dialog) return removeDialog(dialog);
 
       if ('reset' in dialog) return setUpdatedDialogs((updatedDialogs) => updatedDialogs.filter(({ id }) => id !== dialog.id));
+
+      // Make sure no sheet is open due to z-index issues
+      if (isMobile) sheet.remove();
 
       prevFocusedElement.current = (document.activeElement || document.body) as HTMLElement;
       setUpdatedDialogs((updatedDialogs) => [...updatedDialogs.filter((d) => d.id !== dialog.id), dialog]);

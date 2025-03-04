@@ -99,7 +99,7 @@ export const getOauthRedirectUrl = async (ctx: Context, firstSignIn?: boolean) =
   let redirectPath = config.defaultRedirectPath;
 
   if (redirectCookie) {
-    if (redirectCookieUrl.startsWith('http')) return decodeURIComponent(redirectCookie);
+    if (redirectCookieUrl.startsWith(config.publicCDNUrl)) return decodeURIComponent(redirectCookie);
     redirectPath = redirectCookieUrl;
   }
 

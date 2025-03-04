@@ -10,6 +10,7 @@ import { deletePasskey as baseRemovePasskey, createPasskey, getSelf, getSelfAuth
 import type { LimitedUser } from '~/modules/users/types';
 import { getQueryItems } from '~/query/helpers/mutate-query';
 import type { InfiniteQueryData, QueryData } from '~/query/types';
+import { useGeneralStore } from '~/store/general';
 import { useNavigationStore } from '~/store/navigation';
 import { useUserStore } from '~/store/user';
 
@@ -152,7 +153,8 @@ export const deletePasskey = async () => {
  */
 export const getAndSetMe = async () => {
   const user = await getSelf();
-  useUserStore.getState().setUser(user);
+  const skipLastUser = useGeneralStore.getState().impersonating;
+  useUserStore.getState().setUser(user, skipLastUser);
   return user;
 };
 

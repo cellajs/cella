@@ -17,7 +17,7 @@ export const config = {
   statusUrl: 'https://status.cellajs.com',
   productionUrl: 'https://cellajs.com',
 
-  description: 'Intuitive TypeScript template to build web apps with a sync engine. MIT licensed.',
+  description: 'Cella is a comprehensive TypeScript template to build web apps with sync engine. MIT licensed.',
   keywords:
     'starter kit, fullstack, monorepo, typescript, hono, honojs, drizzle, shadcn, react, postgres, pwa, offline, instant updates, realtime data, sync engine',
 
@@ -112,7 +112,7 @@ export const config = {
   // Optional settings
   has: {
     pwa: true, // Progressive Web App support for preloading static assets and offline support
-    sync: true, // Realtime updates and sync using Electric Sync
+    sync: false, // Realtime updates and sync using Electric Sync
     registrationEnabled: true, // Allow users to sign up. If disabled, the app is by invitation only
     waitlist: false, // Suggest a waitlist for unknown emails when sign up is disabled,
     imado: false, // Imado fully configured, if false, files will be stored in local browser (indexedDB)

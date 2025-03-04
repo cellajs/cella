@@ -6,7 +6,7 @@ import AuthPage from '~/modules/auth/auth-layout';
 import CreatePasswordForm from '~/modules/auth/create-password-form';
 import EmailVerification from '~/modules/auth/email-verification';
 import { RequestPasswordForm } from '~/modules/auth/request-password-form';
-import SignOut from '~/modules/auth/sign-out';
+import { SignOut } from '~/modules/auth/sign-out';
 import AuthSteps from '~/modules/auth/steps';
 import Unsubscribed from '~/modules/auth/unsubscribed';
 import VerifyEmail from '~/modules/auth/verify-email';
@@ -100,7 +100,8 @@ export const UnsubscribedRoute = createRoute({
 
 export const SignOutRoute = createRoute({
   path: '/sign-out',
+  validateSearch: z.object({ force: z.boolean().optional() }),
   getParentRoute: () => PublicRoute,
   staticData: { pageTitle: 'Sign out', isAuth: false },
-  component: SignOut,
+  component: () => <SignOut />,
 });

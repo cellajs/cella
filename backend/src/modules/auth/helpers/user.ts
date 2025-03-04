@@ -1,6 +1,6 @@
 import type { EnabledOauthProvider } from 'config';
 import { config } from 'config';
-import { eq } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 import type { Context } from 'hono';
 import { db } from '#/db/db';
 import { emailsTable } from '#/db/schema/emails';
@@ -70,7 +70,17 @@ export const handleCreateUser = async ({ ctx, newUser, redirectUrl, provider, to
     // If email is not verified, send verification email. Otherwise, create verified email record and  sign in user
     if (!emailVerified) sendVerificationEmail(user.id);
     else {
-      await db.insert(emailsTable).values({ email: user.email, userId: user.id, verified: true, verifiedAt: getIsoDate() });
+      // Delete any unverified email under a different user
+      await db.delete(emailsTable).where(and(eq(emailsTable.email, userEmail), eq(emailsTable.verified, false)));
+
+      // Insert new email entry
+      await db.insert(emailsTable).values({
+        email: userEmail,
+        userId: user.id,
+        verified: true,
+        verifiedAt: getIsoDate(),
+      });
+
       await setUserSession(ctx, user.id, provider?.id || 'password');
     }
 

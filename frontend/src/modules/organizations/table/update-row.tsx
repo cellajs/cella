@@ -1,5 +1,5 @@
 import { Pencil } from 'lucide-react';
-import { useTranslation } from 'react-i18next';
+import { i18n } from '~/lib/i18n';
 
 import { sheet } from '~/modules/common/sheeter/state';
 import type { Organization } from '~/modules/organizations/types';
@@ -14,13 +14,11 @@ interface Props {
 }
 
 const UpdateRow = ({ organization, callback, tabIndex }: Props) => {
-  const { t } = useTranslation();
-
   const openUpdateSheet = () => {
     sheet.create(
       <Card>
         <CardHeader>
-          <CardTitle>{t('common:general')}</CardTitle>
+          <CardTitle>{i18n.t('common:general')}</CardTitle>
         </CardHeader>
         <CardContent>
           <UpdateOrganizationForm organization={organization} sheet callback={(organization) => callback([organization])} />
@@ -30,14 +28,22 @@ const UpdateRow = ({ organization, callback, tabIndex }: Props) => {
         id: 'update-organization',
         side: 'right',
         className: 'max-w-full lg:max-w-4xl',
-        title: t('common:edit_resource', { resource: t('common:organization').toLowerCase() }),
+        title: i18n.t('common:edit_resource', { resource: i18n.t('common:organization').toLowerCase() }),
         scrollableOverlay: true,
       },
     );
   };
 
   return (
-    <Button variant="cell" size="icon" tabIndex={tabIndex} className="h-full w-full" onClick={openUpdateSheet}>
+    <Button
+      variant="cell"
+      size="icon"
+      tabIndex={tabIndex}
+      className="h-full w-full"
+      data-tooltip="true"
+      data-tooltip-content={i18n.t('common:edit')}
+      onClick={openUpdateSheet}
+    >
       <Pencil size={16} />
     </Button>
   );

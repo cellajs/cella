@@ -12,10 +12,11 @@ import { objectEntries } from '~/utils/object';
 
 interface UserThemeProps {
   size?: number;
-  className?: string;
+  buttonClassName?: string;
+  contentClassName?: string;
 }
 
-const UserTheme = ({ size = 24, className = '' }: UserThemeProps) => {
+const UserTheme = ({ size = 24, buttonClassName = '', contentClassName = '' }: UserThemeProps) => {
   const { t } = useTranslation();
   const { mode, theme, setMode, setTheme } = useThemeStore();
 
@@ -35,7 +36,7 @@ const UserTheme = ({ size = 24, className = '' }: UserThemeProps) => {
       <Switch
         size="sm"
         id="changeTheme"
-        className={cn(mode === 'light' && 'bg-border/50!', 'scale-125 m-2', className)}
+        className={cn(mode === 'light' && 'bg-border/50!', 'scale-125 m-2', buttonClassName)}
         checked={mode === 'light'}
         onCheckedChange={() => setMode(mode === 'light' ? 'dark' : 'light')}
         aria-label={'changeTheme'}
@@ -47,7 +48,7 @@ const UserTheme = ({ size = 24, className = '' }: UserThemeProps) => {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon" className={className} aria-label="Change theme">
+        <Button variant="ghost" size="icon" className={buttonClassName} aria-label="Change theme">
           {mode === 'light' ? (
             <Sun size={size} strokeWidth={config.theme.strokeWidth} />
           ) : (
@@ -55,7 +56,7 @@ const UserTheme = ({ size = 24, className = '' }: UserThemeProps) => {
           )}
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent className="w-48" align="end">
+      <DropdownMenuContent className={cn('w-48', contentClassName)} align="end">
         {modes.map((item) => (
           <DropdownMenuCheckboxItem key={item.id} checked={mode === item.id} onCheckedChange={() => setMode(item.id)}>
             <Icon icon={item.icon} />

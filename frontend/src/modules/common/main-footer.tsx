@@ -66,13 +66,13 @@ export const MainFooter = ({ className = '' }) => {
   return (
     <footer className={cn('flex flex-col gap-2', className)}>
       <div className="flex items-center gap-4">
-        <UserLanguage align="start" />
+        <UserLanguage align="start" contentClassName="z-110" />
         <div className="mr-1 font-light text-muted">|</div>
         <Link to="/about" className="hover:scale-105 transition-transform active:translate-y-[.07rem]">
           <Logo height={25} />
         </Link>
         <div className="ml-1 font-light text-muted">|</div>
-        <UserTheme size={18} />
+        <UserTheme size={18} contentClassName="z-110" />
       </div>
       <FooterLinks />
     </footer>

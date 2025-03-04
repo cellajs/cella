@@ -37,12 +37,12 @@ export const openAttachmentsUploadDialog = (organizationId: string) => {
     const { mutate: createAttachments } = useAttachmentCreateMutation();
 
     const handleCallback = (result: UploadedUppyFile[]) => {
-      const attachments = result.map((a) => ({
-        id: nanoid(),
-        url: a.url,
-        size: String(a.file.size || 0),
-        contentType: a.file.type,
-        filename: a.file.name || 'unknown',
+      const attachments = result.map(({ file, url }) => ({
+        id: file.id || nanoid(),
+        url,
+        size: String(file.size || 0),
+        contentType: file.type,
+        filename: file.name || 'unknown',
         organizationId,
       }));
 

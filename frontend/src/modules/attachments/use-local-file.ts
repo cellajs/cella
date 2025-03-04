@@ -8,12 +8,13 @@ import { useBlobStore } from '~/store/blob'; // Import the Zustand store
  * @param fileType
  * @returns
  */
-export const useLocalFile = (key: string, fileType?: string): string => {
+export const useLocalFile = (key: string, fileType?: string): { localUrl: string; localFileError: string | null } => {
   // We use the Zustand store to get and set the blob URL after LocalFileStorage has created it. It also revokes the URL user closes the browser tab.
   const { getBlobUrl, setBlobUrl } = useBlobStore();
 
   // State
   const [fileUrl, setFileUrl] = useState<string>('');
+  const [error, setError] = useState<string | null>(null); // New error state
   const isMounted = useRef(true);
 
   useEffect(() => {
@@ -30,6 +31,10 @@ export const useLocalFile = (key: string, fileType?: string): string => {
     const fetchFile = async () => {
       try {
         const file = await LocalFileStorage.getFile(key);
+        if (!file)
+          setError(
+            'File not found. The file is stored locally in the browser where it was originally loaded and might not be accessible in other browsers or devices.',
+          );
         if (file && isMounted.current) {
           const blob = new Blob([file.data], { type: fileType || 'application/octet-stream' });
           const newUrl = URL.createObjectURL(blob);
@@ -38,6 +43,7 @@ export const useLocalFile = (key: string, fileType?: string): string => {
         }
       } catch (error) {
         console.error('Error fetching file from FileStorage:', error);
+        if (error instanceof Error) setError(`Error loading file: ${error.message}`);
       }
     };
 
@@ -48,5 +54,5 @@ export const useLocalFile = (key: string, fileType?: string): string => {
     };
   }, [key, fileType, getBlobUrl, setBlobUrl]);
 
-  return fileUrl;
+  return { localUrl: fileUrl, localFileError: error };
 };
