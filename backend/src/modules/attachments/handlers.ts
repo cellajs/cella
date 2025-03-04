@@ -1,21 +1,22 @@
-import { OpenAPIHono } from '@hono/zod-openapi';
-import { type SQL, and, count, eq, ilike, inArray, like, notIlike, or } from 'drizzle-orm';
-import { html } from 'hono/html';
-import { stream } from 'hono/streaming';
-
-import { config } from 'config';
 import { db } from '#/db/db';
 import { attachmentsTable } from '#/db/schema/attachments';
 import { type Env, getContextMemberships, getContextOrganization, getContextUser } from '#/lib/context';
 import { type ErrorType, createError, errorResponse } from '#/lib/errors';
 import { logEvent } from '#/middlewares/logger/log-event';
+import attachmentsRouteConfig from '#/modules/attachments/routes';
 import { splitByAllowance } from '#/permissions/split-by-allowance';
 import defaultHook from '#/utils/default-hook';
 import { getIsoDate } from '#/utils/iso-date';
 import { nanoid } from '#/utils/nanoid';
 import { getOrderColumn } from '#/utils/order-column';
 import { prepareStringForILikeFilter } from '#/utils/sql';
-import attachmentsRouteConfig from './routes';
+
+import { OpenAPIHono } from '@hono/zod-openapi';
+import { type SQL, and, count, eq, ilike, inArray, like, notIlike, or } from 'drizzle-orm';
+import { html } from 'hono/html';
+import { stream } from 'hono/streaming';
+
+import { config } from 'config';
 
 // Set default hook to catch validation errors
 const app = new OpenAPIHono<Env>({ defaultHook });
@@ -83,7 +84,7 @@ const attachmentsRoutes = app
    * Get attachments
    */
   .openapi(attachmentsRouteConfig.getAttachments, async (ctx) => {
-    const { q, sort, order, offset, limit } = ctx.req.valid('query');
+    const { q, sort, order, offset, limit, groupId } = ctx.req.valid('query');
 
     const user = getContextUser();
     // Scope request to organization
@@ -92,6 +93,7 @@ const attachmentsRoutes = app
     // Filter at least by valid organization
     const filters: SQL[] = [
       eq(attachmentsTable.organizationId, organization.id),
+      ...(groupId ? [eq(attachmentsTable.groupId, groupId)] : []),
       ...(!config.has.imado
         ? [
             or(

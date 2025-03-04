@@ -1,6 +1,6 @@
 import { type Entity, type PageEntity, config } from 'config';
 import { clientConfig, handleResponse } from '~/lib/api';
-import type { UploadParams } from '~/lib/imado';
+import type { UploadParams } from '~/lib/imado/types';
 import { generalHc } from '#/modules/general/hc';
 
 export const client = generalHc(config.backendUrl, clientConfig);

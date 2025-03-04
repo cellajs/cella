@@ -11,14 +11,12 @@ const AttachmentDialog = ({ attachmentId, groupId, orgIdOrSlug }: { attachmentId
   const { t } = useTranslation();
   const { isOnline } = useOnlineManager();
 
-  // TODO: we should fetch the attachments by group id?
-  const { data, isError, isLoading } = useSuspenseInfiniteQuery(attachmentsQueryOptions({ orgIdOrSlug }));
+  const { data, isError, isLoading } = useSuspenseInfiniteQuery(attachmentsQueryOptions({ groupId, orgIdOrSlug }));
 
   const attachments = data?.pages.flatMap((a) =>
     a.items.map(({ id, url, name, contentType, filename, groupId }) => ({ id, src: url, filename, name, fileType: contentType, groupId })),
   );
-
-  const slides = attachments.filter((el) => (groupId ? el.groupId === groupId : el.id === attachmentId));
+  const slides = groupId ? attachments : attachments.filter(({ id }) => id === attachmentId);
 
   const startSlide = attachments?.findIndex(({ id }) => attachmentId === id);
 

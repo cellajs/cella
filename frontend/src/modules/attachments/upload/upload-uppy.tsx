@@ -6,7 +6,8 @@ import ScreenCapture from '@uppy/screen-capture';
 import Webcam, { type WebcamOptions } from '@uppy/webcam';
 import { config } from 'config';
 import { useEffect, useState } from 'react';
-import { ImadoUppy, type UploadedUppyFile, type UppyBody, type UppyMeta } from '~/lib/imado';
+import { ImadoUppy } from '~/lib/imado';
+import type { UploadedUppyFile, UppyBody, UppyMeta } from '~/lib/imado/types';
 import { getImageEditorOptions } from '~/modules/attachments/upload/image-editor-options';
 import { useThemeStore } from '~/store/theme';
 
@@ -25,6 +26,7 @@ export interface UploadUppyProps {
   imageMode?: 'cover' | 'avatar' | 'attachment';
   organizationId?: string;
   callback?: (result: UploadedUppyFile[]) => void;
+  onRetryCallback?: (result: UploadedUppyFile[], previousIds: string[]) => void;
 }
 
 const uppyRestrictions = config.uppy.defaultRestrictions;
@@ -41,6 +43,7 @@ export const UploadUppy = ({
   plugins = [],
   imageMode = 'attachment',
   callback,
+  onRetryCallback,
 }: UploadUppyProps) => {
   const [uppy, setUppy] = useState<Uppy | null>(null);
   const { mode } = useThemeStore();
@@ -58,13 +61,15 @@ export const UploadUppy = ({
 
   useEffect(() => {
     const initializeUppy = async () => {
-      const imadoUppy = await ImadoUppy(uploadType, uppyOptions, {
+      const imadoUppy = await ImadoUppy(uploadType, imageMode, uppyOptions, {
         public: isPublic,
         organizationId: organizationId,
         statusEventHandler: {
           onComplete: (mappedResult) => {
-            if (!callback) return;
-            callback(mappedResult);
+            if (callback) callback(mappedResult);
+          },
+          onRetryComplete(mappedResult, localStoreIds) {
+            if (onRetryCallback) onRetryCallback(mappedResult, localStoreIds);
           },
           onFileEditorComplete: () => {
             // If in image mode, start upload directly after editing
