@@ -33,7 +33,7 @@ export const SignInForm = ({ email, resetSteps, emailEnabled }: Props) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
 
-  const { lastUser, clearLastUser } = useUserStore();
+  const { lastUser, clearUserStore } = useUserStore();
   const { redirect, token, tokenId } = useSearch({ from: AuthenticateRoute.id });
 
   const isMobile = window.innerWidth < 640;
@@ -72,7 +72,7 @@ export const SignInForm = ({ email, resetSteps, emailEnabled }: Props) => {
   };
 
   const resetAuth = () => {
-    clearLastUser();
+    clearUserStore();
     resetSteps();
   };
 

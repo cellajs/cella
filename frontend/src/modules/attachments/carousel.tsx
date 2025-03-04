@@ -15,7 +15,7 @@ import { cn } from '~/utils/cn';
 
 interface CarouselPropsBase {
   slide?: number;
-  slides?: { src: string; name?: string; filename?: string; fileType?: string }[];
+  slides?: { src: string; id?: string; name?: string; filename?: string; fileType?: string }[];
   classNameContainer?: string;
 }
 
@@ -54,7 +54,7 @@ const AttachmentsCarousel = ({ slides = [], isDialog = false, slide = 0, saveInS
     const currentSlide = slides[current] ? slides[current] : undefined;
 
     // Only navigate if the current slide is different from the attachmentPreview
-    if (currentSlide?.src === attachmentPreview) return;
+    if (currentSlide?.id === attachmentPreview) return;
 
     // Decide whether to replace the history entry based on whether the attachmentPreview is already set
     const useReplace = attachmentPreview !== undefined;
@@ -65,7 +65,7 @@ const AttachmentsCarousel = ({ slides = [], isDialog = false, slide = 0, saveInS
       resetScroll: false,
       search: (prev) => ({
         ...prev,
-        attachmentPreview: currentSlide?.src,
+        attachmentPreview: currentSlide?.id,
       }),
     });
   }, [current]);

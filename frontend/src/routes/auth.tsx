@@ -100,6 +100,7 @@ export const UnsubscribedRoute = createRoute({
 
 export const SignOutRoute = createRoute({
   path: '/sign-out',
+  validateSearch: z.object({ force: z.boolean().optional() }),
   getParentRoute: () => PublicRoute,
   staticData: { pageTitle: 'Sign out', isAuth: false },
   component: () => <SignOut />,

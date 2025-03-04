@@ -10,10 +10,10 @@ interface UserStoreState {
   passkey: UserAuthInfo['passkey']; // Current user's passkey
   oauth: UserAuthInfo['oauth']; // Current user's oauth options
   lastUser: Partial<MeUser> | null; // Last signed-out user's data (email, name, passkey, id, slug)
-  clearLastUser: () => void; // Resets the `lastUser` to null.
-  setUser: (user: MeUser) => void; // Sets current user and updates lastUser
+  setUser: (user: MeUser, skipLastUser?: boolean) => void; // Sets current user and updates lastUser
   setUserAuthInfo: (data: Partial<UserAuthInfo>) => void; // Sets current user auth info
   updateUser: (user: User) => void; // Updates current user and adjusts lastUser
+  clearUserStore: () => void; // Resets the store.
 }
 
 export const useUserStore = create<UserStoreState>()(
@@ -24,11 +24,6 @@ export const useUserStore = create<UserStoreState>()(
         oauth: [] as UserAuthInfo['oauth'],
         passkey: false,
         lastUser: null,
-        clearLastUser: () => {
-          set((state) => {
-            state.lastUser = null;
-          });
-        },
         updateUser: (user) => {
           set((state) => ({
             user: {
@@ -46,9 +41,11 @@ export const useUserStore = create<UserStoreState>()(
 
           i18n.changeLanguage(user.language || 'en');
         },
-        setUser: (user) => {
+        setUser: (user, skipLastUser) => {
           set((state) => {
             state.user = user;
+            if (skipLastUser) return;
+
             state.lastUser = {
               email: user.email,
               name: user.name,
@@ -63,6 +60,14 @@ export const useUserStore = create<UserStoreState>()(
           set((state) => {
             state.passkey = data.passkey ?? state.passkey;
             state.oauth = data.oauth ?? state.oauth;
+          });
+        },
+        clearUserStore: () => {
+          set((state) => {
+            state.user = null as unknown as MeUser;
+            state.lastUser = null;
+            state.oauth = [];
+            state.passkey = false;
           });
         },
       })),

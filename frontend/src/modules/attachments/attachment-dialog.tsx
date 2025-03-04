@@ -11,6 +11,7 @@ const AttachmentDialog = ({ attachmentId, groupId, orgIdOrSlug }: { attachmentId
   const { t } = useTranslation();
   const { isOnline } = useOnlineManager();
 
+  // TODO: we should fetch the attachments by group id?
   const { data, isError, isLoading } = useSuspenseInfiniteQuery(attachmentsQueryOptions({ orgIdOrSlug }));
 
   const attachments = data?.pages.flatMap((a) =>
@@ -23,7 +24,7 @@ const AttachmentDialog = ({ attachmentId, groupId, orgIdOrSlug }: { attachmentId
 
   if (isError) return <ContentPlaceholder Icon={ServerCrash} title={t('error:request_failed')} />;
 
-  // Show a loading spinner if no cached user exists and data is still loading
+  // Show a loading spinner if no cache exists and data is still loading
   if (isLoading) {
     return (
       <div className="block">

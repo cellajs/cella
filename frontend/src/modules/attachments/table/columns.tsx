@@ -11,6 +11,7 @@ import type { Attachment } from '~/modules/attachments/types';
 import CheckboxColumn from '~/modules/common/data-table/checkbox-column';
 import HeaderCell from '~/modules/common/data-table/header-cell';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
+import Spinner from '~/modules/common/spinner';
 import { Button } from '~/modules/ui/button';
 import { Input } from '~/modules/ui/input';
 import { dateShort } from '~/utils/date-short';
@@ -28,9 +29,9 @@ export const useColumns = (isAdmin: boolean, isSheet: boolean) => {
       visible: true,
       sortable: false,
       width: 32,
-      renderCell: ({ row: { url, filename, contentType, groupId }, tabIndex }) => (
+      renderCell: ({ row: { id, url, filename, contentType, groupId }, tabIndex }) => (
         <Link
-          id={`attachment-cell-${url}`}
+          id={`attachment-cell-${id}`}
           to={url}
           tabIndex={tabIndex}
           className="flex space-x-2 items-center justify-center outline-0 ring-0 group w-full h-full"
@@ -41,7 +42,7 @@ export const useColumns = (isAdmin: boolean, isSheet: boolean) => {
               to: '.',
               replace: true,
               resetScroll: false,
-              search: (prev) => ({ ...prev, attachmentPreview: url, groupId: groupId || undefined }),
+              search: (prev) => ({ ...prev, attachmentPreview: id, groupId: groupId || undefined }),
             });
           }}
         >
@@ -69,11 +70,18 @@ export const useColumns = (isAdmin: boolean, isSheet: boolean) => {
       visible: true,
       sortable: false,
       width: 32,
-      renderCell: ({ row }) => (
-        <div className="flex items-center h-full w-full">
-          {row.url.startsWith(config.publicCDNUrl) ? <Cloud className="text-success" size={16} /> : <CloudOff className="opacity-50" size={16} />}
-        </div>
-      ),
+      renderCell: ({ row }) => {
+        const isInCloud = row.url.startsWith(config.publicCDNUrl);
+        return (
+          <div
+            className="flex justify-center items-center h-full w-full"
+            data-tooltip="true"
+            data-tooltip-content={isInCloud ? t('common:online') : t('common:local_only')}
+          >
+            {isInCloud ? <Cloud className="text-success" size={16} /> : <CloudOff className="opacity-50" size={16} />}
+          </div>
+        );
+      },
     },
     {
       key: 'url',
@@ -83,7 +91,8 @@ export const useColumns = (isAdmin: boolean, isSheet: boolean) => {
       width: 32,
       renderCell: ({ row, tabIndex }) => {
         const { copyToClipboard, copied } = useCopyToClipboard();
-        if (!row.url.startsWith(config.publicCDNUrl)) return <div className="text-muted text-center w-full">-</div>;
+        const isInCloud = row.url.startsWith(config.publicCDNUrl);
+        if (!isInCloud) return <div className="text-muted text-center w-full">-</div>;
 
         const shareLink = `${config.backendUrl}/${row.organizationId}/attachments/${row.id}/link`;
         return (
@@ -93,6 +102,8 @@ export const useColumns = (isAdmin: boolean, isSheet: boolean) => {
             tabIndex={tabIndex}
             className="h-full w-full"
             aria-label="Copy"
+            data-tooltip="true"
+            data-tooltip-content={copied ? t('common:copied') : t('common:copy')}
             onClick={() => copyToClipboard(shareLink)}
           >
             {copied ? <CopyCheckIcon size={16} /> : <CopyIcon size={16} />}
@@ -107,18 +118,21 @@ export const useColumns = (isAdmin: boolean, isSheet: boolean) => {
       sortable: false,
       width: 32,
       renderCell: ({ row, tabIndex }) => {
-        const { download } = useDownloader();
+        const { download, isInProgress } = useDownloader();
         if (!row.url.startsWith(config.publicCDNUrl)) return <div className="text-muted text-center w-full">-</div>;
         return (
           <Button
             variant="cell"
             size="icon"
             tabIndex={tabIndex}
+            disabled={isInProgress}
             className="h-full w-full"
             aria-label="Download"
+            data-tooltip="true"
+            data-tooltip-content={t('common:download')}
             onClick={() => download(row.url, row.filename)}
           >
-            <Download size={16} />
+            {isInProgress ? <Spinner className="w-4 h-4 text-muted" /> : <Download size={16} />}
           </Button>
         );
       },
@@ -129,10 +143,8 @@ export const useColumns = (isAdmin: boolean, isSheet: boolean) => {
       visible: !isMobile,
       sortable: false,
       renderHeaderCell: HeaderCell,
-      renderCell: ({ row, tabIndex }) => (
-        <span tabIndex={tabIndex} className="group-hover:underline underline-offset-4 truncate font-light">
-          {row.filename || <span className="text-muted">-</span>}
-        </span>
+      renderCell: ({ row }) => (
+        <span className="group-hover:underline underline-offset-4 truncate font-light">{row.filename || <span className="text-muted">-</span>}</span>
       ),
     },
     {
@@ -142,13 +154,9 @@ export const useColumns = (isAdmin: boolean, isSheet: boolean) => {
       visible: !isMobile,
       renderHeaderCell: HeaderCell,
       minWidth: 140,
-      renderCell: ({ row, tabIndex }) => {
+      renderCell: ({ row }) => {
         if (!row.contentType) return <span className="text-muted">-</span>;
-        return (
-          <span tabIndex={tabIndex} className="font-light">
-            {row.contentType}
-          </span>
-        );
+        return <span className="font-light">{row.contentType}</span>;
       },
     },
     {

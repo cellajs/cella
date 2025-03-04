@@ -33,7 +33,15 @@ const uppyRestrictions = config.uppy.defaultRestrictions;
 // For more info in Imado, see: https://imado.eu/
 // For more info on Uppy and its APIs, see: https://uppy.io/docs/
 
-export const UploadUppy = ({ uploadType, isPublic, organizationId, restrictions = {}, plugins = [], imageMode, callback }: UploadUppyProps) => {
+export const UploadUppy = ({
+  uploadType,
+  isPublic,
+  organizationId,
+  restrictions = {},
+  plugins = [],
+  imageMode = 'attachment',
+  callback,
+}: UploadUppyProps) => {
   const [uppy, setUppy] = useState<Uppy | null>(null);
   const { mode } = useThemeStore();
 
@@ -60,7 +68,7 @@ export const UploadUppy = ({ uploadType, isPublic, organizationId, restrictions 
           },
           onFileEditorComplete: () => {
             // If in image mode, start upload directly after editing
-            if (imageMode) imadoUppy.upload();
+            if (['cover', 'avatar'].includes(imageMode)) imadoUppy.upload();
           },
         },
       });
@@ -71,7 +79,7 @@ export const UploadUppy = ({ uploadType, isPublic, organizationId, restrictions 
         videoConstraints: { width: 1280, height: 720 },
       };
 
-      if (imageMode) webcamOptions.modes = ['picture'];
+      if (['cover', 'avatar'].includes(imageMode)) webcamOptions.modes = ['picture'];
 
       // Set plugins based on plugins props
       if (plugins.includes('webcam')) imadoUppy.use(Webcam, webcamOptions);
@@ -90,7 +98,7 @@ export const UploadUppy = ({ uploadType, isPublic, organizationId, restrictions 
       {uppy && (
         <Dashboard
           uppy={uppy}
-          autoOpen={imageMode ? 'imageEditor' : null}
+          autoOpen={['cover', 'avatar'].includes(imageMode) ? 'imageEditor' : null}
           width="100%"
           height="400px"
           theme={mode}

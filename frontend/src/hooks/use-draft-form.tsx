@@ -20,7 +20,7 @@ import { useDraftStore } from '~/store/draft';
  *
  * @example
  * const form = useFormWithDraft<MyFormType>('my-form', {
- *   onUnsavedChanges: () => console.log('Unsaved changes detected!')
+ *   onUnsavedChanges: () => console.info('Unsaved changes detected!')
  * });
  *
  * return (

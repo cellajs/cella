@@ -29,8 +29,6 @@ export function Dialoger() {
       if ('reset' in dialog) return setUpdatedDialogs((updatedDialogs) => updatedDialogs.filter(({ id }) => id !== dialog.id));
 
       // Make sure no sheet is open due to z-index issues
-
-      console.log('sheet', sheet);
       if (isMobile) sheet.remove();
 
       prevFocusedElement.current = (document.activeElement || document.body) as HTMLElement;

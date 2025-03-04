@@ -32,7 +32,6 @@ export async function syncOfflineFiles() {
       for (const file of files) {
         try {
           uppy.addFile({ ...file, name: file.name || `${file.type}-${file.id}` });
-          console.log(`✅ Added to Uppy: ${file.name}`);
         } catch (error) {
           console.error(`Failed to add ${file.name}:`, error);
         }

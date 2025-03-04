@@ -7,9 +7,8 @@ import { impersonationStart } from '~/modules/auth/api';
 import { toaster } from '~/modules/common/toaster';
 import { Button } from '~/modules/ui/button';
 import { getAndSetMe, getAndSetMenu } from '~/modules/users/helpers';
-import type { MeUser, User } from '~/modules/users/types';
+import type { User } from '~/modules/users/types';
 import { useGeneralStore } from '~/store/general';
-import { useUserStore } from '~/store/user';
 
 interface Props {
   user: User;
@@ -19,9 +18,7 @@ interface Props {
 const handleStartImpersonation = async (userId: string) => {
   try {
     await impersonationStart(userId);
-    useUserStore.setState({ user: null as unknown as MeUser });
     useGeneralStore.getState().setImpersonating(true);
-    // TODO this seems to cause for a short interval user is null, causing a JS error?
     await Promise.all([getAndSetMe(), getAndSetMenu()]);
     toast.success(i18n.t('common:success.impersonated'));
     router.navigate({ to: config.defaultRedirectPath, replace: true });
@@ -33,7 +30,15 @@ const handleStartImpersonation = async (userId: string) => {
 
 const ImpersonateRow = ({ user, tabIndex }: Props) => {
   return (
-    <Button variant="cell" size="icon" tabIndex={tabIndex} className="w-full h-full" onClick={() => handleStartImpersonation(user.id)}>
+    <Button
+      variant="cell"
+      size="icon"
+      tabIndex={tabIndex}
+      className="w-full h-full"
+      data-tooltip="true"
+      data-tooltip-content={i18n.t('common:impersonate')}
+      onClick={() => handleStartImpersonation(user.id)}
+    >
       <VenetianMask size={16} />
     </Button>
   );

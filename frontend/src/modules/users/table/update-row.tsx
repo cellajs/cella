@@ -33,7 +33,15 @@ const openUpdateSheet = (user: User, callback: (users: User[]) => void) => {
 
 const UpdateRow = ({ user, callback, tabIndex }: Props) => {
   return (
-    <Button variant="cell" size="icon" tabIndex={tabIndex} className="h-full w-full" onClick={() => openUpdateSheet(user, callback)}>
+    <Button
+      variant="cell"
+      size="icon"
+      tabIndex={tabIndex}
+      className="h-full w-full"
+      data-tooltip="true"
+      data-tooltip-content={i18n.t('common:edit')}
+      onClick={() => openUpdateSheet(user, callback)}
+    >
       <Pencil size={16} />
     </Button>
   );

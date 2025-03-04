@@ -1,10 +1,10 @@
+import { autoUpdate, computePosition, offset } from '@floating-ui/dom';
 import { config } from 'config';
 import { Search } from 'lucide-react';
 import { type Key, type ReactNode, useEffect, useRef, useState } from 'react';
 import { type CellClickArgs, type CellMouseEvent, DataGrid, type RenderRowProps, type RowsChangeData, type SortColumn } from 'react-data-grid';
 import { useTranslation } from 'react-i18next';
 import { useInView } from 'react-intersection-observer';
-
 import { useOnlineManager } from '~/hooks/use-online-manager';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { DataTableSkeleton } from '~/modules/common/data-table/table-skeleton';
@@ -93,6 +93,105 @@ export const DataTable = <TData,>({
   const [initialDone, setInitialDone] = useState(false);
   const { ref: measureRef, inView } = useInView({ triggerOnce: false, threshold: 0 });
 
+  // TODO move tooltip to separate hook file
+  const gridRef = useRef<HTMLDivElement | null>(null);
+  const tooltipRef = useRef<HTMLDivElement | null>(null);
+  const timeoutRef = useRef<number | null>(null);
+  const lastShownCellRef = useRef<HTMLElement | null>(null);
+  const observerRef = useRef<MutationObserver | null>(null);
+
+  useEffect(() => {
+    if (!gridRef.current) return;
+
+    // Create tooltip element outside React
+    const tooltip = document.createElement('div');
+    tooltip.className =
+      'max-md:invisible bg-muted-foreground text-primary-foreground absolute pointer-events-none hidden font-light rounded-md text-xs px-3 py-1.5 z-200';
+    document.body.appendChild(tooltip);
+    tooltipRef.current = tooltip;
+
+    // Function to show tooltip
+    const showTooltip = (cell: HTMLElement) => {
+      const tooltipContent = cell.getAttribute('data-tooltip-content') || '';
+      if (!tooltipContent) return;
+
+      tooltip.textContent = tooltipContent;
+      tooltip.style.display = 'block';
+      lastShownCellRef.current = cell;
+
+      autoUpdate(cell, tooltip, () => {
+        computePosition(cell, tooltip, {
+          placement: 'right',
+          middleware: [offset(4)],
+        }).then(({ x, y }) => {
+          Object.assign(tooltip.style, {
+            left: `${x}px`,
+            top: `${y}px`,
+          });
+        });
+      });
+
+      //  Observe changes in data-tooltip-content
+      observerRef.current?.disconnect();
+      observerRef.current = new MutationObserver(() => updateTooltipContent(cell));
+      observerRef.current.observe(cell, { attributes: true, attributeFilter: ['data-tooltip-content'] });
+    };
+
+    const updateTooltipContent = (cell: HTMLElement) => {
+      const tooltipContent = cell.getAttribute('data-tooltip-content') || '';
+      tooltip.textContent = tooltipContent;
+    };
+
+    const handleMouseMove = (e: MouseEvent) => {
+      const cell: HTMLElement | null = (e.target as HTMLElement).closest("[data-tooltip='true']");
+      if (!cell) return clearTooltip();
+
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+
+      if (lastShownCellRef.current) {
+        showTooltip(cell);
+      } else {
+        timeoutRef.current = window.setTimeout(() => showTooltip(cell), 400);
+      }
+    };
+
+    const handleFocus = (e: FocusEvent) => {
+      const cell: HTMLElement | null = (e.target as HTMLElement).closest("[data-tooltip='true']");
+      if (cell) showTooltip(cell);
+    };
+
+    const handleMouseLeave = () => {
+      clearTooltip();
+
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
+      }
+    };
+
+    const clearTooltip = () => {
+      tooltip.style.display = 'none';
+      lastShownCellRef.current = null;
+      observerRef.current?.disconnect();
+    };
+
+    // Attach event listeners
+    gridRef.current.addEventListener('mousemove', handleMouseMove);
+    gridRef.current.addEventListener('mouseleave', handleMouseLeave);
+    gridRef.current.addEventListener('focusin', handleFocus);
+    gridRef.current.addEventListener('focusout', clearTooltip);
+
+    // Cleanup on unmount
+    return () => {
+      gridRef.current?.removeEventListener('mousemove', handleMouseMove);
+      gridRef.current?.removeEventListener('mouseleave', handleMouseLeave);
+      gridRef.current?.removeEventListener('focusin', handleFocus);
+      gridRef.current?.removeEventListener('focusout', clearTooltip);
+      observerRef.current?.disconnect();
+      tooltip.remove();
+    };
+  }, [initialDone]);
+
   useEffect(() => {
     if (!rows.length || error || !fetchMore || isFetching || !inView) return;
 
@@ -120,7 +219,7 @@ export const DataTable = <TData,>({
           ) : !rows.length ? (
             <NoRows isFiltered={isFiltered} isFetching={isFetching} customComponent={NoRowsComponent} />
           ) : (
-            <div className="grid rdg-wrapper relative pb-8">
+            <div className="grid rdg-wrapper relative pb-8" ref={gridRef}>
               <DataGrid
                 rowHeight={rowHeight}
                 enableVirtualization={enableVirtualization}
@@ -161,7 +260,6 @@ export const DataTable = <TData,>({
                   },
                 }}
               />
-
               {/* Infinite loading measure ref, which increases until 50 rows */}
               <div
                 key={rows.length}
@@ -172,12 +270,10 @@ export const DataTable = <TData,>({
                   maxHeight: `${rowHeight * limit}px`,
                 }}
               />
-
               {/* Can load more, but offline */}
               {!isOnline && !!totalCount && totalCount > rows.length && (
                 <div className="w-full mt-4 italic text-muted text-sm text-center">{t('common:offline.load_more')}</div>
               )}
-
               {/* Loading */}
               {isFetching && totalCount && totalCount > rows.length && !error && (
                 <div className="flex space-x-1 justify-center items-center relative top-4 h-0 w-full animate-pulse">
@@ -187,7 +283,6 @@ export const DataTable = <TData,>({
                   <div className="h-1 w-3 bg-foreground rounded-full animate-bounce" />
                 </div>
               )}
-
               {/* All is loaded */}
               {!isFetching && !error && !!totalCount && totalCount <= rows.length && (
                 <div className="opacity-50 w-full text-xl  mt-4 text-center">
@@ -197,7 +292,6 @@ export const DataTable = <TData,>({
                   <div className="-mt-3">&#176;</div>
                 </div>
               )}
-
               {/* Error */}
               {error && <div className="text-center my-8 text-sm text-red-500">{t('error:load_more_failed')}</div>}
             </div>

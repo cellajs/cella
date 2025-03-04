@@ -411,5 +411,10 @@
   "invalid.name": "Name may only contain letters, numbers, spaces and these characters: ,.'-",
   "invalid.slug": "Slug may only contain alphanumeric characters or up to three hyphens, and cannot begin or end with a hyphen.",
   "invalid.url": "URL must start with https://",
-  "invalid.required": "This field is required."
+  "invalid.required": "This field is required.",
+  "online": "Online",
+  "local_only": "Only visible by you",
+  "copy": "Copy",
+  "copied": "Copied!",
+  "download": "Download"
 }
