@@ -117,6 +117,64 @@ const organizationsRoutes = app
     return ctx.json({ success: true, data: { items: organizations, total } }, 200);
   })
   /*
+   * Delete organizations by ids
+   */
+  .openapi(organizationsRouteConfig.deleteOrganizations, async (ctx) => {
+    const { ids } = ctx.req.valid('json');
+
+    const memberships = getContextMemberships();
+
+    // Convert the ids to an array
+    const toDeleteIds = Array.isArray(ids) ? ids : [ids];
+    if (!toDeleteIds.length) return errorResponse(ctx, 400, 'invalid_request', 'warn', 'organization');
+
+    // Split ids into allowed and disallowed
+    const { allowedIds, disallowedIds } = await splitByAllowance('delete', 'organization', toDeleteIds, memberships);
+    if (!allowedIds.length) return errorResponse(ctx, 403, 'forbidden', 'warn', 'organization');
+
+    // Map errors of organization user is not allowed to delete
+    const errors: ErrorType[] = disallowedIds.map((id) => createError(ctx, 404, 'not_found', 'warn', 'organization', { organization: id }));
+
+    // Get ids of members for organizations
+    const memberIds = await db
+      .select({ id: membershipsTable.userId })
+      .from(membershipsTable)
+      .where(and(eq(membershipsTable.type, 'organization'), inArray(membershipsTable.organizationId, allowedIds)));
+
+    // Delete the organizations
+    await db.delete(organizationsTable).where(inArray(organizationsTable.id, allowedIds));
+
+    // Send SSE events to all members of organizations that were deleted
+    for (const id of allowedIds) {
+      if (!memberIds.length) continue;
+
+      const userIds = memberIds.map((m) => m.id);
+      sendSSEToUsers(userIds, 'remove_entity', { id, entity: 'organization' });
+    }
+
+    logEvent('Organizations deleted', { ids: allowedIds.join() });
+
+    return ctx.json({ success: true, errors: errors }, 200);
+  })
+  /*
+   * Get organization by id or slug
+   */
+  .openapi(organizationsRouteConfig.getOrganization, async (ctx) => {
+    const { idOrSlug } = ctx.req.valid('param');
+
+    const { entity: organization, isAllowed, membership } = await getValidEntity('organization', 'read', idOrSlug);
+    if (!organization) return errorResponse(ctx, 404, 'not_found', 'warn', 'organization');
+    if (!isAllowed) return errorResponse(ctx, 403, 'forbidden', 'warn', 'organization');
+
+    const memberCounts = await getMemberCounts('organization', organization.id);
+    const relatedEntitiesCounts = await getRelatedEntityCounts('organization', organization.id);
+
+    const counts = { membership: memberCounts, ...relatedEntitiesCounts };
+    const data = { ...organization, membership, counts };
+
+    return ctx.json({ success: true, data }, 200);
+  })
+  /*
    * Update an organization by id or slug
    */
   .openapi(organizationsRouteConfig.updateOrganization, async (ctx) => {
@@ -170,64 +228,6 @@ const organizationsRoutes = app
     };
 
     return ctx.json({ success: true, data }, 200);
-  })
-  /*
-   * Get organization by id or slug
-   */
-  .openapi(organizationsRouteConfig.getOrganization, async (ctx) => {
-    const { idOrSlug } = ctx.req.valid('param');
-
-    const { entity: organization, isAllowed, membership } = await getValidEntity('organization', 'read', idOrSlug);
-    if (!organization) return errorResponse(ctx, 404, 'not_found', 'warn', 'organization');
-    if (!isAllowed) return errorResponse(ctx, 403, 'forbidden', 'warn', 'organization');
-
-    const memberCounts = await getMemberCounts('organization', organization.id);
-    const relatedEntitiesCounts = await getRelatedEntityCounts('organization', organization.id);
-
-    const counts = { membership: memberCounts, ...relatedEntitiesCounts };
-    const data = { ...organization, membership, counts };
-
-    return ctx.json({ success: true, data }, 200);
-  })
-  /*
-   * Delete organizations by ids
-   */
-  .openapi(organizationsRouteConfig.deleteOrganizations, async (ctx) => {
-    const { ids } = ctx.req.valid('json');
-
-    const memberships = getContextMemberships();
-
-    // Convert the ids to an array
-    const toDeleteIds = Array.isArray(ids) ? ids : [ids];
-    if (!toDeleteIds.length) return errorResponse(ctx, 400, 'invalid_request', 'warn', 'organization');
-
-    // Split ids into allowed and disallowed
-    const { allowedIds, disallowedIds } = await splitByAllowance('delete', 'organization', toDeleteIds, memberships);
-    if (!allowedIds.length) return errorResponse(ctx, 403, 'forbidden', 'warn', 'organization');
-
-    // Map errors of organization user is not allowed to delete
-    const errors: ErrorType[] = disallowedIds.map((id) => createError(ctx, 404, 'not_found', 'warn', 'organization', { organization: id }));
-
-    // Get ids of members for organizations
-    const memberIds = await db
-      .select({ id: membershipsTable.userId })
-      .from(membershipsTable)
-      .where(and(eq(membershipsTable.type, 'organization'), inArray(membershipsTable.organizationId, allowedIds)));
-
-    // Delete the organizations
-    await db.delete(organizationsTable).where(inArray(organizationsTable.id, allowedIds));
-
-    // Send SSE events to all members of organizations that were deleted
-    for (const id of allowedIds) {
-      if (!memberIds.length) continue;
-
-      const userIds = memberIds.map((m) => m.id);
-      sendSSEToUsers(userIds, 'remove_entity', { id, entity: 'organization' });
-    }
-
-    logEvent('Organizations deleted', { ids: allowedIds.join() });
-
-    return ctx.json({ success: true, errors: errors }, 200);
   });
 
 export default organizationsRoutes;

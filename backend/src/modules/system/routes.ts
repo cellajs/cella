@@ -41,7 +41,7 @@ class SystemRouteConfig {
     path: '/newsletter',
     guard: [isAuthenticated, hasSystemAccess],
     tags: ['system'],
-    summary: 'Newsletter for members',
+    summary: 'Newsletter to members',
     description: 'Send a newsletter to requested organizations members.',
     request: {
       query: z.object({ toSelf: booleanQuerySchema }),

@@ -11,16 +11,6 @@ const app = new OpenAPIHono<Env>({ defaultHook });
 
 const entitiesRoutes = app
   /*
-   * Check if slug is available
-   */
-  .openapi(entitiesRouteConfig.checkSlug, async (ctx) => {
-    const { slug } = ctx.req.valid('json');
-
-    const slugAvailable = await checkSlugAvailable(slug);
-
-    return ctx.json({ success: slugAvailable }, 200);
-  })
-  /*
    * Get entities with a limited schema
    */
   .openapi(entitiesRouteConfig.getEntitiesConfig, async (ctx) => {
@@ -40,6 +30,16 @@ const entitiesRoutes = app
     const items = (await Promise.all(queries)).flat();
 
     return ctx.json({ success: true, data: { items, total: items.length } }, 200);
+  })
+  /*
+   * Check if slug is available
+   */
+  .openapi(entitiesRouteConfig.checkSlug, async (ctx) => {
+    const { slug } = ctx.req.valid('json');
+
+    const slugAvailable = await checkSlugAvailable(slug);
+
+    return ctx.json({ success: slugAvailable }, 200);
   });
 
 export default entitiesRoutes;

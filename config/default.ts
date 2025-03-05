@@ -39,7 +39,7 @@ export const config = {
   // API docs settings
   apiVersion: 'v1',
   apiDescription:
-    '(ATTENTION: PRERELEASE!) This API documentation is split in modules. The documentation is based upon zod schemas that are converted to openapi specs using hono middleware: zod-openapi.',
+    '(ATTENTION: PRERELEASE!) This API documentation is split in modules. The documentation is based upon zod schemas that are converted to openapi using hono middleware: zod-openapi.',
 
   // Payment with Paddle
   // paddleToken: 'live_ba8bb57b62089459e4f4fd1da8c',
