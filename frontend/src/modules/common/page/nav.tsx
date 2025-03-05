@@ -1,6 +1,6 @@
 import { Link, type ToPathOption } from '@tanstack/react-router';
 import { motion } from 'motion/react';
-import { useMemo } from 'react';
+import { type MouseEventHandler, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useInView } from 'react-intersection-observer';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
@@ -32,13 +32,15 @@ export const PageNav = ({ title, avatar, tabs, className = '' }: Props) => {
   const { ref: inViewRef, inView } = useInView({ triggerOnce: false, threshold: 0 });
 
   // Scroll to tabs when scrolled past header
-  const updateScrollPosition = () => {
+  const updateScrollPosition: MouseEventHandler<HTMLAnchorElement> = (e) => {
+    if (e.currentTarget.dataset.active) {
+      e.preventDefault();
+      return;
+    }
     const tabsWrapper = document.getElementById('tabs-position');
     if (inView || !tabsWrapper) return;
 
-    window.scrollTo({
-      top: tabsWrapper.offsetTop,
-    });
+    window.scrollTo({ top: tabsWrapper.offsetTop });
   };
 
   return (
@@ -58,6 +60,7 @@ export const PageNav = ({ title, avatar, tabs, className = '' }: Props) => {
             to={path}
             params={true}
             activeOptions={{ exact: true, includeSearch: false }}
+            activeProps={{ 'data-active': true }}
             onClick={updateScrollPosition}
           >
             {({ isActive }) => (

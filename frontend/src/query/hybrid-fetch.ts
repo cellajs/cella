@@ -1,5 +1,5 @@
 import { type FetchInfiniteQueryOptions, type FetchQueryOptions, onlineManager } from '@tanstack/react-query';
-import { queryClient } from './query-client';
+import { queryClient } from '~/query/query-client';
 
 /**
  * Function to fetch data with offline support. If online, it will attempt to fetch data and perform a background revalidation.
@@ -19,10 +19,9 @@ export const hybridFetch = async <T>(options: FetchQueryOptions<any, any, any, a
   if (!onlineManager.isOnline()) return cachedData ?? undefined;
 
   try {
-    // Remove cached queries to trigger re-fetch if online
+    // Cancel queries (avoid CancelledError) and invalidate queries to trigger re-fetch if online
     if (refetchIfOnline) {
-      await queryClient.cancelQueries({ queryKey, exact: true }); // To avoid CancelledError
-      await queryClient.invalidateQueries({ queryKey, exact: true });
+      queryClient.cancelQueries({ queryKey, exact: true }).then(() => queryClient.invalidateQueries({ queryKey, exact: true }));
     }
     return queryClient.fetchQuery(options);
   } catch (error) {
@@ -47,9 +46,9 @@ export const hybridFetchInfinite = async (options: FetchInfiniteQueryOptions<any
   if (!onlineManager.isOnline()) return cachedData ?? undefined;
 
   try {
+    // Cancel queries (avoid CancelledError) and invalidate queries to trigger re-fetch if online
     if (refetchIfOnline) {
-      await queryClient.cancelQueries({ queryKey, exact: true }); // To avoid CancelledError
-      await queryClient.invalidateQueries({ queryKey, exact: true });
+      queryClient.cancelQueries({ queryKey, exact: true }).then(() => queryClient.invalidateQueries({ queryKey, exact: true }));
     }
     return queryClient.fetchInfiniteQuery(options);
   } catch (error) {

@@ -66,14 +66,11 @@ export const OrganizationMembersRoute = createRoute({
   staticData: { pageTitle: 'members', isAuth: true },
   getParentRoute: () => OrganizationRoute,
   loaderDeps: ({ search: { q, sort, order, role } }) => ({ q, sort, order, role }),
-  loader: ({ cause, params: { idOrSlug }, deps: { q, sort, order, role }, context: { orgIdOrSlug } }) => {
-    // Prevents unnecessary fetches(runs when user enters page)
-    if (cause !== 'enter') return;
-
+  loader: async ({ params: { idOrSlug }, deps: { q, sort, order, role }, context: { orgIdOrSlug } }) => {
     const entityType = 'organization';
 
     const queryOptions = membersQueryOptions({ idOrSlug, orgIdOrSlug, entityType, q, sort, order, role });
-    return hybridFetchInfinite(queryOptions);
+    return await hybridFetchInfinite(queryOptions);
   },
   component: () => (
     <Suspense>
@@ -88,12 +85,9 @@ export const OrganizationAttachmentsRoute = createRoute({
   staticData: { pageTitle: 'attachments', isAuth: true },
   getParentRoute: () => OrganizationRoute,
   loaderDeps: ({ search: { q, sort, order } }) => ({ q, sort, order }),
-  loader: ({ cause, deps: { q, sort, order }, context: { orgIdOrSlug } }) => {
-    // Prevents unnecessary fetches(runs when user enters page)
-    if (cause !== 'enter') return;
-
+  loader: async ({ deps: { q, sort, order }, context: { orgIdOrSlug } }) => {
     const queryOptions = attachmentsQueryOptions({ orgIdOrSlug, q, sort, order });
-    return hybridFetchInfinite(queryOptions);
+    return await hybridFetchInfinite(queryOptions);
   },
   component: () => {
     const { idOrSlug } = useParams({ from: OrganizationAttachmentsRoute.id });

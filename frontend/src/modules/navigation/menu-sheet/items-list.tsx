@@ -8,10 +8,10 @@ import { useNavigationStore } from '~/store/navigation';
 
 interface MenuSheetItemsProps {
   data: UserMenuItem[];
+  type: ContextEntity;
   shownOption: 'archived' | 'unarchive';
   createDialog?: () => void;
   className?: string;
-  type: ContextEntity;
 }
 
 export const MenuSheetItems = ({ data, type, shownOption, createDialog, className }: MenuSheetItemsProps) => {
