@@ -1,30 +1,34 @@
-import { and, asc, eq, isNotNull } from 'drizzle-orm';
-import type { z } from 'zod';
-
-import type { EnabledOauthProvider } from 'config';
-import { db } from '#/db/db';
-import { usersTable } from '#/db/schema/users';
-import { type ErrorType, createError, errorResponse } from '#/lib/errors';
-import { logEvent } from '#/middlewares/logger/log-event';
-import { getParsedSessionCookie, invalidateSessionById, invalidateUserSessions, validateSession } from '../auth/helpers/session';
-import { checkSlugAvailable } from '../general/helpers/check-slug';
-import meRouteConfig from './routes';
-
 import { OpenAPIHono } from '@hono/zod-openapi';
+import type { EnabledOauthProvider } from 'config';
 import { config } from 'config';
+import { and, asc, eq, isNotNull } from 'drizzle-orm';
+import { type SSEStreamingApi, streamSSE } from 'hono/streaming';
+import jwt from 'jsonwebtoken';
+import type { z } from 'zod';
+import { db } from '#/db/db';
 import { membershipsTable } from '#/db/schema/memberships';
 import { oauthAccountsTable } from '#/db/schema/oauth-accounts';
 import { passkeysTable } from '#/db/schema/passkeys';
+import { usersTable } from '#/db/schema/users';
 import { type EntityRelations, entityIdFields, entityRelations, entityTables } from '#/entity-config';
+import { env } from '#/env';
 import { type Env, getContextMemberships, getContextUser } from '#/lib/context';
 import { resolveEntity } from '#/lib/entity';
+import { type ErrorType, createError, errorResponse } from '#/lib/errors';
 import { sendSSEToUsers } from '#/lib/sse';
+import { isAuthenticated } from '#/middlewares/guard';
+import { logEvent } from '#/middlewares/logger/log-event';
+import { getUserBy } from '#/modules/users/helpers/get-user-by';
+import { verifyUnsubscribeToken } from '#/modules/users/helpers/unsubscribe-token';
 import defaultHook from '#/utils/default-hook';
 import { getIsoDate } from '#/utils/iso-date';
 import { deleteAuthCookie, getAuthCookie } from '../auth/helpers/cookie';
 import { parseAndValidatePasskeyAttestation } from '../auth/helpers/passkey';
+import { getParsedSessionCookie, invalidateSessionById, invalidateUserSessions, validateSession } from '../auth/helpers/session';
+import { checkSlugAvailable } from '../entities/helpers/check-slug';
 import { membershipSelect } from '../memberships/helpers/select';
 import { getUserSessions } from './helpers/get-sessions';
+import meRouteConfig from './routes';
 import type { menuItemSchema, userMenuSchema } from './schema';
 
 type UserMenu = z.infer<typeof userMenuSchema>;
@@ -32,6 +36,8 @@ type MenuItem = z.infer<typeof menuItemSchema>;
 
 // Set default hook to catch validation errors
 const app = new OpenAPIHono<Env>({ defaultHook });
+
+export const streams = new Map<string, SSEStreamingApi>();
 
 const meRoutes = app
   /*
@@ -248,7 +254,7 @@ const meRoutes = app
     return ctx.json({ success: true }, 200);
   })
   /*
-   * Create Passkey of self
+   * Create passkey for self
    */
   .openapi(meRouteConfig.createPasskey, async (ctx) => {
     const { attestationObject, clientDataJSON, userEmail } = ctx.req.valid('json');
@@ -272,6 +278,78 @@ const meRoutes = app
     await db.delete(passkeysTable).where(eq(passkeysTable.userEmail, user.email));
 
     return ctx.json({ success: true }, 200);
+  })
+  /*
+   * Get upload token
+   */
+  .openapi(meRouteConfig.getUploadToken, async (ctx) => {
+    const user = getContextUser();
+    const { public: isPublic, organization } = ctx.req.valid('query');
+
+    const sub = organization ? `${organization}/${user.id}` : user.id;
+
+    const token = jwt.sign(
+      {
+        sub: sub,
+        public: isPublic === 'true',
+        imado: !!env.AWS_S3_UPLOAD_ACCESS_KEY_ID,
+      },
+      env.TUS_SECRET,
+    );
+
+    return ctx.json({ success: true, data: token }, 200);
+  })
+  /*
+   * Unsubscribe a user by token from receiving newsletters
+   */
+  .openapi(meRouteConfig.unsubscribeSelf, async (ctx) => {
+    const { token } = ctx.req.valid('query');
+
+    // Check if token exists
+    const user = await getUserBy('unsubscribeToken', token, 'unsafe');
+    if (!user) return errorResponse(ctx, 404, 'not_found', 'warn', 'user');
+
+    // Verify token
+    const isValid = verifyUnsubscribeToken(user.email, token);
+    if (!isValid) return errorResponse(ctx, 401, 'unsubscribe_failed', 'warn', 'user');
+
+    // Update user
+    await db.update(usersTable).set({ newsletter: false }).where(eq(usersTable.id, user.id));
+
+    const redirectUrl = `${config.frontendUrl}/auth/unsubscribed`;
+    return ctx.redirect(redirectUrl, 302);
+  })
+  /*
+   *  Get SSE stream
+   */
+  .get('/sse', isAuthenticated, async (ctx) => {
+    const user = getContextUser();
+    return streamSSE(ctx, async (stream) => {
+      ctx.header('Content-Encoding', '');
+      streams.set(user.id, stream);
+
+      console.info('User connected to SSE', user.id);
+      await stream.writeSSE({
+        event: 'connected',
+        data: 'connected',
+        retry: 5000,
+      });
+
+      stream.onAbort(async () => {
+        console.info('User disconnected from SSE', user.id);
+        streams.delete(user.id);
+      });
+
+      // Keep connection alive
+      while (true) {
+        await stream.writeSSE({
+          event: 'ping',
+          data: 'pong',
+          retry: 5000,
+        });
+        await stream.sleep(30000);
+      }
+    });
   });
 
 export default meRoutes;

@@ -1,5 +1,5 @@
 import { config } from 'config';
-import { useGeneralStore } from '~/store/general';
+import { useUIStore } from '~/store/ui';
 
 export interface LogoProps extends React.SVGProps<SVGSVGElement> {
   className?: string;
@@ -10,7 +10,7 @@ export interface LogoProps extends React.SVGProps<SVGSVGElement> {
 }
 
 function Logo({ className, iconColor, textColor, height = 50, iconOnly = false, ...props }: LogoProps) {
-  const { mode, theme } = useGeneralStore();
+  const { mode, theme } = useUIStore();
   const defaultTextColor = mode === 'light' ? '#333' : '#fff';
   const defaultIconColor = theme === 'none' ? '#333' : config.theme.colors[theme];
   if (!textColor) textColor = defaultTextColor;

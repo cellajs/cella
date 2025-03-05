@@ -54,13 +54,6 @@ export const createOrganizationBodySchema = z.object({
   slug: validSlugSchema,
 });
 
-export const sendNewsletterBodySchema = z.object({
-  organizationIds: z.array(z.string()),
-  roles: z.array(z.enum(config.rolesByType.entityRoles)).min(1, { message: 'Role selection is required' }),
-  subject: z.string(),
-  content: z.string(),
-});
-
 export const updateOrganizationBodySchema = createInsertSchema(organizationsTable, {
   slug: validSlugSchema,
   name: validNameSchema,

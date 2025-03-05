@@ -6,14 +6,14 @@ import { membershipsTable } from '#/db/schema/memberships';
 import { entityIdFields, entityTables } from '#/entity-config';
 import { membershipSelect } from '#/modules/memberships/helpers/select';
 import { prepareStringForILikeFilter } from '#/utils/sql';
-import type { suggestionsQuerySchema } from '../schema';
+import type { entitiesQuerySchema } from '../schema';
 
-type SuggestionsQueryProps = z.infer<typeof suggestionsQuerySchema> & {
+type EntitiesQueryProps = z.infer<typeof entitiesQuerySchema> & {
   organizationIds: string[];
   userId: string;
 };
 
-export const getSuggestionsQuery = async ({ userId, organizationIds, type, q, entityId }: SuggestionsQueryProps) => {
+export const getEntitiesQuery = async ({ userId, organizationIds, type, q, entityId }: EntitiesQueryProps) => {
   const entityTypes = type ? [type] : config.pageEntityTypes;
 
   const idFields = config.contextEntityTypes.map((entity) => entityIdFields[entity]);

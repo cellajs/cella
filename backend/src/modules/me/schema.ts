@@ -3,10 +3,10 @@ import { z } from 'zod';
 import { createSelectSchema } from 'drizzle-zod';
 import { sessionsTable } from '#/db/schema/sessions';
 import { type MenuSectionName, entityRelations } from '#/entity-config';
+import { limitEntitySchema } from '#/modules/entities/schema';
+import { membershipInfoSchema } from '#/modules/memberships/schema';
+import { enabledOauthProvidersEnum } from '#/modules/users/schema';
 import { contextEntityTypeSchema, idOrSlugSchema } from '#/utils/schema/common';
-import { limitEntitySchema } from '../general/schema';
-import { membershipInfoSchema } from '../memberships/schema';
-import { signUpInfo } from '../users/schema';
 
 const sessionSchema = createSelectSchema(sessionsTable);
 
@@ -15,7 +15,8 @@ export const sessionsSchema = z.object({
 });
 
 export const meAuthInfoSchema = z.object({
-  ...signUpInfo.shape,
+  oauth: z.array(enabledOauthProvidersEnum),
+  passkey: z.boolean(),
   ...sessionsSchema.shape,
 });
 
@@ -53,4 +54,8 @@ export const passkeyRegistrationBodySchema = z.object({
 export const leaveEntityQuerySchema = z.object({
   idOrSlug: idOrSlugSchema,
   entityType: contextEntityTypeSchema,
+});
+
+export const unsubscribeSelfQuerySchema = z.object({
+  token: z.string(),
 });

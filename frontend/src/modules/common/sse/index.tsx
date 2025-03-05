@@ -1,6 +1,6 @@
 import { useSSE } from '~/modules/common/sse/use-sse';
+import type { UserMenuItem } from '~/modules/me/types';
 import { addMenuItem, deleteMenuItem, updateMenuItem } from '~/modules/navigation/menu-sheet/helpers/menu-operations';
-import type { UserMenuItem } from '~/modules/users/types';
 
 const SSE = () => {
   const addEntity = (e: MessageEvent<string>) => {

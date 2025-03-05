@@ -18,10 +18,10 @@ import HelpText from '~/modules/common/help-text';
 import { PageAside } from '~/modules/common/page/aside';
 import StickyBox from '~/modules/common/sticky-box';
 import { toaster } from '~/modules/common/toaster';
-import DeleteSelf from '~/modules/users/delete-self';
+import DeleteSelf from '~/modules/me/delete-self';
 import { deletePasskey, passkeyRegistration } from '~/modules/users/helpers';
 import UpdateUserForm from '~/modules/users/update-user-form';
-import { useGeneralStore } from '~/store/general';
+import { useUIStore } from '~/store/ui';
 import SessionsList from './sessions-list';
 import type { UserAuthInfo } from './types';
 
@@ -34,7 +34,7 @@ const tabs = [
 
 const UserSettingsPage = ({ userAuthInfo }: { userAuthInfo: UserAuthInfo }) => {
   const { user } = useUserStore();
-  const mode = useGeneralStore((state) => state.mode);
+  const mode = useUIStore((state) => state.mode);
   const { t } = useTranslation();
 
   const [disabledResetPassword, setDisabledResetPassword] = useState(false);

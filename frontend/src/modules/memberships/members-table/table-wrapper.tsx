@@ -11,7 +11,7 @@ import { useSortColumns } from '~/modules/common/data-table/sort-columns';
 import type { BaseTableMethods } from '~/modules/common/data-table/types';
 import { dialog } from '~/modules/common/dialoger/state';
 import { toaster } from '~/modules/common/toaster';
-import type { EntityPage } from '~/modules/general/types';
+import type { EntityPage } from '~/modules/entities/types';
 import { getMembers } from '~/modules/memberships/api';
 import { useColumns } from '~/modules/memberships/members-table/columns';
 import BaseDataTable from '~/modules/memberships/members-table/table';

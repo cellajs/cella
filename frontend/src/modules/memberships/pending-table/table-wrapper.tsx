@@ -4,20 +4,20 @@ import type { z } from 'zod';
 import useSearchParams from '~/hooks/use-search-params';
 import { useSortColumns } from '~/modules/common/data-table/sort-columns';
 import type { BaseTableMethods } from '~/modules/common/data-table/types';
-import type { EntityPage } from '~/modules/general/types';
-import { useColumns } from '~/modules/memberships/invited-members-table/columns';
-import BaseDataTable from '~/modules/memberships/invited-members-table/table';
-import { InvitedMembersTableBar } from '~/modules/memberships/invited-members-table/table-bar';
-import type { invitedMembersSearchSchema } from '~/routes/organizations';
+import type { EntityPage } from '~/modules/entities/types';
+import { useColumns } from '~/modules/memberships/pending-table/columns';
+import BaseDataTable from '~/modules/memberships/pending-table/table';
+import { MembershipInvitationsTableBar } from '~/modules/memberships/pending-table/table-bar';
+import type { memberInvitationsSearchSchema } from '~/routes/organizations';
 
-export type InvitedMembersSearch = z.infer<typeof invitedMembersSearchSchema>;
+export type MembershipInvitationsSearch = z.infer<typeof memberInvitationsSearchSchema>;
 
-export interface InvitedMembersTableProps {
+export interface MembershipInvitationsTableProps {
   entity: EntityPage;
 }
 
-export const InvitedMembersTable = ({ entity }: InvitedMembersTableProps) => {
-  const { search, setSearch } = useSearchParams<InvitedMembersSearch>({ saveDataInSearch: false });
+export const MembershipInvitationsTable = ({ entity }: MembershipInvitationsTableProps) => {
+  const { search, setSearch } = useSearchParams<MembershipInvitationsSearch>({ saveDataInSearch: false });
   const dataTableRef = useRef<BaseTableMethods | null>(null);
 
   // Table state
@@ -32,12 +32,12 @@ export const InvitedMembersTable = ({ entity }: InvitedMembersTableProps) => {
 
   return (
     <div className="flex flex-col gap-4 h-full">
-      <InvitedMembersTableBar total={total} />
+      <MembershipInvitationsTableBar total={total} />
       <BaseDataTable
         ref={dataTableRef}
         entity={entity}
         columns={columns}
-        queryVars={{ sort, order, limit: config.requestLimits.invitedMembers }}
+        queryVars={{ sort, order, limit: config.requestLimits.memberInvitations }}
         sortColumns={sortColumns}
         setSortColumns={setSortColumns}
         setTotal={setTotal}
@@ -46,4 +46,4 @@ export const InvitedMembersTable = ({ entity }: InvitedMembersTableProps) => {
   );
 };
 
-export default InvitedMembersTable;
+export default MembershipInvitationsTable;

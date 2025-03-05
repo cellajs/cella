@@ -14,11 +14,11 @@ import InputFormField from '~/modules/common/form-fields/input';
 import SelectRoles from '~/modules/common/form-fields/select-roles';
 import { sheet } from '~/modules/common/sheeter/state';
 import { toaster } from '~/modules/common/toaster';
-import { sendNewsletter } from '~/modules/organizations/api';
+import { sendNewsletter } from '~/modules/system/api';
 import { Button, SubmitButton } from '~/modules/ui/button';
 import { Checkbox } from '~/modules/ui/checkbox';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
-import { sendNewsletterBodySchema } from '#/modules/organizations/schema';
+import { sendNewsletterBodySchema } from '#/modules/system/schema';
 
 import '@blocknote/shadcn/style.css';
 import '~/modules/common/blocknote/app-specific-custom/styles.css';

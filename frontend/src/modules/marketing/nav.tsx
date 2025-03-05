@@ -7,10 +7,10 @@ import { useInView } from 'react-intersection-observer';
 import { useTranslation } from 'react-i18next';
 import HamburgerButton from '~/modules/common/hamburger';
 import Logo from '~/modules/common/logo';
+import UserLanguage from '~/modules/me/user-language';
+import UserTheme from '~/modules/me/user-theme';
 import { Button, buttonVariants } from '~/modules/ui/button';
 import { Sheet, SheetContent, SheetHiddenTitle } from '~/modules/ui/sheet';
-import UserLanguage from '~/modules/users/user-language';
-import UserTheme from '~/modules/users/user-theme';
 import { cn } from '~/utils/cn';
 
 const marketingNavConfig = [

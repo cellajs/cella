@@ -8,7 +8,7 @@ import type { ImadoOptions, LocalFile, UploadedUppyFile, UppyBody, UppyMeta } fr
 import { LocalFileStorage } from '~/modules/attachments/local-file-storage';
 import type { UploadUppyProps } from '~/modules/attachments/upload/upload-uppy';
 import { toaster } from '~/modules/common/toaster';
-import { getUploadToken } from '~/modules/general/api';
+import { getUploadToken } from '~/modules/me/api';
 import { nanoid } from '~/utils/nanoid';
 
 import '@uppy/core/dist/style.min.css';

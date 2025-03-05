@@ -3,9 +3,9 @@ import { useTranslation } from 'react-i18next';
 import { i18n } from '~/lib/i18n';
 import CountryFlag from '~/modules/common/country-flag';
 import { toaster } from '~/modules/common/toaster';
+import { updateSelf } from '~/modules/me/api';
 import { Button } from '~/modules/ui/button';
 import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuTrigger } from '~/modules/ui/dropdown-menu';
-import { updateSelf } from '~/modules/users/api';
 import { useUserStore } from '~/store/user';
 import { cn } from '~/utils/cn';
 

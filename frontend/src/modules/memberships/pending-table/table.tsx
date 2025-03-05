@@ -4,12 +4,12 @@ import { useTranslation } from 'react-i18next';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { DataTable } from '~/modules/common/data-table';
 import type { BaseTableMethods, BaseTableProps } from '~/modules/common/data-table/types';
-import type { InvitedMembersSearch, InvitedMembersTableProps } from '~/modules/memberships/invited-members-table/table-wrapper';
-import { invitedMembersQueryOptions } from '~/modules/memberships/query';
+import type { MembershipInvitationsSearch, MembershipInvitationsTableProps } from '~/modules/memberships/pending-table/table-wrapper';
+import { memberInvitationsQueryOptions } from '~/modules/memberships/query';
 import type { InvitedMember } from '~/modules/memberships/types';
 import { useDataFromInfiniteQuery } from '~/query/hooks/use-data-from-query';
 
-type BaseDataTableProps = InvitedMembersTableProps & Omit<BaseTableProps<InvitedMember, InvitedMembersSearch>, 'setSelected'>;
+type BaseDataTableProps = MembershipInvitationsTableProps & Omit<BaseTableProps<InvitedMember, MembershipInvitationsSearch>, 'setSelected'>;
 
 const BaseDataTable = memo(
   forwardRef<BaseTableMethods, BaseDataTableProps>(({ entity, columns, queryVars, sortColumns, setSortColumns, setTotal }, ref) => {
@@ -23,7 +23,7 @@ const BaseDataTable = memo(
 
     // Query invited members
     const { rows, totalCount, isLoading, isFetching, error, fetchNextPage } = useDataFromInfiniteQuery(
-      invitedMembersQueryOptions({
+      memberInvitationsQueryOptions({
         idOrSlug: entity.slug,
         entityType,
         orgIdOrSlug: organizationId,

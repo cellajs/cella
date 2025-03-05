@@ -14,7 +14,8 @@ const commonModulesList = [
   },
   { name: 'organizations', description: 'Organizations - `organization` - are a core `entity`.' },
   { name: 'requests', description: 'Receive contact form, newsletter and waitlist requests.' },
-  { name: 'general', description: 'Endpoints that are system-wide, system related or span multiple entities.' },
+  { name: 'entities', description: 'Endpoints that span accros multiple entities.' },
+  { name: 'system', description: 'Endpoints that are system-wide or system (admin) related.' },
   {
     name: 'auth',
     description: 'Multiple authentication methods are included: email/password combination, OAuth and passkey support.',

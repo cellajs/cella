@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AlertWrap } from '~/modules/common/alert-wrap';
 import { dialog } from '~/modules/common/dialoger/state';
-import type { EntityPage } from '~/modules/general/types';
+import type { EntityPage } from '~/modules/entities/types';
 import { ToggleGroup, ToggleGroupItem } from '~/modules/ui/toggle-group';
 import InviteEmailForm from '~/modules/users/invite-email-form';
 import InviteSearchForm from '~/modules/users/invite-search-form';

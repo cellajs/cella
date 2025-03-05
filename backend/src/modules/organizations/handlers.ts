@@ -5,13 +5,11 @@ import { organizationsTable } from '#/db/schema/organizations';
 
 import { OpenAPIHono } from '@hono/zod-openapi';
 import { config } from 'config';
-import { usersTable } from '#/db/schema/users';
 import { type Env, getContextMemberships, getContextUser } from '#/lib/context';
 import { type ErrorType, createError, errorResponse } from '#/lib/errors';
-import { mailer } from '#/lib/mailer';
 import { sendSSEToUsers } from '#/lib/sse';
 import { logEvent } from '#/middlewares/logger/log-event';
-import { checkSlugAvailable } from '#/modules/general/helpers/check-slug';
+import { checkSlugAvailable } from '#/modules/entities/helpers/check-slug';
 import { insertMembership } from '#/modules/memberships/helpers';
 import { membershipSelect } from '#/modules/memberships/helpers/select';
 import { getValidEntity } from '#/permissions/get-valid-entity';
@@ -21,7 +19,6 @@ import defaultHook from '#/utils/default-hook';
 import { getIsoDate } from '#/utils/iso-date';
 import { getOrderColumn } from '#/utils/order-column';
 import { prepareStringForILikeFilter } from '#/utils/sql';
-import { NewsletterEmail, type NewsletterEmailProps } from '../../../emails/newsletter';
 import organizationsRouteConfig from './routes';
 
 // Set default hook to catch validation errors
@@ -231,65 +228,6 @@ const organizationsRoutes = app
     logEvent('Organizations deleted', { ids: allowedIds.join() });
 
     return ctx.json({ success: true, errors: errors }, 200);
-  })
-  /*
-   * Send newsletter to one or more roles members of one or more organizations
-   */
-  .openapi(organizationsRouteConfig.sendNewsletter, async (ctx) => {
-    const { organizationIds, subject, content, roles } = ctx.req.valid('json');
-    const { toSelf } = ctx.req.valid('query');
-
-    const user = getContextUser();
-
-    // Get members from organizations
-    const recipientsRecords = await db
-      .selectDistinct({
-        email: usersTable.email,
-        name: usersTable.name,
-        unsubscribeToken: usersTable.unsubscribeToken,
-        newsletter: usersTable.newsletter,
-        orgName: organizationsTable.name,
-      })
-      .from(membershipsTable)
-      .innerJoin(usersTable, and(eq(usersTable.id, membershipsTable.userId)))
-      // eq(usersTable.emailVerified, true) // maybe add for only confirmed emails
-      .innerJoin(organizationsTable, eq(organizationsTable.id, membershipsTable.organizationId))
-      .where(
-        and(
-          eq(membershipsTable.type, 'organization'),
-          inArray(membershipsTable.organizationId, organizationIds),
-          inArray(membershipsTable.role, roles),
-          eq(usersTable.newsletter, true),
-        ),
-      );
-
-    // Stop if no recipients
-    if (recipientsRecords.length === 0) return errorResponse(ctx, 400, 'no_recipients', 'warn');
-
-    // Add unsubscribe link to each recipient
-    let recipients = recipientsRecords.map(({ newsletter, unsubscribeToken, ...recipient }) => ({
-      ...recipient,
-      unsubscribeLink: `${config.backendUrl}/unsubscribe?token=${unsubscribeToken}`,
-    }));
-
-    // If toSelf is true, send the email only to self
-    if (toSelf)
-      recipients = [
-        {
-          email: user.email,
-          name: user.name,
-          unsubscribeLink: `${config.backendUrl}/unsubscribe?token=NOTOKEN`,
-          orgName: recipients[0].orgName,
-        },
-      ];
-
-    type Recipient = (typeof recipients)[number];
-
-    // Prepare emails and send them
-    const staticProps = { content, subject, testEmail: toSelf, lng: user.language };
-    await mailer.prepareEmails<NewsletterEmailProps, Recipient>(NewsletterEmail, staticProps, recipients, user.email);
-
-    return ctx.json({ success: true }, 200);
   });
 
 export default organizationsRoutes;

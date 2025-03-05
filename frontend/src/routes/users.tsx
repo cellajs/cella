@@ -5,10 +5,10 @@ import ErrorNotice from '~/modules/common/error-notice';
 import Spinner from '~/modules/common/spinner';
 import { userAuthQueryOptions, userQueryOptions } from '~/modules/users/query';
 import { queryClient } from '~/query/query-client';
-import { AppRoute } from '~/routes/general';
+import { AppRoute } from '~/routes/base';
 
 const UserProfilePage = lazy(() => import('~/modules/users/profile-page'));
-const UserSettingsPage = lazy(() => import('~/modules/users/settings-page'));
+const UserSettingsPage = lazy(() => import('~/modules/me/settings-page'));
 
 export const UserProfileRoute = createRoute({
   path: '/users/$idOrSlug',

@@ -3,8 +3,8 @@ import { AnimatePresence, LayoutGroup, motion } from 'motion/react';
 import { useTranslation } from 'react-i18next';
 import StickyBox from '~/modules/common/sticky-box';
 import { TooltipButton } from '~/modules/common/tooltip-button';
+import type { UserMenu, UserMenuItem } from '~/modules/me/types';
 import { Button } from '~/modules/ui/button';
-import type { UserMenu, UserMenuItem } from '~/modules/users/types';
 import { useNavigationStore } from '~/store/navigation';
 
 interface MenuSectionButtonProps {

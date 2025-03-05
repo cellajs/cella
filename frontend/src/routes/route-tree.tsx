@@ -10,7 +10,7 @@ import {
   UnsubscribedRoute,
   VerifyEmailWithTokenRoute,
 } from '~/routes/auth';
-import { AppRoute, ErrorNoticeRoute, PublicRoute, rootRoute } from '~/routes/general';
+import { AppRoute, ErrorNoticeRoute, PublicRoute, rootRoute } from '~/routes/base';
 import { HomeAliasRoute, HomeRoute, WelcomeRoute } from '~/routes/home';
 import { AboutRoute, AccessibilityRoute, ContactRoute, LegalRoute } from '~/routes/marketing';
 import { OrganizationAttachmentsRoute, OrganizationMembersRoute, OrganizationRoute, OrganizationSettingsRoute } from '~/routes/organizations';

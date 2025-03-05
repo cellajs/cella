@@ -5,7 +5,7 @@ import { immer } from 'zustand/middleware/immer';
 
 export type Mode = 'light' | 'dark';
 
-interface GeneralStoreState {
+interface UIStoreState {
   offlineAccess: boolean; // Offline access mode status
   toggleOfflineAccess: () => void; // Toggles the offline access state
 
@@ -18,14 +18,14 @@ interface GeneralStoreState {
   theme: Theme; // Selected theme ('none' for default)
   setTheme: (theme: Theme) => void; // Updates the theme
 
-  clearGeneralStore: () => void; // Resets store to initial state
+  clearUIStore: () => void; // Resets store to initial state
 }
 
 // Detects system preference
 const browserMode = window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
 
 // Default state values
-const initStore: Pick<GeneralStoreState, 'mode' | 'theme' | 'offlineAccess' | 'impersonating'> = {
+const initStore: Pick<UIStoreState, 'mode' | 'theme' | 'offlineAccess' | 'impersonating'> = {
   mode: browserMode,
   theme: 'none',
   offlineAccess: false,
@@ -33,9 +33,9 @@ const initStore: Pick<GeneralStoreState, 'mode' | 'theme' | 'offlineAccess' | 'i
 };
 
 /**
- * General store for privacy-safe general states: offline access, impersonation, theme
+ * UI store for non-user-identifiable states: offline access, impersonation, theme
  */
-export const useGeneralStore = create<GeneralStoreState>()(
+export const useUIStore = create<UIStoreState>()(
   devtools(
     persist(
       immer((set) => ({
@@ -60,7 +60,7 @@ export const useGeneralStore = create<GeneralStoreState>()(
             state.theme = theme;
           });
         },
-        clearGeneralStore: () =>
+        clearUIStore: () =>
           set(() => ({
             offlineAccess: false,
             impersonating: false,
@@ -68,7 +68,7 @@ export const useGeneralStore = create<GeneralStoreState>()(
       })),
       {
         version: 1,
-        name: `${config.slug}-general`,
+        name: `${config.slug}-ui`,
         partialize: (state) => ({
           offlineAccess: state.offlineAccess,
           impersonating: state.impersonating,

@@ -161,7 +161,7 @@ export const config = {
     organizations: 40,
     requests: 40,
     attachments: 40,
-    invitedMembers: 20,
+    memberInvitations: 20,
   },
   /**
    * Roles on system and entity level.

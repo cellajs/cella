@@ -3,9 +3,9 @@ import type { Control } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 
 import type { ContextEntity } from 'config';
+import type { UserMenu, UserMenuItem } from '~/modules/me/types';
 import Combobox from '~/modules/ui/combobox';
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
-import type { UserMenu, UserMenuItem } from '~/modules/users/types';
 import { useNavigationStore } from '~/store/navigation';
 
 interface Props {

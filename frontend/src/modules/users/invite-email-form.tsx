@@ -2,8 +2,8 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
-import { type SystemInviteProps, invite as inviteSystem } from '~/modules/general/api';
 import { type InviteMemberProps, inviteMembers } from '~/modules/memberships/api';
+import { type SystemInviteProps, invite as inviteSystem } from '~/modules/system/api';
 
 import { config } from 'config';
 import { Send } from 'lucide-react';
@@ -15,7 +15,7 @@ import SelectRoleRadio from '~/modules/common/form-fields/select-role-radio';
 import { MultiEmail } from '~/modules/common/multi-email';
 import { useStepper } from '~/modules/common/stepper/use-stepper';
 import { toaster } from '~/modules/common/toaster';
-import type { EntityPage } from '~/modules/general/types';
+import type { EntityPage } from '~/modules/entities/types';
 import { Badge } from '~/modules/ui/badge';
 import { Button, SubmitButton } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';

@@ -9,10 +9,10 @@ import { hybridFetch, hybridFetchInfinite } from '~/query/hybrid-fetch';
 import { queryClient } from '~/query/query-client';
 
 import type { Organization as OrganizationType } from '~/modules/organizations/types';
-import { AppRoute } from '~/routes/general';
+import { AppRoute } from '~/routes/base';
 import { noDirectAccess } from '~/utils/no-direct-access';
 import { attachmentsQuerySchema } from '#/modules/attachments/schema';
-import { invitedMembersQuerySchema, membersQuerySchema } from '#/modules/memberships/schema';
+import { memberInvitationsQuerySchema, membersQuerySchema } from '#/modules/memberships/schema';
 
 //Lazy-loaded components
 const OrganizationPage = lazy(() => import('~/modules/organizations/organization-page'));
@@ -25,7 +25,7 @@ export const membersSearchSchema = membersQuerySchema
   .pick({ q: true, sort: true, order: true, role: true })
   .extend({ sheetId: z.string().optional() });
 
-export const invitedMembersSearchSchema = invitedMembersQuerySchema.pick({ sort: true, order: true });
+export const memberInvitationsSearchSchema = memberInvitationsQuerySchema.pick({ sort: true, order: true });
 
 export const attachmentsSearchSchema = attachmentsQuerySchema.pick({ q: true, sort: true, order: true }).extend({
   attachmentPreview: z.string().optional(),
