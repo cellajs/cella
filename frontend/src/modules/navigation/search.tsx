@@ -15,7 +15,7 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { ScrollArea } from '~/modules/ui/scroll-area';
 import { getEntityRoute, suggestionSections } from '~/nav-config';
 import { useNavigationStore } from '~/store/navigation';
-import type { entitySuggestionSchema } from '#/modules/general/schema';
+import type { entitySuggestionSchema } from '#/modules/entities/schema';
 
 export type SuggestionType = z.infer<typeof entitySuggestionSchema>;
 
