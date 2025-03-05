@@ -17,7 +17,8 @@ const AttachmentThumb: React.FC<AttachmentThumbProps> = ({ url: baseUrl, content
   const url = useMemo(() => {
     if (baseUrl.startsWith(config.publicCDNUrl)) return `${baseUrl}?width=100&format=avif`;
     if (baseUrl.startsWith('/static/')) return baseUrl;
-    return localUrl;
+
+    return localUrl.length ? localUrl : null;
   }, [baseUrl, localUrl]);
 
   return url && contentType.includes('image') ? (

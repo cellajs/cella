@@ -66,7 +66,9 @@ export const OrganizationMembersRoute = createRoute({
   staticData: { pageTitle: 'members', isAuth: true },
   getParentRoute: () => OrganizationRoute,
   loaderDeps: ({ search: { q, sort, order, role } }) => ({ q, sort, order, role }),
-  loader: async ({ params: { idOrSlug }, deps: { q, sort, order, role }, context: { orgIdOrSlug } }) => {
+  loader: async ({ cause, params: { idOrSlug }, deps: { q, sort, order, role }, context: { orgIdOrSlug } }) => {
+    if (cause !== 'enter') return;
+
     const entityType = 'organization';
 
     const queryOptions = membersQueryOptions({ idOrSlug, orgIdOrSlug, entityType, q, sort, order, role });
@@ -85,7 +87,9 @@ export const OrganizationAttachmentsRoute = createRoute({
   staticData: { pageTitle: 'attachments', isAuth: true },
   getParentRoute: () => OrganizationRoute,
   loaderDeps: ({ search: { q, sort, order } }) => ({ q, sort, order }),
-  loader: async ({ deps: { q, sort, order }, context: { orgIdOrSlug } }) => {
+  loader: async ({ cause, deps: { q, sort, order }, context: { orgIdOrSlug } }) => {
+    if (cause !== 'enter') return;
+
     const queryOptions = attachmentsQueryOptions({ orgIdOrSlug, q, sort, order });
     return await hybridFetchInfinite(queryOptions);
   },
