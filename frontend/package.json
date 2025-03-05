@@ -142,7 +142,7 @@
     "@types/zxcvbn": "^4.4.5",
     "@vitejs/plugin-basic-ssl": "^2.0.0",
     "@vitejs/plugin-react": "^4.3.4",
-    "babel-plugin-react-compiler": "19.0.0-beta-e1e972c-20250221",
+    "babel-plugin-react-compiler": "19.0.0-beta-714736e-20250131",
     "cross-env": "^7.0.3",
     "postgres": "^3.4.5",
     "rollup-plugin-visualizer": "^5.14.0",
