@@ -3,24 +3,25 @@ import { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { signOut } from '~/modules/auth/api';
 import { toaster } from '~/modules/common/toaster';
-import type { MeUser } from '~/modules/users/types';
+import type { MeUser } from '~/modules/me/types';
 import { queryClient } from '~/query/query-client';
 import { SignOutRoute } from '~/routes/auth';
 import { useAlertStore } from '~/store/alert';
 import { useDraftStore } from '~/store/draft';
-import { useGeneralStore } from '~/store/general';
 import { useNavigationStore } from '~/store/navigation';
+import { useUIStore } from '~/store/ui';
 import { useUserStore } from '~/store/user';
 
-export const flushStoresAndCache = (force?: boolean) => {
+export const flushStoresAndCache = (removeAccount?: boolean) => {
   queryClient.clear();
   useUserStore.setState({ user: null as unknown as MeUser });
   useDraftStore.getState().clearForms();
   useNavigationStore.getState().clearNavigationStore();
+  useUIStore.getState().setImpersonating(false);
 
-  if (!force) return;
+  if (!removeAccount) return;
   useAlertStore.getState().clearAlertStore();
-  useGeneralStore.getState().clearGeneralStore();
+  useUIStore.getState().clearUIStore();
 };
 
 // Sign out user and clear all stores and query cache

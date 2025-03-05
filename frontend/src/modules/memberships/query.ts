@@ -1,7 +1,7 @@
 import { infiniteQueryOptions } from '@tanstack/react-query';
 import { config } from 'config';
 
-import { type GetInvitedMembersParams, type GetMembersParams, getInvitedMembers, getMembers } from '~/modules/memberships/api';
+import { type GetMembersParams, type GetMembershipInvitationsParams, getMembers, getMembershipInvitations } from '~/modules/memberships/api';
 
 /**
  * Keys for members related queries. These keys help to uniquely identify different query.
@@ -11,7 +11,7 @@ export const membersKeys = {
   all: ['members'] as const,
   list: () => [...membersKeys.all, 'list'] as const,
   table: (filters?: GetMembersParams) => [...membersKeys.list(), filters] as const,
-  invitesTable: (filters?: GetInvitedMembersParams) => [...membersKeys.list(), 'invites', filters] as const,
+  invitesTable: (filters?: GetMembershipInvitationsParams) => [...membersKeys.list(), 'invites', filters] as const,
   similar: (filters?: Pick<GetMembersParams, 'orgIdOrSlug' | 'idOrSlug' | 'entityType'>) => [...membersKeys.list(), filters] as const,
   update: () => [...membersKeys.all, 'update'] as const,
   delete: () => [...membersKeys.all, 'delete'] as const,
@@ -67,18 +67,18 @@ export const membersQueryOptions = ({
  * @param param.q - Optional search query to filter invited members by (default is an empty string).
  * @param param.sort - Field to sort by (default is 'createdAt').
  * @param param.order - Order of sorting (default is 'desc').
- * @param param.limit - Number of items per page (default is configured in `config.requestLimits.invitedMembers`).
+ * @param param.limit - Number of items per page (default is configured in `config.requestLimits.memberInvitations`).
  * @returns Infinite query options.
  */
-export const invitedMembersQueryOptions = ({
+export const memberInvitationsQueryOptions = ({
   idOrSlug,
   orgIdOrSlug,
   entityType,
   q = '',
   sort: initialSort,
   order: initialOrder,
-  limit = config.requestLimits.invitedMembers,
-}: GetInvitedMembersParams) => {
+  limit = config.requestLimits.memberInvitations,
+}: GetMembershipInvitationsParams) => {
   const sort = initialSort || 'createdAt';
   const order = initialOrder || 'desc';
 
@@ -88,7 +88,7 @@ export const invitedMembersQueryOptions = ({
     queryKey,
     initialPageParam: 0,
     queryFn: async ({ pageParam: page, signal }) =>
-      await getInvitedMembers({ page, q, sort, order, limit, idOrSlug, orgIdOrSlug, entityType, offset: page * limit }, signal),
+      await getMembershipInvitations({ page, q, sort, order, limit, idOrSlug, orgIdOrSlug, entityType, offset: page * limit }, signal),
     getNextPageParam: (_lastPage, allPages) => allPages.length,
   });
 };

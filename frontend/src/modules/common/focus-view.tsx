@@ -37,7 +37,7 @@ export const FocusView = ({ className = '', iconOnly }: FocusViewProps) => {
 };
 
 export const FocusViewContainer = ({ children, className = '' }: { children: React.ReactNode; className?: string }) => {
-  const { focusView } = useNavigationStore();
+  const focusView = useNavigationStore((state) => state.focusView);
 
   useBodyClass({ 'focus-view': focusView });
 

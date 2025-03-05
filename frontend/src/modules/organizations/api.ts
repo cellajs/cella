@@ -115,25 +115,3 @@ export const deleteOrganizations = async (ids: string[]) => {
 
   await handleResponse(response);
 };
-
-export type NewsLetterBody = Parameters<(typeof client)['send-newsletter']['$post']>['0']['json'];
-
-/**
- * Send a newsletter to organizations.
- *
- * @param body.content - Content of the newsletter.
- * @param body.organizationIds - An array of organization IDs to which the newsletter will be sent.
- * @param body.roles - An array specifying the roles  (`admin`, `member`) who will receive the newsletter.
- * @param body.subject - Subject of the newsletter.
- * @param toSelf - A flag to determine if the newsletter should be sent to the sender only.
- * @returns A boolean indicating whether the newsletter was successfully sent.
- */
-export const sendNewsletter = async ({ body, toSelf = false }: { body: NewsLetterBody; toSelf: boolean }) => {
-  const response = await client['send-newsletter'].$post({
-    json: body,
-    query: { toSelf },
-  });
-
-  const json = await handleResponse(response);
-  return json.success;
-};

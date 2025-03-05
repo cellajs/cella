@@ -1,16 +1,30 @@
-import { useEffect, useRef, useState } from 'react';
+import { useRouterState } from '@tanstack/react-router';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import useBodyClass from '~/hooks/use-body-class';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import useMounted from '~/hooks/use-mounted';
 import FloatingNavButton from '~/modules/navigation/floating-nav/button';
-import type { NavItem } from '~/nav-config';
+import { type NavItem, navItems } from '~/nav-config';
 
-const FloatingNav = ({ items, onClick }: { items: NavItem[]; onClick: (index: number) => void }) => {
+const FloatingNav = ({ onClick }: { onClick: (id: NavItem['id']) => void }) => {
   const isMobile = useBreakpoints('max', 'sm');
+  const routerState = useRouterState();
+
   const { hasWaited } = useMounted();
 
   const [showButtons, setShowButtons] = useState(true);
   const lastScrollY = useRef(0);
   const scrollContainer = useRef<HTMLElement | Window | null>(null);
+
+  const items = useMemo(() => {
+    const floatingButtonIdsInRoute = routerState.matches.flatMap((el) => el.staticData.floatingNavButtons || []);
+    return navItems.filter(({ id }) => {
+      if (floatingButtonIdsInRoute.length && isMobile) return floatingButtonIdsInRoute.includes(id);
+      return false;
+    });
+  }, [isMobile, routerState.matches]);
+
+  useBodyClass({ 'floating-nav': !!items.length });
 
   useEffect(() => {
     if (!hasWaited) return;
@@ -42,16 +56,16 @@ const FloatingNav = ({ items, onClick }: { items: NavItem[]; onClick: (index: nu
   }, []);
 
   return (
-    <nav id="app-nav">
+    <nav id="floating-nav">
       {showButtons &&
-        items.map((navItem: NavItem, idx: number) => {
-          const firstButton = items.length > 1 && idx === 0;
+        items.map((navItem: NavItem, index: number) => {
+          const firstButton = items.length > 1 && index === 0;
           return (
             <FloatingNavButton
               id={navItem.id}
               key={navItem.id}
               Icon={navItem.icon}
-              onClick={() => onClick(idx)}
+              onClick={() => onClick(navItem.id)}
               direction={firstButton ? 'left' : 'right'}
             />
           );

@@ -7,33 +7,34 @@ import type { BaseTableMethods, BaseTableProps } from '~/modules/common/data-tab
 import { requestsQueryOptions } from '~/modules/requests/query';
 import type { RequestsSearch } from '~/modules/requests/table/table-wrapper';
 import type { Request } from '~/modules/requests/types';
-import { useDataFromSuspenseInfiniteQuery } from '~/query/hooks/use-data-from-query';
+import { useDataFromInfiniteQuery } from '~/query/hooks/use-data-from-query';
 
 type BaseRequestsTableProps = BaseTableProps<Request, RequestsSearch>;
 
 const BaseRequestsTable = memo(
-  forwardRef<BaseTableMethods, BaseRequestsTableProps>(({ columns, queryVars, updateCounts, sortColumns, setSortColumns }, ref) => {
+  forwardRef<BaseTableMethods, BaseRequestsTableProps>(({ columns, queryVars, sortColumns, setSortColumns, setTotal, setSelected }, ref) => {
     const { t } = useTranslation();
 
     // Extract query variables and set defaults
     const { q, sort, order, limit } = queryVars;
 
     // Query requests
-    const { rows, selectedRows, setRows, setSelectedRows, totalCount, isLoading, isFetching, error, fetchNextPage } =
-      useDataFromSuspenseInfiniteQuery(requestsQueryOptions({ q, sort, order, limit }));
+    const { rows, selectedRows, setRows, setSelectedRows, totalCount, isLoading, isFetching, error, fetchNextPage } = useDataFromInfiniteQuery(
+      requestsQueryOptions({ q, sort, order, limit }),
+    );
 
     const onRowsChange = async (changedRows: Request[]) => setRows(changedRows);
 
-    useEffect(() => {
-      updateCounts(
-        rows.filter((row) => selectedRows.has(row.id)),
-        totalCount,
-      );
-    }, [selectedRows, rows, totalCount]);
+    const onSelectedRowsChange = (value: Set<string>) => {
+      setSelectedRows(value);
+      setSelected(rows.filter((row) => value.has(row.id)));
+    };
+
+    useEffect(() => setTotal(totalCount), [totalCount]);
 
     // Expose methods via ref using useImperativeHandle
     useImperativeHandle(ref, () => ({
-      clearSelection: () => setSelectedRows(new Set<string>()),
+      clearSelection: () => onSelectedRowsChange(new Set<string>()),
     }));
 
     return (
@@ -54,7 +55,7 @@ const BaseRequestsTable = memo(
           fetchMore: fetchNextPage,
           sortColumns,
           selectedRows,
-          onSelectedRowsChange: setSelectedRows,
+          onSelectedRowsChange,
           onSortColumnsChange: setSortColumns,
           NoRowsComponent: <ContentPlaceholder Icon={Bird} title={t('common:no_resource_yet', { resource: t('common:requests').toLowerCase() })} />,
         }}

@@ -2,7 +2,7 @@ import dayjs from 'dayjs';
 import localizedFormat from 'dayjs/plugin/localizedFormat';
 import type { ReactElement } from 'react';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
-import type { Mode } from '~/store/theme';
+import type { Mode } from '~/store/ui';
 
 dayjs.extend(localizedFormat);
 
@@ -104,11 +104,12 @@ const formatRowData = <R extends Row>(row: R, column: Column) => {
     const key = column.key.replace('Count', '');
     return row.counts.membership[key];
   }
+  if (column.key === 'role') return row.role ?? row.membership?.role ?? '-';
+
   const date = dayjs(row[column.key]);
-  if (date.isValid()) {
-    return date.format('lll');
-  }
-  return row[column.key];
+  if (date.isValid()) return date.format('lll');
+
+  return row[column.key] ?? '-';
 };
 
 // Format the body data based on column definitions
@@ -118,7 +119,8 @@ const formatBodyData = <R extends Row>(rows: R[], columns: Column[]): (string | 
 
 // Filter columns based on visibility
 const filterColumns = (column: Column) => {
-  if ('visible' in column && column.key !== 'checkbox-column') return column.visible;
+  const invalidColumnKeys = ['subscription', 'checkbox-column'];
+  if ('visible' in column && !invalidColumnKeys.includes(column.key) && column.name !== '') return column.visible;
   return false;
 };
 

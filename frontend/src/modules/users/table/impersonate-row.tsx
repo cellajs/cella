@@ -8,7 +8,7 @@ import { toaster } from '~/modules/common/toaster';
 import { Button } from '~/modules/ui/button';
 import { getAndSetMe, getAndSetMenu } from '~/modules/users/helpers';
 import type { User } from '~/modules/users/types';
-import { useGeneralStore } from '~/store/general';
+import { useUIStore } from '~/store/ui';
 
 interface Props {
   user: User;
@@ -18,7 +18,7 @@ interface Props {
 const handleStartImpersonation = async (userId: string) => {
   try {
     await impersonationStart(userId);
-    useGeneralStore.getState().setImpersonating(true);
+    useUIStore.getState().setImpersonating(true);
     await Promise.all([getAndSetMe(), getAndSetMenu()]);
     toast.success(i18n.t('common:success.impersonated'));
     router.navigate({ to: config.defaultRedirectPath, replace: true });

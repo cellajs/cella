@@ -211,7 +211,7 @@ export const DataTable = <TData,>({
   }, [isLoading]);
 
   return (
-    <div className="w-full h-full mb-4 md:mb-8">
+    <div className="w-full h-full mb-4 md:mb-8 focus-view-scroll">
       {initialDone ? ( // Render skeleton only on initial load
         <>
           {error && rows.length === 0 ? (

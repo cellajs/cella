@@ -162,8 +162,8 @@ export const getMembers = async (
 };
 
 // Combined type
-export type GetInvitedMembersParams = RequiredGetMembersParams &
-  Omit<Parameters<(typeof client)['invited-members']['$get']>['0']['query'], 'limit' | 'offset'> & {
+export type GetMembershipInvitationsParams = RequiredGetMembersParams &
+  Omit<Parameters<(typeof client)['pending']['$get']>['0']['query'], 'limit' | 'offset'> & {
     limit?: number;
     offset?: number;
     page?: number;
@@ -180,12 +180,12 @@ export type GetInvitedMembersParams = RequiredGetMembersParams &
  * @param param.order - Sort order `'asc' | 'desc'` (defaults to 'asc').
  * @param param.role - Optional Role `"admin" | "member"` to filter results.
  * @param param.page - Page number.
- * @param param.limit - Maximum number of invited members per page (defaults to `config.requestLimits.invitedMembers`).
+ * @param param.limit - Maximum number of invited members per page (defaults to `config.requestLimits.memberInvitations`).
  * @param param.offset - Optional offset.
  * @param signal - Optional abort signal for cancelling the request.
  * @returns A paginated list of invited members.
  */
-export const getInvitedMembers = async (
+export const getMembershipInvitations = async (
   {
     idOrSlug,
     orgIdOrSlug,
@@ -194,12 +194,12 @@ export const getInvitedMembers = async (
     sort = 'createdAt',
     order = 'asc',
     page = 0,
-    limit = config.requestLimits.invitedMembers,
+    limit = config.requestLimits.memberInvitations,
     offset,
-  }: GetInvitedMembersParams,
+  }: GetMembershipInvitationsParams,
   signal?: AbortSignal,
 ) => {
-  const response = await client['invited-members'].$get(
+  const response = await client.pending.$get(
     {
       query: {
         idOrSlug,

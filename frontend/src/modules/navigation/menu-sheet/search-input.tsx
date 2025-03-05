@@ -3,8 +3,9 @@ import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import useMounted from '~/hooks/use-mounted';
+import type { UserMenu, UserMenuItem } from '~/modules/me/types';
 import { Input } from '~/modules/ui/input';
-import type { UserMenu, UserMenuItem } from '~/modules/users/types';
+import { cn } from '~/utils/cn';
 import { entityRelations } from '#/entity-config';
 
 interface MenuSheetSearchProps {
@@ -12,9 +13,10 @@ interface MenuSheetSearchProps {
   searchTerm: string;
   setSearchTerm: (term: string) => void;
   searchResultsChange: (results: UserMenuItem[]) => void;
+  className?: string;
 }
 
-export const MenuSheetSearchInput = ({ menu, searchTerm, setSearchTerm, searchResultsChange }: MenuSheetSearchProps) => {
+export const MenuSheetSearchInput = ({ menu, searchTerm, setSearchTerm, searchResultsChange, className }: MenuSheetSearchProps) => {
   const { t } = useTranslation();
   const { hasStarted } = useMounted();
   const isMobile = useBreakpoints('max', 'sm');
@@ -39,7 +41,7 @@ export const MenuSheetSearchInput = ({ menu, searchTerm, setSearchTerm, searchRe
   }, [searchTerm, menu]);
 
   return (
-    <div className="relative z-20">
+    <div className={cn('relative z-20', className)}>
       <Search
         size={16}
         className="absolute left-3 -z-10 top-1/2 -translate-y-1/2 opacity-50

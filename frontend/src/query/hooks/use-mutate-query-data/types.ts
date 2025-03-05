@@ -1,5 +1,5 @@
 import type { ContextEntity, Entity, ProductEntity } from 'config';
-import type { LimitedEntity } from '~/modules/general/types';
+import type { LimitedEntity } from '~/modules/entities/types';
 import type { MinimumMembershipInfo } from '~/modules/memberships/types';
 import type { InfiniteQueryData, QueryData } from '~/query/types';
 

@@ -1,6 +1,5 @@
-import { useSearch } from '@tanstack/react-router';
 import { config } from 'config';
-import { Suspense, lazy, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { z } from 'zod';
 import useSearchParams from '~/hooks/use-search-params';
@@ -13,13 +12,12 @@ import DeleteUsers from '~/modules/users/delete-users';
 import InviteUsers from '~/modules/users/invite-users';
 import { usersKeys } from '~/modules/users/query';
 import { useColumns } from '~/modules/users/table/columns';
+import BaseDataTable from '~/modules/users/table/table';
 import { UsersTableBar } from '~/modules/users/table/table-bar';
 import type { User } from '~/modules/users/types';
 import { useMutateQueryData } from '~/query/hooks/use-mutate-query-data';
 import { UsersTableRoute, type usersSearchSchema } from '~/routes/system';
-import { arraysHaveSameElements } from '~/utils';
 
-const BaseDataTable = lazy(() => import('~/modules/users/table/table'));
 const LIMIT = config.requestLimits.users;
 
 export type UsersSearch = z.infer<typeof usersSearchSchema>;
@@ -28,25 +26,19 @@ const UsersTable = () => {
   const { t } = useTranslation();
 
   const { search, setSearch } = useSearchParams<UsersSearch>({ from: UsersTableRoute.id });
-  const { sheetId } = useSearch({ from: UsersTableRoute.id });
-
   const dataTableRef = useRef<BaseTableMethods | null>(null);
 
   // Table state
-  const { q, role, sort, order } = search;
+  const { q, role, sort, order, sheetId } = search;
   const limit = LIMIT;
+
+  const mutateQuery = useMutateQueryData(usersKeys.list(), (item) => usersKeys.single(item.id), ['update']);
+  // Render user sheet if sheetId is present
+  useUserSheet({ sheetId });
 
   // State for selected and total counts
   const [total, setTotal] = useState<number | undefined>(undefined);
   const [selected, setSelected] = useState<User[]>([]);
-
-  // Update total and selected counts
-  const updateCounts = (newSelected: User[], newTotal: number) => {
-    if (newTotal !== total) setTotal(newTotal);
-    if (!arraysHaveSameElements(selected, newSelected)) setSelected(newSelected);
-  };
-
-  const mutateQuery = useMutateQueryData(usersKeys.list(), (item) => usersKeys.single(item.id), ['update']);
 
   // Build columns
   const [columns, setColumns] = useColumns(mutateQuery.update);
@@ -55,9 +47,6 @@ const UsersTable = () => {
   const clearSelection = () => {
     if (dataTableRef.current) dataTableRef.current.clearSelection();
   };
-
-  // Render user sheet if sheetId is present
-  useUserSheet({ sheetId });
 
   const openInviteDialog = (container: HTMLElement | null) => {
     dialog(<InviteUsers mode={'email'} dialog />, {
@@ -108,16 +97,15 @@ const UsersTable = () => {
         openRemoveDialog={openRemoveDialog}
         openInviteDialog={openInviteDialog}
       />
-      <Suspense>
-        <BaseDataTable
-          updateCounts={updateCounts}
-          ref={dataTableRef}
-          columns={columns}
-          queryVars={{ q, role, sort, order, limit }}
-          sortColumns={sortColumns}
-          setSortColumns={setSortColumns}
-        />
-      </Suspense>
+      <BaseDataTable
+        ref={dataTableRef}
+        columns={columns}
+        queryVars={{ q, role, sort, order, limit }}
+        sortColumns={sortColumns}
+        setSortColumns={setSortColumns}
+        setTotal={setTotal}
+        setSelected={setSelected}
+      />
     </div>
   );
 };

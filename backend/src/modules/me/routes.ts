@@ -1,9 +1,11 @@
+import { z } from 'zod';
 import { createRouteConfig } from '#/lib/route-config';
-import { isAuthenticated } from '#/middlewares/guard';
+import { isAuthenticated, isPublicAccess } from '#/middlewares/guard';
+import { tokenLimiter } from '#/middlewares/rate-limiter/limiters';
 import { idsBodySchema } from '#/utils/schema/common';
 import { errorResponses, successWithDataSchema, successWithErrorsSchema, successWithoutDataSchema } from '#/utils/schema/responses';
 import { updateUserBodySchema, userSchema } from '../users/schema';
-import { leaveEntityQuerySchema, meAuthInfoSchema, meRelativeEntitiesSchema, passkeyRegistrationBodySchema, userMenuSchema } from './schema';
+import { leaveEntityQuerySchema, meAuthInfoSchema, passkeyRegistrationBodySchema, unsubscribeSelfQuerySchema, userMenuSchema } from './schema';
 
 class MeRouteConfig {
   public getSelf = createRouteConfig({
@@ -39,26 +41,6 @@ class MeRouteConfig {
         content: {
           'application/json': {
             schema: successWithDataSchema(meAuthInfoSchema),
-          },
-        },
-      },
-      ...errorResponses,
-    },
-  });
-
-  public getSelfEntities = createRouteConfig({
-    method: 'get',
-    path: '/entities',
-    guard: isAuthenticated,
-    tags: ['me'],
-    summary: 'Get relevant entities for self.',
-    description: 'Get relevant entities that current user (self) is member of.',
-    responses: {
-      200: {
-        description: 'Entities info',
-        content: {
-          'application/json': {
-            schema: successWithDataSchema(meRelativeEntitiesSchema),
           },
         },
       },
@@ -120,7 +102,7 @@ class MeRouteConfig {
     path: '/menu',
     guard: isAuthenticated,
     tags: ['me'],
-    summary: 'Get menu of self',
+    summary: 'Get menu',
     description:
       'Receive menu data with all contextual entities of which the current user is a member. It is in essence a restructured list of `memberships` per entity type, with some entity data in it.',
     responses: {
@@ -186,11 +168,61 @@ class MeRouteConfig {
     },
   });
 
+  public unsubscribeSelf = createRouteConfig({
+    method: 'get',
+    path: '/unsubscribe',
+    guard: isPublicAccess,
+    middleware: [tokenLimiter('unsubscribe')],
+    tags: ['me'],
+    summary: 'Unsubscribe',
+    description: 'Unsubscribe using a personal unsubscribe token.',
+    request: {
+      query: unsubscribeSelfQuerySchema,
+    },
+    responses: {
+      302: {
+        description: 'Redirect to FE',
+        headers: z.object({ Location: z.string() }),
+      },
+      ...errorResponses,
+    },
+  });
+  public getUploadToken = createRouteConfig({
+    method: 'get',
+    path: '/upload-token',
+    guard: isAuthenticated,
+    tags: ['me'],
+    summary: 'Get upload token',
+    description:
+      'This endpoint is used to get an upload token for a user or organization. The token can be used to upload public or private images/files to your S3 bucket using imado.',
+    request: {
+      query: z.object({
+        public: z.string().optional().default('false'),
+        organization: z.string().optional(),
+        width: z.string().optional(),
+        height: z.string().optional(),
+        quality: z.string().optional(),
+        format: z.string().optional(),
+      }),
+    },
+    responses: {
+      200: {
+        description: 'Upload token with a scope for a user or organization',
+        content: {
+          'application/json': {
+            schema: successWithDataSchema(z.string()),
+          },
+        },
+      },
+      ...errorResponses,
+    },
+  });
+
   public createPasskey = createRouteConfig({
     method: 'post',
-    path: '/passkey-registration',
+    path: '/passkey',
     guard: isAuthenticated,
-    tags: ['auth'],
+    tags: ['me'],
     summary: 'Create passkey',
     description:
       'The server associates the public key and the credential ID with the user for future authentication flows and checks the validity of the operation by verifying the signed challenge with the public key.',
@@ -223,7 +255,7 @@ class MeRouteConfig {
     path: '/passkey',
     guard: isAuthenticated,
     tags: ['me'],
-    summary: 'Delete passkey of self',
+    summary: 'Delete passkey',
     description: 'Delete your passkey record.',
     security: [],
     responses: {

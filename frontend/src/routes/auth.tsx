@@ -12,7 +12,7 @@ import Unsubscribed from '~/modules/auth/unsubscribed';
 import VerifyEmail from '~/modules/auth/verify-email';
 import { meQueryOptions } from '~/modules/users/query';
 import { queryClient } from '~/query/query-client';
-import { PublicRoute } from '~/routes/general';
+import { PublicRoute } from '~/routes/base';
 import { useUserStore } from '~/store/user';
 
 export const AuthLayoutRoute = createRoute({

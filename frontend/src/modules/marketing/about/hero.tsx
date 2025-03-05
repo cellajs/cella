@@ -2,7 +2,7 @@ import { config } from 'config';
 import { Trans, useTranslation } from 'react-i18next';
 import { useInView } from 'react-intersection-observer';
 import { Badge } from '~/modules/ui/badge';
-import { useThemeStore } from '~/store/theme';
+import { useUIStore } from '~/store/ui';
 
 interface HeroProps {
   title: string;
@@ -14,7 +14,7 @@ interface HeroProps {
 
 export const Hero = ({ title, subtitle, text, children, badgeText }: HeroProps) => {
   const { t } = useTranslation();
-  const { theme } = useThemeStore();
+  const { theme } = useUIStore();
   const { ref, inView } = useInView({
     triggerOnce: true,
     threshold: 0.5,
@@ -53,7 +53,7 @@ export const Hero = ({ title, subtitle, text, children, badgeText }: HeroProps) 
 };
 
 export const BackgroundCurve = () => {
-  const { mode } = useThemeStore();
+  const mode = useUIStore((state) => state.mode);
   const fillColor = mode === 'dark' ? config.theme.colorDarkBackground : '#fff';
 
   return (

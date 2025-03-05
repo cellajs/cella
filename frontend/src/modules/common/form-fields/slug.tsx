@@ -7,7 +7,7 @@ import { useTranslation } from 'react-i18next';
 import slugify from 'slugify';
 import { useMeasure } from '~/hooks/use-measure';
 import { useOnlineManager } from '~/hooks/use-online-manager';
-import { checkSlugAvailable } from '~/modules/general/api';
+import { checkSlugAvailable } from '~/modules/entities/api';
 import { Button } from '~/modules/ui/button';
 import { FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
 import { Input } from '~/modules/ui/input';

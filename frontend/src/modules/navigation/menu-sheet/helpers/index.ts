@@ -1,7 +1,7 @@
 import type { Edge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/dist/types/types';
 import type { ContextEntity } from 'config';
+import type { UserMenu, UserMenuItem } from '~/modules/me/types';
 import type { PageDraggableItemData } from '~/modules/navigation/types';
-import type { UserMenu, UserMenuItem } from '~/modules/users/types';
 
 const sortAndFilterMenu = (data: UserMenuItem[], entityType: ContextEntity, archived: boolean, reverse = false): UserMenuItem[] => {
   return (

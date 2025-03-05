@@ -11,7 +11,8 @@ export type BaseTableProps<T, K extends { q?: unknown; sort?: unknown; order?: u
   columns: ColumnOrColumnGroup<T>[];
   sortColumns: SortColumn[];
   setSortColumns: (sortColumns: SortColumn[]) => void;
-  updateCounts: (selected: T[], total: number) => void;
+  setTotal: (total: number) => void;
+  setSelected: (selected: T[]) => void;
 };
 
 export type BaseTableMethods = {

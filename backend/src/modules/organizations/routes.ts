@@ -1,14 +1,8 @@
 import { z } from 'zod';
 import { createRouteConfig } from '#/lib/route-config';
 import { hasSystemAccess, isAuthenticated } from '#/middlewares/guard';
-import { booleanQuerySchema, entityParamSchema, idsBodySchema } from '#/utils/schema/common';
-import {
-  errorResponses,
-  successWithDataSchema,
-  successWithErrorsSchema,
-  successWithPaginationSchema,
-  successWithoutDataSchema,
-} from '#/utils/schema/responses';
+import { entityParamSchema, idsBodySchema } from '#/utils/schema/common';
+import { errorResponses, successWithDataSchema, successWithErrorsSchema, successWithPaginationSchema } from '#/utils/schema/responses';
 import {
   createOrganizationBodySchema,
   getOrganizationsQuerySchema,
@@ -16,7 +10,6 @@ import {
   organizationSchema,
   organizationWithMembershipSchema,
   relatedEntitiesCountSchema,
-  sendNewsletterBodySchema,
   updateOrganizationBodySchema,
 } from './schema';
 
@@ -122,37 +115,6 @@ class OrganizationRouteConfig {
             schema: successWithDataSchema(
               organizationSchema.extend({ counts: z.object({ ...membershipsCountSchema.shape, ...relatedEntitiesCountSchema.shape }) }),
             ),
-          },
-        },
-      },
-      ...errorResponses,
-    },
-  });
-
-  public sendNewsletter = createRouteConfig({
-    method: 'post',
-    path: '/send-newsletter',
-    guard: [isAuthenticated, hasSystemAccess],
-    tags: ['organizations'],
-    summary: 'Newsletter for members',
-    description: 'Sends to requested organizations members, a newsletter.',
-    request: {
-      query: z.object({ toSelf: booleanQuerySchema }),
-      body: {
-        required: true,
-        content: {
-          'application/json': {
-            schema: sendNewsletterBodySchema,
-          },
-        },
-      },
-    },
-    responses: {
-      200: {
-        description: 'Organization',
-        content: {
-          'application/json': {
-            schema: successWithoutDataSchema,
           },
         },
       },

@@ -4,9 +4,9 @@ import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { toaster } from '~/modules/common/toaster';
-import type { UserMenuItem } from '~/modules/users/types';
+import type { UserMenuItem } from '~/modules/me/types';
 import { getEntityRoute } from '~/nav-config';
-import { useGeneralStore } from '~/store/general';
+import { useUIStore } from '~/store/ui';
 import { cn } from '~/utils/cn';
 
 interface MenuSheetItemProps {
@@ -22,7 +22,7 @@ export const MenuSheetItem = ({ item, className, searchResults }: MenuSheetItemP
   const { params, path } = useMemo(() => getEntityRoute(item), [item]);
 
   const isOnline = onlineManager.isOnline();
-  const offlineAccess = useGeneralStore((state) => state.offlineAccess);
+  const offlineAccess = useUIStore((state) => state.offlineAccess);
 
   const canAccess = offlineAccess ? (isOnline ? true : !item.membership.archived) : true;
 
@@ -53,7 +53,7 @@ export const MenuSheetItem = ({ item, className, searchResults }: MenuSheetItemP
       />
       <div className="truncate grow py-2 flex flex-col justify-center pr-2 text-left">
         <div
-          className={`truncate leading-5 transition-all group-hover/menuItem:delay-300 duration-200 ease-in-out ${!searchResults && 'pt-2.5'} sm:group-hover/menuItem:pt-0! text-base group-data-[subitem=true]/menuItem:text-sm
+          className={`truncate leading-5 transition-all group-hover/menuItem:delay-300 duration-200 ease-in-out ${!searchResults && 'pt-2.5 group-data-[subitem=true]/menuItem:pt-1.5'} sm:group-hover/menuItem:pt-0! text-base group-data-[subitem=true]/menuItem:text-sm
             sm:group-data-[subitem=true]/menuItem:-my-0.5 sm:group-data-[subitem=true]/menuItem:pt-1`}
         >
           {item.name}

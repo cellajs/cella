@@ -11,8 +11,8 @@ import TableSearch from '~/modules/common/data-table/table-search';
 import type { BaseTableBarProps, BaseTableMethods } from '~/modules/common/data-table/types';
 import { FocusView } from '~/modules/common/focus-view';
 import SelectRole from '~/modules/common/form-fields/select-role';
-import { InvitedMembers } from '~/modules/memberships/invited-members-table/invites-count';
 import type { MemberSearch, MembersTableProps } from '~/modules/memberships/members-table/table-wrapper';
+import { MembershipInvitations } from '~/modules/memberships/pending-table/invites-count';
 import type { Member } from '~/modules/memberships/types';
 import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
@@ -115,7 +115,7 @@ export const MembersTableBar = ({
             )}
             {selected.length === 0 && (
               <TableCount count={total} type="member" isFiltered={isFiltered} onResetFilters={onResetFilters}>
-                {isAdmin && !isFiltered && <InvitedMembers entity={entity} />}
+                {isAdmin && !isFiltered && <MembershipInvitations entity={entity} />}
               </TableCount>
             )}
           </FilterBarActions>
@@ -139,7 +139,7 @@ export const MembersTableBar = ({
       </TableBarContainer>
 
       {/* Container ref to embed dialog */}
-      <div ref={containerRef} />
+      <div className="empty:hidden" ref={containerRef} />
     </div>
   );
 };

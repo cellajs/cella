@@ -1,6 +1,6 @@
 import { type Theme, config } from 'config';
 import { useEffect } from 'react';
-import { type Mode, useThemeStore } from '~/store/theme';
+import { type Mode, useUIStore } from '~/store/ui';
 import { hexToHsl } from '~/utils/hex-to-hsl';
 
 const root = window.document.documentElement;
@@ -35,17 +35,17 @@ const setThemeColor = (passedTheme: Theme) => {
  */
 export const ThemeManager = () => {
   useEffect(() => {
-    useThemeStore.subscribe(({ mode }) => {
+    useUIStore.subscribe(({ mode }) => {
       setModeClass(mode);
     });
-    useThemeStore.subscribe(({ theme }) => {
+    useUIStore.subscribe(({ theme }) => {
       setThemeColor(theme);
     });
   }, []);
 
   // Set initial theme and mode
-  setModeClass(useThemeStore.getState().mode);
-  setThemeColor(useThemeStore.getState().theme);
+  setModeClass(useUIStore.getState().mode);
+  setThemeColor(useUIStore.getState().theme);
 
   return null;
 };

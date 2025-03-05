@@ -2,7 +2,7 @@ import { ArrowUpRight } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import CountryFlag from '~/modules/common/country-flag';
 import { ScrollArea, ScrollBar } from '~/modules/ui/scroll-area';
-import { useThemeStore } from '~/store/theme';
+import { useUIStore } from '~/store/ui';
 
 interface Integrations {
   name: string;
@@ -25,7 +25,7 @@ const integrations: Integrations[] = [
 
 const Integrations = () => {
   const { t } = useTranslation();
-  const { mode } = useThemeStore();
+  const mode = useUIStore((state) => state.mode);
 
   return (
     <ScrollArea className="w-full" orientation="horizontal" size="defaultHorizontal">

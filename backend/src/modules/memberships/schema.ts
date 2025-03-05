@@ -56,12 +56,12 @@ export const membersSchema = z.object({
   membership: membershipInfoSchema,
 });
 
-export const invitedMembersQuerySchema = paginationQuerySchema.extend({
+export const memberInvitationsQuerySchema = paginationQuerySchema.extend({
   ...baseMembersQuerySchema.shape,
   sort: z.enum(['email', 'role', 'expiresAt', 'createdAt', 'createdBy']).default('createdAt').optional(),
 });
 
-export const invitedMembersSchema = z.object({
+export const memberInvitationsSchema = z.object({
   id: z.string(),
   email: z.string(),
   name: z.string().nullable(),

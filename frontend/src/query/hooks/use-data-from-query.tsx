@@ -1,15 +1,15 @@
-import { type InfiniteData, type QueryKey, useSuspenseInfiniteQuery } from '@tanstack/react-query';
+import { type InfiniteData, type QueryKey, useInfiniteQuery } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 import type { QueryData } from '~/query/types';
 
 type Options<T, TQueryKey extends QueryKey = QueryKey> = Parameters<
-  typeof useSuspenseInfiniteQuery<T, Error, InfiniteData<T, unknown>, TQueryKey, number>
+  typeof useInfiniteQuery<T, Error, InfiniteData<T, unknown>, TQueryKey, number>
 >[0];
 
 /**
- * Custom hook to map query result data to rows for a Suspense-based infinite query.
+ * Custom hook to map query result data to rows for a infinite query.
  *
- * This hook uses a Suspense infinite query to fetch and manage paginated data.
+ * This hook uses a infinite query to fetch and manage paginated data.
  * It flattens the fetched pages into a single list of rows and manages selected rows and total count.
  *
  * @param options - The options object for the query, including the query key and any other parameters for the infinite query.
@@ -20,16 +20,17 @@ type Options<T, TQueryKey extends QueryKey = QueryKey> = Parameters<
  *  - `selectedRows`: A set of the selected row IDs.
  *  - `setSelectedRows`: A function to manually update the selected rows.
  *  - `totalCount`: The total count of items based on the query result.
- *  - `queryResult`: The result from the `useSuspenseInfiniteQuery` hook, providing additional query states such as `isLoading`, `isError`, etc.
+ *  - `queryResult`: The result from the `useInfiniteQuery` hook, providing additional query states such as `isLoading`, `isError`, etc.
  */
-export const useDataFromSuspenseInfiniteQuery = <T extends { id: string } = { id: string }, TQueryKey extends QueryKey = QueryKey>(
+export const useDataFromInfiniteQuery = <T extends { id: string } = { id: string }, TQueryKey extends QueryKey = QueryKey>(
   options: Options<QueryData<T>, TQueryKey>,
 ) => {
   const [rows, setRows] = useState<T[]>([]);
   const [selectedRows, setSelectedRows] = useState(new Set<string>());
   const [totalCount, setTotalCount] = useState(0);
 
-  const queryResult = useSuspenseInfiniteQuery(options);
+  // TODO: this seems to cause a cancelledError when returning to a page with infinite query in organizations page
+  const queryResult = useInfiniteQuery({ ...options, placeholderData: (prevData) => prevData });
 
   useEffect(() => {
     // Flatten the array of pages to get all items

@@ -90,7 +90,7 @@ CommandEmpty.displayName = CommandPrimitive.Empty.displayName;
 const CommandGroup = React.forwardRef<
   React.ComponentRef<typeof CommandPrimitive.Group>,
   React.ComponentPropsWithoutRef<typeof CommandPrimitive.Group>
->(({ className, ...props }, ref) => <CommandPrimitive.Group ref={ref} className={cn('p-1 text-foreground', className)} {...props} />);
+>(({ className, ...props }, ref) => <CommandPrimitive.Group ref={ref} className={cn('p-1 empty:p-0 text-foreground', className)} {...props} />);
 
 CommandGroup.displayName = CommandPrimitive.Group.displayName;
 

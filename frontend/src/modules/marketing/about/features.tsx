@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { useThemeStore } from '~/store/theme';
+import { useUIStore } from '~/store/ui';
 
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { ExpandableList } from '~/modules/common/expandable-list';
@@ -28,7 +28,7 @@ const Feature = ({ icon, invertClass, index }: FeatureProps) => {
 };
 
 const Features = () => {
-  const { mode } = useThemeStore();
+  const mode = useUIStore((state) => state.mode);
   const invertClass = mode === 'dark' ? 'invert' : '';
   const isMediumScreen = useBreakpoints('min', 'md');
 

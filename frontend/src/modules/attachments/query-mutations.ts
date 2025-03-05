@@ -18,6 +18,7 @@ import { formatUpdatedData, getCancelingRefetchQueries, getQueries, getQueryItem
 import { queryClient } from '~/query/query-client';
 import type { ContextProp, InfiniteQueryData, QueryData } from '~/query/types';
 import { nanoid } from '~/utils/nanoid';
+import { LocalFileStorage } from './local-file-storage';
 
 type AttachmentQueryData = QueryData<Attachment>;
 export type AttachmentInfiniteQueryData = InfiniteQueryData<Attachment>;
@@ -206,6 +207,8 @@ queryClient.setMutationDefaults(attachmentsKeys.delete(), {
   mutationFn: deleteAttachments,
   onMutate: async (variables) => {
     const { ids, orgIdOrSlug } = variables;
+
+    LocalFileStorage.removeFiles(ids); // delete attachments from indexedDB also
 
     const context: AttachmentContextProp[] = []; // previous query data for rollback if an error occurs
 

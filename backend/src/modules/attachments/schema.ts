@@ -31,5 +31,6 @@ export const attachmentSchema = z.object({
 });
 
 export const attachmentsQuerySchema = paginationQuerySchema.extend({
+  groupId: z.string().optional(),
   sort: z.enum(['id', 'filename', 'contentType', 'createdAt']).default('createdAt').optional(),
 });

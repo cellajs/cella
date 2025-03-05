@@ -4,8 +4,8 @@ import { AccountSheet } from '~/modules/navigation/account-sheet';
 import { MenuSheet } from '~/modules/navigation/menu-sheet';
 
 import type { FooterLinkProps } from '~/modules/common/main-footer';
+import type { UserMenuItem } from '~/modules/me/types';
 import { AppSearch, type SuggestionSection, type SuggestionType } from '~/modules/navigation/search';
-import type { UserMenuItem } from '~/modules/users/types';
 
 /**
  * Set entity paths so we can dynamically use them in the app
@@ -62,7 +62,7 @@ export const suggestionSections: SuggestionSection[] = [
  * App-specific entity path resolver
  *
  * Since each app has its own entity structure or hierarchy, we need to resolve them dynamically in some cases.
- * For example in search suggestions and for items in the menu sheet.
+ * For example to get/search entities and for items in the menu sheet.
  */
 export const getEntityRoute = (item: UserMenuItem | SuggestionType) => {
   const {

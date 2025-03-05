@@ -10,7 +10,7 @@ import { toaster } from '~/modules/common/toaster';
 import { useUpdateUserMutation, usersKeys, usersQueryOptions } from '~/modules/users/query';
 import type { UsersSearch } from '~/modules/users/table/table-wrapper';
 import type { User } from '~/modules/users/types';
-import { useDataFromSuspenseInfiniteQuery } from '~/query/hooks/use-data-from-query';
+import { useDataFromInfiniteQuery } from '~/query/hooks/use-data-from-query';
 import { useMutateQueryData } from '~/query/hooks/use-mutate-query-data';
 
 type BaseDataTableProps = BaseTableProps<User, UsersSearch> & {
@@ -18,18 +18,18 @@ type BaseDataTableProps = BaseTableProps<User, UsersSearch> & {
 };
 
 const BaseDataTable = memo(
-  forwardRef<BaseTableMethods, BaseDataTableProps>(({ columns, queryVars, updateCounts, sortColumns, setSortColumns }, ref) => {
+  forwardRef<BaseTableMethods, BaseDataTableProps>(({ columns, queryVars, sortColumns, setSortColumns, setTotal, setSelected }, ref) => {
     const { t } = useTranslation();
 
     // Extract query variables and set defaults
     const { q, role, sort, order, limit } = queryVars;
 
     // Query users
-    const { rows, selectedRows, setRows, setSelectedRows, totalCount, isLoading, isFetching, error, fetchNextPage } =
-      useDataFromSuspenseInfiniteQuery(usersQueryOptions({ q, sort, order, role, limit }));
+    const { rows, selectedRows, setRows, setSelectedRows, totalCount, isLoading, isFetching, error, fetchNextPage } = useDataFromInfiniteQuery(
+      usersQueryOptions({ q, sort, order, role, limit }),
+    );
 
     const mutateQuery = useMutateQueryData(usersKeys.list(), (item) => usersKeys.single(item.id), ['update']);
-
     // Update user role
     const { mutate: updateUserRole } = useUpdateUserMutation();
 
@@ -51,16 +51,16 @@ const BaseDataTable = memo(
       setRows(changedRows);
     };
 
-    useEffect(() => {
-      updateCounts(
-        rows.filter((row) => selectedRows.has(row.id)),
-        totalCount,
-      );
-    }, [selectedRows, rows, totalCount]);
+    const onSelectedRowsChange = (value: Set<string>) => {
+      setSelectedRows(value);
+      setSelected(rows.filter((row) => value.has(row.id)));
+    };
+
+    useEffect(() => setTotal(totalCount), [totalCount]);
 
     // Expose methods via ref using useImperativeHandle
     useImperativeHandle(ref, () => ({
-      clearSelection: () => setSelectedRows(new Set<string>()),
+      clearSelection: () => onSelectedRowsChange(new Set<string>()),
     }));
 
     return (
@@ -80,7 +80,7 @@ const BaseDataTable = memo(
           fetchMore: fetchNextPage,
           isFiltered: role !== undefined || !!q,
           selectedRows,
-          onSelectedRowsChange: setSelectedRows,
+          onSelectedRowsChange,
           sortColumns,
           onSortColumnsChange: setSortColumns,
         }}

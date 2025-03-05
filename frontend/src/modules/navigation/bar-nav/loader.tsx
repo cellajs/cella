@@ -7,11 +7,13 @@ import useMounted from '~/hooks/use-mounted';
 import { useNavigationStore } from '~/store/navigation';
 
 const AppNavLoader = () => {
-  const { hasWaited } = useMounted();
-  const { navLoading } = useNavigationStore();
   const isFetching = useIsFetching();
+  const { hasWaited } = useMounted();
+
+  const navLoading = useNavigationStore((state) => state.navLoading);
 
   const isLoading = isFetching > 0 || navLoading;
+
   return (
     <>
       <Logo

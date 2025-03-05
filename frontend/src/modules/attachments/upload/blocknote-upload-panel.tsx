@@ -5,7 +5,7 @@ import type React from 'react';
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useOnlineManager } from '~/hooks/use-online-manager';
-import type { UploadedUppyFile } from '~/lib/imado';
+import type { UploadedUppyFile } from '~/lib/imado/types';
 import UploadUppy from '~/modules/attachments/upload/upload-uppy';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '~/modules/ui/dialog';
 

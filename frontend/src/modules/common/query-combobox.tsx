@@ -9,13 +9,13 @@ import { useMeasure } from '~/hooks/use-measure';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import Spinner from '~/modules/common/spinner';
-import { searchQueryOptions } from '~/modules/general/query';
+import { searchQueryOptions } from '~/modules/entities/query';
 import { Badge } from '~/modules/ui/badge';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandLoading } from '~/modules/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '~/modules/ui/popover';
 import { ScrollArea } from '~/modules/ui/scroll-area';
 
-export function QueryCombobox({ onChange, value }: { value: string[]; onChange: (items: string[]) => void }) {
+export function QueryCombobox({ value, onChange, entityId }: { value: string[]; onChange: (items: string[]) => void; entityId?: string }) {
   const { t } = useTranslation();
   const { ref, bounds } = useMeasure<HTMLDivElement>();
 
@@ -48,7 +48,7 @@ export function QueryCombobox({ onChange, value }: { value: string[]; onChange: 
     setOpen(false);
   };
 
-  const { data, isLoading: isLoadingOrig } = useQuery(searchQueryOptions(debouncedSearchQuery, 'user'));
+  const { data, isLoading: isLoadingOrig } = useQuery(searchQueryOptions({ q: debouncedSearchQuery, type: 'user', entityId }));
   // To get around this https://github.com/TanStack/query/issues/3584
   const isLoading = !!debouncedSearchQuery && isLoadingOrig;
 

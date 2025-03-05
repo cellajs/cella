@@ -13,8 +13,8 @@ import {
 import {
   baseMembersQuerySchema,
   createMembershipsBodySchema,
-  invitedMembersQuerySchema,
-  invitedMembersSchema,
+  memberInvitationsQuerySchema,
+  memberInvitationsSchema,
   membersQuerySchema,
   membersSchema,
   membershipSchema,
@@ -27,8 +27,8 @@ class MembershipRouteConfig {
     path: '/',
     guard: [isAuthenticated, hasOrgAccess],
     tags: ['memberships'],
-    summary: 'Invite members',
-    description: 'Invite members to an entity such as an organization.',
+    summary: 'Create memberships',
+    description: 'Create memberships (invite members that may or may not exist in the system) to an entity such as an organization.',
     request: {
       query: baseMembersQuerySchema,
       params: inOrgParamSchema,
@@ -134,15 +134,15 @@ class MembershipRouteConfig {
     },
   });
 
-  public getInvitedMembers = createRouteConfig({
+  public getMembershipInvitations = createRouteConfig({
     method: 'get',
-    path: '/invited-members',
+    path: '/pending',
     guard: [isAuthenticated, hasOrgAccess],
     tags: ['memberships'],
-    summary: 'Get list of invited members',
-    description: 'Get invited members of a context entity by id or slug. It returns invite info.',
+    summary: 'Get list of invitations',
+    description: 'Get pending membership invitations from a context entity by id or slug. It returns invite info.',
     request: {
-      query: invitedMembersQuerySchema,
+      query: memberInvitationsQuerySchema,
       params: inOrgParamSchema,
     },
     responses: {
@@ -150,7 +150,7 @@ class MembershipRouteConfig {
         description: 'Invited members',
         content: {
           'application/json': {
-            schema: successWithPaginationSchema(invitedMembersSchema),
+            schema: successWithPaginationSchema(memberInvitationsSchema),
           },
         },
       },

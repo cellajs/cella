@@ -6,7 +6,7 @@ import type { Step } from '~/modules/auth/types';
 import { Button } from '~/modules/ui/button';
 import { passkeyAuth } from '~/modules/users/helpers';
 import { AuthenticateRoute } from '~/routes/auth';
-import { useThemeStore } from '~/store/theme';
+import { useUIStore } from '~/store/ui';
 
 interface PassKeyOptionProps {
   actionType: Step;
@@ -16,7 +16,7 @@ interface PassKeyOptionProps {
 const PassKeyOption = ({ email, actionType = 'signIn' }: PassKeyOptionProps) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { mode } = useThemeStore();
+  const mode = useUIStore((state) => state.mode);
 
   const { redirect } = useSearch({ from: AuthenticateRoute.id });
   const redirectPath = redirect?.startsWith('/') ? redirect : config.defaultRedirectPath;
