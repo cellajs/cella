@@ -83,7 +83,7 @@ const InviteSearchForm = ({ entity, callback, dialog: isDialog }: Props) => {
           render={({ field: { onChange, value } }) => (
             <FormItem>
               <FormControl>
-                <QueryCombobox value={value} onChange={onChange} />
+                <QueryCombobox value={value} onChange={onChange} entityId={entity.id} />
               </FormControl>
               <FormMessage />
             </FormItem>

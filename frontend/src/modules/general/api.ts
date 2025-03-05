@@ -1,4 +1,4 @@
-import { type Entity, type PageEntity, config } from 'config';
+import { type Entity, config } from 'config';
 import { clientConfig, handleResponse } from '~/lib/api';
 import type { UploadParams } from '~/lib/imado/types';
 import { generalHc } from '#/modules/general/hc';
@@ -66,17 +66,19 @@ export const checkSlugAvailable = async (params: { slug: string; type: Entity })
   return json.success;
 };
 
+export type SuggestionsQuery = Parameters<(typeof client)['suggestions']['$get']>['0']['query'];
+
 /**
  * Get suggestions for a given query and optional entity type.
  *
- * @param query - Search query.
- * @param type - Optional, type of entity to filter suggestions by.
+ * @param query - Query parameters to get suggestions.
+ * @param query.q -  Optional, search query.
+ * @param query.type - Optional, type of entity to filter suggestions by.
+ * @param query.entityId - Optional, excludes suggestions based on membership in the specified entity.
  * @returns An array of suggested entities based on the query.
  */
-export const getSuggestions = async (query: string, type?: PageEntity | undefined) => {
-  const response = await client.suggestions.$get({
-    query: { q: query, type },
-  });
+export const getSuggestions = async (query: SuggestionsQuery) => {
+  const response = await client.suggestions.$get({ query });
 
   const json = await handleResponse(response);
   return json.data;

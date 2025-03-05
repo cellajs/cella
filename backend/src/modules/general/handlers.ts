@@ -1,4 +1,4 @@
-import { and, eq, ilike, inArray, isNull, lt, or } from 'drizzle-orm';
+import { and, eq, inArray, isNull, lt } from 'drizzle-orm';
 import { mailer } from '#/lib/mailer';
 import { SystemInviteEmail, type SystemInviteEmailProps } from '../../../emails/system-invite';
 
@@ -9,11 +9,9 @@ import jwt from 'jsonwebtoken';
 import { OpenAPIHono } from '@hono/zod-openapi';
 import { EventName, Paddle } from '@paddle/paddle-node-sdk';
 import { db } from '#/db/db';
-import { membershipsTable } from '#/db/schema/memberships';
 import { requestsTable } from '#/db/schema/requests';
 import { tokensTable } from '#/db/schema/tokens';
 import { usersTable } from '#/db/schema/users';
-import { entityIdFields, entityTables } from '#/entity-config';
 import { type Env, getContextMemberships, getContextUser } from '#/lib/context';
 import { errorResponse } from '#/lib/errors';
 import { i18n } from '#/lib/i18n';
@@ -23,12 +21,11 @@ import { getUserBy, getUsersByConditions } from '#/modules/users/helpers/get-use
 import { verifyUnsubscribeToken } from '#/modules/users/helpers/unsubscribe-token';
 import defaultHook from '#/utils/default-hook';
 import { nanoid } from '#/utils/nanoid';
-import { prepareStringForILikeFilter } from '#/utils/sql';
 import { TimeSpan, createDate } from '#/utils/time-span';
 import { env } from '../../env';
 import { slugFromEmail } from '../auth/helpers/oauth';
-import { membershipSelect } from '../memberships/helpers/select';
 import { checkSlugAvailable } from './helpers/check-slug';
+import { getSuggestionsQuery } from './helpers/suggestions-query';
 import generalRouteConfig from './routes';
 
 const paddle = new Paddle(env.PADDLE_API_KEY || '');
@@ -177,70 +174,18 @@ const generalRoutes = app
    * Get entity search suggestions
    */
   .openapi(generalRouteConfig.getSuggestionsConfig, async (ctx) => {
-    const { q, type } = ctx.req.valid('query');
+    const { q, type, entityId } = ctx.req.valid('query');
 
     const user = getContextUser();
     const memberships = getContextMemberships();
 
     // Retrieve organizationIds
     const organizationIds = memberships.filter((el) => el.type === 'organization').map((el) => String(el.organizationId));
+
     if (!organizationIds.length) return ctx.json({ success: true, data: { items: [], total: 0 } }, 200);
 
-    // Determine the entity types to query, default to all types if not specified
-    const entityTypes = type ? [type] : config.pageEntityTypes;
-
     // Array to hold queries for concurrent execution
-    // TODO move to a helpers file?
-    const queries = entityTypes
-      .map((entityType) => {
-        const table = entityTables[entityType];
-        const entityIdField = entityIdFields[entityType];
-        if (!table) return null;
-
-        // Base selection setup including membership details
-        const baseSelect = {
-          id: table.id,
-          slug: table.slug,
-          name: table.name,
-          entity: table.entity,
-          ...('email' in table && { email: table.email }),
-          ...('thumbnailUrl' in table && { thumbnailUrl: table.thumbnailUrl }),
-        };
-
-        // Build search filters
-        const $or = [];
-        if (q) {
-          const query = prepareStringForILikeFilter(q);
-          $or.push(ilike(table.name, query));
-          if ('email' in table) {
-            $or.push(ilike(table.email, query));
-          }
-        }
-
-        // Perform the join with memberships
-        const $where = and(
-          or(...$or),
-          entityType !== 'user' ? eq(membershipsTable.userId, user.id) : undefined,
-          inArray(membershipsTable.organizationId, organizationIds),
-          eq(membershipsTable[entityIdField], table.id),
-        );
-
-        // Execute the query using inner join with memberships table
-        return db
-          .select({
-            ...baseSelect,
-            membership: membershipSelect,
-          })
-          .from(table)
-          .innerJoin(
-            membershipsTable,
-            and(eq(table.id, membershipsTable[entityIdField]), eq(membershipsTable.type, entityType === 'user' ? 'organization' : entityType)),
-          )
-          .where($where)
-          .groupBy(table.id, membershipsTable.id) // Group by entity ID for distinct results
-          .limit(10);
-      })
-      .filter((el) => el !== null); // Filter out null values if any entity type is invalid
+    const queries = await getSuggestionsQuery({ userId: user.id, organizationIds, type, q, entityId });
 
     const items = (await Promise.all(queries)).flat();
 

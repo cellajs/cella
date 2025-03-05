@@ -24,3 +24,9 @@ export const suggestionsSchema = z.object({
   items: z.array(entitySuggestionSchema),
   total: z.number(),
 });
+
+export const suggestionsQuerySchema = z.object({
+  q: z.string().optional(),
+  type: pageEntityTypeSchema.optional(),
+  entityId: idSchema.optional(),
+});

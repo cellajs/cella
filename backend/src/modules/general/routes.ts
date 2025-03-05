@@ -2,10 +2,10 @@ import { z } from '@hono/zod-openapi';
 import { createRouteConfig } from '#/lib/route-config';
 import { hasSystemAccess, isAuthenticated, isPublicAccess } from '#/middlewares/guard';
 import { tokenLimiter } from '#/middlewares/rate-limiter/limiters';
-import { pageEntityTypeSchema, slugSchema } from '#/utils/schema/common';
+import { slugSchema } from '#/utils/schema/common';
 import { errorResponses, successWithDataSchema, successWithoutDataSchema } from '#/utils/schema/responses';
 import { userUnsubscribeQuerySchema } from '../users/schema';
-import { inviteBodySchema, suggestionsSchema } from './schema';
+import { inviteBodySchema, suggestionsQuerySchema, suggestionsSchema } from './schema';
 
 class GeneralRouteConfig {
   public unsubscribeUser = createRouteConfig({
@@ -156,12 +156,7 @@ class GeneralRouteConfig {
     tags: ['general'],
     summary: 'Get list of suggestions',
     description: 'Get search suggestions for page entities such as users and organizations. It returns suggestions to which the user has access.',
-    request: {
-      query: z.object({
-        q: z.string().optional(),
-        type: pageEntityTypeSchema.optional(),
-      }),
-    },
+    request: { query: suggestionsQuerySchema },
     responses: {
       200: {
         description: 'Suggestions',

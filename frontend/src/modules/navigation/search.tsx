@@ -63,7 +63,7 @@ export const AppSearch = () => {
     });
   };
 
-  const { data: suggestions, isFetching } = useQuery(searchQueryOptions(searchValue));
+  const { data: suggestions, isFetching } = useQuery(searchQueryOptions({ q: searchValue }));
 
   const onSelectSuggestion = (suggestion: SuggestionType) => {
     // Update recent searches with the search value
