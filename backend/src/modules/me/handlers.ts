@@ -1,4 +1,4 @@
-import { and, asc, eq, inArray, isNotNull } from 'drizzle-orm';
+import { and, asc, eq, isNotNull } from 'drizzle-orm';
 import type { z } from 'zod';
 
 import type { EnabledOauthProvider } from 'config';
@@ -61,56 +61,6 @@ const meRoutes = app
       .filter((provider): provider is EnabledOauthProvider => config.enabledOauthProviders.includes(provider as EnabledOauthProvider));
 
     return ctx.json({ success: true, data: { oauth: validOAuthAccounts, passkey: !!passkeys.length, sessions } }, 200);
-  })
-  /*
-   * Get current user relevant entities
-   */
-  .openapi(meRouteConfig.getSelfEntities, async (ctx) => {
-    const memberships = getContextMemberships();
-
-    const membershipMap = new Map(
-      memberships.map((membership) => {
-        const entityIdField = entityIdFields[membership.type];
-        return [membership[entityIdField], membership];
-      }),
-    );
-
-    // Get IDs user is member of
-    const userEntityIds = Array.from(membershipMap.keys()).filter((el) => el !== null);
-
-    if (userEntityIds.length === 0) return ctx.json({ success: true, data: [] }, 200);
-
-    const queries = config.contextEntityTypes
-      .map((entityType) => {
-        const table = entityTables[entityType];
-        if (!table) return null;
-
-        return db
-          .select({
-            id: table.id,
-            slug: table.slug,
-            name: table.name,
-            entity: table.entity,
-            thumbnailUrl: table.thumbnailUrl,
-            bannerUrl: table.bannerUrl,
-          })
-          .from(table)
-          .where(inArray(table.id, userEntityIds));
-      })
-      .filter((el) => el !== null);
-
-    // Fetch entities that match the user’s memberships
-    const entities = (await Promise.all(queries)).flat();
-
-    const data = entities
-      .map((entity) => {
-        const membership = membershipMap.get(entity.id);
-        if (!membership) return null;
-        return { ...entity, membership };
-      })
-      .filter((el) => el !== null);
-
-    return ctx.json({ success: true, data }, 200);
   })
   /*
    * Get current user menu

@@ -19,8 +19,6 @@ export const meAuthInfoSchema = z.object({
   ...sessionsSchema.shape,
 });
 
-export const meRelativeEntitiesSchema = z.array(limitEntitySchema.extend({ membership: membershipInfoSchema }));
-
 export const menuItemSchema = limitEntitySchema.omit({ bannerUrl: true }).extend({
   createdAt: z.string(),
   modifiedAt: z.string().nullable(),
