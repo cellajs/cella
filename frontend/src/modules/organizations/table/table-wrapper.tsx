@@ -57,6 +57,7 @@ const OrganizationsTable = () => {
         callback={(organizations) => {
           toaster(t('common:success.delete_resources', { resources: t('common:organizations') }), 'success');
           mutateQuery.remove(organizations);
+          clearSelection();
         }}
         dialog
       />,

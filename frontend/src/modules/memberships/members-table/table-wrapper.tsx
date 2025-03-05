@@ -76,19 +76,29 @@ const MembersTable = ({ entity: baseEntity, isSheet = false }: MembersTableProps
   };
 
   const openRemoveDialog = () => {
-    dialog(<RemoveMembersForm organizationId={organizationId} entityIdOrSlug={entity.slug} entityType={entity.entity} dialog members={selected} />, {
-      className: 'max-w-xl',
-      title: t('common:remove_resource', { resource: t('common:member').toLowerCase() }),
-      description: (
-        <Trans
-          i18nKey="common:confirm.remove_members"
-          values={{
-            entity: entity.entity,
-            emails: selected.map((member) => member.email).join(', '),
-          }}
-        />
-      ),
-    });
+    dialog(
+      <RemoveMembersForm
+        organizationId={organizationId}
+        entityIdOrSlug={entity.slug}
+        entityType={entity.entity}
+        dialog
+        members={selected}
+        callback={clearSelection}
+      />,
+      {
+        className: 'max-w-xl',
+        title: t('common:remove_resource', { resource: t('common:member').toLowerCase() }),
+        description: (
+          <Trans
+            i18nKey="common:confirm.remove_members"
+            values={{
+              entity: entity.entity,
+              emails: selected.map((member) => member.email).join(', '),
+            }}
+          />
+        ),
+      },
+    );
   };
 
   const handleNewInvites = (emails: string[]) => {

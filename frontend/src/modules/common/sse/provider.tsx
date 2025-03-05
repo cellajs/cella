@@ -23,7 +23,7 @@ export const SSEProvider: FC<Props> = ({ children }) => {
   };
 
   const createSource = (reconnectAttempt = false) => {
-    const source = new EventSource(`${config.backendUrl}/sse`, {
+    const source = new EventSource(`${config.backendUrl}/me/sse`, {
       withCredentials: true,
     });
 

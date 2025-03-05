@@ -57,7 +57,7 @@ const AttachmentsTable = ({ organization, canUpload = true, isSheet = false }: A
   };
 
   const openRemoveDialog = () => {
-    dialog(<RemoveAttachmentsForm organizationId={organization.id} dialog attachments={selected} />, {
+    dialog(<RemoveAttachmentsForm organizationId={organization.id} dialog attachments={selected} callback={clearSelection} />, {
       className: 'max-w-xl',
       title: t('common:remove_resource', { resource: t('common:attachment').toLowerCase() }),
       description: t('common:confirm.delete_resources', { resources: t('common:attachments').toLowerCase() }),

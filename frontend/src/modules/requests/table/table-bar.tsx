@@ -1,5 +1,5 @@
 import { config } from 'config';
-import { Handshake, Mail, Trash, XSquare } from 'lucide-react';
+import { Handshake, Trash, XSquare } from 'lucide-react';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import ColumnsView from '~/modules/common/data-table/columns-view';
@@ -37,7 +37,6 @@ export const RequestsTableBar = ({
   const { t } = useTranslation();
 
   const selectedToWaitlist = useMemo(() => selected.filter((r) => r.type === 'waitlist' && !r.tokenId), [selected]);
-  const selectedContact = useMemo(() => selected.filter((r) => r.type !== 'waitlist'), [selected]);
 
   const isFiltered = !!q;
   // Drop selected Rows on search
@@ -58,13 +57,6 @@ export const RequestsTableBar = ({
         <FilterBarActions>
           {selected.length > 0 && (
             <>
-              {selectedContact.length > 0 && (
-                <Button className="relative">
-                  <Badge className="py-0 px-1 absolute -right-2 min-w-5 flex justify-center -top-1.5">{selectedContact.length}</Badge>
-                  <Mail size={16} />
-                  <span className="ml-1 max-xs:hidden">{t('common:email')}</span>
-                </Button>
-              )}
               {selectedToWaitlist.length > 0 && (
                 <Button variant="darkSuccess" className="relative" onClick={openInviteDialog}>
                   <Badge className="py-0 px-1 absolute -right-2 min-w-5 flex justify-center -top-1.5">{selectedToWaitlist.length}</Badge>

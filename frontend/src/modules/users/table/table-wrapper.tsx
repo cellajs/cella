@@ -69,6 +69,7 @@ const UsersTable = () => {
         callback={(users) => {
           mutateQuery.remove(users);
           toaster(t('common:success.delete_resources', { resources: t('common:users') }), 'success');
+          clearSelection();
         }}
       />,
       {
