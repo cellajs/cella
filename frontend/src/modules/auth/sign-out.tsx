@@ -12,13 +12,14 @@ import { useGeneralStore } from '~/store/general';
 import { useNavigationStore } from '~/store/navigation';
 import { useUserStore } from '~/store/user';
 
-export const flushStoresAndCache = (force?: boolean) => {
+export const flushStoresAndCache = (removeAccount?: boolean) => {
   queryClient.clear();
   useUserStore.setState({ user: null as unknown as MeUser });
   useDraftStore.getState().clearForms();
   useNavigationStore.getState().clearNavigationStore();
+  useGeneralStore.getState().setImpersonating(false);
 
-  if (!force) return;
+  if (!removeAccount) return;
   useAlertStore.getState().clearAlertStore();
   useGeneralStore.getState().clearGeneralStore();
 };

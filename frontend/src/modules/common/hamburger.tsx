@@ -1,4 +1,4 @@
-import { useThemeStore } from '~/store/theme';
+import { useGeneralStore } from '~/store/general';
 import { cn } from '~/utils/cn';
 
 interface HamburgerButtonProps {
@@ -15,7 +15,7 @@ const HamburgerLine = ({
 }) => <div className={cn('ease my-[.19rem] h-0.5 w-6 rounded-full transition duration-300', className)} style={{ backgroundColor: lineColor }} />;
 
 const HamburgerButton = ({ isOpen, toggle, className }: HamburgerButtonProps) => {
-  const { mode } = useThemeStore();
+  const mode = useGeneralStore((state) => state.mode);
   const lineColor = mode === 'dark' ? 'white' : 'black';
 
   const topLineClass = isOpen ? 'rotate-45 translate-y-2' : '';

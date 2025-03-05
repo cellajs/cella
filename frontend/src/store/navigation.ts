@@ -74,6 +74,9 @@ const initStore: InitStore = {
   finishedOnboarding: false,
 };
 
+/**
+ * Navigation store for managing navigation state: menu, recent searches, onboarding
+ */
 export const useNavigationStore = create<NavigationStoreState>()(
   devtools(
     immer(
@@ -113,6 +116,12 @@ export const useNavigationStore = create<NavigationStoreState>()(
           setFocusView: (status) => {
             set((state) => {
               state.focusView = status;
+              // Only move scroll to table if .focus-view-scroll is present
+              if (status && document.getElementsByClassName('focus-view-scroll').length) {
+                document.body.classList.add('focus-view-table');
+              } else {
+                document.body.classList.remove('focus-view-table');
+              }
             });
           },
           toggleSection: (section) => {

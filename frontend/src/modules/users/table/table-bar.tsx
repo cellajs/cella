@@ -119,7 +119,7 @@ export const UsersTableBar = ({
       </TableBarContainer>
 
       {/* Container for embedded dialog */}
-      <div ref={containerRef} />
+      <div className="empty:hidden" ref={containerRef} />
     </>
   );
 };

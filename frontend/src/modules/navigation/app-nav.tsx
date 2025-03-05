@@ -23,7 +23,17 @@ const AppNav = () => {
   const navSheetOpen = useNavigationStore((state) => state.navSheetOpen);
   const setNavSheetOpen = useNavigationStore.getState().setNavSheetOpen;
 
-  const navButtonClick = (navItem: NavItem) => {
+  const clickNavItem = (id: NavItem['id']) => {
+    // If the nav item is already open, close it
+    if (id === navSheetOpen && sheet.get('nav-sheet')?.open) {
+      setNavSheetOpen(null);
+      sheet.update('nav-sheet', { open: false });
+      return;
+    }
+
+    // Get the nav item
+    const navItem = navItems.filter((item) => item.id === id)[0];
+
     // If it has a dialog, open it
     if (navItem.dialog) {
       if (!onlineManager.isOnline()) return toaster(t('common:action.offline.text'), 'warning');
@@ -68,19 +78,6 @@ const AppNav = () => {
         setNavSheetOpen(null);
       },
     });
-  };
-
-  const clickNavItem = (id: NavItem['id']) => {
-    // If the nav item is already open, close it
-    if (id === navSheetOpen && sheet.get('nav-sheet')?.open) {
-      setNavSheetOpen(null);
-      sheet.update('nav-sheet', { open: false });
-      return;
-    }
-
-    const item = navItems.filter((item) => item.id === id)[0];
-
-    navButtonClick(item);
   };
 
   useHotkeys([

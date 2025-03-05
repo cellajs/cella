@@ -170,7 +170,23 @@
     @apply flex flex-col min-h-full;
   }
 
-  /* Hide elements for focus view  */
+  /* Overwrite elements for focus view when table is present in it  */
+  body.focus-view-table, .focus-view-table .focus-view-container {
+    overflow: hidden;
+    height: 100vh !important;
+  }
+
+  .focus-view-table .focus-view-scroll {
+    overflow-y: auto;
+    margin-bottom: 0 !important;
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+    margin-left: -0.75rem;
+    margin-right: -0.75rem;
+    width: 100vw !important;
+  }
+
+  /* Hide elements when focus view is active */
   .focus-view #app-content-inner *:not(.focus-view-container, .focus-view-container *) {
     display: none !important;
   }

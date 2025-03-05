@@ -6,7 +6,7 @@ import { githubSignInUrl, googleSignInUrl, microsoftSignInUrl } from '~/modules/
 import type { Step } from '~/modules/auth/types';
 import { Button } from '~/modules/ui/button';
 import { AuthenticateRoute } from '~/routes/auth';
-import { useThemeStore } from '~/store/theme';
+import { useGeneralStore } from '~/store/general';
 
 export const mapOauthProviders = [
   { id: 'github', name: 'Github', url: githubSignInUrl },
@@ -30,7 +30,7 @@ interface OauthOptionsProps {
  */
 const OauthOptions = ({ actionType = 'signIn' }: OauthOptionsProps) => {
   const { t } = useTranslation();
-  const { mode } = useThemeStore();
+  const mode = useGeneralStore((state) => state.mode);
   const { token, redirect } = useSearch({ from: AuthenticateRoute.id });
 
   const [loading, setLoading] = useState(false);

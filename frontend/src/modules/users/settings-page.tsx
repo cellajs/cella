@@ -21,7 +21,7 @@ import { toaster } from '~/modules/common/toaster';
 import DeleteSelf from '~/modules/users/delete-self';
 import { deletePasskey, passkeyRegistration } from '~/modules/users/helpers';
 import UpdateUserForm from '~/modules/users/update-user-form';
-import { useThemeStore } from '~/store/theme';
+import { useGeneralStore } from '~/store/general';
 import SessionsList from './sessions-list';
 import type { UserAuthInfo } from './types';
 
@@ -34,7 +34,7 @@ const tabs = [
 
 const UserSettingsPage = ({ userAuthInfo }: { userAuthInfo: UserAuthInfo }) => {
   const { user } = useUserStore();
-  const { mode } = useThemeStore();
+  const mode = useGeneralStore((state) => state.mode);
   const { t } = useTranslation();
 
   const [disabledResetPassword, setDisabledResetPassword] = useState(false);

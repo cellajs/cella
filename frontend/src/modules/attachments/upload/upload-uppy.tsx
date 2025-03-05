@@ -9,7 +9,7 @@ import { useEffect, useState } from 'react';
 import { ImadoUppy } from '~/lib/imado';
 import type { UploadedUppyFile, UppyBody, UppyMeta } from '~/lib/imado/types';
 import { getImageEditorOptions } from '~/modules/attachments/upload/image-editor-options';
-import { useThemeStore } from '~/store/theme';
+import { useGeneralStore } from '~/store/general';
 
 import '@uppy/audio/dist/style.css';
 import '@uppy/dashboard/dist/style.min.css';
@@ -46,7 +46,7 @@ export const UploadUppy = ({
   onRetryCallback,
 }: UploadUppyProps) => {
   const [uppy, setUppy] = useState<Uppy | null>(null);
-  const { mode } = useThemeStore();
+  const mode = useGeneralStore((state) => state.mode);
 
   // Set uppy options with restrictions
   const uppyOptions: UppyOptions<UppyMeta, UppyBody> = {

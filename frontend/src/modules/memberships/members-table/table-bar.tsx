@@ -139,7 +139,7 @@ export const MembersTableBar = ({
       </TableBarContainer>
 
       {/* Container ref to embed dialog */}
-      <div ref={containerRef} />
+      <div className="empty:hidden" ref={containerRef} />
     </div>
   );
 };

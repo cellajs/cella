@@ -3,8 +3,8 @@ import { Fragment, Suspense, lazy, useMemo } from 'react';
 import useMounted from '~/hooks/use-mounted';
 import { BarNavButton } from '~/modules/navigation/bar-nav/button';
 import { type NavItem, navItems } from '~/nav-config';
+import { useGeneralStore } from '~/store/general';
 import { useNavigationStore } from '~/store/navigation';
-import { useThemeStore } from '~/store/theme';
 import { cn } from '~/utils/cn';
 import StopImpersonation from './stop-impersonation';
 
@@ -13,9 +13,10 @@ const DebugToolbars = config.mode === 'development' ? lazy(() => import('~/modul
 const BarNav = ({ onClick }: { onClick: (id: NavItem['id']) => void }) => {
   const { hasStarted } = useMounted();
 
-  const { theme } = useThemeStore();
-  const { navSheetOpen } = useNavigationStore();
+  const theme = useGeneralStore((state) => state.theme);
+  const navSheetOpen = useNavigationStore((state) => state.navSheetOpen);
 
+  // Show only base nav items in bar navigation
   const items = useMemo(() => {
     const items = navItems.filter(({ type }) => type === 'base');
     return items;
@@ -51,7 +52,7 @@ const BarNav = ({ onClick }: { onClick: (id: NavItem['id']) => void }) => {
           );
         })}
       </ul>
-      <div className="max-sm:hidden p-2">
+      <div className="max-sm:hidden flex flex-col gap-2 p-2">
         <Suspense>{DebugToolbars ? <DebugToolbars /> : null}</Suspense>
         <StopImpersonation />
       </div>

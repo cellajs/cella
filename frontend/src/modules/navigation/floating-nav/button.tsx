@@ -24,7 +24,7 @@ const FloatingNavButton: React.FC<FloatingNavButtonProps> = ({ id, Icon, onClick
         data-[direction=left]:left-3 data-[direction=right]:right-3`,
         className,
       )}
-      aria-label="Nav Button"
+      aria-label="Navigate"
     >
       <Icon size={24} strokeWidth={1.5} />
     </Button>

@@ -1,6 +1,6 @@
 import { config } from 'config';
 
-import { useThemeStore } from '~/store/theme';
+import { useGeneralStore } from '~/store/general';
 
 import { Ban, Circle, type LucideProps, Moon, Sun } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -18,7 +18,7 @@ interface UserThemeProps {
 
 const UserTheme = ({ size = 24, buttonClassName = '', contentClassName = '' }: UserThemeProps) => {
   const { t } = useTranslation();
-  const { mode, theme, setMode, setTheme } = useThemeStore();
+  const { mode, theme, setMode, setTheme } = useGeneralStore();
 
   const modes = [
     { id: 'light', label: t('common:light'), icon: Sun },
