@@ -30,7 +30,6 @@ const BaseDataTable = memo(
     );
 
     const mutateQuery = useMutateQueryData(usersKeys.list(), (item) => usersKeys.single(item.id), ['update']);
-
     // Update user role
     const { mutate: updateUserRole } = useUpdateUserMutation();
 
@@ -81,7 +80,7 @@ const BaseDataTable = memo(
           fetchMore: fetchNextPage,
           isFiltered: role !== undefined || !!q,
           selectedRows,
-          onSelectedRowsChange: setSelectedRows,
+          onSelectedRowsChange,
           sortColumns,
           onSortColumnsChange: setSortColumns,
         }}

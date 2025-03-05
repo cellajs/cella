@@ -44,6 +44,9 @@ const MembersTable = ({ entity: baseEntity, isSheet = false }: MembersTableProps
   const { q, role, sort, order, sheetId } = search;
   const limit = LIMIT;
 
+  // Render user sheet if sheetId is present
+  useUserSheet({ sheetId, organizationId });
+
   // State for selected, total counts and entity
   const [total, setTotal] = useState<number | undefined>(undefined);
   const [selected, setSelected] = useState<Member[]>([]);
@@ -56,9 +59,6 @@ const MembersTable = ({ entity: baseEntity, isSheet = false }: MembersTableProps
   const clearSelection = () => {
     if (dataTableRef.current) dataTableRef.current.clearSelection();
   };
-
-  // Render user sheet if sheetId is present
-  useUserSheet({ sheetId, organizationId });
 
   const openInviteDialog = (container?: HTMLElement | null) => {
     if (!onlineManager.isOnline()) return toaster(t('common:action.offline.text'), 'warning');

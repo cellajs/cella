@@ -84,7 +84,7 @@ const BaseDataTable = memo(
           selectedRows,
           onRowsChange,
           fetchMore: fetchNextPage,
-          onSelectedRowsChange: setSelectedRows,
+          onSelectedRowsChange,
           sortColumns,
           onSortColumnsChange: setSortColumns,
           NoRowsComponent: (

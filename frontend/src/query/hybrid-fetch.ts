@@ -20,7 +20,10 @@ export const hybridFetch = async <T>(options: FetchQueryOptions<any, any, any, a
 
   try {
     // Remove cached queries to trigger re-fetch if online
-    if (refetchIfOnline) queryClient.removeQueries({ queryKey, exact: true });
+    if (refetchIfOnline) {
+      await queryClient.cancelQueries({ queryKey, exact: true }); // To avoid CancelledError
+      await queryClient.invalidateQueries({ queryKey, exact: true });
+    }
     return queryClient.fetchQuery(options);
   } catch (error) {
     return cachedData ?? undefined; // Fallback to cached data if available
@@ -44,7 +47,10 @@ export const hybridFetchInfinite = async (options: FetchInfiniteQueryOptions<any
   if (!onlineManager.isOnline()) return cachedData ?? undefined;
 
   try {
-    if (refetchIfOnline) queryClient.removeQueries({ queryKey, exact: true });
+    if (refetchIfOnline) {
+      await queryClient.cancelQueries({ queryKey, exact: true }); // To avoid CancelledError
+      await queryClient.invalidateQueries({ queryKey, exact: true });
+    }
     return queryClient.fetchInfiniteQuery(options);
   } catch (error) {
     return cachedData ?? undefined; // Fallback to cached data if available

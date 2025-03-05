@@ -21,8 +21,6 @@ const BaseDataTable = memo(
     ({ organization, columns, queryVars, sortColumns, setSortColumns, setTotal, setSelected }, ref) => {
       const { t } = useTranslation();
 
-      useSync(organization.id);
-
       const { q, sort, order, limit } = queryVars;
 
       // Query attachments
@@ -30,7 +28,9 @@ const BaseDataTable = memo(
         attachmentsQueryOptions({ orgIdOrSlug: organization.id, q, sort, order, limit }),
       );
 
+      useSync(organization.id);
       const attachmentUpdateMutation = useAttachmentUpdateMutation();
+
       // Update rows
       const onRowsChange = (changedRows: Attachment[], { indexes, column }: RowsChangeData<Attachment>) => {
         if (column.key === 'name') {
@@ -77,7 +77,7 @@ const BaseDataTable = memo(
             fetchMore: fetchNextPage,
             isFiltered: !!q,
             selectedRows,
-            onSelectedRowsChange: setSelectedRows,
+            onSelectedRowsChange,
             sortColumns,
             onSortColumnsChange: setSortColumns,
             NoRowsComponent: (

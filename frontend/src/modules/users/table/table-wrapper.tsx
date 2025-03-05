@@ -33,6 +33,8 @@ const UsersTable = () => {
   const limit = LIMIT;
 
   const mutateQuery = useMutateQueryData(usersKeys.list(), (item) => usersKeys.single(item.id), ['update']);
+  // Render user sheet if sheetId is present
+  useUserSheet({ sheetId });
 
   // State for selected and total counts
   const [total, setTotal] = useState<number | undefined>(undefined);
@@ -45,9 +47,6 @@ const UsersTable = () => {
   const clearSelection = () => {
     if (dataTableRef.current) dataTableRef.current.clearSelection();
   };
-
-  // Render user sheet if sheetId is present
-  useUserSheet({ sheetId });
 
   const openInviteDialog = (container: HTMLElement | null) => {
     dialog(<InviteUsers mode={'email'} dialog />, {

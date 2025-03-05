@@ -42,6 +42,8 @@ const AttachmentsTable = ({ organization, canUpload = true, isSheet = false }: A
   const { q, sort, order, attachmentPreview, groupId } = search;
   const limit = LIMIT;
 
+  useAttachmentDialog({ orgIdOrSlug: organization.id, attachmentPreview, groupId });
+
   // State for selected and total counts
   const [total, setTotal] = useState<number | undefined>(undefined);
   const [selected, setSelected] = useState<Attachment[]>([]);
@@ -61,8 +63,6 @@ const AttachmentsTable = ({ organization, canUpload = true, isSheet = false }: A
       description: t('common:confirm.delete_resources', { resources: t('common:attachments').toLowerCase() }),
     });
   };
-
-  useAttachmentDialog({ orgIdOrSlug: organization.id, attachmentPreview, groupId });
 
   return (
     <div className="flex flex-col gap-4 h-full">
