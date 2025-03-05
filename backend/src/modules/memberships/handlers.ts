@@ -36,7 +36,7 @@ const app = new OpenAPIHono<Env>({ defaultHook });
 
 const membershipsRoutes = app
   /*
-   * Invite members to an entity such as an organization
+   * Create memberships (invite members) for an entity such as an organization
    */
   .openapi(membershipsRouteConfig.createMemberships, async (ctx) => {
     const { emails, role } = ctx.req.valid('json');
@@ -342,9 +342,9 @@ const membershipsRoutes = app
     return ctx.json({ success: true, data: { items, total } }, 200);
   })
   /*
-   * Get invited members by entity id/slug and type
+   * Get pending membership invitations by entity id/slug and type
    */
-  .openapi(membershipsRouteConfig.getInvitedMembers, async (ctx) => {
+  .openapi(membershipsRouteConfig.getMembershipInvitations, async (ctx) => {
     const { idOrSlug, entityType, sort, order, offset, limit } = ctx.req.valid('query');
 
     // Scope request to organization
@@ -370,7 +370,7 @@ const membershipsRoutes = app
 
     const orderColumn = getOrderColumn(invitedMemberSelect, sort, tokensTable.createdAt, order);
 
-    const invitedMembersQuery = db
+    const memberInvitationsQuery = db
       .select(invitedMemberSelect)
       .from(tokensTable)
       .where(
@@ -384,9 +384,9 @@ const membershipsRoutes = app
       .leftJoin(usersTable, eq(usersTable.id, tokensTable.userId))
       .orderBy(orderColumn);
 
-    const [{ total }] = await db.select({ total: count() }).from(invitedMembersQuery.as('invites'));
+    const [{ total }] = await db.select({ total: count() }).from(memberInvitationsQuery.as('invites'));
 
-    const items = await invitedMembersQuery.limit(Number(limit)).offset(Number(offset));
+    const items = await memberInvitationsQuery.limit(Number(limit)).offset(Number(offset));
 
     return ctx.json({ success: true, data: { items, total } }, 200);
   });

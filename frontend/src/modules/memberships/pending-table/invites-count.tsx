@@ -1,12 +1,12 @@
 import { Suspense, lazy } from 'react';
 import { useTranslation } from 'react-i18next';
 import { sheet } from '~/modules/common/sheeter/state';
-import type { InvitedMembersTableProps } from '~/modules/memberships/invited-members-table/table-wrapper';
+import type { MembershipInvitationsTableProps } from '~/modules/memberships/pending-table/table-wrapper';
 import { Button } from '~/modules/ui/button';
 
-const InvitedMembersTable = lazy(() => import('~/modules/memberships/invited-members-table/table-wrapper'));
+const MembershipInvitationsTable = lazy(() => import('~/modules/memberships/pending-table/table-wrapper'));
 
-export const InvitedMembers = ({ entity }: InvitedMembersTableProps) => {
+export const MembershipInvitations = ({ entity }: MembershipInvitationsTableProps) => {
   const { t } = useTranslation();
 
   const total = entity.counts?.membership.pending;
@@ -14,13 +14,13 @@ export const InvitedMembers = ({ entity }: InvitedMembersTableProps) => {
   const openSheet = () => {
     sheet.create(
       <Suspense>
-        <InvitedMembersTable entity={entity} />
+        <MembershipInvitationsTable entity={entity} />
       </Suspense>,
       {
         className: 'max-w-full lg:max-w-4xl',
         title: t('common:pending_invitations'),
         description: t('common:pending_invitations.text', { entity: t(`common:${entity.entity}`).toLowerCase() }),
-        id: `invited-members-info-${entity.id}`,
+        id: `pending-info-${entity.id}`,
         scrollableOverlay: true,
         side: 'right',
       },

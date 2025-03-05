@@ -3,73 +3,38 @@ import { mailer } from '#/lib/mailer';
 import { SystemInviteEmail, type SystemInviteEmailProps } from '../../../emails/system-invite';
 
 import { config } from 'config';
-import { type SSEStreamingApi, streamSSE } from 'hono/streaming';
-import jwt from 'jsonwebtoken';
 
 import { OpenAPIHono } from '@hono/zod-openapi';
 import { EventName, Paddle } from '@paddle/paddle-node-sdk';
 import { db } from '#/db/db';
+import { membershipsTable } from '#/db/schema/memberships';
+import { organizationsTable } from '#/db/schema/organizations';
 import { requestsTable } from '#/db/schema/requests';
 import { tokensTable } from '#/db/schema/tokens';
 import { usersTable } from '#/db/schema/users';
-import { type Env, getContextMemberships, getContextUser } from '#/lib/context';
+import { type Env, getContextUser } from '#/lib/context';
 import { errorResponse } from '#/lib/errors';
 import { i18n } from '#/lib/i18n';
-import { isAuthenticated } from '#/middlewares/guard';
 import { logEvent } from '#/middlewares/logger/log-event';
-import { getUserBy, getUsersByConditions } from '#/modules/users/helpers/get-user-by';
-import { verifyUnsubscribeToken } from '#/modules/users/helpers/unsubscribe-token';
+import { getUsersByConditions } from '#/modules/users/helpers/get-user-by';
 import defaultHook from '#/utils/default-hook';
 import { nanoid } from '#/utils/nanoid';
 import { TimeSpan, createDate } from '#/utils/time-span';
+import { NewsletterEmail, type NewsletterEmailProps } from '../../../emails/newsletter';
 import { env } from '../../env';
 import { slugFromEmail } from '../auth/helpers/oauth';
-import { checkSlugAvailable } from './helpers/check-slug';
-import { getSuggestionsQuery } from './helpers/suggestions-query';
-import generalRouteConfig from './routes';
+import systemRouteConfig from './routes';
 
 const paddle = new Paddle(env.PADDLE_API_KEY || '');
 
 // Set default hook to catch validation errors
 const app = new OpenAPIHono<Env>({ defaultHook });
 
-export const streams = new Map<string, SSEStreamingApi>();
-
-const generalRoutes = app
-  /*
-   * Get upload token
-   */
-  .openapi(generalRouteConfig.getUploadToken, async (ctx) => {
-    const user = getContextUser();
-    const { public: isPublic, organization } = ctx.req.valid('query');
-
-    const sub = organization ? `${organization}/${user.id}` : user.id;
-
-    const token = jwt.sign(
-      {
-        sub: sub,
-        public: isPublic === 'true',
-        imado: !!env.AWS_S3_UPLOAD_ACCESS_KEY_ID,
-      },
-      env.TUS_SECRET,
-    );
-
-    return ctx.json({ success: true, data: token }, 200);
-  })
-  /*
-   * Check if slug is available
-   */
-  .openapi(generalRouteConfig.checkSlug, async (ctx) => {
-    const { slug } = ctx.req.valid('json');
-
-    const slugAvailable = await checkSlugAvailable(slug);
-
-    return ctx.json({ success: slugAvailable }, 200);
-  })
+const systemRoutes = app
   /*
    * Invite users to system
    */
-  .openapi(generalRouteConfig.createInvite, async (ctx) => {
+  .openapi(systemRouteConfig.createInvite, async (ctx) => {
     const { emails } = ctx.req.valid('json');
     const user = getContextUser();
 
@@ -142,7 +107,7 @@ const generalRoutes = app
   /*
    * Paddle webhook
    */
-  .openapi(generalRouteConfig.paddleWebhook, async (ctx) => {
+  .openapi(systemRouteConfig.paddleWebhook, async (ctx) => {
     const signature = ctx.req.header('paddle-signature');
     const rawRequestBody = String(ctx.req.raw.body);
 
@@ -171,77 +136,63 @@ const generalRoutes = app
     return ctx.json({ success: true }, 200);
   })
   /*
-   * Get entity search suggestions
+   * Send newsletter to one or more roles members of one or more organizations
    */
-  .openapi(generalRouteConfig.getSuggestionsConfig, async (ctx) => {
-    const { q, type, entityId } = ctx.req.valid('query');
+  .openapi(systemRouteConfig.sendNewsletter, async (ctx) => {
+    const { organizationIds, subject, content, roles } = ctx.req.valid('json');
+    const { toSelf } = ctx.req.valid('query');
 
     const user = getContextUser();
-    const memberships = getContextMemberships();
 
-    // Retrieve organizationIds
-    const organizationIds = memberships.filter((el) => el.type === 'organization').map((el) => String(el.organizationId));
+    // Get members from organizations
+    const recipientsRecords = await db
+      .selectDistinct({
+        email: usersTable.email,
+        name: usersTable.name,
+        unsubscribeToken: usersTable.unsubscribeToken,
+        newsletter: usersTable.newsletter,
+        orgName: organizationsTable.name,
+      })
+      .from(membershipsTable)
+      .innerJoin(usersTable, and(eq(usersTable.id, membershipsTable.userId)))
+      // eq(usersTable.emailVerified, true) // maybe add for only confirmed emails
+      .innerJoin(organizationsTable, eq(organizationsTable.id, membershipsTable.organizationId))
+      .where(
+        and(
+          eq(membershipsTable.type, 'organization'),
+          inArray(membershipsTable.organizationId, organizationIds),
+          inArray(membershipsTable.role, roles),
+          eq(usersTable.newsletter, true),
+        ),
+      );
 
-    if (!organizationIds.length) return ctx.json({ success: true, data: { items: [], total: 0 } }, 200);
+    // Stop if no recipients
+    if (recipientsRecords.length === 0) return errorResponse(ctx, 400, 'no_recipients', 'warn');
 
-    // Array to hold queries for concurrent execution
-    const queries = await getSuggestionsQuery({ userId: user.id, organizationIds, type, q, entityId });
+    // Add unsubscribe link to each recipient
+    let recipients = recipientsRecords.map(({ newsletter, unsubscribeToken, ...recipient }) => ({
+      ...recipient,
+      unsubscribeLink: `${config.backendUrl}/unsubscribe?token=${unsubscribeToken}`,
+    }));
 
-    const items = (await Promise.all(queries)).flat();
+    // If toSelf is true, send the email only to self
+    if (toSelf)
+      recipients = [
+        {
+          email: user.email,
+          name: user.name,
+          unsubscribeLink: `${config.backendUrl}/unsubscribe?token=NOTOKEN`,
+          orgName: recipients[0].orgName,
+        },
+      ];
 
-    return ctx.json({ success: true, data: { items, total: items.length } }, 200);
-  })
-  /*
-   * Unsubscribe a user by token from receiving newsletters
-   */
-  .openapi(generalRouteConfig.unsubscribeUser, async (ctx) => {
-    const { token } = ctx.req.valid('query');
+    type Recipient = (typeof recipients)[number];
 
-    // Check if token exists
-    const user = await getUserBy('unsubscribeToken', token, 'unsafe');
-    if (!user) return errorResponse(ctx, 404, 'not_found', 'warn', 'user');
+    // Prepare emails and send them
+    const staticProps = { content, subject, testEmail: toSelf, lng: user.language };
+    await mailer.prepareEmails<NewsletterEmailProps, Recipient>(NewsletterEmail, staticProps, recipients, user.email);
 
-    // Verify token
-    const isValid = verifyUnsubscribeToken(user.email, token);
-    if (!isValid) return errorResponse(ctx, 401, 'unsubscribe_failed', 'warn', 'user');
-
-    // Update user
-    await db.update(usersTable).set({ newsletter: false }).where(eq(usersTable.id, user.id));
-
-    const redirectUrl = `${config.frontendUrl}/auth/unsubscribed`;
-    return ctx.redirect(redirectUrl, 302);
-  })
-  /*
-   *  Get SSE stream
-   */
-  .get('/sse', isAuthenticated, async (ctx) => {
-    const user = getContextUser();
-    return streamSSE(ctx, async (stream) => {
-      ctx.header('Content-Encoding', '');
-      streams.set(user.id, stream);
-
-      console.info('User connected to SSE', user.id);
-      await stream.writeSSE({
-        event: 'connected',
-        data: 'connected',
-        retry: 5000,
-      });
-
-      stream.onAbort(async () => {
-        console.info('User disconnected from SSE', user.id);
-        streams.delete(user.id);
-      });
-
-      // Keep connection alive
-      while (true) {
-        await stream.writeSSE({
-          event: 'ping',
-          data: 'pong',
-          retry: 5000,
-        });
-        await stream.sleep(30000);
-      }
-    });
+    return ctx.json({ success: true }, 200);
   });
 
-export default generalRoutes;
+export default systemRoutes;

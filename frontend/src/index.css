@@ -171,7 +171,8 @@
   }
 
   /* Overwrite elements for focus view when table is present in it  */
-  body.focus-view-table, .focus-view-table .focus-view-container {
+  body.focus-view-table,
+  .focus-view-table .focus-view-container {
     overflow: hidden;
     height: 100vh !important;
   }

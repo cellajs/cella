@@ -7,7 +7,6 @@ import { useSortColumns } from '~/modules/common/data-table/sort-columns';
 import type { BaseTableMethods } from '~/modules/common/data-table/types';
 import { dialog } from '~/modules/common/dialoger/state';
 import { toaster } from '~/modules/common/toaster';
-import { invite } from '~/modules/general/api';
 import { getRequests } from '~/modules/requests/api';
 import DeleteRequests from '~/modules/requests/delete-requests';
 import { requestsKeys } from '~/modules/requests/query';
@@ -15,6 +14,7 @@ import { useColumns } from '~/modules/requests/table/columns';
 import BaseDataTable from '~/modules/requests/table/table';
 import { RequestsTableBar } from '~/modules/requests/table/table-bar';
 import type { Request } from '~/modules/requests/types';
+import { invite } from '~/modules/system/api';
 import { useMutateQueryData } from '~/query/hooks/use-mutate-query-data';
 import { RequestsTableRoute, type requestSearchSchema } from '~/routes/system';
 

@@ -9,10 +9,10 @@ import { dispatchCustomEvent } from '~/lib/custom-events';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import Spinner from '~/modules/common/spinner';
 import { toaster } from '~/modules/common/toaster';
+import type { UserMenuItem } from '~/modules/me/types';
 import { updateMembership as baseUpdateMembership } from '~/modules/memberships/api';
 import { updateMenuItem } from '~/modules/navigation/menu-sheet/helpers/menu-operations';
 import { Button } from '~/modules/ui/button';
-import type { UserMenuItem } from '~/modules/users/types';
 
 interface MenuItemEditProps {
   item: UserMenuItem;

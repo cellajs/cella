@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { set_cell_color, start_cells, stop_cells } from '~/modules/common/bg-animation/animation.js';
-import { useGeneralStore } from '~/store/general.js';
+import { useUIStore } from '~/store/ui.js';
 
 function maximize_canvas(c: HTMLCanvasElement) {
   if (!c) return;
@@ -12,7 +12,7 @@ function maximize_canvas(c: HTMLCanvasElement) {
 }
 
 const BgAnimation = () => {
-  const { theme } = useGeneralStore();
+  const { theme } = useUIStore();
 
   useEffect(() => {
     const c = document.getElementById('animation-canvas') as HTMLCanvasElement | null;

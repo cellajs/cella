@@ -1,4 +1,4 @@
-import { useGeneralStore } from '~/store/general';
+import { useUIStore } from '~/store/ui';
 
 /**
  * Converts a HEX color to HSL format.
@@ -14,7 +14,7 @@ export const hexToHsl = (hex: string): string => {
   // Validate hex format
   const hexPattern = /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/;
   if (!hexPattern.test(hex)) {
-    useGeneralStore.setState((state) => ({ ...state, ...{ theme: 'none' } }));
+    useUIStore.setState((state) => ({ ...state, ...{ theme: 'none' } }));
     throw new Error('Invalid theme color hex format.');
   }
 

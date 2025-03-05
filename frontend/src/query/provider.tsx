@@ -1,13 +1,13 @@
 import { QueryClientProvider as BaseQueryClientProvider } from '@tanstack/react-query';
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
 import { useEffect } from 'react';
+import type { UserMenuItem } from '~/modules/me/types';
 import { meQueryOptions, menuQueryOptions } from '~/modules/users/query';
-import type { UserMenuItem } from '~/modules/users/types';
 import { queriesToMap } from '~/offline-config';
 import { prefetchQuery } from '~/query/helpers/prefetch-query';
 import { waitFor } from '~/query/helpers/wait-for';
 import { queryClient } from '~/query/query-client';
-import { useGeneralStore } from '~/store/general';
+import { useUIStore } from '~/store/ui';
 import { useUserStore } from '~/store/user';
 
 // Import all files containing default mutations to ensure
@@ -19,7 +19,7 @@ const GC_TIME = 24 * 60 * 60 * 1000; // 24 hours
 
 export const QueryClientProvider = ({ children }: { children: React.ReactNode }) => {
   const { user } = useUserStore();
-  const { offlineAccess } = useGeneralStore();
+  const { offlineAccess } = useUIStore();
 
   useEffect(() => {
     // Exit early if offline access is disabled or no stored user is available

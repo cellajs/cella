@@ -3,8 +3,8 @@ import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import useMounted from '~/hooks/use-mounted';
+import type { UserMenu, UserMenuItem } from '~/modules/me/types';
 import { Input } from '~/modules/ui/input';
-import type { UserMenu, UserMenuItem } from '~/modules/users/types';
 import { cn } from '~/utils/cn';
 import { entityRelations } from '#/entity-config';
 

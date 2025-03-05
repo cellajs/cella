@@ -4,7 +4,7 @@ import { createJSONStorage, devtools, persist } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
 import { entityRelations } from '#/entity-config';
 
-import type { UserMenu } from '~/modules/users/types';
+import type { UserMenu } from '~/modules/me/types';
 
 interface NavigationStoreState {
   recentSearches: string[]; // Recent search (from AppSearch),

@@ -4,9 +4,9 @@ import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { toaster } from '~/modules/common/toaster';
-import type { UserMenuItem } from '~/modules/users/types';
+import type { UserMenuItem } from '~/modules/me/types';
 import { getEntityRoute } from '~/nav-config';
-import { useGeneralStore } from '~/store/general';
+import { useUIStore } from '~/store/ui';
 import { cn } from '~/utils/cn';
 
 interface MenuSheetItemProps {
@@ -22,7 +22,7 @@ export const MenuSheetItem = ({ item, className, searchResults }: MenuSheetItemP
   const { params, path } = useMemo(() => getEntityRoute(item), [item]);
 
   const isOnline = onlineManager.isOnline();
-  const offlineAccess = useGeneralStore((state) => state.offlineAccess);
+  const offlineAccess = useUIStore((state) => state.offlineAccess);
 
   const canAccess = offlineAccess ? (isOnline ? true : !item.membership.archived) : true;
 

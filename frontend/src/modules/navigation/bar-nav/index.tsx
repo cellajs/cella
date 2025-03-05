@@ -3,8 +3,8 @@ import { Fragment, Suspense, lazy, useMemo } from 'react';
 import useMounted from '~/hooks/use-mounted';
 import { BarNavButton } from '~/modules/navigation/bar-nav/button';
 import { type NavItem, navItems } from '~/nav-config';
-import { useGeneralStore } from '~/store/general';
 import { useNavigationStore } from '~/store/navigation';
+import { useUIStore } from '~/store/ui';
 import { cn } from '~/utils/cn';
 import StopImpersonation from './stop-impersonation';
 
@@ -13,7 +13,7 @@ const DebugToolbars = config.mode === 'development' ? lazy(() => import('~/modul
 const BarNav = ({ onClick }: { onClick: (id: NavItem['id']) => void }) => {
   const { hasStarted } = useMounted();
 
-  const theme = useGeneralStore((state) => state.theme);
+  const theme = useUIStore((state) => state.theme);
   const navSheetOpen = useNavigationStore((state) => state.navSheetOpen);
 
   // Show only base nav items in bar navigation

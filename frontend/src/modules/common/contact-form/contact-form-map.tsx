@@ -6,7 +6,7 @@ import { ErrorBoundary } from 'react-error-boundary';
 import { useTranslation } from 'react-i18next';
 import ErrorNotice from '~/modules/common/error-notice';
 import { Button } from '~/modules/ui/button';
-import { useGeneralStore } from '~/store/general';
+import { useUIStore } from '~/store/ui';
 import Logo from '/static/logo/logo-icon-only.svg';
 
 type MapConfig = {
@@ -85,7 +85,7 @@ const CustomZoomControl = ({ controlPosition, zoom, onZoomChange }: CustomZoomCo
 };
 
 const ContactFormMap = () => {
-  const mode = useGeneralStore((state) => state.mode);
+  const mode = useUIStore((state) => state.mode);
   const [zoom, setZoom] = useState(config.company.mapZoom);
   const [mapConfig] = useState<MapConfig>(mode === 'dark' ? mapStyles[1] : mapStyles[0]);
 

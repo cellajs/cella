@@ -7,7 +7,7 @@ import { healthCheck } from '~/lib/health-check';
 import { Alert, AlertDescription } from '~/modules/ui/alert';
 import { Button } from '~/modules/ui/button';
 import { useAlertStore } from '~/store/alert';
-import { useGeneralStore } from '~/store/general';
+import { useUIStore } from '~/store/ui';
 
 const downAlertConfig = {
   offline: {
@@ -30,7 +30,7 @@ const downAlertConfig = {
 export const DownAlert = () => {
   const { t } = useTranslation();
   const { downAlert, setDownAlert } = useAlertStore();
-  const { offlineAccess } = useGeneralStore();
+  const { offlineAccess } = useUIStore();
   const { isOnline } = useOnlineManager();
   const [isNetworkAlertClosed, setIsNetworkAlertClosed] = useState(false);
 

@@ -1,10 +1,10 @@
 import { Toaster as Sonner } from 'sonner';
-import { useGeneralStore } from '~/store/general';
+import { useUIStore } from '~/store/ui';
 
 type ToasterProps = React.ComponentProps<typeof Sonner>;
 
 const Toaster = ({ ...props }: ToasterProps) => {
-  const mode = useGeneralStore((state) => state.mode);
+  const mode = useUIStore((state) => state.mode);
 
   return (
     <Sonner

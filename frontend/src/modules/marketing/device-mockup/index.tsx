@@ -1,7 +1,7 @@
 import { useInView } from 'react-intersection-observer';
 
 import AttachmentsCarousel from '~/modules/attachments/carousel';
-import { useGeneralStore } from '~/store/general';
+import { useUIStore } from '~/store/ui';
 import { cn } from '~/utils/cn';
 
 import DeviceFrame from '~/modules/marketing/device-mockup/frame';
@@ -16,7 +16,7 @@ interface DeviceMockupProps {
 }
 
 const DeviceMockup = ({ lightSlides, darkSlides, type, className }: DeviceMockupProps) => {
-  const mode = useGeneralStore((state) => state.mode);
+  const mode = useUIStore((state) => state.mode);
 
   const slides = mode === 'dark' ? darkSlides : lightSlides;
 

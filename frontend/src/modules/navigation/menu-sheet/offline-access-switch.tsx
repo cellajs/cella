@@ -3,12 +3,12 @@ import { useTranslation } from 'react-i18next';
 import { sheet } from '~/modules/common/sheeter/state';
 import { toaster } from '~/modules/common/toaster';
 import { Switch } from '~/modules/ui/switch';
-import { useGeneralStore } from '~/store/general';
 import { useNavigationStore } from '~/store/navigation';
+import { useUIStore } from '~/store/ui';
 
 export const OfflineAccessSwitch = () => {
   const { t } = useTranslation();
-  const { offlineAccess, toggleOfflineAccess } = useGeneralStore();
+  const { offlineAccess, toggleOfflineAccess } = useUIStore();
   const setNavSheetOpen = useNavigationStore((state) => state.setNavSheetOpen);
 
   const onCheckedChange = (isOffline: boolean) => {

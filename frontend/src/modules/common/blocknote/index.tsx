@@ -18,7 +18,7 @@ import { useBreakpoints } from '~/hooks/use-breakpoints';
 import router from '~/lib/router';
 import { type CarouselAttachment, openAttachmentDialog } from '~/modules/attachments/helpers';
 import type { Member } from '~/modules/memberships/types';
-import { useGeneralStore } from '~/store/general';
+import { useUIStore } from '~/store/ui';
 
 import {
   allowedFileTypes,
@@ -94,7 +94,7 @@ export const BlockNote = ({
   onFocus,
   onTextDifference,
 }: BlockNoteProps) => {
-  const mode = useGeneralStore((state) => state.mode);
+  const mode = useUIStore((state) => state.mode);
   const wasInitial = useRef(false);
   const editor = useCreateBlockNote({ schema: customSchema, trailingBlock });
   const isMobile = useBreakpoints('max', 'sm');

@@ -1,12 +1,10 @@
-import { type ContextEntity, config } from 'config';
+import { config } from 'config';
 import { clientConfig, handleResponse } from '~/lib/api';
-import { meHc } from '#/modules/me/hc';
 import { usersHc } from '#/modules/users/hc';
 
-export const meClient = meHc(config.backendUrl, clientConfig);
-export const userClient = usersHc(config.backendUrl, clientConfig);
+export const client = usersHc(config.backendUrl, clientConfig);
 
-export type GetUsersParams = Omit<Parameters<(typeof userClient.index)['$get']>['0']['query'], 'limit' | 'offset'> & {
+export type GetUsersParams = Omit<Parameters<(typeof client.index)['$get']>['0']['query'], 'limit' | 'offset'> & {
   limit?: number;
   offset?: number;
   page?: number;
@@ -19,7 +17,7 @@ export type GetUsersParams = Omit<Parameters<(typeof userClient.index)['$get']>[
  * @returns User's data.
  */
 export const getUser = async (idOrSlug: string) => {
-  const response = await userClient[':idOrSlug'].$get({
+  const response = await client[':idOrSlug'].$get({
     param: { idOrSlug },
   });
 
@@ -44,7 +42,7 @@ export const getUsers = async (
   { q, sort = 'id', order = 'asc', page = 0, limit = config.requestLimits.users, role, offset }: GetUsersParams,
   signal?: AbortSignal,
 ) => {
-  const response = await userClient.index.$get(
+  const response = await client.index.$get(
     {
       query: {
         q,
@@ -70,7 +68,7 @@ export const getUsers = async (
   return json.data;
 };
 
-export type UpdateUserParams = Parameters<(typeof userClient)[':idOrSlug']['$put']>['0']['json'];
+export type UpdateUserParams = Parameters<(typeof client)[':idOrSlug']['$put']>['0']['json'];
 
 /**
  * Update user details by ID or slug.
@@ -87,7 +85,7 @@ export type UpdateUserParams = Parameters<(typeof userClient)[':idOrSlug']['$put
  */
 export const updateUser = async (info: UpdateUserParams & { idOrSlug: string }) => {
   const { idOrSlug, ...body } = info;
-  const response = await userClient[':idOrSlug'].$put({
+  const response = await client[':idOrSlug'].$put({
     param: { idOrSlug },
     json: body,
   });
@@ -102,127 +100,9 @@ export const updateUser = async (info: UpdateUserParams & { idOrSlug: string }) 
  * @param userIds - An array of user IDs to delete.
  */
 export const deleteUsers = async (userIds: string[]) => {
-  const response = await userClient.index.$delete({
+  const response = await client.index.$delete({
     json: { ids: userIds },
   });
 
   await handleResponse(response);
-};
-
-/**
- * Get the current user's details. Retrieves information about the currently authenticated user.
- *
- * @returns The user's data.
- */
-export const getSelf = async () => {
-  const response = await meClient.index.$get();
-
-  const json = await handleResponse(response);
-  return json.data;
-};
-
-/**
- * Get the current user auth details. Retrieves data like sessions, passkey and OAuth.
- *
- * @returns Current user auth data.
- */
-export const getSelfAuthInfo = async () => {
-  const response = await meClient.auth.$get();
-
-  const json = await handleResponse(response);
-  return json.data;
-};
-
-/**
- * Get current user menu. Retrieves menu associated with currently authenticated user.
- *
- * @returns The user menu data.
- */
-export const getSelfMenu = async () => {
-  const response = await meClient.menu.$get();
-
-  const json = await handleResponse(response);
-  return json.data;
-};
-
-/**
- * Update current user details. Updates currently authenticated user information.
- *
- *  @param params User data to update.
- *  @returns The updated user data.
- */
-export const updateSelf = async (params: UpdateUserParams) => {
-  const response = await meClient.index.$put({
-    json: params,
-  });
-
-  const json = await handleResponse(response);
-  return json.data;
-};
-
-/**
- * Delete current user.
- */
-export const deleteSelf = async () => {
-  const response = await meClient.index.$delete();
-  await handleResponse(response);
-};
-
-/**
- * Terminate user sessions by their IDs.
- *
- * @param sessionIds - An array of session IDs to terminate.
- */
-export const deleteMySessions = async (sessionIds: string[]) => {
-  const response = await meClient.sessions.$delete({
-    json: { ids: sessionIds },
-  });
-
-  await handleResponse(response);
-};
-
-type RegisterPasskeyProp = Parameters<(typeof meClient)['passkey-registration']['$post']>['0']['json'];
-
-/**
- * Create a passkey for current user
- *
- * @param data - Passkey registration data.
- * @returns A boolean indicating success of the passkey registration.
- */
-export const createPasskey = async (data: RegisterPasskeyProp) => {
-  const apiResponse = await meClient['passkey-registration'].$post({
-    json: data,
-  });
-  const json = await handleResponse(apiResponse);
-  return json.success;
-};
-
-/**
- * Remove passkey associated with the currently authenticated user.
- *
- * @returns A boolean indicating whether the passkey was successfully removed.
- */
-export const deletePasskey = async () => {
-  const response = await meClient.passkey.$delete();
-
-  const json = await handleResponse(response);
-  return json.success;
-};
-
-export type LeaveEntityQuery = { idOrSlug: string; entityType: ContextEntity };
-
-/**
- * Remove the current user from a specified entity.
- *
- * @param query.idOrSlug - ID or slug of the entity to leave.
- * @param query.entityType - Type of entity to leave.
- * @returns A boolean indicating whether the user successfully left the entity.
- */
-export const leaveEntity = async (query: LeaveEntityQuery) => {
-  const response = await meClient.leave.$delete({
-    query,
-  });
-
-  const json = await handleResponse(response);
-  return json.success;
 };

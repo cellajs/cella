@@ -4,11 +4,11 @@ import { draggable, dropTargetForElements } from '@atlaskit/pragmatic-drag-and-d
 import type { Entity } from 'config';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { DropIndicator } from '~/modules/common/drop-indicator';
+import type { UserMenuItem } from '~/modules/me/types';
 import { isPageData } from '~/modules/navigation/menu-sheet/helpers';
 import { MenuItemEdit } from '~/modules/navigation/menu-sheet/item-edit';
 import { MenuSheetItemsEdit } from '~/modules/navigation/menu-sheet/items-edit-list';
 import { SectionArchiveButton } from '~/modules/navigation/menu-sheet/section-archive-button';
-import type { UserMenuItem } from '~/modules/users/types';
 import { getDraggableItemData } from '~/utils/get-draggable-item-data';
 
 type DragDropData = { item: UserMenuItem; itemType: Entity };

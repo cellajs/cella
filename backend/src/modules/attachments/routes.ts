@@ -150,7 +150,7 @@ class AttachmentRouteConfig {
     guard: [isAuthenticated, hasOrgAccess],
     tags: ['attachments'],
     summary: 'Shape proxy',
-    description: 'Get shape proxy for attachment.',
+    description: 'Get shape proxy for attachments to keep attachment data in sync.',
     request: {
       params: inOrgParamSchema,
     },

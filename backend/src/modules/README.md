@@ -4,7 +4,8 @@ Each module has a similar setup: `routes`, `schema`, a `hc` hono client and the 
 ### Core modules
 * attachments
 * auth
-* general
+* entities
+* system
 * me
 * memberships
 * metrics

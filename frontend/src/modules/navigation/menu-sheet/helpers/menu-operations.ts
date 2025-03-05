@@ -1,4 +1,4 @@
-import type { UserMenu, UserMenuItem } from '~/modules/users/types';
+import type { UserMenu, UserMenuItem } from '~/modules/me/types';
 import { useNavigationStore } from '~/store/navigation';
 import { entityRelations } from '#/entity-config';
 

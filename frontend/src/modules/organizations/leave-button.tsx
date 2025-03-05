@@ -5,11 +5,11 @@ import { Check, UserRoundX } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toaster } from '~/modules/common/toaster';
+import { leaveEntity } from '~/modules/me/api';
 import type { Organization } from '~/modules/organizations/types';
 import { Button } from '~/modules/ui/button';
 import { Command, CommandGroup, CommandItem, CommandList } from '~/modules/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '~/modules/ui/popover';
-import { leaveEntity } from '~/modules/users/api';
 
 const LeaveButton = ({ organization }: { organization: Organization }) => {
   const { t } = useTranslation();

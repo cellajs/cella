@@ -14,7 +14,7 @@ import { insertMembership } from '#/modules/memberships/helpers';
 import { generateUnsubscribeToken } from '#/modules/users/helpers/unsubscribe-token';
 import { getIsoDate } from '#/utils/iso-date';
 import { nanoid } from '#/utils/nanoid';
-import { checkSlugAvailable } from '../../general/helpers/check-slug';
+import { checkSlugAvailable } from '../../entities/helpers/check-slug';
 import { insertOauthAccount } from './oauth';
 import { setUserSession } from './session';
 import { sendVerificationEmail } from './verify-email';

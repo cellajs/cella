@@ -12,7 +12,7 @@ import defaultHook from '#/utils/default-hook';
 import { getIsoDate } from '#/utils/iso-date';
 import { getOrderColumn } from '#/utils/order-column';
 import { prepareStringForILikeFilter } from '#/utils/sql';
-import { checkSlugAvailable } from '../general/helpers/check-slug';
+import { checkSlugAvailable } from '../entities/helpers/check-slug';
 import { userSelect } from './helpers/select';
 import usersRouteConfig from './routes';
 

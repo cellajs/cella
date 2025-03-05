@@ -5,8 +5,7 @@ import { type EnabledOauthProvider, config } from 'config';
 import { usersTable } from '#/db/schema/users';
 import { paginationQuerySchema, validImageUrlSchema, validNameSchema, validSlugSchema } from '#/utils/schema/common';
 
-const enabledOauthProvidersEnum = z.enum(config.enabledOauthProviders as unknown as [EnabledOauthProvider]);
-export const signUpInfo = z.object({ oauth: z.array(enabledOauthProvidersEnum), passkey: z.boolean() });
+export const enabledOauthProvidersEnum = z.enum(config.enabledOauthProviders as unknown as [EnabledOauthProvider]);
 
 const userTableSchema = createSelectSchema(usersTable, {
   email: z.string().email(),
@@ -32,9 +31,6 @@ export const usersQuerySchema = paginationQuerySchema.merge(
     role: z.enum(config.rolesByType.systemRoles).default('user').optional(),
   }),
 );
-export const userUnsubscribeQuerySchema = z.object({
-  token: z.string(),
-});
 
 export const updateUserBodySchema = createInsertSchema(usersTable, {
   firstName: validNameSchema.nullable(),

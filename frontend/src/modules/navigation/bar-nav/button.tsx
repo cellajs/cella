@@ -1,7 +1,7 @@
 import { config } from 'config';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { Button } from '~/modules/ui/button';
-import { useGeneralStore } from '~/store/general';
+import { useUIStore } from '~/store/ui';
 import { useUserStore } from '~/store/user';
 
 import { useTranslation } from 'react-i18next';
@@ -20,7 +20,7 @@ export const BarNavButton = ({ navItem, isActive, onClick }: BarNavButtonProps) 
   const { t } = useTranslation();
 
   const { user } = useUserStore();
-  const theme = useGeneralStore((state) => state.theme);
+  const theme = useUIStore((state) => state.theme);
 
   return (
     <TooltipButton toolTipContent={t(`common:${navItem.id}`)} side="right" sideOffset={10} hideWhenDetached>
