@@ -41,6 +41,10 @@ export const useSync = (organizationId: string) => {
     return () => {
       unsubscribe();
       // Abort shape's subscription to live updates
+      /**
+       * Note that if you have multiple components using the same component, this will stop updates for all subscribers.
+       * Electric plan to add a better API for unsubscribing from updates & cleaning up shapes that are no longer needed.
+       */
       controller.abort();
     };
   }, [isOnline]);
