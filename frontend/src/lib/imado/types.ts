@@ -1,6 +1,6 @@
 import type { UploadResult, UppyFile } from '@uppy/core';
 
-export type UppyMeta = { public?: boolean; contentType?: string };
+export type UppyMeta = { public?: boolean; contentType?: string; offlineUploaded?: boolean };
 
 export type LocalFile = UppyFile<UppyMeta, UppyBody>;
 
