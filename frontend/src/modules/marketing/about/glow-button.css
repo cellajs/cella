@@ -2,8 +2,8 @@
   content: "";
   display: block;
   position: absolute;
-  top: -1px;
-  left: -1px;
+  top: -0.05rem;
+  left: -0.05rem;
   width: calc(100% + 2px);
   height: calc(100% + 2px);
   z-index: -2;
@@ -15,8 +15,8 @@
   content: "";
   display: block;
   position: absolute;
-  top: -1px;
-  left: -1px;
+  top: -0.05rem;
+  left: -0.05rem;
   filter: blur(8px);
   width: calc(100% + 2px);
   height: calc(100% + 2px);

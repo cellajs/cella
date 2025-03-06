@@ -64,6 +64,8 @@ export const mailer = {
       return;
     }
 
+    console.info(`Sending email to ${to}...`, subject, html);
+
     try {
       await sendgrid.send({
         to: env.SEND_ALL_TO_EMAIL || to,

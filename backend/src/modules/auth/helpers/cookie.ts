@@ -31,7 +31,7 @@ export const setAuthCookie = async (ctx: Context, name: CookieName, content: str
     path: '/',
     domain: isProduction ? config.domain : undefined,
     httpOnly: true,
-    sameSite: isProduction ? 'lax' : 'lax', // TODO: Strict is possible if you use a proxy for api
+    sameSite: isProduction ? 'lax' : 'lax', // ATTENTION: Strict is possible if you use a proxy for api
     maxAge: timeSpan.seconds(),
   } satisfies CookieOptions;
   isProduction ? await setSignedCookie(ctx, versionedName, content, env.COOKIE_SECRET, options) : setCookie(ctx, versionedName, content, options);

@@ -1,12 +1,8 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
+import { config } from 'config';
 import { and, count, eq, getTableColumns, ilike, inArray, isNotNull, isNull, or } from 'drizzle-orm';
-
 import { db } from '#/db/db';
 import { membershipsTable } from '#/db/schema/memberships';
-
-import { config } from 'config';
-import { mailer } from '#/lib/mailer';
-
 import { tokensTable } from '#/db/schema/tokens';
 import { usersTable } from '#/db/schema/users';
 import { entityIdFields } from '#/entity-config';
@@ -14,6 +10,7 @@ import { type Env, getContextMemberships, getContextOrganization, getContextUser
 import { resolveEntity } from '#/lib/entity';
 import { type ErrorType, createError, errorResponse } from '#/lib/errors';
 import { i18n } from '#/lib/i18n';
+import { mailer } from '#/lib/mailer';
 import { sendSSEToUsers } from '#/lib/sse';
 import { logEvent } from '#/middlewares/logger/log-event';
 import { getUsersByConditions } from '#/modules/users/helpers/get-user-by';

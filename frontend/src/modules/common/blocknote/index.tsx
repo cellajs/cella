@@ -221,8 +221,7 @@ export const BlockNote = ({
 
       if (allowedTypes.includes(type) && blockUrl && blockUrl.length > 0) {
         const filename = blockUrl.split('/').pop() || 'File';
-        // TODO - Add contentType to the props?
-        newAttachments.push({ url: blockUrl, filename, name: filename, contentType: undefined });
+        newAttachments.push({ url: blockUrl, filename, name: filename, contentType: type });
       }
       return true;
     });
