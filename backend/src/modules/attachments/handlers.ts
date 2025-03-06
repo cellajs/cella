@@ -185,14 +185,12 @@ const attachmentsRoutes = app
 
     // Convert the ids to an array
     const toDeleteIds = Array.isArray(ids) ? ids : [ids];
-
-    if (!toDeleteIds.length) return errorResponse(ctx, 400, 'invalid_request', 'warn', 'attachment');
+    if (!toDeleteIds.length) return errorResponse(ctx, 400, 'invalid_request', 'error', 'attachment');
 
     const { allowedIds, disallowedIds } = await splitByAllowance('delete', 'attachment', toDeleteIds, memberships);
 
     // Map errors for disallowed ids
     const errors: ErrorType[] = disallowedIds.map((id) => createError(ctx, 404, 'not_found', 'warn', 'attachment', { attachment: id }));
-
     if (!allowedIds.length) return errorResponse(ctx, 403, 'forbidden', 'warn', 'attachment');
 
     // Delete the attachments

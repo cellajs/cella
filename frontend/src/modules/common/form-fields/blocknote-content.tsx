@@ -6,7 +6,6 @@ import UppyFilePanel from '~/modules/attachments/upload/blocknote-upload-panel';
 import { BlockNote } from '~/modules/common/blocknote';
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
 
-import '@blocknote/shadcn/style.css';
 import '~/modules/common/blocknote/app-specific-custom/styles.css';
 import '~/modules/common/blocknote/styles.css';
 
@@ -31,7 +30,7 @@ const BlockNoteContent = ({ blocknoteId, control, label, name, required, disable
             ADD_ATTR: ['colwidth', 'style'], // Allow 'colwidth' and 'style' attributes in the sanitized HTML
           };
 
-          //Sanitized BlockNote content
+          //Sanitize BlockNote content
           const cleanContent = DOMPurify.sanitize(value, config);
           onChange(cleanContent);
         };

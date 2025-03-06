@@ -17,7 +17,7 @@ export const hasValidToken = (requiredType: TokenModel['type']): MiddlewareHandl
   return async (ctx, next) => {
     // Find token in request
     const token = ctx.req.param('token');
-    if (!token) return errorResponse(ctx, 400, 'invalid_request', 'warn');
+    if (!token) return errorResponse(ctx, 400, 'invalid_request', 'error');
 
     // Check if token exists
     const [tokenRecord] = await db.select().from(tokensTable).where(eq(tokensTable.token, token));

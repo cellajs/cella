@@ -34,7 +34,6 @@ import { CustomSlashMenu } from '~/modules/common/blocknote/custom-slash-menu';
 import { compareIsContentSame, focusEditor, getContentAsString, getUrlFromProps, handleSubmitOnEnter } from '~/modules/common/blocknote/helpers';
 import type { BasicBlockBaseTypes, BasicFileBlockTypes, CellaCustomBlockTypes } from '~/modules/common/blocknote/types';
 
-import '@blocknote/shadcn/style.css';
 import '~/modules/common/blocknote/app-specific-custom/styles.css';
 import '~/modules/common/blocknote/styles.css';
 
@@ -222,8 +221,7 @@ export const BlockNote = ({
 
       if (allowedTypes.includes(type) && blockUrl && blockUrl.length > 0) {
         const filename = blockUrl.split('/').pop() || 'File';
-        // TODO - Add contentType to the props?
-        newAttachments.push({ url: blockUrl, filename, name: filename, contentType: undefined });
+        newAttachments.push({ url: blockUrl, filename, name: filename, contentType: type });
       }
       return true;
     });

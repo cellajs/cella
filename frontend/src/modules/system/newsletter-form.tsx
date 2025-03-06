@@ -69,7 +69,14 @@ const NewsletterForm = ({ organizationIds }: NewsletterFormProps) => {
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} id="newsletter-form" className="space-y-6 pb-8 h-max">
-        <InputFormField control={form.control} name="subject" placeholder={t('common:placeholder.subject')} label={t('common:subject')} required />
+        <InputFormField
+          control={form.control}
+          inputClassName="font-bold"
+          name="subject"
+          placeholder={t('common:placeholder.subject')}
+          label={t('common:subject')}
+          required
+        />
 
         <BlockNoteContent control={form.control} name="content" required label={t('common:message')} blocknoteId="blocknote-newsletter" />
 
@@ -78,7 +85,10 @@ const NewsletterForm = ({ organizationIds }: NewsletterFormProps) => {
           name="roles"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>{t('common:roles')}</FormLabel>
+              <FormLabel>
+                {t('common:roles')}
+                <span className="ml-1 opacity-50">*</span>
+              </FormLabel>
               <FormControl>
                 <SelectRoles {...field} />
               </FormControl>
@@ -101,7 +111,6 @@ const NewsletterForm = ({ organizationIds }: NewsletterFormProps) => {
           <Button type="reset" variant="secondary" className="max-sm:w-full" aria-label={t('common:cancel')} onClick={cancel}>
             {t('common:cancel')}
           </Button>
-          DJUHYKI7='P6U'
           <div className="max-sm:mt-2 flex gap-2 items-center">
             <Checkbox id="testOnly" checked={testOnly} onCheckedChange={(value) => setTestOnly(value)} className="w-4 h-4 ml-4" />
             <label htmlFor="testOnly" className="items-center text-sm">

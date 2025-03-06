@@ -24,6 +24,7 @@ import type { Organization } from '~/modules/organizations/types';
 import { Button, SubmitButton } from '~/modules/ui/button';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
 import { cleanUrl } from '~/utils/clean-url';
+import Spinner from '../common/spinner';
 
 interface Props {
   organization: Organization;
@@ -89,8 +90,6 @@ const UpdateOrganizationForm = ({ organization, callback, sheet: isSheet }: Prop
     form.setValue('thumbnailUrl', url, { shouldDirty: true });
   };
 
-  if (form.loading) return null;
-
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
@@ -147,6 +146,9 @@ const UpdateOrganizationForm = ({ organization, callback, sheet: isSheet }: Prop
           control={form.control}
           name="defaultLanguage"
           render={({ field }) => {
+            // Make sure languages are loaded
+            if (form.loading) return <Spinner />;
+
             // If defaultLanguage is not selected languages, set first language
             const languages = form.getValues('languages') || [];
             const correctValue = field.value && languages.includes(field.value) ? field.value : languages[0] || config.defaultLanguage;
