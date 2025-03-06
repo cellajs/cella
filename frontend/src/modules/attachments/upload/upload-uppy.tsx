@@ -61,7 +61,7 @@ export const UploadUppy = ({
 
   useEffect(() => {
     const initializeUppy = async () => {
-      const imadoUppy = await ImadoUppy(uploadType, imageMode, uppyOptions, {
+      const imadoUppy = await ImadoUppy(uploadType, uppyOptions, {
         public: isPublic,
         organizationId: organizationId,
         statusEventHandler: {
