@@ -13,7 +13,7 @@ const RenderVideo = lazy(() => import('~/modules/attachments/render-video'));
 
 interface AttachmentRenderProps {
   type: string;
-  source: string;
+  url: string;
   altName?: string;
   imagePanZoom?: boolean;
   showButtons?: boolean;
@@ -23,7 +23,7 @@ interface AttachmentRenderProps {
 }
 
 export const AttachmentRender = ({
-  source,
+  url: baseUrl,
   type,
   altName,
   showButtons,
@@ -34,18 +34,18 @@ export const AttachmentRender = ({
 }: AttachmentRenderProps) => {
   const isMobile = useBreakpoints('max', 'sm');
 
-  const sanitizedSource = DOMPurify.sanitize(source);
-  const { localUrl, localFileError } = useLocalFile(sanitizedSource, type);
+  const sanitizedUrl = DOMPurify.sanitize(baseUrl);
+  const { localUrl, localFileError } = useLocalFile(sanitizedUrl, type);
 
   const url = useMemo(() => {
     // Use direct URL for static images
-    if (sanitizedSource.startsWith('/static/')) return sanitizedSource;
+    if (sanitizedUrl.startsWith('/static/')) return sanitizedUrl;
 
     // Use either remote URL or local URL pointing to indexedDB
-    return sanitizedSource.startsWith(config.publicCDNUrl) ? sanitizedSource : localUrl;
-  }, [sanitizedSource, localUrl]);
+    return sanitizedUrl.startsWith(config.publicCDNUrl) ? sanitizedUrl : localUrl;
+  }, [sanitizedUrl, localUrl]);
 
-  if (sanitizedSource === localUrl && localFileError) {
+  if (sanitizedUrl === localUrl && localFileError) {
     return (
       <div className="flex flex-col items-center justify-center h-full w-full bg-background text-muted-foreground">
         <div className="text-center my-8 text-sm text-red-500">{localFileError}</div>

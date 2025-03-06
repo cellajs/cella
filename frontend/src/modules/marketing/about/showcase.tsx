@@ -10,12 +10,12 @@ const showcaseItems = [{ id: 'raak', url: 'https://raak.dev' }];
 
 // Slides for light and dark themes
 const lightSlides = [
-  { src: '/static/images/showcases/raak-1.png', fileType: 'image/png' },
-  { src: '/static/images/showcases/raak-2.png', fileType: 'image/png' },
+  { url: '/static/images/showcases/raak-1.png', contentType: 'image/png' },
+  { url: '/static/images/showcases/raak-2.png', contentType: 'image/png' },
 ];
 const darkSlides = [
-  { src: '/static/images/showcases/raak-1-dark.png', fileType: 'image/png' },
-  { src: '/static/images/showcases/raak-2-dark.png', fileType: 'image/png' },
+  { url: '/static/images/showcases/raak-1-dark.png', contentType: 'image/png' },
+  { url: '/static/images/showcases/raak-2-dark.png', contentType: 'image/png' },
 ];
 
 const Showcase = () => {

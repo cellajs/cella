@@ -68,7 +68,7 @@ export const MainFooter = ({ className = '' }) => {
       <div className="flex items-center gap-4">
         <UserLanguage align="start" contentClassName="z-110" />
         <div className="mr-1 font-light text-muted">|</div>
-        <Link to="/about" className="hover:scale-105 transition-transform active:translate-y-[.07rem]">
+        <Link to="/about" className="hover:scale-105 transition-transform active:translate-y-[.05rem]">
           <Logo height={25} />
         </Link>
         <div className="ml-1 font-light text-muted">|</div>

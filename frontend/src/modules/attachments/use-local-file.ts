@@ -5,10 +5,10 @@ import { useBlobStore } from '~/store/blob'; // Import the Zustand store
 /**
  *
  * @param key Key used to get the file from indexedDB
- * @param fileType
+ * @param contentType
  * @returns
  */
-export const useLocalFile = (key: string, fileType?: string): { localUrl: string; localFileError: string | null } => {
+export const useLocalFile = (key: string, contentType?: string): { localUrl: string; localFileError: string | null } => {
   // We use the Zustand store to get and set the blob URL after LocalFileStorage has created it. It also revokes the URL user closes the browser tab.
   const { getBlobUrl, setBlobUrl } = useBlobStore();
 
@@ -36,7 +36,7 @@ export const useLocalFile = (key: string, fileType?: string): { localUrl: string
             'File not found. The file is stored locally in the browser where it was originally loaded and might not be accessible in other browsers or devices.',
           );
         if (file && isMounted.current) {
-          const blob = new Blob([file.data], { type: fileType || 'application/octet-stream' });
+          const blob = new Blob([file.data], { type: contentType || 'application/octet-stream' });
           const newUrl = URL.createObjectURL(blob);
           setBlobUrl(key, newUrl);
           setFileUrl(newUrl);
@@ -52,7 +52,7 @@ export const useLocalFile = (key: string, fileType?: string): { localUrl: string
     return () => {
       isMounted.current = false;
     };
-  }, [key, fileType, getBlobUrl, setBlobUrl]);
+  }, [key, contentType, getBlobUrl, setBlobUrl]);
 
   return { localUrl: fileUrl, localFileError: error };
 };

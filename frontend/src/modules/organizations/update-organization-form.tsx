@@ -90,6 +90,7 @@ const UpdateOrganizationForm = ({ organization, callback, sheet: isSheet }: Prop
   };
 
   if (form.loading) return null;
+
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">

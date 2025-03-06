@@ -9,8 +9,8 @@ import DeviceFrame from '~/modules/marketing/device-mockup/frame';
 type DeviceType = 'mobile' | 'tablet' | 'pc';
 
 interface DeviceMockupProps {
-  lightSlides?: { src: string; name?: string }[];
-  darkSlides?: { src: string; name?: string }[];
+  lightSlides?: { url: string; name?: string }[];
+  darkSlides?: { url: string; name?: string }[];
   className?: string;
   type: DeviceType;
 }

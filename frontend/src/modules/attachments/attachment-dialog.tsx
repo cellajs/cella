@@ -13,9 +13,7 @@ const AttachmentDialog = ({ attachmentId, groupId, orgIdOrSlug }: { attachmentId
 
   const { data, isError, isLoading } = useSuspenseInfiniteQuery(attachmentsQueryOptions({ groupId, orgIdOrSlug }));
 
-  const attachments = data?.pages.flatMap((a) =>
-    a.items.map(({ id, url, name, contentType, filename, groupId }) => ({ id, src: url, filename, name, fileType: contentType, groupId })),
-  );
+  const attachments = data?.pages.flatMap((page) => page.items);
   const slides = groupId ? attachments : attachments.filter(({ id }) => id === attachmentId);
 
   const startSlide = attachments?.findIndex(({ id }) => attachmentId === id);

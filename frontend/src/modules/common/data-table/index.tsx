@@ -229,7 +229,7 @@ export const DataTable = <TData,>({
                 rows={rows}
                 onCellClick={onCellClick}
                 // Hack to rerender html/css by changing width
-                style={{ blockSize: '100%', marginRight: columns.length % 2 === 0 ? '0' : '.07rem' }}
+                style={{ blockSize: '100%', marginRight: columns.length % 2 === 0 ? '0' : '.05rem' }}
                 selectedRows={selectedRows}
                 onSelectedRowsChange={onSelectedRowsChange}
                 sortColumns={sortColumns as SortColumn[]}

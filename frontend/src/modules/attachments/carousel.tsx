@@ -15,7 +15,7 @@ import { cn } from '~/utils/cn';
 
 interface CarouselPropsBase {
   slide?: number;
-  slides?: { src: string; id?: string; name?: string; filename?: string; fileType?: string }[];
+  slides?: { url: string; id?: string; name?: string; filename?: string; contentType?: string }[];
   classNameContainer?: string;
 }
 
@@ -35,7 +35,7 @@ const AttachmentsCarousel = ({ slides = [], isDialog = false, slide = 0, saveInS
     search: { attachmentPreview },
   } = useLocation();
 
-  const [current, setCurrent] = useState(slides.findIndex((slide) => slide.src === attachmentPreview) ?? 0);
+  const [current, setCurrent] = useState(slides.findIndex((slide) => slide.url === attachmentPreview) ?? 0);
   const [watchDrag, setWatchDrag] = useState(slides.length > 1);
 
   const itemClass = isDialog ? 'object-contain' : '';
@@ -87,28 +87,28 @@ const AttachmentsCarousel = ({ slides = [], isDialog = false, slide = 0, saveInS
         <div className="fixed z-10 top-0 left-0 w-full flex gap-2 p-3 text-center sm:text-left bg-background/60 backdrop-blur-xs">
           {slides[current].name && (
             <h2 className="text-base tracking-tight flex ml-1 items-center gap-2 leading-6 h-6">
-              {slides[current].fileType && <FilePlaceholder fileType={slides[current].fileType} iconSize={16} strokeWidth={2} />}
+              {slides[current].contentType && <FilePlaceholder contentType={slides[current].contentType} iconSize={16} strokeWidth={2} />}
               {slides[current].name}
             </h2>
           )}
           <div className="grow" />
-          {slides[current].src.startsWith(config.publicCDNUrl) && (
+          {slides[current].url.startsWith(config.publicCDNUrl) && (
             <Button
               variant="ghost"
               size="icon"
               className="-my-1 w-8 h-8 opacity-70 hover:opacity-100"
-              onClick={() => window.open(slides[current].src, '_blank')}
+              onClick={() => window.open(slides[current].url, '_blank')}
             >
               <ExternalLink className="h-5 w-5" strokeWidth={1.5} />
             </Button>
           )}
 
-          {slides[current].src.startsWith(config.publicCDNUrl) && (
+          {slides[current].url.startsWith(config.publicCDNUrl) && (
             <Button
               variant="ghost"
               size="icon"
               className="-my-1 w-8 h-8 opacity-70 hover:opacity-100"
-              onClick={() => download(slides[current].src, slides[current].filename || 'file')}
+              onClick={() => download(slides[current].url, slides[current].filename || 'file')}
             >
               <Download className="h-5 w-5" strokeWidth={1.5} />
             </Button>
@@ -121,10 +121,10 @@ const AttachmentsCarousel = ({ slides = [], isDialog = false, slide = 0, saveInS
       )}
 
       <CarouselContent className="h-full">
-        {slides?.map(({ src, fileType = 'image' }, idx) => {
+        {slides?.map(({ url, contentType = 'image' }, idx) => {
           return (
             <CarouselItem
-              key={src}
+              key={url}
               onClick={() => {
                 if (isDialog) return;
                 openAttachmentDialog(idx, slides);
@@ -133,10 +133,10 @@ const AttachmentsCarousel = ({ slides = [], isDialog = false, slide = 0, saveInS
               <AttachmentRender
                 containerClassName={cn('overflow-hidden h-full relative flex items-center justify-center, ', classNameContainer)}
                 itemClassName={itemClass}
-                type={fileType}
+                type={contentType}
                 imagePanZoom={isDialog}
                 showButtons={current === idx}
-                source={src}
+                url={url}
                 altName={`Slide ${idx}`}
                 togglePanState
               />

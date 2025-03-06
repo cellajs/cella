@@ -21,7 +21,7 @@ const DeviceFrame = ({ type, inView, renderCarousel }: DeviceFrameProps) => {
     case 'pc':
       return (
         <div className="w-full">
-          <div className="relative mx-auto border-gray-400/75 mb-[.07rem] dark:border-gray-700 border-[.25rem] rounded-t-xl max-w-[85%] aspect-video">
+          <div className="relative mx-auto border-gray-400/75 mb-[.05rem] dark:border-gray-700 border-[.25rem] rounded-t-xl max-w-[85%] aspect-video">
             <div className="rounded-lg h-full w-full bg-background cursor-pointer">{inView && renderCarousel('rounded-t-[.5rem]')}</div>
           </div>
           <div className="relative mx-auto bg-gray-300 dark:bg-gray-800 rounded-b-xl rounded-t-sm h-4 md:h-5">
