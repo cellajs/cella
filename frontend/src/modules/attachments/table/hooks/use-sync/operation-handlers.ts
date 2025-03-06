@@ -18,7 +18,7 @@ export const handleInsert = (orgIdOrSlug: string, newAttachments: Attachment[]) 
       const uniqueAttachments = newAttachments.filter(({ id }) => !existingIds.has(id));
 
       // Avoid adding an already existing attachment
-      if (uniqueAttachments.length === 0) return data;
+      if (!uniqueAttachments.length) return data;
 
       // Add new attachments and update total count
       const pages = data.pages.map(({ items, total }) => ({
@@ -64,7 +64,7 @@ export const handleDelete = (orgIdOrSlug: string, attachmentIds: string[]) => {
       // Remove the attachment and adjust total
       const pages = data.pages.map(({ items, total }) => {
         const newItems = items.filter((item) => !attachmentIds.includes(item.id));
-        const difference = newItems.length - items.length;
+        const difference = items.length - newItems.length;
         return {
           items: newItems,
           total: total - difference,
