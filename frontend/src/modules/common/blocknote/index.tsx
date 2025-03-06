@@ -222,12 +222,13 @@ export const BlockNote = ({
 
       if (allowedTypes.includes(type) && blockUrl && blockUrl.length > 0) {
         const filename = blockUrl.split('/').pop() || 'File';
-        newAttachments.push({ src: blockUrl, filename, name: filename, fileType: type });
+        // TODO - Add contentType to the props?
+        newAttachments.push({ url: blockUrl, filename, name: filename, contentType: undefined });
       }
       return true;
     });
 
-    const attachmentNum = newAttachments.findIndex(({ src }) => src === url);
+    const attachmentNum = newAttachments.findIndex(({ url: newUrl }) => newUrl === url);
     openAttachmentDialog(attachmentNum, newAttachments);
   };
 

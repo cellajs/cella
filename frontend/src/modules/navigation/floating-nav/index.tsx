@@ -47,14 +47,6 @@ const FloatingNav = ({ onClick }: { onClick: (id: NavItem['id']) => void }) => {
     return () => scrollContainer.current?.removeEventListener('scroll', onScroll);
   }, [isMobile, hasWaited]);
 
-  useEffect(() => {
-    const appLayout = document.getElementById('app-layout');
-    if (appLayout) appLayout.style.height = '100vh';
-    return () => {
-      if (appLayout) appLayout.style.height = '';
-    };
-  }, []);
-
   return (
     <nav id="floating-nav">
       {showButtons &&

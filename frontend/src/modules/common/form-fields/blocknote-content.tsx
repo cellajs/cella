@@ -49,7 +49,7 @@ const BlockNoteContent = ({ blocknoteId, control, label, name, required, disable
                   defaultValue={value}
                   onChange={sanitizedOnChange}
                   updateData={sanitizedOnChange}
-                  className="min-h-20 pl-10 pr-6 p-3 border rounded-md"
+                  className="min-h-20 pl-10 pr-6 p-3 border-input ring-offset-background placeholder:text-muted-foreground focus-visible:ring-ring max-focus-visible:ring-transparent max-focus-visible:ring-offset-0 flex w-full rounded-md border text-sm file:border-0 file:bg-transparent file:text-sm file:font-medium focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                   allowedBlockTypes={['emoji', 'heading', 'paragraph', 'codeBlock']}
                   {...(config.has.imado
                     ? {

@@ -4,7 +4,7 @@ import AttachmentsCarousel from '~/modules/attachments/carousel';
 import { type DialogT, dialog } from '~/modules/common/dialoger/state';
 import { toaster } from '~/modules/common/toaster';
 
-export type CarouselAttachment = { src: string; filename?: string; name?: string; fileType?: string };
+export type CarouselAttachment = { url: string; filename?: string; name?: string; contentType?: string };
 
 export const openAttachmentDialog = (
   attachment: number,

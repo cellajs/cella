@@ -24,7 +24,7 @@ const AttachmentThumb: React.FC<AttachmentThumbProps> = ({ url: baseUrl, content
   return url && contentType.includes('image') ? (
     <img src={url} draggable="false" alt={name} className="h-8 w-8 bg-muted rounded-md object-cover" loading="lazy" decoding="async" />
   ) : (
-    <FilePlaceholder fileType={contentType} />
+    <FilePlaceholder contentType={contentType} />
   );
 };
 

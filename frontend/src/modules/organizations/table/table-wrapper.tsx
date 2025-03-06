@@ -13,13 +13,13 @@ import { sheet } from '~/modules/common/sheeter/state';
 import { toaster } from '~/modules/common/toaster';
 import { getOrganizations } from '~/modules/organizations/api';
 import DeleteOrganizations from '~/modules/organizations/delete-organizations';
-import NewsletterDraft from '~/modules/organizations/newsletter-draft';
-import NewsletterForm from '~/modules/organizations/newsletter-form';
 import { organizationsKeys } from '~/modules/organizations/query';
 import { useColumns } from '~/modules/organizations/table/columns';
 import BaseDataTable from '~/modules/organizations/table/table';
 import { OrganizationsTableBar } from '~/modules/organizations/table/table-bar';
 import type { Organization } from '~/modules/organizations/types';
+import NewsletterDraft from '~/modules/system/newsletter-draft';
+import NewsletterForm from '~/modules/system/newsletter-form';
 import { OrganizationsTableRoute, type organizationsSearchSchema } from '~/routes/system';
 
 const LIMIT = config.requestLimits.organizations;

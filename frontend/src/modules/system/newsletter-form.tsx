@@ -93,19 +93,21 @@ const NewsletterForm = ({ organizationIds }: NewsletterFormProps) => {
           </AlertWrap>
         )}
 
-        <div className="flex flex-col sm:flex-row gap-2 items-center">
-          <SubmitButton loading={isPending}>
+        <div className="flex max-sm:flex-col gap-2 items-center">
+          <SubmitButton loading={isPending} className="max-sm:w-full">
             <Send size={16} className="mr-2" />
             {testOnly ? t('common:send_test_email') : t('common:send')}
           </SubmitButton>
-          <Button type="reset" variant="secondary" aria-label={t('common:cancel')} onClick={cancel}>
+          <Button type="reset" variant="secondary" className="max-sm:w-full" aria-label={t('common:cancel')} onClick={cancel}>
             {t('common:cancel')}
           </Button>
-
-          <Checkbox id="testOnly" checked={testOnly} onCheckedChange={(value) => setTestOnly(value)} className="w-4 h-4 ml-4" />
-          <label htmlFor="testOnly" className="items-center text-sm">
-            {t('common:test_email')}
-          </label>
+          DJUHYKI7='P6U'
+          <div className="max-sm:mt-2 flex gap-2 items-center">
+            <Checkbox id="testOnly" checked={testOnly} onCheckedChange={(value) => setTestOnly(value)} className="w-4 h-4 ml-4" />
+            <label htmlFor="testOnly" className="items-center text-sm">
+              {t('common:test_email')}
+            </label>
+          </div>
         </div>
       </form>
     </Form>

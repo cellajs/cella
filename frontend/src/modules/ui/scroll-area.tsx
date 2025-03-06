@@ -11,8 +11,8 @@ const scrollbarVariants = cva('flex touch-none transition-colors z-20', {
       horizontal: 'horizontal',
     },
     size: {
-      defaultVertical: 'h-full w-2.5 border-l border-l-transparent p-[.07rem]',
-      defaultHorizontal: 'h-2.5 flex-col border-t border-t-transparent p-[.07rem]',
+      defaultVertical: 'h-full w-2.5 border-l border-l-transparent p-[.05rem]',
+      defaultHorizontal: 'h-2.5 flex-col border-t border-t-transparent p-[.05rem]',
     },
   },
   defaultVariants: {

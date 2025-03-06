@@ -99,16 +99,16 @@ export const updateSourcesFromDataUrl = (elementId: string, openPreviewDialog = 
   const elementsWithDataUrl = parentElement.querySelectorAll('[data-url]');
   // Exit early if no matching elements are found
   if (elementsWithDataUrl.length === 0) return;
-  const urls: CarouselAttachment[] = [];
+  const attachments: CarouselAttachment[] = [];
 
   const onElClick = (e: MouseEvent) => {
     if (!e.target || !openPreviewDialog) return;
     e.preventDefault();
     const target = e.target as HTMLImageElement | HTMLVideoElement | HTMLAudioElement;
     // Find the slide based on the currentSrc of the target
-    const slideNum = urls.findIndex(({ src }) => src === target.currentSrc);
+    const slideNum = attachments.findIndex(({ url }) => url === target.currentSrc);
 
-    openAttachmentDialog(slideNum, urls);
+    openAttachmentDialog(slideNum, attachments);
   };
 
   for (const element of elementsWithDataUrl) {
@@ -121,7 +121,7 @@ export const updateSourcesFromDataUrl = (elementId: string, openPreviewDialog = 
     url = DOMPurify.sanitize(url);
     const filename = url.split('/').pop() || 'File';
 
-    urls.push({ src: url, filename, name: filename, fileType: contentType });
+    attachments.push({ url, filename, name: filename, contentType });
 
     switch (contentType) {
       case 'image': {

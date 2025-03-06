@@ -58,7 +58,7 @@ export async function ImadoUppy(
   const onBeforeFileAdded = (file: UppyFile<UppyMeta, UppyBody>) => {
     // Simplify file ID and add content type to the meta
     file.id = nanoid();
-    file.meta = { ...file.meta, contentType: file.type };
+    file.meta = { ...file.meta, contentType: file.type, offlineUploaded: !onlineManager.isOnline() };
     return file;
   };
 
@@ -116,21 +116,19 @@ export async function ImadoUppy(
       // Notify event handler when upload is complete
       opts.statusEventHandler?.onComplete?.(mappedResult, result);
     })
-    .on('is-offline', () => {
-      // Pause all uploads when user goes offline if imado is enabled
-      if (config.has.imado) imadoUppy.pauseAll();
-    })
     .on('is-online', async () => {
       // When back online, retry uploads
       if (!config.has.imado) return;
 
+      // Get files that was uploaded during offline
+      const offlineUploadedFiles = imadoUppy.getFiles().filter((el) => el.meta.offlineUploaded);
+      if (!offlineUploadedFiles.length) return;
+
       // Get a new upload token
-      const imadoToken = (await getUploadToken(type, { public: opts.public, organizationId: opts.organizationId })) || '';
+      const imadoToken = await getUploadToken(type, { public: opts.public, organizationId: opts.organizationId });
+      if (!imadoToken) return;
 
-      const files = imadoUppy.getFiles();
       imadoUppy.destroy(); // Destroy the current Uppy instance to restart
-
-      if (files.length < 1) return;
 
       // Initialize a new Uppy instance to retry the upload
       const retryImadoUppy = new Uppy({
@@ -140,7 +138,7 @@ export async function ImadoUppy(
       }).use(Tus, getTusConfig(imadoToken));
 
       // Add files to the new Uppy instance
-      const validFiles = files.map((file) => ({ ...file, name: file.name || `${file.type}-${file.id}` }));
+      const validFiles = offlineUploadedFiles.map((file) => ({ ...file, name: file.name || `${file.type}-${file.id}` }));
       retryImadoUppy.addFiles(validFiles);
 
       // Upload the files

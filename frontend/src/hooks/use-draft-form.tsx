@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import { type FieldPath, type FieldValues, type UseFormProps, type UseFormReturn, useForm } from 'react-hook-form';
 import { useDraftStore } from '~/store/draft';
 
-// TODO make unsaved changes when form get dirty?
 /**
  * useFormWithDraft
  *
