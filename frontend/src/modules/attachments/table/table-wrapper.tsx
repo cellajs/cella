@@ -8,6 +8,7 @@ import { useTranslation } from 'react-i18next';
 import { useAttachmentDialog } from '~/hooks/use-attachment-dialog';
 import useSearchParams from '~/hooks/use-search-params';
 import { useColumns } from '~/modules/attachments/table/columns';
+import { useSync } from '~/modules/attachments/table/hooks/use-sync';
 import RemoveAttachmentsForm from '~/modules/attachments/table/remove-attachments-form';
 import BaseDataTable from '~/modules/attachments/table/table';
 import { AttachmentsTableBar } from '~/modules/attachments/table/table-bar';
@@ -43,6 +44,7 @@ const AttachmentsTable = ({ organization, canUpload = true, isSheet = false }: A
   const limit = LIMIT;
 
   useAttachmentDialog({ orgIdOrSlug: organization.id, attachmentPreview, groupId });
+  useSync(organization.id);
 
   // State for selected and total counts
   const [total, setTotal] = useState<number | undefined>(undefined);
