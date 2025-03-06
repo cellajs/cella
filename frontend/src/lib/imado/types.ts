@@ -20,6 +20,6 @@ export interface ImadoOptions extends UploadParams {
     onUploadStart?: (uploadId: string, files: LocalFile[]) => void;
     onError?: (error: Error) => void;
     onComplete?: (mappedResult: UploadedUppyFile[], result: UploadResult<UppyMeta, UppyBody>) => void;
-    onRetryComplete?: (mappedResult: UploadedUppyFile[], localStoreIds: string[]) => void;
+    onRetrySuccess?: (mappedResult: UploadedUppyFile[], localStoreIds: string[]) => void;
   };
 }

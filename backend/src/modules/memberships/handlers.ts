@@ -43,8 +43,8 @@ const membershipsRoutes = app
     const { idOrSlug, entityType: passedEntityType } = ctx.req.valid('query');
 
     // Validate entity existence and check user permission for updates
-    const { entity, isAllowed } = await getValidEntity(passedEntityType, 'update', idOrSlug);
-    if (!entity || !isAllowed) return errorResponse(ctx, 403, 'forbidden', 'warn', passedEntityType);
+    const { entity, error } = await getValidEntity(ctx, passedEntityType, 'update', idOrSlug);
+    if (error) return ctx.json({ success: false, error });
 
     // Extract entity details
     const { entity: entityType, id: entityId } = entity;
@@ -170,9 +170,8 @@ const membershipsRoutes = app
     const { entityType, idOrSlug } = ctx.req.valid('query');
     const { ids } = ctx.req.valid('json');
 
-    const { entity, isAllowed } = await getValidEntity(entityType, 'delete', idOrSlug);
-    if (!entity) return errorResponse(ctx, 404, 'not_found', 'warn', entityType);
-    if (!isAllowed) return errorResponse(ctx, 403, 'forbidden', 'warn', entityType);
+    const { entity, error } = await getValidEntity(ctx, entityType, 'delete', idOrSlug);
+    if (error) return ctx.json({ success: false, errors: [error] }, 200);
 
     const entityIdField = entityIdFields[entityType];
 
@@ -262,9 +261,8 @@ const membershipsRoutes = app
 
     // Check if user has permission to someone elses membership
     if (user.id !== membershipToUpdate.userId) {
-      const { entity, isAllowed } = await getValidEntity(updatedType, 'update', membershipContextId);
-      if (!entity) return errorResponse(ctx, 404, 'not_found', 'warn', updatedType);
-      if (!isAllowed) return errorResponse(ctx, 403, 'forbidden', 'warn', updatedType);
+      const { error } = await getValidEntity(ctx, updatedType, 'update', membershipContextId);
+      if (error) return ctx.json({ success: false, error }, 400);
     }
 
     const [updatedMembership] = await db
@@ -350,11 +348,8 @@ const membershipsRoutes = app
     // Scope request to organization
     const organization = getContextOrganization();
 
-    const { entity, isAllowed, membership } = await getValidEntity(entityType, 'read', idOrSlug);
-
-    if (!entity) return errorResponse(ctx, 404, 'not_found', 'warn', entityType);
-    if (!isAllowed) return errorResponse(ctx, 403, 'forbidden', 'warn', entityType);
-    if (!membership || membership.role !== 'admin') return errorResponse(ctx, 403, 'forbidden', 'warn', entityType);
+    const { entity, error } = await getValidEntity(ctx, entityType, 'read', idOrSlug);
+    if (error) return ctx.json({ success: false, error }, 400);
 
     const entityIdField = entityIdFields[entity.entity];
 
