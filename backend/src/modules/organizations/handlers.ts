@@ -126,7 +126,7 @@ const organizationsRoutes = app
 
     // Convert the ids to an array
     const toDeleteIds = Array.isArray(ids) ? ids : [ids];
-    if (!toDeleteIds.length) return errorResponse(ctx, 400, 'invalid_request', 'warn', 'organization');
+    if (!toDeleteIds.length) return errorResponse(ctx, 400, 'invalid_request', 'error', 'organization');
 
     // Split ids into allowed and disallowed
     const { allowedIds, disallowedIds } = await splitByAllowance('delete', 'organization', toDeleteIds, memberships);
@@ -162,9 +162,8 @@ const organizationsRoutes = app
   .openapi(organizationsRouteConfig.getOrganization, async (ctx) => {
     const { idOrSlug } = ctx.req.valid('param');
 
-    const { entity: organization, isAllowed, membership } = await getValidEntity('organization', 'read', idOrSlug);
-    if (!organization) return errorResponse(ctx, 404, 'not_found', 'warn', 'organization');
-    if (!isAllowed) return errorResponse(ctx, 403, 'forbidden', 'warn', 'organization');
+    const { entity: organization, membership, error } = await getValidEntity(ctx, 'organization', 'read', idOrSlug);
+    if (error) return ctx.json({ success: false, error }, 400);
 
     const memberCounts = await getMemberCounts('organization', organization.id);
     const relatedEntitiesCounts = await getRelatedEntityCounts('organization', organization.id);
@@ -180,9 +179,8 @@ const organizationsRoutes = app
   .openapi(organizationsRouteConfig.updateOrganization, async (ctx) => {
     const { idOrSlug } = ctx.req.valid('param');
 
-    const { entity: organization, isAllowed, membership } = await getValidEntity('organization', 'update', idOrSlug);
-    if (!organization) return errorResponse(ctx, 404, 'not_found', 'warn', 'organization');
-    if (!isAllowed) return errorResponse(ctx, 403, 'forbidden', 'warn', 'organization');
+    const { entity: organization, membership, error } = await getValidEntity(ctx, 'organization', 'update', idOrSlug);
+    if (error) return ctx.json({ success: false, error }, 400);
 
     const user = getContextUser();
 

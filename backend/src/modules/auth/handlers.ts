@@ -96,7 +96,7 @@ const authRoutes = app
     // Verify if strategy allowed
     const strategy = 'password';
     if (!enabledStrategies.includes(strategy)) {
-      return errorResponse(ctx, 400, 'forbidden_strategy', 'warn', undefined, { strategy });
+      return errorResponse(ctx, 400, 'forbidden_strategy', 'error', undefined, { strategy });
     }
 
     // Stop if sign up is disabled and no invitation
@@ -119,12 +119,12 @@ const authRoutes = app
     const userId = nanoid();
 
     const validToken = getContextToken();
-    if (!validToken) return errorResponse(ctx, 400, 'invalid_request', 'warn');
+    if (!validToken) return errorResponse(ctx, 400, 'invalid_request', 'error');
 
     // Verify if strategy allowed
     const strategy = 'password';
     if (!enabledStrategies.includes(strategy)) {
-      return errorResponse(ctx, 400, 'forbidden_strategy', 'warn', undefined, { strategy });
+      return errorResponse(ctx, 400, 'forbidden_strategy', 'error', undefined, { strategy });
     }
 
     // Delete token to not needed anymore (if no membership invitation)
@@ -213,7 +213,7 @@ const authRoutes = app
    */
   .openapi(authRouteConfig.verifyEmail, async (ctx) => {
     const token = getContextToken();
-    if (!token || !token.userId) return errorResponse(ctx, 400, 'invalid_request', 'warn');
+    if (!token || !token.userId) return errorResponse(ctx, 400, 'invalid_request', 'error');
 
     // Set email verified
     await db
@@ -280,7 +280,7 @@ const authRoutes = app
     // Verify if strategy allowed
     const strategy = 'password';
     if (!enabledStrategies.includes(strategy)) {
-      return errorResponse(ctx, 400, 'forbidden_strategy', 'warn', undefined, { strategy });
+      return errorResponse(ctx, 400, 'forbidden_strategy', 'error', undefined, { strategy });
     }
 
     // If the token is not found or expired
@@ -318,7 +318,7 @@ const authRoutes = app
     // Verify if strategy allowed
     const strategy = 'password';
     if (!enabledStrategies.includes(strategy)) {
-      return errorResponse(ctx, 400, 'forbidden_strategy', 'warn', undefined, { strategy });
+      return errorResponse(ctx, 400, 'forbidden_strategy', 'error', undefined, { strategy });
     }
 
     const loweredEmail = email.toLowerCase();
@@ -538,7 +538,7 @@ const authRoutes = app
     if (error || !code) return errorRedirect(ctx, 'oauth_failed', 'error');
 
     const strategy = 'github' as EnabledOauthProvider;
-    if (!isOAuthEnabled(strategy)) return errorResponse(ctx, 400, 'unsupported_oauth', 'warn', undefined, { strategy });
+    if (!isOAuthEnabled(strategy)) return errorResponse(ctx, 400, 'unsupported_oauth', 'error', undefined, { strategy });
 
     const stateCookie = await getAuthCookie(ctx, 'oauth_state');
     // Verify state
@@ -617,7 +617,7 @@ const authRoutes = app
     const { state, code } = ctx.req.valid('query');
     const strategy = 'google' as EnabledOauthProvider;
 
-    if (!isOAuthEnabled(strategy)) return errorResponse(ctx, 400, 'unsupported_oauth', 'warn', undefined, { strategy });
+    if (!isOAuthEnabled(strategy)) return errorResponse(ctx, 400, 'unsupported_oauth', 'error', undefined, { strategy });
 
     const storedState = await getAuthCookie(ctx, 'oauth_state');
     const storedCodeVerifier = await getAuthCookie(ctx, 'oauth_code_verifier');
@@ -695,7 +695,7 @@ const authRoutes = app
     const { state, code } = ctx.req.valid('query');
     const strategy = 'microsoft' as EnabledOauthProvider;
 
-    if (!isOAuthEnabled(strategy)) return errorResponse(ctx, 400, 'unsupported_oauth', 'warn', undefined, { strategy });
+    if (!isOAuthEnabled(strategy)) return errorResponse(ctx, 400, 'unsupported_oauth', 'error', undefined, { strategy });
 
     const storedState = await getAuthCookie(ctx, 'oauth_state');
     const storedCodeVerifier = await getAuthCookie(ctx, 'oauth_code_verifier');
