@@ -15,18 +15,6 @@ type CamelToSnakeObject<T> = {
 // Convert Attachment type to RawAttachment with snake_case keys
 export type RawAttachment = CamelToSnakeObject<Attachment>;
 
-const snakeToCamel = (str: string) => str.replace(/_([a-z])/g, (_, letter) => letter.toUpperCase());
-
-// Parses raw attachment data into the Attachment type
-export const parseRawAttachment = (rawAttachment: RawAttachment): Attachment => {
-  const attachment = {} as Attachment;
-  for (const key of Object.keys(rawAttachment) as (keyof RawAttachment)[]) {
-    const camelKey = snakeToCamel(key) as keyof Attachment;
-    attachment[camelKey] = rawAttachment[key] as never;
-  }
-  return attachment;
-};
-
 // Configures ShapeStream options for real-time syncing of attachments
 export const attachmentShape = (organizationId: string): ShapeStreamOptions => ({
   url: new URL(`/${organizationId}/attachments/shape-proxy`, config.backendUrl).href,
@@ -47,3 +35,15 @@ export const convertMessageIntoAttachments = (messages: ChangeMessage<RawAttachm
   const filteredMessages = messages.filter((m) => m.headers.operation === action);
   return filteredMessages.map((message) => parseRawAttachment(message.value));
 };
+
+// Parses raw attachment data into the Attachment type
+const parseRawAttachment = (rawAttachment: RawAttachment): Attachment => {
+  const attachment = {} as Attachment;
+  for (const key of Object.keys(rawAttachment) as (keyof RawAttachment)[]) {
+    const camelKey = snakeToCamel(key) as keyof Attachment;
+    attachment[camelKey] = rawAttachment[key] as never;
+  }
+  return attachment;
+};
+
+const snakeToCamel = (str: string) => str.replace(/_([a-z])/g, (_, letter) => letter.toUpperCase());

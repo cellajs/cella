@@ -15,8 +15,10 @@ export const useSync = (organizationId: string) => {
     // Exit if offline, sync is disabled, imado upload is disabled, or in quick mode
     if (!isOnline || !config.has.sync || !config.has.imado || env.VITE_QUICK) return;
 
+    const controller = new AbortController();
+
     // Initialize ShapeStream to listen for changes
-    const shapeStream = getShapeStream<RawAttachment>(attachmentShape(organizationId));
+    const shapeStream = getShapeStream<RawAttachment>({ ...attachmentShape(organizationId), signal: controller.signal });
 
     // Subscribe to ShapeStream for real-time updates
     const unsubscribe = shapeStream.subscribe((messages) => {
@@ -36,6 +38,10 @@ export const useSync = (organizationId: string) => {
       if (deleteIdsArray.length) handleDelete(organizationId, deleteIdsArray);
     });
 
-    return () => unsubscribe();
+    return () => {
+      unsubscribe();
+      // Abort shape's subscription to live updates
+      controller.abort();
+    };
   }, [isOnline]);
 };
