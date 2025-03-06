@@ -1,10 +1,10 @@
 import { onlineManager } from '@tanstack/react-query';
-import type { UploadResult, Uppy, UppyOptions } from '@uppy/core';
+import type { Uppy, UppyOptions } from '@uppy/core';
 import { config } from 'config';
 import { t } from 'i18next';
 
 import { createBaseTusUppy, prepareFilesForOffline, transformUploadedFile } from '~/lib/imado/helpers';
-import type { ImadoOptions, UploadedUppyFile, UppyBody, UppyMeta } from '~/lib/imado/types';
+import type { ImadoOptions, UppyBody, UppyMeta } from '~/lib/imado/types';
 import { LocalFileStorage } from '~/modules/attachments/local-file-storage';
 import type { UploadUppyProps } from '~/modules/attachments/upload/upload-uppy';
 import { toaster } from '~/modules/common/toaster';
@@ -42,18 +42,10 @@ export async function ImadoUppy(
     {
       ...uppyOptions,
       onBeforeUpload: (files) => {
-        if (!canUpload) {
-          // If not online, prepare the files for offline storage and emit complete event
-          prepareFilesForOffline(files).then((successfulFiles) => {
-            imadoUppy.emit('complete', {
-              successful: successfulFiles,
-              failed: [],
-            });
-          });
-
-          return config.has.imado; // Prevent upload if Imado is unavailable
-        }
-        return true; // Allow upload if `canUpload` is true
+        if (canUpload) return true;
+        // If not online, prepare the files for offline storage and emit complete event
+        prepareFilesForOffline(files).then((successful) => imadoUppy.emit('complete', { successful, failed: [] }));
+        return config.has.imado; // Prevent upload if Imado is unavailable
       },
     },
     token,
@@ -75,21 +67,14 @@ export async function ImadoUppy(
       console.error('Upload error:', error);
       opts.statusEventHandler?.onError?.(error);
     })
-    .on('complete', (result: UploadResult<UppyMeta, UppyBody>) => {
+    .on('complete', (result) => {
       console.info('Upload complete:', result);
+      const successful = result.successful ?? [];
 
-      let mappedResult: UploadedUppyFile[] = [];
+      // Default to an empty array if no successful files
+      const mappedResult = successful.map((file) => (canUpload ? transformUploadedFile(file, token, isPublic) : { file, url: file.id }));
 
-      if (result.successful && result.successful.length > 0) {
-        // Map successful files to a URL and file object
-        mappedResult = result.successful.map((file) => {
-          if (!canUpload) return { file, url: file.id }; // Handle offline uploads
-
-          // Generate URL for successful file upload
-          return transformUploadedFile(file, token, isPublic);
-        });
-      }
-      // Notify event handler when upload is complete
+      // Notify the event handler when upload is complete
       opts.statusEventHandler?.onComplete?.(mappedResult, result);
     })
     .on('is-online', async () => {
@@ -115,10 +100,10 @@ export async function ImadoUppy(
 
       // Upload the files
       retryImadoUppy.upload().then(async (result) => {
-        if (!result || !result.successful || result.successful.length < 1) return;
+        if (!result || !result.successful || !result.successful.length) return;
 
         // Map the successful files and remove them from offline storage
-        const mappedResult = result.successful.map((file) => transformUploadedFile(file, imadoToken, isPublic));
+        const successResult = result.successful.map((file) => transformUploadedFile(file, imadoToken, isPublic));
 
         // Clean up offline files from IndexedDB
         const ids = offlineUploadedFiles.map((el) => el.id);
@@ -126,7 +111,7 @@ export async function ImadoUppy(
         console.info('🗑️ Successfully uploaded files removed from IndexedDB.');
 
         // Notify the event handler for retry completion
-        opts.statusEventHandler?.onRetryComplete?.(mappedResult, ids);
+        opts.statusEventHandler?.onRetrySuccess?.(successResult, ids);
       });
     });
 

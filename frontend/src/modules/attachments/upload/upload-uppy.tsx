@@ -26,7 +26,7 @@ export interface UploadUppyProps {
   imageMode?: 'cover' | 'avatar' | 'attachment';
   organizationId?: string;
   callback?: (result: UploadedUppyFile[]) => void;
-  onRetryCallback?: (result: UploadedUppyFile[], previousIds: string[]) => void;
+  onRetrySuccessCallback?: (result: UploadedUppyFile[], previousIds: string[]) => void;
 }
 
 const uppyRestrictions = config.uppy.defaultRestrictions;
@@ -43,7 +43,7 @@ export const UploadUppy = ({
   plugins = [],
   imageMode = 'attachment',
   callback,
-  onRetryCallback,
+  onRetrySuccessCallback,
 }: UploadUppyProps) => {
   const [uppy, setUppy] = useState<Uppy | null>(null);
   const mode = useUIStore((state) => state.mode);
@@ -68,8 +68,8 @@ export const UploadUppy = ({
           onComplete: (mappedResult) => {
             if (callback) callback(mappedResult);
           },
-          onRetryComplete(mappedResult, localStoreIds) {
-            if (onRetryCallback) onRetryCallback(mappedResult, localStoreIds);
+          onRetrySuccess(results, localStoreIds) {
+            if (onRetrySuccessCallback) onRetrySuccessCallback(results, localStoreIds);
           },
           onFileEditorComplete: () => {
             // If in image mode, start upload directly after editing

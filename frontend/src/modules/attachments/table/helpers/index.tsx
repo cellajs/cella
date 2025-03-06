@@ -51,7 +51,7 @@ export const openAttachmentsUploadDialog = (organizationId: string) => {
       dialog.remove(true, 'upload-attachment');
     };
 
-    const handleRetryCallback = async (result: UploadedUppyFile[], ids: string[]) => {
+    const handleSuccessesRetryCallback = async (result: UploadedUppyFile[], ids: string[]) => {
       handleCallback(result);
 
       deleteAttachments({ orgIdOrSlug: organizationId, ids });
@@ -65,7 +65,7 @@ export const openAttachmentsUploadDialog = (organizationId: string) => {
         plugins={['webcam', 'image-editor', 'screen-capture', 'audio']}
         imageMode="attachment"
         callback={handleCallback}
-        onRetryCallback={handleRetryCallback}
+        onRetrySuccessCallback={handleSuccessesRetryCallback}
       />
     );
   };
