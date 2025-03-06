@@ -89,6 +89,8 @@ const UpdateOrganizationForm = ({ organization, callback, sheet: isSheet }: Prop
     form.setValue('thumbnailUrl', url, { shouldDirty: true });
   };
 
+  // TODO this is causing a significant repaint when form renders later in the rest of the content
+  // Can we somehow render directly?
   if (form.loading) return null;
 
   return (

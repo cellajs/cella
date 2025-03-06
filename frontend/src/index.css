@@ -49,17 +49,6 @@
 @layer base {
   .bn-container.bn-shadcn,
   :root {
-    --base: 14px;
-
-    --table-border: 48 100% 5%;
-    --media-secondary-color: 240 5% 92%;
-    --bloknote-placeholder: 240 6% 92%;
-    --chart-1: 12 76% 61%;
-    --chart-2: 173 58% 39%;
-    --chart-3: 197 37% 24%;
-    --chart-4: 43 74% 66%;
-    --chart-5: 27 87% 67%;
-
     --background: 0 0% 100%;
     --foreground: 240 10% 10%;
     --card: 0 0% 100%;
@@ -85,15 +74,6 @@
 
   .bn-container.bn-shadcn.dark,
   .dark {
-    --table-border: 228 100% 95%;
-    --media-secondary-color: 240 3.7% 15%;
-    --bloknote-placeholder: 240 3.7% 20%;
-    --chart-1: 220 70% 50%;
-    --chart-2: 160 60% 45%;
-    --chart-3: 30 80% 55%;
-    --chart-4: 280 65% 60%;
-    --chart-5: 340 75% 55%;
-
     --background: 240 10% 9%;
     --foreground: 0 0% 95%;
     --card: 240 10% 14%;
