@@ -151,9 +151,7 @@ class AttachmentRouteConfig {
     tags: ['attachments'],
     summary: 'Shape proxy',
     description: 'Get shape proxy for attachments to keep attachment data in sync.',
-    request: {
-      params: inOrgParamSchema,
-    },
+    request: { params: inOrgParamSchema },
     responses: {
       200: {
         description: 'Success',

@@ -23,6 +23,40 @@ const app = new OpenAPIHono<Env>({ defaultHook });
 
 // Attachment endpoints
 const attachmentsRoutes = app
+  /**
+   * Proxy to electric for syncing to client
+   * Hono handlers are executed in registration order, so registered first to avoid route collisions.
+   */
+  .openapi(attachmentsRouteConfig.shapeProxy, async (ctx) => {
+    const url = new URL(ctx.req.url);
+
+    // Construct the upstream URL
+    const originUrl = new URL(`${config.electricUrl}/v1/shape?table=attachments`);
+
+    // Copy over the relevant query params that the Electric client adds
+    // so that we return the right part of the Shape log.
+    url.searchParams.forEach((value, key) => {
+      if (['live', 'handle', 'offset', 'cursor', 'where'].includes(key)) {
+        originUrl.searchParams.set(key, value);
+      }
+    });
+
+    // When proxying long-polling requests, content-encoding & content-length are added
+    // erroneously (saying the body is gzipped when it's not) so we'll just remove
+    // them to avoid content decoding errors in the browser.
+    let res = await fetch(originUrl.toString());
+    if (res.headers.get('content-encoding')) {
+      const headers = new Headers(res.headers);
+      headers.delete('content-encoding');
+      headers.delete('content-length');
+      res = new Response(res.body, {
+        status: res.status,
+        statusText: res.statusText,
+        headers,
+      });
+    }
+    return res;
+  })
   /*
    * Create one or more attachments
    */
@@ -169,39 +203,6 @@ const attachmentsRoutes = app
     return ctx.json({ success: true, errors }, 200);
   })
   /*
-   * Proxy to electric for syncing to client
-   */
-  .openapi(attachmentsRouteConfig.shapeProxy, async (ctx) => {
-    const url = new URL(ctx.req.url);
-
-    // Constuct the upstream URL
-    const originUrl = new URL(`${config.electricUrl}/v1/shape?table=attachments`);
-
-    // Copy over the relevant query params that the Electric client adds
-    // so that we return the right part of the Shape log.
-    url.searchParams.forEach((value, key) => {
-      if (['live', 'handle', 'offset', 'cursor', 'where'].includes(key)) {
-        originUrl.searchParams.set(key, value);
-      }
-    });
-
-    // When proxying long-polling requests, content-encoding & content-length are added
-    // erroneously (saying the body is gzipped when it's not) so we'll just remove
-    // them to avoid content decoding errors in the browser.
-    let res = await fetch(originUrl.toString());
-    if (res.headers.get('content-encoding')) {
-      const headers = new Headers(res.headers);
-      headers.delete('content-encoding');
-      headers.delete('content-length');
-      res = new Response(res.body, {
-        status: res.status,
-        statusText: res.statusText,
-        headers,
-      });
-    }
-    return res;
-  })
-  /*
    * Get attachment cover
    */
   .openapi(attachmentsRouteConfig.getAttachmentCover, async (ctx) => {
@@ -239,7 +240,7 @@ const attachmentsRoutes = app
     const [attachment] = await db.select().from(attachmentsTable).where(eq(attachmentsTable.id, id));
     if (!attachment) return errorResponse(ctx, 404, 'not_found', 'warn', 'attachment');
 
-    const redirectUrl = `${config.frontendUrl}/${attachment.organizationId}/attachments?attachmentPreview=${attachment.url}`;
+    const redirectUrl = `${config.frontendUrl}/${attachment.organizationId}/attachments?attachmentPreview=${attachment.id}`;
 
     return ctx.html(html`
       <!doctype html>
