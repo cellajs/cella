@@ -64,14 +64,12 @@ export const mailer = {
       return;
     }
 
-    console.info(`Sending email to ${to}...`, subject, html);
-
     try {
       await sendgrid.send({
         to: env.SEND_ALL_TO_EMAIL || to,
         replyTo: replyTo || config.supportEmail,
         from: config.notificationsEmail,
-        subject: subject || `${config.name} message.`,
+        subject: subject || `${config.name} message`,
         html,
       });
     } catch (err) {
