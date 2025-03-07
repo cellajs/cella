@@ -91,9 +91,6 @@ services:
         name: X-XSS-Protection
         value: 1; mode=block
       - path: /*
-        name: Permissions-Policy
-        value: camera=(), microphone=(), geolocation=(), accelerometer=(), gyroscope=(), magnetometer=(), payment=(), midi=()
-      - path: /*
         name: X-Frame-Options
         value: SAMEORIGIN
     routes:
