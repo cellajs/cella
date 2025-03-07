@@ -4,8 +4,8 @@ import { config } from 'config';
 import { useTranslation } from 'react-i18next';
 
 import Logo from '~/modules/common/logo';
-import { footerSections, legalLinks } from '~/modules/marketing/about/about-config';
 import { BackgroundCurve } from '~/modules/marketing/about/hero';
+import { footerSections, legalLinks } from '~/modules/marketing/marketing-config';
 import SubscribeNewsletterForm from '~/modules/marketing/newsletter';
 
 const currentYear = new Date().getFullYear();

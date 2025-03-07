@@ -1,4 +1,4 @@
-import { Link } from '@tanstack/react-router';
+import { Link, useNavigate } from '@tanstack/react-router';
 import { config } from 'config';
 import { Github } from 'lucide-react';
 import { useState } from 'react';
@@ -12,39 +12,45 @@ import UserTheme from '~/modules/me/user-theme';
 import { Button, buttonVariants } from '~/modules/ui/button';
 import { Sheet, SheetContent, SheetHiddenTitle } from '~/modules/ui/sheet';
 import { cn } from '~/utils/cn';
+import { marketingNavConfig } from './marketing-config';
 
-const marketingNavConfig = [
-  { id: 'features', url: '/about', hash: 'features' },
-  // { id: 'pricing', url: '/about', hash: 'pricing' },
-  { id: 'docs', url: `${config.backendUrl}/docs`, hash: '' },
-];
-
-export function MarketingNav({ onHandleMismatch }: { onHandleMismatch?: (target: string) => void }) {
+export function MarketingNav() {
   const { t } = useTranslation();
+  const navigate = useNavigate();
+
   const [showSheet, setShowSheet] = useState<boolean>(false);
 
   const toggleSheet = (isOpen: boolean) => {
     setShowSheet(isOpen);
   };
 
-  const handleNavClick = (target: string, isOpen: boolean) => {
-    if (onHandleMismatch) onHandleMismatch(target);
+  const handleNavClick = (target: string, isOpen = false) => {
+    if (window.location.hash === `#${target}`) navigate({ to: '.', hash: 'top', replace: true });
+
+    setTimeout(() => {
+      navigate({ hash: target, replace: true });
+    }, 20);
+
     setShowSheet(isOpen);
   };
 
   const { ref, inView } = useInView();
 
   const renderNavItems = () => {
-    return marketingNavConfig.map((item) => (
+    return marketingNavConfig.map(({ url, hash, id }) => (
       <Link
-        to={item.url}
-        hash={item.hash}
+        to={url}
+        hash={hash}
         replace={location.pathname === '/about'}
-        key={item.id}
-        onClick={() => handleNavClick(item.hash, false)}
+        key={id}
+        onClick={(e) => {
+          if (window.location.hash !== `#${hash}`) return;
+          e.preventDefault();
+          handleNavClick(hash);
+        }}
         className={cn(buttonVariants({ variant: 'ghost', size: 'lg' }))}
       >
-        {t(item.id)}
+        {t(id)}
       </Link>
     ));
   };
@@ -94,17 +100,19 @@ export function MarketingNav({ onHandleMismatch }: { onHandleMismatch?: (target:
 
             <UserTheme buttonClassName="max-xs:hidden mr-2" />
 
-            <Button
-              variant="ghost"
-              aria-label="Github repository"
-              className="max-sm:hidden"
-              size="icon"
-              onClick={() => {
-                openInNewTab(config.company.githubUrl);
-              }}
-            >
-              <Github strokeWidth={config.theme.strokeWidth} />
-            </Button>
+            {config.company.githubUrl && (
+              <Button
+                variant="ghost"
+                aria-label="Github repository"
+                className="max-sm:hidden"
+                size="icon"
+                onClick={() => {
+                  openInNewTab(config.company.githubUrl);
+                }}
+              >
+                <Github strokeWidth={config.theme.strokeWidth} />
+              </Button>
+            )}
 
             <Link to="/auth/authenticate" preload={false} className={cn('sm:ml-2 max-xs:hidden"', buttonVariants())}>
               {t('common:sign_in')}
@@ -132,16 +140,18 @@ export function MarketingNav({ onHandleMismatch }: { onHandleMismatch?: (target:
               <UserTheme buttonClassName="absolute top-5 right-5 xs:hidden" />
             </div>
             {renderNavItems()}
-            <Button
-              size="lg"
-              className="sm:hidden"
-              onClick={() => {
-                openInNewTab(config.company.githubUrl);
-              }}
-            >
-              <Github className="mr-2" strokeWidth={config.theme.strokeWidth} />
-              Github
-            </Button>
+            {config.company.githubUrl && (
+              <Button
+                size="lg"
+                className="sm:hidden"
+                onClick={() => {
+                  openInNewTab(config.company.githubUrl);
+                }}
+              >
+                <Github className="mr-2" strokeWidth={config.theme.strokeWidth} />
+                Github
+              </Button>
+            )}
           </div>
         </SheetContent>
       </Sheet>

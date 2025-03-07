@@ -52,7 +52,7 @@ import { deleteAuthCookie, getAuthCookie, setAuthCookie } from './helpers/cookie
 import { handleInvitationToken } from './helpers/oauth';
 import { verifyPassKeyPublic } from './helpers/passkey';
 import { getParsedSessionCookie, invalidateSessionById, setUserSession, validateSession } from './helpers/session';
-import { handleCreateUser, handleTokenUpdate } from './helpers/user';
+import { handleCreateUser, handleMembershipTokenUpdate } from './helpers/user';
 import { sendVerificationEmail } from './helpers/verify-email';
 import authRouteConfig from './routes';
 
@@ -121,6 +121,7 @@ const authRoutes = app
     const validToken = getContextToken();
     if (!validToken) return errorResponse(ctx, 400, 'invalid_request', 'error');
 
+    const systemInvite = !!validToken.entity;
     // Verify if strategy allowed
     const strategy = 'password';
     if (!enabledStrategies.includes(strategy)) {
@@ -128,15 +129,17 @@ const authRoutes = app
     }
 
     // Delete token to not needed anymore (if no membership invitation)
-    if (!validToken.entity) await db.delete(tokensTable).where(eq(tokensTable.id, validToken.id));
+    if (!systemInvite) await db.delete(tokensTable).where(eq(tokensTable.id, validToken.id));
 
+    // add token if it's membership invitation
+    const tokenId = systemInvite ? validToken.id : undefined;
     const hashedPassword = await hashPassword(password);
     const slug = slugFromEmail(validToken.email);
 
     // Create user & send verification email
     const newUser = { id: userId, slug, name: slug, email: validToken.email, hashedPassword };
 
-    return await handleCreateUser({ ctx, newUser, tokenId: validToken.id });
+    return await handleCreateUser({ ctx, newUser, tokenId, emailVerified: true });
   })
   /*
    * Send verification email, also used to resend verification email.
@@ -393,7 +396,7 @@ const authRoutes = app
     // Make sure correct user accepts invitation (for example another user could have a sessions and click on email invite of another user)
     if (user.id !== token.userId && emailInfo.userId !== user.id) return errorResponse(ctx, 401, 'user_mismatch', 'warn');
 
-    if (emailInfo.userId === user.id && user.id !== token.userId) await handleTokenUpdate(user.id, token.id);
+    if (emailInfo.userId === user.id && user.id !== token.userId) await handleMembershipTokenUpdate(user.id, token.id);
     // Activate memberships
     await db
       .update(membershipsTable)

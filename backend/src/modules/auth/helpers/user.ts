@@ -65,7 +65,7 @@ export const handleCreateUser = async ({ ctx, newUser, redirectUrl, provider, to
     if (provider) await insertOauthAccount(user.id, provider.id, provider.userId);
 
     // If signing up with token, update it with new user id and insert membership if applicable
-    if (tokenId) await handleTokenUpdate(user.id, tokenId);
+    if (tokenId) await handleMembershipTokenUpdate(user.id, tokenId);
 
     // If email is not verified, send verification email. Otherwise, create verified email record and  sign in user
     if (!emailVerified) sendVerificationEmail(user.id);
@@ -105,7 +105,7 @@ export const handleCreateUser = async ({ ctx, newUser, redirectUrl, provider, to
   }
 };
 
-export const handleTokenUpdate = async (userId: string, tokenId: string) => {
+export const handleMembershipTokenUpdate = async (userId: string, tokenId: string) => {
   try {
     // Update the token with the new userId
     const [token] = await db.update(tokensTable).set({ userId }).where(eq(tokensTable.id, tokenId)).returning();
