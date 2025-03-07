@@ -31,6 +31,8 @@ const UserLanguage = ({ align = 'end', triggerClassName = '', contentClassName =
     i18n.changeLanguage(lng);
   };
 
+  if (config.languages.length < 2) return null;
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>

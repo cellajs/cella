@@ -3,7 +3,7 @@ import { useUIStore } from '~/store/ui';
 
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { ExpandableList } from '~/modules/common/expandable-list';
-import { features } from '~/modules/marketing/about/about-config';
+import { features } from '~/modules/marketing/marketing-config';
 
 type FeatureProps = {
   icon: string;

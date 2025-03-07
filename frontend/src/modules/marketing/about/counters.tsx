@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useInView } from 'react-intersection-observer';
 import { CountUp } from 'use-count-up';
-import { counts } from '~/modules/marketing/about/about-config';
+import { counts } from '~/modules/marketing/marketing-config';
 import { getPublicCounts } from '~/modules/metrics/api';
 import { Card, CardContent, CardHeader, CardTitle } from '~/modules/ui/card';
 

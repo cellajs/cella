@@ -32,6 +32,7 @@ interface AboutSectionProps {
 
 const AboutSection = ({ title, text, section, children, alternate = false }: AboutSectionProps) => {
   const { t } = useTranslation();
+
   const backgroundClass = alternate ? 'bg-accent/40 dark:bg-transparent' : '';
 
   return (
@@ -55,18 +56,9 @@ const About = () => {
 
   useScrollSpy({ sectionIds });
 
-  // If the hash already matches but the user is not at the section, clear and re-set the hash
-  const handleMismatch = (target: string) => {
-    if (location.hash !== `#${target}`) return;
-    navigate({ hash: '', replace: true });
-    setTimeout(() => {
-      navigate({ hash: target, replace: true });
-    }, 1);
-  };
-
   return (
     <>
-      <MarketingNav onHandleMismatch={handleMismatch} />
+      <MarketingNav />
 
       <div className="container max-w-none px-0">
         {/* Hero landing */}
@@ -94,7 +86,14 @@ const About = () => {
             to="/about"
             replace
             hash="why"
-            onClick={() => handleMismatch('why')}
+            onClick={(e) => {
+              e.preventDefault();
+              if (window.location.hash === '#why') navigate({ to: '.', hash: 'top', replace: true });
+
+              setTimeout(() => {
+                navigate({ hash: 'why', replace: true });
+              }, 20);
+            }}
             className={cn(buttonVariants({ variant: 'ghost', size: 'lg' }))}
             aria-label="Read more"
           >

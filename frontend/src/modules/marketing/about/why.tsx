@@ -1,23 +1,9 @@
 import { Suspense, lazy } from 'react';
 import { useTranslation } from 'react-i18next';
 import Spinner from '~/modules/common/spinner';
+import { whyDarkSlides, whyItems, whyLightSlides } from '../marketing-config';
 
 const DeviceMockup = lazy(() => import('~/modules/marketing/device-mockup'));
-
-const whyItems = [{ id: 'implementation-ready' }, { id: 'prebuilt-endpoints' }, { id: 'dedicated-community' }];
-
-// Slides for light and dark themes
-const lightSlides = [
-  { url: '/static/screenshots/system-page.png', name: 'System page', filename: 'system-page.png', contentType: 'image/png' },
-  { url: '/static/screenshots/org-page.png', name: 'Organization page', filename: 'org-page.png', contentType: 'image/png' },
-  { url: '/static/screenshots/settings.png', name: 'User settings page', filename: 'settings.png', contentType: 'image/png' },
-];
-const darkSlides = [
-  { url: '/static/screenshots/system-page-dark.png', name: 'System page', filename: 'system-page-dark.png', contentType: 'image/png' },
-  { url: '/static/screenshots/org-page-dark.png', name: 'Organization page', filename: 'org-page-dark.png', contentType: 'image/png' },
-  { url: '/static/screenshots/settings-dark.png', name: 'User settings page', filename: 'settings-dark.png', contentType: 'image/png' },
-];
-
 const Why = () => {
   const { t } = useTranslation();
 
@@ -47,7 +33,7 @@ const Why = () => {
       </div>
       <div className="w-full lg:w-7/12">
         <Suspense fallback={<Spinner className="mt-[40vh] h-10 w-10" />}>
-          <DeviceMockup className="lg:absolute -top-2 lg:ml-8 lg:w-[54vw]" type="pc" lightSlides={lightSlides} darkSlides={darkSlides} />
+          <DeviceMockup className="lg:absolute -top-2 lg:ml-8 lg:w-[54vw]" type="pc" lightSlides={whyLightSlides} darkSlides={whyDarkSlides} />
         </Suspense>
       </div>
     </div>
