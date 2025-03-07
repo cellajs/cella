@@ -1,5 +1,6 @@
 CREATE TABLE "attachments" (
 	"id" varchar PRIMARY KEY NOT NULL,
+	"group_id" varchar,
 	"name" varchar DEFAULT 'attachment' NOT NULL,
 	"filename" varchar NOT NULL,
 	"content_type" varchar NOT NULL,
@@ -13,11 +14,24 @@ CREATE TABLE "attachments" (
 	"organization_id" varchar NOT NULL
 );
 --> statement-breakpoint
+CREATE TABLE "emails" (
+	"id" varchar PRIMARY KEY NOT NULL,
+	"email" varchar NOT NULL,
+	"verified" boolean DEFAULT false NOT NULL,
+	"token_id" varchar,
+	"user_id" varchar NOT NULL,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	"verified_at" timestamp,
+	CONSTRAINT "emails_email_unique" UNIQUE("email")
+);
+--> statement-breakpoint
 CREATE TABLE "memberships" (
 	"id" varchar PRIMARY KEY NOT NULL,
 	"type" varchar NOT NULL,
 	"user_id" varchar NOT NULL,
 	"role" varchar DEFAULT 'member' NOT NULL,
+	"token_id" varchar,
+	"activated_at" timestamp,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"created_by" varchar,
 	"modified_at" timestamp,
@@ -25,7 +39,6 @@ CREATE TABLE "memberships" (
 	"archived" boolean DEFAULT false NOT NULL,
 	"muted" boolean DEFAULT false NOT NULL,
 	"order" double precision NOT NULL,
-	"token_id" varchar,
 	"organization_id" varchar NOT NULL
 );
 --> statement-breakpoint
@@ -92,8 +105,7 @@ CREATE TABLE "sessions" (
 	"auth_strategy" varchar,
 	"type" varchar DEFAULT 'regular' NOT NULL,
 	"created_at" timestamp DEFAULT now() NOT NULL,
-	"expires_at" timestamp with time zone NOT NULL,
-	"admin_user_id" varchar
+	"expires_at" timestamp with time zone NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE "tokens" (
@@ -101,12 +113,13 @@ CREATE TABLE "tokens" (
 	"token" varchar NOT NULL,
 	"type" varchar NOT NULL,
 	"email" varchar NOT NULL,
+	"entity" varchar,
 	"role" varchar,
 	"user_id" varchar,
-	"organization_id" varchar,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"created_by" varchar,
-	"expires_at" timestamp with time zone NOT NULL
+	"expires_at" timestamp with time zone NOT NULL,
+	"organization_id" varchar
 );
 --> statement-breakpoint
 CREATE TABLE "users" (
@@ -119,16 +132,15 @@ CREATE TABLE "users" (
 	"first_name" varchar,
 	"last_name" varchar,
 	"email" varchar NOT NULL,
-	"email_verified" boolean DEFAULT false NOT NULL,
 	"language" varchar DEFAULT 'en' NOT NULL,
 	"banner_url" varchar,
 	"thumbnail_url" varchar,
 	"newsletter" boolean DEFAULT false NOT NULL,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	"modified_at" timestamp,
 	"last_seen_at" timestamp,
 	"last_started_at" timestamp,
 	"last_sign_in_at" timestamp,
-	"created_at" timestamp DEFAULT now() NOT NULL,
-	"modified_at" timestamp,
 	"modified_by" varchar,
 	"role" varchar DEFAULT 'user' NOT NULL,
 	CONSTRAINT "users_slug_unique" UNIQUE("slug"),
@@ -139,10 +151,12 @@ CREATE TABLE "users" (
 ALTER TABLE "attachments" ADD CONSTRAINT "attachments_created_by_users_id_fk" FOREIGN KEY ("created_by") REFERENCES "public"."users"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "attachments" ADD CONSTRAINT "attachments_modified_by_users_id_fk" FOREIGN KEY ("modified_by") REFERENCES "public"."users"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "attachments" ADD CONSTRAINT "attachments_organization_id_organizations_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "emails" ADD CONSTRAINT "emails_token_id_tokens_id_fk" FOREIGN KEY ("token_id") REFERENCES "public"."tokens"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "emails" ADD CONSTRAINT "emails_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "memberships" ADD CONSTRAINT "memberships_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "memberships" ADD CONSTRAINT "memberships_token_id_tokens_id_fk" FOREIGN KEY ("token_id") REFERENCES "public"."tokens"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "memberships" ADD CONSTRAINT "memberships_created_by_users_id_fk" FOREIGN KEY ("created_by") REFERENCES "public"."users"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "memberships" ADD CONSTRAINT "memberships_modified_by_users_id_fk" FOREIGN KEY ("modified_by") REFERENCES "public"."users"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "memberships" ADD CONSTRAINT "memberships_token_id_tokens_id_fk" FOREIGN KEY ("token_id") REFERENCES "public"."tokens"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "memberships" ADD CONSTRAINT "memberships_organization_id_organizations_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "oauth_accounts" ADD CONSTRAINT "oauth_accounts_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "organizations" ADD CONSTRAINT "organizations_created_by_users_id_fk" FOREIGN KEY ("created_by") REFERENCES "public"."users"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
@@ -150,16 +164,14 @@ ALTER TABLE "organizations" ADD CONSTRAINT "organizations_modified_by_users_id_f
 ALTER TABLE "passkeys" ADD CONSTRAINT "passkeys_user_email_users_email_fk" FOREIGN KEY ("user_email") REFERENCES "public"."users"("email") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "requests" ADD CONSTRAINT "requests_token_id_tokens_id_fk" FOREIGN KEY ("token_id") REFERENCES "public"."tokens"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "sessions" ADD CONSTRAINT "sessions_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "sessions" ADD CONSTRAINT "sessions_admin_user_id_users_id_fk" FOREIGN KEY ("admin_user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "tokens" ADD CONSTRAINT "tokens_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "tokens" ADD CONSTRAINT "tokens_organization_id_organizations_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "tokens" ADD CONSTRAINT "tokens_created_by_users_id_fk" FOREIGN KEY ("created_by") REFERENCES "public"."users"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "tokens" ADD CONSTRAINT "tokens_organization_id_organizations_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "users" ADD CONSTRAINT "users_modified_by_users_id_fk" FOREIGN KEY ("modified_by") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 CREATE INDEX "organizations_name_index" ON "organizations" USING btree ("name" DESC NULLS LAST);--> statement-breakpoint
 CREATE INDEX "organizations_created_at_index" ON "organizations" USING btree ("created_at" DESC NULLS LAST);--> statement-breakpoint
 CREATE INDEX "requests_emails" ON "requests" USING btree ("email" DESC NULLS LAST);--> statement-breakpoint
 CREATE INDEX "requests_created_at" ON "requests" USING btree ("created_at" DESC NULLS LAST);--> statement-breakpoint
-CREATE INDEX "idx_admin_id" ON "sessions" USING btree ("admin_user_id");--> statement-breakpoint
 CREATE INDEX "users_name_index" ON "users" USING btree ("name" DESC NULLS LAST);--> statement-breakpoint
 CREATE INDEX "users_token_index" ON "users" USING btree ("unsubscribe_token");--> statement-breakpoint
 CREATE INDEX "users_email_index" ON "users" USING btree ("email" DESC NULLS LAST);--> statement-breakpoint
