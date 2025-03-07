@@ -34,6 +34,12 @@ export const useSync = (organizationId: string) => {
       // Avoid triggering on initial load
       if (shapeStream.isLoading()) return;
 
+      // Save latest offset and shape handle to store
+      if (shapeStream.shapeHandle) {
+        const newSyncData = { offset: shapeStream.lastOffset, handle: shapeStream.shapeHandle };
+        setSyncData(storeKey, newSyncData);
+      }
+
       // Filter out the messages that contain valid operations (create, update, delete)
       const operationMessages = messages.filter((m) => m.headers.operation && 'value' in m && m.value) as ChangeMessage<RawAttachment>[];
       if (!operationMessages.length) return;
@@ -47,12 +53,6 @@ export const useSync = (organizationId: string) => {
       if (insertArray.length) handleInsert(organizationId, insertArray);
       if (updateArray.length) handleUpdate(organizationId, updateArray);
       if (deleteIdsArray.length) handleDelete(organizationId, deleteIdsArray);
-
-      // Save latest offset and shape handle to store
-      if (shapeStream.shapeHandle) {
-        const newSyncData = { offset: shapeStream.lastOffset, handle: shapeStream.shapeHandle };
-        setSyncData(storeKey, newSyncData);
-      }
     });
 
     return () => {
