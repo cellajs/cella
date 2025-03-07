@@ -19,11 +19,11 @@ import { PageAside } from '~/modules/common/page/aside';
 import StickyBox from '~/modules/common/sticky-box';
 import { toaster } from '~/modules/common/toaster';
 import DeleteSelf from '~/modules/me/delete-self';
+import SessionsList from '~/modules/me/sessions-list';
+import type { UserAuthInfo } from '~/modules/me/types';
 import { deletePasskey, passkeyRegistration } from '~/modules/users/helpers';
 import UpdateUserForm from '~/modules/users/update-user-form';
 import { useUIStore } from '~/store/ui';
-import SessionsList from './sessions-list';
-import type { UserAuthInfo } from './types';
 
 const tabs = [
   { id: 'general', label: 'common:general' },

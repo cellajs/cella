@@ -3,7 +3,7 @@ import { useBreakpoints } from '~/hooks/use-breakpoints';
 import StandardDialog from '~/modules/common/dialoger/dialog';
 import DrawerDialog from '~/modules/common/dialoger/drawer';
 import { DialogState, type DialogT, type DialogToRemove } from '~/modules/common/dialoger/state';
-import { sheet } from '../sheeter/state';
+import { sheet } from '~/modules/common/sheeter/state';
 
 export function Dialoger() {
   const [dialogs, setDialogs] = useState<DialogT[]>([]);

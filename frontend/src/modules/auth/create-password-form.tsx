@@ -12,12 +12,12 @@ import { Suspense, lazy } from 'react';
 import { createPassword } from '~/modules/auth/api';
 import AuthNotice from '~/modules/auth/notice';
 import { RequestPasswordDialog } from '~/modules/auth/request-password-dialog';
+import { useTokenCheck } from '~/modules/auth/use-token-check';
 import Spinner from '~/modules/common/spinner';
 import { toaster } from '~/modules/common/toaster';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '~/modules/ui/form';
 import { Input } from '~/modules/ui/input';
 import { CreatePasswordWithTokenRoute } from '~/routes/auth';
-import { useTokenCheck } from './use-token-check';
 
 const PasswordStrength = lazy(() => import('~/modules/auth/password-strength'));
 

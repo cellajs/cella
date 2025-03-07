@@ -9,6 +9,7 @@ type SearchParams<T> = {
   from?: RoutesById;
   defaultValues?: Partial<T>;
   saveDataInSearch?: boolean;
+  useCurrentSearch?: boolean;
 };
 
 /**
@@ -18,7 +19,7 @@ type SearchParams<T> = {
  * @param from - The route identifier (optional). If provided, the hook is scoped to that route.
  * @param defaultValues - Default values for search parameters (optional).
  * @param saveDataInSearch - A flag (default: `true`) that controls whether changes to search parameters should be saved in the URL.
- *
+ * @param useCurrentSearch - A flag (default: saveDataInSearch) that controls whether use search parameters that already exist in url.
  * @returns An object with:
  *   - `search`: The current search parameters (query string).
  *   - `setSearch`: A function to update the search parameters and sync with the URL.
@@ -27,6 +28,7 @@ const useSearchParams = <T extends Record<string, string | string[] | undefined>
   from,
   defaultValues,
   saveDataInSearch = true,
+  useCurrentSearch = saveDataInSearch,
 }: SearchParams<T>) => {
   const navigate = useNavigate();
   const params = useParams(from ? { from, strict: true } : { strict: false });
@@ -37,9 +39,9 @@ const useSearchParams = <T extends Record<string, string | string[] | undefined>
     () =>
       ({
         ...defaultValues,
-        ...search,
+        ...(useCurrentSearch ? search : {}),
       }) as T,
-    [defaultValues, search],
+    [defaultValues, search, useCurrentSearch],
   );
 
   // State to hold the current search parameters

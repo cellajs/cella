@@ -17,6 +17,7 @@ import { SelectLanguages } from '~/modules/common/form-fields/select-languages';
 import SelectTimezone from '~/modules/common/form-fields/select-timezone';
 import { SlugFormField } from '~/modules/common/form-fields/slug';
 import { sheet } from '~/modules/common/sheeter/state';
+import Spinner from '~/modules/common/spinner';
 import { toaster } from '~/modules/common/toaster';
 import UnsavedBadge from '~/modules/common/unsaved-badge';
 import { useOrganizationUpdateMutation } from '~/modules/organizations/query';
@@ -24,7 +25,6 @@ import type { Organization } from '~/modules/organizations/types';
 import { Button, SubmitButton } from '~/modules/ui/button';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
 import { cleanUrl } from '~/utils/clean-url';
-import Spinner from '../common/spinner';
 
 interface Props {
   organization: Organization;

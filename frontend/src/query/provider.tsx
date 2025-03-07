@@ -6,6 +6,7 @@ import { meQueryOptions, menuQueryOptions } from '~/modules/users/query';
 import { queriesToMap } from '~/offline-config';
 import { prefetchQuery } from '~/query/helpers/prefetch-query';
 import { waitFor } from '~/query/helpers/wait-for';
+import { persister } from '~/query/persister';
 import { queryClient } from '~/query/query-client';
 import { useUIStore } from '~/store/ui';
 import { useUserStore } from '~/store/user';
@@ -13,7 +14,6 @@ import { useUserStore } from '~/store/user';
 // Import all files containing default mutations to ensure
 // QueryClientProvider can handle offline mutations correctly.
 import '~/query/mutation-import-config';
-import { persister } from './persister';
 
 const GC_TIME = 24 * 60 * 60 * 1000; // 24 hours
 
