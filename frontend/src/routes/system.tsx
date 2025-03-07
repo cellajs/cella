@@ -1,16 +1,17 @@
 import { createRoute } from '@tanstack/react-router';
 import { Suspense, lazy } from 'react';
 import { z } from 'zod';
+
+import { getOrganizationsQuerySchema } from '#/modules/organizations/schema';
+import { getRequestsQuerySchema } from '#/modules/requests/schema';
+import { usersQuerySchema } from '#/modules/users/schema';
+
 import ErrorNotice from '~/modules/common/error-notice';
 import { organizationsQueryOptions } from '~/modules/organizations/query';
 import { requestsQueryOptions } from '~/modules/requests/query';
 import SystemPage from '~/modules/system/system-page';
 import { usersQueryOptions } from '~/modules/users/query';
 import { queryClient } from '~/query/query-client';
-import { getOrganizationsQuerySchema } from '#/modules/organizations/schema';
-import { getRequestsQuerySchema } from '#/modules/requests/schema';
-import { usersQuerySchema } from '#/modules/users/schema';
-
 import { AppRoute } from '~/routes/base';
 import { noDirectAccess } from '~/utils/no-direct-access';
 
@@ -45,9 +46,8 @@ export const UsersTableRoute = createRoute({
   getParentRoute: () => SystemRoute,
   loaderDeps: ({ search: { q, sort, order, role } }) => ({ q, sort, order, role }),
   loader: async ({ deps: { q, sort, order, role } }) => {
-    const infiniteQueryOptions = usersQueryOptions({ q, sort, order, role });
-    const cachedUsers = queryClient.getQueryData(infiniteQueryOptions.queryKey);
-    if (!cachedUsers) queryClient.fetchInfiniteQuery(infiniteQueryOptions);
+    const options = usersQueryOptions({ q, sort, order, role });
+    queryClient.ensureInfiniteQueryData(options);
   },
   component: () => (
     <Suspense>
@@ -63,11 +63,8 @@ export const OrganizationsTableRoute = createRoute({
   getParentRoute: () => SystemRoute,
   loaderDeps: ({ search: { q, sort, order } }) => ({ q, sort, order }),
   loader: async ({ deps: { q, sort, order } }) => {
-    const infiniteQueryOptions = organizationsQueryOptions({ q, sort, order });
-    const cachedOrganizations = queryClient.getQueryData(infiniteQueryOptions.queryKey);
-    if (!cachedOrganizations) {
-      queryClient.fetchInfiniteQuery(infiniteQueryOptions);
-    }
+    const options = organizationsQueryOptions({ q, sort, order });
+    queryClient.ensureInfiniteQueryData(options);
   },
   component: () => (
     <Suspense>
@@ -83,11 +80,8 @@ export const RequestsTableRoute = createRoute({
   getParentRoute: () => SystemRoute,
   loaderDeps: ({ search: { q, sort, order } }) => ({ q, sort, order }),
   loader: async ({ deps: { q, sort, order } }) => {
-    const infiniteQueryOptions = requestsQueryOptions({ q, sort, order });
-    const cachedRequests = queryClient.getQueryData(infiniteQueryOptions.queryKey);
-    if (!cachedRequests) {
-      queryClient.fetchInfiniteQuery(infiniteQueryOptions);
-    }
+    const options = requestsQueryOptions({ q, sort, order });
+    queryClient.ensureInfiniteQueryData(options);
   },
   component: () => (
     <Suspense>
