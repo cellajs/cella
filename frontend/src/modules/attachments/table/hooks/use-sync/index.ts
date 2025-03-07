@@ -1,12 +1,31 @@
-import type { ChangeMessage } from '@electric-sql/client';
+import type { ChangeMessage, ShapeStreamOptions } from '@electric-sql/client';
 import { getShapeStream } from '@electric-sql/react';
 import { config } from 'config';
 import { useEffect } from 'react';
 import { env } from '~/env';
 import { useOnlineManager } from '~/hooks/use-online-manager';
-import { type RawAttachment, attachmentShape, convertMessageIntoAttachments } from '~/modules/attachments/table/hooks/use-sync/helpers';
+import { type CamelToSnakeObject, convertMessageInfo } from '~/lib/use-sync';
 import { handleDelete, handleInsert, handleUpdate } from '~/modules/attachments/table/hooks/use-sync/operation-handlers';
+import type { Attachment } from '~/modules/attachments/types';
 import { useSyncStore } from '~/store/sync';
+
+// Configures ShapeStream options for real-time syncing of attachments
+const attachmentShape = (organizationId: string): ShapeStreamOptions => ({
+  url: new URL(`/${organizationId}/attachments/shape-proxy`, config.backendUrl).href,
+  params: { where: `organization_id = '${organizationId}'` },
+  backoffOptions: {
+    initialDelay: 500,
+    maxDelay: 32000,
+    multiplier: 2,
+  },
+  fetchClient: (input, init) =>
+    fetch(input, {
+      ...init,
+      credentials: 'include',
+    }),
+});
+
+type RawAttachment = CamelToSnakeObject<Attachment>;
 
 // Custom hook to sync attachments in real-time for a specific organization
 export const useSync = (organizationId: string) => {
@@ -45,9 +64,9 @@ export const useSync = (organizationId: string) => {
       if (!operationMessages.length) return;
 
       // Convert operation messages into respective arrays (inserts, updates, deletes)
-      const insertArray = convertMessageIntoAttachments(operationMessages, 'insert');
-      const updateArray = convertMessageIntoAttachments(operationMessages, 'update');
-      const deleteIdsArray = convertMessageIntoAttachments(operationMessages, 'delete').map(({ id }) => id);
+      const insertArray = convertMessageInfo<Attachment>(operationMessages, 'insert');
+      const updateArray = convertMessageInfo<Attachment>(operationMessages, 'update');
+      const deleteIdsArray = convertMessageInfo<Attachment>(operationMessages, 'delete').map(({ id }) => id);
 
       // Handle operations
       if (insertArray.length) handleInsert(organizationId, insertArray);

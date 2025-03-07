@@ -5,64 +5,8 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1738618006759,
-      "tag": "0000_big_warbound",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "7",
-      "when": 1738845275361,
-      "tag": "0001_nifty_sphinx",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "7",
-      "when": 1738921405100,
-      "tag": "0002_confused_texas_twister",
-      "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "7",
-      "when": 1739277764585,
-      "tag": "0003_optimal_screwball",
-      "breakpoints": true
-    },
-    {
-      "idx": 4,
-      "version": "7",
-      "when": 1739976100994,
-      "tag": "0004_third_lady_mastermind",
-      "breakpoints": true
-    },
-    {
-      "idx": 5,
-      "version": "7",
-      "when": 1740402114188,
-      "tag": "0005_green_warbird",
-      "breakpoints": true
-    },
-    {
-      "idx": 6,
-      "version": "7",
-      "when": 1740405435147,
-      "tag": "0006_common_talon",
-      "breakpoints": true
-    },
-    {
-      "idx": 7,
-      "version": "7",
-      "when": 1740494451961,
-      "tag": "0007_gorgeous_monster_badoon",
-      "breakpoints": true
-    },
-    {
-      "idx": 8,
-      "version": "7",
-      "when": 1740734436345,
-      "tag": "0008_jittery_kat_farrell",
+      "when": 1741356295782,
+      "tag": "0000_clear_strong_guy",
       "breakpoints": true
     }
   ]

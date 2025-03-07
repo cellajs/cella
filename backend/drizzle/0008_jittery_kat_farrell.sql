@@ -1,1 +1,0 @@
-ALTER TABLE "attachments" ADD COLUMN "group_id" varchar;
