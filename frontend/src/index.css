@@ -34,7 +34,7 @@
     margin-left: 1.7rem;
     opacity: 0.5;
     z-index: 0;
-    width: 1px;
+    width: 0.05rem;
     height: calc(100% - 1.5rem);
   }
 }

@@ -202,7 +202,7 @@ export const handleInvitationToken = async (ctx: Context) => {
 
   if (!tokenRecord) return { tokenId: null, redirectUrl: redirect, error: createError(ctx, 404, 'invitation_not_found', 'warn') };
   if (isExpiredDate(tokenRecord.expiresAt)) return { tokenId: null, redirectUrl: redirect, error: createError(ctx, 403, 'expired_token', 'warn') };
-  if (tokenRecord.type !== 'invitation') return { tokenId: null, redirectUrl: redirect, error: createError(ctx, 400, 'invalid_token', 'warn') };
+  if (tokenRecord.type !== 'invitation') return { tokenId: null, redirectUrl: redirect, error: createError(ctx, 400, 'invalid_token', 'error') };
 
   return {
     tokenId: tokenRecord.id,

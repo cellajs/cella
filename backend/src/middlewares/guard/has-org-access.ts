@@ -18,7 +18,7 @@ import { organizationsTable } from '#/db/schema/organizations';
  */
 export async function hasOrgAccess(ctx: Context, next: Next): Promise<Response | undefined> {
   const orgIdOrSlug = ctx.req.param('orgIdOrSlug');
-  if (!orgIdOrSlug) return errorResponse(ctx, 400, 'invalid_request', 'warn');
+  if (!orgIdOrSlug) return errorResponse(ctx, 400, 'invalid_request', 'error');
 
   const memberships = getContextMemberships();
   const user = getContextUser();

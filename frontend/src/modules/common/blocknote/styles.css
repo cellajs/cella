@@ -65,9 +65,9 @@ p.bn-inline-content code {
 .bn-grid-suggestion-menu {
   max-height: 25rem !important;
   background-color: hsl(var(--popover)) !important;
-  border: 1px solid hsl(var(--border)) !important;
+  border: 0.05rem solid hsl(var(--border)) !important;
   border-radius: 8px !important;
-  box-shadow: 0 1px 4px 0 rgb(0 0 0 / 0.1) !important;
+  box-shadow: 0 0.05rem 4px 0 rgb(0 0 0 / 0.1) !important;
   gap: 0.75rem !important;
   padding: 1rem !important;
 }
@@ -123,7 +123,7 @@ p.bn-inline-content code {
 
 .bn-menu-dropdown {
   background-color: hsl(var(--popover));
-  border: 1px solid hsl(var(--border));
+  border: 0.05rem solid hsl(var(--border));
   position: fixed;
   z-index: 9999 !important;
   width: 11rem;
@@ -135,7 +135,7 @@ p.bn-inline-content code {
   padding: 0.5rem;
   gap: 0.5rem;
   background-color: hsl(var(--popover));
-  border: 1px solid hsl(var(--border));
+  border: 0.05rem solid hsl(var(--border));
 }
 
 .bn-toolbar.bn-formatting-toolbar button {
@@ -160,9 +160,9 @@ p.bn-inline-content code {
   max-height: 40vh;
   overflow-y: auto;
   background-color: hsl(var(--popover));
-  border: 1px solid hsl(var(--border));
-  border-radius: 8px;
-  box-shadow: 0 1px 4px 0 rgb(0 0 0 / 0.1);
+  border: 0.05rem solid hsl(var(--border)) !important;
+  border-radius: 0.5rem;
+  box-shadow: 0 0.05rem 0.3rem 0 rgb(0 0 0 / 0.1) !important;
   display: flex;
   flex-direction: column;
   height: fit-content;
@@ -293,11 +293,11 @@ p.bn-inline-content code {
 }
 
 .bn-shadcn th {
-  border: 1px solid hsl(var(--table-border));
+  border: 0.05rem solid hsl(var(--table-border));
   border-collapse: collapse;
 }
 .bn-shadcn td {
   padding: 4px;
-  border: 1px solid hsl(var(--table-border));
+  border: 0.05rem solid hsl(var(--table-border));
   border-collapse: collapse;
 }

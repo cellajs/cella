@@ -69,7 +69,7 @@ export const mailer = {
         to: env.SEND_ALL_TO_EMAIL || to,
         replyTo: replyTo || config.supportEmail,
         from: config.notificationsEmail,
-        subject: subject || `${config.name} message.`,
+        subject: subject || `${config.name} message`,
         html,
       });
     } catch (err) {

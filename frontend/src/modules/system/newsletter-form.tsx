@@ -69,7 +69,14 @@ const NewsletterForm = ({ organizationIds }: NewsletterFormProps) => {
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} id="newsletter-form" className="space-y-6 pb-8 h-max">
-        <InputFormField control={form.control} name="subject" placeholder={t('common:placeholder.subject')} label={t('common:subject')} required />
+        <InputFormField
+          control={form.control}
+          inputClassName="font-bold"
+          name="subject"
+          placeholder={t('common:placeholder.subject')}
+          label={t('common:subject')}
+          required
+        />
 
         <BlockNoteContent control={form.control} name="content" required label={t('common:message')} blocknoteId="blocknote-newsletter" />
 

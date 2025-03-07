@@ -1,6 +1,6 @@
 import { MutationCache, QueryCache, QueryClient, onlineManager } from '@tanstack/react-query';
+import { onError } from '~/query/on-error';
 import { useAlertStore } from '~/store/alert';
-import { onError } from './on-error';
 
 const onSuccess = () => {
   // Clear down alerts

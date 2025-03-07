@@ -6,12 +6,12 @@ import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { acceptOrgInvite } from '~/modules/auth/api';
 import AuthNotice from '~/modules/auth/notice';
+import { useTokenCheck } from '~/modules/auth/use-token-check';
 import Spinner from '~/modules/common/spinner';
 import { SubmitButton, buttonVariants } from '~/modules/ui/button';
 import { getAndSetMenu } from '~/modules/users/helpers';
 import { AcceptOrgInviteRoute } from '~/routes/auth';
 import { cn } from '~/utils/cn';
-import { useTokenCheck } from './use-token-check';
 
 // Accept organization invitation when user is signed in
 const AcceptOrgInvite = () => {

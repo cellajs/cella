@@ -1,10 +1,5 @@
-import { clear, del, delMany, get, keys, set, setMany, values } from 'idb-keyval';
+import { clear, del, delMany, get, keys, set, setMany } from 'idb-keyval';
 import type { LocalFile } from '~/lib/imado/types';
-import type { UploadUppyProps } from './upload/upload-uppy';
-
-type ImageMode = NonNullable<UploadUppyProps['imageMode']>;
-
-type StoredFiles = LocalFile & { meta: LocalFile['meta'] & { imageMode: ImageMode } };
 
 /**
  * Store files in IndexedDB when user is offline or when Imado is not configured
@@ -12,21 +7,17 @@ type StoredFiles = LocalFile & { meta: LocalFile['meta'] & { imageMode: ImageMod
  * @link https://github.com/jakearchibald/idb-keyval
  */
 export const LocalFileStorage = {
-  async addFiles(imageMode: ImageMode, fileMap: Record<string, LocalFile>): Promise<void> {
+  async addFiles(fileMap: Record<string, LocalFile>): Promise<void> {
     console.debug('Saving multiple files');
     try {
-      const updatedFileMap: [IDBValidKey, StoredFiles][] = Object.entries(fileMap).map(([key, file]) => [
-        key,
-        { ...file, meta: { ...file.meta, imageMode } },
-      ]);
-
-      await setMany(updatedFileMap);
+      const validFileMap = Object.entries(fileMap);
+      await setMany(validFileMap);
     } catch (error) {
       console.error('Failed to save multiple files:', error);
     }
   },
 
-  async addFile(key: string, file: StoredFiles): Promise<void> {
+  async addFile(key: string, file: LocalFile): Promise<void> {
     console.debug(`Saving file with key: ${key}`);
     try {
       await set(key, file);
@@ -35,10 +26,10 @@ export const LocalFileStorage = {
     }
   },
 
-  async getFile(key: string): Promise<StoredFiles | undefined> {
+  async getFile(key: string): Promise<LocalFile | undefined> {
     console.debug(`Retrieving file with key: ${key}`);
     try {
-      return await get<StoredFiles>(key);
+      return await get<LocalFile>(key);
     } catch (error) {
       console.error(`Failed to retrieve file (${key}):`, error);
       return undefined;
@@ -78,16 +69,6 @@ export const LocalFileStorage = {
       return await keys();
     } catch (error) {
       console.error('Failed to list keys:', error);
-      return [];
-    }
-  },
-
-  async listValues(): Promise<StoredFiles[]> {
-    console.debug('Listing all file values');
-    try {
-      return await values();
-    } catch (error) {
-      console.error('Failed to list values:', error);
       return [];
     }
   },

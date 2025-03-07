@@ -17,6 +17,7 @@ import { SelectLanguages } from '~/modules/common/form-fields/select-languages';
 import SelectTimezone from '~/modules/common/form-fields/select-timezone';
 import { SlugFormField } from '~/modules/common/form-fields/slug';
 import { sheet } from '~/modules/common/sheeter/state';
+import Spinner from '~/modules/common/spinner';
 import { toaster } from '~/modules/common/toaster';
 import UnsavedBadge from '~/modules/common/unsaved-badge';
 import { useOrganizationUpdateMutation } from '~/modules/organizations/query';
@@ -89,10 +90,6 @@ const UpdateOrganizationForm = ({ organization, callback, sheet: isSheet }: Prop
     form.setValue('thumbnailUrl', url, { shouldDirty: true });
   };
 
-  // TODO this is causing a significant repaint when form renders later in the rest of the content
-  // Can we somehow render directly?
-  if (form.loading) return null;
-
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
@@ -149,6 +146,9 @@ const UpdateOrganizationForm = ({ organization, callback, sheet: isSheet }: Prop
           control={form.control}
           name="defaultLanguage"
           render={({ field }) => {
+            // Make sure languages are loaded
+            if (form.loading) return <Spinner />;
+
             // If defaultLanguage is not selected languages, set first language
             const languages = form.getValues('languages') || [];
             const correctValue = field.value && languages.includes(field.value) ? field.value : languages[0] || config.defaultLanguage;

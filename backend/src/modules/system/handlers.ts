@@ -167,7 +167,7 @@ const systemRoutes = app
       );
 
     // Stop if no recipients
-    if (recipientsRecords.length === 0) return errorResponse(ctx, 400, 'no_recipients', 'warn');
+    if (recipientsRecords.length === 0 && !toSelf) return errorResponse(ctx, 400, 'no_recipients', 'warn');
 
     // Add unsubscribe link to each recipient
     let recipients = recipientsRecords.map(({ newsletter, unsubscribeToken, ...recipient }) => ({
@@ -182,7 +182,7 @@ const systemRoutes = app
           email: user.email,
           name: user.name,
           unsubscribeLink: `${config.backendUrl}/unsubscribe?token=NOTOKEN`,
-          orgName: recipients[0].orgName,
+          orgName: 'TEST EMAIL ORGANIZATION',
         },
       ];
 
@@ -191,6 +191,8 @@ const systemRoutes = app
     // Prepare emails and send them
     const staticProps = { content, subject, testEmail: toSelf, lng: user.language };
     await mailer.prepareEmails<NewsletterEmailProps, Recipient>(NewsletterEmail, staticProps, recipients, user.email);
+
+    logEvent('Newsletter sent', { amount: recipients.length });
 
     return ctx.json({ success: true }, 200);
   });

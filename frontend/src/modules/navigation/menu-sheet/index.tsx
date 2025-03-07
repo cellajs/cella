@@ -17,6 +17,7 @@ import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { sheet } from '~/modules/common/sheeter/state';
 import type { UserMenuItem } from '~/modules/me/types';
 import { updateMembership } from '~/modules/memberships/api';
+import { AccountSheet } from '~/modules/navigation/account-sheet';
 import { getRelativeItemOrder, isPageData } from '~/modules/navigation/menu-sheet/helpers';
 import { updateMenuItem } from '~/modules/navigation/menu-sheet/helpers/menu-operations';
 import { MenuSheetItem } from '~/modules/navigation/menu-sheet/item';
@@ -29,7 +30,6 @@ import { Switch } from '~/modules/ui/switch';
 import { useNavigationStore } from '~/store/navigation';
 import { useUserStore } from '~/store/user';
 import { cn } from '~/utils/cn';
-import { AccountSheet } from '../account-sheet';
 
 export const MenuSheet = memo(() => {
   const { t } = useTranslation();
