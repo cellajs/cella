@@ -333,8 +333,8 @@ importers:
         specifier: 1.0.0-beta.4
         version: 1.0.0-beta.4
       '@electric-sql/react':
-        specifier: 1.0.0-beta.5
-        version: 1.0.0-beta.5(react@19.0.0)
+        specifier: 1.0.0-beta.6
+        version: 1.0.0-beta.6(react@19.0.0)
       '@floating-ui/dom':
         specifier: ^1.6.13
         version: 1.6.13
@@ -1668,11 +1668,14 @@ packages:
   '@electric-sql/client@1.0.0-beta.4':
     resolution: {integrity: sha512-UKiS0WJHVL91mvcZPPXuUGE9vSFB8zjNuYESUUNKqO+jhaebxwI6e8SHx4nHH1P4RD5hotGGvQNErz8ViB9b7Q==}
 
+  '@electric-sql/client@1.0.0-beta.5':
+    resolution: {integrity: sha512-sP4yBBt4sDWE7FhMMVkVceKULLPStumFzlgltUqb7AzzXP6AK2qs4bZ2QrabY6feBgRgrMP19bOzxI/WOSnTAA==}
+
   '@electric-sql/pglite@0.2.17':
     resolution: {integrity: sha512-qEpKRT2oUaWDH6tjRxLHjdzMqRUGYDnGZlKrnL4dJ77JVMcP2Hpo3NYnOSPKdZdeec57B6QPprCUFg0picx5Pw==}
 
-  '@electric-sql/react@1.0.0-beta.5':
-    resolution: {integrity: sha512-cojT8Kc+ZFftYzrp3CGiM0OXv2lMdLXD77gyTdlkkti1x9CAO4QVMoTIWTxvpBKQ20oqsNafZvZHQQmpkURXsQ==}
+  '@electric-sql/react@1.0.0-beta.6':
+    resolution: {integrity: sha512-SlXutaifuuAjna2KW4u4vmlHSPXOv7XeAnsP2xlsedLkMKk5iU1TVR7af0YMzOzxiuaIIXz5CnjDYegPY7tJbw==}
     peerDependencies:
       react: '>=18.3.1 <20.0.0'
     peerDependenciesMeta:
@@ -12232,11 +12235,15 @@ snapshots:
     optionalDependencies:
       '@rollup/rollup-darwin-arm64': 4.34.9
 
+  '@electric-sql/client@1.0.0-beta.5':
+    optionalDependencies:
+      '@rollup/rollup-darwin-arm64': 4.34.9
+
   '@electric-sql/pglite@0.2.17': {}
 
-  '@electric-sql/react@1.0.0-beta.5(react@19.0.0)':
+  '@electric-sql/react@1.0.0-beta.6(react@19.0.0)':
     dependencies:
-      '@electric-sql/client': 1.0.0-beta.4
+      '@electric-sql/client': 1.0.0-beta.5
       use-sync-external-store: 1.4.0(react@19.0.0)
     optionalDependencies:
       react: 19.0.0

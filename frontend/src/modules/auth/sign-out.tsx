@@ -9,12 +9,14 @@ import { SignOutRoute } from '~/routes/auth';
 import { useAlertStore } from '~/store/alert';
 import { useDraftStore } from '~/store/draft';
 import { useNavigationStore } from '~/store/navigation';
+import { useSyncStore } from '~/store/sync';
 import { useUIStore } from '~/store/ui';
 import { useUserStore } from '~/store/user';
 
 export const flushStoresAndCache = (removeAccount?: boolean) => {
   queryClient.clear();
   useUserStore.setState({ user: null as unknown as MeUser });
+  useSyncStore.setState({ syncData: {} });
   useDraftStore.getState().clearForms();
   useNavigationStore.getState().clearNavigationStore();
   useUIStore.getState().setImpersonating(false);
