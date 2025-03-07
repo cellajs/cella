@@ -8,11 +8,11 @@ import { useOnlineManager } from '~/hooks/use-online-manager';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { DataTableSkeleton } from '~/modules/common/data-table/table-skeleton';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
+import { useTableTooltip } from '~/modules/common/data-table/use-table-tooltip';
 import { Checkbox } from '~/modules/ui/checkbox';
 
 import 'react-data-grid/lib/styles.css';
 import '~/modules/common/data-table/style.css';
-import { useTableTooltip } from './use-table-tooltip';
 
 interface DataTableProps<TData> {
   columns: ColumnOrColumnGroup<TData>[];

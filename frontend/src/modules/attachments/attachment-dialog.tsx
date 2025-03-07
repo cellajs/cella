@@ -2,10 +2,10 @@ import { useSuspenseInfiniteQuery } from '@tanstack/react-query';
 import { FlameKindling, ServerCrash, WifiOff } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useOnlineManager } from '~/hooks/use-online-manager';
+import AttachmentsCarousel from '~/modules/attachments/carousel';
+import { attachmentsQueryOptions } from '~/modules/attachments/query';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import Spinner from '~/modules/common/spinner';
-import AttachmentsCarousel from './carousel';
-import { attachmentsQueryOptions } from './query';
 
 const AttachmentDialog = ({ attachmentId, groupId, orgIdOrSlug }: { attachmentId: string; groupId?: string; orgIdOrSlug: string }) => {
   const { t } = useTranslation();

@@ -5,7 +5,6 @@ import type { RowsChangeData } from 'react-data-grid';
 import { useTranslation } from 'react-i18next';
 import { attachmentsQueryOptions } from '~/modules/attachments/query';
 import { useAttachmentUpdateMutation } from '~/modules/attachments/query-mutations';
-import { useSync } from '~/modules/attachments/table/helpers/use-sync';
 import type { AttachmentSearch, AttachmentsTableProps } from '~/modules/attachments/table/table-wrapper';
 import type { Attachment } from '~/modules/attachments/types';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
@@ -27,8 +26,6 @@ const BaseDataTable = memo(
       const { rows, selectedRows, setRows, setSelectedRows, totalCount, isLoading, isFetching, error, fetchNextPage } = useDataFromInfiniteQuery(
         attachmentsQueryOptions({ orgIdOrSlug: organization.id, q, sort, order, limit }),
       );
-
-      useSync(organization.id);
       const attachmentUpdateMutation = useAttachmentUpdateMutation();
 
       // Update rows

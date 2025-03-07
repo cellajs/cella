@@ -1,5 +1,5 @@
 import equal from 'fast-deep-equal/es6/react';
-import type { BaseTableProps } from './types';
+import type { BaseTableProps } from '~/modules/common/data-table/types';
 
 export const tablePropsAreEqual = <T, U extends { q?: unknown; sort?: unknown; order?: unknown }>(
   prevProps: BaseTableProps<T, U>,

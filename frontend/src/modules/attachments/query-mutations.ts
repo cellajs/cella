@@ -10,6 +10,7 @@ import {
   deleteAttachments,
   updateAttachment,
 } from '~/modules/attachments/api';
+import { LocalFileStorage } from '~/modules/attachments/local-file-storage';
 import { attachmentsKeys } from '~/modules/attachments/query';
 import type { Attachment } from '~/modules/attachments/types';
 import { toaster } from '~/modules/common/toaster';
@@ -18,7 +19,6 @@ import { formatUpdatedData, getCancelingRefetchQueries, getQueries, getQueryItem
 import { queryClient } from '~/query/query-client';
 import type { ContextProp, InfiniteQueryData, QueryData } from '~/query/types';
 import { nanoid } from '~/utils/nanoid';
-import { LocalFileStorage } from './local-file-storage';
 
 type AttachmentQueryData = QueryData<Attachment>;
 export type AttachmentInfiniteQueryData = InfiniteQueryData<Attachment>;
