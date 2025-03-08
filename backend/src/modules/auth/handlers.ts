@@ -121,7 +121,7 @@ const authRoutes = app
     const validToken = getContextToken();
     if (!validToken) return errorResponse(ctx, 400, 'invalid_request', 'error');
 
-    const systemInvite = !!validToken.entity;
+    const membershipInvite = !!validToken.entity;
     // Verify if strategy allowed
     const strategy = 'password';
     if (!enabledStrategies.includes(strategy)) {
@@ -129,10 +129,10 @@ const authRoutes = app
     }
 
     // Delete token to not needed anymore (if no membership invitation)
-    if (!systemInvite) await db.delete(tokensTable).where(eq(tokensTable.id, validToken.id));
+    if (!membershipInvite) await db.delete(tokensTable).where(eq(tokensTable.id, validToken.id));
 
     // add token if it's membership invitation
-    const tokenId = systemInvite ? validToken.id : undefined;
+    const tokenId = membershipInvite ? validToken.id : undefined;
     const hashedPassword = await hashPassword(password);
     const slug = slugFromEmail(validToken.email);
 
