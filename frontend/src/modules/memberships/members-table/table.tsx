@@ -60,7 +60,6 @@ const BaseDataTable = memo(
             },
             onError(error, variables, context) {
               queryClient.getMutationDefaults(membersKeys.update()).onError?.(error, variables, context);
-              toaster('Error updating role', 'error');
             },
           },
         );

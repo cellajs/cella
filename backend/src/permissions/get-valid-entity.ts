@@ -13,6 +13,8 @@ import permissionManager, { type PermittedAction } from './permission-manager';
  * Resolves entity based on the given type and ID/slug, checks user permissions (including system admins),
  * and retrieves the user's membership for the entity.
  *
+ * It returns either an error object or an object with the resolved entity + membership and without error.
+ *
  * @param ctx - The request context.
  * @param entityType - The type of entity (e.g., organization, project).
  * @param action - Action to check `"create" | "read" | "update" | "delete"`.

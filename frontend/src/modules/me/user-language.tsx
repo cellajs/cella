@@ -2,7 +2,6 @@ import { type Language, config } from 'config';
 import { useTranslation } from 'react-i18next';
 import { i18n } from '~/lib/i18n';
 import CountryFlag from '~/modules/common/country-flag';
-import { toaster } from '~/modules/common/toaster';
 import { updateSelf } from '~/modules/me/api';
 import { Button } from '~/modules/ui/button';
 import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuTrigger } from '~/modules/ui/dropdown-menu';
@@ -46,7 +45,6 @@ const UserLanguage = ({ align = 'end', triggerClassName = '', contentClassName =
             key={lang}
             checked={language === lang}
             onCheckedChange={() => {
-              if (lang === 'nl') toaster('NL (Dutch) language will be available upon release.', 'info');
               changeLanguage(lang);
             }}
           >

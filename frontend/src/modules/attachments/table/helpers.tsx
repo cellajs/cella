@@ -4,6 +4,7 @@ import type { UploadedUppyFile } from '~/lib/imado/types';
 import { useAttachmentCreateMutation, useAttachmentDeleteMutation } from '~/modules/attachments/query-mutations';
 import UploadUppy from '~/modules/attachments/upload/upload-uppy';
 import { dialog } from '~/modules/common/dialoger/state';
+import Spinner from '~/modules/common/spinner';
 import { nanoid } from '~/utils/nanoid';
 
 /**
@@ -71,7 +72,7 @@ export const openAttachmentsUploadDialog = (organizationId: string) => {
   };
 
   dialog(
-    <Suspense>
+    <Suspense fallback={<Spinner className="my-44 h-12 w-12" />}>
       <UploadDialog organizationId={organizationId} />
     </Suspense>,
     {

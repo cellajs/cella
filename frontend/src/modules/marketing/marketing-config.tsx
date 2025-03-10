@@ -43,6 +43,10 @@ export const footerSections = [
   },
 ];
 
+/*************************************************************************************************
+ * Legal
+ ************************************************************************************************/
+
 export const legalLinks = [
   { title: 'common:legal', href: '/legal' },
   { title: 'common:accessibility', href: '/accessibility' },

@@ -239,7 +239,17 @@ const membershipsRoutes = app
     const updatedType = membershipToUpdate.type;
     const updatedEntityIdField = entityIdFields[updatedType];
 
-    // if archived changed, set lowest order in relevant memberships
+    const membershipContextId = membershipToUpdate[updatedEntityIdField];
+    if (!membershipContextId) return errorResponse(ctx, 404, 'not_found', 'warn', updatedType);
+
+    const membershipContext = await resolveEntity(updatedType, membershipContextId);
+    if (!membershipContext) return errorResponse(ctx, 404, 'not_found', 'warn', updatedType);
+
+    // Check if user has permission to update context
+    const { error } = await getValidEntity(ctx, updatedType, 'update', membershipContextId);
+    if (error) return ctx.json({ success: false, error }, 400);
+
+    // If archived changed, set lowest order in relevant memberships
     if (archived !== undefined && archived !== membershipToUpdate.archived) {
       const relevantMemberships = memberships.filter((membership) => membership.type === updatedType && membership.archived === archived);
 
@@ -248,18 +258,6 @@ const membershipsRoutes = app
       const ceilOrder = lastOrderMembership ? Math.ceil(lastOrderMembership.order) : 0;
 
       orderToUpdate = ceilOrder + 10;
-    }
-
-    const membershipContextId = membershipToUpdate[updatedEntityIdField];
-    if (!membershipContextId) return errorResponse(ctx, 404, 'not_found', 'warn', updatedType);
-
-    const membershipContext = await resolveEntity(updatedType, membershipContextId);
-    if (!membershipContext) return errorResponse(ctx, 404, 'not_found', 'warn', updatedType);
-
-    // Check if user has permission to someone elses membership
-    if (user.id !== membershipToUpdate.userId) {
-      const { error } = await getValidEntity(ctx, updatedType, 'update', membershipContextId);
-      if (error) return ctx.json({ success: false, error }, 400);
     }
 
     const [updatedMembership] = await db
