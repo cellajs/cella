@@ -65,7 +65,7 @@ export const UsersTableBar = ({
               <>
                 <Button asChild variant="destructive" onClick={openRemoveDialog} className="relative">
                   <motion.button layout="size" layoutRoot transition={{ duration: 0.1 }} layoutId="members-filter-bar-button">
-                    <Badge className="py-0 px-1 absolute -right-2 min-w-5 flex justify-center -top-1.5 animate-in zoom-in">{selected.length}</Badge>
+                    <Badge context="button">{selected.length}</Badge>
                     <motion.span layoutId="members-filter-bar-icon">
                       <Trash size={16} />
                     </motion.span>

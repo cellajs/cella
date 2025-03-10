@@ -114,7 +114,7 @@ export const useColumns = (isAdmin: boolean, isSheet: boolean) => {
     {
       key: 'download',
       name: '',
-      visible: true,
+      visible: !isMobile,
       sortable: false,
       width: 32,
       renderCell: ({ row, tabIndex }) => {

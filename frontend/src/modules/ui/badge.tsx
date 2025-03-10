@@ -28,25 +28,24 @@ const badgeVariants = cva(
         rounded: 'rounded-lg',
         square: 'rounded-none',
       },
-      textCase: {
-        uppercase: 'uppercase',
-        lowercase: 'lowercase',
-        capitalize: 'capitalize',
+      context: {
+        button: 'py-0 px-1 absolute -right-2 min-w-5 flex justify-center -top-1.5 animate-in zoom-in',
+        none: 'lowercase',
       },
     },
     defaultVariants: {
       variant: 'default',
-      size: 'sm',
+      size: 'xs',
       shape: 'default',
-      textCase: 'lowercase',
+      context: 'none',
     },
   },
 );
 
 export interface BadgeProps extends React.HTMLAttributes<HTMLDivElement>, VariantProps<typeof badgeVariants> {}
 
-function Badge({ className, variant, size, textCase, shape, ...props }: BadgeProps) {
-  return <div className={cn(badgeVariants({ variant, size, textCase, shape }), className)} {...props} />;
+function Badge({ className, variant, size, context, shape, ...props }: BadgeProps) {
+  return <div className={cn(badgeVariants({ variant, size, context, shape }), className)} {...props} />;
 }
 
 export { Badge, badgeVariants };

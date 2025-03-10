@@ -122,9 +122,9 @@ export const MenuSheet = memo(() => {
 
   return (
     <ScrollArea className="h-full" id="nav-sheet" viewPortRef={scrollViewportRef}>
-      <div data-search={!!searchTerm} className="group/menu p-3 min-h-[calc(100vh-0.5rem)] flex flex-col">
+      <div data-search={!!searchTerm} className="group/menu p-3 max-sm:pt-0 min-h-[calc(100vh-0.5rem)] flex flex-col">
         {/* Only visible when floating nav is present. To return to home */}
-        <div id="return-nav" className="hidden gap-2">
+        <div id="return-nav" className="flex gap-2 pt-3">
           <Link to="/home" className={cn(buttonVariants({ variant: 'ghost' }), 'w-full justify-start')}>
             <ArrowLeft size={16} strokeWidth={1.5} />
             <span className="ml-2 font-normal">Back to home</span>
@@ -171,7 +171,7 @@ export const MenuSheet = memo(() => {
           <>
             {renderedSections}
             <div className="grow mt-4 border-b border-dashed" />
-            <div className="flex flex-col mt-6 mb-1 mx-2 gap-4">
+            <div className="flex flex-col mt-6 mb-3 mx-2 gap-4">
               <div className="max-xl:hidden flex items-center gap-4 ml-1">
                 <Switch
                   size="xs"

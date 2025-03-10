@@ -23,7 +23,7 @@ export const SessionTile = ({ session, deleteMySessions, isPending }: SessionTil
           <div className="flex gap-2">
             <div className="font-semibold">{session.deviceName || t('common:unknown_device')}</div>
             {session.isCurrent && (
-              <Badge variant="plain" className="uppercase text-[10px] py-0">
+              <Badge size="sm" variant="plain" className="uppercase text-[10px] py-0">
                 {t('common:current')}
               </Badge>
             )}

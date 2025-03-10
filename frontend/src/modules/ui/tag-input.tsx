@@ -250,13 +250,22 @@ const TagInput = React.forwardRef<HTMLInputElement, TagInputProps>((props, ref) 
     onClearAll?.();
   };
 
+  // Bring focus to input when clicking on tag wrapper
+  const handleClick: React.MouseEventHandler<HTMLDivElement> = (e) => {
+    if ((e.target as HTMLElement)?.id !== 'tag-input-wrapper') return;
+    inputRef.current?.focus();
+  };
+
   const truncatedTags = truncate ? tags.map((tag) => (tag.length > truncate ? `${tag.substring(0, truncate)}...` : tag)) : tags;
 
   return (
-    <div className="w-full flex flex-col relative" ref={ref}>
+    <div className="flex flex-col relative" ref={ref}>
+      {/* biome-ignore lint/a11y/useKeyWithClickEvents: Make sure all clicks on the wrapper activate focus */}
       <div
+        id="tag-input-wrapper"
+        onClick={handleClick}
         className={cn(
-          'flex flex-wrap items-center gap-2 p-2 w-full rounded-md text-sm file:border-0 file:bg-transparent file:text-sm file:font-medium',
+          'flex flex-wrap items-center p-1 rounded-md text-sm file:border-0 file:bg-transparent file:text-sm file:font-medium',
           tagListPlacement === 'bottom' ? 'flex-col-reverse' : tagListPlacement === 'top' ? 'flex-col' : 'flex-row',
           tagListPlacement === 'inside' &&
             'bg-background ring-offset-background border border-input focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 placeholder:text-muted-foreground',
@@ -270,7 +279,11 @@ const TagInput = React.forwardRef<HTMLInputElement, TagInputProps>((props, ref) 
           onRemoveTag={removeTag}
           direction={direction}
           classStyleProps={{
-            tagListClasses: cn(styleClasses?.tagList, tagListPlacement === 'inside' && tags.length < 1 && 'hidden'),
+            tagListClasses: cn(
+              styleClasses?.tagList,
+              tagListPlacement === 'inside' && tags.length < 1 && 'hidden',
+              tagListPlacement === 'inside' && 'p-1',
+            ),
             tagClasses: styleClasses?.tag,
           }}
           activeTagIndex={activeTagIndex}
@@ -291,7 +304,7 @@ const TagInput = React.forwardRef<HTMLInputElement, TagInputProps>((props, ref) 
                   styleClasses?.input,
                   'bg-background ring-offset-background border border-input focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 placeholder:text-muted-foreground',
                 )
-              : 'h-8 border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-transparent focus-visible:ring-offset-0 py-0 px-1'
+              : 'h-8 w-auto grow border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-transparent focus-visible:ring-offset-0 py-0 px-1'
           }
           disabled={maxTags !== undefined && tags.length >= maxTags}
         />
@@ -329,7 +342,7 @@ const TagList: React.FC<TagListProps> = ({ tags, direction, classStyleProps, onT
   return (
     <div
       className={cn(
-        'flex gap-1 w-full rounded-md',
+        'flex flex-wrap gap-1 rounded-md',
         {
           'flex-row': direction === 'row',
           'flex-col': direction === 'column',
@@ -355,7 +368,7 @@ const TagList: React.FC<TagListProps> = ({ tags, direction, classStyleProps, onT
               e.stopPropagation(); // Prevent event from bubbling up to the tag span
               onRemoveTag(tag);
             }}
-            className={cn('p-0 h-full', classStyleProps.tagClasses?.closeButton)}
+            className={cn('p-0 h-full -mr-0.5', classStyleProps.tagClasses?.closeButton)}
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"

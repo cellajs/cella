@@ -104,9 +104,7 @@ const InviteSearchForm = ({ entity, callback, dialog: isDialog }: Props) => {
         />
         <div className="flex flex-col sm:flex-row gap-2">
           <SubmitButton loading={isPending} className="relative">
-            {!!form.getValues('emails')?.length && (
-              <Badge className="py-0 px-1 absolute -right-2 min-w-5 flex justify-center -top-1.5">{form.getValues('emails')?.length}</Badge>
-            )}
+            {!!form.getValues('emails')?.length && <Badge context="button">{form.getValues('emails')?.length}</Badge>}
             <Send size={16} className="mr-2" />
             {t('common:invite')}
           </SubmitButton>

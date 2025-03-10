@@ -28,7 +28,9 @@ export const ExpandableList = ({ items, renderItem, initialDisplayCount, alwaysS
       {visibleItems.map(renderItem)}
       {displayCount < items.length && (
         <Button variant="ghost" className="w-full mt-4 group" onClick={handleLoadMore}>
-          <Badge className="mr-2 aspect-square py-0 px-1">{items.length - initialDisplayCount}</Badge>
+          <Badge size="sm" className="mr-2 aspect-square py-0 px-1">
+            {items.length - initialDisplayCount}
+          </Badge>
           {t(expandText)}
           <ChevronDown className="opacity-50 group-hover:opacity-100 transition-opacity ml-2" size={16} />
         </Button>
