@@ -1,6 +1,6 @@
 import * as Sentry from '@sentry/react';
 import { type QueryClient, onlineManager } from '@tanstack/react-query';
-import { createRootRouteWithContext, createRoute, defer, redirect } from '@tanstack/react-router';
+import { createRootRouteWithContext, createRoute, redirect } from '@tanstack/react-router';
 import { config } from 'config';
 import { Suspense, lazy } from 'react';
 import { z } from 'zod';
@@ -9,7 +9,6 @@ import { PublicLayout } from '~/modules/common/public-layout';
 import { Root } from '~/modules/common/root';
 import Spinner from '~/modules/common/spinner';
 import { meQueryOptions, menuQueryOptions } from '~/modules/users/query';
-import { hybridFetch } from '~/query/hybrid-fetch';
 import { onError } from '~/query/on-error';
 import { useUserStore } from '~/store/user';
 
@@ -32,14 +31,12 @@ export const PublicRoute = createRoute({
   staticData: { pageTitle: '', isAuth: false },
   getParentRoute: () => rootRoute,
   component: () => <PublicLayout />,
-  beforeLoad: async ({ location, cause }) => {
-    if (cause !== 'enter' || location.pathname === '/sign-out') return;
-
+  beforeLoad: async ({ location, context }) => {
     try {
       console.debug('Fetch me & menu in while entering public page ', location.pathname);
 
       // Fetch and set user
-      await hybridFetch(meQueryOptions());
+      context.queryClient.ensureQueryData({ ...meQueryOptions(), revalidateIfStale: true });
     } catch (error) {
       if (error instanceof Error) {
         Sentry.captureException(error);
@@ -58,19 +55,19 @@ export const AppRoute = createRoute({
       <AppLayout />
     </Suspense>
   ),
-  loader: async ({ location, cause }) => {
+  loader: async ({ location, cause, context: { queryClient } }) => {
     if (cause !== 'enter') return;
 
     try {
       console.debug('Fetch me & menu while entering app ', location.pathname);
 
       // Fetch and set user
-      const user = await hybridFetch(meQueryOptions());
+      const user = await queryClient.ensureQueryData({ ...meQueryOptions(), revalidateIfStale: true });
 
       // Defer menu loading (won't block rendering)
       if (user)
         return {
-          menuData: defer(hybridFetch(menuQueryOptions())),
+          menuData: await queryClient.ensureQueryData({ ...menuQueryOptions(), revalidateIfStale: true }),
         };
     } catch (error) {
       if (error instanceof Error) {

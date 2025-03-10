@@ -2,11 +2,8 @@ import { createRoute, useLoaderData } from '@tanstack/react-router';
 import { Suspense, lazy } from 'react';
 import { z } from 'zod';
 import ErrorNotice from '~/modules/common/error-notice';
-import { membersQueryOptions } from '~/modules/memberships/query';
 import { organizationQueryOptions } from '~/modules/organizations/query';
-import { hybridFetch, hybridFetchInfinite } from '~/query/hybrid-fetch';
 
-import type { Organization as OrganizationType } from '~/modules/organizations/types';
 import { AppRoute } from '~/routes/base';
 import { noDirectAccess } from '~/utils/no-direct-access';
 import { attachmentsQuerySchema } from '#/modules/attachments/schema';
@@ -36,10 +33,10 @@ export const OrganizationRoute = createRoute({
   beforeLoad: async ({ location, params: { idOrSlug } }) => {
     noDirectAccess(location.pathname, idOrSlug, '/members');
   },
-  loader: async ({ params: { idOrSlug } }) => {
+  loader: async ({ params: { idOrSlug }, context }) => {
     const queryOptions = organizationQueryOptions(idOrSlug);
-    console.debug('get organization', { idOrSlug });
-    return await hybridFetch<OrganizationType>(queryOptions);
+    console.debug('Get organization', { idOrSlug });
+    return context.queryClient.ensureQueryData({ ...queryOptions, revalidateIfStale: true });
   },
   getParentRoute: () => AppRoute,
   errorComponent: ({ error }) => <ErrorNotice level="app" error={error} />,
@@ -58,20 +55,13 @@ export const OrganizationMembersRoute = createRoute({
   staticData: { pageTitle: 'members', isAuth: true },
   getParentRoute: () => OrganizationRoute,
   loaderDeps: ({ search: { q, sort, order, role } }) => ({ q, sort, order, role }),
-  loader: async ({ params: { idOrSlug }, deps: { q, sort, order, role } }) => {
-    const entityType = 'organization';
-    console.debug('get members', { idOrSlug, q, sort, order, role });
-
-    const queryOptions = membersQueryOptions({ idOrSlug, orgIdOrSlug: idOrSlug, entityType, q, sort, order, role });
-    return await hybridFetchInfinite(queryOptions);
-  },
   component: () => {
     const organization = useLoaderData({ from: OrganizationRoute.id });
 
     if (!organization) return;
     return (
       <Suspense>
-        <MembersTable entity={organization} />
+        <MembersTable key={organization.id} entity={organization} />
       </Suspense>
     );
   },
@@ -88,7 +78,7 @@ export const OrganizationAttachmentsRoute = createRoute({
     if (!organization) return;
     return (
       <Suspense>
-        <AttachmentsTable organization={organization} />
+        <AttachmentsTable key={organization.id} organization={organization} />
       </Suspense>
     );
   },
