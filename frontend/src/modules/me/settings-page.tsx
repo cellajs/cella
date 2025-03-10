@@ -7,6 +7,7 @@ import { Button } from '~/modules/ui/button';
 import { useUserStore } from '~/store/user';
 
 import { onlineManager } from '@tanstack/react-query';
+import { useLoaderData } from '@tanstack/react-router';
 import { config } from 'config';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -20,9 +21,9 @@ import StickyBox from '~/modules/common/sticky-box';
 import { toaster } from '~/modules/common/toaster';
 import DeleteSelf from '~/modules/me/delete-self';
 import SessionsList from '~/modules/me/sessions-list';
-import type { UserAuthInfo } from '~/modules/me/types';
 import { deletePasskey, passkeyRegistration } from '~/modules/users/helpers';
 import UpdateUserForm from '~/modules/users/update-user-form';
+import { UserSettingsRoute } from '~/routes/users';
 import { useUIStore } from '~/store/ui';
 
 const tabs = [
@@ -32,10 +33,13 @@ const tabs = [
   { id: 'delete-account', label: 'common:delete_account' },
 ];
 
-const UserSettingsPage = ({ userAuthInfo }: { userAuthInfo: UserAuthInfo }) => {
+const UserSettingsPage = () => {
   const { user } = useUserStore();
   const mode = useUIStore((state) => state.mode);
   const { t } = useTranslation();
+
+  // Get user auth info from route
+  const userAuthInfo = useLoaderData({ from: UserSettingsRoute.id });
 
   const [disabledResetPassword, setDisabledResetPassword] = useState(false);
   const invertClass = mode === 'dark' ? 'invert' : '';

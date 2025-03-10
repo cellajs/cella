@@ -188,7 +188,7 @@ p.bn-inline-content code {
   min-width: 1rem;
   align-items: center;
   color: hsl(var(--muted-foreground));
-  opacity: .5 !important;
+  opacity: 0.5 !important;
   display: flex;
   padding: 0.125rem 0 0.125rem 0.25rem;
 }
