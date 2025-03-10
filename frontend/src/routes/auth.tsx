@@ -10,7 +10,7 @@ import { SignOut } from '~/modules/auth/sign-out';
 import AuthSteps from '~/modules/auth/steps';
 import Unsubscribed from '~/modules/auth/unsubscribed';
 import VerifyEmail from '~/modules/auth/verify-email';
-import { meQueryOptions } from '~/modules/users/query';
+import { meQueryOptions } from '~/modules/me/query';
 import { PublicRoute } from '~/routes/base';
 import { useUserStore } from '~/store/user';
 

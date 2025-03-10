@@ -5,7 +5,6 @@ import { queryClient } from '~/query/query-client';
 
 import { updateSelf } from '~/modules/me/api';
 import { type GetUsersParams, type UpdateUserParams, getUser, getUsers, updateUser } from '~/modules/users/api';
-import { getAndSetMe, getAndSetMenu, getAndSetUserAuthInfo } from '~/modules/users/helpers';
 import type { User } from '~/modules/users/types';
 import { useUserStore } from '~/store/user';
 
@@ -38,27 +37,6 @@ export const meKeys = {
  * @returns Query options.
  */
 export const userQueryOptions = (idOrSlug: string) => queryOptions({ queryKey: usersKeys.single(idOrSlug), queryFn: () => getUser(idOrSlug) });
-
-/**
- * Query options for fetching the current authenticated user's data.
- *
- * @returns Query options.
- */
-export const meQueryOptions = () => queryOptions({ queryKey: meKeys.all, queryFn: getAndSetMe });
-
-/**
- * Query options for fetching the authentication information of the current authenticated user.
- *
- * @returns Query options.
- */
-export const userAuthQueryOptions = () => queryOptions({ queryKey: ['auth'], queryFn: getAndSetUserAuthInfo, staleTime: 0 });
-
-/**
- * Query options for fetching the current authenticated user's menu.
- *
- * @returns Query options.
- */
-export const menuQueryOptions = () => queryOptions({ queryKey: ['menu'], queryFn: getAndSetMenu });
 
 /**
  * Infinite query options to get a paginated list of users.

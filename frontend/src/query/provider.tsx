@@ -1,8 +1,8 @@
 import { QueryClientProvider as BaseQueryClientProvider } from '@tanstack/react-query';
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
 import { useEffect } from 'react';
+import { meQueryOptions, menuQueryOptions } from '~/modules/me/query';
 import type { UserMenuItem } from '~/modules/me/types';
-import { meQueryOptions, menuQueryOptions } from '~/modules/users/query';
 import { queriesToMap } from '~/offline-config';
 import { prefetchQuery } from '~/query/helpers/prefetch-query';
 import { waitFor } from '~/query/helpers/wait-for';

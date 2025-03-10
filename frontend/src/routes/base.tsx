@@ -8,8 +8,7 @@ import ErrorNotice from '~/modules/common/error-notice';
 import { PublicLayout } from '~/modules/common/public-layout';
 import { Root } from '~/modules/common/root';
 import Spinner from '~/modules/common/spinner';
-import { meQueryOptions, menuQueryOptions } from '~/modules/users/query';
-import { hybridFetch } from '~/query/hybrid-fetch';
+import { meQueryOptions, menuQueryOptions } from '~/modules/me/query';
 import { onError } from '~/query/on-error';
 import { useUserStore } from '~/store/user';
 
@@ -32,14 +31,14 @@ export const PublicRoute = createRoute({
   staticData: { pageTitle: '', isAuth: false },
   getParentRoute: () => rootRoute,
   component: () => <PublicLayout />,
-  beforeLoad: async ({ location, cause }) => {
+  beforeLoad: async ({ location, cause, context }) => {
     if (cause !== 'enter' || location.pathname === '/sign-out') return;
 
     try {
       console.debug('Fetch me & menu in while entering public page ', location.pathname);
 
       // Fetch and set user
-      await hybridFetch(meQueryOptions());
+      await context.queryClient.ensureQueryData({ ...meQueryOptions(), revalidateIfStale: true });
     } catch (error) {
       if (error instanceof Error) {
         Sentry.captureException(error);
@@ -58,19 +57,19 @@ export const AppRoute = createRoute({
       <AppLayout />
     </Suspense>
   ),
-  loader: async ({ location, cause }) => {
+  loader: async ({ context, location, cause }) => {
     if (cause !== 'enter') return;
 
     try {
       console.debug('Fetch me & menu while entering app ', location.pathname);
 
       // Fetch and set user
-      const user = await hybridFetch(meQueryOptions());
+      const user = await context.queryClient.ensureQueryData({ ...meQueryOptions(), revalidateIfStale: true });
 
       // Defer menu loading (won't block rendering)
       if (user)
         return {
-          menuData: defer(hybridFetch(menuQueryOptions())),
+          menuData: await defer(context.queryClient.ensureQueryData({ ...menuQueryOptions(), revalidateIfStale: true })),
         };
     } catch (error) {
       if (error instanceof Error) {
