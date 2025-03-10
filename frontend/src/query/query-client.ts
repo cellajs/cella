@@ -1,6 +1,6 @@
 import { MutationCache, QueryCache, QueryClient, onlineManager } from '@tanstack/react-query';
 import { onError } from '~/query/on-error';
-import { onSuccess } from './on-success';
+import { onSuccess } from '~/query/on-success';
 
 const queryClientConfig = { onError, onSuccess };
 
