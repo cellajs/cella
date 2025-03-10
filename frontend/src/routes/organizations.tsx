@@ -32,13 +32,14 @@ export const attachmentsSearchSchema = attachmentsQuerySchema.pick({ q: true, so
 export const OrganizationRoute = createRoute({
   path: '/$idOrSlug',
   staticData: { pageTitle: 'Organization', isAuth: true },
-  beforeLoad: async ({ location, params: { idOrSlug } }) => {
+  beforeLoad: async ({ location, params: { idOrSlug }, context }) => {
     noDirectAccess(location.pathname, idOrSlug, '/members');
-  },
-  loader: async ({ params: { idOrSlug }, context }) => {
     const queryOptions = organizationQueryOptions(idOrSlug);
 
-    return await context.queryClient.ensureQueryData({ ...queryOptions, revalidateIfStale: true });
+    return { organization: await context.queryClient.fetchQuery(queryOptions) };
+  },
+  loader: async ({ context: { organization } }) => {
+    return organization;
   },
   getParentRoute: () => AppRoute,
   errorComponent: ({ error }) => <ErrorNotice level="app" error={error} />,
@@ -59,9 +60,11 @@ export const OrganizationMembersRoute = createRoute({
   loaderDeps: ({ search: { q, sort, order, role } }) => ({ q, sort, order, role }),
   loader: async ({ context, params: { idOrSlug }, deps: { q, sort, order, role } }) => {
     const entityType = 'organization';
+    const orgIdOrSlug = context.organization.id ?? idOrSlug;
 
-    const queryOptions = membersQueryOptions({ idOrSlug, orgIdOrSlug: idOrSlug, entityType, q, sort, order, role });
-    return await context.queryClient.ensureInfiniteQueryData({ ...queryOptions, revalidateIfStale: true });
+    const queryOptions = membersQueryOptions({ idOrSlug, orgIdOrSlug, entityType, q, sort, order, role });
+
+    await context.queryClient.prefetchInfiniteQuery(queryOptions);
   },
   component: () => {
     const organization = useLoaderData({ from: OrganizationRoute.id });
@@ -81,15 +84,17 @@ export const OrganizationAttachmentsRoute = createRoute({
   getParentRoute: () => OrganizationRoute,
   loaderDeps: ({ search: { q, sort, order } }) => ({ q, sort, order }),
   loader: async ({ deps: { q, sort, order }, context, params: { idOrSlug } }) => {
-    const queryOptions = attachmentsQueryOptions({ orgIdOrSlug: idOrSlug, q, sort, order });
-    return await context.queryClient.ensureInfiniteQueryData({ ...queryOptions, revalidateIfStale: true });
+    const orgIdOrSlug = context.organization.id ?? idOrSlug;
+    const queryOptions = attachmentsQueryOptions({ orgIdOrSlug, q, sort, order });
+
+    await context.queryClient.prefetchInfiniteQuery(queryOptions);
   },
   component: () => {
     const organization = useLoaderData({ from: OrganizationRoute.id });
     if (!organization) return;
     return (
       <Suspense>
-        <AttachmentsTable organization={organization} />
+        <AttachmentsTable key={organization.id} organization={organization} />
       </Suspense>
     );
   },
