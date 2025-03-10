@@ -1,6 +1,6 @@
 import { forwardRef, memo, useEffect, useImperativeHandle, useState } from 'react';
 
-import { useInfiniteQuery } from '@tanstack/react-query';
+import { useLoaderData } from '@tanstack/react-router';
 import { Paperclip } from 'lucide-react';
 import type { RowsChangeData } from 'react-data-grid';
 import { useTranslation } from 'react-i18next';
@@ -11,113 +11,90 @@ import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { DataTable } from '~/modules/common/data-table';
 import { tablePropsAreEqual } from '~/modules/common/data-table/table-props-are-equal';
 import type { BaseTableMethods, BaseTableProps } from '~/modules/common/data-table/types';
-import { attachmentsQueryOptions } from '../query';
+import { OrganizationAttachmentsRoute } from '~/routes/organizations';
 
 type BaseDataTableProps = AttachmentsTableProps & BaseTableProps<Attachment, AttachmentSearch>;
 
 const BaseDataTable = memo(
-  forwardRef<BaseTableMethods, BaseDataTableProps>(
-    ({ organization, columns, queryVars, sortColumns, setSortColumns, setTotal, setSelected }, ref) => {
-      const { t } = useTranslation();
+  forwardRef<BaseTableMethods, BaseDataTableProps>(({ organization, columns, queryVars, sortColumns, setSortColumns, setSelected }, ref) => {
+    const { t } = useTranslation();
 
-      const { q, sort, order, limit } = queryVars;
+    const { q, limit } = queryVars;
 
-      // Table state
-      const [rows, setRows] = useState<Attachment[]>([]);
-      const [selectedRows, setSelectedRows] = useState(new Set<string>());
-      const [totalCount, setTotalCount] = useState(0);
+    // Table state
+    const [selectedRows, setSelectedRows] = useState(new Set<string>());
 
-      // Fetching attachments
-      const {
-        data: queryResult,
-        fetchNextPage,
-        // hasNextPage,
-        isFetchingNextPage: isFetching,
-        isLoading,
-        error,
-      } = useInfiniteQuery({
-        ...attachmentsQueryOptions({ orgIdOrSlug: organization.id, q, sort, order, limit: 10 }),
-        getNextPageParam: (_lastPage, allPages) => allPages.length,
-      });
+    // Fetching data
+    const { data: rows, nextCursor, totalCount, error, isLoading } = useLoaderData({ from: OrganizationAttachmentsRoute.id });
 
-      // 🚀 Flatten paginated data
-      useEffect(() => {
-        if (!queryResult) return;
+    // 🚀 Flatten paginated data
+    useEffect(() => {
+      if (!rows) return;
 
-        // Flatten the array of pages to get all items
-        const data = queryResult.pages?.flatMap((page) => page.items);
-        if (!data) return;
+      // Update selected rows
+      if (selectedRows.size > 0) {
+        setSelectedRows(new Set<string>([...selectedRows].filter((id) => rows.some((row) => row.id === id))));
+      }
+    }, [rows]);
+    const attachmentUpdateMutation = useAttachmentUpdateMutation();
 
-        // Update total count
-        setTotalCount(queryResult.pages?.[queryResult.pages.length - 1]?.total ?? 0);
-
-        // Update selected rows
-        if (selectedRows.size > 0) {
-          setSelectedRows(new Set<string>([...selectedRows].filter((id) => data.some((row) => row.id === id))));
+    // Update rows
+    const onRowsChange = (changedRows: Attachment[], { indexes, column }: RowsChangeData<Attachment>) => {
+      if (column.key === 'name') {
+        // If name is changed, update the attachment
+        for (const index of indexes) {
+          const attachment = changedRows[index];
+          attachmentUpdateMutation.mutate({
+            id: attachment.id,
+            orgIdOrSlug: organization.id,
+            name: attachment.name,
+          });
         }
+      }
 
-        setRows(data);
-      }, [queryResult]);
+      // TODO
+      // setRows(changedRows);
+    };
 
-      const attachmentUpdateMutation = useAttachmentUpdateMutation();
+    const onSelectedRowsChange = (value: Set<string>) => {
+      setSelectedRows(value);
+      setSelected(rows.filter((row) => value.has(row.id)));
+    };
 
-      // Update rows
-      const onRowsChange = (changedRows: Attachment[], { indexes, column }: RowsChangeData<Attachment>) => {
-        if (column.key === 'name') {
-          // If name is changed, update the attachment
-          for (const index of indexes) {
-            const attachment = changedRows[index];
-            attachmentUpdateMutation.mutate({
-              id: attachment.id,
-              orgIdOrSlug: organization.id,
-              name: attachment.name,
-            });
-          }
-        }
+    // Expose methods via ref using useImperativeHandle
+    useImperativeHandle(ref, () => ({
+      clearSelection: () => onSelectedRowsChange(new Set<string>()),
+    }));
 
-        setRows(changedRows);
-      };
-
-      const onSelectedRowsChange = (value: Set<string>) => {
-        setSelectedRows(value);
-        setSelected(rows.filter((row) => value.has(row.id)));
-      };
-
-      useEffect(() => setTotal(totalCount), [totalCount]);
-
-      // Expose methods via ref using useImperativeHandle
-      useImperativeHandle(ref, () => ({
-        clearSelection: () => onSelectedRowsChange(new Set<string>()),
-      }));
-
-      return (
-        <DataTable<Attachment>
-          {...{
-            columns: columns.filter((column) => column.visible),
-            rowHeight: 50,
-            enableVirtualization: false,
-            onRowsChange,
-            rows,
-            limit,
-            totalCount,
-            rowKeyGetter: (row) => row.id,
-            error,
-            isLoading,
-            isFetching,
-            fetchMore: fetchNextPage,
-            isFiltered: !!q,
-            selectedRows,
-            onSelectedRowsChange,
-            sortColumns,
-            onSortColumnsChange: setSortColumns,
-            NoRowsComponent: (
-              <ContentPlaceholder Icon={Paperclip} title={t('common:no_resource_yet', { resource: t('common:attachments').toLowerCase() })} />
-            ),
-          }}
-        />
-      );
-    },
-  ),
+    return (
+      // TODO
+      // @ts-expect-error
+      <DataTable<Attachment>
+        {...{
+          columns: columns.filter((column) => column.visible),
+          rowHeight: 50,
+          enableVirtualization: false,
+          onRowsChange,
+          rows,
+          limit,
+          totalCount,
+          rowKeyGetter: (row) => row.id,
+          error,
+          isLoading,
+          isFetching: isLoading,
+          nextCursor,
+          isFiltered: !!q,
+          selectedRows,
+          onSelectedRowsChange,
+          sortColumns,
+          onSortColumnsChange: setSortColumns,
+          NoRowsComponent: (
+            <ContentPlaceholder Icon={Paperclip} title={t('common:no_resource_yet', { resource: t('common:attachments').toLowerCase() })} />
+          ),
+        }}
+      />
+    );
+  }),
   tablePropsAreEqual,
 );
 

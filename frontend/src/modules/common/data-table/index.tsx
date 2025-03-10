@@ -13,13 +13,14 @@ import { Checkbox } from '~/modules/ui/checkbox';
 
 import 'react-data-grid/lib/styles.css';
 import '~/modules/common/data-table/style.css';
+import { useNavigate } from '@tanstack/react-router';
 
 interface DataTableProps<TData> {
   columns: ColumnOrColumnGroup<TData>[];
   rows: TData[];
   totalCount?: number;
   rowKeyGetter: (row: TData) => string;
-  error?: Error | null;
+  error?: Error | null | undefined; //TODO
   isLoading?: boolean;
   isFetching?: boolean;
   limit?: number;
@@ -36,6 +37,7 @@ interface DataTableProps<TData> {
   enableVirtualization?: boolean;
   onRowsChange?: (rows: TData[], data: RowsChangeData<TData>) => void;
   fetchMore?: () => Promise<unknown>;
+  nextCursor?: number;
 }
 
 interface NoRowsProps {
@@ -85,10 +87,12 @@ export const DataTable = <TData,>({
   enableVirtualization,
   onRowsChange,
   fetchMore,
+  nextCursor,
   renderRow,
   onCellClick,
 }: DataTableProps<TData>) => {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const { isOnline } = useOnlineManager();
   const [initialDone, setInitialDone] = useState(false);
   const { ref: measureRef, inView } = useInView({ triggerOnce: false, threshold: 0 });
@@ -96,16 +100,24 @@ export const DataTable = <TData,>({
   const gridRef = useRef<HTMLDivElement | null>(null);
   useTableTooltip(gridRef, initialDone);
 
+  // TODO clean this up
   useEffect(() => {
-    if (!rows.length || error || !fetchMore || isFetching || !inView) return;
+    let fetchMoreTimeout: string | number | NodeJS.Timeout | undefined;
+
+    if (!rows.length || error || isFetching || !inView) return;
 
     if (typeof totalCount === 'number' && rows.length >= totalCount) return;
 
-    // Throttle fetchMore to avoid duplicate calls
-    const fetchMoreTimeout = setTimeout(() => {
-      fetchMore();
-    }, 100);
+    if (nextCursor) {
+      navigate({ to: '.', search: (prev) => ({ ...prev, cursor: nextCursor }), replace: true });
+    }
 
+    if (fetchMore) {
+      // Throttle fetchMore to avoid duplicate calls
+      fetchMoreTimeout = setTimeout(() => {
+        fetchMore();
+      }, 100);
+    }
     return () => clearTimeout(fetchMoreTimeout); // Clear timeout on cleanup
   }, [inView, error, rows.length, isFetching]);
 

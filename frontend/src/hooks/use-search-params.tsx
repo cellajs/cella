@@ -24,7 +24,7 @@ type SearchParams<T> = {
  *   - `search`: The current search parameters (query string).
  *   - `setSearch`: A function to update the search parameters and sync with the URL.
  */
-const useSearchParams = <T extends Record<string, string | string[] | undefined>>({
+const useSearchParams = <T extends Record<string, string | string[] | number | undefined>>({
   from,
   defaultValues,
   saveDataInSearch = true,

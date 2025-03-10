@@ -1,5 +1,6 @@
 import { onlineManager } from '@tanstack/react-query';
-import { forwardRef, memo, useEffect, useImperativeHandle } from 'react';
+import { useLoaderData } from '@tanstack/react-router';
+import { forwardRef, memo, useEffect, useImperativeHandle, useState } from 'react';
 import type { RowsChangeData } from 'react-data-grid';
 import { useTranslation } from 'react-i18next';
 import { DataTable } from '~/modules/common/data-table';
@@ -7,11 +8,11 @@ import { tablePropsAreEqual } from '~/modules/common/data-table/table-props-are-
 import type { BaseTableMethods, BaseTableProps } from '~/modules/common/data-table/types';
 import { toaster } from '~/modules/common/toaster';
 import type { MemberSearch, MembersTableProps } from '~/modules/memberships/members-table/table-wrapper';
-import { membersKeys, membersQueryOptions } from '~/modules/memberships/query';
+import { membersKeys } from '~/modules/memberships/query';
 import { useMemberUpdateMutation } from '~/modules/memberships/query-mutations';
 import type { Member } from '~/modules/memberships/types';
-import { useDataFromInfiniteQuery } from '~/query/hooks/use-data-from-query';
 import { queryClient } from '~/query/query-client';
+import { OrganizationMembersRoute } from '~/routes/organizations';
 
 type BaseDataTableProps = MembersTableProps &
   BaseTableProps<Member, MemberSearch> & {
@@ -19,35 +20,38 @@ type BaseDataTableProps = MembersTableProps &
   };
 
 const BaseDataTable = memo(
-  forwardRef<BaseTableMethods, BaseDataTableProps>(({ entity, columns, queryVars, sortColumns, setSortColumns, setTotal, setSelected }, ref) => {
+  forwardRef<BaseTableMethods, BaseDataTableProps>(({ entity, columns, queryVars, sortColumns, setSortColumns, setSelected }, ref) => {
     const { t } = useTranslation();
     const entityType = entity.entity;
     const organizationId = entity.organizationId || entity.id;
 
     // Extract query variables and set defaults
-    const { q, role, sort, order, limit } = queryVars;
+    const { q, role, limit } = queryVars;
 
-    // Query members
-    const { rows, selectedRows, setRows, setSelectedRows, totalCount, isLoading, isFetching, error, fetchNextPage } = useDataFromInfiniteQuery(
-      membersQueryOptions({
-        idOrSlug: entity.slug,
-        entityType,
-        orgIdOrSlug: organizationId,
-        q,
-        sort,
-        order,
-        role,
-        limit,
-      }),
-    );
+    // Table state
+    const [selectedRows, setSelectedRows] = useState(new Set<string>());
+
+    // Fetching data
+    const { data: rows, nextCursor, totalCount, error, isLoading } = useLoaderData({ from: OrganizationMembersRoute.id });
+
+    // 🚀 Flatten paginated data
+    useEffect(() => {
+      if (!rows) return;
+
+      // Update selected rows
+      if (selectedRows.size > 0) {
+        setSelectedRows(new Set<string>([...selectedRows].filter((id) => rows.some((row) => row.id === id))));
+      }
+    }, [rows]);
 
     const updateMemberMembership = useMemberUpdateMutation();
 
     // Update rows
-    const onRowsChange = (changedRows: Member[], { indexes, column }: RowsChangeData<Member>) => {
+    const onRowsChange = (changedRows: Member[], { indexes }: RowsChangeData<Member>) => {
       if (!onlineManager.isOnline()) return toaster(t('common:action.offline.text'), 'warning');
 
-      if (column.key !== 'role') return setRows(changedRows);
+      // TODO
+      // if (column.key !== 'role') return setRows(changedRows);
 
       // If role is changed, update membership
       for (const index of indexes) {
@@ -64,7 +68,8 @@ const BaseDataTable = memo(
           },
         );
       }
-      setRows(changedRows);
+      // TODO
+      // setRows(changedRows);
     };
 
     const onSelectedRowsChange = (value: Set<string>) => {
@@ -72,14 +77,14 @@ const BaseDataTable = memo(
       setSelected(rows.filter((row) => value.has(row.id)));
     };
 
-    useEffect(() => setTotal(totalCount), [totalCount]);
-
     // Expose methods via ref using useImperativeHandle
     useImperativeHandle(ref, () => ({
       clearSelection: () => onSelectedRowsChange(new Set<string>()),
     }));
 
     return (
+      // TODO
+      // @ts-expect-error
       <DataTable<Member>
         {...{
           columns: columns.filter((column) => column.visible),
@@ -92,8 +97,8 @@ const BaseDataTable = memo(
           rowKeyGetter: (row) => row.id,
           error,
           isLoading,
-          isFetching,
-          fetchMore: fetchNextPage,
+          isFetching: isLoading,
+          nextCursor,
           isFiltered: role !== undefined || !!q,
           selectedRows,
           onSelectedRowsChange,

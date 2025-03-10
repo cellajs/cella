@@ -22,14 +22,7 @@ export const membersKeys = {
  *
  * This function returns the configuration needed to query a list of members from target entity with pagination.
  *
- * @param param.idOrSlug - ID or slug of entity.
- * @param param.entityType - Type of entity.
- * @param param.orgIdOrSlug - ID or slug of organization based of witch entity created.
- * @param param.q - Optional search query to filter members by (default is an empty string).
- * @param param.role - Role of the members to filter by.
- * @param param.sort - Field to sort by (default is 'createdAt').
- * @param param.order - Order of sorting (default is 'desc').
- * @param param.limit - Number of items per page (default is configured in `config.requestLimits.members`).
+ * @param params - GetMembersParams object with query parameters.
  * @returns Infinite query options.
  */
 export const membersQueryOptions = ({
@@ -41,6 +34,7 @@ export const membersQueryOptions = ({
   order: initialOrder,
   role,
   limit = config.requestLimits.members,
+  cursor = 0,
 }: GetMembersParams) => {
   const sort = initialSort || 'createdAt';
   const order = initialOrder || 'desc';
@@ -51,8 +45,8 @@ export const membersQueryOptions = ({
     queryKey,
     initialPageParam: 0,
     queryFn: async ({ pageParam: page, signal }) =>
-      await getMembers({ page, q, sort, order, role, limit, idOrSlug, orgIdOrSlug, entityType, offset: page * limit }, signal),
-    getNextPageParam: (_lastPage, allPages) => allPages.length,
+      await getMembers({ page, q, sort, order, role, limit, idOrSlug, orgIdOrSlug, entityType, offset: cursor * limit }, signal),
+    getNextPageParam: () => cursor + 1,
   });
 };
 

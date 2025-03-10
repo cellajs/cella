@@ -96,6 +96,7 @@ type OptionalGetMembersParams = Omit<Parameters<(typeof client)['members']['$get
   limit?: number;
   offset?: number;
   page?: number;
+  cursor?: number;
 };
 
 // Combined type
