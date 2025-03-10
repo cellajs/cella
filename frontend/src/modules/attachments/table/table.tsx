@@ -1,9 +1,9 @@
-import { forwardRef, memo, useEffect, useImperativeHandle } from 'react';
+import { forwardRef, memo, useEffect, useImperativeHandle, useState } from 'react';
 
+import { useInfiniteQuery } from '@tanstack/react-query';
 import { Paperclip } from 'lucide-react';
 import type { RowsChangeData } from 'react-data-grid';
 import { useTranslation } from 'react-i18next';
-import { attachmentsQueryOptions } from '~/modules/attachments/query';
 import { useAttachmentUpdateMutation } from '~/modules/attachments/query-mutations';
 import type { AttachmentSearch, AttachmentsTableProps } from '~/modules/attachments/table/table-wrapper';
 import type { Attachment } from '~/modules/attachments/types';
@@ -11,7 +11,7 @@ import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { DataTable } from '~/modules/common/data-table';
 import { tablePropsAreEqual } from '~/modules/common/data-table/table-props-are-equal';
 import type { BaseTableMethods, BaseTableProps } from '~/modules/common/data-table/types';
-import { useDataFromInfiniteQuery } from '~/query/hooks/use-data-from-query';
+import { attachmentsQueryOptions } from '../query';
 
 type BaseDataTableProps = AttachmentsTableProps & BaseTableProps<Attachment, AttachmentSearch>;
 
@@ -22,10 +22,43 @@ const BaseDataTable = memo(
 
       const { q, sort, order, limit } = queryVars;
 
-      // Query attachments
-      const { rows, selectedRows, setRows, setSelectedRows, totalCount, isLoading, isFetching, error, fetchNextPage } = useDataFromInfiniteQuery(
-        attachmentsQueryOptions({ orgIdOrSlug: organization.id, q, sort, order, limit }),
-      );
+      // Table state
+      const [rows, setRows] = useState<Attachment[]>([]);
+      const [selectedRows, setSelectedRows] = useState(new Set<string>());
+      const [totalCount, setTotalCount] = useState(0);
+
+      // Fetching attachments
+      const {
+        data: queryResult,
+        fetchNextPage,
+        // hasNextPage,
+        isFetchingNextPage: isFetching,
+        isLoading,
+        error,
+      } = useInfiniteQuery({
+        ...attachmentsQueryOptions({ orgIdOrSlug: organization.id, q, sort, order, limit: 10 }),
+        getNextPageParam: (_lastPage, allPages) => allPages.length,
+      });
+
+      // 🚀 Flatten paginated data
+      useEffect(() => {
+        if (!queryResult) return;
+
+        // Flatten the array of pages to get all items
+        const data = queryResult.pages?.flatMap((page) => page.items);
+        if (!data) return;
+
+        // Update total count
+        setTotalCount(queryResult.pages?.[queryResult.pages.length - 1]?.total ?? 0);
+
+        // Update selected rows
+        if (selectedRows.size > 0) {
+          setSelectedRows(new Set<string>([...selectedRows].filter((id) => data.some((row) => row.id === id))));
+        }
+
+        setRows(data);
+      }, [queryResult]);
+
       const attachmentUpdateMutation = useAttachmentUpdateMutation();
 
       // Update rows

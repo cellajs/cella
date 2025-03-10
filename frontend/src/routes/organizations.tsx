@@ -1,7 +1,6 @@
 import { createRoute, useLoaderData } from '@tanstack/react-router';
 import { Suspense, lazy } from 'react';
 import { z } from 'zod';
-import { attachmentsQueryOptions } from '~/modules/attachments/query';
 import ErrorNotice from '~/modules/common/error-notice';
 import { membersQueryOptions } from '~/modules/memberships/query';
 import { organizationQueryOptions } from '~/modules/organizations/query';
@@ -15,7 +14,7 @@ import { memberInvitationsQuerySchema, membersQuerySchema } from '#/modules/memb
 
 //Lazy-loaded components
 const OrganizationPage = lazy(() => import('~/modules/organizations/organization-page'));
-const OrgMembersTable = lazy(() => import('~/modules/organizations/organization-members-table'));
+const MembersTable = lazy(() => import('~/modules/memberships/members-table/table-wrapper'));
 const AttachmentsTable = lazy(() => import('~/modules/attachments/table/table-wrapper'));
 const OrganizationSettings = lazy(() => import('~/modules/organizations/organization-settings'));
 
@@ -66,11 +65,16 @@ export const OrganizationMembersRoute = createRoute({
     const queryOptions = membersQueryOptions({ idOrSlug, orgIdOrSlug: idOrSlug, entityType, q, sort, order, role });
     return await hybridFetchInfinite(queryOptions);
   },
-  component: () => (
-    <Suspense>
-      <OrgMembersTable />
-    </Suspense>
-  ),
+  component: () => {
+    const organization = useLoaderData({ from: OrganizationRoute.id });
+
+    if (!organization) return;
+    return (
+      <Suspense>
+        <MembersTable entity={organization} />
+      </Suspense>
+    );
+  },
 });
 
 export const OrganizationAttachmentsRoute = createRoute({
@@ -78,12 +82,6 @@ export const OrganizationAttachmentsRoute = createRoute({
   validateSearch: attachmentsSearchSchema,
   staticData: { pageTitle: 'attachments', isAuth: true },
   getParentRoute: () => OrganizationRoute,
-  loaderDeps: ({ search: { q, sort, order } }) => ({ q, sort, order }),
-  loader: async ({ deps: { q, sort, order }, params: { idOrSlug } }) => {
-    const queryOptions = attachmentsQueryOptions({ orgIdOrSlug: idOrSlug, q, sort, order });
-    console.debug('get attachments', { idOrSlug, q, sort, order });
-    return await hybridFetchInfinite(queryOptions);
-  },
   component: () => {
     const organization = useLoaderData({ from: OrganizationRoute.id });
 
