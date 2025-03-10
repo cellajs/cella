@@ -59,13 +59,13 @@ export const RequestsTableBar = ({
             <>
               {selectedToWaitlist.length > 0 && (
                 <Button variant="darkSuccess" className="relative" onClick={openInviteDialog}>
-                  <Badge className="py-0 px-1 absolute -right-2 min-w-5 flex justify-center -top-1.5">{selectedToWaitlist.length}</Badge>
+                  <Badge context="button">{selectedToWaitlist.length}</Badge>
                   <Handshake size={16} />
                   <span className="ml-1 max-xs:hidden">{t('common:invite')}</span>
                 </Button>
               )}
               <Button variant="destructive" className="relative" onClick={openRemoveDialog}>
-                <Badge className="py-0 px-1 absolute -right-2 min-w-5 flex justify-center -top-1.5">{selected.length}</Badge>
+                <Badge context="button">{selected.length}</Badge>
                 <Trash size={16} />
                 <span className="ml-1 max-lg:hidden">{t('common:remove')}</span>
               </Button>

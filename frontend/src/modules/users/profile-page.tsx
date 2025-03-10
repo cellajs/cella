@@ -5,10 +5,10 @@ import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { useEventListener } from '~/hooks/use-event-listener';
 import { PageHeader } from '~/modules/common/page/header';
+import { useUpdateSelfMutation } from '~/modules/me/query';
 import { useUpdateUserMutation } from '~/modules/users/query';
-import { useUserStore } from '~/store/user';
-
 import type { LimitedUser } from '~/modules/users/types';
+import { useUserStore } from '~/store/user';
 
 const ProfilePageContent = lazy(() => import('~/modules/users/profile-page-content'));
 
@@ -19,13 +19,14 @@ const UserProfilePage = ({ user, sheet, orgIdOrSlug }: { user: LimitedUser; shee
 
   const isSelf = currentUser.id === user.id;
 
-  const { mutate } = useUpdateUserMutation(currentUser.id);
+  const mutationFn = isSelf ? useUpdateSelfMutation : useUpdateUserMutation;
+  const { mutate } = mutationFn();
 
   useEventListener('updateEntityCover', (e) => {
     const { bannerUrl, entity } = e.detail;
     if (entity !== user.entity) return;
     mutate(
-      { bannerUrl },
+      { idOrSlug: currentUser.id, bannerUrl },
       {
         onSuccess: () => {
           toast.success(t('common:success.upload_cover'));

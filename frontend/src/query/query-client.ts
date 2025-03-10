@@ -1,6 +1,6 @@
 import { MutationCache, QueryCache, QueryClient, onlineManager } from '@tanstack/react-query';
 import { onError } from '~/query/on-error';
-import { onSuccess } from './on-success';
+import { onSuccess } from '~/query/on-success';
 
 const queryClientConfig = { onError, onSuccess };
 
@@ -28,10 +28,11 @@ export const queryClient = new QueryClient({
     queries: {
       // networkMode: 'offlineFirst',
       gcTime: 1000 * 60 * 60 * 24, // 24 hours
-      staleTime: 1000 * 60 * 5, // 5 minutes
+      staleTime: 1000 * 60 * 1, // 1 minutes
 
       refetchOnWindowFocus: false,
       refetchOnReconnect: true,
+
       retry: false,
     },
     mutations: {

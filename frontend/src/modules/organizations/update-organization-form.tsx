@@ -112,11 +112,7 @@ const UpdateOrganizationForm = ({ organization, callback, sheet: isSheet }: Prop
           previousSlug={organization.slug}
         />
         <InputFormField control={form.control} name="shortName" label={t('common:short_name')} required />
-        <DomainsFormField
-          control={form.control}
-          label={t('common:email_domains')}
-          description={t('common:email_domains.text', { domain: config.domain })}
-        />
+        <DomainsFormField control={form.control} label={t('common:email_domains')} description={t('common:email_domains.text')} />
         <InputFormField
           control={form.control}
           type="email"

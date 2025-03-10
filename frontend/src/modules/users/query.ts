@@ -3,10 +3,8 @@ import { config } from 'config';
 import type { ApiError } from '~/lib/api';
 import { queryClient } from '~/query/query-client';
 
-import { updateSelf } from '~/modules/me/api';
 import { type GetUsersParams, type UpdateUserParams, getUser, getUsers, updateUser } from '~/modules/users/api';
 import type { User } from '~/modules/users/types';
-import { useUserStore } from '~/store/user';
 
 /**
  * Keys for user related queries. These keys help to uniquely identify different query. For managing query caching and invalidation.
@@ -19,15 +17,6 @@ export const usersKeys = {
   table: (filters?: GetUsersParams) => [...usersKeys.list(), filters] as const,
   update: () => [...usersKeys.one, 'update'] as const,
   delete: () => [...usersKeys.one, 'delete'] as const,
-};
-
-/**
- * Keys for current authenticated user(self) related queries. These keys help to uniquely identify different query.
- * For managing query caching and invalidation.
- */
-export const meKeys = {
-  all: ['me'] as const,
-  update: () => [...meKeys.all, 'update'] as const,
 };
 
 /**
@@ -64,16 +53,12 @@ export const usersQueryOptions = ({ q = '', sort: initialSort, order: initialOrd
 /**
  * Mutation hook for updating user
  *
- * @param idOrSlug - Optional ID or slug of the user to update. If not provided, it will update the current authenticated user (self).
  * @returns The mutation hook for updating the user.
  */
-export const useUpdateUserMutation = (idOrSlug?: string) => {
-  const { user: currentUser } = useUserStore();
-  const isSelf = currentUser.id === idOrSlug;
-
-  return useMutation<User, ApiError, (UpdateUserParams & { idOrSlug: string }) | Omit<UpdateUserParams, 'role'>>({
-    mutationKey: idOrSlug && !isSelf ? usersKeys.update() : meKeys.update(),
-    mutationFn: (params) => (idOrSlug && !isSelf ? updateUser({ idOrSlug, ...params }) : updateSelf(params)),
+export const useUpdateUserMutation = () => {
+  return useMutation<User, ApiError, UpdateUserParams & { idOrSlug: string }>({
+    mutationKey: usersKeys.update(),
+    mutationFn: updateUser,
     onSuccess: (updatedUser) => {
       queryClient.setQueryData(usersKeys.single(updatedUser.slug), updatedUser);
     },
