@@ -3,11 +3,8 @@ import { config } from 'config';
 import type { ApiError } from '~/lib/api';
 import { queryClient } from '~/query/query-client';
 
-import { updateSelf } from '~/modules/me/api';
 import { type GetUsersParams, type UpdateUserParams, getUser, getUsers, updateUser } from '~/modules/users/api';
-import { getAndSetMe, getAndSetMenu, getAndSetUserAuthInfo } from '~/modules/users/helpers';
 import type { User } from '~/modules/users/types';
-import { useUserStore } from '~/store/user';
 
 /**
  * Keys for user related queries. These keys help to uniquely identify different query. For managing query caching and invalidation.
@@ -23,42 +20,12 @@ export const usersKeys = {
 };
 
 /**
- * Keys for current authenticated user(self) related queries. These keys help to uniquely identify different query.
- * For managing query caching and invalidation.
- */
-export const meKeys = {
-  all: ['me'] as const,
-  update: () => [...meKeys.all, 'update'] as const,
-};
-
-/**
  * Query options for fetching a user by ID or slug.
  *
  * @param idOrSlug - The ID or slug of the user to fetch.
  * @returns Query options.
  */
 export const userQueryOptions = (idOrSlug: string) => queryOptions({ queryKey: usersKeys.single(idOrSlug), queryFn: () => getUser(idOrSlug) });
-
-/**
- * Query options for fetching the current authenticated user's data.
- *
- * @returns Query options.
- */
-export const meQueryOptions = () => queryOptions({ queryKey: meKeys.all, queryFn: getAndSetMe });
-
-/**
- * Query options for fetching the authentication information of the current authenticated user.
- *
- * @returns Query options.
- */
-export const userAuthQueryOptions = () => queryOptions({ queryKey: ['auth'], queryFn: getAndSetUserAuthInfo });
-
-/**
- * Query options for fetching the current authenticated user's menu.
- *
- * @returns Query options.
- */
-export const menuQueryOptions = () => queryOptions({ queryKey: ['menu'], queryFn: getAndSetMenu });
 
 /**
  * Infinite query options to get a paginated list of users.
@@ -85,17 +52,12 @@ export const usersQueryOptions = ({ q = '', sort: initialSort, order: initialOrd
 
 /**
  * Mutation hook for updating user
- *
- * @param idOrSlug - Optional ID or slug of the user to update. If not provided, it will update the current authenticated user (self).
  * @returns The mutation hook for updating the user.
  */
-export const useUpdateUserMutation = (idOrSlug?: string) => {
-  const { user: currentUser } = useUserStore();
-  const isSelf = currentUser.id === idOrSlug;
-
-  return useMutation<User, ApiError, (UpdateUserParams & { idOrSlug: string }) | Omit<UpdateUserParams, 'role'>>({
-    mutationKey: idOrSlug && !isSelf ? usersKeys.update() : meKeys.update(),
-    mutationFn: (params) => (idOrSlug && !isSelf ? updateUser({ idOrSlug, ...params }) : updateSelf(params)),
+export const useUpdateUserMutation = () => {
+  return useMutation<User, ApiError, UpdateUserParams & { idOrSlug: string }>({
+    mutationKey: usersKeys.update(),
+    mutationFn: updateUser,
     onSuccess: (updatedUser) => {
       queryClient.setQueryData(usersKeys.single(updatedUser.slug), updatedUser);
     },

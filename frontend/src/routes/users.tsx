@@ -3,7 +3,8 @@ import { createRoute, useParams } from '@tanstack/react-router';
 import { Suspense, lazy } from 'react';
 import ErrorNotice from '~/modules/common/error-notice';
 import Spinner from '~/modules/common/spinner';
-import { userAuthQueryOptions, userQueryOptions } from '~/modules/users/query';
+import { userAuthQueryOptions } from '~/modules/me/query';
+import { userQueryOptions } from '~/modules/users/query';
 import { AppRoute } from '~/routes/base';
 
 const UserProfilePage = lazy(() => import('~/modules/users/profile-page'));

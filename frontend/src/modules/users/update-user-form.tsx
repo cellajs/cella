@@ -17,11 +17,13 @@ import { sheet } from '~/modules/common/sheeter/state';
 import { useStepper } from '~/modules/common/stepper/use-stepper';
 import { toaster } from '~/modules/common/toaster';
 import UnsavedBadge from '~/modules/common/unsaved-badge';
+import { useUpdateSelfMutation } from '~/modules/me/query';
 import { Button, SubmitButton } from '~/modules/ui/button';
 import { Checkbox } from '~/modules/ui/checkbox';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
 import { Input } from '~/modules/ui/input';
 import { useUpdateUserMutation } from '~/modules/users/query';
+
 import type { User } from '~/modules/users/types';
 import { useUserStore } from '~/store/user';
 import { cleanUrl } from '~/utils/clean-url';
@@ -50,7 +52,8 @@ const UpdateUserForm = ({ user, callback, sheet: isSheet, hiddenFields, children
     useHideElementsById(fieldIds);
   }
 
-  const { mutate, isPending } = useUpdateUserMutation(user.id);
+  const mutationFunc = isSelf ? useUpdateSelfMutation : useUpdateUserMutation;
+  const { mutate, isPending } = mutationFunc();
 
   const formOptions: UseFormProps<FormValues> = useMemo(
     () => ({
@@ -84,18 +87,21 @@ const UpdateUserForm = ({ user, callback, sheet: isSheet, hiddenFields, children
   const onSubmit = (values: FormValues) => {
     if (!user) return;
 
-    mutate(values, {
-      onSuccess: (updatedUser) => {
-        if (isSelf) {
-          updateUser(updatedUser);
-          toaster(t('common:success.profile_updated'), 'success');
-        } else toaster(t('common:success.update_item', { item: t('common:user') }), 'success');
-        form.reset(updatedUser);
-        if (isSheet) sheet.remove('update-user');
-        nextStep?.();
-        callback?.(updatedUser);
+    mutate(
+      { idOrSlug: user.id, ...values },
+      {
+        onSuccess: (updatedUser) => {
+          if (isSelf) {
+            updateUser(updatedUser);
+            toaster(t('common:success.profile_updated'), 'success');
+          } else toaster(t('common:success.update_item', { item: t('common:user') }), 'success');
+          form.reset(updatedUser);
+          if (isSheet) sheet.remove('update-user');
+          nextStep?.();
+          callback?.(updatedUser);
+        },
       },
-    });
+    );
   };
 
   const setImageUrl = (url: string | null) => {

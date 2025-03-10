@@ -8,7 +8,7 @@ import ErrorNotice from '~/modules/common/error-notice';
 import { PublicLayout } from '~/modules/common/public-layout';
 import { Root } from '~/modules/common/root';
 import Spinner from '~/modules/common/spinner';
-import { meQueryOptions, menuQueryOptions } from '~/modules/users/query';
+import { meQueryOptions, menuQueryOptions } from '~/modules/me/query';
 import { onError } from '~/query/on-error';
 import { useUserStore } from '~/store/user';
 

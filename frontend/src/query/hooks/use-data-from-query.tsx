@@ -29,7 +29,7 @@ export const useDataFromInfiniteQuery = <T extends { id: string } = { id: string
   const [selectedRows, setSelectedRows] = useState(new Set<string>());
   const [totalCount, setTotalCount] = useState(0);
 
-  const queryResult = useInfiniteQuery({ ...options, staleTime: options.staleTime ?? 1000 * 60 }); // stale time for 1 min
+  const queryResult = useInfiniteQuery(options);
 
   useEffect(() => {
     // Flatten the array of pages to get all items
