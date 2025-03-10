@@ -1,4 +1,4 @@
-import { createRoute, useParams } from '@tanstack/react-router';
+import { createRoute, useLoaderData } from '@tanstack/react-router';
 import { Suspense, lazy } from 'react';
 import { z } from 'zod';
 import { attachmentsQueryOptions } from '~/modules/attachments/query';
@@ -6,7 +6,6 @@ import ErrorNotice from '~/modules/common/error-notice';
 import { membersQueryOptions } from '~/modules/memberships/query';
 import { organizationQueryOptions } from '~/modules/organizations/query';
 import { hybridFetch, hybridFetchInfinite } from '~/query/hybrid-fetch';
-import { queryClient } from '~/query/query-client';
 
 import type { Organization as OrganizationType } from '~/modules/organizations/types';
 import { AppRoute } from '~/routes/base';
@@ -35,26 +34,20 @@ export const attachmentsSearchSchema = attachmentsQuerySchema.pick({ q: true, so
 export const OrganizationRoute = createRoute({
   path: '/$idOrSlug',
   staticData: { pageTitle: 'Organization', isAuth: true },
-  beforeLoad: async ({ location, cause, params: { idOrSlug } }) => {
+  beforeLoad: async ({ location, params: { idOrSlug } }) => {
     noDirectAccess(location.pathname, idOrSlug, '/members');
+  },
+  loader: async ({ params: { idOrSlug } }) => {
     const queryOptions = organizationQueryOptions(idOrSlug);
-
-    // Prevents unnecessary fetches(runs when user enters page)
-    if (cause !== 'enter') {
-      const { id: organizationId, membership } = await queryClient.ensureQueryData(queryOptions);
-      return { orgIdOrSlug: organizationId, isAdmin: membership?.role === 'admin' };
-    }
-
-    const organization = await hybridFetch<OrganizationType>(queryOptions);
-    return { orgIdOrSlug: organization?.id || idOrSlug };
+    console.debug('get organization', { idOrSlug });
+    return await hybridFetch<OrganizationType>(queryOptions);
   },
   getParentRoute: () => AppRoute,
   errorComponent: ({ error }) => <ErrorNotice level="app" error={error} />,
   component: () => {
-    const { idOrSlug } = useParams({ from: OrganizationRoute.id });
     return (
       <Suspense>
-        <OrganizationPage key={idOrSlug} />
+        <OrganizationPage />
       </Suspense>
     );
   },
@@ -66,12 +59,11 @@ export const OrganizationMembersRoute = createRoute({
   staticData: { pageTitle: 'members', isAuth: true },
   getParentRoute: () => OrganizationRoute,
   loaderDeps: ({ search: { q, sort, order, role } }) => ({ q, sort, order, role }),
-  loader: async ({ cause, params: { idOrSlug }, deps: { q, sort, order, role }, context: { orgIdOrSlug } }) => {
-    if (cause !== 'enter') return;
-
+  loader: async ({ params: { idOrSlug }, deps: { q, sort, order, role } }) => {
     const entityType = 'organization';
+    console.debug('get members', { idOrSlug, q, sort, order, role });
 
-    const queryOptions = membersQueryOptions({ idOrSlug, orgIdOrSlug, entityType, q, sort, order, role });
+    const queryOptions = membersQueryOptions({ idOrSlug, orgIdOrSlug: idOrSlug, entityType, q, sort, order, role });
     return await hybridFetchInfinite(queryOptions);
   },
   component: () => (
@@ -87,16 +79,13 @@ export const OrganizationAttachmentsRoute = createRoute({
   staticData: { pageTitle: 'attachments', isAuth: true },
   getParentRoute: () => OrganizationRoute,
   loaderDeps: ({ search: { q, sort, order } }) => ({ q, sort, order }),
-  loader: async ({ cause, deps: { q, sort, order }, context: { orgIdOrSlug } }) => {
-    if (cause !== 'enter') return;
-
-    const queryOptions = attachmentsQueryOptions({ orgIdOrSlug, q, sort, order });
+  loader: async ({ deps: { q, sort, order }, params: { idOrSlug } }) => {
+    const queryOptions = attachmentsQueryOptions({ orgIdOrSlug: idOrSlug, q, sort, order });
+    console.debug('get attachments', { idOrSlug, q, sort, order });
     return await hybridFetchInfinite(queryOptions);
   },
   component: () => {
-    const { idOrSlug } = useParams({ from: OrganizationAttachmentsRoute.id });
-    const orgQueryOptions = organizationQueryOptions(idOrSlug);
-    const organization: OrganizationType | undefined = queryClient.getQueryData(orgQueryOptions.queryKey);
+    const organization = useLoaderData({ from: OrganizationRoute.id });
 
     if (!organization) return;
     return (
