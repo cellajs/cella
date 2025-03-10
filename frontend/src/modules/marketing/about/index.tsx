@@ -87,8 +87,9 @@ const About = () => {
             replace
             hash="why"
             onClick={(e) => {
+              if (window.location.hash !== '#why') return;
               e.preventDefault();
-              if (window.location.hash === '#why') navigate({ to: '.', hash: 'top', replace: true });
+              navigate({ to: '.', hash: 'top', replace: true });
 
               setTimeout(() => {
                 navigate({ hash: 'why', replace: true });

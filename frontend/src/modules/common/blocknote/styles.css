@@ -69,7 +69,7 @@ p.bn-inline-content code {
   border-radius: 8px !important;
   box-shadow: 0 0.05rem 4px 0 rgb(0 0 0 / 0.1) !important;
   gap: 0.75rem !important;
-  padding: 1rem !important;
+  padding: 0.5rem !important;
 }
 
 .bn-shadcn .bn-block-outer,
@@ -176,25 +176,26 @@ p.bn-inline-content code {
   min-width: 14rem;
   align-items: center;
   display: flex;
-  height: 2rem;
+  height: 2.25rem;
   flex-direction: row;
   justify-content: space-between;
-  padding: 1rem;
+  padding-left: 0.5rem;
+  padding-right: 0.5rem;
 }
 
 .slash-menu-item-badge {
-  font-size: 0.8em;
-  font-weight: 200;
+  font-size: 0.8rem;
+  min-width: 1rem;
   align-items: center;
   color: hsl(var(--muted-foreground));
+  opacity: 0.5 !important;
   display: flex;
   padding: 0.125rem 0 0.125rem 0.25rem;
 }
 
 .slash-menu-separator {
-  border: 0.5px solid hsl(var(--border));
-  margin-top: 0.25rem;
-  margin-bottom: 0.25rem;
+  margin-top: 0.25rem !important;
+  margin-bottom: 0.25rem !important;
 }
 
 .slash-menu-item[aria-selected="true"] {

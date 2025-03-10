@@ -33,6 +33,7 @@ const cookieExpires = new TimeSpan(5, 'm');
  * @param token - Optional, invitation token for the OAuth process.
  * @returns Redirect response to the OAuth provider's authorization URL.
  */
+// TODO add Oauth req type, to avoid `sign_up_restricted` on signIn
 export const createOauthSession = async (
   ctx: Context,
   provider: string,
@@ -41,7 +42,7 @@ export const createOauthSession = async (
   codeVerifier?: string,
   redirect?: string,
   connect?: string,
-  token?: string | null,
+  token?: { id: string; inviteType: 'membership' | 'system' } | null,
 ) => {
   setAuthCookie(ctx, 'oauth_state', state, cookieExpires);
   // If connecting oauth account to user, make sure same user is logged in
@@ -59,7 +60,12 @@ export const createOauthSession = async (
   if (codeVerifier) await setAuthCookie(ctx, 'oauth_code_verifier', codeVerifier, cookieExpires);
   if (redirect) await setAuthCookie(ctx, 'oauth_redirect', redirect, cookieExpires);
   if (connect) await setAuthCookie(ctx, 'oauth_connect_user_id', connect, cookieExpires);
-  if (token) await setAuthCookie(ctx, 'oauth_invite_token', token, cookieExpires);
+  if (token) {
+    await Promise.all([
+      setAuthCookie(ctx, 'oauth_invite_tokenId', token.id, cookieExpires),
+      setAuthCookie(ctx, 'oauth_invite_tokenType', token.inviteType, cookieExpires),
+    ]);
+  }
 
   logEvent('User redirected', { strategy: provider });
 
@@ -85,7 +91,14 @@ export const handleExistingOauthAccount = async (
 
 // Clear oauth session
 export const clearOauthSession = (ctx: Context) => {
-  const cookies: CookieName[] = ['oauth_state', 'oauth_code_verifier', 'oauth_redirect', 'oauth_connect_user_id', 'oauth_invite_token'];
+  const cookies: CookieName[] = [
+    'oauth_state',
+    'oauth_code_verifier',
+    'oauth_redirect',
+    'oauth_connect_user_id',
+    'oauth_invite_tokenId',
+    'oauth_invite_tokenType',
+  ];
   for (const cookie of cookies) {
     deleteAuthCookie(ctx, cookie);
   }
@@ -190,37 +203,42 @@ export const updateExistingUser = async (ctx: Context, existingUser: UserModel, 
  * Handle invitation token helper
  *
  * @param ctx
- * @returns Object with token ID, redirect URL, and error
+ * @returns Object with token data, redirect URL, and error
  */
 export const handleInvitationToken = async (ctx: Context) => {
   const token = ctx.req.query('token');
-  const redirect = ctx.req.query('redirect');
+  let redirectUrl = ctx.req.query('redirect');
 
-  if (!token) return { tokenId: null, redirectUrl: redirect, error: null };
+  if (!token) return { token: null, redirectUrl, error: null };
 
   const [tokenRecord] = await db.select().from(tokensTable).where(eq(tokensTable.token, token));
 
-  if (!tokenRecord) return { tokenId: null, redirectUrl: redirect, error: createError(ctx, 404, 'invitation_not_found', 'warn') };
-  if (isExpiredDate(tokenRecord.expiresAt)) return { tokenId: null, redirectUrl: redirect, error: createError(ctx, 403, 'expired_token', 'warn') };
-  if (tokenRecord.type !== 'invitation') return { tokenId: null, redirectUrl: redirect, error: createError(ctx, 400, 'invalid_token', 'error') };
+  if (!tokenRecord) return { token: null, redirectUrl, error: createError(ctx, 404, 'invitation_not_found', 'warn') };
+  if (isExpiredDate(tokenRecord.expiresAt)) return { token: null, redirectUrl, error: createError(ctx, 403, 'expired_token', 'warn') };
+  if (tokenRecord.type !== 'invitation') return { token: null, redirectUrl, error: createError(ctx, 400, 'invalid_token', 'error') };
 
+  const membershipInvite = !!tokenRecord.entity;
+  redirectUrl = membershipInvite ? `/invitation/${tokenRecord.token}?tokenId=${tokenRecord.id}` : '/welcome';
   return {
-    tokenId: tokenRecord.id,
-    redirectUrl: `${config.frontendUrl}/invitation/${tokenRecord.token}?tokenId=${tokenRecord.id}`,
+    token: { id: tokenRecord.id, inviteType: membershipInvite ? 'membership' : 'system' } as { id: string; inviteType: 'membership' | 'system' },
+    redirectUrl,
     error: null,
   };
 };
-
 /**
  * Retrieve OAuth cookies (user ID and invite token) from the request context.
  *
  * @param  ctx - Hono context ojb.
- * @returns - An object containing `userId` and `inviteTokenId`, both or either can be null.
+ * @returns - An object containing `userId`, `inviteTokenId` and `inviteTokenType`, all or either can be null.
  */
 export const getOauthCookies = async (ctx: Context) => {
-  const [userId, inviteTokenId] = await Promise.all([getAuthCookie(ctx, 'oauth_connect_user_id'), getAuthCookie(ctx, 'oauth_invite_token')]);
+  const [userId, inviteTokenId, inviteTokenType] = await Promise.all([
+    getAuthCookie(ctx, 'oauth_connect_user_id'),
+    getAuthCookie(ctx, 'oauth_invite_tokenId'),
+    getAuthCookie(ctx, 'oauth_invite_tokenType'),
+  ]);
 
-  return { userId: userId || null, inviteTokenId: inviteTokenId || null };
+  return { userId: userId || null, inviteTokenId: inviteTokenId || null, inviteTokenType: inviteTokenType || null };
 };
 
 /**

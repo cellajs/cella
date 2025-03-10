@@ -4,7 +4,6 @@ import { Suspense, lazy } from 'react';
 import ErrorNotice from '~/modules/common/error-notice';
 import Spinner from '~/modules/common/spinner';
 import { userAuthQueryOptions, userQueryOptions } from '~/modules/users/query';
-import { queryClient } from '~/query/query-client';
 import { AppRoute } from '~/routes/base';
 
 const UserProfilePage = lazy(() => import('~/modules/users/profile-page'));
@@ -14,7 +13,7 @@ export const UserProfileRoute = createRoute({
   path: '/users/$idOrSlug',
   staticData: { pageTitle: 'Profile', isAuth: true },
   getParentRoute: () => AppRoute,
-  loader: async ({ params: { idOrSlug } }) => queryClient.ensureQueryData(userQueryOptions(idOrSlug)),
+  loader: async ({ params: { idOrSlug }, context }) => context.queryClient.ensureQueryData(userQueryOptions(idOrSlug)),
   errorComponent: ({ error }) => <ErrorNotice level="app" error={error} />,
   component: () => {
     const { idOrSlug } = useParams({ from: UserProfileRoute.id });
@@ -31,12 +30,11 @@ export const UserSettingsRoute = createRoute({
   path: '/settings',
   staticData: { pageTitle: 'Settings', isAuth: true },
   getParentRoute: () => AppRoute,
-  loader: async () => queryClient.fetchQuery(userAuthQueryOptions()),
+  loader: async ({ context }) => context.queryClient.ensureQueryData(userAuthQueryOptions()),
   component: () => {
-    const { data: userAuthInfo } = useSuspenseQuery(userAuthQueryOptions());
     return (
       <Suspense fallback={<Spinner className="mt-[40vh] h-10 w-10" />}>
-        <UserSettingsPage userAuthInfo={userAuthInfo} />
+        <UserSettingsPage />
       </Suspense>
     );
   },

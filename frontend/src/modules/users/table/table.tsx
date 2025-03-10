@@ -45,7 +45,6 @@ const BaseDataTable = memo(
               mutateQuery.update([updatedUser]);
               toaster(t('common:success.update_item', { item: t('common:role') }), 'success');
             },
-            onError: () => toaster('Error updating role', 'error'),
           });
         }
       setRows(changedRows);

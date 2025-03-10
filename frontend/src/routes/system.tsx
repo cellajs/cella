@@ -11,7 +11,6 @@ import { organizationsQueryOptions } from '~/modules/organizations/query';
 import { requestsQueryOptions } from '~/modules/requests/query';
 import SystemPage from '~/modules/system/system-page';
 import { usersQueryOptions } from '~/modules/users/query';
-import { queryClient } from '~/query/query-client';
 import { AppRoute } from '~/routes/base';
 import { noDirectAccess } from '~/utils/no-direct-access';
 
@@ -45,9 +44,9 @@ export const UsersTableRoute = createRoute({
   staticData: { pageTitle: 'users', isAuth: true },
   getParentRoute: () => SystemRoute,
   loaderDeps: ({ search: { q, sort, order, role } }) => ({ q, sort, order, role }),
-  loader: async ({ deps: { q, sort, order, role } }) => {
+  loader: async ({ deps: { q, sort, order, role }, context }) => {
     const options = usersQueryOptions({ q, sort, order, role });
-    queryClient.ensureInfiniteQueryData(options);
+    context.queryClient.ensureInfiniteQueryData(options);
   },
   component: () => (
     <Suspense>
@@ -62,9 +61,9 @@ export const OrganizationsTableRoute = createRoute({
   staticData: { pageTitle: 'organizations', isAuth: true },
   getParentRoute: () => SystemRoute,
   loaderDeps: ({ search: { q, sort, order } }) => ({ q, sort, order }),
-  loader: async ({ deps: { q, sort, order } }) => {
+  loader: async ({ deps: { q, sort, order }, context }) => {
     const options = organizationsQueryOptions({ q, sort, order });
-    queryClient.ensureInfiniteQueryData(options);
+    context.queryClient.ensureInfiniteQueryData(options);
   },
   component: () => (
     <Suspense>
@@ -79,9 +78,9 @@ export const RequestsTableRoute = createRoute({
   staticData: { pageTitle: 'requests', isAuth: true },
   getParentRoute: () => SystemRoute,
   loaderDeps: ({ search: { q, sort, order } }) => ({ q, sort, order }),
-  loader: async ({ deps: { q, sort, order } }) => {
+  loader: async ({ deps: { q, sort, order }, context }) => {
     const options = requestsQueryOptions({ q, sort, order });
-    queryClient.ensureInfiniteQueryData(options);
+    context.queryClient.ensureInfiniteQueryData(options);
   },
   component: () => (
     <Suspense>

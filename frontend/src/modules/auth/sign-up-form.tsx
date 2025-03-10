@@ -21,6 +21,7 @@ import { AuthenticateRoute } from '~/routes/auth';
 const PasswordStrength = lazy(() => import('~/modules/auth/password-strength'));
 const LegalText = lazy(() => import('~/modules/marketing/legal-texts'));
 
+const enabledStrategies: readonly string[] = config.enabledAuthenticationStrategies;
 const formSchema = emailPasswordBodySchema;
 
 interface Props {
@@ -105,28 +106,32 @@ export const SignUpForm = ({ tokenData, email, resetSteps, emailEnabled }: Props
               </FormItem>
             )}
           />
-          <FormField
-            control={form.control}
-            name="password"
-            render={({ field }) => (
-              // Custom css due to html injection by browser extensions
-              <FormItem className="gap-0">
-                <FormControl>
-                  <div className="relative">
-                    <Input type="password" autoFocus placeholder={t('common:new_password')} autoComplete="new-password" {...field} />
-                    <Suspense>
-                      <PasswordStrength password={form.getValues('password') || ''} minLength={8} />
-                    </Suspense>
-                  </div>
-                </FormControl>
-                <FormMessage className="mt-2" />
-              </FormItem>
-            )}
-          />
-          <SubmitButton loading={isPending || isPendingWithToken} className="w-full">
-            {t('common:sign_up')}
-            <ArrowRight size={16} className="ml-2" />
-          </SubmitButton>
+          {enabledStrategies.includes('password') && (
+            <>
+              <FormField
+                control={form.control}
+                name="password"
+                render={({ field }) => (
+                  // Custom css due to html injection by browser extensions
+                  <FormItem className="gap-0">
+                    <FormControl>
+                      <div className="relative">
+                        <Input type="password" autoFocus placeholder={t('common:new_password')} autoComplete="new-password" {...field} />
+                        <Suspense>
+                          <PasswordStrength password={form.getValues('password') || ''} minLength={8} />
+                        </Suspense>
+                      </div>
+                    </FormControl>
+                    <FormMessage className="mt-2" />
+                  </FormItem>
+                )}
+              />
+              <SubmitButton loading={isPending || isPendingWithToken} className="w-full">
+                {t('common:sign_up')}
+                <ArrowRight size={16} className="ml-2" />
+              </SubmitButton>
+            </>
+          )}
         </form>
       )}
     </Form>
