@@ -1,4 +1,4 @@
-import { Trash, Upload, XSquare } from 'lucide-react';
+import { ChevronsLeftRight, ChevronsRightLeft, Trash, Upload, XSquare } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useTranslation } from 'react-i18next';
 import { openAttachmentsUploadDialog } from '~/modules/attachments/table/helpers';
@@ -11,13 +11,16 @@ import { FilterBarActions, FilterBarContent, TableFilterBar } from '~/modules/co
 import TableSearch from '~/modules/common/data-table/table-search';
 import type { BaseTableBarProps, BaseTableMethods } from '~/modules/common/data-table/types';
 import { FocusView } from '~/modules/common/focus-view';
+import { TooltipButton } from '~/modules/common/tooltip-button';
 import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
 
 type AttachmentsTableBarProps = AttachmentsTableProps &
   BaseTableMethods &
   BaseTableBarProps<Attachment, AttachmentSearch> & {
+    highDensity: boolean;
     openRemoveDialog: () => void;
+    toggleDensityView: () => void;
   };
 
 export const AttachmentsTableBar = ({
@@ -28,6 +31,8 @@ export const AttachmentsTableBar = ({
   setSearch,
   columns,
   setColumns,
+  highDensity,
+  toggleDensityView,
   clearSelection,
   openRemoveDialog,
   isSheet = false,
@@ -99,6 +104,11 @@ export const AttachmentsTableBar = ({
         <div className="sm:grow" />
         <FilterBarContent className="max-sm:animate-in max-sm:slide-in-from-left max-sm:fade-in max-sm:duration-300">
           <TableSearch value={q} setQuery={onSearch} />
+          <TooltipButton toolTipContent={t('common:high_density_view')}>
+            <Button variant="outline" onClick={toggleDensityView}>
+              {highDensity ? <ChevronsRightLeft size={16} /> : <ChevronsLeftRight size={16} />}
+            </Button>
+          </TooltipButton>
         </FilterBarContent>
       </TableFilterBar>
 

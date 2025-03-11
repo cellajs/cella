@@ -416,5 +416,8 @@
   "local_only": "Only visible by you",
   "copy": "Copy",
   "copied": "Copied!",
-  "download": "Download"
+  "download": "Download",
+  "high_density_view": "High-density view",
+  "enter_high_density.text": "High-density column view restored",
+  "left_high_density.text": "Low-density column view activated"
 }

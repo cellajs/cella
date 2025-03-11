@@ -17,6 +17,7 @@ import { AlertWrap } from '~/modules/common/alert-wrap';
 import { useSortColumns } from '~/modules/common/data-table/sort-columns';
 import type { BaseTableMethods } from '~/modules/common/data-table/types';
 import { dialog } from '~/modules/common/dialoger/state';
+import { toaster } from '~/modules/common/toaster';
 import type { Organization } from '~/modules/organizations/types';
 import type { attachmentsSearchSchema } from '~/routes/organizations';
 import { useUserStore } from '~/store/user';
@@ -50,8 +51,13 @@ const AttachmentsTable = ({ organization, canUpload = true, isSheet = false }: A
   const [total, setTotal] = useState<number | undefined>(undefined);
   const [selected, setSelected] = useState<Attachment[]>([]);
 
+  const [highDensity, setHighDensity] = useState(true);
+
   // Build columns
-  const [columns, setColumns] = useState(useColumns(isAdmin, isSheet));
+  const highDensityColumns = useColumns(isAdmin, isSheet, true);
+  const lowDensityColumns = useColumns(isAdmin, isSheet, false);
+  const [columns, setColumns] = useState(highDensityColumns);
+
   const { sortColumns, setSortColumns } = useSortColumns(sort, order, setSearch);
 
   const clearSelection = () => {
@@ -64,6 +70,14 @@ const AttachmentsTable = ({ organization, canUpload = true, isSheet = false }: A
       title: t('common:remove_resource', { resource: t('common:attachment').toLowerCase() }),
       description: t('common:confirm.delete_resources', { resources: t('common:attachments').toLowerCase() }),
     });
+  };
+
+  const toggleDensityView = () => {
+    const newHightDensity = !highDensity;
+
+    setHighDensity(newHightDensity);
+    setColumns(newHightDensity ? highDensityColumns : lowDensityColumns);
+    toaster(!highDensity ? t('common:enter_high_density.text') : t('common:left_high_density.text'), 'success');
   };
 
   return (
@@ -80,6 +94,8 @@ const AttachmentsTable = ({ organization, canUpload = true, isSheet = false }: A
         openRemoveDialog={openRemoveDialog}
         isSheet={isSheet}
         canUpload={canUpload}
+        highDensity={highDensity}
+        toggleDensityView={toggleDensityView}
       />
       <div>
         {/* Explainer alert box */}

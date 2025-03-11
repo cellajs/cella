@@ -16,13 +16,12 @@ import { Button } from '~/modules/ui/button';
 import { Input } from '~/modules/ui/input';
 import { dateShort } from '~/utils/date-short';
 
-export const useColumns = (isAdmin: boolean, isSheet: boolean) => {
+export const useColumns = (isAdmin: boolean, isSheet: boolean, highDensity: boolean) => {
   const { t } = useTranslation();
   const isMobile = useBreakpoints('max', 'sm', false);
   const navigate = useNavigate();
 
-  const columns: ColumnOrColumnGroup<Attachment>[] = [
-    CheckboxColumn,
+  const thumbnailColumn: ColumnOrColumnGroup<Attachment>[] = [
     {
       key: 'thumbnail',
       name: '',
@@ -50,20 +49,9 @@ export const useColumns = (isAdmin: boolean, isSheet: boolean) => {
         </Link>
       ),
     },
-    {
-      key: 'name',
-      name: t('common:name'),
-      editable: true,
-      visible: true,
-      sortable: false,
-      renderHeaderCell: HeaderCell,
-      renderCell: ({ row }) => <strong>{row.name || '-'}</strong>,
-      ...(isAdmin && {
-        renderEditCell: ({ row, onRowChange }) => (
-          <Input value={row.name} onChange={(e) => onRowChange({ ...row, name: e.target.value })} autoFocus />
-        ),
-      }),
-    },
+  ];
+
+  const AttachmentInfoColumns: ColumnOrColumnGroup<Attachment>[] = [
     {
       key: 'storeType',
       name: '',
@@ -137,6 +125,26 @@ export const useColumns = (isAdmin: boolean, isSheet: boolean) => {
         );
       },
     },
+  ];
+
+  const columns: ColumnOrColumnGroup<Attachment>[] = [
+    CheckboxColumn,
+    ...(highDensity ? thumbnailColumn : []),
+    {
+      key: 'name',
+      name: t('common:name'),
+      editable: true,
+      visible: true,
+      sortable: false,
+      renderHeaderCell: HeaderCell,
+      renderCell: ({ row }) => <strong>{row.name || '-'}</strong>,
+      ...(isAdmin && {
+        renderEditCell: ({ row, onRowChange }) => (
+          <Input value={row.name} onChange={(e) => onRowChange({ ...row, name: e.target.value })} autoFocus />
+        ),
+      }),
+    },
+    ...(highDensity ? AttachmentInfoColumns : []),
     {
       key: 'filename',
       name: t('common:filename'),
@@ -153,7 +161,7 @@ export const useColumns = (isAdmin: boolean, isSheet: boolean) => {
       sortable: false,
       visible: !isMobile,
       renderHeaderCell: HeaderCell,
-      minWidth: 120,
+      minWidth: highDensity ? 120 : 140,
       renderCell: ({ row }) => {
         if (!row.contentType) return <span className="text-muted">-</span>;
         return <span className="font-light">{row.contentType}</span>;
@@ -164,7 +172,7 @@ export const useColumns = (isAdmin: boolean, isSheet: boolean) => {
       name: t('common:size'),
       sortable: false,
       visible: !isMobile,
-      width: 80,
+      minWidth: highDensity ? 80 : 100,
       renderHeaderCell: HeaderCell,
       renderCell: ({ row }) => (
         <div className="inline-flex items-center gap-1 relative font-light group h-full w-full opacity-50">{formatBytes(row.size)}</div>
@@ -175,7 +183,7 @@ export const useColumns = (isAdmin: boolean, isSheet: boolean) => {
       name: t('common:created_at'),
       sortable: true,
       visible: !isSheet && !isMobile,
-      minWidth: 105,
+      minWidth: highDensity ? 105 : 120,
       renderHeaderCell: HeaderCell,
       renderCell: ({ row }) => (row.createdAt ? dateShort(row.createdAt) : <span className="text-muted">-</span>),
     },
@@ -184,7 +192,7 @@ export const useColumns = (isAdmin: boolean, isSheet: boolean) => {
       name: t('common:created_by'),
       sortable: false,
       visible: false,
-      minWidth: 105,
+      minWidth: highDensity ? 105 : 120,
       renderHeaderCell: HeaderCell,
       renderCell: ({ row, tabIndex }) =>
         row.createdBy ? (
@@ -206,7 +214,7 @@ export const useColumns = (isAdmin: boolean, isSheet: boolean) => {
       name: t('common:modified'),
       sortable: false,
       visible: false,
-      minWidth: 105,
+      minWidth: highDensity ? 105 : 120,
       renderHeaderCell: HeaderCell,
       renderCell: ({ row }) => (row.modifiedAt ? dateShort(row.modifiedAt) : <span className="text-muted">-</span>),
     },
@@ -215,7 +223,7 @@ export const useColumns = (isAdmin: boolean, isSheet: boolean) => {
       name: t('common:modified_by'),
       sortable: false,
       visible: false,
-      minWidth: 105,
+      minWidth: highDensity ? 105 : 120,
       renderHeaderCell: HeaderCell,
       renderCell: ({ row, tabIndex }) =>
         row.modifiedBy ? (
