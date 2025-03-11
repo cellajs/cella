@@ -1,6 +1,6 @@
 import type { QueryKey } from '@tanstack/react-query';
 import type { Entity } from 'config';
-import { getCacheInsertOrder } from '~/query/helpers';
+import { getQueryKeySortOrder } from '~/query/helpers';
 import type {
   ArbitraryEntityQueryData,
   ContextEntityData,
@@ -35,12 +35,19 @@ export const isArbitraryQueryData = (data: unknown): data is ArbitraryEntityQuer
  * @param action - `"create" | "update" | "delete" | "updateMembership"`
  */
 export const changeInfiniteQueryData = (queryKey: QueryKey, items: ItemData[], action: QueryDataActions) => {
+  const { sort, order: insertOrder } = getQueryKeySortOrder(queryKey);
+
+  if ((sort && sort !== 'createdAt') || (sort === 'createdAt' && insertOrder === 'asc')) {
+    queryClient.invalidateQueries({ queryKey, exact: true });
+    queryClient.removeQueries({ queryKey, exact: true });
+    return;
+  }
+
   queryClient.setQueryData<InfiniteEntityQueryData>(queryKey, (data) => {
     if (!data) return;
 
     // Adjust total based on the action
     const totalAdjustment = action === 'create' ? items.length : action === 'delete' ? -items.length : 0;
-    const insertOrder = action === 'create' ? getCacheInsertOrder(queryKey) : undefined;
 
     // Update items in each page and adjust the total
     const pages = data.pages.map((page) => ({

@@ -14,7 +14,7 @@ import { LocalFileStorage } from '~/modules/attachments/local-file-storage';
 import { attachmentsKeys } from '~/modules/attachments/query';
 import type { Attachment } from '~/modules/attachments/types';
 import { toaster } from '~/modules/common/toaster';
-import { getCacheInsertOrder } from '~/query/helpers';
+import { getQueryKeySortOrder } from '~/query/helpers';
 import { compareQueryKeys } from '~/query/helpers/compare-query-keys';
 import { formatUpdatedData, getCancelingRefetchQueries, getQueries, getQueryItems } from '~/query/helpers/mutate-query';
 import { queryClient } from '~/query/query-client';
@@ -99,7 +99,7 @@ queryClient.setMutationDefaults(attachmentsKeys.create(), {
       queryClient.setQueryData<AttachmentInfiniteQueryData | AttachmentQueryData>(queryKey, (oldData) => {
         if (!oldData) return oldData;
 
-        const insertOrder = getCacheInsertOrder(queryKey);
+        const { order: insertOrder } = getQueryKeySortOrder(queryKey);
 
         // Add new attachments and update total count
         const prevItems = getQueryItems(oldData);
@@ -114,7 +114,7 @@ queryClient.setMutationDefaults(attachmentsKeys.create(), {
     return context;
   },
 
-  onSuccess: (createdAttachments, { orgIdOrSlug }, context) => {
+  onSuccess: async (createdAttachments, { orgIdOrSlug }, context) => {
     const exactKey = attachmentsKeys.table({ orgIdOrSlug });
     const similarKey = attachmentsKeys.similar({ orgIdOrSlug });
 
@@ -122,6 +122,14 @@ queryClient.setMutationDefaults(attachmentsKeys.create(), {
 
     for (const query of queries) {
       const [activeKey] = query;
+
+      const { sort, order: insertOrder } = getQueryKeySortOrder(activeKey);
+
+      if ((sort && sort !== 'createdAt') || (sort === 'createdAt' && insertOrder === 'asc')) {
+        queryClient.invalidateQueries({ queryKey: activeKey, exact: true });
+        queryClient.removeQueries({ queryKey: activeKey, exact: true });
+        continue;
+      }
 
       queryClient.setQueryData<AttachmentInfiniteQueryData | AttachmentQueryData>(activeKey, (oldData) => {
         if (!oldData) return oldData;
