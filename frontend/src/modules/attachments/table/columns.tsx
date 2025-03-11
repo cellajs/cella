@@ -153,7 +153,7 @@ export const useColumns = (isAdmin: boolean, isSheet: boolean) => {
       sortable: false,
       visible: !isMobile,
       renderHeaderCell: HeaderCell,
-      minWidth: 140,
+      minWidth: 120,
       renderCell: ({ row }) => {
         if (!row.contentType) return <span className="text-muted">-</span>;
         return <span className="font-light">{row.contentType}</span>;
@@ -164,7 +164,7 @@ export const useColumns = (isAdmin: boolean, isSheet: boolean) => {
       name: t('common:size'),
       sortable: false,
       visible: !isMobile,
-      width: 100,
+      width: 80,
       renderHeaderCell: HeaderCell,
       renderCell: ({ row }) => (
         <div className="inline-flex items-center gap-1 relative font-light group h-full w-full opacity-50">{formatBytes(row.size)}</div>
@@ -175,9 +175,62 @@ export const useColumns = (isAdmin: boolean, isSheet: boolean) => {
       name: t('common:created_at'),
       sortable: true,
       visible: !isSheet && !isMobile,
-      minWidth: 180,
+      minWidth: 105,
       renderHeaderCell: HeaderCell,
       renderCell: ({ row }) => (row.createdAt ? dateShort(row.createdAt) : <span className="text-muted">-</span>),
+    },
+    {
+      key: 'createdBy',
+      name: t('common:created_by'),
+      sortable: false,
+      visible: false,
+      minWidth: 105,
+      renderHeaderCell: HeaderCell,
+      renderCell: ({ row, tabIndex }) =>
+        row.createdBy ? (
+          <Link
+            id={`attachments-created-by-${row.createdBy}-cell-${row.id}`}
+            to="/users/$idOrSlug"
+            tabIndex={tabIndex}
+            params={{ idOrSlug: row.createdBy }}
+            className="flex space-x-2 items-center outline-0 ring-0 group"
+          >
+            <span className="group-hover:underline underline-offset-4 truncate font-medium">{row.createdBy}</span>
+          </Link>
+        ) : (
+          <span className="text-muted">-</span>
+        ),
+    },
+    {
+      key: 'modifiedAt',
+      name: t('common:modified'),
+      sortable: false,
+      visible: false,
+      minWidth: 105,
+      renderHeaderCell: HeaderCell,
+      renderCell: ({ row }) => (row.modifiedAt ? dateShort(row.modifiedAt) : <span className="text-muted">-</span>),
+    },
+    {
+      key: 'modifiedBy',
+      name: t('common:modified_by'),
+      sortable: false,
+      visible: false,
+      minWidth: 105,
+      renderHeaderCell: HeaderCell,
+      renderCell: ({ row, tabIndex }) =>
+        row.modifiedBy ? (
+          <Link
+            id={`attachments-modified-by-${row.modifiedBy}-cell-${row.id}`}
+            to="/users/$idOrSlug"
+            tabIndex={tabIndex}
+            params={{ idOrSlug: row.modifiedBy }}
+            className="flex space-x-2 items-center outline-0 ring-0 group"
+          >
+            <span className="group-hover:underline underline-offset-4 truncate font-medium">{row.modifiedBy}</span>
+          </Link>
+        ) : (
+          <span className="text-muted">-</span>
+        ),
     },
   ];
 

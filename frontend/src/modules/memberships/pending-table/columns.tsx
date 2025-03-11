@@ -1,6 +1,6 @@
-import { useTranslation } from 'react-i18next';
-
+import { Link } from '@tanstack/react-router';
 import { useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import HeaderCell from '~/modules/common/data-table/header-cell';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
@@ -65,9 +65,22 @@ export const useColumns = () => {
         name: t('common:invited_by'),
         sortable: true,
         visible: !isMobile,
-        renderHeaderCell: HeaderCell,
-        renderCell: ({ row }) => row.createdBy,
         minWidth: 80,
+        renderHeaderCell: HeaderCell,
+        renderCell: ({ row, tabIndex }) =>
+          row.createdBy ? (
+            <Link
+              id={`pending-created-by-${row.createdBy}-cell-${row.id}`}
+              to="/users/$idOrSlug"
+              tabIndex={tabIndex}
+              params={{ idOrSlug: row.createdBy }}
+              className="flex space-x-2 items-center outline-0 ring-0 group"
+            >
+              <span className="group-hover:underline underline-offset-4 truncate font-medium">{row.createdBy}</span>
+            </Link>
+          ) : (
+            <span className="text-muted">-</span>
+          ),
       },
     ];
 
