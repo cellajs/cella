@@ -8,10 +8,12 @@ import { useCopyToClipboard } from '~/hooks/use-copy-to-clipboard';
 import AttachmentThumb from '~/modules/attachments/attachment-thumb';
 import { formatBytes } from '~/modules/attachments/table/helpers';
 import type { Attachment } from '~/modules/attachments/types';
+import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import CheckboxColumn from '~/modules/common/data-table/checkbox-column';
 import HeaderCell from '~/modules/common/data-table/header-cell';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 import Spinner from '~/modules/common/spinner';
+import { getMembersTableCache } from '~/modules/memberships/members-table/helpers';
 import { Button } from '~/modules/ui/button';
 import { Input } from '~/modules/ui/input';
 import { dateShort } from '~/utils/date-short';
@@ -194,20 +196,25 @@ export const useColumns = (isAdmin: boolean, isSheet: boolean, highDensity: bool
       visible: false,
       minWidth: highDensity ? 105 : 120,
       renderHeaderCell: HeaderCell,
-      renderCell: ({ row, tabIndex }) =>
-        row.createdBy ? (
+      renderCell: ({ row, tabIndex }) => {
+        if (!row.createdBy) return <span className="text-muted">-</span>;
+
+        const items = getMembersTableCache(row.organizationId, 'organization');
+        const user = items.find((u) => u.id === row.createdBy);
+
+        return (
           <Link
             id={`attachments-created-by-${row.createdBy}-cell-${row.id}`}
             to="/users/$idOrSlug"
             tabIndex={tabIndex}
-            params={{ idOrSlug: row.createdBy }}
+            params={{ idOrSlug: user?.slug ?? row.createdBy }}
             className="flex space-x-2 items-center outline-0 ring-0 group"
           >
-            <span className="group-hover:underline underline-offset-4 truncate font-medium">{row.createdBy}</span>
+            {user && <AvatarWrap type="user" className="h-8 w-8" id={user.id} name={user.name} url={user.thumbnailUrl} />}
+            <span className="group-hover:underline underline-offset-4 truncate font-medium">{user?.name ?? row.createdBy}</span>
           </Link>
-        ) : (
-          <span className="text-muted">-</span>
-        ),
+        );
+      },
     },
     {
       key: 'modifiedAt',
@@ -225,20 +232,25 @@ export const useColumns = (isAdmin: boolean, isSheet: boolean, highDensity: bool
       visible: false,
       minWidth: highDensity ? 105 : 120,
       renderHeaderCell: HeaderCell,
-      renderCell: ({ row, tabIndex }) =>
-        row.modifiedBy ? (
+      renderCell: ({ row, tabIndex }) => {
+        if (!row.modifiedBy) return <span className="text-muted">-</span>;
+
+        const items = getMembersTableCache(row.organizationId, 'organization');
+        const user = items.find((u) => u.id === row.modifiedBy);
+
+        return (
           <Link
             id={`attachments-modified-by-${row.modifiedBy}-cell-${row.id}`}
             to="/users/$idOrSlug"
             tabIndex={tabIndex}
-            params={{ idOrSlug: row.modifiedBy }}
+            params={{ idOrSlug: user?.slug ?? row.modifiedBy }}
             className="flex space-x-2 items-center outline-0 ring-0 group"
           >
-            <span className="group-hover:underline underline-offset-4 truncate font-medium">{row.modifiedBy}</span>
+            {user && <AvatarWrap type="user" className="h-8 w-8" id={user.id} name={user.name} url={user.thumbnailUrl} />}
+            <span className="group-hover:underline underline-offset-4 truncate font-medium">{user?.name ?? row.modifiedBy}</span>
           </Link>
-        ) : (
-          <span className="text-muted">-</span>
-        ),
+        );
+      },
     },
   ];
 

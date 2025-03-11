@@ -11,7 +11,7 @@ import { queryClient } from '~/query/query-client';
 import type { ContextProp, InfiniteQueryData, QueryData } from '~/query/types';
 
 type MemberQueryData = QueryData<Member>;
-type InfiniteMemberQueryData = InfiniteQueryData<Member>;
+export type InfiniteMemberQueryData = InfiniteQueryData<Member>;
 type MemberContextProp = ContextProp<Member, string | null>;
 
 const limit = config.requestLimits.members;
