@@ -1,5 +1,6 @@
 import type { QueryKey } from '@tanstack/react-query';
 import type { Entity } from 'config';
+import { getCacheInsertOrder } from '~/query/helpers';
 import type {
   ArbitraryEntityQueryData,
   ContextEntityData,
@@ -39,10 +40,11 @@ export const changeInfiniteQueryData = (queryKey: QueryKey, items: ItemData[], a
 
     // Adjust total based on the action
     const totalAdjustment = action === 'create' ? items.length : action === 'delete' ? -items.length : 0;
+    const insertOrder = action === 'create' ? getCacheInsertOrder(queryKey) : undefined;
 
     // Update items in each page and adjust the total
     const pages = data.pages.map((page) => ({
-      items: updateArrayItems(page.items, items, action),
+      items: updateArrayItems(page.items, items, action, insertOrder),
       total: page.total + totalAdjustment,
     }));
 
@@ -125,7 +127,7 @@ export const changeArbitraryQueryData = (
  * @param action - `"create" | "update" | "delete" | "updateMembership"`
  * @returns The updated array of items.
  */
-const updateArrayItems = <T extends ItemData>(items: T[], dataItems: T[], action: QueryDataActions) => {
+const updateArrayItems = <T extends ItemData>(items: T[], dataItems: T[], action: QueryDataActions, insertOrder?: 'asc' | 'desc') => {
   // Determine how to handle dataItems in the items array based on action type
   switch (action) {
     case 'create': {
@@ -133,7 +135,7 @@ const updateArrayItems = <T extends ItemData>(items: T[], dataItems: T[], action
       const existingIds = items.map(({ id }) => id);
       const newItems = dataItems.filter((i) => !existingIds.includes(i.id));
       // Concatenate to add only new entries
-      return [...newItems, ...items];
+      return insertOrder === 'asc' ? [...items, ...newItems] : [...newItems, ...items];
     }
 
     case 'update':

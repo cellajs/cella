@@ -13,6 +13,7 @@ import {
   updateOrganization,
 } from '~/modules/organizations/api';
 import type { Organization, OrganizationWithMembership } from '~/modules/organizations/types';
+import { getOffset } from '~/query/helpers';
 import { queryClient } from '~/query/query-client';
 
 /**
@@ -66,10 +67,12 @@ export const organizationsQueryOptions = ({
 
   const queryKey = organizationsKeys.table({ q, sort, order });
 
+  const offset = getOffset(queryKey);
+
   return infiniteQueryOptions({
     queryKey,
     initialPageParam: 0,
-    queryFn: async ({ pageParam: page, signal }) => await getOrganizations({ page, q, sort, order, limit, offset: page * limit }, signal),
+    queryFn: async ({ pageParam: page, signal }) => await getOrganizations({ page, q, sort, order, limit, offset }, signal),
     getNextPageParam: (_lastPage, allPages) => allPages.length,
   });
 };

@@ -1,6 +1,7 @@
 import { attachmentsKeys } from '~/modules/attachments/query';
 import type { AttachmentInfiniteQueryData } from '~/modules/attachments/query-mutations';
 import type { Attachment } from '~/modules/attachments/types';
+import { getCacheInsertOrder } from '~/query/helpers';
 import { getSimilarQueries } from '~/query/helpers/mutate-query';
 import { queryClient } from '~/query/query-client';
 
@@ -20,9 +21,11 @@ export const handleInsert = (orgIdOrSlug: string, newAttachments: Attachment[]) 
       // Avoid adding an already existing attachment
       if (!uniqueAttachments.length) return data;
 
+      const insertOrder = getCacheInsertOrder(queryKey);
+
       // Add new attachments and update total count
       const pages = data.pages.map(({ items, total }) => ({
-        items: [...items, ...uniqueAttachments],
+        items: insertOrder === 'asc' ? [...items, ...uniqueAttachments] : [...uniqueAttachments, ...items],
         total: total + uniqueAttachments.length,
       }));
 

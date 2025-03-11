@@ -14,6 +14,7 @@ import { LocalFileStorage } from '~/modules/attachments/local-file-storage';
 import { attachmentsKeys } from '~/modules/attachments/query';
 import type { Attachment } from '~/modules/attachments/types';
 import { toaster } from '~/modules/common/toaster';
+import { getCacheInsertOrder } from '~/query/helpers';
 import { compareQueryKeys } from '~/query/helpers/compare-query-keys';
 import { formatUpdatedData, getCancelingRefetchQueries, getQueries, getQueryItems } from '~/query/helpers/mutate-query';
 import { queryClient } from '~/query/query-client';
@@ -98,8 +99,11 @@ queryClient.setMutationDefaults(attachmentsKeys.create(), {
       queryClient.setQueryData<AttachmentInfiniteQueryData | AttachmentQueryData>(queryKey, (oldData) => {
         if (!oldData) return oldData;
 
+        const insertOrder = getCacheInsertOrder(queryKey);
+
+        // Add new attachments and update total count
         const prevItems = getQueryItems(oldData);
-        const updatedItems = [...newAttachments, ...prevItems];
+        const updatedItems = insertOrder === 'asc' ? [...prevItems, ...newAttachments] : [...newAttachments, ...prevItems];
 
         return formatUpdatedData(oldData, updatedItems, limit, newAttachments.length);
       });

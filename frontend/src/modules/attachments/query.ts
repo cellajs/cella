@@ -2,6 +2,7 @@ import { infiniteQueryOptions } from '@tanstack/react-query';
 import { config } from 'config';
 
 import { type GetAttachmentsParams, getAttachments } from '~/modules/attachments/api';
+import { getOffset } from '~/query/helpers';
 
 /**
  * Keys for attachments related queries. These keys help to uniquely identify different query.
@@ -42,11 +43,12 @@ export const attachmentsQueryOptions = ({
 
   const queryKey = attachmentsKeys.table({ orgIdOrSlug, q, sort, order, groupId });
 
+  const offset = getOffset(queryKey);
+
   return infiniteQueryOptions({
     queryKey,
     initialPageParam: 0,
-    queryFn: async ({ pageParam: page, signal }) =>
-      await getAttachments({ page, q, sort, order, limit, groupId, orgIdOrSlug, offset: page * limit }, signal),
+    queryFn: async ({ pageParam: page, signal }) => await getAttachments({ page, q, sort, order, limit, groupId, orgIdOrSlug, offset }, signal),
     getNextPageParam: (_lastPage, allPages) => allPages.length,
   });
 };
