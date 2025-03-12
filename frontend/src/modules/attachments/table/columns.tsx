@@ -131,13 +131,14 @@ export const useColumns = (isAdmin: boolean, isSheet: boolean, highDensity: bool
 
   const columns: ColumnOrColumnGroup<Attachment>[] = [
     CheckboxColumn,
-    ...(highDensity ? thumbnailColumn : []),
+    ...thumbnailColumn,
     {
       key: 'name',
       name: t('common:name'),
       editable: true,
       visible: true,
       sortable: false,
+      minWidth: 180,
       renderHeaderCell: HeaderCell,
       renderCell: ({ row }) => <strong>{row.name || '-'}</strong>,
       ...(isAdmin && {
@@ -146,12 +147,13 @@ export const useColumns = (isAdmin: boolean, isSheet: boolean, highDensity: bool
         ),
       }),
     },
-    ...(highDensity ? AttachmentInfoColumns : []),
+    ...AttachmentInfoColumns,
     {
       key: 'filename',
       name: t('common:filename'),
       visible: !isMobile,
       sortable: false,
+      minWidth: 140,
       renderHeaderCell: HeaderCell,
       renderCell: ({ row }) => (
         <span className="group-hover:underline underline-offset-4 truncate font-light">{row.filename || <span className="text-muted">-</span>}</span>
@@ -163,7 +165,7 @@ export const useColumns = (isAdmin: boolean, isSheet: boolean, highDensity: bool
       sortable: false,
       visible: !isMobile,
       renderHeaderCell: HeaderCell,
-      minWidth: highDensity ? 120 : 140,
+      minWidth: 140,
       renderCell: ({ row }) => {
         if (!row.contentType) return <span className="text-muted">-</span>;
         return <span className="font-light">{row.contentType}</span>;
@@ -174,7 +176,7 @@ export const useColumns = (isAdmin: boolean, isSheet: boolean, highDensity: bool
       name: t('common:size'),
       sortable: false,
       visible: !isMobile,
-      minWidth: highDensity ? 80 : 100,
+      minWidth: 100,
       renderHeaderCell: HeaderCell,
       renderCell: ({ row }) => (
         <div className="inline-flex items-center gap-1 relative font-light group h-full w-full opacity-50">{formatBytes(row.size)}</div>
@@ -185,7 +187,7 @@ export const useColumns = (isAdmin: boolean, isSheet: boolean, highDensity: bool
       name: t('common:created_at'),
       sortable: true,
       visible: !isSheet && !isMobile,
-      minWidth: highDensity ? 105 : 120,
+      minWidth: 160,
       renderHeaderCell: HeaderCell,
       renderCell: ({ row }) => (row.createdAt ? dateShort(row.createdAt) : <span className="text-muted">-</span>),
     },
@@ -194,7 +196,8 @@ export const useColumns = (isAdmin: boolean, isSheet: boolean, highDensity: bool
       name: t('common:created_by'),
       sortable: false,
       visible: false,
-      minWidth: highDensity ? 105 : 120,
+      minWidth: highDensity ? null : 120,
+      width: highDensity ? 50 : null,
       renderHeaderCell: HeaderCell,
       renderCell: ({ row, tabIndex }) => {
         if (!row.createdBy) return <span className="text-muted">-</span>;
@@ -211,7 +214,9 @@ export const useColumns = (isAdmin: boolean, isSheet: boolean, highDensity: bool
             className="flex space-x-2 items-center outline-0 ring-0 group"
           >
             {user && <AvatarWrap type="user" className="h-8 w-8" id={user.id} name={user.name} url={user.thumbnailUrl} />}
-            <span className="group-hover:underline underline-offset-4 truncate font-medium">{user?.name ?? row.createdBy}</span>
+            <span className="[.high-density_&]:hidden group-hover:underline underline-offset-4 truncate font-medium">
+              {user?.name ?? row.createdBy}
+            </span>
           </Link>
         );
       },
@@ -221,7 +226,7 @@ export const useColumns = (isAdmin: boolean, isSheet: boolean, highDensity: bool
       name: t('common:modified'),
       sortable: false,
       visible: false,
-      minWidth: highDensity ? 105 : 120,
+      minWidth: 160,
       renderHeaderCell: HeaderCell,
       renderCell: ({ row }) => (row.modifiedAt ? dateShort(row.modifiedAt) : <span className="text-muted">-</span>),
     },
@@ -230,7 +235,7 @@ export const useColumns = (isAdmin: boolean, isSheet: boolean, highDensity: bool
       name: t('common:modified_by'),
       sortable: false,
       visible: false,
-      minWidth: highDensity ? 105 : 120,
+      width: highDensity ? 80 : 120,
       renderHeaderCell: HeaderCell,
       renderCell: ({ row, tabIndex }) => {
         if (!row.modifiedBy) return <span className="text-muted">-</span>;
@@ -247,7 +252,9 @@ export const useColumns = (isAdmin: boolean, isSheet: boolean, highDensity: bool
             className="flex space-x-2 items-center outline-0 ring-0 group"
           >
             {user && <AvatarWrap type="user" className="h-8 w-8" id={user.id} name={user.name} url={user.thumbnailUrl} />}
-            <span className="group-hover:underline underline-offset-4 truncate font-medium">{user?.name ?? row.modifiedBy}</span>
+            <span className="[.high-density_&]:hidden group-hover:underline underline-offset-4 truncate font-medium">
+              {user?.name ?? row.modifiedBy}
+            </span>
           </Link>
         );
       },

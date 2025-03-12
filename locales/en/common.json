@@ -417,7 +417,6 @@
   "copy": "Copy",
   "copied": "Copied!",
   "download": "Download",
-  "high_density_view": "High-density view",
-  "enter_high_density.text": "High-density column view restored",
-  "left_high_density.text": "Low-density column view activated"
+  "normal_density": "Normal density",
+  "high_density": "High density"
 }

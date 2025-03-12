@@ -78,7 +78,7 @@ export const useColumns = (callback: (organizations: Organization[]) => void) =>
         name: t('common:created_at'),
         sortable: true,
         visible: !isMobile,
-        minWidth: 180,
+        minWidth: 160,
         renderHeaderCell: HeaderCell,
         renderCell: ({ row }) => (row.createdAt ? dateShort(row.createdAt) : <span className="text-muted">-</span>),
       },

@@ -1,4 +1,4 @@
-import { ChevronsLeftRight, ChevronsRightLeft, Trash, Upload, XSquare } from 'lucide-react';
+import { Trash, Upload, XSquare } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useTranslation } from 'react-i18next';
 import { openAttachmentsUploadDialog } from '~/modules/attachments/table/helpers';
@@ -11,7 +11,6 @@ import { FilterBarActions, FilterBarContent, TableFilterBar } from '~/modules/co
 import TableSearch from '~/modules/common/data-table/table-search';
 import type { BaseTableBarProps, BaseTableMethods } from '~/modules/common/data-table/types';
 import { FocusView } from '~/modules/common/focus-view';
-import { TooltipButton } from '~/modules/common/tooltip-button';
 import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
 
@@ -20,11 +19,11 @@ type AttachmentsTableBarProps = AttachmentsTableProps &
   BaseTableBarProps<Attachment, AttachmentSearch> & {
     highDensity: boolean;
     openRemoveDialog: () => void;
-    toggleDensityView: () => void;
+    toggleDensityView: (highDensity: boolean) => void;
   };
 
 export const AttachmentsTableBar = ({
-  organization,
+  entity,
   total,
   selected,
   q,
@@ -89,7 +88,7 @@ export const AttachmentsTableBar = ({
             </>
           ) : (
             showUpload && (
-              <Button asChild onClick={() => openAttachmentsUploadDialog(organization.id)}>
+              <Button asChild onClick={() => openAttachmentsUploadDialog(entity.id)}>
                 <motion.button transition={{ duration: 0.1 }} layoutId="attachments-filter-bar-button">
                   <motion.span layoutId="attachments-filter-bar-icon">
                     <Upload size={16} />
@@ -104,16 +103,17 @@ export const AttachmentsTableBar = ({
         <div className="sm:grow" />
         <FilterBarContent className="max-sm:animate-in max-sm:slide-in-from-left max-sm:fade-in max-sm:duration-300">
           <TableSearch value={q} setQuery={onSearch} />
-          <TooltipButton toolTipContent={t('common:high_density_view')}>
-            <Button variant="outline" onClick={toggleDensityView}>
-              {highDensity ? <ChevronsRightLeft size={16} /> : <ChevronsLeftRight size={16} />}
-            </Button>
-          </TooltipButton>
         </FilterBarContent>
       </TableFilterBar>
 
       {/* Columns view */}
-      <ColumnsView className="max-lg:hidden" columns={columns} setColumns={setColumns} />
+      <ColumnsView
+        className="max-lg:hidden"
+        columns={columns}
+        setColumns={setColumns}
+        highDensity={highDensity}
+        toggleDensityView={toggleDensityView}
+      />
 
       {/* Focus view */}
       {!isSheet && <FocusView iconOnly />}
