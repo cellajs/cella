@@ -28,6 +28,23 @@ export const UserProfileRoute = createRoute({
   },
 });
 
+export const UserInOrganizationProfileRoute = createRoute({
+  path: '/$orgIdOrSlug/users/$idOrSlug',
+  staticData: { pageTitle: 'Profile', isAuth: true },
+  getParentRoute: () => AppRoute,
+  loader: async ({ params: { idOrSlug } }) => queryClient.ensureQueryData(userQueryOptions(idOrSlug)),
+  errorComponent: ({ error }) => <ErrorNotice level="app" error={error} />,
+  component: () => {
+    const { idOrSlug, orgIdOrSlug } = useParams({ from: UserInOrganizationProfileRoute.id });
+    const { data: user } = useSuspenseQuery(userQueryOptions(idOrSlug));
+    return (
+      <Suspense>
+        <UserProfilePage key={idOrSlug} user={user} orgIdOrSlug={orgIdOrSlug} />
+      </Suspense>
+    );
+  },
+});
+
 export const UserSettingsRoute = createRoute({
   path: '/settings',
   staticData: { pageTitle: 'Settings', isAuth: true },

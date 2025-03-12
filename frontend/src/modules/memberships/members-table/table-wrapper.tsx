@@ -6,7 +6,6 @@ import { onlineManager } from '@tanstack/react-query';
 import { config } from 'config';
 import { Trans, useTranslation } from 'react-i18next';
 import useSearchParams from '~/hooks/use-search-params';
-import { useUserSheet } from '~/hooks/use-user-sheet';
 import { useSortColumns } from '~/modules/common/data-table/sort-columns';
 import type { BaseTableMethods } from '~/modules/common/data-table/types';
 import { dialog } from '~/modules/common/dialoger/state';
@@ -41,11 +40,8 @@ const MembersTable = ({ entity: baseEntity, isSheet = false }: MembersTableProps
   const isAdmin = baseEntity.membership?.role === 'admin';
 
   // Table state
-  const { q, role, sort, order, sheetId } = search;
+  const { q, role, sort, order } = search;
   const limit = LIMIT;
-
-  // Render user sheet if sheetId is present
-  useUserSheet({ sheetId, organizationId });
 
   // State for selected, total counts and entity
   const [total, setTotal] = useState<number | undefined>(undefined);

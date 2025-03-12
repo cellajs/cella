@@ -109,12 +109,8 @@ export const AppSearch = () => {
             {suggestions.total === 0 && (
               <>
                 {!!searchValue.length && !isFetching && (
-                  <CommandEmpty className="h-full">
-                    <ContentPlaceholder
-                      className="h-full"
-                      Icon={Search}
-                      title={t('common:no_resource_found', { resource: t('common:results').toLowerCase() })}
-                    />
+                  <CommandEmpty className="h-full sm:h-[36vh]">
+                    <ContentPlaceholder Icon={Search} title={t('common:no_resource_found', { resource: t('common:results').toLowerCase() })} />
                   </CommandEmpty>
                 )}
                 {searchValue.length === 0 && (

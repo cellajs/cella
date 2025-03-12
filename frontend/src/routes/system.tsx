@@ -26,7 +26,8 @@ export const organizationsSearchSchema = getOrganizationsQuerySchema.pick({ q: t
 const baseUsersSearchSchema = usersQuerySchema.pick({ q: true, sort: true, order: true, role: true });
 export const usersSearchSchema = z.object({
   ...baseUsersSearchSchema.shape,
-  sheetId: z.string().optional(),
+  userSheetId: z.string().optional(),
+  sheetContext: z.string().optional(),
 });
 export const requestSearchSchema = getRequestsQuerySchema.pick({ q: true, sort: true, order: true });
 

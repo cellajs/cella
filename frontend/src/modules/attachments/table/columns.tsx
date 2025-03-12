@@ -8,7 +8,6 @@ import { useCopyToClipboard } from '~/hooks/use-copy-to-clipboard';
 import AttachmentThumb from '~/modules/attachments/attachment-thumb';
 import { formatBytes } from '~/modules/attachments/table/helpers';
 import type { Attachment } from '~/modules/attachments/types';
-import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import CheckboxColumn from '~/modules/common/data-table/checkbox-column';
 import HeaderCell from '~/modules/common/data-table/header-cell';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
@@ -16,6 +15,7 @@ import Spinner from '~/modules/common/spinner';
 import { getMembersTableCache } from '~/modules/memberships/members-table/helpers';
 import { Button } from '~/modules/ui/button';
 import { Input } from '~/modules/ui/input';
+import UserCell from '~/modules/users/user-cell';
 import { dateShort } from '~/utils/date-short';
 
 export const useColumns = (isAdmin: boolean, isSheet: boolean, highDensity: boolean) => {
@@ -32,7 +32,7 @@ export const useColumns = (isAdmin: boolean, isSheet: boolean, highDensity: bool
       width: 32,
       renderCell: ({ row: { id, url, filename, contentType, groupId }, tabIndex }) => (
         <Link
-          id={`attachment-cell-${id}`}
+          id={`attachments-${id}`}
           to={url}
           tabIndex={tabIndex}
           className="flex space-x-2 items-center justify-center outline-0 ring-0 group w-full h-full"
@@ -41,9 +41,9 @@ export const useColumns = (isAdmin: boolean, isSheet: boolean, highDensity: bool
             e.preventDefault();
             navigate({
               to: '.',
-              replace: true,
+              replace: false,
               resetScroll: false,
-              search: (prev) => ({ ...prev, attachmentPreview: id, groupId: groupId || undefined }),
+              search: (prev) => ({ ...prev, attachmentDialogId: id, groupId: groupId || undefined, dialogContext: 'attachments' }),
             });
           }}
         >
@@ -122,7 +122,7 @@ export const useColumns = (isAdmin: boolean, isSheet: boolean, highDensity: bool
             data-tooltip-content={t('common:download')}
             onClick={() => download(row.url, row.filename)}
           >
-            {isInProgress ? <Spinner className="w-4 h-4 text-muted" /> : <Download size={16} />}
+            {isInProgress ? <Spinner className="w-4 h-4 text-foreground/80" noDelay /> : <Download size={16} />}
           </Button>
         );
       },
@@ -140,7 +140,7 @@ export const useColumns = (isAdmin: boolean, isSheet: boolean, highDensity: bool
       sortable: false,
       minWidth: 180,
       renderHeaderCell: HeaderCell,
-      renderCell: ({ row }) => <strong>{row.name || '-'}</strong>,
+      renderCell: ({ row }) => <span className="font-medium">{row.name || '-'}</span>,
       ...(isAdmin && {
         renderEditCell: ({ row, onRowChange }) => (
           <Input value={row.name} onChange={(e) => onRowChange({ ...row, name: e.target.value })} autoFocus />
@@ -205,20 +205,9 @@ export const useColumns = (isAdmin: boolean, isSheet: boolean, highDensity: bool
         const items = getMembersTableCache(row.organizationId, 'organization');
         const user = items.find((u) => u.id === row.createdBy);
 
-        return (
-          <Link
-            id={`attachments-created-by-${row.createdBy}-cell-${row.id}`}
-            to="/users/$idOrSlug"
-            tabIndex={tabIndex}
-            params={{ idOrSlug: user?.slug ?? row.createdBy }}
-            className="flex space-x-2 items-center outline-0 ring-0 group"
-          >
-            {user && <AvatarWrap type="user" className="h-8 w-8" id={user.id} name={user.name} url={user.thumbnailUrl} />}
-            <span className="[.high-density_&]:hidden group-hover:underline underline-offset-4 truncate font-medium">
-              {user?.name ?? row.createdBy}
-            </span>
-          </Link>
-        );
+        if (!user) return <span>{row.createdBy}</span>;
+
+        return <UserCell user={user} tabIndex={tabIndex} context="attachment-created" />;
       },
     },
     {
@@ -243,20 +232,9 @@ export const useColumns = (isAdmin: boolean, isSheet: boolean, highDensity: bool
         const items = getMembersTableCache(row.organizationId, 'organization');
         const user = items.find((u) => u.id === row.modifiedBy);
 
-        return (
-          <Link
-            id={`attachments-modified-by-${row.modifiedBy}-cell-${row.id}`}
-            to="/users/$idOrSlug"
-            tabIndex={tabIndex}
-            params={{ idOrSlug: user?.slug ?? row.modifiedBy }}
-            className="flex space-x-2 items-center outline-0 ring-0 group"
-          >
-            {user && <AvatarWrap type="user" className="h-8 w-8" id={user.id} name={user.name} url={user.thumbnailUrl} />}
-            <span className="[.high-density_&]:hidden group-hover:underline underline-offset-4 truncate font-medium">
-              {user?.name ?? row.modifiedBy}
-            </span>
-          </Link>
-        );
+        if (!user) return <span>{row.modifiedBy}</span>;
+
+        return <UserCell user={user} tabIndex={tabIndex} context="attachment-modified" />;
       },
     },
   ];

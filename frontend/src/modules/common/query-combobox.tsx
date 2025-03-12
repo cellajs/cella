@@ -65,7 +65,7 @@ export function QueryCombobox({ value, onChange, entityId }: { value: string[]; 
       <PopoverTrigger asChild>
         <div
           ref={ref}
-          className="rounded-md w-full flex relative items-center flex-wrap gap-1 border border-input bg-background active:translate-y-0! hover:transparent p-2 cursor-pointer"
+          className="rounded-md w-full flex relative items-center flex-wrap gap-1 border border-input bg-background active:translate-y-0! hover:transparent p-1.5 min-h-10 cursor-pointer pr-10"
         >
           {value?.length ? (
             value?.map((el) => (
@@ -73,9 +73,9 @@ export function QueryCombobox({ value, onChange, entityId }: { value: string[]; 
                 size="sm"
                 variant="secondary"
                 key={el}
-                className="data-disabled:bg-muted-foreground data-disabled:text-muted data-disabled:hover:bg-muted-foreground data-fixed:bg-muted-foreground data-fixed:text-muted data-fixed:hover:bg-muted-foreground"
+                className="data-disabled:bg-muted-foreground data-disabled:text-muted data-disabled:hover:bg-muted-foreground data-fixed:bg-muted-foreground data-fixed:text-muted data-fixed:hover:bg-muted-foreground max-w-60"
               >
-                {el}
+                <span className="truncate">{el}</span>
                 <button
                   type="button"
                   className="py-1 m-[-.25rem] ml-1 rounded-full outline-hidden sm:ring-offset-background focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
@@ -96,7 +96,7 @@ export function QueryCombobox({ value, onChange, entityId }: { value: string[]; 
         </div>
       </PopoverTrigger>
 
-      <PopoverContent align="start" style={{ width: `${bounds.left + bounds.right + 2}px` }} className={'p-0'}>
+      <PopoverContent align="start" style={{ width: `${bounds.left + bounds.right + 42}px` }} className={'p-0'}>
         <Command shouldFilter={false}>
           <CommandInput
             value={searchQuery}

@@ -3,7 +3,6 @@ import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { z } from 'zod';
 import useSearchParams from '~/hooks/use-search-params';
-import { useUserSheet } from '~/hooks/use-user-sheet';
 import { useSortColumns } from '~/modules/common/data-table/sort-columns';
 import type { BaseTableMethods } from '~/modules/common/data-table/types';
 import { dialog } from '~/modules/common/dialoger/state';
@@ -29,12 +28,10 @@ const UsersTable = () => {
   const dataTableRef = useRef<BaseTableMethods | null>(null);
 
   // Table state
-  const { q, role, sort, order, sheetId } = search;
+  const { q, role, sort, order } = search;
   const limit = LIMIT;
 
   const mutateQuery = useMutateQueryData(usersKeys.list(), (item) => usersKeys.single(item.id), ['update']);
-  // Render user sheet if sheetId is present
-  useUserSheet({ sheetId });
 
   // State for selected and total counts
   const [total, setTotal] = useState<number | undefined>(undefined);

@@ -1,8 +1,8 @@
-import { useLocation, useNavigate } from '@tanstack/react-router';
+import { useNavigate, useSearch } from '@tanstack/react-router';
 import { config } from 'config';
 import Autoplay from 'embla-carousel-autoplay';
 import { Download, ExternalLink, X } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import useDownloader from 'react-use-downloader';
 import { useEventListener } from '~/hooks/use-event-listener';
 import { AttachmentRender } from '~/modules/attachments/attachment-render';
@@ -12,10 +12,13 @@ import { dialog } from '~/modules/common/dialoger/state';
 import { Button } from '~/modules/ui/button';
 import { Carousel as BaseCarousel, CarouselContent, CarouselDots, CarouselItem, CarouselNext, CarouselPrevious } from '~/modules/ui/carousel';
 import { cn } from '~/utils/cn';
+import Spinner from '../common/spinner';
+import { clearAttachmentDialogSearchParams } from './attachment-dialog-handler';
 
+type CarouselItemData = { url: string; id?: string; name?: string; filename?: string; contentType?: string };
 interface CarouselPropsBase {
-  slide?: number;
-  slides?: { url: string; id?: string; name?: string; filename?: string; contentType?: string }[];
+  itemIndex?: number;
+  items?: CarouselItemData[];
   classNameContainer?: string;
 }
 
@@ -29,88 +32,86 @@ type CarouselProps =
       saveInSearchParams?: never; // Disallowed when isDialog is false
     });
 
-const AttachmentsCarousel = ({ slides = [], isDialog = false, slide = 0, saveInSearchParams = false, classNameContainer }: CarouselProps) => {
+const AttachmentsCarousel = ({ items = [], isDialog = false, itemIndex = 0, saveInSearchParams = false, classNameContainer }: CarouselProps) => {
   const navigate = useNavigate();
-  const {
-    search: { attachmentPreview },
-  } = useLocation();
 
-  const [current, setCurrent] = useState(slides.findIndex((slide) => slide.url === attachmentPreview) ?? 0);
-  const [watchDrag, setWatchDrag] = useState(slides.length > 1);
+  const { attachmentDialogId } = useSearch({ strict: false });
+  const [currentItem, setCurrentItem] = useState(items.find((item) => item.url === attachmentDialogId) || items[itemIndex]);
+  const [watchDrag, setWatchDrag] = useState(items.length > 1);
 
   const itemClass = isDialog ? 'object-contain' : '';
   const autoplay = Autoplay({ delay: 4000, stopOnInteraction: true, stopOnMouseEnter: true });
+  const currentItemIndex = items.findIndex((item) => item.url === currentItem?.url) || itemIndex;
 
-  const { download } = useDownloader();
+  const { download, isInProgress } = useDownloader();
 
   useEventListener('toggleCarouselDrag', (e) => {
-    const shouldWatchDrag = e.detail && slides.length > 1;
+    const shouldWatchDrag = e.detail && items.length > 1;
     setWatchDrag(shouldWatchDrag);
   });
 
-  useEffect(() => {
-    if (!saveInSearchParams || slides.length === 0) return;
-
-    const currentSlide = slides[current] ? slides[current] : undefined;
-
-    // Only navigate if the current slide is different from the attachmentPreview
-    if (currentSlide?.id === attachmentPreview) return;
-
-    // Decide whether to replace the history entry based on whether the attachmentPreview is already set
-    const useReplace = attachmentPreview !== undefined;
-
+  const updateSearchParam = (newItem: CarouselItemData) => {
+    if (!saveInSearchParams) return;
+    if (!newItem) {
+      clearAttachmentDialogSearchParams();
+      return dialog.remove();
+    }
     navigate({
       to: '.',
-      replace: useReplace,
+      replace: true,
       resetScroll: false,
       search: (prev) => ({
         ...prev,
-        attachmentPreview: currentSlide?.id,
+        attachmentDialogId: newItem.id,
       }),
     });
-  }, [current]);
+  };
 
-  // Reopen dialog after reload if the attachmentPreview parameter exists
+  // Reopen dialog after reload if the attachmentDialogId parameter exists
   return (
     <BaseCarousel
       isDialog={isDialog}
-      opts={{ duration: 20, loop: true, startIndex: slide, watchDrag }}
+      opts={{ duration: 20, loop: true, startIndex: itemIndex, watchDrag }}
       plugins={isDialog ? [] : [autoplay]}
       className="w-full h-full group"
       setApi={(api) => {
         if (!api) return;
-        setCurrent(api.selectedScrollSnap());
-        api.on('select', () => setCurrent(api.selectedScrollSnap()));
+        api.on('select', () => {
+          const newItem = items[api.selectedScrollSnap()];
+          updateSearchParam(newItem);
+          setCurrentItem(newItem);
+        });
       }}
     >
-      {slides[current] && isDialog && (
+      {currentItem && isDialog && (
         <div className="fixed z-10 top-0 left-0 w-full flex gap-2 p-3 text-center sm:text-left bg-background/60 backdrop-blur-xs">
-          {slides[current].name && (
+          {currentItem.name && (
             <h2 className="text-base tracking-tight flex ml-1 items-center gap-2 leading-6 h-6">
-              {slides[current].contentType && <FilePlaceholder contentType={slides[current].contentType} iconSize={16} strokeWidth={2} />}
-              {slides[current].name}
+              {currentItem.contentType && <FilePlaceholder contentType={currentItem.contentType} iconSize={16} strokeWidth={2} />}
+              {currentItem.name}
             </h2>
           )}
           <div className="grow" />
-          {slides[current].url.startsWith(config.publicCDNUrl) && (
+          {currentItem.url.startsWith(config.publicCDNUrl) && (
             <Button
               variant="ghost"
               size="icon"
               className="-my-1 w-8 h-8 opacity-70 hover:opacity-100"
-              onClick={() => window.open(slides[current].url, '_blank')}
+              onClick={() => window.open(currentItem.url, '_blank')}
             >
               <ExternalLink className="h-5 w-5" strokeWidth={1.5} />
             </Button>
           )}
 
-          {slides[current].url.startsWith(config.publicCDNUrl) && (
+          {currentItem.url.startsWith(config.publicCDNUrl) && (
             <Button
               variant="ghost"
               size="icon"
+              disabled={isInProgress}
               className="-my-1 w-8 h-8 opacity-70 hover:opacity-100"
-              onClick={() => download(slides[current].url, slides[current].filename || 'file')}
+              onClick={() => download(currentItem.url, currentItem.filename || 'file')}
             >
-              <Download className="h-5 w-5" strokeWidth={1.5} />
+              {isInProgress ? <Spinner className="w-5 h-5 text-foreground/80" noDelay /> : <Download className="h-5 w-5" strokeWidth={1.5} />}
             </Button>
           )}
 
@@ -121,13 +122,13 @@ const AttachmentsCarousel = ({ slides = [], isDialog = false, slide = 0, saveInS
       )}
 
       <CarouselContent className="h-full">
-        {slides?.map(({ url, contentType = 'image' }, idx) => {
+        {items?.map(({ url, contentType = 'image' }, idx) => {
           return (
             <CarouselItem
               key={url}
               onClick={() => {
                 if (isDialog) return;
-                openAttachmentDialog(idx, slides);
+                openAttachmentDialog(idx, items);
               }}
             >
               <AttachmentRender
@@ -135,7 +136,7 @@ const AttachmentsCarousel = ({ slides = [], isDialog = false, slide = 0, saveInS
                 itemClassName={itemClass}
                 type={contentType}
                 imagePanZoom={isDialog}
-                showButtons={current === idx}
+                showButtons={currentItemIndex === idx}
                 url={url}
                 altName={`Slide ${idx}`}
                 togglePanState
@@ -144,7 +145,7 @@ const AttachmentsCarousel = ({ slides = [], isDialog = false, slide = 0, saveInS
           );
         })}
       </CarouselContent>
-      {(slides?.length ?? 0) > 1 && (
+      {(items?.length ?? 0) > 1 && (
         <>
           <CarouselPrevious className="left-4 lg:left-8 opacity-0 transition-opacity group-hover:opacity-100" />
           <CarouselNext className="right-4 lg:right-8 opacity-0 transition-opacity group-hover:opacity-100" />

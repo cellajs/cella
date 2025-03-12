@@ -62,7 +62,7 @@
     "@tanstack/react-query-devtools": "^5.67.3",
     "@tanstack/react-query-persist-client": "^5.67.3",
     "@tanstack/react-router": "^1.114.15",
-    "@tanstack/router-devtools": "^1.114.15",
+    "@tanstack/react-router-devtools": "^1.114.15",
     "@uppy/audio": "^2.1.1",
     "@uppy/core": "^4.4.2",
     "@uppy/dashboard": "^4.3.2",

@@ -5,7 +5,6 @@ import type { z } from 'zod';
 import { Info } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { useTranslation } from 'react-i18next';
-import { useAttachmentDialog } from '~/hooks/use-attachment-dialog';
 import useSearchParams from '~/hooks/use-search-params';
 import { useColumns } from '~/modules/attachments/table/columns';
 import { useSync } from '~/modules/attachments/table/hooks/use-sync';
@@ -40,10 +39,9 @@ const AttachmentsTable = ({ entity, canUpload = true, isSheet = false }: Attachm
   const isAdmin = entity.membership?.role === 'admin' || user?.role === 'admin';
 
   // Table state
-  const { q, sort, order, attachmentPreview, groupId } = search;
+  const { q, sort, order } = search;
   const limit = LIMIT;
 
-  useAttachmentDialog({ orgIdOrSlug: entity.id, attachmentPreview, groupId });
   useSync(entity.id);
 
   const [total, setTotal] = useState<number | undefined>(undefined);

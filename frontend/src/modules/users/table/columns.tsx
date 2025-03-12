@@ -1,8 +1,6 @@
-import { Link, useNavigate } from '@tanstack/react-router';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
-import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import CheckboxColumn from '~/modules/common/data-table/checkbox-column';
 import HeaderCell from '~/modules/common/data-table/header-cell';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
@@ -10,11 +8,11 @@ import ImpersonateRow from '~/modules/users/table/impersonate-row';
 import UpdateRow from '~/modules/users/table/update-row';
 import type { User } from '~/modules/users/types';
 import { dateShort } from '~/utils/date-short';
+import UserCell from '../user-cell';
 
 export const useColumns = (callback: (users: User[]) => void) => {
   const { t } = useTranslation();
   const isMobile = useBreakpoints('max', 'sm', false);
-  const navigate = useNavigate();
 
   const columns = useMemo(() => {
     const cols: ColumnOrColumnGroup<User>[] = [
@@ -25,28 +23,7 @@ export const useColumns = (callback: (users: User[]) => void) => {
         visible: true,
         sortable: true,
         renderHeaderCell: HeaderCell,
-        renderCell: ({ row, tabIndex }) => (
-          <Link
-            id={`user-cell-${row.id}`}
-            to="/users/$idOrSlug"
-            tabIndex={tabIndex}
-            params={{ idOrSlug: row.slug }}
-            className="flex space-x-2 items-center outline-0 ring-0 group"
-            onClick={(e) => {
-              if (e.metaKey || e.ctrlKey) return;
-              e.preventDefault();
-              navigate({
-                to: '.',
-                replace: true,
-                resetScroll: false,
-                search: (prev) => ({ ...prev, sheetId: row.id }),
-              });
-            }}
-          >
-            <AvatarWrap type="user" className="h-8 w-8" id={row.id} name={row.name} url={row.thumbnailUrl} />
-            <span className="group-hover:underline underline-offset-4 truncate font-medium">{row.name || '-'}</span>
-          </Link>
-        ),
+        renderCell: ({ row, tabIndex }) => <UserCell user={row} tabIndex={tabIndex} context="users" />,
       },
       {
         key: 'impersonate',

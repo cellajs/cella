@@ -33,7 +33,7 @@ const Why = () => {
       </div>
       <div className="w-full lg:w-7/12">
         <Suspense fallback={<Spinner className="mt-[40vh] h-10 w-10" />}>
-          <DeviceMockup className="lg:absolute -top-2 lg:ml-8 lg:w-[54vw]" type="pc" lightSlides={whyLightSlides} darkSlides={whyDarkSlides} />
+          <DeviceMockup className="lg:absolute -top-2 lg:ml-8 lg:w-[54vw]" type="pc" lightItems={whyLightSlides} darkItems={whyDarkSlides} />
         </Suspense>
       </div>
     </div>
