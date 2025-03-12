@@ -6,6 +6,7 @@ import { t } from 'i18next';
 import { toaster } from '~/modules/common/toaster';
 import { membersKeys } from '~/modules/memberships/query';
 import type { Member, Membership } from '~/modules/memberships/types';
+import { updateMenuItemMembership } from '~/modules/navigation/menu-sheet/helpers/menu-operations';
 import { formatUpdatedData, getCancelingRefetchQueries, getQueries, getQueryItems } from '~/query/helpers/mutate-query';
 import { queryClient } from '~/query/query-client';
 import type { ContextProp, InfiniteQueryData, QueryData } from '~/query/types';
@@ -38,6 +39,36 @@ const onError = (_: Error, __: UpdateMembershipProp | RemoveMembersProps, contex
 
 queryClient.setMutationDefaults(membersKeys.update(), {
   mutationFn: updateMembership,
+  onMutate: async (variables) => {
+    const { idOrSlug, entityType, orgIdOrSlug, ...membershipInfo } = variables;
+
+    const context: MemberContextProp[] = []; // previous query data for rollback if an error occurs
+
+    // Get affected queries
+    const exactKey = membersKeys.table({ idOrSlug, entityType, orgIdOrSlug });
+    const similarKey = membersKeys.similar({ idOrSlug, entityType, orgIdOrSlug });
+    const queries = await getCancelingRefetchQueries<Member>(exactKey, similarKey);
+
+    updateMenuItemMembership(membershipInfo, idOrSlug, entityType);
+
+    // Iterate over affected queries and optimistically update cache
+    for (const [queryKey, previousData] of queries) {
+      if (!previousData) continue;
+
+      queryClient.setQueryData<InfiniteMemberQueryData | MemberQueryData>(queryKey, (oldData) => {
+        if (!oldData) return oldData;
+
+        const prevItems = getQueryItems(oldData);
+        const updatedData = updateMembers(prevItems, membershipInfo);
+
+        return formatUpdatedData(oldData, updatedData, limit);
+      });
+
+      context.push([queryKey, previousData, membershipInfo.id]); // Store previous data for rollback if needed
+    }
+
+    return context;
+  },
   onSuccess: async (updatedMembership, { idOrSlug, entityType, orgIdOrSlug }) => {
     // Get affected queries
     const exactKey = membersKeys.table({ idOrSlug, entityType, orgIdOrSlug });
