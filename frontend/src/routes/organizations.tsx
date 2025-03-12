@@ -46,8 +46,8 @@ export const OrganizationRoute = createRoute({
   errorComponent: ({ error }) => <ErrorNotice level="app" error={error} />,
   component: () => {
     const { idOrSlug } = useParams({ from: OrganizationRoute.id });
-
     return (
+      // Pass dynamic key, idOrSlug to ensure a re-render when it changes
       <Suspense>
         <OrganizationPage key={idOrSlug} />
       </Suspense>
