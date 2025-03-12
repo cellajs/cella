@@ -2,16 +2,16 @@ import { Check, ChevronsUpDown, Search, X } from 'lucide-react';
 
 import { useQuery } from '@tanstack/react-query';
 import { config } from 'config';
+import { AnimatePresence, motion } from 'motion/react';
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useDebounce } from '~/hooks/use-debounce';
 import { useMeasure } from '~/hooks/use-measure';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
-import Spinner from '~/modules/common/spinner';
-import { searchQueryOptions } from '~/modules/entities/query';
+import { entitiesQueryOptions } from '~/modules/entities/query';
 import { Badge } from '~/modules/ui/badge';
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandLoading } from '~/modules/ui/command';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '~/modules/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '~/modules/ui/popover';
 import { ScrollArea } from '~/modules/ui/scroll-area';
 
@@ -48,13 +48,17 @@ export function QueryCombobox({ value, onChange, entityId }: { value: string[]; 
     setOpen(false);
   };
 
-  const { data, isLoading: isLoadingOrig } = useQuery(searchQueryOptions({ q: debouncedSearchQuery, type: 'user', entityId }));
-  // To get around this https://github.com/TanStack/query/issues/3584
-  const isLoading = !!debouncedSearchQuery && isLoadingOrig;
+  const { data, isFetching } = useQuery(entitiesQueryOptions({ q: debouncedSearchQuery, type: 'user', entityId }));
 
   useEffect(() => {
     onChange(selected);
   }, [selected]);
+
+  const variants = {
+    hidden: { opacity: 0, y: -5, scale: 0.98 },
+    visible: { opacity: 1, y: 0, scale: 1, transition: { duration: 0.1 } },
+    exit: { opacity: 0, y: -5, scale: 0.98, transition: { duration: 0.1 } },
+  };
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -98,48 +102,58 @@ export function QueryCombobox({ value, onChange, entityId }: { value: string[]; 
             value={searchQuery}
             onValueChange={setSearchQuery}
             clearValue={setSearchQuery}
+            isSearching={isFetching}
             placeholder={t('common:placeholder.type_name')}
           />
-          {isLoading && (
-            <CommandLoading className="flex flex-col items-center w-full text-center p-8 h-full justify-center relative">
-              <Spinner className="h-8 w-8" />
-            </CommandLoading>
-          )}
-          <CommandList className="px-1 h-full">
-            {!isLoading &&
-              !data?.items.length &&
-              (debouncedSearchQuery.length ? (
-                <CommandEmpty className="h-full">
-                  <ContentPlaceholder Icon={Search} title={t('common:no_resource_found', { resource: t('common:users').toLowerCase() })} />
-                </CommandEmpty>
-              ) : (
-                <CommandEmpty className="h-full">
-                  <ContentPlaceholder title={t('common:invite_members_search.text', { appName: config.name })} />
-                </CommandEmpty>
-              ))}
 
-            {data && data.items?.length > 0 && (
-              <ScrollArea className="max-h-[30vh] overflow-y-auto">
-                <CommandGroup>
-                  {data.items.map((user) => (
-                    <CommandItem
-                      data-was-selected={selected.some((u) => u === user.email)}
-                      key={user.id}
-                      className="w-full justify-between group"
-                      onSelect={() => {
-                        if (user.email) onSelect(user.email);
-                      }}
-                    >
-                      <div className="flex space-x-2 items-center outline-0 ring-0 group">
-                        <AvatarWrap type={user.entity} className="h-8 w-8" id={user.id} name={user.name} url={user.thumbnailUrl} />
-                        <span className="group-hover:underline underline-offset-4 truncate font-medium">{user.name}</span>
-                      </div>
-                      <Check size={16} className="text-success group-data-[was-selected=false]:invisible" />
-                    </CommandItem>
-                  ))}
-                </CommandGroup>
-              </ScrollArea>
-            )}
+          <CommandList className="px-1 h-full">
+            <AnimatePresence mode="wait">
+              {!isFetching && !data?.items.length ? (
+                <motion.div key="empty-state" initial="hidden" animate="visible" exit="exit" variants={variants} className="h-full">
+                  {debouncedSearchQuery.length ? (
+                    <CommandEmpty>
+                      <ContentPlaceholder Icon={Search} title={t('common:no_resource_found', { resource: t('common:users').toLowerCase() })} />
+                    </CommandEmpty>
+                  ) : (
+                    <CommandEmpty>
+                      <ContentPlaceholder title={t('common:invite_members_search.text', { appName: config.name })} />
+                    </CommandEmpty>
+                  )}
+                </motion.div>
+              ) : (
+                data?.items.length > 0 && (
+                  <motion.div
+                    key="results"
+                    initial="hidden"
+                    animate="visible"
+                    exit="exit"
+                    variants={variants}
+                    className="max-h-[30vh] overflow-y-auto"
+                  >
+                    <ScrollArea>
+                      <CommandGroup>
+                        {data.items.map((user) => (
+                          <CommandItem
+                            data-was-selected={selected.some((u) => u === user.email)}
+                            key={user.id}
+                            className="w-full justify-between group"
+                            onSelect={() => {
+                              if (user.email) onSelect(user.email);
+                            }}
+                          >
+                            <div className="flex space-x-2 items-center outline-0 ring-0 group">
+                              <AvatarWrap type={user.entity} className="h-8 w-8" id={user.id} name={user.name} url={user.thumbnailUrl} />
+                              <span className="group-hover:underline underline-offset-4 truncate font-medium">{user.name}</span>
+                            </div>
+                            <Check size={16} className="text-success group-data-[was-selected=false]:invisible" />
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </ScrollArea>
+                  </motion.div>
+                )
+              )}
+            </AnimatePresence>
           </CommandList>
         </Command>
       </PopoverContent>

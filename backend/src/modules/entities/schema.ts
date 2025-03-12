@@ -1,3 +1,4 @@
+import { config } from 'config';
 import { z } from 'zod';
 import { contextEntityTypeSchema, idSchema, imageUrlSchema, nameSchema, pageEntityTypeSchema, slugSchema } from '#/utils/schema/common';
 import { membershipInfoSchema } from '../memberships/schema';
@@ -17,6 +18,7 @@ export const entitySuggestionSchema = limitEntitySchema
 
 export const entitiesSchema = z.object({
   items: z.array(entitySuggestionSchema),
+  counts: z.record(z.enum(config.pageEntityTypes), z.number().optional()),
   total: z.number(),
 });
 

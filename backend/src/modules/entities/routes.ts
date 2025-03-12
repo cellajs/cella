@@ -37,7 +37,7 @@ class EntitiesRouteConfig {
     },
   });
 
-  public getEntitiesConfig = createRouteConfig({
+  public getEntities = createRouteConfig({
     method: 'get',
     path: '/',
     guard: isAuthenticated,

@@ -1,4 +1,4 @@
-import { queryOptions } from '@tanstack/react-query';
+import { keepPreviousData, queryOptions } from '@tanstack/react-query';
 import { type EntitiesQuery, getEntities } from '~/modules/entities/api';
 
 /**
@@ -11,13 +11,14 @@ import { type EntitiesQuery, getEntities } from '~/modules/entities/api';
  * @param query.entityId - Optional, excludes entities based on membership in the specified entity.
  * @returns Query options
  */
-export const searchQueryOptions = (query: EntitiesQuery) => {
+export const entitiesQueryOptions = (query: EntitiesQuery) => {
   const searchQuery = query.q ?? '';
   return queryOptions({
     queryKey: ['search', searchQuery],
     queryFn: () => getEntities(query),
     staleTime: 0,
     enabled: searchQuery.trim().length > 0, // to avoid issues with spaces
-    initialData: { items: [], total: 0 },
+    initialData: { items: [], total: 0, counts: {} },
+    placeholderData: keepPreviousData,
   });
 };
