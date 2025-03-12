@@ -3,8 +3,8 @@ import { config } from 'config';
 import { Fingerprint } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { Step } from '~/modules/auth/types';
+import { passkeyAuth } from '~/modules/me/helpers';
 import { Button } from '~/modules/ui/button';
-import { passkeyAuth } from '~/modules/users/helpers';
 import { AuthenticateRoute } from '~/routes/auth';
 import { useUIStore } from '~/store/ui';
 

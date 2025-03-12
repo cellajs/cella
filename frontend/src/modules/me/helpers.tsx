@@ -2,14 +2,11 @@ import { config } from 'config';
 import { t } from 'i18next';
 
 import { decodeBase64, encodeBase64 } from '@oslojs/encoding';
-import { type QueryKey, onlineManager } from '@tanstack/react-query';
+import { onlineManager } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { authenticateWithPasskey, getPasskeyChallenge } from '~/modules/auth/api';
 import { toaster } from '~/modules/common/toaster';
 import { deletePasskey as baseRemovePasskey, createPasskey, getSelf, getSelfAuthInfo, getSelfMenu } from '~/modules/me/api';
-import type { LimitedUser } from '~/modules/users/types';
-import { getQueryItems } from '~/query/helpers/mutate-query';
-import type { InfiniteQueryData, QueryData } from '~/query/types';
 import { useNavigationStore } from '~/store/navigation';
 import { useUIStore } from '~/store/ui';
 import { useUserStore } from '~/store/user';
@@ -20,9 +17,13 @@ import { useUserStore } from '~/store/user';
  * This function generates a challenge for passkey creation, and then creates a passkey using the WebAuthn API.
  *
  * @throws Error if passkey creation fails or if the response is unexpected.
+ * @returns True if the passkey was successfully created, otherwise false.
  */
 export const passkeyRegistration = async () => {
-  if (!onlineManager.isOnline()) return toaster(t('common:action.offline.text'), 'warning');
+  if (!onlineManager.isOnline()) {
+    toaster(t('common:action.offline.text'), 'warning');
+    return false;
+  }
 
   const user = useUserStore.getState().user;
 
@@ -53,6 +54,7 @@ export const passkeyRegistration = async () => {
         ],
         attestation: 'none', // No verification of authenticator device
         authenticatorSelection: {
+          authenticatorAttachment: 'platform',
           residentKey: 'required',
           userVerification: 'required',
         },
@@ -75,10 +77,12 @@ export const passkeyRegistration = async () => {
 
     toast.success(t('common:success.passkey_added'));
     useUserStore.getState().setUserAuthInfo({ passkey: true });
+    return result;
   } catch (error) {
     // On cancel throws error NotAllowedError
     console.error('Error during passkey registration:', error);
     toast.error(t('error:passkey_add_failed'));
+    return false;
   }
 };
 
@@ -129,6 +133,7 @@ export const passkeyAuth = async (userEmail: string, callback?: () => void) => {
  * Deletes an existing passkey for current user.
  *
  * @throws Error if there is an issue with removing the passkey.
+ * @returns True if the passkey was successfully removed, otherwise false.
  */
 export const deletePasskey = async () => {
   if (!onlineManager.isOnline()) return toaster(t('common:action.offline.text'), 'warning');
@@ -138,10 +143,14 @@ export const deletePasskey = async () => {
     if (result) {
       toast.success(t('common:success.passkey_removed'));
       useUserStore.getState().setUserAuthInfo({ passkey: false });
-    } else toast.error(t('error:passkey_remove_failed'));
+      return true;
+    }
+    toast.error(t('error:passkey_remove_failed'));
+    return false;
   } catch (error) {
     console.error('Error removing passkey:', error);
     toast.error(t('error:passkey_remove_failed'));
+    return false;
   }
 };
 
@@ -178,22 +187,4 @@ export const getAndSetMenu = async () => {
   const menu = await getSelfMenu();
   useNavigationStore.setState({ menu });
   return menu;
-};
-
-/**
- * Searches through the query data to find a user by their ID or slug.
- *
- * @param queries - An array of tuples, each containing a query key and associated data.
- * @param idOrSlug - The ID or slug to search for.
- * @returns User data if found, otherwise null.
- */
-export const findUserFromQueries = (queries: [QueryKey, InfiniteQueryData<LimitedUser> | QueryData<LimitedUser> | undefined][], idOrSlug: string) => {
-  for (const [_, prevData] of queries) {
-    if (!prevData) continue;
-
-    const data = getQueryItems(prevData);
-    const user = data.find((item) => item.id === idOrSlug);
-    if (user) return user;
-  }
-  return null;
 };

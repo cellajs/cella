@@ -5,8 +5,8 @@ import { i18n } from '~/lib/i18n';
 import router from '~/lib/router';
 import { impersonationStart } from '~/modules/auth/api';
 import { toaster } from '~/modules/common/toaster';
+import { getAndSetMe, getAndSetMenu } from '~/modules/me/helpers';
 import { Button } from '~/modules/ui/button';
-import { getAndSetMe, getAndSetMenu } from '~/modules/users/helpers';
 import type { User } from '~/modules/users/types';
 import { useUIStore } from '~/store/ui';
 
