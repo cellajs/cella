@@ -1,4 +1,4 @@
-import { createRoute, useLoaderData } from '@tanstack/react-router';
+import { createRoute, useLoaderData, useParams } from '@tanstack/react-router';
 import { Suspense, lazy } from 'react';
 import { z } from 'zod';
 import { attachmentsQueryOptions } from '~/modules/attachments/query';
@@ -45,9 +45,11 @@ export const OrganizationRoute = createRoute({
   getParentRoute: () => AppRoute,
   errorComponent: ({ error }) => <ErrorNotice level="app" error={error} />,
   component: () => {
+    const { idOrSlug } = useParams({ from: OrganizationRoute.id });
+
     return (
       <Suspense>
-        <OrganizationPage />
+        <OrganizationPage key={idOrSlug} />
       </Suspense>
     );
   },
