@@ -19,7 +19,7 @@ function FooterLinks() {
     <nav>
       <ul className="grid grid-cols-2 gap-8 sm:grid-cols-3">
         {footerSections.map((section) => (
-          <li key={section.title} className={section.hideOnMobile ? 'hidden sm:block' : ''}>
+          <li key={section.title} className={section.hideOnMobile ? 'max-sm:hidden' : ''}>
             <div className="font-display text-sm font-semibold tracking-wider text-white/40">{t(section.title)}</div>
 
             <ul className="mt-4 text-sm text-white/90">
