@@ -66,6 +66,7 @@ export function QueryCombobox({ value, onChange, entityId }: { value: string[]; 
           {value?.length ? (
             value?.map((el) => (
               <Badge
+                size="sm"
                 variant="secondary"
                 key={el}
                 className="data-disabled:bg-muted-foreground data-disabled:text-muted data-disabled:hover:bg-muted-foreground data-fixed:bg-muted-foreground data-fixed:text-muted data-fixed:hover:bg-muted-foreground"

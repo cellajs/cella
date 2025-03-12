@@ -310,6 +310,7 @@ export function MultiEmail(props: MultiEmailProps) {
         {emails.map((email: string, index: number) => {
           return (
             <Badge
+              size="sm"
               variant="secondary"
               key={email}
               className={cn(
