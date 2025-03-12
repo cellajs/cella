@@ -1,11 +1,10 @@
-import { Link } from '@tanstack/react-router';
+import { Link, useNavigate } from '@tanstack/react-router';
 import { config } from 'config';
 import { Cloud, CloudOff, CopyCheckIcon, CopyIcon, Download } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import useDownloader from 'react-use-downloader';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { useCopyToClipboard } from '~/hooks/use-copy-to-clipboard';
-import { useLinkClick } from '~/hooks/use-link-click';
 import AttachmentThumb from '~/modules/attachments/attachment-thumb';
 import { formatBytes } from '~/modules/attachments/table/helpers';
 import type { Attachment } from '~/modules/attachments/types';
@@ -22,7 +21,7 @@ import { dateShort } from '~/utils/date-short';
 export const useColumns = (isAdmin: boolean, isSheet: boolean, highDensity: boolean) => {
   const { t } = useTranslation();
   const isMobile = useBreakpoints('max', 'sm', false);
-  const linkClick = useLinkClick();
+  const navigate = useNavigate();
 
   const thumbnailColumn: ColumnOrColumnGroup<Attachment>[] = [
     {
@@ -37,7 +36,16 @@ export const useColumns = (isAdmin: boolean, isSheet: boolean, highDensity: bool
           to={url}
           tabIndex={tabIndex}
           className="flex space-x-2 items-center justify-center outline-0 ring-0 group w-full h-full"
-          onClick={(e) => linkClick(e, { attachmentPreview: id, groupId: groupId || undefined }, 'updateSearch')}
+          onClick={(e) => {
+            if (e.metaKey || e.ctrlKey) return;
+            e.preventDefault();
+            navigate({
+              to: '.',
+              replace: true,
+              resetScroll: false,
+              search: (prev) => ({ ...prev, attachmentPreview: id, groupId: groupId || undefined }),
+            });
+          }}
         >
           <AttachmentThumb url={url} name={filename} contentType={contentType} />
         </Link>
