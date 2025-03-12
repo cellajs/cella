@@ -1,13 +1,15 @@
-import { useTranslation } from 'react-i18next';
-
 import { useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import HeaderCell from '~/modules/common/data-table/header-cell';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
+import type { EntityPage } from '~/modules/entities/types';
+import { getMembersTableCache } from '~/modules/memberships/members-table/helpers';
 import type { InvitedMember } from '~/modules/memberships/types';
+import UserCell from '~/modules/users/user-cell';
 import { dateShort } from '~/utils/date-short';
 
-export const useColumns = () => {
+export const useColumns = (entity: EntityPage) => {
   const { t } = useTranslation();
   const isMobile = useBreakpoints('max', 'sm', false);
 
@@ -65,9 +67,18 @@ export const useColumns = () => {
         name: t('common:invited_by'),
         sortable: true,
         visible: !isMobile,
-        renderHeaderCell: HeaderCell,
-        renderCell: ({ row }) => row.createdBy,
         minWidth: 80,
+        renderHeaderCell: HeaderCell,
+        renderCell: ({ row, tabIndex }) => {
+          if (!row.createdBy) return <span className="text-muted">-</span>;
+
+          const items = getMembersTableCache(entity.id, entity.entity);
+          const user = items.find((u) => u.id === row.createdBy);
+
+          if (!user) return <span>{row.createdBy}</span>;
+
+          return <UserCell user={user} tabIndex={tabIndex} context="invitation-created" />;
+        },
       },
     ];
 

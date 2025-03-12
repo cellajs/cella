@@ -1,5 +1,5 @@
 import { config } from 'config';
-import { type SQL, and, eq, ilike, inArray, notInArray, or } from 'drizzle-orm';
+import { type SQL, and, eq, ilike, inArray, notInArray, or, sql } from 'drizzle-orm';
 import type { z } from 'zod';
 import { db } from '#/db/db';
 import { membershipsTable } from '#/db/schema/memberships';
@@ -18,6 +18,7 @@ export const getEntitiesQuery = async ({ userId, organizationIds, type, q, entit
 
   const idFields = config.contextEntityTypes.map((entity) => entityIdFields[entity]);
 
+  // TODO can you explain this @david?
   const membersToExclude =
     type === 'user' && entityId
       ? (
@@ -64,6 +65,7 @@ export const getEntitiesQuery = async ({ userId, organizationIds, type, q, entit
         .selectDistinctOn([table.id], {
           ...baseSelect,
           membership: membershipSelect,
+          total: sql<number>`COUNT(*) OVER()`.as('total'),
         })
         .from(table)
         .innerJoin(
@@ -71,7 +73,7 @@ export const getEntitiesQuery = async ({ userId, organizationIds, type, q, entit
           and(eq(table.id, membershipsTable[entityIdField]), eq(membershipsTable.type, entityType === 'user' ? 'organization' : entityType)),
         )
         .where(and(...filters))
-        .limit(10);
+        .limit(20);
     })
     .filter((el) => el !== null); // Filter out null values if any entity type is invalid
 

@@ -12,17 +12,18 @@ import CheckboxColumn from '~/modules/common/data-table/checkbox-column';
 import HeaderCell from '~/modules/common/data-table/header-cell';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 import Spinner from '~/modules/common/spinner';
+import { getMembersTableCache } from '~/modules/memberships/members-table/helpers';
 import { Button } from '~/modules/ui/button';
 import { Input } from '~/modules/ui/input';
+import UserCell from '~/modules/users/user-cell';
 import { dateShort } from '~/utils/date-short';
 
-export const useColumns = (isAdmin: boolean, isSheet: boolean) => {
+export const useColumns = (isAdmin: boolean, isSheet: boolean, highDensity: boolean) => {
   const { t } = useTranslation();
   const isMobile = useBreakpoints('max', 'sm', false);
   const navigate = useNavigate();
 
-  const columns: ColumnOrColumnGroup<Attachment>[] = [
-    CheckboxColumn,
+  const thumbnailColumn: ColumnOrColumnGroup<Attachment>[] = [
     {
       key: 'thumbnail',
       name: '',
@@ -31,7 +32,7 @@ export const useColumns = (isAdmin: boolean, isSheet: boolean) => {
       width: 32,
       renderCell: ({ row: { id, url, filename, contentType, groupId }, tabIndex }) => (
         <Link
-          id={`attachment-cell-${id}`}
+          id={`attachments-${id}`}
           to={url}
           tabIndex={tabIndex}
           className="flex space-x-2 items-center justify-center outline-0 ring-0 group w-full h-full"
@@ -40,9 +41,9 @@ export const useColumns = (isAdmin: boolean, isSheet: boolean) => {
             e.preventDefault();
             navigate({
               to: '.',
-              replace: true,
+              replace: false,
               resetScroll: false,
-              search: (prev) => ({ ...prev, attachmentPreview: id, groupId: groupId || undefined }),
+              search: (prev) => ({ ...prev, attachmentDialogId: id, groupId: groupId || undefined, dialogContext: 'attachments' }),
             });
           }}
         >
@@ -50,20 +51,9 @@ export const useColumns = (isAdmin: boolean, isSheet: boolean) => {
         </Link>
       ),
     },
-    {
-      key: 'name',
-      name: t('common:name'),
-      editable: true,
-      visible: true,
-      sortable: false,
-      renderHeaderCell: HeaderCell,
-      renderCell: ({ row }) => <strong>{row.name || '-'}</strong>,
-      ...(isAdmin && {
-        renderEditCell: ({ row, onRowChange }) => (
-          <Input value={row.name} onChange={(e) => onRowChange({ ...row, name: e.target.value })} autoFocus />
-        ),
-      }),
-    },
+  ];
+
+  const AttachmentInfoColumns: ColumnOrColumnGroup<Attachment>[] = [
     {
       key: 'storeType',
       name: '',
@@ -132,16 +122,38 @@ export const useColumns = (isAdmin: boolean, isSheet: boolean) => {
             data-tooltip-content={t('common:download')}
             onClick={() => download(row.url, row.filename)}
           >
-            {isInProgress ? <Spinner className="w-4 h-4 text-muted" /> : <Download size={16} />}
+            {isInProgress ? <Spinner className="w-4 h-4 text-foreground/80" noDelay /> : <Download size={16} />}
           </Button>
         );
       },
     },
+  ];
+
+  const columns: ColumnOrColumnGroup<Attachment>[] = [
+    CheckboxColumn,
+    ...thumbnailColumn,
+    {
+      key: 'name',
+      name: t('common:name'),
+      editable: true,
+      visible: true,
+      sortable: false,
+      minWidth: 180,
+      renderHeaderCell: HeaderCell,
+      renderCell: ({ row }) => <span className="font-medium">{row.name || '-'}</span>,
+      ...(isAdmin && {
+        renderEditCell: ({ row, onRowChange }) => (
+          <Input value={row.name} onChange={(e) => onRowChange({ ...row, name: e.target.value })} autoFocus />
+        ),
+      }),
+    },
+    ...AttachmentInfoColumns,
     {
       key: 'filename',
       name: t('common:filename'),
       visible: !isMobile,
       sortable: false,
+      minWidth: 140,
       renderHeaderCell: HeaderCell,
       renderCell: ({ row }) => (
         <span className="group-hover:underline underline-offset-4 truncate font-light">{row.filename || <span className="text-muted">-</span>}</span>
@@ -164,7 +176,7 @@ export const useColumns = (isAdmin: boolean, isSheet: boolean) => {
       name: t('common:size'),
       sortable: false,
       visible: !isMobile,
-      width: 100,
+      minWidth: 100,
       renderHeaderCell: HeaderCell,
       renderCell: ({ row }) => (
         <div className="inline-flex items-center gap-1 relative font-light group h-full w-full opacity-50">{formatBytes(row.size)}</div>
@@ -175,9 +187,55 @@ export const useColumns = (isAdmin: boolean, isSheet: boolean) => {
       name: t('common:created_at'),
       sortable: true,
       visible: !isSheet && !isMobile,
-      minWidth: 180,
+      minWidth: 160,
       renderHeaderCell: HeaderCell,
       renderCell: ({ row }) => (row.createdAt ? dateShort(row.createdAt) : <span className="text-muted">-</span>),
+    },
+    {
+      key: 'createdBy',
+      name: t('common:created_by'),
+      sortable: false,
+      visible: false,
+      minWidth: highDensity ? null : 120,
+      width: highDensity ? 50 : null,
+      renderHeaderCell: HeaderCell,
+      renderCell: ({ row, tabIndex }) => {
+        if (!row.createdBy) return <span className="text-muted">-</span>;
+
+        const items = getMembersTableCache(row.organizationId, 'organization');
+        const user = items.find((u) => u.id === row.createdBy);
+
+        if (!user) return <span>{row.createdBy}</span>;
+
+        return <UserCell user={user} tabIndex={tabIndex} context="attachment-created" />;
+      },
+    },
+    {
+      key: 'modifiedAt',
+      name: t('common:modified'),
+      sortable: false,
+      visible: false,
+      minWidth: 160,
+      renderHeaderCell: HeaderCell,
+      renderCell: ({ row }) => (row.modifiedAt ? dateShort(row.modifiedAt) : <span className="text-muted">-</span>),
+    },
+    {
+      key: 'modifiedBy',
+      name: t('common:modified_by'),
+      sortable: false,
+      visible: false,
+      width: highDensity ? 80 : 120,
+      renderHeaderCell: HeaderCell,
+      renderCell: ({ row, tabIndex }) => {
+        if (!row.modifiedBy) return <span className="text-muted">-</span>;
+
+        const items = getMembersTableCache(row.organizationId, 'organization');
+        const user = items.find((u) => u.id === row.modifiedBy);
+
+        if (!user) return <span>{row.modifiedBy}</span>;
+
+        return <UserCell user={user} tabIndex={tabIndex} context="attachment-modified" />;
+      },
     },
   ];
 

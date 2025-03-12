@@ -16,75 +16,74 @@ import { useDataFromInfiniteQuery } from '~/query/hooks/use-data-from-query';
 type BaseDataTableProps = AttachmentsTableProps & BaseTableProps<Attachment, AttachmentSearch>;
 
 const BaseDataTable = memo(
-  forwardRef<BaseTableMethods, BaseDataTableProps>(
-    ({ organization, columns, queryVars, sortColumns, setSortColumns, setTotal, setSelected }, ref) => {
-      const { t } = useTranslation();
+  forwardRef<BaseTableMethods, BaseDataTableProps>(({ entity, columns, queryVars, sortColumns, setSortColumns, setTotal, setSelected }, ref) => {
+    const { t } = useTranslation();
 
-      const { q, sort, order, limit } = queryVars;
+    const { q, sort, order, limit } = queryVars;
+    const orgIdOrSlug = entity.membership?.organizationId || entity.id;
 
-      // Query attachments
-      const { rows, selectedRows, setRows, setSelectedRows, totalCount, isLoading, isFetching, error, fetchNextPage } = useDataFromInfiniteQuery(
-        attachmentsQueryOptions({ orgIdOrSlug: organization.id, q, sort, order, limit }),
-      );
-      const attachmentUpdateMutation = useAttachmentUpdateMutation();
+    // Query attachments
+    const { rows, selectedRows, setRows, setSelectedRows, totalCount, isLoading, isFetching, error, fetchNextPage } = useDataFromInfiniteQuery(
+      attachmentsQueryOptions({ orgIdOrSlug, q, sort, order, limit }),
+    );
+    const attachmentUpdateMutation = useAttachmentUpdateMutation();
 
-      // Update rows
-      const onRowsChange = (changedRows: Attachment[], { indexes, column }: RowsChangeData<Attachment>) => {
-        if (column.key === 'name') {
-          // If name is changed, update the attachment
-          for (const index of indexes) {
-            const attachment = changedRows[index];
-            attachmentUpdateMutation.mutate({
-              id: attachment.id,
-              orgIdOrSlug: organization.id,
-              name: attachment.name,
-            });
-          }
+    // Update rows
+    const onRowsChange = (changedRows: Attachment[], { indexes, column }: RowsChangeData<Attachment>) => {
+      if (column.key === 'name') {
+        // If name is changed, update the attachment
+        for (const index of indexes) {
+          const attachment = changedRows[index];
+          attachmentUpdateMutation.mutate({
+            id: attachment.id,
+            orgIdOrSlug: entity.id,
+            name: attachment.name,
+          });
         }
+      }
 
-        setRows(changedRows);
-      };
+      setRows(changedRows);
+    };
 
-      const onSelectedRowsChange = (value: Set<string>) => {
-        setSelectedRows(value);
-        setSelected(rows.filter((row) => value.has(row.id)));
-      };
+    const onSelectedRowsChange = (value: Set<string>) => {
+      setSelectedRows(value);
+      setSelected(rows.filter((row) => value.has(row.id)));
+    };
 
-      useEffect(() => setTotal(totalCount), [totalCount]);
+    useEffect(() => setTotal(totalCount), [totalCount]);
 
-      // Expose methods via ref using useImperativeHandle
-      useImperativeHandle(ref, () => ({
-        clearSelection: () => onSelectedRowsChange(new Set<string>()),
-      }));
+    // Expose methods via ref using useImperativeHandle
+    useImperativeHandle(ref, () => ({
+      clearSelection: () => onSelectedRowsChange(new Set<string>()),
+    }));
 
-      return (
-        <DataTable<Attachment>
-          {...{
-            columns: columns.filter((column) => column.visible),
-            rowHeight: 50,
-            enableVirtualization: false,
-            onRowsChange,
-            rows,
-            limit,
-            totalCount,
-            rowKeyGetter: (row) => row.id,
-            error,
-            isLoading,
-            isFetching,
-            fetchMore: fetchNextPage,
-            isFiltered: !!q,
-            selectedRows,
-            onSelectedRowsChange,
-            sortColumns,
-            onSortColumnsChange: setSortColumns,
-            NoRowsComponent: (
-              <ContentPlaceholder Icon={Paperclip} title={t('common:no_resource_yet', { resource: t('common:attachments').toLowerCase() })} />
-            ),
-          }}
-        />
-      );
-    },
-  ),
+    return (
+      <DataTable<Attachment>
+        {...{
+          columns: columns.filter((column) => column.visible),
+          rowHeight: 50,
+          enableVirtualization: false,
+          onRowsChange,
+          rows,
+          limit,
+          totalCount,
+          rowKeyGetter: (row) => row.id,
+          error,
+          isLoading,
+          isFetching,
+          fetchMore: fetchNextPage,
+          isFiltered: !!q,
+          selectedRows,
+          onSelectedRowsChange,
+          sortColumns,
+          onSortColumnsChange: setSortColumns,
+          NoRowsComponent: (
+            <ContentPlaceholder Icon={Paperclip} title={t('common:no_resource_yet', { resource: t('common:attachments').toLowerCase() })} />
+          ),
+        }}
+      />
+    );
+  }),
   tablePropsAreEqual,
 );
 

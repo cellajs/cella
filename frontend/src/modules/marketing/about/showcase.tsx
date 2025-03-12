@@ -9,11 +9,11 @@ const DeviceMockup = lazy(() => import('~/modules/marketing/device-mockup'));
 const showcaseItems = [{ id: 'raak', url: 'https://raak.dev' }];
 
 // Slides for light and dark themes
-const lightSlides = [
+const lightItems = [
   { url: '/static/images/showcases/raak-1.png', contentType: 'image/png' },
   { url: '/static/images/showcases/raak-2.png', contentType: 'image/png' },
 ];
-const darkSlides = [
+const darkItems = [
   { url: '/static/images/showcases/raak-1-dark.png', contentType: 'image/png' },
   { url: '/static/images/showcases/raak-2-dark.png', contentType: 'image/png' },
 ];
@@ -53,7 +53,7 @@ const Showcase = () => {
       </div>
       <div className="">
         <Suspense fallback={<Spinner className="mt-[40vh] h-10 w-10" />}>
-          <DeviceMockup className="" type="mobile" lightSlides={lightSlides} darkSlides={darkSlides} />
+          <DeviceMockup className="" type="mobile" lightItems={lightItems} darkItems={darkItems} />
         </Suspense>
       </div>
     </div>

@@ -10,7 +10,7 @@ import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import Spinner from '~/modules/common/spinner';
 import { toaster } from '~/modules/common/toaster';
 import type { UserMenuItem } from '~/modules/me/types';
-import { updateMembership as baseUpdateMembership } from '~/modules/memberships/api';
+import { updateMembership } from '~/modules/memberships/api';
 import { updateMenuItem } from '~/modules/navigation/menu-sheet/helpers/menu-operations';
 import { Button } from '~/modules/ui/button';
 
@@ -20,11 +20,12 @@ interface MenuItemEditProps {
 
 export const MenuItemEdit = ({ item }: MenuItemEditProps) => {
   const { t } = useTranslation();
-  // Directly create the mutation to avoid lazy loading for MenuItemEdit,
-  // since useMemberUpdateMutation relies on queryClient.
-  const { mutate: updateMembership, status } = useMutation({
-    mutationFn: baseUpdateMembership,
-    onMutate: ({ archived, muted }) => {
+
+  // Directly create mutation to avoid lazy loading for MenuItemEdit, since useMemberUpdateMutation relies on queryClient to update cache, this mutation updated menu and not cache
+  const { mutate: _updateMembership, status } = useMutation({
+    mutationFn: updateMembership,
+    onMutate: (variables) => {
+      const { archived, muted } = variables;
       const { membership, entity } = item;
 
       const messages = {
@@ -33,6 +34,9 @@ export const MenuItemEdit = ({ item }: MenuItemEditProps) => {
       };
       // Determine the appropriate toast message
       const toastMessage = archived !== membership.archived ? messages.archived : muted !== membership.muted ? messages.muted : null;
+
+      const updatedEntity = { ...item, membership: { ...item.membership, ...variables } };
+      updateMenuItem(updatedEntity);
 
       return { toastMessage };
     },
@@ -46,18 +50,18 @@ export const MenuItemEdit = ({ item }: MenuItemEditProps) => {
       if (toastMessage) toaster(toastMessage, 'success');
     },
   });
+
   const handleUpdateMembershipKey = (key: 'archive' | 'mute') => {
-    if (!onlineManager.isOnline()) {
+    const membership = { ...item.membership }; // Clone the membership to make it mutable
+    if (key === 'archive' && membership.archived && !onlineManager.isOnline()) {
       toast.warning(t('common:action.offline.text'));
       return;
     }
 
-    const membership = { ...item.membership }; // Clone the membership to make it mutable
-
     if (key === 'archive') membership.archived = !item.membership.archived;
     if (key === 'mute') membership.muted = !item.membership.muted;
 
-    updateMembership({
+    _updateMembership({
       ...membership,
       idOrSlug: item.id,
       entityType: item.entity,
@@ -74,7 +78,7 @@ export const MenuItemEdit = ({ item }: MenuItemEditProps) => {
         ring-inset ring-muted/25 focus-visible:ring-foreground hover:bg-accent/50 hover:text-accent-foreground ring-1 data-[archived=false]:cursor-grab
         group-data-[submenu=false]/menuOptions:h-12"
     >
-      {status === 'pending' && (
+      {status === 'pending' && onlineManager.isOnline() && (
         <div className="absolute z-10">
           <Spinner
             className="p-1 m-2 text-black opacity-50 h-10 w-10 group-data-[submenu=false]/menuOptions:my-2 group-data-[submenu=false]/menuOptions:mx-3

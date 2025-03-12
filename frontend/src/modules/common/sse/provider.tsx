@@ -36,9 +36,10 @@ export const SSEProvider: FC<Props> = ({ children }) => {
     };
 
     source.onerror = () => {
-      console.error('SSE connection error. Scheduling reconnection...');
+      console.error('SSE connection error. Scheduling reconnection ...');
       source.close();
-      if (!isReconnecting) {
+      if (!isReconnecting && isOnline) {
+        console.error('Scheduling SSE reconnection ...');
         setIsReconnecting(true);
         setTimeout(reconnect, 5000); // Retry reconnection after 5 seconds
       }

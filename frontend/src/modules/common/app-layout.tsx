@@ -9,6 +9,7 @@ import { Sheeter } from '~/modules/common/sheeter';
 import SSE from '~/modules/common/sse';
 import { SSEProvider } from '~/modules/common/sse/provider';
 import AppNav from '~/modules/navigation/app-nav';
+import AppSheets from './app-sheets';
 
 // Dialoger, dropdowner and sheeter are put here so they fall inside SSE provider.
 const AppLayout = () => {
@@ -23,6 +24,7 @@ const AppLayout = () => {
           <SSE />
           <AppContent />
           <Dialoger />
+          <AppSheets />
           <Sheeter />
           <Dropdowner />
         </SSEProvider>

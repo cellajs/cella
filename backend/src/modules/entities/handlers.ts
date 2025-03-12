@@ -4,6 +4,7 @@ import { type Env, getContextMemberships, getContextUser } from '#/lib/context';
 import defaultHook from '#/utils/default-hook';
 import { checkSlugAvailable } from './helpers/check-slug';
 import { getEntitiesQuery } from './helpers/entities-query';
+import { processEntitiesData } from './helpers/process-entities-data';
 import entitiesRouteConfig from './routes';
 
 // Set default hook to catch validation errors
@@ -13,23 +14,24 @@ const entitiesRoutes = app
   /*
    * Get entities with a limited schema
    */
-  .openapi(entitiesRouteConfig.getEntitiesConfig, async (ctx) => {
+  .openapi(entitiesRouteConfig.getEntities, async (ctx) => {
     const { q, type, entityId } = ctx.req.valid('query');
 
     const user = getContextUser();
     const memberships = getContextMemberships();
 
-    // Retrieve organizationIds
+    // Retrieve valid organizationIds and cancel if none are found
     const organizationIds = memberships.filter((el) => el.type === 'organization').map((el) => String(el.organizationId));
-
-    if (!organizationIds.length) return ctx.json({ success: true, data: { items: [], total: 0 } }, 200);
+    if (!organizationIds.length) return ctx.json({ success: true, data: { items: [], total: 0, counts: {} } }, 200);
 
     // Array to hold queries for concurrent execution
     const queries = await getEntitiesQuery({ userId: user.id, organizationIds, type, q, entityId });
 
-    const items = (await Promise.all(queries)).flat();
+    const queryData = await Promise.all(queries);
 
-    return ctx.json({ success: true, data: { items, total: items.length } }, 200);
+    const { counts, items, total } = processEntitiesData(queryData, type);
+
+    return ctx.json({ success: true, data: { items, total, counts } }, 200);
   })
   /*
    * Check if slug is available

@@ -1,4 +1,6 @@
+import type { ContextEntity } from 'config';
 import type { UserMenu, UserMenuItem } from '~/modules/me/types';
+import type { MinimumMembershipInfo } from '~/modules/memberships/types';
 import { useNavigationStore } from '~/store/navigation';
 import { entityRelations } from '#/entity-config';
 
@@ -78,6 +80,42 @@ export const updateMenuItem = (updatedEntity: UserMenuItem) => {
   };
 
   return useTransformOnMenuItems(update); // use update on every menu item by storage type from menu config
+};
+
+/**
+ * Updates the membership information of an entity in the navigation menu.
+ *
+ * @param membershipInfo - Updated membership details.
+ * @param entityIdOrSlug - ID or slug of entity.
+ * @param entityType - Context entity type
+ */
+export const updateMenuItemMembership = (
+  membershipInfo: Partial<Omit<MinimumMembershipInfo, 'organizationId'>>,
+  entityIdOrSlug: string,
+  entityType: ContextEntity,
+) => {
+  // Get the current menu state from the navigation store (without using hooks)
+  const menu = useNavigationStore.getState().menu;
+
+  // Find section that corresponds to given entity type
+  const menuSection = entityRelations.find((el) => el.entity === entityType);
+
+  if (!menuSection) return;
+
+  const { menuSectionName } = menuSection;
+  const menuEntities = menu[menuSectionName];
+
+  // Find entity in menu by matching its ID or slug
+  const currentEntity = menuEntities.find((e) => e.id === entityIdOrSlug || e.slug === entityIdOrSlug);
+  if (!currentEntity) return;
+
+  const updatedEntity: UserMenuItem = {
+    ...currentEntity,
+    membership: { ...currentEntity.membership, ...membershipInfo },
+  };
+
+  // Update menu item with new membership data
+  updateMenuItem(updatedEntity);
 };
 
 /**

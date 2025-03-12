@@ -310,14 +310,15 @@ export function MultiEmail(props: MultiEmailProps) {
         {emails.map((email: string, index: number) => {
           return (
             <Badge
+              size="sm"
               variant="secondary"
               key={email}
               className={cn(
                 'data-disabled:bg-muted-foreground data-disabled:text-muted data-disabled:hover:bg-muted-foreground',
-                'data-fixed:bg-muted-foreground data-fixed:text-muted data-fixed:hover:bg-muted-foreground',
+                'data-fixed:bg-muted-foreground data-fixed:text-muted data-fixed:hover:bg-muted-foreground max-w-60',
               )}
             >
-              {email}
+              <span className="truncate">{email}</span>
               <button
                 type="button"
                 className={cn(

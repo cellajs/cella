@@ -8,7 +8,7 @@ import type { LocalFile } from '~/lib/imado/types';
  */
 export const LocalFileStorage = {
   async addFiles(fileMap: Record<string, LocalFile>): Promise<void> {
-    console.debug('Saving multiple files');
+    // console.debug('Saving multiple files');
     try {
       const validFileMap = Object.entries(fileMap);
       await setMany(validFileMap);
@@ -18,7 +18,7 @@ export const LocalFileStorage = {
   },
 
   async addFile(key: string, file: LocalFile): Promise<void> {
-    console.debug(`Saving file with key: ${key}`);
+    // console.debug(`Saving file with key: ${key}`);
     try {
       await set(key, file);
     } catch (error) {
@@ -27,7 +27,7 @@ export const LocalFileStorage = {
   },
 
   async getFile(key: string): Promise<LocalFile | undefined> {
-    console.debug(`Retrieving file with key: ${key}`);
+    // console.debug(`Retrieving file with key: ${key}`);
     try {
       return await get<LocalFile>(key);
     } catch (error) {
@@ -37,7 +37,7 @@ export const LocalFileStorage = {
   },
 
   async removeFile(key: string): Promise<void> {
-    console.debug(`Deleting file with key: ${key}`);
+    // console.debug(`Deleting file with key: ${key}`);
     try {
       await del(key);
     } catch (error) {

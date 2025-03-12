@@ -17,17 +17,21 @@ import { Button } from '~/modules/ui/button';
 type AttachmentsTableBarProps = AttachmentsTableProps &
   BaseTableMethods &
   BaseTableBarProps<Attachment, AttachmentSearch> & {
+    highDensity: boolean;
     openRemoveDialog: () => void;
+    toggleDensityView: (highDensity: boolean) => void;
   };
 
 export const AttachmentsTableBar = ({
-  organization,
+  entity,
   total,
   selected,
   q,
   setSearch,
   columns,
   setColumns,
+  highDensity,
+  toggleDensityView,
   clearSelection,
   openRemoveDialog,
   isSheet = false,
@@ -84,7 +88,7 @@ export const AttachmentsTableBar = ({
             </>
           ) : (
             showUpload && (
-              <Button asChild onClick={() => openAttachmentsUploadDialog(organization.id)}>
+              <Button asChild onClick={() => openAttachmentsUploadDialog(entity.id)}>
                 <motion.button transition={{ duration: 0.1 }} layoutId="attachments-filter-bar-button">
                   <motion.span layoutId="attachments-filter-bar-icon">
                     <Upload size={16} />
@@ -103,7 +107,13 @@ export const AttachmentsTableBar = ({
       </TableFilterBar>
 
       {/* Columns view */}
-      <ColumnsView className="max-lg:hidden" columns={columns} setColumns={setColumns} />
+      <ColumnsView
+        className="max-lg:hidden"
+        columns={columns}
+        setColumns={setColumns}
+        highDensity={highDensity}
+        toggleDensityView={toggleDensityView}
+      />
 
       {/* Focus view */}
       {!isSheet && <FocusView iconOnly />}

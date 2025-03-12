@@ -11,6 +11,7 @@ import { organizationsQueryOptions } from '~/modules/organizations/query';
 import { requestsQueryOptions } from '~/modules/requests/query';
 import SystemPage from '~/modules/system/system-page';
 import { usersQueryOptions } from '~/modules/users/query';
+import { queryClient } from '~/query/query-client';
 import { AppRoute } from '~/routes/base';
 import { noDirectAccess } from '~/utils/no-direct-access';
 
@@ -25,7 +26,8 @@ export const organizationsSearchSchema = getOrganizationsQuerySchema.pick({ q: t
 const baseUsersSearchSchema = usersQuerySchema.pick({ q: true, sort: true, order: true, role: true });
 export const usersSearchSchema = z.object({
   ...baseUsersSearchSchema.shape,
-  sheetId: z.string().optional(),
+  userSheetId: z.string().optional(),
+  sheetContext: z.string().optional(),
 });
 export const requestSearchSchema = getRequestsQuerySchema.pick({ q: true, sort: true, order: true });
 
@@ -44,9 +46,9 @@ export const UsersTableRoute = createRoute({
   staticData: { pageTitle: 'users', isAuth: true },
   getParentRoute: () => SystemRoute,
   loaderDeps: ({ search: { q, sort, order, role } }) => ({ q, sort, order, role }),
-  loader: async ({ deps: { q, sort, order, role }, context }) => {
+  loader: async ({ deps: { q, sort, order, role } }) => {
     const options = usersQueryOptions({ q, sort, order, role });
-    context.queryClient.ensureInfiniteQueryData(options);
+    queryClient.ensureInfiniteQueryData(options);
   },
   component: () => (
     <Suspense>
@@ -61,9 +63,9 @@ export const OrganizationsTableRoute = createRoute({
   staticData: { pageTitle: 'organizations', isAuth: true },
   getParentRoute: () => SystemRoute,
   loaderDeps: ({ search: { q, sort, order } }) => ({ q, sort, order }),
-  loader: async ({ deps: { q, sort, order }, context }) => {
+  loader: async ({ deps: { q, sort, order } }) => {
     const options = organizationsQueryOptions({ q, sort, order });
-    context.queryClient.ensureInfiniteQueryData(options);
+    queryClient.ensureInfiniteQueryData(options);
   },
   component: () => (
     <Suspense>
@@ -78,9 +80,9 @@ export const RequestsTableRoute = createRoute({
   staticData: { pageTitle: 'requests', isAuth: true },
   getParentRoute: () => SystemRoute,
   loaderDeps: ({ search: { q, sort, order } }) => ({ q, sort, order }),
-  loader: async ({ deps: { q, sort, order }, context }) => {
+  loader: async ({ deps: { q, sort, order } }) => {
     const options = requestsQueryOptions({ q, sort, order });
-    context.queryClient.ensureInfiniteQueryData(options);
+    queryClient.ensureInfiniteQueryData(options);
   },
   component: () => (
     <Suspense>

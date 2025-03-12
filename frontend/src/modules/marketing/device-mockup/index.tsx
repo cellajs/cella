@@ -9,16 +9,16 @@ import DeviceFrame from '~/modules/marketing/device-mockup/frame';
 type DeviceType = 'mobile' | 'tablet' | 'pc';
 
 interface DeviceMockupProps {
-  lightSlides?: { url: string; name?: string }[];
-  darkSlides?: { url: string; name?: string }[];
+  lightItems?: { url: string; name?: string }[];
+  darkItems?: { url: string; name?: string }[];
   className?: string;
   type: DeviceType;
 }
 
-const DeviceMockup = ({ lightSlides, darkSlides, type, className }: DeviceMockupProps) => {
+const DeviceMockup = ({ lightItems, darkItems, type, className }: DeviceMockupProps) => {
   const mode = useUIStore((state) => state.mode);
 
-  const slides = mode === 'dark' ? darkSlides : lightSlides;
+  const items = mode === 'dark' ? darkItems : lightItems;
 
   const { ref, inView } = useInView({
     triggerOnce: false,
@@ -32,7 +32,7 @@ const DeviceMockup = ({ lightSlides, darkSlides, type, className }: DeviceMockup
         type={type}
         inView={inView}
         renderCarousel={(className) => {
-          return <AttachmentsCarousel slides={slides} isDialog={false} classNameContainer={className} />;
+          return <AttachmentsCarousel items={items} isDialog={false} classNameContainer={className} />;
         }}
       />
     </div>

@@ -143,7 +143,7 @@ export default defineConfig(() => {
         globIgnores: ['**/shiki.*', '**/shiki/**', 'static/flags/**/*'],
         cleanupOutdatedCaches: true,
         clientsClaim: true,
-        maximumFileSizeToCacheInBytes: 10 * 1024 * 1024, // 10MB
+        maximumFileSizeToCacheInBytes: 100 * 1024 * 1024, // 100MB
       },
     }),
   );

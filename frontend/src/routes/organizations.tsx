@@ -1,4 +1,4 @@
-import { createRoute, useLoaderData } from '@tanstack/react-router';
+import { createRoute, useLoaderData, useParams } from '@tanstack/react-router';
 import { Suspense, lazy } from 'react';
 import { z } from 'zod';
 import { attachmentsQueryOptions } from '~/modules/attachments/query';
@@ -6,6 +6,7 @@ import ErrorNotice from '~/modules/common/error-notice';
 import { membersQueryOptions } from '~/modules/memberships/query';
 import { organizationQueryOptions } from '~/modules/organizations/query';
 
+import { queryClient } from '~/query/query-client';
 import { AppRoute } from '~/routes/base';
 import { noDirectAccess } from '~/utils/no-direct-access';
 import { attachmentsQuerySchema } from '#/modules/attachments/schema';
@@ -20,23 +21,24 @@ const OrganizationSettings = lazy(() => import('~/modules/organizations/organiza
 // Search query schema
 export const membersSearchSchema = membersQuerySchema
   .pick({ q: true, sort: true, order: true, role: true })
-  .extend({ sheetId: z.string().optional() });
+  .extend({ userSheetId: z.string().optional(), sheetContext: z.string().optional() });
 
 export const memberInvitationsSearchSchema = memberInvitationsQuerySchema.pick({ sort: true, order: true });
 
 export const attachmentsSearchSchema = attachmentsQuerySchema.pick({ q: true, sort: true, order: true }).extend({
-  attachmentPreview: z.string().optional(),
+  attachmentDialogId: z.string().optional(),
+  dialogContext: z.string().optional(),
   groupId: z.string().optional(),
 });
 
 export const OrganizationRoute = createRoute({
   path: '/$idOrSlug',
   staticData: { pageTitle: 'Organization', isAuth: true },
-  beforeLoad: async ({ location, params: { idOrSlug }, context }) => {
+  beforeLoad: async ({ location, params: { idOrSlug } }) => {
     noDirectAccess(location.pathname, idOrSlug, '/members');
     const queryOptions = organizationQueryOptions(idOrSlug);
 
-    return { organization: await context.queryClient.fetchQuery(queryOptions) };
+    return { organization: await queryClient.ensureQueryData(queryOptions) };
   },
   loader: async ({ context: { organization } }) => {
     return organization;
@@ -44,9 +46,11 @@ export const OrganizationRoute = createRoute({
   getParentRoute: () => AppRoute,
   errorComponent: ({ error }) => <ErrorNotice level="app" error={error} />,
   component: () => {
+    const { idOrSlug } = useParams({ from: OrganizationRoute.id });
     return (
+      // Pass dynamic key, idOrSlug to ensure a re-render when it changes
       <Suspense>
-        <OrganizationPage />
+        <OrganizationPage key={idOrSlug} />
       </Suspense>
     );
   },
@@ -64,7 +68,7 @@ export const OrganizationMembersRoute = createRoute({
 
     const queryOptions = membersQueryOptions({ idOrSlug, orgIdOrSlug, entityType, q, sort, order, role });
 
-    await context.queryClient.prefetchInfiniteQuery(queryOptions);
+    await queryClient.prefetchInfiniteQuery(queryOptions);
   },
   component: () => {
     const organization = useLoaderData({ from: OrganizationRoute.id });
@@ -87,14 +91,14 @@ export const OrganizationAttachmentsRoute = createRoute({
     const orgIdOrSlug = context.organization.id ?? idOrSlug;
     const queryOptions = attachmentsQueryOptions({ orgIdOrSlug, q, sort, order });
 
-    await context.queryClient.prefetchInfiniteQuery(queryOptions);
+    await queryClient.prefetchInfiniteQuery(queryOptions);
   },
   component: () => {
     const organization = useLoaderData({ from: OrganizationRoute.id });
     if (!organization) return;
     return (
       <Suspense>
-        <AttachmentsTable key={organization.id} organization={organization} />
+        <AttachmentsTable key={organization.id} entity={organization} />
       </Suspense>
     );
   },

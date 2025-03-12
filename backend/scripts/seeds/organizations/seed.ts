@@ -46,7 +46,7 @@ export const organizationsSeed = async () => {
       name,
       slug: slugify(name, { lower: true, strict: true }),
       bannerUrl: null,
-      color: faker.internet.color(),
+      color: faker.color.rgb(),
       chatSupport: faker.datatype.boolean(),
       country: faker.location.country(),
       createdAt: pastIsoDate(),

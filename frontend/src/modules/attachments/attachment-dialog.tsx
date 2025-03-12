@@ -14,9 +14,9 @@ const AttachmentDialog = ({ attachmentId, groupId, orgIdOrSlug }: { attachmentId
   const { data, isError, isLoading } = useSuspenseInfiniteQuery(attachmentsQueryOptions({ groupId, orgIdOrSlug }));
 
   const attachments = data?.pages.flatMap((page) => page.items);
-  const slides = groupId ? attachments : attachments.filter(({ id }) => id === attachmentId);
+  const items = groupId ? attachments : attachments.filter(({ id }) => id === attachmentId);
 
-  const startSlide = attachments?.findIndex(({ id }) => attachmentId === id);
+  const itemIndex = attachments?.findIndex(({ id }) => attachmentId === id);
 
   if (isError) return <ContentPlaceholder Icon={ServerCrash} title={t('error:request_failed')} />;
 
@@ -29,9 +29,9 @@ const AttachmentDialog = ({ attachmentId, groupId, orgIdOrSlug }: { attachmentId
     );
   }
 
-  return slides ? (
+  return items ? (
     <div className="flex flex-wrap relative -z-1 h-screen justify-center p-2 grow">
-      <AttachmentsCarousel slides={slides} isDialog slide={startSlide} saveInSearchParams={true} />
+      <AttachmentsCarousel items={items} isDialog itemIndex={itemIndex} saveInSearchParams={true} />
     </div>
   ) : (
     <ContentPlaceholder Icon={isOnline ? FlameKindling : WifiOff} title={t(`${isOnline ? 'error:no_user_found' : 'common:offline.text'}`)} />
