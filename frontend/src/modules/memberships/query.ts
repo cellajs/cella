@@ -2,6 +2,7 @@ import { infiniteQueryOptions } from '@tanstack/react-query';
 import { config } from 'config';
 
 import { type GetMembersParams, type GetMembershipInvitationsParams, getMembers, getMembershipInvitations } from '~/modules/memberships/api';
+import { getOffset } from '~/query/helpers';
 
 /**
  * Keys for members related queries. These keys help to uniquely identify different query.
@@ -47,14 +48,13 @@ export const membersQueryOptions = ({
 
   const queryKey = membersKeys.table({ idOrSlug, entityType, orgIdOrSlug, q, sort, order, role });
 
-  // const offset = getOffset(queryKey);
-  const offset = undefined;
-
   return infiniteQueryOptions({
     queryKey,
     initialPageParam: 0,
-    queryFn: async ({ pageParam: page, signal }) =>
-      await getMembers({ page, q, sort, order, role, limit, idOrSlug, orgIdOrSlug, entityType, offset }, signal),
+    queryFn: async ({ pageParam: page, signal }) => {
+      const offset = getOffset(queryKey); // Calculate before fetching ensuring correct offset
+      return await getMembers({ page, q, sort, order, role, limit, idOrSlug, orgIdOrSlug, entityType, offset }, signal);
+    },
     getNextPageParam: (_lastPage, allPages) => allPages.length,
   });
 };
@@ -87,14 +87,13 @@ export const memberInvitationsQueryOptions = ({
 
   const queryKey = membersKeys.invitesTable({ idOrSlug, entityType, orgIdOrSlug, q, sort, order });
 
-  // const offset = getOffset(queryKey);
-  const offset = undefined;
-
   return infiniteQueryOptions({
     queryKey,
     initialPageParam: 0,
-    queryFn: async ({ pageParam: page, signal }) =>
-      await getMembershipInvitations({ page, q, sort, order, limit, idOrSlug, orgIdOrSlug, entityType, offset }, signal),
+    queryFn: async ({ pageParam: page, signal }) => {
+      const offset = getOffset(queryKey); // Calculate before fetching ensuring correct offset
+      return await getMembershipInvitations({ page, q, sort, order, limit, idOrSlug, orgIdOrSlug, entityType, offset }, signal);
+    },
     getNextPageParam: (_lastPage, allPages) => allPages.length,
   });
 };

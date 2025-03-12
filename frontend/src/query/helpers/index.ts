@@ -7,8 +7,8 @@ export const waitFor = (ms: number) => new Promise((resolve) => setTimeout(resol
 export const getOffset = <T>(queryKey: QueryKey) => {
   const queryState = queryClient.getQueryState<InfiniteQueryData<T>>(queryKey);
 
-  // If query was invalidated and not re-fetched, return 0
-  if (!queryState || queryState.isInvalidated) return 0;
+  //Query was invalidated and notre-fetched return 0
+  if (!queryState || queryState.isInvalidated || queryState.status === 'pending') return 0;
 
   const { data } = queryState;
   return data?.pages.reduce((total, page) => total + page.items.length, 0) ?? 0;
