@@ -13,7 +13,6 @@ import {
   updateOrganization,
 } from '~/modules/organizations/api';
 import type { Organization, OrganizationWithMembership } from '~/modules/organizations/types';
-import { getOffset } from '~/query/helpers';
 import { queryClient } from '~/query/query-client';
 
 /**
@@ -67,7 +66,8 @@ export const organizationsQueryOptions = ({
 
   const queryKey = organizationsKeys.table({ q, sort, order });
 
-  const offset = getOffset(queryKey);
+  // const offset = getOffset(queryKey);
+  const offset = undefined;
 
   return infiniteQueryOptions({
     queryKey,

@@ -39,7 +39,6 @@ export const changeInfiniteQueryData = (queryKey: QueryKey, items: ItemData[], a
 
   if ((sort && sort !== 'createdAt') || (sort === 'createdAt' && insertOrder === 'asc')) {
     queryClient.invalidateQueries({ queryKey, exact: true });
-    queryClient.removeQueries({ queryKey, exact: true });
     return;
   }
 

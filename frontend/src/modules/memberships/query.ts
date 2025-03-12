@@ -2,7 +2,6 @@ import { infiniteQueryOptions } from '@tanstack/react-query';
 import { config } from 'config';
 
 import { type GetMembersParams, type GetMembershipInvitationsParams, getMembers, getMembershipInvitations } from '~/modules/memberships/api';
-import { getOffset } from '~/query/helpers';
 
 /**
  * Keys for members related queries. These keys help to uniquely identify different query.
@@ -48,7 +47,8 @@ export const membersQueryOptions = ({
 
   const queryKey = membersKeys.table({ idOrSlug, entityType, orgIdOrSlug, q, sort, order, role });
 
-  const offset = getOffset(queryKey);
+  // const offset = getOffset(queryKey);
+  const offset = undefined;
 
   return infiniteQueryOptions({
     queryKey,
@@ -87,7 +87,8 @@ export const memberInvitationsQueryOptions = ({
 
   const queryKey = membersKeys.invitesTable({ idOrSlug, entityType, orgIdOrSlug, q, sort, order });
 
-  const offset = getOffset(queryKey);
+  // const offset = getOffset(queryKey);
+  const offset = undefined;
 
   return infiniteQueryOptions({
     queryKey,

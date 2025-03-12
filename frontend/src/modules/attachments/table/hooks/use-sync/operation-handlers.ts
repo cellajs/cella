@@ -15,7 +15,6 @@ export const handleInsert = (orgIdOrSlug: string, newAttachments: Attachment[]) 
 
     if ((sort && sort !== 'createdAt') || (sort === 'createdAt' && insertOrder === 'asc')) {
       queryClient.invalidateQueries({ queryKey, exact: true });
-      queryClient.removeQueries({ queryKey, exact: true });
       continue;
     }
 

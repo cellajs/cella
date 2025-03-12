@@ -5,7 +5,6 @@ import { queryClient } from '~/query/query-client';
 
 import { type GetUsersParams, type UpdateUserParams, getUser, getUsers, updateUser } from '~/modules/users/api';
 import type { User } from '~/modules/users/types';
-import { getOffset } from '~/query/helpers';
 
 /**
  * Keys for user related queries. These keys help to uniquely identify different query. For managing query caching and invalidation.
@@ -43,7 +42,8 @@ export const usersQueryOptions = ({ q = '', sort: initialSort, order: initialOrd
 
   const queryKey = usersKeys.table({ q, sort, order, role });
 
-  const offset = getOffset(queryKey);
+  // const offset = getOffset(queryKey);
+  const offset = undefined;
 
   return infiniteQueryOptions({
     queryKey,

@@ -2,7 +2,6 @@ import { infiniteQueryOptions, useMutation } from '@tanstack/react-query';
 import { config } from 'config';
 import type { ApiError } from '~/lib/api';
 import { type CreateRequestBody, type GetRequestsParams, createRequest, getRequests } from '~/modules/requests/api';
-import { getOffset } from '~/query/helpers';
 
 /**
  * Keys for request related queries. These keys help to uniquely identify different query. For managing query caching and invalidation.
@@ -37,7 +36,8 @@ export const requestsQueryOptions = ({
 
   const queryKey = requestsKeys.table({ q, sort, order });
 
-  const offset = getOffset(queryKey);
+  // const offset = getOffset(queryKey);
+  const offset = undefined;
 
   return infiniteQueryOptions({
     queryKey,

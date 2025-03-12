@@ -127,7 +127,6 @@ queryClient.setMutationDefaults(attachmentsKeys.create(), {
 
       if ((sort && sort !== 'createdAt') || (sort === 'createdAt' && insertOrder === 'asc')) {
         queryClient.invalidateQueries({ queryKey: activeKey, exact: true });
-        queryClient.removeQueries({ queryKey: activeKey, exact: true });
         continue;
       }
 

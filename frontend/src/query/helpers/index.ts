@@ -5,12 +5,13 @@ import type { InfiniteQueryData } from '~/query/types';
 export const waitFor = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 export const getOffset = <T>(queryKey: QueryKey) => {
-  const data = queryClient.getQueryData<InfiniteQueryData<T>>(queryKey);
+  const queryState = queryClient.getQueryState<InfiniteQueryData<T>>(queryKey);
 
-  // Sum the number of items across all pages
-  const offset = data?.pages.reduce((total, page) => total + page.items.length, 0);
+  // If query was invalidated and not re-fetched, return 0
+  if (!queryState || queryState.isInvalidated) return 0;
 
-  return offset ?? 0;
+  const { data } = queryState;
+  return data?.pages.reduce((total, page) => total + page.items.length, 0) ?? 0;
 };
 
 export const getQueryKeySortOrder = (queryKey: QueryKey) => {
