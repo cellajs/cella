@@ -1,7 +1,9 @@
+import { onlineManager } from '@tanstack/react-query';
 import { type Language, config } from 'config';
 import { useTranslation } from 'react-i18next';
 import { i18n } from '~/lib/i18n';
 import CountryFlag from '~/modules/common/country-flag';
+import { toaster } from '~/modules/common/toaster';
 import { updateSelf } from '~/modules/me/api';
 import { Button } from '~/modules/ui/button';
 import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuTrigger } from '~/modules/ui/dropdown-menu';
@@ -22,6 +24,7 @@ const UserLanguage = ({ align = 'end', triggerClassName = '', contentClassName =
   const language = user?.language || i18n.resolvedLanguage || i18n.language;
 
   const changeLanguage = (lng: Language) => {
+    if (!onlineManager.isOnline()) return toaster(t('common:action.offline.text'), 'warning');
     if (!user) return;
     updateSelf({ language: lng }).then((res) => {
       updateUser(res);

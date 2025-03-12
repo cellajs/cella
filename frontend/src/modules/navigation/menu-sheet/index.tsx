@@ -16,7 +16,7 @@ import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { sheet } from '~/modules/common/sheeter/state';
 import type { UserMenuItem } from '~/modules/me/types';
-import { updateMembership } from '~/modules/memberships/api';
+import { useMemberUpdateMutation } from '~/modules/memberships/query-mutations';
 import { AccountSheet } from '~/modules/navigation/account-sheet';
 import { getRelativeItemOrder, isPageData } from '~/modules/navigation/menu-sheet/helpers';
 import { updateMenuItem } from '~/modules/navigation/menu-sheet/helpers/menu-operations';
@@ -46,6 +46,7 @@ export const MenuSheet = memo(() => {
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [searchResults, setSearchResults] = useState<UserMenuItem[]>([]);
 
+  const { mutateAsync } = useMemberUpdateMutation();
   const scrollViewportRef = useRef(null);
   const pwaEnabled = config.has.pwa;
 
@@ -102,19 +103,24 @@ export const MenuSheet = memo(() => {
           // Exit early if order remains the same
           if (targetData.order === sourceItem.membership.order || newOrder === sourceItem.membership.order) return;
 
-          const updatedMembership = await updateMembership({
-            id: sourceItem.membership.id,
-            order: newOrder,
-            orgIdOrSlug: sourceItem.organizationId || sourceItem.id,
-            idOrSlug: sourceItem.id,
-            entityType: sourceItem.entity,
-          });
+          await mutateAsync(
+            {
+              id: sourceItem.membership.id,
+              order: newOrder,
+              orgIdOrSlug: sourceItem.organizationId || sourceItem.id,
+              idOrSlug: sourceItem.id,
+              entityType: sourceItem.entity,
+            },
 
-          const updatedEntity: UserMenuItem = { ...sourceItem, membership: { ...sourceItem.membership, ...updatedMembership } };
-          updateMenuItem(updatedEntity);
-
-          // To be able to update, add a listener to manipulate data that has been changed in the menu (reordered entities on your page)
-          dispatchCustomEvent('menuEntityChange', { entity: sourceItem.entity, membership: updatedMembership });
+            {
+              onSuccess: (updatedMembership) => {
+                const updatedEntity: UserMenuItem = { ...sourceItem, membership: { ...sourceItem.membership, ...updatedMembership } };
+                updateMenuItem(updatedEntity);
+                // To be able to update, add a listener to manipulate data that has been changed in the menu (reordered entities on your page)
+                dispatchCustomEvent('menuEntityChange', { entity: sourceItem.entity, membership: updatedMembership });
+              },
+            },
+          );
         },
       }),
     );
