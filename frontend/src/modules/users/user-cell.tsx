@@ -1,5 +1,8 @@
+import { onlineManager } from '@tanstack/react-query';
 import { Link, useNavigate } from '@tanstack/react-router';
+import { useTranslation } from 'react-i18next';
 import { AvatarWrap } from '../common/avatar-wrap';
+import { toaster } from '../common/toaster';
 import type { Member } from '../memberships/types';
 import type { User } from './types';
 
@@ -8,6 +11,7 @@ import type { User } from './types';
  */
 const UserCell = ({ user, context, orgIdOrSlug, tabIndex }: { user: User | Member; context: string; orgIdOrSlug?: string; tabIndex: number }) => {
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   return (
     <Link
@@ -17,6 +21,10 @@ const UserCell = ({ user, context, orgIdOrSlug, tabIndex }: { user: User | Membe
       params={{ idOrSlug: user.slug, ...(orgIdOrSlug ? { orgIdOrSlug } : {}) }}
       className="flex space-x-2 items-center outline-0 ring-0 group"
       onClick={(e) => {
+        if (!onlineManager.isOnline()) {
+          e.preventDefault();
+          return toaster(t('common:action.offline.text'), 'warning');
+        }
         if (e.metaKey || e.ctrlKey) return;
         e.preventDefault();
         navigate({
