@@ -27,7 +27,7 @@ export const MembershipInvitationsTable = ({ entity }: MembershipInvitationsTabl
   const [total, setTotal] = useState<number | undefined>(undefined);
 
   // Build columns
-  const [columns] = useColumns();
+  const [columns] = useColumns(entity);
   const { sortColumns, setSortColumns } = useSortColumns(sort, order, setSearch);
 
   return (

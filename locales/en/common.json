@@ -416,5 +416,7 @@
   "local_only": "Only visible by you",
   "copy": "Copy",
   "copied": "Copied!",
-  "download": "Download"
+  "download": "Download",
+  "normal_density": "Normal density",
+  "high_density": "High density"
 }

@@ -8,21 +8,22 @@ import { useCopyToClipboard } from '~/hooks/use-copy-to-clipboard';
 import AttachmentThumb from '~/modules/attachments/attachment-thumb';
 import { formatBytes } from '~/modules/attachments/table/helpers';
 import type { Attachment } from '~/modules/attachments/types';
+import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import CheckboxColumn from '~/modules/common/data-table/checkbox-column';
 import HeaderCell from '~/modules/common/data-table/header-cell';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 import Spinner from '~/modules/common/spinner';
+import { getMembersTableCache } from '~/modules/memberships/members-table/helpers';
 import { Button } from '~/modules/ui/button';
 import { Input } from '~/modules/ui/input';
 import { dateShort } from '~/utils/date-short';
 
-export const useColumns = (isAdmin: boolean, isSheet: boolean) => {
+export const useColumns = (isAdmin: boolean, isSheet: boolean, highDensity: boolean) => {
   const { t } = useTranslation();
   const isMobile = useBreakpoints('max', 'sm', false);
   const navigate = useNavigate();
 
-  const columns: ColumnOrColumnGroup<Attachment>[] = [
-    CheckboxColumn,
+  const thumbnailColumn: ColumnOrColumnGroup<Attachment>[] = [
     {
       key: 'thumbnail',
       name: '',
@@ -50,20 +51,9 @@ export const useColumns = (isAdmin: boolean, isSheet: boolean) => {
         </Link>
       ),
     },
-    {
-      key: 'name',
-      name: t('common:name'),
-      editable: true,
-      visible: true,
-      sortable: false,
-      renderHeaderCell: HeaderCell,
-      renderCell: ({ row }) => <strong>{row.name || '-'}</strong>,
-      ...(isAdmin && {
-        renderEditCell: ({ row, onRowChange }) => (
-          <Input value={row.name} onChange={(e) => onRowChange({ ...row, name: e.target.value })} autoFocus />
-        ),
-      }),
-    },
+  ];
+
+  const AttachmentInfoColumns: ColumnOrColumnGroup<Attachment>[] = [
     {
       key: 'storeType',
       name: '',
@@ -137,11 +127,33 @@ export const useColumns = (isAdmin: boolean, isSheet: boolean) => {
         );
       },
     },
+  ];
+
+  const columns: ColumnOrColumnGroup<Attachment>[] = [
+    CheckboxColumn,
+    ...thumbnailColumn,
+    {
+      key: 'name',
+      name: t('common:name'),
+      editable: true,
+      visible: true,
+      sortable: false,
+      minWidth: 180,
+      renderHeaderCell: HeaderCell,
+      renderCell: ({ row }) => <strong>{row.name || '-'}</strong>,
+      ...(isAdmin && {
+        renderEditCell: ({ row, onRowChange }) => (
+          <Input value={row.name} onChange={(e) => onRowChange({ ...row, name: e.target.value })} autoFocus />
+        ),
+      }),
+    },
+    ...AttachmentInfoColumns,
     {
       key: 'filename',
       name: t('common:filename'),
       visible: !isMobile,
       sortable: false,
+      minWidth: 140,
       renderHeaderCell: HeaderCell,
       renderCell: ({ row }) => (
         <span className="group-hover:underline underline-offset-4 truncate font-light">{row.filename || <span className="text-muted">-</span>}</span>
@@ -164,7 +176,7 @@ export const useColumns = (isAdmin: boolean, isSheet: boolean) => {
       name: t('common:size'),
       sortable: false,
       visible: !isMobile,
-      width: 100,
+      minWidth: 100,
       renderHeaderCell: HeaderCell,
       renderCell: ({ row }) => (
         <div className="inline-flex items-center gap-1 relative font-light group h-full w-full opacity-50">{formatBytes(row.size)}</div>
@@ -175,9 +187,77 @@ export const useColumns = (isAdmin: boolean, isSheet: boolean) => {
       name: t('common:created_at'),
       sortable: true,
       visible: !isSheet && !isMobile,
-      minWidth: 180,
+      minWidth: 160,
       renderHeaderCell: HeaderCell,
       renderCell: ({ row }) => (row.createdAt ? dateShort(row.createdAt) : <span className="text-muted">-</span>),
+    },
+    {
+      key: 'createdBy',
+      name: t('common:created_by'),
+      sortable: false,
+      visible: false,
+      minWidth: highDensity ? null : 120,
+      width: highDensity ? 50 : null,
+      renderHeaderCell: HeaderCell,
+      renderCell: ({ row, tabIndex }) => {
+        if (!row.createdBy) return <span className="text-muted">-</span>;
+
+        const items = getMembersTableCache(row.organizationId, 'organization');
+        const user = items.find((u) => u.id === row.createdBy);
+
+        return (
+          <Link
+            id={`attachments-created-by-${row.createdBy}-cell-${row.id}`}
+            to="/users/$idOrSlug"
+            tabIndex={tabIndex}
+            params={{ idOrSlug: user?.slug ?? row.createdBy }}
+            className="flex space-x-2 items-center outline-0 ring-0 group"
+          >
+            {user && <AvatarWrap type="user" className="h-8 w-8" id={user.id} name={user.name} url={user.thumbnailUrl} />}
+            <span className="[.high-density_&]:hidden group-hover:underline underline-offset-4 truncate font-medium">
+              {user?.name ?? row.createdBy}
+            </span>
+          </Link>
+        );
+      },
+    },
+    {
+      key: 'modifiedAt',
+      name: t('common:modified'),
+      sortable: false,
+      visible: false,
+      minWidth: 160,
+      renderHeaderCell: HeaderCell,
+      renderCell: ({ row }) => (row.modifiedAt ? dateShort(row.modifiedAt) : <span className="text-muted">-</span>),
+    },
+    {
+      key: 'modifiedBy',
+      name: t('common:modified_by'),
+      sortable: false,
+      visible: false,
+      width: highDensity ? 80 : 120,
+      renderHeaderCell: HeaderCell,
+      renderCell: ({ row, tabIndex }) => {
+        if (!row.modifiedBy) return <span className="text-muted">-</span>;
+
+        const items = getMembersTableCache(row.organizationId, 'organization');
+        const user = items.find((u) => u.id === row.modifiedBy);
+
+        return (
+          <Link
+            id={`attachments-modified-by-${row.modifiedBy}-cell-${row.id}`}
+            to="/users/$idOrSlug"
+            tabIndex={tabIndex}
+            params={{ idOrSlug: user?.slug ?? row.modifiedBy }}
+            className="flex space-x-2 items-center outline-0 ring-0 group"
+          >
+            {user && <AvatarWrap type="user" className="h-8 w-8" id={user.id} name={user.name} url={user.thumbnailUrl} />}
+            <span className="[.high-density_&]:hidden group-hover:underline underline-offset-4 truncate font-medium">
+              {user?.name ?? row.modifiedBy}
+            </span>
+          </Link>
+        );
+      },
     },
   ];
 

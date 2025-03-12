@@ -1,4 +1,4 @@
-import { SlidersHorizontal } from 'lucide-react';
+import { FoldHorizontal, SlidersHorizontal, UnfoldHorizontal } from 'lucide-react';
 import { type Dispatch, type SetStateAction, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
@@ -11,9 +11,11 @@ interface Props<TData> {
   columns: ColumnOrColumnGroup<TData>[];
   setColumns: Dispatch<SetStateAction<ColumnOrColumnGroup<TData>[]>>;
   className?: string;
+  highDensity?: boolean;
+  toggleDensityView?: (highDensity: boolean) => void;
 }
 
-const ColumnsView = <TData,>({ columns, setColumns, className = '' }: Props<TData>) => {
+const ColumnsView = <TData,>({ columns, setColumns, className = '', highDensity, toggleDensityView }: Props<TData>) => {
   const { t } = useTranslation();
   const [columnSearch, setColumnSearch] = useState('');
 
@@ -65,6 +67,13 @@ const ColumnsView = <TData,>({ columns, setColumns, className = '' }: Props<TDat
             {column.name}
           </DropdownMenuCheckboxItem>
         ))}
+        {/* Not finished, therefore hidden */}
+        {toggleDensityView && highDensity !== undefined && (
+          <Button variant="outline" onClick={() => toggleDensityView(!highDensity)} className="hidden w-full mt-3 gap-2" size="sm">
+            {highDensity ? <UnfoldHorizontal size={16} /> : <FoldHorizontal size={16} />}
+            <span>{highDensity ? t('common:normal_density') : t('common:high_density')}</span>
+          </Button>
+        )}
       </DropdownMenuContent>
     </DropdownMenu>
   );

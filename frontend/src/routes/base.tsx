@@ -1,5 +1,5 @@
 import * as Sentry from '@sentry/react';
-import { type QueryClient, onlineManager } from '@tanstack/react-query';
+import { onlineManager } from '@tanstack/react-query';
 import { createRootRouteWithContext, createRoute, defer, redirect } from '@tanstack/react-router';
 import { config } from 'config';
 import { Suspense, lazy } from 'react';
@@ -10,6 +10,7 @@ import { Root } from '~/modules/common/root';
 import Spinner from '~/modules/common/spinner';
 import { meQueryOptions, menuQueryOptions } from '~/modules/me/query';
 import { onError } from '~/query/on-error';
+import { queryClient } from '~/query/query-client';
 import { useUserStore } from '~/store/user';
 
 // Lazy load main App component, which is behind authentication
@@ -20,7 +21,7 @@ const errorSearchSchema = z.object({
   severity: z.enum(['warn', 'error']).optional(),
 });
 
-export const rootRoute = createRootRouteWithContext<{ queryClient: QueryClient }>()({
+export const rootRoute = createRootRouteWithContext()({
   staticData: { pageTitle: '', isAuth: false },
   component: () => <Root />,
   errorComponent: ({ error }) => <ErrorNotice level="root" error={error} />,
@@ -31,14 +32,14 @@ export const PublicRoute = createRoute({
   staticData: { pageTitle: '', isAuth: false },
   getParentRoute: () => rootRoute,
   component: () => <PublicLayout />,
-  beforeLoad: async ({ location, cause, context }) => {
+  beforeLoad: async ({ location, cause }) => {
     if (cause !== 'enter' || location.pathname === '/sign-out') return;
 
     try {
       console.debug('Fetch me & menu in while entering public page ', location.pathname);
 
       // Fetch and set user
-      await context.queryClient.ensureQueryData({ ...meQueryOptions(), revalidateIfStale: true });
+      await queryClient.ensureQueryData({ ...meQueryOptions(), revalidateIfStale: true });
     } catch (error) {
       if (error instanceof Error) {
         Sentry.captureException(error);
@@ -57,19 +58,19 @@ export const AppRoute = createRoute({
       <AppLayout />
     </Suspense>
   ),
-  loader: async ({ context, location, cause }) => {
+  loader: async ({ location, cause }) => {
     if (cause !== 'enter') return;
 
     try {
       console.debug('Fetch me & menu while entering app ', location.pathname);
 
       // Fetch and set user
-      const user = await context.queryClient.ensureQueryData({ ...meQueryOptions(), revalidateIfStale: true });
+      const user = await queryClient.ensureQueryData({ ...meQueryOptions(), revalidateIfStale: true });
 
       // Defer menu loading (won't block rendering)
       if (user)
         return {
-          menuData: await defer(context.queryClient.ensureQueryData({ ...menuQueryOptions(), revalidateIfStale: true })),
+          menuData: await defer(queryClient.ensureQueryData({ ...menuQueryOptions(), revalidateIfStale: true })),
         };
     } catch (error) {
       if (error instanceof Error) {
