@@ -6,6 +6,7 @@ import ErrorNotice from '~/modules/common/error-notice';
 import { membersQueryOptions } from '~/modules/memberships/query';
 import { organizationQueryOptions } from '~/modules/organizations/query';
 
+import { queryClient } from '~/query/query-client';
 import { AppRoute } from '~/routes/base';
 import { noDirectAccess } from '~/utils/no-direct-access';
 import { attachmentsQuerySchema } from '#/modules/attachments/schema';
@@ -32,11 +33,11 @@ export const attachmentsSearchSchema = attachmentsQuerySchema.pick({ q: true, so
 export const OrganizationRoute = createRoute({
   path: '/$idOrSlug',
   staticData: { pageTitle: 'Organization', isAuth: true },
-  beforeLoad: async ({ location, params: { idOrSlug }, context }) => {
+  beforeLoad: async ({ location, params: { idOrSlug } }) => {
     noDirectAccess(location.pathname, idOrSlug, '/members');
     const queryOptions = organizationQueryOptions(idOrSlug);
 
-    return { organization: await context.queryClient.fetchQuery(queryOptions) };
+    return { organization: await queryClient.fetchQuery(queryOptions) };
   },
   loader: async ({ context: { organization } }) => {
     return organization;
@@ -64,7 +65,7 @@ export const OrganizationMembersRoute = createRoute({
 
     const queryOptions = membersQueryOptions({ idOrSlug, orgIdOrSlug, entityType, q, sort, order, role });
 
-    await context.queryClient.prefetchInfiniteQuery(queryOptions);
+    await queryClient.prefetchInfiniteQuery(queryOptions);
   },
   component: () => {
     const organization = useLoaderData({ from: OrganizationRoute.id });
@@ -87,7 +88,7 @@ export const OrganizationAttachmentsRoute = createRoute({
     const orgIdOrSlug = context.organization.id ?? idOrSlug;
     const queryOptions = attachmentsQueryOptions({ orgIdOrSlug, q, sort, order });
 
-    await context.queryClient.prefetchInfiniteQuery(queryOptions);
+    await queryClient.prefetchInfiniteQuery(queryOptions);
   },
   component: () => {
     const organization = useLoaderData({ from: OrganizationRoute.id });

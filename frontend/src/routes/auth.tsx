@@ -11,6 +11,7 @@ import AuthSteps from '~/modules/auth/steps';
 import Unsubscribed from '~/modules/auth/unsubscribed';
 import VerifyEmail from '~/modules/auth/verify-email';
 import { meQueryOptions } from '~/modules/me/query';
+import { queryClient } from '~/query/query-client';
 import { PublicRoute } from '~/routes/base';
 import { useUserStore } from '~/store/user';
 
@@ -78,10 +79,10 @@ export const AcceptOrgInviteRoute = createRoute({
   path: '/invitation/$token',
   staticData: { pageTitle: 'Join organization', isAuth: false },
   getParentRoute: () => AuthLayoutRoute,
-  beforeLoad: async ({ context, params, search }) => {
+  beforeLoad: async ({ params, search }) => {
     try {
       const queryOptions = meQueryOptions();
-      await context.queryClient.fetchQuery(queryOptions);
+      await queryClient.fetchQuery(queryOptions);
     } catch {
       console.info('Not authenticated (silent check) -> redirect to sign in');
       throw redirect({ to: '/auth/authenticate', search: { token: params.token, tokenId: search.tokenId } });

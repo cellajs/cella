@@ -1,5 +1,4 @@
 import { createRouter } from '@tanstack/react-router';
-import { queryClient } from '~/query/query-client';
 import { routeTree } from '~/routes/route-tree';
 
 /**
@@ -13,7 +12,7 @@ const router = createRouter({
   routeTree,
   // notFoundRoute,
   defaultPreload: false,
-  context: { queryClient },
+  context: {},
   defaultPendingMinMs: 0,
 });
 
