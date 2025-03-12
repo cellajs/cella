@@ -45,7 +45,7 @@ const AuthSteps = () => {
   const { data, isLoading, error } = useTokenCheck('invitation', tokenId, !!(token && tokenId));
 
   useEffect(() => {
-    if (!data) return;
+    if (!data?.email) return;
 
     setEmail(data.email);
     setStep(data.userId ? 'signIn' : 'signUp');
