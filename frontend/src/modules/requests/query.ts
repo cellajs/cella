@@ -2,6 +2,7 @@ import { infiniteQueryOptions, useMutation } from '@tanstack/react-query';
 import { config } from 'config';
 import type { ApiError } from '~/lib/api';
 import { type CreateRequestBody, type GetRequestsParams, createRequest, getRequests } from '~/modules/requests/api';
+import { getOffset } from '~/query/helpers';
 
 /**
  * Keys for request related queries. These keys help to uniquely identify different query. For managing query caching and invalidation.
@@ -39,7 +40,10 @@ export const requestsQueryOptions = ({
   return infiniteQueryOptions({
     queryKey,
     initialPageParam: 0,
-    queryFn: async ({ pageParam: page, signal }) => await getRequests({ page, q, sort, order, limit, offset: page * limit }, signal),
+    queryFn: async ({ pageParam: page, signal }) => {
+      const offset = getOffset(queryKey); // Calculate before fetching ensuring correct offset
+      return await getRequests({ page, q, sort, order, limit, offset }, signal);
+    },
     getNextPageParam: (_lastPage, allPages) => allPages.length,
   });
 };

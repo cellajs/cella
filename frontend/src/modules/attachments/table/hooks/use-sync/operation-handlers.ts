@@ -1,6 +1,8 @@
 import { attachmentsKeys } from '~/modules/attachments/query';
 import type { AttachmentInfiniteQueryData } from '~/modules/attachments/query-mutations';
 import type { Attachment } from '~/modules/attachments/types';
+import { getQueryKeySortOrder } from '~/query/helpers';
+
 import { getSimilarQueries } from '~/query/helpers/mutate-query';
 import { queryClient } from '~/query/query-client';
 
@@ -9,6 +11,13 @@ export const handleInsert = (orgIdOrSlug: string, newAttachments: Attachment[]) 
   const queries = getSimilarQueries(attachmentsKeys.similar({ orgIdOrSlug }));
 
   for (const [queryKey] of queries) {
+    const { sort, order: insertOrder } = getQueryKeySortOrder(queryKey);
+
+    if ((sort && sort !== 'createdAt') || (sort === 'createdAt' && insertOrder === 'asc')) {
+      queryClient.invalidateQueries({ queryKey, exact: true });
+      continue;
+    }
+
     queryClient.setQueryData<AttachmentInfiniteQueryData>(queryKey, (data) => {
       if (!data) return;
 
@@ -22,7 +31,7 @@ export const handleInsert = (orgIdOrSlug: string, newAttachments: Attachment[]) 
 
       // Add new attachments and update total count
       const pages = data.pages.map(({ items, total }) => ({
-        items: [...items, ...uniqueAttachments],
+        items: insertOrder === 'asc' ? [...items, ...uniqueAttachments] : [...uniqueAttachments, ...items],
         total: total + uniqueAttachments.length,
       }));
 
