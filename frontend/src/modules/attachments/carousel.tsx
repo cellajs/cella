@@ -132,7 +132,7 @@ const AttachmentsCarousel = ({ items = [], isDialog = false, itemIndex = 0, save
               }}
             >
               <AttachmentRender
-                containerClassName={cn('overflow-hidden h-full relative flex items-center justify-center, ', classNameContainer)}
+                containerClassName={cn('overflow-hidden h-full relative flex items-center justify-center ', classNameContainer)}
                 itemClassName={itemClass}
                 type={contentType}
                 imagePanZoom={isDialog}

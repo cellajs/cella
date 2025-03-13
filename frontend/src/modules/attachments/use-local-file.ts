@@ -3,10 +3,11 @@ import { LocalFileStorage } from '~/modules/attachments/local-file-storage';
 import { useBlobStore } from '~/store/blob'; // Import the Zustand store
 
 /**
+ * Custom hook to retrieve a local file from IndexedDB and generate a blob URL.
  *
- * @param key Key used to get the file from indexedDB
- * @param contentType
- * @returns
+ * @param key Key used to get file from IndexedDB.
+ * @param contentType Optional content type of file.
+ * @returns Object containing local file URL and any error encountered.
  */
 export const useLocalFile = (key: string, contentType?: string): { localUrl: string; localFileError: string | null } => {
   // We use the Zustand store to get and set the blob URL after LocalFileStorage has created it. It also revokes the URL user closes the browser tab.
@@ -14,7 +15,7 @@ export const useLocalFile = (key: string, contentType?: string): { localUrl: str
 
   // State
   const [fileUrl, setFileUrl] = useState<string>('');
-  const [error, setError] = useState<string | null>(null); // New error state
+  const [error, setError] = useState<string | null>(null);
   const isMounted = useRef(true);
 
   useEffect(() => {
@@ -27,7 +28,7 @@ export const useLocalFile = (key: string, contentType?: string): { localUrl: str
       return;
     }
 
-    // Fetch the file from indexedDB and create a blob URL
+    // Fetch the file from IndexedDB
     const fetchFile = async () => {
       try {
         const file = await LocalFileStorage.getFile(key);
