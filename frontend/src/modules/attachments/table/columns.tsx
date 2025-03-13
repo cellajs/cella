@@ -13,7 +13,7 @@ import HeaderCell from '~/modules/common/data-table/header-cell';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 import Spinner from '~/modules/common/spinner';
 import type { EntityPage } from '~/modules/entities/types';
-import { membersKeys } from '~/modules/memberships/query';
+import { membersKeys } from '~/modules/memberships/query/options';
 import { Button } from '~/modules/ui/button';
 import { Input } from '~/modules/ui/input';
 import { findUserFromCache } from '~/modules/users/helpers';

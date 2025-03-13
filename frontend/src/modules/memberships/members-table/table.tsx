@@ -7,8 +7,8 @@ import { tablePropsAreEqual } from '~/modules/common/data-table/table-props-are-
 import type { BaseTableMethods, BaseTableProps } from '~/modules/common/data-table/types';
 import { toaster } from '~/modules/common/toaster';
 import type { MemberSearch, MembersTableProps } from '~/modules/memberships/members-table/table-wrapper';
-import { membersKeys, membersQueryOptions } from '~/modules/memberships/query';
-import { useMemberUpdateMutation } from '~/modules/memberships/query-mutations';
+import { useMemberUpdateMutation } from '~/modules/memberships/query/mutations';
+import { membersKeys, membersQueryOptions } from '~/modules/memberships/query/options';
 import type { Member } from '~/modules/memberships/types';
 import { useDataFromInfiniteQuery } from '~/query/hooks/use-data-from-query';
 import { queryClient } from '~/query/query-client';

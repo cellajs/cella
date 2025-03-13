@@ -1,5 +1,5 @@
-import { attachmentsQueryOptions } from '~/modules/attachments/query';
-import { membersQueryOptions } from '~/modules/memberships/query';
+import { attachmentsQueryOptions } from '~/modules/attachments/query/options';
+import { membersQueryOptions } from '~/modules/memberships/query/options';
 import { organizationQueryOptions } from '~/modules/organizations/query';
 
 import type { UserMenuItem } from '~/modules/me/types';

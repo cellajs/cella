@@ -1,9 +1,9 @@
 import { createRoute, useLoaderData, useParams } from '@tanstack/react-router';
 import { Suspense, lazy } from 'react';
 import { z } from 'zod';
-import { attachmentsQueryOptions } from '~/modules/attachments/query';
+import { attachmentsQueryOptions } from '~/modules/attachments/query/options';
 import ErrorNotice from '~/modules/common/error-notice';
-import { membersQueryOptions } from '~/modules/memberships/query';
+import { membersQueryOptions } from '~/modules/memberships/query/options';
 import { organizationQueryOptions } from '~/modules/organizations/query';
 
 import { queryClient } from '~/query/query-client';

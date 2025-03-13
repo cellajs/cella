@@ -1,6 +1,8 @@
 import { MutationCache, QueryCache, QueryClient, onlineManager } from '@tanstack/react-query';
 import { onError } from '~/query/on-error';
 import { onSuccess } from '~/query/on-success';
+import { mutationDefaultArray } from './mutation-default-config';
+import type { DefaultMutationOptions } from './types';
 
 const queryClientConfig = { onError, onSuccess };
 
@@ -40,3 +42,10 @@ export const queryClient = new QueryClient({
     },
   },
 });
+
+// Loop over the mutation mappings to set defaults dynamically
+for (const getMutationDefault of mutationDefaultArray) {
+  const mutationDefault = getMutationDefault(queryClient);
+  const { mutationKey, ...mutationOptions } = mutationDefault;
+  queryClient.setMutationDefaults(mutationKey, mutationOptions as DefaultMutationOptions);
+}
