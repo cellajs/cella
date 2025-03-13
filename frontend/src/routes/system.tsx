@@ -47,8 +47,8 @@ export const UsersTableRoute = createRoute({
   getParentRoute: () => SystemRoute,
   loaderDeps: ({ search: { q, sort, order, role } }) => ({ q, sort, order, role }),
   loader: async ({ deps: { q, sort, order, role } }) => {
-    const options = usersQueryOptions({ q, sort, order, role });
-    queryClient.ensureInfiniteQueryData(options);
+    const queryOptions = usersQueryOptions({ q, sort, order, role });
+    await queryClient.prefetchInfiniteQuery(queryOptions);
   },
   component: () => (
     <Suspense>
@@ -64,8 +64,8 @@ export const OrganizationsTableRoute = createRoute({
   getParentRoute: () => SystemRoute,
   loaderDeps: ({ search: { q, sort, order } }) => ({ q, sort, order }),
   loader: async ({ deps: { q, sort, order } }) => {
-    const options = organizationsQueryOptions({ q, sort, order });
-    queryClient.ensureInfiniteQueryData(options);
+    const orgOptions = organizationsQueryOptions({ q, sort, order });
+    await queryClient.prefetchInfiniteQuery(orgOptions);
   },
   component: () => (
     <Suspense>
@@ -81,8 +81,8 @@ export const RequestsTableRoute = createRoute({
   getParentRoute: () => SystemRoute,
   loaderDeps: ({ search: { q, sort, order } }) => ({ q, sort, order }),
   loader: async ({ deps: { q, sort, order } }) => {
-    const options = requestsQueryOptions({ q, sort, order });
-    queryClient.ensureInfiniteQueryData(options);
+    const requestsOptions = requestsQueryOptions({ q, sort, order });
+    await queryClient.prefetchInfiniteQuery(requestsOptions);
   },
   component: () => (
     <Suspense>

@@ -82,7 +82,8 @@ export const AcceptOrgInviteRoute = createRoute({
   beforeLoad: async ({ params, search }) => {
     try {
       const queryOptions = meQueryOptions();
-      await queryClient.ensureQueryData(queryOptions);
+      const options = { ...queryOptions, revalidateIfStale: true };
+      await queryClient.ensureQueryData(options);
     } catch {
       console.info('Not authenticated (silent check) -> redirect to sign in');
       throw redirect({ to: '/auth/authenticate', search: { token: params.token, tokenId: search.tokenId } });

@@ -16,7 +16,7 @@ import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { sheet } from '~/modules/common/sheeter/state';
 import type { UserMenuItem } from '~/modules/me/types';
-import { useMemberUpdateMutation } from '~/modules/memberships/query-mutations';
+import { useMemberUpdateMutation } from '~/modules/memberships/query/mutations';
 import { AccountSheet } from '~/modules/navigation/account-sheet';
 import { getRelativeItemOrder, isPageData } from '~/modules/navigation/menu-sheet/helpers';
 import { updateMenuItem } from '~/modules/navigation/menu-sheet/helpers/menu-operations';
