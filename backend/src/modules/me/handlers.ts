@@ -15,7 +15,6 @@ import { env } from '#/env';
 import { type Env, getContextMemberships, getContextUser } from '#/lib/context';
 import { resolveEntity } from '#/lib/entity';
 import { type ErrorType, createError, errorResponse } from '#/lib/errors';
-import { sendSSEToUsers } from '#/lib/sse';
 import { isAuthenticated } from '#/middlewares/guard';
 import { logEvent } from '#/middlewares/logger/log-event';
 import { getUserBy } from '#/modules/users/helpers/get-user-by';
@@ -248,7 +247,6 @@ const meRoutes = app
       .delete(membershipsTable)
       .where(and(eq(membershipsTable.userId, user.id), eq(membershipsTable.type, entityType), eq(membershipsTable[entityIdField], entity.id)));
 
-    sendSSEToUsers([user.id], 'remove_entity', { id: entity.id, entity: entity.entity });
     logEvent('User leave entity', { user: user.id });
 
     return ctx.json({ success: true }, 200);

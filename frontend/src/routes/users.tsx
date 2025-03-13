@@ -2,7 +2,7 @@ import { createRoute, useLoaderData, useParams } from '@tanstack/react-router';
 import { Suspense, lazy } from 'react';
 import ErrorNotice from '~/modules/common/error-notice';
 import Spinner from '~/modules/common/spinner';
-import { userAuthQueryOptions } from '~/modules/me/query';
+import { meAuthQueryOptions } from '~/modules/me/query';
 import { userQueryOptions } from '~/modules/users/query';
 import { queryClient } from '~/query/query-client';
 import { AppRoute } from '~/routes/base';
@@ -57,7 +57,7 @@ export const UserSettingsRoute = createRoute({
   staticData: { pageTitle: 'Settings', isAuth: true },
   getParentRoute: () => AppRoute,
   loader: async () => {
-    const userAuthOptions = userAuthQueryOptions();
+    const userAuthOptions = meAuthQueryOptions();
     const options = { ...userAuthOptions, revalidateIfStale: true };
     return queryClient.ensureQueryData(options);
   },

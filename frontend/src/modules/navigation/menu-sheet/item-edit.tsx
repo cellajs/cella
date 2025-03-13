@@ -9,6 +9,7 @@ import { dispatchCustomEvent } from '~/lib/custom-events';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import Spinner from '~/modules/common/spinner';
 import { toaster } from '~/modules/common/toaster';
+import { getAndSetMenu } from '~/modules/me/helpers';
 import type { UserMenuItem } from '~/modules/me/types';
 import { updateMembership } from '~/modules/memberships/api';
 import { updateMenuItem } from '~/modules/navigation/menu-sheet/helpers/menu-operations';
@@ -49,6 +50,7 @@ export const MenuItemEdit = ({ item }: MenuItemEditProps) => {
       dispatchCustomEvent('menuEntityChange', { entity: item.entity, membership: updatedMembership });
       if (toastMessage) toaster(toastMessage, 'success');
     },
+    onError: () => getAndSetMenu(),
   });
 
   const handleUpdateMembershipKey = (key: 'archive' | 'mute') => {
