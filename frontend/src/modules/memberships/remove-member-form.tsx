@@ -9,31 +9,21 @@ interface Props {
   organizationId: string;
   members: Member[];
   entityType?: ContextEntity;
-  callback?: (members: Member[]) => void;
   dialog?: boolean;
+  callback?: (members: Member[]) => void;
 }
 
 const RemoveMembersForm = ({ members, entityIdOrSlug, entityType = 'organization', organizationId, callback, dialog: isDialog }: Props) => {
   const { mutate: removeMembers, isPending } = useMembersDeleteMutation();
 
   const onRemoveMember = () => {
-    removeMembers(
-      {
-        orgIdOrSlug: organizationId,
-        idOrSlug: entityIdOrSlug,
-        entityType,
-        ids: members.map((member) => member.id),
-      },
-      {
-        onSuccess: () => {
-          callback?.(members);
-          if (isDialog) dialog.remove();
-        },
-      },
-    );
+    removeMembers({ orgIdOrSlug: organizationId, idOrSlug: entityIdOrSlug, entityType, ids: members.map((member) => member.id) });
+
+    if (isDialog) dialog.remove();
+    callback?.(members);
   };
 
-  return <DeleteForm onDelete={onRemoveMember} onCancel={() => dialog.remove()} pending={isPending} />;
+  return <DeleteForm allowOfflineDelete={true} onDelete={onRemoveMember} onCancel={() => dialog.remove()} pending={isPending} />;
 };
 
 export default RemoveMembersForm;
