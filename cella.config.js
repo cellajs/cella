@@ -58,7 +58,7 @@ export const config = {
     'frontend/src/modules/common/bg-animation/*',
     'frontend/src/modules/home/onboarding/onboarding-config.ts',
     'frontend/src/modules/marketing/marketing-config.tsx',
-    'frontend/src/modules/marketing/about/index.tsx',
+    'frontend/src/modules/marketing/about/about-page.tsx',
     'frontend/src/modules/users/profile-page-content.tsx',
     'frontend/package.json',
     'backend/package.json',

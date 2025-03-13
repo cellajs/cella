@@ -1,12 +1,13 @@
 import path from 'node:path';
 
+import reactScan from '@react-scan/vite-plugin-react-scan';
 import terser from '@rollup/plugin-terser';
 import { sentryVitePlugin } from '@sentry/vite-plugin';
 import tailwindcss from '@tailwindcss/vite';
 import basicSsl from '@vitejs/plugin-basic-ssl';
 import react from '@vitejs/plugin-react';
 // import { visualizer } from 'rollup-plugin-visualizer';
-import { type UserConfig, defineConfig } from 'vite';
+import { type UserConfig, defineConfig, loadEnv } from 'vite';
 import { createHtmlPlugin } from 'vite-plugin-html';
 import { VitePWA } from 'vite-plugin-pwa';
 import { viteStaticCopy } from 'vite-plugin-static-copy';
@@ -18,7 +19,8 @@ const ReactCompilerConfig = {
 };
 
 // https://vitejs.dev/config/
-export default defineConfig(() => {
+export default defineConfig(({ mode }) => {
+  const env = loadEnv(mode, process.cwd());
   const frontendUrl = new URL(config.frontendUrl);
 
   const viteConfig = {
@@ -148,5 +150,11 @@ export default defineConfig(() => {
     }),
   );
   if (config.frontendUrl.includes('https')) viteConfig.plugins?.push([basicSsl()]);
+  if (config.mode === 'development')
+    viteConfig.plugins?.push([
+      reactScan({
+        enable: env.VITE_REACT_SCAN === 'true',
+      }),
+    ]);
   return viteConfig;
 });

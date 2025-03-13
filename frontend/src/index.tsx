@@ -1,13 +1,7 @@
 import { RouterProvider } from '@tanstack/react-router';
 import { StrictMode } from 'react';
 import ReactDOM from 'react-dom/client';
-import { scan } from 'react-scan';
 import { ThemeManager } from '~/modules/common/theme-manager';
-
-// Scan for React performance issues
-scan({
-  enabled: env.VITE_REACT_SCAN,
-});
 
 // Import tailwindcss
 import '~/styling/index.css';
@@ -23,7 +17,6 @@ import router from '~/lib/router';
 import { initSentry } from '~/lib/sentry';
 import { QueryClientProvider } from '~/query/provider';
 import { renderAscii } from '~/utils/ascii';
-import { env } from './env';
 
 // Render ASCII logo in console
 renderAscii();
