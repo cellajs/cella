@@ -108,47 +108,6 @@ export async function pullUpstream({
     console.info(`${colors.yellow('Skipped')} Cleaning ignored files because none were ignored.`);
   }
 
-  // Check for merge conflicts
-  const conflictSpinner = yoctoSpinner({
-    text: 'Checking for merge conflicts',
-  }).start();
-
-  try {
-    const conflicts = await runGitCommand({ targetFolder, command: 'diff --check' });
-
-    if (!conflicts) {
-      conflictSpinner.success('No merge conflicts detected, proceeding with commit.');
-
-      // Commit the merge
-      const commitSpinner = yoctoSpinner({
-        text: 'Committing merge',
-      }).start();
-
-      try {
-        await runGitCommand({ targetFolder, command: 'add .' });
-        await runGitCommand({
-          targetFolder,
-          command: `commit -m "Merged upstream changes, keeping files listed in ${ignoreFile || 'ignoreList'}."`,
-        });
-        commitSpinner.success('Merge committed successfully.');
-      } catch (error) {
-        if (!(error instanceof Error) || !error.message.includes('nothing to commit, working tree clean')) {
-          console.error(error);
-          commitSpinner.error('Failed to commit the merge.');
-          process.exit(1);
-        }
-        commitSpinner.success('Nothing to commit, working tree clean.');
-      }
-    } else {
-      conflictSpinner.error('Merge conflicts detected. Resolve conflicts before committing.');
-      process.exit(1);
-    }
-  } catch (error) {
-    console.error(error);
-    conflictSpinner.error('Failed to check for merge conflicts.');
-    process.exit(1);
-  }
-
   console.info(`${colors.green('Success')} Merged upstream changes into local branch ${localBranch}.`);
   console.info();
 }
