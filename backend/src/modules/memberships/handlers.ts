@@ -275,7 +275,7 @@ const membershipsRoutes = app
 
     // Trigger SSE notification only if the update is for a different user
     if (updatedMembership.userId !== user.id) {
-      sendSSEToUsers([membershipToUpdate.userId], 'update_entity', {
+      sendSSEToUsers([updatedMembership.userId], 'update_entity', {
         ...membershipContext,
         membership: updatedMembership,
       });
