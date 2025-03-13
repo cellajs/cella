@@ -273,10 +273,13 @@ const membershipsRoutes = app
       .where(and(eq(membershipsTable.id, membershipId)))
       .returning();
 
-    sendSSEToUsers([membershipToUpdate.userId], 'update_entity', {
-      ...membershipContext,
-      membership: updatedMembership,
-    });
+    // Trigger SSE notification only if the update is for a different user
+    if (updatedMembership.userId !== user.id) {
+      sendSSEToUsers([membershipToUpdate.userId], 'update_entity', {
+        ...membershipContext,
+        membership: updatedMembership,
+      });
+    }
 
     logEvent('Membership updated', { user: updatedMembership.userId, membership: updatedMembership.id });
 

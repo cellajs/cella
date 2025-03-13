@@ -15,11 +15,11 @@ import { AlertWrap } from '~/modules/common/alert-wrap';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { sheet } from '~/modules/common/sheeter/state';
+import { meKeys } from '~/modules/me/query';
 import type { UserMenuItem } from '~/modules/me/types';
 import { useMemberUpdateMutation } from '~/modules/memberships/query/mutations';
 import { AccountSheet } from '~/modules/navigation/account-sheet';
 import { getRelativeItemOrder, isPageData } from '~/modules/navigation/menu-sheet/helpers';
-import { updateMenuItem } from '~/modules/navigation/menu-sheet/helpers/menu-operations';
 import { MenuSheetItem } from '~/modules/navigation/menu-sheet/item';
 import { OfflineAccessSwitch } from '~/modules/navigation/menu-sheet/offline-access-switch';
 import { MenuSheetSearchInput } from '~/modules/navigation/menu-sheet/search-input';
@@ -27,6 +27,7 @@ import { MenuSheetSection } from '~/modules/navigation/menu-sheet/section';
 import { Button, buttonVariants } from '~/modules/ui/button';
 import { ScrollArea } from '~/modules/ui/scroll-area';
 import { Switch } from '~/modules/ui/switch';
+import { queryClient } from '~/query/query-client';
 import { useNavigationStore } from '~/store/navigation';
 import { useUserStore } from '~/store/user';
 import { cn } from '~/utils/cn';
@@ -111,14 +112,10 @@ export const MenuSheet = memo(() => {
               idOrSlug: sourceItem.id,
               entityType: sourceItem.entity,
             },
-
             {
-              onSuccess: (updatedMembership) => {
-                const updatedEntity: UserMenuItem = { ...sourceItem, membership: { ...sourceItem.membership, ...updatedMembership } };
-                updateMenuItem(updatedEntity);
-                // To be able to update, add a listener to manipulate data that has been changed in the menu (reordered entities on your page)
-                dispatchCustomEvent('menuEntityChange', { entity: sourceItem.entity, membership: updatedMembership });
-              },
+              // To be able to update, add a listener to manipulate data that has been changed in the menu (reordered entities on your page)
+              onSuccess: (updatedMembership) => dispatchCustomEvent('menuEntityChange', { entity: sourceItem.entity, membership: updatedMembership }),
+              onError: () => queryClient.refetchQueries({ queryKey: meKeys.me, exact: true }),
             },
           );
         },
