@@ -419,5 +419,6 @@
   "copied": "Copied!",
   "download": "Download",
   "normal_density": "Normal density",
-  "high_density": "High density"
+  "high_density": "High density",
+  "restrict_image_upload": "Image upload blocked, imado disabled."
 }
