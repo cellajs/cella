@@ -7,10 +7,11 @@ import colors from 'picocolors';
 import { input, confirm, select } from '@inquirer/prompts';
 
 import { cli } from './cli';
+import { extractPackageJsonVersionFromUri } from './utils/extract-package-json-version-from-uri';
 import { validateProjectName } from './utils/validate-project-name.ts';
 import { isEmptyDirectory } from './utils/is-empty-directory.ts';
 import { create } from './create.ts';
-import { LOGO, VERSION, WEBSITE, AUTHOR, GITHUB, DESCRIPTION } from './constants.ts';
+import { LOGO, VERSION, WEBSITE, AUTHOR, GITHUB, DESCRIPTION, TEMPLATE_URL } from './constants.ts';
 
 interface CreateOptions {
   projectName: string;
@@ -26,11 +27,15 @@ interface CreateOptions {
 async function main(): Promise<void> {
   console.info(LOGO);
 
+  // Get the latest version of the template
+  const templateVersion = await extractPackageJsonVersionFromUri(TEMPLATE_URL);
+
   // Display CLI version and created by information
   console.info();
   console.info(DESCRIPTION);
   console.info();
-  console.info(`Version ${colors.green(VERSION)}`);
+  console.info(`Cella version: ${colors.green(templateVersion)}`);
+  console.info(`Cli version ${colors.green(VERSION)}`);
   console.info(`Created by ${AUTHOR}`);
   console.info(`${GITHUB} | ${WEBSITE}`);
   console.info();
