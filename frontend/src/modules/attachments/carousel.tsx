@@ -5,15 +5,15 @@ import { Download, ExternalLink, X } from 'lucide-react';
 import { useState } from 'react';
 import useDownloader from 'react-use-downloader';
 import { useEventListener } from '~/hooks/use-event-listener';
+import { clearAttachmentDialogSearchParams } from '~/modules/attachments/attachment-dialog-handler';
 import { AttachmentRender } from '~/modules/attachments/attachment-render';
 import FilePlaceholder from '~/modules/attachments/file-placeholder';
 import { openAttachmentDialog } from '~/modules/attachments/helpers';
 import { dialog } from '~/modules/common/dialoger/state';
+import Spinner from '~/modules/common/spinner';
 import { Button } from '~/modules/ui/button';
 import { Carousel as BaseCarousel, CarouselContent, CarouselDots, CarouselItem, CarouselNext, CarouselPrevious } from '~/modules/ui/carousel';
 import { cn } from '~/utils/cn';
-import Spinner from '../common/spinner';
-import { clearAttachmentDialogSearchParams } from './attachment-dialog-handler';
 
 type CarouselItemData = { url: string; id?: string; name?: string; filename?: string; contentType?: string };
 interface CarouselPropsBase {

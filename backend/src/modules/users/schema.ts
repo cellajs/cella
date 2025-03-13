@@ -18,6 +18,7 @@ export const userSchema = z.object({ ...userTableSchema.shape });
 
 export const limitedUserSchema = userTableSchema.pick({
   id: true,
+  slug: true,
   name: true,
   email: true,
   entity: true,

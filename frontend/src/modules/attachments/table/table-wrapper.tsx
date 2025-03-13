@@ -18,7 +18,6 @@ import type { BaseTableMethods } from '~/modules/common/data-table/types';
 import { dialog } from '~/modules/common/dialoger/state';
 import type { EntityPage } from '~/modules/entities/types';
 import type { attachmentsSearchSchema } from '~/routes/organizations';
-import { useUserStore } from '~/store/user';
 
 const LIMIT = config.requestLimits.attachments;
 
@@ -31,12 +30,9 @@ export interface AttachmentsTableProps {
 
 const AttachmentsTable = ({ entity, canUpload = true, isSheet = false }: AttachmentsTableProps) => {
   const { t } = useTranslation();
-  const user = useUserStore((state) => state.user);
 
   const { search, setSearch } = useSearchParams<AttachmentSearch>({ saveDataInSearch: !isSheet });
   const dataTableRef = useRef<BaseTableMethods | null>(null);
-
-  const isAdmin = entity.membership?.role === 'admin' || user?.role === 'admin';
 
   // Table state
   const { q, sort, order } = search;
@@ -49,7 +45,7 @@ const AttachmentsTable = ({ entity, canUpload = true, isSheet = false }: Attachm
   const [highDensity, setHighDensity] = useState(false);
 
   // Build columns
-  const [columns, setColumns] = useState(useColumns(isAdmin, isSheet, highDensity));
+  const [columns, setColumns] = useState(useColumns(entity, isSheet, highDensity));
   const { sortColumns, setSortColumns } = useSortColumns(sort, order, setSearch);
 
   const clearSelection = () => {
