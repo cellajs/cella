@@ -60,7 +60,6 @@ export const config = {
     'frontend/src/modules/marketing/marketing-config.tsx',
     'frontend/src/modules/marketing/about/index.tsx',
     'frontend/src/modules/users/profile-page-content.tsx',
-    'frontend/src/query/mutation-import-config.ts',
     'frontend/package.json',
     'backend/package.json',
     'backend/drizzle/*',
