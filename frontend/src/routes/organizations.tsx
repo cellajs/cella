@@ -37,8 +37,8 @@ export const OrganizationRoute = createRoute({
   beforeLoad: async ({ location, params: { idOrSlug } }) => {
     noDirectAccess(location.pathname, idOrSlug, '/members');
     const queryOptions = organizationQueryOptions(idOrSlug);
-
-    return { organization: await queryClient.ensureQueryData(queryOptions) };
+    const options = { ...queryOptions, revalidateIfStale: true };
+    return { organization: await queryClient.ensureQueryData(options) };
   },
   loader: async ({ context: { organization } }) => {
     return organization;
