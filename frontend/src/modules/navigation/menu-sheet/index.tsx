@@ -15,7 +15,7 @@ import { AlertWrap } from '~/modules/common/alert-wrap';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { sheet } from '~/modules/common/sheeter/state';
-import { meKeys } from '~/modules/me/query';
+import { getAndSetMenu } from '~/modules/me/helpers';
 import type { UserMenuItem } from '~/modules/me/types';
 import { useMemberUpdateMutation } from '~/modules/memberships/query/mutations';
 import { AccountSheet } from '~/modules/navigation/account-sheet';
@@ -27,7 +27,6 @@ import { MenuSheetSection } from '~/modules/navigation/menu-sheet/section';
 import { Button, buttonVariants } from '~/modules/ui/button';
 import { ScrollArea } from '~/modules/ui/scroll-area';
 import { Switch } from '~/modules/ui/switch';
-import { queryClient } from '~/query/query-client';
 import { useNavigationStore } from '~/store/navigation';
 import { useUserStore } from '~/store/user';
 import { cn } from '~/utils/cn';
@@ -115,7 +114,7 @@ export const MenuSheet = memo(() => {
             {
               // To be able to update, add a listener to manipulate data that has been changed in the menu (reordered entities on your page)
               onSuccess: (updatedMembership) => dispatchCustomEvent('menuEntityChange', { entity: sourceItem.entity, membership: updatedMembership }),
-              onError: () => queryClient.refetchQueries({ queryKey: meKeys.me, exact: true }),
+              onError: () => getAndSetMenu(),
             },
           );
         },
