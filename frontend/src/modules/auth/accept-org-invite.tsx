@@ -8,8 +8,8 @@ import { acceptOrgInvite } from '~/modules/auth/api';
 import AuthNotice from '~/modules/auth/notice';
 import { useTokenCheck } from '~/modules/auth/use-token-check';
 import Spinner from '~/modules/common/spinner';
+import { getAndSetMenu } from '~/modules/me/helpers';
 import { SubmitButton, buttonVariants } from '~/modules/ui/button';
-import { getAndSetMenu } from '~/modules/users/helpers';
 import { AcceptOrgInviteRoute } from '~/routes/auth';
 import { cn } from '~/utils/cn';
 

@@ -1,8 +1,8 @@
 import { queryOptions, useMutation } from '@tanstack/react-query';
 import type { ApiError } from '~/lib/api';
 import { updateSelf } from '~/modules/me/api';
+import { getAndSetMe, getAndSetMenu, getAndSetUserAuthInfo } from '~/modules/me/helpers';
 import type { UpdateUserParams } from '~/modules/users/api';
-import { getAndSetMe, getAndSetMenu, getAndSetUserAuthInfo } from '~/modules/users/helpers';
 import { usersKeys } from '~/modules/users/query';
 import type { User } from '~/modules/users/types';
 import { queryClient } from '~/query/query-client';

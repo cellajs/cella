@@ -1,4 +1,4 @@
-import { Check, KeyRound, Send, Trash2 } from 'lucide-react';
+import { Check, Send, Trash2 } from 'lucide-react';
 import { SimpleHeader } from '~/modules/common/simple-header';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/modules/ui/card';
 
@@ -21,10 +21,10 @@ import StickyBox from '~/modules/common/sticky-box';
 import { toaster } from '~/modules/common/toaster';
 import DeleteSelf from '~/modules/me/delete-self';
 import SessionsList from '~/modules/me/sessions-list';
-import { deletePasskey, passkeyRegistration } from '~/modules/users/helpers';
 import UpdateUserForm from '~/modules/users/update-user-form';
 import { UserSettingsRoute } from '~/routes/users';
 import { useUIStore } from '~/store/ui';
+import Passkeys from './passkeys';
 
 const tabs = [
   { id: 'general', label: 'common:general' },
@@ -128,24 +128,7 @@ const UserSettingsPage = () => {
                 <p className="font-semibold">{t('common:passkey')}</p>
               </HelpText>
 
-              {userAuthInfo.passkey && (
-                <div className="flex items-center gap-2 mb-6">
-                  <Check size={18} className="text-success" />
-                  <span>{t('common:passkey_registered')}</span>
-                </div>
-              )}
-              <div className="flex max-sm:flex-col gap-2 mb-6">
-                <Button key="createPasskey" type="button" variant="plain" onClick={passkeyRegistration}>
-                  <KeyRound className="w-4 h-4 mr-2" />
-                  {userAuthInfo.passkey ? t('common:reset_passkey') : `${t('common:add')} ${t('common:new_passkey').toLowerCase()}`}
-                </Button>
-                {userAuthInfo.passkey && (
-                  <Button key="deletePasskey" type="button" variant="ghost" onClick={deletePasskey}>
-                    <Trash2 className="w-4 h-4 mr-2" />
-                    <span>{t('common:remove')}</span>
-                  </Button>
-                )}
-              </div>
+              <Passkeys userAuthInfo={userAuthInfo} />
 
               <HelpText content={t('common:oauth.text')}>
                 <p className="font-semibold">{t('common:oauth')}</p>
