@@ -1,19 +1,11 @@
 /* Custom gradients that are not easy to build using tailwind */
 @import "./gradients.css" layer(base);
-@import "./modules/common/blocknote/styles.css" layer(base);
+@import "../modules/common/blocknote/styles.css" layer(base);
 
 @import "tailwindcss";
 
-@config '../tailwind.config.ts';
+@config '../../tailwind.config.ts';
 
-/*
-  The default border color has changed to `currentColor` in Tailwind CSS v4,
-  so we've added these compatibility styles to make sure everything still
-  looks the same as it did with Tailwind CSS v3.
-
-  If we ever want to remove these styles, we need to add an explicit border
-  color utility to any element that depends on these defaults.
-*/
 @layer base {
   *,
   ::after,
@@ -36,13 +28,6 @@
     z-index: 0;
     width: 0.05rem;
     height: calc(100% - 1.5rem);
-  }
-}
-
-/* Override tailwind here */
-@layer components {
-  .grid.rdg-wrapper > .rdg {
-    border: none;
   }
 }
 
@@ -125,9 +110,14 @@
   }
 
   /* For small screens we enlarge all elements by using rem everywhere, and then simply increase font-size */
+  /* Secondly, for app layout, we change the scroll body to #app-content */
   @media (max-width: 639px) {
     html {
       font-size: 18px;
+    }
+
+    #root {
+      @apply flex flex-col min-h-full;
     }
 
     #app-layout {
@@ -144,10 +134,6 @@
       height: 100%;
       overflow-y: auto;
     }
-  }
-
-  #root {
-    @apply flex flex-col min-h-full;
   }
 
   /* Overwrite elements for focus view when table is present in it  */
@@ -170,15 +156,6 @@
   /* Hide elements when focus view is active */
   .focus-view #app-content-inner *:not(.focus-view-container, .focus-view-container *) {
     display: none !important;
-  }
-
-  /* Floating nav should hide default nav  */
-  .floating-nav #bar-nav {
-    display: none !important;
-  }
-
-  .floating-nav #return-nav {
-    display: flex !important;
   }
 
   /* Hide tanstack devtools button */

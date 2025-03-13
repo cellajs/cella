@@ -10,7 +10,7 @@ scan({
 });
 
 // Import tailwindcss
-import '~/index.css';
+import '~/styling/index.css';
 
 // Boot with i18n & dayjs
 import '~/lib/dayjs';

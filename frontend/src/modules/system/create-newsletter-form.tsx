@@ -23,7 +23,7 @@ import { sendNewsletterBodySchema } from '#/modules/system/schema';
 import '@blocknote/shadcn/style.css';
 import '~/modules/common/blocknote/app-specific-custom/styles.css';
 import '~/modules/common/blocknote/styles.css';
-interface NewsletterFormProps {
+interface CreateNewsletterFormProps {
   organizationIds: string[];
 }
 
@@ -31,7 +31,7 @@ const formSchema = sendNewsletterBodySchema;
 
 type FormValues = z.infer<typeof formSchema>;
 
-const NewsletterForm = ({ organizationIds }: NewsletterFormProps) => {
+const CreateNewsletterForm = ({ organizationIds }: CreateNewsletterFormProps) => {
   const { t } = useTranslation();
 
   const [testOnly, setTestOnly] = useState<CheckedState>(false);
@@ -123,4 +123,4 @@ const NewsletterForm = ({ organizationIds }: NewsletterFormProps) => {
   );
 };
 
-export default NewsletterForm;
+export default CreateNewsletterForm;

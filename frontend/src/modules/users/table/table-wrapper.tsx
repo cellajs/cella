@@ -58,7 +58,7 @@ const UsersTable = () => {
     });
   };
 
-  const openRemoveDialog = () => {
+  const openDeleteDialog = () => {
     dialog(
       <DeleteUsers
         dialog
@@ -92,7 +92,7 @@ const UsersTable = () => {
         columns={columns}
         setColumns={setColumns}
         clearSelection={clearSelection}
-        openRemoveDialog={openRemoveDialog}
+        openDeleteDialog={openDeleteDialog}
         openInviteDialog={openInviteDialog}
       />
       <BaseDataTable

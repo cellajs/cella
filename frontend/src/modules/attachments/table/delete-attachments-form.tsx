@@ -11,19 +11,19 @@ interface Props {
   callback?: (attachments: Attachment[]) => void;
 }
 
-const RemoveAttachmentsForm = ({ attachments, entity, callback, dialog: isDialog }: Props) => {
+const DeleteAttachmentsForm = ({ attachments, entity, callback, dialog: isDialog }: Props) => {
   const { mutate: deleteAttachments, isPending } = useAttachmentDeleteMutation();
 
   const orgIdOrSlug = entity.membership?.organizationId || entity.id;
 
-  const onRemove = async () => {
+  const onDelete = async () => {
     deleteAttachments({ ids: attachments.map(({ id }) => id), orgIdOrSlug });
 
     if (isDialog) dialog.remove();
     callback?.(attachments);
   };
 
-  return <DeleteForm allowOfflineDelete={true} onDelete={onRemove} onCancel={() => dialog.remove()} pending={isPending} />;
+  return <DeleteForm allowOfflineDelete={true} onDelete={onDelete} onCancel={() => dialog.remove()} pending={isPending} />;
 };
 
-export default RemoveAttachmentsForm;
+export default DeleteAttachmentsForm;

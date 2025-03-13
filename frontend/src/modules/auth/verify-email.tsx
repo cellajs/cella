@@ -4,7 +4,7 @@ import { config } from 'config';
 import { ArrowRight, Check, Mail } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { sendVerificationEmail, verifyEmail } from '~/modules/auth/api';
-import AuthNotice from '~/modules/auth/notice';
+import AuthErrorNotice from '~/modules/auth/auth-error-notice';
 import { useTokenCheck } from '~/modules/auth/use-token-check';
 import Spinner from '~/modules/common/spinner';
 import { toaster } from '~/modules/common/toaster';
@@ -47,7 +47,7 @@ const VerifyEmail = () => {
   // Check token failed
   if (error)
     return (
-      <AuthNotice error={error}>
+      <AuthErrorNotice error={error}>
         {/* Show resend option if possible */}
         {error.status && ![404, 429].includes(error.status) && (
           <Button size="lg" onClick={() => resendVerification()} className="flex gap-2" disabled={isSuccess} loading={isPending}>
@@ -55,7 +55,7 @@ const VerifyEmail = () => {
             {isSuccess ? t('common:resend_sent') : t('common:resend_email')}
           </Button>
         )}
-      </AuthNotice>
+      </AuthErrorNotice>
     );
 
   return (

@@ -18,7 +18,7 @@ import { Button } from '~/modules/ui/button';
 
 type OrganizationsTableBarProps = BaseTableMethods &
   BaseTableBarProps<Organization, OrganizationsSearch> & {
-    openRemoveDialog: () => void;
+    openDeleteDialog: () => void;
     openNewsletterSheet: () => void;
     fetchExport: (limit: number) => Promise<Organization[]>;
   };
@@ -30,7 +30,7 @@ export const OrganizationsTableBar = ({
   setSearch,
   columns,
   setColumns,
-  openRemoveDialog,
+  openDeleteDialog,
   openNewsletterSheet,
   clearSelection,
   fetchExport,
@@ -61,7 +61,7 @@ export const OrganizationsTableBar = ({
                 <Mailbox size={16} />
                 <span className="ml-1 max-xs:hidden">{t('common:newsletter')}</span>
               </Button>
-              <Button variant="destructive" className="relative" onClick={openRemoveDialog}>
+              <Button variant="destructive" className="relative" onClick={openDeleteDialog}>
                 <Badge context="button">{selected.length}</Badge>
                 <Trash size={16} />
                 <span className="ml-1 max-lg:hidden">{t('common:remove')}</span>

@@ -7,8 +7,8 @@ import { AnimatePresence, motion } from 'motion/react';
 import { useTranslation } from 'react-i18next';
 import useSearchParams from '~/hooks/use-search-params';
 import { useColumns } from '~/modules/attachments/table/columns';
-import { useSync } from '~/modules/attachments/table/hooks/use-sync';
-import RemoveAttachmentsForm from '~/modules/attachments/table/remove-attachments-form';
+import DeleteAttachmentsForm from '~/modules/attachments/table/delete-attachments-form';
+import { useAttachmentsSync } from '~/modules/attachments/table/sync-attachments';
 import BaseDataTable from '~/modules/attachments/table/table';
 import { AttachmentsTableBar } from '~/modules/attachments/table/table-bar';
 import type { Attachment } from '~/modules/attachments/types';
@@ -38,7 +38,7 @@ const AttachmentsTable = ({ entity, canUpload = true, isSheet = false }: Attachm
   const { q, sort, order } = search;
   const limit = LIMIT;
 
-  useSync(entity.id);
+  useAttachmentsSync(entity.id);
 
   const [total, setTotal] = useState<number | undefined>(undefined);
   const [selected, setSelected] = useState<Attachment[]>([]);
@@ -52,8 +52,8 @@ const AttachmentsTable = ({ entity, canUpload = true, isSheet = false }: Attachm
     if (dataTableRef.current) dataTableRef.current.clearSelection();
   };
 
-  const openRemoveDialog = () => {
-    dialog(<RemoveAttachmentsForm entity={entity} dialog attachments={selected} callback={clearSelection} />, {
+  const openDeleteDialog = () => {
+    dialog(<DeleteAttachmentsForm entity={entity} dialog attachments={selected} callback={clearSelection} />, {
       className: 'max-w-xl',
       title: t('common:remove_resource', { resource: t('common:attachment').toLowerCase() }),
       description: t('common:confirm.delete_resources', { resources: t('common:attachments').toLowerCase() }),
@@ -71,7 +71,7 @@ const AttachmentsTable = ({ entity, canUpload = true, isSheet = false }: Attachm
         columns={columns}
         setColumns={setColumns}
         clearSelection={clearSelection}
-        openRemoveDialog={openRemoveDialog}
+        openDeleteDialog={openDeleteDialog}
         isSheet={isSheet}
         canUpload={canUpload}
         highDensity={highDensity}

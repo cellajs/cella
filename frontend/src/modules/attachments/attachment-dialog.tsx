@@ -7,7 +7,13 @@ import { attachmentsQueryOptions } from '~/modules/attachments/query/options';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import Spinner from '~/modules/common/spinner';
 
-const AttachmentDialog = ({ attachmentId, groupId, orgIdOrSlug }: { attachmentId: string; groupId?: string; orgIdOrSlug: string }) => {
+interface AttachmentDialogProps {
+  attachmentId: string;
+  groupId?: string;
+  orgIdOrSlug: string;
+}
+
+const AttachmentDialog = ({ attachmentId, groupId, orgIdOrSlug }: AttachmentDialogProps) => {
   const { t } = useTranslation();
   const { isOnline } = useOnlineManager();
 

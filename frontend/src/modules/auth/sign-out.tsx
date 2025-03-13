@@ -1,4 +1,5 @@
 import { useNavigate, useSearch } from '@tanstack/react-router';
+import { Heart } from 'lucide-react';
 import { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { signOut } from '~/modules/auth/api';
@@ -12,6 +13,7 @@ import { useNavigationStore } from '~/store/navigation';
 import { useSyncStore } from '~/store/sync';
 import { useUIStore } from '~/store/ui';
 import { useUserStore } from '~/store/user';
+import ContentPlaceholder from '../common/content-placeholder';
 
 export const flushStoresAndCache = (removeAccount?: boolean) => {
   queryClient.clear();
@@ -30,6 +32,7 @@ export const flushStoresAndCache = (removeAccount?: boolean) => {
 export const SignOut = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
+
   const { force } = useSearch({ from: SignOutRoute.id });
 
   const signOutTriggeredRef = useRef(false);
@@ -53,5 +56,5 @@ export const SignOut = () => {
     performSignOut();
   }, []);
 
-  return null;
+  return <ContentPlaceholder className="h-screen" Icon={Heart} title={t('common:signing_out')} />;
 };

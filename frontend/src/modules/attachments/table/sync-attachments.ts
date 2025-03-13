@@ -4,12 +4,12 @@ import { config } from 'config';
 import { useEffect } from 'react';
 import { env } from '~/env';
 import { useOnlineManager } from '~/hooks/use-online-manager';
-import { type CamelToSnakeObject, convertMessageInfo } from '~/lib/use-sync';
-import { handleDelete, handleInsert, handleUpdate } from '~/modules/attachments/table/hooks/use-sync/operation-handlers';
+import { handleDelete, handleInsert, handleUpdate } from '~/modules/attachments/table/sync-handlers';
 import type { Attachment } from '~/modules/attachments/types';
 import { useSyncStore } from '~/store/sync';
+import { type CamelToSnakeObject, convertMessageInfo } from '~/utils/electric-utils';
 
-// Configures ShapeStream options for real-time syncing of attachments
+// Configure ShapeStream options
 const attachmentShape = (organizationId: string): ShapeStreamOptions => ({
   url: new URL(`/${organizationId}/attachments/shape-proxy`, config.backendUrl).href,
   params: { where: `organization_id = '${organizationId}'` },
@@ -27,8 +27,11 @@ const attachmentShape = (organizationId: string): ShapeStreamOptions => ({
 
 type RawAttachment = CamelToSnakeObject<Attachment>;
 
-// Custom hook to sync attachments in real-time for a specific organization
-export const useSync = (organizationId: string) => {
+/**
+ * Hook to receive attachments updates in real-time for a specific organization using electric ShapeStream
+ * @param organizationId - Organization ID
+ */
+export const useAttachmentsSync = (organizationId: string) => {
   const { isOnline } = useOnlineManager();
   const { getSyncData, setSyncData } = useSyncStore();
 

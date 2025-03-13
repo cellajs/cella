@@ -23,7 +23,7 @@ type MembersTableBarProps = MembersTableProps &
   BaseTableBarProps<Member, MemberSearch> & {
     role: MemberSearch['role'];
     openInviteDialog: (container: HTMLElement | null) => void;
-    openRemoveDialog: () => void;
+    openDeleteDialog: () => void;
     fetchExport: (limit: number) => Promise<Member[]>;
   };
 
@@ -40,7 +40,7 @@ export const MembersTableBar = ({
   fetchExport,
   clearSelection,
   openInviteDialog,
-  openRemoveDialog,
+  openDeleteDialog,
 }: MembersTableBarProps) => {
   const { t } = useTranslation();
   const containerRef = useRef(null);
@@ -73,7 +73,7 @@ export const MembersTableBar = ({
           <FilterBarActions>
             {selected.length > 0 ? (
               <>
-                <Button asChild variant="destructive" onClick={openRemoveDialog} className="relative">
+                <Button asChild variant="destructive" onClick={openDeleteDialog} className="relative">
                   <motion.button layout="size" layoutRoot transition={{ duration: 0.1 }} layoutId="members-filter-bar-button">
                     <Badge context="button">{selected.length}</Badge>
                     <motion.span layoutId="members-filter-bar-icon">

@@ -50,7 +50,7 @@ export const config = {
     'frontend/src/menu-config.tsx',
     'frontend/src/alert-config.tsx',
     'frontend/src/offline-config.tsx',
-    'frontend/src/gradients.css',
+    'frontend/src/styling/gradients.css',
     'frontend/src/routes/route-tree.tsx',
     'frontend/src/routes/marketing.tsx',
     'frontend/src/lib/custom-events/app-types.ts',

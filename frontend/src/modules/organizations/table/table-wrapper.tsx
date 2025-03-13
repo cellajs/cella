@@ -18,8 +18,8 @@ import { useColumns } from '~/modules/organizations/table/columns';
 import BaseDataTable from '~/modules/organizations/table/table';
 import { OrganizationsTableBar } from '~/modules/organizations/table/table-bar';
 import type { Organization } from '~/modules/organizations/types';
+import CreateNewsletterForm from '~/modules/system/create-newsletter-form';
 import NewsletterDraft from '~/modules/system/newsletter-draft';
-import NewsletterForm from '~/modules/system/newsletter-form';
 import { OrganizationsTableRoute, type organizationsSearchSchema } from '~/routes/system';
 
 const LIMIT = config.requestLimits.organizations;
@@ -50,7 +50,7 @@ const OrganizationsTable = () => {
     if (dataTableRef.current) dataTableRef.current.clearSelection();
   };
 
-  const openRemoveDialog = () => {
+  const openDeleteDialog = () => {
     dialog(
       <DeleteOrganizations
         organizations={selected}
@@ -73,7 +73,7 @@ const OrganizationsTable = () => {
   const openNewsletterSheet = () => {
     const ids = selected.map((o) => o.id);
     const newsletterTabs = [
-      { id: 'write', label: 'common:write', element: <NewsletterForm organizationIds={ids} /> },
+      { id: 'write', label: 'common:write', element: <CreateNewsletterForm organizationIds={ids} /> },
       { id: 'preview', label: 'common:preview', element: <NewsletterDraft /> },
     ];
 
@@ -103,7 +103,7 @@ const OrganizationsTable = () => {
         setSearch={setSearch}
         setColumns={setColumns}
         clearSelection={clearSelection}
-        openRemoveDialog={openRemoveDialog}
+        openDeleteDialog={openDeleteDialog}
         openNewsletterSheet={openNewsletterSheet}
         fetchExport={fetchExport}
       />

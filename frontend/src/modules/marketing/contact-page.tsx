@@ -3,7 +3,7 @@ import { ArrowUpRight, CalendarCheck, Mail, MapPin, PhoneCall } from 'lucide-rea
 
 import { useTranslation } from 'react-i18next';
 import ContactFormMap from '~/modules/common/contact-form/contact-form';
-import PublicPage from '~/modules/marketing/page';
+import MarketingLayout from '~/modules/marketing/layout';
 
 const methods = [
   { icon: MapPin, title: 'common:visit', link: config.company.googleMapsUrl, text: config.company.streetAddress },
@@ -14,10 +14,11 @@ if (config.company.scheduleCallUrl)
   methods.push({ icon: CalendarCheck, title: 'common:book', link: config.company.scheduleCallUrl, text: 'common:schedule_call.text' });
 if (config.company.tel) methods.push({ icon: PhoneCall, title: 'common:call', link: `tel:${config.company.tel}`, text: config.company.tel });
 
-const Contact = () => {
+const ContactPage = () => {
   const { t } = useTranslation();
+
   return (
-    <PublicPage title="common:contact_us">
+    <MarketingLayout title="common:contact_us">
       <div className="container pb-16 pt-20">
         <h1 className="mb-4 text-3xl font-semibold text-center sm:text-left md:text-4xl">{t('common:leave_message.text')}</h1>
         <p className="mb-8 text-muted-foreground text-center sm:text-left sm:text-lg">{t('common:contact_us.text')}</p>
@@ -48,8 +49,8 @@ const Contact = () => {
           ))}
         </div>
       </div>
-    </PublicPage>
+    </MarketingLayout>
   );
 };
 
-export default Contact;
+export default ContactPage;

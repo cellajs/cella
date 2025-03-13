@@ -10,7 +10,7 @@ import { config } from 'config';
 import { ArrowRight } from 'lucide-react';
 import { Suspense, lazy } from 'react';
 import { createPassword } from '~/modules/auth/api';
-import AuthNotice from '~/modules/auth/notice';
+import AuthErrorNotice from '~/modules/auth/auth-error-notice';
 import { RequestPasswordDialog } from '~/modules/auth/request-password-dialog';
 import { useTokenCheck } from '~/modules/auth/use-token-check';
 import Spinner from '~/modules/common/spinner';
@@ -64,11 +64,11 @@ const CreatePasswordForm = () => {
   // If error, allow to request new password reset
   if (error || resetPasswordError)
     return (
-      <AuthNotice error={error || resetPasswordError}>
+      <AuthErrorNotice error={error || resetPasswordError}>
         <RequestPasswordDialog email={data?.email}>
           <Button size="lg">{t('common:forgot_password')}</Button>
         </RequestPasswordDialog>
-      </AuthNotice>
+      </AuthErrorNotice>
     );
 
   if (!data?.email) return null;

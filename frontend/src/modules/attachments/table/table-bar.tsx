@@ -18,7 +18,7 @@ type AttachmentsTableBarProps = AttachmentsTableProps &
   BaseTableMethods &
   BaseTableBarProps<Attachment, AttachmentSearch> & {
     highDensity: boolean;
-    openRemoveDialog: () => void;
+    openDeleteDialog: () => void;
     toggleDensityView: (highDensity: boolean) => void;
   };
 
@@ -33,7 +33,7 @@ export const AttachmentsTableBar = ({
   highDensity,
   toggleDensityView,
   clearSelection,
-  openRemoveDialog,
+  openDeleteDialog,
   isSheet = false,
   canUpload = true,
 }: AttachmentsTableBarProps) => {
@@ -60,7 +60,7 @@ export const AttachmentsTableBar = ({
         <FilterBarActions>
           {selected.length > 0 ? (
             <>
-              <Button asChild variant="destructive" onClick={openRemoveDialog} className="relative">
+              <Button asChild variant="destructive" onClick={openDeleteDialog} className="relative">
                 <motion.button layout="size" layoutRoot transition={{ duration: 0.1 }} layoutId="members-filter-bar-button">
                   <Badge context="button">{selected.length}</Badge>
                   <motion.span layoutId="attachments-filter-bar-icon">

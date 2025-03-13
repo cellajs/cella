@@ -2,8 +2,9 @@ import { useSearch } from '@tanstack/react-router';
 import { config } from 'config';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import AuthErrorNotice from '~/modules/auth/auth-error-notice';
 import { CheckEmailForm } from '~/modules/auth/check-email-form';
-import AuthNotice from '~/modules/auth/notice';
+import { shouldShowDivider } from '~/modules/auth/helpers';
 import OauthOptions from '~/modules/auth/oauth-options';
 import PasskeyOption from '~/modules/auth/passkey-option';
 import { SignInForm } from '~/modules/auth/sign-in-form';
@@ -14,7 +15,6 @@ import { WaitlistForm } from '~/modules/auth/waitlist-form';
 import Spinner from '~/modules/common/spinner';
 import { AuthenticateRoute } from '~/routes/auth';
 import { useUserStore } from '~/store/user';
-import { shouldShowDivider } from '~/utils';
 
 const enabledStrategies: readonly string[] = config.enabledAuthenticationStrategies;
 const emailEnabled = enabledStrategies.includes('password') || enabledStrategies.includes('passkey');
@@ -52,7 +52,7 @@ const AuthSteps = () => {
   }, [data]);
 
   if (isLoading) return <Spinner className="h-10 w-10" />;
-  if (error) return <AuthNotice error={error} />;
+  if (error) return <AuthErrorNotice error={error} />;
 
   // Render form based on current step
   return (

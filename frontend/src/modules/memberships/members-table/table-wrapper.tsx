@@ -71,7 +71,7 @@ const MembersTable = ({ entity: baseEntity, isSheet = false }: MembersTableProps
     });
   };
 
-  const openRemoveDialog = () => {
+  const openDeleteDialog = () => {
     dialog(
       <RemoveMembersForm
         organizationId={organizationId}
@@ -135,7 +135,7 @@ const MembersTable = ({ entity: baseEntity, isSheet = false }: MembersTableProps
         setColumns={setColumns}
         fetchExport={fetchExport}
         clearSelection={clearSelection}
-        openRemoveDialog={openRemoveDialog}
+        openDeleteDialog={openDeleteDialog}
         openInviteDialog={openInviteDialog}
         isSheet={isSheet}
       />

@@ -19,7 +19,7 @@ type UsersTableBarProps = BaseTableMethods &
   BaseTableBarProps<User, UsersSearch> & {
     role: UsersSearch['role'];
     openInviteDialog: (container: HTMLElement | null) => void;
-    openRemoveDialog: () => void;
+    openDeleteDialog: () => void;
   };
 
 export const UsersTableBar = ({
@@ -32,7 +32,7 @@ export const UsersTableBar = ({
   setColumns,
   clearSelection,
   openInviteDialog,
-  openRemoveDialog,
+  openDeleteDialog,
 }: UsersTableBarProps) => {
   const { t } = useTranslation();
   const containerRef = useRef(null);
@@ -63,7 +63,7 @@ export const UsersTableBar = ({
           <FilterBarActions>
             {selected.length > 0 ? (
               <>
-                <Button asChild variant="destructive" onClick={openRemoveDialog} className="relative">
+                <Button asChild variant="destructive" onClick={openDeleteDialog} className="relative">
                   <motion.button layout="size" layoutRoot transition={{ duration: 0.1 }} layoutId="members-filter-bar-button">
                     <Badge context="button">{selected.length}</Badge>
                     <motion.span layoutId="members-filter-bar-icon">
