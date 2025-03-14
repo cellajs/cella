@@ -43,7 +43,7 @@ export const useAlertStore = create<AlertStoreState>()(
         }),
         {
           version: 1,
-          name: `${config.slug}-alerts-seen`,
+          name: `${config.slug}-alerts`,
           partialize: (state) => ({
             alertsSeen: state.alertsSeen,
             downAlert: state.downAlert,

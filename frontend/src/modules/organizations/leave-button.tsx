@@ -6,6 +6,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toaster } from '~/modules/common/toaster';
 import { leaveEntity } from '~/modules/me/api';
+import { deleteMenuItem } from '~/modules/navigation/menu-sheet/helpers/menu-operations';
 import type { Organization } from '~/modules/organizations/types';
 import { Button } from '~/modules/ui/button';
 import { Command, CommandGroup, CommandItem, CommandList } from '~/modules/ui/command';
@@ -16,18 +17,20 @@ const LeaveButton = ({ organization }: { organization: Organization }) => {
   const navigate = useNavigate();
   const [openPopover, setOpenPopover] = useState(false);
 
-  const { mutate: _leaveEntity } = useMutation({ mutationFn: leaveEntity });
+  const { mutate: _leaveEntity } = useMutation({
+    mutationFn: leaveEntity,
+    onSuccess: () => {
+      toaster(t('common:success.you_left_organization'), 'success');
+      navigate({ to: config.defaultRedirectPath, replace: true });
+      deleteMenuItem(organization.id);
+    },
+  });
 
   const onLeave = () => {
     if (!onlineManager.isOnline()) return toaster(t('common:action.offline.text'), 'warning');
     const queryParams = { idOrSlug: organization.slug, entityType: 'organization' as const };
 
-    _leaveEntity(queryParams, {
-      onSuccess: () => {
-        toaster(t('common:success.you_left_organization'), 'success');
-        navigate({ to: config.defaultRedirectPath, replace: true });
-      },
-    });
+    _leaveEntity(queryParams);
   };
 
   return (

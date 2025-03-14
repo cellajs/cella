@@ -12,8 +12,10 @@ import { queryClient } from '~/query/query-client';
  * For managing query caching and invalidation.
  */
 export const meKeys = {
-  all: ['me'] as const,
-  update: () => [...meKeys.all, 'update'] as const,
+  me: ['me'] as const,
+  menu: ['menu'] as const,
+  auth: () => [...meKeys.me, 'auth'] as const,
+  update: () => [...meKeys.me, 'update'] as const,
 };
 
 /**
@@ -21,21 +23,21 @@ export const meKeys = {
  *
  * @returns Query options.
  */
-export const meQueryOptions = () => queryOptions({ queryKey: meKeys.all, queryFn: getAndSetMe });
+export const meQueryOptions = () => queryOptions({ queryKey: meKeys.me, queryFn: getAndSetMe });
 
 /**
  * Query options for fetching the authentication information of the current authenticated user.
  *
  * @returns Query options.
  */
-export const userAuthQueryOptions = () => queryOptions({ queryKey: [], queryFn: getAndSetUserAuthInfo, staleTime: 0 });
+export const meAuthQueryOptions = () => queryOptions({ queryKey: meKeys.auth(), queryFn: getAndSetUserAuthInfo, staleTime: 0 });
 
 /**
  * Query options for fetching the current authenticated user's menu.
  *
  * @returns Query options.
  */
-export const menuQueryOptions = () => queryOptions({ queryKey: ['menu'], queryFn: getAndSetMenu });
+export const menuQueryOptions = () => queryOptions({ queryKey: meKeys.menu, queryFn: getAndSetMenu });
 
 /**
  * Mutation hook for updating current user (self)

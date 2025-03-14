@@ -3,7 +3,7 @@ import type React from 'react';
 import { Button } from '~/modules/ui/button';
 import { cn } from '~/utils/cn';
 
-interface FloatingNavButtonProps {
+interface Props {
   id: string;
   Icon: React.ElementType<LucideProps>;
   onClick: () => void;
@@ -11,7 +11,7 @@ interface FloatingNavButtonProps {
   direction?: 'left' | 'right';
 }
 
-const FloatingNavButton: React.FC<FloatingNavButtonProps> = ({ id, Icon, onClick, className, direction = 'right' }) => {
+const FloatingNavButton = ({ id, Icon, onClick, className, direction = 'right' }: Props) => {
   return (
     <Button
       id={id}

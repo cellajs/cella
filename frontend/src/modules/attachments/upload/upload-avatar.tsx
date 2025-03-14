@@ -1,4 +1,5 @@
 import { onlineManager } from '@tanstack/react-query';
+import { config } from 'config';
 import { Trash, Upload } from 'lucide-react';
 import { Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -51,12 +52,18 @@ export const UploadAvatar = ({ type, id, name, url, setUrl }: UploadAvatarProps)
       <AvatarWrap type={type} className="h-16 w-16" id={id} name={name} url={url} />
 
       <div className="flex flex-col gap-2">
-        <p className="font-light text-xs sm:text-sm">{t('common:upload_img_max_10mb.text')}</p>
+        {config.has.imado ? (
+          <p className="font-light text-xs sm:text-sm">{t('common:upload_img_max_10mb.text')}</p>
+        ) : (
+          config.mode === 'development' && <p className="font-light text-xs sm:text-sm">{t('common:restrict_image_upload')}</p>
+        )}
         <div className="flex gap-2 items-center">
-          <Button variant="plain" type="button" size="sm" onClick={openUploadDialog} onMouseOver={() => UploadUppy.preload()}>
-            <Upload size={16} className="mr-2" />
-            <span>{t('common:upload')}</span>
-          </Button>
+          {config.has.imado && (
+            <Button variant="plain" type="button" size="sm" onClick={openUploadDialog} onMouseOver={() => UploadUppy.preload()}>
+              <Upload size={16} className="mr-2" />
+              <span>{t('common:upload')}</span>
+            </Button>
+          )}
 
           {url && (
             <Button variant="secondary" onClick={removeImage} size="sm">

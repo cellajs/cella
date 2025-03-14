@@ -6,7 +6,7 @@ import { useTranslation } from 'react-i18next';
 import Logo from '~/modules/common/logo';
 import { BackgroundCurve } from '~/modules/marketing/about/hero';
 import { footerSections, legalLinks } from '~/modules/marketing/marketing-config';
-import SubscribeNewsletterForm from '~/modules/marketing/newsletter';
+import SubscribeNewsletterForm from '~/modules/marketing/subscribe-newsletter-form';
 
 const currentYear = new Date().getFullYear();
 const companyName = config.company.name;

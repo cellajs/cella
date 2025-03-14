@@ -3,7 +3,7 @@ import yoctoSpinner from 'yocto-spinner';
 import colors from 'picocolors';
 
 import { fetchRemote } from './fetch-remote.ts';
-import { runGitCommand } from './utils/run-git-command.ts';
+import { runGitCommand, getLatestFileCommitInfo } from './utils/run-git-command.ts';
 import { extractIgnorePatterns, excludeByIgnorePatterns } from './utils/ignore-patterns.ts';
 
 export interface DivergedOptions {
@@ -13,6 +13,12 @@ export interface DivergedOptions {
   upstreamBranch: string;
   localBranch: string;
 }
+
+type DiffStatInfo = {
+  statLine: string;
+  hash?: string;
+  date?: string;
+};
 
 export async function diverged({
   divergedFile,
@@ -66,12 +72,19 @@ export async function diverged({
   }).start();
 
   let divergedFiles: string = '';
+  let divergedDiff: string = '';
 
   try {
     // Get the list of diverged files by comparing local branch and upstream branch
     divergedFiles = await runGitCommand({
       targetFolder,
       command: `diff --name-only ${localBranch} upstream/${upstreamBranch}`,
+    });
+
+    // Get the diff of diverged files (for showing in UI)
+    divergedDiff = await runGitCommand({
+      targetFolder,
+      command: `diff ${localBranch} upstream/${upstreamBranch} --stat=200 --color=always`,
     });
 
     divergedSpinner.success('Found diverged files between upstream and local branch.');
@@ -121,10 +134,69 @@ export async function diverged({
     await rm(divergedFile, { force: true });
   }
 
+  // Prepare the final output
+  const commitInfoSpinner = yoctoSpinner({
+    text: 'Processing diverged files...',
+  }).start();
+
+  // Split the diff stat output line by line
+  const divergedDiffLines = divergedDiff.split('\n');
+
+  // Build a Map: file name => diff stat line
+  const diffStatMap = new Map<string, DiffStatInfo>();
+
+  divergedDiffLines.forEach((line) => {
+    const fileName = line.split('|')[0]?.trim();
+
+    if (fileName) {
+      diffStatMap.set(fileName, {
+        statLine: line,
+      });
+    }
+  });
+
+  // Fetch commit info for each file
+  const commitInfoPromises = Array.from(diffStatMap.keys()).map(async (fileName) => {
+    const { hash, date } = await getLatestFileCommitInfo(targetFolder, fileName);
+
+    const existing = diffStatMap.get(fileName);
+    if (existing) {
+      diffStatMap.set(fileName, {
+        ...existing,
+        hash,
+        date,
+      });
+    }
+  });
+
+  // Wait for all promises to resolve
+  await Promise.all(commitInfoPromises);
+
+  commitInfoSpinner.success('Diverged files processed and commit info fetched.');
+
   console.info();
 
   // Log each diverged file line by line for clickable paths in VSCode
-  filteredFiles.forEach((file) => console.info(`./${file}`));
+  console.info('====================');
+
+  filteredFiles.forEach((file) => {
+    const info = diffStatMap.get(file);
+  
+    if (info) {
+      const { statLine, hash, date } = info;
+  
+      // Colorize the output using picocolors
+      const coloredHash = hash ? colors.yellow(hash) : colors.dim('no commits');
+      const coloredDate = date ? colors.green(date) : colors.dim('N/A');
+  
+      console.info(`${statLine}\t(${coloredHash} on ${coloredDate})`);
+    } else {
+      // Fallback: show clickable file path
+      console.info(`./${file}`);
+    }
+  });
+  
+  console.info('====================');
 
   console.info();
   console.info(`Found ${colors.blue(filteredFiles.length.toString())} diverged files between the upstream and local branch.`);

@@ -10,18 +10,18 @@ interface MenuSheetItemsProps {
   data: UserMenuItem[];
   type: ContextEntity;
   shownOption: 'archived' | 'unarchive';
-  createDialog?: () => void;
+  createAction?: () => void;
   className?: string;
 }
 
-export const MenuSheetItems = ({ data, type, shownOption, createDialog, className }: MenuSheetItemsProps) => {
+export const MenuSheetItems = ({ data, type, shownOption, createAction, className }: MenuSheetItemsProps) => {
   const { t } = useTranslation();
   const hideSubmenu = useNavigationStore((state) => state.hideSubmenu);
 
   const renderNoItems = () =>
-    createDialog ? (
+    createAction ? (
       <div className="flex items-center">
-        <Button className="w-full" variant="ghost" onClick={createDialog}>
+        <Button className="w-full" variant="ghost" onClick={createAction}>
           <Plus size={14} />
           <span className="ml-1 text-sm text-light">
             {t('common:create_your_first')} {t(type).toLowerCase()}

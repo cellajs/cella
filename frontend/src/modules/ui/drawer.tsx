@@ -81,7 +81,7 @@ DrawerFooter.displayName = 'DrawerFooter';
 
 const DrawerTitle = React.forwardRef<React.ComponentRef<typeof DrawerPrimitive.Title>, React.ComponentPropsWithoutRef<typeof DrawerPrimitive.Title>>(
   ({ className, ...props }, ref) => (
-    <DrawerPrimitive.Title ref={ref} className={cn('text-lg text-left font-semibold leading-none tracking-tight', className)} {...props} />
+    <DrawerPrimitive.Title ref={ref} className={cn('text-lg text-left font-semibold leading-none tracking-tight min-h-6', className)} {...props} />
   ),
 );
 DrawerTitle.displayName = DrawerPrimitive.Title.displayName;

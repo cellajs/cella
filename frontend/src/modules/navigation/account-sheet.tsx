@@ -23,7 +23,7 @@ type AccountButtonProps = {
 } & ({ offlineAccess: false; isOnline: boolean } | { offlineAccess: true; isOnline?: never });
 
 // Create a button for each account action
-const AccountButton: React.FC<AccountButtonProps> = ({ offlineAccess, isOnline, lucide: Icon, label, id, action }) => {
+const AccountButton = ({ offlineAccess, isOnline, lucide: Icon, label, id, action }: AccountButtonProps) => {
   const { t } = useTranslation();
 
   const isDisabled = offlineAccess ? false : !isOnline;

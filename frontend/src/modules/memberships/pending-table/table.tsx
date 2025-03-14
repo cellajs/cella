@@ -5,7 +5,7 @@ import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { DataTable } from '~/modules/common/data-table';
 import type { BaseTableMethods, BaseTableProps } from '~/modules/common/data-table/types';
 import type { MembershipInvitationsSearch, MembershipInvitationsTableProps } from '~/modules/memberships/pending-table/table-wrapper';
-import { memberInvitationsQueryOptions } from '~/modules/memberships/query';
+import { memberInvitationsQueryOptions } from '~/modules/memberships/query/options';
 import type { InvitedMember } from '~/modules/memberships/types';
 import { useDataFromInfiniteQuery } from '~/query/hooks/use-data-from-query';
 

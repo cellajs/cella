@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AlertWrap } from '~/modules/common/alert-wrap';
 import { dialog } from '~/modules/common/dialoger/state';
+import UnsavedBadge from '~/modules/common/unsaved-badge';
 import type { EntityPage } from '~/modules/entities/types';
 import { ToggleGroup, ToggleGroupItem } from '~/modules/ui/toggle-group';
 import InviteEmailForm from '~/modules/users/invite-email-form';
@@ -24,16 +25,21 @@ const InviteUsers = ({ entity, callback, dialog: isDialog, mode, children }: Inv
   const [inviteMode, setInviteMode] = useState(mode);
 
   const updateMode = (mode: string[]) => {
+    // If mode is empty, go back to initial state
     mode[0] ? setInviteMode(mode[0]) : setInviteMode(null);
-    dialog.update(`user-invite-${entity?.id ?? 'system'}`, {
-      title: (
+
+    // Update dialog title
+    dialog.update('invite-users', {
+      titleContent: (
         <div className="flex items-center gap-2">
           {mode[0] ? (
             <button type="button" aria-label="Go back" onClick={() => updateMode([])}>
               {t('common:invite')}
             </button>
           ) : (
-            <div>{t('common:invite')}</div>
+            <div>
+              <UnsavedBadge title={t('common:invite')} />
+            </div>
           )}
           <AnimatePresence>
             {mode[0] && (
@@ -45,7 +51,7 @@ const InviteUsers = ({ entity, callback, dialog: isDialog, mode, children }: Inv
                 transition={{ type: 'spring', bounce: 0, duration: 0.4 }}
               >
                 <ChevronRight className="opacity-50" size={16} />
-                {mode[0] === 'search' ? t('common:search') : t('common:email')}
+                <UnsavedBadge title={mode[0] === 'search' ? t('common:search') : t('common:email')} />
               </motion.span>
             )}
           </AnimatePresence>

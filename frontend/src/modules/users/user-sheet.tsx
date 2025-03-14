@@ -4,21 +4,19 @@ import { useTranslation } from 'react-i18next';
 import { useOnlineManager } from '~/hooks/use-online-manager';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import Spinner from '~/modules/common/spinner';
-import { membersKeys } from '~/modules/memberships/query';
-import type { Member } from '~/modules/memberships/types';
-import { findUserFromQueries } from '~/modules/users/helpers';
+import { membersKeys } from '~/modules/memberships/query/options';
+import { findUserFromCache } from '~/modules/users/helpers';
 import UserProfilePage from '~/modules/users/profile-page';
 import { userQueryOptions } from '~/modules/users/query';
-import { getSimilarQueries } from '~/query/helpers/mutate-query';
 
 const UserSheet = ({ idOrSlug, orgIdOrSlug }: { idOrSlug: string; orgIdOrSlug?: string }) => {
   const { t } = useTranslation();
   const { isOnline } = useOnlineManager();
 
-  const memberQueries = getSimilarQueries<Member>([...membersKeys.list(), { orgIdOrSlug }]);
-
   // Search for the user in cached queries
-  const cachedUser = findUserFromQueries(memberQueries, idOrSlug);
+  const memberKey = [...membersKeys.list(), { orgIdOrSlug }];
+  const cachedUser = findUserFromCache(memberKey, idOrSlug);
+
   const { data, isError, isLoading } = useQuery(userQueryOptions(idOrSlug));
 
   // Use the cached user if available, otherwise fallback to the server-fetched data

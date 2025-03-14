@@ -15,11 +15,10 @@ export type DialogT = {
   containerBackdropClassName?: string;
   autoFocus?: boolean;
   hideClose?: boolean;
+  // TODO not used?
   preventEscPress?: boolean;
   content?: React.ReactNode;
   titleContent?: string | React.ReactNode;
-  addToTitle?: boolean;
-  useDefaultTitle?: boolean;
   open?: boolean;
   removeCallback?: () => void;
 };
@@ -39,10 +38,12 @@ export type ExternalDialog = Omit<DialogT, 'id' | 'content'> & {
   id?: number | string;
 };
 
-export const isDialog = (dialog: DialogT | DialogToRemove): dialog is DialogT => {
+export const isDialog = (dialog?: DialogT | DialogToRemove): dialog is DialogT => {
+  if (!dialog) return false;
   return !('remove' in dialog);
 };
 
+// TODO rewrite to functional component and reduce type complexity
 class Observer {
   subscribers: Array<(dialog: DialogT | DialogToRemove | DialogToReset) => void>;
   dialogs: (DialogT | DialogToRemove | DialogToReset)[];
@@ -78,7 +79,8 @@ class Observer {
     this.publish(data);
   };
 
-  get = (id: number | string) => this.dialogs.find((dialog) => dialog.id === id);
+  // TODO type assertion
+  get = (id: number | string) => this.dialogs.find((dialog) => dialog.id === id) as DialogT;
 
   hasOpenDialogs = () => this.dialogs.some((d) => isDialog(d) && d.open);
 

@@ -84,25 +84,35 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
 );
 Button.displayName = 'Button';
 
-const SubmitButton = React.forwardRef<HTMLButtonElement, Omit<ButtonProps, 'type'>>(({ onClick, children, ...props }, ref) => {
-  const { isOnline } = useOnlineManager();
+const SubmitButton = React.forwardRef<HTMLButtonElement, Omit<ButtonProps, 'type'> & { allowOfflineDelete?: boolean }>(
+  ({ onClick, children, allowOfflineDelete = false, ...props }, ref) => {
+    const { isOnline } = useOnlineManager();
 
-  const handleClick: React.MouseEventHandler<HTMLButtonElement> = (e) => {
-    if (!isOnline) {
-      e.preventDefault();
-      return toaster(t('common:action.offline.text'), 'warning');
-    }
-    onClick?.(e);
-  };
+    const handleClick: React.MouseEventHandler<HTMLButtonElement> = (e) => {
+      if (!allowOfflineDelete && !isOnline) {
+        e.preventDefault();
+        return toaster(t('common:action.offline.text'), 'warning');
+      }
+      onClick?.(e);
+    };
 
-  const buttonContent = (
-    <Button ref={ref} type="submit" onClick={handleClick} {...props}>
-      {!isOnline && <TriangleAlert className="mr-2" size={16} />}
-      {children}
-    </Button>
-  );
+    const buttonContent = (
+      <Button ref={ref} type="submit" onClick={handleClick} {...props}>
+        {!allowOfflineDelete && !isOnline && <TriangleAlert className="mr-2" size={16} />}
+        {children}
+      </Button>
+    );
 
-  return <>{isOnline ? buttonContent : <TooltipButton toolTipContent={t('common:offline.text_with_info')}>{buttonContent}</TooltipButton>}</>;
-});
+    return (
+      <>
+        {!allowOfflineDelete && !isOnline ? (
+          <TooltipButton toolTipContent={t('common:offline.text_with_info')}>{buttonContent}</TooltipButton>
+        ) : (
+          buttonContent
+        )}
+      </>
+    );
+  },
+);
 
 export { Button, SubmitButton, buttonVariants };

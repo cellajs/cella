@@ -338,7 +338,7 @@ type TagListProps = Pick<TagInputProps, 'tags' | 'badgeVariants' | 'direction' |
   onRemoveTag: (id: string) => void;
 };
 
-const TagList: React.FC<TagListProps> = ({ tags, direction, classStyleProps, onTagClick, onRemoveTag, activeTagIndex, badgeVariants }) => {
+const TagList = ({ tags, direction, classStyleProps, onTagClick, onRemoveTag, activeTagIndex, badgeVariants }: TagListProps) => {
   return (
     <div
       className={cn(

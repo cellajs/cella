@@ -363,6 +363,7 @@
   "unknown_inviter": "an inviter",
   "unknown_organization": "an organization",
   "unmute": "Unmute",
+  "signing_out": "Signing out ... Enjoy your day!",
   "unsaved_changes": "Unsaved changes",
   "unselected": "Unselected",
   "unsubscribe_text": "Our newsletter will not be sent to {{email}}. You can opt back in by changing your settings.",
@@ -418,5 +419,6 @@
   "copied": "Copied!",
   "download": "Download",
   "normal_density": "Normal density",
-  "high_density": "High density"
+  "high_density": "High density",
+  "restrict_image_upload": "Image upload blocked, imado disabled."
 }

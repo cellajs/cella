@@ -3,7 +3,6 @@ import { t } from 'i18next';
 
 import { decodeBase64, encodeBase64 } from '@oslojs/encoding';
 import { onlineManager } from '@tanstack/react-query';
-import { toast } from 'sonner';
 import { authenticateWithPasskey, getPasskeyChallenge } from '~/modules/auth/api';
 import { toaster } from '~/modules/common/toaster';
 import { deletePasskey as baseRemovePasskey, createPasskey, getSelf, getSelfAuthInfo, getSelfMenu } from '~/modules/me/api';
@@ -73,15 +72,16 @@ export const passkeyRegistration = async () => {
 
     const result = await createPasskey(credentialData);
 
-    if (!result) toast.error(t('error:passkey_add_failed'));
+    if (!result) toaster(t('error:passkey_add_failed'), 'error');
 
-    toast.success(t('common:success.passkey_added'));
+    toaster(t('common:success.passkey_added'), 'success');
+
     useUserStore.getState().setUserAuthInfo({ passkey: true });
     return result;
   } catch (error) {
     // On cancel throws error NotAllowedError
     console.error('Error during passkey registration:', error);
-    toast.error(t('error:passkey_add_failed'));
+    toaster(t('error:passkey_add_failed'), 'error');
     return false;
   }
 };
@@ -123,9 +123,9 @@ export const passkeyAuth = async (userEmail: string, callback?: () => void) => {
 
     const success = await authenticateWithPasskey(credentialData);
     if (success) callback?.();
-    else toast.error(t('error:passkey_sign_in'));
+    else toaster(t('error:passkey_sign_in'), 'error');
   } catch (err) {
-    toast.error(t('error:passkey_sign_in'));
+    toaster(t('error:passkey_sign_in'), 'error');
   }
 };
 
@@ -140,16 +140,17 @@ export const deletePasskey = async () => {
 
   try {
     const result = await baseRemovePasskey();
-    if (result) {
-      toast.success(t('common:success.passkey_removed'));
+    if (!result) {
+      toaster(t('common:success.passkey_removed'), 'success');
+
       useUserStore.getState().setUserAuthInfo({ passkey: false });
       return true;
     }
-    toast.error(t('error:passkey_remove_failed'));
+    toaster(t('error:passkey_remove_failed'), 'error');
     return false;
   } catch (error) {
     console.error('Error removing passkey:', error);
-    toast.error(t('error:passkey_remove_failed'));
+    toaster(t('error:passkey_remove_failed'), 'error');
     return false;
   }
 };

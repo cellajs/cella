@@ -18,6 +18,7 @@ export default function StandardDialog({ dialog, removeDialog }: DialogProp) {
     open,
     description,
     title,
+    titleContent = title,
     className,
     containerBackdrop,
     containerBackdropClassName,
@@ -60,6 +61,7 @@ export default function StandardDialog({ dialog, removeDialog }: DialogProp) {
         />
       )}
       <DialogContent
+        id={String(id)}
         onEscapeKeyDown={handleEscapeKeyDown}
         hideClose={hideClose}
         onInteractOutside={handleInteractOutside}
@@ -70,7 +72,7 @@ export default function StandardDialog({ dialog, removeDialog }: DialogProp) {
         container={container}
       >
         <DialogHeader className={`${title || description ? headerClassName : 'hidden'}`}>
-          <DialogTitle className={`${title || title ? '' : 'hidden'} leading-6 h-6`}>{title}</DialogTitle>
+          <DialogTitle className={`${title || title ? '' : 'hidden'} leading-6 h-6`}>{titleContent}</DialogTitle>
           <DialogDescription className={`${description ? '' : 'hidden'}`}>{description}</DialogDescription>
         </DialogHeader>
 

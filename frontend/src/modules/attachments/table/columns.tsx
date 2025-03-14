@@ -12,16 +12,22 @@ import CheckboxColumn from '~/modules/common/data-table/checkbox-column';
 import HeaderCell from '~/modules/common/data-table/header-cell';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 import Spinner from '~/modules/common/spinner';
-import { getMembersTableCache } from '~/modules/memberships/members-table/helpers';
+import type { EntityPage } from '~/modules/entities/types';
+import { membersKeys } from '~/modules/memberships/query/options';
 import { Button } from '~/modules/ui/button';
 import { Input } from '~/modules/ui/input';
+import { findUserFromCache } from '~/modules/users/helpers';
 import UserCell from '~/modules/users/user-cell';
+import { useUserStore } from '~/store/user';
 import { dateShort } from '~/utils/date-short';
 
-export const useColumns = (isAdmin: boolean, isSheet: boolean, highDensity: boolean) => {
+export const useColumns = (entity: EntityPage, isSheet: boolean, highDensity: boolean) => {
   const { t } = useTranslation();
-  const isMobile = useBreakpoints('max', 'sm', false);
   const navigate = useNavigate();
+  const storeUser = useUserStore((state) => state.user);
+
+  const isMobile = useBreakpoints('max', 'sm', false);
+  const isAdmin = entity.membership?.role === 'admin' || storeUser?.role === 'admin';
 
   const thumbnailColumn: ColumnOrColumnGroup<Attachment>[] = [
     {
@@ -202,8 +208,8 @@ export const useColumns = (isAdmin: boolean, isSheet: boolean, highDensity: bool
       renderCell: ({ row, tabIndex }) => {
         if (!row.createdBy) return <span className="text-muted">-</span>;
 
-        const items = getMembersTableCache(row.organizationId, 'organization');
-        const user = items.find((u) => u.id === row.createdBy);
+        const queryKey = [...membersKeys.list(), { entityType: entity.entity, orgIdOrSlug: row.organizationId }];
+        const user = findUserFromCache(queryKey, row.createdBy);
 
         if (!user) return <span>{row.createdBy}</span>;
 
@@ -229,8 +235,8 @@ export const useColumns = (isAdmin: boolean, isSheet: boolean, highDensity: bool
       renderCell: ({ row, tabIndex }) => {
         if (!row.modifiedBy) return <span className="text-muted">-</span>;
 
-        const items = getMembersTableCache(row.organizationId, 'organization');
-        const user = items.find((u) => u.id === row.modifiedBy);
+        const queryKey = [...membersKeys.list(), { entityType: entity.entity, orgIdOrSlug: row.organizationId }];
+        const user = findUserFromCache(queryKey, row.modifiedBy);
 
         if (!user) return <span>{row.modifiedBy}</span>;
 

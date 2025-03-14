@@ -46,7 +46,7 @@ const RequestsTable = () => {
     if (dataTableRef.current) dataTableRef.current.clearSelection();
   };
 
-  const openRemoveDialog = () => {
+  const openDeleteDialog = () => {
     dialog(
       <DeleteRequests
         requests={selected}
@@ -102,14 +102,14 @@ const RequestsTable = () => {
         q={q ?? ''}
         setSearch={setSearch}
         clearSelection={clearSelection}
-        openRemoveDialog={openRemoveDialog}
+        openDeleteDialog={openDeleteDialog}
         openInviteDialog={openInviteDialog}
         fetchExport={fetchExport}
       />
       <BaseDataTable
         ref={dataTableRef}
         columns={columns}
-        queryVars={{ q, sort, order, limit }}
+        queryVars={{ ...search, limit }}
         sortColumns={sortColumns}
         setSortColumns={setSortColumns}
         setTotal={setTotal}

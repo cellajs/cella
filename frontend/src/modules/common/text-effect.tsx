@@ -1,5 +1,5 @@
 import { motion, useInView } from 'motion/react';
-import * as React from 'react';
+import { useRef } from 'react';
 import { cn } from '~/utils/cn';
 
 type TextEffectProps = {
@@ -7,7 +7,7 @@ type TextEffectProps = {
   className?: string;
 };
 
-export const TextEffect: React.FC<TextEffectProps> = ({ text, className = '' }) => {
+export const TextEffect = ({ text, className = '' }: TextEffectProps) => {
   const variants = {
     hidden: { opacity: 0 },
     show: (i: number) => ({
@@ -18,7 +18,7 @@ export const TextEffect: React.FC<TextEffectProps> = ({ text, className = '' }) 
   };
 
   const letters = text.split('');
-  const ref = React.useRef(null);
+  const ref = useRef(null);
   const isInView = useInView(ref, { once: true });
 
   return (

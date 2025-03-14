@@ -27,7 +27,7 @@ const BarNav = ({ onClick }: { onClick: (id: NavItem['id']) => void }) => {
       id="bar-nav"
       data-theme={theme}
       data-started={hasStarted}
-      className="fixed z-100 sm:z-110 flex justify-between flex-col w-full max-sm:bottom-0 transition-transform ease-out shadow-xs sm:left-0 sm:top-0 sm:h-screen sm:w-16 group-[.focus-view]/body:hidden bg-primary data-[theme=none]:bg-secondary max-sm:data-[started=false]:translate-y-full sm:data-[started=false]:-translate-x-full"
+      className="[.floating-nav_&]:hidden fixed z-100 sm:z-110 flex justify-between flex-col w-full max-sm:bottom-0 transition-transform ease-out shadow-xs sm:left-0 sm:top-0 sm:h-screen sm:w-16 group-[.focus-view]/body:hidden bg-primary data-[theme=none]:bg-secondary max-sm:data-[started=false]:translate-y-full sm:data-[started=false]:-translate-x-full"
     >
       <ul className="flex flex-row justify-between p-1 sm:flex-col sm:gap-1 max-sm:px-2">
         {items.map((navItem: NavItem, index: number) => {

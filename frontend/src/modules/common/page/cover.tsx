@@ -1,5 +1,5 @@
 import { onlineManager } from '@tanstack/react-query';
-import type { Entity } from 'config';
+import { type Entity, config } from 'config';
 import { Upload } from 'lucide-react';
 import { Suspense, memo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -63,7 +63,7 @@ const PageCover = memo(({ type, id, canUpdate, url }: PageCoverProps) => {
       className={`relative flex bg-cover bg-center h-32 ${numberToColorClass(id)} data-[url=true]:h-[20vw] min-h-40 sm:min-w-52`}
       style={coverUrl ? { backgroundImage: `url(${coverUrl})` } : {}}
     >
-      {canUpdate && (
+      {canUpdate && config.has.imado && (
         <Button
           variant="secondary"
           size="sm"

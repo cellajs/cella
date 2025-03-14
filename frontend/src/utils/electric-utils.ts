@@ -10,13 +10,18 @@ export type CamelToSnakeObject<T> = {
   [K in keyof T as CamelToSnake<Extract<K, string>>]: T[K];
 };
 
+/**
+ * Converts messages to the passed type
+ */
 export const convertMessageInfo = <T>(messages: ChangeMessage<CamelToSnakeObject<T>>[], action: 'insert' | 'update' | 'delete') => {
   const filteredMessages = messages.filter((m) => m.headers.operation === action);
-  return filteredMessages.map((message) => parseRawAData(message.value));
+  return filteredMessages.map((message) => parseRawData(message.value));
 };
 
-// Parses raw  data into passed type
-const parseRawAData = <T>(rawData: CamelToSnakeObject<T>): T => {
+/**
+ * Parses raw  data into passed type
+ */
+const parseRawData = <T>(rawData: CamelToSnakeObject<T>): T => {
   const attachment = {} as T;
   for (const key of Object.keys(rawData)) {
     const camelKey = snakeToCamel(key) as keyof T;

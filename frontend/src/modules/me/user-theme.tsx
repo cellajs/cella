@@ -27,7 +27,7 @@ const UserTheme = ({ size = 24, buttonClassName = '', contentClassName = '' }: U
 
   const themes = objectEntries(config.theme.colors);
 
-  function Icon({ icon: Icon }: { icon: React.FC<LucideProps> }) {
+  function Icon({ icon: Icon }: { icon: React.ElementType<LucideProps> }) {
     return <Icon size={16} />;
   }
 

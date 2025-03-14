@@ -10,6 +10,7 @@ import { useSortColumns } from '~/modules/common/data-table/sort-columns';
 import type { BaseTableMethods } from '~/modules/common/data-table/types';
 import { dialog } from '~/modules/common/dialoger/state';
 import { toaster } from '~/modules/common/toaster';
+import UnsavedBadge from '~/modules/common/unsaved-badge';
 import type { EntityPage } from '~/modules/entities/types';
 import { getMembers } from '~/modules/memberships/api';
 import { useColumns } from '~/modules/memberships/members-table/columns';
@@ -21,6 +22,7 @@ import { organizationsKeys } from '~/modules/organizations/query';
 import InviteUsers from '~/modules/users/invite-users';
 import { queryClient } from '~/query/query-client';
 import type { membersSearchSchema } from '~/routes/organizations';
+import { membersKeys } from '../query/options';
 
 const LIMIT = config.requestLimits.members;
 
@@ -60,18 +62,19 @@ const MembersTable = ({ entity: baseEntity, isSheet = false }: MembersTableProps
     if (!onlineManager.isOnline()) return toaster(t('common:action.offline.text'), 'warning');
 
     dialog(<InviteUsers entity={entity} mode={null} dialog callback={handleNewInvites} />, {
-      id: `user-invite-${entity.id}`,
+      id: 'invite-users',
       drawerOnMobile: false,
       className: 'w-auto shadow-none relative z-60 max-w-4xl',
       container,
       containerBackdrop: true,
       containerBackdropClassName: 'z-50',
       title: t('common:invite'),
+      titleContent: <UnsavedBadge title={t('common:invite')} />,
       description: `${t('common:invite_users.text')}`,
     });
   };
 
-  const openRemoveDialog = () => {
+  const openDeleteDialog = () => {
     dialog(
       <RemoveMembersForm
         organizationId={organizationId}
@@ -106,6 +109,9 @@ const MembersTable = ({ entity: baseEntity, isSheet = false }: MembersTableProps
       setEntity(newEntity);
       return newEntity;
     });
+    queryClient.invalidateQueries({
+      queryKey: membersKeys.invitesTable({ idOrSlug: entity.slug, entityType: entity.entity, orgIdOrSlug: entity.organizationId || entity.id }),
+    });
   };
 
   const fetchExport = async (limit: number) => {
@@ -135,7 +141,7 @@ const MembersTable = ({ entity: baseEntity, isSheet = false }: MembersTableProps
         setColumns={setColumns}
         fetchExport={fetchExport}
         clearSelection={clearSelection}
-        openRemoveDialog={openRemoveDialog}
+        openDeleteDialog={openDeleteDialog}
         openInviteDialog={openInviteDialog}
         isSheet={isSheet}
       />
@@ -143,7 +149,7 @@ const MembersTable = ({ entity: baseEntity, isSheet = false }: MembersTableProps
         entity={entity}
         ref={dataTableRef}
         columns={columns}
-        queryVars={{ q, role, sort, order, limit }}
+        queryVars={{ ...search, limit }}
         sortColumns={sortColumns}
         setSortColumns={setSortColumns}
         setTotal={setTotal}

@@ -5,7 +5,7 @@ import { Ban, Check } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { acceptOrgInvite } from '~/modules/auth/api';
-import AuthNotice from '~/modules/auth/notice';
+import AuthErrorNotice from '~/modules/auth/auth-error-notice';
 import { useTokenCheck } from '~/modules/auth/use-token-check';
 import Spinner from '~/modules/common/spinner';
 import { getAndSetMenu } from '~/modules/me/helpers';
@@ -42,7 +42,7 @@ const AcceptOrgInvite = () => {
   };
 
   if (isLoading) return <Spinner className="h-10 w-10" />;
-  if (error || acceptInviteError) return <AuthNotice error={error || acceptInviteError} />;
+  if (error || acceptInviteError) return <AuthErrorNotice error={error || acceptInviteError} />;
   if (!data) return null;
 
   return (

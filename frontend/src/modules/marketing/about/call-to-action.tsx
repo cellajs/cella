@@ -1,20 +1,9 @@
 import { useTranslation } from 'react-i18next';
-import ContactForm from '~/modules/common/contact-form/contact-form';
-import { dialog } from '~/modules/common/dialoger/state';
+import { contactFormHandler } from '~/modules/common/contact-form/contact-form-handler';
 import { Button } from '~/modules/ui/button';
 
 const CallToAction = () => {
   const { t } = useTranslation();
-
-  const handleContactUs = () => {
-    dialog(<ContactForm dialog />, {
-      id: 'contact-form',
-      drawerOnMobile: false,
-      className: 'sm:max-w-5xl',
-      title: t('common:contact_us'),
-      description: t('common:contact_us.text'),
-    });
-  };
 
   return (
     <div className="mx-auto grid max-w-4xl">
@@ -23,7 +12,7 @@ const CallToAction = () => {
         <Button
           variant="ghost"
           size="xl"
-          onClick={handleContactUs}
+          onClick={contactFormHandler}
           className="glow-button bg-background/95 px-20 rounded-full! relative hover:bg-background! active:bg-background"
           aria-label="Contact"
         >

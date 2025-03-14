@@ -30,16 +30,7 @@ interface ComboboxProps {
   disabled?: boolean;
 }
 
-const Combobox: React.FC<ComboboxProps> = ({
-  options,
-  name,
-  onChange,
-  placeholder,
-  searchPlaceholder,
-  renderOption,
-  contentWidthMatchInput,
-  disabled,
-}) => {
+const Combobox = ({ options, name, onChange, placeholder, searchPlaceholder, renderOption, contentWidthMatchInput, disabled }: ComboboxProps) => {
   const { t } = useTranslation();
   const formValue = useFormContext()?.getValues(name);
   const isMobile = useBreakpoints('max', 'sm');

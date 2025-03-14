@@ -1,5 +1,4 @@
 import confetti from 'canvas-confetti';
-import type React from 'react';
 import { useEffect, useRef } from 'react';
 
 interface ConfettiProps {
@@ -7,7 +6,7 @@ interface ConfettiProps {
   options?: confetti.Options; // Options for customizing confetti
 }
 
-export const Confetti: React.FC<ConfettiProps> = ({ fire, options }) => {
+export const Confetti = ({ fire, options }: ConfettiProps) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const confettiInstance = useRef<confetti.CreateTypes | null>(null);
 

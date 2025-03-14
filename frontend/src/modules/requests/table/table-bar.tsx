@@ -18,7 +18,7 @@ import { Button } from '~/modules/ui/button';
 type RequestsTableBarProps = BaseTableMethods &
   BaseTableBarProps<Request, RequestsSearch> & {
     openInviteDialog: () => void;
-    openRemoveDialog: () => void;
+    openDeleteDialog: () => void;
     fetchExport: (limit: number) => Promise<Request[]>;
   };
 
@@ -31,7 +31,7 @@ export const RequestsTableBar = ({
   setColumns,
   clearSelection,
   openInviteDialog,
-  openRemoveDialog,
+  openDeleteDialog,
   fetchExport,
 }: RequestsTableBarProps) => {
   const { t } = useTranslation();
@@ -64,7 +64,7 @@ export const RequestsTableBar = ({
                   <span className="ml-1 max-xs:hidden">{t('common:invite')}</span>
                 </Button>
               )}
-              <Button variant="destructive" className="relative" onClick={openRemoveDialog}>
+              <Button variant="destructive" className="relative" onClick={openDeleteDialog}>
                 <Badge context="button">{selected.length}</Badge>
                 <Trash size={16} />
                 <span className="ml-1 max-lg:hidden">{t('common:remove')}</span>

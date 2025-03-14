@@ -2,10 +2,11 @@ import { Pencil } from 'lucide-react';
 import { i18n } from '~/lib/i18n';
 
 import { sheet } from '~/modules/common/sheeter/state';
+import UnsavedBadge from '~/modules/common/unsaved-badge';
 import type { Organization } from '~/modules/organizations/types';
 import UpdateOrganizationForm from '~/modules/organizations/update-organization-form';
 import { Button } from '~/modules/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '~/modules/ui/card';
+import { Card, CardContent } from '~/modules/ui/card';
 
 interface Props {
   organization: Organization;
@@ -17,9 +18,6 @@ const UpdateRow = ({ organization, callback, tabIndex }: Props) => {
   const openUpdateSheet = () => {
     sheet.create(
       <Card>
-        <CardHeader>
-          <CardTitle>{i18n.t('common:general')}</CardTitle>
-        </CardHeader>
         <CardContent>
           <UpdateOrganizationForm organization={organization} sheet callback={(organization) => callback([organization])} />
         </CardContent>
@@ -29,6 +27,7 @@ const UpdateRow = ({ organization, callback, tabIndex }: Props) => {
         side: 'right',
         className: 'max-w-full lg:max-w-4xl',
         title: i18n.t('common:edit_resource', { resource: i18n.t('common:organization').toLowerCase() }),
+        titleContent: <UnsavedBadge title={i18n.t('common:edit_resource', { resource: i18n.t('common:organization').toLowerCase() })} />,
         scrollableOverlay: true,
       },
     );

@@ -2,12 +2,12 @@ import { useTranslation } from 'react-i18next';
 import { MarketingFooter } from '~/modules/marketing/footer';
 import { MarketingNav } from '~/modules/marketing/nav';
 
-export interface MarketingPageProps {
+interface MarketingLayoutProps {
   title: string;
   children?: React.ReactNode;
 }
 
-const MarketingPage = ({ title, children }: MarketingPageProps) => {
+const MarketingLayout = ({ title, children }: MarketingLayoutProps) => {
   const { t } = useTranslation();
 
   return (
@@ -25,4 +25,4 @@ const MarketingPage = ({ title, children }: MarketingPageProps) => {
   );
 };
 
-export default MarketingPage;
+export default MarketingLayout;

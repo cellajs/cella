@@ -5,14 +5,15 @@ interface DeleteFormProps {
   onDelete: () => void;
   onCancel: () => void;
   pending: boolean;
+  allowOfflineDelete?: boolean;
 }
 
-export const DeleteForm = ({ onDelete, onCancel, pending }: DeleteFormProps) => {
+export const DeleteForm = ({ onDelete, onCancel, pending, allowOfflineDelete = false }: DeleteFormProps) => {
   const { t } = useTranslation();
 
   return (
     <div className="flex flex-col-reverse sm:flex-row gap-2">
-      <SubmitButton variant="destructive" onClick={onDelete} aria-label="Delete" loading={pending}>
+      <SubmitButton variant="destructive" allowOfflineDelete={allowOfflineDelete} onClick={onDelete} aria-label="Delete" loading={pending}>
         {t('common:delete')}
       </SubmitButton>
       <Button type="reset" variant="secondary" aria-label="Cancel" onClick={onCancel}>

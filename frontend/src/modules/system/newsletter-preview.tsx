@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import { updateSourcesFromDataUrl } from '~/modules/common/blocknote/helpers';
 
-const NewsletterDraft = () => {
+const NewsletterPreview = () => {
   const form = useFormWithDraft('newsletter');
 
   useEffect(() => {
@@ -23,4 +23,4 @@ const NewsletterDraft = () => {
     </div>
   );
 };
-export default NewsletterDraft;
+export default NewsletterPreview;

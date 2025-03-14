@@ -11,6 +11,7 @@ import { dialog } from '~/modules/common/dialoger/state';
 import { SheetTabs } from '~/modules/common/sheet-tabs';
 import { sheet } from '~/modules/common/sheeter/state';
 import { toaster } from '~/modules/common/toaster';
+import UnsavedBadge from '~/modules/common/unsaved-badge';
 import { getOrganizations } from '~/modules/organizations/api';
 import DeleteOrganizations from '~/modules/organizations/delete-organizations';
 import { organizationsKeys } from '~/modules/organizations/query';
@@ -18,8 +19,8 @@ import { useColumns } from '~/modules/organizations/table/columns';
 import BaseDataTable from '~/modules/organizations/table/table';
 import { OrganizationsTableBar } from '~/modules/organizations/table/table-bar';
 import type { Organization } from '~/modules/organizations/types';
-import NewsletterDraft from '~/modules/system/newsletter-draft';
-import NewsletterForm from '~/modules/system/newsletter-form';
+import CreateNewsletterForm from '~/modules/system/create-newsletter-form';
+import NewsletterPreview from '~/modules/system/newsletter-preview';
 import { OrganizationsTableRoute, type organizationsSearchSchema } from '~/routes/system';
 
 const LIMIT = config.requestLimits.organizations;
@@ -50,7 +51,7 @@ const OrganizationsTable = () => {
     if (dataTableRef.current) dataTableRef.current.clearSelection();
   };
 
-  const openRemoveDialog = () => {
+  const openDeleteDialog = () => {
     dialog(
       <DeleteOrganizations
         organizations={selected}
@@ -73,15 +74,16 @@ const OrganizationsTable = () => {
   const openNewsletterSheet = () => {
     const ids = selected.map((o) => o.id);
     const newsletterTabs = [
-      { id: 'write', label: 'common:write', element: <NewsletterForm organizationIds={ids} /> },
-      { id: 'preview', label: 'common:preview', element: <NewsletterDraft /> },
+      { id: 'write', label: 'common:write', element: <CreateNewsletterForm organizationIds={ids} /> },
+      { id: 'preview', label: 'common:preview', element: <NewsletterPreview /> },
     ];
 
     sheet.create(<SheetTabs tabs={newsletterTabs} />, {
       className: 'max-w-full lg:max-w-4xl',
       title: t('common:newsletter'),
+      titleContent: <UnsavedBadge title={t('common:newsletter')} />,
       description: t('common:newsletter.text'),
-      id: 'newsletter-sheet',
+      id: 'create-newsletter',
       scrollableOverlay: true,
       side: 'right',
       removeCallback: clearSelection,
@@ -103,14 +105,14 @@ const OrganizationsTable = () => {
         setSearch={setSearch}
         setColumns={setColumns}
         clearSelection={clearSelection}
-        openRemoveDialog={openRemoveDialog}
+        openDeleteDialog={openDeleteDialog}
         openNewsletterSheet={openNewsletterSheet}
         fetchExport={fetchExport}
       />
       <BaseDataTable
         ref={dataTableRef}
         columns={columns}
-        queryVars={{ q, sort, order, limit }}
+        queryVars={{ ...search, limit }}
         sortColumns={sortColumns}
         setSortColumns={setSortColumns}
         setTotal={setTotal}

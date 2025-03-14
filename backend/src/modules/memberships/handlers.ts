@@ -19,10 +19,10 @@ import defaultHook from '#/utils/default-hook';
 import { getIsoDate } from '#/utils/iso-date';
 import { nanoid } from '#/utils/nanoid';
 import { getOrderColumn } from '#/utils/order-column';
+import { slugFromEmail } from '#/utils/slug-from-email';
 import { prepareStringForILikeFilter } from '#/utils/sql';
 import { TimeSpan, createDate } from '#/utils/time-span';
 import { MemberInviteEmail, type MemberInviteEmailProps } from '../../../emails/member-invite';
-import { slugFromEmail } from '../auth/helpers/oauth';
 import { userSelect } from '../users/helpers/select';
 import { getAssociatedEntityDetails, insertMembership } from './helpers';
 import { membershipSelect } from './helpers/select';
@@ -273,10 +273,13 @@ const membershipsRoutes = app
       .where(and(eq(membershipsTable.id, membershipId)))
       .returning();
 
-    sendSSEToUsers([membershipToUpdate.userId], 'update_entity', {
-      ...membershipContext,
-      membership: updatedMembership,
-    });
+    // Trigger SSE notification only if the update is for a different user
+    if (updatedMembership.userId !== user.id) {
+      sendSSEToUsers([updatedMembership.userId], 'update_entity', {
+        ...membershipContext,
+        membership: updatedMembership,
+      });
+    }
 
     logEvent('Membership updated', { user: updatedMembership.userId, membership: updatedMembership.id });
 

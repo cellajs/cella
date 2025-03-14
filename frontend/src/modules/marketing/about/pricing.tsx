@@ -3,7 +3,7 @@ import { config } from 'config';
 import { Check, Sparkles } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { WaitlistForm } from '~/modules/auth/waitlist-form';
-import ContactForm from '~/modules/common/contact-form/contact-form';
+import { contactFormHandler } from '~/modules/common/contact-form/contact-form-handler';
 import { dialog } from '~/modules/common/dialoger/state';
 import { pricingPlans } from '~/modules/marketing/marketing-config';
 import { Badge } from '~/modules/ui/badge';
@@ -15,15 +15,8 @@ const Pricing = () => {
   const isFlexLayout = pricingPlans.length < 3;
 
   const handleActionClick = (action: 'sign_in' | 'contact_us' | 'waitlist_request') => {
-    if (action === 'contact_us') {
-      dialog(<ContactForm dialog />, {
-        id: 'contact-form',
-        drawerOnMobile: false,
-        className: 'sm:max-w-5xl',
-        title: t('common:contact_us'),
-        description: t('common:contact_us.text'),
-      });
-    }
+    if (action === 'contact_us') return contactFormHandler();
+
     if (action === 'sign_in') {
       navigate({ to: '/auth/authenticate', replace: true });
     }

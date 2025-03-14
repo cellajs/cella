@@ -1,15 +1,14 @@
 import { onlineManager } from '@tanstack/react-query';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
-import { AvatarWrap } from '../common/avatar-wrap';
-import { toaster } from '../common/toaster';
-import type { Member } from '../memberships/types';
-import type { User } from './types';
+import { AvatarWrap } from '~/modules/common/avatar-wrap';
+import { toaster } from '~/modules/common/toaster';
+import type { LimitedUser } from '~/modules/users/types';
 
 /**
  * Render a user cell with avatar and name, wrapped in a link to open user sheet.
  */
-const UserCell = ({ user, context, orgIdOrSlug, tabIndex }: { user: User | Member; context: string; orgIdOrSlug?: string; tabIndex: number }) => {
+const UserCell = ({ user, context, orgIdOrSlug, tabIndex }: { user: LimitedUser; context: string; orgIdOrSlug?: string; tabIndex: number }) => {
   const navigate = useNavigate();
   const { t } = useTranslation();
 

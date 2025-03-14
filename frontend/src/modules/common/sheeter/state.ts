@@ -1,6 +1,7 @@
 export type SheetT = {
   id: string;
   title?: string | React.ReactNode;
+  titleContent?: string | React.ReactNode;
   description?: React.ReactNode;
   className?: string;
   content?: React.ReactNode;

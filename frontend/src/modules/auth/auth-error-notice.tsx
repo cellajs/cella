@@ -5,8 +5,13 @@ import { type ErrorNoticeError, getErrorText, getErrorTitle, handleAskForHelp } 
 import { Button, buttonVariants } from '~/modules/ui/button';
 import { Card, CardDescription, CardFooter, CardHeader, CardTitle } from '~/modules/ui/card';
 
-// Notify user about an authentication related error
-const AuthNotice = ({ error, children }: { error: ErrorNoticeError; children?: React.ReactNode }) => {
+/**
+ * UI to notify user about an authentication related error
+ *
+ * @param error - ErrorNoticeError
+ * @param children - React.ReactNode (optional)
+ */
+const AuthErrorNotice = ({ error, children }: { error: ErrorNoticeError; children?: React.ReactNode }) => {
   const { t } = useTranslation();
   const { location } = useRouterState();
   const { error: errorFromQuery, severity: severityFromQuery } = location.search;
@@ -39,4 +44,4 @@ const AuthNotice = ({ error, children }: { error: ErrorNoticeError; children?: R
   );
 };
 
-export default AuthNotice;
+export default AuthErrorNotice;

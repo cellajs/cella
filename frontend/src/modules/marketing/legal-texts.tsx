@@ -1,6 +1,6 @@
 import { Link } from '@tanstack/react-router';
 import { config } from 'config';
-import type { LegalTypes } from '~/modules/marketing/legal';
+import type { LegalTypes } from '~/modules/marketing/legal-page';
 
 const LegalTexts = ({ textFor }: { textFor: LegalTypes }) => {
   const appName = config.name;

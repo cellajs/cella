@@ -23,7 +23,7 @@ import { sendNewsletterBodySchema } from '#/modules/system/schema';
 import '@blocknote/shadcn/style.css';
 import '~/modules/common/blocknote/app-specific-custom/styles.css';
 import '~/modules/common/blocknote/styles.css';
-interface NewsletterFormProps {
+interface CreateNewsletterFormProps {
   organizationIds: string[];
 }
 
@@ -31,7 +31,7 @@ const formSchema = sendNewsletterBodySchema;
 
 type FormValues = z.infer<typeof formSchema>;
 
-const NewsletterForm = ({ organizationIds }: NewsletterFormProps) => {
+const CreateNewsletterForm = ({ organizationIds }: CreateNewsletterFormProps) => {
   const { t } = useTranslation();
 
   const [testOnly, setTestOnly] = useState<CheckedState>(false);
@@ -45,7 +45,8 @@ const NewsletterForm = ({ organizationIds }: NewsletterFormProps) => {
   );
 
   // Create form
-  const form = useFormWithDraft<FormValues>('newsletter', { formOptions });
+  const formContainerId = 'create-newsletter';
+  const form = useFormWithDraft<FormValues>(formContainerId, { formOptions });
 
   // Send newsletter
   const { mutate: _sendNewsletter, isPending } = useMutation({
@@ -54,7 +55,7 @@ const NewsletterForm = ({ organizationIds }: NewsletterFormProps) => {
       if (testOnly) return toaster(t('common:success.test_email'), 'success');
       form.reset();
       toaster(t('common:success.create_newsletter'), 'success');
-      sheet.remove('newsletter-sheet');
+      sheet.remove(formContainerId);
     },
   });
 
@@ -123,4 +124,4 @@ const NewsletterForm = ({ organizationIds }: NewsletterFormProps) => {
   );
 };
 
-export default NewsletterForm;
+export default CreateNewsletterForm;
