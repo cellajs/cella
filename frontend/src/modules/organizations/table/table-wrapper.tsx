@@ -112,7 +112,7 @@ const OrganizationsTable = () => {
       <BaseDataTable
         ref={dataTableRef}
         columns={columns}
-        queryVars={{ q, sort, order, limit }}
+        queryVars={{ ...search, limit }}
         sortColumns={sortColumns}
         setSortColumns={setSortColumns}
         setTotal={setTotal}

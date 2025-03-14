@@ -149,7 +149,7 @@ const MembersTable = ({ entity: baseEntity, isSheet = false }: MembersTableProps
         entity={entity}
         ref={dataTableRef}
         columns={columns}
-        queryVars={{ q, role, sort, order, limit }}
+        queryVars={{ ...search, limit }}
         sortColumns={sortColumns}
         setSortColumns={setSortColumns}
         setTotal={setTotal}

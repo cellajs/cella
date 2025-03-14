@@ -102,7 +102,7 @@ const AttachmentsTable = ({ entity, canUpload = true, isSheet = false }: Attachm
           entity={entity}
           ref={dataTableRef}
           columns={columns}
-          queryVars={{ q, sort, order, limit }}
+          queryVars={{ ...search, limit }}
           isSheet={isSheet}
           canUpload={canUpload}
           sortColumns={sortColumns}
