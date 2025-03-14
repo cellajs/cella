@@ -22,6 +22,7 @@ import { organizationsKeys } from '~/modules/organizations/query';
 import InviteUsers from '~/modules/users/invite-users';
 import { queryClient } from '~/query/query-client';
 import type { membersSearchSchema } from '~/routes/organizations';
+import { membersKeys } from '../query/options';
 
 const LIMIT = config.requestLimits.members;
 
@@ -107,6 +108,9 @@ const MembersTable = ({ entity: baseEntity, isSheet = false }: MembersTableProps
 
       setEntity(newEntity);
       return newEntity;
+    });
+    queryClient.invalidateQueries({
+      queryKey: membersKeys.invitesTable({ idOrSlug: entity.slug, entityType: entity.entity, orgIdOrSlug: entity.organizationId || entity.id }),
     });
   };
 

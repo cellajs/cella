@@ -1,12 +1,14 @@
 import type { Dispatch, SetStateAction } from 'react';
 import type { ColumnOrColumnGroup as GridColumnOrColumnGroup, SortColumn } from 'react-data-grid';
 
+type BaseSearch = { q?: unknown; sort?: unknown; order?: unknown };
+
 export type ColumnOrColumnGroup<TData> = GridColumnOrColumnGroup<TData> & {
   key: string;
   visible?: boolean;
 };
 
-export type BaseTableProps<T, K extends { q?: unknown; sort?: unknown; order?: unknown }> = {
+export type BaseTableProps<T, K extends BaseSearch> = {
   queryVars: BaseTableQueryVariables<K>;
   columns: ColumnOrColumnGroup<T>[];
   sortColumns: SortColumn[];
@@ -19,7 +21,7 @@ export type BaseTableMethods = {
   clearSelection: () => void;
 };
 
-export type BaseTableQueryVariables<T extends { q?: unknown; sort?: unknown; order?: unknown }> = {
+export type BaseTableQueryVariables<T extends BaseSearch> = {
   q?: T['q'] | undefined;
   sort: T['sort'] | undefined;
   order: T['order'] | undefined;
