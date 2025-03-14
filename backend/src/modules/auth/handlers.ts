@@ -581,7 +581,9 @@ const authRoutes = app
       const existingUser = await findExistingUser(transformedUser.email, connectUserId, inviteToken?.id ?? null);
 
       // If registration is disabled and no existing user, throw to error
-      if (!config.has.registrationEnabled && !existingUser) return errorRedirect(ctx, 'sign_up_restricted', 'error');
+      if (!config.has.registrationEnabled && (!existingUser || (inviteToken && inviteToken.type !== 'system'))) {
+        return errorRedirect(ctx, 'sign_up_restricted', 'error');
+      }
 
       const emailVerified = transformedUser.emailVerified || !!inviteToken;
       // Get the redirect URL based on whether a new user or invite token exists
@@ -653,7 +655,9 @@ const authRoutes = app
       const existingUser = await findExistingUser(transformedUser.email, connectUserId, inviteToken?.id ?? null);
 
       // If registration is disabled and no existing user, throw to error
-      if (!config.has.registrationEnabled && !existingUser) return errorRedirect(ctx, 'sign_up_restricted', 'error');
+      if (!config.has.registrationEnabled && (!existingUser || (inviteToken && inviteToken.type !== 'system'))) {
+        return errorRedirect(ctx, 'sign_up_restricted', 'error');
+      }
 
       const emailVerified = transformedUser.emailVerified || !!inviteToken;
       // Get the redirect URL based on whether a new user or invite token exists
@@ -725,7 +729,9 @@ const authRoutes = app
       const existingUser = await findExistingUser(transformedUser.email, connectUserId, inviteToken?.id ?? null);
 
       // If registration is disabled and no existing user, throw to error
-      if (!config.has.registrationEnabled && !existingUser) return errorRedirect(ctx, 'sign_up_restricted', 'error');
+      if (!config.has.registrationEnabled && (!existingUser || (inviteToken && inviteToken.type !== 'system'))) {
+        return errorRedirect(ctx, 'sign_up_restricted', 'error');
+      }
 
       const emailVerified = transformedUser.emailVerified || !!inviteToken;
       // Get the redirect URL based on whether a new user or invite token exists
