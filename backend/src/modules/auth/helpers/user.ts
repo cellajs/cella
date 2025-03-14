@@ -1,9 +1,9 @@
-import type { EnabledOauthProvider } from 'config';
 import { config } from 'config';
 import { and, eq } from 'drizzle-orm';
 import type { Context } from 'hono';
 import { db } from '#/db/db';
 import { emailsTable } from '#/db/schema/emails';
+import { oauthAccountsTable } from '#/db/schema/oauth-accounts';
 import { tokensTable } from '#/db/schema/tokens';
 import { type InsertUserModel, usersTable } from '#/db/schema/users';
 import { entityIdFields } from '#/entity-config';
@@ -15,7 +15,7 @@ import { generateUnsubscribeToken } from '#/modules/users/helpers/unsubscribe-to
 import { getIsoDate } from '#/utils/iso-date';
 import { nanoid } from '#/utils/nanoid';
 import { checkSlugAvailable } from '../../entities/helpers/check-slug';
-import { insertOauthAccount } from './oauth';
+import type { Provider } from './oauth/oauth-providers';
 import { setUserSession } from './session';
 import { sendVerificationEmail } from './verify-email';
 
@@ -23,8 +23,8 @@ interface HandleCreateUserProps {
   ctx: Context;
   newUser: Omit<InsertUserModel, 'unsubscribeToken'>;
   redirectUrl?: string;
-  provider?: { id: EnabledOauthProvider; userId: string };
-  tokenId?: string | null;
+  provider?: Provider;
+  membershipInviteTokenId?: string | null;
   emailVerified?: boolean;
 }
 
@@ -37,11 +37,11 @@ interface HandleCreateUserProps {
  * @param newUser - New user data for registration(InsertUserModel).
  * @param redirectUrl - Optional, URL to redirect the user to after successful sign-up.
  * @param provider - Optional, OAuth provider data for linking the user.
- * @param tokenId - Optional, token ID to associate with the new user.
+ * @param membershipInviteTokenId - Optional, token ID to associate with the new user.
  * @param emailVerified - Optional, new user email verified.
  * @returns Error response or Redirect response or Response
  */
-export const handleCreateUser = async ({ ctx, newUser, redirectUrl, provider, tokenId, emailVerified }: HandleCreateUserProps) => {
+export const handleCreateUser = async ({ ctx, newUser, redirectUrl, provider, membershipInviteTokenId, emailVerified }: HandleCreateUserProps) => {
   // Check if slug is available
   const slugAvailable = await checkSlugAvailable(newUser.slug);
 
@@ -62,10 +62,11 @@ export const handleCreateUser = async ({ ctx, newUser, redirectUrl, provider, to
       .returning();
 
     // If a provider is passed, insert oauth account
-    if (provider) await insertOauthAccount(user.id, provider.id, provider.userId);
-
+    if (provider) {
+      await db.insert(oauthAccountsTable).values({ providerId: provider.id, providerUserId: provider.userId, userId: user.id });
+    }
     // If signing up with token, update it with new user id and insert membership if applicable
-    if (tokenId) await handleMembershipTokenUpdate(user.id, tokenId);
+    if (membershipInviteTokenId) await handleMembershipTokenUpdate(user.id, membershipInviteTokenId);
 
     // If email is not verified, send verification email. Otherwise, create verified email record and  sign in user
     if (!emailVerified) sendVerificationEmail(user.id);
