@@ -55,3 +55,23 @@ export async function runGitCommand({ targetFolder, command }: RunGitCommandOpti
     });
   });
 }
+
+// Get latest commit info for a specific file
+export async function getLatestFileCommitInfo(
+  targetFolder: string,
+  filePath: string
+): Promise<{ hash: string; date: string }> {
+  try {
+    const logOutput = await runGitCommand({
+      targetFolder,
+      command: `log -1 --format="%h|%ad" --date=short -- "${filePath}"`,
+    });
+
+    const [hash = '', date = ''] = logOutput.split('|');
+
+    return { hash, date };
+  } catch (error) {
+    // If git log fails (maybe no commits yet), return empty values
+    return { hash: '', date: '' };
+  }
+}
