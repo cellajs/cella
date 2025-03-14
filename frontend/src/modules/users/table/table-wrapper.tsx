@@ -7,6 +7,7 @@ import { useSortColumns } from '~/modules/common/data-table/sort-columns';
 import type { BaseTableMethods } from '~/modules/common/data-table/types';
 import { dialog } from '~/modules/common/dialoger/state';
 import { toaster } from '~/modules/common/toaster';
+import UnsavedBadge from '~/modules/common/unsaved-badge';
 import DeleteUsers from '~/modules/users/delete-users';
 import InviteUsers from '~/modules/users/invite-users';
 import { usersKeys } from '~/modules/users/query';
@@ -47,13 +48,14 @@ const UsersTable = () => {
 
   const openInviteDialog = (container: HTMLElement | null) => {
     dialog(<InviteUsers mode={'email'} dialog />, {
-      id: 'user-invite',
+      id: 'invite-users',
       drawerOnMobile: false,
       className: 'w-auto shadow-none relative z-60 max-w-4xl',
       container,
       containerBackdrop: true,
       containerBackdropClassName: 'z-50',
       title: t('common:invite'),
+      titleContent: <UnsavedBadge title={t('common:invite')} />,
       description: `${t('common:invite_users.text')}`,
     });
   };

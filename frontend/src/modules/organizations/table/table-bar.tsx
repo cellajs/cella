@@ -10,6 +10,7 @@ import TableSearch from '~/modules/common/data-table/table-search';
 import type { BaseTableBarProps, BaseTableMethods } from '~/modules/common/data-table/types';
 import { dialog } from '~/modules/common/dialoger/state';
 import { FocusView } from '~/modules/common/focus-view';
+import UnsavedBadge from '~/modules/common/unsaved-badge';
 import CreateOrganizationForm from '~/modules/organizations/create-organization-form';
 import type { OrganizationsSearch } from '~/modules/organizations/table/table-wrapper';
 import type { Organization } from '~/modules/organizations/types';
@@ -49,6 +50,10 @@ export const OrganizationsTableBar = ({
     clearSelection();
   };
 
+  const onCreateOrganization = () => {
+    dialog.remove(true, 'create-organization');
+  };
+
   return (
     <TableBarContainer>
       {/* Filter bar */}
@@ -75,10 +80,11 @@ export const OrganizationsTableBar = ({
             !isFiltered && (
               <Button
                 onClick={() => {
-                  dialog(<CreateOrganizationForm dialog />, {
+                  dialog(<CreateOrganizationForm callback={onCreateOrganization} />, {
                     className: 'md:max-w-2xl',
                     id: 'create-organization',
                     title: t('common:create_resource', { resource: t('common:organization').toLowerCase() }),
+                    titleContent: <UnsavedBadge title={t('common:create_resource', { resource: t('common:organization').toLowerCase() })} />,
                   });
                 }}
               >

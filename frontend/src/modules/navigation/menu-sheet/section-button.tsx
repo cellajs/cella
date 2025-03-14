@@ -14,7 +14,7 @@ interface MenuSectionButtonProps {
   isSectionVisible: boolean;
   data: UserMenuItem[];
   toggleIsEditing: () => void;
-  createDialog?: () => void;
+  handleCreateAction?: () => void;
 }
 
 export const MenuSectionButton = ({
@@ -23,7 +23,7 @@ export const MenuSectionButton = ({
   sectionLabel,
   isEditing,
   isSectionVisible,
-  createDialog,
+  handleCreateAction,
   toggleIsEditing,
 }: MenuSectionButtonProps) => {
   const { t } = useTranslation();
@@ -79,9 +79,9 @@ export const MenuSectionButton = ({
             )}
           </AnimatePresence>
           <AnimatePresence mode="popLayout">
-            {isSectionVisible && createDialog && (
+            {isSectionVisible && handleCreateAction && (
               <TooltipButton toolTipContent={t('common:create')} sideOffset={22} side="right">
-                <Button className="w-12 px-2" variant="secondary" size="icon" onClick={createDialog} asChild>
+                <Button className="w-12 px-2" variant="secondary" size="icon" onClick={handleCreateAction} asChild>
                   <motion.button
                     key={`sheet-menu-plus-${sectionType}`}
                     transition={{ bounce: 0, duration: 0.2, transition: { bounce: 0, duration: 0.1 } }}

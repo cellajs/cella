@@ -7,15 +7,11 @@ import type { z } from 'zod';
 // Change this in the future on current schema
 import { createOrganizationBodySchema } from '#/modules/organizations/schema';
 
-import { useNavigate } from '@tanstack/react-router';
-import { isValidElement, useMemo } from 'react';
+import { useMemo } from 'react';
 import { toast } from 'sonner';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
-import { isDialog as checkDialog, dialog } from '~/modules/common/dialoger/state';
 import InputFormField from '~/modules/common/form-fields/input';
 import { SlugFormField } from '~/modules/common/form-fields/slug';
-import { useStepper } from '~/modules/common/stepper/use-stepper';
-import UnsavedBadge from '~/modules/common/unsaved-badge';
 import { addMenuItem } from '~/modules/navigation/menu-sheet/helpers/menu-operations';
 import { organizationsKeys, useOrganizationCreateMutation } from '~/modules/organizations/query';
 import type { Organization } from '~/modules/organizations/types';
@@ -23,10 +19,9 @@ import { Button, SubmitButton } from '~/modules/ui/button';
 import { Form, type LabelDirectionType } from '~/modules/ui/form';
 import { useMutateQueryData } from '~/query/hooks/use-mutate-query-data';
 
-interface CreateOrganizationFormProps {
+interface Props {
   callback?: (org: Organization) => void;
   dialog?: boolean;
-  replaceToCreatedOrg?: boolean;
   labelDirection?: LabelDirectionType;
   children?: React.ReactNode;
 }
@@ -35,39 +30,20 @@ const formSchema = createOrganizationBodySchema;
 
 type FormValues = z.infer<typeof formSchema>;
 
-const CreateOrganizationForm: React.FC<CreateOrganizationFormProps> = ({
-  dialog: isDialog,
-  labelDirection = 'top',
-  children,
-  callback,
-  replaceToCreatedOrg,
-}) => {
+const CreateOrganizationForm = ({ labelDirection = 'top', children, callback }: Props) => {
   const { t } = useTranslation();
-  const navigate = useNavigate();
-  const { nextStep } = useStepper();
 
+  const defaultValues = { name: '', slug: '' };
   const formOptions: UseFormProps<FormValues> = useMemo(
     () => ({
       resolver: zodResolver(formSchema),
-      defaultValues: {
-        name: '',
-        slug: '',
-      },
+      defaultValues,
     }),
     [],
   );
 
-  const dialogTitleUpdate = () => {
-    const targetDialog = dialog.get('create-organization');
-    if (!targetDialog || !checkDialog(targetDialog)) return;
-
-    // Check if the title's type is a function (React component) and not a string
-    if (isValidElement(targetDialog.title) && targetDialog.title.type === UnsavedBadge) return;
-
-    dialog.update('create-organization', { title: <UnsavedBadge title={targetDialog?.title} /> });
-  };
-
-  const form = useFormWithDraft<FormValues>('create-organization', { formOptions, onUnsavedChanges: dialogTitleUpdate });
+  const formContainerId = 'create-organization';
+  const form = useFormWithDraft<FormValues>(formContainerId, { formOptions });
 
   // Watch to update slug field
   const name = useWatch({ control: form.control, name: 'name' });
@@ -80,24 +56,13 @@ const CreateOrganizationForm: React.FC<CreateOrganizationFormProps> = ({
       onSuccess: (createdOrganization) => {
         form.reset();
         toast.success(t('common:success.create_resource', { resource: t('common:organization') }));
-        nextStep?.();
 
+        // TODO these two are always combined so perhaps do these things together?
         addMenuItem(createdOrganization, 'organizations');
-
-        if (isDialog) dialog.remove(true, 'create-organization');
-
         mutateQuery.create([createdOrganization]);
 
+        // Trigger callback
         callback?.(createdOrganization);
-
-        if (replaceToCreatedOrg) {
-          navigate({
-            to: '/$idOrSlug/members',
-            params: {
-              idOrSlug: createdOrganization.slug,
-            },
-          });
-        }
       },
     });
   };

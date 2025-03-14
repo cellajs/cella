@@ -14,6 +14,7 @@ import UpdateOrganizationForm from '~/modules/organizations/update-organization-
 import { Button } from '~/modules/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/modules/ui/card';
 import { OrganizationSettingsRoute } from '~/routes/organizations';
+import UnsavedBadge from '../common/unsaved-badge';
 
 const tabs = [
   { id: 'general', label: 'common:general' },
@@ -47,16 +48,18 @@ const OrganizationSettings = ({ organization }: { organization: Organization }) 
   return (
     <div className="md:flex md:flex-row mx-auto gap-4 my-4 ">
       <div className="max-md:hidden mx-auto md:min-w-48 md:w-[30%] flex h-auto flex-col">
-        <StickyBox offsetTop={60} className="md:mt-2 z-10 max-md:block!">
+        <StickyBox offsetTop={60} className="md:mt-3 z-10 max-md:block!">
           <PageAside tabs={tabs} className="pb-2" />
         </StickyBox>
       </div>
 
       <div className="md:w-[70%] flex flex-col gap-8">
         <AsideAnchor id="general" extraOffset>
-          <Card>
+          <Card id="update-organization">
             <CardHeader>
-              <CardTitle>{t('common:general')}</CardTitle>
+              <CardTitle>
+                <UnsavedBadge title={t('common:general')} />
+              </CardTitle>
             </CardHeader>
             <CardContent>
               <UpdateOrganizationForm

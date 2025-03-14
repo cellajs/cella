@@ -10,6 +10,7 @@ import { useSortColumns } from '~/modules/common/data-table/sort-columns';
 import type { BaseTableMethods } from '~/modules/common/data-table/types';
 import { dialog } from '~/modules/common/dialoger/state';
 import { toaster } from '~/modules/common/toaster';
+import UnsavedBadge from '~/modules/common/unsaved-badge';
 import type { EntityPage } from '~/modules/entities/types';
 import { getMembers } from '~/modules/memberships/api';
 import { useColumns } from '~/modules/memberships/members-table/columns';
@@ -60,13 +61,14 @@ const MembersTable = ({ entity: baseEntity, isSheet = false }: MembersTableProps
     if (!onlineManager.isOnline()) return toaster(t('common:action.offline.text'), 'warning');
 
     dialog(<InviteUsers entity={entity} mode={null} dialog callback={handleNewInvites} />, {
-      id: `user-invite-${entity.id}`,
+      id: 'invite-users',
       drawerOnMobile: false,
       className: 'w-auto shadow-none relative z-60 max-w-4xl',
       container,
       containerBackdrop: true,
       containerBackdropClassName: 'z-50',
       title: t('common:invite'),
+      titleContent: <UnsavedBadge title={t('common:invite')} />,
       description: `${t('common:invite_users.text')}`,
     });
   };

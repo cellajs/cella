@@ -67,9 +67,8 @@ export const MenuSheet = memo(() => {
             key={menuSectionName}
             sectionLabel={menuSection.label}
             sectionType={menuSectionName}
-            createForm={menuSection.createForm}
+            createAction={menuSection.createAction}
             data={menuData}
-            description={menuSection.description}
           />
         );
       })

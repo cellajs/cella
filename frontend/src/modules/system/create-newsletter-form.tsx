@@ -45,7 +45,8 @@ const CreateNewsletterForm = ({ organizationIds }: CreateNewsletterFormProps) =>
   );
 
   // Create form
-  const form = useFormWithDraft<FormValues>('newsletter', { formOptions });
+  const formContainerId = 'create-newsletter';
+  const form = useFormWithDraft<FormValues>(formContainerId, { formOptions });
 
   // Send newsletter
   const { mutate: _sendNewsletter, isPending } = useMutation({
@@ -54,7 +55,7 @@ const CreateNewsletterForm = ({ organizationIds }: CreateNewsletterFormProps) =>
       if (testOnly) return toaster(t('common:success.test_email'), 'success');
       form.reset();
       toaster(t('common:success.create_newsletter'), 'success');
-      sheet.remove('newsletter-sheet');
+      sheet.remove(formContainerId);
     },
   });
 

@@ -5,13 +5,11 @@ import type React from 'react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { ApiError } from '~/lib/api';
-import { i18n } from '~/lib/i18n';
-import ContactForm from '~/modules/common/contact-form/contact-form';
 import { Dialoger } from '~/modules/common/dialoger';
-import { dialog } from '~/modules/common/dialoger/state';
 import { MainFooter } from '~/modules/common/main-footer';
 import { Button } from '~/modules/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '~/modules/ui/card';
+import { contactFormHandler } from './contact-form/contact-form-handler';
 
 export type ErrorNoticeError = ApiError | Error | null;
 
@@ -23,13 +21,7 @@ interface ErrorNoticeProps {
 
 export const handleAskForHelp = () => {
   if (!window.Gleap) {
-    return dialog(<ContactForm dialog />, {
-      id: 'contact-form',
-      drawerOnMobile: false,
-      className: 'sm:max-w-5xl',
-      title: i18n.t('common:contact_us'),
-      description: i18n.t('common:contact_us.text'),
-    });
+    return contactFormHandler();
   }
   window.Gleap.openConversations();
 };

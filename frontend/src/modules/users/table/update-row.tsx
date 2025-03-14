@@ -1,8 +1,9 @@
 import { Pencil } from 'lucide-react';
 import { i18n } from '~/lib/i18n';
 import { sheet } from '~/modules/common/sheeter/state';
+import UnsavedBadge from '~/modules/common/unsaved-badge';
 import { Button } from '~/modules/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '~/modules/ui/card';
+import { Card, CardContent } from '~/modules/ui/card';
 import type { User } from '~/modules/users/types';
 import UpdateUserForm from '~/modules/users/update-user-form';
 
@@ -13,11 +14,10 @@ interface Props {
 }
 
 const openUpdateSheet = (user: User, callback: (users: User[]) => void) => {
+  const title = i18n.t('common:edit_resource', { resource: i18n.t('common:user').toLowerCase() });
+
   sheet.create(
     <Card>
-      <CardHeader>
-        <CardTitle>{i18n.t('common:general')}</CardTitle>
-      </CardHeader>
       <CardContent>
         <UpdateUserForm user={user} sheet callback={(user) => callback([user])} />
       </CardContent>
@@ -26,7 +26,8 @@ const openUpdateSheet = (user: User, callback: (users: User[]) => void) => {
       id: 'update-user',
       side: 'right',
       className: 'max-w-full lg:max-w-4xl',
-      title: i18n.t('common:edit_resource', { resource: i18n.t('common:user').toLowerCase() }),
+      title,
+      titleContent: <UnsavedBadge title={title} />,
     },
   );
 };
