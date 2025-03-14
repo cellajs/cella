@@ -3,7 +3,7 @@ import { Send } from 'lucide-react';
 import { useRef } from 'react';
 
 import { useTranslation } from 'react-i18next';
-import { toast } from 'sonner';
+import { toaster } from '~/modules/common/toaster';
 import { useCreateRequestMutation } from '~/modules/requests/query';
 import { SubmitButton } from '~/modules/ui/button';
 
@@ -23,7 +23,7 @@ const SubscribeNewsletterForm = () => {
       { email, type: 'newsletter', message: null },
       {
         onSuccess: () => {
-          toast.success(t('common:success.newsletter_sign_up', { appName: config.name }));
+          toaster(t('common:success.newsletter_sign_up', { appName: config.name }), 'success');
           formRef.current?.reset();
         },
       },

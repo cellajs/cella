@@ -32,7 +32,7 @@ importers:
         version: 5.8.2
       vitest:
         specifier: ^3.0.8
-        version: 3.0.8(@types/debug@4.1.12)(@types/node@22.13.10)(jiti@2.4.2)(jsdom@26.0.0(canvas@3.1.0))(lightningcss@1.29.2)(terser@5.39.0)(tsx@4.19.3)(yaml@2.7.0)
+        version: 3.0.8(@types/debug@4.1.12)(@types/node@22.13.10)(jiti@2.4.2)(jsdom@26.0.0)(lightningcss@1.29.2)(terser@5.39.0)(tsx@4.19.3)(yaml@2.7.0)
 
   backend:
     dependencies:
@@ -47,7 +47,7 @@ importers:
         version: 3.758.0(@aws-sdk/client-s3@3.758.0)
       '@cellajs/permission-manager':
         specifier: ^0.1.0
-        version: 0.1.0(@swc/core@1.7.26(@swc/helpers@0.5.15))(jiti@2.4.2)(postcss@8.5.3)(tsx@4.19.3)(yaml@2.7.0)
+        version: 0.1.0(@swc/core@1.7.26)(jiti@2.4.2)(postcss@8.5.3)(tsx@4.19.3)(yaml@2.7.0)
       '@dotenv-run/core':
         specifier: ^1.3.6
         version: 1.3.6
@@ -149,7 +149,7 @@ importers:
         version: 9.0.2
       jsx-email:
         specifier: ^2.7.1
-        version: 2.7.1(@emotion/is-prop-valid@1.3.1)(@jsx-email/plugin-inline@1.0.1)(@jsx-email/plugin-minify@1.0.1)(@jsx-email/plugin-pretty@1.0.0)(@types/node@22.13.10)(@types/react-dom@19.0.4(@types/react@19.0.10))(@types/react@19.0.10)(lightningcss@1.29.2)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(terser@5.39.0)(ts-node@10.9.2(@swc/core@1.7.26(@swc/helpers@0.5.15))(@types/node@22.13.10)(typescript@5.8.2))(typescript@5.8.2)
+        version: 2.7.1(@emotion/is-prop-valid@1.3.1)(@jsx-email/plugin-inline@1.0.1)(@jsx-email/plugin-minify@1.0.1)(@jsx-email/plugin-pretty@1.0.0)(@types/node@22.13.10)(@types/react-dom@19.0.4(@types/react@19.0.10))(@types/react@19.0.10)(lightningcss@1.29.2)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(terser@5.39.0)(ts-node@10.9.2(@swc/core@1.7.26)(@types/node@22.13.10)(typescript@5.8.2))(typescript@5.8.2)
       locales:
         specifier: workspace:*
         version: link:../locales
@@ -240,7 +240,7 @@ importers:
         version: 5.5.2
       tsup:
         specifier: ^8.4.0
-        version: 8.4.0(@swc/core@1.7.26(@swc/helpers@0.5.15))(jiti@2.4.2)(postcss@8.5.3)(tsx@4.19.3)(typescript@5.8.2)(yaml@2.7.0)
+        version: 8.4.0(@swc/core@1.7.26)(jiti@2.4.2)(postcss@8.5.3)(tsx@4.19.3)(typescript@5.8.2)(yaml@2.7.0)
       tsx:
         specifier: ^4.19.3
         version: 4.19.3
@@ -277,7 +277,7 @@ importers:
     devDependencies:
       tsup:
         specifier: ^8.3.5
-        version: 8.3.5(@swc/core@1.7.26(@swc/helpers@0.5.15))(jiti@2.4.2)(postcss@8.5.3)(tsx@4.19.2)(typescript@5.8.2)(yaml@2.7.0)
+        version: 8.3.5(@swc/core@1.7.26)(jiti@2.4.2)(postcss@8.5.3)(tsx@4.19.2)(typescript@5.8.2)(yaml@2.7.0)
       tsx:
         specifier: ^4.19.2
         version: 4.19.2
@@ -331,7 +331,7 @@ importers:
         version: 0.25.2(@hocuspocus/provider@2.15.2(y-protocols@1.0.6(yjs@13.6.24))(yjs@13.6.24))(@types/hast@3.0.4)(highlight.js@11.11.1)(lowlight@3.3.0)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
       '@blocknote/shadcn':
         specifier: ^0.25.2
-        version: 0.25.2(@hocuspocus/provider@2.15.2(y-protocols@1.0.6(yjs@13.6.24))(yjs@13.6.24))(@types/hast@3.0.4)(@types/react-dom@19.0.4(@types/react@19.0.10))(@types/react@19.0.10)(highlight.js@11.11.1)(lowlight@3.3.0)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(ts-node@10.9.2(@swc/core@1.7.26(@swc/helpers@0.5.15))(@types/node@22.13.10)(typescript@5.8.2))
+        version: 0.25.2(@hocuspocus/provider@2.15.2(y-protocols@1.0.6(yjs@13.6.24))(yjs@13.6.24))(@types/hast@3.0.4)(@types/react-dom@19.0.4(@types/react@19.0.10))(@types/react@19.0.10)(highlight.js@11.11.1)(lowlight@3.3.0)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(ts-node@10.9.2(@types/node@22.13.10)(typescript@5.8.2))
       '@electric-sql/client':
         specifier: 1.0.0-beta.5
         version: 1.0.0-beta.5
@@ -612,8 +612,8 @@ importers:
         specifier: 1.6.6
         version: 1.6.6
       sonner:
-        specifier: ^2.0.1
-        version: 2.0.1(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
+        specifier: ^1.7.4
+        version: 1.7.4(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
       tailwind-merge:
         specifier: ^3.0.2
         version: 3.0.2
@@ -782,7 +782,7 @@ importers:
         version: 7.0.3
       tsup:
         specifier: ^8.4.0
-        version: 8.4.0(@swc/core@1.7.26(@swc/helpers@0.5.15))(jiti@2.4.2)(postcss@8.5.3)(tsx@4.19.3)(typescript@5.8.2)(yaml@2.7.0)
+        version: 8.4.0(@swc/core@1.7.26)(jiti@2.4.2)(postcss@8.5.3)(tsx@4.19.3)(typescript@5.8.2)(yaml@2.7.0)
       typescript:
         specifier: ^5.8.2
         version: 5.8.2
@@ -2544,7 +2544,6 @@ packages:
 
   '@evilmartians/lefthook@1.11.3':
     resolution: {integrity: sha512-ic3gCgCnm7XQCxGLsnLXU+33J86iFuC5r4JYSWrMXo0rTjGT6EqKKpSDuA0r/1F14VZmdgmvRUTXTBOvXA2UXA==}
-    cpu: [x64, arm64, ia32]
     os: [darwin, linux, win32]
     hasBin: true
 
@@ -4692,9 +4691,6 @@ packages:
 
   '@swc/counter@0.1.3':
     resolution: {integrity: sha512-e2BR4lsJkkRlKZ/qCHPw9ZaSxc0MVUd7gtbtaB7aMvHeJVYe8sOB8DBZkP2DtISHGSku9sCK6T6cnY0CtXrOCQ==}
-
-  '@swc/helpers@0.5.15':
-    resolution: {integrity: sha512-JQ5TuMi45Owi4/BIMAJBoSQoOJu12oOk/gADqlcUL9JEdHB8vyjUSsxqeNXnmXHjYKMi2WcYtezGEEhqUI/E2g==}
 
   '@swc/types@0.1.19':
     resolution: {integrity: sha512-WkAZaAfj44kh/UFdAQcrMP1I0nwRqpt27u+08LMBYMqmQfwwMofYoMh/48NGkMMRfC4ynpfwRbJuu8ErfNloeA==}
@@ -9191,8 +9187,8 @@ packages:
   solid-js@1.9.5:
     resolution: {integrity: sha512-ogI3DaFcyn6UhYhrgcyRAMbu/buBJitYQASZz5WzfQVPP10RD2AbCoRZ517psnezrasyCbWzIxZ6kVqet768xw==}
 
-  sonner@2.0.1:
-    resolution: {integrity: sha512-FRBphaehZ5tLdLcQ8g2WOIRE+Y7BCfWi5Zyd8bCvBjiW8TxxAyoWZIxS661Yz6TGPqFQ4VLzOF89WEYhfynSFQ==}
+  sonner@1.7.4:
+    resolution: {integrity: sha512-DIS8z4PfJRbIyfVFDVnK9rO3eYDtse4Omcm6bt0oEr5/jtLgysmjuBl1frJ9E/EQZrFmKx2A8m/s5s9CRXIzhw==}
     peerDependencies:
       react: ^18.0.0 || ^19.0.0 || ^19.0.0-rc
       react-dom: ^18.0.0 || ^19.0.0 || ^19.0.0-rc
@@ -11612,7 +11608,7 @@ snapshots:
       - sugar-high
       - supports-color
 
-  '@blocknote/shadcn@0.25.2(@hocuspocus/provider@2.15.2(y-protocols@1.0.6(yjs@13.6.24))(yjs@13.6.24))(@types/hast@3.0.4)(@types/react-dom@19.0.4(@types/react@19.0.10))(@types/react@19.0.10)(highlight.js@11.11.1)(lowlight@3.3.0)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(ts-node@10.9.2(@swc/core@1.7.26(@swc/helpers@0.5.15))(@types/node@22.13.10)(typescript@5.8.2))':
+  '@blocknote/shadcn@0.25.2(@hocuspocus/provider@2.15.2(y-protocols@1.0.6(yjs@13.6.24))(yjs@13.6.24))(@types/hast@3.0.4)(@types/react-dom@19.0.4(@types/react@19.0.10))(@types/react@19.0.10)(highlight.js@11.11.1)(lowlight@3.3.0)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(ts-node@10.9.2(@types/node@22.13.10)(typescript@5.8.2))':
     dependencies:
       '@blocknote/core': 0.25.2(@hocuspocus/provider@2.15.2(y-protocols@1.0.6(yjs@13.6.24))(yjs@13.6.24))(@types/hast@3.0.4)(highlight.js@11.11.1)(lowlight@3.3.0)
       '@blocknote/react': 0.25.2(@hocuspocus/provider@2.15.2(y-protocols@1.0.6(yjs@13.6.24))(yjs@13.6.24))(@types/hast@3.0.4)(highlight.js@11.11.1)(lowlight@3.3.0)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
@@ -11635,8 +11631,8 @@ snapshots:
       react-dom: 19.0.0(react@19.0.0)
       react-hook-form: 7.54.2(react@19.0.0)
       tailwind-merge: 2.6.0
-      tailwindcss: 3.4.17(ts-node@10.9.2(@swc/core@1.7.26(@swc/helpers@0.5.15))(@types/node@22.13.10)(typescript@5.8.2))
-      tailwindcss-animate: 1.0.7(tailwindcss@3.4.17(ts-node@10.9.2(@swc/core@1.7.26(@swc/helpers@0.5.15))(@types/node@22.13.10)(typescript@5.8.2)))
+      tailwindcss: 3.4.17(ts-node@10.9.2(@types/node@22.13.10)(typescript@5.8.2))
+      tailwindcss-animate: 1.0.7(tailwindcss@3.4.17(ts-node@10.9.2(@types/node@22.13.10)(typescript@5.8.2)))
       zod: 3.24.2
     transitivePeerDependencies:
       - '@hocuspocus/provider'
@@ -11653,9 +11649,9 @@ snapshots:
   '@canvas/image-data@1.0.0':
     optional: true
 
-  '@cellajs/permission-manager@0.1.0(@swc/core@1.7.26(@swc/helpers@0.5.15))(jiti@2.4.2)(postcss@8.5.3)(tsx@4.19.3)(yaml@2.7.0)':
+  '@cellajs/permission-manager@0.1.0(@swc/core@1.7.26)(jiti@2.4.2)(postcss@8.5.3)(tsx@4.19.3)(yaml@2.7.0)':
     dependencies:
-      tsup: 8.4.0(@swc/core@1.7.26(@swc/helpers@0.5.15))(jiti@2.4.2)(postcss@8.5.3)(tsx@4.19.3)(typescript@5.8.2)(yaml@2.7.0)
+      tsup: 8.4.0(@swc/core@1.7.26)(jiti@2.4.2)(postcss@8.5.3)(tsx@4.19.3)(typescript@5.8.2)(yaml@2.7.0)
       typescript: 5.8.2
     transitivePeerDependencies:
       - '@microsoft/api-extractor'
@@ -12450,13 +12446,13 @@ snapshots:
       '@adobe/css-tools': 4.4.2
       hast-util-select: 6.0.4
       hast-util-to-string: 3.0.1
-      jsx-email: 2.7.1(@emotion/is-prop-valid@1.3.1)(@jsx-email/plugin-inline@1.0.1)(@jsx-email/plugin-minify@1.0.1)(@jsx-email/plugin-pretty@1.0.0)(@types/node@22.13.10)(@types/react-dom@19.0.4(@types/react@19.0.10))(@types/react@19.0.10)(lightningcss@1.29.2)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(terser@5.39.0)(ts-node@10.9.2(@swc/core@1.7.26(@swc/helpers@0.5.15))(@types/node@22.13.10)(typescript@5.8.2))(typescript@5.8.2)
+      jsx-email: 2.7.1(@emotion/is-prop-valid@1.3.1)(@jsx-email/plugin-inline@1.0.1)(@jsx-email/plugin-minify@1.0.1)(@jsx-email/plugin-pretty@1.0.0)(@types/node@22.13.10)(@types/react-dom@19.0.4(@types/react@19.0.10))(@types/react@19.0.10)(lightningcss@1.29.2)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(terser@5.39.0)(ts-node@10.9.2(@swc/core@1.7.26)(@types/node@22.13.10)(typescript@5.8.2))(typescript@5.8.2)
       unist-util-remove: 4.0.0
       unist-util-visit: 5.0.0
 
   '@jsx-email/plugin-minify@1.0.1(jsx-email@2.7.1)':
     dependencies:
-      jsx-email: 2.7.1(@emotion/is-prop-valid@1.3.1)(@jsx-email/plugin-inline@1.0.1)(@jsx-email/plugin-minify@1.0.1)(@jsx-email/plugin-pretty@1.0.0)(@types/node@22.13.10)(@types/react-dom@19.0.4(@types/react@19.0.10))(@types/react@19.0.10)(lightningcss@1.29.2)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(terser@5.39.0)(ts-node@10.9.2(@swc/core@1.7.26(@swc/helpers@0.5.15))(@types/node@22.13.10)(typescript@5.8.2))(typescript@5.8.2)
+      jsx-email: 2.7.1(@emotion/is-prop-valid@1.3.1)(@jsx-email/plugin-inline@1.0.1)(@jsx-email/plugin-minify@1.0.1)(@jsx-email/plugin-pretty@1.0.0)(@types/node@22.13.10)(@types/react-dom@19.0.4(@types/react@19.0.10))(@types/react@19.0.10)(lightningcss@1.29.2)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(terser@5.39.0)(ts-node@10.9.2(@swc/core@1.7.26)(@types/node@22.13.10)(typescript@5.8.2))(typescript@5.8.2)
       rehype-minify-attribute-whitespace: 4.0.1
       rehype-minify-css-style: 4.0.1
       rehype-minify-enumerated-attribute: 5.0.2
@@ -12478,7 +12474,7 @@ snapshots:
 
   '@jsx-email/plugin-pretty@1.0.0(jsx-email@2.7.1)':
     dependencies:
-      jsx-email: 2.7.1(@emotion/is-prop-valid@1.3.1)(@jsx-email/plugin-inline@1.0.1)(@jsx-email/plugin-minify@1.0.1)(@jsx-email/plugin-pretty@1.0.0)(@types/node@22.13.10)(@types/react-dom@19.0.4(@types/react@19.0.10))(@types/react@19.0.10)(lightningcss@1.29.2)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(terser@5.39.0)(ts-node@10.9.2(@swc/core@1.7.26(@swc/helpers@0.5.15))(@types/node@22.13.10)(typescript@5.8.2))(typescript@5.8.2)
+      jsx-email: 2.7.1(@emotion/is-prop-valid@1.3.1)(@jsx-email/plugin-inline@1.0.1)(@jsx-email/plugin-minify@1.0.1)(@jsx-email/plugin-pretty@1.0.0)(@types/node@22.13.10)(@types/react-dom@19.0.4(@types/react@19.0.10))(@types/react@19.0.10)(lightningcss@1.29.2)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(terser@5.39.0)(ts-node@10.9.2(@swc/core@1.7.26)(@types/node@22.13.10)(typescript@5.8.2))(typescript@5.8.2)
       pretty: 2.0.0
 
   '@libsql/client-wasm@0.14.0':
@@ -14551,7 +14547,7 @@ snapshots:
   '@swc/core-win32-x64-msvc@1.7.26':
     optional: true
 
-  '@swc/core@1.7.26(@swc/helpers@0.5.15)':
+  '@swc/core@1.7.26':
     dependencies:
       '@swc/counter': 0.1.3
       '@swc/types': 0.1.19
@@ -14566,15 +14562,9 @@ snapshots:
       '@swc/core-win32-arm64-msvc': 1.7.26
       '@swc/core-win32-ia32-msvc': 1.7.26
       '@swc/core-win32-x64-msvc': 1.7.26
-      '@swc/helpers': 0.5.15
     optional: true
 
   '@swc/counter@0.1.3':
-    optional: true
-
-  '@swc/helpers@0.5.15':
-    dependencies:
-      tslib: 2.8.1
     optional: true
 
   '@swc/types@0.1.19':
@@ -17709,7 +17699,7 @@ snapshots:
       dompurify: 3.2.4
       html2canvas: 1.4.1
 
-  jsx-email@2.7.1(@emotion/is-prop-valid@1.3.1)(@jsx-email/plugin-inline@1.0.1)(@jsx-email/plugin-minify@1.0.1)(@jsx-email/plugin-pretty@1.0.0)(@types/node@22.13.10)(@types/react-dom@19.0.4(@types/react@19.0.10))(@types/react@19.0.10)(lightningcss@1.29.2)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(terser@5.39.0)(ts-node@10.9.2(@swc/core@1.7.26(@swc/helpers@0.5.15))(@types/node@22.13.10)(typescript@5.8.2))(typescript@5.8.2):
+  jsx-email@2.7.1(@emotion/is-prop-valid@1.3.1)(@jsx-email/plugin-inline@1.0.1)(@jsx-email/plugin-minify@1.0.1)(@jsx-email/plugin-pretty@1.0.0)(@types/node@22.13.10)(@types/react-dom@19.0.4(@types/react@19.0.10))(@types/react@19.0.10)(lightningcss@1.29.2)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(terser@5.39.0)(ts-node@10.9.2(@swc/core@1.7.26)(@types/node@22.13.10)(typescript@5.8.2))(typescript@5.8.2):
     dependencies:
       '@dot/log': 0.1.5
       '@jsx-email/doiuse-email': 1.0.4
@@ -17759,7 +17749,7 @@ snapshots:
       shiki: 1.29.2
       source-map-support: 0.5.21
       std-env: 3.8.1
-      tailwindcss: 3.4.15(ts-node@10.9.2(@swc/core@1.7.26(@swc/helpers@0.5.15))(@types/node@22.13.10)(typescript@5.8.2))
+      tailwindcss: 3.4.15(ts-node@10.9.2(@swc/core@1.7.26)(@types/node@22.13.10)(typescript@5.8.2))
       titleize: 4.0.0
       unist-util-visit: 5.0.0
       valibot: 0.42.1(typescript@5.8.2)
@@ -18809,13 +18799,13 @@ snapshots:
       camelcase-css: 2.0.1
       postcss: 8.5.3
 
-  postcss-load-config@4.0.2(postcss@8.5.3)(ts-node@10.9.2(@swc/core@1.7.26(@swc/helpers@0.5.15))(@types/node@22.13.10)(typescript@5.8.2)):
+  postcss-load-config@4.0.2(postcss@8.5.3)(ts-node@10.9.2(@types/node@22.13.10)(typescript@5.8.2)):
     dependencies:
       lilconfig: 3.1.3
       yaml: 2.7.0
     optionalDependencies:
       postcss: 8.5.3
-      ts-node: 10.9.2(@swc/core@1.7.26(@swc/helpers@0.5.15))(@types/node@22.13.10)(typescript@5.8.2)
+      ts-node: 10.9.2(@swc/core@1.7.26)(@types/node@22.13.10)(typescript@5.8.2)
 
   postcss-load-config@6.0.1(jiti@2.4.2)(postcss@8.5.3)(tsx@4.19.2)(yaml@2.7.0):
     dependencies:
@@ -19911,7 +19901,7 @@ snapshots:
       seroval: 1.2.1
       seroval-plugins: 1.2.1(seroval@1.2.1)
 
-  sonner@2.0.1(react-dom@19.0.0(react@19.0.0))(react@19.0.0):
+  sonner@1.7.4(react-dom@19.0.0(react@19.0.0))(react@19.0.0):
     dependencies:
       react: 19.0.0
       react-dom: 19.0.0(react@19.0.0)
@@ -20080,15 +20070,15 @@ snapshots:
 
   tailwind-merge@3.0.2: {}
 
-  tailwindcss-animate@1.0.7(tailwindcss@3.4.17(ts-node@10.9.2(@swc/core@1.7.26(@swc/helpers@0.5.15))(@types/node@22.13.10)(typescript@5.8.2))):
+  tailwindcss-animate@1.0.7(tailwindcss@3.4.17(ts-node@10.9.2(@types/node@22.13.10)(typescript@5.8.2))):
     dependencies:
-      tailwindcss: 3.4.17(ts-node@10.9.2(@swc/core@1.7.26(@swc/helpers@0.5.15))(@types/node@22.13.10)(typescript@5.8.2))
+      tailwindcss: 3.4.17(ts-node@10.9.2(@types/node@22.13.10)(typescript@5.8.2))
 
   tailwindcss-animate@1.0.7(tailwindcss@4.0.14):
     dependencies:
       tailwindcss: 4.0.14
 
-  tailwindcss@3.4.15(ts-node@10.9.2(@swc/core@1.7.26(@swc/helpers@0.5.15))(@types/node@22.13.10)(typescript@5.8.2)):
+  tailwindcss@3.4.15(ts-node@10.9.2(@swc/core@1.7.26)(@types/node@22.13.10)(typescript@5.8.2)):
     dependencies:
       '@alloc/quick-lru': 5.2.0
       arg: 5.0.2
@@ -20107,7 +20097,7 @@ snapshots:
       postcss: 8.5.3
       postcss-import: 15.1.0(postcss@8.5.3)
       postcss-js: 4.0.1(postcss@8.5.3)
-      postcss-load-config: 4.0.2(postcss@8.5.3)(ts-node@10.9.2(@swc/core@1.7.26(@swc/helpers@0.5.15))(@types/node@22.13.10)(typescript@5.8.2))
+      postcss-load-config: 4.0.2(postcss@8.5.3)(ts-node@10.9.2(@types/node@22.13.10)(typescript@5.8.2))
       postcss-nested: 6.2.0(postcss@8.5.3)
       postcss-selector-parser: 6.1.2
       resolve: 1.22.10
@@ -20115,7 +20105,7 @@ snapshots:
     transitivePeerDependencies:
       - ts-node
 
-  tailwindcss@3.4.17(ts-node@10.9.2(@swc/core@1.7.26(@swc/helpers@0.5.15))(@types/node@22.13.10)(typescript@5.8.2)):
+  tailwindcss@3.4.17(ts-node@10.9.2(@types/node@22.13.10)(typescript@5.8.2)):
     dependencies:
       '@alloc/quick-lru': 5.2.0
       arg: 5.0.2
@@ -20134,7 +20124,7 @@ snapshots:
       postcss: 8.5.3
       postcss-import: 15.1.0(postcss@8.5.3)
       postcss-js: 4.0.1(postcss@8.5.3)
-      postcss-load-config: 4.0.2(postcss@8.5.3)(ts-node@10.9.2(@swc/core@1.7.26(@swc/helpers@0.5.15))(@types/node@22.13.10)(typescript@5.8.2))
+      postcss-load-config: 4.0.2(postcss@8.5.3)(ts-node@10.9.2(@types/node@22.13.10)(typescript@5.8.2))
       postcss-nested: 6.2.0(postcss@8.5.3)
       postcss-selector-parser: 6.1.2
       resolve: 1.22.10
@@ -20305,7 +20295,7 @@ snapshots:
 
   ts-interface-checker@0.1.13: {}
 
-  ts-node@10.9.2(@swc/core@1.7.26(@swc/helpers@0.5.15))(@types/node@22.13.10)(typescript@5.8.2):
+  ts-node@10.9.2(@swc/core@1.7.26)(@types/node@22.13.10)(typescript@5.8.2):
     dependencies:
       '@cspotcode/source-map-support': 0.8.1
       '@tsconfig/node10': 1.0.11
@@ -20323,12 +20313,12 @@ snapshots:
       v8-compile-cache-lib: 3.0.1
       yn: 3.1.1
     optionalDependencies:
-      '@swc/core': 1.7.26(@swc/helpers@0.5.15)
+      '@swc/core': 1.7.26
     optional: true
 
   tslib@2.8.1: {}
 
-  tsup@8.3.5(@swc/core@1.7.26(@swc/helpers@0.5.15))(jiti@2.4.2)(postcss@8.5.3)(tsx@4.19.2)(typescript@5.8.2)(yaml@2.7.0):
+  tsup@8.3.5(@swc/core@1.7.26)(jiti@2.4.2)(postcss@8.5.3)(tsx@4.19.2)(typescript@5.8.2)(yaml@2.7.0):
     dependencies:
       bundle-require: 5.1.0(esbuild@0.24.2)
       cac: 6.7.14
@@ -20347,7 +20337,7 @@ snapshots:
       tinyglobby: 0.2.10
       tree-kill: 1.2.2
     optionalDependencies:
-      '@swc/core': 1.7.26(@swc/helpers@0.5.15)
+      '@swc/core': 1.7.26
       postcss: 8.5.3
       typescript: 5.8.2
     transitivePeerDependencies:
@@ -20356,7 +20346,7 @@ snapshots:
       - tsx
       - yaml
 
-  tsup@8.4.0(@swc/core@1.7.26(@swc/helpers@0.5.15))(jiti@2.4.2)(postcss@8.5.3)(tsx@4.19.3)(typescript@5.8.2)(yaml@2.7.0):
+  tsup@8.4.0(@swc/core@1.7.26)(jiti@2.4.2)(postcss@8.5.3)(tsx@4.19.3)(typescript@5.8.2)(yaml@2.7.0):
     dependencies:
       bundle-require: 5.1.0(esbuild@0.25.1)
       cac: 6.7.14
@@ -20375,7 +20365,7 @@ snapshots:
       tinyglobby: 0.2.12
       tree-kill: 1.2.2
     optionalDependencies:
-      '@swc/core': 1.7.26(@swc/helpers@0.5.15)
+      '@swc/core': 1.7.26
       postcss: 8.5.3
       typescript: 5.8.2
     transitivePeerDependencies:
@@ -20834,7 +20824,7 @@ snapshots:
       tsx: 4.19.3
       yaml: 2.7.0
 
-  vitest@3.0.8(@types/debug@4.1.12)(@types/node@22.13.10)(jiti@2.4.2)(jsdom@26.0.0(canvas@3.1.0))(lightningcss@1.29.2)(terser@5.39.0)(tsx@4.19.3)(yaml@2.7.0):
+  vitest@3.0.8(@types/debug@4.1.12)(@types/node@22.13.10)(jiti@2.4.2)(jsdom@26.0.0)(lightningcss@1.29.2)(terser@5.39.0)(tsx@4.19.3)(yaml@2.7.0):
     dependencies:
       '@vitest/expect': 3.0.8
       '@vitest/mocker': 3.0.8(vite@6.2.1(@types/node@22.13.10)(jiti@2.4.2)(lightningcss@1.29.2)(terser@5.39.0)(tsx@4.19.3)(yaml@2.7.0))

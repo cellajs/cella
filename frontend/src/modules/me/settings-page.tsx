@@ -82,7 +82,7 @@ const UserSettingsPage = () => {
     if (!onlineManager.isOnline()) return toaster(t('common:action.offline.text'), 'warning');
 
     // Proceed to OAuth URL with redirect and connect
-    window.location.href = `${provider.url}?connect=${user.id}&redirect=${encodeURIComponent(window.location.href)}`;
+    window.location.href = `${provider.url}?connect=${user.id}&type=connect&redirect=${encodeURIComponent(window.location.href)}`;
   };
 
   return (
