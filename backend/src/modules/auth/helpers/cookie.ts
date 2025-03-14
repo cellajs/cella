@@ -15,8 +15,7 @@ export type CookieName =
   | 'oauth_connect_user_id'
   | 'oauth_invite_tokenId'
   | 'oauth_invite_tokenType'
-  | 'passkey_challenge'
-  | 'oauth_type';
+  | 'passkey_challenge';
 
 /**
  * Sets an authentication cookie.
