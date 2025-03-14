@@ -9,7 +9,7 @@ import slugify from 'slugify';
 import { db } from '#/db/db';
 import { emailsTable } from '#/db/schema/emails';
 import { tokensTable } from '#/db/schema/tokens';
-import { createError, errorRedirect, errorResponse } from '#/lib/errors';
+import { createError } from '#/lib/errors';
 import { logEvent } from '#/middlewares/logger/log-event';
 import { getUsersByConditions } from '#/modules/users/helpers/get-user-by';
 import { getIsoDate } from '#/utils/iso-date';
@@ -28,44 +28,12 @@ const cookieExpires = new TimeSpan(5, 'm');
  * @param url - URL of the OAuth provider's authorization endpoint.
  * @param state - OAuth state parameter to prevent CSRF attacks.
  * @param codeVerifier - Optional, code verifier for PKCE.
- * @param redirect - Optional, URL to redirect the user to after OAuth.
- * @param connect - Optional, user ID to connect the OAuth account to.
- * @param token - Optional, invitation token for the OAuth process.
  * @returns Redirect response to the OAuth provider's authorization URL.
  */
-// TODO add Oauth req type, to avoid `sign_up_restricted` on signIn
-export const createOauthSession = async (
-  ctx: Context,
-  provider: string,
-  url: URL,
-  state: string,
-  codeVerifier?: string,
-  redirect?: string,
-  connect?: string,
-  token?: { id: string; inviteType: 'membership' | 'system' } | null,
-) => {
-  setAuthCookie(ctx, 'oauth_state', state, cookieExpires);
-  // If connecting oauth account to user, make sure same user is logged in
-  if (connect) {
-    const sessionData = await getParsedSessionCookie(ctx);
-    if (!sessionData) return errorResponse(ctx, 401, 'no_session', 'warn');
-
-    const { user } = await validateSession(sessionData.sessionToken);
-    if (user?.id !== connect) return errorResponse(ctx, 404, 'user_mismatch', 'warn');
-  }
-
-  // If sign up is disabled, stop early if no token or connect
-  if (!config.has.registrationEnabled && !token && !connect) return errorRedirect(ctx, 'sign_up_restricted', 'warn');
+export const createOauthSession = async (ctx: Context, provider: string, url: URL, state: string, codeVerifier?: string) => {
+  await setAuthCookie(ctx, 'oauth_state', state, cookieExpires);
 
   if (codeVerifier) await setAuthCookie(ctx, 'oauth_code_verifier', codeVerifier, cookieExpires);
-  if (redirect) await setAuthCookie(ctx, 'oauth_redirect', redirect, cookieExpires);
-  if (connect) await setAuthCookie(ctx, 'oauth_connect_user_id', connect, cookieExpires);
-  if (token) {
-    await Promise.all([
-      setAuthCookie(ctx, 'oauth_invite_tokenId', token.id, cookieExpires),
-      setAuthCookie(ctx, 'oauth_invite_tokenType', token.inviteType, cookieExpires),
-    ]);
-  }
 
   logEvent('User redirected', { strategy: provider });
 
@@ -200,31 +168,66 @@ export const updateExistingUser = async (ctx: Context, existingUser: UserModel, 
 };
 
 /**
- * Handle invitation token helper
+ * Handles an invitation token validation and sets authentication cookies.
  *
- * @param ctx
- * @returns Object with token data, redirect URL, and error
+ * @param ctx - The request context.
+ * @returns Error response if invalid or expired, otherwise sets cookies for authentication.
  */
-export const handleInvitationToken = async (ctx: Context) => {
+export const handleInvitation = async (ctx: Context) => {
   const token = ctx.req.query('token');
-  let redirectUrl = ctx.req.query('redirect');
+  if (!token) return createError(ctx, 404, 'invitation_not_found', 'warn');
 
-  if (!token) return { token: null, redirectUrl, error: null };
-
+  // Fetch token record
   const [tokenRecord] = await db.select().from(tokensTable).where(eq(tokensTable.token, token));
+  if (!tokenRecord) return createError(ctx, 404, 'invitation_not_found', 'warn');
+  if (isExpiredDate(tokenRecord.expiresAt)) return createError(ctx, 403, 'expired_token', 'warn');
+  if (tokenRecord.type !== 'invitation') return createError(ctx, 400, 'invalid_token', 'error');
 
-  if (!tokenRecord) return { token: null, redirectUrl, error: createError(ctx, 404, 'invitation_not_found', 'warn') };
-  if (isExpiredDate(tokenRecord.expiresAt)) return { token: null, redirectUrl, error: createError(ctx, 403, 'expired_token', 'warn') };
-  if (tokenRecord.type !== 'invitation') return { token: null, redirectUrl, error: createError(ctx, 400, 'invalid_token', 'error') };
+  // Determine redirection based on entity presence
+  const isMembershipInvite = !!tokenRecord.entity;
+  const redirectUrl = isMembershipInvite ? `/invitation/${tokenRecord.token}?tokenId=${tokenRecord.id}` : '/welcome';
 
-  const membershipInvite = !!tokenRecord.entity;
-  redirectUrl = membershipInvite ? `/invitation/${tokenRecord.token}?tokenId=${tokenRecord.id}` : '/welcome';
-  return {
-    token: { id: tokenRecord.id, inviteType: membershipInvite ? 'membership' : 'system' } as { id: string; inviteType: 'membership' | 'system' },
-    redirectUrl,
-    error: null,
-  };
+  // Set authentication cookies
+  await Promise.all([
+    setAuthCookie(ctx, 'oauth_invite_tokenId', tokenRecord.id, cookieExpires),
+    setAuthCookie(ctx, 'oauth_invite_tokenType', isMembershipInvite ? 'membership' : 'system', cookieExpires),
+    handleOAuthRedirect(ctx, redirectUrl),
+  ]);
+  return null;
 };
+
+/**
+ * Handles connecting an OAuth account to a user.
+ * Ensures that user attempting to connect is same as logged-in user.
+ *
+ * @param ctx Request context
+ * @returns Error object if validation fails, otherwise null
+ */
+export const handleOAuthConnection = async (ctx: Context) => {
+  const connectingUserId = ctx.req.query('connect');
+
+  if (!connectingUserId) return createError(ctx, 404, 'oauth_connection_not_found', 'error');
+
+  const sessionData = await getParsedSessionCookie(ctx);
+  if (!sessionData) return createError(ctx, 401, 'no_session', 'warn');
+
+  const { user } = await validateSession(sessionData.sessionToken);
+  if (user?.id !== connectingUserId) return createError(ctx, 403, 'user_mismatch', 'warn');
+
+  await setAuthCookie(ctx, 'oauth_connect_user_id', connectingUserId, cookieExpires);
+  return null;
+};
+
+/**
+ * Sets the OAuth redirect URL as a cookie.
+ *
+ * @param ctx - Hono context ojb.
+ * @param redirectUrl - URL to redirect user after authentication
+ */
+export const handleOAuthRedirect = async (ctx: Context, redirectUrl: string) => {
+  await setAuthCookie(ctx, 'oauth_redirect', redirectUrl, cookieExpires);
+};
+
 /**
  * Retrieve OAuth cookies (user ID and invite token) from the request context.
  *

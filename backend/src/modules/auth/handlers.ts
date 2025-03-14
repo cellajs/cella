@@ -15,7 +15,7 @@ import { sessionsTable } from '#/db/schema/sessions';
 import { tokensTable } from '#/db/schema/tokens';
 import { type UserModel, usersTable } from '#/db/schema/users';
 import { type Env, getContextToken, getContextUser } from '#/lib/context';
-import { errorRedirect, errorResponse } from '#/lib/errors';
+import { type ErrorType, errorRedirect, errorResponse } from '#/lib/errors';
 import { i18n } from '#/lib/i18n';
 import { mailer } from '#/lib/mailer';
 import { logEvent } from '#/middlewares/logger/log-event';
@@ -27,7 +27,9 @@ import {
   getOauthCookies,
   getOauthRedirectUrl,
   handleExistingOauthAccount,
-  handleInvitationToken,
+  handleInvitation,
+  handleOAuthConnection,
+  handleOAuthRedirect,
   slugFromEmail,
   transformGithubUserData,
   transformSocialUserData,
@@ -488,48 +490,66 @@ const authRoutes = app
    * Github authentication
    */
   .openapi(authRouteConfig.githubSignIn, async (ctx) => {
-    const { connect } = ctx.req.valid('query');
+    const { type, redirect } = ctx.req.valid('query');
+
+    if (redirect) await handleOAuthRedirect(ctx, redirect);
+    let error: ErrorType | null = null;
+
+    // If sign up is disabled, stop early
+    // if (type === 'signUp' && !config.has.registrationEnabled) return errorRedirect(ctx, 'sign_up_restricted', 'warn');
+    if (type === 'invite') error = await handleInvitation(ctx);
+    if (type === 'connect') error = await handleOAuthConnection(ctx);
+
+    if (error) return ctx.json({ success: false, error }, error.status as 400 | 403 | 404);
 
     const state = generateState();
     const url = githubAuth.createAuthorizationURL(state, githubScopes);
 
-    const { redirectUrl, token, error } = await handleInvitationToken(ctx);
-
-    if (error) return ctx.json({ success: false, error }, error.status as 400 | 403 | 404);
-
-    return await createOauthSession(ctx, 'github', url, state, '', redirectUrl, connect, token);
+    return await createOauthSession(ctx, 'github', url, state);
   })
   /*
    * Google authentication
    */
   .openapi(authRouteConfig.googleSignIn, async (ctx) => {
-    const { connect } = ctx.req.valid('query');
+    const { type, redirect } = ctx.req.valid('query');
+
+    if (redirect) await handleOAuthRedirect(ctx, redirect);
+    let error: ErrorType | null = null;
+
+    // If sign up is disabled, stop early
+    // if (type === 'signUp' && !config.has.registrationEnabled) return errorRedirect(ctx, 'sign_up_restricted', 'warn');
+    if (type === 'invite') error = await handleInvitation(ctx);
+    if (type === 'connect') error = await handleOAuthConnection(ctx);
+
+    if (error) return ctx.json({ success: false, error }, error.status as 400 | 403 | 404);
 
     const state = generateState();
     const codeVerifier = generateCodeVerifier();
     const url = googleAuth.createAuthorizationURL(state, codeVerifier, googleScopes);
 
-    const { redirectUrl, token, error } = await handleInvitationToken(ctx);
-
-    if (error) return ctx.json({ success: false, error }, error.status as 400 | 403 | 404);
-
-    return await createOauthSession(ctx, 'google', url, state, codeVerifier, redirectUrl, connect, token);
+    return await createOauthSession(ctx, 'google', url, state, codeVerifier);
   })
   /*
    * Microsoft authentication
    */
   .openapi(authRouteConfig.microsoftSignIn, async (ctx) => {
-    const { connect } = ctx.req.valid('query');
+    const { type, redirect } = ctx.req.valid('query');
+
+    if (redirect) await handleOAuthRedirect(ctx, redirect);
+    let error: ErrorType | null = null;
+
+    // If sign up is disabled, stop early
+    // if (type === 'signUp' && !config.has.registrationEnabled) return errorRedirect(ctx, 'sign_up_restricted', 'warn');
+    if (type === 'invite') error = await handleInvitation(ctx);
+    if (type === 'connect') error = await handleOAuthConnection(ctx);
+
+    if (error) return ctx.json({ success: false, error }, error.status as 400 | 403 | 404);
 
     const state = generateState();
     const codeVerifier = generateCodeVerifier();
     const url = microsoftAuth.createAuthorizationURL(state, codeVerifier, microsoftScopes);
 
-    const { redirectUrl, token, error } = await handleInvitationToken(ctx);
-
-    if (error) return ctx.json({ success: false, error }, error.status as 400 | 403 | 404);
-
-    return await createOauthSession(ctx, 'microsoft', url, state, codeVerifier, redirectUrl, connect, token);
+    return await createOauthSession(ctx, 'microsoft', url, state, codeVerifier);
   })
   /*
    * Github authentication callback
