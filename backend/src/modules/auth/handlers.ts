@@ -26,7 +26,6 @@ import {
   findExistingUser,
   getOauthCookies,
   getOauthRedirectUrl,
-  handleExistingOauthAccount,
   handleInvitation,
   handleOAuthConnection,
   handleOAuthRedirect,
@@ -538,8 +537,6 @@ const authRoutes = app
     if (redirect) await handleOAuthRedirect(ctx, redirect);
     let error: ErrorType | null = null;
 
-    // If sign up is disabled, stop early
-    // if (type === 'signUp' && !config.has.registrationEnabled) return errorRedirect(ctx, 'sign_up_restricted', 'warn');
     if (type === 'invite') error = await handleInvitation(ctx);
     if (type === 'connect') error = await handleOAuthConnection(ctx);
 
@@ -579,38 +576,33 @@ const authRoutes = app
 
       const githubUser: githubUserProps = await githubUserResponse.json();
       const githubUserEmails: githubUserEmailProps[] = await githubUserEmailsResponse.json();
+      const transformedUser = transformGithubUserData(githubUser, githubUserEmails);
 
       const provider = { id: strategy, userId: String(githubUser.id) };
 
       // Check account linking, invite
-      const { userId, inviteTokenId, inviteTokenType } = await getOauthCookies(ctx);
+      const { connectUserId, inviteToken } = await getOauthCookies(ctx);
 
-      // Check if OAuth account already exists
-      const existingStatus = await handleExistingOauthAccount(ctx, strategy, provider.userId, userId);
-      if (existingStatus === 'mismatch') return errorRedirect(ctx, 'oauth_mismatch', 'warn');
+      const existingUser = await findExistingUser(transformedUser.email, connectUserId, inviteToken?.id ?? null);
 
-      // Get redirect URL based on existingStatus
-      const redirectUrl = await getOauthRedirectUrl(ctx, existingStatus === null && !inviteTokenId);
-      if (existingStatus === 'auth') return ctx.redirect(redirectUrl, 302);
+      if (!config.has.registrationEnabled && !existingUser) return errorRedirect(ctx, 'sign_up_restricted', 'error');
 
-      const transformedUser = transformGithubUserData(githubUser, githubUserEmails);
-
-      const emailVerified = transformedUser.emailVerified || !!inviteTokenId;
-
-      const existingUser = await findExistingUser(transformedUser.email, userId, inviteTokenId);
+      const emailVerified = transformedUser.emailVerified || !!inviteToken;
+      const redirectUrl = await getOauthRedirectUrl(ctx, !existingUser && !inviteToken);
 
       if (existingUser) {
         const [existingOauth] = await db
           .select()
           .from(oauthAccountsTable)
-          .where(and(eq(oauthAccountsTable.userId, existingUser.id), eq(oauthAccountsTable.providerId, provider.id)));
+          .where(and(eq(oauthAccountsTable.providerUserId, provider.userId), eq(oauthAccountsTable.providerId, provider.id)));
 
         if (!existingOauth) {
           const { slug, name, emailVerified: transformVerified, ...providerUser } = transformedUser;
           return await updateExistingUser(ctx, existingUser, strategy, { providerUser, redirectUrl, emailVerified });
         }
-        if (existingOauth.providerUserId !== provider.userId) return errorRedirect(ctx, 'oauth_merge_error', 'error');
+        if (existingOauth && connectUserId && existingOauth.userId !== connectUserId) return errorRedirect(ctx, 'oauth_mismatch', 'warn');
 
+        await setUserSession(ctx, existingUser.id, provider.id);
         return ctx.redirect(redirectUrl, 302);
       }
 
@@ -621,7 +613,7 @@ const authRoutes = app
         redirectUrl,
         provider,
         emailVerified,
-        ...(inviteTokenType === 'membership' && { tokenId: inviteTokenId }),
+        ...(inviteToken && inviteToken.type === 'membership' && { tokenId: inviteToken.id }),
       });
     } catch (error) {
       // Handle invalid credentials
@@ -665,37 +657,33 @@ const authRoutes = app
       const response = await fetch('https://openidconnect.googleapis.com/v1/userinfo', { headers });
 
       const googleUser: googleUserProps = await response.json();
+      const transformedUser = transformSocialUserData(googleUser);
+
       const provider = { id: strategy, userId: googleUser.sub };
 
       // Check account linking, invite
-      const { userId, inviteTokenId, inviteTokenType } = await getOauthCookies(ctx);
+      const { connectUserId, inviteToken } = await getOauthCookies(ctx);
 
-      // Check if oauth account already exists
-      const existingStatus = await handleExistingOauthAccount(ctx, strategy, provider.userId, userId);
-      if (existingStatus === 'mismatch') return errorRedirect(ctx, 'oauth_mismatch', 'warn');
+      const existingUser = await findExistingUser(transformedUser.email, connectUserId, inviteToken?.id ?? null);
 
-      // Get redirectUrl based of existingStatus
-      const redirectUrl = await getOauthRedirectUrl(ctx, existingStatus === null && !inviteTokenId);
-      if (existingStatus === 'auth') return ctx.redirect(redirectUrl, 302);
+      if (!config.has.registrationEnabled && !existingUser) return errorRedirect(ctx, 'sign_up_restricted', 'error');
 
-      const transformedUser = transformSocialUserData(googleUser);
-
-      const emailVerified = transformedUser.emailVerified || !!inviteTokenId;
-
-      const existingUser = await findExistingUser(transformedUser.email, userId, inviteTokenId);
+      const emailVerified = transformedUser.emailVerified || !!inviteToken;
+      const redirectUrl = await getOauthRedirectUrl(ctx, !existingUser && !inviteToken);
 
       if (existingUser) {
         const [existingOauth] = await db
           .select()
           .from(oauthAccountsTable)
-          .where(and(eq(oauthAccountsTable.userId, existingUser.id), eq(oauthAccountsTable.providerId, provider.id)));
+          .where(and(eq(oauthAccountsTable.providerUserId, provider.userId), eq(oauthAccountsTable.providerId, provider.id)));
 
         if (!existingOauth) {
           const { slug, name, emailVerified: transformVerified, ...providerUser } = transformedUser;
           return await updateExistingUser(ctx, existingUser, strategy, { providerUser, redirectUrl, emailVerified });
         }
-        if (existingOauth.providerUserId !== provider.userId) return errorRedirect(ctx, 'oauth_merge_error', 'error');
+        if (existingOauth && connectUserId && existingOauth.userId !== connectUserId) return errorRedirect(ctx, 'oauth_mismatch', 'warn');
 
+        await setUserSession(ctx, existingUser.id, provider.id);
         return ctx.redirect(redirectUrl, 302);
       }
 
@@ -706,7 +694,7 @@ const authRoutes = app
         emailVerified,
         redirectUrl,
         provider,
-        ...(inviteTokenType === 'membership' && { tokenId: inviteTokenId }),
+        ...(inviteToken && inviteToken.type === 'membership' && { tokenId: inviteToken.id }),
       });
     } catch (error) {
       // Handle invalid credentials
@@ -750,36 +738,33 @@ const authRoutes = app
       const response = await fetch('https://graph.microsoft.com/oidc/userinfo', { headers });
 
       const microsoftUser: microsoftUserProps = await response.json();
-      const provider = { id: strategy, userId: microsoftUser.sub };
-
-      const { userId, inviteTokenId, inviteTokenType } = await getOauthCookies(ctx);
-
-      // Check if oauth account already exists
-      const existingStatus = await handleExistingOauthAccount(ctx, strategy, provider.userId, userId || '');
-      if (existingStatus === 'mismatch') return errorRedirect(ctx, 'oauth_mismatch', 'warn');
-
-      // Get redirectUrl based of existingStatus
-      const redirectUrl = await getOauthRedirectUrl(ctx, existingStatus === null && !inviteTokenId);
-      if (existingStatus === 'auth') return ctx.redirect(redirectUrl, 302);
-
       const transformedUser = transformSocialUserData(microsoftUser);
 
-      const emailVerified = transformedUser.emailVerified || !!inviteTokenId;
+      const provider = { id: strategy, userId: microsoftUser.sub };
 
-      const existingUser = await findExistingUser(transformedUser.email, userId, inviteTokenId);
+      // Check account linking, invite
+      const { connectUserId, inviteToken } = await getOauthCookies(ctx);
+
+      const existingUser = await findExistingUser(transformedUser.email, connectUserId, inviteToken?.id ?? null);
+
+      if (!config.has.registrationEnabled && !existingUser) return errorRedirect(ctx, 'sign_up_restricted', 'error');
+
+      const emailVerified = transformedUser.emailVerified || !!inviteToken;
+      const redirectUrl = await getOauthRedirectUrl(ctx, !existingUser && !inviteToken);
 
       if (existingUser) {
         const [existingOauth] = await db
           .select()
           .from(oauthAccountsTable)
-          .where(and(eq(oauthAccountsTable.userId, existingUser.id), eq(oauthAccountsTable.providerId, provider.id)));
+          .where(and(eq(oauthAccountsTable.providerUserId, provider.userId), eq(oauthAccountsTable.providerId, provider.id)));
 
         if (!existingOauth) {
           const { slug, name, emailVerified: transformVerified, ...providerUser } = transformedUser;
           return await updateExistingUser(ctx, existingUser, strategy, { providerUser, redirectUrl, emailVerified });
         }
-        if (existingOauth.providerUserId !== provider.userId) return errorRedirect(ctx, 'oauth_merge_error', 'error');
+        if (existingOauth && connectUserId && existingOauth.userId !== connectUserId) return errorRedirect(ctx, 'oauth_mismatch', 'warn');
 
+        await setUserSession(ctx, existingUser.id, provider.id);
         return ctx.redirect(redirectUrl, 302);
       }
 
@@ -790,7 +775,7 @@ const authRoutes = app
         redirectUrl,
         provider,
         emailVerified,
-        ...(inviteTokenType === 'membership' && { tokenId: inviteTokenId }),
+        ...(inviteToken && inviteToken.type === 'membership' && { tokenId: inviteToken.id }),
       });
     } catch (error) {
       // Handle invalid credentials

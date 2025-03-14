@@ -41,6 +41,11 @@ export const createOauthSession = async (ctx: Context, provider: string, url: UR
 };
 
 // Check if oauth account already exists
+export const checkExistingOauthAccount = async (oauthProvider: EnabledOauthProvider, oauthProviderId: string) => {
+  return await findOauthAccount(oauthProvider, oauthProviderId);
+};
+
+// Check if oauth account already exists
 export const handleExistingOauthAccount = async (
   ctx: Context,
   oauthProvider: EnabledOauthProvider,
@@ -80,12 +85,13 @@ export const getOauthRedirectUrl = async (ctx: Context, firstSignIn?: boolean) =
   let redirectPath = config.defaultRedirectPath;
 
   if (redirectCookie) {
-    if (redirectCookieUrl.startsWith(config.publicCDNUrl)) return decodeURIComponent(redirectCookie);
+    if (redirectCookieUrl.startsWith(config.publicCDNUrl)) return redirectCookieUrl;
     redirectPath = redirectCookieUrl;
   }
 
   if (firstSignIn) redirectPath = config.welcomeRedirectPath;
-  return config.frontendUrl + redirectPath;
+
+  return redirectPath.startsWith(config.frontendUrl) ? redirectPath : config.frontendUrl + redirectPath;
 };
 
 // Insert oauth account into db
@@ -232,16 +238,19 @@ export const handleOAuthRedirect = async (ctx: Context, redirectUrl: string) => 
  * Retrieve OAuth cookies (user ID and invite token) from the request context.
  *
  * @param  ctx - Hono context ojb.
- * @returns - An object containing `userId`, `inviteTokenId` and `inviteTokenType`, all or either can be null.
+ * @returns - An object containing `connectUserId`, `inviteTokenId` and `inviteTokenType`, all or either can be null.
  */
 export const getOauthCookies = async (ctx: Context) => {
-  const [userId, inviteTokenId, inviteTokenType] = await Promise.all([
+  const [connectUserId, inviteTokenId, inviteTokenType] = await Promise.all([
     getAuthCookie(ctx, 'oauth_connect_user_id'),
     getAuthCookie(ctx, 'oauth_invite_tokenId'),
     getAuthCookie(ctx, 'oauth_invite_tokenType'),
   ]);
 
-  return { userId: userId || null, inviteTokenId: inviteTokenId || null, inviteTokenType: inviteTokenType || null };
+  return {
+    connectUserId: connectUserId || null,
+    inviteToken: inviteTokenId && inviteTokenType ? { id: inviteTokenId, type: inviteTokenType } : null,
+  };
 };
 
 /**
