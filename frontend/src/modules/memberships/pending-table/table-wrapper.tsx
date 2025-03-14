@@ -10,6 +10,8 @@ import BaseDataTable from '~/modules/memberships/pending-table/table';
 import { MembershipInvitationsTableBar } from '~/modules/memberships/pending-table/table-bar';
 import type { memberInvitationsSearchSchema } from '~/routes/organizations';
 
+const LIMIT = config.requestLimits.memberInvitations;
+
 export type MembershipInvitationsSearch = z.infer<typeof memberInvitationsSearchSchema>;
 
 export interface MembershipInvitationsTableProps {
@@ -22,6 +24,7 @@ export const MembershipInvitationsTable = ({ entity }: MembershipInvitationsTabl
 
   // Table state
   const { sort, order } = search;
+  const limit = LIMIT;
 
   // State for selected and total counts
   const [total, setTotal] = useState<number | undefined>(undefined);
@@ -37,7 +40,7 @@ export const MembershipInvitationsTable = ({ entity }: MembershipInvitationsTabl
         ref={dataTableRef}
         entity={entity}
         columns={columns}
-        queryVars={{ sort, order, limit: config.requestLimits.memberInvitations }}
+        queryVars={{ ...search, limit }}
         sortColumns={sortColumns}
         setSortColumns={setSortColumns}
         setTotal={setTotal}

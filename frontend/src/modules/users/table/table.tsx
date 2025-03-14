@@ -13,9 +13,7 @@ import type { User } from '~/modules/users/types';
 import { useDataFromInfiniteQuery } from '~/query/hooks/use-data-from-query';
 import { useMutateQueryData } from '~/query/hooks/use-mutate-query-data';
 
-type BaseDataTableProps = BaseTableProps<User, UsersSearch> & {
-  queryVars: { role: UsersSearch['role'] };
-};
+type BaseDataTableProps = BaseTableProps<User, UsersSearch>;
 
 const BaseDataTable = memo(
   forwardRef<BaseTableMethods, BaseDataTableProps>(({ columns, queryVars, sortColumns, setSortColumns, setTotal, setSelected }, ref) => {

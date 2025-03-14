@@ -11,10 +11,7 @@ import { membersQueryOptions } from '~/modules/memberships/query/options';
 import type { Member } from '~/modules/memberships/types';
 import { useDataFromInfiniteQuery } from '~/query/hooks/use-data-from-query';
 
-type BaseDataTableProps = MembersTableProps &
-  BaseTableProps<Member, MemberSearch> & {
-    queryVars: { role: MemberSearch['role'] };
-  };
+type BaseDataTableProps = MembersTableProps & BaseTableProps<Member, MemberSearch>;
 
 const BaseDataTable = memo(
   forwardRef<BaseTableMethods, BaseDataTableProps>(({ entity, columns, queryVars, sortColumns, setSortColumns, setTotal, setSelected }, ref) => {
