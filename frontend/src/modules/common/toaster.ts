@@ -1,7 +1,5 @@
 import { toast } from 'sonner';
 
-const toastMap = new Map<string, string | number>();
-
 /**
  * Show a toast message
  * @param text
@@ -13,10 +11,11 @@ export const toaster = (
   type: 'success' | 'error' | 'info' | 'warning' | 'default' = 'default',
   options: { id?: number | string } = {},
 ) => {
-  const existingToastId = toastMap.get(text);
-
-  // Dismiss the previous toast if it exists
-  if (existingToastId) toast.dismiss(existingToastId);
+  // Get all active toasts and dismiss the ones with the same title
+  for (const existingToast of toast.getToasts()) {
+    if ('title' in existingToast && existingToast.title !== text) continue;
+    toast.dismiss(existingToast.id); // Dismiss the toast with the same title
+  }
 
   // Determine toast function based on type
   const toastFn =
@@ -28,7 +27,5 @@ export const toaster = (
       default: toast,
     }[type] || toast;
 
-  const newToastId = toastFn(text, options);
-
-  toastMap.set(text, newToastId);
+  toastFn(text, options);
 };

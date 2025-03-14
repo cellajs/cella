@@ -2,7 +2,6 @@ import { onlineManager } from '@tanstack/react-query';
 import { Archive, ArchiveRestore, Bell, BellOff } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useTranslation } from 'react-i18next';
-import { toast } from 'sonner';
 import { env } from '~/env';
 import { useMutation } from '~/hooks/use-mutations';
 import { dispatchCustomEvent } from '~/lib/custom-events';
@@ -56,8 +55,7 @@ export const MenuItemEdit = ({ item }: MenuItemEditProps) => {
   const handleUpdateMembershipKey = (key: 'archive' | 'mute') => {
     const membership = { ...item.membership }; // Clone the membership to make it mutable
     if (key === 'archive' && membership.archived && !onlineManager.isOnline()) {
-      toast.warning(t('common:action.offline.text'));
-      return;
+      return toaster(t('common:action.offline.text'), 'warning');
     }
 
     if (key === 'archive') membership.archived = !item.membership.archived;

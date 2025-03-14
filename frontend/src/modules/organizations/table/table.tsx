@@ -3,7 +3,6 @@ import { Bird } from 'lucide-react';
 import { forwardRef, memo, useEffect, useImperativeHandle } from 'react';
 import type { RowsChangeData } from 'react-data-grid';
 import { useTranslation } from 'react-i18next';
-import { toast } from 'sonner';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { DataTable } from '~/modules/common/data-table';
 import { tablePropsAreEqual } from '~/modules/common/data-table/table-props-are-equal';
@@ -51,9 +50,9 @@ const BaseDataTable = memo(
         })
           .then(() => {
             getAndSetMenu();
-            toast.success(t('common:success.role_updated'));
+            toaster(t('common:success.role_updated'), 'success');
           })
-          .catch(() => toast.error(t('error:error')));
+          .catch(() => toaster(t('error:error'), 'error'));
       }
 
       setRows(changedRows);
