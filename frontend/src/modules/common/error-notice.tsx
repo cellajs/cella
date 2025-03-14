@@ -1,7 +1,6 @@
 import { SearchParamError, useRouterState } from '@tanstack/react-router';
 import type { TFunction } from 'i18next';
 import { ChevronDown, Home, MessageCircleQuestion, RefreshCw } from 'lucide-react';
-import type React from 'react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { ApiError } from '~/lib/api';
@@ -60,7 +59,7 @@ export const getErrorText = (t: TFunction, error?: ErrorNoticeError, errorFromQu
 // - root: no footer can be shown because services are not available
 // - app: no footer required
 // - public: show footer
-const ErrorNotice: React.FC<ErrorNoticeProps> = ({ error, resetErrorBoundary, level }) => {
+const ErrorNotice = ({ error, resetErrorBoundary, level }: ErrorNoticeProps) => {
   const { t } = useTranslation();
   const { location } = useRouterState();
   const { error: errorFromQuery, severity: severityFromQuery } = location.search;

@@ -1,7 +1,6 @@
 import type { PartialBlock } from '@blocknote/core';
 import { type FilePanelProps, useBlockNoteEditor } from '@blocknote/react';
 import { DialogDescription } from '@radix-ui/react-dialog';
-import type React from 'react';
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useOnlineManager } from '~/hooks/use-online-manager';
@@ -32,7 +31,7 @@ interface UppyFilePanelProps {
   onCreateCallback?: (result: UploadedUppyFile[]) => void;
 }
 
-const UppyFilePanel: React.FC<UppyFilePanelProps & FilePanelProps> = ({ onCreateCallback, ...props }) => {
+const UppyFilePanel = ({ onCreateCallback, ...props }: UppyFilePanelProps & FilePanelProps) => {
   const { t } = useTranslation();
   const { block } = props;
   const { isOnline } = useOnlineManager();
