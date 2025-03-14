@@ -2,6 +2,32 @@ import { useEffect, useState } from 'react';
 import { type FieldPath, type FieldValues, type UseFormProps, type UseFormReturn, useForm } from 'react-hook-form';
 import { useDraftStore } from '~/store/draft';
 
+/**
+ * This hook manages form state with draft-saving support. It automatically
+ * restores saved drafts on mount and tracks unsaved changes.
+ *
+ * @param formId - A unique identifier for the form draft storage.
+ * @param opt - Optional configuration:
+ *   - `formOptions`: Props passed to `useForm()` from react-hook-form.
+ *   - `formContainerId`: element id to target and toggle .unsaved-changes class with.
+ *
+ * @returns - Returns form methods along with:
+ *  - `unsavedChanges`: `true` if the form has unsaved changes.
+ *  - `loading`: `true` while restoring draft data.
+ *
+ * @example
+ * const form = useFormWithDraft<MyFormType>('my-form', {
+ *   onUnsavedChanges: () => console.info('Unsaved changes detected!')
+ * });
+ *
+ * return (
+ *   <form onSubmit={form.handleSubmit(onSubmit)}>
+ *     <input {...form.register('name')} />
+ *     {form.unsavedChanges && <span>You have unsaved changes</span>}
+ *     <button type="submit">Submit</button>
+ *   </form>
+ * );
+ */
 export function useFormWithDraft<
   TFieldValues extends FieldValues = FieldValues,
   // biome-ignore lint/suspicious/noExplicitAny: Can be any form context
