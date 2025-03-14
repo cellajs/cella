@@ -1,6 +1,6 @@
 import { GitHub, Google, MicrosoftEntraId } from 'arctic';
-import { config } from 'config';
-import { env } from '../../../env';
+import { type EnabledOauthProvider, config } from 'config';
+import { env } from '../../../../env';
 
 export const githubAuth = new GitHub(env.GITHUB_CLIENT_ID || '', env.GITHUB_CLIENT_SECRET || '', `${config.backendAuthUrl}/github/callback`);
 
@@ -13,7 +13,9 @@ export const microsoftAuth = new MicrosoftEntraId(
   `${config.backendAuthUrl}/microsoft/callback`,
 );
 
-export interface githubUserProps {
+export type Provider = { id: EnabledOauthProvider; userId: string };
+
+export interface GithubUserProps {
   avatar_url: string;
   bio: string | null;
   blog: string | null;
@@ -47,14 +49,14 @@ export interface githubUserProps {
   url: string;
 }
 
-export interface githubUserEmailProps {
+export interface GithubUserEmailProps {
   email: string;
   primary: boolean;
   verified: boolean;
   visibility: string | null;
 }
 
-export interface googleUserProps {
+export interface GoogleUserProps {
   sub: string;
   name: string;
   given_name: string;
@@ -65,7 +67,7 @@ export interface googleUserProps {
   locale: string;
 }
 
-export interface microsoftUserProps {
+export interface MicrosoftUserProps {
   sub: string;
   name: string;
   given_name: string;

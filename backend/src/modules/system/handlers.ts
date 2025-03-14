@@ -19,10 +19,10 @@ import { logEvent } from '#/middlewares/logger/log-event';
 import { getUsersByConditions } from '#/modules/users/helpers/get-user-by';
 import defaultHook from '#/utils/default-hook';
 import { nanoid } from '#/utils/nanoid';
+import { slugFromEmail } from '#/utils/slug-from-email';
 import { TimeSpan, createDate } from '#/utils/time-span';
 import { NewsletterEmail, type NewsletterEmailProps } from '../../../emails/newsletter';
 import { env } from '../../env';
-import { slugFromEmail } from '../auth/helpers/oauth';
 import systemRouteConfig from './routes';
 
 const paddle = new Paddle(env.PADDLE_API_KEY || '');
