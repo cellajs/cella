@@ -1,6 +1,5 @@
 import { Mail, Trash, XSquare } from 'lucide-react';
 import { motion } from 'motion/react';
-import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import ColumnsView from '~/modules/common/data-table/columns-view';
 import { TableBarContainer } from '~/modules/common/data-table/table-bar-container';
@@ -12,19 +11,19 @@ import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { FocusView } from '~/modules/common/focus-view';
 import SelectRole from '~/modules/common/form-fields/select-role';
 import { toaster } from '~/modules/common/toaster';
+import UnsavedBadge from '~/modules/common/unsaved-badge';
 import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
 import DeleteUsers from '~/modules/users/delete-users';
 import type { UsersSearch } from '~/modules/users/table/table-wrapper';
 import type { User } from '~/modules/users/types';
+import InviteUsers from '../invite-users';
 
 type UsersTableBarProps = BaseTableMethods & BaseTableBarProps<User, UsersSearch> & {};
 
 export const UsersTableBar = ({ total, selected, searchVars, setSearch, columns, setColumns, clearSelection }: UsersTableBarProps) => {
   const { t } = useTranslation();
   const createDialog = useDialoger((state) => state.create);
-
-  const containerRef = useRef(null);
 
   const { q, role } = searchVars;
 
@@ -46,19 +45,16 @@ export const UsersTableBar = ({ total, selected, searchVars, setSearch, columns,
     clearSelection();
   };
 
-  // TODO
   const openInviteDialog = () => {
-    // createDialog(<InviteUsers mode={'email'} dialog />, {
-    //   id: 'invite-users',
-    //   drawerOnMobile: false,
-    //   className: 'w-auto shadow-none relative z-60 max-w-4xl',
-    //   container,
-    //   containerBackdrop: true,
-    //   containerBackdropClassName: 'z-50',
-    //   title: t('common:invite'),
-    //   titleContent: <UnsavedBadge title={t('common:invite')} />,
-    //   description: `${t('common:invite_users.text')}`,
-    // });
+    createDialog(<InviteUsers mode={'email'} dialog />, {
+      id: 'invite-users',
+      drawerOnMobile: false,
+      className: 'w-auto shadow-none relative z-60 max-w-4xl',
+      container: { id: 'invite-users-container', overlay: true },
+      title: t('common:invite'),
+      titleContent: <UnsavedBadge title={t('common:invite')} />,
+      description: `${t('common:invite_users.text')}`,
+    });
   };
 
   const openDeleteDialog = () => {
@@ -147,7 +143,7 @@ export const UsersTableBar = ({ total, selected, searchVars, setSearch, columns,
       </TableBarContainer>
 
       {/* Container for embedded dialog */}
-      <div className="empty:hidden" ref={containerRef} />
+      <div id="invite-users-container" className="empty:hidden" />
     </>
   );
 };

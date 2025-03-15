@@ -3,6 +3,11 @@ import { create } from 'zustand';
 import { immer } from 'zustand/middleware/immer';
 import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
 
+type DialogContainerOptions = {
+  id: string;
+  overlay?: boolean;
+};
+
 export type DialogData = {
   id: number | string;
   title?: string | ReactNode;
@@ -11,6 +16,7 @@ export type DialogData = {
   className?: string;
   headerClassName?: string;
   hideClose?: boolean;
+  container?: DialogContainerOptions;
   content?: ReactNode;
   titleContent?: string | ReactNode;
   open?: boolean;

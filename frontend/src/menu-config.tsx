@@ -13,6 +13,9 @@ type SectionsSchema = {
   icon?: React.ElementType<LucideProps>;
 };
 
+/**
+ * Create new organization from the menu.
+ */
 const createOrganizationAction = () => {
   const callback = (createdOrganization: Organization) => {
     useDialoger.getState().remove('create-organization');
@@ -27,6 +30,9 @@ const createOrganizationAction = () => {
   });
 };
 
+/**
+ * Configuration to set menu sections with options for different context entities.
+ */
 export const menuSectionsSchemas: Partial<Record<ContextEntity, SectionsSchema>> = {
   organization: { createAction: createOrganizationAction, label: 'common:organizations' },
 };

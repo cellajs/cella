@@ -2544,6 +2544,7 @@ packages:
 
   '@evilmartians/lefthook@1.11.3':
     resolution: {integrity: sha512-ic3gCgCnm7XQCxGLsnLXU+33J86iFuC5r4JYSWrMXo0rTjGT6EqKKpSDuA0r/1F14VZmdgmvRUTXTBOvXA2UXA==}
+    cpu: [x64, arm64, ia32]
     os: [darwin, linux, win32]
     hasBin: true
 
@@ -6346,8 +6347,8 @@ packages:
     engines: {node: '>=0.10.0'}
     hasBin: true
 
-  electron-to-chromium@1.5.118:
-    resolution: {integrity: sha512-yNDUus0iultYyVoEFLnQeei7LOQkL8wg8GQpkPCRrOlJXlcCwa6eGKZkxQ9ciHsqZyYbj8Jd94X1CTPzGm+uIA==}
+  electron-to-chromium@1.5.119:
+    resolution: {integrity: sha512-Ku4NMzUjz3e3Vweh7PhApPrZSS4fyiCIbcIrG9eKrriYVLmbMepETR/v6SU7xPm98QTqMSYiCwfO89QNjXLkbQ==}
 
   embla-carousel-autoplay@8.5.2:
     resolution: {integrity: sha512-27emJ0px3q/c0kCHCjwRrEbYcyYUPfGO3g5IBWF1i7714TTzE6L9P81V6PHLoSMAKJ1aHoT2e7YFOsuFKCbyag==}
@@ -15695,7 +15696,7 @@ snapshots:
   browserslist@4.24.4:
     dependencies:
       caniuse-lite: 1.0.30001704
-      electron-to-chromium: 1.5.118
+      electron-to-chromium: 1.5.119
       node-releases: 2.0.19
       update-browserslist-db: 1.1.3(browserslist@4.24.4)
 
@@ -16313,7 +16314,7 @@ snapshots:
     dependencies:
       jake: 10.9.2
 
-  electron-to-chromium@1.5.118: {}
+  electron-to-chromium@1.5.119: {}
 
   embla-carousel-autoplay@8.5.2(embla-carousel@8.5.2):
     dependencies:

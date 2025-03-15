@@ -1,7 +1,6 @@
 import { onlineManager } from '@tanstack/react-query';
 import { Mail, Trash, XSquare } from 'lucide-react';
 import { motion } from 'motion/react';
-import { useRef } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
 import { sort } from 'virtua/unstable_core';
 import ColumnsView from '~/modules/common/data-table/columns-view';
@@ -46,20 +45,19 @@ export const MembersTableBar = ({
   const { t } = useTranslation();
   const createDialog = useDialoger((state) => state.create);
 
-  const containerRef = useRef(null);
-
   const { q, role, order } = searchVars;
 
   const isFiltered = role !== undefined || !!q;
   const isAdmin = entity.membership?.role === 'admin';
   const entityType = entity.entity;
 
-  // Drop selected Rows on search
+  // Clear selected rows on search
   const onSearch = (searchString: string) => {
     clearSelection();
     setSearch({ q: searchString });
   };
-  // Drop selected Rows on role change
+
+  // Clear selected rows on role change
   const onRoleChange = (role?: string) => {
     clearSelection();
     setSearch({ role: role === 'all' ? undefined : (role as MemberSearch['role']) });
@@ -103,9 +101,7 @@ export const MembersTableBar = ({
       id: 'invite-users',
       drawerOnMobile: false,
       className: 'w-auto shadow-none relative z-60 max-w-4xl',
-      // container,
-      // containerBackdrop: true,
-      // containerBackdropClassName: 'z-50',
+      container: { id: 'invite-users-container', overlay: true },
       title: t('common:invite'),
       titleContent: <UnsavedBadge title={t('common:invite')} />,
       description: `${t('common:invite_users.text')}`,
@@ -160,10 +156,7 @@ export const MembersTableBar = ({
 
                 <Button asChild variant="ghost" onClick={clearSelection}>
                   <motion.button
-                    transition={{
-                      bounce: 0,
-                      duration: 0.2,
-                    }}
+                    transition={{ bounce: 0, duration: 0.2 }}
                     initial={{ x: -20, opacity: 0 }}
                     animate={{ x: 0, opacity: 1 }}
                     exit={{ x: -20, opacity: 0 }}
@@ -213,7 +206,7 @@ export const MembersTableBar = ({
       </TableBarContainer>
 
       {/* Container ref to embed dialog */}
-      <div className="empty:hidden" ref={containerRef} />
+      <div id="invite-users-container" className="empty:hidden" />
     </div>
   );
 };
