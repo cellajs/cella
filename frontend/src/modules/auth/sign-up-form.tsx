@@ -11,7 +11,7 @@ import { ArrowRight, ChevronDown } from 'lucide-react';
 import { Suspense, lazy } from 'react';
 import { signUp, signUpWithToken } from '~/modules/auth/api';
 import type { TokenData } from '~/modules/auth/types';
-import { dialog } from '~/modules/common/dialoger/state';
+import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import Spinner from '~/modules/common/spinner';
 import { Button, SubmitButton } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '~/modules/ui/form';
@@ -140,6 +140,7 @@ export const SignUpForm = ({ tokenData, email, resetSteps, emailEnabled }: Props
 
 export const LegalNotice = ({ email }: { email: string }) => {
   const { t } = useTranslation();
+  const createDialog = useDialoger((state) => state.create);
 
   const openDialog = (mode: 'terms' | 'privacy') => () => {
     const dialogComponent = (
@@ -148,7 +149,7 @@ export const LegalNotice = ({ email }: { email: string }) => {
       </Suspense>
     );
 
-    dialog(dialogComponent, {
+    createDialog(dialogComponent, {
       className: 'md:max-w-3xl mb-10 px-6',
       drawerOnMobile: false,
     });

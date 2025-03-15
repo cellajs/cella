@@ -1,7 +1,7 @@
 import type { Organization } from '~/modules/organizations/types';
 
 import { DeleteForm } from '~/modules/common/delete-form';
-import { dialog } from '~/modules/common/dialoger/state';
+import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { deleteMenuItem } from '~/modules/navigation/menu-sheet/helpers/menu-operations';
 import { organizationsKeys, useOrganizationDeleteMutation } from '~/modules/organizations/query';
 import { queryClient } from '~/query/query-client';
@@ -13,6 +13,7 @@ interface Props {
 }
 
 const DeleteOrganizations = ({ organizations, callback, dialog: isDialog }: Props) => {
+  const removeDialog = useDialoger((state) => state.remove);
   const { mutate: deleteOrganizations, isPending } = useOrganizationDeleteMutation();
 
   const onDelete = () => {
@@ -25,14 +26,14 @@ const DeleteOrganizations = ({ organizations, callback, dialog: isDialog }: Prop
             queryClient.invalidateQueries({ queryKey: organizationsKeys.single(organization.slug) });
             deleteMenuItem(organization.id);
           }
-          if (isDialog) dialog.remove();
+          if (isDialog) removeDialog();
           callback?.(organizations);
         },
       },
     );
   };
 
-  return <DeleteForm onDelete={onDelete} onCancel={() => dialog.remove()} pending={isPending} />;
+  return <DeleteForm onDelete={onDelete} onCancel={removeDialog} pending={isPending} />;
 };
 
 export default DeleteOrganizations;

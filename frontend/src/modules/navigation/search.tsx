@@ -7,7 +7,7 @@ import { useTranslation } from 'react-i18next';
 import type { z } from 'zod';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
-import { dialog } from '~/modules/common/dialoger/state';
+import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import StickyBox from '~/modules/common/sticky-box';
 import { entitiesQueryOptions } from '~/modules/entities/query';
 import { Button } from '~/modules/ui/button';
@@ -77,7 +77,7 @@ export const AppSearch = () => {
       params: entityRoute.params,
     });
 
-    dialog.remove(false);
+    useDialoger.getState().remove();
   };
 
   useEffect(() => {

@@ -7,7 +7,7 @@ import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { useMutation } from '~/hooks/use-mutations';
 import { requestPasswordEmail } from '~/modules/auth/api';
-import { dialog } from '~/modules/common/dialoger/state';
+import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 
 export const RequestPasswordForm = ({ email = '' }: { email?: string }) => {
   const { t } = useTranslation();
@@ -21,7 +21,7 @@ export const RequestPasswordForm = ({ email = '' }: { email?: string }) => {
     mutationFn: requestPasswordEmail,
     onSuccess: () => {
       toast.success(t('common:success.reset_link_sent'));
-      dialog.remove();
+      useDialoger.getState().remove();
     },
     onError: () => {
       document.getElementById('reset-email-field')?.focus();

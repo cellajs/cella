@@ -64,7 +64,15 @@ export const useUpdateUserMutation = () => {
     mutationKey: usersKeys.update(),
     mutationFn: updateUser,
     onSuccess: (updatedUser) => {
+      // Update single user
       queryClient.setQueryData(usersKeys.single(updatedUser.slug), updatedUser);
+
+      // Update user list
+      queryClient.setQueryData(usersKeys.list(), (existingUsers: User[] | undefined) => {
+        if (!existingUsers) return [];
+
+        return existingUsers.map((user) => (user.id === updatedUser.id ? updatedUser : user));
+      });
     },
     gcTime: 1000 * 10,
   });

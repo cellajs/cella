@@ -6,8 +6,8 @@ import type { UserMenuItem } from '~/modules/me/types';
 
 /**
  * This function returns queries that need to be prefetched based on the entity of the item.
- *
- * It is used to prefetch data for each unarchived item in user menu if offlineAccess is enabled, allowing the app to have necessary data while offline.
+ * It is used to prefetch data for each unarchived item in user menu if offlineAccess is enabled,
+ * allowing the app to have entity and content data while offline.
  */
 export const queriesToMap = (item: UserMenuItem) => {
   const orgIdOrSlug = item.organizationId ?? item.id;

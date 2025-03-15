@@ -5,7 +5,7 @@ import { Suspense, memo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { lazyWithPreload } from 'react-lazy-with-preload';
 import { dispatchCustomEvent } from '~/lib/custom-events';
-import { dialog } from '~/modules/common/dialoger/state';
+import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { toaster } from '~/modules/common/toaster';
 import { Button } from '~/modules/ui/button';
 import { numberToColorClass } from '~/utils/number-to-color-class';
@@ -22,6 +22,7 @@ export interface PageCoverProps {
 
 const PageCover = memo(({ type, id, canUpdate, url }: PageCoverProps) => {
   const { t } = useTranslation();
+  const dialog = useDialoger();
 
   const [coverUrl, setCoverUrl] = useState(url);
 
@@ -34,7 +35,7 @@ const PageCover = memo(({ type, id, canUpdate, url }: PageCoverProps) => {
   const openUploadDialog = () => {
     if (!onlineManager.isOnline()) return toaster(t('common:action.offline.text'), 'warning');
 
-    dialog(
+    dialog.create(
       <Suspense>
         <UploadUppy
           isPublic={true}
@@ -45,7 +46,7 @@ const PageCover = memo(({ type, id, canUpdate, url }: PageCoverProps) => {
           callback={(result) => {
             const url = result[0].url;
             if (url) setUrl(url);
-            dialog.remove(true, 'page-cover');
+            dialog.remove('page-cover');
           }}
         />
       </Suspense>,

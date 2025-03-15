@@ -103,7 +103,15 @@ export const useOrganizationUpdateMutation = () => {
     mutationKey: organizationsKeys.update(),
     mutationFn: updateOrganization,
     onSuccess: (updatedOrganization, { idOrSlug }) => {
+      // Update single organization
       queryClient.setQueryData(organizationsKeys.single(idOrSlug), updatedOrganization);
+
+      // Update organization list
+      queryClient.setQueryData(organizationsKeys.list(), (existingOrganizations: Organization[] | undefined) => {
+        if (!existingOrganizations) return [];
+
+        return existingOrganizations.map((org) => (org.id === updatedOrganization.id ? updatedOrganization : org));
+      });
     },
   });
 };

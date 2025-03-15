@@ -1,6 +1,6 @@
 import { config } from 'config';
 import { useTranslation } from 'react-i18next';
-import { sheet } from '~/modules/common/sheeter/state';
+import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
 import { toaster } from '~/modules/common/toaster';
 import { Switch } from '~/modules/ui/switch';
 import { useNavigationStore } from '~/store/navigation';
@@ -20,7 +20,7 @@ export const OfflineAccessSwitch = () => {
     toggleOfflineAccess();
 
     // Close the navigation sheet & set it state to null
-    sheet.remove('nav-sheet');
+    useSheeter.getState().remove('nav-sheet');
     setNavSheetOpen(null);
   };
 

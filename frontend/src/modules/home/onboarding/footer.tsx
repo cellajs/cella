@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 
 import { ArrowLeft, Redo } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { dialog } from '~/modules/common/dialoger/state';
+import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { useStepper } from '~/modules/common/stepper';
 import { onDefaultBoardingSteps } from '~/modules/home/onboarding/onboarding-config';
 import { SkipOrganization } from '~/modules/home/onboarding/skip-organization';
@@ -24,7 +24,7 @@ const StepperFooter = ({
   const skipStep = (e: { preventDefault: () => void }) => {
     e.preventDefault();
     if (onDefaultBoardingSteps[activeStep].id === 'organization' && !hasOrganizations) {
-      dialog(<SkipOrganization />, {
+      useDialoger.getState().create(<SkipOrganization />, {
         className: 'md:max-w-xl',
         title: `${t('common:skip')} ${t('common:create_resource', { resource: t('common:organization') }).toLowerCase()}`,
         description: t('common:skip_org_creation.text'),

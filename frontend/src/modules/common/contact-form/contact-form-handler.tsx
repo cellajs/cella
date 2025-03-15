@@ -1,5 +1,5 @@
 import { i18n } from '~/lib/i18n';
-import { dialog } from '../dialoger/state';
+import { useDialoger } from '../dialoger/use-dialoger';
 import UnsavedBadge from '../unsaved-badge';
 import ContactForm from './contact-form';
 
@@ -7,7 +7,7 @@ import ContactForm from './contact-form';
  * Launch contact form dialog
  */
 export const contactFormHandler = () => {
-  dialog(<ContactForm dialog />, {
+  useDialoger.getState().create(<ContactForm dialog />, {
     id: 'contact-form',
     drawerOnMobile: false,
     className: 'sm:max-w-5xl',

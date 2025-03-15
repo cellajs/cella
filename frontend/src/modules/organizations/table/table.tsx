@@ -19,12 +19,12 @@ import { useUserStore } from '~/store/user';
 type BaseDataTableProps = BaseTableProps<Organization, OrganizationsSearch>;
 
 const BaseDataTable = memo(
-  forwardRef<BaseTableMethods, BaseDataTableProps>(({ columns, queryVars, sortColumns, setSortColumns, setTotal, setSelected }, ref) => {
+  forwardRef<BaseTableMethods, BaseDataTableProps>(({ columns, searchVars, sortColumns, setSortColumns, setTotal, setSelected }, ref) => {
     const { t } = useTranslation();
     const { user } = useUserStore();
 
     // Extract query variables and set defaults
-    const { q, sort, order, limit } = queryVars;
+    const { q, sort, order, limit } = searchVars;
 
     // Query organizations
     const { rows, selectedRows, setRows, setSelectedRows, totalCount, isLoading, isFetching, error, fetchNextPage } = useDataFromInfiniteQuery(

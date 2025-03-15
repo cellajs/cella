@@ -14,13 +14,13 @@ import { useDataFromInfiniteQuery } from '~/query/hooks/use-data-from-query';
 type BaseDataTableProps = MembersTableProps & BaseTableProps<Member, MemberSearch>;
 
 const BaseDataTable = memo(
-  forwardRef<BaseTableMethods, BaseDataTableProps>(({ entity, columns, queryVars, sortColumns, setSortColumns, setTotal, setSelected }, ref) => {
+  forwardRef<BaseTableMethods, BaseDataTableProps>(({ entity, columns, searchVars, sortColumns, setSortColumns, setTotal, setSelected }, ref) => {
     const { t } = useTranslation();
     const entityType = entity.entity;
     const organizationId = entity.organizationId || entity.id;
 
     // Extract query variables and set defaults
-    const { q, role, sort, order, limit } = queryVars;
+    const { q, role, sort, order, limit } = searchVars;
 
     // Query members
     const { rows, selectedRows, setRows, setSelectedRows, totalCount, isLoading, isFetching, error, fetchNextPage } = useDataFromInfiniteQuery(

@@ -16,10 +16,10 @@ import { useDataFromInfiniteQuery } from '~/query/hooks/use-data-from-query';
 type BaseDataTableProps = AttachmentsTableProps & BaseTableProps<Attachment, AttachmentSearch>;
 
 const BaseDataTable = memo(
-  forwardRef<BaseTableMethods, BaseDataTableProps>(({ entity, columns, queryVars, sortColumns, setSortColumns, setTotal, setSelected }, ref) => {
+  forwardRef<BaseTableMethods, BaseDataTableProps>(({ entity, columns, searchVars, sortColumns, setSortColumns, setTotal, setSelected }, ref) => {
     const { t } = useTranslation();
 
-    const { q, sort, order, limit } = queryVars;
+    const { q, sort, order, limit } = searchVars;
     const orgIdOrSlug = entity.membership?.organizationId || entity.id;
 
     // Query attachments

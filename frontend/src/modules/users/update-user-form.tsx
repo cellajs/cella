@@ -13,7 +13,7 @@ import AvatarFormField from '~/modules/common/form-fields/avatar';
 import InputFormField from '~/modules/common/form-fields/input';
 import { SelectLanguage } from '~/modules/common/form-fields/select-language';
 import { SlugFormField } from '~/modules/common/form-fields/slug';
-import { sheet } from '~/modules/common/sheeter/state';
+import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
 import { toaster } from '~/modules/common/toaster';
 import { useUpdateSelfMutation } from '~/modules/me/query';
 import { Button, SubmitButton } from '~/modules/ui/button';
@@ -86,7 +86,7 @@ const UpdateUserForm = ({ user, callback, sheet: isSheet, hiddenFields, children
           } else toaster(t('common:success.update_item', { item: t('common:user') }), 'success');
 
           form.reset(updatedUser);
-          if (isSheet) sheet.remove(formContainerId);
+          if (isSheet) useSheeter.getState().remove(formContainerId);
 
           callback?.(updatedUser);
         },

@@ -5,7 +5,7 @@ import { useScrollSpy } from '~/hooks/use-scroll-spy';
 import { buttonVariants } from '~/modules/ui/button';
 import { cn } from '~/utils/cn';
 
-interface Tab {
+interface PageTab {
   id: string;
   label: string;
   resource?: string;
@@ -17,7 +17,7 @@ interface PageAsideProps<T> {
   tabs: T[] | readonly T[];
 }
 
-export const PageAside = <T extends Tab>({ tabs, className }: PageAsideProps<T>) => {
+export const PageAside = <T extends PageTab>({ tabs, className }: PageAsideProps<T>) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const sectionIds = tabs.map((tab) => tab.id);

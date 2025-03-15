@@ -2,7 +2,7 @@ import { onlineManager } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { useMutation } from '~/hooks/use-mutations';
 import { DeleteForm } from '~/modules/common/delete-form';
-import { dialog } from '~/modules/common/dialoger/state';
+import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { toaster } from '~/modules/common/toaster';
 import { deleteUsers } from '~/modules/users/api';
 import { usersKeys } from '~/modules/users/query';
@@ -17,6 +17,7 @@ interface Props {
 
 const DeleteUsers = ({ users, callback, dialog: isDialog }: Props) => {
   const { t } = useTranslation();
+  const removeDialog = useDialoger((state) => state.remove);
 
   const { mutate: _deleteUsers, isPending } = useMutation({
     mutationKey: usersKeys.delete(),
@@ -26,7 +27,7 @@ const DeleteUsers = ({ users, callback, dialog: isDialog }: Props) => {
         queryClient.invalidateQueries({ queryKey: usersKeys.single(user.id) });
       }
 
-      if (isDialog) dialog.remove();
+      if (isDialog) removeDialog();
       callback?.(users);
     },
   });
@@ -38,7 +39,7 @@ const DeleteUsers = ({ users, callback, dialog: isDialog }: Props) => {
     _deleteUsers(idsToDelete);
   };
 
-  return <DeleteForm onDelete={onDelete} onCancel={() => dialog.remove()} pending={isPending} />;
+  return <DeleteForm onDelete={onDelete} onCancel={removeDialog} pending={isPending} />;
 };
 
 export default DeleteUsers;

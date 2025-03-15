@@ -14,7 +14,7 @@ import { Button, buttonVariants } from '~/modules/ui/button';
 import { Sheet, SheetContent, SheetHiddenTitle } from '~/modules/ui/sheet';
 import { cn } from '~/utils/cn';
 
-export function MarketingNav() {
+export const MarketingNav = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
 
@@ -157,4 +157,4 @@ export function MarketingNav() {
       </Sheet>
     </>
   );
-}
+};

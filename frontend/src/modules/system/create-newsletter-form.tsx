@@ -12,7 +12,6 @@ import { AlertWrap } from '~/modules/common/alert-wrap';
 import BlockNoteContent from '~/modules/common/form-fields/blocknote-content';
 import InputFormField from '~/modules/common/form-fields/input';
 import SelectRoles from '~/modules/common/form-fields/select-roles';
-import { sheet } from '~/modules/common/sheeter/state';
 import { toaster } from '~/modules/common/toaster';
 import { sendNewsletter } from '~/modules/system/api';
 import { Button, SubmitButton } from '~/modules/ui/button';
@@ -23,6 +22,7 @@ import { sendNewsletterBodySchema } from '#/modules/system/schema';
 import '@blocknote/shadcn/style.css';
 import '~/modules/common/blocknote/app-specific-custom/styles.css';
 import '~/modules/common/blocknote/styles.css';
+import { useSheeter } from '../common/sheeter/use-sheeter';
 interface CreateNewsletterFormProps {
   organizationIds: string[];
 }
@@ -55,7 +55,7 @@ const CreateNewsletterForm = ({ organizationIds }: CreateNewsletterFormProps) =>
       if (testOnly) return toaster(t('common:success.test_email'), 'success');
       form.reset();
       toaster(t('common:success.create_newsletter'), 'success');
-      sheet.remove(formContainerId);
+      useSheeter.getState().remove(formContainerId);
     },
   });
 

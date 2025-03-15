@@ -22,13 +22,11 @@ export const useBlobStore = create<BlobStoreState>()(
         blobUrls: new Map(), // Default state
 
         getBlobUrl: (key) => get().blobUrls.get(key),
-
         setBlobUrl: (key, url) => {
           set((state) => {
             state.blobUrls.set(key, url);
           });
         },
-
         revokeBlobUrl: (key) => {
           set((state) => {
             const url = state.blobUrls.get(key);
@@ -36,7 +34,6 @@ export const useBlobStore = create<BlobStoreState>()(
             state.blobUrls.delete(key);
           });
         },
-
         clearAll: () => {
           set((state) => {
             for (const url of state.blobUrls.values()) {

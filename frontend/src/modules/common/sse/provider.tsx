@@ -9,6 +9,10 @@ export const SSEConsumer = SSEContext.Consumer;
 
 type Props = React.PropsWithChildren;
 
+/**
+ * Provider for the EventSource connection to the server.
+ * Reconnects when the connection is lost.
+ */
 export const SSEProvider: FC<Props> = ({ children }) => {
   const { isOnline } = useOnlineManager();
 
@@ -54,14 +58,14 @@ export const SSEProvider: FC<Props> = ({ children }) => {
       setSource(eventSource);
       return () => eventSource.close();
     }
-    // Clean up the source if it exists when going offline
+    // Clean up source if it exists when going offline
     source?.close();
   }, [isOnline]);
 
-  // Effect to handle reconnecting when the tab becomes visible again
+  // Handle reconnecting when tab becomes visible again
   useEffect(() => {
     const handleVisibilityChange = async () => {
-      // Reconnect if the page becomes visible and the SSE connection is closed
+      // Reconnect if page becomes visible and SSE connection is closed
       if (document.visibilityState !== 'visible') return;
       if (source?.readyState === EventSource.CLOSED) reconnect();
     };

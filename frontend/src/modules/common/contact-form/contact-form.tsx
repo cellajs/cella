@@ -3,7 +3,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { Mail, MessageSquare, Send, User } from 'lucide-react';
 import type { SubmitHandler, UseFormProps } from 'react-hook-form';
 import * as z from 'zod';
-import { dialog } from '~/modules/common/dialoger/state';
+import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 
 import { Suspense, lazy, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -49,7 +49,7 @@ const ContactForm = ({ dialog: isDialog }: { dialog?: boolean }) => {
     createRequest(body, {
       onSuccess: () => {
         toaster(t('common:message_sent.text'), 'success');
-        if (isDialog) dialog.remove();
+        if (isDialog) useDialoger.getState().remove();
         form.reset();
       },
       onError: () => {

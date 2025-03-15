@@ -2,7 +2,7 @@ import { useRegisterSW } from 'virtual:pwa-register/react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '~/modules/ui/button';
 
-function ReloadPrompt() {
+const ReloadPrompt = () => {
   const { t } = useTranslation();
 
   // replaced dynamically
@@ -54,6 +54,6 @@ function ReloadPrompt() {
       <div className="hidden">{buildDate}</div>
     </>
   );
-}
+};
 
 export default ReloadPrompt;

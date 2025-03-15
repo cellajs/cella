@@ -1,22 +1,23 @@
 import { useNavigate } from '@tanstack/react-router';
 import { config } from 'config';
 import { useTranslation } from 'react-i18next';
-import { dialog } from '~/modules/common/dialoger/state';
+import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { Button } from '~/modules/ui/button';
 
 export const SkipOrganization = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const removeDialog = useDialoger((state) => state.remove);
 
   const onDelete = () => {
-    dialog.remove(true, 'skip_org_creation');
+    removeDialog('skip_org_creation');
     navigate({
       to: config.defaultRedirectPath,
       replace: true,
     });
   };
   const onCancel = () => {
-    dialog.remove(true, 'skip_org_creation');
+    removeDialog('skip_org_creation');
   };
 
   return (

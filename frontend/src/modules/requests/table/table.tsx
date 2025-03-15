@@ -12,11 +12,11 @@ import { useDataFromInfiniteQuery } from '~/query/hooks/use-data-from-query';
 type BaseRequestsTableProps = BaseTableProps<Request, RequestsSearch>;
 
 const BaseRequestsTable = memo(
-  forwardRef<BaseTableMethods, BaseRequestsTableProps>(({ columns, queryVars, sortColumns, setSortColumns, setTotal, setSelected }, ref) => {
+  forwardRef<BaseTableMethods, BaseRequestsTableProps>(({ columns, searchVars, sortColumns, setSortColumns, setTotal, setSelected }, ref) => {
     const { t } = useTranslation();
 
     // Extract query variables and set defaults
-    const { q, sort, order, limit } = queryVars;
+    const { q, sort, order, limit } = searchVars;
 
     // Query requests
     const { rows, selectedRows, setRows, setSelectedRows, totalCount, isLoading, isFetching, error, fetchNextPage } = useDataFromInfiniteQuery(

@@ -31,9 +31,9 @@ const setThemeColor = (passedTheme: Theme) => {
 };
 
 /**
- * This component is used to set the theme and mode classes on the root element
+ * Service component to set theme and mode classes on root element
  */
-export const ThemeManager = () => {
+export const Themer = () => {
   useEffect(() => {
     useUIStore.subscribe(({ mode }) => {
       setModeClass(mode);

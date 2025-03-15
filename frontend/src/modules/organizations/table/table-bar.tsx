@@ -1,6 +1,7 @@
 import { config } from 'config';
 import { Mailbox, Plus, Trash, XSquare } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { sort } from 'virtua/unstable_core';
 import ColumnsView from '~/modules/common/data-table/columns-view';
 import Export from '~/modules/common/data-table/export';
 import { TableBarContainer } from '~/modules/common/data-table/table-bar-container';
@@ -8,35 +9,38 @@ import TableCount from '~/modules/common/data-table/table-count';
 import { FilterBarActions, FilterBarContent, TableFilterBar } from '~/modules/common/data-table/table-filter-bar';
 import TableSearch from '~/modules/common/data-table/table-search';
 import type { BaseTableBarProps, BaseTableMethods } from '~/modules/common/data-table/types';
-import { dialog } from '~/modules/common/dialoger/state';
+import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { FocusView } from '~/modules/common/focus-view';
+import { SheetTabs } from '~/modules/common/sheet-tabs';
+import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
+import { toaster } from '~/modules/common/toaster';
 import UnsavedBadge from '~/modules/common/unsaved-badge';
+import { getOrganizations } from '~/modules/organizations/api';
 import CreateOrganizationForm from '~/modules/organizations/create-organization-form';
+import DeleteOrganizations from '~/modules/organizations/delete-organizations';
 import type { OrganizationsSearch } from '~/modules/organizations/table/table-wrapper';
 import type { Organization } from '~/modules/organizations/types';
+import CreateNewsletterForm from '~/modules/system/create-newsletter-form';
+import NewsletterPreview from '~/modules/system/newsletter-preview';
 import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
 
-type OrganizationsTableBarProps = BaseTableMethods &
-  BaseTableBarProps<Organization, OrganizationsSearch> & {
-    openDeleteDialog: () => void;
-    openNewsletterSheet: () => void;
-    fetchExport: (limit: number) => Promise<Organization[]>;
-  };
+type OrganizationsTableBarProps = BaseTableMethods & BaseTableBarProps<Organization, OrganizationsSearch>;
 
 export const OrganizationsTableBar = ({
   total,
   selected,
-  q,
+  searchVars,
   setSearch,
   columns,
   setColumns,
-  openDeleteDialog,
-  openNewsletterSheet,
   clearSelection,
-  fetchExport,
 }: OrganizationsTableBarProps) => {
   const { t } = useTranslation();
+  const removeDialog = useDialoger((state) => state.remove);
+  const createDialog = useDialoger((state) => state.create);
+
+  const { q, order } = searchVars;
 
   const isFiltered = !!q;
   // Drop selected Rows on search
@@ -51,7 +55,45 @@ export const OrganizationsTableBar = ({
   };
 
   const onCreateOrganization = () => {
-    dialog.remove(true, 'create-organization');
+    removeDialog('create-organization');
+  };
+
+  const openDeleteDialog = () => {
+    const callback = () => {
+      toaster(t('common:success.delete_resources', { resources: t('common:organizations') }), 'success');
+      clearSelection();
+    };
+
+    createDialog(<DeleteOrganizations organizations={selected} dialog callback={callback} />, {
+      drawerOnMobile: false,
+      className: 'max-w-xl',
+      title: t('common:delete'),
+      description: t('common:confirm.delete_resources', { resources: t('common:organizations').toLowerCase() }),
+    });
+  };
+
+  const openNewsletterSheet = () => {
+    const ids = selected.map((o) => o.id);
+    const newsletterTabs = [
+      { id: 'write', label: 'common:write', element: <CreateNewsletterForm organizationIds={ids} /> },
+      { id: 'preview', label: 'common:preview', element: <NewsletterPreview /> },
+    ];
+
+    useSheeter.getState().create(<SheetTabs tabs={newsletterTabs} />, {
+      className: 'max-w-full lg:max-w-4xl',
+      title: t('common:newsletter'),
+      titleContent: <UnsavedBadge title={t('common:newsletter')} />,
+      description: t('common:newsletter.text'),
+      id: 'create-newsletter',
+      scrollableOverlay: true,
+      side: 'right',
+      removeCallback: clearSelection,
+    });
+  };
+
+  const fetchExport = async (limit: number) => {
+    const { items } = await getOrganizations({ limit, q, sort, order });
+    return items;
   };
 
   return (
@@ -80,7 +122,7 @@ export const OrganizationsTableBar = ({
             !isFiltered && (
               <Button
                 onClick={() => {
-                  dialog(<CreateOrganizationForm callback={onCreateOrganization} />, {
+                  createDialog(<CreateOrganizationForm callback={onCreateOrganization} />, {
                     className: 'md:max-w-2xl',
                     id: 'create-organization',
                     title: t('common:create_resource', { resource: t('common:organization').toLowerCase() }),

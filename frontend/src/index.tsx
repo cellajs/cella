@@ -1,7 +1,7 @@
 import { RouterProvider } from '@tanstack/react-router';
 import { StrictMode } from 'react';
 import ReactDOM from 'react-dom/client';
-import { ThemeManager } from '~/modules/common/theme-manager';
+import { Themer } from '~/modules/common/themer';
 
 // Import tailwindcss
 import '~/styling/index.css';
@@ -26,7 +26,7 @@ initSentry();
 
 ReactDOM.createRoot(root).render(
   <StrictMode>
-    <ThemeManager />
+    <Themer />
     <QueryClientProvider>
       <RouterProvider router={router} />
     </QueryClientProvider>

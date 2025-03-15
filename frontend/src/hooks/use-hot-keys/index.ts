@@ -1,5 +1,4 @@
-import * as React from 'react';
-
+import { useEffect } from 'react';
 import { type HotkeyItem, getHotkeyMatcher, shouldFireEvent } from '~/hooks/use-hot-keys/helpers';
 
 /**
@@ -20,7 +19,7 @@ export function useHotkeys(
   tagsToIgnore: string[] = ['INPUT', 'TEXTAREA', 'SELECT', 'BUTTON', 'A'], // HTML tags to ignore
   triggerOnContentEditable = false,
 ) {
-  React.useEffect(() => {
+  useEffect(() => {
     const keydownListener = (event: KeyboardEvent) => {
       // Check if the event target is within an ignored HTML element
       const isFormElement = tagsToIgnore.some((tag) => event.target instanceof HTMLElement && event.target.closest(tag));

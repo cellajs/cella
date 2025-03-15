@@ -1,6 +1,6 @@
 import { Suspense, lazy } from 'react';
 import { useTranslation } from 'react-i18next';
-import { sheet } from '~/modules/common/sheeter/state';
+import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
 import type { MembershipInvitationsTableProps } from '~/modules/memberships/pending-table/table-wrapper';
 import { Button } from '~/modules/ui/button';
 
@@ -12,7 +12,7 @@ export const MembershipInvitations = ({ entity }: MembershipInvitationsTableProp
   const total = entity.counts?.membership.pending;
 
   const openSheet = () => {
-    sheet.create(
+    useSheeter.getState().create(
       <Suspense>
         <MembershipInvitationsTable entity={entity} />
       </Suspense>,

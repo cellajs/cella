@@ -3,7 +3,7 @@ import { AnimatePresence, MotionConfig, motion } from 'motion/react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AlertWrap } from '~/modules/common/alert-wrap';
-import { dialog } from '~/modules/common/dialoger/state';
+import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import UnsavedBadge from '~/modules/common/unsaved-badge';
 import type { EntityPage } from '~/modules/entities/types';
 import { ToggleGroup, ToggleGroupItem } from '~/modules/ui/toggle-group';
@@ -29,7 +29,7 @@ const InviteUsers = ({ entity, callback, dialog: isDialog, mode, children }: Inv
     mode[0] ? setInviteMode(mode[0]) : setInviteMode(null);
 
     // Update dialog title
-    dialog.update('invite-users', {
+    useDialoger.getState().update('invite-users', {
       titleContent: (
         <div className="flex items-center gap-2">
           {mode[0] ? (
