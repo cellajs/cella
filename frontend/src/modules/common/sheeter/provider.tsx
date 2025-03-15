@@ -12,8 +12,8 @@ export const Sheeter = () => {
   const isMobile = useBreakpoints('max', 'sm');
   const prevFocusedElement = useRef<HTMLElement | null>(null);
 
+  // Get sheets from store
   const sheets = useSheeter((state) => state.sheets);
-  const removeSheet = useSheeter((state) => state.remove);
 
   useEffect(() => {
     // Keep track of the previously focused element before a sheet opens
@@ -32,7 +32,7 @@ export const Sheeter = () => {
     <>
       {sheets.map((sheet) => {
         const SheetComponent = isMobile ? MobileSheet : DesktopSheet;
-        return <SheetComponent key={sheet.id} sheet={sheet} removeSheet={() => removeSheet(sheet.id)} />;
+        return <SheetComponent key={sheet.id} sheet={sheet} />;
       })}
     </>
   );

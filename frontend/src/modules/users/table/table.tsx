@@ -16,11 +16,11 @@ import { useMutateQueryData } from '~/query/hooks/use-mutate-query-data';
 type BaseDataTableProps = BaseTableProps<User, UsersSearch>;
 
 const BaseDataTable = memo(
-  forwardRef<BaseTableMethods, BaseDataTableProps>(({ columns, queryVars, sortColumns, setSortColumns, setTotal, setSelected }, ref) => {
+  forwardRef<BaseTableMethods, BaseDataTableProps>(({ columns, searchVars, sortColumns, setSortColumns, setTotal, setSelected }, ref) => {
     const { t } = useTranslation();
 
     // Extract query variables and set defaults
-    const { q, role, sort, order, limit } = queryVars;
+    const { q, role, sort, order, limit } = searchVars;
 
     // Query users
     const { rows, selectedRows, setRows, setSelectedRows, totalCount, isLoading, isFetching, error, fetchNextPage } = useDataFromInfiniteQuery(

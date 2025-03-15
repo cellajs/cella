@@ -14,7 +14,7 @@ import UpdateRow from '~/modules/organizations/table/update-row';
 import type { Organization } from '~/modules/organizations/types';
 import { dateShort } from '~/utils/date-short';
 
-export const useColumns = (callback: (organizations: Organization[]) => void) => {
+export const useColumns = () => {
   const { t } = useTranslation();
   const isMobile = useBreakpoints('max', 'sm', false);
 
@@ -45,8 +45,7 @@ export const useColumns = (callback: (organizations: Organization[]) => void) =>
         visible: true,
         width: 32,
         renderCell: ({ row, tabIndex }) => {
-          if (row.counts.membership.admin > 0 || row.counts.membership.member > 0)
-            return <UpdateRow organization={row} tabIndex={tabIndex} callback={callback} />;
+          if (row.counts.membership.admin > 0 || row.counts.membership.member > 0) return <UpdateRow organization={row} tabIndex={tabIndex} />;
         },
       },
       {

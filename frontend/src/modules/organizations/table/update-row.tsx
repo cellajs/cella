@@ -10,16 +10,15 @@ import { Card, CardContent } from '~/modules/ui/card';
 
 interface Props {
   organization: Organization;
-  callback: (organizations: Organization[]) => void;
   tabIndex: number;
 }
 
-const UpdateRow = ({ organization, callback, tabIndex }: Props) => {
+const UpdateRow = ({ organization, tabIndex }: Props) => {
   const openUpdateSheet = () => {
     useSheeter.getState().create(
       <Card>
         <CardContent>
-          <UpdateOrganizationForm organization={organization} sheet callback={(organization) => callback([organization])} />
+          <UpdateOrganizationForm organization={organization} sheet />
         </CardContent>
       </Card>,
       {

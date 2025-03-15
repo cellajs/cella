@@ -9,7 +9,7 @@ import { onlineManager } from '@tanstack/react-query';
 import { config } from 'config';
 import { ArrowRight, ChevronDown } from 'lucide-react';
 import { LegalNotice } from '~/modules/auth/sign-up-form';
-import { dialog } from '~/modules/common/dialoger/state';
+import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { toaster } from '~/modules/common/toaster';
 import { useCreateRequestMutation } from '~/modules/requests/query';
 import { Button, SubmitButton } from '~/modules/ui/button';
@@ -51,7 +51,7 @@ export const WaitlistForm = ({ email, buttonContent, emailField, dialog: isDialo
       onSuccess: () => {
         navigate({ to: '/about', replace: true });
         toaster(t('common:success.waitlist_request', { appName: config.name }), 'success');
-        if (isDialog) dialog.remove();
+        if (isDialog) useDialoger.getState().remove();
         callback?.();
       },
       onError: (error) => {

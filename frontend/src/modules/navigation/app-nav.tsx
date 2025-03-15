@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { useHotkeys } from '~/hooks/use-hot-keys';
 import router from '~/lib/router';
-import { dialog } from '~/modules/common/dialoger/state';
+import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { toaster } from '~/modules/common/toaster';
 import BarNav from '~/modules/navigation/bar-nav';
 import FloatingNav from '~/modules/navigation/floating-nav';
@@ -40,13 +40,11 @@ const AppNav = () => {
     if (navItem.dialog) {
       if (!onlineManager.isOnline()) return toaster(t('common:action.offline.text'), 'warning');
 
-      return dialog(navItem.dialog, {
+      return useDialoger.getState().create(navItem.dialog, {
         id: navItem.id,
         className: navItem.id === 'search' ? 'sm:max-w-2xl p-0 border-0 mb-4' : '',
         drawerOnMobile: navItem.id !== 'search',
-        refocus: false,
         hideClose: true,
-        autoFocus: !isMobile,
       });
     }
 
@@ -82,6 +80,7 @@ const AppNav = () => {
     });
   };
 
+  // Enable hotkeys
   useHotkeys([
     ['Shift + A', () => clickNavItem('account')],
     ['Shift + F', () => clickNavItem('search')],

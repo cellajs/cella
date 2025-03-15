@@ -8,34 +8,25 @@ import TableCount from '~/modules/common/data-table/table-count';
 import { FilterBarActions, FilterBarContent, TableFilterBar } from '~/modules/common/data-table/table-filter-bar';
 import TableSearch from '~/modules/common/data-table/table-search';
 import type { BaseTableBarProps, BaseTableMethods } from '~/modules/common/data-table/types';
+import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { FocusView } from '~/modules/common/focus-view';
 import SelectRole from '~/modules/common/form-fields/select-role';
+import { toaster } from '~/modules/common/toaster';
 import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
+import DeleteUsers from '~/modules/users/delete-users';
 import type { UsersSearch } from '~/modules/users/table/table-wrapper';
 import type { User } from '~/modules/users/types';
 
-type UsersTableBarProps = BaseTableMethods &
-  BaseTableBarProps<User, UsersSearch> & {
-    role: UsersSearch['role'];
-    openInviteDialog: (container: HTMLElement | null) => void;
-    openDeleteDialog: () => void;
-  };
+type UsersTableBarProps = BaseTableMethods & BaseTableBarProps<User, UsersSearch> & {};
 
-export const UsersTableBar = ({
-  total,
-  selected,
-  q,
-  role,
-  setSearch,
-  columns,
-  setColumns,
-  clearSelection,
-  openInviteDialog,
-  openDeleteDialog,
-}: UsersTableBarProps) => {
+export const UsersTableBar = ({ total, selected, searchVars, setSearch, columns, setColumns, clearSelection }: UsersTableBarProps) => {
   const { t } = useTranslation();
+  const createDialog = useDialoger((state) => state.create);
+
   const containerRef = useRef(null);
+
+  const { q, role } = searchVars;
 
   const isFiltered = role !== undefined || !!q;
 
@@ -53,6 +44,43 @@ export const UsersTableBar = ({
   const onResetFilters = () => {
     setSearch({ q: '', role: undefined });
     clearSelection();
+  };
+
+  // TODO
+  const openInviteDialog = () => {
+    // createDialog(<InviteUsers mode={'email'} dialog />, {
+    //   id: 'invite-users',
+    //   drawerOnMobile: false,
+    //   className: 'w-auto shadow-none relative z-60 max-w-4xl',
+    //   container,
+    //   containerBackdrop: true,
+    //   containerBackdropClassName: 'z-50',
+    //   title: t('common:invite'),
+    //   titleContent: <UnsavedBadge title={t('common:invite')} />,
+    //   description: `${t('common:invite_users.text')}`,
+    // });
+  };
+
+  const openDeleteDialog = () => {
+    createDialog(
+      <DeleteUsers
+        dialog
+        users={selected}
+        callback={() => {
+          toaster(t('common:success.delete_resources', { resources: t('common:users') }), 'success');
+          clearSelection();
+        }}
+      />,
+      {
+        drawerOnMobile: false,
+        className: 'max-w-xl',
+        title: t('common:delete'),
+        description: t('common:confirm.delete_resource', {
+          name: selected.map((u) => u.email).join(', '),
+          resource: selected.length > 1 ? t('common:users').toLowerCase() : t('common:user').toLowerCase(),
+        }),
+      },
+    );
   };
 
   return (
@@ -90,7 +118,7 @@ export const UsersTableBar = ({
               </>
             ) : (
               !isFiltered && (
-                <Button asChild onClick={() => openInviteDialog(containerRef.current)}>
+                <Button asChild onClick={() => openInviteDialog()}>
                   <motion.button transition={{ duration: 0.1 }} layoutId="members-filter-bar-button">
                     <motion.span layoutId="members-filter-bar-icon">
                       <Mail size={16} />

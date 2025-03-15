@@ -2,7 +2,7 @@ import { ErrorBoundary } from 'react-error-boundary';
 import { AppContent } from '~/modules/common/app-content';
 
 import AppSheets from '~/modules/common/app-sheets';
-import { Dialoger } from '~/modules/common/dialoger';
+import { Dialoger } from '~/modules/common/dialoger/provider';
 import { Dropdowner } from '~/modules/common/dropdowner';
 import ErrorNotice from '~/modules/common/error-notice';
 import { Sheeter } from '~/modules/common/sheeter/provider';

@@ -3,7 +3,7 @@ import { Suspense } from 'react';
 import type { UploadedUppyFile } from '~/lib/imado/types';
 import { useAttachmentCreateMutation, useAttachmentDeleteMutation } from '~/modules/attachments/query/mutations';
 import UploadUppy from '~/modules/attachments/upload/upload-uppy';
-import { dialog } from '~/modules/common/dialoger/state';
+import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import Spinner from '~/modules/common/spinner';
 import { nanoid } from '~/utils/nanoid';
 
@@ -49,7 +49,7 @@ export const openAttachmentsUploadDialog = (organizationId: string) => {
       }));
 
       createAttachments({ attachments, orgIdOrSlug: organizationId });
-      dialog.remove(true, 'upload-attachment');
+      useDialoger.getState().remove('upload-attachment');
     };
 
     const handleSuccessesRetryCallback = async (result: UploadedUppyFile[], ids: string[]) => {
@@ -71,7 +71,7 @@ export const openAttachmentsUploadDialog = (organizationId: string) => {
     );
   };
 
-  dialog(
+  useDialoger.getState().create(
     <Suspense fallback={<Spinner className="my-44 h-12 w-12" />}>
       <UploadDialog organizationId={organizationId} />
     </Suspense>,

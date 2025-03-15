@@ -7,7 +7,6 @@ import { AnimatePresence, motion } from 'motion/react';
 import { useTranslation } from 'react-i18next';
 import useSearchParams from '~/hooks/use-search-params';
 import { useColumns } from '~/modules/attachments/table/columns';
-import DeleteAttachmentsForm from '~/modules/attachments/table/delete-attachments-form';
 import { useAttachmentsSync } from '~/modules/attachments/table/sync-attachments';
 import BaseDataTable from '~/modules/attachments/table/table';
 import { AttachmentsTableBar } from '~/modules/attachments/table/table-bar';
@@ -15,7 +14,6 @@ import type { Attachment } from '~/modules/attachments/types';
 import { AlertWrap } from '~/modules/common/alert-wrap';
 import { useSortColumns } from '~/modules/common/data-table/sort-columns';
 import type { BaseTableMethods } from '~/modules/common/data-table/types';
-import { dialog } from '~/modules/common/dialoger/state';
 import type { EntityPage } from '~/modules/entities/types';
 import type { attachmentsSearchSchema } from '~/routes/organizations';
 
@@ -35,7 +33,7 @@ const AttachmentsTable = ({ entity, canUpload = true, isSheet = false }: Attachm
   const dataTableRef = useRef<BaseTableMethods | null>(null);
 
   // Table state
-  const { q, sort, order } = search;
+  const { sort, order } = search;
   const limit = LIMIT;
 
   useAttachmentsSync(entity.id);
@@ -52,26 +50,17 @@ const AttachmentsTable = ({ entity, canUpload = true, isSheet = false }: Attachm
     if (dataTableRef.current) dataTableRef.current.clearSelection();
   };
 
-  const openDeleteDialog = () => {
-    dialog(<DeleteAttachmentsForm entity={entity} dialog attachments={selected} callback={clearSelection} />, {
-      className: 'max-w-xl',
-      title: t('common:remove_resource', { resource: t('common:attachment').toLowerCase() }),
-      description: t('common:confirm.delete_resources', { resources: t('common:attachments').toLowerCase() }),
-    });
-  };
-
   return (
     <div className="flex flex-col gap-4 h-full">
       <AttachmentsTableBar
         entity={entity}
         total={total}
         selected={selected}
-        q={q ?? ''}
+        searchVars={{ ...search, limit }}
         setSearch={setSearch}
         columns={columns}
         setColumns={setColumns}
         clearSelection={clearSelection}
-        openDeleteDialog={openDeleteDialog}
         isSheet={isSheet}
         canUpload={canUpload}
         highDensity={highDensity}
@@ -102,7 +91,7 @@ const AttachmentsTable = ({ entity, canUpload = true, isSheet = false }: Attachm
           entity={entity}
           ref={dataTableRef}
           columns={columns}
-          queryVars={{ ...search, limit }}
+          searchVars={{ ...search, limit }}
           isSheet={isSheet}
           canUpload={canUpload}
           sortColumns={sortColumns}

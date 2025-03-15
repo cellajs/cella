@@ -3,7 +3,7 @@ import type { SheetProps } from '~/modules/common/sheeter/sheet';
 import { Drawer, DrawerContent, DrawerDescription, DrawerHeader, DrawerTitle } from '~/modules/ui/drawer';
 import { useSheeter } from './use-sheeter';
 
-export const MobileSheet = ({ sheet, removeSheet }: SheetProps) => {
+export const MobileSheet = ({ sheet }: SheetProps) => {
   const { modal = true, id, side: sheetSide, description, title, titleContent = title, className: sheetClassName, content, open } = sheet;
 
   const updateSheet = useSheeter.getState().update;
@@ -21,7 +21,7 @@ export const MobileSheet = ({ sheet, removeSheet }: SheetProps) => {
   }, [sheetSide, sheetClassName]);
 
   const closeSheet = () => {
-    removeSheet(sheet);
+    useSheeter.getState().remove(sheet.id);
     sheet.removeCallback?.();
   };
 

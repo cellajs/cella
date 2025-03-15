@@ -1,14 +1,14 @@
 import { useEffect, useRef, useState } from 'react';
 import StickyBox from '~/modules/common/sticky-box';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '~/modules/ui/sheet';
+import { isElementInteractive } from '~/utils/is-el-interactive';
 import { type SheetData, useSheeter } from './use-sheeter';
 
 export interface SheetProps {
   sheet: SheetData;
-  removeSheet: (sheet: SheetData) => void;
 }
 
-export const DesktopSheet = ({ sheet, removeSheet }: SheetProps) => {
+export const DesktopSheet = ({ sheet }: SheetProps) => {
   const {
     id,
     modal = true,
@@ -22,6 +22,7 @@ export const DesktopSheet = ({ sheet, removeSheet }: SheetProps) => {
     className: sheetClassName,
     content,
   } = sheet;
+
   const sheetRef = useRef<HTMLDivElement>(null);
 
   // State to retain side value even after sheet removal
@@ -37,19 +38,20 @@ export const DesktopSheet = ({ sheet, removeSheet }: SheetProps) => {
   }, [sheetSide, sheetClassName]);
 
   const closeSheet = () => {
-    removeSheet(sheet);
+    useSheeter.getState().remove(sheet.id);
     sheet.removeCallback?.();
   };
 
   const onOpenChange = (open: boolean) => {
     if (!modal) return;
-    useSheeter.getState().update(id, { open });
-    if (!open) closeSheet();
+    if (open) useSheeter.getState().update(id, { open });
+    else closeSheet();
   };
 
   const handleEscapeKeyDown = (e: KeyboardEvent) => {
     const activeElement = document.activeElement;
     if (!modal && !sheetRef.current?.contains(activeElement)) return;
+    if (isElementInteractive(activeElement)) return;
     e.preventDefault();
     e.stopPropagation();
     closeSheet();

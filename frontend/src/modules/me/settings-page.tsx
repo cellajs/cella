@@ -2,7 +2,7 @@ import { Check, Send, Trash2 } from 'lucide-react';
 import { SimpleHeader } from '~/modules/common/simple-header';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/modules/ui/card';
 
-import { dialog } from '~/modules/common/dialoger/state';
+import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { Button } from '~/modules/ui/button';
 import { useUserStore } from '~/store/user';
 
@@ -63,7 +63,7 @@ const UserSettingsPage = () => {
 
   // Delete account
   const openDeleteDialog = () => {
-    dialog(
+    useDialoger.getState().create(
       <DeleteSelf
         dialog
         callback={() => {
