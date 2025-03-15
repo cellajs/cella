@@ -13,7 +13,7 @@ import dayjs from 'dayjs';
  * @param date - The date to format. Can be a string, Date object, or null.
  * @returns A formatted string representing the relative time or the full date.
  */
-export function dateShort(date?: string | null | Date) {
+export const dateShort = (date?: string | null | Date) => {
   if (!date) return '-';
 
   return dayjs(date).calendar(null, {
@@ -26,4 +26,4 @@ export function dateShort(date?: string | null | Date) {
       return dayjs(date).format('MMM D, YYYY');
     },
   });
-}
+};

@@ -1,7 +1,7 @@
 import { Pencil } from 'lucide-react';
 import { i18n } from '~/lib/i18n';
+import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
 
-import { sheet } from '~/modules/common/sheeter/state';
 import UnsavedBadge from '~/modules/common/unsaved-badge';
 import type { Organization } from '~/modules/organizations/types';
 import UpdateOrganizationForm from '~/modules/organizations/update-organization-form';
@@ -16,7 +16,7 @@ interface Props {
 
 const UpdateRow = ({ organization, callback, tabIndex }: Props) => {
   const openUpdateSheet = () => {
-    sheet.create(
+    useSheeter.getState().create(
       <Card>
         <CardContent>
           <UpdateOrganizationForm organization={organization} sheet callback={(organization) => callback([organization])} />

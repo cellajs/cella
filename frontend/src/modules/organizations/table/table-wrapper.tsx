@@ -9,7 +9,7 @@ import { useSortColumns } from '~/modules/common/data-table/sort-columns';
 import type { BaseTableMethods } from '~/modules/common/data-table/types';
 import { dialog } from '~/modules/common/dialoger/state';
 import { SheetTabs } from '~/modules/common/sheet-tabs';
-import { sheet } from '~/modules/common/sheeter/state';
+import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
 import { toaster } from '~/modules/common/toaster';
 import UnsavedBadge from '~/modules/common/unsaved-badge';
 import { getOrganizations } from '~/modules/organizations/api';
@@ -78,7 +78,7 @@ const OrganizationsTable = () => {
       { id: 'preview', label: 'common:preview', element: <NewsletterPreview /> },
     ];
 
-    sheet.create(<SheetTabs tabs={newsletterTabs} />, {
+    useSheeter.getState().create(<SheetTabs tabs={newsletterTabs} />, {
       className: 'max-w-full lg:max-w-4xl',
       title: t('common:newsletter'),
       titleContent: <UnsavedBadge title={t('common:newsletter')} />,

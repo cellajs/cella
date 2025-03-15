@@ -1,8 +1,11 @@
 import { config } from 'config';
 import { env } from './env';
-import { ImadoTus } from './imado-tus';
+import { imadoTus } from './imado-tus';
 
-const tus = ImadoTus({
+/**
+ * Start the TUS server
+ */
+const tus = imadoTus({
   secret: env.TUS_SECRET,
   serverOptions: {
     respectForwardedHeaders: true,

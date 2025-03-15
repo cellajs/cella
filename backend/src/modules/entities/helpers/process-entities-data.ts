@@ -1,6 +1,6 @@
 import { type PageEntity, config } from 'config';
 
-export function processEntitiesData<T extends { entity: PageEntity; total: number }>(queryData: T[][], type?: PageEntity) {
+export const processEntitiesData = <T extends { entity: PageEntity; total: number }>(queryData: T[][], type?: PageEntity) => {
   const itemsData = [];
   const counts: { [key in PageEntity]?: number } = {};
   let total = 0;
@@ -24,4 +24,4 @@ export function processEntitiesData<T extends { entity: PageEntity; total: numbe
   }
 
   return { counts, items: itemsData, total };
-}
+};

@@ -4,7 +4,7 @@ import { Suspense, lazy } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { useEventListener } from '~/hooks/use-event-listener';
-import { PageHeader } from '~/modules/common/page/header';
+import { PageHeader } from '~/modules/common/page/page-header';
 import { toaster } from '~/modules/common/toaster';
 import { useUpdateSelfMutation } from '~/modules/me/query';
 import { useUpdateUserMutation } from '~/modules/users/query';

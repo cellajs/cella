@@ -16,7 +16,7 @@ import { requestPasswordEmail } from '~/modules/auth/api';
 import { mapOauthProviders } from '~/modules/auth/oauth-options';
 import { AsideAnchor } from '~/modules/common/aside-anchor';
 import HelpText from '~/modules/common/help-text';
-import { PageAside } from '~/modules/common/page/aside';
+import { PageAside } from '~/modules/common/page/page-aside';
 import StickyBox from '~/modules/common/sticky-box';
 import { toaster } from '~/modules/common/toaster';
 import DeleteSelf from '~/modules/me/delete-self';

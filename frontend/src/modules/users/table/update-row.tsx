@@ -1,6 +1,6 @@
 import { Pencil } from 'lucide-react';
 import { i18n } from '~/lib/i18n';
-import { sheet } from '~/modules/common/sheeter/state';
+import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
 import UnsavedBadge from '~/modules/common/unsaved-badge';
 import { Button } from '~/modules/ui/button';
 import { Card, CardContent } from '~/modules/ui/card';
@@ -15,8 +15,9 @@ interface Props {
 
 const openUpdateSheet = (user: User, callback: (users: User[]) => void) => {
   const title = i18n.t('common:edit_resource', { resource: i18n.t('common:user').toLowerCase() });
+  const createSheet = useSheeter.getState().create;
 
-  sheet.create(
+  createSheet(
     <Card>
       <CardContent>
         <UpdateUserForm user={user} sheet callback={(user) => callback([user])} />

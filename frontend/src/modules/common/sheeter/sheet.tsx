@@ -1,14 +1,14 @@
 import { useEffect, useRef, useState } from 'react';
-import { type SheetT, sheet as sheetState } from '~/modules/common/sheeter/state';
 import StickyBox from '~/modules/common/sticky-box';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '~/modules/ui/sheet';
+import { type SheetData, useSheeter } from './use-sheeter';
 
-export interface SheetProp {
-  sheet: SheetT;
-  removeSheet: (sheet: SheetT) => void;
+export interface SheetProps {
+  sheet: SheetData;
+  removeSheet: (sheet: SheetData) => void;
 }
 
-export default function DesktopSheet({ sheet, removeSheet }: SheetProp) {
+export const DesktopSheet = ({ sheet, removeSheet }: SheetProps) => {
   const {
     id,
     modal = true,
@@ -43,7 +43,7 @@ export default function DesktopSheet({ sheet, removeSheet }: SheetProp) {
 
   const onOpenChange = (open: boolean) => {
     if (!modal) return;
-    sheetState.update(id, { open });
+    useSheeter.getState().update(id, { open });
     if (!open) closeSheet();
   };
 
@@ -55,6 +55,7 @@ export default function DesktopSheet({ sheet, removeSheet }: SheetProp) {
     closeSheet();
   };
 
+  // Close sheet when clicking outside also when modal is false
   const handleInteractOutside = (event: CustomEvent<{ originalEvent: PointerEvent }> | CustomEvent<{ originalEvent: FocusEvent }>) => {
     const bodyClassList = document.body.classList;
     if (bodyClassList.contains('keep-menu-open') && bodyClassList.contains('menu-sheet-open')) return;
@@ -86,4 +87,4 @@ export default function DesktopSheet({ sheet, removeSheet }: SheetProp) {
       </SheetContent>
     </Sheet>
   );
-}
+};

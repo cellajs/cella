@@ -3,7 +3,7 @@ import useBodyClass from '~/hooks/use-body-class';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { useNavigationStore } from '~/store/navigation';
 
-export const SetBody = () => {
+export const AppNavState = () => {
   const { navSheetOpen, setKeepMenuOpen, keepOpenPreference } = useNavigationStore();
   const isDesktop = useBreakpoints('min', 'xl', true);
 

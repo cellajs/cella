@@ -11,8 +11,8 @@ import type { UseFormProps } from 'react-hook-form';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import { useMutation } from '~/hooks/use-mutations';
 import { dialog } from '~/modules/common/dialoger/state';
+import { SelectEmails } from '~/modules/common/form-fields/select-emails';
 import SelectRoleRadio from '~/modules/common/form-fields/select-role-radio';
-import { MultiEmail } from '~/modules/common/multi-email';
 import { useStepper } from '~/modules/common/stepper/use-stepper';
 import { toaster } from '~/modules/common/toaster';
 import type { EntityPage } from '~/modules/entities/types';
@@ -89,7 +89,7 @@ const InviteEmailForm = ({ entity, callback, dialog: isDialog, children }: Props
           render={({ field: { onChange, value } }) => (
             <FormItem>
               <FormControl>
-                <MultiEmail placeholder={t('common:add_email')} emails={value} onChange={onChange} autoComplete="off" />
+                <SelectEmails placeholder={t('common:add_email')} emails={value} onChange={onChange} autoComplete="off" />
               </FormControl>
               <FormMessage />
             </FormItem>

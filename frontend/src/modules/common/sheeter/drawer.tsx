@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react';
-import type { SheetProp } from '~/modules/common/sheeter/sheet';
-import { sheet as sheetState } from '~/modules/common/sheeter/state';
+import type { SheetProps } from '~/modules/common/sheeter/sheet';
 import { Drawer, DrawerContent, DrawerDescription, DrawerHeader, DrawerTitle } from '~/modules/ui/drawer';
+import { useSheeter } from './use-sheeter';
 
-export default function MobileSheet({ sheet, removeSheet }: SheetProp) {
+export const MobileSheet = ({ sheet, removeSheet }: SheetProps) => {
   const { modal = true, id, side: sheetSide, description, title, titleContent = title, className: sheetClassName, content, open } = sheet;
+
+  const updateSheet = useSheeter.getState().update;
 
   // State to retain side value even after sheet removal
   const [side, setSide] = useState(sheetSide);
@@ -24,7 +26,7 @@ export default function MobileSheet({ sheet, removeSheet }: SheetProp) {
   };
 
   const onOpenChange = (open: boolean) => {
-    sheetState.update(sheet.id, { open });
+    updateSheet(sheet.id, { open });
     if (!open) closeSheet();
   };
 
@@ -39,4 +41,4 @@ export default function MobileSheet({ sheet, removeSheet }: SheetProp) {
       </DrawerContent>
     </Drawer>
   );
-}
+};

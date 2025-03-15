@@ -3,13 +3,14 @@ import { useBreakpoints } from '~/hooks/use-breakpoints';
 import StandardDialog from '~/modules/common/dialoger/dialog';
 import DrawerDialog from '~/modules/common/dialoger/drawer';
 import { DialogState, type DialogT, type DialogToRemove } from '~/modules/common/dialoger/state';
-import { sheet } from '~/modules/common/sheeter/state';
+import { useSheeter } from '../sheeter/use-sheeter';
 
 export function Dialoger() {
   const [dialogs, setDialogs] = useState<DialogT[]>([]);
   const [updatedDialogs, setUpdatedDialogs] = useState<DialogT[]>([]);
   const isMobile = useBreakpoints('max', 'sm');
   const prevFocusedElement = useRef<HTMLElement | null>(null);
+  const removeSheet = useSheeter((state) => state.remove);
 
   const removeDialog = useCallback((dialog: DialogT | DialogToRemove) => {
     setDialogs((dialogs) => dialogs.filter(({ id }) => id !== dialog.id));
@@ -28,8 +29,8 @@ export function Dialoger() {
 
       if ('reset' in dialog) return setUpdatedDialogs((updatedDialogs) => updatedDialogs.filter(({ id }) => id !== dialog.id));
 
-      // Make sure no sheet is open due to z-index issues
-      if (isMobile) sheet.remove();
+      // Make sure no sheet is open due to z-index conflicts
+      if (isMobile) removeSheet();
 
       prevFocusedElement.current = (document.activeElement || document.body) as HTMLElement;
       setUpdatedDialogs((updatedDialogs) => [...updatedDialogs.filter((d) => d.id !== dialog.id), dialog]);

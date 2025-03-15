@@ -20,7 +20,12 @@ interface TusOptions {
   credentials: AWSCredentials;
   serverOptions?: ModifiedServerOptions;
 }
-
+/**
+ * Move an object from one key to another in S3
+ * @param oldKey
+ * @param newKey
+ * @param credentials
+ */
 async function moveS3Object(oldKey: string, newKey: string, credentials: AWSCredentials) {
   const s3Client = new S3Client({
     region: credentials.region,
@@ -47,6 +52,11 @@ async function moveS3Object(oldKey: string, newKey: string, credentials: AWSCred
   );
 }
 
+/**
+ * Optionally store the uploaded files in S3
+ * @param options
+ * @param credentials
+ */
 function optionallyStoreInS3(options: ServerOptions & { datastore: FileStore }, credentials: AWSCredentials) {
   return {
     ...options,
@@ -76,12 +86,22 @@ function optionallyStoreInS3(options: ServerOptions & { datastore: FileStore }, 
   };
 }
 
+/**
+ * Extract content type from metadata
+ * @param upload Upload object
+ * @returns Content type / MIME type
+ */
 function extractContentType(upload: Upload) {
   const mimeType = upload.metadata?.type;
   return mimeType;
 }
 
-export const ImadoTus = (opts: TusOptions) => {
+/**
+ * Create a TUS server with JWT authentication
+ * @param opts TusOptions
+ * @returns TUS server
+ */
+export const imadoTus = (opts: TusOptions) => {
   return new Server(
     optionallyStoreInS3(
       {
