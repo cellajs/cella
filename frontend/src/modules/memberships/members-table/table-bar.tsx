@@ -1,7 +1,8 @@
+import { onlineManager } from '@tanstack/react-query';
 import { Mail, Trash, XSquare } from 'lucide-react';
 import { motion } from 'motion/react';
-import { useRef } from 'react';
-import { useTranslation } from 'react-i18next';
+import { Trans, useTranslation } from 'react-i18next';
+import { sort } from 'virtua/unstable_core';
 import ColumnsView from '~/modules/common/data-table/columns-view';
 import Export from '~/modules/common/data-table/export';
 import { TableBarContainer } from '~/modules/common/data-table/table-bar-container';
@@ -9,52 +10,54 @@ import TableCount from '~/modules/common/data-table/table-count';
 import { FilterBarActions, FilterBarContent, TableFilterBar } from '~/modules/common/data-table/table-filter-bar';
 import TableSearch from '~/modules/common/data-table/table-search';
 import type { BaseTableBarProps, BaseTableMethods } from '~/modules/common/data-table/types';
+import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { FocusView } from '~/modules/common/focus-view';
 import SelectRole from '~/modules/common/form-fields/select-role';
+import { toaster } from '~/modules/common/toaster';
+import UnsavedBadge from '~/modules/common/unsaved-badge';
+import type { EntityPage } from '~/modules/entities/types';
 import type { MemberSearch, MembersTableProps } from '~/modules/memberships/members-table/table-wrapper';
 import { MembershipInvitations } from '~/modules/memberships/pending-table/invites-count';
 import type { Member } from '~/modules/memberships/types';
+import { organizationsKeys } from '~/modules/organizations/query';
 import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
+import InviteUsers from '~/modules/users/invite-users';
+import { queryClient } from '~/query/query-client';
 import { nanoid } from '~/utils/nanoid';
+import { getMembers } from '../api';
+import { membersKeys } from '../query/options';
+import RemoveMembersForm from '../remove-member-form';
 
-type MembersTableBarProps = MembersTableProps &
-  BaseTableMethods &
-  BaseTableBarProps<Member, MemberSearch> & {
-    role: MemberSearch['role'];
-    openInviteDialog: (container: HTMLElement | null) => void;
-    openDeleteDialog: () => void;
-    fetchExport: (limit: number) => Promise<Member[]>;
-  };
+type MembersTableBarProps = MembersTableProps & BaseTableMethods & BaseTableBarProps<Member, MemberSearch>;
 
 export const MembersTableBar = ({
   entity,
   total,
   selected,
-  q,
+  searchVars,
   setSearch,
-  role,
   columns,
   setColumns,
   isSheet = false,
-  fetchExport,
   clearSelection,
-  openInviteDialog,
-  openDeleteDialog,
 }: MembersTableBarProps) => {
   const { t } = useTranslation();
-  const containerRef = useRef(null);
+  const createDialog = useDialoger((state) => state.create);
+
+  const { q, role, order } = searchVars;
 
   const isFiltered = role !== undefined || !!q;
   const isAdmin = entity.membership?.role === 'admin';
   const entityType = entity.entity;
 
-  // Drop selected Rows on search
+  // Clear selected rows on search
   const onSearch = (searchString: string) => {
     clearSelection();
     setSearch({ q: searchString });
   };
-  // Drop selected Rows on role change
+
+  // Clear selected rows on role change
   const onRoleChange = (role?: string) => {
     clearSelection();
     setSearch({ role: role === 'all' ? undefined : (role as MemberSearch['role']) });
@@ -63,6 +66,74 @@ export const MembersTableBar = ({
   const onResetFilters = () => {
     setSearch({ q: '', role: undefined });
     clearSelection();
+  };
+
+  const openDeleteDialog = () => {
+    createDialog(
+      <RemoveMembersForm
+        organizationId={entity.organizationId || entity.id}
+        entityIdOrSlug={entity.slug}
+        entityType={entity.entity}
+        dialog
+        members={selected}
+        callback={clearSelection}
+      />,
+      {
+        className: 'max-w-xl',
+        title: t('common:remove_resource', { resource: t('common:member').toLowerCase() }),
+        description: (
+          <Trans
+            i18nKey="common:confirm.remove_members"
+            values={{
+              entity: entity.entity,
+              emails: selected.map((member) => member.email).join(', '),
+            }}
+          />
+        ),
+      },
+    );
+  };
+
+  const openInviteDialog = () => {
+    if (!onlineManager.isOnline()) return toaster(t('common:action.offline.text'), 'warning');
+
+    createDialog(<InviteUsers entity={entity} mode={null} dialog callback={handleNewInvites} />, {
+      id: 'invite-users',
+      drawerOnMobile: false,
+      className: 'w-auto shadow-none relative z-60 max-w-4xl',
+      container: { id: 'invite-users-container', overlay: true },
+      title: t('common:invite'),
+      titleContent: <UnsavedBadge title={t('common:invite')} />,
+      description: `${t('common:invite_users.text')}`,
+    });
+  };
+
+  const handleNewInvites = (emails: string[]) => {
+    // TODO ?
+    queryClient.setQueryData(organizationsKeys.single(entity.slug), (oldEntity: EntityPage) => {
+      if (!oldEntity) return oldEntity;
+      const newEntity = { ...oldEntity };
+      if (newEntity.counts?.membership) newEntity.counts.membership.pending += emails.length;
+
+      return newEntity;
+    });
+    queryClient.invalidateQueries({
+      queryKey: membersKeys.invitesTable({ idOrSlug: entity.slug, entityType: entity.entity, orgIdOrSlug: entity.organizationId || entity.id }),
+    });
+  };
+
+  const fetchExport = async (limit: number) => {
+    const { items } = await getMembers({
+      q,
+      sort,
+      order,
+      role,
+      limit,
+      idOrSlug: entity.slug,
+      orgIdOrSlug: entity.organizationId || entity.id,
+      entityType: entity.entity,
+    });
+    return items;
   };
 
   return (
@@ -86,10 +157,7 @@ export const MembersTableBar = ({
 
                 <Button asChild variant="ghost" onClick={clearSelection}>
                   <motion.button
-                    transition={{
-                      bounce: 0,
-                      duration: 0.2,
-                    }}
+                    transition={{ bounce: 0, duration: 0.2 }}
                     initial={{ x: -20, opacity: 0 }}
                     animate={{ x: 0, opacity: 1 }}
                     exit={{ x: -20, opacity: 0 }}
@@ -102,8 +170,7 @@ export const MembersTableBar = ({
             ) : (
               !isFiltered &&
               isAdmin && (
-                //TODO mb rework sheet to find a way use dialog with ref in sheet
-                <Button asChild onClick={() => openInviteDialog(isSheet ? null : containerRef.current)}>
+                <Button asChild onClick={() => openInviteDialog()}>
                   <motion.button transition={{ duration: 0.1 }} layoutId={nanoid()} initial={false}>
                     <motion.span>
                       <Mail size={16} />
@@ -139,7 +206,7 @@ export const MembersTableBar = ({
       </TableBarContainer>
 
       {/* Container ref to embed dialog */}
-      <div className="empty:hidden" ref={containerRef} />
+      <div id="invite-users-container" className="empty:hidden" />
     </div>
   );
 };

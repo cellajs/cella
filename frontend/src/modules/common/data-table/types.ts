@@ -1,7 +1,7 @@
 import type { Dispatch, SetStateAction } from 'react';
 import type { ColumnOrColumnGroup as GridColumnOrColumnGroup, SortColumn } from 'react-data-grid';
 
-type BaseTableQueryVariables<T> = T & {
+type BaseTableSearchVariables<T> = T & {
   limit: number;
 };
 
@@ -11,7 +11,7 @@ export type ColumnOrColumnGroup<TData> = GridColumnOrColumnGroup<TData> & {
 };
 
 export type BaseTableProps<T, K> = {
-  queryVars: BaseTableQueryVariables<K>;
+  searchVars: BaseTableSearchVariables<K>;
   columns: ColumnOrColumnGroup<T>[];
   sortColumns: SortColumn[];
   setSortColumns: (sortColumns: SortColumn[]) => void;
@@ -26,8 +26,7 @@ export type BaseTableMethods = {
 export type BaseTableBarProps<T, K> = {
   total: number | undefined;
   selected: T[];
-
-  q: string;
+  searchVars: BaseTableSearchVariables<K>;
   setSearch: (newValues: Partial<K>, saveSearch?: boolean) => void;
   columns: ColumnOrColumnGroup<T>[];
   setColumns: Dispatch<SetStateAction<ColumnOrColumnGroup<T>[]>>;

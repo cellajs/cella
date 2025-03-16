@@ -5,13 +5,13 @@
 // Use shadcn UI components and css
 
 import { X } from 'lucide-react';
-import * as React from 'react';
-import { isEmail as isEmailFn } from '~/modules/common/multi-email/is-email';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Badge } from '~/modules/ui/badge';
 import { inputClass } from '~/modules/ui/input';
 import { cn } from '~/utils/cn';
+import { isEmail as isEmailFn } from '~/utils/is-email';
 
-export interface MultiEmailProps {
+export interface SelectEmailsProps {
   id?: string;
   emails?: string[];
   onChange?: (emails: string[]) => void;
@@ -39,7 +39,7 @@ export interface MultiEmailProps {
   allowDuplicate?: boolean;
 }
 
-export function MultiEmail(props: MultiEmailProps) {
+export const SelectEmails = (props: SelectEmailsProps) => {
   const {
     id,
     style,
@@ -65,14 +65,14 @@ export function MultiEmail(props: MultiEmailProps) {
     spinner,
     disableOnBlurValidation = false,
   } = props;
-  const emailInputRef = React.useRef<HTMLInputElement>(null);
+  const emailInputRef = useRef<HTMLInputElement>(null);
 
-  const [focused, setFocused] = React.useState(false);
-  const [emails, setEmails] = React.useState<string[]>([]);
-  const [inputValue, setInputValue] = React.useState('');
-  const [spinning, setSpinning] = React.useState(false);
+  const [focused, setFocused] = useState(false);
+  const [emails, setEmails] = useState<string[]>([]);
+  const [inputValue, setInputValue] = useState('');
+  const [spinning, setSpinning] = useState(false);
 
-  const findEmailAddress = React.useCallback(
+  const findEmailAddress = useCallback(
     async (value: string, isEnter?: boolean) => {
       const validEmails: string[] = [];
       let inputValue = '';
@@ -188,7 +188,7 @@ export function MultiEmail(props: MultiEmailProps) {
     [allowDisplayName, allowDuplicate, delimiter, emails, enable, onChange, onChangeInput, onDisabled, stripDisplayName, validateEmail],
   );
 
-  const onChangeInputValue = React.useCallback(
+  const onChangeInputValue = useCallback(
     async (value: string) => {
       await findEmailAddress(value);
       onChangeInput?.(value);
@@ -196,7 +196,7 @@ export function MultiEmail(props: MultiEmailProps) {
     [findEmailAddress, onChangeInput],
   );
 
-  const removeEmail = React.useCallback(
+  const removeEmail = useCallback(
     (index: number, isDisabled?: boolean) => {
       if (isDisabled) {
         return;
@@ -209,7 +209,7 @@ export function MultiEmail(props: MultiEmailProps) {
     [emails, onChange],
   );
 
-  const handleOnKeydown = React.useCallback(
+  const handleOnKeydown = useCallback(
     (e: React.KeyboardEvent<HTMLInputElement>) => {
       onKeyDown?.(e);
 
@@ -228,7 +228,7 @@ export function MultiEmail(props: MultiEmailProps) {
     [emails.length, onKeyDown, removeEmail],
   );
 
-  const handleOnKeyup = React.useCallback(
+  const handleOnKeyup = useCallback(
     async (e: React.KeyboardEvent<HTMLInputElement>) => {
       onKeyUp?.(e);
 
@@ -242,12 +242,12 @@ export function MultiEmail(props: MultiEmailProps) {
     [findEmailAddress, onKeyUp],
   );
 
-  const handleOnChange = React.useCallback(
+  const handleOnChange = useCallback(
     async (e: React.SyntheticEvent<HTMLInputElement>) => await onChangeInputValue(e.currentTarget.value),
     [onChangeInputValue],
   );
 
-  const handleOnBlur = React.useCallback(
+  const handleOnBlur = useCallback(
     async (e: React.SyntheticEvent<HTMLInputElement>) => {
       setFocused(false);
       if (!disableOnBlurValidation) {
@@ -258,16 +258,16 @@ export function MultiEmail(props: MultiEmailProps) {
     [disableOnBlurValidation, findEmailAddress, onBlur],
   );
 
-  const handleOnFocus = React.useCallback(() => {
+  const handleOnFocus = useCallback(() => {
     setFocused(true);
     onFocus?.();
   }, [onFocus]);
 
-  React.useEffect(() => {
+  useEffect(() => {
     setInputValue(initialInputValue);
   }, [initialInputValue]);
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (validateEmail) {
       (async () => {
         setSpinning(true);
@@ -362,4 +362,4 @@ export function MultiEmail(props: MultiEmailProps) {
       </div>
     </div>
   );
-}
+};

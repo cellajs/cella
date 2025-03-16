@@ -1,7 +1,7 @@
 import { useMutation } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
 import { DeleteForm } from '~/modules/common/delete-form';
-import { dialog } from '~/modules/common/dialoger/state';
+import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { deleteSelf } from '~/modules/me/api';
 import { usersKeys } from '~/modules/users/query';
 import type { User } from '~/modules/users/types';
@@ -15,6 +15,7 @@ interface Props {
 
 const DeleteSelf = ({ callback, dialog: isDialog }: Props) => {
   const navigate = useNavigate();
+  const removeDialog = useDialoger((state) => state.remove);
 
   const { user } = useUserStore();
 
@@ -26,7 +27,7 @@ const DeleteSelf = ({ callback, dialog: isDialog }: Props) => {
       });
 
       navigate({ to: '/sign-out', replace: true, search: { force: true } });
-      if (isDialog) dialog.remove();
+      if (isDialog) removeDialog();
       callback?.(user);
     },
   });
@@ -35,7 +36,7 @@ const DeleteSelf = ({ callback, dialog: isDialog }: Props) => {
     _deleteSelf(undefined);
   };
 
-  return <DeleteForm onDelete={onDelete} onCancel={() => dialog.remove()} pending={isPending} />;
+  return <DeleteForm onDelete={onDelete} onCancel={removeDialog} pending={isPending} />;
 };
 
 export default DeleteSelf;

@@ -7,7 +7,7 @@ export const tablePropsAreEqual = <T, U extends { q?: unknown; sort?: unknown; o
 ) => {
   return (
     equal(prevProps.columns, nextProps.columns) &&
-    equal(prevProps.queryVars, nextProps.queryVars) &&
+    equal(prevProps.searchVars, nextProps.searchVars) &&
     equal(prevProps.sortColumns, nextProps.sortColumns)
   );
 };

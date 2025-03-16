@@ -1,13 +1,15 @@
 import { useNavigate, useParams, useSearch } from '@tanstack/react-router';
 import { memo, useEffect } from 'react';
-import { sheet } from '~/modules/common/sheeter/state';
 import UserSheet from '~/modules/users/user-sheet';
+import { useSheeter } from '../common/sheeter/use-sheeter';
 
 const UserSheetHandler = memo(() => {
   const navigate = useNavigate();
 
   const { userSheetId, sheetContext } = useSearch({ strict: false });
   const { orgIdOrSlug: baseOrgIdOrSlug, idOrSlug } = useParams({ strict: false });
+
+  const { remove: removeSheet, create: createSheet } = useSheeter();
 
   const orgIdOrSlug = baseOrgIdOrSlug || idOrSlug;
 
@@ -20,7 +22,7 @@ const UserSheetHandler = memo(() => {
 
     // Defer creation to ensure the DOM and state are ready
     const timeoutId = setTimeout(() => {
-      sheet.create(<UserSheet idOrSlug={userSheetId} orgIdOrSlug={orgIdOrSlug} />, {
+      createSheet(<UserSheet idOrSlug={userSheetId} orgIdOrSlug={orgIdOrSlug} />, {
         className: 'max-w-full lg:max-w-4xl p-0',
         id: sheetInstanceId,
         side: 'right',
@@ -49,7 +51,7 @@ const UserSheetHandler = memo(() => {
 
     return () => {
       clearTimeout(timeoutId);
-      sheet.remove(sheetInstanceId);
+      removeSheet(sheetInstanceId);
     };
   }, [userSheetId, orgIdOrSlug, sheetContext]);
 

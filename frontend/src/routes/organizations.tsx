@@ -65,7 +65,6 @@ export const OrganizationMembersRoute = createRoute({
   loader: async ({ context, params: { idOrSlug }, deps: { q, sort, order, role } }) => {
     const entityType = 'organization';
     const orgIdOrSlug = context.organization.id ?? idOrSlug;
-
     const queryOptions = membersQueryOptions({ idOrSlug, orgIdOrSlug, entityType, q, sort, order, role });
 
     await queryClient.prefetchInfiniteQuery(queryOptions);

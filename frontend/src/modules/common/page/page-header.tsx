@@ -4,7 +4,7 @@ import { ChevronRight, Home, Loader2 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import useScrollTo from '~/hooks/use-scroll-to';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
-import { PageCover } from '~/modules/common/page/cover';
+import { PageCover } from '~/modules/common/page/page-cover';
 import type { LimitedEntity } from '~/modules/entities/types';
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbSeparator } from '~/modules/ui/breadcrumb';
 import { baseEntityRoutes } from '~/nav-config';

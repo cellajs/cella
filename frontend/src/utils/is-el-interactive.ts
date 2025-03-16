@@ -4,7 +4,7 @@
  * @param element - Element to check.
  * @returns Boolean(if element is interactive).
  */
-export function isElementInteractive(element: Element | null) {
+export const isElementInteractive = (element: Element | null) => {
   if (!element) return false;
   return (
     element instanceof HTMLInputElement ||
@@ -13,4 +13,4 @@ export function isElementInteractive(element: Element | null) {
     element instanceof HTMLButtonElement ||
     element?.getAttribute('contenteditable') === 'true'
   );
-}
+};

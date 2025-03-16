@@ -15,7 +15,13 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { Popover, PopoverContent, PopoverTrigger } from '~/modules/ui/popover';
 import { ScrollArea } from '~/modules/ui/scroll-area';
 
-export function QueryCombobox({ value, onChange, entityId }: { value: string[]; onChange: (items: string[]) => void; entityId?: string }) {
+interface Props {
+  value: string[];
+  onChange: (items: string[]) => void;
+  entityId: string;
+}
+
+export const QueryCombobox = ({ value, onChange, entityId }: Props) => {
   const { t } = useTranslation();
   const { ref, bounds } = useMeasure<HTMLDivElement>();
 
@@ -159,4 +165,4 @@ export function QueryCombobox({ value, onChange, entityId }: { value: string[]; 
       </PopoverContent>
     </Popover>
   );
-}
+};

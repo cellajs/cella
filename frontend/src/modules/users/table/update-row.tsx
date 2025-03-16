@@ -1,6 +1,6 @@
 import { Pencil } from 'lucide-react';
 import { i18n } from '~/lib/i18n';
-import { sheet } from '~/modules/common/sheeter/state';
+import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
 import UnsavedBadge from '~/modules/common/unsaved-badge';
 import { Button } from '~/modules/ui/button';
 import { Card, CardContent } from '~/modules/ui/card';
@@ -9,17 +9,17 @@ import UpdateUserForm from '~/modules/users/update-user-form';
 
 interface Props {
   user: User;
-  callback: (users: User[]) => void;
   tabIndex: number;
 }
 
-const openUpdateSheet = (user: User, callback: (users: User[]) => void) => {
+const openUpdateSheet = (user: User) => {
   const title = i18n.t('common:edit_resource', { resource: i18n.t('common:user').toLowerCase() });
+  const createSheet = useSheeter.getState().create;
 
-  sheet.create(
+  createSheet(
     <Card>
       <CardContent>
-        <UpdateUserForm user={user} sheet callback={(user) => callback([user])} />
+        <UpdateUserForm user={user} sheet />
       </CardContent>
     </Card>,
     {
@@ -32,7 +32,7 @@ const openUpdateSheet = (user: User, callback: (users: User[]) => void) => {
   );
 };
 
-const UpdateRow = ({ user, callback, tabIndex }: Props) => {
+const UpdateRow = ({ user, tabIndex }: Props) => {
   return (
     <Button
       variant="cell"
@@ -41,7 +41,7 @@ const UpdateRow = ({ user, callback, tabIndex }: Props) => {
       className="h-full w-full"
       data-tooltip="true"
       data-tooltip-content={i18n.t('common:edit')}
-      onClick={() => openUpdateSheet(user, callback)}
+      onClick={() => openUpdateSheet(user)}
     >
       <Pencil size={16} />
     </Button>

@@ -87,7 +87,6 @@ const dropdownerFunction = (content: React.ReactNode, data?: ExternalDropdown) =
   dropdownerState.set({
     content,
     refocus: true,
-    autoFocus: true,
     modal: data?.modal ?? true,
     align: 'start',
     id,

@@ -104,7 +104,7 @@ export const DataTable = <TData,>({
     // Throttle fetchMore to avoid duplicate calls
     const fetchMoreTimeout = setTimeout(() => {
       fetchMore();
-    }, 100);
+    }, 20);
 
     return () => clearTimeout(fetchMoreTimeout); // Clear timeout on cleanup
   }, [inView, error, rows.length, isFetching]);

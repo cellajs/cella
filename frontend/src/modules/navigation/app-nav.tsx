@@ -5,13 +5,13 @@ import { useTranslation } from 'react-i18next';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { useHotkeys } from '~/hooks/use-hot-keys';
 import router from '~/lib/router';
-import { dialog } from '~/modules/common/dialoger/state';
-import { sheet } from '~/modules/common/sheeter/state';
+import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { toaster } from '~/modules/common/toaster';
 import BarNav from '~/modules/navigation/bar-nav';
 import FloatingNav from '~/modules/navigation/floating-nav';
 import { type NavItem, navItems } from '~/nav-config';
 import { useNavigationStore } from '~/store/navigation';
+import { useSheeter } from '../common/sheeter/use-sheeter';
 
 const AppNav = () => {
   const { t } = useTranslation();
@@ -22,12 +22,14 @@ const AppNav = () => {
   const setLoading = useNavigationStore.getState().setLoading;
   const navSheetOpen = useNavigationStore((state) => state.navSheetOpen);
   const setNavSheetOpen = useNavigationStore.getState().setNavSheetOpen;
+  const getSheet = useSheeter.getState().get;
+  const updateSheet = useSheeter.getState().update;
 
   const clickNavItem = (id: NavItem['id']) => {
     // If the nav item is already open, close it
-    if (id === navSheetOpen && sheet.get('nav-sheet')?.open) {
+    if (id === navSheetOpen && getSheet('nav-sheet')?.open) {
       setNavSheetOpen(null);
-      sheet.update('nav-sheet', { open: false });
+      updateSheet('nav-sheet', { open: false });
       return;
     }
 
@@ -38,13 +40,11 @@ const AppNav = () => {
     if (navItem.dialog) {
       if (!onlineManager.isOnline()) return toaster(t('common:action.offline.text'), 'warning');
 
-      return dialog(navItem.dialog, {
+      return useDialoger.getState().create(navItem.dialog, {
         id: navItem.id,
         className: navItem.id === 'search' ? 'sm:max-w-2xl p-0 border-0 mb-4' : '',
         drawerOnMobile: navItem.id !== 'search',
-        refocus: false,
         hideClose: true,
-        autoFocus: !isMobile,
       });
     }
 
@@ -52,7 +52,7 @@ const AppNav = () => {
     if (navItem.href) {
       if (!useNavigationStore.getState().keepMenuOpen) {
         setNavSheetOpen(null);
-        sheet.update('nav-sheet', { open: false });
+        updateSheet('nav-sheet', { open: false });
       }
       return navigate({ to: navItem.href });
     }
@@ -68,7 +68,7 @@ const AppNav = () => {
     setNavSheetOpen(navItem.id);
 
     // Create a sheet
-    sheet.create(navItem.sheet, {
+    useSheeter.getState().create(navItem.sheet, {
       id: 'nav-sheet',
       side: sheetSide,
       hideClose: true,
@@ -80,6 +80,7 @@ const AppNav = () => {
     });
   };
 
+  // Enable hotkeys
   useHotkeys([
     ['Shift + A', () => clickNavItem('account')],
     ['Shift + F', () => clickNavItem('search')],
@@ -96,8 +97,8 @@ const AppNav = () => {
         // Remove all sheets in content or
         if (sheetOpen && (sheetOpen !== 'menu' || !useNavigationStore.getState().keepMenuOpen)) {
           setNavSheetOpen(null);
-          sheet.remove();
-        } else sheet.remove(undefined, 'nav-sheet');
+          useSheeter.getState().remove();
+        } else useSheeter.getState().remove(undefined, 'nav-sheet');
       }
       pathChanged && setLoading(true);
     });

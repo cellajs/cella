@@ -14,7 +14,7 @@ import { menuSectionsSchemas } from '~/menu-config';
 import { AlertWrap } from '~/modules/common/alert-wrap';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
-import { sheet } from '~/modules/common/sheeter/state';
+import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
 import { getAndSetMenu } from '~/modules/me/helpers';
 import type { UserMenuItem } from '~/modules/me/types';
 import { useMemberUpdateMutation } from '~/modules/memberships/query/mutations';
@@ -136,7 +136,7 @@ export const MenuSheet = memo(() => {
             onClick={() => {
               setNavSheetOpen('account');
               // Create a sheet
-              sheet.create(<AccountSheet />, {
+              useSheeter.getState().create(<AccountSheet />, {
                 id: 'nav-sheet',
                 side: 'left',
                 hideClose: true,

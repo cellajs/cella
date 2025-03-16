@@ -9,7 +9,7 @@ import { useMemo } from 'react';
 import type { UseFormProps } from 'react-hook-form';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import { useMutation } from '~/hooks/use-mutations';
-import { dialog } from '~/modules/common/dialoger/state';
+import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import SelectRoleRadio from '~/modules/common/form-fields/select-role-radio';
 import { QueryCombobox } from '~/modules/common/query-combobox';
 import { toaster } from '~/modules/common/toaster';
@@ -64,7 +64,7 @@ const InviteSearchForm = ({ entity, callback, dialog: isDialog }: Props) => {
     },
     onSuccess: (_, { emails }) => {
       form.reset(undefined, { keepDirtyValues: true });
-      if (isDialog) dialog.remove();
+      if (isDialog) useDialoger.getState().remove();
       toaster(t('common:success.user_invited'), 'success');
       callback?.(emails);
     },

@@ -11,7 +11,7 @@ function usePrevious<T>(value: T): T | undefined {
   return ref.current;
 }
 
-export function useStepper() {
+export const useStepper = () => {
   const context = React.useContext(StepperContext);
 
   if (context === undefined) {
@@ -39,4 +39,4 @@ export function useStepper() {
     currentStep,
     previousActiveStep,
   };
-}
+};

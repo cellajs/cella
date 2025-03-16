@@ -5,7 +5,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { AlertWrap } from '~/modules/common/alert-wrap';
-import { sheet } from '~/modules/common/sheeter/state';
+import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
 import type { UserMenu, UserMenuItem } from '~/modules/me/types';
 import { MenuSheetItemsEdit } from '~/modules/navigation/menu-sheet/items-edit-list';
 import { MenuSheetItems } from '~/modules/navigation/menu-sheet/items-list';
@@ -35,7 +35,7 @@ export const MenuSheetSection = ({ data, sectionType, sectionLabel, entityType, 
   const archivedCount = data.filter((i) => i.membership.archived).length;
 
   const handleCreateAction = () => {
-    if (isMobile) sheet.remove('nav-sheet');
+    if (isMobile) useSheeter.getState().remove('nav-sheet');
 
     createAction?.();
   };

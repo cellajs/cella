@@ -3,8 +3,6 @@ import { config } from 'config';
 import type { UseFormProps } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import type { z } from 'zod';
-import { updateOrganizationBodySchema } from '#/modules/organizations/schema';
-
 import { useBeforeUnload } from '~/hooks/use-before-unload';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import AvatarFormField from '~/modules/common/form-fields/avatar';
@@ -15,7 +13,7 @@ import { SelectLanguage } from '~/modules/common/form-fields/select-language';
 import { SelectLanguages } from '~/modules/common/form-fields/select-languages';
 import SelectTimezone from '~/modules/common/form-fields/select-timezone';
 import { SlugFormField } from '~/modules/common/form-fields/slug';
-import { sheet } from '~/modules/common/sheeter/state';
+import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
 import Spinner from '~/modules/common/spinner';
 import { toaster } from '~/modules/common/toaster';
 import { useOrganizationUpdateMutation } from '~/modules/organizations/query';
@@ -23,6 +21,7 @@ import type { Organization } from '~/modules/organizations/types';
 import { Button, SubmitButton } from '~/modules/ui/button';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
 import { cleanUrl } from '~/utils/clean-url';
+import { updateOrganizationBodySchema } from '#/modules/organizations/schema';
 
 interface Props {
   organization: Organization;
@@ -66,7 +65,7 @@ const UpdateOrganizationForm = ({ organization, callback, sheet: isSheet }: Prop
       { idOrSlug: organization.slug, json },
       {
         onSuccess: (updatedOrganization) => {
-          if (isSheet) sheet.remove(formContainerId);
+          if (isSheet) useSheeter.getState().remove(formContainerId);
           form.reset(updatedOrganization);
           toaster(t('common:success.update_resource', { resource: t('common:organization') }), 'success');
           callback?.(updatedOrganization);
