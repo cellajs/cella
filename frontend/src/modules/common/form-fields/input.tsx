@@ -74,7 +74,7 @@ const InputFormField = <TFieldValues extends FieldValues>({
               )}
               <InputComponent
                 className={inputClassName}
-                style={{ paddingLeft: icon ? '2rem' : '' }}
+                style={{ paddingLeft: icon ? '2.25rem' : '' }}
                 placeholder={placeholder}
                 onFocus={onFocus}
                 readOnly={readOnly}

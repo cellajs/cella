@@ -10,15 +10,16 @@ import TableCount from '~/modules/common/data-table/table-count';
 import { FilterBarActions, FilterBarContent, TableFilterBar } from '~/modules/common/data-table/table-filter-bar';
 import TableSearch from '~/modules/common/data-table/table-search';
 import type { BaseTableBarProps, BaseTableMethods } from '~/modules/common/data-table/types';
+import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { FocusView } from '~/modules/common/focus-view';
 import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
+import DeleteAttachmentsForm from './delete-attachments-form';
 
 type AttachmentsTableBarProps = AttachmentsTableProps &
   BaseTableMethods &
   BaseTableBarProps<Attachment, AttachmentSearch> & {
     highDensity: boolean;
-    openRemoveDialog: () => void;
     toggleDensityView: (highDensity: boolean) => void;
   };
 
@@ -26,18 +27,20 @@ export const AttachmentsTableBar = ({
   entity,
   total,
   selected,
-  q,
+  searchVars,
   setSearch,
   columns,
   setColumns,
   highDensity,
   toggleDensityView,
   clearSelection,
-  openRemoveDialog,
   isSheet = false,
   canUpload = true,
 }: AttachmentsTableBarProps) => {
   const { t } = useTranslation();
+  const createDialog = useDialoger((state) => state.create);
+
+  const { q } = searchVars;
 
   const isFiltered = !!q;
   const showUpload = canUpload && !isFiltered;
@@ -53,6 +56,14 @@ export const AttachmentsTableBar = ({
     clearSelection();
   };
 
+  const openDeleteDialog = () => {
+    createDialog(<DeleteAttachmentsForm entity={entity} dialog attachments={selected} callback={clearSelection} />, {
+      className: 'max-w-xl',
+      title: t('common:remove_resource', { resource: t('common:attachment').toLowerCase() }),
+      description: t('common:confirm.delete_resources', { resources: t('common:attachments').toLowerCase() }),
+    });
+  };
+
   return (
     <TableBarContainer>
       {/* Filter bar */}
@@ -60,7 +71,7 @@ export const AttachmentsTableBar = ({
         <FilterBarActions>
           {selected.length > 0 ? (
             <>
-              <Button asChild variant="destructive" onClick={openRemoveDialog} className="relative">
+              <Button asChild variant="destructive" onClick={openDeleteDialog} className="relative">
                 <motion.button layout="size" layoutRoot transition={{ duration: 0.1 }} layoutId="members-filter-bar-button">
                   <Badge context="button">{selected.length}</Badge>
                   <motion.span layoutId="attachments-filter-bar-icon">

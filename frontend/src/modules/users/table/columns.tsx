@@ -7,10 +7,10 @@ import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 import ImpersonateRow from '~/modules/users/table/impersonate-row';
 import UpdateRow from '~/modules/users/table/update-row';
 import type { User } from '~/modules/users/types';
+import UserCell from '~/modules/users/user-cell';
 import { dateShort } from '~/utils/date-short';
-import UserCell from '../user-cell';
 
-export const useColumns = (callback: (users: User[]) => void) => {
+export const useColumns = () => {
   const { t } = useTranslation();
   const isMobile = useBreakpoints('max', 'sm', false);
 
@@ -39,7 +39,7 @@ export const useColumns = (callback: (users: User[]) => void) => {
         visible: true,
         sortable: false,
         width: 32,
-        renderCell: ({ row, tabIndex }) => <UpdateRow user={row} tabIndex={tabIndex} callback={callback} />,
+        renderCell: ({ row, tabIndex }) => <UpdateRow user={row} tabIndex={tabIndex} />,
       },
       {
         key: 'email',

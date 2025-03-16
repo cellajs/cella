@@ -2,7 +2,7 @@ import { config } from 'config';
 import { Undo } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { sheet } from '~/modules/common/sheeter/state';
+import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
 import { Confetti } from '~/modules/home/onboarding/confetti';
 import { onBoardingFinishCallback } from '~/modules/home/onboarding/onboarding-config';
 import { MenuSheet } from '~/modules/navigation/menu-sheet';
@@ -29,7 +29,7 @@ export const OnboardingCompleted = () => {
     setSectionsDefault();
     setTimeout(
       () => {
-        sheet.create(<MenuSheet />, {
+        useSheeter.getState().create(<MenuSheet />, {
           id: 'menu-nav',
           side: 'left',
           modal: false,

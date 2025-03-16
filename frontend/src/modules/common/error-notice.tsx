@@ -1,17 +1,14 @@
 import { SearchParamError, useRouterState } from '@tanstack/react-router';
 import type { TFunction } from 'i18next';
 import { ChevronDown, Home, MessageCircleQuestion, RefreshCw } from 'lucide-react';
-import type React from 'react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { ApiError } from '~/lib/api';
-import { i18n } from '~/lib/i18n';
-import ContactForm from '~/modules/common/contact-form/contact-form';
-import { Dialoger } from '~/modules/common/dialoger';
-import { dialog } from '~/modules/common/dialoger/state';
+import { Dialoger } from '~/modules/common/dialoger/provider';
 import { MainFooter } from '~/modules/common/main-footer';
 import { Button } from '~/modules/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '~/modules/ui/card';
+import { contactFormHandler } from './contact-form/contact-form-handler';
 
 export type ErrorNoticeError = ApiError | Error | null;
 
@@ -23,13 +20,7 @@ interface ErrorNoticeProps {
 
 export const handleAskForHelp = () => {
   if (!window.Gleap) {
-    return dialog(<ContactForm dialog />, {
-      id: 'contact-form',
-      drawerOnMobile: false,
-      className: 'sm:max-w-5xl',
-      title: i18n.t('common:contact_us'),
-      description: i18n.t('common:contact_us.text'),
-    });
+    return contactFormHandler();
   }
   window.Gleap.openConversations();
 };
@@ -68,7 +59,7 @@ export const getErrorText = (t: TFunction, error?: ErrorNoticeError, errorFromQu
 // - root: no footer can be shown because services are not available
 // - app: no footer required
 // - public: show footer
-const ErrorNotice: React.FC<ErrorNoticeProps> = ({ error, resetErrorBoundary, level }) => {
+const ErrorNotice = ({ error, resetErrorBoundary, level }: ErrorNoticeProps) => {
   const { t } = useTranslation();
   const { location } = useRouterState();
   const { error: errorFromQuery, severity: severityFromQuery } = location.search;

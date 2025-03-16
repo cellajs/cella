@@ -1,4 +1,3 @@
-import { onlineManager } from '@tanstack/react-query';
 import { forwardRef, memo, useEffect, useImperativeHandle } from 'react';
 import type { RowsChangeData } from 'react-data-grid';
 import { useTranslation } from 'react-i18next';
@@ -7,25 +6,21 @@ import { tablePropsAreEqual } from '~/modules/common/data-table/table-props-are-
 import type { BaseTableMethods, BaseTableProps } from '~/modules/common/data-table/types';
 import { toaster } from '~/modules/common/toaster';
 import type { MemberSearch, MembersTableProps } from '~/modules/memberships/members-table/table-wrapper';
-import { membersKeys, membersQueryOptions } from '~/modules/memberships/query';
-import { useMemberUpdateMutation } from '~/modules/memberships/query-mutations';
+import { useMemberUpdateMutation } from '~/modules/memberships/query/mutations';
+import { membersQueryOptions } from '~/modules/memberships/query/options';
 import type { Member } from '~/modules/memberships/types';
 import { useDataFromInfiniteQuery } from '~/query/hooks/use-data-from-query';
-import { queryClient } from '~/query/query-client';
 
-type BaseDataTableProps = MembersTableProps &
-  BaseTableProps<Member, MemberSearch> & {
-    queryVars: { role: MemberSearch['role'] };
-  };
+type BaseDataTableProps = MembersTableProps & BaseTableProps<Member, MemberSearch>;
 
 const BaseDataTable = memo(
-  forwardRef<BaseTableMethods, BaseDataTableProps>(({ entity, columns, queryVars, sortColumns, setSortColumns, setTotal, setSelected }, ref) => {
+  forwardRef<BaseTableMethods, BaseDataTableProps>(({ entity, columns, searchVars, sortColumns, setSortColumns, setTotal, setSelected }, ref) => {
     const { t } = useTranslation();
     const entityType = entity.entity;
     const organizationId = entity.organizationId || entity.id;
 
     // Extract query variables and set defaults
-    const { q, role, sort, order, limit } = queryVars;
+    const { q, role, sort, order, limit } = searchVars;
 
     // Query members
     const { rows, selectedRows, setRows, setSelectedRows, totalCount, isLoading, isFetching, error, fetchNextPage } = useDataFromInfiniteQuery(
@@ -45,8 +40,6 @@ const BaseDataTable = memo(
 
     // Update rows
     const onRowsChange = (changedRows: Member[], { indexes, column }: RowsChangeData<Member>) => {
-      if (!onlineManager.isOnline()) return toaster(t('common:action.offline.text'), 'warning');
-
       if (column.key !== 'role') return setRows(changedRows);
 
       // If role is changed, update membership
@@ -54,13 +47,7 @@ const BaseDataTable = memo(
         updateMemberMembership.mutateAsync(
           { ...changedRows[index].membership, orgIdOrSlug: organizationId, idOrSlug: entity.slug, entityType },
           {
-            onSuccess(data, variables, context) {
-              queryClient.getMutationDefaults(membersKeys.update()).onSuccess?.(data, variables, context);
-              toaster(t('common:success.update_item', { item: t('common:role') }), 'success');
-            },
-            onError(error, variables, context) {
-              queryClient.getMutationDefaults(membersKeys.update()).onError?.(error, variables, context);
-            },
+            onSuccess: () => toaster(t('common:success.update_item', { item: t('common:role') }), 'success'),
           },
         );
       }

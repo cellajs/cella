@@ -1,5 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { isValidElement, useMemo } from 'react';
+import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { z } from 'zod';
 import { updateUserBodySchema } from '#/modules/users/schema';
@@ -13,10 +13,8 @@ import AvatarFormField from '~/modules/common/form-fields/avatar';
 import InputFormField from '~/modules/common/form-fields/input';
 import { SelectLanguage } from '~/modules/common/form-fields/select-language';
 import { SlugFormField } from '~/modules/common/form-fields/slug';
-import { sheet } from '~/modules/common/sheeter/state';
-import { useStepper } from '~/modules/common/stepper/use-stepper';
+import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
 import { toaster } from '~/modules/common/toaster';
-import UnsavedBadge from '~/modules/common/unsaved-badge';
 import { useUpdateSelfMutation } from '~/modules/me/query';
 import { Button, SubmitButton } from '~/modules/ui/button';
 import { Checkbox } from '~/modules/ui/checkbox';
@@ -41,7 +39,6 @@ type FormValues = z.infer<typeof formSchema>;
 
 const UpdateUserForm = ({ user, callback, sheet: isSheet, hiddenFields, children }: UpdateUserFormProps) => {
   const { t } = useTranslation();
-  const { nextStep } = useStepper();
   const { user: currentUser, updateUser } = useUserStore();
   const isSelf = currentUser.id === user.id;
 
@@ -70,15 +67,8 @@ const UpdateUserForm = ({ user, callback, sheet: isSheet, hiddenFields, children
     [],
   );
 
-  const sheetTitleUpdate = () => {
-    const targetSheet = sheet.get('update-user');
-    // Check if the title's type is a function (React component) and not a string
-    if (!targetSheet || (isValidElement(targetSheet.title) && targetSheet.title.type === UnsavedBadge)) return;
-
-    sheet.update('update-user', { title: <UnsavedBadge title={targetSheet?.title} /> });
-  };
-
-  const form = useFormWithDraft<FormValues>(`update-user-${user.id}`, { formOptions, onUnsavedChanges: sheetTitleUpdate });
+  const formContainerId = 'update-user';
+  const form = useFormWithDraft<FormValues>(`${formContainerId}-${user.id}`, { formOptions, formContainerId });
 
   // Prevent data loss
   useBeforeUnload(form.formState.isDirty);
@@ -94,9 +84,10 @@ const UpdateUserForm = ({ user, callback, sheet: isSheet, hiddenFields, children
             updateUser(updatedUser);
             toaster(t('common:success.profile_updated'), 'success');
           } else toaster(t('common:success.update_item', { item: t('common:user') }), 'success');
+
           form.reset(updatedUser);
-          if (isSheet) sheet.remove('update-user');
-          nextStep?.();
+          if (isSheet) useSheeter.getState().remove(formContainerId);
+
           callback?.(updatedUser);
         },
       },
@@ -110,7 +101,6 @@ const UpdateUserForm = ({ user, callback, sheet: isSheet, hiddenFields, children
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 w-full">
-        {!isSheet && form.unsavedChanges && <UnsavedBadge />}
         <AvatarFormField
           control={form.control}
           label={children ? '' : t('common:profile_picture')}

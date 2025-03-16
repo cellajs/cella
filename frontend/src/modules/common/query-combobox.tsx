@@ -1,4 +1,4 @@
-import { Check, ChevronsUpDown, Search, X } from 'lucide-react';
+import { Check, ChevronsUpDown, Search, Users2, X } from 'lucide-react';
 
 import { useQuery } from '@tanstack/react-query';
 import { config } from 'config';
@@ -15,7 +15,13 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { Popover, PopoverContent, PopoverTrigger } from '~/modules/ui/popover';
 import { ScrollArea } from '~/modules/ui/scroll-area';
 
-export function QueryCombobox({ value, onChange, entityId }: { value: string[]; onChange: (items: string[]) => void; entityId?: string }) {
+interface Props {
+  value: string[];
+  onChange: (items: string[]) => void;
+  entityId: string;
+}
+
+export const QueryCombobox = ({ value, onChange, entityId }: Props) => {
   const { t } = useTranslation();
   const { ref, bounds } = useMeasure<HTMLDivElement>();
 
@@ -96,7 +102,7 @@ export function QueryCombobox({ value, onChange, entityId }: { value: string[]; 
         </div>
       </PopoverTrigger>
 
-      <PopoverContent align="start" style={{ width: `${bounds.left + bounds.right + 42}px` }} className={'p-0'}>
+      <PopoverContent align="start" style={{ width: `${bounds.left + bounds.right + 36}px` }} className={'p-0'}>
         <Command shouldFilter={false}>
           <CommandInput
             value={searchQuery}
@@ -116,7 +122,7 @@ export function QueryCombobox({ value, onChange, entityId }: { value: string[]; 
                     </CommandEmpty>
                   ) : (
                     <CommandEmpty>
-                      <ContentPlaceholder title={t('common:invite_members_search.text', { appName: config.name })} />
+                      <ContentPlaceholder Icon={Users2} title={t('common:invite_members_search.text', { appName: config.name })} />
                     </CommandEmpty>
                   )}
                 </motion.div>
@@ -159,4 +165,4 @@ export function QueryCombobox({ value, onChange, entityId }: { value: string[]; 
       </PopoverContent>
     </Popover>
   );
-}
+};

@@ -208,9 +208,7 @@ const organizationsRoutes = app
       .where(and(eq(membershipsTable.type, 'organization'), eq(membershipsTable.organizationId, organization.id)));
 
     // Send SSE events to organization members
-    for (const member of organizationMemberships) {
-      sendSSEToUsers([member.userId], 'update_entity', { ...updatedOrganization, member });
-    }
+    for (const member of organizationMemberships) sendSSEToUsers([member.userId], 'update_entity', { ...updatedOrganization, member });
 
     logEvent('Organization updated', { organization: updatedOrganization.id });
 

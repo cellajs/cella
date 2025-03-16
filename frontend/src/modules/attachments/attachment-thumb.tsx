@@ -1,16 +1,15 @@
 import { config } from 'config';
-import type React from 'react';
 import { useMemo } from 'react';
 import FilePlaceholder from '~/modules/attachments/file-placeholder';
 import { useLocalFile } from '~/modules/attachments/use-local-file';
 
-interface AttachmentThumbProps {
+interface Props {
   url: string;
   contentType: string;
   name: string;
 }
 
-const AttachmentThumb: React.FC<AttachmentThumbProps> = ({ url: baseUrl, contentType, name }) => {
+const AttachmentThumb = ({ url: baseUrl, contentType, name }: Props) => {
   const { localUrl } = useLocalFile(baseUrl, contentType);
 
   // Use either remote URL or local URL

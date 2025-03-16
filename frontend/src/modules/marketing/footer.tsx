@@ -6,7 +6,7 @@ import { useTranslation } from 'react-i18next';
 import Logo from '~/modules/common/logo';
 import { BackgroundCurve } from '~/modules/marketing/about/hero';
 import { footerSections, legalLinks } from '~/modules/marketing/marketing-config';
-import SubscribeNewsletterForm from '~/modules/marketing/newsletter';
+import SubscribeNewsletterForm from '~/modules/marketing/subscribe-newsletter-form';
 
 const currentYear = new Date().getFullYear();
 const companyName = config.company.name;
@@ -41,7 +41,7 @@ function FooterLinks() {
   );
 }
 
-export function Credits({ className }: { className?: string }) {
+export const Credits = ({ className }: { className?: string }) => {
   const { t } = useTranslation();
 
   return (
@@ -51,9 +51,9 @@ export function Credits({ className }: { className?: string }) {
       </p>
     </div>
   );
-}
+};
 
-export function MarketingFooter() {
+export const MarketingFooter = () => {
   const { t } = useTranslation();
   const sectionClass = 'rich-gradient dark-gradient relative min-h-[30vw] pt-[15vw]';
 
@@ -101,4 +101,4 @@ export function MarketingFooter() {
       </section>
     </div>
   );
-}
+};

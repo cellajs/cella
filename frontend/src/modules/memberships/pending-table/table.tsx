@@ -5,21 +5,21 @@ import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { DataTable } from '~/modules/common/data-table';
 import type { BaseTableMethods, BaseTableProps } from '~/modules/common/data-table/types';
 import type { MembershipInvitationsSearch, MembershipInvitationsTableProps } from '~/modules/memberships/pending-table/table-wrapper';
-import { memberInvitationsQueryOptions } from '~/modules/memberships/query';
+import { memberInvitationsQueryOptions } from '~/modules/memberships/query/options';
 import type { InvitedMember } from '~/modules/memberships/types';
 import { useDataFromInfiniteQuery } from '~/query/hooks/use-data-from-query';
 
 type BaseDataTableProps = MembershipInvitationsTableProps & Omit<BaseTableProps<InvitedMember, MembershipInvitationsSearch>, 'setSelected'>;
 
 const BaseDataTable = memo(
-  forwardRef<BaseTableMethods, BaseDataTableProps>(({ entity, columns, queryVars, sortColumns, setSortColumns, setTotal }, ref) => {
+  forwardRef<BaseTableMethods, BaseDataTableProps>(({ entity, columns, searchVars, sortColumns, setSortColumns, setTotal }, ref) => {
     const { t } = useTranslation();
 
     const entityType = entity.entity;
     const organizationId = entity.organizationId || entity.id;
 
     // Extract query variables and set defaults
-    const { sort, order, limit } = queryVars;
+    const { sort, order, limit } = searchVars;
 
     // Query invited members
     const { rows, totalCount, isLoading, isFetching, error, fetchNextPage } = useDataFromInfiniteQuery(

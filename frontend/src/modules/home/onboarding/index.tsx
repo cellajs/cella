@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import useMounted from '~/hooks/use-mounted';
-import { Step, Stepper } from '~/modules/common/stepper';
+import { Step, Stepper, useStepper } from '~/modules/common/stepper';
 import StepperFooter from '~/modules/home/onboarding/footer';
 import { onDefaultBoardingSteps } from '~/modules/home/onboarding/onboarding-config';
 import { OnboardingStart } from '~/modules/home/onboarding/start';
@@ -24,6 +24,7 @@ const Onboarding = ({ onboarding = 'start', onboardingToStepper }: OnboardingPro
   const { user } = useUserStore();
   const { hasStarted } = useMounted();
   const { menu } = useNavigationStore();
+  const { nextStep } = useStepper();
 
   const [steps, setSteps] = useState(onDefaultBoardingSteps);
   const [organization, setOrganization] = useState<Organization | null>(null);
@@ -32,6 +33,7 @@ const Onboarding = ({ onboarding = 'start', onboardingToStepper }: OnboardingPro
 
   const onCreateOrganization = (organization: Organization) => {
     setOrganization(organization);
+    nextStep();
   };
 
   useEffect(() => {
@@ -53,7 +55,7 @@ const Onboarding = ({ onboarding = 'start', onboardingToStepper }: OnboardingPro
                     </CardHeader>
                     <CardContent>
                       {id === 'profile' && (
-                        <UpdateUserForm user={user} hiddenFields={['email', 'newsletter', 'slug', 'language']}>
+                        <UpdateUserForm user={user} hiddenFields={['email', 'newsletter', 'slug', 'language']} callback={() => nextStep()}>
                           <StepperFooter />
                         </UpdateUserForm>
                       )}

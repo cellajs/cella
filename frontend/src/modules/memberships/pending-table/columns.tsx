@@ -4,8 +4,9 @@ import { useBreakpoints } from '~/hooks/use-breakpoints';
 import HeaderCell from '~/modules/common/data-table/header-cell';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 import type { EntityPage } from '~/modules/entities/types';
-import { getMembersTableCache } from '~/modules/memberships/members-table/helpers';
+import { membersKeys } from '~/modules/memberships/query/options';
 import type { InvitedMember } from '~/modules/memberships/types';
+import { findUserFromCache } from '~/modules/users/helpers';
 import UserCell from '~/modules/users/user-cell';
 import { dateShort } from '~/utils/date-short';
 
@@ -72,8 +73,8 @@ export const useColumns = (entity: EntityPage) => {
         renderCell: ({ row, tabIndex }) => {
           if (!row.createdBy) return <span className="text-muted">-</span>;
 
-          const items = getMembersTableCache(entity.id, entity.entity);
-          const user = items.find((u) => u.id === row.createdBy);
+          const queryKey = [...membersKeys.list(), { entityType: entity.entity, orgIdOrSlug: entity.organizationId ?? entity.id }];
+          const user = findUserFromCache(queryKey, row.createdBy);
 
           if (!user) return <span>{row.createdBy}</span>;
 

@@ -33,10 +33,11 @@ DialogOverlay.displayName = DialogPrimitive.Overlay.displayName;
 
 const DialogContent = React.forwardRef<
   React.ComponentRef<typeof DialogPrimitive.Content>,
-  React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content> & { container?: HTMLElement | null; hideClose?: boolean }
->(({ className, children, container, hideClose, ...props }, ref) => {
+  React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content> & { containerId?: string | null; hideClose?: boolean; containerOverlay?: boolean }
+>(({ className, children, containerId, hideClose, id, containerOverlay, ...props }, ref) => {
   const renderContent = () => (
     <DialogPrimitive.Content
+      id={id}
       ref={ref}
       className={cn(
         'overflow-x-clip overflow-y-clip bg-background mt-4 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 relative z-125 grid w-[95vw] gap-4 border p-4 shadow-lg duration-200 rounded-lg mx-auto',
@@ -53,6 +54,17 @@ const DialogContent = React.forwardRef<
       )}
     </DialogPrimitive.Content>
   );
+
+  // EDIT: Find container element by id to portal dialog into it
+  let container: HTMLElement | null = null;
+
+  if (containerId) {
+    const c = document.getElementById(containerId);
+    if (!container) console.warn('DialogContent: containerId provided but no element found.');
+
+    container = c;
+  }
+
   // EDIT: only wrap in Overlay if container is not provided
   return <DialogPortal container={container}>{container ? renderContent() : <DialogOverlay> {renderContent()}</DialogOverlay>}</DialogPortal>;
 });

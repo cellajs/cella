@@ -2,7 +2,7 @@ import { useParams, useSearch } from '@tanstack/react-router';
 import { Suspense, memo, useEffect } from 'react';
 import router from '~/lib/router';
 import AttachmentDialog from '~/modules/attachments/attachment-dialog';
-import { dialog } from '~/modules/common/dialoger/state';
+import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 
 /**
  * Handler for attachment dialog.
@@ -26,15 +26,16 @@ export const clearAttachmentDialogSearchParams = () => {
 const AttachmentDialogHandler = memo(() => {
   const { attachmentDialogId, groupId, dialogContext } = useSearch({ strict: false });
   const { orgIdOrSlug: baseOrgIdOrSlug, idOrSlug } = useParams({ strict: false });
-
   const orgIdOrSlug = baseOrgIdOrSlug || idOrSlug;
+
+  const dialog = useDialoger();
 
   useEffect(() => {
     if (!attachmentDialogId || !orgIdOrSlug || !dialogContext) return;
     if (dialog.get('attachment-dialog')) return;
 
     const timeoutId = setTimeout(() => {
-      dialog(
+      dialog.create(
         <Suspense>
           <AttachmentDialog attachmentId={attachmentDialogId} groupId={groupId} orgIdOrSlug={orgIdOrSlug} />
         </Suspense>,
@@ -44,7 +45,6 @@ const AttachmentDialogHandler = memo(() => {
           className: 'min-w-full h-screen border-0 p-0 rounded-none flex flex-col mt-0',
           headerClassName: 'absolute p-4 w-full backdrop-blur-xs bg-background/50',
           hideClose: true,
-          autoFocus: true,
           removeCallback: () => {
             // TODO find a way to remove a history entry when the sheet is closed. this way perhaps its better
             // for UX to not do a replace here and in the column
@@ -66,7 +66,7 @@ const AttachmentDialogHandler = memo(() => {
   // Separate cleanup when `attachmentDialogId` disappears
   useEffect(() => {
     if (attachmentDialogId) return;
-    dialog.remove(true, 'attachment-dialog');
+    dialog.remove('attachment-dialog');
   }, [attachmentDialogId]);
 
   return null;

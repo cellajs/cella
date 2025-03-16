@@ -1,14 +1,14 @@
 import { useEffect, useRef, useState } from 'react';
-import { type SheetT, sheet as sheetState } from '~/modules/common/sheeter/state';
 import StickyBox from '~/modules/common/sticky-box';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '~/modules/ui/sheet';
+import { isElementInteractive } from '~/utils/is-el-interactive';
+import { type SheetData, useSheeter } from './use-sheeter';
 
-export interface SheetProp {
-  sheet: SheetT;
-  removeSheet: (sheet: SheetT) => void;
+export interface SheetProps {
+  sheet: SheetData;
 }
 
-export default function DesktopSheet({ sheet, removeSheet }: SheetProp) {
+export const DesktopSheet = ({ sheet }: SheetProps) => {
   const {
     id,
     modal = true,
@@ -17,10 +17,12 @@ export default function DesktopSheet({ sheet, removeSheet }: SheetProp) {
     description,
     scrollableOverlay,
     title,
+    titleContent = title,
     hideClose = false,
     className: sheetClassName,
     content,
   } = sheet;
+
   const sheetRef = useRef<HTMLDivElement>(null);
 
   // State to retain side value even after sheet removal
@@ -36,24 +38,26 @@ export default function DesktopSheet({ sheet, removeSheet }: SheetProp) {
   }, [sheetSide, sheetClassName]);
 
   const closeSheet = () => {
-    removeSheet(sheet);
+    useSheeter.getState().remove(sheet.id);
     sheet.removeCallback?.();
   };
 
   const onOpenChange = (open: boolean) => {
     if (!modal) return;
-    sheetState.update(id, { open });
-    if (!open) closeSheet();
+    if (open) useSheeter.getState().update(id, { open });
+    else closeSheet();
   };
 
   const handleEscapeKeyDown = (e: KeyboardEvent) => {
     const activeElement = document.activeElement;
     if (!modal && !sheetRef.current?.contains(activeElement)) return;
+    if (isElementInteractive(activeElement)) return;
     e.preventDefault();
     e.stopPropagation();
     closeSheet();
   };
 
+  // Close sheet when clicking outside also when modal is false
   const handleInteractOutside = (event: CustomEvent<{ originalEvent: PointerEvent }> | CustomEvent<{ originalEvent: FocusEvent }>) => {
     const bodyClassList = document.body.classList;
     if (bodyClassList.contains('keep-menu-open') && bodyClassList.contains('menu-sheet-open')) return;
@@ -65,6 +69,7 @@ export default function DesktopSheet({ sheet, removeSheet }: SheetProp) {
   return (
     <Sheet open={open} onOpenChange={onOpenChange} modal={modal}>
       <SheetContent
+        id={String(id)}
         scrollableOverlay={scrollableOverlay}
         ref={sheetRef}
         onEscapeKeyDown={handleEscapeKeyDown}
@@ -75,7 +80,7 @@ export default function DesktopSheet({ sheet, removeSheet }: SheetProp) {
         className={`${className} items-start`}
       >
         <StickyBox className={`z-10 flex items-center justify-between bg-background py-3 ${title ? '' : 'hidden'}`}>
-          <SheetTitle>{title}</SheetTitle>
+          <SheetTitle>{titleContent}</SheetTitle>
         </StickyBox>
         <SheetHeader className={`${description || title ? '' : 'hidden'}`}>
           <SheetDescription className={`${description ? '' : 'hidden'}`}>{description}</SheetDescription>
@@ -84,4 +89,4 @@ export default function DesktopSheet({ sheet, removeSheet }: SheetProp) {
       </SheetContent>
     </Sheet>
   );
-}
+};

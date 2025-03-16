@@ -1,5 +1,5 @@
-import { attachmentsQueryOptions } from '~/modules/attachments/query';
-import { membersQueryOptions } from '~/modules/memberships/query';
+import { attachmentsQueryOptions } from '~/modules/attachments/query/options';
+import { membersQueryOptions } from '~/modules/memberships/query/options';
 import { organizationQueryOptions } from '~/modules/organizations/query';
 
 import type { UserMenuItem } from '~/modules/me/types';
@@ -7,12 +7,12 @@ import type { UserMenuItem } from '~/modules/me/types';
 /**
  * This function returns queries that need to be prefetched based on the entity of the item.
  *
- * It is used to prefetch data for each unarchived item in user menu if offlineAccess is enabled, allowing the app to have necessary data while offline.
+ * It is used to prefetch data for each unarchived item in user menu if offlineAccess is enabled,
+ * allowing the app to have entity and content data while offline.
  */
 export const queriesToMap = (item: UserMenuItem) => {
   const orgIdOrSlug = item.organizationId ?? item.id;
 
-  // Switch statement to handle different entity types.
   // The entity type will decide which queries should be returned for prefetching.
   switch (item.entity) {
     case 'organization':
@@ -30,7 +30,7 @@ export const queriesToMap = (item: UserMenuItem) => {
         attachmentsQueryOptions({ orgIdOrSlug }),
       ];
 
-    // Extend switch case for app-specific entity types
+    // Extend switch case for app-specific entity types ...
 
     // When no matching entity, return empty array or add default set of queries
     default:

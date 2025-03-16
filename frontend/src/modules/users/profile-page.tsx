@@ -4,7 +4,8 @@ import { Suspense, lazy } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { useEventListener } from '~/hooks/use-event-listener';
-import { PageHeader } from '~/modules/common/page/header';
+import { PageHeader } from '~/modules/common/page/page-header';
+import { toaster } from '~/modules/common/toaster';
 import { useUpdateSelfMutation } from '~/modules/me/query';
 import { useUpdateUserMutation } from '~/modules/users/query';
 import type { LimitedUser } from '~/modules/users/types';
@@ -32,7 +33,7 @@ const UserProfilePage = ({ user, sheet, orgIdOrSlug }: { user: LimitedUser; shee
           toast.success(t('common:success.upload_cover'));
           if (isSelf) setUser({ ...currentUser, ...{ bannerUrl } });
         },
-        onError: () => toast.error(t('error:image_upload_failed')),
+        onError: () => toaster(t('error:image_upload_failed'), 'error'),
       },
     );
   });

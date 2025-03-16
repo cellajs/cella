@@ -1,0 +1,166 @@
+/* Custom gradients that are not easy to build using tailwind */
+@import "./gradients.css" layer(base);
+@import "../modules/common/blocknote/styles.css" layer(base);
+
+@import "tailwindcss";
+
+@config '../../tailwind.config.ts';
+
+@layer base {
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--color-gray-200, currentColor);
+  }
+}
+
+@utility submenu-section {
+  &:before {
+    border-left: 2px dotted hsl(var(--foreground));
+    content: "";
+    display: block;
+    position: absolute;
+    margin-top: 0.5rem;
+    margin-left: 1.7rem;
+    opacity: 0.5;
+    z-index: 0;
+    width: 0.05rem;
+    height: calc(100% - 1.5rem);
+  }
+}
+
+@layer base {
+  .bn-container.bn-shadcn,
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 240 10% 10%;
+    --card: 0 0% 100%;
+    --card-foreground: 240 10% 10%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 10% 0%;
+    --primary: 240 6% 10%;
+    --primary-foreground: 0 0% 95%;
+    --secondary: 240 5% 92%;
+    --secondary-foreground: 240 6% 20%;
+    --muted: 240 5% 77.2%;
+    --muted-foreground: 240 4% 40%;
+    --accent: 240 5% 92%;
+    --accent-foreground: 240 6% 10%;
+    --destructive: 0 85% 40%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 240 6% 92%;
+    --input: 240 6% 92%;
+    --ring: 240 6% 10%;
+    --radius: 0.5rem;
+    --success: 120 100% 30%;
+  }
+
+  .bn-container.bn-shadcn.dark,
+  .dark {
+    --background: 240 10% 9%;
+    --foreground: 0 0% 95%;
+    --card: 240 10% 14%;
+    --card-foreground: 0 0% 95%;
+    --popover: 240 10% 9%;
+    --popover-foreground: 0 0% 95%;
+    --primary: 0 0% 98%;
+    --primary-foreground: 240 5.9% 16%;
+    --secondary: 240 3.7% 15%;
+    --secondary-foreground: 0 0% 95%;
+    --muted: 240 3.7% 25%;
+    --muted-foreground: 240 5% 84.9%;
+    --accent: 240 3.7% 25%;
+    --accent-foreground: 0 0% 95%;
+    --destructive: 0 62.8% 50%;
+    --destructive-foreground: 0 0% 95%;
+    --border: 240 3.7% 20%;
+    --input: 240 3.7% 25%;
+    --ring: 240 4.9% 83.9%;
+    --success: 120 100% 40%;
+  }
+
+  .theme-base.light {
+    --primary-foreground: 355.7 100% 97.3%;
+    --secondary: 240 4.8% 95.9%;
+    --secondary-foreground: 240 5.9% 10%;
+    --accent: 240 4.8% 95.9%;
+    --accent-foreground: 240 5.9% 10%;
+  }
+
+  .theme-base.dark {
+    --primary-foreground: 355.7 100% 97.3%;
+    --secondary: 240 3.7% 15%;
+    --secondary-foreground: 0 0% 98%;
+    --accent: 12 6.5% 15.1%;
+    --accent-foreground: 0 0% 98%;
+    --muted-foreground: 240, 5%, 42.45%;
+  }
+}
+
+/* Some tweak on tailwind here */
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground min-h-full overscroll-none;
+  }
+
+  /* For small screens we enlarge all elements by using rem everywhere, and then simply increase font-size */
+  /* Secondly, for app layout, we change the scroll body to #app-content */
+  @media (max-width: 639px) {
+    html {
+      font-size: 18px;
+    }
+
+    #root {
+      @apply flex flex-col min-h-full;
+    }
+
+    #app-layout {
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      height: calc(100vh - 4rem);
+      overflow: hidden;
+      position: relative;
+    }
+
+    #app-content {
+      flex: 1;
+      height: 100%;
+      overflow-y: auto;
+    }
+  }
+
+  /* Overwrite elements for focus view when table is present in it  */
+  body.focus-view-table,
+  .focus-view-table .focus-view-container {
+    overflow: hidden;
+    height: 100vh !important;
+  }
+
+  .focus-view-table .focus-view-scroll {
+    overflow-y: auto;
+    margin-bottom: 0 !important;
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+    margin-left: -0.75rem;
+    margin-right: -0.75rem;
+    width: 100vw !important;
+  }
+
+  /* Hide elements when focus view is active */
+  .focus-view #app-content-inner *:not(.focus-view-container, .focus-view-container *) {
+    display: none !important;
+  }
+
+  /* Hide tanstack devtools button */
+  .tsqd-open-btn-container,
+  .TanStackRouterDevtools > button {
+    display: none !important;
+  }
+}

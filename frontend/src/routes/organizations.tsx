@@ -1,9 +1,9 @@
 import { createRoute, useLoaderData, useParams } from '@tanstack/react-router';
 import { Suspense, lazy } from 'react';
 import { z } from 'zod';
-import { attachmentsQueryOptions } from '~/modules/attachments/query';
+import { attachmentsQueryOptions } from '~/modules/attachments/query/options';
 import ErrorNotice from '~/modules/common/error-notice';
-import { membersQueryOptions } from '~/modules/memberships/query';
+import { membersQueryOptions } from '~/modules/memberships/query/options';
 import { organizationQueryOptions } from '~/modules/organizations/query';
 
 import { queryClient } from '~/query/query-client';
@@ -37,8 +37,8 @@ export const OrganizationRoute = createRoute({
   beforeLoad: async ({ location, params: { idOrSlug } }) => {
     noDirectAccess(location.pathname, idOrSlug, '/members');
     const queryOptions = organizationQueryOptions(idOrSlug);
-
-    return { organization: await queryClient.ensureQueryData(queryOptions) };
+    const options = { ...queryOptions, revalidateIfStale: true };
+    return { organization: await queryClient.ensureQueryData(options) };
   },
   loader: async ({ context: { organization } }) => {
     return organization;
@@ -65,7 +65,6 @@ export const OrganizationMembersRoute = createRoute({
   loader: async ({ context, params: { idOrSlug }, deps: { q, sort, order, role } }) => {
     const entityType = 'organization';
     const orgIdOrSlug = context.organization.id ?? idOrSlug;
-
     const queryOptions = membersQueryOptions({ idOrSlug, orgIdOrSlug, entityType, q, sort, order, role });
 
     await queryClient.prefetchInfiniteQuery(queryOptions);

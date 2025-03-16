@@ -3,13 +3,13 @@ import { Bird } from 'lucide-react';
 import { forwardRef, memo, useEffect, useImperativeHandle } from 'react';
 import type { RowsChangeData } from 'react-data-grid';
 import { useTranslation } from 'react-i18next';
-import { toast } from 'sonner';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { DataTable } from '~/modules/common/data-table';
 import { tablePropsAreEqual } from '~/modules/common/data-table/table-props-are-equal';
 import type { BaseTableMethods, BaseTableProps } from '~/modules/common/data-table/types';
 import { toaster } from '~/modules/common/toaster';
-import { inviteMembers } from '~/modules/memberships/api';
+import { getAndSetMenu } from '~/modules/me/helpers';
+import { inviteMembers as changeRole } from '~/modules/memberships/api';
 import { organizationsQueryOptions } from '~/modules/organizations/query';
 import type { OrganizationsSearch } from '~/modules/organizations/table/table-wrapper';
 import type { Organization } from '~/modules/organizations/types';
@@ -19,12 +19,12 @@ import { useUserStore } from '~/store/user';
 type BaseDataTableProps = BaseTableProps<Organization, OrganizationsSearch>;
 
 const BaseDataTable = memo(
-  forwardRef<BaseTableMethods, BaseDataTableProps>(({ columns, queryVars, sortColumns, setSortColumns, setTotal, setSelected }, ref) => {
+  forwardRef<BaseTableMethods, BaseDataTableProps>(({ columns, searchVars, sortColumns, setSortColumns, setTotal, setSelected }, ref) => {
     const { t } = useTranslation();
     const { user } = useUserStore();
 
     // Extract query variables and set defaults
-    const { q, sort, order, limit } = queryVars;
+    const { q, sort, order, limit } = searchVars;
 
     // Query organizations
     const { rows, selectedRows, setRows, setSelectedRows, totalCount, isLoading, isFetching, error, fetchNextPage } = useDataFromInfiniteQuery(
@@ -41,15 +41,18 @@ const BaseDataTable = memo(
         const organization = changedRows[index];
         if (!organization.membership?.role) continue;
 
-        inviteMembers({
+        changeRole({
           idOrSlug: organization.id,
           emails: [user.email],
           role: organization.membership?.role,
           entityType: 'organization',
           orgIdOrSlug: organization.id,
         })
-          .then(() => toast.success(t('common:success.role_updated')))
-          .catch(() => toast.error(t('error:error')));
+          .then(() => {
+            getAndSetMenu();
+            toaster(t('common:success.role_updated'), 'success');
+          })
+          .catch(() => toaster(t('error:error'), 'error'));
       }
 
       setRows(changedRows);

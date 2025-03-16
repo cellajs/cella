@@ -8,6 +8,7 @@ type SheetTab = { id: string; label: string; element: React.ReactNode };
 
 interface Props {
   tabs: SheetTab[];
+  id?: string;
 }
 
 export const SheetTabs = ({ tabs }: Props) => {

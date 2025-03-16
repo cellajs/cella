@@ -41,8 +41,10 @@ export const AttachmentRender = ({
     // Use direct URL for static images
     if (sanitizedUrl.startsWith('/static/')) return sanitizedUrl;
 
-    // Use either remote URL or local URL pointing to indexedDB
-    return sanitizedUrl.startsWith(config.publicCDNUrl) ? sanitizedUrl : localUrl;
+    // Use either remote URL
+    if (sanitizedUrl.startsWith(config.publicCDNUrl)) return sanitizedUrl;
+
+    return localUrl.length ? localUrl : null;
   }, [sanitizedUrl, localUrl]);
 
   if (sanitizedUrl === localUrl && localFileError) {
@@ -52,6 +54,8 @@ export const AttachmentRender = ({
       </div>
     );
   }
+
+  if (!url) return <Spinner />;
 
   return (
     <div className={containerClassName}>

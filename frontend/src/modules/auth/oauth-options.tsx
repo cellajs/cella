@@ -41,8 +41,8 @@ const OauthOptions = ({ actionType = 'signIn' }: OauthOptionsProps) => {
   const authenticateWithProvider = async (url: string) => {
     setLoading(true);
 
-    let providerUrl = `${url}?redirect=${redirectPath}`;
-    if (token) providerUrl += `&token=${token}`;
+    const additionalQueryParams = token ? `&token=${token}&type=invite` : '&type=auth';
+    const providerUrl = `${url}?redirect=${redirectPath}${additionalQueryParams}`;
 
     window.location.assign(providerUrl);
   };

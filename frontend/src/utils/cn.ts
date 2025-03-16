@@ -7,6 +7,6 @@ import { twMerge } from 'tailwind-merge';
  * @param inputs - A list of classes to be merged.
  * @returns A string with the merged Tailwind classes.
  */
-export function cn(...inputs: ClassValue[]) {
+export const cn = (...inputs: ClassValue[]) => {
   return twMerge(clsx(inputs));
-}
+};

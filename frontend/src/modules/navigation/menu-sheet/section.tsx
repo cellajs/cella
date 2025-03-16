@@ -1,12 +1,11 @@
 import type { ContextEntity } from 'config';
 import { Info } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
-import { type ReactNode, useState } from 'react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { AlertWrap } from '~/modules/common/alert-wrap';
-import { dialog } from '~/modules/common/dialoger/state';
-import { sheet } from '~/modules/common/sheeter/state';
+import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
 import type { UserMenu, UserMenuItem } from '~/modules/me/types';
 import { MenuSheetItemsEdit } from '~/modules/navigation/menu-sheet/items-edit-list';
 import { MenuSheetItems } from '~/modules/navigation/menu-sheet/items-list';
@@ -19,11 +18,10 @@ interface MenuSheetSectionProps {
   sectionType: keyof UserMenu;
   sectionLabel: string;
   entityType: ContextEntity;
-  createForm: ReactNode;
-  description?: string;
+  createAction?: () => void;
 }
 
-export const MenuSheetSection = ({ data, sectionType, sectionLabel, entityType, createForm, description }: MenuSheetSectionProps) => {
+export const MenuSheetSection = ({ data, sectionType, sectionLabel, entityType, createAction }: MenuSheetSectionProps) => {
   const { t } = useTranslation();
   const isMobile = useBreakpoints('max', 'sm');
   const toggleSection = useNavigationStore((state) => state.toggleSection);
@@ -36,15 +34,10 @@ export const MenuSheetSection = ({ data, sectionType, sectionLabel, entityType, 
   const isSectionVisible = activeSections?.[sectionType] ?? true;
   const archivedCount = data.filter((i) => i.membership.archived).length;
 
-  const createDialog = () => {
-    if (isMobile) sheet.remove('nav-sheet');
+  const handleCreateAction = () => {
+    if (isMobile) useSheeter.getState().remove('nav-sheet');
 
-    dialog(createForm, {
-      className: 'md:max-w-2xl',
-      id: `create-${entityType}`,
-      title: t('common:create_resource', { resource: t(`common:${entityType}`).toLowerCase() }),
-      description: description ? t(description) : '',
-    });
+    createAction?.();
   };
 
   const toggleIsEditing = () => {
@@ -62,7 +55,7 @@ export const MenuSheetSection = ({ data, sectionType, sectionLabel, entityType, 
         isEditing={isEditing}
         isSectionVisible={isSectionVisible}
         toggleIsEditing={toggleIsEditing}
-        createDialog={createDialog}
+        handleCreateAction={handleCreateAction}
       />
       <AnimatePresence initial={false}>
         {isEditing && (
@@ -96,7 +89,7 @@ export const MenuSheetSection = ({ data, sectionType, sectionLabel, entityType, 
             {isEditing ? (
               <MenuSheetItemsEdit data={data} shownOption="unarchive" />
             ) : (
-              <MenuSheetItems type={entityType} data={data} shownOption="unarchive" createDialog={createDialog} />
+              <MenuSheetItems type={entityType} data={data} shownOption="unarchive" createAction={createAction} />
             )}
             {!!data.length && (
               <div className="group/archived" data-has-archived={!!archivedCount} data-submenu={false} data-archived-visible={isArchivedVisible}>
@@ -114,7 +107,7 @@ export const MenuSheetSection = ({ data, sectionType, sectionLabel, entityType, 
                       {isEditing ? (
                         <MenuSheetItemsEdit data={data} shownOption="archived" />
                       ) : (
-                        <MenuSheetItems type={entityType} data={data} createDialog={createDialog} shownOption="archived" />
+                        <MenuSheetItems type={entityType} data={data} createAction={createAction} shownOption="archived" />
                       )}
                     </motion.ul>
                   )}

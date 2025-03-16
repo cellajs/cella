@@ -3,15 +3,14 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { Mail, MessageSquare, Send, User } from 'lucide-react';
 import type { SubmitHandler, UseFormProps } from 'react-hook-form';
 import * as z from 'zod';
-import { isDialog as checkDialog, dialog } from '~/modules/common/dialoger/state';
+import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 
-import { Suspense, isValidElement, lazy, useMemo } from 'react';
+import { Suspense, lazy, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import InputFormField from '~/modules/common/form-fields/input';
 import { toaster } from '~/modules/common/toaster';
-import UnsavedBadge from '~/modules/common/unsaved-badge';
 import { useCreateRequestMutation } from '~/modules/requests/query';
 import { Button, SubmitButton } from '~/modules/ui/button';
 import { Form } from '~/modules/ui/form';
@@ -38,21 +37,10 @@ const ContactForm = ({ dialog: isDialog }: { dialog?: boolean }) => {
     [],
   );
 
-  const dialogTitleUpdate = () => {
-    const targetDialog = dialog.get('contact-form');
-    if (!targetDialog || !checkDialog(targetDialog)) return;
-
-    // Check if the title's type is a function (React component) and not a string
-    if (isValidElement(targetDialog.title) && targetDialog.title.type === UnsavedBadge) return;
-
-    dialog.update('contact-form', { title: <UnsavedBadge title={targetDialog?.title} /> });
-  };
-
-  const form = useFormWithDraft<FormValues>('contact-form', { formOptions, onUnsavedChanges: dialogTitleUpdate });
+  const form = useFormWithDraft<FormValues>('contact-form', { formOptions });
 
   const cancel = () => {
     form.reset();
-    isDialog && dialog.remove();
   };
 
   const { mutate: createRequest } = useCreateRequestMutation();
@@ -61,7 +49,7 @@ const ContactForm = ({ dialog: isDialog }: { dialog?: boolean }) => {
     createRequest(body, {
       onSuccess: () => {
         toaster(t('common:message_sent.text'), 'success');
-        if (isDialog) dialog.remove();
+        if (isDialog) useDialoger.getState().remove();
         form.reset();
       },
       onError: () => {

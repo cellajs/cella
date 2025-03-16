@@ -10,6 +10,7 @@ import {
   checkTokenSchema,
   emailBodySchema,
   emailPasswordBodySchema,
+  oauthCallbackQuerySchema,
   oauthQuerySchema,
   passkeyChallengeQuerySchema,
   passkeyVerificationBodySchema,
@@ -415,9 +416,7 @@ class AuthLayoutRouteConfig {
     description:
       'Authenticate with Github to sign in or sign up. A `connect` (userId),`redirect` or `token` query parameter can be used to connect account, redirect to a specific page or to accept invitation.',
     security: [],
-    request: {
-      query: oauthQuerySchema,
-    },
+    request: { query: oauthQuerySchema },
     responses: {
       302: {
         description: 'Redirect to GitHub',
@@ -437,9 +436,7 @@ class AuthLayoutRouteConfig {
     description: 'Callback to receive authorization and basic user data from Github.',
     security: [],
     request: {
-      query: z.object({
-        code: z.string().optional(),
-        state: z.string(),
+      query: oauthCallbackQuerySchema.extend({
         error: z.string().optional(),
         error_description: z.string().optional(),
         error_uri: z.string().optional(),
@@ -484,9 +481,7 @@ class AuthLayoutRouteConfig {
     description:
       'Authenticate with Google to sign in or sign up. A `connect` (userId),`redirect` or `token` query parameter can be used to connect account, redirect to a specific page or to accept invitation.',
     security: [],
-    request: {
-      query: oauthQuerySchema,
-    },
+    request: { query: oauthQuerySchema },
     responses: {
       302: {
         description: 'Redirect to Google',
@@ -505,12 +500,7 @@ class AuthLayoutRouteConfig {
     summary: 'Callback for Google',
     description: 'Callback to receive authorization and basic user data from Google.',
     security: [],
-    request: {
-      query: z.object({
-        code: z.string(),
-        state: z.string(),
-      }),
-    },
+    request: { query: oauthCallbackQuerySchema },
     responses: {
       302: {
         description: 'Redirect to frontend',
@@ -529,9 +519,7 @@ class AuthLayoutRouteConfig {
     description:
       'Authenticate with Microsoft to sign in or sign up.  A `connect` (userId),`redirect` or `token` query parameter can be used to connect account, redirect to a specific page or to accept invitation.',
     security: [],
-    request: {
-      query: oauthQuerySchema,
-    },
+    request: { query: oauthQuerySchema },
     responses: {
       302: {
         description: 'Redirect to Microsoft',
@@ -550,12 +538,7 @@ class AuthLayoutRouteConfig {
     summary: 'Callback for Microsoft',
     description: 'Callback to receive authorization and basic user data from Microsoft.',
     security: [],
-    request: {
-      query: z.object({
-        code: z.string(),
-        state: z.string(),
-      }),
-    },
+    request: { query: oauthCallbackQuerySchema },
     responses: {
       302: {
         description: 'Redirect to frontend',

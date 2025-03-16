@@ -5,15 +5,15 @@ import { Download, ExternalLink, X } from 'lucide-react';
 import { useState } from 'react';
 import useDownloader from 'react-use-downloader';
 import { useEventListener } from '~/hooks/use-event-listener';
+import { clearAttachmentDialogSearchParams } from '~/modules/attachments/attachment-dialog-handler';
 import { AttachmentRender } from '~/modules/attachments/attachment-render';
 import FilePlaceholder from '~/modules/attachments/file-placeholder';
 import { openAttachmentDialog } from '~/modules/attachments/helpers';
-import { dialog } from '~/modules/common/dialoger/state';
+import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
+import Spinner from '~/modules/common/spinner';
 import { Button } from '~/modules/ui/button';
 import { Carousel as BaseCarousel, CarouselContent, CarouselDots, CarouselItem, CarouselNext, CarouselPrevious } from '~/modules/ui/carousel';
 import { cn } from '~/utils/cn';
-import Spinner from '../common/spinner';
-import { clearAttachmentDialogSearchParams } from './attachment-dialog-handler';
 
 type CarouselItemData = { url: string; id?: string; name?: string; filename?: string; contentType?: string };
 interface CarouselPropsBase {
@@ -34,6 +34,7 @@ type CarouselProps =
 
 const AttachmentsCarousel = ({ items = [], isDialog = false, itemIndex = 0, saveInSearchParams = false, classNameContainer }: CarouselProps) => {
   const navigate = useNavigate();
+  const removeDialog = useDialoger((state) => state.remove);
 
   const { attachmentDialogId } = useSearch({ strict: false });
   const [currentItem, setCurrentItem] = useState(items.find((item) => item.url === attachmentDialogId) || items[itemIndex]);
@@ -54,7 +55,7 @@ const AttachmentsCarousel = ({ items = [], isDialog = false, itemIndex = 0, save
     if (!saveInSearchParams) return;
     if (!newItem) {
       clearAttachmentDialogSearchParams();
-      return dialog.remove();
+      return removeDialog();
     }
     navigate({
       to: '.',
@@ -115,7 +116,7 @@ const AttachmentsCarousel = ({ items = [], isDialog = false, itemIndex = 0, save
             </Button>
           )}
 
-          <Button variant="ghost" size="icon" className="-my-1 w-8 h-8 opacity-70 hover:opacity-100" onClick={() => dialog.remove()}>
+          <Button variant="ghost" size="icon" className="-my-1 w-8 h-8 opacity-70 hover:opacity-100" onClick={() => removeDialog()}>
             <X className="h-6 w-6" strokeWidth={1.5} />
           </Button>
         </div>
@@ -132,7 +133,7 @@ const AttachmentsCarousel = ({ items = [], isDialog = false, itemIndex = 0, save
               }}
             >
               <AttachmentRender
-                containerClassName={cn('overflow-hidden h-full relative flex items-center justify-center, ', classNameContainer)}
+                containerClassName={cn('overflow-hidden h-full relative flex items-center justify-center ', classNameContainer)}
                 itemClassName={itemClass}
                 type={contentType}
                 imagePanZoom={isDialog}

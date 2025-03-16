@@ -14,12 +14,12 @@ import { menuSectionsSchemas } from '~/menu-config';
 import { AlertWrap } from '~/modules/common/alert-wrap';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
-import { sheet } from '~/modules/common/sheeter/state';
+import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
+import { getAndSetMenu } from '~/modules/me/helpers';
 import type { UserMenuItem } from '~/modules/me/types';
-import { useMemberUpdateMutation } from '~/modules/memberships/query-mutations';
+import { useMemberUpdateMutation } from '~/modules/memberships/query/mutations';
 import { AccountSheet } from '~/modules/navigation/account-sheet';
 import { getRelativeItemOrder, isPageData } from '~/modules/navigation/menu-sheet/helpers';
-import { updateMenuItem } from '~/modules/navigation/menu-sheet/helpers/menu-operations';
 import { MenuSheetItem } from '~/modules/navigation/menu-sheet/item';
 import { OfflineAccessSwitch } from '~/modules/navigation/menu-sheet/offline-access-switch';
 import { MenuSheetSearchInput } from '~/modules/navigation/menu-sheet/search-input';
@@ -67,9 +67,8 @@ export const MenuSheet = memo(() => {
             key={menuSectionName}
             sectionLabel={menuSection.label}
             sectionType={menuSectionName}
-            createForm={menuSection.createForm}
+            createAction={menuSection.createAction}
             data={menuData}
-            description={menuSection.description}
           />
         );
       })
@@ -111,14 +110,10 @@ export const MenuSheet = memo(() => {
               idOrSlug: sourceItem.id,
               entityType: sourceItem.entity,
             },
-
             {
-              onSuccess: (updatedMembership) => {
-                const updatedEntity: UserMenuItem = { ...sourceItem, membership: { ...sourceItem.membership, ...updatedMembership } };
-                updateMenuItem(updatedEntity);
-                // To be able to update, add a listener to manipulate data that has been changed in the menu (reordered entities on your page)
-                dispatchCustomEvent('menuEntityChange', { entity: sourceItem.entity, membership: updatedMembership });
-              },
+              // To be able to update, add a listener to manipulate data that has been changed in the menu (reordered entities on your page)
+              onSuccess: (updatedMembership) => dispatchCustomEvent('menuEntityChange', { entity: sourceItem.entity, membership: updatedMembership }),
+              onError: () => getAndSetMenu(),
             },
           );
         },
@@ -130,7 +125,7 @@ export const MenuSheet = memo(() => {
     <ScrollArea className="h-full" id="nav-sheet" viewPortRef={scrollViewportRef}>
       <div data-search={!!searchTerm} className="group/menu p-3 max-sm:pt-0 min-h-[calc(100vh-0.5rem)] flex flex-col">
         {/* Only visible when floating nav is present. To return to home */}
-        <div id="return-nav" className="hidden gap-2 pt-3">
+        <div id="return-nav" className="[.floating-nav_&]:flex hidden gap-2 pt-3">
           <Link to="/home" className={cn(buttonVariants({ variant: 'ghost' }), 'w-full justify-start')}>
             <ArrowLeft size={16} strokeWidth={1.5} />
             <span className="ml-2 font-normal">Back to home</span>
@@ -141,7 +136,7 @@ export const MenuSheet = memo(() => {
             onClick={() => {
               setNavSheetOpen('account');
               // Create a sheet
-              sheet.create(<AccountSheet />, {
+              useSheeter.getState().create(<AccountSheet />, {
                 id: 'nav-sheet',
                 side: 'left',
                 hideClose: true,

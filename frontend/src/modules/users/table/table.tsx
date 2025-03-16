@@ -13,23 +13,21 @@ import type { User } from '~/modules/users/types';
 import { useDataFromInfiniteQuery } from '~/query/hooks/use-data-from-query';
 import { useMutateQueryData } from '~/query/hooks/use-mutate-query-data';
 
-type BaseDataTableProps = BaseTableProps<User, UsersSearch> & {
-  queryVars: { role: UsersSearch['role'] };
-};
+type BaseDataTableProps = BaseTableProps<User, UsersSearch>;
 
 const BaseDataTable = memo(
-  forwardRef<BaseTableMethods, BaseDataTableProps>(({ columns, queryVars, sortColumns, setSortColumns, setTotal, setSelected }, ref) => {
+  forwardRef<BaseTableMethods, BaseDataTableProps>(({ columns, searchVars, sortColumns, setSortColumns, setTotal, setSelected }, ref) => {
     const { t } = useTranslation();
+    const mutateQuery = useMutateQueryData(usersKeys.list(), (item) => usersKeys.single(item.id), ['update']);
 
     // Extract query variables and set defaults
-    const { q, role, sort, order, limit } = queryVars;
+    const { q, role, sort, order, limit } = searchVars;
 
     // Query users
     const { rows, selectedRows, setRows, setSelectedRows, totalCount, isLoading, isFetching, error, fetchNextPage } = useDataFromInfiniteQuery(
       usersQueryOptions({ q, sort, order, role, limit }),
     );
 
-    const mutateQuery = useMutateQueryData(usersKeys.list(), (item) => usersKeys.single(item.id), ['update']);
     // Update user role
     const { mutate: updateUserRole } = useUpdateUserMutation();
 
@@ -42,6 +40,7 @@ const BaseDataTable = memo(
           const updateInfo = { idOrSlug: newUser.id, role: newUser.role };
           updateUserRole(updateInfo, {
             onSuccess: (updatedUser) => {
+              // TODO perhaps not do these things here, this onSuccess should be more UI related? Instead, we should handle this in useUpdateUserMutation directly for all caches list/single/table?
               mutateQuery.update([updatedUser]);
               toaster(t('common:success.update_item', { item: t('common:role') }), 'success');
             },

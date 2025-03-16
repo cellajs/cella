@@ -1,7 +1,7 @@
 import type { ContextEntity } from 'config';
 import { DeleteForm } from '~/modules/common/delete-form';
-import { dialog } from '~/modules/common/dialoger/state';
-import { useMembersDeleteMutation } from '~/modules/memberships/query-mutations';
+import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
+import { useMembersDeleteMutation } from '~/modules/memberships/query/mutations';
 import type { Member } from '~/modules/memberships/types';
 
 interface Props {
@@ -9,31 +9,22 @@ interface Props {
   organizationId: string;
   members: Member[];
   entityType?: ContextEntity;
-  callback?: (members: Member[]) => void;
   dialog?: boolean;
+  callback?: (members: Member[]) => void;
 }
 
 const RemoveMembersForm = ({ members, entityIdOrSlug, entityType = 'organization', organizationId, callback, dialog: isDialog }: Props) => {
+  const removeDialog = useDialoger((state) => state.remove);
   const { mutate: removeMembers, isPending } = useMembersDeleteMutation();
 
   const onRemoveMember = () => {
-    removeMembers(
-      {
-        orgIdOrSlug: organizationId,
-        idOrSlug: entityIdOrSlug,
-        entityType,
-        ids: members.map((member) => member.id),
-      },
-      {
-        onSuccess: () => {
-          callback?.(members);
-          if (isDialog) dialog.remove();
-        },
-      },
-    );
+    removeMembers({ orgIdOrSlug: organizationId, idOrSlug: entityIdOrSlug, entityType, ids: members.map((member) => member.id) });
+
+    if (isDialog) removeDialog();
+    callback?.(members);
   };
 
-  return <DeleteForm onDelete={onRemoveMember} onCancel={() => dialog.remove()} pending={isPending} />;
+  return <DeleteForm allowOfflineDelete={true} onDelete={onRemoveMember} onCancel={removeDialog} pending={isPending} />;
 };
 
 export default RemoveMembersForm;

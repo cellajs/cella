@@ -4,8 +4,8 @@ import { Trash2 } from 'lucide-react';
 import { Trans, useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { AsideAnchor } from '~/modules/common/aside-anchor';
-import { dialog } from '~/modules/common/dialoger/state';
-import { PageAside } from '~/modules/common/page/aside';
+import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
+import { PageAside } from '~/modules/common/page/page-aside';
 import StickyBox from '~/modules/common/sticky-box';
 import DeleteOrganizations from '~/modules/organizations/delete-organizations';
 import Subscription from '~/modules/organizations/subscription';
@@ -14,6 +14,7 @@ import UpdateOrganizationForm from '~/modules/organizations/update-organization-
 import { Button } from '~/modules/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/modules/ui/card';
 import { OrganizationSettingsRoute } from '~/routes/organizations';
+import UnsavedBadge from '../common/unsaved-badge';
 
 const tabs = [
   { id: 'general', label: 'common:general' },
@@ -27,7 +28,7 @@ const OrganizationSettings = ({ organization }: { organization: Organization }) 
   const { idOrSlug } = useParams({ from: OrganizationSettingsRoute.id });
 
   const openDeleteDialog = () => {
-    dialog(
+    useDialoger.getState().create(
       <DeleteOrganizations
         dialog
         organizations={[organization]}
@@ -47,16 +48,18 @@ const OrganizationSettings = ({ organization }: { organization: Organization }) 
   return (
     <div className="md:flex md:flex-row mx-auto gap-4 my-4 ">
       <div className="max-md:hidden mx-auto md:min-w-48 md:w-[30%] flex h-auto flex-col">
-        <StickyBox offsetTop={60} className="md:mt-2 z-10 max-md:block!">
+        <StickyBox offsetTop={60} className="md:mt-3 z-10 max-md:block!">
           <PageAside tabs={tabs} className="pb-2" />
         </StickyBox>
       </div>
 
       <div className="md:w-[70%] flex flex-col gap-8">
         <AsideAnchor id="general" extraOffset>
-          <Card>
+          <Card id="update-organization">
             <CardHeader>
-              <CardTitle>{t('common:general')}</CardTitle>
+              <CardTitle>
+                <UnsavedBadge title={t('common:general')} />
+              </CardTitle>
             </CardHeader>
             <CardContent>
               <UpdateOrganizationForm

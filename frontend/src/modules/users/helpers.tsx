@@ -1,17 +1,17 @@
 import type { QueryKey } from '@tanstack/react-query';
 
 import type { LimitedUser } from '~/modules/users/types';
-import { getQueryItems } from '~/query/helpers/mutate-query';
-import type { InfiniteQueryData, QueryData } from '~/query/types';
+import { getQueryItems, getSimilarQueries } from '~/query/helpers/mutate-query';
 
 /**
- * Searches through the query data to find a user by their ID or slug.
+ * Searches through query data to find a user by their ID or slug.
  *
- * @param queries - An array of tuples, each containing a query key and associated data.
- * @param idOrSlug - The ID or slug to search for.
+ * @param queryKey - queryKey where to find by similar.
+ * @param idOrSlug - ID or slug to search for.
  * @returns User data if found, otherwise null.
  */
-export const findUserFromQueries = (queries: [QueryKey, InfiniteQueryData<LimitedUser> | QueryData<LimitedUser> | undefined][], idOrSlug: string) => {
+export const findUserFromCache = (queryKey: QueryKey, idOrSlug: string) => {
+  const queries = getSimilarQueries<LimitedUser>(queryKey);
   for (const [_, prevData] of queries) {
     if (!prevData) continue;
 

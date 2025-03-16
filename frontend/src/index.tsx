@@ -1,16 +1,10 @@
 import { RouterProvider } from '@tanstack/react-router';
 import { StrictMode } from 'react';
 import ReactDOM from 'react-dom/client';
-import { scan } from 'react-scan';
-import { ThemeManager } from '~/modules/common/theme-manager';
-
-// Scan for React performance issues
-scan({
-  enabled: env.VITE_REACT_SCAN,
-});
+import { Themer } from '~/modules/common/themer';
 
 // Import tailwindcss
-import '~/index.css';
+import '~/styling/index.css';
 
 // Boot with i18n & dayjs
 import '~/lib/dayjs';
@@ -23,7 +17,6 @@ import router from '~/lib/router';
 import { initSentry } from '~/lib/sentry';
 import { QueryClientProvider } from '~/query/provider';
 import { renderAscii } from '~/utils/ascii';
-import { env } from './env';
 
 // Render ASCII logo in console
 renderAscii();
@@ -33,7 +26,7 @@ initSentry();
 
 ReactDOM.createRoot(root).render(
   <StrictMode>
-    <ThemeManager />
+    <Themer />
     <QueryClientProvider>
       <RouterProvider router={router} />
     </QueryClientProvider>

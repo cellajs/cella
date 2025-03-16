@@ -8,7 +8,7 @@ interface SimpleHeaderProps {
   className?: string;
 }
 
-export function SimpleHeader({ heading, text, children, className = '' }: SimpleHeaderProps) {
+export const SimpleHeader = ({ heading, text, children, className = '' }: SimpleHeaderProps) => {
   const { t } = useTranslation();
 
   return (
@@ -18,4 +18,4 @@ export function SimpleHeader({ heading, text, children, className = '' }: Simple
       {children}
     </div>
   );
-}
+};

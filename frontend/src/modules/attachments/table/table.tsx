@@ -3,8 +3,8 @@ import { forwardRef, memo, useEffect, useImperativeHandle } from 'react';
 import { Paperclip } from 'lucide-react';
 import type { RowsChangeData } from 'react-data-grid';
 import { useTranslation } from 'react-i18next';
-import { attachmentsQueryOptions } from '~/modules/attachments/query';
-import { useAttachmentUpdateMutation } from '~/modules/attachments/query-mutations';
+import { useAttachmentUpdateMutation } from '~/modules/attachments/query/mutations';
+import { attachmentsQueryOptions } from '~/modules/attachments/query/options';
 import type { AttachmentSearch, AttachmentsTableProps } from '~/modules/attachments/table/table-wrapper';
 import type { Attachment } from '~/modules/attachments/types';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
@@ -16,10 +16,10 @@ import { useDataFromInfiniteQuery } from '~/query/hooks/use-data-from-query';
 type BaseDataTableProps = AttachmentsTableProps & BaseTableProps<Attachment, AttachmentSearch>;
 
 const BaseDataTable = memo(
-  forwardRef<BaseTableMethods, BaseDataTableProps>(({ entity, columns, queryVars, sortColumns, setSortColumns, setTotal, setSelected }, ref) => {
+  forwardRef<BaseTableMethods, BaseDataTableProps>(({ entity, columns, searchVars, sortColumns, setSortColumns, setTotal, setSelected }, ref) => {
     const { t } = useTranslation();
 
-    const { q, sort, order, limit } = queryVars;
+    const { q, sort, order, limit } = searchVars;
     const orgIdOrSlug = entity.membership?.organizationId || entity.id;
 
     // Query attachments

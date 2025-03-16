@@ -2,7 +2,7 @@ import { Check, Send, Trash2 } from 'lucide-react';
 import { SimpleHeader } from '~/modules/common/simple-header';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/modules/ui/card';
 
-import { dialog } from '~/modules/common/dialoger/state';
+import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { Button } from '~/modules/ui/button';
 import { useUserStore } from '~/store/user';
 
@@ -16,15 +16,16 @@ import { requestPasswordEmail } from '~/modules/auth/api';
 import { mapOauthProviders } from '~/modules/auth/oauth-options';
 import { AsideAnchor } from '~/modules/common/aside-anchor';
 import HelpText from '~/modules/common/help-text';
-import { PageAside } from '~/modules/common/page/aside';
+import { PageAside } from '~/modules/common/page/page-aside';
 import StickyBox from '~/modules/common/sticky-box';
 import { toaster } from '~/modules/common/toaster';
 import DeleteSelf from '~/modules/me/delete-self';
+import Passkeys from '~/modules/me/passkeys';
 import SessionsList from '~/modules/me/sessions-list';
 import UpdateUserForm from '~/modules/users/update-user-form';
 import { UserSettingsRoute } from '~/routes/users';
 import { useUIStore } from '~/store/ui';
-import Passkeys from './passkeys';
+import UnsavedBadge from '../common/unsaved-badge';
 
 const tabs = [
   { id: 'general', label: 'common:general' },
@@ -62,7 +63,7 @@ const UserSettingsPage = () => {
 
   // Delete account
   const openDeleteDialog = () => {
-    dialog(
+    useDialoger.getState().create(
       <DeleteSelf
         dialog
         callback={() => {
@@ -81,12 +82,12 @@ const UserSettingsPage = () => {
     if (!onlineManager.isOnline()) return toaster(t('common:action.offline.text'), 'warning');
 
     // Proceed to OAuth URL with redirect and connect
-    window.location.href = `${provider.url}?connect=${user.id}&redirect=${encodeURIComponent(window.location.href)}`;
+    window.location.href = `${provider.url}?connect=${user.id}&type=connect&redirect=${encodeURIComponent(window.location.href)}`;
   };
 
   return (
     <div className="container md:flex md:flex-row my-4 md:mt-8 mx-auto gap-4 ">
-      <div className="max-md:hidden mx-auto md:min-w-48 md:w-[30%] md:mt-2">
+      <div className="max-md:hidden mx-auto md:min-w-48 md:w-[30%] md:mt-3">
         <StickyBox className="z-10 max-md:block!">
           <SimpleHeader className="p-3" heading="common:settings" text="common:settings.text" />
           <PageAside tabs={tabs} className="py-2" />
@@ -95,9 +96,11 @@ const UserSettingsPage = () => {
 
       <div className="md:w-[70%] flex flex-col gap-8">
         <AsideAnchor id="general">
-          <Card className="mx-auto sm:w-full">
+          <Card className="mx-auto sm:w-full" id="update-user">
             <CardHeader>
-              <CardTitle>{t('common:general')}</CardTitle>
+              <CardTitle>
+                <UnsavedBadge title={t('common:general')} />
+              </CardTitle>
             </CardHeader>
             <CardContent>
               <UpdateUserForm user={user} />

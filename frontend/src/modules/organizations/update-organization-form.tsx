@@ -1,11 +1,8 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { config } from 'config';
-import { isValidElement } from 'react';
 import type { UseFormProps } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import type { z } from 'zod';
-import { updateOrganizationBodySchema } from '#/modules/organizations/schema';
-
 import { useBeforeUnload } from '~/hooks/use-before-unload';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import AvatarFormField from '~/modules/common/form-fields/avatar';
@@ -16,15 +13,15 @@ import { SelectLanguage } from '~/modules/common/form-fields/select-language';
 import { SelectLanguages } from '~/modules/common/form-fields/select-languages';
 import SelectTimezone from '~/modules/common/form-fields/select-timezone';
 import { SlugFormField } from '~/modules/common/form-fields/slug';
-import { sheet } from '~/modules/common/sheeter/state';
+import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
 import Spinner from '~/modules/common/spinner';
 import { toaster } from '~/modules/common/toaster';
-import UnsavedBadge from '~/modules/common/unsaved-badge';
 import { useOrganizationUpdateMutation } from '~/modules/organizations/query';
 import type { Organization } from '~/modules/organizations/types';
 import { Button, SubmitButton } from '~/modules/ui/button';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
 import { cleanUrl } from '~/utils/clean-url';
+import { updateOrganizationBodySchema } from '#/modules/organizations/schema';
 
 interface Props {
   organization: Organization;
@@ -57,17 +54,8 @@ const UpdateOrganizationForm = ({ organization, callback, sheet: isSheet }: Prop
     },
   };
 
-  const sheetTitleUpdate = () => {
-    const targetSheet = sheet.get('update-organization');
-
-    if (!targetSheet) return;
-    // Check if the title's type is a function (React component) and not a string
-    if (!targetSheet || (isValidElement(targetSheet.title) && targetSheet.title.type === UnsavedBadge)) return;
-
-    sheet.update('update-organization', { title: <UnsavedBadge title={targetSheet?.title} /> });
-  };
-
-  const form = useFormWithDraft<FormValues>(`update-organization-${organization.id}`, { formOptions, onUnsavedChanges: sheetTitleUpdate });
+  const formContainerId = 'update-organization';
+  const form = useFormWithDraft<FormValues>(`${formContainerId}-${organization.id}`, { formOptions, formContainerId });
 
   // Prevent data loss
   useBeforeUnload(form.formState.isDirty);
@@ -77,7 +65,7 @@ const UpdateOrganizationForm = ({ organization, callback, sheet: isSheet }: Prop
       { idOrSlug: organization.slug, json },
       {
         onSuccess: (updatedOrganization) => {
-          if (isSheet) sheet.remove('update-organization');
+          if (isSheet) useSheeter.getState().remove(formContainerId);
           form.reset(updatedOrganization);
           toaster(t('common:success.update_resource', { resource: t('common:organization') }), 'success');
           callback?.(updatedOrganization);
@@ -93,7 +81,6 @@ const UpdateOrganizationForm = ({ organization, callback, sheet: isSheet }: Prop
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-        {!isSheet && form.unsavedChanges && <UnsavedBadge />}
         <AvatarFormField
           control={form.control}
           label={t('common:resource_logo', { resource: t('common:organization') })}
