@@ -46,7 +46,7 @@ const Pricing = () => {
             }`}
           >
             {popular && (
-              <Badge className="absolute top-0 left-1/2 -translate-x-2/4 font-light -translate-y-2/4 py-1 px-4 text-center">
+              <Badge size="sm" className="absolute top-0 left-1/2 -translate-x-2/4 font-light -translate-y-2/4 py-1 px-4 text-center">
                 🚀 {t('about:pricing.popular')}
               </Badge>
             )}
@@ -56,7 +56,11 @@ const Pricing = () => {
                 {popular && <Sparkles className="ml-1 w-5 text-primary" strokeWidth={config.theme.strokeWidth} />}
               </h3>
               <div className="flex items-center justify-center mt-4 text-gray-600 dark:text-gray-400">
-                {discount && <Badge className="text-lg mr-2 py-0 px-2">{discount}</Badge>}
+                {discount && (
+                  <Badge size="md" className="text-lg mr-2 py-0 px-2">
+                    {discount}
+                  </Badge>
+                )}
                 <span className={`text-3xl font-bold ${discount ? 'line-through mr-2' : 'mr-1'}`}>{t(price)}</span>
                 <span className="font-light">/ {t('common:year')}</span>
               </div>

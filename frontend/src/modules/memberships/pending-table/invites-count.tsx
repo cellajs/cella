@@ -8,11 +8,12 @@ const MembershipInvitationsTable = lazy(() => import('~/modules/memberships/pend
 
 export const MembershipInvitations = ({ entity }: MembershipInvitationsTableProps) => {
   const { t } = useTranslation();
+  const createSheet = useSheeter((state) => state.create);
 
   const total = entity.counts?.membership.pending;
 
   const openSheet = () => {
-    useSheeter.getState().create(
+    createSheet(
       <Suspense>
         <MembershipInvitationsTable entity={entity} />
       </Suspense>,

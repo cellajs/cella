@@ -1,7 +1,7 @@
 import type { Dispatch, SetStateAction } from 'react';
 import type { ColumnOrColumnGroup as GridColumnOrColumnGroup, SortColumn } from 'react-data-grid';
 
-type BaseTableSearchVariables<T> = T & {
+export type BaseTableSearchVariables<T> = T & {
   limit: number;
 };
 
