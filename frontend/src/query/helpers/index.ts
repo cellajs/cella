@@ -2,13 +2,25 @@ import type { QueryKey } from '@tanstack/react-query';
 import { queryClient } from '~/query/query-client';
 import type { InfiniteQueryData } from '~/query/types';
 
+/**
+ * Wait for a given number of milliseconds.
+ *
+ * @param ms - Number of milliseconds to wait.
+ * @returns Promise that resolves after the given number of milliseconds.
+ */
 export const waitFor = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
+/**
+ * Get the offset to fetch next page for an infinite query.
+ *
+ * @param queryKey - Query key of the infinite query.
+ * @returns number - Offset to fetch next page.
+ */
 export const getOffset = <T>(queryKey: QueryKey) => {
   const queryState = queryClient.getQueryState(queryKey);
 
-  //Query was invalidated and notre-fetched return 0
-  if (!queryState || queryState.isInvalidated || queryState.status === 'pending' || queryState.fetchStatus === 'fetching') return 0;
+  //Query was invalidated and not re-fetched return 0
+  if (!queryState || queryState.isInvalidated || queryState.status === 'pending') return 0;
 
   const [[_, data]] = queryClient.getQueriesData<InfiniteQueryData<T>>({ queryKey, exact: true, stale: false }) || [];
   if (!data) return 0;

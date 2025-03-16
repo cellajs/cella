@@ -9,6 +9,7 @@ import { routeTree } from '~/routes/route-tree';
 const router = createRouter({
   scrollRestoration: true,
   scrollRestorationBehavior: 'instant',
+  defaultHashScrollIntoView: { behavior: 'smooth' },
   routeTree,
   // notFoundRoute,
   defaultPreload: false,
