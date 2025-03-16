@@ -109,6 +109,7 @@ export const MembersTableBar = ({
   };
 
   const handleNewInvites = (emails: string[]) => {
+    // TODO ?
     queryClient.setQueryData(organizationsKeys.single(entity.slug), (oldEntity: EntityPage) => {
       if (!oldEntity) return oldEntity;
       const newEntity = { ...oldEntity };
@@ -169,7 +170,6 @@ export const MembersTableBar = ({
             ) : (
               !isFiltered &&
               isAdmin && (
-                //TODO mb rework sheet to find a way use dialog with ref in sheet
                 <Button asChild onClick={() => openInviteDialog()}>
                   <motion.button transition={{ duration: 0.1 }} layoutId={nanoid()} initial={false}>
                     <motion.span>

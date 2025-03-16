@@ -40,7 +40,7 @@ const BaseDataTable = memo(
           const updateInfo = { idOrSlug: newUser.id, role: newUser.role };
           updateUserRole(updateInfo, {
             onSuccess: (updatedUser) => {
-              // TODO perhaps not do these things in onSuccess it should be more UI related. Instead, we should handle this in useUpdateUserMutation directly for all caches?
+              // TODO perhaps not do these things here, this onSuccess should be more UI related? Instead, we should handle this in useUpdateUserMutation directly for all caches list/single/table?
               mutateQuery.update([updatedUser]);
               toaster(t('common:success.update_item', { item: t('common:role') }), 'success');
             },

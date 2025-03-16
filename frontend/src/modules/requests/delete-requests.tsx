@@ -21,8 +21,6 @@ const DeleteRequests = ({ requests, callback, dialog: isDialog }: Props) => {
     onSuccess: () => {
       if (isDialog) removeDialog();
       callback?.(requests);
-
-      //TODO mutate list query cache here too?
     },
   });
 
