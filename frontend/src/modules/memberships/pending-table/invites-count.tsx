@@ -21,12 +21,13 @@ export const MembershipInvitations = ({ entity }: MembershipInvitationsTableProp
         className: 'max-w-full lg:max-w-4xl',
         title: t('common:pending_invitations'),
         description: t('common:pending_invitations.text', { entity: t(`common:${entity.entity}`).toLowerCase() }),
-        id: `pending-info-${entity.id}`,
+        id: 'pending-invites',
         scrollableOverlay: true,
         side: 'right',
       },
     );
   };
+
   if (total === undefined) return null;
 
   return (

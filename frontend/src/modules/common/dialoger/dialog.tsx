@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { type DialogData, useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { dropdowner } from '~/modules/common/dropdowner/state';
@@ -12,6 +13,8 @@ export interface DialogProp {
 export default function StandardDialog({ dialog }: DialogProp) {
   const { id, content, open, description, title, titleContent = title, className, hideClose, headerClassName = '', container } = dialog;
   const isMobile = useBreakpoints('max', 'sm', false);
+
+  const [containerElement, setContainerElement] = useState<HTMLElement | null>(null);
 
   const closeDialog = () => {
     useDialoger.getState().remove(dialog.id);
@@ -30,13 +33,22 @@ export default function StandardDialog({ dialog }: DialogProp) {
     if (dropDown && !dropDown.modal) event.preventDefault();
   };
 
+  // Find container element if id provided
+  useEffect(() => {
+    if (!open) return;
+    if (!container?.id) return;
+    const c = document.getElementById(container?.id);
+    if (!container) return console.warn('containerId provided but no element found.');
+    setContainerElement(c);
+  }, [open, container]);
+
   return (
-    <Dialog key={id} open={open} onOpenChange={onOpenChange} modal={!container}>
+    <Dialog key={id} open={open} onOpenChange={onOpenChange} modal={!containerElement}>
       {container?.overlay && (
         <div className="fixed inset-0 z-50 bg-background/75 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
       )}
       <DialogContent
-        containerId={container?.id}
+        container={containerElement}
         containerOverlay={container?.overlay}
         id={String(id)}
         hideClose={hideClose}
@@ -44,7 +56,7 @@ export default function StandardDialog({ dialog }: DialogProp) {
         onOpenAutoFocus={(event: Event) => {
           if (isMobile) event.preventDefault();
         }}
-        className={cn(className, container && 'z-60')}
+        className={cn(className, containerElement && 'z-60')}
       >
         <DialogHeader className={`${title || description ? headerClassName : 'hidden'}`}>
           <DialogTitle className={`${title || title ? '' : 'hidden'} leading-6 h-6`}>{titleContent}</DialogTitle>
