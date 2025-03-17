@@ -19,13 +19,13 @@ import HelpText from '~/modules/common/help-text';
 import { PageAside } from '~/modules/common/page/page-aside';
 import StickyBox from '~/modules/common/sticky-box';
 import { toaster } from '~/modules/common/toaster';
+import UnsavedBadge from '~/modules/common/unsaved-badge';
 import DeleteSelf from '~/modules/me/delete-self';
 import Passkeys from '~/modules/me/passkeys';
 import SessionsList from '~/modules/me/sessions-list';
 import UpdateUserForm from '~/modules/users/update-user-form';
 import { UserSettingsRoute } from '~/routes/users';
 import { useUIStore } from '~/store/ui';
-import UnsavedBadge from '../common/unsaved-badge';
 
 const tabs = [
   { id: 'general', label: 'common:general' },

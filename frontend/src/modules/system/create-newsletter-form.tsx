@@ -22,7 +22,7 @@ import { sendNewsletterBodySchema } from '#/modules/system/schema';
 import '@blocknote/shadcn/style.css';
 import '~/modules/common/blocknote/app-specific-custom/styles.css';
 import '~/modules/common/blocknote/styles.css';
-import { useSheeter } from '../common/sheeter/use-sheeter';
+import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
 interface CreateNewsletterFormProps {
   organizationIds: string[];
 }

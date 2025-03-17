@@ -20,8 +20,8 @@ import Why from '~/modules/marketing/about/why';
 
 import CallToAction from '~/modules/marketing/about/call-to-action';
 import '~/modules/marketing/about/glow-button.css';
+import { AboutSection } from '~/modules/marketing/about/section';
 import { Input } from '~/modules/ui/input';
-import { AboutSection } from './section';
 
 const sectionIds = ['hero', 'why', 'features', 'integrations', 'showcase', 'call-to-action'];
 

@@ -2,6 +2,7 @@ import { infiniteQueryOptions, queryOptions, useMutation } from '@tanstack/react
 import { config } from 'config';
 
 import type { ApiError } from '~/lib/api';
+import { addMenuItem, deleteMenuItem } from '~/modules/navigation/menu-sheet/helpers/menu-operations';
 import {
   type CreateOrganizationParams,
   type GetOrganizationsParams,
@@ -14,7 +15,7 @@ import {
 } from '~/modules/organizations/api';
 import type { Organization, OrganizationWithMembership } from '~/modules/organizations/types';
 import { getOffset } from '~/query/helpers';
-import { queryClient } from '~/query/query-client';
+import { useMutateQueryData } from '~/query/hooks/use-mutate-query-data';
 
 /**
  * Keys for organizations related queries. These keys help to uniquely identify different query.
@@ -22,10 +23,11 @@ import { queryClient } from '~/query/query-client';
  */
 export const organizationsKeys = {
   one: ['organization'] as const,
-  single: (idOrSlug: string) => [...organizationsKeys.one, idOrSlug] as const,
   many: ['organizations'] as const,
   list: () => [...organizationsKeys.many, 'list'] as const,
   table: (filters?: GetOrganizationsParams) => [...organizationsKeys.list(), filters] as const,
+  singleBase: () => [...organizationsKeys.one, 'single'] as const,
+  single: (idOrSlug: string) => [...organizationsKeys.singleBase(), idOrSlug] as const,
   create: () => [...organizationsKeys.one, 'create'] as const,
   update: () => [...organizationsKeys.one, 'update'] as const,
   delete: () => [...organizationsKeys.one, 'delete'] as const,
@@ -88,6 +90,12 @@ export const useOrganizationCreateMutation = () => {
   return useMutation<OrganizationWithMembership, ApiError, CreateOrganizationParams>({
     mutationKey: organizationsKeys.create(),
     mutationFn: createOrganization,
+    onSuccess: (createdOrganization) => {
+      const mutateCache = useMutateQueryData(organizationsKeys.list());
+
+      mutateCache.create([createdOrganization]);
+      addMenuItem(createdOrganization, 'organizations');
+    },
   });
 };
 
@@ -102,16 +110,10 @@ export const useOrganizationUpdateMutation = () => {
   return useMutation<Organization, ApiError, { idOrSlug: string; json: UpdateOrganizationBody }>({
     mutationKey: organizationsKeys.update(),
     mutationFn: updateOrganization,
-    onSuccess: (updatedOrganization, { idOrSlug }) => {
-      // Update single organization
-      queryClient.setQueryData(organizationsKeys.single(idOrSlug), updatedOrganization);
+    onSuccess: (updatedOrganization) => {
+      const mutateCache = useMutateQueryData(organizationsKeys.list(), () => organizationsKeys.singleBase(), ['update']);
 
-      // Update organization list
-      queryClient.setQueryData(organizationsKeys.list(), (existingOrganizations: Organization[] | undefined) => {
-        if (!existingOrganizations) return [];
-
-        return existingOrganizations.map((org) => (org.id === updatedOrganization.id ? updatedOrganization : org));
-      });
+      mutateCache.update([updatedOrganization]);
     },
   });
 };
@@ -123,8 +125,14 @@ export const useOrganizationUpdateMutation = () => {
  * @returns The mutation hook for deleting organizations.
  */
 export const useOrganizationDeleteMutation = () => {
-  return useMutation<void, ApiError, string[]>({
+  return useMutation<void, ApiError, Organization[]>({
     mutationKey: organizationsKeys.delete(),
-    mutationFn: deleteOrganizations,
+    mutationFn: (organizations) => deleteOrganizations(organizations.map(({ id }) => id)),
+    onSuccess: (_, organizations) => {
+      const mutateCache = useMutateQueryData(organizationsKeys.list(), () => organizationsKeys.singleBase(), ['remove']);
+
+      mutateCache.remove(organizations);
+      for (const { id } of organizations) deleteMenuItem(id);
+    },
   });
 };

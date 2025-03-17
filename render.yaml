@@ -27,6 +27,8 @@ services:
         sync: false
       - key: COOKIE_SECRET
         sync: false
+      - key: ELECTRIC_API_SECRET
+        sync: false
       - key: AWS_CLOUDFRONT_KEY_ID
         sync: false
       - key: AWS_CLOUDFRONT_PRIVATE_KEY

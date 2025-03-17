@@ -32,12 +32,12 @@ export const isArbitraryQueryData = (data: unknown): data is ArbitraryEntityQuer
  *
  * @param queryKey - Query key.
  * @param items - items to update.
- * @param action - `"create" | "update" | "delete" | "updateMembership"`
+ * @param action - `"create" | "update" | "remove" | "updateMembership"`
  */
 export const changeInfiniteQueryData = (queryKey: QueryKey, items: ItemData[], action: QueryDataActions) => {
   const { sort, order: insertOrder } = getQueryKeySortOrder(queryKey);
 
-  if ((sort && sort !== 'createdAt') || (sort === 'createdAt' && insertOrder === 'asc')) {
+  if ((action === 'create' && sort && sort !== 'createdAt') || (sort === 'createdAt' && insertOrder === 'asc')) {
     queryClient.invalidateQueries({ queryKey, exact: true });
     return;
   }
@@ -46,7 +46,7 @@ export const changeInfiniteQueryData = (queryKey: QueryKey, items: ItemData[], a
     if (!data) return;
 
     // Adjust total based on the action
-    const totalAdjustment = action === 'create' ? items.length : action === 'delete' ? -items.length : 0;
+    const totalAdjustment = action === 'create' ? items.length : action === 'remove' ? -items.length : 0;
 
     // Update items in each page and adjust the total
     const pages = data.pages.map((page) => ({
@@ -63,14 +63,14 @@ export const changeInfiniteQueryData = (queryKey: QueryKey, items: ItemData[], a
  *
  * @param queryKey - Query key.
  * @param items - items to update.
- * @param action - `"create" | "update" | "delete" | "updateMembership"`
+ * @param action - `"create" | "update" | "remove" | "updateMembership"`
  */
 export const changeQueryData = (queryKey: QueryKey, items: ItemData[], action: QueryDataActions) => {
   queryClient.setQueryData<EntityQueryData>(queryKey, (data) => {
     if (!data) return;
 
     // Adjust total based on the action
-    const totalAdjustment = action === 'create' ? items.length : action === 'delete' ? -items.length : 0;
+    const totalAdjustment = action === 'create' ? items.length : action === 'remove' ? -items.length : 0;
 
     // Update items and adjust the total
     return {
@@ -85,7 +85,7 @@ export const changeQueryData = (queryKey: QueryKey, items: ItemData[], action: Q
  *
  * @param queryKey - Query key.
  * @param items - items to update.
- * @param action - `"create" | "update" | "delete" | "updateMembership"`
+ * @param action - `"create" | "update" | "remove" | "updateMembership"`
  * @param entity - Entity to update the data for.
  * @param keyToOperateIn - Optional key to specify which part of the data to update.
  */
@@ -130,7 +130,7 @@ export const changeArbitraryQueryData = (
  *
  * @param items - Current items to update.
  * @param dataItems - Items to merge into current items.
- * @param action - `"create" | "update" | "delete" | "updateMembership"`
+ * @param action - `"create" | "update" | "remove" | "updateMembership"`
  * @returns The updated array of items.
  */
 const updateArrayItems = <T extends ItemData>(items: T[], dataItems: T[], action: QueryDataActions, insertOrder?: 'asc' | 'desc') => {
@@ -148,7 +148,7 @@ const updateArrayItems = <T extends ItemData>(items: T[], dataItems: T[], action
       // update existing items in dataItems
       return items.map((item) => dataItems.find((i) => i.id === item.id) ?? item);
 
-    case 'delete': {
+    case 'remove': {
       // Exclude items matching IDs in dataItems
       const deleteIds = dataItems.map(({ id }) => id);
       return items.filter((item) => !deleteIds.includes(item.id));
@@ -175,7 +175,7 @@ const updateArrayItems = <T extends ItemData>(items: T[], dataItems: T[], action
  *
  * @param prevItem - Previous item to update.
  * @param newItem - New item to merge.
- * @param action - `"create" | "update" | "delete" | "updateMembership"`
+ * @param action - `"create" | "update" | "remove" | "updateMembership"`
  * @returns The updated item.
  */
 const updateItem = <T extends ItemData>(prevItem: T, newItem: T, action: QueryDataActions) => {

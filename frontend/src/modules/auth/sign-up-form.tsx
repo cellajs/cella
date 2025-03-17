@@ -42,9 +42,7 @@ export const SignUpForm = ({ tokenData, email, resetSteps, emailEnabled }: Props
   // Handle basic sign up
   const { mutate: _signUp, isPending } = useMutation({
     mutationFn: signUp,
-    onSuccess: () => {
-      navigate({ to: '/auth/email-verification', replace: true });
-    },
+    onSuccess: () => navigate({ to: '/auth/email-verification', replace: true }),
   });
 
   // Handle sign up with token to accept invitation
@@ -53,8 +51,8 @@ export const SignUpForm = ({ tokenData, email, resetSteps, emailEnabled }: Props
     onSuccess: () => {
       // Redirect to organization invitation page if there is a membership invitation
       const isMemberInvitation = tokenData?.organizationSlug && token && tokenId;
-      if (isMemberInvitation) return navigate({ to: '/invitation/$token', replace: true, params: { token }, search: { tokenId } });
-      return navigate({ to: config.welcomeRedirectPath, replace: true });
+      const redirectPath = isMemberInvitation ? '/invitation/$token' : config.welcomeRedirectPath;
+      return navigate({ to: redirectPath, replace: true, ...(token && tokenId && { params: { token }, search: { tokenId } }) });
     },
   });
 

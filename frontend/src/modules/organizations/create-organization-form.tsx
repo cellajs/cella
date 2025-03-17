@@ -12,12 +12,10 @@ import { toast } from 'sonner';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import InputFormField from '~/modules/common/form-fields/input';
 import { SlugFormField } from '~/modules/common/form-fields/slug';
-import { addMenuItem } from '~/modules/navigation/menu-sheet/helpers/menu-operations';
-import { organizationsKeys, useOrganizationCreateMutation } from '~/modules/organizations/query';
+import { useOrganizationCreateMutation } from '~/modules/organizations/query';
 import type { Organization } from '~/modules/organizations/types';
 import { Button, SubmitButton } from '~/modules/ui/button';
 import { Form, type LabelDirectionType } from '~/modules/ui/form';
-import { useMutateQueryData } from '~/query/hooks/use-mutate-query-data';
 
 interface Props {
   callback?: (org: Organization) => void;
@@ -47,7 +45,6 @@ const CreateOrganizationForm = ({ labelDirection = 'top', children, callback }: 
 
   // Watch to update slug field
   const name = useWatch({ control: form.control, name: 'name' });
-  const mutateQuery = useMutateQueryData(organizationsKeys.list());
 
   const { mutate, isPending } = useOrganizationCreateMutation();
 
@@ -57,12 +54,7 @@ const CreateOrganizationForm = ({ labelDirection = 'top', children, callback }: 
         form.reset();
         toast.success(t('common:success.create_resource', { resource: t('common:organization') }));
 
-        // TODO these two are always combined so perhaps do these things together?
-        addMenuItem(createdOrganization, 'organizations');
-        mutateQuery.create([createdOrganization]);
-
-        // Trigger callback
-        callback?.(createdOrganization);
+        callback?.(createdOrganization); // Trigger callback
       },
     });
   };

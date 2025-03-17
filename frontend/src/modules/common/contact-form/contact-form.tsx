@@ -49,6 +49,7 @@ const ContactForm = ({ dialog: isDialog }: { dialog?: boolean }) => {
     createRequest(body, {
       onSuccess: () => {
         toaster(t('common:message_sent.text'), 'success');
+
         if (isDialog) useDialoger.getState().remove();
         form.reset();
       },

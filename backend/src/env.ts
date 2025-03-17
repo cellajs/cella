@@ -25,6 +25,8 @@ export const env = createEnv({
 
     ARGON_SECRET: z.string(),
     COOKIE_SECRET: z.string(),
+    TUS_SECRET: z.string().default('very_secret'),
+    ELECTRIC_API_SECRET: z.string(),
     REMOTE_SYSTEM_ACCESS_IP: z.string(),
 
     NOVU_API_KEY: z.string().optional(),
@@ -51,7 +53,6 @@ export const env = createEnv({
     AWS_S3_UPLOAD_SECRET_ACCESS_KEY: z.string().default(''),
     AWS_CLOUDFRONT_KEY_ID: z.string().default(''),
     AWS_CLOUDFRONT_PRIVATE_KEY: z.string().default(''),
-    TUS_SECRET: z.string().default('very_secret'),
   },
   runtimeEnv: process.env,
   emptyStringAsUndefined: true,

@@ -9,8 +9,8 @@ import { PageHeader } from '~/modules/common/page/page-header';
 import { toaster } from '~/modules/common/toaster';
 import { useUpdateSelfMutation } from '~/modules/me/query';
 import { useUpdateUserMutation, userQueryOptions } from '~/modules/users/query';
+import type { LimitedUser } from '~/modules/users/types';
 import { useUserStore } from '~/store/user';
-import type { LimitedUser } from './types';
 
 const ProfilePageContent = lazy(() => import('~/modules/users/profile-page-content'));
 
@@ -22,7 +22,7 @@ const UserProfilePage = ({ user: baseUser, sheet, orgIdOrSlug }: { user: Limited
   const user = data || baseUser;
 
   // Check if user is current user
-  const { user: currentUser, setUser } = useUserStore();
+  const { user: currentUser } = useUserStore();
   const isSelf = currentUser.id === user.id;
 
   const mutationFn = isSelf ? useUpdateSelfMutation : useUpdateUserMutation;
@@ -34,10 +34,7 @@ const UserProfilePage = ({ user: baseUser, sheet, orgIdOrSlug }: { user: Limited
     mutate(
       { idOrSlug: currentUser.id, bannerUrl },
       {
-        onSuccess: () => {
-          toast.success(t('common:success.upload_cover'));
-          if (isSelf) setUser({ ...currentUser, ...{ bannerUrl } });
-        },
+        onSuccess: () => toast.success(t('common:success.upload_cover')),
         onError: () => toaster(t('error:image_upload_failed'), 'error'),
       },
     );
