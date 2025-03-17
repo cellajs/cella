@@ -1,3 +1,4 @@
+import { useQuery } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
 import { UserCog } from 'lucide-react';
 import { Suspense, lazy } from 'react';
@@ -7,17 +8,21 @@ import { useEventListener } from '~/hooks/use-event-listener';
 import { PageHeader } from '~/modules/common/page/page-header';
 import { toaster } from '~/modules/common/toaster';
 import { useUpdateSelfMutation } from '~/modules/me/query';
-import { useUpdateUserMutation } from '~/modules/users/query';
-import type { LimitedUser } from '~/modules/users/types';
+import { useUpdateUserMutation, userQueryOptions } from '~/modules/users/query';
 import { useUserStore } from '~/store/user';
+import type { LimitedUser } from './types';
 
 const ProfilePageContent = lazy(() => import('~/modules/users/profile-page-content'));
 
-const UserProfilePage = ({ user, sheet, orgIdOrSlug }: { user: LimitedUser; sheet?: boolean; orgIdOrSlug?: string }) => {
+const UserProfilePage = ({ user: baseUser, sheet, orgIdOrSlug }: { user: LimitedUser; sheet?: boolean; orgIdOrSlug?: string }) => {
   const { t } = useTranslation();
 
-  const { user: currentUser, setUser } = useUserStore();
+  // Use loader data but also fetch from cache to ensure it's up to date
+  const { data } = useQuery(userQueryOptions(baseUser.id));
+  const user = data || baseUser;
 
+  // Check if user is current user
+  const { user: currentUser, setUser } = useUserStore();
   const isSelf = currentUser.id === user.id;
 
   const mutationFn = isSelf ? useUpdateSelfMutation : useUpdateUserMutation;
