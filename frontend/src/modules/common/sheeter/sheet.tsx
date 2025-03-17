@@ -13,7 +13,7 @@ export const DesktopSheet = ({ sheet }: SheetProps) => {
     id,
     modal = true,
     side: sheetSide,
-    open,
+    open = true,
     description,
     scrollableOverlay,
     title,

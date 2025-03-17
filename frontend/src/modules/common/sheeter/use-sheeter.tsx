@@ -21,7 +21,7 @@ interface SheetStoreState {
   sheets: SheetData[];
 
   create(content: ReactNode, data?: Omit<SheetData, 'content'>): string;
-  update(id: string, updates: Partial<SheetData>, leavePrevData?: boolean): void;
+  update(id: string, updates: Partial<SheetData>): void;
   remove(id?: string, excludeId?: string): void;
   get(id: string): SheetData | undefined;
 }
@@ -36,14 +36,13 @@ export const useSheeter = create<SheetStoreState>()(
     create: (content, data) => {
       const id = data?.id || Date.now().toString();
       set((state) => {
-        state.sheets = [...state.sheets.filter((s) => s.id !== id), { id, modal: data?.modal ?? true, content, open: data?.open ?? true, ...data }];
+        state.sheets = [...state.sheets.filter((s) => s.id !== id), { id, content, ...data }];
       });
       return id;
     },
-    update: (id, updates, leavePrevData = true) => {
+    update: (id, updates) => {
       set((state) => {
-        const existingSheet = leavePrevData ? get().get(id) : undefined;
-        state.sheets = [...state.sheets.filter((s) => s.id !== id), { id, ...(existingSheet ? { ...existingSheet, ...updates } : updates) }];
+        state.sheets = [...state.sheets.filter((s) => s.id !== id), { id, ...updates }];
       });
     },
     remove: (id, excludeId) => {

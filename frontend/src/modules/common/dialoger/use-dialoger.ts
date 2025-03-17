@@ -78,12 +78,12 @@ export const useDialoger = create<DialogStoreState>()(
           const dialog = state.dialogs.find((d) => d.id === id);
           dialog?.removeCallback?.();
           state.dialogs = state.dialogs.filter((d) => d.id !== id);
-        } else {
-          for (const d of state.dialogs) {
-            d.removeCallback?.();
-          }
-          state.dialogs = [];
+          return;
         }
+        for (const d of state.dialogs) {
+          d.removeCallback?.();
+        }
+        state.dialogs = [];
       });
     },
 
@@ -92,10 +92,10 @@ export const useDialoger = create<DialogStoreState>()(
         if (id) {
           const dialog = state.dialogs.find((d) => d.id === id);
           if (dialog) dialog.reset = true;
-        } else {
-          for (const d of state.dialogs) {
-            d.reset = true;
-          }
+          return;
+        }
+        for (const d of state.dialogs) {
+          d.reset = true;
         }
       });
     },
