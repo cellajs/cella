@@ -23,6 +23,7 @@ services:
     image: electricsql/electric:latest
     environment:
       DATABASE_URL: postgresql://postgres:postgres@db:5432/postgres?sslmode=disable
+      ELECTRIC_SECRET: electric_api_secret
     ports:
       - 4200:3000
     depends_on:

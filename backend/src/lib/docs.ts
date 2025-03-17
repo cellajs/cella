@@ -56,12 +56,10 @@ const docs = (app: OpenAPIHono<Env>) => {
   app.get(
     '/docs',
     apiReference({
+      url: 'openapi.json',
       defaultHttpClient: {
         targetKey: 'node',
         clientKey: 'axios',
-      },
-      spec: {
-        url: 'openapi.json',
       },
     }),
   );

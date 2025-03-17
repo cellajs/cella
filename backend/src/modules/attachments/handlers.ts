@@ -17,6 +17,7 @@ import { html } from 'hono/html';
 import { stream } from 'hono/streaming';
 
 import { config } from 'config';
+import { env } from '#/env';
 
 // Set default hook to catch validation errors
 const app = new OpenAPIHono<Env>({ defaultHook });
@@ -31,7 +32,7 @@ const attachmentsRoutes = app
     const url = new URL(ctx.req.url);
 
     // Construct the upstream URL
-    const originUrl = new URL(`${config.electricUrl}/v1/shape?table=attachments`);
+    const originUrl = new URL(`${config.electricUrl}/v1/shape?table=attachments&api_secret=${env.ELECTRIC_API_SECRET}`);
 
     // Copy over the relevant query params that the Electric client adds
     // so that we return the right part of the Shape log.
