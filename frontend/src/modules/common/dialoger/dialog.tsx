@@ -35,8 +35,10 @@ export default function StandardDialog({ dialog }: DialogProp) {
 
   // Find container element if id provided
   useEffect(() => {
+    console.log('container', container, open);
     if (!open) return;
     if (!container?.id) return;
+
     const c = document.getElementById(container?.id);
     if (!container) return console.warn('containerId provided but no element found.');
     setContainerElement(c);

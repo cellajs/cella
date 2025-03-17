@@ -1,4 +1,4 @@
-import { SubmitButton } from '~/modules/ui/button';
+import { Button, SubmitButton } from '~/modules/ui/button';
 import { Input } from '~/modules/ui/input';
 
 import { Send } from 'lucide-react';
@@ -36,14 +36,20 @@ export const RequestPasswordForm = ({ email = '' }: { email?: string }) => {
         autoFocus={!isMobile}
         className="mb-4"
         placeholder={t('common:email')}
-        defaultValue={email} // Set the default value instead of value
+        value={emailValue} // Set the default value instead of value
         onChange={(e) => setEmailValue(e.target.value)}
         required
       />
-      <SubmitButton className="w-full" disabled={!emailValue} loading={isPending} onClick={() => _requestPasswordEmail(emailValue)}>
-        <Send size={16} className="mr-2" />
-        {t('common:send_reset_link')}
-      </SubmitButton>
+      <div className="flex flex-col sm:flex-row gap-2">
+        <SubmitButton disabled={!emailValue} loading={isPending} onClick={() => _requestPasswordEmail(emailValue)}>
+          <Send size={16} className="mr-2" />
+          {t('common:send_reset_link')}
+        </SubmitButton>
+
+        <Button type="reset" variant="secondary" onClick={() => setEmailValue('')} className={emailValue ? '' : 'invisible'}>
+          {t('common:cancel')}
+        </Button>
+      </div>
     </div>
   );
 };
