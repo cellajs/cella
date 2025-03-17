@@ -4,7 +4,7 @@ import { Drawer, DrawerContent, DrawerDescription, DrawerHeader, DrawerTitle } f
 import { useSheeter } from './use-sheeter';
 
 export const MobileSheet = ({ sheet }: SheetProps) => {
-  const { modal = true, id, side: sheetSide, description, title, titleContent = title, className: sheetClassName, content, open } = sheet;
+  const { modal = true, id, side: sheetSide, description, title, titleContent = title, className: sheetClassName, content, open = true } = sheet;
 
   const updateSheet = useSheeter.getState().update;
 

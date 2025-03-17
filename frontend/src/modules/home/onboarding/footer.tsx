@@ -32,6 +32,7 @@ const StepperFooter = ({
       });
       return;
     }
+    console.log('nextStep', nextStep);
     nextStep();
   };
 
@@ -46,17 +47,17 @@ const StepperFooter = ({
   }, [organization, hasCompletedAllSteps]);
 
   return (
-    <div className="w-full flex justify-end gap-2 max-sm:justify-stretch">
-      {activeStep === 1 && !organization && (
-        <Button onClick={backStep} variant="secondary" className="max-sm:w-full">
-          <ArrowLeft size={16} className="mr-2" />
-          {t('common:previous')}
-        </Button>
-      )}
+    <div className="w-full flex gap-2 max-sm:justify-stretch">
       {isOptionalStep && (
         <Button onClick={skipStep} variant="secondary" className="max-sm:w-full">
           <Redo size={16} className="mr-2" />
           {t('common:skip')}
+        </Button>
+      )}
+      {activeStep === 1 && !organization && (
+        <Button onClick={backStep} variant="secondary" className="max-sm:w-full">
+          <ArrowLeft size={16} className="mr-2" />
+          {t('common:previous')}
         </Button>
       )}
     </div>

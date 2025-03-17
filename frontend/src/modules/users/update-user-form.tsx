@@ -164,7 +164,6 @@ const UpdateUserForm = ({ user, callback, sheet: isSheet, hiddenFields, children
         />
 
         <div className="flex flex-col sm:flex-row gap-2">
-          {children}
           <SubmitButton
             disabled={!hiddenFields?.length && (!form.formState.isDirty || Object.keys(form.formState.errors).length > 0)}
             loading={isPending}
@@ -176,6 +175,7 @@ const UpdateUserForm = ({ user, callback, sheet: isSheet, hiddenFields, children
               {t('common:cancel')}
             </Button>
           )}
+          {children}
         </div>
       </form>
     </Form>
