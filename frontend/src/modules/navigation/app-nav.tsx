@@ -18,16 +18,13 @@ const AppNav = () => {
   const navigate = useNavigate();
   const isMobile = useBreakpoints('max', 'sm');
 
-  const setFocusView = useNavigationStore.getState().setFocusView;
-  const setLoading = useNavigationStore.getState().setLoading;
+  const { setFocusView, setLoading, setNavSheetOpen } = useNavigationStore.getState();
   const navSheetOpen = useNavigationStore((state) => state.navSheetOpen);
-  const setNavSheetOpen = useNavigationStore.getState().setNavSheetOpen;
-  const getSheet = useSheeter.getState().get;
   const updateSheet = useSheeter.getState().update;
 
   const clickNavItem = (id: NavItem['id']) => {
     // If the nav item is already open, close it
-    if (id === navSheetOpen && getSheet('nav-sheet')?.open) {
+    if (id === navSheetOpen) {
       setNavSheetOpen(null);
       updateSheet('nav-sheet', { open: false });
       return;
@@ -90,12 +87,14 @@ const AppNav = () => {
 
   useEffect(() => {
     router.subscribe('onBeforeLoad', ({ pathChanged, toLocation, fromLocation }) => {
-      const sheetOpen = useNavigationStore.getState().navSheetOpen;
+      const navState = useNavigationStore.getState();
+      const sheetOpen = navState.navSheetOpen;
+
       if (toLocation.pathname !== fromLocation?.pathname) {
-        if (useNavigationStore.getState().focusView) setFocusView(false);
+        if (navState.focusView) setFocusView(false);
 
         // Remove all sheets in content or
-        if (sheetOpen && (sheetOpen !== 'menu' || !useNavigationStore.getState().keepMenuOpen)) {
+        if (sheetOpen && (sheetOpen !== 'menu' || !navState.keepMenuOpen)) {
           setNavSheetOpen(null);
           useSheeter.getState().remove();
         } else useSheeter.getState().remove(undefined, 'nav-sheet');

@@ -3,6 +3,7 @@ import { motion } from 'motion/react';
 import { type MouseEventHandler, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useInView } from 'react-intersection-observer';
+import useFocusById from '~/hooks/use-focus-by-id';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import StickyBox from '~/modules/common/sticky-box';
 import { cn } from '~/utils/cn';
@@ -31,6 +32,8 @@ export const PageNav = ({ title, avatar, tabs, className = '' }: Props) => {
   const { t } = useTranslation();
   const { ref: inViewRef, inView } = useInView({ triggerOnce: false, threshold: 0 });
 
+  useFocusById(`tab-${tabs[0].id}`);
+
   // Scroll to tabs when scrolled past header
   const updateScrollPosition: MouseEventHandler<HTMLAnchorElement> = (e) => {
     if (e.currentTarget.dataset.active) {
@@ -55,6 +58,7 @@ export const PageNav = ({ title, avatar, tabs, className = '' }: Props) => {
         {tabs.map(({ id, path, label }) => (
           <Link
             key={id}
+            id={`tab-${id}`}
             resetScroll={false}
             className="relative p-2 lg:px-4 rounded-sm outline-hidden sm:ring-offset-background focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
             to={path}
