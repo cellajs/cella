@@ -7,18 +7,16 @@ import { DataTable } from '~/modules/common/data-table';
 import { tablePropsAreEqual } from '~/modules/common/data-table/table-props-are-equal';
 import type { BaseTableMethods, BaseTableProps } from '~/modules/common/data-table/types';
 import { toaster } from '~/modules/common/toaster';
-import { useUpdateUserMutation, usersKeys, usersQueryOptions } from '~/modules/users/query';
+import { useUpdateUserMutation, usersQueryOptions } from '~/modules/users/query';
 import type { UsersSearch } from '~/modules/users/table/table-wrapper';
 import type { User } from '~/modules/users/types';
 import { useDataFromInfiniteQuery } from '~/query/hooks/use-data-from-query';
-import { useMutateQueryData } from '~/query/hooks/use-mutate-query-data';
 
 type BaseDataTableProps = BaseTableProps<User, UsersSearch>;
 
 const BaseDataTable = memo(
   forwardRef<BaseTableMethods, BaseDataTableProps>(({ columns, searchVars, sortColumns, setSortColumns, setTotal, setSelected }, ref) => {
     const { t } = useTranslation();
-    const mutateQuery = useMutateQueryData(usersKeys.list(), (item) => usersKeys.single(item.id), ['update']);
 
     // Extract query variables and set defaults
     const { q, role, sort, order, limit } = searchVars;
@@ -39,11 +37,7 @@ const BaseDataTable = memo(
           const newUser = changedRows[index];
           const updateInfo = { idOrSlug: newUser.id, role: newUser.role };
           updateUserRole(updateInfo, {
-            onSuccess: (updatedUser) => {
-              // TODO perhaps not do these things here, this onSuccess should be more UI related? Instead, we should handle this in useUpdateUserMutation directly for all caches list/single/table?
-              mutateQuery.update([updatedUser]);
-              toaster(t('common:success.update_item', { item: t('common:role') }), 'success');
-            },
+            onSuccess: () => toaster(t('common:success.update_item', { item: t('common:role') }), 'success'),
           });
         }
       setRows(changedRows);

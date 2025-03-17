@@ -23,9 +23,7 @@ export const RequestPasswordForm = ({ email = '' }: { email?: string }) => {
       toast.success(t('common:success.reset_link_sent'));
       useDialoger.getState().remove();
     },
-    onError: () => {
-      document.getElementById('reset-email-field')?.focus();
-    },
+    onError: () => document.getElementById('reset-email-field')?.focus(),
   });
 
   return (

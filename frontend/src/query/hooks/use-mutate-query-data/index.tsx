@@ -84,7 +84,7 @@ export function useMutateQueryData(
   function remove(items: ContextEntityData[], entity: ContextEntity, keyToOperateIn?: string): void;
   function remove(items: EntityData[], entity: ProductEntity, keyToOperateIn: string): void;
   function remove(items: ItemData[] | EntityData[] | ContextEntityData[], entity?: ProductEntity | ContextEntity, keyToOperateIn?: string) {
-    dataMutation(items, 'delete', entity, keyToOperateIn);
+    dataMutation(items, 'remove', entity, keyToOperateIn);
   }
 
   return { create, update, updateMembership, remove };

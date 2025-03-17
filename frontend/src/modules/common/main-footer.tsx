@@ -1,12 +1,12 @@
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
+import { contactFormHandler } from '~/modules/common/contact-form/contact-form-handler';
 import Logo from '~/modules/common/logo';
 import UserLanguage from '~/modules/me/user-language';
 import UserTheme from '~/modules/me/user-theme';
 import { Button } from '~/modules/ui/button';
 import { defaultFooterLinks } from '~/nav-config';
 import { cn } from '~/utils/cn';
-import { contactFormHandler } from './contact-form/contact-form-handler';
 
 export interface FooterLinkProps {
   id: string;

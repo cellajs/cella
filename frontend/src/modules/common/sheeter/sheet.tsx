@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
+import { type SheetData, useSheeter } from '~/modules/common/sheeter/use-sheeter';
 import StickyBox from '~/modules/common/sticky-box';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '~/modules/ui/sheet';
 import { isElementInteractive } from '~/utils/is-el-interactive';
-import { type SheetData, useSheeter } from './use-sheeter';
 
 export interface SheetProps {
   sheet: SheetData;

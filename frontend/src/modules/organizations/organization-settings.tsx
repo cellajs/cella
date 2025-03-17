@@ -7,6 +7,7 @@ import { AsideAnchor } from '~/modules/common/aside-anchor';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { PageAside } from '~/modules/common/page/page-aside';
 import StickyBox from '~/modules/common/sticky-box';
+import UnsavedBadge from '~/modules/common/unsaved-badge';
 import DeleteOrganizations from '~/modules/organizations/delete-organizations';
 import Subscription from '~/modules/organizations/subscription';
 import type { Organization } from '~/modules/organizations/types';
@@ -14,7 +15,6 @@ import UpdateOrganizationForm from '~/modules/organizations/update-organization-
 import { Button } from '~/modules/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/modules/ui/card';
 import { OrganizationSettingsRoute } from '~/routes/organizations';
-import UnsavedBadge from '../common/unsaved-badge';
 
 const tabs = [
   { id: 'general', label: 'common:general' },

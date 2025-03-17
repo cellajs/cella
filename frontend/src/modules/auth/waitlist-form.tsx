@@ -51,6 +51,7 @@ export const WaitlistForm = ({ email, buttonContent, emailField, dialog: isDialo
       onSuccess: () => {
         navigate({ to: '/about', replace: true });
         toaster(t('common:success.waitlist_request', { appName: config.name }), 'success');
+
         if (isDialog) useDialoger.getState().remove();
         callback?.();
       },

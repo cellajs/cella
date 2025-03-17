@@ -6,6 +6,7 @@ import type { UpdateUserParams } from '~/modules/users/api';
 import { usersKeys } from '~/modules/users/query';
 import type { User } from '~/modules/users/types';
 import { queryClient } from '~/query/query-client';
+import { useUserStore } from '~/store/user';
 
 /**
  * Keys for current authenticated user(self) related queries. These keys help to uniquely identify different query.
@@ -49,7 +50,10 @@ export const useUpdateSelfMutation = () => {
     mutationKey: meKeys.update(),
     mutationFn: updateSelf,
     onSuccess: (updatedUser) => {
+      const updateUser = useUserStore.getState().updateUser;
+
       queryClient.setQueryData(usersKeys.single(updatedUser.slug), updatedUser);
+      updateUser(updatedUser);
     },
     gcTime: 1000 * 10,
   });

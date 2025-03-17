@@ -1,7 +1,7 @@
 import { i18n } from '~/lib/i18n';
-import { useDialoger } from '../dialoger/use-dialoger';
-import UnsavedBadge from '../unsaved-badge';
-import ContactForm from './contact-form';
+import ContactForm from '~/modules/common/contact-form/contact-form';
+import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
+import UnsavedBadge from '~/modules/common/unsaved-badge';
 
 /**
  * Launch contact form dialog

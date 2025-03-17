@@ -36,9 +36,7 @@ const VerifyEmail = () => {
     isSuccess,
   } = useMutation({
     mutationFn: () => sendVerificationEmail({ tokenId }),
-    onSuccess: () => {
-      toaster(t('common:success.sent_verification_email'), 'success');
-    },
+    onSuccess: () => toaster(t('common:success.sent_verification_email'), 'success'),
   });
 
   // Checking token by id

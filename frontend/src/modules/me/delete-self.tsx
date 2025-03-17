@@ -22,9 +22,7 @@ const DeleteSelf = ({ callback, dialog: isDialog }: Props) => {
   const { mutate: _deleteSelf, isPending } = useMutation({
     mutationFn: deleteSelf,
     onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: usersKeys.single(user.id),
-      });
+      queryClient.invalidateQueries({ queryKey: usersKeys.single(user.id) });
 
       navigate({ to: '/sign-out', replace: true, search: { force: true } });
       if (isDialog) removeDialog();

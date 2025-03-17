@@ -1,6 +1,7 @@
 import { Trash, Upload, XSquare } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useTranslation } from 'react-i18next';
+import DeleteAttachmentsForm from '~/modules/attachments/table/delete-attachments-form';
 import { openAttachmentsUploadDialog } from '~/modules/attachments/table/helpers';
 import type { AttachmentSearch, AttachmentsTableProps } from '~/modules/attachments/table/table-wrapper';
 import type { Attachment } from '~/modules/attachments/types';
@@ -14,7 +15,6 @@ import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { FocusView } from '~/modules/common/focus-view';
 import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
-import DeleteAttachmentsForm from './delete-attachments-form';
 
 type AttachmentsTableBarProps = AttachmentsTableProps &
   BaseTableMethods &

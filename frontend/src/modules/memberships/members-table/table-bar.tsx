@@ -16,8 +16,11 @@ import SelectRole from '~/modules/common/form-fields/select-role';
 import { toaster } from '~/modules/common/toaster';
 import UnsavedBadge from '~/modules/common/unsaved-badge';
 import type { EntityPage } from '~/modules/entities/types';
+import { getMembers } from '~/modules/memberships/api';
 import type { MemberSearch, MembersTableProps } from '~/modules/memberships/members-table/table-wrapper';
 import { MembershipInvitations } from '~/modules/memberships/pending-table/invites-count';
+import { membersKeys } from '~/modules/memberships/query/options';
+import RemoveMembersForm from '~/modules/memberships/remove-member-form';
 import type { Member } from '~/modules/memberships/types';
 import { organizationsKeys } from '~/modules/organizations/query';
 import { Badge } from '~/modules/ui/badge';
@@ -25,9 +28,6 @@ import { Button } from '~/modules/ui/button';
 import InviteUsers from '~/modules/users/invite-users';
 import { queryClient } from '~/query/query-client';
 import { nanoid } from '~/utils/nanoid';
-import { getMembers } from '../api';
-import { membersKeys } from '../query/options';
-import RemoveMembersForm from '../remove-member-form';
 
 type MembersTableBarProps = MembersTableProps & BaseTableMethods & BaseTableBarProps<Member, MemberSearch>;
 

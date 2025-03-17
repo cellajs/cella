@@ -2,12 +2,12 @@ import { Expand, Shrink } from 'lucide-react';
 import type React from 'react';
 import { useTranslation } from 'react-i18next';
 import useBodyClass from '~/hooks/use-body-class';
+import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
 import { toaster } from '~/modules/common/toaster';
 import { TooltipButton } from '~/modules/common/tooltip-button';
 import { Button } from '~/modules/ui/button';
 import { useNavigationStore } from '~/store/navigation';
 import { cn } from '~/utils/cn';
-import { useSheeter } from './sheeter/use-sheeter';
 
 interface FocusViewProps {
   className?: string;
