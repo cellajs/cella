@@ -42,7 +42,7 @@ export const useSheeter = create<SheetStoreState>()(
     },
     update: (id, updates) => {
       set((state) => {
-        state.sheets = [...state.sheets.filter((s) => s.id !== id), { id, ...updates }];
+        state.sheets = state.sheets.map((sheet) => (sheet.id === id ? { ...sheet, ...updates } : sheet));
       });
     },
     remove: (id, excludeId) => {
