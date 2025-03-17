@@ -66,7 +66,7 @@ const UpdateOrganizationForm = ({ organization, callback, sheet: isSheet }: Prop
       {
         onSuccess: (updatedOrganization) => {
           if (isSheet) useSheeter.getState().remove(formContainerId);
-          form.reset(updatedOrganization);
+          form.reset(json);
           toaster(t('common:success.update_resource', { resource: t('common:organization') }), 'success');
           callback?.(updatedOrganization);
         },
