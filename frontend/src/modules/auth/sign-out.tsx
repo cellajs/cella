@@ -3,6 +3,7 @@ import { Heart } from 'lucide-react';
 import { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { signOut } from '~/modules/auth/api';
+import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { toaster } from '~/modules/common/toaster';
 import type { MeUser } from '~/modules/me/types';
 import { queryClient } from '~/query/query-client';
@@ -13,7 +14,6 @@ import { useNavigationStore } from '~/store/navigation';
 import { useSyncStore } from '~/store/sync';
 import { useUIStore } from '~/store/ui';
 import { useUserStore } from '~/store/user';
-import ContentPlaceholder from '../common/content-placeholder';
 
 export const flushStoresAndCache = (removeAccount?: boolean) => {
   queryClient.clear();

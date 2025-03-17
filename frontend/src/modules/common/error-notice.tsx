@@ -4,11 +4,11 @@ import { ChevronDown, Home, MessageCircleQuestion, RefreshCw } from 'lucide-reac
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { ApiError } from '~/lib/api';
+import { contactFormHandler } from '~/modules/common/contact-form/contact-form-handler';
 import { Dialoger } from '~/modules/common/dialoger/provider';
 import { MainFooter } from '~/modules/common/main-footer';
 import { Button } from '~/modules/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '~/modules/ui/card';
-import { contactFormHandler } from './contact-form/contact-form-handler';
 
 export type ErrorNoticeError = ApiError | Error | null;
 

@@ -1,6 +1,6 @@
 import type { DialogProp } from '~/modules/common/dialoger/dialog';
+import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { Drawer, DrawerContent, DrawerDescription, DrawerHeader, DrawerTitle } from '~/modules/ui/drawer';
-import { useDialoger } from './use-dialoger';
 
 export default function DrawerDialog({ dialog }: DialogProp) {
   const { id, content, open, description, title, titleContent = title, className, headerClassName = '' } = dialog;

@@ -6,12 +6,12 @@ import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { useHotkeys } from '~/hooks/use-hot-keys';
 import router from '~/lib/router';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
+import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
 import { toaster } from '~/modules/common/toaster';
 import BarNav from '~/modules/navigation/bar-nav';
 import FloatingNav from '~/modules/navigation/floating-nav';
 import { type NavItem, navItems } from '~/nav-config';
 import { useNavigationStore } from '~/store/navigation';
-import { useSheeter } from '../common/sheeter/use-sheeter';
 
 const AppNav = () => {
   const { t } = useTranslation();

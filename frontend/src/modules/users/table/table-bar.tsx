@@ -15,9 +15,9 @@ import UnsavedBadge from '~/modules/common/unsaved-badge';
 import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
 import DeleteUsers from '~/modules/users/delete-users';
+import InviteUsers from '~/modules/users/invite-users';
 import type { UsersSearch } from '~/modules/users/table/table-wrapper';
 import type { User } from '~/modules/users/types';
-import InviteUsers from '../invite-users';
 
 type UsersTableBarProps = BaseTableMethods & BaseTableBarProps<User, UsersSearch> & {};
 

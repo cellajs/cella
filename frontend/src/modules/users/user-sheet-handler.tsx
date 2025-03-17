@@ -1,7 +1,7 @@
 import { useNavigate, useParams, useSearch } from '@tanstack/react-router';
 import { memo, useEffect } from 'react';
+import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
 import UserSheet from '~/modules/users/user-sheet';
-import { useSheeter } from '../common/sheeter/use-sheeter';
 
 const UserSheetHandler = memo(() => {
   const navigate = useNavigate();

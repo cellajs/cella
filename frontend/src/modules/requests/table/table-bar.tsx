@@ -13,15 +13,15 @@ import type { BaseTableBarProps, BaseTableMethods } from '~/modules/common/data-
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { FocusView } from '~/modules/common/focus-view';
 import { toaster } from '~/modules/common/toaster';
+import { getRequests } from '~/modules/requests/api';
+import DeleteRequests from '~/modules/requests/delete-requests';
+import { requestsKeys } from '~/modules/requests/query';
 import type { RequestsSearch } from '~/modules/requests/table/table-wrapper';
 import type { Request } from '~/modules/requests/types';
 import { invite } from '~/modules/system/api';
 import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
 import { useMutateQueryData } from '~/query/hooks/use-mutate-query-data';
-import { getRequests } from '../api';
-import DeleteRequests from '../delete-requests';
-import { requestsKeys } from '../query';
 
 type RequestsTableBarProps = BaseTableMethods & BaseTableBarProps<Request, RequestsSearch>;
 
