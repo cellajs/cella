@@ -39,7 +39,7 @@ type FormValues = z.infer<typeof formSchema>;
 
 const UpdateUserForm = ({ user, callback, sheet: isSheet, hiddenFields, children }: UpdateUserFormProps) => {
   const { t } = useTranslation();
-  const { user: currentUser, updateUser } = useUserStore();
+  const { user: currentUser } = useUserStore();
   const isSelf = currentUser.id === user.id;
 
   // Hide fields if requested
@@ -80,10 +80,8 @@ const UpdateUserForm = ({ user, callback, sheet: isSheet, hiddenFields, children
       { idOrSlug: user.id, ...values },
       {
         onSuccess: (updatedUser) => {
-          if (isSelf) {
-            updateUser(updatedUser);
-            toaster(t('common:success.profile_updated'), 'success');
-          } else toaster(t('common:success.update_item', { item: t('common:user') }), 'success');
+          const message = isSelf ? t('common:success.profile_updated') : t('common:success.update_item', { item: t('common:user') });
+          toaster(message, 'success');
 
           form.reset(updatedUser);
           if (isSheet) useSheeter.getState().remove(formContainerId);

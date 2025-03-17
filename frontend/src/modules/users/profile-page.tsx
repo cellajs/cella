@@ -22,7 +22,7 @@ const UserProfilePage = ({ user: baseUser, sheet, orgIdOrSlug }: { user: Limited
   const user = data || baseUser;
 
   // Check if user is current user
-  const { user: currentUser, setUser } = useUserStore();
+  const { user: currentUser } = useUserStore();
   const isSelf = currentUser.id === user.id;
 
   const mutationFn = isSelf ? useUpdateSelfMutation : useUpdateUserMutation;
@@ -34,10 +34,7 @@ const UserProfilePage = ({ user: baseUser, sheet, orgIdOrSlug }: { user: Limited
     mutate(
       { idOrSlug: currentUser.id, bannerUrl },
       {
-        onSuccess: () => {
-          toast.success(t('common:success.upload_cover'));
-          if (isSelf) setUser({ ...currentUser, ...{ bannerUrl } });
-        },
+        onSuccess: () => toast.success(t('common:success.upload_cover')),
         onError: () => toaster(t('error:image_upload_failed'), 'error'),
       },
     );
