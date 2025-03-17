@@ -6,6 +6,7 @@ import ErrorNotice from '~/modules/common/error-notice';
 import { membersQueryOptions } from '~/modules/memberships/query/options';
 import { organizationQueryOptions } from '~/modules/organizations/query';
 
+import { useQuery } from '@tanstack/react-query';
 import { queryClient } from '~/query/query-client';
 import { AppRoute } from '~/routes/base';
 import { noDirectAccess } from '~/utils/no-direct-access';
@@ -66,11 +67,14 @@ export const OrganizationMembersRoute = createRoute({
     const entityType = 'organization';
     const orgIdOrSlug = context.organization.id ?? idOrSlug;
     const queryOptions = membersQueryOptions({ idOrSlug, orgIdOrSlug, entityType, q, sort, order, role });
-
     await queryClient.prefetchInfiniteQuery(queryOptions);
   },
   component: () => {
-    const organization = useLoaderData({ from: OrganizationRoute.id });
+    const loaderData = useLoaderData({ from: OrganizationRoute.id });
+
+    // Use loader data but also fetch from cache to ensure it's up to date
+    const queryData = useQuery(organizationQueryOptions(loaderData.slug));
+    const organization = queryData.data ?? loaderData;
     if (!organization) return;
     return (
       <Suspense>
@@ -89,11 +93,14 @@ export const OrganizationAttachmentsRoute = createRoute({
   loader: async ({ deps: { q, sort, order }, context, params: { idOrSlug } }) => {
     const orgIdOrSlug = context.organization.id ?? idOrSlug;
     const queryOptions = attachmentsQueryOptions({ orgIdOrSlug, q, sort, order });
-
     await queryClient.prefetchInfiniteQuery(queryOptions);
   },
   component: () => {
-    const organization = useLoaderData({ from: OrganizationRoute.id });
+    const loaderData = useLoaderData({ from: OrganizationRoute.id });
+
+    // Use loader data but also fetch from cache to ensure it's up to date
+    const queryData = useQuery(organizationQueryOptions(loaderData.slug));
+    const organization = queryData.data ?? loaderData;
     if (!organization) return;
     return (
       <Suspense>
@@ -108,7 +115,11 @@ export const OrganizationSettingsRoute = createRoute({
   staticData: { pageTitle: 'settings', isAuth: true },
   getParentRoute: () => OrganizationRoute,
   component: () => {
-    const organization = useLoaderData({ from: OrganizationRoute.id });
+    const loaderData = useLoaderData({ from: OrganizationRoute.id });
+
+    // Use loader data but also fetch from cache to ensure it's up to date
+    const queryData = useQuery(organizationQueryOptions(loaderData.slug));
+    const organization = queryData.data ?? loaderData;
     if (!organization) return;
     return (
       <Suspense>

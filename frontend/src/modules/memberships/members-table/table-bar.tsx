@@ -112,10 +112,17 @@ export const MembersTableBar = ({
     // TODO ?
     queryClient.setQueryData(organizationsKeys.single(entity.slug), (oldEntity: EntityPage) => {
       if (!oldEntity) return oldEntity;
-      const newEntity = { ...oldEntity };
-      if (newEntity.counts?.membership) newEntity.counts.membership.pending += emails.length;
 
-      return newEntity;
+      return {
+        ...oldEntity,
+        counts: {
+          ...oldEntity.counts,
+          membership: {
+            ...oldEntity.counts?.membership,
+            pending: (oldEntity.counts?.membership?.pending ?? 0) + emails.length,
+          },
+        },
+      };
     });
     queryClient.invalidateQueries({
       queryKey: membersKeys.invitesTable({ idOrSlug: entity.slug, entityType: entity.entity, orgIdOrSlug: entity.organizationId || entity.id }),
