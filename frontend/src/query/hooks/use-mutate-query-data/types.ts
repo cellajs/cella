@@ -11,7 +11,7 @@ export interface ItemData {
 export type ContextEntityData = LimitedEntity & { membership: MinimumMembershipInfo | null };
 export type EntityData = { id: string; entity: Entity };
 
-export type QueryDataActions = 'create' | 'update' | 'delete' | 'updateMembership';
+export type QueryDataActions = 'create' | 'update' | 'remove' | 'updateMembership';
 
 export type EntityQueryData = QueryData<ItemData>;
 export type InfiniteEntityQueryData = InfiniteQueryData<ItemData>;
