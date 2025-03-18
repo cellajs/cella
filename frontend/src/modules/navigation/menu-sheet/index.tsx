@@ -9,7 +9,6 @@ import { useTranslation } from 'react-i18next';
 import { entityRelations } from '#/entity-config';
 
 import { Link } from '@tanstack/react-router';
-import { dispatchCustomEvent } from '~/lib/custom-events';
 import { menuSectionsSchemas } from '~/menu-config';
 import { AlertWrap } from '~/modules/common/alert-wrap';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
@@ -111,8 +110,6 @@ export const MenuSheet = memo(() => {
               entityType: sourceItem.entity,
             },
             {
-              // To be able to update, add a listener to manipulate data that has been changed in the menu (reordered entities on your page)
-              onSuccess: (updatedMembership) => dispatchCustomEvent('menuEntityChange', { entity: sourceItem.entity, membership: updatedMembership }),
               onError: () => getAndSetMenu(),
             },
           );

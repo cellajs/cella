@@ -1,9 +1,11 @@
 import type { Block, PropSchema, Props } from '@blocknote/core';
 import type { DefaultReactSuggestionItem } from '@blocknote/react';
 import DOMPurify from 'dompurify';
-import { type CarouselAttachment, openAttachmentDialog } from '~/modules/attachments/helpers';
+import type { CarouselItemData } from '~/modules/attachments/carousel';
+import { openAttachmentDialog } from '~/modules/attachments/helpers';
 import { customSlashIndexedItems, customSlashNotIndexedItems, menusTitleToAllowedType } from '~/modules/common/blocknote/blocknote-config';
 import type { BasicBlockTypes, CellaCustomBlockTypes, CustomBlockNoteSchema, MenusItemsTitle } from '~/modules/common/blocknote/types';
+import { nanoid } from '~/utils/nanoid';
 
 export const getSortedSlashMenuItems = (items: DefaultReactSuggestionItem[], allowedBlockTypes: (CellaCustomBlockTypes | BasicBlockTypes)[]) => {
   const indexedItems: readonly string[] = customSlashIndexedItems;
@@ -99,7 +101,7 @@ export const updateSourcesFromDataUrl = (elementId: string, openPreviewDialog = 
   const elementsWithDataUrl = parentElement.querySelectorAll('[data-url]');
   // Exit early if no matching elements are found
   if (elementsWithDataUrl.length === 0) return;
-  const attachments: CarouselAttachment[] = [];
+  const attachments: CarouselItemData[] = [];
 
   const onElClick = (e: MouseEvent) => {
     if (!e.target || !openPreviewDialog) return;
@@ -120,8 +122,9 @@ export const updateSourcesFromDataUrl = (elementId: string, openPreviewDialog = 
 
     url = DOMPurify.sanitize(url);
     const filename = url.split('/').pop() || 'File';
+    const id = nanoid();
 
-    attachments.push({ url, filename, name: filename, contentType });
+    attachments.push({ id, url, filename, name: filename, contentType });
 
     switch (contentType) {
       case 'image': {

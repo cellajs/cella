@@ -16,7 +16,7 @@ import * as Tooltip from '~/modules/ui/tooltip';
 
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import router from '~/lib/router';
-import { type CarouselAttachment, openAttachmentDialog } from '~/modules/attachments/helpers';
+import { openAttachmentDialog } from '~/modules/attachments/helpers';
 import type { Member } from '~/modules/memberships/types';
 import { useUIStore } from '~/store/ui';
 
@@ -34,8 +34,10 @@ import { CustomSlashMenu } from '~/modules/common/blocknote/custom-slash-menu';
 import { compareIsContentSame, focusEditor, getContentAsString, getUrlFromProps, handleSubmitOnEnter } from '~/modules/common/blocknote/helpers';
 import type { BasicBlockBaseTypes, BasicFileBlockTypes, CellaCustomBlockTypes } from '~/modules/common/blocknote/types';
 
+import type { CarouselItemData } from '~/modules/attachments/carousel';
 import '~/modules/common/blocknote/app-specific-custom/styles.css';
 import '~/modules/common/blocknote/styles.css';
+import { nanoid } from '~/utils/nanoid';
 
 type BlockNoteProps = {
   id: string;
@@ -213,7 +215,7 @@ export const BlockNote = ({
 
     const url = getUrlFromProps(props);
     if (!allowedTypes.includes(type) || !url || url.length === 0) return;
-    const newAttachments: CarouselAttachment[] = [];
+    const newAttachments: CarouselItemData[] = [];
 
     // Collect attachments based on valid file types
     editor.forEachBlock(({ type, props }) => {
@@ -221,7 +223,7 @@ export const BlockNote = ({
 
       if (allowedTypes.includes(type) && blockUrl && blockUrl.length > 0) {
         const filename = blockUrl.split('/').pop() || 'File';
-        newAttachments.push({ url: blockUrl, filename, name: filename, contentType: type });
+        newAttachments.push({ id: nanoid(), url: blockUrl, filename, name: filename, contentType: type });
       }
       return true;
     });

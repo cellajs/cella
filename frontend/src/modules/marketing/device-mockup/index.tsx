@@ -1,16 +1,17 @@
 import { useInView } from 'react-intersection-observer';
 
-import AttachmentsCarousel from '~/modules/attachments/carousel';
+import AttachmentsCarousel, { type CarouselItemData } from '~/modules/attachments/carousel';
 import { useUIStore } from '~/store/ui';
 import { cn } from '~/utils/cn';
 
 import DeviceFrame from '~/modules/marketing/device-mockup/frame';
 
 type DeviceType = 'mobile' | 'tablet' | 'pc';
+type MockupItem = Pick<CarouselItemData, 'url' | 'id' | 'name'>;
 
 interface DeviceMockupProps {
-  lightItems?: { url: string; name?: string }[];
-  darkItems?: { url: string; name?: string }[];
+  lightItems?: MockupItem[];
+  darkItems?: MockupItem[];
   className?: string;
   type: DeviceType;
 }

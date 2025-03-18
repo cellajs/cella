@@ -1,17 +1,14 @@
 import { onlineManager } from '@tanstack/react-query';
 import { t } from 'i18next';
-import AttachmentsCarousel from '~/modules/attachments/carousel';
+import AttachmentsCarousel, { type CarouselItemData } from '~/modules/attachments/carousel';
 import { type DialogData, useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { toaster } from '~/modules/common/toaster';
 
-export type CarouselAttachment = { url: string; filename?: string; name?: string; contentType?: string };
-
 export const openAttachmentDialog = (
   attachmentIndex: number,
-  attachments: CarouselAttachment[],
+  attachments: CarouselItemData[],
   saveInSearchParams = false,
-  // TODO this is not used anywhere?
-  dialogOptions?: Omit<DialogData, 'id'>,
+  dialogOptions?: Pick<DialogData, 'removeCallback'>,
 ) => {
   if (!onlineManager.isOnline()) return toaster(t('common:action.offline.text'), 'warning');
 

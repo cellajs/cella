@@ -1,7 +1,6 @@
 import { Grab, Hand, Minus, Plus, RefreshCw, RotateCwSquare } from 'lucide-react';
 import type React from 'react';
 import { forwardRef, useEffect, useRef, useState } from 'react';
-import { dispatchCustomEvent } from '~/lib/custom-events';
 import ImageViewer from '~/modules/attachments/render-image/image-viewer';
 import { TooltipButton } from '~/modules/common/tooltip-button';
 import { Button } from '~/modules/ui/button';
@@ -15,7 +14,7 @@ type RenderImageProps = {
   resetImageState?: boolean;
   imageClass?: string;
   showButtons?: boolean;
-  togglePanState?: boolean;
+  togglePanState?: (state: boolean) => void;
 };
 
 interface ControlButtonProps {
@@ -34,7 +33,7 @@ const ControlButton = ({ tooltipContent, onClick, icon, className }: ControlButt
 );
 
 const RenderImage = forwardRef<HTMLImageElement, RenderImageProps>(
-  ({ image, alt, resetImageState, showButtons, imageClass, togglePanState = false }, forwardedRef) => {
+  ({ image, alt, resetImageState, showButtons, imageClass, togglePanState }, forwardedRef) => {
     const [dx, setDx] = useState(0);
     const [dy, setDy] = useState(0);
 
@@ -100,12 +99,12 @@ const RenderImage = forwardRef<HTMLImageElement, RenderImageProps>(
             <ControlButton tooltipContent="Zoom out" onClick={zoomOut} icon={<Minus size={14} />} className="border-r-0 " />
             <ControlButton tooltipContent="Rotate right" onClick={rotateRight} icon={<RotateCwSquare size={14} />} className="border-r-0 " />
 
-            {togglePanState !== undefined && (
+            {togglePanState && (
               <ControlButton
                 tooltipContent="Toggle pan view"
                 onClick={() => {
                   setPanState(!panState);
-                  dispatchCustomEvent('toggleCarouselDrag', panState);
+                  togglePanState(panState);
                 }}
                 icon={panState ? <Grab size={14} /> : <Hand size={14} />}
                 className="border-r-0 "

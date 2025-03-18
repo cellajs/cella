@@ -20,10 +20,11 @@ interface PageHeaderProps {
   panel?: React.ReactNode;
   parent?: { id: string; fetchFunc: (idOrSlug: string) => Promise<LimitedEntity> };
   disableScroll?: boolean;
+  coverUpdateCallback: (bannerUrl: string) => void;
 }
 
 // PageHeader Component
-const PageHeader = ({ title, id, isAdmin, thumbnailUrl, bannerUrl, type, panel, parent, disableScroll }: PageHeaderProps) => {
+const PageHeader = ({ title, id, isAdmin, thumbnailUrl, bannerUrl, type, panel, parent, disableScroll, coverUpdateCallback }: PageHeaderProps) => {
   const [fetchedParent, setFetchedParent] = useState<LimitedEntity | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<boolean>(false);
@@ -50,7 +51,7 @@ const PageHeader = ({ title, id, isAdmin, thumbnailUrl, bannerUrl, type, panel, 
 
   return (
     <div className="relative">
-      <PageCover type={type} id={id} url={bannerUrl} canUpdate={isAdmin} />
+      <PageCover id={id} url={bannerUrl} canUpdate={isAdmin} coverUpdateCallback={coverUpdateCallback} />
 
       <div className="absolute flex bottom-0 w-full h-16 bg-background/50 backdrop-blur-xs px-1 py-1" ref={scrollToRef}>
         <AvatarWrap
