@@ -28,7 +28,7 @@ const DeleteRequests = ({ requests, callback, dialog: isDialog }: Props) => {
     _deleteRequests(requests.map((req) => req.id));
   };
 
-  return <DeleteForm onDelete={onDelete} onCancel={removeDialog} pending={isPending} />;
+  return <DeleteForm onDelete={onDelete} onCancel={() => removeDialog()} pending={isPending} />;
 };
 
 export default DeleteRequests;

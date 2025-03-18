@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next';
 import { lazyWithPreload } from 'react-lazy-with-preload';
 import { AvatarWrap, type AvatarWrapProps } from '~/modules/common/avatar-wrap';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
+import Spinner from '~/modules/common/spinner';
 import { toaster } from '~/modules/common/toaster';
 import { Button } from '~/modules/ui/button';
 
@@ -25,7 +26,7 @@ export const UploadAvatar = ({ type, id, name, url, setUrl }: UploadAvatarProps)
     if (!onlineManager.isOnline()) return toaster(t('common:action.offline.text'), 'warning');
 
     useDialoger.getState().create(
-      <Suspense>
+      <Suspense fallback={<Spinner className="my-44 h-12 w-12" noDelay />}>
         <UploadUppy
           isPublic
           uploadType="personal"

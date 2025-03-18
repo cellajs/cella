@@ -4,7 +4,7 @@ import Home from '~/modules/home';
 import { AppRoute } from '~/routes/base';
 import { useNavigationStore } from '~/store/navigation';
 
-const Welcome = lazy(() => import('~/modules/home/welcome'));
+const Welcome = lazy(() => import('~/modules/home/welcome-page'));
 
 export const HomeRoute = createRoute({
   path: '/',

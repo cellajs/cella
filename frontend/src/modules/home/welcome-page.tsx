@@ -1,14 +1,14 @@
 import { useNavigate } from '@tanstack/react-router';
 import { config } from 'config';
 import { useEffect, useState } from 'react';
-import type { OnboardingStates } from '~/modules/home/onboarding';
-import Onboarding from '~/modules/home/onboarding';
 import { OnboardingCompleted } from '~/modules/home/onboarding/completed';
+import type { OnboardingStates } from '~/modules/home/onboarding/steps';
+import Onboarding from '~/modules/home/onboarding/steps';
 import { Dialog, DialogContent, DialogHiddenTitle } from '~/modules/ui/dialog';
 import { useNavigationStore } from '~/store/navigation';
 import { isElementInteractive } from '~/utils/is-el-interactive';
 
-const Welcome = () => {
+const WelcomePage = () => {
   const navigate = useNavigate();
   const { finishedOnboarding } = useNavigationStore();
   const [onboarding, setOnboarding] = useState<OnboardingStates>(finishedOnboarding ? 'completed' : 'start');
@@ -47,4 +47,4 @@ const Welcome = () => {
     </>
   );
 };
-export default Welcome;
+export default WelcomePage;

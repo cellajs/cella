@@ -12,7 +12,7 @@ export const DeleteForm = ({ onDelete, onCancel, pending, allowOfflineDelete = f
   const { t } = useTranslation();
 
   return (
-    <div className="flex flex-col-reverse sm:flex-row gap-2">
+    <div className="flex flex-col sm:flex-row gap-2">
       <SubmitButton variant="destructive" allowOfflineDelete={allowOfflineDelete} onClick={onDelete} aria-label="Delete" loading={pending}>
         {t('common:delete')}
       </SubmitButton>

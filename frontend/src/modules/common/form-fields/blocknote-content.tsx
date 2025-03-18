@@ -6,6 +6,7 @@ import UppyFilePanel from '~/modules/attachments/upload/blocknote-upload-panel';
 import { BlockNote } from '~/modules/common/blocknote';
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
 
+import '@blocknote/shadcn/style.css';
 import '~/modules/common/blocknote/app-specific-custom/styles.css';
 import '~/modules/common/blocknote/styles.css';
 
