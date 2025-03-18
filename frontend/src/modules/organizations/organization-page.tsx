@@ -7,9 +7,9 @@ import { PageNav, type PageTab } from '~/modules/common/page/page-nav';
 import { OrganizationRoute } from '~/routes/organizations';
 
 import { Suspense, lazy } from 'react';
+import { toaster } from '~/modules/common/toaster';
 import { organizationQueryOptions, useOrganizationUpdateMutation } from '~/modules/organizations/query';
 import { useUserStore } from '~/store/user';
-import { toaster } from '../common/toaster';
 
 const LeaveButton = lazy(() => import('~/modules/organizations/leave-button'));
 
