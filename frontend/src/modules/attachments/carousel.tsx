@@ -4,7 +4,6 @@ import Autoplay from 'embla-carousel-autoplay';
 import { Download, ExternalLink, X } from 'lucide-react';
 import { useState } from 'react';
 import useDownloader from 'react-use-downloader';
-import { useEventListener } from '~/hooks/use-event-listener';
 import { clearAttachmentDialogSearchParams } from '~/modules/attachments/attachment-dialog-handler';
 import { AttachmentRender } from '~/modules/attachments/attachment-render';
 import FilePlaceholder from '~/modules/attachments/file-placeholder';
@@ -46,10 +45,10 @@ const AttachmentsCarousel = ({ items = [], isDialog = false, itemIndex = 0, save
 
   const { download, isInProgress } = useDownloader();
 
-  useEventListener('toggleCarouselDrag', (e) => {
-    const shouldWatchDrag = e.detail && items.length > 1;
+  const togglePanState = (state: boolean) => {
+    const shouldWatchDrag = state && items.length > 1;
     setWatchDrag(shouldWatchDrag);
-  });
+  };
 
   const updateSearchParam = (newItem: CarouselItemData) => {
     if (!saveInSearchParams) return;
@@ -140,7 +139,7 @@ const AttachmentsCarousel = ({ items = [], isDialog = false, itemIndex = 0, save
                 showButtons={currentItemIndex === idx}
                 url={url}
                 altName={`Slide ${idx}`}
-                togglePanState
+                togglePanState={togglePanState}
               />
             </CarouselItem>
           );

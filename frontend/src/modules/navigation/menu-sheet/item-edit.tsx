@@ -4,7 +4,6 @@ import { motion } from 'motion/react';
 import { useTranslation } from 'react-i18next';
 import { env } from '~/env';
 import { useMutation } from '~/hooks/use-mutations';
-import { dispatchCustomEvent } from '~/lib/custom-events';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import Spinner from '~/modules/common/spinner';
 import { toaster } from '~/modules/common/toaster';
@@ -42,12 +41,10 @@ export const MenuItemEdit = ({ item }: MenuItemEditProps) => {
     },
     onSuccess: (updatedMembership, _, context) => {
       const { toastMessage } = context;
-      const updatedEntity = { ...item, membership: { ...item.membership, ...updatedMembership } };
-
-      updateMenuItem(updatedEntity);
-      // To be able to update, add a listener to manipulate data that has been changed in the menu(like mute or archive entities )
-      dispatchCustomEvent('menuEntityChange', { entity: item.entity, membership: updatedMembership });
       if (toastMessage) toaster(toastMessage, 'success');
+
+      const updatedEntity = { ...item, membership: { ...item.membership, ...updatedMembership } };
+      updateMenuItem(updatedEntity);
     },
     onError: () => getAndSetMenu(),
   });

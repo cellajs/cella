@@ -7,10 +7,9 @@ import { PageNav, type PageTab } from '~/modules/common/page/page-nav';
 import { OrganizationRoute } from '~/routes/organizations';
 
 import { Suspense, lazy } from 'react';
-import { toast } from 'sonner';
-import { useEventListener } from '~/hooks/use-event-listener';
 import { organizationQueryOptions, useOrganizationUpdateMutation } from '~/modules/organizations/query';
 import { useUserStore } from '~/store/user';
+import { toaster } from '../common/toaster';
 
 const LeaveButton = lazy(() => import('~/modules/organizations/leave-button'));
 
@@ -33,17 +32,15 @@ const OrganizationPage = () => {
 
   const { mutate } = useOrganizationUpdateMutation();
 
-  useEventListener('updateEntityCover', (e) => {
-    const { bannerUrl, entity } = e.detail;
-    if (entity !== organization.entity) return;
+  const coverUpdateCallback = (bannerUrl: string) => {
     mutate(
       { idOrSlug: organization.slug, json: { bannerUrl } },
       {
-        onSuccess: () => toast.success(t('common:success.upload_cover')),
-        onError: () => toast.error(t('error:image_upload_failed')),
+        onSuccess: () => toaster(t('common:success.upload_cover'), 'success'),
+        onError: () => toaster(t('error:image_upload_failed'), 'error'),
       },
     );
-  });
+  };
 
   return (
     <>
@@ -54,6 +51,7 @@ const OrganizationPage = () => {
         isAdmin={isAdmin}
         thumbnailUrl={organization.thumbnailUrl}
         bannerUrl={organization.bannerUrl}
+        coverUpdateCallback={coverUpdateCallback}
         panel={
           organization.membership && (
             <Suspense>

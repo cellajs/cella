@@ -3,8 +3,6 @@ import { Link } from '@tanstack/react-router';
 import { UserCog } from 'lucide-react';
 import { Suspense, lazy } from 'react';
 import { useTranslation } from 'react-i18next';
-import { toast } from 'sonner';
-import { useEventListener } from '~/hooks/use-event-listener';
 import { PageHeader } from '~/modules/common/page/page-header';
 import { toaster } from '~/modules/common/toaster';
 import { useUpdateSelfMutation } from '~/modules/me/query';
@@ -28,17 +26,15 @@ const UserProfilePage = ({ user: baseUser, sheet, orgIdOrSlug }: { user: Limited
   const mutationFn = isSelf ? useUpdateSelfMutation : useUpdateUserMutation;
   const { mutate } = mutationFn();
 
-  useEventListener('updateEntityCover', (e) => {
-    const { bannerUrl, entity } = e.detail;
-    if (entity !== user.entity) return;
+  const coverUpdateCallback = (bannerUrl: string) => {
     mutate(
       { idOrSlug: currentUser.id, bannerUrl },
       {
-        onSuccess: () => toast.success(t('common:success.upload_cover')),
+        onSuccess: () => toaster(t('common:success.upload_cover'), 'success'),
         onError: () => toaster(t('error:image_upload_failed'), 'error'),
       },
     );
-  });
+  };
 
   return (
     <>
@@ -50,6 +46,7 @@ const UserProfilePage = ({ user: baseUser, sheet, orgIdOrSlug }: { user: Limited
         isAdmin={isSelf}
         thumbnailUrl={user.thumbnailUrl}
         bannerUrl={user.bannerUrl}
+        coverUpdateCallback={coverUpdateCallback}
         panel={
           isSelf && (
             <div className="max-xs:hidden flex items-center p-2">
