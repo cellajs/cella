@@ -1,17 +1,17 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useTranslation } from 'react-i18next';
-import type { z } from 'zod';
-
 import type { CheckedState } from '@radix-ui/react-checkbox';
 import { useMutation } from '@tanstack/react-query';
 import { Info, Send } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { Suspense, lazy, useMemo, useState } from 'react';
 import type { UseFormProps } from 'react-hook-form';
+import { useTranslation } from 'react-i18next';
+import type { z } from 'zod';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import { AlertWrap } from '~/modules/common/alert-wrap';
-import BlockNoteContent from '~/modules/common/form-fields/blocknote-content';
 import InputFormField from '~/modules/common/form-fields/input';
 import SelectRoles from '~/modules/common/form-fields/select-roles';
+import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
+import Spinner from '~/modules/common/spinner';
 import { toaster } from '~/modules/common/toaster';
 import { sendNewsletter } from '~/modules/system/api';
 import { Button, SubmitButton } from '~/modules/ui/button';
@@ -19,10 +19,7 @@ import { Checkbox } from '~/modules/ui/checkbox';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
 import { sendNewsletterBodySchema } from '#/modules/system/schema';
 
-import '@blocknote/shadcn/style.css';
-import '~/modules/common/blocknote/app-specific-custom/styles.css';
-import '~/modules/common/blocknote/styles.css';
-import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
+const BlockNoteContent = lazy(() => import('~/modules/common/form-fields/blocknote-content'));
 interface CreateNewsletterFormProps {
   organizationIds: string[];
 }
@@ -84,7 +81,9 @@ const CreateNewsletterForm = ({ organizationIds }: CreateNewsletterFormProps) =>
           required
         />
 
-        <BlockNoteContent control={form.control} name="content" required label={t('common:message')} blocknoteId="blocknote-newsletter" />
+        <Suspense fallback={<Spinner className="my-16 h-6 w-6 opacity-50" noDelay />}>
+          <BlockNoteContent control={form.control} name="content" required label={t('common:message')} blocknoteId="blocknote-newsletter" />
+        </Suspense>
 
         <FormField
           control={form.control}

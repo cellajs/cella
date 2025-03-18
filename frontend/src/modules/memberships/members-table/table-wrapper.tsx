@@ -24,7 +24,6 @@ const MembersTable = ({ entity, isSheet = false }: MembersTableProps) => {
 
   const dataTableRef = useRef<BaseTableMethods | null>(null);
 
-  // TODO we should create an entity page zustand store to keep this data in sync. so when pending, role or else changes, we can rerender this
   const isAdmin = entity.membership?.role === 'admin';
 
   // Table state

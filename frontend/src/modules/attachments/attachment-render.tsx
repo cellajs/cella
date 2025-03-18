@@ -55,11 +55,11 @@ export const AttachmentRender = ({
     );
   }
 
-  if (!url) return <Spinner />;
+  if (!url) return <Spinner className="h-12 w-12 mt-[45vh]" />;
 
   return (
     <div className={containerClassName}>
-      <Suspense fallback={<Spinner className="mt-[40vh]" />}>
+      <Suspense fallback={<Spinner className="mt-[45vh]" />}>
         {type.includes('image') &&
           (imagePanZoom && !isMobile ? (
             <ReactPanZoom image={url} alt={altName} togglePanState={togglePanState} imageClass={itemClassName} showButtons={showButtons} />

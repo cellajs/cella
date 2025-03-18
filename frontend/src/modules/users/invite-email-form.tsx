@@ -19,16 +19,43 @@ import type { EntityPage } from '~/modules/entities/types';
 import { Badge } from '~/modules/ui/badge';
 import { Button, SubmitButton } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
+import { queryClient } from '~/query/query-client';
+import { membersKeys } from '../memberships/query/options';
+import { organizationsKeys } from '../organizations/query';
 
 interface Props {
   entity?: EntityPage;
-  callback?: (emails: string[]) => void;
   dialog?: boolean;
   children?: React.ReactNode;
 }
 
-// When no entity type, it's a system invite
-const InviteEmailForm = ({ entity, callback, dialog: isDialog, children }: Props) => {
+/**
+ * Add new invites to the organization count and invalidate the invites table query.
+ */
+export const handleNewInvites = (emails: string[], entity: EntityPage) => {
+  queryClient.setQueryData(organizationsKeys.single(entity.slug), (oldEntity: EntityPage) => {
+    if (!oldEntity) return oldEntity;
+
+    return {
+      ...oldEntity,
+      counts: {
+        ...oldEntity.counts,
+        membership: {
+          ...oldEntity.counts?.membership,
+          pending: (oldEntity.counts?.membership?.pending ?? 0) + emails.length,
+        },
+      },
+    };
+  });
+  queryClient.invalidateQueries({
+    queryKey: membersKeys.invitesTable({ idOrSlug: entity.slug, entityType: entity.entity, orgIdOrSlug: entity.organizationId || entity.id }),
+  });
+};
+
+/**
+ * Form for inviting users by email.
+ */
+const InviteEmailForm = ({ entity, dialog: isDialog, children }: Props) => {
   const { t } = useTranslation();
   const { nextStep } = useStepper();
 
@@ -72,7 +99,7 @@ const InviteEmailForm = ({ entity, callback, dialog: isDialog, children }: Props
       nextStep?.();
       if (isDialog) useDialoger.getState().remove();
       toaster(t('common:success.user_invited'), 'success');
-      callback?.(emails);
+      if (entity) handleNewInvites(emails, entity);
     },
   });
 

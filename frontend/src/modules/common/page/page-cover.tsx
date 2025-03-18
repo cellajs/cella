@@ -8,6 +8,7 @@ import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { toaster } from '~/modules/common/toaster';
 import { Button } from '~/modules/ui/button';
 import { numberToColorClass } from '~/utils/number-to-color-class';
+import Spinner from '../spinner';
 
 // Lazy load the upload component
 const UploadUppy = lazyWithPreload(() => import('~/modules/attachments/upload/upload-uppy'));
@@ -35,7 +36,7 @@ const PageCover = memo(({ id, canUpdate, url, coverUpdateCallback }: PageCoverPr
     if (!onlineManager.isOnline()) return toaster(t('common:action.offline.text'), 'warning');
 
     dialog.create(
-      <Suspense>
+      <Suspense fallback={<Spinner className="my-44 h-12 w-12" noDelay />}>
         <UploadUppy
           isPublic={true}
           organizationId={id}

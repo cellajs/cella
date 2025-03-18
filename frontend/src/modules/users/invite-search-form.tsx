@@ -17,15 +17,17 @@ import type { EntityPage } from '~/modules/entities/types';
 import { Badge } from '~/modules/ui/badge';
 import { Button, SubmitButton } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
+import { handleNewInvites } from './invite-email-form';
 
 interface Props {
   entity?: EntityPage;
-  callback?: (emails: string[]) => void;
   dialog?: boolean;
 }
 
-// Invite members by searching for users which are already in the system
-const InviteSearchForm = ({ entity, callback, dialog: isDialog }: Props) => {
+/**
+ * Invite members by searching for users which are already in the system
+ */
+const InviteSearchForm = ({ entity, dialog: isDialog }: Props) => {
   const { t } = useTranslation();
   if (!entity) return null;
 
@@ -66,7 +68,7 @@ const InviteSearchForm = ({ entity, callback, dialog: isDialog }: Props) => {
       form.reset(undefined, { keepDirtyValues: true });
       if (isDialog) useDialoger.getState().remove();
       toaster(t('common:success.user_invited'), 'success');
-      callback?.(emails);
+      if (entity) handleNewInvites(emails, entity);
     },
   });
 

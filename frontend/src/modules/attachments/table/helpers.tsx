@@ -72,7 +72,7 @@ export const openAttachmentsUploadDialog = (organizationId: string) => {
   };
 
   useDialoger.getState().create(
-    <Suspense fallback={<Spinner className="my-44 h-12 w-12" />}>
+    <Suspense fallback={<Spinner noDelay className="my-44 h-12 w-12" />}>
       <UploadDialog organizationId={organizationId} />
     </Suspense>,
     {

@@ -28,7 +28,7 @@ const UserSheet = ({ idOrSlug, orgIdOrSlug }: { idOrSlug: string; orgIdOrSlug?: 
   if (!cachedUser && isLoading) {
     return (
       <div className="block">
-        <Spinner className="mt-[40vh] h-10 w-10" />
+        <Spinner className="mt-[45vh] h-10 w-10" />
       </div>
     );
   }

@@ -63,7 +63,7 @@ export const UserSettingsRoute = createRoute({
   },
   component: () => {
     return (
-      <Suspense fallback={<Spinner className="mt-[40vh] h-10 w-10" />}>
+      <Suspense fallback={<Spinner className="mt-[45vh] h-10 w-10" />}>
         <UserSettingsPage />
       </Suspense>
     );

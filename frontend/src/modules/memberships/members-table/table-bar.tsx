@@ -15,18 +15,14 @@ import { FocusView } from '~/modules/common/focus-view';
 import SelectRole from '~/modules/common/form-fields/select-role';
 import { toaster } from '~/modules/common/toaster';
 import UnsavedBadge from '~/modules/common/unsaved-badge';
-import type { EntityPage } from '~/modules/entities/types';
 import { getMembers } from '~/modules/memberships/api';
 import type { MemberSearch, MembersTableProps } from '~/modules/memberships/members-table/table-wrapper';
 import { MembershipInvitations } from '~/modules/memberships/pending-table/invites-count';
-import { membersKeys } from '~/modules/memberships/query/options';
 import RemoveMembersForm from '~/modules/memberships/remove-member-form';
 import type { Member } from '~/modules/memberships/types';
-import { organizationsKeys } from '~/modules/organizations/query';
 import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
 import InviteUsers from '~/modules/users/invite-users';
-import { queryClient } from '~/query/query-client';
 import { nanoid } from '~/utils/nanoid';
 
 type MembersTableBarProps = MembersTableProps & BaseTableMethods & BaseTableBarProps<Member, MemberSearch>;
@@ -97,7 +93,7 @@ export const MembersTableBar = ({
   const openInviteDialog = () => {
     if (!onlineManager.isOnline()) return toaster(t('common:action.offline.text'), 'warning');
 
-    createDialog(<InviteUsers entity={entity} mode={null} dialog callback={handleNewInvites} />, {
+    createDialog(<InviteUsers entity={entity} mode={null} dialog />, {
       id: 'invite-users',
       drawerOnMobile: false,
       className: 'w-auto shadow-none relative z-60 max-w-4xl',
@@ -105,27 +101,6 @@ export const MembersTableBar = ({
       title: t('common:invite'),
       titleContent: <UnsavedBadge title={t('common:invite')} />,
       description: `${t('common:invite_users.text')}`,
-    });
-  };
-
-  const handleNewInvites = (emails: string[]) => {
-    // TODO ?
-    queryClient.setQueryData(organizationsKeys.single(entity.slug), (oldEntity: EntityPage) => {
-      if (!oldEntity) return oldEntity;
-
-      return {
-        ...oldEntity,
-        counts: {
-          ...oldEntity.counts,
-          membership: {
-            ...oldEntity.counts?.membership,
-            pending: (oldEntity.counts?.membership?.pending ?? 0) + emails.length,
-          },
-        },
-      };
-    });
-    queryClient.invalidateQueries({
-      queryKey: membersKeys.invitesTable({ idOrSlug: entity.slug, entityType: entity.entity, orgIdOrSlug: entity.organizationId || entity.id }),
     });
   };
 
