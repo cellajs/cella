@@ -19,18 +19,18 @@ const useTransformOnMenuItems = (transform: (items: UserMenuItem[]) => UserMenuI
 
 /**
  * Adds a new menu item to the user's navigation menu.
- * If the `parentSlug` is provided, the new item will be added under the parent menu item.
+ * If `parentIdOrSlug` is provided, new item will be added under parent menu item.
  *
  * @param newEntity - New menu item to be added.
- * @param sectionName - Name of section in the menu where the item will be added.
- * @param parentSlug - Slug of the parent item, if the new item should be a submenu (optional).
+ * @param sectionName - Name of section in  menu where  item will be added.
+ * @param parentIdOrSlug -  ID or Slug of  parent item, if new item should be a submenu (optional).
  */
-export const addMenuItem = (newEntity: UserMenuItem, sectionName: keyof UserMenu, parentSlug?: string) => {
+export const addMenuItem = (newEntity: UserMenuItem, sectionName: keyof UserMenu, parentIdOrSlug?: string) => {
   const menu = useNavigationStore.getState().menu;
 
   const add = (items: UserMenuItem[]): UserMenuItem[] => {
     return items.map((item) => {
-      if (!parentSlug || item.slug !== parentSlug) return item;
+      if (!parentIdOrSlug || item.slug !== parentIdOrSlug || item.id !== parentIdOrSlug) return item;
 
       // If parent is found, add new entity to its submenu
       return {
@@ -40,7 +40,7 @@ export const addMenuItem = (newEntity: UserMenuItem, sectionName: keyof UserMenu
     });
   };
 
-  const updatedMenuSection = parentSlug ? add(menu[sectionName]) : [...menu[sectionName], { ...newEntity, submenu: [] }];
+  const updatedMenuSection = parentIdOrSlug ? add(menu[sectionName]) : [...menu[sectionName], { ...newEntity, submenu: [] }];
 
   useNavigationStore.setState({
     menu: {
