@@ -39,7 +39,7 @@ const CreateNewsletterForm = ({ organizationIds }: CreateNewsletterFormProps) =>
   const formOptions: UseFormProps<FormValues> = useMemo(
     () => ({
       resolver: zodResolver(formSchema),
-      defaultValues: { organizationIds, subject: '', roles: [], content: '' },
+      defaultValues: { organizationIds: [], subject: '', roles: [], content: '' },
     }),
     [],
   );
@@ -60,10 +60,15 @@ const CreateNewsletterForm = ({ organizationIds }: CreateNewsletterFormProps) =>
   });
 
   const onSubmit = (body: FormValues) => {
+    // Set organizationIds here to avoind having them in draft
+    body.organizationIds = organizationIds;
+
     _sendNewsletter({ body, toSelf: !!testOnly });
   };
 
-  const cancel = () => form.reset();
+  const cancel = () => {
+    form.reset();
+  };
 
   if (form.loading) return null;
 
@@ -104,12 +109,18 @@ const CreateNewsletterForm = ({ organizationIds }: CreateNewsletterFormProps) =>
           </AlertWrap>
         )}
 
-        <div className="flex max-sm:flex-col gap-2 items-center">
-          <SubmitButton loading={isPending} className="max-sm:w-full">
+        <div className="flex max-sm:flex-col max-sm:items-stretch gap-2 items-center">
+          <SubmitButton loading={isPending}>
             <Send size={16} className="mr-2" />
             {testOnly ? t('common:send_test_email') : t('common:send')}
           </SubmitButton>
-          <Button type="reset" variant="secondary" className="max-sm:w-full" aria-label={t('common:cancel')} onClick={cancel}>
+          <Button
+            type="reset"
+            variant="secondary"
+            className={form.formState.isDirty ? '' : 'invisible'}
+            aria-label={t('common:cancel')}
+            onClick={cancel}
+          >
             {t('common:cancel')}
           </Button>
           <div className="max-sm:mt-2 flex gap-2 items-center">

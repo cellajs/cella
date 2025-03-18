@@ -23,7 +23,7 @@ const DeleteOrganizations = ({ organizations, callback, dialog: isDialog }: Prop
     });
   };
 
-  return <DeleteForm onDelete={onDelete} onCancel={removeDialog} pending={isPending} />;
+  return <DeleteForm onDelete={onDelete} onCancel={() => removeDialog()} pending={isPending} />;
 };
 
 export default DeleteOrganizations;

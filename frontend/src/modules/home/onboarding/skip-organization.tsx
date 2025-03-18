@@ -21,7 +21,7 @@ export const SkipOrganization = () => {
   };
 
   return (
-    <div className="flex flex-col-reverse sm:flex-row gap-2">
+    <div className="flex sm:flex-row gap-2">
       <Button type="submit" variant="destructive" onClick={onDelete} aria-label="Skip">
         {t('common:skip')}
       </Button>

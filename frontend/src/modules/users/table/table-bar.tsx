@@ -68,7 +68,6 @@ export const UsersTableBar = ({ total, selected, searchVars, setSearch, columns,
         }}
       />,
       {
-        drawerOnMobile: false,
         className: 'max-w-xl',
         title: t('common:delete'),
         description: t('common:confirm.delete_resource', {
