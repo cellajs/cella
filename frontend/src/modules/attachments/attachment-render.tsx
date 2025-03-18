@@ -19,7 +19,7 @@ interface AttachmentRenderProps {
   showButtons?: boolean;
   itemClassName?: string;
   containerClassName?: string;
-  togglePanState?: boolean;
+  togglePanState?: (state: boolean) => void;
 }
 
 export const AttachmentRender = ({

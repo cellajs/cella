@@ -1,10 +1,9 @@
 import { onlineManager } from '@tanstack/react-query';
-import { type Entity, config } from 'config';
+import { config } from 'config';
 import { Upload } from 'lucide-react';
 import { Suspense, memo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { lazyWithPreload } from 'react-lazy-with-preload';
-import { dispatchCustomEvent } from '~/lib/custom-events';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { toaster } from '~/modules/common/toaster';
 import { Button } from '~/modules/ui/button';
@@ -15,12 +14,12 @@ const UploadUppy = lazyWithPreload(() => import('~/modules/attachments/upload/up
 
 export interface PageCoverProps {
   id: string;
-  type: Entity;
   canUpdate: boolean;
   url?: string | null;
+  coverUpdateCallback: (bannerUrl: string) => void;
 }
 
-const PageCover = memo(({ type, id, canUpdate, url }: PageCoverProps) => {
+const PageCover = memo(({ id, canUpdate, url, coverUpdateCallback }: PageCoverProps) => {
   const { t } = useTranslation();
   const dialog = useDialoger();
 
@@ -28,7 +27,7 @@ const PageCover = memo(({ type, id, canUpdate, url }: PageCoverProps) => {
 
   const setUrl = (bannerUrl: string) => {
     setCoverUrl(bannerUrl);
-    dispatchCustomEvent('updateEntityCover', { bannerUrl, entity: type });
+    coverUpdateCallback(bannerUrl);
   };
 
   // Open the upload dialog

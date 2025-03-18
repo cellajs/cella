@@ -1,5 +1,6 @@
 import { config } from 'config';
 import { Building2, Cloud, Github, Users } from 'lucide-react';
+import { nanoid } from '~/utils/nanoid';
 
 /*************************************************************************************************
  * Nav
@@ -114,12 +115,12 @@ export const counts = [
 export const whyItems = [{ id: 'implementation-ready' }, { id: 'prebuilt-endpoints' }, { id: 'dedicated-community' }];
 
 export const whyLightSlides = [
-  { url: '/static/screenshots/system-page.png', name: 'System page', filename: 'system-page.png', contentType: 'image/png' },
-  { url: '/static/screenshots/org-page.png', name: 'Organization page', filename: 'org-page.png', contentType: 'image/png' },
-  { url: '/static/screenshots/settings.png', name: 'User settings page', filename: 'settings.png', contentType: 'image/png' },
+  { id: nanoid(), url: '/static/screenshots/system-page.png', name: 'System page', filename: 'system-page.png', contentType: 'image/png' },
+  { id: nanoid(), url: '/static/screenshots/org-page.png', name: 'Organization page', filename: 'org-page.png', contentType: 'image/png' },
+  { id: nanoid(), url: '/static/screenshots/settings.png', name: 'User settings page', filename: 'settings.png', contentType: 'image/png' },
 ];
 export const whyDarkSlides = [
-  { url: '/static/screenshots/system-page-dark.png', name: 'System page', filename: 'system-page-dark.png', contentType: 'image/png' },
-  { url: '/static/screenshots/org-page-dark.png', name: 'Organization page', filename: 'org-page-dark.png', contentType: 'image/png' },
-  { url: '/static/screenshots/settings-dark.png', name: 'User settings page', filename: 'settings-dark.png', contentType: 'image/png' },
+  { id: nanoid(), url: '/static/screenshots/system-page-dark.png', name: 'System page', filename: 'system-page-dark.png', contentType: 'image/png' },
+  { id: nanoid(), url: '/static/screenshots/org-page-dark.png', name: 'Organization page', filename: 'org-page-dark.png', contentType: 'image/png' },
+  { id: nanoid(), url: '/static/screenshots/settings-dark.png', name: 'User settings page', filename: 'settings-dark.png', contentType: 'image/png' },
 ];
