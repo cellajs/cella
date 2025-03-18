@@ -96,10 +96,14 @@ const InviteEmailForm = ({ entity, dialog: isDialog, children }: Props) => {
     },
     onSuccess: (_, { emails }) => {
       form.reset(undefined, { keepDirtyValues: true });
-      nextStep?.();
+
       if (isDialog) useDialoger.getState().remove();
       toaster(t('common:success.user_invited'), 'success');
       if (entity) handleNewInvites(emails, entity);
+
+      // Since this form is also used in onboarding, we need to call the next step
+      // This should ideally be done through the callback, but we need to refactor stepper
+      nextStep?.();
     },
   });
 
@@ -137,12 +141,13 @@ const InviteEmailForm = ({ entity, dialog: isDialog, children }: Props) => {
         />
 
         <div className="flex flex-col sm:flex-row gap-2">
-          {children}
           <SubmitButton loading={isPending} className="relative">
             {!!form.getValues('emails')?.length && <Badge context="button">{form.getValues('emails')?.length}</Badge>}{' '}
             <Send size={16} className="mr-2" />
             {t('common:invite')}
           </SubmitButton>
+          {children}
+
           {!children && form.formState.isDirty && (
             <Button type="reset" variant="secondary" onClick={() => form.reset()}>
               {t('common:cancel')}

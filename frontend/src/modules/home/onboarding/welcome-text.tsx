@@ -4,11 +4,11 @@ import { useTranslation } from 'react-i18next';
 import { TextEffect } from '~/modules/common/text-effect';
 import { Button } from '~/modules/ui/button';
 
-interface OnboardingStartProps {
+interface WelcomeTextProps {
   onboardingToStepper: () => void;
 }
 
-export const OnboardingStart = ({ onboardingToStepper }: OnboardingStartProps) => {
+export const WelcomeText = ({ onboardingToStepper }: WelcomeTextProps) => {
   const { t } = useTranslation();
 
   return (

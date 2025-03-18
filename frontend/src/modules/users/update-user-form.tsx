@@ -24,6 +24,7 @@ import { useUpdateUserMutation } from '~/modules/users/query';
 import type { User } from '~/modules/users/types';
 import { useUserStore } from '~/store/user';
 import { cleanUrl } from '~/utils/clean-url';
+import { useStepper } from '../common/stepper';
 
 interface UpdateUserFormProps {
   user: User;
@@ -41,6 +42,7 @@ const UpdateUserForm = ({ user, callback, sheet: isSheet, hiddenFields, children
   const { t } = useTranslation();
   const { user: currentUser } = useUserStore();
   const isSelf = currentUser.id === user.id;
+  const { nextStep } = useStepper();
 
   // Hide fields if requested
   if (hiddenFields) {
@@ -85,6 +87,10 @@ const UpdateUserForm = ({ user, callback, sheet: isSheet, hiddenFields, children
 
           form.reset(updatedUser);
           if (isSheet) useSheeter.getState().remove(formContainerId);
+
+          // Since this form is also used in onboarding, we need to call the next step
+          // This should ideally be done through the callback, but we need to refactor stepper
+          nextStep?.();
 
           callback?.(updatedUser);
         },

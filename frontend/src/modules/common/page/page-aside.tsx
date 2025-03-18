@@ -27,7 +27,7 @@ export const PageAside = <T extends PageTab>({ tabs, className }: PageAsideProps
     // Remove hash temporarily to make sure it navigates to section that was already in URL
     navigate({ to: '.', hash: 'top', replace: true });
 
-    // TODO fix while Link component doesn't support hash scroll into view
+    // TODO temp fix while Link component doesn't support hash scroll into view
     const anchor = document.getElementById(id);
     anchor?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 
