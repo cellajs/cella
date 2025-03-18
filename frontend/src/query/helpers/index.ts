@@ -22,7 +22,7 @@ export const getOffset = <T>(queryKey: QueryKey) => {
   //Query was invalidated and not re-fetched return 0
   if (!queryState || queryState.isInvalidated || queryState.status === 'pending') return 0;
 
-  const [[_, data]] = queryClient.getQueriesData<InfiniteQueryData<T>>({ queryKey, exact: true, stale: false }) || [];
+  const [[_, data] = []] = queryClient.getQueriesData<InfiniteQueryData<T>>({ queryKey, exact: true, stale: false }) || [];
   if (!data) return 0;
 
   return data.pages.reduce((total, page) => total + page.items.length, 0) ?? 0;
