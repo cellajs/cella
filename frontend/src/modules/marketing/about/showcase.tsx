@@ -3,6 +3,7 @@ import { ArrowUpRight } from 'lucide-react';
 import { Suspense, lazy } from 'react';
 import { useTranslation } from 'react-i18next';
 import Spinner from '~/modules/common/spinner';
+import { nanoid } from '~/utils/nanoid';
 
 const DeviceMockup = lazy(() => import('~/modules/marketing/device-mockup'));
 
@@ -10,12 +11,12 @@ const showcaseItems = [{ id: 'raak', url: 'https://raak.dev' }];
 
 // Slides for light and dark themes
 const lightItems = [
-  { url: '/static/images/showcases/raak-1.png', contentType: 'image/png' },
-  { url: '/static/images/showcases/raak-2.png', contentType: 'image/png' },
+  { id: nanoid(), url: '/static/images/showcases/raak-1.png', contentType: 'image/png' },
+  { id: nanoid(), url: '/static/images/showcases/raak-2.png', contentType: 'image/png' },
 ];
 const darkItems = [
-  { url: '/static/images/showcases/raak-1-dark.png', contentType: 'image/png' },
-  { url: '/static/images/showcases/raak-2-dark.png', contentType: 'image/png' },
+  { id: nanoid(), url: '/static/images/showcases/raak-1-dark.png', contentType: 'image/png' },
+  { id: nanoid(), url: '/static/images/showcases/raak-2-dark.png', contentType: 'image/png' },
 ];
 
 const Showcase = () => {

@@ -14,7 +14,7 @@ import { Button } from '~/modules/ui/button';
 import { Carousel as BaseCarousel, CarouselContent, CarouselDots, CarouselItem, CarouselNext, CarouselPrevious } from '~/modules/ui/carousel';
 import { cn } from '~/utils/cn';
 
-type CarouselItemData = { url: string; id?: string; name?: string; filename?: string; contentType?: string };
+export type CarouselItemData = { id: string; url: string; name?: string; filename?: string; contentType?: string };
 interface CarouselPropsBase {
   itemIndex?: number;
   items?: CarouselItemData[];
@@ -36,12 +36,13 @@ const AttachmentsCarousel = ({ items = [], isDialog = false, itemIndex = 0, save
   const removeDialog = useDialoger((state) => state.remove);
 
   const { attachmentDialogId } = useSearch({ strict: false });
-  const [currentItem, setCurrentItem] = useState(items.find((item) => item.url === attachmentDialogId) || items[itemIndex]);
+  const [currentItem, setCurrentItem] = useState(items.find((item) => item.id === attachmentDialogId) || items[itemIndex]);
   const [watchDrag, setWatchDrag] = useState(items.length > 1);
 
   const itemClass = isDialog ? 'object-contain' : '';
   const autoplay = Autoplay({ delay: 4000, stopOnInteraction: true, stopOnMouseEnter: true });
-  const currentItemIndex = items.findIndex((item) => item.url === currentItem?.url) || itemIndex;
+  const currentItemIndex = items.findIndex((item) => item.id === currentItem?.id);
+  const resolvedIndex = currentItemIndex !== -1 ? currentItemIndex : itemIndex;
 
   const { download, isInProgress } = useDownloader();
 
@@ -136,7 +137,7 @@ const AttachmentsCarousel = ({ items = [], isDialog = false, itemIndex = 0, save
                 itemClassName={itemClass}
                 type={contentType}
                 imagePanZoom={isDialog}
-                showButtons={currentItemIndex === idx}
+                showButtons={resolvedIndex === idx}
                 url={url}
                 altName={`Slide ${idx}`}
                 togglePanState={togglePanState}
