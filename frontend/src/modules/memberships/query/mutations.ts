@@ -32,9 +32,9 @@ export const useMemberUpdateMutation = () =>
       // Store previous query data for rollback if an error occurs
       const context = { queryContext: [] as MemberContextProp[], toastMessage: t('common:success.update_item', { item: t('common:membership') }) };
 
-      if (archived) {
+      if (archived !== undefined) {
         context.toastMessage = t(`common:success.${archived ? 'archived' : 'restore'}_resource`, { resource: t(`common:${entityType}`) });
-      } else if (muted) {
+      } else if (muted !== undefined) {
         context.toastMessage = t(`common:success.${muted ? 'mute' : 'unmute'}_resource`, { resource: t(`common:${entityType}`) });
       } else if (role) context.toastMessage = t('common:success.update_item', { item: t('common:role') });
       else if (order !== undefined) context.toastMessage = t('common:success.update_item', { item: t('common:order') });
@@ -71,6 +71,14 @@ export const useMemberUpdateMutation = () =>
       return context;
     },
     onSuccess: async (updatedMembership, { idOrSlug, entityType, orgIdOrSlug }, { toastMessage }) => {
+      // Update membership of ContextEntity query that was fetched after success
+      const queryKey = contextEntityCacheKeys[entityType];
+      const mutateCache = useMutateQueryData(queryKey);
+      mutateCache.updateMembership([updatedMembership], entityType);
+
+      // To update membership after success
+      updateMenuItemMembership(updatedMembership, idOrSlug, entityType);
+
       // Get affected queries
       const exactKey = membersKeys.table({ idOrSlug, entityType, orgIdOrSlug });
       const similarKey = membersKeys.similar({ idOrSlug, entityType, orgIdOrSlug });
@@ -84,9 +92,6 @@ export const useMemberUpdateMutation = () =>
           queryClient.invalidateQueries({ queryKey: activeKey });
           continue;
         }
-
-        // To update right order after
-        updateMenuItemMembership(updatedMembership, idOrSlug, entityType);
 
         queryClient.setQueryData<InfiniteMemberQueryData | MemberQueryData>(activeKey, (oldData) => {
           if (!oldData) return oldData;
