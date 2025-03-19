@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
 import { Confetti } from '~/modules/home/onboarding/confetti';
-import { onBoardingFinishCallback } from '~/modules/home/onboarding/onboarding-config';
+import { onboardingFinishCallback } from '~/modules/home/onboarding/onboarding-config';
 import { MenuSheet } from '~/modules/navigation/menu-sheet';
 import { useNavigationStore } from '~/store/navigation';
 
@@ -22,7 +22,7 @@ export const OnboardingCompleted = () => {
     const sortedOrganizations = [...menu.organizations].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
     const lastCreatedOrganization = sortedOrganizations[0];
 
-    onBoardingFinishCallback();
+    onboardingFinishCallback();
 
     if (!lastCreatedOrganization) return;
 
@@ -49,7 +49,7 @@ export const OnboardingCompleted = () => {
         <Undo size={400} strokeWidth={0.1} className="max-lg:hidden scale-y-75 xl:-translate-x-24 -mt-40 -mb-12  text-primary rotate-[30deg]" />
       )}
       <h1 className="text-3xl font-bold">{t('common:onboarding_completed')}</h1>
-      <p className="text-xl text-foreground/90 md:text-2xl font-light leading-7 pb-8">
+      <p className="text-xl text-foreground/90 md:text-2xl max-w-md font-light leading-7 pb-8">
         {t('common:onboarding_completed.text', { appName: config.name })}
       </p>
     </div>

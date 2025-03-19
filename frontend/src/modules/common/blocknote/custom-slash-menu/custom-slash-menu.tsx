@@ -43,14 +43,14 @@ export const slashMenu = (
   };
 
   useEffect(() => {
-    //ensure that all items loaded
+    // Ensure that all items are loaded
     if (loadingState !== 'loaded') return;
 
     window.addEventListener('keydown', handleKeyPress);
     return () => window.removeEventListener('keydown', handleKeyPress);
   }, [loadingState]);
 
-  // to be able to use in sheet
+  // To be able to use in sheet
   useEffect(() => {
     const bodyStyle = document.body.style;
     const pointerEventsOnOpen = bodyStyle.pointerEvents;

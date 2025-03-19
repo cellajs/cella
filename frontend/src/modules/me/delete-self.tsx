@@ -34,7 +34,7 @@ const DeleteSelf = ({ callback, dialog: isDialog }: Props) => {
     _deleteSelf(undefined);
   };
 
-  return <DeleteForm onDelete={onDelete} onCancel={removeDialog} pending={isPending} />;
+  return <DeleteForm onDelete={onDelete} onCancel={() => removeDialog()} pending={isPending} />;
 };
 
 export default DeleteSelf;

@@ -65,7 +65,6 @@ export const OrganizationsTableBar = ({
     };
 
     createDialog(<DeleteOrganizations organizations={selected} dialog callback={callback} />, {
-      drawerOnMobile: false,
       className: 'max-w-xl',
       title: t('common:delete'),
       description: t('common:confirm.delete_resources', { resources: t('common:organizations').toLowerCase() }),

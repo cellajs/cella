@@ -10,7 +10,6 @@ export const isElementInteractive = (element: Element | null) => {
     element instanceof HTMLInputElement ||
     element instanceof HTMLTextAreaElement ||
     element instanceof HTMLSelectElement ||
-    element instanceof HTMLButtonElement ||
     element?.getAttribute('contenteditable') === 'true'
   );
 };

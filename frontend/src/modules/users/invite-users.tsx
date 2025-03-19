@@ -12,14 +12,13 @@ import InviteSearchForm from '~/modules/users/invite-search-form';
 
 interface InviteUsersProps {
   entity?: EntityPage;
-  callback?: (emails: string[]) => void;
   dialog?: boolean;
   mode?: string | null;
   children?: React.ReactNode;
 }
 
 // When no entity type, it's a system invite
-const InviteUsers = ({ entity, callback, dialog: isDialog, mode, children }: InviteUsersProps) => {
+const InviteUsers = ({ entity, dialog: isDialog, mode, children }: InviteUsersProps) => {
   const { t } = useTranslation();
 
   const [inviteMode, setInviteMode] = useState(mode);
@@ -95,11 +94,11 @@ const InviteUsers = ({ entity, callback, dialog: isDialog, mode, children }: Inv
               {t(inviteMode === 'email' ? 'common:explain.invite_email.text' : 'common:explain.invite_search.text')}
             </AlertWrap>
             {inviteMode === 'email' ? (
-              <InviteEmailForm entity={entity} callback={callback} dialog={isDialog}>
+              <InviteEmailForm entity={entity} dialog={isDialog}>
                 {children}
               </InviteEmailForm>
             ) : (
-              <InviteSearchForm entity={entity} callback={callback} dialog={isDialog} />
+              <InviteSearchForm entity={entity} dialog={isDialog} />
             )}
           </motion.div>
         )}

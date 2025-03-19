@@ -1,14 +1,16 @@
 import { useMutation } from '@tanstack/react-query';
 import { config } from 'config';
 import { t } from 'i18next';
+import { contextEntityCacheKeys } from '~/menu-config';
 import { toaster } from '~/modules/common/toaster';
+import { getAndSetMenu } from '~/modules/me/helpers';
 import { type RemoveMembersProps, type UpdateMembershipProp, removeMembers, updateMembership } from '~/modules/memberships/api';
-
 import { membersKeys } from '~/modules/memberships/query/options';
-import type { InfiniteMemberQueryData, MemberContextProp, MemberQueryData } from '~/modules/memberships/query/types';
+import type { EntityMembershipContextProp, InfiniteMemberQueryData, MemberContextProp, MemberQueryData } from '~/modules/memberships/query/types';
 import type { Member, Membership } from '~/modules/memberships/types';
 import { updateMenuItemMembership } from '~/modules/navigation/menu-sheet/helpers/menu-operations';
 import { formatUpdatedData, getCancelingRefetchQueries, getQueries, getQueryItems } from '~/query/helpers/mutate-query';
+import { useMutateQueryData } from '~/query/hooks/use-mutate-query-data';
 import { queryClient } from '~/query/query-client';
 
 const limit = config.requestLimits.members;
@@ -20,20 +22,35 @@ const onError = (_: Error, __: UpdateMembershipProp | RemoveMembersProps, contex
 };
 
 export const useMemberUpdateMutation = () =>
-  useMutation<Membership, Error, UpdateMembershipProp, MemberContextProp[]>({
+  useMutation<Membership, Error, UpdateMembershipProp, EntityMembershipContextProp>({
     mutationKey: membersKeys.update(),
     mutationFn: updateMembership,
     onMutate: async (variables) => {
       const { idOrSlug, entityType, orgIdOrSlug, ...membershipInfo } = variables;
+      const { archived, muted, role, order } = membershipInfo;
 
-      const context: MemberContextProp[] = []; // previous query data for rollback if an error occurs
+      // Store previous query data for rollback if an error occurs
+      const context = { queryContext: [] as MemberContextProp[], toastMessage: t('common:success.update_item', { item: t('common:membership') }) };
+
+      if (archived) {
+        context.toastMessage = t(`common:success.${archived ? 'archived' : 'restore'}_resource`, { resource: t(`common:${entityType}`) });
+      } else if (muted) {
+        context.toastMessage = t(`common:success.${muted ? 'mute' : 'unmute'}_resource`, { resource: t(`common:${entityType}`) });
+      } else if (role) context.toastMessage = t('common:success.update_item', { item: t('common:role') });
+      else if (order !== undefined) context.toastMessage = t('common:success.update_item', { item: t('common:order') });
+
+      // Update membership of ContextEntity query that was fetched
+      const queryKey = contextEntityCacheKeys[entityType];
+      const mutateCache = useMutateQueryData(queryKey);
+      mutateCache.updateMembership([membershipInfo], entityType);
+
+      // To be able update menu offline
+      updateMenuItemMembership(membershipInfo, idOrSlug, entityType);
 
       // Get affected queries
       const exactKey = membersKeys.table({ idOrSlug, entityType, orgIdOrSlug });
       const similarKey = membersKeys.similar({ idOrSlug, entityType, orgIdOrSlug });
       const queries = await getCancelingRefetchQueries<Member>(exactKey, similarKey);
-
-      updateMenuItemMembership(membershipInfo, idOrSlug, entityType);
 
       // Iterate over affected queries and optimistically update cache
       for (const [queryKey, previousData] of queries) {
@@ -48,12 +65,12 @@ export const useMemberUpdateMutation = () =>
           return formatUpdatedData(oldData, updatedData, limit);
         });
 
-        context.push([queryKey, previousData, membershipInfo.id]); // Store previous data for rollback if needed
+        context.queryContext.push([queryKey, previousData, membershipInfo.id]); // Store previous data for rollback if needed
       }
 
       return context;
     },
-    onSuccess: async (updatedMembership, { idOrSlug, entityType, orgIdOrSlug }) => {
+    onSuccess: async (updatedMembership, { idOrSlug, entityType, orgIdOrSlug }, { toastMessage }) => {
       // Get affected queries
       const exactKey = membersKeys.table({ idOrSlug, entityType, orgIdOrSlug });
       const similarKey = membersKeys.similar({ idOrSlug, entityType, orgIdOrSlug });
@@ -67,6 +84,10 @@ export const useMemberUpdateMutation = () =>
           queryClient.invalidateQueries({ queryKey: activeKey });
           continue;
         }
+
+        // To update right order after
+        updateMenuItemMembership(updatedMembership, idOrSlug, entityType);
+
         queryClient.setQueryData<InfiniteMemberQueryData | MemberQueryData>(activeKey, (oldData) => {
           if (!oldData) return oldData;
 
@@ -76,8 +97,12 @@ export const useMemberUpdateMutation = () =>
           return formatUpdatedData(oldData, updatedData, limit);
         });
       }
+      toaster(toastMessage, 'success');
     },
-    onError,
+    onError: (_, __, context) => {
+      getAndSetMenu();
+      onError(_, __, context?.queryContext);
+    },
   });
 
 export const useMembersDeleteMutation = () =>

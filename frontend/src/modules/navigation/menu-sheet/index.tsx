@@ -14,7 +14,6 @@ import { AlertWrap } from '~/modules/common/alert-wrap';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
-import { getAndSetMenu } from '~/modules/me/helpers';
 import type { UserMenuItem } from '~/modules/me/types';
 import { useMemberUpdateMutation } from '~/modules/memberships/query/mutations';
 import { AccountSheet } from '~/modules/navigation/account-sheet';
@@ -101,18 +100,13 @@ export const MenuSheet = memo(() => {
           // Exit early if order remains the same
           if (targetData.order === sourceItem.membership.order || newOrder === sourceItem.membership.order) return;
 
-          await mutateAsync(
-            {
-              id: sourceItem.membership.id,
-              order: newOrder,
-              orgIdOrSlug: sourceItem.organizationId || sourceItem.id,
-              idOrSlug: sourceItem.id,
-              entityType: sourceItem.entity,
-            },
-            {
-              onError: () => getAndSetMenu(),
-            },
-          );
+          await mutateAsync({
+            id: sourceItem.membership.id,
+            order: newOrder,
+            orgIdOrSlug: sourceItem.organizationId || sourceItem.id,
+            idOrSlug: sourceItem.id,
+            entityType: sourceItem.entity,
+          });
         },
       }),
     );

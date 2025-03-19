@@ -10,18 +10,18 @@ export const SkipOrganization = () => {
   const removeDialog = useDialoger((state) => state.remove);
 
   const onDelete = () => {
-    removeDialog('skip_org_creation');
+    removeDialog('skip-org-creation');
     navigate({
       to: config.defaultRedirectPath,
       replace: true,
     });
   };
   const onCancel = () => {
-    removeDialog('skip_org_creation');
+    removeDialog('skip-org-creation');
   };
 
   return (
-    <div className="flex flex-col-reverse sm:flex-row gap-2">
+    <div className="flex sm:flex-row gap-2">
       <Button type="submit" variant="destructive" onClick={onDelete} aria-label="Skip">
         {t('common:skip')}
       </Button>

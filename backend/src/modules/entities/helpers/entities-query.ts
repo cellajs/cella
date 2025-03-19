@@ -18,7 +18,9 @@ export const getEntitiesQuery = async ({ userId, organizationIds, type, q, entit
 
   const idFields = config.contextEntityTypes.map((entity) => entityIdFields[entity]);
 
-  // TODO can you explain this @david?
+  // TODO: we should not exclude but show in invite members in frontend that user is already member
+  // For this, we should drop membersToExclude and instead make sure the correct membership is shared in the response. so if an entityId is
+  // provided, we should include the membership for that entity in the response, not the membership is currently is sharing?
   const membersToExclude =
     type === 'user' && entityId
       ? (

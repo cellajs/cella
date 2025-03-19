@@ -1,10 +1,8 @@
 import { forwardRef, memo, useEffect, useImperativeHandle } from 'react';
 import type { RowsChangeData } from 'react-data-grid';
-import { useTranslation } from 'react-i18next';
 import { DataTable } from '~/modules/common/data-table';
 import { tablePropsAreEqual } from '~/modules/common/data-table/table-props-are-equal';
 import type { BaseTableMethods, BaseTableProps } from '~/modules/common/data-table/types';
-import { toaster } from '~/modules/common/toaster';
 import type { MemberSearch, MembersTableProps } from '~/modules/memberships/members-table/table-wrapper';
 import { useMemberUpdateMutation } from '~/modules/memberships/query/mutations';
 import { membersQueryOptions } from '~/modules/memberships/query/options';
@@ -15,7 +13,6 @@ type BaseDataTableProps = MembersTableProps & BaseTableProps<Member, MemberSearc
 
 const BaseDataTable = memo(
   forwardRef<BaseTableMethods, BaseDataTableProps>(({ entity, columns, searchVars, sortColumns, setSortColumns, setTotal, setSelected }, ref) => {
-    const { t } = useTranslation();
     const entityType = entity.entity;
     const organizationId = entity.organizationId || entity.id;
 
@@ -44,12 +41,15 @@ const BaseDataTable = memo(
 
       // If role is changed, update membership
       for (const index of indexes) {
-        updateMemberMembership.mutateAsync(
-          { ...changedRows[index].membership, orgIdOrSlug: organizationId, idOrSlug: entity.slug, entityType },
-          {
-            onSuccess: () => toaster(t('common:success.update_item', { item: t('common:role') }), 'success'),
-          },
-        );
+        const updatedMembership = {
+          id: changedRows[index].membership.id,
+          role: changedRows[index].membership.role,
+          idOrSlug: entity.slug,
+          orgIdOrSlug: organizationId,
+          entityType,
+        };
+
+        updateMemberMembership.mutateAsync(updatedMembership);
       }
       setRows(changedRows);
     };

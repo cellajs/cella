@@ -50,7 +50,6 @@ export const DesktopSheet = ({ sheet }: SheetProps) => {
 
   const handleEscapeKeyDown = (e: KeyboardEvent) => {
     const activeElement = document.activeElement;
-    if (!modal && !sheetRef.current?.contains(activeElement)) return;
     if (isElementInteractive(activeElement)) return;
     e.preventDefault();
     e.stopPropagation();

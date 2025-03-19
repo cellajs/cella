@@ -12,6 +12,7 @@ import { toast } from 'sonner';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import InputFormField from '~/modules/common/form-fields/input';
 import { SlugFormField } from '~/modules/common/form-fields/slug';
+import { useStepper } from '~/modules/common/stepper';
 import { useOrganizationCreateMutation } from '~/modules/organizations/query';
 import type { Organization } from '~/modules/organizations/types';
 import { Button, SubmitButton } from '~/modules/ui/button';
@@ -30,6 +31,8 @@ type FormValues = z.infer<typeof formSchema>;
 
 const CreateOrganizationForm = ({ labelDirection = 'top', children, callback }: Props) => {
   const { t } = useTranslation();
+
+  const { nextStep } = useStepper();
 
   const defaultValues = { name: '', slug: '' };
   const formOptions: UseFormProps<FormValues> = useMemo(
@@ -55,6 +58,10 @@ const CreateOrganizationForm = ({ labelDirection = 'top', children, callback }: 
         toast.success(t('common:success.create_resource', { resource: t('common:organization') }));
 
         callback?.(createdOrganization); // Trigger callback
+
+        // Since this form is also used in onboarding, we need to call the next step
+        // This should ideally be done through the callback, but we need to refactor stepper
+        nextStep?.();
       },
     });
   };
@@ -72,10 +79,10 @@ const CreateOrganizationForm = ({ labelDirection = 'top', children, callback }: 
         />
 
         <div className="flex flex-col sm:flex-row gap-2">
-          {children}
           <SubmitButton disabled={!form.formState.isDirty} loading={isPending}>
             {t('common:create')}
           </SubmitButton>
+          {children}
 
           {!children && (
             <Button

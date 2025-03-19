@@ -55,7 +55,6 @@ export const RequestsTableBar = ({ total, selected, searchVars, setSearch, colum
     };
 
     createDialog(<DeleteRequests requests={selected} callback={callback} dialog />, {
-      drawerOnMobile: false,
       className: 'max-w-xl',
       title: t('common:delete'),
       description: t('common:confirm.delete_resources', { resources: t('common:requests').toLowerCase() }),

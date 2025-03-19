@@ -24,7 +24,7 @@ const DeleteAttachmentsForm = ({ attachments, entity, callback, dialog: isDialog
     callback?.(attachments);
   };
 
-  return <DeleteForm allowOfflineDelete={true} onDelete={onDelete} onCancel={removeDialog} pending={isPending} />;
+  return <DeleteForm allowOfflineDelete={true} onDelete={onDelete} onCancel={() => removeDialog()} pending={isPending} />;
 };
 
 export default DeleteAttachmentsForm;

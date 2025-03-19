@@ -142,7 +142,7 @@ export const LegalNotice = ({ email }: { email: string }) => {
 
   const openDialog = (mode: 'terms' | 'privacy') => () => {
     const dialogComponent = (
-      <Suspense fallback={<Spinner className="mt-[40vh] h-10 w-10" />}>
+      <Suspense fallback={<Spinner className="mt-[45vh] h-10 w-10" />}>
         <LegalText textFor={mode} />
       </Suspense>
     );

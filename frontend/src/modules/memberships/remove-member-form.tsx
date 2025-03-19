@@ -24,7 +24,7 @@ const RemoveMembersForm = ({ members, entityIdOrSlug, entityType = 'organization
     callback?.(members);
   };
 
-  return <DeleteForm allowOfflineDelete={true} onDelete={onRemoveMember} onCancel={removeDialog} pending={isPending} />;
+  return <DeleteForm allowOfflineDelete={true} onDelete={onRemoveMember} onCancel={() => removeDialog()} pending={isPending} />;
 };
 
 export default RemoveMembersForm;

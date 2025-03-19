@@ -53,7 +53,7 @@ const Showcase = () => {
         </div>
       </div>
       <div className="">
-        <Suspense fallback={<Spinner className="mt-[40vh] h-10 w-10" />}>
+        <Suspense fallback={<Spinner className="mt-[45vh] h-10 w-10" />}>
           <DeviceMockup className="" type="mobile" lightItems={lightItems} darkItems={darkItems} />
         </Suspense>
       </div>

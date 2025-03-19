@@ -5,6 +5,7 @@ import router from '~/lib/router';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import UnsavedBadge from '~/modules/common/unsaved-badge';
 import CreateOrganizationForm from '~/modules/organizations/create-organization-form';
+import { organizationsKeys } from '~/modules/organizations/query';
 import type { Organization } from '~/modules/organizations/types';
 
 type SectionsSchema = {
@@ -35,4 +36,12 @@ const createOrganizationAction = () => {
  */
 export const menuSectionsSchemas: Partial<Record<ContextEntity, SectionsSchema>> = {
   organization: { createAction: createOrganizationAction, label: 'common:organizations' },
+};
+
+/**
+ * Configuration to by with key update membership in contextEntity
+ */
+//TODO find way to avoid usage of it
+export const contextEntityCacheKeys = {
+  organization: organizationsKeys.singleBase(),
 };
