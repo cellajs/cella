@@ -41,6 +41,7 @@ export const menuSectionsSchemas: Partial<Record<ContextEntity, SectionsSchema>>
 /**
  * Configuration to by with key update membership in contextEntity
  */
+//TODO find way to avoid usage of it
 export const contextEntityCacheKeys = {
   organization: organizationsKeys.singleBase(),
 };
