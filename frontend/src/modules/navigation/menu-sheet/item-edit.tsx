@@ -3,14 +3,12 @@ import { Archive, ArchiveRestore, Bell, BellOff } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useTranslation } from 'react-i18next';
 import { env } from '~/env';
-import { useMutation } from '~/hooks/use-mutations';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import Spinner from '~/modules/common/spinner';
 import { toaster } from '~/modules/common/toaster';
-import { getAndSetMenu } from '~/modules/me/helpers';
 import type { UserMenuItem } from '~/modules/me/types';
-import { updateMembership } from '~/modules/memberships/api';
-import { updateMenuItem } from '~/modules/navigation/menu-sheet/helpers/menu-operations';
+import type { UpdateMembershipProp } from '~/modules/memberships/api';
+import { useMemberUpdateMutation } from '~/modules/memberships/query/mutations';
 import { Button } from '~/modules/ui/button';
 
 interface MenuItemEditProps {
@@ -20,50 +18,24 @@ interface MenuItemEditProps {
 export const MenuItemEdit = ({ item }: MenuItemEditProps) => {
   const { t } = useTranslation();
 
-  // Directly create mutation to avoid lazy loading for MenuItemEdit, since useMemberUpdateMutation relies on queryClient to update cache, this mutation updated menu and not cache
-  const { mutate: _updateMembership, status } = useMutation({
-    mutationFn: updateMembership,
-    onMutate: (variables) => {
-      const { archived, muted } = variables;
-      const { membership, entity } = item;
-
-      const messages = {
-        archived: t(`common:success.${archived ? 'archived' : 'restore'}_resource`, { resource: t(`common:${entity}`) }),
-        muted: t(`common:success.${muted ? 'mute' : 'unmute'}_resource`, { resource: t(`common:${entity}`) }),
-      };
-      // Determine the appropriate toast message
-      const toastMessage = archived !== membership.archived ? messages.archived : muted !== membership.muted ? messages.muted : null;
-
-      const updatedEntity = { ...item, membership: { ...item.membership, ...variables } };
-      updateMenuItem(updatedEntity);
-
-      return { toastMessage };
-    },
-    onSuccess: (updatedMembership, _, context) => {
-      const { toastMessage } = context;
-      if (toastMessage) toaster(toastMessage, 'success');
-
-      const updatedEntity = { ...item, membership: { ...item.membership, ...updatedMembership } };
-      updateMenuItem(updatedEntity);
-    },
-    onError: () => getAndSetMenu(),
-  });
+  const { mutate: updateMembership, status } = useMemberUpdateMutation();
 
   const handleUpdateMembershipKey = (key: 'archive' | 'mute') => {
-    const membership = { ...item.membership }; // Clone the membership to make it mutable
-    if (key === 'archive' && membership.archived && !onlineManager.isOnline()) {
+    if (key === 'archive' && item.membership.archived && !onlineManager.isOnline()) {
       return toaster(t('common:action.offline.text'), 'warning');
     }
 
-    if (key === 'archive') membership.archived = !item.membership.archived;
-    if (key === 'mute') membership.muted = !item.membership.muted;
-
-    _updateMembership({
-      ...membership,
+    const updatedMembership: UpdateMembershipProp = {
+      id: item.membership.id,
       idOrSlug: item.id,
       entityType: item.entity,
-      orgIdOrSlug: membership.organizationId,
-    });
+      orgIdOrSlug: item.membership.organizationId,
+    };
+
+    if (key === 'archive') updatedMembership.archived = !item.membership.archived;
+    if (key === 'mute') updatedMembership.muted = !item.membership.muted;
+
+    updateMembership(updatedMembership);
   };
 
   return (

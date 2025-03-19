@@ -98,15 +98,26 @@ export const updateMenuItemMembership = (
   const menu = useNavigationStore.getState().menu;
 
   // Find section that corresponds to given entity type
-  const menuSection = entityRelations.find((el) => el.entity === entityType);
-
+  const menuSection = entityRelations.find((el) => el.entity === entityType || el.subEntity === entityType);
   if (!menuSection) return;
 
   const { menuSectionName } = menuSection;
   const menuEntities = menu[menuSectionName];
 
-  // Find entity in menu by matching its ID or slug
-  const currentEntity = menuEntities.find((e) => e.id === entityIdOrSlug || e.slug === entityIdOrSlug);
+  // Search in menuEntities
+  let currentEntity = menuEntities.find((e) => e.id === entityIdOrSlug || e.slug === entityIdOrSlug);
+
+  // Search in menuEntities submenus
+  if (!currentEntity) {
+    for (const entity of menuEntities) {
+      if (!entity.submenu) continue;
+
+      currentEntity = entity.submenu.find((sub) => sub.id === entityIdOrSlug || sub.slug === entityIdOrSlug);
+      if (currentEntity) break; // Stop searching once found
+    }
+  }
+
+  // If not found, in menuEntities and it's submenus return
   if (!currentEntity) return;
 
   const updatedEntity: UserMenuItem = {
