@@ -19,7 +19,6 @@ export const AppNavState = () => {
 
   // Determine if the menu should stay open
   const shouldKeepMenuOpen = isDesktop && keepOpenPreference && (navSheetOpen === 'menu' || prevSheetRef.current === 'menu');
-  console.log(shouldKeepMenuOpen, 'shouldKeepMenuOpen', isDesktop, navSheetOpen === 'menu', prevSheetRef.current === 'menu');
 
   // Maintain keep menu open state to use elsewhere
   useEffect(() => {
