@@ -61,7 +61,10 @@ const SheetContent = React.forwardRef<React.ComponentRef<typeof SheetPrimitive.C
         {!hideClose && (
           <SheetPrimitive.Close
             onClick={onClick}
-            className="sm:ring-offset-background focus-visible:ring-ring data-[state=open]:bg-accent data-[state=open]:text-muted-foreground absolute right-4 top-4 rounded-sm opacity-70 transition-opacity hover:opacity-100 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-offset-2 disabled:pointer-events-none z-20"
+            className={cn(
+              'sm:ring-offset-background focus-visible:ring-ring data-[state=open]:bg-accent data-[state=open]:text-muted-foreground absolute right-4 top-3.5 rounded-sm opacity-70 transition-opacity hover:opacity-100 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-offset-2 disabled:pointer-events-none z-20',
+              scrollableOverlay && 'fixed',
+            )}
           >
             <X className="h-6 w-6" strokeWidth={1.25} />
             <span className="sr-only">Close</span>

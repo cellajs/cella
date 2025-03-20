@@ -1,6 +1,6 @@
 import { Link, type ToPathOption } from '@tanstack/react-router';
 import { motion } from 'motion/react';
-import { type MouseEventHandler, useEffect, useMemo, useRef } from 'react';
+import { type MouseEventHandler, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useInView } from 'react-intersection-observer';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
@@ -31,11 +31,9 @@ export const PageNav = ({ title, avatar, tabs, className = '' }: Props) => {
   const { t } = useTranslation();
   const { ref: inViewRef, inView } = useInView({ triggerOnce: false, threshold: 0 });
 
-  const firstTabRef = useRef<HTMLAnchorElement | null>(null);
-
   // Focus the first tab on mount
   useEffect(() => {
-    firstTabRef.current?.focus();
+    document.getElementById(`tab-${tabs[0].id}`)?.focus();
   }, []);
 
   // Scroll to tabs when scrolled past header
@@ -59,10 +57,9 @@ export const PageNav = ({ title, avatar, tabs, className = '' }: Props) => {
           <div className="truncate leading-5 font-semibold text-sm max-w-42 sm:block">{title}</div>
         </div>
 
-        {tabs.map(({ id, path, label }, index) => (
+        {tabs.map(({ id, path, label }) => (
           <Link
             key={id}
-            ref={index === 0 ? firstTabRef : null}
             id={`tab-${id}`}
             resetScroll={false}
             className="relative p-2 lg:px-4 rounded-sm outline-hidden sm:ring-offset-background focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"

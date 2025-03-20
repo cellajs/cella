@@ -10,7 +10,7 @@ const useFocusByRef = () => {
   const focusRef = useRef<HTMLInputElement | null>(null);
 
   const setFocus = useCallback(() => {
-    if (focusRef.current) {
+    if (focusRef.current && window.innerWidth >= 640) {
       focusRef.current.focus();
     }
   }, []);

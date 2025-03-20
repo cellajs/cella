@@ -1,7 +1,6 @@
 import type { ReactNode } from 'react';
 import { create } from 'zustand';
 import { immer } from 'zustand/middleware/immer';
-import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
 
 type DialogContainerOptions = {
   id: string;
@@ -45,7 +44,6 @@ export const useDialoger = create<DialogStoreState>()(
 
     create: (content, data) => {
       const id = data?.id || Date.now().toString();
-      useSheeter.getState().remove();
 
       set((state) => {
         state.dialogs = [
