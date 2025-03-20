@@ -28,6 +28,14 @@ const openUpdateSheet = (user: User) => {
       className: 'max-w-full lg:max-w-4xl',
       title,
       titleContent: <UnsavedBadge title={title} />,
+      scrollableOverlay: true,
+      removeCallback: () => {
+        // Return focus to the original cell after closing
+        setTimeout(() => {
+          const cell = document.getElementById(`update-${user.id}`);
+          if (cell) cell.focus();
+        }, 0);
+      },
     },
   );
 };
@@ -35,6 +43,7 @@ const openUpdateSheet = (user: User) => {
 const UpdateRow = ({ user, tabIndex }: Props) => {
   return (
     <Button
+      id={`update-${user.id}`}
       variant="cell"
       size="icon"
       tabIndex={tabIndex}

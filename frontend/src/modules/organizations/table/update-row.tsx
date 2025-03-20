@@ -28,12 +28,20 @@ const UpdateRow = ({ organization, tabIndex }: Props) => {
         title: i18n.t('common:edit_resource', { resource: i18n.t('common:organization').toLowerCase() }),
         titleContent: <UnsavedBadge title={i18n.t('common:edit_resource', { resource: i18n.t('common:organization').toLowerCase() })} />,
         scrollableOverlay: true,
+        removeCallback: () => {
+          // Return focus to the original cell after closing
+          setTimeout(() => {
+            const cell = document.getElementById(`update-${organization.id}`);
+            if (cell) cell.focus();
+          }, 0);
+        },
       },
     );
   };
 
   return (
     <Button
+      id={`update-${organization.id}`}
       variant="cell"
       size="icon"
       tabIndex={tabIndex}

@@ -24,7 +24,7 @@ interface MenuSheetSectionProps {
 export const MenuSheetSection = ({ data, sectionType, sectionLabel, entityType, createAction }: MenuSheetSectionProps) => {
   const { t } = useTranslation();
   const isMobile = useBreakpoints('max', 'sm');
-  const toggleSection = useNavigationStore((state) => state.toggleSection);
+  const { toggleSection, setNavSheetOpen } = useNavigationStore.getState();
   const activeSections = useNavigationStore((state) => state.activeSections);
 
   const [isEditing, setIsEditing] = useState(false);
@@ -35,8 +35,10 @@ export const MenuSheetSection = ({ data, sectionType, sectionLabel, entityType, 
   const archivedCount = data.filter((i) => i.membership.archived).length;
 
   const handleCreateAction = () => {
-    if (isMobile) useSheeter.getState().remove('nav-sheet');
-
+    if (isMobile) {
+      useSheeter.getState().remove('nav-sheet');
+      setNavSheetOpen(null);
+    }
     createAction?.();
   };
 
