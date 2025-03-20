@@ -19,7 +19,7 @@ import InviteUsers from '~/modules/users/invite-users';
 import type { UsersSearch } from '~/modules/users/table/table-wrapper';
 import type { User } from '~/modules/users/types';
 
-type UsersTableBarProps = BaseTableMethods & BaseTableBarProps<User, UsersSearch> & {};
+type UsersTableBarProps = BaseTableMethods & BaseTableBarProps<User, UsersSearch>;
 
 export const UsersTableBar = ({ total, selected, searchVars, setSearch, columns, setColumns, clearSelection }: UsersTableBarProps) => {
   const { t } = useTranslation();
