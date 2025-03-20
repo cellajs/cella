@@ -18,7 +18,7 @@ const Why = () => {
             return (
               <div className="w-full" key={item.id}>
                 <div className="group mb-12 flex">
-                  <div className="border-primary text-l md:text-1xl mr-6 flex h-8 w-full max-w-8 items-center justify-center rounded-full border-2 font-semibold group-hover:bg-transparent md:-mt-2 md:h-12 md:max-w-12">
+                  <div className="border-primary text-l md:text-1xl mr-4 flex h-8 w-full max-w-8 items-center justify-center rounded-full border-2 font-semibold group-hover:bg-transparent md:-mt-2 md:h-12 md:max-w-12">
                     {index + 1}
                   </div>
                   <div className="w-full">

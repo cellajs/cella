@@ -21,7 +21,7 @@ const Pricing = () => {
       navigate({ to: '/auth/authenticate', replace: true });
     }
     if (action === 'waitlist_request') {
-      useDialoger.getState().create(<WaitlistForm email="" dialog emailField />, {
+      useDialoger.getState().create(<WaitlistForm email="" className="p-6" dialog emailField />, {
         id: 'waitlist-form',
         drawerOnMobile: true,
         className: 'sm:max-w-2xl',

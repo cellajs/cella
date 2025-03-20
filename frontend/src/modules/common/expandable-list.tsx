@@ -42,7 +42,7 @@ export const ExpandableList = <T,>({ items, renderItem, initialDisplayCount, alw
       })}
 
       {!expanded && items.length > initialDisplayCount && (
-        <Button variant="ghost" className="w-full mt-4 group flex items-center" onClick={() => setExpanded(true)}>
+        <Button variant="ghost" className="w-full group flex items-center" onClick={() => setExpanded(true)}>
           <Badge size="sm" className="mr-2 aspect-square py-0 px-1">
             {items.length - initialDisplayCount}
           </Badge>
