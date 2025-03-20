@@ -76,7 +76,7 @@ export const MembersTableBar = ({
       />,
       {
         className: 'max-w-xl',
-        title: t('common:remove_resource', { resource: t('common:member').toLowerCase() }),
+        title: t('common:remove_resource', { resource: t('common:members').toLowerCase() }),
         description: (
           <Trans
             i18nKey="common:confirm.remove_members"
@@ -97,10 +97,11 @@ export const MembersTableBar = ({
       id: 'invite-users',
       drawerOnMobile: false,
       className: 'w-auto shadow-none relative z-60 max-w-4xl',
-      container: { id: 'invite-users-container', overlay: true },
+      // TODO handle container open in sheet
+      ...(!isSheet && { container: { id: 'invite-members-container', overlay: true } }),
       title: t('common:invite'),
       titleContent: <UnsavedBadge title={t('common:invite')} />,
-      description: `${t('common:invite_users.text')}`,
+      description: `${t('common:invite_members.text')}`,
     });
   };
 
@@ -188,7 +189,7 @@ export const MembersTableBar = ({
       </TableBarContainer>
 
       {/* Container ref to embed dialog */}
-      <div id="invite-users-container" className="empty:hidden" />
+      <div id="invite-members-container" className="empty:hidden" />
     </div>
   );
 };

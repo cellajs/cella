@@ -1,5 +1,6 @@
 import { useUIStore } from '~/store/ui';
 import { cn } from '~/utils/cn';
+import { Button } from '../ui/button';
 
 interface HamburgerButtonProps {
   isOpen: boolean;
@@ -23,7 +24,9 @@ const HamburgerButton = ({ isOpen, toggle, className }: HamburgerButtonProps) =>
   const bottomLineClass = isOpen ? '-rotate-45 -translate-y-2' : '';
 
   return (
-    <button
+    <Button
+      size="lg"
+      variant="ghost"
       className={cn('group flex h-10 w-10 flex-col items-center hover:opacity-50 justify-center', className)}
       type="button"
       onClick={() => toggle(!isOpen)}
@@ -33,7 +36,7 @@ const HamburgerButton = ({ isOpen, toggle, className }: HamburgerButtonProps) =>
       <HamburgerLine className={topLineClass} lineColor={lineColor} />
       <HamburgerLine className={middleLineClass} lineColor={lineColor} />
       <HamburgerLine className={bottomLineClass} lineColor={lineColor} />
-    </button>
+    </Button>
   );
 };
 

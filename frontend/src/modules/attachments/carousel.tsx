@@ -87,9 +87,11 @@ const AttachmentsCarousel = ({ items = [], isDialog = false, itemIndex = 0, save
       {currentItem && isDialog && (
         <div className="fixed z-10 top-0 left-0 w-full flex gap-2 p-3 text-center sm:text-left bg-background/60 backdrop-blur-xs">
           {currentItem.name && (
-            <h2 className="text-base tracking-tight flex ml-1 items-center gap-2 leading-6 h-6">
-              {currentItem.contentType && <FilePlaceholder contentType={currentItem.contentType} iconSize={16} strokeWidth={2} />}
-              {currentItem.name}
+            <h2 className="text-base tracking-tight flex ml-1 items-center gap-2 leading-6 h-6 truncate max-sm:text-sm">
+              {currentItem.contentType && (
+                <FilePlaceholder contentType={currentItem.contentType} iconSize={16} className="w-4 shrink-0" strokeWidth={2} />
+              )}
+              <span className="truncate">{currentItem.name}</span>
             </h2>
           )}
           <div className="grow" />

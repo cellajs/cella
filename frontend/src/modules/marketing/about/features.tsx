@@ -11,6 +11,10 @@ type FeatureProps = {
   index: number;
 };
 
+type Feature = {
+  icon: string;
+};
+
 const Feature = ({ icon, invertClass, index }: FeatureProps) => {
   const { t } = useTranslation();
   const title = `about:feature.title_${index + 1}`;
@@ -30,11 +34,11 @@ const Feature = ({ icon, invertClass, index }: FeatureProps) => {
 const Features = () => {
   const mode = useUIStore((state) => state.mode);
   const invertClass = mode === 'dark' ? 'invert' : '';
-  const isMediumScreen = useBreakpoints('min', 'md');
+  const isMediumScreen = useBreakpoints('min', 'sm');
 
   return (
     <div className="mx-auto grid max-w-5xl justify-center gap-4 sm:grid-cols-2 md:grid-cols-3">
-      <ExpandableList
+      <ExpandableList<Feature>
         items={features}
         renderItem={(feature, index) => <Feature key={feature.icon} {...feature} index={index} invertClass={invertClass} />}
         initialDisplayCount={4}

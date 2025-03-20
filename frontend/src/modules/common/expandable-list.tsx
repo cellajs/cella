@@ -1,33 +1,48 @@
 import { ChevronDown } from 'lucide-react';
-import type React from 'react';
+import { AnimatePresence, motion } from 'motion/react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
 
-interface ExpandableListProps {
-  items: unknown[];
-  // biome-ignore lint/suspicious/noExplicitAny: the component doesn't do anything with items
-  renderItem: (item: any, index: number) => React.ReactNode;
+interface ExpandableListProps<T> {
+  items: T[];
+  renderItem: (item: T, index: number) => React.ReactNode;
   initialDisplayCount: number;
   alwaysShowAll?: boolean;
   expandText: string;
 }
 
-export const ExpandableList = ({ items, renderItem, initialDisplayCount, alwaysShowAll, expandText }: ExpandableListProps) => {
+/**
+ * A list that can be expanded to show all items.
+ */
+export const ExpandableList = <T,>({ items, renderItem, initialDisplayCount, alwaysShowAll = false, expandText }: ExpandableListProps<T>) => {
   const { t } = useTranslation();
-  const [displayCount, setDisplayCount] = useState(alwaysShowAll ? items.length : initialDisplayCount);
+  const [expanded, setExpanded] = useState(alwaysShowAll);
 
-  const handleLoadMore = () => {
-    setDisplayCount(items.length);
-  };
-
-  const visibleItems = items.slice(0, displayCount);
   return (
     <>
-      {visibleItems.map(renderItem)}
-      {displayCount < items.length && (
-        <Button variant="ghost" className="w-full mt-4 group" onClick={handleLoadMore}>
+      {items.map((item, index) => {
+        const isInitiallyVisible = index < initialDisplayCount;
+        return (
+          // biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
+          <AnimatePresence key={index}>
+            {isInitiallyVisible || expanded ? (
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: 'auto', opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ duration: 0.3, ease: 'easeInOut' }}
+              >
+                {renderItem(item, index)}
+              </motion.div>
+            ) : null}
+          </AnimatePresence>
+        );
+      })}
+
+      {!expanded && items.length > initialDisplayCount && (
+        <Button variant="ghost" className="w-full group flex items-center" onClick={() => setExpanded(true)}>
           <Badge size="sm" className="mr-2 aspect-square py-0 px-1">
             {items.length - initialDisplayCount}
           </Badge>

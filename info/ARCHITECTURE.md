@@ -1,11 +1,23 @@
 # Architecture
-This document describes the high-level architecture of Cella.
+This document describes the high-level architecture of Cella. 
 
- 1. Only build what you are going to use yourself.
- 2. Stay humble and remain a template, not a framework. So prevent abstraction layers.
- 3. A single, opinionated stack: ie. Cella uses Drizzle ORM and will not make it replaceable with another ORM.
- 4. Modularity. As CellaJS will grow, we need to make sure you can scaffold only the modules that you need.
- 5. Open standards. Our long term vision is that each Cella - as in each cell - can speak fluently with other cells. 
+### Target product
+Cella in general is targeted towards being a template for SaaS development. But that is a large segment. So when to use / not use cella? Here are some thoughts on that. Use cella if the below matches your product/development requirements:
+
+* frequent-use or heavy use web applications
+* focused on user generated content that requires some form of authentication/authorization. So either semi-public or private access.
+* Requires a great UX on different device, but native apps are not a direct priority
+* Development budget and time is limited
+* Fullstack development is seens as beneficial to work effectively and to provide engineering stability. 
+
+### Core aspects
+ * Type safe, without overdoing it. 
+ * Only build what you are going to use yourself.
+ * Stay humble and remain a template, not a framework. So prevent abstraction layers and leverage libraries to the fullest extent.
+ * A single/narrow stack: ie. Cella uses Drizzle ORM and will not make it replaceable with another ORM.
+ * Modularity. As CellaJS will grow, we need to make sure you can scaffold only the modules that you need.
+ * Open standards. Our long term vision is that each Cella - as in each cell - can speak fluently with other cells.
+ * Focused on client-side rendering (CSR) and - once it becomes relevant - static site generation (SSG). This seems to align best with our hybrid idiom to support offline and sync capabilities and reduce 'server dependency'. 
 
 ### Backend
 - [NodeJS](https://nodejs.org)
@@ -15,7 +27,6 @@ This document describes the high-level architecture of Cella.
 - [Zod](https://github.com/colinhacks/zod)
 - [OpenAPI](https://www.openapis.org)
 - [JSX Email](https://jsx.email/)
-- [Oslo](https://oslojs.dev/)
 
 ### Frontend
 - [React](https://reactjs.org)
@@ -90,7 +101,6 @@ Zooming in on some of the frontend modules:
 * `ui`: Full with shadcn UI components. They have some small tweaks however and it is to be expected you will customize them yourself further.
 * `attachments`: product entity module that has support for **offline, optimistic updates and realtime sync**.
 
-A similar situation can be found in the `types` folders of both frontend and backend. you have app-specific types in `app.ts` and predefined cella types in `common.ts`.
 
 
 ## Security

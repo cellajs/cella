@@ -5,6 +5,7 @@ import { History, Search, X } from 'lucide-react';
 import { Fragment, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { z } from 'zod';
+import useFocusByRef from '~/hooks/use-focus-by-ref';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
@@ -33,6 +34,8 @@ export const AppSearch = () => {
   const [searchValue, setSearchValue] = useState('');
 
   const { recentSearches } = useNavigationStore();
+
+  const { focusRef, setFocus } = useFocusByRef();
 
   const deleteItemFromList = (item: string) => {
     useNavigationStore.setState((state) => {
@@ -88,9 +91,13 @@ export const AppSearch = () => {
     <Command className="rounded-lg border shadow-2xl" shouldFilter={false}>
       <CommandInput
         value={searchValue}
-        clearValue={setSearchValue}
+        ref={focusRef}
+        clearValue={() => {
+          console.log('clearValue');
+          setSearchValue('');
+          setFocus();
+        }}
         className="h-12 text-lg"
-        autoFocus
         isSearching={isFetching}
         wrapClassName="text-lg"
         placeholder={t('common:placeholder.search')}

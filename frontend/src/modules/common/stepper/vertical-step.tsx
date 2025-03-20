@@ -129,32 +129,35 @@ const VerticalStep = React.forwardRef<HTMLDivElement, VerticalStepProps>((props,
       data-invalid={localIsError}
       onClick={() => onClickStep?.(index || 0, setStep) || onClickStepGeneral?.(index || 0, setStep)}
     >
-      <div
-        data-vertical={true}
-        data-active={active}
-        className={cn(
-          'stepper__vertical-step-container',
-          'flex items-center',
-          variant === 'line' && 'border-s-[.19rem] data-[active=true]:border-primary py-2 ps-3',
-          styles?.['vertical-step-container'],
-        )}
-      >
-        <StepButtonContainer {...{ isLoading: localIsLoading, isError: localIsError, ...props }}>
-          <StepIcon
-            {...{
-              index,
-              isError: localIsError,
-              isLoading: localIsLoading,
-              isCurrentStep,
-              isCompletedStep,
-            }}
-            icon={icon}
-            checkIcon={checkIcon}
-            errorIcon={errorIcon}
-          />
-        </StepButtonContainer>
-        <StepLabel label={label} description={description} {...{ isCurrentStep, opacity }} />
-      </div>
+      {steps.length > 1 && (
+        <div
+          data-vertical={true}
+          data-active={active}
+          className={cn(
+            'stepper__vertical-step-container',
+            'flex items-center',
+            variant === 'line' && 'border-s-[.19rem] data-[active=true]:border-primary py-2 ps-3',
+            styles?.['vertical-step-container'],
+          )}
+        >
+          <StepButtonContainer {...{ isLoading: localIsLoading, isError: localIsError, ...props }}>
+            <StepIcon
+              {...{
+                index,
+                isError: localIsError,
+                isLoading: localIsLoading,
+                isCurrentStep,
+                isCompletedStep,
+              }}
+              icon={icon}
+              checkIcon={checkIcon}
+              errorIcon={errorIcon}
+            />
+          </StepButtonContainer>
+
+          <StepLabel label={label} description={description} {...{ isCurrentStep, opacity }} />
+        </div>
+      )}
       <div
         className={cn(
           'stepper__vertical-step-content',

@@ -68,5 +68,5 @@ export const useBreakpoints = (mustBe: 'min' | 'max', breakpoint: keyof typeof b
   const currentBreakpointIndex = sortedBreakpoints.indexOf(breakpointState);
   const targetBreakpointIndex = sortedBreakpoints.indexOf(breakpoint as string);
 
-  return mustBe === 'min' ? currentBreakpointIndex >= targetBreakpointIndex : currentBreakpointIndex <= targetBreakpointIndex;
+  return mustBe === 'min' ? currentBreakpointIndex > targetBreakpointIndex : currentBreakpointIndex <= targetBreakpointIndex;
 };

@@ -15,6 +15,7 @@ import { useCreateRequestMutation } from '~/modules/requests/query';
 import { Button, SubmitButton } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '~/modules/ui/form';
 import { Input } from '~/modules/ui/input';
+import { cn } from '~/utils/cn';
 
 const formSchema = createRequestSchema;
 
@@ -25,9 +26,10 @@ interface WaitlistFormProps {
   dialog?: boolean;
   changeEmail?: () => void;
   callback?: () => void;
+  className?: string;
 }
 
-export const WaitlistForm = ({ email, buttonContent, emailField, dialog: isDialog, changeEmail, callback }: WaitlistFormProps) => {
+export const WaitlistForm = ({ email, buttonContent, emailField, dialog: isDialog, changeEmail, callback, className }: WaitlistFormProps) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
 
@@ -68,20 +70,20 @@ export const WaitlistForm = ({ email, buttonContent, emailField, dialog: isDialo
           <div className="text-2xl text-center">
             <h1 className="text-xxl">{t('common:request_access')}</h1>
 
-            <Button variant="ghost" onClick={changeEmail} className="font-light mt-2 text-xl border border-primary/20">
+            <Button variant="ghost" onClick={changeEmail} className="font-light mt-2 text-xl">
               {email}
               <ChevronDown size={16} className="ml-2" />
             </Button>
           </div>
-          <LegalNotice email={email} />
+          <LegalNotice email={email} mode="waitlist" />
         </>
       )}
-      <form onSubmit={form.handleSubmit(onSubmit)} className="max-xs:min-w-full flex flex-col gap-4 sm:flex-row">
+      <form onSubmit={form.handleSubmit(onSubmit)} className={cn('max-xs:min-w-full flex flex-col gap-4 sm:flex-row', className)}>
         <FormField
           control={form.control}
           name="email"
           render={({ field }) => (
-            <FormItem className={`${emailField ? '' : 'hidden'} gap-0`}>
+            <FormItem className={`${emailField ? '' : 'hidden'} grow gap-0`}>
               <FormControl>
                 <Input
                   {...field}
@@ -97,7 +99,7 @@ export const WaitlistForm = ({ email, buttonContent, emailField, dialog: isDialo
             </FormItem>
           )}
         />
-        <SubmitButton size="xl" loading={isPending} className={`w-full ${emailField && 'rounded-full ring-4 ring-primary/10'}`}>
+        <SubmitButton size="xl" loading={isPending} className={`w-full ${emailField && 'rounded-full ring-4 sm:max-w-40 ring-primary/10'}`}>
           {buttonContent ? (
             buttonContent
           ) : (

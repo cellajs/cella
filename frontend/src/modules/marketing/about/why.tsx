@@ -18,7 +18,7 @@ const Why = () => {
             return (
               <div className="w-full" key={item.id}>
                 <div className="group mb-12 flex">
-                  <div className="border-primary text-l md:text-1xl mr-6 flex h-8 w-full max-w-8 items-center justify-center rounded-full border-2 font-semibold group-hover:bg-transparent md:-mt-2 md:h-12 md:max-w-12">
+                  <div className="border-primary text-l md:text-1xl mr-4 flex h-8 w-full max-w-8 items-center justify-center rounded-full border-2 font-semibold group-hover:bg-transparent md:-mt-2 md:h-12 md:max-w-12">
                     {index + 1}
                   </div>
                   <div className="w-full">
@@ -33,7 +33,7 @@ const Why = () => {
       </div>
       <div className="w-full lg:w-7/12">
         <Suspense fallback={<Spinner className="mt-[45vh] h-10 w-10" />}>
-          <DeviceMockup className="lg:absolute -top-2 lg:ml-8 lg:w-[54vw]" type="pc" lightItems={whyLightSlides} darkItems={whyDarkSlides} />
+          <DeviceMockup className="lg:relative -top-2 lg:ml-8 lg:w-[54vw]" type="pc" lightItems={whyLightSlides} darkItems={whyDarkSlides} />
         </Suspense>
       </div>
     </div>

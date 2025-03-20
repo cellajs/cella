@@ -1,6 +1,6 @@
 import { APIProvider, AdvancedMarker, ControlPosition, Map as GMap, InfoWindow, MapControl, useAdvancedMarkerRef } from '@vis.gl/react-google-maps';
 import { config } from 'config';
-import { Minus, Plus, X } from 'lucide-react';
+import { ArrowUpRight, Minus, Plus, X } from 'lucide-react';
 import { useState } from 'react';
 import { ErrorBoundary } from 'react-error-boundary';
 import { useTranslation } from 'react-i18next';
@@ -53,8 +53,9 @@ const MarkerWithInfowindow = ({ position }: { position: { lat: number; lng: numb
             </div>
             <span className="block">{config.company.streetAddress}</span>
             <span className="block">{config.company.country}</span>
-            <a href={config.company.googleMapsUrl} target="_blank" rel="noreferrer">
+            <a href={config.company.googleMapsUrl} target="_blank" className="font-semibold flex mt-1" rel="noreferrer">
               {t('common:get_directions')}
+              <ArrowUpRight size={12} className="ml-1 opacity-50" />
             </a>
           </div>
         </InfoWindow>

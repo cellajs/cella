@@ -26,7 +26,6 @@ export type NavItem = {
   type: 'base' | 'floating';
   sheet?: React.ReactNode;
   dialog?: React.ReactNode;
-  event?: string;
   href?: string;
   mirrorOnMobile?: boolean;
 };

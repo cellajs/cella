@@ -4,13 +4,13 @@ import { Drawer as DrawerPrimitive } from 'vaul';
 
 import { cn } from '~/utils/cn';
 
-const DrawerVariants = cva('fixed z-125 p-6 overflow-x-hidden flex flex-col rounded-t-2.5 border bg-background', {
+const DrawerVariants = cva('fixed z-125 p-6 flex flex-col rounded-t-2.5 border bg-background', {
   variants: {
     direction: {
       top: 'inset-x-0 top-0 mb-24 flex-col',
       bottom: 'inset-x-0 bottom-0 mt-24 flex-col',
-      right: 'inset-y-0 right-0 w-[95vw] flex-row',
-      left: 'inset-y-0 left-0 w-[95vw] flex-row',
+      right: 'inset-y-0 right-0 w-[95vw] flex-row overflow-x-hidden',
+      left: 'inset-y-0 left-0 w-[95vw] flex-row overflow-x-hidden',
     },
   },
   defaultVariants: {
@@ -90,7 +90,7 @@ const DrawerDescription = React.forwardRef<
   React.ComponentRef<typeof DrawerPrimitive.Description>,
   React.ComponentPropsWithoutRef<typeof DrawerPrimitive.Description>
 >(({ className, ...props }, ref) => (
-  <DrawerPrimitive.Description ref={ref} className={cn('font-light text-left text-muted-foreground', className)} {...props} />
+  <DrawerPrimitive.Description ref={ref} className={cn('font-light text-left tex-sm text-muted-foreground mb-4', className)} {...props} />
 ));
 DrawerDescription.displayName = DrawerPrimitive.Description.displayName;
 

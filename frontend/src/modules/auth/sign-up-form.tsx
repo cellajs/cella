@@ -98,7 +98,7 @@ export const SignUpForm = ({ tokenData, email, resetSteps, emailEnabled }: Props
             render={({ field }) => (
               <FormItem className="hidden">
                 <FormControl>
-                  <Input {...field} type="email" autoFocus={!isMobile} disabled={true} readOnly={true} placeholder={t('common:email')} />
+                  <Input {...field} type="email" disabled={true} readOnly={true} placeholder={t('common:email')} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -114,7 +114,7 @@ export const SignUpForm = ({ tokenData, email, resetSteps, emailEnabled }: Props
                   <FormItem className="gap-0">
                     <FormControl>
                       <div className="relative">
-                        <Input type="password" autoFocus placeholder={t('common:new_password')} autoComplete="new-password" {...field} />
+                        <Input type="password" autoFocus={!isMobile} placeholder={t('common:new_password')} autoComplete="new-password" {...field} />
                         <Suspense>
                           <PasswordStrength password={form.getValues('password') || ''} minLength={8} />
                         </Suspense>
@@ -136,14 +136,14 @@ export const SignUpForm = ({ tokenData, email, resetSteps, emailEnabled }: Props
   );
 };
 
-export const LegalNotice = ({ email }: { email: string }) => {
+export const LegalNotice = ({ email, mode = 'signup' }: { email: string; mode?: 'waitlist' | 'signup' }) => {
   const { t } = useTranslation();
   const createDialog = useDialoger((state) => state.create);
 
-  const openDialog = (mode: 'terms' | 'privacy') => () => {
+  const openDialog = (legalSubject: 'terms' | 'privacy') => () => {
     const dialogComponent = (
       <Suspense fallback={<Spinner className="mt-[45vh] h-10 w-10" />}>
-        <LegalText textFor={mode} />
+        <LegalText textFor={legalSubject} />
       </Suspense>
     );
 
@@ -155,7 +155,7 @@ export const LegalNotice = ({ email }: { email: string }) => {
 
   return (
     <p className="font-light text-sm text-center space-x-1">
-      <span>{t('common:legal_notice.text', { email })}</span>
+      <span>{mode === 'signup' ? t('common:legal_notice.text', { email }) : t('common:legal_notice_waitlist.text', { email })}</span>
       <Button type="button" variant="link" className="p-0 h-auto" onClick={openDialog('terms')}>
         {t('common:terms').toLocaleLowerCase()}
       </Button>

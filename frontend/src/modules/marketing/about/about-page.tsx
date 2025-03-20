@@ -23,7 +23,9 @@ import '~/modules/marketing/about/glow-button.css';
 import { AboutSection } from '~/modules/marketing/about/section';
 import { Input } from '~/modules/ui/input';
 
-const sectionIds = ['hero', 'why', 'features', 'integrations', 'showcase', 'call-to-action'];
+export type AboutSectionId = (typeof aboutSectionIds)[number];
+
+const aboutSectionIds = ['hero', 'why', 'features', 'integrations', 'showcase', 'call-to-action'];
 
 const AboutPage = () => {
   const { t } = useTranslation();
@@ -31,7 +33,7 @@ const AboutPage = () => {
 
   const { copyToClipboard, copied } = useCopyToClipboard();
 
-  useScrollSpy({ sectionIds });
+  useScrollSpy({ sectionIds: aboutSectionIds });
 
   return (
     <>
@@ -44,7 +46,7 @@ const AboutPage = () => {
             <Input
               readOnly
               value="pnpm create @cellajs/cella"
-              className="block w-96 py-6 h-14 px-8 font-light text-sm font-mono rounded-full border border-transparent bg-background ring-4 ring-primary/10 transition focus:border-gray-500 focus:outline-hidden focus-visible:ring-primary/20"
+              className="block w-80 sm:w-96 py-6 h-14 px-8 font-light text-sm font-mono rounded-full border border-transparent bg-background ring-4 ring-primary/10 transition focus:border-gray-500 focus:outline-hidden focus-visible:ring-primary/20"
             />
             {copied && (
               <div className="absolute font-mono top-2.5 text-sm left-8 text-left bg-background right-2 py-2 rounded-full">copied! bon voyage 🚀</div>
@@ -64,9 +66,13 @@ const AboutPage = () => {
             replace
             hash="why"
             onClick={(e) => {
-              if (window.location.hash !== '#why') return;
+              // if (window.location.hash !== '#why') return;
               e.preventDefault();
               navigate({ to: '.', hash: 'top', replace: true });
+
+              // TODO temp fix while Link component doesn't support hash scroll into view
+              const anchor = document.getElementById('why');
+              anchor?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 
               setTimeout(() => {
                 navigate({ hash: 'why', replace: true });

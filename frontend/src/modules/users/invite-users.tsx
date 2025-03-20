@@ -13,17 +13,17 @@ import InviteSearchForm from '~/modules/users/invite-search-form';
 interface InviteUsersProps {
   entity?: EntityPage;
   dialog?: boolean;
-  mode?: string | null;
+  mode?: 'search' | 'email' | null;
   children?: React.ReactNode;
 }
 
 // When no entity type, it's a system invite
-const InviteUsers = ({ entity, dialog: isDialog, mode, children }: InviteUsersProps) => {
+const InviteUsers = ({ entity, dialog: isDialog, mode: baseMode, children }: InviteUsersProps) => {
   const { t } = useTranslation();
 
-  const [inviteMode, setInviteMode] = useState(mode);
+  const [inviteMode, setInviteMode] = useState(baseMode);
 
-  const updateMode = (mode: string[]) => {
+  const updateMode = (mode: ('search' | 'email')[]) => {
     // If mode is empty, go back to initial state
     mode[0] ? setInviteMode(mode[0]) : setInviteMode(null);
 

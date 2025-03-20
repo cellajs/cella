@@ -1,6 +1,7 @@
 import { SearchParamError, useRouterState } from '@tanstack/react-router';
 import type { TFunction } from 'i18next';
-import { ChevronDown, Home, MessageCircleQuestion, RefreshCw } from 'lucide-react';
+import { ChevronUp, Home, MessageCircleQuestion, RefreshCw } from 'lucide-react';
+import { AnimatePresence, motion } from 'motion/react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { ApiError } from '~/lib/api';
@@ -55,10 +56,13 @@ export const getErrorText = (t: TFunction, error?: ErrorNoticeError, errorFromQu
   }
 };
 
-// Error can be shown in multiple levels
-// - root: no footer can be shown because services are not available
-// - app: no footer required
-// - public: show footer
+/**
+ * Error can be shown in multiple levels
+ *
+ * root: no footer can be shown because services are not available
+ * app: no footer required
+ * public: show footer
+ */
 const ErrorNotice = ({ error, resetErrorBoundary, level }: ErrorNoticeProps) => {
   const { t } = useTranslation();
   const { location } = useRouterState();
@@ -86,7 +90,7 @@ const ErrorNotice = ({ error, resetErrorBoundary, level }: ErrorNoticeProps) => 
         <div className="mt-auto mb-auto">
           <Card className="max-w-[36rem] m-4">
             <CardHeader className="text-center">
-              <CardTitle className="text-2xl mb-2">{getErrorTitle(t, error, errorFromQuery) || t('error:error')}</CardTitle>
+              <CardTitle className="text-2xl mb-2 justify-center">{getErrorTitle(t, error, errorFromQuery) || t('error:error')}</CardTitle>
               <CardDescription className="text-base">
                 <span>{getErrorText(t, error, errorFromQuery) || t('error:reported_try_or_contact')}</span>
                 <span className="ml-1">{severity === 'warn' && t('error:contact_mistake')}</span>
@@ -94,35 +98,51 @@ const ErrorNotice = ({ error, resetErrorBoundary, level }: ErrorNoticeProps) => 
               </CardDescription>
             </CardHeader>
             {error && 'status' in error && (
-              <CardContent className="whitespace-pre-wrap text-red-600 font-mono">
-                {error.type && !showError && (
-                  <Button variant="link" size="sm" onClick={() => setShowError(true)} className="whitespace-pre-wrap w-full text-red-600">
-                    <span>{t('error:show_details')}</span>
-                    <ChevronDown size={12} className="ml-1" />
+              <CardContent className="whitespace-pre-wrap text-red-600 font-mono pb-4">
+                {error.type && (
+                  <Button
+                    variant="link"
+                    size="sm"
+                    onClick={() => setShowError((prev) => !prev)}
+                    className="whitespace-pre-wrap w-full text-red-600 flex items-center"
+                  >
+                    <span>{showError ? t('common:hide_details') : t('common:show_details')}</span>
+                    {<ChevronUp size={16} className={`ml-2 transition-transform ${showError ? 'rotate-0' : 'rotate-180'}`} />}
                   </Button>
                 )}
-                {error.type && showError && (
-                  <div className="grid gap-1 grid-cols-[1fr_1fr] text-sm place-items-start">
-                    <div className="font-medium pr-4 place-self-end">Log ID</div>
-                    <div>{error.logId || 'na'}</div>
-                    <div className="font-medium pr-4 place-self-end">Timestamp</div>
-                    <div>{dateNow}</div>
-                    <div className="font-medium pr-4 place-self-end">Message</div>
-                    <div>{error.message || 'na'}</div>
-                    <div className="font-medium pr-4 place-self-end">Type</div>
-                    <div>{error.type || 'na'}</div>
-                    <div className="font-medium pr-4 place-self-end">Resource type</div>
-                    <div>{error.entityType || 'na'}</div>
-                    <div className="font-medium pr-4 place-self-end">HTTP status</div>
-                    <div>{error.status || 'na'}</div>
-                    <div className="font-medium pr-4 place-self-end">Severity</div>
-                    <div>{error.severity || 'na'}</div>
-                    <div className="font-medium pr-4 place-self-end">User ID</div>
-                    <div>{error.usr || 'na'}</div>
-                    <div className="font-medium pr-4 place-self-end">Organization ID</div>
-                    <div>{error.org || 'na'}</div>
-                  </div>
-                )}
+
+                <AnimatePresence>
+                  {showError && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: 'auto', opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.3, ease: 'easeInOut' }}
+                      className="overflow-hidden"
+                    >
+                      <div className="grid gap-1 grid-cols-[1fr_1fr] text-sm place-items-start pb-4">
+                        <div className="font-medium pr-4 place-self-end">Log ID</div>
+                        <div>{error.logId || 'na'}</div>
+                        <div className="font-medium pr-4 place-self-end">Timestamp</div>
+                        <div>{dateNow}</div>
+                        <div className="font-medium pr-4 place-self-end">Message</div>
+                        <div>{error.message || 'na'}</div>
+                        <div className="font-medium pr-4 place-self-end">Type</div>
+                        <div>{error.type || 'na'}</div>
+                        <div className="font-medium pr-4 place-self-end">Resource type</div>
+                        <div>{error.entityType || 'na'}</div>
+                        <div className="font-medium pr-4 place-self-end">HTTP status</div>
+                        <div>{error.status || 'na'}</div>
+                        <div className="font-medium pr-4 place-self-end">Severity</div>
+                        <div>{error.severity || 'na'}</div>
+                        <div className="font-medium pr-4 place-self-end">User ID</div>
+                        <div>{error.usr || 'na'}</div>
+                        <div className="font-medium pr-4 place-self-end">Organization ID</div>
+                        <div>{error.org || 'na'}</div>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </CardContent>
             )}
             <CardFooter className="flex gap-2 mt-4 justify-center">

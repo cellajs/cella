@@ -54,11 +54,6 @@ const AppNav = () => {
       return navigate({ to: navItem.href });
     }
 
-    // If it has an event, emit it
-    if (navItem.event) {
-      return dispatchEvent(new Event(navItem.event));
-    }
-
     // Set nav sheet
     const sheetSide = isMobile ? (navItem.mirrorOnMobile ? 'right' : 'left') : 'left';
 
@@ -86,20 +81,24 @@ const AppNav = () => {
   ]);
 
   useEffect(() => {
-    router.subscribe('onBeforeLoad', ({ pathChanged, toLocation, fromLocation }) => {
+    router.subscribe('onBeforeLoad', ({ pathChanged }) => {
       const navState = useNavigationStore.getState();
       const sheetOpen = navState.navSheetOpen;
 
-      if (toLocation.pathname !== fromLocation?.pathname) {
-        if (navState.focusView) setFocusView(false);
+      if (!pathChanged) return;
 
-        // Remove all sheets in content or
-        if (sheetOpen && (sheetOpen !== 'menu' || !navState.keepMenuOpen)) {
-          setNavSheetOpen(null);
-          useSheeter.getState().remove();
-        } else useSheeter.getState().remove(undefined, 'nav-sheet');
-      }
-      pathChanged && setLoading(true);
+      if (navState.focusView) setFocusView(false);
+
+      // TODO - shouldnt be here - Clear sheets and dialogs
+      if (sheetOpen && (sheetOpen !== 'menu' || !navState.keepMenuOpen)) {
+        setNavSheetOpen(null);
+        useSheeter.getState().remove();
+      } else useSheeter.getState().remove(undefined, 'nav-sheet');
+
+      useDialoger.getState().remove();
+
+      // Set nav bar loading state
+      setLoading(true);
     });
     router.subscribe('onLoad', () => {
       setLoading(false);

@@ -13,8 +13,9 @@ export interface DialogProp {
 export default function StandardDialog({ dialog }: DialogProp) {
   const { id, content, open, description, title, titleContent = title, className, hideClose, headerClassName = '', container } = dialog;
   const isMobile = useBreakpoints('max', 'sm', false);
-  const modal = container ? container.overlay : true;
 
+  // When a container is provided, the dialog is rendered inside the container and scroll should stay enabled
+  const modal = !container;
   const containerElement = useMemo(() => (container ? document.getElementById(container.id) : null), [container]);
 
   const closeDialog = () => {
@@ -37,7 +38,7 @@ export default function StandardDialog({ dialog }: DialogProp) {
   return (
     <Dialog key={id} open={open} onOpenChange={onOpenChange} modal={modal}>
       {container?.overlay && (
-        <div className="fixed inset-0 z-80 bg-background/75 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
+        <div className="fixed inset-0 z-30 bg-background/75 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
       )}
       <DialogContent
         id={String(id)}
@@ -47,7 +48,7 @@ export default function StandardDialog({ dialog }: DialogProp) {
         onOpenAutoFocus={(event: Event) => {
           if (isMobile) event.preventDefault();
         }}
-        className={cn(className, containerElement && 'z-85')}
+        className={cn(className, containerElement && 'z-40')}
       >
         <DialogHeader className={`${title || description ? headerClassName : 'hidden'}`}>
           <DialogTitle className={`${title || title ? '' : 'hidden'} leading-6 h-6`}>{titleContent}</DialogTitle>

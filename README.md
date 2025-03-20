@@ -18,7 +18,7 @@
 <p>
 	<h1><b>Cella</b></h1>
 <p>
-    <b>Single stack TypeScript template to build powerful web apps with sync & offline capabilities.</b>
+    <b>Single stack TypeScript template to build web apps with sync & offline capabilities.</b>
     <br />
     <br />
     <a href="https://cellajs.com">Website</a>
@@ -33,7 +33,7 @@
 </div>
 
 > [!CAUTION]
-> Please be aware this is a prerelease. It does NOT meet production requirements yet and large breaking changes still occur regularly. An alpha version will be released once we have solid tests for at least authentication & authorization. Want to contribute or discuss cella for one of your projects? Let's connect! ✉️ <info@cellajs.com>
+> This is a prerelease. It does NOT meet production requirements yet and large breaking changes occur regularly. Versioned releases will begin once we have solid tests for authentication, authorization and data access. Want to contribute or discuss cella with us? Let's connect! ✉️ <info@cellajs.com>
 
 #### Contents
 - [Installation](#installation)
@@ -48,7 +48,7 @@
 <br>
 
 ## Create your own app
-Want to try cella to build your new web app? We made it simple using a short create CLI. Simply follow the steps to get started:
+Want to try cella to build your new web app? We made it simple with a create CLI. Simply follow the steps to get started:
 
 ```bash
 pnpm create @cellajs/cella@latest

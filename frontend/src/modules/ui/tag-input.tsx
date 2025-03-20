@@ -313,7 +313,7 @@ const TagInput = React.forwardRef<HTMLInputElement, TagInputProps>((props, ref) 
       {showCount && (
         <Badge
           size="micro"
-          className={`inline-flex items-center justify-center absolute -top-1 p-0 z-100 text-[10px]  ${maxTags ? '-right-2 w-5' : ' -right-1 w-4'}`}
+          className={`inline-flex items-center justify-center absolute -top-1 p-0 z-10 text-[10px]  ${maxTags ? '-right-2 w-5' : ' -right-1 w-4'}`}
         >
           {tagCount}
           {maxTags && `/${maxTags}`}

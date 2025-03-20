@@ -31,7 +31,7 @@ export const Hero = ({ title, subtitle, text, children, badgeText }: HeroProps) 
         <header ref={ref} className={headerClass}>
           <div className="container flex max-w-5xl flex-col items-center gap-4 text-center">
             {badgeText && (
-              <Badge size="sm" className="max-sm:hidden">
+              <Badge variant="plain" size="sm" className="max-sm:hidden">
                 {t(badgeText)}
               </Badge>
             )}
@@ -45,7 +45,7 @@ export const Hero = ({ title, subtitle, text, children, badgeText }: HeroProps) 
                 <Trans i18nKey={text} components={{ strong: <strong /> }} />
               </h2>
             )}
-            <div className="space-x-4">{children}</div>
+            <div className="">{children}</div>
           </div>
         </header>
       </section>
