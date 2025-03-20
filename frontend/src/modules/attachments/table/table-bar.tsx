@@ -59,7 +59,7 @@ export const AttachmentsTableBar = ({
   const openDeleteDialog = () => {
     createDialog(<DeleteAttachmentsForm entity={entity} dialog attachments={selected} callback={clearSelection} />, {
       className: 'max-w-xl',
-      title: t('common:remove_resource', { resource: t('common:attachment').toLowerCase() }),
+      title: t('common:remove_resource', { resource: t('common:attachments').toLowerCase() }),
       description: t('common:confirm.delete_resources', { resources: t('common:attachments').toLowerCase() }),
     });
   };

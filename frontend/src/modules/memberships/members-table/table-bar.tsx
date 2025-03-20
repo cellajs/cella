@@ -76,7 +76,7 @@ export const MembersTableBar = ({
       />,
       {
         className: 'max-w-xl',
-        title: t('common:remove_resource', { resource: t('common:member').toLowerCase() }),
+        title: t('common:remove_resource', { resource: t('common:members').toLowerCase() }),
         description: (
           <Trans
             i18nKey="common:confirm.remove_members"
@@ -100,7 +100,7 @@ export const MembersTableBar = ({
       container: { id: 'invite-users-container', overlay: true },
       title: t('common:invite'),
       titleContent: <UnsavedBadge title={t('common:invite')} />,
-      description: `${t('common:invite_users.text')}`,
+      description: `${t('common:invite_members.text')}`,
     });
   };
 

@@ -45,7 +45,7 @@ export const Hero = ({ title, subtitle, text, children, badgeText }: HeroProps) 
                 <Trans i18nKey={text} components={{ strong: <strong /> }} />
               </h2>
             )}
-            <div className="space-x-4">{children}</div>
+            <div className="">{children}</div>
           </div>
         </header>
       </section>
