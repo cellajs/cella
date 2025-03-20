@@ -15,6 +15,7 @@ export function Dialoger() {
   // Get dialogs from store
   const dialogs = useDialoger((state) => state.dialogs);
 
+  // Focus the previous element when dialogs change
   useEffect(() => {
     prevFocusedElement.current = (document.activeElement || document.body) as HTMLElement;
 

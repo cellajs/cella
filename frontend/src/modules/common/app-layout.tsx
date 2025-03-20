@@ -14,7 +14,7 @@ import { AppNavState } from '~/modules/navigation/app-nav-state';
 // Dialoger, dropdowner and sheeter are put here so they fall inside SSE provider.
 const AppLayout = () => {
   return (
-    <div id="app-layout" className="[.floating-nav_&]:h-auto">
+    <div id="app-layout" className="max-sm:mb-16 [.floating-nav_&]:mb-0">
       <ErrorBoundary
         fallbackRender={({ error, resetErrorBoundary }) => <ErrorNotice error={error} level="root" resetErrorBoundary={resetErrorBoundary} />}
       >

@@ -23,7 +23,9 @@ import '~/modules/marketing/about/glow-button.css';
 import { AboutSection } from '~/modules/marketing/about/section';
 import { Input } from '~/modules/ui/input';
 
-const sectionIds = ['hero', 'why', 'features', 'integrations', 'showcase', 'call-to-action'];
+export type AboutSectionId = (typeof aboutSectionIds)[number];
+
+const aboutSectionIds = ['hero', 'why', 'features', 'integrations', 'showcase', 'call-to-action'];
 
 const AboutPage = () => {
   const { t } = useTranslation();
@@ -31,7 +33,7 @@ const AboutPage = () => {
 
   const { copyToClipboard, copied } = useCopyToClipboard();
 
-  useScrollSpy({ sectionIds });
+  useScrollSpy({ sectionIds: aboutSectionIds });
 
   return (
     <>
@@ -64,9 +66,13 @@ const AboutPage = () => {
             replace
             hash="why"
             onClick={(e) => {
-              if (window.location.hash !== '#why') return;
+              // if (window.location.hash !== '#why') return;
               e.preventDefault();
               navigate({ to: '.', hash: 'top', replace: true });
+
+              // TODO temp fix while Link component doesn't support hash scroll into view
+              const anchor = document.getElementById('why');
+              anchor?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 
               setTimeout(() => {
                 navigate({ hash: 'why', replace: true });

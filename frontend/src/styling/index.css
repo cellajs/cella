@@ -110,29 +110,9 @@
   }
 
   /* For small screens we enlarge all elements by using rem everywhere, and then simply increase font-size */
-  /* Secondly, for app layout, we change the scroll body to #app-content */
   @media (max-width: 639px) {
     html {
       font-size: 18px;
-    }
-
-    #root {
-      @apply flex flex-col min-h-full;
-    }
-
-    #app-layout {
-      margin: 0;
-      display: flex;
-      flex-direction: column;
-      height: calc(100vh - 4rem);
-      overflow: hidden;
-      position: relative;
-    }
-
-    #app-content {
-      flex: 1;
-      height: 100%;
-      overflow-y: auto;
     }
   }
 

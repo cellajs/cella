@@ -36,9 +36,7 @@ const ColumnsView = <TData,>({ columns, setColumns, className = '', highDensity,
       <TooltipButton className={className} toolTipContent={t('common:columns_view')}>
         <DropdownMenuTrigger asChild>
           <Button variant="outline" className="relative flex">
-            {filteredColumns.some((column) => !column.visible) && (
-              <Badge className="absolute -right-1 -top-1 flex h-2 w-2 justify-center p-0 z-100" />
-            )}
+            {filteredColumns.some((column) => !column.visible) && <Badge className="absolute -right-1 -top-1 flex h-2 w-2 justify-center p-0 z-10" />}
             <SlidersHorizontal className="h-4 w-4" />
             <span className="ml-1 max-xl:hidden">{t('common:view')}</span>
           </Button>

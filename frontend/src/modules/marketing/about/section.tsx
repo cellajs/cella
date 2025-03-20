@@ -1,7 +1,8 @@
 import { useTranslation } from 'react-i18next';
+import type { AboutSectionId } from './about-page';
 
 interface AboutSectionProps {
-  section: string;
+  section: AboutSectionId;
   title?: string;
   text?: string;
   children?: React.ReactNode;

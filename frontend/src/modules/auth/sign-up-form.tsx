@@ -98,7 +98,7 @@ export const SignUpForm = ({ tokenData, email, resetSteps, emailEnabled }: Props
             render={({ field }) => (
               <FormItem className="hidden">
                 <FormControl>
-                  <Input {...field} type="email" autoFocus={!isMobile} disabled={true} readOnly={true} placeholder={t('common:email')} />
+                  <Input {...field} type="email" disabled={true} readOnly={true} placeholder={t('common:email')} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -114,7 +114,7 @@ export const SignUpForm = ({ tokenData, email, resetSteps, emailEnabled }: Props
                   <FormItem className="gap-0">
                     <FormControl>
                       <div className="relative">
-                        <Input type="password" autoFocus placeholder={t('common:new_password')} autoComplete="new-password" {...field} />
+                        <Input type="password" autoFocus={!isMobile} placeholder={t('common:new_password')} autoComplete="new-password" {...field} />
                         <Suspense>
                           <PasswordStrength password={form.getValues('password') || ''} minLength={8} />
                         </Suspense>

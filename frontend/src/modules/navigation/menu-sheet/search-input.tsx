@@ -2,6 +2,7 @@ import { Search, XCircle } from 'lucide-react';
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
+import useFocusByRef from '~/hooks/use-focus-by-ref';
 import useMounted from '~/hooks/use-mounted';
 import type { UserMenu, UserMenuItem } from '~/modules/me/types';
 import { Input } from '~/modules/ui/input';
@@ -20,6 +21,8 @@ export const MenuSheetSearchInput = ({ menu, searchTerm, setSearchTerm, searchRe
   const { t } = useTranslation();
   const { hasStarted } = useMounted();
   const isMobile = useBreakpoints('max', 'sm');
+
+  const { setFocus, focusRef } = useFocusByRef();
 
   useEffect(() => {
     const filterResults = () => {
@@ -50,6 +53,7 @@ export const MenuSheetSearchInput = ({ menu, searchTerm, setSearchTerm, searchRe
       <Input
         disabled={!hasStarted && isMobile} // Delay to prevent focus on initial render
         type="text"
+        ref={focusRef}
         placeholder={t('common:search')}
         value={searchTerm}
         onChange={(e) => setSearchTerm(e.target.value)}
@@ -59,7 +63,10 @@ export const MenuSheetSearchInput = ({ menu, searchTerm, setSearchTerm, searchRe
       <XCircle
         size={16}
         className="absolute right-3 top-1/2 opacity-70 hover:opacity-100 -translate-y-1/2 cursor-pointer group-data-[search=false]/menu:hidden"
-        onClick={() => setSearchTerm('')}
+        onClick={() => {
+          setSearchTerm('');
+          setFocus();
+        }}
       />
     </div>
   );
