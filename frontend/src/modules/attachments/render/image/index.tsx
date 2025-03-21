@@ -1,7 +1,7 @@
 import { Grab, Hand, Minus, Plus, RefreshCw, RotateCwSquare } from 'lucide-react';
 import type React from 'react';
 import { forwardRef, useEffect, useRef, useState } from 'react';
-import ImageViewer from '~/modules/attachments/render-image/image-viewer';
+import ImageViewer from '~/modules/attachments/render/image/viewer';
 import { TooltipButton } from '~/modules/common/tooltip-button';
 import { Button } from '~/modules/ui/button';
 import { cn } from '~/utils/cn';

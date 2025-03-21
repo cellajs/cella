@@ -1,7 +1,7 @@
 import { Trash, Upload, XSquare } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useTranslation } from 'react-i18next';
-import DeleteAttachmentsForm from '~/modules/attachments/table/delete-attachments-form';
+import DeleteAttachmentsForm from '~/modules/attachments/delete-attachments-form';
 import { openAttachmentsUploadDialog } from '~/modules/attachments/table/helpers';
 import type { AttachmentSearch, AttachmentsTableProps } from '~/modules/attachments/table/table-wrapper';
 import type { Attachment } from '~/modules/attachments/types';
