@@ -1,25 +1,26 @@
-import { useSuspenseInfiniteQuery } from '@tanstack/react-query';
+import { useSuspenseQuery } from '@tanstack/react-query';
 import { FlameKindling, ServerCrash, WifiOff } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useOnlineManager } from '~/hooks/use-online-manager';
 import AttachmentsCarousel from '~/modules/attachments/carousel';
-import { attachmentsQueryOptions } from '~/modules/attachments/query/options';
+import { groupedAttachmentsQueryOptions } from '~/modules/attachments/query/options';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import Spinner from '~/modules/common/spinner';
 
 interface AttachmentDialogProps {
   attachmentId: string;
-  groupId?: string;
   orgIdOrSlug: string;
+  groupId?: string;
 }
 
 const AttachmentDialog = ({ attachmentId, groupId, orgIdOrSlug }: AttachmentDialogProps) => {
   const { t } = useTranslation();
   const { isOnline } = useOnlineManager();
 
-  const { data, isError, isLoading } = useSuspenseInfiniteQuery(attachmentsQueryOptions({ groupId, orgIdOrSlug }));
+  const { data, isError, isLoading } = useSuspenseQuery(groupedAttachmentsQueryOptions({ groupId, orgIdOrSlug }));
 
-  const attachments = data?.pages.flatMap((page) => page.items);
+  const attachments = data?.items ?? [];
+  // TODO improve fetch when no groupId(mb fetch by attachment id and return group if there is one)
   const items = groupId ? attachments : attachments.filter(({ id }) => id === attachmentId);
 
   const itemIndex = attachments?.findIndex(({ id }) => attachmentId === id);

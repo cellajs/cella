@@ -2,13 +2,12 @@ import { attachmentsKeys } from '~/modules/attachments/query/options';
 import type { AttachmentInfiniteQueryData } from '~/modules/attachments/query/types';
 import type { Attachment } from '~/modules/attachments/types';
 import { getQueryKeySortOrder } from '~/query/helpers';
-
 import { getSimilarQueries } from '~/query/helpers/mutate-query';
 import { queryClient } from '~/query/query-client';
 
 // Handle new attachment insert
 export const handleInsert = (orgIdOrSlug: string, newAttachments: Attachment[]) => {
-  const queries = getSimilarQueries(attachmentsKeys.similar({ orgIdOrSlug }));
+  const queries = getSimilarQueries(attachmentsKeys.list.tableByOrg({ orgIdOrSlug }));
 
   for (const [queryKey] of queries) {
     const { sort, order: insertOrder } = getQueryKeySortOrder(queryKey);
@@ -42,7 +41,7 @@ export const handleInsert = (orgIdOrSlug: string, newAttachments: Attachment[]) 
 
 // Handle attachment update
 export const handleUpdate = (orgIdOrSlug: string, updatedAttachments: Attachment[]) => {
-  const queries = getSimilarQueries(attachmentsKeys.similar({ orgIdOrSlug }));
+  const queries = getSimilarQueries(attachmentsKeys.list.tableByOrg({ orgIdOrSlug }));
 
   for (const [queryKey] of queries) {
     queryClient.setQueryData<AttachmentInfiniteQueryData>(queryKey, (data) => {
@@ -64,7 +63,7 @@ export const handleUpdate = (orgIdOrSlug: string, updatedAttachments: Attachment
 
 // Handle attachment deletion in attachment query
 export const handleDelete = (orgIdOrSlug: string, attachmentIds: string[]) => {
-  const queries = getSimilarQueries(attachmentsKeys.similar({ orgIdOrSlug }));
+  const queries = getSimilarQueries(attachmentsKeys.list.tableByOrg({ orgIdOrSlug }));
 
   for (const [queryKey] of queries) {
     queryClient.setQueryData<AttachmentInfiniteQueryData>(queryKey, (data) => {

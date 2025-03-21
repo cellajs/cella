@@ -19,9 +19,11 @@ Key factories are an effective way to standardize and manage query keys, especia
 ```ts
 export const attachmentsKeys = {
   all: ["attachments"] as const,
-  list: () => [...attachmentsKeys.all, "list"] as const,
-  table: (filters?: GetAttachmentsParams) => [...attachmentsKeys.list(), filters] as const,
-  similar: (filters?: Pick<GetAttachmentsParams, "orgIdOrSlug">) => [...attachmentsKeys.list(), filters] as const,
+  list: {
+    base: () => [...attachmentsKeys.all, "list"],
+    table: (filters: GetAttachmentsParams) => [...attachmentsKeys.list.base(), filters] as const,
+    tableByOrg: (filters: Pick<GetAttachmentsParams, "orgIdOrSlug">) => [...attachmentsKeys.list.base(), filters] as const
+  },
   create: () => [...attachmentsKeys.all, "create"] as const,
   update: () => [...attachmentsKeys.all, "update"] as const,
   delete: () => [...attachmentsKeys.all, "delete"] as const
