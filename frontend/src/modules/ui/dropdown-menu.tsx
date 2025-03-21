@@ -1,7 +1,6 @@
 import * as DropdownMenuPrimitive from '@radix-ui/react-dropdown-menu';
 import { Check, ChevronRight, Circle } from 'lucide-react';
 import * as React from 'react';
-import ReactDOM from 'react-dom';
 
 import { cn } from '~/utils/cn';
 
@@ -57,14 +56,7 @@ const DropdownMenuContent = React.forwardRef<
   React.ComponentRef<typeof DropdownMenuPrimitive.Content>,
   React.ComponentPropsWithoutRef<typeof DropdownMenuPrimitive.Content> & { modal?: boolean }
 >(({ className, modal = true, sideOffset = 4, ...props }, ref) => (
-  <>
-    {!modal &&
-      ReactDOM.createPortal(
-        <div
-          className="fixed inset-0 bg-transparent z-103" // Full-screen overlay
-        />,
-        document.body,
-      )}
+  <DropdownMenuPrimitive.Portal>
     <DropdownMenuPrimitive.Content
       ref={ref}
       sideOffset={sideOffset}
@@ -74,7 +66,7 @@ const DropdownMenuContent = React.forwardRef<
       )}
       {...props}
     />
-  </>
+  </DropdownMenuPrimitive.Portal>
 ));
 DropdownMenuContent.displayName = DropdownMenuPrimitive.Content.displayName;
 

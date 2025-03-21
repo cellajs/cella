@@ -112,7 +112,7 @@
   /* For small screens we enlarge all elements by using rem everywhere, and then simply increase font-size */
   @media (max-width: 639px) {
     html {
-      font-size: 18px;
+      font-size: 20px;
     }
   }
 

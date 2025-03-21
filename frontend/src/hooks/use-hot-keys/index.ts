@@ -5,7 +5,7 @@ import { type HotkeyItem, getHotkeyMatcher, shouldFireEvent } from '~/hooks/use-
  * Hook to handle global keyboard shortcuts.
  *
  * @param hotkeys - Array of hotkey definitions ([key combination, handler function, options]).
- * @param tagsToIgnore - Elements where hotkeys should be ignored(default `['INPUT', 'TEXTAREA', 'SELECT', 'BUTTON', 'A']`).
+ * @param tagsToIgnore - Elements where hotkeys should be ignored(default `['INPUT', 'TEXTAREA', 'SELECT']`).
  * @param triggerOnContentEditable - Whether hotkeys should trigger in content-editable elements(default `false`0.
  *
  * @example
@@ -16,7 +16,7 @@ import { type HotkeyItem, getHotkeyMatcher, shouldFireEvent } from '~/hooks/use-
  */
 export function useHotkeys(
   hotkeys: HotkeyItem[],
-  tagsToIgnore: string[] = ['INPUT', 'TEXTAREA', 'SELECT', 'BUTTON', 'A'], // HTML tags to ignore
+  tagsToIgnore: string[] = ['INPUT', 'TEXTAREA', 'SELECT'], // HTML tags to ignore
   triggerOnContentEditable = false,
 ) {
   useEffect(() => {

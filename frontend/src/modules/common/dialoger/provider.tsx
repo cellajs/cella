@@ -1,4 +1,3 @@
-import { useEffect, useRef } from 'react';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import StandardDialog from '~/modules/common/dialoger/dialog';
 import DrawerDialog from '~/modules/common/dialoger/drawer';
@@ -10,24 +9,9 @@ import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
  */
 export function Dialoger() {
   const isMobile = useBreakpoints('max', 'sm');
-  const prevFocusedElement = useRef<HTMLElement | null>(null);
 
   // Get dialogs from store
   const dialogs = useDialoger((state) => state.dialogs);
-
-  // Focus the previous element when dialogs change
-  useEffect(() => {
-    prevFocusedElement.current = (document.activeElement || document.body) as HTMLElement;
-
-    return () => {
-      if (prevFocusedElement.current) {
-        setTimeout(() => {
-          prevFocusedElement.current?.focus();
-          prevFocusedElement.current = null;
-        }, 1);
-      }
-    };
-  }, [dialogs.length]);
 
   if (!dialogs.length) return null;
 
