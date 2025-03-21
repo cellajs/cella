@@ -11,7 +11,7 @@ import { getOffset } from '~/query/helpers';
 export const attachmentsKeys = {
   all: ['attachments'] as const,
   list: {
-    base: () => [...attachmentsKeys.all, 'list'],
+    base: () => [...attachmentsKeys.all, 'list'] as const,
     table: (filters: GetAttachmentsParams) => [...attachmentsKeys.list.base(), filters] as const,
     tableByOrg: (filters: Pick<GetAttachmentsParams, 'orgIdOrSlug'>) => [...attachmentsKeys.list.base(), filters] as const,
   },
