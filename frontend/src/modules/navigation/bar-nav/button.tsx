@@ -8,12 +8,12 @@ import { useTranslation } from 'react-i18next';
 
 import { TooltipButton } from '~/modules/common/tooltip-button';
 import AppNavLoader from '~/modules/navigation/bar-nav/loader';
-import type { NavItem } from '~/nav-config';
+import type { NavItem, NavItemId } from '~/nav-config';
 
 interface BarNavButtonProps {
   navItem: NavItem;
   isActive: boolean;
-  onClick: (id: string) => void;
+  onClick: (id: NavItemId) => void;
 }
 
 export const BarNavButton = ({ navItem, isActive, onClick }: BarNavButtonProps) => {

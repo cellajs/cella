@@ -1,20 +1,16 @@
-import { onlineManager } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
 import { useEffect } from 'react';
-import { useTranslation } from 'react-i18next';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { useHotkeys } from '~/hooks/use-hot-keys';
 import router from '~/lib/router';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
-import { toaster } from '~/modules/common/toaster';
 import BarNav from '~/modules/navigation/bar-nav';
 import FloatingNav from '~/modules/navigation/floating-nav';
-import { type NavItem, navItems } from '~/nav-config';
+import { type NavItem, type NavItemId, navItems } from '~/nav-config';
 import { useNavigationStore } from '~/store/navigation';
 
 const AppNav = () => {
-  const { t } = useTranslation();
   const navigate = useNavigate();
   const isMobile = useBreakpoints('max', 'sm');
 
@@ -22,28 +18,19 @@ const AppNav = () => {
   const navSheetOpen = useNavigationStore((state) => state.navSheetOpen);
   const updateSheet = useSheeter.getState().update;
 
-  const clickNavItem = (id: NavItem['id']) => {
-    // If the nav item is already open, close it
+  const clickNavItem = (id: NavItemId) => {
+    // If nav item is already open, close it
     if (id === navSheetOpen) {
       setNavSheetOpen(null);
       updateSheet('nav-sheet', { open: false });
       return;
     }
 
-    // Get the nav item
-    const navItem = navItems.filter((item) => item.id === id)[0];
+    // Get nav item
+    const navItem: NavItem = navItems.filter((item) => item.id === id)[0];
 
-    // If it has a dialog, open it
-    if (navItem.dialog) {
-      if (!onlineManager.isOnline()) return toaster(t('common:action.offline.text'), 'warning');
-
-      return useDialoger.getState().create(navItem.dialog, {
-        id: navItem.id,
-        className: navItem.id === 'search' ? 'sm:max-w-2xl p-0 border-0 mb-4' : '',
-        drawerOnMobile: navItem.id !== 'search',
-        hideClose: true,
-      });
-    }
+    // If it has an action, trigger it
+    if (navItem.action) return navItem.action();
 
     // If its a route, navigate to it
     if (navItem.href) {
@@ -54,9 +41,8 @@ const AppNav = () => {
       return navigate({ to: navItem.href });
     }
 
-    // Set nav sheet
+    // If all fails, it should be a nav sheet
     const sheetSide = isMobile ? (navItem.mirrorOnMobile ? 'right' : 'left') : 'left';
-
     setNavSheetOpen(navItem.id);
 
     // Create a sheet

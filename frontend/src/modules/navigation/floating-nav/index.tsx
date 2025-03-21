@@ -4,9 +4,9 @@ import useBodyClass from '~/hooks/use-body-class';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import useMounted from '~/hooks/use-mounted';
 import FloatingNavButton from '~/modules/navigation/floating-nav/button';
-import { type NavItem, navItems } from '~/nav-config';
+import { type NavItem, type NavItemId, navItems } from '~/nav-config';
 
-const FloatingNav = ({ onClick }: { onClick: (id: NavItem['id']) => void }) => {
+const FloatingNav = ({ onClick }: { onClick: (id: NavItemId) => void }) => {
   const isMobile = useBreakpoints('max', 'sm');
   const routerState = useRouterState();
 

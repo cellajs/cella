@@ -3,14 +3,14 @@ import { Fragment, Suspense, lazy, useMemo } from 'react';
 import useMounted from '~/hooks/use-mounted';
 import { BarNavButton } from '~/modules/navigation/bar-nav/button';
 import StopImpersonation from '~/modules/navigation/bar-nav/stop-impersonation';
-import { type NavItem, navItems } from '~/nav-config';
+import { type NavItem, type NavItemId, navItems } from '~/nav-config';
 import { useNavigationStore } from '~/store/navigation';
 import { useUIStore } from '~/store/ui';
 import { cn } from '~/utils/cn';
 
 const DebugToolbars = config.mode === 'development' ? lazy(() => import('~/modules/common/debug-toolbars')) : () => null;
 
-const BarNav = ({ onClick }: { onClick: (id: NavItem['id']) => void }) => {
+const BarNav = ({ onClick }: { onClick: (id: NavItemId) => void }) => {
   const { hasStarted } = useMounted();
 
   const theme = useUIStore((state) => state.theme);
