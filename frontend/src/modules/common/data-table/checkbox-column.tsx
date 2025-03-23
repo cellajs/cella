@@ -9,7 +9,7 @@ const CheckboxColumn: Column<any> & {
   frozen: false,
   headerCellClass: 'flex items-center justify-center',
   cellClass: 'flex items-center justify-center',
-  visible: true,
+  visible: window.innerWidth >= 640,
 };
 
 export default CheckboxColumn;

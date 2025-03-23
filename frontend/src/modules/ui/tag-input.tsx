@@ -268,7 +268,7 @@ const TagInput = React.forwardRef<HTMLInputElement, TagInputProps>((props, ref) 
           'flex flex-wrap items-center p-1 rounded-md text-sm file:border-0 file:bg-transparent file:text-sm file:font-medium',
           tagListPlacement === 'bottom' ? 'flex-col-reverse' : tagListPlacement === 'top' ? 'flex-col' : 'flex-row',
           tagListPlacement === 'inside' &&
-            'bg-background ring-offset-background border border-input focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 placeholder:text-muted-foreground',
+            'bg-background ring-offset-background border border-input focus-visible:outline-none sm:focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 placeholder:text-muted-foreground',
           tagListPlacement === 'inside' && styleClasses?.input,
         )}
       >
@@ -302,7 +302,7 @@ const TagInput = React.forwardRef<HTMLInputElement, TagInputProps>((props, ref) 
             tagListPlacement !== 'inside'
               ? cn(
                   styleClasses?.input,
-                  'bg-background ring-offset-background border border-input focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 placeholder:text-muted-foreground',
+                  'bg-background ring-offset-background border border-input focus-visible:outline-none sm:focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 placeholder:text-muted-foreground',
                 )
               : 'h-8 w-auto grow border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-transparent focus-visible:ring-offset-0 py-0 px-1'
           }

@@ -93,7 +93,6 @@ export const AppSearch = () => {
         value={searchValue}
         ref={focusRef}
         clearValue={() => {
-          console.log('clearValue');
           setSearchValue('');
           setFocus();
         }}

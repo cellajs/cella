@@ -20,7 +20,7 @@ const FloatingNavButton = ({ id, Icon, onClick, className, direction = 'right' }
       variant="secondary"
       onClick={onClick}
       className={cn(
-        `fixed z-105 w-14 h-14 flex items-center shadow-lg hover:bg-secondary justify-center rounded-full bottom-3 
+        `fixed z-105 w-12 h-12 flex items-center shadow-lg hover:bg-secondary justify-center rounded-full bottom-3 
         data-[direction=left]:left-3 data-[direction=right]:right-3`,
         className,
       )}

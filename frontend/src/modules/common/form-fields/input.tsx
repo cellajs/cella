@@ -78,6 +78,7 @@ const InputFormField = <TFieldValues extends FieldValues>({
                 placeholder={placeholder}
                 onFocus={onFocus}
                 readOnly={readOnly}
+                type={type}
                 autoFocus={autoFocus}
                 defaultValue={defaultValue}
                 value={value || formFieldValue || ''}

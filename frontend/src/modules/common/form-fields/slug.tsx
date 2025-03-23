@@ -31,7 +31,7 @@ export const SlugFormField = ({ control, label, previousSlug, description, nameV
 
   const prefix = `${config.frontendUrl.replace(/^https?:\/\//, '')}/${type === 'organization' ? '' : `${type}s/`}`;
 
-  const inputClassName = `${isSlugAvailable !== 'blank' && 'ring-2 focus-visible:ring-2'}
+  const inputClassName = `${isSlugAvailable !== 'blank' && 'ring-2 sm:focus-visible:ring-2'}
                           ${isSlugAvailable === 'available' && 'ring-green-500 focus-visible:ring-green-500'}
                           ${isSlugAvailable === 'notAvailable' && 'ring-red-500 focus-visible:ring-red-500'}`;
 

@@ -13,6 +13,7 @@ import { Checkbox } from '~/modules/ui/checkbox';
 
 import 'react-data-grid/lib/styles.css';
 import '~/modules/common/data-table/style.css';
+import { useBreakpoints } from '~/hooks/use-breakpoints';
 
 interface DataTableProps<TData> {
   columns: ColumnOrColumnGroup<TData>[];
@@ -89,7 +90,9 @@ export const DataTable = <TData,>({
   onCellClick,
 }: DataTableProps<TData>) => {
   const { t } = useTranslation();
+  const isMobile = useBreakpoints('max', 'sm', false);
   const { isOnline } = useOnlineManager();
+
   const [initialDone, setInitialDone] = useState(false);
   const { ref: measureRef, inView } = useInView({ triggerOnce: false, threshold: 0 });
 
@@ -125,7 +128,7 @@ export const DataTable = <TData,>({
           ) : (
             <div className="grid rdg-wrapper relative pb-8" ref={gridRef}>
               <DataGrid
-                rowHeight={rowHeight}
+                rowHeight={isMobile ? rowHeight * 1.2 : rowHeight}
                 enableVirtualization={enableVirtualization}
                 rowKeyGetter={rowKeyGetter}
                 columns={columns}

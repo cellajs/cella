@@ -2,8 +2,8 @@ export const config = {
   mode: 'development',
   name: 'Cella',
   slug: 'cella',
-
   domain: 'cellajs.com',
+
   frontendUrl: 'https://cellajs.com',
   backendUrl: 'https://api.cellajs.com',
   backendAuthUrl: 'https://api.cellajs.com/auth',
@@ -113,8 +113,8 @@ export const config = {
   has: {
     pwa: true, // Progressive Web App support for preloading static assets and offline support
     sync: true, // Realtime updates and sync using Electric Sync
-    registrationEnabled: true, // Allow users to sign up. If false, the app is by invitation only
-    waitlist: false, // Suggest a waitlist for unknown emails when sign up is disabled,
+    registrationEnabled: false, // Allow users to sign up. If false, the app is by invitation only
+    waitlist: true, // Suggest a waitlist for unknown emails when sign up is disabled,
     imado: true, // Imado fully configured, if false, files will be stored in local browser (indexedDB)
   },
 
