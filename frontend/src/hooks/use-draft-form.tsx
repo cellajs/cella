@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { type FieldPath, type FieldValues, type UseFormProps, type UseFormReturn, useForm } from 'react-hook-form';
+import { type FieldPath, type FieldValues, type UseFormProps, type UseFormReturn, useForm, useWatch } from 'react-hook-form';
 import { useDraftStore } from '~/store/draft';
 
 /**
@@ -54,7 +54,7 @@ export function useFormWithDraft<
   const [loading, setLoading] = useState(true);
 
   // Watch all fields
-  const allFields = form.watch();
+  const allFields = useWatch({ control: form.control });
 
   // Make unsaved badge appear above form
   const toggleUnsavedBadge = (showBadge: boolean) => {

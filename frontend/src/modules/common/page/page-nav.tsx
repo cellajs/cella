@@ -3,6 +3,7 @@ import { motion } from 'motion/react';
 import { type MouseEventHandler, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useInView } from 'react-intersection-observer';
+import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import StickyBox from '~/modules/common/sticky-box';
 import { cn } from '~/utils/cn';
@@ -26,6 +27,7 @@ interface Props {
 }
 
 export const PageNav = ({ title, avatar, tabs, className = '' }: Props) => {
+  const isMobile = useBreakpoints('max', 'sm', false);
   const layoutId = useMemo(() => nanoid(), []);
 
   const { t } = useTranslation();
@@ -33,6 +35,7 @@ export const PageNav = ({ title, avatar, tabs, className = '' }: Props) => {
 
   // Focus the first tab on mount
   useEffect(() => {
+    if (!isMobile) return;
     document.getElementById(`tab-${tabs[0].id}`)?.focus();
   }, []);
 
@@ -62,7 +65,7 @@ export const PageNav = ({ title, avatar, tabs, className = '' }: Props) => {
             key={id}
             id={`tab-${id}`}
             resetScroll={false}
-            className="relative p-2 lg:px-4 rounded-sm outline-hidden sm:ring-offset-background focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+            className="relative p-2 lg:px-4 rounded-sm outline-hidden sm:ring-offset-background sm:focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
             to={path}
             params={true}
             activeOptions={{ exact: true, includeSearch: false }}

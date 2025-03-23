@@ -22,11 +22,13 @@ export const isArbitraryQueryData = (data: unknown): data is ArbitraryEntityQuer
   if (typeof data !== 'object' || data === null) return false;
 
   return Object.entries(data).every(([_, value]) => {
-    if (!Array.isArray(value)) return 'entity' in value && 'id' in value;
-    return value.every((item) => 'entity' in item && 'id' in item);
+    if (!Array.isArray(value)) {
+      return typeof value === 'object' && value !== null && 'entity' in value && 'id' in value;
+    }
+
+    return value.every((item) => typeof item === 'object' && item !== null && 'entity' in item && 'id' in item);
   });
 };
-
 /**
  * Updates the infinite query data based on the specified action.
  *

@@ -397,7 +397,7 @@
   "updated_at": "Updated",
   "updated_by": "Updated by",
   "upload": "Upload",
-  "upload_img_max_10mb.text": "Upload a PNG or JPG under 10MB",
+  "upload_img_max_10mb.text": "PNG or JPG below 10MB",
   "upload_item": "Upload {{item}}",
   "upload_multiple.text": "Up to {{count}} {{item}} at a time. Max. 10MB each.",
   "user": "User",
@@ -422,5 +422,6 @@
   "year": "year",
   "your_role": "Your role",
   "tune_profile": "Tune your profile",
-  "invite_others": "Invite others"
+  "invite_others": "Invite others",
+  "order": "Order"
 }

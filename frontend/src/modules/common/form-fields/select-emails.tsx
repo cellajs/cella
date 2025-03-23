@@ -322,7 +322,7 @@ export const SelectEmails = (props: SelectEmailsProps) => {
               <button
                 type="button"
                 className={cn(
-                  'py-1 m-[-.25rem] ml-1 rounded-full outline-hidden sm:ring-offset-background focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
+                  'py-1 m-[-.25rem] ml-1 rounded-full outline-hidden sm:ring-offset-background sm:focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
                 )}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') {

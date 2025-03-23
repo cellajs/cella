@@ -36,7 +36,7 @@ export const BarNavButton = ({ navItem, isActive, onClick }: BarNavButtonProps) 
         {navItem.id === 'account' && user ? (
           <AvatarWrap
             type="user"
-            className="border-[0.1rem] rounded-full border-primary group-hover:scale-110 transition-transform"
+            className="border-[0.1rem] w-8 h-8 sm:w-9 sm:h-9 rounded-full border-primary group-hover:scale-110 transition-transform"
             id={user.id}
             name={user.name}
             url={user.thumbnailUrl}

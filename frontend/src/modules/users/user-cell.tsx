@@ -18,7 +18,7 @@ const UserCell = ({ user, context, orgIdOrSlug, tabIndex }: { user: LimitedUser;
       to={orgIdOrSlug ? '/$orgIdOrSlug/users/$idOrSlug' : '/users/$idOrSlug'}
       tabIndex={tabIndex}
       params={{ idOrSlug: user.slug, ...(orgIdOrSlug ? { orgIdOrSlug } : {}) }}
-      className="flex space-x-2 items-center outline-0 ring-0 group"
+      className="flex space-x-2 items-center outline-0 ring-0 group truncate"
       onClick={(e) => {
         if (!onlineManager.isOnline()) {
           e.preventDefault();
