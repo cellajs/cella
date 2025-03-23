@@ -1,4 +1,4 @@
-import type { NavItem } from '~/nav-config';
+import type { NavItemId } from '~/nav-config';
 import {
   AcceptOrgInviteRoute,
   AuthLayoutRoute,
@@ -60,6 +60,6 @@ export const routeTree = rootRoute.addChildren([
 
 declare module '@tanstack/react-router' {
   interface StaticDataRouteOption {
-    floatingNavButtons?: Array<NavItem['id']>;
+    floatingNavButtons?: Array<NavItemId>;
   }
 }
