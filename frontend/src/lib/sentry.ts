@@ -8,6 +8,7 @@ window.ononline = () => {
 
 // Close Sentry when offline to avoid sending errors
 window.onoffline = () => {
+  console.info('You went offline. Closing Sentry.');
   Sentry.close();
 };
 
