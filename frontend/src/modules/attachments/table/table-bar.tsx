@@ -113,7 +113,7 @@ export const AttachmentsTableBar = ({
         </FilterBarActions>
         <div className="sm:grow" />
         <FilterBarContent className="max-sm:animate-in max-sm:slide-in-from-left max-sm:fade-in max-sm:duration-300">
-          <TableSearch value={q} setQuery={onSearch} />
+          <TableSearch value={q} setQuery={onSearch} allowOfflineSearch={true} />
         </FilterBarContent>
       </TableFilterBar>
 
