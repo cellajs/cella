@@ -1,6 +1,7 @@
 import { Suspense, lazy } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
+import type { EntityPage } from '~/modules/entities/types';
 import type { MembershipInvitationsTableProps } from '~/modules/memberships/pending-table/table-wrapper';
 import { Button } from '~/modules/ui/button';
 
@@ -13,19 +14,21 @@ export const MembershipInvitations = ({ entity }: MembershipInvitationsTableProp
   const total = entity.counts?.membership.pending;
 
   const openSheet = () => {
-    createSheet(
+    // Wrapping this to prevent react-compiler issue?!
+    const SheetComponent = ({ entity }: { entity: EntityPage }) => (
       <Suspense>
         <MembershipInvitationsTable entity={entity} />
-      </Suspense>,
-      {
-        className: 'max-w-full lg:max-w-4xl',
-        title: t('common:pending_invitations'),
-        description: t('common:pending_invitations.text', { entity: t(`common:${entity.entity}`).toLowerCase() }),
-        id: 'pending-invites',
-        scrollableOverlay: true,
-        side: 'right',
-      },
+      </Suspense>
     );
+
+    createSheet(<SheetComponent entity={entity} />, {
+      className: 'max-w-full lg:max-w-4xl',
+      title: t('common:pending_invitations'),
+      description: t('common:pending_invitations.text', { entity: t(`common:${entity.entity}`).toLowerCase() }),
+      id: 'pending-invites',
+      scrollableOverlay: true,
+      side: 'right',
+    });
   };
 
   if (total === undefined) return null;

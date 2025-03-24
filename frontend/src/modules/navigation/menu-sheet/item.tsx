@@ -35,7 +35,7 @@ export const MenuSheetItem = ({ item, className, searchResults }: MenuSheetItemP
       data-subitem={!searchResults && !item.submenu}
       resetScroll={false}
       className={cn(
-        'relative group/menuItem h-14 w-full flex cursor-pointer items-start justify-start space-x-1 rounded p-0 focus:outline-hidden ring-2 ring-inset ring-transparent focus-visible:ring-foreground hover:bg-accent/50 hover:text-accent-foreground data-[subitem=true]:h-12 data-[active=true]:ring-transparent data-[active=true]:bg-accent',
+        'relative group/menuItem h-12 w-full flex items-start justify-start space-x-1 rounded p-0 focus:outline-hidden ring-2 ring-inset ring-transparent focus-visible:ring-foreground sm:hover:bg-accent/50 sm:hover:text-accent-foreground data-[subitem=true]:h-10 data-[active=true]:ring-transparent data-[active=true]:bg-accent',
         className,
       )}
       activeOptions={{ exact: false, includeHash: false }}
@@ -45,22 +45,21 @@ export const MenuSheetItem = ({ item, className, searchResults }: MenuSheetItemP
       params={params}
     >
       <AvatarWrap
-        className="z-1 items-center m-2 group-data-[subitem=true]/menuItem:my-2 group-data-[subitem=true]/menuItem:mx-3 group-data-[subitem=true]/menuItem:text-xs group-data-[subitem=true]/menuItem:h-8 group-data-[subitem=true]/menuItem:w-8"
+        className="z-1 items-center m-1 mr-3 group-data-[subitem=true]/menuItem:my-1.5 group-data-[subitem=true]/menuItem:mx-2.5 group-data-[subitem=true]/menuItem:text-xs group-data-[subitem=true]/menuItem:h-7 group-data-[subitem=true]/menuItem:w-7"
         type={item.entity}
         id={item.id}
         name={item.name}
         url={item.thumbnailUrl}
       />
-      <div className="truncate grow py-2 flex flex-col justify-center pr-2 text-left">
+      <div className="truncate grow flex flex-col justify-center pr-2 text-left group-data-[subitem=true]/menuItem:pl-2">
         <div
-          className={`truncate leading-5 transition-all group-hover/menuItem:delay-300 duration-200 ease-in-out ${!searchResults && 'pt-2.5 group-data-[subitem=true]/menuItem:pt-1.5'} sm:group-hover/menuItem:pt-0! text-base group-data-[subitem=true]/menuItem:text-sm
-            sm:group-data-[subitem=true]/menuItem:-my-0.5 sm:group-data-[subitem=true]/menuItem:pt-2`}
+          className={`truncate leading-5 transition-all text-base group-hover/menuItem:delay-300 pt-1.5 duration-200 ease-in-out ${!searchResults && 'pt-3.5 group-data-[subitem=true]/menuItem:pt-3'} sm:group-hover/menuItem:pt-1.5! group-data-[subitem=true]/menuItem:text-sm group-data-[subitem=true]/menuItem:leading-4`}
         >
           {item.name}
         </div>
-        <div className="text-muted-foreground text-sm font-light sm:group-data-[subitem=true]/menuItem:text-xs">
+        <div className="text-muted-foreground text-xs font-light sm:group-data-[subitem=true]/menuItem:leading-3">
           {searchResults && (
-            <span className="absolute transition-opacity duration-200 delay-200 ease-in-out sm:group-hover/menuItem:opacity-0 opacity-50">
+            <span className="absolute transition-opacity duration-200 delay-200 ease-in-out sm:group-hover/menuItem:opacity-0">
               {t(`app:${item.entity}`)}
             </span>
           )}

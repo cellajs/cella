@@ -8,12 +8,12 @@ import { useTranslation } from 'react-i18next';
 
 import { TooltipButton } from '~/modules/common/tooltip-button';
 import AppNavLoader from '~/modules/navigation/bar-nav/loader';
-import type { NavItem } from '~/nav-config';
+import type { NavItem, NavItemId } from '~/nav-config';
 
 interface BarNavButtonProps {
   navItem: NavItem;
   isActive: boolean;
-  onClick: (id: string) => void;
+  onClick: (id: NavItemId) => void;
 }
 
 export const BarNavButton = ({ navItem, isActive, onClick }: BarNavButtonProps) => {
@@ -36,7 +36,7 @@ export const BarNavButton = ({ navItem, isActive, onClick }: BarNavButtonProps) 
         {navItem.id === 'account' && user ? (
           <AvatarWrap
             type="user"
-            className="border-[0.1rem] rounded-full border-primary group-hover:scale-110 transition-transform"
+            className="border-[0.1rem] w-8 h-8 sm:w-9 sm:h-9 rounded-full border-primary group-hover:scale-110 transition-transform"
             id={user.id}
             name={user.name}
             url={user.thumbnailUrl}

@@ -43,29 +43,29 @@ export const MenuItemEdit = ({ item }: MenuItemEditProps) => {
       layoutId={`sheet-menu-item-${item.id}`}
       data-subitem={!item.submenu}
       data-archived={item.membership.archived}
-      className="group/optionsItem flex relative items-center h-14 w-full p-0 pr-2 justify-start rounded focus:outline-hidden
+      className="group/optionsItem flex relative items-center h-12 w-full p-0 pr-2 justify-start rounded focus:outline-hidden
         ring-inset ring-muted/25 focus-visible:ring-foreground hover:bg-accent/50 hover:text-accent-foreground ring-1 data-[archived=false]:cursor-grab
         group-data-[submenu=false]/menuOptions:h-12"
     >
       {status === 'pending' && onlineManager.isOnline() && (
         <div className="absolute z-10">
           <Spinner
-            className="p-1 m-2 text-black opacity-50 h-10 w-10 group-data-[submenu=false]/menuOptions:my-2 group-data-[submenu=false]/menuOptions:mx-3
-            group-data-[submenu=false]/menuOptions:p-1 group-data-[submenu=false]/menuOptions:h-8 group-data-[submenu=false]/menuOptions:w-8"
+            className="p-1 m-1 mr-3 text-black opacity-50 h-10 w-10 group-data-[submenu=false]/menuOptions:my-2 group-data-[submenu=false]/menuOptions:mx-3
+            group-data-[submenu=false]/menuOptions:p-1 group-data-[submenu=false]/menuOptions:h-7 group-data-[submenu=false]/menuOptions:w-7"
           />
         </div>
       )}
       <AvatarWrap
-        className="m-2 group-data-[subitem=true]/optionsItem:text-xs group-data-[submenu=false]/menuOptions:my-2 group-data-[submenu=false]/menuOptions:mx-3
-            group-data-[submenu=false]/menuOptions:h-8 group-data-[submenu=false]/menuOptions:w-8 group-data-[archived=true]/optionsItem:opacity-70"
+        className="m-1 mr-3 group-data-[subitem=true]/optionsItem:text-xs group-data-[submenu=false]/menuOptions:my-2 group-data-[submenu=false]/menuOptions:mx-3
+            group-data-[submenu=false]/menuOptions:h-7 group-data-[submenu=false]/menuOptions:w-7 group-data-[archived=true]/optionsItem:opacity-70"
         type={item.entity}
         id={item.id}
         name={item.name}
         url={item.thumbnailUrl}
       />
 
-      <div className="truncate grow py-1 pl-1 text-left">
-        <div className="truncate group-data-[subitem=true]/optionsItem:text-xs leading-6 group-data-[archived=true]/optionsItem:opacity-70">
+      <div className="truncate grow text-left group-data-[submenu=false]/menuOptions:pl-1">
+        <div className="truncate group-data-[subitem=true]/optionsItem:text-xs leading-5 group-data-[archived=true]/optionsItem:opacity-70">
           {item.name} {env.VITE_DEBUG_UI && <span className="text-muted">#{item.membership.order}</span>}
         </div>
         <div className="flex items-center gap-4 transition-opacity delay-500">

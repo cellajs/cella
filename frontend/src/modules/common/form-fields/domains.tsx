@@ -68,12 +68,12 @@ const DomainsFormField = ({ control, label, description, required }: Props) => {
                 styleClasses={{
                   tag: {
                     body: 'pr-0 gap-0.5',
-                    closeButton: 'h-6 w-6 ring-inset focus-visible:ring-2 p-0 rounded-full hover:bg-transparent cursor-pointer',
+                    closeButton: 'h-6 w-6 ring-inset sm:focus-visible:ring-2 p-0 rounded-full hover:bg-transparent cursor-pointer',
                   },
                   input: `${
                     fieldActive
                       ? !checkValidInput(currentValue)
-                        ? 'ring-2 focus-visible:ring-2 ring-red-500 focus-visible:ring-red-500'
+                        ? 'ring-2 sm:focus-visible:ring-2 ring-red-500 focus-visible:ring-red-500'
                         : 'max-sm:ring-offset-0  max-sm:ring-transparent ring-2 ring-offset-2 ring-white'
                       : ''
                   }`,

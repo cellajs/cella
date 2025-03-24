@@ -3,9 +3,13 @@ import { Home, type LucideProps, Menu, Search, User } from 'lucide-react';
 import { AccountSheet } from '~/modules/navigation/account-sheet';
 import { MenuSheet } from '~/modules/navigation/menu-sheet';
 
+import { onlineManager } from '@tanstack/react-query';
 import type { FooterLinkProps } from '~/modules/common/main-footer';
 import type { UserMenuItem } from '~/modules/me/types';
 import { AppSearch, type SuggestionSection, type SuggestionType } from '~/modules/navigation/search';
+import { i18n } from './lib/i18n';
+import { useDialoger } from './modules/common/dialoger/use-dialoger';
+import { toaster } from './modules/common/toaster';
 
 /**
  * Set entity paths so we can dynamically use them in the app
@@ -16,29 +20,43 @@ export const baseEntityRoutes = {
 } as const;
 
 /**
- * Declare navigation items/buttons ids for main navigation bar
- *
- * Type `base` if for buttons in the main navigation bar, `floating` is for floating buttons
+ * Type `base` for buttons in the main navigation bar, `floating` is for floating buttons
  */
+export type NavItemId = (typeof navItems)[number]['id'];
+
 export type NavItem = {
-  id: string;
+  id: NavItemId;
   icon: React.ElementType<LucideProps>;
   type: 'base' | 'floating';
   sheet?: React.ReactNode;
-  dialog?: React.ReactNode;
+  action?: () => void;
   href?: string;
   mirrorOnMobile?: boolean;
 };
 
 /**
+ * Declare search nav button action
+ */
+const startSearchAction = () => {
+  if (!onlineManager.isOnline()) return toaster(i18n.t('common:action.offline.text'), 'warning');
+
+  return useDialoger.getState().create(<AppSearch />, {
+    id: 'search',
+    className: 'sm:max-w-2xl p-0 border-0 mb-4',
+    drawerOnMobile: false,
+    hideClose: true,
+  });
+};
+
+/**
  * Declare all of your main navigation items, visible in main navigation bar or as floating buttons on mobile
  */
-export const navItems: NavItem[] = [
+export const navItems = [
   { id: 'menu', type: 'base', icon: Menu, sheet: <MenuSheet /> },
   { id: 'home', type: 'base', icon: Home, href: '/home' },
-  { id: 'search', type: 'base', icon: Search, dialog: <AppSearch /> },
+  { id: 'search', type: 'base', icon: Search, action: startSearchAction },
   { id: 'account', type: 'base', icon: User, sheet: <AccountSheet />, mirrorOnMobile: true },
-];
+] as const;
 
 /**
  * Set footer links

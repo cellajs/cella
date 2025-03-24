@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { type FieldPath, type FieldValues, type UseFormProps, type UseFormReturn, useForm } from 'react-hook-form';
+import { type FieldPath, type FieldValues, type UseFormProps, type UseFormReturn, useForm, useWatch } from 'react-hook-form';
 import { useDraftStore } from '~/store/draft';
 
 /**
@@ -12,6 +12,7 @@ import { useDraftStore } from '~/store/draft';
  *   - `formContainerId`: element id to target and toggle .unsaved-changes class with.
  *
  * @returns - Returns form methods along with:
+ *  - `isDirty`: `true` if the form has unsaved changes.
  *  - `unsavedChanges`: `true` if the form has unsaved changes.
  *  - `loading`: `true` while restoring draft data.
  *
@@ -41,10 +42,12 @@ export function useFormWithDraft<
   },
 ): UseFormReturn<TFieldValues, TContext, TTransformedValues> & {
   unsavedChanges: boolean;
+  isDirty: boolean;
   loading: boolean;
 } {
   const { formOptions, formContainerId } = opt || {};
   const form = useForm<TFieldValues, TContext, TTransformedValues>(formOptions);
+  const { isDirty } = form.formState;
 
   const getDraftForm = useDraftStore((state) => state.getForm);
   const setDraftForm = useDraftStore((state) => state.setForm);
@@ -54,7 +57,7 @@ export function useFormWithDraft<
   const [loading, setLoading] = useState(true);
 
   // Watch all fields
-  const allFields = form.watch();
+  const allFields = useWatch({ control: form.control });
 
   // Make unsaved badge appear above form
   const toggleUnsavedBadge = (showBadge: boolean) => {
@@ -100,6 +103,7 @@ export function useFormWithDraft<
   return {
     ...form,
     unsavedChanges,
+    isDirty,
     loading,
     reset: (values, keepStateOptions) => {
       resetDraftForm(formId);
