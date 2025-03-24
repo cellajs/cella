@@ -86,7 +86,7 @@ const ErrorNotice = ({ error, resetErrorBoundary, level }: ErrorNoticeProps) => 
   return (
     <>
       {level === 'root' && <Dialoger />}
-      <div className="container flex flex-col min-h-[calc(100vh-20rem)] items-center">
+      <div className="container flex flex-col min-h-[calc(100vh-10rem)] items-center">
         <div className="mt-auto mb-auto">
           <Card className="max-w-[36rem] m-4">
             <CardHeader className="text-center">

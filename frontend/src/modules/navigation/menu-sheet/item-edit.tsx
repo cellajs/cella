@@ -51,20 +51,20 @@ export const MenuItemEdit = ({ item }: MenuItemEditProps) => {
         <div className="absolute z-10">
           <Spinner
             className="p-1 m-1 mr-3 text-black opacity-50 h-10 w-10 group-data-[submenu=false]/menuOptions:my-2 group-data-[submenu=false]/menuOptions:mx-3
-            group-data-[submenu=false]/menuOptions:p-1 group-data-[submenu=false]/menuOptions:h-8 group-data-[submenu=false]/menuOptions:w-8"
+            group-data-[submenu=false]/menuOptions:p-1 group-data-[submenu=false]/menuOptions:h-7 group-data-[submenu=false]/menuOptions:w-7"
           />
         </div>
       )}
       <AvatarWrap
         className="m-1 mr-3 group-data-[subitem=true]/optionsItem:text-xs group-data-[submenu=false]/menuOptions:my-2 group-data-[submenu=false]/menuOptions:mx-3
-            group-data-[submenu=false]/menuOptions:h-8 group-data-[submenu=false]/menuOptions:w-8 group-data-[archived=true]/optionsItem:opacity-70"
+            group-data-[submenu=false]/menuOptions:h-7 group-data-[submenu=false]/menuOptions:w-7 group-data-[archived=true]/optionsItem:opacity-70"
         type={item.entity}
         id={item.id}
         name={item.name}
         url={item.thumbnailUrl}
       />
 
-      <div className="truncate grow text-left">
+      <div className="truncate grow text-left group-data-[submenu=false]/menuOptions:pl-1">
         <div className="truncate group-data-[subitem=true]/optionsItem:text-xs leading-5 group-data-[archived=true]/optionsItem:opacity-70">
           {item.name} {env.VITE_DEBUG_UI && <span className="text-muted">#{item.membership.order}</span>}
         </div>

@@ -45,15 +45,15 @@ export const MenuSheetItem = ({ item, className, searchResults }: MenuSheetItemP
       params={params}
     >
       <AvatarWrap
-        className="z-1 items-center m-1 mr-3 group-data-[subitem=true]/menuItem:my-1 group-data-[subitem=true]/menuItem:mx-2 group-data-[subitem=true]/menuItem:text-xs group-data-[subitem=true]/menuItem:h-8 group-data-[subitem=true]/menuItem:w-8"
+        className="z-1 items-center m-1 mr-3 group-data-[subitem=true]/menuItem:my-1.5 group-data-[subitem=true]/menuItem:mx-2.5 group-data-[subitem=true]/menuItem:text-xs group-data-[subitem=true]/menuItem:h-7 group-data-[subitem=true]/menuItem:w-7"
         type={item.entity}
         id={item.id}
         name={item.name}
         url={item.thumbnailUrl}
       />
-      <div className="truncate grow flex flex-col justify-center pr-2 text-left">
+      <div className="truncate grow flex flex-col justify-center pr-2 text-left group-data-[subitem=true]/menuItem:pl-2">
         <div
-          className={`truncate leading-5 transition-all text-base group-hover/menuItem:delay-300 pt-1.5 duration-200 ease-in-out ${!searchResults && 'pt-3.5 group-data-[subitem=true]/menuItem:pt-3'} sm:group-hover/menuItem:pt-1.5! group-data-[subitem=true]/menuItem:text-sm sm:group-data-[subitem=true]/menuItem:leading-4`}
+          className={`truncate leading-5 transition-all text-base group-hover/menuItem:delay-300 pt-1.5 duration-200 ease-in-out ${!searchResults && 'pt-3.5 group-data-[subitem=true]/menuItem:pt-3'} sm:group-hover/menuItem:pt-1.5! group-data-[subitem=true]/menuItem:text-sm group-data-[subitem=true]/menuItem:leading-4`}
         >
           {item.name}
         </div>
