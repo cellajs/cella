@@ -1,4 +1,3 @@
-import { RouterProvider } from '@tanstack/react-router';
 import { StrictMode } from 'react';
 import ReactDOM from 'react-dom/client';
 import { Themer } from '~/modules/common/themer';
@@ -13,10 +12,10 @@ import '~/lib/i18n';
 const root = document.getElementById('root');
 if (!root) throw new Error('Root element not found');
 
-import router from '~/lib/router';
 import { initSentry } from '~/lib/sentry';
 import { QueryClientProvider } from '~/query/provider';
 import { renderAscii } from '~/utils/ascii';
+import { RouterWrapper } from './modules/common/router-wrapper';
 
 // Render ASCII logo in console
 renderAscii();
@@ -28,7 +27,7 @@ ReactDOM.createRoot(root).render(
   <StrictMode>
     <Themer />
     <QueryClientProvider>
-      <RouterProvider router={router} />
+      <RouterWrapper />
     </QueryClientProvider>
   </StrictMode>,
 );

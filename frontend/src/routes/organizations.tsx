@@ -1,4 +1,4 @@
-import { createRoute, useLoaderData, useParams } from '@tanstack/react-router';
+import { createRoute, redirect, useLoaderData, useParams } from '@tanstack/react-router';
 import { Suspense, lazy } from 'react';
 import { z } from 'zod';
 import { attachmentsQueryOptions } from '~/modules/attachments/query/options';
@@ -6,7 +6,9 @@ import ErrorNotice from '~/modules/common/error-notice';
 import { membersQueryOptions } from '~/modules/memberships/query/options';
 import { organizationQueryOptions } from '~/modules/organizations/query';
 
-import { useQuery } from '@tanstack/react-query';
+import { onlineManager, useQuery } from '@tanstack/react-query';
+import { i18n } from '~/lib/i18n';
+import { toaster } from '~/modules/common/toaster';
 import { queryClient } from '~/query/query-client';
 import { AppRoute } from '~/routes/base';
 import { noDirectAccess } from '~/utils/no-direct-access';
@@ -40,20 +42,14 @@ export const OrganizationRoute = createRoute({
 
     const queryOptions = organizationQueryOptions(idOrSlug);
 
-    try {
-      const options = { ...queryOptions, revalidateIfStale: true };
-      const organization = await queryClient.ensureQueryData(options);
-      return { organization };
-    } catch (error) {
-      console.error('ooops');
-      if (!navigator.onLine) {
-        // Forward to error page manually by throwing a custom error
-        throw new Error('Offline: No cached data available for this organization');
-      }
-
-      // Re-throw original error for other cases
-      throw error;
+    const options = { ...queryOptions, revalidateIfStale: true };
+    const isOnline = onlineManager.isOnline();
+    const organization = isOnline ? await queryClient.ensureQueryData(options) : queryClient.getQueryData(queryOptions.queryKey);
+    if (!organization) {
+      toaster(i18n.t('common:offline_cache_miss.text'), 'warning');
+      throw redirect({ to: '/home', replace: true });
     }
+    return { organization };
   },
   loader: async ({ context: { organization } }) => {
     return organization;
@@ -80,15 +76,17 @@ export const OrganizationMembersRoute = createRoute({
   loader: async ({ context, params: { idOrSlug }, deps: { q, sort, order, role } }) => {
     const entityType = 'organization';
     const orgIdOrSlug = context.organization.id ?? idOrSlug;
+    const isOnline = onlineManager.isOnline();
     const queryOptions = membersQueryOptions({ idOrSlug, orgIdOrSlug, entityType, q, sort, order, role });
-    await queryClient.prefetchInfiniteQuery(queryOptions);
+    const results = isOnline ? await queryClient.prefetchInfiniteQuery(queryOptions) : queryClient.getQueryData(queryOptions.queryKey);
+    return results;
   },
   component: () => {
-    const organization = useLoaderData({ from: OrganizationRoute.id });
+    const loaderData = useLoaderData({ from: OrganizationRoute.id });
 
     // Use loader data but also fetch from cache to ensure it's up to date
-    // const queryData = useQuery(organizationQueryOptions(loaderData.slug));
-    // const organization = queryData.data ?? loaderData;
+    const queryData = useQuery(organizationQueryOptions(loaderData.slug));
+    const organization = queryData.data ?? loaderData;
     if (!organization) return;
     return (
       <Suspense>
@@ -106,15 +104,17 @@ export const OrganizationAttachmentsRoute = createRoute({
   loaderDeps: ({ search: { q, sort, order } }) => ({ q, sort, order }),
   loader: async ({ deps: { q, sort, order }, context, params: { idOrSlug } }) => {
     const orgIdOrSlug = context.organization.id ?? idOrSlug;
+    const isOnline = onlineManager.isOnline();
     const queryOptions = attachmentsQueryOptions({ orgIdOrSlug, q, sort, order });
-    await queryClient.prefetchInfiniteQuery(queryOptions);
+    const results = isOnline ? await queryClient.prefetchInfiniteQuery(queryOptions) : queryClient.getQueryData(queryOptions.queryKey);
+    return results;
   },
   component: () => {
-    const organization = useLoaderData({ from: OrganizationRoute.id });
+    const loaderData = useLoaderData({ from: OrganizationRoute.id });
 
     // Use loader data but also fetch from cache to ensure it's up to date
-    // const queryData = useQuery(organizationQueryOptions(loaderData.slug));
-    // const organization = queryData.data ?? loaderData;
+    const queryData = useQuery(organizationQueryOptions(loaderData.slug));
+    const organization = queryData.data ?? loaderData;
     if (!organization) return;
     return (
       <Suspense>

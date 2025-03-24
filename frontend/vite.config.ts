@@ -36,7 +36,7 @@ export default defineConfig(({ mode }) => {
     build: {
       rollupOptions: {
         output: {
-          experimentalMinChunkSize: 10 * 1024, // Minimum chunk size in Kb
+          experimentalMinChunkSize: 50 * 1024, // Minimum chunk size of 50 Kb
           manualChunks(id) {
             if (id.includes('shiki')) {
               return 'shiki'; // Ensures all shiki-related modules go into one chunk

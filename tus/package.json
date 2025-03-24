@@ -7,6 +7,7 @@
     "quick": "pnpm dev",
     "build": "cross-env NODE_ENV=production tsup",
     "build:dev": "cross-env NODE_ENV=development tsup",
+    "build:staging": "cross-env NODE_ENV=staging tsup",
     "start": "cross-env NODE_ENV=production tsx dist/index.js",
     "dev": "cross-env NODE_ENV=development tsup --watch --onSuccess \"tsx dist/index.js\""
   },

@@ -29,6 +29,7 @@
     "ts:perf": "pnpm --filter backend ts:perf && pnpm --filter frontend ts:perf ",
     "build": "pnpm -r --parallel clean && pnpm -r --parallel build",
     "build:dev": "pnpm -r --parallel build:dev",
+    "build:staging": "pnpm -r --parallel build:staging",
     "start": "pnpm -r --parallel start",
     "upstream:pull": "tsx ./cli/sync-cella/index.ts pull-upstream --config-file cella.config.js",
     "fork:pull": "tsx ./cli/sync-cella/index.ts pull-fork --config-file cella.config.js",

@@ -89,20 +89,6 @@ export const DownAlert = () => {
           <button type="button" className="inline-block sm:hidden font-semibold" onClick={cancelAlert}>
             {t('common:continue')}
           </button>
-          {config.statusUrl && (
-            <>
-              <span className="sm:hidden mx-2">&#183;</span>
-              <a
-                href={config.statusUrl}
-                className="max-sm:capitalize ml-1 hover:underline font-semibold hover:underline-offset-2"
-                target="_blank"
-                rel="noreferrer"
-              >
-                {t('common:status_page')}
-              </a>
-              <span className="max-sm:hidden">.</span>
-            </>
-          )}
         </AlertDescription>
       </Alert>
     </div>

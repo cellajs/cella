@@ -1,4 +1,5 @@
 import * as Sentry from '@sentry/react';
+import { onlineManager } from '@tanstack/react-query';
 import { createRootRouteWithContext, createRoute, defer, redirect } from '@tanstack/react-router';
 import { config } from 'config';
 import { Suspense, lazy } from 'react';
@@ -63,6 +64,13 @@ export const AppRoute = createRoute({
     try {
       console.debug('Fetch me & menu while entering app ', location.pathname);
 
+      // If offline, try to use stored user
+      const storedUser = useUserStore.getState().user;
+      if (!onlineManager.isOnline() && storedUser) {
+        console.info('Continuing as offline user with session');
+        return;
+      }
+
       // Fetch and set user
       const user = await queryClient.ensureQueryData({ ...meQueryOptions(), revalidateIfStale: true });
 
@@ -79,10 +87,6 @@ export const AppRoute = createRoute({
 
       // If root domain, treat as new user and go to about
       if (location.pathname === '/') throw redirect({ to: '/about', replace: true });
-
-      // If is offline and has stored user, continue
-      const storedUser = useUserStore.getState().user;
-      if (!navigator.onLine && storedUser) return console.info('Continuing as offline user with session');
 
       console.info('Not authenticated -> redirect to sign in');
       throw redirect({ to: '/auth/authenticate', search: { fromRoot: true, redirect: location.pathname } });

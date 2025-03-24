@@ -15,21 +15,8 @@ type Props = React.PropsWithChildren;
 export const SSEProvider: FC<Props> = ({ children }) => {
   const { isOnline } = useOnlineManager();
   const [source, setSource] = useState<EventSource | null>(null);
-  const [isReconnecting, setIsReconnecting] = useState(false);
-  const [lastErrorTime, setLastErrorTime] = useState<Date | null>(null);
-  const [hasAuthError, setHasAuthError] = useState(false); // Prevents reconnect loops
-
-  // Closes old source, creates new
-  const reconnect = () => {
-    if (hasAuthError) return; // Stop if authentication failed
-    if (source) source.close(); // Close old connection if it exists
-    const newSource = createSource(true);
-    setSource(newSource);
-  };
 
   const createSource = (reconnectAttempt = false) => {
-    if (hasAuthError) return null; // Prevent creating SSE if unauthorized
-
     const source = new EventSource(`${config.backendUrl}/me/sse`, {
       withCredentials: true,
     });
@@ -37,25 +24,12 @@ export const SSEProvider: FC<Props> = ({ children }) => {
     source.onopen = async () => {
       if (reconnectAttempt) {
         await Promise.all([getAndSetMe(), getAndSetMenu()]);
-        console.info('SSE reconnection successful!');
-      }
-      setIsReconnecting(false);
+        console.info('SSE reconnect successful!');
+      } else console.info('SSE stream connected.');
     };
 
     source.onerror = () => {
-      console.error('SSE connection error. Checking if it should stop reconnecting...');
-
-      const now = new Date();
-      setLastErrorTime(now);
-
-      if (lastErrorTime && now.getTime() - lastErrorTime.getTime() < 30000) {
-        console.error('SSE failed quickly after reconnecting. Assuming 401 Unauthorized. Stopping retries.');
-        setHasAuthError(true);
-      } else if (!isReconnecting && isOnline) {
-        console.error('Scheduling SSE reconnection ...');
-        setIsReconnecting(true);
-        setTimeout(reconnect, 5000);
-      }
+      console.error('SSE connection closed.');
 
       source.close();
     };
@@ -64,24 +38,26 @@ export const SSEProvider: FC<Props> = ({ children }) => {
   };
 
   useEffect(() => {
-    if (isOnline && !hasAuthError) {
+    if (isOnline) {
       const eventSource = createSource();
       setSource(eventSource);
       return () => eventSource?.close();
     }
     source?.close(); // Clean up when going offline
-  }, [isOnline, hasAuthError]);
+  }, [isOnline]);
 
   useEffect(() => {
     const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible' && source?.readyState === EventSource.CLOSED && !hasAuthError) {
-        reconnect();
+      if (document.visibilityState === 'visible' && source?.readyState === EventSource.CLOSED) {
+        if (source) source.close(); // Close old connection if it exists
+        const newSource = createSource(true);
+        setSource(newSource);
       }
     };
 
     window.addEventListener('visibilitychange', handleVisibilityChange);
     return () => window.removeEventListener('visibilitychange', handleVisibilityChange);
-  }, [source, hasAuthError]);
+  }, [source]);
 
   return createElement(SSEContext.Provider, { value: source }, children);
 };
