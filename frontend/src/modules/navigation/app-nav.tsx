@@ -51,7 +51,8 @@ const AppNav = () => {
       side: sheetSide,
       hideClose: true,
       modal: isMobile,
-      className: 'fixed sm:z-105 p-0 sm:inset-0 xs:max-w-80 sm:left-16 xl:group-[.keep-menu-open]/body:group-[.menu-sheet-open]/body:shadow-none',
+      className:
+        'fixed sm:z-105 p-0 sm:inset-0 xs:max-w-80 sm:left-16 xl:group-[.keep-menu-open]/body:group-[.menu-sheet-open]/body:shadow-none xl:group-[.keep-menu-open]/body:group-[.menu-sheet-open]/body:border-r',
       removeCallback: () => {
         setNavSheetOpen(null);
       },
