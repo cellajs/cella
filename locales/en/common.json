@@ -316,7 +316,7 @@
   "settings.text": "Update your account settings and preferences",
   "short_name": "Short name",
   "show_all": "Show all",
-  "show_archived.offline.text": "Offline access allows browsing only unarchived content during offline mode.",
+  "show_archived.offline.text": "Unarchived content is not available during when offline.",
   "show_less": "Show less",
   "sign_in": "Sign in",
   "sign_in_as": "Sign in as",
@@ -424,5 +424,5 @@
   "tune_profile": "Tune your profile",
   "invite_others": "Invite others",
   "order": "Order",
-  "offline_search.text": "Offline search will perform the search using only the cache of already fetched items."
+  "offline_cache_miss.text": "Resource unavailable while offline."
 }

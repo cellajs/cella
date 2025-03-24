@@ -4,7 +4,6 @@ import { useTranslation } from 'react-i18next';
 import { useDebounce } from '~/hooks/use-debounce';
 import { useOnlineManager } from '~/hooks/use-online-manager';
 import { TableFilterBarContext } from '~/modules/common/data-table/table-filter-bar';
-import { toaster } from '~/modules/common/toaster';
 import { Input } from '~/modules/ui/input';
 
 interface TableSearchProps {
@@ -39,12 +38,6 @@ const TableSearch = ({ value = '', allowOfflineSearch = false, setQuery }: Table
   useEffect(() => {
     if (isFilterActive) inputRef.current?.focus();
   }, [isFilterActive]);
-
-  // Update parent query only when debouncedQuery changes
-  useEffect(() => {
-    if (isOnline || !allowOfflineSearch) return;
-    toaster(t('common:offline_search.text'), 'info');
-  }, [isOnline, allowOfflineSearch]);
 
   return (
     <div className="relative flex w-full sm:min-w-44 md:min-w-56 lg:min-w-64 items-center" onClick={handleClick} onKeyDown={handleClick}>

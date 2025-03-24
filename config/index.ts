@@ -1,6 +1,7 @@
 import _default, { type DeepPartial } from './default';
 import development from './development';
 import production from './production';
+import staging from './staging';
 import tunnel from './tunnel';
 
 /**
@@ -66,8 +67,9 @@ function mergeDeep<T extends {}, U extends DeepPartial<T>>(target: T, ...sources
 
 const configModes = {
   development,
-  production,
   tunnel,
+  staging,
+  production,
 };
 
 type ConfigMode = keyof typeof configModes;
