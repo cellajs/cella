@@ -17,7 +17,7 @@ import type { Attachment } from '~/modules/attachments/types';
 import { toaster } from '~/modules/common/toaster';
 import { getQueryKeySortOrder } from '~/query/helpers';
 import { compareQueryKeys } from '~/query/helpers/compare-query-keys';
-import { formatUpdatedData, getCancelingRefetchQueries, getQueries, getQueryItems } from '~/query/helpers/mutate-query';
+import { formatUpdatedData, getQueryItems, getSimilarQueries } from '~/query/helpers/mutate-query';
 import { queryClient } from '~/query/query-client';
 import { nanoid } from '~/utils/nanoid';
 
@@ -68,9 +68,10 @@ export const useAttachmentCreateMutation = () =>
       }
 
       // Get affected queries
-      const exactKey = attachmentsKeys.table({ orgIdOrSlug });
-      const similarKey = attachmentsKeys.similar({ orgIdOrSlug });
-      const queries = await getCancelingRefetchQueries<Attachment>(exactKey, similarKey);
+      const similarKey = attachmentsKeys.list.tableByOrg({ orgIdOrSlug });
+      //Cancel all affected queries
+      await queryClient.cancelQueries({ queryKey: similarKey });
+      const queries = getSimilarQueries<Attachment>(similarKey);
 
       // Iterate over affected queries and optimistically update cache
       for (const [queryKey, previousData] of queries) {
@@ -95,10 +96,9 @@ export const useAttachmentCreateMutation = () =>
     },
 
     onSuccess: async (createdAttachments, { orgIdOrSlug }, context) => {
-      const exactKey = attachmentsKeys.table({ orgIdOrSlug });
-      const similarKey = attachmentsKeys.similar({ orgIdOrSlug });
-
-      const queries = getQueries<Attachment>(exactKey, similarKey);
+      // Get affected queries
+      const similarKey = attachmentsKeys.list.tableByOrg({ orgIdOrSlug });
+      const queries = getSimilarQueries<Attachment>(similarKey);
 
       for (const query of queries) {
         const [activeKey] = query;
@@ -146,9 +146,10 @@ export const useAttachmentUpdateMutation = () =>
       const optimisticIds: string[] = []; // IDs of optimistically updated items
 
       // Get affected queries
-      const exactKey = attachmentsKeys.table({ orgIdOrSlug });
-      const similarKey = attachmentsKeys.similar({ orgIdOrSlug });
-      const queries = await getCancelingRefetchQueries<Attachment>(exactKey, similarKey);
+      const similarKey = attachmentsKeys.list.tableByOrg({ orgIdOrSlug });
+      //Cancel all affected queries
+      await queryClient.cancelQueries({ queryKey: similarKey });
+      const queries = getSimilarQueries<Attachment>(similarKey);
 
       // Iterate over affected queries and optimistically update cache
       for (const [queryKey, previousData] of queries) {
@@ -171,9 +172,8 @@ export const useAttachmentUpdateMutation = () =>
     },
     onSuccess: async (updatedAttachment, { orgIdOrSlug }, context) => {
       // Get affected queries
-      const exactKey = attachmentsKeys.table({ orgIdOrSlug });
-      const similarKey = attachmentsKeys.similar({ orgIdOrSlug });
-      const queries = getQueries<Attachment>(exactKey, similarKey);
+      const similarKey = attachmentsKeys.list.tableByOrg({ orgIdOrSlug });
+      const queries = getSimilarQueries<Attachment>(similarKey);
 
       for (const query of queries) {
         const [activeKey] = query;
@@ -208,9 +208,10 @@ export const useAttachmentDeleteMutation = () =>
       const context: AttachmentContextProp[] = []; // previous query data for rollback if an error occurs
 
       // Get affected queries
-      const exactKey = attachmentsKeys.table({ orgIdOrSlug });
-      const similarKey = attachmentsKeys.similar({ orgIdOrSlug });
-      const queries = await getCancelingRefetchQueries<Attachment>(exactKey, similarKey);
+      const similarKey = attachmentsKeys.list.tableByOrg({ orgIdOrSlug });
+      //Cancel all affected queries
+      await queryClient.cancelQueries({ queryKey: similarKey });
+      const queries = getSimilarQueries<Attachment>(similarKey);
 
       // Iterate over affected queries and optimistically update cache
       for (const [queryKey, previousData] of queries) {

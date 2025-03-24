@@ -4,14 +4,16 @@ import { useTranslation } from 'react-i18next';
 import { useDebounce } from '~/hooks/use-debounce';
 import { useOnlineManager } from '~/hooks/use-online-manager';
 import { TableFilterBarContext } from '~/modules/common/data-table/table-filter-bar';
+import { toaster } from '~/modules/common/toaster';
 import { Input } from '~/modules/ui/input';
 
 interface TableSearchProps {
   value?: string;
+  allowOfflineSearch?: boolean;
   setQuery: (value: string) => void;
 }
 
-const TableSearch = ({ value = '', setQuery }: TableSearchProps) => {
+const TableSearch = ({ value = '', allowOfflineSearch = false, setQuery }: TableSearchProps) => {
   const { t } = useTranslation();
   const { isOnline } = useOnlineManager();
   const { isFilterActive } = useContext(TableFilterBarContext);
@@ -38,11 +40,17 @@ const TableSearch = ({ value = '', setQuery }: TableSearchProps) => {
     if (isFilterActive) inputRef.current?.focus();
   }, [isFilterActive]);
 
+  // Update parent query only when debouncedQuery changes
+  useEffect(() => {
+    if (isOnline || !allowOfflineSearch) return;
+    toaster(t('common:offline_search.text'), 'info');
+  }, [isOnline, allowOfflineSearch]);
+
   return (
     <div className="relative flex w-full sm:min-w-44 md:min-w-56 lg:min-w-64 items-center" onClick={handleClick} onKeyDown={handleClick}>
       <Search size={16} className="absolute left-3 top-3" style={{ opacity: inputValue ? 1 : 0.5 }} />
       <Input
-        disabled={!isOnline}
+        disabled={!isOnline && !allowOfflineSearch}
         placeholder={t('common:placeholder.search')}
         value={inputValue}
         onChange={(e) => setInputValue(e.target.value)}
