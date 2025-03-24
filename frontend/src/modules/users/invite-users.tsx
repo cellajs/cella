@@ -67,7 +67,7 @@ const InviteUsers = ({ entity, dialog: isDialog, mode: baseMode, children }: Inv
             <ToggleGroup type="multiple" onValueChange={updateMode} className="max-sm:flex-col">
               <ToggleGroupItem size="tile" variant="tile" value="email" aria-label="Add by email" className="h-auto">
                 <AtSign size={48} strokeWidth={1} />
-                <div className="flex flex-col p-4">
+                <div className="flex flex-col pl-3">
                   <p className="font-light">{t('common:invite_by_email')}</p>
                   <div className="flex items-center flex-row mt-1 opacity-50 transition-opacity group-hover:opacity-100">
                     <strong>{t('common:continue')}</strong>
@@ -77,7 +77,7 @@ const InviteUsers = ({ entity, dialog: isDialog, mode: baseMode, children }: Inv
               </ToggleGroupItem>
               <ToggleGroupItem size="tile" variant="tile" value="search" aria-label="Search users" className="h-auto">
                 <Search size={48} strokeWidth={1} />
-                <div className="flex flex-col p-4">
+                <div className="flex flex-col pl-3">
                   <div className="font-light">{t('common:invite_by_name')}</div>
                   <div className="flex items-center flex-row mt-1 opacity-50 transition-opacity group-hover:opacity-100">
                     <strong>{t('common:continue')}</strong>
