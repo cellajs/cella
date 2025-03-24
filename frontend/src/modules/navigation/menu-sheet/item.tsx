@@ -59,7 +59,7 @@ export const MenuSheetItem = ({ item, className, searchResults }: MenuSheetItemP
         </div>
         <div className="text-muted-foreground text-xs font-light sm:group-data-[subitem=true]/menuItem:leading-3">
           {searchResults && (
-            <span className="absolute transition-opacity duration-200 delay-200 ease-in-out sm:group-hover/menuItem:opacity-0 opacity-50">
+            <span className="absolute transition-opacity duration-200 delay-200 ease-in-out sm:group-hover/menuItem:opacity-0">
               {t(`app:${item.entity}`)}
             </span>
           )}
