@@ -12,6 +12,7 @@ import { useDraftStore } from '~/store/draft';
  *   - `formContainerId`: element id to target and toggle .unsaved-changes class with.
  *
  * @returns - Returns form methods along with:
+ *  - `isDirty`: `true` if the form has unsaved changes.
  *  - `unsavedChanges`: `true` if the form has unsaved changes.
  *  - `loading`: `true` while restoring draft data.
  *
@@ -41,10 +42,12 @@ export function useFormWithDraft<
   },
 ): UseFormReturn<TFieldValues, TContext, TTransformedValues> & {
   unsavedChanges: boolean;
+  isDirty: boolean;
   loading: boolean;
 } {
   const { formOptions, formContainerId } = opt || {};
   const form = useForm<TFieldValues, TContext, TTransformedValues>(formOptions);
+  const { isDirty } = form.formState;
 
   const getDraftForm = useDraftStore((state) => state.getForm);
   const setDraftForm = useDraftStore((state) => state.setForm);
@@ -100,6 +103,7 @@ export function useFormWithDraft<
   return {
     ...form,
     unsavedChanges,
+    isDirty,
     loading,
     reset: (values, keepStateOptions) => {
       resetDraftForm(formId);
