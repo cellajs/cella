@@ -44,10 +44,11 @@ export const SSEProvider: FC<Props> = ({ children }) => {
 
     source.onerror = () => {
       console.error('SSE connection error. Checking if it should stop reconnecting...');
+
       const now = new Date();
       setLastErrorTime(now);
 
-      if (lastErrorTime && now.getTime() - lastErrorTime.getTime() < 2000) {
+      if (lastErrorTime && now.getTime() - lastErrorTime.getTime() < 30000) {
         console.error('SSE failed quickly after reconnecting. Assuming 401 Unauthorized. Stopping retries.');
         setHasAuthError(true);
       } else if (!isReconnecting && isOnline) {

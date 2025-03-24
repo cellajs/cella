@@ -1,5 +1,4 @@
 import * as Sentry from '@sentry/react';
-import { onlineManager } from '@tanstack/react-query';
 import { createRootRouteWithContext, createRoute, defer, redirect } from '@tanstack/react-router';
 import { config } from 'config';
 import { Suspense, lazy } from 'react';
@@ -83,7 +82,7 @@ export const AppRoute = createRoute({
 
       // If is offline and has stored user, continue
       const storedUser = useUserStore.getState().user;
-      if (!onlineManager.isOnline() && storedUser) return console.info('Continuing as offline user with session');
+      if (!navigator.onLine && storedUser) return console.info('Continuing as offline user with session');
 
       console.info('Not authenticated -> redirect to sign in');
       throw redirect({ to: '/auth/authenticate', search: { fromRoot: true, redirect: location.pathname } });

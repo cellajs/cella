@@ -12,8 +12,6 @@ declare global {
   }
 }
 
-Gleap.initialize(config.gleapToken);
-
 window.ononline = () => {
   Gleap.initialize(config.gleapToken);
 };
@@ -21,6 +19,9 @@ window.ononline = () => {
 window.onoffline = () => {
   Gleap.destroy();
 };
+
+// Initialize Gleap if online
+if (navigator.onLine) Gleap.initialize(config.gleapToken);
 
 const setGleapUser = (user: User) => {
   if (!window.Gleap) return;

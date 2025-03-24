@@ -1,4 +1,3 @@
-import { CancelledError } from '@tanstack/react-query';
 import i18next from 'i18next';
 import { ApiError } from '~/lib/api';
 import { i18n } from '~/lib/i18n';
@@ -37,14 +36,6 @@ const getErrorMessage = (error: ApiError) => {
  * @param error - The error object.
  */
 export const onError = (error: Error | ApiError) => {
-  // Ignore cancellation error
-  if (error instanceof CancelledError) {
-    return console.debug('Ignoring CancelledError');
-  }
-
-  // Handle network error (e.g., connection refused)
-  if (error instanceof Error && error.message === 'Failed to fetch') toaster(i18n.t('error:network_error'), 'error');
-
   if (error instanceof ApiError) {
     const statusCode = Number(error.status);
     const isSilentSessionAttempt = error.path && ['/me', '/me/menu'].includes(error.path);

@@ -21,8 +21,8 @@ import { renderAscii } from '~/utils/ascii';
 // Render ASCII logo in console
 renderAscii();
 
-// Initialize Sentry
-initSentry();
+// Initialize Sentry if online
+if (navigator.onLine) initSentry();
 
 ReactDOM.createRoot(root).render(
   <StrictMode>

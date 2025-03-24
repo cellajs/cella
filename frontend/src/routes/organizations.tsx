@@ -37,9 +37,23 @@ export const OrganizationRoute = createRoute({
   staticData: { pageTitle: 'Organization', isAuth: true },
   beforeLoad: async ({ location, params: { idOrSlug } }) => {
     noDirectAccess(location.pathname, idOrSlug, '/members');
+
     const queryOptions = organizationQueryOptions(idOrSlug);
-    const options = { ...queryOptions, revalidateIfStale: true };
-    return { organization: await queryClient.ensureQueryData(options) };
+
+    try {
+      const options = { ...queryOptions, revalidateIfStale: true };
+      const organization = await queryClient.ensureQueryData(options);
+      return { organization };
+    } catch (error) {
+      console.error('ooops');
+      if (!navigator.onLine) {
+        // Forward to error page manually by throwing a custom error
+        throw new Error('Offline: No cached data available for this organization');
+      }
+
+      // Re-throw original error for other cases
+      throw error;
+    }
   },
   loader: async ({ context: { organization } }) => {
     return organization;
@@ -70,11 +84,11 @@ export const OrganizationMembersRoute = createRoute({
     await queryClient.prefetchInfiniteQuery(queryOptions);
   },
   component: () => {
-    const loaderData = useLoaderData({ from: OrganizationRoute.id });
+    const organization = useLoaderData({ from: OrganizationRoute.id });
 
     // Use loader data but also fetch from cache to ensure it's up to date
-    const queryData = useQuery(organizationQueryOptions(loaderData.slug));
-    const organization = queryData.data ?? loaderData;
+    // const queryData = useQuery(organizationQueryOptions(loaderData.slug));
+    // const organization = queryData.data ?? loaderData;
     if (!organization) return;
     return (
       <Suspense>
@@ -96,11 +110,11 @@ export const OrganizationAttachmentsRoute = createRoute({
     await queryClient.prefetchInfiniteQuery(queryOptions);
   },
   component: () => {
-    const loaderData = useLoaderData({ from: OrganizationRoute.id });
+    const organization = useLoaderData({ from: OrganizationRoute.id });
 
     // Use loader data but also fetch from cache to ensure it's up to date
-    const queryData = useQuery(organizationQueryOptions(loaderData.slug));
-    const organization = queryData.data ?? loaderData;
+    // const queryData = useQuery(organizationQueryOptions(loaderData.slug));
+    // const organization = queryData.data ?? loaderData;
     if (!organization) return;
     return (
       <Suspense>
