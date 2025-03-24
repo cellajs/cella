@@ -1,7 +1,7 @@
 import { Trash, Upload, XSquare } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useTranslation } from 'react-i18next';
-import DeleteAttachmentsForm from '~/modules/attachments/table/delete-attachments-form';
+import DeleteAttachmentsForm from '~/modules/attachments/delete-attachments-form';
 import { openAttachmentsUploadDialog } from '~/modules/attachments/table/helpers';
 import type { AttachmentSearch, AttachmentsTableProps } from '~/modules/attachments/table/table-wrapper';
 import type { Attachment } from '~/modules/attachments/types';
@@ -113,7 +113,7 @@ export const AttachmentsTableBar = ({
         </FilterBarActions>
         <div className="sm:grow" />
         <FilterBarContent className="max-sm:animate-in max-sm:slide-in-from-left max-sm:fade-in max-sm:duration-300">
-          <TableSearch value={q} setQuery={onSearch} />
+          <TableSearch value={q} setQuery={onSearch} allowOfflineSearch={true} />
         </FilterBarContent>
       </TableFilterBar>
 

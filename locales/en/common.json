@@ -423,5 +423,6 @@
   "your_role": "Your role",
   "tune_profile": "Tune your profile",
   "invite_others": "Invite others",
-  "order": "Order"
+  "order": "Order",
+  "offline_search.text": "Offline search will perform the search using only the cache of already fetched items."
 }
