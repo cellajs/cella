@@ -73,7 +73,7 @@ export const useColumns = (entity: EntityPage) => {
         renderCell: ({ row, tabIndex }) => {
           if (!row.createdBy) return <span className="text-muted">-</span>;
 
-          const queryKey = [...membersKeys.list(), { entityType: entity.entity, orgIdOrSlug: entity.organizationId ?? entity.id }];
+          const queryKey = [...membersKeys.table.base(), { entityType: entity.entity, orgIdOrSlug: entity.organizationId ?? entity.id }];
           const user = findUserFromCache(queryKey, row.createdBy);
 
           if (!user) return <span>{row.createdBy}</span>;

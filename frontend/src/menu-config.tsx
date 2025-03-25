@@ -43,5 +43,5 @@ export const menuSectionsSchemas: Partial<Record<ContextEntity, SectionsSchema>>
  */
 //TODO find way to avoid usage of it Work poorly on offline access to much entities go through
 export const contextEntityCacheKeys = {
-  organization: organizationsKeys.singleBase(),
+  organization: organizationsKeys.single.base(),
 };

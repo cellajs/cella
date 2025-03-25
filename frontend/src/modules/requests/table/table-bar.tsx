@@ -34,7 +34,7 @@ export const RequestsTableBar = ({ total, selected, searchVars, setSearch, colum
   const { q, order } = searchVars;
   const isFiltered = !!q;
 
-  const mutateQuery = useMutateQueryData(requestsKeys.list());
+  const mutateQuery = useMutateQueryData(requestsKeys.table.base());
 
   // Drop selected Rows on search
   const onSearch = (searchString: string) => {

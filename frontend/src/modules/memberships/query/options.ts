@@ -10,10 +10,12 @@ import { getOffset } from '~/query/helpers';
  */
 export const membersKeys = {
   all: ['members'] as const,
-  list: () => [...membersKeys.all, 'list'] as const,
-  table: (filters?: GetMembersParams) => [...membersKeys.list(), filters] as const,
-  invitesTable: (filters?: GetMembershipInvitationsParams) => [...membersKeys.list(), 'invites', filters] as const,
-  similar: (filters?: Pick<GetMembersParams, 'orgIdOrSlug' | 'idOrSlug' | 'entityType'>) => [...membersKeys.list(), filters] as const,
+  table: {
+    base: () => [...membersKeys.all, 'table'] as const,
+    members: (filters: GetMembersParams) => [...membersKeys.table.base(), filters] as const,
+    similarMembers: (filters: Pick<GetMembersParams, 'orgIdOrSlug' | 'idOrSlug' | 'entityType'>) => [...membersKeys.table.base(), filters] as const,
+    pending: (filters: GetMembershipInvitationsParams) => ['invites', ...membersKeys.table.base(), filters] as const,
+  },
   update: () => [...membersKeys.all, 'update'] as const,
   delete: () => [...membersKeys.all, 'delete'] as const,
 };
@@ -46,7 +48,7 @@ export const membersQueryOptions = ({
   const sort = initialSort || 'createdAt';
   const order = initialOrder || 'desc';
 
-  const queryKey = membersKeys.table({ idOrSlug, entityType, orgIdOrSlug, q, sort, order, role });
+  const queryKey = membersKeys.table.members({ idOrSlug, entityType, orgIdOrSlug, q, sort, order, role });
 
   return infiniteQueryOptions({
     queryKey,
@@ -85,7 +87,7 @@ export const memberInvitationsQueryOptions = ({
   const sort = initialSort || 'createdAt';
   const order = initialOrder || 'desc';
 
-  const queryKey = membersKeys.invitesTable({ idOrSlug, entityType, orgIdOrSlug, q, sort, order });
+  const queryKey = membersKeys.table.pending({ idOrSlug, entityType, orgIdOrSlug, q, sort, order });
 
   return infiniteQueryOptions({
     queryKey,

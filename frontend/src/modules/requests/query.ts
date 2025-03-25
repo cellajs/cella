@@ -1,7 +1,8 @@
 import { infiniteQueryOptions, useMutation } from '@tanstack/react-query';
 import { config } from 'config';
 import type { ApiError } from '~/lib/api';
-import { type CreateRequestBody, type GetRequestsParams, createRequest, getRequests } from '~/modules/requests/api';
+import { type CreateRequestBody, type GetRequestsParams, createRequest, deleteRequests, getRequests } from '~/modules/requests/api';
+import type { Request } from '~/modules/requests/types';
 import { getOffset } from '~/query/helpers';
 
 /**
@@ -9,8 +10,10 @@ import { getOffset } from '~/query/helpers';
  */
 export const requestsKeys = {
   all: ['requests'] as const,
-  list: () => [...requestsKeys.all, 'list'] as const,
-  table: (filters?: GetRequestsParams) => [...requestsKeys.list(), filters] as const,
+  table: {
+    base: () => [...requestsKeys.all, 'table'] as const,
+    entries: (filters: GetRequestsParams) => [...requestsKeys.table.base(), filters] as const,
+  },
   create: () => [...requestsKeys.all, 'create'],
   delete: () => [...requestsKeys.all, 'delete'],
 };
@@ -35,7 +38,7 @@ export const requestsQueryOptions = ({
   const sort = initialSort || 'createdAt';
   const order = initialOrder || 'desc';
 
-  const queryKey = requestsKeys.table({ q, sort, order });
+  const queryKey = requestsKeys.table.entries({ q, sort, order });
 
   return infiniteQueryOptions({
     queryKey,
@@ -57,5 +60,17 @@ export const useCreateRequestMutation = () => {
   return useMutation<boolean, ApiError, CreateRequestBody>({
     mutationKey: requestsKeys.create(),
     mutationFn: createRequest,
+  });
+};
+
+/**
+ * Mutation hook to delete a requests.
+ *
+ * @returns Mutation hook for deleting requests.
+ */
+export const useDeleteRequestMutation = () => {
+  return useMutation<boolean, ApiError, Request[]>({
+    mutationKey: requestsKeys.delete(),
+    mutationFn: (requests) => deleteRequests(requests.map(({ id }) => id)),
   });
 };

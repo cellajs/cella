@@ -11,14 +11,17 @@ import { useMutateQueryData } from '~/query/hooks/use-mutate-query-data';
  * Keys for user related queries. These keys help to uniquely identify different query. For managing query caching and invalidation.
  */
 export const usersKeys = {
-  one: ['user'] as const,
-  many: ['users'] as const,
-  list: () => [...usersKeys.many, 'list'] as const,
-  table: (filters?: GetUsersParams) => [...usersKeys.list(), filters] as const,
-  singleBase: () => [...usersKeys.one, 'single'] as const,
-  single: (idOrSlug: string) => [...usersKeys.singleBase(), idOrSlug] as const,
-  update: () => [...usersKeys.one, 'update'] as const,
-  delete: () => [...usersKeys.one, 'delete'] as const,
+  all: ['users'] as const,
+  table: {
+    base: () => [...usersKeys.all, 'table'] as const,
+    entries: (filters?: GetUsersParams) => [...usersKeys.table.base(), filters] as const,
+  },
+  single: {
+    base: () => [...usersKeys.all, 'single'] as const,
+    byIdOrSlug: (idOrSlug: string) => [...usersKeys.single.base(), idOrSlug] as const,
+  },
+  update: () => [...usersKeys.all, 'update'] as const,
+  delete: () => [...usersKeys.all, 'delete'] as const,
 };
 
 /**
@@ -27,7 +30,8 @@ export const usersKeys = {
  * @param idOrSlug - The ID or slug of the user to fetch.
  * @returns Query options.
  */
-export const userQueryOptions = (idOrSlug: string) => queryOptions({ queryKey: usersKeys.single(idOrSlug), queryFn: () => getUser(idOrSlug) });
+export const userQueryOptions = (idOrSlug: string) =>
+  queryOptions({ queryKey: usersKeys.single.byIdOrSlug(idOrSlug), queryFn: () => getUser(idOrSlug) });
 
 /**
  * Infinite query options to get a paginated list of users.
@@ -42,7 +46,7 @@ export const usersQueryOptions = ({ q = '', sort: initialSort, order: initialOrd
   const sort = initialSort || 'createdAt';
   const order = initialOrder || 'desc';
 
-  const queryKey = usersKeys.table({ q, sort, order, role });
+  const queryKey = usersKeys.table.entries({ q, sort, order, role });
 
   return infiniteQueryOptions({
     queryKey,
@@ -65,7 +69,7 @@ export const useUpdateUserMutation = () => {
     mutationKey: usersKeys.update(),
     mutationFn: updateUser,
     onSuccess: (updatedUser) => {
-      const mutateCache = useMutateQueryData(usersKeys.list(), () => usersKeys.singleBase(), ['update']);
+      const mutateCache = useMutateQueryData(usersKeys.table.base(), () => usersKeys.single.base(), ['update']);
 
       mutateCache.update([updatedUser]);
     },
@@ -84,7 +88,7 @@ export const useUserDeleteMutation = () => {
     mutationKey: usersKeys.delete(),
     mutationFn: (users) => deleteUsers(users.map(({ id }) => id)),
     onSuccess: (_, users) => {
-      const mutateCache = useMutateQueryData(usersKeys.list(), () => usersKeys.singleBase(), ['remove']);
+      const mutateCache = useMutateQueryData(usersKeys.table.base(), () => usersKeys.single.base(), ['remove']);
 
       mutateCache.remove(users);
     },

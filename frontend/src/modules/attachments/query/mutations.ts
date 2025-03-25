@@ -68,7 +68,7 @@ export const useAttachmentCreateMutation = () =>
       }
 
       // Get affected queries
-      const similarKey = attachmentsKeys.list.tableByOrg({ orgIdOrSlug });
+      const similarKey = attachmentsKeys.list.similarTable({ orgIdOrSlug });
       //Cancel all affected queries
       await queryClient.cancelQueries({ queryKey: similarKey });
       const queries = getSimilarQueries<Attachment>(similarKey);
@@ -97,7 +97,7 @@ export const useAttachmentCreateMutation = () =>
 
     onSuccess: async (createdAttachments, { orgIdOrSlug }, context) => {
       // Get affected queries
-      const similarKey = attachmentsKeys.list.tableByOrg({ orgIdOrSlug });
+      const similarKey = attachmentsKeys.list.similarTable({ orgIdOrSlug });
       const queries = getSimilarQueries<Attachment>(similarKey);
 
       for (const query of queries) {
@@ -146,7 +146,7 @@ export const useAttachmentUpdateMutation = () =>
       const optimisticIds: string[] = []; // IDs of optimistically updated items
 
       // Get affected queries
-      const similarKey = attachmentsKeys.list.tableByOrg({ orgIdOrSlug });
+      const similarKey = attachmentsKeys.list.similarTable({ orgIdOrSlug });
       //Cancel all affected queries
       await queryClient.cancelQueries({ queryKey: similarKey });
       const queries = getSimilarQueries<Attachment>(similarKey);
@@ -172,7 +172,7 @@ export const useAttachmentUpdateMutation = () =>
     },
     onSuccess: async (updatedAttachment, { orgIdOrSlug }, context) => {
       // Get affected queries
-      const similarKey = attachmentsKeys.list.tableByOrg({ orgIdOrSlug });
+      const similarKey = attachmentsKeys.list.similarTable({ orgIdOrSlug });
       const queries = getSimilarQueries<Attachment>(similarKey);
 
       for (const query of queries) {
@@ -208,7 +208,7 @@ export const useAttachmentDeleteMutation = () =>
       const context: AttachmentContextProp[] = []; // previous query data for rollback if an error occurs
 
       // Get affected queries
-      const similarKey = attachmentsKeys.list.tableByOrg({ orgIdOrSlug });
+      const similarKey = attachmentsKeys.list.similarTable({ orgIdOrSlug });
       //Cancel all affected queries
       await queryClient.cancelQueries({ queryKey: similarKey });
       const queries = getSimilarQueries<Attachment>(similarKey);
