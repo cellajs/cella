@@ -43,7 +43,7 @@ export const UserInOrganizationProfileRoute = createRoute({
   errorComponent: ({ error }) => <ErrorNotice level="app" error={error} />,
   component: () => {
     const { orgIdOrSlug } = useParams({ from: UserInOrganizationProfileRoute.id });
-    const user = useLoaderData({ from: UserProfileRoute.id });
+    const user = useLoaderData({ from: UserInOrganizationProfileRoute.id });
     return (
       <Suspense>
         <UserProfilePage key={user.id} user={user} orgIdOrSlug={orgIdOrSlug} />
