@@ -130,6 +130,7 @@
     "zxcvbn": "^4.4.2"
   },
   "devDependencies": {
+    "@tanstack/router-core": "^1.114.25",
     "@faker-js/faker": "^9.6.0",
     "@react-scan/vite-plugin-react-scan": "^0.1.8",
     "@redux-devtools/extension": "^3.3.0",

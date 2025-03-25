@@ -1,9 +1,9 @@
-import { forwardRef, memo, useEffect, useImperativeHandle, useMemo } from 'react';
+import { forwardRef, memo, useEffect, useImperativeHandle } from 'react';
 
 import { Paperclip } from 'lucide-react';
 import type { RowsChangeData } from 'react-data-grid';
 import { useTranslation } from 'react-i18next';
-import { useOnlineManager } from '~/hooks/use-online-manager';
+import useOfflineTableSearch from '~/hooks/use-offline-table-search';
 import { useAttachmentUpdateMutation } from '~/modules/attachments/query/mutations';
 import { attachmentsQueryOptions } from '~/modules/attachments/query/options';
 import type { AttachmentSearch, AttachmentsTableProps } from '~/modules/attachments/table/table-wrapper';
@@ -19,7 +19,6 @@ type BaseDataTableProps = AttachmentsTableProps & BaseTableProps<Attachment, Att
 const BaseDataTable = memo(
   forwardRef<BaseTableMethods, BaseDataTableProps>(({ entity, columns, searchVars, sortColumns, setSortColumns, setTotal, setSelected }, ref) => {
     const { t } = useTranslation();
-    const { isOnline } = useOnlineManager();
 
     const { q, sort, order, limit } = searchVars;
     const orgIdOrSlug = entity.membership?.organizationId || entity.id;
@@ -38,12 +37,15 @@ const BaseDataTable = memo(
     } = useDataFromInfiniteQuery(attachmentsQueryOptions({ orgIdOrSlug, q, sort, order, limit }));
     const attachmentUpdateMutation = useAttachmentUpdateMutation();
 
-    const rows = useMemo(() => {
-      if (isOnline || !q?.trim()) return fetchedRows; // Skip filtering if online or query is empty
-
-      const query = q.trim().toLowerCase(); // Normalize query
-      return fetchedRows.filter(({ name, filename }) => name.toLowerCase().includes(query) || filename.toLowerCase().includes(query));
-    }, [isOnline, q, fetchedRows]);
+    const rows = useOfflineTableSearch({
+      data: fetchedRows,
+      filterFn: ({ q }, item) => {
+        if (!q) return true;
+        const query = q.trim().toLowerCase(); // Normalize query
+        return item.name.toLowerCase().includes(query) || item.filename.toLowerCase().includes(query);
+      },
+      onFilterCallback: (filteredData) => setTotal(filteredData.length),
+    });
 
     // Update rows
     const onRowsChange = (changedRows: Attachment[], { indexes, column }: RowsChangeData<Attachment>) => {
@@ -69,12 +71,6 @@ const BaseDataTable = memo(
 
     // Effect to update total when online totalCount changes
     useEffect(() => setTotal(totalCount), [totalCount]);
-
-    // Effect to update total when offline and rows filters
-    useEffect(() => {
-      if (isOnline) return;
-      setTotal(rows.length); // Update total when offline and rows.length changes
-    }, [isOnline, rows.length]);
 
     // Expose methods via ref using useImperativeHandle
     useImperativeHandle(ref, () => ({
