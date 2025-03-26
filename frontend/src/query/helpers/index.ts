@@ -1,6 +1,7 @@
 import type { QueryKey } from '@tanstack/react-query';
 import { queryClient } from '~/query/query-client';
 import type { InfiniteQueryData } from '~/query/types';
+import { useUIStore } from '~/store/ui';
 
 /**
  * Wait for a given number of milliseconds.
@@ -18,6 +19,12 @@ export const waitFor = (ms: number) => new Promise((resolve) => setTimeout(resol
  */
 export const getOffset = <T>(queryKey: QueryKey) => {
   const queryState = queryClient.getQueryState(queryKey);
+  const offlineAccess = useUIStore.getState().offlineAccess;
+
+  /**
+   * on offlineAccess due to PersistQueryClientProvider on reload invalidate all queries, return undefined, so fetch func default couts offset as page * limit
+   */
+  if (offlineAccess) return undefined;
 
   //Query was invalidated and not re-fetched return 0
   if (!queryState || queryState.isInvalidated || queryState.status === 'pending') return 0;
