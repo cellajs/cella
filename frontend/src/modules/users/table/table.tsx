@@ -1,7 +1,7 @@
 import { onlineManager } from '@tanstack/react-query';
 import { forwardRef, memo, useEffect, useImperativeHandle } from 'react';
 
-import type { RowsChangeData } from 'react-data-grid';
+import type { RowsChangeData, SortColumn } from 'react-data-grid';
 import { useTranslation } from 'react-i18next';
 import { DataTable } from '~/modules/common/data-table';
 import { tablePropsAreEqual } from '~/modules/common/data-table/table-props-are-equal';
@@ -48,6 +48,11 @@ const BaseDataTable = memo(
       setSelected(rows.filter((row) => value.has(row.id)));
     };
 
+    const onSortColumnsChange = (sortColumns: SortColumn[]) => {
+      setSortColumns(sortColumns);
+      onSelectedRowsChange(new Set<string>());
+    };
+
     useEffect(() => setTotal(totalCount), [totalCount]);
 
     // Expose methods via ref using useImperativeHandle
@@ -74,7 +79,7 @@ const BaseDataTable = memo(
           selectedRows,
           onSelectedRowsChange,
           sortColumns,
-          onSortColumnsChange: setSortColumns,
+          onSortColumnsChange,
         }}
       />
     );
