@@ -2,7 +2,6 @@ import { Outlet } from '@tanstack/react-router';
 import { ErrorBoundary } from 'react-error-boundary';
 import Alerter from '~/modules/common/alerter';
 import { Dialoger } from '~/modules/common/dialoger/provider';
-import { Dropdowner } from '~/modules/common/dropdowner';
 import ErrorNotice from '~/modules/common/error-notice';
 import { Sheeter } from '~/modules/common/sheeter/provider';
 
@@ -15,7 +14,6 @@ function PublicLayout() {
       <Alerter mode="public" />
       <Dialoger />
       <Sheeter />
-      <Dropdowner />
       <Outlet />
     </ErrorBoundary>
   );

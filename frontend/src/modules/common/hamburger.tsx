@@ -1,6 +1,6 @@
+import { Button } from '~/modules/ui/button';
 import { useUIStore } from '~/store/ui';
 import { cn } from '~/utils/cn';
-import { Button } from '../ui/button';
 
 interface HamburgerButtonProps {
   isOpen: boolean;

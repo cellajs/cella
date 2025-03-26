@@ -5,10 +5,10 @@ import { Suspense, memo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { lazyWithPreload } from 'react-lazy-with-preload';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
+import Spinner from '~/modules/common/spinner';
 import { toaster } from '~/modules/common/toaster';
 import { Button } from '~/modules/ui/button';
 import { numberToColorClass } from '~/utils/number-to-color-class';
-import Spinner from '../spinner';
 
 // Lazy load the upload component
 const UploadUppy = lazyWithPreload(() => import('~/modules/attachments/upload/upload-uppy'));

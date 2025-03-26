@@ -3,7 +3,7 @@ import { AppContent } from '~/modules/common/app-content';
 
 import AppSheets from '~/modules/common/app-sheets';
 import { Dialoger } from '~/modules/common/dialoger/provider';
-import { Dropdowner } from '~/modules/common/dropdowner';
+import { Dropdowner } from '~/modules/common/dropdowner/provider';
 import ErrorNotice from '~/modules/common/error-notice';
 import { Sheeter } from '~/modules/common/sheeter/provider';
 import SSE from '~/modules/common/sse';

@@ -75,7 +75,7 @@ const CommandInput = React.forwardRef<HTMLInputElement, CommandInputProps & Zero
 CommandInput.displayName = CommandPrimitive.Input.displayName;
 
 const CommandList = React.forwardRef<React.ComponentRef<typeof CommandPrimitive.List>, React.ComponentPropsWithoutRef<typeof CommandPrimitive.List>>(
-  ({ className, ...props }, ref) => <CommandPrimitive.List ref={ref} className={cn(className)} {...props} />,
+  ({ className, ...props }, ref) => <CommandPrimitive.List ref={ref} className={cn(className, 'p-1 empty:p-0')} {...props} />,
 );
 
 CommandList.displayName = CommandPrimitive.List.displayName;
@@ -90,7 +90,7 @@ CommandEmpty.displayName = CommandPrimitive.Empty.displayName;
 const CommandGroup = React.forwardRef<
   React.ComponentRef<typeof CommandPrimitive.Group>,
   React.ComponentPropsWithoutRef<typeof CommandPrimitive.Group>
->(({ className, ...props }, ref) => <CommandPrimitive.Group ref={ref} className={cn('p-1 empty:p-0 text-foreground', className)} {...props} />);
+>(({ className, ...props }, ref) => <CommandPrimitive.Group ref={ref} className={cn('text-foreground', className)} {...props} />);
 
 CommandGroup.displayName = CommandPrimitive.Group.displayName;
 

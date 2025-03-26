@@ -1,24 +1,15 @@
-import { useEffect, useState } from 'react';
 import type { SheetProps } from '~/modules/common/sheeter/sheet';
 import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
 import { Drawer, DrawerContent, DrawerDescription, DrawerHeader, DrawerTitle } from '~/modules/ui/drawer';
+import { useDropdowner } from '../dropdowner/use-dropdowner';
 
 export const MobileSheet = ({ sheet }: SheetProps) => {
-  const { modal = true, id, side: sheetSide, description, title, titleContent = title, className: sheetClassName, content, open = true } = sheet;
+  const { modal = true, id, side, description, title, titleContent = title, className, content, open = true } = sheet;
 
   const updateSheet = useSheeter.getState().update;
 
-  // State to retain side value even after sheet removal
-  const [side, setSide] = useState(sheetSide);
-  const [className, setClassName] = useState(sheetClassName);
-
-  // Prevent flickering of sheet when its removed
-  useEffect(() => {
-    if (sheetSide) {
-      setSide(sheetSide); // Update side when new sheet is created
-      setClassName(sheetClassName);
-    }
-  }, [sheetSide, sheetClassName]);
+  // Check if dropdown is open, then disable dismissible
+  const isDropdownOpen = useDropdowner((state) => state.dropdown);
 
   const closeSheet = () => {
     useSheeter.getState().remove(sheet.id);
@@ -31,7 +22,16 @@ export const MobileSheet = ({ sheet }: SheetProps) => {
   };
 
   return (
-    <Drawer key={id} modal={modal} open={open} onOpenChange={onOpenChange} onClose={closeSheet} direction={side} noBodyStyles>
+    <Drawer
+      key={id}
+      modal={modal}
+      open={open}
+      dismissible={!isDropdownOpen}
+      onOpenChange={onOpenChange}
+      onClose={closeSheet}
+      direction={side}
+      noBodyStyles
+    >
       <DrawerContent id={String(id)} onEscapeKeyDown={closeSheet} direction={side} className={className}>
         <DrawerHeader className={`${description || title ? '' : 'hidden'}`}>
           <DrawerTitle className={`font-medium mb-2 ${title ? '' : 'hidden'}`}>{titleContent}</DrawerTitle>

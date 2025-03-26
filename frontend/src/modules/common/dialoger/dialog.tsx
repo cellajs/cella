@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { type DialogData, useDialoger } from '~/modules/common/dialoger/use-dialoger';
-import { dropdowner } from '~/modules/common/dropdowner/state';
+import { useDropdowner } from '~/modules/common/dropdowner/use-dropdowner';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '~/modules/ui/dialog';
 import { cn } from '~/utils/cn';
 
@@ -28,11 +28,10 @@ export default function StandardDialog({ dialog }: DialogProp) {
     if (!open) closeDialog();
   };
 
+  // Dont close if interact outside is caused by dropdown, and also when modal is false
   const handleInteractOutside = (event: CustomInteractOutsideEvent) => {
-    const dropDown = dropdowner.getOpenDropdown();
-
-    // Check if there is an open dropdown and if it is not modal
-    if ((dropDown && !dropDown.modal) || !modal) event.preventDefault();
+    const dropdown = useDropdowner.getState().dropdown;
+    if (dropdown || !modal) event.preventDefault();
   };
 
   return (
