@@ -25,12 +25,11 @@ export const QueryClientProvider = ({ children }: { children: React.ReactNode })
     // Exit early if offline access is disabled or no stored user is available
     if (!offlineAccess || !user) return;
 
-    const controller = new AbortController(); // To cancel the request if needed
-    const signal = controller.signal; // Abort signal to handle the cancellation
+    let isCancelled = false; // to handle the cancellation
 
     (async () => {
       await waitFor(1000); // Avoid overloading server with requests
-      if (signal.aborted) return; // If request was aborted, exit early
+      if (isCancelled) return; // If request was aborted, exit early
 
       // Prefetch menu and user details
       const [menuResponse]: PromiseSettledResult<UserMenu>[] = await Promise.allSettled([
@@ -39,32 +38,34 @@ export const QueryClientProvider = ({ children }: { children: React.ReactNode })
       ]);
 
       // If menu query failed or request was aborted, return early
-      if (menuResponse.status !== 'fulfilled' || signal.aborted) return;
+      if (menuResponse.status !== 'fulfilled' || isCancelled) return;
 
       // Recursive function to prefetch menu items
       const prefetchMenuItems = async (items: UserMenuItem[]) => {
         for (const item of items) {
-          if (signal.aborted) return; // Check for abortion in each loop
+          if (isCancelled) return; // Check for abortion in each loop
           if (item.membership.archived) continue; // Skip archived items
 
           // Fetch queries for this menu item in parallel
           const queries = queriesToMap(item).map((query) => prefetchQuery({ ...query, gcTime: GC_TIME }));
           await Promise.allSettled(queries);
 
-          await waitFor(500); // Avoid overloading the server
+          await waitFor(500); // Avoid overloading server
 
           // Recursively prefetch submenu items if they exist
           if (item.submenu) await prefetchMenuItems(item.submenu);
         }
       };
 
-      // Access the menu data and start prefetching each menu section
+      // Access menu data and start prefetching each menu section
       const menu = menuResponse.value;
       Object.values(menu).map(prefetchMenuItems); // Start prefetching for each menu section
     })();
 
-    // Cleanup function to abort the request if the component is unmounted
-    return () => controller.abort();
+    // Cleanup function to abort prefetch if component is unmounted
+    return () => {
+      isCancelled = true;
+    };
   }, [offlineAccess, user]);
 
   if (!offlineAccess) return <BaseQueryClientProvider client={queryClient}>{children}</BaseQueryClientProvider>;
