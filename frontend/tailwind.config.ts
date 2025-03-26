@@ -1,4 +1,3 @@
-import lineClampPlugin from '@tailwindcss/line-clamp';
 import typographyPlugin from '@tailwindcss/typography';
 import { config } from 'config';
 import type { Config } from 'tailwindcss';
@@ -123,5 +122,5 @@ export default {
       },
     },
   },
-  plugins: [animatePlugin, typographyPlugin, lineClampPlugin],
+  plugins: [animatePlugin, typographyPlugin],
 } satisfies Config;

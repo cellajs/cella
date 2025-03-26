@@ -9,6 +9,7 @@ import { useUpdateSelfMutation } from '~/modules/me/query';
 import { useUpdateUserMutation, userQueryOptions } from '~/modules/users/query';
 import type { LimitedUser } from '~/modules/users/types';
 import { useUserStore } from '~/store/user';
+import { FocusViewContainer } from '../common/focus-view';
 
 const ProfilePageContent = lazy(() => import('~/modules/users/profile-page-content'));
 
@@ -63,9 +64,9 @@ const UserProfilePage = ({ user: baseUser, sheet, orgIdOrSlug }: { user: Limited
         }
       />
       <Suspense>
-        <div className="container">
+        <FocusViewContainer className="container">
           <ProfilePageContent orgIdOrSlug={orgIdOrSlug} userId={user.id} sheet={sheet} />
-        </div>
+        </FocusViewContainer>
       </Suspense>
     </>
   );

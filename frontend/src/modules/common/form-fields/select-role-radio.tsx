@@ -3,14 +3,14 @@ import { useTranslation } from 'react-i18next';
 import { RadioGroup, RadioGroupItem } from '~/modules/ui/radio-group';
 import { cn } from '~/utils/cn';
 
-interface SelectRoleProps {
+interface Props {
   entityType?: ContextEntity;
   onChange: (value?: string) => void;
   value?: (typeof config.rolesByType.allRoles)[number];
   className?: string;
 }
 
-const SelectRole = ({ entityType, onChange, value, className }: SelectRoleProps) => {
+const SelectRoleRadio = ({ entityType, onChange, value, className }: Props) => {
   const { t } = useTranslation();
 
   const roles = entityType ? config.rolesByType.entityRoles : ['user'];
@@ -28,4 +28,4 @@ const SelectRole = ({ entityType, onChange, value, className }: SelectRoleProps)
   );
 };
 
-export default SelectRole;
+export default SelectRoleRadio;
