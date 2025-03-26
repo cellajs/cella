@@ -208,7 +208,7 @@ export const useColumns = (entity: EntityPage, isSheet: boolean, highDensity: bo
       renderCell: ({ row, tabIndex }) => {
         if (!row.createdBy) return <span className="text-muted">-</span>;
 
-        const queryKey = [...membersKeys.list(), { entityType: entity.entity, orgIdOrSlug: row.organizationId }];
+        const queryKey = [...membersKeys.table.base(), { entityType: entity.entity, orgIdOrSlug: row.organizationId }];
         const user = findUserFromCache(queryKey, row.createdBy);
 
         if (!user) return <span>{row.createdBy}</span>;
@@ -235,7 +235,7 @@ export const useColumns = (entity: EntityPage, isSheet: boolean, highDensity: bo
       renderCell: ({ row, tabIndex }) => {
         if (!row.modifiedBy) return <span className="text-muted">-</span>;
 
-        const queryKey = [...membersKeys.list(), { entityType: entity.entity, orgIdOrSlug: row.organizationId }];
+        const queryKey = [...membersKeys.table.base(), { entityType: entity.entity, orgIdOrSlug: row.organizationId }];
         const user = findUserFromCache(queryKey, row.modifiedBy);
 
         if (!user) return <span>{row.modifiedBy}</span>;

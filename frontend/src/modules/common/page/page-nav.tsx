@@ -35,7 +35,7 @@ export const PageNav = ({ title, avatar, tabs, className = '' }: Props) => {
 
   // Focus the first tab on mount
   useEffect(() => {
-    if (!isMobile) return;
+    if (isMobile) return;
     document.getElementById(`tab-${tabs[0].id}`)?.focus();
   }, []);
 

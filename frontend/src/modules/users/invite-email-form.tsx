@@ -33,7 +33,7 @@ interface Props {
  * Add new invites to the organization count and invalidate the invites table query.
  */
 export const handleNewInvites = (emails: string[], entity: EntityPage) => {
-  queryClient.setQueryData(organizationsKeys.single(entity.slug), (oldEntity: EntityPage) => {
+  queryClient.setQueryData(organizationsKeys.single.byIdOrSlug(entity.slug), (oldEntity: EntityPage) => {
     if (!oldEntity) return oldEntity;
 
     return {
@@ -48,7 +48,7 @@ export const handleNewInvites = (emails: string[], entity: EntityPage) => {
     };
   });
   queryClient.invalidateQueries({
-    queryKey: membersKeys.invitesTable({ idOrSlug: entity.slug, entityType: entity.entity, orgIdOrSlug: entity.organizationId || entity.id }),
+    queryKey: membersKeys.table.pending({ idOrSlug: entity.slug, entityType: entity.entity, orgIdOrSlug: entity.organizationId || entity.id }),
   });
 };
 

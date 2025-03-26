@@ -3,6 +3,7 @@ import { type SheetData, useSheeter } from '~/modules/common/sheeter/use-sheeter
 import StickyBox from '~/modules/common/sticky-box';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '~/modules/ui/sheet';
 import { isElementInteractive } from '~/utils/is-el-interactive';
+import { useDropdowner } from '../dropdowner/use-dropdowner';
 
 export interface SheetProps {
   sheet: SheetData;
@@ -56,8 +57,11 @@ export const DesktopSheet = ({ sheet }: SheetProps) => {
     closeSheet();
   };
 
-  // Close sheet when clicking outside also when modal is false
   const handleInteractOutside = (event: CustomEvent<{ originalEvent: PointerEvent }> | CustomEvent<{ originalEvent: FocusEvent }>) => {
+    // Dont close if interact outside is caused by dropdown
+    const dropdown = useDropdowner.getState().dropdown;
+    if (dropdown) return event.preventDefault();
+
     const bodyClassList = document.body.classList;
     if (bodyClassList.contains('keep-menu-open') && bodyClassList.contains('menu-sheet-open')) return;
 

@@ -7,7 +7,7 @@ import { queryClient } from '~/query/query-client';
 
 // Handle new attachment insert
 export const handleInsert = (orgIdOrSlug: string, newAttachments: Attachment[]) => {
-  const queries = getSimilarQueries(attachmentsKeys.list.tableByOrg({ orgIdOrSlug }));
+  const queries = getSimilarQueries(attachmentsKeys.list.similarTable({ orgIdOrSlug }));
 
   for (const [queryKey] of queries) {
     const { sort, order: insertOrder } = getQueryKeySortOrder(queryKey);
@@ -41,7 +41,7 @@ export const handleInsert = (orgIdOrSlug: string, newAttachments: Attachment[]) 
 
 // Handle attachment update
 export const handleUpdate = (orgIdOrSlug: string, updatedAttachments: Attachment[]) => {
-  const queries = getSimilarQueries(attachmentsKeys.list.tableByOrg({ orgIdOrSlug }));
+  const queries = getSimilarQueries(attachmentsKeys.list.similarTable({ orgIdOrSlug }));
 
   for (const [queryKey] of queries) {
     queryClient.setQueryData<AttachmentInfiniteQueryData>(queryKey, (data) => {
@@ -63,7 +63,7 @@ export const handleUpdate = (orgIdOrSlug: string, updatedAttachments: Attachment
 
 // Handle attachment deletion in attachment query
 export const handleDelete = (orgIdOrSlug: string, attachmentIds: string[]) => {
-  const queries = getSimilarQueries(attachmentsKeys.list.tableByOrg({ orgIdOrSlug }));
+  const queries = getSimilarQueries(attachmentsKeys.list.similarTable({ orgIdOrSlug }));
 
   for (const [queryKey] of queries) {
     queryClient.setQueryData<AttachmentInfiniteQueryData>(queryKey, (data) => {

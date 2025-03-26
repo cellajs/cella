@@ -13,10 +13,10 @@ import { useUserStore } from '~/store/user';
  * For managing query caching and invalidation.
  */
 export const meKeys = {
-  me: ['me'] as const,
-  menu: ['menu'] as const,
-  auth: () => [...meKeys.me, 'auth'] as const,
-  update: () => [...meKeys.me, 'update'] as const,
+  all: ['me'] as const,
+  menu: () => [...meKeys.all, 'menu'] as const,
+  auth: () => [...meKeys.all, 'auth'] as const,
+  update: () => [...meKeys.all, 'update'] as const,
 };
 
 /**
@@ -24,7 +24,7 @@ export const meKeys = {
  *
  * @returns Query options.
  */
-export const meQueryOptions = () => queryOptions({ queryKey: meKeys.me, queryFn: getAndSetMe });
+export const meQueryOptions = () => queryOptions({ queryKey: meKeys.all, queryFn: getAndSetMe });
 
 /**
  * Query options for fetching the authentication information of the current authenticated user.
@@ -38,7 +38,7 @@ export const meAuthQueryOptions = () => queryOptions({ queryKey: meKeys.auth(), 
  *
  * @returns Query options.
  */
-export const menuQueryOptions = () => queryOptions({ queryKey: meKeys.menu, queryFn: getAndSetMenu });
+export const menuQueryOptions = () => queryOptions({ queryKey: meKeys.menu(), queryFn: getAndSetMenu });
 
 /**
  * Mutation hook for updating current user (self)
@@ -52,7 +52,7 @@ export const useUpdateSelfMutation = () => {
     onSuccess: (updatedUser) => {
       const updateUser = useUserStore.getState().updateUser;
 
-      queryClient.setQueryData(usersKeys.single(updatedUser.slug), updatedUser);
+      queryClient.setQueryData(usersKeys.single.byIdOrSlug(updatedUser.slug), updatedUser);
       updateUser(updatedUser);
     },
     gcTime: 1000 * 10,

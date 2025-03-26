@@ -4,11 +4,11 @@ import { Drawer as DrawerPrimitive } from 'vaul';
 
 import { cn } from '~/utils/cn';
 
-const DrawerVariants = cva('fixed z-115 p-6 flex flex-col rounded-t-2.5 bg-background', {
+const DrawerVariants = cva('fixed z-118 p-6 flex flex-col rounded-t-2.5 bg-background', {
   variants: {
     direction: {
       top: 'inset-x-0 top-0 mb-24 flex-col',
-      bottom: 'inset-x-0 bottom-0 mt-24 flex-col',
+      bottom: 'inset-x-0 bottom-0 mt-24 flex-col z-121',
       right: 'inset-y-0 right-0 w-[95vw] flex-row overflow-x-hidden',
       left: 'inset-y-0 left-0 w-[95vw] flex-row overflow-x-hidden',
     },
@@ -47,7 +47,7 @@ const DrawerOverlay = React.forwardRef<
   React.ComponentRef<typeof DrawerPrimitive.Overlay>,
   React.ComponentPropsWithoutRef<typeof DrawerPrimitive.Overlay>
 >(({ className, ...props }, ref) => (
-  <DrawerPrimitive.Overlay ref={ref} className={cn('fixed inset-0 z-114 bg-background/40 backdrop-blur-xs', className)} {...props} />
+  <DrawerPrimitive.Overlay ref={ref} className={cn('fixed inset-0 bg-muted/20 backdrop-blur-xs', className)} {...props} />
 ));
 DrawerOverlay.displayName = DrawerPrimitive.Overlay.displayName;
 
@@ -57,7 +57,7 @@ const DrawerContent = React.forwardRef<React.ComponentRef<typeof DrawerPrimitive
   ({ className, direction, children, ...props }, ref) => {
     return (
       <DrawerPortal>
-        <DrawerOverlay />
+        <DrawerOverlay className={!direction || direction === 'bottom' ? 'z-120' : 'z-117'} />
         <DrawerPrimitive.Content ref={ref} className={cn(DrawerVariants({ direction }), className)} {...props}>
           <div className={DrawerSliderVariants({ direction })} />
           <div className="w-full h-full">{children}</div>
@@ -90,7 +90,7 @@ const DrawerDescription = React.forwardRef<
   React.ComponentRef<typeof DrawerPrimitive.Description>,
   React.ComponentPropsWithoutRef<typeof DrawerPrimitive.Description>
 >(({ className, ...props }, ref) => (
-  <DrawerPrimitive.Description ref={ref} className={cn('font-light text-left tex-sm text-muted-foreground mb-4', className)} {...props} />
+  <DrawerPrimitive.Description ref={ref} className={cn('font-light text-left text-sm text-muted-foreground', className)} {...props} />
 ));
 DrawerDescription.displayName = DrawerPrimitive.Description.displayName;
 

@@ -14,7 +14,7 @@ const UserSheet = ({ idOrSlug, orgIdOrSlug }: { idOrSlug: string; orgIdOrSlug?: 
   const { isOnline } = useOnlineManager();
 
   // Search for the user in cached queries
-  const memberKey = [...membersKeys.list(), { orgIdOrSlug }];
+  const memberKey = [...membersKeys.table.base(), { orgIdOrSlug }];
   const cachedUser = findUserFromCache(memberKey, idOrSlug);
 
   const { data, isError, isLoading } = useQuery(userQueryOptions(idOrSlug));

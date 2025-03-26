@@ -76,6 +76,7 @@ p.bn-inline-content code {
 .bn-shadcn .bn-default-styles {
   font-size: 0.888rem;
   line-height: 1.3;
+  -webkit-font-smoothing: auto;
 }
 
 .bn-inline-content:has(> .ProseMirror-trailingBreak)::before {

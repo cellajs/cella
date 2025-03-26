@@ -91,7 +91,14 @@ export const AccountSheet = () => {
             label={t('common:view_item', { item: t('common:profile').toLowerCase() })}
             action={`/users/${user.slug}`}
           />
-          <AccountButton offlineAccess={true} lucide={UserCog} id="btn-account" label={t('common:settings')} action="/settings" />
+          <AccountButton
+            offlineAccess={false}
+            isOnline={isOnline}
+            lucide={UserCog}
+            id="btn-account"
+            label={t('common:settings')}
+            action="/settings"
+          />
           {isSystemAdmin && (
             <AccountButton
               offlineAccess={false}

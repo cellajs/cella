@@ -23,7 +23,7 @@ export type DialogData = {
   reset?: boolean;
 };
 
-// CAn we get rid of this?
+// TODO CAn we get rid of this?
 export type ExternalDialog = Omit<DialogData, 'id' | 'content'> & {
   id?: number | string;
 };

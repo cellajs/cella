@@ -9,7 +9,7 @@ import { membersKeys } from '~/modules/memberships/query/options';
 import type { EntityMembershipContextProp, InfiniteMemberQueryData, MemberContextProp, MemberQueryData } from '~/modules/memberships/query/types';
 import type { Member, Membership } from '~/modules/memberships/types';
 import { updateMenuItemMembership } from '~/modules/navigation/menu-sheet/helpers/menu-operations';
-import { formatUpdatedData, getCancelingRefetchQueries, getQueries, getQueryItems } from '~/query/helpers/mutate-query';
+import { formatUpdatedData, getQueryItems, getSimilarQueries } from '~/query/helpers/mutate-query';
 import { useMutateQueryData } from '~/query/hooks/use-mutate-query-data';
 import { queryClient } from '~/query/query-client';
 
@@ -48,9 +48,10 @@ export const useMemberUpdateMutation = () =>
       updateMenuItemMembership(membershipInfo, idOrSlug, entityType);
 
       // Get affected queries
-      const exactKey = membersKeys.table({ idOrSlug, entityType, orgIdOrSlug });
-      const similarKey = membersKeys.similar({ idOrSlug, entityType, orgIdOrSlug });
-      const queries = await getCancelingRefetchQueries<Member>(exactKey, similarKey);
+      const similarKey = membersKeys.table.similarMembers({ idOrSlug, entityType, orgIdOrSlug });
+      //Cancel all affected queries
+      await queryClient.cancelQueries({ queryKey: similarKey });
+      const queries = getSimilarQueries<Member>(similarKey);
 
       // Iterate over affected queries and optimistically update cache
       for (const [queryKey, previousData] of queries) {
@@ -80,9 +81,9 @@ export const useMemberUpdateMutation = () =>
       updateMenuItemMembership(updatedMembership, idOrSlug, entityType);
 
       // Get affected queries
-      const exactKey = membersKeys.table({ idOrSlug, entityType, orgIdOrSlug });
-      const similarKey = membersKeys.similar({ idOrSlug, entityType, orgIdOrSlug });
-      const queries = getQueries<Member>(exactKey, similarKey);
+      const similarKey = membersKeys.table.similarMembers({ idOrSlug, entityType, orgIdOrSlug });
+      //Cancel all affected queries
+      const queries = getSimilarQueries<Member>(similarKey);
 
       for (const query of queries) {
         const [activeKey] = query;
@@ -120,9 +121,10 @@ export const useMembersDeleteMutation = () =>
       const context: MemberContextProp[] = []; // previous query data for rollback if an error occurs
 
       // Get affected queries
-      const exactKey = membersKeys.table({ idOrSlug, entityType, orgIdOrSlug });
-      const similarKey = membersKeys.similar({ idOrSlug, entityType, orgIdOrSlug });
-      const queries = await getCancelingRefetchQueries<Member>(exactKey, similarKey);
+      const similarKey = membersKeys.table.similarMembers({ idOrSlug, entityType, orgIdOrSlug });
+      //Cancel all affected queries
+      await queryClient.cancelQueries({ queryKey: similarKey });
+      const queries = getSimilarQueries<Member>(similarKey);
 
       // Iterate over affected queries and optimistically update cache
       for (const [queryKey, previousData] of queries) {

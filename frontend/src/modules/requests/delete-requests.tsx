@@ -1,10 +1,8 @@
 import type { Request } from '~/modules/requests/types';
 
-import { useMutation } from '@tanstack/react-query';
 import { DeleteForm } from '~/modules/common/delete-form';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
-import { deleteRequests } from '~/modules/requests/api';
-import { requestsKeys } from '~/modules/requests/query';
+import { useDeleteRequestMutation } from '~/modules/requests/query';
 
 interface Props {
   requests: Request[];
@@ -15,17 +13,15 @@ interface Props {
 const DeleteRequests = ({ requests, callback, dialog: isDialog }: Props) => {
   const removeDialog = useDialoger((state) => state.remove);
 
-  const { mutate: _deleteRequests, isPending } = useMutation({
-    mutationKey: requestsKeys.delete(),
-    mutationFn: deleteRequests,
-    onSuccess: () => {
-      if (isDialog) removeDialog();
-      callback?.(requests);
-    },
-  });
+  const { mutate: deleteRequests, isPending } = useDeleteRequestMutation();
 
   const onDelete = () => {
-    _deleteRequests(requests.map((req) => req.id));
+    deleteRequests(requests, {
+      onSuccess(_, requests) {
+        if (isDialog) removeDialog();
+        callback?.(requests);
+      },
+    });
   };
 
   return <DeleteForm onDelete={onDelete} onCancel={() => removeDialog()} pending={isPending} />;
