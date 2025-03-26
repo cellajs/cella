@@ -1,5 +1,6 @@
 import { Bird } from 'lucide-react';
 import { forwardRef, memo, useEffect, useImperativeHandle } from 'react';
+import type { SortColumn } from 'react-data-grid';
 import { useTranslation } from 'react-i18next';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { DataTable } from '~/modules/common/data-table';
@@ -30,6 +31,11 @@ const BaseRequestsTable = memo(
       setSelected(rows.filter((row) => value.has(row.id)));
     };
 
+    const onSortColumnsChange = (sortColumns: SortColumn[]) => {
+      setSortColumns(sortColumns);
+      onSelectedRowsChange(new Set<string>());
+    };
+
     useEffect(() => setTotal(totalCount), [totalCount]);
 
     // Expose methods via ref using useImperativeHandle
@@ -56,7 +62,7 @@ const BaseRequestsTable = memo(
           sortColumns,
           selectedRows,
           onSelectedRowsChange,
-          onSortColumnsChange: setSortColumns,
+          onSortColumnsChange,
           NoRowsComponent: <ContentPlaceholder Icon={Bird} title={t('common:no_resource_yet', { resource: t('common:requests').toLowerCase() })} />,
         }}
       />

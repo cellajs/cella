@@ -1,7 +1,7 @@
 import { forwardRef, memo, useEffect, useImperativeHandle } from 'react';
 
 import { Paperclip } from 'lucide-react';
-import type { RowsChangeData } from 'react-data-grid';
+import type { RowsChangeData, SortColumn } from 'react-data-grid';
 import { useTranslation } from 'react-i18next';
 import useOfflineTableSearch from '~/hooks/use-offline-table-search';
 import { useAttachmentUpdateMutation } from '~/modules/attachments/query/mutations';
@@ -69,6 +69,11 @@ const BaseDataTable = memo(
       setSelected(rows.filter((row) => value.has(row.id)));
     };
 
+    const onSortColumnsChange = (sortColumns: SortColumn[]) => {
+      setSortColumns(sortColumns);
+      onSelectedRowsChange(new Set<string>());
+    };
+
     // Effect to update total when online totalCount changes
     useEffect(() => setTotal(totalCount), [totalCount]);
 
@@ -96,7 +101,7 @@ const BaseDataTable = memo(
           selectedRows,
           onSelectedRowsChange,
           sortColumns,
-          onSortColumnsChange: setSortColumns,
+          onSortColumnsChange,
           NoRowsComponent: (
             <ContentPlaceholder Icon={Paperclip} title={t('common:no_resource_yet', { resource: t('common:attachments').toLowerCase() })} />
           ),
