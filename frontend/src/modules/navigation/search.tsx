@@ -88,7 +88,7 @@ export const AppSearch = () => {
   }, [suggestions]);
 
   return (
-    <Command className="rounded-lg border shadow-2xl" shouldFilter={false}>
+    <Command className="rounded-lg shadow-2xl" shouldFilter={false}>
       <CommandInput
         value={searchValue}
         ref={focusRef}

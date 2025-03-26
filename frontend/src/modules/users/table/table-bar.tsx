@@ -49,7 +49,7 @@ export const UsersTableBar = ({ total, selected, searchVars, setSearch, columns,
     createDialog(<InviteUsers mode={'email'} dialog />, {
       id: 'invite-users',
       drawerOnMobile: false,
-      className: 'w-auto shadow-none relative z-60 max-w-4xl',
+      className: 'w-auto shadow-none border relative z-60 max-w-4xl',
       container: { id: 'invite-users-container', overlay: true },
       title: t('common:invite'),
       titleContent: <UnsavedBadge title={t('common:invite')} />,

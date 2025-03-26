@@ -96,7 +96,7 @@ export const MembersTableBar = ({
     createDialog(<InviteUsers entity={entity} mode={null} dialog />, {
       id: 'invite-users',
       drawerOnMobile: false,
-      className: 'w-auto shadow-none relative z-60 max-w-4xl',
+      className: 'w-auto shadow-none border relative z-60 max-w-4xl',
       // TODO handle container open in sheet
       ...(!isSheet && { container: { id: 'invite-members-container', overlay: true } }),
       title: t('common:invite'),
