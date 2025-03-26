@@ -3,6 +3,7 @@ import { AnimatePresence, MotionConfig, motion } from 'motion/react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AlertWrap } from '~/modules/common/alert-wrap';
+import { AnimatedArrow } from '~/modules/common/animated-arrow';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import UnsavedBadge from '~/modules/common/unsaved-badge';
 import type { EntityPage } from '~/modules/entities/types';
@@ -65,13 +66,13 @@ const InviteUsers = ({ entity, dialog: isDialog, mode: baseMode, children }: Inv
         {!inviteMode && (
           <motion.div key="invite-initial" initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}>
             <ToggleGroup type="multiple" onValueChange={updateMode} className="max-sm:flex-col">
-              <ToggleGroupItem size="tile" variant="tile" value="email" aria-label="Add by email" className="h-auto">
+              <ToggleGroupItem size="tile" variant="tile" value="email" aria-label="Add by email" className="h-auto sm:py-6">
                 <AtSign size={48} strokeWidth={1} />
                 <div className="flex flex-col pl-3">
                   <p className="font-light">{t('common:invite_by_email')}</p>
                   <div className="flex items-center flex-row mt-1 opacity-50 transition-opacity group-hover:opacity-100">
                     <strong>{t('common:continue')}</strong>
-                    <ChevronRight className="ml-1" size={16} />
+                    <AnimatedArrow />
                   </div>
                 </div>
               </ToggleGroupItem>
@@ -81,7 +82,7 @@ const InviteUsers = ({ entity, dialog: isDialog, mode: baseMode, children }: Inv
                   <div className="font-light">{t('common:invite_by_name')}</div>
                   <div className="flex items-center flex-row mt-1 opacity-50 transition-opacity group-hover:opacity-100">
                     <strong>{t('common:continue')}</strong>
-                    <ChevronRight className="ml-1" size={16} />
+                    <AnimatedArrow />
                   </div>
                 </div>
               </ToggleGroupItem>

@@ -33,8 +33,8 @@ export const MobileSheet = ({ sheet }: SheetProps) => {
       noBodyStyles
     >
       <DrawerContent id={String(id)} onEscapeKeyDown={closeSheet} direction={side} className={className}>
-        <DrawerHeader className={`${description || title ? '' : 'hidden'}`}>
-          <DrawerTitle className={`font-medium mb-2 ${title ? '' : 'hidden'}`}>{titleContent}</DrawerTitle>
+        <DrawerHeader className={description || title ? '' : 'hidden'}>
+          <DrawerTitle className={title ? '' : 'hidden'}>{titleContent}</DrawerTitle>
           <DrawerDescription className={`text-muted-foreground font-light ${description ? '' : 'hidden'}`}>{description}</DrawerDescription>
         </DrawerHeader>
         {content}

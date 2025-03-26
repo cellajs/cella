@@ -4,7 +4,7 @@ import { Drawer as DrawerPrimitive } from 'vaul';
 
 import { cn } from '~/utils/cn';
 
-const DrawerVariants = cva('fixed z-118 p-6 flex flex-col rounded-t-2.5 bg-background', {
+const DrawerVariants = cva('fixed z-118 4 flex flex-col bg-background', {
   variants: {
     direction: {
       top: 'inset-x-0 top-0 mb-24 flex-col',
@@ -70,7 +70,7 @@ const DrawerContent = React.forwardRef<React.ComponentRef<typeof DrawerPrimitive
 DrawerContent.displayName = 'DrawerContent';
 
 const DrawerHeader = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
-  <div className={cn('grid gap-1.5 text-center pb-3 sm:text-left', className)} {...props} />
+  <div className={cn('grid gap-2 text-center pb-3 sm:text-left', className)} {...props} />
 );
 DrawerHeader.displayName = 'DrawerHeader';
 

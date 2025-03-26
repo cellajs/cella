@@ -135,6 +135,7 @@
     "@redux-devtools/extension": "^3.3.0",
     "@rollup/plugin-terser": "^0.4.4",
     "@sentry/vite-plugin": "^3.2.2",
+    "@tailwindcss/line-clamp": "^0.4.4",
     "@tailwindcss/vite": "^4.0.16",
     "@tanstack/router-core": "^1.114.25",
     "@tanstack/router-plugin": "^1.114.27",
