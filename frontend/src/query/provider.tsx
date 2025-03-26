@@ -1,8 +1,9 @@
 import { QueryClientProvider as BaseQueryClientProvider } from '@tanstack/react-query';
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
+import { config } from 'config';
 import { useEffect } from 'react';
 import { meQueryOptions, menuQueryOptions } from '~/modules/me/query';
-import type { UserMenuItem } from '~/modules/me/types';
+import type { UserMenu, UserMenuItem } from '~/modules/me/types';
 import { queriesToMap } from '~/offline-config';
 import { waitFor } from '~/query/helpers';
 import { prefetchQuery } from '~/query/helpers/prefetch-query';
@@ -11,53 +12,59 @@ import { queryClient } from '~/query/query-client';
 import { useUIStore } from '~/store/ui';
 import { useUserStore } from '~/store/user';
 
-const GC_TIME = 24 * 60 * 60 * 1000; // 24 hours
+const GC_TIME = 24 * 60 * 60 * 1000; // Cache expiration time: 24 hours
 
 export const QueryClientProvider = ({ children }: { children: React.ReactNode }) => {
   const { user } = useUserStore();
-  const { offlineAccess } = useUIStore();
+  const { offlineAccess, toggleOfflineAccess } = useUIStore();
+
+  // Disable offline access if PWA is not enabled in the config
+  if (!config.has.pwa && offlineAccess) toggleOfflineAccess();
 
   useEffect(() => {
     // Exit early if offline access is disabled or no stored user is available
     if (!offlineAccess || !user) return;
 
-    let isCancelled = false;
+    const controller = new AbortController(); // To cancel the request if needed
+    const signal = controller.signal; // Abort signal to handle the cancellation
 
     (async () => {
-      await waitFor(1000); // wait for a second to avoid server overload
+      await waitFor(1000); // Avoid overloading server with requests
+      if (signal.aborted) return; // If request was aborted, exit early
 
-      if (isCancelled) return;
+      // Prefetch menu and user details
+      const [menuResponse]: PromiseSettledResult<UserMenu>[] = await Promise.allSettled([
+        prefetchQuery({ ...menuQueryOptions(), gcTime: GC_TIME }),
+        prefetchQuery({ ...meQueryOptions(), gcTime: GC_TIME }),
+      ]);
 
-      // Prefetch user data
-      prefetchQuery({ ...meQueryOptions(), gcTime: GC_TIME });
-      const menu = await prefetchQuery({ ...menuQueryOptions(), ...{ gcTime: GC_TIME } });
+      // If menu query failed or request was aborted, return early
+      if (menuResponse.status !== 'fulfilled' || signal.aborted) return;
 
-      if (!menu || isCancelled) return;
-
-      // Recursively prefetch menu items
+      // Recursive function to prefetch menu items
       const prefetchMenuItems = async (items: UserMenuItem[]) => {
         for (const item of items) {
-          if (isCancelled) return;
+          if (signal.aborted) return; // Check for abortion in each loop
+          if (item.membership.archived) continue; // Skip archived items
 
-          if (item.membership.archived) continue; // Skip this item but continue with others
+          // Fetch queries for this menu item in parallel
+          const queries = queriesToMap(item).map((query) => prefetchQuery({ ...query, gcTime: GC_TIME }));
+          await Promise.allSettled(queries);
 
-          for (const query of queriesToMap(item)) {
-            prefetchQuery(query);
-            await waitFor(500);
-            if (isCancelled) return;
-          }
+          await waitFor(500); // Avoid overloading the server
 
+          // Recursively prefetch submenu items if they exist
           if (item.submenu) await prefetchMenuItems(item.submenu);
         }
       };
 
-      // Prefetching each menu section
-      await Promise.all(Object.values(menu).map((section) => prefetchMenuItems(section as UserMenuItem[])));
+      // Access the menu data and start prefetching each menu section
+      const menu = menuResponse.value;
+      Object.values(menu).map(prefetchMenuItems); // Start prefetching for each menu section
     })();
 
-    return () => {
-      isCancelled = true;
-    };
+    // Cleanup function to abort the request if the component is unmounted
+    return () => controller.abort();
   }, [offlineAccess, user]);
 
   if (!offlineAccess) return <BaseQueryClientProvider client={queryClient}>{children}</BaseQueryClientProvider>;
@@ -67,7 +74,7 @@ export const QueryClientProvider = ({ children }: { children: React.ReactNode })
       client={queryClient}
       persistOptions={{ persister }}
       onSuccess={() => {
-        // resume mutations after initial restore from localStorage was successful
+        // After successful cache restoration, resume paused mutations and invalidate queries
         queryClient.resumePausedMutations().then(() => queryClient.invalidateQueries());
       }}
     >

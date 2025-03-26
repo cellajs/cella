@@ -16,14 +16,9 @@ export async function prefetchQuery<T extends UseInfiniteQueryOptions<any, any, 
  * @returns Cached data if available, or fetched data if online; otherwise undefined.
  */
 export async function prefetchQuery(options: UseQueryOptions | UseInfiniteQueryOptions) {
-  const cachedData = queryClient.getQueryData(options.queryKey);
-
-  // If cache exists, return cached data immediately
-  if (cachedData) return cachedData;
-
   if (!onlineManager.isOnline()) return undefined;
 
   // fetch if online (avoid fetch when offline or during hydration)
-  if ('getNextPageParam' in options) return queryClient.fetchInfiniteQuery(options); // Infinite query fetch
-  return queryClient.fetchQuery(options); // Regular query fetch
+  if ('getNextPageParam' in options) return queryClient.ensureInfiniteQueryData(options); // Infinite query fetch
+  return queryClient.ensureQueryData(options); // Regular query fetch
 }
