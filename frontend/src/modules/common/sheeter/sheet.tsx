@@ -51,10 +51,11 @@ export const DesktopSheet = ({ sheet }: SheetProps) => {
 
   const handleEscapeKeyDown = (e: KeyboardEvent) => {
     const activeElement = document.activeElement;
-    if (isElementInteractive(activeElement)) return;
     e.preventDefault();
     e.stopPropagation();
-    closeSheet();
+
+    if (!(activeElement instanceof HTMLElement) || !isElementInteractive(activeElement)) closeSheet();
+    else activeElement.blur(); // Remove focus from the active element if it's interactive
   };
 
   const handleInteractOutside = (event: CustomEvent<{ originalEvent: PointerEvent }> | CustomEvent<{ originalEvent: FocusEvent }>) => {
