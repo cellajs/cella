@@ -42,6 +42,7 @@ export const useAttachmentsSync = (organizationId: string) => {
     if (!isOnline || !config.has.sync || !config.has.imado || env.VITE_QUICK) return;
 
     const controller = new AbortController();
+    // if any params of  `attachmentShape` changes need to delete sync data from store
     const syncData = getSyncData(storeKey);
 
     // Initialize ShapeStream

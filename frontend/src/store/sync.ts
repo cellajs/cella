@@ -10,7 +10,8 @@ interface SyncStoreState {
   syncData: Record<string, SyncData>;
 
   setSyncData: (key: string, data: SyncData) => void; // Saves or updates a SyncData
-  getSyncData(key: string): SyncData | undefined; // Retrieves a specific SyncData
+  getSyncData: (key: string) => SyncData | undefined; // Retrieves a specific SyncData
+  removeSyncData: (key: string) => void; // Removes a specific SyncData
 }
 
 export const useSyncStore = create<SyncStoreState>()(
@@ -18,11 +19,15 @@ export const useSyncStore = create<SyncStoreState>()(
     persist(
       immer((set, get) => ({
         syncData: {},
+
         setSyncData: (key, data) =>
           set((state) => {
             state.syncData[key] = data;
           }),
+
         getSyncData: (key) => get().syncData[key],
+
+        removeSyncData: (key) => set((state) => delete state.syncData[key]),
       })),
       {
         version: 1,
