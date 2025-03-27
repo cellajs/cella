@@ -1,10 +1,10 @@
 import type { ContextEntity } from 'config';
 import type { Context } from 'hono';
-import type { MembershipModel } from '#/db/schema/memberships';
 import { entityIdFields } from '#/entity-config';
+import { type Env, getContextMemberships, getContextUser } from '#/lib/context';
+import { type EntityModel, resolveEntity } from '#/lib/entity';
 import { type ErrorType, createError } from '#/lib/errors';
-import { getContextMemberships, getContextUser } from '../lib/context';
-import { type EntityModel, resolveEntity } from '../lib/entity';
+import type { MembershipInfoType } from '#/modules/memberships/schema';
 import permissionManager, { type PermittedAction } from './permission-manager';
 
 /**
@@ -25,11 +25,11 @@ import permissionManager, { type PermittedAction } from './permission-manager';
  *   - `error`: Error object or `null` if no error occurred.
  */
 export const getValidEntity = async <T extends ContextEntity>(
-  ctx: Context,
+  ctx: Context<Env>,
   entityType: T,
   action: PermittedAction,
   idOrSlug: string,
-): Promise<{ error: ErrorType; entity: null; membership: null } | { error: null; entity: EntityModel<T>; membership: MembershipModel | null }> => {
+): Promise<{ error: ErrorType; entity: null; membership: null } | { error: null; entity: EntityModel<T>; membership: MembershipInfoType | null }> => {
   const user = getContextUser();
   const memberships = getContextMemberships();
   const isSystemAdmin = user.role === 'admin';
