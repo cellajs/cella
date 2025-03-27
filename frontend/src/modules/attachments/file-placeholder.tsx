@@ -1,18 +1,31 @@
-import { File, FileAudio, FileImage, FileText, FileVideo } from 'lucide-react';
+import { File, FileAudio, FileImage, FileSpreadsheet, FileText, FileVideo } from 'lucide-react';
+
+const contentTypeMap = [
+  { match: ['image'], Icon: FileImage },
+  { match: ['video'], Icon: FileVideo },
+  { match: ['pdf'], Icon: FileText },
+  { match: ['audio'], Icon: FileAudio },
+  { match: ['csv', 'xslx'], Icon: FileSpreadsheet },
+];
 
 interface Props {
-  contentType: string | undefined;
+  contentType?: string;
   iconSize?: number;
   strokeWidth?: number;
   className?: string;
 }
 
 const FilePlaceholder = ({ contentType, iconSize = 20, strokeWidth = 1.5, className }: Props) => {
-  if (!contentType) return <File size={iconSize} />;
-  if (contentType.includes('image')) return <FileImage size={iconSize} strokeWidth={strokeWidth} className={className} />;
-  if (contentType.includes('video')) return <FileVideo size={iconSize} strokeWidth={strokeWidth} className={className} />;
-  if (contentType.includes('pdf')) return <FileText size={iconSize} strokeWidth={strokeWidth} className={className} />;
-  if (contentType.includes('audio')) return <FileAudio size={iconSize} strokeWidth={strokeWidth} className={className} />;
+  const iconProps = { size: iconSize, strokeWidth, className };
+
+  if (contentType) {
+    const found = contentTypeMap.find(({ match }) => match.some((type) => contentType.includes(type)));
+    if (found) {
+      const { Icon } = found;
+      return <Icon {...iconProps} />;
+    }
+  }
+
   return <File size={iconSize} />;
 };
 

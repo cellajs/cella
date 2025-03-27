@@ -33,6 +33,7 @@ export async function ImadoUppy(
 
   // Variable to store the upload token
   let token = '';
+
   if (canUpload) {
     token = (await getUploadToken(type, { public: isPublic, organizationId: opts.organizationId })) || '';
     if (!token) throw new Error('Failed to get upload token');

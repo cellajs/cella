@@ -41,7 +41,6 @@ export const membershipInfoSchema = z.object(
     tokenId: true,
     activatedAt: true,
     userId: true,
-    type: true,
   }).shape,
 );
 
@@ -71,4 +70,4 @@ export const memberInvitationsSchema = z.object({
   createdBy: z.string().nullable(),
 });
 
-export type membershipInfoType = z.infer<typeof membershipInfoSchema>;
+export type MembershipInfoType = z.infer<typeof membershipInfoSchema>;

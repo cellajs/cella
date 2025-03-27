@@ -46,9 +46,9 @@ export const UploadUppy = ({
   onRetrySuccessCallback,
 }: UploadUppyProps) => {
   const [uppy, setUppy] = useState<Uppy | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const mode = useUIStore((state) => state.mode);
 
-  // Set uppy options with restrictions
   const uppyOptions: UppyOptions<UppyMeta, UppyBody> = {
     restrictions: {
       ...uppyRestrictions,
@@ -61,42 +61,49 @@ export const UploadUppy = ({
 
   useEffect(() => {
     const initializeUppy = async () => {
-      const imadoUppy = await ImadoUppy(uploadType, uppyOptions, {
-        public: isPublic,
-        organizationId: organizationId,
-        statusEventHandler: {
-          onComplete: (mappedResult) => {
-            if (callback) callback(mappedResult);
+      try {
+        const imadoUppy = await ImadoUppy(uploadType, uppyOptions, {
+          public: isPublic,
+          organizationId: organizationId,
+          statusEventHandler: {
+            onComplete: (mappedResult) => {
+              if (callback) callback(mappedResult);
+            },
+            onRetrySuccess(results, localStoreIds) {
+              if (onRetrySuccessCallback) onRetrySuccessCallback(results, localStoreIds);
+            },
+            onFileEditorComplete: () => {
+              if (['cover', 'avatar'].includes(imageMode)) imadoUppy.upload();
+            },
           },
-          onRetrySuccess(results, localStoreIds) {
-            if (onRetrySuccessCallback) onRetrySuccessCallback(results, localStoreIds);
-          },
-          onFileEditorComplete: () => {
-            // If in image mode, start upload directly after editing
-            if (['cover', 'avatar'].includes(imageMode)) imadoUppy.upload();
-          },
-        },
-      });
+        });
 
-      const imageEditorOptions: ImageEditorOptions = getImageEditorOptions(imageMode);
+        const imageEditorOptions: ImageEditorOptions = getImageEditorOptions(imageMode);
+        const webcamOptions: WebcamOptions<UppyMeta, UppyBody> = {
+          videoConstraints: { width: 1280, height: 720 },
+        };
 
-      const webcamOptions: WebcamOptions<UppyMeta, UppyBody> = {
-        videoConstraints: { width: 1280, height: 720 },
-      };
+        if (['cover', 'avatar'].includes(imageMode)) {
+          webcamOptions.modes = ['picture'];
+        }
 
-      if (['cover', 'avatar'].includes(imageMode)) webcamOptions.modes = ['picture'];
+        if (plugins.includes('webcam')) imadoUppy.use(Webcam, webcamOptions);
+        if (plugins.includes('image-editor')) imadoUppy.use(ImageEditor, imageEditorOptions);
+        if (plugins.includes('audio')) imadoUppy.use(Audio);
+        if (plugins.includes('screen-capture')) imadoUppy.use(ScreenCapture);
 
-      // Set plugins based on plugins props
-      if (plugins.includes('webcam')) imadoUppy.use(Webcam, webcamOptions);
-      if (plugins.includes('image-editor')) imadoUppy.use(ImageEditor, imageEditorOptions);
-      if (plugins.includes('audio')) imadoUppy.use(Audio);
-      if (plugins.includes('screen-capture')) imadoUppy.use(ScreenCapture);
-
-      setUppy(imadoUppy);
+        setUppy(imadoUppy);
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Failed to initialize upload';
+        setError(message);
+      }
     };
 
     initializeUppy();
   }, []);
+
+  // Catch and display errors
+  if (error) return <div className="text-red-600 py-3">{error}</div>;
 
   return (
     <>

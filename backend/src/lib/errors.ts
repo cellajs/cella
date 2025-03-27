@@ -6,7 +6,7 @@ import type { z } from 'zod';
 import type { Entity, Severity } from 'config';
 import { logEvent, logtail } from '#/middlewares/logger/log-event';
 import type { errorSchema } from '#/utils/schema/responses';
-import { getContextOrganization, getContextUser } from './context';
+import { type Env, getContextOrganization, getContextUser } from './context';
 import { i18n } from './i18n';
 import type locales from './i18n-locales';
 
@@ -38,7 +38,7 @@ export type EventData = {
  * @returns An error object containing details of the error.
  */
 export const createError = (
-  ctx: Context,
+  ctx: Context<Env>,
   status: HttpErrorStatus,
   type: SimplifiedErrorKey,
   severity: Severity = 'info',
@@ -89,7 +89,7 @@ export const createError = (
  * @returns The HTTP Error response in JSON format.
  */
 export const errorResponse = (
-  ctx: Context,
+  ctx: Context<Env>,
   status: HttpErrorStatus,
   type: SimplifiedErrorKey,
   severity: Severity = 'info',
@@ -110,6 +110,6 @@ export const errorResponse = (
  * @param severity - `'debug' | 'log' | 'info' | 'warn' | 'error'`, The severity of the error, defaults to 'info'.
  * @returns A 302 redirect response to the frontend error page.
  */
-export const errorRedirect = (ctx: Context, type: SimplifiedErrorKey, severity: Severity = 'info') =>
+export const errorRedirect = (ctx: Context<Env>, type: SimplifiedErrorKey, severity: Severity = 'info') =>
   // Redirect to the frontend error page with query parameters for error details
   ctx.redirect(`${config.frontendUrl}/error?error=${type}&severity=${severity}`, 302);

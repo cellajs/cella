@@ -61,8 +61,10 @@ export const compareIsContentSame = async (editor: CustomBlockNoteSchema, text: 
 
 export const focusEditor = (editor: CustomBlockNoteSchema, blockId?: string) => {
   const lastBlock = editor.document[editor.document.length - 1];
-  editor.focus();
-  editor.setTextCursorPosition(blockId ?? lastBlock.id, 'end');
+  try {
+    editor.focus();
+    editor.setTextCursorPosition(blockId ?? lastBlock.id, 'end');
+  } catch (err) {}
 };
 
 export const handleSubmitOnEnter = (editor: CustomBlockNoteSchema): CustomBlockNoteSchema['document'] | null => {

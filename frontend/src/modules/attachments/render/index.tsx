@@ -1,9 +1,9 @@
-import { config } from 'config';
 import DOMPurify from 'dompurify';
 import { Suspense, lazy, useMemo } from 'react';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { useLocalFile } from '~/modules/attachments/use-local-file';
 import Spinner from '~/modules/common/spinner';
+import { isCDNUrl } from '~/utils/is-cdn-url';
 
 // Lazy-loaded components
 const ReactPanZoom = lazy(() => import('~/modules/attachments/render/image'));
@@ -42,7 +42,7 @@ export const AttachmentRender = ({
     if (sanitizedUrl.startsWith('/static/')) return sanitizedUrl;
 
     // Use either remote URL
-    if (sanitizedUrl.startsWith(config.publicCDNUrl)) return sanitizedUrl;
+    if (isCDNUrl(sanitizedUrl)) return sanitizedUrl;
 
     return localUrl.length ? localUrl : null;
   }, [sanitizedUrl, localUrl]);
@@ -50,7 +50,7 @@ export const AttachmentRender = ({
   if (sanitizedUrl === localUrl && localFileError) {
     return (
       <div className="flex flex-col items-center justify-center h-full w-full bg-background text-muted-foreground">
-        <div className="text-center my-8 text-sm text-red-500">{localFileError}</div>
+        <div className="text-center my-8 text-sm text-red-600">{localFileError}</div>
       </div>
     );
   }

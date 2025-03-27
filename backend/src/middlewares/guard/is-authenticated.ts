@@ -1,8 +1,9 @@
 import { eq } from 'drizzle-orm';
-import type { Context, Next } from 'hono';
+import { createMiddleware } from 'hono/factory';
 import { db } from '#/db/db';
 import { membershipsTable } from '#/db/schema/memberships';
 import { usersTable } from '#/db/schema/users';
+import type { Env } from '#/lib/context';
 import { errorResponse } from '#/lib/errors';
 import { deleteAuthCookie } from '#/modules/auth/helpers/cookie';
 import { getParsedSessionCookie, validateSession } from '#/modules/auth/helpers/session';
@@ -18,7 +19,7 @@ import { TimeSpan } from '#/utils/time-span';
  * @param next - The next middleware or route handler to call if authentication succeeds.
  * @returns Error response or undefined if the user is allowed to proceed.
  */
-export async function isAuthenticated(ctx: Context, next: Next): Promise<Response | undefined> {
+export const isAuthenticated = createMiddleware<Env>(async (ctx, next): Promise<Response | undefined> => {
   // Get session id from cookie
   const sessionData = await getParsedSessionCookie(ctx);
 
@@ -51,4 +52,4 @@ export async function isAuthenticated(ctx: Context, next: Next): Promise<Respons
   ctx.set('memberships', memberships);
 
   await next();
-}
+});

@@ -1,4 +1,3 @@
-import { config } from 'config';
 import { useMemo } from 'react';
 import FilePlaceholder from '~/modules/attachments/file-placeholder';
 import { useLocalFile } from '~/modules/attachments/use-local-file';
@@ -14,10 +13,7 @@ const AttachmentThumb = ({ url: baseUrl, contentType, name }: Props) => {
 
   // Use either remote URL or local URL
   const url = useMemo(() => {
-    if (baseUrl.startsWith(config.publicCDNUrl)) return `${baseUrl}?width=100&format=avif`;
-    if (baseUrl.startsWith('/static/')) return baseUrl;
-
-    return localUrl.length ? localUrl : null;
+    return localUrl.length ? localUrl : baseUrl;
   }, [baseUrl, localUrl]);
 
   return url && contentType.includes('image') ? (

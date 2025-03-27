@@ -1,12 +1,10 @@
-import type { Context, Next } from 'hono';
-import { getContextMemberships, getContextUser } from '#/lib/context';
+import { createMiddleware } from 'hono/factory';
+import { type Env, getContextMemberships, getContextUser } from '#/lib/context';
 export { isAuthenticated } from './is-authenticated';
-
-import { errorResponse } from '#/lib/errors';
-
 import { eq, or } from 'drizzle-orm';
 import { db } from '#/db/db';
 import { organizationsTable } from '#/db/schema/organizations';
+import { errorResponse } from '#/lib/errors';
 
 /**
  * Middleware to ensure the user has access to an organization-scoped route.
@@ -16,7 +14,8 @@ import { organizationsTable } from '#/db/schema/organizations';
  * @param next - The next middleware or route handler to call if the check passes.
  * @returns Error response or undefined if the user is allowed to proceed.
  */
-export async function hasOrgAccess(ctx: Context, next: Next): Promise<Response | undefined> {
+
+export const hasOrgAccess = createMiddleware<Env>(async (ctx, next): Promise<Response | undefined> => {
   const orgIdOrSlug = ctx.req.param('orgIdOrSlug');
   if (!orgIdOrSlug) return errorResponse(ctx, 400, 'invalid_request', 'error');
 
@@ -40,4 +39,4 @@ export async function hasOrgAccess(ctx: Context, next: Next): Promise<Response |
   ctx.set('organization', orgWithMembership);
 
   await next();
-}
+});
