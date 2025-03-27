@@ -7,6 +7,7 @@ import Logo from '~/modules/common/logo';
 import { BackgroundCurve } from '~/modules/marketing/about/hero';
 import { footerSections, legalLinks } from '~/modules/marketing/marketing-config';
 import SubscribeNewsletterForm from '~/modules/marketing/subscribe-newsletter-form';
+import { isCDNUrl } from '~/utils/is-cdn-url';
 
 const currentYear = new Date().getFullYear();
 const companyName = config.company.name;
@@ -24,7 +25,7 @@ function FooterLinks() {
 
             <ul className="mt-4 text-sm text-white/90">
               {section.links.map((link) => {
-                const target = link.href.startsWith(config.publicCDNUrl) ? '_blank' : '_self';
+                const target = isCDNUrl(link.href) ? '_blank' : '_self';
                 return (
                   <li key={link.title} className="mt-4">
                     <Link to={link.href} target={target} className="underline-offset-4 transition hover:underline">

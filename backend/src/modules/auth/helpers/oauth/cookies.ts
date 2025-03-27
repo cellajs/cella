@@ -5,6 +5,7 @@ import { db } from '#/db/db';
 import { tokensTable } from '#/db/schema/tokens';
 import { createError } from '#/lib/errors';
 import { logEvent } from '#/middlewares/logger/log-event';
+import { isRedirectUrl } from '#/utils/is-redirect-url';
 import { TimeSpan, isExpiredDate } from '#/utils/time-span';
 import { type CookieName, deleteAuthCookie, getAuthCookie, setAuthCookie } from '../cookie';
 import { getParsedSessionCookie, validateSession } from '../session';
@@ -73,10 +74,7 @@ export const getOauthCookies = async (ctx: Context) => {
  */
 export const handleOAuthRedirect = async (ctx: Context, passedRedirect: string) => {
   // Ensure the redirect URL is absolute and valid
-  const redirectUrl =
-    passedRedirect.startsWith(config.publicCDNUrl) || passedRedirect.startsWith(config.frontendUrl)
-      ? passedRedirect
-      : `${config.frontendUrl}${passedRedirect}`;
+  const redirectUrl = isRedirectUrl(passedRedirect) ? passedRedirect : `${config.frontendUrl}${passedRedirect}`;
 
   // Set the redirect URL in the authentication cookie
   await setAuthCookie(ctx, 'oauth_redirect', redirectUrl, oauthCookieExpires);

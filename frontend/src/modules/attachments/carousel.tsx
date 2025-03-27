@@ -1,5 +1,4 @@
 import { useNavigate, useSearch } from '@tanstack/react-router';
-import { config } from 'config';
 import Autoplay from 'embla-carousel-autoplay';
 import { Download, ExternalLink, X } from 'lucide-react';
 import { useState } from 'react';
@@ -13,6 +12,7 @@ import Spinner from '~/modules/common/spinner';
 import { Button } from '~/modules/ui/button';
 import { Carousel as BaseCarousel, CarouselContent, CarouselDots, CarouselItem, CarouselNext, CarouselPrevious } from '~/modules/ui/carousel';
 import { cn } from '~/utils/cn';
+import { isCDNUrl } from '~/utils/is-cdn-url';
 
 export type CarouselItemData = { id: string; url: string; name?: string; filename?: string; contentType?: string };
 interface CarouselPropsBase {
@@ -95,7 +95,7 @@ const AttachmentsCarousel = ({ items = [], isDialog = false, itemIndex = 0, save
             </h2>
           )}
           <div className="grow" />
-          {currentItem.url.startsWith(config.publicCDNUrl) && (
+          {isCDNUrl(currentItem.url) && (
             <Button
               variant="ghost"
               size="icon"
@@ -106,7 +106,7 @@ const AttachmentsCarousel = ({ items = [], isDialog = false, itemIndex = 0, save
             </Button>
           )}
 
-          {currentItem.url.startsWith(config.publicCDNUrl) && (
+          {isCDNUrl(currentItem.url) && (
             <Button
               variant="ghost"
               size="icon"

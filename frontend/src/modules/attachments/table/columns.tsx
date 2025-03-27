@@ -20,6 +20,7 @@ import { findUserFromCache } from '~/modules/users/helpers';
 import UserCell from '~/modules/users/user-cell';
 import { useUserStore } from '~/store/user';
 import { dateShort } from '~/utils/date-short';
+import { isCDNUrl } from '~/utils/is-cdn-url';
 
 export const useColumns = (entity: EntityPage, isSheet: boolean, highDensity: boolean) => {
   const { t } = useTranslation();
@@ -67,7 +68,7 @@ export const useColumns = (entity: EntityPage, isSheet: boolean, highDensity: bo
       sortable: false,
       width: 32,
       renderCell: ({ row }) => {
-        const isInCloud = row.url.startsWith(config.publicCDNUrl);
+        const isInCloud = isCDNUrl(row.url);
         return (
           <div
             className="flex justify-center items-center h-full w-full"
@@ -87,7 +88,7 @@ export const useColumns = (entity: EntityPage, isSheet: boolean, highDensity: bo
       width: 32,
       renderCell: ({ row, tabIndex }) => {
         const { copyToClipboard, copied } = useCopyToClipboard();
-        const isInCloud = row.url.startsWith(config.publicCDNUrl);
+        const isInCloud = isCDNUrl(row.url);
         if (!isInCloud) return <div className="text-muted text-center w-full">-</div>;
 
         const shareLink = `${config.backendUrl}/${row.organizationId}/attachments/${row.id}/link`;
@@ -115,7 +116,7 @@ export const useColumns = (entity: EntityPage, isSheet: boolean, highDensity: bo
       width: 32,
       renderCell: ({ row, tabIndex }) => {
         const { download, isInProgress } = useDownloader();
-        if (!row.url.startsWith(config.publicCDNUrl)) return <div className="text-muted text-center w-full">-</div>;
+        if (!isCDNUrl(row.url)) return <div className="text-muted text-center w-full">-</div>;
         return (
           <Button
             variant="cell"

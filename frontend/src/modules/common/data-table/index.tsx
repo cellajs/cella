@@ -62,7 +62,7 @@ const NoRows = ({ isFiltered, isFetching, customComponent }: NoRowsProps) => {
 const ErrorMessage = ({ error }: { error: Error }) => {
   return (
     <div className="flex flex-col items-center justify-center h-full w-full bg-background text-muted-foreground">
-      <div className="text-center my-8 text-sm text-red-500">{error.message}</div>
+      <div className="text-center my-8 text-sm text-red-600">{error.message}</div>
     </div>
   );
 };
@@ -200,7 +200,7 @@ export const DataTable = <TData,>({
                 </div>
               )}
               {/* Error */}
-              {error && <div className="text-center my-8 text-sm text-red-500">{t('error:load_more_failed')}</div>}
+              {error && <div className="text-center my-8 text-sm text-red-600">{t('error:load_more_failed')}</div>}
             </div>
           )}
         </>
