@@ -92,13 +92,7 @@ const membershipsRoutes = app
         // If not instant, add to invite list
         if (!instantCreateMembership) return emailsToInvite.push({ email, userId });
 
-        await insertMembership({
-          userId: existingUser.id,
-          role,
-          entity,
-          addAssociatedMembership: hasAssociatedMembership,
-          addOrganizationMembership: !hasOrgMembership,
-        });
+        await insertMembership({ userId: existingUser.id, role, entity, addAssociatedMembership: hasAssociatedMembership });
 
         // TODO: Add SSE to notify user of instant membership creation
       }),

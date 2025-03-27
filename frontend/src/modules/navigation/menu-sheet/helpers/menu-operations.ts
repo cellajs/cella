@@ -30,7 +30,7 @@ export const addMenuItem = (newEntity: UserMenuItem, sectionName: keyof UserMenu
 
   const add = (items: UserMenuItem[]): UserMenuItem[] => {
     return items.map((item) => {
-      if (!parentIdOrSlug || item.slug !== parentIdOrSlug || item.id !== parentIdOrSlug) return item;
+      if (!parentIdOrSlug || (item.slug !== parentIdOrSlug && item.id !== parentIdOrSlug)) return item;
 
       // If parent is found, add new entity to its submenu
       return {
