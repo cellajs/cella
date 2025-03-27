@@ -399,7 +399,7 @@
   "upload": "Upload",
   "upload_img_max_10mb.text": "PNG or JPG below 10MB",
   "upload_item": "Upload {{item}}",
-  "upload_multiple.text": "Up to {{count}} {{item}} at a time. Max. 10MB each.",
+  "upload_multiple.text": "Up to {{count}} {{item}} at once. Max. 10MB each.",
   "user": "User",
   "user_handle.text": "A unique handle for your profile URL",
   "user_preview": "Preview user",

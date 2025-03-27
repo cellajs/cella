@@ -31,7 +31,11 @@ const maxNumberOfFiles = 20;
 const maxTotalFileSize = 10 * 1024 * 1024 * maxNumberOfFiles; // for maxNumberOfFiles files at 10MB max each
 
 /**
- * Open the upload dialog
+ * Open the upload dialog for attachments
+ *
+ * Attachments are private and belong to an organization. Uploading requirer an upload token with organization scope.
+ *
+ * @param organizationId The organization ID
  */
 export const openAttachmentsUploadDialog = (organizationId: string) => {
   const UploadDialog = ({ organizationId }: { organizationId: string }) => {
@@ -60,8 +64,9 @@ export const openAttachmentsUploadDialog = (organizationId: string) => {
 
     return (
       <UploadUppy
-        isPublic
-        uploadType="personal"
+        isPublic={false}
+        uploadType="organization"
+        organizationId={organizationId}
         restrictions={{ maxNumberOfFiles, allowedFileTypes: ['*/*'], maxTotalFileSize }}
         plugins={['webcam', 'image-editor', 'screen-capture', 'audio']}
         imageMode="attachment"

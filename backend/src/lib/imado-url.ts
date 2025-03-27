@@ -1,7 +1,7 @@
 import { config } from 'config';
 import { env } from '../env';
 
-import { getSignedUrl as cloudfrontGetSignedUrl } from '@aws-sdk/cloudfront-signer';
+import { getSignedUrl } from '@aws-sdk/cloudfront-signer';
 
 type ImadoUrlParams = {
   width?: number;
@@ -23,32 +23,37 @@ class ImadoUrl {
     this.config = config;
   }
 
-  generate(path: string | null, params?: ImadoUrlParams) {
-    if (!path) return path;
+  generate(rawUrl: string, params?: ImadoUrlParams) {
+    if (!rawUrl) return rawUrl;
+    if (!rawUrl.startsWith(config.privateCDNUrl) && !rawUrl.startsWith(config.publicCDNUrl)) return rawUrl;
 
-    const url = new URL(path);
+    const url = new URL(rawUrl);
 
+    // Add requested params
     if (params) {
       for (const [key, value] of Object.entries(params)) {
         url.searchParams.append(key, value.toString());
       }
     }
 
-    if (this.config.signUrl && path.includes(this.config.signUrl) && this.config.cloudfrontKeyId && this.config.cloudfrontPrivateKey) {
-      const signed = cloudfrontGetSignedUrl({
+    if (rawUrl.startsWith(config.privateCDNUrl)) {
+      const signedUrl = getSignedUrl({
         url: url.toString(),
         keyPairId: this.config.cloudfrontKeyId,
         privateKey: this.config.cloudfrontPrivateKey,
-        dateLessThan: new Date(Date.now() + 24 * 60 * 60 * 1000).toString(),
+        dateLessThan: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), // 24 hours
       });
 
-      return signed;
+      return signedUrl;
     }
 
     return url.toString();
   }
 }
 
+/**
+ * Get a signed URL from AWS Cloudfront.
+ */
 export const getImadoUrl = new ImadoUrl({
   signUrl: config.privateCDNUrl,
   cloudfrontKeyId: env.AWS_CLOUDFRONT_KEY_ID,

@@ -18,6 +18,7 @@ import { stream } from 'hono/streaming';
 
 import { config } from 'config';
 import { env } from '#/env';
+import { getImadoUrl } from '#/lib/imado-url';
 
 // Set default hook to catch validation errors
 const app = new OpenAPIHono<Env>({ defaultHook });
@@ -78,6 +79,11 @@ const attachmentsRoutes = app
 
     const createdAttachments = await db.insert(attachmentsTable).values(fixedNewAttachments).returning();
 
+    // Send urls through imado to sign them if needed
+    for (const attachment of createdAttachments) {
+      attachment.url = getImadoUrl.generate(attachment.url);
+    }
+
     logEvent(`${createdAttachments.length} attachments have been created`);
 
     return ctx.json({ success: true, data: createdAttachments }, 200);
@@ -98,6 +104,7 @@ const attachmentsRoutes = app
       ...(groupId ? [eq(attachmentsTable.groupId, groupId)] : []),
       ...(!config.has.imado
         ? [
+            // TODO explain this please
             or(
               and(eq(attachmentsTable.createdBy, user.id), notIlike(attachmentsTable.url, `${config.publicCDNUrl}%`)),
               like(attachmentsTable.url, `${config.publicCDNUrl}%`),
@@ -131,6 +138,11 @@ const attachmentsRoutes = app
 
     const attachments = await attachmentsQuery.offset(Number(offset)).limit(Number(limit));
 
+    // Send urls through imado to sign them if needed
+    for (const attachment of attachments) {
+      attachment.url = getImadoUrl.generate(attachment.url);
+    }
+
     const [{ total }] = await db.select({ total: count() }).from(attachmentsQuery.as('attachments'));
 
     return ctx.json({ success: true, data: { items: attachments, total } }, 200);
@@ -148,6 +160,8 @@ const attachmentsRoutes = app
       .select()
       .from(attachmentsTable)
       .where(and(eq(attachmentsTable.id, id), eq(attachmentsTable.organizationId, organization.id)));
+
+    attachment.url = getImadoUrl.generate(attachment.url);
 
     if (!attachment) return errorResponse(ctx, 404, 'not_found', 'warn', 'attachment');
 
@@ -173,6 +187,8 @@ const attachmentsRoutes = app
       .returning();
 
     logEvent('Attachment updated', { attachment: updatedAttachment.id });
+
+    updatedAttachment.url = getImadoUrl.generate(updatedAttachment.url);
 
     return ctx.json({ success: true, data: updatedAttachment }, 200);
   })

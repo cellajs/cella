@@ -10,6 +10,7 @@ import { emailsTable } from '#/db/schema/emails';
 import { tokensTable } from '#/db/schema/tokens';
 import { errorRedirect } from '#/lib/errors';
 import { getUsersByConditions } from '#/modules/users/helpers/get-user-by';
+import { isRedirectUrl } from '#/utils/is-redirect-url';
 import { getIsoDate } from '#/utils/iso-date';
 import { getAuthCookie } from '../cookie';
 import { sendVerificationEmail } from '../verify-email';
@@ -22,9 +23,7 @@ export const getOauthRedirectUrl = async (ctx: Context, firstSignIn?: boolean) =
 
   const baseRedirect = redirectCookie || firstSignIn ? config.welcomeRedirectPath : config.defaultRedirectPath;
 
-  return baseRedirect.startsWith(config.publicCDNUrl) || baseRedirect.startsWith(config.frontendUrl)
-    ? baseRedirect
-    : `${config.frontendUrl}${baseRedirect}`;
+  return isRedirectUrl(baseRedirect) ? baseRedirect : `${config.frontendUrl}${baseRedirect}`;
 };
 
 export const handleExistingUser = async (
