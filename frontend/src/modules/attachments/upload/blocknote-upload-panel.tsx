@@ -6,6 +6,8 @@ import { useTranslation } from 'react-i18next';
 import { useOnlineManager } from '~/hooks/use-online-manager';
 import type { UploadedUppyFile } from '~/lib/imado/types';
 import UploadUppy from '~/modules/attachments/upload/upload-uppy';
+import { customSchema } from '~/modules/common/blocknote/blocknote-config';
+import { focusEditor } from '~/modules/common/blocknote/helpers';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '~/modules/ui/dialog';
 
 const basicBlockTypes = {
@@ -36,16 +38,26 @@ const UppyFilePanel = ({ onCreateCallback, ...props }: UppyFilePanelProps & File
   const { block } = props;
   const { isOnline } = useOnlineManager();
 
-  const editor = useBlockNoteEditor();
+  const editor = useBlockNoteEditor(customSchema);
   const type = (block.type as keyof typeof basicBlockTypes) || 'file';
 
-  useEffect(() => {
-    if (isOnline) return;
+  const closeFilePanel = () => {
     editor.filePanel?.closeMenu();
+    focusEditor(editor);
+  };
+
+  // Close file panel if user goes offline
+  useEffect(() => {
+    if (!isOnline) closeFilePanel();
   }, [isOnline]);
 
+  // Ensure focus is returned to editor when unmounting
+  useEffect(() => {
+    return () => focusEditor(editor);
+  }, []);
+
   return (
-    <Dialog defaultOpen={isOnline} onOpenChange={() => editor.filePanel?.closeMenu()}>
+    <Dialog defaultOpen={isOnline} onOpenChange={() => closeFilePanel()}>
       <DialogContent className="md:max-w-xl">
         <DialogHeader>
           <DialogTitle className="h-6">{t('common:upload_item', { item: t(`common:${type}`).toLowerCase() })}</DialogTitle>
