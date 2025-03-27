@@ -1,4 +1,5 @@
-import type { MiddlewareHandler } from 'hono/types';
+import { createMiddleware } from 'hono/factory';
+import type { Env } from '#/lib/context';
 import { nanoid } from '#/utils/nanoid';
 
 enum LogPrefix {
@@ -30,8 +31,8 @@ function log(fn: PrintFunc, prefix: string, logId: string, method: string, path:
   fn(out);
 }
 
-export const logger = (fn: PrintFunc = console.info): MiddlewareHandler => {
-  return async function logger(c, next) {
+export const logger = (fn: PrintFunc = console.info) =>
+  createMiddleware<Env>(async (c, next) => {
     const { method } = c.req;
 
     // Generate logId and set it so we can use it to match error reports
@@ -54,5 +55,4 @@ export const logger = (fn: PrintFunc = console.info): MiddlewareHandler => {
 
     // Log outgoing
     log(fn, LogPrefix.Outgoing, logId, method, stripUrl, c.res.status, time(start), user, org);
-  };
-};
+  });

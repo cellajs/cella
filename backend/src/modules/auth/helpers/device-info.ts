@@ -1,5 +1,6 @@
 import type { Context } from 'hono';
 import { UAParser } from 'ua-parser-js';
+import type { Env } from '#/lib/context';
 
 /**
  * Extracts device, OS, and browser information from the User-Agent header.
@@ -7,7 +8,7 @@ import { UAParser } from 'ua-parser-js';
  * @param ctx - Request/response context.
  * @returns An object with device name, type (mobile/desktop), OS, and browser info.
  */
-export const deviceInfo = (ctx: Context) => {
+export const deviceInfo = (ctx: Context<Env>) => {
   const userAgent = ctx.req.header('User-Agent');
   const { device, os, browser } = UAParser(userAgent);
 

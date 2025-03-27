@@ -1,7 +1,7 @@
-import type { MiddlewareHandler } from 'hono';
 import type { RateLimiterMemory, RateLimiterPostgres } from 'rate-limiter-flexible';
 import { RateLimiterRes } from 'rate-limiter-flexible';
 
+import { createMiddleware } from 'hono/factory';
 import type { Env } from '#/lib/context';
 import { errorResponse } from '#/lib/errors';
 import { getRateLimiterInstance, rateLimitError } from '#/middlewares/rate-limiter/helpers';
@@ -48,16 +48,11 @@ export const slowOptions = {
  * @returns Middleware handler for rate limiting.
  * @link https://github.com/animir/node-rate-limiter-flexible#readme
  */
-export const rateLimiter = (
-  mode: RateLimitMode,
-  key: string,
-  identifiers: RateLimitIdentifier[],
-  options?: RateLimitOptions,
-): MiddlewareHandler<Env> => {
+export const rateLimiter = (mode: RateLimitMode, key: string, identifiers: RateLimitIdentifier[], options?: RateLimitOptions) => {
   const limiter = getRateLimiterInstance({ ...defaultOptions, ...options, keyPrefix: `${key}_${mode}` });
   const slowLimiter = getRateLimiterInstance({ ...slowOptions, keyPrefix: `${key}_${mode}:slow` });
 
-  return async (ctx, next) => {
+  return createMiddleware<Env>(async (ctx, next) => {
     const ipAddr = getIp(ctx);
     const body = ctx.req.header('content-type') === 'application/json' ? await ctx.req.raw.clone().json() : undefined;
 
@@ -119,5 +114,5 @@ export const rateLimiter = (
         await limiter.consume(rateLimitKey);
       } catch {}
     }
-  };
+  });
 };

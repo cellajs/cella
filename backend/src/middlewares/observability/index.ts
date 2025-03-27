@@ -1,5 +1,6 @@
-import type { MiddlewareHandler } from 'hono/types';
+import { createMiddleware } from 'hono/factory';
 import { Counter, Histogram } from 'prom-client';
+import type { Env } from '#/lib/context';
 import { metricsConfig } from '#/middlewares/observability/config';
 
 // Prometheus metrics Initialize
@@ -23,7 +24,7 @@ const observabilityRequestsCounter = new Counter({
  * @param ctx - Request/response context.
  * @param next - The next middleware or route handler to call after this middleware completes its work.
  */
-export const observabilityMiddleware: MiddlewareHandler = async (ctx, next) => {
+export const observabilityMiddleware = createMiddleware<Env>(async (ctx, next) => {
   const start = Date.now();
 
   // Incrementing request count
@@ -43,4 +44,4 @@ export const observabilityMiddleware: MiddlewareHandler = async (ctx, next) => {
   );
 
   await next();
-};
+});
