@@ -1,5 +1,3 @@
-import type { ContextEntity } from 'config';
-import { eq, max } from 'drizzle-orm';
 import { db } from '#/db/db';
 import { type MembershipModel, membershipsTable } from '#/db/schema/memberships';
 import { entityIdFields, entityRelations } from '#/entity-config';
@@ -7,6 +5,9 @@ import type { EntityModel } from '#/lib/entity';
 import { logEvent } from '#/middlewares/logger/log-event';
 import { membershipSelect } from '#/modules/memberships/helpers/select';
 import { getIsoDate } from '#/utils/iso-date';
+
+import type { ContextEntity } from 'config';
+import { and, eq, max } from 'drizzle-orm';
 
 type BaseEntityModel = EntityModel<ContextEntity> & {
   organizationId?: string;
@@ -19,7 +20,6 @@ interface Props<T> {
   createdBy?: string;
   tokenId?: string | null;
   addAssociatedMembership?: boolean;
-  addOrganizationMembership?: boolean;
 }
 
 /**
@@ -33,7 +33,6 @@ interface Props<T> {
  * @param info.createdBy - Optional, user who created membership (default: current user).
  * @param info.tokenId - Optional, Id of a token if it's and invite membership (default: null).
  * @param info.addAssociatedMembership - Optional, boolean flag whether to check and add user to an associated entity of target entity (default: true)
- * * @param info.addOrganizationMembership - Optional, boolean flag whether to check and add user to an organization entity of target entity (default: true)
  * @returns Inserted target membership.
  */
 export const insertMembership = async <T extends BaseEntityModel>({
@@ -43,7 +42,6 @@ export const insertMembership = async <T extends BaseEntityModel>({
   createdBy = userId,
   tokenId = null,
   addAssociatedMembership = true,
-  addOrganizationMembership = true,
 }: Props<T>) => {
   // Get max order number
   const [{ maxOrder }] = await db
@@ -65,11 +63,19 @@ export const insertMembership = async <T extends BaseEntityModel>({
   };
 
   // Insert organization membership first
-  if (addOrganizationMembership && entity.entity !== 'organization') {
-    await db
-      .insert(membershipsTable)
-      .values({ ...baseMembership, type: 'organization' })
-      .onConflictDoNothing(); // Do nothing if already exist
+  if (entity.entity !== 'organization') {
+    const hasOrgMembership = await db
+      .select()
+      .from(membershipsTable)
+      .where(
+        and(
+          eq(membershipsTable.userId, userId),
+          eq(membershipsTable.type, 'organization'),
+          eq(membershipsTable.organizationId, baseMembership.organizationId),
+        ),
+      );
+
+    if (!hasOrgMembership.length) await db.insert(membershipsTable).values({ ...baseMembership, type: 'organization' });
   }
 
   // Insert associated entity membership first (if applicable)
