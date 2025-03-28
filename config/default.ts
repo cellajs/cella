@@ -134,6 +134,20 @@ export const config = {
   entityTypes: ['user', 'organization', 'attachment'] as const,
 
   /**
+   * Restrictions default for organization.
+   * Used to control limits on certain entities or behaviors under this organization.
+   * For example:
+   * - Limit number of projects, tasks, or members
+   * - Limit number of active online members at the same time
+   *
+   * The key is the entity name and the value is the numeric limit.
+   */
+  defaultOrganizationRestrictions: {
+    user: 1000,
+    attachment: 100,
+  } as const,
+
+  /**
    * Page entity types (pages with memberships + users)
    */
   pageEntityTypes: ['user', 'organization'] as const,

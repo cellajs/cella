@@ -116,5 +116,6 @@
   "update_resource": "{{resource}} could not be updated. Try again later.",
   "user_mismatch": "User mismatch",
   "user_mismatch.text": "The user you are trying to access is not the same as the one authenticated.",
-  "oauth_connection_not_found": "Failed to connect, required data missing."
+  "oauth_connection_not_found": "Failed to connect, required data missing.",
+  "restrict_by_org": "Action is restricted due to your organization's policies."
 }
