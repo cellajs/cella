@@ -1,16 +1,18 @@
 import { Link, useNavigate } from '@tanstack/react-router';
 import { config } from 'config';
 import { Cloud, CloudOff, CopyCheckIcon, CopyIcon, Download } from 'lucide-react';
+import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import useDownloader from 'react-use-downloader';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { useCopyToClipboard } from '~/hooks/use-copy-to-clipboard';
-import AttachmentThumb from '~/modules/attachments/attachment-thumb';
+import AttachmentPreview from '~/modules/attachments/attachment-preview';
 import { formatBytes } from '~/modules/attachments/table/helpers';
 import type { Attachment } from '~/modules/attachments/types';
 import CheckboxColumn from '~/modules/common/data-table/checkbox-column';
 import HeaderCell from '~/modules/common/data-table/header-cell';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
+import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import Spinner from '~/modules/common/spinner';
 import type { EntityPage } from '~/modules/entities/types';
 import { membersKeys } from '~/modules/memberships/query/options';
@@ -26,6 +28,7 @@ export const useColumns = (entity: EntityPage, isSheet: boolean, highDensity: bo
   const { t } = useTranslation();
   const navigate = useNavigate();
   const storeUser = useUserStore((state) => state.user);
+  const setTriggerRef = useDialoger((state) => state.setTriggerRef);
 
   const isMobile = useBreakpoints('max', 'sm', false);
   const isAdmin = entity.membership?.role === 'admin' || storeUser?.role === 'admin';
@@ -37,26 +40,35 @@ export const useColumns = (entity: EntityPage, isSheet: boolean, highDensity: bo
       visible: true,
       sortable: false,
       width: 32,
-      renderCell: ({ row: { id, url, filename, contentType, groupId }, tabIndex }) => (
-        <Link
-          id={`attachments-${id}`}
-          to={url}
-          tabIndex={tabIndex}
-          className="flex space-x-2 items-center justify-center outline-0 ring-0 group w-full h-full"
-          onClick={(e) => {
-            if (e.metaKey || e.ctrlKey) return;
-            e.preventDefault();
-            navigate({
-              to: '.',
-              replace: false,
-              resetScroll: false,
-              search: (prev) => ({ ...prev, attachmentDialogId: id, groupId: groupId || undefined, dialogContext: 'attachments' }),
-            });
-          }}
-        >
-          <AttachmentThumb url={url} name={filename} contentType={contentType} />
-        </Link>
-      ),
+      renderCell: ({ row: { id, url, filename, contentType, groupId }, tabIndex }) => {
+        const cellRef = useRef<HTMLAnchorElement | null>(null);
+
+        return (
+          <Link
+            to={url}
+            ref={cellRef}
+            draggable="false"
+            tabIndex={tabIndex}
+            className="flex space-x-2 items-center justify-center outline-0 ring-0 group w-full h-full"
+            onClick={(e) => {
+              if (e.metaKey || e.ctrlKey) return;
+              e.preventDefault();
+
+              // Store trigger to bring focus back
+              setTriggerRef(id, cellRef);
+
+              navigate({
+                to: '.',
+                replace: false,
+                resetScroll: false,
+                search: (prev) => ({ ...prev, attachmentDialogId: id, groupId: groupId || undefined }),
+              });
+            }}
+          >
+            <AttachmentPreview url={url} name={filename} contentType={contentType} />
+          </Link>
+        );
+      },
     },
   ];
 
@@ -214,7 +226,7 @@ export const useColumns = (entity: EntityPage, isSheet: boolean, highDensity: bo
 
         if (!user) return <span>{row.createdBy}</span>;
 
-        return <UserCell user={user} tabIndex={tabIndex} context="attachment-created" />;
+        return <UserCell user={user} tabIndex={tabIndex} />;
       },
     },
     {
@@ -241,7 +253,7 @@ export const useColumns = (entity: EntityPage, isSheet: boolean, highDensity: bo
 
         if (!user) return <span>{row.modifiedBy}</span>;
 
-        return <UserCell user={user} tabIndex={tabIndex} context="attachment-modified" />;
+        return <UserCell user={user} tabIndex={tabIndex} />;
       },
     },
   ];

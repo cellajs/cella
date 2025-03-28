@@ -1,5 +1,5 @@
 import { t } from 'i18next';
-import { Suspense } from 'react';
+import { type RefObject, Suspense } from 'react';
 import type { UploadedUppyFile } from '~/lib/imado/types';
 import { useAttachmentCreateMutation, useAttachmentDeleteMutation } from '~/modules/attachments/query/mutations';
 import UploadUppy from '~/modules/attachments/upload/upload-uppy';
@@ -37,7 +37,7 @@ const maxTotalFileSize = 10 * 1024 * 1024 * maxNumberOfFiles; // for maxNumberOf
  *
  * @param organizationId The organization ID
  */
-export const openAttachmentsUploadDialog = (organizationId: string) => {
+export const openAttachmentsUploadDialog = (organizationId: string, triggerRef: RefObject<HTMLButtonElement | null>) => {
   const UploadDialog = ({ organizationId }: { organizationId: string }) => {
     const { mutate: createAttachments } = useAttachmentCreateMutation();
     const { mutate: deleteAttachments } = useAttachmentDeleteMutation();
@@ -82,8 +82,7 @@ export const openAttachmentsUploadDialog = (organizationId: string) => {
     </Suspense>,
     {
       id: 'upload-attachment',
-      // TODO
-      triggerRef: { current: null },
+      triggerRef,
       drawerOnMobile: false,
       title: t('common:upload_item', { item: t('common:attachments').toLowerCase() }),
       description: t('common:upload_multiple.text', { item: t('common:attachments').toLowerCase(), count: maxNumberOfFiles }),

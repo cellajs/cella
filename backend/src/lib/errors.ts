@@ -99,7 +99,7 @@ export const errorResponse = (
 ) => {
   const error: ErrorType = createError(ctx, status, type, severity, entityType, eventData, err);
 
-  return ctx.json({ success: false, error }, status as 400); // TODO: Review type assertion (as 400)
+  return ctx.json({ success: false, error }, status as 400); // TODO(BLOCKED): Review type assertion (as 400) https://github.com/honojs/hono/issues/2719
 };
 
 /**

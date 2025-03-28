@@ -1,5 +1,6 @@
 import { ChevronDown, Plus, Settings2 } from 'lucide-react';
 import { AnimatePresence, LayoutGroup, motion } from 'motion/react';
+import { type RefObject, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import StickyBox from '~/modules/common/sticky-box';
 import { TooltipButton } from '~/modules/common/tooltip-button';
@@ -14,7 +15,7 @@ interface MenuSectionButtonProps {
   isSectionVisible: boolean;
   data: UserMenuItem[];
   toggleIsEditing: () => void;
-  handleCreateAction?: () => void;
+  handleCreateAction?: (ref: RefObject<HTMLButtonElement | null>) => void;
 }
 
 export const MenuSectionButton = ({
@@ -28,6 +29,8 @@ export const MenuSectionButton = ({
 }: MenuSectionButtonProps) => {
   const { t } = useTranslation();
   const toggleSection = useNavigationStore((state) => state.toggleSection);
+
+  const createButtonRef = useRef(null);
 
   return (
     <StickyBox className="z-10">
@@ -81,7 +84,14 @@ export const MenuSectionButton = ({
           <AnimatePresence mode="popLayout">
             {isSectionVisible && handleCreateAction && (
               <TooltipButton toolTipContent={t('common:create')} sideOffset={22} side="right">
-                <Button className="w-12 px-2" variant="secondary" size="icon" onClick={handleCreateAction} asChild>
+                <Button
+                  ref={createButtonRef}
+                  className="w-12 px-2"
+                  variant="secondary"
+                  size="icon"
+                  onClick={() => handleCreateAction(createButtonRef)}
+                  asChild
+                >
                   <motion.button
                     key={`sheet-menu-plus-${sectionType}`}
                     transition={{ bounce: 0, duration: 0.2, transition: { bounce: 0, duration: 0.1 } }}

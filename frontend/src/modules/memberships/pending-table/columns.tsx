@@ -78,7 +78,7 @@ export const useColumns = (entity: EntityPage) => {
 
           if (!user) return <span>{row.createdBy}</span>;
 
-          return <UserCell user={user} tabIndex={tabIndex} context="invitation-created" />;
+          return <UserCell user={user} tabIndex={tabIndex} />;
         },
       },
     ];

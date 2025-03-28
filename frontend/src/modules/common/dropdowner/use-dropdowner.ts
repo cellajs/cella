@@ -11,7 +11,7 @@ export type DropdownData = {
 };
 
 type InternalDropdown = DropdownData & {
-  key: number; // for reactivity
+  key: number;
   content: ReactNode;
 };
 

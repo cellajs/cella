@@ -24,13 +24,12 @@ const OrganizationSettings = lazy(() => import('~/modules/organizations/organiza
 // Search query schema
 export const membersSearchSchema = membersQuerySchema
   .pick({ q: true, sort: true, order: true, role: true })
-  .extend({ userSheetId: z.string().optional(), sheetContext: z.string().optional() });
+  .extend({ userSheetId: z.string().optional() });
 
 export const memberInvitationsSearchSchema = memberInvitationsQuerySchema.pick({ sort: true, order: true });
 
 export const attachmentsSearchSchema = attachmentsQuerySchema.pick({ q: true, sort: true, order: true }).extend({
   attachmentDialogId: z.string().optional(),
-  dialogContext: z.string().optional(),
   groupId: z.string().optional(),
 });
 

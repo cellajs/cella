@@ -13,7 +13,7 @@ export default function DrawerDialog({ dialog }: DialogProp) {
 
   const closeDialog = () => {
     useDialoger.getState().remove(dialog.id);
-    dialog.removeCallback?.();
+    dialog.onClose?.();
   };
 
   const onOpenChange = (open: boolean) => {

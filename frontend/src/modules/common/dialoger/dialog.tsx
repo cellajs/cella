@@ -11,7 +11,7 @@ export interface DialogProp {
   dialog: InternalDialog;
 }
 export default function StandardDialog({ dialog }: DialogProp) {
-  const { id, content, open, triggerRef, description, title, titleContent = title, className, hideClose, headerClassName = '', container } = dialog;
+  const { id, content, open, triggerRef, description, title, titleContent = title, className, hideClose, headerClassName, container } = dialog;
   const isMobile = useBreakpoints('max', 'sm', false);
 
   // When a container is provided, the dialog is rendered inside the container and scroll should stay enabled
@@ -20,7 +20,7 @@ export default function StandardDialog({ dialog }: DialogProp) {
 
   const closeDialog = () => {
     useDialoger.getState().remove(dialog.id);
-    dialog.removeCallback?.();
+    dialog.onClose?.();
   };
 
   const onOpenChange = (open: boolean) => {
@@ -43,19 +43,16 @@ export default function StandardDialog({ dialog }: DialogProp) {
         id={String(id)}
         hideClose={hideClose}
         container={containerElement}
+        className={cn(className, containerElement && 'z-40')}
         onInteractOutside={handleInteractOutside}
         onOpenAutoFocus={(event: Event) => {
           if (isMobile) event.preventDefault();
         }}
         onCloseAutoFocus={() => {
-          // TODO can we only bring focus conditionally? If not changing routes? OR only if
-          if (triggerRef?.current) {
-            triggerRef.current.focus();
-          }
+          if (triggerRef?.current) triggerRef.current.focus();
         }}
-        className={cn(className, containerElement && 'z-40')}
       >
-        <DialogHeader className={`${title || description ? headerClassName : 'hidden'}`}>
+        <DialogHeader className={`${title || description ? headerClassName || '' : 'hidden'}`}>
           <DialogTitle className={`${title || title ? '' : 'hidden'} leading-6 h-6`}>{titleContent}</DialogTitle>
           <DialogDescription className={`${description ? '' : 'hidden'}`}>{description}</DialogDescription>
         </DialogHeader>

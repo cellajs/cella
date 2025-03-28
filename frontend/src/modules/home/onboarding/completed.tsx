@@ -31,6 +31,7 @@ export const OnboardingCompleted = () => {
       () => {
         useSheeter.getState().create(<MenuSheet />, {
           id: 'menu-nav',
+          triggerRef: { current: document.activeElement instanceof HTMLButtonElement ? document.activeElement : null },
           side: 'left',
           modal: false,
           className:

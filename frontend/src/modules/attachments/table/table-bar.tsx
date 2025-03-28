@@ -89,7 +89,12 @@ export const AttachmentsTableBar = ({
             </>
           ) : (
             showUpload && (
-              <TableBarButton ref={uploadButtonRef} icon={Upload} label={t('common:upload')} onClick={() => openAttachmentsUploadDialog(entity.id)} />
+              <TableBarButton
+                ref={uploadButtonRef}
+                icon={Upload}
+                label={t('common:upload')}
+                onClick={() => openAttachmentsUploadDialog(entity.id, uploadButtonRef)}
+              />
             )
           )}
           {selected.length === 0 && <TableCount count={total} type="attachment" isFiltered={isFiltered} onResetFilters={onResetFilters} />}

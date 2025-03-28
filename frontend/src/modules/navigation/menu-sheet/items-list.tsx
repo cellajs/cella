@@ -1,5 +1,6 @@
 import type { ContextEntity } from 'config';
 import { Plus } from 'lucide-react';
+import { type RefObject, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { UserMenuItem } from '~/modules/me/types';
 import { MenuSheetItem } from '~/modules/navigation/menu-sheet/item';
@@ -10,7 +11,7 @@ interface MenuSheetItemsProps {
   data: UserMenuItem[];
   type: ContextEntity;
   shownOption: 'archived' | 'unarchive';
-  createAction?: () => void;
+  createAction?: (ref: RefObject<HTMLButtonElement | null>) => void;
   className?: string;
 }
 
@@ -18,10 +19,12 @@ export const MenuSheetItems = ({ data, type, shownOption, createAction, classNam
   const { t } = useTranslation();
   const hideSubmenu = useNavigationStore((state) => state.hideSubmenu);
 
+  const buttonRef = useRef(null);
+
   const renderNoItems = () =>
     createAction ? (
       <div className="flex items-center">
-        <Button className="w-full" variant="ghost" onClick={createAction}>
+        <Button ref={buttonRef} className="w-full" variant="ghost" onClick={() => createAction(buttonRef)}>
           <Plus size={14} />
           <span className="ml-1 text-sm text-light">
             {t('common:create_your_first')} {t(type).toLowerCase()}

@@ -1,5 +1,6 @@
 import type { ContextEntity } from 'config';
 import type { LucideProps } from 'lucide-react';
+import type { RefObject } from 'react';
 import { i18n } from '~/lib/i18n';
 import router from '~/lib/router';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
@@ -10,14 +11,14 @@ import type { Organization } from '~/modules/organizations/types';
 
 type SectionsSchema = {
   label: string;
-  createAction?: () => void;
+  createAction?: (ref: RefObject<HTMLButtonElement | null>) => void;
   icon?: React.ElementType<LucideProps>;
 };
 
 /**
  * Create new organization from the menu.
  */
-const createOrganizationAction = () => {
+const createOrganizationAction = (triggerRef: RefObject<HTMLButtonElement | null>) => {
   const callback = (createdOrganization: Organization) => {
     useDialoger.getState().remove('create-organization');
     router.navigate({ to: '/$idOrSlug/members', params: { idOrSlug: createdOrganization.slug } });
@@ -26,7 +27,7 @@ const createOrganizationAction = () => {
   return useDialoger.getState().create(<CreateOrganizationForm dialog callback={callback} />, {
     className: 'md:max-w-2xl',
     id: 'create-organization',
-    triggerRef: { current: null },
+    triggerRef,
     title: i18n.t('common:create_resource', { resource: i18n.t('common:organization').toLowerCase() }),
     titleContent: <UnsavedBadge title={i18n.t('common:create_resource', { resource: i18n.t('common:organization').toLowerCase() })} />,
   });
@@ -42,7 +43,7 @@ export const menuSectionsSchemas: Partial<Record<ContextEntity, SectionsSchema>>
 /**
  * Configuration to by with key update membership in contextEntity
  */
-//TODO find way to avoid usage of it Work poorly on offline access to much entities go through
+//TODO(REFACTOR) find way to avoid usage of it Work poorly on offline access to much entities go through
 export const contextEntityCacheKeys = {
   organization: organizationsKeys.single.base(),
 };

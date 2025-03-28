@@ -1,20 +1,22 @@
 import { useEffect, useRef, useState } from 'react';
-import { type SheetData, useSheeter } from '~/modules/common/sheeter/use-sheeter';
+import { useBreakpoints } from '~/hooks/use-breakpoints';
+import { type InternalSheet, useSheeter } from '~/modules/common/sheeter/use-sheeter';
 import StickyBox from '~/modules/common/sticky-box';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '~/modules/ui/sheet';
 import { isElementInteractive } from '~/utils/is-el-interactive';
 import { useDropdowner } from '../dropdowner/use-dropdowner';
 
 export interface SheetProps {
-  sheet: SheetData;
+  sheet: InternalSheet;
 }
 
 export const DesktopSheet = ({ sheet }: SheetProps) => {
   const {
     id,
-    modal = true,
+    modal,
     side: sheetSide,
-    open = true,
+    open,
+    triggerRef,
     description,
     scrollableOverlay,
     title,
@@ -23,6 +25,8 @@ export const DesktopSheet = ({ sheet }: SheetProps) => {
     className: sheetClassName,
     content,
   } = sheet;
+
+  const isMobile = useBreakpoints('max', 'sm', false);
 
   const sheetRef = useRef<HTMLDivElement>(null);
 
@@ -40,7 +44,7 @@ export const DesktopSheet = ({ sheet }: SheetProps) => {
 
   const closeSheet = () => {
     useSheeter.getState().remove(sheet.id);
-    sheet.removeCallback?.();
+    sheet.onClose?.();
   };
 
   const onOpenChange = (open: boolean) => {
@@ -76,12 +80,18 @@ export const DesktopSheet = ({ sheet }: SheetProps) => {
         id={String(id)}
         scrollableOverlay={scrollableOverlay}
         ref={sheetRef}
-        onEscapeKeyDown={handleEscapeKeyDown}
-        onInteractOutside={handleInteractOutside}
         side={side} // Retained side value
         hideClose={hideClose}
         aria-describedby={undefined}
         className={`${className} items-start`}
+        onEscapeKeyDown={handleEscapeKeyDown}
+        onInteractOutside={handleInteractOutside}
+        onOpenAutoFocus={(event: Event) => {
+          if (isMobile) event.preventDefault();
+        }}
+        onCloseAutoFocus={() => {
+          if (triggerRef?.current) triggerRef.current.focus();
+        }}
       >
         <StickyBox className={`z-10 flex items-center justify-between bg-background py-3 ${title ? '' : 'hidden'}`}>
           <SheetTitle>{titleContent}</SheetTitle>

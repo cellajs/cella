@@ -101,7 +101,7 @@ export const MembersTableBar = ({
       triggerRef: inviteButtonRef,
       drawerOnMobile: false,
       className: 'w-auto shadow-none border relative z-60 max-w-4xl',
-      // TODO handle container open in sheet
+      // TODO(REFACTOR) handle container open in sheet
       ...(!isSheet && { container: { id: 'invite-members-container', overlay: true } }),
       title: t('common:invite'),
       titleContent: <UnsavedBadge title={t('common:invite')} />,
