@@ -18,7 +18,7 @@ const entitiesRoutes = app
    * Get entities with a limited schema
    */
   .openapi(entitiesRouteConfig.getEntities, async (ctx) => {
-    const { q, type, targetUserId, removeSelf } = ctx.req.valid('query');
+    const { q, type, targetUserId, removeSelf, userMembershipType } = ctx.req.valid('query');
 
     const { id: selfId } = getContextUser();
 
@@ -35,7 +35,7 @@ const entitiesRoutes = app
     if (!organizationIds.length) return ctx.json({ success: true, data: { items: [], total: 0, counts: {} } }, 200);
 
     // Array to hold queries for concurrent execution
-    const queries = await getEntitiesQuery({ userId, organizationIds, type, q, selfId: removeSelf ? selfId : null });
+    const queries = await getEntitiesQuery({ userId, organizationIds, type, q, selfId: removeSelf ? selfId : null, userMembershipType });
 
     const queryData = await Promise.all(queries);
 

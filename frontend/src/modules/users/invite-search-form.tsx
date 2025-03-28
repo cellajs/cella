@@ -1,23 +1,23 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useTranslation } from 'react-i18next';
-import { z } from 'zod';
-import { type InviteMemberProps, inviteMembers } from '~/modules/memberships/api';
-
 import { config } from 'config';
 import { Send } from 'lucide-react';
 import { useMemo } from 'react';
 import type { UseFormProps } from 'react-hook-form';
+import { useTranslation } from 'react-i18next';
+import { z } from 'zod';
+
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import { useMutation } from '~/hooks/use-mutations';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import SelectRoleRadio from '~/modules/common/form-fields/select-role-radio';
-import { QueryCombobox } from '~/modules/common/query-combobox';
 import { toaster } from '~/modules/common/toaster';
 import type { EntityPage } from '~/modules/entities/types';
+import { type InviteMemberProps, inviteMembers } from '~/modules/memberships/api';
 import { Badge } from '~/modules/ui/badge';
 import { Button, SubmitButton } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
-import { handleNewInvites } from './invite-email-form';
+import { UserSuggestionCombobox } from '~/modules/users/combobox';
+import { handleNewInvites } from '~/modules/users/invite-email-form';
 
 interface Props {
   entity?: EntityPage;
@@ -86,7 +86,7 @@ const InviteSearchForm = ({ entity, dialog: isDialog }: Props) => {
           render={({ field: { onChange, value } }) => (
             <FormItem>
               <FormControl>
-                <QueryCombobox value={value} onChange={onChange} />
+                <UserSuggestionCombobox value={value} onChange={onChange} entity={entity} />
               </FormControl>
               <FormMessage />
             </FormItem>

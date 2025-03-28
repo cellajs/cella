@@ -9,13 +9,13 @@ import type { entitiesQuerySchema } from '#/modules/entities/schema';
 import { membershipSelect } from '#/modules/memberships/helpers/select';
 import { prepareStringForILikeFilter } from '#/utils/sql';
 
-type EntitiesQueryProps = Pick<z.infer<typeof entitiesQuerySchema>, 'q' | 'type'> & {
+type EntitiesQueryProps = Omit<z.infer<typeof entitiesQuerySchema>, 'targetUserId' | 'removeSelf'> & {
   organizationIds: string[];
   userId: string;
   selfId: string | null;
 };
 
-export const getEntitiesQuery = async ({ userId, organizationIds, type, q, selfId }: EntitiesQueryProps) => {
+export const getEntitiesQuery = async ({ userId, organizationIds, type, q, selfId, userMembershipType = 'organization' }: EntitiesQueryProps) => {
   const entityTypes = type ? [type] : config.pageEntityTypes;
 
   const queries = entityTypes
@@ -59,7 +59,7 @@ export const getEntitiesQuery = async ({ userId, organizationIds, type, q, selfI
         .from(table)
         .innerJoin(
           membershipsTable,
-          and(eq(table.id, membershipsTable[entityIdField]), eq(membershipsTable.type, entityType === 'user' ? 'organization' : entityType)),
+          and(eq(table.id, membershipsTable[entityIdField]), eq(membershipsTable.type, entityType === 'user' ? userMembershipType : entityType)),
         )
         .where(and(...filters))
         .limit(20);
