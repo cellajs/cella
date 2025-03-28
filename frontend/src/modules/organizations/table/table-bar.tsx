@@ -24,7 +24,6 @@ import type { OrganizationsSearch } from '~/modules/organizations/table/table-wr
 import type { Organization } from '~/modules/organizations/types';
 import CreateNewsletterForm from '~/modules/system/create-newsletter-form';
 import NewsletterPreview from '~/modules/system/newsletter-preview';
-import { Button } from '~/modules/ui/button';
 
 type OrganizationsTableBarProps = BaseTableMethods & BaseTableBarProps<Organization, OrganizationsSearch>;
 
@@ -131,7 +130,9 @@ export const OrganizationsTableBar = ({
             </>
           ) : (
             !isFiltered && (
-              <Button
+              <TableBarButton
+                label={t('common:create')}
+                icon={Plus}
                 onClick={() => {
                   createDialog(<CreateOrganizationForm callback={onCreateOrganization} />, {
                     id: 'create-organization',
@@ -141,10 +142,7 @@ export const OrganizationsTableBar = ({
                     titleContent: <UnsavedBadge title={t('common:create_resource', { resource: t('common:organization').toLowerCase() })} />,
                   });
                 }}
-              >
-                <Plus size={16} />
-                <span className="ml-1">{t('common:create')}</span>
-              </Button>
+              />
             )
           )}
           {selected.length === 0 && <TableCount count={total} type="organization" isFiltered={isFiltered} onResetFilters={onResetFilters} />}

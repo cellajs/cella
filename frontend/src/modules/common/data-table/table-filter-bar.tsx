@@ -63,7 +63,15 @@ export const TableFilterBar = ({ onResetFilters, isFiltered, children }: TableFi
               <motion.span layoutId={`table-filter-bar-icon-${key}`}>
                 <Search width={16} height={16} />
               </motion.span>
-              <span className="ml-1">{t('common:search')}</span>
+              <motion.span
+                className="ml-1"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ delay: 0.2, duration: 0.3 }}
+              >
+                {t('common:search')}
+              </motion.span>
             </motion.button>
           </Button>
         )}
