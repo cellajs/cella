@@ -18,10 +18,9 @@ import { ScrollArea } from '~/modules/ui/scroll-area';
 interface Props {
   value: string[];
   onChange: (items: string[]) => void;
-  entityId: string;
 }
 
-export const QueryCombobox = ({ value, onChange, entityId }: Props) => {
+export const QueryCombobox = ({ value, onChange }: Props) => {
   const { t } = useTranslation();
   const { ref, bounds } = useMeasure<HTMLDivElement>();
 
@@ -54,7 +53,7 @@ export const QueryCombobox = ({ value, onChange, entityId }: Props) => {
     setOpen(false);
   };
 
-  const { data, isFetching } = useQuery(entitiesQueryOptions({ q: debouncedSearchQuery, type: 'user', entityId }));
+  const { data, isFetching } = useQuery(entitiesQueryOptions({ q: debouncedSearchQuery, type: 'user', removeUserMembership: true }));
 
   useEffect(() => {
     onChange(selected);

@@ -1,35 +1,21 @@
 import { config } from 'config';
-import { type SQL, and, eq, ilike, inArray, notInArray, or, sql } from 'drizzle-orm';
+import { type SQL, and, eq, ilike, inArray, ne, or, sql } from 'drizzle-orm';
 import type { z } from 'zod';
+
 import { db } from '#/db/db';
 import { membershipsTable } from '#/db/schema/memberships';
 import { entityIdFields, entityTables } from '#/entity-config';
+import type { entitiesQuerySchema } from '#/modules/entities/schema';
 import { membershipSelect } from '#/modules/memberships/helpers/select';
 import { prepareStringForILikeFilter } from '#/utils/sql';
-import type { entitiesQuerySchema } from '../schema';
 
 type EntitiesQueryProps = z.infer<typeof entitiesQuerySchema> & {
   organizationIds: string[];
   userId: string;
 };
 
-export const getEntitiesQuery = async ({ userId, organizationIds, type, q, entityId }: EntitiesQueryProps) => {
+export const getEntitiesQuery = async ({ userId, organizationIds, type, q, removeUserMembership }: EntitiesQueryProps) => {
   const entityTypes = type ? [type] : config.pageEntityTypes;
-
-  const idFields = config.contextEntityTypes.map((entity) => entityIdFields[entity]);
-
-  // TODO: we should not exclude but show in invite members in frontend that user is already member
-  // For this, we should drop membersToExclude and instead make sure the correct membership is shared in the response. so if an entityId is
-  // provided, we should include the membership for that entity in the response, not the membership is currently is sharing?
-  const membersToExclude =
-    type === 'user' && entityId
-      ? (
-          await db
-            .select()
-            .from(membershipsTable)
-            .where(or(...idFields.map((idField) => eq(membershipsTable[idField], entityId))))
-        ).map(({ userId }) => userId)
-      : [];
 
   const queries = entityTypes
     .map((entityType) => {
@@ -51,8 +37,7 @@ export const getEntitiesQuery = async ({ userId, organizationIds, type, q, entit
       const filters = [
         inArray(membershipsTable.organizationId, organizationIds),
         eq(membershipsTable[entityIdField], table.id),
-        ...(entityType !== 'user' ? [eq(membershipsTable.userId, userId)] : []),
-        ...(membersToExclude.length ? [notInArray(membershipsTable.userId, membersToExclude)] : []),
+        ...(entityType === 'user' && removeUserMembership ? [ne(membershipsTable.userId, userId)] : [eq(membershipsTable.userId, userId)]),
       ];
 
       // Build search filters
