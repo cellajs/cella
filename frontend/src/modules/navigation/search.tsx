@@ -66,7 +66,7 @@ export const AppSearch = () => {
     });
   };
 
-  const { data: suggestions, isFetching } = useQuery(entitiesQueryOptions({ q: searchValue }));
+  const { data: suggestions, isFetching } = useQuery(entitiesQueryOptions({ q: searchValue, removeSelf: true }));
 
   const onSelectSuggestion = (suggestion: SuggestionType) => {
     // Update recent searches with the search value

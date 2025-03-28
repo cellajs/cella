@@ -1,35 +1,22 @@
 import { config } from 'config';
-import { type SQL, and, eq, ilike, inArray, notInArray, or, sql } from 'drizzle-orm';
+import { type SQL, and, eq, ilike, inArray, ne, or, sql } from 'drizzle-orm';
 import type { z } from 'zod';
+
 import { db } from '#/db/db';
 import { membershipsTable } from '#/db/schema/memberships';
 import { entityIdFields, entityTables } from '#/entity-config';
+import type { entitiesQuerySchema } from '#/modules/entities/schema';
 import { membershipSelect } from '#/modules/memberships/helpers/select';
 import { prepareStringForILikeFilter } from '#/utils/sql';
-import type { entitiesQuerySchema } from '../schema';
 
-type EntitiesQueryProps = z.infer<typeof entitiesQuerySchema> & {
+type EntitiesQueryProps = Omit<z.infer<typeof entitiesQuerySchema>, 'targetUserId' | 'removeSelf'> & {
   organizationIds: string[];
   userId: string;
+  selfId: string | null;
 };
 
-export const getEntitiesQuery = async ({ userId, organizationIds, type, q, entityId }: EntitiesQueryProps) => {
+export const getEntitiesQuery = async ({ userId, organizationIds, type, q, selfId, userMembershipType = 'organization' }: EntitiesQueryProps) => {
   const entityTypes = type ? [type] : config.pageEntityTypes;
-
-  const idFields = config.contextEntityTypes.map((entity) => entityIdFields[entity]);
-
-  // TODO: we should not exclude but show in invite members in frontend that user is already member
-  // For this, we should drop membersToExclude and instead make sure the correct membership is shared in the response. so if an entityId is
-  // provided, we should include the membership for that entity in the response, not the membership is currently is sharing?
-  const membersToExclude =
-    type === 'user' && entityId
-      ? (
-          await db
-            .select()
-            .from(membershipsTable)
-            .where(or(...idFields.map((idField) => eq(membershipsTable[idField], entityId))))
-        ).map(({ userId }) => userId)
-      : [];
 
   const queries = entityTypes
     .map((entityType) => {
@@ -52,7 +39,7 @@ export const getEntitiesQuery = async ({ userId, organizationIds, type, q, entit
         inArray(membershipsTable.organizationId, organizationIds),
         eq(membershipsTable[entityIdField], table.id),
         ...(entityType !== 'user' ? [eq(membershipsTable.userId, userId)] : []),
-        ...(membersToExclude.length ? [notInArray(membershipsTable.userId, membersToExclude)] : []),
+        ...(selfId ? [ne(membershipsTable.userId, selfId)] : []),
       ];
 
       // Build search filters
@@ -72,7 +59,7 @@ export const getEntitiesQuery = async ({ userId, organizationIds, type, q, entit
         .from(table)
         .innerJoin(
           membershipsTable,
-          and(eq(table.id, membershipsTable[entityIdField]), eq(membershipsTable.type, entityType === 'user' ? 'organization' : entityType)),
+          and(eq(table.id, membershipsTable[entityIdField]), eq(membershipsTable.type, entityType === 'user' ? userMembershipType : entityType)),
         )
         .where(and(...filters))
         .limit(20);
