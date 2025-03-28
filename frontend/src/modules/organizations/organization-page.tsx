@@ -30,6 +30,7 @@ const OrganizationPage = () => {
   const isAdmin = organization.membership?.role === 'admin' || user?.role === 'admin';
   const tabs = isAdmin ? organizationTabs : organizationTabs.slice(0, 2);
 
+  // TODO(IMPROVE) can we do this in an better? In a generic entityPage store?
   const { mutate } = useOrganizationUpdateMutation();
 
   const coverUpdateCallback = (bannerUrl: string) => {

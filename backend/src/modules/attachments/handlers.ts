@@ -267,7 +267,7 @@ const attachmentsRoutes = app
     const [attachment] = await db.select().from(attachmentsTable).where(eq(attachmentsTable.id, id));
     if (!attachment) return errorResponse(ctx, 404, 'not_found', 'warn', 'attachment');
 
-    let redirectUrl = `${config.frontendUrl}/${attachment.organizationId}/attachments?attachmentDialogId=${attachment.id}&dialogContext=attachments`;
+    let redirectUrl = `${config.frontendUrl}/${attachment.organizationId}/attachments?attachmentDialogId=${attachment.id}`;
     if (attachment.groupId) redirectUrl += `&groupId=${attachment.groupId}`;
 
     return ctx.html(html`

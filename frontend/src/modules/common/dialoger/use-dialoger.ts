@@ -6,9 +6,11 @@ type DialogContainerOptions = {
   overlay?: boolean;
 };
 
+type TriggerRef = RefObject<HTMLButtonElement | HTMLAnchorElement | null>;
+
 export type DialogData = {
   id: number | string;
-  triggerRef: RefObject<HTMLButtonElement | null>;
+  triggerRef: TriggerRef;
   description?: ReactNode;
   drawerOnMobile?: boolean;
   className?: string;
@@ -17,13 +19,12 @@ export type DialogData = {
   container?: DialogContainerOptions;
   title?: string | ReactNode;
   titleContent?: string | ReactNode;
-  open?: boolean;
-  removeCallback?: () => void;
-  reset?: boolean;
+  onClose?: () => void;
 };
 
 export type InternalDialog = DialogData & {
   key: number;
+  open?: boolean;
   content: ReactNode;
 };
 
@@ -34,25 +35,26 @@ interface DialogStoreState {
   update: (id: number | string, updates: Partial<InternalDialog>) => void;
   remove: (id?: number | string) => void;
   get: (id: number | string) => InternalDialog | undefined;
-  reset: (id?: number | string) => void;
+
+  triggerRefs: Record<string, TriggerRef | null>;
+
+  setTriggerRef: (id: string, ref: TriggerRef) => void;
+  getTriggerRef: (id: string) => TriggerRef | null;
 }
 
+/**
+ * A hook to manage one or multiple dialogs (on mobile it renders drawers.)
+ */
 export const useDialoger = create<DialogStoreState>((set, get) => ({
   dialogs: [],
+  triggerRefs: {},
 
   create: (content, data) => {
+    // Add defaults and a key for reactivity
+    const defaults = { drawerOnMobile: true, hideClose: false, open: true, modal: true, key: Date.now() };
+
     set((state) => ({
-      dialogs: [
-        ...state.dialogs.filter((d) => d.id !== data.id),
-        {
-          ...data,
-          content,
-          drawerOnMobile: true,
-          hideClose: false,
-          open: true,
-          key: Date.now(),
-        },
-      ],
+      dialogs: [...state.dialogs.filter((d) => d.id !== data.id), { ...defaults, ...data, content }],
     }));
 
     return data.id;
@@ -69,7 +71,7 @@ export const useDialoger = create<DialogStoreState>((set, get) => ({
       const dialogsToRemove = id ? state.dialogs.filter((d) => d.id === id) : state.dialogs;
 
       for (const d of dialogsToRemove) {
-        d.removeCallback?.();
+        d.onClose?.();
       }
 
       return {
@@ -78,11 +80,15 @@ export const useDialoger = create<DialogStoreState>((set, get) => ({
     });
   },
 
-  reset: (id) => {
+  get: (id) => get().dialogs.find((d) => d.id === id),
+
+  setTriggerRef: (id, ref) => {
     set((state) => ({
-      dialogs: state.dialogs.map((dialog) => (id && dialog.id !== id ? dialog : { ...dialog, reset: true })),
+      triggerRefs: { ...state.triggerRefs, [id]: ref },
     }));
   },
 
-  get: (id) => get().dialogs.find((d) => d.id === id),
+  getTriggerRef: (id) => {
+    return get().triggerRefs[id] ?? null;
+  },
 }));

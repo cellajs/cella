@@ -1,20 +1,31 @@
 import { onlineManager } from '@tanstack/react-query';
 import { Link, useNavigate } from '@tanstack/react-router';
+import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { toaster } from '~/modules/common/toaster';
 import type { LimitedUser } from '~/modules/users/types';
+import { useSheeter } from '../common/sheeter/use-sheeter';
+
+interface Props {
+  user: LimitedUser;
+  orgIdOrSlug?: string;
+  tabIndex: number;
+}
 
 /**
  * Render a user cell with avatar and name, wrapped in a link to open user sheet.
  */
-const UserCell = ({ user, context, orgIdOrSlug, tabIndex }: { user: LimitedUser; context: string; orgIdOrSlug?: string; tabIndex: number }) => {
-  const navigate = useNavigate();
+const UserCell = ({ user, orgIdOrSlug, tabIndex }: Props) => {
   const { t } = useTranslation();
+  const navigate = useNavigate();
+  const cellRef = useRef<HTMLAnchorElement | null>(null);
+
+  const setTriggerRef = useSheeter((state) => state.setTriggerRef);
 
   return (
     <Link
-      id={`${context}-${user.id}`}
+      ref={cellRef}
       to={orgIdOrSlug ? '/$orgIdOrSlug/users/$idOrSlug' : '/users/$idOrSlug'}
       tabIndex={tabIndex}
       params={{ idOrSlug: user.slug, ...(orgIdOrSlug ? { orgIdOrSlug } : {}) }}
@@ -26,11 +37,15 @@ const UserCell = ({ user, context, orgIdOrSlug, tabIndex }: { user: LimitedUser;
         }
         if (e.metaKey || e.ctrlKey) return;
         e.preventDefault();
+
+        // Store trigger to bring focus back
+        setTriggerRef(user.id, cellRef);
+
         navigate({
           to: '.',
           replace: true,
           resetScroll: false,
-          search: (prev) => ({ ...prev, userSheetId: user.id, sheetContext: context }),
+          search: (prev) => ({ ...prev, userSheetId: user.id }),
         });
       }}
     >

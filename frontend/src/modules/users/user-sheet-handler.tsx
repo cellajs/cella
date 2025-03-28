@@ -6,29 +6,30 @@ import UserSheet from '~/modules/users/user-sheet';
 const UserSheetHandler = memo(() => {
   const navigate = useNavigate();
 
-  const { userSheetId, sheetContext } = useSearch({ strict: false });
+  const { userSheetId } = useSearch({ strict: false });
   const { orgIdOrSlug: baseOrgIdOrSlug, idOrSlug } = useParams({ strict: false });
 
-  const { remove: removeSheet, create: createSheet } = useSheeter();
+  const { remove: removeSheet, create: createSheet, getTriggerRef } = useSheeter();
 
   const orgIdOrSlug = baseOrgIdOrSlug || idOrSlug;
 
   useEffect(() => {
-    if (!userSheetId || !sheetContext) return;
-
-    console.debug('Open user sheet', userSheetId);
+    if (!userSheetId) return;
 
     const sheetInstanceId = `user-sheet-${userSheetId}`;
+    // TODO(IMPROVE) we should have a fallback ref in the app-content that is always available
+    const triggerRef = getTriggerRef(userSheetId) || { current: document.activeElement instanceof HTMLButtonElement ? document.activeElement : null };
 
     // Defer creation to ensure the DOM and state are ready
     const timeoutId = setTimeout(() => {
       createSheet(<UserSheet idOrSlug={userSheetId} orgIdOrSlug={orgIdOrSlug} />, {
-        className: 'max-w-full lg:max-w-4xl p-0',
         id: sheetInstanceId,
+        triggerRef,
         side: 'right',
-        // TODO find a way to remove a history entry when the sheet is closed. this way perhaps its better
+        className: 'max-w-full lg:max-w-4xl p-0',
+        // TODO(IMPROVE) find a way to remove a history entry when the sheet is closed. this way perhaps its better
         // for UX to not do a replace here and in the UserCell
-        removeCallback: () => {
+        onClose: () => {
           navigate({
             to: '.',
             replace: true,
@@ -36,15 +37,8 @@ const UserSheetHandler = memo(() => {
             search: (prev) => ({
               ...prev,
               userSheetId: undefined,
-              sheetContext: undefined,
             }),
           });
-
-          // Return focus to the original cell after closing
-          setTimeout(() => {
-            const cell = document.getElementById(`${sheetContext}-${userSheetId}`);
-            if (cell) cell.focus();
-          }, 0);
         },
       });
     }, 0);
@@ -53,7 +47,7 @@ const UserSheetHandler = memo(() => {
       clearTimeout(timeoutId);
       removeSheet(sheetInstanceId);
     };
-  }, [userSheetId, orgIdOrSlug, sheetContext]);
+  }, [userSheetId, orgIdOrSlug]);
 
   return null;
 });

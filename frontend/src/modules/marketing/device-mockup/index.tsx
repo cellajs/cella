@@ -1,6 +1,6 @@
 import { useInView } from 'react-intersection-observer';
 
-import AttachmentsCarousel, { type CarouselItemData } from '~/modules/attachments/carousel';
+import AttachmentsCarousel, { type CarouselItemData } from '~/modules/attachments/attachments-carousel';
 import { useUIStore } from '~/store/ui';
 import { cn } from '~/utils/cn';
 

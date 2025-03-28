@@ -24,7 +24,7 @@ export const useColumns = () => {
         visible: true,
         sortable: true,
         renderHeaderCell: HeaderCell,
-        renderCell: ({ row, tabIndex }) => <UserCell user={row} tabIndex={tabIndex} context="users" />,
+        renderCell: ({ row, tabIndex }) => <UserCell user={row} tabIndex={tabIndex} />,
       },
       {
         key: 'impersonate',

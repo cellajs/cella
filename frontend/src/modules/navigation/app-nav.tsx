@@ -19,6 +19,9 @@ const AppNav = () => {
   const updateSheet = useSheeter.getState().update;
 
   const clickNavItem = (id: NavItemId, ref?: RefObject<HTMLButtonElement | null>) => {
+    // Trigger ref is used to focus the button after closing the sheet
+    const triggerRef = ref || { current: document.activeElement instanceof HTMLButtonElement ? document.activeElement : null };
+
     // If nav item is already open, close it
     if (id === navSheetOpen) {
       setNavSheetOpen(null);
@@ -30,7 +33,6 @@ const AppNav = () => {
     const navItem: NavItem = navItems.filter((item) => item.id === id)[0];
 
     // If it has an action, trigger it
-    const triggerRef = ref || { current: document.activeElement instanceof HTMLButtonElement ? document.activeElement : null };
     if (navItem.action) return navItem.action(triggerRef);
 
     // If its a route, navigate to it
@@ -49,12 +51,13 @@ const AppNav = () => {
     // Create a sheet
     useSheeter.getState().create(navItem.sheet, {
       id: 'nav-sheet',
+      triggerRef,
       side: sheetSide,
       hideClose: true,
       modal: isMobile,
       className:
         'fixed sm:z-105 p-0 sm:inset-0 xs:max-w-80 sm:left-16 xl:group-[.keep-menu-open]/body:group-[.menu-sheet-open]/body:shadow-none xl:group-[.keep-menu-open]/body:group-[.menu-sheet-open]/body:border-r dark:shadow-[0_0_30px_rgba(255,255,255,0.05)]',
-      removeCallback: () => {
+      onClose: () => {
         setNavSheetOpen(null);
       },
     });
@@ -77,7 +80,7 @@ const AppNav = () => {
 
       if (navState.focusView) setFocusView(false);
 
-      // TODO - shouldnt be here - Clear sheets and dialogs
+      // TODO(REFACTOR) - shouldnt be here - Clear sheets and dialogs
       if (sheetOpen && (sheetOpen !== 'menu' || !navState.keepMenuOpen)) {
         setNavSheetOpen(null);
         useSheeter.getState().remove();

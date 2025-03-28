@@ -2,7 +2,7 @@ import { useSuspenseQuery } from '@tanstack/react-query';
 import { FlameKindling, ServerCrash, WifiOff } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useOnlineManager } from '~/hooks/use-online-manager';
-import AttachmentsCarousel from '~/modules/attachments/carousel';
+import AttachmentsCarousel from '~/modules/attachments/attachments-carousel';
 import { groupedAttachmentsQueryOptions } from '~/modules/attachments/query/options';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import Spinner from '~/modules/common/spinner';
@@ -20,7 +20,7 @@ const AttachmentDialog = ({ attachmentId, groupId, orgIdOrSlug }: AttachmentDial
   const { data, isError, isLoading } = useSuspenseQuery(groupedAttachmentsQueryOptions({ groupId, orgIdOrSlug }));
 
   const attachments = data?.items ?? [];
-  // TODO improve fetch when no groupId(mb fetch by attachment id and return group if there is one)
+  // TODO(IMPROVE) improve fetch when no groupId(mb fetch by attachment id and return group if there is one)
   const items = groupId ? attachments : attachments.filter(({ id }) => id === attachmentId);
 
   const itemIndex = attachments?.findIndex(({ id }) => attachmentId === id);

@@ -1,7 +1,7 @@
 import type { Block, PropSchema, Props } from '@blocknote/core';
 import type { DefaultReactSuggestionItem } from '@blocknote/react';
 import DOMPurify from 'dompurify';
-import type { CarouselItemData } from '~/modules/attachments/carousel';
+import type { CarouselItemData } from '~/modules/attachments/attachments-carousel';
 import { openAttachmentDialog } from '~/modules/attachments/helpers';
 import { customSlashIndexedItems, customSlashNotIndexedItems, menusTitleToAllowedType } from '~/modules/common/blocknote/blocknote-config';
 import type { BasicBlockTypes, CellaCustomBlockTypes, CustomBlockNoteSchema, MenusItemsTitle } from '~/modules/common/blocknote/types';
@@ -111,8 +111,7 @@ export const updateSourcesFromDataUrl = (elementId: string, openPreviewDialog = 
     const target = e.target as HTMLImageElement | HTMLVideoElement | HTMLAudioElement;
     // Find the slide based on the currentSrc of the target
     const slideNum = attachments.findIndex(({ url }) => url === target.currentSrc);
-
-    openAttachmentDialog(slideNum, attachments);
+    openAttachmentDialog({ attachmentIndex: slideNum, attachments, triggerRef: { current: target as unknown as HTMLButtonElement } });
   };
 
   for (const element of elementsWithDataUrl) {

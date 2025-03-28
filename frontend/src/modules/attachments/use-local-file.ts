@@ -10,7 +10,7 @@ import { useBlobStore } from '~/store/blob'; // Import the Zustand store
  * @returns Object containing local file URL and any error encountered.
  */
 export const useLocalFile = (key: string, contentType?: string): { localUrl: string; localFileError: string | null } => {
-  // We use the Zustand store to get and set the blob URL after LocalFileStorage has created it. It also revokes the URL user closes the browser tab.
+  // We use store to get and set blob URL after LocalFileStorage created it. It also revokes URL once user closes browser tab.
   const { getBlobUrl, setBlobUrl } = useBlobStore();
 
   // State

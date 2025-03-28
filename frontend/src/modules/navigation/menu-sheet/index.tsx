@@ -29,9 +29,10 @@ import { useNavigationStore } from '~/store/navigation';
 import { useUserStore } from '~/store/user';
 import { cn } from '~/utils/cn';
 
+const pwaEnabled = config.has.pwa;
+
 export const MenuSheet = memo(() => {
   const { t } = useTranslation();
-
   const { user } = useUserStore();
 
   const menu = useNavigationStore((state) => state.menu);
@@ -45,8 +46,9 @@ export const MenuSheet = memo(() => {
   const [searchResults, setSearchResults] = useState<UserMenuItem[]>([]);
 
   const { mutateAsync } = useMemberUpdateMutation();
+
   const scrollViewportRef = useRef(null);
-  const pwaEnabled = config.has.pwa;
+  const accountButtonRef = useRef(null);
 
   const searchResultsListItems = useCallback(() => {
     return searchResults.length > 0 ? searchResults.map((item: UserMenuItem) => <MenuSheetItem key={item.id} searchResults item={item} />) : [];
@@ -122,6 +124,7 @@ export const MenuSheet = memo(() => {
             <span className="ml-2 font-normal">Back to home</span>
           </Link>
           <Button
+            ref={accountButtonRef}
             size="icon"
             variant="ghost"
             onClick={() => {
@@ -129,12 +132,13 @@ export const MenuSheet = memo(() => {
               // Create a sheet
               useSheeter.getState().create(<AccountSheet />, {
                 id: 'nav-sheet',
+                triggerRef: accountButtonRef,
                 side: 'left',
                 hideClose: true,
                 modal: true,
                 className:
                   'fixed sm:z-105 p-0 sm:inset-0 xs:max-w-80 sm:left-16 xl:group-[.keep-menu-open]/body:group-[.menu-sheet-open]/body:shadow-none xl:group-[.keep-menu-open]/body:group-[.menu-sheet-open]/body:border-r dark:shadow-[0_0_30px_rgba(255,255,255,0.05)]',
-                removeCallback: () => {
+                onClose: () => {
                   setNavSheetOpen(null);
                 },
               });

@@ -59,15 +59,7 @@ const TableEllipsis = ({ row, tabIndex }: Props) => {
   const triggerRef = useRef(null);
 
   return (
-    <Button
-      ref={triggerRef}
-      id={`ellipsis-${row.id}`}
-      variant="cell"
-      size="icon"
-      tabIndex={tabIndex}
-      className="h-full w-full"
-      onClick={() => openDropdown(row, triggerRef)}
-    >
+    <Button ref={triggerRef} variant="cell" size="icon" tabIndex={tabIndex} className="h-full w-full" onClick={() => openDropdown(row, triggerRef)}>
       <EllipsisVertical size={16} />
     </Button>
   );

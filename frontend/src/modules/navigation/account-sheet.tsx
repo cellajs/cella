@@ -35,6 +35,7 @@ const AccountButton = ({ offlineAccess, isOnline, lucide: Icon, label, id, actio
       }}
       data-sign-out={id === 'btn-signout'}
       id={id}
+      draggable="false"
       to={action}
       className={cn(
         buttonVariants({ variant: 'ghost', size: 'lg' }),

@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import FilePlaceholder from '~/modules/attachments/file-placeholder';
+import FilePlaceholder from '~/modules/attachments/preview-placeholder';
 import { useLocalFile } from '~/modules/attachments/use-local-file';
 
 interface Props {
@@ -8,7 +8,7 @@ interface Props {
   name: string;
 }
 
-const AttachmentThumb = ({ url: baseUrl, contentType, name }: Props) => {
+const AttachmentPreview = ({ url: baseUrl, contentType, name }: Props) => {
   const { localUrl } = useLocalFile(baseUrl, contentType);
 
   // Use either remote URL or local URL
@@ -23,4 +23,4 @@ const AttachmentThumb = ({ url: baseUrl, contentType, name }: Props) => {
   );
 };
 
-export default AttachmentThumb;
+export default AttachmentPreview;

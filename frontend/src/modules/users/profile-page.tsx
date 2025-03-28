@@ -52,6 +52,7 @@ const UserProfilePage = ({ user: baseUser, sheet, orgIdOrSlug }: { user: Limited
             <div className="max-xs:hidden flex items-center p-2">
               <Link
                 to="/settings"
+                draggable="false"
                 tabIndex={0}
                 className="inline-flex items-center justify-center whitespace-nowrap h-9 rounded-md px-3 text-sm font-medium ring-offset-background transition-colors focus-visible:outline-hidden sm:focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 bg-primary text-primary-foreground hover:bg-primary/80"
               >

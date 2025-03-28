@@ -18,56 +18,54 @@ export const clearAttachmentDialogSearchParams = () => {
       ...prev,
       attachmentDialogId: undefined,
       groupId: undefined,
-      dialogContext: undefined,
     }),
   });
 };
 
 const AttachmentDialogHandler = memo(() => {
-  const { attachmentDialogId, groupId, dialogContext } = useSearch({ strict: false });
+  const { attachmentDialogId, groupId } = useSearch({ strict: false });
   const { orgIdOrSlug: baseOrgIdOrSlug, idOrSlug } = useParams({ strict: false });
   const orgIdOrSlug = baseOrgIdOrSlug || idOrSlug;
 
-  const dialog = useDialoger();
+  const { remove: removeDialog, create: createDialog, get: getDialog, getTriggerRef } = useDialoger();
 
   useEffect(() => {
-    if (!attachmentDialogId || !orgIdOrSlug || !dialogContext) return;
-    if (dialog.get('attachment-dialog')) return;
+    if (!attachmentDialogId || !orgIdOrSlug) return;
+    if (getDialog('attachment-dialog')) return;
+
+    // TODO(IMPROVE) we should have a fallback ref in the app-content that is always available
+    const triggerRef = getTriggerRef(attachmentDialogId) || {
+      current: document.activeElement instanceof HTMLButtonElement ? document.activeElement : null,
+    };
 
     const timeoutId = setTimeout(() => {
-      dialog.create(
+      createDialog(
         <Suspense>
           <AttachmentDialog attachmentId={attachmentDialogId} groupId={groupId} orgIdOrSlug={orgIdOrSlug} />
         </Suspense>,
         {
           id: 'attachment-dialog',
-          triggerRef: { current: null },
+          triggerRef: triggerRef,
           drawerOnMobile: false,
           className: 'min-w-full h-screen border-0 p-0 rounded-none flex flex-col mt-0',
           headerClassName: 'absolute p-4 w-full backdrop-blur-xs bg-background/50',
           hideClose: true,
-          removeCallback: () => {
-            // TODO find a way to remove a history entry when the sheet is closed. this way perhaps its better
+          onClose: () => {
+            // TODO(IMPROVE) find a way to remove a history entry when the sheet is closed. this way perhaps its better
             // for UX to not do a replace here and in the column
             clearAttachmentDialogSearchParams();
-
-            // Try to return focus back to the cell
-            setTimeout(() => {
-              const cell = document.getElementById(`${dialogContext}-${attachmentDialogId}`);
-              if (cell) cell.focus();
-            }, 0);
           },
         },
       );
     }, 0);
 
     return () => clearTimeout(timeoutId);
-  }, [attachmentDialogId, orgIdOrSlug, dialogContext, groupId]);
+  }, [attachmentDialogId, orgIdOrSlug, groupId]);
 
   // Separate cleanup when `attachmentDialogId` disappears
   useEffect(() => {
     if (attachmentDialogId) return;
-    dialog.remove('attachment-dialog');
+    removeDialog('attachment-dialog');
   }, [attachmentDialogId]);
 
   return null;

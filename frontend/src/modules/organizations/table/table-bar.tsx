@@ -43,6 +43,7 @@ export const OrganizationsTableBar = ({
 
   const createButtonRef = useRef(null);
   const deleteButtonRef = useRef(null);
+  const newsletterButtonRef = useRef(null);
 
   const { q, order } = searchVars;
 
@@ -85,14 +86,16 @@ export const OrganizationsTableBar = ({
     ];
 
     useSheeter.getState().create(<SheetTabs tabs={newsletterTabs} />, {
+      id: 'create-newsletter',
+      side: 'right',
+      triggerRef: newsletterButtonRef,
       className: 'max-w-full lg:max-w-4xl',
       title: t('common:newsletter'),
       titleContent: <UnsavedBadge title={t('common:newsletter')} />,
       description: t('common:newsletter.text'),
-      id: 'create-newsletter',
+
       scrollableOverlay: true,
-      side: 'right',
-      removeCallback: clearSelection,
+      onClose: clearSelection,
     });
   };
 
@@ -109,6 +112,7 @@ export const OrganizationsTableBar = ({
           {selected.length > 0 ? (
             <>
               <TableBarButton
+                ref={newsletterButtonRef}
                 onClick={openNewsletterSheet}
                 label={t('common:newsletter')}
                 icon={Mailbox}

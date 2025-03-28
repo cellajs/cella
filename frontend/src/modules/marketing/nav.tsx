@@ -27,7 +27,7 @@ export const MarketingNav = () => {
   const handleNavClick = (target: string, isOpen = false) => {
     if (window.location.hash === `#${target}`) navigate({ to: '.', hash: 'top', replace: true });
 
-    // TODO temp fix while Link component doesn't support hash scroll into view
+    // TODO(BLOCKING) temp fix while Link component doesn't support hash scroll into view
     const anchor = document.getElementById(target);
     anchor?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 
