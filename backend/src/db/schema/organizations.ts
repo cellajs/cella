@@ -1,10 +1,15 @@
-import { type Language, config } from 'config';
+import { type Entity, type Language, config } from 'config';
 import { boolean, index, json, pgTable, varchar } from 'drizzle-orm/pg-core';
 import { usersTable } from '#/db/schema/users';
+import { timestampsColumn } from '#/db/utils/timestamp-columns';
 import { nanoid } from '#/utils/nanoid';
-import { timestampsColumn } from '../utils/timestamp-columns';
 
 const languagesEnum = config.languages;
+
+// To avoid error on schema return and not set default undefined for all entities
+type Restrictions = {
+  [K in Exclude<Entity, 'organization'>]: number | undefined;
+} & Partial<Record<Exclude<Entity, 'organization'>, number>>;
 
 export const organizationsTable = pgTable(
   'organizations',
@@ -20,6 +25,16 @@ export const organizationsTable = pgTable(
     timezone: varchar(),
     defaultLanguage: varchar({ enum: languagesEnum }).notNull().default(config.defaultLanguage),
     languages: json().$type<Language[]>().notNull().default([config.defaultLanguage]),
+    /**
+     * Restrictions config for the organization.
+     * Used to control limits on certain entities or behaviors under this organization.
+     * For example:
+     * - Limit number of projects, tasks, or members
+     * - Limit number of active online members at the same time
+     *
+     * The key is the entity name and the value is the numeric limit.
+     */
+    restrictions: json().$type<Restrictions>(),
     notificationEmail: varchar(),
     emailDomains: json().$type<string[]>().notNull().default([]),
     color: varchar(),
