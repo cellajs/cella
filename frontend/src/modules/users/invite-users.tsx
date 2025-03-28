@@ -64,7 +64,7 @@ const InviteUsers = ({ entity, dialog: isDialog, mode: baseMode, children }: Inv
       <AnimatePresence mode="popLayout">
         {!inviteMode && (
           <motion.div key="invite-initial" initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}>
-            <ToggleGroup type="multiple" onValueChange={updateMode} className="max-sm:flex-col">
+            <ToggleGroup type="multiple" onValueChange={updateMode} className="max-sm:flex-col sm:gap-3">
               <ToggleGroupItem size="tile" variant="tile" value="email" aria-label="Add by email" className="h-auto">
                 <AtSign size={48} strokeWidth={1} />
                 <div className="flex flex-col pl-3">
@@ -75,7 +75,7 @@ const InviteUsers = ({ entity, dialog: isDialog, mode: baseMode, children }: Inv
                   </div>
                 </div>
               </ToggleGroupItem>
-              <ToggleGroupItem size="tile" variant="tile" value="search" aria-label="Search users" className="h-auto">
+              <ToggleGroupItem size="tile" variant="tile" value="search" aria-label="Search users" className="h-auto sm:py-6">
                 <Search size={48} strokeWidth={1} />
                 <div className="flex flex-col pl-3">
                   <div className="font-light">{t('common:invite_by_name')}</div>

@@ -16,6 +16,7 @@ export default function StandardDialog({ dialog }: DialogProp) {
 
   // When a container is provided, the dialog is rendered inside the container and scroll should stay enabled
   const modal = !container;
+  // TODO use ref here?
   const containerElement = useMemo(() => (container ? document.getElementById(container.id) : null), [container]);
 
   const closeDialog = () => {

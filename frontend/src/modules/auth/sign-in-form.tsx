@@ -12,6 +12,7 @@ import { Input } from '~/modules/ui/input';
 import { useMutation } from '@tanstack/react-query';
 import { config } from 'config';
 import { ArrowRight, ChevronDown } from 'lucide-react';
+import { useRef } from 'react';
 import type { ApiError } from '~/lib/api';
 import { signIn } from '~/modules/auth/api';
 import { RequestPasswordDialog } from '~/modules/auth/request-password-dialog';
@@ -32,6 +33,7 @@ interface Props {
 export const SignInForm = ({ email, resetSteps, emailEnabled }: Props) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const passwordRef = useRef<HTMLInputElement>(null);
 
   const { lastUser, clearUserStore } = useUserStore();
   const { redirect, token, tokenId } = useSearch({ from: AuthenticateRoute.id });
@@ -65,7 +67,7 @@ export const SignInForm = ({ email, resetSteps, emailEnabled }: Props) => {
       if (error?.status === 404) return resetSteps();
 
       if (error.type !== 'invalid_password') return;
-      if (!isMobile) document.getElementById('password-field')?.focus();
+      if (!isMobile) passwordRef.current?.focus();
       form.reset(form.getValues());
     },
   });
@@ -116,6 +118,7 @@ export const SignInForm = ({ email, resetSteps, emailEnabled }: Props) => {
                         id="password-field"
                         autoFocus={!isMobile}
                         {...field}
+                        ref={passwordRef}
                         autoComplete="current-password"
                         placeholder={t('common:password')}
                       />

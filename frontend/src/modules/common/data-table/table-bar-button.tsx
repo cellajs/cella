@@ -21,9 +21,9 @@ export const TableBarButton = forwardRef<HTMLButtonElement, Props>(({ icon: Icon
         layoutId={id}
         className={className}
         transition={{ bounce: 0, duration: 0.3, ease: 'easeOut' }}
-        initial={{ x: -20, opacity: 0 }}
-        animate={{ x: 0, opacity: 1 }}
-        exit={{ x: -20, opacity: 0 }}
+        initial={{ scale: 0.9, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        exit={{ scale: 0.6, opacity: 0 }}
       >
         {Icon && <motion.span className="flex items-center">{<Icon size={16} />}</motion.span>}
         {label && <span className="ml-1">{label}</span>}
