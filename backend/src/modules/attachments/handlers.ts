@@ -66,15 +66,15 @@ const attachmentsRoutes = app
     const newAttachments = ctx.req.valid('json');
 
     const organization = getContextOrganization();
-    const attachmentRestrictions = organization.restrictions?.attachment;
+    const attachmentRestrictions = organization.restrictions.attachment;
 
-    if (typeof attachmentRestrictions === 'number' && newAttachments.length > attachmentRestrictions) {
+    if (attachmentRestrictions !== 0 && newAttachments.length > attachmentRestrictions) {
       return errorResponse(ctx, 403, 'restrict_by_org', 'warn', 'attachment');
     }
 
     const currentAttachments = await db.select().from(attachmentsTable).where(eq(attachmentsTable.organizationId, organization.id));
 
-    if (typeof attachmentRestrictions === 'number' && currentAttachments.length + newAttachments.length > attachmentRestrictions) {
+    if (attachmentRestrictions !== 0 && currentAttachments.length + newAttachments.length > attachmentRestrictions) {
       return errorResponse(ctx, 403, 'restrict_by_org', 'warn', 'attachment');
     }
 

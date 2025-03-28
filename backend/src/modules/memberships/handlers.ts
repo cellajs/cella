@@ -1,3 +1,5 @@
+import { MemberInviteEmail, type MemberInviteEmailProps } from '../../../emails/member-invite';
+
 import { OpenAPIHono } from '@hono/zod-openapi';
 import { config } from 'config';
 import { and, count, eq, getTableColumns, ilike, inArray, isNotNull, isNull, or } from 'drizzle-orm';
@@ -13,7 +15,11 @@ import { i18n } from '#/lib/i18n';
 import { mailer } from '#/lib/mailer';
 import { sendSSEToUsers } from '#/lib/sse';
 import { logEvent } from '#/middlewares/logger/log-event';
+import { getAssociatedEntityDetails, insertMembership } from '#/modules/memberships/helpers';
+import { membershipSelect } from '#/modules/memberships/helpers/select';
+import membershipsRouteConfig from '#/modules/memberships/routes';
 import { getUsersByConditions } from '#/modules/users/helpers/get-user-by';
+import { userSelect } from '#/modules/users/helpers/select';
 import { getValidEntity } from '#/permissions/get-valid-entity';
 import defaultHook from '#/utils/default-hook';
 import { getIsoDate } from '#/utils/iso-date';
@@ -22,11 +28,6 @@ import { getOrderColumn } from '#/utils/order-column';
 import { slugFromEmail } from '#/utils/slug-from-email';
 import { prepareStringForILikeFilter } from '#/utils/sql';
 import { TimeSpan, createDate } from '#/utils/time-span';
-import { MemberInviteEmail, type MemberInviteEmailProps } from '../../../emails/member-invite';
-import { userSelect } from '../users/helpers/select';
-import { getAssociatedEntityDetails, insertMembership } from './helpers';
-import { membershipSelect } from './helpers/select';
-import membershipsRouteConfig from './routes';
 
 // Set default hook to catch validation errors
 const app = new OpenAPIHono<Env>({ defaultHook });
@@ -50,14 +51,14 @@ const membershipsRoutes = app
     const user = getContextUser();
     const organization = getContextOrganization();
 
-    const membersRestrictions = organization.restrictions?.user;
+    const membersRestrictions = organization.restrictions.user;
 
     const currentOrgMemberships = await db
       .select()
       .from(membershipsTable)
       .where(and(eq(membershipsTable.type, 'organization'), eq(membershipsTable.organizationId, organization.id)));
 
-    if (typeof membersRestrictions === 'number' && currentOrgMemberships.length + emails.length > membersRestrictions) {
+    if (membersRestrictions !== 0 && currentOrgMemberships.length + emails.length > membersRestrictions) {
       return errorResponse(ctx, 403, 'restrict_by_org', 'warn', 'attachment');
     }
 

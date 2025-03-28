@@ -1,5 +1,5 @@
 {
-  "id": "1ff3f9d1-9d7f-4a2c-8cde-20427278f02e",
+  "id": "41a2a52a-7e82-4506-aebe-3715108cb8cf",
   "prevId": "60920ebd-ac78-4e8d-b352-e9ac9daf2235",
   "version": "7",
   "dialect": "postgresql",
@@ -522,7 +522,8 @@
           "name": "restrictions",
           "type": "json",
           "primaryKey": false,
-          "notNull": false
+          "notNull": true,
+          "default": "'{\"user\":120,\"attachment\":40}'::json"
         },
         "notification_email": {
           "name": "notification_email",
