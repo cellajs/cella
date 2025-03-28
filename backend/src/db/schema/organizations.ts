@@ -1,8 +1,9 @@
 import { type Language, config } from 'config';
 import { boolean, index, json, pgTable, varchar } from 'drizzle-orm/pg-core';
 import { usersTable } from '#/db/schema/users';
+import { type Restrictions, defaultOrgRestrictions } from '#/db/utils/organization-restrictions';
+import { timestampsColumn } from '#/db/utils/timestamp-columns';
 import { nanoid } from '#/utils/nanoid';
-import { timestampsColumn } from '../utils/timestamp-columns';
 
 const languagesEnum = config.languages;
 
@@ -20,6 +21,7 @@ export const organizationsTable = pgTable(
     timezone: varchar(),
     defaultLanguage: varchar({ enum: languagesEnum }).notNull().default(config.defaultLanguage),
     languages: json().$type<Language[]>().notNull().default([config.defaultLanguage]),
+    restrictions: json().$type<Restrictions>().notNull().default(defaultOrgRestrictions()),
     notificationEmail: varchar(),
     emailDomains: json().$type<string[]>().notNull().default([]),
     color: varchar(),
