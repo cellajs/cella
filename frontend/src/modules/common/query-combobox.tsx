@@ -1,7 +1,6 @@
-import { Check, ChevronsUpDown, Search, Users2, X } from 'lucide-react';
-
 import { useQuery } from '@tanstack/react-query';
 import { config } from 'config';
+import { Check, ChevronsUpDown, Search, Users2, X } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -53,7 +52,7 @@ export const QueryCombobox = ({ value, onChange }: Props) => {
     setOpen(false);
   };
 
-  const { data, isFetching } = useQuery(entitiesQueryOptions({ q: debouncedSearchQuery, type: 'user', removeUserMembership: true }));
+  const { data, isFetching } = useQuery(entitiesQueryOptions({ q: debouncedSearchQuery, type: 'user', removeSelf: true }));
 
   useEffect(() => {
     onChange(selected);

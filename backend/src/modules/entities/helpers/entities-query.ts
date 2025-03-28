@@ -9,12 +9,13 @@ import type { entitiesQuerySchema } from '#/modules/entities/schema';
 import { membershipSelect } from '#/modules/memberships/helpers/select';
 import { prepareStringForILikeFilter } from '#/utils/sql';
 
-type EntitiesQueryProps = z.infer<typeof entitiesQuerySchema> & {
+type EntitiesQueryProps = Pick<z.infer<typeof entitiesQuerySchema>, 'q' | 'type'> & {
   organizationIds: string[];
   userId: string;
+  selfId: string | null;
 };
 
-export const getEntitiesQuery = async ({ userId, organizationIds, type, q, removeUserMembership }: EntitiesQueryProps) => {
+export const getEntitiesQuery = async ({ userId, organizationIds, type, q, selfId }: EntitiesQueryProps) => {
   const entityTypes = type ? [type] : config.pageEntityTypes;
 
   const queries = entityTypes
@@ -37,8 +38,8 @@ export const getEntitiesQuery = async ({ userId, organizationIds, type, q, remov
       const filters = [
         inArray(membershipsTable.organizationId, organizationIds),
         eq(membershipsTable[entityIdField], table.id),
-        ...(entityType === 'user' ? [] : [eq(membershipsTable.userId, userId)]),
-        ...(removeUserMembership ? [ne(membershipsTable.userId, userId)] : []),
+        ...(entityType !== 'user' ? [eq(membershipsTable.userId, userId)] : []),
+        ...(selfId ? [ne(membershipsTable.userId, selfId)] : []),
       ];
 
       // Build search filters
