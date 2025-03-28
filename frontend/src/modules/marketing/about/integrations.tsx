@@ -39,6 +39,7 @@ const Integrations = () => {
               href={`https://${url}`}
               target="_blank"
               rel="noreferrer"
+              draggable="false"
               key={name}
               className="flex h-96 w-72 group relative shrink-0 flex-col justify-between rounded-lg border p-5 hover:cursor-pointer hover:border-primary hover:ring-4 hover:ring-primary/10"
             >

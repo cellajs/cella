@@ -1,6 +1,5 @@
-import type { ReactNode } from 'react';
+import type { ReactNode, RefObject } from 'react';
 import { create } from 'zustand';
-import { immer } from 'zustand/middleware/immer';
 
 type DialogContainerOptions = {
   id: string;
@@ -9,95 +8,81 @@ type DialogContainerOptions = {
 
 export type DialogData = {
   id: number | string;
-  title?: string | ReactNode;
+  triggerRef: RefObject<HTMLButtonElement | null>;
   description?: ReactNode;
   drawerOnMobile?: boolean;
   className?: string;
   headerClassName?: string;
   hideClose?: boolean;
   container?: DialogContainerOptions;
-  content?: ReactNode;
+  title?: string | ReactNode;
   titleContent?: string | ReactNode;
   open?: boolean;
   removeCallback?: () => void;
   reset?: boolean;
 };
 
-// TODO CAn we get rid of this?
-export type ExternalDialog = Omit<DialogData, 'id' | 'content'> & {
-  id?: number | string;
+export type InternalDialog = DialogData & {
+  key: number;
+  content: ReactNode;
 };
 
 interface DialogStoreState {
-  dialogs: DialogData[];
+  dialogs: InternalDialog[];
 
-  create: (content: ReactNode, data?: ExternalDialog) => string | number;
-  update: (id: number | string, updates: Partial<DialogData>) => void;
+  create: (content: ReactNode, data: DialogData) => string | number;
+  update: (id: number | string, updates: Partial<InternalDialog>) => void;
   remove: (id?: number | string) => void;
-  get: (id: number | string) => DialogData | undefined;
+  get: (id: number | string) => InternalDialog | undefined;
   reset: (id?: number | string) => void;
 }
 
-export const useDialoger = create<DialogStoreState>()(
-  immer((set, get) => ({
-    dialogs: [],
+export const useDialoger = create<DialogStoreState>((set, get) => ({
+  dialogs: [],
 
-    create: (content, data) => {
-      const id = data?.id || Date.now().toString();
+  create: (content, data) => {
+    set((state) => ({
+      dialogs: [
+        ...state.dialogs.filter((d) => d.id !== data.id),
+        {
+          ...data,
+          content,
+          drawerOnMobile: true,
+          hideClose: false,
+          open: true,
+          key: Date.now(),
+        },
+      ],
+    }));
 
-      set((state) => {
-        state.dialogs = [
-          ...state.dialogs.filter((d) => d.id !== id),
-          {
-            id,
-            content,
-            drawerOnMobile: true,
-            hideClose: false,
-            open: true,
-            ...data,
-          },
-        ];
-      });
-      return id;
-    },
+    return data.id;
+  },
 
-    update: (id, updates) => {
-      set((state) => {
-        const existingDialog = state.dialogs.find((d) => d.id === id);
-        if (existingDialog) {
-          Object.assign(existingDialog, updates);
-        }
-      });
-    },
+  update: (id, updates) => {
+    set((state) => ({
+      dialogs: state.dialogs.map((dialog) => (dialog.id === id ? { ...dialog, ...updates } : dialog)),
+    }));
+  },
 
-    remove: (id) => {
-      set((state) => {
-        if (id) {
-          const dialog = state.dialogs.find((d) => d.id === id);
-          dialog?.removeCallback?.();
-          state.dialogs = state.dialogs.filter((d) => d.id !== id);
-          return;
-        }
-        for (const d of state.dialogs) {
-          d.removeCallback?.();
-        }
-        state.dialogs = [];
-      });
-    },
+  remove: (id) => {
+    set((state) => {
+      const dialogsToRemove = id ? state.dialogs.filter((d) => d.id === id) : state.dialogs;
 
-    reset: (id) => {
-      set((state) => {
-        if (id) {
-          const dialog = state.dialogs.find((d) => d.id === id);
-          if (dialog) dialog.reset = true;
-          return;
-        }
-        for (const d of state.dialogs) {
-          d.reset = true;
-        }
-      });
-    },
+      for (const d of dialogsToRemove) {
+        d.removeCallback?.();
+      }
 
-    get: (id) => get().dialogs.find((d) => d.id === id),
-  })),
-);
+      return {
+        dialogs: id ? state.dialogs.filter((d) => d.id !== id) : [],
+      };
+    });
+  },
+
+  reset: (id) => {
+    set((state) => ({
+      dialogs: state.dialogs.map((dialog) => (id && dialog.id !== id ? dialog : { ...dialog, reset: true })),
+    }));
+  },
+
+  get: (id) => get().dialogs.find((d) => d.id === id),
+}));

@@ -1,6 +1,7 @@
 import { useNavigate, useParams } from '@tanstack/react-router';
 import { config } from 'config';
-import { Trash2 } from 'lucide-react';
+import { Trash } from 'lucide-react';
+import { useRef } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { AsideAnchor } from '~/modules/common/aside-anchor';
@@ -27,6 +28,8 @@ const OrganizationSettings = ({ organization }: { organization: Organization }) 
   const navigate = useNavigate();
   const { idOrSlug } = useParams({ from: OrganizationSettingsRoute.id });
 
+  const deleteButtonRef = useRef(null);
+
   const openDeleteDialog = () => {
     useDialoger.getState().create(
       <DeleteOrganizations
@@ -38,6 +41,8 @@ const OrganizationSettings = ({ organization }: { organization: Organization }) 
         }}
       />,
       {
+        id: 'delete-organization',
+        triggerRef: deleteButtonRef,
         className: 'md:max-w-xl',
         title: t('common:delete_resource', { resource: t('common:organization').toLowerCase() }),
         description: t('common:confirm.delete_resource', { name: organization.name, resource: t('common:organization').toLowerCase() }),
@@ -101,8 +106,8 @@ const OrganizationSettings = ({ organization }: { organization: Organization }) 
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <Button variant="destructive" className="w-full sm:w-auto" onClick={openDeleteDialog}>
-                <Trash2 className="mr-2 h-4 w-4" />
+              <Button ref={deleteButtonRef} variant="destructive" className="w-full sm:w-auto" onClick={openDeleteDialog}>
+                <Trash className="mr-2 h-4 w-4" />
                 <span>{t('common:delete_resource', { resource: t('common:organization').toLowerCase() })}</span>
               </Button>
             </CardContent>

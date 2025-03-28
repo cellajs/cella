@@ -1,5 +1,5 @@
 import { config } from 'config';
-import { Fragment, Suspense, lazy, useMemo } from 'react';
+import { Fragment, type RefObject, Suspense, lazy, useMemo } from 'react';
 import useMounted from '~/hooks/use-mounted';
 import { BarNavButton } from '~/modules/navigation/bar-nav/button';
 import StopImpersonation from '~/modules/navigation/bar-nav/stop-impersonation';
@@ -10,7 +10,7 @@ import { cn } from '~/utils/cn';
 
 const DebugToolbars = config.mode === 'development' ? lazy(() => import('~/modules/common/debug-toolbars')) : () => null;
 
-const BarNav = ({ onClick }: { onClick: (id: NavItemId) => void }) => {
+const BarNav = ({ onClick }: { onClick: (id: NavItemId, ref: RefObject<HTMLButtonElement | null>) => void }) => {
   const { hasStarted } = useMounted();
 
   const theme = useUIStore((state) => state.theme);
@@ -45,7 +45,7 @@ const BarNav = ({ onClick }: { onClick: (id: NavItemId) => void }) => {
                 )}
               >
                 <Suspense>
-                  <BarNavButton navItem={navItem} isActive={isActive} onClick={() => onClick(navItem.id)} />
+                  <BarNavButton navItem={navItem} isActive={isActive} onClick={(ref) => onClick(navItem.id, ref)} />
                 </Suspense>
               </li>
             </Fragment>

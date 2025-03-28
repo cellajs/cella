@@ -2,12 +2,12 @@ import { SearchParamError, useRouterState } from '@tanstack/react-router';
 import type { TFunction } from 'i18next';
 import { ChevronUp, Home, MessageCircleQuestion, RefreshCw } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
-import { useState } from 'react';
+import { type RefObject, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { ApiError } from '~/lib/api';
+import { AppFooter } from '~/modules/common/app-footer';
 import { contactFormHandler } from '~/modules/common/contact-form/contact-form-handler';
 import { Dialoger } from '~/modules/common/dialoger/provider';
-import { MainFooter } from '~/modules/common/main-footer';
 import { Button } from '~/modules/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '~/modules/ui/card';
 
@@ -19,9 +19,9 @@ interface ErrorNoticeProps {
   level: 'root' | 'app' | 'public';
 }
 
-export const handleAskForHelp = () => {
+export const handleAskForHelp = (ref: RefObject<HTMLButtonElement | null>) => {
   if (!window.Gleap) {
-    return contactFormHandler();
+    return contactFormHandler(ref);
   }
   window.Gleap.openConversations();
 };
@@ -66,6 +66,9 @@ export const getErrorText = (t: TFunction, error?: ErrorNoticeError, errorFromQu
 const ErrorNotice = ({ error, resetErrorBoundary, level }: ErrorNoticeProps) => {
   const { t } = useTranslation();
   const { location } = useRouterState();
+
+  const contactButtonRef = useRef(null);
+
   const { error: errorFromQuery, severity: severityFromQuery } = location.search;
 
   const dateNow = new Date().toUTCString();
@@ -157,14 +160,14 @@ const ErrorNotice = ({ error, resetErrorBoundary, level }: ErrorNoticeProps) => 
                 </Button>
               )}
               {severity && ['warn', 'error'].includes(severity) && (
-                <Button variant="plain" onClick={handleAskForHelp}>
+                <Button ref={contactButtonRef} variant="plain" onClick={() => handleAskForHelp(contactButtonRef)}>
                   <MessageCircleQuestion size={16} className="mr-1" />
                   {t('common:ask_for_help')}
                 </Button>
               )}
             </CardFooter>
           </Card>
-          {level !== 'app' && <MainFooter className="items-center mt-10" />}
+          {level !== 'app' && <AppFooter className="items-center mt-10" />}
         </div>
       </div>
     </>

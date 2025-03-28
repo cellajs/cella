@@ -47,6 +47,7 @@ export const MarketingNav = () => {
         hash={hash}
         replace={location.pathname === '/about'}
         key={id}
+        draggable="false"
         onClick={(e) => {
           // if (window.location.hash !== `#${hash}`) return;
           if (!hash) return;

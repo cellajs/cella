@@ -6,8 +6,8 @@ import { useTranslation } from 'react-i18next';
 import { useEffect, useRef } from 'react';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { useOnlineManager } from '~/hooks/use-online-manager';
+import { AppFooter } from '~/modules/common/app-footer';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
-import { MainFooter } from '~/modules/common/main-footer';
 import { toaster } from '~/modules/common/toaster';
 import { buttonVariants } from '~/modules/ui/button';
 import { ScrollArea } from '~/modules/ui/scroll-area';
@@ -114,7 +114,7 @@ export const AccountSheet = () => {
 
         <div className="grow border-b border-dashed" />
 
-        <MainFooter className="items-center" />
+        <AppFooter className="items-center" />
       </div>
     </ScrollArea>
   );

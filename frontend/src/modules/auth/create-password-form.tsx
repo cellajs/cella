@@ -8,7 +8,7 @@ import { Button, SubmitButton } from '~/modules/ui/button';
 import { useMutation } from '@tanstack/react-query';
 import { config } from 'config';
 import { ArrowRight } from 'lucide-react';
-import { Suspense, lazy } from 'react';
+import { Suspense, lazy, useRef } from 'react';
 import { createPassword } from '~/modules/auth/api';
 import AuthErrorNotice from '~/modules/auth/auth-error-notice';
 import { RequestPasswordDialog } from '~/modules/auth/request-password-dialog';
@@ -26,6 +26,8 @@ const formSchema = z.object({ password: z.string().min(8).max(100) });
 const CreatePasswordForm = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
+
+  const requestButtonRef = useRef(null);
 
   const { token } = useParams({ from: CreatePasswordWithTokenRoute.id });
   const { tokenId } = useSearch({ from: CreatePasswordWithTokenRoute.id });
@@ -66,7 +68,9 @@ const CreatePasswordForm = () => {
     return (
       <AuthErrorNotice error={error || resetPasswordError}>
         <RequestPasswordDialog email={data?.email}>
-          <Button size="lg">{t('common:forgot_password')}</Button>
+          <Button ref={requestButtonRef} size="lg">
+            {t('common:forgot_password')}
+          </Button>
         </RequestPasswordDialog>
       </AuthErrorNotice>
     );

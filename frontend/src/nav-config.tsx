@@ -1,10 +1,11 @@
 import { Home, type LucideProps, Menu, Search, User } from 'lucide-react';
+import type { RefObject } from 'react';
 
 import { AccountSheet } from '~/modules/navigation/account-sheet';
 import { MenuSheet } from '~/modules/navigation/menu-sheet';
 
 import { onlineManager } from '@tanstack/react-query';
-import type { FooterLinkProps } from '~/modules/common/main-footer';
+import type { FooterLinkProps } from '~/modules/common/app-footer';
 import type { UserMenuItem } from '~/modules/me/types';
 import { AppSearch, type SuggestionSection, type SuggestionType } from '~/modules/navigation/search';
 import { i18n } from './lib/i18n';
@@ -29,7 +30,7 @@ export type NavItem = {
   icon: React.ElementType<LucideProps>;
   type: 'base' | 'floating';
   sheet?: React.ReactNode;
-  action?: () => void;
+  action?: (ref: RefObject<HTMLButtonElement | null>) => void;
   href?: string;
   mirrorOnMobile?: boolean;
 };
@@ -37,11 +38,12 @@ export type NavItem = {
 /**
  * Declare search nav button action
  */
-const startSearchAction = () => {
+const startSearchAction = (triggerRef: RefObject<HTMLButtonElement | null>) => {
   if (!onlineManager.isOnline()) return toaster(i18n.t('common:action.offline.text'), 'warning');
 
   return useDialoger.getState().create(<AppSearch />, {
     id: 'search',
+    triggerRef,
     className: 'sm:max-w-2xl p-0 border-0 mb-4',
     drawerOnMobile: false,
     hideClose: true,

@@ -6,7 +6,7 @@ import { useEffect } from 'react';
  *
  * @param scrollToRef - A ref pointing to the HTML element to scroll to.
  */
-const useScrollTo = (scrollToRef: React.RefObject<HTMLElement>) => {
+const useScrollTo = (scrollToRef: React.RefObject<HTMLElement | HTMLDivElement | null>) => {
   useEffect(() => {
     if (scrollToRef.current) {
       window.scrollTo({

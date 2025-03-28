@@ -1,10 +1,11 @@
 import { config } from 'config';
 import { Handshake, Trash, XSquare } from 'lucide-react';
-import { useMemo } from 'react';
+import { useMemo, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { sort } from 'virtua/unstable_core';
 import ColumnsView from '~/modules/common/data-table/columns-view';
 import Export from '~/modules/common/data-table/export';
+import { TableBarButton } from '~/modules/common/data-table/table-bar-button';
 import { TableBarContainer } from '~/modules/common/data-table/table-bar-container';
 import TableCount from '~/modules/common/data-table/table-count';
 import { FilterBarActions, FilterBarContent, TableFilterBar } from '~/modules/common/data-table/table-filter-bar';
@@ -19,8 +20,6 @@ import { requestsKeys } from '~/modules/requests/query';
 import type { RequestsSearch } from '~/modules/requests/table/table-wrapper';
 import type { Request } from '~/modules/requests/types';
 import { invite } from '~/modules/system/api';
-import { Badge } from '~/modules/ui/badge';
-import { Button } from '~/modules/ui/button';
 import { useMutateQueryData } from '~/query/hooks/use-mutate-query-data';
 
 type RequestsTableBarProps = BaseTableMethods & BaseTableBarProps<Request, RequestsSearch>;
@@ -28,6 +27,8 @@ type RequestsTableBarProps = BaseTableMethods & BaseTableBarProps<Request, Reque
 export const RequestsTableBar = ({ total, selected, searchVars, setSearch, columns, setColumns, clearSelection }: RequestsTableBarProps) => {
   const { t } = useTranslation();
   const createDialog = useDialoger((state) => state.create);
+
+  const deleteButtonRef = useRef(null);
 
   const selectedToWaitlist = useMemo(() => selected.filter((r) => r.type === 'waitlist' && !r.tokenId), [selected]);
 
@@ -55,17 +56,19 @@ export const RequestsTableBar = ({ total, selected, searchVars, setSearch, colum
     };
 
     createDialog(<DeleteRequests requests={selected} callback={callback} dialog />, {
+      id: 'delete-requests',
+      triggerRef: deleteButtonRef,
       className: 'max-w-xl',
       title: t('common:delete'),
       description: t('common:confirm.delete_resources', { resources: t('common:requests').toLowerCase() }),
     });
   };
 
-  const openInviteDialog = async () => {
+  const inviteSelected = async () => {
     const waitlistRequests = selected.filter(({ type }) => type === 'waitlist');
     const emails = waitlistRequests.map(({ email }) => email);
 
-    // add random token value so state it table changes
+    // add random token value so state table changes
     const updatedWaitLists = waitlistRequests.map((req) => {
       return req;
     });
@@ -95,21 +98,25 @@ export const RequestsTableBar = ({ total, selected, searchVars, setSearch, colum
           {selected.length > 0 && (
             <>
               {selectedToWaitlist.length > 0 && (
-                <Button variant="darkSuccess" className="relative" onClick={openInviteDialog}>
-                  <Badge context="button">{selectedToWaitlist.length}</Badge>
-                  <Handshake size={16} />
-                  <span className="ml-1 max-xs:hidden">{t('common:invite')}</span>
-                </Button>
+                <TableBarButton
+                  badge={selectedToWaitlist.length}
+                  variant="darkSuccess"
+                  className="relative"
+                  label={t('common:invite')}
+                  icon={Handshake}
+                  onClick={inviteSelected}
+                />
               )}
-              <Button variant="destructive" className="relative" onClick={openDeleteDialog}>
-                <Badge context="button">{selected.length}</Badge>
-                <Trash size={16} />
-                <span className="ml-1 max-lg:hidden">{t('common:remove')}</span>
-              </Button>
-              <Button variant="ghost" onClick={clearSelection}>
-                <XSquare size={16} />
-                <span className="ml-1">{t('common:clear')}</span>
-              </Button>
+              <TableBarButton
+                ref={deleteButtonRef}
+                variant="destructive"
+                icon={Trash}
+                label={t('common:remove')}
+                badge={selected.length}
+                className="relative"
+                onClick={openDeleteDialog}
+              />
+              <TableBarButton variant="ghost" onClick={clearSelection} icon={XSquare} label={t('common:clear')} />
             </>
           )}
           {selected.length === 0 && <TableCount count={total} type="request" isFiltered={isFiltered} onResetFilters={onResetFilters} />}

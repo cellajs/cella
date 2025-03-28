@@ -47,6 +47,7 @@ export const PageAside = <T extends PageTab>({ tabs, className }: PageAsideProps
             to="."
             className={cn(buttonVariants({ variant: 'ghost', size: 'lg' }), btnClass, currentSection === id && 'bg-secondary')}
             hash={id}
+            draggable="false"
             onClick={(e) => {
               // if (window.location.hash !== `#${id}`) return;
               e.preventDefault();

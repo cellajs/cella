@@ -1,6 +1,7 @@
 import { useNavigate } from '@tanstack/react-router';
 import { config } from 'config';
 import { Check, Sparkles } from 'lucide-react';
+import { type RefObject, createRef, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { WaitlistForm } from '~/modules/auth/waitlist-form';
 import { contactFormHandler } from '~/modules/common/contact-form/contact-form-handler';
@@ -9,13 +10,16 @@ import { pricingPlans } from '~/modules/marketing/marketing-config';
 import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
 
+const isFlexLayout = pricingPlans.length < 3;
+
 const Pricing = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const isFlexLayout = pricingPlans.length < 3;
 
-  const handleActionClick = (action: 'sign_in' | 'contact_us' | 'waitlist_request') => {
-    if (action === 'contact_us') return contactFormHandler();
+  const buttonRefs = useRef<Array<RefObject<HTMLButtonElement | null>>>(pricingPlans.map(() => createRef()));
+
+  const handleActionClick = (action: 'sign_in' | 'contact_us' | 'waitlist_request', buttonRef: RefObject<HTMLButtonElement | null>) => {
+    if (action === 'contact_us') return contactFormHandler(buttonRef);
 
     if (action === 'sign_in') {
       navigate({ to: '/auth/authenticate', replace: true });
@@ -23,6 +27,7 @@ const Pricing = () => {
     if (action === 'waitlist_request') {
       useDialoger.getState().create(<WaitlistForm email="" className="p-6" dialog emailField />, {
         id: 'waitlist-form',
+        triggerRef: buttonRef,
         drawerOnMobile: true,
         className: 'sm:max-w-2xl',
         title: t('common:waitlist_request'),
@@ -37,6 +42,8 @@ const Pricing = () => {
         const title = `about:pricing.title_${planIndex + 1}`;
         const text = `about:pricing.text_${planIndex + 1}`;
         const price = `about:pricing.plan_${planIndex + 1}.title`;
+
+        const ref = buttonRefs.current[planIndex];
 
         return (
           <div
@@ -81,10 +88,11 @@ const Pricing = () => {
             </div>
 
             <Button
+              ref={ref}
               variant={popular ? 'default' : 'plain'}
               className="w-full mt-6"
               aria-label={`Handle the ${t(`common:${action}`)} click`}
-              onClick={() => handleActionClick(action)}
+              onClick={() => handleActionClick(action, ref)}
             >
               {t(`common:${action}`)}
             </Button>

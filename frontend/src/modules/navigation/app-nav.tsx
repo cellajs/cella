@@ -1,5 +1,5 @@
 import { useNavigate } from '@tanstack/react-router';
-import { useEffect } from 'react';
+import { type RefObject, useEffect } from 'react';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { useHotkeys } from '~/hooks/use-hot-keys';
 import router from '~/lib/router';
@@ -18,7 +18,7 @@ const AppNav = () => {
   const navSheetOpen = useNavigationStore((state) => state.navSheetOpen);
   const updateSheet = useSheeter.getState().update;
 
-  const clickNavItem = (id: NavItemId) => {
+  const clickNavItem = (id: NavItemId, ref?: RefObject<HTMLButtonElement | null>) => {
     // If nav item is already open, close it
     if (id === navSheetOpen) {
       setNavSheetOpen(null);
@@ -30,7 +30,8 @@ const AppNav = () => {
     const navItem: NavItem = navItems.filter((item) => item.id === id)[0];
 
     // If it has an action, trigger it
-    if (navItem.action) return navItem.action();
+    const triggerRef = ref || { current: document.activeElement instanceof HTMLButtonElement ? document.activeElement : null };
+    if (navItem.action) return navItem.action(triggerRef);
 
     // If its a route, navigate to it
     if (navItem.href) {
