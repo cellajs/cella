@@ -143,8 +143,8 @@ export const config = {
    * The key is the entity name and the value is the numeric limit.
    */
   defaultOrganizationRestrictions: {
-    user: 120,
-    attachment: 40,
+    user: 1000,
+    attachment: 100,
   } as const,
 
   /**
