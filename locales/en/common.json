@@ -424,5 +424,6 @@
   "tune_profile": "Tune your profile",
   "invite_others": "Invite others",
   "order": "Order",
-  "offline_cache_miss.text": "Resource unavailable while offline."
+  "offline_cache_miss.text": "Resource unavailable while offline.",
+  "delete_confirm.text": "Please confirm you want to delete {{name}}."
 }

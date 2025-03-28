@@ -41,6 +41,7 @@ const AttachmentDialogHandler = memo(() => {
         </Suspense>,
         {
           id: 'attachment-dialog',
+          triggerRef: { current: null },
           drawerOnMobile: false,
           className: 'min-w-full h-screen border-0 p-0 rounded-none flex flex-col mt-0',
           headerClassName: 'absolute p-4 w-full backdrop-blur-xs bg-background/50',

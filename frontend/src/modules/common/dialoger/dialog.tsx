@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
-import { type DialogData, useDialoger } from '~/modules/common/dialoger/use-dialoger';
+import { type InternalDialog, useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { useDropdowner } from '~/modules/common/dropdowner/use-dropdowner';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '~/modules/ui/dialog';
 import { cn } from '~/utils/cn';
@@ -8,10 +8,10 @@ import { cn } from '~/utils/cn';
 type CustomInteractOutsideEvent = CustomEvent<{ originalEvent: PointerEvent | FocusEvent }>;
 
 export interface DialogProp {
-  dialog: DialogData;
+  dialog: InternalDialog;
 }
 export default function StandardDialog({ dialog }: DialogProp) {
-  const { id, content, open, description, title, titleContent = title, className, hideClose, headerClassName = '', container } = dialog;
+  const { id, content, open, triggerRef, description, title, titleContent = title, className, hideClose, headerClassName = '', container } = dialog;
   const isMobile = useBreakpoints('max', 'sm', false);
 
   // When a container is provided, the dialog is rendered inside the container and scroll should stay enabled
@@ -46,6 +46,12 @@ export default function StandardDialog({ dialog }: DialogProp) {
         onInteractOutside={handleInteractOutside}
         onOpenAutoFocus={(event: Event) => {
           if (isMobile) event.preventDefault();
+        }}
+        onCloseAutoFocus={() => {
+          // TODO can we only bring focus conditionally? If not changing routes? OR only if
+          if (triggerRef?.current) {
+            triggerRef.current.focus();
+          }
         }}
         className={cn(className, containerElement && 'z-40')}
       >

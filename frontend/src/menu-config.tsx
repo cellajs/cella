@@ -26,6 +26,7 @@ const createOrganizationAction = () => {
   return useDialoger.getState().create(<CreateOrganizationForm dialog callback={callback} />, {
     className: 'md:max-w-2xl',
     id: 'create-organization',
+    triggerRef: { current: null },
     title: i18n.t('common:create_resource', { resource: i18n.t('common:organization').toLowerCase() }),
     titleContent: <UnsavedBadge title={i18n.t('common:create_resource', { resource: i18n.t('common:organization').toLowerCase() })} />,
   });

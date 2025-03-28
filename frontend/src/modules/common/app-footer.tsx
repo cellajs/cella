@@ -1,4 +1,5 @@
 import { Link } from '@tanstack/react-router';
+import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { contactFormHandler } from '~/modules/common/contact-form/contact-form-handler';
 import Logo from '~/modules/common/logo';
@@ -18,7 +19,7 @@ export const FooterLink = ({ id, href }: FooterLinkProps) => {
 
   return (
     <li>
-      <Link to={href}>
+      <Link to={href} draggable="false">
         <Button variant="ghost" className="font-light" size="xs">
           {t(`common:${id}`)}
         </Button>
@@ -35,6 +36,7 @@ interface FooterLinksProps {
 // Row of footer links including a contact button
 export const FooterLinks = ({ links = defaultFooterLinks, className = '' }: FooterLinksProps) => {
   const { t } = useTranslation();
+  const contactButtonRef = useRef(null);
 
   return (
     <ul className={cn('flex flex-wrap gap-4 text-center', className)}>
@@ -42,7 +44,14 @@ export const FooterLinks = ({ links = defaultFooterLinks, className = '' }: Foot
         <FooterLink key={link.id} id={link.id} href={link.href} />
       ))}
       <li>
-        <Button variant="ghost" className="font-light" size="xs" aria-label="Open contact form" onClick={contactFormHandler}>
+        <Button
+          ref={contactButtonRef}
+          variant="ghost"
+          className="font-light"
+          size="xs"
+          aria-label="Open contact form"
+          onClick={() => contactFormHandler(contactButtonRef)}
+        >
           {t('common:contact')}
         </Button>
       </li>
@@ -51,13 +60,13 @@ export const FooterLinks = ({ links = defaultFooterLinks, className = '' }: Foot
 };
 
 // App Footer component
-export const MainFooter = ({ className = '' }) => {
+export const AppFooter = ({ className = '' }) => {
   return (
     <footer className={cn('flex flex-col gap-2', className)}>
       <div className="flex items-center gap-4">
         <UserLanguage align="start" contentClassName="z-110" />
         <div className="mr-1 font-light text-muted first:hidden">|</div>
-        <Link to="/about" className="hover:scale-105 transition-transform active:translate-y-[.05rem]">
+        <Link to="/about" draggable="false" className="hover:scale-105 transition-transform active:translate-y-[.05rem]">
           <Logo height={25} />
         </Link>
         <div className="ml-1 font-light text-muted">|</div>

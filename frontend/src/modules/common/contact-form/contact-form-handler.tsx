@@ -1,3 +1,4 @@
+import type { RefObject } from 'react';
 import { i18n } from '~/lib/i18n';
 import ContactForm from '~/modules/common/contact-form/contact-form';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
@@ -6,9 +7,10 @@ import UnsavedBadge from '~/modules/common/unsaved-badge';
 /**
  * Launch contact form dialog
  */
-export const contactFormHandler = () => {
+export const contactFormHandler = (ref: RefObject<HTMLButtonElement | null>) => {
   useDialoger.getState().create(<ContactForm dialog />, {
     id: 'contact-form',
+    triggerRef: ref,
     drawerOnMobile: false,
     className: 'sm:max-w-5xl',
     title: i18n.t('common:contact_us'),

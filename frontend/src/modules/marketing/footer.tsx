@@ -79,6 +79,7 @@ export const MarketingFooter = () => {
             to="/about"
             replace={location.pathname === '/about'}
             hash=""
+            draggable="false"
             onClick={() => {
               scrollTo(0, 0);
             }}
@@ -90,7 +91,7 @@ export const MarketingFooter = () => {
           <ul className="mb-12 mt-6 flex flex-wrap justify-center gap-x-6 gap-y-4 border-t border-white/20 pt-12 text-center text-sm text-white/60">
             {legalLinks.map((link) => (
               <li key={link.title}>
-                <Link to={link.href} className="underline-offset-4 transition hover:underline">
+                <Link to={link.href} draggable="false" className="underline-offset-4 transition hover:underline">
                   {t(link.title)}
                 </Link>
               </li>

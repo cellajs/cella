@@ -1,7 +1,7 @@
 import { onlineManager } from '@tanstack/react-query';
 import { config } from 'config';
 import { Trash, Upload } from 'lucide-react';
-import { Suspense } from 'react';
+import { Suspense, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { lazyWithPreload } from 'react-lazy-with-preload';
 import { AvatarWrap, type AvatarWrapProps } from '~/modules/common/avatar-wrap';
@@ -19,6 +19,7 @@ interface UploadAvatarProps extends AvatarWrapProps {
 export const UploadAvatar = ({ type, id, name, url, setUrl }: UploadAvatarProps) => {
   const { t } = useTranslation();
 
+  const uploadButtonRef = useRef(null);
   const removeImage = () => setUrl(null);
 
   // Open the upload dialog
@@ -41,6 +42,7 @@ export const UploadAvatar = ({ type, id, name, url, setUrl }: UploadAvatarProps)
       </Suspense>,
       {
         id: 'upload-image',
+        triggerRef: uploadButtonRef,
         drawerOnMobile: false,
         title: t('common:upload_item', { item: t('common:profile_picture').toLowerCase() }),
         className: 'md:max-w-xl',
@@ -60,7 +62,7 @@ export const UploadAvatar = ({ type, id, name, url, setUrl }: UploadAvatarProps)
         )}
         <div className="flex gap-2 items-center">
           {config.has.imado && (
-            <Button variant="plain" type="button" size="sm" onClick={openUploadDialog} onMouseOver={() => UploadUppy.preload()}>
+            <Button ref={uploadButtonRef} variant="plain" type="button" size="sm" onClick={openUploadDialog} onMouseOver={() => UploadUppy.preload()}>
               <Upload size={16} className="mr-2" />
               <span>{t('common:upload')}</span>
             </Button>

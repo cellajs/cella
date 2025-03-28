@@ -9,6 +9,7 @@ import UpdateRow from '~/modules/users/table/update-row';
 import type { User } from '~/modules/users/types';
 import UserCell from '~/modules/users/user-cell';
 import { dateShort } from '~/utils/date-short';
+import TableEllipsis from '../../common/data-table/table-ellipsis';
 
 export const useColumns = () => {
   const { t } = useTranslation();
@@ -28,7 +29,7 @@ export const useColumns = () => {
       {
         key: 'impersonate',
         name: '',
-        visible: true,
+        visible: !isMobile,
         sortable: false,
         width: 32,
         renderCell: ({ row, tabIndex }) => <ImpersonateRow user={row} tabIndex={tabIndex} />,
@@ -40,6 +41,14 @@ export const useColumns = () => {
         sortable: false,
         width: 32,
         renderCell: ({ row, tabIndex }) => <UpdateRow user={row} tabIndex={tabIndex} />,
+      },
+      {
+        key: 'ellipsis',
+        name: '',
+        visible: isMobile,
+        sortable: false,
+        width: 32,
+        renderCell: ({ row, tabIndex }) => <TableEllipsis row={row} tabIndex={tabIndex} />,
       },
       {
         key: 'email',

@@ -1,7 +1,7 @@
 import { onlineManager } from '@tanstack/react-query';
 import { config } from 'config';
 import { Upload } from 'lucide-react';
-import { Suspense, memo, useState } from 'react';
+import { Suspense, memo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { lazyWithPreload } from 'react-lazy-with-preload';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
@@ -23,6 +23,8 @@ export interface PageCoverProps {
 const PageCover = memo(({ id, canUpdate, url, coverUpdateCallback }: PageCoverProps) => {
   const { t } = useTranslation();
   const dialog = useDialoger();
+
+  const uploadButtonRef = useRef(null);
 
   const [coverUrl, setCoverUrl] = useState(url);
 
@@ -52,6 +54,7 @@ const PageCover = memo(({ id, canUpdate, url, coverUpdateCallback }: PageCoverPr
       </Suspense>,
       {
         id: 'page-cover',
+        triggerRef: uploadButtonRef,
         drawerOnMobile: false,
         title: t('common:upload_item', { item: t('common:cover').toLowerCase() }),
         className: 'md:max-w-xl',
@@ -66,6 +69,7 @@ const PageCover = memo(({ id, canUpdate, url, coverUpdateCallback }: PageCoverPr
     >
       {canUpdate && config.has.imado && (
         <Button
+          ref={uploadButtonRef}
           variant="secondary"
           size="sm"
           className="relative top-3 mx-auto opacity-50 hover:opacity-80 hover:bg-secondary"

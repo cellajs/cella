@@ -82,6 +82,8 @@ export const openAttachmentsUploadDialog = (organizationId: string) => {
     </Suspense>,
     {
       id: 'upload-attachment',
+      // TODO
+      triggerRef: { current: null },
       drawerOnMobile: false,
       title: t('common:upload_item', { item: t('common:attachments').toLowerCase() }),
       description: t('common:upload_multiple.text', { item: t('common:attachments').toLowerCase(), count: maxNumberOfFiles }),

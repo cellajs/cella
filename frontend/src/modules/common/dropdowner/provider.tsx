@@ -1,23 +1,24 @@
 import { autoUpdate, flip, offset, shift, useFloating } from '@floating-ui/react';
-import { useLayoutEffect, useRef } from 'react';
+import { useLayoutEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useDropdowner } from '~/modules/common/dropdowner/use-dropdowner';
 import { DropdownMenu, DropdownMenuContent } from '~/modules/ui/dropdown-menu';
 
 export function Dropdowner() {
   const dropdown = useDropdowner((state) => state.dropdown);
-  const triggerRef = useRef<HTMLElement | null>(null);
+  const triggerEl = dropdown?.triggerRef?.current;
 
-  // We use floating-ui to manage the dropdown positioning and also remove it when trigger is not in the DOM
   const { refs, floatingStyles, update } = useFloating({
     placement: dropdown?.align === 'start' ? 'bottom-start' : 'bottom-end',
     middleware: [offset(4), flip(), shift()],
     whileElementsMounted(reference, floating, update) {
+      if (!reference || !floating) return () => {};
+
       const cleanup = autoUpdate(reference, floating, update);
 
-      // If trigger is removed, close dropdown
+      // Close if trigger is removed from DOM
       const observer = new MutationObserver(() => {
-        if (reference instanceof Node && !document.body.contains(reference)) {
+        if (reference instanceof Element && !document.body.contains(reference)) {
           useDropdowner.getState().remove();
         }
       });
@@ -35,21 +36,17 @@ export function Dropdowner() {
   });
 
   useLayoutEffect(() => {
-    if (!dropdown) return;
+    if (!dropdown || !triggerEl) return;
 
-    const trigger = dropdown.triggerId ? document.getElementById(dropdown.triggerId) : null;
-    if (!trigger) return;
-
-    refs.setReference(trigger);
-    triggerRef.current = trigger;
+    refs.setReference(triggerEl);
     update();
 
     return () => {
-      triggerRef.current = null;
+      refs.setReference(null);
     };
-  }, [dropdown?.key, refs, update]);
+  }, [dropdown?.key, triggerEl, refs, update]);
 
-  if (!dropdown || !triggerRef.current) return null;
+  if (!dropdown || !triggerEl) return null;
 
   return createPortal(
     <DropdownMenu key={dropdown.key} open={true} modal={false}>
@@ -58,10 +55,10 @@ export function Dropdowner() {
         style={floatingStyles}
         align={dropdown.align ?? 'start'}
         modal={dropdown.modal}
-        onCloseAutoFocus={() => triggerRef.current?.focus()}
+        onCloseAutoFocus={() => triggerEl?.focus()}
         onEscapeKeyDown={() => useDropdowner.getState().remove()}
         onInteractOutside={(e) => {
-          if (!triggerRef.current?.contains(e.target as Node)) {
+          if (!triggerEl.contains(e.target as Node)) {
             useDropdowner.getState().remove();
           }
         }}

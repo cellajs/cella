@@ -67,6 +67,7 @@ export const PageNav = ({ title, avatar, tabs, className = '' }: Props) => {
             resetScroll={false}
             className="relative p-2 lg:px-4 rounded-sm outline-hidden sm:ring-offset-background sm:focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
             to={path}
+            draggable="false"
             params={true}
             activeOptions={{ exact: true, includeSearch: false }}
             activeProps={{ 'data-active': true }}

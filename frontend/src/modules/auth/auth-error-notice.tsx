@@ -1,5 +1,6 @@
 import { Link, useRouterState } from '@tanstack/react-router';
 import { MessageCircleQuestion } from 'lucide-react';
+import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { type ErrorNoticeError, getErrorText, getErrorTitle, handleAskForHelp } from '~/modules/common/error-notice';
 import { Button, buttonVariants } from '~/modules/ui/button';
@@ -14,6 +15,8 @@ import { Card, CardDescription, CardFooter, CardHeader, CardTitle } from '~/modu
 const AuthErrorNotice = ({ error, children }: { error: ErrorNoticeError; children?: React.ReactNode }) => {
   const { t } = useTranslation();
   const { location } = useRouterState();
+  const contactButtonRef = useRef(null);
+
   const { error: errorFromQuery, severity: severityFromQuery } = location.search;
 
   const severity = error && 'status' in error ? error.severity : severityFromQuery;
@@ -34,7 +37,7 @@ const AuthErrorNotice = ({ error, children }: { error: ErrorNoticeError; childre
           {t('common:sign_in')}
         </Link>
         {severity && ['warn', 'error'].includes(severity) && (
-          <Button variant="plain" onClick={handleAskForHelp} size="lg">
+          <Button ref={contactButtonRef} variant="plain" onClick={() => handleAskForHelp(contactButtonRef)} size="lg">
             <MessageCircleQuestion size={16} className="mr-1" />
             {t('common:ask_for_help')}
           </Button>

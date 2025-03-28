@@ -1,4 +1,4 @@
-import { Check, KeyRound, Trash2 } from 'lucide-react';
+import { Check, KeyRound, Trash } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '~/modules/ui/button';
@@ -36,7 +36,7 @@ const Passkeys = ({ userAuthInfo }: { userAuthInfo: UserAuthInfo }) => {
         </Button>
         {hasPasskey && (
           <Button key="deletePasskey" type="button" variant="ghost" onClick={handleDeletePasskey}>
-            <Trash2 className="w-4 h-4 mr-2" />
+            <Trash className="w-4 h-4 mr-2" />
             <span>{t('common:remove')}</span>
           </Button>
         )}

@@ -1,8 +1,8 @@
-import { Filter, FilterX, X } from 'lucide-react';
+import { FilterX, Search, X } from 'lucide-react';
 import { createContext, useContext, useState } from 'react';
 import { Button } from '~/modules/ui/button';
 
-import { motion } from 'motion/react';
+import { AnimatePresence, motion } from 'motion/react';
 import { useTranslation } from 'react-i18next';
 import { cn } from '~/utils/cn';
 import { nanoid } from '~/utils/nanoid';
@@ -56,23 +56,25 @@ export const TableFilterBar = ({ onResetFilters, isFiltered, children }: TableFi
   return (
     <>
       <TableFilterBarContext.Provider value={{ isFilterActive, setFilterActive }}>{children}</TableFilterBarContext.Provider>
-      {!isFilterActive && (
-        <Button className="sm:hidden" variant="secondary" onClick={() => setFilterActive(true)} asChild>
-          <motion.button key={key} layoutId={`table-filter-bar-button-${key}`}>
-            <motion.span layoutId={`table-filter-bar-icon-${key}`}>
-              <Filter width={16} height={16} />
-            </motion.span>
-            <span className="ml-1">{t('common:filter')}</span>
-          </motion.button>
-        </Button>
-      )}
-      {isFilterActive && (
-        <Button className="sm:hidden" variant="secondary" onClick={clearFilters} asChild>
-          <motion.button key={key} layoutId="table-filter-bar-button">
-            <motion.span layoutId="table-filter-bar-icon">{isFiltered ? <FilterX size={16} /> : <X size={16} />}</motion.span>
-          </motion.button>
-        </Button>
-      )}
+      <AnimatePresence>
+        {!isFilterActive && (
+          <Button className="sm:hidden" variant="secondary" onClick={() => setFilterActive(true)} asChild>
+            <motion.button key={key} layoutId={`table-filter-bar-button-${key}`}>
+              <motion.span layoutId={`table-filter-bar-icon-${key}`}>
+                <Search width={16} height={16} />
+              </motion.span>
+              <span className="ml-1">{t('common:search')}</span>
+            </motion.button>
+          </Button>
+        )}
+        {isFilterActive && (
+          <Button className="sm:hidden" variant="secondary" onClick={clearFilters} asChild>
+            <motion.button key={key} layoutId="table-filter-bar-button">
+              <motion.span layoutId="table-filter-bar-icon">{isFiltered ? <FilterX size={16} /> : <X size={16} />}</motion.span>
+            </motion.button>
+          </Button>
+        )}
+      </AnimatePresence>
     </>
   );
 };
