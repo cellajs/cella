@@ -7,27 +7,30 @@ import { immer } from 'zustand/middleware/immer';
 type SyncData = { offset: Offset; handle: string };
 
 interface SyncStoreState {
-  syncData: Record<string, SyncData>;
+  data: Record<string, SyncData>;
 
-  setSyncData: (key: string, data: SyncData) => void; // Saves or updates a SyncData
-  getSyncData: (key: string) => SyncData | undefined; // Retrieves a specific SyncData
-  removeSyncData: (key: string) => void; // Removes a specific SyncData
+  setSyncData: (key: string, data: SyncData) => void; // Sets or updates sync data
+  getKeysByPrefix: (prefix: string) => string[]; // Retrieves all sync keys with the given prefix
+  getSyncData: (key: string) => SyncData | undefined; // Retrieves a specific sync data by key
+  removeSyncData: (key: string) => void; // Removes a specific sync data by key
 }
 
 export const useSyncStore = create<SyncStoreState>()(
   devtools(
     persist(
       immer((set, get) => ({
-        syncData: {},
+        data: {},
 
         setSyncData: (key, data) =>
           set((state) => {
-            state.syncData[key] = data;
+            state.data[key] = data;
           }),
 
-        getSyncData: (key) => get().syncData[key],
+        getSyncData: (key) => get().data[key],
 
-        removeSyncData: (key) => set((state) => delete state.syncData[key]),
+        getKeysByPrefix: (prefix) => Object.keys(get().data).filter((key) => key.startsWith(prefix)),
+
+        removeSyncData: (key) => set((state) => delete state.data[key]),
       })),
       {
         version: 1,
