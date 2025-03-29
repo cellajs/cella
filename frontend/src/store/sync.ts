@@ -30,7 +30,10 @@ export const useSyncStore = create<SyncStoreState>()(
 
         getKeysByPrefix: (prefix) => Object.keys(get().data).filter((key) => key.startsWith(prefix)),
 
-        removeSyncData: (key) => set((state) => delete state.data[key]),
+        removeSyncData: (key) =>
+          set((state) => {
+            if (key in state.data) delete state.data[key];
+          }),
       })),
       {
         version: 1,
