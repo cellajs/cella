@@ -72,7 +72,7 @@ export const WaitlistForm = ({ email, buttonContent, emailField, dialog: isDialo
 
             <Button variant="ghost" onClick={changeEmail} className="font-light mt-2 text-xl">
               {email}
-              <ChevronDown size={16} className="ml-2" />
+              <ChevronDown size={16} className="ml-1" />
             </Button>
           </div>
           <LegalNotice email={email} mode="waitlist" />
@@ -105,7 +105,7 @@ export const WaitlistForm = ({ email, buttonContent, emailField, dialog: isDialo
           ) : (
             <>
               {t('common:join')}
-              <ArrowRight size={16} className="ml-2" />
+              <ArrowRight size={16} className="ml-1" />
             </>
           )}
         </SubmitButton>

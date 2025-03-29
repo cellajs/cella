@@ -1,9 +1,9 @@
 import { EllipsisVertical, Trash } from 'lucide-react';
 import { type RefObject, useRef } from 'react';
 import { i18n } from '~/lib/i18n';
+import { DropdownActionItem } from '~/modules/common/dropdowner/dropdown-action-item';
 import { useDropdowner } from '~/modules/common/dropdowner/use-dropdowner';
 import { Button } from '~/modules/ui/button';
-import { DropdownMenuItem } from '~/modules/ui/dropdown-menu';
 import DeleteUsers from '~/modules/users/delete-users';
 import type { User } from '~/modules/users/types';
 import { PopConfirm } from '../popconfirm';
@@ -20,30 +20,31 @@ const openDropdown = (row: User, triggerRef: RefObject<HTMLButtonElement | null>
   const { create } = useDropdowner.getState();
 
   const RowDropdown = () => {
-    const { update } = useDropdowner.getState();
+    const { update, remove } = useDropdowner.getState();
+    const isMobile = window.innerWidth < 640;
 
     // Only on cancel we need to remove manually
     const callback = ({ status }: CallbackArgs<User[]>) => {
-      if (status === 'settle') update({ content: <RowDropdown /> });
+      // Use update if there are more options in the dropdown
+      // if (status === 'settle') update({ content: <RowDropdown /> });
+      if (status === 'settle') remove();
     };
+
+    const handleClick = () => {
+      update({
+        content: (
+          <PopConfirm title={i18n.t('common:delete_confirm.text', { name: row.name })}>
+            <DeleteUsers users={[row]} callback={callback} />
+          </PopConfirm>
+        ),
+      });
+    };
+
+    // Use Button on isMobile, else DropdownMenuItem
     return (
-      <div className="p-1">
-        <DropdownMenuItem
-          className="flex items-center"
-          onClick={() =>
-            update({
-              content: (
-                <PopConfirm title={i18n.t('common:delete_confirm.text', { name: row.name })}>
-                  <DeleteUsers users={[row]} callback={callback} />
-                </PopConfirm>
-              ),
-            })
-          }
-        >
-          <Trash size={16} />
-          <span className="ml-2 font-light">{i18n.t('common:delete')}</span>
-        </DropdownMenuItem>
-      </div>
+      <DropdownActionItem isMobile={isMobile} onSelect={handleClick} icon={Trash}>
+        {i18n.t('common:delete')}
+      </DropdownActionItem>
     );
   };
 

@@ -90,7 +90,7 @@ const InviteUsers = ({ entity, dialog: isDialog, mode: baseMode, children }: Inv
         )}
         {inviteMode && (
           <motion.div key="invite-form" initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="flex flex-col gap-4">
-            <AlertWrap id={`invite_${inviteMode}`} variant="success" Icon={Info}>
+            <AlertWrap id={`invite_${inviteMode}`} variant="success" icon={Info}>
               {t(inviteMode === 'email' ? 'common:explain.invite_email.text' : 'common:explain.invite_search.text')}
             </AlertWrap>
             {inviteMode === 'email' ? (

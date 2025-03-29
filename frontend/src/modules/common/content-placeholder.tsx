@@ -4,13 +4,13 @@ import { cn } from '~/utils/cn';
 
 interface Props {
   title: string;
-  Icon?: React.ElementType<LucideProps>;
+  icon?: React.ElementType<LucideProps>;
   text?: string | React.ReactNode;
   className?: string;
   textClassName?: string;
 }
 
-const ContentPlaceholder = ({ title, Icon, text, textClassName = '', className = '' }: Props) => {
+const ContentPlaceholder = ({ title, icon: Icon, text, textClassName = '', className = '' }: Props) => {
   return (
     <div className={cn('flex flex-col items-center w-full text-center p-8 h-full justify-center relative', className)}>
       {Icon && <Icon strokeWidth={0.7} size={80} className="opacity-50" />}

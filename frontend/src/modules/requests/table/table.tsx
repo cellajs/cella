@@ -63,7 +63,7 @@ const BaseRequestsTable = memo(
           selectedRows,
           onSelectedRowsChange,
           onSortColumnsChange,
-          NoRowsComponent: <ContentPlaceholder Icon={Bird} title={t('common:no_resource_yet', { resource: t('common:requests').toLowerCase() })} />,
+          NoRowsComponent: <ContentPlaceholder icon={Bird} title={t('common:no_resource_yet', { resource: t('common:requests').toLowerCase() })} />,
         }}
       />
     );

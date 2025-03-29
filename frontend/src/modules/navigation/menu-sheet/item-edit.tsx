@@ -70,13 +70,13 @@ export const MenuItemEdit = ({ item }: MenuItemEditProps) => {
         </div>
         <div className="flex items-center gap-4 transition-opacity delay-500">
           <MenuItemEditButton
-            Icon={item.membership.archived ? ArchiveRestore : Archive}
+            icon={item.membership.archived ? ArchiveRestore : Archive}
             title={item.membership.archived ? t('common:restore') : t('common:archive')}
             onClick={() => handleUpdateMembershipKey('archive')}
             subitem={!item.submenu}
           />
           <MenuItemEditButton
-            Icon={item.membership.muted ? Bell : BellOff}
+            icon={item.membership.muted ? Bell : BellOff}
             title={item.membership.muted ? t('common:unmute') : t('common:mute')}
             onClick={() => handleUpdateMembershipKey('mute')}
             subitem={!item.submenu}
@@ -88,12 +88,12 @@ export const MenuItemEdit = ({ item }: MenuItemEditProps) => {
 };
 
 interface MenuItemEditButtonProps {
-  Icon: React.ElementType;
+  icon: React.ElementType;
   title: string;
   onClick: () => void;
   subitem?: boolean;
 }
-const MenuItemEditButton = ({ Icon, title, onClick, subitem = false }: MenuItemEditButtonProps) => (
+const MenuItemEditButton = ({ icon: Icon, title, onClick, subitem = false }: MenuItemEditButtonProps) => (
   <Button
     variant="link"
     size="sm"

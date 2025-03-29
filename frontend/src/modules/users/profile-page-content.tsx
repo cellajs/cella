@@ -11,7 +11,7 @@ const ProfilePageContent = ({ sheet, userId, orgIdOrSlug }: { userId: string; or
   // Don't render anything until `orgId` is available
   if (!orgIdOrSlug) return <div className="container">Do a get organizations request here</div>;
 
-  return <ContentPlaceholder Icon={Squirrel} title={'Default user page'} />;
+  return <ContentPlaceholder icon={Squirrel} title={'Default user page'} />;
 };
 
 export default ProfilePageContent;

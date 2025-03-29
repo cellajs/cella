@@ -63,7 +63,7 @@ export const UploadAvatar = ({ type, id, name, url, setUrl }: UploadAvatarProps)
         <div className="flex gap-2 items-center">
           {config.has.imado && (
             <Button ref={uploadButtonRef} variant="plain" type="button" size="sm" onClick={openUploadDialog} onMouseOver={() => UploadUppy.preload()}>
-              <Upload size={16} className="mr-2" />
+              <Upload size={16} className="mr-1" />
               <span>{t('common:upload')}</span>
             </Button>
           )}

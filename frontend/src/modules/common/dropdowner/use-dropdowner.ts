@@ -1,3 +1,4 @@
+import type { DropdownMenuContentProps } from '@radix-ui/react-dropdown-menu';
 import type { ReactNode } from 'react';
 import type { RefObject } from 'react';
 import { create } from 'zustand';
@@ -6,13 +7,15 @@ export type DropdownData = {
   id: number | string;
   triggerId: string;
   triggerRef: RefObject<HTMLButtonElement | null>;
-  align?: 'start' | 'end';
+  align?: DropdownMenuContentProps['align'];
   modal?: boolean;
 };
 
-type InternalDropdown = DropdownData & {
+export type InternalDropdown = DropdownData & {
   key: number;
   content: ReactNode;
+  align: DropdownMenuContentProps['align'];
+  modal: boolean;
 };
 
 interface DropdownStoreState {

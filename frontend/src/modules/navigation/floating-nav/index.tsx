@@ -63,7 +63,7 @@ const FloatingNav = ({ onClick }: { onClick: (id: NavItemId) => void }) => {
           key={navItem.id}
           className={showButtons ? 'opacity-100' : 'opacity-0 -bottom-12 scale-50'}
           id={navItem.id}
-          Icon={navItem.icon}
+          icon={navItem.icon}
           onClick={() => onClick(navItem.id)}
           direction={items.length > 1 && index === 0 ? 'left' : 'right'}
         />

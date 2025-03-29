@@ -96,7 +96,7 @@ const BaseDataTable = memo(
           sortColumns,
           onSortColumnsChange,
           NoRowsComponent: (
-            <ContentPlaceholder Icon={Bird} title={t('common:no_resource_yet', { resource: t('common:organizations').toLowerCase() })} />
+            <ContentPlaceholder icon={Bird} title={t('common:no_resource_yet', { resource: t('common:organizations').toLowerCase() })} />
           ),
         }}
       />
