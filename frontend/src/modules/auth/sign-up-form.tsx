@@ -83,7 +83,7 @@ export const SignUpForm = ({ tokenData, email, resetSteps, emailEnabled }: Props
         {!tokenData && (
           <Button variant="ghost" onClick={resetSteps} className="font-light mt-2 text-xl">
             {email}
-            <ChevronDown size={16} className="ml-2" />
+            <ChevronDown size={16} className="ml-1" />
           </Button>
         )}
       </h1>
@@ -126,7 +126,7 @@ export const SignUpForm = ({ tokenData, email, resetSteps, emailEnabled }: Props
               />
               <SubmitButton loading={isPending || isPendingWithToken} className="w-full">
                 {t('common:sign_up')}
-                <ArrowRight size={16} className="ml-2" />
+                <ArrowRight size={16} className="ml-1" />
               </SubmitButton>
             </>
           )}

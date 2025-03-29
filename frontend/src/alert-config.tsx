@@ -10,7 +10,7 @@ if (config.mode === 'development') {
   alerts.push({
     id: 'test-credentials',
     modes: ['public'],
-    Icon: Info,
+    icon: Info,
     className: 'rounded-none border-0 border-t z-60 fixed bottom-0 left-0 right-0',
     children: (
       <>
@@ -28,7 +28,7 @@ if (config.mode === 'production') {
   alerts.push({
     id: 'prerelease',
     modes: ['app'],
-    Icon: Info,
+    icon: Info,
     className: 'rounded-none border-0 border-b',
     children: (
       <>

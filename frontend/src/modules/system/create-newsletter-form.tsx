@@ -119,14 +119,14 @@ const CreateNewsletterForm = ({ organizationIds }: CreateNewsletterFormProps) =>
         />
 
         {testOnly && (
-          <AlertWrap id="test-email" variant="plain" Icon={Info}>
+          <AlertWrap id="test-email" variant="plain" icon={Info}>
             {t('common:test_email.text')}
           </AlertWrap>
         )}
 
         <div className="flex max-sm:flex-col max-sm:items-stretch gap-2 items-center">
           <SubmitButton disabled={!canSend()} loading={isPending}>
-            <Send size={16} className="mr-2" />
+            <Send size={16} className="mr-1" />
             {testOnly ? t('common:send_test_email') : t('common:send')}
           </SubmitButton>
           <Button type="reset" variant="secondary" className={isDirty() ? '' : 'invisible'} aria-label={t('common:cancel')} onClick={cancel}>

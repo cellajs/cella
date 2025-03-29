@@ -109,7 +109,7 @@ export const MarketingNav = () => {
           <div className={`gap-2 px-2 flex items-center transition-opacity duration-300 ease-in-out ${showSheet ? 'opacity-0' : 'max-sm:delay-700'}`}>
             <UserLanguage />
 
-            <UserTheme buttonClassName="max-xs:hidden mr-2" />
+            <UserTheme buttonClassName="max-xs:hidden mr-1" />
 
             {config.company.githubUrl && (
               <Button

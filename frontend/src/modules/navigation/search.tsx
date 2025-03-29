@@ -116,12 +116,12 @@ export const AppSearch = () => {
               <>
                 {!!searchValue.length && !isFetching && (
                   <CommandEmpty className="h-full sm:h-[36vh]">
-                    <ContentPlaceholder Icon={Search} title={t('common:no_resource_found', { resource: t('common:results').toLowerCase() })} />
+                    <ContentPlaceholder icon={Search} title={t('common:no_resource_found', { resource: t('common:results').toLowerCase() })} />
                   </CommandEmpty>
                 )}
                 {searchValue.length === 0 && (
                   <CommandEmpty className="h-full sm:h-[36vh]">
-                    <ContentPlaceholder Icon={Search} title={t('common:global_search.text', { appName: config.name })} />
+                    <ContentPlaceholder icon={Search} title={t('common:global_search.text', { appName: config.name })} />
                   </CommandEmpty>
                 )}
                 {!!recentSearches.length && (

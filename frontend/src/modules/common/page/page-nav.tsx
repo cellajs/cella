@@ -56,7 +56,7 @@ export const PageNav = ({ title, avatar, tabs, className = '' }: Props) => {
       <div id="tabs-position" ref={inViewRef} />
       <StickyBox
         className={cn(
-          'max-sm:overflow-x-auto block [scrollbar-width:none] [&::-webkit-scrollbar]:hidden gap-1 border-b bg-background/75 backdrop-blur-xs z-80',
+          'max-sm:overflow-x-auto block text-center [scrollbar-width:none] [&::-webkit-scrollbar]:hidden gap-1 border-b bg-background/75 backdrop-blur-xs z-80',
           className,
         )}
       >

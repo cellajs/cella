@@ -107,7 +107,7 @@ const CreatePasswordForm = () => {
         />
         <SubmitButton loading={isPending} className="w-full">
           {t('common:reset')}
-          <ArrowRight size={16} className="ml-2" />
+          <ArrowRight size={16} className="ml-1" />
         </SubmitButton>
       </form>
     </Form>

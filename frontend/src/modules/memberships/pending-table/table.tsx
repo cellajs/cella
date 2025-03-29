@@ -56,7 +56,7 @@ const BaseDataTable = memo(
           fetchMore: fetchNextPage,
           sortColumns,
           onSortColumnsChange: setSortColumns,
-          NoRowsComponent: <ContentPlaceholder Icon={Bird} title={t('common:no_resource_yet', { resource: t('common:invites').toLowerCase() })} />,
+          NoRowsComponent: <ContentPlaceholder icon={Bird} title={t('common:no_resource_yet', { resource: t('common:invites').toLowerCase() })} />,
         }}
       />
     );

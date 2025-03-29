@@ -5,13 +5,13 @@ import { cn } from '~/utils/cn';
 
 interface Props {
   id: string;
-  Icon: React.ElementType<LucideProps>;
+  icon: React.ElementType<LucideProps>;
   onClick: () => void;
   className?: string;
   direction?: 'left' | 'right';
 }
 
-const FloatingNavButton = ({ id, Icon, onClick, className, direction = 'right' }: Props) => {
+const FloatingNavButton = ({ id, icon: Icon, onClick, className, direction = 'right' }: Props) => {
   return (
     <Button
       id={id}

@@ -160,7 +160,7 @@ export const MenuSheet = memo(() => {
           {searchResultsListItems().length > 0 ? (
             searchResultsListItems()
           ) : (
-            <ContentPlaceholder Icon={Search} title={t('common:no_resource_found', { resource: t('common:results').toLowerCase() })} />
+            <ContentPlaceholder icon={Search} title={t('common:no_resource_found', { resource: t('common:results').toLowerCase() })} />
           )}
         </div>
         {!searchTerm && (
@@ -190,7 +190,7 @@ export const MenuSheet = memo(() => {
                 </div>
               )}
               {pwaEnabled && (
-                <AlertWrap id="offline_access" variant="plain" Icon={Info}>
+                <AlertWrap id="offline_access" variant="plain" icon={Info}>
                   {t('common:offline_access.text')}
                 </AlertWrap>
               )}

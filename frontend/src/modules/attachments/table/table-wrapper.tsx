@@ -81,7 +81,7 @@ const AttachmentsTable = ({ entity, canUpload = true, isSheet = false }: Attachm
               }}
               style={{ overflow: 'hidden' }}
             >
-              <AlertWrap id="edit_attachment" variant="plain" Icon={Info}>
+              <AlertWrap id="edit_attachment" variant="plain" icon={Info}>
                 {t('common:edit_attachment.text')}
               </AlertWrap>
             </motion.div>

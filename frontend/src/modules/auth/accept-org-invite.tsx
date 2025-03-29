@@ -53,11 +53,11 @@ const AcceptOrgInvite = () => {
       {data.email && (
         <div className="space-y-4">
           <SubmitButton loading={isPending} className="w-full" onClick={onSubmit}>
-            <Check size={16} className="mr-2" />
+            <Check size={16} className="mr-1" />
             {t('common:accept')}
           </SubmitButton>
           <Link to={config.defaultRedirectPath} preload={false} className={cn('w-full', buttonVariants({ variant: 'secondary' }))}>
-            <Ban size={16} className="mr-2" />
+            <Ban size={16} className="mr-1" />
             {t('common:decline')}
           </Link>
         </div>

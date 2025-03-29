@@ -25,7 +25,7 @@ const AttachmentDialog = ({ attachmentId, groupId, orgIdOrSlug }: AttachmentDial
 
   const itemIndex = attachments?.findIndex(({ id }) => attachmentId === id);
 
-  if (isError) return <ContentPlaceholder Icon={ServerCrash} title={t('error:request_failed')} />;
+  if (isError) return <ContentPlaceholder icon={ServerCrash} title={t('error:request_failed')} />;
 
   // Show a loading spinner if no cache exists and data is still loading
   if (isLoading) {
@@ -41,7 +41,7 @@ const AttachmentDialog = ({ attachmentId, groupId, orgIdOrSlug }: AttachmentDial
       <AttachmentsCarousel items={items} isDialog itemIndex={itemIndex} saveInSearchParams={true} />
     </div>
   ) : (
-    <ContentPlaceholder Icon={isOnline ? FlameKindling : WifiOff} title={t(`${isOnline ? 'error:no_user_found' : 'common:offline.text'}`)} />
+    <ContentPlaceholder icon={isOnline ? FlameKindling : WifiOff} title={t(`${isOnline ? 'error:no_user_found' : 'common:offline.text'}`)} />
   );
 };
 

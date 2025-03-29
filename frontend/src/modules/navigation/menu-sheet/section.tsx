@@ -72,7 +72,7 @@ export const MenuSheetSection = ({ data, sectionType, sectionLabel, entityType, 
             }}
             style={{ overflow: 'hidden' }}
           >
-            <AlertWrap id="menu_management" variant="plain" Icon={Info}>
+            <AlertWrap id="menu_management" variant="plain" icon={Info}>
               {t('common:configure_menu.text')}
             </AlertWrap>
           </motion.div>
