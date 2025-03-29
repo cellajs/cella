@@ -1,103 +1,94 @@
-import type { ReactNode } from 'react';
+import type { ReactNode, RefObject } from 'react';
 import { create } from 'zustand';
-import { immer } from 'zustand/middleware/immer';
 
 type DialogContainerOptions = {
   id: string;
   overlay?: boolean;
 };
 
+type TriggerRef = RefObject<HTMLButtonElement | HTMLAnchorElement | null>;
+
 export type DialogData = {
   id: number | string;
-  title?: string | ReactNode;
+  triggerRef: TriggerRef;
   description?: ReactNode;
   drawerOnMobile?: boolean;
   className?: string;
   headerClassName?: string;
   hideClose?: boolean;
   container?: DialogContainerOptions;
-  content?: ReactNode;
+  title?: string | ReactNode;
   titleContent?: string | ReactNode;
-  open?: boolean;
-  removeCallback?: () => void;
-  reset?: boolean;
+  onClose?: () => void;
 };
 
-// TODO CAn we get rid of this?
-export type ExternalDialog = Omit<DialogData, 'id' | 'content'> & {
-  id?: number | string;
+export type InternalDialog = DialogData & {
+  key: number;
+  open?: boolean;
+  content: ReactNode;
 };
 
 interface DialogStoreState {
-  dialogs: DialogData[];
+  dialogs: InternalDialog[];
 
-  create: (content: ReactNode, data?: ExternalDialog) => string | number;
-  update: (id: number | string, updates: Partial<DialogData>) => void;
+  create: (content: ReactNode, data: DialogData) => string | number;
+  update: (id: number | string, updates: Partial<InternalDialog>) => void;
   remove: (id?: number | string) => void;
-  get: (id: number | string) => DialogData | undefined;
-  reset: (id?: number | string) => void;
+  get: (id: number | string) => InternalDialog | undefined;
+
+  triggerRefs: Record<string, TriggerRef | null>;
+
+  setTriggerRef: (id: string, ref: TriggerRef) => void;
+  getTriggerRef: (id: string) => TriggerRef | null;
 }
 
-export const useDialoger = create<DialogStoreState>()(
-  immer((set, get) => ({
-    dialogs: [],
+/**
+ * A hook to manage one or multiple dialogs (on mobile it renders drawers.)
+ */
+export const useDialoger = create<DialogStoreState>((set, get) => ({
+  dialogs: [],
+  triggerRefs: {},
 
-    create: (content, data) => {
-      const id = data?.id || Date.now().toString();
+  create: (content, data) => {
+    // Add defaults and a key for reactivity
+    const defaults = { drawerOnMobile: true, hideClose: false, open: true, modal: true, key: Date.now() };
 
-      set((state) => {
-        state.dialogs = [
-          ...state.dialogs.filter((d) => d.id !== id),
-          {
-            id,
-            content,
-            drawerOnMobile: true,
-            hideClose: false,
-            open: true,
-            ...data,
-          },
-        ];
-      });
-      return id;
-    },
+    set((state) => ({
+      dialogs: [...state.dialogs.filter((d) => d.id !== data.id), { ...defaults, ...data, content }],
+    }));
 
-    update: (id, updates) => {
-      set((state) => {
-        const existingDialog = state.dialogs.find((d) => d.id === id);
-        if (existingDialog) {
-          Object.assign(existingDialog, updates);
-        }
-      });
-    },
+    return data.id;
+  },
 
-    remove: (id) => {
-      set((state) => {
-        if (id) {
-          const dialog = state.dialogs.find((d) => d.id === id);
-          dialog?.removeCallback?.();
-          state.dialogs = state.dialogs.filter((d) => d.id !== id);
-          return;
-        }
-        for (const d of state.dialogs) {
-          d.removeCallback?.();
-        }
-        state.dialogs = [];
-      });
-    },
+  update: (id, updates) => {
+    set((state) => ({
+      dialogs: state.dialogs.map((dialog) => (dialog.id === id ? { ...dialog, ...updates } : dialog)),
+    }));
+  },
 
-    reset: (id) => {
-      set((state) => {
-        if (id) {
-          const dialog = state.dialogs.find((d) => d.id === id);
-          if (dialog) dialog.reset = true;
-          return;
-        }
-        for (const d of state.dialogs) {
-          d.reset = true;
-        }
-      });
-    },
+  remove: (id) => {
+    set((state) => {
+      const dialogsToRemove = id ? state.dialogs.filter((d) => d.id === id) : state.dialogs;
 
-    get: (id) => get().dialogs.find((d) => d.id === id),
-  })),
-);
+      for (const d of dialogsToRemove) {
+        d.onClose?.();
+      }
+
+      return {
+        dialogs: id ? state.dialogs.filter((d) => d.id !== id) : [],
+      };
+    });
+  },
+
+  get: (id) => get().dialogs.find((d) => d.id === id),
+
+  setTriggerRef: (id, ref) => {
+    set((state) => ({
+      triggerRefs: { ...state.triggerRefs, [id]: ref },
+    }));
+  },
+
+  getTriggerRef: (id) => {
+    return get().triggerRefs[id] ?? null;
+  },
+}));

@@ -1,9 +1,11 @@
 import { config } from 'config';
 import { Mailbox, Plus, Trash, XSquare } from 'lucide-react';
+import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { sort } from 'virtua/unstable_core';
 import ColumnsView from '~/modules/common/data-table/columns-view';
 import Export from '~/modules/common/data-table/export';
+import { TableBarButton } from '~/modules/common/data-table/table-bar-button';
 import { TableBarContainer } from '~/modules/common/data-table/table-bar-container';
 import TableCount from '~/modules/common/data-table/table-count';
 import { FilterBarActions, FilterBarContent, TableFilterBar } from '~/modules/common/data-table/table-filter-bar';
@@ -22,8 +24,6 @@ import type { OrganizationsSearch } from '~/modules/organizations/table/table-wr
 import type { Organization } from '~/modules/organizations/types';
 import CreateNewsletterForm from '~/modules/system/create-newsletter-form';
 import NewsletterPreview from '~/modules/system/newsletter-preview';
-import { Badge } from '~/modules/ui/badge';
-import { Button } from '~/modules/ui/button';
 
 type OrganizationsTableBarProps = BaseTableMethods & BaseTableBarProps<Organization, OrganizationsSearch>;
 
@@ -39,6 +39,10 @@ export const OrganizationsTableBar = ({
   const { t } = useTranslation();
   const removeDialog = useDialoger((state) => state.remove);
   const createDialog = useDialoger((state) => state.create);
+
+  const createButtonRef = useRef(null);
+  const deleteButtonRef = useRef(null);
+  const newsletterButtonRef = useRef(null);
 
   const { q, order } = searchVars;
 
@@ -65,6 +69,8 @@ export const OrganizationsTableBar = ({
     };
 
     createDialog(<DeleteOrganizations organizations={selected} dialog callback={callback} />, {
+      id: 'delete-organizations',
+      triggerRef: deleteButtonRef,
       className: 'max-w-xl',
       title: t('common:delete'),
       description: t('common:confirm.delete_resources', { resources: t('common:organizations').toLowerCase() }),
@@ -79,14 +85,16 @@ export const OrganizationsTableBar = ({
     ];
 
     useSheeter.getState().create(<SheetTabs tabs={newsletterTabs} />, {
+      id: 'create-newsletter',
+      side: 'right',
+      triggerRef: newsletterButtonRef,
       className: 'max-w-full lg:max-w-4xl',
       title: t('common:newsletter'),
       titleContent: <UnsavedBadge title={t('common:newsletter')} />,
       description: t('common:newsletter.text'),
-      id: 'create-newsletter',
+
       scrollableOverlay: true,
-      side: 'right',
-      removeCallback: clearSelection,
+      onClose: clearSelection,
     });
   };
 
@@ -102,36 +110,39 @@ export const OrganizationsTableBar = ({
         <FilterBarActions>
           {selected.length > 0 ? (
             <>
-              <Button onClick={openNewsletterSheet} className="relative">
-                <Badge context="button">{selected.length}</Badge>
-                <Mailbox size={16} />
-                <span className="ml-1 max-xs:hidden">{t('common:newsletter')}</span>
-              </Button>
-              <Button variant="destructive" className="relative" onClick={openDeleteDialog}>
-                <Badge context="button">{selected.length}</Badge>
-                <Trash size={16} />
-                <span className="ml-1 max-lg:hidden">{t('common:remove')}</span>
-              </Button>
-              <Button variant="ghost" onClick={clearSelection}>
-                <XSquare size={16} />
-                <span className="ml-1">{t('common:clear')}</span>
-              </Button>
+              <TableBarButton
+                ref={newsletterButtonRef}
+                onClick={openNewsletterSheet}
+                label={t('common:newsletter')}
+                icon={Mailbox}
+                badge={selected.length}
+                className="relative"
+              />
+              <TableBarButton
+                variant="destructive"
+                label={t('common:remove')}
+                icon={Trash}
+                className="relative"
+                badge={selected.length}
+                onClick={openDeleteDialog}
+              />
+              <TableBarButton variant="ghost" onClick={clearSelection} icon={XSquare} label={t('common:clear')} />
             </>
           ) : (
             !isFiltered && (
-              <Button
+              <TableBarButton
+                label={t('common:create')}
+                icon={Plus}
                 onClick={() => {
                   createDialog(<CreateOrganizationForm callback={onCreateOrganization} />, {
-                    className: 'md:max-w-2xl',
                     id: 'create-organization',
+                    triggerRef: createButtonRef,
+                    className: 'md:max-w-2xl',
                     title: t('common:create_resource', { resource: t('common:organization').toLowerCase() }),
                     titleContent: <UnsavedBadge title={t('common:create_resource', { resource: t('common:organization').toLowerCase() })} />,
                   });
                 }}
-              >
-                <Plus size={16} />
-                <span className="ml-1">{t('common:create')}</span>
-              </Button>
+              />
             )
           )}
           {selected.length === 0 && <TableCount count={total} type="organization" isFiltered={isFiltered} onResetFilters={onResetFilters} />}

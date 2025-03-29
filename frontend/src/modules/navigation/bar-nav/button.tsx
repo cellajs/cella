@@ -6,18 +6,20 @@ import { useUserStore } from '~/store/user';
 
 import { useTranslation } from 'react-i18next';
 
+import { type RefObject, useRef } from 'react';
 import { TooltipButton } from '~/modules/common/tooltip-button';
 import AppNavLoader from '~/modules/navigation/bar-nav/loader';
-import type { NavItem, NavItemId } from '~/nav-config';
+import type { NavItem } from '~/nav-config';
 
 interface BarNavButtonProps {
   navItem: NavItem;
   isActive: boolean;
-  onClick: (id: NavItemId) => void;
+  onClick: (ref: RefObject<HTMLButtonElement | null>) => void;
 }
 
 export const BarNavButton = ({ navItem, isActive, onClick }: BarNavButtonProps) => {
   const { t } = useTranslation();
+  const buttonRef = useRef(null);
 
   const { user } = useUserStore();
   const theme = useUIStore((state) => state.theme);
@@ -27,11 +29,14 @@ export const BarNavButton = ({ navItem, isActive, onClick }: BarNavButtonProps) 
       <Button
         id={`${navItem.id}-nav`}
         variant="ghost"
+        ref={buttonRef}
         data-theme={theme}
         data-active={isActive}
         className={`ring-inset focus-visible:ring-offset-0 group h-14 w-14 
           data-[active=true]:bg-background/50 hover:bg-background/30 text-primary-foreground data-[theme=none]:text-inherit`}
-        onClick={() => onClick(navItem.id)}
+        onClick={() => {
+          onClick(buttonRef);
+        }}
       >
         {navItem.id === 'account' && user ? (
           <AvatarWrap

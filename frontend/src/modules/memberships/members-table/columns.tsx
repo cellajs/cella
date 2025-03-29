@@ -24,7 +24,7 @@ export const useColumns = (isAdmin: boolean, isSheet: boolean) => {
         visible: true,
         sortable: true,
         renderHeaderCell: HeaderCell,
-        renderCell: ({ row, tabIndex }) => <UserCell user={row} tabIndex={tabIndex} orgIdOrSlug={row.membership.organizationId} context="members" />,
+        renderCell: ({ row, tabIndex }) => <UserCell user={row} tabIndex={tabIndex} orgIdOrSlug={row.membership.organizationId} />,
       },
       {
         key: 'email',

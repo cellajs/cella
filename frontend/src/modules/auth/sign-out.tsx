@@ -18,7 +18,7 @@ import { useUserStore } from '~/store/user';
 export const flushStoresAndCache = (removeAccount?: boolean) => {
   queryClient.clear();
   useUserStore.setState({ user: null as unknown as MeUser });
-  useSyncStore.setState({ syncData: {} });
+  useSyncStore.setState({ data: {} });
   useDraftStore.getState().clearForms();
   useNavigationStore.getState().clearNavigationStore();
   useUIStore.getState().setImpersonating(false);
@@ -56,5 +56,5 @@ export const SignOut = () => {
     performSignOut();
   }, []);
 
-  return <ContentPlaceholder className="h-screen" Icon={Heart} title={t('common:signing_out')} />;
+  return <ContentPlaceholder className="h-screen" icon={Heart} title={t('common:signing_out')} />;
 };

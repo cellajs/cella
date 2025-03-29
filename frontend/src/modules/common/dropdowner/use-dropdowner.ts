@@ -1,74 +1,63 @@
+import type { DropdownMenuContentProps } from '@radix-ui/react-dropdown-menu';
 import type { ReactNode } from 'react';
+import type { RefObject } from 'react';
 import { create } from 'zustand';
-import { immer } from 'zustand/middleware/immer';
-
-// ==== Types ====
 
 export type DropdownData = {
   id: number | string;
-  key?: number;
-  triggerId?: string;
-  content?: ReactNode;
-  align?: 'start' | 'end';
+  triggerId: string;
+  triggerRef: RefObject<HTMLButtonElement | null>;
+  align?: DropdownMenuContentProps['align'];
   modal?: boolean;
 };
 
-export type ExternalDropdown = Omit<DropdownData, 'id' | 'content' | 'key'> & {
-  id?: number | string;
+export type InternalDropdown = DropdownData & {
+  key: number;
+  content: ReactNode;
+  align: DropdownMenuContentProps['align'];
+  modal: boolean;
 };
 
 interface DropdownStoreState {
-  dropdown: DropdownData | null;
+  dropdown: InternalDropdown | null;
 
-  create: (content: ReactNode, data?: ExternalDropdown) => string | number;
-  update: (updates: Partial<DropdownData>) => void;
+  create: (content: ReactNode, data: DropdownData) => string | number;
+  update: (updates: Partial<InternalDropdown>) => void;
   remove: () => void;
-  getOpen: () => DropdownData | null;
+  get: () => InternalDropdown | null;
 }
 
-// ==== Defaults ====
+export const useDropdowner = create<DropdownStoreState>((set, get) => ({
+  dropdown: null,
 
-const defaultDropdown: Omit<DropdownData, 'id' | 'content' | 'key'> = {
-  align: 'start',
-  modal: true,
-};
+  create: (content, data) => {
+    const current = get().dropdown;
 
-// ==== Store ====
+    // Close dropdown if it's already open
+    if (current?.triggerId === data.triggerId) {
+      set({ dropdown: null });
+      return data.id;
+    }
 
-export const useDropdowner = create<DropdownStoreState>()(
-  immer((set, get) => ({
-    dropdown: null,
+    set({
+      dropdown: { content, align: 'start', modal: true, ...data, key: Date.now() },
+    });
 
-    create: (content, data) => {
-      const id = data?.id ?? Date.now().toString();
+    return data.id;
+  },
 
-      set((state) => {
-        state.dropdown = {
-          id,
-          key: Date.now(), // Forces reactivity
-          content,
-          ...defaultDropdown,
-          ...data,
-        };
-      });
+  update: (updates) => {
+    const current = get().dropdown;
+    if (!current) return;
 
-      return id;
-    },
+    set({
+      dropdown: { ...current, ...updates },
+    });
+  },
 
-    update: (updates) => {
-      set((state) => {
-        if (state.dropdown) {
-          Object.assign(state.dropdown, updates);
-        }
-      });
-    },
+  remove: () => {
+    set({ dropdown: null });
+  },
 
-    remove: () => {
-      set((state) => {
-        state.dropdown = null;
-      });
-    },
-
-    getOpen: () => get().dropdown,
-  })),
-);
+  get: () => get().dropdown,
+}));

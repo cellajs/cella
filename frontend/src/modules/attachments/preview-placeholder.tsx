@@ -1,11 +1,11 @@
 import { File, FileAudio, FileImage, FileSpreadsheet, FileText, FileVideo } from 'lucide-react';
 
 const contentTypeMap = [
-  { match: ['image'], Icon: FileImage },
-  { match: ['video'], Icon: FileVideo },
-  { match: ['pdf'], Icon: FileText },
-  { match: ['audio'], Icon: FileAudio },
-  { match: ['csv', 'xslx'], Icon: FileSpreadsheet },
+  { match: ['image'], icon: FileImage },
+  { match: ['video'], icon: FileVideo },
+  { match: ['pdf'], icon: FileText },
+  { match: ['audio'], icon: FileAudio },
+  { match: ['csv', 'xslx'], icon: FileSpreadsheet },
 ];
 
 interface Props {
@@ -21,7 +21,7 @@ const FilePlaceholder = ({ contentType, iconSize = 20, strokeWidth = 1.5, classN
   if (contentType) {
     const found = contentTypeMap.find(({ match }) => match.some((type) => contentType.includes(type)));
     if (found) {
-      const { Icon } = found;
+      const { icon: Icon } = found;
       return <Icon {...iconProps} />;
     }
   }

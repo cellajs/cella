@@ -5,7 +5,7 @@ import type { Env } from '#/lib/context';
 type NonEmptyArray<T> = readonly [T, ...T[]];
 
 type RouteOptions = Parameters<typeof createRoute>[0] & {
-  guard: MiddlewareHandler | NonEmptyArray<MiddlewareHandler>;
+  guard: MiddlewareHandler<Env> | NonEmptyArray<MiddlewareHandler<Env>>;
   middleware?: MiddlewareHandler<Env> | NonEmptyArray<MiddlewareHandler<Env>>;
 };
 

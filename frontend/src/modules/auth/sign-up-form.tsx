@@ -8,7 +8,7 @@ import { emailPasswordBodySchema } from '#/modules/auth/schema';
 import { useMutation } from '@tanstack/react-query';
 import { config } from 'config';
 import { ArrowRight, ChevronDown } from 'lucide-react';
-import { Suspense, lazy } from 'react';
+import { type RefObject, Suspense, lazy, useRef } from 'react';
 import { signUp, signUpWithToken } from '~/modules/auth/api';
 import type { TokenData } from '~/modules/auth/types';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
@@ -83,7 +83,7 @@ export const SignUpForm = ({ tokenData, email, resetSteps, emailEnabled }: Props
         {!tokenData && (
           <Button variant="ghost" onClick={resetSteps} className="font-light mt-2 text-xl">
             {email}
-            <ChevronDown size={16} className="ml-2" />
+            <ChevronDown size={16} className="ml-1" />
           </Button>
         )}
       </h1>
@@ -126,7 +126,7 @@ export const SignUpForm = ({ tokenData, email, resetSteps, emailEnabled }: Props
               />
               <SubmitButton loading={isPending || isPendingWithToken} className="w-full">
                 {t('common:sign_up')}
-                <ArrowRight size={16} className="ml-2" />
+                <ArrowRight size={16} className="ml-1" />
               </SubmitButton>
             </>
           )}
@@ -140,7 +140,10 @@ export const LegalNotice = ({ email, mode = 'signup' }: { email: string; mode?: 
   const { t } = useTranslation();
   const createDialog = useDialoger((state) => state.create);
 
-  const openDialog = (legalSubject: 'terms' | 'privacy') => () => {
+  const termsButtonRef = useRef(null);
+  const privacyButtonRef = useRef(null);
+
+  const openDialog = (legalSubject: 'terms' | 'privacy', triggerRef: RefObject<HTMLButtonElement | null>) => () => {
     const dialogComponent = (
       <Suspense fallback={<Spinner className="mt-[45vh] h-10 w-10" />}>
         <LegalText textFor={legalSubject} />
@@ -148,6 +151,8 @@ export const LegalNotice = ({ email, mode = 'signup' }: { email: string; mode?: 
     );
 
     createDialog(dialogComponent, {
+      id: 'legal',
+      triggerRef,
       className: 'md:max-w-3xl mb-10 px-6',
       drawerOnMobile: false,
     });
@@ -156,11 +161,11 @@ export const LegalNotice = ({ email, mode = 'signup' }: { email: string; mode?: 
   return (
     <p className="font-light text-sm text-center space-x-1">
       <span>{mode === 'signup' ? t('common:legal_notice.text', { email }) : t('common:legal_notice_waitlist.text', { email })}</span>
-      <Button type="button" variant="link" className="p-0 h-auto" onClick={openDialog('terms')}>
+      <Button ref={termsButtonRef} type="button" variant="link" className="p-0 h-auto" onClick={openDialog('terms', termsButtonRef)}>
         {t('common:terms').toLocaleLowerCase()}
       </Button>
       <span>&</span>
-      <Button type="button" variant="link" className="p-0 h-auto" onClick={openDialog('privacy')}>
+      <Button ref={privacyButtonRef} type="button" variant="link" className="p-0 h-auto" onClick={openDialog('privacy', privacyButtonRef)}>
         {t('common:privacy_policy').toLocaleLowerCase()}
       </Button>
       <span>of {config.company.name}.</span>

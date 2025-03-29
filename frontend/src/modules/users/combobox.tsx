@@ -1,7 +1,6 @@
-import { Check, ChevronsUpDown, Search, Users2, X } from 'lucide-react';
-
 import { useQuery } from '@tanstack/react-query';
 import { config } from 'config';
+import { Check, ChevronsUpDown, Search, User, Users2, X } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -10,20 +9,23 @@ import { useMeasure } from '~/hooks/use-measure';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { entitiesQueryOptions } from '~/modules/entities/query';
+import type { EntityPage } from '~/modules/entities/types';
 import { Badge } from '~/modules/ui/badge';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '~/modules/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '~/modules/ui/popover';
 import { ScrollArea } from '~/modules/ui/scroll-area';
+import { entityIdFields } from '#/entity-config';
 
 interface Props {
   value: string[];
   onChange: (items: string[]) => void;
-  entityId: string;
+  entity: EntityPage;
 }
 
-export const QueryCombobox = ({ value, onChange, entityId }: Props) => {
+export const UserSuggestionCombobox = ({ value, onChange, entity }: Props) => {
   const { t } = useTranslation();
   const { ref, bounds } = useMeasure<HTMLDivElement>();
+  const entityIdField = entityIdFields[entity.entity];
 
   const [open, setOpen] = useState(false);
   const [selected, setSelected] = useState<string[]>(value);
@@ -54,7 +56,9 @@ export const QueryCombobox = ({ value, onChange, entityId }: Props) => {
     setOpen(false);
   };
 
-  const { data, isFetching } = useQuery(entitiesQueryOptions({ q: debouncedSearchQuery, type: 'user', entityId }));
+  const { data, isFetching } = useQuery(
+    entitiesQueryOptions({ q: debouncedSearchQuery, type: 'user', removeSelf: true, userMembershipType: entity.entity }),
+  );
 
   useEffect(() => {
     onChange(selected);
@@ -118,11 +122,11 @@ export const QueryCombobox = ({ value, onChange, entityId }: Props) => {
                 <motion.div key="empty-state" initial="hidden" animate="visible" exit="exit" variants={variants} className="h-full">
                   {debouncedSearchQuery.length ? (
                     <CommandEmpty>
-                      <ContentPlaceholder Icon={Search} title={t('common:no_resource_found', { resource: t('common:users').toLowerCase() })} />
+                      <ContentPlaceholder icon={Search} title={t('common:no_resource_found', { resource: t('common:users').toLowerCase() })} />
                     </CommandEmpty>
                   ) : (
                     <CommandEmpty>
-                      <ContentPlaceholder Icon={Users2} title={t('common:invite_members_search.text', { appName: config.name })} />
+                      <ContentPlaceholder icon={Users2} title={t('common:invite_members_search.text', { appName: config.name })} />
                     </CommandEmpty>
                   )}
                 </motion.div>
@@ -141,6 +145,8 @@ export const QueryCombobox = ({ value, onChange, entityId }: Props) => {
                         {data.items.map((user) => (
                           <CommandItem
                             data-was-selected={selected.some((u) => u === user.email)}
+                            data-already-member={user.membership[entityIdField] === entity.id}
+                            disabled={user.membership[entityIdField] === entity.id}
                             key={user.id}
                             className="w-full justify-between group"
                             onSelect={() => {
@@ -149,9 +155,18 @@ export const QueryCombobox = ({ value, onChange, entityId }: Props) => {
                           >
                             <div className="flex space-x-2 items-center outline-0 ring-0 group">
                               <AvatarWrap type={user.entity} className="h-8 w-8" id={user.id} name={user.name} url={user.thumbnailUrl} />
-                              <span className="group-hover:underline underline-offset-4 truncate font-medium">{user.name}</span>
+                              <span className="group-hover:underline group-data-[already-member=true]:no-underline underline-offset-4 truncate font-medium">
+                                {user.name}
+                              </span>
                             </div>
-                            <Check size={16} className="text-success group-data-[was-selected=false]:invisible" />
+
+                            <div className="flex items-center">
+                              <Badge size="sm" variant="plain" className=" group-data-[already-member=true]:flex hidden gap-1">
+                                <User size={14} />
+                                <span className="max-sm:hidden font-light">{t('common:already_member')}</span>
+                              </Badge>
+                              <Check size={16} className="text-success group-data-[was-selected=false]:invisible" />
+                            </div>
                           </CommandItem>
                         ))}
                       </CommandGroup>

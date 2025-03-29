@@ -13,7 +13,7 @@ export const MobileSheet = ({ sheet }: SheetProps) => {
 
   const closeSheet = () => {
     useSheeter.getState().remove(sheet.id);
-    sheet.removeCallback?.();
+    sheet.onClose?.();
   };
 
   const onOpenChange = (open: boolean) => {
@@ -27,10 +27,10 @@ export const MobileSheet = ({ sheet }: SheetProps) => {
       modal={modal}
       open={open}
       dismissible={!isDropdownOpen}
-      onOpenChange={onOpenChange}
-      onClose={closeSheet}
       direction={side}
       noBodyStyles
+      onOpenChange={onOpenChange}
+      onClose={closeSheet}
     >
       <DrawerContent id={String(id)} onEscapeKeyDown={closeSheet} direction={side} className={className}>
         <DrawerHeader className={`${description || title ? '' : 'hidden'}`}>

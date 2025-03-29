@@ -1,11 +1,11 @@
 import { useNavigate, useSearch } from '@tanstack/react-router';
 import Autoplay from 'embla-carousel-autoplay';
 import { Download, ExternalLink, X } from 'lucide-react';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import useDownloader from 'react-use-downloader';
-import { clearAttachmentDialogSearchParams } from '~/modules/attachments/attachment-dialog/handler';
-import FilePlaceholder from '~/modules/attachments/file-placeholder';
+import { clearAttachmentDialogSearchParams } from '~/modules/attachments/attachment-dialog-handler';
 import { openAttachmentDialog } from '~/modules/attachments/helpers';
+import FilePlaceholder from '~/modules/attachments/preview-placeholder';
 import { AttachmentRender } from '~/modules/attachments/render';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import Spinner from '~/modules/common/spinner';
@@ -34,6 +34,8 @@ type CarouselProps =
 const AttachmentsCarousel = ({ items = [], isDialog = false, itemIndex = 0, saveInSearchParams = false, classNameContainer }: CarouselProps) => {
   const navigate = useNavigate();
   const removeDialog = useDialoger((state) => state.remove);
+
+  const nextButtonRef = useRef(null);
 
   const { attachmentDialogId } = useSearch({ strict: false });
   const [currentItem, setCurrentItem] = useState(items.find((item) => item.id === attachmentDialogId) || items[itemIndex]);
@@ -131,7 +133,7 @@ const AttachmentsCarousel = ({ items = [], isDialog = false, itemIndex = 0, save
               key={url}
               onClick={() => {
                 if (isDialog) return;
-                openAttachmentDialog(idx, items);
+                openAttachmentDialog({ attachmentIndex: idx, attachments: items, triggerRef: nextButtonRef });
               }}
             >
               <AttachmentRender
@@ -151,7 +153,7 @@ const AttachmentsCarousel = ({ items = [], isDialog = false, itemIndex = 0, save
       {(items?.length ?? 0) > 1 && (
         <>
           <CarouselPrevious className="left-4 lg:left-8 opacity-0 transition-opacity group-hover:opacity-100 shadow-md" />
-          <CarouselNext className="right-4 lg:right-8 opacity-0 transition-opacity group-hover:opacity-100 shadow-md" />
+          <CarouselNext ref={nextButtonRef} className="right-4 lg:right-8 opacity-0 transition-opacity group-hover:opacity-100 shadow-md" />
         </>
       )}
       {!isDialog && <CarouselDots size="sm" gap="lg" className="relative mt-[calc(1rem+2%)]" />}

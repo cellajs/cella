@@ -47,7 +47,7 @@ const SessionsList = ({ userAuthInfo }: { userAuthInfo: UserAuthInfo }) => {
           disabled={isPending}
           onClick={() => onDeleteSession(sessionsWithoutCurrent.map((session) => session.id))}
         >
-          <ZapOff size={16} className="mr-2" />
+          <ZapOff size={16} className="mr-1" />
           {t('common:terminate_all')}
         </Button>
       )}

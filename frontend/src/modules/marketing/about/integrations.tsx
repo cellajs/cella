@@ -39,6 +39,7 @@ const Integrations = () => {
               href={`https://${url}`}
               target="_blank"
               rel="noreferrer"
+              draggable="false"
               key={name}
               className="flex h-96 w-72 group relative shrink-0 flex-col justify-between rounded-lg border p-5 hover:cursor-pointer hover:border-primary hover:ring-4 hover:ring-primary/10"
             >
@@ -60,7 +61,7 @@ const Integrations = () => {
               <div className="pt-2 text-xs">
                 <div className="italic text-muted-foreground mb-2">{t(purpose)}</div>
                 <div className="text-muted-foreground font-semibold group-hover:underline underline-offset-4">
-                  <CountryFlag countryCode={country} className="mr-2" />
+                  <CountryFlag countryCode={country} className="mr-1" />
                   {url}
                   <ArrowUpRight size={12} className="inline-block text-primary -mt-2 ml-1 opacity-50 group-hover:opacity-100" />
                 </div>

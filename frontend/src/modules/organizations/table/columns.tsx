@@ -30,6 +30,7 @@ export const useColumns = () => {
         renderCell: ({ row, tabIndex }) => (
           <Link
             to="/$idOrSlug/members"
+            draggable="false"
             tabIndex={tabIndex}
             params={{ idOrSlug: row.slug }}
             className="flex space-x-2 items-center outline-0 ring-0 group"

@@ -34,7 +34,7 @@ import { CustomSlashMenu } from '~/modules/common/blocknote/custom-slash-menu';
 import { compareIsContentSame, focusEditor, getContentAsString, getUrlFromProps, handleSubmitOnEnter } from '~/modules/common/blocknote/helpers';
 import type { BasicBlockBaseTypes, BasicFileBlockTypes, CellaCustomBlockTypes } from '~/modules/common/blocknote/types';
 
-import type { CarouselItemData } from '~/modules/attachments/carousel';
+import type { CarouselItemData } from '~/modules/attachments/attachments-carousel';
 import '~/modules/common/blocknote/app-specific-custom/styles.css';
 import '~/modules/common/blocknote/styles.css';
 import { nanoid } from '~/utils/nanoid';
@@ -99,6 +99,8 @@ export const BlockNote = ({
   const wasInitial = useRef(false);
   const editor = useCreateBlockNote({ schema: customSchema, trailingBlock });
   const isMobile = useBreakpoints('max', 'sm');
+
+  const blockNoteRef = useRef(null);
 
   const isCreationMode = !!onChange;
   const [text, setText] = useState<string>(defaultValue);
@@ -229,7 +231,7 @@ export const BlockNote = ({
     });
 
     const attachmentNum = newAttachments.findIndex(({ url: newUrl }) => newUrl === url);
-    openAttachmentDialog(attachmentNum, newAttachments);
+    openAttachmentDialog({ attachmentIndex: attachmentNum, attachments: newAttachments, triggerRef: blockNoteRef });
   };
 
   useEffect(() => {
@@ -241,6 +243,7 @@ export const BlockNote = ({
   return (
     <BlockNoteView
       id={id}
+      ref={blockNoteRef}
       data-color-scheme={mode}
       theme={mode}
       editor={editor}

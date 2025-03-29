@@ -31,7 +31,7 @@ export const meQueryOptions = () => queryOptions({ queryKey: meKeys.all, queryFn
  *
  * @returns Query options.
  */
-export const meAuthQueryOptions = () => queryOptions({ queryKey: meKeys.auth(), queryFn: getAndSetUserAuthInfo, staleTime: 0 });
+export const meAuthQueryOptions = () => queryOptions({ queryKey: meKeys.auth(), queryFn: getAndSetUserAuthInfo });
 
 /**
  * Query options for fetching the current authenticated user's menu.

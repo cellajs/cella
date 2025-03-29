@@ -66,6 +66,18 @@ const attachmentsRoutes = app
     const newAttachments = ctx.req.valid('json');
 
     const organization = getContextOrganization();
+    const attachmentRestrictions = organization.restrictions.attachment;
+
+    if (attachmentRestrictions !== 0 && newAttachments.length > attachmentRestrictions) {
+      return errorResponse(ctx, 403, 'restrict_by_org', 'warn', 'attachment');
+    }
+
+    const currentAttachments = await db.select().from(attachmentsTable).where(eq(attachmentsTable.organizationId, organization.id));
+
+    if (attachmentRestrictions !== 0 && currentAttachments.length + newAttachments.length > attachmentRestrictions) {
+      return errorResponse(ctx, 403, 'restrict_by_org', 'warn', 'attachment');
+    }
+
     const user = getContextUser();
     const groupId = newAttachments.length > 1 ? nanoid() : null;
 
@@ -255,7 +267,7 @@ const attachmentsRoutes = app
     const [attachment] = await db.select().from(attachmentsTable).where(eq(attachmentsTable.id, id));
     if (!attachment) return errorResponse(ctx, 404, 'not_found', 'warn', 'attachment');
 
-    let redirectUrl = `${config.frontendUrl}/${attachment.organizationId}/attachments?attachmentDialogId=${attachment.id}&dialogContext=attachments`;
+    let redirectUrl = `${config.frontendUrl}/${attachment.organizationId}/attachments?attachmentDialogId=${attachment.id}`;
     if (attachment.groupId) redirectUrl += `&groupId=${attachment.groupId}`;
 
     return ctx.html(html`

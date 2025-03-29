@@ -27,7 +27,7 @@ export const MarketingNav = () => {
   const handleNavClick = (target: string, isOpen = false) => {
     if (window.location.hash === `#${target}`) navigate({ to: '.', hash: 'top', replace: true });
 
-    // TODO temp fix while Link component doesn't support hash scroll into view
+    // TODO(BLOCKING) temp fix while Link component doesn't support hash scroll into view
     const anchor = document.getElementById(target);
     anchor?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 
@@ -47,6 +47,7 @@ export const MarketingNav = () => {
         hash={hash}
         replace={location.pathname === '/about'}
         key={id}
+        draggable="false"
         onClick={(e) => {
           // if (window.location.hash !== `#${hash}`) return;
           if (!hash) return;
@@ -108,7 +109,7 @@ export const MarketingNav = () => {
           <div className={`gap-2 px-2 flex items-center transition-opacity duration-300 ease-in-out ${showSheet ? 'opacity-0' : 'max-sm:delay-700'}`}>
             <UserLanguage />
 
-            <UserTheme buttonClassName="max-xs:hidden mr-2" />
+            <UserTheme buttonClassName="max-xs:hidden mr-1" />
 
             {config.company.githubUrl && (
               <Button

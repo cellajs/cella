@@ -1,7 +1,7 @@
 import type { ContextEntity } from 'config';
 import { Info } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
-import { useState } from 'react';
+import { type RefObject, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { AlertWrap } from '~/modules/common/alert-wrap';
@@ -18,7 +18,7 @@ interface MenuSheetSectionProps {
   sectionType: keyof UserMenu;
   sectionLabel: string;
   entityType: ContextEntity;
-  createAction?: () => void;
+  createAction?: (ref: RefObject<HTMLButtonElement | null>) => void;
 }
 
 export const MenuSheetSection = ({ data, sectionType, sectionLabel, entityType, createAction }: MenuSheetSectionProps) => {
@@ -34,12 +34,12 @@ export const MenuSheetSection = ({ data, sectionType, sectionLabel, entityType, 
   const isSectionVisible = activeSections?.[sectionType] ?? true;
   const archivedCount = data.filter((i) => i.membership.archived).length;
 
-  const handleCreateAction = () => {
+  const handleCreateAction = (ref: RefObject<HTMLButtonElement | null>) => {
     if (isMobile) {
       useSheeter.getState().remove('nav-sheet');
       setNavSheetOpen(null);
     }
-    createAction?.();
+    createAction?.(ref);
   };
 
   const toggleIsEditing = () => {
@@ -72,7 +72,7 @@ export const MenuSheetSection = ({ data, sectionType, sectionLabel, entityType, 
             }}
             style={{ overflow: 'hidden' }}
           >
-            <AlertWrap id="menu_management" variant="plain" Icon={Info}>
+            <AlertWrap id="menu_management" variant="plain" icon={Info}>
               {t('common:configure_menu.text')}
             </AlertWrap>
           </motion.div>

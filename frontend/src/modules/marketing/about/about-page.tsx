@@ -70,7 +70,7 @@ const AboutPage = () => {
               e.preventDefault();
               navigate({ to: '.', hash: 'top', replace: true });
 
-              // TODO temp fix while Link component doesn't support hash scroll into view
+              // TODO(BLOCKING) fix while Link component doesn't support hash scroll into view
               const anchor = document.getElementById('why');
               anchor?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 

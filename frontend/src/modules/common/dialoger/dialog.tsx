@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
-import { type DialogData, useDialoger } from '~/modules/common/dialoger/use-dialoger';
+import { type InternalDialog, useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { useDropdowner } from '~/modules/common/dropdowner/use-dropdowner';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '~/modules/ui/dialog';
 import { cn } from '~/utils/cn';
@@ -8,19 +8,20 @@ import { cn } from '~/utils/cn';
 type CustomInteractOutsideEvent = CustomEvent<{ originalEvent: PointerEvent | FocusEvent }>;
 
 export interface DialogProp {
-  dialog: DialogData;
+  dialog: InternalDialog;
 }
 export default function StandardDialog({ dialog }: DialogProp) {
-  const { id, content, open, description, title, titleContent = title, className, hideClose, headerClassName = '', container } = dialog;
+  const { id, content, open, triggerRef, description, title, titleContent = title, className, hideClose, headerClassName, container } = dialog;
   const isMobile = useBreakpoints('max', 'sm', false);
 
   // When a container is provided, the dialog is rendered inside the container and scroll should stay enabled
   const modal = !container;
+  // TODO use ref here?
   const containerElement = useMemo(() => (container ? document.getElementById(container.id) : null), [container]);
 
   const closeDialog = () => {
     useDialoger.getState().remove(dialog.id);
-    dialog.removeCallback?.();
+    dialog.onClose?.();
   };
 
   const onOpenChange = (open: boolean) => {
@@ -43,13 +44,16 @@ export default function StandardDialog({ dialog }: DialogProp) {
         id={String(id)}
         hideClose={hideClose}
         container={containerElement}
+        className={cn(className, containerElement && 'z-40')}
         onInteractOutside={handleInteractOutside}
         onOpenAutoFocus={(event: Event) => {
           if (isMobile) event.preventDefault();
         }}
-        className={cn(className, containerElement && 'z-40')}
+        onCloseAutoFocus={() => {
+          if (triggerRef?.current) triggerRef.current.focus();
+        }}
       >
-        <DialogHeader className={`${title || description ? headerClassName : 'hidden'}`}>
+        <DialogHeader className={`${title || description ? headerClassName || '' : 'hidden'}`}>
           <DialogTitle className={`${title || title ? '' : 'hidden'} leading-6 h-6`}>{titleContent}</DialogTitle>
           <DialogDescription className={`${description ? '' : 'hidden'}`}>{description}</DialogDescription>
         </DialogHeader>

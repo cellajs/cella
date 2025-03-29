@@ -103,7 +103,7 @@ const Combobox = ({ options, name, onChange, placeholder, searchPlaceholder, ren
 
           <CommandList className="h-[30vh]">
             <CommandEmpty>
-              <ContentPlaceholder Icon={Search} title={t('common:no_resource_found', { resource: t(`common:${name}`).toLowerCase() })} />
+              <ContentPlaceholder icon={Search} title={t('common:no_resource_found', { resource: t(`common:${name}`).toLowerCase() })} />
             </CommandEmpty>
 
             <CommandGroup>

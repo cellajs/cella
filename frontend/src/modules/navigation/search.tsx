@@ -66,7 +66,7 @@ export const AppSearch = () => {
     });
   };
 
-  const { data: suggestions, isFetching } = useQuery(entitiesQueryOptions({ q: searchValue }));
+  const { data: suggestions, isFetching } = useQuery(entitiesQueryOptions({ q: searchValue, removeSelf: true }));
 
   const onSelectSuggestion = (suggestion: SuggestionType) => {
     // Update recent searches with the search value
@@ -116,12 +116,12 @@ export const AppSearch = () => {
               <>
                 {!!searchValue.length && !isFetching && (
                   <CommandEmpty className="h-full sm:h-[36vh]">
-                    <ContentPlaceholder Icon={Search} title={t('common:no_resource_found', { resource: t('common:results').toLowerCase() })} />
+                    <ContentPlaceholder icon={Search} title={t('common:no_resource_found', { resource: t('common:results').toLowerCase() })} />
                   </CommandEmpty>
                 )}
                 {searchValue.length === 0 && (
                   <CommandEmpty className="h-full sm:h-[36vh]">
-                    <ContentPlaceholder Icon={Search} title={t('common:global_search.text', { appName: config.name })} />
+                    <ContentPlaceholder icon={Search} title={t('common:global_search.text', { appName: config.name })} />
                   </CommandEmpty>
                 )}
                 {!!recentSearches.length && (

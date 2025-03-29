@@ -1,4 +1,4 @@
-import { Check, Send, Trash2 } from 'lucide-react';
+import { Check, Send, Trash } from 'lucide-react';
 import { SimpleHeader } from '~/modules/common/simple-header';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/modules/ui/card';
 
@@ -9,7 +9,7 @@ import { useUserStore } from '~/store/user';
 import { onlineManager } from '@tanstack/react-query';
 import { useLoaderData } from '@tanstack/react-router';
 import { config } from 'config';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { requestPasswordEmail } from '~/modules/auth/api';
@@ -38,6 +38,8 @@ const UserSettingsPage = () => {
   const { user } = useUserStore();
   const mode = useUIStore((state) => state.mode);
   const { t } = useTranslation();
+
+  const deleteButtonRef = useRef(null);
 
   // Get user auth info from route
   const userAuthInfo = useLoaderData({ from: UserSettingsRoute.id });
@@ -71,6 +73,8 @@ const UserSettingsPage = () => {
         }}
       />,
       {
+        id: 'delete-account',
+        triggerRef: deleteButtonRef,
         className: 'md:max-w-xl',
         title: t('common:delete_account'),
         description: t('common:confirm.delete_account', { email: user.email }),
@@ -173,7 +177,7 @@ const UserSettingsPage = () => {
               </HelpText>
               <div>
                 <Button className="w-full sm:w-auto" variant="outline" disabled={disabledResetPassword} onClick={requestResetPasswordClick}>
-                  <Send size={16} className="mr-2" />
+                  <Send size={16} className="mr-1" />
                   {t('common:send_reset_link')}
                 </Button>
                 {disabledResetPassword && <p className="text-sm text-gray-500 mt-2">{t('common:retry_reset_password.text')}</p>}
@@ -189,8 +193,8 @@ const UserSettingsPage = () => {
               <CardDescription>{t('common:delete_account.text', { appName: config.name })}</CardDescription>
             </CardHeader>
             <CardContent>
-              <Button variant="destructive" className="w-full sm:w-auto" onClick={openDeleteDialog}>
-                <Trash2 className="mr-2 h-4 w-4" />
+              <Button ref={deleteButtonRef} variant="destructive" className="w-full sm:w-auto" onClick={openDeleteDialog}>
+                <Trash className="mr-2 h-4 w-4" />
                 {t('common:delete_account')}
               </Button>
             </CardContent>

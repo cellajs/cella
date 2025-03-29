@@ -31,3 +31,8 @@ export type BaseTableBarProps<T, K> = {
   columns: ColumnOrColumnGroup<T>[];
   setColumns: Dispatch<SetStateAction<ColumnOrColumnGroup<T>[]>>;
 };
+
+/**
+ * Generic pattern for callbacks to pass to parent components.
+ */
+export type CallbackArgs<T> = { status: 'success'; data: T } | { status: 'fail'; error?: string } | { status: 'settle' };

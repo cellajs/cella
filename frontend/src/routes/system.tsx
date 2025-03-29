@@ -24,11 +24,7 @@ const RequestsPerMinute = lazy(() => import('~/modules/metrics/requests-per-minu
 // Search query schemas
 export const organizationsSearchSchema = getOrganizationsQuerySchema.pick({ q: true, sort: true, order: true });
 const baseUsersSearchSchema = usersQuerySchema.pick({ q: true, sort: true, order: true, role: true });
-export const usersSearchSchema = z.object({
-  ...baseUsersSearchSchema.shape,
-  userSheetId: z.string().optional(),
-  sheetContext: z.string().optional(),
-});
+export const usersSearchSchema = z.object({ ...baseUsersSearchSchema.shape, userSheetId: z.string().optional() });
 export const requestSearchSchema = getRequestsQuerySchema.pick({ q: true, sort: true, order: true });
 
 export const SystemRoute = createRoute({

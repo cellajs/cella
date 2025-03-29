@@ -14,13 +14,13 @@ export type AlertWrap = {
   className?: string;
   id: string;
   modes?: AlertContextMode[];
-  Icon?: React.ElementType<LucideProps>;
+  icon?: React.ElementType<LucideProps>;
   children: React.ReactNode;
   title?: string;
   variant?: VariantProps<typeof alertVariants>['variant'];
 };
 
-export const AlertWrap = ({ id, Icon, children, className = '', title = '', variant = 'default' }: AlertWrap) => {
+export const AlertWrap = ({ id, icon: Icon, children, className = '', title = '', variant = 'default' }: AlertWrap) => {
   const { t } = useTranslation();
   const { alertsSeen, setAlertSeen, downAlert } = useAlertStore();
   const showAlert = !alertsSeen.includes(id);

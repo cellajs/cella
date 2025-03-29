@@ -34,6 +34,7 @@ export const MenuSheetItem = ({ item, className, searchResults }: MenuSheetItemP
       }}
       data-subitem={!searchResults && !item.submenu}
       resetScroll={false}
+      draggable="false"
       className={cn(
         'relative group/menuItem h-12 w-full flex items-start justify-start space-x-1 rounded p-0 focus:outline-hidden ring-2 ring-inset ring-transparent focus-visible:ring-foreground sm:hover:bg-accent/30 sm:hover:text-accent-foreground data-[subitem=true]:h-10 data-[active=true]:ring-transparent data-[active=true]:bg-accent/50',
         className,
