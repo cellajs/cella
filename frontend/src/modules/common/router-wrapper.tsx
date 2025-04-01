@@ -1,6 +1,7 @@
 import { onlineManager, useIsRestoring } from '@tanstack/react-query';
 import { RouterProvider } from '@tanstack/react-router';
 import router from '~/lib/router';
+import PullToRefresh from './pull-to-refresh';
 import Spinner from './spinner';
 
 /**
@@ -14,5 +15,9 @@ export const RouterWrapper = () => {
     return <Spinner className="h-12 w-12 mt-[45vh]" />;
   }
 
-  return <RouterProvider router={router} />;
+  return (
+    <PullToRefresh onRefresh={() => console.log('refresh')} isDisabled={isRestoring || !isOnline}>
+      <RouterProvider router={router} />
+    </PullToRefresh>
+  );
 };
