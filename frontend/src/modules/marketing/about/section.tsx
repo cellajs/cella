@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import type { AboutSectionId } from './about-page';
+import type { AboutSectionId } from '~/modules/marketing/about/about-page';
 
 interface AboutSectionProps {
   section: AboutSectionId;

@@ -1,13 +1,13 @@
 import { EllipsisVertical, Trash } from 'lucide-react';
 import { type RefObject, useRef } from 'react';
 import { i18n } from '~/lib/i18n';
+import type { CallbackArgs } from '~/modules/common/data-table/types';
 import { DropdownActionItem } from '~/modules/common/dropdowner/dropdown-action-item';
 import { useDropdowner } from '~/modules/common/dropdowner/use-dropdowner';
+import { PopConfirm } from '~/modules/common/popconfirm';
 import { Button } from '~/modules/ui/button';
 import DeleteUsers from '~/modules/users/delete-users';
 import type { User } from '~/modules/users/types';
-import { PopConfirm } from '../popconfirm';
-import type { CallbackArgs } from './types';
 
 interface Props {
   row: User;

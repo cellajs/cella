@@ -16,12 +16,12 @@ import SelectRoleRadio from '~/modules/common/form-fields/select-role-radio';
 import { useStepper } from '~/modules/common/stepper/use-stepper';
 import { toaster } from '~/modules/common/toaster';
 import type { EntityPage } from '~/modules/entities/types';
+import { membersKeys } from '~/modules/memberships/query/options';
+import { organizationsKeys } from '~/modules/organizations/query';
 import { Badge } from '~/modules/ui/badge';
 import { Button, SubmitButton } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
 import { queryClient } from '~/query/query-client';
-import { membersKeys } from '../memberships/query/options';
-import { organizationsKeys } from '../organizations/query';
 
 interface Props {
   entity?: EntityPage;

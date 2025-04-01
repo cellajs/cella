@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
+import { useDropdowner } from '~/modules/common/dropdowner/use-dropdowner';
 import { type InternalSheet, useSheeter } from '~/modules/common/sheeter/use-sheeter';
 import StickyBox from '~/modules/common/sticky-box';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '~/modules/ui/sheet';
 import { isElementInteractive } from '~/utils/is-el-interactive';
-import { useDropdowner } from '../dropdowner/use-dropdowner';
 
 export interface SheetProps {
   sheet: InternalSheet;

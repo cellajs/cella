@@ -13,9 +13,9 @@ const root = document.getElementById('root');
 if (!root) throw new Error('Root element not found');
 
 import { initSentry } from '~/lib/sentry';
+import { RouterWrapper } from '~/modules/common/router-wrapper';
 import { QueryClientProvider } from '~/query/provider';
 import { renderAscii } from '~/utils/ascii';
-import { RouterWrapper } from './modules/common/router-wrapper';
 
 // Render ASCII logo in console
 renderAscii();

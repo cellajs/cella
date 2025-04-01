@@ -3,9 +3,9 @@ import { Link, useNavigate } from '@tanstack/react-router';
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
+import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
 import { toaster } from '~/modules/common/toaster';
 import type { LimitedUser } from '~/modules/users/types';
-import { useSheeter } from '../common/sheeter/use-sheeter';
 
 interface Props {
   user: LimitedUser;
