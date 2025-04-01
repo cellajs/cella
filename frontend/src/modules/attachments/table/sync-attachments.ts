@@ -1,29 +1,29 @@
-import type { ChangeMessage, ShapeStreamOptions } from '@electric-sql/client';
+import { type ShapeStreamOptions, isChangeMessage } from '@electric-sql/client';
 import { getShapeStream } from '@electric-sql/react';
 import { config } from 'config';
 import { useEffect } from 'react';
 import { env } from '~/env';
 import { useOnlineManager } from '~/hooks/use-online-manager';
+import { clientConfig } from '~/lib/api';
 import { handleDelete, handleInsert, handleUpdate } from '~/modules/attachments/table/sync-handlers';
 import type { Attachment } from '~/modules/attachments/types';
 import { useSyncStore } from '~/store/sync';
-import { type CamelToSnakeObject, convertMessageInfo } from '~/utils/electric-utils';
+import { type CamelToSnakeObject, baseBackoffOptions as backoffOptions, convertMessageInfo, errorHandler } from '~/utils/electric-utils';
 
 // Configure ShapeStream options
-const attachmentShape = (organizationId: string): ShapeStreamOptions => ({
-  url: new URL(`/${organizationId}/attachments/shape-proxy`, config.backendUrl).href,
-  params: { where: `organization_id = '${organizationId}'` },
-  backoffOptions: {
-    initialDelay: 500,
-    maxDelay: 32000,
-    multiplier: 2,
-  },
-  fetchClient: (input, init) =>
-    fetch(input, {
-      ...init,
-      credentials: 'include',
-    }),
-});
+const attachmentShape = (organizationId: string, storePrefix: string): ShapeStreamOptions => {
+  const params = { where: `organization_id = '${organizationId}'` };
+  return {
+    url: new URL(`/${organizationId}/attachments/shape-proxy`, config.backendUrl).href,
+    params,
+    backoffOptions,
+    fetchClient: clientConfig.fetch,
+    onError: (error) => {
+      const retry = errorHandler(error, storePrefix);
+      return retry ? { params } : undefined;
+    },
+  };
+};
 
 type RawAttachment = CamelToSnakeObject<Attachment>;
 
@@ -47,7 +47,7 @@ export const useAttachmentsSync = (organizationId: string) => {
 
     // Initialize ShapeStream
     const shapeStream = getShapeStream<RawAttachment>({
-      ...attachmentShape(organizationId),
+      ...attachmentShape(organizationId, storeKey),
       signal: controller.signal, // Abort signal to be able to cancel it later
       ...(syncData ? syncData : {}), // Include previous sync data if there is any
     });
@@ -64,13 +64,13 @@ export const useAttachmentsSync = (organizationId: string) => {
       }
 
       // Filter out the messages that contain valid operations (create, update, delete)
-      const operationMessages = messages.filter((m) => m.headers.operation && 'value' in m && m.value) as ChangeMessage<RawAttachment>[];
-      if (!operationMessages.length) return;
+      const changeMessages = messages.filter(isChangeMessage);
+      if (!changeMessages.length) return;
 
       // Convert operation messages into respective arrays (inserts, updates, deletes)
-      const insertArray = convertMessageInfo<Attachment>(operationMessages, 'insert');
-      const updateArray = convertMessageInfo<Attachment>(operationMessages, 'update');
-      const deleteIdsArray = convertMessageInfo<Attachment>(operationMessages, 'delete').map(({ id }) => id);
+      const insertArray = convertMessageInfo<Attachment>(changeMessages, 'insert');
+      const updateArray = convertMessageInfo<Attachment>(changeMessages, 'update');
+      const deleteIdsArray = convertMessageInfo<Attachment>(changeMessages, 'delete').map(({ id }) => id);
 
       // Handle operations
       if (insertArray.length) handleInsert(organizationId, insertArray);
