@@ -1,7 +1,7 @@
 import { onlineManager, useIsRestoring } from '@tanstack/react-query';
 import { RouterProvider } from '@tanstack/react-router';
 import router from '~/lib/router';
-import Spinner from './spinner';
+import Spinner from '~/modules/common/spinner';
 
 /**
  * Wait for react-query to hydrate cache so we can use fallback getQueryData in router loaders when offline.

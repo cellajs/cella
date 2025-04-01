@@ -1,6 +1,6 @@
 import { VisuallyHidden } from '@radix-ui/react-visually-hidden';
+import { type InternalDropdown, useDropdowner } from '~/modules/common/dropdowner/use-dropdowner';
 import { Drawer, DrawerContent, DrawerDescription, DrawerHeader, DrawerTitle } from '~/modules/ui/drawer';
-import { type InternalDropdown, useDropdowner } from './use-dropdowner';
 
 export default function DropdownDrawer({ dropdown }: { dropdown: InternalDropdown }) {
   const { id, content } = dropdown;

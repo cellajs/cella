@@ -5,12 +5,12 @@ import { AccountSheet } from '~/modules/navigation/account-sheet';
 import { MenuSheet } from '~/modules/navigation/menu-sheet';
 
 import { onlineManager } from '@tanstack/react-query';
+import { i18n } from '~/lib/i18n';
 import type { FooterLinkProps } from '~/modules/common/app-footer';
+import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
+import { toaster } from '~/modules/common/toaster';
 import type { UserMenuItem } from '~/modules/me/types';
 import { AppSearch, type SuggestionSection, type SuggestionType } from '~/modules/navigation/search';
-import { i18n } from './lib/i18n';
-import { useDialoger } from './modules/common/dialoger/use-dialoger';
-import { toaster } from './modules/common/toaster';
 
 /**
  * Set entity paths so we can dynamically use them in the app
