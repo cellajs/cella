@@ -6,7 +6,6 @@ import router from '~/lib/router';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import UnsavedBadge from '~/modules/common/unsaved-badge';
 import CreateOrganizationForm from '~/modules/organizations/create-organization-form';
-import { organizationsKeys } from '~/modules/organizations/query';
 import type { Organization } from '~/modules/organizations/types';
 
 type SectionsSchema = {
@@ -44,6 +43,6 @@ export const menuSectionsSchemas: Partial<Record<ContextEntity, SectionsSchema>>
  * Configuration to by with key update membership in contextEntity
  */
 //TODO(REFACTOR) find way to avoid usage of it Work poorly on offline access to much entities go through
-export const contextEntityCacheKeys = {
-  organization: organizationsKeys.single.base(),
+export const contextEntityCacheKeys: Record<ContextEntity, readonly [ContextEntity]> = {
+  organization: ['organization'],
 };

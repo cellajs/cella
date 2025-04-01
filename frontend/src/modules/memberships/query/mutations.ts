@@ -6,7 +6,13 @@ import { toaster } from '~/modules/common/toaster';
 import { getAndSetMenu } from '~/modules/me/helpers';
 import { type RemoveMembersProps, type UpdateMembershipProp, removeMembers, updateMembership } from '~/modules/memberships/api';
 import { membersKeys } from '~/modules/memberships/query/options';
-import type { EntityMembershipContextProp, InfiniteMemberQueryData, MemberContextProp, MemberQueryData } from '~/modules/memberships/query/types';
+import type {
+  EntityMembershipContextProp,
+  InfiniteMemberQueryData,
+  MemberContextProp,
+  MemberQueryData,
+  MutationUpdateMembership,
+} from '~/modules/memberships/query/types';
 import type { Member, Membership } from '~/modules/memberships/types';
 import { updateMenuItemMembership } from '~/modules/navigation/menu-sheet/helpers/menu-operations';
 import { formatUpdatedData, getQueryItems, getSimilarQueries } from '~/query/helpers/mutate-query';
@@ -15,14 +21,14 @@ import { queryClient } from '~/query/query-client';
 
 const limit = config.requestLimits.members;
 
-const onError = (_: Error, __: UpdateMembershipProp | RemoveMembersProps, context?: MemberContextProp[]) => {
+const onError = (_: Error, __: MutationUpdateMembership | RemoveMembersProps, context?: MemberContextProp[]) => {
   if (context?.length) {
     for (const [queryKey, previousData] of context) queryClient.setQueryData(queryKey, previousData);
   }
 };
 
 export const useMemberUpdateMutation = () =>
-  useMutation<Membership, Error, UpdateMembershipProp, EntityMembershipContextProp>({
+  useMutation<Membership, Error, MutationUpdateMembership, EntityMembershipContextProp>({
     mutationKey: membersKeys.update(),
     mutationFn: updateMembership,
     onMutate: async (variables) => {

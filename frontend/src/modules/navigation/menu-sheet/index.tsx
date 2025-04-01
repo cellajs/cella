@@ -106,6 +106,7 @@ export const MenuSheet = memo(() => {
             id: sourceItem.membership.id,
             order: newOrder,
             orgIdOrSlug: sourceItem.organizationId || sourceItem.id,
+            // Mutation variables
             idOrSlug: sourceItem.id,
             entityType: sourceItem.entity,
           });
