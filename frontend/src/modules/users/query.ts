@@ -17,8 +17,8 @@ export const usersKeys = {
     entries: (filters?: GetUsersParams) => [...usersKeys.table.base(), filters] as const,
   },
   single: {
-    base: () => [...usersKeys.all, 'single'] as const,
-    byIdOrSlug: (idOrSlug: string) => [...usersKeys.single.base(), idOrSlug] as const,
+    base: ['user'] as const,
+    byIdOrSlug: (idOrSlug: string) => [...usersKeys.single.base, idOrSlug] as const,
   },
   update: () => [...usersKeys.all, 'update'] as const,
   delete: () => [...usersKeys.all, 'delete'] as const,
@@ -69,7 +69,7 @@ export const useUpdateUserMutation = () => {
     mutationKey: usersKeys.update(),
     mutationFn: updateUser,
     onSuccess: (updatedUser) => {
-      const mutateCache = useMutateQueryData(usersKeys.table.base(), () => usersKeys.single.base(), ['update']);
+      const mutateCache = useMutateQueryData(usersKeys.table.base(), () => usersKeys.single.base, ['update']);
 
       mutateCache.update([updatedUser]);
     },
@@ -88,7 +88,7 @@ export const useUserDeleteMutation = () => {
     mutationKey: usersKeys.delete(),
     mutationFn: (users) => deleteUsers(users.map(({ id }) => id)),
     onSuccess: (_, users) => {
-      const mutateCache = useMutateQueryData(usersKeys.table.base(), () => usersKeys.single.base(), ['remove']);
+      const mutateCache = useMutateQueryData(usersKeys.table.base(), () => usersKeys.single.base, ['remove']);
 
       mutateCache.remove(users);
     },

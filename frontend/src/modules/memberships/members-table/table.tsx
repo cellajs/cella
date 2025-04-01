@@ -44,8 +44,9 @@ const BaseDataTable = memo(
         const updatedMembership = {
           id: changedRows[index].membership.id,
           role: changedRows[index].membership.role,
-          idOrSlug: entity.slug,
           orgIdOrSlug: organizationId,
+          // Mutation variables
+          idOrSlug: entity.slug,
           entityType,
         };
 

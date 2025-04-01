@@ -53,18 +53,12 @@ export const removeMembers = async ({ idOrSlug, entityType, ids, orgIdOrSlug }: 
   await handleResponse(response);
 };
 
-export type UpdateMembershipProp = {
-  idOrSlug: string;
-  entityType: ContextEntity;
-} & Parameters<(typeof client)[':id']['$put']>['0']['json'] &
-  Parameters<(typeof client)[':id']['$put']>['0']['param'];
+export type UpdateMembershipProp = Parameters<(typeof client)[':id']['$put']>['0']['json'] & Parameters<(typeof client)[':id']['$put']>['0']['param'];
 
 /**
  * Update an membership in entity
  *
  * @param values.id - ID of membership.
- * @param values.idOrSlug - ID or slug of target entity.
- * @param values.entityType - Type of target entity.
  * @param param.orgIdOrSlug - Organization ID or slug associated with the entity.
  * @param values.order - New order(for users menu).
  * @param values.role - New role of user for target entity.
