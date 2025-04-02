@@ -1,13 +1,13 @@
-import { MailService } from '@sendgrid/mail';
+import brevo from '@getbrevo/brevo';
 import { config } from 'config';
 import { render } from 'jsx-email';
-import { env } from '../env';
+import { env } from '#/env';
 
-const sendgrid = new MailService();
+const apiInstance = new brevo.TransactionalEmailsApi();
+
 // Check if the API key is set
-const hasApiKey = !!env.SENDGRID_API_KEY;
-
-if (hasApiKey) sendgrid.setApiKey(env.SENDGRID_API_KEY ?? '');
+const hasApiKey = !!env.BREVO_API_KEY;
+if (hasApiKey) apiInstance.setApiKey(0, env.BREVO_API_KEY ?? '');
 
 // Basic email template type
 export type BasicTemplateType = {
@@ -51,7 +51,7 @@ export const mailer = {
   },
 
   /**
-   * Send an email using the SendGrid service.
+   * Send an email using the Brevo service.
    *
    * @param to - Recipient email address.
    * @param subject - Subject of the email.
@@ -64,14 +64,16 @@ export const mailer = {
       return;
     }
 
+    const sendSmtpEmail = new brevo.SendSmtpEmail();
+
+    sendSmtpEmail.subject = subject || `${config.name} message`;
+    sendSmtpEmail.htmlContent = html;
+    sendSmtpEmail.to = [{ email: env.SEND_ALL_TO_EMAIL || to }];
+    sendSmtpEmail.replyTo = { email: replyTo || config.supportEmail };
+    sendSmtpEmail.sender = { email: 'bobdilson44@gmail.com' };
+
     try {
-      await sendgrid.send({
-        to: env.SEND_ALL_TO_EMAIL || to,
-        replyTo: replyTo || config.supportEmail,
-        from: config.notificationsEmail,
-        subject: subject || `${config.name} message`,
-        html,
-      });
+      await apiInstance.sendTransacEmail(sendSmtpEmail);
     } catch (err) {
       console.warn('Failed to send email. \n', err);
     }
