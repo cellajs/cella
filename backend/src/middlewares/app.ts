@@ -48,7 +48,7 @@ app.use('*', csrf({ origin: config.frontendUrl }));
 app.use(
   '*',
   bodyLimit({
-    maxSize: 1 * 1024 * 1024, // 1mb
+    maxSize: config.uploadBodyLimit,
     onError: (ctx) => {
       return errorResponse(ctx, 413, 'body_too_large', 'warn', undefined, { path: ctx.req.path });
     },

@@ -100,6 +100,11 @@ export const config = {
     'bg-red-300',
   ],
 
+  /**
+   * Default upload body limit
+   */
+  uploadBodyLimit: 1 * 1024 * 1024, // 1mb
+
   // Allowed oauth strategies providers
   enabledAuthenticationStrategies: ['password', 'passkey', 'oauth'] as const,
 
