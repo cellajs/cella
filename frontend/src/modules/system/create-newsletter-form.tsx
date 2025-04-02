@@ -23,13 +23,14 @@ import { sendNewsletterBodySchema } from '#/modules/system/schema';
 const BlockNoteContent = lazy(() => import('~/modules/common/form-fields/blocknote-content'));
 interface CreateNewsletterFormProps {
   organizationIds: string[];
+  callback?: () => void;
 }
 
 const formSchema = sendNewsletterBodySchema;
 
 type FormValues = z.infer<typeof formSchema>;
 
-const CreateNewsletterForm = ({ organizationIds }: CreateNewsletterFormProps) => {
+const CreateNewsletterForm = ({ organizationIds, callback }: CreateNewsletterFormProps) => {
   const { t } = useTranslation();
 
   const [testOnly, setTestOnly] = useState<CheckedState>(false);
@@ -54,6 +55,7 @@ const CreateNewsletterForm = ({ organizationIds }: CreateNewsletterFormProps) =>
       form.reset();
       toaster(t('common:success.create_newsletter'), 'success');
       useSheeter.getState().remove(formContainerId);
+      callback?.();
     },
   });
 
@@ -67,9 +69,9 @@ const CreateNewsletterForm = ({ organizationIds }: CreateNewsletterFormProps) =>
   const cancel = () => form.reset();
 
   const canSend = () => {
-    const { content } = form.getValues();
+    const { content, roles } = form.getValues();
     // Only check if content field is dirty and if blocknote has changes
-    return form.formState.dirtyFields.content && blocknoteFieldIsDirty(content);
+    return roles.length > 0 && form.formState.dirtyFields.content && blocknoteFieldIsDirty(content);
   };
 
   const isDirty = () => {
