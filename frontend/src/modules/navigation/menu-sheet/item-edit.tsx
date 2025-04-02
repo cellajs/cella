@@ -7,8 +7,8 @@ import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import Spinner from '~/modules/common/spinner';
 import { toaster } from '~/modules/common/toaster';
 import type { UserMenuItem } from '~/modules/me/types';
-import type { UpdateMembershipProp } from '~/modules/memberships/api';
 import { useMemberUpdateMutation } from '~/modules/memberships/query/mutations';
+import type { MutationUpdateMembership } from '~/modules/memberships/query/types';
 import { Button } from '~/modules/ui/button';
 
 interface MenuItemEditProps {
@@ -25,11 +25,12 @@ export const MenuItemEdit = ({ item }: MenuItemEditProps) => {
       return toaster(t('common:action.offline.text'), 'warning');
     }
 
-    const updatedMembership: UpdateMembershipProp = {
+    const updatedMembership: MutationUpdateMembership = {
       id: item.membership.id,
+      orgIdOrSlug: item.membership.organizationId,
+      // Mutation variables
       idOrSlug: item.id,
       entityType: item.entity,
-      orgIdOrSlug: item.membership.organizationId,
     };
 
     if (key === 'archive') updatedMembership.archived = !item.membership.archived;

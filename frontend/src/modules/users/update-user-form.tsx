@@ -14,6 +14,7 @@ import InputFormField from '~/modules/common/form-fields/input';
 import { SelectLanguage } from '~/modules/common/form-fields/select-language';
 import { SlugFormField } from '~/modules/common/form-fields/slug';
 import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
+import { useStepper } from '~/modules/common/stepper';
 import { toaster } from '~/modules/common/toaster';
 import { useUpdateSelfMutation } from '~/modules/me/query';
 import { Button, SubmitButton } from '~/modules/ui/button';
@@ -24,7 +25,6 @@ import { useUpdateUserMutation } from '~/modules/users/query';
 import type { User } from '~/modules/users/types';
 import { useUserStore } from '~/store/user';
 import { cleanUrl } from '~/utils/clean-url';
-import { useStepper } from '../common/stepper';
 
 interface UpdateUserFormProps {
   user: User;

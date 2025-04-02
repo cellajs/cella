@@ -3,13 +3,13 @@ import { useTranslation } from 'react-i18next';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import CheckboxColumn from '~/modules/common/data-table/checkbox-column';
 import HeaderCell from '~/modules/common/data-table/header-cell';
+import TableEllipsis from '~/modules/common/data-table/table-ellipsis';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 import ImpersonateRow from '~/modules/users/table/impersonate-row';
 import UpdateRow from '~/modules/users/table/update-row';
 import type { User } from '~/modules/users/types';
 import UserCell from '~/modules/users/user-cell';
 import { dateShort } from '~/utils/date-short';
-import TableEllipsis from '../../common/data-table/table-ellipsis';
 
 export const useColumns = () => {
   const { t } = useTranslation();

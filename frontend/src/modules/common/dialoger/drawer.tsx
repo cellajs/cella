@@ -1,7 +1,7 @@
 import type { DialogProp } from '~/modules/common/dialoger/dialog';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
+import { useDropdowner } from '~/modules/common/dropdowner/use-dropdowner';
 import { Drawer, DrawerContent, DrawerDescription, DrawerHeader, DrawerTitle } from '~/modules/ui/drawer';
-import { useDropdowner } from '../dropdowner/use-dropdowner';
 
 export default function DrawerDialog({ dialog }: DialogProp) {
   const { id, content, open, description, title, titleContent = title, className, headerClassName = '' } = dialog;

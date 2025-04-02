@@ -28,8 +28,8 @@ export const organizationsKeys = {
     entries: (filters: GetOrganizationsParams) => [...organizationsKeys.table.base(), filters] as const,
   },
   single: {
-    base: () => [...organizationsKeys.all, 'single'] as const,
-    byIdOrSlug: (idOrSlug: string) => [...organizationsKeys.single.base(), idOrSlug] as const,
+    base: ['organization'] as const,
+    byIdOrSlug: (idOrSlug: string) => [...organizationsKeys.single.base, idOrSlug] as const,
   },
   create: () => [...organizationsKeys.all, 'create'] as const,
   update: () => [...organizationsKeys.all, 'update'] as const,
@@ -114,7 +114,7 @@ export const useOrganizationUpdateMutation = () => {
     mutationKey: organizationsKeys.update(),
     mutationFn: updateOrganization,
     onSuccess: (updatedOrganization) => {
-      const mutateCache = useMutateQueryData(organizationsKeys.table.base(), () => organizationsKeys.single.base(), ['update']);
+      const mutateCache = useMutateQueryData(organizationsKeys.table.base(), () => organizationsKeys.single.base, ['update']);
 
       mutateCache.update([updatedOrganization]);
     },
@@ -132,7 +132,7 @@ export const useOrganizationDeleteMutation = () => {
     mutationKey: organizationsKeys.delete(),
     mutationFn: (organizations) => deleteOrganizations(organizations.map(({ id }) => id)),
     onSuccess: (_, organizations) => {
-      const mutateCache = useMutateQueryData(organizationsKeys.table.base(), () => organizationsKeys.single.base(), ['remove']);
+      const mutateCache = useMutateQueryData(organizationsKeys.table.base(), () => organizationsKeys.single.base, ['remove']);
 
       mutateCache.remove(organizations);
       for (const { id } of organizations) deleteMenuItem(id);
