@@ -70,7 +70,7 @@ export const mailer = {
     sendSmtpEmail.htmlContent = html;
     sendSmtpEmail.to = [{ email: env.SEND_ALL_TO_EMAIL || to }];
     sendSmtpEmail.replyTo = { email: replyTo || config.supportEmail };
-    sendSmtpEmail.sender = { email: 'bobdilson44@gmail.com' };
+    sendSmtpEmail.sender = { email: config.notificationsEmail };
 
     try {
       await apiInstance.sendTransacEmail(sendSmtpEmail);
