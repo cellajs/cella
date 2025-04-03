@@ -11,10 +11,8 @@ export const MobileSheet = ({ sheet }: SheetProps) => {
   // Check if dropdown is open, then disable dismissible
   const isDropdownOpen = useDropdowner((state) => state.dropdown);
 
-  const closeSheet = () => {
-    useSheeter.getState().remove(sheet.id);
-    sheet.onClose?.();
-  };
+  // onClose trigger handles by remove method
+  const closeSheet = () => useSheeter.getState().remove(sheet.id);
 
   const onOpenChange = (open: boolean) => {
     updateSheet(sheet.id, { open });

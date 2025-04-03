@@ -42,10 +42,8 @@ export const DesktopSheet = ({ sheet }: SheetProps) => {
     }
   }, [sheetSide, sheetClassName]);
 
-  const closeSheet = () => {
-    useSheeter.getState().remove(sheet.id);
-    sheet.onClose?.();
-  };
+  // onClose trigger handles by remove method
+  const closeSheet = () => useSheeter.getState().remove(sheet.id);
 
   const onOpenChange = (open: boolean) => {
     if (!modal) return;
@@ -53,11 +51,12 @@ export const DesktopSheet = ({ sheet }: SheetProps) => {
     else closeSheet();
   };
 
+  // Esc click on sheet prevent eny Esc key down listeners
   const handleEscapeKeyDown = (e: KeyboardEvent) => {
-    const activeElement = document.activeElement;
     e.preventDefault();
     e.stopPropagation();
 
+    const activeElement = document.activeElement;
     if (!(activeElement instanceof HTMLElement) || !isElementInteractive(activeElement)) closeSheet();
     else activeElement.blur(); // Remove focus from the active element if it's interactive
   };
