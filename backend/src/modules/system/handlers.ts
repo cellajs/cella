@@ -167,7 +167,7 @@ const systemRoutes = app
       );
 
     // Stop if no recipients
-    if (recipientsRecords.length === 0 && !toSelf) return errorResponse(ctx, 400, 'no_recipients', 'warn');
+    if (!recipientsRecords.length && !toSelf) return errorResponse(ctx, 400, 'no_recipients', 'warn');
 
     // Add unsubscribe link to each recipient
     let recipients = recipientsRecords.map(({ newsletter, unsubscribeToken, ...recipient }) => ({

@@ -80,7 +80,7 @@ export const OrganizationsTableBar = ({
   const openNewsletterSheet = () => {
     const ids = selected.map((o) => o.id);
     const newsletterTabs = [
-      { id: 'write', label: 'common:write', element: <CreateNewsletterForm organizationIds={ids} /> },
+      { id: 'write', label: 'common:write', element: <CreateNewsletterForm organizationIds={ids} callback={clearSelection} /> },
       { id: 'preview', label: 'common:preview', element: <NewsletterPreview /> },
     ];
 
