@@ -13,6 +13,7 @@ export type SheetData = {
   className?: string;
   hideClose?: boolean;
   scrollableOverlay?: boolean;
+  closeSheetOnEsc?: boolean;
   modal?: boolean;
   onClose?: () => void;
 };
