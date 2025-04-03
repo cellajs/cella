@@ -1,4 +1,4 @@
-import { CopyObjectCommand, DeleteObjectCommand, S3Client } from '@aws-sdk/client-s3';
+import { CopyObjectCommand, DeleteObjectCommand, HeadObjectCommand, type HeadObjectCommandOutput, S3Client } from '@aws-sdk/client-s3';
 import { FileStore } from '@tus/file-store';
 import { S3Store } from '@tus/s3-store';
 import { MemoryLocker, Server, type ServerOptions, type Upload } from '@tus/server';
@@ -26,6 +26,7 @@ interface TusOptions {
  * @param newKey
  * @param credentials
  */
+
 async function moveS3Object(oldKey: string, newKey: string, credentials: AWSCredentials) {
   const s3Client = new S3Client({
     region: credentials.region,
@@ -35,12 +36,23 @@ async function moveS3Object(oldKey: string, newKey: string, credentials: AWSCred
     },
   });
 
+  const head: HeadObjectCommandOutput = await s3Client.send(
+    new HeadObjectCommand({
+      Bucket: credentials.bucket,
+      Key: oldKey,
+    }),
+  );
+
+  const contentType = head.ContentType ?? 'application/octet-stream';
+
   await s3Client.send(
     new CopyObjectCommand({
       Bucket: credentials.bucket,
       CopySource: `${credentials.bucket}/${oldKey}`,
       Key: newKey,
-      MetadataDirective: 'COPY',
+      MetadataDirective: 'REPLACE',
+      ContentType: contentType,
+      Metadata: head.Metadata,
     }),
   );
 
