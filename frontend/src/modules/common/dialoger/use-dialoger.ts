@@ -70,13 +70,11 @@ export const useDialoger = create<DialogStoreState>((set, get) => ({
     set((state) => {
       const dialogsToRemove = id ? state.dialogs.filter((d) => d.id === id) : state.dialogs;
 
-      for (const d of dialogsToRemove) {
-        d.onClose?.();
-      }
+      for (const dialog of dialogsToRemove) dialog.onClose?.();
 
-      return {
-        dialogs: id ? state.dialogs.filter((d) => d.id !== id) : [],
-      };
+      const dialogs = state.dialogs.filter(({ id }) => !dialogsToRemove.some(({ id: removedId }) => removedId === id));
+
+      return { dialogs };
     });
   },
 

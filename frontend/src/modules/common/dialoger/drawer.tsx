@@ -11,10 +11,8 @@ export default function DrawerDialog({ dialog }: DialogProp) {
   // Check if dropdown is open, then disable dismissible
   const isDropdownOpen = useDropdowner((state) => state.dropdown);
 
-  const closeDialog = () => {
-    useDialoger.getState().remove(dialog.id);
-    dialog.onClose?.();
-  };
+  // onClose trigger handles by remove method
+  const closeDialog = () => useDialoger.getState().remove(dialog.id);
 
   const onOpenChange = (open: boolean) => {
     updateDialog(dialog.id, { open });
