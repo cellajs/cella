@@ -39,7 +39,8 @@ export const getEntitiesQuery = async ({ userId, organizationIds, type, q, selfI
         inArray(membershipsTable.organizationId, organizationIds),
         eq(membershipsTable[entityIdField], table.id),
         ...(entityType !== 'user' ? [eq(membershipsTable.userId, userId)] : []),
-        ...(selfId ? [ne(membershipsTable.userId, selfId)] : []),
+        // in user searches exclude self from results
+        ...(selfId && entityType === 'user' ? [ne(membershipsTable.userId, selfId)] : []),
       ];
 
       // Build search filters
