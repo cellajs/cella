@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { config } from 'config';
 import { createSelectSchema } from 'drizzle-zod';
 import { membershipsTable } from '#/db/schema/memberships';
+import { tokensTable } from '#/db/schema/tokens';
 import { contextEntityTypeSchema, idOrSlugSchema, paginationQuerySchema } from '#/utils/schema/common';
 import { userSchema } from '../users/schema';
 
@@ -60,14 +61,14 @@ export const memberInvitationsQuerySchema = paginationQuerySchema.extend({
   sort: z.enum(['email', 'role', 'expiresAt', 'createdAt', 'createdBy']).default('createdAt').optional(),
 });
 
-export const memberInvitationsSchema = z.object({
-  id: z.string(),
-  email: z.string(),
-  name: z.string().nullable(),
-  role: z.enum(config.rolesByType.entityRoles).nullable(),
-  expiresAt: z.string(),
-  createdAt: z.string(),
-  createdBy: z.string().nullable(),
-});
+export const memberInvitationsSchema = createSelectSchema(tokensTable)
+  .pick({
+    id: true,
+    email: true,
+    role: true,
+    createdAt: true,
+    createdBy: true,
+  })
+  .extend({ expiresAt: z.string(), name: z.string().nullable() });
 
 export type MembershipInfoType = z.infer<typeof membershipInfoSchema>;

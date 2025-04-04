@@ -1,5 +1,5 @@
 import type { Entity } from 'config';
-import { eq, inArray, or } from 'drizzle-orm';
+import { type TableConfig, eq, inArray, or } from 'drizzle-orm';
 import type { PgTableWithColumns } from 'drizzle-orm/pg-core';
 import { db } from '#/db/db';
 import { entityTables } from '#/entity-config';
@@ -14,8 +14,7 @@ export type EntityModel<T extends Entity> = (typeof entityTables)[T]['$inferSele
  */
 export async function resolveEntity<T extends Entity>(entityType: T, idOrSlug: string): Promise<EntityModel<T> | undefined>;
 export async function resolveEntity<T extends Entity>(entityType: T, idOrSlug: string) {
-  // biome-ignore lint/suspicious/noExplicitAny: TODO
-  const table = entityTables[entityType] as PgTableWithColumns<any>;
+  const table = entityTables[entityType] as unknown as PgTableWithColumns<TableConfig>;
 
   // Return early if table is not available
   if (!table) throw new Error(`Invalid entity: ${entityType}`);
@@ -39,8 +38,7 @@ export async function resolveEntity<T extends Entity>(entityType: T, idOrSlug: s
  */
 export async function resolveEntities<T extends Entity>(entityType: T, ids: Array<string>): Promise<Array<EntityModel<T>>> {
   // Get the corresponding table for the entity type
-  // biome-ignore lint/suspicious/noExplicitAny: TODO
-  const table = entityTables[entityType] as PgTableWithColumns<any>;
+  const table = entityTables[entityType] as unknown as PgTableWithColumns<TableConfig>;
 
   // Return early if table is not available
   if (!table) throw new Error(`Invalid entity: ${entityType}`);

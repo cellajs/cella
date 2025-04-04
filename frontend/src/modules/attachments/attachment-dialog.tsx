@@ -10,18 +10,15 @@ import Spinner from '~/modules/common/spinner';
 interface AttachmentDialogProps {
   attachmentId: string;
   orgIdOrSlug: string;
-  groupId?: string;
 }
 
-const AttachmentDialog = ({ attachmentId, groupId, orgIdOrSlug }: AttachmentDialogProps) => {
+const AttachmentDialog = ({ attachmentId, orgIdOrSlug }: AttachmentDialogProps) => {
   const { t } = useTranslation();
   const { isOnline } = useOnlineManager();
 
-  const { data, isError, isLoading } = useSuspenseQuery(groupedAttachmentsQueryOptions({ groupId, orgIdOrSlug }));
+  const { data, isError, isLoading } = useSuspenseQuery(groupedAttachmentsQueryOptions({ attachmentId, orgIdOrSlug }));
 
   const attachments = data?.items ?? [];
-  // TODO(IMPROVE) improve fetch when no groupId(mb fetch by attachment id and return group if there is one)
-  const items = groupId ? attachments : attachments.filter(({ id }) => id === attachmentId);
 
   const itemIndex = attachments?.findIndex(({ id }) => attachmentId === id);
 
@@ -36,9 +33,9 @@ const AttachmentDialog = ({ attachmentId, groupId, orgIdOrSlug }: AttachmentDial
     );
   }
 
-  return items ? (
+  return attachments ? (
     <div className="flex flex-wrap relative -z-1 h-screen justify-center p-2 grow">
-      <AttachmentsCarousel items={items} isDialog itemIndex={itemIndex} saveInSearchParams={true} />
+      <AttachmentsCarousel items={attachments} isDialog itemIndex={itemIndex} saveInSearchParams={true} />
     </div>
   ) : (
     <ContentPlaceholder icon={isOnline ? FlameKindling : WifiOff} title={t(`${isOnline ? 'error:no_user_found' : 'common:offline.text'}`)} />

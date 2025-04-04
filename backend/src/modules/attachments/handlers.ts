@@ -104,7 +104,7 @@ const attachmentsRoutes = app
    * Get attachments
    */
   .openapi(attachmentsRouteConfig.getAttachments, async (ctx) => {
-    const { q, sort, order, offset, limit, groupId } = ctx.req.valid('query');
+    const { q, sort, order, offset, limit, attachmentId } = ctx.req.valid('query');
 
     const user = getContextUser();
     // Scope request to organization
@@ -113,10 +113,9 @@ const attachmentsRoutes = app
     // Filter at least by valid organization
     const filters: SQL[] = [
       eq(attachmentsTable.organizationId, organization.id),
-      ...(groupId ? [eq(attachmentsTable.groupId, groupId)] : []),
+      // If IMADO is off, show attachments that not have a public CDN URL only to users that create it because in that case attachments stored in IndexedDB
       ...(!config.has.imado
         ? [
-            // TODO explain this please
             or(
               and(eq(attachmentsTable.createdBy, user.id), notIlike(attachmentsTable.url, `${config.publicCDNUrl}%`)),
               like(attachmentsTable.url, `${config.publicCDNUrl}%`),
@@ -141,6 +140,18 @@ const attachmentsRoutes = app
       attachmentsTable.id,
       order,
     );
+
+    if (attachmentId) {
+      // Retrieve target attachment
+      const [targetAttachment] = await db.select().from(attachmentsTable).where(eq(attachmentsTable.id, attachmentId)).limit(1);
+      if (!targetAttachment) return errorResponse(ctx, 404, 'not_found', 'warn', 'attachment', { attachmentId });
+
+      // return target attachment itself if no groupId
+      if (!targetAttachment.groupId) return ctx.json({ success: true, data: { items: [targetAttachment], total: 1 } }, 200);
+
+      // add filter attachments by groupId
+      filters.push(eq(attachmentsTable.groupId, targetAttachment.groupId));
+    }
 
     const attachmentsQuery = db
       .select()

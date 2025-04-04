@@ -59,7 +59,7 @@ export const useColumns = (entity: EntityPage, isSheet: boolean, highDensity: bo
 
               navigate({
                 to: '.',
-                replace: false,
+                replace: true,
                 resetScroll: false,
                 search: (prev) => ({ ...prev, attachmentDialogId: id, groupId: groupId || undefined }),
               });
