@@ -41,7 +41,7 @@ const AttachmentDialogHandler = memo(() => {
     const timeoutId = setTimeout(() => {
       createDialog(
         <Suspense>
-          <AttachmentDialog attachmentId={attachmentDialogId} groupId={groupId} orgIdOrSlug={orgIdOrSlug} />
+          <AttachmentDialog attachmentId={attachmentDialogId} orgIdOrSlug={orgIdOrSlug} />
         </Suspense>,
         {
           id: 'attachment-dialog',
