@@ -81,6 +81,7 @@ export const UploadUppy = ({
         const imageEditorOptions: ImageEditorOptions = getImageEditorOptions(imageMode);
         const webcamOptions: WebcamOptions<UppyMeta, UppyBody> = {
           videoConstraints: { width: 1280, height: 720 },
+          preferredVideoMimeType: 'video/webm;codecs=vp9',
         };
 
         if (['cover', 'avatar'].includes(imageMode)) {
@@ -90,7 +91,7 @@ export const UploadUppy = ({
         if (plugins.includes('webcam')) imadoUppy.use(Webcam, webcamOptions);
         if (plugins.includes('image-editor')) imadoUppy.use(ImageEditor, imageEditorOptions);
         if (plugins.includes('audio')) imadoUppy.use(Audio);
-        if (plugins.includes('screen-capture')) imadoUppy.use(ScreenCapture);
+        if (plugins.includes('screen-capture')) imadoUppy.use(ScreenCapture, { preferredVideoMimeType: 'video/webm;codecs=vp9' });
 
         setUppy(imadoUppy);
       } catch (err) {
