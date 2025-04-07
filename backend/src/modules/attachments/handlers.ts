@@ -146,6 +146,8 @@ const attachmentsRoutes = app
       const [targetAttachment] = await db.select().from(attachmentsTable).where(eq(attachmentsTable.id, attachmentId)).limit(1);
       if (!targetAttachment) return errorResponse(ctx, 404, 'not_found', 'warn', 'attachment', { attachmentId });
 
+      targetAttachment.url = getImadoUrl.generate(targetAttachment.url);
+
       // return target attachment itself if no groupId
       if (!targetAttachment.groupId) return ctx.json({ success: true, data: { items: [targetAttachment], total: 1 } }, 200);
 
