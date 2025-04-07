@@ -12,6 +12,8 @@ export const dbConfig: DrizzleConfig = {
   casing: 'snake_case',
 };
 
+export const migrateConfig = { migrationsFolder: 'drizzle', migrationsSchema: 'drizzle-backend' };
+
 export const connection = env.PGLITE
   ? process.env.NODE_ENV === 'test'
     ? // in-memory database for tests

@@ -3,10 +3,10 @@ import chalk from 'chalk';
 import { config } from 'config';
 import { sql } from 'drizzle-orm';
 import { migrate } from 'drizzle-orm/pglite/migrator';
-import { db } from '#/db/db';
+import { db, migrateConfig } from '#/db/db';
 
 // Migrate the database
-await migrate(db, { migrationsFolder: 'drizzle', migrationsSchema: 'drizzle-backend' });
+await migrate(db, migrateConfig);
 
 const res = await db.execute(sql`SELECT * FROM users`);
 
