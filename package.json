@@ -19,6 +19,7 @@
     "prepare": "node prepare.js",
     "quick": "cross-env FORCE_COLOR=1 pnpm -r --parallel --stream quick",
     "docker": "pnpm --filter backend docker:up --detach",
+    "stop": "pnpm -r --parallel --stream stop",
     "generate": "pnpm --filter backend generate",
     "clean": "rimraf backend/dist frontend/dist frontend/stats",
     "dev": "pnpm clean && cross-env FORCE_COLOR=1 pnpm -r --parallel --stream dev",

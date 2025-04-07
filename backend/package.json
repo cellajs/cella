@@ -16,6 +16,8 @@
     "build:dev": "tsup",
     "build:staging": "cross-env NODE_ENV=staging tsup",
     "docker:up": "docker compose --env-file .env up",
+    "docker:down": "docker compose down",
+    "stop": "pnpm docker:down",
     "sentry:sourcemaps": "sentry-cli sourcemaps inject --org cella --project backend dist && sentry-cli sourcemaps upload --org cella --project backend dist",
     "build:sourcemaps": "cross-env NODE_ENV=production tsup && pnpm sentry:sourcemaps",
     "seed:user": "tsx scripts/seeds/user/index.ts",
