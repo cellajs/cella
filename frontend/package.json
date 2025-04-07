@@ -15,7 +15,8 @@
     "build:dev": "cross-env NODE_ENV=development vite build --mode development",
     "build:staging": "cross-env NODE_ENV=staging vite build --mode staging",
     "preview": "vite preview --port 3000",
-    "preview:dev": "cross-env NODE_ENV=development vite preview --port 3000"
+    "preview:dev": "cross-env NODE_ENV=development vite preview --port 3000",
+    "stop": "pkill -f 'vite'"
   },
   "dependencies": {
     "@atlaskit/pragmatic-drag-and-drop": "^1.5.2",
