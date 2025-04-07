@@ -7,6 +7,7 @@ import { db } from '#/db/db';
 import { nanoid } from '#/utils/nanoid';
 
 import chalk from 'chalk';
+import { type InsertEmailModel, emailsTable } from '#/db/schema/emails';
 import { type InsertMembershipModel, membershipsTable } from '#/db/schema/memberships';
 import { type InsertOrganizationModel, organizationsTable } from '#/db/schema/organizations';
 import { type InsertUserModel, usersTable } from '#/db/schema/users';
@@ -105,6 +106,14 @@ export const organizationsSeed = async () => {
     usersCount += insertUsers.length;
 
     const users = await db.insert(usersTable).values(insertUsers).returning().onConflictDoNothing();
+
+    const insertUsersEmails: InsertEmailModel[] = users.map((user) => ({
+      email: user.email,
+      userId: user.id,
+      verified: true,
+      verifiedAt: faker.date.past().toISOString(),
+    }));
+    await db.insert(emailsTable).values(insertUsersEmails).onConflictDoNothing();
 
     // Create 100 memberships for each organization
     const memberships: InsertMembershipModel[] = users.map((user) => {
