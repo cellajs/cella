@@ -99,6 +99,7 @@ export const organizationsSeed = async () => {
         hashedPassword,
         slug,
         avatarUrl: null,
+        newsletter: faker.datatype.boolean(),
         createdAt: pastIsoDate(),
       };
     });
