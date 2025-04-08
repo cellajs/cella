@@ -1,5 +1,6 @@
-import { useSuspenseQuery } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { FlameKindling, ServerCrash, WifiOff } from 'lucide-react';
+import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useOnlineManager } from '~/hooks/use-online-manager';
 import AttachmentsCarousel from '~/modules/attachments/attachments-carousel';
@@ -16,11 +17,14 @@ const AttachmentDialog = ({ attachmentId, orgIdOrSlug }: AttachmentDialogProps) 
   const { t } = useTranslation();
   const { isOnline } = useOnlineManager();
 
-  const { data, isError, isLoading } = useSuspenseQuery(groupedAttachmentsQueryOptions({ attachmentId, orgIdOrSlug }));
+  const { data, isError, isLoading } = useQuery(groupedAttachmentsQueryOptions({ attachmentId, orgIdOrSlug }));
 
   const attachments = data?.items ?? [];
 
-  const itemIndex = attachments?.findIndex(({ id }) => attachmentId === id);
+  const itemIndex = useMemo(() => {
+    const index = attachments.findIndex(({ id }) => id === attachmentId);
+    return index === -1 ? 0 : index;
+  }, [attachmentId, attachments]);
 
   if (isError) return <ContentPlaceholder icon={ServerCrash} title={t('error:request_failed')} />;
 
