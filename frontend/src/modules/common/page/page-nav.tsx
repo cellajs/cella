@@ -1,4 +1,4 @@
-import { Link, type ToPathOption } from '@tanstack/react-router';
+import { Link, type LinkComponentProps } from '@tanstack/react-router';
 import { motion } from 'motion/react';
 import { type MouseEventHandler, useEffect, useMemo, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -12,7 +12,10 @@ import { nanoid } from '~/utils/nanoid';
 export type PageTab = {
   id: string;
   label: string;
-  path: ToPathOption;
+  path: LinkComponentProps['to'];
+  params?: LinkComponentProps['params'];
+  search?: LinkComponentProps['search'];
+  activeOptions?: LinkComponentProps['activeOptions'];
 };
 
 interface Props {
@@ -62,10 +65,10 @@ export const PageNav = ({ title, avatar, tabs, className = '' }: Props) => {
       >
         <div className="hidden md:group-[.is-sticky]/sticky:flex absolute left-0 h-full items-center">
           {avatar && <AvatarWrap className="m-3 h-5 w-5 text-xs" type="organization" id={avatar.id} name={avatar.name} url={avatar.thumbnailUrl} />}
-          <div className="truncate leading-5 font-semibold text-sm max-w-42 sm:block">{title}</div>
+          {title && <div className="truncate leading-5 font-semibold text-sm max-w-42 sm:block">{title}</div>}
         </div>
         <div className="inline-flex min-w-max gap-1 px-1 sm:justify-center sm:flex">
-          {tabs.map(({ id, path, label }, index) => (
+          {tabs.map(({ id, path, label, search = {}, params = true, activeOptions = { exact: true, includeSearch: true } }, index) => (
             <Link
               key={id}
               id={`tab-${id}`}
@@ -74,8 +77,9 @@ export const PageNav = ({ title, avatar, tabs, className = '' }: Props) => {
               className="relative last:mr-4 p-2 lg:px-4 rounded-sm outline-hidden sm:ring-offset-background sm:focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
               to={path}
               draggable="false"
-              params={true}
-              activeOptions={{ exact: true, includeSearch: false }}
+              params={params}
+              search={search}
+              activeOptions={activeOptions}
               activeProps={{ 'data-active': true }}
               onClick={updateScrollPosition}
             >
