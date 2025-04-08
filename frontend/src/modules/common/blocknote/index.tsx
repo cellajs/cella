@@ -268,7 +268,8 @@ export const BlockNote = ({
       {/* By default hides on mobile */}
       {sideMenu && <CustomSideMenu editor={editor} allowedTypes={[...allowedBlockTypes, ...allowedFileBlockTypes]} />}
 
-      {members?.length && <Mention members={members} editor={editor} />}
+      {/* To avoid rendering "0" */}
+      {members?.length ? <Mention members={members} editor={editor} /> : null}
 
       {emojiPicker && (
         <GridSuggestionMenuController
