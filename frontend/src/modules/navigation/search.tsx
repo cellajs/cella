@@ -1,3 +1,5 @@
+import type { entitySuggestionSchema } from '#/modules/entities/schema';
+
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
 import { type Entity, config } from 'config';
@@ -16,7 +18,6 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { ScrollArea } from '~/modules/ui/scroll-area';
 import { getEntityRoute, suggestionSections } from '~/nav-config';
 import { useNavigationStore } from '~/store/navigation';
-import type { entitySuggestionSchema } from '#/modules/entities/schema';
 
 export type SuggestionType = z.infer<typeof entitySuggestionSchema>;
 
@@ -72,13 +73,8 @@ export const AppSearch = () => {
     // Update recent searches with the search value
     updateRecentSearches(searchValue);
 
-    const entityRoute = getEntityRoute(suggestion);
-
-    navigate({
-      to: entityRoute.path,
-      resetScroll: false,
-      params: entityRoute.params,
-    });
+    const { path, params, search } = getEntityRoute(suggestion);
+    navigate({ to: path, resetScroll: false, params, search });
 
     useDialoger.getState().remove();
   };

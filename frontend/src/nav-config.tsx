@@ -5,6 +5,7 @@ import { AccountSheet } from '~/modules/navigation/account-sheet';
 import { MenuSheet } from '~/modules/navigation/menu-sheet';
 
 import { onlineManager } from '@tanstack/react-query';
+import type { LinkComponentProps } from '@tanstack/react-router';
 import { i18n } from '~/lib/i18n';
 import type { FooterLinkProps } from '~/modules/common/app-footer';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
@@ -35,6 +36,12 @@ export type NavItem = {
   mirrorOnMobile?: boolean;
 };
 
+type EntityRoute = {
+  path: LinkComponentProps['to'];
+  params: LinkComponentProps['params'];
+  search: LinkComponentProps['search'];
+  activeOptions: LinkComponentProps['activeOptions'];
+};
 /**
  * Declare search nav button action
  */
@@ -83,7 +90,7 @@ export const suggestionSections: SuggestionSection[] = [
  * Since each app has its own entity structure or hierarchy, we need to resolve them dynamically in some cases.
  * For example to get/search entities and for items in the menu sheet.
  */
-export const getEntityRoute = (item: UserMenuItem | SuggestionType) => {
+export const getEntityRoute = (item: UserMenuItem | SuggestionType): EntityRoute => {
   const {
     entity,
     id,
@@ -91,10 +98,12 @@ export const getEntityRoute = (item: UserMenuItem | SuggestionType) => {
     membership: { organizationId },
   } = item;
 
-  const path = baseEntityRoutes[entity];
-
   const idOrSlug = slug || id;
   const orgIdOrSlug = entity === 'organization' ? id : organizationId;
 
-  return { path, params: { idOrSlug, orgIdOrSlug } };
+  const path = baseEntityRoutes[entity];
+  const params: LinkComponentProps['params'] = { idOrSlug, orgIdOrSlug };
+  const activeOptions: LinkComponentProps['activeOptions'] = { exact: false, includeHash: true, includeSearch: true };
+
+  return { path, params, search: {}, activeOptions };
 };
