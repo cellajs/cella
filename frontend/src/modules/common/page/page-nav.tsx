@@ -68,7 +68,7 @@ export const PageNav = ({ title, avatar, tabs, className = '' }: Props) => {
           {title && <div className="truncate leading-5 font-semibold text-sm max-w-42 sm:block">{title}</div>}
         </div>
         <div className="inline-flex min-w-max gap-1 px-1 sm:justify-center sm:flex">
-          {tabs.map(({ id, path, label, search = {}, params = true, activeOptions = { exact: true, includeSearch: true } }, index) => (
+          {tabs.map(({ id, path, label, search = {}, params = true, activeOptions = { exact: true, includeSearch: false } }, index) => (
             <Link
               key={id}
               id={`tab-${id}`}
