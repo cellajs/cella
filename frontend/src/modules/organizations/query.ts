@@ -115,7 +115,7 @@ export const useOrganizationUpdateMutation = () => {
     mutationFn: updateOrganization,
     onSuccess: (updatedOrganization) => {
       // Update menuItem in store, only if it has membership is not null
-      if (updatedOrganization.membership) updateMenuItem(updatedOrganization as OrganizationWithMembership);
+      if (updatedOrganization.membership) updateMenuItem({ ...updatedOrganization, membership: updatedOrganization.membership });
 
       const mutateCache = useMutateQueryData(organizationsKeys.table.base(), () => organizationsKeys.single.base, ['update']);
 
