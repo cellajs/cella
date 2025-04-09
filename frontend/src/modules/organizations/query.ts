@@ -2,7 +2,7 @@ import { infiniteQueryOptions, queryOptions, useMutation } from '@tanstack/react
 import { config } from 'config';
 
 import type { ApiError } from '~/lib/api';
-import { addMenuItem, deleteMenuItem } from '~/modules/navigation/menu-sheet/helpers/menu-operations';
+import { addMenuItem, deleteMenuItem, updateMenuItem } from '~/modules/navigation/menu-sheet/helpers/menu-operations';
 import {
   type CreateOrganizationParams,
   type GetOrganizationsParams,
@@ -114,6 +114,9 @@ export const useOrganizationUpdateMutation = () => {
     mutationKey: organizationsKeys.update(),
     mutationFn: updateOrganization,
     onSuccess: (updatedOrganization) => {
+      // Update menuItem in store, only if it has membership is not null
+      if (updatedOrganization.membership) updateMenuItem(updatedOrganization as OrganizationWithMembership);
+
       const mutateCache = useMutateQueryData(organizationsKeys.table.base(), () => organizationsKeys.single.base, ['update']);
 
       mutateCache.update([updatedOrganization]);

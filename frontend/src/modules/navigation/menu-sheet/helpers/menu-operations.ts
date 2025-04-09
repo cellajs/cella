@@ -1,8 +1,9 @@
+import { entityRelations } from '#/entity-config';
+
 import type { ContextEntity } from 'config';
 import type { UserMenu, UserMenuItem } from '~/modules/me/types';
 import type { MinimumMembershipInfo } from '~/modules/memberships/types';
 import { useNavigationStore } from '~/store/navigation';
-import { entityRelations } from '#/entity-config';
 
 const useTransformOnMenuItems = (transform: (items: UserMenuItem[]) => UserMenuItem[]) => {
   const { menu } = useNavigationStore.getState();
@@ -60,13 +61,16 @@ export const updateMenuItem = (updatedEntity: UserMenuItem) => {
   const update = (items: UserMenuItem[]): UserMenuItem[] => {
     return items.map((item) => {
       if (item.id === updatedEntity.id) {
+        const updatedMembership = {
+          ...item.membership,
+          ...updatedEntity.membership,
+        };
+
         return {
           ...item,
-          ...updatedEntity,
-          membership: {
-            ...item.membership,
-            ...updatedEntity.membership,
-          },
+          // Only update fields that exist in item
+          ...Object.fromEntries(Object.keys(updatedEntity).map((key) => (key in item ? [key, updatedEntity[key as keyof UserMenuItem]] : []))),
+          membership: updatedMembership,
         };
       }
       if (item.submenu) {
