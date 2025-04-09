@@ -2,7 +2,6 @@ import { config } from 'config';
 import { Handshake, Trash, XSquare } from 'lucide-react';
 import { useMemo, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { sort } from 'virtua/unstable_core';
 import ColumnsView from '~/modules/common/data-table/columns-view';
 import Export from '~/modules/common/data-table/export';
 import { TableBarButton } from '~/modules/common/data-table/table-bar-button';
@@ -32,7 +31,7 @@ export const RequestsTableBar = ({ total, selected, searchVars, setSearch, colum
 
   const selectedToWaitlist = useMemo(() => selected.filter((r) => r.type === 'waitlist' && !r.tokenId), [selected]);
 
-  const { q, order } = searchVars;
+  const { q, order, sort } = searchVars;
   const isFiltered = !!q;
 
   const mutateQuery = useMutateQueryData(requestsKeys.table.base());
