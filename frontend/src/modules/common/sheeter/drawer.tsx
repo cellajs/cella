@@ -35,7 +35,8 @@ export const MobileSheet = ({ sheet }: SheetProps) => {
           <DrawerTitle className={`font-medium mb-2 ${title ? '' : 'hidden'}`}>{titleContent}</DrawerTitle>
           <DrawerDescription className={`text-muted-foreground font-light ${description ? '' : 'hidden'}`}>{description}</DrawerDescription>
         </DrawerHeader>
-        {content}
+        {/* To allow y scroll in drawer */}
+        <div className="overflow-y-auto">{content}</div>
       </DrawerContent>
     </Drawer>
   );
