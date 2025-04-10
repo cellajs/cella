@@ -1,4 +1,4 @@
-import { and, count, eq, getTableColumns, ilike, inArray, or } from 'drizzle-orm';
+import { and, count, eq, ilike, inArray, or } from 'drizzle-orm';
 
 import { OpenAPIHono } from '@hono/zod-openapi';
 import { db } from '#/db/db';
@@ -65,7 +65,7 @@ const usersRoutes = app
     if (role) filters.push(eq(usersTable.role, role));
 
     const usersQuery = db
-      .select({ ...getTableColumns(userSelect) })
+      .select({ users: userSelect })
       .from(usersTable)
       .where(filters.length > 0 ? and(...filters) : undefined)
       .orderBy(orderColumn)
@@ -73,7 +73,7 @@ const usersRoutes = app
 
     const [{ total }] = await db.select({ total: count() }).from(usersQuery.as('users'));
 
-    const items = await usersQuery.limit(Number(limit)).offset(Number(offset));
+    const items = (await usersQuery.limit(Number(limit)).offset(Number(offset))).map(({ users }) => users);
 
     return ctx.json({ success: true, data: { items, total } }, 200);
   })
