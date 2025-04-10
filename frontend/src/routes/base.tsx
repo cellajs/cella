@@ -18,7 +18,7 @@ const AppLayout = lazy(() => import('~/modules/common/app-layout'));
 
 const errorSearchSchema = z.object({
   error: z.string().optional(),
-  severity: z.enum(['warn', 'error']).optional(),
+  severity: z.enum(config.severityLevels).optional(),
 });
 
 export const rootRoute = createRootRouteWithContext()({

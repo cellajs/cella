@@ -95,7 +95,7 @@ const ContactFormMap = () => {
       <ErrorBoundary
         fallbackRender={({ error, resetErrorBoundary }) => <ErrorNotice level="app" error={error} resetErrorBoundary={resetErrorBoundary} />}
       >
-        <div className="w-full h-full md:pb-12 md:px-4 overflow-hidden">
+        <div className="w-full h-full md:pb-12 overflow-hidden">
           <APIProvider apiKey={config.googleMapsKey} libraries={['marker']}>
             <GMap
               mapId={mapConfig.mapId || null}
