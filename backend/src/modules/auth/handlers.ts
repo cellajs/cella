@@ -97,7 +97,7 @@ const authRoutes = app
     }
 
     // Stop if sign up is disabled and no invitation
-    if (!config.has.registrationEnabled) return errorResponse(ctx, 403, 'sign_up_restricted', 'warn');
+    if (!config.has.registrationEnabled) return errorResponse(ctx, 403, 'sign_up_restricted', 'info');
 
     const hashedPassword = await hashPassword(password);
     const slug = slugFromEmail(email);
@@ -582,7 +582,7 @@ const authRoutes = app
 
       // If registration is disabled and no existing user, throw to error
       if (!config.has.registrationEnabled && (!existingUser || (inviteToken && inviteToken.type !== 'system'))) {
-        return errorRedirect(ctx, 'sign_up_restricted', 'error');
+        return errorRedirect(ctx, 'sign_up_restricted', 'info');
       }
 
       const emailVerified = transformedUser.emailVerified || !!inviteToken;
@@ -656,7 +656,7 @@ const authRoutes = app
 
       // If registration is disabled and no existing user, throw to error
       if (!config.has.registrationEnabled && (!existingUser || (inviteToken && inviteToken.type !== 'system'))) {
-        return errorRedirect(ctx, 'sign_up_restricted', 'error');
+        return errorRedirect(ctx, 'sign_up_restricted', 'info');
       }
 
       const emailVerified = transformedUser.emailVerified || !!inviteToken;
@@ -730,7 +730,7 @@ const authRoutes = app
 
       // If registration is disabled and no existing user, throw to error
       if (!config.has.registrationEnabled && (!existingUser || (inviteToken && inviteToken.type !== 'system'))) {
-        return errorRedirect(ctx, 'sign_up_restricted', 'error');
+        return errorRedirect(ctx, 'sign_up_restricted', 'info');
       }
 
       const emailVerified = transformedUser.emailVerified || !!inviteToken;
