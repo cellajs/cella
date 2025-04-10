@@ -69,14 +69,14 @@ const AttachmentsCarousel = ({ items = [], isDialog = false, itemIndex = 0, save
     });
   };
 
-  const togglePanState = (enabled: boolean) => setWatchDrag(enabled && items.length > 1);
+  const toggleWatchDrag = (enabled: boolean) => setWatchDrag(enabled && items.length > 1);
 
   if (!items.length || !currentItem) return null;
 
   return (
     <BaseCarousel
       isDialog={isDialog}
-      opts={{ duration: 20, loop: true, startIndex: itemIndex, watchDrag }}
+      opts={{ duration: 20, loop: true, startIndex: currentItemIndex, watchDrag }}
       plugins={isDialog ? [] : [Autoplay({ delay: 4000, stopOnInteraction: true, stopOnMouseEnter: true })]}
       className="w-full h-full group"
       setApi={(api) => {
@@ -145,7 +145,7 @@ const AttachmentsCarousel = ({ items = [], isDialog = false, itemIndex = 0, save
                 showButtons={currentItemIndex === idx}
                 url={url}
                 altName={`Slide ${idx}`}
-                togglePanState={togglePanState}
+                onPanStateToggle={toggleWatchDrag}
               />
             </CarouselItem>
           );

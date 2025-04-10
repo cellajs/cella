@@ -19,7 +19,7 @@ interface AttachmentRenderProps {
   showButtons?: boolean;
   itemClassName?: string;
   containerClassName?: string;
-  togglePanState?: (state: boolean) => void;
+  onPanStateToggle?: (state: boolean) => void;
 }
 
 export const AttachmentRender = ({
@@ -30,7 +30,7 @@ export const AttachmentRender = ({
   imagePanZoom = false,
   itemClassName,
   containerClassName,
-  togglePanState,
+  onPanStateToggle,
 }: AttachmentRenderProps) => {
   const isMobile = useBreakpoints('max', 'sm');
 
@@ -62,7 +62,7 @@ export const AttachmentRender = ({
       <Suspense fallback={<Spinner className="mt-[45vh]" />}>
         {type.includes('image') &&
           (imagePanZoom && !isMobile ? (
-            <ReactPanZoom image={url} alt={altName} togglePanState={togglePanState} imageClass={itemClassName} showButtons={showButtons} />
+            <ReactPanZoom image={url} alt={altName} onPanStateToggle={onPanStateToggle} imageClass={itemClassName} showButtons={showButtons} />
           ) : (
             <img src={url} alt={altName} className={`${itemClassName} w-full h-full`} />
           ))}
