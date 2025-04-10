@@ -1,25 +1,14 @@
-import type { Block } from '@blocknote/core';
 import { FilePanelController, type FilePanelProps, GridSuggestionMenuController, useCreateBlockNote } from '@blocknote/react';
 import { BlockNoteView } from '@blocknote/shadcn';
 import { type KeyboardEventHandler, type MouseEventHandler, useCallback, useEffect, useRef, useState } from 'react';
-import * as Badge from '~/modules/ui/badge';
-import * as Button from '~/modules/ui/button';
-import * as Card from '~/modules/ui/card';
-import * as DropdownMenu from '~/modules/ui/dropdown-menu';
-import * as Input from '~/modules/ui/input';
-import * as Label from '~/modules/ui/label';
-import * as Popover from '~/modules/ui/popover';
-import * as Select from '~/modules/ui/select';
-import * as Tabs from '~/modules/ui/tabs';
-import * as Toggle from '~/modules/ui/toggle';
-import * as Tooltip from '~/modules/ui/tooltip';
+
+import '~/modules/common/blocknote/app-specific-custom/styles.css';
+import '~/modules/common/blocknote/styles.css';
 
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import router from '~/lib/router';
+import type { CarouselItemData } from '~/modules/attachments/attachments-carousel';
 import { openAttachmentDialog } from '~/modules/attachments/helpers';
-import type { Member } from '~/modules/memberships/types';
-import { useUIStore } from '~/store/ui';
-
 import {
   allowedFileTypes,
   allowedTypes,
@@ -31,12 +20,21 @@ import { Mention } from '~/modules/common/blocknote/custom-elements/mention';
 import { CustomFormattingToolbar } from '~/modules/common/blocknote/custom-formatting-toolbar';
 import { CustomSideMenu } from '~/modules/common/blocknote/custom-side-menu';
 import { CustomSlashMenu } from '~/modules/common/blocknote/custom-slash-menu';
-import { compareIsContentSame, focusEditor, getContentAsString, getUrlFromProps, handleSubmitOnEnter } from '~/modules/common/blocknote/helpers';
+import { compareIsContentSame, getUrlFromProps, handleSubmitOnEnter } from '~/modules/common/blocknote/helpers';
 import type { BasicBlockBaseTypes, BasicFileBlockTypes, CellaCustomBlockTypes } from '~/modules/common/blocknote/types';
-
-import type { CarouselItemData } from '~/modules/attachments/attachments-carousel';
-import '~/modules/common/blocknote/app-specific-custom/styles.css';
-import '~/modules/common/blocknote/styles.css';
+import type { Member } from '~/modules/memberships/types';
+import * as Badge from '~/modules/ui/badge';
+import * as Button from '~/modules/ui/button';
+import * as Card from '~/modules/ui/card';
+import * as DropdownMenu from '~/modules/ui/dropdown-menu';
+import * as Input from '~/modules/ui/input';
+import * as Label from '~/modules/ui/label';
+import * as Popover from '~/modules/ui/popover';
+import * as Select from '~/modules/ui/select';
+import * as Tabs from '~/modules/ui/tabs';
+import * as Toggle from '~/modules/ui/toggle';
+import * as Tooltip from '~/modules/ui/tooltip';
+import { useUIStore } from '~/store/ui';
 import { nanoid } from '~/utils/nanoid';
 
 type BlockNoteProps = {
@@ -123,8 +121,9 @@ export const BlockNote = ({
     if (editor.filePanel?.shown) return;
 
     const textToUpdate = passedText ?? text;
+
     // Check if there is any difference in the content
-    if (await compareIsContentSame(editor, defaultValue)) return;
+    if (compareIsContentSame(textToUpdate, defaultValue)) return;
 
     updateData(textToUpdate);
   };
@@ -135,7 +134,7 @@ export const BlockNote = ({
     // Converts the editor's contents from Block objects to HTML and sanitizes it
     const descriptionHtml = await editor.blocksToFullHTML(editor.document);
 
-    const contentSame = await compareIsContentSame(editor, text);
+    const contentSame = compareIsContentSame(descriptionHtml, text);
     // Check if there is any difference in the content
     if (!contentSame) onTextDifference?.();
 
@@ -178,32 +177,19 @@ export const BlockNote = ({
       if (wasInitial.current && isCreationMode && html !== '') return;
 
       const blocks = await editor.tryParseHTMLToBlocks(html);
-
-      // Get the current blocks and the new blocks' content as strings to compare them
-      const currentBlocks = getContentAsString(editor.document as Block[]);
-      const newBlocksContent = getContentAsString(blocks as Block[]);
+      const currentHTML = await editor.blocksToFullHTML(editor.document);
 
       // Only replace blocks if the content actually changes
-      if (!isCreationMode && currentBlocks === newBlocksContent) return;
+      if (!isCreationMode && compareIsContentSame(html, currentHTML)) return;
 
       editor.replaceBlocks(editor.document, blocks);
-
-      // Handle focus:
-      // 1. In creation mode, focus the editor only if it hasn't been initialized before.
-      // 2. Outside creation mode, focus the editor every time.
-      if (isCreationMode) {
-        if (!wasInitial.current) focusEditor(editor); // Focus only on the first initialization in creation mode
-      } else focusEditor(editor); // Always focus when not in creation mode
-
-      // Mark the editor as having been initialized
-      wasInitial.current = true;
     };
 
     blockUpdate(defaultValue);
   }, [defaultValue]);
 
   const onBeforeLoadHandle = useCallback(async () => {
-    if (!wasInitial.current || (await compareIsContentSame(editor, defaultValue))) return;
+    if (!wasInitial.current || compareIsContentSame(text, defaultValue)) return;
     updateData(text);
   }, [text, wasInitial]);
 
@@ -246,6 +232,8 @@ export const BlockNote = ({
       ref={blockNoteRef}
       data-color-scheme={mode}
       theme={mode}
+      // Auto focus on desktop
+      autoFocus={!isMobile}
       editor={editor}
       shadCNComponents={{ Button, DropdownMenu, Popover, Tooltip, Select, Label, Input, Card, Badge, Toggle, Tabs }}
       onChange={onBlockNoteChange}
