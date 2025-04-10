@@ -8,16 +8,12 @@ import { membershipInfoSchema } from '#/modules/memberships/schema';
 import { enabledOauthProvidersEnum } from '#/modules/users/schema';
 import { contextEntityTypeSchema, idOrSlugSchema } from '#/utils/schema/common';
 
-const sessionSchema = createSelectSchema(sessionsTable);
-
-export const sessionsSchema = z.object({
-  sessions: z.array(sessionSchema.omit({ token: true }).extend({ createdAt: z.string(), expiresAt: z.string(), isCurrent: z.boolean() })),
-});
+export const sessionSchema = createSelectSchema(sessionsTable).omit({ token: true }).extend({ isCurrent: z.boolean() });
 
 export const meAuthInfoSchema = z.object({
   oauth: z.array(enabledOauthProvidersEnum),
   passkey: z.boolean(),
-  ...sessionsSchema.shape,
+  sessions: z.array(sessionSchema.extend({ expiresAt: z.string() })),
 });
 
 export const menuItemSchema = limitEntitySchema.omit({ bannerUrl: true }).extend({

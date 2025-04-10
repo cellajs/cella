@@ -11,10 +11,8 @@ export default function DrawerDialog({ dialog }: DialogProp) {
   // Check if dropdown is open, then disable dismissible
   const isDropdownOpen = useDropdowner((state) => state.dropdown);
 
-  const closeDialog = () => {
-    useDialoger.getState().remove(dialog.id);
-    dialog.onClose?.();
-  };
+  // onClose trigger handles by remove method
+  const closeDialog = () => useDialoger.getState().remove(dialog.id);
 
   const onOpenChange = (open: boolean) => {
     updateDialog(dialog.id, { open });
@@ -28,7 +26,8 @@ export default function DrawerDialog({ dialog }: DialogProp) {
           <DrawerTitle className={`${title ? '' : 'hidden'} text-left min-h-6`}>{titleContent}</DrawerTitle>
           <DrawerDescription className={`${description ? '' : 'hidden'}`}>{description}</DrawerDescription>
         </DrawerHeader>
-        <div className="flex flex-col gap-4">{content}</div>
+        {/* To allow y scroll in drawer */}
+        <div className="flex flex-col gap-4 overflow-y-auto">{content}</div>
       </DrawerContent>
     </Drawer>
   );

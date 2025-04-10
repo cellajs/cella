@@ -24,6 +24,7 @@ export const DesktopSheet = ({ sheet }: SheetProps) => {
     hideClose = false,
     className: sheetClassName,
     content,
+    closeSheetOnEsc = true,
   } = sheet;
 
   const isMobile = useBreakpoints('max', 'sm', false);
@@ -42,10 +43,8 @@ export const DesktopSheet = ({ sheet }: SheetProps) => {
     }
   }, [sheetSide, sheetClassName]);
 
-  const closeSheet = () => {
-    useSheeter.getState().remove(sheet.id);
-    sheet.onClose?.();
-  };
+  // onClose trigger handles by remove method
+  const closeSheet = () => useSheeter.getState().remove(sheet.id);
 
   const onOpenChange = (open: boolean) => {
     if (!modal) return;
@@ -54,12 +53,16 @@ export const DesktopSheet = ({ sheet }: SheetProps) => {
   };
 
   const handleEscapeKeyDown = (e: KeyboardEvent) => {
-    const activeElement = document.activeElement;
     e.preventDefault();
-    e.stopPropagation();
 
-    if (!(activeElement instanceof HTMLElement) || !isElementInteractive(activeElement)) closeSheet();
-    else activeElement.blur(); // Remove focus from the active element if it's interactive
+    // Blur active element on esc click
+    const activeElement = document.activeElement;
+    if (activeElement instanceof HTMLElement && isElementInteractive(activeElement)) activeElement.blur();
+
+    if (!closeSheetOnEsc) return;
+    // if close prevent eny Esc key down listeners
+    e.stopPropagation();
+    closeSheet();
   };
 
   const handleInteractOutside = (event: CustomEvent<{ originalEvent: PointerEvent }> | CustomEvent<{ originalEvent: FocusEvent }>) => {

@@ -13,6 +13,7 @@ export type SheetData = {
   className?: string;
   hideClose?: boolean;
   scrollableOverlay?: boolean;
+  closeSheetOnEsc?: boolean;
   modal?: boolean;
   onClose?: () => void;
 };
@@ -62,13 +63,21 @@ export const useSheeter = create<SheetStoreState>()((set, get) => ({
 
   remove: (id, excludeId) => {
     set((state) => {
-      let updatedSheets: InternalSheet[];
+      let removedSheets = [];
+
       if (id) {
-        updatedSheets = state.sheets.filter((sheet) => sheet.id !== id);
+        removedSheets = state.sheets.filter((sheet) => sheet.id === id);
       } else {
-        updatedSheets = excludeId ? state.sheets.filter((sheet) => sheet.id === excludeId) : [];
+        removedSheets = excludeId ? state.sheets.filter((sheet) => sheet.id !== excludeId) : state.sheets;
       }
-      return { sheets: updatedSheets };
+
+      // Call onClose for each removed sheet
+      for (const sheet of removedSheets) sheet.onClose?.();
+
+      // Filter out removed sheets from state
+      const sheets = state.sheets.filter((sheet) => !removedSheets.some((removed) => removed.id === sheet.id));
+
+      return { sheets };
     });
   },
 

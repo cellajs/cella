@@ -19,10 +19,8 @@ export default function StandardDialog({ dialog }: DialogProp) {
   // TODO use ref here?
   const containerElement = useMemo(() => (container ? document.getElementById(container.id) : null), [container]);
 
-  const closeDialog = () => {
-    useDialoger.getState().remove(dialog.id);
-    dialog.onClose?.();
-  };
+  // onClose trigger handles by remove method
+  const closeDialog = () => useDialoger.getState().remove(dialog.id);
 
   const onOpenChange = (open: boolean) => {
     useDialoger.getState().update(dialog.id, { open });

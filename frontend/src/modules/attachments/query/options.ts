@@ -26,15 +26,15 @@ export const attachmentsKeys = {
  * This function returns the configuration for querying group of attachments from target organization.
  *
  * @param param.orgIdOrSlug - Organization ID or slug.
- * @param param.groupId - GroupId, of fetched attachments.
+ * @param param.attachmentId - attachmentId, to fetch all attachments of same group.
  * @returns  Query options.
  */
-export const groupedAttachmentsQueryOptions = ({ orgIdOrSlug, groupId }: Pick<GetAttachmentsParams, 'groupId' | 'orgIdOrSlug'>) => {
+export const groupedAttachmentsQueryOptions = ({ orgIdOrSlug, attachmentId }: Pick<GetAttachmentsParams, 'attachmentId' | 'orgIdOrSlug'>) => {
   const queryKey = attachmentsKeys.list.base();
 
   return queryOptions({
     queryKey,
-    queryFn: () => getAttachments({ groupId, orgIdOrSlug }),
+    queryFn: () => getAttachments({ attachmentId, orgIdOrSlug }),
     staleTime: 0,
     gcTime: 0,
   });

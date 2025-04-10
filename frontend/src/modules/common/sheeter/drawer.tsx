@@ -11,10 +11,8 @@ export const MobileSheet = ({ sheet }: SheetProps) => {
   // Check if dropdown is open, then disable dismissible
   const isDropdownOpen = useDropdowner((state) => state.dropdown);
 
-  const closeSheet = () => {
-    useSheeter.getState().remove(sheet.id);
-    sheet.onClose?.();
-  };
+  // onClose trigger handles by remove method
+  const closeSheet = () => useSheeter.getState().remove(sheet.id);
 
   const onOpenChange = (open: boolean) => {
     updateSheet(sheet.id, { open });
@@ -37,7 +35,8 @@ export const MobileSheet = ({ sheet }: SheetProps) => {
           <DrawerTitle className={`font-medium mb-2 ${title ? '' : 'hidden'}`}>{titleContent}</DrawerTitle>
           <DrawerDescription className={`text-muted-foreground font-light ${description ? '' : 'hidden'}`}>{description}</DrawerDescription>
         </DrawerHeader>
-        {content}
+        {/* To allow y scroll in drawer */}
+        <div className="overflow-y-auto">{content}</div>
       </DrawerContent>
     </Drawer>
   );

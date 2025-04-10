@@ -19,7 +19,7 @@ export const MenuSheetItem = ({ item, className, searchResults }: MenuSheetItemP
   const { t } = useTranslation();
 
   // Build route path for the entity
-  const { params, path } = useMemo(() => getEntityRoute(item), [item]);
+  const { params, path, search, activeOptions } = useMemo(() => getEntityRoute(item), [item]);
 
   const isOnline = onlineManager.isOnline();
   const offlineAccess = useUIStore((state) => state.offlineAccess);
@@ -33,17 +33,18 @@ export const MenuSheetItem = ({ item, className, searchResults }: MenuSheetItemP
         if (!canAccess) toaster(t('common:show_archived.offline.text'), 'warning');
       }}
       data-subitem={!searchResults && !item.submenu}
-      resetScroll={false}
+      aria-label={item.name}
       draggable="false"
+      to={path}
+      params={params}
+      search={search}
+      resetScroll={false}
+      activeOptions={activeOptions}
+      activeProps={{ 'data-active': true }}
       className={cn(
         'relative group/menuItem h-12 w-full flex items-start justify-start space-x-1 rounded p-0 focus:outline-hidden ring-2 ring-inset ring-transparent focus-visible:ring-foreground sm:hover:bg-accent/30 sm:hover:text-accent-foreground data-[subitem=true]:h-10 data-[active=true]:ring-transparent data-[active=true]:bg-accent/50',
         className,
       )}
-      activeOptions={{ exact: false, includeHash: false }}
-      activeProps={{ 'data-active': true }}
-      aria-label={item.name}
-      to={path}
-      params={params}
     >
       <AvatarWrap
         className="z-1 items-center m-1 mr-3 group-data-[subitem=true]/menuItem:my-1.5 group-data-[subitem=true]/menuItem:mx-2.5 group-data-[subitem=true]/menuItem:text-xs group-data-[subitem=true]/menuItem:h-7 group-data-[subitem=true]/menuItem:w-7"

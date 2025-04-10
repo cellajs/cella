@@ -19,6 +19,7 @@
     "prepare": "node prepare.js",
     "quick": "cross-env FORCE_COLOR=1 pnpm -r --parallel --stream quick",
     "docker": "pnpm --filter backend docker:up --detach",
+    "stop": "pnpm -r --parallel --stream stop",
     "generate": "pnpm --filter backend generate",
     "clean": "rimraf backend/dist frontend/dist frontend/stats",
     "dev": "pnpm clean && cross-env FORCE_COLOR=1 pnpm -r --parallel --stream dev",
@@ -38,12 +39,12 @@
   },
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",
-    "@evilmartians/lefthook": "^1.11.5",
+    "@evilmartians/lefthook": "^1.11.8",
     "cross-env": "^7.0.3",
     "rimraf": "^6.0.1",
     "tsx": "^4.19.3",
-    "typescript": "^5.8.2",
-    "vitest": "^3.0.9"
+    "typescript": "^5.8.3",
+    "vitest": "^3.1.1"
   },
   "packageManager": "pnpm@9.1.2",
   "dependencies": {

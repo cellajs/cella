@@ -1,5 +1,5 @@
 import { useParams, useSearch } from '@tanstack/react-router';
-import { Suspense, memo, useEffect } from 'react';
+import { memo, useEffect } from 'react';
 import router from '~/lib/router';
 import AttachmentDialog from '~/modules/attachments/attachment-dialog';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
@@ -38,28 +38,23 @@ const AttachmentDialogHandler = memo(() => {
       current: document.activeElement instanceof HTMLButtonElement ? document.activeElement : null,
     };
 
-    const timeoutId = setTimeout(() => {
-      createDialog(
-        <Suspense>
-          <AttachmentDialog attachmentId={attachmentDialogId} groupId={groupId} orgIdOrSlug={orgIdOrSlug} />
-        </Suspense>,
-        {
-          id: 'attachment-dialog',
-          triggerRef: triggerRef,
-          drawerOnMobile: false,
-          className: 'min-w-full h-screen border-0 p-0 rounded-none flex flex-col mt-0',
-          headerClassName: 'absolute p-4 w-full backdrop-blur-xs bg-background/50',
-          hideClose: true,
-          onClose: () => {
-            // TODO(IMPROVE) find a way to remove a history entry when the sheet is closed. this way perhaps its better
-            // for UX to not do a replace here and in the column
-            clearAttachmentDialogSearchParams();
-          },
-        },
-      );
-    }, 0);
+    // const timeoutId = setTimeout(() => {
+    createDialog(<AttachmentDialog key={attachmentDialogId} attachmentId={attachmentDialogId} orgIdOrSlug={orgIdOrSlug} />, {
+      id: 'attachment-dialog',
+      triggerRef: triggerRef,
+      drawerOnMobile: false,
+      className: 'min-w-full h-screen border-0 p-0 rounded-none flex flex-col mt-0',
+      headerClassName: 'absolute p-4 w-full backdrop-blur-xs bg-background/50',
+      hideClose: true,
+      onClose: () => {
+        // TODO(IMPROVE) find a way to remove a history entry when the sheet is closed. this way perhaps its better
+        // for UX to not do a replace here and in the column
+        clearAttachmentDialogSearchParams();
+      },
+    });
+    // }, 0);
 
-    return () => clearTimeout(timeoutId);
+    // return () => clearTimeout(timeoutId);
   }, [attachmentDialogId, orgIdOrSlug, groupId]);
 
   // Separate cleanup when `attachmentDialogId` disappears
