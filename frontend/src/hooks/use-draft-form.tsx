@@ -33,20 +33,19 @@ export function useFormWithDraft<
   TFieldValues extends FieldValues = FieldValues,
   // biome-ignore lint/suspicious/noExplicitAny: Can be any form context
   TContext = any,
-  TTransformedValues extends TFieldValues = TFieldValues,
 >(
   formId: string,
   opt?: {
     formOptions?: UseFormProps<TFieldValues, TContext>;
     formContainerId?: string;
   },
-): UseFormReturn<TFieldValues, TContext, TTransformedValues> & {
+): UseFormReturn<TFieldValues, TContext, TFieldValues> & {
   unsavedChanges: boolean;
   isDirty: boolean;
   loading: boolean;
 } {
   const { formOptions, formContainerId } = opt || {};
-  const form = useForm<TFieldValues, TContext, TTransformedValues>(formOptions);
+  const form = useForm<TFieldValues, TContext, TFieldValues>(formOptions);
   const { isDirty } = form.formState;
 
   const getDraftForm = useDraftStore((state) => state.getForm);
