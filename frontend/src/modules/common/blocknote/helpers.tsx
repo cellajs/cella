@@ -1,4 +1,4 @@
-import type { Block, PropSchema, Props } from '@blocknote/core';
+import type { PropSchema, Props } from '@blocknote/core';
 import type { DefaultReactSuggestionItem } from '@blocknote/react';
 import DOMPurify from 'dompurify';
 import type { CarouselItemData } from '~/modules/attachments/attachments-carousel';
@@ -38,25 +38,6 @@ const isAllowedSlashMenu = (item: string, allowedTypes: (CellaCustomBlockTypes |
   const allowedBlockTypes: readonly string[] = allowedTypes;
   const allowedType = menusTitleToAllowedType[item as MenusItemsTitle];
   return allowedType && allowedBlockTypes.includes(allowedType);
-};
-
-export const getContentAsString = (blocks: Block[]) => {
-  const blocksStringifyContent = blocks
-    .map((block) => {
-      if (Array.isArray(block.content)) return (block.content[0] as { text: string } | undefined)?.text;
-      return block.type;
-    })
-    .join('');
-  return blocksStringifyContent;
-};
-
-export const compareIsContentSame = async (editor: CustomBlockNoteSchema, text: string) => {
-  // Get the current and old block content as strings for comparison
-  const newHtml = getContentAsString(editor.document as Block[]);
-  const oldBlocks = await editor.tryParseHTMLToBlocks(text);
-  const oldHtml = getContentAsString(oldBlocks as Block[]);
-
-  return oldHtml === newHtml;
 };
 
 export const focusEditor = (editor: CustomBlockNoteSchema, blockId?: string) => {
@@ -179,4 +160,45 @@ export const updateSourcesFromDataUrl = (elementId: string, openPreviewDialog = 
 export const getUrlFromProps = (props: Props<PropSchema>): string | null => {
   if (props && typeof props.url === 'string') return props.url;
   return null;
+};
+
+export const compareIsContentSame = (currentHtml: string, initialHtml: string) => normalizeHtml(currentHtml) === normalizeHtml(initialHtml);
+
+/**
+ * Normalizes HTML by sorting element attributes alphabetically and minimizing whitespace,
+ * so that equivalent HTML structures can be compared reliably.
+ */
+const normalizeHtml = (html: string): string => {
+  // Parse the input HTML into a document
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(html, 'text/html');
+
+  // List of attributes to ignore or normalize
+  const attributesToNormalize = ['contenteditable', 'draggable', 'controls'];
+  /**
+   * Recursively sorts attributes of an element and its children.
+   * @param el The element whose attributes should be normalized
+   */
+  const sortAttributes = (el: Element) => {
+    if (el.hasAttributes()) {
+      // Get all attributes
+      const attrs = Array.from(el.attributes);
+      // Sort attributes alphabetically by name
+      const sortedAttrs = [...attrs]
+        .filter((attr) => !attributesToNormalize.includes(attr.name)) // Remove attributes to ignore
+        .sort((a, b) => a.name.localeCompare(b.name));
+
+      // Remove existing attributes
+      for (const attr of attrs) el.removeAttribute(attr.name);
+
+      // Re-add attributes in sorted order
+      for (const attr of sortedAttrs) el.setAttribute(attr.name, attr.value);
+    }
+
+    // Recurse through child elements
+    for (const child of el.children) sortAttributes(child);
+  };
+  // Normalize top-level children
+  for (const child of doc.body.children) sortAttributes(child);
+  return doc.body.innerHTML.trim().replace(/\s+/g, ' ');
 };
