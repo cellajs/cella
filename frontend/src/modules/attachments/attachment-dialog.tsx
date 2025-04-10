@@ -19,7 +19,7 @@ const AttachmentDialog = ({ attachmentId, orgIdOrSlug }: AttachmentDialogProps) 
 
   const { data, isError, isLoading } = useQuery(groupedAttachmentsQueryOptions({ attachmentId, orgIdOrSlug }));
 
-  const attachments = data?.items ?? [];
+  const attachments = useMemo(() => data?.items ?? [], [data?.items]);
 
   const itemIndex = useMemo(() => {
     const index = attachments.findIndex(({ id }) => id === attachmentId);
