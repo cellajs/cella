@@ -23,7 +23,7 @@ export default function DropdownDrawer({ dropdown }: { dropdown: InternalDropdow
           </VisuallyHidden>
         </DrawerHeader>
         {/* To allow y scroll in drawer */}
-        <div className="overflow-y-auto">{content}</div>
+        <div className="overflow-y-auto flex justify-center w-full">{content}</div>
       </DrawerContent>
     </Drawer>
   );

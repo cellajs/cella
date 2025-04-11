@@ -54,10 +54,10 @@ DrawerOverlay.displayName = DrawerPrimitive.Overlay.displayName;
 export interface DrawerContentProps extends VariantProps<typeof DrawerVariants>, React.ComponentPropsWithoutRef<typeof DrawerPrimitive.Content> {}
 
 const DrawerContent = React.forwardRef<React.ComponentRef<typeof DrawerPrimitive.Content>, DrawerContentProps>(
-  ({ className, direction, children, ...props }, ref) => {
+  ({ className, direction = 'bottom', children, ...props }, ref) => {
     return (
       <DrawerPortal>
-        <DrawerOverlay className={!direction || direction === 'bottom' ? 'z-120' : 'z-117'} />
+        <DrawerOverlay className={direction === 'bottom' ? 'z-120' : 'z-117'} />
         <DrawerPrimitive.Content ref={ref} className={cn(DrawerVariants({ direction }), className)} {...props}>
           <div className={DrawerSliderVariants({ direction })} />
           <div className="w-full h-full">{children}</div>
