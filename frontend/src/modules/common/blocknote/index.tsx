@@ -20,7 +20,7 @@ import { Mention } from '~/modules/common/blocknote/custom-elements/mention';
 import { CustomFormattingToolbar } from '~/modules/common/blocknote/custom-formatting-toolbar';
 import { CustomSideMenu } from '~/modules/common/blocknote/custom-side-menu';
 import { CustomSlashMenu } from '~/modules/common/blocknote/custom-slash-menu';
-import { compareIsContentSame, getUrlFromProps, handleSubmitOnEnter } from '~/modules/common/blocknote/helpers';
+import { compareIsContentSame, focusEditor, getUrlFromProps, handleSubmitOnEnter } from '~/modules/common/blocknote/helpers';
 import type { BasicBlockBaseTypes, BasicFileBlockTypes, CellaCustomBlockTypes } from '~/modules/common/blocknote/types';
 import type { Member } from '~/modules/memberships/types';
 import * as Badge from '~/modules/ui/badge';
@@ -226,14 +226,24 @@ export const BlockNote = ({
     return () => unsubscribe();
   }, [onBeforeLoadHandle]);
 
+  // TODO(BLOCKING) https://github.com/TypeCellOS/BlockNote/issues/891
+  useEffect(() => {
+    const intervalID = setInterval(() => {
+      if (editor) {
+        focusEditor(editor);
+        clearInterval(intervalID);
+      }
+    }, 10);
+
+    return () => clearInterval(intervalID);
+  }, [editor]);
+
   return (
     <BlockNoteView
       id={id}
       ref={blockNoteRef}
       data-color-scheme={mode}
       theme={mode}
-      // Auto focus on desktop
-      autoFocus={!isMobile}
       editor={editor}
       shadCNComponents={{ Button, DropdownMenu, Popover, Tooltip, Select, Label, Input, Card, Badge, Toggle, Tabs }}
       onChange={onBlockNoteChange}
