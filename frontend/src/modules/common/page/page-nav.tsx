@@ -19,17 +19,18 @@ export type PageTab = {
 };
 
 interface Props {
+  tabs: PageTab[];
   title?: string;
   avatar?: {
     id: string;
     thumbnailUrl?: string | null;
     name: string;
   };
-  tabs: PageTab[];
+  fallbackToFirst?: boolean;
   className?: string;
 }
 
-export const PageNav = ({ title, avatar, tabs, className = '' }: Props) => {
+export const PageNav = ({ tabs, title, avatar, fallbackToFirst, className }: Props) => {
   const isMobile = useBreakpoints('max', 'sm', false);
   const layoutId = useMemo(() => nanoid(), []);
   const firstTabRef = useRef<HTMLAnchorElement>(null);
@@ -77,25 +78,29 @@ export const PageNav = ({ title, avatar, tabs, className = '' }: Props) => {
               className="relative last:mr-4 max-sm:p-3 p-2 lg:px-4 rounded-sm outline-hidden sm:ring-offset-background sm:focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
               to={path}
               draggable="false"
+              data-active={fallbackToFirst && index === 0 ? true : undefined}
               params={params}
               search={search}
               activeOptions={activeOptions}
               activeProps={{ 'data-active': true }}
               onClick={updateScrollPosition}
             >
-              {({ isActive }) => (
-                <>
-                  {t(label)}
-                  {isActive && (
-                    <motion.span
-                      initial={false}
-                      layoutId={layoutId}
-                      transition={{ type: 'spring', duration: 0.4, bounce: 0, delay: 0.1 }}
-                      className="h-1 bg-primary rounded-sm w-[calc(100%-1rem)] absolute bottom-0 left-2"
-                    />
-                  )}
-                </>
-              )}
+              {({ isActive }) => {
+                const showAsActive = isActive || (fallbackToFirst && index === 0);
+                return (
+                  <>
+                    {t(label)}
+                    {showAsActive && (
+                      <motion.span
+                        initial={false}
+                        layoutId={layoutId}
+                        transition={{ type: 'spring', duration: 0.4, bounce: 0, delay: 0.1 }}
+                        className="h-1 bg-primary rounded-sm w-[calc(100%-1rem)] absolute bottom-0 left-2"
+                      />
+                    )}
+                  </>
+                );
+              }}
             </Link>
           ))}
         </div>
