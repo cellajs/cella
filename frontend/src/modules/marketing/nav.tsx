@@ -27,10 +27,6 @@ export const MarketingNav = () => {
   const handleNavClick = (target: string, isOpen = false) => {
     if (window.location.hash === `#${target}`) navigate({ to: '.', hash: 'top', replace: true });
 
-    // TODO(BLOCKING) temp fix while Link component doesn't support hash scroll into view
-    const anchor = document.getElementById(target);
-    anchor?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-
     setTimeout(() => {
       navigate({ hash: target, replace: true });
     }, 20);
@@ -49,7 +45,7 @@ export const MarketingNav = () => {
         key={id}
         draggable="false"
         onClick={(e) => {
-          // if (window.location.hash !== `#${hash}`) return;
+          if (window.location.hash !== `#${hash}`) return;
           if (!hash) return;
           e.preventDefault();
           handleNavClick(hash);

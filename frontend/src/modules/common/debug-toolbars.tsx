@@ -41,7 +41,7 @@ const DebugToolbars = () => {
             🐞
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent side="right" align="end" sideOffset={24} className="w-48 z-300">
+        <DropdownMenuContent side="right" align="end" sideOffset={24} className="p-1 w-48 z-300">
           {debugOptions.map((item) => (
             <DropdownMenuItem key={item.id} onClick={() => debugToggle(item)}>
               <span className="mr-2">{item.icon}</span>

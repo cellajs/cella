@@ -1,9 +1,11 @@
 import { APIProvider, AdvancedMarker, ControlPosition, Map as GMap, InfoWindow, MapControl, useAdvancedMarkerRef } from '@vis.gl/react-google-maps';
 import { config } from 'config';
 import { ArrowUpRight, Minus, Plus, X } from 'lucide-react';
+import { AnimatePresence, motion } from 'motion/react';
 import { useState } from 'react';
 import { ErrorBoundary } from 'react-error-boundary';
 import { useTranslation } from 'react-i18next';
+import useMounted from '~/hooks/use-mounted';
 import ErrorNotice from '~/modules/common/error-notice';
 import { Button } from '~/modules/ui/button';
 import { useUIStore } from '~/store/ui';
@@ -31,7 +33,7 @@ const mapStyles: MapConfig[] = [
   },
 ];
 
-const MarkerWithInfowindow = ({ position }: { position: { lat: number; lng: number } }) => {
+const MarkerWithInfoWindow = ({ position }: { position: { lat: number; lng: number } }) => {
   const { t } = useTranslation();
   const [markerRef, marker] = useAdvancedMarkerRef();
   const [infowindowOpen, setInfowindowOpen] = useState(true);
@@ -89,29 +91,46 @@ const ContactFormMap = () => {
   const mode = useUIStore((state) => state.mode);
   const [zoom, setZoom] = useState(config.company.mapZoom);
   const [mapConfig] = useState<MapConfig>(mode === 'dark' ? mapStyles[1] : mapStyles[0]);
+  const { hasStarted } = useMounted();
 
-  if (config.company.coordinates && config.googleMapsKey)
-    return (
-      <ErrorBoundary
-        fallbackRender={({ error, resetErrorBoundary }) => <ErrorNotice level="app" error={error} resetErrorBoundary={resetErrorBoundary} />}
-      >
-        <div className="w-full h-full md:pb-12 overflow-hidden">
+  if (!config.company.coordinates || !config.googleMapsKey) return null;
+
+  return (
+    <ErrorBoundary
+      fallbackRender={({ error, resetErrorBoundary }) => <ErrorNotice level="app" error={error} resetErrorBoundary={resetErrorBoundary} />}
+    >
+      <div className="md:pb-12 w-full h-full">
+        <div className="w-full h-full rounded-sm overflow-hidden bg-accent">
           <APIProvider apiKey={config.googleMapsKey} libraries={['marker']}>
-            <GMap
-              mapId={mapConfig.mapId || null}
-              mapTypeId={mapConfig.mapTypeId}
-              gestureHandling={'greedy'}
-              disableDefaultUI
-              defaultCenter={config.company.coordinates}
-              zoom={zoom}
-              defaultZoom={config.company.mapZoom}
-            >
-              <MarkerWithInfowindow position={config.company.coordinates} />
-              <CustomZoomControl controlPosition={ControlPosition.LEFT_BOTTOM} zoom={zoom} onZoomChange={(zoom) => setZoom(zoom)} />
-            </GMap>
+            <AnimatePresence>
+              {hasStarted && (
+                <motion.div
+                  key="gmap"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.5, delay: 1 }}
+                  className="w-full h-full"
+                >
+                  <GMap
+                    mapId={mapConfig.mapId || null}
+                    mapTypeId={mapConfig.mapTypeId}
+                    gestureHandling="greedy"
+                    disableDefaultUI
+                    defaultCenter={config.company.coordinates}
+                    zoom={zoom}
+                    defaultZoom={config.company.mapZoom}
+                  >
+                    <MarkerWithInfoWindow position={config.company.coordinates} />
+                    <CustomZoomControl controlPosition={ControlPosition.LEFT_BOTTOM} zoom={zoom} onZoomChange={setZoom} />
+                  </GMap>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </APIProvider>
         </div>
-      </ErrorBoundary>
-    );
+      </div>
+    </ErrorBoundary>
+  );
 };
 export default ContactFormMap;

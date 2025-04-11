@@ -4,7 +4,7 @@ import { Drawer as DrawerPrimitive } from 'vaul';
 
 import { cn } from '~/utils/cn';
 
-const DrawerVariants = cva('fixed z-118 p-6 flex flex-col rounded-t-2.5 bg-background', {
+const DrawerVariants = cva('fixed z-118 p-4 flex flex-col rounded-t-2.5 bg-background', {
   variants: {
     direction: {
       top: 'inset-x-0 top-0 mb-24 flex-col',
@@ -21,10 +21,10 @@ const DrawerVariants = cva('fixed z-118 p-6 flex flex-col rounded-t-2.5 bg-backg
 const DrawerSliderVariants = cva('rounded-full absolute z-10 bg-muted', {
   variants: {
     direction: {
-      top: 'bottom-0.5 mx-auto my-0.5 h-1 w-12 ml-[calc(50vw-2rem)]',
-      bottom: 'top-0.5 mx-auto my-0.5 h-1 w-12 ml-[calc(50vw-2rem)]',
-      right: 'left-0.5 mx-0.5 my-auto h-16 w-1 mt-[calc(50vh-2.5rem)]',
-      left: 'right-0.5 mx-0.5 my-auto h-16 w-1 mt-[calc(50vh-2.5rem)]',
+      top: 'bottom-1.5 mx-auto my-0.5 h-1 w-16 ml-[calc(50vw-2.5rem)]',
+      bottom: 'top-1.5 mx-auto my-0.5 h-1 w-16 ml-[calc(50vw-2.5rem)]',
+      right: 'left-1 mx-0.5 my-auto h-20 w-1 mt-[calc(50vh-3rem)]',
+      left: 'right-1 mx-0.5 my-auto h-20 w-1 mt-[calc(50vh-3rem)]',
     },
   },
   defaultVariants: {
@@ -46,18 +46,16 @@ const DrawerClose = DrawerPrimitive.Close;
 const DrawerOverlay = React.forwardRef<
   React.ComponentRef<typeof DrawerPrimitive.Overlay>,
   React.ComponentPropsWithoutRef<typeof DrawerPrimitive.Overlay>
->(({ className, ...props }, ref) => (
-  <DrawerPrimitive.Overlay ref={ref} className={cn('fixed inset-0 bg-muted/20 backdrop-blur-xs', className)} {...props} />
-));
+>(({ className, ...props }, ref) => <DrawerPrimitive.Overlay ref={ref} className={cn('fixed inset-0 bg-muted/30', className)} {...props} />);
 DrawerOverlay.displayName = DrawerPrimitive.Overlay.displayName;
 
 export interface DrawerContentProps extends VariantProps<typeof DrawerVariants>, React.ComponentPropsWithoutRef<typeof DrawerPrimitive.Content> {}
 
-const DrawerContent = React.forwardRef<React.ComponentRef<typeof DrawerPrimitive.Content>, DrawerContentProps>(
-  ({ className, direction = 'bottom', children, ...props }, ref) => {
+const DrawerContent = React.forwardRef<React.ComponentRef<typeof DrawerPrimitive.Content>, DrawerContentProps & { isDropdown?: boolean }>(
+  ({ className, direction = 'bottom', children, isDropdown = false, ...props }, ref) => {
     return (
       <DrawerPortal>
-        <DrawerOverlay className={direction === 'bottom' ? 'z-120' : 'z-117'} />
+        <DrawerOverlay className={isDropdown ? 'z-300' : direction === 'bottom' ? 'z-120' : 'z-117 backdrop-blur-xs'} />
         <DrawerPrimitive.Content ref={ref} className={cn(DrawerVariants({ direction }), className)} {...props}>
           <div className={DrawerSliderVariants({ direction })} />
           <div className="w-full h-full">{children}</div>
