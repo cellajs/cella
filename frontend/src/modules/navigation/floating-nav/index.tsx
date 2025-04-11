@@ -21,9 +21,9 @@ const FloatingNav = ({ onClick }: { onClick: (id: NavItemId) => void }) => {
     .flatMap((el) => el.staticData.floatingNavButtons || [])
     .filter((id, index, self) => self.indexOf(id) === index); // dedupe
 
-  const items = navItems.filter((item) => floatingItems.includes(item.id));
+  const items = isMobile ? navItems.filter((item) => floatingItems.includes(item.id)) : [];
 
-  useBodyClass({ 'floating-nav': items.length > 0 });
+  useBodyClass({ 'floating-nav': isMobile && items.length > 0 });
 
   // Hide buttons when scrolling down and show when scrolling up
   useEffect(() => {

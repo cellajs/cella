@@ -74,7 +74,7 @@ export const PageNav = ({ title, avatar, tabs, className = '' }: Props) => {
               id={`tab-${id}`}
               ref={index === 0 ? firstTabRef : undefined}
               resetScroll={false}
-              className="relative last:mr-4 p-2 lg:px-4 rounded-sm outline-hidden sm:ring-offset-background sm:focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              className="relative last:mr-4 max-sm:p-3 p-2 lg:px-4 rounded-sm outline-hidden sm:ring-offset-background sm:focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
               to={path}
               draggable="false"
               params={params}

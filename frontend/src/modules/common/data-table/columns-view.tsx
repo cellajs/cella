@@ -42,7 +42,7 @@ const ColumnsView = <TData,>({ columns, setColumns, className = '', highDensity,
           </Button>
         </DropdownMenuTrigger>
       </TooltipButton>
-      <DropdownMenuContent align="end" className="min-w-56" collisionPadding={16}>
+      <DropdownMenuContent align="end" className="min-w-56 p-1" collisionPadding={16}>
         {filteredColumns.map((column) => (
           <DropdownMenuCheckboxItem
             key={column.key}
