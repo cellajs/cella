@@ -15,7 +15,7 @@ export default function DropdownDrawer({ dropdown }: { dropdown: InternalDropdow
 
   return (
     <Drawer key={id} open={true} onOpenChange={onOpenChange} onClose={closeDialog} noBodyStyles>
-      <DrawerContent id={String(id)} onEscapeKeyDown={closeDialog} className="p-4 z-301" isDropdown>
+      <DrawerContent id={String(id)} onEscapeKeyDown={closeDialog} className="py-6 px-4 z-301" isDropdown>
         <DrawerHeader className="p-0">
           <VisuallyHidden>
             <DrawerTitle>Choose</DrawerTitle>
@@ -23,7 +23,7 @@ export default function DropdownDrawer({ dropdown }: { dropdown: InternalDropdow
           </VisuallyHidden>
         </DrawerHeader>
         {/* To allow y scroll in drawer */}
-        <div className="overflow-y-auto flex justify-center w-full">{content}</div>
+        <div className="overflow-y-auto">{content}</div>
       </DrawerContent>
     </Drawer>
   );
