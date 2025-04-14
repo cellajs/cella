@@ -172,9 +172,7 @@ export const BlockNote = ({
 
   useEffect(() => {
     const blockUpdate = async (html: string) => {
-      if (wasInitial.current && !isCreationMode) return;
-
-      if (wasInitial.current && isCreationMode && html !== '') return;
+      if (wasInitial.current && ((isCreationMode && html !== '') || !isCreationMode)) return;
 
       const blocks = await editor.tryParseHTMLToBlocks(html);
       const currentHTML = await editor.blocksToFullHTML(editor.document);
@@ -183,6 +181,8 @@ export const BlockNote = ({
       if (!isCreationMode && compareIsContentSame(html, currentHTML)) return;
 
       editor.replaceBlocks(editor.document, blocks);
+      // Mark the editor as having been initialized
+      wasInitial.current = true;
     };
 
     blockUpdate(defaultValue);
@@ -191,7 +191,7 @@ export const BlockNote = ({
   const onBeforeLoadHandle = useCallback(async () => {
     if (!wasInitial.current || compareIsContentSame(text, defaultValue)) return;
     updateData(text);
-  }, [text, wasInitial]);
+  }, [text]);
 
   const openAttachment: MouseEventHandler = (event) => {
     if (!altClickOpensPreview || !event.altKey) return;
