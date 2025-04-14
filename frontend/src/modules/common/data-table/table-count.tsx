@@ -4,9 +4,8 @@ import { useTranslation } from 'react-i18next';
 import { Button } from '~/modules/ui/button';
 
 interface TableCountProps {
-  count?: number;
-
   type: string;
+  count?: number;
   isFiltered?: boolean;
   onResetFilters?: () => void;
   children?: ReactNode;
@@ -26,9 +25,10 @@ const TableCount = ({ count, type, isFiltered, children, onResetFilters }: Table
         </Button>
       )}
       {count !== undefined && (
-        <div>
-          {new Intl.NumberFormat('de-DE').format(count)} {t(`common:${type}${count === 1 ? '' : 's'}`).toLowerCase()}
-          {isFiltered && ` ${t('common:found')}`}
+        <div className="flex items-center gap-1">
+          <span>{new Intl.NumberFormat('de-DE').format(count)}</span>
+          <span>{t(`common:${type}${count === 1 ? '' : 's'}`).toLowerCase()}</span>
+          <span>{isFiltered && ` ${t('common:found')}`}</span>
         </div>
       )}
       {children}

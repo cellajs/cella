@@ -32,7 +32,7 @@ export const MobileSheet = ({ sheet }: SheetProps) => {
     >
       <DrawerContent id={String(id)} onEscapeKeyDown={closeSheet} direction={side} className={className}>
         <DrawerHeader className={`${description || title ? '' : 'hidden'}`}>
-          <DrawerTitle className={`font-medium mb-2 ${title ? '' : 'hidden'}`}>{titleContent}</DrawerTitle>
+          <DrawerTitle className={`font-medium ${title ? '' : 'hidden'}`}>{titleContent}</DrawerTitle>
           <DrawerDescription className={`text-muted-foreground font-light ${description ? '' : 'hidden'}`}>{description}</DrawerDescription>
         </DrawerHeader>
         {/* To allow y scroll in drawer */}

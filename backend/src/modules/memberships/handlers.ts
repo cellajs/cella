@@ -2,7 +2,7 @@ import { MemberInviteEmail, type MemberInviteEmailProps } from '../../../emails/
 
 import { OpenAPIHono } from '@hono/zod-openapi';
 import { config } from 'config';
-import { and, count, eq, getTableColumns, ilike, inArray, isNotNull, isNull, or } from 'drizzle-orm';
+import { and, count, eq, ilike, inArray, isNotNull, isNull, or } from 'drizzle-orm';
 import { db } from '#/db/db';
 import { membershipsTable } from '#/db/schema/memberships';
 import { tokensTable } from '#/db/schema/tokens';
@@ -336,7 +336,7 @@ const membershipsRoutes = app
 
     const membersQuery = db
       .select({
-        ...getTableColumns(userSelect),
+        user: userSelect,
         membership: membershipSelect,
       })
       .from(usersTable)
@@ -345,7 +345,8 @@ const membershipsRoutes = app
 
     const [{ total }] = await db.select({ total: count() }).from(membersQuery.as('memberships'));
 
-    const items = await membersQuery.orderBy(orderColumn).limit(Number(limit)).offset(Number(offset));
+    const members = await membersQuery.orderBy(orderColumn).limit(Number(limit)).offset(Number(offset));
+    const items = members.map(({ user, membership }) => ({ ...user, membership }));
 
     return ctx.json({ success: true, data: { items, total } }, 200);
   })

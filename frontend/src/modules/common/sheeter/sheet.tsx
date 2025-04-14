@@ -96,10 +96,10 @@ export const DesktopSheet = ({ sheet }: SheetProps) => {
           if (triggerRef?.current) triggerRef.current.focus();
         }}
       >
-        <StickyBox className={`z-10 flex items-center justify-between bg-background py-3 ${title ? '' : 'hidden'}`}>
+        <StickyBox className={`z-10 flex items-center justify-between bg-background/50 backdrop-blur-xs py-3 ${title ? '' : 'hidden'}`}>
           <SheetTitle>{titleContent}</SheetTitle>
         </StickyBox>
-        <SheetHeader className={`${description || title ? '' : 'hidden'}`}>
+        <SheetHeader className={`${description ? '' : 'hidden'}`}>
           <SheetDescription className={`${description ? '' : 'hidden'}`}>{description}</SheetDescription>
         </SheetHeader>
         {content}

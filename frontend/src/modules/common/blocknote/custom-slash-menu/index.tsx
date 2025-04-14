@@ -16,7 +16,7 @@ export const CustomSlashMenu = ({
     <SuggestionMenuController
       triggerCharacter={'/'}
       getItems={async (query) => filterSuggestionItems(items, query)}
-      suggestionMenuComponent={(props) => slashMenu(props, editor, indexedItemCount, originalItemCount)}
+      suggestionMenuComponent={(props) => slashMenu(props, indexedItemCount, originalItemCount)}
     />
   );
 };

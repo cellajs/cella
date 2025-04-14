@@ -15,8 +15,8 @@ export default function DropdownDrawer({ dropdown }: { dropdown: InternalDropdow
 
   return (
     <Drawer key={id} open={true} onOpenChange={onOpenChange} onClose={closeDialog} noBodyStyles>
-      <DrawerContent id={String(id)} onEscapeKeyDown={closeDialog}>
-        <DrawerHeader>
+      <DrawerContent id={String(id)} onEscapeKeyDown={closeDialog} className="py-6 px-4 z-301" isDropdown>
+        <DrawerHeader className="p-0">
           <VisuallyHidden>
             <DrawerTitle>Choose</DrawerTitle>
             <DrawerDescription>Select an option</DrawerDescription>

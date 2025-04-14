@@ -1,3 +1,4 @@
+import useBodyClass from '~/hooks/use-body-class';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { MobileSheet } from '~/modules/common/sheeter/drawer';
 import { DesktopSheet } from '~/modules/common/sheeter/sheet';
@@ -12,6 +13,9 @@ export const Sheeter = () => {
 
   // Get sheets from store
   const sheets = useSheeter((state) => state.sheets);
+
+  // Apply body class
+  useBodyClass({ 'sheeter-open': sheets.length > 0 });
 
   if (!sheets.length) return null;
 

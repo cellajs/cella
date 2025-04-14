@@ -1,8 +1,8 @@
+import { decodeBase64, encodeBase64 } from '@oslojs/encoding';
+import { onlineManager } from '@tanstack/react-query';
 import { config } from 'config';
 import { t } from 'i18next';
 
-import { decodeBase64, encodeBase64 } from '@oslojs/encoding';
-import { onlineManager } from '@tanstack/react-query';
 import { authenticateWithPasskey, getPasskeyChallenge } from '~/modules/auth/api';
 import { toaster } from '~/modules/common/toaster';
 import { deletePasskey as baseRemovePasskey, createPasskey, getSelf, getSelfAuthInfo, getSelfMenu } from '~/modules/me/api';
@@ -141,13 +141,13 @@ export const deletePasskey = async () => {
   try {
     const result = await baseRemovePasskey();
     if (!result) {
-      toaster(t('common:success.passkey_removed'), 'success');
+      toaster(t('error:passkey_remove_failed'), 'error');
 
-      useUserStore.getState().setUserAuthInfo({ passkey: false });
-      return true;
+      return false;
     }
-    toaster(t('error:passkey_remove_failed'), 'error');
-    return false;
+    toaster(t('common:success.passkey_removed'), 'success');
+    useUserStore.getState().setUserAuthInfo({ passkey: false });
+    return true;
   } catch (error) {
     console.error('Error removing passkey:', error);
     toaster(t('error:passkey_remove_failed'), 'error');

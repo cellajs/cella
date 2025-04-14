@@ -45,7 +45,7 @@ export const UploadAvatar = ({ type, id, name, url, setUrl }: UploadAvatarProps)
         triggerRef: uploadButtonRef,
         drawerOnMobile: false,
         title: t('common:upload_item', { item: t('common:profile_picture').toLowerCase() }),
-        className: 'md:max-w-xl',
+        className: 'md:max-w-xl z-200',
       },
     );
   };

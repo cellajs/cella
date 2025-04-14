@@ -48,12 +48,17 @@ const openDropdown = (row: User, triggerRef: RefObject<HTMLButtonElement | null>
     );
   };
 
-  create(<RowDropdown />, {
-    id: 'row-dropdown',
-    triggerId: `ellipsis-${row.id}`,
-    triggerRef: triggerRef,
-    align: 'end',
-  });
+  create(
+    <div className="p-1">
+      <RowDropdown />
+    </div>,
+    {
+      id: 'row-dropdown',
+      triggerId: `ellipsis-${row.id}`,
+      triggerRef: triggerRef,
+      align: 'end',
+    },
+  );
 };
 
 const TableEllipsis = ({ row, tabIndex }: Props) => {

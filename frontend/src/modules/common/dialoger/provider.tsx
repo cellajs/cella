@@ -1,3 +1,4 @@
+import useBodyClass from '~/hooks/use-body-class';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import StandardDialog from '~/modules/common/dialoger/dialog';
 import DrawerDialog from '~/modules/common/dialoger/drawer';
@@ -12,6 +13,9 @@ export function Dialoger() {
 
   // Get dialogs from store
   const dialogs = useDialoger((state) => state.dialogs);
+
+  // Apply body class
+  useBodyClass({ 'dialoger-open': dialogs.length > 0 });
 
   if (!dialogs.length) return null;
 
