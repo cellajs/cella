@@ -330,7 +330,7 @@ const authRoutes = app
 
     // If user is not found or doesn't have password
     if (!user) return errorResponse(ctx, 404, 'not_found', 'warn', 'user');
-    if (!user.hashedPassword) return errorResponse(ctx, 404, 'no_password_found', 'warn');
+    if (!user.hashedPassword) return errorResponse(ctx, 403, 'no_password_found', 'warn');
 
     // Verify password
     const validPassword = await verifyPasswordHash(user.hashedPassword, password);
