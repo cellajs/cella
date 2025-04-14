@@ -290,8 +290,9 @@ const authRoutes = app
     await db.delete(tokensTable).where(and(eq(tokensTable.id, token.id), eq(tokensTable.type, 'password_reset')));
 
     const user = await getUserBy('id', token.userId);
-    // If the user is not found or the email is different from the token email
-    if (!user || user.email !== token.email) return errorResponse(ctx, 404, 'not_found', 'warn', 'user', { userId: token.userId });
+
+    // If the user is not found
+    if (!user) return errorResponse(ctx, 404, 'not_found', 'warn', 'user', { userId: token.userId });
 
     // Hash password
     const hashedPassword = await hashPassword(password);
@@ -590,25 +591,22 @@ const authRoutes = app
         return errorRedirect(ctx, 'sign_up_restricted', 'info');
       }
 
-      // Verified by github or if using invite token
-      const emailVerified = transformedUser.emailVerified || !!inviteToken;
-
       // Get the redirect URL based on whether a new user or invite token exists
       const firstSignIn = !connectUserId && !existingUser;
       const redirectUrl = await getOauthRedirectUrl(ctx, firstSignIn);
 
       // If the user already exists, use existing user logic
       if (existingUser) {
-        return await handleExistingUser(ctx, existingUser, transformedUser, provider, connectUserId, redirectUrl, emailVerified);
+        return await handleExistingUser(ctx, existingUser, transformedUser, provider, connectUserId, redirectUrl);
       }
 
       // Create new user and OAuth account
       return await handleCreateUser({
         ctx,
         newUser: transformedUser,
+        emailVerified: transformedUser.emailVerified,
         redirectUrl,
         provider,
-        emailVerified,
         ...(inviteToken && inviteToken.type === 'membership' && { tokenId: inviteToken.id }),
       });
     } catch (error) {
@@ -672,22 +670,20 @@ const authRoutes = app
         return errorRedirect(ctx, 'sign_up_restricted', 'info');
       }
 
-      const emailVerified = transformedUser.emailVerified || !!inviteToken;
-
       // Get the redirect URL based on whether a new user or invite token exists
       const firstSignIn = !connectUserId && !existingUser;
       const redirectUrl = await getOauthRedirectUrl(ctx, firstSignIn);
 
       // If the user already exists, use existing user logic
       if (existingUser) {
-        return await handleExistingUser(ctx, existingUser, transformedUser, provider, connectUserId, redirectUrl, emailVerified);
+        return await handleExistingUser(ctx, existingUser, transformedUser, provider, connectUserId, redirectUrl);
       }
 
       // Create a new user and associated OAuth account
       return await handleCreateUser({
         ctx,
         newUser: transformedUser,
-        emailVerified,
+        emailVerified: transformedUser.emailVerified,
         redirectUrl,
         provider,
         ...(inviteToken?.type === 'membership' && { tokenId: inviteToken.id }), // Conditionally add tokenId if membership invitation
@@ -753,24 +749,22 @@ const authRoutes = app
         return errorRedirect(ctx, 'sign_up_restricted', 'info');
       }
 
-      const emailVerified = transformedUser.emailVerified || !!inviteToken;
-
       // Get the redirect URL based on whether a new user or invite token exists
       const firstSignIn = !connectUserId && !existingUser;
       const redirectUrl = await getOauthRedirectUrl(ctx, firstSignIn);
 
       // If the user already exists, use existing user logic
       if (existingUser) {
-        return await handleExistingUser(ctx, existingUser, transformedUser, provider, connectUserId, redirectUrl, emailVerified);
+        return await handleExistingUser(ctx, existingUser, transformedUser, provider, connectUserId, redirectUrl);
       }
 
       // Create new user and oauth account
       return await handleCreateUser({
         ctx,
         newUser: transformedUser,
+        emailVerified: transformedUser.emailVerified,
         redirectUrl,
         provider,
-        emailVerified,
         ...(inviteToken && inviteToken.type === 'membership' && { tokenId: inviteToken.id }),
       });
     } catch (error) {

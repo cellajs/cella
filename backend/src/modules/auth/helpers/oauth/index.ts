@@ -33,7 +33,6 @@ export const handleExistingUser = async (
   provider: Provider,
   connectUserId: string | null,
   redirectUrl: string,
-  emailVerified: boolean,
 ) => {
   // Check if the user has a linked OAuth account
   const [existingOauth] = await db
@@ -43,7 +42,7 @@ export const handleExistingUser = async (
 
   // Update the existing user if OAuth is not yet linked
   if (!existingOauth) {
-    const { slug, name, emailVerified: transformVerified, ...providerUser } = transformedUser;
+    const { slug, name, emailVerified, ...providerUser } = transformedUser;
     return await updateExistingUser(ctx, existingUser, provider.id, { providerUser, redirectUrl, emailVerified });
   }
 
@@ -125,7 +124,7 @@ export const findExistingUsers = async (email: string, userId: string | null, to
     : null;
 
   const conditions = or(
-    eq(usersTable.email, email),
+    eq(emailsTable.email, email),
     ...(userId ? [eq(usersTable.id, userId)] : []),
     ...(tokenUserId ? [eq(usersTable.id, tokenUserId)] : []),
   );

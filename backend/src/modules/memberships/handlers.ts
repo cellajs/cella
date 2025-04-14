@@ -4,6 +4,7 @@ import { OpenAPIHono } from '@hono/zod-openapi';
 import { config } from 'config';
 import { and, count, eq, ilike, inArray, isNotNull, isNull, or } from 'drizzle-orm';
 import { db } from '#/db/db';
+import { emailsTable } from '#/db/schema/emails';
 import { membershipsTable } from '#/db/schema/memberships';
 import { tokensTable } from '#/db/schema/tokens';
 import { usersTable } from '#/db/schema/users';
@@ -58,6 +59,7 @@ const membershipsRoutes = app
       .from(membershipsTable)
       .where(and(eq(membershipsTable.type, 'organization'), eq(membershipsTable.organizationId, organization.id)));
 
+    // Check create restrictions
     if (membersRestrictions !== 0 && currentOrgMemberships.length + emails.length > membersRestrictions) {
       return errorResponse(ctx, 403, 'restrict_by_org', 'warn', 'attachment');
     }
@@ -69,8 +71,11 @@ const membershipsRoutes = app
     const { associatedEntityType, associatedEntityIdField, associatedEntityId } = getAssociatedEntityDetails(entity);
 
     // Fetch existing users based on the provided emails
-    const existingUsers = await getUsersByConditions([inArray(usersTable.email, normalizedEmails)]);
+    const existingUsers = await getUsersByConditions([inArray(emailsTable.email, normalizedEmails)]);
     const userIds = existingUsers.map(({ id }) => id);
+
+    // Since a user can have multiple emails, we need to check if the email exists in the emails table
+    const existingEmails = await db.select().from(emailsTable).where(inArray(emailsTable.email, normalizedEmails));
 
     // Fetch all existing memberships by organizationId
     const memberships = await db
@@ -78,9 +83,15 @@ const membershipsRoutes = app
       .from(membershipsTable)
       .where(and(eq(membershipsTable.organizationId, organization.id), inArray(membershipsTable.userId, userIds)));
 
+    // Fetch all existing tokens by organizationId
+    const existingTokens = await db
+      .select()
+      .from(tokensTable)
+      .where(and(eq(tokensTable.organizationId, organization.id), inArray(tokensTable.email, emails)));
+
     // Map for lookup of existing users by email
-    const existingUsersByEmail = new Map(existingUsers.map((eu) => [eu.email, eu]));
-    const emailsToInvite: { email: string; userId: string | null }[] = [];
+    const existingUsersByEmail = new Map(existingEmails.map((eu) => [eu.email, eu]));
+    const emailsWithIdToInvite: { email: string; userId: string | null }[] = [];
 
     // Process existing users
     await Promise.all(
@@ -102,7 +113,7 @@ const membershipsRoutes = app
         const instantCreateMembership = (entityType !== 'organization' && hasOrgMembership) || (user.role === 'admin' && userId === user.id);
 
         // If not instant, add to invite list
-        if (!instantCreateMembership) return emailsToInvite.push({ email, userId });
+        if (!instantCreateMembership) return emailsWithIdToInvite.push({ email, userId });
 
         await insertMembership({ userId: existingUser.id, role, entity, addAssociatedMembership: hasAssociatedMembership });
 
@@ -110,14 +121,31 @@ const membershipsRoutes = app
       }),
     );
 
-    // Identify emails without associated users
-    for (const email of normalizedEmails) if (!existingUsersByEmail.has(email)) emailsToInvite.push({ email, userId: null });
+    // Identify emails without associated users, nor with existing tokens
+    for (const email of normalizedEmails) {
+      if (existingUsersByEmail.has(email)) continue;
+
+      // There might be emails that are already invited recently
+      if (
+        existingTokens.some(({ email: tokenEmail, createdAt }) => {
+          const tokenCreatedAt = new Date(createdAt);
+          const isSameEmail = tokenEmail === email;
+          const isRecent = tokenCreatedAt > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000); // 7 days
+          return isSameEmail && isRecent;
+        })
+      ) {
+        logEvent('Invitation to pending user by email address already sent recently', { id: entityId });
+        continue;
+      }
+
+      emailsWithIdToInvite.push({ email, userId: null });
+    }
 
     // Stop if no recipients
-    if (emailsToInvite.length === 0) return ctx.json({ success: true }, 200); // Stop if no recipients to send invites
+    if (emailsWithIdToInvite.length === 0) return ctx.json({ success: true }, 200); // Stop if no recipients to send invites
 
     // Generate invitation tokens
-    const tokens = emailsToInvite.map(({ email, userId }) => ({
+    const tokens = emailsWithIdToInvite.map(({ email, userId }) => ({
       id: nanoid(),
       token: nanoid(40), // unique hashed token
       type: 'invitation' as const,
@@ -167,7 +195,7 @@ const membershipsRoutes = app
 
     await mailer.prepareEmails<MemberInviteEmailProps, (typeof recipients)[number]>(MemberInviteEmail, emailProps, recipients, user.email);
 
-    logEvent('Users invited to organization', { organization: organization.id }); // Log invitation event
+    logEvent(`${insertedTokens.length} users invited to organization`, { organization: organization.id }); // Log invitation event
 
     return ctx.json({ success: true }, 200);
   })
