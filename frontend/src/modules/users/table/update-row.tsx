@@ -18,7 +18,7 @@ const openUpdateSheet = (user: User, buttonRef: RefObject<HTMLButtonElement | nu
   const createSheet = useSheeter.getState().create;
 
   createSheet(
-    <Card>
+    <Card className="mb-20">
       <CardContent>
         <UpdateUserForm user={user} sheet />
       </CardContent>
