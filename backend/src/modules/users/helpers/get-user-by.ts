@@ -1,5 +1,6 @@
 import { type SQL, and, eq } from 'drizzle-orm';
 import { db } from '#/db/db';
+import { emailsTable } from '#/db/schema/emails';
 import { type UnsafeUserModel, type UserModel, usersTable } from '#/db/schema/users';
 import { userSelect } from '#/modules/users/helpers/select';
 
@@ -32,8 +33,15 @@ export async function getUserBy(
 ): Promise<UserModel | UnsafeUserModel | null> {
   const select = type === 'unsafe' ? usersTable : userSelect;
 
-  // Execute a database query to select the user based on the given field and value.
-  const [result] = await db.select({ user: select }).from(usersTable).where(eq(usersTable[field], value));
+  // Check if the field is 'email' to handle it differently
+  const conditions = field === 'email' ? eq(emailsTable.email, value) : eq(usersTable[field], value);
+
+  const [result] = await db
+    .select({ user: select })
+    .from(usersTable)
+    .leftJoin(emailsTable, eq(usersTable.id, emailsTable.userId))
+    .where(conditions)
+    .limit(1);
 
   return result?.user ?? null;
 }
@@ -54,11 +62,13 @@ export function getUsersByConditions(whereArray: (SQL<unknown> | undefined)[], t
 export async function getUsersByConditions(whereArray: (SQL<unknown> | undefined)[], type?: SelectType): Promise<UserModel[] | UnsafeUserModel[]> {
   const select = type === 'unsafe' ? usersTable : userSelect;
 
-  // Execute a database query to select users based on the conditions in 'whereArray'.
+  // Always join emailsTable
   const result = await db
     .select({ user: select })
     .from(usersTable)
-    .where(and(...whereArray));
+    .leftJoin(emailsTable, eq(usersTable.id, emailsTable.userId))
+    .where(and(...whereArray.filter(Boolean))) // filter out undefined conditions
+    .execute();
 
   return result.map(({ user }) => user);
 }

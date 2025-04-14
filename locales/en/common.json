@@ -425,5 +425,6 @@
   "invite_others": "Invite others",
   "order": "Order",
   "offline_cache_miss.text": "Resource unavailable while offline.",
-  "delete_confirm.text": "Please confirm you want to delete {{name}}."
+  "delete_confirm.text": "Please confirm you want to delete {{name}}.",
+  "already_member": "Already member"
 }
