@@ -48,7 +48,6 @@ export const UsersTableBar = ({ total, selected, searchVars, setSearch, columns,
   };
 
   const openInviteDialog = () => {
-    console.log('openInviteDialog');
     createDialog(<InviteUsers mode={'email'} dialog />, {
       id: 'invite-users',
       triggerRef: inviteButtonRef,

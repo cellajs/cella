@@ -24,8 +24,10 @@ export const flushStoresAndCache = (removeAccount?: boolean) => {
   useUIStore.getState().setImpersonating(false);
 
   if (!removeAccount) return;
+  // Clear below on remove account
   useAlertStore.getState().clearAlertStore();
   useUIStore.getState().clearUIStore();
+  useUserStore.setState({ lastUser: null as unknown as MeUser, passkey: false, oauth: [] });
 };
 
 // Sign out user and clear all stores and query cache
@@ -42,7 +44,7 @@ export const SignOut = () => {
 
     signOutTriggeredRef.current = true;
 
-    const performSignOut = async () => {
+    const handleSignOut = async () => {
       try {
         await signOut();
         flushStoresAndCache(!!force);
@@ -53,7 +55,7 @@ export const SignOut = () => {
       }
     };
 
-    performSignOut();
+    handleSignOut();
   }, []);
 
   return <ContentPlaceholder className="h-screen" icon={Heart} title={t('common:signing_out')} />;

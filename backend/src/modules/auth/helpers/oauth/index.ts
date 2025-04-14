@@ -21,7 +21,7 @@ import type { TransformedUser } from './transform-user-data';
 export const getOauthRedirectUrl = async (ctx: Context, firstSignIn?: boolean) => {
   const redirectCookie = await getAuthCookie(ctx, 'oauth_redirect');
 
-  const baseRedirect = redirectCookie || firstSignIn ? config.welcomeRedirectPath : config.defaultRedirectPath;
+  const baseRedirect = redirectCookie || (firstSignIn && config.welcomeRedirectPath) || config.defaultRedirectPath;
 
   return isRedirectUrl(baseRedirect) ? baseRedirect : `${config.frontendUrl}${baseRedirect}`;
 };
@@ -107,7 +107,7 @@ const updateExistingUser = async (ctx: Context, existingUser: UserModel, provide
 };
 
 /**
- * Find an existing user based on their email, user ID, or token ID.
+ * Find existing users based on their email, user ID, or token ID.
  * This utility checks if a user already exists in the system based on one or more conditions.
  *
  * @param email - Email of  user to search for.
@@ -115,7 +115,7 @@ const updateExistingUser = async (ctx: Context, existingUser: UserModel, provide
  * @param tokenId - Invite token ID to search for (optional).
  * @returns - Existing user or null if not found.
  */
-export const findExistingUser = async (email: string, userId: string | null, tokenId: string | null): Promise<UserModel | null> => {
+export const findExistingUsers = async (email: string, userId: string | null, tokenId: string | null): Promise<UserModel[]> => {
   const tokenUserId = tokenId
     ? await db
         .select({ userId: tokensTable.userId })
@@ -130,6 +130,6 @@ export const findExistingUser = async (email: string, userId: string | null, tok
     ...(tokenUserId ? [eq(usersTable.id, tokenUserId)] : []),
   );
 
-  const [existingUser] = await getUsersByConditions([conditions]);
-  return existingUser || null;
+  const existingUsers = await getUsersByConditions([conditions]);
+  return existingUsers;
 };

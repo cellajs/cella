@@ -13,8 +13,8 @@ export type CookieName =
   | 'oauth_code_verifier'
   | 'oauth_redirect'
   | 'oauth_connect_user_id'
-  | 'oauth_invite_tokenId'
-  | 'oauth_invite_tokenType'
+  | 'oauth_invite_token_id'
+  | 'oauth_invite_token_type'
   | 'passkey_challenge';
 
 /**

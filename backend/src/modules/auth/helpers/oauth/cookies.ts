@@ -39,8 +39,8 @@ export const clearOauthSession = (ctx: Context) => {
     'oauth_code_verifier',
     'oauth_redirect',
     'oauth_connect_user_id',
-    'oauth_invite_tokenId',
-    'oauth_invite_tokenType',
+    'oauth_invite_token_id',
+    'oauth_invite_token_type',
   ];
   for (const cookie of cookies) {
     deleteAuthCookie(ctx, cookie);
@@ -56,8 +56,8 @@ export const clearOauthSession = (ctx: Context) => {
 export const getOauthCookies = async (ctx: Context) => {
   const [connectUserId, inviteTokenId, inviteTokenType] = await Promise.all([
     getAuthCookie(ctx, 'oauth_connect_user_id'),
-    getAuthCookie(ctx, 'oauth_invite_tokenId'),
-    getAuthCookie(ctx, 'oauth_invite_tokenType'),
+    getAuthCookie(ctx, 'oauth_invite_token_id'),
+    getAuthCookie(ctx, 'oauth_invite_token_type'),
   ]);
 
   return {
@@ -102,8 +102,8 @@ export const handleOAuthInvitation = async (ctx: Context) => {
 
   // Set authentication cookies
   await Promise.all([
-    setAuthCookie(ctx, 'oauth_invite_tokenId', tokenRecord.id, oauthCookieExpires),
-    setAuthCookie(ctx, 'oauth_invite_tokenType', isMembershipInvite ? 'membership' : 'system', oauthCookieExpires),
+    setAuthCookie(ctx, 'oauth_invite_token_id', tokenRecord.id, oauthCookieExpires),
+    setAuthCookie(ctx, 'oauth_invite_token_type', isMembershipInvite ? 'membership' : 'system', oauthCookieExpires),
     handleOAuthRedirect(ctx, redirectUrl),
   ]);
   return null;

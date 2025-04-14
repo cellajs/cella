@@ -58,12 +58,13 @@ const meRoutes = app
 
     const getPasskey = db.select().from(passkeysTable).where(eq(passkeysTable.userEmail, user.email));
     const getOAuth = db.select({ providerId: oauthAccountsTable.providerId }).from(oauthAccountsTable).where(eq(oauthAccountsTable.userId, user.id));
-
     const [passkeys, oauthAccounts, sessions] = await Promise.all([getPasskey, getOAuth, getUserSessions(ctx, user.id)]);
 
     const validOAuthAccounts = oauthAccounts
       .map((el) => el.providerId)
       .filter((provider): provider is EnabledOauthProvider => config.enabledOauthProviders.includes(provider as EnabledOauthProvider));
+
+    console.info('Valid OAuth accounts:', validOAuthAccounts);
 
     return ctx.json({ success: true, data: { oauth: validOAuthAccounts, passkey: !!passkeys.length, sessions } }, 200);
   })
