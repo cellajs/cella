@@ -7,8 +7,8 @@ import { cn } from '~/utils/cn';
 const DrawerVariants = cva('fixed z-118 p-4 flex flex-col rounded-t-2.5 bg-background', {
   variants: {
     direction: {
-      top: 'inset-x-0 top-0 mb-24 flex-col',
-      bottom: 'inset-x-0 bottom-0 mt-24 flex-col z-121',
+      top: 'pt-6 inset-x-0 top-0 mb-24 flex-col',
+      bottom: 'pt-6 inset-x-0 bottom-0 mt-24 flex-col z-121',
       right: 'inset-y-0 right-0 w-[95vw] flex-row overflow-x-hidden',
       left: 'inset-y-0 left-0 w-[95vw] flex-row overflow-x-hidden',
     },
