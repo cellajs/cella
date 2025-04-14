@@ -15,7 +15,7 @@ interface Props {
 
 const openUpdateSheet = (organization: Organization, buttonRef: RefObject<HTMLButtonElement | null>) => {
   useSheeter.getState().create(
-    <Card>
+    <Card className="mb-20">
       <CardContent>
         <UpdateOrganizationForm organization={organization} sheet />
       </CardContent>
