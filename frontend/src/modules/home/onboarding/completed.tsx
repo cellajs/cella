@@ -2,10 +2,8 @@ import { config } from 'config';
 import { Undo } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
 import { Confetti } from '~/modules/home/onboarding/confetti';
 import { onboardingFinishCallback } from '~/modules/home/onboarding/onboarding-config';
-import { MenuSheet } from '~/modules/navigation/menu-sheet';
 import { useNavigationStore } from '~/store/navigation';
 
 export const OnboardingCompleted = () => {
@@ -16,9 +14,9 @@ export const OnboardingCompleted = () => {
   const effectRan = useRef(false);
 
   useEffect(() => {
-    // If already run, exit
     if (effectRan.current) return;
     effectRan.current = true;
+
     const sortedOrganizations = [...menu.organizations].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
     const lastCreatedOrganization = sortedOrganizations[0];
 
@@ -27,19 +25,6 @@ export const OnboardingCompleted = () => {
     if (!lastCreatedOrganization) return;
 
     setSectionsDefault();
-    setTimeout(
-      () => {
-        useSheeter.getState().create(<MenuSheet />, {
-          id: 'menu-nav',
-          triggerRef: { current: document.activeElement instanceof HTMLButtonElement ? document.activeElement : null },
-          side: 'left',
-          modal: false,
-          className:
-            'fixed sm:z-80 inset-0 left-16 p-0 backdrop-blur-xs max-w-80 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0',
-        });
-      },
-      finishedOnboarding ? 500 : 4000,
-    );
   }, []);
 
   return (
@@ -47,7 +32,7 @@ export const OnboardingCompleted = () => {
       {isExploding && <Confetti fire />}
 
       {finishedOnboarding && (
-        <Undo size={400} strokeWidth={0.1} className="max-lg:hidden scale-y-75 xl:-translate-x-24 -mt-40 -mb-12  text-primary rotate-[30deg]" />
+        <Undo size={400} strokeWidth={0.1} className="max-md:hidden scale-y-75 md:-translate-x-24 -mt-52 -mb-12  text-primary rotate-[30deg]" />
       )}
       <h1 className="text-3xl font-bold">{t('common:onboarding_completed')}</h1>
       <p className="text-xl text-foreground/90 md:text-2xl max-w-md font-light leading-7 pb-8">
