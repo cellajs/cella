@@ -41,7 +41,7 @@ const Integrations = () => {
               rel="noreferrer"
               draggable="false"
               key={name}
-              className="flex h-96 w-72 group relative shrink-0 flex-col justify-between rounded-lg border p-5 hover:cursor-pointer hover:border-primary hover:ring-4 hover:ring-primary/10"
+              className="flex h-96 w-64 group relative shrink-0 flex-col justify-between rounded-lg border p-5 hover:cursor-pointer hover:border-primary hover:ring-4 hover:ring-primary/10"
             >
               {planned && (
                 <div className="absolute top-0 right-0 bg-foreground/25 text-white text-xs px-2 py-1 rounded-tr-md rounded-bl-md">Planned</div>
