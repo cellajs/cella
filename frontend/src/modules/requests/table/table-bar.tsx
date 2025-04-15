@@ -29,7 +29,7 @@ export const RequestsTableBar = ({ total, selected, searchVars, setSearch, colum
 
   const deleteButtonRef = useRef(null);
 
-  const selectedToWaitlist = useMemo(() => selected.filter((r) => r.type === 'waitlist' && !r.tokenId), [selected]);
+  const selectedToWaitlist = useMemo(() => selected.filter((r) => r.type === 'waitlist' && !r.wasInvited), [selected]);
 
   const { q, order, sort } = searchVars;
   const isFiltered = !!q;
@@ -67,10 +67,10 @@ export const RequestsTableBar = ({ total, selected, searchVars, setSearch, colum
     const waitlistRequests = selected.filter(({ type }) => type === 'waitlist');
     const emails = waitlistRequests.map(({ email }) => email);
 
-    // add random token value so state table changes
-    const updatedWaitLists = waitlistRequests.map((req) => {
-      return req;
-    });
+    const updatedWaitLists = waitlistRequests.map((reqInfo) => ({
+      ...reqInfo,
+      wasInvited: true,
+    }));
 
     try {
       // Send invite to users

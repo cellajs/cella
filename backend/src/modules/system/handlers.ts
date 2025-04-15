@@ -84,8 +84,15 @@ const systemRoutes = app
     // Batch insert tokens
     const insertedTokens = await db.insert(tokensTable).values(tokens).returning();
 
-    // Remove waitlist request - if found - because users are explicitly invited
-    await db.delete(requestsTable).where(and(inArray(requestsTable.email, recipientEmails), eq(requestsTable.type, 'waitlist')));
+    // Change waitlist request status
+    await Promise.all(
+      insertedTokens.map((token) =>
+        db
+          .update(requestsTable)
+          .set({ tokenId: token.id })
+          .where(and(eq(requestsTable.email, token.email), eq(requestsTable.type, 'waitlist'))),
+      ),
+    );
 
     // Prepare emails
     const recipients = insertedTokens.map((tokenRecord) => ({
