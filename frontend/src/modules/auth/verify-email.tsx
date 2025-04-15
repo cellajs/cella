@@ -61,7 +61,7 @@ const VerifyEmail = () => {
       <h1 className="text-2xl">{t('common:verify_email', { email: data?.email })}</h1>
       <Button size="lg" onClick={() => verify()} className="mt-6" loading={isVerifying}>
         {t('common:verify_signin')}
-        <ArrowRight size={16} className="ml-1" />
+        <ArrowRight size={16} className="ml-2" />
       </Button>
     </div>
   );

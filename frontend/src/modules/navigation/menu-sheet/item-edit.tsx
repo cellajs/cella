@@ -102,7 +102,7 @@ const MenuItemEditButton = ({ icon: Icon, title, onClick, subitem = false }: Men
     aria-label={`Click ${title}`}
     onClick={onClick}
   >
-    <Icon size={subitem ? 12 : 13} strokeWidth={1.5} className="mr-1" />
+    <Icon size={subitem ? 12 : 13} strokeWidth={1.5} className="mr-2" />
     {title}
   </Button>
 );

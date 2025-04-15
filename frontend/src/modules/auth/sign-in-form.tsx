@@ -87,7 +87,7 @@ export const SignInForm = ({ email, resetSteps, emailEnabled }: Props) => {
         {token ? t('common:invite_sign_in') : lastUser ? t('common:welcome_back') : t('common:sign_in_as')} <br />
         <Button variant="ghost" onClick={resetAuth} disabled={!!token} className="font-light mt-2 text-xl">
           {email}
-          {!token && <ChevronDown size={16} className="ml-1" />}
+          {!token && <ChevronDown size={16} className="ml-2" />}
         </Button>
       </h1>
       {emailEnabled && (
@@ -130,7 +130,7 @@ export const SignInForm = ({ email, resetSteps, emailEnabled }: Props) => {
 
               <SubmitButton loading={isPending} className="w-full">
                 {t('common:sign_in')}
-                <ArrowRight size={16} className="ml-1" />
+                <ArrowRight size={16} className="ml-2" />
               </SubmitButton>
               <RequestPasswordDialog email={email}>
                 <Button variant="ghost" size="sm" className="w-full font-normal">
