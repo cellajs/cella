@@ -51,7 +51,10 @@ const DomainsFormField = ({ control, label, description, required }: Props) => {
                 onInputChange={(newValue) => setCurrentValue(newValue)}
                 onFocus={() => setFieldActive(true)}
                 onBlur={() => {
-                  if (checkValidDomain(currentValue)) setDomains((prev) => [...prev, currentValue]);
+                  if (checkValidDomain(currentValue)) {
+                    setDomains((prev) => [...prev, currentValue]);
+                    onChange([...domains, currentValue]);
+                  }
                   setCurrentValue('');
                   setFieldActive(false);
                 }}
