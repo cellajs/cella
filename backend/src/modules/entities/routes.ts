@@ -43,7 +43,8 @@ class EntitiesRouteConfig {
     guard: isAuthenticated,
     tags: ['entities'],
     summary: 'Get list of entities',
-    description: 'Get page entities such as users and organizations. It returns a limited schema of entities to which the user has access.',
+    description:
+      'Get page entities such as users and organizations. It returns a paginated list of entities to which the user has access. The schema is limited to common fields.',
     request: { query: entitiesQuerySchema },
     responses: {
       200: {

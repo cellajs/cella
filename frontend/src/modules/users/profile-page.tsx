@@ -9,10 +9,20 @@ import { useUpdateSelfMutation } from '~/modules/me/query';
 import { useUpdateUserMutation, userQueryOptions } from '~/modules/users/query';
 import type { LimitedUser } from '~/modules/users/types';
 import { useUserStore } from '~/store/user';
+import { FocusViewContainer } from '../common/focus-view';
 
 const ProfilePageContent = lazy(() => import('~/modules/users/profile-page-content'));
 
-const UserProfilePage = ({ user: baseUser, sheet, orgIdOrSlug }: { user: LimitedUser; sheet?: boolean; orgIdOrSlug?: string }) => {
+interface Props {
+  user: LimitedUser;
+  isSheet?: boolean;
+  orgIdOrSlug?: string;
+}
+
+/**
+ * Profile page for a user
+ */
+const UserProfilePage = ({ user: baseUser, isSheet, orgIdOrSlug }: Props) => {
   const { t } = useTranslation();
 
   // Use loader data but also fetch from cache to ensure it's up to date
@@ -64,9 +74,9 @@ const UserProfilePage = ({ user: baseUser, sheet, orgIdOrSlug }: { user: Limited
         }
       />
       <Suspense>
-        <div className="container">
-          <ProfilePageContent orgIdOrSlug={orgIdOrSlug} userId={user.id} sheet={sheet} />
-        </div>
+        <FocusViewContainer className="container">
+          <ProfilePageContent orgIdOrSlug={orgIdOrSlug} userId={user.id} isSheet={isSheet} />
+        </FocusViewContainer>
       </Suspense>
     </>
   );

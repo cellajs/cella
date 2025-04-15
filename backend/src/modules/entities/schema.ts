@@ -12,9 +12,11 @@ export const limitEntitySchema = z.object({
   bannerUrl: imageUrlSchema.nullable().optional(),
 });
 
-export const entitySuggestionSchema = limitEntitySchema
-  .omit({ bannerUrl: true })
-  .extend({ email: z.string().optional(), entity: pageEntityTypeSchema, membership: membershipInfoSchema });
+export const entitySuggestionSchema = limitEntitySchema.extend({
+  email: z.string().optional(),
+  entity: pageEntityTypeSchema,
+  membership: membershipInfoSchema,
+});
 
 export const entitiesSchema = z.object({
   items: z.array(entitySuggestionSchema),
