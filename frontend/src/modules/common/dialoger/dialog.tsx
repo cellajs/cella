@@ -42,7 +42,7 @@ export default function StandardDialog({ dialog }: DialogProp) {
         id={String(id)}
         hideClose={hideClose}
         container={containerElement}
-        className={cn(className, containerElement && 'z-40')}
+        className={cn(className, containerElement && 'z-40 [.sheeter-open_&]:z-40')}
         onInteractOutside={handleInteractOutside}
         onOpenAutoFocus={(event: Event) => {
           if (isMobile) event.preventDefault();

@@ -94,7 +94,7 @@ const UserSettingsPage = () => {
       <div className="max-md:hidden mx-auto md:min-w-48 md:w-[30%] md:mt-3">
         <StickyBox className="z-10 max-md:block!">
           <SimpleHeader className="p-3" heading="common:settings" text="common:settings.text" />
-          <PageAside tabs={tabs} className="py-2" />
+          <PageAside tabs={tabs} className="py-2" setFocus />
         </StickyBox>
       </div>
 
@@ -177,7 +177,7 @@ const UserSettingsPage = () => {
               </HelpText>
               <div>
                 <Button className="w-full sm:w-auto" variant="outline" disabled={disabledResetPassword} onClick={requestResetPasswordClick}>
-                  <Send size={16} className="mr-1" />
+                  <Send size={16} className="mr-2" />
                   {t('common:send_reset_link')}
                 </Button>
                 {disabledResetPassword && <p className="text-sm text-gray-500 mt-2">{t('common:retry_reset_password.text')}</p>}
@@ -194,7 +194,7 @@ const UserSettingsPage = () => {
             </CardHeader>
             <CardContent>
               <Button ref={deleteButtonRef} variant="destructive" className="w-full sm:w-auto" onClick={openDeleteDialog}>
-                <Trash className="mr-2 h-4 w-4" />
+                <Trash size={16} className="mr-2" />
                 {t('common:delete_account')}
               </Button>
             </CardContent>

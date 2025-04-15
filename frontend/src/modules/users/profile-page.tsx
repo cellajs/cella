@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
-import { UserCog } from 'lucide-react';
+import { Settings } from 'lucide-react';
 import { Suspense, lazy } from 'react';
 import { useTranslation } from 'react-i18next';
 import { PageHeader } from '~/modules/common/page/page-header';
@@ -9,10 +9,20 @@ import { useUpdateSelfMutation } from '~/modules/me/query';
 import { useUpdateUserMutation, userQueryOptions } from '~/modules/users/query';
 import type { LimitedUser } from '~/modules/users/types';
 import { useUserStore } from '~/store/user';
+import { FocusViewContainer } from '../common/focus-view';
 
 const ProfilePageContent = lazy(() => import('~/modules/users/profile-page-content'));
 
-const UserProfilePage = ({ user: baseUser, sheet, orgIdOrSlug }: { user: LimitedUser; sheet?: boolean; orgIdOrSlug?: string }) => {
+interface Props {
+  user: LimitedUser;
+  isSheet?: boolean;
+  orgIdOrSlug?: string;
+}
+
+/**
+ * Profile page for a user
+ */
+const UserProfilePage = ({ user: baseUser, isSheet, orgIdOrSlug }: Props) => {
   const { t } = useTranslation();
 
   // Use loader data but also fetch from cache to ensure it's up to date
@@ -56,7 +66,7 @@ const UserProfilePage = ({ user: baseUser, sheet, orgIdOrSlug }: { user: Limited
                 tabIndex={0}
                 className="inline-flex items-center justify-center whitespace-nowrap h-9 rounded-md px-3 text-sm font-medium ring-offset-background transition-colors focus-visible:outline-hidden sm:focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 bg-primary text-primary-foreground hover:bg-primary/80"
               >
-                <UserCog size={16} />
+                <Settings size={16} />
                 <span className="max-sm:hidden ml-1">{t('common:settings')}</span>
               </Link>
             </div>
@@ -64,9 +74,9 @@ const UserProfilePage = ({ user: baseUser, sheet, orgIdOrSlug }: { user: Limited
         }
       />
       <Suspense>
-        <div className="container">
-          <ProfilePageContent orgIdOrSlug={orgIdOrSlug} userId={user.id} sheet={sheet} />
-        </div>
+        <FocusViewContainer className="container">
+          <ProfilePageContent orgIdOrSlug={orgIdOrSlug} userId={user.id} isSheet={isSheet} />
+        </FocusViewContainer>
       </Suspense>
     </>
   );

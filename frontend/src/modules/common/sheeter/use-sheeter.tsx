@@ -20,8 +20,8 @@ export type SheetData = {
 
 export type InternalSheet = SheetData & {
   key: number;
-  open?: boolean;
   content: ReactNode;
+  open?: boolean;
 };
 
 interface SheetStoreState {
@@ -29,7 +29,7 @@ interface SheetStoreState {
 
   create(content: ReactNode, data: SheetData): string;
   update(id: string, updates: Partial<InternalSheet>): void;
-  remove(id?: string, excludeId?: string): void;
+  remove(id?: string): void;
   get(id: string): InternalSheet | undefined;
 
   triggerRefs: Record<string, TriggerRef | null>;
@@ -61,21 +61,21 @@ export const useSheeter = create<SheetStoreState>()((set, get) => ({
     }));
   },
 
-  remove: (id, excludeId) => {
+  remove: (id) => {
     set((state) => {
-      let removedSheets = [];
+      let removeSheets = state.sheets;
 
-      if (id) {
-        removedSheets = state.sheets.filter((sheet) => sheet.id === id);
-      } else {
-        removedSheets = excludeId ? state.sheets.filter((sheet) => sheet.id !== excludeId) : state.sheets;
-      }
+      // Remove by id or remove all
+      if (id) removeSheets = state.sheets.filter((sheet) => sheet.id === id);
 
-      // Call onClose for each removed sheet
-      for (const sheet of removedSheets) sheet.onClose?.();
+      // If no sheets to remove, return
+      if (!removeSheets.length) return { sheets: state.sheets };
 
-      // Filter out removed sheets from state
-      const sheets = state.sheets.filter((sheet) => !removedSheets.some((removed) => removed.id === sheet.id));
+      // Call onClose hooks
+      for (const sheet of removeSheets) sheet.onClose?.();
+
+      // Filter them out
+      const sheets = state.sheets.filter((sheet) => !removeSheets.some((s) => s.id === sheet.id));
 
       return { sheets };
     });

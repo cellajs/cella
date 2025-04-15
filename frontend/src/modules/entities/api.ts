@@ -26,11 +26,8 @@ export type EntitiesQuery = Parameters<(typeof client)['index']['$get']>['0']['q
 /**
  * Get entities for a given query and optional entity type.
  *
- * @param query - Query parameters to get entities.
- * @param query.q -  Optional, search query.
- * @param query.type - Optional, type of entity to filter entities by.
- * @param query.entityId - Optional, excludes entities based on membership in the specified entity.
- * @returns An array of suggested entities based on the query.
+ * @param query - EntitiesQuery parameters to get entities.
+ * @returns An array of entities based on query.
  */
 export const getEntities = async (query: EntitiesQuery) => {
   const response = await client.index.$get({ query });

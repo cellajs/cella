@@ -7,6 +7,7 @@ import { config } from 'config';
 import { OpenAPIHono } from '@hono/zod-openapi';
 import { EventName, Paddle } from '@paddle/paddle-node-sdk';
 import { db } from '#/db/db';
+import { emailsTable } from '#/db/schema/emails';
 import { membershipsTable } from '#/db/schema/memberships';
 import { organizationsTable } from '#/db/schema/organizations';
 import { requestsTable } from '#/db/schema/requests';
@@ -57,7 +58,7 @@ const systemRoutes = app
         ),
       );
 
-    const [existingUsers, existingInvites] = await Promise.all([getUsersByConditions([inArray(usersTable.email, emails)]), existingInvitesQuery]);
+    const [existingUsers, existingInvites] = await Promise.all([getUsersByConditions([inArray(emailsTable.email, emails)]), existingInvitesQuery]);
 
     // Create a set of emails from both existing users and invitations
     const existingEmails = new Set([...existingUsers.map((user) => user.email), ...existingInvites.map((invite) => invite.email)]);
@@ -83,8 +84,15 @@ const systemRoutes = app
     // Batch insert tokens
     const insertedTokens = await db.insert(tokensTable).values(tokens).returning();
 
-    // Remove waitlist request - if found - because users are explicitly invited
-    await db.delete(requestsTable).where(and(inArray(requestsTable.email, recipientEmails), eq(requestsTable.type, 'waitlist')));
+    // Change waitlist request status
+    await Promise.all(
+      insertedTokens.map((token) =>
+        db
+          .update(requestsTable)
+          .set({ tokenId: token.id })
+          .where(and(eq(requestsTable.email, token.email), eq(requestsTable.type, 'waitlist'))),
+      ),
+    );
 
     // Prepare emails
     const recipients = insertedTokens.map((tokenRecord) => ({

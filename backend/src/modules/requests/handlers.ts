@@ -1,16 +1,16 @@
-import { type SQL, and, count, eq, ilike, inArray } from 'drizzle-orm';
-
 import { OpenAPIHono } from '@hono/zod-openapi';
+import { type SQL, and, count, eq, getTableColumns, ilike, inArray, sql } from 'drizzle-orm';
+
 import { db } from '#/db/db';
 import { type RequestModel, requestsTable } from '#/db/schema/requests';
 import type { Env } from '#/lib/context';
 import { errorResponse } from '#/lib/errors';
 import { sendSlackMessage } from '#/lib/notification';
+import requestsRouteConfig from '#/modules/requests/routes';
+import { getUserBy } from '#/modules/users/helpers/get-user-by';
 import defaultHook from '#/utils/default-hook';
 import { getOrderColumn } from '#/utils/order-column';
 import { prepareStringForILikeFilter } from '#/utils/sql';
-import { getUserBy } from '../users/helpers/get-user-by';
-import requestsRouteConfig from './routes';
 
 // These requests are only allowed to be created if user has none yet
 const uniqueRequests: RequestModel['type'][] = ['waitlist', 'newsletter'];
@@ -25,8 +25,10 @@ const requestsRoutes = app
   .openapi(requestsRouteConfig.createRequest, async (ctx) => {
     const { email, type, message } = ctx.req.valid('json');
 
+    const loweredEmail = email.toLowerCase();
+
     if (type === 'waitlist') {
-      const existingUser = await getUserBy('email', email);
+      const existingUser = await getUserBy('email', loweredEmail);
       if (existingUser) return errorResponse(ctx, 400, 'request_email_is_user', 'info');
     }
 
@@ -35,19 +37,24 @@ const requestsRoutes = app
       const [existingRequest] = await db
         .select()
         .from(requestsTable)
-        .where(and(eq(requestsTable.email, email), inArray(requestsTable.type, uniqueRequests)));
+        .where(and(eq(requestsTable.email, loweredEmail), inArray(requestsTable.type, uniqueRequests)));
       if (existingRequest?.type === type) return errorResponse(ctx, 409, 'request_exists', 'info');
     }
+    const { tokenId, ...requestsSelect } = getTableColumns(requestsTable);
 
-    const [{ ...createdRequest }] = await db.insert(requestsTable).values({ email, type, message }).returning();
+    const [createdRequest] = await db
+      .insert(requestsTable)
+      .values({ email: loweredEmail, type, message })
+      .returning({ ...requestsSelect });
 
     // Slack notifications
-    if (type === 'waitlist') await sendSlackMessage('Join waitlist', email);
-    if (type === 'newsletter') await sendSlackMessage('Join newsletter', email);
-    if (type === 'contact') await sendSlackMessage(`for contact from ${message}.`, email);
+    if (type === 'waitlist') await sendSlackMessage('Join waitlist', loweredEmail);
+    if (type === 'newsletter') await sendSlackMessage('Join newsletter', loweredEmail);
+    if (type === 'contact') await sendSlackMessage(`for contact from ${message}.`, loweredEmail);
 
     const data = {
       ...createdRequest,
+      wasInvited: false,
     };
 
     return ctx.json({ success: true, data }, 200);
@@ -60,7 +67,12 @@ const requestsRoutes = app
 
     const filter: SQL | undefined = q ? ilike(requestsTable.email, prepareStringForILikeFilter(q)) : undefined;
 
-    const requestsQuery = db.select().from(requestsTable).where(filter);
+    const { tokenId, ...requestsSelect } = getTableColumns(requestsTable);
+
+    const requestsQuery = db
+      .select({ ...requestsSelect, wasInvited: sql`(${requestsTable.tokenId} IS NOT NULL)`.as('wasInvited') })
+      .from(requestsTable)
+      .where(filter);
 
     const [{ total }] = await db.select({ total: count() }).from(requestsQuery.as('requests'));
 

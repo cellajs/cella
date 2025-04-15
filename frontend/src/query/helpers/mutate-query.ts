@@ -48,10 +48,16 @@ export function formatUpdatedData<T>(
     chunks.push(updatedData.slice(i, i + pageItemsLimit));
   }
 
+  const oldTotal = prevData.pages[0]?.total ?? 0;
+
+  const totalPages = Math.ceil(updatedData.length / pageItemsLimit);
+  const newPages = Array.from({ length: totalPages }, (_, i) => i);
+
   return {
     ...prevData,
-    pages: chunks.map((chunk, index) => ({
-      total: prevData.pages[index].total + addToTotal,
+    pageParams: newPages,
+    pages: chunks.map((chunk) => ({
+      total: oldTotal + addToTotal,
       items: chunk,
     })),
   };

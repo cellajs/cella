@@ -69,7 +69,7 @@ const ContactForm = ({ dialog: isDialog }: { dialog?: boolean }) => {
             <InputFormField control={form.control} name="message" label={t('common:message')} type="textarea" icon={<MessageSquare size={16} />} />
             <div className="flex flex-col sm:flex-row gap-2">
               <SubmitButton>
-                <Send size={16} className="mr-1" />
+                <Send size={16} className="mr-2" />
                 {t('common:send')}
               </SubmitButton>
               <Button type="reset" variant="secondary" onClick={cancel} className={form.formState.isDirty ? '' : 'invisible'}>

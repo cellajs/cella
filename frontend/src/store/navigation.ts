@@ -11,6 +11,7 @@ interface NavigationStoreState {
   setRecentSearches: (searchValue: string[]) => void; // Updates recent searches
 
   menu: UserMenu; // User menu
+  // TODO make typesafe with ids
   navSheetOpen: string | null; // Currently open navigation sheet
   setNavSheetOpen: (sheet: string | null) => void; // Sets navigation sheet
 

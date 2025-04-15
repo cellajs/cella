@@ -34,7 +34,7 @@ export const LegalPage = () => {
         <div className="mx-auto md:min-w-48 md:w-[30%] md:mt-3">
           <StickyBox className="z-10 max-md:block!">
             <SimpleHeader className="p-3" text={t('common:legal_text', { appName: config.name })} />
-            <PageAside tabs={tabs} className="py-2" />
+            <PageAside tabs={tabs} className="py-2" setFocus />
           </StickyBox>
         </div>
         <div className="md:w-[70%] flex flex-col gap-8">

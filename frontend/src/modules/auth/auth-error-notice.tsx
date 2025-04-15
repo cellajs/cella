@@ -24,7 +24,7 @@ const AuthErrorNotice = ({ error, children }: { error: ErrorNoticeError; childre
   return (
     <Card className="bg-transparent border-0">
       <CardHeader className="text-center p-0">
-        <CardTitle className="text-2xl mb-4">{getErrorTitle(t, error, errorFromQuery) || t('error:error')}</CardTitle>
+        <CardTitle className="text-2xl mb-2 justify-center">{getErrorTitle(t, error, errorFromQuery) || t('error:error')}</CardTitle>
         <CardDescription className="text-lg">
           <span>{getErrorText(t, error, errorFromQuery) || t('error:reported_try_or_contact')}</span>
           <span className="ml-1">{severity === 'warn' && t('error:contact_mistake')}</span>
@@ -38,7 +38,7 @@ const AuthErrorNotice = ({ error, children }: { error: ErrorNoticeError; childre
         </Link>
         {severity && ['warn', 'error'].includes(severity) && (
           <Button ref={contactButtonRef} variant="plain" onClick={() => handleAskForHelp(contactButtonRef)} size="lg">
-            <MessageCircleQuestion size={16} className="mr-1" />
+            <MessageCircleQuestion size={16} className="mr-2" />
             {t('common:ask_for_help')}
           </Button>
         )}

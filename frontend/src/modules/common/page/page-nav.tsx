@@ -1,9 +1,10 @@
 import { Link, type LinkComponentProps } from '@tanstack/react-router';
 import { motion } from 'motion/react';
-import { type MouseEventHandler, useEffect, useMemo, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useInView } from 'react-intersection-observer';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
+import useMounted from '~/hooks/use-mounted';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import StickyBox from '~/modules/common/sticky-box';
 import { cn } from '~/utils/cn';
@@ -31,24 +32,36 @@ interface Props {
 }
 
 export const PageNav = ({ tabs, title, avatar, fallbackToFirst, className }: Props) => {
-  const isMobile = useBreakpoints('max', 'sm', false);
-  const layoutId = useMemo(() => nanoid(), []);
-  const firstTabRef = useRef<HTMLAnchorElement>(null);
-
   const { t } = useTranslation();
+  const isMobile = useBreakpoints('max', 'sm', false);
+  const { hasStarted } = useMounted();
+
+  const layoutId = useRef(nanoid()).current;
+
+  const tabRefs = useRef<Record<string, HTMLAnchorElement | null>>({});
+
   const { ref: inViewRef, inView } = useInView({ triggerOnce: false, threshold: 0 });
 
   // Focus the first tab on mount
   useEffect(() => {
-    if (!isMobile) firstTabRef.current?.focus();
-  }, []);
+    if (!isMobile && hasStarted) tabRefs.current[tabs[0].id]?.focus();
+  }, [hasStarted]);
+
+  const scrollTabIntoView = (id: string) => {
+    const tab = tabRefs.current[id];
+    tab?.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+  };
+
+  const handleTabClick = (id: string, el: HTMLAnchorElement | null) => {
+    const isActive = el?.dataset.active === 'true';
+    scrollTabIntoView(id);
+    updateScrollPosition(el, isActive);
+  };
 
   // Scroll to tabs when scrolled past header
-  const updateScrollPosition: MouseEventHandler<HTMLAnchorElement> = (e) => {
-    if (e.currentTarget.dataset.active) {
-      e.preventDefault();
-      return;
-    }
+  const updateScrollPosition = (tabEl: HTMLAnchorElement | null, isActive: boolean) => {
+    if (isActive || !tabEl) return;
+
     const tabsWrapper = document.getElementById('tabs-position');
     if (inView || !tabsWrapper) return;
 
@@ -73,7 +86,9 @@ export const PageNav = ({ tabs, title, avatar, fallbackToFirst, className }: Pro
             <Link
               key={id}
               id={`tab-${id}`}
-              ref={index === 0 ? firstTabRef : undefined}
+              ref={(el) => {
+                if (el) tabRefs.current[id] = el;
+              }}
               resetScroll={false}
               className="relative last:mr-4 max-sm:p-3 p-2 lg:px-4 rounded-sm outline-hidden sm:ring-offset-background sm:focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
               to={path}
@@ -83,7 +98,7 @@ export const PageNav = ({ tabs, title, avatar, fallbackToFirst, className }: Pro
               search={search}
               activeOptions={activeOptions}
               activeProps={{ 'data-active': true }}
-              onClick={updateScrollPosition}
+              onClick={(e) => handleTabClick(id, e.currentTarget)}
             >
               {({ isActive }) => {
                 const showAsActive = isActive || (fallbackToFirst && index === 0);

@@ -25,14 +25,14 @@ export const BarNavButton = ({ navItem, isActive, onClick }: BarNavButtonProps) 
   const theme = useUIStore((state) => state.theme);
 
   return (
-    <TooltipButton toolTipContent={t(`common:${navItem.id}`)} side="right" sideOffset={10} hideWhenDetached>
+    <TooltipButton toolTipContent={t(`common:${navItem.id}`)} side="right" sideOffset={10} hideWhenDetached disabled>
       <Button
         id={`${navItem.id}-nav`}
         variant="ghost"
         ref={buttonRef}
         data-theme={theme}
         data-active={isActive}
-        className={`ring-inset focus-visible:ring-offset-0 group h-14 w-14 
+        className={`ring-inset focus-visible:ring-offset-0 group h-14 w-14
           data-[active=true]:bg-background/50 hover:bg-background/30 text-primary-foreground data-[theme=none]:text-inherit`}
         onClick={() => {
           onClick(buttonRef);

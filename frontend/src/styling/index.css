@@ -23,7 +23,7 @@
     display: block;
     position: absolute;
     margin-top: 0.5rem;
-    margin-left: 1.45rem;
+    margin-left: 1.70rem;
     opacity: 0.5;
     z-index: 0;
     width: 0.05rem;
@@ -70,7 +70,7 @@
     --secondary: 240 3.7% 15%;
     --secondary-foreground: 0 0% 95%;
     --muted: 240 3.7% 25%;
-    --muted-foreground: 240 5% 84.9%;
+    --muted-foreground: 240 5% 54.9%;
     --accent: 240 3.7% 25%;
     --accent-foreground: 0 0% 95%;
     --destructive: 0 62.8% 50%;
@@ -138,7 +138,7 @@
     display: none !important;
   }
 
-  /* Hide tanstack devtools button */
+  /* Hide devtools */
   .tsqd-open-btn-container,
   .TanStackRouterDevtools > button {
     display: none !important;

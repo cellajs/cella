@@ -21,7 +21,7 @@ import type { TransformedUser } from './transform-user-data';
 export const getOauthRedirectUrl = async (ctx: Context, firstSignIn?: boolean) => {
   const redirectCookie = await getAuthCookie(ctx, 'oauth_redirect');
 
-  const baseRedirect = redirectCookie || firstSignIn ? config.welcomeRedirectPath : config.defaultRedirectPath;
+  const baseRedirect = redirectCookie || (firstSignIn && config.welcomeRedirectPath) || config.defaultRedirectPath;
 
   return isRedirectUrl(baseRedirect) ? baseRedirect : `${config.frontendUrl}${baseRedirect}`;
 };
@@ -33,7 +33,6 @@ export const handleExistingUser = async (
   provider: Provider,
   connectUserId: string | null,
   redirectUrl: string,
-  emailVerified: boolean,
 ) => {
   // Check if the user has a linked OAuth account
   const [existingOauth] = await db
@@ -43,7 +42,7 @@ export const handleExistingUser = async (
 
   // Update the existing user if OAuth is not yet linked
   if (!existingOauth) {
-    const { slug, name, emailVerified: transformVerified, ...providerUser } = transformedUser;
+    const { slug, name, emailVerified, ...providerUser } = transformedUser;
     return await updateExistingUser(ctx, existingUser, provider.id, { providerUser, redirectUrl, emailVerified });
   }
 
@@ -107,7 +106,7 @@ const updateExistingUser = async (ctx: Context, existingUser: UserModel, provide
 };
 
 /**
- * Find an existing user based on their email, user ID, or token ID.
+ * Find existing users based on their email, user ID, or token ID.
  * This utility checks if a user already exists in the system based on one or more conditions.
  *
  * @param email - Email of  user to search for.
@@ -115,7 +114,7 @@ const updateExistingUser = async (ctx: Context, existingUser: UserModel, provide
  * @param tokenId - Invite token ID to search for (optional).
  * @returns - Existing user or null if not found.
  */
-export const findExistingUser = async (email: string, userId: string | null, tokenId: string | null): Promise<UserModel | null> => {
+export const findExistingUsers = async (email: string, userId: string | null, tokenId: string | null): Promise<UserModel[]> => {
   const tokenUserId = tokenId
     ? await db
         .select({ userId: tokensTable.userId })
@@ -125,11 +124,11 @@ export const findExistingUser = async (email: string, userId: string | null, tok
     : null;
 
   const conditions = or(
-    eq(usersTable.email, email),
+    eq(emailsTable.email, email),
     ...(userId ? [eq(usersTable.id, userId)] : []),
     ...(tokenUserId ? [eq(usersTable.id, tokenUserId)] : []),
   );
 
-  const [existingUser] = await getUsersByConditions([conditions]);
-  return existingUser || null;
+  const existingUsers = await getUsersByConditions([conditions]);
+  return existingUsers;
 };

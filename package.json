@@ -5,7 +5,19 @@
   "license": "MIT",
   "repository": "https://github.com/cellajs/cella",
   "description": "Cella is a TypeScript template to create powerful web apps with sync and offline capabilities.",
-  "keywords": ["template", "monorepo", "fullstack", "typescript", "hono", "drizzle", "shadcn", "postgres", "react", "vite", "pwa"],
+  "keywords": [
+    "template",
+    "monorepo",
+    "fullstack",
+    "typescript",
+    "hono",
+    "drizzle",
+    "shadcn",
+    "postgres",
+    "react",
+    "vite",
+    "pwa"
+  ],
   "author": "CellaJS <info@cellajs.com>",
   "homepage": "https://cellajs.com",
   "type": "module",
@@ -39,8 +51,9 @@
   },
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",
-    "@evilmartians/lefthook": "^1.11.8",
+    "@evilmartians/lefthook": "^1.11.10",
     "cross-env": "^7.0.3",
+    "knip": "^5.50.4",
     "rimraf": "^6.0.1",
     "tsx": "^4.19.3",
     "typescript": "^5.8.3",
@@ -48,6 +61,14 @@
   },
   "packageManager": "pnpm@9.1.2",
   "dependencies": {
-    "dotenv": "^16.4.7"
+    "dotenv": "^16.5.0"
+  },
+  "pnpm": {
+    "overrides": {
+      "react": "^19.0.0",
+      "react-dom": "^19.0.0",
+      "@types/react": "^19.0.0",
+      "@types/react-dom": "^19.0.0"
+    }
   }
 }

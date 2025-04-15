@@ -28,7 +28,6 @@ export const AppNavState = () => {
   // Apply body classes for menu state
   useBodyClass({
     'keep-menu-open': shouldKeepMenuOpen,
-    'menu-sheet-open': navSheetOpen === 'menu',
     'nav-sheet-open': !!navSheetOpen,
   });
 

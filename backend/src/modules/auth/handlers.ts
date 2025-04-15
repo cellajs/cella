@@ -28,7 +28,7 @@ import {
   handleOAuthInvitation,
   handleOAuthRedirect,
 } from '#/modules/auth/helpers/oauth/cookies';
-import { findExistingUser, getOauthRedirectUrl, handleExistingUser } from '#/modules/auth/helpers/oauth/index';
+import { findExistingUsers, getOauthRedirectUrl, handleExistingUser } from '#/modules/auth/helpers/oauth/index';
 import {
   type GithubUserEmailProps,
   type GithubUserProps,
@@ -290,8 +290,9 @@ const authRoutes = app
     await db.delete(tokensTable).where(and(eq(tokensTable.id, token.id), eq(tokensTable.type, 'password_reset')));
 
     const user = await getUserBy('id', token.userId);
-    // If the user is not found or the email is different from the token email
-    if (!user || user.email !== token.email) return errorResponse(ctx, 404, 'not_found', 'warn', 'user', { userId: token.userId });
+
+    // If the user is not found
+    if (!user) return errorResponse(ctx, 404, 'not_found', 'warn', 'user', { userId: token.userId });
 
     // Hash password
     const hashedPassword = await hashPassword(password);
@@ -330,7 +331,7 @@ const authRoutes = app
 
     // If user is not found or doesn't have password
     if (!user) return errorResponse(ctx, 404, 'not_found', 'warn', 'user');
-    if (!user.hashedPassword) return errorResponse(ctx, 404, 'no_password_found', 'warn');
+    if (!user.hashedPassword) return errorResponse(ctx, 403, 'no_password_found', 'warn');
 
     // Verify password
     const validPassword = await verifyPasswordHash(user.hashedPassword, password);
@@ -488,6 +489,7 @@ const authRoutes = app
     const { type, redirect } = ctx.req.valid('query');
 
     if (redirect) await handleOAuthRedirect(ctx, redirect);
+
     let error: ErrorType | null = null;
 
     // If sign up is disabled, stop early
@@ -578,28 +580,33 @@ const authRoutes = app
       const { connectUserId, inviteToken } = await getOauthCookies(ctx);
 
       // Find existing user based on email, connectUserId, or invite token id
-      const existingUser = await findExistingUser(transformedUser.email, connectUserId, inviteToken?.id ?? null);
+      const existingUsers = await findExistingUsers(transformedUser.email, connectUserId, inviteToken?.id ?? null);
+
+      // Make sure we have only one user
+      if (existingUsers.length > 1) return errorRedirect(ctx, 'oauth_mismatch', 'warn');
+      const existingUser = existingUsers[0] ?? null;
 
       // If registration is disabled and no existing user, throw to error
       if (!config.has.registrationEnabled && (!existingUser || (inviteToken && inviteToken.type !== 'system'))) {
         return errorRedirect(ctx, 'sign_up_restricted', 'info');
       }
 
-      const emailVerified = transformedUser.emailVerified || !!inviteToken;
       // Get the redirect URL based on whether a new user or invite token exists
-      const redirectUrl = await getOauthRedirectUrl(ctx, !existingUser && !inviteToken);
+      const firstSignIn = !connectUserId && !existingUser;
+      const redirectUrl = await getOauthRedirectUrl(ctx, firstSignIn);
 
+      // If the user already exists, use existing user logic
       if (existingUser) {
-        return await handleExistingUser(ctx, existingUser, transformedUser, provider, connectUserId, redirectUrl, emailVerified);
+        return await handleExistingUser(ctx, existingUser, transformedUser, provider, connectUserId, redirectUrl);
       }
 
       // Create new user and OAuth account
       return await handleCreateUser({
         ctx,
         newUser: transformedUser,
+        emailVerified: transformedUser.emailVerified,
         redirectUrl,
         provider,
-        emailVerified,
         ...(inviteToken && inviteToken.type === 'membership' && { tokenId: inviteToken.id }),
       });
     } catch (error) {
@@ -652,26 +659,31 @@ const authRoutes = app
       const { connectUserId, inviteToken } = await getOauthCookies(ctx);
 
       // Find existing user based on email, connectUserId, or invite token id
-      const existingUser = await findExistingUser(transformedUser.email, connectUserId, inviteToken?.id ?? null);
+      const existingUsers = await findExistingUsers(transformedUser.email, connectUserId, inviteToken?.id ?? null);
+
+      // Make sure we have only one user
+      if (existingUsers.length > 1) return errorRedirect(ctx, 'oauth_mismatch', 'warn');
+      const existingUser = existingUsers[0] ?? null;
 
       // If registration is disabled and no existing user, throw to error
       if (!config.has.registrationEnabled && (!existingUser || (inviteToken && inviteToken.type !== 'system'))) {
         return errorRedirect(ctx, 'sign_up_restricted', 'info');
       }
 
-      const emailVerified = transformedUser.emailVerified || !!inviteToken;
       // Get the redirect URL based on whether a new user or invite token exists
-      const redirectUrl = await getOauthRedirectUrl(ctx, !existingUser && !inviteToken);
+      const firstSignIn = !connectUserId && !existingUser;
+      const redirectUrl = await getOauthRedirectUrl(ctx, firstSignIn);
 
+      // If the user already exists, use existing user logic
       if (existingUser) {
-        return await handleExistingUser(ctx, existingUser, transformedUser, provider, connectUserId, redirectUrl, emailVerified);
+        return await handleExistingUser(ctx, existingUser, transformedUser, provider, connectUserId, redirectUrl);
       }
 
       // Create a new user and associated OAuth account
       return await handleCreateUser({
         ctx,
         newUser: transformedUser,
-        emailVerified,
+        emailVerified: transformedUser.emailVerified,
         redirectUrl,
         provider,
         ...(inviteToken?.type === 'membership' && { tokenId: inviteToken.id }), // Conditionally add tokenId if membership invitation
@@ -726,28 +738,33 @@ const authRoutes = app
       const { connectUserId, inviteToken } = await getOauthCookies(ctx);
 
       // Find existing user based on email, connectUserId, or invite token id
-      const existingUser = await findExistingUser(transformedUser.email, connectUserId, inviteToken?.id ?? null);
+      const existingUsers = await findExistingUsers(transformedUser.email, connectUserId, inviteToken?.id ?? null);
+
+      // Make sure we have only one user
+      if (existingUsers.length > 1) return errorRedirect(ctx, 'oauth_mismatch', 'warn');
+      const existingUser = existingUsers[0] ?? null;
 
       // If registration is disabled and no existing user, throw to error
       if (!config.has.registrationEnabled && (!existingUser || (inviteToken && inviteToken.type !== 'system'))) {
         return errorRedirect(ctx, 'sign_up_restricted', 'info');
       }
 
-      const emailVerified = transformedUser.emailVerified || !!inviteToken;
       // Get the redirect URL based on whether a new user or invite token exists
-      const redirectUrl = await getOauthRedirectUrl(ctx, !existingUser && !inviteToken);
+      const firstSignIn = !connectUserId && !existingUser;
+      const redirectUrl = await getOauthRedirectUrl(ctx, firstSignIn);
 
+      // If the user already exists, use existing user logic
       if (existingUser) {
-        return await handleExistingUser(ctx, existingUser, transformedUser, provider, connectUserId, redirectUrl, emailVerified);
+        return await handleExistingUser(ctx, existingUser, transformedUser, provider, connectUserId, redirectUrl);
       }
 
       // Create new user and oauth account
       return await handleCreateUser({
         ctx,
         newUser: transformedUser,
+        emailVerified: transformedUser.emailVerified,
         redirectUrl,
         provider,
-        emailVerified,
         ...(inviteToken && inviteToken.type === 'membership' && { tokenId: inviteToken.id }),
       });
     } catch (error) {

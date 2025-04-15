@@ -52,7 +52,7 @@ export const UploadAvatar = ({ type, id, name, url, setUrl }: UploadAvatarProps)
 
   return (
     <div className="flex gap-4">
-      <AvatarWrap type={type} className="h-16 w-16" id={id} name={name} url={url} />
+      <AvatarWrap type={type} className="h-16 w-16 text-2xl" id={id} name={name} url={url} />
 
       <div className="flex flex-col gap-2">
         {config.has.imado ? (
@@ -63,7 +63,7 @@ export const UploadAvatar = ({ type, id, name, url, setUrl }: UploadAvatarProps)
         <div className="flex gap-2 items-center">
           {config.has.imado && (
             <Button ref={uploadButtonRef} variant="plain" type="button" size="sm" onClick={openUploadDialog} onMouseOver={() => UploadUppy.preload()}>
-              <Upload size={16} className="mr-1" />
+              <Upload size={16} className="mr-2" />
               <span>{t('common:upload')}</span>
             </Button>
           )}

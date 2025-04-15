@@ -7,8 +7,8 @@ import { cn } from '~/utils/cn';
 const DrawerVariants = cva('fixed z-118 p-4 flex flex-col rounded-t-2.5 bg-background', {
   variants: {
     direction: {
-      top: 'inset-x-0 top-0 mb-24 flex-col',
-      bottom: 'inset-x-0 bottom-0 mt-24 flex-col z-121',
+      top: 'pt-6 inset-x-0 top-0 mb-24 flex-col',
+      bottom: 'pt-6 inset-x-0 bottom-0 mt-24 flex-col z-121',
       right: 'inset-y-0 right-0 w-[95vw] flex-row overflow-x-hidden',
       left: 'inset-y-0 left-0 w-[95vw] flex-row overflow-x-hidden',
     },
@@ -23,8 +23,8 @@ const DrawerSliderVariants = cva('rounded-full absolute z-10 bg-muted', {
     direction: {
       top: 'bottom-1.5 mx-auto my-0.5 h-1 w-16 ml-[calc(50vw-2.5rem)]',
       bottom: 'top-1.5 mx-auto my-0.5 h-1 w-16 ml-[calc(50vw-2.5rem)]',
-      right: 'left-1 mx-0.5 my-auto h-20 w-1 mt-[calc(50vh-3rem)]',
-      left: 'right-1 mx-0.5 my-auto h-20 w-1 mt-[calc(50vh-3rem)]',
+      right: 'left-1 mx-0.5 my-auto h-20 w-1 top-[calc(50vh-3rem)]',
+      left: 'right-1 mx-0.5 my-auto h-20 w-1 top-[calc(50vh-3rem)]',
     },
   },
   defaultVariants: {
@@ -68,7 +68,7 @@ const DrawerContent = React.forwardRef<React.ComponentRef<typeof DrawerPrimitive
 DrawerContent.displayName = 'DrawerContent';
 
 const DrawerHeader = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
-  <div className={cn('grid gap-1.5 text-center pb-3 sm:text-left', className)} {...props} />
+  <div className={cn('grid gap-2 text-center pb-3 sm:text-left', className)} {...props} />
 );
 DrawerHeader.displayName = 'DrawerHeader';
 

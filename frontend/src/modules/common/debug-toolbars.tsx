@@ -1,5 +1,7 @@
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { TanStackRouterDevtools } from '@tanstack/react-router-devtools';
+import { useRef } from 'react';
+import { scan } from 'react-scan';
 import { Button } from '~/modules/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '~/modules/ui/dropdown-menu';
 import { queryClient } from '~/query/query-client';
@@ -16,11 +18,20 @@ const debugOptions: DebugItem[] = [
   { id: 'drizzle-studio', icon: '💦', url: 'https://local.drizzle.studio/' },
   { id: 'tanstack-router', icon: '🌴', parent: '.TanStackRouterDevtools', element: ':scope > button' },
   { id: 'react-query', icon: '📡', parent: '.tsqd-parent-container', element: '.tsqd-open-btn' },
+  { id: 'react-scan', icon: '⏱️' },
 ];
 
 const DebugToolbars = () => {
+  const isScannerEnabled = useRef(false);
+
   const debugToggle = (item: DebugItem) => {
     if (item.url) return window.open(item.url);
+    if (item.id === 'react-scan') {
+      const enable = !isScannerEnabled.current;
+      scan({ showToolbar: enable, enabled: enable });
+      isScannerEnabled.current = enable;
+      return;
+    }
     if (!item.parent || !item.element) return;
 
     const parent = document.querySelector<HTMLElement>(item.parent);

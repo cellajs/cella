@@ -7,10 +7,6 @@ export const env = createEnv({
       .string()
       .default('false')
       .transform((v) => v === 'true'),
-    VITE_REACT_SCAN: z
-      .string()
-      .default('false')
-      .transform((v) => v === 'true'),
     VITE_QUICK: z
       .string()
       .default('false')
