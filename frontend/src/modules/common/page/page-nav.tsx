@@ -1,9 +1,10 @@
 import { Link, type LinkComponentProps } from '@tanstack/react-router';
 import { motion } from 'motion/react';
-import { type MouseEventHandler, useEffect, useMemo, useRef } from 'react';
+import { type MouseEventHandler, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useInView } from 'react-intersection-observer';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
+import useMounted from '~/hooks/use-mounted';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import StickyBox from '~/modules/common/sticky-box';
 import { cn } from '~/utils/cn';
@@ -31,17 +32,19 @@ interface Props {
 }
 
 export const PageNav = ({ tabs, title, avatar, fallbackToFirst, className }: Props) => {
+  const { t } = useTranslation();
   const isMobile = useBreakpoints('max', 'sm', false);
-  const layoutId = useMemo(() => nanoid(), []);
+  const { hasStarted } = useMounted();
+
+  const layoutId = useRef(nanoid()).current;
   const firstTabRef = useRef<HTMLAnchorElement>(null);
 
-  const { t } = useTranslation();
   const { ref: inViewRef, inView } = useInView({ triggerOnce: false, threshold: 0 });
 
   // Focus the first tab on mount
   useEffect(() => {
-    if (!isMobile) firstTabRef.current?.focus();
-  }, []);
+    if (!isMobile && hasStarted) firstTabRef.current?.focus();
+  }, [hasStarted]);
 
   // Scroll to tabs when scrolled past header
   const updateScrollPosition: MouseEventHandler<HTMLAnchorElement> = (e) => {

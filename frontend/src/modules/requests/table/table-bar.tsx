@@ -1,5 +1,5 @@
 import { config } from 'config';
-import { Handshake, Trash, XSquare } from 'lucide-react';
+import { LockOpen, Trash, XSquare } from 'lucide-react';
 import { useMemo, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import ColumnsView from '~/modules/common/data-table/columns-view';
@@ -102,7 +102,7 @@ export const RequestsTableBar = ({ total, selected, searchVars, setSearch, colum
                   variant="darkSuccess"
                   className="relative"
                   label={t('common:invite')}
-                  icon={Handshake}
+                  icon={LockOpen}
                   onClick={inviteSelected}
                 />
               )}

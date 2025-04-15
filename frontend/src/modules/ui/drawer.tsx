@@ -23,8 +23,8 @@ const DrawerSliderVariants = cva('rounded-full absolute z-10 bg-muted', {
     direction: {
       top: 'bottom-1.5 mx-auto my-0.5 h-1 w-16 ml-[calc(50vw-2.5rem)]',
       bottom: 'top-1.5 mx-auto my-0.5 h-1 w-16 ml-[calc(50vw-2.5rem)]',
-      right: 'left-1 mx-0.5 my-auto h-20 w-1 mt-[calc(50vh-3rem)]',
-      left: 'right-1 mx-0.5 my-auto h-20 w-1 mt-[calc(50vh-3rem)]',
+      right: 'left-1 mx-0.5 my-auto h-20 w-1 top-[calc(50vh-3rem)]',
+      left: 'right-1 mx-0.5 my-auto h-20 w-1 top-[calc(50vh-3rem)]',
     },
   },
   defaultVariants: {

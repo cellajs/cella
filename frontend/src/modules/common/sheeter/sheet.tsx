@@ -4,6 +4,7 @@ import { useDropdowner } from '~/modules/common/dropdowner/use-dropdowner';
 import { type InternalSheet, useSheeter } from '~/modules/common/sheeter/use-sheeter';
 import StickyBox from '~/modules/common/sticky-box';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '~/modules/ui/sheet';
+import { useNavigationStore } from '~/store/navigation';
 import { isElementInteractive } from '~/utils/is-el-interactive';
 
 export interface SheetProps {
@@ -35,7 +36,7 @@ export const DesktopSheet = ({ sheet }: SheetProps) => {
   const [side, setSide] = useState(sheetSide);
   const [className, setClassName] = useState(sheetClassName);
 
-  // Prevent flickering of sheet when its removed
+  // TODO(REVIEW) Prevent flickering of sheet when its removed
   useEffect(() => {
     if (sheetSide) {
       setSide(sheetSide); // Update side when new sheet is created
@@ -60,7 +61,8 @@ export const DesktopSheet = ({ sheet }: SheetProps) => {
     if (activeElement instanceof HTMLElement && isElementInteractive(activeElement)) activeElement.blur();
 
     if (!closeSheetOnEsc) return;
-    // if close prevent eny Esc key down listeners
+
+    // if close, prevent any Esc key down listeners
     e.stopPropagation();
     closeSheet();
   };
@@ -70,9 +72,14 @@ export const DesktopSheet = ({ sheet }: SheetProps) => {
     const dropdown = useDropdowner.getState().dropdown;
     if (dropdown) return event.preventDefault();
 
-    const bodyClassList = document.body.classList;
-    if (bodyClassList.contains('keep-menu-open') && bodyClassList.contains('menu-sheet-open')) return;
+    // Nav sheet in keep open mode shouldnt close
+    if (sheet.id === 'nav-sheet') {
+      const navState = useNavigationStore.getState();
+      navState.navSheetOpen;
+      if (navState.keepMenuOpen && navState.navSheetOpen === 'menu') return event.preventDefault();
+    }
 
+    // TODO(REVIEW) Close if clicked in app content area
     const mainContentElement = document.getElementById('app-content-inner');
     if (!modal && mainContentElement?.contains(event.target as Node)) return closeSheet();
   };
@@ -92,15 +99,7 @@ export const DesktopSheet = ({ sheet }: SheetProps) => {
         onOpenAutoFocus={(event: Event) => {
           if (isMobile) event.preventDefault();
         }}
-        onCloseAutoFocus={(event) => {
-          console.log('onCloseAutoFocus', event);
-          // Prevent focus on trigger if refocus is false
-          const sheetData = useSheeter.getState().get(id);
-          if (!sheetData?.refocus) {
-            event.preventDefault();
-            return;
-          }
-
+        onCloseAutoFocus={() => {
           if (triggerRef?.current) triggerRef.current.focus();
         }}
       >

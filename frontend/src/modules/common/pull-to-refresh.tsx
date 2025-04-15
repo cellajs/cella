@@ -1,15 +1,14 @@
 import { Circle } from 'lucide-react';
-import { type ReactNode, useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 type Props = {
-  children: ReactNode;
   onRefresh: () => void | Promise<void>;
   refreshThreshold?: number;
   maximumPullLength?: number;
   isDisabled?: boolean;
 };
 
-const PullToRefresh = ({ children, onRefresh, refreshThreshold = 100, maximumPullLength = 200, isDisabled = false }: Props) => {
+const PullToRefresh = ({ onRefresh, refreshThreshold = 100, maximumPullLength = 200, isDisabled = false }: Props) => {
   const [pullPosition, setPullPosition] = useState(0);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
@@ -102,6 +101,8 @@ const PullToRefresh = ({ children, onRefresh, refreshThreshold = 100, maximumPul
   const progress = clamped / refreshThreshold;
   const strokeDashoffset = circumference * (1 - progress);
 
+  if (!isPulling) return null;
+
   return (
     <>
       <div
@@ -135,7 +136,6 @@ const PullToRefresh = ({ children, onRefresh, refreshThreshold = 100, maximumPul
           />
         </svg>
       </div>
-      {children}
     </>
   );
 };

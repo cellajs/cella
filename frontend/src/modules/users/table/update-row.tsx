@@ -13,7 +13,7 @@ interface Props {
   tabIndex: number;
 }
 
-const openUpdateSheet = (user: User, buttonRef: RefObject<HTMLButtonElement | null>) => {
+export const openUpdateUserSheet = (user: User, buttonRef: RefObject<HTMLButtonElement | null>) => {
   const title = i18n.t('common:edit_resource', { resource: i18n.t('common:user').toLowerCase() });
   const createSheet = useSheeter.getState().create;
 
@@ -47,7 +47,7 @@ const UpdateRow = ({ user, tabIndex }: Props) => {
       className="h-full w-full"
       data-tooltip="true"
       data-tooltip-content={i18n.t('common:edit')}
-      onClick={() => openUpdateSheet(user, buttonRef)}
+      onClick={() => openUpdateUserSheet(user, buttonRef)}
     >
       <Pencil size={16} />
     </Button>

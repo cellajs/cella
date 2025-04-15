@@ -94,7 +94,7 @@ const UserSettingsPage = () => {
       <div className="max-md:hidden mx-auto md:min-w-48 md:w-[30%] md:mt-3">
         <StickyBox className="z-10 max-md:block!">
           <SimpleHeader className="p-3" heading="common:settings" text="common:settings.text" />
-          <PageAside tabs={tabs} className="py-2" />
+          <PageAside tabs={tabs} className="py-2" setFocus />
         </StickyBox>
       </div>
 
@@ -194,7 +194,7 @@ const UserSettingsPage = () => {
             </CardHeader>
             <CardContent>
               <Button ref={deleteButtonRef} variant="destructive" className="w-full sm:w-auto" onClick={openDeleteDialog}>
-                <Trash className="mr-2 h-4 w-4" />
+                <Trash className="mr-1" size={16} />
                 {t('common:delete_account')}
               </Button>
             </CardContent>

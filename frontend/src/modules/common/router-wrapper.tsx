@@ -23,8 +23,9 @@ export const RouterWrapper = () => {
   };
 
   return (
-    <PullToRefresh onRefresh={() => handleRefresh()} isDisabled={isRestoring || !isOnline}>
+    <>
+      <PullToRefresh onRefresh={() => handleRefresh()} isDisabled={isRestoring || !isOnline} />
       <RouterProvider router={router} />
-    </PullToRefresh>
+    </>
   );
 };

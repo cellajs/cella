@@ -21,7 +21,7 @@ export function DropdownActionItem({ isMobile, onSelect, icon: Icon, children, c
   if (isMobile) {
     return (
       <div className="sm:p-1">
-        <Button {...sharedProps}>
+        <Button {...sharedProps} variant="secondary">
           {Icon && <Icon size={16} className="mr-1" />}
           {children}
         </Button>

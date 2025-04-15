@@ -1,4 +1,4 @@
-import { Check, KeyRound, Trash } from 'lucide-react';
+import { Check, Fingerprint, Trash } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '~/modules/ui/button';
@@ -31,7 +31,7 @@ const Passkeys = ({ userAuthInfo }: { userAuthInfo: UserAuthInfo }) => {
       )}
       <div className="flex max-sm:flex-col gap-2 mb-6">
         <Button key="createPasskey" type="button" variant="plain" onClick={handlePasskeyRegistration}>
-          <KeyRound className="w-4 h-4 mr-1" />
+          <Fingerprint className="w-4 h-4 mr-1" />
           {hasPasskey ? t('common:reset_passkey') : `${t('common:add')} ${t('common:new_passkey').toLowerCase()}`}
         </Button>
         {hasPasskey && (

@@ -138,7 +138,7 @@ export const MenuSheet = memo(() => {
                 hideClose: true,
                 modal: true,
                 className:
-                  'fixed sm:z-105 p-0 sm:inset-0 xs:max-w-80 sm:left-16 xl:group-[.keep-menu-open]/body:group-[.menu-sheet-open]/body:shadow-none xl:group-[.keep-menu-open]/body:group-[.menu-sheet-open]/body:border-r dark:shadow-[0_0_30px_rgba(255,255,255,0.05)]',
+                  'fixed sm:z-105 p-0 sm:inset-0 xs:max-w-80 sm:left-16 xl:group-[.keep-menu-open]/body:group-[.keep-menu-open]/body:shadow-none xl:group-[.keep-menu-open]/body:group-[.keep-menu-open]/body:border-r dark:shadow-[0_0_30px_rgba(255,255,255,0.05)]',
                 onClose: () => {
                   setNavSheetOpen(null);
                 },
