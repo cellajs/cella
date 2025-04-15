@@ -150,18 +150,18 @@ const ErrorNotice = ({ error, resetErrorBoundary, level }: ErrorNoticeProps) => 
             )}
             <CardFooter className="flex gap-2 mt-4 justify-center">
               <Button onClick={handleGoToHome} variant="secondary">
-                <Home size={16} className="mr-1" />
+                <Home size={16} className="mr-2" />
                 {t('common:home')}
               </Button>
               {!location.pathname.startsWith('/error') && (
                 <Button onClick={handleReload}>
-                  <RefreshCw size={16} className="mr-1" />
+                  <RefreshCw size={16} className="mr-2" />
                   {t('common:reload')}
                 </Button>
               )}
               {severity && ['warn', 'error'].includes(severity) && (
                 <Button ref={contactButtonRef} variant="plain" onClick={() => handleAskForHelp(contactButtonRef)}>
-                  <MessageCircleQuestion size={16} className="mr-1" />
+                  <MessageCircleQuestion size={16} className="mr-2" />
                   {t('common:ask_for_help')}
                 </Button>
               )}

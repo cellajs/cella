@@ -31,12 +31,12 @@ const Passkeys = ({ userAuthInfo }: { userAuthInfo: UserAuthInfo }) => {
       )}
       <div className="flex max-sm:flex-col gap-2 mb-6">
         <Button key="createPasskey" type="button" variant="plain" onClick={handlePasskeyRegistration}>
-          <Fingerprint className="w-4 h-4 mr-1" />
-          {hasPasskey ? t('common:reset_passkey') : `${t('common:add')} ${t('common:new_passkey').toLowerCase()}`}
+          <Fingerprint className="w-4 h-4 mr-2" />
+          {hasPasskey ? t('common:reset_passkey') : t('common:create_resource', { resource: t('common:passkey').toLowerCase() })}
         </Button>
         {hasPasskey && (
           <Button key="deletePasskey" type="button" variant="ghost" onClick={handleDeletePasskey}>
-            <Trash className="w-4 h-4 mr-1" />
+            <Trash className="w-4 h-4 mr-2" />
             <span>{t('common:remove')}</span>
           </Button>
         )}

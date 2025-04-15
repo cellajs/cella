@@ -65,7 +65,7 @@ const AuthSteps = () => {
         <WaitlistForm
           buttonContent={
             <>
-              <Lock className="mr-1" size={16} />
+              <Lock size={16} className="mr-2" />
               <span className="text-base">{t('common:request_access')}</span>
             </>
           }

@@ -38,7 +38,7 @@ const AuthErrorNotice = ({ error, children }: { error: ErrorNoticeError; childre
         </Link>
         {severity && ['warn', 'error'].includes(severity) && (
           <Button ref={contactButtonRef} variant="plain" onClick={() => handleAskForHelp(contactButtonRef)} size="lg">
-            <MessageCircleQuestion size={16} className="mr-1" />
+            <MessageCircleQuestion size={16} className="mr-2" />
             {t('common:ask_for_help')}
           </Button>
         )}

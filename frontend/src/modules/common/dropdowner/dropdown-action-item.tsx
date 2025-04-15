@@ -22,7 +22,7 @@ export function DropdownActionItem({ isMobile, onSelect, icon: Icon, children, c
     return (
       <div className="sm:p-1">
         <Button {...sharedProps} variant="secondary">
-          {Icon && <Icon size={16} className="mr-1" />}
+          {Icon && <Icon size={16} className="mr-2" />}
           {children}
         </Button>
       </div>

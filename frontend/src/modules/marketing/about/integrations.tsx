@@ -61,7 +61,7 @@ const Integrations = () => {
               <div className="pt-2 text-xs">
                 <div className="italic text-muted-foreground mb-2">{t(purpose)}</div>
                 <div className="text-muted-foreground font-semibold group-hover:underline underline-offset-4">
-                  <CountryFlag countryCode={country} className="mr-1" />
+                  <CountryFlag countryCode={country} className="mr-2" />
                   {url}
                   <ArrowUpRight size={12} className="inline-block text-primary -mt-2 ml-1 opacity-50 group-hover:opacity-100" />
                 </div>

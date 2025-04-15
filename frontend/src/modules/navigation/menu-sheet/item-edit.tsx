@@ -98,11 +98,11 @@ const MenuItemEditButton = ({ icon: Icon, title, onClick, subitem = false }: Men
   <Button
     variant="link"
     size="sm"
-    className="p-0 font-light text-xs h-4 leading-3 opacity-80 group-hover/optionsItem:opacity-100"
+    className="p-0 font-light text-xs h-4 leading-3 opacity-80 group-hover/optionsItem:opacity-100 hover:underline underline-offset-1"
     aria-label={`Click ${title}`}
     onClick={onClick}
   >
-    <Icon size={subitem ? 12 : 14} className="mr-1" />
+    <Icon size={subitem ? 12 : 13} strokeWidth={1.5} className="mr-1" />
     {title}
   </Button>
 );

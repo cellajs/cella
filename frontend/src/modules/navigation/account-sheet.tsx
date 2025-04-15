@@ -1,5 +1,5 @@
 import { Link } from '@tanstack/react-router';
-import { CircleUserRound, LogOut, type LucideProps, UserCog, Wrench } from 'lucide-react';
+import { CircleUserRound, LogOut, type LucideProps, Settings, Wrench } from 'lucide-react';
 import type React from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -16,14 +16,14 @@ import { cn } from '~/utils/cn';
 import { numberToColorClass } from '~/utils/number-to-color-class';
 
 type AccountButtonProps = {
-  lucide: React.ElementType<LucideProps>;
+  icon: React.ElementType<LucideProps>;
   label: string;
   id: string;
   action: string;
 } & ({ offlineAccess: false; isOnline: boolean } | { offlineAccess: true; isOnline?: never });
 
 // Create a button for each account action
-const AccountButton = ({ offlineAccess, isOnline, lucide: Icon, label, id, action }: AccountButtonProps) => {
+const AccountButton = ({ offlineAccess, isOnline, icon: Icon, label, id, action }: AccountButtonProps) => {
   const { t } = useTranslation();
 
   const isDisabled = offlineAccess ? false : !isOnline;
@@ -68,7 +68,7 @@ export const AccountSheet = () => {
       <div ref={buttonWrapper} className="p-3 flex flex-col gap-4 min-h-[calc(100vh-0.5rem)]">
         <Link to="/users/$idOrSlug" params={{ idOrSlug: user.slug }} className="w-full relative">
           <div
-            className={`relative transition-all shadow-[inset_0_-4px_10px_rgba(0,0,0,0.2)] duration-300 hover:bg-opacity-50 hover:-mx-8 -mx-3 -mt-3 bg-cover bg-center h-24 bg-opacity-80 ${
+            className={`relative transition-all shadow-[inset_0_-4px_12px_rgba(0,0,0,0.15)] duration-300 hover:bg-opacity-50 hover:-mx-10 -mx-5 -mt-3 bg-cover bg-center h-24 bg-opacity-80 ${
               user.bannerUrl ? '' : numberToColorClass(user.id)
             }`}
             style={user.bannerUrl ? { backgroundImage: `url(${user.bannerUrl})` } : {}}
@@ -87,30 +87,23 @@ export const AccountSheet = () => {
           <AccountButton
             offlineAccess={false}
             isOnline={isOnline}
-            lucide={CircleUserRound}
+            icon={CircleUserRound}
             id="btn-profile"
             label={t('common:view_item', { item: t('common:profile').toLowerCase() })}
             action={`/users/${user.slug}`}
           />
-          <AccountButton
-            offlineAccess={false}
-            isOnline={isOnline}
-            lucide={UserCog}
-            id="btn-account"
-            label={t('common:settings')}
-            action="/settings"
-          />
+          <AccountButton offlineAccess={false} isOnline={isOnline} icon={Settings} id="btn-account" label={t('common:settings')} action="/settings" />
           {isSystemAdmin && (
             <AccountButton
               offlineAccess={false}
               isOnline={isOnline}
-              lucide={Wrench}
+              icon={Wrench}
               id="btn-system"
               label={t('common:system_panel')}
               action="/system/users"
             />
           )}
-          <AccountButton offlineAccess={false} isOnline={isOnline} lucide={LogOut} id="btn-signout" label={t('common:sign_out')} action="/sign-out" />
+          <AccountButton offlineAccess={false} isOnline={isOnline} icon={LogOut} id="btn-signout" label={t('common:sign_out')} action="/sign-out" />
         </div>
 
         <div className="grow border-b border-dashed" />

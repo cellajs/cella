@@ -7,7 +7,7 @@ import tailwindcss from '@tailwindcss/vite';
 import basicSsl from '@vitejs/plugin-basic-ssl';
 import react from '@vitejs/plugin-react';
 // import { visualizer } from 'rollup-plugin-visualizer';
-import { type UserConfig, defineConfig, loadEnv } from 'vite';
+import { type UserConfig, defineConfig } from 'vite';
 import { createHtmlPlugin } from 'vite-plugin-html';
 import { VitePWA } from 'vite-plugin-pwa';
 import { viteStaticCopy } from 'vite-plugin-static-copy';
@@ -19,8 +19,7 @@ const ReactCompilerConfig = {
 };
 
 // https://vitejs.dev/config/
-export default defineConfig(({ mode }) => {
-  const env = loadEnv(mode, process.cwd());
+export default defineConfig(() => {
   const frontendUrl = new URL(config.frontendUrl);
 
   const viteConfig = {
@@ -153,7 +152,10 @@ export default defineConfig(({ mode }) => {
   if (config.mode === 'development')
     viteConfig.plugins?.push([
       reactScan({
-        enable: env.VITE_REACT_SCAN === 'true',
+        enable: false,
+        scanOptions: {
+          showToolbar: false,
+        },
       }),
     ]);
   return viteConfig;

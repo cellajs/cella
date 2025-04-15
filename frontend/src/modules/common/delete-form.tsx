@@ -15,7 +15,7 @@ export const DeleteForm = ({ onDelete, onCancel, pending, allowOfflineDelete = f
   return (
     <div className="flex flex-col sm:flex-row gap-2">
       <SubmitButton variant="destructive" allowOfflineDelete={allowOfflineDelete} onClick={onDelete} aria-label="Delete" loading={pending}>
-        <Trash size={16} className="mr-1" />
+        <Trash size={16} className="mr-2" />
         {t('common:delete')}
       </SubmitButton>
       <Button type="reset" variant="secondary" aria-label="Cancel" onClick={onCancel}>

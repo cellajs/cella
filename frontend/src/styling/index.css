@@ -138,7 +138,7 @@
     display: none !important;
   }
 
-  /* Hide tanstack devtools button */
+  /* Hide devtools */
   .tsqd-open-btn-container,
   .TanStackRouterDevtools > button {
     display: none !important;
