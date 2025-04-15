@@ -25,8 +25,10 @@ const requestsRoutes = app
   .openapi(requestsRouteConfig.createRequest, async (ctx) => {
     const { email, type, message } = ctx.req.valid('json');
 
+    const loweredEmail = email.toLowerCase();
+
     if (type === 'waitlist') {
-      const existingUser = await getUserBy('email', email);
+      const existingUser = await getUserBy('email', loweredEmail);
       if (existingUser) return errorResponse(ctx, 400, 'request_email_is_user', 'info');
     }
 
@@ -35,20 +37,20 @@ const requestsRoutes = app
       const [existingRequest] = await db
         .select()
         .from(requestsTable)
-        .where(and(eq(requestsTable.email, email), inArray(requestsTable.type, uniqueRequests)));
+        .where(and(eq(requestsTable.email, loweredEmail), inArray(requestsTable.type, uniqueRequests)));
       if (existingRequest?.type === type) return errorResponse(ctx, 409, 'request_exists', 'info');
     }
     const { tokenId, ...requestsSelect } = getTableColumns(requestsTable);
 
     const [createdRequest] = await db
       .insert(requestsTable)
-      .values({ email, type, message })
+      .values({ email: loweredEmail, type, message })
       .returning({ ...requestsSelect });
 
     // Slack notifications
-    if (type === 'waitlist') await sendSlackMessage('Join waitlist', email);
-    if (type === 'newsletter') await sendSlackMessage('Join newsletter', email);
-    if (type === 'contact') await sendSlackMessage(`for contact from ${message}.`, email);
+    if (type === 'waitlist') await sendSlackMessage('Join waitlist', loweredEmail);
+    if (type === 'newsletter') await sendSlackMessage('Join newsletter', loweredEmail);
+    if (type === 'contact') await sendSlackMessage(`for contact from ${message}.`, loweredEmail);
 
     const data = {
       ...createdRequest,
