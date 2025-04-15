@@ -38,7 +38,7 @@ export interface Props {
 }
 
 const EntityGridWrapper = ({ isSheet = false }: Props) => {
-  const { search, setSearch } = useSearchParams<EntitySearch>({ saveDataInSearch: isSheet });
+  const { search, setSearch } = useSearchParams<EntitySearch>({ saveDataInSearch: !isSheet });
 
   // Table state
   const limit = LIMIT;
@@ -49,7 +49,7 @@ const EntityGridWrapper = ({ isSheet = false }: Props) => {
   return (
     <div className="flex flex-col gap-4 h-full">
       {/* @ts-expect-error TODO */}
-      <EntityGridBar total={total} searchVars={{ ...search, limit }} setSearch={setSearch} />
+      <EntityGridBar total={total} searchVars={{ ...search, limit }} setSearch={setSearch} isSheet={isSheet} />
       <EntityGrid entities={entities} />
     </div>
   );
