@@ -20,8 +20,9 @@ export type SheetData = {
 
 export type InternalSheet = SheetData & {
   key: number;
-  open?: boolean;
   content: ReactNode;
+  open?: boolean;
+  refocus?: boolean;
 };
 
 interface SheetStoreState {
@@ -29,7 +30,7 @@ interface SheetStoreState {
 
   create(content: ReactNode, data: SheetData): string;
   update(id: string, updates: Partial<InternalSheet>): void;
-  remove(id?: string, excludeId?: string): void;
+  remove(id?: string, options?: { excludeId?: string; refocus?: boolean }): void;
   get(id: string): InternalSheet | undefined;
 
   triggerRefs: Record<string, TriggerRef | null>;
@@ -47,7 +48,7 @@ export const useSheeter = create<SheetStoreState>()((set, get) => ({
 
   create: (content, data) => {
     // Add defaults and a key for reactivity
-    const defaults = { drawerOnMobile: true, hideClose: false, open: true, modal: true, key: Date.now() };
+    const defaults = { drawerOnMobile: true, hideClose: false, open: true, modal: true, key: Date.now(), refocus: true };
 
     set((state) => ({
       sheets: [...state.sheets.filter((s) => s.id !== data.id), { ...defaults, ...data, content }],
@@ -61,21 +62,30 @@ export const useSheeter = create<SheetStoreState>()((set, get) => ({
     }));
   },
 
-  remove: (id, excludeId) => {
+  remove: (id, options) => {
     set((state) => {
-      let removedSheets = [];
+      let removedSheets: InternalSheet[] = [];
 
+      // Remove by id or remove all and optionally exlude one
       if (id) {
         removedSheets = state.sheets.filter((sheet) => sheet.id === id);
       } else {
-        removedSheets = excludeId ? state.sheets.filter((sheet) => sheet.id !== excludeId) : state.sheets;
+        removedSheets = options?.excludeId ? state.sheets.filter((sheet) => sheet.id !== options.excludeId) : state.sheets;
       }
 
-      // Call onClose for each removed sheet
+      // Apply refocus option before onClose and filtering
+      const sheetsWithRefocus = state.sheets.map((sheet) => {
+        if (removedSheets.some((removed) => removed.id === sheet.id)) {
+          return { ...sheet, refocus: options?.refocus ?? true };
+        }
+        return sheet;
+      });
+
+      // Call onClose hooks
       for (const sheet of removedSheets) sheet.onClose?.();
 
-      // Filter out removed sheets from state
-      const sheets = state.sheets.filter((sheet) => !removedSheets.some((removed) => removed.id === sheet.id));
+      // Filter them out
+      const sheets = sheetsWithRefocus.filter((sheet) => !removedSheets.some((removed) => removed.id === sheet.id));
 
       return { sheets };
     });

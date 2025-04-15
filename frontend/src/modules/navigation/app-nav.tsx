@@ -80,11 +80,11 @@ const AppNav = () => {
 
       if (navState.focusView) setFocusView(false);
 
-      // TODO(REFACTOR) - shouldnt be here - Clear sheets and dialogs
+      // TODO(REFACTOR) - shouldnt be here? - Clear sheets and dialogs
       if (sheetOpen && (sheetOpen !== 'menu' || !navState.keepMenuOpen)) {
         setNavSheetOpen(null);
-        useSheeter.getState().remove();
-      } else useSheeter.getState().remove(undefined, 'nav-sheet');
+        useSheeter.getState().remove(undefined, { refocus: false });
+      } else useSheeter.getState().remove(undefined, { excludeId: 'nav-sheet', refocus: false });
 
       useDialoger.getState().remove();
 

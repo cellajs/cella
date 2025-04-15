@@ -92,7 +92,15 @@ export const DesktopSheet = ({ sheet }: SheetProps) => {
         onOpenAutoFocus={(event: Event) => {
           if (isMobile) event.preventDefault();
         }}
-        onCloseAutoFocus={() => {
+        onCloseAutoFocus={(event) => {
+          console.log('onCloseAutoFocus', event);
+          // Prevent focus on trigger if refocus is false
+          const sheetData = useSheeter.getState().get(id);
+          if (!sheetData?.refocus) {
+            event.preventDefault();
+            return;
+          }
+
           if (triggerRef?.current) triggerRef.current.focus();
         }}
       >
