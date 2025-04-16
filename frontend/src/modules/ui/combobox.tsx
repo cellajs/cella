@@ -121,7 +121,7 @@ const Combobox = ({ options, name, onChange, placeholder, searchPlaceholder, ren
                       className="group rounded-md flex justify-between items-center w-full leading-normal"
                     >
                       <div className="flex items-center gap-2">
-                        {!excludeAvatarWrapFields.includes(name) && <AvatarWrap id={option.value} name={name} url={option.url} />}
+                        {!excludeAvatarWrapFields.includes(option.label) && <AvatarWrap id={option.value} name={option.label} url={option.url} />}
                         {renderOption?.(option) ?? option.label}
                       </div>
                       <Check size={16} className={`text-success ${formValue !== option.value && 'invisible'}`} />
