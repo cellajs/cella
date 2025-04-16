@@ -1,11 +1,13 @@
 import { onlineManager } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
+import type { PageEntity } from 'config';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
+import router from '~/lib/router';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { toaster } from '~/modules/common/toaster';
 import type { UserMenuItem } from '~/modules/me/types';
-import { getEntityRoute } from '~/nav-config';
+import { baseEntityRoutes, getEntityRoute } from '~/nav-config';
 import { useUIStore } from '~/store/ui';
 import { cn } from '~/utils/cn';
 
@@ -19,12 +21,22 @@ export const MenuSheetItem = ({ item, className, searchResults }: MenuSheetItemP
   const { t } = useTranslation();
 
   // Build route path for the entity
-  const { params, path, search, activeOptions } = useMemo(() => getEntityRoute(item), [item]);
+  const { to, params, search, activeOptions } = useMemo(() => getEntityRoute(item), [item]);
 
   const isOnline = onlineManager.isOnline();
   const offlineAccess = useUIStore((state) => state.offlineAccess);
 
   const canAccess = offlineAccess ? (isOnline ? true : !item.membership.archived) : true;
+
+  const checkSamePath = (entity: PageEntity) => {
+    const { matches } = router.state;
+    const activePath = matches.at(-1)?.fullPath;
+
+    const { fullPath, children } = baseEntityRoutes[entity];
+    const childPaths = Array.isArray(children) ? children.map((c) => c.fullPath) : [];
+
+    return activePath === fullPath || childPaths.includes(activePath);
+  };
 
   return (
     <Link
@@ -35,14 +47,15 @@ export const MenuSheetItem = ({ item, className, searchResults }: MenuSheetItemP
       data-subitem={!searchResults && !item.submenu}
       aria-label={item.name}
       draggable="false"
-      to={path}
+      to={to}
       params={params}
       search={search}
       resetScroll={false}
       activeOptions={activeOptions}
-      activeProps={{ 'data-active': true }}
+      activeProps={{ 'data-link-active': true }}
       className={cn(
-        'relative group/menuItem h-12 w-full flex items-start justify-start space-x-1 rounded p-0 focus:outline-hidden ring-2 ring-inset ring-transparent focus-visible:ring-foreground sm:hover:bg-accent/30 sm:hover:text-accent-foreground data-[subitem=true]:h-10 data-[active=true]:ring-transparent',
+        'relative group/menuItem h-12 w-full flex items-start justify-start space-x-1 rounded p-0 focus:outline-hidden ring-2 ring-inset ring-transparent focus-visible:ring-foreground sm:hover:bg-accent/30 sm:hover:text-accent-foreground data-[subitem=true]:h-10 ',
+        checkSamePath(item.entity) && 'data-[link-active=true]:ring-transparent',
         className,
       )}
     >
@@ -58,7 +71,12 @@ export const MenuSheetItem = ({ item, className, searchResults }: MenuSheetItemP
           className={`truncate leading-5 transition-all text-base group-hover/menuItem:delay-300 pt-1.5 duration-200 ease-in-out ${!searchResults && 'pt-3.5 group-data-[subitem=true]/menuItem:pt-3'} sm:group-hover/menuItem:pt-1.5! group-data-[subitem=true]/menuItem:text-sm group-data-[subitem=true]/menuItem:leading-4`}
         >
           {item.name}
-          <span className="absolute left-0 top-3 h-[calc(100%-1.5rem)] w-1 rounded-lg bg-primary transition-opacity opacity-0 group-data-[active=true]/menuItem:opacity-100" />
+          <span
+            className={cn(
+              'absolute left-0 top-3 h-[calc(100%-1.5rem)] w-1 rounded-lg bg-primary transition-opacity opacity-0',
+              checkSamePath(item.entity) && 'group-data-[link-active=true]/menuItem:opacity-100',
+            )}
+          />
         </div>
         <div className="text-muted-foreground text-xs font-light sm:group-data-[subitem=true]/menuItem:leading-3">
           {searchResults && (

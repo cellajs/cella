@@ -86,7 +86,7 @@ const PageHeader = ({ title, id, isAdmin, thumbnailUrl, bannerUrl, type, panel, 
                   ) : (
                     <BreadcrumbItem>
                       <BreadcrumbLink className="flex items-center" asChild>
-                        <Link to={baseEntityRoutes[fetchedParent.entity]} params={{ idOrSlug: fetchedParent.slug }}>
+                        <Link to={baseEntityRoutes[fetchedParent.entity].to} params={{ idOrSlug: fetchedParent.slug }}>
                           <span className="truncate max-sm:max-w-24">{fetchedParent.name}</span>
                         </Link>
                       </BreadcrumbLink>

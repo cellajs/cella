@@ -73,8 +73,8 @@ export const AppSearch = () => {
     // Update recent searches with the search value
     updateRecentSearches(searchValue);
 
-    const { path, params, search } = getEntityRoute(suggestion);
-    navigate({ to: path, resetScroll: false, params, search });
+    const { to, params, search } = getEntityRoute(suggestion);
+    navigate({ to, params, search, resetScroll: false });
 
     useDialoger.getState().remove();
   };

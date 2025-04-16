@@ -12,13 +12,15 @@ import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { toaster } from '~/modules/common/toaster';
 import type { UserMenuItem } from '~/modules/me/types';
 import { AppSearch, type SuggestionSection, type SuggestionType } from '~/modules/navigation/search';
+import { OrganizationRoute } from '~/routes/organizations';
+import { UserProfileRoute } from '~/routes/users';
 
 /**
  * Set entity paths so we can dynamically use them in the app
  */
 export const baseEntityRoutes = {
-  user: '/users/$idOrSlug',
-  organization: '/$idOrSlug',
+  user: UserProfileRoute,
+  organization: OrganizationRoute,
 } as const;
 
 /**
@@ -37,7 +39,7 @@ export type NavItem = {
 };
 
 type EntityRoute = {
-  path: LinkComponentProps['to'];
+  to: LinkComponentProps['to'];
   params: LinkComponentProps['params'];
   search: LinkComponentProps['search'];
   activeOptions: LinkComponentProps['activeOptions'];
@@ -101,9 +103,9 @@ export const getEntityRoute = (item: UserMenuItem | SuggestionType): EntityRoute
   const idOrSlug = slug || id;
   const orgIdOrSlug = entity === 'organization' ? id : organizationId;
 
-  const path = baseEntityRoutes[entity];
+  const to = baseEntityRoutes[entity].to;
   const params: LinkComponentProps['params'] = { idOrSlug, orgIdOrSlug };
   const activeOptions: LinkComponentProps['activeOptions'] = { exact: false, includeHash: true, includeSearch: true };
 
-  return { path, params, search: {}, activeOptions };
+  return { to, params, search: {}, activeOptions };
 };
