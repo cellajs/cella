@@ -1,10 +1,10 @@
-import { TableBarContainer } from '../common/data-table/table-bar-container';
-import TableCount from '../common/data-table/table-count';
-import { FilterBarActions, FilterBarContent, TableFilterBar } from '../common/data-table/table-filter-bar';
-import TableSearch from '../common/data-table/table-search';
-import { FocusView } from '../common/focus-view';
-import SelectSort from '../common/form-fields/select-sort';
-import type { EntitySearch } from './entity-grid-wrapper';
+import { TableBarContainer } from '~/modules/common/data-table/table-bar-container';
+import TableCount from '~/modules/common/data-table/table-count';
+import { FilterBarActions, FilterBarContent, TableFilterBar } from '~/modules/common/data-table/table-filter-bar';
+import TableSearch from '~/modules/common/data-table/table-search';
+import { FocusView } from '~/modules/common/focus-view';
+import SelectSort from '~/modules/common/form-fields/select-sort';
+import type { EntitySearch } from '~/modules/entities/entity-grid-wrapper';
 
 interface Props {
   searchVars: EntitySearch;

@@ -1,6 +1,6 @@
-import type { LimitedUser } from '../users/types';
-import { EntityTile } from './entity-tile';
-import type { EntityPage } from './types';
+import { EntityTile } from '~/modules/entities/entity-tile';
+import type { EntityPage } from '~/modules/entities/types';
+import type { LimitedUser } from '~/modules/users/types';
 
 export type EntityTileData = EntityPage & {
   members: LimitedUser[];

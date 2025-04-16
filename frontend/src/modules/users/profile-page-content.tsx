@@ -1,6 +1,6 @@
 import { Squirrel } from 'lucide-react';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
-import EntityGridWrapper from '../entities/entity-grid-wrapper';
+import EntityGridWrapper from '~/modules/entities/entity-grid-wrapper';
 
 interface Props {
   userId: string;
