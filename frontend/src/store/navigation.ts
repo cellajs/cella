@@ -29,7 +29,7 @@ interface NavigationStoreState {
   setSectionsDefault: () => void; // Resets all sections to default state
 
   navLoading: boolean; // Navigation is in a loading state
-  setLoading: (status: boolean) => void; // Updates the loading state
+  setNavLoading: (status: boolean) => void; // Updates the loading state
 
   focusView: boolean; // Focused view mode state
   setFocusView: (status: boolean) => void; // Toggles focus view state
@@ -109,7 +109,7 @@ export const useNavigationStore = create<NavigationStoreState>()(
               state.hideSubmenu = status;
             });
           },
-          setLoading: (status) => {
+          setNavLoading: (status) => {
             set((state) => {
               state.navLoading = status;
             });
