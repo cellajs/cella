@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
+import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { useDropdowner } from '~/modules/common/dropdowner/use-dropdowner';
 import { type InternalSheet, useSheeter } from '~/modules/common/sheeter/use-sheeter';
 import StickyBox from '~/modules/common/sticky-box';
@@ -45,7 +46,13 @@ export const DesktopSheet = ({ sheet }: SheetProps) => {
   }, [sheetSide, sheetClassName]);
 
   // onClose trigger handles by remove method
-  const closeSheet = () => useSheeter.getState().remove(sheet.id);
+  const closeSheet = () => {
+    useSheeter.getState().remove(sheet.id);
+
+    // Close dialogs opened in sheet with sheet close
+    const dialogs = useDialoger.getState().dialogs.filter((d) => d.open);
+    for (const dialog of dialogs) useDialoger.getState().remove(dialog.id);
+  };
 
   const onOpenChange = (open: boolean) => {
     if (!modal) return;
@@ -71,6 +78,10 @@ export const DesktopSheet = ({ sheet }: SheetProps) => {
     // Dont close if interact outside is caused by dropdown
     const dropdown = useDropdowner.getState().dropdown;
     if (dropdown) return event.preventDefault();
+
+    // Dont close if interact outside is caused by dialog
+    const dialogs = useDialoger.getState().dialogs;
+    if (dialogs.some((d) => d.open)) return event.preventDefault();
 
     // Nav sheet in keep open mode shouldnt close
     if (sheet.id === 'nav-sheet') {
