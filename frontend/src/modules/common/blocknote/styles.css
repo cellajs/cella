@@ -286,6 +286,12 @@ p.bn-inline-content code {
   flex-grow: 1;
 }
 
+/* TODO remove when blocknotefix bug with content shown as col  */
+.bn-block-content[data-content-type="numberedListItem"]:before {
+  content: var(--index) ".";
+  white-space: nowrap;
+}
+
 /* For showing saved checkListItem */
 .bn-block-content[data-content-type="checkListItem"] > input {
   margin: 0;

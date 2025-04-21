@@ -3,12 +3,8 @@ import DOMPurify from 'dompurify';
 import { Suspense } from 'react';
 import type { Control } from 'react-hook-form';
 import UppyFilePanel from '~/modules/attachments/upload/blocknote-upload-panel';
-import { BlockNote } from '~/modules/common/blocknote';
+import { BlockNoteWithStyles } from '~/modules/common/blocknote';
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
-
-import '@blocknote/shadcn/style.css';
-import '~/modules/common/blocknote/app-specific-custom/styles.css';
-import '~/modules/common/blocknote/styles.css';
 
 interface Props {
   // biome-ignore lint/suspicious/noExplicitAny: <explanation>
@@ -44,7 +40,7 @@ const BlockNoteContent = ({ blocknoteId, control, label, name, required, disable
             </FormLabel>
             <FormControl>
               <Suspense>
-                <BlockNote
+                <BlockNoteWithStyles
                   id={blocknoteId}
                   defaultValue={value}
                   onChange={sanitizedOnChange}
