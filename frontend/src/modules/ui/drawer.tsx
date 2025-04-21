@@ -2,6 +2,7 @@ import { type VariantProps, cva } from 'class-variance-authority';
 import * as React from 'react';
 import { Drawer as DrawerPrimitive } from 'vaul';
 
+import { ScrollArea } from '~/modules/ui/scroll-area';
 import { cn } from '~/utils/cn';
 
 const DrawerVariants = cva('fixed z-118 p-4 flex flex-col rounded-t-2.5 bg-background', {
@@ -58,7 +59,9 @@ const DrawerContent = React.forwardRef<React.ComponentRef<typeof DrawerPrimitive
         <DrawerOverlay className={isDropdown ? 'z-300' : direction === 'bottom' ? 'z-120' : 'z-117 backdrop-blur-xs'} />
         <DrawerPrimitive.Content ref={ref} className={cn(DrawerVariants({ direction }), className)} {...props}>
           <div className={DrawerSliderVariants({ direction })} />
-          <div className="w-full h-full">{children}</div>
+          <div className="w-full h-full">
+            <ScrollArea>{children} </ScrollArea>
+          </div>
         </DrawerPrimitive.Content>
       </DrawerPortal>
     );

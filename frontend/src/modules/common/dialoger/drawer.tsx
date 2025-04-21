@@ -26,8 +26,7 @@ export default function DrawerDialog({ dialog }: DialogProp) {
           <DrawerTitle className={`${title ? '' : 'hidden'} text-left min-h-6`}>{titleContent}</DrawerTitle>
           <DrawerDescription className={`${description ? '' : 'hidden'}`}>{description}</DrawerDescription>
         </DrawerHeader>
-        {/* To allow y scroll in drawer */}
-        <div className="flex flex-col gap-4 overflow-y-auto">{content}</div>
+        <div className="flex flex-col gap-4">{content}</div>
       </DrawerContent>
     </Drawer>
   );
