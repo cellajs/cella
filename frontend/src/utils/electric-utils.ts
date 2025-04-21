@@ -21,11 +21,14 @@ export const baseBackoffOptions: BackoffOptions = {
 };
 
 /**
- * Converts messages to the passed type
+ * Converts messages
  */
-export const convertMessageInfo = <T>(messages: ChangeMessage<CamelToSnakeObject<T>>[], action: 'insert' | 'update' | 'delete') => {
-  const filteredMessages = messages.filter((m) => m.headers.operation === action);
-  return filteredMessages.map((message) => parseRawData(message.value));
+export const processMessages = <T extends { id: string }>(messages: ChangeMessage<CamelToSnakeObject<T>>[]) => {
+  return {
+    insertData: messages.filter((m) => m.headers.operation === 'insert').map((message) => parseRawData(message.value)),
+    updateData: messages.filter((m) => m.headers.operation === 'update').map((message) => parseRawData<Partial<T> & { id: string }>(message.value)),
+    deleteIds: messages.filter((m) => m.headers.operation === 'delete').map(({ value }) => value.id),
+  };
 };
 
 /**
