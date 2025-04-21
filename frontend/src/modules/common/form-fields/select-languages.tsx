@@ -30,7 +30,14 @@ export const SelectLanguages = ({ value, onChange }: SelectLanguagesProps) => {
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <Button ref={ref} variant="input" aria-label="Select language" className="w-full justify-between font-normal" aria-expanded={open}>
+        <Button
+          disabled={config.languages.length < 2}
+          ref={ref}
+          variant="input"
+          aria-label="Select language"
+          className="w-full justify-between font-normal"
+          aria-expanded={open}
+        >
           {value.length > 0 ? (
             <div className="flex items-center flex-nowrap truncate">
               {value.map((lang, index) => (
