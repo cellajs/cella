@@ -15,21 +15,21 @@
   "author": "CellaJS <info@cellajs.com>",
   "license": "UNLICENSED",
   "dependencies": {
-    "@aws-sdk/client-s3": "^3.758.0",
+    "@aws-sdk/client-s3": "^3.787.0",
     "@t3-oss/env-core": "^0.12.0",
     "@tus/file-store": "^1.5.1",
-    "@tus/s3-store": "^1.9.0",
+    "@tus/s3-store": "^1.9.1",
     "@tus/server": "^1.10.2",
     "config": "workspace:*",
-    "dotenv": "^16.4.7",
+    "dotenv": "^16.5.0",
     "jsonwebtoken": "^9.0.2",
     "tsx": "^4.19.3",
-    "zod": "3.24.2"
+    "zod": "3.24.3"
   },
   "devDependencies": {
     "@types/jsonwebtoken": "^9.0.9",
     "cross-env": "^7.0.3",
     "tsup": "^8.4.0",
-    "typescript": "^5.8.2"
+    "typescript": "^5.8.3"
   }
 }
