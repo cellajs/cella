@@ -70,7 +70,7 @@ export const SelectLanguages = ({ value, onChange }: SelectLanguagesProps) => {
                     <CountryFlag countryCode={lang} imgType="png" className="mr-2 shrink-0" />
                     <span className="truncate">{t(`common:${lang}`)}</span>
                   </div>
-                  <Check size={16} className={`text-success ${!value.some((u) => u === lang) && 'invisible'}`} />
+                  <Check size={16} strokeWidth={3} className={`text-success ${!value.some((u) => u === lang) && 'invisible'}`} />
                 </CommandItem>
               ))}
             </CommandGroup>

@@ -165,7 +165,7 @@ export const UserSuggestionCombobox = ({ value, onChange, entity }: Props) => {
                                 <User size={14} />
                                 <span className="max-sm:hidden font-light">{t('common:already_member')}</span>
                               </Badge>
-                              <Check size={16} className="text-success group-data-[was-selected=false]:invisible" />
+                              <Check size={16} strokeWidth={3} className="text-success group-data-[was-selected=false]:invisible" />
                             </div>
                           </CommandItem>
                         ))}

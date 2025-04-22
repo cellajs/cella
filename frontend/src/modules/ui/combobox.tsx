@@ -134,7 +134,7 @@ const Combobox = ({
                         {!excludeAvatarWrapFields.includes(name) && <AvatarWrap id={option.value} name={option.label} url={option.url} />}
                         {renderOption?.(option) ?? option.label}
                       </div>
-                      <Check size={16} className={`text-success ${formValue !== option.value && 'invisible'}`} />
+                      <Check size={16} strokeWidth={3} className={`text-success ${formValue !== option.value && 'invisible'}`} />
                     </CommandItem>
                   ))}
                 </Virtualizer>
