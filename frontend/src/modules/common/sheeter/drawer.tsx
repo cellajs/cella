@@ -35,7 +35,7 @@ export const MobileSheet = ({ sheet }: SheetProps) => {
           <DrawerTitle className={`font-medium ${title ? '' : 'hidden'}`}>{titleContent}</DrawerTitle>
           <DrawerDescription className={`text-muted-foreground font-light ${description ? '' : 'hidden'}`}>{description}</DrawerDescription>
         </DrawerHeader>
-        {content}
+        <div className="flex flex-col gap-3 px-3">{content}</div>
       </DrawerContent>
     </Drawer>
   );
