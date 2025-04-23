@@ -24,7 +24,7 @@ const TableCount = ({ count, type, isFiltered, children, onResetFilters }: Table
           {t('common:clear')}
         </Button>
       )}
-      {count !== undefined && (
+      {typeof count === 'number' && (
         <div className="flex items-center gap-1 text-muted-foreground">
           <span>{new Intl.NumberFormat('de-DE').format(count)}</span>
           <span>{t(`common:${type}${count === 1 ? '' : 's'}`).toLowerCase()}</span>
