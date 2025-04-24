@@ -95,9 +95,10 @@ export const paginationQuerySchema = z.object({
  ************************************************************************************************/
 
 /** Schema for a request body containing an array of IDs */
-export const idsBodySchema = z.object({
-  ids: z.array(z.string()).min(1, 'Add at least one item').max(50, 'The number of items cannot exceed 50'),
-});
+export const idsBodySchema = (maxItems = 50) =>
+  z.object({
+    ids: z.array(z.string()).min(1, 'Add at least one item').max(maxItems, `The number of items cannot exceed ${maxItems}`),
+  });
 
 /*************************************************************************************************
  * Validation schemas (for create and update)
