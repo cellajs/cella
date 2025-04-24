@@ -56,7 +56,7 @@ const MembersTable = ({ entity, isSheet = false, children }: MembersTableProps) 
         clearSelection={clearSelection}
         isSheet={isSheet}
       />
-      {typeof total === 'number' && children}
+      {!!total && children}
       <BaseDataTable
         entity={entity}
         ref={dataTableRef}
