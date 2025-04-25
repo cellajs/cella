@@ -25,7 +25,6 @@ export const env = createEnv({
 
     ARGON_SECRET: z.string(),
     COOKIE_SECRET: z.string(),
-    TUS_SECRET: z.string().default('very_secret'),
     ELECTRIC_API_SECRET: z.string(),
     REMOTE_SYSTEM_ACCESS_IP: z.string(),
 
@@ -48,10 +47,8 @@ export const env = createEnv({
     MICROSOFT_CLIENT_ID: z.string().optional(),
     MICROSOFT_CLIENT_SECRET: z.string().optional(),
 
-    AWS_S3_UPLOAD_ACCESS_KEY_ID: z.string().default(''),
-    AWS_S3_UPLOAD_SECRET_ACCESS_KEY: z.string().default(''),
-    AWS_CLOUDFRONT_KEY_ID: z.string().default(''),
-    AWS_CLOUDFRONT_PRIVATE_KEY: z.string().default(''),
+    S3_ACCESS_KEY_ID: z.string().default(''),
+    S3_SECRET_ACCESS_KEY: z.string().default(''),
   },
   runtimeEnv: process.env,
   emptyStringAsUndefined: true,

@@ -1,4 +1,4 @@
-import type { UploadResult, UppyFile } from '@uppy/core';
+import type { UppyFile } from '@uppy/core';
 
 export type UppyMeta = { public?: boolean; contentType?: string; offlineUploaded?: boolean };
 
@@ -19,7 +19,7 @@ export interface ImadoOptions extends UploadParams {
     onFileEditorComplete?: (file: LocalFile) => void;
     onUploadStart?: (uploadId: string, files: LocalFile[]) => void;
     onError?: (error: Error) => void;
-    onComplete?: (mappedResult: UploadedUppyFile[], result: UploadResult<UppyMeta, UppyBody>) => void;
+    onComplete?: (mappedResult: UploadedUppyFile[]) => void;
     onRetrySuccess?: (mappedResult: UploadedUppyFile[], localStoreIds: string[]) => void;
   };
 }

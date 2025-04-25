@@ -2,15 +2,19 @@ import { onlineManager } from '@tanstack/react-query';
 import type { Uppy, UppyOptions } from '@uppy/core';
 import { config } from 'config';
 import { t } from 'i18next';
-
+import type { z } from 'zod';
 import { createBaseTusUppy, prepareFilesForOffline, transformUploadedFile } from '~/lib/imado/helpers';
 import type { ImadoOptions, UppyBody, UppyMeta } from '~/lib/imado/types';
 import { LocalFileStorage } from '~/modules/attachments/local-file-storage';
 import type { UploadUppyProps } from '~/modules/attachments/upload/upload-uppy';
 import { toaster } from '~/modules/common/toaster';
 import { getUploadToken } from '~/modules/me/api';
+import type { uploadTokenBodySchema } from '#/modules/me/schema';
 
 import '@uppy/core/dist/style.min.css';
+import slugify from 'slugify';
+
+export type UploadTokenData = z.infer<typeof uploadTokenBodySchema>;
 
 /**
  * Initialize Uppy with Imado configuration.
@@ -32,10 +36,10 @@ export async function ImadoUppy(
   const isPublic = opts.public;
 
   // Variable to store the upload token
-  let token = '';
+  let token: UploadTokenData | undefined;
 
   if (canUpload) {
-    token = (await getUploadToken(type, { public: isPublic, organizationId: opts.organizationId })) || '';
+    token = (await getUploadToken(type, { public: isPublic, organizationId: opts.organizationId })) as UploadTokenData;
     if (!token) throw new Error('Failed to get upload token');
   }
 
@@ -43,6 +47,29 @@ export async function ImadoUppy(
     {
       ...uppyOptions,
       onBeforeUpload: (files) => {
+        console.log('Files:', files);
+        // Clean up file names
+        for (const file of Object.values(files)) {
+          const originalName = file.name || 'na';
+          const lastDotIndex = originalName.lastIndexOf('.');
+
+          const hasExtension = lastDotIndex !== -1;
+          const baseName = hasExtension ? originalName.slice(0, lastDotIndex) : originalName;
+          const extension = hasExtension ? originalName.slice(lastDotIndex) : '';
+
+          const cleanBaseName = slugify(baseName, {
+            lower: true,
+            strict: true,
+            replacement: '-',
+          });
+
+          const cleanName = `${cleanBaseName}${extension}`;
+          file.name = cleanName;
+          file.meta.name = cleanName;
+        }
+
+        console.log('Files to upload:', files);
+
         if (canUpload) return true;
         // If not online, prepare the files for offline storage and emit complete event
         prepareFilesForOffline(files).then((successful) => imadoUppy.emit('complete', { successful, failed: [] }));
@@ -68,15 +95,25 @@ export async function ImadoUppy(
       console.error('Upload error:', error);
       opts.statusEventHandler?.onError?.(error);
     })
-    .on('complete', (result) => {
-      console.info('Upload complete:', result);
-      const successful = result.successful ?? [];
+    .on('complete', ({ transloadit }) => {
+      console.info('Upload complete:', transloadit);
+      // biome-ignore lint/suspicious/noExplicitAny: TODO find type for transloadit results
+      const successful: any = transloadit ?? [];
+      if (!successful || !successful.length) {
+        console.warn('No successful uploads');
+        return;
+      }
 
       // Default to an empty array if no successful files
-      const mappedResult = successful.map((file) => (canUpload ? transformUploadedFile(file, token, isPublic) : { file, url: file.id }));
+      // @ts-ignore : TODO find type for transloadit results
+      const mappedResult = successful.map((assembly) =>
+        canUpload && token
+          ? transformUploadedFile(assembly.results[':original'][0], token, isPublic)
+          : { file: assembly.results[':original'][0], url: assembly.results[':original'][0].id },
+      );
 
       // Notify the event handler when upload is complete
-      opts.statusEventHandler?.onComplete?.(mappedResult, result);
+      opts.statusEventHandler?.onComplete?.(mappedResult);
     })
     .on('is-online', async () => {
       // When back online, retry uploads

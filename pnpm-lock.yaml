@@ -54,6 +54,9 @@ importers:
       '@aws-sdk/lib-storage':
         specifier: ^3.787.0
         version: 3.787.0(@aws-sdk/client-s3@3.787.0)
+      '@aws-sdk/s3-request-presigner':
+        specifier: ^3.787.0
+        version: 3.787.0
       '@cellajs/permission-manager':
         specifier: ^0.1.0
         version: 0.1.0(@swc/core@1.7.26)(jiti@2.4.2)(postcss@8.5.3)(tsx@4.19.3)(yaml@2.7.1)
@@ -491,12 +494,18 @@ importers:
       '@uppy/react':
         specifier: ^4.2.3
         version: 4.2.3(@uppy/core@4.4.4)(@uppy/dashboard@4.3.3(@uppy/core@4.4.4))(@uppy/drag-drop@4.1.2(@uppy/core@4.4.4))(@uppy/file-input@4.1.2(@uppy/core@4.4.4))(@uppy/progress-bar@4.2.1(@uppy/core@4.4.4))(@uppy/status-bar@4.1.3(@uppy/core@4.4.4))(react@19.1.0)
+      '@uppy/remote-sources':
+        specifier: ^2.3.2
+        version: 2.3.2(@uppy/core@4.4.4)
       '@uppy/screen-capture':
         specifier: ^4.2.2
         version: 4.2.2(@uppy/core@4.4.4)
       '@uppy/status-bar':
         specifier: ^4.1.3
         version: 4.1.3(@uppy/core@4.4.4)
+      '@uppy/transloadit':
+        specifier: ^4.2.2
+        version: 4.2.2(@uppy/core@4.4.4)
       '@uppy/tus':
         specifier: ^4.2.2
         version: 4.2.2(@uppy/core@4.4.4)
@@ -1049,6 +1058,10 @@ packages:
     resolution: {integrity: sha512-40iH3LJjrQS3LKUJAl7Wj0bln7RFPEvUYKFxtP8a+oKFDO0F65F52xZxIJbPn6sHkxWDAnZlGgdjZXM3p2g5wQ==}
     engines: {node: '>=18.0.0'}
 
+  '@aws-sdk/s3-request-presigner@3.787.0':
+    resolution: {integrity: sha512-WBm0AS3RRURNN0yjYXHaiI692boVwWXGt3RLdI7tYBX58E1Zb5nzC8rlk81O9Xe7ZTgTC1KCr8y4+jcBD+zwJg==}
+    engines: {node: '>=18.0.0'}
+
   '@aws-sdk/signature-v4-multi-region@3.775.0':
     resolution: {integrity: sha512-cnGk8GDfTMJ8p7+qSk92QlIk2bmTmFJqhYxcXZ9PysjZtx0xmfCMxnG3Hjy1oU2mt5boPCVSOptqtWixayM17g==}
     engines: {node: '>=18.0.0'}
@@ -1079,6 +1092,10 @@ packages:
 
   '@aws-sdk/util-endpoints@3.787.0':
     resolution: {integrity: sha512-fd3zkiOkwnbdbN0Xp9TsP5SWrmv0SpT70YEdbb8wAj2DWQwiCmFszaSs+YCvhoCdmlR3Wl9Spu0pGpSAGKeYvQ==}
+    engines: {node: '>=18.0.0'}
+
+  '@aws-sdk/util-format-url@3.775.0':
+    resolution: {integrity: sha512-Nw4nBeyCbWixoGh8NcVpa/i8McMA6RXJIjQFyloJLaPr7CPquz7ZbSl0MUWMFVwP/VHaJ7B+lNN3Qz1iFCEP/Q==}
     engines: {node: '>=18.0.0'}
 
   '@aws-sdk/util-locate-window@3.723.0':
@@ -5949,6 +5966,11 @@ packages:
     peerDependencies:
       '@uppy/core': ^4.4.4
 
+  '@uppy/box@3.2.2':
+    resolution: {integrity: sha512-BX7Ay80WUTS9/YHyC//OTpAiU3r3ErOaFZukXnM1oyPTbkj1XiWqm4m56qwJkCXp1r3ajLtMVuwFfgw2Uz+lVw==}
+    peerDependencies:
+      '@uppy/core': ^4.4.4
+
   '@uppy/companion-client@4.4.1':
     resolution: {integrity: sha512-ardMacShsfzaIbqHEH48YlpzWZkBj1qhAj0Dvn3r31p9d0HA5xFUvAdLYrZ6ezKvZ0RcDbf0SB5qCrQMkjscXQ==}
     peerDependencies:
@@ -5967,8 +5989,23 @@ packages:
     peerDependencies:
       '@uppy/core': ^4.4.4
 
+  '@uppy/dropbox@4.2.2':
+    resolution: {integrity: sha512-ssMa/QPeDwGFJcYW8cnipqSDLOcOTGE5nTQG50hPWAQEs7rd3lzxv4YlPwsZFTNJcp0z2L0+ss5w5Dx84vDjMg==}
+    peerDependencies:
+      '@uppy/core': ^4.4.4
+
+  '@uppy/facebook@4.2.2':
+    resolution: {integrity: sha512-PKJkQqPFTAwvKPEP84s5zmUZLdIZmyl6O4ItR7Kuo7A4/nx90AGek0lZ3uORUO9JZ5PClCTXl+Wtw4E0aD1bAQ==}
+    peerDependencies:
+      '@uppy/core': ^4.4.4
+
   '@uppy/file-input@4.1.2':
     resolution: {integrity: sha512-tpxT41/00wI3WzqzbRaBPf9bphWYT8XMPxDhPhUqG7Y+k29PLhCu0rL57m/pvOfOWundug4E1CAejo9V01FNRg==}
+    peerDependencies:
+      '@uppy/core': ^4.4.4
+
+  '@uppy/google-drive@4.3.2':
+    resolution: {integrity: sha512-h4AhEyllqM6Kun8g7vVIHtchqPD7l5L/lzfVBulD9dgwlOihyrI2vsAO9CnunzDXHDme37hgrOraCavJ7sRJ0Q==}
     peerDependencies:
       '@uppy/core': ^4.4.4
 
@@ -5981,6 +6018,16 @@ packages:
     resolution: {integrity: sha512-0en8Py47pl6RMDrgUfqFoF807W5kK5AKVJNT1SkTsLiGg5anmTIMuvmNG3k6LN4cn9P/rKyEHSdGcoBBUj9u7Q==}
     peerDependencies:
       '@uppy/core': ^4.4.1
+
+  '@uppy/instagram@4.2.2':
+    resolution: {integrity: sha512-54pB3sjE1O/5o4rAjAkpwu639DOR8Z/MLeQkdMHNXPNBCfDBkjJ7f3Uk/2zTJrSP/wYFdsQhtIuu8rpcCRHXjA==}
+    peerDependencies:
+      '@uppy/core': ^4.4.4
+
+  '@uppy/onedrive@4.2.3':
+    resolution: {integrity: sha512-24IgzA5WfDkbHXqkliNrOc7gUdIOGyL0sdFHiikL02frBEFbYUQKL4OjIgVvlj91oPNwE2W1r4sUl93xbT+MVA==}
+    peerDependencies:
+      '@uppy/core': ^4.4.4
 
   '@uppy/progress-bar@4.2.1':
     resolution: {integrity: sha512-5TrUYYt1e/Qy4L4GS7pHeH9I9/zYpp7SiJzC5BtYlku5J6yxZbdxpMPW1mBhQqW+ou/IByaVIGFIR6iSq6yo0w==}
@@ -6014,6 +6061,11 @@ packages:
       '@uppy/status-bar':
         optional: true
 
+  '@uppy/remote-sources@2.3.2':
+    resolution: {integrity: sha512-ZL8Flf4Lqav7/pDWM1xhsrOBOlcnnJEv+o8Lt121U/hxCPJsIWHGoK+NwzVTFAuk9BEhl85xIJCHO+UhrBxUVA==}
+    peerDependencies:
+      '@uppy/core': ^4.4.4
+
   '@uppy/screen-capture@4.2.2':
     resolution: {integrity: sha512-dTGa13O1a99lHSD4zKqvLS1S5gnM7PU/qZCjoyhrQEEXO/TWasWIWvIl7n/O9X6KCSvHF6fl/KwZIhxl2O/tJA==}
     peerDependencies:
@@ -6032,16 +6084,36 @@ packages:
     peerDependencies:
       '@uppy/core': ^4.4.1
 
+  '@uppy/transloadit@4.2.2':
+    resolution: {integrity: sha512-R7iKDi3gbbcZydUulSLIwCAI5krPTZBUfWIBkdc4XpcL5oGQHHjLmVbSIyLgsTBrBowrtaQP2Nj6ZkWtF6LF+Q==}
+    peerDependencies:
+      '@uppy/core': ^4.4.4
+
   '@uppy/tus@4.2.2':
     resolution: {integrity: sha512-fauUHqoLDtyRXwoaIyWM8ctuJ+SAXdjuM2eyoPYcGtpVaEGa+AS7IQkJkWz2RrWSdLCHL9O+fk6jKr+0PIDEpQ==}
     peerDependencies:
       '@uppy/core': ^4.4.1
+
+  '@uppy/unsplash@4.3.3':
+    resolution: {integrity: sha512-KsaUz1/1A5F9fNnLuE9EGZjSm8DHPwSzKRsEHAaefjZ286sDcNGnQy/WqH3iIA+8tZ8dAfvyVFfCSUsnTf5HsA==}
+    peerDependencies:
+      '@uppy/core': ^4.4.4
+
+  '@uppy/url@4.2.3':
+    resolution: {integrity: sha512-lN9mKdpGeh7R98A0uo3zsc6Di+m1JaTNNydyNpMhsixwXrsuK7KWE/iwg4xZaY+I1ESqNgnIc9fFEQJO46O1Qg==}
+    peerDependencies:
+      '@uppy/core': ^4.4.4
 
   '@uppy/utils@6.1.3':
     resolution: {integrity: sha512-7WuTtMf0k1g962sE76mKy8aDV/kLeDrF8Wv1oTxaXQzUpmHBAoKd3FXLrQXu7TgM0XNHHRZXAckBttbVOWkKCw==}
 
   '@uppy/webcam@4.1.2':
     resolution: {integrity: sha512-sbiqtrKxd+aoAkV10vTAj/Wr9PB6WjPhJyTGEz9Ff4+3gqnhUlusO4Od+cHZgGVZeqLhL4L9l6HwsFhdyK3nWg==}
+    peerDependencies:
+      '@uppy/core': ^4.4.4
+
+  '@uppy/zoom@3.2.2':
+    resolution: {integrity: sha512-jsfrGfmedln6dRGlLzkXlGC19KxDE8zilJ5MB8nqAcWL1kd9mTjBg8zKvfLjDiAV8El+5tZZRjCAr5NdEYz45g==}
     peerDependencies:
       '@uppy/core': ^4.4.4
 
@@ -6664,6 +6736,10 @@ packages:
 
   component-emitter@1.3.1:
     resolution: {integrity: sha512-T0+barUSQRTUQASh8bx02dl+DhF54GtIDY13Y3m9oWTklKbb3Wv974meRpeZ3lp1JpLVECWWNHC4vaG2XHXouQ==}
+
+  component-emitter@2.0.0:
+    resolution: {integrity: sha512-4m5s3Me2xxlVKG9PkZpQqHQR7bgpnN7joDMJ4yvVkVXngjoITG76IaZmzmywSeRTeTpc6N6r3H3+KyUurV8OYw==}
+    engines: {node: '>=18'}
 
   compressible@2.0.18:
     resolution: {integrity: sha512-AF3r7P5dWxL8MxyITRMlORQNaOA2IkAFaTr4k7BUumjPtRpGDTZpl0Pb1XCO6JeDCBdp126Cgs9sMxqSjgYyRg==}
@@ -7548,7 +7624,7 @@ packages:
 
   formidable@2.1.3:
     resolution: {integrity: sha512-vDI5JjeALeGXpyL8v71ZG2VgHY5zD6qg1IvypU7aJCYvREZyhawrYJxMdsWO+m5DIGLiMiDH71yEN8RO4wQAMQ==}
-    deprecated: 'ACTION REQUIRED: SWITCH TO v3 - v1 and v2 are VULNERABLE AND DEPRECATED FOR OVER 2 YEARS! Use formidable@latest or try formidable-mini for fresh projects'
+    deprecated: 'ATTENTION: please upgrade to v3! The v1 and v2 versions are pretty old and deprecated'
 
   forwarded-parse@2.1.2:
     resolution: {integrity: sha512-alTFZZQDKMporBH77856pXgzhEzaUVmLCDk+egLgIgHst3Tpndzz8MnKe+GzRJRfvVdn69HhpW7cmXzvtLvJAw==}
@@ -11655,7 +11731,7 @@ snapshots:
       '@aws-crypto/sha256-js': 3.0.0
       '@aws-crypto/supports-web-crypto': 3.0.0
       '@aws-crypto/util': 3.0.0
-      '@aws-sdk/types': 3.378.0
+      '@aws-sdk/types': 3.775.0
       '@aws-sdk/util-locate-window': 3.723.0
       '@aws-sdk/util-utf8-browser': 3.259.0
       tslib: 1.14.1
@@ -11673,7 +11749,7 @@ snapshots:
   '@aws-crypto/sha256-js@3.0.0':
     dependencies:
       '@aws-crypto/util': 3.0.0
-      '@aws-sdk/types': 3.378.0
+      '@aws-sdk/types': 3.775.0
       tslib: 1.14.1
 
   '@aws-crypto/sha256-js@5.2.0':
@@ -11692,7 +11768,7 @@ snapshots:
 
   '@aws-crypto/util@3.0.0':
     dependencies:
-      '@aws-sdk/types': 3.378.0
+      '@aws-sdk/types': 3.775.0
       '@aws-sdk/util-utf8-browser': 3.259.0
       tslib: 1.14.1
 
@@ -12384,6 +12460,17 @@ snapshots:
       '@smithy/util-middleware': 4.0.2
       tslib: 2.8.1
 
+  '@aws-sdk/s3-request-presigner@3.787.0':
+    dependencies:
+      '@aws-sdk/signature-v4-multi-region': 3.775.0
+      '@aws-sdk/types': 3.775.0
+      '@aws-sdk/util-format-url': 3.775.0
+      '@smithy/middleware-endpoint': 4.1.0
+      '@smithy/protocol-http': 5.1.0
+      '@smithy/smithy-client': 4.2.0
+      '@smithy/types': 4.2.0
+      tslib: 2.8.1
+
   '@aws-sdk/signature-v4-multi-region@3.775.0':
     dependencies:
       '@aws-sdk/middleware-sdk-s3': 3.775.0
@@ -12439,6 +12526,13 @@ snapshots:
       '@aws-sdk/types': 3.775.0
       '@smithy/types': 4.2.0
       '@smithy/util-endpoints': 3.0.2
+      tslib: 2.8.1
+
+  '@aws-sdk/util-format-url@3.775.0':
+    dependencies:
+      '@aws-sdk/types': 3.775.0
+      '@smithy/querystring-builder': 4.0.2
+      '@smithy/types': 4.2.0
       tslib: 2.8.1
 
   '@aws-sdk/util-locate-window@3.723.0':
@@ -17613,6 +17707,14 @@ snapshots:
       '@uppy/utils': 6.1.3
       preact: 10.26.5
 
+  '@uppy/box@3.2.2(@uppy/core@4.4.4)':
+    dependencies:
+      '@uppy/companion-client': 4.4.1(@uppy/core@4.4.4)
+      '@uppy/core': 4.4.4
+      '@uppy/provider-views': 4.4.3(@uppy/core@4.4.4)
+      '@uppy/utils': 6.1.3
+      preact: 10.26.5
+
   '@uppy/companion-client@4.4.1(@uppy/core@4.4.4)':
     dependencies:
       '@uppy/core': 4.4.4
@@ -17653,9 +17755,33 @@ snapshots:
       '@uppy/utils': 6.1.3
       preact: 10.26.5
 
+  '@uppy/dropbox@4.2.2(@uppy/core@4.4.4)':
+    dependencies:
+      '@uppy/companion-client': 4.4.1(@uppy/core@4.4.4)
+      '@uppy/core': 4.4.4
+      '@uppy/provider-views': 4.4.3(@uppy/core@4.4.4)
+      '@uppy/utils': 6.1.3
+      preact: 10.26.5
+
+  '@uppy/facebook@4.2.2(@uppy/core@4.4.4)':
+    dependencies:
+      '@uppy/companion-client': 4.4.1(@uppy/core@4.4.4)
+      '@uppy/core': 4.4.4
+      '@uppy/provider-views': 4.4.3(@uppy/core@4.4.4)
+      '@uppy/utils': 6.1.3
+      preact: 10.26.5
+
   '@uppy/file-input@4.1.2(@uppy/core@4.4.4)':
     dependencies:
       '@uppy/core': 4.4.4
+      '@uppy/utils': 6.1.3
+      preact: 10.26.5
+
+  '@uppy/google-drive@4.3.2(@uppy/core@4.4.4)':
+    dependencies:
+      '@uppy/companion-client': 4.4.1(@uppy/core@4.4.4)
+      '@uppy/core': 4.4.4
+      '@uppy/provider-views': 4.4.3(@uppy/core@4.4.4)
       '@uppy/utils': 6.1.3
       preact: 10.26.5
 
@@ -17669,6 +17795,22 @@ snapshots:
   '@uppy/informer@4.2.1(@uppy/core@4.4.4)':
     dependencies:
       '@uppy/core': 4.4.4
+      '@uppy/utils': 6.1.3
+      preact: 10.26.5
+
+  '@uppy/instagram@4.2.2(@uppy/core@4.4.4)':
+    dependencies:
+      '@uppy/companion-client': 4.4.1(@uppy/core@4.4.4)
+      '@uppy/core': 4.4.4
+      '@uppy/provider-views': 4.4.3(@uppy/core@4.4.4)
+      '@uppy/utils': 6.1.3
+      preact: 10.26.5
+
+  '@uppy/onedrive@4.2.3(@uppy/core@4.4.4)':
+    dependencies:
+      '@uppy/companion-client': 4.4.1(@uppy/core@4.4.4)
+      '@uppy/core': 4.4.4
+      '@uppy/provider-views': 4.4.3(@uppy/core@4.4.4)
       '@uppy/utils': 6.1.3
       preact: 10.26.5
 
@@ -17700,6 +17842,20 @@ snapshots:
       '@uppy/progress-bar': 4.2.1(@uppy/core@4.4.4)
       '@uppy/status-bar': 4.1.3(@uppy/core@4.4.4)
 
+  '@uppy/remote-sources@2.3.2(@uppy/core@4.4.4)':
+    dependencies:
+      '@uppy/box': 3.2.2(@uppy/core@4.4.4)
+      '@uppy/core': 4.4.4
+      '@uppy/dashboard': 4.3.3(@uppy/core@4.4.4)
+      '@uppy/dropbox': 4.2.2(@uppy/core@4.4.4)
+      '@uppy/facebook': 4.2.2(@uppy/core@4.4.4)
+      '@uppy/google-drive': 4.3.2(@uppy/core@4.4.4)
+      '@uppy/instagram': 4.2.2(@uppy/core@4.4.4)
+      '@uppy/onedrive': 4.2.3(@uppy/core@4.4.4)
+      '@uppy/unsplash': 4.3.3(@uppy/core@4.4.4)
+      '@uppy/url': 4.2.3(@uppy/core@4.4.4)
+      '@uppy/zoom': 3.2.2(@uppy/core@4.4.4)
+
   '@uppy/screen-capture@4.2.2(@uppy/core@4.4.4)':
     dependencies:
       '@uppy/core': 4.4.4
@@ -17722,12 +17878,37 @@ snapshots:
       '@uppy/utils': 6.1.3
       exifr: 7.1.3
 
+  '@uppy/transloadit@4.2.2(@uppy/core@4.4.4)':
+    dependencies:
+      '@uppy/companion-client': 4.4.1(@uppy/core@4.4.4)
+      '@uppy/core': 4.4.4
+      '@uppy/provider-views': 4.4.3(@uppy/core@4.4.4)
+      '@uppy/tus': 4.2.2(@uppy/core@4.4.4)
+      '@uppy/utils': 6.1.3
+      component-emitter: 2.0.0
+
   '@uppy/tus@4.2.2(@uppy/core@4.4.4)':
     dependencies:
       '@uppy/companion-client': 4.4.1(@uppy/core@4.4.4)
       '@uppy/core': 4.4.4
       '@uppy/utils': 6.1.3
       tus-js-client: 4.3.1
+
+  '@uppy/unsplash@4.3.3(@uppy/core@4.4.4)':
+    dependencies:
+      '@uppy/companion-client': 4.4.1(@uppy/core@4.4.4)
+      '@uppy/core': 4.4.4
+      '@uppy/provider-views': 4.4.3(@uppy/core@4.4.4)
+      '@uppy/utils': 6.1.3
+      preact: 10.26.5
+
+  '@uppy/url@4.2.3(@uppy/core@4.4.4)':
+    dependencies:
+      '@uppy/companion-client': 4.4.1(@uppy/core@4.4.4)
+      '@uppy/core': 4.4.4
+      '@uppy/utils': 6.1.3
+      nanoid: 5.1.5
+      preact: 10.26.5
 
   '@uppy/utils@6.1.3':
     dependencies:
@@ -17739,6 +17920,14 @@ snapshots:
       '@uppy/core': 4.4.4
       '@uppy/utils': 6.1.3
       is-mobile: 4.0.0
+      preact: 10.26.5
+
+  '@uppy/zoom@3.2.2(@uppy/core@4.4.4)':
+    dependencies:
+      '@uppy/companion-client': 4.4.1(@uppy/core@4.4.4)
+      '@uppy/core': 4.4.4
+      '@uppy/provider-views': 4.4.3(@uppy/core@4.4.4)
+      '@uppy/utils': 6.1.3
       preact: 10.26.5
 
   '@vis.gl/react-google-maps@1.5.2(react-dom@19.1.0(react@19.1.0))(react@19.1.0)':
@@ -18593,6 +18782,8 @@ snapshots:
   common-tags@1.8.2: {}
 
   component-emitter@1.3.1: {}
+
+  component-emitter@2.0.0: {}
 
   compressible@2.0.18:
     dependencies:

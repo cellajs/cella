@@ -62,10 +62,12 @@ export const config = {
 
   // File handling with imado
   tusPort: 4100,
-  s3UploadBucket: 'cella-uploads',
-  s3UploadRegion: 'eu-west-1',
-  privateCDNUrl: 'https://cdn-priv.cellajs.com',
-  publicCDNUrl: 'https://cdn.cellajs.com',
+  s3PublicBucket: 'imado-dev',
+  s3PrivateBucket: 'imado-dev-priv',
+  s3Region: 'nl-ams',
+  s3Host: 's3.nl-ams.scw.cloud',
+  privateCDNUrl: 'https://imado-dev-priv.s3.nl-ams.scw.cloud',
+  publicCDNUrl: 'https://544ba5eb-2c7a-417f-a5bf-b13950b89755.svc.edge.scw.cloud',
 
   themeColor: '#26262b',
 

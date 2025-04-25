@@ -55,3 +55,9 @@ export const leaveEntityQuerySchema = z.object({
 export const unsubscribeSelfQuerySchema = z.object({
   token: z.string(),
 });
+
+export const uploadTokenBodySchema = z.object({
+  public: z.boolean(),
+  sub: z.string(),
+  imado: z.boolean(),
+});

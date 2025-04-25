@@ -67,6 +67,7 @@ export const UploadUppy = ({
           organizationId: organizationId,
           statusEventHandler: {
             onComplete: (mappedResult) => {
+              console.log('onComplete:', mappedResult);
               if (callback) callback(mappedResult);
             },
             onRetrySuccess(results, localStoreIds) {

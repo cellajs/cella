@@ -3,7 +3,6 @@ import type { EnabledOauthProvider } from 'config';
 import { config } from 'config';
 import { and, asc, eq, isNotNull } from 'drizzle-orm';
 import { type SSEStreamingApi, streamSSE } from 'hono/streaming';
-import jwt from 'jsonwebtoken';
 import type { z } from 'zod';
 import { db } from '#/db/db';
 import { membershipsTable } from '#/db/schema/memberships';
@@ -287,14 +286,12 @@ const meRoutes = app
 
     const sub = organization ? `${organization}/${user.id}` : user.id;
 
-    const token = jwt.sign(
-      {
-        sub: sub,
-        public: isPublic === 'true',
-        imado: !!env.AWS_S3_UPLOAD_ACCESS_KEY_ID,
-      },
-      env.TUS_SECRET,
-    );
+    // TODO use signing pattern from transloadit here
+    const token = {
+      sub: sub,
+      public: isPublic === 'true',
+      imado: !!env.S3_ACCESS_KEY_ID,
+    };
 
     return ctx.json({ success: true, data: token }, 200);
   })

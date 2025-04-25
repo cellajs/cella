@@ -91,9 +91,9 @@ const attachmentsRoutes = app
 
     const createdAttachments = await db.insert(attachmentsTable).values(fixedNewAttachments).returning();
 
-    // Send urls through imado to sign them if needed
+    // TODO: can we batch this or promise.all? Send urls through imado to sign them if needed
     for (const attachment of createdAttachments) {
-      attachment.url = getImadoUrl.generate(attachment.url);
+      attachment.url = await getImadoUrl(attachment.url);
     }
 
     logEvent(`${createdAttachments.length} attachments have been created`);
@@ -146,7 +146,7 @@ const attachmentsRoutes = app
       const [targetAttachment] = await db.select().from(attachmentsTable).where(eq(attachmentsTable.id, attachmentId)).limit(1);
       if (!targetAttachment) return errorResponse(ctx, 404, 'not_found', 'warn', 'attachment', { attachmentId });
 
-      targetAttachment.url = getImadoUrl.generate(targetAttachment.url);
+      targetAttachment.url = await getImadoUrl(targetAttachment.url);
 
       // return target attachment itself if no groupId
       if (!targetAttachment.groupId) return ctx.json({ success: true, data: { items: [targetAttachment], total: 1 } }, 200);
@@ -165,7 +165,7 @@ const attachmentsRoutes = app
 
     // Send urls through imado to sign them if needed
     for (const attachment of attachments) {
-      attachment.url = getImadoUrl.generate(attachment.url);
+      attachment.url = await getImadoUrl(attachment.url);
     }
 
     const [{ total }] = await db.select({ total: count() }).from(attachmentsQuery.as('attachments'));
@@ -186,7 +186,7 @@ const attachmentsRoutes = app
       .from(attachmentsTable)
       .where(and(eq(attachmentsTable.id, id), eq(attachmentsTable.organizationId, organization.id)));
 
-    attachment.url = getImadoUrl.generate(attachment.url);
+    attachment.url = await getImadoUrl(attachment.url);
 
     if (!attachment) return errorResponse(ctx, 404, 'not_found', 'warn', 'attachment');
 
@@ -213,7 +213,7 @@ const attachmentsRoutes = app
 
     logEvent('Attachment updated', { attachment: updatedAttachment.id });
 
-    updatedAttachment.url = getImadoUrl.generate(updatedAttachment.url);
+    updatedAttachment.url = await getImadoUrl(updatedAttachment.url);
 
     return ctx.json({ success: true, data: updatedAttachment }, 200);
   })
