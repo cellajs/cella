@@ -47,6 +47,8 @@ export const env = createEnv({
     MICROSOFT_CLIENT_ID: z.string().optional(),
     MICROSOFT_CLIENT_SECRET: z.string().optional(),
 
+    TRANSLOADIT_KEY: z.string().optional(),
+    TRANSLOADIT_SECRET: z.string().optional(),
     S3_ACCESS_KEY_ID: z.string().default(''),
     S3_SECRET_ACCESS_KEY: z.string().default(''),
   },

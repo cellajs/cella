@@ -1,3 +1,4 @@
+import crypto from 'node:crypto';
 import { OpenAPIHono } from '@hono/zod-openapi';
 import type { EnabledOauthProvider } from 'config';
 import { config } from 'config';
@@ -20,6 +21,8 @@ import { getUserBy } from '#/modules/users/helpers/get-user-by';
 import { verifyUnsubscribeToken } from '#/modules/users/helpers/unsubscribe-token';
 import defaultHook from '#/utils/default-hook';
 import { getIsoDate } from '#/utils/iso-date';
+import { nanoid } from '#/utils/nanoid';
+import { utcDateString } from '#/utils/utc-data-string';
 import { deleteAuthCookie, getAuthCookie } from '../auth/helpers/cookie';
 import { parseAndValidatePasskeyAttestation } from '../auth/helpers/passkey';
 import { getParsedSessionCookie, invalidateSessionById, invalidateUserSessions, validateSession } from '../auth/helpers/session';
@@ -283,14 +286,78 @@ const meRoutes = app
   .openapi(meRouteConfig.getUploadToken, async (ctx) => {
     const user = getContextUser();
     const { public: isPublic, organization } = ctx.req.valid('query');
+    console.log('isPublic', isPublic);
+    console.log('organization', organization);
 
+    // This will be used to as first part of S3 key
     const sub = organization ? `${organization}/${user.id}` : user.id;
 
-    // TODO use signing pattern from transloadit here
+    // Transloadit security requires us to set an expiration date like this
+    const expires = utcDateString(Date.now() + 1 * 60 * 60 * 1000); // 1 hour
+
+    // And a nonce to prevent replay attacks
+    const nonce = nanoid(16);
+
+    const authKey = env.TRANSLOADIT_KEY;
+    const authSecret = env.TRANSLOADIT_SECRET;
+
+    if (!authKey || !authSecret) {
+      return errorResponse(ctx, 500, 'missing_auth_key', 'error');
+    }
+
+    const params = {
+      auth: {
+        key: authKey,
+        expires,
+        nonce,
+      },
+      steps: {
+        ':original': {
+          robot: '/upload/handle',
+        },
+        'converted-image': {
+          use: ':original',
+          robot: '/image/resize',
+          format: 'webp',
+        },
+        'resized-image': {
+          use: 'converted-image',
+          robot: '/image/resize',
+          resize_strategy: 'fit',
+          width: 100,
+          height: 100,
+        },
+        'compressed-image': {
+          use: 'resized-image',
+          robot: '/image/optimize',
+          progressive: true,
+        },
+        exported: {
+          use: [':original', 'compressed-image'],
+          robot: '/s3/store',
+          credentials: isPublic ? 'imado-dev' : 'imado-dev-priv',
+          host: 's3.nl-ams.scw.cloud',
+          no_vhost: true,
+          url_prefix: '',
+          acl: isPublic ? 'public-read' : 'private',
+          path: `/${sub}/\${file.id}.\${file.url_name}`,
+        },
+      },
+    };
+
+    const paramsString = JSON.stringify(params);
+    const signatureBytes = crypto.createHmac('sha384', authSecret).update(Buffer.from(paramsString, 'utf-8'));
+    // The final signature needs the hash name in front, so
+    // the hashing algorithm can be updated in a backwards-compatible
+    // way when old algorithms become insecure.
+    const signature = `sha384:${signatureBytes.digest('hex')}`;
+
     const token = {
       sub: sub,
-      public: isPublic === 'true',
+      public: isPublic,
       imado: !!env.S3_ACCESS_KEY_ID,
+      params,
+      signature,
     };
 
     return ctx.json({ success: true, data: token }, 200);

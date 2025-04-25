@@ -60,4 +60,6 @@ export const uploadTokenBodySchema = z.object({
   public: z.boolean(),
   sub: z.string(),
   imado: z.boolean(),
+  params: z.record(z.string(), z.any()),
+  signature: z.string(),
 });

@@ -1,6 +1,14 @@
 import { config } from 'config';
 import { z } from 'zod';
-import { contextEntityTypeSchema, idSchema, imageUrlSchema, nameSchema, pageEntityTypeSchema, slugSchema } from '#/utils/schema/common';
+import {
+  booleanQuerySchema,
+  contextEntityTypeSchema,
+  idSchema,
+  imageUrlSchema,
+  nameSchema,
+  pageEntityTypeSchema,
+  slugSchema,
+} from '#/utils/schema/common';
 import { membershipInfoSchema } from '../memberships/schema';
 
 export const limitEntitySchema = z.object({
@@ -28,6 +36,6 @@ export const entitiesQuerySchema = z.object({
   q: z.string().optional(),
   type: pageEntityTypeSchema.optional(),
   targetUserId: idSchema.optional(),
-  removeSelf: z.coerce.boolean().optional(),
+  removeSelf: booleanQuerySchema.optional(),
   userMembershipType: contextEntityTypeSchema.optional(),
 });
