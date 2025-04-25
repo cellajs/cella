@@ -4,7 +4,6 @@ import type { ApiError } from '~/lib/api';
 
 import { type GetUsersParams, type UpdateUserParams, deleteUsers, getUser, getUsers, updateUser } from '~/modules/users/api';
 import type { User } from '~/modules/users/types';
-import { getOffset } from '~/query/helpers';
 import { useMutateQueryData } from '~/query/hooks/use-mutate-query-data';
 
 /**
@@ -50,12 +49,13 @@ export const usersQueryOptions = ({ q = '', sort: initialSort, order: initialOrd
 
   return infiniteQueryOptions({
     queryKey,
-    initialPageParam: 0,
-    queryFn: async ({ pageParam: page, signal }) => {
-      const offset = getOffset(queryKey); // Calculate before fetching ensuring correct offset
-      return await getUsers({ page, q, sort, order, role, limit, offset }, signal);
+    initialPageParam: { page: 0, offset: 0 },
+    queryFn: async ({ pageParam: { page, offset }, signal }) => await getUsers({ page, q, sort, order, role, limit, offset }, signal),
+    getNextPageParam: (_lastPage, allPages) => {
+      const page = allPages.length;
+      const offset = allPages.reduce((acc, page) => acc + page.items.length, 0);
+      return { page, offset };
     },
-    getNextPageParam: (_lastPage, allPages) => allPages.length,
   });
 };
 
