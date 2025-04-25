@@ -16,8 +16,8 @@ import { type InviteMemberProps, inviteMembers } from '~/modules/memberships/api
 import { Badge } from '~/modules/ui/badge';
 import { Button, SubmitButton } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
-import { UserSuggestionCombobox } from '~/modules/users/combobox';
 import { handleNewInvites } from '~/modules/users/invite-email-form';
+import { UserSuggestionCombobox } from '~/modules/users/suggestions-combobox';
 
 interface Props {
   entity?: EntityPage;
