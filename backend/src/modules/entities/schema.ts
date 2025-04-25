@@ -27,6 +27,7 @@ export const entitiesSchema = z.object({
 export const entitiesQuerySchema = z.object({
   q: z.string().optional(),
   type: pageEntityTypeSchema.optional(),
+  targetOrgId: idSchema.optional(),
   targetUserId: idSchema.optional(),
   userMembershipType: contextEntityTypeSchema.optional(),
 });

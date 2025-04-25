@@ -10,7 +10,7 @@ import type { entitiesQuerySchema } from '#/modules/entities/schema';
 import { membershipSelect } from '#/modules/memberships/helpers/select';
 import { prepareStringForILikeFilter } from '#/utils/sql';
 
-type EntitiesQueryProps = Omit<z.infer<typeof entitiesQuerySchema>, 'targetUserId'> & {
+type EntitiesQueryProps = Omit<z.infer<typeof entitiesQuerySchema>, 'targetUserId' | 'targetOrgId'> & {
   organizationIds: string[];
   selfId: string;
   userId: string;
@@ -27,6 +27,10 @@ export const getEntitiesQuery = ({ q, organizationIds, userId, selfId, type, use
       : getContextEntitiesQuery({ q, organizationIds, userId, type });
 };
 
+/**
+ * Creates a queries with max 20 uniqe entities each. Query return entities that part of organizations where passed user have memberships
+ * and match the provided search query. Default will return query for all context entities if type is not provided.
+ */
 const getContextEntitiesQuery = ({ q, organizationIds, userId, type }: ContextEntitiesQueryProps) => {
   const contextEntityTypes = type ? [type] : config.contextEntityTypes;
 
@@ -64,6 +68,10 @@ const getContextEntitiesQuery = ({ q, organizationIds, userId, type }: ContextEn
   return contextQueries;
 };
 
+/**
+ * Creates a query with max 20 uniqe users. Query return users that share with you organizations membership and match the provided
+ * search query, excluding self.
+ */
 const getUsersQuery = ({ q, organizationIds, selfId, userMembershipType }: UserEntitiesQueryProps) => {
   const usersQuery = db
     .selectDistinctOn([usersTable.id], {
