@@ -20,7 +20,6 @@ import { useOrganizationUpdateMutation } from '~/modules/organizations/query';
 import type { Organization } from '~/modules/organizations/types';
 import { Button, SubmitButton } from '~/modules/ui/button';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
-import { cleanUrl } from '~/utils/clean-url';
 import { updateOrganizationBodySchema } from '#/modules/organizations/schema';
 
 interface Props {
@@ -45,7 +44,7 @@ const UpdateOrganizationForm = ({ organization, callback, sheet: isSheet }: Prop
       shortName: organization.shortName,
       websiteUrl: organization.websiteUrl,
       emailDomains: organization.emailDomains,
-      thumbnailUrl: cleanUrl(organization.thumbnailUrl),
+      thumbnailUrl: organization.thumbnailUrl,
       notificationEmail: organization.notificationEmail,
       timezone: organization.timezone,
       country: organization.country,

@@ -58,7 +58,6 @@ export const openAttachmentsUploadDialog = (organizationId: string, triggerRef: 
 
     const handleSuccessesRetryCallback = async (result: UploadedUppyFile[], ids: string[]) => {
       handleCallback(result);
-
       deleteAttachments({ orgIdOrSlug: organizationId, ids });
     };
 
@@ -69,7 +68,7 @@ export const openAttachmentsUploadDialog = (organizationId: string, triggerRef: 
         organizationId={organizationId}
         restrictions={{ maxNumberOfFiles, allowedFileTypes: ['*/*'], maxTotalFileSize }}
         plugins={['webcam', 'image-editor', 'screen-capture', 'audio']}
-        imageMode="attachment"
+        templateId="attachment"
         callback={handleCallback}
         onRetrySuccessCallback={handleSuccessesRetryCallback}
       />

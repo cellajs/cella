@@ -32,9 +32,11 @@ export const UploadAvatar = ({ type, id, name, url, setUrl }: UploadAvatarProps)
           isPublic
           uploadType="personal"
           plugins={['webcam', 'image-editor']}
-          imageMode="avatar"
+          templateId="avatar"
           callback={(result) => {
-            const url = result[0].url;
+            console.log('Upload result:', result);
+            // @ts-ignore : TODO find type for transloadit results
+            const url = result.thumbnail[0].url;
             if (url) setUrl(url);
             useDialoger.getState().remove('upload-image');
           }}

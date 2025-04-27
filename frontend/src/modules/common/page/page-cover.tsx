@@ -40,13 +40,15 @@ const PageCover = memo(({ id, canUpdate, url, coverUpdateCallback }: PageCoverPr
     dialog.create(
       <Suspense fallback={<Spinner className="my-44 h-12 w-12" noDelay />}>
         <UploadUppy
-          isPublic={true}
+          isPublic
           organizationId={id}
           uploadType="organization"
           plugins={['webcam', 'image-editor']}
-          imageMode="cover"
+          templateId="cover"
           callback={(result) => {
-            const url = result[0].url;
+            console.log('Upload result:', result);
+            // @ts-ignore : TODO find type for transloadit results
+            const url = result.cover[0].url;
             if (url) setUrl(url);
             dialog.remove('page-cover');
           }}
@@ -65,7 +67,7 @@ const PageCover = memo(({ id, canUpdate, url, coverUpdateCallback }: PageCoverPr
     <div
       data-url={!!url}
       className={`relative flex bg-cover bg-center h-32 ${numberToColorClass(id)} data-[url=true]:h-[20vw] min-h-40 sm:min-w-52`}
-      style={coverUrl ? { backgroundImage: `url(${coverUrl})` } : {}}
+      style={coverUrl ? { backgroundImage: `url(${config.publicCDNUrl}/${coverUrl})` } : {}}
     >
       {canUpdate && config.has.imado && (
         <Button

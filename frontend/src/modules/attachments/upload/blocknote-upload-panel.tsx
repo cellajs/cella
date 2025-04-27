@@ -63,9 +63,11 @@ const UppyFilePanel = ({ onCreateCallback, ...props }: UppyFilePanelProps & File
           <DialogTitle className="h-6">{t('common:upload_item', { item: t(`common:${type}`).toLowerCase() })}</DialogTitle>
           <DialogDescription className="hidden" />
         </DialogHeader>
+        {/* TODO: add organization ID? */}
         <UploadUppy
-          isPublic
+          isPublic={false}
           uploadType="personal"
+          templateId="attachment"
           restrictions={{
             maxFileSize: 10 * 1024 * 1024, // 10MB
             maxNumberOfFiles: 1,
@@ -73,8 +75,8 @@ const UppyFilePanel = ({ onCreateCallback, ...props }: UppyFilePanelProps & File
             maxTotalFileSize: 10 * 1024 * 1024, // 10MB
           }}
           plugins={basicBlockTypes[type].plugins}
-          imageMode="attachment"
           callback={async (result) => {
+            // TODO make work with transloadit
             for (const res of result) {
               const updateData: PartialBlock = {
                 props: {

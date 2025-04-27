@@ -15,15 +15,12 @@ const s3Client = new S3Client({
 /**
  * Generate a presigned URL for a private object in Scaleway Object Storage.
  */
-export async function getImadoUrl(rawUrl: string): Promise<string> {
-  const key = rawUrl.replace(config.privateCDNUrl, '');
-  const keyWithoutSlash = key.startsWith('/') ? key.slice(1) : key;
-
+export async function getImadoUrl(url: string): Promise<string> {
   const signedUrl = await getSignedUrl(
     s3Client,
     new GetObjectCommand({
       Bucket: config.s3PrivateBucket,
-      Key: keyWithoutSlash,
+      Key: url,
     }),
     { expiresIn: 86400 }, // 24 hours
   );

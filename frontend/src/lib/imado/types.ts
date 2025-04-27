@@ -1,4 +1,5 @@
 import type { UppyFile } from '@uppy/core';
+import type { UploadTemplateId } from 'config';
 
 export type UppyMeta = { public?: boolean; contentType?: string; offlineUploaded?: boolean };
 
@@ -15,6 +16,7 @@ export interface UploadParams {
 }
 
 export interface ImadoOptions extends UploadParams {
+  templateId: UploadTemplateId;
   statusEventHandler?: {
     onFileEditorComplete?: (file: LocalFile) => void;
     onUploadStart?: (uploadId: string, files: LocalFile[]) => void;

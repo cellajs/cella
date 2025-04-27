@@ -69,6 +69,8 @@ export const config = {
   privateCDNUrl: 'https://imado-dev-priv.s3.nl-ams.scw.cloud',
   publicCDNUrl: 'https://544ba5eb-2c7a-417f-a5bf-b13950b89755.svc.edge.scw.cloud',
 
+  uploadTemplateIds: ['avatar', 'cover', 'attachment'] as const,
+
   themeColor: '#26262b',
 
   // Theme settings

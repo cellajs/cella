@@ -29,6 +29,7 @@ import { getParsedSessionCookie, invalidateSessionById, invalidateUserSessions, 
 import { checkSlugAvailable } from '../entities/helpers/check-slug';
 import { membershipSelect } from '../memberships/helpers/select';
 import { getUserSessions } from './helpers/get-sessions';
+import { uploadTemplates } from './helpers/upload-templates';
 import meRouteConfig from './routes';
 import type { menuItemSchema, userMenuSchema } from './schema';
 
@@ -285,9 +286,7 @@ const meRoutes = app
    */
   .openapi(meRouteConfig.getUploadToken, async (ctx) => {
     const user = getContextUser();
-    const { public: isPublic, organization } = ctx.req.valid('query');
-    console.log('isPublic', isPublic);
-    console.log('organization', organization);
+    const { public: isPublic, organization, templateId } = ctx.req.valid('query');
 
     // This will be used to as first part of S3 key
     const sub = organization ? `${organization}/${user.id}` : user.id;
@@ -305,6 +304,8 @@ const meRoutes = app
       return errorResponse(ctx, 500, 'missing_auth_key', 'error');
     }
 
+    const template = uploadTemplates[templateId];
+
     const params = {
       auth: {
         key: authKey,
@@ -315,25 +316,11 @@ const meRoutes = app
         ':original': {
           robot: '/upload/handle',
         },
-        'converted-image': {
-          use: ':original',
-          robot: '/image/resize',
-          format: 'webp',
-        },
-        'resized-image': {
-          use: 'converted-image',
-          robot: '/image/resize',
-          resize_strategy: 'fit',
-          width: 100,
-          height: 100,
-        },
-        'compressed-image': {
-          use: 'resized-image',
-          robot: '/image/optimize',
-          progressive: true,
-        },
+        // Inject steps based on template: avatar thumbnail, cover image, attachments ...
+        ...template.steps,
         exported: {
-          use: [':original', 'compressed-image'],
+          // Use is also based on template data
+          use: template.use,
           robot: '/s3/store',
           credentials: isPublic ? 'imado-dev' : 'imado-dev-priv',
           host: 's3.nl-ams.scw.cloud',

@@ -1,28 +1,10 @@
 import { onlineManager } from '@tanstack/react-query';
 import { Uppy, type UppyFile, type UppyOptions } from '@uppy/core';
 import Transloadit from '@uppy/transloadit';
-import { config } from 'config';
 import type { LocalFile, UppyBody, UppyMeta } from '~/lib/imado/types';
 import { LocalFileStorage } from '~/modules/attachments/local-file-storage';
 import { nanoid } from '~/utils/nanoid';
 import type { UploadTokenData } from '.';
-
-/**
- * Transforms an uploaded file by constructing its final URL.
- *
- * @param file - Fle object containing metadata and upload details.
- * @param token - JWT token used to extract the user's subscription info.
- * @param isPublic - Flag indicating whether the file is public or private.
- * @returns An object containing the file and its final URL.
- */
-export const transformUploadedFile = (file: UppyFile<UppyMeta, UppyBody>, token: UploadTokenData, isPublic: boolean) => {
-  // Define the root URL for the uploaded files (public or private CDN)
-  const rootUrl = isPublic ? config.publicCDNUrl : config.privateCDNUrl;
-  const cleanUrl = `${rootUrl}/${token.sub}/${file.id}.${file.name}`;
-  const url = new URL(cleanUrl);
-
-  return { file, url: url.toString() };
-};
 
 /**
  * Prepares files for offline storage and returns successfully uploaded files.

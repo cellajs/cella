@@ -1,3 +1,4 @@
+import { config } from 'config';
 import { z } from 'zod';
 import { createRouteConfig } from '#/lib/route-config';
 import { isAuthenticated, isPublicAccess } from '#/middlewares/guard';
@@ -206,6 +207,7 @@ class MeRouteConfig {
       query: z.object({
         public: booleanQuerySchema,
         organization: z.string().optional(),
+        templateId: z.enum(config.uploadTemplateIds),
       }),
     },
     responses: {
