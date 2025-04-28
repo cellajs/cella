@@ -15,14 +15,14 @@ const s3Client = new S3Client({
 /**
  * Generate a presigned URL for a private object in Scaleway Object Storage.
  */
-export async function getImadoUrl(url: string): Promise<string> {
+export async function getImadoUrl(url: string, expiresIn = 86400): Promise<string> {
   const signedUrl = await getSignedUrl(
     s3Client,
     new GetObjectCommand({
       Bucket: config.s3PrivateBucket,
       Key: url,
     }),
-    { expiresIn: 86400 }, // 24 hours
+    { expiresIn }, // Default 24 hours
   );
 
   return signedUrl;

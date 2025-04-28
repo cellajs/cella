@@ -9,6 +9,7 @@ import { parseUploadedAttachments } from '~/modules/attachments/helpers';
 import UploadUppy from '~/modules/attachments/upload/upload-uppy';
 import { customSchema } from '~/modules/common/blocknote/blocknote-config';
 import { focusEditor } from '~/modules/common/blocknote/helpers';
+import { getPriasignedUrl } from '~/modules/system/api';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '~/modules/ui/dialog';
 
 const basicBlockTypes = {
@@ -80,11 +81,20 @@ const UppyFilePanel = ({ organizationId, onCreateCallback, ...props }: UppyFileP
           callback={async (result) => {
             const attachments = parseUploadedAttachments(result, organizationId ?? 'prewiew');
 
-            for (const attachment of attachments) {
+            // Map all attachments to promises of getting presigned URLs
+            const presignedUrls = await Promise.all(attachments.map((attachment) => getPriasignedUrl({ key: attachment.url })));
+            for (let index = 0; index < attachments.length; index++) {
+              const attachment = attachments[index];
+              //TODO(IMPROVE) preasigned url creation after upload on server
+              const presignedUrl = presignedUrls[index];
+
               const updateData: PartialBlock = {
-                // TODO(TRANSLOADIT) add signed url for return url
-                props: { name: attachment.filename, url: attachment.url },
+                props: {
+                  name: attachment.filename,
+                  url: presignedUrl ?? attachment.url,
+                },
               };
+
               editor.updateBlock(block, updateData);
             }
             onCreateCallback?.(result);
