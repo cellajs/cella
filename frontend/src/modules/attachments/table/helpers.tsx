@@ -1,12 +1,11 @@
 import { t } from 'i18next';
 import { type RefObject, Suspense } from 'react';
-import { processedSteps } from '~/lib/imado/helpers';
 import type { UploadedUppyFile } from '~/lib/imado/types';
+import { parseUploadedAttachments } from '~/modules/attachments/helpers';
 import { useAttachmentCreateMutation, useAttachmentDeleteMutation } from '~/modules/attachments/query/mutations';
 import UploadUppy from '~/modules/attachments/upload/upload-uppy';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import Spinner from '~/modules/common/spinner';
-import { nanoid } from '~/utils/nanoid';
 
 /**
  * Utility function to format bytes into human-readable format
@@ -44,51 +43,7 @@ export const openAttachmentsUploadDialog = (organizationId: string, triggerRef: 
     const { mutate: deleteAttachments } = useAttachmentDeleteMutation();
 
     const handleCallback = (result: UploadedUppyFile<'attachment'>) => {
-      console.log('Upload result:', result);
-
-      const attachments = [];
-
-      // Track file ids that we already processed
-      const processedFileIds = new Set<string>();
-
-      // First, handle all processed steps
-      for (const step of processedSteps) {
-        const files = result[step];
-        if (!files) continue;
-
-        for (const { id, size, type, ext, url, original_name, original_id } of files) {
-          attachments.push({
-            id: id || nanoid(),
-            url,
-            size: String(size || 0),
-            contentType: type || ext,
-            filename: original_name || 'unknown',
-            organizationId,
-            type: step.startsWith('converted_') ? step.replace('converted_', '') : 'thumbnail', // 'image', 'audio', 'document', or 'thumbnail'
-          });
-
-          // Mark this file url as processed
-          processedFileIds.add(original_id);
-        }
-      }
-
-      // Now, handle any leftover original files that were NOT processed
-      const originalFiles = result[':original'] || [];
-      for (const { id, size, type, ext, url, original_name, original_id } of originalFiles) {
-        // Already handled by processed steps, skip
-        if (processedFileIds.has(original_id)) continue;
-
-        attachments.push({
-          id: id || nanoid(),
-          url,
-          size: String(size || 0),
-          contentType: type || ext,
-          filename: original_name || 'unknown',
-          organizationId,
-          type: 'raw', // fallback type for unprocessed original uploads (e.g., zip, csv, etc.)
-        });
-      }
-
+      const attachments = parseUploadedAttachments(result, organizationId);
       // Save attachments
       createAttachments({ attachments, orgIdOrSlug: organizationId });
 

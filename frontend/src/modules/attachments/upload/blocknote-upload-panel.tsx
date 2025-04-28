@@ -5,6 +5,7 @@ import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useOnlineManager } from '~/hooks/use-online-manager';
 import type { UploadedUppyFile } from '~/lib/imado/types';
+import { parseUploadedAttachments } from '~/modules/attachments/helpers';
 import UploadUppy from '~/modules/attachments/upload/upload-uppy';
 import { customSchema } from '~/modules/common/blocknote/blocknote-config';
 import { focusEditor } from '~/modules/common/blocknote/helpers';
@@ -30,10 +31,11 @@ const basicBlockTypes = {
 };
 
 interface UppyFilePanelProps {
+  organizationId?: string;
   onCreateCallback?: (result: UploadedUppyFile<'attachment'>) => void;
 }
 
-const UppyFilePanel = ({ onCreateCallback, ...props }: UppyFilePanelProps & FilePanelProps) => {
+const UppyFilePanel = ({ organizationId, onCreateCallback, ...props }: UppyFilePanelProps & FilePanelProps) => {
   const { t } = useTranslation();
   const { block } = props;
   const { isOnline } = useOnlineManager();
@@ -63,11 +65,11 @@ const UppyFilePanel = ({ onCreateCallback, ...props }: UppyFilePanelProps & File
           <DialogTitle className="h-6">{t('common:upload_item', { item: t(`common:${type}`).toLowerCase() })}</DialogTitle>
           <DialogDescription className="hidden" />
         </DialogHeader>
-        {/* TODO(TRANSLOADIT) add optional organization ID for raak? */}
         <UploadUppy
           isPublic={false}
           uploadType="personal"
           templateId="attachment"
+          organizationId={organizationId}
           restrictions={{
             maxFileSize: 10 * 1024 * 1024, // 10MB
             maxNumberOfFiles: 1,
@@ -76,13 +78,12 @@ const UppyFilePanel = ({ onCreateCallback, ...props }: UppyFilePanelProps & File
           }}
           plugins={basicBlockTypes[type].plugins}
           callback={async (result) => {
-            // TODO(TRANSLOADIT) make work with transloadit
-            for (const res of Array.isArray(result) ? result : [result]) {
+            const attachments = parseUploadedAttachments(result, organizationId ?? 'prewiew');
+
+            for (const attachment of attachments) {
               const updateData: PartialBlock = {
-                props: {
-                  name: res.file.name,
-                  url: res.url,
-                },
+                // TODO(TRANSLOADIT) add signed url for return url
+                props: { name: attachment.filename, url: attachment.url },
               };
               editor.updateBlock(block, updateData);
             }

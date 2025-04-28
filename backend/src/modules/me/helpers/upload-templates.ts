@@ -13,7 +13,7 @@ const avatar = {
       height: 200,
     },
   },
-  use: ['thumbnail'],
+  use: ['thumbnail'] as const,
 };
 
 const cover = {
@@ -31,7 +31,7 @@ const cover = {
       height: 700,
     },
   },
-  use: ['cover'],
+  use: ['cover'] as const,
 };
 
 // @link https://transloadit.com/docs/transcoding/file-filtering/file-filter/
@@ -91,7 +91,7 @@ const attachment = {
       height: 360,
     },
   },
-  use: [':original', 'document_thumb', 'video_thumb', 'converted_image', 'converted_audio', 'converted_document'],
+  use: [':original', 'document_thumb', 'video_thumb', 'converted_image', 'converted_audio', 'converted_document'] as const,
 };
 
 export const uploadTemplates = {
