@@ -63,7 +63,7 @@ const UppyFilePanel = ({ onCreateCallback, ...props }: UppyFilePanelProps & File
           <DialogTitle className="h-6">{t('common:upload_item', { item: t(`common:${type}`).toLowerCase() })}</DialogTitle>
           <DialogDescription className="hidden" />
         </DialogHeader>
-        {/* TODO: add organization ID? */}
+        {/* TODO(TRANSLOADIT) add optional organization ID for raak? */}
         <UploadUppy
           isPublic={false}
           uploadType="personal"
@@ -76,7 +76,7 @@ const UppyFilePanel = ({ onCreateCallback, ...props }: UppyFilePanelProps & File
           }}
           plugins={basicBlockTypes[type].plugins}
           callback={async (result) => {
-            // TODO make work with transloadit
+            // TODO(TRANSLOADIT) make work with transloadit
             for (const res of result) {
               const updateData: PartialBlock = {
                 props: {

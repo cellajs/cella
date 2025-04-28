@@ -111,7 +111,7 @@ export async function ImadoUppy(
       // Initialize a new Uppy instance to retry the upload
       const retryImadoUppy = createBaseTusUppy(uppyOptions, imadoToken, isPublic);
 
-      //TODO add transloadit logic here
+      //TODO(TRANSLOADIT) also add transloadit logic here
       // Add files to the new Uppy instance
       const validFiles = offlineUploadedFiles.map((file) => ({ ...file, name: file.name || `${file.type}-${file.id}` }));
       retryImadoUppy.addFiles(validFiles);

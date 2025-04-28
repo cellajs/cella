@@ -47,7 +47,7 @@ const PageCover = memo(({ id, canUpdate, url, coverUpdateCallback }: PageCoverPr
           templateId="cover"
           callback={(result) => {
             console.log('Upload result:', result);
-            // @ts-ignore : TODO find type for transloadit results
+            // @ts-ignore : TODO(TRANSLOADIT) find type for transloadit results
             const url = result.cover[0].url;
             if (url) setUrl(url);
             dialog.remove('page-cover');

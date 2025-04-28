@@ -83,7 +83,6 @@ export const deleteMySessions = async (sessionIds: string[]) => {
  *
  * @link https://imado.eu
  */
-// TODO remove this and use getUploadToken directly
 export const getUploadToken = async (
   type: 'organization' | 'personal',
   templateId: UploadTemplateId,
