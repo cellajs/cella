@@ -42,17 +42,73 @@ export const openAttachmentsUploadDialog = (organizationId: string, triggerRef: 
     const { mutate: createAttachments } = useAttachmentCreateMutation();
     const { mutate: deleteAttachments } = useAttachmentDeleteMutation();
 
-    const handleCallback = (result: UploadedUppyFile[]) => {
-      const attachments = result.map(({ file, url }) => ({
-        id: file.id || nanoid(),
-        url,
-        size: String(file.size || 0),
-        contentType: file.type,
-        filename: file.name || 'unknown',
-        organizationId,
-      }));
+    type UploadedUppyFile = {
+      [key: string]: Array<{
+        file: {
+          id: string;
+          size: number;
+          type: string;
+          name: string;
+        };
+        url: string;
+      }>;
+    };
 
+    const handleCallback = (result: UploadedUppyFile) => {
+      console.log('Upload result:', result);
+
+      const attachments = [];
+
+      // Steps we expect processed versions from
+      const processedSteps = ['converted_image', 'converted_audio', 'converted_document', 'document_thumb', 'video_thumb'];
+
+      // Track file ids that we already processed
+      const processedFileIds = new Set<string>();
+
+      // First, handle all processed steps
+      for (const step of processedSteps) {
+        const files = result[step];
+        if (!files) continue;
+
+        for (const { file, url } of files) {
+          attachments.push({
+            id: file.id || nanoid(),
+            url,
+            size: String(file.size || 0),
+            contentType: file.type,
+            filename: file.name || 'unknown',
+            organizationId,
+            type: step.startsWith('converted_') ? step.replace('converted_', '') : 'thumbnail', // 'image', 'audio', 'document', or 'thumbnail'
+          });
+
+          // Mark this file ID as processed
+          processedFileIds.add(file.id);
+        }
+      }
+
+      // Now, handle any leftover original files that were NOT processed
+      const originalFiles = result[':original'] || [];
+      for (const { file, url } of originalFiles) {
+        if (processedFileIds.has(file.id)) {
+          // Already handled by processed steps, skip
+          continue;
+        }
+
+        attachments.push({
+          id: file.id || nanoid(),
+          url,
+          size: String(file.size || 0),
+          contentType: file.type,
+          filename: file.name || 'unknown',
+          organizationId,
+          type: 'raw', // fallback type for unprocessed original uploads (e.g., zip, csv, etc.)
+        });
+      }
+
+      // Save attachments
       createAttachments({ attachments, orgIdOrSlug: organizationId });
+
+      // Close the upload dialog
       useDialoger.getState().remove('upload-attachment');
     };
 

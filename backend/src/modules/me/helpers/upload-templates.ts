@@ -34,29 +34,48 @@ const cover = {
   use: ['cover'],
 };
 
+// @link https://transloadit.com/docs/transcoding/file-filtering/file-filter/
 const attachment = {
   steps: {
-    converted_image: {
+    filter_images: {
       use: ':original',
+      robot: '/file/filter',
+      accepts: [['${file.mime}', 'regex', '^image/']],
+    },
+    filter_documents: {
+      use: ':original',
+      robot: '/file/filter',
+      accepts: [
+        ['${file.mime}', 'regex', '^application/(msword|vnd\\.openxmlformats-officedocument.*|pdf)$'],
+        ['${file.mime}', 'regex', '^text/'],
+      ],
+    },
+    filter_audio: {
+      use: ':original',
+      robot: '/file/filter',
+      accepts: [['${file.mime}', 'regex', '^audio/']],
+    },
+    converted_image: {
+      use: 'filter_images',
       robot: '/image/resize',
       resize_strategy: 'fit',
-      width: 800,
-      height: 800,
+      width: 1800,
+      height: 1800,
       format: 'webp',
     },
     converted_audio: {
-      use: ':original',
+      use: 'filter_audio',
       robot: '/audio/encode',
       preset: 'mp3',
     },
     converted_document: {
-      use: ':original',
+      use: 'filter_documents',
       robot: '/document/convert',
       format: 'pdf',
       accepted: ['doc', 'docx', 'html', 'latex', 'md', 'odt', 'ppt', 'pptx', 'rtf', 'txt', 'xhtml', 'xls', 'xlsx'],
     },
     document_thumb: {
-      use: ':original',
+      use: 'filter_documents',
       robot: '/document/thumbs',
       count: 1,
       format: 'png',
