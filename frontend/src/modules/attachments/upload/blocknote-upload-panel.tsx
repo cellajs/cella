@@ -30,7 +30,7 @@ const basicBlockTypes = {
 };
 
 interface UppyFilePanelProps {
-  onCreateCallback?: (result: UploadedUppyFile[]) => void;
+  onCreateCallback?: (result: UploadedUppyFile) => void;
 }
 
 const UppyFilePanel = ({ onCreateCallback, ...props }: UppyFilePanelProps & FilePanelProps) => {
@@ -77,7 +77,7 @@ const UppyFilePanel = ({ onCreateCallback, ...props }: UppyFilePanelProps & File
           plugins={basicBlockTypes[type].plugins}
           callback={async (result) => {
             // TODO(TRANSLOADIT) make work with transloadit
-            for (const res of result) {
+            for (const res of Array.isArray(result) ? result : [result]) {
               const updateData: PartialBlock = {
                 props: {
                   name: res.file.name,

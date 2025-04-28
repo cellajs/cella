@@ -1,10 +1,11 @@
 import { onlineManager } from '@tanstack/react-query';
 import { Uppy, type UppyFile, type UppyOptions } from '@uppy/core';
 import Transloadit from '@uppy/transloadit';
-import type { LocalFile, UppyBody, UppyMeta } from '~/lib/imado/types';
+import type { LocalFile, UploadTokenData, UppyBody, UppyMeta } from '~/lib/imado/types';
 import { LocalFileStorage } from '~/modules/attachments/local-file-storage';
 import { nanoid } from '~/utils/nanoid';
-import type { UploadTokenData } from '.';
+
+export const processedSteps = ['converted_image', 'converted_audio', 'converted_document', 'document_thumb', 'video_thumb'] as const;
 
 /**
  * Prepares files for offline storage and returns successfully uploaded files.

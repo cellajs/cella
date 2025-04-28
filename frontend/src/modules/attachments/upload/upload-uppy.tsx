@@ -25,8 +25,8 @@ export interface UploadUppyProps {
   restrictions?: Partial<UppyOptions<UppyMeta, UppyBody>['restrictions']>;
   templateId?: UploadTemplateId;
   organizationId?: string;
-  callback?: (result: UploadedUppyFile[]) => void;
-  onRetrySuccessCallback?: (result: UploadedUppyFile[], previousIds: string[]) => void;
+  callback?: (result: UploadedUppyFile) => void;
+  onRetrySuccessCallback?: (result: UploadedUppyFile, previousIds: string[]) => void;
 }
 
 const uppyRestrictions = config.uppy.defaultRestrictions;

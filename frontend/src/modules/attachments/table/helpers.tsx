@@ -1,5 +1,6 @@
 import { t } from 'i18next';
 import { type RefObject, Suspense } from 'react';
+import { processedSteps } from '~/lib/imado/helpers';
 import type { UploadedUppyFile } from '~/lib/imado/types';
 import { useAttachmentCreateMutation, useAttachmentDeleteMutation } from '~/modules/attachments/query/mutations';
 import UploadUppy from '~/modules/attachments/upload/upload-uppy';
@@ -42,25 +43,10 @@ export const openAttachmentsUploadDialog = (organizationId: string, triggerRef: 
     const { mutate: createAttachments } = useAttachmentCreateMutation();
     const { mutate: deleteAttachments } = useAttachmentDeleteMutation();
 
-    type UploadedUppyFile = {
-      [key: string]: Array<{
-        file: {
-          id: string;
-          size: number;
-          type: string;
-          name: string;
-        };
-        url: string;
-      }>;
-    };
-
     const handleCallback = (result: UploadedUppyFile) => {
       console.log('Upload result:', result);
 
       const attachments = [];
-
-      // Steps we expect processed versions from
-      const processedSteps = ['converted_image', 'converted_audio', 'converted_document', 'document_thumb', 'video_thumb'];
 
       // Track file ids that we already processed
       const processedFileIds = new Set<string>();
@@ -70,36 +56,34 @@ export const openAttachmentsUploadDialog = (organizationId: string, triggerRef: 
         const files = result[step];
         if (!files) continue;
 
-        for (const { file, url } of files) {
+        for (const { id, size, type, ext, url, original_name, original_id } of files) {
           attachments.push({
-            id: file.id || nanoid(),
+            id: id || nanoid(),
             url,
-            size: String(file.size || 0),
-            contentType: file.type,
-            filename: file.name || 'unknown',
+            size: String(size || 0),
+            contentType: type || ext,
+            filename: original_name || 'unknown',
             organizationId,
             type: step.startsWith('converted_') ? step.replace('converted_', '') : 'thumbnail', // 'image', 'audio', 'document', or 'thumbnail'
           });
 
-          // Mark this file ID as processed
-          processedFileIds.add(file.id);
+          // Mark this file url as processed
+          processedFileIds.add(original_id);
         }
       }
 
       // Now, handle any leftover original files that were NOT processed
       const originalFiles = result[':original'] || [];
-      for (const { file, url } of originalFiles) {
-        if (processedFileIds.has(file.id)) {
-          // Already handled by processed steps, skip
-          continue;
-        }
+      for (const { id, size, type, ext, url, original_name, original_id } of originalFiles) {
+        // Already handled by processed steps, skip
+        if (processedFileIds.has(original_id)) continue;
 
         attachments.push({
-          id: file.id || nanoid(),
+          id: id || nanoid(),
           url,
-          size: String(file.size || 0),
-          contentType: file.type,
-          filename: file.name || 'unknown',
+          size: String(size || 0),
+          contentType: type || ext,
+          filename: original_name || 'unknown',
           organizationId,
           type: 'raw', // fallback type for unprocessed original uploads (e.g., zip, csv, etc.)
         });
@@ -112,7 +96,7 @@ export const openAttachmentsUploadDialog = (organizationId: string, triggerRef: 
       useDialoger.getState().remove('upload-attachment');
     };
 
-    const handleSuccessesRetryCallback = async (result: UploadedUppyFile[], ids: string[]) => {
+    const handleSuccessesRetryCallback = async (result: UploadedUppyFile, ids: string[]) => {
       handleCallback(result);
       deleteAttachments({ orgIdOrSlug: organizationId, ids });
     };

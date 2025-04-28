@@ -2,19 +2,15 @@ import { onlineManager } from '@tanstack/react-query';
 import type { Uppy, UppyOptions } from '@uppy/core';
 import { config } from 'config';
 import { t } from 'i18next';
-import type { z } from 'zod';
 import { createBaseTusUppy, prepareFilesForOffline } from '~/lib/imado/helpers';
-import type { ImadoOptions, UppyBody, UppyMeta } from '~/lib/imado/types';
+import type { ImadoOptions, UploadTokenData, UppyBody, UppyMeta } from '~/lib/imado/types';
 import { LocalFileStorage } from '~/modules/attachments/local-file-storage';
 import type { UploadUppyProps } from '~/modules/attachments/upload/upload-uppy';
 import { toaster } from '~/modules/common/toaster';
 import { getUploadToken } from '~/modules/me/api';
-import type { uploadTokenBodySchema } from '#/modules/me/schema';
 
 import '@uppy/core/dist/style.min.css';
 import { cleanFileName } from '~/utils/clean-file-name';
-
-export type UploadTokenData = z.infer<typeof uploadTokenBodySchema>;
 
 /**
  * Initialize Uppy with Imado configuration.
