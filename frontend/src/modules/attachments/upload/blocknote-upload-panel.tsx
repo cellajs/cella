@@ -30,7 +30,7 @@ const basicBlockTypes = {
 };
 
 interface UppyFilePanelProps {
-  onCreateCallback?: (result: UploadedUppyFile) => void;
+  onCreateCallback?: (result: UploadedUppyFile<'attachment'>) => void;
 }
 
 const UppyFilePanel = ({ onCreateCallback, ...props }: UppyFilePanelProps & FilePanelProps) => {

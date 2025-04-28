@@ -46,8 +46,6 @@ const PageCover = memo(({ id, canUpdate, url, coverUpdateCallback }: PageCoverPr
           plugins={['webcam', 'image-editor']}
           templateId="cover"
           callback={(result) => {
-            console.log('Upload result:', result);
-            // @ts-ignore : TODO(TRANSLOADIT) find type for transloadit results
             const url = result.cover[0].url;
             if (url) setUrl(url);
             dialog.remove('page-cover');

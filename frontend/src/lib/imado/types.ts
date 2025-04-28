@@ -1,9 +1,9 @@
+import type { uploadTemplates } from '#/modules/me/helpers/upload-templates';
 import type { uploadTokenBodySchema } from '#/modules/me/schema';
 
 import type { UppyFile } from '@uppy/core';
 import type { UploadTemplateId } from 'config';
 import type { z } from 'zod';
-import type { processedSteps } from '~/lib/imado/helpers';
 
 export type UppyMeta = { public?: boolean; contentType?: string; offlineUploaded?: boolean };
 
@@ -24,13 +24,22 @@ export interface ImadoOptions extends UploadParams {
     onFileEditorComplete?: (file: LocalFile) => void;
     onUploadStart?: (uploadId: string, files: LocalFile[]) => void;
     onError?: (error: Error) => void;
-    onComplete?: (mappedResult: UploadedUppyFile) => void;
-    onRetrySuccess?: (mappedResult: UploadedUppyFile, localStoreIds: string[]) => void;
+    onComplete?: (mappedResult: UploadedUppyFile<UploadTemplateId>) => void;
+    onRetrySuccess?: (mappedResult: UploadedUppyFile<UploadTemplateId>, localStoreIds: string[]) => void;
   };
 }
 
-// Type that represents the keys from processedSteps plus ":original"
-type ProcessedStepKeys = (typeof processedSteps)[number] | ':original';
+type TemplateStepKeys<T extends UploadTemplateId> = (typeof uploadTemplates)[T]['use'][number];
+
+type ImadoUserMeta = {
+  contentType: string;
+  filetype: string;
+  name: string;
+  offlineUploaded: string;
+  public: string;
+  relativePath: string;
+  type: string;
+};
 
 type UploadedFile<T = Record<string, unknown>> = {
   basename: string;
@@ -61,6 +70,6 @@ type UploadedFile<T = Record<string, unknown>> = {
 };
 
 // Use a mapped object type for the index signature
-export type UploadedUppyFile = {
-  [key in ProcessedStepKeys]: UploadedFile[];
+export type UploadedUppyFile<T extends UploadTemplateId, K = ImadoUserMeta> = {
+  [key in TemplateStepKeys<T>]: UploadedFile<K>[];
 };

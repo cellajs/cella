@@ -43,7 +43,7 @@ export const openAttachmentsUploadDialog = (organizationId: string, triggerRef: 
     const { mutate: createAttachments } = useAttachmentCreateMutation();
     const { mutate: deleteAttachments } = useAttachmentDeleteMutation();
 
-    const handleCallback = (result: UploadedUppyFile) => {
+    const handleCallback = (result: UploadedUppyFile<'attachment'>) => {
       console.log('Upload result:', result);
 
       const attachments = [];
@@ -96,7 +96,7 @@ export const openAttachmentsUploadDialog = (organizationId: string, triggerRef: 
       useDialoger.getState().remove('upload-attachment');
     };
 
-    const handleSuccessesRetryCallback = async (result: UploadedUppyFile, ids: string[]) => {
+    const handleSuccessesRetryCallback = async (result: UploadedUppyFile<'attachment'>, ids: string[]) => {
       handleCallback(result);
       deleteAttachments({ orgIdOrSlug: organizationId, ids });
     };

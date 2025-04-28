@@ -1,3 +1,10 @@
+import '@uppy/audio/dist/style.css';
+import '@uppy/dashboard/dist/style.min.css';
+import '@uppy/image-editor/dist/style.css';
+import '@uppy/screen-capture/dist/style.css';
+import '@uppy/webcam/dist/style.css';
+import '~/modules/attachments/upload/uppy.css';
+
 import Audio from '@uppy/audio';
 import type { Uppy, UppyOptions } from '@uppy/core';
 import ImageEditor, { type ImageEditorOptions } from '@uppy/image-editor';
@@ -11,13 +18,6 @@ import type { UploadedUppyFile, UppyBody, UppyMeta } from '~/lib/imado/types';
 import { getImageEditorOptions } from '~/modules/attachments/upload/image-editor-options';
 import { useUIStore } from '~/store/ui';
 
-import '@uppy/audio/dist/style.css';
-import '@uppy/dashboard/dist/style.min.css';
-import '@uppy/image-editor/dist/style.css';
-import '@uppy/screen-capture/dist/style.css';
-import '@uppy/webcam/dist/style.css';
-import '~/modules/attachments/upload/uppy.css';
-
 export interface UploadUppyProps {
   uploadType: 'organization' | 'personal';
   isPublic: boolean;
@@ -25,8 +25,8 @@ export interface UploadUppyProps {
   restrictions?: Partial<UppyOptions<UppyMeta, UppyBody>['restrictions']>;
   templateId?: UploadTemplateId;
   organizationId?: string;
-  callback?: (result: UploadedUppyFile) => void;
-  onRetrySuccessCallback?: (result: UploadedUppyFile, previousIds: string[]) => void;
+  callback?: (result: UploadedUppyFile<UploadTemplateId>) => void;
+  onRetrySuccessCallback?: (result: UploadedUppyFile<UploadTemplateId>, previousIds: string[]) => void;
 }
 
 const uppyRestrictions = config.uppy.defaultRestrictions;
@@ -87,9 +87,7 @@ export const UploadUppy = ({
           preferredVideoMimeType: 'video/webm;codecs=vp9',
         };
 
-        if (['cover', 'avatar'].includes(templateId)) {
-          webcamOptions.modes = ['picture'];
-        }
+        if (['cover', 'avatar'].includes(templateId)) webcamOptions.modes = ['picture'];
 
         if (plugins.includes('webcam')) imadoUppy.use(Webcam, webcamOptions);
         if (plugins.includes('image-editor')) imadoUppy.use(ImageEditor, imageEditorOptions);

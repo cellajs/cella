@@ -35,7 +35,6 @@ export const UploadAvatar = ({ type, id, name, url, setUrl }: UploadAvatarProps)
           templateId="avatar"
           callback={(result) => {
             console.log('Upload result:', result);
-            // @ts-ignore : TODO(TRANSLOADIT) find type for transloadit results
             const url = result.thumbnail[0].url;
             if (url) setUrl(url);
             useDialoger.getState().remove('upload-image');

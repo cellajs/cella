@@ -1,3 +1,5 @@
+import '@uppy/core/dist/style.min.css';
+
 import { onlineManager } from '@tanstack/react-query';
 import type { Uppy, UppyOptions } from '@uppy/core';
 import { config } from 'config';
@@ -9,7 +11,6 @@ import type { UploadUppyProps } from '~/modules/attachments/upload/upload-uppy';
 import { toaster } from '~/modules/common/toaster';
 import { getUploadToken } from '~/modules/me/api';
 
-import '@uppy/core/dist/style.min.css';
 import { cleanFileName } from '~/utils/clean-file-name';
 
 /**
