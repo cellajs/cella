@@ -2,6 +2,7 @@ import type { uploadTemplates } from '#/modules/me/helpers/upload-templates';
 import type { uploadTokenBodySchema } from '#/modules/me/schema';
 
 import type { UppyFile } from '@uppy/core';
+import type { AssemblyResult } from '@uppy/transloadit';
 import type { UploadTemplateId } from 'config';
 import type { z } from 'zod';
 
@@ -41,31 +42,7 @@ type ImadoUserMeta = {
   type: string;
 };
 
-type UploadedFile<T = Record<string, unknown>> = {
-  basename: string;
-  cost: number;
-  exec_time: number;
-  ext: string;
-  field: string;
-  from_batch_import: boolean;
-  id: string;
-  is_temp_url: boolean;
-  is_tus_file: boolean;
-  md5hash: string;
-  mime: string;
-  name: string;
-  original_basename: string;
-  original_id: string;
-  original_md5hash: string;
-  original_name: string;
-  original_path: string;
-  queue: string;
-  queue_time: number;
-  size: number;
-  ssl_url: string;
-  tus_upload_url: string | null;
-  type: string | null;
-  url: string;
+type UploadedFile<T = Record<string, unknown>> = AssemblyResult & {
   user_meta: T;
 };
 

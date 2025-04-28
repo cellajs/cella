@@ -2,15 +2,15 @@ import '@uppy/core/dist/style.min.css';
 
 import { onlineManager } from '@tanstack/react-query';
 import type { Uppy, UppyOptions } from '@uppy/core';
-import { config } from 'config';
+import type { AssemblyResponse } from '@uppy/transloadit';
+import { type UploadTemplateId, config } from 'config';
 import { t } from 'i18next';
-import { createBaseTusUppy, prepareFilesForOffline } from '~/lib/imado/helpers';
-import type { ImadoOptions, UploadTokenData, UppyBody, UppyMeta } from '~/lib/imado/types';
+import { createBaseTransloaditUppy, prepareFilesForOffline } from '~/lib/imado/helpers';
+import type { ImadoOptions, UploadTokenData, UploadedUppyFile, UppyBody, UppyMeta } from '~/lib/imado/types';
 import { LocalFileStorage } from '~/modules/attachments/local-file-storage';
 import type { UploadUppyProps } from '~/modules/attachments/upload/upload-uppy';
 import { toaster } from '~/modules/common/toaster';
 import { getUploadToken } from '~/modules/me/api';
-
 import { cleanFileName } from '~/utils/clean-file-name';
 
 /**
@@ -40,7 +40,7 @@ export async function ImadoUppy(
     if (!token) throw new Error('Failed to get upload token');
   }
 
-  const imadoUppy = createBaseTusUppy(
+  const imadoUppy = createBaseTransloaditUppy(
     {
       ...uppyOptions,
       onBeforeUpload: (files) => {
@@ -76,20 +76,16 @@ export async function ImadoUppy(
       console.error('Upload error:', error);
       opts.statusEventHandler?.onError?.(error);
     })
-    .on('complete', ({ transloadit }) => {
-      console.info('Upload complete:', transloadit);
+    .on('transloadit:complete', (assembly: AssemblyResponse) => {
+      console.info('Upload complete:', assembly);
 
-      // @ts-expect-error biome-ignore lint/suspicious/noExplicitAny:
-      // biome-ignore lint/suspicious/noExplicitAny: <explanation>
-      const successful: any = transloadit[0].results;
-
-      if (!successful) {
+      if (!assembly.ok) {
         console.warn('No successful uploads');
         return;
       }
 
       // Notify the event handler when upload is complete
-      opts.statusEventHandler?.onComplete?.(successful);
+      opts.statusEventHandler?.onComplete?.(assembly.results as UploadedUppyFile<UploadTemplateId>);
     })
     .on('is-online', async () => {
       // When back online, retry uploads
@@ -106,7 +102,7 @@ export async function ImadoUppy(
       imadoUppy.destroy(); // Destroy the current Uppy instance to restart
 
       // Initialize a new Uppy instance to retry the upload
-      const retryImadoUppy = createBaseTusUppy(uppyOptions, imadoToken, isPublic);
+      const retryImadoUppy = createBaseTransloaditUppy(uppyOptions, imadoToken, isPublic);
 
       //TODO(TRANSLOADIT) also add transloadit logic here
       // Add files to the new Uppy instance

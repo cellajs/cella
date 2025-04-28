@@ -28,11 +28,15 @@ export const prepareFilesForOffline = async (files: Record<string, LocalFile>) =
  * Creates and initializes a new Uppy instance with provided options and configuration.
  *
  * @param uppyOptions - Configuration options for Uppy.
- * @param imadoToken - JWT token to authenticate requests for uploading files via Tus.
+ * @param imadoToken - JWT token to authenticate requests for uploading files via Transloadit.
  * @param isPublic -  Flag indicating whether file is public or private.
- * @returns A new Uppy instance configured with specified options and Tus uploader.
+ * @returns A new Uppy instance configured with specified options and Transloadit uploader.
  */
-export const createBaseTusUppy = (uppyOptions: UppyOptions<UppyMeta, UppyBody>, imadoToken: UploadTokenData | undefined, isPublic: boolean) => {
+export const createBaseTransloaditUppy = (
+  uppyOptions: UppyOptions<UppyMeta, UppyBody>,
+  imadoToken: UploadTokenData | undefined,
+  isPublic: boolean,
+) => {
   if (!imadoToken) {
     throw new Error('Imado token is required for uploading files');
   }
