@@ -44,7 +44,6 @@ export const createBaseTusUppy = (uppyOptions: UppyOptions<UppyMeta, UppyBody>, 
   }).use(Transloadit, {
     waitForEncoding: true,
     alwaysRunAssembly: true,
-    // @ts-expect-error TODO(TRANSLOADIT): Fix type error
     assemblyOptions: { params: imadoToken.params, signature: imadoToken.signature },
   });
 };
