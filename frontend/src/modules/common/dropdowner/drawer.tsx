@@ -15,7 +15,7 @@ export default function DropdownDrawer({ dropdown }: { dropdown: InternalDropdow
 
   return (
     <Drawer key={id} open={true} onOpenChange={onOpenChange} onClose={closeDialog} noBodyStyles>
-      <DrawerContent id={String(id)} onEscapeKeyDown={closeDialog} className="z-301" isDropdown>
+      <DrawerContent id={String(id)} onEscapeKeyDown={closeDialog} className="z-301 max-h-[70vh]" isDropdown>
         <DrawerHeader className="p-0">
           <VisuallyHidden>
             <DrawerTitle>Choose</DrawerTitle>
