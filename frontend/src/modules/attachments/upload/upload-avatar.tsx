@@ -34,7 +34,6 @@ export const UploadAvatar = ({ type, id, name, url, setUrl }: UploadAvatarProps)
           plugins={['webcam', 'image-editor']}
           templateId="avatar"
           callback={(result) => {
-            console.log('Upload result:', result);
             const url = result.thumbnail[0].url;
             if (url) setUrl(url);
             useDialoger.getState().remove('upload-image');

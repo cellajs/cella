@@ -52,13 +52,14 @@ export async function ImadoUppy(
         }
 
         if (canUpload) return true;
-        // If not online, prepare the files for offline storage and emit complete event
-        prepareFilesForOffline(files).then((successful) => imadoUppy.emit('complete', { successful, failed: [] }));
+        // If not online, prepare the files for offline storage and emit transloadit:complete event
+        prepareFilesForOffline(files, opts.templateId).then((assembly) => imadoUppy.emit('transloadit:complete', assembly));
         return config.has.imado; // Prevent upload if Imado is unavailable
       },
     },
     token,
     isPublic,
+    canUpload,
   )
     .on('files-added', () => {
       // Show warning if the user is online but Imado is not available
@@ -104,25 +105,25 @@ export async function ImadoUppy(
       // Initialize a new Uppy instance to retry the upload
       const retryImadoUppy = createBaseTransloaditUppy(uppyOptions, imadoToken, isPublic);
 
-      //TODO(TRANSLOADIT) also add transloadit logic here
       // Add files to the new Uppy instance
       const validFiles = offlineUploadedFiles.map((file) => ({ ...file, name: file.name || `${file.type}-${file.id}` }));
       retryImadoUppy.addFiles(validFiles);
 
       // Upload the files
       retryImadoUppy.upload().then(async (result) => {
-        if (!result || !result.successful || !result.successful.length) return;
+        if (!result || !('transloadit' in result)) return;
 
-        // Map the successful files and remove them from offline storage
-        const successResult = result.successful;
+        const transloadit = result.transloadit as AssemblyResponse;
+        if (!transloadit.ok) return;
+
         // Clean up offline files from IndexedDB
         const ids = offlineUploadedFiles.map((el) => el.id);
         await LocalFileStorage.removeFiles(ids);
         console.info('🗑️ Successfully uploaded files removed from IndexedDB.');
 
+        //TODO(TRANSLOADIT) make onRetrySuccess work as should
         // Notify the event handler for retry completion
-        // @ts-expect-error TODO: Fix type error
-        opts.statusEventHandler?.onRetrySuccess?.(successResult, ids);
+        opts.statusEventHandler?.onRetrySuccess?.(transloadit.results as UploadedUppyFile<UploadTemplateId>, ids);
       });
     });
 
