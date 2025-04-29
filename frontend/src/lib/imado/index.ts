@@ -88,6 +88,7 @@ export async function ImadoUppy(
       // Notify the event handler when upload is complete
       opts.statusEventHandler?.onComplete?.(assembly.results as UploadedUppyFile<UploadTemplateId>);
     })
+    // TODO review this
     .on('is-online', async () => {
       // When back online, retry uploads
       if (!config.has.imado) return;
