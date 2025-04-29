@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { createRouteConfig } from '#/lib/route-config';
 import { isAuthenticated, isPublicAccess } from '#/middlewares/guard';
 import { tokenLimiter } from '#/middlewares/rate-limiter/limiters';
-import { booleanQuerySchema, idsBodySchema } from '#/utils/schema/common';
+import { booleanQuerySchema } from '#/utils/schema/common';
 import { errorResponses, successWithDataSchema, successWithErrorsSchema, successWithoutDataSchema } from '#/utils/schema/responses';
 import { updateUserBodySchema, userSchema } from '../users/schema';
 import {
@@ -135,7 +135,7 @@ class MeRouteConfig {
     description: 'Terminate sessions of the current user by list of ids.',
     request: {
       body: {
-        content: { 'application/json': { schema: idsBodySchema } },
+        content: { 'application/json': { schema: z.object({ ids: z.array(z.string()).min(1, 'Add at least one item') }) } },
       },
     },
 

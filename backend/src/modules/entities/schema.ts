@@ -1,14 +1,6 @@
 import { config } from 'config';
 import { z } from 'zod';
-import {
-  booleanQuerySchema,
-  contextEntityTypeSchema,
-  idSchema,
-  imageUrlSchema,
-  nameSchema,
-  pageEntityTypeSchema,
-  slugSchema,
-} from '#/utils/schema/common';
+import { contextEntityTypeSchema, idSchema, imageUrlSchema, nameSchema, pageEntityTypeSchema, slugSchema } from '#/utils/schema/common';
 import { membershipInfoSchema } from '../memberships/schema';
 
 export const limitEntitySchema = z.object({
@@ -23,7 +15,7 @@ export const limitEntitySchema = z.object({
 export const entitySuggestionSchema = limitEntitySchema.extend({
   email: z.string().optional(),
   entity: pageEntityTypeSchema,
-  membership: membershipInfoSchema,
+  membership: membershipInfoSchema.nullable(),
 });
 
 export const entitiesSchema = z.object({
@@ -35,7 +27,7 @@ export const entitiesSchema = z.object({
 export const entitiesQuerySchema = z.object({
   q: z.string().optional(),
   type: pageEntityTypeSchema.optional(),
+  targetOrgId: idSchema.optional(),
   targetUserId: idSchema.optional(),
-  removeSelf: booleanQuerySchema.optional(),
   userMembershipType: contextEntityTypeSchema.optional(),
 });

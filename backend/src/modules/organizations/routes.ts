@@ -131,7 +131,7 @@ class OrganizationRouteConfig {
     description: 'Delete organizations by ids.',
     request: {
       body: {
-        content: { 'application/json': { schema: idsBodySchema } },
+        content: { 'application/json': { schema: idsBodySchema() } },
       },
     },
     responses: {

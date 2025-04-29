@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import type { QueryData } from '~/query/types';
 
 type Options<T, TQueryKey extends QueryKey = QueryKey> = Parameters<
-  typeof useInfiniteQuery<T, Error, InfiniteData<T, unknown>, TQueryKey, number>
+  typeof useInfiniteQuery<T, Error, InfiniteData<T, unknown>, TQueryKey, { page: number; offset: number }>
 >[0];
 
 /**

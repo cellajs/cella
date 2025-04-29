@@ -37,7 +37,7 @@ class UserRouteConfig {
     description: 'Delete users from system by list of ids.',
     request: {
       body: {
-        content: { 'application/json': { schema: idsBodySchema } },
+        content: { 'application/json': { schema: idsBodySchema() } },
       },
     },
     responses: {

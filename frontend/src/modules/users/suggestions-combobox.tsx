@@ -56,9 +56,7 @@ export const UserSuggestionCombobox = ({ value, onChange, entity }: Props) => {
     setOpen(false);
   };
 
-  const { data, isFetching } = useQuery(
-    entitiesQueryOptions({ q: debouncedSearchQuery, type: 'user', removeSelf: true, userMembershipType: entity.entity }),
-  );
+  const { data, isFetching } = useQuery(entitiesQueryOptions({ q: debouncedSearchQuery, type: 'user', userMembershipType: entity.entity }));
 
   useEffect(() => {
     onChange(selected);
@@ -145,8 +143,8 @@ export const UserSuggestionCombobox = ({ value, onChange, entity }: Props) => {
                         {data.items.map((user) => (
                           <CommandItem
                             data-was-selected={selected.some((u) => u === user.email)}
-                            data-already-member={user.membership[entityIdField] === entity.id}
-                            disabled={user.membership[entityIdField] === entity.id}
+                            data-already-member={user.membership && user.membership[entityIdField] === entity.id}
+                            disabled={!user.membership || user.membership[entityIdField] === entity.id}
                             key={user.id}
                             className="w-full justify-between group"
                             onSelect={() => {

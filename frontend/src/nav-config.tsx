@@ -93,18 +93,11 @@ export const suggestionSections: SuggestionSection[] = [
  * For example to get/search entities and for items in the menu sheet.
  */
 export const getEntityRoute = (item: UserMenuItem | SuggestionType): EntityRoute => {
-  const {
-    entity,
-    id,
-    slug,
-    membership: { organizationId },
-  } = item;
-
-  const idOrSlug = slug || id;
-  const orgIdOrSlug = entity === 'organization' ? id : organizationId;
+  const { entity, id, slug } = item;
 
   const to = baseEntityRoutes[entity].to;
-  const params: LinkComponentProps['params'] = { idOrSlug, orgIdOrSlug };
+  const params = { idOrSlug: slug || id };
+
   const activeOptions: LinkComponentProps['activeOptions'] = { exact: false, includeHash: true, includeSearch: true };
 
   return { to, params, search: {}, activeOptions };

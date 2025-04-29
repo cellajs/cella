@@ -1,4 +1,4 @@
-import { OpenAPIHono } from '@hono/zod-openapi';
+import { OpenAPIHono, type z } from '@hono/zod-openapi';
 import { and, eq, isNotNull } from 'drizzle-orm';
 
 import { db } from '#/db/db';
@@ -6,9 +6,10 @@ import { membershipsTable } from '#/db/schema/memberships';
 import { type Env, getContextMemberships, getContextUser } from '#/lib/context';
 import { checkSlugAvailable } from '#/modules/entities/helpers/check-slug';
 import { getEntitiesQuery } from '#/modules/entities/helpers/entities-query';
-import { processEntitiesData } from '#/modules/entities/helpers/process-entities-data';
 import entitiesRouteConfig from '#/modules/entities/routes';
 import defaultHook from '#/utils/default-hook';
+import { processEntitiesData } from './helpers/process-entities-data';
+import type { entitySuggestionSchema } from './schema';
 
 // Set default hook to catch validation errors
 const app = new OpenAPIHono<Env>({ defaultHook });
@@ -18,27 +19,36 @@ const entitiesRoutes = app
    * Get entities with a limited schema
    */
   .openapi(entitiesRouteConfig.getEntities, async (ctx) => {
-    const { q, type, targetUserId, removeSelf, userMembershipType } = ctx.req.valid('query');
+    const { q, type, targetUserId, targetOrgId, userMembershipType } = ctx.req.valid('query');
 
     const { id: selfId } = getContextUser();
 
     const userId = targetUserId ?? selfId;
-    const memberships = targetUserId
-      ? await db
-          .select()
-          .from(membershipsTable)
-          .where(and(eq(membershipsTable.type, 'organization'), eq(membershipsTable.userId, targetUserId), isNotNull(membershipsTable.activatedAt)))
-      : getContextMemberships();
 
-    // Retrieve valid organizationIds and cancel if none are found
-    const organizationIds = memberships.filter((el) => el.type === 'organization').map((el) => String(el.organizationId));
+    // Determine organizationIds
+    let organizationIds: string[] = [];
+
+    if (targetOrgId) {
+      organizationIds = [targetOrgId];
+    } else {
+      const orgMemberships = targetUserId
+        ? await db
+            .select()
+            .from(membershipsTable)
+            .where(and(eq(membershipsTable.type, 'organization'), eq(membershipsTable.userId, targetUserId), isNotNull(membershipsTable.activatedAt)))
+        : getContextMemberships().filter((m) => m.type === 'organization');
+
+      organizationIds = orgMemberships.map((m) => m.organizationId);
+    }
+
     if (!organizationIds.length) return ctx.json({ success: true, data: { items: [], total: 0, counts: {} } }, 200);
 
-    // Array to hold queries for concurrent execution
-    const queries = await getEntitiesQuery({ userId, organizationIds, type, q, selfId: removeSelf ? selfId : null, userMembershipType });
+    // Prepare query and execute in parallel
+    const queries = getEntitiesQuery({ q, organizationIds, userId, selfId, type, userMembershipType });
+    // TODO: fix typing in getEntitiesQuery return
+    const queryData = (await Promise.all(queries)) as unknown as (z.infer<typeof entitySuggestionSchema> & { total: number })[][];
 
-    const queryData = await Promise.all(queries);
-
+    // Aggregate and process result data
     const { counts, items, total } = processEntitiesData(queryData, type);
 
     return ctx.json({ success: true, data: { items, total, counts } }, 200);
