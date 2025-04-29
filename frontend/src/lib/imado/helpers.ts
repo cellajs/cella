@@ -1,13 +1,11 @@
 import { uploadTemplates } from '#/modules/me/helpers/upload-templates';
 import { onlineManager } from '@tanstack/react-query';
 import { Uppy, type UppyFile, type UppyOptions } from '@uppy/core';
-import Transloadit, { type AssemblyResponse, type AssemblyResult } from '@uppy/transloadit';
+import Transloadit, { type AssemblyResponse } from '@uppy/transloadit';
 import type { UploadTemplateId } from 'config';
 import type { LocalFile, UploadTokenData, UppyBody, UppyMeta } from '~/lib/imado/types';
 import { LocalFileStorage } from '~/modules/attachments/local-file-storage';
 import { nanoid } from '~/utils/nanoid';
-
-export const processedSteps = ['converted_image', 'converted_audio', 'converted_document', 'document_thumb', 'video_thumb'] as const;
 
 /**
  * Prepares files for offline storage and returns successfully uploaded files.
@@ -21,10 +19,6 @@ export const prepareFilesForOffline = async (files: Record<string, LocalFile>, t
   const template = uploadTemplates[templateId];
   const templateKey = template.use[0];
 
-  const assembly = {
-    ok: 'OFFLINE_UPLOAD',
-    results: [{ [templateKey]: [] }],
-  } as unknown as AssemblyResponse;
   // Save files to local storage
   await LocalFileStorage.addFiles(files);
 
@@ -38,8 +32,13 @@ export const prepareFilesForOffline = async (files: Record<string, LocalFile>, t
     original_name: el.meta.name,
     original_id: el.id,
   }));
-  assembly.results[':original'] = localFiles as AssemblyResult[];
-  return assembly;
+
+  return {
+    ok: 'OFFLINE_UPLOAD',
+    results: {
+      [templateKey]: localFiles,
+    },
+  } as unknown as AssemblyResponse;
 };
 
 /**

@@ -80,7 +80,7 @@ export async function ImadoUppy(
     .on('transloadit:complete', (assembly: AssemblyResponse) => {
       console.info('Upload complete:', assembly);
 
-      if (!assembly.ok) {
+      if (assembly.error) {
         console.warn('No successful uploads');
         return;
       }
@@ -113,17 +113,17 @@ export async function ImadoUppy(
       retryImadoUppy.upload().then(async (result) => {
         if (!result || !('transloadit' in result)) return;
 
-        const transloadit = result.transloadit as AssemblyResponse;
-        if (!transloadit.ok) return;
+        const transloadits = result.transloadit as AssemblyResponse[];
+        const assembly = transloadits[0];
+        if (assembly.error) return;
 
         // Clean up offline files from IndexedDB
         const ids = offlineUploadedFiles.map((el) => el.id);
         await LocalFileStorage.removeFiles(ids);
         console.info('🗑️ Successfully uploaded files removed from IndexedDB.');
 
-        //TODO(TRANSLOADIT) make onRetrySuccess work as should
         // Notify the event handler for retry completion
-        opts.statusEventHandler?.onRetrySuccess?.(transloadit.results as UploadedUppyFile<UploadTemplateId>, ids);
+        opts.statusEventHandler?.onRetrySuccess?.(assembly.results as UploadedUppyFile<UploadTemplateId>, ids);
       });
     });
 
