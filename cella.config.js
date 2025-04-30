@@ -67,6 +67,7 @@ export const config = {
     'backend/src/routes.ts',
     'backend/src/entity-config.ts',
     'backend/src/lib/permission-manager.ts',
+    'backend/src/lib/notification/novu-config.ts',
     'locales/en/about.json',
     'locales/en/app.json',
   ],
