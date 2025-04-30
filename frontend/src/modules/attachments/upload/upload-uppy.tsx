@@ -1,10 +1,3 @@
-import '@uppy/audio/dist/style.css';
-import '@uppy/dashboard/dist/style.min.css';
-import '@uppy/image-editor/dist/style.css';
-import '@uppy/screen-capture/dist/style.css';
-import '@uppy/webcam/dist/style.css';
-import '~/modules/attachments/upload/uppy.css';
-
 import Audio from '@uppy/audio';
 import type { Uppy, UppyOptions } from '@uppy/core';
 import ImageEditor, { type ImageEditorOptions } from '@uppy/image-editor';
@@ -17,6 +10,13 @@ import { ImadoUppy } from '~/lib/imado';
 import type { UploadedUppyFile, UppyBody, UppyMeta } from '~/lib/imado/types';
 import { getImageEditorOptions } from '~/modules/attachments/upload/image-editor-options';
 import { useUIStore } from '~/store/ui';
+
+import '@uppy/audio/dist/style.css';
+import '@uppy/dashboard/dist/style.min.css';
+import '@uppy/image-editor/dist/style.css';
+import '@uppy/screen-capture/dist/style.css';
+import '@uppy/webcam/dist/style.css';
+import '~/modules/attachments/upload/uppy.css';
 
 export interface UploadUppyProps {
   uploadType: 'organization' | 'personal';
