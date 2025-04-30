@@ -8,7 +8,7 @@ import {
   languageSchema,
   paginationQuerySchema,
   validDomainsSchema,
-  validImageUrlSchema,
+  validImageKeySchema,
   validNameSchema,
   validSlugSchema,
   validUrlSchema,
@@ -63,9 +63,9 @@ export const updateOrganizationBodySchema = createInsertSchema(organizationsTabl
   emailDomains: validDomainsSchema,
   authStrategies: z.array(z.string()).optional(),
   websiteUrl: validUrlSchema.nullable(),
-  thumbnailUrl: validImageUrlSchema.nullable(),
-  bannerUrl: validImageUrlSchema.nullable(),
-  logoUrl: validImageUrlSchema.nullable(),
+  thumbnailUrl: validImageKeySchema.nullable(),
+  bannerUrl: validImageKeySchema.nullable(),
+  logoUrl: validImageKeySchema.nullable(),
 })
   .pick({
     slug: true,

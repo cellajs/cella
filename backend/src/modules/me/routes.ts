@@ -1,10 +1,19 @@
+import { config } from 'config';
 import { z } from 'zod';
 import { createRouteConfig } from '#/lib/route-config';
 import { isAuthenticated, isPublicAccess } from '#/middlewares/guard';
 import { tokenLimiter } from '#/middlewares/rate-limiter/limiters';
+import { booleanQuerySchema } from '#/utils/schema/common';
 import { errorResponses, successWithDataSchema, successWithErrorsSchema, successWithoutDataSchema } from '#/utils/schema/responses';
 import { updateUserBodySchema, userSchema } from '../users/schema';
-import { leaveEntityQuerySchema, meAuthInfoSchema, passkeyRegistrationBodySchema, unsubscribeSelfQuerySchema, userMenuSchema } from './schema';
+import {
+  leaveEntityQuerySchema,
+  meAuthInfoSchema,
+  passkeyRegistrationBodySchema,
+  unsubscribeSelfQuerySchema,
+  uploadTokenBodySchema,
+  userMenuSchema,
+} from './schema';
 
 class MeRouteConfig {
   public getSelf = createRouteConfig({
@@ -196,12 +205,9 @@ class MeRouteConfig {
       'This endpoint is used to get an upload token for a user or organization. The token can be used to upload public or private images/files to your S3 bucket using imado.',
     request: {
       query: z.object({
-        public: z.string().optional().default('false'),
+        public: booleanQuerySchema,
         organization: z.string().optional(),
-        width: z.string().optional(),
-        height: z.string().optional(),
-        quality: z.string().optional(),
-        format: z.string().optional(),
+        templateId: z.enum(config.uploadTemplateIds),
       }),
     },
     responses: {
@@ -209,7 +215,7 @@ class MeRouteConfig {
         description: 'Upload token with a scope for a user or organization',
         content: {
           'application/json': {
-            schema: successWithDataSchema(z.string()),
+            schema: successWithDataSchema(uploadTokenBodySchema),
           },
         },
       },

@@ -1,8 +1,13 @@
+import { uploadTemplates } from '#/modules/me/helpers/upload-templates';
+
 import { onlineManager } from '@tanstack/react-query';
 import { t } from 'i18next';
+import type { UploadedUppyFile } from '~/lib/imado/types';
 import AttachmentsCarousel, { type CarouselItemData } from '~/modules/attachments/attachments-carousel';
+import type { AttachmentToInsert } from '~/modules/attachments/types';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { toaster } from '~/modules/common/toaster';
+import { nanoid } from '~/utils/nanoid';
 
 interface OpenAttachmentDialogParams {
   attachmentIndex: number;
@@ -26,4 +31,44 @@ export const openAttachmentDialog = ({ attachmentIndex, attachments, triggerRef 
       hideClose: true,
     },
   );
+};
+
+export const parseUploadedAttachments = (result: UploadedUppyFile<'attachment'>, organizationId: string, groupId = nanoid()) => {
+  const uploadedAttachments: AttachmentToInsert[] = [];
+
+  // Process original files
+  const originalFiles = result[':original'] || [];
+  for (const { size, url, mime, ext, type, original_name, original_id } of originalFiles) {
+    uploadedAttachments.push({
+      id: original_id || nanoid(),
+      originalKey: url,
+      size: String(size || 0),
+      contentType: mime,
+      filename: original_name || 'unknown',
+      organizationId,
+      type: type ?? ext,
+    });
+  }
+  // Process all converted and thumbnail variants
+  const processSteps = uploadTemplates.attachment.use.filter((step) => step !== ':original');
+
+  for (const step of processSteps) {
+    const processFiles = result[step] || [];
+    if (!processFiles.length) continue;
+
+    for (const { url, mime, type, original_id } of processFiles) {
+      const target = uploadedAttachments.find((a) => a.id === original_id);
+      if (!target) continue;
+
+      if (step.includes('converted_')) {
+        target.convertedKey = url;
+        target.contentType = mime;
+        if (type) target.type = type;
+      }
+
+      if (step.includes('thumb_')) target.thumbnailKey = url;
+    }
+  }
+
+  return uploadedAttachments.length > 1 ? uploadedAttachments.map((attachment) => ({ ...attachment, groupId })) : uploadedAttachments;
 };

@@ -1,61 +1,29 @@
+import { GetObjectCommand, S3Client } from '@aws-sdk/client-s3';
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { config } from 'config';
 import { env } from '../env';
 
-import { getSignedUrl } from '@aws-sdk/cloudfront-signer';
-
-type ImadoUrlParams = {
-  width?: number;
-  height?: number;
-  quality?: number;
-  format?: 'auto' | 'jpeg' | 'webp' | 'avif' | 'png' | 'gif' | 'pdf';
-};
-
-interface ImadoUrlConfig {
-  signUrl: string;
-  cloudfrontKeyId: string;
-  cloudfrontPrivateKey: string;
-}
-
-class ImadoUrl {
-  private config: ImadoUrlConfig;
-
-  constructor(config: ImadoUrlConfig) {
-    this.config = config;
-  }
-
-  generate(rawUrl: string, params?: ImadoUrlParams) {
-    if (!rawUrl) return rawUrl;
-    if (!rawUrl.startsWith(config.privateCDNUrl) && !rawUrl.startsWith(config.publicCDNUrl)) return rawUrl;
-
-    const url = new URL(rawUrl);
-
-    // Add requested params
-    if (params) {
-      for (const [key, value] of Object.entries(params)) {
-        url.searchParams.append(key, value.toString());
-      }
-    }
-
-    if (rawUrl.startsWith(config.privateCDNUrl)) {
-      const signedUrl = getSignedUrl({
-        url: url.toString(),
-        keyPairId: this.config.cloudfrontKeyId,
-        privateKey: this.config.cloudfrontPrivateKey,
-        dateLessThan: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), // 24 hours
-      });
-
-      return signedUrl;
-    }
-
-    return url.toString();
-  }
-}
+const s3Client = new S3Client({
+  region: config.s3Region,
+  endpoint: `https://${config.s3Host}`,
+  credentials: {
+    accessKeyId: env.S3_ACCESS_KEY_ID,
+    secretAccessKey: env.S3_SECRET_ACCESS_KEY,
+  },
+});
 
 /**
- * Get a signed URL from AWS Cloudfront.
+ * Generate a presigned URL for a private object in Scaleway Object Storage.
  */
-export const getImadoUrl = new ImadoUrl({
-  signUrl: config.privateCDNUrl,
-  cloudfrontKeyId: env.AWS_CLOUDFRONT_KEY_ID,
-  cloudfrontPrivateKey: env.AWS_CLOUDFRONT_PRIVATE_KEY,
-});
+export async function getImadoUrl(url: string, expiresIn = 86400): Promise<string> {
+  const signedUrl = await getSignedUrl(
+    s3Client,
+    new GetObjectCommand({
+      Bucket: config.s3PrivateBucket,
+      Key: url,
+    }),
+    { expiresIn }, // Default 24 hours
+  );
+
+  return signedUrl;
+}

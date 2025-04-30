@@ -3,7 +3,7 @@ import { z } from 'zod';
 
 import { type EnabledOauthProvider, config } from 'config';
 import { usersTable } from '#/db/schema/users';
-import { paginationQuerySchema, validImageUrlSchema, validNameSchema, validSlugSchema } from '#/utils/schema/common';
+import { paginationQuerySchema, validImageKeySchema, validNameSchema, validSlugSchema } from '#/utils/schema/common';
 
 export const enabledOauthProvidersEnum = z.enum(config.enabledOauthProviders as unknown as [EnabledOauthProvider]);
 
@@ -37,8 +37,8 @@ export const updateUserBodySchema = createInsertSchema(usersTable, {
   firstName: validNameSchema.nullable(),
   lastName: validNameSchema.nullable(),
   slug: validSlugSchema,
-  thumbnailUrl: validImageUrlSchema.nullable(),
-  bannerUrl: validImageUrlSchema.nullable(),
+  thumbnailUrl: validImageKeySchema.nullable(),
+  bannerUrl: validImageKeySchema.nullable(),
 })
   .pick({
     bannerUrl: true,

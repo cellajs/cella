@@ -1,11 +1,9 @@
-import { and, eq, inArray, isNull, lt } from 'drizzle-orm';
 import { mailer } from '#/lib/mailer';
+import { and, eq, inArray, isNull, lt } from 'drizzle-orm';
 import { SystemInviteEmail, type SystemInviteEmailProps } from '../../../emails/system-invite';
 
 import { config } from 'config';
 
-import { OpenAPIHono } from '@hono/zod-openapi';
-import { EventName, Paddle } from '@paddle/paddle-node-sdk';
 import { db } from '#/db/db';
 import { emailsTable } from '#/db/schema/emails';
 import { membershipsTable } from '#/db/schema/memberships';
@@ -16,12 +14,15 @@ import { usersTable } from '#/db/schema/users';
 import { type Env, getContextUser } from '#/lib/context';
 import { errorResponse } from '#/lib/errors';
 import { i18n } from '#/lib/i18n';
+import { getImadoUrl } from '#/lib/imado-url';
 import { logEvent } from '#/middlewares/logger/log-event';
 import { getUsersByConditions } from '#/modules/users/helpers/get-user-by';
 import defaultHook from '#/utils/default-hook';
 import { nanoid } from '#/utils/nanoid';
 import { slugFromEmail } from '#/utils/slug-from-email';
 import { TimeSpan, createDate } from '#/utils/time-span';
+import { OpenAPIHono } from '@hono/zod-openapi';
+import { EventName, Paddle } from '@paddle/paddle-node-sdk';
 import { NewsletterEmail, type NewsletterEmailProps } from '../../../emails/newsletter';
 import { env } from '../../env';
 import systemRouteConfig from './routes';
@@ -111,6 +112,16 @@ const systemRoutes = app
     logEvent('Users invited on system level');
 
     return ctx.json({ success: true }, 200);
+  })
+  /*
+   * Get preasigned URL
+   */
+  .openapi(systemRouteConfig.getPriasignedUrl, async (ctx) => {
+    const { key } = ctx.req.valid('query');
+
+    const url = await getImadoUrl(key);
+
+    return ctx.json({ success: true, data: url }, 200);
   })
   /*
    * Paddle webhook

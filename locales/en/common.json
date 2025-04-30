@@ -117,7 +117,7 @@
   "general": "General",
   "get_directions": "Get directions",
   "get_started": "Get started",
-  "global_search.text": "Search for entities that connected to organizations you belong to and users you share membership with in {{appName}}.",
+  "global_search.text": "Search within your organizations on {{appName}}.",
   "hi": "Hey there!",
   "hide": "Hide",
   "high_density": "High density",

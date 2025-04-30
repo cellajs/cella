@@ -128,11 +128,7 @@ export const validSlugSchema = z
   )
   .transform((str) => str.toLowerCase().trim());
 
-/** Schema for a valid image URL (must be a valid URL and cannot have search params) */
-export const validImageUrlSchema = z
-  .string()
-  .url('Invalid URL format. Please enter a valid URL.')
-  .refine((url) => new URL(url).search === '', 'Search params not allowed');
+export const validImageKeySchema = z.string();
 
 /** Schema for an array of valid domains */
 export const validDomainsSchema = z

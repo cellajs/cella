@@ -19,6 +19,8 @@
   "expired_token": "Token has expired",
   "expired_token.text": "You provided an expired token.",
   "forbidden": "Forbidden",
+  "missing_auth_key": "Missing authentication key",
+  "missing_auth_key.text": "An authentication key is missing. Please contact support.",
   "forbidden.text": "Not allowed to perform this action.",
   "forbidden_action": "Forbidden: Not allowed to perform this action",
   "forbidden_strategy": "Forbidden authentication method",

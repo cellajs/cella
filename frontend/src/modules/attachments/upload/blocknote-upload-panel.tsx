@@ -5,9 +5,11 @@ import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useOnlineManager } from '~/hooks/use-online-manager';
 import type { UploadedUppyFile } from '~/lib/imado/types';
+import { parseUploadedAttachments } from '~/modules/attachments/helpers';
 import UploadUppy from '~/modules/attachments/upload/upload-uppy';
 import { customSchema } from '~/modules/common/blocknote/blocknote-config';
 import { focusEditor } from '~/modules/common/blocknote/helpers';
+import { getPriasignedUrl } from '~/modules/system/api';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '~/modules/ui/dialog';
 
 const basicBlockTypes = {
@@ -30,10 +32,11 @@ const basicBlockTypes = {
 };
 
 interface UppyFilePanelProps {
-  onCreateCallback?: (result: UploadedUppyFile[]) => void;
+  organizationId?: string;
+  onCreateCallback?: (result: UploadedUppyFile<'attachment'>) => void;
 }
 
-const UppyFilePanel = ({ onCreateCallback, ...props }: UppyFilePanelProps & FilePanelProps) => {
+const UppyFilePanel = ({ organizationId, onCreateCallback, ...props }: UppyFilePanelProps & FilePanelProps) => {
   const { t } = useTranslation();
   const { block } = props;
   const { isOnline } = useOnlineManager();
@@ -64,8 +67,10 @@ const UppyFilePanel = ({ onCreateCallback, ...props }: UppyFilePanelProps & File
           <DialogDescription className="hidden" />
         </DialogHeader>
         <UploadUppy
-          isPublic
+          isPublic={false}
           uploadType="personal"
+          templateId="attachment"
+          organizationId={organizationId}
           restrictions={{
             maxFileSize: 10 * 1024 * 1024, // 10MB
             maxNumberOfFiles: 1,
@@ -73,15 +78,23 @@ const UppyFilePanel = ({ onCreateCallback, ...props }: UppyFilePanelProps & File
             maxTotalFileSize: 10 * 1024 * 1024, // 10MB
           }}
           plugins={basicBlockTypes[type].plugins}
-          imageMode="attachment"
           callback={async (result) => {
-            for (const res of result) {
+            const attachments = parseUploadedAttachments(result, organizationId ?? 'prewiew');
+
+            // Map all attachments to promises of getting presigned URLs
+            const presignedUrls = await Promise.all(attachments.map((attachment) => getPriasignedUrl({ key: attachment.originalKey })));
+            for (let index = 0; index < attachments.length; index++) {
+              const attachment = attachments[index];
+              //TODO(IMPROVE) preasigned url creation after upload on server
+              const presignedUrl = presignedUrls[index];
+
               const updateData: PartialBlock = {
                 props: {
-                  name: res.file.name,
-                  url: res.url,
+                  name: attachment.filename,
+                  url: presignedUrl ?? attachment.originalKey,
                 },
               };
+
               editor.updateBlock(block, updateData);
             }
             onCreateCallback?.(result);
