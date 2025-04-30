@@ -1,4 +1,3 @@
-import { uploadTemplates } from '#/modules/me/helpers/upload-templates';
 import { onlineManager } from '@tanstack/react-query';
 import { Uppy, type UppyFile, type UppyOptions } from '@uppy/core';
 import Transloadit, { type AssemblyResponse } from '@uppy/transloadit';
@@ -6,6 +5,7 @@ import type { UploadTemplateId } from 'config';
 import type { LocalFile, UploadTokenData, UppyBody, UppyMeta } from '~/lib/imado/types';
 import { LocalFileStorage } from '~/modules/attachments/local-file-storage';
 import { nanoid } from '~/utils/nanoid';
+import { uploadTemplates } from '#/modules/me/helpers/upload-templates';
 
 /**
  * Prepares files for offline storage and returns successfully uploaded files.
@@ -27,6 +27,7 @@ export const prepareFilesForOffline = async (files: Record<string, LocalFile>, t
     id: el.id,
     size: el.size,
     type: el.type,
+    mime: el.meta.contentType,
     ext: el.extension,
     url: el.preview,
     original_name: el.meta.name,

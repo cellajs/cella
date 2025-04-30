@@ -82,7 +82,7 @@ const UppyFilePanel = ({ organizationId, onCreateCallback, ...props }: UppyFileP
             const attachments = parseUploadedAttachments(result, organizationId ?? 'prewiew');
 
             // Map all attachments to promises of getting presigned URLs
-            const presignedUrls = await Promise.all(attachments.map((attachment) => getPriasignedUrl({ key: attachment.url })));
+            const presignedUrls = await Promise.all(attachments.map((attachment) => getPriasignedUrl({ key: attachment.originalKey })));
             for (let index = 0; index < attachments.length; index++) {
               const attachment = attachments[index];
               //TODO(IMPROVE) preasigned url creation after upload on server
@@ -91,7 +91,7 @@ const UppyFilePanel = ({ organizationId, onCreateCallback, ...props }: UppyFileP
               const updateData: PartialBlock = {
                 props: {
                   name: attachment.filename,
-                  url: presignedUrl ?? attachment.url,
+                  url: presignedUrl ?? attachment.originalKey,
                 },
               };
 

@@ -1,8 +1,10 @@
 import { uploadTemplates } from '#/modules/me/helpers/upload-templates';
+
 import { onlineManager } from '@tanstack/react-query';
 import { t } from 'i18next';
 import type { UploadedUppyFile } from '~/lib/imado/types';
 import AttachmentsCarousel, { type CarouselItemData } from '~/modules/attachments/attachments-carousel';
+import type { AttachmentToInsert } from '~/modules/attachments/types';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { toaster } from '~/modules/common/toaster';
 import { nanoid } from '~/utils/nanoid';
@@ -31,51 +33,42 @@ export const openAttachmentDialog = ({ attachmentIndex, attachments, triggerRef 
   );
 };
 
-export const parseUploadedAttachments = (result: UploadedUppyFile<'attachment'>, organizationId: string, grouopId = nanoid()) => {
-  const attachments = [];
+export const parseUploadedAttachments = (result: UploadedUppyFile<'attachment'>, organizationId: string, groupId = nanoid()) => {
+  const uploadedAttachments: AttachmentToInsert[] = [];
 
-  // Track file ids that we already processed
-  const processedFileIds = new Set<string>();
+  // Process original files
+  const originalFiles = result[':original'] || [];
+  for (const { size, url, mime, ext, type, original_name, original_id } of originalFiles) {
+    uploadedAttachments.push({
+      id: original_id || nanoid(),
+      originalKey: url,
+      size: String(size || 0),
+      contentType: mime,
+      filename: original_name || 'unknown',
+      organizationId,
+      type: type ?? ext,
+    });
+  }
+  // Process all converted and thumbnail variants
+  const processSteps = uploadTemplates.attachment.use.filter((step) => step !== ':original');
 
-  const processedSteps = uploadTemplates.attachment.use.filter((step) => step === ':original');
+  for (const step of processSteps) {
+    const processFiles = result[step] || [];
+    if (!processFiles.length) continue;
 
-  // First, handle all processed steps
-  for (const step of processedSteps) {
-    const files = result[step];
-    if (!files) continue;
+    for (const { url, mime, type, original_id } of processFiles) {
+      const target = uploadedAttachments.find((a) => a.id === original_id);
+      if (!target) continue;
 
-    for (const { id, size, type, ext, url, original_name, original_id } of files) {
-      attachments.push({
-        id: id || nanoid(),
-        url,
-        size: String(size || 0),
-        contentType: type || ext,
-        filename: original_name || 'unknown',
-        organizationId,
-        type: step.startsWith('converted_') ? step.replace('converted_', '') : 'thumbnail', // 'image', 'audio', 'document', or 'thumbnail'
-      });
+      if (step.includes('converted_')) {
+        target.convertedKey = url;
+        target.contentType = mime;
+        if (type) target.type = type;
+      }
 
-      // Mark this file url as processed
-      processedFileIds.add(original_id);
+      if (step.includes('thumb_')) target.thumbnailKey = url;
     }
   }
 
-  // Now, handle any leftover original files that were NOT processed
-  const originalFiles = result[':original'] || [];
-  for (const { id, size, type, ext, url, original_name, original_id } of originalFiles) {
-    // Already handled by processed steps, skip
-    if (processedFileIds.has(original_id)) continue;
-
-    attachments.push({
-      id: id || nanoid(),
-      url,
-      size: String(size || 0),
-      contentType: type || ext,
-      filename: original_name || 'unknown',
-      organizationId,
-      type: 'raw', // fallback type for unprocessed original uploads (e.g., zip, csv, etc.)
-    });
-  }
-
-  return attachments.length > 1 ? attachments.map((attachment) => ({ ...attachment, groupId: grouopId })) : attachments;
+  return uploadedAttachments.length > 1 ? uploadedAttachments.map((attachment) => ({ ...attachment, groupId })) : uploadedAttachments;
 };

@@ -47,12 +47,14 @@ export const useAttachmentCreateMutation = () =>
       // BE will assign final groupId during attachment creation.
       const groupId = attachments.length > 1 ? nanoid() : null;
 
-      for (const attachment of attachments) {
+      for (const { originalKey, convertedKey, thumbnailKey, ...attachment } of attachments) {
         const optimisticId = attachment.id || nanoid();
 
         // Make newAttachment satisfy Attachment type for optimistic update
         const newAttachment: Attachment = {
           ...attachment,
+          url: convertedKey ?? originalKey,
+          thumbnailUrl: thumbnailKey ?? null,
           name: attachment.filename.split('.').slice(0, -1).join('.'),
           id: optimisticId,
           entity: 'attachment',

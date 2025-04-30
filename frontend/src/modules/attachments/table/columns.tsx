@@ -40,7 +40,7 @@ export const useColumns = (entity: EntityPage, isSheet: boolean, highDensity: bo
       visible: true,
       sortable: false,
       width: 32,
-      renderCell: ({ row: { id, url, filename, contentType, groupId }, tabIndex }) => {
+      renderCell: ({ row: { id, url, thumbnailUrl, filename, contentType, groupId }, tabIndex }) => {
         const cellRef = useRef<HTMLAnchorElement | null>(null);
 
         return (
@@ -65,7 +65,7 @@ export const useColumns = (entity: EntityPage, isSheet: boolean, highDensity: bo
               });
             }}
           >
-            <AttachmentPreview url={url} name={filename} contentType={contentType} />
+            <AttachmentPreview url={thumbnailUrl ?? url} name={filename} contentType={contentType} />
           </Link>
         );
       },

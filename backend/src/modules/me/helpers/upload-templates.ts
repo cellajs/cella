@@ -74,7 +74,7 @@ const attachment = {
       format: 'pdf',
       accepted: ['doc', 'docx', 'html', 'latex', 'md', 'odt', 'ppt', 'pptx', 'rtf', 'txt', 'xhtml', 'xls', 'xlsx'],
     },
-    document_thumb: {
+    thumb_document: {
       use: 'filter_documents',
       robot: '/document/thumbs',
       count: 1,
@@ -82,7 +82,7 @@ const attachment = {
       width: 640,
       height: 800,
     },
-    video_thumb: {
+    thumb_video: {
       use: ':original',
       robot: '/video/thumbs',
       count: 1,
@@ -90,8 +90,16 @@ const attachment = {
       width: 640,
       height: 360,
     },
+    thumb_image: {
+      use: 'filter_images',
+      robot: '/image/resize',
+      count: 1,
+      format: 'png',
+      width: 100,
+      height: 100,
+    },
   },
-  use: [':original', 'document_thumb', 'video_thumb', 'converted_image', 'converted_audio', 'converted_document'] as const,
+  use: [':original', 'thumb_image', 'thumb_video', 'thumb_document', 'converted_image', 'converted_audio', 'converted_document'] as const,
 };
 
 export const uploadTemplates = {
