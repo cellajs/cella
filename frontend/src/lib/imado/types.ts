@@ -1,4 +1,4 @@
-import type { uploadTemplates } from '#/modules/me/helpers/upload-templates';
+import type { TemplateStepKeys } from '#/lib/transloadit/types';
 import type { uploadTokenBodySchema } from '#/modules/me/schema';
 
 import type { UppyFile } from '@uppy/core';
@@ -29,8 +29,6 @@ export interface ImadoOptions extends UploadParams {
     onRetrySuccess?: (mappedResult: UploadedUppyFile<UploadTemplateId>, localStoreIds: string[]) => void;
   };
 }
-
-type TemplateStepKeys<T extends UploadTemplateId> = (typeof uploadTemplates)[T]['use'][number];
 
 type ImadoUserMeta = {
   contentType: string;

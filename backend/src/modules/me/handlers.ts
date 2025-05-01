@@ -1,4 +1,3 @@
-import crypto from 'node:crypto';
 import { OpenAPIHono } from '@hono/zod-openapi';
 import type { EnabledOauthProvider } from 'config';
 import { config } from 'config';
@@ -15,21 +14,19 @@ import { env } from '#/env';
 import { type Env, getContextMemberships, getContextUser } from '#/lib/context';
 import { resolveEntity } from '#/lib/entity';
 import { type ErrorType, createError, errorResponse } from '#/lib/errors';
+import { getParams, getSignature } from '#/lib/transloadit';
 import { isAuthenticated } from '#/middlewares/guard';
 import { logEvent } from '#/middlewares/logger/log-event';
 import { getUserBy } from '#/modules/users/helpers/get-user-by';
 import { verifyUnsubscribeToken } from '#/modules/users/helpers/unsubscribe-token';
 import defaultHook from '#/utils/default-hook';
 import { getIsoDate } from '#/utils/iso-date';
-import { nanoid } from '#/utils/nanoid';
-import { utcDateString } from '#/utils/utc-data-string';
 import { deleteAuthCookie, getAuthCookie } from '../auth/helpers/cookie';
 import { parseAndValidatePasskeyAttestation } from '../auth/helpers/passkey';
 import { getParsedSessionCookie, invalidateSessionById, invalidateUserSessions, validateSession } from '../auth/helpers/session';
 import { checkSlugAvailable } from '../entities/helpers/check-slug';
 import { membershipSelect } from '../memberships/helpers/select';
 import { getUserSessions } from './helpers/get-sessions';
-import { uploadTemplates } from './helpers/upload-templates';
 import meRouteConfig from './routes';
 import type { menuItemSchema, userMenuSchema } from './schema';
 
@@ -285,69 +282,29 @@ const meRoutes = app
    * Get upload token
    */
   .openapi(meRouteConfig.getUploadToken, async (ctx) => {
-    const user = getContextUser();
     const { public: isPublic, organization, templateId } = ctx.req.valid('query');
+    const user = getContextUser();
 
     // This will be used to as first part of S3 key
     const sub = organization ? `${organization}/${user.id}` : user.id;
 
-    // Transloadit security requires us to set an expiration date like this
-    const expires = utcDateString(Date.now() + 1 * 60 * 60 * 1000); // 1 hour
+    try {
+      const params = getParams(templateId, isPublic, sub);
+      const paramsString = JSON.stringify(params);
+      const signature = getSignature(paramsString);
 
-    // And a nonce to prevent replay attacks
-    const nonce = nanoid(16);
+      const token = {
+        sub,
+        public: isPublic,
+        imado: !!env.S3_ACCESS_KEY_ID,
+        params,
+        signature,
+      };
 
-    const authKey = env.TRANSLOADIT_KEY;
-    const authSecret = env.TRANSLOADIT_SECRET;
-
-    if (!authKey || !authSecret) {
+      return ctx.json({ success: true, data: token }, 200);
+    } catch (error) {
       return errorResponse(ctx, 500, 'missing_auth_key', 'error');
     }
-
-    const template = uploadTemplates[templateId];
-
-    const params = {
-      auth: {
-        key: authKey,
-        expires,
-        nonce,
-      },
-      steps: {
-        ':original': {
-          robot: '/upload/handle',
-        },
-        // Inject steps based on template: avatar thumbnail, cover image, attachments ...
-        ...template.steps,
-        exported: {
-          // Use is also based on template data
-          use: template.use,
-          robot: '/s3/store',
-          credentials: isPublic ? 'imado-dev' : 'imado-dev-priv',
-          host: 's3.nl-ams.scw.cloud',
-          no_vhost: true,
-          url_prefix: '',
-          acl: isPublic ? 'public-read' : 'private',
-          path: `/${sub}/\${file.id}.\${file.url_name}`,
-        },
-      },
-    };
-
-    const paramsString = JSON.stringify(params);
-    const signatureBytes = crypto.createHmac('sha384', authSecret).update(Buffer.from(paramsString, 'utf-8'));
-    // The final signature needs the hash name in front, so
-    // the hashing algorithm can be updated in a backwards-compatible
-    // way when old algorithms become insecure.
-    const signature = `sha384:${signatureBytes.digest('hex')}`;
-
-    const token = {
-      sub: sub,
-      public: isPublic,
-      imado: !!env.S3_ACCESS_KEY_ID,
-      params,
-      signature,
-    };
-
-    return ctx.json({ success: true, data: token }, 200);
   })
   /*
    * Unsubscribe a user by token from receiving newsletters
