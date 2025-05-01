@@ -88,7 +88,7 @@ const Combobox = ({
           {selectedOption ? (
             <div className="flex items-center truncate gap-2">
               {!excludeAvatarWrapFields.includes(name) && (
-                <AvatarWrap className="h-6 w-6 text-xs shrink-0" id={selectedOption.value} name={name} url={selectedOption.url} />
+                <AvatarWrap className="h-6 w-6 text-xs shrink-0" id={selectedOption.value} name={selectedOption.label} url={selectedOption.url} />
               )}
               {renderOption?.(selectedOption) ?? <span className="truncate">{selectedOption.label}</span>}
             </div>
