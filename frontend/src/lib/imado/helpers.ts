@@ -5,7 +5,7 @@ import type { UploadTemplateId } from 'config';
 import type { LocalFile, UploadTokenData, UppyBody, UppyMeta } from '~/lib/imado/types';
 import { LocalFileStorage } from '~/modules/attachments/local-file-storage';
 import { nanoid } from '~/utils/nanoid';
-import { uploadTemplates } from '#/modules/me/helpers/upload-templates';
+import { uploadTemplates } from '#/lib/transloadit/templates';
 
 /**
  * Prepares files for offline storage and returns successfully uploaded files.

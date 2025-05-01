@@ -52,7 +52,6 @@ export const openAttachmentsUploadDialog = (organizationId: string, triggerRef: 
     };
 
     const handleSuccessesRetryCallback = async (result: UploadedUppyFile<'attachment'>, ids: string[]) => {
-      console.log('🚀 ~ handleSuccessesRetryCallback ~ result:', result);
       handleCallback(result);
       deleteAttachments({ orgIdOrSlug: organizationId, ids });
     };

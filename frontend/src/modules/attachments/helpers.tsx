@@ -1,4 +1,4 @@
-import { uploadTemplates } from '#/modules/me/helpers/upload-templates';
+import { uploadTemplates } from '#/lib/transloadit/templates';
 
 import { onlineManager } from '@tanstack/react-query';
 import { t } from 'i18next';

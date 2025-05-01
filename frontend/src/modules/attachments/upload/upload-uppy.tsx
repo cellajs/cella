@@ -69,7 +69,6 @@ export const UploadUppy = ({
           templateId,
           statusEventHandler: {
             onComplete: (results) => {
-              console.log('onComplete:', results);
               if (callback) callback(results);
             },
             onRetrySuccess(results, localStoreIds) {
