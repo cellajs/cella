@@ -8,7 +8,7 @@ const s3Client = new S3Client({
   endpoint: `https://${config.s3Host}`,
   credentials: {
     accessKeyId: env.S3_ACCESS_KEY_ID,
-    secretAccessKey: env.S3_SECRET_ACCESS_KEY,
+    secretAccessKey: env.S3_ACCESS_KEY_SECRET,
   },
 });
 
