@@ -12,7 +12,12 @@ import { queryClient } from '~/query/query-client';
 import { useUIStore } from '~/store/ui';
 import { useUserStore } from '~/store/user';
 
-const GC_TIME = 24 * 60 * 60 * 1000; // Cache expiration time: 24 hours
+const offlineQueryConfig = {
+  gcTime: 24 * 60 * 60 * 1000, // Cache expiration time: 24 hours
+  meta: {
+    offlinePrefetch: true,
+  },
+};
 
 export const QueryClientProvider = ({ children }: { children: React.ReactNode }) => {
   const { user } = useUserStore();
@@ -33,8 +38,14 @@ export const QueryClientProvider = ({ children }: { children: React.ReactNode })
 
       // Prefetch menu and user details
       const [menuResponse]: PromiseSettledResult<UserMenu>[] = await Promise.allSettled([
-        prefetchQuery({ ...menuQueryOptions(), gcTime: GC_TIME }),
-        prefetchQuery({ ...meQueryOptions(), gcTime: GC_TIME }),
+        prefetchQuery({
+          ...menuQueryOptions(),
+          ...offlineQueryConfig,
+        }),
+        prefetchQuery({
+          ...meQueryOptions(),
+          ...offlineQueryConfig,
+        }),
       ]);
 
       // If menu query failed or request was aborted, return early
@@ -47,7 +58,12 @@ export const QueryClientProvider = ({ children }: { children: React.ReactNode })
           if (item.membership.archived) continue; // Skip archived items
 
           // Fetch queries for this menu item in parallel
-          const queries = queriesToMap(item).map((query) => prefetchQuery({ ...query, gcTime: GC_TIME }));
+          const queries = queriesToMap(item).map((query) =>
+            prefetchQuery({
+              ...query,
+              ...offlineQueryConfig,
+            }),
+          );
           await Promise.allSettled(queries);
 
           await waitFor(500); // Avoid overloading server

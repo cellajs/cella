@@ -64,7 +64,7 @@ export const AccountSheet = () => {
   }, []);
 
   return (
-    <ScrollArea className="h-full" id="nav-sheet">
+    <ScrollArea className="h-full max-sm:-mx-3" id="nav-sheet">
       <div ref={buttonWrapper} className="p-3 flex flex-col gap-4 min-h-[calc(100vh-0.5rem)]">
         <Link to="/users/$idOrSlug" params={{ idOrSlug: user.slug }} className="w-full relative">
           <div

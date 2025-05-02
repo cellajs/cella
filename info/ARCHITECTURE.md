@@ -77,8 +77,7 @@ Cella in general is targeted towards being a template for SaaS development. But 
 │   │   ├── store             Zustand data stores
 │   │   ├── utils             Generic functions
 ├── info                      General info
-├── locales                   Translations
-└── tus                       TUS server
+└── locales                   Translations
 ```
 
 ## Data modeling

@@ -3,13 +3,13 @@ import { Link } from '@tanstack/react-router';
 import { Settings } from 'lucide-react';
 import { Suspense, lazy } from 'react';
 import { useTranslation } from 'react-i18next';
+import { FocusViewContainer } from '~/modules/common/focus-view';
 import { PageHeader } from '~/modules/common/page/page-header';
 import { toaster } from '~/modules/common/toaster';
 import { useUpdateSelfMutation } from '~/modules/me/query';
 import { useUpdateUserMutation, userQueryOptions } from '~/modules/users/query';
 import type { LimitedUser } from '~/modules/users/types';
 import { useUserStore } from '~/store/user';
-import { FocusViewContainer } from '../common/focus-view';
 
 const ProfilePageContent = lazy(() => import('~/modules/users/profile-page-content'));
 

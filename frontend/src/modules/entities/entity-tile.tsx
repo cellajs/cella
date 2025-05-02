@@ -1,10 +1,10 @@
 import { Link } from '@tanstack/react-router';
+import { AvatarWrap } from '~/modules/common/avatar-wrap';
+import type { EntityTileData } from '~/modules/entities/entity-grid';
+import { AvatarGroup, AvatarGroupList, AvatarOverflowIndicator } from '~/modules/ui/avatar';
 import { Button } from '~/modules/ui/button';
 import { Card, CardContent } from '~/modules/ui/card';
 import { numberToColorClass } from '~/utils/number-to-color-class';
-import { AvatarWrap } from '../common/avatar-wrap';
-import { AvatarGroup, AvatarGroupList, AvatarOverflowIndicator } from '../ui/avatar';
-import type { EntityTileData } from './entity-grid';
 
 export const EntityTile = ({ entity }: { entity: EntityTileData }) => {
   return (

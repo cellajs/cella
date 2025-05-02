@@ -15,7 +15,7 @@ export const limitEntitySchema = z.object({
 export const entitySuggestionSchema = limitEntitySchema.extend({
   email: z.string().optional(),
   entity: pageEntityTypeSchema,
-  membership: membershipInfoSchema,
+  membership: membershipInfoSchema.nullable(),
 });
 
 export const entitiesSchema = z.object({
@@ -27,7 +27,7 @@ export const entitiesSchema = z.object({
 export const entitiesQuerySchema = z.object({
   q: z.string().optional(),
   type: pageEntityTypeSchema.optional(),
+  targetOrgId: idSchema.optional(),
   targetUserId: idSchema.optional(),
-  removeSelf: z.coerce.boolean().optional(),
   userMembershipType: contextEntityTypeSchema.optional(),
 });

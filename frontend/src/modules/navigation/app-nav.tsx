@@ -14,7 +14,7 @@ const AppNav = () => {
   const navigate = useNavigate();
   const isMobile = useBreakpoints('max', 'sm');
 
-  const { setFocusView, setLoading, setNavSheetOpen } = useNavigationStore.getState();
+  const { setFocusView, setNavLoading, setNavSheetOpen } = useNavigationStore.getState();
   const navSheetOpen = useNavigationStore((state) => state.navSheetOpen);
   const updateSheet = useSheeter.getState().update;
 
@@ -73,20 +73,17 @@ const AppNav = () => {
 
   useEffect(() => {
     router.subscribe('onBeforeLoad', ({ pathChanged }) => {
-      const navState = useNavigationStore.getState();
-
       if (!pathChanged) return;
 
+      const navState = useNavigationStore.getState();
       if (navState.focusView) setFocusView(false);
 
       useDialoger.getState().remove();
 
       // Set nav bar loading state
-      setLoading(true);
+      setNavLoading(true);
     });
-    router.subscribe('onLoad', () => {
-      setLoading(false);
-    });
+    router.subscribe('onLoad', () => setNavLoading(false));
   }, []);
 
   return (

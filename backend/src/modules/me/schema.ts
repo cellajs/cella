@@ -1,12 +1,12 @@
 import { z } from 'zod';
 
-import { createSelectSchema } from 'drizzle-zod';
 import { sessionsTable } from '#/db/schema/sessions';
 import { type MenuSectionName, entityRelations } from '#/entity-config';
 import { limitEntitySchema } from '#/modules/entities/schema';
 import { membershipInfoSchema } from '#/modules/memberships/schema';
 import { enabledOauthProvidersEnum } from '#/modules/users/schema';
 import { contextEntityTypeSchema, idOrSlugSchema } from '#/utils/schema/common';
+import { createSelectSchema } from 'drizzle-zod';
 
 export const sessionSchema = createSelectSchema(sessionsTable).omit({ token: true }).extend({ isCurrent: z.boolean() });
 
@@ -54,4 +54,20 @@ export const leaveEntityQuerySchema = z.object({
 
 export const unsubscribeSelfQuerySchema = z.object({
   token: z.string(),
+});
+
+export const uploadTokenBodySchema = z.object({
+  public: z.boolean(),
+  sub: z.string(),
+  imado: z.boolean(),
+  signature: z.string(),
+  params: z
+    .object({
+      auth: z.object({
+        key: z.string(),
+        expires: z.string().optional(),
+      }),
+      // Allow additional arbitrary keys with any type in params
+    })
+    .catchall(z.any()),
 });

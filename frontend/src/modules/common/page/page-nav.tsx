@@ -53,14 +53,13 @@ export const PageNav = ({ tabs, title, avatar, fallbackToFirst, className }: Pro
   };
 
   const handleTabClick = (id: string, el: HTMLAnchorElement | null) => {
-    const isActive = el?.dataset.active === 'true';
     scrollTabIntoView(id);
-    updateScrollPosition(el, isActive);
+    updateScrollPosition(el);
   };
 
   // Scroll to tabs when scrolled past header
-  const updateScrollPosition = (tabEl: HTMLAnchorElement | null, isActive: boolean) => {
-    if (isActive || !tabEl) return;
+  const updateScrollPosition = (tabEl: HTMLAnchorElement | null) => {
+    if (!tabEl) return;
 
     const tabsWrapper = document.getElementById('tabs-position');
     if (inView || !tabsWrapper) return;

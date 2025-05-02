@@ -69,7 +69,7 @@ class RequestRouteConfig {
     description: 'Delete requests by ids.',
     request: {
       body: {
-        content: { 'application/json': { schema: idsBodySchema } },
+        content: { 'application/json': { schema: idsBodySchema() } },
       },
     },
     responses: {

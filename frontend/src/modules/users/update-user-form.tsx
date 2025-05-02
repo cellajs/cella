@@ -24,7 +24,6 @@ import { Input } from '~/modules/ui/input';
 import { useUpdateUserMutation } from '~/modules/users/query';
 import type { User } from '~/modules/users/types';
 import { useUserStore } from '~/store/user';
-import { cleanUrl } from '~/utils/clean-url';
 
 interface UpdateUserFormProps {
   user: User;
@@ -58,7 +57,7 @@ const UpdateUserForm = ({ user, callback, sheet: isSheet, hiddenFields, children
       resolver: zodResolver(formSchema),
       defaultValues: {
         slug: user.slug,
-        thumbnailUrl: cleanUrl(user.thumbnailUrl),
+        thumbnailUrl: user.thumbnailUrl,
         firstName: user.firstName,
         lastName: user.lastName,
         email: user.email,

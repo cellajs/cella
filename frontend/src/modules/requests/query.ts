@@ -3,7 +3,6 @@ import { config } from 'config';
 import type { ApiError } from '~/lib/api';
 import { type CreateRequestBody, type GetRequestsParams, createRequest, deleteRequests, getRequests } from '~/modules/requests/api';
 import type { Request } from '~/modules/requests/types';
-import { getOffset } from '~/query/helpers';
 
 /**
  * Keys for request related queries. These keys help to uniquely identify different query. For managing query caching and invalidation.
@@ -42,12 +41,13 @@ export const requestsQueryOptions = ({
 
   return infiniteQueryOptions({
     queryKey,
-    initialPageParam: 0,
-    queryFn: async ({ pageParam: page, signal }) => {
-      const offset = getOffset(queryKey); // Calculate before fetching ensuring correct offset
-      return await getRequests({ page, q, sort, order, limit, offset }, signal);
+    initialPageParam: { page: 0, offset: 0 },
+    queryFn: async ({ pageParam: { page, offset }, signal }) => await getRequests({ page, q, sort, order, limit, offset }, signal),
+    getNextPageParam: (_lastPage, allPages) => {
+      const page = allPages.length;
+      const offset = allPages.reduce((acc, page) => acc + page.items.length, 0);
+      return { page, offset };
     },
-    getNextPageParam: (_lastPage, allPages) => allPages.length,
   });
 };
 

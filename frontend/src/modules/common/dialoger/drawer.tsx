@@ -22,12 +22,11 @@ export default function DrawerDialog({ dialog }: DialogProp) {
   return (
     <Drawer key={id} open={open} dismissible={!isDropdownOpen} onOpenChange={onOpenChange} onClose={closeDialog} noBodyStyles>
       <DrawerContent id={String(id)} onEscapeKeyDown={closeDialog} className={className}>
-        <DrawerHeader className={`${title || description ? headerClassName : 'hidden'}`}>
+        <DrawerHeader className={`${title || description ? headerClassName : 'hidden'} pt-6`}>
           <DrawerTitle className={`${title ? '' : 'hidden'} text-left min-h-6`}>{titleContent}</DrawerTitle>
           <DrawerDescription className={`${description ? '' : 'hidden'}`}>{description}</DrawerDescription>
         </DrawerHeader>
-        {/* To allow y scroll in drawer */}
-        <div className="flex flex-col gap-4 overflow-y-auto">{content}</div>
+        <div className="px-3 pb-3">{content}</div>
       </DrawerContent>
     </Drawer>
   );

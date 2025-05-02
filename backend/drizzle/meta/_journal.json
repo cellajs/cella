@@ -15,6 +15,13 @@
       "when": 1743162263273,
       "tag": "0001_loving_warstar",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1746004883664,
+      "tag": "0002_old_sentinels",
+      "breakpoints": true
     }
   ]
 }

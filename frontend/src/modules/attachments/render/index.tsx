@@ -67,8 +67,8 @@ export const AttachmentRender = ({
             <img src={url} alt={altName} className={`${itemClassName} w-full h-full`} />
           ))}
         {type.includes('audio') && <RenderAudio src={url} className="w-[80vw] mx-auto -mt-48 h-20" />}
-        {type.includes('video') && <RenderVideo src={url} className="aspect-video max-h-[90vh] mx-auto" />}
-        {type.includes('pdf') && <RenderPDF file={url} className="w-[95vw] m-auto h-[95vh] overflow-auto" />}
+        {type.includes('video') && <RenderVideo src={url} className="max-h-[90vh] max-w-[80rem] mx-auto" />}
+        {type.includes('pdf') && <RenderPDF file={url} className="w-[95vw] max-w-[70rem] mt-12 m-auto h-[calc(97vh-3rem)] overflow-auto" />}
       </Suspense>
     </div>
   );

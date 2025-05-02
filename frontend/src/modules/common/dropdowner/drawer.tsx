@@ -15,15 +15,14 @@ export default function DropdownDrawer({ dropdown }: { dropdown: InternalDropdow
 
   return (
     <Drawer key={id} open={true} onOpenChange={onOpenChange} onClose={closeDialog} noBodyStyles>
-      <DrawerContent id={String(id)} onEscapeKeyDown={closeDialog} className="py-6 px-4 z-301" isDropdown>
+      <DrawerContent id={String(id)} onEscapeKeyDown={closeDialog} className="z-301 max-h-[70vh]" isDropdown>
         <DrawerHeader className="p-0">
           <VisuallyHidden>
             <DrawerTitle>Choose</DrawerTitle>
             <DrawerDescription>Select an option</DrawerDescription>
           </VisuallyHidden>
         </DrawerHeader>
-        {/* To allow y scroll in drawer */}
-        <div className="overflow-y-auto">{content}</div>
+        <div className="flex flex-col gap-4 p-4">{content}</div>
       </DrawerContent>
     </Drawer>
   );

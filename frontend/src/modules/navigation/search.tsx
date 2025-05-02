@@ -3,7 +3,7 @@ import type { entitySuggestionSchema } from '#/modules/entities/schema';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
 import { type Entity, config } from 'config';
-import { History, Search, X } from 'lucide-react';
+import { History, Search, User, X } from 'lucide-react';
 import { Fragment, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { z } from 'zod';
@@ -18,6 +18,7 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { ScrollArea } from '~/modules/ui/scroll-area';
 import { getEntityRoute, suggestionSections } from '~/nav-config';
 import { useNavigationStore } from '~/store/navigation';
+import { Badge } from '../ui/badge';
 
 export type SuggestionType = z.infer<typeof entitySuggestionSchema>;
 
@@ -67,14 +68,14 @@ export const AppSearch = () => {
     });
   };
 
-  const { data: suggestions, isFetching } = useQuery(entitiesQueryOptions({ q: searchValue, removeSelf: true }));
+  const { data: suggestions, isFetching } = useQuery(entitiesQueryOptions({ q: searchValue }));
 
   const onSelectSuggestion = (suggestion: SuggestionType) => {
     // Update recent searches with the search value
     updateRecentSearches(searchValue);
 
-    const { path, params, search } = getEntityRoute(suggestion);
-    navigate({ to: path, resetScroll: false, params, search });
+    const { to, params, search } = getEntityRoute(suggestion);
+    navigate({ to, params, search, resetScroll: false });
 
     useDialoger.getState().remove();
   };
@@ -154,25 +155,43 @@ export const AppSearch = () => {
                 const filteredSuggestions = suggestions.items.filter((el) => el.entity === section.type);
                 // Skip rendering if no items match the section type
                 if (filteredSuggestions.length === 0) return null;
+
                 return (
                   <Fragment key={section.id}>
                     <CommandSeparator />
                     <CommandGroup className="">
                       <StickyBox className="z-10 px-2 py-1.5 text-xs font-medium text-muted-foreground bg-popover">{t(section.label)}</StickyBox>
-                      {filteredSuggestions.map((suggestion: SuggestionType) => (
-                        <CommandItem key={suggestion.id} onSelect={() => onSelectSuggestion(suggestion)}>
-                          <div className="flex space-x-2 items-center outline-0 ring-0 group">
-                            <AvatarWrap
-                              type={section.type}
-                              className="h-8 w-8"
-                              id={suggestion.id}
-                              name={suggestion.name}
-                              url={suggestion.thumbnailUrl}
-                            />
-                            <span className="group-hover:underline underline-offset-4 truncate font-medium">{suggestion.name}</span>
-                          </div>
-                        </CommandItem>
-                      ))}
+                      {filteredSuggestions.map((suggestion: SuggestionType) => {
+                        return (
+                          <CommandItem
+                            data-already-member={section.type !== 'user' && suggestion.membership !== null}
+                            key={suggestion.id}
+                            disabled={section.type !== 'user' && suggestion.membership === null}
+                            className="w-full justify-between group"
+                            onSelect={() => onSelectSuggestion(suggestion)}
+                          >
+                            <div className="flex space-x-2 items-center outline-0 ring-0 group">
+                              <AvatarWrap
+                                type={section.type}
+                                className="h-8 w-8"
+                                id={suggestion.id}
+                                name={suggestion.name}
+                                url={suggestion.thumbnailUrl}
+                              />
+                              <span className="group-data-[already-member=true]:hover:underline underline-offset-4 truncate font-medium">
+                                {suggestion.name}
+                              </span>
+                            </div>
+
+                            <div className="flex items-center">
+                              <Badge size="sm" variant="plain" className=" group-data-[already-member=true]:flex hidden gap-1">
+                                <User size={14} />
+                                <span className="max-sm:hidden font-light">{t('common:member')}</span>
+                              </Badge>
+                            </div>
+                          </CommandItem>
+                        );
+                      })}
                     </CommandGroup>
                   </Fragment>
                 );

@@ -17,6 +17,7 @@ export const SelectLanguage = ({ value, options, onChange }: SelectLanguageProps
   return (
     <Select
       name="language"
+      disabled={config.languages.length < 2}
       open={open}
       onOpenChange={setOpen}
       onValueChange={(lang: Language) => {

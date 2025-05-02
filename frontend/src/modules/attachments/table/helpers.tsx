@@ -1,11 +1,11 @@
 import { t } from 'i18next';
 import { type RefObject, Suspense } from 'react';
 import type { UploadedUppyFile } from '~/lib/imado/types';
+import { parseUploadedAttachments } from '~/modules/attachments/helpers';
 import { useAttachmentCreateMutation, useAttachmentDeleteMutation } from '~/modules/attachments/query/mutations';
 import UploadUppy from '~/modules/attachments/upload/upload-uppy';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import Spinner from '~/modules/common/spinner';
-import { nanoid } from '~/utils/nanoid';
 
 /**
  * Utility function to format bytes into human-readable format
@@ -42,23 +42,17 @@ export const openAttachmentsUploadDialog = (organizationId: string, triggerRef: 
     const { mutate: createAttachments } = useAttachmentCreateMutation();
     const { mutate: deleteAttachments } = useAttachmentDeleteMutation();
 
-    const handleCallback = (result: UploadedUppyFile[]) => {
-      const attachments = result.map(({ file, url }) => ({
-        id: file.id || nanoid(),
-        url,
-        size: String(file.size || 0),
-        contentType: file.type,
-        filename: file.name || 'unknown',
-        organizationId,
-      }));
-
+    const handleCallback = (result: UploadedUppyFile<'attachment'>) => {
+      const attachments = parseUploadedAttachments(result, organizationId);
+      // Save attachments
       createAttachments({ attachments, orgIdOrSlug: organizationId });
+
+      // Close the upload dialog
       useDialoger.getState().remove('upload-attachment');
     };
 
-    const handleSuccessesRetryCallback = async (result: UploadedUppyFile[], ids: string[]) => {
+    const handleSuccessesRetryCallback = async (result: UploadedUppyFile<'attachment'>, ids: string[]) => {
       handleCallback(result);
-
       deleteAttachments({ orgIdOrSlug: organizationId, ids });
     };
 
@@ -69,7 +63,7 @@ export const openAttachmentsUploadDialog = (organizationId: string, triggerRef: 
         organizationId={organizationId}
         restrictions={{ maxNumberOfFiles, allowedFileTypes: ['*/*'], maxTotalFileSize }}
         plugins={['webcam', 'image-editor', 'screen-capture', 'audio']}
-        imageMode="attachment"
+        templateId="attachment"
         callback={handleCallback}
         onRetrySuccessCallback={handleSuccessesRetryCallback}
       />

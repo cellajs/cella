@@ -2,9 +2,9 @@ import { type PageEntity, config } from 'config';
 import { useState } from 'react';
 import type { z } from 'zod';
 import useSearchParams from '~/hooks/use-search-params';
+import { EntityGrid } from '~/modules/entities/entity-grid';
+import { EntityGridBar } from '~/modules/entities/entity-grid-bar';
 import type { entitiesQuerySchema } from '#/modules/entities/schema';
-import { EntityGrid } from './entity-grid';
-import { EntityGridBar } from './entity-grid-bar';
 
 const LIMIT = config.requestLimits.default;
 

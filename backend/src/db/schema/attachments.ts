@@ -14,7 +14,9 @@ export const attachmentsTable = pgTable('attachments', {
   entity: varchar({ enum: ['attachment'] })
     .notNull()
     .default('attachment'),
-  url: varchar().notNull(),
+  originalKey: varchar().notNull(),
+  convertedKey: varchar(),
+  thumbnailKey: varchar(),
   createdAt: timestampsColumn.createdAt,
   createdBy: varchar().references(() => usersTable.id, {
     onDelete: 'set null',

@@ -14,7 +14,6 @@ import {
   updateOrganization,
 } from '~/modules/organizations/api';
 import type { Organization, OrganizationWithMembership } from '~/modules/organizations/types';
-import { getOffset } from '~/query/helpers';
 import { useMutateQueryData } from '~/query/hooks/use-mutate-query-data';
 
 /**
@@ -74,12 +73,13 @@ export const organizationsQueryOptions = ({
 
   return infiniteQueryOptions({
     queryKey,
-    initialPageParam: 0,
-    queryFn: async ({ pageParam: page, signal }) => {
-      const offset = getOffset(queryKey); // Calculate before fetching ensuring correct offset
-      return await getOrganizations({ page, q, sort, order, limit, offset }, signal);
+    initialPageParam: { page: 0, offset: 0 },
+    queryFn: async ({ pageParam: { page, offset }, signal }) => await getOrganizations({ page, q, sort, order, limit, offset }, signal),
+    getNextPageParam: (_lastPage, allPages) => {
+      const page = allPages.length;
+      const offset = allPages.reduce((acc, page) => acc + page.items.length, 0);
+      return { page, offset };
     },
-    getNextPageParam: (_lastPage, allPages) => allPages.length,
   });
 };
 

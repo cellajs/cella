@@ -57,7 +57,8 @@ export const useColumns = () => {
         sortable: false,
         minWidth: 200,
         renderHeaderCell: HeaderCell,
-        renderCell: ({ row }) => <>{row.message || <span className="text-muted">-</span>}</>,
+        renderCell: ({ row }) =>
+          row.message ? <span className="font-light whitespace-pre-wrap leading-5">{row.message}</span> : <span className="text-muted">-</span>,
       },
       {
         key: 'createdAt',

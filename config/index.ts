@@ -30,6 +30,11 @@ export type ProductEntity = (typeof _default.productEntityTypes)[number];
 export type EnabledOauthProvider = (typeof _default.enabledOauthProviders)[number];
 
 /**
+ * Upload template IDs
+ */
+export type UploadTemplateId = (typeof _default.uploadTemplateIds)[number];
+
+/**
  * Language options
  */
 export type Language = (typeof _default.languages)[number];
