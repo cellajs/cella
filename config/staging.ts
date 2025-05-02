@@ -9,7 +9,6 @@ export default {
   frontendUrl: 'https://cella.dev',
   backendUrl: 'https://api.cella.dev',
   backendAuthUrl: 'https://api.cella.dev/auth',
-  tusUrl: 'https://tus.cella.dev',
   electricUrl: 'https://electric.cella.dev',
 
   // Hide chat widget in staging
