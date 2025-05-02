@@ -7,7 +7,6 @@ export const config = {
   frontendUrl: 'https://cellajs.com',
   backendUrl: 'https://api.cellajs.com',
   backendAuthUrl: 'https://api.cellajs.com/auth',
-  tusUrl: 'https://tus.cellajs.com',
   electricUrl: 'https://electric.cellajs.com',
 
   defaultRedirectPath: '/home',
