@@ -1,6 +1,6 @@
 import { type DefaultReactGridSuggestionItem, createReactInlineContentSpec } from '@blocknote/react';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
-import type { CustomBlockNoteSchema } from '~/modules/common/blocknote/types';
+import type { CustomBlockNoteEditor } from '~/modules/common/blocknote/types';
 import type { Member } from '~/modules/memberships/types';
 
 // The Mention inline content.
@@ -23,7 +23,7 @@ export const MentionSchema = createReactInlineContentSpec(
 );
 
 // Function which gets all users for the mentions menu.
-export const getMentionMenuItems = (members: Member[], editor: CustomBlockNoteSchema): DefaultReactGridSuggestionItem[] => {
+export const getMentionMenuItems = (members: Member[], editor: CustomBlockNoteEditor): DefaultReactGridSuggestionItem[] => {
   return members.map((m) => ({
     id: m.id,
     onItemClick: () => {

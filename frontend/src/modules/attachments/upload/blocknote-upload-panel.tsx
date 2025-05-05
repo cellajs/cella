@@ -8,7 +8,7 @@ import type { UploadedUppyFile } from '~/lib/imado/types';
 import { parseUploadedAttachments } from '~/modules/attachments/helpers';
 import UploadUppy from '~/modules/attachments/upload/upload-uppy';
 import { customSchema } from '~/modules/common/blocknote/blocknote-config';
-import { focusEditor } from '~/modules/common/blocknote/helpers';
+import { focusEditor } from '~/modules/common/blocknote/helpers/focus';
 import { getPriasignedUrl } from '~/modules/system/api';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '~/modules/ui/dialog';
 
@@ -54,11 +54,6 @@ const UppyFilePanel = ({ organizationId, onCreateCallback, ...props }: UppyFileP
     if (!isOnline) closeFilePanel();
   }, [isOnline]);
 
-  // Ensure focus is returned to editor when unmounting
-  useEffect(() => {
-    return () => focusEditor(editor);
-  }, []);
-
   return (
     <Dialog defaultOpen={isOnline} onOpenChange={() => closeFilePanel()}>
       <DialogContent className="md:max-w-xl">
@@ -85,15 +80,10 @@ const UppyFilePanel = ({ organizationId, onCreateCallback, ...props }: UppyFileP
             const presignedUrls = await Promise.all(attachments.map((attachment) => getPriasignedUrl({ key: attachment.originalKey })));
             for (let index = 0; index < attachments.length; index++) {
               const attachment = attachments[index];
-              //TODO(IMPROVE) preasigned url creation after upload on server
+              //TODO(IMPROVE) can be ipmroved by resolveFileUrl func in useCreateBlockNote but it blick on load
               const presignedUrl = presignedUrls[index];
 
-              const updateData: PartialBlock = {
-                props: {
-                  name: attachment.filename,
-                  url: presignedUrl ?? attachment.originalKey,
-                },
-              };
+              const updateData: PartialBlock = { props: { name: attachment.filename, url: presignedUrl ?? attachment.originalKey } };
 
               editor.updateBlock(block, updateData);
             }

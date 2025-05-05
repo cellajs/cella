@@ -1,7 +1,10 @@
+import type { FilePanelProps } from '@blocknote/react';
 import type React from 'react';
 import type { customSchema } from '~/modules/common/blocknote/blocknote-config';
+import type { Member } from '~/modules/memberships/types';
 
-export type CustomBlockNoteSchema = typeof customSchema.BlockNoteEditor;
+export type CustomBlockNoteEditor = typeof customSchema.BlockNoteEditor;
+export type CustomBlock = typeof customSchema.Block;
 
 export interface CustomFormatToolBarConfig {
   blockTypeSelect?: boolean;
@@ -66,3 +69,31 @@ export type BaseMenusItemsTitle =
 // Combine base types with extended types
 export type CellaCustomBlockTypes = ExtendableBlocknoteTypes['BlockTypes'];
 export type MenusItemsTitle = ExtendableBlocknoteTypes['ItemsTitle'];
+
+export type BaseBlockNoteProps = {
+  id: string;
+  defaultValue?: string; // stringified block
+  className?: string;
+  sideMenu?: boolean;
+  slashMenu?: boolean;
+  formattingToolbar?: boolean;
+  trailingBlock?: boolean;
+  altClickOpensPreview?: boolean;
+  emojis?: boolean;
+  allowedBlockTypes?: (BasicBlockBaseTypes | CellaCustomBlockTypes)[];
+  members?: Member[];
+  onFocus?: () => void;
+  onEscapeClick?: () => void;
+  onEnterClick?: () => void;
+} & (
+  | {
+      // filePanel and allowedFileBlockTypes req to add together
+      filePanel: (props: FilePanelProps) => React.ReactElement;
+      allowedFileBlockTypes?: BasicFileBlockTypes[];
+    }
+  | {
+      // if neither is provided, it allows the omission of both
+      filePanel?: never;
+      allowedFileBlockTypes?: never;
+    }
+);

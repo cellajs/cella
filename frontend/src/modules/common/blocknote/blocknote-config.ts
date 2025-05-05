@@ -11,7 +11,7 @@ import type {
   BlockAlignTypes,
   BlockStyleTypes,
   CellaCustomBlockTypes,
-  CustomBlockNoteSchema,
+  CustomBlockNoteEditor,
   CustomFormatToolBarConfig,
   MenusItemsTitle,
   SlashIndexedItems,
@@ -104,7 +104,7 @@ export const customSlashIndexedItems: SlashIndexedItems = ['Image', 'Video', 'Fi
 export const customSlashNotIndexedItems: MenusItemsTitle[] = ['Table', 'Audio', 'Heading 1', 'Heading 2', 'Heading 3', 'Paragraph', 'Code Block'];
 
 // Generate the complete Slash menu items list
-export const getSlashMenuItems = (editor: CustomBlockNoteSchema) => [...getDefaultReactSlashMenuItems(editor), getSlashNotifySlashItem(editor)];
+export const getSlashMenuItems = (editor: CustomBlockNoteEditor) => [...getDefaultReactSlashMenuItems(editor), getSlashNotifySlashItem(editor)];
 
 /**
  *  Formatting toolbar Configuration
