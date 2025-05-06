@@ -10,4 +10,4 @@ export const userSelect = omitKeys(usersTable, config.sensitiveFields);
 /**
  * Limited user select. Include min info.
  */
-export const limitUserSelect = extractKeys(usersTable, ['id', 'name', 'email', 'entity', 'thumbnailUrl', 'bannerUrl']);
+export const limitUserSelect = extractKeys(usersTable, ['id', 'name', 'email', 'entity', 'thumbnailUrl', 'bannerUrl', 'slug']);

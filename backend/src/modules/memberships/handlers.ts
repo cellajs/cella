@@ -244,12 +244,12 @@ const membershipsRoutes = app
     );
 
     // Send SSE events for the memberships that were deleted
-    for (const membership of targets) {
+    for (const targetMembership of targets) {
       // Send the event to the user if they are a member of the organization
       const memberIds = targets.map((el) => el.userId);
       sendSSEToUsers(memberIds, 'remove_entity', { id: entity.id, entity: entity.entity });
 
-      logEvent('Member deleted', { membership: membership.id });
+      logEvent('Member deleted', { membership: targetMembership.id });
     }
 
     return ctx.json({ success: true, errors }, 200);

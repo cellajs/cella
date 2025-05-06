@@ -9,7 +9,7 @@ import middlewares from './middlewares/app';
 const baseApp = new OpenAPIHono<Env>();
 
 // Redirect favicon
-baseApp.get('/favicon.ico', (c) => c.redirect(`${config.frontendUrl}/static/favicon.ico`, 301));
+baseApp.get('/favicon.ico', (c) => c.redirect(`${config.frontendUrl}/favicon.ico`, 301));
 
 // Add context storage
 baseApp.use(contextStorage());

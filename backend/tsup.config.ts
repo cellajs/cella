@@ -17,5 +17,5 @@ export default defineConfig({
     options.mainFields = ['module', 'main']; // Prioritize ESM entry points
     options.conditions = ['module']; // Enforce use of ESM
   },
-  external: ['jszip', 'papaparse'],
+  external: ['papaparse'],
 });

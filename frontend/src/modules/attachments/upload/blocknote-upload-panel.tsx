@@ -63,7 +63,7 @@ const UppyFilePanel = ({ organizationId, onCreateCallback, ...props }: UppyFileP
         </DialogHeader>
         <UploadUppy
           isPublic={false}
-          uploadType="personal"
+          uploadType="organization"
           templateId="attachment"
           organizationId={organizationId}
           restrictions={{

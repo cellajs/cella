@@ -51,6 +51,8 @@ export const env = createEnv({
     TRANSLOADIT_SECRET: z.string().optional(),
     S3_ACCESS_KEY_ID: z.string().default(''),
     S3_ACCESS_KEY_SECRET: z.string().default(''),
+
+    TRIGGER_SECRET_KEY: z.string().optional(),
   },
   runtimeEnv: process.env,
   emptyStringAsUndefined: true,

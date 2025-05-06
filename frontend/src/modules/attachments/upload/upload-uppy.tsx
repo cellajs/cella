@@ -65,7 +65,7 @@ export const UploadUppy = ({
       try {
         const imadoUppy = await ImadoUppy(uploadType, uppyOptions, {
           public: isPublic,
-          organizationId: organizationId,
+          organizationId,
           templateId,
           statusEventHandler: {
             onComplete: (results) => {

@@ -21,7 +21,14 @@ const FAQ = () => {
                 <Trans
                   i18nKey={answer}
                   components={{
-                    Link: <Link to={faq.link} aria-label={`Visit ${faq.link}`} target="_blank" className="underline" />,
+                    Link: (
+                      <Link
+                        to={faq.link}
+                        aria-label={`Visit ${faq.link}`}
+                        target={faq.link?.startsWith('https:') ? '_blank' : '_self'}
+                        className="underline"
+                      />
+                    ),
                   }}
                 />
               </AccordionContent>
