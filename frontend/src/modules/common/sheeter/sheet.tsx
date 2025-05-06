@@ -37,12 +37,9 @@ export const DesktopSheet = ({ sheet }: SheetProps) => {
   const [side, setSide] = useState(sheetSide);
   const [className, setClassName] = useState(sheetClassName);
 
-  // TODO(REVIEW) Prevent flickering of sheet when its removed
   useEffect(() => {
-    if (sheetSide) {
-      setSide(sheetSide); // Update side when new sheet is created
-      setClassName(sheetClassName);
-    }
+    setSide(sheetSide);
+    setClassName(sheetClassName);
   }, [sheetSide, sheetClassName]);
 
   // onClose trigger handles by remove method

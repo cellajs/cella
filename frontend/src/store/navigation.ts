@@ -5,15 +5,15 @@ import { immer } from 'zustand/middleware/immer';
 import { entityRelations } from '#/entity-config';
 
 import type { UserMenu } from '~/modules/me/types';
+import type { NavItemId } from '~/nav-config';
 
 interface NavigationStoreState {
   recentSearches: string[]; // Recent search (from AppSearch),
   setRecentSearches: (searchValue: string[]) => void; // Updates recent searches
 
   menu: UserMenu; // User menu
-  // TODO make typesafe with ids
-  navSheetOpen: string | null; // Currently open navigation sheet
-  setNavSheetOpen: (sheet: string | null) => void; // Sets navigation sheet
+  navSheetOpen: NavItemId | null; // Currently open navigation sheet
+  setNavSheetOpen: (sheet: NavItemId | null) => void; // Sets navigation sheet
 
   keepMenuOpen: boolean; // Menu remains open state
   setKeepMenuOpen: (status: boolean) => void; // Toggles menu open state
