@@ -16,7 +16,6 @@ export const RequestPasswordDialog = forwardRef<HTMLButtonElement, RequestPasswo
   const openDialog = () => {
     createDialog(<RequestPasswordForm email={email} />, {
       id: 'request-password',
-      // TODO
       triggerRef: ref as RefObject<HTMLButtonElement>,
       className: 'md:max-w-xl',
       title: t('common:reset_password'),

@@ -17,7 +17,7 @@ export interface PageCoverProps {
   id: string;
   canUpdate: boolean;
   url?: string | null;
-  coverUpdateCallback: (bannerUrl: string) => void;
+  coverUpdateCallback: (bannerKey: string) => void;
 }
 
 const PageCover = memo(({ id, canUpdate, url, coverUpdateCallback }: PageCoverProps) => {
@@ -28,7 +28,8 @@ const PageCover = memo(({ id, canUpdate, url, coverUpdateCallback }: PageCoverPr
 
   const [coverUrl, setCoverUrl] = useState(url);
 
-  const setUrl = (bannerUrl: string) => {
+  const handleNewUrl = (bannerKey: string) => {
+    const bannerUrl = `${config.publicCDNUrl}/${bannerKey}`;
     setCoverUrl(bannerUrl);
     coverUpdateCallback(bannerUrl);
   };
@@ -47,7 +48,7 @@ const PageCover = memo(({ id, canUpdate, url, coverUpdateCallback }: PageCoverPr
           templateId="cover"
           callback={(result) => {
             const url = result.cover[0].url;
-            if (url) setUrl(url);
+            if (url) handleNewUrl(url);
             dialog.remove('page-cover');
           }}
         />
@@ -65,7 +66,7 @@ const PageCover = memo(({ id, canUpdate, url, coverUpdateCallback }: PageCoverPr
     <div
       data-url={!!url}
       className={`relative flex bg-cover bg-center h-32 ${numberToColorClass(id)} data-[url=true]:h-[20vw] min-h-40 sm:min-w-52`}
-      style={coverUrl ? { backgroundImage: `url(${config.publicCDNUrl}/${coverUrl})` } : {}}
+      style={coverUrl ? { backgroundImage: `url(${coverUrl})` } : {}}
     >
       {canUpdate && config.has.imado && (
         <Button

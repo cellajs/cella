@@ -3,6 +3,7 @@ import { memo, useEffect } from 'react';
 import router from '~/lib/router';
 import AttachmentDialog from '~/modules/attachments/attachment-dialog';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
+import { fallbackContentRef } from '~/utils/fallback-content-ref';
 
 /**
  * Handler for attachment dialog.
@@ -33,12 +34,8 @@ const AttachmentDialogHandler = memo(() => {
     if (!attachmentDialogId || !orgIdOrSlug) return;
     if (getDialog('attachment-dialog')) return;
 
-    // TODO(IMPROVE) we should have a fallback ref in the app-content that is always available
-    const triggerRef = getTriggerRef(attachmentDialogId) || {
-      current: document.activeElement instanceof HTMLButtonElement ? document.activeElement : null,
-    };
+    const triggerRef = getTriggerRef(attachmentDialogId) || fallbackContentRef;
 
-    // const timeoutId = setTimeout(() => {
     createDialog(<AttachmentDialog key={attachmentDialogId} attachmentId={attachmentDialogId} orgIdOrSlug={orgIdOrSlug} />, {
       id: 'attachment-dialog',
       triggerRef: triggerRef,
@@ -52,9 +49,6 @@ const AttachmentDialogHandler = memo(() => {
         clearAttachmentDialogSearchParams();
       },
     });
-    // }, 0);
-
-    // return () => clearTimeout(timeoutId);
   }, [attachmentDialogId, orgIdOrSlug, groupId]);
 
   // Separate cleanup when `attachmentDialogId` disappears

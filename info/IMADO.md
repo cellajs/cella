@@ -1,7 +1,10 @@
 # Imado
 
-
 ## Set cors headers
+```
+aws configure
+```
+
 Create a JSON like this
 ```
 {

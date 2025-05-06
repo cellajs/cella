@@ -3,13 +3,13 @@ import { CustomDragHandleButton } from '~/modules/common/blocknote/custom-side-m
 import { ResetBlockTypeItem } from '~/modules/common/blocknote/custom-side-menu/reset-block-type';
 
 import { sideMenuOpenOnTypes } from '~/modules/common/blocknote/blocknote-config';
-import type { BasicBlockTypes, CellaCustomBlockTypes, CustomBlockNoteSchema } from '~/modules/common/blocknote/types';
+import type { BasicBlockTypes, CellaCustomBlockTypes, CustomBlockNoteEditor } from '~/modules/common/blocknote/types';
 
 // in this menu we have only drag button
 export const CustomSideMenu = ({
   editor,
   allowedTypes,
-}: { editor: CustomBlockNoteSchema; allowedTypes: (CellaCustomBlockTypes | BasicBlockTypes)[] }) => (
+}: { editor: CustomBlockNoteEditor; allowedTypes: (CellaCustomBlockTypes | BasicBlockTypes)[] }) => (
   <SideMenuController
     sideMenu={(props) => (
       <SideMenu {...props}>

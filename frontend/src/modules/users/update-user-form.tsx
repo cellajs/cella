@@ -97,22 +97,10 @@ const UpdateUserForm = ({ user, callback, sheet: isSheet, hiddenFields, children
     );
   };
 
-  const setImageUrl = (url: string | null) => {
-    form.setValue('thumbnailUrl', url, { shouldDirty: true });
-  };
-
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 w-full">
-        <AvatarFormField
-          control={form.control}
-          label={children ? '' : t('common:profile_picture')}
-          type="user"
-          name="thumbnailUrl"
-          entity={user}
-          url={form.getValues('thumbnailUrl')}
-          setUrl={setImageUrl}
-        />
+        <AvatarFormField form={form} label={children ? '' : t('common:profile_picture')} type="user" name="thumbnailUrl" entity={user} />
         <div className="grid sm:grid-cols-2 gap-6 sm:gap-4">
           <InputFormField inputClassName="border" control={form.control} name="firstName" label={t('common:first_name')} required />
           <InputFormField inputClassName="border" control={form.control} name="lastName" label={t('common:last_name')} required />

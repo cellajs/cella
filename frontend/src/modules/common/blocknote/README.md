@@ -14,7 +14,7 @@ functions `getSideMenuItems` and `getSlashMenuItems` are required for integratin
 respectively. For default Cella usage, they should look like this:
 
 ```typescript
-export const getSlashMenuItems = (editor: CustomBlockNoteSchema) => [...getDefaultReactSlashMenuItems(editor), getSlashNotifySlashItem(editor)];
+export const getSlashMenuItems = (editor: CustomBlockNoteEditor) => [...getDefaultReactSlashMenuItems(editor), getSlashNotifySlashItem(editor)];
 
 export const getSideMenuItems = (dict: Dictionary) => [...blockTypeSelectItems(dict)];
 ```
@@ -67,7 +67,7 @@ export const menusTitleToAllowedType = {
 export const customBlockTypeSelectItems: (BasicBlockTypes | CellaCustomBlockTypes)[] = [...existingCustomBlockTypeSelectItems, "summary"];
 export const getSideMenuItems = (dict: Dictionary) => [...blockTypeSelectItems(dict), insertSummarySideMenu()];
 
-export const getSlashMenuItems = (editor: CustomBlockNoteSchema) => [
+export const getSlashMenuItems = (editor: CustomBlockNoteEditor) => [
   ...getDefaultReactSlashMenuItems(editor),
   getSlashNotifySlashItem(editor),
   getSlashSummaryItem(editor)
@@ -90,7 +90,7 @@ types by specifying them in the <BlockNote /> component configuration. This allo
 Example Usage:
 
 ```tsx
-<BlockNote
+<BlockNoteEditor
   id={blocknoteId}
   defaultValue={value}
   onChange={onChange}

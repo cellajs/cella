@@ -27,6 +27,6 @@
       "#/*": ["./src/*"]
     }
   },
-  "include": ["src/**/*", "drizzle.config.ts", "emails", "scripts"],
+  "include": ["src/**/*", "drizzle.config.ts", "emails", "scripts", "trigger.config.ts"],
   "exclude": ["**/node_modules", "**/dist", "**/.*/"]
 }

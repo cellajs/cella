@@ -73,21 +73,15 @@ const UpdateOrganizationForm = ({ organization, callback, sheet: isSheet }: Prop
     );
   };
 
-  const setImageUrl = (url: string | null) => {
-    form.setValue('thumbnailUrl', url, { shouldDirty: true });
-  };
-
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
         <AvatarFormField
-          control={form.control}
+          form={form}
           label={t('common:resource_logo', { resource: t('common:organization') })}
           type="organization"
           name="thumbnailUrl"
           entity={organization}
-          url={form.getValues('thumbnailUrl')}
-          setUrl={setImageUrl}
         />
         <InputFormField control={form.control} name="name" label={t('common:name')} required />
         <SlugFormField

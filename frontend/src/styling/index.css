@@ -23,7 +23,7 @@
     display: block;
     position: absolute;
     margin-top: 0.5rem;
-    margin-left: 1.70rem;
+    margin-left: 1.7rem;
     opacity: 0.5;
     z-index: 0;
     width: 0.05rem;
@@ -112,7 +112,7 @@
   /* For small screens we enlarge all elements by using rem everywhere, and then simply increase font-size */
   @media (max-width: 639px) {
     html {
-      font-size: 20px;
+      font-size: 18px;
     }
   }
 

@@ -25,7 +25,7 @@
   --success: 120 100% 40%;
 }
 
-p.bn-inline-content {
+.bn-shadcn p {
   font-size: 0.888rem;
   font-weight: 350;
   line-height: 1.3;
@@ -33,11 +33,11 @@ p.bn-inline-content {
   padding: 0;
 }
 
-.bn-inline-content:has(> .ProseMirror-trailingBreak)::before {
+.bn-shadcn p:has(> .ProseMirror-trailingBreak)::before {
   color: hsl(var(--blocknote-placeholder));
 }
 
-p.bn-inline-content code {
+.bn-shadcn code {
   background: hsl(var(--muted));
   font-size: 0.85em;
   border-radius: 0.24rem;
@@ -79,7 +79,7 @@ p.bn-inline-content code {
   -webkit-font-smoothing: auto;
 }
 
-.bn-inline-content:has(> .ProseMirror-trailingBreak)::before {
+.bn-shadcn p:has(> .ProseMirror-trailingBreak)::before {
   color: var(--blocknote-placeholder);
 }
 

@@ -2,11 +2,11 @@ import type { Block, BlockConfig, InlineContentSchema, StyleSchema } from '@bloc
 import { type BlockTypeSelectItem, type DragHandleMenuProps, useComponentsContext, useDictionary } from '@blocknote/react';
 import { useMemo } from 'react';
 import { customBlockTypeSelectItems, getSideMenuItems } from '~/modules/common/blocknote/blocknote-config';
-import { focusEditor } from '~/modules/common/blocknote/helpers';
-import type { BasicBlockTypes, CellaCustomBlockTypes, CustomBlockNoteSchema } from '~/modules/common/blocknote/types';
+import { focusEditor } from '~/modules/common/blocknote/helpers/focus';
+import type { BasicBlockTypes, CellaCustomBlockTypes, CustomBlockNoteEditor } from '~/modules/common/blocknote/types';
 
 interface ResetBlockTypeItemProp {
-  editor: CustomBlockNoteSchema;
+  editor: CustomBlockNoteEditor;
   props: DragHandleMenuProps;
   allowedTypes: (CellaCustomBlockTypes | BasicBlockTypes)[];
 }

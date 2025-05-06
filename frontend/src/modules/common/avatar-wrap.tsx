@@ -1,5 +1,5 @@
 import type { AvatarProps } from '@radix-ui/react-avatar';
-import { type Entity, config } from 'config';
+import type { Entity } from 'config';
 import { memo, useMemo } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '~/modules/ui/avatar';
 import { cn } from '~/utils/cn';
@@ -20,7 +20,7 @@ const AvatarWrap = memo(({ type, id, name, url, className, ...props }: AvatarWra
     //key will force remounting of AvatarImage or AvatarFallback when URL changes
     <Avatar key={url ? 'image' : 'fallback'} {...props} data-type={type} className={cn('group', className)}>
       {url ? (
-        <AvatarImage src={`${config.publicCDNUrl}/${url}`} draggable="false" className="bg-muted rounded-md group-data-[type=user]:rounded-full" />
+        <AvatarImage src={url} draggable="false" className="bg-muted rounded-md group-data-[type=user]:rounded-full" />
       ) : (
         <AvatarFallback className={cn('bg-muted', avatarBackground, type && type === 'user' ? 'rounded-full' : 'rounded-md')}>
           <span className="sr-only">{name}</span>

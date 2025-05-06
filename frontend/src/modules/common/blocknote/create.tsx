@@ -1,9 +1,8 @@
 import { FilePanelController, GridSuggestionMenuController, useCreateBlockNote } from '@blocknote/react';
 import { BlockNoteView } from '@blocknote/shadcn';
-import { type FocusEventHandler, type MouseEventHandler, useCallback, useEffect, useMemo, useRef } from 'react';
+import { type MouseEventHandler, useCallback, useEffect, useMemo, useRef } from 'react';
 
 import { useBreakpoints } from '~/hooks/use-breakpoints';
-import router from '~/lib/router';
 import {
   allowedFileTypes,
   allowedTypes,
@@ -20,19 +19,18 @@ import { focusEditor } from '~/modules/common/blocknote/helpers/focus';
 import { createHandleKeyDown } from '~/modules/common/blocknote/helpers/key-down';
 import { openAttachment } from '~/modules/common/blocknote/helpers/open-attachment';
 import { shadCNComponents } from '~/modules/common/blocknote/helpers/shad-cn';
-import type { BaseBlockNoteProps } from '~/modules/common/blocknote/types';
+import type { BaseBlockNoteProps, CustomBlockNoteEditor } from '~/modules/common/blocknote/types';
 import { useUIStore } from '~/store/ui';
 
 import '@blocknote/shadcn/style.css';
 import '~/modules/common/blocknote/app-specific-custom/styles.css';
 import '~/modules/common/blocknote/styles.css';
 
-type BlockNoteEditorProps = BaseBlockNoteProps & {
-  updateDataOnBeforeLoad?: boolean;
-  updateData: (srtBlocks: string) => void;
+export type BlockNoteCreateProps = BaseBlockNoteProps & {
+  onChange: (value: string) => void;
 };
 
-export const BlockNoteEditor = ({
+export const BlockNoteCreate = ({
   id,
   defaultValue = '',
   className = '',
@@ -41,7 +39,6 @@ export const BlockNoteEditor = ({
   formattingToolbar = true,
   emojis = true,
   trailingBlock = true,
-  updateDataOnBeforeLoad = false,
   altClickOpensPreview = false,
   // allow default types
   allowedBlockTypes = allowedTypes,
@@ -49,59 +46,28 @@ export const BlockNoteEditor = ({
   filePanel,
   // allow default filetypes
   allowedFileBlockTypes = filePanel ? allowedFileTypes : [],
-  updateData,
+  onChange,
   onEscapeClick,
   onEnterClick,
   onFocus,
-}: BlockNoteEditorProps) => {
+}: BlockNoteCreateProps) => {
   const mode = useUIStore((state) => state.mode);
   const isMobile = useBreakpoints('max', 'sm');
 
-  const blockNoteRef = useRef<HTMLDivElement | null>(null);
+  const blockNoteRef = useRef(null);
   const editor = useCreateBlockNote({ schema: customSchema, trailingBlock });
 
   const emojiPicker = slashMenu
     ? [...customSlashIndexedItems, ...customSlashNotIndexedItems].includes('Emoji') && allowedBlockTypes.includes('emoji')
     : emojis;
 
-  const handleDataUpdate = useCallback(() => {
-    const strBlocks = JSON.stringify(editor.document);
-    // Check if there is any difference in the content
-    if (compareIsContentSame(strBlocks, defaultValue)) return;
-    updateData(strBlocks);
-  }, [editor]);
-
-  const handleKeyDown = useCallback(
-    createHandleKeyDown({
-      editor,
-      handleDataUpdate,
-      onEnterClick,
-      onEscapeClick,
-    }),
-    [editor],
-  );
+  const handleKeyDown = useCallback(createHandleKeyDown({ editor, handleDataUpdate: onChange, onEnterClick, onEscapeClick }), [editor]);
   const handleClick: MouseEventHandler = (event) => openAttachment(event, editor, altClickOpensPreview, blockNoteRef);
-  const handleBlur: FocusEventHandler = useCallback(
-    (event) => {
-      // if user in Side Menu does not update
-      if (editor.sideMenu.view?.menuFrozen) return;
+  const handleChange = (editor: CustomBlockNoteEditor) => {
+    const strBlocks = JSON.stringify(editor.document);
+    onChange(strBlocks);
+  };
 
-      // if user in Formatting Toolbar does not update
-      if (editor.formattingToolbar.shown) return;
-
-      // if user in Slash Menu does not update
-      if (editor.suggestionMenus.shown) return;
-
-      // if user in file panel does not update
-      if (editor.filePanel?.shown) return;
-
-      const nextFocused = event.relatedTarget;
-      // Check if the next focused element is still inside the editor
-      if (nextFocused && blockNoteRef.current && blockNoteRef.current.contains(nextFocused)) return;
-      handleDataUpdate();
-    },
-    [editor],
-  );
   const passedContent = useMemo(() => getParsedContent(defaultValue), [defaultValue]);
 
   useEffect(() => {
@@ -114,12 +80,6 @@ export const BlockNoteEditor = ({
       else editor.replaceBlocks(editor.document, passedContent);
     });
   }, [passedContent]);
-
-  useEffect(() => {
-    if (!updateDataOnBeforeLoad) return;
-    const unsubscribe = router.subscribe('onBeforeLoad', handleDataUpdate);
-    return () => unsubscribe();
-  }, [handleDataUpdate]);
 
   // TODO(BLOCKING) https://github.com/TypeCellOS/BlockNote/issues/891
   useEffect(() => {
@@ -141,9 +101,9 @@ export const BlockNoteEditor = ({
       theme={mode}
       editor={editor}
       shadCNComponents={shadCNComponents}
+      onChange={handleChange}
       onFocus={onFocus}
       onClick={handleClick}
-      onBlur={handleBlur}
       onKeyDown={handleKeyDown}
       sideMenu={false}
       slashMenu={!slashMenu}
