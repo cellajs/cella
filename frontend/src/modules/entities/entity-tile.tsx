@@ -8,7 +8,7 @@ import { numberToColorClass } from '~/utils/number-to-color-class';
 
 export const EntityTile = ({ entity }: { entity: EntityTileData }) => {
   return (
-    <Card className="overflow-hidden shadow-md transition hover:shadow-lg">
+    <Card className="overflow-hidden transition hover:shadow-sm">
       <CardContent className="p-4">
         <Link to="/$idOrSlug" params={{ idOrSlug: entity.slug }} className="w-full relative group">
           <div

@@ -16,8 +16,8 @@ pnpm quick
 ```bash
 pnpm install
 pnpm docker
-pnpm dev
 pnpm seed
+pnpm dev
 ```
 
 ## Customize & contribute
