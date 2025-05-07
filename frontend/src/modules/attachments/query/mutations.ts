@@ -53,8 +53,10 @@ export const useAttachmentCreateMutation = () =>
         // Make newAttachment satisfy Attachment type for optimistic update
         const newAttachment: Attachment = {
           ...attachment,
-          url: convertedKey ?? originalKey,
+          url: originalKey,
           thumbnailUrl: thumbnailKey ?? null,
+          convertedUrl: convertedKey ?? null,
+          convertedContentType: attachment.convertedContentType ?? null,
           name: attachment.filename.split('.').slice(0, -1).join('.'),
           id: optimisticId,
           entity: 'attachment',

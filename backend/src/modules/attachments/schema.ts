@@ -30,6 +30,7 @@ export const attachmentSchema = z.object({
   ...createSelectSchema(attachmentsTable).omit({ originalKey: true, convertedKey: true, thumbnailKey: true }).extend({
     url: z.string(),
     thumbnailUrl: z.string().nullable(),
+    convertedUrl: z.string().nullable(),
   }).shape,
 });
 

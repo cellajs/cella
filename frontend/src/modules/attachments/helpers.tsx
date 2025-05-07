@@ -62,7 +62,7 @@ export const parseUploadedAttachments = (result: UploadedUppyFile<'attachment'>,
 
       if (step.includes('converted_')) {
         target.convertedKey = url;
-        target.contentType = mime;
+        target.convertedContentType = mime;
         if (type) target.type = type;
       }
 

@@ -14,7 +14,16 @@ import { Carousel as BaseCarousel, CarouselContent, CarouselDots, CarouselItem, 
 import { cn } from '~/utils/cn';
 import { isCDNUrl } from '~/utils/is-cdn-url';
 
-export type CarouselItemData = { id: string; url: string; name?: string; filename?: string; contentType?: string };
+export type CarouselItemData = {
+  id: string;
+  url: string;
+  convertedUrl?: string | null;
+  name?: string;
+  filename?: string;
+  contentType?: string;
+  convertedContentType?: string | null;
+};
+
 interface CarouselPropsBase {
   itemIndex?: number;
   items?: CarouselItemData[];
@@ -128,7 +137,7 @@ const AttachmentsCarousel = ({ items = [], isDialog = false, itemIndex = 0, save
       )}
 
       <CarouselContent className="h-full">
-        {items.map(({ url, contentType = 'image' }, idx) => {
+        {items.map(({ url, convertedUrl, contentType = 'image', convertedContentType }, idx) => {
           return (
             <CarouselItem
               key={url}
@@ -140,10 +149,10 @@ const AttachmentsCarousel = ({ items = [], isDialog = false, itemIndex = 0, save
               <AttachmentRender
                 containerClassName={cn('overflow-hidden h-full relative flex items-center justify-center ', classNameContainer)}
                 itemClassName={isDialog ? 'object-contain' : ''}
-                type={contentType}
+                type={convertedContentType ?? contentType}
                 imagePanZoom={isDialog}
                 showButtons={currentItemIndex === idx}
-                url={url}
+                url={convertedUrl ?? url}
                 altName={`Slide ${idx}`}
                 onPanStateToggle={toggleWatchDrag}
               />

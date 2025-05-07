@@ -40,8 +40,15 @@ export const useColumns = (entity: EntityPage, isSheet: boolean, highDensity: bo
       visible: true,
       sortable: false,
       width: 32,
-      renderCell: ({ row: { id, url, thumbnailUrl, filename, contentType, groupId }, tabIndex }) => {
+      renderCell: ({ row: { id, url, thumbnailUrl, filename, contentType, groupId, convertedUrl }, tabIndex }) => {
         const cellRef = useRef<HTMLAnchorElement | null>(null);
+
+        if (!thumbnailUrl && !convertedUrl)
+          return (
+            <div className="flex space-x-2 items-center justify-center w-full h-full">
+              <AttachmentPreview url={url} name={filename} contentType={contentType} />
+            </div>
+          );
 
         return (
           <Link
@@ -177,18 +184,6 @@ export const useColumns = (entity: EntityPage, isSheet: boolean, highDensity: bo
       renderCell: ({ row }) => (
         <span className="group-hover:underline underline-offset-4 truncate font-light">{row.filename || <span className="text-muted">-</span>}</span>
       ),
-    },
-    {
-      key: 'contentType',
-      name: t('common:content_type'),
-      sortable: false,
-      visible: !isMobile,
-      renderHeaderCell: HeaderCell,
-      minWidth: 140,
-      renderCell: ({ row }) => {
-        if (!row.contentType) return <span className="text-muted">-</span>;
-        return <span className="font-light">{row.contentType}</span>;
-      },
     },
     {
       key: 'size',

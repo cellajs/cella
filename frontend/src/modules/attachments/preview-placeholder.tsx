@@ -1,11 +1,12 @@
-import { File, FileAudio, FileImage, FileSpreadsheet, FileText, FileVideo } from 'lucide-react';
+import { File, FileArchive, FileAudio, FileImage, FileSpreadsheet, FileText, FileVideo } from 'lucide-react';
 
 const contentTypeMap = [
   { match: ['image'], icon: FileImage },
   { match: ['video'], icon: FileVideo },
-  { match: ['pdf'], icon: FileText },
+  { match: ['pdf', 'msword', 'vnd', 'text'], icon: FileText },
   { match: ['audio'], icon: FileAudio },
   { match: ['csv', 'xslx'], icon: FileSpreadsheet },
+  { match: ['zip', 'rar'], icon: FileArchive },
 ];
 
 interface Props {

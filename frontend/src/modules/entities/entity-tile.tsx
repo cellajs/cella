@@ -28,9 +28,6 @@ export const EntityTile = ({ entity }: { entity: EntityTileData }) => {
           </div>
         </Link>
 
-        {/* TODO add description field to all context entities */}
-        {/* <p className="text-sm opacity-70 pt-3 line-clamp-2">{entity.description}</p> */}
-
         <div className="flex items-center justify-stretch gap-3 pt-3">
           <Button variant="outlinePrimary">Owner</Button>
           <AvatarGroup limit={3}>
