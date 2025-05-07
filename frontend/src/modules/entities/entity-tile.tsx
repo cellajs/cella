@@ -8,7 +8,7 @@ import { numberToColorClass } from '~/utils/number-to-color-class';
 
 export const EntityTile = ({ entity }: { entity: EntityTileData }) => {
   return (
-    <Card className="overflow-hidden shadow-md transition hover:shadow-lg">
+    <Card className="overflow-hidden transition hover:shadow-sm">
       <CardContent className="p-4">
         <Link to="/$idOrSlug" params={{ idOrSlug: entity.slug }} className="w-full relative group">
           <div
@@ -27,9 +27,6 @@ export const EntityTile = ({ entity }: { entity: EntityTileData }) => {
             </div>
           </div>
         </Link>
-
-        {/* TODO add description field to all context entities */}
-        {/* <p className="text-sm opacity-70 pt-3 line-clamp-2">{entity.description}</p> */}
 
         <div className="flex items-center justify-stretch gap-3 pt-3">
           <Button variant="outlinePrimary">Owner</Button>

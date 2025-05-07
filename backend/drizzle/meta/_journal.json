@@ -22,6 +22,13 @@
       "when": 1746004883664,
       "tag": "0002_old_sentinels",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1746595976859,
+      "tag": "0003_omniscient_peter_parker",
+      "breakpoints": true
     }
   ]
 }

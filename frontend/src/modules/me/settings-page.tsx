@@ -147,19 +147,19 @@ const UserSettingsPage = () => {
                   if (!provider) return;
                   if (userAuthInfo.oauth.includes(id))
                     return (
-                      <div key={provider.id} className="flex items-center justify-center py-2 px-3 gap-2 border rounded-md">
+                      <div key={provider.id} className="flex items-center justify-center px-3 gap-2">
                         <img
                           src={`/static/images/${provider.id}-icon.svg`}
                           alt={provider.id}
-                          className={`w-4 h-4 ${provider.id === 'github' ? invertClass : ''}`}
+                          className={`w-4 h-4 mr-2 ${provider.id === 'github' ? invertClass : ''}`}
                           loading="lazy"
                         />
-                        <Check size={18} className="text-success" />
+                        <Check size={18} strokeWidth={3} className="text-success" />
                         {`${t('common:already_connected_to')} ${provider.name}`}
                       </div>
                     );
                   return (
-                    <Button key={provider.id} type="button" variant="outline" onClick={() => authenticateWithProvider(provider)}>
+                    <Button key={provider.id} type="button" variant="plain" onClick={() => authenticateWithProvider(provider)}>
                       <img
                         src={`/static/images/${provider.id}-icon.svg`}
                         alt={provider.id}

@@ -10,6 +10,7 @@ export const attachmentsTable = pgTable('attachments', {
   name: varchar().notNull().default('attachment'),
   filename: varchar().notNull(),
   contentType: varchar().notNull(),
+  convertedContentType: varchar(),
   size: varchar().notNull(),
   entity: varchar({ enum: ['attachment'] })
     .notNull()

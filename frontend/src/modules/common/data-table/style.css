@@ -22,6 +22,7 @@
 @media (max-width: 480px) {
   .rdg-cell[aria-selected="true"] {
     outline: none !important;
+    background: none !important;
   }
 }
 

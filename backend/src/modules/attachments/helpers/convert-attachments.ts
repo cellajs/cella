@@ -15,7 +15,8 @@ export const enrichAttachmentWithUrls = async (attachment: AttachmentSelect): Pr
 const enrichAttachment = async ({ convertedKey, thumbnailKey, originalKey, ...attachment }: AttachmentSelect): Promise<Attachment> => {
   return {
     ...attachment,
-    url: await getImadoUrl(convertedKey ?? originalKey),
+    url: await getImadoUrl(originalKey),
     thumbnailUrl: thumbnailKey ? await getImadoUrl(thumbnailKey) : null,
+    convertedUrl: convertedKey ? await getImadoUrl(convertedKey) : null,
   };
 };
