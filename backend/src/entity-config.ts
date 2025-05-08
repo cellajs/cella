@@ -25,60 +25,53 @@ export const entityIdFields = {
   Define entity relationships.
   This configuration also helps in creating user menu.
 
-  - `subEntity` must be one of `ContextEntityTypes` if used.
-  - `dependentHierarchy` is required when `subEntity` is set. It determines whether membership should be connected through associated  entity.
-  - For sub-entities, ensure that database schema includes a column `${entity}Id` (e.g., `projectId`, `teamId`) that references associated `entity`.
+  ──────────────────────────────────────────────────────────────────────────────
+  ⚠️  IMPORTANT:
+  If you define a `subEntity`, that in relation to main entity, then corresponding database table for that
+  sub-entity, must include a foreign key, field named `${entity}Id`.
 
-  Example configuration:
-  1. Base config - {
-    menuSectionName: 'departments',
-    entity: 'department'
-  }.
-  2. Submenu without hierarchy - {
-    menuSectionName: 'projects',
-    entity: 'project',
-    subEntity: 'task',                 
-    dependentHierarchy: false // No hierarchy needed between project and task
-  }.
-  3. Submenu with hierarchy - {
-    menuSectionName: 'teams',
-    entity: 'team',
-    subEntity: 'defender',
-    dependentHierarchy: true // Hierarchical relationship between team and defender role
-  } or {
-    menuSectionName: 'teams',
-    entity: 'team',
-    subEntity: 'forward',
-    dependentHierarchy: true // Hierarchical relationship between team and forward role
-  }
+  Example:
+  If a `group` is a subEntity of `team`, then `group` table must include: teamId: references 'teams' table
+
+  This is required for , generating memberships logic and building UI.
+
+  ──────────────────────────────────────────────────────────────────────────────
+  Configuration Fields:
+  - `menuSectionName`: Label used in navigation menus
+  - `entity`: The parent entity (e.g., 'project', 'team')
+  - `subEntity`: The child entity (optional). If defined, the child must have a foreign key `${entity}Id`.
+
+  Examples:
+  1. Standalone entity:
+      {
+        menuSectionName: 'departments',
+        entity: 'department'
+      }
+
+  2. Sub-entity:
+      {
+        menuSectionName: 'teams',
+        entity: 'team',
+        subEntity: 'defender',
+      } or {
+        menuSectionName: 'teams',
+        entity: 'team',
+        subEntity: 'forward',
+      }
 */
 export const entityRelations = [
   {
     menuSectionName: 'organizations', // Name of menu section
     entity: 'organization',
     subEntity: undefined,
-    dependentHierarchy: undefined, // Indicates that the sub-entity requires a hierarchy dependency
   } as const,
 ] satisfies UsageEntityRelations[];
-
-/**
- * Usage  Types
- */
-
-type EntityWithSubEntity = {
-  subEntity: ContextEntity; // When subEntity is ContextEntity
-  dependentHierarchy: boolean; // dependentHierarchy is required
-};
-
-type EntityWithoutSubEntity = {
-  subEntity?: undefined; // subEntity is absent
-  dependentHierarchy?: never; // dependentHierarchy must not be present
-};
 
 type UsageEntityRelations = {
   menuSectionName: string;
   entity: ContextEntity;
-} & (EntityWithSubEntity | EntityWithoutSubEntity);
+  subEntity?: ContextEntity;
+};
 
 /**
  * Export Types
