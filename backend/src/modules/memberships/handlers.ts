@@ -68,7 +68,7 @@ const membershipsRoutes = app
     const normalizedEmails = emails.map((email) => email.toLowerCase());
 
     // Determine main entity details (if applicable)
-    const { associatedEntityType, associatedEntityIdField, associatedEntityId } = getAssociatedEntityDetails(entity);
+    const associatedEntity = getAssociatedEntityDetails(entity);
 
     // Fetch existing users based on the provided emails
     const existingUsers = await getUsersByConditions([inArray(emailsTable.email, normalizedEmails)]);
@@ -102,12 +102,12 @@ const membershipsRoutes = app
         const userMemberships = memberships.filter(({ userId: id }) => id === userId);
 
         // Check if the user is already a member of the target entity
-        const hasTargetMembership = userMemberships.some(({ type }) => type === entityType);
+        const hasTargetMembership = userMemberships.some((m) => m[targetEntityIdField] === entityId);
         if (hasTargetMembership) return logEvent(`User already member of ${entityType}`, { user: userId, id: entityId });
 
         // Check for associated memberships and organization memberships
-        const hasAssociatedMembership = userMemberships.some(({ type }) => type === associatedEntityType);
-        const hasOrgMembership = userMemberships.some(({ type }) => type === 'organization');
+        const hasAssociatedMembership = associatedEntity ? userMemberships.some((m) => m[associatedEntity.field] === associatedEntity.id) : false;
+        const hasOrgMembership = userMemberships.some((membership) => membership.organizationId === entity.id);
 
         // Determine if membership should be created instantly
         const instantCreateMembership = (entityType !== 'organization' && hasOrgMembership) || (user.role === 'admin' && userId === user.id);
@@ -156,7 +156,7 @@ const membershipsRoutes = app
       userId,
       entity: entityType,
       [targetEntityIdField]: entityId,
-      ...(associatedEntityIdField && associatedEntityId && { [associatedEntityIdField]: associatedEntityId }), // Include associated entity if applicable
+      ...(associatedEntity && { [associatedEntity.field]: associatedEntity.id }), // Include associated entity if applicable
       ...(entityType !== 'organization' && { organizationId: organization.id }), // Add org ID if not an organization
     }));
 
