@@ -58,7 +58,7 @@ export const useAttachmentsSync = (organizationId: string) => {
       if (shapeStream.isLoading()) return;
 
       // Save latest offset and shape handle to store
-      if (shapeStream.shapeHandle) {
+      if (shapeStream.shapeHandle && shapeStream.isUpToDate) {
         const newSyncData = { offset: shapeStream.lastOffset, handle: shapeStream.shapeHandle };
         setSyncData(storeKey, newSyncData);
       }
