@@ -7,6 +7,7 @@ import { compareIsContentSame, getParsedContent } from '~/modules/common/blockno
 import { openAttachment } from '~/modules/common/blocknote/helpers/open-attachment';
 import { shadCNComponents } from '~/modules/common/blocknote/helpers/shad-cn';
 import type { BaseBlockNoteProps } from '~/modules/common/blocknote/types';
+import { getPriasignedUrl } from '~/modules/system/api';
 import { useUIStore } from '~/store/ui';
 
 import '@blocknote/shadcn/style.css';
@@ -23,7 +24,15 @@ export const BlockNotePreview = ({
   const mode = useUIStore((state) => state.mode);
   const blockNoteRef = useRef(null);
 
-  const editor = useCreateBlockNote({ schema: customSchema, trailingBlock });
+  const editor = useCreateBlockNote({
+    schema: customSchema,
+    trailingBlock,
+    // TODO(BLOCKING) remove image blick (https://github.com/TypeCellOS/BlockNote/issues/1570)
+    resolveFileUrl: (key) => {
+      if (!key.length) return Promise.resolve('');
+      return getPriasignedUrl({ key });
+    },
+  });
 
   const handleClick: MouseEventHandler = (event) => openAttachment(event, editor, altClickOpensPreview, blockNoteRef);
 

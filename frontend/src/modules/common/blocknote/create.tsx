@@ -20,6 +20,7 @@ import { createHandleKeyDown } from '~/modules/common/blocknote/helpers/key-down
 import { openAttachment } from '~/modules/common/blocknote/helpers/open-attachment';
 import { shadCNComponents } from '~/modules/common/blocknote/helpers/shad-cn';
 import type { BaseBlockNoteProps, CustomBlockNoteEditor } from '~/modules/common/blocknote/types';
+import { getPriasignedUrl } from '~/modules/system/api';
 import { useUIStore } from '~/store/ui';
 
 import '@blocknote/shadcn/style.css';
@@ -55,7 +56,15 @@ export const BlockNoteCreate = ({
   const isMobile = useBreakpoints('max', 'sm');
 
   const blockNoteRef = useRef(null);
-  const editor = useCreateBlockNote({ schema: customSchema, trailingBlock });
+  const editor = useCreateBlockNote({
+    schema: customSchema,
+    trailingBlock,
+    // TODO(BLOCKING) remove image blick (https://github.com/TypeCellOS/BlockNote/issues/1570)
+    resolveFileUrl: (key) => {
+      if (!key.length) return Promise.resolve('');
+      return getPriasignedUrl({ key });
+    },
+  });
 
   const emojiPicker = slashMenu
     ? [...customSlashIndexedItems, ...customSlashNotIndexedItems].includes('Emoji') && allowedBlockTypes.includes('emoji')
