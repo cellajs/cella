@@ -392,7 +392,7 @@ const authRoutes = app
 
     const [emailInfo] = await db.select().from(emailsTable).where(eq(emailsTable.email, token.email));
     // Make sure correct user accepts invitation (for example another user could have a sessions and click on email invite of another user)
-    if (user.id !== token.userId && emailInfo.userId !== user.id) return errorResponse(ctx, 401, 'user_mismatch', 'warn');
+    if (user.id !== token.userId && (!emailInfo || emailInfo.userId !== user.id)) return errorResponse(ctx, 401, 'user_mismatch', 'warn');
 
     if (emailInfo.userId === user.id && user.id !== token.userId) await handleMembershipTokenUpdate(user.id, token.id);
     // Activate memberships

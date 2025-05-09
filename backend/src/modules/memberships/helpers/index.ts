@@ -50,7 +50,7 @@ export const insertMembership = async <T extends BaseEntityModel>({
     .where(eq(membershipsTable.userId, userId));
 
   const entityIdField = entityIdFields[entity.entity];
-  const { associatedEntityType, associatedEntityIdField, associatedEntityId } = getAssociatedEntityDetails(entity);
+  const associatedEntity = getAssociatedEntityDetails(entity);
 
   const baseMembership = {
     organizationId: entity.organizationId ?? entity.id,
@@ -79,13 +79,13 @@ export const insertMembership = async <T extends BaseEntityModel>({
   }
 
   // Insert associated entity membership first (if applicable)
-  if (addAssociatedMembership && associatedEntityId && associatedEntityType) {
+  if (addAssociatedMembership && associatedEntity) {
     await db
       .insert(membershipsTable)
       .values({
         ...baseMembership,
-        type: associatedEntityType,
-        [associatedEntityIdField]: associatedEntityId,
+        type: associatedEntity.type,
+        [associatedEntity.field]: associatedEntity.id,
       })
       .onConflictDoNothing(); // Do nothing if already exist
   }
@@ -97,7 +97,7 @@ export const insertMembership = async <T extends BaseEntityModel>({
       ...baseMembership,
       type: entity.entity,
       ...(entity.entity !== 'organization' && { [entityIdField]: entity.id }),
-      ...(associatedEntityId && associatedEntityIdField && { [associatedEntityIdField]: associatedEntityId }),
+      ...(associatedEntity && { [associatedEntity.field]: associatedEntity.id }),
     })
     .returning(membershipSelect);
 
@@ -107,14 +107,12 @@ export const insertMembership = async <T extends BaseEntityModel>({
 };
 
 export const getAssociatedEntityDetails = <T extends ContextEntity>(entity: EntityModel<T>) => {
-  const associatedEntityRelation = entityRelations.find((el) => el.subEntity === entity.entity && el.dependentHierarchy);
+  const relation = entityRelations.find((rel) => rel.subEntity === entity.entity);
+  if (!relation) return null;
+  const type = relation.entity;
+  const field = entityIdFields[type] ?? null;
+  if (!field || !(field in entity)) return null;
 
-  if (!associatedEntityRelation) return { associatedEntityType: null, associatedEntityIdField: null, associatedEntityId: null };
-
-  const { entity: associatedEntityType } = associatedEntityRelation;
-  const associatedEntityIdField = entityIdFields[associatedEntityType] ?? null;
-  const associatedEntityId =
-    associatedEntityIdField && associatedEntityIdField in entity ? (entity[associatedEntityIdField as keyof typeof entity] as string) : null;
-
-  return { associatedEntityType, associatedEntityIdField, associatedEntityId };
+  const id = entity[field as keyof typeof entity] as string;
+  return { id, type, field };
 };
