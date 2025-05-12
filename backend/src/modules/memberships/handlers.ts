@@ -107,7 +107,7 @@ const membershipsRoutes = app
 
         // Check for associated memberships and organization memberships
         const hasAssociatedMembership = associatedEntity ? userMemberships.some((m) => m[associatedEntity.field] === associatedEntity.id) : false;
-        const hasOrgMembership = userMemberships.some((membership) => membership.organizationId === entity.id);
+        const hasOrgMembership = userMemberships.some(({ organizationId }) => organizationId === organization.id);
 
         // Determine if membership should be created instantly
         const instantCreateMembership = (entityType !== 'organization' && hasOrgMembership) || (user.role === 'admin' && userId === user.id);
