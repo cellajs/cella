@@ -1,9 +1,11 @@
-import { mailer } from '#/lib/mailer';
 import { and, eq, inArray, isNull, lt } from 'drizzle-orm';
+import { mailer } from '#/lib/mailer';
 import { SystemInviteEmail, type SystemInviteEmailProps } from '../../../emails/system-invite';
 
 import { config } from 'config';
 
+import { OpenAPIHono } from '@hono/zod-openapi';
+import { EventName, Paddle } from '@paddle/paddle-node-sdk';
 import { db } from '#/db/db';
 import { emailsTable } from '#/db/schema/emails';
 import { membershipsTable } from '#/db/schema/memberships';
@@ -21,8 +23,6 @@ import defaultHook from '#/utils/default-hook';
 import { nanoid } from '#/utils/nanoid';
 import { slugFromEmail } from '#/utils/slug-from-email';
 import { TimeSpan, createDate } from '#/utils/time-span';
-import { OpenAPIHono } from '@hono/zod-openapi';
-import { EventName, Paddle } from '@paddle/paddle-node-sdk';
 import { NewsletterEmail, type NewsletterEmailProps } from '../../../emails/newsletter';
 import { env } from '../../env';
 import systemRouteConfig from './routes';
@@ -114,7 +114,7 @@ const systemRoutes = app
     return ctx.json({ success: true }, 200);
   })
   /*
-   * Get preasigned URL
+   * Get presigned URL
    */
   .openapi(systemRouteConfig.getPriasignedUrl, async (ctx) => {
     const { key } = ctx.req.valid('query');
