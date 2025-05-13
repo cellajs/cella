@@ -72,7 +72,7 @@ const OrganizationSettings = ({ organization }: { organization: Organization }) 
                 callback={(organization) => {
                   if (idOrSlug !== organization.slug) {
                     navigate({
-                      to: '/$idOrSlug/settings',
+                      to: '/organizations/$idOrSlug/settings',
                       params: { idOrSlug: organization.slug },
                       replace: true,
                     });

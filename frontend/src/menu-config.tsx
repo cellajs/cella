@@ -20,7 +20,7 @@ type SectionsSchema = {
 const createOrganizationAction = (triggerRef: RefObject<HTMLButtonElement | null>) => {
   const callback = (createdOrganization: Organization) => {
     useDialoger.getState().remove('create-organization');
-    router.navigate({ to: '/$idOrSlug/members', params: { idOrSlug: createdOrganization.slug } });
+    router.navigate({ to: '/organizations/$idOrSlug/members', params: { idOrSlug: createdOrganization.slug } });
   };
 
   return useDialoger.getState().create(<CreateOrganizationForm dialog callback={callback} />, {

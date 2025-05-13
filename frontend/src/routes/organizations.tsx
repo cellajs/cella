@@ -32,7 +32,7 @@ export const attachmentsSearchSchema = attachmentsQuerySchema.pick({ q: true, so
 });
 
 export const OrganizationRoute = createRoute({
-  path: '/$idOrSlug',
+  path: '/organizations/$idOrSlug',
   staticData: { pageTitle: 'Organization', isAuth: true },
   beforeLoad: async ({ location, params: { idOrSlug } }) => {
     noDirectAccess(location.pathname, idOrSlug, '/members');

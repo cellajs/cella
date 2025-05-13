@@ -4,7 +4,8 @@ import useBodyClass from '~/hooks/use-body-class';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import useMounted from '~/hooks/use-mounted';
 import FloatingNavButton from '~/modules/navigation/floating-nav/button';
-import { type NavItemId, navItems } from '~/nav-config';
+import type { NavItemId } from '~/modules/navigation/types';
+import { navItems } from '~/nav-config';
 
 const SCROLL_THRESHOLD = 10; // Minimum scroll delta to toggle visibility
 

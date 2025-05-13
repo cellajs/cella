@@ -29,7 +29,7 @@ export const useColumns = () => {
         renderHeaderCell: HeaderCell,
         renderCell: ({ row, tabIndex }) => (
           <Link
-            to="/$idOrSlug/members"
+            to="/organizations/$idOrSlug/members"
             draggable="false"
             tabIndex={tabIndex}
             params={{ idOrSlug: row.slug }}
