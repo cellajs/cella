@@ -73,69 +73,48 @@ export function getMemberCounts(entity: ContextEntity, id: string) {
 }
 
 /**
- * Retrieves count of related entities(Context and Product) for passed Context entity based on its ID.
+ * Counts related entities (Context + Product) for the given entity instance
+ * by running one query per entity type instead of a single multi‑join.
  *
- * @param entity Entity type (Context or Product).
- * @param entityId ID of entity.
- * @param countConditions - Optional,  An object where the key is entities(Context and Product) and the value is the condition to apply.
- * @returns A record mapping each entity type to its corresponding count.
+ * @param entity          – Base entity type whose ID we’re counting against
+ * @param entityId        – ID value of that base entity
+ * @param countConditions – Optional extra WHERE fragments per entity type
  *
- * @example
- * // Example usage for counting related entities with an additional condition for "attachment"
- * await getRelatedEntityCounts(
- *   'organization',
- *   organization.id,
- *   {
- *     attachment: sql`${attachmentsTable.name} = 'Screenshot'` // Applies condition to the "attachment" entity type
- *   }
- * );
+ * @returns Record mapping each valid entity type to its count
  */
 export const getRelatedEntityCounts = async (
   entity: ContextEntity,
   entityId: string,
   countConditions: Partial<Record<ProductEntity | ContextEntity, SQL>> = {},
 ) => {
-  // Get the ID field based on entity
   const entityIdField = entityIdFields[entity];
 
   const allEntityTypes = [...config.productEntityTypes, ...config.contextEntityTypes];
 
-  // Filter valid entity types that have the specified entityIdField
-  const validEntityTypes = allEntityTypes.filter((type) => hasField(type, entityIdField));
-  if (!validEntityTypes.length) return {} as Record<ValidEntityTypes<typeof entityIdField>, number>;
-  // Get the base table for the first valid entity type
-  const firstTableTable = entityTables[validEntityTypes[0]];
-
-  // Create count fields for each valid entity type, applying any custom conditions
-  const countFields = validEntityTypes.reduce(
-    (acc, entityType) => {
-      const table = entityTables[entityType];
-      const additionalCondition = countConditions[entityType];
-
-      acc[entityType] = count(
-        sql`DISTINCT CASE WHEN ${table[entityIdField as keyof typeof table]} = ${entityId} ${additionalCondition ? sql`AND ${additionalCondition}` : sql``} THEN ${table.id} ELSE NULL END`,
-      ).as(entityType);
-      return acc;
-    },
-    {} as Record<ValidEntityTypes<typeof entityIdField>, SQL.Aliased<number>>,
-  );
-
-  // Build the query to count related entities
-  let query = db
-    .select(countFields)
-    .from(firstTableTable)
-    .where(eq(firstTableTable[entityIdField as keyof typeof firstTableTable] as SQLWrapper, entityId));
-
-  // Add LEFT JOINs for remaining valid entity types
-  for (let i = 1; i < validEntityTypes.length; i++) {
-    const table = entityTables[validEntityTypes[i]];
-    const tableField = table[entityIdField as keyof typeof table] as SQLWrapper;
-    query = query.leftJoin(table, eq(tableField, entityId));
+  // Only keep entity types that actually contain the ID field we care about
+  const validEntityTypes = allEntityTypes.filter((t) => hasField(t, entityIdField));
+  if (!validEntityTypes.length) {
+    return {} as Record<ValidEntityTypes<typeof entityIdField>, number>;
   }
 
-  // Execute query and return result or zero counts
-  const result = await query;
-  return result[0] || Object.fromEntries(validEntityTypes.map((type) => [type, 0]));
+  // Run one COUNT query per entity type in parallel
+  const counts = await Promise.all(
+    validEntityTypes.map(async (entityType) => {
+      const table = entityTables[entityType];
+      const idColumn = table[entityIdField as keyof typeof table] as SQLWrapper;
+      const extraCondition = countConditions[entityType];
+
+      const [row] = await db
+        .select({ count: count().as('count') })
+        .from(table)
+        .where(extraCondition ? and(eq(idColumn, entityId), extraCondition) : eq(idColumn, entityId));
+
+      return [entityType, row?.count ?? 0] as const;
+    }),
+  );
+
+  // Convert array of tuples → Record<'entityType', number>
+  return Object.fromEntries(counts) as Record<ValidEntityTypes<typeof entityIdField>, number>;
 };
 
 // Define a mapped type to check if field name passed as 'T' exists in each table and filter out 'never' types

@@ -68,13 +68,13 @@ importers:
         version: 0.3.1
       '@hono/node-server':
         specifier: ^1.14.1
-        version: 1.14.1(hono@4.7.8)
+        version: 1.14.1(hono@4.7.9)
       '@hono/sentry':
         specifier: ^1.2.1
-        version: 1.2.1(hono@4.7.8)
+        version: 1.2.1(hono@4.7.9)
       '@hono/zod-openapi':
         specifier: 0.19.6
-        version: 0.19.6(hono@4.7.8)(zod@3.24.4)
+        version: 0.19.6(hono@4.7.9)(zod@3.24.4)
       '@logtail/node':
         specifier: ^0.5.4
         version: 0.5.4
@@ -119,7 +119,7 @@ importers:
         version: 2.7.1
       '@scalar/hono-api-reference':
         specifier: ^0.8.9
-        version: 0.8.9(hono@4.7.8)
+        version: 0.8.9(hono@4.7.9)
       '@sendgrid/mail':
         specifier: ^8.1.5
         version: 8.1.5
@@ -148,8 +148,8 @@ importers:
         specifier: ^1.3.0
         version: 1.3.0
       hono:
-        specifier: 4.7.8
-        version: 4.7.8
+        specifier: 4.7.9
+        version: 4.7.9
       i18next:
         specifier: ^25.1.2
         version: 25.1.2(typescript@5.8.3)
@@ -184,10 +184,10 @@ importers:
         specifier: ^7.1.0
         version: 7.1.0
       react:
-        specifier: ^19.1.0
+        specifier: ^19.0.0
         version: 19.1.0
       react-dom:
-        specifier: ^19.1.0
+        specifier: ^19.0.0
         version: 19.1.0(react@19.1.0)
       react-i18next:
         specifier: ^15.5.1
@@ -224,7 +224,7 @@ importers:
         specifier: ^8.15.1
         version: 8.15.1
       '@types/react':
-        specifier: ^19.1.4
+        specifier: ^19.0.0
         version: 19.1.4
       '@types/ua-parser-js':
         specifier: ^0.7.39
@@ -543,8 +543,8 @@ importers:
         specifier: ^14.6.2
         version: 14.6.2
       hono:
-        specifier: 4.7.8
-        version: 4.7.8
+        specifier: 4.7.9
+        version: 4.7.9
       i18next:
         specifier: ^25.1.2
         version: 25.1.2(typescript@5.8.3)
@@ -2683,7 +2683,6 @@ packages:
 
   '@evilmartians/lefthook@1.11.12':
     resolution: {integrity: sha512-IQW69dcjGy/Qpp9i3BsZkMhLFi1NpXsNpr9NQCslCfe4SSg5hAbdTOzk8Wzx8pewlkYZhlzcBfudGbSnGUK7hw==}
-    cpu: [x64, arm64, ia32]
     os: [darwin, linux, win32]
     hasBin: true
 
@@ -7884,8 +7883,8 @@ packages:
   hoist-non-react-statics@3.3.2:
     resolution: {integrity: sha512-/gGivxi8JPKWNm/W0jSmzcMPpfpPLc3dY/6GxhX2hQ9iGj3aDfklV4ET7NjKpSinLpJ5vafa9iiGIEZg10SfBw==}
 
-  hono@4.7.8:
-    resolution: {integrity: sha512-PCibtFdxa7/Ldud9yddl1G81GjYaeMYYTq4ywSaNsYbB1Lug4mwtOMJf2WXykL0pntYwmpRJeOI3NmoDgD+Jxw==}
+  hono@4.7.9:
+    resolution: {integrity: sha512-/EsCoR5h7N4yu01TDu9GMCCJa6ZLk5ZJIWFFGNawAXmd1Tp53+Wir4xm0D2X19bbykWUlzQG0+BvPAji6p9E8Q==}
     engines: {node: '>=16.9.0'}
 
   html-encoding-sniffer@4.0.0:
@@ -14119,25 +14118,25 @@ snapshots:
       - utf-8-validate
     optional: true
 
-  '@hono/node-server@1.14.1(hono@4.7.8)':
+  '@hono/node-server@1.14.1(hono@4.7.9)':
     dependencies:
-      hono: 4.7.8
+      hono: 4.7.9
 
-  '@hono/sentry@1.2.1(hono@4.7.8)':
+  '@hono/sentry@1.2.1(hono@4.7.9)':
     dependencies:
-      hono: 4.7.8
+      hono: 4.7.9
       toucan-js: 4.1.1
 
-  '@hono/zod-openapi@0.19.6(hono@4.7.8)(zod@3.24.4)':
+  '@hono/zod-openapi@0.19.6(hono@4.7.9)(zod@3.24.4)':
     dependencies:
       '@asteasolutions/zod-to-openapi': 7.3.0(zod@3.24.4)
-      '@hono/zod-validator': 0.5.0(hono@4.7.8)(zod@3.24.4)
-      hono: 4.7.8
+      '@hono/zod-validator': 0.5.0(hono@4.7.9)(zod@3.24.4)
+      hono: 4.7.9
       zod: 3.24.4
 
-  '@hono/zod-validator@0.5.0(hono@4.7.8)(zod@3.24.4)':
+  '@hono/zod-validator@0.5.0(hono@4.7.9)(zod@3.24.4)':
     dependencies:
-      hono: 4.7.8
+      hono: 4.7.9
       zod: 3.24.4
 
   '@hookform/resolvers@3.10.0(react-hook-form@7.56.3(react@19.1.0))':
@@ -16017,10 +16016,10 @@ snapshots:
     dependencies:
       '@scalar/types': 0.1.15
 
-  '@scalar/hono-api-reference@0.8.9(hono@4.7.8)':
+  '@scalar/hono-api-reference@0.8.9(hono@4.7.9)':
     dependencies:
       '@scalar/core': 0.2.15
-      hono: 4.7.8
+      hono: 4.7.9
 
   '@scalar/openapi-types@0.2.3':
     dependencies:
@@ -20104,7 +20103,7 @@ snapshots:
     dependencies:
       react-is: 16.13.1
 
-  hono@4.7.8: {}
+  hono@4.7.9: {}
 
   html-encoding-sniffer@4.0.0:
     dependencies:
