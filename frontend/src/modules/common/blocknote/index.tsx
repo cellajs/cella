@@ -1,9 +1,8 @@
 import { FilePanelController, GridSuggestionMenuController, useCreateBlockNote } from '@blocknote/react';
 import { BlockNoteView } from '@blocknote/shadcn';
-import { type FocusEventHandler, type MouseEventHandler, useCallback, useEffect, useMemo, useRef } from 'react';
+import { type FocusEventHandler, type KeyboardEventHandler, type MouseEventHandler, useCallback, useEffect, useMemo, useRef } from 'react';
 
 import { useBreakpoints } from '~/hooks/use-breakpoints';
-import router from '~/lib/router';
 import {
   allowedFileTypes,
   allowedTypes,
@@ -17,10 +16,11 @@ import { CustomSideMenu } from '~/modules/common/blocknote/custom-side-menu';
 import { CustomSlashMenu } from '~/modules/common/blocknote/custom-slash-menu';
 import { compareIsContentSame, getParsedContent } from '~/modules/common/blocknote/helpers';
 import { focusEditor } from '~/modules/common/blocknote/helpers/focus';
-import { createHandleKeyDown } from '~/modules/common/blocknote/helpers/key-down';
+
+import router from '~/lib/router';
 import { openAttachment } from '~/modules/common/blocknote/helpers/open-attachment';
 import { shadCNComponents } from '~/modules/common/blocknote/helpers/shad-cn';
-import type { BaseBlockNoteProps } from '~/modules/common/blocknote/types';
+import type { CommonBlockNoteProps, CustomBlockNoteEditor } from '~/modules/common/blocknote/types';
 import { getPriasignedUrl } from '~/modules/system/api';
 import { useUIStore } from '~/store/ui';
 
@@ -28,38 +28,52 @@ import '@blocknote/shadcn/style.css';
 import '~/modules/common/blocknote/app-specific-custom/styles.css';
 import '~/modules/common/blocknote/styles.css';
 
-type BlockNoteEditorProps = BaseBlockNoteProps & {
-  updateDataOnBeforeLoad?: boolean;
-  updateData: (srtBlocks: string) => void;
-};
+type BlockNoteProps =
+  | (CommonBlockNoteProps & {
+      type: 'edit' | 'create';
+      updateData: (strBlocks: string) => void;
+    })
+  | (CommonBlockNoteProps & {
+      type: 'preview';
+      updateData?: never;
+      onEscapeClick?: never;
+      onEnterClick?: never;
+      onBeforeLoad?: never;
+    });
 
-//TODO(REFACTOR) to create base BlockNoteEditor and then just pass edit or create related stuff
-export const BlockNoteEditor = ({
+export const BlockNote = ({
   id,
-  defaultValue = '',
+  type,
   className = '',
+  defaultValue = '', // stringified blocks
+  trailingBlock = true,
+  altClickOpensPreview = false,
+  // Editor functional
+  editable = true,
   sideMenu = true,
   slashMenu = true,
   formattingToolbar = true,
   emojis = true,
-  trailingBlock = true,
-  updateDataOnBeforeLoad = false,
-  altClickOpensPreview = false,
-  // allow default types
-  allowedBlockTypes = allowedTypes,
-  members,
+  allowedBlockTypes = allowedTypes, // default types
+  members, // for mentions
   filePanel,
-  // allow default filetypes
-  allowedFileBlockTypes = filePanel ? allowedFileTypes : [],
+  allowedFileBlockTypes = filePanel ? allowedFileTypes : [], // default filetypes
+  // Functions
   updateData,
   onEscapeClick,
-  onEnterClick,
+  onEnterClick, // Trigger on Cmd+Enter
   onFocus,
-}: BlockNoteEditorProps) => {
+  onBeforeLoad,
+}: BlockNoteProps) => {
   const mode = useUIStore((state) => state.mode);
   const isMobile = useBreakpoints('max', 'sm');
 
   const blockNoteRef = useRef<HTMLDivElement | null>(null);
+
+  const emojiPicker = slashMenu
+    ? [...customSlashIndexedItems, ...customSlashNotIndexedItems].includes('Emoji') && allowedBlockTypes.includes('emoji')
+    : emojis;
+
   const editor = useCreateBlockNote({
     schema: customSchema,
     trailingBlock,
@@ -70,27 +84,36 @@ export const BlockNoteEditor = ({
     },
   });
 
-  const emojiPicker = slashMenu
-    ? [...customSlashIndexedItems, ...customSlashNotIndexedItems].includes('Emoji') && allowedBlockTypes.includes('emoji')
-    : emojis;
+  const handleKeyDown: KeyboardEventHandler = useCallback(
+    (event) => {
+      const isEscape = event.key === 'Escape';
+      const isCmdEnter = (event.metaKey || event.ctrlKey) && event.key === 'Enter';
+      if (!isCmdEnter && !isEscape) return;
+      event.preventDefault();
 
-  const handleDataUpdate = useCallback(() => {
-    const strBlocks = JSON.stringify(editor.document);
-    // Check if there is any difference in the content
-    if (compareIsContentSame(strBlocks, defaultValue)) return;
-    updateData(strBlocks);
-  }, [editor]);
+      if (isEscape) onEscapeClick?.();
 
-  const handleKeyDown = useCallback(
-    createHandleKeyDown({
-      editor,
-      handleDataUpdate,
-      onEnterClick,
-      onEscapeClick,
-    }),
-    [editor],
+      if (isCmdEnter) {
+        event.stopPropagation();
+        onEnterClick?.();
+        if (!editor.isEmpty) handleUpdateData(editor);
+      }
+    },
+    [editor, defaultValue],
   );
-  const handleClick: MouseEventHandler = (event) => openAttachment(event, editor, altClickOpensPreview, blockNoteRef);
+
+  const handleUpdateData = useCallback(
+    (editor: CustomBlockNoteEditor) => {
+      const strBlocks = JSON.stringify(editor.document);
+      if (compareIsContentSame(strBlocks, defaultValue) || !updateData) return;
+
+      updateData(strBlocks);
+    },
+    [defaultValue],
+  );
+
+  const handleOnBeforeLoad = useCallback(() => onBeforeLoad?.(editor), [editor]);
+
   const handleBlur: FocusEventHandler = useCallback(
     (event) => {
       // if user in Side Menu does not update
@@ -108,59 +131,63 @@ export const BlockNoteEditor = ({
       const nextFocused = event.relatedTarget;
       // Check if the next focused element is still inside the editor
       if (nextFocused && blockNoteRef.current && blockNoteRef.current.contains(nextFocused)) return;
-      handleDataUpdate();
+
+      if (type === 'edit') handleUpdateData(editor);
     },
-    [editor],
+    [editor, defaultValue],
   );
+  const handleClick: MouseEventHandler = (event) => {
+    if (altClickOpensPreview) openAttachment(event, editor, blockNoteRef);
+  };
+
   const passedContent = useMemo(() => getParsedContent(defaultValue), [defaultValue]);
 
   useEffect(() => {
     const currentContent = JSON.stringify(editor.document);
     if (compareIsContentSame(currentContent, defaultValue)) return;
 
-    // TODO(BLOCKING) (https://github.com/TypeCellOS/BlockNote/issues/1513)
-    queueMicrotask(() => {
-      if (passedContent === undefined) editor.removeBlocks(editor.document);
-      else editor.replaceBlocks(editor.document, passedContent);
-    });
+    if (passedContent === undefined) editor.removeBlocks(editor.document);
+    else editor.replaceBlocks(editor.document, passedContent);
   }, [passedContent]);
-
-  useEffect(() => {
-    if (!updateDataOnBeforeLoad) return;
-    const unsubscribe = router.subscribe('onBeforeLoad', handleDataUpdate);
-    return () => unsubscribe();
-  }, [handleDataUpdate]);
 
   // TODO(BLOCKING) https://github.com/TypeCellOS/BlockNote/issues/891
   useEffect(() => {
+    if (type === 'preview' || !editable || !editor) return;
+
     const intervalID = setInterval(() => {
-      if (editor) {
-        focusEditor(editor);
-        clearInterval(intervalID);
-      }
+      focusEditor(editor);
+      clearInterval(intervalID);
     }, 10);
 
     return () => clearInterval(intervalID);
-  }, [editor]);
+  }, [editor, editable]);
+
+  useEffect(() => {
+    if (!onBeforeLoad) return;
+    const unsubscribe = router.subscribe('onBeforeLoad', handleOnBeforeLoad);
+    return () => unsubscribe();
+  }, []);
 
   return (
     <BlockNoteView
       id={id}
-      ref={blockNoteRef}
-      data-color-scheme={mode}
       theme={mode}
       editor={editor}
+      editable={type === 'preview' ? false : editable}
+      ref={blockNoteRef}
+      className={className}
+      data-color-scheme={mode}
       shadCNComponents={shadCNComponents}
-      onFocus={onFocus}
-      onClick={handleClick}
-      onBlur={handleBlur}
-      onKeyDown={handleKeyDown}
       sideMenu={false}
       slashMenu={!slashMenu}
       formattingToolbar={!formattingToolbar}
       emojiPicker={!emojiPicker}
       filePanel={!filePanel}
-      className={className}
+      onFocus={onFocus}
+      onClick={handleClick}
+      onKeyDown={handleKeyDown}
+      onBlur={handleBlur}
+      {...(type === 'create' && { onChange: handleUpdateData })}
     >
       {slashMenu && <CustomSlashMenu editor={editor} allowedTypes={[...allowedBlockTypes, ...allowedFileBlockTypes]} />}
 
@@ -173,14 +200,8 @@ export const BlockNoteEditor = ({
       {/* To avoid rendering "0" */}
       {members?.length ? <Mention members={members} editor={editor} /> : null}
 
-      {emojiPicker && (
-        <GridSuggestionMenuController
-          triggerCharacter={':'}
-          // Changes the Emoji Picker to only have 10 columns & min length of 0.
-          columns={8}
-          minQueryLength={0}
-        />
-      )}
+      {/* Changes the Emoji Picker to only have 10 columns & min length of 0. */}
+      {emojiPicker && <GridSuggestionMenuController triggerCharacter={':'} columns={8} minQueryLength={0} />}
 
       {filePanel && <FilePanelController filePanel={filePanel} />}
     </BlockNoteView>

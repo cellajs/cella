@@ -1,4 +1,3 @@
-import type { PropSchema, Props } from '@blocknote/core';
 import DOMPurify from 'dompurify';
 import type { CarouselItemData } from '~/modules/attachments/attachments-carousel';
 import { openAttachmentDialog } from '~/modules/attachments/helpers';
@@ -97,10 +96,4 @@ export const updateSourcesFromDataUrl = (elementId: string, openPreviewDialog = 
         break;
     }
   }
-};
-
-// Get url property of el
-export const getUrlFromProps = (props: Props<PropSchema>): string | null => {
-  if (props && typeof props.url === 'string') return props.url;
-  return null;
 };
