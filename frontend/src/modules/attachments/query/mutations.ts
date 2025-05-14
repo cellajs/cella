@@ -230,7 +230,7 @@ export const useAttachmentDeleteMutation = () =>
           return formatUpdatedData(oldData, updatedItems, limit, -ids.length);
         });
 
-        context.push([queryKey, previousData, null]); // Store previous data for potential rollback
+        context.push([queryKey, previousData]); // Store previous data for potential rollback
       }
 
       return context;
