@@ -60,7 +60,6 @@ export const config = {
   googleMapsKey: 'AIzaSyDMjCpQusdoPWLeD7jxkqAxVgJ8s5xJ3Co',
 
   // File handling with imado
-  tusPort: 4100,
   s3PublicBucket: 'imado-dev',
   s3PrivateBucket: 'imado-dev-priv',
   s3Region: 'nl-ams',
