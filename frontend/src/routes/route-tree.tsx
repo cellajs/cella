@@ -1,4 +1,4 @@
-import type { NavItemId } from '~/nav-config';
+import type { NavItemId } from '~/modules/navigation/types';
 import {
   AcceptOrgInviteRoute,
   AuthLayoutRoute,
@@ -49,12 +49,10 @@ export const routeTree = rootRoute.addChildren([
     UserProfileRoute,
     UserInOrganizationProfileRoute,
     UserSettingsRoute,
+    OrganizationRoute.addChildren([OrganizationMembersRoute, OrganizationAttachmentsRoute, OrganizationSettingsRoute]),
 
     // App-specific routes here
     // ...
-
-    // Org routes on bottom because of slug directly after root path
-    OrganizationRoute.addChildren([OrganizationMembersRoute, OrganizationAttachmentsRoute, OrganizationSettingsRoute]),
   ]),
 ]);
 

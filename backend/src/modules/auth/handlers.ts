@@ -586,10 +586,8 @@ const authRoutes = app
       if (existingUsers.length > 1) return errorRedirect(ctx, 'oauth_mismatch', 'warn');
       const existingUser = existingUsers[0] ?? null;
 
-      // If registration is disabled and no existing user, throw to error
-      if (!config.has.registrationEnabled && (!existingUser || (inviteToken && inviteToken.type !== 'system'))) {
-        return errorRedirect(ctx, 'sign_up_restricted', 'info');
-      }
+      // If registration is disabled and no existing user and not invite throw to error
+      if (!config.has.registrationEnabled && !existingUser && !inviteToken) return errorRedirect(ctx, 'sign_up_restricted', 'info');
 
       // Get the redirect URL based on whether a new user or invite token exists
       const firstSignIn = !connectUserId && !existingUser;
@@ -665,10 +663,8 @@ const authRoutes = app
       if (existingUsers.length > 1) return errorRedirect(ctx, 'oauth_mismatch', 'warn');
       const existingUser = existingUsers[0] ?? null;
 
-      // If registration is disabled and no existing user, throw to error
-      if (!config.has.registrationEnabled && (!existingUser || (inviteToken && inviteToken.type !== 'system'))) {
-        return errorRedirect(ctx, 'sign_up_restricted', 'info');
-      }
+      // If registration is disabled and no existing user and not invite throw to error
+      if (!config.has.registrationEnabled && !existingUser && !inviteToken) return errorRedirect(ctx, 'sign_up_restricted', 'info');
 
       // Get the redirect URL based on whether a new user or invite token exists
       const firstSignIn = !connectUserId && !existingUser;
@@ -744,10 +740,8 @@ const authRoutes = app
       if (existingUsers.length > 1) return errorRedirect(ctx, 'oauth_mismatch', 'warn');
       const existingUser = existingUsers[0] ?? null;
 
-      // If registration is disabled and no existing user, throw to error
-      if (!config.has.registrationEnabled && (!existingUser || (inviteToken && inviteToken.type !== 'system'))) {
-        return errorRedirect(ctx, 'sign_up_restricted', 'info');
-      }
+      // If registration is disabled and no existing user and not invite throw to error
+      if (!config.has.registrationEnabled && !existingUser && !inviteToken) return errorRedirect(ctx, 'sign_up_restricted', 'info');
 
       // Get the redirect URL based on whether a new user or invite token exists
       const firstSignIn = !connectUserId && !existingUser;

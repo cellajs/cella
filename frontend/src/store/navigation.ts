@@ -5,7 +5,7 @@ import { immer } from 'zustand/middleware/immer';
 import { entityRelations } from '#/entity-config';
 
 import type { UserMenu } from '~/modules/me/types';
-import type { NavItemId } from '~/nav-config';
+import type { NavItemId } from '~/modules/navigation/types';
 
 interface NavigationStoreState {
   recentSearches: string[]; // Recent search (from AppSearch),

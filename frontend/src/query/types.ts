@@ -10,6 +10,9 @@ export type InfiniteQueryData<T> = {
   pages: QueryData<T>[];
 };
 
-export type ContextProp<T, K> = [QueryKey, QueryData<T> | InfiniteQueryData<T> | undefined, K];
+export type ContextQueryProp<T, K = undefined> = K extends undefined | null
+  ? [QueryKey, QueryData<T> | InfiniteQueryData<T> | undefined]
+  : [QueryKey, QueryData<T> | InfiniteQueryData<T> | undefined, K];
+export type ContextProp<T, K = undefined> = K extends undefined | null ? [QueryKey, T | undefined] : [QueryKey, T | undefined, K];
 
 export type InferType<T> = T extends UseQueryOptions<infer D> ? D : T extends UseInfiniteQueryOptions<infer D> ? D : never;

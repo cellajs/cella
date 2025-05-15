@@ -14,9 +14,9 @@ import { useUserStore } from '~/store/user';
 const LeaveButton = lazy(() => import('~/modules/organizations/leave-button'));
 
 const organizationTabs: PageTab[] = [
-  { id: 'members', label: 'common:members', path: '/$idOrSlug/members' },
-  { id: 'attachments', label: 'common:attachments', path: '/$idOrSlug/attachments' },
-  { id: 'settings', label: 'common:settings', path: '/$idOrSlug/settings' },
+  { id: 'members', label: 'common:members', path: '/organizations/$idOrSlug/members' },
+  { id: 'attachments', label: 'common:attachments', path: '/organizations/$idOrSlug/attachments' },
+  { id: 'settings', label: 'common:settings', path: '/organizations/$idOrSlug/settings' },
 ];
 
 const OrganizationPage = () => {

@@ -9,7 +9,7 @@ import { useTranslation } from 'react-i18next';
 import { type RefObject, useRef } from 'react';
 import { TooltipButton } from '~/modules/common/tooltip-button';
 import AppNavLoader from '~/modules/navigation/bar-nav/loader';
-import type { NavItem } from '~/nav-config';
+import type { NavItem } from '~/modules/navigation/types';
 
 interface BarNavButtonProps {
   navItem: NavItem;

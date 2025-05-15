@@ -1,6 +1,6 @@
-import { systemHc } from '#/modules/system/hc';
 import { config } from 'config';
 import { clientConfig, handleResponse } from '~/lib/api';
+import { systemHc } from '#/modules/system/hc';
 
 export const client = systemHc(config.backendUrl, clientConfig);
 
@@ -45,7 +45,7 @@ export const sendNewsletter = async ({ body, toSelf = false }: { body: Newslette
 };
 
 export const getPriasignedUrl = async ({ key }: { key: string }) => {
-  const response = await client['preasigned-url'].$get({
+  const response = await client['presigned-url'].$get({
     query: { key },
   });
 

@@ -1,40 +1,43 @@
 import type { CarouselItemData } from '~/modules/attachments/attachments-carousel';
 import { openAttachmentDialog } from '~/modules/attachments/helpers';
-import { getUrlFromProps } from '~/modules/common/blocknote/helpers/url-related';
 import type { CustomBlockNoteEditor } from '~/modules/common/blocknote/types';
-import { nanoid } from '~/utils/nanoid';
 
-export const openAttachment = (
+export const openAttachment = async (
   event: React.MouseEvent<Element>,
   editor: CustomBlockNoteEditor,
-  altClickOpensPreview: boolean,
   blockNoteRef: React.RefObject<HTMLDivElement | null>,
 ) => {
-  if (!altClickOpensPreview || !event.altKey) return;
+  if (!event.altKey) return;
+
   event.preventDefault();
   editor.formattingToolbar.closeMenu();
 
-  const { props } = editor.getTextCursorPosition().block;
+  const {
+    block: { props },
+  } = editor.getTextCursorPosition();
 
-  const url = getUrlFromProps(props);
-  if (!url || url.length === 0) return;
+  if (!props || !('url' in props) || !props.url.length) return;
+
   const newAttachments: CarouselItemData[] = [];
 
-  // Collect attachments based on valid file types
-  editor.forEachBlock(({ type, props }) => {
-    const blockUrl = getUrlFromProps(props);
+  // Iterate through all blocks and collect attachments
+  editor.forEachBlock(({ id, props, type: contentType }) => {
+    if (!('url' in props)) return true;
 
-    if (blockUrl && blockUrl.length > 0) {
-      const filename = blockUrl.split('/').pop() || 'File';
-      newAttachments.push({ id: nanoid(), url: blockUrl, filename, name: filename, contentType: type });
-    }
-    return true;
+    const { url, name } = props;
+    if (url.length > 0) newAttachments.push({ id, url, filename: name, name, contentType });
+
+    return true; // keep iterating
   });
 
-  const attachmentNum = newAttachments.findIndex(({ url: newUrl }) => newUrl === url);
-  openAttachmentDialog({
-    attachmentIndex: attachmentNum,
-    attachments: newAttachments,
-    triggerRef: blockNoteRef as React.RefObject<null>,
-  });
+  const attachmentIndex = newAttachments.findIndex(({ url }) => url === props.url);
+
+  const attachments = await Promise.all(
+    newAttachments.map(async (attachment) => ({
+      ...attachment,
+      url: editor.resolveFileUrl ? await editor.resolveFileUrl(attachment.url) : attachment.url,
+    })),
+  );
+
+  openAttachmentDialog({ attachmentIndex, attachments, triggerRef: blockNoteRef as React.RefObject<null> });
 };

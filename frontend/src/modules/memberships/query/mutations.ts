@@ -145,7 +145,7 @@ export const useMembersDeleteMutation = () =>
           return formatUpdatedData(oldData, updatedMemberships, limit, -ids.length);
         });
 
-        context.push([queryKey, previousData, null]); // Store previous data for rollback if needed
+        context.push([queryKey, previousData]); // Store previous data for rollback if needed
       }
 
       return context;

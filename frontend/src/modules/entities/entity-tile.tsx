@@ -10,7 +10,7 @@ export const EntityTile = ({ entity }: { entity: EntityTileData }) => {
   return (
     <Card className="overflow-hidden transition hover:shadow-sm">
       <CardContent className="p-4">
-        <Link to="/$idOrSlug" params={{ idOrSlug: entity.slug }} className="w-full relative group">
+        <Link to="/organizations/$idOrSlug" params={{ idOrSlug: entity.slug }} className="w-full relative group">
           <div
             className={`relative flex flex-col -mx-4 -mt-6 bg-cover bg-center aspect-[3/1] bg-opacity-80 ${
               entity.bannerUrl ? '' : numberToColorClass(entity.id)

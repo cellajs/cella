@@ -70,9 +70,10 @@ export type BaseMenusItemsTitle =
 export type CellaCustomBlockTypes = ExtendableBlocknoteTypes['BlockTypes'];
 export type MenusItemsTitle = ExtendableBlocknoteTypes['ItemsTitle'];
 
-export type BaseBlockNoteProps = {
+export type CommonBlockNoteProps = {
   id: string;
   defaultValue?: string; // stringified block
+  editable?: boolean;
   className?: string;
   sideMenu?: boolean;
   slashMenu?: boolean;
@@ -81,18 +82,18 @@ export type BaseBlockNoteProps = {
   altClickOpensPreview?: boolean;
   emojis?: boolean;
   allowedBlockTypes?: (BasicBlockBaseTypes | CellaCustomBlockTypes)[];
-  members?: Member[];
+  members?: Member[]; // for mentions
   onFocus?: () => void;
   onEscapeClick?: () => void;
   onEnterClick?: () => void;
+  onBeforeLoad?: (editor: CustomBlockNoteEditor) => void;
 } & (
   | {
-      // filePanel and allowedFileBlockTypes req to add together
+      // filePanel and allowedFileBlockTypes must be defined together
       filePanel: (props: FilePanelProps) => React.ReactElement;
       allowedFileBlockTypes?: BasicFileBlockTypes[];
     }
   | {
-      // if neither is provided, it allows the omission of both
       filePanel?: never;
       allowedFileBlockTypes?: never;
     }

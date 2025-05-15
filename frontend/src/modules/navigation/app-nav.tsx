@@ -7,7 +7,8 @@ import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
 import BarNav from '~/modules/navigation/bar-nav';
 import FloatingNav from '~/modules/navigation/floating-nav';
-import { type NavItem, type NavItemId, navItems } from '~/nav-config';
+import type { NavItem, NavItemId } from '~/modules/navigation/types';
+import { navItems } from '~/nav-config';
 import { useNavigationStore } from '~/store/navigation';
 
 const AppNav = () => {

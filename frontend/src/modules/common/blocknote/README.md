@@ -90,8 +90,9 @@ types by specifying them in the <BlockNote /> component configuration. This allo
 Example Usage:
 
 ```tsx
-<BlockNoteEditor
+<BlockNote
   id={blocknoteId}
+  type='edit'
   defaultValue={value}
   onChange={onChange}
   updateData={onChange}

@@ -1,9 +1,9 @@
+import { z } from '@hono/zod-openapi';
 import { createRouteConfig } from '#/lib/route-config';
 import { hasSystemAccess, isAuthenticated, isPublicAccess } from '#/middlewares/guard';
 import { tokenLimiter } from '#/middlewares/rate-limiter/limiters';
 import { booleanQuerySchema } from '#/utils/schema/common';
 import { errorResponses, successWithDataSchema, successWithoutDataSchema } from '#/utils/schema/responses';
-import { z } from '@hono/zod-openapi';
 import { inviteBodySchema, sendNewsletterBodySchema } from './schema';
 
 class SystemRouteConfig {
@@ -69,7 +69,7 @@ class SystemRouteConfig {
 
   public getPriasignedUrl = createRouteConfig({
     method: 'get',
-    path: '/preasigned-url',
+    path: '/presigned-url',
     guard: [isAuthenticated],
     tags: ['system'],
     summary: '',
@@ -79,12 +79,8 @@ class SystemRouteConfig {
     },
     responses: {
       200: {
-        description: 'Preasigned URL',
-        content: {
-          'application/json': {
-            schema: successWithDataSchema(z.string()),
-          },
-        },
+        description: 'Presigned URL',
+        content: { 'application/json': { schema: successWithDataSchema(z.string()) } },
       },
       ...errorResponses,
     },
