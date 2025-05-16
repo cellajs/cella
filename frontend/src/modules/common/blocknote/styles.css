@@ -37,11 +37,21 @@
   color: hsl(var(--blocknote-placeholder));
 }
 
+.bn-editor[contenteditable="false"] .bn-block-content[data-content-type="codeBlock"] select {
+  display: none;
+}
+
 .bn-shadcn code {
-  background: hsl(var(--muted));
   font-size: 0.85em;
-  border-radius: 0.24rem;
-  border: 0.25rem solid hsl(var(--muted));
+  line-height: 1rem;
+}
+
+.bn-block-content[data-content-type="codeBlock"] {
+  background: hsl(var(--secondary));
+  border: solid hsl(var(--muted));
+}
+.bn-block-content[data-content-type="codeBlock"] > pre {
+  padding: 1.2rem 1rem 1rem;
 }
 
 .bn-add-file-button {

@@ -1,6 +1,6 @@
 import type { FilePanelProps } from '@blocknote/react';
 import type React from 'react';
-import type { customSchema } from '~/modules/common/blocknote/blocknote-config';
+import type { customSchema, supportedLanguages } from '~/modules/common/blocknote/blocknote-config';
 import type { Member } from '~/modules/memberships/types';
 
 export type CustomBlockNoteEditor = typeof customSchema.BlockNoteEditor;
@@ -75,6 +75,7 @@ export type CommonBlockNoteProps = {
   defaultValue?: string; // stringified block
   editable?: boolean;
   className?: string;
+  codeBlockDefaultLanguage?: keyof typeof supportedLanguages;
   sideMenu?: boolean;
   slashMenu?: boolean;
   formattingToolbar?: boolean;

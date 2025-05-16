@@ -1,14 +1,17 @@
+import { codeBlock } from '@blocknote/code-block';
 import { FilePanelController, GridSuggestionMenuController, useCreateBlockNote } from '@blocknote/react';
 import { BlockNoteView } from '@blocknote/shadcn';
 import { type FocusEventHandler, type KeyboardEventHandler, type MouseEventHandler, useCallback, useEffect, useMemo, useRef } from 'react';
 
 import { useBreakpoints } from '~/hooks/use-breakpoints';
+import router from '~/lib/router';
 import {
   allowedFileTypes,
   allowedTypes,
   customSchema,
   customSlashIndexedItems,
   customSlashNotIndexedItems,
+  supportedLanguages,
 } from '~/modules/common/blocknote/blocknote-config';
 import { Mention } from '~/modules/common/blocknote/custom-elements/mention';
 import { CustomFormattingToolbar } from '~/modules/common/blocknote/custom-formatting-toolbar';
@@ -16,8 +19,6 @@ import { CustomSideMenu } from '~/modules/common/blocknote/custom-side-menu';
 import { CustomSlashMenu } from '~/modules/common/blocknote/custom-slash-menu';
 import { compareIsContentSame, getParsedContent } from '~/modules/common/blocknote/helpers';
 import { focusEditor } from '~/modules/common/blocknote/helpers/focus';
-
-import router from '~/lib/router';
 import { openAttachment } from '~/modules/common/blocknote/helpers/open-attachment';
 import { shadCNComponents } from '~/modules/common/blocknote/helpers/shad-cn';
 import type { CommonBlockNoteProps, CustomBlockNoteEditor } from '~/modules/common/blocknote/types';
@@ -49,6 +50,7 @@ export const BlockNote = ({
   trailingBlock = true,
   altClickOpensPreview = false,
   // Editor functional
+  codeBlockDefaultLanguage = 'text',
   editable = true,
   sideMenu = true,
   slashMenu = true,
@@ -76,6 +78,12 @@ export const BlockNote = ({
 
   const editor = useCreateBlockNote({
     schema: customSchema,
+    codeBlock: {
+      indentLineWithTab: true,
+      defaultLanguage: codeBlockDefaultLanguage,
+      supportedLanguages,
+      createHighlighter: codeBlock.createHighlighter,
+    },
     trailingBlock,
     // TODO(BLOCKING) remove image blick (https://github.com/TypeCellOS/BlockNote/issues/1570)
     resolveFileUrl: (key) => {
