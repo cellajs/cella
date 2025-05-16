@@ -99,6 +99,8 @@
   "resource_not_found.text": "This {{resource}} does not exist or has been deleted.",
   "route_not_found": "Route not found",
   "route_not_found.text": "The server could not find the requested route.",
+  "page_not_found": "Page not found",
+  "page_not_found.text": "Oops! That page doesn`t seem to exist.",
   "server_error": "Server error",
   "server_error.text": "Your request could not be completed.",
   "sign_up_restricted": "Invite only",
