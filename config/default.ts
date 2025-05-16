@@ -104,9 +104,11 @@ export const config = {
   ],
 
   /**
-   * Default upload body limit
+   * Uploads body limit
    */
-  uploadBodyLimit: 1 * 1024 * 1024, // 1mb
+  jsonBodyLimit: 1 * 1024 * 1024, // 1mb
+  fileUploadLimit: 20 * 1024 * 1024, // 20mb
+  defaultBodyLimit: 1 * 1024 * 1024, // 1mb
 
   // Allowed oauth strategies providers
   enabledAuthenticationStrategies: ['password', 'passkey', 'oauth'] as const,
