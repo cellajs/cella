@@ -14,6 +14,8 @@ export default {
   // Hide chat widget in staging
   gleapToken: undefined,
 
+  s3BucketPrefix: 'cella-staging',
+
   // Payment with Paddle
   paddleToken: 'test_85052d6574ab68d36b341e0afc8',
   paddlePriceIds: {

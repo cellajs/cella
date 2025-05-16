@@ -286,7 +286,7 @@ const meRoutes = app
     const user = getContextUser();
 
     // This will be used to as first part of S3 key
-    const sub = organization ? `${organization}/${user.id}` : user.id;
+    const sub = [config.s3BucketPrefix, organization, user.id].filter(Boolean).join('/');
 
     try {
       const params = getParams(templateId, isPublic, sub);

@@ -60,6 +60,7 @@ export const config = {
   googleMapsKey: 'AIzaSyDMjCpQusdoPWLeD7jxkqAxVgJ8s5xJ3Co',
 
   // File handling with imado
+  s3BucketPrefix: 'cella-development' as string | null, // Prefix to namespace files when sharing a bucket across apps or envs.
   s3PublicBucket: 'imado-dev',
   s3PrivateBucket: 'imado-dev-priv',
   s3Region: 'nl-ams',
