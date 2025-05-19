@@ -9,6 +9,9 @@ type CommonUploadData = {
   plugins?: Plugins;
   restrictions?: Partial<CustomUppyOpt['restrictions']>;
   statusEventHandler?: StatusEventHandlers;
+  // Dialog props
+  title?: string;
+  description?: string;
 };
 
 export type UploadData =

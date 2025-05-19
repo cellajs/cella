@@ -8,6 +8,7 @@ import ErrorNotice from '~/modules/common/error-notice';
 import { Sheeter } from '~/modules/common/sheeter/provider';
 import SSE from '~/modules/common/sse';
 import { SSEProvider } from '~/modules/common/sse/provider';
+import { Uploader } from '~/modules/common/uploader/uploader';
 import AppNav from '~/modules/navigation/app-nav';
 import { AppNavState } from '~/modules/navigation/app-nav-state';
 
@@ -23,6 +24,7 @@ const AppLayout = () => {
           <AppNavState />
           <SSE />
           <AppContent />
+          <Uploader />
           <Dialoger />
           <AppSheets />
           <Sheeter />

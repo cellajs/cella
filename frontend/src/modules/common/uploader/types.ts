@@ -21,16 +21,6 @@ export type CustomUppyFile = UppyFile<UppyMeta, UppyBody>;
 export type CustomUppyOpt = UppyOptions<UppyMeta, UppyBody>;
 export type CustomWebcamOpt = WebcamOptions<UppyMeta, UppyBody>;
 
-export interface UploadParams {
-  public: boolean;
-  organizationId?: string;
-}
-
-export interface ImadoOptions extends UploadParams {
-  templateId: UploadTemplateId;
-  statusEventHandler?: StatusEventHandlers;
-}
-
 export type StatusEventHandlers = {
   onFileEditorComplete?: (file: CustomUppyFile) => void;
   onUploadStart?: (uploadId: string, files: CustomUppyFile[]) => void;

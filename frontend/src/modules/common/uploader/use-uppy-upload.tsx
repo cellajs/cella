@@ -6,16 +6,16 @@ import ScreenCapture from '@uppy/screen-capture';
 import Webcam from '@uppy/webcam';
 import { type UploadTemplateId, config } from 'config';
 import { useEffect, useState } from 'react';
-import { getImageEditorOptions } from '~/modules/attachments/upload/image-editor-options';
 import { toaster } from '~/modules/common/toaster';
 import { createBaseTransloaditUppy } from '~/modules/common/uploader/helpers';
+import { getImageEditorOptions } from '~/modules/common/uploader/helpers/image-editor-options';
 import type { CustomUppyOpt, CustomWebcamOpt, UploadedUppyFile } from '~/modules/common/uploader/types';
 import { useUploader } from '~/modules/common/uploader/use-uploader';
 
 const uppyRestrictions = config.uppy.defaultRestrictions;
 
 export function useUploadUppy() {
-  const uploaderConfig = useUploader((state) => state.uploaderConfig);
+  const uploaderData = useUploader((state) => state.uploaderConfig);
 
   const [uppy, setUppy] = useState<Uppy | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -24,11 +24,12 @@ export function useUploadUppy() {
   const canUpload = isOnline && config.has.imado;
 
   useEffect(() => {
-    let mounted = true;
+    if (!uploaderData || !canUpload) return;
 
-    if (!uploaderConfig || !canUpload) return;
+    let isMounted = true;
+    let localUppy: Uppy | null = null;
 
-    const { isPublic, templateId = 'attachment', organizationId, restrictions, plugins = [], statusEventHandler = {} } = uploaderConfig;
+    const { isPublic, templateId = 'attachment', organizationId, restrictions, plugins = [], statusEventHandler = {} } = uploaderData;
 
     const uppyOptions: CustomUppyOpt = {
       restrictions: {
@@ -42,13 +43,13 @@ export function useUploadUppy() {
 
     const initializeUppy = async () => {
       try {
-        const imadoUppy = await createBaseTransloaditUppy(uppyOptions, {
+        localUppy = await createBaseTransloaditUppy(uppyOptions, {
           public: isPublic,
           templateId,
           organization: organizationId,
         });
 
-        imadoUppy
+        localUppy
           .on('files-added', () => {
             if (isOnline && !config.has.imado) toaster('File upload warning: service unavailable', 'warning');
           })
@@ -116,28 +117,30 @@ export function useUploadUppy() {
         if (['cover', 'avatar'].includes(templateId)) webcamOptions.modes = ['picture'];
 
         // Plugin Registration
-        if (plugins.includes('webcam')) imadoUppy.use(Webcam, webcamOptions);
-        if (plugins.includes('image-editor')) imadoUppy.use(ImageEditor, imageEditorOptions);
-        if (plugins.includes('audio')) imadoUppy.use(Audio);
-        if (plugins.includes('screen-capture')) imadoUppy.use(ScreenCapture, { preferredVideoMimeType: 'video/webm;codecs=vp9' });
+        if (plugins.includes('webcam')) localUppy.use(Webcam, webcamOptions);
+        if (plugins.includes('image-editor')) localUppy.use(ImageEditor, imageEditorOptions);
+        if (plugins.includes('audio')) localUppy.use(Audio);
+        if (plugins.includes('screen-capture')) localUppy.use(ScreenCapture, { preferredVideoMimeType: 'video/webm;codecs=vp9' });
 
-        if (mounted) setUppy(imadoUppy);
+        if (!isMounted) {
+          localUppy.destroy();
+          return;
+        }
+        setUppy(localUppy);
       } catch (err) {
         const message = err instanceof Error ? err.message : 'Failed to initialize upload';
-        if (mounted) setError(message);
+        setError(message);
       }
     };
 
     initializeUppy();
 
     return () => {
-      mounted = false;
-      if (uppy) {
-        uppy.destroy(); // Ensures events and memory are cleared
-        setUppy(null);
-      }
+      isMounted = false;
+      setUppy(null);
+      if (localUppy) localUppy.destroy();
     };
-  }, [uploaderConfig, canUpload]);
+  }, [uploaderData]);
 
-  return { uppy, error };
+  return { uppy, error, uploaderData };
 }

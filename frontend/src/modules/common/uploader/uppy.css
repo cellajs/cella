@@ -7,5 +7,5 @@
 
 .uppy-Container .uppy-Dashboard-browse:focus,
 .uppy-Container .uppy-Dashboard-browse:hover {
-  border-bottom: .125rem solid hsl(var(--primary));
+  border-bottom: 0.125rem solid hsl(var(--primary));
 }
