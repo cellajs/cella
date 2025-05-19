@@ -30,8 +30,8 @@ const BlockNoteContent = ({
   disabled,
   BaseBlockNoteProps: {
     allowedBlockTypes = ['emoji', 'heading', 'paragraph', 'codeBlock'],
-    allowedFileBlockTypes = config.has.imado ? ['image', 'file'] : undefined,
-    filePanel = config.has.imado ? (props) => <UppyFilePanel {...props} /> : (null as never),
+    allowedFileBlockTypes = config.has.s3 ? ['image', 'file'] : undefined,
+    filePanel = config.has.s3 ? (props) => <UppyFilePanel {...props} /> : (null as never),
     ...blockNoteProps
   },
 }: Props) => {

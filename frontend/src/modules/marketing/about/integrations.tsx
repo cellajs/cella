@@ -20,7 +20,6 @@ const integrations: Integrations[] = [
   { name: 'BlockNote', country: 'NL', url: 'blocknotejs.org', logo: 'blocknote.svg' },
   { name: 'Novu', country: 'IL', url: 'novu.co', logo: 'novu.svg' },
   { name: 'Gleap', country: 'AT', url: 'gleap.io', logo: 'gleap.svg' },
-  { name: 'Imado', country: 'NL', url: 'imado.eu', logo: 'imado.svg' },
 ];
 
 const Integrations = () => {

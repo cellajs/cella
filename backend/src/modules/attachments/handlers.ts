@@ -110,9 +110,9 @@ const attachmentsRoutes = app
     // Filter at least by valid organization
     const filters: SQL[] = [
       eq(attachmentsTable.organizationId, organization.id),
-      // If IMADO is off, show attachments that not have a public CDN URL only to users that create it because in that case attachments stored in IndexedDB
+      // If s3 is off, show attachments that not have a public CDN URL only to users that create it because in that case attachments stored in IndexedDB
       // TODO reworkIt
-      // ...(!config.has.imado
+      // ...(!config.has.s3
       //   ? [
       //       or(
       //         and(eq(attachmentsTable.createdBy, user.id), notIlike(attachmentsTable.url, `${config.publicCDNUrl}%`)),

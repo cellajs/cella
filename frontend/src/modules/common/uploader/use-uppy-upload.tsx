@@ -21,7 +21,7 @@ export function useUploadUppy() {
   const [error, setError] = useState<string | null>(null);
 
   const isOnline = onlineManager.isOnline();
-  const canUpload = isOnline && config.has.imado;
+  const canUpload = isOnline && config.has.s3;
 
   useEffect(() => {
     if (!uploaderData || !canUpload) return;
@@ -47,7 +47,7 @@ export function useUploadUppy() {
 
         localUppy
           .on('files-added', () => {
-            if (isOnline && !config.has.imado) toaster('File upload warning: service unavailable', 'warning');
+            if (isOnline && !config.has.s3) toaster('File upload warning: service unavailable', 'warning');
           })
           .on('file-editor:complete', (file) => {
             statusEventHandler.onFileEditorComplete?.(file);

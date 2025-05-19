@@ -1,6 +1,6 @@
 import type { z } from 'zod';
 import type { attachmentsTable } from '#/db/schema/attachments';
-import { getImadoUrl } from '#/lib/imado-url';
+import { getSignedUrl } from '#/lib/signed-url';
 import type { attachmentSchema } from '#/modules/attachments/schema';
 
 type AttachmentSelect = typeof attachmentsTable.$inferSelect;
@@ -15,8 +15,8 @@ export const enrichAttachmentWithUrls = async (attachment: AttachmentSelect): Pr
 const enrichAttachment = async ({ convertedKey, thumbnailKey, originalKey, ...attachment }: AttachmentSelect): Promise<Attachment> => {
   return {
     ...attachment,
-    url: await getImadoUrl(originalKey),
-    thumbnailUrl: thumbnailKey ? await getImadoUrl(thumbnailKey) : null,
-    convertedUrl: convertedKey ? await getImadoUrl(convertedKey) : null,
+    url: await getSignedUrl(originalKey),
+    thumbnailUrl: thumbnailKey ? await getSignedUrl(thumbnailKey) : null,
+    convertedUrl: convertedKey ? await getSignedUrl(convertedKey) : null,
   };
 };

@@ -9,7 +9,7 @@ import { nanoid } from '~/utils/nanoid';
  * Creates and initializes a new Uppy instance with provided options and configuration.
  *
  * @param uppyOptions - Configuration options for Uppy (restrictions, plugins, etc.).
- * @param imadoToken - JWT token containing Transloadit upload parameters and signature.
+ * @param token - JWT token containing Transloadit upload parameters and signature.
  * @param isPublic - Flag indicating whether the uploaded files should be publicly accessible.
  * @param withTransloadit - Optional flag to control whether to integrate Transloadit plugin. Defaults to true.
  * @returns A new Uppy instance configured with the specified options, and Transloadit if enabled.

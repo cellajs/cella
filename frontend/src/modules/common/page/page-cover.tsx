@@ -56,7 +56,7 @@ const PageCover = memo(({ id, canUpdate, url, coverUpdateCallback }: PageCoverPr
       className={`relative flex bg-cover bg-center h-32 ${numberToColorClass(id)} data-[url=true]:h-[20vw] min-h-40 sm:min-w-52`}
       style={coverUrl ? { backgroundImage: `url(${coverUrl})` } : {}}
     >
-      {canUpdate && config.has.imado && (
+      {canUpdate && config.has.s3 && (
         <Button
           ref={uploadButtonRef}
           variant="secondary"

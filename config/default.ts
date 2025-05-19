@@ -59,7 +59,7 @@ export const config = {
   // Google maps key
   googleMapsKey: 'AIzaSyDMjCpQusdoPWLeD7jxkqAxVgJ8s5xJ3Co',
 
-  // File handling with imado
+  // File handling with s3
   s3BucketPrefix: 'cella-development' as string | null, // Prefix to namespace files when sharing a bucket across apps or envs.
   s3PublicBucket: 'imado-dev',
   s3PrivateBucket: 'imado-dev-priv',
@@ -123,7 +123,7 @@ export const config = {
     sync: true, // Realtime updates and sync using Electric Sync
     registrationEnabled: false, // Allow users to sign up. If false, the app is by invitation only
     waitlist: true, // Suggest a waitlist for unknown emails when sign up is disabled,
-    imado: true, // Imado fully configured, if false, files will be stored in local browser (indexedDB)
+    s3: true, // s3 fully configured, if false, files will be stored in local browser (indexedDB)
   },
 
   /**

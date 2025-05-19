@@ -16,7 +16,7 @@ import { usersTable } from '#/db/schema/users';
 import { type Env, getContextUser } from '#/lib/context';
 import { errorResponse } from '#/lib/errors';
 import { i18n } from '#/lib/i18n';
-import { getImadoUrl } from '#/lib/imado-url';
+import { getSignedUrl } from '#/lib/signed-url';
 import { logEvent } from '#/middlewares/logger/log-event';
 import { getUsersByConditions } from '#/modules/users/helpers/get-user-by';
 import defaultHook from '#/utils/default-hook';
@@ -119,7 +119,7 @@ const systemRoutes = app
   .openapi(systemRouteConfig.getPriasignedUrl, async (ctx) => {
     const { key } = ctx.req.valid('query');
 
-    const url = await getImadoUrl(key);
+    const url = await getSignedUrl(key);
 
     return ctx.json({ success: true, data: url }, 200);
   })

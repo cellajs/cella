@@ -2,7 +2,7 @@ import { clear, del, delMany, get, keys, set, setMany } from 'idb-keyval';
 import type { CustomUppyFile } from '~/modules/common/uploader/types';
 
 /**
- * Store files in IndexedDB when user is offline or when Imado is not configured
+ * Store files in IndexedDB when user is offline or when s3 is not configured
  *
  * @link https://github.com/jakearchibald/idb-keyval
  */

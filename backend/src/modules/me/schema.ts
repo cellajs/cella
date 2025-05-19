@@ -60,7 +60,7 @@ export const unsubscribeSelfQuerySchema = z.object({
 export const uploadTokenBodySchema = z.object({
   public: z.boolean(),
   sub: z.string(),
-  imado: z.boolean(),
+  s3: z.boolean(),
   signature: z.string(),
   params: z
     .object({
