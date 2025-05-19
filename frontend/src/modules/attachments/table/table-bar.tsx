@@ -2,7 +2,7 @@ import { Trash, Upload, XSquare } from 'lucide-react';
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import DeleteAttachmentsForm from '~/modules/attachments/delete-attachments-form';
-import { openAttachmentsUploadDialog } from '~/modules/attachments/table/helpers';
+import { useAttachmentsUploadDialog } from '~/modules/attachments/table/helpers';
 import type { AttachmentSearch, AttachmentsTableProps } from '~/modules/attachments/table/table-wrapper';
 import type { Attachment } from '~/modules/attachments/types';
 import ColumnsView from '~/modules/common/data-table/columns-view';
@@ -38,9 +38,8 @@ export const AttachmentsTableBar = ({
 }: AttachmentsTableBarProps) => {
   const { t } = useTranslation();
   const createDialog = useDialoger((state) => state.create);
-
+  const { open } = useAttachmentsUploadDialog();
   const deleteButtonRef = useRef(null);
-  const uploadButtonRef = useRef(null);
 
   const { q } = searchVars;
 
@@ -88,14 +87,7 @@ export const AttachmentsTableBar = ({
               <TableBarButton variant="ghost" onClick={clearSelection} icon={XSquare} label={t('common:clear')} />
             </>
           ) : (
-            showUpload && (
-              <TableBarButton
-                ref={uploadButtonRef}
-                icon={Upload}
-                label={t('common:upload')}
-                onClick={() => openAttachmentsUploadDialog(entity.id, uploadButtonRef)}
-              />
-            )
+            showUpload && <TableBarButton icon={Upload} label={t('common:upload')} onClick={() => open(entity.id)} />
           )}
           {selected.length === 0 && <TableCount count={total} type="attachment" isFiltered={isFiltered} onResetFilters={onResetFilters} />}
         </FilterBarActions>

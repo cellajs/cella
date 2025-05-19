@@ -3,14 +3,10 @@ import { config } from 'config';
 import { Upload } from 'lucide-react';
 import { memo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { lazyWithPreload } from 'react-lazy-with-preload';
 import { toaster } from '~/modules/common/toaster';
 import { useUploader } from '~/modules/common/uploader/use-uploader';
 import { Button } from '~/modules/ui/button';
 import { numberToColorClass } from '~/utils/number-to-color-class';
-
-// Lazy load the upload component
-const UploadUppy = lazyWithPreload(() => import('~/modules/attachments/upload/upload-uppy'));
 
 export interface PageCoverProps {
   id: string;
@@ -67,7 +63,6 @@ const PageCover = memo(({ id, canUpdate, url, coverUpdateCallback }: PageCoverPr
           size="sm"
           className="relative top-3 mx-auto opacity-50 hover:opacity-80 hover:bg-secondary"
           onClick={openUploadDialog}
-          onMouseOver={() => UploadUppy.preload()}
         >
           <Upload size={16} />
           <span className="ml-1">{t('common:upload_item', { item: t('common:cover').toLowerCase() })}</span>

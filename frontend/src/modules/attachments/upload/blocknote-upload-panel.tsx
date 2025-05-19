@@ -1,12 +1,8 @@
-import type { PartialBlock } from '@blocknote/core';
 import { type FilePanelProps, useBlockNoteEditor } from '@blocknote/react';
 import { DialogDescription } from '@radix-ui/react-dialog';
-import { config } from 'config';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useOnlineManager } from '~/hooks/use-online-manager';
-import { parseUploadedAttachments } from '~/modules/attachments/helpers';
-import UploadUppy from '~/modules/attachments/upload/upload-uppy';
 import { customSchema } from '~/modules/common/blocknote/blocknote-config';
 import { focusEditor } from '~/modules/common/blocknote/helpers/focus';
 import type { UploadedUppyFile } from '~/modules/common/uploader/types';
@@ -66,7 +62,7 @@ const UppyFilePanel = ({ organizationId, onCreateCallback, ...props }: UppyFileP
           <DialogTitle className="h-6">{t('common:upload_item', { item: t(`common:${type}`).toLowerCase() })}</DialogTitle>
           <DialogDescription className="hidden" />
         </DialogHeader>
-        <UploadUppy
+        {/* <UploadUppy
           isPublic={false}
           uploadType="organization"
           templateId="attachment"
@@ -87,7 +83,7 @@ const UppyFilePanel = ({ organizationId, onCreateCallback, ...props }: UppyFileP
             }
             onCreateCallback?.(result);
           }}
-        />
+        /> */}
       </DialogContent>
     </Dialog>
   );
