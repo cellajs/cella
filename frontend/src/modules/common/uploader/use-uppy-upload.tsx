@@ -50,18 +50,21 @@ export function useUploadUppy() {
             if (isOnline && !config.has.s3) toaster('File upload warning: service unavailable', 'warning');
           })
           .on('file-editor:complete', (file) => {
+            console.info('File editor complete:', file);
             statusEventHandler.onFileEditorComplete?.(file);
           })
           .on('upload', (uploadId, files) => {
+            console.info('Upload started:', files);
             statusEventHandler.onUploadStart?.(uploadId, files);
           })
           .on('error', (error) => {
+            console.error('Upload error:', error);
             statusEventHandler.onError?.(error);
             throw new Error(error.message ?? 'Upload error');
           })
           .on('transloadit:complete', (assembly) => {
             if (assembly?.error) throw new Error(assembly?.error);
-
+            console.info('Upload complete:', assembly);
             statusEventHandler.onComplete?.(assembly.results as UploadedUppyFile<UploadTemplateId>);
           });
         // TODO(UPPYREFACTOR)
