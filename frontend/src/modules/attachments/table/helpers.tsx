@@ -1,11 +1,11 @@
 import { t } from 'i18next';
 import { type RefObject, Suspense } from 'react';
-import type { UploadedUppyFile } from '~/lib/imado/types';
 import { parseUploadedAttachments } from '~/modules/attachments/helpers';
 import { useAttachmentCreateMutation, useAttachmentDeleteMutation } from '~/modules/attachments/query/mutations';
 import UploadUppy from '~/modules/attachments/upload/upload-uppy';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import Spinner from '~/modules/common/spinner';
+import type { UploadedUppyFile } from '~/modules/common/uploader/types';
 
 /**
  * Utility function to format bytes into human-readable format

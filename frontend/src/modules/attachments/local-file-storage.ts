@@ -1,5 +1,5 @@
 import { clear, del, delMany, get, keys, set, setMany } from 'idb-keyval';
-import type { LocalFile } from '~/lib/imado/types';
+import type { CustomUppyFile } from '~/modules/common/uploader/types';
 
 /**
  * Store files in IndexedDB when user is offline or when Imado is not configured
@@ -7,7 +7,7 @@ import type { LocalFile } from '~/lib/imado/types';
  * @link https://github.com/jakearchibald/idb-keyval
  */
 export const LocalFileStorage = {
-  async addFiles(fileMap: Record<string, LocalFile>): Promise<void> {
+  async addFiles(fileMap: Record<string, CustomUppyFile>): Promise<void> {
     // console.debug('Saving multiple files');
     try {
       const validFileMap = Object.entries(fileMap);
@@ -17,7 +17,7 @@ export const LocalFileStorage = {
     }
   },
 
-  async addFile(key: string, file: LocalFile): Promise<void> {
+  async addFile(key: string, file: CustomUppyFile): Promise<void> {
     // console.debug(`Saving file with key: ${key}`);
     try {
       await set(key, file);
@@ -26,10 +26,10 @@ export const LocalFileStorage = {
     }
   },
 
-  async getFile(key: string): Promise<LocalFile | undefined> {
+  async getFile(key: string): Promise<CustomUppyFile | undefined> {
     // console.debug(`Retrieving file with key: ${key}`);
     try {
-      return await get<LocalFile>(key);
+      return await get<CustomUppyFile>(key);
     } catch (error) {
       console.error(`Failed to retrieve file (${key}):`, error);
       return undefined;

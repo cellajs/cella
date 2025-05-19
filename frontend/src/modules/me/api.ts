@@ -1,6 +1,5 @@
 import { type ContextEntity, type UploadTemplateId, config } from 'config';
 import { clientConfig, handleResponse } from '~/lib/api';
-import type { UploadParams } from '~/lib/imado/types';
 import type { UpdateUserParams } from '~/modules/users/api';
 import { meHc } from '#/modules/me/hc';
 
@@ -78,26 +77,15 @@ export const deleteMySessions = async (sessionIds: string[]) => {
   await handleResponse(response);
 };
 
+export type UploadTokenQuery = { public: boolean; templateId: UploadTemplateId; organization?: string };
+
 /**
- * Get upload token to securely upload files with imado
- *
- * @link https://imado.eu
+ * Get upload token to securely upload files
  */
-export const getUploadToken = async (
-  type: 'organization' | 'personal',
-  templateId: UploadTemplateId,
-  query: UploadParams = { public: false, organizationId: undefined },
-) => {
-  const id = query.organizationId;
-
-  if (!id && type === 'organization') return console.error('Organization id required for organization uploads');
-
-  if (id && type === 'personal') return console.error('Personal uploads should be typed as personal');
-
+export const getUploadToken = async (tokenQuery: UploadTokenQuery) => {
   const preparedQuery = {
-    public: String(query.public),
-    organization: id,
-    templateId,
+    ...tokenQuery,
+    public: String(tokenQuery.public),
   };
 
   const response = await client['upload-token'].$get({ query: preparedQuery });

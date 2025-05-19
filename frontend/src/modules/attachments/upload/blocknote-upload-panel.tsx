@@ -5,11 +5,11 @@ import { config } from 'config';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useOnlineManager } from '~/hooks/use-online-manager';
-import type { UploadedUppyFile } from '~/lib/imado/types';
 import { parseUploadedAttachments } from '~/modules/attachments/helpers';
 import UploadUppy from '~/modules/attachments/upload/upload-uppy';
 import { customSchema } from '~/modules/common/blocknote/blocknote-config';
 import { focusEditor } from '~/modules/common/blocknote/helpers/focus';
+import type { UploadedUppyFile } from '~/modules/common/uploader/types';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '~/modules/ui/dialog';
 
 const basicBlockTypes = {
