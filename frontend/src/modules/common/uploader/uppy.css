@@ -9,3 +9,7 @@
 .uppy-Container .uppy-Dashboard-browse:hover {
   border-bottom: 0.125rem solid hsl(var(--primary));
 }
+
+.uppy-DashboardTab-btn {
+  display: flex;
+}

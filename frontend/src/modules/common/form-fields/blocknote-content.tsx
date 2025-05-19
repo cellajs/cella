@@ -1,7 +1,7 @@
 import { config } from 'config';
 import type { Control } from 'react-hook-form';
-import UppyFilePanel from '~/modules/attachments/upload/blocknote-upload-panel';
 import { BlockNote } from '~/modules/common/blocknote';
+import UppyFilePanel from '~/modules/common/blocknote/blocknote-upload-panel';
 import type { CommonBlockNoteProps } from '~/modules/common/blocknote/types';
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
 
