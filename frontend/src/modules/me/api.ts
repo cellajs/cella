@@ -77,7 +77,7 @@ export const deleteMySessions = async (sessionIds: string[]) => {
   await handleResponse(response);
 };
 
-export type UploadTokenQuery = { public: boolean; templateId: UploadTemplateId; organization?: string };
+export type UploadTokenQuery = { public: boolean; templateId: UploadTemplateId; organizationId?: string };
 
 /**
  * Get upload token to securely upload files
@@ -132,9 +132,7 @@ export type LeaveEntityQuery = { idOrSlug: string; entityType: ContextEntity };
  * @returns A boolean indicating whether the user successfully left the entity.
  */
 export const leaveEntity = async (query: LeaveEntityQuery) => {
-  const response = await client.leave.$delete({
-    query,
-  });
+  const response = await client.leave.$delete({ query });
 
   const json = await handleResponse(response);
   return json.success;

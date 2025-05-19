@@ -43,11 +43,7 @@ export function useUploadUppy() {
 
     const initializeUppy = async () => {
       try {
-        localUppy = await createBaseTransloaditUppy(uppyOptions, {
-          public: isPublic,
-          templateId,
-          organization: organizationId,
-        });
+        localUppy = await createBaseTransloaditUppy(uppyOptions, { public: isPublic, templateId, organizationId });
 
         localUppy
           .on('files-added', () => {
