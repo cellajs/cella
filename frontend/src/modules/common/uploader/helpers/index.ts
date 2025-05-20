@@ -27,8 +27,6 @@ export const createBaseTransloaditUppy = async (uppyOptions: CustomUppyOpt, toke
   if (!token) throw new Error('Failed to get upload token');
   const { params, signature } = token;
 
-  // If Transloadit integration is enabled and an upload token is available
-
   uppy.use(Transloadit, {
     waitForEncoding: true, // Wait for server-side encoding to finish before completing the upload
     alwaysRunAssembly: true, // Always create a Transloadit Assembly even if no files changed

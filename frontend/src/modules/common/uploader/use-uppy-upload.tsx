@@ -1,7 +1,7 @@
 import { onlineManager } from '@tanstack/react-query';
 import Audio from '@uppy/audio';
 import type { Body, Meta } from '@uppy/core';
-import ImageEditor, { type ImageEditorOptions } from '@uppy/image-editor';
+import ImageEditor from '@uppy/image-editor';
 import ScreenCapture from '@uppy/screen-capture';
 import Webcam, { type WebcamOptions } from '@uppy/webcam';
 import { type UploadTemplateId, config } from 'config';
@@ -107,7 +107,7 @@ export function useUploadUppy() {
         //       });
         //     });
         // Plugin Options
-        const imageEditorOptions: ImageEditorOptions = getImageEditorOptions(templateId);
+        const imageEditorOptions = getImageEditorOptions(templateId);
         const webcamOptions: WebcamOptions<Meta, Body> = {
           videoConstraints: { width: 1280, height: 720 },
           preferredVideoMimeType: 'video/webm;codecs=vp9',

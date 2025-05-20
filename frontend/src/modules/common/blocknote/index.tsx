@@ -1,5 +1,5 @@
 import { codeBlock } from '@blocknote/code-block';
-import { FilePanelController, GridSuggestionMenuController, useCreateBlockNote } from '@blocknote/react';
+import { GridSuggestionMenuController, useCreateBlockNote } from '@blocknote/react';
 import { BlockNoteView } from '@blocknote/shadcn';
 import { type FocusEventHandler, type KeyboardEventHandler, type MouseEventHandler, useCallback, useEffect, useMemo, useRef } from 'react';
 
@@ -14,6 +14,7 @@ import {
   supportedLanguages,
 } from '~/modules/common/blocknote/blocknote-config';
 import { Mention } from '~/modules/common/blocknote/custom-elements/mention';
+import { CustomFilePanel } from '~/modules/common/blocknote/custom-file-panel';
 import { CustomFormattingToolbar } from '~/modules/common/blocknote/custom-formatting-toolbar';
 import { CustomSideMenu } from '~/modules/common/blocknote/custom-side-menu';
 import { CustomSlashMenu } from '~/modules/common/blocknote/custom-slash-menu';
@@ -40,6 +41,8 @@ type BlockNoteProps =
       onEscapeClick?: never;
       onEnterClick?: never;
       onBeforeLoad?: never;
+      filePanel?: never;
+      baseFilePanelProps?: never;
     });
 
 export const BlockNote = ({
@@ -58,8 +61,9 @@ export const BlockNote = ({
   emojis = true,
   allowedBlockTypes = allowedTypes, // default types
   members, // for mentions
+  allowedFileBlockTypes = allowedFileTypes, // default filetypes
   filePanel,
-  allowedFileBlockTypes = filePanel ? allowedFileTypes : [], // default filetypes
+  baseFilePanelProps,
   // Functions
   updateData,
   onEscapeClick,
@@ -190,7 +194,7 @@ export const BlockNote = ({
       slashMenu={!slashMenu}
       formattingToolbar={!formattingToolbar}
       emojiPicker={!emojiPicker}
-      filePanel={!filePanel}
+      filePanel={false} // Because in CustomFilePanel renders default UI
       onFocus={onFocus}
       onClick={handleClick}
       onKeyDown={handleKeyDown}
@@ -211,7 +215,7 @@ export const BlockNote = ({
       {/* Changes the Emoji Picker to only have 10 columns & min length of 0. */}
       {emojiPicker && <GridSuggestionMenuController triggerCharacter={':'} columns={8} minQueryLength={0} />}
 
-      {filePanel && <FilePanelController filePanel={filePanel} />}
+      <CustomFilePanel filePanel={filePanel} baseFilePanelProps={baseFilePanelProps} />
     </BlockNoteView>
   );
 };
