@@ -2,6 +2,7 @@ import { useNavigate, useParams, useSearch } from '@tanstack/react-router';
 import { memo, useEffect } from 'react';
 import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
 import UserSheet from '~/modules/users/user-sheet';
+import { fallbackContentRef } from '~/utils/fallback-content-ref';
 
 const UserSheetHandler = memo(() => {
   const navigate = useNavigate();
@@ -17,8 +18,7 @@ const UserSheetHandler = memo(() => {
     if (!userSheetId) return;
 
     const sheetInstanceId = `user-sheet-${userSheetId}`;
-    // TODO(IMPROVE) we should have a fallback ref in the app-content that is always available
-    const triggerRef = getTriggerRef(userSheetId) || { current: document.activeElement instanceof HTMLButtonElement ? document.activeElement : null };
+    const triggerRef = getTriggerRef(userSheetId) || fallbackContentRef;
 
     // Defer creation to ensure the DOM and state are ready
     const timeoutId = setTimeout(() => {

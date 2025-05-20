@@ -23,41 +23,13 @@ services:
         sync: false
       - key: ARGON_SECRET
         sync: false
-      - key: TUS_SECRET
-        sync: false
       - key: COOKIE_SECRET
         sync: false
       - key: ELECTRIC_API_SECRET
         sync: false
-      - key: AWS_CLOUDFRONT_KEY_ID
-        sync: false
-      - key: AWS_CLOUDFRONT_PRIVATE_KEY
-        sync: false
     buildFilter:
       paths:
         - backend/**/*.?s
-
-  # TUS upload server
-  - type: web
-    name: cella-tus
-    runtime: node
-    region: frankfurt
-    rootDir: tus
-    buildCommand: pnpm install && pnpm build
-    startCommand: pnpm start
-    numInstances: 1
-    previews:
-      generation: manual
-    envVars:
-      - key: TUS_SECRET
-        sync: false
-      - key: AWS_S3_UPLOAD_ACCESS_KEY_ID
-        sync: false
-      - key: AWS_S3_UPLOAD_SECRET_ACCESS_KEY
-        sync: false
-    buildFilter:
-      paths:
-        - tus/**/*.?s
 
   # Frontend
   - type: web

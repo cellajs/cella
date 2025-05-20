@@ -2,8 +2,9 @@ import { MemberInviteEmail, type MemberInviteEmailProps } from '../../../emails/
 
 import { OpenAPIHono } from '@hono/zod-openapi';
 import { config } from 'config';
-import { and, count, eq, getTableColumns, ilike, inArray, isNotNull, isNull, or } from 'drizzle-orm';
+import { and, count, eq, ilike, inArray, isNotNull, isNull, or } from 'drizzle-orm';
 import { db } from '#/db/db';
+import { emailsTable } from '#/db/schema/emails';
 import { membershipsTable } from '#/db/schema/memberships';
 import { tokensTable } from '#/db/schema/tokens';
 import { usersTable } from '#/db/schema/users';
@@ -58,6 +59,7 @@ const membershipsRoutes = app
       .from(membershipsTable)
       .where(and(eq(membershipsTable.type, 'organization'), eq(membershipsTable.organizationId, organization.id)));
 
+    // Check create restrictions
     if (membersRestrictions !== 0 && currentOrgMemberships.length + emails.length > membersRestrictions) {
       return errorResponse(ctx, 403, 'restrict_by_org', 'warn', 'attachment');
     }
@@ -66,11 +68,14 @@ const membershipsRoutes = app
     const normalizedEmails = emails.map((email) => email.toLowerCase());
 
     // Determine main entity details (if applicable)
-    const { associatedEntityType, associatedEntityIdField, associatedEntityId } = getAssociatedEntityDetails(entity);
+    const associatedEntity = getAssociatedEntityDetails(entity);
 
     // Fetch existing users based on the provided emails
-    const existingUsers = await getUsersByConditions([inArray(usersTable.email, normalizedEmails)]);
+    const existingUsers = await getUsersByConditions([inArray(emailsTable.email, normalizedEmails)]);
     const userIds = existingUsers.map(({ id }) => id);
+
+    // Since a user can have multiple emails, we need to check if the email exists in the emails table
+    const existingEmails = await db.select().from(emailsTable).where(inArray(emailsTable.email, normalizedEmails));
 
     // Fetch all existing memberships by organizationId
     const memberships = await db
@@ -78,9 +83,15 @@ const membershipsRoutes = app
       .from(membershipsTable)
       .where(and(eq(membershipsTable.organizationId, organization.id), inArray(membershipsTable.userId, userIds)));
 
+    // Fetch all existing tokens by organizationId
+    const existingTokens = await db
+      .select()
+      .from(tokensTable)
+      .where(and(eq(tokensTable.organizationId, organization.id), inArray(tokensTable.email, emails)));
+
     // Map for lookup of existing users by email
-    const existingUsersByEmail = new Map(existingUsers.map((eu) => [eu.email, eu]));
-    const emailsToInvite: { email: string; userId: string | null }[] = [];
+    const existingUsersByEmail = new Map(existingEmails.map((eu) => [eu.email, eu]));
+    const emailsWithIdToInvite: { email: string; userId: string | null }[] = [];
 
     // Process existing users
     await Promise.all(
@@ -91,18 +102,18 @@ const membershipsRoutes = app
         const userMemberships = memberships.filter(({ userId: id }) => id === userId);
 
         // Check if the user is already a member of the target entity
-        const hasTargetMembership = userMemberships.some(({ type }) => type === entityType);
+        const hasTargetMembership = userMemberships.some((m) => m[targetEntityIdField] === entityId);
         if (hasTargetMembership) return logEvent(`User already member of ${entityType}`, { user: userId, id: entityId });
 
         // Check for associated memberships and organization memberships
-        const hasAssociatedMembership = userMemberships.some(({ type }) => type === associatedEntityType);
-        const hasOrgMembership = userMemberships.some(({ type }) => type === 'organization');
+        const hasAssociatedMembership = associatedEntity ? userMemberships.some((m) => m[associatedEntity.field] === associatedEntity.id) : false;
+        const hasOrgMembership = userMemberships.some(({ organizationId }) => organizationId === organization.id);
 
         // Determine if membership should be created instantly
         const instantCreateMembership = (entityType !== 'organization' && hasOrgMembership) || (user.role === 'admin' && userId === user.id);
 
         // If not instant, add to invite list
-        if (!instantCreateMembership) return emailsToInvite.push({ email, userId });
+        if (!instantCreateMembership) return emailsWithIdToInvite.push({ email, userId });
 
         await insertMembership({ userId: existingUser.id, role, entity, addAssociatedMembership: hasAssociatedMembership });
 
@@ -110,14 +121,31 @@ const membershipsRoutes = app
       }),
     );
 
-    // Identify emails without associated users
-    for (const email of normalizedEmails) if (!existingUsersByEmail.has(email)) emailsToInvite.push({ email, userId: null });
+    // Identify emails without associated users, nor with existing tokens
+    for (const email of normalizedEmails) {
+      if (existingUsersByEmail.has(email)) continue;
+
+      // There might be emails that are already invited recently
+      if (
+        existingTokens.some(({ email: tokenEmail, createdAt }) => {
+          const tokenCreatedAt = new Date(createdAt);
+          const isSameEmail = tokenEmail === email;
+          const isRecent = tokenCreatedAt > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000); // 7 days
+          return isSameEmail && isRecent;
+        })
+      ) {
+        logEvent('Invitation to pending user by email address already sent recently', { id: entityId });
+        continue;
+      }
+
+      emailsWithIdToInvite.push({ email, userId: null });
+    }
 
     // Stop if no recipients
-    if (emailsToInvite.length === 0) return ctx.json({ success: true }, 200); // Stop if no recipients to send invites
+    if (emailsWithIdToInvite.length === 0) return ctx.json({ success: true }, 200); // Stop if no recipients to send invites
 
     // Generate invitation tokens
-    const tokens = emailsToInvite.map(({ email, userId }) => ({
+    const tokens = emailsWithIdToInvite.map(({ email, userId }) => ({
       id: nanoid(),
       token: nanoid(40), // unique hashed token
       type: 'invitation' as const,
@@ -128,7 +156,7 @@ const membershipsRoutes = app
       userId,
       entity: entityType,
       [targetEntityIdField]: entityId,
-      ...(associatedEntityIdField && associatedEntityId && { [associatedEntityIdField]: associatedEntityId }), // Include associated entity if applicable
+      ...(associatedEntity && { [associatedEntity.field]: associatedEntity.id }), // Include associated entity if applicable
       ...(entityType !== 'organization' && { organizationId: organization.id }), // Add org ID if not an organization
     }));
 
@@ -167,7 +195,7 @@ const membershipsRoutes = app
 
     await mailer.prepareEmails<MemberInviteEmailProps, (typeof recipients)[number]>(MemberInviteEmail, emailProps, recipients, user.email);
 
-    logEvent('Users invited to organization', { organization: organization.id }); // Log invitation event
+    logEvent(`${insertedTokens.length} users invited to organization`, { organization: organization.id }); // Log invitation event
 
     return ctx.json({ success: true }, 200);
   })
@@ -216,12 +244,12 @@ const membershipsRoutes = app
     );
 
     // Send SSE events for the memberships that were deleted
-    for (const membership of targets) {
+    for (const targetMembership of targets) {
       // Send the event to the user if they are a member of the organization
       const memberIds = targets.map((el) => el.userId);
       sendSSEToUsers(memberIds, 'remove_entity', { id: entity.id, entity: entity.entity });
 
-      logEvent('Member deleted', { membership: membership.id });
+      logEvent('Member deleted', { membership: targetMembership.id });
     }
 
     return ctx.json({ success: true, errors }, 200);
@@ -336,7 +364,7 @@ const membershipsRoutes = app
 
     const membersQuery = db
       .select({
-        ...getTableColumns(userSelect),
+        user: userSelect,
         membership: membershipSelect,
       })
       .from(usersTable)
@@ -345,7 +373,8 @@ const membershipsRoutes = app
 
     const [{ total }] = await db.select({ total: count() }).from(membersQuery.as('memberships'));
 
-    const items = await membersQuery.orderBy(orderColumn).limit(Number(limit)).offset(Number(offset));
+    const members = await membersQuery.orderBy(orderColumn).limit(Number(limit)).offset(Number(offset));
+    const items = members.map(({ user, membership }) => ({ ...user, membership }));
 
     return ctx.json({ success: true, data: { items, total } }, 200);
   })

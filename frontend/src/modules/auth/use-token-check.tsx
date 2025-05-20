@@ -14,7 +14,7 @@ export const useTokenCheck = (type: TokenType, tokenId?: string, enabled = true)
   return useQuery({
     queryKey: [],
     queryFn: async () => {
-      if (!tokenId) return;
+      if (!tokenId) throw new Error('Token ID is required');
       return checkToken({ id: tokenId, type });
     },
     enabled,

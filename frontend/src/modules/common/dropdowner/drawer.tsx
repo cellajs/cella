@@ -15,14 +15,14 @@ export default function DropdownDrawer({ dropdown }: { dropdown: InternalDropdow
 
   return (
     <Drawer key={id} open={true} onOpenChange={onOpenChange} onClose={closeDialog} noBodyStyles>
-      <DrawerContent id={String(id)} onEscapeKeyDown={closeDialog}>
-        <DrawerHeader>
+      <DrawerContent id={String(id)} onEscapeKeyDown={closeDialog} className="z-301 max-h-[70vh]" isDropdown>
+        <DrawerHeader className="p-0">
           <VisuallyHidden>
             <DrawerTitle>Choose</DrawerTitle>
             <DrawerDescription>Select an option</DrawerDescription>
           </VisuallyHidden>
         </DrawerHeader>
-        {content}
+        <div className="flex flex-col gap-4 p-4">{content}</div>
       </DrawerContent>
     </Drawer>
   );

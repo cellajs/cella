@@ -1,3 +1,5 @@
+import { sendNewsletterBodySchema } from '#/modules/system/schema';
+
 import { zodResolver } from '@hookform/resolvers/zod';
 import type { CheckedState } from '@radix-ui/react-checkbox';
 import { useMutation } from '@tanstack/react-query';
@@ -18,7 +20,6 @@ import { Button, SubmitButton } from '~/modules/ui/button';
 import { Checkbox } from '~/modules/ui/checkbox';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
 import { blocknoteFieldIsDirty } from '~/utils/blocknote-filed-is-dirty';
-import { sendNewsletterBodySchema } from '#/modules/system/schema';
 
 const BlockNoteContent = lazy(() => import('~/modules/common/form-fields/blocknote-content'));
 interface CreateNewsletterFormProps {
@@ -69,19 +70,14 @@ const CreateNewsletterForm = ({ organizationIds, callback }: CreateNewsletterFor
   const cancel = () => form.reset();
 
   const canSend = () => {
-    const { content, roles } = form.getValues();
-    // Only check if content field is dirty and if blocknote has changes
-    return roles.length > 0 && form.formState.dirtyFields.content && blocknoteFieldIsDirty(content);
+    if (!form.formState.isDirty) return false;
+    const { content } = form.getValues();
+    return blocknoteFieldIsDirty(content);
   };
 
   const isDirty = () => {
+    if (!form.formState.isDirty) return false;
     const { content, roles, subject } = form.getValues();
-    const dirtyFieldsKeys = Object.keys(form.formState.dirtyFields);
-
-    // If no fields are dirty, return false early
-    if (!dirtyFieldsKeys.length) return false;
-
-    // Check if roles, subject are dirty or if the content blocknote is dirty
     return roles.length > 0 || subject.length > 0 || blocknoteFieldIsDirty(content);
   };
 
@@ -100,7 +96,18 @@ const CreateNewsletterForm = ({ organizationIds, callback }: CreateNewsletterFor
         />
 
         <Suspense fallback={<Spinner className="my-16 h-6 w-6 opacity-50" noDelay />}>
-          <BlockNoteContent control={form.control} name="content" required label={t('common:message')} blocknoteId="blocknote-newsletter" />
+          <BlockNoteContent
+            control={form.control}
+            name="content"
+            required
+            label={t('common:message')}
+            BaseBlockNoteProps={{
+              id: 'blocknote-newsletter',
+              trailingBlock: false,
+              className:
+                'min-h-20 pl-10 pr-6 p-3 border-input ring-offset-background placeholder:text-muted-foreground focus-visible:ring-ring max-focus-visible:ring-transparent max-focus-visible:ring-offset-0 flex w-full rounded-md border text-sm file:border-0 file:bg-transparent file:text-sm file:font-medium focus-visible:outline-hidden sm:focus-visible:ring-2 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50',
+            }}
+          />
         </Suspense>
 
         <FormField
@@ -128,7 +135,7 @@ const CreateNewsletterForm = ({ organizationIds, callback }: CreateNewsletterFor
 
         <div className="flex max-sm:flex-col max-sm:items-stretch gap-2 items-center">
           <SubmitButton disabled={!canSend()} loading={isPending}>
-            <Send size={16} className="mr-1" />
+            <Send size={16} className="mr-2" />
             {testOnly ? t('common:send_test_email') : t('common:send')}
           </SubmitButton>
           <Button type="reset" variant="secondary" className={isDirty() ? '' : 'invisible'} aria-label={t('common:cancel')} onClick={cancel}>

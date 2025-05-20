@@ -30,7 +30,14 @@ export const SelectLanguages = ({ value, onChange }: SelectLanguagesProps) => {
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <Button ref={ref} variant="input" aria-label="Select language" className="w-full justify-between font-normal" aria-expanded={open}>
+        <Button
+          disabled={config.languages.length < 2}
+          ref={ref}
+          variant="input"
+          aria-label="Select language"
+          className="w-full justify-between font-normal"
+          aria-expanded={open}
+        >
           {value.length > 0 ? (
             <div className="flex items-center flex-nowrap truncate">
               {value.map((lang, index) => (
@@ -63,7 +70,7 @@ export const SelectLanguages = ({ value, onChange }: SelectLanguagesProps) => {
                     <CountryFlag countryCode={lang} imgType="png" className="mr-2 shrink-0" />
                     <span className="truncate">{t(`common:${lang}`)}</span>
                   </div>
-                  <Check size={16} className={`text-success ${!value.some((u) => u === lang) && 'invisible'}`} />
+                  <Check size={16} strokeWidth={3} className={`text-success ${!value.some((u) => u === lang) && 'invisible'}`} />
                 </CommandItem>
               ))}
             </CommandGroup>

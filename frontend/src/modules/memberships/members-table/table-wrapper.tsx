@@ -17,9 +17,10 @@ export type MemberSearch = z.infer<typeof membersSearchSchema>;
 export interface MembersTableProps {
   entity: EntityPage;
   isSheet?: boolean;
+  children?: React.ReactNode;
 }
 
-const MembersTable = ({ entity, isSheet = false }: MembersTableProps) => {
+const MembersTable = ({ entity, isSheet = false, children }: MembersTableProps) => {
   const { search, setSearch } = useSearchParams<MemberSearch>({ saveDataInSearch: !isSheet });
 
   const dataTableRef = useRef<BaseTableMethods | null>(null);
@@ -55,6 +56,7 @@ const MembersTable = ({ entity, isSheet = false }: MembersTableProps) => {
         clearSelection={clearSelection}
         isSheet={isSheet}
       />
+      {!!total && children}
       <BaseDataTable
         entity={entity}
         ref={dataTableRef}

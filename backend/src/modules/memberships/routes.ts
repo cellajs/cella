@@ -64,7 +64,7 @@ class MembershipRouteConfig {
       params: inOrgParamSchema,
       query: baseMembersQuerySchema,
       body: {
-        content: { 'application/json': { schema: idsBodySchema } },
+        content: { 'application/json': { schema: idsBodySchema() } },
       },
     },
     responses: {

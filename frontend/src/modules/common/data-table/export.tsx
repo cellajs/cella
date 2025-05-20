@@ -53,7 +53,7 @@ const Export = <R extends Record<string, any>>({ filename, columns, selectedRows
           </Button>
         </DropdownMenuTrigger>
       </TooltipButton>
-      <DropdownMenuContent align="end">
+      <DropdownMenuContent align="end" className="p-1">
         {isOnline && (
           <>
             <DropdownMenuItem onClick={() => exportDefault('csv')}>

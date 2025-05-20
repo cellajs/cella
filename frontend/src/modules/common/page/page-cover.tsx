@@ -17,7 +17,7 @@ export interface PageCoverProps {
   id: string;
   canUpdate: boolean;
   url?: string | null;
-  coverUpdateCallback: (bannerUrl: string) => void;
+  coverUpdateCallback: (bannerKey: string) => void;
 }
 
 const PageCover = memo(({ id, canUpdate, url, coverUpdateCallback }: PageCoverProps) => {
@@ -28,7 +28,8 @@ const PageCover = memo(({ id, canUpdate, url, coverUpdateCallback }: PageCoverPr
 
   const [coverUrl, setCoverUrl] = useState(url);
 
-  const setUrl = (bannerUrl: string) => {
+  const handleNewUrl = (bannerKey: string) => {
+    const bannerUrl = `${config.publicCDNUrl}/${bannerKey}`;
     setCoverUrl(bannerUrl);
     coverUpdateCallback(bannerUrl);
   };
@@ -40,14 +41,14 @@ const PageCover = memo(({ id, canUpdate, url, coverUpdateCallback }: PageCoverPr
     dialog.create(
       <Suspense fallback={<Spinner className="my-44 h-12 w-12" noDelay />}>
         <UploadUppy
-          isPublic={true}
+          isPublic
           organizationId={id}
           uploadType="organization"
           plugins={['webcam', 'image-editor']}
-          imageMode="cover"
+          templateId="cover"
           callback={(result) => {
-            const url = result[0].url;
-            if (url) setUrl(url);
+            const url = result.cover[0].url;
+            if (url) handleNewUrl(url);
             dialog.remove('page-cover');
           }}
         />

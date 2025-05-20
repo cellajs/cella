@@ -30,7 +30,16 @@ interface ComboboxProps {
   disabled?: boolean;
 }
 
-const Combobox = ({ options, name, onChange, placeholder, searchPlaceholder, renderOption, contentWidthMatchInput, disabled }: ComboboxProps) => {
+const Combobox = ({
+  options,
+  name,
+  onChange,
+  placeholder,
+  searchPlaceholder,
+  renderOption,
+  contentWidthMatchInput = false,
+  disabled,
+}: ComboboxProps) => {
   const { t } = useTranslation();
   const formValue = useFormContext()?.getValues(name);
   const isMobile = useBreakpoints('max', 'sm');
@@ -79,7 +88,7 @@ const Combobox = ({ options, name, onChange, placeholder, searchPlaceholder, ren
           {selectedOption ? (
             <div className="flex items-center truncate gap-2">
               {!excludeAvatarWrapFields.includes(name) && (
-                <AvatarWrap className="h-6 w-6 text-xs shrink-0" id={selectedOption.value} name={name} url={selectedOption.url} />
+                <AvatarWrap className="h-6 w-6 text-xs shrink-0" id={selectedOption.value} name={selectedOption.label} url={selectedOption.url} />
               )}
               {renderOption?.(selectedOption) ?? <span className="truncate">{selectedOption.label}</span>}
             </div>
@@ -89,8 +98,8 @@ const Combobox = ({ options, name, onChange, placeholder, searchPlaceholder, ren
           <ChevronDown className={`ml-2 h-4 w-4 shrink-0 opacity-50 transition-transform ${open ? '-rotate-90' : 'rotate-0'}`} />
         </Button>
       </PopoverTrigger>
-
-      <PopoverContent align="start" style={{ width: contentWidthMatchInput ? `${bounds.width}px` : '100%' }} className="p-0">
+      {/* bounds.width + bounds.x * 2 to also include padding */}
+      <PopoverContent align="start" style={{ width: contentWidthMatchInput ? `${bounds.width + bounds.x * 2}px` : '100%' }} className="p-0">
         <Command shouldFilter={false}>
           {!isMobile && (
             <CommandInput
@@ -121,10 +130,11 @@ const Combobox = ({ options, name, onChange, placeholder, searchPlaceholder, ren
                       className="group rounded-md flex justify-between items-center w-full leading-normal"
                     >
                       <div className="flex items-center gap-2">
-                        {!excludeAvatarWrapFields.includes(name) && <AvatarWrap id={option.value} name={name} url={option.url} />}
+                        {/* Not show awatar if name of component in exclude list */}
+                        {!excludeAvatarWrapFields.includes(name) && <AvatarWrap id={option.value} name={option.label} url={option.url} />}
                         {renderOption?.(option) ?? option.label}
                       </div>
-                      <Check size={16} className={`text-success ${formValue !== option.value && 'invisible'}`} />
+                      <Check size={16} strokeWidth={3} className={`text-success ${formValue !== option.value && 'invisible'}`} />
                     </CommandItem>
                   ))}
                 </Virtualizer>

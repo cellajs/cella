@@ -1,9 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
+import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { useDropdowner } from '~/modules/common/dropdowner/use-dropdowner';
 import { type InternalSheet, useSheeter } from '~/modules/common/sheeter/use-sheeter';
 import StickyBox from '~/modules/common/sticky-box';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '~/modules/ui/sheet';
+import { useNavigationStore } from '~/store/navigation';
 import { isElementInteractive } from '~/utils/is-el-interactive';
 
 export interface SheetProps {
@@ -24,6 +26,7 @@ export const DesktopSheet = ({ sheet }: SheetProps) => {
     hideClose = false,
     className: sheetClassName,
     content,
+    closeSheetOnEsc = true,
   } = sheet;
 
   const isMobile = useBreakpoints('max', 'sm', false);
@@ -34,17 +37,18 @@ export const DesktopSheet = ({ sheet }: SheetProps) => {
   const [side, setSide] = useState(sheetSide);
   const [className, setClassName] = useState(sheetClassName);
 
-  // Prevent flickering of sheet when its removed
   useEffect(() => {
-    if (sheetSide) {
-      setSide(sheetSide); // Update side when new sheet is created
-      setClassName(sheetClassName);
-    }
+    setSide(sheetSide);
+    setClassName(sheetClassName);
   }, [sheetSide, sheetClassName]);
 
+  // onClose trigger handles by remove method
   const closeSheet = () => {
     useSheeter.getState().remove(sheet.id);
-    sheet.onClose?.();
+
+    // Close dialogs opened in sheet with sheet close
+    const dialogs = useDialoger.getState().dialogs.filter((d) => d.open);
+    for (const dialog of dialogs) useDialoger.getState().remove(dialog.id);
   };
 
   const onOpenChange = (open: boolean) => {
@@ -54,12 +58,17 @@ export const DesktopSheet = ({ sheet }: SheetProps) => {
   };
 
   const handleEscapeKeyDown = (e: KeyboardEvent) => {
-    const activeElement = document.activeElement;
     e.preventDefault();
-    e.stopPropagation();
 
-    if (!(activeElement instanceof HTMLElement) || !isElementInteractive(activeElement)) closeSheet();
-    else activeElement.blur(); // Remove focus from the active element if it's interactive
+    // Blur active element on esc click
+    const activeElement = document.activeElement;
+    if (activeElement instanceof HTMLElement && isElementInteractive(activeElement)) activeElement.blur();
+
+    if (!closeSheetOnEsc) return;
+
+    // if close, prevent any Esc key down listeners
+    e.stopPropagation();
+    closeSheet();
   };
 
   const handleInteractOutside = (event: CustomEvent<{ originalEvent: PointerEvent }> | CustomEvent<{ originalEvent: FocusEvent }>) => {
@@ -67,9 +76,18 @@ export const DesktopSheet = ({ sheet }: SheetProps) => {
     const dropdown = useDropdowner.getState().dropdown;
     if (dropdown) return event.preventDefault();
 
-    const bodyClassList = document.body.classList;
-    if (bodyClassList.contains('keep-menu-open') && bodyClassList.contains('menu-sheet-open')) return;
+    // Dont close if interact outside is caused by dialog
+    const dialogs = useDialoger.getState().dialogs;
+    if (dialogs.some((d) => d.open)) return event.preventDefault();
 
+    // Nav sheet in keep open mode shouldnt close
+    if (sheet.id === 'nav-sheet') {
+      const navState = useNavigationStore.getState();
+      navState.navSheetOpen;
+      if (navState.keepMenuOpen && navState.navSheetOpen === 'menu') return event.preventDefault();
+    }
+
+    // TODO(REVIEW) Close if clicked in app content area
     const mainContentElement = document.getElementById('app-content-inner');
     if (!modal && mainContentElement?.contains(event.target as Node)) return closeSheet();
   };
@@ -93,10 +111,12 @@ export const DesktopSheet = ({ sheet }: SheetProps) => {
           if (triggerRef?.current) triggerRef.current.focus();
         }}
       >
-        <StickyBox className={`z-10 flex items-center justify-between bg-background py-3 ${title ? '' : 'hidden'}`}>
+        <StickyBox
+          className={`z-10 flex items-center justify-between bg-background/50 backdrop-blur-xs py-3 [.scrollable_&]:px-3 ${title ? '' : 'hidden'}`}
+        >
           <SheetTitle>{titleContent}</SheetTitle>
         </StickyBox>
-        <SheetHeader className={`${description || title ? '' : 'hidden'}`}>
+        <SheetHeader className={`${description ? '' : 'hidden'}`}>
           <SheetDescription className={`${description ? '' : 'hidden'}`}>{description}</SheetDescription>
         </SheetHeader>
         {content}

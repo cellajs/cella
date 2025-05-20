@@ -72,7 +72,7 @@ export const WaitlistForm = ({ email, buttonContent, emailField, dialog: isDialo
 
             <Button variant="ghost" onClick={changeEmail} className="font-light mt-2 text-xl">
               {email}
-              <ChevronDown size={16} className="ml-1" />
+              <ChevronDown size={16} className="ml-2" />
             </Button>
           </div>
           <LegalNotice email={email} mode="waitlist" />
@@ -99,13 +99,17 @@ export const WaitlistForm = ({ email, buttonContent, emailField, dialog: isDialo
             </FormItem>
           )}
         />
-        <SubmitButton size="xl" loading={isPending} className={`w-full ${emailField && 'rounded-full ring-4 sm:max-w-40 ring-primary/10'}`}>
+        <SubmitButton
+          size={buttonContent ? 'default' : 'xl'}
+          loading={isPending}
+          className={`w-full ${emailField && 'h-14 rounded-full ring-4 sm:max-w-40 ring-primary/10'}`}
+        >
           {buttonContent ? (
             buttonContent
           ) : (
             <>
               {t('common:join')}
-              <ArrowRight size={16} className="ml-1" />
+              <ArrowRight size={16} className="ml-2" />
             </>
           )}
         </SubmitButton>

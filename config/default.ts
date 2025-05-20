@@ -7,7 +7,6 @@ export const config = {
   frontendUrl: 'https://cellajs.com',
   backendUrl: 'https://api.cellajs.com',
   backendAuthUrl: 'https://api.cellajs.com/auth',
-  tusUrl: 'https://tus.cellajs.com',
   electricUrl: 'https://electric.cellajs.com',
 
   defaultRedirectPath: '/home',
@@ -61,11 +60,15 @@ export const config = {
   googleMapsKey: 'AIzaSyDMjCpQusdoPWLeD7jxkqAxVgJ8s5xJ3Co',
 
   // File handling with imado
-  tusPort: 4100,
-  s3UploadBucket: 'cella-uploads',
-  s3UploadRegion: 'eu-west-1',
-  privateCDNUrl: 'https://cdn-priv.cellajs.com',
-  publicCDNUrl: 'https://cdn.cellajs.com',
+  s3BucketPrefix: 'cella' as string | null, // Prefix to namespace files when sharing a bucket across apps or envs.
+  s3PublicBucket: 'imado-dev',
+  s3PrivateBucket: 'imado-dev-priv',
+  s3Region: 'nl-ams',
+  s3Host: 's3.nl-ams.scw.cloud',
+  privateCDNUrl: 'https://imado-dev-priv.s3.nl-ams.scw.cloud',
+  publicCDNUrl: 'https://544ba5eb-2c7a-417f-a5bf-b13950b89755.svc.edge.scw.cloud',
+
+  uploadTemplateIds: ['avatar', 'cover', 'attachment'] as const,
 
   themeColor: '#26262b',
 
@@ -101,9 +104,11 @@ export const config = {
   ],
 
   /**
-   * Default upload body limit
+   * Uploads body limit
    */
-  uploadBodyLimit: 1 * 1024 * 1024, // 1mb
+  jsonBodyLimit: 1 * 1024 * 1024, // 1mb
+  fileUploadLimit: 20 * 1024 * 1024, // 20mb
+  defaultBodyLimit: 1 * 1024 * 1024, // 1mb
 
   // Allowed oauth strategies providers
   enabledAuthenticationStrategies: ['password', 'passkey', 'oauth'] as const,

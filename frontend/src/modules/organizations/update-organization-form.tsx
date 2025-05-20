@@ -20,7 +20,6 @@ import { useOrganizationUpdateMutation } from '~/modules/organizations/query';
 import type { Organization } from '~/modules/organizations/types';
 import { Button, SubmitButton } from '~/modules/ui/button';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
-import { cleanUrl } from '~/utils/clean-url';
 import { updateOrganizationBodySchema } from '#/modules/organizations/schema';
 
 interface Props {
@@ -45,7 +44,7 @@ const UpdateOrganizationForm = ({ organization, callback, sheet: isSheet }: Prop
       shortName: organization.shortName,
       websiteUrl: organization.websiteUrl,
       emailDomains: organization.emailDomains,
-      thumbnailUrl: cleanUrl(organization.thumbnailUrl),
+      thumbnailUrl: organization.thumbnailUrl,
       notificationEmail: organization.notificationEmail,
       timezone: organization.timezone,
       country: organization.country,
@@ -74,21 +73,15 @@ const UpdateOrganizationForm = ({ organization, callback, sheet: isSheet }: Prop
     );
   };
 
-  const setImageUrl = (url: string | null) => {
-    form.setValue('thumbnailUrl', url, { shouldDirty: true });
-  };
-
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
         <AvatarFormField
-          control={form.control}
+          form={form}
           label={t('common:resource_logo', { resource: t('common:organization') })}
           type="organization"
           name="thumbnailUrl"
           entity={organization}
-          url={form.getValues('thumbnailUrl')}
-          setUrl={setImageUrl}
         />
         <InputFormField control={form.control} name="name" label={t('common:name')} required />
         <SlugFormField

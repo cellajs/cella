@@ -24,7 +24,6 @@ import { Input } from '~/modules/ui/input';
 import { useUpdateUserMutation } from '~/modules/users/query';
 import type { User } from '~/modules/users/types';
 import { useUserStore } from '~/store/user';
-import { cleanUrl } from '~/utils/clean-url';
 
 interface UpdateUserFormProps {
   user: User;
@@ -58,7 +57,7 @@ const UpdateUserForm = ({ user, callback, sheet: isSheet, hiddenFields, children
       resolver: zodResolver(formSchema),
       defaultValues: {
         slug: user.slug,
-        thumbnailUrl: cleanUrl(user.thumbnailUrl),
+        thumbnailUrl: user.thumbnailUrl,
         firstName: user.firstName,
         lastName: user.lastName,
         email: user.email,
@@ -98,22 +97,10 @@ const UpdateUserForm = ({ user, callback, sheet: isSheet, hiddenFields, children
     );
   };
 
-  const setImageUrl = (url: string | null) => {
-    form.setValue('thumbnailUrl', url, { shouldDirty: true });
-  };
-
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 w-full">
-        <AvatarFormField
-          control={form.control}
-          label={children ? '' : t('common:profile_picture')}
-          type="user"
-          name="thumbnailUrl"
-          entity={user}
-          url={form.getValues('thumbnailUrl')}
-          setUrl={setImageUrl}
-        />
+        <AvatarFormField form={form} label={children ? '' : t('common:profile_picture')} type="user" name="thumbnailUrl" entity={user} />
         <div className="grid sm:grid-cols-2 gap-6 sm:gap-4">
           <InputFormField inputClassName="border" control={form.control} name="firstName" label={t('common:first_name')} required />
           <InputFormField inputClassName="border" control={form.control} name="lastName" label={t('common:last_name')} required />

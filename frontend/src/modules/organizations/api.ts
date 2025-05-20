@@ -9,8 +9,7 @@ export type CreateOrganizationParams = Parameters<(typeof client.index)['$post']
 /**
  * Create a new organization.
  *
- * @param params.name - Name of the organization.
- * @param params.slug - Slug for the organization, used in URLs and references.
+ * @param params - CreateOrganizationParams.
  * @returns The created organization's data.
  */
 export const createOrganization = async (params: CreateOrganizationParams) => {

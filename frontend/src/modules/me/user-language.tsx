@@ -42,7 +42,7 @@ const UserLanguage = ({ align = 'end', triggerClassName = '', contentClassName =
           <span className="font-light">{language.toUpperCase()}</span>
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align={align} className={cn('w-48', contentClassName)}>
+      <DropdownMenuContent align={align} className={cn('w-48 p-1', contentClassName)}>
         {config.languages.map((lang) => (
           <DropdownMenuCheckboxItem
             key={lang}

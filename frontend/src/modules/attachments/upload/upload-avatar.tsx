@@ -32,9 +32,9 @@ export const UploadAvatar = ({ type, id, name, url, setUrl }: UploadAvatarProps)
           isPublic
           uploadType="personal"
           plugins={['webcam', 'image-editor']}
-          imageMode="avatar"
+          templateId="avatar"
           callback={(result) => {
-            const url = result[0].url;
+            const url = result.thumbnail[0].url;
             if (url) setUrl(url);
             useDialoger.getState().remove('upload-image');
           }}
@@ -45,14 +45,14 @@ export const UploadAvatar = ({ type, id, name, url, setUrl }: UploadAvatarProps)
         triggerRef: uploadButtonRef,
         drawerOnMobile: false,
         title: t('common:upload_item', { item: t('common:profile_picture').toLowerCase() }),
-        className: 'md:max-w-xl',
+        className: 'md:max-w-xl z-200',
       },
     );
   };
 
   return (
     <div className="flex gap-4">
-      <AvatarWrap type={type} className="h-16 w-16" id={id} name={name} url={url} />
+      <AvatarWrap type={type} className="h-16 w-16 text-2xl" id={id} name={name} url={url} />
 
       <div className="flex flex-col gap-2">
         {config.has.imado ? (
@@ -63,7 +63,7 @@ export const UploadAvatar = ({ type, id, name, url, setUrl }: UploadAvatarProps)
         <div className="flex gap-2 items-center">
           {config.has.imado && (
             <Button ref={uploadButtonRef} variant="plain" type="button" size="sm" onClick={openUploadDialog} onMouseOver={() => UploadUppy.preload()}>
-              <Upload size={16} className="mr-1" />
+              <Upload size={16} className="mr-2" />
               <span>{t('common:upload')}</span>
             </Button>
           )}

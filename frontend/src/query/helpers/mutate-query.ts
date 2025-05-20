@@ -29,6 +29,9 @@ export function formatUpdatedData<T>(
 ): InfiniteQueryData<T> | QueryData<T> {
   if (isQueryData(prevData)) return { total: prevData.total + addToTotal, items: updatedData };
 
+  // return empty InfiniteQueryData for case of deleting all items
+  if (!updatedData.length) return { pageParams: [0], pages: [{ items: [], total: 0 }] };
+
   // Determine the effective limit without modifying the function parameter
   const pageItemsLimit = limit ?? (prevData.pages.length > 1 ? prevData.pages[0].items.length : null);
 
@@ -45,10 +48,16 @@ export function formatUpdatedData<T>(
     chunks.push(updatedData.slice(i, i + pageItemsLimit));
   }
 
+  const oldTotal = prevData.pages[0]?.total ?? 0;
+
+  const totalPages = Math.ceil(updatedData.length / pageItemsLimit);
+  const newPages = Array.from({ length: totalPages }, (_, i) => i);
+
   return {
     ...prevData,
-    pages: chunks.map((chunk, index) => ({
-      total: prevData.pages[index].total + addToTotal,
+    pageParams: newPages,
+    pages: chunks.map((chunk) => ({
+      total: oldTotal + addToTotal,
       items: chunk,
     })),
   };

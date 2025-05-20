@@ -57,15 +57,15 @@ export const MenuItemEdit = ({ item }: MenuItemEditProps) => {
         </div>
       )}
       <AvatarWrap
-        className="m-1 mr-3 group-data-[subitem=true]/optionsItem:text-xs group-data-[submenu=false]/menuOptions:my-2 group-data-[submenu=false]/menuOptions:mx-3
-            group-data-[submenu=false]/menuOptions:h-7 group-data-[submenu=false]/menuOptions:w-7 group-data-[archived=true]/optionsItem:opacity-70"
+        className="m-2 mx-3 group-data-[subitem=true]/optionsItem:text-xs group-data-[submenu=false]/menuOptions:my-1 group-data-[submenu=false]/menuOptions:mx-4
+            h-8 w-8 group-data-[submenu=false]/menuOptions:h-6 group-data-[submenu=false]/menuOptions:w-6 group-data-[archived=true]/optionsItem:opacity-70"
         type={item.entity}
         id={item.id}
         name={item.name}
         url={item.thumbnailUrl}
       />
 
-      <div className="truncate grow text-left group-data-[submenu=false]/menuOptions:pl-1">
+      <div className="truncate grow text-left group-data-[submenu=false]/menuOptions:pl-0">
         <div className="truncate group-data-[subitem=true]/optionsItem:text-xs leading-5 group-data-[archived=true]/optionsItem:opacity-70">
           {item.name} {env.VITE_DEBUG_UI && <span className="text-muted">#{item.membership.order}</span>}
         </div>
@@ -98,11 +98,11 @@ const MenuItemEditButton = ({ icon: Icon, title, onClick, subitem = false }: Men
   <Button
     variant="link"
     size="sm"
-    className="p-0 font-light text-xs h-4 leading-3 opacity-80 group-hover/optionsItem:opacity-100"
+    className="p-0 font-light text-xs h-4 leading-3 opacity-80 group-hover/optionsItem:opacity-100 hover:underline underline-offset-1"
     aria-label={`Click ${title}`}
     onClick={onClick}
   >
-    <Icon size={subitem ? 12 : 14} className="mr-1" />
+    <Icon size={subitem ? 12 : 13} strokeWidth={1.5} className="mr-2" />
     {title}
   </Button>
 );

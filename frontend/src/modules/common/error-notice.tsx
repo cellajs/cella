@@ -4,7 +4,7 @@ import { ChevronUp, Home, MessageCircleQuestion, RefreshCw } from 'lucide-react'
 import { AnimatePresence, motion } from 'motion/react';
 import { type RefObject, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { ApiError } from '~/lib/api';
+import { ApiError } from '~/lib/api';
 import { AppFooter } from '~/modules/common/app-footer';
 import { contactFormHandler } from '~/modules/common/contact-form/contact-form-handler';
 import { Dialoger } from '~/modules/common/dialoger/provider';
@@ -54,6 +54,8 @@ export const getErrorText = (t: TFunction, error?: ErrorNoticeError, errorFromQu
     if (error.type) return t(`error:${error.type}.text`);
     if (error.message) return error.message;
   }
+
+  if (error instanceof ApiError && error.severity === 'info') return error.message;
 };
 
 /**
@@ -72,7 +74,7 @@ const ErrorNotice = ({ error, resetErrorBoundary, level }: ErrorNoticeProps) => 
   const { error: errorFromQuery, severity: severityFromQuery } = location.search;
 
   const dateNow = new Date().toUTCString();
-  const severity = error && 'status' in error ? error.severity : severityFromQuery;
+  const severity = error && 'severity' in error ? error.severity : severityFromQuery;
 
   const [showError, setShowError] = useState(false);
 
@@ -94,7 +96,7 @@ const ErrorNotice = ({ error, resetErrorBoundary, level }: ErrorNoticeProps) => 
           <Card className="max-w-[36rem] m-4">
             <CardHeader className="text-center">
               <CardTitle className="text-2xl mb-2 justify-center">{getErrorTitle(t, error, errorFromQuery) || t('error:error')}</CardTitle>
-              <CardDescription className="text-base">
+              <CardDescription className="text-lg">
                 <span>{getErrorText(t, error, errorFromQuery) || t('error:reported_try_or_contact')}</span>
                 <span className="ml-1">{severity === 'warn' && t('error:contact_mistake')}</span>
                 <span className="ml-1">{severity === 'error' && t('error:try_again_later')}</span>
@@ -150,18 +152,18 @@ const ErrorNotice = ({ error, resetErrorBoundary, level }: ErrorNoticeProps) => 
             )}
             <CardFooter className="flex gap-2 mt-4 justify-center">
               <Button onClick={handleGoToHome} variant="secondary">
-                <Home size={16} className="mr-1" />
+                <Home size={16} className="mr-2" />
                 {t('common:home')}
               </Button>
-              {!location.pathname.startsWith('/error') && (
+              {!location.pathname.startsWith('/error') && severity !== 'info' && (
                 <Button onClick={handleReload}>
-                  <RefreshCw size={16} className="mr-1" />
+                  <RefreshCw size={16} className="mr-2" />
                   {t('common:reload')}
                 </Button>
               )}
               {severity && ['warn', 'error'].includes(severity) && (
                 <Button ref={contactButtonRef} variant="plain" onClick={() => handleAskForHelp(contactButtonRef)}>
-                  <MessageCircleQuestion size={16} className="mr-1" />
+                  <MessageCircleQuestion size={16} className="mr-2" />
                   {t('common:ask_for_help')}
                 </Button>
               )}

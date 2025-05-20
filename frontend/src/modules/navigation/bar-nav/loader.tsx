@@ -7,7 +7,12 @@ import useMounted from '~/hooks/use-mounted';
 import { useNavigationStore } from '~/store/navigation';
 
 const AppNavLoader = () => {
-  const isFetching = useIsFetching();
+  const isFetching = useIsFetching({
+    predicate: (query) => {
+      if (query.meta === undefined || !('offlinePrefetch' in query.meta) || !query.meta.offlinePrefetch) return true;
+      return false;
+    },
+  });
   const { hasWaited } = useMounted();
 
   const navLoading = useNavigationStore((state) => state.navLoading);

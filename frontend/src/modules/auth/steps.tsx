@@ -1,5 +1,6 @@
 import { useSearch } from '@tanstack/react-router';
 import { config } from 'config';
+import { Lock } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import AuthErrorNotice from '~/modules/auth/auth-error-notice';
@@ -60,7 +61,18 @@ const AuthSteps = () => {
       {step === 'checkEmail' && <CheckEmailForm emailEnabled={emailEnabled} setStep={handleSetStep} />}
       {step === 'signIn' && <SignInForm emailEnabled={emailEnabled} email={email} resetSteps={resetSteps} />}
       {step === 'signUp' && <SignUpForm emailEnabled={emailEnabled} tokenData={data} email={email} resetSteps={resetSteps} />}
-      {step === 'waitlist' && <WaitlistForm buttonContent={t('common:request_access')} email={email} changeEmail={resetSteps} />}
+      {step === 'waitlist' && (
+        <WaitlistForm
+          buttonContent={
+            <>
+              <Lock size={16} className="mr-2" />
+              <span className="text-base">{t('common:request_access')}</span>
+            </>
+          }
+          email={email}
+          changeEmail={resetSteps}
+        />
+      )}
       {step === 'inviteOnly' && (
         <>
           <h1 className="text-2xl text-center pb-2 mt-4">{t('common:hi')}</h1>
@@ -68,6 +80,7 @@ const AuthSteps = () => {
         </>
       )}
 
+      {/* Show passkey and oauth options if not in inviteOnly or waitlist step */}
       {step !== 'inviteOnly' && step !== 'waitlist' && (
         <>
           {shouldShowDivider(hasPasskey, step) && (

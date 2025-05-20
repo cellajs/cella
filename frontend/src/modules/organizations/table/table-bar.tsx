@@ -2,7 +2,6 @@ import { config } from 'config';
 import { Mailbox, Plus, Trash, XSquare } from 'lucide-react';
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { sort } from 'virtua/unstable_core';
 import ColumnsView from '~/modules/common/data-table/columns-view';
 import Export from '~/modules/common/data-table/export';
 import { TableBarButton } from '~/modules/common/data-table/table-bar-button';
@@ -44,7 +43,7 @@ export const OrganizationsTableBar = ({
   const deleteButtonRef = useRef(null);
   const newsletterButtonRef = useRef(null);
 
-  const { q, order } = searchVars;
+  const { q, order, sort } = searchVars;
 
   const isFiltered = !!q;
   // Drop selected Rows on search

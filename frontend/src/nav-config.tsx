@@ -1,4 +1,4 @@
-import { Home, type LucideProps, Menu, Search, User } from 'lucide-react';
+import { Home, Menu, Search, User } from 'lucide-react';
 import type { RefObject } from 'react';
 
 import { AccountSheet } from '~/modules/navigation/account-sheet';
@@ -11,29 +11,17 @@ import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { toaster } from '~/modules/common/toaster';
 import type { UserMenuItem } from '~/modules/me/types';
 import { AppSearch, type SuggestionSection, type SuggestionType } from '~/modules/navigation/search';
+import { OrganizationRoute } from '~/routes/organizations';
+import { UserProfileRoute } from '~/routes/users';
+import type { EntityRoute } from './modules/navigation/types';
 
 /**
  * Set entity paths so we can dynamically use them in the app
  */
 export const baseEntityRoutes = {
-  user: '/users/$idOrSlug',
-  organization: '/$idOrSlug',
+  user: UserProfileRoute,
+  organization: OrganizationRoute,
 } as const;
-
-/**
- * Type `base` for buttons in the main navigation bar, `floating` is for floating buttons
- */
-export type NavItemId = (typeof navItems)[number]['id'];
-
-export type NavItem = {
-  id: NavItemId;
-  icon: React.ElementType<LucideProps>;
-  type: 'base' | 'floating';
-  sheet?: React.ReactNode;
-  action?: (ref: RefObject<HTMLButtonElement | null>) => void;
-  href?: string;
-  mirrorOnMobile?: boolean;
-};
 
 /**
  * Declare search nav button action
@@ -83,18 +71,11 @@ export const suggestionSections: SuggestionSection[] = [
  * Since each app has its own entity structure or hierarchy, we need to resolve them dynamically in some cases.
  * For example to get/search entities and for items in the menu sheet.
  */
-export const getEntityRoute = (item: UserMenuItem | SuggestionType) => {
-  const {
-    entity,
-    id,
-    slug,
-    membership: { organizationId },
-  } = item;
+export const getEntityRoute = (item: UserMenuItem | SuggestionType): EntityRoute => {
+  const { entity, id, slug } = item;
 
-  const path = baseEntityRoutes[entity];
+  const to = baseEntityRoutes[entity].to;
+  const params = { idOrSlug: slug || id };
 
-  const idOrSlug = slug || id;
-  const orgIdOrSlug = entity === 'organization' ? id : organizationId;
-
-  return { path, params: { idOrSlug, orgIdOrSlug } };
+  return { to, params, search: {} };
 };

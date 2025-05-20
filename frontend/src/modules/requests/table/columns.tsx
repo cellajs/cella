@@ -6,6 +6,7 @@ import { useBreakpoints } from '~/hooks/use-breakpoints';
 import CheckboxColumn from '~/modules/common/data-table/checkbox-column';
 import HeaderCell from '~/modules/common/data-table/header-cell';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
+import { TooltipButton } from '~/modules/common/tooltip-button';
 import { Badge } from '~/modules/ui/badge';
 import { dateShort } from '~/utils/date-short';
 
@@ -23,10 +24,14 @@ export const useColumns = () => {
         visible: true,
         width: 160,
         renderHeaderCell: HeaderCell,
-        renderCell: ({ row: { type, tokenId } }) => (
+        renderCell: ({ row: { type, wasInvited } }) => (
           <div className="flex flew-row gap-2 items-center">
             {t(`common:${type}`)}
-            {type === 'waitlist' && <Badge className={`h-2 w-2 justify-center p-0 ${tokenId ? 'bg-yellow-400 ' : 'bg-gray-400'}`} />}
+            {type === 'waitlist' && (
+              <TooltipButton toolTipContent={t(`common:${wasInvited ? 'pending' : 'not_processed'}`)} disabled={type !== 'waitlist'}>
+                <Badge className={`h-2 w-2 justify-center p-0 ${wasInvited ? 'bg-yellow-400 ' : 'bg-gray-400'}`} />
+              </TooltipButton>
+            )}
           </div>
         ),
       },
@@ -52,7 +57,8 @@ export const useColumns = () => {
         sortable: false,
         minWidth: 200,
         renderHeaderCell: HeaderCell,
-        renderCell: ({ row }) => <>{row.message || <span className="text-muted">-</span>}</>,
+        renderCell: ({ row }) =>
+          row.message ? <span className="font-light whitespace-pre-wrap leading-5">{row.message}</span> : <span className="text-muted">-</span>,
       },
       {
         key: 'createdAt',

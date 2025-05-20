@@ -7,6 +7,7 @@ import { config } from 'config';
 import { OpenAPIHono } from '@hono/zod-openapi';
 import { EventName, Paddle } from '@paddle/paddle-node-sdk';
 import { db } from '#/db/db';
+import { emailsTable } from '#/db/schema/emails';
 import { membershipsTable } from '#/db/schema/memberships';
 import { organizationsTable } from '#/db/schema/organizations';
 import { requestsTable } from '#/db/schema/requests';
@@ -15,6 +16,7 @@ import { usersTable } from '#/db/schema/users';
 import { type Env, getContextUser } from '#/lib/context';
 import { errorResponse } from '#/lib/errors';
 import { i18n } from '#/lib/i18n';
+import { getImadoUrl } from '#/lib/imado-url';
 import { logEvent } from '#/middlewares/logger/log-event';
 import { getUsersByConditions } from '#/modules/users/helpers/get-user-by';
 import defaultHook from '#/utils/default-hook';
@@ -57,7 +59,7 @@ const systemRoutes = app
         ),
       );
 
-    const [existingUsers, existingInvites] = await Promise.all([getUsersByConditions([inArray(usersTable.email, emails)]), existingInvitesQuery]);
+    const [existingUsers, existingInvites] = await Promise.all([getUsersByConditions([inArray(emailsTable.email, emails)]), existingInvitesQuery]);
 
     // Create a set of emails from both existing users and invitations
     const existingEmails = new Set([...existingUsers.map((user) => user.email), ...existingInvites.map((invite) => invite.email)]);
@@ -83,8 +85,15 @@ const systemRoutes = app
     // Batch insert tokens
     const insertedTokens = await db.insert(tokensTable).values(tokens).returning();
 
-    // Remove waitlist request - if found - because users are explicitly invited
-    await db.delete(requestsTable).where(and(inArray(requestsTable.email, recipientEmails), eq(requestsTable.type, 'waitlist')));
+    // Change waitlist request status
+    await Promise.all(
+      insertedTokens.map((token) =>
+        db
+          .update(requestsTable)
+          .set({ tokenId: token.id })
+          .where(and(eq(requestsTable.email, token.email), eq(requestsTable.type, 'waitlist'))),
+      ),
+    );
 
     // Prepare emails
     const recipients = insertedTokens.map((tokenRecord) => ({
@@ -103,6 +112,16 @@ const systemRoutes = app
     logEvent('Users invited on system level');
 
     return ctx.json({ success: true }, 200);
+  })
+  /*
+   * Get presigned URL
+   */
+  .openapi(systemRouteConfig.getPriasignedUrl, async (ctx) => {
+    const { key } = ctx.req.valid('query');
+
+    const url = await getImadoUrl(key);
+
+    return ctx.json({ success: true, data: url }, 200);
   })
   /*
    * Paddle webhook

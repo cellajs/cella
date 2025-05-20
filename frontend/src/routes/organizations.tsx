@@ -1,9 +1,7 @@
 import { createRoute, redirect, useLoaderData, useParams } from '@tanstack/react-router';
 import { Suspense, lazy } from 'react';
 import { z } from 'zod';
-import { attachmentsQueryOptions } from '~/modules/attachments/query/options';
 import ErrorNotice from '~/modules/common/error-notice';
-import { membersQueryOptions } from '~/modules/memberships/query/options';
 import { organizationQueryOptions } from '~/modules/organizations/query';
 
 import { onlineManager, useQuery } from '@tanstack/react-query';
@@ -34,7 +32,7 @@ export const attachmentsSearchSchema = attachmentsQuerySchema.pick({ q: true, so
 });
 
 export const OrganizationRoute = createRoute({
-  path: '/$idOrSlug',
+  path: '/organizations/$idOrSlug',
   staticData: { pageTitle: 'Organization', isAuth: true },
   beforeLoad: async ({ location, params: { idOrSlug } }) => {
     noDirectAccess(location.pathname, idOrSlug, '/members');
@@ -72,14 +70,6 @@ export const OrganizationMembersRoute = createRoute({
   staticData: { pageTitle: 'members', isAuth: true },
   getParentRoute: () => OrganizationRoute,
   loaderDeps: ({ search: { q, sort, order, role } }) => ({ q, sort, order, role }),
-  loader: async ({ context, params: { idOrSlug }, deps: { q, sort, order, role } }) => {
-    const entityType = 'organization';
-    const orgIdOrSlug = context.organization.id ?? idOrSlug;
-    const isOnline = onlineManager.isOnline();
-    const queryOptions = membersQueryOptions({ idOrSlug, orgIdOrSlug, entityType, q, sort, order, role });
-    const results = isOnline ? await queryClient.prefetchInfiniteQuery(queryOptions) : queryClient.getQueryData(queryOptions.queryKey);
-    return results;
-  },
   component: () => {
     const loaderData = useLoaderData({ from: OrganizationRoute.id });
 
@@ -101,13 +91,6 @@ export const OrganizationAttachmentsRoute = createRoute({
   staticData: { pageTitle: 'attachments', isAuth: true },
   getParentRoute: () => OrganizationRoute,
   loaderDeps: ({ search: { q, sort, order } }) => ({ q, sort, order }),
-  loader: async ({ deps: { q, sort, order }, context, params: { idOrSlug } }) => {
-    const orgIdOrSlug = context.organization.id ?? idOrSlug;
-    const isOnline = onlineManager.isOnline();
-    const queryOptions = attachmentsQueryOptions({ orgIdOrSlug, q, sort, order });
-    const results = isOnline ? await queryClient.prefetchInfiniteQuery(queryOptions) : queryClient.getQueryData(queryOptions.queryKey);
-    return results;
-  },
   component: () => {
     const loaderData = useLoaderData({ from: OrganizationRoute.id });
 

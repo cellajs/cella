@@ -25,14 +25,14 @@ const ContactForm = ({ dialog: isDialog }: { dialog?: boolean }) => {
   const { user } = useUserStore();
   const isMediumScreen = useBreakpoints('min', 'md');
 
-  const formSchema = createRequestSchema.extend({ name: z.string().min(2, t('error:name_required')).default('') });
+  const formSchema = createRequestSchema.extend({ name: z.string().min(2, t('error:name_required')) });
 
   type FormValues = z.infer<typeof formSchema>;
 
   const formOptions: UseFormProps<FormValues> = useMemo(
     () => ({
       resolver: zodResolver(formSchema),
-      defaultValues: { name: user?.name || '', email: user?.email || '', message: '', type: 'contact' },
+      defaultValues: { name: user?.name ?? '', email: user?.email ?? '', message: '', type: 'contact' },
     }),
     [],
   );
@@ -60,30 +60,28 @@ const ContactForm = ({ dialog: isDialog }: { dialog?: boolean }) => {
   };
 
   return (
-    <div className="flex w-full gap-8 flex-col md:flex-row">
-      <div className="w-full">
-        <div className="w-full">
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 md:space-y-6">
-              <InputFormField control={form.control} name="name" label={t('common:name')} icon={<User size={16} />} />
-              <InputFormField control={form.control} name="email" label={t('common:email')} type="email" icon={<Mail size={16} />} required />
-              <InputFormField control={form.control} name="message" label={t('common:message')} type="textarea" icon={<MessageSquare size={16} />} />
-              <div className="flex flex-col sm:flex-row gap-2">
-                <SubmitButton>
-                  <Send size={16} className="mr-1" />
-                  {t('common:send')}
-                </SubmitButton>
-                <Button type="reset" variant="secondary" onClick={cancel} className={form.formState.isDirty ? '' : 'invisible'}>
-                  {t('common:cancel')}
-                </Button>
-              </div>
-            </form>
-          </Form>
-        </div>
+    <div className="flex w-full flex-col gap-6 md:flex-row">
+      <div className="w-full md:flex-[0_0_calc(50%-0.75rem)]">
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 md:space-y-6">
+            <InputFormField control={form.control} name="name" label={t('common:name')} icon={<User size={16} />} />
+            <InputFormField control={form.control} name="email" label={t('common:email')} type="email" icon={<Mail size={16} />} required />
+            <InputFormField control={form.control} name="message" label={t('common:message')} type="textarea" icon={<MessageSquare size={16} />} />
+            <div className="flex flex-col sm:flex-row gap-2">
+              <SubmitButton>
+                <Send size={16} className="mr-2" />
+                {t('common:send')}
+              </SubmitButton>
+              <Button type="reset" variant="secondary" onClick={cancel} className={form.formState.isDirty ? '' : 'invisible'}>
+                {t('common:cancel')}
+              </Button>
+            </div>
+          </form>
+        </Form>
       </div>
       {isMediumScreen && (
         <Suspense>
-          <div className="w-full">
+          <div className="md:flex-[0_0_calc(50%-0.75rem)]">
             <ContactFormMap />
           </div>
         </Suspense>

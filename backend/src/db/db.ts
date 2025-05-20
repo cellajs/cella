@@ -1,6 +1,6 @@
 import { type NodePgClient, drizzle as pgDrizzle } from 'drizzle-orm/node-postgres';
 import { drizzle as pgliteDrizzle } from 'drizzle-orm/pglite';
-import { env } from '#/env';
+import { env } from '../env';
 
 import type { PGlite } from '@electric-sql/pglite';
 import { config } from 'config';
@@ -11,6 +11,8 @@ export const dbConfig: DrizzleConfig = {
   logger: config.debug,
   casing: 'snake_case',
 };
+
+export const migrateConfig = { migrationsFolder: 'drizzle', migrationsSchema: 'drizzle-backend' };
 
 export const connection = env.PGLITE
   ? process.env.NODE_ENV === 'test'

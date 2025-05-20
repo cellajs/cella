@@ -45,7 +45,7 @@ const StepperFooter = ({
     <div className="w-full flex gap-2 max-sm:justify-stretch">
       {isOptionalStep && (
         <Button ref={skipButtonRef} onClick={skipStep} variant="secondary" className="max-sm:w-full">
-          <Redo size={16} className="mr-1" />
+          <Redo size={16} className="mr-2" />
           {t('common:skip')}
         </Button>
       )}

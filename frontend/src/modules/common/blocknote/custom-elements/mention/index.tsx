@@ -1,9 +1,9 @@
 import { GridSuggestionMenuController } from '@blocknote/react';
 import { getMentionMenuItems } from '~/modules/common/blocknote/custom-elements/mention/mention';
-import type { CustomBlockNoteSchema } from '~/modules/common/blocknote/types';
+import type { CustomBlockNoteEditor } from '~/modules/common/blocknote/types';
 import type { Member } from '~/modules/memberships/types';
 
-export const Mention = ({ members, editor }: { members?: Member[]; editor: CustomBlockNoteSchema }) => {
+export const Mention = ({ members, editor }: { members?: Member[]; editor: CustomBlockNoteEditor }) => {
   if (!members || members.length === 0) return;
   return (
     <GridSuggestionMenuController

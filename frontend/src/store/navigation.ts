@@ -5,14 +5,15 @@ import { immer } from 'zustand/middleware/immer';
 import { entityRelations } from '#/entity-config';
 
 import type { UserMenu } from '~/modules/me/types';
+import type { NavItemId } from '~/modules/navigation/types';
 
 interface NavigationStoreState {
   recentSearches: string[]; // Recent search (from AppSearch),
   setRecentSearches: (searchValue: string[]) => void; // Updates recent searches
 
   menu: UserMenu; // User menu
-  navSheetOpen: string | null; // Currently open navigation sheet
-  setNavSheetOpen: (sheet: string | null) => void; // Sets navigation sheet
+  navSheetOpen: NavItemId | null; // Currently open navigation sheet
+  setNavSheetOpen: (sheet: NavItemId | null) => void; // Sets navigation sheet
 
   keepMenuOpen: boolean; // Menu remains open state
   setKeepMenuOpen: (status: boolean) => void; // Toggles menu open state
@@ -28,7 +29,7 @@ interface NavigationStoreState {
   setSectionsDefault: () => void; // Resets all sections to default state
 
   navLoading: boolean; // Navigation is in a loading state
-  setLoading: (status: boolean) => void; // Updates the loading state
+  setNavLoading: (status: boolean) => void; // Updates the loading state
 
   focusView: boolean; // Focused view mode state
   setFocusView: (status: boolean) => void; // Toggles focus view state
@@ -108,7 +109,7 @@ export const useNavigationStore = create<NavigationStoreState>()(
               state.hideSubmenu = status;
             });
           },
-          setLoading: (status) => {
+          setNavLoading: (status) => {
             set((state) => {
               state.navLoading = status;
             });

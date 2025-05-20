@@ -1,7 +1,7 @@
 .bn-container.bn-shadcn.dark {
   --table-border: 228 100% 95%;
   --media-secondary-color: 240 3.7% 15%;
-  --blocknote-placeholder: 240 3.7% 20%;
+  --blocknote-placeholder: 240 3.7% 50%;
 
   --background: 240 10% 9%;
   --foreground: 0 0% 95%;
@@ -25,7 +25,7 @@
   --success: 120 100% 40%;
 }
 
-p.bn-inline-content {
+.bn-shadcn p {
   font-size: 0.888rem;
   font-weight: 350;
   line-height: 1.3;
@@ -33,15 +33,25 @@ p.bn-inline-content {
   padding: 0;
 }
 
-.bn-inline-content:has(> .ProseMirror-trailingBreak)::before {
+.bn-shadcn p:has(> .ProseMirror-trailingBreak)::before {
   color: hsl(var(--blocknote-placeholder));
 }
 
-p.bn-inline-content code {
-  background: hsl(var(--muted));
+.bn-editor[contenteditable="false"] .bn-block-content[data-content-type="codeBlock"] select {
+  display: none;
+}
+
+.bn-shadcn code {
   font-size: 0.85em;
-  border-radius: 0.24rem;
-  border: 0.25rem solid hsl(var(--muted));
+  line-height: 1rem;
+}
+
+.bn-block-content[data-content-type="codeBlock"] {
+  background: hsl(var(--secondary));
+  border: solid hsl(var(--muted));
+}
+.bn-block-content[data-content-type="codeBlock"] > pre {
+  padding: 1.2rem 1rem 1rem;
 }
 
 .bn-add-file-button {
@@ -77,10 +87,6 @@ p.bn-inline-content code {
   font-size: 0.888rem;
   line-height: 1.3;
   -webkit-font-smoothing: auto;
-}
-
-.bn-inline-content:has(> .ProseMirror-trailingBreak)::before {
-  color: var(--blocknote-placeholder);
 }
 
 .bn-container.bn-shadcn a {
@@ -284,6 +290,12 @@ p.bn-inline-content code {
 
 .inline-content {
   flex-grow: 1;
+}
+
+/* TODO remove when blocknotefix bug with content shown as col  */
+.bn-block-content[data-content-type="numberedListItem"]:before {
+  content: var(--index) ".";
+  white-space: nowrap;
 }
 
 /* For showing saved checkListItem */

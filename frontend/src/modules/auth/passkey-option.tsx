@@ -8,12 +8,12 @@ import { Button } from '~/modules/ui/button';
 import { AuthenticateRoute } from '~/routes/auth';
 import { useUIStore } from '~/store/ui';
 
-interface PassKeyOptionProps {
+interface PasskeyOptionProps {
   actionType: Step;
   email: string;
 }
 
-const PassKeyOption = ({ email, actionType = 'signIn' }: PassKeyOptionProps) => {
+const PasskeyOption = ({ email, actionType = 'signIn' }: PasskeyOptionProps) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const mode = useUIStore((state) => state.mode);
@@ -37,4 +37,4 @@ const PassKeyOption = ({ email, actionType = 'signIn' }: PassKeyOptionProps) => 
   );
 };
 
-export default PassKeyOption;
+export default PasskeyOption;

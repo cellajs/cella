@@ -3,7 +3,7 @@ import { createRouteConfig } from '#/lib/route-config';
 import { hasSystemAccess, isAuthenticated, isPublicAccess } from '#/middlewares/guard';
 import { tokenLimiter } from '#/middlewares/rate-limiter/limiters';
 import { booleanQuerySchema } from '#/utils/schema/common';
-import { errorResponses, successWithoutDataSchema } from '#/utils/schema/responses';
+import { errorResponses, successWithDataSchema, successWithoutDataSchema } from '#/utils/schema/responses';
 import { inviteBodySchema, sendNewsletterBodySchema } from './schema';
 
 class SystemRouteConfig {
@@ -62,6 +62,25 @@ class SystemRouteConfig {
             schema: successWithoutDataSchema,
           },
         },
+      },
+      ...errorResponses,
+    },
+  });
+
+  public getPriasignedUrl = createRouteConfig({
+    method: 'get',
+    path: '/presigned-url',
+    guard: [isAuthenticated],
+    tags: ['system'],
+    summary: '',
+    description: '',
+    request: {
+      query: z.object({ key: z.string() }),
+    },
+    responses: {
+      200: {
+        description: 'Presigned URL',
+        content: { 'application/json': { schema: successWithDataSchema(z.string()) } },
       },
       ...errorResponses,
     },

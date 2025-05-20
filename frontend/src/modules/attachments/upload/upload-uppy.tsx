@@ -4,7 +4,7 @@ import ImageEditor, { type ImageEditorOptions } from '@uppy/image-editor';
 import { Dashboard } from '@uppy/react';
 import ScreenCapture from '@uppy/screen-capture';
 import Webcam, { type WebcamOptions } from '@uppy/webcam';
-import { config } from 'config';
+import { type UploadTemplateId, config } from 'config';
 import { useEffect, useState } from 'react';
 import { ImadoUppy } from '~/lib/imado';
 import type { UploadedUppyFile, UppyBody, UppyMeta } from '~/lib/imado/types';
@@ -23,10 +23,10 @@ export interface UploadUppyProps {
   isPublic: boolean;
   plugins?: ('webcam' | 'image-editor' | 'audio' | 'screen-capture' | string)[];
   restrictions?: Partial<UppyOptions<UppyMeta, UppyBody>['restrictions']>;
-  imageMode?: 'cover' | 'avatar' | 'attachment';
+  templateId?: UploadTemplateId;
   organizationId?: string;
-  callback?: (result: UploadedUppyFile[]) => void;
-  onRetrySuccessCallback?: (result: UploadedUppyFile[], previousIds: string[]) => void;
+  callback?: (result: UploadedUppyFile<UploadTemplateId>) => void;
+  onRetrySuccessCallback?: (result: UploadedUppyFile<UploadTemplateId>, previousIds: string[]) => void;
 }
 
 const uppyRestrictions = config.uppy.defaultRestrictions;
@@ -35,13 +35,14 @@ const uppyRestrictions = config.uppy.defaultRestrictions;
 // For more info in Imado, see: https://imado.eu/
 // For more info on Uppy and its APIs, see: https://uppy.io/docs/
 
+// TODO merge this with imadoUppy or figure out a clearer separation of concerns
 export const UploadUppy = ({
   uploadType,
   isPublic,
   organizationId,
   restrictions = {},
   plugins = [],
-  imageMode = 'attachment',
+  templateId = 'attachment',
   callback,
   onRetrySuccessCallback,
 }: UploadUppyProps) => {
@@ -64,33 +65,33 @@ export const UploadUppy = ({
       try {
         const imadoUppy = await ImadoUppy(uploadType, uppyOptions, {
           public: isPublic,
-          organizationId: organizationId,
+          organizationId,
+          templateId,
           statusEventHandler: {
-            onComplete: (mappedResult) => {
-              if (callback) callback(mappedResult);
+            onComplete: (results) => {
+              if (callback) callback(results);
             },
             onRetrySuccess(results, localStoreIds) {
               if (onRetrySuccessCallback) onRetrySuccessCallback(results, localStoreIds);
             },
             onFileEditorComplete: () => {
-              if (['cover', 'avatar'].includes(imageMode)) imadoUppy.upload();
+              if (['cover', 'avatar'].includes(templateId)) imadoUppy.upload();
             },
           },
         });
 
-        const imageEditorOptions: ImageEditorOptions = getImageEditorOptions(imageMode);
+        const imageEditorOptions: ImageEditorOptions = getImageEditorOptions(templateId);
         const webcamOptions: WebcamOptions<UppyMeta, UppyBody> = {
           videoConstraints: { width: 1280, height: 720 },
+          preferredVideoMimeType: 'video/webm;codecs=vp9',
         };
 
-        if (['cover', 'avatar'].includes(imageMode)) {
-          webcamOptions.modes = ['picture'];
-        }
+        if (['cover', 'avatar'].includes(templateId)) webcamOptions.modes = ['picture'];
 
         if (plugins.includes('webcam')) imadoUppy.use(Webcam, webcamOptions);
         if (plugins.includes('image-editor')) imadoUppy.use(ImageEditor, imageEditorOptions);
         if (plugins.includes('audio')) imadoUppy.use(Audio);
-        if (plugins.includes('screen-capture')) imadoUppy.use(ScreenCapture);
+        if (plugins.includes('screen-capture')) imadoUppy.use(ScreenCapture, { preferredVideoMimeType: 'video/webm;codecs=vp9' });
 
         setUppy(imadoUppy);
       } catch (err) {
@@ -110,7 +111,7 @@ export const UploadUppy = ({
       {uppy && (
         <Dashboard
           uppy={uppy}
-          autoOpen={['cover', 'avatar'].includes(imageMode) ? 'imageEditor' : null}
+          autoOpen={['cover', 'avatar'].includes(templateId) ? 'imageEditor' : null}
           width="100%"
           height="400px"
           theme={mode}

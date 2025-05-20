@@ -2,7 +2,6 @@ import { onlineManager } from '@tanstack/react-query';
 import { Mail, Trash, XSquare } from 'lucide-react';
 import { useRef } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
-import { sort } from 'virtua/unstable_core';
 import ColumnsView from '~/modules/common/data-table/columns-view';
 import Export from '~/modules/common/data-table/export';
 import { TableBarButton } from '~/modules/common/data-table/table-bar-button';
@@ -42,7 +41,7 @@ export const MembersTableBar = ({
   const deleteButtonRef = useRef(null);
   const inviteButtonRef = useRef(null);
 
-  const { q, role, order } = searchVars;
+  const { q, role, order, sort } = searchVars;
 
   const isFiltered = role !== undefined || !!q;
   const isAdmin = entity.membership?.role === 'admin';
@@ -101,8 +100,7 @@ export const MembersTableBar = ({
       triggerRef: inviteButtonRef,
       drawerOnMobile: false,
       className: 'w-auto shadow-none border relative z-60 max-w-4xl',
-      // TODO(REFACTOR) handle container open in sheet
-      ...(!isSheet && { container: { id: 'invite-members-container', overlay: true } }),
+      container: { id: 'invite-members-container', overlay: !isSheet },
       title: t('common:invite'),
       titleContent: <UnsavedBadge title={t('common:invite')} />,
       description: `${t('common:invite_members.text')}`,

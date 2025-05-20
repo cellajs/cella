@@ -92,7 +92,7 @@ export const SlugFormField = ({ control, label, previousSlug, description, nameV
 
   const getStyle = () => ({
     paddingLeft: `${prefixMeasure.bounds.width + 14}px`,
-    paddingRight: `${revertMeasure.bounds.width + 14}px`,
+    paddingRight: `${revertMeasure.bounds.width + 44}px`,
   });
 
   return (

@@ -9,11 +9,12 @@ export default {
   frontendUrl: 'https://cella.dev',
   backendUrl: 'https://api.cella.dev',
   backendAuthUrl: 'https://api.cella.dev/auth',
-  tusUrl: 'https://tus.cella.dev',
   electricUrl: 'https://electric.cella.dev',
 
   // Hide chat widget in staging
   gleapToken: undefined,
+
+  s3BucketPrefix: 'cella-staging',
 
   // Payment with Paddle
   paddleToken: 'test_85052d6574ab68d36b341e0afc8',

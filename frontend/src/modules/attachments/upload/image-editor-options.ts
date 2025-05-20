@@ -1,4 +1,5 @@
 import type { ImageEditorOptions } from '@uppy/image-editor';
+import type { UploadTemplateId } from 'config';
 
 const baseCropperOptions = {
   croppedCanvasOptions: {},
@@ -28,7 +29,7 @@ const baseActions = {
   cropWidescreenVertical: false,
 };
 
-export const getImageEditorOptions = (mode: 'avatar' | 'cover' | 'attachment' | undefined): ImageEditorOptions => {
+export const getImageEditorOptions = (mode: UploadTemplateId | undefined): ImageEditorOptions => {
   const options: ImageEditorOptions = {
     quality: 0.9,
     actions: baseActions,

@@ -1,4 +1,4 @@
-import { BlockNoteSchema, type Dictionary, defaultBlockSpecs, defaultInlineContentSpecs } from '@blocknote/core';
+import { BlockNoteSchema, type CodeBlockOptions, type Dictionary, defaultBlockSpecs, defaultInlineContentSpecs } from '@blocknote/core';
 import { blockTypeSelectItems, getDefaultReactSlashMenuItems } from '@blocknote/react';
 
 import { MentionSchema } from '~/modules/common/blocknote/custom-elements/mention/mention';
@@ -11,7 +11,7 @@ import type {
   BlockAlignTypes,
   BlockStyleTypes,
   CellaCustomBlockTypes,
-  CustomBlockNoteSchema,
+  CustomBlockNoteEditor,
   CustomFormatToolBarConfig,
   MenusItemsTitle,
   SlashIndexedItems,
@@ -26,6 +26,38 @@ export const customSchema = BlockNoteSchema.create({
   blockSpecs: { ...defaultBlockSpecs, notify: Notify }, // Adds Notify block
   inlineContentSpecs: { ...defaultInlineContentSpecs, mention: MentionSchema }, // Adds Mention tag
 });
+
+// Config for supported languages for BlockNote code blocks
+export const supportedLanguages = {
+  text: {
+    name: 'Plain Text',
+    aliases: ['text', 'txt', 'plain'],
+  },
+  html: {
+    name: 'HTML',
+    aliases: ['htm'],
+  },
+  javascript: {
+    name: 'JavaScript',
+    aliases: ['javascript', 'js'],
+  },
+  json: {
+    name: 'JSON',
+    aliases: ['json'],
+  },
+  jsonc: {
+    name: 'JSON with Comments',
+    aliases: ['jsonc'],
+  },
+  markdown: {
+    name: 'Markdown',
+    aliases: ['markdown', 'md'],
+  },
+  typescript: {
+    name: 'TypeScript',
+    aliases: ['typescript', 'ts'],
+  },
+} satisfies CodeBlockOptions['supportedLanguages'];
 
 // Extend Blocknote types to include custom block types and menu titles
 declare module '~/modules/common/blocknote/types' {
@@ -104,7 +136,7 @@ export const customSlashIndexedItems: SlashIndexedItems = ['Image', 'Video', 'Fi
 export const customSlashNotIndexedItems: MenusItemsTitle[] = ['Table', 'Audio', 'Heading 1', 'Heading 2', 'Heading 3', 'Paragraph', 'Code Block'];
 
 // Generate the complete Slash menu items list
-export const getSlashMenuItems = (editor: CustomBlockNoteSchema) => [...getDefaultReactSlashMenuItems(editor), getSlashNotifySlashItem(editor)];
+export const getSlashMenuItems = (editor: CustomBlockNoteEditor) => [...getDefaultReactSlashMenuItems(editor), getSlashNotifySlashItem(editor)];
 
 /**
  *  Formatting toolbar Configuration

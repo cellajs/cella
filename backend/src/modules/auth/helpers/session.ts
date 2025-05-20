@@ -67,7 +67,8 @@ export const setUserSession = async (ctx: Context, userId: UserModel['id'], stra
   // Set expiration time span
   const timeSpan = strategy === 'impersonation' ? new TimeSpan(1, 'h') : new TimeSpan(1, 'w');
 
-  const cookieContent = JSON.stringify({ sessionToken: hashedSessionToken, adminUserId });
+  const cookieContent = `${hashedSessionToken}.${adminUserId ?? ''}`;
+
   // Set session cookie with the unhashed version
   await setAuthCookie(ctx, 'session', cookieContent, timeSpan);
 
@@ -128,11 +129,13 @@ export const getParsedSessionCookie = async (
     // If no session data, return null
     if (!sessionData) return null;
 
-    // Parse the session data from the string
-    const parsedData = JSON.parse(sessionData);
+    // Parse delimited string: "<hashedSessionToken>.<adminUserId>"
+    const [sessionToken, adminUserIdRaw] = sessionData.split('.');
+    if (!sessionToken) return null;
 
-    // Validate the parsed data using the schema
-    return sessionCookieContentSchema.parse(parsedData);
+    const adminUserId = adminUserIdRaw || undefined;
+
+    return sessionCookieContentSchema.parse({ sessionToken, adminUserId });
   } catch (error) {
     return null;
   } finally {

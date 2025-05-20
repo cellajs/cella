@@ -55,7 +55,7 @@ const PageHeader = ({ title, id, isAdmin, thumbnailUrl, bannerUrl, type, panel, 
 
       <div className="absolute flex bottom-0 w-full h-16 bg-background/50 backdrop-blur-xs px-1 py-1" ref={scrollToRef}>
         <AvatarWrap
-          className={type === 'user' ? 'h-24 w-24 -mt-12 text-2xl ml-2 mr-3 border-bg border-opacity-50 border-2 rounded-full' : 'm-2'}
+          className={type === 'user' ? 'h-24 w-24 -mt-12 text-4xl ml-2 mr-3 border-bg border-opacity-50 border-2 rounded-full' : 'm-2'}
           type={type}
           id={id}
           name={title}
@@ -86,7 +86,7 @@ const PageHeader = ({ title, id, isAdmin, thumbnailUrl, bannerUrl, type, panel, 
                   ) : (
                     <BreadcrumbItem>
                       <BreadcrumbLink className="flex items-center" asChild>
-                        <Link to={baseEntityRoutes[fetchedParent.entity]} params={{ idOrSlug: fetchedParent.slug }}>
+                        <Link to={baseEntityRoutes[fetchedParent.entity].to} params={{ idOrSlug: fetchedParent.slug }}>
                           <span className="truncate max-sm:max-w-24">{fetchedParent.name}</span>
                         </Link>
                       </BreadcrumbLink>

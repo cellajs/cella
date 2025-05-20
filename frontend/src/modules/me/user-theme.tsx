@@ -56,7 +56,7 @@ const UserTheme = ({ size = 24, buttonClassName = '', contentClassName = '' }: U
           )}
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent className={cn('w-48', contentClassName)} align="end">
+      <DropdownMenuContent className={cn('w-48 p-1', contentClassName)} align="end">
         {modes.map((item) => (
           <DropdownMenuCheckboxItem key={item.id} checked={mode === item.id} onCheckedChange={() => setMode(item.id)}>
             <Icon icon={item.icon} />

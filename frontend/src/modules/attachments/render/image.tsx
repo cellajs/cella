@@ -14,7 +14,7 @@ type RenderImageProps = {
   resetImageState?: boolean;
   imageClass?: string;
   showButtons?: boolean;
-  togglePanState?: (state: boolean) => void;
+  onPanStateToggle?: (state: boolean) => void;
 };
 
 interface ControlButtonProps {
@@ -33,13 +33,14 @@ const ControlButton = ({ tooltipContent, onClick, icon, className }: ControlButt
 );
 
 const RenderImage = forwardRef<HTMLImageElement, RenderImageProps>(
-  ({ image, alt, resetImageState, showButtons, imageClass, togglePanState }, forwardedRef) => {
+  ({ image, alt, resetImageState, showButtons, imageClass, onPanStateToggle }, forwardedRef) => {
     const [dx, setDx] = useState(0);
     const [dy, setDy] = useState(0);
 
     const [zoom, setZoom] = useState(1);
     const [rotation, setRotation] = useState(0);
-    const [panState, setPanState] = useState(!togglePanState);
+    // On by default if to onPanStateToggle passed
+    const [panState, setPanState] = useState(!onPanStateToggle);
 
     const imgRef = useRef<HTMLImageElement>(null);
 
@@ -99,12 +100,12 @@ const RenderImage = forwardRef<HTMLImageElement, RenderImageProps>(
             <ControlButton tooltipContent="Zoom out" onClick={zoomOut} icon={<Minus size={14} />} className="border-r-0 " />
             <ControlButton tooltipContent="Rotate right" onClick={rotateRight} icon={<RotateCwSquare size={14} />} className="border-r-0 " />
 
-            {togglePanState && (
+            {onPanStateToggle && (
               <ControlButton
                 tooltipContent="Toggle pan view"
                 onClick={() => {
                   setPanState(!panState);
-                  togglePanState(panState);
+                  onPanStateToggle(panState);
                 }}
                 icon={panState ? <Grab size={14} /> : <Hand size={14} />}
                 className="border-r-0 "

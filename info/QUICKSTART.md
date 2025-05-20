@@ -16,8 +16,8 @@ pnpm quick
 ```bash
 pnpm install
 pnpm docker
-pnpm dev
 pnpm seed
+pnpm dev
 ```
 
 ## Customize & contribute
@@ -25,7 +25,7 @@ pnpm seed
 2. Update package.json with your own data
 3. Look at your `.env` file to understand what is required, for example to send emails you will need an API key.
 4. Explore readmes and config files with filenames like `-config.ts`. For example for entities or navigation structure.
-5. Cella currently uses its homegrown [imado](https://github.com/cellajs/imado) service for file handling. It combines TUS. AWS Lambda, S3 and Cloudfront. However, you can also use local file storage during development. This gives you time to explore how to approach file handling for your app.
+5. Cella uses [imado](https://github.com/cellajs/imado) as a service wrapper for public and private file handling. It combines Transloadit, TUS, S3-compatible Scaleway Object Storage and its Edge Services. However, you can also use local file storage during development. This gives you time to explore how to approach file handling for your app.
 6. Many things can be improved or are missing. Have a look at our roadmap and contact us to get involved.
 
 ## Cella CLI

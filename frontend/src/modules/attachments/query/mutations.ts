@@ -47,12 +47,16 @@ export const useAttachmentCreateMutation = () =>
       // BE will assign final groupId during attachment creation.
       const groupId = attachments.length > 1 ? nanoid() : null;
 
-      for (const attachment of attachments) {
+      for (const { originalKey, convertedKey, thumbnailKey, ...attachment } of attachments) {
         const optimisticId = attachment.id || nanoid();
 
         // Make newAttachment satisfy Attachment type for optimistic update
         const newAttachment: Attachment = {
           ...attachment,
+          url: originalKey,
+          thumbnailUrl: thumbnailKey ?? null,
+          convertedUrl: convertedKey ?? null,
+          convertedContentType: attachment.convertedContentType ?? null,
           name: attachment.filename.split('.').slice(0, -1).join('.'),
           id: optimisticId,
           entity: 'attachment',
@@ -226,7 +230,7 @@ export const useAttachmentDeleteMutation = () =>
           return formatUpdatedData(oldData, updatedItems, limit, -ids.length);
         });
 
-        context.push([queryKey, previousData, null]); // Store previous data for potential rollback
+        context.push([queryKey, previousData]); // Store previous data for potential rollback
       }
 
       return context;

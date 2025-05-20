@@ -1,14 +1,8 @@
 import type { DefaultReactSuggestionItem, SuggestionMenuProps } from '@blocknote/react';
 import { useEffect, useRef } from 'react';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
-import type { CustomBlockNoteSchema } from '~/modules/common/blocknote/types';
 
-export const slashMenu = (
-  props: SuggestionMenuProps<DefaultReactSuggestionItem>,
-  editor: CustomBlockNoteSchema,
-  indexedItemCount: number,
-  originalItemCount: number,
-) => {
+export const slashMenu = (props: SuggestionMenuProps<DefaultReactSuggestionItem>, indexedItemCount: number, originalItemCount: number) => {
   const { items, loadingState, selectedIndex, onItemClick } = props;
   const itemRefs = useRef<(HTMLDivElement | null)[]>([]);
   const isMobile = useBreakpoints('max', 'sm');
@@ -22,18 +16,6 @@ export const slashMenu = (
     const item = items[itemIndex];
     if (!item) return;
 
-    // media block opens only if document has next block
-    if (item.group === 'Media') {
-      const { nextBlock } = editor.getTextCursorPosition();
-
-      // if exist next block trigger item
-      if (nextBlock) return triggerItemClick(item, e);
-
-      // if no next block create one and trigger item
-      const block = await editor.tryParseMarkdownToBlocks('');
-      editor.replaceBlocks(editor.document, [...editor.document, ...block]);
-      return setTimeout(() => triggerItemClick(item, e), 0);
-    }
     return triggerItemClick(item, e);
   };
 

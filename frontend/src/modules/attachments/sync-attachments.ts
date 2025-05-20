@@ -5,10 +5,10 @@ import { useEffect } from 'react';
 import { env } from '~/env';
 import { useOnlineManager } from '~/hooks/use-online-manager';
 import { clientConfig } from '~/lib/api';
-import { handleDelete, handleInsert, handleUpdate } from '~/modules/attachments/table/sync-handlers';
+import { handleDelete, handleInsert, handleUpdate } from '~/modules/attachments/sync-handlers';
 import type { Attachment } from '~/modules/attachments/types';
 import { useSyncStore } from '~/store/sync';
-import { type CamelToSnakeObject, baseBackoffOptions as backoffOptions, convertMessageInfo, errorHandler } from '~/utils/electric-utils';
+import { type CamelToSnakeObject, baseBackoffOptions as backoffOptions, errorHandler, processMessages } from '~/utils/electric-utils';
 
 // Configure ShapeStream options
 const attachmentShape = (organizationId: string, storePrefix: string): ShapeStreamOptions => {
@@ -42,7 +42,7 @@ export const useAttachmentsSync = (organizationId: string) => {
     if (!isOnline || !config.has.sync || !config.has.imado || env.VITE_QUICK) return;
 
     const controller = new AbortController();
-    // if any params of  `attachmentShape` changes need to delete sync data from store
+    // if any params of `attachmentShape` changes need to delete sync data from store
     const syncData = getSyncData(storeKey);
 
     // Initialize ShapeStream
@@ -58,7 +58,7 @@ export const useAttachmentsSync = (organizationId: string) => {
       if (shapeStream.isLoading()) return;
 
       // Save latest offset and shape handle to store
-      if (shapeStream.shapeHandle) {
+      if (shapeStream.shapeHandle && shapeStream.isUpToDate) {
         const newSyncData = { offset: shapeStream.lastOffset, handle: shapeStream.shapeHandle };
         setSyncData(storeKey, newSyncData);
       }
@@ -67,15 +67,13 @@ export const useAttachmentsSync = (organizationId: string) => {
       const changeMessages = messages.filter(isChangeMessage);
       if (!changeMessages.length) return;
 
-      // Convert operation messages into respective arrays (inserts, updates, deletes)
-      const insertArray = convertMessageInfo<Attachment>(changeMessages, 'insert');
-      const updateArray = convertMessageInfo<Attachment>(changeMessages, 'update');
-      const deleteIdsArray = convertMessageInfo<Attachment>(changeMessages, 'delete').map(({ id }) => id);
+      // Process operation messages into respective arrays (insertData, updateData, deleteIds)
+      const { insertData, updateData, deleteIds } = processMessages(changeMessages);
 
       // Handle operations
-      if (insertArray.length) handleInsert(organizationId, insertArray);
-      if (updateArray.length) handleUpdate(organizationId, updateArray);
-      if (deleteIdsArray.length) handleDelete(organizationId, deleteIdsArray);
+      if (insertData.length) handleInsert(organizationId, insertData);
+      if (updateData.length) handleUpdate(organizationId, updateData);
+      if (deleteIds.length) handleDelete(organizationId, deleteIds);
     });
 
     return () => {

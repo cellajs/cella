@@ -35,7 +35,7 @@ const OauthOptions = ({ actionType = 'signIn' }: OauthOptionsProps) => {
 
   const [loading, setLoading] = useState(false);
 
-  const redirectPath = redirect?.startsWith('/') ? redirect : config.defaultRedirectPath;
+  const redirectPath = redirect?.startsWith('/') ? redirect : '';
   const actionText = actionType === 'signIn' ? t('common:sign_in') : actionType === 'signUp' ? t('common:sign_up') : t('common:continue');
 
   const authenticateWithProvider = async (url: string) => {

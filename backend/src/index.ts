@@ -1,16 +1,17 @@
+import { db, migrateConfig } from '#/db/db';
+import docs from '#/lib/docs';
+import '#/lib/i18n';
 import { serve } from '@hono/node-server';
-
 import chalk from 'chalk';
 import { config } from 'config';
 import { migrate as pgMigrate } from 'drizzle-orm/node-postgres/migrator';
 import type { PgliteDatabase } from 'drizzle-orm/pglite';
 import { migrate as pgliteMigrate } from 'drizzle-orm/pglite/migrator';
-import { db } from '#/db/db';
+import app from '#/routes';
 import ascii from '#/utils/ascii';
 import { env } from './env';
-import docs from './lib/docs';
-import app from './routes';
-import './lib/i18n';
+import '#/lib/i18n';
+
 // import { sdk } from './tracing';
 
 const isPGliteDatabase = (_db: unknown): _db is PgliteDatabase => !!env.PGLITE;
@@ -20,10 +21,6 @@ docs(app);
 
 const main = async () => {
   // Migrate db
-  const migrateConfig = {
-    migrationsFolder: 'drizzle',
-    migrationsSchema: 'drizzle-backend',
-  };
   if (isPGliteDatabase(db)) {
     await pgliteMigrate(db, migrateConfig);
   } else {

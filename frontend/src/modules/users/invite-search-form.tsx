@@ -16,8 +16,8 @@ import { type InviteMemberProps, inviteMembers } from '~/modules/memberships/api
 import { Badge } from '~/modules/ui/badge';
 import { Button, SubmitButton } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
-import { UserSuggestionCombobox } from '~/modules/users/combobox';
 import { handleNewInvites } from '~/modules/users/invite-email-form';
+import { UserSuggestionCombobox } from '~/modules/users/suggestions-combobox';
 
 interface Props {
   entity?: EntityPage;
@@ -108,7 +108,7 @@ const InviteSearchForm = ({ entity, dialog: isDialog }: Props) => {
         <div className="flex flex-col sm:flex-row gap-2">
           <SubmitButton loading={isPending} className="relative">
             {!!form.getValues('emails')?.length && <Badge context="button">{form.getValues('emails')?.length}</Badge>}
-            <Send size={16} className="mr-1" />
+            <Send size={16} className="mr-2" />
             {t('common:invite')}
           </SubmitButton>
           {form.formState.isDirty && (

@@ -18,11 +18,16 @@ const AvatarWrap = memo(({ type, id, name, url, className, ...props }: AvatarWra
 
   return (
     //key will force remounting of AvatarImage or AvatarFallback when URL changes
-    <Avatar key={url ? 'image' : 'fallback'} {...props} data-type={type} className={cn('group', className)}>
+    <Avatar
+      key={url ? 'image' : 'fallback'}
+      {...props}
+      data-type={type}
+      className={cn('group bg-muted rounded-md data-[type=user]:rounded-full overflow-hidden', className)}
+    >
       {url ? (
-        <AvatarImage src={`${url}?width=100&format=avif`} draggable="false" className="bg-muted rounded-md group-data-[type=user]:rounded-full" />
+        <AvatarImage src={url} draggable="false" />
       ) : (
-        <AvatarFallback className={cn('bg-muted', avatarBackground, type && type === 'user' ? 'rounded-full' : 'rounded-md')}>
+        <AvatarFallback className={avatarBackground}>
           <span className="sr-only">{name}</span>
           <div className="text-black opacity-80 flex h-full items-center justify-center">{name?.charAt(0).toUpperCase() || '-'}</div>
         </AvatarFallback>

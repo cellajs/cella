@@ -16,13 +16,10 @@ export default function StandardDialog({ dialog }: DialogProp) {
 
   // When a container is provided, the dialog is rendered inside the container and scroll should stay enabled
   const modal = !container;
-  // TODO use ref here?
   const containerElement = useMemo(() => (container ? document.getElementById(container.id) : null), [container]);
 
-  const closeDialog = () => {
-    useDialoger.getState().remove(dialog.id);
-    dialog.onClose?.();
-  };
+  // onClose trigger handles by remove method
+  const closeDialog = () => useDialoger.getState().remove(dialog.id);
 
   const onOpenChange = (open: boolean) => {
     useDialoger.getState().update(dialog.id, { open });
@@ -44,7 +41,7 @@ export default function StandardDialog({ dialog }: DialogProp) {
         id={String(id)}
         hideClose={hideClose}
         container={containerElement}
-        className={cn(className, containerElement && 'z-40')}
+        className={cn(className, containerElement && 'z-40 [.sheeter-open_&]:z-40')}
         onInteractOutside={handleInteractOutside}
         onOpenAutoFocus={(event: Event) => {
           if (isMobile) event.preventDefault();

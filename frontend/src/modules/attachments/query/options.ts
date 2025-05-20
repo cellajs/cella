@@ -2,7 +2,6 @@ import { infiniteQueryOptions, queryOptions } from '@tanstack/react-query';
 import { config } from 'config';
 
 import { type GetAttachmentsParams, getAttachments } from '~/modules/attachments/api';
-import { getOffset } from '~/query/helpers';
 
 /**
  * Keys for attachments related queries. These keys help to uniquely identify different query.
@@ -26,15 +25,15 @@ export const attachmentsKeys = {
  * This function returns the configuration for querying group of attachments from target organization.
  *
  * @param param.orgIdOrSlug - Organization ID or slug.
- * @param param.groupId - GroupId, of fetched attachments.
+ * @param param.attachmentId - attachmentId, to fetch all attachments of same group.
  * @returns  Query options.
  */
-export const groupedAttachmentsQueryOptions = ({ orgIdOrSlug, groupId }: Pick<GetAttachmentsParams, 'groupId' | 'orgIdOrSlug'>) => {
+export const groupedAttachmentsQueryOptions = ({ orgIdOrSlug, attachmentId }: Pick<GetAttachmentsParams, 'attachmentId' | 'orgIdOrSlug'>) => {
   const queryKey = attachmentsKeys.list.base();
 
   return queryOptions({
     queryKey,
-    queryFn: () => getAttachments({ groupId, orgIdOrSlug }),
+    queryFn: () => getAttachments({ attachmentId, orgIdOrSlug }),
     staleTime: 0,
     gcTime: 0,
   });
@@ -66,11 +65,12 @@ export const attachmentsQueryOptions = ({
 
   return infiniteQueryOptions({
     queryKey,
-    initialPageParam: 0,
-    queryFn: async ({ pageParam: page, signal }) => {
-      const offset = getOffset(queryKey); // Calculate before fetching ensuring correct offset
-      return await getAttachments({ page, q, sort, order, limit, orgIdOrSlug, offset }, signal);
+    initialPageParam: { page: 0, offset: 0 },
+    queryFn: async ({ pageParam: { page, offset }, signal }) => await getAttachments({ page, q, sort, order, limit, orgIdOrSlug, offset }, signal),
+    getNextPageParam: (_lastPage, allPages) => {
+      const page = allPages.length;
+      const offset = allPages.reduce((acc, page) => acc + page.items.length, 0);
+      return { page, offset };
     },
-    getNextPageParam: (_lastPage, allPages) => allPages.length,
   });
 };

@@ -1,7 +1,7 @@
 import { useNavigate, useSearch } from '@tanstack/react-router';
 import Autoplay from 'embla-carousel-autoplay';
 import { Download, ExternalLink, X } from 'lucide-react';
-import { useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import useDownloader from 'react-use-downloader';
 import { clearAttachmentDialogSearchParams } from '~/modules/attachments/attachment-dialog-handler';
 import { openAttachmentDialog } from '~/modules/attachments/helpers';
@@ -14,7 +14,16 @@ import { Carousel as BaseCarousel, CarouselContent, CarouselDots, CarouselItem, 
 import { cn } from '~/utils/cn';
 import { isCDNUrl } from '~/utils/is-cdn-url';
 
-export type CarouselItemData = { id: string; url: string; name?: string; filename?: string; contentType?: string };
+export type CarouselItemData = {
+  id: string;
+  url: string;
+  convertedUrl?: string | null;
+  name?: string;
+  filename?: string;
+  contentType?: string;
+  convertedContentType?: string | null;
+};
+
 interface CarouselPropsBase {
   itemIndex?: number;
   items?: CarouselItemData[];
@@ -34,31 +43,30 @@ type CarouselProps =
 const AttachmentsCarousel = ({ items = [], isDialog = false, itemIndex = 0, saveInSearchParams = false, classNameContainer }: CarouselProps) => {
   const navigate = useNavigate();
   const removeDialog = useDialoger((state) => state.remove);
-
-  const nextButtonRef = useRef(null);
-
   const { attachmentDialogId } = useSearch({ strict: false });
-  const [currentItem, setCurrentItem] = useState(items.find((item) => item.id === attachmentDialogId) || items[itemIndex]);
-  const [watchDrag, setWatchDrag] = useState(items.length > 1);
-
-  const itemClass = isDialog ? 'object-contain' : '';
-  const autoplay = Autoplay({ delay: 4000, stopOnInteraction: true, stopOnMouseEnter: true });
-  const currentItemIndex = items.findIndex((item) => item.id === currentItem?.id);
-  const resolvedIndex = currentItemIndex !== -1 ? currentItemIndex : itemIndex;
-
   const { download, isInProgress } = useDownloader();
 
-  const togglePanState = (state: boolean) => {
-    const shouldWatchDrag = state && items.length > 1;
-    setWatchDrag(shouldWatchDrag);
-  };
+  const nextButtonRef = useRef(null);
+  const [watchDrag, setWatchDrag] = useState(items.length > 1);
 
-  const updateSearchParam = (newItem: CarouselItemData) => {
+  const currentItem = useMemo(() => {
+    return items.find((item) => item.id === attachmentDialogId) ?? items[itemIndex] ?? null;
+  }, [attachmentDialogId, items, itemIndex]);
+
+  const currentItemIndex = useMemo(() => {
+    const index = items.findIndex((item) => item.id === currentItem?.id);
+    return index !== -1 ? index : itemIndex;
+  }, [items, currentItem, itemIndex]);
+
+  const updateSearchParam = (newItem: CarouselItemData | undefined) => {
     if (!saveInSearchParams) return;
+
     if (!newItem) {
       clearAttachmentDialogSearchParams();
-      return removeDialog();
+      removeDialog();
+      return;
     }
+
     navigate({
       to: '.',
       replace: true,
@@ -70,19 +78,21 @@ const AttachmentsCarousel = ({ items = [], isDialog = false, itemIndex = 0, save
     });
   };
 
-  // Reopen dialog after reload if the attachmentDialogId parameter exists
+  const toggleWatchDrag = (enabled: boolean) => setWatchDrag(enabled && items.length > 1);
+
+  if (!items.length || !currentItem) return null;
+
   return (
     <BaseCarousel
       isDialog={isDialog}
-      opts={{ duration: 20, loop: true, startIndex: itemIndex, watchDrag }}
-      plugins={isDialog ? [] : [autoplay]}
+      opts={{ duration: 20, loop: true, startIndex: currentItemIndex, watchDrag }}
+      plugins={isDialog ? [] : [Autoplay({ delay: 4000, stopOnInteraction: true, stopOnMouseEnter: true })]}
       className="w-full h-full group"
       setApi={(api) => {
         if (!api) return;
         api.on('select', () => {
           const newItem = items[api.selectedScrollSnap()];
           updateSearchParam(newItem);
-          setCurrentItem(newItem);
         });
       }}
     >
@@ -127,7 +137,7 @@ const AttachmentsCarousel = ({ items = [], isDialog = false, itemIndex = 0, save
       )}
 
       <CarouselContent className="h-full">
-        {items?.map(({ url, contentType = 'image' }, idx) => {
+        {items.map(({ url, convertedUrl, contentType = 'image', convertedContentType }, idx) => {
           return (
             <CarouselItem
               key={url}
@@ -138,22 +148,23 @@ const AttachmentsCarousel = ({ items = [], isDialog = false, itemIndex = 0, save
             >
               <AttachmentRender
                 containerClassName={cn('overflow-hidden h-full relative flex items-center justify-center ', classNameContainer)}
-                itemClassName={itemClass}
-                type={contentType}
+                itemClassName={isDialog ? 'object-contain' : ''}
+                type={convertedContentType ?? contentType}
                 imagePanZoom={isDialog}
-                showButtons={resolvedIndex === idx}
-                url={url}
+                showButtons={currentItemIndex === idx}
+                url={convertedUrl ?? url}
                 altName={`Slide ${idx}`}
-                togglePanState={togglePanState}
+                onPanStateToggle={toggleWatchDrag}
               />
             </CarouselItem>
           );
         })}
       </CarouselContent>
-      {(items?.length ?? 0) > 1 && (
+
+      {items.length > 1 && (
         <>
-          <CarouselPrevious className="left-4 lg:left-8 opacity-0 transition-opacity group-hover:opacity-100 shadow-md" />
-          <CarouselNext ref={nextButtonRef} className="right-4 lg:right-8 opacity-0 transition-opacity group-hover:opacity-100 shadow-md" />
+          <CarouselPrevious className="left-4 lg:left-8 opacity-0 transition-opacity group-hover:opacity-70 shadow-md" />
+          <CarouselNext ref={nextButtonRef} className="right-4 lg:right-8 opacity-0 transition-opacity group-hover:opacity-70 shadow-md" />
         </>
       )}
       {!isDialog && <CarouselDots size="sm" gap="lg" className="relative mt-[calc(1rem+2%)]" />}

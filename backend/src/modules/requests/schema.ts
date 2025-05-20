@@ -4,9 +4,11 @@ import { createSelectSchema } from 'drizzle-zod';
 import { requestsTable } from '#/db/schema/requests';
 import { paginationQuerySchema } from '#/utils/schema/common';
 
-export const requestSchema = z.object({
+const requestTableSchema = z.object({
   ...createSelectSchema(requestsTable).shape,
 });
+
+export const requestSchema = requestTableSchema.omit({ tokenId: true }).extend({ wasInvited: z.boolean() });
 
 export const createRequestSchema = z.object({
   email: z.string().min(1).email(),

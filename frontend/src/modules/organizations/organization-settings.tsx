@@ -10,7 +10,7 @@ import { PageAside } from '~/modules/common/page/page-aside';
 import StickyBox from '~/modules/common/sticky-box';
 import UnsavedBadge from '~/modules/common/unsaved-badge';
 import DeleteOrganizations from '~/modules/organizations/delete-organizations';
-import Subscription from '~/modules/organizations/subscription';
+// import Subscription from '~/modules/organizations/subscription';
 import type { Organization } from '~/modules/organizations/types';
 import UpdateOrganizationForm from '~/modules/organizations/update-organization-form';
 import { Button } from '~/modules/ui/button';
@@ -19,7 +19,7 @@ import { OrganizationSettingsRoute } from '~/routes/organizations';
 
 const tabs = [
   { id: 'general', label: 'common:general' },
-  { id: 'subscription', label: 'common:subscription' },
+  // { id: 'subscription', label: 'common:subscription' },
   { id: 'delete-organization', label: 'common:delete_resource', resource: 'common:organization' },
 ];
 
@@ -72,7 +72,7 @@ const OrganizationSettings = ({ organization }: { organization: Organization }) 
                 callback={(organization) => {
                   if (idOrSlug !== organization.slug) {
                     navigate({
-                      to: '/$idOrSlug/settings',
+                      to: '/organizations/$idOrSlug/settings',
                       params: { idOrSlug: organization.slug },
                       replace: true,
                     });
@@ -83,7 +83,7 @@ const OrganizationSettings = ({ organization }: { organization: Organization }) 
           </Card>
         </AsideAnchor>
 
-        <AsideAnchor id="subscription" extraOffset>
+        {/* <AsideAnchor id="subscription" extraOffset>
           <Card>
             <CardHeader>
               <CardTitle>{t('common:subscription')}</CardTitle>
@@ -92,7 +92,7 @@ const OrganizationSettings = ({ organization }: { organization: Organization }) 
               <Subscription organization={organization} />
             </CardContent>
           </Card>
-        </AsideAnchor>
+        </AsideAnchor> */}
 
         <AsideAnchor id="delete-organization" extraOffset>
           <Card>

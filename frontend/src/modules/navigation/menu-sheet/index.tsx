@@ -117,7 +117,7 @@ export const MenuSheet = memo(() => {
 
   return (
     <ScrollArea className="h-full" id="nav-sheet" viewPortRef={scrollViewportRef}>
-      <div data-search={!!searchTerm} className="group/menu p-3 max-sm:pt-0 min-h-[calc(100vh-0.5rem)] flex flex-col">
+      <div data-search={!!searchTerm} className="group/menu py-3 sm:px-3 max-sm:pt-0 min-h-[calc(100vh-0.5rem)] flex flex-col">
         {/* Only visible when floating nav is present. To return to home */}
         <div id="return-nav" className="[.floating-nav_&]:flex hidden gap-2 pt-3">
           <Link to="/home" className={cn(buttonVariants({ variant: 'ghost' }), 'w-full justify-start')}>
@@ -138,7 +138,7 @@ export const MenuSheet = memo(() => {
                 hideClose: true,
                 modal: true,
                 className:
-                  'fixed sm:z-105 p-0 sm:inset-0 xs:max-w-80 sm:left-16 xl:group-[.keep-menu-open]/body:group-[.menu-sheet-open]/body:shadow-none xl:group-[.keep-menu-open]/body:group-[.menu-sheet-open]/body:border-r dark:shadow-[0_0_30px_rgba(255,255,255,0.05)]',
+                  'fixed sm:z-105 p-0 sm:inset-0 xs:max-w-80 sm:left-16 xl:group-[.keep-menu-open]/body:group-[.keep-menu-open]/body:shadow-none xl:group-[.keep-menu-open]/body:group-[.keep-menu-open]/body:border-r dark:shadow-[0_0_2px_5px_rgba(255,255,255,0.05)]',
                 onClose: () => {
                   setNavSheetOpen(null);
                 },

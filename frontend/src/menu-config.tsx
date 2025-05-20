@@ -20,7 +20,7 @@ type SectionsSchema = {
 const createOrganizationAction = (triggerRef: RefObject<HTMLButtonElement | null>) => {
   const callback = (createdOrganization: Organization) => {
     useDialoger.getState().remove('create-organization');
-    router.navigate({ to: '/$idOrSlug/members', params: { idOrSlug: createdOrganization.slug } });
+    router.navigate({ to: '/organizations/$idOrSlug/members', params: { idOrSlug: createdOrganization.slug } });
   };
 
   return useDialoger.getState().create(<CreateOrganizationForm dialog callback={callback} />, {
@@ -29,6 +29,7 @@ const createOrganizationAction = (triggerRef: RefObject<HTMLButtonElement | null
     triggerRef,
     title: i18n.t('common:create_resource', { resource: i18n.t('common:organization').toLowerCase() }),
     titleContent: <UnsavedBadge title={i18n.t('common:create_resource', { resource: i18n.t('common:organization').toLowerCase() })} />,
+    description: i18n.t('common:create_organization.text'),
   });
 };
 

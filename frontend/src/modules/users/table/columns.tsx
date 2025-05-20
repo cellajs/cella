@@ -37,7 +37,7 @@ export const useColumns = () => {
       {
         key: 'edit',
         name: '',
-        visible: true,
+        visible: !isMobile,
         sortable: false,
         width: 32,
         renderCell: ({ row, tabIndex }) => <UpdateRow user={row} tabIndex={tabIndex} />,

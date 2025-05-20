@@ -40,7 +40,7 @@ export const handleInsert = (orgIdOrSlug: string, newAttachments: Attachment[]) 
 };
 
 // Handle attachment update
-export const handleUpdate = (orgIdOrSlug: string, updatedAttachments: Attachment[]) => {
+export const handleUpdate = (orgIdOrSlug: string, updatedAttachments: Partial<Attachment>[]) => {
   const queries = getSimilarQueries(attachmentsKeys.list.similarTable({ orgIdOrSlug }));
 
   for (const [queryKey] of queries) {

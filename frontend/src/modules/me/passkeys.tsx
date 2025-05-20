@@ -1,4 +1,4 @@
-import { Check, KeyRound, Trash } from 'lucide-react';
+import { Check, Fingerprint, RotateCw, Trash } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '~/modules/ui/button';
@@ -24,19 +24,20 @@ const Passkeys = ({ userAuthInfo }: { userAuthInfo: UserAuthInfo }) => {
   return (
     <>
       {hasPasskey && (
-        <div className="flex items-center gap-2 mb-6">
-          <Check size={18} className="text-success" />
+        <div className="flex items-center gap-2 mb-6 px-3">
+          <Fingerprint className="w-4 h-4 mr-2" />
+          <Check size={18} strokeWidth={3} className="text-success" />
           <span>{t('common:passkey_registered')}</span>
         </div>
       )}
       <div className="flex max-sm:flex-col gap-2 mb-6">
         <Button key="createPasskey" type="button" variant="plain" onClick={handlePasskeyRegistration}>
-          <KeyRound className="w-4 h-4 mr-1" />
-          {hasPasskey ? t('common:reset_passkey') : `${t('common:add')} ${t('common:new_passkey').toLowerCase()}`}
+          {hasPasskey ? <RotateCw className="w-4 h-4 mr-2" /> : <Fingerprint className="w-4 h-4 mr-2" />}
+          {hasPasskey ? t('common:reset_passkey') : t('common:create_resource', { resource: t('common:passkey').toLowerCase() })}
         </Button>
         {hasPasskey && (
           <Button key="deletePasskey" type="button" variant="ghost" onClick={handleDeletePasskey}>
-            <Trash className="w-4 h-4 mr-1" />
+            <Trash className="w-4 h-4 mr-2" />
             <span>{t('common:remove')}</span>
           </Button>
         )}

@@ -126,7 +126,7 @@ class AttachmentRouteConfig {
       body: {
         content: {
           'application/json': {
-            schema: idsBodySchema,
+            schema: idsBodySchema(),
           },
         },
       },

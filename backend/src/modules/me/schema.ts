@@ -8,16 +8,12 @@ import { membershipInfoSchema } from '#/modules/memberships/schema';
 import { enabledOauthProvidersEnum } from '#/modules/users/schema';
 import { contextEntityTypeSchema, idOrSlugSchema } from '#/utils/schema/common';
 
-const sessionSchema = createSelectSchema(sessionsTable);
-
-export const sessionsSchema = z.object({
-  sessions: z.array(sessionSchema.omit({ token: true }).extend({ createdAt: z.string(), expiresAt: z.string(), isCurrent: z.boolean() })),
-});
+export const sessionSchema = createSelectSchema(sessionsTable).omit({ token: true }).extend({ isCurrent: z.boolean() });
 
 export const meAuthInfoSchema = z.object({
   oauth: z.array(enabledOauthProvidersEnum),
   passkey: z.boolean(),
-  ...sessionsSchema.shape,
+  sessions: z.array(sessionSchema.extend({ expiresAt: z.string() })),
 });
 
 export const menuItemSchema = limitEntitySchema.omit({ bannerUrl: true }).extend({
@@ -58,4 +54,20 @@ export const leaveEntityQuerySchema = z.object({
 
 export const unsubscribeSelfQuerySchema = z.object({
   token: z.string(),
+});
+
+export const uploadTokenBodySchema = z.object({
+  public: z.boolean(),
+  sub: z.string(),
+  imado: z.boolean(),
+  signature: z.string(),
+  params: z
+    .object({
+      auth: z.object({
+        key: z.string(),
+        expires: z.string().optional(),
+      }),
+      // Allow additional arbitrary keys with any type in params
+    })
+    .catchall(z.any()),
 });

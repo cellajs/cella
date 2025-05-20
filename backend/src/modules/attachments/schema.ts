@@ -22,15 +22,19 @@ export const createAttachmentsSchema = z
 export const updateAttachmentBodySchema = attachmentsInsertSchema
   .pick({
     name: true,
-    url: true,
+    originalKey: true,
   })
   .partial();
 
 export const attachmentSchema = z.object({
-  ...createSelectSchema(attachmentsTable).shape,
+  ...createSelectSchema(attachmentsTable).omit({ originalKey: true, convertedKey: true, thumbnailKey: true }).extend({
+    url: z.string(),
+    thumbnailUrl: z.string().nullable(),
+    convertedUrl: z.string().nullable(),
+  }).shape,
 });
 
 export const attachmentsQuerySchema = paginationQuerySchema.extend({
-  groupId: z.string().optional(),
+  attachmentId: z.string().optional(),
   sort: z.enum(['id', 'filename', 'contentType', 'createdAt']).default('createdAt').optional(),
 });

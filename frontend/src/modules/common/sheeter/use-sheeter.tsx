@@ -13,14 +13,15 @@ export type SheetData = {
   className?: string;
   hideClose?: boolean;
   scrollableOverlay?: boolean;
+  closeSheetOnEsc?: boolean;
   modal?: boolean;
   onClose?: () => void;
 };
 
 export type InternalSheet = SheetData & {
   key: number;
-  open?: boolean;
   content: ReactNode;
+  open?: boolean;
 };
 
 interface SheetStoreState {
@@ -28,7 +29,7 @@ interface SheetStoreState {
 
   create(content: ReactNode, data: SheetData): string;
   update(id: string, updates: Partial<InternalSheet>): void;
-  remove(id?: string, excludeId?: string): void;
+  remove(id?: string): void;
   get(id: string): InternalSheet | undefined;
 
   triggerRefs: Record<string, TriggerRef | null>;
@@ -60,15 +61,23 @@ export const useSheeter = create<SheetStoreState>()((set, get) => ({
     }));
   },
 
-  remove: (id, excludeId) => {
+  remove: (id) => {
     set((state) => {
-      let updatedSheets: InternalSheet[];
-      if (id) {
-        updatedSheets = state.sheets.filter((sheet) => sheet.id !== id);
-      } else {
-        updatedSheets = excludeId ? state.sheets.filter((sheet) => sheet.id === excludeId) : [];
-      }
-      return { sheets: updatedSheets };
+      let removeSheets = state.sheets;
+
+      // Remove by id or remove all
+      if (id) removeSheets = state.sheets.filter((sheet) => sheet.id === id);
+
+      // If no sheets to remove, return
+      if (!removeSheets.length) return { sheets: state.sheets };
+
+      // Call onClose hooks
+      for (const sheet of removeSheets) sheet.onClose?.();
+
+      // Filter them out
+      const sheets = state.sheets.filter((sheet) => !removeSheets.some((s) => s.id === sheet.id));
+
+      return { sheets };
     });
   },
 

@@ -94,7 +94,7 @@ const UserSettingsPage = () => {
       <div className="max-md:hidden mx-auto md:min-w-48 md:w-[30%] md:mt-3">
         <StickyBox className="z-10 max-md:block!">
           <SimpleHeader className="p-3" heading="common:settings" text="common:settings.text" />
-          <PageAside tabs={tabs} className="py-2" />
+          <PageAside tabs={tabs} className="py-2" setFocus />
         </StickyBox>
       </div>
 
@@ -147,19 +147,19 @@ const UserSettingsPage = () => {
                   if (!provider) return;
                   if (userAuthInfo.oauth.includes(id))
                     return (
-                      <div key={provider.id} className="flex items-center justify-center py-2 px-3 gap-2 border rounded-md">
+                      <div key={provider.id} className="flex items-center justify-center px-3 gap-2">
                         <img
                           src={`/static/images/${provider.id}-icon.svg`}
                           alt={provider.id}
-                          className={`w-4 h-4 ${provider.id === 'github' ? invertClass : ''}`}
+                          className={`w-4 h-4 mr-2 ${provider.id === 'github' ? invertClass : ''}`}
                           loading="lazy"
                         />
-                        <Check size={18} className="text-success" />
+                        <Check size={18} strokeWidth={3} className="text-success" />
                         {`${t('common:already_connected_to')} ${provider.name}`}
                       </div>
                     );
                   return (
-                    <Button key={provider.id} type="button" variant="outline" onClick={() => authenticateWithProvider(provider)}>
+                    <Button key={provider.id} type="button" variant="plain" onClick={() => authenticateWithProvider(provider)}>
                       <img
                         src={`/static/images/${provider.id}-icon.svg`}
                         alt={provider.id}
@@ -177,7 +177,7 @@ const UserSettingsPage = () => {
               </HelpText>
               <div>
                 <Button className="w-full sm:w-auto" variant="outline" disabled={disabledResetPassword} onClick={requestResetPasswordClick}>
-                  <Send size={16} className="mr-1" />
+                  <Send size={16} className="mr-2" />
                   {t('common:send_reset_link')}
                 </Button>
                 {disabledResetPassword && <p className="text-sm text-gray-500 mt-2">{t('common:retry_reset_password.text')}</p>}
@@ -194,7 +194,7 @@ const UserSettingsPage = () => {
             </CardHeader>
             <CardContent>
               <Button ref={deleteButtonRef} variant="destructive" className="w-full sm:w-auto" onClick={openDeleteDialog}>
-                <Trash className="mr-2 h-4 w-4" />
+                <Trash size={16} className="mr-2" />
                 {t('common:delete_account')}
               </Button>
             </CardContent>

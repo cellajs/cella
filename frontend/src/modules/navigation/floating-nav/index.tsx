@@ -4,7 +4,8 @@ import useBodyClass from '~/hooks/use-body-class';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import useMounted from '~/hooks/use-mounted';
 import FloatingNavButton from '~/modules/navigation/floating-nav/button';
-import { type NavItemId, navItems } from '~/nav-config';
+import type { NavItemId } from '~/modules/navigation/types';
+import { navItems } from '~/nav-config';
 
 const SCROLL_THRESHOLD = 10; // Minimum scroll delta to toggle visibility
 
@@ -21,9 +22,9 @@ const FloatingNav = ({ onClick }: { onClick: (id: NavItemId) => void }) => {
     .flatMap((el) => el.staticData.floatingNavButtons || [])
     .filter((id, index, self) => self.indexOf(id) === index); // dedupe
 
-  const items = navItems.filter((item) => floatingItems.includes(item.id));
+  const items = isMobile ? navItems.filter((item) => floatingItems.includes(item.id)) : [];
 
-  useBodyClass({ 'floating-nav': items.length > 0 });
+  useBodyClass({ 'floating-nav': isMobile && items.length > 0 });
 
   // Hide buttons when scrolling down and show when scrolling up
   useEffect(() => {

@@ -7,11 +7,7 @@ import { getRequestsQuerySchema } from '#/modules/requests/schema';
 import { usersQuerySchema } from '#/modules/users/schema';
 
 import ErrorNotice from '~/modules/common/error-notice';
-import { organizationsQueryOptions } from '~/modules/organizations/query';
-import { requestsQueryOptions } from '~/modules/requests/query';
 import SystemPage from '~/modules/system/system-page';
-import { usersQueryOptions } from '~/modules/users/query';
-import { queryClient } from '~/query/query-client';
 import { AppRoute } from '~/routes/base';
 import { noDirectAccess } from '~/utils/no-direct-access';
 
@@ -42,10 +38,6 @@ export const UsersTableRoute = createRoute({
   staticData: { pageTitle: 'users', isAuth: true },
   getParentRoute: () => SystemRoute,
   loaderDeps: ({ search: { q, sort, order, role } }) => ({ q, sort, order, role }),
-  loader: async ({ deps: { q, sort, order, role } }) => {
-    const queryOptions = usersQueryOptions({ q, sort, order, role });
-    await queryClient.prefetchInfiniteQuery(queryOptions);
-  },
   component: () => (
     <Suspense>
       <UsersTable />
@@ -59,10 +51,6 @@ export const OrganizationsTableRoute = createRoute({
   staticData: { pageTitle: 'organizations', isAuth: true },
   getParentRoute: () => SystemRoute,
   loaderDeps: ({ search: { q, sort, order } }) => ({ q, sort, order }),
-  loader: async ({ deps: { q, sort, order } }) => {
-    const orgOptions = organizationsQueryOptions({ q, sort, order });
-    await queryClient.prefetchInfiniteQuery(orgOptions);
-  },
   component: () => (
     <Suspense>
       <OrganizationsTable />
@@ -76,10 +64,6 @@ export const RequestsTableRoute = createRoute({
   staticData: { pageTitle: 'requests', isAuth: true },
   getParentRoute: () => SystemRoute,
   loaderDeps: ({ search: { q, sort, order } }) => ({ q, sort, order }),
-  loader: async ({ deps: { q, sort, order } }) => {
-    const requestsOptions = requestsQueryOptions({ q, sort, order });
-    await queryClient.prefetchInfiniteQuery(requestsOptions);
-  },
   component: () => (
     <Suspense>
       <RequestsTable />

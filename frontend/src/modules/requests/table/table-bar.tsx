@@ -1,8 +1,7 @@
 import { config } from 'config';
-import { Handshake, Trash, XSquare } from 'lucide-react';
+import { LockOpen, Trash, XSquare } from 'lucide-react';
 import { useMemo, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { sort } from 'virtua/unstable_core';
 import ColumnsView from '~/modules/common/data-table/columns-view';
 import Export from '~/modules/common/data-table/export';
 import { TableBarButton } from '~/modules/common/data-table/table-bar-button';
@@ -30,9 +29,9 @@ export const RequestsTableBar = ({ total, selected, searchVars, setSearch, colum
 
   const deleteButtonRef = useRef(null);
 
-  const selectedToWaitlist = useMemo(() => selected.filter((r) => r.type === 'waitlist' && !r.tokenId), [selected]);
+  const selectedToWaitlist = useMemo(() => selected.filter((r) => r.type === 'waitlist' && !r.wasInvited), [selected]);
 
-  const { q, order } = searchVars;
+  const { q, order, sort } = searchVars;
   const isFiltered = !!q;
 
   const mutateQuery = useMutateQueryData(requestsKeys.table.base());
@@ -68,10 +67,10 @@ export const RequestsTableBar = ({ total, selected, searchVars, setSearch, colum
     const waitlistRequests = selected.filter(({ type }) => type === 'waitlist');
     const emails = waitlistRequests.map(({ email }) => email);
 
-    // add random token value so state table changes
-    const updatedWaitLists = waitlistRequests.map((req) => {
-      return req;
-    });
+    const updatedWaitLists = waitlistRequests.map((reqInfo) => ({
+      ...reqInfo,
+      wasInvited: true,
+    }));
 
     try {
       // Send invite to users
@@ -103,7 +102,7 @@ export const RequestsTableBar = ({ total, selected, searchVars, setSearch, colum
                   variant="darkSuccess"
                   className="relative"
                   label={t('common:invite')}
-                  icon={Handshake}
+                  icon={LockOpen}
                   onClick={inviteSelected}
                 />
               )}

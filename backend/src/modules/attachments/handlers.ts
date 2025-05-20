@@ -12,13 +12,13 @@ import { getOrderColumn } from '#/utils/order-column';
 import { prepareStringForILikeFilter } from '#/utils/sql';
 
 import { OpenAPIHono } from '@hono/zod-openapi';
-import { type SQL, and, count, eq, ilike, inArray, like, notIlike, or } from 'drizzle-orm';
+import { type SQL, and, count, eq, ilike, inArray, or } from 'drizzle-orm';
 import { html } from 'hono/html';
 import { stream } from 'hono/streaming';
 
 import { config } from 'config';
 import { env } from '#/env';
-import { getImadoUrl } from '#/lib/imado-url';
+import { enrichAttachmentWithUrls, enrichAttachmentsWithUrls } from '#/modules/attachments/helpers/convert-attachments';
 
 // Set default hook to catch validation errors
 const app = new OpenAPIHono<Env>({ defaultHook });
@@ -91,38 +91,35 @@ const attachmentsRoutes = app
 
     const createdAttachments = await db.insert(attachmentsTable).values(fixedNewAttachments).returning();
 
-    // Send urls through imado to sign them if needed
-    for (const attachment of createdAttachments) {
-      attachment.url = getImadoUrl.generate(attachment.url);
-    }
+    const data = await enrichAttachmentsWithUrls(createdAttachments);
 
     logEvent(`${createdAttachments.length} attachments have been created`);
 
-    return ctx.json({ success: true, data: createdAttachments }, 200);
+    return ctx.json({ success: true, data }, 200);
   })
   /*
    * Get attachments
    */
   .openapi(attachmentsRouteConfig.getAttachments, async (ctx) => {
-    const { q, sort, order, offset, limit, groupId } = ctx.req.valid('query');
+    const { q, sort, order, offset, limit, attachmentId } = ctx.req.valid('query');
 
-    const user = getContextUser();
+    // const user = getContextUser();
     // Scope request to organization
     const organization = getContextOrganization();
 
     // Filter at least by valid organization
     const filters: SQL[] = [
       eq(attachmentsTable.organizationId, organization.id),
-      ...(groupId ? [eq(attachmentsTable.groupId, groupId)] : []),
-      ...(!config.has.imado
-        ? [
-            // TODO explain this please
-            or(
-              and(eq(attachmentsTable.createdBy, user.id), notIlike(attachmentsTable.url, `${config.publicCDNUrl}%`)),
-              like(attachmentsTable.url, `${config.publicCDNUrl}%`),
-            ) as SQL,
-          ]
-        : []),
+      // If IMADO is off, show attachments that not have a public CDN URL only to users that create it because in that case attachments stored in IndexedDB
+      // TODO reworkIt
+      // ...(!config.has.imado
+      //   ? [
+      //       or(
+      //         and(eq(attachmentsTable.createdBy, user.id), notIlike(attachmentsTable.url, `${config.publicCDNUrl}%`)),
+      //         like(attachmentsTable.url, `${config.publicCDNUrl}%`),
+      //       ) as SQL,
+      //     ]
+      //   : []),
     ];
 
     if (q) {
@@ -142,6 +139,19 @@ const attachmentsRoutes = app
       order,
     );
 
+    if (attachmentId) {
+      // Retrieve target attachment
+      const [targetAttachment] = await db.select().from(attachmentsTable).where(eq(attachmentsTable.id, attachmentId)).limit(1);
+      if (!targetAttachment) return errorResponse(ctx, 404, 'not_found', 'warn', 'attachment', { attachmentId });
+
+      const items = await enrichAttachmentsWithUrls([targetAttachment]);
+      // return target attachment itself if no groupId
+      if (!targetAttachment.groupId) return ctx.json({ success: true, data: { items, total: 1 } }, 200);
+
+      // add filter attachments by groupId
+      filters.push(eq(attachmentsTable.groupId, targetAttachment.groupId));
+    }
+
     const attachmentsQuery = db
       .select()
       .from(attachmentsTable)
@@ -150,14 +160,11 @@ const attachmentsRoutes = app
 
     const attachments = await attachmentsQuery.offset(Number(offset)).limit(Number(limit));
 
-    // Send urls through imado to sign them if needed
-    for (const attachment of attachments) {
-      attachment.url = getImadoUrl.generate(attachment.url);
-    }
-
     const [{ total }] = await db.select({ total: count() }).from(attachmentsQuery.as('attachments'));
 
-    return ctx.json({ success: true, data: { items: attachments, total } }, 200);
+    const items = await enrichAttachmentsWithUrls(attachments);
+
+    return ctx.json({ success: true, data: { items, total } }, 200);
   })
   /*
    * Get attachment by id
@@ -173,11 +180,11 @@ const attachmentsRoutes = app
       .from(attachmentsTable)
       .where(and(eq(attachmentsTable.id, id), eq(attachmentsTable.organizationId, organization.id)));
 
-    attachment.url = getImadoUrl.generate(attachment.url);
-
     if (!attachment) return errorResponse(ctx, 404, 'not_found', 'warn', 'attachment');
 
-    return ctx.json({ success: true, data: attachment }, 200);
+    const data = await enrichAttachmentWithUrls(attachment);
+
+    return ctx.json({ success: true, data }, 200);
   })
   /*
    * Update an attachment by id
@@ -200,9 +207,9 @@ const attachmentsRoutes = app
 
     logEvent('Attachment updated', { attachment: updatedAttachment.id });
 
-    updatedAttachment.url = getImadoUrl.generate(updatedAttachment.url);
+    const data = await enrichAttachmentWithUrls(updatedAttachment);
 
-    return ctx.json({ success: true, data: updatedAttachment }, 200);
+    return ctx.json({ success: true, data }, 200);
   })
   /*
    * Delete attachments by ids

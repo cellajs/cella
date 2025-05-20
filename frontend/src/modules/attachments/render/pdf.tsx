@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Document, Page, pdfjs } from 'react-pdf';
 import 'react-pdf/dist/esm/Page/AnnotationLayer.css';
 import 'react-pdf/dist/esm/Page/TextLayer.css';
@@ -10,35 +10,34 @@ const options = { cMapUrl: '/cmaps/' };
 
 export default function RenderPDF({ file, className }: { file: string; className?: string }) {
   const [numPages, setNumPages] = useState<number | null>(null);
-  const [scale, setScale] = useState(1); // Scale for fitting the page
+  const [scale, setScale] = useState(1);
+
+  const containerRef = useRef<HTMLDivElement>(null);
 
   const onDocumentLoadSuccess = ({ numPages }: { numPages: number }) => {
     setNumPages(numPages);
   };
 
-  // Adjust scale based on container width
-  const adjustScale = (width: number) => {
-    const desiredWidth = width - 60;
-    const naturalWidth = 612; // Default PDF page width in points
-    setScale(desiredWidth / naturalWidth);
-  };
-
   useEffect(() => {
-    const handleResize = () => {
-      adjustScale(window.innerWidth - 60);
-    };
+    const container = containerRef.current;
+    if (!container) return;
 
-    // Adjust scale on window resize
-    window.addEventListener('resize', handleResize);
-    handleResize();
+    const resizeObserver = new ResizeObserver(([entry]) => {
+      const containerWidth = entry.contentRect.width;
+      const naturalWidth = 612; // PDF width in points (8.5 inch * 72)
+      const desiredWidth = containerWidth - 20; // Optional padding
+      setScale(desiredWidth / naturalWidth);
+    });
+
+    resizeObserver.observe(container);
 
     return () => {
-      window.removeEventListener('resize', handleResize);
+      resizeObserver.disconnect();
     };
   }, []);
 
   return (
-    <div className={className}>
+    <div ref={containerRef} className={className}>
       <Document file={file} options={options} onLoadSuccess={onDocumentLoadSuccess}>
         {Array.from(new Array(numPages || 0), (_el, index) => (
           <Page key={`page_${index + 1}`} pageNumber={index + 1} scale={scale} />

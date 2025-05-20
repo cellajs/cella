@@ -74,7 +74,7 @@ export const CheckEmailForm = ({ setStep, emailEnabled }: CheckEmailProps) => {
           />
           <SubmitButton loading={isPending} className="w-full">
             {t('common:continue')}
-            <ArrowRight size={16} className="ml-1" />
+            <ArrowRight size={16} className="ml-2" />
           </SubmitButton>
         </form>
       )}

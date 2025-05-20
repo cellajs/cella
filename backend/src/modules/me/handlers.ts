@@ -3,7 +3,6 @@ import type { EnabledOauthProvider } from 'config';
 import { config } from 'config';
 import { and, asc, eq, isNotNull } from 'drizzle-orm';
 import { type SSEStreamingApi, streamSSE } from 'hono/streaming';
-import jwt from 'jsonwebtoken';
 import type { z } from 'zod';
 import { db } from '#/db/db';
 import { membershipsTable } from '#/db/schema/memberships';
@@ -15,6 +14,7 @@ import { env } from '#/env';
 import { type Env, getContextMemberships, getContextUser } from '#/lib/context';
 import { resolveEntity } from '#/lib/entity';
 import { type ErrorType, createError, errorResponse } from '#/lib/errors';
+import { getParams, getSignature } from '#/lib/transloadit';
 import { isAuthenticated } from '#/middlewares/guard';
 import { logEvent } from '#/middlewares/logger/log-event';
 import { getUserBy } from '#/modules/users/helpers/get-user-by';
@@ -58,12 +58,13 @@ const meRoutes = app
 
     const getPasskey = db.select().from(passkeysTable).where(eq(passkeysTable.userEmail, user.email));
     const getOAuth = db.select({ providerId: oauthAccountsTable.providerId }).from(oauthAccountsTable).where(eq(oauthAccountsTable.userId, user.id));
-
     const [passkeys, oauthAccounts, sessions] = await Promise.all([getPasskey, getOAuth, getUserSessions(ctx, user.id)]);
 
     const validOAuthAccounts = oauthAccounts
       .map((el) => el.providerId)
       .filter((provider): provider is EnabledOauthProvider => config.enabledOauthProviders.includes(provider as EnabledOauthProvider));
+
+    console.info('Valid OAuth accounts:', validOAuthAccounts);
 
     return ctx.json({ success: true, data: { oauth: validOAuthAccounts, passkey: !!passkeys.length, sessions } }, 200);
   })
@@ -281,21 +282,29 @@ const meRoutes = app
    * Get upload token
    */
   .openapi(meRouteConfig.getUploadToken, async (ctx) => {
+    const { public: isPublic, organization, templateId } = ctx.req.valid('query');
     const user = getContextUser();
-    const { public: isPublic, organization } = ctx.req.valid('query');
 
-    const sub = organization ? `${organization}/${user.id}` : user.id;
+    // This will be used to as first part of S3 key
+    const sub = [config.s3BucketPrefix, organization, user.id].filter(Boolean).join('/');
 
-    const token = jwt.sign(
-      {
-        sub: sub,
-        public: isPublic === 'true',
-        imado: !!env.AWS_S3_UPLOAD_ACCESS_KEY_ID,
-      },
-      env.TUS_SECRET,
-    );
+    try {
+      const params = getParams(templateId, isPublic, sub);
+      const paramsString = JSON.stringify(params);
+      const signature = getSignature(paramsString);
 
-    return ctx.json({ success: true, data: token }, 200);
+      const token = {
+        sub,
+        public: isPublic,
+        imado: !!env.S3_ACCESS_KEY_ID,
+        params,
+        signature,
+      };
+
+      return ctx.json({ success: true, data: token }, 200);
+    } catch (error) {
+      return errorResponse(ctx, 500, 'missing_auth_key', 'error');
+    }
   })
   /*
    * Unsubscribe a user by token from receiving newsletters
