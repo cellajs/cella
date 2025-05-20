@@ -6,6 +6,7 @@ import ScreenCapture from '@uppy/screen-capture';
 import Webcam, { type WebcamOptions } from '@uppy/webcam';
 import { type UploadTemplateId, config } from 'config';
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { toaster } from '~/modules/common/toaster';
 import { createBaseTransloaditUppy } from '~/modules/common/uploader/helpers';
 import { getImageEditorOptions } from '~/modules/common/uploader/helpers/image-editor-options';
@@ -15,16 +16,14 @@ import { useUploader } from '~/modules/common/uploader/use-uploader';
 const uppyRestrictions = config.uppy.defaultRestrictions;
 
 export function useUploadUppy() {
+  const { t } = useTranslation();
   const uploaderData = useUploader((state) => state.uploaderConfig);
 
   const [uppy, setUppy] = useState<CustomUppy | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const isOnline = onlineManager.isOnline();
-  const canUpload = isOnline && config.has.s3;
-
   useEffect(() => {
-    if (!uploaderData || !canUpload) return;
+    if (!uploaderData || !config.has.s3) return;
 
     let isMounted = true;
     let localUppy: CustomUppy | null = null;
@@ -47,7 +46,7 @@ export function useUploadUppy() {
 
         localUppy
           .on('files-added', () => {
-            if (isOnline && !config.has.s3) toaster('File upload warning: service unavailable', 'warning');
+            if (onlineManager.isOnline() && !config.has.s3) toaster(t('common:file_upload_warning'), 'warning');
           })
           .on('file-editor:complete', (file) => {
             console.info('File editor complete:', file);
