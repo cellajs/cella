@@ -1,7 +1,7 @@
 import { onlineManager } from '@tanstack/react-query';
 import { Uppy } from '@uppy/core';
 import Transloadit from '@uppy/transloadit';
-import type { CustomUppyFile, CustomUppyOpt } from '~/modules/common/uploader/types';
+import type { CustomUppy, CustomUppyFile, CustomUppyOpt } from '~/modules/common/uploader/types';
 import { type UploadTokenQuery, getUploadToken } from '~/modules/me/api';
 import { nanoid } from '~/utils/nanoid';
 
@@ -14,12 +14,12 @@ import { nanoid } from '~/utils/nanoid';
  * @param withTransloadit - Optional flag to control whether to integrate Transloadit plugin. Defaults to true.
  * @returns A new Uppy instance configured with the specified options, and Transloadit if enabled.
  */
-export const createBaseTransloaditUppy = async (uppyOptions: CustomUppyOpt, tokenQuery: UploadTokenQuery) => {
+export const createBaseTransloaditUppy = async (uppyOptions: CustomUppyOpt, tokenQuery: UploadTokenQuery): Promise<CustomUppy> => {
   // TODO(UPPYREFACTOR) hande offline upload
 
   const uppy = new Uppy({
     ...uppyOptions,
-    meta: { public: tokenQuery.public },
+    meta: { public: tokenQuery.public, offlineUploaded: !onlineManager.isOnline() },
     onBeforeFileAdded,
   });
 
@@ -41,7 +41,6 @@ export const createBaseTransloaditUppy = async (uppyOptions: CustomUppyOpt, toke
 const onBeforeFileAdded = (file: CustomUppyFile) => {
   // Simplify file ID and add content type to meta
   file.id = nanoid();
-  file.meta = { ...file.meta, contentType: file.type, offlineUploaded: !onlineManager.isOnline() };
   return file;
 };
 

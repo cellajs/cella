@@ -1,15 +1,15 @@
 import { onlineManager } from '@tanstack/react-query';
 import Audio from '@uppy/audio';
-import type { Uppy } from '@uppy/core';
+import type { Body, Meta } from '@uppy/core';
 import ImageEditor, { type ImageEditorOptions } from '@uppy/image-editor';
 import ScreenCapture from '@uppy/screen-capture';
-import Webcam from '@uppy/webcam';
+import Webcam, { type WebcamOptions } from '@uppy/webcam';
 import { type UploadTemplateId, config } from 'config';
 import { useEffect, useState } from 'react';
 import { toaster } from '~/modules/common/toaster';
 import { createBaseTransloaditUppy } from '~/modules/common/uploader/helpers';
 import { getImageEditorOptions } from '~/modules/common/uploader/helpers/image-editor-options';
-import type { CustomUppyOpt, CustomWebcamOpt, UploadedUppyFile } from '~/modules/common/uploader/types';
+import type { CustomUppy, CustomUppyOpt, UploadedUppyFile } from '~/modules/common/uploader/types';
 import { useUploader } from '~/modules/common/uploader/use-uploader';
 
 const uppyRestrictions = config.uppy.defaultRestrictions;
@@ -17,7 +17,7 @@ const uppyRestrictions = config.uppy.defaultRestrictions;
 export function useUploadUppy() {
   const uploaderData = useUploader((state) => state.uploaderConfig);
 
-  const [uppy, setUppy] = useState<Uppy | null>(null);
+  const [uppy, setUppy] = useState<CustomUppy | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const isOnline = onlineManager.isOnline();
@@ -27,7 +27,7 @@ export function useUploadUppy() {
     if (!uploaderData || !canUpload) return;
 
     let isMounted = true;
-    let localUppy: Uppy | null = null;
+    let localUppy: CustomUppy | null = null;
 
     const { isPublic, templateId = 'attachment', organizationId, restrictions, plugins = [], statusEventHandler = {} } = uploaderData;
 
@@ -108,7 +108,7 @@ export function useUploadUppy() {
         //     });
         // Plugin Options
         const imageEditorOptions: ImageEditorOptions = getImageEditorOptions(templateId);
-        const webcamOptions: CustomWebcamOpt = {
+        const webcamOptions: WebcamOptions<Meta, Body> = {
           videoConstraints: { width: 1280, height: 720 },
           preferredVideoMimeType: 'video/webm;codecs=vp9',
         };
