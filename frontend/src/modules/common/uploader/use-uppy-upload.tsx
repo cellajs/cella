@@ -66,45 +66,6 @@ export function useUploadUppy() {
             console.info('Upload complete:', assembly);
             statusEventHandler.onComplete?.(assembly.results as UploadedUppyFile<UploadTemplateId>);
           });
-        // TODO(UPPYREFACTOR)
-        // .on('is-online', async () => {
-        //       // When back online, retry uploads
-        //       if (!config.has.imado) return;
-
-        //       // Get files that was uploaded during offline
-        //       const offlineUploadedFiles = imadoUppy.getFiles().filter((el) => el.meta.offlineUploaded);
-        //       if (!offlineUploadedFiles.length) return;
-
-        //       // Get a new upload token
-        //       const imadoToken = await getUploadToken(type, opts.templateId, { public: isPublic, organizationId: opts.organizationId });
-        //       if (!imadoToken) return;
-
-        //       imadoUppy.destroy(); // Destroy the current Uppy instance to restart
-
-        //       // Initialize a new Uppy instance to retry the upload
-        //       const retryImadoUppy = createBaseTransloaditUppy(uppyOptions, imadoToken, isPublic);
-
-        //       // Add files to the new Uppy instance
-        //       const validFiles = offlineUploadedFiles.map((file) => ({ ...file, name: file.name || `${file.type}-${file.id}` }));
-        //       retryImadoUppy.addFiles(validFiles);
-
-        //       // Upload the files
-        //       retryImadoUppy.upload().then(async (result) => {
-        //         if (!result || !('transloadit' in result)) return;
-
-        //         const transloadits = result.transloadit as AssemblyResponse[];
-        //         const assembly = transloadits[0];
-        //         if (assembly.error) return;
-
-        //         // Clean up offline files from IndexedDB
-        //         const ids = offlineUploadedFiles.map((el) => el.id);
-        //         await LocalFileStorage.removeFiles(ids);
-        //         console.info('🗑️ Successfully uploaded files removed from IndexedDB.');
-
-        //         // Notify the event handler for retry completion
-        //         opts.statusEventHandler?.onRetrySuccess?.(assembly.results as UploadedUppyFile<UploadTemplateId>, ids);
-        //       });
-        //     });
         // Plugin Options
         const imageEditorOptions = getImageEditorOptions(templateId);
         const webcamOptions: WebcamOptions<Meta, Body> = {

@@ -1,6 +1,6 @@
 import { t } from 'i18next';
 import { parseUploadedAttachments } from '~/modules/attachments/helpers';
-import { useAttachmentCreateMutation, useAttachmentDeleteMutation } from '~/modules/attachments/query/mutations';
+import { useAttachmentCreateMutation } from '~/modules/attachments/query/mutations';
 import type { UploadedUppyFile } from '~/modules/common/uploader/types';
 import { useUploader } from '~/modules/common/uploader/use-uploader';
 
@@ -9,18 +9,12 @@ const maxTotalFileSize = 10 * 1024 * 1024 * maxNumberOfFiles; // for maxNumberOf
 
 export const useAttachmentsUploadDialog = () => {
   const { mutate: createAttachments } = useAttachmentCreateMutation();
-  const { mutate: deleteAttachments } = useAttachmentDeleteMutation();
 
   const open = (organizationId: string) => {
     const onComplete = (result: UploadedUppyFile<'attachment'>) => {
       const attachments = parseUploadedAttachments(result, organizationId);
       createAttachments({ attachments, orgIdOrSlug: organizationId });
       useUploader.getState().remove();
-    };
-
-    const onRetrySuccess = (result: UploadedUppyFile<'attachment'>, ids: string[]) => {
-      onComplete(result);
-      deleteAttachments({ orgIdOrSlug: organizationId, ids });
     };
 
     useUploader.getState().create({
@@ -35,10 +29,7 @@ export const useAttachmentsUploadDialog = () => {
         maxTotalFileSize,
       },
       plugins: ['webcam', 'image-editor', 'screen-capture', 'audio'],
-      statusEventHandler: {
-        onComplete,
-        onRetrySuccess,
-      },
+      statusEventHandler: { onComplete },
       title: t('common:upload_item', {
         item: t('common:attachments').toLowerCase(),
       }),

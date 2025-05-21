@@ -10,7 +10,6 @@ import {
   deleteAttachments,
   updateAttachment,
 } from '~/modules/attachments/api';
-import { LocalFileStorage } from '~/modules/attachments/local-file-storage';
 import { attachmentsKeys } from '~/modules/attachments/query/options';
 import type { AttachmentContextProp, AttachmentInfiniteQueryData, AttachmentQueryData } from '~/modules/attachments/query/types';
 import type { Attachment } from '~/modules/attachments/types';
@@ -206,8 +205,6 @@ export const useAttachmentDeleteMutation = () =>
     mutationFn: deleteAttachments,
     onMutate: async (variables) => {
       const { ids, orgIdOrSlug } = variables;
-
-      LocalFileStorage.removeFiles(ids); // delete attachments from indexedDB also
 
       const context: AttachmentContextProp[] = []; // previous query data for rollback if an error occurs
 

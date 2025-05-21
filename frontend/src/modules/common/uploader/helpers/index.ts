@@ -18,8 +18,6 @@ import { nanoid } from '~/utils/nanoid';
  * @returns A new Uppy instance configured with the specified options, and Transloadit if enabled.
  */
 export const createBaseTransloaditUppy = async (uppyOptions: CustomUppyOpt, tokenQuery: UploadTokenQuery): Promise<CustomUppy> => {
-  // TODO(UPPYREFACTOR) hande offline upload
-
   const uppy = new Uppy({
     ...uppyOptions,
     meta: { public: tokenQuery.public, offlineUploaded: !onlineManager.isOnline() },
@@ -37,7 +35,7 @@ export const createBaseTransloaditUppy = async (uppyOptions: CustomUppyOpt, toke
 
       if (canUpload) return true;
       // If not online, prepare the files for offline storage and emit transloadit:complete event
-      prepareFilesForOffline(files).then((assembly) => uppy.emit('transloadit:complete', assembly));
+      prepareFilesForOffline(files, tokenQuery).then((assembly) => uppy.emit('transloadit:complete', assembly));
       return config.has.s3; // Prevent upload if s3 is unavailable
     },
   });

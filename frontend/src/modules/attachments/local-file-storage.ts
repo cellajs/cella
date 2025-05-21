@@ -1,5 +1,7 @@
-import { clear, del, delMany, get, keys, set, setMany } from 'idb-keyval';
+import { del, get, keys, set } from 'idb-keyval';
 import type { CustomUppyFile } from '~/modules/common/uploader/types';
+import type { UploadTokenQuery } from '~/modules/me/api';
+import { nanoid } from '~/utils/nanoid';
 
 /**
  * Store files in IndexedDB when user is offline or when s3 is not configured
@@ -7,69 +9,43 @@ import type { CustomUppyFile } from '~/modules/common/uploader/types';
  * @link https://github.com/jakearchibald/idb-keyval
  */
 export const LocalFileStorage = {
-  async addFiles(fileMap: Record<string, CustomUppyFile>): Promise<void> {
-    // console.debug('Saving multiple files');
+  async addData(files: Record<string, CustomUppyFile>, tokenQuery: UploadTokenQuery): Promise<void> {
     try {
-      const validFileMap = Object.entries(fileMap);
-      await setMany(validFileMap);
+      await set(tokenQuery.organizationId ?? nanoid(), { files, tokenQuery });
     } catch (error) {
       console.error('Failed to save multiple files:', error);
     }
   },
 
-  async addFile(key: string, file: CustomUppyFile): Promise<void> {
-    // console.debug(`Saving file with key: ${key}`);
+  async getData(organizationId: string) {
     try {
-      await set(key, file);
+      return await get<{ files: Record<string, CustomUppyFile>; tokenQuery: UploadTokenQuery }>(organizationId);
     } catch (error) {
-      console.error(`Failed to save file (${key}):`, error);
+      console.error('Failed to save multiple files:', error);
     }
   },
 
-  async getFile(key: string): Promise<CustomUppyFile | undefined> {
-    // console.debug(`Retrieving file with key: ${key}`);
+  async getFile(fileId: string): Promise<CustomUppyFile | undefined> {
     try {
-      return await get<CustomUppyFile>(key);
+      const storageKeys = await keys();
+      if (!storageKeys.length) return undefined;
+      for (const groupKey of storageKeys) {
+        const group = await get<{ files: Record<string, CustomUppyFile> }>(groupKey);
+        if (!group) return undefined;
+        return group.files[fileId];
+      }
+      return undefined;
     } catch (error) {
-      console.error(`Failed to retrieve file (${key}):`, error);
+      console.error(`Failed to retrieve file (${fileId}):`, error);
       return undefined;
     }
   },
 
-  async removeFile(key: string): Promise<void> {
-    // console.debug(`Deleting file with key: ${key}`);
+  async removeData(organizationId: string): Promise<void> {
     try {
-      await del(key);
+      await del(organizationId);
     } catch (error) {
-      console.error(`Failed to delete file (${key}):`, error);
-    }
-  },
-
-  async removeFiles(keys: string[]): Promise<void> {
-    console.debug('Deleting files');
-    try {
-      await delMany(keys);
-    } catch (error) {
-      console.error('Failed to delete files:', error);
-    }
-  },
-
-  async clearAll(): Promise<void> {
-    console.debug('Clearing all files');
-    try {
-      await clear();
-    } catch (error) {
-      console.error('Failed to clear all files:', error);
-    }
-  },
-
-  async listKeys(): Promise<string[]> {
-    console.debug('Listing all file keys');
-    try {
-      return await keys();
-    } catch (error) {
-      console.error('Failed to list keys:', error);
-      return [];
+      console.error(`Failed to delete file (${organizationId}):`, error);
     }
   },
 };
