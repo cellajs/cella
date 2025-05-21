@@ -24,6 +24,7 @@ const openDropdown = (row: User, triggerRef: RefObject<HTMLButtonElement | null>
     const { update, remove } = useDropdowner.getState();
     const isMobile = window.innerWidth < 640;
 
+    // TODO design a fixed callback pattern using spread across cella ?
     // Only on cancel we need to remove manually
     const callback = ({ status }: CallbackArgs<User[]>) => {
       // Use update if there are more options in the dropdown

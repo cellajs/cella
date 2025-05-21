@@ -7,7 +7,7 @@ import { TableBarContainer } from '~/modules/common/data-table/table-bar-contain
 import TableCount from '~/modules/common/data-table/table-count';
 import { FilterBarActions, FilterBarContent, TableFilterBar } from '~/modules/common/data-table/table-filter-bar';
 import TableSearch from '~/modules/common/data-table/table-search';
-import type { BaseTableBarProps, BaseTableMethods } from '~/modules/common/data-table/types';
+import type { BaseTableBarProps, BaseTableMethods, CallbackArgs } from '~/modules/common/data-table/types';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { FocusView } from '~/modules/common/focus-view';
 import SelectRole from '~/modules/common/form-fields/select-role';
@@ -61,8 +61,8 @@ export const UsersTableBar = ({ total, selected, searchVars, setSearch, columns,
   };
 
   const openDeleteDialog = () => {
-    const callback = () => {
-      toaster(t('common:success.delete_resources', { resources: t('common:users') }), 'success');
+    const callback = (args: CallbackArgs<User[]>) => {
+      if (args.status === 'success') toaster(t('common:success.delete_resources', { resources: t('common:users') }), 'success');
       clearSelection();
     };
 
