@@ -142,7 +142,7 @@ const membershipsRoutes = app
     }
 
     // Stop if no recipients
-    if (emailsWithIdToInvite.length === 0) return ctx.json({ success: true }, 200); // Stop if no recipients to send invites
+    if (emailsWithIdToInvite.length === 0) return errorResponse(ctx, 400, 'no_recipients', 'warn'); // Stop if no recipients to send invites
 
     // Generate invitation tokens
     const tokens = emailsWithIdToInvite.map(({ email, userId }) => ({
