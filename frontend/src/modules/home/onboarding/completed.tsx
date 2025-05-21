@@ -17,7 +17,7 @@ export const OnboardingCompleted = () => {
     if (effectRan.current) return;
     effectRan.current = true;
 
-    const sortedOrganizations = [...menu.organizations].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    const sortedOrganizations = [...menu.organization].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
     const lastCreatedOrganization = sortedOrganizations[0];
 
     onboardingFinishCallback();

@@ -8,7 +8,6 @@ import { emailsTable } from '#/db/schema/emails';
 import { membershipsTable } from '#/db/schema/memberships';
 import { tokensTable } from '#/db/schema/tokens';
 import { usersTable } from '#/db/schema/users';
-import { entityIdFields } from '#/entity-config';
 import { type Env, getContextMemberships, getContextOrganization, getContextUser } from '#/lib/context';
 import { resolveEntity } from '#/lib/entity';
 import { type ErrorType, createError, errorResponse } from '#/lib/errors';
@@ -47,7 +46,7 @@ const membershipsRoutes = app
 
     // Extract entity details
     const { entity: entityType, id: entityId } = entity;
-    const targetEntityIdField = entityIdFields[entityType];
+    const targetEntityIdField = config.entityIdFields[entityType];
 
     const user = getContextUser();
     const organization = getContextOrganization();
@@ -57,7 +56,7 @@ const membershipsRoutes = app
     const currentOrgMemberships = await db
       .select()
       .from(membershipsTable)
-      .where(and(eq(membershipsTable.type, 'organization'), eq(membershipsTable.organizationId, organization.id)));
+      .where(and(eq(membershipsTable.contextType, 'organization'), eq(membershipsTable.organizationId, organization.id)));
 
     // Check create restrictions
     if (membersRestrictions !== 0 && currentOrgMemberships.length + emails.length > membersRestrictions) {
@@ -210,14 +209,14 @@ const membershipsRoutes = app
     const { entity, error } = await getValidEntity(ctx, entityType, 'delete', idOrSlug);
     if (error) return ctx.json({ success: false, errors: [error] }, 200);
 
-    const entityIdField = entityIdFields[entityType];
+    const entityIdField = config.entityIdFields[entityType];
 
     // Convert ids to an array
     const membershipIds = Array.isArray(ids) ? ids : [ids];
 
     const errors: ErrorType[] = [];
 
-    const filters = [eq(membershipsTable.type, entityType), eq(membershipsTable[entityIdField], entity.id)];
+    const filters = [eq(membershipsTable.contextType, entityType), eq(membershipsTable[entityIdField], entity.id)];
 
     // Get target memberships
     const targets = await db
@@ -276,8 +275,8 @@ const membershipsRoutes = app
 
     if (!membershipToUpdate) return errorResponse(ctx, 404, 'not_found', 'warn', 'user', { membership: membershipId });
 
-    const updatedType = membershipToUpdate.type;
-    const updatedEntityIdField = entityIdFields[updatedType];
+    const updatedType = membershipToUpdate.contextType;
+    const updatedEntityIdField = config.entityIdFields[updatedType];
 
     const membershipContextId = membershipToUpdate[updatedEntityIdField];
     if (!membershipContextId) return errorResponse(ctx, 404, 'not_found', 'warn', updatedType);
@@ -291,7 +290,7 @@ const membershipsRoutes = app
 
     // If archived changed, set lowest order in relevant memberships
     if (archived !== undefined && archived !== membershipToUpdate.archived) {
-      const relevantMemberships = memberships.filter((membership) => membership.type === updatedType && membership.archived === archived);
+      const relevantMemberships = memberships.filter((membership) => membership.contextType === updatedType && membership.archived === archived);
 
       const lastOrderMembership = relevantMemberships.sort((a, b) => b.order - a.order)[0];
 
@@ -334,14 +333,14 @@ const membershipsRoutes = app
     const entity = await resolveEntity(entityType, idOrSlug);
     if (!entity) return errorResponse(ctx, 404, 'not_found', 'warn', entityType);
 
-    const entityIdField = entityIdFields[entity.entity];
+    const entityIdField = config.entityIdFields[entity.entity];
 
     // Build search filters
     const $or = q ? [ilike(usersTable.name, prepareStringForILikeFilter(q)), ilike(usersTable.email, prepareStringForILikeFilter(q))] : [];
 
     const membersFilters = [
       eq(membershipsTable[entityIdField], entity.id),
-      eq(membershipsTable.type, entityType),
+      eq(membershipsTable.contextType, entityType),
       isNull(membershipsTable.tokenId),
       isNotNull(membershipsTable.activatedAt),
     ];
@@ -390,7 +389,7 @@ const membershipsRoutes = app
     const { entity, error } = await getValidEntity(ctx, entityType, 'read', idOrSlug);
     if (error) return ctx.json({ success: false, error }, 400);
 
-    const entityIdField = entityIdFields[entity.entity];
+    const entityIdField = config.entityIdFields[entity.entity];
 
     const invitedMemberSelect = {
       id: tokensTable.id,

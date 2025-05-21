@@ -2,7 +2,6 @@ import { config } from 'config';
 import { create } from 'zustand';
 import { createJSONStorage, devtools, persist } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
-import { entityRelations } from '#/entity-config';
 
 import type { UserMenu } from '~/modules/me/types';
 import type { NavItemId } from '~/modules/navigation/types';
@@ -41,8 +40,8 @@ interface NavigationStoreState {
 }
 
 // Defines the initial menu structure, excluding submenu items
-const initialMenuState: UserMenu = entityRelations.reduce((acc, { menuSectionName }) => {
-  acc[menuSectionName] = [];
+const initialMenuState: UserMenu = config.menuStructure.reduce((acc, { entity }) => {
+  acc[entity] = [];
   return acc;
 }, {} as UserMenu);
 

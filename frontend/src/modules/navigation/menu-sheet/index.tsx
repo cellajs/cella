@@ -6,7 +6,6 @@ import { config } from 'config';
 import { ArrowLeft, Info, Search } from 'lucide-react';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { entityRelations } from '#/entity-config';
 
 import { Link } from '@tanstack/react-router';
 import { menuSectionsSchemas } from '~/menu-config';
@@ -55,18 +54,18 @@ export const MenuSheet = memo(() => {
   }, [searchResults]);
 
   const renderedSections = useMemo(() => {
-    return entityRelations
-      .map(({ menuSectionName, entity: entityType }) => {
-        const menuData = menu[menuSectionName];
+    return config.menuStructure
+      .map(({ entity: entityType }) => {
+        const menuData = menu[entityType];
         const menuSection = menuSectionsSchemas[entityType];
         if (!menuSection) return null;
 
         return (
           <MenuSheetSection
             entityType={entityType}
-            key={menuSectionName}
+            key={entityType}
             sectionLabel={menuSection.label}
-            sectionType={menuSectionName}
+            sectionType={entityType}
             createAction={menuSection.createAction}
             data={menuData}
           />
@@ -182,7 +181,7 @@ export const MenuSheet = memo(() => {
                 </label>
               </div>
               {pwaEnabled && <OfflineAccessSwitch />}
-              {entityRelations.some(({ subEntity }) => subEntity) && (
+              {config.menuStructure.some(({ subentity }) => subentity) && (
                 <div className="flex items-center gap-4 ml-1">
                   <Switch size="xs" id="hideSubmenu" checked={hideSubmenu} onCheckedChange={toggleHideSubmenu} ria-label={t('common:nested_menu')} />
                   <label htmlFor="hideSubmenu" className="cursor-pointer select-none text-sm font-medium leading-none">

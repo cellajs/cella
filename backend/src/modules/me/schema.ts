@@ -1,9 +1,8 @@
 import { z } from 'zod';
 
-import { config } from 'config';
+import { type ContextEntity, config } from 'config';
 import { createSelectSchema } from 'drizzle-zod';
 import { sessionsTable } from '#/db/schema/sessions';
-import { type MenuSectionName, entityRelations } from '#/entity-config';
 import { limitEntitySchema } from '#/modules/entities/schema';
 import { membershipInfoSchema } from '#/modules/memberships/schema';
 import { enabledOauthProvidersEnum } from '#/modules/users/schema';
@@ -33,12 +32,12 @@ export const menuItemsSchema = z.array(
 
 // Create a menu schema based on menu sections in entity-config
 export const userMenuSchema = z.object(
-  entityRelations.reduce(
-    (acc, { menuSectionName }) => {
-      acc[menuSectionName] = menuItemsSchema;
+  config.menuStructure.reduce(
+    (acc, { entity }) => {
+      acc[entity] = menuItemsSchema;
       return acc;
     },
-    {} as Record<MenuSectionName, typeof menuItemsSchema>,
+    {} as Record<ContextEntity, typeof menuItemsSchema>,
   ),
 );
 

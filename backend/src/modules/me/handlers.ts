@@ -1,5 +1,5 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
-import type { EnabledOauthProvider } from 'config';
+import type { EnabledOauthProvider, MenuSection } from 'config';
 import { config } from 'config';
 import { and, asc, eq, isNotNull } from 'drizzle-orm';
 import { type SSEStreamingApi, streamSSE } from 'hono/streaming';
@@ -9,7 +9,7 @@ import { membershipsTable } from '#/db/schema/memberships';
 import { oauthAccountsTable } from '#/db/schema/oauth-accounts';
 import { passkeysTable } from '#/db/schema/passkeys';
 import { usersTable } from '#/db/schema/users';
-import { type EntityRelations, entityIdFields, entityRelations, entityTables } from '#/entity-config';
+import { entityTables } from '#/entity-config';
 import { env } from '#/env';
 import { type Env, getContextMemberships, getContextUser } from '#/lib/context';
 import { resolveEntity } from '#/lib/entity';
@@ -76,10 +76,10 @@ const meRoutes = app
     const memberships = getContextMemberships();
 
     // Fetch function for each menu section, including handling submenus
-    const fetchMenuItemsForSection = async (section: EntityRelations) => {
+    const fetchMenuItemsForSection = async (section: MenuSection) => {
       let submenu: MenuItem[] = [];
       const mainTable = entityTables[section.entity];
-      const mainEntityIdField = entityIdFields[section.entity];
+      const mainEntityIdField = config.entityIdFields[section.entity];
 
       const entity = await db
         .select({
@@ -94,14 +94,14 @@ const meRoutes = app
           membership: membershipSelect,
         })
         .from(mainTable)
-        .where(and(eq(membershipsTable.userId, user.id), eq(membershipsTable.type, section.entity)))
+        .where(and(eq(membershipsTable.userId, user.id), eq(membershipsTable.contextType, section.entity)))
         .orderBy(asc(membershipsTable.order))
         .innerJoin(membershipsTable, and(eq(membershipsTable[mainEntityIdField], mainTable.id), isNotNull(membershipsTable.activatedAt)));
 
       // If the section has a submenu, fetch the submenu items
-      if (section.subEntity) {
-        const subTable = entityTables[section.subEntity];
-        const subEntityIdField = entityIdFields[section.subEntity];
+      if (section.subentity) {
+        const subTable = entityTables[section.subentity];
+        const subentityIdField = config.entityIdFields[section.subentity];
 
         submenu = await db
           .select({
@@ -116,9 +116,9 @@ const meRoutes = app
             membership: membershipSelect,
           })
           .from(subTable)
-          .where(and(eq(membershipsTable.userId, user.id), eq(membershipsTable.type, section.subEntity)))
+          .where(and(eq(membershipsTable.userId, user.id), eq(membershipsTable.contextType, section.subentity)))
           .orderBy(asc(membershipsTable.order))
-          .innerJoin(membershipsTable, eq(membershipsTable[subEntityIdField], subTable.id));
+          .innerJoin(membershipsTable, eq(membershipsTable[subentityIdField], subTable.id));
       }
 
       return entity.map((entity) => ({
@@ -129,16 +129,16 @@ const meRoutes = app
 
     // Build the menu data asynchronously
     const data = async () => {
-      const result = await entityRelations.reduce(
+      const result = await config.menuStructure.reduce(
         async (accPromise, section) => {
           const acc = await accPromise;
           if (!memberships.length) {
-            acc[section.menuSectionName] = [];
+            acc[section.entity] = [];
             return acc;
           }
 
           // Fetch menu items for the current section
-          acc[section.menuSectionName] = await fetchMenuItemsForSection(section);
+          acc[section.entity] = await fetchMenuItemsForSection(section);
           return acc;
         },
         Promise.resolve({} as UserMenu),
@@ -241,12 +241,12 @@ const meRoutes = app
     const entity = await resolveEntity(entityType, idOrSlug);
     if (!entity) return errorResponse(ctx, 404, 'not_found', 'warn', entityType);
 
-    const entityIdField = entityIdFields[entityType];
+    const entityIdField = config.entityIdFields[entityType];
 
     // Delete the memberships
     await db
       .delete(membershipsTable)
-      .where(and(eq(membershipsTable.userId, user.id), eq(membershipsTable.type, entityType), eq(membershipsTable[entityIdField], entity.id)));
+      .where(and(eq(membershipsTable.userId, user.id), eq(membershipsTable.contextType, entityType), eq(membershipsTable[entityIdField], entity.id)));
 
     logEvent('User leave entity', { user: user.id });
 

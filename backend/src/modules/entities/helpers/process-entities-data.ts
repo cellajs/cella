@@ -5,10 +5,10 @@ export const processEntitiesData = <T extends { entity: PageEntity; total: numbe
   const counts: { [key in PageEntity]?: number } = {};
   let total = 0;
 
-  const entityTypes = type ? [type] : config.pageEntityTypes;
+  const entities = type ? [type] : config.pageEntities;
 
   // Initialize counts for each entity type
-  for (const entityType of entityTypes) {
+  for (const entityType of entities) {
     counts[entityType] = 0;
   }
 

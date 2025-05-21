@@ -35,8 +35,14 @@ const entitiesRoutes = app
         ? await db
             .select()
             .from(membershipsTable)
-            .where(and(eq(membershipsTable.type, 'organization'), eq(membershipsTable.userId, targetUserId), isNotNull(membershipsTable.activatedAt)))
-        : getContextMemberships().filter((m) => m.type === 'organization');
+            .where(
+              and(
+                eq(membershipsTable.contextType, 'organization'),
+                eq(membershipsTable.userId, targetUserId),
+                isNotNull(membershipsTable.activatedAt),
+              ),
+            )
+        : getContextMemberships().filter((m) => m.contextType === 'organization');
 
       organizationIds = orgMemberships.map((m) => m.organizationId);
     }

@@ -5,7 +5,7 @@ import { db } from '#/db/db';
 import { type RequestModel, requestsTable } from '#/db/schema/requests';
 import type { Env } from '#/lib/context';
 import { errorResponse } from '#/lib/errors';
-import { sendSlackMessage } from '#/lib/notification';
+import { sendSlackMessage } from '#/lib/notifications';
 import requestsRouteConfig from '#/modules/requests/routes';
 import { getUserBy } from '#/modules/users/helpers/get-user-by';
 import defaultHook from '#/utils/default-hook';

@@ -1,9 +1,9 @@
 import { config } from 'config';
 import { boolean, doublePrecision, timestamp, varchar } from 'drizzle-orm/pg-core';
 import { usersTable } from '#/db/schema/users';
-import { generateContextEntityFields } from '#/db/utils/context-columns-generation';
-import { generateTable } from '#/db/utils/table-generation';
-import { timestampsColumn } from '#/db/utils/timestamp-columns';
+import { generateContextEntityFields } from '#/db/utils/generate-context-entity-fields';
+import { generateTable } from '#/db/utils/generate-table';
+import { timestampColumns } from '#/db/utils/timestamp-columns';
 import { nanoid } from '#/utils/nanoid';
 import { tokensTable } from './tokens';
 
@@ -13,16 +13,16 @@ const { organizationId, ...otherEntityIdColumns } = generateContextEntityFields(
 
 const baseColumns = {
   id: varchar().primaryKey().$defaultFn(nanoid),
-  type: varchar({ enum: config.contextEntityTypes }).notNull(),
+  contextType: varchar({ enum: config.contextEntities }).notNull(),
   userId: varchar()
     .notNull()
     .references(() => usersTable.id, { onDelete: 'cascade' }),
   role: varchar({ enum: roleEnum }).notNull().default('member'),
   tokenId: varchar().references(() => tokensTable.id, { onDelete: 'cascade' }),
   activatedAt: timestamp({ mode: 'string' }),
-  createdAt: timestampsColumn.createdAt,
+  createdAt: timestampColumns.createdAt,
   createdBy: varchar().references(() => usersTable.id, { onDelete: 'set null' }),
-  modifiedAt: timestampsColumn.modifiedAt,
+  modifiedAt: timestampColumns.modifiedAt,
   modifiedBy: varchar().references(() => usersTable.id, { onDelete: 'set null' }),
   archived: boolean().default(false).notNull(),
   muted: boolean().default(false).notNull(),

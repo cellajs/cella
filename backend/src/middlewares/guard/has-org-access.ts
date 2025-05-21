@@ -30,7 +30,7 @@ export const hasOrgAccess = createMiddleware<Env>(async (ctx, next): Promise<Res
   if (!organization) return errorResponse(ctx, 404, 'not_found', 'warn', 'organization');
 
   // Check if user has access to organization (or is a system admin)
-  const orgMembership = memberships.find((m) => m.organizationId === organization.id && m.type === 'organization') || null;
+  const orgMembership = memberships.find((m) => m.organizationId === organization.id && m.contextType === 'organization') || null;
   if (!isSystemAdmin && !orgMembership) return errorResponse(ctx, 403, 'forbidden', 'warn', 'organization');
 
   const orgWithMembership = { ...organization, membership: orgMembership };

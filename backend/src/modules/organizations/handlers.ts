@@ -77,7 +77,7 @@ const organizationsRoutes = app
     const memberships = db
       .select()
       .from(membershipsTable)
-      .where(and(eq(membershipsTable.userId, user.id), eq(membershipsTable.type, 'organization')))
+      .where(and(eq(membershipsTable.userId, user.id), eq(membershipsTable.contextType, 'organization')))
       .as('memberships');
 
     const orderColumn = getOrderColumn(
@@ -139,7 +139,7 @@ const organizationsRoutes = app
     const memberIds = await db
       .select({ id: membershipsTable.userId })
       .from(membershipsTable)
-      .where(and(eq(membershipsTable.type, 'organization'), inArray(membershipsTable.organizationId, allowedIds)));
+      .where(and(eq(membershipsTable.contextType, 'organization'), inArray(membershipsTable.organizationId, allowedIds)));
 
     // Delete the organizations
     await db.delete(organizationsTable).where(inArray(organizationsTable.id, allowedIds));
@@ -205,7 +205,7 @@ const organizationsRoutes = app
     const organizationMemberships = await db
       .select(membershipSelect)
       .from(membershipsTable)
-      .where(and(eq(membershipsTable.type, 'organization'), eq(membershipsTable.organizationId, organization.id)));
+      .where(and(eq(membershipsTable.contextType, 'organization'), eq(membershipsTable.organizationId, organization.id)));
 
     // Send SSE events to organization members
     for (const member of organizationMemberships) sendSSEToUsers([member.userId], 'update_entity', { ...updatedOrganization, member });

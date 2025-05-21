@@ -1,6 +1,4 @@
-import { entityRelations } from '#/entity-config';
-
-import type { ContextEntity } from 'config';
+import { type ContextEntity, config } from 'config';
 import type { UserMenu, UserMenuItem } from '~/modules/me/types';
 import type { MinimumMembershipInfo } from '~/modules/memberships/types';
 import { useNavigationStore } from '~/store/navigation';
@@ -8,9 +6,9 @@ import { useNavigationStore } from '~/store/navigation';
 const useTransformOnMenuItems = (transform: (items: UserMenuItem[]) => UserMenuItem[]) => {
   const { menu } = useNavigationStore.getState();
 
-  const updatedMenu = entityRelations.reduce(
-    (acc, { menuSectionName }) => {
-      if (menu[menuSectionName]) acc[menuSectionName] = transform(menu[menuSectionName]);
+  const updatedMenu = config.menuStructure.reduce(
+    (acc, { entity }) => {
+      if (menu[entity]) acc[entity] = transform(menu[entity]);
       return acc;
     },
     {} as Record<keyof UserMenu, UserMenuItem[]>,
@@ -102,11 +100,11 @@ export const updateMenuItemMembership = (
   const menu = useNavigationStore.getState().menu;
 
   // Find section that corresponds to given entity type
-  const menuSection = entityRelations.find((el) => el.entity === entityType || el.subEntity === entityType);
+  const menuSection = config.menuStructure.find((el) => el.entity === entityType || el.subentity === entityType);
   if (!menuSection) return;
 
-  const { menuSectionName } = menuSection;
-  const menuEntities = menu[menuSectionName];
+  const { entity } = menuSection;
+  const menuEntities = menu[entity];
 
   // Search in menuEntities
   let currentEntity = menuEntities.find((e) => e.id === entityIdOrSlug || e.slug === entityIdOrSlug);

@@ -32,7 +32,7 @@ export const config = {
   // Which scripts to run when seeding the database
   seedScripts: ['pnpm run seed:user', 'pnpm run seed:organizations'],
 
-  // Which fields to omit from user object
+  // Sensitive fields to omit from user object
   sensitiveFields: ['hashedPassword', 'unsubscribeToken'] as const,
 
   // API docs settings
@@ -60,7 +60,7 @@ export const config = {
   googleMapsKey: 'AIzaSyDMjCpQusdoPWLeD7jxkqAxVgJ8s5xJ3Co',
 
   // File handling with imado
-  s3BucketPrefix: 'cella' as string | null, // Prefix to namespace files when sharing a bucket across apps or envs.
+  s3BucketPrefix: 'cella' as string | null, // Prefix to namespace files when sharing a bucket across apps or envs
   s3PublicBucket: 'imado-dev',
   s3PrivateBucket: 'imado-dev-priv',
   s3Region: 'nl-ams',
@@ -104,7 +104,7 @@ export const config = {
   ],
 
   /**
-   * Uploads body limit
+   * Upload body limit
    */
   jsonBodyLimit: 1 * 1024 * 1024, // 1mb
   fileUploadLimit: 20 * 1024 * 1024, // 20mb
@@ -141,16 +141,46 @@ export const config = {
   /**
    * All entity types used in the app
    */
-  entityTypes: ['user', 'organization', 'attachment'] as const,
+  entities: ['user', 'organization', 'attachment'] as const,
 
   /**
-   * Restrictions default for organization.
-   * Used to control limits on certain entities or behaviors under this organization.
-   * For example:
-   * - Limit number of projects, tasks, or members
-   * - Limit number of active online members at the same time
-   *
-   * The key is the entity name and the value is the numeric limit.
+   * Page entity types (pages with memberships + users)
+   */
+  pageEntities: ['user', 'organization'] as const,
+
+  /**
+   * Context entity types (memberships)
+   */
+  contextEntities: ['organization'] as const,
+
+  /**
+   * Product entity types (mostly content)
+   */
+  productEntities: ['attachment'] as const,
+
+  /**
+   * Define fields to identify an entity in a relationship
+   */
+  entityIdFields: {
+    user: 'userId',
+    organization: 'organizationId',
+    attachment: 'attachmentId',
+  } as const,
+
+  /**
+   * Define user menu structure
+   * ⚠️ IMPORTANT: If you define a `subentity`, then the corresponding database table for that
+   * subentity, must include a foreign key, field named `${entity}Id`.
+   */
+  menuStructure: [
+    {
+      entity: 'organization',
+      subentity: null,
+    } as const,
+  ],
+
+  /**
+   * Restrictions within organization to set limits on entities
    */
   defaultOrganizationRestrictions: {
     user: 1000,
@@ -158,25 +188,10 @@ export const config = {
   } as const,
 
   /**
-   * Page entity types (pages with memberships + users)
-   */
-  pageEntityTypes: ['user', 'organization'] as const,
-
-  /**
-   * Context entity types (memberships)
-   */
-  contextEntityTypes: ['organization'] as const,
-
-  /**
-   * Product entity types (mostly content)
-   */
-  productEntityTypes: ['attachment'] as const,
-
-  /**
    * Default request limits for lists
    *
-   * By default, BE common-schemas enforce a maximum limit of 1000 items via `limitRefine`.
-   * if some of requested limit need to exceed 1000, make sure to adjust `limitRefine` accordingly.
+   * By default, BE common-schemas enforce a maximum limit of 1000 items via `limitRefine`
+   * if some of requested limit need to exceed 1000, make sure to adjust `limitRefine` accordingly
    */
   requestLimits: {
     default: 40,
@@ -188,7 +203,7 @@ export const config = {
     memberInvitations: 20,
   },
   /**
-   * Roles on system and entity level.
+   * Roles on system and entity level
    */
   rolesByType: {
     systemRoles: ['user', 'admin'] as const,
@@ -197,7 +212,7 @@ export const config = {
   },
 
   /**
-   * Company details.
+   * Company details
    */
   company: {
     name: 'CellaJS',
@@ -221,17 +236,17 @@ export const config = {
   },
 
   /**
-   * Error handling.
+   * Error handling
    */
   severityLevels: ['debug', 'log', 'info', 'warn', 'error'] as const,
 
   /**
-   * UI settings.
+   * UI settings
    */
   navLogoAnimation: 'animate-spin-slow',
 
   /**
-   * Common countries.
+   * Common countries
    */
   common: {
     countries: ['fr', 'de', 'nl', 'ua', 'us', 'gb'],
@@ -250,7 +265,6 @@ export const config = {
     },
   },
 };
-
 export default config;
 
 export type DeepPartial<T> = T extends object

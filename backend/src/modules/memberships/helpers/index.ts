@@ -1,12 +1,11 @@
 import { db } from '#/db/db';
 import { type MembershipModel, membershipsTable } from '#/db/schema/memberships';
-import { entityIdFields, entityRelations } from '#/entity-config';
 import type { EntityModel } from '#/lib/entity';
 import { logEvent } from '#/middlewares/logger/log-event';
 import { membershipSelect } from '#/modules/memberships/helpers/select';
 import { getIsoDate } from '#/utils/iso-date';
 
-import type { ContextEntity } from 'config';
+import { type ContextEntity, config } from 'config';
 import { and, eq, max } from 'drizzle-orm';
 
 type BaseEntityModel = EntityModel<ContextEntity> & {
@@ -49,7 +48,7 @@ export const insertMembership = async <T extends BaseEntityModel>({
     .from(membershipsTable)
     .where(eq(membershipsTable.userId, userId));
 
-  const entityIdField = entityIdFields[entity.entity];
+  const entityIdField = config.entityIdFields[entity.entity];
   const associatedEntity = getAssociatedEntityDetails(entity);
 
   const baseMembership = {
@@ -70,12 +69,12 @@ export const insertMembership = async <T extends BaseEntityModel>({
       .where(
         and(
           eq(membershipsTable.userId, userId),
-          eq(membershipsTable.type, 'organization'),
+          eq(membershipsTable.contextType, 'organization'),
           eq(membershipsTable.organizationId, baseMembership.organizationId),
         ),
       );
 
-    if (!hasOrgMembership.length) await db.insert(membershipsTable).values({ ...baseMembership, type: 'organization' });
+    if (!hasOrgMembership.length) await db.insert(membershipsTable).values({ ...baseMembership, contextType: 'organization' });
   }
 
   // Insert associated entity membership first (if applicable)
@@ -84,7 +83,7 @@ export const insertMembership = async <T extends BaseEntityModel>({
       .insert(membershipsTable)
       .values({
         ...baseMembership,
-        type: associatedEntity.type,
+        contextType: associatedEntity.type,
         [associatedEntity.field]: associatedEntity.id,
       })
       .onConflictDoNothing(); // Do nothing if already exist
@@ -95,7 +94,7 @@ export const insertMembership = async <T extends BaseEntityModel>({
     .insert(membershipsTable)
     .values({
       ...baseMembership,
-      type: entity.entity,
+      contextType: entity.entity,
       ...(entity.entity !== 'organization' && { [entityIdField]: entity.id }),
       ...(associatedEntity && { [associatedEntity.field]: associatedEntity.id }),
     })
@@ -107,10 +106,10 @@ export const insertMembership = async <T extends BaseEntityModel>({
 };
 
 export const getAssociatedEntityDetails = <T extends ContextEntity>(entity: EntityModel<T>) => {
-  const relation = entityRelations.find((rel) => rel.subEntity === entity.entity);
+  const relation = config.menuStructure.find((rel) => rel.subentity === entity.entity);
   if (!relation) return null;
   const type = relation.entity;
-  const field = entityIdFields[type] ?? null;
+  const field = config.entityIdFields[type] ?? null;
   if (!field || !(field in entity)) return null;
 
   const id = entity[field as keyof typeof entity] as string;

@@ -48,7 +48,7 @@
 <br>
 
 ## Create your own app
-Want to try cella to build your new web app? We made it simple with a create CLI. Simply follow the steps to get started:
+Want to try cella to build your new web app? Use a simple create CLI to get started:
 
 ```bash
 pnpm create @cellajs/cella@latest

@@ -10,12 +10,12 @@ import { env } from '../../env';
  * ```
  * {{payload.prefix}} request from {{payload.email}}
  * ```
- * Subscriber you will create from sendSlackMessage, so just set desiered subscriber ID here.
+ * Subscriber you will create from sendSlackMessage, so just set desired subscriber ID here.
  */
 export const novuConfig = {
   secretKey: env.NOVU_API_KEY,
   serverURL: 'https://eu.api.novu.co',
   slackWebhookUrl: env.NOVU_SLACK_WEBHOOK,
-  workflowId: 'cella-sluck',
+  workflowId: 'cella-slack',
   subscriberId: 'slack-contact-form-subscriber',
 };

@@ -3,7 +3,7 @@ import { type SQL, type SQLWrapper, and, count, eq, isNull, sql } from 'drizzle-
 import { db } from '#/db/db';
 import { membershipsTable } from '#/db/schema/memberships';
 import { tokensTable } from '#/db/schema/tokens';
-import { entityIdFields, entityTables } from '#/entity-config';
+import { entityTables } from '#/entity-config';
 
 type EntityIdColumnNames = keyof (typeof membershipsTable)['_']['columns'];
 
@@ -16,7 +16,7 @@ type EntityIdColumnNames = keyof (typeof membershipsTable)['_']['columns'];
  * @returns Query object that can be executed
  */
 export const getMemberCountsQuery = (entity: ContextEntity) => {
-  const targetEntityIdField = entityIdFields[entity];
+  const targetEntityIdField = config.entityIdFields[entity];
   const entityIdColumn = membershipsTable[targetEntityIdField as EntityIdColumnNames];
   if (!entityIdColumn) throw new Error(`Entity ${entity} does not have an ID column defined`);
 
@@ -45,7 +45,7 @@ export const getMemberCountsQuery = (entity: ContextEntity) => {
     })
     .from(membershipsTable)
     .leftJoin(inviteCountSubquery, eq(entityIdColumn, inviteCountSubquery.id))
-    .where(eq(membershipsTable.type, entity))
+    .where(eq(membershipsTable.contextType, entity))
     .groupBy(entityIdColumn, inviteCountSubquery.invites)
     .as('counts');
 };
@@ -87,19 +87,19 @@ export const getRelatedEntityCounts = async (
   entityId: string,
   countConditions: Partial<Record<ProductEntity | ContextEntity, SQL>> = {},
 ) => {
-  const entityIdField = entityIdFields[entity];
+  const entityIdField = config.entityIdFields[entity];
 
-  const allEntityTypes = [...config.productEntityTypes, ...config.contextEntityTypes];
+  const allEntities = [...config.productEntities, ...config.contextEntities];
 
   // Only keep entity types that actually contain the ID field we care about
-  const validEntityTypes = allEntityTypes.filter((t) => hasField(t, entityIdField));
-  if (!validEntityTypes.length) {
-    return {} as Record<ValidEntityTypes<typeof entityIdField>, number>;
+  const validEntities = allEntities.filter((t) => hasField(t, entityIdField));
+  if (!validEntities.length) {
+    return {} as Record<ValidEntities<typeof entityIdField>, number>;
   }
 
   // Run one COUNT query per entity type in parallel
   const counts = await Promise.all(
-    validEntityTypes.map(async (entityType) => {
+    validEntities.map(async (entityType) => {
       const table = entityTables[entityType];
       const idColumn = table[entityIdField as keyof typeof table] as SQLWrapper;
       const extraCondition = countConditions[entityType];
@@ -114,11 +114,11 @@ export const getRelatedEntityCounts = async (
   );
 
   // Convert array of tuples → Record<'entityType', number>
-  return Object.fromEntries(counts) as Record<ValidEntityTypes<typeof entityIdField>, number>;
+  return Object.fromEntries(counts) as Record<ValidEntities<typeof entityIdField>, number>;
 };
 
 // Define a mapped type to check if field name passed as 'T' exists in each table and filter out 'never' types
-export type ValidEntityTypes<T extends string> = Extract<
+export type ValidEntities<T extends string> = Extract<
   {
     [K in ProductEntity | ContextEntity]: T extends keyof (typeof entityTables)[K] ? K : never;
   }[ProductEntity | ContextEntity],
@@ -126,7 +126,7 @@ export type ValidEntityTypes<T extends string> = Extract<
 >;
 
 // Generic type guard function for filtering based on a dynamic field name 'T'
-const hasField = <T extends string>(entityType: ProductEntity | ContextEntity, field: T): entityType is ValidEntityTypes<T> => {
+const hasField = <T extends string>(entityType: ProductEntity | ContextEntity, field: T): entityType is ValidEntities<T> => {
   const table = entityTables[entityType];
   return field in table;
 };

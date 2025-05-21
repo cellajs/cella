@@ -81,7 +81,7 @@ Cella in general is targeted towards being a template for SaaS development. But 
 ```
 
 ## Data modeling
-Entities can be split in four types:
+Some of the data tables (check out [/backend/src/db/schema]() ) in cella are an `entity`. Entities can be split in four types:
 * All entities (`user`, `organization`, `attachments`)
 * `PageEntity`: Entity that can be searched for (`user`, `organization`)
 * `ContextEntity`: Has memberships (`organization`)

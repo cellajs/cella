@@ -6,7 +6,6 @@ import { emailsTable } from '#/db/schema/emails';
 import { oauthAccountsTable } from '#/db/schema/oauth-accounts';
 import { tokensTable } from '#/db/schema/tokens';
 import { type InsertUserModel, usersTable } from '#/db/schema/users';
-import { entityIdFields } from '#/entity-config';
 import { resolveEntity } from '#/lib/entity';
 import { errorResponse } from '#/lib/errors';
 import { logEvent } from '#/middlewares/logger/log-event';
@@ -115,7 +114,7 @@ export const handleMembershipTokenUpdate = async (userId: string, tokenId: strin
     // Validate if the token has an entityType and role (must be a membership invite)
     if (!entityType || !role) throw new Error('Token is not a valid membership invite.');
 
-    const entityIdField = entityIdFields[entityType];
+    const entityIdField = config.entityIdFields[entityType];
     // Validate if the token contains the required entity ID field
     if (!token[entityIdField]) throw new Error(`Token is missing entity ID field for ${entityType}.`);
 

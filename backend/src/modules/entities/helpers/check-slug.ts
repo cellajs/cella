@@ -8,7 +8,7 @@ import { resolveEntity } from '#/lib/entity';
  * @returns Boolean(true if available, false if taken).
  */
 export const checkSlugAvailable = async (slug: string) => {
-  const entities = config.pageEntityTypes;
+  const entities = config.pageEntities;
 
   const promises = entities.map((entity) => resolveEntity(entity, slug));
   const results = await Promise.all(promises);

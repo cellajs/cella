@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { config } from 'config';
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 import { organizationsTable } from '#/db/schema/organizations';
-import type { ValidEntityTypes } from '#/utils/counts';
+import type { ValidEntities } from '#/utils/counts';
 import {
   languageSchema,
   paginationQuerySchema,
@@ -29,12 +29,12 @@ export const membershipsCountSchema = z.object({
  */
 //TODO: find way to fix ?
 export const relatedEntitiesCountSchema = z.object(
-  [...config.productEntityTypes, ...config.contextEntityTypes].reduce(
+  [...config.productEntities, ...config.contextEntities].reduce(
     (acc, key) => {
-      acc[key as ValidEntityTypes<'organizationId'>] = z.number();
+      acc[key as ValidEntities<'organizationId'>] = z.number();
       return acc;
     },
-    {} as Record<ValidEntityTypes<'organizationId'>, z.ZodNumber>,
+    {} as Record<ValidEntities<'organizationId'>, z.ZodNumber>,
   ),
 );
 

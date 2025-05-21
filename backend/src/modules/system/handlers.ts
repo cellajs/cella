@@ -14,8 +14,8 @@ import { env } from '#/env';
 import { type Env, getContextUser } from '#/lib/context';
 import { errorResponse } from '#/lib/errors';
 import { i18n } from '#/lib/i18n';
-import { getSignedUrl } from '#/lib/signed-url';
 import { mailer } from '#/lib/mailer';
+import { getSignedUrl } from '#/lib/signed-url';
 import { logEvent } from '#/middlewares/logger/log-event';
 import systemRouteConfig from '#/modules/system/routes';
 import { getUsersByConditions } from '#/modules/users/helpers/get-user-by';
@@ -177,7 +177,7 @@ const systemRoutes = app
       .innerJoin(organizationsTable, eq(organizationsTable.id, membershipsTable.organizationId))
       .where(
         and(
-          eq(membershipsTable.type, 'organization'),
+          eq(membershipsTable.contextType, 'organization'),
           inArray(membershipsTable.organizationId, organizationIds),
           inArray(membershipsTable.role, roles),
           eq(usersTable.newsletter, true),

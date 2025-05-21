@@ -1,6 +1,6 @@
 import { pgTable, primaryKey, varchar } from 'drizzle-orm/pg-core';
 import { usersTable } from '#/db/schema/users';
-import { timestampsColumn } from '#/db/utils/timestamp-columns';
+import { timestampColumns } from '#/db/utils/timestamp-columns';
 
 export const supportedOauthProviders = ['github', 'google', 'microsoft'] as const;
 
@@ -12,7 +12,7 @@ export const oauthAccountsTable = pgTable(
     userId: varchar()
       .notNull()
       .references(() => usersTable.id, { onDelete: 'cascade' }),
-    createdAt: timestampsColumn.createdAt,
+    createdAt: timestampColumns.createdAt,
   },
   (table) => [
     primaryKey({

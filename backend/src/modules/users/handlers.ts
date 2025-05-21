@@ -147,7 +147,7 @@ const usersRoutes = app
     const targetUserMembership = await db
       .select()
       .from(membershipsTable)
-      .where(and(eq(membershipsTable.userId, targetUser.id), eq(membershipsTable.type, 'organization')));
+      .where(and(eq(membershipsTable.userId, targetUser.id), eq(membershipsTable.contextType, 'organization')));
 
     const jointMembership = memberships.find((membership) =>
       targetUserMembership.some((targetMembership) => targetMembership.organizationId === membership.organizationId),

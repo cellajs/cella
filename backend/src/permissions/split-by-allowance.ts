@@ -2,7 +2,7 @@ import type { Entity } from 'config';
 import { getContextUser } from '#/lib/context';
 import { resolveEntities } from '#/lib/entity';
 import type { MembershipInfoType } from '#/modules/memberships/schema';
-import permissionManager, { type PermittedAction } from '#/permissions/permission-manager';
+import permissionManager, { type PermittedAction } from '#/permissions/permissions-config';
 
 /**
  * Splits entity IDs into allowed and disallowed based on the user's permissions.

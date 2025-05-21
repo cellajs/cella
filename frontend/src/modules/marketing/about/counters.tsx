@@ -10,7 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '~/modules/ui/card';
 const Counters = () => {
   const { t } = useTranslation();
   const { ref, inView } = useInView({ triggerOnce: true, threshold: 0 });
-  const initialObject = config.entityTypes.reduce(
+  const initialObject = config.entities.reduce(
     (acc, key) => {
       acc[key] = 0;
       return acc;

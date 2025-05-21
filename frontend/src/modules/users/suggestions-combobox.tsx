@@ -14,7 +14,6 @@ import { Badge } from '~/modules/ui/badge';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '~/modules/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '~/modules/ui/popover';
 import { ScrollArea } from '~/modules/ui/scroll-area';
-import { entityIdFields } from '#/entity-config';
 
 interface Props {
   value: string[];
@@ -25,7 +24,7 @@ interface Props {
 export const UserSuggestionCombobox = ({ value, onChange, entity }: Props) => {
   const { t } = useTranslation();
   const { ref, bounds } = useMeasure<HTMLDivElement>();
-  const entityIdField = entityIdFields[entity.entity];
+  const entityIdField = config.entityIdFields[entity.entity];
 
   const [open, setOpen] = useState(false);
   const [selected, setSelected] = useState<string[]>(value);

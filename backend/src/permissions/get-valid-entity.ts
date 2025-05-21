@@ -1,14 +1,13 @@
-import type { ContextEntity } from 'config';
+import { type ContextEntity, config } from 'config';
 import type { Context } from 'hono';
-import { entityIdFields } from '#/entity-config';
 import { type Env, getContextMemberships, getContextUser } from '#/lib/context';
 import { type EntityModel, resolveEntity } from '#/lib/entity';
 import { type ErrorType, createError } from '#/lib/errors';
 import type { MembershipInfoType } from '#/modules/memberships/schema';
-import permissionManager, { type PermittedAction } from './permission-manager';
+import permissionManager, { type PermittedAction } from './permissions-config';
 
 /**
- * Checks if user has permission to perform an action on an entity.
+ * Checks if user has permission to perform an action on a context entity.
  *
  * Resolves entity based on the given type and ID/slug, checks user permissions (including system admins),
  * and retrieves the user's membership for the entity.
@@ -45,8 +44,8 @@ export const getValidEntity = async <T extends ContextEntity>(
   if (!isAllowed) return { error: createError(ctx, 403, 'forbidden', 'warn', entityType), ...nullData };
 
   // Find membership for entity
-  const entityIdField = entityIdFields[entity.entity];
-  const membership = memberships.find((m) => m[entityIdField] === entity.id && m.type === entityType) || null;
+  const entityIdField = config.entityIdFields[entity.entity];
+  const membership = memberships.find((m) => m[entityIdField] === entity.id && m.contextType === entityType) || null;
 
   if (!membership && !isSystemAdmin) return { error: createError(ctx, 400, 'invalid_request', 'error', entityType), ...nullData };
 

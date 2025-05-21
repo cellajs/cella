@@ -1,11 +1,16 @@
 import { pgTable, varchar } from 'drizzle-orm/pg-core';
 import { usersTable } from '#/db/schema/users';
-import { timestampsColumn } from '#/db/utils/timestamp-columns';
+import { timestampColumns } from '#/db/utils/timestamp-columns';
 import { nanoid } from '#/utils/nanoid';
 
 export const sessionsTable = pgTable('sessions', {
   id: varchar().primaryKey().$defaultFn(nanoid),
   token: varchar().notNull(),
+  type: varchar({
+    enum: ['regular', 'impersonation'],
+  })
+    .notNull()
+    .default('regular'),
   userId: varchar()
     .notNull()
     .references(() => usersTable.id, { onDelete: 'cascade' }),
@@ -18,13 +23,8 @@ export const sessionsTable = pgTable('sessions', {
   authStrategy: varchar({
     enum: ['github', 'google', 'microsoft', 'password', 'passkey'],
   }),
-  type: varchar({
-    enum: ['regular', 'impersonation'],
-  })
-    .notNull()
-    .default('regular'),
-  createdAt: timestampsColumn.createdAt,
-  expiresAt: timestampsColumn.expiresAt,
+  createdAt: timestampColumns.createdAt,
+  expiresAt: timestampColumns.expiresAt,
 });
 
 export type SessionModel = typeof sessionsTable.$inferSelect;

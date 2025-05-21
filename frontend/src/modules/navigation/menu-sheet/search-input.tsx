@@ -1,3 +1,4 @@
+import { config } from 'config';
 import { Search, XCircle } from 'lucide-react';
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -7,7 +8,6 @@ import useMounted from '~/hooks/use-mounted';
 import type { UserMenu, UserMenuItem } from '~/modules/me/types';
 import { Input } from '~/modules/ui/input';
 import { cn } from '~/utils/cn';
-import { entityRelations } from '#/entity-config';
 
 interface MenuSheetSearchProps {
   menu: UserMenu;
@@ -38,7 +38,7 @@ export const MenuSheetSearchInput = ({ menu, searchTerm, setSearchTerm, searchRe
           return isMatch ? [item, ...filteredSubmenu] : filteredSubmenu;
         });
 
-      return entityRelations.flatMap(({ menuSectionName }) => filterItems(menu[menuSectionName]));
+      return config.menuStructure.flatMap(({ entity }) => filterItems(menu[entity]));
     };
     searchResultsChange(filterResults());
   }, [searchTerm, menu]);
