@@ -24,13 +24,14 @@ import { blocknoteFieldIsDirty } from '~/utils/blocknote-filed-is-dirty';
 const BlockNoteContent = lazy(() => import('~/modules/common/form-fields/blocknote-content'));
 interface CreateNewsletterFormProps {
   organizationIds: string[];
+  callback?: () => void;
 }
 
 const formSchema = sendNewsletterBodySchema;
 
 type FormValues = z.infer<typeof formSchema>;
 
-const CreateNewsletterForm = ({ organizationIds }: CreateNewsletterFormProps) => {
+const CreateNewsletterForm = ({ organizationIds, callback }: CreateNewsletterFormProps) => {
   const { t } = useTranslation();
 
   const [testOnly, setTestOnly] = useState<CheckedState>(false);
@@ -55,6 +56,7 @@ const CreateNewsletterForm = ({ organizationIds }: CreateNewsletterFormProps) =>
       form.reset();
       toaster(t('common:success.create_newsletter'), 'success');
       useSheeter.getState().remove(formContainerId);
+      callback?.();
     },
   });
 

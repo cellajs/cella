@@ -18,6 +18,10 @@ Last update: January 12,2024
 - Perf testing with K6 / Grafana
 - SSR Blog section using honox or tanstack start
 
+- Automated security audit / testing solution
+- Perf testing with K6 / Grafana
+- SSR Blog section using honox or tanstack start
+
 # Community involvement
 
 Some things we would love to include in cella, but they are beyond the scope/resources we have ourselves. If you are interested in working on any of these, please let us know ([info@cellajs.com](mailto:info@cellajs.com)). We are open to funding it as an OS project, if you are based in Europe and will be using cella to build a new service.
@@ -32,10 +36,19 @@ Being able to embed dashboards for traffic and event analytics on multiple level
 - per customer
 - for end-users (ie. a teacher wants to see the activity of its students)
 
+- app-wide
+- per customer
+- for end-users (ie. a teacher wants to see the activity of its students)
+
 ## 📱 &nbsp; Native mobile/desktop app
 
 - [Expo](https://expo.dev/) or [CapacitorJS](https://github.com/ionic-team/capacitor) (OS) for native apps
 - [Electron-Vite](https://github.com/electron-vite/electron-vite-react) or [Tauri](https://github.com/tauri-apps/tauri) or [ToDesktop](https://www.todesktop.com/) for desktop app
+
+- [Expo](https://expo.dev/) or [CapacitorJS](https://github.com/ionic-team/capacitor) (OS) for native apps
+- [Electron-Vite](https://github.com/electron-vite/electron-vite-react) or [Tauri](https://github.com/tauri-apps/tauri) or [ToDesktop](https://www.todesktop.com/) for desktop app
+
+## European alternatives to
 
 ## European alternatives to
 

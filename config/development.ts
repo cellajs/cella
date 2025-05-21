@@ -11,6 +11,8 @@ export default {
   backendAuthUrl: 'http://localhost:4000/auth',
   electricUrl: 'http://localhost:4200',
 
+  s3BucketPrefix: 'cella-development',
+
   // Hide chat widget in development
   gleapToken: undefined,
 

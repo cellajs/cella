@@ -59,8 +59,8 @@ export const config = {
   // Google maps key
   googleMapsKey: 'AIzaSyDMjCpQusdoPWLeD7jxkqAxVgJ8s5xJ3Co',
 
-  // File handling with s3
-  s3BucketPrefix: 'cella-development' as string | null, // Prefix to namespace files when sharing a bucket across apps or envs.
+  // File handling with imado
+  s3BucketPrefix: 'cella' as string | null, // Prefix to namespace files when sharing a bucket across apps or envs.
   s3PublicBucket: 'imado-dev',
   s3PrivateBucket: 'imado-dev-priv',
   s3Region: 'nl-ams',
@@ -104,9 +104,11 @@ export const config = {
   ],
 
   /**
-   * Default upload body limit
+   * Uploads body limit
    */
-  uploadBodyLimit: 1 * 1024 * 1024, // 1mb
+  jsonBodyLimit: 1 * 1024 * 1024, // 1mb
+  fileUploadLimit: 20 * 1024 * 1024, // 20mb
+  defaultBodyLimit: 1 * 1024 * 1024, // 1mb
 
   // Allowed oauth strategies providers
   enabledAuthenticationStrategies: ['password', 'passkey', 'oauth'] as const,
