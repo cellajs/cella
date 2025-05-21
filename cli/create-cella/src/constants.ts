@@ -42,7 +42,6 @@ export const TO_EDIT: Record<string, { regexMatch: RegExp; replaceWith: string }
       replaceWith: "enabledAuthenticationStrategies: ['password', 'passkey'] as const,",
     },
     {
-      // TODO(CHECK NAMING)
       regexMatch: /imado\:\s*(true|false),/g,
       replaceWith: "imado: false,",
     },
