@@ -282,24 +282,18 @@ const meRoutes = app
    * Get upload token
    */
   .openapi(meRouteConfig.getUploadToken, async (ctx) => {
-    const { public: isPublic, organization, templateId } = ctx.req.valid('query');
+    const { public: isPublic, organizationId, templateId } = ctx.req.valid('query');
     const user = getContextUser();
 
     // This will be used to as first part of S3 key
-    const sub = [config.s3BucketPrefix, organization, user.id].filter(Boolean).join('/');
+    const sub = [config.s3BucketPrefix, organizationId, user.id].filter(Boolean).join('/');
 
     try {
       const params = getParams(templateId, isPublic, sub);
       const paramsString = JSON.stringify(params);
       const signature = getSignature(paramsString);
 
-      const token = {
-        sub,
-        public: isPublic,
-        imado: !!env.S3_ACCESS_KEY_ID,
-        params,
-        signature,
-      };
+      const token = { sub, public: isPublic, s3: !!env.S3_ACCESS_KEY_ID, params, signature };
 
       return ctx.json({ success: true, data: token }, 200);
     } catch (error) {

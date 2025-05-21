@@ -43,10 +43,10 @@ export const useColumns = (entity: EntityPage, isSheet: boolean, highDensity: bo
       renderCell: ({ row: { id, url, thumbnailUrl, filename, contentType, groupId, convertedUrl }, tabIndex }) => {
         const cellRef = useRef<HTMLAnchorElement | null>(null);
 
-        if (!thumbnailUrl && !convertedUrl)
+        if (!thumbnailUrl && !convertedUrl && !url.startsWith('blob:http'))
           return (
             <div className="flex space-x-2 items-center justify-center w-full h-full">
-              <AttachmentPreview url={url} name={filename} contentType={contentType} />
+              <AttachmentPreview id={id} url={url} name={filename} contentType={contentType} />
             </div>
           );
 
@@ -72,7 +72,7 @@ export const useColumns = (entity: EntityPage, isSheet: boolean, highDensity: bo
               });
             }}
           >
-            <AttachmentPreview url={thumbnailUrl ?? url} name={filename} contentType={contentType} />
+            <AttachmentPreview id={id} url={thumbnailUrl ?? url} name={filename} contentType={contentType} />
           </Link>
         );
       },

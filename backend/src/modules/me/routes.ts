@@ -1,9 +1,7 @@
-import { config } from 'config';
 import { z } from 'zod';
 import { createRouteConfig } from '#/lib/route-config';
 import { isAuthenticated, isPublicAccess } from '#/middlewares/guard';
 import { tokenLimiter } from '#/middlewares/rate-limiter/limiters';
-import { booleanQuerySchema } from '#/utils/schema/common';
 import { errorResponses, successWithDataSchema, successWithErrorsSchema, successWithoutDataSchema } from '#/utils/schema/responses';
 import { updateUserBodySchema, userSchema } from '../users/schema';
 import {
@@ -11,6 +9,7 @@ import {
   meAuthInfoSchema,
   passkeyRegistrationBodySchema,
   unsubscribeSelfQuerySchema,
+  uploadQuerySchema,
   uploadTokenBodySchema,
   userMenuSchema,
 } from './schema';
@@ -26,11 +25,7 @@ class MeRouteConfig {
     responses: {
       200: {
         description: 'User',
-        content: {
-          'application/json': {
-            schema: successWithDataSchema(userSchema),
-          },
-        },
+        content: { 'application/json': { schema: successWithDataSchema(userSchema) } },
       },
       ...errorResponses,
     },
@@ -46,11 +41,7 @@ class MeRouteConfig {
     responses: {
       200: {
         description: 'User sign-up info',
-        content: {
-          'application/json': {
-            schema: successWithDataSchema(meAuthInfoSchema),
-          },
-        },
+        content: { 'application/json': { schema: successWithDataSchema(meAuthInfoSchema) } },
       },
       ...errorResponses,
     },
@@ -64,13 +55,7 @@ class MeRouteConfig {
     summary: 'Update self',
     description: 'Update the current user (self).',
     request: {
-      body: {
-        content: {
-          'application/json': {
-            schema: updateUserBodySchema,
-          },
-        },
-      },
+      body: { content: { 'application/json': { schema: updateUserBodySchema } } },
     },
     responses: {
       200: {
@@ -95,11 +80,7 @@ class MeRouteConfig {
     responses: {
       200: {
         description: 'User deleted',
-        content: {
-          'application/json': {
-            schema: successWithoutDataSchema,
-          },
-        },
+        content: { 'application/json': { schema: successWithoutDataSchema } },
       },
       ...errorResponses,
     },
@@ -116,11 +97,7 @@ class MeRouteConfig {
     responses: {
       200: {
         description: 'Menu of user',
-        content: {
-          'application/json': {
-            schema: successWithDataSchema(userMenuSchema),
-          },
-        },
+        content: { 'application/json': { schema: successWithDataSchema(userMenuSchema) } },
       },
       ...errorResponses,
     },
@@ -142,11 +119,7 @@ class MeRouteConfig {
     responses: {
       200: {
         description: 'Success',
-        content: {
-          'application/json': {
-            schema: successWithErrorsSchema(),
-          },
-        },
+        content: { 'application/json': { schema: successWithErrorsSchema() } },
       },
       ...errorResponses,
     },
@@ -166,11 +139,7 @@ class MeRouteConfig {
     responses: {
       200: {
         description: 'Passkey removed',
-        content: {
-          'application/json': {
-            schema: successWithoutDataSchema,
-          },
-        },
+        content: { 'application/json': { schema: successWithoutDataSchema } },
       },
       ...errorResponses,
     },
@@ -202,13 +171,9 @@ class MeRouteConfig {
     tags: ['me'],
     summary: 'Get upload token',
     description:
-      'This endpoint is used to get an upload token for a user or organization. The token can be used to upload public or private images/files to your S3 bucket using imado.',
+      'This endpoint is used to get an upload token for a user or organization. The token can be used to upload public or private images/files to your S3 bucket using',
     request: {
-      query: z.object({
-        public: booleanQuerySchema,
-        organization: z.string().optional(),
-        templateId: z.enum(config.uploadTemplateIds),
-      }),
+      query: uploadQuerySchema,
     },
     responses: {
       200: {
@@ -235,21 +200,13 @@ class MeRouteConfig {
     request: {
       body: {
         required: true,
-        content: {
-          'application/json': {
-            schema: passkeyRegistrationBodySchema,
-          },
-        },
+        content: { 'application/json': { schema: passkeyRegistrationBodySchema } },
       },
     },
     responses: {
       200: {
         description: 'Passkey created',
-        content: {
-          'application/json': {
-            schema: successWithoutDataSchema,
-          },
-        },
+        content: { 'application/json': { schema: successWithoutDataSchema } },
       },
       ...errorResponses,
     },
@@ -266,11 +223,7 @@ class MeRouteConfig {
     responses: {
       200: {
         description: 'Passkey removed',
-        content: {
-          'application/json': {
-            schema: successWithoutDataSchema,
-          },
-        },
+        content: { 'application/json': { schema: successWithoutDataSchema } },
       },
       ...errorResponses,
     },

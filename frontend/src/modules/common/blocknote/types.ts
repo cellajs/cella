@@ -1,6 +1,7 @@
 import type { FilePanelProps } from '@blocknote/react';
 import type React from 'react';
 import type { customSchema, supportedLanguages } from '~/modules/common/blocknote/blocknote-config';
+import type { UploadedUppyFile } from '~/modules/common/uploader/types';
 import type { Member } from '~/modules/memberships/types';
 
 export type CustomBlockNoteEditor = typeof customSchema.BlockNoteEditor;
@@ -70,6 +71,12 @@ export type BaseMenusItemsTitle =
 export type CellaCustomBlockTypes = ExtendableBlocknoteTypes['BlockTypes'];
 export type MenusItemsTitle = ExtendableBlocknoteTypes['ItemsTitle'];
 
+export type BaseUppyFilePanelProps = {
+  organizationId: string;
+  onComplete?: (result: UploadedUppyFile<'attachment'>) => void;
+  onError?: (error: Error) => void;
+};
+
 export type CommonBlockNoteProps = {
   id: string;
   defaultValue?: string; // stringified block
@@ -83,19 +90,14 @@ export type CommonBlockNoteProps = {
   altClickOpensPreview?: boolean;
   emojis?: boolean;
   allowedBlockTypes?: (BasicBlockBaseTypes | CellaCustomBlockTypes)[];
+  allowedFileBlockTypes?: BasicFileBlockTypes[];
   members?: Member[]; // for mentions
   onFocus?: () => void;
   onEscapeClick?: () => void;
   onEnterClick?: () => void;
   onBeforeLoad?: (editor: CustomBlockNoteEditor) => void;
 } & (
-  | {
-      // filePanel and allowedFileBlockTypes must be defined together
-      filePanel: (props: FilePanelProps) => React.ReactElement;
-      allowedFileBlockTypes?: BasicFileBlockTypes[];
-    }
-  | {
-      filePanel?: never;
-      allowedFileBlockTypes?: never;
-    }
+  | { filePanel: (props: FilePanelProps) => React.ReactElement; baseFilePanelProps?: never }
+  | { filePanel?: never; baseFilePanelProps: BaseUppyFilePanelProps }
+  | { filePanel?: never; baseFilePanelProps?: never }
 );

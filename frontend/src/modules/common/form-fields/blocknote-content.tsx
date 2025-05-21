@@ -1,8 +1,6 @@
-import { config } from 'config';
 import type { Control } from 'react-hook-form';
-import UppyFilePanel from '~/modules/attachments/upload/blocknote-upload-panel';
 import { BlockNote } from '~/modules/common/blocknote';
-import type { CommonBlockNoteProps } from '~/modules/common/blocknote/types';
+import type { BaseUppyFilePanelProps, CommonBlockNoteProps } from '~/modules/common/blocknote/types';
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
 
 type Props = {
@@ -10,7 +8,9 @@ type Props = {
   control: Control<any>;
   name: string;
   disabled?: boolean;
-  BaseBlockNoteProps: Omit<CommonBlockNoteProps, 'defaultValue' | 'updateData'>;
+  BaseBlockNoteProps: Omit<CommonBlockNoteProps, 'defaultValue' | 'updateData' | 'filePanel' | 'baseFilePanelProps'> & {
+    baseFilePanelProps: BaseUppyFilePanelProps;
+  };
 } & (
   | {
       label: string;
@@ -28,12 +28,7 @@ const BlockNoteContent = ({
   name,
   required,
   disabled,
-  BaseBlockNoteProps: {
-    allowedBlockTypes = ['emoji', 'heading', 'paragraph', 'codeBlock'],
-    allowedFileBlockTypes = config.has.imado ? ['image', 'file'] : undefined,
-    filePanel = config.has.imado ? (props) => <UppyFilePanel {...props} /> : (null as never),
-    ...blockNoteProps
-  },
+  BaseBlockNoteProps: { allowedBlockTypes = ['emoji', 'heading', 'paragraph', 'codeBlock'], ...restBlockNoteProps },
 }: Props) => {
   return (
     <FormField
@@ -49,15 +44,7 @@ const BlockNoteContent = ({
               </FormLabel>
             )}
             <FormControl>
-              <BlockNote
-                type="create"
-                defaultValue={value}
-                allowedBlockTypes={allowedBlockTypes}
-                allowedFileBlockTypes={allowedFileBlockTypes}
-                filePanel={filePanel}
-                updateData={onChange}
-                {...blockNoteProps}
-              />
+              <BlockNote type="create" defaultValue={value} allowedBlockTypes={allowedBlockTypes} updateData={onChange} {...restBlockNoteProps} />
             </FormControl>
             <FormMessage />
           </FormItem>

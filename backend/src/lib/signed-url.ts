@@ -1,7 +1,8 @@
+import { env } from '#/env';
+
 import { GetObjectCommand, S3Client } from '@aws-sdk/client-s3';
-import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
+import { getSignedUrl as s3SignedUrl } from '@aws-sdk/s3-request-presigner';
 import { config } from 'config';
-import { env } from '../env';
 
 const s3Client = new S3Client({
   region: config.s3Region,
@@ -15,13 +16,12 @@ const s3Client = new S3Client({
 /**
  * Generate a presigned URL for a private object in Scaleway Object Storage.
  */
-export async function getImadoUrl(url: string, expiresIn = 86400): Promise<string> {
-  const signedUrl = await getSignedUrl(
+export async function getSignedUrl(Key: string, expiresIn = 86400): Promise<string> {
+  // To avoid get signed url for attachmetns that was loaded offline
+  if (Key.startsWith('blob:http')) return Key;
+  const signedUrl = await s3SignedUrl(
     s3Client,
-    new GetObjectCommand({
-      Bucket: config.s3PrivateBucket,
-      Key: url,
-    }),
+    new GetObjectCommand({ Bucket: config.s3PrivateBucket, Key }),
     { expiresIn }, // Default 24 hours
   );
 

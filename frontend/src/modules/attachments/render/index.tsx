@@ -12,6 +12,7 @@ const RenderPDF = lazy(() => import('~/modules/attachments/render/pdf'));
 const RenderVideo = lazy(() => import('~/modules/attachments/render/video'));
 
 interface AttachmentRenderProps {
+  id: string;
   type: string;
   url: string;
   altName?: string;
@@ -23,6 +24,7 @@ interface AttachmentRenderProps {
 }
 
 export const AttachmentRender = ({
+  id,
   url: baseUrl,
   type,
   altName,
@@ -35,7 +37,7 @@ export const AttachmentRender = ({
   const isMobile = useBreakpoints('max', 'sm');
 
   const sanitizedUrl = DOMPurify.sanitize(baseUrl);
-  const { localUrl, localFileError } = useLocalFile(sanitizedUrl, type);
+  const { localUrl, localFileError } = useLocalFile(id, type);
 
   const url = useMemo(() => {
     // Use direct URL for static images

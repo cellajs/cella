@@ -1,12 +1,13 @@
 import { z } from 'zod';
 
+import { config } from 'config';
 import { createSelectSchema } from 'drizzle-zod';
 import { sessionsTable } from '#/db/schema/sessions';
 import { type MenuSectionName, entityRelations } from '#/entity-config';
 import { limitEntitySchema } from '#/modules/entities/schema';
 import { membershipInfoSchema } from '#/modules/memberships/schema';
 import { enabledOauthProvidersEnum } from '#/modules/users/schema';
-import { contextEntityTypeSchema, idOrSlugSchema } from '#/utils/schema/common';
+import { booleanQuerySchema, contextEntityTypeSchema, idOrSlugSchema } from '#/utils/schema/common';
 
 export const sessionSchema = createSelectSchema(sessionsTable).omit({ token: true }).extend({ isCurrent: z.boolean() });
 
@@ -59,7 +60,7 @@ export const unsubscribeSelfQuerySchema = z.object({
 export const uploadTokenBodySchema = z.object({
   public: z.boolean(),
   sub: z.string(),
-  imado: z.boolean(),
+  s3: z.boolean(),
   signature: z.string(),
   params: z
     .object({
@@ -70,4 +71,10 @@ export const uploadTokenBodySchema = z.object({
       // Allow additional arbitrary keys with any type in params
     })
     .catchall(z.any()),
+});
+
+export const uploadQuerySchema = z.object({
+  public: booleanQuerySchema,
+  organizationId: z.string().optional(),
+  templateId: z.enum(config.uploadTemplateIds),
 });

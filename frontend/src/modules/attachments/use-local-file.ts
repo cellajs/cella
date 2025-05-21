@@ -5,11 +5,11 @@ import { useBlobStore } from '~/store/blob'; // Import the Zustand store
 /**
  * Custom hook to retrieve a local file from IndexedDB and generate a blob URL.
  *
- * @param key Key used to get file from IndexedDB.
+ * @param attachmentId  used to get file from IndexedDB.
  * @param contentType Optional content type of file.
  * @returns Object containing local file URL and any error encountered.
  */
-export const useLocalFile = (key: string, contentType?: string): { localUrl: string; localFileError: string | null } => {
+export const useLocalFile = (attachmentId: string, contentType?: string): { localUrl: string; localFileError: string | null } => {
   // We use store to get and set blob URL after LocalFileStorage created it. It also revokes URL once user closes browser tab.
   const { getBlobUrl, setBlobUrl } = useBlobStore();
 
@@ -20,7 +20,7 @@ export const useLocalFile = (key: string, contentType?: string): { localUrl: str
 
   useEffect(() => {
     isMounted.current = true;
-    const cachedUrl = getBlobUrl(key);
+    const cachedUrl = getBlobUrl(attachmentId);
 
     // If the URL is already cached in Blob store, we can use it directly
     if (cachedUrl) {
@@ -31,7 +31,7 @@ export const useLocalFile = (key: string, contentType?: string): { localUrl: str
     // Fetch the file from IndexedDB
     const fetchFile = async () => {
       try {
-        const file = await LocalFileStorage.getFile(key);
+        const file = await LocalFileStorage.getFile(attachmentId);
         if (!file)
           setError(
             'File not found. The file is stored locally in the browser where it was originally loaded and might not be accessible in other browsers or devices.',
@@ -39,7 +39,7 @@ export const useLocalFile = (key: string, contentType?: string): { localUrl: str
         if (file && isMounted.current) {
           const blob = new Blob([file.data], { type: contentType || 'application/octet-stream' });
           const newUrl = URL.createObjectURL(blob);
-          setBlobUrl(key, newUrl);
+          setBlobUrl(attachmentId, newUrl);
           setFileUrl(newUrl);
         }
       } catch (error) {
@@ -53,7 +53,7 @@ export const useLocalFile = (key: string, contentType?: string): { localUrl: str
     return () => {
       isMounted.current = false;
     };
-  }, [key, contentType, getBlobUrl, setBlobUrl]);
+  }, [attachmentId, contentType, getBlobUrl, setBlobUrl]);
 
   return { localUrl: fileUrl, localFileError: error };
 };

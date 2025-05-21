@@ -5,7 +5,7 @@ Last update: January 12,2024
 
 ## ⭐ &nbsp; Current projects
 
-- [imado.eu](imado.eu) and uppy for (offline) file handling
+- uppy for (offline) file handling
 - Vitest + Playwright + Storybook [https://github.com/shadcn-ui/ui/pull/1561](https://github.com/shadcn-ui/ui/pull/1561)
 - code refactors
 - typescript perf improvements
@@ -13,6 +13,10 @@ Last update: January 12,2024
 - Write many more tests
 
 ## 🧊 &nbsp; Iced projects / ideas
+
+- Automated security audit / testing solution
+- Perf testing with K6 / Grafana
+- SSR Blog section using honox or tanstack start
 
 - Automated security audit / testing solution
 - Perf testing with K6 / Grafana
@@ -32,13 +36,23 @@ Being able to embed dashboards for traffic and event analytics on multiple level
 - per customer
 - for end-users (ie. a teacher wants to see the activity of its students)
 
+- app-wide
+- per customer
+- for end-users (ie. a teacher wants to see the activity of its students)
+
 ## 📱 &nbsp; Native mobile/desktop app
+
+- [Expo](https://expo.dev/) or [CapacitorJS](https://github.com/ionic-team/capacitor) (OS) for native apps
+- [Electron-Vite](https://github.com/electron-vite/electron-vite-react) or [Tauri](https://github.com/tauri-apps/tauri) or [ToDesktop](https://www.todesktop.com/) for desktop app
 
 - [Expo](https://expo.dev/) or [CapacitorJS](https://github.com/ionic-team/capacitor) (OS) for native apps
 - [Electron-Vite](https://github.com/electron-vite/electron-vite-react) or [Tauri](https://github.com/tauri-apps/tauri) or [ToDesktop](https://www.todesktop.com/) for desktop app
 
 ## European alternatives to
 
+## European alternatives to
+
+- Sendgrid/Resend
 - Netlify
 - Heroku
 - Google Keep

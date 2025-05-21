@@ -14,7 +14,7 @@ import { env } from '#/env';
 import { type Env, getContextUser } from '#/lib/context';
 import { errorResponse } from '#/lib/errors';
 import { i18n } from '#/lib/i18n';
-import { getImadoUrl } from '#/lib/imado-url';
+import { getSignedUrl } from '#/lib/signed-url';
 import { mailer } from '#/lib/mailer';
 import { logEvent } from '#/middlewares/logger/log-event';
 import systemRouteConfig from '#/modules/system/routes';
@@ -118,7 +118,7 @@ const systemRoutes = app
   .openapi(systemRouteConfig.getPriasignedUrl, async (ctx) => {
     const { key } = ctx.req.valid('query');
 
-    const url = await getImadoUrl(key);
+    const url = await getSignedUrl(key);
 
     return ctx.json({ success: true, data: url }, 200);
   })
