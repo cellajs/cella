@@ -1,8 +1,10 @@
 import { db } from '#/db/db';
 import { attachmentsTable } from '#/db/schema/attachments';
+import { env } from '#/env';
 import { type Env, getContextMemberships, getContextOrganization, getContextUser } from '#/lib/context';
 import { type ErrorType, createError, errorResponse } from '#/lib/errors';
 import { logEvent } from '#/middlewares/logger/log-event';
+import { enrichAttachmentWithUrls, enrichAttachmentsWithUrls } from '#/modules/attachments/helpers/convert-attachments';
 import attachmentsRouteConfig from '#/modules/attachments/routes';
 import { splitByAllowance } from '#/permissions/split-by-allowance';
 import defaultHook from '#/utils/default-hook';
@@ -12,13 +14,10 @@ import { getOrderColumn } from '#/utils/order-column';
 import { prepareStringForILikeFilter } from '#/utils/sql';
 
 import { OpenAPIHono } from '@hono/zod-openapi';
-import { type SQL, and, count, eq, ilike, inArray, or } from 'drizzle-orm';
+import { config } from 'config';
+import { type SQL, and, count, eq, ilike, inArray, like, notLike, or } from 'drizzle-orm';
 import { html } from 'hono/html';
 import { stream } from 'hono/streaming';
-
-import { config } from 'config';
-import { env } from '#/env';
-import { enrichAttachmentWithUrls, enrichAttachmentsWithUrls } from '#/modules/attachments/helpers/convert-attachments';
 
 // Set default hook to catch validation errors
 const app = new OpenAPIHono<Env>({ defaultHook });
@@ -103,23 +102,21 @@ const attachmentsRoutes = app
   .openapi(attachmentsRouteConfig.getAttachments, async (ctx) => {
     const { q, sort, order, offset, limit, attachmentId } = ctx.req.valid('query');
 
-    // const user = getContextUser();
-    // Scope request to organization
+    const user = getContextUser();
     const organization = getContextOrganization();
 
     // Filter at least by valid organization
     const filters: SQL[] = [
       eq(attachmentsTable.organizationId, organization.id),
       // If s3 is off, show attachments that not have a public CDN URL only to users that create it because in that case attachments stored in IndexedDB
-      // TODO reworkIt
-      // ...(!config.has.s3
-      //   ? [
-      //       or(
-      //         and(eq(attachmentsTable.createdBy, user.id), notIlike(attachmentsTable.url, `${config.publicCDNUrl}%`)),
-      //         like(attachmentsTable.url, `${config.publicCDNUrl}%`),
-      //       ) as SQL,
-      //     ]
-      //   : []),
+      ...(!config.has.s3
+        ? [
+            or(
+              and(eq(attachmentsTable.createdBy, user.id), like(attachmentsTable.originalKey, 'blob:http%')),
+              notLike(attachmentsTable.originalKey, 'blob:http%'),
+            ) as SQL,
+          ]
+        : []),
     ];
 
     if (q) {
