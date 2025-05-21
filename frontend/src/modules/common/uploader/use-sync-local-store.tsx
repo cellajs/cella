@@ -32,7 +32,7 @@ export function useSyncLocalStore(organizationId: string) {
             restrictions: {
               maxFileSize: 10 * 1024 * 1024, // 10MB
               maxNumberOfFiles: 20,
-              allowedFileTypes: ['.jpg', '.jpeg', '.png'],
+              allowedFileTypes: ['*/*'],
               maxTotalFileSize: 100 * 1024 * 1024, // 100MB
               minFileSize: null,
               minNumberOfFiles: null,
