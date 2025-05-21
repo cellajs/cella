@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useOnlineManager } from '~/hooks/use-online-manager';
 import { parseUploadedAttachments } from '~/modules/attachments/helpers';
 import { LocalFileStorage } from '~/modules/attachments/local-file-storage';
@@ -12,20 +12,25 @@ export function useSyncLocalStore(organizationId: string) {
   const { mutate: createAttachments } = useAttachmentCreateMutation();
   const { mutate: deleteAttachments } = useAttachmentDeleteMutation();
 
+  const isUploadingRef = useRef(false);
+
   const onComplete = (attachments: AttachmentToInsert[], storedIds: string[]) => {
     createAttachments({ attachments, orgIdOrSlug: organizationId });
     deleteAttachments({ orgIdOrSlug: organizationId, ids: storedIds });
   };
 
   useEffect(() => {
-    if (!isOnline) return;
+    if (!isOnline || isUploadingRef.current) return;
 
     const syncStoreAttachments = async () => {
+      isUploadingRef.current = true;
       const storageData = await LocalFileStorage.getData(organizationId);
 
       if (!storageData) return;
 
       const files = Object.values(storageData.files);
+      if (!files.length) return;
+
       try {
         const localUppy = await createBaseTransloaditUppy(
           {
@@ -35,7 +40,7 @@ export function useSyncLocalStore(organizationId: string) {
               allowedFileTypes: ['*/*'],
               maxTotalFileSize: 100 * 1024 * 1024, // 100MB
               minFileSize: null,
-              minNumberOfFiles: null,
+              minNumberOfFiles: 1,
               requiredMetaFields: [],
             },
           },
@@ -45,6 +50,7 @@ export function useSyncLocalStore(organizationId: string) {
         localUppy
           .on('error', (err) => {
             console.error('Sync files upload error:', err);
+            isUploadingRef.current = false;
           })
           .on('upload', () => {
             console.log('Sync files upload started');
@@ -58,6 +64,8 @@ export function useSyncLocalStore(organizationId: string) {
             // Clean up offline files from IndexedDB
             await LocalFileStorage.removeData(organizationId);
             console.info('🗑️ Successfully uploaded files removed from IndexedDB.');
+
+            isUploadingRef.current = false;
           });
 
         for (const file of files) localUppy.addFile({ ...file, name: file.name || `${file.type}-${file.id}` });

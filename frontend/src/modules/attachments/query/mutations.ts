@@ -27,7 +27,7 @@ const handleError = (action: 'create' | 'update' | 'delete' | 'deleteMany', cont
     for (const [queryKey, previousData] of context) queryClient.setQueryData(queryKey, previousData);
   }
 
-  if (action === 'deleteMany') toast.error(t('error:delete_resources', { resource: t('common:attachments') }));
+  if (action === 'deleteMany') toast.error(t('error:delete_resources', { resources: t('common:attachments') }));
   else toast.error(t(`error:${action}_resource`, { resource: t('common:attachment') }));
 };
 

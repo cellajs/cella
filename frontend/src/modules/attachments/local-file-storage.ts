@@ -13,7 +13,7 @@ export const LocalFileStorage = {
     try {
       await set(tokenQuery.organizationId ?? nanoid(), { files, tokenQuery });
     } catch (error) {
-      console.error('Failed to save multiple files:', error);
+      console.error('Failed to save data:', error);
     }
   },
 
@@ -21,7 +21,7 @@ export const LocalFileStorage = {
     try {
       return await get<{ files: Record<string, CustomUppyFile>; tokenQuery: UploadTokenQuery }>(organizationId);
     } catch (error) {
-      console.error('Failed to save multiple files:', error);
+      console.error('Failed to retrieve data:', error);
     }
   },
 
@@ -45,7 +45,7 @@ export const LocalFileStorage = {
     try {
       await del(organizationId);
     } catch (error) {
-      console.error(`Failed to delete file (${organizationId}):`, error);
+      console.error(`Failed to delete data (${organizationId}):`, error);
     }
   },
 };
