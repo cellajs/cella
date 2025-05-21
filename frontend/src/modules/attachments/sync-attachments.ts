@@ -39,7 +39,7 @@ export const useAttachmentsSync = (organizationId: string) => {
 
   useEffect(() => {
     // Exit if offline, sync is disabled, s3 upload is disabled, or in quick mode
-    if (!isOnline || !config.has.sync || !config.has.s3 || env.VITE_QUICK) return;
+    if (!isOnline || !config.has.sync || !config.has.uploadEnabled || env.VITE_QUICK) return;
 
     const controller = new AbortController();
     // if any params of `attachmentShape` changes need to delete sync data from store

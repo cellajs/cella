@@ -66,13 +66,13 @@ const AvatarFormField = ({ form, label, name, entity, type }: Props) => {
               <AvatarWrap type={type} className="h-16 w-16 text-2xl" id={entity.id} name={name} url={url} />
 
               <div className="flex flex-col gap-2">
-                {config.has.s3 ? (
+                {config.has.uploadEnabled ? (
                   <p className="font-light text-xs sm:text-sm">{t('common:upload_img_max_10mb.text')}</p>
                 ) : (
                   config.mode === 'development' && <p className="font-light text-xs sm:text-sm">{t('common:restrict_image_upload')}</p>
                 )}
                 <div className="flex gap-2 items-center">
-                  {config.has.s3 && (
+                  {config.has.uploadEnabled && (
                     <Button ref={uploadButtonRef} variant="plain" type="button" size="sm" onClick={openUploadDialog}>
                       <Upload size={16} className="mr-2" />
                       <span>{t('common:upload')}</span>

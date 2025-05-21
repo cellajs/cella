@@ -24,7 +24,7 @@ export const createBaseTransloaditUppy = async (uppyOptions: CustomUppyOpt, toke
     onBeforeFileAdded,
     onBeforeUpload: (files) => {
       // Determine if we can upload based on online status and s3 configuration
-      const canUpload = onlineManager.isOnline() && config.has.s3;
+      const canUpload = onlineManager.isOnline() && config.has.uploadEnabled;
 
       // Clean up file names
       for (const file of Object.values(files)) {
@@ -36,7 +36,7 @@ export const createBaseTransloaditUppy = async (uppyOptions: CustomUppyOpt, toke
       if (canUpload) return true;
       // If not online, prepare the files for offline storage and emit transloadit:complete event
       prepareFilesForOffline(files, tokenQuery).then((assembly) => uppy.emit('transloadit:complete', assembly));
-      return config.has.s3; // Prevent upload if s3 is unavailable
+      return config.has.uploadEnabled; // Prevent upload if s3 is unavailable
     },
   });
 

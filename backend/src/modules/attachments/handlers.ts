@@ -109,7 +109,7 @@ const attachmentsRoutes = app
     const filters: SQL[] = [
       eq(attachmentsTable.organizationId, organization.id),
       // If s3 is off, show attachments that not have a public CDN URL only to users that create it because in that case attachments stored in IndexedDB
-      ...(!config.has.s3
+      ...(!config.has.uploadEnabled
         ? [
             or(
               and(eq(attachmentsTable.createdBy, user.id), like(attachmentsTable.originalKey, 'blob:http%')),

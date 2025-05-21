@@ -125,7 +125,7 @@ export const config = {
     sync: true, // Realtime updates and sync using Electric Sync
     registrationEnabled: false, // Allow users to sign up. If false, the app is by invitation only
     waitlist: true, // Suggest a waitlist for unknown emails when sign up is disabled,
-    s3: true, // s3 fully configured, if false, files will be stored in local browser (indexedDB)
+    uploadEnabled: true, // s3 fully configured, if false, files will be stored in local browser (indexedDB)
   },
 
   /**

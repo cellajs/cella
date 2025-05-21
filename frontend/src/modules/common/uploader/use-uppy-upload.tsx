@@ -23,7 +23,7 @@ export function useUploadUppy() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!uploaderData || !config.has.s3) return;
+    if (!uploaderData || !config.has.uploadEnabled) return;
 
     let isMounted = true;
     let localUppy: CustomUppy | null = null;
@@ -46,7 +46,7 @@ export function useUploadUppy() {
 
         localUppy
           .on('files-added', () => {
-            if (onlineManager.isOnline() && !config.has.s3) toaster(t('common:file_upload_warning'), 'warning');
+            if (onlineManager.isOnline() && !config.has.uploadEnabled) toaster(t('common:file_upload_warning'), 'warning');
           })
           .on('file-editor:complete', (file) => {
             console.info('File editor complete:', file);

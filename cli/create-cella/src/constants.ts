@@ -42,8 +42,8 @@ export const TO_EDIT: Record<string, { regexMatch: RegExp; replaceWith: string }
       replaceWith: "enabledAuthenticationStrategies: ['password', 'passkey'] as const,",
     },
     {
-      regexMatch: /imado\:\s*(true|false),/g,
-      replaceWith: "imado: false,",
+      regexMatch: /uploadEnabled\:\s*(true|false),/g,
+      replaceWith: "uploadEnabled: false,",
     },
     {
       regexMatch: /enabledOauthProviders:\s*\[[^\]]+\]\s*as\s*const,/g,
