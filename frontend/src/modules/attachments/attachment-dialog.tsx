@@ -17,6 +17,7 @@ const AttachmentDialog = ({ attachmentId, orgIdOrSlug }: AttachmentDialogProps) 
   const { t } = useTranslation();
   const { isOnline } = useOnlineManager();
 
+  // TODO handle offline open
   const { data, isError, isLoading } = useQuery(groupedAttachmentsQueryOptions({ attachmentId, orgIdOrSlug }));
 
   const attachments = useMemo(() => data?.items ?? [], [data?.items]);

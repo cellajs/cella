@@ -137,7 +137,7 @@ const AttachmentsCarousel = ({ items = [], isDialog = false, itemIndex = 0, save
       )}
 
       <CarouselContent className="h-full">
-        {items.map(({ url, convertedUrl, contentType = 'image', convertedContentType }, idx) => {
+        {items.map(({ id, url, convertedUrl, contentType = 'image', convertedContentType }, idx) => {
           return (
             <CarouselItem
               key={url}
@@ -147,6 +147,7 @@ const AttachmentsCarousel = ({ items = [], isDialog = false, itemIndex = 0, save
               }}
             >
               <AttachmentRender
+                id={id}
                 containerClassName={cn('overflow-hidden h-full relative flex items-center justify-center ', classNameContainer)}
                 itemClassName={isDialog ? 'object-contain' : ''}
                 type={convertedContentType ?? contentType}
