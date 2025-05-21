@@ -1,10 +1,9 @@
-import type { AssemblyResponse } from '@uppy/transloadit';
-import { config } from 'config';
 import { useEffect } from 'react';
 import { useOnlineManager } from '~/hooks/use-online-manager';
 import { parseUploadedAttachments } from '~/modules/attachments/helpers';
 import { LocalFileStorage } from '~/modules/attachments/local-file-storage';
 import { useAttachmentCreateMutation, useAttachmentDeleteMutation } from '~/modules/attachments/query/mutations';
+import type { AttachmentToInsert } from '~/modules/attachments/types';
 import { createBaseTransloaditUppy } from '~/modules/common/uploader/helpers';
 import type { UploadedUppyFile } from '~/modules/common/uploader/types';
 
@@ -13,8 +12,7 @@ export function useSyncLocalStore(organizationId: string) {
   const { mutate: createAttachments } = useAttachmentCreateMutation();
   const { mutate: deleteAttachments } = useAttachmentDeleteMutation();
 
-  const onComplete = (result: UploadedUppyFile<'attachment'>, storedIds: string[]) => {
-    const attachments = parseUploadedAttachments(result, organizationId);
+  const onComplete = (attachments: AttachmentToInsert[], storedIds: string[]) => {
     createAttachments({ attachments, orgIdOrSlug: organizationId });
     deleteAttachments({ orgIdOrSlug: organizationId, ids: storedIds });
   };
@@ -27,11 +25,15 @@ export function useSyncLocalStore(organizationId: string) {
 
       if (!storageData) return;
 
+      const files = Object.values(storageData.files);
       try {
         const localUppy = await createBaseTransloaditUppy(
           {
             restrictions: {
-              ...config.uppy.defaultRestrictions,
+              maxFileSize: 10 * 1024 * 1024, // 10MB
+              maxNumberOfFiles: 20,
+              allowedFileTypes: ['.jpg', '.jpeg', '.png'],
+              maxTotalFileSize: 100 * 1024 * 1024, // 100MB
               minFileSize: null,
               minNumberOfFiles: null,
               requiredMetaFields: [],
@@ -40,23 +42,27 @@ export function useSyncLocalStore(organizationId: string) {
           storageData.tokenQuery,
         );
 
-        // Add files to the new Uppy instance
-        const validFiles = Object.values(storageData.files).map((file) => ({ ...file, name: file.name || `${file.type}-${file.id}` }));
-        localUppy.addFiles(validFiles);
-        localUppy.upload().then(async (result) => {
-          if (!result || !('transloadit' in result)) throw new Error('IndexedDB files don`t sync');
+        localUppy
+          .on('error', (err) => {
+            console.error('Sync files upload error:', err);
+          })
+          .on('upload', () => {
+            console.log('Sync files upload started');
+          })
+          .on('transloadit:complete', async (assembly) => {
+            if (assembly.error) throw new Error(assembly.error);
+            const attachments = parseUploadedAttachments(assembly.results as UploadedUppyFile<'attachment'>, organizationId);
 
-          const transloadits = result.transloadit as AssemblyResponse[];
-          const assembly = transloadits[0];
-          if (assembly.error) throw new Error(assembly.error);
+            const ids = files.map(({ id }) => id);
+            onComplete(attachments, ids);
+            // Clean up offline files from IndexedDB
+            await LocalFileStorage.removeData(organizationId);
+            console.info('🗑️ Successfully uploaded files removed from IndexedDB.');
+          });
 
-          // Clean up offline files from IndexedDB
-          await LocalFileStorage.removeData(organizationId);
-          console.info('🗑️ Successfully uploaded files removed from IndexedDB.');
+        for (const file of files) localUppy.addFile({ ...file, name: file.name || `${file.type}-${file.id}` });
 
-          const ids = validFiles.map(({ id }) => id);
-          onComplete(assembly.results as UploadedUppyFile<'attachment'>, ids);
-        });
+        await localUppy.upload();
       } catch (err) {}
     };
 
