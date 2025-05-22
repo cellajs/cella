@@ -34,5 +34,3 @@ const initOptions: InitOptions = {
 
 // Init i18n instance
 i18n.use(Backend).use(LanguageDetector).use(initReactI18next).init(initOptions);
-
-export { i18n };

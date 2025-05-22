@@ -5,7 +5,7 @@ import { AccountSheet } from '~/modules/navigation/account-sheet';
 import { MenuSheet } from '~/modules/navigation/menu-sheet';
 
 import { onlineManager } from '@tanstack/react-query';
-import { i18n } from '~/lib/i18n';
+import i18n from 'i18next';
 import type { FooterLinkProps } from '~/modules/common/app-footer';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { toaster } from '~/modules/common/toaster';

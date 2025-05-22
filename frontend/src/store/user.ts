@@ -1,8 +1,8 @@
 import { config } from 'config';
+import i18n from 'i18next';
 import { create } from 'zustand';
 import { createJSONStorage, devtools, persist } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
-import { i18n } from '~/lib/i18n';
 import type { MeUser, UserAuthInfo } from '~/modules/me/types';
 import type { User } from '~/modules/users/types';
 

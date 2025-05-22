@@ -1,3 +1,4 @@
+import * as Sentry from '@sentry/node';
 import { createMiddleware } from 'hono/factory';
 import { type Env, getContextMemberships, getContextUser } from '#/lib/context';
 export { isAuthenticated } from './is-authenticated';
@@ -37,6 +38,8 @@ export const hasOrgAccess = createMiddleware<Env>(async (ctx, next): Promise<Res
 
   // Set organization with membership (can be null for system admins!) in context
   ctx.set('organization', orgWithMembership);
+  Sentry.setTag('organization_id', orgWithMembership.id);
+  Sentry.setTag('organization_slug', orgWithMembership.slug);
 
   await next();
 });

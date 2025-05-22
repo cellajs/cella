@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { createRouteConfig } from '#/lib/route-config';
+import { createCustomRoute } from '#/lib/custom-routes';
 import { isAuthenticated, isPublicAccess } from '#/middlewares/guard';
 import { tokenLimiter } from '#/middlewares/rate-limiter/limiters';
 import { errorResponses, successWithDataSchema, successWithErrorsSchema, successWithoutDataSchema } from '#/utils/schema/responses';
@@ -15,7 +15,7 @@ import {
 } from './schema';
 
 class MeRouteConfig {
-  public getSelf = createRouteConfig({
+  public getSelf = createCustomRoute({
     method: 'get',
     path: '/',
     guard: isAuthenticated,
@@ -31,7 +31,7 @@ class MeRouteConfig {
     },
   });
 
-  public getSelfAuthData = createRouteConfig({
+  public getSelfAuthData = createCustomRoute({
     method: 'get',
     path: '/auth',
     guard: isAuthenticated,
@@ -47,7 +47,7 @@ class MeRouteConfig {
     },
   });
 
-  public updateSelf = createRouteConfig({
+  public updateSelf = createCustomRoute({
     method: 'put',
     path: '/',
     guard: isAuthenticated,
@@ -70,7 +70,7 @@ class MeRouteConfig {
     },
   });
 
-  public deleteSelf = createRouteConfig({
+  public deleteSelf = createCustomRoute({
     method: 'delete',
     path: '/',
     guard: isAuthenticated,
@@ -86,7 +86,7 @@ class MeRouteConfig {
     },
   });
 
-  public getSelfMenu = createRouteConfig({
+  public getSelfMenu = createCustomRoute({
     method: 'get',
     path: '/menu',
     guard: isAuthenticated,
@@ -103,7 +103,7 @@ class MeRouteConfig {
     },
   });
 
-  public deleteSessions = createRouteConfig({
+  public deleteSessions = createCustomRoute({
     method: 'delete',
     path: '/sessions',
     guard: isAuthenticated,
@@ -125,7 +125,7 @@ class MeRouteConfig {
     },
   });
 
-  public leaveEntity = createRouteConfig({
+  public leaveEntity = createCustomRoute({
     method: 'delete',
     path: '/leave',
     guard: isAuthenticated,
@@ -145,7 +145,7 @@ class MeRouteConfig {
     },
   });
 
-  public unsubscribeSelf = createRouteConfig({
+  public unsubscribeSelf = createCustomRoute({
     method: 'get',
     path: '/unsubscribe',
     guard: isPublicAccess,
@@ -164,7 +164,7 @@ class MeRouteConfig {
       ...errorResponses,
     },
   });
-  public getUploadToken = createRouteConfig({
+  public getUploadToken = createCustomRoute({
     method: 'get',
     path: '/upload-token',
     guard: isAuthenticated,
@@ -188,7 +188,7 @@ class MeRouteConfig {
     },
   });
 
-  public createPasskey = createRouteConfig({
+  public createPasskey = createCustomRoute({
     method: 'post',
     path: '/passkey',
     guard: isAuthenticated,
@@ -212,7 +212,7 @@ class MeRouteConfig {
     },
   });
 
-  public deletePasskey = createRouteConfig({
+  public deletePasskey = createCustomRoute({
     method: 'delete',
     path: '/passkey',
     guard: isAuthenticated,

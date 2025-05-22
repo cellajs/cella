@@ -1,13 +1,13 @@
 import { config } from 'config';
 import type { Context } from 'hono';
 import type { ClientErrorStatusCode, ServerErrorStatusCode } from 'hono/utils/http-status';
+import i18n from 'i18next';
 import type { z } from 'zod';
 
 import type { Entity, Severity } from 'config';
 import { logEvent, logtail } from '#/middlewares/logger/log-event';
 import type { errorSchema } from '#/utils/schema/responses';
 import { type Env, getContextOrganization, getContextUser } from './context';
-import { i18n } from './i18n';
 import type locales from './i18n-locales';
 
 type StripPrefix<T, Prefix extends string> = T extends `${Prefix}${infer Rest}` ? Rest : T;

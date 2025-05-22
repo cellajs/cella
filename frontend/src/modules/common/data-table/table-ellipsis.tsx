@@ -1,6 +1,6 @@
+import i18n from 'i18next';
 import { EllipsisVertical, Pencil, Trash } from 'lucide-react';
 import { type RefObject, useRef } from 'react';
-import { i18n } from '~/lib/i18n';
 import type { CallbackArgs } from '~/modules/common/data-table/types';
 import { DropdownActionItem } from '~/modules/common/dropdowner/dropdown-action-item';
 import { useDropdowner } from '~/modules/common/dropdowner/use-dropdowner';

@@ -13,11 +13,12 @@ type Route<P extends string, R extends Omit<RouteOptions, 'path'> & { path: P }>
 
 /**
  * Custom wrapper around hono/zod-openapi createRoute to extend it with setting guard and other middleware.
+ * The goal is to make setting a guard middleware explicit and required.
  *
  * @param routeConfig
  * @link https://github.com/honojs/middleware/tree/main/packages/zod-openapi#configure-middleware-for-each-endpoint
  */
-export const createRouteConfig = <P extends string, R extends Omit<RouteOptions, 'path'> & { path: P }>({
+export const createCustomRoute = <P extends string, R extends Omit<RouteOptions, 'path'> & { path: P }>({
   guard,
   ...routeConfig
 }: R): Route<P, R> => {

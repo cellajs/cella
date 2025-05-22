@@ -1,4 +1,4 @@
-import { createRouteConfig } from '#/lib/route-config';
+import { createCustomRoute } from '#/lib/custom-routes';
 import { hasSystemAccess, isAuthenticated, isPublicAccess } from '#/middlewares/guard';
 import { isNoBot } from '#/middlewares/is-no-bot';
 import { spamLimiter } from '#/middlewares/rate-limiter/limiters';
@@ -7,7 +7,7 @@ import { errorResponses, successWithDataSchema, successWithPaginationSchema, suc
 import { createRequestSchema, getRequestsQuerySchema, requestSchema } from './schema';
 
 class RequestRouteConfig {
-  public createRequest = createRouteConfig({
+  public createRequest = createCustomRoute({
     method: 'post',
     path: '/',
     guard: isPublicAccess,
@@ -37,7 +37,7 @@ class RequestRouteConfig {
     },
   });
 
-  public getRequests = createRouteConfig({
+  public getRequests = createCustomRoute({
     method: 'get',
     path: '/',
     guard: [isAuthenticated, hasSystemAccess],
@@ -60,7 +60,7 @@ class RequestRouteConfig {
     },
   });
 
-  public deleteRequests = createRouteConfig({
+  public deleteRequests = createCustomRoute({
     method: 'delete',
     path: '/',
     guard: [isAuthenticated, hasSystemAccess],

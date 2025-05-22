@@ -1,7 +1,7 @@
 import { config } from 'config';
 import { Search } from 'lucide-react';
 import { type Key, type ReactNode, useEffect, useRef, useState } from 'react';
-import { type CellClickArgs, type CellMouseEvent, DataGrid, type RenderRowProps, type RowsChangeData, type SortColumn } from 'react-data-grid';
+import { type CellMouseArgs, type CellMouseEvent, DataGrid, type RenderRowProps, type RowsChangeData, type SortColumn } from 'react-data-grid';
 import { useTranslation } from 'react-i18next';
 import { useInView } from 'react-intersection-observer';
 import { useOnlineManager } from '~/hooks/use-online-manager';
@@ -28,7 +28,7 @@ interface DataTableProps<TData> {
   renderRow?: (key: Key, props: RenderRowProps<TData, unknown>) => ReactNode;
   NoRowsComponent?: React.ReactNode;
   overflowNoRows?: boolean;
-  onCellClick?: (args: CellClickArgs<TData, unknown>, event: CellMouseEvent) => void;
+  onCellClick?: (args: CellMouseArgs<TData, unknown>, event: CellMouseEvent) => void;
   selectedRows?: Set<string>;
   onSelectedRowsChange?: (selectedRows: Set<string>) => void;
   sortColumns?: SortColumn[];

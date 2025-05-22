@@ -2,6 +2,7 @@ import { db, migrateConfig } from '#/db/db';
 import docs from '#/lib/docs';
 import '#/lib/i18n';
 import { serve } from '@hono/node-server';
+import * as Sentry from '@sentry/node';
 import chalk from 'chalk';
 import { config } from 'config';
 import { migrate as pgMigrate } from 'drizzle-orm/node-postgres/migrator';
@@ -10,7 +11,6 @@ import { migrate as pgliteMigrate } from 'drizzle-orm/pglite/migrator';
 import app from '#/routes';
 import ascii from '#/utils/ascii';
 import { env } from './env';
-import '#/lib/i18n';
 
 // import { sdk } from './tracing';
 
@@ -18,6 +18,13 @@ const isPGliteDatabase = (_db: unknown): _db is PgliteDatabase => !!env.PGLITE;
 
 // Init OpenAPI docs
 docs(app);
+
+// Init monitoring instance
+Sentry.init({
+  dsn: config.sentryDsn,
+  environment: config.mode,
+  tracesSampleRate: 1.0,
+});
 
 const main = async () => {
   // Migrate db

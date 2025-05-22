@@ -5,7 +5,7 @@ import ErrorNotice from '~/modules/common/error-notice';
 import { organizationQueryOptions } from '~/modules/organizations/query';
 
 import { onlineManager, useQuery } from '@tanstack/react-query';
-import { i18n } from '~/lib/i18n';
+import i18n from 'i18next';
 import { toaster } from '~/modules/common/toaster';
 import { queryClient } from '~/query/query-client';
 import { AppRoute } from '~/routes/base';

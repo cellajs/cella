@@ -1,6 +1,6 @@
 import i18next from 'i18next';
+import i18n from 'i18next';
 import { ApiError } from '~/lib/api';
-import { i18n } from '~/lib/i18n';
 import router from '~/lib/router';
 import { flushStoresAndCache } from '~/modules/auth/sign-out';
 import { toaster } from '~/modules/common/toaster';

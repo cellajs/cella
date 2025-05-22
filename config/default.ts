@@ -59,7 +59,7 @@ export const config = {
   // Google maps key
   googleMapsKey: 'AIzaSyDMjCpQusdoPWLeD7jxkqAxVgJ8s5xJ3Co',
 
-  // File handling with imado
+  // File handling with s3 on Scaleway
   s3BucketPrefix: 'cella' as string | null, // Prefix to namespace files when sharing a bucket across apps or envs
   s3PublicBucket: 'imado-dev',
   s3PrivateBucket: 'imado-dev-priv',
@@ -68,11 +68,11 @@ export const config = {
   privateCDNUrl: 'https://imado-dev-priv.s3.nl-ams.scw.cloud',
   publicCDNUrl: 'https://544ba5eb-2c7a-417f-a5bf-b13950b89755.svc.edge.scw.cloud',
 
+  // Upload templates using Transloadit
   uploadTemplateIds: ['avatar', 'cover', 'attachment'] as const,
 
-  themeColor: '#26262b',
-
   // Theme settings
+  themeColor: '#26262b',
   theme: {
     colors: {
       rose: '#e11d48',
@@ -168,7 +168,7 @@ export const config = {
   } as const,
 
   /**
-   * Define user menu structure
+   * Define user menu structure of context entities with optionally nested subentities
    * ⚠️ IMPORTANT: If you define a `subentity`, then the corresponding database table for that
    * subentity, must include a foreign key, field named `${entity}Id`.
    */

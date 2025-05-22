@@ -1,4 +1,3 @@
-import { sentry } from '@hono/sentry';
 import { OpenAPIHono } from '@hono/zod-openapi';
 import { config } from 'config';
 import { compress } from 'hono/compress';
@@ -10,6 +9,7 @@ import { dynamicBodyLimit } from '#/middlewares/body-limit';
 import { observabilityMiddleware } from '#/middlewares/observability';
 import { logEvent } from './logger/log-event';
 import { logger } from './logger/logger';
+import { monitoringMiddleware } from './monitoring';
 
 const app = new OpenAPIHono<Env>();
 
@@ -19,8 +19,8 @@ app.use('*', secureHeaders());
 // Get metrics and trace
 app.use('*', observabilityMiddleware);
 
-// Sentry
-app.use('*', sentry({ dsn: config.sentryDsn }));
+// Error and perf monitoring
+app.use('*', monitoringMiddleware);
 
 // Health check for render.com
 app.get('/ping', (c) => c.text('pong'));

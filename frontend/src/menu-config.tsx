@@ -1,7 +1,7 @@
 import type { ContextEntity } from 'config';
+import i18n from 'i18next';
 import type { LucideProps } from 'lucide-react';
 import type { RefObject } from 'react';
-import { i18n } from '~/lib/i18n';
 import router from '~/lib/router';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import UnsavedBadge from '~/modules/common/unsaved-badge';

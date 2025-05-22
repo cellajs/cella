@@ -1,6 +1,6 @@
-import { getContext } from 'hono/context-storage';
-
 import type { HttpBindings } from '@hono/node-server';
+import type * as Sentry from '@sentry/node';
+import { getContext } from 'hono/context-storage';
 import type { OrganizationModel } from '#/db/schema/organizations';
 import type { TokenModel } from '#/db/schema/tokens';
 import type { UserModel } from '#/db/schema/users';
@@ -27,6 +27,8 @@ export type Env = {
     memberships: MembershipInfoType[];
     token: TokenModel;
     logId: string;
+    sentry: typeof Sentry;
+    sentrySpan?: ReturnType<typeof Sentry.startSpan>;
   };
   Bindings: Bindings;
 };

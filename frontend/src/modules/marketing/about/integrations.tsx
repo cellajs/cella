@@ -9,17 +9,19 @@ interface Integrations {
   planned?: boolean;
   url: string;
   invert?: boolean;
-  logo: string;
+  id: string;
   country: string;
 }
 
 const integrations: Integrations[] = [
-  { name: 'Sentry', country: 'US', url: 'sentry.io', logo: 'sentry.svg' },
-  { name: 'Better Stack', invert: true, country: 'CZ', url: 'betterstack.com', logo: 'betterstack.svg' },
-  { name: 'Paddle', country: 'GB', url: 'paddle.com', logo: 'paddle.svg' },
-  { name: 'BlockNote', country: 'NL', url: 'blocknotejs.org', logo: 'blocknote.svg' },
-  { name: 'Novu', country: 'IL', url: 'novu.co', logo: 'novu.svg' },
-  { name: 'Gleap', country: 'AT', url: 'gleap.io', logo: 'gleap.svg' },
+  { name: 'Transloadit', country: 'DE', url: 'transloadit.com', id: 'transloadit' },
+  { name: 'Better Stack', invert: true, country: 'CZ', url: 'betterstack.com', id: 'betterstack' },
+  { name: 'Paddle', country: 'GB', url: 'paddle.com', id: 'paddle' },
+  { name: 'BlockNote', country: 'NL', url: 'blocknotejs.org', id: 'blocknote' },
+  { name: 'Brevo', country: 'FR', url: 'brevo.com', id: 'brevo' },
+  { name: 'Sentry', country: 'US', url: 'sentry.io', id: 'sentry' },
+  { name: 'Gleap', country: 'AT', url: 'gleap.io', id: 'gleap' },
+  { name: 'Novu', country: 'IL', url: 'novu.co', id: 'novu' },
 ];
 
 const Integrations = () => {
@@ -29,7 +31,7 @@ const Integrations = () => {
   return (
     <ScrollArea className="w-full" orientation="horizontal" size="defaultHorizontal">
       <div className="flex w-max space-x-4 py-8 px-2">
-        {integrations.map(({ planned, url, logo, name, invert, country }, index) => {
+        {integrations.map(({ planned, url, id, name, invert, country }, index) => {
           const text = `about:integrations.text_${index + 1}`;
           const purpose = `about:integrations.purpose_${index + 1}`;
 
@@ -39,7 +41,7 @@ const Integrations = () => {
               target="_blank"
               rel="noreferrer"
               draggable="false"
-              key={name}
+              key={id}
               className="flex h-96 w-64 group relative shrink-0 flex-col justify-between rounded-lg border p-5 hover:cursor-pointer hover:border-primary hover:ring-4 hover:ring-primary/10"
             >
               {planned && (
@@ -47,7 +49,7 @@ const Integrations = () => {
               )}
               <div className="flex items-center space-x-2">
                 <img
-                  src={`/static/images/integrations/${logo}`}
+                  src={`/static/images/integrations/${id}.svg`}
                   alt={name}
                   className={`h-8 w-8 object-contain ${invert && mode === 'dark' && 'invert'}`}
                   loading="lazy"

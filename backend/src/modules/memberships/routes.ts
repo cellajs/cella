@@ -1,6 +1,6 @@
 import { z } from '@hono/zod-openapi';
 
-import { createRouteConfig } from '#/lib/route-config';
+import { createCustomRoute } from '#/lib/custom-routes';
 import { hasOrgAccess, isAuthenticated } from '#/middlewares/guard';
 import { idInOrgParamSchema, idOrSlugSchema, idsBodySchema, inOrgParamSchema } from '#/utils/schema/common';
 import {
@@ -22,7 +22,7 @@ import {
 } from './schema';
 
 class MembershipRouteConfig {
-  public createMemberships = createRouteConfig({
+  public createMemberships = createCustomRoute({
     method: 'post',
     path: '/',
     guard: [isAuthenticated, hasOrgAccess],
@@ -53,7 +53,7 @@ class MembershipRouteConfig {
     },
   });
 
-  public deleteMemberships = createRouteConfig({
+  public deleteMemberships = createCustomRoute({
     method: 'delete',
     path: '/',
     guard: [isAuthenticated, hasOrgAccess],
@@ -80,7 +80,7 @@ class MembershipRouteConfig {
     },
   });
 
-  public updateMembership = createRouteConfig({
+  public updateMembership = createCustomRoute({
     method: 'put',
     path: '/{id}',
     guard: [isAuthenticated, hasOrgAccess],
@@ -110,7 +110,7 @@ class MembershipRouteConfig {
     },
   });
 
-  public getMembers = createRouteConfig({
+  public getMembers = createCustomRoute({
     method: 'get',
     path: '/members',
     guard: [isAuthenticated, hasOrgAccess],
@@ -134,7 +134,7 @@ class MembershipRouteConfig {
     },
   });
 
-  public getMembershipInvitations = createRouteConfig({
+  public getMembershipInvitations = createCustomRoute({
     method: 'get',
     path: '/pending',
     guard: [isAuthenticated, hasOrgAccess],

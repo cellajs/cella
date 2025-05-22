@@ -2,7 +2,7 @@ import { type PgColumn, index, varchar } from 'drizzle-orm/pg-core';
 import { organizationsTable } from './db/schema/organizations';
 
 /**
- * Schema configuration for the attachments table.
+ * Include relations in the attachments table.
  * This configuration includes the columns and indexes for relations in the attachments table.
  */
 export const attachmentRelations = {

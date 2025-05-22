@@ -2,6 +2,7 @@ import * as Sentry from '@sentry/react';
 import { onlineManager } from '@tanstack/react-query';
 import { createRootRouteWithContext, createRoute, defer, redirect } from '@tanstack/react-router';
 import { config } from 'config';
+import i18n from 'i18next';
 import { Suspense, lazy } from 'react';
 import { z } from 'zod';
 import ErrorNotice from '~/modules/common/error-notice';
@@ -25,6 +26,11 @@ export const rootRoute = createRootRouteWithContext()({
   staticData: { pageTitle: '', isAuth: false },
   component: () => <Root />,
   errorComponent: ({ error }) => <ErrorNotice level="root" error={error} />,
+  notFoundComponent: () => {
+    return (
+      <ErrorNotice error={{ name: i18n.t('error:page_not_found'), message: i18n.t('error:page_not_found.text'), severity: 'info' }} level="root" />
+    );
+  },
 });
 
 export const PublicRoute = createRoute({

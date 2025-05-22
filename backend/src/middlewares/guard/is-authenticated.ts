@@ -1,3 +1,4 @@
+import * as Sentry from '@sentry/node';
 import { eq } from 'drizzle-orm';
 import { createMiddleware } from 'hono/factory';
 import { db } from '#/db/db';
@@ -45,7 +46,13 @@ export const isAuthenticated = createMiddleware<Env>(async (ctx, next): Promise<
     if (shouldUpdate) await db.update(usersTable).set({ lastSeenAt: newLastSeenAt.toISOString() }).where(eq(usersTable.id, user.id)).returning();
   }
 
+  // Set user in context and add to monitoring
   ctx.set('user', user);
+  Sentry.setUser({
+    id: user.id,
+    email: user.email,
+    username: user.slug,
+  });
 
   // Fetch user's memberships from the database
   const memberships = await db.select(membershipSelect).from(membershipsTable).where(eq(membershipsTable.userId, user.id));

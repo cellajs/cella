@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { createRouteConfig } from '#/lib/route-config';
+import { createCustomRoute } from '#/lib/custom-routes';
 import { hasSystemAccess, isAuthenticated } from '#/middlewares/guard';
 import { entityParamSchema, idsBodySchema } from '#/utils/schema/common';
 import { errorResponses, successWithDataSchema, successWithErrorsSchema, successWithPaginationSchema } from '#/utils/schema/responses';
@@ -14,7 +14,7 @@ import {
 } from './schema';
 
 class OrganizationRouteConfig {
-  public createOrganization = createRouteConfig({
+  public createOrganization = createCustomRoute({
     method: 'post',
     path: '/',
     guard: isAuthenticated,
@@ -44,7 +44,7 @@ class OrganizationRouteConfig {
     },
   });
 
-  public getOrganizations = createRouteConfig({
+  public getOrganizations = createCustomRoute({
     method: 'get',
     path: '/',
     guard: [isAuthenticated, hasSystemAccess],
@@ -67,7 +67,7 @@ class OrganizationRouteConfig {
     },
   });
 
-  public updateOrganization = createRouteConfig({
+  public updateOrganization = createCustomRoute({
     method: 'put',
     path: '/{idOrSlug}',
     guard: [isAuthenticated],
@@ -97,7 +97,7 @@ class OrganizationRouteConfig {
     },
   });
 
-  public getOrganization = createRouteConfig({
+  public getOrganization = createCustomRoute({
     method: 'get',
     path: '/{idOrSlug}',
     guard: [isAuthenticated],
@@ -122,7 +122,7 @@ class OrganizationRouteConfig {
     },
   });
 
-  public deleteOrganizations = createRouteConfig({
+  public deleteOrganizations = createCustomRoute({
     method: 'delete',
     path: '/',
     guard: [isAuthenticated],

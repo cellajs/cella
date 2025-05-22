@@ -17,7 +17,7 @@ import permissionManager, { type PermittedAction } from './permissions-config';
  * @param ctx - The request context.
  * @param entityType - The type of entity (e.g., organization, project).
  * @param action - Action to check `"create" | "read" | "update" | "delete"`.
- * @param idOrSlug - entity's id or slug.
+ * @param idOrSlug - entity id or slug.
  * @returns An object with:
  *   - `entity`: Resolved entity or `null` if not found.
  *   - `membership`: User's membership or `null` if not found.

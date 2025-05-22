@@ -5,6 +5,7 @@ import { OAuth2RequestError, generateCodeVerifier, generateState } from 'arctic'
 import type { EnabledOauthProvider } from 'config';
 import { config } from 'config';
 import { and, desc, eq } from 'drizzle-orm';
+import i18n from 'i18next';
 import { db } from '#/db/db';
 import { type EmailsModel, emailsTable } from '#/db/schema/emails';
 import { membershipsTable } from '#/db/schema/memberships';
@@ -15,7 +16,6 @@ import { tokensTable } from '#/db/schema/tokens';
 import { type UserModel, usersTable } from '#/db/schema/users';
 import { type Env, getContextToken, getContextUser } from '#/lib/context';
 import { type ErrorType, errorRedirect, errorResponse } from '#/lib/errors';
-import { i18n } from '#/lib/i18n';
 import { mailer } from '#/lib/mailer';
 import { logEvent } from '#/middlewares/logger/log-event';
 import { hashPassword, verifyPasswordHash } from '#/modules/auth/helpers/argon2id';

@@ -1,5 +1,4 @@
 import { createRouter } from '@tanstack/react-router';
-import { notFoundRoute } from '~/routes/not-found';
 import { routeTree } from '~/routes/route-tree';
 
 /**
@@ -12,7 +11,6 @@ const router = createRouter({
   scrollRestorationBehavior: 'instant',
   defaultHashScrollIntoView: { behavior: 'smooth' },
   routeTree,
-  notFoundRoute,
   defaultPreload: false,
   context: {},
   defaultPendingMinMs: 0,

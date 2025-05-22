@@ -2,6 +2,7 @@ import { OpenAPIHono } from '@hono/zod-openapi';
 import { EventName, Paddle } from '@paddle/paddle-node-sdk';
 import { config } from 'config';
 import { and, eq, inArray, isNull, lt } from 'drizzle-orm';
+import i18n from 'i18next';
 
 import { db } from '#/db/db';
 import { emailsTable } from '#/db/schema/emails';
@@ -13,7 +14,6 @@ import { usersTable } from '#/db/schema/users';
 import { env } from '#/env';
 import { type Env, getContextUser } from '#/lib/context';
 import { errorResponse } from '#/lib/errors';
-import { i18n } from '#/lib/i18n';
 import { mailer } from '#/lib/mailer';
 import { getSignedUrl } from '#/lib/signed-url';
 import { logEvent } from '#/middlewares/logger/log-event';

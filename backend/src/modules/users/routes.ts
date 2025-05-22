@@ -1,11 +1,11 @@
-import { createRouteConfig } from '#/lib/route-config';
+import { createCustomRoute } from '#/lib/custom-routes';
 import { hasSystemAccess, isAuthenticated } from '#/middlewares/guard';
 import { entityParamSchema, idsBodySchema } from '#/utils/schema/common';
 import { errorResponses, successWithDataSchema, successWithErrorsSchema, successWithPaginationSchema } from '#/utils/schema/responses';
 import { updateUserBodySchema, userSchema, usersQuerySchema } from './schema';
 
 class UserRouteConfig {
-  public getUsers = createRouteConfig({
+  public getUsers = createCustomRoute({
     method: 'get',
     path: '/',
     guard: [isAuthenticated, hasSystemAccess],
@@ -28,7 +28,7 @@ class UserRouteConfig {
     },
   });
 
-  public deleteUsers = createRouteConfig({
+  public deleteUsers = createCustomRoute({
     method: 'delete',
     path: '/',
     guard: [isAuthenticated, hasSystemAccess],
@@ -53,7 +53,7 @@ class UserRouteConfig {
     },
   });
 
-  public getUser = createRouteConfig({
+  public getUser = createCustomRoute({
     method: 'get',
     path: '/{idOrSlug}',
     guard: isAuthenticated,
@@ -76,7 +76,7 @@ class UserRouteConfig {
     },
   });
 
-  public updateUser = createRouteConfig({
+  public updateUser = createCustomRoute({
     method: 'put',
     path: '/{idOrSlug}',
     guard: [isAuthenticated, hasSystemAccess],

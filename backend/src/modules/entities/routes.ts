@@ -1,12 +1,12 @@
 import { z } from '@hono/zod-openapi';
-import { createRouteConfig } from '#/lib/route-config';
+import { createCustomRoute } from '#/lib/custom-routes';
 import { isAuthenticated } from '#/middlewares/guard';
 import { slugSchema } from '#/utils/schema/common';
 import { errorResponses, successWithDataSchema, successWithoutDataSchema } from '#/utils/schema/responses';
 import { entitiesQuerySchema, entitiesSchema } from './schema';
 
 class EntitiesRouteConfig {
-  public checkSlug = createRouteConfig({
+  public checkSlug = createCustomRoute({
     method: 'post',
     path: '/check-slug',
     guard: isAuthenticated,
@@ -37,7 +37,7 @@ class EntitiesRouteConfig {
     },
   });
 
-  public getEntities = createRouteConfig({
+  public getEntities = createCustomRoute({
     method: 'get',
     path: '/',
     guard: isAuthenticated,
