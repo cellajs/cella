@@ -42,27 +42,15 @@ const attachmentsRouteHandlers = app
       }
     });
 
-    // TODO: removing headers is not needed anymore? When proxying long-polling requests, content-encoding & content-length are added
-    // erroneously (saying the body is gzipped when it's not) so we'll just remove
-    // them to avoid content decoding errors in the browser.
+    const res = await fetch(originUrl.toString());
 
-    try {
-      let res = await fetch(originUrl.toString());
-      if (res.headers.get('content-encoding')) {
-        const headers = new Headers(res.headers);
-        headers.delete('content-encoding');
-        headers.delete('content-length');
-        res = new Response(res.body, {
-          status: res.status,
-          statusText: res.statusText,
-          headers,
-        });
-      }
-      return res;
-    } catch (err) {
-      const error = err instanceof Error ? err : new Error('Unknown electric error');
-      return errorResponse(ctx, 500, 'sync_failed', 'error', undefined, { entityType: 'attachments' }, error);
-    }
+    const headers = new Headers(res.headers);
+
+    return new Response(res.body, {
+      status: res.status,
+      statusText: res.statusText,
+      headers,
+    });
   })
   /*
    * Create one or more attachments
