@@ -175,7 +175,7 @@ export const BlockNote = ({
   }, [editor, editable]);
 
   useEffect(() => {
-    if (!onBeforeLoad) return;
+    if (!onBeforeLoad || !editable) return;
     const unsubscribe = router.subscribe('onBeforeLoad', handleOnBeforeLoad);
     return () => unsubscribe();
   }, []);
