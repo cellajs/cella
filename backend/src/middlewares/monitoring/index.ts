@@ -15,6 +15,14 @@ export const monitoringMiddleware = createMiddleware<Env>(async (ctx, next) => {
   // Attach SDK to context
   ctx.set('sentry', Sentry);
 
+  // Set request context
+  Sentry.setContext('request', {
+    method: ctx.req.method,
+    url: ctx.req.url,
+    headers: Object.fromEntries(ctx.req.raw.headers.entries()),
+    query_string: ctx.req.url.split('?')[1] || '',
+  });
+
   // Add tracing span
   await Sentry.startSpan({ name: `${ctx.req.method} ${ctx.req.path}` }, async (span) => {
     ctx.set('sentrySpan', span);

@@ -1,12 +1,9 @@
-import { Logtail } from '@logtail/node';
 import type { Severity } from 'config';
 import type { EventData } from '#/lib/errors';
-import { env } from '../../env';
-
-export const logtail = env.LOGTAIL_TOKEN ? new Logtail(env.LOGTAIL_TOKEN, {}) : undefined;
+import { externalLogger } from './external-logger';
 
 /**
- * Logs significant events with optional additional data to console and an external logging service (Logtail).
+ * Logs significant events with optional additional data to console and an external logging service.
  *
  * @param message - Main message or description of the event.
  * @param eventData - Optional additional data to log along with the event message.
@@ -15,9 +12,9 @@ export const logtail = env.LOGTAIL_TOKEN ? new Logtail(env.LOGTAIL_TOKEN, {}) : 
 export const logEvent = (message: string, eventData?: EventData, severity: Severity = 'info') => {
   if (eventData) {
     console[severity](message, eventData);
-    if (logtail) logtail[severity](message, undefined, eventData);
+    if (externalLogger) externalLogger[severity](message, undefined, eventData);
   } else {
     console[severity](message);
-    if (logtail) logtail[severity](message);
+    if (externalLogger) externalLogger[severity](message);
   }
 };

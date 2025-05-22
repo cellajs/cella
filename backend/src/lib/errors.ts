@@ -6,7 +6,8 @@ import i18n from 'i18next';
 import type { z } from 'zod';
 
 import type { Entity, Severity } from 'config';
-import { logEvent, logtail } from '#/middlewares/logger/log-event';
+import { externalLogger } from '#/middlewares/logger/external-logger';
+import { logEvent } from '#/middlewares/logger/log-event';
 import type { errorSchema } from '#/utils/schema/responses';
 import { type Env, getContextOrganization, getContextUser } from './context';
 import type locales from './i18n-locales';
@@ -70,8 +71,8 @@ export const createError = (
   if (err || ['warn', 'error'].includes(severity)) {
     const data = { ...error, eventData };
 
-    // Log error to logtail and Sentry
-    if (logtail) logtail[severity](message, undefined, data);
+    // Log error to external logger and monitoring service
+    if (externalLogger) externalLogger[severity](message, undefined, data);
     Sentry.captureException(err);
 
     if (err) console.error(err);
