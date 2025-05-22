@@ -4,7 +4,7 @@ import { env } from '#/env';
 import { type Env, getContextMemberships, getContextOrganization, getContextUser } from '#/lib/context';
 import { type ErrorType, createError, errorResponse } from '#/lib/errors';
 import { logEvent } from '#/middlewares/logger/log-event';
-import { enrichAttachmentWithUrls, enrichAttachmentsWithUrls } from '#/modules/attachments/helpers/convert-attachments';
+import { processAttachmentUrls, processAttachmentUrlsBatch } from '#/modules/attachments/helpers/process-attachment-urls';
 import attachmentRoutes from '#/modules/attachments/routes';
 import { splitByAllowance } from '#/permissions/split-by-allowance';
 import defaultHook from '#/utils/default-hook';
@@ -96,7 +96,7 @@ const attachmentsRouteHandlers = app
 
     const createdAttachments = await db.insert(attachmentsTable).values(fixedNewAttachments).returning();
 
-    const data = await enrichAttachmentsWithUrls(createdAttachments);
+    const data = await processAttachmentUrlsBatch(createdAttachments);
 
     logEvent(`${createdAttachments.length} attachments have been created`);
 
@@ -147,7 +147,7 @@ const attachmentsRouteHandlers = app
       const [targetAttachment] = await db.select().from(attachmentsTable).where(eq(attachmentsTable.id, attachmentId)).limit(1);
       if (!targetAttachment) return errorResponse(ctx, 404, 'not_found', 'warn', 'attachment', { attachmentId });
 
-      const items = await enrichAttachmentsWithUrls([targetAttachment]);
+      const items = await processAttachmentUrlsBatch([targetAttachment]);
       // return target attachment itself if no groupId
       if (!targetAttachment.groupId) return ctx.json({ success: true, data: { items, total: 1 } }, 200);
 
@@ -165,7 +165,7 @@ const attachmentsRouteHandlers = app
 
     const [{ total }] = await db.select({ total: count() }).from(attachmentsQuery.as('attachments'));
 
-    const items = await enrichAttachmentsWithUrls(attachments);
+    const items = await processAttachmentUrlsBatch(attachments);
 
     return ctx.json({ success: true, data: { items, total } }, 200);
   })
@@ -185,7 +185,7 @@ const attachmentsRouteHandlers = app
 
     if (!attachment) return errorResponse(ctx, 404, 'not_found', 'warn', 'attachment');
 
-    const data = await enrichAttachmentWithUrls(attachment);
+    const data = await processAttachmentUrls(attachment);
 
     return ctx.json({ success: true, data }, 200);
   })
@@ -210,7 +210,7 @@ const attachmentsRouteHandlers = app
 
     logEvent('Attachment updated', { attachment: updatedAttachment.id });
 
-    const data = await enrichAttachmentWithUrls(updatedAttachment);
+    const data = await processAttachmentUrls(updatedAttachment);
 
     return ctx.json({ success: true, data }, 200);
   })

@@ -6,13 +6,13 @@ import type { attachmentSchema } from '#/modules/attachments/schema';
 type AttachmentSelect = typeof attachmentsTable.$inferSelect;
 type Attachment = z.infer<typeof attachmentSchema>;
 
-export const enrichAttachmentsWithUrls = async (attachments: AttachmentSelect[]): Promise<Attachment[]> => {
-  return Promise.all(attachments.map(enrichAttachment));
+export const processAttachmentUrlsBatch = async (attachments: AttachmentSelect[]): Promise<Attachment[]> => {
+  return Promise.all(attachments.map(processAttachment));
 };
 
-export const enrichAttachmentWithUrls = async (attachment: AttachmentSelect): Promise<Attachment> => enrichAttachment(attachment);
+export const processAttachmentUrls = async (attachment: AttachmentSelect): Promise<Attachment> => processAttachment(attachment);
 
-const enrichAttachment = async ({ convertedKey, thumbnailKey, originalKey, ...attachment }: AttachmentSelect): Promise<Attachment> => {
+const processAttachment = async ({ convertedKey, thumbnailKey, originalKey, ...attachment }: AttachmentSelect): Promise<Attachment> => {
   return {
     ...attachment,
     url: await getSignedUrl(originalKey),

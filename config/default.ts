@@ -169,7 +169,7 @@ export const config = {
 
   /**
    * Define user menu structure of context entities with optionally nested subentities
-   * ⚠️ IMPORTANT: If you define a `subentity`, then the corresponding database table for that
+   * ⚠️ IMPORTANT: If you define a `subentityType`, then the corresponding database table for that
    * subentity, must include a foreign key, field named `${entity}Id`.
    */
   menuStructure: [
