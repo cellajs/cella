@@ -19,16 +19,16 @@ import defaultHook from '#/utils/default-hook';
 import { getIsoDate } from '#/utils/iso-date';
 import { getOrderColumn } from '#/utils/order-column';
 import { prepareStringForILikeFilter } from '#/utils/sql';
-import organizationsRouteConfig from './routes';
+import organizationRoutes from './routes';
 
 // Set default hook to catch validation errors
 const app = new OpenAPIHono<Env>({ defaultHook });
 
-const organizationsRoutes = app
+const organizationRouteHandlers = app
   /*
    * Create organization
    */
-  .openapi(organizationsRouteConfig.createOrganization, async (ctx) => {
+  .openapi(organizationRoutes.createOrganization, async (ctx) => {
     const { name, slug } = ctx.req.valid('json');
     const user = getContextUser();
 
@@ -64,7 +64,7 @@ const organizationsRoutes = app
   /*
    * Get list of organizations
    */
-  .openapi(organizationsRouteConfig.getOrganizations, async (ctx) => {
+  .openapi(organizationRoutes.getOrganizations, async (ctx) => {
     const { q, sort, order, offset, limit } = ctx.req.valid('query');
     const user = getContextUser();
 
@@ -119,7 +119,7 @@ const organizationsRoutes = app
   /*
    * Delete organizations by ids
    */
-  .openapi(organizationsRouteConfig.deleteOrganizations, async (ctx) => {
+  .openapi(organizationRoutes.deleteOrganizations, async (ctx) => {
     const { ids } = ctx.req.valid('json');
 
     const memberships = getContextMemberships();
@@ -159,7 +159,7 @@ const organizationsRoutes = app
   /*
    * Get organization by id or slug
    */
-  .openapi(organizationsRouteConfig.getOrganization, async (ctx) => {
+  .openapi(organizationRoutes.getOrganization, async (ctx) => {
     const { idOrSlug } = ctx.req.valid('param');
 
     const { entity: organization, membership, error } = await getValidEntity(ctx, 'organization', 'read', idOrSlug);
@@ -176,7 +176,7 @@ const organizationsRoutes = app
   /*
    * Update an organization by id or slug
    */
-  .openapi(organizationsRouteConfig.updateOrganization, async (ctx) => {
+  .openapi(organizationRoutes.updateOrganization, async (ctx) => {
     const { idOrSlug } = ctx.req.valid('param');
 
     const { entity: organization, membership, error } = await getValidEntity(ctx, 'organization', 'update', idOrSlug);
@@ -226,4 +226,4 @@ const organizationsRoutes = app
     return ctx.json({ success: true, data }, 200);
   });
 
-export default organizationsRoutes;
+export default organizationRouteHandlers;

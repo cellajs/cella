@@ -27,10 +27,10 @@ import { getParsedSessionCookie, invalidateSessionById, invalidateUserSessions, 
 import { checkSlugAvailable } from '../entities/helpers/check-slug';
 import { membershipSelect } from '../memberships/helpers/select';
 import { getUserSessions } from './helpers/get-sessions';
-import meRouteConfig from './routes';
-import type { menuItemSchema, userMenuSchema } from './schema';
+import meRoutes from './routes';
+import type { menuItemSchema, menuSchema } from './schema';
 
-type UserMenu = z.infer<typeof userMenuSchema>;
+type UserMenu = z.infer<typeof menuSchema>;
 type MenuItem = z.infer<typeof menuItemSchema>;
 
 // Set default hook to catch validation errors
@@ -38,11 +38,11 @@ const app = new OpenAPIHono<Env>({ defaultHook });
 
 export const streams = new Map<string, SSEStreamingApi>();
 
-const meRoutes = app
+const meRouteHandlers = app
   /*
-   * Get current user
+   * Get me
    */
-  .openapi(meRouteConfig.getSelf, async (ctx) => {
+  .openapi(meRoutes.getMe, async (ctx) => {
     const user = getContextUser();
 
     // Update last visit date
@@ -51,9 +51,9 @@ const meRoutes = app
     return ctx.json({ success: true, data: user }, 200);
   })
   /*
-   * Get current user auth info
+   * Get my auth data
    */
-  .openapi(meRouteConfig.getSelfAuthData, async (ctx) => {
+  .openapi(meRoutes.getSelfAuthData, async (ctx) => {
     const user = getContextUser();
 
     const getPasskey = db.select().from(passkeysTable).where(eq(passkeysTable.userEmail, user.email));
@@ -69,9 +69,9 @@ const meRoutes = app
     return ctx.json({ success: true, data: { oauth: validOAuthAccounts, passkey: !!passkeys.length, sessions } }, 200);
   })
   /*
-   * Get current user menu
+   * Get my user menu
    */
-  .openapi(meRouteConfig.getSelfMenu, async (ctx) => {
+  .openapi(meRoutes.getSelfMenu, async (ctx) => {
     const user = getContextUser();
     const memberships = getContextMemberships();
 
@@ -152,7 +152,7 @@ const meRoutes = app
   /*
    * Terminate a session
    */
-  .openapi(meRouteConfig.deleteSessions, async (ctx) => {
+  .openapi(meRoutes.deleteSessions, async (ctx) => {
     const { ids } = ctx.req.valid('json');
 
     const sessionIds = Array.isArray(ids) ? ids : [ids];
@@ -180,7 +180,7 @@ const meRoutes = app
   /*
    * Update current user (self)
    */
-  .openapi(meRouteConfig.updateSelf, async (ctx) => {
+  .openapi(meRoutes.updateSelf, async (ctx) => {
     const user = getContextUser();
 
     if (!user) return errorResponse(ctx, 404, 'not_found', 'warn', 'user', { user: 'self' });
@@ -214,7 +214,7 @@ const meRoutes = app
   /*
    * Delete current user (self)
    */
-  .openapi(meRouteConfig.deleteSelf, async (ctx) => {
+  .openapi(meRoutes.deleteSelf, async (ctx) => {
     const user = getContextUser();
 
     // Check if user exists
@@ -233,7 +233,7 @@ const meRoutes = app
   /*
    * Delete current user (self) entity membership
    */
-  .openapi(meRouteConfig.leaveEntity, async (ctx) => {
+  .openapi(meRoutes.leaveEntity, async (ctx) => {
     const user = getContextUser();
 
     const { entityType, idOrSlug } = ctx.req.valid('query');
@@ -255,7 +255,7 @@ const meRoutes = app
   /*
    * Create passkey for self
    */
-  .openapi(meRouteConfig.createPasskey, async (ctx) => {
+  .openapi(meRoutes.createPasskey, async (ctx) => {
     const { attestationObject, clientDataJSON, userEmail } = ctx.req.valid('json');
 
     const challengeFromCookie = await getAuthCookie(ctx, 'passkey_challenge');
@@ -271,7 +271,7 @@ const meRoutes = app
   /*
    * Delete passkey of self
    */
-  .openapi(meRouteConfig.deletePasskey, async (ctx) => {
+  .openapi(meRoutes.deletePasskey, async (ctx) => {
     const user = getContextUser();
 
     await db.delete(passkeysTable).where(eq(passkeysTable.userEmail, user.email));
@@ -281,7 +281,7 @@ const meRoutes = app
   /*
    * Get upload token
    */
-  .openapi(meRouteConfig.getUploadToken, async (ctx) => {
+  .openapi(meRoutes.getUploadToken, async (ctx) => {
     const { public: isPublic, organizationId, templateId } = ctx.req.valid('query');
     const user = getContextUser();
 
@@ -303,7 +303,7 @@ const meRoutes = app
   /*
    * Unsubscribe a user by token from receiving newsletters
    */
-  .openapi(meRouteConfig.unsubscribeSelf, async (ctx) => {
+  .openapi(meRoutes.unsubscribeSelf, async (ctx) => {
     const { token } = ctx.req.valid('query');
 
     // Check if token exists
@@ -353,4 +353,4 @@ const meRoutes = app
     });
   });
 
-export default meRoutes;
+export default meRouteHandlers;

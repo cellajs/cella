@@ -10,7 +10,7 @@ import { metricsConfig } from '#/middlewares/observability/config';
 import { calculateRequestsPerMinute, parsePromMetrics } from '#/modules/metrics/helpers';
 import defaultHook from '#/utils/default-hook';
 import { TimeSpan } from '#/utils/time-span';
-import metricsRouteConfig from './routes';
+import metricRoutes from './routes';
 
 // Set default hook to catch validation errors
 const app = new OpenAPIHono<Env>({ defaultHook });
@@ -18,11 +18,11 @@ const app = new OpenAPIHono<Env>({ defaultHook });
 // Store public counts in memory with a 1-minute cache
 const publicCountsCache = new Map<string, { data: Record<string, number>; expiresAt: number }>();
 
-const metricRoutes = app
+const metricRouteHandlers = app
   /*
    * Get metrics
    */
-  .openapi(metricsRouteConfig.getMetrics, async (ctx) => {
+  .openapi(metricRoutes.getMetrics, async (ctx) => {
     const metrics = await register.metrics();
 
     // get count metrics
@@ -37,7 +37,7 @@ const metricRoutes = app
   /*
    * Get public counts with caching
    */
-  .openapi(metricsRouteConfig.getPublicCounts, async (ctx) => {
+  .openapi(metricRoutes.getPublicCounts, async (ctx) => {
     const cacheKey = 'publicCounts';
     const cached = publicCountsCache.get(cacheKey);
 
@@ -65,4 +65,4 @@ const metricRoutes = app
     return ctx.json({ success: true, data }, 200);
   });
 
-export default metricRoutes;
+export default metricRouteHandlers;

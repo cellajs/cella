@@ -10,8 +10,8 @@ import { toaster } from '~/modules/common/toaster';
 import { queryClient } from '~/query/query-client';
 import { AppRoute } from '~/routes/base';
 import { noDirectAccess } from '~/utils/no-direct-access';
-import { attachmentsQuerySchema } from '#/modules/attachments/schema';
-import { memberInvitationsQuerySchema, membersQuerySchema } from '#/modules/memberships/schema';
+import { attachmentListQuerySchema } from '#/modules/attachments/schema';
+import { memberListQuerySchema, pendingInvitationListQuerySchema } from '#/modules/memberships/schema';
 
 //Lazy-loaded components
 const OrganizationPage = lazy(() => import('~/modules/organizations/organization-page'));
@@ -20,13 +20,13 @@ const AttachmentsTable = lazy(() => import('~/modules/attachments/table/table-wr
 const OrganizationSettings = lazy(() => import('~/modules/organizations/organization-settings'));
 
 // Search query schema
-export const membersSearchSchema = membersQuerySchema
+export const membersSearchSchema = memberListQuerySchema
   .pick({ q: true, sort: true, order: true, role: true })
   .extend({ userSheetId: z.string().optional() });
 
-export const memberInvitationsSearchSchema = memberInvitationsQuerySchema.pick({ sort: true, order: true });
+export const pendingInvitationsSearchSchema = pendingInvitationListQuerySchema.pick({ sort: true, order: true });
 
-export const attachmentsSearchSchema = attachmentsQuerySchema.pick({ q: true, sort: true, order: true }).extend({
+export const attachmentsSearchSchema = attachmentListQuerySchema.pick({ q: true, sort: true, order: true }).extend({
   attachmentDialogId: z.string().optional(),
   groupId: z.string().optional(),
 });

@@ -17,7 +17,7 @@ import { sendSSEToUsers } from '#/lib/sse';
 import { logEvent } from '#/middlewares/logger/log-event';
 import { getAssociatedEntityDetails, insertMembership } from '#/modules/memberships/helpers';
 import { membershipSelect } from '#/modules/memberships/helpers/select';
-import membershipsRouteConfig from '#/modules/memberships/routes';
+import membershipRoutes from '#/modules/memberships/routes';
 import { getUsersByConditions } from '#/modules/users/helpers/get-user-by';
 import { userSelect } from '#/modules/users/helpers/select';
 import { getValidEntity } from '#/permissions/get-valid-entity';
@@ -32,11 +32,11 @@ import { TimeSpan, createDate } from '#/utils/time-span';
 // Set default hook to catch validation errors
 const app = new OpenAPIHono<Env>({ defaultHook });
 
-const membershipsRoutes = app
+const membershipRouteHandlers = app
   /*
    * Create memberships (invite members) for an entity such as an organization
    */
-  .openapi(membershipsRouteConfig.createMemberships, async (ctx) => {
+  .openapi(membershipRoutes.createMemberships, async (ctx) => {
     const { emails, role } = ctx.req.valid('json');
     const { idOrSlug, entityType: passedEntityType } = ctx.req.valid('query');
 
@@ -202,7 +202,7 @@ const membershipsRoutes = app
    * Delete memberships to remove users from entity
    * When user is allowed to delete entity, they can delete memberships too
    */
-  .openapi(membershipsRouteConfig.deleteMemberships, async (ctx) => {
+  .openapi(membershipRoutes.deleteMemberships, async (ctx) => {
     const { entityType, idOrSlug } = ctx.req.valid('query');
     const { ids } = ctx.req.valid('json');
 
@@ -256,7 +256,7 @@ const membershipsRoutes = app
   /*
    * Update user membership
    */
-  .openapi(membershipsRouteConfig.updateMembership, async (ctx) => {
+  .openapi(membershipRoutes.updateMembership, async (ctx) => {
     const { id: membershipId } = ctx.req.valid('param');
     const { role, archived, muted, order } = ctx.req.valid('json');
 
@@ -327,7 +327,7 @@ const membershipsRoutes = app
   /*
    * Get members by entity id/slug and type
    */
-  .openapi(membershipsRouteConfig.getMembers, async (ctx) => {
+  .openapi(membershipRoutes.getMembers, async (ctx) => {
     const { idOrSlug, entityType, q, sort, order, offset, limit, role } = ctx.req.valid('query');
 
     const entity = await resolveEntity(entityType, idOrSlug);
@@ -380,7 +380,7 @@ const membershipsRoutes = app
   /*
    * Get pending membership invitations by entity id/slug and type
    */
-  .openapi(membershipsRouteConfig.getMembershipInvitations, async (ctx) => {
+  .openapi(membershipRoutes.getPendingInvitations, async (ctx) => {
     const { idOrSlug, entityType, sort, order, offset, limit } = ctx.req.valid('query');
 
     // Scope request to organization
@@ -403,7 +403,7 @@ const membershipsRoutes = app
 
     const orderColumn = getOrderColumn(invitedMemberSelect, sort, tokensTable.createdAt, order);
 
-    const memberInvitationsQuery = db
+    const pendingInvitationsQuery = db
       .select(invitedMemberSelect)
       .from(tokensTable)
       .where(
@@ -417,11 +417,11 @@ const membershipsRoutes = app
       .leftJoin(usersTable, eq(usersTable.id, tokensTable.userId))
       .orderBy(orderColumn);
 
-    const [{ total }] = await db.select({ total: count() }).from(memberInvitationsQuery.as('invites'));
+    const [{ total }] = await db.select({ total: count() }).from(pendingInvitationsQuery.as('invites'));
 
-    const items = await memberInvitationsQuery.limit(Number(limit)).offset(Number(offset));
+    const items = await pendingInvitationsQuery.limit(Number(limit)).offset(Number(offset));
 
     return ctx.json({ success: true, data: { items, total } }, 200);
   });
 
-export default membershipsRoutes;
+export default membershipRouteHandlers;

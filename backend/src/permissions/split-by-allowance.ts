@@ -1,7 +1,7 @@
 import type { Entity } from 'config';
 import { getContextUser } from '#/lib/context';
 import { resolveEntities } from '#/lib/entity';
-import type { MembershipInfoType } from '#/modules/memberships/schema';
+import type { MembershipSummary } from '#/modules/memberships/helpers/select';
 import permissionManager, { type PermittedAction } from '#/permissions/permissions-config';
 
 /**
@@ -16,7 +16,7 @@ import permissionManager, { type PermittedAction } from '#/permissions/permissio
  * @param memberships - The user's memberships.
  * @returns An object with `allowedIds` and `disallowedIds` arrays.
  */
-export const splitByAllowance = async (action: PermittedAction, entityType: Entity, ids: string[], memberships: MembershipInfoType[]) => {
+export const splitByAllowance = async (action: PermittedAction, entityType: Entity, ids: string[], memberships: MembershipSummary[]) => {
   const user = getContextUser();
 
   // Resolve entities

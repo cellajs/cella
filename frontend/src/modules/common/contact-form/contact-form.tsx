@@ -15,7 +15,7 @@ import { useCreateRequestMutation } from '~/modules/requests/query';
 import { Button, SubmitButton } from '~/modules/ui/button';
 import { Form } from '~/modules/ui/form';
 import { useUserStore } from '~/store/user';
-import { createRequestSchema } from '#/modules/requests/schema';
+import { requestCreateBodySchema } from '#/modules/requests/schema';
 
 const ContactFormMap = lazy(() => import('~/modules/common/contact-form/contact-form-map'));
 
@@ -25,7 +25,7 @@ const ContactForm = ({ dialog: isDialog }: { dialog?: boolean }) => {
   const { user } = useUserStore();
   const isMediumScreen = useBreakpoints('min', 'md');
 
-  const formSchema = createRequestSchema.extend({ name: z.string().min(2, t('error:name_required')) });
+  const formSchema = requestCreateBodySchema.extend({ name: z.string().min(2, t('error:name_required')) });
 
   type FormValues = z.infer<typeof formSchema>;
 

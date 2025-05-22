@@ -4,11 +4,11 @@ import type { z } from 'zod';
 import useSearchParams from '~/hooks/use-search-params';
 import { EntityGrid } from '~/modules/entities/entity-grid';
 import { EntityGridBar } from '~/modules/entities/entity-grid-bar';
-import type { entitiesQuerySchema } from '#/modules/entities/schema';
+import type { entityListQuerySchema } from '#/modules/entities/schema';
 
 const LIMIT = config.requestLimits.default;
 
-export type EntitySearch = Omit<z.infer<typeof entitiesQuerySchema>, 'removeSelf'>;
+export type EntitySearch = Omit<z.infer<typeof entityListQuerySchema>, 'removeSelf'>;
 
 // TODO replace with real data for GET entities
 const entities = Array.from({ length: 19 }).map((_, i) => ({

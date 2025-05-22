@@ -6,7 +6,7 @@ import { booleanQuerySchema } from '#/utils/schema/common';
 import { errorResponses, successWithDataSchema, successWithoutDataSchema } from '#/utils/schema/responses';
 import { inviteBodySchema, sendNewsletterBodySchema } from './schema';
 
-class SystemRouteConfig {
+class SystemRoutes {
   public createInvite = createCustomRoute({
     method: 'post',
     path: '/invite',
@@ -116,4 +116,4 @@ class SystemRouteConfig {
     },
   });
 }
-export default new SystemRouteConfig();
+export default new SystemRoutes();

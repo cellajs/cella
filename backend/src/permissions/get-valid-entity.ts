@@ -3,7 +3,7 @@ import type { Context } from 'hono';
 import { type Env, getContextMemberships, getContextUser } from '#/lib/context';
 import { type EntityModel, resolveEntity } from '#/lib/entity';
 import { type ErrorType, createError } from '#/lib/errors';
-import type { MembershipInfoType } from '#/modules/memberships/schema';
+import type { MembershipSummary } from '#/modules/memberships/helpers/select';
 import permissionManager, { type PermittedAction } from './permissions-config';
 
 /**
@@ -28,7 +28,7 @@ export const getValidEntity = async <T extends ContextEntity>(
   entityType: T,
   action: PermittedAction,
   idOrSlug: string,
-): Promise<{ error: ErrorType; entity: null; membership: null } | { error: null; entity: EntityModel<T>; membership: MembershipInfoType | null }> => {
+): Promise<{ error: ErrorType; entity: null; membership: null } | { error: null; entity: EntityModel<T>; membership: MembershipSummary | null }> => {
   const user = getContextUser();
   const memberships = getContextMemberships();
   const isSystemAdmin = user.role === 'admin';

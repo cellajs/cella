@@ -5,7 +5,7 @@ import HeaderCell from '~/modules/common/data-table/header-cell';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 import type { EntityPage } from '~/modules/entities/types';
 import { membersKeys } from '~/modules/memberships/query/options';
-import type { InvitedMember } from '~/modules/memberships/types';
+import type { PendingInvitation } from '~/modules/memberships/types';
 import { findUserFromCache } from '~/modules/users/helpers';
 import UserCell from '~/modules/users/user-cell';
 import { dateShort } from '~/utils/date-short';
@@ -15,7 +15,7 @@ export const useColumns = (entity: EntityPage) => {
   const isMobile = useBreakpoints('max', 'sm', false);
 
   const columns = useMemo(() => {
-    const cols: ColumnOrColumnGroup<InvitedMember>[] = [
+    const cols: ColumnOrColumnGroup<PendingInvitation>[] = [
       {
         key: 'email',
         name: t('common:email'),
@@ -86,5 +86,5 @@ export const useColumns = (entity: EntityPage) => {
     return cols;
   }, []);
 
-  return useState<ColumnOrColumnGroup<InvitedMember>[]>(columns);
+  return useState<ColumnOrColumnGroup<PendingInvitation>[]>(columns);
 };

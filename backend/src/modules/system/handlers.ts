@@ -17,7 +17,7 @@ import { errorResponse } from '#/lib/errors';
 import { mailer } from '#/lib/mailer';
 import { getSignedUrl } from '#/lib/signed-url';
 import { logEvent } from '#/middlewares/logger/log-event';
-import systemRouteConfig from '#/modules/system/routes';
+import systemRoutes from '#/modules/system/routes';
 import { getUsersByConditions } from '#/modules/users/helpers/get-user-by';
 import defaultHook from '#/utils/default-hook';
 import { nanoid } from '#/utils/nanoid';
@@ -31,11 +31,11 @@ const paddle = new Paddle(env.PADDLE_API_KEY || '');
 // Set default hook to catch validation errors
 const app = new OpenAPIHono<Env>({ defaultHook });
 
-const systemRoutes = app
+const systemRouteHandlers = app
   /*
    * Invite users to system
    */
-  .openapi(systemRouteConfig.createInvite, async (ctx) => {
+  .openapi(systemRoutes.createInvite, async (ctx) => {
     const { emails } = ctx.req.valid('json');
     const user = getContextUser();
 
@@ -115,7 +115,7 @@ const systemRoutes = app
   /*
    * Get presigned URL
    */
-  .openapi(systemRouteConfig.getPriasignedUrl, async (ctx) => {
+  .openapi(systemRoutes.getPriasignedUrl, async (ctx) => {
     const { key } = ctx.req.valid('query');
 
     const url = await getSignedUrl(key);
@@ -125,7 +125,7 @@ const systemRoutes = app
   /*
    * Paddle webhook
    */
-  .openapi(systemRouteConfig.paddleWebhook, async (ctx) => {
+  .openapi(systemRoutes.paddleWebhook, async (ctx) => {
     const signature = ctx.req.header('paddle-signature');
     const rawRequestBody = String(ctx.req.raw.body);
 
@@ -156,7 +156,7 @@ const systemRoutes = app
   /*
    * Send newsletter to one or more roles members of one or more organizations
    */
-  .openapi(systemRouteConfig.sendNewsletter, async (ctx) => {
+  .openapi(systemRoutes.sendNewsletter, async (ctx) => {
     const { organizationIds, subject, content, roles } = ctx.req.valid('json');
     const { toSelf } = ctx.req.valid('query');
 
@@ -215,4 +215,4 @@ const systemRoutes = app
     return ctx.json({ success: true }, 200);
   });
 
-export default systemRoutes;
+export default systemRouteHandlers;

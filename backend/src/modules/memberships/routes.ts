@@ -2,7 +2,7 @@ import { z } from '@hono/zod-openapi';
 
 import { createCustomRoute } from '#/lib/custom-routes';
 import { hasOrgAccess, isAuthenticated } from '#/middlewares/guard';
-import { idInOrgParamSchema, idOrSlugSchema, idsBodySchema, inOrgParamSchema } from '#/utils/schema/common';
+import { entityWithTypeQuerySchema, idInOrgParamSchema, idOrSlugSchema, idsBodySchema, inOrgParamSchema } from '#/utils/schema/common';
 import {
   errorResponses,
   successWithDataSchema,
@@ -10,18 +10,17 @@ import {
   successWithPaginationSchema,
   successWithoutDataSchema,
 } from '#/utils/schema/responses';
+import { memberSchema } from '../users/schema';
 import {
-  baseMembersQuerySchema,
-  createMembershipsBodySchema,
-  memberInvitationsQuerySchema,
-  memberInvitationsSchema,
-  membersQuerySchema,
-  membersSchema,
+  memberListQuerySchema,
+  membershipCreateBodySchema,
   membershipSchema,
-  updateMembershipBodySchema,
+  membershipUpdateBodySchema,
+  pendingInvitationListQuerySchema,
+  pendingInvitationSchema,
 } from './schema';
 
-class MembershipRouteConfig {
+class MembershipRoutes {
   public createMemberships = createCustomRoute({
     method: 'post',
     path: '/',
@@ -30,12 +29,12 @@ class MembershipRouteConfig {
     summary: 'Create memberships',
     description: 'Create memberships (invite members that may or may not exist in the system) to an entity such as an organization.',
     request: {
-      query: baseMembersQuerySchema,
       params: inOrgParamSchema,
+      query: entityWithTypeQuerySchema,
       body: {
         content: {
           'application/json': {
-            schema: createMembershipsBodySchema,
+            schema: membershipCreateBodySchema,
           },
         },
       },
@@ -62,7 +61,7 @@ class MembershipRouteConfig {
     description: 'Delete memberships by their ids. This will remove the membership but not delete any user(s).',
     request: {
       params: inOrgParamSchema,
-      query: baseMembersQuerySchema,
+      query: entityWithTypeQuerySchema,
       body: {
         content: { 'application/json': { schema: idsBodySchema() } },
       },
@@ -92,7 +91,7 @@ class MembershipRouteConfig {
       body: {
         content: {
           'application/json': {
-            schema: updateMembershipBodySchema,
+            schema: membershipUpdateBodySchema,
           },
         },
       },
@@ -118,15 +117,15 @@ class MembershipRouteConfig {
     summary: 'Get list of members',
     description: 'Get members of a context entity by id or slug. It returns members (users) with their membership.',
     request: {
-      query: membersQuerySchema,
       params: z.object({ orgIdOrSlug: idOrSlugSchema.optional() }),
+      query: memberListQuerySchema,
     },
     responses: {
       200: {
         description: 'Members',
         content: {
           'application/json': {
-            schema: successWithPaginationSchema(membersSchema),
+            schema: successWithPaginationSchema(memberSchema),
           },
         },
       },
@@ -134,7 +133,7 @@ class MembershipRouteConfig {
     },
   });
 
-  public getMembershipInvitations = createCustomRoute({
+  public getPendingInvitations = createCustomRoute({
     method: 'get',
     path: '/pending',
     guard: [isAuthenticated, hasOrgAccess],
@@ -142,15 +141,15 @@ class MembershipRouteConfig {
     summary: 'Get list of invitations',
     description: 'Get pending membership invitations from a context entity by id or slug. It returns invite info.',
     request: {
-      query: memberInvitationsQuerySchema,
       params: inOrgParamSchema,
+      query: pendingInvitationListQuerySchema,
     },
     responses: {
       200: {
         description: 'Invited members',
         content: {
           'application/json': {
-            schema: successWithPaginationSchema(memberInvitationsSchema),
+            schema: successWithPaginationSchema(pendingInvitationSchema),
           },
         },
       },
@@ -158,4 +157,4 @@ class MembershipRouteConfig {
     },
   });
 }
-export default new MembershipRouteConfig();
+export default new MembershipRoutes();

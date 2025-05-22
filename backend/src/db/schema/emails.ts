@@ -16,5 +16,5 @@ export const emailsTable = pgTable('emails', {
   verifiedAt: timestamp({ mode: 'string' }),
 });
 
-export type EmailsModel = typeof emailsTable.$inferSelect;
+export type EmailModel = typeof emailsTable.$inferSelect;
 export type InsertEmailModel = typeof emailsTable.$inferInsert;

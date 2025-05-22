@@ -3,9 +3,9 @@ import { createCustomRoute } from '#/lib/custom-routes';
 import { hasOrgAccess, isAuthenticated, isPublicAccess } from '#/middlewares/guard';
 import { idInOrgParamSchema, idSchema, idsBodySchema, inOrgParamSchema } from '#/utils/schema/common';
 import { errorResponses, successWithDataSchema, successWithErrorsSchema, successWithPaginationSchema } from '#/utils/schema/responses';
-import { attachmentSchema, attachmentsQuerySchema, createAttachmentsSchema, updateAttachmentBodySchema } from './schema';
+import { attachmentCreateManySchema, attachmentListQuerySchema, attachmentSchema, attachmentUpdateBodySchema } from './schema';
 
-class AttachmentRouteConfig {
+class AttachmentRoutes {
   public createAttachments = createCustomRoute({
     method: 'post',
     path: '/',
@@ -19,7 +19,7 @@ class AttachmentRouteConfig {
         required: true,
         content: {
           'application/json': {
-            schema: createAttachmentsSchema,
+            schema: attachmentCreateManySchema,
           },
         },
       },
@@ -45,8 +45,8 @@ class AttachmentRouteConfig {
     summary: 'Get list of attachments',
     description: 'Get attachments for an organization.',
     request: {
-      query: attachmentsQuerySchema,
       params: inOrgParamSchema,
+      query: attachmentListQuerySchema,
     },
     responses: {
       200: {
@@ -96,7 +96,7 @@ class AttachmentRouteConfig {
       body: {
         content: {
           'application/json': {
-            schema: updateAttachmentBodySchema,
+            schema: attachmentUpdateBodySchema,
           },
         },
       },
@@ -168,9 +168,7 @@ class AttachmentRouteConfig {
     summary: 'Redirect to attachment',
     description: 'Redirect to attachment by id.',
     request: {
-      params: z.object({
-        id: idSchema,
-      }),
+      params: z.object({ id: idSchema }),
     },
     responses: {
       200: {
@@ -188,9 +186,7 @@ class AttachmentRouteConfig {
     summary: 'Get attachment cover',
     description: 'Get attachment cover image by id.',
     request: {
-      params: z.object({
-        id: idSchema,
-      }),
+      params: z.object({ id: idSchema }),
     },
     responses: {
       200: {
@@ -200,4 +196,4 @@ class AttachmentRouteConfig {
     },
   });
 }
-export default new AttachmentRouteConfig();
+export default new AttachmentRoutes();

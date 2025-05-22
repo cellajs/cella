@@ -1,6 +1,6 @@
 import type { z } from 'zod';
-import type { checkTokenSchema } from '#/modules/auth/schema';
+import type { tokenWithDataSchema } from '#/modules/auth/schema';
 
-export type TokenData = z.infer<typeof checkTokenSchema>;
+export type TokenData = z.infer<typeof tokenWithDataSchema>;
 
 export type Step = 'checkEmail' | 'signIn' | 'signUp' | 'inviteOnly' | 'waitlist';

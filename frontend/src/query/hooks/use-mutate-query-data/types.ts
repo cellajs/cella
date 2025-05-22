@@ -1,6 +1,6 @@
 import type { ContextEntity, Entity, ProductEntity } from 'config';
-import type { LimitedEntity } from '~/modules/entities/types';
-import type { MinimumMembershipInfo } from '~/modules/memberships/types';
+import type { EntitySummary } from '~/modules/entities/types';
+import type { MembershipSummary } from '~/modules/memberships/types';
 import type { InfiniteQueryData, QueryData } from '~/query/types';
 
 export interface ItemData {
@@ -8,7 +8,7 @@ export interface ItemData {
   membership?: { id: string } | null;
 }
 
-export type ContextEntityData = LimitedEntity & { membership: MinimumMembershipInfo | null };
+export type ContextEntityData = EntitySummary & { membership: MembershipSummary | null };
 export type EntityData = { id: string; entity: Entity };
 
 export type QueryDataActions = 'create' | 'update' | 'remove' | 'updateMembership';

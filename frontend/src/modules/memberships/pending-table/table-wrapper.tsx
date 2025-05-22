@@ -8,11 +8,11 @@ import type { EntityPage } from '~/modules/entities/types';
 import { useColumns } from '~/modules/memberships/pending-table/columns';
 import BaseDataTable from '~/modules/memberships/pending-table/table';
 import { MembershipInvitationsTableBar } from '~/modules/memberships/pending-table/table-bar';
-import type { memberInvitationsSearchSchema } from '~/routes/organizations';
+import type { pendingInvitationsSearchSchema } from '~/routes/organizations';
 
-const LIMIT = config.requestLimits.memberInvitations;
+const LIMIT = config.requestLimits.pendingInvitations;
 
-export type MembershipInvitationsSearch = z.infer<typeof memberInvitationsSearchSchema>;
+export type MembershipInvitationsSearch = z.infer<typeof pendingInvitationsSearchSchema>;
 
 export interface MembershipInvitationsTableProps {
   entity: EntityPage;

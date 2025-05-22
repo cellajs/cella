@@ -1,4 +1,4 @@
-import type { entitySuggestionSchema } from '#/modules/entities/schema';
+import type { entityListItemSchema } from '#/modules/entities/schema';
 
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
@@ -20,7 +20,7 @@ import { getEntityRoute, suggestionSections } from '~/nav-config';
 import { useNavigationStore } from '~/store/navigation';
 import { Badge } from '../ui/badge';
 
-export type SuggestionType = z.infer<typeof entitySuggestionSchema>;
+export type SuggestionType = z.infer<typeof entityListItemSchema>;
 
 export interface SuggestionSection {
   id: string;

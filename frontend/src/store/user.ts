@@ -3,16 +3,16 @@ import i18n from 'i18next';
 import { create } from 'zustand';
 import { createJSONStorage, devtools, persist } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
-import type { MeUser, UserAuthInfo } from '~/modules/me/types';
+import type { MeAuthData, MeUser } from '~/modules/me/types';
 import type { User } from '~/modules/users/types';
 
 interface UserStoreState {
   user: MeUser; // Current user data
-  passkey: UserAuthInfo['passkey']; // Current user's passkey
-  oauth: UserAuthInfo['oauth']; // Current user's oauth options
+  passkey: MeAuthData['passkey']; // Current user's passkey
+  oauth: MeAuthData['oauth']; // Current user's oauth options
   lastUser: Partial<MeUser> | null; // Last signed-out user's data (email, name, passkey, id, slug)
   setUser: (user: MeUser, skipLastUser?: boolean) => void; // Sets current user and updates lastUser
-  setUserAuthInfo: (data: Partial<UserAuthInfo>) => void; // Sets current user auth info
+  setMeAuthData: (data: Partial<MeAuthData>) => void; // Sets current user auth info
   updateUser: (user: User) => void; // Updates current user and adjusts lastUser
   clearUserStore: () => void; // Resets the store.
 }
@@ -22,7 +22,7 @@ export const useUserStore = create<UserStoreState>()(
     persist(
       immer((set) => ({
         user: null as unknown as MeUser,
-        oauth: [] as UserAuthInfo['oauth'],
+        oauth: [] as MeAuthData['oauth'],
         passkey: false,
         lastUser: null,
         updateUser: (user) => {
@@ -57,7 +57,7 @@ export const useUserStore = create<UserStoreState>()(
 
           i18n.changeLanguage(user.language || 'en');
         },
-        setUserAuthInfo: (data) => {
+        setMeAuthData: (data) => {
           set((state) => {
             state.passkey = data.passkey ?? state.passkey;
             state.oauth = data.oauth ?? state.oauth;

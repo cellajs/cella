@@ -3,7 +3,7 @@ import { useNavigate } from '@tanstack/react-router';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import type * as z from 'zod';
-import { createRequestSchema } from '#/modules/requests/schema';
+import { requestCreateBodySchema } from '#/modules/requests/schema';
 
 import { onlineManager } from '@tanstack/react-query';
 import { config } from 'config';
@@ -17,7 +17,7 @@ import { Form, FormControl, FormField, FormItem, FormMessage } from '~/modules/u
 import { Input } from '~/modules/ui/input';
 import { cn } from '~/utils/cn';
 
-const formSchema = createRequestSchema;
+const formSchema = requestCreateBodySchema;
 
 interface WaitlistFormProps {
   email: string;

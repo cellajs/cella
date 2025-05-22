@@ -4,9 +4,9 @@ import { isNoBot } from '#/middlewares/is-no-bot';
 import { spamLimiter } from '#/middlewares/rate-limiter/limiters';
 import { idsBodySchema } from '#/utils/schema/common';
 import { errorResponses, successWithDataSchema, successWithPaginationSchema, successWithoutDataSchema } from '#/utils/schema/responses';
-import { createRequestSchema, getRequestsQuerySchema, requestSchema } from './schema';
+import { requestCreateBodySchema, requestListQuerySchema, requestSchema } from './schema';
 
-class RequestRouteConfig {
+class RequestRoutes {
   public createRequest = createCustomRoute({
     method: 'post',
     path: '/',
@@ -19,7 +19,7 @@ class RequestRouteConfig {
       body: {
         content: {
           'application/json': {
-            schema: createRequestSchema,
+            schema: requestCreateBodySchema,
           },
         },
       },
@@ -45,7 +45,7 @@ class RequestRouteConfig {
     summary: 'Get list of requests',
     description: 'Get list of requests on system level for waitlist, submit contact form or to join newsletter.',
     request: {
-      query: getRequestsQuerySchema,
+      query: requestListQuerySchema,
     },
     responses: {
       200: {
@@ -85,4 +85,4 @@ class RequestRouteConfig {
     },
   });
 }
-export default new RequestRouteConfig();
+export default new RequestRoutes();

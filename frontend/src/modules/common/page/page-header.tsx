@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from 'react';
 import useScrollTo from '~/hooks/use-scroll-to';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { PageCover } from '~/modules/common/page/page-cover';
-import type { LimitedEntity } from '~/modules/entities/types';
+import type { EntitySummary } from '~/modules/entities/types';
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbSeparator } from '~/modules/ui/breadcrumb';
 import { baseEntityRoutes } from '~/nav-config';
 
@@ -18,14 +18,14 @@ interface PageHeaderProps {
   thumbnailUrl?: string | null;
   bannerUrl?: string | null;
   panel?: React.ReactNode;
-  parent?: { id: string; fetchFunc: (idOrSlug: string) => Promise<LimitedEntity> };
+  parent?: { id: string; fetchFunc: (idOrSlug: string) => Promise<EntitySummary> };
   disableScroll?: boolean;
   coverUpdateCallback: (bannerUrl: string) => void;
 }
 
 // PageHeader Component
 const PageHeader = ({ title, id, isAdmin, thumbnailUrl, bannerUrl, type, panel, parent, disableScroll, coverUpdateCallback }: PageHeaderProps) => {
-  const [fetchedParent, setFetchedParent] = useState<LimitedEntity | null>(null);
+  const [fetchedParent, setFetchedParent] = useState<EntitySummary | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<boolean>(false);
   const scrollToRef = useRef<HTMLDivElement>(null);

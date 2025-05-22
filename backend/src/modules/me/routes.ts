@@ -2,26 +2,19 @@ import { z } from 'zod';
 import { createCustomRoute } from '#/lib/custom-routes';
 import { isAuthenticated, isPublicAccess } from '#/middlewares/guard';
 import { tokenLimiter } from '#/middlewares/rate-limiter/limiters';
+import { entityWithTypeQuerySchema } from '#/utils/schema/common';
 import { errorResponses, successWithDataSchema, successWithErrorsSchema, successWithoutDataSchema } from '#/utils/schema/responses';
-import { updateUserBodySchema, userSchema } from '../users/schema';
-import {
-  leaveEntityQuerySchema,
-  meAuthInfoSchema,
-  passkeyRegistrationBodySchema,
-  unsubscribeSelfQuerySchema,
-  uploadQuerySchema,
-  uploadTokenBodySchema,
-  userMenuSchema,
-} from './schema';
+import { userSchema, userUpdateBodySchema } from '../users/schema';
+import { meAuthDataSchema, menuSchema, passkeyRegistrationBodySchema, uploadTokenQuerySchema, uploadTokenSchema } from './schema';
 
-class MeRouteConfig {
-  public getSelf = createCustomRoute({
+class MeRoutes {
+  public getMe = createCustomRoute({
     method: 'get',
     path: '/',
     guard: isAuthenticated,
     tags: ['me'],
-    summary: 'Get self',
-    description: 'Get the current user (self). It includes a `counts` object.',
+    summary: 'Get me',
+    description: 'Get the current user (me). It includes a `counts` object.',
     responses: {
       200: {
         description: 'User',
@@ -41,7 +34,7 @@ class MeRouteConfig {
     responses: {
       200: {
         description: 'User sign-up info',
-        content: { 'application/json': { schema: successWithDataSchema(meAuthInfoSchema) } },
+        content: { 'application/json': { schema: successWithDataSchema(meAuthDataSchema) } },
       },
       ...errorResponses,
     },
@@ -55,7 +48,7 @@ class MeRouteConfig {
     summary: 'Update self',
     description: 'Update the current user (self).',
     request: {
-      body: { content: { 'application/json': { schema: updateUserBodySchema } } },
+      body: { content: { 'application/json': { schema: userUpdateBodySchema } } },
     },
     responses: {
       200: {
@@ -97,7 +90,7 @@ class MeRouteConfig {
     responses: {
       200: {
         description: 'Menu of user',
-        content: { 'application/json': { schema: successWithDataSchema(userMenuSchema) } },
+        content: { 'application/json': { schema: successWithDataSchema(menuSchema) } },
       },
       ...errorResponses,
     },
@@ -131,14 +124,14 @@ class MeRouteConfig {
     guard: isAuthenticated,
     tags: ['me'],
     summary: 'Leave entity',
-    description: 'Leave any entity on your own.',
+    description: 'Remove your own entity membership by yourself.',
     security: [],
     request: {
-      query: leaveEntityQuerySchema,
+      query: entityWithTypeQuerySchema,
     },
     responses: {
       200: {
-        description: 'Passkey removed',
+        description: 'Membership removed',
         content: { 'application/json': { schema: successWithoutDataSchema } },
       },
       ...errorResponses,
@@ -154,7 +147,7 @@ class MeRouteConfig {
     summary: 'Unsubscribe',
     description: 'Unsubscribe using a personal unsubscribe token.',
     request: {
-      query: unsubscribeSelfQuerySchema,
+      query: z.object({ token: z.string() }),
     },
     responses: {
       302: {
@@ -173,14 +166,14 @@ class MeRouteConfig {
     description:
       'This endpoint is used to get an upload token for a user or organization. The token can be used to upload public or private images/files to your S3 bucket using',
     request: {
-      query: uploadQuerySchema,
+      query: uploadTokenQuerySchema,
     },
     responses: {
       200: {
         description: 'Upload token with a scope for a user or organization',
         content: {
           'application/json': {
-            schema: successWithDataSchema(uploadTokenBodySchema),
+            schema: successWithDataSchema(uploadTokenSchema),
           },
         },
       },
@@ -229,4 +222,4 @@ class MeRouteConfig {
     },
   });
 }
-export default new MeRouteConfig();
+export default new MeRoutes();

@@ -13,22 +13,13 @@ import {
   validSlugSchema,
   validUrlSchema,
 } from '#/utils/schema/common';
-import { membershipInfoSchema } from '../memberships/schema';
-
-export const membershipsCountSchema = z.object({
-  membership: z.object({
-    admin: z.number(),
-    member: z.number(),
-    pending: z.number(),
-    total: z.number(),
-  }),
-});
+import { membershipSummarySchema } from '../memberships/schema';
 
 /** Type assertion to avoid "ReferenceError: Buffer is not defined" when using `hasField`.
  * Redundant fields will be filtered out in `getRelatedEntityCounts`.
  */
 //TODO: find way to fix ?
-export const relatedEntitiesCountSchema = z.object(
+export const entityCountSchema = z.object(
   [...config.productEntities, ...config.contextEntities].reduce(
     (acc, key) => {
       acc[key as ValidEntities<'organizationId'>] = z.number();
@@ -38,23 +29,32 @@ export const relatedEntitiesCountSchema = z.object(
   ),
 );
 
+export const membershipCountSchema = z.object({
+  membership: z.object({
+    admin: z.number(),
+    member: z.number(),
+    pending: z.number(),
+    total: z.number(),
+  }),
+});
+
 export const organizationSchema = z.object({
   ...createSelectSchema(organizationsTable).shape,
   languages: z.array(languageSchema).min(1),
   emailDomains: z.array(z.string()),
   authStrategies: z.array(z.string()),
-  membership: membershipInfoSchema.nullable(),
-  counts: membershipsCountSchema,
+  membership: membershipSummarySchema.nullable(),
+  counts: membershipCountSchema,
 });
 
-export const organizationWithMembershipSchema = organizationSchema.extend({ membership: membershipInfoSchema });
+export const organizationWithMembershipSchema = organizationSchema.extend({ membership: membershipSummarySchema });
 
-export const createOrganizationBodySchema = z.object({
+export const organizationCreateBodySchema = z.object({
   name: validNameSchema,
   slug: validSlugSchema,
 });
 
-export const updateOrganizationBodySchema = createInsertSchema(organizationsTable, {
+export const organizationUpdateBodySchema = createInsertSchema(organizationsTable, {
   slug: validSlugSchema,
   name: validNameSchema,
   shortName: validNameSchema.nullable(),
@@ -88,7 +88,7 @@ export const updateOrganizationBodySchema = createInsertSchema(organizationsTabl
   })
   .partial();
 
-export const getOrganizationsQuerySchema = paginationQuerySchema.merge(
+export const organizationListQuerySchema = paginationQuerySchema.merge(
   z.object({
     sort: z.enum(['id', 'name', 'userRole', 'createdAt']).default('createdAt').optional(),
   }),

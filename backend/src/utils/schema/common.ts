@@ -55,6 +55,9 @@ export const tokenParamSchema = z.object({ token: z.string() });
 /** Schema for entity identifier idOrSlug */
 export const entityParamSchema = z.object({ idOrSlug: idOrSlugSchema });
 
+/** Schema for idOrSlug that must be a specific entity type */
+export const entityWithTypeQuerySchema = z.object({ idOrSlug: idOrSlugSchema, entityType: contextEntityTypeSchema });
+
 /** Schema for an organization identifier idOrSlug */
 export const inOrgParamSchema = z.object({ orgIdOrSlug: idOrSlugSchema });
 
@@ -116,6 +119,9 @@ export const validNameSchema = z
     (s) => /^[\p{L}\d\-., '&()]+$/u.test(s), // Allow only specified characters
     "Name may only contain letters, numbers, spaces, and these characters: .,'-&()",
   );
+
+/** Schema for a valid email */
+export const validEmailSchema = z.string().min(4, 'Name must be between 4 and 100 characters').max(100, 'Name must be between 4 and 100 characters');
 
 /** Schema for a valid slug: string between 2 and 100 characters, allowing alphanumeric and hyphens */
 export const validSlugSchema = z

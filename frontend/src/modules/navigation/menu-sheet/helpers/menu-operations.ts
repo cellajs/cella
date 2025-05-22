@@ -1,6 +1,6 @@
 import { type ContextEntity, config } from 'config';
 import type { UserMenu, UserMenuItem } from '~/modules/me/types';
-import type { MinimumMembershipInfo } from '~/modules/memberships/types';
+import type { MembershipSummary } from '~/modules/memberships/types';
 import { useNavigationStore } from '~/store/navigation';
 
 const useTransformOnMenuItems = (transform: (items: UserMenuItem[]) => UserMenuItem[]) => {
@@ -91,11 +91,7 @@ export const updateMenuItem = (updatedEntity: UserMenuItem) => {
  * @param entityIdOrSlug - ID or slug of entity.
  * @param entityType - Context entity type
  */
-export const updateMenuItemMembership = (
-  membershipInfo: Partial<Omit<MinimumMembershipInfo, 'organizationId'>>,
-  entityIdOrSlug: string,
-  entityType: ContextEntity,
-) => {
+export const updateMenuItemMembership = (membershipInfo: Partial<MembershipSummary>, entityIdOrSlug: string, entityType: ContextEntity) => {
   // Get the current menu state from the navigation store (without using hooks)
   const menu = useNavigationStore.getState().menu;
 

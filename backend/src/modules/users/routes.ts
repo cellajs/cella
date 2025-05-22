@@ -2,9 +2,9 @@ import { createCustomRoute } from '#/lib/custom-routes';
 import { hasSystemAccess, isAuthenticated } from '#/middlewares/guard';
 import { entityParamSchema, idsBodySchema } from '#/utils/schema/common';
 import { errorResponses, successWithDataSchema, successWithErrorsSchema, successWithPaginationSchema } from '#/utils/schema/responses';
-import { updateUserBodySchema, userSchema, usersQuerySchema } from './schema';
+import { userListQuerySchema, userSchema, userUpdateBodySchema } from './schema';
 
-class UserRouteConfig {
+class UserRoutes {
   public getUsers = createCustomRoute({
     method: 'get',
     path: '/',
@@ -13,7 +13,7 @@ class UserRouteConfig {
     summary: 'Get list of users',
     description: 'Get a list of users on system level.',
     request: {
-      query: usersQuerySchema,
+      query: userListQuerySchema,
     },
     responses: {
       200: {
@@ -88,7 +88,7 @@ class UserRouteConfig {
       body: {
         content: {
           'application/json': {
-            schema: updateUserBodySchema,
+            schema: userUpdateBodySchema,
           },
         },
       },
@@ -106,4 +106,4 @@ class UserRouteConfig {
     },
   });
 }
-export default new UserRouteConfig();
+export default new UserRoutes();

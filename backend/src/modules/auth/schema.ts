@@ -2,12 +2,16 @@ import { z } from 'zod';
 import { idSchema, passwordSchema } from '#/utils/schema/common';
 import { userSchema } from '../users/schema';
 
+export const emailBodySchema = z.object({
+  email: userSchema.shape.email,
+});
+
 export const emailPasswordBodySchema = z.object({
   email: userSchema.shape.email,
   password: passwordSchema,
 });
 
-export const checkTokenSchema = z.object({
+export const tokenWithDataSchema = z.object({
   email: z.string().email(),
   userId: idSchema.optional(),
   organizationName: z.string().optional(),
@@ -15,23 +19,23 @@ export const checkTokenSchema = z.object({
   organizationId: z.string().optional(),
 });
 
+export const sendVerificationEmailBodySchema = z.object({
+  tokenId: z.string().optional(),
+  userId: z.string().optional(),
+});
+
+export const emailVerifiedSchema = z.object({
+  emailVerified: z.boolean(),
+});
+
+export const passkeyChallengeQuerySchema = z.object({ challengeBase64: z.string() });
+
 export const passkeyVerificationBodySchema = z.object({
   clientDataJSON: z.string(),
   authenticatorData: z.string(),
   signature: z.string(),
   userEmail: z.string(),
 });
-
-export const emailBodySchema = z.object({
-  email: userSchema.shape.email,
-});
-
-/** Response schema if successfully signed in */
-export const signInSchema = z.object({
-  emailVerified: z.boolean(),
-});
-
-export const passkeyChallengeQuerySchema = z.object({ challengeBase64: z.string() });
 
 export const oauthQuerySchema = z
   .object({
@@ -52,8 +56,4 @@ export const oauthQuerySchema = z
 export const oauthCallbackQuerySchema = z.object({
   code: z.string(),
   state: z.string(),
-});
-export const sendVerificationEmailBodySchema = z.object({
-  tokenId: z.string().optional(),
-  userId: z.string().optional(),
 });

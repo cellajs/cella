@@ -174,12 +174,12 @@ export type GetMembershipInvitationsParams = RequiredGetMembersParams &
  * @param param.order - Sort order `'asc' | 'desc'` (defaults to 'asc').
  * @param param.role - Optional Role `"admin" | "member"` to filter results.
  * @param param.page - Page number.
- * @param param.limit - Maximum number of invited members per page (defaults to `config.requestLimits.memberInvitations`).
+ * @param param.limit - Maximum number of invited members per page (defaults to `config.requestLimits.pendingInvitations`).
  * @param param.offset - Optional offset.
  * @param signal - Optional abort signal for cancelling the request.
  * @returns A paginated list of invited members.
  */
-export const getMembershipInvitations = async (
+export const getPendingInvitations = async (
   {
     idOrSlug,
     orgIdOrSlug,
@@ -188,7 +188,7 @@ export const getMembershipInvitations = async (
     sort = 'createdAt',
     order = 'asc',
     page = 0,
-    limit = config.requestLimits.memberInvitations,
+    limit = config.requestLimits.pendingInvitations,
     offset,
   }: GetMembershipInvitationsParams,
   signal?: AbortSignal,

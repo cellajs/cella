@@ -4,7 +4,7 @@ import { getContext } from 'hono/context-storage';
 import type { OrganizationModel } from '#/db/schema/organizations';
 import type { TokenModel } from '#/db/schema/tokens';
 import type { UserModel } from '#/db/schema/users';
-import type { MembershipInfoType } from '#/modules/memberships/schema';
+import type { MembershipSummary } from '#/modules/memberships/helpers/select';
 
 /**
  * Set node server bindings.
@@ -23,8 +23,8 @@ type Bindings = HttpBindings & {
 export type Env = {
   Variables: {
     user: UserModel;
-    organization: OrganizationModel & { membership: MembershipInfoType | null };
-    memberships: MembershipInfoType[];
+    organization: OrganizationModel & { membership: MembershipSummary | null };
+    memberships: MembershipSummary[];
     token: TokenModel;
     logId: string;
     sentry: typeof Sentry;

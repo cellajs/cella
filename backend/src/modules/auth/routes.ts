@@ -7,18 +7,18 @@ import { emailEnumLimiter, passwordLimiter, spamLimiter, tokenLimiter } from '#/
 import { cookieSchema, idSchema, passwordSchema, tokenParamSchema } from '#/utils/schema/common';
 import { errorResponses, successWithDataSchema, successWithoutDataSchema } from '#/utils/schema/responses';
 import {
-  checkTokenSchema,
   emailBodySchema,
   emailPasswordBodySchema,
+  emailVerifiedSchema,
   oauthCallbackQuerySchema,
   oauthQuerySchema,
   passkeyChallengeQuerySchema,
   passkeyVerificationBodySchema,
   sendVerificationEmailBodySchema,
-  signInSchema,
+  tokenWithDataSchema,
 } from './schema';
 
-class AuthLayoutRouteConfig {
+class AuthRoutes {
   public startImpersonation = createCustomRoute({
     method: 'get',
     path: '/impersonation/start',
@@ -349,7 +349,7 @@ class AuthLayoutRouteConfig {
         }),
         content: {
           'application/json': {
-            schema: successWithDataSchema(signInSchema),
+            schema: successWithDataSchema(emailVerifiedSchema),
           },
         },
       },
@@ -374,7 +374,7 @@ class AuthLayoutRouteConfig {
         description: 'Token is valid',
         content: {
           'application/json': {
-            schema: successWithDataSchema(checkTokenSchema),
+            schema: successWithDataSchema(tokenWithDataSchema),
           },
         },
       },
@@ -569,4 +569,4 @@ class AuthLayoutRouteConfig {
   });
 }
 
-export default new AuthLayoutRouteConfig();
+export default new AuthRoutes();

@@ -8,9 +8,9 @@ import { Button } from '~/modules/ui/button';
 import { toaster } from '~/modules/common/toaster';
 import { deleteMySessions } from '~/modules/me/api';
 import { SessionTile } from '~/modules/me/session-tile';
-import type { UserAuthInfo } from '~/modules/me/types';
+import type { MeAuthData } from '~/modules/me/types';
 
-const SessionsList = ({ userAuthInfo }: { userAuthInfo: UserAuthInfo }) => {
+const SessionsList = ({ userAuthInfo }: { userAuthInfo: MeAuthData }) => {
   const { t } = useTranslation();
 
   const [allSessions, setAllSessions] = useState(userAuthInfo.sessions);

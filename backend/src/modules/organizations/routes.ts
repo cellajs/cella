@@ -4,16 +4,16 @@ import { hasSystemAccess, isAuthenticated } from '#/middlewares/guard';
 import { entityParamSchema, idsBodySchema } from '#/utils/schema/common';
 import { errorResponses, successWithDataSchema, successWithErrorsSchema, successWithPaginationSchema } from '#/utils/schema/responses';
 import {
-  createOrganizationBodySchema,
-  getOrganizationsQuerySchema,
-  membershipsCountSchema,
+  entityCountSchema,
+  membershipCountSchema,
+  organizationCreateBodySchema,
+  organizationListQuerySchema,
   organizationSchema,
+  organizationUpdateBodySchema,
   organizationWithMembershipSchema,
-  relatedEntitiesCountSchema,
-  updateOrganizationBodySchema,
 } from './schema';
 
-class OrganizationRouteConfig {
+class OrganizationRoutes {
   public createOrganization = createCustomRoute({
     method: 'post',
     path: '/',
@@ -26,7 +26,7 @@ class OrganizationRouteConfig {
         required: true,
         content: {
           'application/json': {
-            schema: createOrganizationBodySchema,
+            schema: organizationCreateBodySchema,
           },
         },
       },
@@ -52,7 +52,7 @@ class OrganizationRouteConfig {
     summary: 'Get list of organizations',
     description: 'Get list of organizations. Currently only available to system admins.',
     request: {
-      query: getOrganizationsQuerySchema,
+      query: organizationListQuerySchema,
     },
     responses: {
       200: {
@@ -79,7 +79,7 @@ class OrganizationRouteConfig {
       body: {
         content: {
           'application/json': {
-            schema: updateOrganizationBodySchema,
+            schema: organizationUpdateBodySchema,
           },
         },
       },
@@ -113,7 +113,7 @@ class OrganizationRouteConfig {
         content: {
           'application/json': {
             schema: successWithDataSchema(
-              organizationSchema.extend({ counts: z.object({ ...membershipsCountSchema.shape, ...relatedEntitiesCountSchema.shape }) }),
+              organizationSchema.extend({ counts: z.object({ ...membershipCountSchema.shape, ...entityCountSchema.shape }) }),
             ),
           },
         },
@@ -147,4 +147,4 @@ class OrganizationRouteConfig {
     },
   });
 }
-export default new OrganizationRouteConfig();
+export default new OrganizationRoutes();

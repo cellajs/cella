@@ -2,7 +2,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { z } from 'zod';
-import { updateUserBodySchema } from '#/modules/users/schema';
+import { userUpdateBodySchema } from '#/modules/users/schema';
 
 import { config } from 'config';
 import type { UseFormProps } from 'react-hook-form';
@@ -33,7 +33,7 @@ interface UpdateUserFormProps {
   children?: React.ReactNode;
 }
 
-const formSchema = updateUserBodySchema;
+const formSchema = userUpdateBodySchema;
 
 type FormValues = z.infer<typeof formSchema>;
 

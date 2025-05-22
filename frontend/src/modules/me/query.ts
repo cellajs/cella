@@ -1,7 +1,7 @@
 import { queryOptions, useMutation } from '@tanstack/react-query';
 import type { ApiError } from '~/lib/api';
 import { updateSelf } from '~/modules/me/api';
-import { getAndSetMe, getAndSetMenu, getAndSetUserAuthInfo } from '~/modules/me/helpers';
+import { getAndSetMe, getAndSetMeAuthData, getAndSetMenu } from '~/modules/me/helpers';
 import type { UpdateUserParams } from '~/modules/users/api';
 import { usersKeys } from '~/modules/users/query';
 import type { User } from '~/modules/users/types';
@@ -31,7 +31,7 @@ export const meQueryOptions = () => queryOptions({ queryKey: meKeys.all, queryFn
  *
  * @returns Query options.
  */
-export const meAuthQueryOptions = () => queryOptions({ queryKey: meKeys.auth(), queryFn: getAndSetUserAuthInfo });
+export const meAuthQueryOptions = () => queryOptions({ queryKey: meKeys.auth(), queryFn: getAndSetMeAuthData });
 
 /**
  * Query options for fetching the current authenticated user's menu.

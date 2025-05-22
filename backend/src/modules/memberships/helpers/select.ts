@@ -1,6 +1,10 @@
 import { config } from 'config';
+import type { z } from 'zod';
 import { membershipsTable } from '#/db/schema/memberships';
 import type { ContextEntityIdFields, GeneratedColumn } from '#/db/types';
+import type { membershipSummarySchema } from '../schema';
+
+export type MembershipSummary = z.infer<typeof membershipSummarySchema>;
 
 // Dynamic part of the select based on contextEntities that you can set in config
 const membershipDynamicSelect = config.contextEntities
