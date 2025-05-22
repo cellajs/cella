@@ -10,7 +10,7 @@ export const attachmentCreateManySchema = z
   .array(
     attachmentInsertSchema.omit({
       name: true,
-      entity: true,
+      entityType: true,
       modifiedAt: true,
       modifiedBy: true,
       createdAt: true,

@@ -1,4 +1,4 @@
-import { type ContextEntity, config } from 'config';
+import { type ContextEntityType, config } from 'config';
 import { type SQLWrapper, and, eq, ilike, inArray, ne, or, sql } from 'drizzle-orm';
 import type { z } from 'zod';
 
@@ -17,7 +17,7 @@ type EntitiesQueryProps = Omit<z.infer<typeof entityListQuerySchema>, 'targetUse
 };
 
 type UserEntitiesQueryProps = Omit<EntitiesQueryProps, 'userId'>;
-type ContextEntitiesQueryProps = Omit<EntitiesQueryProps, 'userMembershipType' | 'selfId' | 'type'> & { type?: ContextEntity };
+type ContextEntitiesQueryProps = Omit<EntitiesQueryProps, 'userMembershipType' | 'selfId' | 'type'> & { type?: ContextEntityType };
 
 export const getEntitiesQuery = ({ q, organizationIds, userId, selfId, type, userMembershipType }: EntitiesQueryProps) => {
   return !type
@@ -32,7 +32,7 @@ export const getEntitiesQuery = ({ q, organizationIds, userId, selfId, type, use
  * and match the provided search query. Default will return query for all context entities if type is not provided.
  */
 const getContextEntitiesQuery = ({ q, organizationIds, userId, type }: ContextEntitiesQueryProps) => {
-  const contextEntities = type ? [type] : config.contextEntities;
+  const contextEntities = type ? [type] : config.contextEntityTypes;
 
   const contextQueries = contextEntities
     .map((entityType) => {
@@ -50,7 +50,7 @@ const getContextEntitiesQuery = ({ q, organizationIds, userId, type }: ContextEn
           id: table.id,
           slug: table.slug,
           name: table.name,
-          entity: table.entity,
+          entityType: table.entityType,
           thumbnailUrl: table.thumbnailUrl,
           membership: membershipSelect,
           total: sql<number>`COUNT(*) OVER()`.as('total'),
@@ -78,7 +78,7 @@ const getUsersQuery = ({ q, organizationIds, selfId, userMembershipType }: UserE
       id: usersTable.id,
       slug: usersTable.slug,
       name: usersTable.name,
-      entity: usersTable.entity,
+      entityType: usersTable.entityType,
       email: usersTable.email,
       thumbnailUrl: usersTable.thumbnailUrl,
       membership: membershipSelect,

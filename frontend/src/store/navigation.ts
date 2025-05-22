@@ -40,8 +40,8 @@ interface NavigationStoreState {
 }
 
 // Defines the initial menu structure, excluding submenu items
-const initialMenuState: UserMenu = config.menuStructure.reduce((acc, { entity }) => {
-  acc[entity] = [];
+const initialMenuState: UserMenu = config.menuStructure.reduce((acc, { entityType }) => {
+  acc[entityType] = [];
   return acc;
 }, {} as UserMenu);
 

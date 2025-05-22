@@ -1,13 +1,13 @@
 import { config } from 'config';
 import type { z } from 'zod';
 import { membershipsTable } from '#/db/schema/memberships';
-import type { ContextEntityIdFields, GeneratedColumn } from '#/db/types';
+import type { ContextEntityTypeIdFields, GeneratedColumn } from '#/db/types';
 import type { membershipSummarySchema } from '../schema';
 
 export type MembershipSummary = z.infer<typeof membershipSummarySchema>;
 
 // Dynamic part of the select based on contextEntities that you can set in config
-const membershipDynamicSelect = config.contextEntities
+const membershipDynamicSelect = config.contextEntityTypes
   .filter((e) => e !== 'organization')
   .reduce(
     (fields, entityType) => {
@@ -16,7 +16,7 @@ const membershipDynamicSelect = config.contextEntities
       if (Object.prototype.hasOwnProperty.call(membershipsTable, fieldName)) fields[fieldName] = membershipsTable[fieldName];
       return fields;
     },
-    {} as Record<Exclude<ContextEntityIdFields, 'organizationId'>, GeneratedColumn>,
+    {} as Record<Exclude<ContextEntityTypeIdFields, 'organizationId'>, GeneratedColumn>,
   );
 
 // Merge the static and dynamic select fields

@@ -5,7 +5,7 @@ import type { ClientErrorStatusCode, ServerErrorStatusCode } from 'hono/utils/ht
 import i18n from 'i18next';
 import type { z } from 'zod';
 
-import type { Entity, Severity } from 'config';
+import type { EntityType, Severity } from 'config';
 import { externalLogger } from '#/middlewares/logger/external-logger';
 import { logEvent } from '#/middlewares/logger/log-event';
 import type { errorSchema } from '#/utils/schema/responses';
@@ -44,7 +44,7 @@ export const createError = (
   status: HttpErrorStatus,
   type: SimplifiedErrorKey,
   severity: Severity = 'info',
-  entityType?: Entity,
+  entityType?: EntityType,
   eventData?: EventData,
   err?: Error,
 ) => {
@@ -98,7 +98,7 @@ export const errorResponse = (
   status: HttpErrorStatus,
   type: SimplifiedErrorKey,
   severity: Severity = 'info',
-  entityType?: Entity,
+  entityType?: EntityType,
   eventData?: EventData,
   err?: Error,
 ) => {

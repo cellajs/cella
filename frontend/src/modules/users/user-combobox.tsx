@@ -21,10 +21,10 @@ interface Props {
   entity: EntityPage;
 }
 
-export const UserSuggestionCombobox = ({ value, onChange, entity }: Props) => {
+export const UserCombobox = ({ value, onChange, entity }: Props) => {
   const { t } = useTranslation();
   const { ref, bounds } = useMeasure<HTMLDivElement>();
-  const entityIdField = config.entityIdFields[entity.entity];
+  const entityIdField = config.entityIdFields[entity.entityType];
 
   const [open, setOpen] = useState(false);
   const [selected, setSelected] = useState<string[]>(value);
@@ -55,7 +55,7 @@ export const UserSuggestionCombobox = ({ value, onChange, entity }: Props) => {
     setOpen(false);
   };
 
-  const { data, isFetching } = useQuery(entitiesQueryOptions({ q: debouncedSearchQuery, type: 'user', userMembershipType: entity.entity }));
+  const { data, isFetching } = useQuery(entitiesQueryOptions({ q: debouncedSearchQuery, type: 'user', userMembershipType: entity.entityType }));
 
   useEffect(() => {
     onChange(selected);
@@ -151,7 +151,7 @@ export const UserSuggestionCombobox = ({ value, onChange, entity }: Props) => {
                             }}
                           >
                             <div className="flex space-x-2 items-center outline-0 ring-0 group">
-                              <AvatarWrap type={user.entity} className="h-8 w-8" id={user.id} name={user.name} url={user.thumbnailUrl} />
+                              <AvatarWrap type={user.entityType} className="h-8 w-8" id={user.id} name={user.name} url={user.thumbnailUrl} />
                               <span className="group-hover:underline group-data-[already-member=true]:no-underline underline-offset-4 truncate font-medium">
                                 {user.name}
                               </span>

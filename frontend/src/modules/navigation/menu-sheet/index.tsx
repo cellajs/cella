@@ -55,7 +55,7 @@ export const MenuSheet = memo(() => {
 
   const renderedSections = useMemo(() => {
     return config.menuStructure
-      .map(({ entity: entityType }) => {
+      .map(({ entityType }) => {
         const menuData = menu[entityType];
         const menuSection = menuSectionsSchemas[entityType];
         if (!menuSection) return null;
@@ -96,7 +96,7 @@ export const MenuSheet = memo(() => {
 
           const { item: sourceItem } = sourceData;
           const edge: Edge | null = extractClosestEdge(targetData);
-          const newOrder = getRelativeItemOrder(menu, sourceItem.entity, sourceItem.membership.archived, sourceItem.id, targetData.order, edge);
+          const newOrder = getRelativeItemOrder(menu, sourceItem.entityType, sourceItem.membership.archived, sourceItem.id, targetData.order, edge);
 
           // Exit early if order remains the same
           if (targetData.order === sourceItem.membership.order || newOrder === sourceItem.membership.order) return;
@@ -107,7 +107,7 @@ export const MenuSheet = memo(() => {
             orgIdOrSlug: sourceItem.organizationId || sourceItem.id,
             // Mutation variables
             idOrSlug: sourceItem.id,
-            entityType: sourceItem.entity,
+            entityType: sourceItem.entityType,
           });
         },
       }),
@@ -181,7 +181,7 @@ export const MenuSheet = memo(() => {
                 </label>
               </div>
               {pwaEnabled && <OfflineAccessSwitch />}
-              {config.menuStructure.some(({ subentity }) => subentity) && (
+              {config.menuStructure.some(({ subentityType }) => subentityType) && (
                 <div className="flex items-center gap-4 ml-1">
                   <Switch size="xs" id="hideSubmenu" checked={hideSubmenu} onCheckedChange={toggleHideSubmenu} ria-label={t('common:nested_menu')} />
                   <label htmlFor="hideSubmenu" className="cursor-pointer select-none text-sm font-medium leading-none">

@@ -1,4 +1,4 @@
-import { type ContextEntity, config } from 'config';
+import { type ContextEntityType, config } from 'config';
 import { clientConfig, handleResponse } from '~/lib/api';
 import { membershipsHc } from '#/modules/memberships/hc';
 
@@ -7,7 +7,7 @@ export const client = membershipsHc(config.backendUrl, clientConfig);
 export type InviteMemberProps = Parameters<(typeof client.index)['$post']>['0']['json'] &
   Parameters<(typeof client.index)['$post']>['0']['param'] & {
     idOrSlug: string;
-    entityType: ContextEntity;
+    entityType: ContextEntityType;
   };
 
 /**
@@ -32,7 +32,7 @@ export const inviteMembers = async ({ idOrSlug, entityType, orgIdOrSlug, ...rest
 export type RemoveMembersProps = Parameters<(typeof client.index)['$delete']>['0']['param'] &
   Parameters<(typeof client.index)['$delete']>['0']['json'] & {
     idOrSlug: string;
-    entityType: ContextEntity;
+    entityType: ContextEntityType;
   };
 
 /**
@@ -83,7 +83,7 @@ export const updateMembership = async (values: UpdateMembershipProp) => {
 type RequiredGetMembersParams = {
   idOrSlug: string;
   orgIdOrSlug: string;
-  entityType: ContextEntity;
+  entityType: ContextEntityType;
 };
 
 type OptionalGetMembersParams = Omit<Parameters<(typeof client)['members']['$get']>['0']['query'], 'limit' | 'offset'> & {

@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-import { type ContextEntity, config } from 'config';
+import { type ContextEntityType, config } from 'config';
 import { createSelectSchema } from 'drizzle-zod';
 import { sessionsTable } from '#/db/schema/sessions';
 import { entityBaseSchema } from '#/modules/entities/schema';
@@ -32,11 +32,11 @@ const menuItemListSchema = z.array(
 
 export const menuSchema = z.object(
   config.menuStructure.reduce(
-    (acc, { entity }) => {
-      acc[entity] = menuItemListSchema;
+    (acc, { entityType }) => {
+      acc[entityType] = menuItemListSchema;
       return acc;
     },
-    {} as Record<ContextEntity, typeof menuItemListSchema>,
+    {} as Record<ContextEntityType, typeof menuItemListSchema>,
   ),
 );
 

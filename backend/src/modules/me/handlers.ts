@@ -78,8 +78,8 @@ const meRouteHandlers = app
     // Fetch function for each menu section, including handling submenus
     const fetchMenuItemsForSection = async (section: MenuSection) => {
       let submenu: MenuItem[] = [];
-      const mainTable = entityTables[section.entity];
-      const mainEntityIdField = config.entityIdFields[section.entity];
+      const mainTable = entityTables[section.entityType];
+      const mainEntityIdField = config.entityIdFields[section.entityType];
 
       const entity = await db
         .select({
@@ -89,19 +89,19 @@ const meRouteHandlers = app
           modifiedAt: mainTable.modifiedAt,
           organizationId: membershipSelect.organizationId,
           name: mainTable.name,
-          entity: mainTable.entity,
+          entityType: mainTable.entityType,
           thumbnailUrl: mainTable.thumbnailUrl,
           membership: membershipSelect,
         })
         .from(mainTable)
-        .where(and(eq(membershipsTable.userId, user.id), eq(membershipsTable.contextType, section.entity)))
+        .where(and(eq(membershipsTable.userId, user.id), eq(membershipsTable.contextType, section.entityType)))
         .orderBy(asc(membershipsTable.order))
         .innerJoin(membershipsTable, and(eq(membershipsTable[mainEntityIdField], mainTable.id), isNotNull(membershipsTable.activatedAt)));
 
       // If the section has a submenu, fetch the submenu items
-      if (section.subentity) {
-        const subTable = entityTables[section.subentity];
-        const subentityIdField = config.entityIdFields[section.subentity];
+      if (section.subentityType) {
+        const subTable = entityTables[section.subentityType];
+        const subentityIdField = config.entityIdFields[section.subentityType];
 
         submenu = await db
           .select({
@@ -111,12 +111,12 @@ const meRouteHandlers = app
             modifiedAt: subTable.modifiedAt,
             organizationId: membershipSelect.organizationId,
             name: subTable.name,
-            entity: subTable.entity,
+            entityType: subTable.entityType,
             thumbnailUrl: subTable.thumbnailUrl,
             membership: membershipSelect,
           })
           .from(subTable)
-          .where(and(eq(membershipsTable.userId, user.id), eq(membershipsTable.contextType, section.subentity)))
+          .where(and(eq(membershipsTable.userId, user.id), eq(membershipsTable.contextType, section.subentityType)))
           .orderBy(asc(membershipsTable.order))
           .innerJoin(membershipsTable, eq(membershipsTable[subentityIdField], subTable.id));
       }
@@ -133,12 +133,12 @@ const meRouteHandlers = app
         async (accPromise, section) => {
           const acc = await accPromise;
           if (!memberships.length) {
-            acc[section.entity] = [];
+            acc[section.entityType] = [];
             return acc;
           }
 
           // Fetch menu items for the current section
-          acc[section.entity] = await fetchMenuItemsForSection(section);
+          acc[section.entityType] = await fetchMenuItemsForSection(section);
           return acc;
         },
         Promise.resolve({} as UserMenu),

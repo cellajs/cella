@@ -97,7 +97,7 @@ export const handleOAuthInvitation = async (ctx: Context) => {
   if (tokenRecord.type !== 'invitation') return createError(ctx, 400, 'invalid_token', 'error');
 
   // Determine redirection based on entity presence
-  const isMembershipInvite = !!tokenRecord.entity;
+  const isMembershipInvite = !!tokenRecord.entityType;
   const redirectUrl = isMembershipInvite ? `/invitation/${tokenRecord.token}?tokenId=${tokenRecord.id}` : '/welcome';
 
   // Set authentication cookies

@@ -110,7 +110,7 @@ export const handleMembershipTokenUpdate = async (userId: string, tokenId: strin
     // Update the token with the new userId
     const [token] = await db.update(tokensTable).set({ userId }).where(eq(tokensTable.id, tokenId)).returning();
 
-    const { entity: entityType, role } = token;
+    const { entityType, role } = token;
     // Validate if the token has an entityType and role (must be a membership invite)
     if (!entityType || !role) throw new Error('Token is not a valid membership invite.');
 

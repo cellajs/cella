@@ -38,7 +38,7 @@ export const MenuSheetSearchInput = ({ menu, searchTerm, setSearchTerm, searchRe
           return isMatch ? [item, ...filteredSubmenu] : filteredSubmenu;
         });
 
-      return config.menuStructure.flatMap(({ entity }) => filterItems(menu[entity]));
+      return config.menuStructure.flatMap(({ entityType }) => filterItems(menu[entityType]));
     };
     searchResultsChange(filterResults());
   }, [searchTerm, menu]);

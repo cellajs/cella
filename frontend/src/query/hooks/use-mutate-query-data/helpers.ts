@@ -1,9 +1,9 @@
 import type { QueryKey } from '@tanstack/react-query';
-import type { Entity } from 'config';
+import type { EntityType } from 'config';
 import { getQueryKeySortOrder } from '~/query/helpers';
 import type {
   ArbitraryEntityQueryData,
-  ContextEntityData,
+  ContextEntityTypeData,
   EntityData,
   EntityQueryData,
   InfiniteEntityQueryData,
@@ -23,10 +23,10 @@ export const isArbitraryQueryData = (data: unknown): data is ArbitraryEntityQuer
 
   return Object.entries(data).every(([_, value]) => {
     if (!Array.isArray(value)) {
-      return typeof value === 'object' && value !== null && 'entity' in value && 'id' in value;
+      return typeof value === 'object' && value !== null && 'entityType' in value && 'id' in value;
     }
 
-    return value.every((item) => typeof item === 'object' && item !== null && 'entity' in item && 'id' in item);
+    return value.every((item) => typeof item === 'object' && item !== null && 'entityType' in item && 'id' in item);
   });
 };
 /**
@@ -88,14 +88,14 @@ export const changeQueryData = (queryKey: QueryKey, items: ItemData[], action: Q
  * @param queryKey - Query key.
  * @param items - items to update.
  * @param action - `"create" | "update" | "remove" | "updateMembership"`
- * @param entity - Entity to update the data for.
+ * @param entityType - Entity type to update the data for.
  * @param keyToOperateIn - Optional key to specify which part of the data to update.
  */
 export const changeArbitraryQueryData = (
   queryKey: QueryKey,
-  items: EntityData[] | ContextEntityData[],
+  items: EntityData[] | ContextEntityTypeData[],
   action: QueryDataActions,
-  entity: Entity,
+  entityType: EntityType,
   keyToOperateIn?: string,
 ) => {
   queryClient.setQueryData<ArbitraryEntityQueryData>(queryKey, (data) => {
@@ -110,14 +110,14 @@ export const changeArbitraryQueryData = (
         continue;
       }
 
-      if ('entity' in value && value.entity === entity) {
+      if ('entityType' in value && value.entityType === entityType) {
         updatedData[key] = updateItem(value, items[0], action);
         continue;
       }
 
       // If the value is an array, check for entities within it and apply the action
-      if (Array.isArray(value) && value.some((el) => el.entity === entity)) {
-        const filteredArray = value.filter((el) => el.entity === entity);
+      if (Array.isArray(value) && value.some((el) => el.entityType === entityType)) {
+        const filteredArray = value.filter((el) => el.entityType === entityType);
         updatedData[key] = updateArrayItems(filteredArray, items, action);
       }
     }

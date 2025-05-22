@@ -11,4 +11,4 @@ export const userSelect = omitKeys(usersTable, config.sensitiveFields);
  * User select for summary only.
  * TODO: can we use existing base user schema?
  */
-export const userSummarySelect = extractKeys(usersTable, ['id', 'name', 'email', 'entity', 'thumbnailUrl', 'bannerUrl', 'slug']);
+export const userSummarySelect = extractKeys(usersTable, ['id', 'name', 'email', 'entityType', 'thumbnailUrl', 'bannerUrl', 'slug']);

@@ -18,9 +18,9 @@ const userSelectSchema = createSelectSchema(usersTable, {
 
 export const userSchema = z.object({ ...userSelectSchema.shape });
 
-export const userBaseSchema = entityBaseSchema.extend({
+export const userSummarySchema = entityBaseSchema.extend({
   email: z.string().email(),
-  entity: z.literal('user'),
+  entityType: z.literal('user'),
 });
 
 export const memberSchema = z.object({

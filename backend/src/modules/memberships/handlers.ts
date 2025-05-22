@@ -41,11 +41,13 @@ const membershipRouteHandlers = app
     const { idOrSlug, entityType: passedEntityType } = ctx.req.valid('query');
 
     // Validate entity existence and check user permission for updates
-    const { entity, error } = await getValidEntity(ctx, passedEntityType, 'update', idOrSlug);
-    if (error) return ctx.json({ success: false, error });
+    const result = await getValidEntity(ctx, passedEntityType, 'update', idOrSlug);
+    if (result.error) return ctx.json({ success: false, error: result.error });
+
+    const { entity } = result;
 
     // Extract entity details
-    const { entity: entityType, id: entityId } = entity;
+    const { entityType, id: entityId } = entity;
     const targetEntityIdField = config.entityIdFields[entityType];
 
     const user = getContextUser();
@@ -153,7 +155,7 @@ const membershipRouteHandlers = app
       expiresAt: createDate(new TimeSpan(7, 'd')),
       role,
       userId,
-      entity: entityType,
+      entityType: entityType,
       [targetEntityIdField]: entityId,
       ...(associatedEntity && { [associatedEntity.field]: associatedEntity.id }), // Include associated entity if applicable
       ...(entityType !== 'organization' && { organizationId: organization.id }), // Add org ID if not an organization
@@ -187,7 +189,7 @@ const membershipRouteHandlers = app
       subject: i18n.t('backend:email.member_invite.subject', {
         lng: organization.defaultLanguage,
         appName: config.name,
-        entity: organization.name,
+        entityType: organization.name,
       }),
       lng: organization.defaultLanguage,
     };
@@ -206,8 +208,10 @@ const membershipRouteHandlers = app
     const { entityType, idOrSlug } = ctx.req.valid('query');
     const { ids } = ctx.req.valid('json');
 
-    const { entity, error } = await getValidEntity(ctx, entityType, 'delete', idOrSlug);
-    if (error) return ctx.json({ success: false, errors: [error] }, 200);
+    const result = await getValidEntity(ctx, entityType, 'delete', idOrSlug);
+    if (result.error) return ctx.json({ success: false, errors: [result.error] }, 200);
+
+    const { entity } = result;
 
     const entityIdField = config.entityIdFields[entityType];
 
@@ -246,7 +250,7 @@ const membershipRouteHandlers = app
     for (const targetMembership of targets) {
       // Send the event to the user if they are a member of the organization
       const memberIds = targets.map((el) => el.userId);
-      sendSSEToUsers(memberIds, 'remove_entity', { id: entity.id, entity: entity.entity });
+      sendSSEToUsers(memberIds, 'remove_entity', { id: entity.id, entityType: entity.entityType });
 
       logEvent('Member deleted', { membership: targetMembership.id });
     }
@@ -333,7 +337,7 @@ const membershipRouteHandlers = app
     const entity = await resolveEntity(entityType, idOrSlug);
     if (!entity) return errorResponse(ctx, 404, 'not_found', 'warn', entityType);
 
-    const entityIdField = config.entityIdFields[entity.entity];
+    const entityIdField = config.entityIdFields[entity.entityType];
 
     // Build search filters
     const $or = q ? [ilike(usersTable.name, prepareStringForILikeFilter(q)), ilike(usersTable.email, prepareStringForILikeFilter(q))] : [];
@@ -386,10 +390,12 @@ const membershipRouteHandlers = app
     // Scope request to organization
     const organization = getContextOrganization();
 
-    const { entity, error } = await getValidEntity(ctx, entityType, 'read', idOrSlug);
-    if (error) return ctx.json({ success: false, error }, 400);
+    const result = await getValidEntity(ctx, entityType, 'read', idOrSlug);
+    if (result.error) return ctx.json({ success: false, error: result.error }, 400);
 
-    const entityIdField = config.entityIdFields[entity.entity];
+    const { entity } = result;
+
+    const entityIdField = config.entityIdFields[entity.entityType];
 
     const invitedMemberSelect = {
       id: tokensTable.id,
@@ -409,7 +415,7 @@ const membershipRouteHandlers = app
       .where(
         and(
           eq(tokensTable.type, 'invitation'),
-          eq(tokensTable.entity, entity.entity),
+          eq(tokensTable.entityType, entity.entityType),
           eq(tokensTable[entityIdField], entity.id),
           eq(tokensTable.organizationId, organization.id),
         ),

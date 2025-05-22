@@ -1,4 +1,4 @@
-import type { ContextEntity } from 'config';
+import type { ContextEntityType } from 'config';
 import { Plus } from 'lucide-react';
 import { type RefObject, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -9,7 +9,7 @@ import { useNavigationStore } from '~/store/navigation';
 
 interface MenuSheetItemsProps {
   data: UserMenuItem[];
-  type: ContextEntity;
+  type: ContextEntityType;
   shownOption: 'archived' | 'unarchive';
   createAction?: (ref: RefObject<HTMLButtonElement | null>) => void;
   className?: string;
@@ -49,7 +49,7 @@ export const MenuSheetItems = ({ data, type, shownOption, createAction, classNam
             {/* Submenu below */}
             {!item.membership.archived && !!item.submenu?.length && !hideSubmenu && (
               <ul>
-                <MenuSheetItems type={item.submenu[0].entity} data={item.submenu} shownOption="unarchive" />
+                <MenuSheetItems type={item.submenu[0].entityType} data={item.submenu} shownOption="unarchive" />
               </ul>
             )}
           </li>

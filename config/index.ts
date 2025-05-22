@@ -7,29 +7,29 @@ import tunnel from './tunnel';
 /**
  * All entities in this app
  */
-export type Entity = (typeof _default.entities)[number];
+export type EntityType = (typeof _default.entityTypes)[number];
 
 /**
  * Page entities (entities with memberships + users)
  */
-export type PageEntity = (typeof config.pageEntities)[number];
+export type PageEntityType = (typeof config.pageEntityTypes)[number];
 
 /**
  * Context entities (entities with memberships only)
  */
-export type ContextEntity = (typeof _default.contextEntities)[number];
+export type ContextEntityType = (typeof _default.contextEntityTypes)[number];
 
 /**
  * Product entities aka (user-generated) content (no memberships assigned)
  */
-export type ProductEntity = (typeof _default.productEntities)[number];
+export type ProductEntityType = (typeof _default.productEntityTypes)[number];
 
 /**
  * Menu sections in the menu structure
  */
 export type MenuSection = {
-  entity: ContextEntity;
-  subentity: ContextEntity | null;
+  entityType: ContextEntityType;
+  subentityType: ContextEntityType | null;
 };
 
 /**

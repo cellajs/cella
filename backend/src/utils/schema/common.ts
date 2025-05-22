@@ -6,16 +6,16 @@ import { z } from 'zod';
  ************************************************************************************************/
 
 /** Enum schema for entity types */
-export const entityTypeSchema = z.enum(config.entities);
+export const entityTypeSchema = z.enum(config.entityTypes);
 
 /** Enum schema for page entity types */
-export const pageEntityTypeSchema = z.enum(config.pageEntities);
+export const pageEntityTypeSchema = z.enum(config.pageEntityTypes);
 
 /** Enum schema for context entity types */
-export const contextEntityTypeSchema = z.enum(config.contextEntities);
+export const contextEntityTypeSchema = z.enum(config.contextEntityTypes);
 
 /** Enum schema for product entity types */
-export const productEntityTypeSchema = z.enum(config.productEntities);
+export const productEntityTypeSchema = z.enum(config.productEntityTypes);
 
 /*************************************************************************************************
  * Common properties schemas

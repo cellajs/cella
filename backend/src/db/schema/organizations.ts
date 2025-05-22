@@ -11,7 +11,7 @@ export const organizationsTable = pgTable(
   'organizations',
   {
     id: varchar().primaryKey().$defaultFn(nanoid),
-    entity: varchar({ enum: ['organization'] })
+    entityType: varchar({ enum: ['organization'] })
       .notNull()
       .default('organization'),
     name: varchar().notNull(),

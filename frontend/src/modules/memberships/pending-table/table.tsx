@@ -15,7 +15,7 @@ const BaseDataTable = memo(
   forwardRef<BaseTableMethods, BaseDataTableProps>(({ entity, columns, searchVars, sortColumns, setSortColumns, setTotal }, ref) => {
     const { t } = useTranslation();
 
-    const entityType = entity.entity;
+    const entityType = entity.entityType;
     const organizationId = entity.organizationId || entity.id;
 
     // Extract query variables and set defaults

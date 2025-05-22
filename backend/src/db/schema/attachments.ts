@@ -9,7 +9,7 @@ export const attachmentsTable = pgTable(
   {
     id: varchar().primaryKey().$defaultFn(nanoid),
     name: varchar().notNull().default('attachment'),
-    entity: varchar({ enum: ['attachment'] })
+    entityType: varchar({ enum: ['attachment'] })
       .notNull()
       .default('attachment'),
 

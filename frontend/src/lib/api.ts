@@ -1,4 +1,4 @@
-import type { Entity, Severity } from 'config';
+import type { EntityType, Severity } from 'config';
 import type { ClientResponse } from 'hono/client';
 import type { ClientErrorStatusCode, ServerErrorStatusCode } from 'hono/utils/http-status';
 
@@ -37,7 +37,7 @@ export const clientConfig = {
 export class ApiError extends Error {
   status: HttpErrorStatus;
   type?: string;
-  entityType?: Entity;
+  entityType?: EntityType;
   severity?: Severity;
   logId?: string;
   path?: string;

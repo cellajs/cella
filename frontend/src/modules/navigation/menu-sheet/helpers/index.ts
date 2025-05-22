@@ -1,13 +1,13 @@
 import type { Edge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/dist/types/types';
-import type { ContextEntity } from 'config';
+import type { ContextEntityType } from 'config';
 import type { UserMenu, UserMenuItem } from '~/modules/me/types';
 import type { PageDraggableItemData } from '~/modules/navigation/types';
 
-const sortAndFilterMenu = (data: UserMenuItem[], entityType: ContextEntity, archived: boolean, reverse = false): UserMenuItem[] => {
+const sortAndFilterMenu = (data: UserMenuItem[], entityType: ContextEntityType, archived: boolean, reverse = false): UserMenuItem[] => {
   return (
     data
       //filter by type and archive state
-      .filter((el) => el.entity === entityType && el.membership.archived === archived)
+      .filter((el) => el.entityType === entityType && el.membership.archived === archived)
       .sort((a, b) => {
         // sort items by order
         const orderA = a.membership?.order ?? 0; // Fallback to 0 if order is missing
@@ -23,7 +23,7 @@ export const isPageData = (data: Record<string | symbol, unknown>): data is Page
 
 export const getRelativeItemOrder = (
   data: UserMenu,
-  entityType: ContextEntity,
+  entityType: ContextEntityType,
   archived: boolean,
   itemId: string,
   itemOrder: number,

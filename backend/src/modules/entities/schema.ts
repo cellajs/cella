@@ -5,7 +5,7 @@ import { membershipSummarySchema } from '../memberships/schema';
 
 export const entityBaseSchema = z.object({
   id: idSchema,
-  entity: contextEntityTypeSchema,
+  entityType: contextEntityTypeSchema,
   slug: slugSchema,
   name: nameSchema,
   thumbnailUrl: imageUrlSchema.nullable().optional(),
@@ -14,13 +14,13 @@ export const entityBaseSchema = z.object({
 
 export const entityListItemSchema = entityBaseSchema.extend({
   email: z.string().optional(),
-  entity: pageEntityTypeSchema,
+  entityType: pageEntityTypeSchema,
   membership: membershipSummarySchema.nullable(),
 });
 
 export const entityListSchema = z.object({
   items: z.array(entityListItemSchema),
-  counts: z.record(z.enum(config.pageEntities), z.number().optional()),
+  counts: z.record(z.enum(config.pageEntityTypes), z.number().optional()),
   total: z.number(),
 });
 

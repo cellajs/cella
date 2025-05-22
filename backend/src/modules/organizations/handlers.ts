@@ -149,7 +149,7 @@ const organizationRouteHandlers = app
       if (!memberIds.length) continue;
 
       const userIds = memberIds.map((m) => m.id);
-      sendSSEToUsers(userIds, 'remove_entity', { id, entity: 'organization' });
+      sendSSEToUsers(userIds, 'remove_entity', { id, entityType: 'organization' });
     }
 
     logEvent('Organizations deleted', { ids: allowedIds.join() });
@@ -162,8 +162,10 @@ const organizationRouteHandlers = app
   .openapi(organizationRoutes.getOrganization, async (ctx) => {
     const { idOrSlug } = ctx.req.valid('param');
 
-    const { entity: organization, membership, error } = await getValidEntity(ctx, 'organization', 'read', idOrSlug);
-    if (error) return ctx.json({ success: false, error }, 400);
+    const result = await getValidEntity(ctx, 'organization', 'read', idOrSlug);
+    if (result.error) return ctx.json({ success: false, error: result.error }, 400);
+
+    const { entity: organization, membership } = result;
 
     const memberCounts = await getMemberCounts('organization', organization.id);
     const relatedEntitiesCounts = await getRelatedEntityCounts('organization', organization.id);
@@ -179,8 +181,11 @@ const organizationRouteHandlers = app
   .openapi(organizationRoutes.updateOrganization, async (ctx) => {
     const { idOrSlug } = ctx.req.valid('param');
 
-    const { entity: organization, membership, error } = await getValidEntity(ctx, 'organization', 'update', idOrSlug);
-    if (error) return ctx.json({ success: false, error }, 400);
+    const result = await getValidEntity(ctx, 'organization', 'update', idOrSlug);
+    if (result.error) return ctx.json({ success: false, error: result.error }, 400);
+
+    const organization = result.entity;
+    const membership = result.membership;
 
     const user = getContextUser();
 

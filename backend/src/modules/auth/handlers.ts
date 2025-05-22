@@ -118,7 +118,7 @@ const authRouteHandlers = app
     const validToken = getContextToken();
     if (!validToken) return errorResponse(ctx, 400, 'invalid_request', 'error');
 
-    const membershipInvite = !!validToken.entity;
+    const membershipInvite = !!validToken.entityType;
     // Verify if strategy allowed
     const strategy = 'password';
     if (!enabledStrategies.includes(strategy)) {
@@ -388,7 +388,7 @@ const authRouteHandlers = app
     const token = getContextToken();
 
     // Make sure its an organization invitation
-    if (!token.entity) return errorResponse(ctx, 401, 'invalid_token', 'warn');
+    if (!token.entityType) return errorResponse(ctx, 401, 'invalid_token', 'warn');
 
     const [emailInfo] = await db.select().from(emailsTable).where(eq(emailsTable.email, token.email));
     // Make sure correct user accepts invitation (for example another user could have a sessions and click on email invite of another user)

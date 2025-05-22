@@ -30,7 +30,7 @@ export const MenuItemEdit = ({ item }: MenuItemEditProps) => {
       orgIdOrSlug: item.membership.organizationId,
       // Mutation variables
       idOrSlug: item.id,
-      entityType: item.entity,
+      entityType: item.entityType,
     };
 
     if (key === 'archive') updatedMembership.archived = !item.membership.archived;
@@ -59,7 +59,7 @@ export const MenuItemEdit = ({ item }: MenuItemEditProps) => {
       <AvatarWrap
         className="m-2 mx-3 group-data-[subitem=true]/optionsItem:text-xs group-data-[submenu=false]/menuOptions:my-1 group-data-[submenu=false]/menuOptions:mx-4
             h-8 w-8 group-data-[submenu=false]/menuOptions:h-6 group-data-[submenu=false]/menuOptions:w-6 group-data-[archived=true]/optionsItem:opacity-70"
-        type={item.entity}
+        type={item.entityType}
         id={item.id}
         name={item.name}
         url={item.thumbnailUrl}

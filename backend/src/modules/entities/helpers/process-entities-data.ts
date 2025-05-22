@@ -1,11 +1,11 @@
-import { type PageEntity, config } from 'config';
+import { type PageEntityType, config } from 'config';
 
-export const processEntitiesData = <T extends { entity: PageEntity; total: number }>(queryData: T[][], type?: PageEntity) => {
+export const processEntitiesData = <T extends { entityType: PageEntityType; total: number }>(queryData: T[][], type?: PageEntityType) => {
   const itemsData = [];
-  const counts: { [key in PageEntity]?: number } = {};
+  const counts: { [key in PageEntityType]?: number } = {};
   let total = 0;
 
-  const entities = type ? [type] : config.pageEntities;
+  const entities = type ? [type] : config.pageEntityTypes;
 
   // Initialize counts for each entity type
   for (const entityType of entities) {
@@ -15,7 +15,7 @@ export const processEntitiesData = <T extends { entity: PageEntity; total: numbe
   // Set entity count, total and push items without total
   for (const results of queryData) {
     if (results[0]) {
-      const totalEntityType = results[0].entity;
+      const totalEntityType = results[0].entityType;
       const totalValue = Number(results[0].total);
       total += totalValue;
       counts[totalEntityType] = totalValue;

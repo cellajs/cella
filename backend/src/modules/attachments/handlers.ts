@@ -61,7 +61,7 @@ const attachmentsRouteHandlers = app
       return res;
     } catch (err) {
       const error = err instanceof Error ? err : new Error('Unknown electric error');
-      return errorResponse(ctx, 500, 'sync_failed', 'error', undefined, { entity: 'attachments' }, error);
+      return errorResponse(ctx, 500, 'sync_failed', 'error', undefined, { entityType: 'attachments' }, error);
     }
   })
   /*

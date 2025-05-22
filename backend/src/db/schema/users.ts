@@ -16,7 +16,7 @@ export const usersTable = pgTable(
   'users',
   {
     id: varchar().primaryKey().$defaultFn(nanoid),
-    entity: varchar({ enum: ['user'] })
+    entityType: varchar({ enum: ['user'] })
       .notNull()
       .default('user'),
     name: varchar().notNull(),

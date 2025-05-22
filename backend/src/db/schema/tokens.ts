@@ -1,7 +1,7 @@
 import { config } from 'config';
 import { varchar } from 'drizzle-orm/pg-core';
 import { usersTable } from '#/db/schema/users';
-import { generateContextEntityFields } from '#/db/utils/generate-context-entity-fields';
+import { generateContextEntityTypeFields } from '#/db/utils/generate-context-entity-fields';
 import { generateTable } from '#/db/utils/generate-table';
 import { timestampColumns } from '#/db/utils/timestamp-columns';
 import { nanoid } from '#/utils/nanoid';
@@ -15,7 +15,7 @@ const baseColumns = {
   token: varchar().notNull(),
   type: varchar({ enum: tokenTypeEnum }).notNull(),
   email: varchar().notNull(),
-  entity: varchar({ enum: config.contextEntities }),
+  entityType: varchar({ enum: config.contextEntityTypes }),
   role: varchar({ enum: roleEnum }),
   userId: varchar().references(() => usersTable.id, { onDelete: 'cascade' }),
   createdAt: timestampColumns.createdAt,
@@ -24,7 +24,7 @@ const baseColumns = {
 };
 
 // Generate entity id columns based on entity-config
-const additionalColumns = generateContextEntityFields();
+const additionalColumns = generateContextEntityTypeFields();
 
 /**
  * Tokens table contains tokens of different types: email verification, invitation, password reset.

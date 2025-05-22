@@ -20,7 +20,7 @@ import { membershipSummarySchema } from '../memberships/schema';
  */
 //TODO: find way to fix ?
 export const entityCountSchema = z.object(
-  [...config.productEntities, ...config.contextEntities].reduce(
+  [...config.productEntityTypes, ...config.contextEntityTypes].reduce(
     (acc, key) => {
       acc[key as ValidEntities<'organizationId'>] = z.number();
       return acc;

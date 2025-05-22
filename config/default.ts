@@ -141,22 +141,22 @@ export const config = {
   /**
    * All entity types used in the app
    */
-  entities: ['user', 'organization', 'attachment'] as const,
+  entityTypes: ['user', 'organization', 'attachment'] as const,
 
   /**
    * Page entity types (pages with memberships + users)
    */
-  pageEntities: ['user', 'organization'] as const,
+  pageEntityTypes: ['user', 'organization'] as const,
 
   /**
    * Context entity types (memberships)
    */
-  contextEntities: ['organization'] as const,
+  contextEntityTypes: ['organization'] as const,
 
   /**
    * Product entity types (mostly content)
    */
-  productEntities: ['attachment'] as const,
+  productEntityTypes: ['attachment'] as const,
 
   /**
    * Define fields to identify an entity in a relationship
@@ -174,8 +174,8 @@ export const config = {
    */
   menuStructure: [
     {
-      entity: 'organization',
-      subentity: null,
+      entityType: 'organization',
+      subentityType: null,
     } as const,
   ],
 

@@ -8,13 +8,13 @@ import { PageHeader } from '~/modules/common/page/page-header';
 import { toaster } from '~/modules/common/toaster';
 import { useUpdateSelfMutation } from '~/modules/me/query';
 import { useUpdateUserMutation, userQueryOptions } from '~/modules/users/query';
-import type { LimitedUser } from '~/modules/users/types';
+import type { UserSummary } from '~/modules/users/types';
 import { useUserStore } from '~/store/user';
 
 const ProfilePageContent = lazy(() => import('~/modules/users/profile-page-content'));
 
 interface Props {
-  user: LimitedUser;
+  user: UserSummary;
   isSheet?: boolean;
   orgIdOrSlug?: string;
 }

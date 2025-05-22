@@ -1,5 +1,5 @@
 import { Link } from '@tanstack/react-router';
-import { type Entity, config } from 'config';
+import { type EntityType, config } from 'config';
 import { ChevronRight, Home, Loader2 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import useScrollTo from '~/hooks/use-scroll-to';
@@ -12,7 +12,7 @@ import { baseEntityRoutes } from '~/nav-config';
 // PageHeaderProps Interface
 interface PageHeaderProps {
   title?: string | null;
-  type: Entity;
+  type: EntityType;
   id: string;
   isAdmin: boolean;
   thumbnailUrl?: string | null;
@@ -86,7 +86,7 @@ const PageHeader = ({ title, id, isAdmin, thumbnailUrl, bannerUrl, type, panel, 
                   ) : (
                     <BreadcrumbItem>
                       <BreadcrumbLink className="flex items-center" asChild>
-                        <Link to={baseEntityRoutes[fetchedParent.entity].to} params={{ idOrSlug: fetchedParent.slug }}>
+                        <Link to={baseEntityRoutes[fetchedParent.entityType].to} params={{ idOrSlug: fetchedParent.slug }}>
                           <span className="truncate max-sm:max-w-24">{fetchedParent.name}</span>
                         </Link>
                       </BreadcrumbLink>

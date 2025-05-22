@@ -1,4 +1,4 @@
-import { type ContextEntity, type ProductEntity, config } from 'config';
+import { type ContextEntityType, type ProductEntityType, config } from 'config';
 import { type SQL, type SQLWrapper, and, count, eq, isNull, sql } from 'drizzle-orm';
 import { db } from '#/db/db';
 import { membershipsTable } from '#/db/schema/memberships';
@@ -15,10 +15,10 @@ type EntityIdColumnNames = keyof (typeof membershipsTable)['_']['columns'];
  *
  * @returns Query object that can be executed
  */
-export const getMemberCountsQuery = (entity: ContextEntity) => {
-  const targetEntityIdField = config.entityIdFields[entity];
+export const getMemberCountsQuery = (entityType: ContextEntityType) => {
+  const targetEntityIdField = config.entityIdFields[entityType];
   const entityIdColumn = membershipsTable[targetEntityIdField as EntityIdColumnNames];
-  if (!entityIdColumn) throw new Error(`Entity ${entity} does not have an ID column defined`);
+  if (!entityIdColumn) throw new Error(`Entity ${entityType} does not have an ID column defined`);
 
   // Subquery to count pending invitations
   const inviteCountSubquery = db
@@ -27,7 +27,7 @@ export const getMemberCountsQuery = (entity: ContextEntity) => {
       invites: count().as('invites'),
     })
     .from(tokensTable)
-    .where(and(eq(tokensTable.entity, entity), eq(tokensTable.type, 'invitation'), isNull(tokensTable.userId)))
+    .where(and(eq(tokensTable.entityType, entityType), eq(tokensTable.type, 'invitation'), isNull(tokensTable.userId)))
     .groupBy(tokensTable[targetEntityIdField])
     .as('invites');
 
@@ -45,7 +45,7 @@ export const getMemberCountsQuery = (entity: ContextEntity) => {
     })
     .from(membershipsTable)
     .leftJoin(inviteCountSubquery, eq(entityIdColumn, inviteCountSubquery.id))
-    .where(eq(membershipsTable.contextType, entity))
+    .where(eq(membershipsTable.contextType, entityType))
     .groupBy(entityIdColumn, inviteCountSubquery.invites)
     .as('counts');
 };
@@ -53,12 +53,12 @@ export const getMemberCountsQuery = (entity: ContextEntity) => {
 /**
  * Executes a count query to count admins and members for a given entity or entity id.
  *
- * @param entity - The entity to filter by, or null for all entities.
+ * @param entityType - The entity to filter by, or null for all entities.
  * @param id - id to filter the count by a specific entity instance.
  * @returns - The count of admins, members, pending and total members.
  */
-export function getMemberCounts(entity: ContextEntity, id: string) {
-  const query = getMemberCountsQuery(entity);
+export function getMemberCounts(entityType: ContextEntityType, id: string) {
+  const query = getMemberCountsQuery(entityType);
 
   return db
     .select({
@@ -83,13 +83,13 @@ export function getMemberCounts(entity: ContextEntity, id: string) {
  * @returns Record mapping each valid entity type to its count
  */
 export const getRelatedEntityCounts = async (
-  entity: ContextEntity,
+  entityType: ContextEntityType,
   entityId: string,
-  countConditions: Partial<Record<ProductEntity | ContextEntity, SQL>> = {},
+  countConditions: Partial<Record<ProductEntityType | ContextEntityType, SQL>> = {},
 ) => {
-  const entityIdField = config.entityIdFields[entity];
+  const entityIdField = config.entityIdFields[entityType];
 
-  const allEntities = [...config.productEntities, ...config.contextEntities];
+  const allEntities = [...config.productEntityTypes, ...config.contextEntityTypes];
 
   // Only keep entity types that actually contain the ID field we care about
   const validEntities = allEntities.filter((t) => hasField(t, entityIdField));
@@ -120,13 +120,13 @@ export const getRelatedEntityCounts = async (
 // Define a mapped type to check if field name passed as 'T' exists in each table and filter out 'never' types
 export type ValidEntities<T extends string> = Extract<
   {
-    [K in ProductEntity | ContextEntity]: T extends keyof (typeof entityTables)[K] ? K : never;
-  }[ProductEntity | ContextEntity],
+    [K in ProductEntityType | ContextEntityType]: T extends keyof (typeof entityTables)[K] ? K : never;
+  }[ProductEntityType | ContextEntityType],
   string
 >;
 
 // Generic type guard function for filtering based on a dynamic field name 'T'
-const hasField = <T extends string>(entityType: ProductEntity | ContextEntity, field: T): entityType is ValidEntities<T> => {
+const hasField = <T extends string>(entityType: ProductEntityType | ContextEntityType, field: T): entityType is ValidEntities<T> => {
   const table = entityTables[entityType];
   return field in table;
 };

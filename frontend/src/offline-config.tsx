@@ -14,7 +14,7 @@ export const queriesToMap = (item: UserMenuItem) => {
   const orgIdOrSlug = item.organizationId ?? item.id;
 
   // The entity type will decide which queries should be returned for prefetching.
-  switch (item.entity) {
+  switch (item.entityType) {
     case 'organization':
       // As example for 'organization' we return the following queries:
       // - queryOptions to fetch the organization itself
@@ -25,7 +25,7 @@ export const queriesToMap = (item: UserMenuItem) => {
         membersQueryOptions({
           idOrSlug: item.slug,
           orgIdOrSlug,
-          entityType: item.entity,
+          entityType: item.entityType,
         }),
         attachmentsQueryOptions({ orgIdOrSlug }),
       ];

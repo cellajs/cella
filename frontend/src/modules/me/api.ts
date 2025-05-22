@@ -1,4 +1,4 @@
-import { type ContextEntity, type UploadTemplateId, config } from 'config';
+import { type ContextEntityType, type UploadTemplateId, config } from 'config';
 import { clientConfig, handleResponse } from '~/lib/api';
 import type { UpdateUserParams } from '~/modules/users/api';
 import { meHc } from '#/modules/me/hc';
@@ -122,7 +122,7 @@ export const deletePasskey = async () => {
   return json.success;
 };
 
-export type LeaveEntityQuery = { idOrSlug: string; entityType: ContextEntity };
+export type LeaveEntityQuery = { idOrSlug: string; entityType: ContextEntityType };
 
 /**
  * Remove the current user from a specified entity.

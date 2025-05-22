@@ -1,5 +1,5 @@
 import type { AvatarProps } from '@radix-ui/react-avatar';
-import type { Entity } from 'config';
+import type { EntityType } from 'config';
 import { memo, useMemo } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '~/modules/ui/avatar';
 import { cn } from '~/utils/cn';
@@ -7,7 +7,7 @@ import { numberToColorClass } from '~/utils/number-to-color-class';
 
 export interface AvatarWrapProps extends AvatarProps {
   id?: string;
-  type?: Entity;
+  type?: EntityType;
   name?: string | null;
   url?: string | null;
   className?: string;

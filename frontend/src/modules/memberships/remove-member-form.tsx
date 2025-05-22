@@ -1,4 +1,4 @@
-import type { ContextEntity } from 'config';
+import type { ContextEntityType } from 'config';
 import { DeleteForm } from '~/modules/common/delete-form';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { useMembersDeleteMutation } from '~/modules/memberships/query/mutations';
@@ -8,7 +8,7 @@ interface Props {
   entityIdOrSlug: string;
   organizationId: string;
   members: Member[];
-  entityType?: ContextEntity;
+  entityType?: ContextEntityType;
   dialog?: boolean;
   callback?: (members: Member[]) => void;
 }

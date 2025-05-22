@@ -45,7 +45,7 @@ export const useMemberUpdateMutation = () =>
       } else if (role) context.toastMessage = t('common:success.update_item', { item: t('common:role') });
       else if (order !== undefined) context.toastMessage = t('common:success.update_item', { item: t('common:order') });
 
-      // Update membership of ContextEntity query that was fetched
+      // Update membership of ContextEntityType query that was fetched
       const queryKey = contextEntityCacheKeys[entityType];
       const mutateCache = useMutateQueryData(queryKey);
       mutateCache.updateMembership([membershipInfo], entityType);
@@ -78,7 +78,7 @@ export const useMemberUpdateMutation = () =>
       return context;
     },
     onSuccess: async (updatedMembership, { idOrSlug, entityType, orgIdOrSlug }, { toastMessage }) => {
-      // Update membership of ContextEntity query that was fetched after success
+      // Update membership of ContextEntityType query that was fetched after success
       const queryKey = contextEntityCacheKeys[entityType];
       const mutateCache = useMutateQueryData(queryKey);
       mutateCache.updateMembership([updatedMembership], entityType);

@@ -53,7 +53,7 @@ const systemRouteHandlers = app
           inArray(tokensTable.email, emails),
           eq(tokensTable.type, 'invitation'),
           // Make sure its a system invitation
-          isNull(tokensTable.entity),
+          isNull(tokensTable.entityType),
           lt(tokensTable.expiresAt, new Date()),
         ),
       );

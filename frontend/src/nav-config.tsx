@@ -10,7 +10,7 @@ import type { FooterLinkProps } from '~/modules/common/app-footer';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { toaster } from '~/modules/common/toaster';
 import type { UserMenuItem } from '~/modules/me/types';
-import { AppSearch, type SuggestionSection, type SuggestionType } from '~/modules/navigation/search';
+import { AppSearch, type EntityListItemType, type EntitySearchSection } from '~/modules/navigation/search';
 import { OrganizationRoute } from '~/routes/organizations';
 import { UserProfileRoute } from '~/routes/users';
 import type { EntityRoute } from './modules/navigation/types';
@@ -58,9 +58,9 @@ export const defaultFooterLinks: FooterLinkProps[] = [
 ];
 
 /**
- * Set search suggestion sections
+ * Set page entity search sections
  */
-export const suggestionSections: SuggestionSection[] = [
+export const entitySearchSections: EntitySearchSection[] = [
   { id: 'users', label: 'common:users', type: 'user' },
   { id: 'organizations', label: 'common:organizations', type: 'organization' },
 ];
@@ -71,10 +71,10 @@ export const suggestionSections: SuggestionSection[] = [
  * Since each app has its own entity structure or hierarchy, we need to resolve them dynamically in some cases.
  * For example to get/search entities and for items in the menu sheet.
  */
-export const getEntityRoute = (item: UserMenuItem | SuggestionType): EntityRoute => {
-  const { entity, id, slug } = item;
+export const getEntityRoute = (item: UserMenuItem | EntityListItemType): EntityRoute => {
+  const { entityType, id, slug } = item;
 
-  const to = baseEntityRoutes[entity].to;
+  const to = baseEntityRoutes[entityType].to;
   const params = { idOrSlug: slug || id };
 
   return { to, params, search: {} };

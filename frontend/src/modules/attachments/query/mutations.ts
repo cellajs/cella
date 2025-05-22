@@ -58,7 +58,7 @@ export const useAttachmentCreateMutation = () =>
           convertedContentType: attachment.convertedContentType ?? null,
           name: attachment.filename.split('.').slice(0, -1).join('.'),
           id: optimisticId,
-          entity: 'attachment',
+          entityType: 'attachment',
           createdAt: new Date().toISOString(),
           createdBy: null,
           modifiedAt: new Date().toISOString(),

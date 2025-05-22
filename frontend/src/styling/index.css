@@ -100,7 +100,7 @@
 }
 
 @layer base {
-   html {
+  html {
     @apply font-sans;
   }
 

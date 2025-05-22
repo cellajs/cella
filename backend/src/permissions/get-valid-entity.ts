@@ -1,4 +1,4 @@
-import { type ContextEntity, config } from 'config';
+import { type ContextEntityType, config } from 'config';
 import type { Context } from 'hono';
 import { type Env, getContextMemberships, getContextUser } from '#/lib/context';
 import { type EntityModel, resolveEntity } from '#/lib/entity';
@@ -23,17 +23,19 @@ import permissionManager, { type PermittedAction } from './permissions-config';
  *   - `membership`: User's membership or `null` if not found.
  *   - `error`: Error object or `null` if no error occurred.
  */
-export const getValidEntity = async <T extends ContextEntity>(
+export const getValidEntity = async <T extends ContextEntityType>(
   ctx: Context<Env>,
   entityType: T,
   action: PermittedAction,
   idOrSlug: string,
-): Promise<{ error: ErrorType; entity: null; membership: null } | { error: null; entity: EntityModel<T>; membership: MembershipSummary | null }> => {
+): Promise<
+  { error: ErrorType; entityType: null; membership: null } | { error: null; entity: EntityModel<T>; membership: MembershipSummary | null }
+> => {
   const user = getContextUser();
   const memberships = getContextMemberships();
   const isSystemAdmin = user.role === 'admin';
 
-  const nullData = { entity: null, membership: null };
+  const nullData = { entityType: null, membership: null };
 
   // Resolve entity
   const entity = (await resolveEntity(entityType, idOrSlug)) || null;
@@ -44,7 +46,7 @@ export const getValidEntity = async <T extends ContextEntity>(
   if (!isAllowed) return { error: createError(ctx, 403, 'forbidden', 'warn', entityType), ...nullData };
 
   // Find membership for entity
-  const entityIdField = config.entityIdFields[entity.entity];
+  const entityIdField = config.entityIdFields[entity.entityType];
   const membership = memberships.find((m) => m[entityIdField] === entity.id && m.contextType === entityType) || null;
 
   if (!membership && !isSystemAdmin) return { error: createError(ctx, 400, 'invalid_request', 'error', entityType), ...nullData };

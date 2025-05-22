@@ -1,6 +1,6 @@
 import type { QueryKey } from '@tanstack/react-query';
 
-import type { LimitedUser } from '~/modules/users/types';
+import type { UserSummary } from '~/modules/users/types';
 import { getQueryItems, getSimilarQueries } from '~/query/helpers/mutate-query';
 
 /**
@@ -11,7 +11,7 @@ import { getQueryItems, getSimilarQueries } from '~/query/helpers/mutate-query';
  * @returns User data if found, otherwise null.
  */
 export const findUserFromCache = (queryKey: QueryKey, idOrSlug: string) => {
-  const queries = getSimilarQueries<LimitedUser>(queryKey);
+  const queries = getSimilarQueries<UserSummary>(queryKey);
   for (const [_, prevData] of queries) {
     if (!prevData) continue;
 
