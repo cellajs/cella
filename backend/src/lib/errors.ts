@@ -1,3 +1,4 @@
+import * as Sentry from '@sentry/node';
 import { config } from 'config';
 import type { Context } from 'hono';
 import type { ClientErrorStatusCode, ServerErrorStatusCode } from 'hono/utils/http-status';
@@ -69,9 +70,12 @@ export const createError = (
   if (err || ['warn', 'error'].includes(severity)) {
     const data = { ...error, eventData };
 
+    // Log error to logtail and Sentry
     if (logtail) logtail[severity](message, undefined, data);
+    Sentry.captureException(err);
+
     if (err) console.error(err);
-  } else if (eventData) logEvent(message, eventData, severity); // Log significant events with additional data
+  } else if (eventData) logEvent(message, eventData, severity); // Log significant (non-error) events with additional data
 
   return error;
 };

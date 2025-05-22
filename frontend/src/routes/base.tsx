@@ -28,7 +28,16 @@ export const rootRoute = createRootRouteWithContext()({
   errorComponent: ({ error }) => <ErrorNotice level="root" error={error} />,
   notFoundComponent: () => {
     return (
-      <ErrorNotice error={{ name: i18n.t('error:page_not_found'), message: i18n.t('error:page_not_found.text'), severity: 'info' }} level="root" />
+      <ErrorNotice
+        error={{
+          type: 'page_not_found',
+          severity: 'info',
+          status: 404,
+          name: 'NotFoundError',
+          message: i18n.t('error:page_not_found'),
+        }}
+        level="root"
+      />
     );
   },
 });

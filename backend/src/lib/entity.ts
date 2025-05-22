@@ -7,10 +7,10 @@ import { entityTables } from '#/entity-config';
 export type EntityModel<T extends Entity> = (typeof entityTables)[T]['$inferSelect'];
 
 /**
- * Resolves entity based on ID or Slug and sets the context accordingly.
+ * Resolves entity based on `id` or `slug`.
  *
- * @param entityType - The type of the entity.
- * @param idOrSlug - The unique identifier (ID or Slug) of the entity.
+ * @param entityType - The type of entity.
+ * @param idOrSlug - The unique identifier (ID or Slug) of entity.
  */
 export async function resolveEntity<T extends Entity>(entityType: T, idOrSlug: string): Promise<EntityModel<T> | undefined>;
 export async function resolveEntity<T extends Entity>(entityType: T, idOrSlug: string) {
@@ -20,6 +20,8 @@ export async function resolveEntity<T extends Entity>(entityType: T, idOrSlug: s
   if (!table) throw new Error(`Invalid entity: ${entityType}`);
 
   const $where = [eq(table.id, idOrSlug)];
+
+  // Check if table has a slug column
   if ('slug' in table) $where.push(eq(table.slug, idOrSlug));
 
   const [entity] = await db
@@ -31,7 +33,7 @@ export async function resolveEntity<T extends Entity>(entityType: T, idOrSlug: s
 }
 
 /**
- * Resolves entities based on their IDs and sets the context accordingly.
+ * Resolves entities based on array of `id`.
  *
  * @param entityType - The type of the entity.
  * @param ids - An array of unique identifiers (IDs) of entities to resolve.

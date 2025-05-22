@@ -21,6 +21,7 @@ docs(app);
 
 // Init monitoring instance
 Sentry.init({
+  enabled: !!config.sentryDsn,
   dsn: config.sentryDsn,
   environment: config.mode,
   tracesSampleRate: 1.0,

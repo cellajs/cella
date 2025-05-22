@@ -2,27 +2,7 @@ import type { OpenAPIHono } from '@hono/zod-openapi';
 import { apiReference } from '@scalar/hono-api-reference';
 import { config } from 'config';
 import type { Env } from '#/lib/context';
-import { appModulesList } from '#/routes';
-
-const commonModulesList = [
-  { name: 'me', description: 'Current user endpoints. Split from `users` due to different authorization flow.' },
-  { name: 'users', description: '`user` is also an entity, but NOT a contextual entity.' },
-  {
-    name: 'memberships',
-    description:
-      'Memberships represent one-to-one relations between a `user` and a contextual `entity`, such as an `organization`. It contains a role and archived, muted status. It also contains parent entities.',
-  },
-  { name: 'organizations', description: 'Organizations - `organization` - are a core `entity`.' },
-  { name: 'requests', description: 'Receive contact form, newsletter and waitlist requests.' },
-  { name: 'entities', description: 'Endpoints that span across entities.' },
-  { name: 'system', description: 'Endpoints that are system-wide or system (admin) related.' },
-  {
-    name: 'auth',
-    description: 'Multiple authentication methods are included: email/password combination, OAuth and passkey support.',
-  },
-  { name: 'attachments', description: 'Be able to leverage different attachment types within an entity.' },
-  { name: 'metrics', description: 'Observability endpoints.' },
-];
+import { apiModulesList } from './docs-config';
 
 /**
  * Generate OpenAPI documentation using hono/zod-openapi and scalar/hono-api-reference
@@ -31,7 +11,7 @@ const commonModulesList = [
  */
 const docs = (app: OpenAPIHono<Env>) => {
   const registry = app.openAPIRegistry;
-  const tags = commonModulesList.concat(appModulesList);
+  const tags = apiModulesList;
 
   registry.registerComponent('securitySchemes', 'cookieAuth', {
     type: 'apiKey',
