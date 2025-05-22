@@ -99,8 +99,11 @@
   }
 }
 
-/* Some tweak on tailwind here */
 @layer base {
+   html {
+    @apply font-sans;
+  }
+
   * {
     @apply border-border;
   }
