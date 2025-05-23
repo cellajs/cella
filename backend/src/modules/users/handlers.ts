@@ -16,7 +16,6 @@ import { checkSlugAvailable } from '../entities/helpers/check-slug';
 import { userSelect } from './helpers/select';
 import userRoutes from './routes';
 
-// Set default hook to catch validation errors
 const app = new OpenAPIHono<Env>({ defaultHook });
 
 const usersRouteHandlers = app

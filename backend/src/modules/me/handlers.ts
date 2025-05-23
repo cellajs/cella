@@ -33,7 +33,6 @@ import type { menuItemSchema, menuSchema } from './schema';
 type UserMenu = z.infer<typeof menuSchema>;
 type MenuItem = z.infer<typeof menuItemSchema>;
 
-// Set default hook to catch validation errors
 const app = new OpenAPIHono<Env>({ defaultHook });
 
 export const streams = new Map<string, SSEStreamingApi>();

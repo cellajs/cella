@@ -28,7 +28,6 @@ import { SystemInviteEmail, type SystemInviteEmailProps } from '../../../emails/
 
 const paddle = new Paddle(env.PADDLE_API_KEY || '');
 
-// Set default hook to catch validation errors
 const app = new OpenAPIHono<Env>({ defaultHook });
 
 const systemRouteHandlers = app

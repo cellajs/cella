@@ -11,7 +11,6 @@ import { defaultHook } from '#/utils/default-hook';
 import { processEntitiesData } from './helpers/process-entities-data';
 import type { entityListItemSchema } from './schema';
 
-// Set default hook to catch validation errors
 const app = new OpenAPIHono<Env>({ defaultHook });
 
 const entityRouteHandlers = app

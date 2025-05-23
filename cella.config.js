@@ -55,6 +55,8 @@ export const config = {
     'frontend/src/routes/marketing.tsx',
     'frontend/src/modules/common/logo.tsx',
     'frontend/src/modules/common/bg-animation/*',
+    'frontend/src/modules/common/blocknote/blocknote-config.ts',
+    'frontend/src/modules/common/blocknote/app-specific-custom/*',
     'frontend/src/modules/home/onboarding/onboarding-config.ts',
     'frontend/src/modules/marketing/marketing-config.tsx',
     'frontend/src/modules/marketing/about/about-page.tsx',
