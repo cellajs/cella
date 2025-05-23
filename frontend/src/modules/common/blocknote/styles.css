@@ -25,6 +25,12 @@
   --success: 120 100% 40%;
 }
 
+/* TODO(REFACTOR): explore if we can reduce amount of css using just bn vars */
+.bn-shadcn {
+    --blocknote-placeholder: 240 3.7% 50%;
+  --bn-font-family: "Open Sans", ui-sans-serif, sans-serif;
+}
+
 .bn-shadcn p {
   font-size: 0.888rem;
   font-weight: 350;
@@ -46,10 +52,10 @@
   line-height: 1rem;
 }
 
-.bn-block-content[data-content-type="codeBlock"] {
-  background: hsl(var(--secondary));
-  border: solid hsl(var(--muted));
+.bn-container.bn-shadcn.dark .bn-block-content[data-content-type="codeBlock"] {
+  background: hsl(var(--muted) / .5);
 }
+
 .bn-block-content[data-content-type="codeBlock"] > pre {
   padding: 1.2rem 1rem 1rem;
 }
@@ -95,6 +101,16 @@
   text-decoration: underline;
   text-underline-offset: 0.2rem;
   text-decoration-color: hsl(var(--foreground) / 0.2);
+}
+
+.bn-link-toolbar > button.px-3 {
+  padding-left: 0.5rem !important;
+  padding-right: 0.5rem !important;
+  height: 2rem;
+}
+
+.bn-link-toolbar > button:hover {
+  background-color: hsl(var(--muted));
 }
 
 .bn-container.bn-shadcn a:hover {
