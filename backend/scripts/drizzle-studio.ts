@@ -10,6 +10,9 @@ const parentDir = resolve(__dirname, '..');
 // Load .env variables from the parent directory
 dotenv.config({ path: resolve(parentDir, '.env') });
 
+/**
+ * Start Drizzle Studio programmatically.
+ */
 const startDrizzleStudio = () => {
   const studioProcess = spawn('npx', ['drizzle-kit', 'studio', '--config', 'drizzle.config.ts', '--port', '4983'], {
     cwd: parentDir,

@@ -28,10 +28,7 @@ export const organizationsSeed = async () => {
 
   const organizationsInTable = await db.select().from(organizationsTable).limit(1);
 
-  if (organizationsInTable.length > 0) {
-    console.info('Organizations table is not empty, skipping seed');
-    return;
-  }
+  if (organizationsInTable.length > 0) return console.warn('Organizations table is not empty, skipping seed');
 
   const organizationsUniqueEnforcer = new UniqueEnforcer();
 

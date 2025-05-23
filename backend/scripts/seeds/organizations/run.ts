@@ -1,5 +1,8 @@
 import { organizationsSeed } from './seed';
 
+/**
+ * Run organizations seed script.
+ */
 organizationsSeed()
   .catch((error) => {
     console.error(error);

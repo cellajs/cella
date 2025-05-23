@@ -14,6 +14,9 @@ if (env.PGLITE) {
 // Migrate db
 await migrate(db, migrateConfig);
 
+/**
+ * Run seed scripts array from config
+ */
 for (const cmd of config.seedScripts) {
   try {
     // Execute the command

@@ -1,6 +1,9 @@
-import { dataSeed } from './seed';
+import { userSeed } from './seed';
 
-dataSeed()
+/**
+ * Run user seed script.
+ */
+userSeed()
   .catch((error) => {
     console.error(error);
     process.exit(1);
