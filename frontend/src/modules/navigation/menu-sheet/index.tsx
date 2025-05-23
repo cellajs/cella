@@ -8,7 +8,7 @@ import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { Link } from '@tanstack/react-router';
-import { menuSectionsSchemas } from '~/menu-config';
+import { menuSectionsSchema } from '~/menu-config';
 import { AlertWrap } from '~/modules/common/alert-wrap';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
@@ -57,7 +57,7 @@ export const MenuSheet = memo(() => {
     return config.menuStructure
       .map(({ entityType }) => {
         const menuData = menu[entityType];
-        const menuSection = menuSectionsSchemas[entityType];
+        const menuSection = menuSectionsSchema[entityType];
         if (!menuSection) return null;
 
         return (

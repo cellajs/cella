@@ -105,6 +105,7 @@ export const config = {
 
   /**
    * Upload body limit
+   * TODO: is this necessary since files are uploaded through tus using transloadit? also the default Body limit is quite high
    */
   jsonBodyLimit: 1 * 1024 * 1024, // 1mb
   fileUploadLimit: 20 * 1024 * 1024, // 20mb

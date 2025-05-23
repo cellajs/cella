@@ -21,7 +21,7 @@ const UserLanguage = ({ align = 'end', triggerClassName = '', contentClassName =
   const { t } = useTranslation();
 
   const { user, updateUser } = useUserStore();
-  const language = user?.language || i18n.language;
+  const language = user?.language || i18n.languages[0];
 
   const changeLanguage = (lng: Language) => {
     if (!onlineManager.isOnline()) return toaster(t('common:action.offline.text'), 'warning');

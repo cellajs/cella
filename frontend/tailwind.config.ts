@@ -17,6 +17,9 @@ export default {
       },
     },
     extend: {
+      fontSize: {
+        md: '0.888rem',
+      },
       fontFamily: {
         sans: ['Open Sans', 'ui-sans-serif', 'sans-serif'],
       },

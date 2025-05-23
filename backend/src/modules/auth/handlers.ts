@@ -68,7 +68,6 @@ function isOAuthEnabled(provider: EnabledOauthProvider): boolean {
   return enabledOauthProviders.includes(provider);
 }
 
-// Set default hook to catch validation errors
 const app = new OpenAPIHono<Env>({ defaultHook });
 
 const authRouteHandlers = app
