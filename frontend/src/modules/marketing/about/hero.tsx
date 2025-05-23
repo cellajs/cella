@@ -41,7 +41,7 @@ export const Hero = ({ title, subtitle, text, children, badgeText }: HeroProps) 
               {subtitle && <span className={`bg-linear-to-br ${gradientClass} bg-clip-text font-bold`}>{t(subtitle)}</span>}
             </h1>
             {text && (
-              <h2 className="text-foreground/80 mx-auto mb-8 max-w-[48rem] text-xl md:text-2xl">
+              <h2 className="text-foreground/80 mx-auto mb-8 max-w-[48rem] text-xl md:text-2xl md:leading-10">
                 <Trans i18nKey={text} components={{ strong: <strong /> }} />
               </h2>
             )}

@@ -13,7 +13,7 @@ export const TextEffect = ({ text, className = '' }: TextEffectProps) => {
     show: (i: number) => ({
       y: 0,
       opacity: 1,
-      transition: { delay: i * 0.03 },
+      transition: { delay: i * 0.02 },
     }),
   };
 

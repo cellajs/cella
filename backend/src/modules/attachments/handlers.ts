@@ -19,10 +19,8 @@ import { type SQL, and, count, eq, ilike, inArray, like, notLike, or } from 'dri
 import { html } from 'hono/html';
 import { stream } from 'hono/streaming';
 
-// Set default hook to catch validation errors
 const app = new OpenAPIHono<Env>({ defaultHook });
 
-// Attachment endpoints
 const attachmentsRouteHandlers = app
   /**
    * Proxy to electric for syncing to client

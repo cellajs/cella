@@ -15,7 +15,6 @@ import { prepareStringForILikeFilter } from '#/utils/sql';
 // These requests are only allowed to be created if user has none yet
 const uniqueRequests: RequestModel['type'][] = ['waitlist', 'newsletter'];
 
-// Set default hook to catch validation errors
 const app = new OpenAPIHono<Env>({ defaultHook });
 
 const requestRouteHandlers = app

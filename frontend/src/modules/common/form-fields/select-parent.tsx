@@ -13,8 +13,8 @@ interface Props {
   control: Control<any>;
   name: string;
   label: string;
-  collection: keyof UserMenu;
-  type: ContextEntityType;
+  parentType: keyof UserMenu;
+  entityType: ContextEntityType;
   placeholder?: string;
   required?: boolean;
   disabled?: boolean;
@@ -28,11 +28,11 @@ const convertItemToOption = (item: UserMenuItem) => {
   };
 };
 
-const SelectParentFormField = ({ collection, control, name, label, type, placeholder, required, disabled }: Props) => {
+const SelectParentFormField = ({ parentType, control, name, label, entityType, placeholder, required, disabled }: Props) => {
   const { t } = useTranslation();
   const { menu } = useNavigationStore();
 
-  const options = useMemo(() => menu[collection]?.map((item) => convertItemToOption(item)) || [], [menu, collection, control, name]);
+  const options = useMemo(() => menu[parentType]?.map((item) => convertItemToOption(item)) || [], [menu, parentType, control, name]);
 
   return (
     <FormField
@@ -51,7 +51,7 @@ const SelectParentFormField = ({ collection, control, name, label, type, placeho
               name={name}
               onChange={onChange}
               disabled={disabled}
-              placeholder={t('common:select_resource', { resource: t(`common:${type}`).toLowerCase() })}
+              placeholder={t('common:select_resource', { resource: t(`common:${entityType}`).toLowerCase() })}
               searchPlaceholder={placeholder ? placeholder : t('common:search')}
             />
           </FormControl>

@@ -21,7 +21,6 @@ import { getOrderColumn } from '#/utils/order-column';
 import { prepareStringForILikeFilter } from '#/utils/sql';
 import organizationRoutes from './routes';
 
-// Set default hook to catch validation errors
 const app = new OpenAPIHono<Env>({ defaultHook });
 
 const organizationRouteHandlers = app

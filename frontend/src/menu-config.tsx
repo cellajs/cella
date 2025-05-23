@@ -8,7 +8,7 @@ import UnsavedBadge from '~/modules/common/unsaved-badge';
 import CreateOrganizationForm from '~/modules/organizations/create-organization-form';
 import type { Organization } from '~/modules/organizations/types';
 
-type SectionsSchema = {
+type SectionSchema = {
   label: string;
   createAction?: (ref: RefObject<HTMLButtonElement | null>) => void;
   icon?: React.ElementType<LucideProps>;
@@ -36,7 +36,7 @@ const createOrganizationAction = (triggerRef: RefObject<HTMLButtonElement | null
 /**
  * Configuration to set menu sections with options for different context entities.
  */
-export const menuSectionsSchemas: Partial<Record<ContextEntityType, SectionsSchema>> = {
+export const menuSectionsSchema: Partial<Record<ContextEntityType, SectionSchema>> = {
   organization: { createAction: createOrganizationAction, label: 'common:organizations' },
 };
 

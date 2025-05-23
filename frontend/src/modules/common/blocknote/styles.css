@@ -25,6 +25,12 @@
   --success: 120 100% 40%;
 }
 
+/* TODO(REFACTOR): explore if we can reduce amount of css using just bn vars */
+.bn-shadcn {
+    --blocknote-placeholder: 240 3.7% 50%;
+  --bn-font-family: "Open Sans", ui-sans-serif, sans-serif;
+}
+
 .bn-shadcn p {
   font-size: 0.888rem;
   font-weight: 350;
@@ -46,10 +52,10 @@
   line-height: 1rem;
 }
 
-.bn-block-content[data-content-type="codeBlock"] {
-  background: hsl(var(--secondary));
-  border: solid hsl(var(--muted));
+.bn-container.bn-shadcn.dark .bn-block-content[data-content-type="codeBlock"] {
+  background: hsl(var(--muted) / .5);
 }
+
 .bn-block-content[data-content-type="codeBlock"] > pre {
   padding: 1.2rem 1rem 1rem;
 }
@@ -84,14 +90,33 @@
 
 .bn-shadcn .bn-block-outer,
 .bn-shadcn .bn-default-styles {
+  font-family: "Open Sans", ui-sans-serif, sans-serif;
   font-size: 0.888rem;
   line-height: 1.3;
   -webkit-font-smoothing: auto;
 }
 
 .bn-container.bn-shadcn a {
+  color: inherit;
   text-decoration: underline;
+  text-underline-offset: 0.2rem;
+  text-decoration-color: hsl(var(--foreground) / 0.2);
 }
+
+.bn-link-toolbar > button.px-3 {
+  padding-left: 0.5rem !important;
+  padding-right: 0.5rem !important;
+  height: 2rem;
+}
+
+.bn-link-toolbar > button:hover {
+  background-color: hsl(var(--muted));
+}
+
+.bn-container.bn-shadcn a:hover {
+  text-decoration-color: hsl(var(--foreground));
+}
+
 
 .bn-container.bn-shadcn b,
 .bn-container.bn-shadcn strong {
@@ -139,7 +164,7 @@
 }
 
 .bn-toolbar.bn-formatting-toolbar {
-  padding: 0.5rem;
+  padding: 0.25rem;
   gap: 0.5rem;
   background-color: hsl(var(--popover));
   border: 0.05rem solid hsl(var(--border));
@@ -148,6 +173,10 @@
 .bn-toolbar.bn-formatting-toolbar button {
   height: 2rem;
   width: 2rem;
+}
+
+.bn-toolbar.bn-formatting-toolbar button:hover {
+  background-color: hsl(var(--muted));
 }
 
 .bn-menu-item {

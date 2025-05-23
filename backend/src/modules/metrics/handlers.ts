@@ -13,7 +13,6 @@ import { defaultHook } from '#/utils/default-hook';
 import { TimeSpan } from '#/utils/time-span';
 import metricRoutes from './routes';
 
-// Set default hook to catch validation errors
 const app = new OpenAPIHono<Env>({ defaultHook });
 
 // Store public counts in memory with a 1-minute cache
