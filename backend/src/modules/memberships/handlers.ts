@@ -16,12 +16,12 @@ import { mailer } from '#/lib/mailer';
 import { sendSSEToUsers } from '#/lib/sse';
 import { logEvent } from '#/middlewares/logger/log-event';
 import { getAssociatedEntityDetails, insertMembership } from '#/modules/memberships/helpers';
-import { membershipSelect } from '#/modules/memberships/helpers/select';
+import { membershipSummarySelect } from '#/modules/memberships/helpers/select';
 import membershipRoutes from '#/modules/memberships/routes';
 import { getUsersByConditions } from '#/modules/users/helpers/get-user-by';
 import { userSelect } from '#/modules/users/helpers/select';
 import { getValidEntity } from '#/permissions/get-valid-entity';
-import defaultHook from '#/utils/default-hook';
+import { defaultHook } from '#/utils/default-hook';
 import { getIsoDate } from '#/utils/iso-date';
 import { nanoid } from '#/utils/nanoid';
 import { getOrderColumn } from '#/utils/order-column';
@@ -368,7 +368,7 @@ const membershipRouteHandlers = app
     const membersQuery = db
       .select({
         user: userSelect,
-        membership: membershipSelect,
+        membership: membershipSummarySelect,
       })
       .from(usersTable)
       .innerJoin(membershipsTable, eq(membershipsTable.userId, usersTable.id))

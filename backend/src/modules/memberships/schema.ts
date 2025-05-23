@@ -6,24 +6,23 @@ import { membershipsTable } from '#/db/schema/memberships';
 import { tokensTable } from '#/db/schema/tokens';
 import { contextEntityTypeSchema, idOrSlugSchema, paginationQuerySchema, validEmailSchema } from '#/utils/schema/common';
 
-const membershipSelectSchema = createSelectSchema(membershipsTable);
+const membershipSummarySelectSchema = createSelectSchema(membershipsTable);
 
 export const membershipSchema = z.object({
-  ...membershipSelectSchema.omit({
+  ...membershipSummarySelectSchema.omit({
     activatedAt: true,
     tokenId: true,
   }).shape,
 });
 
 export const membershipSummarySchema = z.object(
-  membershipSelectSchema.omit({
+  membershipSummarySelectSchema.omit({
     createdAt: true,
     createdBy: true,
     modifiedAt: true,
     modifiedBy: true,
     tokenId: true,
     activatedAt: true,
-    userId: true,
   }).shape,
 );
 
@@ -33,7 +32,7 @@ export const membershipCreateBodySchema = z.object({
 });
 
 export const membershipUpdateBodySchema = z.object({
-  role: membershipSelectSchema.shape.role.optional(),
+  role: membershipSummarySelectSchema.shape.role.optional(),
   muted: z.boolean().optional(),
   archived: z.boolean().optional(),
   order: z.number().optional(),

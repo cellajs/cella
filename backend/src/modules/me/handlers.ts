@@ -19,13 +19,13 @@ import { isAuthenticated } from '#/middlewares/guard';
 import { logEvent } from '#/middlewares/logger/log-event';
 import { getUserBy } from '#/modules/users/helpers/get-user-by';
 import { verifyUnsubscribeToken } from '#/modules/users/helpers/unsubscribe-token';
-import defaultHook from '#/utils/default-hook';
+import { defaultHook } from '#/utils/default-hook';
 import { getIsoDate } from '#/utils/iso-date';
 import { deleteAuthCookie, getAuthCookie } from '../auth/helpers/cookie';
 import { parseAndValidatePasskeyAttestation } from '../auth/helpers/passkey';
 import { getParsedSessionCookie, invalidateSessionById, invalidateUserSessions, validateSession } from '../auth/helpers/session';
 import { checkSlugAvailable } from '../entities/helpers/check-slug';
-import { membershipSelect } from '../memberships/helpers/select';
+import { membershipSummarySelect } from '../memberships/helpers/select';
 import { getUserSessions } from './helpers/get-sessions';
 import meRoutes from './routes';
 import type { menuItemSchema, menuSchema } from './schema';
@@ -53,7 +53,7 @@ const meRouteHandlers = app
   /*
    * Get my auth data
    */
-  .openapi(meRoutes.getSelfAuthData, async (ctx) => {
+  .openapi(meRoutes.getMyAuthData, async (ctx) => {
     const user = getContextUser();
 
     const getPasskey = db.select().from(passkeysTable).where(eq(passkeysTable.userEmail, user.email));
@@ -71,7 +71,7 @@ const meRouteHandlers = app
   /*
    * Get my user menu
    */
-  .openapi(meRoutes.getSelfMenu, async (ctx) => {
+  .openapi(meRoutes.getMyMenu, async (ctx) => {
     const user = getContextUser();
     const memberships = getContextMemberships();
 
@@ -87,11 +87,11 @@ const meRouteHandlers = app
           id: mainTable.id,
           createdAt: mainTable.createdAt,
           modifiedAt: mainTable.modifiedAt,
-          organizationId: membershipSelect.organizationId,
+          organizationId: membershipSummarySelect.organizationId,
           name: mainTable.name,
           entityType: mainTable.entityType,
           thumbnailUrl: mainTable.thumbnailUrl,
-          membership: membershipSelect,
+          membership: membershipSummarySelect,
         })
         .from(mainTable)
         .where(and(eq(membershipsTable.userId, user.id), eq(membershipsTable.contextType, section.entityType)))
@@ -109,11 +109,11 @@ const meRouteHandlers = app
             id: subTable.id,
             createdAt: subTable.createdAt,
             modifiedAt: subTable.modifiedAt,
-            organizationId: membershipSelect.organizationId,
+            organizationId: membershipSummarySelect.organizationId,
             name: subTable.name,
             entityType: subTable.entityType,
             thumbnailUrl: subTable.thumbnailUrl,
-            membership: membershipSelect,
+            membership: membershipSummarySelect,
           })
           .from(subTable)
           .where(and(eq(membershipsTable.userId, user.id), eq(membershipsTable.contextType, section.subentityType)))
@@ -150,7 +150,7 @@ const meRouteHandlers = app
     return ctx.json({ success: true, data: await data() }, 200);
   })
   /*
-   * Terminate a session
+   * Terminate one or more sessions
    */
   .openapi(meRoutes.deleteSessions, async (ctx) => {
     const { ids } = ctx.req.valid('json');
@@ -178,9 +178,9 @@ const meRouteHandlers = app
     return ctx.json({ success: true, errors: errors }, 200);
   })
   /*
-   * Update current user (self)
+   * Update current user (me)
    */
-  .openapi(meRoutes.updateSelf, async (ctx) => {
+  .openapi(meRoutes.updateMe, async (ctx) => {
     const user = getContextUser();
 
     if (!user) return errorResponse(ctx, 404, 'not_found', 'warn', 'user', { user: 'self' });
@@ -212,9 +212,9 @@ const meRouteHandlers = app
     return ctx.json({ success: true, data: updatedUser }, 200);
   })
   /*
-   * Delete current user (self)
+   * Delete current user (me)
    */
-  .openapi(meRoutes.deleteSelf, async (ctx) => {
+  .openapi(meRoutes.deleteMe, async (ctx) => {
     const user = getContextUser();
 
     // Check if user exists
@@ -226,14 +226,14 @@ const meRouteHandlers = app
     // Invalidate sessions
     await invalidateUserSessions(user.id);
     deleteAuthCookie(ctx, 'session');
-    logEvent('User deleted', { user: user.id });
+    logEvent('User deleted itself', { user: user.id });
 
     return ctx.json({ success: true }, 200);
   })
   /*
-   * Delete current user (self) entity membership
+   * Delete one of my entity memberships
    */
-  .openapi(meRoutes.leaveEntity, async (ctx) => {
+  .openapi(meRoutes.deleteMyMembership, async (ctx) => {
     const user = getContextUser();
 
     const { entityType, idOrSlug } = ctx.req.valid('query');
@@ -248,12 +248,12 @@ const meRouteHandlers = app
       .delete(membershipsTable)
       .where(and(eq(membershipsTable.userId, user.id), eq(membershipsTable.contextType, entityType), eq(membershipsTable[entityIdField], entity.id)));
 
-    logEvent('User leave entity', { user: user.id });
+    logEvent('User left entity', { user: user.id });
 
     return ctx.json({ success: true }, 200);
   })
   /*
-   * Create passkey for self
+   * Create passkey
    */
   .openapi(meRoutes.createPasskey, async (ctx) => {
     const { attestationObject, clientDataJSON, userEmail } = ctx.req.valid('json');
@@ -269,7 +269,7 @@ const meRouteHandlers = app
     return ctx.json({ success: true }, 200);
   })
   /*
-   * Delete passkey of self
+   * Delete passkey
    */
   .openapi(meRoutes.deletePasskey, async (ctx) => {
     const user = getContextUser();
@@ -301,9 +301,9 @@ const meRouteHandlers = app
     }
   })
   /*
-   * Unsubscribe a user by token from receiving newsletters
+   * Unsubscribe myself by token from receiving newsletters
    */
-  .openapi(meRoutes.unsubscribeSelf, async (ctx) => {
+  .openapi(meRoutes.unsubscribeMe, async (ctx) => {
     const { token } = ctx.req.valid('query');
 
     // Check if token exists

@@ -1,6 +1,6 @@
 import { pgTable, varchar } from 'drizzle-orm/pg-core';
 import { nanoid } from '#/utils/nanoid';
-import { attachmentRelations } from '../../attachments-config';
+import { attachmentRelations } from '../../attachment-config';
 import { timestampColumns } from '../utils/timestamp-columns';
 import { usersTable } from './users';
 

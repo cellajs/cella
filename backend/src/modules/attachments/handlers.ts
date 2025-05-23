@@ -7,7 +7,7 @@ import { logEvent } from '#/middlewares/logger/log-event';
 import { processAttachmentUrls, processAttachmentUrlsBatch } from '#/modules/attachments/helpers/process-attachment-urls';
 import attachmentRoutes from '#/modules/attachments/routes';
 import { splitByAllowance } from '#/permissions/split-by-allowance';
-import defaultHook from '#/utils/default-hook';
+import { defaultHook } from '#/utils/default-hook';
 import { getIsoDate } from '#/utils/iso-date';
 import { nanoid } from '#/utils/nanoid';
 import { getOrderColumn } from '#/utils/order-column';

@@ -1,6 +1,6 @@
 import { queryOptions, useMutation } from '@tanstack/react-query';
 import type { ApiError } from '~/lib/api';
-import { updateSelf } from '~/modules/me/api';
+import { updateMe } from '~/modules/me/api';
 import { getAndSetMe, getAndSetMeAuthData, getAndSetMenu } from '~/modules/me/helpers';
 import type { UpdateUserParams } from '~/modules/users/api';
 import { usersKeys } from '~/modules/users/query';
@@ -48,7 +48,7 @@ export const menuQueryOptions = () => queryOptions({ queryKey: meKeys.menu(), qu
 export const useUpdateSelfMutation = () => {
   return useMutation<User, ApiError, Omit<UpdateUserParams, 'role'>>({
     mutationKey: meKeys.update(),
-    mutationFn: updateSelf,
+    mutationFn: updateMe,
     onSuccess: (updatedUser) => {
       const updateUser = useUserStore.getState().updateUser;
 

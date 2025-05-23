@@ -9,7 +9,7 @@ import { migrate as pgMigrate } from 'drizzle-orm/node-postgres/migrator';
 import type { PgliteDatabase } from 'drizzle-orm/pglite';
 import { migrate as pgliteMigrate } from 'drizzle-orm/pglite/migrator';
 import app from '#/routes';
-import ascii from '#/utils/ascii';
+import { ascii } from '#/utils/ascii';
 import { env } from './env';
 
 // import { sdk } from './tracing';

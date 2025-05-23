@@ -7,7 +7,7 @@ import { membershipsTable } from '#/db/schema/memberships';
 import { usersTable } from '#/db/schema/users';
 import { entityTables } from '#/entity-config';
 import type { entityListQuerySchema } from '#/modules/entities/schema';
-import { membershipSelect } from '#/modules/memberships/helpers/select';
+import { membershipSummarySelect } from '#/modules/memberships/helpers/select';
 import { prepareStringForILikeFilter } from '#/utils/sql';
 
 type EntitiesQueryProps = Omit<z.infer<typeof entityListQuerySchema>, 'targetUserId' | 'targetOrgId'> & {
@@ -52,7 +52,7 @@ const getContextEntitiesQuery = ({ q, organizationIds, userId, type }: ContextEn
           name: table.name,
           entityType: table.entityType,
           thumbnailUrl: table.thumbnailUrl,
-          membership: membershipSelect,
+          membership: membershipSummarySelect,
           total: sql<number>`COUNT(*) OVER()`.as('total'),
         })
         .from(table)
@@ -81,7 +81,7 @@ const getUsersQuery = ({ q, organizationIds, selfId, userMembershipType }: UserE
       entityType: usersTable.entityType,
       email: usersTable.email,
       thumbnailUrl: usersTable.thumbnailUrl,
-      membership: membershipSelect,
+      membership: membershipSummarySelect,
       total: sql<number>`COUNT(*) OVER()`.as('total'),
     })
     .from(usersTable)

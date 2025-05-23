@@ -19,7 +19,7 @@ import { sendNewsletter } from '~/modules/system/api';
 import { Button, SubmitButton } from '~/modules/ui/button';
 import { Checkbox } from '~/modules/ui/checkbox';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
-import { blocknoteFieldIsDirty } from '~/utils/blocknote-filed-is-dirty';
+import { blocknoteFieldIsDirty } from '~/utils/blocknote-field-is-dirty';
 
 const BlockNoteContent = lazy(() => import('~/modules/common/form-fields/blocknote-content'));
 interface CreateNewsletterFormProps {

@@ -24,7 +24,7 @@ class MeRoutes {
     },
   });
 
-  public getSelfAuthData = createCustomRoute({
+  public getMyAuthData = createCustomRoute({
     method: 'get',
     path: '/auth',
     guard: isAuthenticated,
@@ -40,7 +40,7 @@ class MeRoutes {
     },
   });
 
-  public updateSelf = createCustomRoute({
+  public updateMe = createCustomRoute({
     method: 'put',
     path: '/',
     guard: isAuthenticated,
@@ -63,7 +63,7 @@ class MeRoutes {
     },
   });
 
-  public deleteSelf = createCustomRoute({
+  public deleteMe = createCustomRoute({
     method: 'delete',
     path: '/',
     guard: isAuthenticated,
@@ -79,7 +79,7 @@ class MeRoutes {
     },
   });
 
-  public getSelfMenu = createCustomRoute({
+  public getMyMenu = createCustomRoute({
     method: 'get',
     path: '/menu',
     guard: isAuthenticated,
@@ -118,7 +118,7 @@ class MeRoutes {
     },
   });
 
-  public leaveEntity = createCustomRoute({
+  public deleteMyMembership = createCustomRoute({
     method: 'delete',
     path: '/leave',
     guard: isAuthenticated,
@@ -138,7 +138,7 @@ class MeRoutes {
     },
   });
 
-  public unsubscribeSelf = createCustomRoute({
+  public unsubscribeMe = createCustomRoute({
     method: 'get',
     path: '/unsubscribe',
     guard: isPublicAccess,

@@ -44,11 +44,12 @@ import { getParsedSessionCookie, invalidateSessionById, setUserSession, validate
 import { handleCreateUser, handleMembershipTokenUpdate } from '#/modules/auth/helpers/user';
 import { sendVerificationEmail } from '#/modules/auth/helpers/verify-email';
 import { getUserBy } from '#/modules/users/helpers/get-user-by';
-import defaultHook from '#/utils/default-hook';
+import { defaultHook } from '#/utils/default-hook';
+import { isExpiredDate } from '#/utils/is-expired-date';
 import { getIsoDate } from '#/utils/iso-date';
 import { nanoid } from '#/utils/nanoid';
 import { slugFromEmail } from '#/utils/slug-from-email';
-import { TimeSpan, createDate, isExpiredDate } from '#/utils/time-span';
+import { TimeSpan, createDate } from '#/utils/time-span';
 import { CreatePasswordEmail, type CreatePasswordEmailProps } from '../../../emails/create-password';
 import { EmailVerificationEmail, type EmailVerificationEmailProps } from '../../../emails/email-verification';
 import authRoutes from './routes';

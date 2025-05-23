@@ -34,7 +34,7 @@ export const getSelfAuthInfo = async () => {
  *
  * @returns The user menu data.
  */
-export const getSelfMenu = async () => {
+export const getMyMenu = async () => {
   const response = await client.menu.$get();
 
   const json = await handleResponse(response);
@@ -47,7 +47,7 @@ export const getSelfMenu = async () => {
  *  @param params User data to update.
  *  @returns The updated user data.
  */
-export const updateSelf = async (params: UpdateUserParams) => {
+export const updateMe = async (params: UpdateUserParams) => {
   const response = await client.index.$put({
     json: params,
   });
@@ -59,7 +59,7 @@ export const updateSelf = async (params: UpdateUserParams) => {
 /**
  * Delete current user.
  */
-export const deleteSelf = async () => {
+export const deleteMe = async () => {
   const response = await client.index.$delete();
   await handleResponse(response);
 };
@@ -131,7 +131,7 @@ export type LeaveEntityQuery = { idOrSlug: string; entityType: ContextEntityType
  * @param query.entityType - Type of entity to leave.
  * @returns A boolean indicating whether the user successfully left the entity.
  */
-export const leaveEntity = async (query: LeaveEntityQuery) => {
+export const deleteMyMembership = async (query: LeaveEntityQuery) => {
   const response = await client.leave.$delete({ query });
 
   const json = await handleResponse(response);

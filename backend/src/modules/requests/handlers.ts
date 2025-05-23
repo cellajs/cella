@@ -8,7 +8,7 @@ import { errorResponse } from '#/lib/errors';
 import { sendSlackMessage } from '#/lib/notifications';
 import requestRoutes from '#/modules/requests/routes';
 import { getUserBy } from '#/modules/users/helpers/get-user-by';
-import defaultHook from '#/utils/default-hook';
+import { defaultHook } from '#/utils/default-hook';
 import { getOrderColumn } from '#/utils/order-column';
 import { prepareStringForILikeFilter } from '#/utils/sql';
 

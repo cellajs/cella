@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { config } from 'config';
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 import { organizationsTable } from '#/db/schema/organizations';
-import type { ValidEntities } from '#/utils/counts';
+import type { ValidEntities } from '#/modules/entities/helpers/counts';
 import {
   languageSchema,
   paginationQuerySchema,

@@ -2,7 +2,7 @@ import { db } from '#/db/db';
 import { type MembershipModel, membershipsTable } from '#/db/schema/memberships';
 import type { EntityModel } from '#/lib/entity';
 import { logEvent } from '#/middlewares/logger/log-event';
-import { membershipSelect } from '#/modules/memberships/helpers/select';
+import { membershipSummarySelect } from '#/modules/memberships/helpers/select';
 import { getIsoDate } from '#/utils/iso-date';
 
 import { type ContextEntityType, config } from 'config';
@@ -98,7 +98,7 @@ export const insertMembership = async <T extends BaseEntityModel>({
       ...(entity.entityType !== 'organization' && { [entityIdField]: entity.id }),
       ...(associatedEntity && { [associatedEntity.field]: associatedEntity.id }),
     })
-    .returning(membershipSelect);
+    .returning(membershipSummarySelect);
 
   logEvent(`User added to ${entity.entityType}`, { user: userId, id: entity.id }); // Log event
 

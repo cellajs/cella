@@ -19,7 +19,7 @@ import { getSignedUrl } from '#/lib/signed-url';
 import { logEvent } from '#/middlewares/logger/log-event';
 import systemRoutes from '#/modules/system/routes';
 import { getUsersByConditions } from '#/modules/users/helpers/get-user-by';
-import defaultHook from '#/utils/default-hook';
+import { defaultHook } from '#/utils/default-hook';
 import { nanoid } from '#/utils/nanoid';
 import { slugFromEmail } from '#/utils/slug-from-email';
 import { TimeSpan, createDate } from '#/utils/time-span';

@@ -4,7 +4,7 @@ import i18n from 'i18next';
 import { useTranslation } from 'react-i18next';
 import CountryFlag from '~/modules/common/country-flag';
 import { toaster } from '~/modules/common/toaster';
-import { updateSelf } from '~/modules/me/api';
+import { updateMe } from '~/modules/me/api';
 import { Button } from '~/modules/ui/button';
 import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuTrigger } from '~/modules/ui/dropdown-menu';
 import { useUserStore } from '~/store/user';
@@ -29,7 +29,7 @@ const UserLanguage = ({ align = 'end', triggerClassName = '', contentClassName =
     i18n.changeLanguage(lng);
 
     if (!user) return;
-    updateSelf({ language: lng }).then((res) => {
+    updateMe({ language: lng }).then((res) => {
       updateUser(res);
     });
   };

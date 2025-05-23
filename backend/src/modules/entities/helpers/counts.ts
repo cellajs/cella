@@ -12,7 +12,6 @@ type EntityIdColumnNames = keyof (typeof membershipsTable)['_']['columns'];
  * If an entity is provided, counts are filtered by entity. Otherwise, counts are for all entities.
  *
  * @param entity - The entity type to filter by, or null for counting all entities.
- *
  * @returns Query object that can be executed
  */
 export const getMemberCountsQuery = (entityType: ContextEntityType) => {

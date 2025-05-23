@@ -9,7 +9,7 @@ import { JSDOM } from 'jsdom';
  * @param passedHTML - The HTML string to be updated.
  * @returns The updated HTML string.
  */
-export const updateBlocknoteHTML = (passedHTML: string): string => {
+export const processBlocknoteHTML = (passedHTML: string): string => {
   // Parse the HTML string with JSDOM
   const dom = new JSDOM(passedHTML);
   const document = dom.window.document;

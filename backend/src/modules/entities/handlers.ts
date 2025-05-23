@@ -7,7 +7,7 @@ import { type Env, getContextMemberships, getContextUser } from '#/lib/context';
 import { checkSlugAvailable } from '#/modules/entities/helpers/check-slug';
 import { getEntitiesQuery } from '#/modules/entities/helpers/entities-query';
 import entityRoutes from '#/modules/entities/routes';
-import defaultHook from '#/utils/default-hook';
+import { defaultHook } from '#/utils/default-hook';
 import { processEntitiesData } from './helpers/process-entities-data';
 import type { entityListItemSchema } from './schema';
 

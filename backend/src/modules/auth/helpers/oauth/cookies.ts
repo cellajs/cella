@@ -5,8 +5,9 @@ import { db } from '#/db/db';
 import { tokensTable } from '#/db/schema/tokens';
 import { createError } from '#/lib/errors';
 import { logEvent } from '#/middlewares/logger/log-event';
+import { isExpiredDate } from '#/utils/is-expired-date';
 import { isRedirectUrl } from '#/utils/is-redirect-url';
-import { TimeSpan, isExpiredDate } from '#/utils/time-span';
+import { TimeSpan } from '#/utils/time-span';
 import { type CookieName, deleteAuthCookie, getAuthCookie, setAuthCookie } from '../cookie';
 import { getParsedSessionCookie, validateSession } from '../session';
 

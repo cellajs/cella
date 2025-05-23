@@ -8,7 +8,7 @@ import type { Env } from '#/lib/context';
 import { errorResponse } from '#/lib/errors';
 import { deleteAuthCookie } from '#/modules/auth/helpers/cookie';
 import { getParsedSessionCookie, validateSession } from '#/modules/auth/helpers/session';
-import { membershipSelect } from '#/modules/memberships/helpers/select';
+import { membershipSummarySelect } from '#/modules/memberships/helpers/select';
 import { TimeSpan } from '#/utils/time-span';
 
 /**
@@ -55,7 +55,7 @@ export const isAuthenticated = createMiddleware<Env>(async (ctx, next): Promise<
   });
 
   // Fetch user's memberships from the database
-  const memberships = await db.select(membershipSelect).from(membershipsTable).where(eq(membershipsTable.userId, user.id));
+  const memberships = await db.select(membershipSummarySelect).from(membershipsTable).where(eq(membershipsTable.userId, user.id));
   ctx.set('memberships', memberships);
 
   await next();

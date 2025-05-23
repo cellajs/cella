@@ -5,7 +5,7 @@ import { t } from 'i18next';
 
 import { authenticateWithPasskey, getPasskeyChallenge } from '~/modules/auth/api';
 import { toaster } from '~/modules/common/toaster';
-import { deletePasskey as baseRemovePasskey, createPasskey, getSelf, getSelfAuthInfo, getSelfMenu } from '~/modules/me/api';
+import { deletePasskey as baseRemovePasskey, createPasskey, getMyMenu, getSelf, getSelfAuthInfo } from '~/modules/me/api';
 import { useNavigationStore } from '~/store/navigation';
 import { useUIStore } from '~/store/ui';
 import { useUserStore } from '~/store/user';
@@ -185,7 +185,7 @@ export const getAndSetMeAuthData = async () => {
  * @returns The menu data.
  */
 export const getAndSetMenu = async () => {
-  const menu = await getSelfMenu();
+  const menu = await getMyMenu();
   useNavigationStore.setState({ menu });
   return menu;
 };

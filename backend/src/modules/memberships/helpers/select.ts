@@ -6,8 +6,8 @@ import type { membershipSummarySchema } from '../schema';
 
 export type MembershipSummary = z.infer<typeof membershipSummarySchema>;
 
-// Dynamic part of the select based on contextEntities that you can set in config
-const membershipDynamicSelect = config.contextEntityTypes
+/** Add additional entity ID fields based on the context entity types, excluding 'organization' */
+const additionalEntityIdFields = config.contextEntityTypes
   .filter((e) => e !== 'organization')
   .reduce(
     (fields, entityType) => {
@@ -19,9 +19,10 @@ const membershipDynamicSelect = config.contextEntityTypes
     {} as Record<Exclude<ContextEntityTypeIdFields, 'organizationId'>, GeneratedColumn>,
   );
 
-// Merge the static and dynamic select fields
-// TODO cant we derive this from the table schema?
-export const membershipSelect = {
+/**
+ * Select for membership summary to embed membership in an entity.
+ */
+export const membershipSummarySelect = {
   id: membershipsTable.id,
   role: membershipsTable.role,
   archived: membershipsTable.archived,
@@ -30,5 +31,5 @@ export const membershipSelect = {
   contextType: membershipsTable.contextType,
   userId: membershipsTable.userId,
   organizationId: membershipsTable.organizationId,
-  ...membershipDynamicSelect,
+  ...additionalEntityIdFields,
 };

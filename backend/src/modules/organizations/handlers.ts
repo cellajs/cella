@@ -10,12 +10,12 @@ import { type ErrorType, createError, errorResponse } from '#/lib/errors';
 import { sendSSEToUsers } from '#/lib/sse';
 import { logEvent } from '#/middlewares/logger/log-event';
 import { checkSlugAvailable } from '#/modules/entities/helpers/check-slug';
+import { getMemberCounts, getMemberCountsQuery, getRelatedEntityCounts } from '#/modules/entities/helpers/counts';
 import { insertMembership } from '#/modules/memberships/helpers';
-import { membershipSelect } from '#/modules/memberships/helpers/select';
+import { membershipSummarySelect } from '#/modules/memberships/helpers/select';
 import { getValidEntity } from '#/permissions/get-valid-entity';
 import { splitByAllowance } from '#/permissions/split-by-allowance';
-import { getMemberCounts, getMemberCountsQuery, getRelatedEntityCounts } from '#/utils/counts';
-import defaultHook from '#/utils/default-hook';
+import { defaultHook } from '#/utils/default-hook';
 import { getIsoDate } from '#/utils/iso-date';
 import { getOrderColumn } from '#/utils/order-column';
 import { prepareStringForILikeFilter } from '#/utils/sql';
@@ -97,7 +97,7 @@ const organizationRouteHandlers = app
     const organizations = await db
       .select({
         ...getTableColumns(organizationsTable),
-        membership: membershipSelect,
+        membership: membershipSummarySelect,
         counts: {
           membership: sql<{
             admin: number;
@@ -208,7 +208,7 @@ const organizationRouteHandlers = app
       .returning();
 
     const organizationMemberships = await db
-      .select(membershipSelect)
+      .select(membershipSummarySelect)
       .from(membershipsTable)
       .where(and(eq(membershipsTable.contextType, 'organization'), eq(membershipsTable.organizationId, organization.id)));
 

@@ -15,5 +15,3 @@ export const mapEntitiesSchema = <T extends ZodTypeAny>(getSchemaForTable: (tabl
     ),
   );
 };
-
-export const sessionCookieContentSchema = z.object({ sessionToken: z.string(), adminUserId: z.string().optional() });
