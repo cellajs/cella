@@ -4,9 +4,9 @@ import { useTranslation } from 'react-i18next';
 import { Button } from '~/modules/ui/button';
 
 import { deletePasskey, passkeyRegistration } from '~/modules/me/helpers';
-import type { UserAuthInfo } from '~/modules/me/types';
+import type { MeAuthData } from '~/modules/me/types';
 
-const Passkeys = ({ userAuthInfo }: { userAuthInfo: UserAuthInfo }) => {
+const Passkeys = ({ userAuthInfo }: { userAuthInfo: MeAuthData }) => {
   const { t } = useTranslation();
 
   const [hasPasskey, setHasPasskey] = useState(userAuthInfo.passkey);

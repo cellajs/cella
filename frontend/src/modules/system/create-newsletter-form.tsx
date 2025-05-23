@@ -19,18 +19,19 @@ import { sendNewsletter } from '~/modules/system/api';
 import { Button, SubmitButton } from '~/modules/ui/button';
 import { Checkbox } from '~/modules/ui/checkbox';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
-import { blocknoteFieldIsDirty } from '~/utils/blocknote-filed-is-dirty';
+import { blocknoteFieldIsDirty } from '~/utils/blocknote-field-is-dirty';
 
 const BlockNoteContent = lazy(() => import('~/modules/common/form-fields/blocknote-content'));
 interface CreateNewsletterFormProps {
   organizationIds: string[];
+  callback?: () => void;
 }
 
 const formSchema = sendNewsletterBodySchema;
 
 type FormValues = z.infer<typeof formSchema>;
 
-const CreateNewsletterForm = ({ organizationIds }: CreateNewsletterFormProps) => {
+const CreateNewsletterForm = ({ organizationIds, callback }: CreateNewsletterFormProps) => {
   const { t } = useTranslation();
 
   const [testOnly, setTestOnly] = useState<CheckedState>(false);
@@ -55,6 +56,7 @@ const CreateNewsletterForm = ({ organizationIds }: CreateNewsletterFormProps) =>
       form.reset();
       toaster(t('common:success.create_newsletter'), 'success');
       useSheeter.getState().remove(formContainerId);
+      callback?.();
     },
   });
 
@@ -104,6 +106,9 @@ const CreateNewsletterForm = ({ organizationIds }: CreateNewsletterFormProps) =>
               trailingBlock: false,
               className:
                 'min-h-20 pl-10 pr-6 p-3 border-input ring-offset-background placeholder:text-muted-foreground focus-visible:ring-ring max-focus-visible:ring-transparent max-focus-visible:ring-offset-0 flex w-full rounded-md border text-sm file:border-0 file:bg-transparent file:text-sm file:font-medium focus-visible:outline-hidden sm:focus-visible:ring-2 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50',
+              baseFilePanelProps: {
+                organizationId: 'adminPreview',
+              },
             }}
           />
         </Suspense>

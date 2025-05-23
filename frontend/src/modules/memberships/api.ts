@@ -1,4 +1,4 @@
-import { type ContextEntity, config } from 'config';
+import { type ContextEntityType, config } from 'config';
 import { clientConfig, handleResponse } from '~/lib/api';
 import { membershipsHc } from '#/modules/memberships/hc';
 
@@ -7,7 +7,7 @@ export const client = membershipsHc(config.backendUrl, clientConfig);
 export type InviteMemberProps = Parameters<(typeof client.index)['$post']>['0']['json'] &
   Parameters<(typeof client.index)['$post']>['0']['param'] & {
     idOrSlug: string;
-    entityType: ContextEntity;
+    entityType: ContextEntityType;
   };
 
 /**
@@ -32,7 +32,7 @@ export const inviteMembers = async ({ idOrSlug, entityType, orgIdOrSlug, ...rest
 export type RemoveMembersProps = Parameters<(typeof client.index)['$delete']>['0']['param'] &
   Parameters<(typeof client.index)['$delete']>['0']['json'] & {
     idOrSlug: string;
-    entityType: ContextEntity;
+    entityType: ContextEntityType;
   };
 
 /**
@@ -83,7 +83,7 @@ export const updateMembership = async (values: UpdateMembershipProp) => {
 type RequiredGetMembersParams = {
   idOrSlug: string;
   orgIdOrSlug: string;
-  entityType: ContextEntity;
+  entityType: ContextEntityType;
 };
 
 type OptionalGetMembersParams = Omit<Parameters<(typeof client)['members']['$get']>['0']['query'], 'limit' | 'offset'> & {
@@ -174,12 +174,12 @@ export type GetMembershipInvitationsParams = RequiredGetMembersParams &
  * @param param.order - Sort order `'asc' | 'desc'` (defaults to 'asc').
  * @param param.role - Optional Role `"admin" | "member"` to filter results.
  * @param param.page - Page number.
- * @param param.limit - Maximum number of invited members per page (defaults to `config.requestLimits.memberInvitations`).
+ * @param param.limit - Maximum number of invited members per page (defaults to `config.requestLimits.pendingInvitations`).
  * @param param.offset - Optional offset.
  * @param signal - Optional abort signal for cancelling the request.
  * @returns A paginated list of invited members.
  */
-export const getMembershipInvitations = async (
+export const getPendingInvitations = async (
   {
     idOrSlug,
     orgIdOrSlug,
@@ -188,7 +188,7 @@ export const getMembershipInvitations = async (
     sort = 'createdAt',
     order = 'asc',
     page = 0,
-    limit = config.requestLimits.memberInvitations,
+    limit = config.requestLimits.pendingInvitations,
     offset,
   }: GetMembershipInvitationsParams,
   signal?: AbortSignal,

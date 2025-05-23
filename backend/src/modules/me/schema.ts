@@ -1,43 +1,42 @@
 import { z } from 'zod';
 
-import { sessionsTable } from '#/db/schema/sessions';
-import { type MenuSectionName, entityRelations } from '#/entity-config';
-import { limitEntitySchema } from '#/modules/entities/schema';
-import { membershipInfoSchema } from '#/modules/memberships/schema';
-import { enabledOauthProvidersEnum } from '#/modules/users/schema';
-import { contextEntityTypeSchema, idOrSlugSchema } from '#/utils/schema/common';
+import { type ContextEntityType, config } from 'config';
 import { createSelectSchema } from 'drizzle-zod';
+import { sessionsTable } from '#/db/schema/sessions';
+import { entityBaseSchema } from '#/modules/entities/schema';
+import { membershipSummarySchema } from '#/modules/memberships/schema';
+import { enabledOauthProvidersEnum } from '#/modules/users/schema';
+import { booleanQuerySchema } from '#/utils/schema/common';
 
 export const sessionSchema = createSelectSchema(sessionsTable).omit({ token: true }).extend({ isCurrent: z.boolean() });
 
-export const meAuthInfoSchema = z.object({
+export const meAuthDataSchema = z.object({
   oauth: z.array(enabledOauthProvidersEnum),
   passkey: z.boolean(),
   sessions: z.array(sessionSchema.extend({ expiresAt: z.string() })),
 });
 
-export const menuItemSchema = limitEntitySchema.omit({ bannerUrl: true }).extend({
+export const menuItemSchema = entityBaseSchema.omit({ bannerUrl: true }).extend({
   createdAt: z.string(),
   modifiedAt: z.string().nullable(),
-  membership: membershipInfoSchema,
-  organizationId: membershipInfoSchema.shape.organizationId.optional(),
+  membership: membershipSummarySchema,
+  organizationId: membershipSummarySchema.shape.organizationId.optional(),
 });
 
-export const menuItemsSchema = z.array(
+const menuItemListSchema = z.array(
   z.object({
     ...menuItemSchema.shape,
     submenu: z.array(menuItemSchema).optional(),
   }),
 );
 
-// Create a menu schema based on menu sections in entity-config
-export const userMenuSchema = z.object(
-  entityRelations.reduce(
-    (acc, { menuSectionName }) => {
-      acc[menuSectionName] = menuItemsSchema;
+export const menuSchema = z.object(
+  config.menuStructure.reduce(
+    (acc, { entityType }) => {
+      acc[entityType] = menuItemListSchema;
       return acc;
     },
-    {} as Record<MenuSectionName, typeof menuItemsSchema>,
+    {} as Record<ContextEntityType, typeof menuItemListSchema>,
   ),
 );
 
@@ -47,19 +46,10 @@ export const passkeyRegistrationBodySchema = z.object({
   clientDataJSON: z.string(),
 });
 
-export const leaveEntityQuerySchema = z.object({
-  idOrSlug: idOrSlugSchema,
-  entityType: contextEntityTypeSchema,
-});
-
-export const unsubscribeSelfQuerySchema = z.object({
-  token: z.string(),
-});
-
-export const uploadTokenBodySchema = z.object({
+export const uploadTokenSchema = z.object({
   public: z.boolean(),
   sub: z.string(),
-  imado: z.boolean(),
+  s3: z.boolean(),
   signature: z.string(),
   params: z
     .object({
@@ -70,4 +60,10 @@ export const uploadTokenBodySchema = z.object({
       // Allow additional arbitrary keys with any type in params
     })
     .catchall(z.any()),
+});
+
+export const uploadTokenQuerySchema = z.object({
+  public: booleanQuerySchema,
+  organizationId: z.string().optional(),
+  templateId: z.enum(config.uploadTemplateIds),
 });

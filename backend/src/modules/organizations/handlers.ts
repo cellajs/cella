@@ -10,25 +10,25 @@ import { type ErrorType, createError, errorResponse } from '#/lib/errors';
 import { sendSSEToUsers } from '#/lib/sse';
 import { logEvent } from '#/middlewares/logger/log-event';
 import { checkSlugAvailable } from '#/modules/entities/helpers/check-slug';
+import { getMemberCounts, getMemberCountsQuery, getRelatedEntityCounts } from '#/modules/entities/helpers/counts';
 import { insertMembership } from '#/modules/memberships/helpers';
-import { membershipSelect } from '#/modules/memberships/helpers/select';
+import { membershipSummarySelect } from '#/modules/memberships/helpers/select';
 import { getValidEntity } from '#/permissions/get-valid-entity';
 import { splitByAllowance } from '#/permissions/split-by-allowance';
-import { getMemberCounts, getMemberCountsQuery, getRelatedEntityCounts } from '#/utils/counts';
-import defaultHook from '#/utils/default-hook';
+import { defaultHook } from '#/utils/default-hook';
 import { getIsoDate } from '#/utils/iso-date';
 import { getOrderColumn } from '#/utils/order-column';
 import { prepareStringForILikeFilter } from '#/utils/sql';
-import organizationsRouteConfig from './routes';
+import organizationRoutes from './routes';
 
 // Set default hook to catch validation errors
 const app = new OpenAPIHono<Env>({ defaultHook });
 
-const organizationsRoutes = app
+const organizationRouteHandlers = app
   /*
    * Create organization
    */
-  .openapi(organizationsRouteConfig.createOrganization, async (ctx) => {
+  .openapi(organizationRoutes.createOrganization, async (ctx) => {
     const { name, slug } = ctx.req.valid('json');
     const user = getContextUser();
 
@@ -64,7 +64,7 @@ const organizationsRoutes = app
   /*
    * Get list of organizations
    */
-  .openapi(organizationsRouteConfig.getOrganizations, async (ctx) => {
+  .openapi(organizationRoutes.getOrganizations, async (ctx) => {
     const { q, sort, order, offset, limit } = ctx.req.valid('query');
     const user = getContextUser();
 
@@ -77,7 +77,7 @@ const organizationsRoutes = app
     const memberships = db
       .select()
       .from(membershipsTable)
-      .where(and(eq(membershipsTable.userId, user.id), eq(membershipsTable.type, 'organization')))
+      .where(and(eq(membershipsTable.userId, user.id), eq(membershipsTable.contextType, 'organization')))
       .as('memberships');
 
     const orderColumn = getOrderColumn(
@@ -97,7 +97,7 @@ const organizationsRoutes = app
     const organizations = await db
       .select({
         ...getTableColumns(organizationsTable),
-        membership: membershipSelect,
+        membership: membershipSummarySelect,
         counts: {
           membership: sql<{
             admin: number;
@@ -119,7 +119,7 @@ const organizationsRoutes = app
   /*
    * Delete organizations by ids
    */
-  .openapi(organizationsRouteConfig.deleteOrganizations, async (ctx) => {
+  .openapi(organizationRoutes.deleteOrganizations, async (ctx) => {
     const { ids } = ctx.req.valid('json');
 
     const memberships = getContextMemberships();
@@ -139,7 +139,7 @@ const organizationsRoutes = app
     const memberIds = await db
       .select({ id: membershipsTable.userId })
       .from(membershipsTable)
-      .where(and(eq(membershipsTable.type, 'organization'), inArray(membershipsTable.organizationId, allowedIds)));
+      .where(and(eq(membershipsTable.contextType, 'organization'), inArray(membershipsTable.organizationId, allowedIds)));
 
     // Delete the organizations
     await db.delete(organizationsTable).where(inArray(organizationsTable.id, allowedIds));
@@ -149,7 +149,7 @@ const organizationsRoutes = app
       if (!memberIds.length) continue;
 
       const userIds = memberIds.map((m) => m.id);
-      sendSSEToUsers(userIds, 'remove_entity', { id, entity: 'organization' });
+      sendSSEToUsers(userIds, 'remove_entity', { id, entityType: 'organization' });
     }
 
     logEvent('Organizations deleted', { ids: allowedIds.join() });
@@ -159,11 +159,13 @@ const organizationsRoutes = app
   /*
    * Get organization by id or slug
    */
-  .openapi(organizationsRouteConfig.getOrganization, async (ctx) => {
+  .openapi(organizationRoutes.getOrganization, async (ctx) => {
     const { idOrSlug } = ctx.req.valid('param');
 
-    const { entity: organization, membership, error } = await getValidEntity(ctx, 'organization', 'read', idOrSlug);
-    if (error) return ctx.json({ success: false, error }, 400);
+    const result = await getValidEntity(ctx, 'organization', 'read', idOrSlug);
+    if (result.error) return ctx.json({ success: false, error: result.error }, 400);
+
+    const { entity: organization, membership } = result;
 
     const memberCounts = await getMemberCounts('organization', organization.id);
     const relatedEntitiesCounts = await getRelatedEntityCounts('organization', organization.id);
@@ -176,11 +178,14 @@ const organizationsRoutes = app
   /*
    * Update an organization by id or slug
    */
-  .openapi(organizationsRouteConfig.updateOrganization, async (ctx) => {
+  .openapi(organizationRoutes.updateOrganization, async (ctx) => {
     const { idOrSlug } = ctx.req.valid('param');
 
-    const { entity: organization, membership, error } = await getValidEntity(ctx, 'organization', 'update', idOrSlug);
-    if (error) return ctx.json({ success: false, error }, 400);
+    const result = await getValidEntity(ctx, 'organization', 'update', idOrSlug);
+    if (result.error) return ctx.json({ success: false, error: result.error }, 400);
+
+    const organization = result.entity;
+    const membership = result.membership;
 
     const user = getContextUser();
 
@@ -203,9 +208,9 @@ const organizationsRoutes = app
       .returning();
 
     const organizationMemberships = await db
-      .select(membershipSelect)
+      .select(membershipSummarySelect)
       .from(membershipsTable)
-      .where(and(eq(membershipsTable.type, 'organization'), eq(membershipsTable.organizationId, organization.id)));
+      .where(and(eq(membershipsTable.contextType, 'organization'), eq(membershipsTable.organizationId, organization.id)));
 
     // Send SSE events to organization members
     for (const member of organizationMemberships) sendSSEToUsers([member.userId], 'update_entity', { ...updatedOrganization, member });
@@ -226,4 +231,4 @@ const organizationsRoutes = app
     return ctx.json({ success: true, data }, 200);
   });
 
-export default organizationsRoutes;
+export default organizationRouteHandlers;

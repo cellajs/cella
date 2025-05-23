@@ -5,8 +5,9 @@ import { db } from '#/db/db';
 import { tokensTable } from '#/db/schema/tokens';
 import { createError } from '#/lib/errors';
 import { logEvent } from '#/middlewares/logger/log-event';
+import { isExpiredDate } from '#/utils/is-expired-date';
 import { isRedirectUrl } from '#/utils/is-redirect-url';
-import { TimeSpan, isExpiredDate } from '#/utils/time-span';
+import { TimeSpan } from '#/utils/time-span';
 import { type CookieName, deleteAuthCookie, getAuthCookie, setAuthCookie } from '../cookie';
 import { getParsedSessionCookie, validateSession } from '../session';
 
@@ -97,7 +98,7 @@ export const handleOAuthInvitation = async (ctx: Context) => {
   if (tokenRecord.type !== 'invitation') return createError(ctx, 400, 'invalid_token', 'error');
 
   // Determine redirection based on entity presence
-  const isMembershipInvite = !!tokenRecord.entity;
+  const isMembershipInvite = !!tokenRecord.entityType;
   const redirectUrl = isMembershipInvite ? `/invitation/${tokenRecord.token}?tokenId=${tokenRecord.id}` : '/welcome';
 
   // Set authentication cookies

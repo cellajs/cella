@@ -31,7 +31,7 @@ const Onboarding = ({ onboarding = 'start', onboardingToStepper }: OnboardingPro
   const animateClass = `transition-all will-change-transform duration-500 ease-out ${hasStarted ? 'opacity-100' : 'opacity-0 scale-95 translate-y-4'}`;
 
   useEffect(() => {
-    if (menu.organizations.length > 0) setSteps([onboardingSteps[0]]);
+    if (menu.organization.length > 0) setSteps([onboardingSteps[0]]);
   }, []);
 
   return (

@@ -1,5 +1,5 @@
+import i18n from 'i18next';
 import type { RefObject } from 'react';
-import { i18n } from '~/lib/i18n';
 import ContactForm from '~/modules/common/contact-form/contact-form';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import UnsavedBadge from '~/modules/common/unsaved-badge';

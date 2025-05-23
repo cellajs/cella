@@ -1,6 +1,6 @@
 import { config } from 'config';
+import i18n from 'i18next';
 import { Column, Row, Text } from 'jsx-email';
-import { i18n } from '../src/lib/i18n';
 import type { BasicTemplateType } from '../src/lib/mailer';
 import { AppLogo } from './components/app-logo';
 import { Avatar } from './components/avatar';

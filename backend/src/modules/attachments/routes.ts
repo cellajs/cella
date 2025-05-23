@@ -1,12 +1,12 @@
 import { z } from 'zod';
-import { createRouteConfig } from '#/lib/route-config';
+import { createCustomRoute } from '#/lib/custom-routes';
 import { hasOrgAccess, isAuthenticated, isPublicAccess } from '#/middlewares/guard';
 import { idInOrgParamSchema, idSchema, idsBodySchema, inOrgParamSchema } from '#/utils/schema/common';
 import { errorResponses, successWithDataSchema, successWithErrorsSchema, successWithPaginationSchema } from '#/utils/schema/responses';
-import { attachmentSchema, attachmentsQuerySchema, createAttachmentsSchema, updateAttachmentBodySchema } from './schema';
+import { attachmentCreateManySchema, attachmentListQuerySchema, attachmentSchema, attachmentUpdateBodySchema } from './schema';
 
-class AttachmentRouteConfig {
-  public createAttachments = createRouteConfig({
+class AttachmentRoutes {
+  public createAttachments = createCustomRoute({
     method: 'post',
     path: '/',
     guard: [isAuthenticated, hasOrgAccess],
@@ -19,7 +19,7 @@ class AttachmentRouteConfig {
         required: true,
         content: {
           'application/json': {
-            schema: createAttachmentsSchema,
+            schema: attachmentCreateManySchema,
           },
         },
       },
@@ -37,7 +37,7 @@ class AttachmentRouteConfig {
     },
   });
 
-  public getAttachments = createRouteConfig({
+  public getAttachments = createCustomRoute({
     method: 'get',
     path: '/',
     guard: [isAuthenticated, hasOrgAccess],
@@ -45,8 +45,8 @@ class AttachmentRouteConfig {
     summary: 'Get list of attachments',
     description: 'Get attachments for an organization.',
     request: {
-      query: attachmentsQuerySchema,
       params: inOrgParamSchema,
+      query: attachmentListQuerySchema,
     },
     responses: {
       200: {
@@ -61,7 +61,7 @@ class AttachmentRouteConfig {
     },
   });
 
-  public getAttachment = createRouteConfig({
+  public getAttachment = createCustomRoute({
     method: 'get',
     path: '/{id}',
     guard: [isAuthenticated, hasOrgAccess],
@@ -84,7 +84,7 @@ class AttachmentRouteConfig {
     },
   });
 
-  public updateAttachment = createRouteConfig({
+  public updateAttachment = createCustomRoute({
     method: 'put',
     path: '/{id}',
     guard: [isAuthenticated, hasOrgAccess],
@@ -96,7 +96,7 @@ class AttachmentRouteConfig {
       body: {
         content: {
           'application/json': {
-            schema: updateAttachmentBodySchema,
+            schema: attachmentUpdateBodySchema,
           },
         },
       },
@@ -114,7 +114,7 @@ class AttachmentRouteConfig {
     },
   });
 
-  public deleteAttachments = createRouteConfig({
+  public deleteAttachments = createCustomRoute({
     method: 'delete',
     path: '/',
     guard: [isAuthenticated, hasOrgAccess],
@@ -144,7 +144,7 @@ class AttachmentRouteConfig {
     },
   });
 
-  public shapeProxy = createRouteConfig({
+  public shapeProxy = createCustomRoute({
     method: 'get',
     path: '/shape-proxy',
     guard: [isAuthenticated, hasOrgAccess],
@@ -160,7 +160,7 @@ class AttachmentRouteConfig {
     },
   });
 
-  public redirectToAttachment = createRouteConfig({
+  public redirectToAttachment = createCustomRoute({
     method: 'get',
     path: '/{id}/link',
     tags: ['attachments'],
@@ -168,9 +168,7 @@ class AttachmentRouteConfig {
     summary: 'Redirect to attachment',
     description: 'Redirect to attachment by id.',
     request: {
-      params: z.object({
-        id: idSchema,
-      }),
+      params: z.object({ id: idSchema }),
     },
     responses: {
       200: {
@@ -180,7 +178,7 @@ class AttachmentRouteConfig {
     },
   });
 
-  public getAttachmentCover = createRouteConfig({
+  public getAttachmentCover = createCustomRoute({
     method: 'get',
     path: '/{id}/cover',
     guard: isPublicAccess,
@@ -188,9 +186,7 @@ class AttachmentRouteConfig {
     summary: 'Get attachment cover',
     description: 'Get attachment cover image by id.',
     request: {
-      params: z.object({
-        id: idSchema,
-      }),
+      params: z.object({ id: idSchema }),
     },
     responses: {
       200: {
@@ -200,4 +196,4 @@ class AttachmentRouteConfig {
     },
   });
 }
-export default new AttachmentRouteConfig();
+export default new AttachmentRoutes();

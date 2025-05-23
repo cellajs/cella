@@ -5,10 +5,10 @@ import { useTranslation } from 'react-i18next';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
 import { toaster } from '~/modules/common/toaster';
-import type { LimitedUser } from '~/modules/users/types';
+import type { UserSummary } from '~/modules/users/types';
 
 interface Props {
-  user: LimitedUser;
+  user: UserSummary;
   orgIdOrSlug?: string;
   tabIndex: number;
 }

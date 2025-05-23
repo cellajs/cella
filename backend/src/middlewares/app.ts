@@ -1,16 +1,15 @@
-import { sentry } from '@hono/sentry';
 import { OpenAPIHono } from '@hono/zod-openapi';
 import { config } from 'config';
-import { bodyLimit } from 'hono/body-limit';
 import { compress } from 'hono/compress';
 import { cors } from 'hono/cors';
 import { csrf } from 'hono/csrf';
 import { secureHeaders } from 'hono/secure-headers';
 import type { Env } from '#/lib/context';
-import { errorResponse } from '#/lib/errors';
-import { observabilityMiddleware } from '#/middlewares/observability/';
+import { dynamicBodyLimit } from '#/middlewares/body-limit';
+import { observabilityMiddleware } from '#/middlewares/observability';
 import { logEvent } from './logger/log-event';
 import { logger } from './logger/logger';
+import { monitoringMiddleware } from './monitoring';
 
 const app = new OpenAPIHono<Env>();
 
@@ -20,8 +19,8 @@ app.use('*', secureHeaders());
 // Get metrics and trace
 app.use('*', observabilityMiddleware);
 
-// Sentry
-app.use('*', sentry({ dsn: config.sentryDsn }));
+// Error and perf monitoring
+app.use('*', monitoringMiddleware);
 
 // Health check for render.com
 app.get('/ping', (c) => c.text('pong'));
@@ -45,15 +44,7 @@ app.use('*', cors(corsOptions));
 app.use('*', csrf({ origin: config.frontendUrl }));
 
 // Body limit
-app.use(
-  '*',
-  bodyLimit({
-    maxSize: config.uploadBodyLimit,
-    onError: (ctx) => {
-      return errorResponse(ctx, 413, 'body_too_large', 'warn', undefined, { path: ctx.req.path });
-    },
-  }),
-);
+app.use('*', dynamicBodyLimit);
 
 // Compress with gzip
 // Apply gzip compression only to GET requests

@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { config } from 'config';
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 import { organizationsTable } from '#/db/schema/organizations';
-import type { ValidEntityTypes } from '#/utils/counts';
+import type { ValidEntities } from '#/modules/entities/helpers/counts';
 import {
   languageSchema,
   paginationQuerySchema,
@@ -13,9 +13,23 @@ import {
   validSlugSchema,
   validUrlSchema,
 } from '#/utils/schema/common';
-import { membershipInfoSchema } from '../memberships/schema';
+import { membershipSummarySchema } from '../memberships/schema';
 
-export const membershipsCountSchema = z.object({
+/** Type assertion to avoid "ReferenceError: Buffer is not defined" when using `hasField`.
+ * Redundant fields will be filtered out in `getRelatedEntityCounts`.
+ */
+//TODO: find way to fix ?
+export const entityCountSchema = z.object(
+  [...config.productEntityTypes, ...config.contextEntityTypes].reduce(
+    (acc, key) => {
+      acc[key as ValidEntities<'organizationId'>] = z.number();
+      return acc;
+    },
+    {} as Record<ValidEntities<'organizationId'>, z.ZodNumber>,
+  ),
+);
+
+export const membershipCountSchema = z.object({
   membership: z.object({
     admin: z.number(),
     member: z.number(),
@@ -24,37 +38,23 @@ export const membershipsCountSchema = z.object({
   }),
 });
 
-/** Type assertion to avoid "ReferenceError: Buffer is not defined" when using `hasField`.
- * Redundant fields will be filtered out in `getRelatedEntityCounts`.
- */
-//TODO: find way to fix ?
-export const relatedEntitiesCountSchema = z.object(
-  [...config.productEntityTypes, ...config.contextEntityTypes].reduce(
-    (acc, key) => {
-      acc[key as ValidEntityTypes<'organizationId'>] = z.number();
-      return acc;
-    },
-    {} as Record<ValidEntityTypes<'organizationId'>, z.ZodNumber>,
-  ),
-);
-
 export const organizationSchema = z.object({
   ...createSelectSchema(organizationsTable).shape,
   languages: z.array(languageSchema).min(1),
   emailDomains: z.array(z.string()),
   authStrategies: z.array(z.string()),
-  membership: membershipInfoSchema.nullable(),
-  counts: membershipsCountSchema,
+  membership: membershipSummarySchema.nullable(),
+  counts: membershipCountSchema,
 });
 
-export const organizationWithMembershipSchema = organizationSchema.extend({ membership: membershipInfoSchema });
+export const organizationWithMembershipSchema = organizationSchema.extend({ membership: membershipSummarySchema });
 
-export const createOrganizationBodySchema = z.object({
+export const organizationCreateBodySchema = z.object({
   name: validNameSchema,
   slug: validSlugSchema,
 });
 
-export const updateOrganizationBodySchema = createInsertSchema(organizationsTable, {
+export const organizationUpdateBodySchema = createInsertSchema(organizationsTable, {
   slug: validSlugSchema,
   name: validNameSchema,
   shortName: validNameSchema.nullable(),
@@ -88,7 +88,7 @@ export const updateOrganizationBodySchema = createInsertSchema(organizationsTabl
   })
   .partial();
 
-export const getOrganizationsQuerySchema = paginationQuerySchema.merge(
+export const organizationListQuerySchema = paginationQuerySchema.merge(
   z.object({
     sort: z.enum(['id', 'name', 'userRole', 'createdAt']).default('createdAt').optional(),
   }),

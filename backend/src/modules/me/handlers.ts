@@ -1,5 +1,5 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
-import type { EnabledOauthProvider } from 'config';
+import type { EnabledOauthProvider, MenuSection } from 'config';
 import { config } from 'config';
 import { and, asc, eq, isNotNull } from 'drizzle-orm';
 import { type SSEStreamingApi, streamSSE } from 'hono/streaming';
@@ -9,7 +9,7 @@ import { membershipsTable } from '#/db/schema/memberships';
 import { oauthAccountsTable } from '#/db/schema/oauth-accounts';
 import { passkeysTable } from '#/db/schema/passkeys';
 import { usersTable } from '#/db/schema/users';
-import { type EntityRelations, entityIdFields, entityRelations, entityTables } from '#/entity-config';
+import { entityTables } from '#/entity-config';
 import { env } from '#/env';
 import { type Env, getContextMemberships, getContextUser } from '#/lib/context';
 import { resolveEntity } from '#/lib/entity';
@@ -19,18 +19,18 @@ import { isAuthenticated } from '#/middlewares/guard';
 import { logEvent } from '#/middlewares/logger/log-event';
 import { getUserBy } from '#/modules/users/helpers/get-user-by';
 import { verifyUnsubscribeToken } from '#/modules/users/helpers/unsubscribe-token';
-import defaultHook from '#/utils/default-hook';
+import { defaultHook } from '#/utils/default-hook';
 import { getIsoDate } from '#/utils/iso-date';
 import { deleteAuthCookie, getAuthCookie } from '../auth/helpers/cookie';
 import { parseAndValidatePasskeyAttestation } from '../auth/helpers/passkey';
 import { getParsedSessionCookie, invalidateSessionById, invalidateUserSessions, validateSession } from '../auth/helpers/session';
 import { checkSlugAvailable } from '../entities/helpers/check-slug';
-import { membershipSelect } from '../memberships/helpers/select';
+import { membershipSummarySelect } from '../memberships/helpers/select';
 import { getUserSessions } from './helpers/get-sessions';
-import meRouteConfig from './routes';
-import type { menuItemSchema, userMenuSchema } from './schema';
+import meRoutes from './routes';
+import type { menuItemSchema, menuSchema } from './schema';
 
-type UserMenu = z.infer<typeof userMenuSchema>;
+type UserMenu = z.infer<typeof menuSchema>;
 type MenuItem = z.infer<typeof menuItemSchema>;
 
 // Set default hook to catch validation errors
@@ -38,11 +38,11 @@ const app = new OpenAPIHono<Env>({ defaultHook });
 
 export const streams = new Map<string, SSEStreamingApi>();
 
-const meRoutes = app
+const meRouteHandlers = app
   /*
-   * Get current user
+   * Get me
    */
-  .openapi(meRouteConfig.getSelf, async (ctx) => {
+  .openapi(meRoutes.getMe, async (ctx) => {
     const user = getContextUser();
 
     // Update last visit date
@@ -51,9 +51,9 @@ const meRoutes = app
     return ctx.json({ success: true, data: user }, 200);
   })
   /*
-   * Get current user auth info
+   * Get my auth data
    */
-  .openapi(meRouteConfig.getSelfAuthData, async (ctx) => {
+  .openapi(meRoutes.getMyAuthData, async (ctx) => {
     const user = getContextUser();
 
     const getPasskey = db.select().from(passkeysTable).where(eq(passkeysTable.userEmail, user.email));
@@ -69,17 +69,17 @@ const meRoutes = app
     return ctx.json({ success: true, data: { oauth: validOAuthAccounts, passkey: !!passkeys.length, sessions } }, 200);
   })
   /*
-   * Get current user menu
+   * Get my user menu
    */
-  .openapi(meRouteConfig.getSelfMenu, async (ctx) => {
+  .openapi(meRoutes.getMyMenu, async (ctx) => {
     const user = getContextUser();
     const memberships = getContextMemberships();
 
     // Fetch function for each menu section, including handling submenus
-    const fetchMenuItemsForSection = async (section: EntityRelations) => {
+    const fetchMenuItemsForSection = async (section: MenuSection) => {
       let submenu: MenuItem[] = [];
-      const mainTable = entityTables[section.entity];
-      const mainEntityIdField = entityIdFields[section.entity];
+      const mainTable = entityTables[section.entityType];
+      const mainEntityIdField = config.entityIdFields[section.entityType];
 
       const entity = await db
         .select({
@@ -87,21 +87,21 @@ const meRoutes = app
           id: mainTable.id,
           createdAt: mainTable.createdAt,
           modifiedAt: mainTable.modifiedAt,
-          organizationId: membershipSelect.organizationId,
+          organizationId: membershipSummarySelect.organizationId,
           name: mainTable.name,
-          entity: mainTable.entity,
+          entityType: mainTable.entityType,
           thumbnailUrl: mainTable.thumbnailUrl,
-          membership: membershipSelect,
+          membership: membershipSummarySelect,
         })
         .from(mainTable)
-        .where(and(eq(membershipsTable.userId, user.id), eq(membershipsTable.type, section.entity)))
+        .where(and(eq(membershipsTable.userId, user.id), eq(membershipsTable.contextType, section.entityType)))
         .orderBy(asc(membershipsTable.order))
         .innerJoin(membershipsTable, and(eq(membershipsTable[mainEntityIdField], mainTable.id), isNotNull(membershipsTable.activatedAt)));
 
       // If the section has a submenu, fetch the submenu items
-      if (section.subEntity) {
-        const subTable = entityTables[section.subEntity];
-        const subEntityIdField = entityIdFields[section.subEntity];
+      if (section.subentityType) {
+        const subTable = entityTables[section.subentityType];
+        const subentityIdField = config.entityIdFields[section.subentityType];
 
         submenu = await db
           .select({
@@ -109,16 +109,16 @@ const meRoutes = app
             id: subTable.id,
             createdAt: subTable.createdAt,
             modifiedAt: subTable.modifiedAt,
-            organizationId: membershipSelect.organizationId,
+            organizationId: membershipSummarySelect.organizationId,
             name: subTable.name,
-            entity: subTable.entity,
+            entityType: subTable.entityType,
             thumbnailUrl: subTable.thumbnailUrl,
-            membership: membershipSelect,
+            membership: membershipSummarySelect,
           })
           .from(subTable)
-          .where(and(eq(membershipsTable.userId, user.id), eq(membershipsTable.type, section.subEntity)))
+          .where(and(eq(membershipsTable.userId, user.id), eq(membershipsTable.contextType, section.subentityType)))
           .orderBy(asc(membershipsTable.order))
-          .innerJoin(membershipsTable, eq(membershipsTable[subEntityIdField], subTable.id));
+          .innerJoin(membershipsTable, eq(membershipsTable[subentityIdField], subTable.id));
       }
 
       return entity.map((entity) => ({
@@ -129,16 +129,16 @@ const meRoutes = app
 
     // Build the menu data asynchronously
     const data = async () => {
-      const result = await entityRelations.reduce(
+      const result = await config.menuStructure.reduce(
         async (accPromise, section) => {
           const acc = await accPromise;
           if (!memberships.length) {
-            acc[section.menuSectionName] = [];
+            acc[section.entityType] = [];
             return acc;
           }
 
           // Fetch menu items for the current section
-          acc[section.menuSectionName] = await fetchMenuItemsForSection(section);
+          acc[section.entityType] = await fetchMenuItemsForSection(section);
           return acc;
         },
         Promise.resolve({} as UserMenu),
@@ -150,9 +150,9 @@ const meRoutes = app
     return ctx.json({ success: true, data: await data() }, 200);
   })
   /*
-   * Terminate a session
+   * Terminate one or more sessions
    */
-  .openapi(meRouteConfig.deleteSessions, async (ctx) => {
+  .openapi(meRoutes.deleteSessions, async (ctx) => {
     const { ids } = ctx.req.valid('json');
 
     const sessionIds = Array.isArray(ids) ? ids : [ids];
@@ -178,9 +178,9 @@ const meRoutes = app
     return ctx.json({ success: true, errors: errors }, 200);
   })
   /*
-   * Update current user (self)
+   * Update current user (me)
    */
-  .openapi(meRouteConfig.updateSelf, async (ctx) => {
+  .openapi(meRoutes.updateMe, async (ctx) => {
     const user = getContextUser();
 
     if (!user) return errorResponse(ctx, 404, 'not_found', 'warn', 'user', { user: 'self' });
@@ -212,9 +212,9 @@ const meRoutes = app
     return ctx.json({ success: true, data: updatedUser }, 200);
   })
   /*
-   * Delete current user (self)
+   * Delete current user (me)
    */
-  .openapi(meRouteConfig.deleteSelf, async (ctx) => {
+  .openapi(meRoutes.deleteMe, async (ctx) => {
     const user = getContextUser();
 
     // Check if user exists
@@ -226,14 +226,14 @@ const meRoutes = app
     // Invalidate sessions
     await invalidateUserSessions(user.id);
     deleteAuthCookie(ctx, 'session');
-    logEvent('User deleted', { user: user.id });
+    logEvent('User deleted itself', { user: user.id });
 
     return ctx.json({ success: true }, 200);
   })
   /*
-   * Delete current user (self) entity membership
+   * Delete one of my entity memberships
    */
-  .openapi(meRouteConfig.leaveEntity, async (ctx) => {
+  .openapi(meRoutes.deleteMyMembership, async (ctx) => {
     const user = getContextUser();
 
     const { entityType, idOrSlug } = ctx.req.valid('query');
@@ -241,21 +241,21 @@ const meRoutes = app
     const entity = await resolveEntity(entityType, idOrSlug);
     if (!entity) return errorResponse(ctx, 404, 'not_found', 'warn', entityType);
 
-    const entityIdField = entityIdFields[entityType];
+    const entityIdField = config.entityIdFields[entityType];
 
     // Delete the memberships
     await db
       .delete(membershipsTable)
-      .where(and(eq(membershipsTable.userId, user.id), eq(membershipsTable.type, entityType), eq(membershipsTable[entityIdField], entity.id)));
+      .where(and(eq(membershipsTable.userId, user.id), eq(membershipsTable.contextType, entityType), eq(membershipsTable[entityIdField], entity.id)));
 
-    logEvent('User leave entity', { user: user.id });
+    logEvent('User left entity', { user: user.id });
 
     return ctx.json({ success: true }, 200);
   })
   /*
-   * Create passkey for self
+   * Create passkey
    */
-  .openapi(meRouteConfig.createPasskey, async (ctx) => {
+  .openapi(meRoutes.createPasskey, async (ctx) => {
     const { attestationObject, clientDataJSON, userEmail } = ctx.req.valid('json');
 
     const challengeFromCookie = await getAuthCookie(ctx, 'passkey_challenge');
@@ -269,9 +269,9 @@ const meRoutes = app
     return ctx.json({ success: true }, 200);
   })
   /*
-   * Delete passkey of self
+   * Delete passkey
    */
-  .openapi(meRouteConfig.deletePasskey, async (ctx) => {
+  .openapi(meRoutes.deletePasskey, async (ctx) => {
     const user = getContextUser();
 
     await db.delete(passkeysTable).where(eq(passkeysTable.userEmail, user.email));
@@ -281,25 +281,19 @@ const meRoutes = app
   /*
    * Get upload token
    */
-  .openapi(meRouteConfig.getUploadToken, async (ctx) => {
-    const { public: isPublic, organization, templateId } = ctx.req.valid('query');
+  .openapi(meRoutes.getUploadToken, async (ctx) => {
+    const { public: isPublic, organizationId, templateId } = ctx.req.valid('query');
     const user = getContextUser();
 
     // This will be used to as first part of S3 key
-    const sub = organization ? `${organization}/${user.id}` : user.id;
+    const sub = [config.s3BucketPrefix, organizationId, user.id].filter(Boolean).join('/');
 
     try {
       const params = getParams(templateId, isPublic, sub);
       const paramsString = JSON.stringify(params);
       const signature = getSignature(paramsString);
 
-      const token = {
-        sub,
-        public: isPublic,
-        imado: !!env.S3_ACCESS_KEY_ID,
-        params,
-        signature,
-      };
+      const token = { sub, public: isPublic, s3: !!env.S3_ACCESS_KEY_ID, params, signature };
 
       return ctx.json({ success: true, data: token }, 200);
     } catch (error) {
@@ -307,9 +301,9 @@ const meRoutes = app
     }
   })
   /*
-   * Unsubscribe a user by token from receiving newsletters
+   * Unsubscribe myself by token from receiving newsletters
    */
-  .openapi(meRouteConfig.unsubscribeSelf, async (ctx) => {
+  .openapi(meRoutes.unsubscribeMe, async (ctx) => {
     const { token } = ctx.req.valid('query');
 
     // Check if token exists
@@ -359,4 +353,4 @@ const meRoutes = app
     });
   });
 
-export default meRoutes;
+export default meRouteHandlers;

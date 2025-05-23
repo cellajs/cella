@@ -3,13 +3,14 @@ import { z } from 'zod';
 import { paginationQuerySchema } from '#/utils/schema/common';
 import { attachmentsTable } from '../../db/schema/attachments';
 
-const attachmentsInsertSchema = createInsertSchema(attachmentsTable);
+const attachmentInsertSchema = createInsertSchema(attachmentsTable);
+const attachmentSelectSchema = createSelectSchema(attachmentsTable);
 
-export const createAttachmentsSchema = z
+export const attachmentCreateManySchema = z
   .array(
-    attachmentsInsertSchema.omit({
+    attachmentInsertSchema.omit({
       name: true,
-      entity: true,
+      entityType: true,
       modifiedAt: true,
       modifiedBy: true,
       createdAt: true,
@@ -19,22 +20,22 @@ export const createAttachmentsSchema = z
   .min(1)
   .max(50);
 
-export const updateAttachmentBodySchema = attachmentsInsertSchema
+export const attachmentUpdateBodySchema = attachmentInsertSchema
   .pick({
     name: true,
     originalKey: true,
   })
   .partial();
 
-export const attachmentSchema = z.object({
-  ...createSelectSchema(attachmentsTable).omit({ originalKey: true, convertedKey: true, thumbnailKey: true }).extend({
+export const attachmentSchema = attachmentSelectSchema.omit({ originalKey: true, convertedKey: true, thumbnailKey: true }).merge(
+  z.object({
     url: z.string(),
     thumbnailUrl: z.string().nullable(),
     convertedUrl: z.string().nullable(),
-  }).shape,
-});
+  }),
+);
 
-export const attachmentsQuerySchema = paginationQuerySchema.extend({
+export const attachmentListQuerySchema = paginationQuerySchema.extend({
   attachmentId: z.string().optional(),
   sort: z.enum(['id', 'filename', 'contentType', 'createdAt']).default('createdAt').optional(),
 });

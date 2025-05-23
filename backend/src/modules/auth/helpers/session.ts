@@ -7,11 +7,12 @@ import { type SessionModel, sessionsTable } from '#/db/schema/sessions';
 import { type UserModel, usersTable } from '#/db/schema/users';
 import { logEvent } from '#/middlewares/logger/log-event';
 import { userSelect } from '#/modules/users/helpers/select';
+import { isExpiredDate } from '#/utils/is-expired-date';
 import { getIsoDate } from '#/utils/iso-date';
 import { nanoid } from '#/utils/nanoid';
 import { encodeLowerCased } from '#/utils/oslo';
-import { sessionCookieContentSchema } from '#/utils/schema/schema';
-import { TimeSpan, createDate, isExpiredDate } from '#/utils/time-span';
+import { sessionCookieSchema } from '#/utils/schema/session-cookie';
+import { TimeSpan, createDate } from '#/utils/time-span';
 import { deleteAuthCookie, getAuthCookie, setAuthCookie } from './cookie';
 import { deviceInfo } from './device-info';
 
@@ -118,10 +119,7 @@ export const invalidateSessionById = async (id: string) => {
   await db.delete(sessionsTable).where(eq(sessionsTable.id, id));
 };
 
-export const getParsedSessionCookie = async (
-  ctx: Context,
-  deleteAfterAttempt = false,
-): Promise<z.infer<typeof sessionCookieContentSchema> | null> => {
+export const getParsedSessionCookie = async (ctx: Context, deleteAfterAttempt = false): Promise<z.infer<typeof sessionCookieSchema> | null> => {
   try {
     // Retrieve session cookie data
     const sessionData = await getAuthCookie(ctx, 'session');
@@ -135,7 +133,7 @@ export const getParsedSessionCookie = async (
 
     const adminUserId = adminUserIdRaw || undefined;
 
-    return sessionCookieContentSchema.parse({ sessionToken, adminUserId });
+    return sessionCookieSchema.parse({ sessionToken, adminUserId });
   } catch (error) {
     return null;
   } finally {

@@ -5,17 +5,17 @@ import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { DataTable } from '~/modules/common/data-table';
 import type { BaseTableMethods, BaseTableProps } from '~/modules/common/data-table/types';
 import type { MembershipInvitationsSearch, MembershipInvitationsTableProps } from '~/modules/memberships/pending-table/table-wrapper';
-import { memberInvitationsQueryOptions } from '~/modules/memberships/query/options';
-import type { InvitedMember } from '~/modules/memberships/types';
+import { pendingInvitationsQueryOptions } from '~/modules/memberships/query/options';
+import type { PendingInvitation } from '~/modules/memberships/types';
 import { useDataFromInfiniteQuery } from '~/query/hooks/use-data-from-query';
 
-type BaseDataTableProps = MembershipInvitationsTableProps & Omit<BaseTableProps<InvitedMember, MembershipInvitationsSearch>, 'setSelected'>;
+type BaseDataTableProps = MembershipInvitationsTableProps & Omit<BaseTableProps<PendingInvitation, MembershipInvitationsSearch>, 'setSelected'>;
 
 const BaseDataTable = memo(
   forwardRef<BaseTableMethods, BaseDataTableProps>(({ entity, columns, searchVars, sortColumns, setSortColumns, setTotal }, ref) => {
     const { t } = useTranslation();
 
-    const entityType = entity.entity;
+    const entityType = entity.entityType;
     const organizationId = entity.organizationId || entity.id;
 
     // Extract query variables and set defaults
@@ -23,7 +23,7 @@ const BaseDataTable = memo(
 
     // Query invited members
     const { rows, totalCount, isLoading, isFetching, error, fetchNextPage } = useDataFromInfiniteQuery(
-      memberInvitationsQueryOptions({
+      pendingInvitationsQueryOptions({
         idOrSlug: entity.slug,
         entityType,
         orgIdOrSlug: organizationId,
@@ -41,7 +41,7 @@ const BaseDataTable = memo(
     }));
 
     return (
-      <DataTable<InvitedMember>
+      <DataTable<PendingInvitation>
         {...{
           columns: columns.filter((column) => column.visible),
           rows,

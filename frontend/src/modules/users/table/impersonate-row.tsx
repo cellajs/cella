@@ -1,7 +1,7 @@
 import { config } from 'config';
+import i18n from 'i18next';
 import { VenetianMask } from 'lucide-react';
 import { toast } from 'sonner';
-import { i18n } from '~/lib/i18n';
 import router from '~/lib/router';
 import { impersonationStart } from '~/modules/auth/api';
 import { toaster } from '~/modules/common/toaster';

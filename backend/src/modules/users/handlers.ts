@@ -8,22 +8,22 @@ import { type Env, getContextMemberships, getContextUser } from '#/lib/context';
 import { type ErrorType, createError, errorResponse } from '#/lib/errors';
 import { logEvent } from '#/middlewares/logger/log-event';
 import { getUsersByConditions } from '#/modules/users/helpers/get-user-by';
-import defaultHook from '#/utils/default-hook';
+import { defaultHook } from '#/utils/default-hook';
 import { getIsoDate } from '#/utils/iso-date';
 import { getOrderColumn } from '#/utils/order-column';
 import { prepareStringForILikeFilter } from '#/utils/sql';
 import { checkSlugAvailable } from '../entities/helpers/check-slug';
 import { userSelect } from './helpers/select';
-import usersRouteConfig from './routes';
+import userRoutes from './routes';
 
 // Set default hook to catch validation errors
 const app = new OpenAPIHono<Env>({ defaultHook });
 
-const usersRoutes = app
+const usersRouteHandlers = app
   /*
    * Get list of users
    */
-  .openapi(usersRouteConfig.getUsers, async (ctx) => {
+  .openapi(userRoutes.getUsers, async (ctx) => {
     const { q, sort, order, offset, limit, role } = ctx.req.valid('query');
 
     const memberships = db
@@ -80,7 +80,7 @@ const usersRoutes = app
   /*
    * Delete users
    */
-  .openapi(usersRouteConfig.deleteUsers, async (ctx) => {
+  .openapi(userRoutes.deleteUsers, async (ctx) => {
     const { ids } = ctx.req.valid('json');
     const user = getContextUser();
 
@@ -131,7 +131,7 @@ const usersRoutes = app
   /*
    * Get a user by id or slug
    */
-  .openapi(usersRouteConfig.getUser, async (ctx) => {
+  .openapi(userRoutes.getUser, async (ctx) => {
     const { idOrSlug } = ctx.req.valid('param');
     const user = getContextUser();
     const memberships = getContextMemberships();
@@ -147,7 +147,7 @@ const usersRoutes = app
     const targetUserMembership = await db
       .select()
       .from(membershipsTable)
-      .where(and(eq(membershipsTable.userId, targetUser.id), eq(membershipsTable.type, 'organization')));
+      .where(and(eq(membershipsTable.userId, targetUser.id), eq(membershipsTable.contextType, 'organization')));
 
     const jointMembership = memberships.find((membership) =>
       targetUserMembership.some((targetMembership) => targetMembership.organizationId === membership.organizationId),
@@ -160,7 +160,7 @@ const usersRoutes = app
   /*
    * Update a user by id or slug
    */
-  .openapi(usersRouteConfig.updateUser, async (ctx) => {
+  .openapi(userRoutes.updateUser, async (ctx) => {
     const { idOrSlug } = ctx.req.valid('param');
 
     const user = getContextUser();
@@ -198,4 +198,4 @@ const usersRoutes = app
     return ctx.json({ success: true, data: updatedUser }, 200);
   });
 
-export default usersRoutes;
+export default usersRouteHandlers;

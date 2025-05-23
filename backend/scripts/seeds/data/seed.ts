@@ -1,4 +1,6 @@
-// Empty data seed, you can seed app-specific data here
+/**
+ * Placeholder data seed. You can seed app-specific data here.
+ */
 export const dataSeed = async () => {
-  console.info('Skip data seed. No app data to seed in template.');
+  console.info('Skip data seed. No app-specific data seed logic is present.');
 };

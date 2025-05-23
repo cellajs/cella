@@ -1,6 +1,7 @@
 import { config } from 'config';
 import { usersTable } from '#/db/schema/users';
-import { extractKeys, omitKeys } from '#/utils/schema-tools';
+import { extractKeys } from '#/utils/schema/extract-keys';
+import { omitKeys } from '#/utils/schema/omit-keys';
 
 /**
  * Safe user select. Sensitive fields are omitted.
@@ -8,6 +9,6 @@ import { extractKeys, omitKeys } from '#/utils/schema-tools';
 export const userSelect = omitKeys(usersTable, config.sensitiveFields);
 
 /**
- * Limited user select. Include min info.
+ * User select for summary only.
  */
-export const limitUserSelect = extractKeys(usersTable, ['id', 'name', 'email', 'entity', 'thumbnailUrl', 'bannerUrl', 'slug']);
+export const userSummarySelect = extractKeys(usersTable, ['id', 'name', 'email', 'entityType', 'thumbnailUrl', 'bannerUrl', 'slug']);

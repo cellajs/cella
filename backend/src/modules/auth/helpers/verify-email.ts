@@ -1,6 +1,6 @@
 import { config } from 'config';
 import { logEvent } from '#/middlewares/logger/log-event';
-import authRouteConfig from '../routes';
+import authRoutes from '../routes';
 
 /**
  * Trigger the backend to send a verification email to the user.
@@ -9,8 +9,8 @@ import authRouteConfig from '../routes';
  */
 export const sendVerificationEmail = (userId: string) => {
   try {
-    fetch(config.backendAuthUrl + authRouteConfig.sendVerificationEmail.path, {
-      method: authRouteConfig.sendVerificationEmail.method,
+    fetch(config.backendAuthUrl + authRoutes.sendVerificationEmail.path, {
+      method: authRoutes.sendVerificationEmail.method,
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ userId }),
     });

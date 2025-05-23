@@ -1,7 +1,7 @@
-import type { ContextEntity } from 'config';
+import type { ContextEntityType } from 'config';
+import i18n from 'i18next';
 import type { LucideProps } from 'lucide-react';
 import type { RefObject } from 'react';
-import { i18n } from '~/lib/i18n';
 import router from '~/lib/router';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import UnsavedBadge from '~/modules/common/unsaved-badge';
@@ -36,7 +36,7 @@ const createOrganizationAction = (triggerRef: RefObject<HTMLButtonElement | null
 /**
  * Configuration to set menu sections with options for different context entities.
  */
-export const menuSectionsSchemas: Partial<Record<ContextEntity, SectionsSchema>> = {
+export const menuSectionsSchemas: Partial<Record<ContextEntityType, SectionsSchema>> = {
   organization: { createAction: createOrganizationAction, label: 'common:organizations' },
 };
 
@@ -44,6 +44,6 @@ export const menuSectionsSchemas: Partial<Record<ContextEntity, SectionsSchema>>
  * Configuration to by with key update membership in contextEntity
  */
 //TODO(REFACTOR) find way to avoid usage of it Work poorly on offline access to much entities go through
-export const contextEntityCacheKeys: Record<ContextEntity, readonly [ContextEntity]> = {
+export const contextEntityCacheKeys: Record<ContextEntityType, readonly [ContextEntityType]> = {
   organization: ['organization'],
 };

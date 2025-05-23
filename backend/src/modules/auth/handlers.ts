@@ -5,8 +5,9 @@ import { OAuth2RequestError, generateCodeVerifier, generateState } from 'arctic'
 import type { EnabledOauthProvider } from 'config';
 import { config } from 'config';
 import { and, desc, eq } from 'drizzle-orm';
+import i18n from 'i18next';
 import { db } from '#/db/db';
-import { type EmailsModel, emailsTable } from '#/db/schema/emails';
+import { type EmailModel, emailsTable } from '#/db/schema/emails';
 import { membershipsTable } from '#/db/schema/memberships';
 import { organizationsTable } from '#/db/schema/organizations';
 import { passkeysTable } from '#/db/schema/passkeys';
@@ -15,7 +16,6 @@ import { tokensTable } from '#/db/schema/tokens';
 import { type UserModel, usersTable } from '#/db/schema/users';
 import { type Env, getContextToken, getContextUser } from '#/lib/context';
 import { type ErrorType, errorRedirect, errorResponse } from '#/lib/errors';
-import { i18n } from '#/lib/i18n';
 import { mailer } from '#/lib/mailer';
 import { logEvent } from '#/middlewares/logger/log-event';
 import { hashPassword, verifyPasswordHash } from '#/modules/auth/helpers/argon2id';
@@ -44,14 +44,15 @@ import { getParsedSessionCookie, invalidateSessionById, setUserSession, validate
 import { handleCreateUser, handleMembershipTokenUpdate } from '#/modules/auth/helpers/user';
 import { sendVerificationEmail } from '#/modules/auth/helpers/verify-email';
 import { getUserBy } from '#/modules/users/helpers/get-user-by';
-import defaultHook from '#/utils/default-hook';
+import { defaultHook } from '#/utils/default-hook';
+import { isExpiredDate } from '#/utils/is-expired-date';
 import { getIsoDate } from '#/utils/iso-date';
 import { nanoid } from '#/utils/nanoid';
 import { slugFromEmail } from '#/utils/slug-from-email';
-import { TimeSpan, createDate, isExpiredDate } from '#/utils/time-span';
+import { TimeSpan, createDate } from '#/utils/time-span';
 import { CreatePasswordEmail, type CreatePasswordEmailProps } from '../../../emails/create-password';
 import { EmailVerificationEmail, type EmailVerificationEmailProps } from '../../../emails/email-verification';
-import authRouteConfig from './routes';
+import authRoutes from './routes';
 
 const enabledStrategies: readonly string[] = config.enabledAuthenticationStrategies;
 const enabledOauthProviders: readonly string[] = config.enabledOauthProviders;
@@ -70,11 +71,11 @@ function isOAuthEnabled(provider: EnabledOauthProvider): boolean {
 // Set default hook to catch validation errors
 const app = new OpenAPIHono<Env>({ defaultHook });
 
-const authRoutes = app
+const authRouteHandlers = app
   /*
    * Check if email exists
    */
-  .openapi(authRouteConfig.checkEmail, async (ctx) => {
+  .openapi(authRoutes.checkEmail, async (ctx) => {
     const { email } = ctx.req.valid('json');
 
     const user = await getUserBy('email', email.toLowerCase());
@@ -87,7 +88,7 @@ const authRoutes = app
    * Attention: sign up is also used for new users that received (system or membership) invitations.
    * Only for membership invitations, user will proceed to accept after signing up.
    */
-  .openapi(authRouteConfig.signUp, async (ctx) => {
+  .openapi(authRoutes.signUp, async (ctx) => {
     const { email, password } = ctx.req.valid('json');
 
     // Verify if strategy allowed
@@ -111,14 +112,14 @@ const authRoutes = app
    * Sign up with email & password to accept (system or membership) invitations.
    * Only for membership invitations, user will proceed to accept after signing up.
    */
-  .openapi(authRouteConfig.signUpWithToken, async (ctx) => {
+  .openapi(authRoutes.signUpWithToken, async (ctx) => {
     const { password } = ctx.req.valid('json');
     const userId = nanoid();
 
     const validToken = getContextToken();
     if (!validToken) return errorResponse(ctx, 400, 'invalid_request', 'error');
 
-    const membershipInvite = !!validToken.entity;
+    const membershipInvite = !!validToken.entityType;
     // Verify if strategy allowed
     const strategy = 'password';
     if (!enabledStrategies.includes(strategy)) {
@@ -141,7 +142,7 @@ const authRoutes = app
   /*
    * Send verification email, also used to resend verification email.
    */
-  .openapi(authRouteConfig.sendVerificationEmail, async (ctx) => {
+  .openapi(authRoutes.sendVerificationEmail, async (ctx) => {
     const { userId, tokenId } = ctx.req.valid('json');
 
     let user: UserModel | null = null;
@@ -157,7 +158,7 @@ const authRoutes = app
     // Check if user exists
     if (!user) return errorResponse(ctx, 404, 'not_found', 'warn', 'user');
 
-    const [emailInUse]: (EmailsModel | undefined)[] = await db
+    const [emailInUse]: (EmailModel | undefined)[] = await db
       .select()
       .from(emailsTable)
       .where(and(eq(emailsTable.email, user.email), eq(emailsTable.verified, true)));
@@ -211,7 +212,7 @@ const authRoutes = app
   /*
    * Verify email
    */
-  .openapi(authRouteConfig.verifyEmail, async (ctx) => {
+  .openapi(authRoutes.verifyEmail, async (ctx) => {
     const token = getContextToken();
     if (!token || !token.userId) return errorResponse(ctx, 400, 'invalid_request', 'error');
 
@@ -232,7 +233,7 @@ const authRoutes = app
   /*
    * Request reset password email
    */
-  .openapi(authRouteConfig.requestPassword, async (ctx) => {
+  .openapi(authRoutes.requestPassword, async (ctx) => {
     const { email } = ctx.req.valid('json');
 
     const user = await getUserBy('email', email.toLowerCase());
@@ -273,7 +274,7 @@ const authRoutes = app
   /*
    * Create password with token
    */
-  .openapi(authRouteConfig.createPasswordWithToken, async (ctx) => {
+  .openapi(authRoutes.createPasswordWithToken, async (ctx) => {
     const { password } = ctx.req.valid('json');
     const token = getContextToken();
 
@@ -313,7 +314,7 @@ const authRoutes = app
    * Attention: sign in is also used to accept organization invitations (when signed out & user exists),
    * after signing in, we proceed to accept the invitation.
    */
-  .openapi(authRouteConfig.signIn, async (ctx) => {
+  .openapi(authRoutes.signIn, async (ctx) => {
     const { email, password } = ctx.req.valid('json');
 
     // Verify if strategy allowed
@@ -347,7 +348,7 @@ const authRoutes = app
   /*
    * Check token (token validation)
    */
-  .openapi(authRouteConfig.checkToken, async (ctx) => {
+  .openapi(authRoutes.checkToken, async (ctx) => {
     // Find token in request
     const { id } = ctx.req.valid('param');
     const { type } = ctx.req.valid('query');
@@ -383,12 +384,12 @@ const authRoutes = app
   /*
    * Accept org invite token for signed in users
    */
-  .openapi(authRouteConfig.acceptOrgInvite, async (ctx) => {
+  .openapi(authRoutes.acceptOrgInvite, async (ctx) => {
     const user = getContextUser();
     const token = getContextToken();
 
     // Make sure its an organization invitation
-    if (!token.entity) return errorResponse(ctx, 401, 'invalid_token', 'warn');
+    if (!token.entityType) return errorResponse(ctx, 401, 'invalid_token', 'warn');
 
     const [emailInfo] = await db.select().from(emailsTable).where(eq(emailsTable.email, token.email));
     // Make sure correct user accepts invitation (for example another user could have a sessions and click on email invite of another user)
@@ -409,7 +410,7 @@ const authRoutes = app
   /*
    * Start impersonation
    */
-  .openapi(authRouteConfig.startImpersonation, async (ctx) => {
+  .openapi(authRoutes.startImpersonation, async (ctx) => {
     const { targetUserId } = ctx.req.valid('query');
 
     const user = getContextUser();
@@ -429,7 +430,7 @@ const authRoutes = app
   /*
    * Stop impersonation
    */
-  .openapi(authRouteConfig.stopImpersonation, async (ctx) => {
+  .openapi(authRoutes.stopImpersonation, async (ctx) => {
     const sessionData = await getParsedSessionCookie(ctx, true);
     if (!sessionData) return errorResponse(ctx, 401, 'unauthorized', 'warn');
 
@@ -463,7 +464,7 @@ const authRoutes = app
   /*
    * Sign out
    */
-  .openapi(authRouteConfig.signOut, async (ctx) => {
+  .openapi(authRoutes.signOut, async (ctx) => {
     const sessionData = await getParsedSessionCookie(ctx);
 
     if (!sessionData) {
@@ -485,7 +486,7 @@ const authRoutes = app
   /*
    * Github authentication
    */
-  .openapi(authRouteConfig.githubSignIn, async (ctx) => {
+  .openapi(authRoutes.githubSignIn, async (ctx) => {
     const { type, redirect } = ctx.req.valid('query');
 
     if (redirect) await handleOAuthRedirect(ctx, redirect);
@@ -506,7 +507,7 @@ const authRoutes = app
   /*
    * Google authentication
    */
-  .openapi(authRouteConfig.googleSignIn, async (ctx) => {
+  .openapi(authRoutes.googleSignIn, async (ctx) => {
     const { type, redirect } = ctx.req.valid('query');
 
     if (redirect) await handleOAuthRedirect(ctx, redirect);
@@ -527,7 +528,7 @@ const authRoutes = app
   /*
    * Microsoft authentication
    */
-  .openapi(authRouteConfig.microsoftSignIn, async (ctx) => {
+  .openapi(authRoutes.microsoftSignIn, async (ctx) => {
     const { type, redirect } = ctx.req.valid('query');
 
     if (redirect) await handleOAuthRedirect(ctx, redirect);
@@ -547,7 +548,7 @@ const authRoutes = app
   /*
    * Github authentication callback
    */
-  .openapi(authRouteConfig.githubSignInCallback, async (ctx) => {
+  .openapi(authRoutes.githubSignInCallback, async (ctx) => {
     const { code, state, error } = ctx.req.valid('query');
 
     // redirect if there is no code or error in callback
@@ -627,7 +628,7 @@ const authRoutes = app
   /*
    * Google authentication callback
    */
-  .openapi(authRouteConfig.googleSignInCallback, async (ctx) => {
+  .openapi(authRoutes.googleSignInCallback, async (ctx) => {
     const { state, code } = ctx.req.valid('query');
     const strategy = 'google' as EnabledOauthProvider;
 
@@ -704,7 +705,7 @@ const authRoutes = app
   /*
    * Microsoft authentication callback
    */
-  .openapi(authRouteConfig.microsoftSignInCallback, async (ctx) => {
+  .openapi(authRoutes.microsoftSignInCallback, async (ctx) => {
     const { state, code } = ctx.req.valid('query');
     const strategy = 'microsoft' as EnabledOauthProvider;
 
@@ -781,7 +782,7 @@ const authRoutes = app
   /*
    * Passkey challenge
    */
-  .openapi(authRouteConfig.getPasskeyChallenge, async (ctx) => {
+  .openapi(authRoutes.getPasskeyChallenge, async (ctx) => {
     // Generate a random challenge
     const challenge = getRandomValues(new Uint8Array(32));
 
@@ -795,7 +796,7 @@ const authRoutes = app
   /*
    * Verify passkey
    */
-  .openapi(authRouteConfig.verifyPasskey, async (ctx) => {
+  .openapi(authRoutes.verifyPasskey, async (ctx) => {
     const { clientDataJSON, authenticatorData, signature, userEmail } = ctx.req.valid('json');
     const strategy = 'passkey';
 
@@ -826,4 +827,4 @@ const authRoutes = app
     return ctx.json({ success: true }, 200);
   });
 
-export default authRoutes;
+export default authRouteHandlers;

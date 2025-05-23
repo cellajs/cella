@@ -1,11 +1,11 @@
-import { createRouteConfig } from '#/lib/route-config';
+import { createCustomRoute } from '#/lib/custom-routes';
 import { hasSystemAccess, isAuthenticated } from '#/middlewares/guard';
 import { entityParamSchema, idsBodySchema } from '#/utils/schema/common';
 import { errorResponses, successWithDataSchema, successWithErrorsSchema, successWithPaginationSchema } from '#/utils/schema/responses';
-import { updateUserBodySchema, userSchema, usersQuerySchema } from './schema';
+import { userListQuerySchema, userSchema, userUpdateBodySchema } from './schema';
 
-class UserRouteConfig {
-  public getUsers = createRouteConfig({
+class UserRoutes {
+  public getUsers = createCustomRoute({
     method: 'get',
     path: '/',
     guard: [isAuthenticated, hasSystemAccess],
@@ -13,7 +13,7 @@ class UserRouteConfig {
     summary: 'Get list of users',
     description: 'Get a list of users on system level.',
     request: {
-      query: usersQuerySchema,
+      query: userListQuerySchema,
     },
     responses: {
       200: {
@@ -28,7 +28,7 @@ class UserRouteConfig {
     },
   });
 
-  public deleteUsers = createRouteConfig({
+  public deleteUsers = createCustomRoute({
     method: 'delete',
     path: '/',
     guard: [isAuthenticated, hasSystemAccess],
@@ -53,7 +53,7 @@ class UserRouteConfig {
     },
   });
 
-  public getUser = createRouteConfig({
+  public getUser = createCustomRoute({
     method: 'get',
     path: '/{idOrSlug}',
     guard: isAuthenticated,
@@ -76,7 +76,7 @@ class UserRouteConfig {
     },
   });
 
-  public updateUser = createRouteConfig({
+  public updateUser = createCustomRoute({
     method: 'put',
     path: '/{idOrSlug}',
     guard: [isAuthenticated, hasSystemAccess],
@@ -88,7 +88,7 @@ class UserRouteConfig {
       body: {
         content: {
           'application/json': {
-            schema: updateUserBodySchema,
+            schema: userUpdateBodySchema,
           },
         },
       },
@@ -106,4 +106,4 @@ class UserRouteConfig {
     },
   });
 }
-export default new UserRouteConfig();
+export default new UserRoutes();

@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 import type { z } from 'zod';
 
 // Change this in the future on current schema
-import { createOrganizationBodySchema } from '#/modules/organizations/schema';
+import { organizationCreateBodySchema } from '#/modules/organizations/schema';
 
 import { useMemo } from 'react';
 import { toast } from 'sonner';
@@ -25,7 +25,7 @@ interface Props {
   children?: React.ReactNode;
 }
 
-const formSchema = createOrganizationBodySchema;
+const formSchema = organizationCreateBodySchema;
 
 type FormValues = z.infer<typeof formSchema>;
 

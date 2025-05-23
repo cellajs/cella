@@ -3,13 +3,14 @@ import FilePlaceholder from '~/modules/attachments/preview-placeholder';
 import { useLocalFile } from '~/modules/attachments/use-local-file';
 
 interface Props {
+  id: string;
   url: string;
   contentType: string;
   name: string;
 }
 
-const AttachmentPreview = ({ url: baseUrl, contentType, name }: Props) => {
-  const { localUrl } = useLocalFile(baseUrl, contentType);
+const AttachmentPreview = ({ id, url: baseUrl, contentType, name }: Props) => {
+  const { localUrl } = useLocalFile(id, contentType);
 
   // Use either remote URL or local URL
   const url = useMemo(() => {

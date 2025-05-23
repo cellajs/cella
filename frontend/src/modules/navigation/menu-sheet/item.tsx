@@ -50,7 +50,7 @@ export const MenuSheetItem = ({ item, className, searchResults }: MenuSheetItemP
     >
       <AvatarWrap
         className="z-1 items-center m-2 mx-3 group-data-[subitem=true]/menuItem:my-2 group-data-[subitem=true]/menuItem:mx-4 group-data-[subitem=true]/menuItem:text-xs h-8 w-8 group-data-[subitem=true]/menuItem:h-6 group-data-[subitem=true]/menuItem:w-6"
-        type={item.entity}
+        type={item.entityType}
         id={item.id}
         name={item.name}
         url={item.thumbnailUrl}
@@ -65,12 +65,12 @@ export const MenuSheetItem = ({ item, className, searchResults }: MenuSheetItemP
         <div className="text-muted-foreground text-xs font-light sm:group-data-[subitem=true]/menuItem:leading-3">
           {searchResults && (
             <span className="absolute transition-opacity duration-200 delay-200 ease-in-out sm:group-hover/menuItem:opacity-0">
-              {t(`app:${item.entity}`)}
+              {t(`app:${item.entityType}`)}
             </span>
           )}
           <span className="absolute opacity-0 transition-opacity duration-200 ease-in-out group-hover/menuItem:delay-300 sm:group-hover/menuItem:opacity-100">
             {item.submenu?.length
-              ? `${item.submenu?.length} ${t(`app:${item.submenu?.length > 1 ? `${item.submenu[0].entity}s` : item.submenu[0].entity}`).toLowerCase()}`
+              ? `${item.submenu?.length} ${t(`app:${item.submenu?.length > 1 ? `${item.submenu[0].entityType}s` : item.submenu[0].entityType}`).toLowerCase()}`
               : item.membership.role
                 ? t(item.membership.role)
                 : ''}

@@ -32,7 +32,7 @@ export const config = {
   // Which scripts to run when seeding the database
   seedScripts: ['pnpm run seed:user', 'pnpm run seed:organizations'],
 
-  // Which fields to omit from user object
+  // Sensitive fields to omit from user object
   sensitiveFields: ['hashedPassword', 'unsubscribeToken'] as const,
 
   // API docs settings
@@ -59,8 +59,8 @@ export const config = {
   // Google maps key
   googleMapsKey: 'AIzaSyDMjCpQusdoPWLeD7jxkqAxVgJ8s5xJ3Co',
 
-  // File handling with imado
-  tusPort: 4100,
+  // File handling with s3 on Scaleway
+  s3BucketPrefix: 'cella' as string | null, // Prefix to namespace files when sharing a bucket across apps or envs
   s3PublicBucket: 'imado-dev',
   s3PrivateBucket: 'imado-dev-priv',
   s3Region: 'nl-ams',
@@ -68,11 +68,11 @@ export const config = {
   privateCDNUrl: 'https://imado-dev-priv.s3.nl-ams.scw.cloud',
   publicCDNUrl: 'https://544ba5eb-2c7a-417f-a5bf-b13950b89755.svc.edge.scw.cloud',
 
+  // Upload templates using Transloadit
   uploadTemplateIds: ['avatar', 'cover', 'attachment'] as const,
 
-  themeColor: '#26262b',
-
   // Theme settings
+  themeColor: '#26262b',
   theme: {
     colors: {
       rose: '#e11d48',
@@ -104,9 +104,11 @@ export const config = {
   ],
 
   /**
-   * Default upload body limit
+   * Upload body limit
    */
-  uploadBodyLimit: 1 * 1024 * 1024, // 1mb
+  jsonBodyLimit: 1 * 1024 * 1024, // 1mb
+  fileUploadLimit: 20 * 1024 * 1024, // 20mb
+  defaultBodyLimit: 1 * 1024 * 1024, // 1mb
 
   // Allowed oauth strategies providers
   enabledAuthenticationStrategies: ['password', 'passkey', 'oauth'] as const,
@@ -123,7 +125,7 @@ export const config = {
     sync: true, // Realtime updates and sync using Electric Sync
     registrationEnabled: false, // Allow users to sign up. If false, the app is by invitation only
     waitlist: true, // Suggest a waitlist for unknown emails when sign up is disabled,
-    imado: true, // Imado fully configured, if false, files will be stored in local browser (indexedDB)
+    uploadEnabled: true, // s3 fully configured, if false, files will be stored in local browser (indexedDB)
   },
 
   /**
@@ -142,20 +144,6 @@ export const config = {
   entityTypes: ['user', 'organization', 'attachment'] as const,
 
   /**
-   * Restrictions default for organization.
-   * Used to control limits on certain entities or behaviors under this organization.
-   * For example:
-   * - Limit number of projects, tasks, or members
-   * - Limit number of active online members at the same time
-   *
-   * The key is the entity name and the value is the numeric limit.
-   */
-  defaultOrganizationRestrictions: {
-    user: 1000,
-    attachment: 100,
-  } as const,
-
-  /**
    * Page entity types (pages with memberships + users)
    */
   pageEntityTypes: ['user', 'organization'] as const,
@@ -171,10 +159,39 @@ export const config = {
   productEntityTypes: ['attachment'] as const,
 
   /**
+   * Define fields to identify an entity in a relationship
+   */
+  entityIdFields: {
+    user: 'userId',
+    organization: 'organizationId',
+    attachment: 'attachmentId',
+  } as const,
+
+  /**
+   * Define user menu structure of context entities with optionally nested subentities
+   * ⚠️ IMPORTANT: If you define a `subentityType`, then the corresponding database table for that
+   * subentity, must include a foreign key, field named `${entity}Id`.
+   */
+  menuStructure: [
+    {
+      entityType: 'organization',
+      subentityType: null,
+    } as const,
+  ],
+
+  /**
+   * Restrictions within organization to set limits on entities
+   */
+  defaultOrganizationRestrictions: {
+    user: 1000,
+    attachment: 100,
+  } as const,
+
+  /**
    * Default request limits for lists
    *
-   * By default, BE common-schemas enforce a maximum limit of 1000 items via `limitRefine`.
-   * if some of requested limit need to exceed 1000, make sure to adjust `limitRefine` accordingly.
+   * By default, BE common-schemas enforce a maximum limit of 1000 items via `limitRefine`
+   * if some of requested limit need to exceed 1000, make sure to adjust `limitRefine` accordingly
    */
   requestLimits: {
     default: 40,
@@ -183,10 +200,10 @@ export const config = {
     organizations: 40,
     requests: 40,
     attachments: 40,
-    memberInvitations: 20,
+    pendingInvitations: 20,
   },
   /**
-   * Roles on system and entity level.
+   * Roles on system and entity level
    */
   rolesByType: {
     systemRoles: ['user', 'admin'] as const,
@@ -195,7 +212,7 @@ export const config = {
   },
 
   /**
-   * Company details.
+   * Company details
    */
   company: {
     name: 'CellaJS',
@@ -219,17 +236,17 @@ export const config = {
   },
 
   /**
-   * Error handling.
+   * Error handling
    */
   severityLevels: ['debug', 'log', 'info', 'warn', 'error'] as const,
 
   /**
-   * UI settings.
+   * UI settings
    */
   navLogoAnimation: 'animate-spin-slow',
 
   /**
-   * Common countries.
+   * Common countries
    */
   common: {
     countries: ['fr', 'de', 'nl', 'ua', 'us', 'gb'],
@@ -248,7 +265,6 @@ export const config = {
     },
   },
 };
-
 export default config;
 
 export type DeepPartial<T> = T extends object

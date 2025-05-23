@@ -1,12 +1,12 @@
 import type { z } from 'zod';
-import type { MinimumMembershipInfo } from '~/modules/memberships/types';
-import type { limitEntitySchema } from '#/modules/entities/schema';
-import type { membershipsCountSchema } from '#/modules/organizations/schema';
+import type { MembershipSummary } from '~/modules/memberships/types';
+import type { entityBaseSchema } from '#/modules/entities/schema';
+import type { membershipCountSchema } from '#/modules/organizations/schema';
 
-export type LimitedEntity = z.infer<typeof limitEntitySchema>;
+export type EntitySummary = z.infer<typeof entityBaseSchema>;
 
-export type EntityPage = LimitedEntity & {
-  membership: MinimumMembershipInfo | null;
+export type EntityPage = EntitySummary & {
+  membership: MembershipSummary | null;
   organizationId?: string | null;
-  counts?: z.infer<typeof membershipsCountSchema>;
+  counts?: z.infer<typeof membershipCountSchema>;
 };

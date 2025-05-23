@@ -1,10 +1,10 @@
 import { onlineManager } from '@tanstack/react-query';
 import { type Language, config } from 'config';
+import i18n from 'i18next';
 import { useTranslation } from 'react-i18next';
-import { i18n } from '~/lib/i18n';
 import CountryFlag from '~/modules/common/country-flag';
 import { toaster } from '~/modules/common/toaster';
-import { updateSelf } from '~/modules/me/api';
+import { updateMe } from '~/modules/me/api';
 import { Button } from '~/modules/ui/button';
 import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuTrigger } from '~/modules/ui/dropdown-menu';
 import { useUserStore } from '~/store/user';
@@ -21,16 +21,17 @@ const UserLanguage = ({ align = 'end', triggerClassName = '', contentClassName =
   const { t } = useTranslation();
 
   const { user, updateUser } = useUserStore();
-  const language = user?.language || i18n.resolvedLanguage || i18n.language;
+  const language = user?.language || i18n.language;
 
   const changeLanguage = (lng: Language) => {
     if (!onlineManager.isOnline()) return toaster(t('common:action.offline.text'), 'warning');
-    if (!user) return;
-    updateSelf({ language: lng }).then((res) => {
-      updateUser(res);
-    });
     if (window.Gleap) window.Gleap.setLanguage(lng);
     i18n.changeLanguage(lng);
+
+    if (!user) return;
+    updateMe({ language: lng }).then((res) => {
+      updateUser(res);
+    });
   };
 
   if (config.languages.length < 2) return null;

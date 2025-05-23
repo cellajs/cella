@@ -27,7 +27,7 @@ export const MembershipInvitations = ({ entity }: MembershipInvitationsTableProp
       side: 'right',
       className: 'max-w-full lg:max-w-4xl',
       title: t('common:pending_invitations'),
-      description: t('common:pending_invitations.text', { entity: t(`common:${entity.entity}`).toLowerCase() }),
+      description: t('common:pending_invitations.text', { entityType: t(`common:${entity.entityType}`).toLowerCase() }),
       scrollableOverlay: true,
     });
   };

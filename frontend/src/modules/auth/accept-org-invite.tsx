@@ -11,6 +11,7 @@ import Spinner from '~/modules/common/spinner';
 import { getAndSetMenu } from '~/modules/me/helpers';
 import { SubmitButton, buttonVariants } from '~/modules/ui/button';
 import { AcceptOrgInviteRoute } from '~/routes/auth';
+import { OrganizationRoute } from '~/routes/organizations';
 import { cn } from '~/utils/cn';
 
 // Accept organization invitation when user is signed in
@@ -32,7 +33,10 @@ const AcceptOrgInvite = () => {
     onSuccess: () => {
       getAndSetMenu();
       toast.success(t('common:invitation_accepted'));
-      navigate({ to: data?.organizationSlug ? `/${data.organizationSlug}` : config.defaultRedirectPath });
+      const idOrSlug = data?.organizationSlug;
+      const to = idOrSlug ? OrganizationRoute.to : config.defaultRedirectPath;
+      const params = idOrSlug ? { idOrSlug } : null;
+      navigate({ to, ...(params && params) });
     },
   });
 

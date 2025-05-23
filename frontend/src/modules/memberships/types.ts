@@ -1,7 +1,8 @@
 import type { z } from 'zod';
-import type { memberInvitationsSchema, membersSchema, membershipInfoSchema, membershipSchema } from '#/modules/memberships/schema';
+import type { membershipSchema, membershipSummarySchema, pendingInvitationSchema } from '#/modules/memberships/schema';
+import type { memberSchema } from '#/modules/users/schema';
 
-export type Member = z.infer<typeof membersSchema>;
+export type Member = z.infer<typeof memberSchema>;
 export type Membership = z.infer<typeof membershipSchema>;
-export type InvitedMember = z.infer<typeof memberInvitationsSchema>;
-export type MinimumMembershipInfo = z.infer<typeof membershipInfoSchema>;
+export type PendingInvitation = z.infer<typeof pendingInvitationSchema>;
+export type MembershipSummary = z.infer<typeof membershipSummarySchema>;

@@ -5,24 +5,32 @@ import staging from './staging';
 import tunnel from './tunnel';
 
 /**
- * All entity types used in this app
+ * All entities in this app
  */
-export type Entity = (typeof _default.entityTypes)[number];
+export type EntityType = (typeof _default.entityTypes)[number];
 
 /**
- * Page entity types (pages with memberships + users)
+ * Page entities (entities with memberships + users)
  */
-export type PageEntity = (typeof config.pageEntityTypes)[number];
+export type PageEntityType = (typeof config.pageEntityTypes)[number];
 
 /**
- * Context entity types (memberships)
+ * Context entities (entities with memberships only)
  */
-export type ContextEntity = (typeof _default.contextEntityTypes)[number];
+export type ContextEntityType = (typeof _default.contextEntityTypes)[number];
 
 /**
- * Product entity types (mostly content)
+ * Product entities aka (user-generated) content (no memberships assigned)
  */
-export type ProductEntity = (typeof _default.productEntityTypes)[number];
+export type ProductEntityType = (typeof _default.productEntityTypes)[number];
+
+/**
+ * Menu sections in the menu structure
+ */
+export type MenuSection = {
+  entityType: ContextEntityType;
+  subentityType: ContextEntityType | null;
+};
 
 /**
  * OAuth providers enabled in this app

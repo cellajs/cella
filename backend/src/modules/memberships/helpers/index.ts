@@ -1,15 +1,14 @@
 import { db } from '#/db/db';
 import { type MembershipModel, membershipsTable } from '#/db/schema/memberships';
-import { entityIdFields, entityRelations } from '#/entity-config';
 import type { EntityModel } from '#/lib/entity';
 import { logEvent } from '#/middlewares/logger/log-event';
-import { membershipSelect } from '#/modules/memberships/helpers/select';
+import { membershipSummarySelect } from '#/modules/memberships/helpers/select';
 import { getIsoDate } from '#/utils/iso-date';
 
-import type { ContextEntity } from 'config';
+import { type ContextEntityType, config } from 'config';
 import { and, eq, max } from 'drizzle-orm';
 
-type BaseEntityModel = EntityModel<ContextEntity> & {
+type BaseEntityModel = EntityModel<ContextEntityType> & {
   organizationId?: string;
 };
 
@@ -49,7 +48,7 @@ export const insertMembership = async <T extends BaseEntityModel>({
     .from(membershipsTable)
     .where(eq(membershipsTable.userId, userId));
 
-  const entityIdField = entityIdFields[entity.entity];
+  const entityIdField = config.entityIdFields[entity.entityType];
   const associatedEntity = getAssociatedEntityDetails(entity);
 
   const baseMembership = {
@@ -63,19 +62,19 @@ export const insertMembership = async <T extends BaseEntityModel>({
   };
 
   // Insert organization membership first
-  if (entity.entity !== 'organization') {
+  if (entity.entityType !== 'organization') {
     const hasOrgMembership = await db
       .select()
       .from(membershipsTable)
       .where(
         and(
           eq(membershipsTable.userId, userId),
-          eq(membershipsTable.type, 'organization'),
+          eq(membershipsTable.contextType, 'organization'),
           eq(membershipsTable.organizationId, baseMembership.organizationId),
         ),
       );
 
-    if (!hasOrgMembership.length) await db.insert(membershipsTable).values({ ...baseMembership, type: 'organization' });
+    if (!hasOrgMembership.length) await db.insert(membershipsTable).values({ ...baseMembership, contextType: 'organization' });
   }
 
   // Insert associated entity membership first (if applicable)
@@ -84,7 +83,7 @@ export const insertMembership = async <T extends BaseEntityModel>({
       .insert(membershipsTable)
       .values({
         ...baseMembership,
-        type: associatedEntity.type,
+        contextType: associatedEntity.type,
         [associatedEntity.field]: associatedEntity.id,
       })
       .onConflictDoNothing(); // Do nothing if already exist
@@ -95,22 +94,22 @@ export const insertMembership = async <T extends BaseEntityModel>({
     .insert(membershipsTable)
     .values({
       ...baseMembership,
-      type: entity.entity,
-      ...(entity.entity !== 'organization' && { [entityIdField]: entity.id }),
+      contextType: entity.entityType,
+      ...(entity.entityType !== 'organization' && { [entityIdField]: entity.id }),
       ...(associatedEntity && { [associatedEntity.field]: associatedEntity.id }),
     })
-    .returning(membershipSelect);
+    .returning(membershipSummarySelect);
 
-  logEvent(`User added to ${entity.entity}`, { user: userId, id: entity.id }); // Log event
+  logEvent(`User added to ${entity.entityType}`, { user: userId, id: entity.id }); // Log event
 
   return result;
 };
 
-export const getAssociatedEntityDetails = <T extends ContextEntity>(entity: EntityModel<T>) => {
-  const relation = entityRelations.find((rel) => rel.subEntity === entity.entity);
+export const getAssociatedEntityDetails = <T extends ContextEntityType>(entity: EntityModel<T>) => {
+  const relation = config.menuStructure.find((rel) => rel.subentityType === entity.entityType);
   if (!relation) return null;
-  const type = relation.entity;
-  const field = entityIdFields[type] ?? null;
+  const type = relation.entityType;
+  const field = config.entityIdFields[type] ?? null;
   if (!field || !(field in entity)) return null;
 
   const id = entity[field as keyof typeof entity] as string;

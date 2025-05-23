@@ -1,20 +1,20 @@
 import { z } from 'zod';
-import { createRouteConfig } from '#/lib/route-config';
+import { createCustomRoute } from '#/lib/custom-routes';
 import { hasSystemAccess, isAuthenticated } from '#/middlewares/guard';
 import { entityParamSchema, idsBodySchema } from '#/utils/schema/common';
 import { errorResponses, successWithDataSchema, successWithErrorsSchema, successWithPaginationSchema } from '#/utils/schema/responses';
 import {
-  createOrganizationBodySchema,
-  getOrganizationsQuerySchema,
-  membershipsCountSchema,
+  entityCountSchema,
+  membershipCountSchema,
+  organizationCreateBodySchema,
+  organizationListQuerySchema,
   organizationSchema,
+  organizationUpdateBodySchema,
   organizationWithMembershipSchema,
-  relatedEntitiesCountSchema,
-  updateOrganizationBodySchema,
 } from './schema';
 
-class OrganizationRouteConfig {
-  public createOrganization = createRouteConfig({
+class OrganizationRoutes {
+  public createOrganization = createCustomRoute({
     method: 'post',
     path: '/',
     guard: isAuthenticated,
@@ -26,7 +26,7 @@ class OrganizationRouteConfig {
         required: true,
         content: {
           'application/json': {
-            schema: createOrganizationBodySchema,
+            schema: organizationCreateBodySchema,
           },
         },
       },
@@ -44,7 +44,7 @@ class OrganizationRouteConfig {
     },
   });
 
-  public getOrganizations = createRouteConfig({
+  public getOrganizations = createCustomRoute({
     method: 'get',
     path: '/',
     guard: [isAuthenticated, hasSystemAccess],
@@ -52,7 +52,7 @@ class OrganizationRouteConfig {
     summary: 'Get list of organizations',
     description: 'Get list of organizations. Currently only available to system admins.',
     request: {
-      query: getOrganizationsQuerySchema,
+      query: organizationListQuerySchema,
     },
     responses: {
       200: {
@@ -67,7 +67,7 @@ class OrganizationRouteConfig {
     },
   });
 
-  public updateOrganization = createRouteConfig({
+  public updateOrganization = createCustomRoute({
     method: 'put',
     path: '/{idOrSlug}',
     guard: [isAuthenticated],
@@ -79,7 +79,7 @@ class OrganizationRouteConfig {
       body: {
         content: {
           'application/json': {
-            schema: updateOrganizationBodySchema,
+            schema: organizationUpdateBodySchema,
           },
         },
       },
@@ -97,7 +97,7 @@ class OrganizationRouteConfig {
     },
   });
 
-  public getOrganization = createRouteConfig({
+  public getOrganization = createCustomRoute({
     method: 'get',
     path: '/{idOrSlug}',
     guard: [isAuthenticated],
@@ -113,7 +113,7 @@ class OrganizationRouteConfig {
         content: {
           'application/json': {
             schema: successWithDataSchema(
-              organizationSchema.extend({ counts: z.object({ ...membershipsCountSchema.shape, ...relatedEntitiesCountSchema.shape }) }),
+              organizationSchema.extend({ counts: z.object({ ...membershipCountSchema.shape, ...entityCountSchema.shape }) }),
             ),
           },
         },
@@ -122,7 +122,7 @@ class OrganizationRouteConfig {
     },
   });
 
-  public deleteOrganizations = createRouteConfig({
+  public deleteOrganizations = createCustomRoute({
     method: 'delete',
     path: '/',
     guard: [isAuthenticated],
@@ -147,4 +147,4 @@ class OrganizationRouteConfig {
     },
   });
 }
-export default new OrganizationRouteConfig();
+export default new OrganizationRoutes();

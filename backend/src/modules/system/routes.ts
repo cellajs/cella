@@ -1,13 +1,13 @@
 import { z } from '@hono/zod-openapi';
-import { createRouteConfig } from '#/lib/route-config';
+import { createCustomRoute } from '#/lib/custom-routes';
 import { hasSystemAccess, isAuthenticated, isPublicAccess } from '#/middlewares/guard';
 import { tokenLimiter } from '#/middlewares/rate-limiter/limiters';
 import { booleanQuerySchema } from '#/utils/schema/common';
 import { errorResponses, successWithDataSchema, successWithoutDataSchema } from '#/utils/schema/responses';
 import { inviteBodySchema, sendNewsletterBodySchema } from './schema';
 
-class SystemRouteConfig {
-  public createInvite = createRouteConfig({
+class SystemRoutes {
+  public createInvite = createCustomRoute({
     method: 'post',
     path: '/invite',
     guard: [isAuthenticated, hasSystemAccess],
@@ -36,7 +36,7 @@ class SystemRouteConfig {
     },
   });
 
-  public sendNewsletter = createRouteConfig({
+  public sendNewsletter = createCustomRoute({
     method: 'post',
     path: '/newsletter',
     guard: [isAuthenticated, hasSystemAccess],
@@ -67,7 +67,7 @@ class SystemRouteConfig {
     },
   });
 
-  public getPriasignedUrl = createRouteConfig({
+  public getPriasignedUrl = createCustomRoute({
     method: 'get',
     path: '/presigned-url',
     guard: [isAuthenticated],
@@ -86,7 +86,7 @@ class SystemRouteConfig {
     },
   });
 
-  public paddleWebhook = createRouteConfig({
+  public paddleWebhook = createCustomRoute({
     method: 'post',
     path: '/paddle-webhook',
     guard: isPublicAccess,
@@ -116,4 +116,4 @@ class SystemRouteConfig {
     },
   });
 }
-export default new SystemRouteConfig();
+export default new SystemRoutes();

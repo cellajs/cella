@@ -11,7 +11,6 @@ const router = createRouter({
   scrollRestorationBehavior: 'instant',
   defaultHashScrollIntoView: { behavior: 'smooth' },
   routeTree,
-  // notFoundRoute,
   defaultPreload: false,
   context: {},
   defaultPendingMinMs: 0,

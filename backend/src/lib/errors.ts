@@ -1,13 +1,15 @@
+import * as Sentry from '@sentry/node';
 import { config } from 'config';
 import type { Context } from 'hono';
 import type { ClientErrorStatusCode, ServerErrorStatusCode } from 'hono/utils/http-status';
+import i18n from 'i18next';
 import type { z } from 'zod';
 
-import type { Entity, Severity } from 'config';
-import { logEvent, logtail } from '#/middlewares/logger/log-event';
+import type { EntityType, Severity } from 'config';
+import { externalLogger } from '#/middlewares/logger/external-logger';
+import { logEvent } from '#/middlewares/logger/log-event';
 import type { errorSchema } from '#/utils/schema/responses';
 import { type Env, getContextOrganization, getContextUser } from './context';
-import { i18n } from './i18n';
 import type locales from './i18n-locales';
 
 type StripPrefix<T, Prefix extends string> = T extends `${Prefix}${infer Rest}` ? Rest : T;
@@ -42,7 +44,7 @@ export const createError = (
   status: HttpErrorStatus,
   type: SimplifiedErrorKey,
   severity: Severity = 'info',
-  entityType?: Entity,
+  entityType?: EntityType,
   eventData?: EventData,
   err?: Error,
 ) => {
@@ -69,9 +71,12 @@ export const createError = (
   if (err || ['warn', 'error'].includes(severity)) {
     const data = { ...error, eventData };
 
-    if (logtail) logtail[severity](message, undefined, data);
+    // Log error to external logger and monitoring service
+    if (externalLogger) externalLogger[severity](message, undefined, data);
+    Sentry.captureException(err);
+
     if (err) console.error(err);
-  } else if (eventData) logEvent(message, eventData, severity); // Log significant events with additional data
+  } else if (eventData) logEvent(message, eventData, severity); // Log significant (non-error) events with additional data
 
   return error;
 };
@@ -93,7 +98,7 @@ export const errorResponse = (
   status: HttpErrorStatus,
   type: SimplifiedErrorKey,
   severity: Severity = 'info',
-  entityType?: Entity,
+  entityType?: EntityType,
   eventData?: EventData,
   err?: Error,
 ) => {

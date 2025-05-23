@@ -1,6 +1,5 @@
-import { type ContextEntity, type UploadTemplateId, config } from 'config';
+import { type ContextEntityType, type UploadTemplateId, config } from 'config';
 import { clientConfig, handleResponse } from '~/lib/api';
-import type { UploadParams } from '~/lib/imado/types';
 import type { UpdateUserParams } from '~/modules/users/api';
 import { meHc } from '#/modules/me/hc';
 
@@ -35,7 +34,7 @@ export const getSelfAuthInfo = async () => {
  *
  * @returns The user menu data.
  */
-export const getSelfMenu = async () => {
+export const getMyMenu = async () => {
   const response = await client.menu.$get();
 
   const json = await handleResponse(response);
@@ -48,7 +47,7 @@ export const getSelfMenu = async () => {
  *  @param params User data to update.
  *  @returns The updated user data.
  */
-export const updateSelf = async (params: UpdateUserParams) => {
+export const updateMe = async (params: UpdateUserParams) => {
   const response = await client.index.$put({
     json: params,
   });
@@ -60,7 +59,7 @@ export const updateSelf = async (params: UpdateUserParams) => {
 /**
  * Delete current user.
  */
-export const deleteSelf = async () => {
+export const deleteMe = async () => {
   const response = await client.index.$delete();
   await handleResponse(response);
 };
@@ -78,26 +77,15 @@ export const deleteMySessions = async (sessionIds: string[]) => {
   await handleResponse(response);
 };
 
+export type UploadTokenQuery = { public: boolean; templateId: UploadTemplateId; organizationId?: string };
+
 /**
- * Get upload token to securely upload files with imado
- *
- * @link https://imado.eu
+ * Get upload token to securely upload files
  */
-export const getUploadToken = async (
-  type: 'organization' | 'personal',
-  templateId: UploadTemplateId,
-  query: UploadParams = { public: false, organizationId: undefined },
-) => {
-  const id = query.organizationId;
-
-  if (!id && type === 'organization') return console.error('Organization id required for organization uploads');
-
-  if (id && type === 'personal') return console.error('Personal uploads should be typed as personal');
-
+export const getUploadToken = async (tokenQuery: UploadTokenQuery) => {
   const preparedQuery = {
-    public: String(query.public),
-    organization: id,
-    templateId,
+    ...tokenQuery,
+    public: String(tokenQuery.public),
   };
 
   const response = await client['upload-token'].$get({ query: preparedQuery });
@@ -134,7 +122,7 @@ export const deletePasskey = async () => {
   return json.success;
 };
 
-export type LeaveEntityQuery = { idOrSlug: string; entityType: ContextEntity };
+export type LeaveEntityQuery = { idOrSlug: string; entityType: ContextEntityType };
 
 /**
  * Remove the current user from a specified entity.
@@ -143,10 +131,8 @@ export type LeaveEntityQuery = { idOrSlug: string; entityType: ContextEntity };
  * @param query.entityType - Type of entity to leave.
  * @returns A boolean indicating whether the user successfully left the entity.
  */
-export const leaveEntity = async (query: LeaveEntityQuery) => {
-  const response = await client.leave.$delete({
-    query,
-  });
+export const deleteMyMembership = async (query: LeaveEntityQuery) => {
+  const response = await client.leave.$delete({ query });
 
   const json = await handleResponse(response);
   return json.success;

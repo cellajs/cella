@@ -5,7 +5,7 @@ import { Check, UserRoundX } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toaster } from '~/modules/common/toaster';
-import { leaveEntity } from '~/modules/me/api';
+import { deleteMyMembership } from '~/modules/me/api';
 import { deleteMenuItem } from '~/modules/navigation/menu-sheet/helpers/menu-operations';
 import type { Organization } from '~/modules/organizations/types';
 import { Button } from '~/modules/ui/button';
@@ -17,8 +17,8 @@ const LeaveButton = ({ organization }: { organization: Organization }) => {
   const navigate = useNavigate();
   const [openPopover, setOpenPopover] = useState(false);
 
-  const { mutate: _leaveEntity } = useMutation({
-    mutationFn: leaveEntity,
+  const { mutate: _deleteMyMembership } = useMutation({
+    mutationFn: deleteMyMembership,
     onSuccess: () => {
       toaster(t('common:success.you_left_organization'), 'success');
       navigate({ to: config.defaultRedirectPath, replace: true });
@@ -30,7 +30,7 @@ const LeaveButton = ({ organization }: { organization: Organization }) => {
     if (!onlineManager.isOnline()) return toaster(t('common:action.offline.text'), 'warning');
     const queryParams = { idOrSlug: organization.slug, entityType: 'organization' as const };
 
-    _leaveEntity(queryParams);
+    _deleteMyMembership(queryParams);
   };
 
   return (

@@ -1,3 +1,4 @@
+import * as Sentry from '@sentry/node';
 import { createMiddleware } from 'hono/factory';
 import { type Env, getContextMemberships, getContextUser } from '#/lib/context';
 export { isAuthenticated } from './is-authenticated';
@@ -30,13 +31,15 @@ export const hasOrgAccess = createMiddleware<Env>(async (ctx, next): Promise<Res
   if (!organization) return errorResponse(ctx, 404, 'not_found', 'warn', 'organization');
 
   // Check if user has access to organization (or is a system admin)
-  const orgMembership = memberships.find((m) => m.organizationId === organization.id && m.type === 'organization') || null;
+  const orgMembership = memberships.find((m) => m.organizationId === organization.id && m.contextType === 'organization') || null;
   if (!isSystemAdmin && !orgMembership) return errorResponse(ctx, 403, 'forbidden', 'warn', 'organization');
 
   const orgWithMembership = { ...organization, membership: orgMembership };
 
   // Set organization with membership (can be null for system admins!) in context
   ctx.set('organization', orgWithMembership);
+  Sentry.setTag('organization_id', orgWithMembership.id);
+  Sentry.setTag('organization_slug', orgWithMembership.slug);
 
   await next();
 });

@@ -1,5 +1,5 @@
 {
-  "id": "60920ebd-ac78-4e8d-b352-e9ac9daf2235",
+  "id": "b833e5bb-ab59-4cfc-89e4-8aeb2890570a",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -14,18 +14,25 @@
           "primaryKey": true,
           "notNull": true
         },
-        "group_id": {
-          "name": "group_id",
-          "type": "varchar",
-          "primaryKey": false,
-          "notNull": false
-        },
         "name": {
           "name": "name",
           "type": "varchar",
           "primaryKey": false,
           "notNull": true,
           "default": "'attachment'"
+        },
+        "entity_type": {
+          "name": "entity_type",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'attachment'"
+        },
+        "group_id": {
+          "name": "group_id",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
         },
         "filename": {
           "name": "filename",
@@ -39,24 +46,35 @@
           "primaryKey": false,
           "notNull": true
         },
+        "converted_content_type": {
+          "name": "converted_content_type",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
         "size": {
           "name": "size",
           "type": "varchar",
           "primaryKey": false,
           "notNull": true
         },
-        "entity": {
-          "name": "entity",
-          "type": "varchar",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'attachment'"
-        },
-        "url": {
-          "name": "url",
+        "original_key": {
+          "name": "original_key",
           "type": "varchar",
           "primaryKey": false,
           "notNull": true
+        },
+        "converted_key": {
+          "name": "converted_key",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "thumbnail_key": {
+          "name": "thumbnail_key",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
         },
         "created_at": {
           "name": "created_at",
@@ -90,7 +108,23 @@
           "notNull": true
         }
       },
-      "indexes": {},
+      "indexes": {
+        "attachments_organization_id_index": {
+          "name": "attachments_organization_id_index",
+          "columns": [
+            {
+              "expression": "organization_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
       "foreignKeys": {
         "attachments_created_by_users_id_fk": {
           "name": "attachments_created_by_users_id_fk",
@@ -240,8 +274,8 @@
           "primaryKey": true,
           "notNull": true
         },
-        "type": {
-          "name": "type",
+        "context_type": {
+          "name": "context_type",
           "type": "varchar",
           "primaryKey": false,
           "notNull": true
@@ -467,8 +501,8 @@
           "primaryKey": true,
           "notNull": true
         },
-        "entity": {
-          "name": "entity",
+        "entity_type": {
+          "name": "entity_type",
           "type": "varchar",
           "primaryKey": false,
           "notNull": true,
@@ -480,8 +514,8 @@
           "primaryKey": false,
           "notNull": true
         },
-        "short_name": {
-          "name": "short_name",
+        "description": {
+          "name": "description",
           "type": "varchar",
           "primaryKey": false,
           "notNull": false
@@ -491,6 +525,24 @@
           "type": "varchar",
           "primaryKey": false,
           "notNull": true
+        },
+        "thumbnail_url": {
+          "name": "thumbnail_url",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "banner_url": {
+          "name": "banner_url",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "short_name": {
+          "name": "short_name",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
         },
         "country": {
           "name": "country",
@@ -518,6 +570,13 @@
           "notNull": true,
           "default": "'[\"en\"]'::json"
         },
+        "restrictions": {
+          "name": "restrictions",
+          "type": "json",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'{\"user\":1000,\"attachment\":100}'::json"
+        },
         "notification_email": {
           "name": "notification_email",
           "type": "varchar",
@@ -533,18 +592,6 @@
         },
         "color": {
           "name": "color",
-          "type": "varchar",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "thumbnail_url": {
-          "name": "thumbnail_url",
-          "type": "varchar",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "banner_url": {
-          "name": "banner_url",
           "type": "varchar",
           "primaryKey": false,
           "notNull": false
@@ -850,6 +897,13 @@
           "primaryKey": false,
           "notNull": true
         },
+        "type": {
+          "name": "type",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'regular'"
+        },
         "user_id": {
           "name": "user_id",
           "type": "varchar",
@@ -886,13 +940,6 @@
           "type": "varchar",
           "primaryKey": false,
           "notNull": false
-        },
-        "type": {
-          "name": "type",
-          "type": "varchar",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'regular'"
         },
         "created_at": {
           "name": "created_at",
@@ -958,8 +1005,8 @@
           "primaryKey": false,
           "notNull": true
         },
-        "entity": {
-          "name": "entity",
+        "entity_type": {
+          "name": "entity_type",
           "type": "varchar",
           "primaryKey": false,
           "notNull": false
@@ -1060,15 +1107,21 @@
           "primaryKey": true,
           "notNull": true
         },
-        "entity": {
-          "name": "entity",
+        "entity_type": {
+          "name": "entity_type",
           "type": "varchar",
           "primaryKey": false,
           "notNull": true,
           "default": "'user'"
         },
-        "hashed_password": {
-          "name": "hashed_password",
+        "name": {
+          "name": "name",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "description": {
+          "name": "description",
           "type": "varchar",
           "primaryKey": false,
           "notNull": false
@@ -1079,14 +1132,32 @@
           "primaryKey": false,
           "notNull": true
         },
-        "unsubscribe_token": {
-          "name": "unsubscribe_token",
+        "thumbnail_url": {
+          "name": "thumbnail_url",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "banner_url": {
+          "name": "banner_url",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "email": {
+          "name": "email",
           "type": "varchar",
           "primaryKey": false,
           "notNull": true
         },
-        "name": {
-          "name": "name",
+        "hashed_password": {
+          "name": "hashed_password",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "unsubscribe_token": {
+          "name": "unsubscribe_token",
           "type": "varchar",
           "primaryKey": false,
           "notNull": true
@@ -1103,12 +1174,6 @@
           "primaryKey": false,
           "notNull": false
         },
-        "email": {
-          "name": "email",
-          "type": "varchar",
-          "primaryKey": false,
-          "notNull": true
-        },
         "language": {
           "name": "language",
           "type": "varchar",
@@ -1116,24 +1181,19 @@
           "notNull": true,
           "default": "'en'"
         },
-        "banner_url": {
-          "name": "banner_url",
-          "type": "varchar",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "thumbnail_url": {
-          "name": "thumbnail_url",
-          "type": "varchar",
-          "primaryKey": false,
-          "notNull": false
-        },
         "newsletter": {
           "name": "newsletter",
           "type": "boolean",
           "primaryKey": false,
           "notNull": true,
           "default": false
+        },
+        "role": {
+          "name": "role",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'user'"
         },
         "created_at": {
           "name": "created_at",
@@ -1171,13 +1231,6 @@
           "type": "varchar",
           "primaryKey": false,
           "notNull": false
-        },
-        "role": {
-          "name": "role",
-          "type": "varchar",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'user'"
         }
       },
       "indexes": {
@@ -1266,18 +1319,18 @@
             "slug"
           ]
         },
-        "users_unsubscribeToken_unique": {
-          "name": "users_unsubscribeToken_unique",
-          "nullsNotDistinct": false,
-          "columns": [
-            "unsubscribe_token"
-          ]
-        },
         "users_email_unique": {
           "name": "users_email_unique",
           "nullsNotDistinct": false,
           "columns": [
             "email"
+          ]
+        },
+        "users_unsubscribeToken_unique": {
+          "name": "users_unsubscribeToken_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "unsubscribe_token"
           ]
         }
       },

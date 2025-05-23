@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import type { Control } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 
-import type { ContextEntity } from 'config';
+import type { ContextEntityType } from 'config';
 import type { UserMenu, UserMenuItem } from '~/modules/me/types';
 import Combobox from '~/modules/ui/combobox';
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
@@ -14,7 +14,7 @@ interface Props {
   name: string;
   label: string;
   collection: keyof UserMenu;
-  type: ContextEntity;
+  type: ContextEntityType;
   placeholder?: string;
   required?: boolean;
   disabled?: boolean;

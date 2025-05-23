@@ -1,7 +1,7 @@
 import { infiniteQueryOptions } from '@tanstack/react-query';
 import { config } from 'config';
 
-import { type GetMembersParams, type GetMembershipInvitationsParams, getMembers, getMembershipInvitations } from '~/modules/memberships/api';
+import { type GetMembersParams, type GetMembershipInvitationsParams, getMembers, getPendingInvitations } from '~/modules/memberships/api';
 
 /**
  * Keys for members related queries. These keys help to uniquely identify different query.
@@ -73,17 +73,17 @@ export const membersQueryOptions = ({
  * @param param.q - Optional search query to filter invited members by (default is an empty string).
  * @param param.sort - Field to sort by (default is 'createdAt').
  * @param param.order - Order of sorting (default is 'desc').
- * @param param.limit - Number of items per page (default is configured in `config.requestLimits.memberInvitations`).
+ * @param param.limit - Number of items per page (default is configured in `config.requestLimits.pendingInvitations`).
  * @returns Infinite query options.
  */
-export const memberInvitationsQueryOptions = ({
+export const pendingInvitationsQueryOptions = ({
   idOrSlug,
   orgIdOrSlug,
   entityType,
   q = '',
   sort: initialSort,
   order: initialOrder,
-  limit = config.requestLimits.memberInvitations,
+  limit = config.requestLimits.pendingInvitations,
 }: GetMembershipInvitationsParams) => {
   const sort = initialSort || 'createdAt';
   const order = initialOrder || 'desc';
@@ -94,7 +94,7 @@ export const memberInvitationsQueryOptions = ({
     queryKey,
     initialPageParam: { page: 0, offset: 0 },
     queryFn: async ({ pageParam: { page, offset }, signal }) =>
-      await getMembershipInvitations({ page, q, sort, order, limit, idOrSlug, orgIdOrSlug, entityType, offset }, signal),
+      await getPendingInvitations({ page, q, sort, order, limit, idOrSlug, orgIdOrSlug, entityType, offset }, signal),
     getNextPageParam: (_lastPage, allPages) => {
       const page = allPages.length;
       const offset = allPages.reduce((acc, page) => acc + page.items.length, 0);

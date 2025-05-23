@@ -1,7 +1,7 @@
 import { type Edge, attachClosestEdge, extractClosestEdge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge';
 import { combine } from '@atlaskit/pragmatic-drag-and-drop/combine';
 import { draggable, dropTargetForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
-import type { Entity } from 'config';
+import type { EntityType } from 'config';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { DropIndicator } from '~/modules/common/drop-indicator';
 import type { UserMenuItem } from '~/modules/me/types';
@@ -11,7 +11,7 @@ import { MenuSheetItemsEdit } from '~/modules/navigation/menu-sheet/items-edit-l
 import { SectionArchiveButton } from '~/modules/navigation/menu-sheet/section-archive-button';
 import { getDraggableItemData } from '~/utils/get-draggable-item-data';
 
-type DragDropData = { item: UserMenuItem; itemType: Entity };
+type DragDropData = { item: UserMenuItem; itemType: EntityType };
 
 interface MenuItemEditWrapperProps {
   item: UserMenuItem;
@@ -38,7 +38,7 @@ export const MenuItemEditWrapper = ({
       return (
         isPageData(sourceData) &&
         sourceData.item.id !== item.id &&
-        sourceData.itemType === item.entity &&
+        sourceData.itemType === item.entityType &&
         unarchiveItems.some((i) => i.id === sourceData.item.id)
       );
     },
@@ -49,7 +49,7 @@ export const MenuItemEditWrapper = ({
   useEffect(() => {
     const element = dragRef.current;
     if (!element) return;
-    const data = getDraggableItemData(item, item.membership.order, 'menuItem', item.entity);
+    const data = getDraggableItemData(item, item.membership.order, 'menuItem', item.entityType);
     return combine(
       draggable({
         element,

@@ -20,7 +20,7 @@ import { useOrganizationUpdateMutation } from '~/modules/organizations/query';
 import type { Organization } from '~/modules/organizations/types';
 import { Button, SubmitButton } from '~/modules/ui/button';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
-import { updateOrganizationBodySchema } from '#/modules/organizations/schema';
+import { organizationUpdateBodySchema } from '#/modules/organizations/schema';
 
 interface Props {
   organization: Organization;
@@ -28,7 +28,7 @@ interface Props {
   sheet?: boolean;
 }
 
-const formSchema = updateOrganizationBodySchema;
+const formSchema = organizationUpdateBodySchema;
 
 type FormValues = z.infer<typeof formSchema>;
 

@@ -48,7 +48,7 @@ export const handleNewInvites = (emails: string[], entity: EntityPage) => {
     };
   });
   queryClient.invalidateQueries({
-    queryKey: membersKeys.table.pending({ idOrSlug: entity.slug, entityType: entity.entity, orgIdOrSlug: entity.organizationId || entity.id }),
+    queryKey: membersKeys.table.pending({ idOrSlug: entity.slug, entityType: entity.entityType, orgIdOrSlug: entity.organizationId || entity.id }),
   });
 };
 
@@ -90,7 +90,7 @@ const InviteEmailForm = ({ entity, dialog: isDialog, children }: Props) => {
       return inviteMembers({
         ...values,
         idOrSlug: entity.id,
-        entityType: entity.entity,
+        entityType: entity.entityType,
         orgIdOrSlug: entity.organizationId || entity.id,
       } as InviteMemberProps);
     },
@@ -133,7 +133,7 @@ const InviteEmailForm = ({ entity, dialog: isDialog, children }: Props) => {
             <FormItem className="flex-row ml-3 gap-4 items-center">
               <FormLabel>{t('common:role')}</FormLabel>
               <FormControl>
-                <SelectRoleRadio value={value} entityType={entity?.entity} onChange={onChange} />
+                <SelectRoleRadio value={value} entityType={entity?.entityType} onChange={onChange} />
               </FormControl>
               <FormMessage />
             </FormItem>

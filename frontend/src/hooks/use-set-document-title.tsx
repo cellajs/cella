@@ -25,6 +25,13 @@ export const useSetDocumentTitle = () => {
 
     void Promise.all(breadcrumbPromises).then((titles) => {
       const append = isPWAInstalled() ? '' : (titles.length && ' · ') + config.name;
+
+      // If no titles are found, set the document title to the app name
+      if (titles.length === 0) {
+        document.title = config.name;
+        return;
+      }
+
       document.title = titles.join(' › ') + append;
     });
   }, [matches]);

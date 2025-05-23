@@ -17,7 +17,7 @@ import { Badge } from '~/modules/ui/badge';
 import { Button, SubmitButton } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
 import { handleNewInvites } from '~/modules/users/invite-email-form';
-import { UserSuggestionCombobox } from '~/modules/users/suggestions-combobox';
+import { UserCombobox } from '~/modules/users/user-combobox';
 
 interface Props {
   entity?: EntityPage;
@@ -60,7 +60,7 @@ const InviteSearchForm = ({ entity, dialog: isDialog }: Props) => {
       return inviteMembers({
         ...values,
         idOrSlug: entity.id,
-        entityType: entity.entity || 'organization',
+        entityType: entity.entityType || 'organization',
         orgIdOrSlug: entity.organizationId || entity.id,
       } as InviteMemberProps);
     },
@@ -86,7 +86,7 @@ const InviteSearchForm = ({ entity, dialog: isDialog }: Props) => {
           render={({ field: { onChange, value } }) => (
             <FormItem>
               <FormControl>
-                <UserSuggestionCombobox value={value} onChange={onChange} entity={entity} />
+                <UserCombobox value={value} onChange={onChange} entity={entity} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -99,7 +99,7 @@ const InviteSearchForm = ({ entity, dialog: isDialog }: Props) => {
             <FormItem className="flex-row gap-4 items-center">
               <FormLabel>{t('common:role')}:</FormLabel>
               <FormControl>
-                <SelectRoleRadio entityType={entity.entity} value={value} onChange={onChange} />
+                <SelectRoleRadio entityType={entity.entityType} value={value} onChange={onChange} />
               </FormControl>
               <FormMessage />
             </FormItem>

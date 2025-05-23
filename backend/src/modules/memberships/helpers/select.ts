@@ -1,30 +1,35 @@
 import { config } from 'config';
+import type { z } from 'zod';
 import { membershipsTable } from '#/db/schema/memberships';
-import type { GeneratedColumn } from '#/db/types';
-import { type ContextEntityIdFields, entityIdFields } from '#/entity-config';
+import type { ContextEntityTypeIdFields, GeneratedColumn } from '#/db/types';
+import type { membershipSummarySchema } from '../schema';
 
-// Dynamic part of the select based on contextEntityTypes that you can set in config
-const membershipDynamicSelect = config.contextEntityTypes
+export type MembershipSummary = z.infer<typeof membershipSummarySchema>;
+
+/** Add additional entity ID fields based on the context entity types, excluding 'organization' */
+const additionalEntityIdFields = config.contextEntityTypes
   .filter((e) => e !== 'organization')
   .reduce(
     (fields, entityType) => {
-      const fieldName = entityIdFields[entityType];
+      const fieldName = config.entityIdFields[entityType];
       // Ensure the field exists on the table
       if (Object.prototype.hasOwnProperty.call(membershipsTable, fieldName)) fields[fieldName] = membershipsTable[fieldName];
       return fields;
     },
-    {} as Record<Exclude<ContextEntityIdFields, 'organizationId'>, GeneratedColumn>,
+    {} as Record<Exclude<ContextEntityTypeIdFields, 'organizationId'>, GeneratedColumn>,
   );
 
-// Merge the static and dynamic select fields
-export const membershipSelect = {
+/**
+ * Select for membership summary to embed membership in an entity.
+ */
+export const membershipSummarySelect = {
   id: membershipsTable.id,
   role: membershipsTable.role,
   archived: membershipsTable.archived,
   muted: membershipsTable.muted,
   order: membershipsTable.order,
-  type: membershipsTable.type,
+  contextType: membershipsTable.contextType,
   userId: membershipsTable.userId,
   organizationId: membershipsTable.organizationId,
-  ...membershipDynamicSelect,
+  ...additionalEntityIdFields,
 };

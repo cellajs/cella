@@ -97,7 +97,7 @@ export const useOrganizationCreateMutation = () => {
       const mutateCache = useMutateQueryData(organizationsKeys.table.base());
 
       mutateCache.create([createdOrganization]);
-      addMenuItem(createdOrganization, 'organizations');
+      addMenuItem(createdOrganization, 'organization');
     },
   });
 };

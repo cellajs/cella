@@ -2,11 +2,11 @@ import { uploadTemplates } from '#/lib/transloadit/templates';
 
 import { onlineManager } from '@tanstack/react-query';
 import { t } from 'i18next';
-import type { UploadedUppyFile } from '~/lib/imado/types';
 import AttachmentsCarousel, { type CarouselItemData } from '~/modules/attachments/attachments-carousel';
 import type { AttachmentToInsert } from '~/modules/attachments/types';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { toaster } from '~/modules/common/toaster';
+import type { UploadedUppyFile } from '~/modules/common/uploader/types';
 import { nanoid } from '~/utils/nanoid';
 
 interface OpenAttachmentDialogParams {

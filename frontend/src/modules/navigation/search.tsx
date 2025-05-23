@@ -1,8 +1,8 @@
-import type { entitySuggestionSchema } from '#/modules/entities/schema';
+import type { entityListItemSchema } from '#/modules/entities/schema';
 
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
-import { type Entity, config } from 'config';
+import { type EntityType, config } from 'config';
 import { History, Search, User, X } from 'lucide-react';
 import { Fragment, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -16,16 +16,16 @@ import { entitiesQueryOptions } from '~/modules/entities/query';
 import { Button } from '~/modules/ui/button';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandSeparator } from '~/modules/ui/command';
 import { ScrollArea } from '~/modules/ui/scroll-area';
-import { getEntityRoute, suggestionSections } from '~/nav-config';
+import { entitySearchSections, getEntityRoute } from '~/nav-config';
 import { useNavigationStore } from '~/store/navigation';
 import { Badge } from '../ui/badge';
 
-export type SuggestionType = z.infer<typeof entitySuggestionSchema>;
+export type EntityListItemType = z.infer<typeof entityListItemSchema>;
 
-export interface SuggestionSection {
+export interface EntitySearchSection {
   id: string;
   label: string;
-  type: Entity;
+  type: EntityType;
 }
 
 export const AppSearch = () => {
@@ -68,13 +68,13 @@ export const AppSearch = () => {
     });
   };
 
-  const { data: suggestions, isFetching } = useQuery(entitiesQueryOptions({ q: searchValue }));
+  const { data: items, isFetching } = useQuery(entitiesQueryOptions({ q: searchValue }));
 
-  const onSelectSuggestion = (suggestion: SuggestionType) => {
+  const onSelectItem = (item: EntityListItemType) => {
     // Update recent searches with the search value
     updateRecentSearches(searchValue);
 
-    const { to, params, search } = getEntityRoute(suggestion);
+    const { to, params, search } = getEntityRoute(item);
     navigate({ to, params, search, resetScroll: false });
 
     useDialoger.getState().remove();
@@ -82,7 +82,7 @@ export const AppSearch = () => {
 
   useEffect(() => {
     if (scrollAreaRef.current) scrollAreaRef.current.scrollTop = 0;
-  }, [suggestions]);
+  }, [items]);
 
   return (
     <Command className="rounded-lg shadow-2xl" shouldFilter={false}>
@@ -106,10 +106,10 @@ export const AppSearch = () => {
           setSearchValue(searchValue);
         }}
       />
-      <ScrollArea id={'suggestion-search'} ref={scrollAreaRef} className="sm:h-[40vh] overflow-y-auto">
+      <ScrollArea id={'item-search'} ref={scrollAreaRef} className="sm:h-[40vh] overflow-y-auto">
         {
           <CommandList className="h-full">
-            {suggestions.total === 0 && (
+            {items.total === 0 && (
               <>
                 {!!searchValue.length && !isFetching && (
                   <CommandEmpty className="h-full sm:h-[36vh]">
@@ -150,36 +150,30 @@ export const AppSearch = () => {
                 )}
               </>
             )}
-            {suggestions.total > 0 &&
-              suggestionSections.map((section) => {
-                const filteredSuggestions = suggestions.items.filter((el) => el.entity === section.type);
+            {items.total > 0 &&
+              entitySearchSections.map((section) => {
+                const filteredItems = items.items.filter((el) => el.entityType === section.type);
                 // Skip rendering if no items match the section type
-                if (filteredSuggestions.length === 0) return null;
+                if (filteredItems.length === 0) return null;
 
                 return (
                   <Fragment key={section.id}>
                     <CommandSeparator />
                     <CommandGroup className="">
                       <StickyBox className="z-10 px-2 py-1.5 text-xs font-medium text-muted-foreground bg-popover">{t(section.label)}</StickyBox>
-                      {filteredSuggestions.map((suggestion: SuggestionType) => {
+                      {filteredItems.map((item: EntityListItemType) => {
                         return (
                           <CommandItem
-                            data-already-member={section.type !== 'user' && suggestion.membership !== null}
-                            key={suggestion.id}
-                            disabled={section.type !== 'user' && suggestion.membership === null}
+                            data-already-member={section.type !== 'user' && item.membership !== null}
+                            key={item.id}
+                            disabled={section.type !== 'user' && item.membership === null}
                             className="w-full justify-between group"
-                            onSelect={() => onSelectSuggestion(suggestion)}
+                            onSelect={() => onSelectItem(item)}
                           >
                             <div className="flex space-x-2 items-center outline-0 ring-0 group">
-                              <AvatarWrap
-                                type={section.type}
-                                className="h-8 w-8"
-                                id={suggestion.id}
-                                name={suggestion.name}
-                                url={suggestion.thumbnailUrl}
-                              />
+                              <AvatarWrap type={section.type} className="h-8 w-8" id={item.id} name={item.name} url={item.thumbnailUrl} />
                               <span className="group-data-[already-member=true]:hover:underline underline-offset-4 truncate font-medium">
-                                {suggestion.name}
+                                {item.name}
                               </span>
                             </div>
 

@@ -8,7 +8,7 @@ export const MenuSheetItemsEdit = ({ data, shownOption }: { data: UserMenuItem[]
   const { t } = useTranslation();
   const { hideSubmenu } = useNavigationStore();
   const [submenuVisibility, setSubmenuVisibility] = useState<Record<string, boolean>>({});
-  const entityType = data[0].entity;
+  const entityType = data[0].entityType;
 
   if (data.length === 0) {
     return <li className="py-2 text-muted-foreground text-sm text-light text-center">{t('common:no_resource_yet', { resource: entityType })}</li>;

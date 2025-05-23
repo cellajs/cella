@@ -10,7 +10,6 @@ import {
   deleteAttachments,
   updateAttachment,
 } from '~/modules/attachments/api';
-import { LocalFileStorage } from '~/modules/attachments/local-file-storage';
 import { attachmentsKeys } from '~/modules/attachments/query/options';
 import type { AttachmentContextProp, AttachmentInfiniteQueryData, AttachmentQueryData } from '~/modules/attachments/query/types';
 import type { Attachment } from '~/modules/attachments/types';
@@ -28,7 +27,7 @@ const handleError = (action: 'create' | 'update' | 'delete' | 'deleteMany', cont
     for (const [queryKey, previousData] of context) queryClient.setQueryData(queryKey, previousData);
   }
 
-  if (action === 'deleteMany') toast.error(t('error:delete_resources', { resource: t('common:attachments') }));
+  if (action === 'deleteMany') toast.error(t('error:delete_resources', { resources: t('common:attachments') }));
   else toast.error(t(`error:${action}_resource`, { resource: t('common:attachment') }));
 };
 
@@ -59,7 +58,7 @@ export const useAttachmentCreateMutation = () =>
           convertedContentType: attachment.convertedContentType ?? null,
           name: attachment.filename.split('.').slice(0, -1).join('.'),
           id: optimisticId,
-          entity: 'attachment',
+          entityType: 'attachment',
           createdAt: new Date().toISOString(),
           createdBy: null,
           modifiedAt: new Date().toISOString(),
@@ -206,8 +205,6 @@ export const useAttachmentDeleteMutation = () =>
     mutationFn: deleteAttachments,
     onMutate: async (variables) => {
       const { ids, orgIdOrSlug } = variables;
-
-      LocalFileStorage.removeFiles(ids); // delete attachments from indexedDB also
 
       const context: AttachmentContextProp[] = []; // previous query data for rollback if an error occurs
 

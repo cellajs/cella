@@ -1,7 +1,6 @@
-import { Link, Text } from 'jsx-email';
-
 import { config } from 'config';
-import { i18n } from '#/lib/i18n';
+import i18n from 'i18next';
+import { Link, Text } from 'jsx-email';
 
 export const Footer = () => (
   <Text

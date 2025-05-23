@@ -3,26 +3,25 @@ import { MemberInviteEmail, type MemberInviteEmailProps } from '../../../emails/
 import { OpenAPIHono } from '@hono/zod-openapi';
 import { config } from 'config';
 import { and, count, eq, ilike, inArray, isNotNull, isNull, or } from 'drizzle-orm';
+import i18n from 'i18next';
 import { db } from '#/db/db';
 import { emailsTable } from '#/db/schema/emails';
 import { membershipsTable } from '#/db/schema/memberships';
 import { tokensTable } from '#/db/schema/tokens';
 import { usersTable } from '#/db/schema/users';
-import { entityIdFields } from '#/entity-config';
 import { type Env, getContextMemberships, getContextOrganization, getContextUser } from '#/lib/context';
 import { resolveEntity } from '#/lib/entity';
 import { type ErrorType, createError, errorResponse } from '#/lib/errors';
-import { i18n } from '#/lib/i18n';
 import { mailer } from '#/lib/mailer';
 import { sendSSEToUsers } from '#/lib/sse';
 import { logEvent } from '#/middlewares/logger/log-event';
 import { getAssociatedEntityDetails, insertMembership } from '#/modules/memberships/helpers';
-import { membershipSelect } from '#/modules/memberships/helpers/select';
-import membershipsRouteConfig from '#/modules/memberships/routes';
+import { membershipSummarySelect } from '#/modules/memberships/helpers/select';
+import membershipRoutes from '#/modules/memberships/routes';
 import { getUsersByConditions } from '#/modules/users/helpers/get-user-by';
 import { userSelect } from '#/modules/users/helpers/select';
 import { getValidEntity } from '#/permissions/get-valid-entity';
-import defaultHook from '#/utils/default-hook';
+import { defaultHook } from '#/utils/default-hook';
 import { getIsoDate } from '#/utils/iso-date';
 import { nanoid } from '#/utils/nanoid';
 import { getOrderColumn } from '#/utils/order-column';
@@ -33,21 +32,23 @@ import { TimeSpan, createDate } from '#/utils/time-span';
 // Set default hook to catch validation errors
 const app = new OpenAPIHono<Env>({ defaultHook });
 
-const membershipsRoutes = app
+const membershipRouteHandlers = app
   /*
    * Create memberships (invite members) for an entity such as an organization
    */
-  .openapi(membershipsRouteConfig.createMemberships, async (ctx) => {
+  .openapi(membershipRoutes.createMemberships, async (ctx) => {
     const { emails, role } = ctx.req.valid('json');
     const { idOrSlug, entityType: passedEntityType } = ctx.req.valid('query');
 
     // Validate entity existence and check user permission for updates
-    const { entity, error } = await getValidEntity(ctx, passedEntityType, 'update', idOrSlug);
-    if (error) return ctx.json({ success: false, error });
+    const result = await getValidEntity(ctx, passedEntityType, 'update', idOrSlug);
+    if (result.error) return ctx.json({ success: false, error: result.error });
+
+    const { entity } = result;
 
     // Extract entity details
-    const { entity: entityType, id: entityId } = entity;
-    const targetEntityIdField = entityIdFields[entityType];
+    const { entityType, id: entityId } = entity;
+    const targetEntityIdField = config.entityIdFields[entityType];
 
     const user = getContextUser();
     const organization = getContextOrganization();
@@ -57,7 +58,7 @@ const membershipsRoutes = app
     const currentOrgMemberships = await db
       .select()
       .from(membershipsTable)
-      .where(and(eq(membershipsTable.type, 'organization'), eq(membershipsTable.organizationId, organization.id)));
+      .where(and(eq(membershipsTable.contextType, 'organization'), eq(membershipsTable.organizationId, organization.id)));
 
     // Check create restrictions
     if (membersRestrictions !== 0 && currentOrgMemberships.length + emails.length > membersRestrictions) {
@@ -142,7 +143,7 @@ const membershipsRoutes = app
     }
 
     // Stop if no recipients
-    if (emailsWithIdToInvite.length === 0) return ctx.json({ success: true }, 200); // Stop if no recipients to send invites
+    if (emailsWithIdToInvite.length === 0) return errorResponse(ctx, 400, 'no_recipients', 'warn'); // Stop if no recipients to send invites
 
     // Generate invitation tokens
     const tokens = emailsWithIdToInvite.map(({ email, userId }) => ({
@@ -154,7 +155,7 @@ const membershipsRoutes = app
       expiresAt: createDate(new TimeSpan(7, 'd')),
       role,
       userId,
-      entity: entityType,
+      entityType: entityType,
       [targetEntityIdField]: entityId,
       ...(associatedEntity && { [associatedEntity.field]: associatedEntity.id }), // Include associated entity if applicable
       ...(entityType !== 'organization' && { organizationId: organization.id }), // Add org ID if not an organization
@@ -188,7 +189,7 @@ const membershipsRoutes = app
       subject: i18n.t('backend:email.member_invite.subject', {
         lng: organization.defaultLanguage,
         appName: config.name,
-        entity: organization.name,
+        entityType: organization.name,
       }),
       lng: organization.defaultLanguage,
     };
@@ -203,21 +204,23 @@ const membershipsRoutes = app
    * Delete memberships to remove users from entity
    * When user is allowed to delete entity, they can delete memberships too
    */
-  .openapi(membershipsRouteConfig.deleteMemberships, async (ctx) => {
+  .openapi(membershipRoutes.deleteMemberships, async (ctx) => {
     const { entityType, idOrSlug } = ctx.req.valid('query');
     const { ids } = ctx.req.valid('json');
 
-    const { entity, error } = await getValidEntity(ctx, entityType, 'delete', idOrSlug);
-    if (error) return ctx.json({ success: false, errors: [error] }, 200);
+    const result = await getValidEntity(ctx, entityType, 'delete', idOrSlug);
+    if (result.error) return ctx.json({ success: false, errors: [result.error] }, 200);
 
-    const entityIdField = entityIdFields[entityType];
+    const { entity } = result;
+
+    const entityIdField = config.entityIdFields[entityType];
 
     // Convert ids to an array
     const membershipIds = Array.isArray(ids) ? ids : [ids];
 
     const errors: ErrorType[] = [];
 
-    const filters = [eq(membershipsTable.type, entityType), eq(membershipsTable[entityIdField], entity.id)];
+    const filters = [eq(membershipsTable.contextType, entityType), eq(membershipsTable[entityIdField], entity.id)];
 
     // Get target memberships
     const targets = await db
@@ -247,7 +250,7 @@ const membershipsRoutes = app
     for (const targetMembership of targets) {
       // Send the event to the user if they are a member of the organization
       const memberIds = targets.map((el) => el.userId);
-      sendSSEToUsers(memberIds, 'remove_entity', { id: entity.id, entity: entity.entity });
+      sendSSEToUsers(memberIds, 'remove_entity', { id: entity.id, entityType: entity.entityType });
 
       logEvent('Member deleted', { membership: targetMembership.id });
     }
@@ -257,7 +260,7 @@ const membershipsRoutes = app
   /*
    * Update user membership
    */
-  .openapi(membershipsRouteConfig.updateMembership, async (ctx) => {
+  .openapi(membershipRoutes.updateMembership, async (ctx) => {
     const { id: membershipId } = ctx.req.valid('param');
     const { role, archived, muted, order } = ctx.req.valid('json');
 
@@ -276,8 +279,8 @@ const membershipsRoutes = app
 
     if (!membershipToUpdate) return errorResponse(ctx, 404, 'not_found', 'warn', 'user', { membership: membershipId });
 
-    const updatedType = membershipToUpdate.type;
-    const updatedEntityIdField = entityIdFields[updatedType];
+    const updatedType = membershipToUpdate.contextType;
+    const updatedEntityIdField = config.entityIdFields[updatedType];
 
     const membershipContextId = membershipToUpdate[updatedEntityIdField];
     if (!membershipContextId) return errorResponse(ctx, 404, 'not_found', 'warn', updatedType);
@@ -291,7 +294,7 @@ const membershipsRoutes = app
 
     // If archived changed, set lowest order in relevant memberships
     if (archived !== undefined && archived !== membershipToUpdate.archived) {
-      const relevantMemberships = memberships.filter((membership) => membership.type === updatedType && membership.archived === archived);
+      const relevantMemberships = memberships.filter((membership) => membership.contextType === updatedType && membership.archived === archived);
 
       const lastOrderMembership = relevantMemberships.sort((a, b) => b.order - a.order)[0];
 
@@ -328,20 +331,20 @@ const membershipsRoutes = app
   /*
    * Get members by entity id/slug and type
    */
-  .openapi(membershipsRouteConfig.getMembers, async (ctx) => {
+  .openapi(membershipRoutes.getMembers, async (ctx) => {
     const { idOrSlug, entityType, q, sort, order, offset, limit, role } = ctx.req.valid('query');
 
     const entity = await resolveEntity(entityType, idOrSlug);
     if (!entity) return errorResponse(ctx, 404, 'not_found', 'warn', entityType);
 
-    const entityIdField = entityIdFields[entity.entity];
+    const entityIdField = config.entityIdFields[entity.entityType];
 
     // Build search filters
     const $or = q ? [ilike(usersTable.name, prepareStringForILikeFilter(q)), ilike(usersTable.email, prepareStringForILikeFilter(q))] : [];
 
     const membersFilters = [
       eq(membershipsTable[entityIdField], entity.id),
-      eq(membershipsTable.type, entityType),
+      eq(membershipsTable.contextType, entityType),
       isNull(membershipsTable.tokenId),
       isNotNull(membershipsTable.activatedAt),
     ];
@@ -365,7 +368,7 @@ const membershipsRoutes = app
     const membersQuery = db
       .select({
         user: userSelect,
-        membership: membershipSelect,
+        membership: membershipSummarySelect,
       })
       .from(usersTable)
       .innerJoin(membershipsTable, eq(membershipsTable.userId, usersTable.id))
@@ -381,16 +384,18 @@ const membershipsRoutes = app
   /*
    * Get pending membership invitations by entity id/slug and type
    */
-  .openapi(membershipsRouteConfig.getMembershipInvitations, async (ctx) => {
+  .openapi(membershipRoutes.getPendingInvitations, async (ctx) => {
     const { idOrSlug, entityType, sort, order, offset, limit } = ctx.req.valid('query');
 
     // Scope request to organization
     const organization = getContextOrganization();
 
-    const { entity, error } = await getValidEntity(ctx, entityType, 'read', idOrSlug);
-    if (error) return ctx.json({ success: false, error }, 400);
+    const result = await getValidEntity(ctx, entityType, 'read', idOrSlug);
+    if (result.error) return ctx.json({ success: false, error: result.error }, 400);
 
-    const entityIdField = entityIdFields[entity.entity];
+    const { entity } = result;
+
+    const entityIdField = config.entityIdFields[entity.entityType];
 
     const invitedMemberSelect = {
       id: tokensTable.id,
@@ -404,13 +409,13 @@ const membershipsRoutes = app
 
     const orderColumn = getOrderColumn(invitedMemberSelect, sort, tokensTable.createdAt, order);
 
-    const memberInvitationsQuery = db
+    const pendingInvitationsQuery = db
       .select(invitedMemberSelect)
       .from(tokensTable)
       .where(
         and(
           eq(tokensTable.type, 'invitation'),
-          eq(tokensTable.entity, entity.entity),
+          eq(tokensTable.entityType, entity.entityType),
           eq(tokensTable[entityIdField], entity.id),
           eq(tokensTable.organizationId, organization.id),
         ),
@@ -418,11 +423,11 @@ const membershipsRoutes = app
       .leftJoin(usersTable, eq(usersTable.id, tokensTable.userId))
       .orderBy(orderColumn);
 
-    const [{ total }] = await db.select({ total: count() }).from(memberInvitationsQuery.as('invites'));
+    const [{ total }] = await db.select({ total: count() }).from(pendingInvitationsQuery.as('invites'));
 
-    const items = await memberInvitationsQuery.limit(Number(limit)).offset(Number(offset));
+    const items = await pendingInvitationsQuery.limit(Number(limit)).offset(Number(offset));
 
     return ctx.json({ success: true, data: { items, total } }, 200);
   });
 
-export default membershipsRoutes;
+export default membershipRouteHandlers;

@@ -1,5 +1,14 @@
 export type TimeSpanUnit = 'ms' | 's' | 'm' | 'h' | 'd' | 'w';
 
+/**
+ * Time span to represent a duration of time.
+ * @param value - The value of the time span.
+ * @param unit - The unit of the time span. Can be 'ms', 's', 'm', 'h', 'd', or 'w'.
+ * @example
+ * const timeSpan = new TimeSpan(1, 'h');
+ * console.log(timeSpan.milliseconds()); // 3600000
+ * console.log(timeSpan.seconds()); // 3600
+ */
 export class TimeSpan {
   constructor(value: number, unit: TimeSpanUnit) {
     this.value = value;
@@ -37,12 +46,9 @@ export class TimeSpan {
   }
 }
 
-// Create a date from a time span
+/**
+ * Create a date from a time span
+ */
 export function createDate(timeSpan: TimeSpan): Date {
   return new Date(Date.now() + timeSpan.milliseconds());
-}
-
-// Check if a date is NOT within now and expiration date
-export function isExpiredDate(date: Date): boolean {
-  return !(Date.now() < date.getTime());
 }

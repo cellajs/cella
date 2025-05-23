@@ -25,19 +25,22 @@ export const env = createEnv({
 
     ARGON_SECRET: z.string(),
     COOKIE_SECRET: z.string(),
+
     ELECTRIC_API_SECRET: z.string(),
+
     REMOTE_SYSTEM_ACCESS_IP: z.string(),
 
     NOVU_API_KEY: z.string().optional(),
     NOVU_SLACK_WEBHOOK: z.string().optional(),
 
     SEND_ALL_TO_EMAIL: z.string().optional(),
-    SENDGRID_API_KEY: z.string().optional(),
+    BREVO_API_KEY: z.string().optional(),
 
     PADDLE_API_KEY: z.string().optional(),
     PADDLE_WEBHOOK_KEY: z.string().optional(),
 
-    LOGTAIL_TOKEN: z.string().optional(),
+    BETTERSTACK_SOURCE_TOKEN: z.string().optional(),
+    BETTERSTACK_INGESTING_HOST: z.string().optional(),
 
     GITHUB_CLIENT_ID: z.string().optional(),
     GITHUB_CLIENT_SECRET: z.string().optional(),
@@ -49,6 +52,7 @@ export const env = createEnv({
 
     TRANSLOADIT_KEY: z.string().optional(),
     TRANSLOADIT_SECRET: z.string().optional(),
+
     S3_ACCESS_KEY_ID: z.string().default(''),
     S3_ACCESS_KEY_SECRET: z.string().default(''),
 

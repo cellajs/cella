@@ -45,7 +45,7 @@ export const MembersTableBar = ({
 
   const isFiltered = role !== undefined || !!q;
   const isAdmin = entity.membership?.role === 'admin';
-  const entityType = entity.entity;
+  const entityType = entity.entityType;
 
   // Clear selected rows on search
   const onSearch = (searchString: string) => {
@@ -69,7 +69,7 @@ export const MembersTableBar = ({
       <RemoveMembersForm
         organizationId={entity.organizationId || entity.id}
         entityIdOrSlug={entity.slug}
-        entityType={entity.entity}
+        entityType={entity.entityType}
         dialog
         members={selected}
         callback={clearSelection}
@@ -83,7 +83,7 @@ export const MembersTableBar = ({
           <Trans
             i18nKey="common:confirm.remove_members"
             values={{
-              entity: entity.entity,
+              entityType: entity.entityType,
               emails: selected.map((member) => member.email).join(', '),
             }}
           />
@@ -116,7 +116,7 @@ export const MembersTableBar = ({
       limit,
       idOrSlug: entity.slug,
       orgIdOrSlug: entity.organizationId || entity.id,
-      entityType: entity.entity,
+      entityType: entity.entityType,
     });
     return items;
   };

@@ -1,5 +1,5 @@
 import { useMutation } from '@tanstack/react-query';
-import { type Entity, config } from 'config';
+import { type EntityType, config } from 'config';
 import { Undo } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { type Control, useFormContext, useWatch } from 'react-hook-form';
@@ -19,7 +19,7 @@ interface SlugFieldProps {
   nameValue?: string;
   description?: string;
   previousSlug?: string;
-  type: Entity;
+  type: EntityType;
 }
 
 export const SlugFormField = ({ control, label, previousSlug, description, nameValue, type }: SlugFieldProps) => {

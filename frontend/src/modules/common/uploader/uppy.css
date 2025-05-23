@@ -1,0 +1,15 @@
+.uppy-Container .uppy-DashboardContent-back,
+.uppy-Container .uppy-DashboardContent-save,
+.uppy-Container .uppy-Dashboard-browse,
+.uppy-Container .uppy-Dashboard-link {
+  color: hsl(var(--primary)); /* Replace with your desired color */
+}
+
+.uppy-Container .uppy-Dashboard-browse:focus,
+.uppy-Container .uppy-Dashboard-browse:hover {
+  border-bottom: 0.125rem solid hsl(var(--primary));
+}
+
+.uppy-DashboardTab-btn {
+  display: flex;
+}

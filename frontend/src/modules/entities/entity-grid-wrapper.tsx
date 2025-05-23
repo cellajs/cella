@@ -1,21 +1,21 @@
-import { type PageEntity, config } from 'config';
+import { type PageEntityType, config } from 'config';
 import { useState } from 'react';
 import type { z } from 'zod';
 import useSearchParams from '~/hooks/use-search-params';
 import { EntityGrid } from '~/modules/entities/entity-grid';
 import { EntityGridBar } from '~/modules/entities/entity-grid-bar';
-import type { entitiesQuerySchema } from '#/modules/entities/schema';
+import type { entityListQuerySchema } from '#/modules/entities/schema';
 
 const LIMIT = config.requestLimits.default;
 
-export type EntitySearch = Omit<z.infer<typeof entitiesQuerySchema>, 'removeSelf'>;
+export type EntitySearch = Omit<z.infer<typeof entityListQuerySchema>, 'removeSelf'>;
 
 // TODO replace with real data for GET entities
 const entities = Array.from({ length: 19 }).map((_, i) => ({
   id: `${i + 1}_id`,
   slug: `project-${i + 1}`,
   name: `Project ${i + 1}`,
-  entity: 'organization' as const,
+  entityType: 'organization' as const,
   description: `This is a mock description for project ${i + 1}.`,
   bannerUrl: '',
   membership: null,
@@ -26,14 +26,14 @@ const entities = Array.from({ length: 19 }).map((_, i) => ({
     slug: `user-${i + 1}-${j + 1}`,
     thumbnailUrl: `https://i.pravatar.cc/150?img=${(i + j) % 70}`,
     email: 'test@test.nl',
-    entity: 'user' as const,
+    entityType: 'user' as const,
     bannerUrl: '',
   })),
 }));
 
 export interface Props {
   isSheet?: boolean;
-  entityType: PageEntity;
+  entityType: PageEntityType;
   userId?: string;
 }
 

@@ -5,10 +5,10 @@ import { db } from '#/db/db';
 import { type RequestModel, requestsTable } from '#/db/schema/requests';
 import type { Env } from '#/lib/context';
 import { errorResponse } from '#/lib/errors';
-import { sendSlackMessage } from '#/lib/notification';
-import requestsRouteConfig from '#/modules/requests/routes';
+import { sendSlackMessage } from '#/lib/notifications';
+import requestRoutes from '#/modules/requests/routes';
 import { getUserBy } from '#/modules/users/helpers/get-user-by';
-import defaultHook from '#/utils/default-hook';
+import { defaultHook } from '#/utils/default-hook';
 import { getOrderColumn } from '#/utils/order-column';
 import { prepareStringForILikeFilter } from '#/utils/sql';
 
@@ -18,11 +18,11 @@ const uniqueRequests: RequestModel['type'][] = ['waitlist', 'newsletter'];
 // Set default hook to catch validation errors
 const app = new OpenAPIHono<Env>({ defaultHook });
 
-const requestsRoutes = app
+const requestRouteHandlers = app
   /*
    *  Create request
    */
-  .openapi(requestsRouteConfig.createRequest, async (ctx) => {
+  .openapi(requestRoutes.createRequest, async (ctx) => {
     const { email, type, message } = ctx.req.valid('json');
 
     const loweredEmail = email.toLowerCase();
@@ -62,7 +62,7 @@ const requestsRoutes = app
   /*
    *  Get list of requests for system admins
    */
-  .openapi(requestsRouteConfig.getRequests, async (ctx) => {
+  .openapi(requestRoutes.getRequests, async (ctx) => {
     const { q, sort, order, offset, limit } = ctx.req.valid('query');
 
     const filter: SQL | undefined = q ? ilike(requestsTable.email, prepareStringForILikeFilter(q)) : undefined;
@@ -95,7 +95,7 @@ const requestsRoutes = app
   /*
    *  Delete requests
    */
-  .openapi(requestsRouteConfig.deleteRequests, async (ctx) => {
+  .openapi(requestRoutes.deleteRequests, async (ctx) => {
     const { ids } = ctx.req.valid('json');
 
     // Convert the ids to an array
@@ -107,4 +107,4 @@ const requestsRoutes = app
     return ctx.json({ success: true }, 200);
   });
 
-export default requestsRoutes;
+export default requestRouteHandlers;

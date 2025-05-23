@@ -1,5 +1,8 @@
 import { clearDb } from './manage-db';
 
+/**
+ * Wipes the entire database, can't be used in production.
+ */
 clearDb()
   .catch((error) => {
     console.error(error);

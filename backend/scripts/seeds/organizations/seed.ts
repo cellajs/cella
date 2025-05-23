@@ -28,10 +28,7 @@ export const organizationsSeed = async () => {
 
   const organizationsInTable = await db.select().from(organizationsTable).limit(1);
 
-  if (organizationsInTable.length > 0) {
-    console.info('Organizations table is not empty, skipping seed');
-    return;
-  }
+  if (organizationsInTable.length > 0) return console.warn('Organizations table is not empty, skipping seed');
 
   const organizationsUniqueEnforcer = new UniqueEnforcer();
 
@@ -122,7 +119,7 @@ export const organizationsSeed = async () => {
         id: nanoid(),
         userId: user.id,
         organizationId: organization.id,
-        type: 'organization',
+        contextType: 'organization',
         role: faker.helpers.arrayElement(['admin', 'member']),
         createdAt: pastIsoDate(),
         order: organizationsCount * 10,
@@ -138,7 +135,7 @@ export const organizationsSeed = async () => {
         id: nanoid(),
         userId: adminUser.id,
         organizationId: organization.id,
-        type: 'organization',
+        contextType: 'organization',
         archived: faker.datatype.boolean(0.5),
         role: faker.helpers.arrayElement(['admin', 'member']),
         createdAt: pastIsoDate(),

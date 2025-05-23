@@ -1,31 +1,31 @@
 import { Link } from '@tanstack/react-router';
-import { type Entity, config } from 'config';
+import { type EntityType, config } from 'config';
 import { ChevronRight, Home, Loader2 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import useScrollTo from '~/hooks/use-scroll-to';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { PageCover } from '~/modules/common/page/page-cover';
-import type { LimitedEntity } from '~/modules/entities/types';
+import type { EntitySummary } from '~/modules/entities/types';
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbSeparator } from '~/modules/ui/breadcrumb';
 import { baseEntityRoutes } from '~/nav-config';
 
 // PageHeaderProps Interface
 interface PageHeaderProps {
   title?: string | null;
-  type: Entity;
+  type: EntityType;
   id: string;
   isAdmin: boolean;
   thumbnailUrl?: string | null;
   bannerUrl?: string | null;
   panel?: React.ReactNode;
-  parent?: { id: string; fetchFunc: (idOrSlug: string) => Promise<LimitedEntity> };
+  parent?: { id: string; fetchFunc: (idOrSlug: string) => Promise<EntitySummary> };
   disableScroll?: boolean;
   coverUpdateCallback: (bannerUrl: string) => void;
 }
 
 // PageHeader Component
 const PageHeader = ({ title, id, isAdmin, thumbnailUrl, bannerUrl, type, panel, parent, disableScroll, coverUpdateCallback }: PageHeaderProps) => {
-  const [fetchedParent, setFetchedParent] = useState<LimitedEntity | null>(null);
+  const [fetchedParent, setFetchedParent] = useState<EntitySummary | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<boolean>(false);
   const scrollToRef = useRef<HTMLDivElement>(null);
@@ -86,7 +86,7 @@ const PageHeader = ({ title, id, isAdmin, thumbnailUrl, bannerUrl, type, panel, 
                   ) : (
                     <BreadcrumbItem>
                       <BreadcrumbLink className="flex items-center" asChild>
-                        <Link to={baseEntityRoutes[fetchedParent.entity].to} params={{ idOrSlug: fetchedParent.slug }}>
+                        <Link to={baseEntityRoutes[fetchedParent.entityType].to} params={{ idOrSlug: fetchedParent.slug }}>
                           <span className="truncate max-sm:max-w-24">{fetchedParent.name}</span>
                         </Link>
                       </BreadcrumbLink>

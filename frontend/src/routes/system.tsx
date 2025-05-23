@@ -2,9 +2,9 @@ import { createRoute } from '@tanstack/react-router';
 import { Suspense, lazy } from 'react';
 import { z } from 'zod';
 
-import { getOrganizationsQuerySchema } from '#/modules/organizations/schema';
-import { getRequestsQuerySchema } from '#/modules/requests/schema';
-import { usersQuerySchema } from '#/modules/users/schema';
+import { organizationListQuerySchema } from '#/modules/organizations/schema';
+import { requestListQuerySchema } from '#/modules/requests/schema';
+import { userListQuerySchema } from '#/modules/users/schema';
 
 import ErrorNotice from '~/modules/common/error-notice';
 import SystemPage from '~/modules/system/system-page';
@@ -18,10 +18,10 @@ const RequestsTable = lazy(() => import('~/modules/requests/table/table-wrapper'
 const RequestsPerMinute = lazy(() => import('~/modules/metrics/requests-per-minute'));
 
 // Search query schemas
-export const organizationsSearchSchema = getOrganizationsQuerySchema.pick({ q: true, sort: true, order: true });
-const baseUsersSearchSchema = usersQuerySchema.pick({ q: true, sort: true, order: true, role: true });
+export const organizationsSearchSchema = organizationListQuerySchema.pick({ q: true, sort: true, order: true });
+const baseUsersSearchSchema = userListQuerySchema.pick({ q: true, sort: true, order: true, role: true });
 export const usersSearchSchema = z.object({ ...baseUsersSearchSchema.shape, userSheetId: z.string().optional() });
-export const requestSearchSchema = getRequestsQuerySchema.pick({ q: true, sort: true, order: true });
+export const requestSearchSchema = requestListQuerySchema.pick({ q: true, sort: true, order: true });
 
 export const SystemRoute = createRoute({
   path: '/system',

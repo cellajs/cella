@@ -6,19 +6,19 @@ import { membershipsTable } from '#/db/schema/memberships';
 import { type Env, getContextMemberships, getContextUser } from '#/lib/context';
 import { checkSlugAvailable } from '#/modules/entities/helpers/check-slug';
 import { getEntitiesQuery } from '#/modules/entities/helpers/entities-query';
-import entitiesRouteConfig from '#/modules/entities/routes';
-import defaultHook from '#/utils/default-hook';
+import entityRoutes from '#/modules/entities/routes';
+import { defaultHook } from '#/utils/default-hook';
 import { processEntitiesData } from './helpers/process-entities-data';
-import type { entitySuggestionSchema } from './schema';
+import type { entityListItemSchema } from './schema';
 
 // Set default hook to catch validation errors
 const app = new OpenAPIHono<Env>({ defaultHook });
 
-const entitiesRoutes = app
+const entityRouteHandlers = app
   /*
    * Get entities with a limited schema
    */
-  .openapi(entitiesRouteConfig.getEntities, async (ctx) => {
+  .openapi(entityRoutes.getEntities, async (ctx) => {
     const { q, type, targetUserId, targetOrgId, userMembershipType } = ctx.req.valid('query');
 
     const { id: selfId } = getContextUser();
@@ -35,8 +35,14 @@ const entitiesRoutes = app
         ? await db
             .select()
             .from(membershipsTable)
-            .where(and(eq(membershipsTable.type, 'organization'), eq(membershipsTable.userId, targetUserId), isNotNull(membershipsTable.activatedAt)))
-        : getContextMemberships().filter((m) => m.type === 'organization');
+            .where(
+              and(
+                eq(membershipsTable.contextType, 'organization'),
+                eq(membershipsTable.userId, targetUserId),
+                isNotNull(membershipsTable.activatedAt),
+              ),
+            )
+        : getContextMemberships().filter((m) => m.contextType === 'organization');
 
       organizationIds = orgMemberships.map((m) => m.organizationId);
     }
@@ -46,7 +52,7 @@ const entitiesRoutes = app
     // Prepare query and execute in parallel
     const queries = getEntitiesQuery({ q, organizationIds, userId, selfId, type, userMembershipType });
     // TODO: fix typing in getEntitiesQuery return
-    const queryData = (await Promise.all(queries)) as unknown as (z.infer<typeof entitySuggestionSchema> & { total: number })[][];
+    const queryData = (await Promise.all(queries)) as unknown as (z.infer<typeof entityListItemSchema> & { total: number })[][];
 
     // Aggregate and process result data
     const { counts, items, total } = processEntitiesData(queryData, type);
@@ -56,7 +62,7 @@ const entitiesRoutes = app
   /*
    * Check if slug is available
    */
-  .openapi(entitiesRouteConfig.checkSlug, async (ctx) => {
+  .openapi(entityRoutes.checkSlug, async (ctx) => {
     const { slug } = ctx.req.valid('json');
 
     const slugAvailable = await checkSlugAvailable(slug);
@@ -64,4 +70,4 @@ const entitiesRoutes = app
     return ctx.json({ success: slugAvailable }, 200);
   });
 
-export default entitiesRoutes;
+export default entityRouteHandlers;

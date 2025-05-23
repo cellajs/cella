@@ -3,7 +3,7 @@ import { ZodError } from 'zod';
 import type { Env } from '#/lib/context';
 import { logEvent } from '#/middlewares/logger/log-event';
 
-const defaultHook: Hook<unknown, Env, '', unknown> = (result, ctx) => {
+export const defaultHook: Hook<unknown, Env, '', unknown> = (result, ctx) => {
   if (!result.success && result.error instanceof ZodError) {
     const message = result.error.issues[0].message;
     const type = result.error.issues[0].code;
@@ -22,5 +22,3 @@ const defaultHook: Hook<unknown, Env, '', unknown> = (result, ctx) => {
     return ctx.json({ success: false, error }, 403);
   }
 };
-
-export default defaultHook;

@@ -1,12 +1,12 @@
 import { z } from '@hono/zod-openapi';
-import { createRouteConfig } from '#/lib/route-config';
+import { createCustomRoute } from '#/lib/custom-routes';
 import { isAuthenticated } from '#/middlewares/guard';
 import { slugSchema } from '#/utils/schema/common';
 import { errorResponses, successWithDataSchema, successWithoutDataSchema } from '#/utils/schema/responses';
-import { entitiesQuerySchema, entitiesSchema } from './schema';
+import { entityListQuerySchema, entityListSchema } from './schema';
 
-class EntitiesRouteConfig {
-  public checkSlug = createRouteConfig({
+class EntityRoutes {
+  public checkSlug = createCustomRoute({
     method: 'post',
     path: '/check-slug',
     guard: isAuthenticated,
@@ -37,7 +37,7 @@ class EntitiesRouteConfig {
     },
   });
 
-  public getEntities = createRouteConfig({
+  public getEntities = createCustomRoute({
     method: 'get',
     path: '/',
     guard: isAuthenticated,
@@ -45,13 +45,13 @@ class EntitiesRouteConfig {
     summary: 'Get list of entities',
     description:
       'Get page entities such as users and organizations. It returns a paginated list of entities to which the user has access. The schema is limited to common fields.',
-    request: { query: entitiesQuerySchema },
+    request: { query: entityListQuerySchema },
     responses: {
       200: {
         description: 'Entities',
         content: {
           'application/json': {
-            schema: successWithDataSchema(entitiesSchema),
+            schema: successWithDataSchema(entityListSchema),
           },
         },
       },
@@ -59,4 +59,4 @@ class EntitiesRouteConfig {
     },
   });
 }
-export default new EntitiesRouteConfig();
+export default new EntityRoutes();

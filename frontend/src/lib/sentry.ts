@@ -15,8 +15,8 @@ window.onoffline = () => {
 export const initSentry = () => {
   // Send errors to Sentry
   Sentry.init({
+    enabled: !!config.sentryDsn,
     dsn: config.sentryDsn,
-    enabled: config.mode === 'production',
     environment: config.mode,
     // Set tracesSampleRate to 1.0 to capture 100% of transactions for performance monitoring.
     tracesSampleRate: 1.0,

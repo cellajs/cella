@@ -17,7 +17,7 @@ const AttachmentDialog = ({ attachmentId, orgIdOrSlug }: AttachmentDialogProps) 
   const { t } = useTranslation();
   const { isOnline } = useOnlineManager();
 
-  const { data, isError, isLoading } = useQuery(groupedAttachmentsQueryOptions({ attachmentId, orgIdOrSlug }));
+  const { data, isError, isLoading } = useQuery({ ...groupedAttachmentsQueryOptions({ attachmentId, orgIdOrSlug }), enabled: isOnline });
 
   const attachments = useMemo(() => data?.items ?? [], [data?.items]);
 
@@ -37,12 +37,14 @@ const AttachmentDialog = ({ attachmentId, orgIdOrSlug }: AttachmentDialogProps) 
     );
   }
 
-  return attachments ? (
+  if (!isOnline) return <ContentPlaceholder icon={WifiOff} title={t('common:offline.text')} />;
+
+  return attachments.length ? (
     <div className="flex flex-wrap relative -z-1 h-screen justify-center p-2 grow">
       <AttachmentsCarousel items={attachments} isDialog itemIndex={itemIndex} saveInSearchParams={true} />
     </div>
   ) : (
-    <ContentPlaceholder icon={isOnline ? FlameKindling : WifiOff} title={t(`${isOnline ? 'error:no_user_found' : 'common:offline.text'}`)} />
+    <ContentPlaceholder icon={FlameKindling} title={t('error:not_found.text')} />
   );
 };
 

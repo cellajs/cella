@@ -1,23 +1,23 @@
-import { type ContextEntity, config } from 'config';
+import { type ContextEntityType, config } from 'config';
 import { type SQLWrapper, and, eq, ilike, inArray, ne, or, sql } from 'drizzle-orm';
 import type { z } from 'zod';
 
 import { db } from '#/db/db';
 import { membershipsTable } from '#/db/schema/memberships';
 import { usersTable } from '#/db/schema/users';
-import { entityIdFields, entityTables } from '#/entity-config';
-import type { entitiesQuerySchema } from '#/modules/entities/schema';
-import { membershipSelect } from '#/modules/memberships/helpers/select';
+import { entityTables } from '#/entity-config';
+import type { entityListQuerySchema } from '#/modules/entities/schema';
+import { membershipSummarySelect } from '#/modules/memberships/helpers/select';
 import { prepareStringForILikeFilter } from '#/utils/sql';
 
-type EntitiesQueryProps = Omit<z.infer<typeof entitiesQuerySchema>, 'targetUserId' | 'targetOrgId'> & {
+type EntitiesQueryProps = Omit<z.infer<typeof entityListQuerySchema>, 'targetUserId' | 'targetOrgId'> & {
   organizationIds: string[];
   selfId: string;
   userId: string;
 };
 
 type UserEntitiesQueryProps = Omit<EntitiesQueryProps, 'userId'>;
-type ContextEntitiesQueryProps = Omit<EntitiesQueryProps, 'userMembershipType' | 'selfId' | 'type'> & { type?: ContextEntity };
+type ContextEntitiesQueryProps = Omit<EntitiesQueryProps, 'userMembershipType' | 'selfId' | 'type'> & { type?: ContextEntityType };
 
 export const getEntitiesQuery = ({ q, organizationIds, userId, selfId, type, userMembershipType }: EntitiesQueryProps) => {
   return !type
@@ -32,12 +32,12 @@ export const getEntitiesQuery = ({ q, organizationIds, userId, selfId, type, use
  * and match the provided search query. Default will return query for all context entities if type is not provided.
  */
 const getContextEntitiesQuery = ({ q, organizationIds, userId, type }: ContextEntitiesQueryProps) => {
-  const contextEntityTypes = type ? [type] : config.contextEntityTypes;
+  const contextEntities = type ? [type] : config.contextEntityTypes;
 
-  const contextQueries = contextEntityTypes
+  const contextQueries = contextEntities
     .map((entityType) => {
       const table = entityTables[entityType];
-      const entityIdField = entityIdFields[entityType];
+      const entityIdField = config.entityIdFields[entityType];
       if (!table) return null;
 
       const filters = [
@@ -50,15 +50,15 @@ const getContextEntitiesQuery = ({ q, organizationIds, userId, type }: ContextEn
           id: table.id,
           slug: table.slug,
           name: table.name,
-          entity: table.entity,
+          entityType: table.entityType,
           thumbnailUrl: table.thumbnailUrl,
-          membership: membershipSelect,
+          membership: membershipSummarySelect,
           total: sql<number>`COUNT(*) OVER()`.as('total'),
         })
         .from(table)
         .leftJoin(
           membershipsTable,
-          and(eq(membershipsTable[entityIdField], table.id), eq(membershipsTable.userId, userId), eq(membershipsTable.type, entityType)),
+          and(eq(membershipsTable[entityIdField], table.id), eq(membershipsTable.userId, userId), eq(membershipsTable.contextType, entityType)),
         )
         .where(and(...filters))
         .limit(20);
@@ -69,7 +69,7 @@ const getContextEntitiesQuery = ({ q, organizationIds, userId, type }: ContextEn
 };
 
 /**
- * Creates a query with max 20 uniqe users. Query return users that share with you organizations membership and match the provided
+ * Creates a query with max 20 unique users. Query return users that share with you organizations membership and match the provided
  * search query, excluding self.
  */
 const getUsersQuery = ({ q, organizationIds, selfId, userMembershipType }: UserEntitiesQueryProps) => {
@@ -78,14 +78,17 @@ const getUsersQuery = ({ q, organizationIds, selfId, userMembershipType }: UserE
       id: usersTable.id,
       slug: usersTable.slug,
       name: usersTable.name,
-      entity: usersTable.entity,
+      entityType: usersTable.entityType,
       email: usersTable.email,
       thumbnailUrl: usersTable.thumbnailUrl,
-      membership: membershipSelect,
+      membership: membershipSummarySelect,
       total: sql<number>`COUNT(*) OVER()`.as('total'),
     })
     .from(usersTable)
-    .leftJoin(membershipsTable, and(eq(membershipsTable.userId, usersTable.id), eq(membershipsTable.type, userMembershipType ?? 'organization')))
+    .leftJoin(
+      membershipsTable,
+      and(eq(membershipsTable.userId, usersTable.id), eq(membershipsTable.contextType, userMembershipType ?? 'organization')),
+    )
     .where(
       and(
         inArray(membershipsTable.organizationId, organizationIds),

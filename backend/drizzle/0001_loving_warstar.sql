@@ -1,1 +1,0 @@
-ALTER TABLE "organizations" ADD COLUMN "restrictions" json DEFAULT '{"user":120,"attachment":40}'::json NOT NULL;

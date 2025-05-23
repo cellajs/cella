@@ -4,7 +4,7 @@ import { db } from '#/db/db';
 import { type TokenModel, tokensTable } from '#/db/schema/tokens';
 import type { Env } from '#/lib/context';
 import { errorResponse } from '#/lib/errors';
-import { isExpiredDate } from '#/utils/time-span';
+import { isExpiredDate } from '#/utils/is-expired-date';
 
 /**
  * Middleware to get and check the validity of a token, and set token data in context.

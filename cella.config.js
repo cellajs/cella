@@ -13,7 +13,7 @@
 
 /**
  * Cella configuration file.
- * This configuration defines how the Cella scripts handle diverged and ignored files.
+ * This configuration defines how Cella CLI sync - such as `pnpm upstream:pull` handles diverged and ignored files.
  *
  * @type {CellaConfig}
  */
@@ -62,12 +62,13 @@ export const config = {
     'frontend/package.json',
     'backend/package.json',
     'backend/drizzle/*',
-    'backend/src/db/attachments-schema-config.ts',
     'backend/scripts/seeds/data/*',
-    'backend/src/routes.ts',
     'backend/src/entity-config.ts',
-    'backend/src/lib/permission-manager.ts',
-    'backend/src/lib/notification/novu-config.ts',
+    'backend/src/attachments-config.ts',
+    'backend/src/routes.ts',
+    'backend/src/permissions/permissions-config.ts',
+    'backend/src/lib/docs-config.ts',
+    'backend/src/lib/notifications/novu-config.ts',
     'locales/en/about.json',
     'locales/en/app.json',
   ],

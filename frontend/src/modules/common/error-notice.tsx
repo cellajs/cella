@@ -4,7 +4,7 @@ import { ChevronUp, Home, MessageCircleQuestion, RefreshCw } from 'lucide-react'
 import { AnimatePresence, motion } from 'motion/react';
 import { type RefObject, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { ApiError } from '~/lib/api';
+import { ApiError } from '~/lib/api';
 import { AppFooter } from '~/modules/common/app-footer';
 import { contactFormHandler } from '~/modules/common/contact-form/contact-form-handler';
 import { Dialoger } from '~/modules/common/dialoger/provider';
@@ -54,6 +54,8 @@ export const getErrorText = (t: TFunction, error?: ErrorNoticeError, errorFromQu
     if (error.type) return t(`error:${error.type}.text`);
     if (error.message) return error.message;
   }
+
+  if (error instanceof ApiError && error.severity === 'info') return error.message;
 };
 
 /**
@@ -72,7 +74,7 @@ const ErrorNotice = ({ error, resetErrorBoundary, level }: ErrorNoticeProps) => 
   const { error: errorFromQuery, severity: severityFromQuery } = location.search;
 
   const dateNow = new Date().toUTCString();
-  const severity = error && 'status' in error ? error.severity : severityFromQuery;
+  const severity = error && 'severity' in error ? error.severity : severityFromQuery;
 
   const [showError, setShowError] = useState(false);
 
@@ -153,7 +155,7 @@ const ErrorNotice = ({ error, resetErrorBoundary, level }: ErrorNoticeProps) => 
                 <Home size={16} className="mr-2" />
                 {t('common:home')}
               </Button>
-              {!location.pathname.startsWith('/error') && (
+              {!location.pathname.startsWith('/error') && severity !== 'info' && (
                 <Button onClick={handleReload}>
                   <RefreshCw size={16} className="mr-2" />
                   {t('common:reload')}

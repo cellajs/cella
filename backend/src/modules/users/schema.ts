@@ -4,36 +4,31 @@ import { z } from 'zod';
 import { type EnabledOauthProvider, config } from 'config';
 import { usersTable } from '#/db/schema/users';
 import { paginationQuerySchema, validImageKeySchema, validNameSchema, validSlugSchema } from '#/utils/schema/common';
+import { entityBaseSchema } from '../entities/schema';
+import { membershipSummarySchema } from '../memberships/schema';
 
 export const enabledOauthProvidersEnum = z.enum(config.enabledOauthProviders as unknown as [EnabledOauthProvider]);
 
-const userTableSchema = createSelectSchema(usersTable, {
+const userSelectSchema = createSelectSchema(usersTable, {
   email: z.string().email(),
 }).omit({
   hashedPassword: true,
   unsubscribeToken: true,
 });
 
-export const userSchema = z.object({ ...userTableSchema.shape });
+export const userSchema = z.object({ ...userSelectSchema.shape });
 
-export const limitedUserSchema = userTableSchema.pick({
-  id: true,
-  slug: true,
-  name: true,
-  email: true,
-  entity: true,
-  thumbnailUrl: true,
-  bannerUrl: true,
+export const userSummarySchema = entityBaseSchema.extend({
+  email: z.string().email(),
+  entityType: z.literal('user'),
 });
 
-export const usersQuerySchema = paginationQuerySchema.merge(
-  z.object({
-    sort: z.enum(['id', 'name', 'email', 'role', 'createdAt', 'lastSeenAt', 'membershipCount']).default('createdAt').optional(),
-    role: z.enum(config.rolesByType.systemRoles).default('user').optional(),
-  }),
-);
+export const memberSchema = z.object({
+  ...userSchema.shape,
+  membership: membershipSummarySchema,
+});
 
-export const updateUserBodySchema = createInsertSchema(usersTable, {
+export const userUpdateBodySchema = createInsertSchema(usersTable, {
   firstName: validNameSchema.nullable(),
   lastName: validNameSchema.nullable(),
   slug: validSlugSchema,
@@ -50,3 +45,10 @@ export const updateUserBodySchema = createInsertSchema(usersTable, {
     slug: true,
   })
   .partial();
+
+export const userListQuerySchema = paginationQuerySchema.merge(
+  z.object({
+    sort: z.enum(['id', 'name', 'email', 'role', 'createdAt', 'lastSeenAt', 'membershipCount']).default('createdAt').optional(),
+    role: z.enum(config.rolesByType.systemRoles).default('user').optional(),
+  }),
+);

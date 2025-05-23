@@ -1,11 +1,9 @@
-import { and, eq, inArray, isNull, lt } from 'drizzle-orm';
-import { mailer } from '#/lib/mailer';
-import { SystemInviteEmail, type SystemInviteEmailProps } from '../../../emails/system-invite';
-
-import { config } from 'config';
-
 import { OpenAPIHono } from '@hono/zod-openapi';
 import { EventName, Paddle } from '@paddle/paddle-node-sdk';
+import { config } from 'config';
+import { and, eq, inArray, isNull, lt } from 'drizzle-orm';
+import i18n from 'i18next';
+
 import { db } from '#/db/db';
 import { emailsTable } from '#/db/schema/emails';
 import { membershipsTable } from '#/db/schema/memberships';
@@ -13,30 +11,31 @@ import { organizationsTable } from '#/db/schema/organizations';
 import { requestsTable } from '#/db/schema/requests';
 import { tokensTable } from '#/db/schema/tokens';
 import { usersTable } from '#/db/schema/users';
+import { env } from '#/env';
 import { type Env, getContextUser } from '#/lib/context';
 import { errorResponse } from '#/lib/errors';
-import { i18n } from '#/lib/i18n';
-import { getImadoUrl } from '#/lib/imado-url';
+import { mailer } from '#/lib/mailer';
+import { getSignedUrl } from '#/lib/signed-url';
 import { logEvent } from '#/middlewares/logger/log-event';
+import systemRoutes from '#/modules/system/routes';
 import { getUsersByConditions } from '#/modules/users/helpers/get-user-by';
-import defaultHook from '#/utils/default-hook';
+import { defaultHook } from '#/utils/default-hook';
 import { nanoid } from '#/utils/nanoid';
 import { slugFromEmail } from '#/utils/slug-from-email';
 import { TimeSpan, createDate } from '#/utils/time-span';
 import { NewsletterEmail, type NewsletterEmailProps } from '../../../emails/newsletter';
-import { env } from '../../env';
-import systemRouteConfig from './routes';
+import { SystemInviteEmail, type SystemInviteEmailProps } from '../../../emails/system-invite';
 
 const paddle = new Paddle(env.PADDLE_API_KEY || '');
 
 // Set default hook to catch validation errors
 const app = new OpenAPIHono<Env>({ defaultHook });
 
-const systemRoutes = app
+const systemRouteHandlers = app
   /*
    * Invite users to system
    */
-  .openapi(systemRouteConfig.createInvite, async (ctx) => {
+  .openapi(systemRoutes.createInvite, async (ctx) => {
     const { emails } = ctx.req.valid('json');
     const user = getContextUser();
 
@@ -54,7 +53,7 @@ const systemRoutes = app
           inArray(tokensTable.email, emails),
           eq(tokensTable.type, 'invitation'),
           // Make sure its a system invitation
-          isNull(tokensTable.entity),
+          isNull(tokensTable.entityType),
           lt(tokensTable.expiresAt, new Date()),
         ),
       );
@@ -116,17 +115,17 @@ const systemRoutes = app
   /*
    * Get presigned URL
    */
-  .openapi(systemRouteConfig.getPriasignedUrl, async (ctx) => {
+  .openapi(systemRoutes.getPriasignedUrl, async (ctx) => {
     const { key } = ctx.req.valid('query');
 
-    const url = await getImadoUrl(key);
+    const url = await getSignedUrl(key);
 
     return ctx.json({ success: true, data: url }, 200);
   })
   /*
    * Paddle webhook
    */
-  .openapi(systemRouteConfig.paddleWebhook, async (ctx) => {
+  .openapi(systemRoutes.paddleWebhook, async (ctx) => {
     const signature = ctx.req.header('paddle-signature');
     const rawRequestBody = String(ctx.req.raw.body);
 
@@ -157,7 +156,7 @@ const systemRoutes = app
   /*
    * Send newsletter to one or more roles members of one or more organizations
    */
-  .openapi(systemRouteConfig.sendNewsletter, async (ctx) => {
+  .openapi(systemRoutes.sendNewsletter, async (ctx) => {
     const { organizationIds, subject, content, roles } = ctx.req.valid('json');
     const { toSelf } = ctx.req.valid('query');
 
@@ -178,7 +177,7 @@ const systemRoutes = app
       .innerJoin(organizationsTable, eq(organizationsTable.id, membershipsTable.organizationId))
       .where(
         and(
-          eq(membershipsTable.type, 'organization'),
+          eq(membershipsTable.contextType, 'organization'),
           inArray(membershipsTable.organizationId, organizationIds),
           inArray(membershipsTable.role, roles),
           eq(usersTable.newsletter, true),
@@ -186,7 +185,7 @@ const systemRoutes = app
       );
 
     // Stop if no recipients
-    if (recipientsRecords.length === 0 && !toSelf) return errorResponse(ctx, 400, 'no_recipients', 'warn');
+    if (!recipientsRecords.length && !toSelf) return errorResponse(ctx, 400, 'no_recipients', 'warn');
 
     // Add unsubscribe link to each recipient
     let recipients = recipientsRecords.map(({ newsletter, unsubscribeToken, ...recipient }) => ({
@@ -216,4 +215,4 @@ const systemRoutes = app
     return ctx.json({ success: true }, 200);
   });
 
-export default systemRoutes;
+export default systemRouteHandlers;

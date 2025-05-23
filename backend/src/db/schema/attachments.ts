@@ -1,30 +1,31 @@
 import { pgTable, varchar } from 'drizzle-orm/pg-core';
 import { nanoid } from '#/utils/nanoid';
-import { attachmentRelations } from '../../attachments-config';
-import { timestampsColumn } from '../utils/timestamp-columns';
+import { attachmentRelations } from '../../attachment-config';
+import { timestampColumns } from '../utils/timestamp-columns';
 import { usersTable } from './users';
 
 export const attachmentsTable = pgTable(
   'attachments',
   {
     id: varchar().primaryKey().$defaultFn(nanoid),
-    groupId: varchar(),
     name: varchar().notNull().default('attachment'),
+    entityType: varchar({ enum: ['attachment'] })
+      .notNull()
+      .default('attachment'),
+
+    groupId: varchar(),
     filename: varchar().notNull(),
     contentType: varchar().notNull(),
     convertedContentType: varchar(),
     size: varchar().notNull(),
-    entity: varchar({ enum: ['attachment'] })
-      .notNull()
-      .default('attachment'),
     originalKey: varchar().notNull(),
     convertedKey: varchar(),
     thumbnailKey: varchar(),
-    createdAt: timestampsColumn.createdAt,
+    createdAt: timestampColumns.createdAt,
     createdBy: varchar().references(() => usersTable.id, {
       onDelete: 'set null',
     }),
-    modifiedAt: timestampsColumn.modifiedAt,
+    modifiedAt: timestampColumns.modifiedAt,
     modifiedBy: varchar().references(() => usersTable.id, {
       onDelete: 'set null',
     }),

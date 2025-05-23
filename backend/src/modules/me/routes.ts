@@ -1,42 +1,30 @@
-import { config } from 'config';
 import { z } from 'zod';
-import { createRouteConfig } from '#/lib/route-config';
+import { createCustomRoute } from '#/lib/custom-routes';
 import { isAuthenticated, isPublicAccess } from '#/middlewares/guard';
 import { tokenLimiter } from '#/middlewares/rate-limiter/limiters';
-import { booleanQuerySchema } from '#/utils/schema/common';
+import { entityWithTypeQuerySchema } from '#/utils/schema/common';
 import { errorResponses, successWithDataSchema, successWithErrorsSchema, successWithoutDataSchema } from '#/utils/schema/responses';
-import { updateUserBodySchema, userSchema } from '../users/schema';
-import {
-  leaveEntityQuerySchema,
-  meAuthInfoSchema,
-  passkeyRegistrationBodySchema,
-  unsubscribeSelfQuerySchema,
-  uploadTokenBodySchema,
-  userMenuSchema,
-} from './schema';
+import { userSchema, userUpdateBodySchema } from '../users/schema';
+import { meAuthDataSchema, menuSchema, passkeyRegistrationBodySchema, uploadTokenQuerySchema, uploadTokenSchema } from './schema';
 
-class MeRouteConfig {
-  public getSelf = createRouteConfig({
+class MeRoutes {
+  public getMe = createCustomRoute({
     method: 'get',
     path: '/',
     guard: isAuthenticated,
     tags: ['me'],
-    summary: 'Get self',
-    description: 'Get the current user (self). It includes a `counts` object.',
+    summary: 'Get me',
+    description: 'Get the current user (me). It includes a `counts` object.',
     responses: {
       200: {
         description: 'User',
-        content: {
-          'application/json': {
-            schema: successWithDataSchema(userSchema),
-          },
-        },
+        content: { 'application/json': { schema: successWithDataSchema(userSchema) } },
       },
       ...errorResponses,
     },
   });
 
-  public getSelfAuthData = createRouteConfig({
+  public getMyAuthData = createCustomRoute({
     method: 'get',
     path: '/auth',
     guard: isAuthenticated,
@@ -46,17 +34,13 @@ class MeRouteConfig {
     responses: {
       200: {
         description: 'User sign-up info',
-        content: {
-          'application/json': {
-            schema: successWithDataSchema(meAuthInfoSchema),
-          },
-        },
+        content: { 'application/json': { schema: successWithDataSchema(meAuthDataSchema) } },
       },
       ...errorResponses,
     },
   });
 
-  public updateSelf = createRouteConfig({
+  public updateMe = createCustomRoute({
     method: 'put',
     path: '/',
     guard: isAuthenticated,
@@ -64,13 +48,7 @@ class MeRouteConfig {
     summary: 'Update self',
     description: 'Update the current user (self).',
     request: {
-      body: {
-        content: {
-          'application/json': {
-            schema: updateUserBodySchema,
-          },
-        },
-      },
+      body: { content: { 'application/json': { schema: userUpdateBodySchema } } },
     },
     responses: {
       200: {
@@ -85,7 +63,7 @@ class MeRouteConfig {
     },
   });
 
-  public deleteSelf = createRouteConfig({
+  public deleteMe = createCustomRoute({
     method: 'delete',
     path: '/',
     guard: isAuthenticated,
@@ -95,17 +73,13 @@ class MeRouteConfig {
     responses: {
       200: {
         description: 'User deleted',
-        content: {
-          'application/json': {
-            schema: successWithoutDataSchema,
-          },
-        },
+        content: { 'application/json': { schema: successWithoutDataSchema } },
       },
       ...errorResponses,
     },
   });
 
-  public getSelfMenu = createRouteConfig({
+  public getMyMenu = createCustomRoute({
     method: 'get',
     path: '/menu',
     guard: isAuthenticated,
@@ -116,17 +90,13 @@ class MeRouteConfig {
     responses: {
       200: {
         description: 'Menu of user',
-        content: {
-          'application/json': {
-            schema: successWithDataSchema(userMenuSchema),
-          },
-        },
+        content: { 'application/json': { schema: successWithDataSchema(menuSchema) } },
       },
       ...errorResponses,
     },
   });
 
-  public deleteSessions = createRouteConfig({
+  public deleteSessions = createCustomRoute({
     method: 'delete',
     path: '/sessions',
     guard: isAuthenticated,
@@ -142,41 +112,33 @@ class MeRouteConfig {
     responses: {
       200: {
         description: 'Success',
-        content: {
-          'application/json': {
-            schema: successWithErrorsSchema(),
-          },
-        },
+        content: { 'application/json': { schema: successWithErrorsSchema() } },
       },
       ...errorResponses,
     },
   });
 
-  public leaveEntity = createRouteConfig({
+  public deleteMyMembership = createCustomRoute({
     method: 'delete',
     path: '/leave',
     guard: isAuthenticated,
     tags: ['me'],
     summary: 'Leave entity',
-    description: 'Leave any entity on your own.',
+    description: 'Remove your own entity membership by yourself.',
     security: [],
     request: {
-      query: leaveEntityQuerySchema,
+      query: entityWithTypeQuerySchema,
     },
     responses: {
       200: {
-        description: 'Passkey removed',
-        content: {
-          'application/json': {
-            schema: successWithoutDataSchema,
-          },
-        },
+        description: 'Membership removed',
+        content: { 'application/json': { schema: successWithoutDataSchema } },
       },
       ...errorResponses,
     },
   });
 
-  public unsubscribeSelf = createRouteConfig({
+  public unsubscribeMe = createCustomRoute({
     method: 'get',
     path: '/unsubscribe',
     guard: isPublicAccess,
@@ -185,7 +147,7 @@ class MeRouteConfig {
     summary: 'Unsubscribe',
     description: 'Unsubscribe using a personal unsubscribe token.',
     request: {
-      query: unsubscribeSelfQuerySchema,
+      query: z.object({ token: z.string() }),
     },
     responses: {
       302: {
@@ -195,27 +157,23 @@ class MeRouteConfig {
       ...errorResponses,
     },
   });
-  public getUploadToken = createRouteConfig({
+  public getUploadToken = createCustomRoute({
     method: 'get',
     path: '/upload-token',
     guard: isAuthenticated,
     tags: ['me'],
     summary: 'Get upload token',
     description:
-      'This endpoint is used to get an upload token for a user or organization. The token can be used to upload public or private images/files to your S3 bucket using imado.',
+      'This endpoint is used to get an upload token for a user or organization. The token can be used to upload public or private images/files to your S3 bucket using',
     request: {
-      query: z.object({
-        public: booleanQuerySchema,
-        organization: z.string().optional(),
-        templateId: z.enum(config.uploadTemplateIds),
-      }),
+      query: uploadTokenQuerySchema,
     },
     responses: {
       200: {
         description: 'Upload token with a scope for a user or organization',
         content: {
           'application/json': {
-            schema: successWithDataSchema(uploadTokenBodySchema),
+            schema: successWithDataSchema(uploadTokenSchema),
           },
         },
       },
@@ -223,7 +181,7 @@ class MeRouteConfig {
     },
   });
 
-  public createPasskey = createRouteConfig({
+  public createPasskey = createCustomRoute({
     method: 'post',
     path: '/passkey',
     guard: isAuthenticated,
@@ -235,27 +193,19 @@ class MeRouteConfig {
     request: {
       body: {
         required: true,
-        content: {
-          'application/json': {
-            schema: passkeyRegistrationBodySchema,
-          },
-        },
+        content: { 'application/json': { schema: passkeyRegistrationBodySchema } },
       },
     },
     responses: {
       200: {
         description: 'Passkey created',
-        content: {
-          'application/json': {
-            schema: successWithoutDataSchema,
-          },
-        },
+        content: { 'application/json': { schema: successWithoutDataSchema } },
       },
       ...errorResponses,
     },
   });
 
-  public deletePasskey = createRouteConfig({
+  public deletePasskey = createCustomRoute({
     method: 'delete',
     path: '/passkey',
     guard: isAuthenticated,
@@ -266,14 +216,10 @@ class MeRouteConfig {
     responses: {
       200: {
         description: 'Passkey removed',
-        content: {
-          'application/json': {
-            schema: successWithoutDataSchema,
-          },
-        },
+        content: { 'application/json': { schema: successWithoutDataSchema } },
       },
       ...errorResponses,
     },
   });
 }
-export default new MeRouteConfig();
+export default new MeRoutes();

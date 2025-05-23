@@ -1,35 +1,34 @@
 import { db } from '#/db/db';
 import { attachmentsTable } from '#/db/schema/attachments';
+import { env } from '#/env';
 import { type Env, getContextMemberships, getContextOrganization, getContextUser } from '#/lib/context';
 import { type ErrorType, createError, errorResponse } from '#/lib/errors';
 import { logEvent } from '#/middlewares/logger/log-event';
-import attachmentsRouteConfig from '#/modules/attachments/routes';
+import { processAttachmentUrls, processAttachmentUrlsBatch } from '#/modules/attachments/helpers/process-attachment-urls';
+import attachmentRoutes from '#/modules/attachments/routes';
 import { splitByAllowance } from '#/permissions/split-by-allowance';
-import defaultHook from '#/utils/default-hook';
+import { defaultHook } from '#/utils/default-hook';
 import { getIsoDate } from '#/utils/iso-date';
 import { nanoid } from '#/utils/nanoid';
 import { getOrderColumn } from '#/utils/order-column';
 import { prepareStringForILikeFilter } from '#/utils/sql';
 
 import { OpenAPIHono } from '@hono/zod-openapi';
-import { type SQL, and, count, eq, ilike, inArray, or } from 'drizzle-orm';
+import { config } from 'config';
+import { type SQL, and, count, eq, ilike, inArray, like, notLike, or } from 'drizzle-orm';
 import { html } from 'hono/html';
 import { stream } from 'hono/streaming';
-
-import { config } from 'config';
-import { env } from '#/env';
-import { enrichAttachmentWithUrls, enrichAttachmentsWithUrls } from '#/modules/attachments/helpers/convert-attachments';
 
 // Set default hook to catch validation errors
 const app = new OpenAPIHono<Env>({ defaultHook });
 
 // Attachment endpoints
-const attachmentsRoutes = app
+const attachmentsRouteHandlers = app
   /**
    * Proxy to electric for syncing to client
    * Hono handlers are executed in registration order, so registered first to avoid route collisions.
    */
-  .openapi(attachmentsRouteConfig.shapeProxy, async (ctx) => {
+  .openapi(attachmentRoutes.shapeProxy, async (ctx) => {
     const url = new URL(ctx.req.url);
 
     // Construct the upstream URL
@@ -43,26 +42,20 @@ const attachmentsRoutes = app
       }
     });
 
-    // When proxying long-polling requests, content-encoding & content-length are added
-    // erroneously (saying the body is gzipped when it's not) so we'll just remove
-    // them to avoid content decoding errors in the browser.
-    let res = await fetch(originUrl.toString());
-    if (res.headers.get('content-encoding')) {
-      const headers = new Headers(res.headers);
-      headers.delete('content-encoding');
-      headers.delete('content-length');
-      res = new Response(res.body, {
-        status: res.status,
-        statusText: res.statusText,
-        headers,
-      });
-    }
-    return res;
+    const res = await fetch(originUrl.toString());
+
+    const headers = new Headers(res.headers);
+
+    return new Response(res.body, {
+      status: res.status,
+      statusText: res.statusText,
+      headers,
+    });
   })
   /*
    * Create one or more attachments
    */
-  .openapi(attachmentsRouteConfig.createAttachments, async (ctx) => {
+  .openapi(attachmentRoutes.createAttachments, async (ctx) => {
     const newAttachments = ctx.req.valid('json');
 
     const organization = getContextOrganization();
@@ -91,7 +84,7 @@ const attachmentsRoutes = app
 
     const createdAttachments = await db.insert(attachmentsTable).values(fixedNewAttachments).returning();
 
-    const data = await enrichAttachmentsWithUrls(createdAttachments);
+    const data = await processAttachmentUrlsBatch(createdAttachments);
 
     logEvent(`${createdAttachments.length} attachments have been created`);
 
@@ -100,26 +93,24 @@ const attachmentsRoutes = app
   /*
    * Get attachments
    */
-  .openapi(attachmentsRouteConfig.getAttachments, async (ctx) => {
+  .openapi(attachmentRoutes.getAttachments, async (ctx) => {
     const { q, sort, order, offset, limit, attachmentId } = ctx.req.valid('query');
 
-    // const user = getContextUser();
-    // Scope request to organization
+    const user = getContextUser();
     const organization = getContextOrganization();
 
     // Filter at least by valid organization
     const filters: SQL[] = [
       eq(attachmentsTable.organizationId, organization.id),
-      // If IMADO is off, show attachments that not have a public CDN URL only to users that create it because in that case attachments stored in IndexedDB
-      // TODO reworkIt
-      // ...(!config.has.imado
-      //   ? [
-      //       or(
-      //         and(eq(attachmentsTable.createdBy, user.id), notIlike(attachmentsTable.url, `${config.publicCDNUrl}%`)),
-      //         like(attachmentsTable.url, `${config.publicCDNUrl}%`),
-      //       ) as SQL,
-      //     ]
-      //   : []),
+      // If s3 is off, show attachments that not have a public CDN URL only to users that create it because in that case attachments stored in IndexedDB
+      ...(!config.has.uploadEnabled
+        ? [
+            or(
+              and(eq(attachmentsTable.createdBy, user.id), like(attachmentsTable.originalKey, 'blob:http%')),
+              notLike(attachmentsTable.originalKey, 'blob:http%'),
+            ) as SQL,
+          ]
+        : []),
     ];
 
     if (q) {
@@ -144,7 +135,7 @@ const attachmentsRoutes = app
       const [targetAttachment] = await db.select().from(attachmentsTable).where(eq(attachmentsTable.id, attachmentId)).limit(1);
       if (!targetAttachment) return errorResponse(ctx, 404, 'not_found', 'warn', 'attachment', { attachmentId });
 
-      const items = await enrichAttachmentsWithUrls([targetAttachment]);
+      const items = await processAttachmentUrlsBatch([targetAttachment]);
       // return target attachment itself if no groupId
       if (!targetAttachment.groupId) return ctx.json({ success: true, data: { items, total: 1 } }, 200);
 
@@ -162,14 +153,14 @@ const attachmentsRoutes = app
 
     const [{ total }] = await db.select({ total: count() }).from(attachmentsQuery.as('attachments'));
 
-    const items = await enrichAttachmentsWithUrls(attachments);
+    const items = await processAttachmentUrlsBatch(attachments);
 
     return ctx.json({ success: true, data: { items, total } }, 200);
   })
   /*
    * Get attachment by id
    */
-  .openapi(attachmentsRouteConfig.getAttachment, async (ctx) => {
+  .openapi(attachmentRoutes.getAttachment, async (ctx) => {
     const { id } = ctx.req.valid('param');
 
     // Scope the attachment to organization
@@ -182,14 +173,14 @@ const attachmentsRoutes = app
 
     if (!attachment) return errorResponse(ctx, 404, 'not_found', 'warn', 'attachment');
 
-    const data = await enrichAttachmentWithUrls(attachment);
+    const data = await processAttachmentUrls(attachment);
 
     return ctx.json({ success: true, data }, 200);
   })
   /*
    * Update an attachment by id
    */
-  .openapi(attachmentsRouteConfig.updateAttachment, async (ctx) => {
+  .openapi(attachmentRoutes.updateAttachment, async (ctx) => {
     const { id } = ctx.req.valid('param');
     const user = getContextUser();
 
@@ -207,14 +198,14 @@ const attachmentsRoutes = app
 
     logEvent('Attachment updated', { attachment: updatedAttachment.id });
 
-    const data = await enrichAttachmentWithUrls(updatedAttachment);
+    const data = await processAttachmentUrls(updatedAttachment);
 
     return ctx.json({ success: true, data }, 200);
   })
   /*
    * Delete attachments by ids
    */
-  .openapi(attachmentsRouteConfig.deleteAttachments, async (ctx) => {
+  .openapi(attachmentRoutes.deleteAttachments, async (ctx) => {
     const { ids } = ctx.req.valid('json');
 
     const memberships = getContextMemberships();
@@ -239,7 +230,7 @@ const attachmentsRoutes = app
   /*
    * Get attachment cover
    */
-  .openapi(attachmentsRouteConfig.getAttachmentCover, async (ctx) => {
+  .openapi(attachmentRoutes.getAttachmentCover, async (ctx) => {
     const { id } = ctx.req.valid('param');
 
     const [attachment] = await db.select().from(attachmentsTable).where(eq(attachmentsTable.id, id));
@@ -268,7 +259,7 @@ const attachmentsRoutes = app
   /*
    * Redirect to attachment
    */
-  .openapi(attachmentsRouteConfig.redirectToAttachment, async (ctx) => {
+  .openapi(attachmentRoutes.redirectToAttachment, async (ctx) => {
     const { id } = ctx.req.valid('param');
 
     const [attachment] = await db.select().from(attachmentsTable).where(eq(attachmentsTable.id, id));
@@ -297,4 +288,4 @@ const attachmentsRoutes = app
     `);
   });
 
-export default attachmentsRoutes;
+export default attachmentsRouteHandlers;

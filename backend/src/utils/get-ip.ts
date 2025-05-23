@@ -5,6 +5,5 @@ import type { Context } from 'hono';
  * function to get the IP address from a request header
  */
 export const getIp = (ctx: Context) => {
-  console.log('getIp', ctx.env.incoming.socket.remoteAddress);
   return ctx.env.incoming.socket.remoteAddress || null;
 };

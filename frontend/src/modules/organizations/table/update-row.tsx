@@ -1,6 +1,6 @@
+import i18n from 'i18next';
 import { Pencil } from 'lucide-react';
 import { type RefObject, useRef } from 'react';
-import { i18n } from '~/lib/i18n';
 import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
 import UnsavedBadge from '~/modules/common/unsaved-badge';
 import type { Organization } from '~/modules/organizations/types';

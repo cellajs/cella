@@ -4,19 +4,17 @@ import { createSelectSchema } from 'drizzle-zod';
 import { requestsTable } from '#/db/schema/requests';
 import { paginationQuerySchema } from '#/utils/schema/common';
 
-const requestTableSchema = z.object({
-  ...createSelectSchema(requestsTable).shape,
-});
+const requestSelectSchema = createSelectSchema(requestsTable);
 
-export const requestSchema = requestTableSchema.omit({ tokenId: true }).extend({ wasInvited: z.boolean() });
+export const requestSchema = requestSelectSchema.omit({ tokenId: true }).extend({ wasInvited: z.boolean() });
 
-export const createRequestSchema = z.object({
+export const requestCreateBodySchema = z.object({
   email: z.string().min(1).email(),
   type: requestSchema.shape.type,
   message: z.string().nullable(),
 });
 
-export const getRequestsQuerySchema = paginationQuerySchema.merge(
+export const requestListQuerySchema = paginationQuerySchema.merge(
   z.object({
     sort: z.enum(['id', 'email', 'type', 'createdAt']).default('createdAt').optional(),
   }),

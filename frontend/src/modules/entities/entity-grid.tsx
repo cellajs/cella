@@ -1,9 +1,9 @@
 import { EntityTile } from '~/modules/entities/entity-tile';
 import type { EntityPage } from '~/modules/entities/types';
-import type { LimitedUser } from '~/modules/users/types';
+import type { UserSummary } from '~/modules/users/types';
 
 export type EntityTileData = EntityPage & {
-  members: LimitedUser[];
+  members: UserSummary[];
 };
 
 export const EntityGrid = ({ entities }: { entities: EntityTileData[] }) => {

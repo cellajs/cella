@@ -1,4 +1,4 @@
-import { type Entity, config } from 'config';
+import { type EntityType, config } from 'config';
 import { clientConfig, handleResponse } from '~/lib/api';
 import { entitiesHc } from '#/modules/entities/hc';
 
@@ -9,10 +9,10 @@ export const client = entitiesHc(config.backendUrl, clientConfig);
  *
  * @param params - Parameters to check slug availability.
  * @param params.slug - Slug to check.
- * @param params.type - Entity type for which the slug is being checked.
+ * @param params.type -EntityType type for which the slug is being checked.
  * @returns A boolean indicating whether the slug is available.
  */
-export const checkSlugAvailable = async (params: { slug: string; type: Entity }) => {
+export const checkSlugAvailable = async (params: { slug: string; type: EntityType }) => {
   const response = await client['check-slug'].$post({
     json: params,
   });

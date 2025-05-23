@@ -38,8 +38,8 @@ export const useAttachmentsSync = (organizationId: string) => {
   const storeKey = `attachments-${organizationId}`; // Unique key for storing sync data based on organization ID
 
   useEffect(() => {
-    // Exit if offline, sync is disabled, imado upload is disabled, or in quick mode
-    if (!isOnline || !config.has.sync || !config.has.imado || env.VITE_QUICK) return;
+    // Exit if offline, sync is disabled, s3 upload is disabled, or in quick mode
+    if (!isOnline || !config.has.sync || !config.has.uploadEnabled || env.VITE_QUICK) return;
 
     const controller = new AbortController();
     // if any params of `attachmentShape` changes need to delete sync data from store

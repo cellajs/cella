@@ -5,7 +5,7 @@ import { t } from 'i18next';
 
 import { authenticateWithPasskey, getPasskeyChallenge } from '~/modules/auth/api';
 import { toaster } from '~/modules/common/toaster';
-import { deletePasskey as baseRemovePasskey, createPasskey, getSelf, getSelfAuthInfo, getSelfMenu } from '~/modules/me/api';
+import { deletePasskey as baseRemovePasskey, createPasskey, getMyMenu, getSelf, getSelfAuthInfo } from '~/modules/me/api';
 import { useNavigationStore } from '~/store/navigation';
 import { useUIStore } from '~/store/ui';
 import { useUserStore } from '~/store/user';
@@ -76,7 +76,7 @@ export const passkeyRegistration = async () => {
 
     toaster(t('common:success.passkey_added'), 'success');
 
-    useUserStore.getState().setUserAuthInfo({ passkey: true });
+    useUserStore.getState().setMeAuthData({ passkey: true });
     return result;
   } catch (error) {
     // On cancel throws error NotAllowedError
@@ -146,7 +146,7 @@ export const deletePasskey = async () => {
       return false;
     }
     toaster(t('common:success.passkey_removed'), 'success');
-    useUserStore.getState().setUserAuthInfo({ passkey: false });
+    useUserStore.getState().setMeAuthData({ passkey: false });
     return true;
   } catch (error) {
     console.error('Error removing passkey:', error);
@@ -173,9 +173,9 @@ export const getAndSetMe = async () => {
  *
  * @returns The data object.
  */
-export const getAndSetUserAuthInfo = async () => {
+export const getAndSetMeAuthData = async () => {
   const authInfo = await getSelfAuthInfo();
-  useUserStore.getState().setUserAuthInfo(authInfo);
+  useUserStore.getState().setMeAuthData(authInfo);
   return authInfo;
 };
 
@@ -185,7 +185,7 @@ export const getAndSetUserAuthInfo = async () => {
  * @returns The menu data.
  */
 export const getAndSetMenu = async () => {
-  const menu = await getSelfMenu();
+  const menu = await getMyMenu();
   useNavigationStore.setState({ menu });
   return menu;
 };

@@ -1,4 +1,4 @@
-import type { ContextEntity } from 'config';
+import type { ContextEntityType } from 'config';
 import { Info } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { type RefObject, useState } from 'react';
@@ -17,7 +17,7 @@ interface MenuSheetSectionProps {
   data: UserMenuItem[];
   sectionType: keyof UserMenu;
   sectionLabel: string;
-  entityType: ContextEntity;
+  entityType: ContextEntityType;
   createAction?: (ref: RefObject<HTMLButtonElement | null>) => void;
 }
 

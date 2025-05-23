@@ -1,16 +1,14 @@
-import { entityRelations } from '#/entity-config';
-
-import type { ContextEntity } from 'config';
+import { type ContextEntityType, config } from 'config';
 import type { UserMenu, UserMenuItem } from '~/modules/me/types';
-import type { MinimumMembershipInfo } from '~/modules/memberships/types';
+import type { MembershipSummary } from '~/modules/memberships/types';
 import { useNavigationStore } from '~/store/navigation';
 
 const useTransformOnMenuItems = (transform: (items: UserMenuItem[]) => UserMenuItem[]) => {
   const { menu } = useNavigationStore.getState();
 
-  const updatedMenu = entityRelations.reduce(
-    (acc, { menuSectionName }) => {
-      if (menu[menuSectionName]) acc[menuSectionName] = transform(menu[menuSectionName]);
+  const updatedMenu = config.menuStructure.reduce(
+    (acc, { entityType }) => {
+      if (menu[entityType]) acc[entityType] = transform(menu[entityType]);
       return acc;
     },
     {} as Record<keyof UserMenu, UserMenuItem[]>,
@@ -93,20 +91,15 @@ export const updateMenuItem = (updatedEntity: UserMenuItem) => {
  * @param entityIdOrSlug - ID or slug of entity.
  * @param entityType - Context entity type
  */
-export const updateMenuItemMembership = (
-  membershipInfo: Partial<Omit<MinimumMembershipInfo, 'organizationId'>>,
-  entityIdOrSlug: string,
-  entityType: ContextEntity,
-) => {
+export const updateMenuItemMembership = (membershipInfo: Partial<MembershipSummary>, entityIdOrSlug: string, entityType: ContextEntityType) => {
   // Get the current menu state from the navigation store (without using hooks)
   const menu = useNavigationStore.getState().menu;
 
   // Find section that corresponds to given entity type
-  const menuSection = entityRelations.find((el) => el.entity === entityType || el.subEntity === entityType);
+  const menuSection = config.menuStructure.find((el) => el.entityType === entityType || el.subentityType === entityType);
   if (!menuSection) return;
 
-  const { menuSectionName } = menuSection;
-  const menuEntities = menu[menuSectionName];
+  const menuEntities = menu[entityType];
 
   // Search in menuEntities
   let currentEntity = menuEntities.find((e) => e.id === entityIdOrSlug || e.slug === entityIdOrSlug);

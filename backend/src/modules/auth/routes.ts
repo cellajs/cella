@@ -1,25 +1,25 @@
 import { z } from '@hono/zod-openapi';
 import { config } from 'config';
-import { createRouteConfig } from '#/lib/route-config';
+import { createCustomRoute } from '#/lib/custom-routes';
 import { hasSystemAccess, isAuthenticated, isPublicAccess } from '#/middlewares/guard';
 import { hasValidToken } from '#/middlewares/has-valid-token';
 import { emailEnumLimiter, passwordLimiter, spamLimiter, tokenLimiter } from '#/middlewares/rate-limiter/limiters';
 import { cookieSchema, idSchema, passwordSchema, tokenParamSchema } from '#/utils/schema/common';
 import { errorResponses, successWithDataSchema, successWithoutDataSchema } from '#/utils/schema/responses';
 import {
-  checkTokenSchema,
   emailBodySchema,
   emailPasswordBodySchema,
+  emailVerifiedSchema,
   oauthCallbackQuerySchema,
   oauthQuerySchema,
   passkeyChallengeQuerySchema,
   passkeyVerificationBodySchema,
   sendVerificationEmailBodySchema,
-  signInSchema,
+  tokenWithDataSchema,
 } from './schema';
 
-class AuthLayoutRouteConfig {
-  public startImpersonation = createRouteConfig({
+class AuthRoutes {
+  public startImpersonation = createCustomRoute({
     method: 'get',
     path: '/impersonation/start',
     guard: [isAuthenticated, hasSystemAccess],
@@ -43,7 +43,7 @@ class AuthLayoutRouteConfig {
     },
   });
 
-  public stopImpersonation = createRouteConfig({
+  public stopImpersonation = createCustomRoute({
     method: 'get',
     path: '/impersonation/stop',
     guard: isPublicAccess,
@@ -63,7 +63,7 @@ class AuthLayoutRouteConfig {
     },
   });
 
-  public checkEmail = createRouteConfig({
+  public checkEmail = createCustomRoute({
     method: 'post',
     path: '/check-email',
     guard: isPublicAccess,
@@ -94,7 +94,7 @@ class AuthLayoutRouteConfig {
     },
   });
 
-  public signUp = createRouteConfig({
+  public signUp = createCustomRoute({
     method: 'post',
     path: '/sign-up',
     guard: isPublicAccess,
@@ -132,7 +132,7 @@ class AuthLayoutRouteConfig {
     },
   });
 
-  public signUpWithToken = createRouteConfig({
+  public signUpWithToken = createCustomRoute({
     method: 'post',
     path: '/sign-up/{token}',
     guard: isPublicAccess,
@@ -171,7 +171,7 @@ class AuthLayoutRouteConfig {
     },
   });
 
-  public sendVerificationEmail = createRouteConfig({
+  public sendVerificationEmail = createCustomRoute({
     method: 'post',
     path: '/send-verification-email',
     guard: isPublicAccess,
@@ -202,7 +202,7 @@ class AuthLayoutRouteConfig {
     },
   });
 
-  public verifyEmail = createRouteConfig({
+  public verifyEmail = createCustomRoute({
     method: 'post',
     path: '/verify-email/{token}',
     guard: isPublicAccess,
@@ -227,7 +227,7 @@ class AuthLayoutRouteConfig {
     },
   });
 
-  public requestPassword = createRouteConfig({
+  public requestPassword = createCustomRoute({
     method: 'post',
     path: '/request-password',
     guard: isPublicAccess,
@@ -258,7 +258,7 @@ class AuthLayoutRouteConfig {
     },
   });
 
-  public createPasswordWithToken = createRouteConfig({
+  public createPasswordWithToken = createCustomRoute({
     method: 'post',
     path: '/create-password/{token}',
     guard: isPublicAccess,
@@ -290,7 +290,7 @@ class AuthLayoutRouteConfig {
     },
   });
 
-  public verifyPasskey = createRouteConfig({
+  public verifyPasskey = createCustomRoute({
     method: 'post',
     path: '/passkey-verification',
     guard: isPublicAccess,
@@ -323,7 +323,7 @@ class AuthLayoutRouteConfig {
     },
   });
 
-  public signIn = createRouteConfig({
+  public signIn = createCustomRoute({
     method: 'post',
     path: '/sign-in',
     guard: isPublicAccess,
@@ -349,7 +349,7 @@ class AuthLayoutRouteConfig {
         }),
         content: {
           'application/json': {
-            schema: successWithDataSchema(signInSchema),
+            schema: successWithDataSchema(emailVerifiedSchema),
           },
         },
       },
@@ -357,7 +357,7 @@ class AuthLayoutRouteConfig {
     },
   });
 
-  public checkToken = createRouteConfig({
+  public checkToken = createCustomRoute({
     method: 'post',
     path: '/check-token/{id}',
     guard: isPublicAccess,
@@ -374,7 +374,7 @@ class AuthLayoutRouteConfig {
         description: 'Token is valid',
         content: {
           'application/json': {
-            schema: successWithDataSchema(checkTokenSchema),
+            schema: successWithDataSchema(tokenWithDataSchema),
           },
         },
       },
@@ -383,7 +383,7 @@ class AuthLayoutRouteConfig {
   });
 
   // Info: this route requires authentication
-  public acceptOrgInvite = createRouteConfig({
+  public acceptOrgInvite = createCustomRoute({
     method: 'post',
     path: '/accept-invite/{token}',
     guard: [isAuthenticated],
@@ -407,7 +407,7 @@ class AuthLayoutRouteConfig {
     },
   });
 
-  public githubSignIn = createRouteConfig({
+  public githubSignIn = createCustomRoute({
     method: 'get',
     path: '/github',
     guard: isPublicAccess,
@@ -426,7 +426,7 @@ class AuthLayoutRouteConfig {
     },
   });
 
-  public githubSignInCallback = createRouteConfig({
+  public githubSignInCallback = createCustomRoute({
     method: 'get',
     path: '/github/callback',
     guard: isPublicAccess,
@@ -451,7 +451,7 @@ class AuthLayoutRouteConfig {
     },
   });
 
-  public getPasskeyChallenge = createRouteConfig({
+  public getPasskeyChallenge = createCustomRoute({
     method: 'get',
     path: '/passkey-challenge',
     guard: isPublicAccess,
@@ -472,7 +472,7 @@ class AuthLayoutRouteConfig {
     },
   });
 
-  public googleSignIn = createRouteConfig({
+  public googleSignIn = createCustomRoute({
     method: 'get',
     path: '/google',
     guard: isPublicAccess,
@@ -491,7 +491,7 @@ class AuthLayoutRouteConfig {
     },
   });
 
-  public googleSignInCallback = createRouteConfig({
+  public googleSignInCallback = createCustomRoute({
     method: 'get',
     path: '/google/callback',
     guard: isPublicAccess,
@@ -510,7 +510,7 @@ class AuthLayoutRouteConfig {
     },
   });
 
-  public microsoftSignIn = createRouteConfig({
+  public microsoftSignIn = createCustomRoute({
     method: 'get',
     path: '/microsoft',
     guard: isPublicAccess,
@@ -529,7 +529,7 @@ class AuthLayoutRouteConfig {
     },
   });
 
-  public microsoftSignInCallback = createRouteConfig({
+  public microsoftSignInCallback = createCustomRoute({
     method: 'get',
     path: '/microsoft/callback',
     guard: isPublicAccess,
@@ -548,7 +548,7 @@ class AuthLayoutRouteConfig {
     },
   });
 
-  public signOut = createRouteConfig({
+  public signOut = createCustomRoute({
     method: 'get',
     path: '/sign-out',
     guard: isPublicAccess,
@@ -569,4 +569,4 @@ class AuthLayoutRouteConfig {
   });
 }
 
-export default new AuthLayoutRouteConfig();
+export default new AuthRoutes();
