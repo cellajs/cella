@@ -1,4 +1,8 @@
 {
+  "onboarding_completed": "Great! Let's go.",
+  "onboarding_completed.text": "Have a look around to explore the features of {{appName}}.",
+  "onboarding_welcome": "Welcome to {{appName}}",
+  "onboarding_welcome.text": "A template to build web apps with sync engine. What will you build with it?",
   "organization": "Organization",
   "organizations": "Organizations",
   "user": "User",
