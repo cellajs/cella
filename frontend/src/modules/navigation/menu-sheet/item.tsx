@@ -57,7 +57,7 @@ export const MenuSheetItem = ({ item, className, searchResults }: MenuSheetItemP
       />
       <div className="truncate grow flex flex-col justify-center pr-2 text-left group-data-[subitem=true]/menuItem:pl-0">
         <div
-          className={`truncate leading-5 transition-all text-md group-hover/menuItem:delay-300 pt-1.5 duration-200 ease-in-out ${!searchResults && 'pt-3.5 group-data-[subitem=true]/menuItem:pt-3'} sm:group-hover/menuItem:pt-1.5! group-data-[subitem=true]/menuItem:text-sm group-data-[subitem=true]/menuItem:leading-4`}
+          className={`truncate leading-5 transition-all text-md group-hover/menuItem:delay-300 pt-1.5 duration-200 ease-in-out ${!searchResults && 'pt-3.5 group-data-[subitem=true]/menuItem:pt-3'} sm:group-hover/menuItem:pt-1.5! group-data-[subitem=true]/menuItem:text-sm group-data-[subitem=true]/menuItem:font-light  group-data-[subitem=true]/menuItem:leading-4`}
         >
           {item.name}
           <span className="absolute left-0 top-3 h-[calc(100%-1.5rem)] w-1 rounded-lg bg-primary transition-opacity opacity-0 group-data-[link-active=true]/menuItem:opacity-100" />

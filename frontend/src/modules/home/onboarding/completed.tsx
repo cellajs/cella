@@ -34,9 +34,9 @@ export const OnboardingCompleted = () => {
       {finishedOnboarding && (
         <Undo size={400} strokeWidth={0.1} className="max-md:hidden scale-y-75 md:-translate-x-24 -mt-52 -mb-12  text-primary rotate-[30deg]" />
       )}
-      <h1 className="text-3xl font-bold">{t('common:onboarding_completed')}</h1>
+      <h1 className="text-3xl font-bold">{t('app:onboarding_completed')}</h1>
       <p className="text-xl text-foreground/90 md:text-2xl max-w-md font-light md:leading-9 pb-8">
-        {t('common:onboarding_completed.text', { appName: config.name })}
+        {t('app:onboarding_completed.text', { appName: config.name })}
       </p>
     </div>
   );

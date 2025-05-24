@@ -1,13 +1,15 @@
-import { db, migrateConfig } from '#/db/db';
-import docs from '#/lib/docs';
-import '#/lib/i18n';
 import { serve } from '@hono/node-server';
 import * as Sentry from '@sentry/node';
+import { nodeProfilingIntegration } from '@sentry/profiling-node';
 import chalk from 'chalk';
-import { config } from 'config';
 import { migrate as pgMigrate } from 'drizzle-orm/node-postgres/migrator';
 import type { PgliteDatabase } from 'drizzle-orm/pglite';
 import { migrate as pgliteMigrate } from 'drizzle-orm/pglite/migrator';
+
+import { db, migrateConfig } from '#/db/db';
+import docs from '#/lib/docs';
+import '#/lib/i18n';
+import { config } from 'config';
 import app from '#/routes';
 import { ascii } from '#/utils/ascii';
 import { env } from './env';
@@ -24,7 +26,13 @@ Sentry.init({
   enabled: !!config.sentryDsn,
   dsn: config.sentryDsn,
   environment: config.mode,
+  integrations: [nodeProfilingIntegration()],
+  // Tracing to capture 100% of transactions
   tracesSampleRate: 1.0,
+  // Set sampling rate for profiling - this is evaluated only once per SDK.init call
+  profileSessionSampleRate: 1.0,
+  // Trace lifecycle automatically enables profiling during active traces
+  profileLifecycle: 'trace',
 });
 
 const main = async () => {
