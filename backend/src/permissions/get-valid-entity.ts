@@ -1,6 +1,6 @@
 import { type ContextEntityType, config } from 'config';
 import type { Context } from 'hono';
-import { type Env, getContextMemberships, getContextUser } from '#/lib/context';
+import { type Env, getContextMemberships, getContextOrganization, getContextUser } from '#/lib/context';
 import { type EntityModel, resolveEntity } from '#/lib/entity';
 import { type ErrorType, createError } from '#/lib/errors';
 import type { MembershipSummary } from '#/modules/memberships/helpers/select';
@@ -51,7 +51,7 @@ export const getValidEntity = async <T extends ContextEntityType>(
 
   if (!membership && !isSystemAdmin) return { error: createError(ctx, 400, 'invalid_request', 'error', entityType), ...nullData };
 
-  const organization = ctx.get('organization');
+  const organization = getContextOrganization();
 
   if (membership?.organizationId && organization) {
     const organizationMatches = membership.organizationId === organization.id;
