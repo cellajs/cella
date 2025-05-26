@@ -88,7 +88,7 @@ export const DesktopSheet = ({ sheet }: SheetProps) => {
     }
 
     // TODO(REVIEW) Close if clicked in app content area
-    const mainContentElement = document.getElementById('app-conten t-inner');
+    const mainContentElement = document.getElementById('app-content-inner');
     if (!modal && mainContentElement?.contains(event.target as Node)) return closeSheet();
   };
 
