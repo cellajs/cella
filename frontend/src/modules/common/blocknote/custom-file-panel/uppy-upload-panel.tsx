@@ -133,7 +133,6 @@ const UppyFilePanel = ({ onComplete, onError, organizationId, block }: BaseUppyF
     return () => {
       isMounted = false;
       setUppy(null);
-      setOpen(false);
       if (localUppy) localUppy.destroy();
     };
   }, []);
