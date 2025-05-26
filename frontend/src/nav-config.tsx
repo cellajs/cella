@@ -11,9 +11,9 @@ import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { toaster } from '~/modules/common/toaster';
 import type { UserMenuItem } from '~/modules/me/types';
 import { AppSearch, type EntityListItemType, type EntitySearchSection } from '~/modules/navigation/search';
+import type { EntityRoute } from '~/modules/navigation/types';
 import { OrganizationRoute } from '~/routes/organizations';
 import { UserProfileRoute } from '~/routes/users';
-import type { EntityRoute } from './modules/navigation/types';
 
 /**
  * Set entity paths so we can dynamically use them in the app

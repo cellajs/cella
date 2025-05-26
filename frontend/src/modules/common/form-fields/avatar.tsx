@@ -5,10 +5,10 @@ import { useRef } from 'react';
 import type { UseFormReturn } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { AvatarWrap, type AvatarWrapProps } from '~/modules/common/avatar-wrap';
+import { toaster } from '~/modules/common/toaster';
+import { useUploader } from '~/modules/common/uploader/use-uploader';
 import { Button } from '~/modules/ui/button';
 import { FormControl, FormField, FormItem, FormLabel } from '~/modules/ui/form';
-import { toaster } from '../toaster';
-import { useUploader } from '../uploader/use-uploader';
 
 interface Props {
   form: UseFormReturn;

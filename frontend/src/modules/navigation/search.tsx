@@ -13,12 +13,12 @@ import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import StickyBox from '~/modules/common/sticky-box';
 import { entitiesQueryOptions } from '~/modules/entities/query';
+import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandSeparator } from '~/modules/ui/command';
 import { ScrollArea } from '~/modules/ui/scroll-area';
 import { entitySearchSections, getEntityRoute } from '~/nav-config';
 import { useNavigationStore } from '~/store/navigation';
-import { Badge } from '../ui/badge';
 
 export type EntityListItemType = z.infer<typeof entityListItemSchema>;
 
