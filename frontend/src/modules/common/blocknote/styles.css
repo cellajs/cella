@@ -37,6 +37,11 @@
   outline: none !important;
 }
 
+/* To hide formattingtoolbar when editor not editable */
+.bn-container:has(.bn-editor[contenteditable="false"]) > [data-floating-ui-focusable] {
+  display: none !important;
+}
+
 .bn-shadcn p {
   font-size: 0.888rem;
   font-weight: 350;
