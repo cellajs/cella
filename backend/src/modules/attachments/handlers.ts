@@ -6,6 +6,7 @@ import { type ErrorType, createError, errorResponse } from '#/lib/errors';
 import { logEvent } from '#/middlewares/logger/log-event';
 import { processAttachmentUrls, processAttachmentUrlsBatch } from '#/modules/attachments/helpers/process-attachment-urls';
 import attachmentRoutes from '#/modules/attachments/routes';
+import { getValidProductEntity } from '#/permissions/get-valid-product';
 import { splitByAllowance } from '#/permissions/split-by-allowance';
 import { defaultHook } from '#/utils/default-hook';
 import { getIsoDate } from '#/utils/iso-date';
@@ -161,15 +162,8 @@ const attachmentsRouteHandlers = app
   .openapi(attachmentRoutes.getAttachment, async (ctx) => {
     const { id } = ctx.req.valid('param');
 
-    // Scope the attachment to organization
-    const organization = getContextOrganization();
-
-    const [attachment] = await db
-      .select()
-      .from(attachmentsTable)
-      .where(and(eq(attachmentsTable.id, id), eq(attachmentsTable.organizationId, organization.id)));
-
-    if (!attachment) return errorResponse(ctx, 404, 'not_found', 'warn', 'attachment');
+    const { error, entity: attachment } = await getValidProductEntity(ctx, id, 'attachment', 'organization', 'read');
+    if (error) return ctx.json({ success: false, error }, 400);
 
     const data = await processAttachmentUrls(attachment);
 
@@ -180,8 +174,11 @@ const attachmentsRouteHandlers = app
    */
   .openapi(attachmentRoutes.updateAttachment, async (ctx) => {
     const { id } = ctx.req.valid('param');
-    const user = getContextUser();
 
+    const { error } = await getValidProductEntity(ctx, id, 'attachment', 'organization', 'update');
+    if (error) return ctx.json({ success: false, error }, 400);
+
+    const user = getContextUser();
     const updatedFields = ctx.req.valid('json');
 
     const [updatedAttachment] = await db
