@@ -21,7 +21,7 @@ const integrations: Integrations[] = [
   { name: 'Brevo', country: 'FR', url: 'brevo.com', id: 'brevo' },
   { name: 'Sentry', country: 'US', url: 'sentry.io', id: 'sentry' },
   { name: 'Gleap', country: 'AT', url: 'gleap.io', id: 'gleap' },
-  { name: 'Novu', country: 'IL', url: 'novu.co', id: 'novu' },
+  // { name: 'Novu', country: 'IL', url: 'novu.co', id: 'novu' },
 ];
 
 const Integrations = () => {

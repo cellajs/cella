@@ -41,7 +41,7 @@
     "@biomejs/biome": "^1.9.4",
     "@evilmartians/lefthook": "^1.11.13",
     "cross-env": "^7.0.3",
-    "knip": "^5.57.1",
+    "knip": "^5.58.1",
     "rimraf": "^6.0.1",
     "tsx": "^4.19.4",
     "typescript": "^5.8.3",
