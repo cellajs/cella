@@ -18,7 +18,7 @@ import { membershipSummarySchema } from '../memberships/schema';
 /** Type assertion to avoid "ReferenceError: Buffer is not defined" when using `hasField`.
  * Redundant fields will be filtered out in `getRelatedEntityCounts`.
  */
-//TODO: find way to fix ?
+//TODO: find way to fix or can we simplify it?
 export const entityCountSchema = z.object(
   [...config.productEntityTypes, ...config.contextEntityTypes].reduce(
     (acc, key) => {

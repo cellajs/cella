@@ -1,6 +1,6 @@
+import { OpenAPIHono } from '@hono/zod-openapi';
 import { contextStorage } from 'hono/context-storage';
 
-import { OpenAPIHono } from '@hono/zod-openapi';
 import { config } from 'config';
 import type { Env } from '#/lib/context';
 import { errorResponse } from './lib/errors';

@@ -114,7 +114,7 @@ const systemRouteHandlers = app
   /*
    * Get presigned URL
    */
-  .openapi(systemRoutes.getPriasignedUrl, async (ctx) => {
+  .openapi(systemRoutes.getPresignedUrl, async (ctx) => {
     const { key } = ctx.req.valid('query');
 
     const url = await getSignedUrl(key);

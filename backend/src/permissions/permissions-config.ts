@@ -51,14 +51,17 @@ class AdaptedMembershipAdapter extends MembershipAdapter {
    */
   // biome-ignore lint/suspicious/noExplicitAny: The format of the membership object may vary.
   adapt(memberships: any[]): Membership[] {
-    return memberships.map((m) => ({
-      contextName: m.type?.toLowerCase() || '',
-      contextKey: m[`${m.type?.toLowerCase() || ''}Id`],
-      roleName: m.role,
-      ancestors: {
-        organization: m.organizationId,
-      },
-    }));
+    return memberships.map((m) => {
+      const contextName = m.contextType?.toLowerCase() || '';
+      return {
+        contextName,
+        contextKey: m[`${contextName}Id`],
+        roleName: m.role,
+        ancestors: {
+          organization: m.organizationId,
+        },
+      };
+    });
   }
 }
 
@@ -75,7 +78,7 @@ class AdaptedSubjectAdapter extends SubjectAdapter {
   // biome-ignore lint/suspicious/noExplicitAny: The format of the subject can vary depending on the subject.
   adapt(s: any): Subject {
     return {
-      name: s.entity,
+      name: s.entityType,
       key: s.id,
       ancestors: {
         organization: s.organizationId,

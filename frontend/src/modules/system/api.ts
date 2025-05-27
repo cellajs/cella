@@ -44,7 +44,7 @@ export const sendNewsletter = async ({ body, toSelf = false }: { body: Newslette
   return json.success;
 };
 
-export const getPriasignedUrl = async ({ key }: { key: string }) => {
+export const getPresignedUrl = async ({ key }: { key: string }) => {
   const response = await client['presigned-url'].$get({
     query: { key },
   });

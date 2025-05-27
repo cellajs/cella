@@ -23,12 +23,15 @@ export function useUploadUppy() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!uploaderData || !config.has.uploadEnabled) return;
+    if (!uploaderData) return;
 
     let isMounted = true;
     let localUppy: CustomUppy | null = null;
+    const isUploadFullyEnabled = config.has.uploadEnabled && onlineManager.isOnline();
 
     const { isPublic, templateId = 'attachment', organizationId, restrictions, plugins = [], statusEventHandler = {} } = uploaderData;
+
+    const allowedFileTypes = isUploadFullyEnabled ? (restrictions?.allowedFileTypes ?? uppyRestrictions.allowedFileTypes) : ['image/*'];
 
     const uppyOptions: CustomUppyOpt = {
       restrictions: {
@@ -37,6 +40,8 @@ export function useUploadUppy() {
         minNumberOfFiles: null,
         ...restrictions,
         requiredMetaFields: restrictions?.requiredMetaFields ?? [],
+        // TODO(IMPROVEMENT) Allow offline upload of audio, file & video?
+        allowedFileTypes,
       },
     };
 
@@ -78,8 +83,10 @@ export function useUploadUppy() {
         // Plugin Registration
         if (plugins.includes('webcam')) localUppy.use(Webcam, webcamOptions);
         if (plugins.includes('image-editor')) localUppy.use(ImageEditor, imageEditorOptions);
-        if (plugins.includes('audio')) localUppy.use(Audio);
-        if (plugins.includes('screen-capture')) localUppy.use(ScreenCapture, { preferredVideoMimeType: 'video/webm;codecs=vp9' });
+        if (plugins.includes('audio') && isUploadFullyEnabled) localUppy.use(Audio);
+        if (plugins.includes('screen-capture') && isUploadFullyEnabled) {
+          localUppy.use(ScreenCapture, { preferredVideoMimeType: 'video/webm;codecs=vp9' });
+        }
 
         if (!isMounted) {
           localUppy.destroy();

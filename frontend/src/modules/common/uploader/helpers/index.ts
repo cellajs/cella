@@ -54,8 +54,7 @@ export const createBaseTransloaditUppy = async (uppyOptions: CustomUppyOpt, toke
 
     return uppy;
   } catch (err) {
-    // Too allow uppy dialog offline upload
-    if (err instanceof Error && err.message === 'Failed to fetch' && !onlineManager.isOnline()) return uppy;
+    if (err instanceof Error && err.message.includes('Failed to fetch') && !onlineManager.isOnline()) return uppy;
     throw new Error('Failed to get upload token');
   }
 };

@@ -10,6 +10,7 @@ import { useTranslation } from 'react-i18next';
 import type { z } from 'zod';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import { AlertWrap } from '~/modules/common/alert-wrap';
+import { blocksToHTML } from '~/modules/common/blocknote/helpers';
 import InputFormField from '~/modules/common/form-fields/input';
 import SelectRoles from '~/modules/common/form-fields/select-roles';
 import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
@@ -60,10 +61,13 @@ const CreateNewsletterForm = ({ organizationIds, callback }: CreateNewsletterFor
     },
   });
 
-  const onSubmit = (body: FormValues) => {
-    // Set organizationIds here to avoind having them in draft
-    body.organizationIds = organizationIds;
-
+  const onSubmit = async (data: FormValues) => {
+    // Set organizationIds here to avoind having them in draft & converting string blocks to HTML
+    const body = {
+      ...data,
+      organizationIds,
+      content: await blocksToHTML(data.content),
+    };
     _sendNewsletter({ body, toSelf: !!testOnly });
   };
 
@@ -71,8 +75,8 @@ const CreateNewsletterForm = ({ organizationIds, callback }: CreateNewsletterFor
 
   const canSend = () => {
     if (!form.formState.isDirty) return false;
-    const { content } = form.getValues();
-    return blocknoteFieldIsDirty(content);
+    const { content, roles } = form.getValues();
+    return blocknoteFieldIsDirty(content) && roles.length > 0;
   };
 
   const isDirty = () => {

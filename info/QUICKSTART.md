@@ -51,4 +51,4 @@ pnpm upstream:pull
 
 ### Troubleshooting
 
-when using `pnpm quick`, it could be that your local pglite is corrupted or has issues. Luckily its easy to clear it. Simply go to `/backend` and remove `.db`.
+when using `pnpm quick`, it could be that your local pglite is corrupted or has issues. Luckily its easy to clear it. Simply go to `/backend` and remove `.db` and retry.
