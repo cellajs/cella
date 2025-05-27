@@ -31,6 +31,12 @@
   --bn-font-family: "Open Sans", ui-sans-serif, sans-serif;
 }
 
+/* To hide selction of file content when editor not editable */
+.bn-editor[contenteditable="false"] .ProseMirror-selectednode > .bn-block-content > *,
+.bn-editor[contenteditable="false"] .bn-block-content.ProseMirror-selectednode > * {
+  outline: none !important;
+}
+
 .bn-shadcn p {
   font-size: 0.888rem;
   font-weight: 350;
