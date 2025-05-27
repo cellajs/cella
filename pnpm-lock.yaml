@@ -190,10 +190,10 @@ importers:
         specifier: ^7.1.1
         version: 7.1.1
       react:
-        specifier: ^19.1.0
+        specifier: ^19.0.0
         version: 19.1.0
       react-dom:
-        specifier: ^19.1.0
+        specifier: ^19.0.0
         version: 19.1.0(react@19.1.0)
       react-i18next:
         specifier: ^15.5.2
@@ -230,7 +230,7 @@ importers:
         specifier: ^8.15.2
         version: 8.15.2
       '@types/react':
-        specifier: ^19.1.5
+        specifier: ^19.0.0
         version: 19.1.5
       '@types/ua-parser-js':
         specifier: ^0.7.39
@@ -2820,7 +2820,6 @@ packages:
 
   '@evilmartians/lefthook@1.11.13':
     resolution: {integrity: sha512-CcR9u7lb3uCKD+295S2GfhROI6q9npTsJ/E07XupZZFO8sdYHm3Uo3x8t+lzKmI/7rCFA2t0MWRggjNrxpjXFg==}
-    cpu: [x64, arm64, ia32]
     os: [darwin, linux, win32]
     hasBin: true
 
