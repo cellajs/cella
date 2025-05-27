@@ -20,7 +20,7 @@ import permissionManager, { type PermittedAction } from '#/permissions/permissio
  * @param action - Action to check `"create" | "read" | "update" | "delete"`.
  * @param idOrSlug - entity id or slug.
  * @returns An object with:
- *   - `entity`: Resolved entity or `null` if not found.
+ *   - `entity`: Resolved context entity or `null` if not found.
  *   - `membership`: User's membership or `null` if not found.
  *   - `error`: Error object or `null` if no error occurred.
  */
@@ -41,8 +41,7 @@ export const getValidContextEntity = async <T extends ContextEntityType>(
   if (!entity) return { error: createError(ctx, 404, 'not_found', 'warn', entityType), ...nullData };
 
   // Step 2: Permission check
-  // const isAllowed = permissionManager.isPermissionAllowed(memberships, action, entity) || isSystemAdmin
-  const isAllowed = permissionManager.isPermissionAllowed(memberships, action, entity);
+  const isAllowed = permissionManager.isPermissionAllowed(memberships, action, entity) || isSystemAdmin;
   if (!isAllowed) return { error: createError(ctx, 403, 'forbidden', 'warn', entityType), ...nullData };
 
   // Step 3: Membership check

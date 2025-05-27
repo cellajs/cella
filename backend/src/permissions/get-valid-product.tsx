@@ -20,7 +20,7 @@ import permissionManager, { type PermittedAction } from '#/permissions/permissio
  * @param contextEntityType: One of context entity types, that the product entity belongs to (e.g., "organization", "project").
  * @param action - Action to check `"create" | "read" | "update" | "delete"`.
  * @returns An object with:
- *   - `entity`: Resolved entity or `null` if not found.
+ *   - `entity`: Resolved product entity or `null` if not found.
  *   - `error`: Error object or `null` if no error occurred.
  */
 export const getValidProductEntity = async <K extends ProductEntityType>(
@@ -30,7 +30,7 @@ export const getValidProductEntity = async <K extends ProductEntityType>(
   contextEntityType: ContextEntityType,
   action: PermittedAction,
 ): Promise<{ error: ErrorType; entity: null } | { error: null; entity: EntityModel<K> }> => {
-  const nullResult = { entity: null as null };
+  const nullResult = { entity: null };
 
   const user = getContextUser();
   const memberships = getContextMemberships();
@@ -41,10 +41,7 @@ export const getValidProductEntity = async <K extends ProductEntityType>(
   if (!entity) return { error: createError(ctx, 404, 'not_found', 'warn', entityType), ...nullResult };
 
   // Step 2: Permission check
-  // const isAllowed = permissionManager.isPermissionAllowed(memberships, action, entity) || isSystemAdmin;
-  const isAllowed = permissionManager.isPermissionAllowed(memberships, action, entity);
-  console.log('🚀 ~ isAllowed:', isAllowed);
-
+  const isAllowed = permissionManager.isPermissionAllowed(memberships, action, entity) || isSystemAdmin;
   if (!isAllowed) return { error: createError(ctx, 403, 'forbidden', 'warn', entityType), ...nullResult };
 
   // Step 3: Membership check
@@ -60,6 +57,5 @@ export const getValidProductEntity = async <K extends ProductEntityType>(
   if (membership?.organizationId && org && membership.organizationId !== org.id)
     return { error: createError(ctx, 400, 'invalid_request', 'error', entityType), ...nullResult };
 
-  // All checks passed
   return { error: null, entity };
 };
