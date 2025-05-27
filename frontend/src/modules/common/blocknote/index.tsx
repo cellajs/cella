@@ -52,7 +52,7 @@ export const BlockNote = ({
   className = '',
   defaultValue = '', // stringified blocks
   trailingBlock = true,
-  clickOpensPreview = false,
+  clickOpensPreview = false, // click on FileBlock opens preview (in case, type is 'preview' or not editable)
   // Editor functional
   codeBlockDefaultLanguage = 'text',
   editable = type !== 'preview',
@@ -149,9 +149,14 @@ export const BlockNote = ({
     },
     [editor, defaultValue],
   );
-  const handleClick: MouseEventHandler = (event) => {
-    if (clickOpensPreview) openAttachment(event, editor, blockNoteRef);
-  };
+
+  const handleClick: MouseEventHandler = useCallback(
+    (event) => {
+      if (!clickOpensPreview || editable || type !== 'preview') return;
+      openAttachment(event, editor, blockNoteRef);
+    },
+    [editable, type],
+  );
 
   const passedContent = useMemo(() => getParsedContent(defaultValue), [defaultValue]);
 

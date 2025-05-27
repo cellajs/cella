@@ -14,6 +14,7 @@ export interface CustomFormatToolBarConfig {
   textColorSelect?: boolean;
   blockNestingSelect?: boolean;
   fileCaption?: boolean;
+  openPreview?: boolean;
   replaceFile?: boolean;
   createLink?: boolean;
 }
