@@ -5,7 +5,7 @@ import { type Env, getContextMemberships, getContextOrganization, getContextUser
 import { type EntityModel, resolveEntity } from '#/lib/entity';
 import { type ErrorType, createError } from '#/lib/errors';
 import type { MembershipSummary } from '#/modules/memberships/helpers/select';
-import permissionManager, { type PermittedAction } from '#/permissions/permissions-config';
+import { checkPermission } from '#/permissions/check-if-allowed';
 
 /**
  * Checks if user has permission to perform an action on a context entity.
@@ -27,7 +27,7 @@ import permissionManager, { type PermittedAction } from '#/permissions/permissio
 export const getValidContextEntity = async <T extends ContextEntityType>(
   ctx: Context<Env>,
   entityType: T,
-  action: PermittedAction,
+  action: 'read' | 'update' | 'delete',
   idOrSlug: string,
 ): Promise<{ error: ErrorType; entity: null; membership: null } | { error: null; entity: EntityModel<T>; membership: MembershipSummary | null }> => {
   const user = getContextUser();
@@ -41,7 +41,7 @@ export const getValidContextEntity = async <T extends ContextEntityType>(
   if (!entity) return { error: createError(ctx, 404, 'not_found', 'warn', entityType), ...nullData };
 
   // Step 2: Permission check
-  const isAllowed = permissionManager.isPermissionAllowed(memberships, action, entity) || isSystemAdmin;
+  const isAllowed = checkPermission(memberships, action, entity);
   if (!isAllowed) return { error: createError(ctx, 403, 'forbidden', 'warn', entityType), ...nullData };
 
   // Step 3: Membership check

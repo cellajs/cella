@@ -4,7 +4,7 @@ import type { Context } from 'hono';
 import { type Env, getContextMemberships, getContextOrganization, getContextUser } from '#/lib/context';
 import { type EntityModel, resolveEntity } from '#/lib/entity';
 import { type ErrorType, createError } from '#/lib/errors';
-import permissionManager, { type PermittedAction } from '#/permissions/permissions-config';
+import { checkPermission } from '#/permissions/check-if-allowed';
 
 /**
  * Checks if user has permission to perform an action on a product entity.
@@ -18,7 +18,7 @@ import permissionManager, { type PermittedAction } from '#/permissions/permissio
  * @param idOrSlug - Product id or slug.
  * @param entityType - Product entity type.
  * @param contextEntityType: One of context entity types, that the product entity belongs to (e.g., "organization", "project").
- * @param action - Action to check `"create" | "read" | "update" | "delete"`.
+ * @param action - Action to check `"read" | "update" | "delete"`.
  * @returns An object with:
  *   - `entity`: Resolved product entity or `null` if not found.
  *   - `error`: Error object or `null` if no error occurred.
@@ -28,7 +28,7 @@ export const getValidProductEntity = async <K extends ProductEntityType>(
   idOrSlug: string,
   entityType: K,
   contextEntityType: ContextEntityType,
-  action: PermittedAction,
+  action: 'read' | 'update' | 'delete',
 ): Promise<{ error: ErrorType; entity: null } | { error: null; entity: EntityModel<K> }> => {
   const nullResult = { entity: null };
 
@@ -41,7 +41,7 @@ export const getValidProductEntity = async <K extends ProductEntityType>(
   if (!entity) return { error: createError(ctx, 404, 'not_found', 'warn', entityType), ...nullResult };
 
   // Step 2: Permission check
-  const isAllowed = permissionManager.isPermissionAllowed(memberships, action, entity) || isSystemAdmin;
+  const isAllowed = checkPermission(memberships, action, entity);
   if (!isAllowed) return { error: createError(ctx, 403, 'forbidden', 'warn', entityType), ...nullResult };
 
   // Step 3: Membership check
