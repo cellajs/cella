@@ -23,7 +23,7 @@ import { focusEditor } from '~/modules/common/blocknote/helpers/focus';
 import { openAttachment } from '~/modules/common/blocknote/helpers/open-attachment';
 import { shadCNComponents } from '~/modules/common/blocknote/helpers/shad-cn';
 import type { CommonBlockNoteProps, CustomBlockNoteEditor } from '~/modules/common/blocknote/types';
-import { getPriasignedUrl } from '~/modules/system/api';
+import { getPresignedUrl } from '~/modules/system/api';
 import { useUIStore } from '~/store/ui';
 
 import '@blocknote/shadcn/style.css';
@@ -92,7 +92,7 @@ export const BlockNote = ({
     // TODO(BLOCKING) remove image blick (https://github.com/TypeCellOS/BlockNote/issues/1570)
     resolveFileUrl: (key) => {
       if (!key.length) return Promise.resolve('');
-      return getPriasignedUrl({ key });
+      return getPresignedUrl({ key });
     },
   });
 

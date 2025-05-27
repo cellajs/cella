@@ -67,7 +67,7 @@ class SystemRoutes {
     },
   });
 
-  public getPriasignedUrl = createCustomRoute({
+  public getPresignedUrl = createCustomRoute({
     method: 'get',
     path: '/presigned-url',
     guard: [isAuthenticated],
