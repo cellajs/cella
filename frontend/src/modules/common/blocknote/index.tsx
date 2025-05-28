@@ -19,6 +19,7 @@ import { CustomFormattingToolbar } from '~/modules/common/blocknote/custom-forma
 import { CustomSideMenu } from '~/modules/common/blocknote/custom-side-menu';
 import { CustomSlashMenu } from '~/modules/common/blocknote/custom-slash-menu';
 import { compareIsContentSame, getParsedContent } from '~/modules/common/blocknote/helpers';
+import { getDictionary } from '~/modules/common/blocknote/helpers/dictionary';
 import { focusEditor } from '~/modules/common/blocknote/helpers/focus';
 import { openAttachment } from '~/modules/common/blocknote/helpers/open-attachment';
 import { shadCNComponents } from '~/modules/common/blocknote/helpers/shad-cn';
@@ -90,6 +91,7 @@ export const BlockNote = ({
       createHighlighter: codeBlock.createHighlighter,
     },
     trailingBlock,
+    dictionary: getDictionary(),
     // TODO(BLOCKING) remove image blick (https://github.com/TypeCellOS/BlockNote/issues/1570)
     resolveFileUrl: (key) => {
       if (!key.length) return Promise.resolve('');
