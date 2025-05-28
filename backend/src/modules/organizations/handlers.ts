@@ -13,7 +13,7 @@ import { checkSlugAvailable } from '#/modules/entities/helpers/check-slug';
 import { getMemberCounts, getMemberCountsQuery, getRelatedEntityCounts } from '#/modules/entities/helpers/counts';
 import { insertMembership } from '#/modules/memberships/helpers';
 import { membershipSummarySelect } from '#/modules/memberships/helpers/select';
-import { getValidEntity } from '#/permissions/get-valid-entity';
+import { getValidContextEntity } from '#/permissions/get-context-entity';
 import { splitByAllowance } from '#/permissions/split-by-allowance';
 import { defaultHook } from '#/utils/default-hook';
 import { getIsoDate } from '#/utils/iso-date';
@@ -161,10 +161,8 @@ const organizationRouteHandlers = app
   .openapi(organizationRoutes.getOrganization, async (ctx) => {
     const { idOrSlug } = ctx.req.valid('param');
 
-    const result = await getValidEntity(ctx, 'organization', 'read', idOrSlug);
-    if (result.error) return ctx.json({ success: false, error: result.error }, 400);
-
-    const { entity: organization, membership } = result;
+    const { error, entity: organization, membership } = await getValidContextEntity(ctx, idOrSlug, 'organization', 'read');
+    if (error) return ctx.json({ success: false, error }, 400);
 
     const memberCounts = await getMemberCounts('organization', organization.id);
     const relatedEntitiesCounts = await getRelatedEntityCounts('organization', organization.id);
@@ -180,11 +178,8 @@ const organizationRouteHandlers = app
   .openapi(organizationRoutes.updateOrganization, async (ctx) => {
     const { idOrSlug } = ctx.req.valid('param');
 
-    const result = await getValidEntity(ctx, 'organization', 'update', idOrSlug);
-    if (result.error) return ctx.json({ success: false, error: result.error }, 400);
-
-    const organization = result.entity;
-    const membership = result.membership;
+    const { error, entity: organization, membership } = await getValidContextEntity(ctx, idOrSlug, 'organization', 'update');
+    if (error) return ctx.json({ success: false, error }, 400);
 
     const user = getContextUser();
 

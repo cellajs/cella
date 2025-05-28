@@ -3,6 +3,7 @@
   "compilerOptions": {
     "noEmit": true,
     "allowImportingTsExtensions": true,
+    "lib": ["ES2021"],
 
     /* Bundler mode */
     "jsx": "react-jsx",

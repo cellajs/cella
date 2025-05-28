@@ -13,7 +13,7 @@ const NewsletterPreview = () => {
           type="preview"
           defaultValue={form.getValues('content')}
           className="text-muted-foreground font-light"
-          altClickOpensPreview
+          clickOpensPreview
         />
       </section>
     </div>

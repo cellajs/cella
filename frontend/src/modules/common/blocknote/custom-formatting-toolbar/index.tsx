@@ -14,6 +14,7 @@ import { customFormattingToolBarConfig } from '~/modules/common/blocknote/blockn
 import { CustomTextAlignSelect } from '~/modules/common/blocknote/custom-formatting-toolbar/custom-align-change';
 import { CellaCustomBlockTypeSelect } from '~/modules/common/blocknote/custom-formatting-toolbar/custom-block-type-change';
 import { CustomTextStyleSelect } from '~/modules/common/blocknote/custom-formatting-toolbar/custom-text-type-change';
+import { FileOpenPreviewButton } from '~/modules/common/blocknote/custom-formatting-toolbar/open-preview-button';
 
 export const CustomFormattingToolbar = () => (
   <FormattingToolbarController
@@ -36,6 +37,8 @@ export const CustomFormattingToolbar = () => (
 
           {customFormattingToolBarConfig.fileCaption && <FileCaptionButton key={'fileCaptionButton'} />}
           {customFormattingToolBarConfig.replaceFile && <FileReplaceButton key={'replaceFileButton'} />}
+          {customFormattingToolBarConfig.openPreview && <FileOpenPreviewButton key={'openPreviewButton'} />}
+
           <FileDownloadButton key={'downloadButton'} />
 
           {customFormattingToolBarConfig.textColorSelect && <ColorStyleButton key={'colorStyleButton'} />}
