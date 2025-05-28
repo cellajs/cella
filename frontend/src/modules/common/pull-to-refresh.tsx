@@ -1,5 +1,6 @@
 import { Circle } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useBodyClassPresence } from '~/hooks/use-body-class-presence';
 
 type Props = {
   onRefresh: () => void | Promise<void>;
@@ -16,6 +17,10 @@ const PullToRefresh = ({ onRefresh, refreshThreshold = 100, maximumPullLength = 
   const isDraggingRef = useRef(false);
 
   const isPulling = pullPosition > 0;
+
+  // If dialoger, dropdowner or sheeter are open, disable pull to refresh
+  const isUIBlocking = useBodyClassPresence(['dropdowner-open', 'sheeter-open', 'dialoger-open']);
+  if (isUIBlocking) isDisabled = true;
 
   const startPull = useCallback(
     (e: TouchEvent) => {
