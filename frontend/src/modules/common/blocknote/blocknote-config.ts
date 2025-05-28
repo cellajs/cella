@@ -150,6 +150,7 @@ export const customFormattingToolBarConfig: CustomFormatToolBarConfig = {
   textColorSelect: false,
   blockNestingSelect: false,
   fileCaption: true,
+  openPreview: true,
   replaceFile: true,
   createLink: true,
 };

@@ -14,6 +14,7 @@ export interface CustomFormatToolBarConfig {
   textColorSelect?: boolean;
   blockNestingSelect?: boolean;
   fileCaption?: boolean;
+  openPreview?: boolean;
   replaceFile?: boolean;
   createLink?: boolean;
 }
@@ -87,7 +88,7 @@ export type CommonBlockNoteProps = {
   slashMenu?: boolean;
   formattingToolbar?: boolean;
   trailingBlock?: boolean;
-  altClickOpensPreview?: boolean;
+  clickOpensPreview?: boolean;
   emojis?: boolean;
   allowedBlockTypes?: (BasicBlockBaseTypes | CellaCustomBlockTypes)[];
   allowedFileBlockTypes?: BasicFileBlockTypes[];

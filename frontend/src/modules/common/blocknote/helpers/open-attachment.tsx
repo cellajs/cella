@@ -7,8 +7,6 @@ export const openAttachment = async (
   editor: CustomBlockNoteEditor,
   blockNoteRef: React.RefObject<HTMLDivElement | null>,
 ) => {
-  if (!event.altKey) return;
-
   event.preventDefault();
   editor.formattingToolbar.closeMenu();
 

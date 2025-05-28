@@ -37,6 +37,7 @@ type BlockNoteProps =
     })
   | (CommonBlockNoteProps & {
       type: 'preview';
+      editable?: never;
       updateData?: never;
       onEscapeClick?: never;
       onEnterClick?: never;
@@ -51,10 +52,10 @@ export const BlockNote = ({
   className = '',
   defaultValue = '', // stringified blocks
   trailingBlock = true,
-  altClickOpensPreview = false,
+  clickOpensPreview = false, // click on FileBlock opens preview (in case, type is 'preview' or not editable)
   // Editor functional
   codeBlockDefaultLanguage = 'text',
-  editable = true,
+  editable = type !== 'preview',
   sideMenu = true,
   slashMenu = true,
   formattingToolbar = true,
@@ -148,9 +149,14 @@ export const BlockNote = ({
     },
     [editor, defaultValue],
   );
-  const handleClick: MouseEventHandler = (event) => {
-    if (altClickOpensPreview) openAttachment(event, editor, blockNoteRef);
-  };
+
+  const handleClick: MouseEventHandler = useCallback(
+    (event) => {
+      if (!clickOpensPreview || editable || type !== 'preview') return;
+      openAttachment(event, editor, blockNoteRef);
+    },
+    [editable, type],
+  );
 
   const passedContent = useMemo(() => getParsedContent(defaultValue), [defaultValue]);
 
@@ -185,7 +191,7 @@ export const BlockNote = ({
       id={id}
       theme={mode}
       editor={editor}
-      editable={type === 'preview' ? false : editable}
+      editable={editable}
       ref={blockNoteRef}
       className={className}
       data-color-scheme={mode}
