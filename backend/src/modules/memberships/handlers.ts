@@ -40,7 +40,7 @@ const membershipRouteHandlers = app
     const { idOrSlug, entityType: passedEntityType } = ctx.req.valid('query');
 
     // Validate entity existence and check user permission for updates
-    const { error, entity } = await getValidContextEntity(ctx, passedEntityType, 'update', idOrSlug);
+    const { error, entity } = await getValidContextEntity(ctx, idOrSlug, passedEntityType, 'update');
     if (error) return ctx.json({ success: false, error });
 
     // Extract entity details
@@ -205,7 +205,7 @@ const membershipRouteHandlers = app
     const { entityType, idOrSlug } = ctx.req.valid('query');
     const { ids } = ctx.req.valid('json');
 
-    const { error, entity } = await getValidContextEntity(ctx, entityType, 'delete', idOrSlug);
+    const { error, entity } = await getValidContextEntity(ctx, idOrSlug, entityType, 'delete');
     if (error) return ctx.json({ success: false, errors: [error] }, 200);
 
     const entityIdField = config.entityIdFields[entityType];
@@ -284,7 +284,7 @@ const membershipRouteHandlers = app
     if (!membershipContext) return errorResponse(ctx, 404, 'not_found', 'warn', updatedType);
 
     // Check if user has permission to update context
-    const { error } = await getValidContextEntity(ctx, updatedType, 'update', membershipContextId);
+    const { error } = await getValidContextEntity(ctx, membershipContextId, updatedType, 'update');
     if (error) return ctx.json({ success: false, error }, 400);
 
     // If archived changed, set lowest order in relevant memberships
@@ -385,7 +385,7 @@ const membershipRouteHandlers = app
     // Scope request to organization
     const organization = getContextOrganization();
 
-    const { error, entity } = await getValidContextEntity(ctx, entityType, 'read', idOrSlug);
+    const { error, entity } = await getValidContextEntity(ctx, idOrSlug, entityType, 'read');
     if (error) return ctx.json({ success: false, error }, 400);
 
     const entityIdField = config.entityIdFields[entity.entityType];

@@ -5,6 +5,7 @@ import { type Env, getContextMemberships, getContextOrganization, getContextUser
 import { type EntityModel, resolveEntity } from '#/lib/entity';
 import { type ErrorType, createError } from '#/lib/errors';
 import { checkPermission } from '#/permissions/check-if-allowed';
+import type { PermittedAction } from '#/permissions/permissions-config';
 
 /**
  * Checks if user has permission to perform an action on a product entity.
@@ -28,7 +29,7 @@ export const getValidProductEntity = async <K extends ProductEntityType>(
   idOrSlug: string,
   entityType: K,
   contextEntityType: ContextEntityType,
-  action: 'read' | 'update' | 'delete',
+  action: Exclude<PermittedAction, 'create'>,
 ): Promise<{ error: ErrorType; entity: null } | { error: null; entity: EntityModel<K> }> => {
   const nullResult = { entity: null };
 

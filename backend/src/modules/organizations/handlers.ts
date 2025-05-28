@@ -161,7 +161,7 @@ const organizationRouteHandlers = app
   .openapi(organizationRoutes.getOrganization, async (ctx) => {
     const { idOrSlug } = ctx.req.valid('param');
 
-    const { error, entity: organization, membership } = await getValidContextEntity(ctx, 'organization', 'read', idOrSlug);
+    const { error, entity: organization, membership } = await getValidContextEntity(ctx, idOrSlug, 'organization', 'read');
     if (error) return ctx.json({ success: false, error }, 400);
 
     const memberCounts = await getMemberCounts('organization', organization.id);
@@ -178,7 +178,7 @@ const organizationRouteHandlers = app
   .openapi(organizationRoutes.updateOrganization, async (ctx) => {
     const { idOrSlug } = ctx.req.valid('param');
 
-    const { error, entity: organization, membership } = await getValidContextEntity(ctx, 'organization', 'update', idOrSlug);
+    const { error, entity: organization, membership } = await getValidContextEntity(ctx, idOrSlug, 'organization', 'update');
     if (error) return ctx.json({ success: false, error }, 400);
 
     const user = getContextUser();

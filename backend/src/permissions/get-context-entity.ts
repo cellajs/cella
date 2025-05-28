@@ -6,6 +6,7 @@ import { type EntityModel, resolveEntity } from '#/lib/entity';
 import { type ErrorType, createError } from '#/lib/errors';
 import type { MembershipSummary } from '#/modules/memberships/helpers/select';
 import { checkPermission } from '#/permissions/check-if-allowed';
+import type { PermittedAction } from '#/permissions/permissions-config';
 
 /**
  * Checks if user has permission to perform an action on a context entity.
@@ -26,9 +27,9 @@ import { checkPermission } from '#/permissions/check-if-allowed';
  */
 export const getValidContextEntity = async <T extends ContextEntityType>(
   ctx: Context<Env>,
-  entityType: T,
-  action: 'read' | 'update' | 'delete',
   idOrSlug: string,
+  entityType: T,
+  action: Exclude<PermittedAction, 'create'>,
 ): Promise<{ error: ErrorType; entity: null; membership: null } | { error: null; entity: EntityModel<T>; membership: MembershipSummary | null }> => {
   const user = getContextUser();
   const memberships = getContextMemberships();
