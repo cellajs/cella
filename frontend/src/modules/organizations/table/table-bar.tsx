@@ -62,8 +62,12 @@ export const OrganizationsTableBar = ({
   };
 
   const openDeleteDialog = () => {
-    const callback = () => {
-      toaster(t('common:success.delete_resources', { resources: t('common:organizations') }), 'success');
+    const callback = (organizations: Organization[]) => {
+      const message =
+        organizations.length === 1
+          ? t('common:success.delete_resource', { resource: t('common:organization') })
+          : t('common:success.delete_counted_resources', { count: organizations.length, resources: t('common:organizations').toLowerCase() });
+      toaster(message, 'success');
       clearSelection();
     };
 
@@ -74,7 +78,7 @@ export const OrganizationsTableBar = ({
       title: t('common:delete'),
       description: t('common:confirm.delete_counted_resource', {
         count: selected.length,
-        resource: selected.length > 1 ? t('common:organization').toLowerCase() : t('common:organizations').toLowerCase(),
+        resource: selected.length > 1 ? t('common:organizations').toLowerCase() : t('common:organization').toLowerCase(),
       }),
     });
   };

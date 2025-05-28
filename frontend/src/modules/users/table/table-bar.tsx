@@ -62,7 +62,13 @@ export const UsersTableBar = ({ total, selected, searchVars, setSearch, columns,
 
   const openDeleteDialog = () => {
     const callback = (args: CallbackArgs<User[]>) => {
-      if (args.status === 'success') toaster(t('common:success.delete_resources', { resources: t('common:users') }), 'success');
+      if (args.status === 'success') {
+        const message =
+          args.data.length === 1
+            ? t('common:success.delete_resource', { resource: t('common:user') })
+            : t('common:success.delete_counted_resources', { count: args.data.length, resources: t('common:users').toLowerCase() });
+        toaster(message, 'success');
+      }
       clearSelection();
     };
 
