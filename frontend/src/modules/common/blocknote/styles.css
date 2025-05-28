@@ -47,6 +47,7 @@
   font-weight: 350;
   line-height: 1.3;
   min-height: 1.3rem;
+  overflow-wrap: anywhere;
   padding: 0;
 }
 
