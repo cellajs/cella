@@ -72,7 +72,10 @@ export const OrganizationsTableBar = ({
       triggerRef: deleteButtonRef,
       className: 'max-w-xl',
       title: t('common:delete'),
-      description: t('common:confirm.delete_resources', { resources: t('common:organizations').toLowerCase() }),
+      description: t('common:confirm.delete_counted_resource', {
+        count: selected.length,
+        resource: selected.length > 1 ? t('common:organization').toLowerCase() : t('common:organizations').toLowerCase(),
+      }),
     });
   };
 

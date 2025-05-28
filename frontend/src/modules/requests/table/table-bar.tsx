@@ -59,7 +59,10 @@ export const RequestsTableBar = ({ total, selected, searchVars, setSearch, colum
       triggerRef: deleteButtonRef,
       className: 'max-w-xl',
       title: t('common:delete'),
-      description: t('common:confirm.delete_resources', { resources: t('common:requests').toLowerCase() }),
+      description: t('common:confirm.delete_counted_resource', {
+        count: selected.length,
+        resource: selected.length > 1 ? t('common:request').toLowerCase() : t('common:requests').toLowerCase(),
+      }),
     });
   };
 

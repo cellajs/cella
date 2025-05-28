@@ -63,7 +63,10 @@ export const AttachmentsTableBar = ({
       triggerRef: deleteButtonRef,
       className: 'max-w-xl',
       title: t('common:remove_resource', { resource: t('common:attachments').toLowerCase() }),
-      description: t('common:confirm.delete_resources', { resources: t('common:attachments').toLowerCase() }),
+      description: t('common:confirm.delete_counted_resource', {
+        count: selected.length,
+        resource: selected.length > 1 ? t('common:attachment').toLowerCase() : t('common:attachments').toLowerCase(),
+      }),
     });
   };
 
