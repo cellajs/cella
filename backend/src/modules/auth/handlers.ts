@@ -452,7 +452,8 @@ const authRouteHandlers = app
       }
 
       const expireTimeSpan = new TimeSpan(adminsLastSession.expiresAt.getTime() - Date.now(), 'ms');
-      const cookieContent = JSON.stringify({ sessionToken: adminsLastSession.token });
+      const cookieContent = `${adminsLastSession.token}.${adminsLastSession.userId ?? ''}`;
+
       await setAuthCookie(ctx, 'session', cookieContent, expireTimeSpan);
     }
 
