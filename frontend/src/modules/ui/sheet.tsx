@@ -113,9 +113,7 @@ const SheetHiddenTitle = React.forwardRef<
 const SheetDescription = React.forwardRef<
   React.ComponentRef<typeof SheetPrimitive.Description>,
   React.ComponentPropsWithoutRef<typeof SheetPrimitive.Description>
->(({ className, ...props }, ref) => (
-  <SheetPrimitive.Description ref={ref} className={cn('text-muted-foreground font-light', className)} {...props} />
-));
+>(({ className, ...props }, ref) => <SheetPrimitive.Description ref={ref} className={cn('text-muted-foreground', className)} {...props} />);
 SheetDescription.displayName = SheetPrimitive.Description.displayName;
 
 export {

@@ -35,8 +35,16 @@ export const useColumns = () => {
             params={{ idOrSlug: row.slug }}
             className="flex space-x-2 items-center outline-0 ring-0 group"
           >
-            <AvatarWrap type="organization" className="h-8 w-8" id={row.id} name={row.name} url={row.thumbnailUrl} />
-            <span className="group-hover:underline underline-offset-4 truncate font-medium">{row.name || '-'}</span>
+            <AvatarWrap
+              type="organization"
+              className="h-8 w-8 group-active:translate-y-[.05rem] group-hover:font-semibold"
+              id={row.id}
+              name={row.name}
+              url={row.thumbnailUrl}
+            />
+            <span className="[.high-density_&]:hidden group-hover:underline underline-offset-3 decoration-foreground/20 group-active:decoration-foreground/50 group-active:translate-y-[.05rem] truncate font-medium">
+              {row.name || '-'}
+            </span>
           </Link>
         ),
       },

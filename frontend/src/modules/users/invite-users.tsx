@@ -69,7 +69,7 @@ const InviteUsers = ({ entity, dialog: isDialog, mode: baseMode, children }: Inv
               <ToggleGroupItem size="tile" variant="tile" value="email" aria-label="Add by email" className="h-auto py-6 sm:py-10">
                 <AtSign size={48} strokeWidth={1} />
                 <div className="flex flex-col pl-3">
-                  <p className="font-light">{t('common:invite_by_email')}</p>
+                  <p>{t('common:invite_by_email')}</p>
                   <div className="flex items-center flex-row mt-1 opacity-50 transition-opacity group-hover:opacity-100">
                     <strong>{t('common:continue')}</strong>
                     <AnimatedArrow />
@@ -79,7 +79,7 @@ const InviteUsers = ({ entity, dialog: isDialog, mode: baseMode, children }: Inv
               <ToggleGroupItem size="tile" variant="tile" value="search" aria-label="Search users" className="h-auto py-6 sm:py-10">
                 <Search size={48} strokeWidth={1} />
                 <div className="flex flex-col pl-3">
-                  <div className="font-light">{t('common:invite_by_name')}</div>
+                  <div>{t('common:invite_by_name')}</div>
                   <div className="flex items-center flex-row mt-1 opacity-50 transition-opacity group-hover:opacity-100">
                     <strong>{t('common:continue')}</strong>
                     <AnimatedArrow />

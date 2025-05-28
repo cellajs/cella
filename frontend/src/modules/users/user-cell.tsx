@@ -29,7 +29,7 @@ const UserCell = ({ user, orgIdOrSlug, tabIndex }: Props) => {
       to={orgIdOrSlug ? '/$orgIdOrSlug/users/$idOrSlug' : '/users/$idOrSlug'}
       tabIndex={tabIndex}
       params={{ idOrSlug: user.slug, ...(orgIdOrSlug ? { orgIdOrSlug } : {}) }}
-      className="flex space-x-2 items-center outline-0 ring-0 group truncate"
+      className="flex space-x-2 items-center outline-0 ring-0 group"
       onClick={(e) => {
         if (!onlineManager.isOnline()) {
           e.preventDefault();
@@ -49,8 +49,16 @@ const UserCell = ({ user, orgIdOrSlug, tabIndex }: Props) => {
         });
       }}
     >
-      <AvatarWrap type="user" className="h-8 w-8" id={user.id} name={user.name} url={user.thumbnailUrl} />
-      <span className="[.high-density_&]:hidden group-hover:underline underline-offset-4 truncate font-medium">{user.name || '-'}</span>
+      <AvatarWrap
+        type="user"
+        className="h-8 w-8 group-active:translate-y-[.05rem] group-hover:font-semibold"
+        id={user.id}
+        name={user.name}
+        url={user.thumbnailUrl}
+      />
+      <span className="[.high-density_&]:hidden group-hover:underline underline-offset-3 decoration-foreground/20 group-active:decoration-foreground/50 group-active:translate-y-[.05rem] truncate font-medium">
+        {user.name || '-'}
+      </span>
     </Link>
   );
 };

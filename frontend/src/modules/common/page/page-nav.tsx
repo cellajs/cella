@@ -89,7 +89,7 @@ export const PageNav = ({ tabs, title, avatar, fallbackToFirst, className }: Pro
                 if (el) tabRefs.current[id] = el;
               }}
               resetScroll={false}
-              className="relative last:mr-4 max-sm:p-3 p-2 lg:px-4 rounded-sm outline-hidden sm:ring-offset-background sm:focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              className="relative last:mr-4 max-sm:p-3 p-2 lg:px-4 rounded-sm outline-hidden sm:ring-offset-background sm:focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 group"
               to={path}
               draggable="false"
               data-active={fallbackToFirst && index === 0 ? true : undefined}
@@ -103,7 +103,7 @@ export const PageNav = ({ tabs, title, avatar, fallbackToFirst, className }: Pro
                 const showAsActive = isActive || (fallbackToFirst && index === 0);
                 return (
                   <>
-                    {t(label)}
+                    <span className="block group-active:translate-y-[.05rem]">{t(label)}</span>
                     {showAsActive && (
                       <motion.span
                         initial={false}

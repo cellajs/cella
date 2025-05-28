@@ -28,10 +28,10 @@ export const SheetTabs = ({ tabs }: Props) => {
               <Button
                 variant="none"
                 data-current={currentPage.id === tab.id}
-                className="peer hover:opacity-100 opacity-80 data-[current=true]:opacity-100"
+                className="peer hover:opacity-100 opacity-80 data-[current=true]:opacity-100 group"
                 onClick={() => setCurrentPage(tab)}
               >
-                {t(tab.label)}
+                <span className="block group-active:translate-y-[.05rem]">{t(tab.label)}</span>
                 {currentPage.id === tab.id && (
                   <motion.span
                     initial={false}

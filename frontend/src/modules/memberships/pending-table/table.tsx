@@ -46,7 +46,7 @@ const BaseDataTable = memo(
           columns: columns.filter((column) => column.visible),
           rows,
           totalCount,
-          rowHeight: 50,
+          rowHeight: 52,
           rowKeyGetter: (row) => row.id,
           error,
           isLoading,
