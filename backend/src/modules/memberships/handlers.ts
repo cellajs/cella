@@ -20,7 +20,7 @@ import { membershipSummarySelect } from '#/modules/memberships/helpers/select';
 import membershipRoutes from '#/modules/memberships/routes';
 import { getUsersByConditions } from '#/modules/users/helpers/get-user-by';
 import { userSelect } from '#/modules/users/helpers/select';
-import { getValidEntity } from '#/permissions/get-valid-entity';
+import { getValidContextEntity } from '#/permissions/get-context-entity';
 import { defaultHook } from '#/utils/default-hook';
 import { getIsoDate } from '#/utils/iso-date';
 import { nanoid } from '#/utils/nanoid';
@@ -40,10 +40,8 @@ const membershipRouteHandlers = app
     const { idOrSlug, entityType: passedEntityType } = ctx.req.valid('query');
 
     // Validate entity existence and check user permission for updates
-    const result = await getValidEntity(ctx, passedEntityType, 'update', idOrSlug);
-    if (result.error) return ctx.json({ success: false, error: result.error });
-
-    const { entity } = result;
+    const { error, entity } = await getValidContextEntity(ctx, idOrSlug, passedEntityType, 'update');
+    if (error) return ctx.json({ success: false, error });
 
     // Extract entity details
     const { entityType, id: entityId } = entity;
@@ -207,10 +205,8 @@ const membershipRouteHandlers = app
     const { entityType, idOrSlug } = ctx.req.valid('query');
     const { ids } = ctx.req.valid('json');
 
-    const result = await getValidEntity(ctx, entityType, 'delete', idOrSlug);
-    if (result.error) return ctx.json({ success: false, errors: [result.error] }, 200);
-
-    const { entity } = result;
+    const { error, entity } = await getValidContextEntity(ctx, idOrSlug, entityType, 'delete');
+    if (error) return ctx.json({ success: false, errors: [error] }, 200);
 
     const entityIdField = config.entityIdFields[entityType];
 
@@ -288,7 +284,7 @@ const membershipRouteHandlers = app
     if (!membershipContext) return errorResponse(ctx, 404, 'not_found', 'warn', updatedType);
 
     // Check if user has permission to update context
-    const { error } = await getValidEntity(ctx, updatedType, 'update', membershipContextId);
+    const { error } = await getValidContextEntity(ctx, membershipContextId, updatedType, 'update');
     if (error) return ctx.json({ success: false, error }, 400);
 
     // If archived changed, set lowest order in relevant memberships
@@ -389,10 +385,8 @@ const membershipRouteHandlers = app
     // Scope request to organization
     const organization = getContextOrganization();
 
-    const result = await getValidEntity(ctx, entityType, 'read', idOrSlug);
-    if (result.error) return ctx.json({ success: false, error: result.error }, 400);
-
-    const { entity } = result;
+    const { error, entity } = await getValidContextEntity(ctx, idOrSlug, entityType, 'read');
+    if (error) return ctx.json({ success: false, error }, 400);
 
     const entityIdField = config.entityIdFields[entity.entityType];
 
