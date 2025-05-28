@@ -17,6 +17,7 @@ import { focusEditor } from '~/modules/common/blocknote/helpers/focus';
 import type { BaseUppyFilePanelProps } from '~/modules/common/blocknote/types';
 import { createBaseTransloaditUppy } from '~/modules/common/uploader/helpers';
 import { getImageEditorOptions } from '~/modules/common/uploader/helpers/image-editor-options';
+import { generateRestrictionNote } from '~/modules/common/uploader/helpers/restrictions-note';
 import type { CustomUppy, CustomUppyOpt, UploadedUppyFile } from '~/modules/common/uploader/types';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '~/modules/ui/dialog';
 import { useUIStore } from '~/store/ui';
@@ -46,6 +47,12 @@ const UppyFilePanel = ({ onComplete, onError, organizationId, block }: BaseUppyF
   const { isOnline } = useOnlineManager();
 
   const blockType = (block.type as keyof typeof basicBlockTypes) || 'file';
+  const uppyOptions: CustomUppyOpt = {
+    restrictions: {
+      ...config.uppy.defaultRestrictions,
+      allowedFileTypes: basicBlockTypes[blockType].allowedFileTypes,
+    },
+  };
   const editor = useBlockNoteEditor(customSchema);
 
   const [uppy, setUppy] = useState<CustomUppy | null>(null);
@@ -67,16 +74,6 @@ const UppyFilePanel = ({ onComplete, onError, organizationId, block }: BaseUppyF
   useEffect(() => {
     let isMounted = true;
     let localUppy: CustomUppy | null = null;
-
-    const uppyOptions: CustomUppyOpt = {
-      restrictions: {
-        ...config.uppy.defaultRestrictions,
-        minFileSize: null,
-        minNumberOfFiles: null,
-        allowedFileTypes: basicBlockTypes[blockType].allowedFileTypes,
-        requiredMetaFields: [],
-      },
-    };
 
     const initializeUppy = async () => {
       try {
@@ -147,7 +144,14 @@ const UppyFilePanel = ({ onComplete, onError, organizationId, block }: BaseUppyF
           <DialogDescription className="hidden" />
         </DialogHeader>
 
-        <Dashboard uppy={uppy} width="100%" height="400px" theme={mode} proudlyDisplayPoweredByUppy={false} />
+        <Dashboard
+          uppy={uppy}
+          width="100%"
+          height="400px"
+          theme={mode}
+          note={generateRestrictionNote(uppyOptions.restrictions)}
+          proudlyDisplayPoweredByUppy={false}
+        />
       </DialogContent>
     </Dialog>
   );

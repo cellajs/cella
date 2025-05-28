@@ -36,10 +36,7 @@ export function useUploadUppy() {
     const uppyOptions: CustomUppyOpt = {
       restrictions: {
         ...uppyRestrictions,
-        minFileSize: null,
-        minNumberOfFiles: null,
         ...restrictions,
-        requiredMetaFields: restrictions?.requiredMetaFields ?? [],
         // TODO(IMPROVEMENT) Allow offline upload of audio, file & video?
         allowedFileTypes,
       },

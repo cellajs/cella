@@ -1,5 +1,6 @@
 import { Dialog } from '@radix-ui/react-dialog';
 import { Dashboard } from '@uppy/react';
+import { generateRestrictionNote } from '~/modules/common/uploader/helpers/restrictions-note';
 import { useUploader } from '~/modules/common/uploader/use-uploader';
 import { useUploadUppy } from '~/modules/common/uploader/use-uppy-upload';
 import { DialogContent, DialogDescription, DialogHeader, DialogTitle } from '~/modules/ui/dialog';
@@ -44,6 +45,7 @@ export const Uploader = () => {
           width="100%"
           height="400px"
           theme={mode}
+          note={generateRestrictionNote(uploaderData.restrictions)}
           proudlyDisplayPoweredByUppy={false}
         />
       </DialogContent>
