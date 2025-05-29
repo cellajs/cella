@@ -38,7 +38,7 @@ const PageCover = memo(({ id, canUpdate, url, coverUpdateCallback }: PageCoverPr
       // TODO CHECK if here pass an org Id
       organizationId: id,
       personalUpload: false,
-      plugins: ['webcam', 'image-editor'],
+      plugins: ['webcam', 'image-editor', 'url'],
       templateId: 'cover',
       statusEventHandler: {
         onComplete(result) {

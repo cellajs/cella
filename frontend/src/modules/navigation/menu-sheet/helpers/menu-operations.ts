@@ -99,7 +99,8 @@ export const updateMenuItemMembership = (membershipInfo: Partial<MembershipSumma
   const menuSection = config.menuStructure.find((el) => el.entityType === entityType || el.subentityType === entityType);
   if (!menuSection) return;
 
-  const menuEntities = menu[entityType];
+  // Select menu entities based on section's entity type
+  const menuEntities = menu[menuSection.entityType] || [];
 
   // Search in menuEntities
   let currentEntity = menuEntities.find((e) => e.id === entityIdOrSlug || e.slug === entityIdOrSlug);

@@ -41,7 +41,7 @@ const AvatarFormField = ({ form, label, name, entity, type }: Props) => {
       id: 'upload-image',
       isPublic: true,
       personalUpload: true,
-      plugins: ['webcam', 'image-editor'],
+      plugins: ['webcam', 'image-editor', 'url'],
       templateId: 'avatar',
       statusEventHandler: {
         onComplete(result) {

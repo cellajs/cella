@@ -6,6 +6,8 @@ import type { Body, Meta } from '@uppy/core';
 import ImageEditor from '@uppy/image-editor/lib/ImageEditor';
 import { Dashboard } from '@uppy/react';
 import ScreenCapture from '@uppy/screen-capture';
+import { COMPANION_ALLOWED_HOSTS, COMPANION_URL } from '@uppy/transloadit';
+import Url from '@uppy/url';
 import Webcam, { type WebcamOptions } from '@uppy/webcam';
 import { config } from 'config';
 import { useEffect, useState } from 'react';
@@ -17,26 +19,35 @@ import { focusEditor } from '~/modules/common/blocknote/helpers/focus';
 import type { BaseUppyFilePanelProps } from '~/modules/common/blocknote/types';
 import { createBaseTransloaditUppy } from '~/modules/common/uploader/helpers';
 import { getImageEditorOptions } from '~/modules/common/uploader/helpers/image-editor-options';
+import { generateRestrictionNote } from '~/modules/common/uploader/helpers/restrictions-note';
 import type { CustomUppy, CustomUppyOpt, UploadedUppyFile } from '~/modules/common/uploader/types';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '~/modules/ui/dialog';
 import { useUIStore } from '~/store/ui';
 
+import '@uppy/audio/dist/style.css';
+import '@uppy/dashboard/dist/style.min.css';
+import '@uppy/image-editor/dist/style.css';
+import '@uppy/screen-capture/dist/style.css';
+import '@uppy/url/dist/style.css';
+import '@uppy/webcam/dist/style.css';
+import '~/modules/common/uploader/uppy.css';
+
 const basicBlockTypes = {
   image: {
     allowedFileTypes: ['image/*'],
-    plugins: ['image-editor', 'screen-capture', 'webcam'],
+    plugins: ['image-editor', 'screen-capture', 'webcam', 'url'],
   },
   video: {
     allowedFileTypes: ['video/*'],
-    plugins: ['screen-capture', 'webcam'],
+    plugins: ['screen-capture', 'webcam', 'url'],
   },
   audio: {
     allowedFileTypes: ['audio/*'],
-    plugins: ['audio', 'screen-capture', 'webcam'],
+    plugins: ['audio', 'screen-capture', 'webcam', 'url'],
   },
   file: {
     allowedFileTypes: ['*/*'],
-    plugins: ['screen-capture', 'webcam'],
+    plugins: ['screen-capture', 'webcam', 'url'],
   },
 };
 
@@ -46,6 +57,12 @@ const UppyFilePanel = ({ onComplete, onError, organizationId, block }: BaseUppyF
   const { isOnline } = useOnlineManager();
 
   const blockType = (block.type as keyof typeof basicBlockTypes) || 'file';
+  const uppyOptions: CustomUppyOpt = {
+    restrictions: {
+      ...config.uppy.defaultRestrictions,
+      allowedFileTypes: basicBlockTypes[blockType].allowedFileTypes,
+    },
+  };
   const editor = useBlockNoteEditor(customSchema);
 
   const [uppy, setUppy] = useState<CustomUppy | null>(null);
@@ -67,16 +84,6 @@ const UppyFilePanel = ({ onComplete, onError, organizationId, block }: BaseUppyF
   useEffect(() => {
     let isMounted = true;
     let localUppy: CustomUppy | null = null;
-
-    const uppyOptions: CustomUppyOpt = {
-      restrictions: {
-        ...config.uppy.defaultRestrictions,
-        minFileSize: null,
-        minNumberOfFiles: null,
-        allowedFileTypes: basicBlockTypes[blockType].allowedFileTypes,
-        requiredMetaFields: [],
-      },
-    };
 
     const initializeUppy = async () => {
       try {
@@ -117,8 +124,12 @@ const UppyFilePanel = ({ onComplete, onError, organizationId, block }: BaseUppyF
         if (basicBlockTypes[blockType].plugins.includes('webcam')) localUppy.use(Webcam, webcamOptions);
         if (basicBlockTypes[blockType].plugins.includes('image-editor')) localUppy.use(ImageEditor, imageEditorOptions);
         if (basicBlockTypes[blockType].plugins.includes('audio')) localUppy.use(Audio);
-        if (basicBlockTypes[blockType].plugins.includes('screen-capture'))
+        if (basicBlockTypes[blockType].plugins.includes('url')) {
+          localUppy.use(Url, { companionUrl: COMPANION_URL, companionAllowedHosts: COMPANION_ALLOWED_HOSTS });
+        }
+        if (basicBlockTypes[blockType].plugins.includes('screen-capture')) {
           localUppy.use(ScreenCapture, { preferredVideoMimeType: 'video/webm;codecs=vp9' });
+        }
 
         if (!isMounted) {
           localUppy.destroy();
@@ -147,7 +158,14 @@ const UppyFilePanel = ({ onComplete, onError, organizationId, block }: BaseUppyF
           <DialogDescription className="hidden" />
         </DialogHeader>
 
-        <Dashboard uppy={uppy} width="100%" height="400px" theme={mode} proudlyDisplayPoweredByUppy={false} />
+        <Dashboard
+          uppy={uppy}
+          width="100%"
+          height="400px"
+          theme={mode}
+          note={generateRestrictionNote(uppyOptions.restrictions)}
+          proudlyDisplayPoweredByUppy={false}
+        />
       </DialogContent>
     </Dialog>
   );
