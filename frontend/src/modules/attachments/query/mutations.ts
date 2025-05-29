@@ -133,7 +133,13 @@ export const useAttachmentCreateMutation = () =>
           return formatUpdatedData(oldData, updatedItems, limit); // Already update total in mutate
         });
       }
-      toaster(t('common:success.create_resources', { resources: t('common:attachments') }), 'success');
+
+      const message =
+        createdAttachments.length === 1
+          ? t('common:success.create_resource', { resource: t('common:attachment') })
+          : t('common:success.create_counted_resources', { count: createdAttachments.length, resources: t('common:attachments').toLowerCase() });
+
+      toaster(message, 'success');
     },
     onError: (_, __, context) => handleError('create', context),
   });
@@ -232,6 +238,13 @@ export const useAttachmentDeleteMutation = () =>
 
       return context;
     },
-    onSuccess: () => toaster(t('common:success.delete_resources', { resources: t('common:attachments') }), 'success'),
+    onSuccess: (_, { ids }) => {
+      const message =
+        ids.length === 1
+          ? t('common:success.delete_resource', { resource: t('common:attachment') })
+          : t('common:success.delete_counted_resources', { count: ids.length, resources: t('common:attachments').toLowerCase() });
+
+      toaster(message, 'success');
+    },
     onError: (_, { ids }, context) => handleError(ids.length > 1 ? 'deleteMany' : 'delete', context),
   });

@@ -6,7 +6,7 @@ import { useDeleteRequestMutation } from '~/modules/requests/query';
 
 interface Props {
   requests: Request[];
-  callback?: (organizations: Request[]) => void;
+  callback?: (requests: Request[]) => void;
   dialog?: boolean;
 }
 

@@ -48,9 +48,13 @@ export const RequestsTableBar = ({ total, selected, searchVars, setSearch, colum
   };
 
   const openDeleteDialog = () => {
-    const callback = () => {
+    const callback = (requests: Request[]) => {
       mutateQuery.remove(selected);
-      toaster(t('common:success.delete_resources', { resources: t('common:requests') }), 'success');
+      const message =
+        requests.length === 1
+          ? t('common:success.delete_resource', { resource: t('common:request') })
+          : t('common:success.delete_counted_resources', { count: requests.length, resources: t('common:requests').toLowerCase() });
+      toaster(message, 'success');
       clearSelection();
     };
 
@@ -59,7 +63,10 @@ export const RequestsTableBar = ({ total, selected, searchVars, setSearch, colum
       triggerRef: deleteButtonRef,
       className: 'max-w-xl',
       title: t('common:delete'),
-      description: t('common:confirm.delete_resources', { resources: t('common:requests').toLowerCase() }),
+      description: t('common:confirm.delete_counted_resource', {
+        count: selected.length,
+        resource: selected.length > 1 ? t('common:requests').toLowerCase() : t('common:request').toLowerCase(),
+      }),
     });
   };
 

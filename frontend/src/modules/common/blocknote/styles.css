@@ -37,6 +37,16 @@
   outline: none !important;
 }
 
+/* To undable click on file buttons when editor not editable */
+.bn-editor[contenteditable="false"] .bn-file-block-content-wrapper {
+  pointer-events: none !important;
+  cursor: default !important;
+}
+/* To hide file buttons placeholders when editor not editable */
+.bn-editor[contenteditable="false"] p.bn-add-file-button-text {
+  display: none;
+}
+
 /* To hide formattingtoolbar when editor not editable */
 .bn-container:has(.bn-editor[contenteditable="false"]) > [data-floating-ui-focusable] {
   display: none !important;
@@ -47,6 +57,7 @@
   font-weight: 350;
   line-height: 1.3;
   min-height: 1.3rem;
+  overflow-wrap: anywhere;
   padding: 0;
 }
 

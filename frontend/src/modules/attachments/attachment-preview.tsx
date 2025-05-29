@@ -18,7 +18,14 @@ const AttachmentPreview = ({ id, url: baseUrl, contentType, name }: Props) => {
   }, [baseUrl, localUrl]);
 
   return url && contentType.includes('image') ? (
-    <img src={url} draggable="false" alt={name} className="h-8 w-8 bg-muted rounded-md object-cover" loading="lazy" decoding="async" />
+    <img
+      src={url}
+      draggable="false"
+      alt={name}
+      className="h-8 w-8 bg-muted rounded-md object-cover group-hover:opacity-80 group-active:translate-y-[.05rem]"
+      loading="lazy"
+      decoding="async"
+    />
   ) : (
     <FilePlaceholder contentType={contentType} />
   );

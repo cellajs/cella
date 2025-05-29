@@ -114,7 +114,7 @@ export const SlugFormField = ({ control, label, previousSlug, description, nameV
                 tabIndex={-1}
                 id="slug-prefix"
                 onClick={prefixClick}
-                className="absolute font-light left-3 text-xs"
+                className="absolute left-3 text-xs"
                 style={{ opacity: formFieldValue ? 1 : 0.5 }}
               >
                 {prefix}

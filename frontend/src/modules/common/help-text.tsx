@@ -24,7 +24,7 @@ const HelpText = ({ content, children, className, type }: HelpTextProps) => {
               <HelpCircle size={16} />
             </Button>
           </PopoverTrigger>
-          <PopoverContent className="w-80 font-light text-sm text-muted-foreground" align="start" side="top">
+          <PopoverContent className="w-80 text-sm text-muted-foreground" align="start" side="top">
             {content}
           </PopoverContent>
         </Popover>
