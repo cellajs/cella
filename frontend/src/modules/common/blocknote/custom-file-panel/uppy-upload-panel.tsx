@@ -6,6 +6,8 @@ import type { Body, Meta } from '@uppy/core';
 import ImageEditor from '@uppy/image-editor/lib/ImageEditor';
 import { Dashboard } from '@uppy/react';
 import ScreenCapture from '@uppy/screen-capture';
+import { COMPANION_ALLOWED_HOSTS, COMPANION_URL } from '@uppy/transloadit';
+import Url from '@uppy/url';
 import Webcam, { type WebcamOptions } from '@uppy/webcam';
 import { config } from 'config';
 import { useEffect, useState } from 'react';
@@ -25,19 +27,19 @@ import { useUIStore } from '~/store/ui';
 const basicBlockTypes = {
   image: {
     allowedFileTypes: ['image/*'],
-    plugins: ['image-editor', 'screen-capture', 'webcam'],
+    plugins: ['image-editor', 'screen-capture', 'webcam', 'url'],
   },
   video: {
     allowedFileTypes: ['video/*'],
-    plugins: ['screen-capture', 'webcam'],
+    plugins: ['screen-capture', 'webcam', 'url'],
   },
   audio: {
     allowedFileTypes: ['audio/*'],
-    plugins: ['audio', 'screen-capture', 'webcam'],
+    plugins: ['audio', 'screen-capture', 'webcam', 'url'],
   },
   file: {
     allowedFileTypes: ['*/*'],
-    plugins: ['screen-capture', 'webcam'],
+    plugins: ['screen-capture', 'webcam', 'url'],
   },
 };
 
@@ -114,8 +116,12 @@ const UppyFilePanel = ({ onComplete, onError, organizationId, block }: BaseUppyF
         if (basicBlockTypes[blockType].plugins.includes('webcam')) localUppy.use(Webcam, webcamOptions);
         if (basicBlockTypes[blockType].plugins.includes('image-editor')) localUppy.use(ImageEditor, imageEditorOptions);
         if (basicBlockTypes[blockType].plugins.includes('audio')) localUppy.use(Audio);
-        if (basicBlockTypes[blockType].plugins.includes('screen-capture'))
+        if (basicBlockTypes[blockType].plugins.includes('url')) {
+          localUppy.use(Url, { companionUrl: COMPANION_URL, companionAllowedHosts: COMPANION_ALLOWED_HOSTS });
+        }
+        if (basicBlockTypes[blockType].plugins.includes('screen-capture')) {
           localUppy.use(ScreenCapture, { preferredVideoMimeType: 'video/webm;codecs=vp9' });
+        }
 
         if (!isMounted) {
           localUppy.destroy();
