@@ -16,7 +16,7 @@ export type CustomUppy = Uppy<UppyMeta, UppyBody>;
 export type CustomUppyFile = UppyFile<UppyMeta, UppyBody>;
 export type CustomUppyOpt = UppyOptions<UppyMeta, UppyBody>;
 
-export type Plugins = ('webcam' | 'image-editor' | 'audio' | 'screen-capture' | string)[];
+export type Plugins = ('webcam' | 'image-editor' | 'audio' | 'screen-capture' | 'url' | string)[];
 
 export type StatusEventHandlers = {
   onFileEditorComplete?: (file: CustomUppyFile) => void;
