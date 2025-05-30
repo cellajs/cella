@@ -1,20 +1,24 @@
-import { BlockNoteSchema, type CodeBlockOptions, type Dictionary, defaultBlockSpecs, defaultInlineContentSpecs } from '@blocknote/core';
+import {
+  BlockNoteSchema,
+  type CodeBlockOptions,
+  type DefaultSuggestionItem,
+  type Dictionary,
+  defaultBlockSpecs,
+  defaultInlineContentSpecs,
+} from '@blocknote/core';
 import { blockTypeSelectItems, getDefaultReactSlashMenuItems } from '@blocknote/react';
 
 import { MentionSchema } from '~/modules/common/blocknote/custom-elements/mention/mention';
 import { Notify, getSlashNotifySlashItem } from '~/modules/common/blocknote/custom-elements/notify';
 
 import type {
-  BasicBlockBaseTypes,
-  BasicBlockTypes,
-  BasicFileBlockTypes,
   BlockAlignTypes,
   BlockStyleTypes,
-  CellaCustomBlockTypes,
   CustomBlockNoteEditor,
+  CustomBlockTypes,
   CustomFormatToolBarConfig,
-  MenusItemsTitle,
-  SlashIndexedItems,
+  SlashIndexedItemsKeys,
+  SlashItemKeys,
 } from '~/modules/common/blocknote/types';
 
 /**
@@ -62,14 +66,12 @@ export const supportedLanguages = {
 // Extend Blocknote types to include custom block types and menu titles
 declare module '~/modules/common/blocknote/types' {
   export interface ExtendableBlocknoteTypes {
-    BlockTypes: BaseCustomBlockTypes;
-    ItemsTitle: BaseMenusItemsTitle;
+    SlashKeys: DefaultSuggestionItem['key'] | 'notify';
   }
 }
 
-// Default allowed block types and file types
-export const allowedFileTypes: BasicFileBlockTypes[] = ['image', 'video', 'audio', 'file'];
-export const allowedTypes: (BasicBlockBaseTypes | CellaCustomBlockTypes)[] = [
+// Default allowed block types
+export const allowedTypes: CustomBlockTypes[] = [
   'notify',
   'table',
   'emoji',
@@ -79,48 +81,21 @@ export const allowedTypes: (BasicBlockBaseTypes | CellaCustomBlockTypes)[] = [
   'bulletListItem',
   'numberedListItem',
   'checkListItem',
+  'image',
+  'video',
+  'audio',
+  'file',
 ];
-
-// Mapping menu titles to block types
-export const menusTitleToAllowedType = {
-  Image: 'image',
-  Video: 'video',
-  File: 'file',
-  'Bullet List': 'bulletListItem',
-  'Numbered List': 'numberedListItem',
-  'Check List': 'checkListItem',
-  Notify: 'notify',
-  Emoji: 'emoji',
-  Table: 'table',
-  Audio: 'audio',
-  'Heading 1': 'heading',
-  'Heading 2': 'heading',
-  'Heading 3': 'heading',
-  'Code Block': 'codeBlock',
-  Paragraph: 'paragraph',
-};
 
 /**
  *  Side Menu Configuration
  */
 
 // Blocks to witch can be switched
-export const customBlockTypeSelectItems: (BasicBlockTypes | CellaCustomBlockTypes)[] = [
-  'heading',
-  'paragraph',
-  'bulletListItem',
-  'numberedListItem',
-  'checkListItem',
-];
+export const customBlockTypeSelectItems: CustomBlockTypes[] = ['heading', 'paragraph', 'bulletListItem', 'numberedListItem', 'checkListItem'];
 
 // Block types that trigger the side menu when selected
-export const sideMenuOpenOnTypes: (BasicBlockTypes | CellaCustomBlockTypes)[] = [
-  'paragraph',
-  'heading',
-  'bulletListItem',
-  'numberedListItem',
-  'checkListItem',
-];
+export const sideMenuOpenOnTypes: CustomBlockTypes[] = ['paragraph', 'heading', 'bulletListItem', 'numberedListItem', 'checkListItem'];
 
 // Generate side menu items based on dictionary input
 export const getSideMenuItems = (dict: Dictionary) => [...blockTypeSelectItems(dict)];
@@ -130,10 +105,28 @@ export const getSideMenuItems = (dict: Dictionary) => [...blockTypeSelectItems(d
  */
 
 // Indexed items (max 9 for quick number-based selection)
-export const customSlashIndexedItems: SlashIndexedItems = ['Image', 'Video', 'File', 'Bullet List', 'Numbered List', 'Check List', 'Notify', 'Emoji'];
+export const customSlashIndexedItems: SlashIndexedItemsKeys = [
+  'image',
+  'video',
+  'file',
+  'bullet_list',
+  'numbered_list',
+  'check_list',
+  'notify',
+  'emoji',
+];
 
 // Non-indexed items (accessed via browsing)
-export const customSlashNotIndexedItems: MenusItemsTitle[] = ['Table', 'Audio', 'Heading 1', 'Heading 2', 'Heading 3', 'Paragraph', 'Code Block'];
+export const customSlashNotIndexedItems: SlashItemKeys[] = [
+  'table',
+  'audio',
+  'heading',
+  'heading_2',
+  'heading_3',
+  'paragraph',
+  'code_block',
+  'quote',
+];
 
 // Generate the complete Slash menu items list
 export const getSlashMenuItems = (editor: CustomBlockNoteEditor) => [...getDefaultReactSlashMenuItems(editor), getSlashNotifySlashItem(editor)];
@@ -162,4 +155,4 @@ export const formattingToolBarTextAlignItems: BlockAlignTypes[] = ['left', 'cent
 export const formattingToolBarTextStyleSelect: BlockStyleTypes[] = ['bold', 'italic', 'underline', 'strike', 'code'];
 
 // Blocks that can have formatting styles applied
-export const formattingToolBarStyleForBlocks: BasicBlockTypes[] = ['heading', 'paragraph', 'bulletListItem', 'numberedListItem', 'checkListItem'];
+export const formattingToolBarStyleForBlocks: CustomBlockTypes[] = ['heading', 'paragraph', 'bulletListItem', 'numberedListItem', 'checkListItem'];

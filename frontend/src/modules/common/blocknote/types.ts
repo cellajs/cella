@@ -7,6 +7,16 @@ import type { Member } from '~/modules/memberships/types';
 export type CustomBlockNoteEditor = typeof customSchema.BlockNoteEditor;
 export type CustomBlock = typeof customSchema.Block;
 
+export type CustomBlockSchema = typeof customSchema.blockSchema;
+export type CustomInlineSchema = typeof customSchema.inlineContentSchema;
+export type CustomStyleSchema = typeof customSchema.styleSchema;
+
+// Define basic block and file types
+export type CustomBlockTypes = CustomBlock['type'] | 'emoji';
+export type CustomBlockFileTypes = Extract<CustomBlockTypes, 'file' | 'image' | 'audio' | 'video'>;
+export type CustomBlockRegularTypes = Exclude<CustomBlockTypes, CustomBlockFileTypes>;
+
+export type SlashItemKeys = ExtendableBlocknoteTypes['SlashKeys'];
 export interface CustomFormatToolBarConfig {
   blockTypeSelect?: boolean;
   blockStyleSelect?: boolean;
@@ -23,11 +33,6 @@ export interface CustomFormatToolBarConfig {
 export type BlockAlignTypes = 'right' | 'center' | 'left';
 export type BlockStyleTypes = 'bold' | 'italic' | 'underline' | 'strike' | 'code';
 
-// Define basic block and file types
-export type BasicFileBlockTypes = 'image' | 'video' | 'audio' | 'file';
-export type BasicBlockBaseTypes = 'emoji' | 'table' | 'paragraph' | 'heading' | 'codeBlock' | 'bulletListItem' | 'numberedListItem' | 'checkListItem';
-export type BasicBlockTypes = BasicBlockBaseTypes | BasicFileBlockTypes;
-
 type MaxNineItems<T extends string> =
   | [T]
   | [T, T]
@@ -38,7 +43,7 @@ type MaxNineItems<T extends string> =
   | [T, T, T, T, T, T, T]
   | [T, T, T, T, T, T, T, T]
   | [T, T, T, T, T, T, T, T, T];
-export type SlashIndexedItems = MaxNineItems<MenusItemsTitle>;
+export type SlashIndexedItemsKeys = MaxNineItems<SlashItemKeys>;
 
 // Icon type for side menu to satisfy custom elements
 export type IconType = (
@@ -49,28 +54,6 @@ export type IconType = (
     title?: string;
   },
 ) => React.ReactElement;
-
-export type BaseCustomBlockTypes = 'notify';
-export type BaseMenusItemsTitle =
-  | 'Image'
-  | 'Video'
-  | 'File'
-  | 'Bullet List'
-  | 'Numbered List'
-  | 'Check List'
-  | 'Notify'
-  | 'Code Block'
-  | 'Emoji'
-  | 'Table'
-  | 'Audio'
-  | 'Heading 1'
-  | 'Heading 2'
-  | 'Heading 3'
-  | 'Paragraph';
-
-// Combine base types with extended types
-export type CellaCustomBlockTypes = ExtendableBlocknoteTypes['BlockTypes'];
-export type MenusItemsTitle = ExtendableBlocknoteTypes['ItemsTitle'];
 
 export type BaseUppyFilePanelProps = {
   organizationId: string;
@@ -90,8 +73,8 @@ export type CommonBlockNoteProps = {
   trailingBlock?: boolean;
   clickOpensPreview?: boolean;
   emojis?: boolean;
-  allowedBlockTypes?: (BasicBlockBaseTypes | CellaCustomBlockTypes)[];
-  allowedFileBlockTypes?: BasicFileBlockTypes[];
+  excludeBlockTypes?: CustomBlockRegularTypes[];
+  excludeFileBlockTypes?: CustomBlockFileTypes[];
   members?: Member[]; // for mentions
   onFocus?: () => void;
   onEscapeClick?: () => void;
