@@ -6,7 +6,6 @@ import { type FocusEventHandler, type KeyboardEventHandler, type MouseEventHandl
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import router from '~/lib/router';
 import {
-  allowedFileTypes,
   allowedTypes,
   customSchema,
   customSlashIndexedItems,
@@ -23,7 +22,7 @@ import { getDictionary } from '~/modules/common/blocknote/helpers/dictionary';
 import { focusEditor } from '~/modules/common/blocknote/helpers/focus';
 import { openAttachment } from '~/modules/common/blocknote/helpers/open-attachment';
 import { shadCNComponents } from '~/modules/common/blocknote/helpers/shad-cn';
-import type { CommonBlockNoteProps, CustomBlockNoteEditor } from '~/modules/common/blocknote/types';
+import type { CommonBlockNoteProps, CustomBlockFileTypes, CustomBlockNoteEditor, CustomBlockRegularTypes } from '~/modules/common/blocknote/types';
 import { getPresignedUrl } from '~/modules/system/api';
 import { useUIStore } from '~/store/ui';
 
@@ -61,9 +60,9 @@ export const BlockNote = ({
   slashMenu = true,
   formattingToolbar = true,
   emojis = true,
-  allowedBlockTypes = allowedTypes, // default types
+  excludeBlockTypes = [], // default types
+  excludeFileBlockTypes = [], // default filetypes
   members, // for mentions
-  allowedFileBlockTypes = allowedFileTypes, // default filetypes
   filePanel,
   baseFilePanelProps,
   // Functions
@@ -78,8 +77,13 @@ export const BlockNote = ({
 
   const blockNoteRef = useRef<HTMLDivElement | null>(null);
 
+  const allowedBlockTypes = allowedTypes.filter(
+    (type) => !excludeBlockTypes.includes(type as CustomBlockRegularTypes) && !excludeFileBlockTypes.includes(type as CustomBlockFileTypes),
+  );
+  console.log('🚀 ~ allowedBlockTypes:', allowedBlockTypes);
+
   const emojiPicker = slashMenu
-    ? [...customSlashIndexedItems, ...customSlashNotIndexedItems].includes('Emoji') && allowedBlockTypes.includes('emoji')
+    ? [...customSlashIndexedItems, ...customSlashNotIndexedItems].includes('emoji') && allowedBlockTypes.includes('emoji')
     : emojis;
 
   const editor = useCreateBlockNote({
@@ -209,13 +213,13 @@ export const BlockNote = ({
       onBlur={handleBlur}
       {...(type === 'create' && { onChange: handleUpdateData })}
     >
-      {slashMenu && <CustomSlashMenu editor={editor} allowedTypes={[...allowedBlockTypes, ...allowedFileBlockTypes]} />}
+      {slashMenu && <CustomSlashMenu editor={editor} allowedTypes={allowedBlockTypes} />}
 
       {/* Hide formatting toolbar on mobile */}
       {!isMobile && formattingToolbar && <CustomFormattingToolbar />}
 
       {/* By default hides on mobile */}
-      {sideMenu && <CustomSideMenu editor={editor} allowedTypes={[...allowedBlockTypes, ...allowedFileBlockTypes]} />}
+      {sideMenu && <CustomSideMenu editor={editor} allowedTypes={allowedBlockTypes} />}
 
       {/* To avoid rendering "0" */}
       {members?.length ? <Mention members={members} editor={editor} /> : null}

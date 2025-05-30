@@ -1,18 +1,15 @@
-import type { BlockSchema, InlineContentSchema, StyleSchema } from '@blocknote/core';
 import { BasicTextStyleButton, blockTypeSelectItems, useBlockNoteEditor, useDictionary, useEditorContentOrSelectionChange } from '@blocknote/react';
 import { useMemo, useState } from 'react';
 import { formattingToolBarStyleForBlocks, formattingToolBarTextStyleSelect } from '~/modules/common/blocknote/blocknote-config';
-import type { BasicBlockTypes } from '~/modules/common/blocknote/types';
+import type { CustomBlockSchema, CustomInlineSchema, CustomStyleSchema } from '~/modules/common/blocknote/types';
 
 export const CustomTextStyleSelect = () => {
   const dict = useDictionary();
-  const editor = useBlockNoteEditor<BlockSchema, InlineContentSchema, StyleSchema>();
+  const editor = useBlockNoteEditor<CustomBlockSchema, CustomInlineSchema, CustomStyleSchema>();
   const [block, setBlock] = useState(editor.getTextCursorPosition().block);
+  const itemsType: readonly string[] = formattingToolBarStyleForBlocks;
 
-  const filteredItems = useMemo(
-    () => blockTypeSelectItems(dict).filter((item) => formattingToolBarStyleForBlocks.includes(item.type as BasicBlockTypes)),
-    [editor, dict],
-  );
+  const filteredItems = useMemo(() => blockTypeSelectItems(dict).filter((item) => itemsType.includes(item.type)), [editor, dict]);
 
   const shouldShow = useMemo(() => filteredItems.some((item) => item.type === block.type), [block.type, filteredItems]);
 
