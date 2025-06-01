@@ -3,6 +3,8 @@ import Audio from '@uppy/audio';
 import type { Body, Meta } from '@uppy/core';
 import ImageEditor from '@uppy/image-editor';
 import ScreenCapture from '@uppy/screen-capture';
+import { COMPANION_ALLOWED_HOSTS, COMPANION_URL } from '@uppy/transloadit';
+import Url from '@uppy/url';
 import Webcam, { type WebcamOptions } from '@uppy/webcam';
 import { type UploadTemplateId, config } from 'config';
 import { useEffect, useState } from 'react';
@@ -36,10 +38,7 @@ export function useUploadUppy() {
     const uppyOptions: CustomUppyOpt = {
       restrictions: {
         ...uppyRestrictions,
-        minFileSize: null,
-        minNumberOfFiles: null,
         ...restrictions,
-        requiredMetaFields: restrictions?.requiredMetaFields ?? [],
         // TODO(IMPROVEMENT) Allow offline upload of audio, file & video?
         allowedFileTypes,
       },
@@ -84,6 +83,9 @@ export function useUploadUppy() {
         if (plugins.includes('webcam')) localUppy.use(Webcam, webcamOptions);
         if (plugins.includes('image-editor')) localUppy.use(ImageEditor, imageEditorOptions);
         if (plugins.includes('audio') && isUploadFullyEnabled) localUppy.use(Audio);
+        if (plugins.includes('url')) {
+          localUppy.use(Url, { companionUrl: COMPANION_URL, companionAllowedHosts: COMPANION_ALLOWED_HOSTS });
+        }
         if (plugins.includes('screen-capture') && isUploadFullyEnabled) {
           localUppy.use(ScreenCapture, { preferredVideoMimeType: 'video/webm;codecs=vp9' });
         }

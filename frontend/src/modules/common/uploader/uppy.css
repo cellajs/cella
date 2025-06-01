@@ -13,3 +13,24 @@
 .uppy-DashboardTab-btn {
   display: flex;
 }
+
+.uppy-Url-input {
+  border-radius: 0.25rem;
+  border: 0.1rem solid hsl(var(--muted));
+  padding: 0.25rem;
+}
+
+.uppy-Url-input:focus-visible {
+  outline: 0.1rem solid hsl(var(--accent-foreground));
+}
+.uppy-Url-importButton {
+  padding: 0.3rem 1rem !important;
+  cursor: pointer;
+  border-radius: 0.25rem;
+  border: 0.1rem solid hsl(var(--primary));
+  background-color: hsl(var(--primary) / 0.07);
+  color: hsl(var(--primary));
+  display: inline-block;
+  line-height: inherit;
+  vertical-align: middle;
+}

@@ -154,7 +154,7 @@ export const BlockNote = ({
 
   const handleClick: MouseEventHandler = useCallback(
     (event) => {
-      if (!clickOpensPreview || editable || type !== 'preview') return;
+      if (!clickOpensPreview || editable) return;
       openAttachment(event, editor, blockNoteRef);
     },
     [editable, type],

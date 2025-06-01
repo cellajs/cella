@@ -263,6 +263,9 @@ export const config = {
       maxNumberOfFiles: 1,
       allowedFileTypes: ['.jpg', '.jpeg', '.png'],
       maxTotalFileSize: 100 * 1024 * 1024, // 100MB
+      minFileSize: null,
+      minNumberOfFiles: null,
+      requiredMetaFields: [],
     },
   },
 };
