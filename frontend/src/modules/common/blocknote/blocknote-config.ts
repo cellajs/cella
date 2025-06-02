@@ -26,15 +26,11 @@ import type {
  *  Basic Configuration
  */
 
-const baseBlockSpecs = { ...defaultBlockSpecs, notify: Notify }; // Adds Notify block
-const baseInlineContentSpecs = { ...defaultInlineContentSpecs, mention: MentionSchema }; // Adds Mention tag
-const baseStyleSpecs = { ...defaultStyleSpecs };
-
 // Base custom schema
 export const customSchema = BlockNoteSchema.create({
-  blockSpecs: baseBlockSpecs,
-  inlineContentSpecs: baseInlineContentSpecs,
-  styleSpecs: baseStyleSpecs,
+  blockSpecs: { ...defaultBlockSpecs, notify: Notify }, // Adds Notify block
+  inlineContentSpecs: { ...defaultInlineContentSpecs, mention: MentionSchema }, // Adds Mention tag
+  styleSpecs: { ...defaultStyleSpecs },
 });
 
 // Config for supported languages for BlockNote code blocks
@@ -142,7 +138,7 @@ export const customSlashIndexedItems: SlashIndexedItems = [
 export const customSlashNotIndexedItems: CustomBlockTypes[] = ['table', 'audio', 'heading', 'paragraph', 'codeBlock', 'quote'];
 
 // Generate the complete Slash menu items list
-export const getSlashMenuItems = (editor: CustomBlockNoteEditor, allowedTypes: readonly CustomBlockTypes[]): DefaultReactSuggestionItem[] => {
+export const getSlashMenuItems = (editor: CustomBlockNoteEditor, allowedTypes: CustomBlockTypes[]): DefaultReactSuggestionItem[] => {
   // Get all available slash items
   const baseItems = [...getDefaultReactSlashMenuItems(editor), getSlashNotifySlashItem(editor)];
 
