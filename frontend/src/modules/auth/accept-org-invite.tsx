@@ -33,10 +33,9 @@ const AcceptOrgInvite = () => {
     onSuccess: () => {
       getAndSetMenu();
       toast.success(t('common:invitation_accepted'));
-      const idOrSlug = data?.organizationSlug;
-      const to = idOrSlug ? OrganizationRoute.to : config.defaultRedirectPath;
-      const params = idOrSlug ? { idOrSlug } : null;
-      navigate({ to, ...(params && params) });
+      if (data?.organizationSlug) {
+        navigate({ to: OrganizationRoute.to, params: { idOrSlug: data.organizationSlug } });
+      } else navigate({ to: config.defaultRedirectPath });
     },
   });
 
