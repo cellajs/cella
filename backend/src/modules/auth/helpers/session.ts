@@ -98,7 +98,7 @@ export const validateSession = async (hashedSessionToken: string) => {
   // If no result is found, return null session and user
   if (!result) return { session: null, user: null };
 
-  const { session } = result;
+  const { session }: { session: SessionModel } = result;
 
   // Check if the session has expired and invalidate it if so
   if (isExpiredDate(session.expiresAt)) {
@@ -106,7 +106,7 @@ export const validateSession = async (hashedSessionToken: string) => {
     return { session: null, user: null };
   }
 
-  return result satisfies { session: SessionModel; user: UserModel };
+  return result as { session: SessionModel; user: UserModel };
 };
 
 // Invalidate all sessions based on user id

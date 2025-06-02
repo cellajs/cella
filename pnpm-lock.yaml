@@ -41,7 +41,7 @@ importers:
         version: 5.8.3
       vitest:
         specifier: ^3.1.4
-        version: 3.1.4(@types/debug@4.1.12)(@types/node@22.15.21)(jiti@2.4.2)(jsdom@26.1.0)(lightningcss@1.30.1)(terser@5.39.2)(tsx@4.19.4)(yaml@2.8.0)
+        version: 3.1.4(@types/debug@4.1.12)(@types/node@22.15.21)(jiti@2.4.2)(jsdom@26.1.0(canvas@3.1.0))(lightningcss@1.30.1)(terser@5.39.2)(tsx@4.19.4)(yaml@2.8.0)
 
   backend:
     dependencies:
@@ -145,11 +145,11 @@ importers:
         specifier: ^3.2.6
         version: 3.2.6
       drizzle-orm:
-        specifier: ^0.43.1
-        version: 0.43.1(@electric-sql/pglite@0.3.2)(@libsql/client-wasm@0.14.0)(@opentelemetry/api@1.9.0)(@types/pg@8.15.2)(gel@2.0.2)(pg@8.16.0)(postgres@3.4.7)
+        specifier: ^0.44.1
+        version: 0.44.1(@electric-sql/pglite@0.3.2)(@libsql/client-wasm@0.14.0)(@opentelemetry/api@1.9.0)(@types/pg@8.15.2)(gel@2.0.2)(pg@8.16.0)(postgres@3.4.7)
       drizzle-zod:
         specifier: 0.7.1
-        version: 0.7.1(drizzle-orm@0.43.1(@electric-sql/pglite@0.3.2)(@libsql/client-wasm@0.14.0)(@opentelemetry/api@1.9.0)(@types/pg@8.15.2)(gel@2.0.2)(pg@8.16.0)(postgres@3.4.7))(zod@3.24.4)
+        version: 0.7.1(drizzle-orm@0.44.1(@electric-sql/pglite@0.3.2)(@libsql/client-wasm@0.14.0)(@opentelemetry/api@1.9.0)(@types/pg@8.15.2)(gel@2.0.2)(pg@8.16.0)(postgres@3.4.7))(zod@3.24.4)
       enforce-unique:
         specifier: ^1.3.0
         version: 1.3.0
@@ -235,6 +235,9 @@ importers:
       '@types/ua-parser-js':
         specifier: ^0.7.39
         version: 0.7.39
+      '@typescript/native-preview':
+        specifier: 7.0.0-dev.20250602.1
+        version: 7.0.0-dev.20250602.1
       chalk:
         specifier: ^5.4.1
         version: 5.4.1
@@ -349,7 +352,7 @@ importers:
         version: 0.31.1(@hocuspocus/provider@2.15.2(y-protocols@1.0.6(yjs@13.6.27))(yjs@13.6.27))(@types/hast@3.0.4)(highlight.js@11.11.1)(lowlight@3.3.0)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       '@blocknote/shadcn':
         specifier: ^0.31.1
-        version: 0.31.1(@hocuspocus/provider@2.15.2(y-protocols@1.0.6(yjs@13.6.27))(yjs@13.6.27))(@types/hast@3.0.4)(@types/react-dom@19.1.5(@types/react@19.1.5))(@types/react@19.1.5)(highlight.js@11.11.1)(lowlight@3.3.0)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(ts-node@10.9.2(@types/node@22.15.21)(typescript@5.8.3))
+        version: 0.31.1(@hocuspocus/provider@2.15.2(y-protocols@1.0.6(yjs@13.6.27))(yjs@13.6.27))(@types/hast@3.0.4)(@types/react-dom@19.1.5(@types/react@19.1.5))(@types/react@19.1.5)(highlight.js@11.11.1)(lowlight@3.3.0)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(ts-node@10.9.2(@swc/core@1.7.26)(@types/node@22.15.21)(typescript@5.8.3))
       '@electric-sql/client':
         specifier: 1.0.4
         version: 1.0.4
@@ -708,6 +711,9 @@ importers:
       '@types/zxcvbn':
         specifier: ^4.4.5
         version: 4.4.5
+      '@typescript/native-preview':
+        specifier: 7.0.0-dev.20250602.1
+        version: 7.0.0-dev.20250602.1
       '@vitejs/plugin-basic-ssl':
         specifier: ^2.0.0
         version: 2.0.0(vite@6.3.5(@types/node@22.15.21)(jiti@2.4.2)(lightningcss@1.30.1)(terser@5.39.2)(tsx@4.19.4)(yaml@2.8.0))
@@ -6263,6 +6269,53 @@ packages:
   '@types/zxcvbn@4.4.5':
     resolution: {integrity: sha512-FZJgC5Bxuqg7Rhsm/bx6gAruHHhDQ55r+s0JhDh8CQ16fD7NsJJ+p8YMMQDhSQoIrSmjpqqYWA96oQVMNkjRyA==}
 
+  '@typescript/native-preview-darwin-arm64@7.0.0-dev.20250602.1':
+    resolution: {integrity: sha512-uw2eYTrzul4jvJZLfELhLP1/ZEM7svfGbYhpQJ7q1d3pd+d/o1xThTXBP7ElLznTTaQDI0HGYB6Mjmw/osb0Uw==}
+    engines: {node: '>=20.6.0'}
+    cpu: [arm64]
+    os: [darwin]
+
+  '@typescript/native-preview-darwin-x64@7.0.0-dev.20250602.1':
+    resolution: {integrity: sha512-8uMmB45tNAFrnQmT9+/cclFz+u5CfmFmtGpC2ukAFvaGt0RuRss6veRSXiO5R00Vt3b8Uo9044rGv6AXPX7nuA==}
+    engines: {node: '>=20.6.0'}
+    cpu: [x64]
+    os: [darwin]
+
+  '@typescript/native-preview-linux-arm64@7.0.0-dev.20250602.1':
+    resolution: {integrity: sha512-T9vD4SGmhbNQo7L3GllRf5O7tJZJXY4iK8tlHPGHUGBI5O8Nuz/Ddl1DXrWqSug2zrH92LchlsdgE9ZG8DcF1w==}
+    engines: {node: '>=20.6.0'}
+    cpu: [arm64]
+    os: [linux]
+
+  '@typescript/native-preview-linux-arm@7.0.0-dev.20250602.1':
+    resolution: {integrity: sha512-5gu+oaj/PMShIPDg4EKmaUI9FK6Q4Vxq90OG+gbnJOVXtXJ6hyxHVi4OIv8fE7IafXDxIV00x5V36+Z5RFzXMQ==}
+    engines: {node: '>=20.6.0'}
+    cpu: [arm]
+    os: [linux]
+
+  '@typescript/native-preview-linux-x64@7.0.0-dev.20250602.1':
+    resolution: {integrity: sha512-1uxFo1zlJ1FF2s2MxJgE4SmS/Q/4PuUXXxBu0iMM/mrNEkSxXdJwrn7yiRql5aQ+mKou/PmmAUQD/cZarXmCQQ==}
+    engines: {node: '>=20.6.0'}
+    cpu: [x64]
+    os: [linux]
+
+  '@typescript/native-preview-win32-arm64@7.0.0-dev.20250602.1':
+    resolution: {integrity: sha512-tlmKv5/K5E0hPwBV5rLEG8p7166LktiqTq5rDqefuNs/j/JTLjSjUoV14H3q9PTsxeM5Q7cWbW2orNH79Mg8RA==}
+    engines: {node: '>=20.6.0'}
+    cpu: [arm64]
+    os: [win32]
+
+  '@typescript/native-preview-win32-x64@7.0.0-dev.20250602.1':
+    resolution: {integrity: sha512-qc04a3nlaCicLVg8aN8UEPkpRIJY9vD2k8S7wCTL68q6FPzn/1yveFCrn+eGe3wRT4H9PXyZmDiySySycLxGeQ==}
+    engines: {node: '>=20.6.0'}
+    cpu: [x64]
+    os: [win32]
+
+  '@typescript/native-preview@7.0.0-dev.20250602.1':
+    resolution: {integrity: sha512-QuIKBvLIlp/aaArUmo+F4xaHe1AJ9AUjRuqto+WWX4OAttMR4hM7FRs1rQX7UQAi5SaP5lB+SdiSt/wU8K4C4g==}
+    engines: {node: '>=20.6.0'}
+    hasBin: true
+
   '@typespec/ts-http-runtime@0.2.2':
     resolution: {integrity: sha512-Gz/Sm64+Sq/vklJu1tt9t+4R2lvnud8NbTD/ZfpZtMiUX7YeVpCA8j6NSW8ptwcoLL+NmYANwqP8DV0q/bwl2w==}
     engines: {node: '>=18.0.0'}
@@ -7539,8 +7592,8 @@ packages:
     resolution: {integrity: sha512-PUjYKWtzOzPtdtQlTHQG3qfv4Y0XT8+Eas6UbxCmxTj7qgMf+39dDujf1BP1I+qqZtw9uzwTh8jYtkMuCq+B0Q==}
     hasBin: true
 
-  drizzle-orm@0.43.1:
-    resolution: {integrity: sha512-dUcDaZtE/zN4RV/xqGrVSMpnEczxd5cIaoDeor7Zst9wOe/HzC/7eAaulywWGYXdDEc9oBPMjayVEDg0ziTLJA==}
+  drizzle-orm@0.44.1:
+    resolution: {integrity: sha512-prIWOlwJbiYInvcJxE+IMiJCtMiFVrSUJCwx6AXSJvGOdLu35qZ46QncTZDgloiLNCG0XxTC8agQElSmsl++TA==}
     peerDependencies:
       '@aws-sdk/client-rds-data': '>=3'
       '@cloudflare/workers-types': '>=4'
@@ -7556,6 +7609,7 @@ packages:
       '@types/better-sqlite3': '*'
       '@types/pg': '*'
       '@types/sql.js': '*'
+      '@upstash/redis': '>=1.34.7'
       '@vercel/postgres': '>=0.8.0'
       '@xata.io/client': '*'
       better-sqlite3: '>=7'
@@ -7598,6 +7652,8 @@ packages:
       '@types/pg':
         optional: true
       '@types/sql.js':
+        optional: true
+      '@upstash/redis':
         optional: true
       '@vercel/postgres':
         optional: true
@@ -14240,7 +14296,7 @@ snapshots:
       - sugar-high
       - supports-color
 
-  '@blocknote/shadcn@0.31.1(@hocuspocus/provider@2.15.2(y-protocols@1.0.6(yjs@13.6.27))(yjs@13.6.27))(@types/hast@3.0.4)(@types/react-dom@19.1.5(@types/react@19.1.5))(@types/react@19.1.5)(highlight.js@11.11.1)(lowlight@3.3.0)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(ts-node@10.9.2(@types/node@22.15.21)(typescript@5.8.3))':
+  '@blocknote/shadcn@0.31.1(@hocuspocus/provider@2.15.2(y-protocols@1.0.6(yjs@13.6.27))(yjs@13.6.27))(@types/hast@3.0.4)(@types/react-dom@19.1.5(@types/react@19.1.5))(@types/react@19.1.5)(highlight.js@11.11.1)(lowlight@3.3.0)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(ts-node@10.9.2(@swc/core@1.7.26)(@types/node@22.15.21)(typescript@5.8.3))':
     dependencies:
       '@blocknote/core': 0.31.1(@hocuspocus/provider@2.15.2(y-protocols@1.0.6(yjs@13.6.27))(yjs@13.6.27))(@types/hast@3.0.4)(highlight.js@11.11.1)(lowlight@3.3.0)
       '@blocknote/react': 0.31.1(@hocuspocus/provider@2.15.2(y-protocols@1.0.6(yjs@13.6.27))(yjs@13.6.27))(@types/hast@3.0.4)(highlight.js@11.11.1)(lowlight@3.3.0)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
@@ -14263,8 +14319,8 @@ snapshots:
       react-dom: 19.1.0(react@19.1.0)
       react-hook-form: 7.56.4(react@19.1.0)
       tailwind-merge: 2.6.0
-      tailwindcss: 3.4.17(ts-node@10.9.2(@types/node@22.15.21)(typescript@5.8.3))
-      tailwindcss-animate: 1.0.7(tailwindcss@3.4.17(ts-node@10.9.2(@types/node@22.15.21)(typescript@5.8.3)))
+      tailwindcss: 3.4.17(ts-node@10.9.2(@swc/core@1.7.26)(@types/node@22.15.21)(typescript@5.8.3))
+      tailwindcss-animate: 1.0.7(tailwindcss@3.4.17(ts-node@10.9.2(@swc/core@1.7.26)(@types/node@22.15.21)(typescript@5.8.3)))
       zod: 3.24.4
     transitivePeerDependencies:
       - '@hocuspocus/provider'
@@ -18823,6 +18879,37 @@ snapshots:
 
   '@types/zxcvbn@4.4.5': {}
 
+  '@typescript/native-preview-darwin-arm64@7.0.0-dev.20250602.1':
+    optional: true
+
+  '@typescript/native-preview-darwin-x64@7.0.0-dev.20250602.1':
+    optional: true
+
+  '@typescript/native-preview-linux-arm64@7.0.0-dev.20250602.1':
+    optional: true
+
+  '@typescript/native-preview-linux-arm@7.0.0-dev.20250602.1':
+    optional: true
+
+  '@typescript/native-preview-linux-x64@7.0.0-dev.20250602.1':
+    optional: true
+
+  '@typescript/native-preview-win32-arm64@7.0.0-dev.20250602.1':
+    optional: true
+
+  '@typescript/native-preview-win32-x64@7.0.0-dev.20250602.1':
+    optional: true
+
+  '@typescript/native-preview@7.0.0-dev.20250602.1':
+    optionalDependencies:
+      '@typescript/native-preview-darwin-arm64': 7.0.0-dev.20250602.1
+      '@typescript/native-preview-darwin-x64': 7.0.0-dev.20250602.1
+      '@typescript/native-preview-linux-arm': 7.0.0-dev.20250602.1
+      '@typescript/native-preview-linux-arm64': 7.0.0-dev.20250602.1
+      '@typescript/native-preview-linux-x64': 7.0.0-dev.20250602.1
+      '@typescript/native-preview-win32-arm64': 7.0.0-dev.20250602.1
+      '@typescript/native-preview-win32-x64': 7.0.0-dev.20250602.1
+
   '@typespec/ts-http-runtime@0.2.2':
     dependencies:
       http-proxy-agent: 7.0.2
@@ -20390,7 +20477,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  drizzle-orm@0.43.1(@electric-sql/pglite@0.3.2)(@libsql/client-wasm@0.14.0)(@opentelemetry/api@1.9.0)(@types/pg@8.15.2)(gel@2.0.2)(pg@8.16.0)(postgres@3.4.7):
+  drizzle-orm@0.44.1(@electric-sql/pglite@0.3.2)(@libsql/client-wasm@0.14.0)(@opentelemetry/api@1.9.0)(@types/pg@8.15.2)(gel@2.0.2)(pg@8.16.0)(postgres@3.4.7):
     optionalDependencies:
       '@electric-sql/pglite': 0.3.2
       '@libsql/client-wasm': 0.14.0
@@ -20400,9 +20487,9 @@ snapshots:
       pg: 8.16.0
       postgres: 3.4.7
 
-  drizzle-zod@0.7.1(drizzle-orm@0.43.1(@electric-sql/pglite@0.3.2)(@libsql/client-wasm@0.14.0)(@opentelemetry/api@1.9.0)(@types/pg@8.15.2)(gel@2.0.2)(pg@8.16.0)(postgres@3.4.7))(zod@3.24.4):
+  drizzle-zod@0.7.1(drizzle-orm@0.44.1(@electric-sql/pglite@0.3.2)(@libsql/client-wasm@0.14.0)(@opentelemetry/api@1.9.0)(@types/pg@8.15.2)(gel@2.0.2)(pg@8.16.0)(postgres@3.4.7))(zod@3.24.4):
     dependencies:
-      drizzle-orm: 0.43.1(@electric-sql/pglite@0.3.2)(@libsql/client-wasm@0.14.0)(@opentelemetry/api@1.9.0)(@types/pg@8.15.2)(gel@2.0.2)(pg@8.16.0)(postgres@3.4.7)
+      drizzle-orm: 0.44.1(@electric-sql/pglite@0.3.2)(@libsql/client-wasm@0.14.0)(@opentelemetry/api@1.9.0)(@types/pg@8.15.2)(gel@2.0.2)(pg@8.16.0)(postgres@3.4.7)
       zod: 3.24.4
 
   dunder-proto@1.0.1:
@@ -24921,9 +25008,9 @@ snapshots:
 
   tailwind-merge@3.3.0: {}
 
-  tailwindcss-animate@1.0.7(tailwindcss@3.4.17(ts-node@10.9.2(@types/node@22.15.21)(typescript@5.8.3))):
+  tailwindcss-animate@1.0.7(tailwindcss@3.4.17(ts-node@10.9.2(@swc/core@1.7.26)(@types/node@22.15.21)(typescript@5.8.3))):
     dependencies:
-      tailwindcss: 3.4.17(ts-node@10.9.2(@types/node@22.15.21)(typescript@5.8.3))
+      tailwindcss: 3.4.17(ts-node@10.9.2(@swc/core@1.7.26)(@types/node@22.15.21)(typescript@5.8.3))
 
   tailwindcss-animate@1.0.7(tailwindcss@4.1.7):
     dependencies:
@@ -24956,7 +25043,7 @@ snapshots:
     transitivePeerDependencies:
       - ts-node
 
-  tailwindcss@3.4.17(ts-node@10.9.2(@types/node@22.15.21)(typescript@5.8.3)):
+  tailwindcss@3.4.17(ts-node@10.9.2(@swc/core@1.7.26)(@types/node@22.15.21)(typescript@5.8.3)):
     dependencies:
       '@alloc/quick-lru': 5.2.0
       arg: 5.0.2
@@ -25701,7 +25788,7 @@ snapshots:
       tsx: 4.19.4
       yaml: 2.8.0
 
-  vitest@3.1.4(@types/debug@4.1.12)(@types/node@22.15.21)(jiti@2.4.2)(jsdom@26.1.0)(lightningcss@1.30.1)(terser@5.39.2)(tsx@4.19.4)(yaml@2.8.0):
+  vitest@3.1.4(@types/debug@4.1.12)(@types/node@22.15.21)(jiti@2.4.2)(jsdom@26.1.0(canvas@3.1.0))(lightningcss@1.30.1)(terser@5.39.2)(tsx@4.19.4)(yaml@2.8.0):
     dependencies:
       '@vitest/expect': 3.1.4
       '@vitest/mocker': 3.1.4(vite@6.3.5(@types/node@22.15.21)(jiti@2.4.2)(lightningcss@1.30.1)(terser@5.39.2)(tsx@4.19.4)(yaml@2.8.0))
