@@ -123,19 +123,10 @@ const typeToBlocknoteKeys: Record<CustomBlockTypes, SlashItemKeys[]> = {
 };
 
 // Indexed items (max 9 for quick number-based selection)
-export const customSlashIndexedItems: SlashIndexedItems = [
-  'image',
-  'video',
-  'file',
-  'bulletListItem',
-  'numberedListItem',
-  'checkListItem',
-  'notify',
-  'emoji',
-];
+export const customSlashIndexedItems: SlashIndexedItems = ['image', 'video', 'file', 'bulletListItem', 'numberedListItem', 'checkListItem', 'notify'];
 
 // Non-indexed items (accessed via browsing)
-export const customSlashNotIndexedItems: CustomBlockTypes[] = ['table', 'audio', 'heading', 'paragraph', 'codeBlock', 'quote'];
+export const customSlashNotIndexedItems: CustomBlockTypes[] = ['table', 'audio', 'heading', 'paragraph', 'codeBlock', 'quote', 'emoji'];
 
 // Generate the complete Slash menu items list
 export const getSlashMenuItems = (editor: CustomBlockNoteEditor, allowedTypes: CustomBlockTypes[]): DefaultReactSuggestionItem[] => {
