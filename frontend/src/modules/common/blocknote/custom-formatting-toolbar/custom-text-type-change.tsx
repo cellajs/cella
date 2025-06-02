@@ -1,11 +1,10 @@
 import { BasicTextStyleButton, blockTypeSelectItems, useBlockNoteEditor, useDictionary, useEditorContentOrSelectionChange } from '@blocknote/react';
 import { useMemo, useState } from 'react';
-import { formattingToolBarStyleForBlocks, formattingToolBarTextStyleSelect } from '~/modules/common/blocknote/blocknote-config';
-import type { CustomBlockSchema, CustomInlineSchema, CustomStyleSchema } from '~/modules/common/blocknote/types';
+import { customSchema, formattingToolBarStyleForBlocks, formattingToolBarTextStyleSelect } from '~/modules/common/blocknote/blocknote-config';
 
 export const CustomTextStyleSelect = () => {
   const dict = useDictionary();
-  const editor = useBlockNoteEditor<CustomBlockSchema, CustomInlineSchema, CustomStyleSchema>();
+  const editor = useBlockNoteEditor(customSchema);
   const [block, setBlock] = useState(editor.getTextCursorPosition().block);
   const itemsType: readonly string[] = formattingToolBarStyleForBlocks;
 

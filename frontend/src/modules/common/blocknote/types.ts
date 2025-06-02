@@ -7,10 +7,6 @@ import type { Member } from '~/modules/memberships/types';
 export type CustomBlockNoteEditor = typeof customSchema.BlockNoteEditor;
 export type CustomBlock = typeof customSchema.Block;
 
-export type CustomBlockSchema = typeof customSchema.blockSchema;
-export type CustomInlineSchema = typeof customSchema.inlineContentSchema;
-export type CustomStyleSchema = typeof customSchema.styleSchema;
-
 // Define basic block and file types
 export type CustomBlockTypes = CustomBlock['type'] | 'emoji';
 export type CustomBlockFileTypes = Extract<CustomBlockTypes, 'file' | 'image' | 'audio' | 'video'>;
@@ -43,7 +39,7 @@ type MaxNineItems<T extends string> =
   | [T, T, T, T, T, T, T]
   | [T, T, T, T, T, T, T, T]
   | [T, T, T, T, T, T, T, T, T];
-export type SlashIndexedItemsKeys = MaxNineItems<SlashItemKeys>;
+export type SlashIndexedItems = MaxNineItems<CustomBlockTypes>;
 
 // Icon type for side menu to satisfy custom elements
 export type IconType = (

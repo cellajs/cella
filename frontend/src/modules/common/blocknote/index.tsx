@@ -80,7 +80,6 @@ export const BlockNote = ({
   const allowedBlockTypes = allowedTypes.filter(
     (type) => !excludeBlockTypes.includes(type as CustomBlockRegularTypes) && !excludeFileBlockTypes.includes(type as CustomBlockFileTypes),
   );
-  console.log('🚀 ~ allowedBlockTypes:', allowedBlockTypes);
 
   const emojiPicker = slashMenu
     ? [...customSlashIndexedItems, ...customSlashNotIndexedItems].includes('emoji') && allowedBlockTypes.includes('emoji')

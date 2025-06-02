@@ -5,8 +5,9 @@ import {
   type Dictionary,
   defaultBlockSpecs,
   defaultInlineContentSpecs,
+  defaultStyleSpecs,
 } from '@blocknote/core';
-import { blockTypeSelectItems, getDefaultReactSlashMenuItems } from '@blocknote/react';
+import { type DefaultReactSuggestionItem, blockTypeSelectItems, getDefaultReactSlashMenuItems } from '@blocknote/react';
 
 import { MentionSchema } from '~/modules/common/blocknote/custom-elements/mention/mention';
 import { Notify, getSlashNotifySlashItem } from '~/modules/common/blocknote/custom-elements/notify';
@@ -17,7 +18,7 @@ import type {
   CustomBlockNoteEditor,
   CustomBlockTypes,
   CustomFormatToolBarConfig,
-  SlashIndexedItemsKeys,
+  SlashIndexedItems,
   SlashItemKeys,
 } from '~/modules/common/blocknote/types';
 
@@ -25,10 +26,15 @@ import type {
  *  Basic Configuration
  */
 
-// Custom schema with block specifications and inline content (e.g., Notify block, Mention tag)
+const baseBlockSpecs = { ...defaultBlockSpecs, notify: Notify }; // Adds Notify block
+const baseInlineContentSpecs = { ...defaultInlineContentSpecs, mention: MentionSchema }; // Adds Mention tag
+const baseStyleSpecs = { ...defaultStyleSpecs };
+
+// Base custom schema
 export const customSchema = BlockNoteSchema.create({
-  blockSpecs: { ...defaultBlockSpecs, notify: Notify }, // Adds Notify block
-  inlineContentSpecs: { ...defaultInlineContentSpecs, mention: MentionSchema }, // Adds Mention tag
+  blockSpecs: baseBlockSpecs,
+  inlineContentSpecs: baseInlineContentSpecs,
+  styleSpecs: baseStyleSpecs,
 });
 
 // Config for supported languages for BlockNote code blocks
@@ -63,7 +69,7 @@ export const supportedLanguages = {
   },
 } satisfies CodeBlockOptions['supportedLanguages'];
 
-// Extend Blocknote types to include custom block types and menu titles
+// Extend Blocknote types to include custom block keys for slash menu
 declare module '~/modules/common/blocknote/types' {
   export interface ExtendableBlocknoteTypes {
     SlashKeys: DefaultSuggestionItem['key'] | 'notify';
@@ -103,33 +109,64 @@ export const getSideMenuItems = (dict: Dictionary) => [...blockTypeSelectItems(d
 /**
  *  Slash Menu Configuration
  */
+const typeToBlocknoteKeys: Record<CustomBlockTypes, SlashItemKeys[]> = {
+  table: ['table'],
+  notify: ['notify'],
+  paragraph: ['paragraph'],
+  heading: ['heading', 'heading_2', 'heading_3'],
+  quote: ['quote'],
+  codeBlock: ['code_block'],
+  bulletListItem: ['bullet_list'],
+  numberedListItem: ['numbered_list'],
+  checkListItem: ['check_list'],
+  file: ['file'],
+  image: ['image'],
+  video: ['video'],
+  audio: ['audio'],
+  emoji: ['emoji'],
+};
 
 // Indexed items (max 9 for quick number-based selection)
-export const customSlashIndexedItems: SlashIndexedItemsKeys = [
+export const customSlashIndexedItems: SlashIndexedItems = [
   'image',
   'video',
   'file',
-  'bullet_list',
-  'numbered_list',
-  'check_list',
+  'bulletListItem',
+  'numberedListItem',
+  'checkListItem',
   'notify',
   'emoji',
 ];
 
 // Non-indexed items (accessed via browsing)
-export const customSlashNotIndexedItems: SlashItemKeys[] = [
-  'table',
-  'audio',
-  'heading',
-  'heading_2',
-  'heading_3',
-  'paragraph',
-  'code_block',
-  'quote',
-];
+export const customSlashNotIndexedItems: CustomBlockTypes[] = ['table', 'audio', 'heading', 'paragraph', 'codeBlock', 'quote'];
 
 // Generate the complete Slash menu items list
-export const getSlashMenuItems = (editor: CustomBlockNoteEditor) => [...getDefaultReactSlashMenuItems(editor), getSlashNotifySlashItem(editor)];
+export const getSlashMenuItems = (editor: CustomBlockNoteEditor, allowedTypes: readonly CustomBlockTypes[]): DefaultReactSuggestionItem[] => {
+  // Get all available slash items
+  const baseItems = [...getDefaultReactSlashMenuItems(editor), getSlashNotifySlashItem(editor)];
+
+  // Filter allowed indexed and non-indexed types once
+  const allowedIndexed = customSlashIndexedItems.filter((type) => allowedTypes.includes(type));
+  const allowedNotIndexed = customSlashNotIndexedItems.filter((type) => allowedTypes.includes(type));
+
+  // Combine allowed types in order
+  const orderedTypes = [...allowedIndexed, ...allowedNotIndexed];
+
+  // Create a sort order map where keys map to their index in orderedTypes
+  const sortOrder = new Map(orderedTypes.flatMap((type, index) => typeToBlocknoteKeys[type].map((key) => [key, index])));
+
+  // Filter items that have keys present in sortOrder, then sort by that index
+  const filteredSortedItems = baseItems
+    .filter((item): item is DefaultSuggestionItem & { key: SlashItemKeys } => 'key' in item && sortOrder.has(item.key as SlashItemKeys))
+    .sort(({ key: first }, { key: second }) => {
+      const aIndex = sortOrder.get(first) ?? Number.POSITIVE_INFINITY;
+      const bIndex = sortOrder.get(second) ?? Number.POSITIVE_INFINITY;
+      return aIndex - bIndex;
+    });
+
+  return filteredSortedItems;
+};
 
 /**
  *  Formatting toolbar Configuration
