@@ -39,8 +39,10 @@
 
 /* To undable click on file buttons when editor not editable */
 .bn-editor[contenteditable="false"] .bn-file-block-content-wrapper {
-  pointer-events: none !important;
   cursor: default !important;
+}
+.bn-editor[contenteditable="false"] .bn-add-file-button {
+  pointer-events: none !important;
 }
 /* To hide file buttons placeholders when editor not editable */
 .bn-editor[contenteditable="false"] p.bn-add-file-button-text {
@@ -72,12 +74,23 @@
 .bn-shadcn code {
   font-size: 0.85em;
   line-height: 1rem;
+  background: hsl(var(--input) / 0.5);
+  border: 0.05rem solid hsl(var(--ring) / 0.4);
+  padding: 0.25rem;
+  border-radius: 0.25rem;
+  color: #e8912d;
 }
-
 .bn-container.bn-shadcn.dark .bn-block-content[data-content-type="codeBlock"] {
-  background: hsl(var(--muted) / 0.5);
+  background: hsl(var(--input) / 0.5);
+  border: 0.05rem solid hsl(var(--ring) / 0.4);
 }
-
+.bn-block-content[data-content-type="codeBlock"] code {
+  background: transparent;
+  padding: 0;
+  border: none;
+  border-radius: none;
+  color: #fff;
+}
 .bn-block-content[data-content-type="codeBlock"] > pre {
   padding: 1.2rem 1rem 1rem;
 }

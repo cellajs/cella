@@ -157,7 +157,16 @@ export const BlockNote = ({
 
   const handleClick: MouseEventHandler = useCallback(
     (event) => {
-      if (!clickOpensPreview || editable || (event.target as HTMLElement).closest('a')) return;
+      if (!clickOpensPreview || editable) return;
+
+      const target = event.target as HTMLElement;
+
+      const tagIsMedia = ['IMG', 'AUDIO', 'VIDEO'].includes(target.tagName);
+      const insideFileNameDiv = !!target.closest('.bn-file-name-with-icon');
+      const containsMedia = target.querySelector('img, video, audio');
+
+      if (!tagIsMedia && !insideFileNameDiv && !containsMedia) return;
+
       openAttachment(event, editor, blockNoteRef);
     },
     [editable, type],
