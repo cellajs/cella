@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { type FieldPath, type FieldValues, type UseFormProps, type UseFormReturn, useForm, useWatch } from 'react-hook-form';
+import { type FieldPath, type FieldValues, type UseFormProps, type UseFormReturn, useForm, useFormState, useWatch } from 'react-hook-form';
 import { useDraftStore } from '~/store/draft';
 
 /**
@@ -29,11 +29,8 @@ import { useDraftStore } from '~/store/draft';
  *   </form>
  * );
  */
-export function useFormWithDraft<
-  TFieldValues extends FieldValues = FieldValues,
-  // biome-ignore lint/suspicious/noExplicitAny: Can be any form context
-  TContext = any,
->(
+// biome-ignore lint/suspicious/noExplicitAny: Can be any form context
+export function useFormWithDraft<TFieldValues extends FieldValues = FieldValues, TContext = any>(
   formId: string,
   opt?: {
     formOptions?: UseFormProps<TFieldValues, TContext>;
@@ -45,70 +42,72 @@ export function useFormWithDraft<
   loading: boolean;
 } {
   const { formOptions, formContainerId } = opt || {};
-  const form = useForm<TFieldValues, TContext, TFieldValues>(formOptions);
-  const { isDirty } = form.formState;
 
+  // Draft store hooks
   const getDraftForm = useDraftStore((state) => state.getForm);
   const setDraftForm = useDraftStore((state) => state.setForm);
   const resetDraftForm = useDraftStore((state) => state.resetForm);
 
+  const form = useForm<TFieldValues, TContext, TFieldValues>(formOptions);
+
   const [unsavedChanges, setUnsavedChanges] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  // Watch all fields
   const allFields = useWatch({ control: form.control });
+  const { isDirty, defaultValues } = useFormState({ control: form.control });
 
-  // Make unsaved badge appear above form
-  const toggleUnsavedBadge = (showBadge: boolean) => {
-    const parentElement = document.getElementById(formContainerId || formId);
-    if (!parentElement) return;
-    showBadge ? parentElement.classList.add('unsaved-changes') : parentElement.classList.remove('unsaved-changes');
+  // Add or remove `.unsaved-changes` class on container
+  const toggleUnsavedBadge = (show: boolean) => {
+    const el = document.getElementById(formContainerId || formId);
+    if (!el) return;
+    el.classList.toggle('unsaved-changes', show);
   };
 
+  // Auto-save draft on change
   useEffect(() => {
-    // Get draft values from store
-    const values = getDraftForm<TFieldValues>(formId);
+    const current = JSON.stringify(allFields);
+    const original = JSON.stringify(defaultValues);
+    // Form is reset to default values, clear the draft
+    if (current === original && unsavedChanges) {
+      resetDraftForm(formId);
+      form.reset();
+      return;
+    }
 
-    // If there is draft, set them to form and show badge
-    if (values) {
-      setUnsavedChanges(true);
-      toggleUnsavedBadge(true);
-      for (const [key, value] of Object.entries(values)) {
-        form.setValue(key as FieldPath<TFieldValues>, value);
-      }
+    if (isDirty) {
+      const cleanedValues = Object.fromEntries(Object.entries(allFields).filter(([_, v]) => v !== undefined));
+      if (Object.keys(cleanedValues).length > 0) setDraftForm(formId, cleanedValues);
+    }
+  }, [allFields, isDirty, defaultValues]);
+
+  // Update dirty state UI and flag
+  useEffect(() => {
+    setUnsavedChanges(isDirty);
+    toggleUnsavedBadge(isDirty);
+  }, [isDirty]);
+
+  // Restore draft on mount
+  useEffect(() => {
+    const draftData = getDraftForm<TFieldValues>(formId);
+
+    if (draftData) {
+      for (const [key, value] of Object.entries(draftData)) form.setValue(key as FieldPath<TFieldValues>, value, { shouldDirty: true });
     }
 
     setLoading(false);
-  }, [formId]);
+  }, []);
 
-  useEffect(() => {
-    // If the form is dirty, save the draft
-    if (form.formState.isDirty) {
-      const values = Object.fromEntries(Object.entries(allFields).filter(([_, value]) => value !== undefined));
-      if (Object.keys(values).length > 0) {
-        return setDraftForm(formId, values);
-      }
-    }
-
-    // Else, remove the draft
-    if (unsavedChanges) {
-      setUnsavedChanges(false);
-      toggleUnsavedBadge(false);
-      resetDraftForm(formId);
-    }
-  }, [allFields, formId]);
-
-  // Return form with some extras
   return {
     ...form,
     unsavedChanges,
     isDirty,
     loading,
+    // Override reset to also clear the draft + UI state
     reset: (values, keepStateOptions) => {
       resetDraftForm(formId);
-      form.reset(values, keepStateOptions);
       setUnsavedChanges(false);
       toggleUnsavedBadge(false);
+      form.reset(values, keepStateOptions);
     },
   };
 }

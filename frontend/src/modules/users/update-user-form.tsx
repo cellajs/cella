@@ -72,7 +72,7 @@ const UpdateUserForm = ({ user, callback, sheet: isSheet, hiddenFields, children
   const form = useFormWithDraft<FormValues>(`${formContainerId}-${user.id}`, { formOptions, formContainerId });
 
   // Prevent data loss
-  useBeforeUnload(form.formState.isDirty);
+  useBeforeUnload(form.isDirty);
 
   const onSubmit = (values: FormValues) => {
     if (!user) return;
@@ -155,14 +155,11 @@ const UpdateUserForm = ({ user, callback, sheet: isSheet, hiddenFields, children
         />
 
         <div className="flex flex-col sm:flex-row gap-2">
-          <SubmitButton
-            disabled={!hiddenFields?.length && (!form.formState.isDirty || Object.keys(form.formState.errors).length > 0)}
-            loading={isPending}
-          >
+          <SubmitButton disabled={!hiddenFields?.length && (!form.isDirty || Object.keys(form.formState.errors).length > 0)} loading={isPending}>
             {t(`common:${hiddenFields?.length ? 'continue' : 'save_changes'}`)}
           </SubmitButton>
           {!children && (
-            <Button type="reset" variant="secondary" onClick={() => form.reset()} className={form.formState.isDirty ? '' : 'invisible'}>
+            <Button type="reset" variant="secondary" onClick={() => form.reset()} className={form.isDirty ? '' : 'invisible'}>
               {t('common:cancel')}
             </Button>
           )}

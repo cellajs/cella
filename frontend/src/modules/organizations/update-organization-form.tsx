@@ -57,7 +57,7 @@ const UpdateOrganizationForm = ({ organization, callback, sheet: isSheet }: Prop
   const form = useFormWithDraft<FormValues>(`${formContainerId}-${organization.id}`, { formOptions, formContainerId });
 
   // Prevent data loss
-  useBeforeUnload(form.formState.isDirty);
+  useBeforeUnload(form.isDirty);
 
   const onSubmit = (json: FormValues) => {
     mutate(
@@ -172,10 +172,10 @@ const UpdateOrganizationForm = ({ organization, callback, sheet: isSheet }: Prop
         />
 
         <div className="flex flex-col sm:flex-row gap-2">
-          <SubmitButton disabled={!form.formState.isDirty} loading={isPending}>
+          <SubmitButton disabled={!form.isDirty} loading={isPending}>
             {t('common:save_changes')}
           </SubmitButton>
-          <Button type="reset" variant="secondary" onClick={() => form.reset()} className={form.formState.isDirty ? '' : 'invisible'}>
+          <Button type="reset" variant="secondary" onClick={() => form.reset()} className={form.isDirty ? '' : 'invisible'}>
             {t('common:cancel')}
           </Button>
         </div>

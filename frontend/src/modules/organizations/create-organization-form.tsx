@@ -79,19 +79,13 @@ const CreateOrganizationForm = ({ labelDirection = 'top', children, callback }: 
         />
 
         <div className="flex flex-col sm:flex-row gap-2">
-          <SubmitButton disabled={!form.formState.isDirty} loading={isPending}>
+          <SubmitButton disabled={!form.isDirty} loading={isPending}>
             {t('common:create')}
           </SubmitButton>
           {children}
 
           {!children && (
-            <Button
-              type="reset"
-              variant="secondary"
-              className={form.formState.isDirty ? '' : 'invisible'}
-              aria-label="Cancel"
-              onClick={() => form.reset()}
-            >
+            <Button type="reset" variant="secondary" className={form.isDirty ? '' : 'invisible'} aria-label="Cancel" onClick={() => form.reset()}>
               {t('common:cancel')}
             </Button>
           )}

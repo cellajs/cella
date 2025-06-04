@@ -148,7 +148,7 @@ const InviteEmailForm = ({ entity, dialog: isDialog, children }: Props) => {
           </SubmitButton>
           {children}
 
-          {!children && form.formState.isDirty && (
+          {!children && form.isDirty && (
             <Button type="reset" variant="secondary" onClick={() => form.reset()}>
               {t('common:cancel')}
             </Button>
