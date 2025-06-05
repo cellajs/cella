@@ -66,7 +66,6 @@ const InviteEmailForm = ({ entity, dialog: isDialog, children }: Props) => {
     role: z.enum(config.rolesByType.allRoles),
     idOrSlug: z.string().optional(),
   });
-
   type FormValues = z.infer<typeof formSchema>;
 
   const formOptions: UseFormProps<FormValues> = useMemo(

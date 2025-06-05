@@ -38,7 +38,6 @@ const InviteSearchForm = ({ entity, dialog: isDialog }: Props) => {
     role: z.enum(config.rolesByType.entityRoles).optional(),
     idOrSlug: z.string().optional(),
   });
-
   type FormValues = z.infer<typeof formSchema>;
 
   const formOptions: UseFormProps<FormValues> = useMemo(

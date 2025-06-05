@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { type FieldPath, type FieldValues, type UseFormProps, type UseFormReturn, useForm, useFormState, useWatch } from 'react-hook-form';
 import { useDraftStore } from '~/store/draft';
+import { defaultOnInvalid } from '~/utils/form-on-invalid';
 
 /**
  * This hook manages form state with draft-saving support. It automatically
@@ -102,7 +103,9 @@ export function useFormWithDraft<TFieldValues extends FieldValues = FieldValues,
     unsavedChanges,
     isDirty,
     loading,
-    // Override reset to also clear the draft + UI state
+    // Override `handleSubmit` to always process `onInvalid` through a fallback handler
+    handleSubmit: (onValid, onInvalid = defaultOnInvalid) => form.handleSubmit(onValid, onInvalid),
+    // Override `reset` to also clear the draft + UI state
     reset: (values, keepStateOptions) => {
       resetDraftForm(formId);
       setUnsavedChanges(false);

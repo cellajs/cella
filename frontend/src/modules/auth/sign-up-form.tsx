@@ -17,12 +17,15 @@ import { Button, SubmitButton } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '~/modules/ui/form';
 import { Input } from '~/modules/ui/input';
 import { AuthenticateRoute } from '~/routes/auth';
+import { defaultOnInvalid } from '~/utils/form-on-invalid';
 
 const PasswordStrength = lazy(() => import('~/modules/auth/password-strength'));
 const LegalText = lazy(() => import('~/modules/marketing/legal-texts'));
 
 const enabledStrategies: readonly string[] = config.enabledAuthenticationStrategies;
+
 const formSchema = emailPasswordBodySchema;
+type FormValues = z.infer<typeof formSchema>;
 
 interface Props {
   tokenData: TokenData | undefined;
@@ -57,16 +60,13 @@ export const SignUpForm = ({ tokenData, email, resetSteps, emailEnabled }: Props
   });
 
   // Create form
-  const form = useForm<z.infer<typeof formSchema>>({
+  const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
-    defaultValues: {
-      email: email,
-      password: '',
-    },
+    defaultValues: { email, password: '' },
   });
 
   // Handle submit action
-  const onSubmit = (formValues: z.infer<typeof formSchema>) => {
+  const onSubmit = (formValues: FormValues) => {
     if (token && tokenId) return _signUpWithToken({ ...formValues, token });
     _signUp({ ...formValues });
   };
@@ -91,7 +91,7 @@ export const SignUpForm = ({ tokenData, email, resetSteps, emailEnabled }: Props
       <LegalNotice email={email} />
 
       {emailEnabled && (
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+        <form onSubmit={form.handleSubmit(onSubmit, defaultOnInvalid)} className="space-y-4">
           <FormField
             control={form.control}
             name="email"

@@ -26,7 +26,6 @@ interface Props {
 }
 
 const formSchema = organizationCreateBodySchema;
-
 type FormValues = z.infer<typeof formSchema>;
 
 const CreateOrganizationForm = ({ labelDirection = 'top', children, callback }: Props) => {
