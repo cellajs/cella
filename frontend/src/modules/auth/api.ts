@@ -179,7 +179,7 @@ export const acceptOrgInvite = async ({ token }: { token: string }) => {
   });
 
   const json = await handleResponse(response);
-  return json.success;
+  return json.data;
 };
 
 /**

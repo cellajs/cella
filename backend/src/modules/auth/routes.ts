@@ -6,6 +6,7 @@ import { hasValidToken } from '#/middlewares/has-valid-token';
 import { emailEnumLimiter, passwordLimiter, spamLimiter, tokenLimiter } from '#/middlewares/rate-limiter/limiters';
 import { cookieSchema, idSchema, passwordSchema, tokenParamSchema } from '#/utils/schema/common';
 import { errorResponses, successWithDataSchema, successWithoutDataSchema } from '#/utils/schema/responses';
+import { membershipSchema } from '../memberships/schema';
 import {
   emailBodySchema,
   emailPasswordBodySchema,
@@ -396,10 +397,10 @@ class AuthRoutes {
     },
     responses: {
       200: {
-        description: 'Invitation was accepted',
+        description: 'Accepted membership info',
         content: {
           'application/json': {
-            schema: successWithoutDataSchema,
+            schema: successWithDataSchema(membershipSchema),
           },
         },
       },

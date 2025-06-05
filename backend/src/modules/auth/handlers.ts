@@ -396,15 +396,16 @@ const authRouteHandlers = app
 
     if (emailInfo.userId === user.id && user.id !== token.userId) await handleMembershipTokenUpdate(user.id, token.id);
     // Activate memberships
-    await db
+    const [membership] = await db
       .update(membershipsTable)
       .set({ tokenId: null, activatedAt: getIsoDate() })
-      .where(and(eq(membershipsTable.tokenId, token.id)));
+      .where(and(eq(membershipsTable.tokenId, token.id)))
+      .returning();
 
     // Delete token after all activation, since tokenId is cascaded in membershipTable
     await db.delete(tokensTable).where(eq(tokensTable.id, token.id));
 
-    return ctx.json({ success: true }, 200);
+    return ctx.json({ success: true, data: membership }, 200);
   })
   /*
    * Start impersonation

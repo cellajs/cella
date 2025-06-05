@@ -9,10 +9,14 @@ import AuthErrorNotice from '~/modules/auth/auth-error-notice';
 import { useTokenCheck } from '~/modules/auth/use-token-check';
 import Spinner from '~/modules/common/spinner';
 import { getAndSetMenu } from '~/modules/me/helpers';
+import { organizationsKeys } from '~/modules/organizations/query';
+import type { Organization } from '~/modules/organizations/types';
 import { SubmitButton, buttonVariants } from '~/modules/ui/button';
+import { queryClient } from '~/query/query-client';
 import { AcceptOrgInviteRoute } from '~/routes/auth';
 import { OrganizationRoute } from '~/routes/organizations';
 import { cn } from '~/utils/cn';
+import { membersKeys } from '../memberships/query/options';
 
 // Accept organization invitation when user is signed in
 const AcceptOrgInvite = () => {
@@ -30,10 +34,35 @@ const AcceptOrgInvite = () => {
     error: acceptInviteError,
   } = useMutation({
     mutationFn: acceptOrgInvite,
-    onSuccess: () => {
+    onSuccess: ({ role }) => {
       getAndSetMenu();
+
       toast.success(t('common:invitation_accepted'));
       if (data?.organizationSlug) {
+        // Cancel any ongoing queries for consistency
+        const singleOrgKey = organizationsKeys.single.byIdOrSlug(data.organizationSlug);
+
+        queryClient.setQueryData<Organization>(singleOrgKey, (oldData) => {
+          // context.push([singleOrgKey, oldData]); // Store previous data for rollback if needed
+          if (!oldData) return oldData;
+
+          const membershipCounts = { ...oldData.counts.membership, pending: oldData.counts.membership.pending - 1 };
+
+          if (role === 'admin') {
+            membershipCounts.admin += 1;
+            membershipCounts.member -= 1;
+          }
+          if (role === 'member') {
+            membershipCounts.member += 1;
+            membershipCounts.admin -= 1;
+          }
+          return { ...oldData, counts: { ...oldData.counts, membership: membershipCounts } };
+        });
+
+        queryClient.invalidateQueries({
+          queryKey: membersKeys.table.similarPending({ idOrSlug: data.organizationSlug, entityType: 'organization' }),
+        });
+
         navigate({ to: OrganizationRoute.to, params: { idOrSlug: data.organizationSlug } });
       } else navigate({ to: config.defaultRedirectPath });
     },
