@@ -22,15 +22,13 @@ import { Button, SubmitButton } from '~/modules/ui/button';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
 import { organizationUpdateBodySchema } from '#/modules/organizations/schema';
 
+const formSchema = organizationUpdateBodySchema;
+type FormValues = z.infer<typeof formSchema>;
 interface Props {
   organization: Organization;
   callback?: (organization: Organization) => void;
   sheet?: boolean;
 }
-
-const formSchema = organizationUpdateBodySchema;
-
-type FormValues = z.infer<typeof formSchema>;
 
 const UpdateOrganizationForm = ({ organization, callback, sheet: isSheet }: Props) => {
   const { t } = useTranslation();

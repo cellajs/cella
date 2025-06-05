@@ -25,6 +25,8 @@ import { useUpdateUserMutation } from '~/modules/users/query';
 import type { User } from '~/modules/users/types';
 import { useUserStore } from '~/store/user';
 
+const formSchema = userUpdateBodySchema;
+type FormValues = z.infer<typeof formSchema>;
 interface UpdateUserFormProps {
   user: User;
   callback?: (user: User) => void;
@@ -32,10 +34,6 @@ interface UpdateUserFormProps {
   hiddenFields?: string[];
   children?: React.ReactNode;
 }
-
-const formSchema = userUpdateBodySchema;
-
-type FormValues = z.infer<typeof formSchema>;
 
 const UpdateUserForm = ({ user, callback, sheet: isSheet, hiddenFields, children }: UpdateUserFormProps) => {
   const { t } = useTranslation();

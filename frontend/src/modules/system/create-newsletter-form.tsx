@@ -23,14 +23,13 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { blocknoteFieldIsDirty } from '~/utils/blocknote-field-is-dirty';
 
 const BlockNoteContent = lazy(() => import('~/modules/common/form-fields/blocknote-content'));
+
+const formSchema = sendNewsletterBodySchema;
+type FormValues = z.infer<typeof formSchema>;
 interface CreateNewsletterFormProps {
   organizationIds: string[];
   callback?: () => void;
 }
-
-const formSchema = sendNewsletterBodySchema;
-
-type FormValues = z.infer<typeof formSchema>;
 
 const CreateNewsletterForm = ({ organizationIds, callback }: CreateNewsletterFormProps) => {
   const { t } = useTranslation();

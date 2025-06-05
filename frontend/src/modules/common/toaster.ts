@@ -9,7 +9,7 @@ import { toast } from 'sonner';
 export const toaster = (
   text: string,
   type: 'success' | 'error' | 'info' | 'warning' | 'default' = 'default',
-  options: { id?: number | string } = {},
+  options: { id?: number | string; description?: string | React.ReactNode } = {},
 ) => {
   // Get all active toasts and dismiss the ones with the same title
   for (const existingToast of toast.getToasts()) {
