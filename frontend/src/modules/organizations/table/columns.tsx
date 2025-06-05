@@ -10,8 +10,8 @@ import CheckboxColumn from '~/modules/common/data-table/checkbox-column';
 import HeaderCell from '~/modules/common/data-table/header-cell';
 import { renderSelect } from '~/modules/common/data-table/select-column';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
+import type { OrganizationTable } from '~/modules/organizations/table/table-wrapper';
 import UpdateRow from '~/modules/organizations/table/update-row';
-import type { Organization } from '~/modules/organizations/types';
 import { dateShort } from '~/utils/date-short';
 
 export const useColumns = () => {
@@ -19,7 +19,7 @@ export const useColumns = () => {
   const isMobile = useBreakpoints('max', 'sm', false);
 
   const columns = useMemo(() => {
-    const cols: ColumnOrColumnGroup<Organization>[] = [
+    const cols: ColumnOrColumnGroup<OrganizationTable>[] = [
       CheckboxColumn,
       {
         key: 'name',
@@ -123,5 +123,5 @@ export const useColumns = () => {
     return cols;
   }, []);
 
-  return useState<ColumnOrColumnGroup<Organization>[]>(columns);
+  return useState<ColumnOrColumnGroup<OrganizationTable>[]>(columns);
 };

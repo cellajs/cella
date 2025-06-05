@@ -19,12 +19,11 @@ import UnsavedBadge from '~/modules/common/unsaved-badge';
 import { getOrganizations } from '~/modules/organizations/api';
 import CreateOrganizationForm from '~/modules/organizations/create-organization-form';
 import DeleteOrganizations from '~/modules/organizations/delete-organizations';
-import type { OrganizationsSearch } from '~/modules/organizations/table/table-wrapper';
-import type { Organization } from '~/modules/organizations/types';
+import type { OrganizationTable, OrganizationsSearch } from '~/modules/organizations/table/table-wrapper';
 import CreateNewsletterForm from '~/modules/system/create-newsletter-form';
 import NewsletterPreview from '~/modules/system/newsletter-preview';
 
-type OrganizationsTableBarProps = BaseTableMethods & BaseTableBarProps<Organization, OrganizationsSearch>;
+type OrganizationsTableBarProps = BaseTableMethods & BaseTableBarProps<OrganizationTable, OrganizationsSearch>;
 
 export const OrganizationsTableBar = ({
   total,
@@ -62,7 +61,7 @@ export const OrganizationsTableBar = ({
   };
 
   const openDeleteDialog = () => {
-    const callback = (organizations: Organization[]) => {
+    const callback = (organizations: OrganizationTable[]) => {
       const message =
         organizations.length === 1
           ? t('common:success.delete_resource', { resource: t('common:organization') })
@@ -71,7 +70,7 @@ export const OrganizationsTableBar = ({
       clearSelection();
     };
 
-    createDialog(<DeleteOrganizations organizations={selected} dialog callback={callback} />, {
+    createDialog(<DeleteOrganizations organizations={selected} dialog callback={(orgs) => callback(orgs as OrganizationTable[])} />, {
       id: 'delete-organizations',
       triggerRef: deleteButtonRef,
       className: 'max-w-xl',

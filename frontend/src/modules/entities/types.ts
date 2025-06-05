@@ -9,7 +9,9 @@ export type ContextEntityData = EntitySummary & { membership: MembershipSummary 
 
 export type EntityPage = ContextEntityData & {
   organizationId?: string | null;
-  counts?: z.infer<typeof membershipCountSchema>;
+  counts?: {
+    membership: z.infer<typeof membershipCountSchema>;
+  };
 };
 
 export type EntityGreidItems = z.infer<typeof contextEntitiesSchema>;

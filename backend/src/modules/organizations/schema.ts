@@ -3,7 +3,8 @@ import { z } from 'zod';
 import { config } from 'config';
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 import { organizationsTable } from '#/db/schema/organizations';
-import type { ValidEntities } from '#/modules/entities/helpers/counts';
+import type { ValidEntities } from '#/modules/entities/helpers/get-related-entities';
+import { membershipSummarySchema } from '#/modules/memberships/schema';
 import {
   languageSchema,
   paginationQuerySchema,
@@ -13,13 +14,12 @@ import {
   validSlugSchema,
   validUrlSchema,
 } from '#/utils/schema/common';
-import { membershipSummarySchema } from '../memberships/schema';
 
 /** Type assertion to avoid "ReferenceError: Buffer is not defined" when using `hasField`.
  * Redundant fields will be filtered out in `getRelatedEntityCounts`.
  */
 //TODO: find way to fix or can we simplify it?
-export const entityCountSchema = z.object(
+const entityCountSchema = z.object(
   [...config.productEntityTypes, ...config.contextEntityTypes].reduce(
     (acc, key) => {
       acc[key as ValidEntities<'organizationId'>] = z.number();
@@ -30,13 +30,13 @@ export const entityCountSchema = z.object(
 );
 
 export const membershipCountSchema = z.object({
-  membership: z.object({
-    admin: z.number(),
-    member: z.number(),
-    pending: z.number(),
-    total: z.number(),
-  }),
+  admin: z.number(),
+  member: z.number(),
+  pending: z.number(),
+  total: z.number(),
 });
+
+export const fullCountsSchema = z.object({ membership: membershipCountSchema, related: entityCountSchema });
 
 export const organizationSchema = z.object({
   ...createSelectSchema(organizationsTable).shape,
@@ -44,7 +44,7 @@ export const organizationSchema = z.object({
   emailDomains: z.array(z.string()),
   authStrategies: z.array(z.string()),
   membership: membershipSummarySchema.nullable(),
-  counts: membershipCountSchema,
+  counts: z.object({ membership: membershipCountSchema }),
 });
 
 export const organizationWithMembershipSchema = organizationSchema.extend({ membership: membershipSummarySchema });

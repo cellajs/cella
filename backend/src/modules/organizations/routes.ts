@@ -1,17 +1,15 @@
-import { z } from 'zod';
 import { createCustomRoute } from '#/lib/custom-routes';
 import { hasSystemAccess, isAuthenticated } from '#/middlewares/guard';
-import { entityParamSchema, idsBodySchema } from '#/utils/schema/common';
-import { errorResponses, successWithDataSchema, successWithErrorsSchema, successWithPaginationSchema } from '#/utils/schema/responses';
 import {
-  entityCountSchema,
-  membershipCountSchema,
+  fullCountsSchema,
   organizationCreateBodySchema,
   organizationListQuerySchema,
   organizationSchema,
   organizationUpdateBodySchema,
   organizationWithMembershipSchema,
-} from './schema';
+} from '#/modules/organizations/schema';
+import { entityParamSchema, idsBodySchema } from '#/utils/schema/common';
+import { errorResponses, successWithDataSchema, successWithErrorsSchema, successWithPaginationSchema } from '#/utils/schema/responses';
 
 class OrganizationRoutes {
   public createOrganization = createCustomRoute({
@@ -59,7 +57,7 @@ class OrganizationRoutes {
         description: 'Organizations',
         content: {
           'application/json': {
-            schema: successWithPaginationSchema(organizationSchema),
+            schema: successWithPaginationSchema(organizationSchema.extend({ counts: fullCountsSchema })),
           },
         },
       },
@@ -112,9 +110,7 @@ class OrganizationRoutes {
         description: 'Organization',
         content: {
           'application/json': {
-            schema: successWithDataSchema(
-              organizationSchema.extend({ counts: z.object({ ...membershipCountSchema.shape, ...entityCountSchema.shape }) }),
-            ),
+            schema: successWithDataSchema(organizationSchema.extend({ counts: fullCountsSchema })),
           },
         },
       },

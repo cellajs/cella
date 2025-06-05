@@ -7,12 +7,14 @@ import type { BaseTableMethods } from '~/modules/common/data-table/types';
 import { useColumns } from '~/modules/organizations/table/columns';
 import BaseDataTable from '~/modules/organizations/table/table';
 import { OrganizationsTableBar } from '~/modules/organizations/table/table-bar';
-import type { Organization } from '~/modules/organizations/types';
 import { OrganizationsTableRoute, type organizationsSearchSchema } from '~/routes/system';
+import { fullCountsSchema, organizationSchema } from '#/modules/organizations/schema';
 
 const LIMIT = config.requestLimits.organizations;
+const orgTableSchema = organizationSchema.extend({ counts: fullCountsSchema });
 
 export type OrganizationsSearch = z.infer<typeof organizationsSearchSchema>;
+export type OrganizationTable = z.infer<typeof orgTableSchema>;
 
 const OrganizationsTable = () => {
   const { search, setSearch } = useSearchParams<OrganizationsSearch>({ from: OrganizationsTableRoute.id });
@@ -24,7 +26,7 @@ const OrganizationsTable = () => {
 
   // State for selected and total counts
   const [total, setTotal] = useState<number | undefined>(undefined);
-  const [selected, setSelected] = useState<Organization[]>([]);
+  const [selected, setSelected] = useState<OrganizationTable[]>([]);
 
   // Build columns
   const [columns, setColumns] = useColumns();
