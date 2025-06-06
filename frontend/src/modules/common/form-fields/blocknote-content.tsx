@@ -28,7 +28,7 @@ const BlockNoteContent = ({
   name,
   required,
   disabled,
-  BaseBlockNoteProps: { allowedBlockTypes = ['emoji', 'heading', 'paragraph', 'codeBlock'], ...restBlockNoteProps },
+  BaseBlockNoteProps: { excludeBlockTypes = ['bulletListItem', 'numberedListItem', 'checkListItem', 'table', 'notify'], ...restBlockNoteProps },
 }: Props) => {
   return (
     <FormField
@@ -44,7 +44,7 @@ const BlockNoteContent = ({
               </FormLabel>
             )}
             <FormControl>
-              <BlockNote type="create" defaultValue={value} allowedBlockTypes={allowedBlockTypes} updateData={onChange} {...restBlockNoteProps} />
+              <BlockNote type="create" defaultValue={value} excludeBlockTypes={excludeBlockTypes} updateData={onChange} {...restBlockNoteProps} />
             </FormControl>
             <FormMessage />
           </FormItem>

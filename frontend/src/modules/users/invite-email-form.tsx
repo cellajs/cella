@@ -36,16 +36,7 @@ export const handleNewInvites = (emails: string[], entity: EntityPage) => {
   queryClient.setQueryData(organizationsKeys.single.byIdOrSlug(entity.slug), (oldEntity: EntityPage) => {
     if (!oldEntity) return oldEntity;
 
-    return {
-      ...oldEntity,
-      counts: {
-        ...oldEntity.counts,
-        membership: {
-          ...oldEntity.counts?.membership,
-          pending: (oldEntity.counts?.membership?.pending ?? 0) + emails.length,
-        },
-      },
-    };
+    return { ...oldEntity, invitesCount: oldEntity.invitesCount ?? 0 + emails.length };
   });
   queryClient.invalidateQueries({
     queryKey: membersKeys.table.pending({ idOrSlug: entity.slug, entityType: entity.entityType, orgIdOrSlug: entity.organizationId || entity.id }),
@@ -66,7 +57,6 @@ const InviteEmailForm = ({ entity, dialog: isDialog, children }: Props) => {
     role: z.enum(config.rolesByType.allRoles),
     idOrSlug: z.string().optional(),
   });
-
   type FormValues = z.infer<typeof formSchema>;
 
   const formOptions: UseFormProps<FormValues> = useMemo(
@@ -148,7 +138,7 @@ const InviteEmailForm = ({ entity, dialog: isDialog, children }: Props) => {
           </SubmitButton>
           {children}
 
-          {!children && form.formState.isDirty && (
+          {!children && form.isDirty && (
             <Button type="reset" variant="secondary" onClick={() => form.reset()}>
               {t('common:cancel')}
             </Button>

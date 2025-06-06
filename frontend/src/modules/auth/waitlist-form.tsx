@@ -16,8 +16,10 @@ import { Button, SubmitButton } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '~/modules/ui/form';
 import { Input } from '~/modules/ui/input';
 import { cn } from '~/utils/cn';
+import { defaultOnInvalid } from '~/utils/form-on-invalid';
 
 const formSchema = requestCreateBodySchema;
+type FormValues = z.infer<typeof formSchema>;
 
 interface WaitlistFormProps {
   email: string;
@@ -37,16 +39,12 @@ export const WaitlistForm = ({ email, buttonContent, emailField, dialog: isDialo
 
   const { mutate: createRequest, isPending } = useCreateRequestMutation();
 
-  const form = useForm<z.infer<typeof formSchema>>({
+  const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
-    defaultValues: {
-      email,
-      type: 'waitlist',
-      message: null,
-    },
+    defaultValues: { email, type: 'waitlist', message: null },
   });
 
-  const onSubmit = (body: z.infer<typeof formSchema>) => {
+  const onSubmit = (body: FormValues) => {
     if (!onlineManager.isOnline()) return toaster(t('common:action.offline.text'), 'warning');
 
     createRequest(body, {
@@ -78,7 +76,7 @@ export const WaitlistForm = ({ email, buttonContent, emailField, dialog: isDialo
           <LegalNotice email={email} mode="waitlist" />
         </>
       )}
-      <form onSubmit={form.handleSubmit(onSubmit)} className={cn('max-xs:min-w-full flex flex-col gap-4 sm:flex-row', className)}>
+      <form onSubmit={form.handleSubmit(onSubmit, defaultOnInvalid)} className={cn('max-xs:min-w-full flex flex-col gap-4 sm:flex-row', className)}>
         <FormField
           control={form.control}
           name="email"

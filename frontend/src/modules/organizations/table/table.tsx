@@ -11,12 +11,11 @@ import { toaster } from '~/modules/common/toaster';
 import { getAndSetMenu } from '~/modules/me/helpers';
 import { inviteMembers as changeRole } from '~/modules/memberships/api';
 import { organizationsQueryOptions } from '~/modules/organizations/query';
-import type { OrganizationsSearch } from '~/modules/organizations/table/table-wrapper';
-import type { Organization } from '~/modules/organizations/types';
+import type { OrganizationTable, OrganizationsSearch } from '~/modules/organizations/table/table-wrapper';
 import { useDataFromInfiniteQuery } from '~/query/hooks/use-data-from-query';
 import { useUserStore } from '~/store/user';
 
-type BaseDataTableProps = BaseTableProps<Organization, OrganizationsSearch>;
+type BaseDataTableProps = BaseTableProps<OrganizationTable, OrganizationsSearch>;
 
 const BaseDataTable = memo(
   forwardRef<BaseTableMethods, BaseDataTableProps>(({ columns, searchVars, sortColumns, setSortColumns, setTotal, setSelected }, ref) => {
@@ -31,7 +30,7 @@ const BaseDataTable = memo(
       organizationsQueryOptions({ q, sort, order, limit }),
     );
 
-    const onRowsChange = async (changedRows: Organization[], { column, indexes }: RowsChangeData<Organization>) => {
+    const onRowsChange = async (changedRows: OrganizationTable[], { column, indexes }: RowsChangeData<OrganizationTable>) => {
       if (!onlineManager.isOnline()) return toaster(t('common:action.offline.text'), 'warning');
 
       if (column.key !== 'role') return setRows(changedRows);
@@ -76,7 +75,7 @@ const BaseDataTable = memo(
     }));
 
     return (
-      <DataTable<Organization>
+      <DataTable<OrganizationTable>
         {...{
           columns: columns.filter((column) => column.visible),
           rows,

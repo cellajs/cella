@@ -14,9 +14,10 @@ import { ArrowRight } from 'lucide-react';
 import type { ApiError } from '~/lib/api';
 import { checkEmail } from '~/modules/auth/api';
 import type { Step } from '~/modules/auth/types';
+import { defaultOnInvalid } from '~/utils/form-on-invalid';
 
 const formSchema = emailBodySchema;
-
+type FormValues = z.infer<typeof formSchema>;
 interface CheckEmailProps {
   setStep: (step: Step, email: string) => void;
   emailEnabled: boolean;
@@ -28,7 +29,7 @@ export const CheckEmailForm = ({ setStep, emailEnabled }: CheckEmailProps) => {
   const isMobile = window.innerWidth < 640;
   const title = config.has.registrationEnabled ? t('common:sign_in_or_up') : t('common:sign_in');
 
-  const form = useForm<z.infer<typeof formSchema>>({
+  const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: { email: '' },
   });
@@ -49,16 +50,14 @@ export const CheckEmailForm = ({ setStep, emailEnabled }: CheckEmailProps) => {
     },
   });
 
-  const onSubmit = () => {
-    _checkEmail(form.getValues('email'));
-  };
+  const onSubmit = ({ email }: FormValues) => _checkEmail(email);
 
   return (
     <Form {...form}>
       <h1 className="text-2xl text-center pb-2 mt-4">{title}</h1>
 
       {emailEnabled && (
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+        <form onSubmit={form.handleSubmit(onSubmit, defaultOnInvalid)} className="space-y-4">
           <FormField
             control={form.control}
             name="email"

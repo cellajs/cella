@@ -42,8 +42,9 @@ export const useMemberUpdateMutation = () =>
         context.toastMessage = t(`common:success.${archived ? 'archived' : 'restore'}_resource`, { resource: t(`common:${entityType}`) });
       } else if (muted !== undefined) {
         context.toastMessage = t(`common:success.${muted ? 'mute' : 'unmute'}_resource`, { resource: t(`common:${entityType}`) });
-      } else if (role) context.toastMessage = t('common:success.update_item', { item: t('common:role') });
-      else if (order !== undefined) context.toastMessage = t('common:success.update_item', { item: t('common:order') });
+      } else if (role) {
+        context.toastMessage = t('common:success.update_item', { item: t('common:role') });
+      } else if (order !== undefined) context.toastMessage = t('common:success.update_item', { item: t('common:order') });
 
       // Update membership of ContextEntityType query that was fetched
       const queryKey = contextEntityCacheKeys[entityType];
@@ -122,7 +123,8 @@ export const useMembersDeleteMutation = () =>
     mutationKey: membersKeys.delete(),
     mutationFn: removeMembers,
     onMutate: async (variables) => {
-      const { ids, idOrSlug, entityType, orgIdOrSlug } = variables;
+      const { members, idOrSlug, entityType, orgIdOrSlug } = variables;
+      const ids = members.map(({ id }) => id);
 
       const context: MemberContextProp[] = []; // previous query data for rollback if an error occurs
 

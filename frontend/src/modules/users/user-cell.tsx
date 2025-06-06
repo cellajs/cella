@@ -29,7 +29,7 @@ const UserCell = ({ user, orgIdOrSlug, tabIndex }: Props) => {
       to={orgIdOrSlug ? '/$orgIdOrSlug/users/$idOrSlug' : '/users/$idOrSlug'}
       tabIndex={tabIndex}
       params={{ idOrSlug: user.slug, ...(orgIdOrSlug ? { orgIdOrSlug } : {}) }}
-      className="flex space-x-2 items-center outline-0 ring-0 group"
+      className="flex space-x-2 items-center outline-0 ring-0 group truncate py-0.5"
       onClick={(e) => {
         if (!onlineManager.isOnline()) {
           e.preventDefault();
@@ -51,7 +51,7 @@ const UserCell = ({ user, orgIdOrSlug, tabIndex }: Props) => {
     >
       <AvatarWrap
         type="user"
-        className="h-8 w-8 group-active:translate-y-[.05rem] group-hover:font-semibold"
+        className="h-7 w-7 group-active:translate-y-[.05rem] group-hover:font-semibold"
         id={user.id}
         name={user.name}
         url={user.thumbnailUrl}

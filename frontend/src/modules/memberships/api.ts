@@ -1,5 +1,6 @@
 import { type ContextEntityType, config } from 'config';
 import { clientConfig, handleResponse } from '~/lib/api';
+import type { Member } from '~/modules/memberships/types';
 import { membershipsHc } from '#/modules/memberships/hc';
 
 export const client = membershipsHc(config.backendUrl, clientConfig);
@@ -29,11 +30,11 @@ export const inviteMembers = async ({ idOrSlug, entityType, orgIdOrSlug, ...rest
   await handleResponse(response);
 };
 
-export type RemoveMembersProps = Parameters<(typeof client.index)['$delete']>['0']['param'] &
-  Parameters<(typeof client.index)['$delete']>['0']['json'] & {
-    idOrSlug: string;
-    entityType: ContextEntityType;
-  };
+export type RemoveMembersProps = Parameters<(typeof client.index)['$delete']>['0']['param'] & {
+  idOrSlug: string;
+  entityType: ContextEntityType;
+  members: Member[];
+};
 
 /**
  * Delete multiple members from an entity.
@@ -41,13 +42,13 @@ export type RemoveMembersProps = Parameters<(typeof client.index)['$delete']>['0
  * @param param.idOrSlug - ID or slug of the target entity.
  * @param param.entityType - Type of the target entity.
  * @param param.orgIdOrSlug - Organization ID or slug associated with the entity.
- * @param param.ids - Array of member IDs to delete.
+ * @param param.members - Array of members to delete.
  */
-export const removeMembers = async ({ idOrSlug, entityType, ids, orgIdOrSlug }: RemoveMembersProps) => {
+export const removeMembers = async ({ idOrSlug, entityType, members, orgIdOrSlug }: RemoveMembersProps) => {
   const response = await client.index.$delete({
     param: { orgIdOrSlug },
     query: { idOrSlug, entityType },
-    json: { ids },
+    json: { ids: members.map(({ id }) => id) },
   });
 
   await handleResponse(response);

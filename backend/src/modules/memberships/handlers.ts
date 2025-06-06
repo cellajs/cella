@@ -206,7 +206,7 @@ const membershipRouteHandlers = app
     const { ids } = ctx.req.valid('json');
 
     const { error, entity } = await getValidContextEntity(ctx, idOrSlug, entityType, 'delete');
-    if (error) return ctx.json({ success: false, errors: [error] }, 200);
+    if (error) return ctx.json({ success: false, error }, 400);
 
     const entityIdField = config.entityIdFields[entityType];
 
@@ -283,9 +283,11 @@ const membershipRouteHandlers = app
     const membershipContext = await resolveEntity(updatedType, membershipContextId);
     if (!membershipContext) return errorResponse(ctx, 404, 'not_found', 'warn', updatedType);
 
-    // Check if user has permission to update context
-    const { error } = await getValidContextEntity(ctx, membershipContextId, updatedType, 'update');
-    if (error) return ctx.json({ success: false, error }, 400);
+    // Check if user has permission to update someone elses membership role
+    if (role) {
+      const { error } = await getValidContextEntity(ctx, membershipContextId, updatedType, 'update');
+      if (error) return ctx.json({ success: false, error }, 400);
+    }
 
     // If archived changed, set lowest order in relevant memberships
     if (archived !== undefined && archived !== membershipToUpdate.archived) {
@@ -301,7 +303,7 @@ const membershipRouteHandlers = app
     const [updatedMembership] = await db
       .update(membershipsTable)
       .set({
-        role,
+        ...(role !== undefined && { role }),
         ...(orderToUpdate !== undefined && { order: orderToUpdate }),
         ...(muted !== undefined && { muted }),
         ...(archived !== undefined && { archived }),

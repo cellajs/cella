@@ -1,6 +1,7 @@
-import { useBlockNoteEditor, useComponentsContext } from '@blocknote/react';
+import { checkBlockIsFileBlock } from '@blocknote/core';
+import { useBlockNoteEditor, useComponentsContext, useSelectedBlocks } from '@blocknote/react';
 import { Scaling } from 'lucide-react';
-import { useRef } from 'react';
+import { useMemo, useRef } from 'react';
 import { customSchema } from '~/modules/common/blocknote/blocknote-config';
 import { openAttachment } from '~/modules/common/blocknote/helpers/open-attachment';
 
@@ -10,6 +11,17 @@ export const FileOpenPreviewButton = () => {
   // biome-ignore lint/style/noNonNullAssertion: required by author
   const Components = useComponentsContext()!;
 
+  const selectedBlocks = useSelectedBlocks(editor);
+  const showButton = useMemo(() => {
+    // Checks if only one block is selected.
+    if (selectedBlocks.length !== 1) return false;
+
+    const block = selectedBlocks[0];
+
+    return checkBlockIsFileBlock(block, editor);
+  }, [editor, selectedBlocks]);
+
+  if (!showButton) return null;
   return (
     <Components.FormattingToolbar.Button
       className={'bn-button'}

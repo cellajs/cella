@@ -18,11 +18,12 @@ import { signIn } from '~/modules/auth/api';
 import { RequestPasswordDialog } from '~/modules/auth/request-password-dialog';
 import { AuthenticateRoute } from '~/routes/auth';
 import { useUserStore } from '~/store/user';
-
-const formSchema = emailPasswordBodySchema;
+import { defaultOnInvalid } from '~/utils/form-on-invalid';
 
 const enabledStrategies: readonly string[] = config.enabledAuthenticationStrategies;
 
+const formSchema = emailPasswordBodySchema;
+type FormValues = z.infer<typeof formSchema>;
 interface Props {
   email: string;
   resetSteps: () => void;
@@ -41,12 +42,9 @@ export const SignInForm = ({ email, resetSteps, emailEnabled }: Props) => {
   const isMobile = window.innerWidth < 640;
 
   // Set up form
-  const form = useForm<z.infer<typeof formSchema>>({
+  const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
-    defaultValues: {
-      email: email,
-      password: '',
-    },
+    defaultValues: { email, password: '' },
   });
 
   // Handle sign in
@@ -72,9 +70,7 @@ export const SignInForm = ({ email, resetSteps, emailEnabled }: Props) => {
     },
   });
 
-  const onSubmit = (values: z.infer<typeof formSchema>) => {
-    _signIn({ ...values });
-  };
+  const onSubmit = (values: FormValues) => _signIn({ ...values });
 
   const resetAuth = () => {
     clearUserStore();
@@ -91,7 +87,7 @@ export const SignInForm = ({ email, resetSteps, emailEnabled }: Props) => {
         </Button>
       </h1>
       {emailEnabled && (
-        <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-4 mt-0!">
+        <form onSubmit={form.handleSubmit(onSubmit, defaultOnInvalid)} className="flex flex-col gap-4 mt-0!">
           <FormField
             control={form.control}
             name="email"

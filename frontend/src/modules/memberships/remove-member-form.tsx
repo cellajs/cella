@@ -18,7 +18,7 @@ const RemoveMembersForm = ({ members, entityIdOrSlug, entityType = 'organization
   const { mutate: removeMembers, isPending } = useMembersDeleteMutation();
 
   const onRemoveMember = () => {
-    removeMembers({ orgIdOrSlug: organizationId, idOrSlug: entityIdOrSlug, entityType, ids: members.map((member) => member.id) });
+    removeMembers({ orgIdOrSlug: organizationId, idOrSlug: entityIdOrSlug, entityType, members });
 
     if (isDialog) removeDialog();
     callback?.(members);

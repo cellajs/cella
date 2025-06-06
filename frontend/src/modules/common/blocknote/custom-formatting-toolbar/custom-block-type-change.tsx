@@ -11,7 +11,6 @@ import {
 import { ChevronDown } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { customBlockTypeSelectItems } from '~/modules/common/blocknote/blocknote-config';
-import type { BasicBlockTypes } from '~/modules/common/blocknote/types';
 
 export const CellaCustomBlockTypeSelect = () => {
   // biome-ignore lint/style/noNonNullAssertion: required by author
@@ -21,13 +20,11 @@ export const CellaCustomBlockTypeSelect = () => {
 
   const selectedBlocks = useSelectedBlocks(editor);
   const currentBlock = selectedBlocks[0];
+  const itemsType: readonly string[] = customBlockTypeSelectItems;
 
   const [block, setBlock] = useState(editor.getTextCursorPosition().block);
 
-  const filteredItems = useMemo(
-    () => blockTypeSelectItems(dict).filter((item) => customBlockTypeSelectItems.includes(item.type as BasicBlockTypes)),
-    [editor, dict],
-  );
+  const filteredItems = useMemo(() => blockTypeSelectItems(dict).filter(({ type }) => itemsType.includes(type)), [editor, dict]);
 
   const shouldShow = useMemo(() => filteredItems.some((item) => item.type === block.type), [block.type, filteredItems]);
 

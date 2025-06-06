@@ -82,7 +82,7 @@ export const DataTable = <TData,>({
   onSelectedRowsChange,
   sortColumns,
   onSortColumnsChange,
-  rowHeight = 50,
+  rowHeight = 52,
   enableVirtualization,
   onRowsChange,
   fetchMore,

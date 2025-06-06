@@ -18,10 +18,12 @@ import { toaster } from '~/modules/common/toaster';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '~/modules/ui/form';
 import { Input } from '~/modules/ui/input';
 import { CreatePasswordWithTokenRoute } from '~/routes/auth';
+import { defaultOnInvalid } from '~/utils/form-on-invalid';
 
 const PasswordStrength = lazy(() => import('~/modules/auth/password-strength'));
 
 const formSchema = z.object({ password: z.string().min(8).max(100) });
+type FormValues = z.infer<typeof formSchema>;
 
 const CreatePasswordForm = () => {
   const { t } = useTranslation();
@@ -48,18 +50,13 @@ const CreatePasswordForm = () => {
     },
   });
 
-  const form = useForm<z.infer<typeof formSchema>>({
+  const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
-    defaultValues: {
-      password: '',
-    },
+    defaultValues: { password: '' },
   });
 
   // Submit new password
-  const onSubmit = (values: z.infer<typeof formSchema>) => {
-    const { password } = values;
-    _createPassword({ token, password });
-  };
+  const onSubmit = ({ password }: FormValues) => _createPassword({ token, password });
 
   if (isLoading) return <Spinner className="h-10 w-10" />;
 
@@ -87,7 +84,7 @@ const CreatePasswordForm = () => {
           </Button>
         )}
       </h1>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+      <form onSubmit={form.handleSubmit(onSubmit, defaultOnInvalid)} className="space-y-4">
         <FormField
           control={form.control}
           name="password"

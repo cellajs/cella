@@ -1,20 +1,53 @@
 import { keepPreviousData, queryOptions } from '@tanstack/react-query';
-import { type EntitiesQuery, getEntities } from '~/modules/entities/api';
+import { type ContextEntitiesQuery, type PageEntitiesQuery, getContextEntities, getPageEntities } from '~/modules/entities/api';
+import { useUserStore } from '~/store/user';
 
 /**
- * Query options for fetching entities based on input query.
+ * Keys for entities related queries. These keys help to uniquely identify different query.
+ * For managing query caching and invalidation.
+ */
+export const entitiesKeys = {
+  all: ['entities'] as const,
+  search: (searchQuery: string) => [...entitiesKeys.all, 'search', searchQuery] as const,
+  grid: {
+    base: () => [...entitiesKeys.all, 'greed'] as const,
+    context: (filters: ContextEntitiesQuery) => [...entitiesKeys.grid.base(), filters] as const,
+  },
+};
+
+/**
+ * Query options for fetching page entities based on input query.
  *
- * @param query - EntitiesQuery parameters to get entities.
+ * @param query - PageEntitiesQuery parameters to get entities.
  * @returns Query options
  */
-export const entitiesQueryOptions = (query: EntitiesQuery) => {
+export const entitiesQueryOptions = (query: PageEntitiesQuery) => {
   const searchQuery = query.q ?? '';
   return queryOptions({
-    queryKey: ['search', searchQuery],
-    queryFn: () => getEntities(query),
+    queryKey: entitiesKeys.search(searchQuery),
+    queryFn: () => getPageEntities(query),
     staleTime: 0,
     enabled: searchQuery.trim().length > 0, // to avoid issues with spaces
     initialData: { items: [], total: 0, counts: {} },
     placeholderData: keepPreviousData,
+  });
+};
+
+/**
+ * Query options for fetching context entities with memberhsip and their members based on userId input query and sort.
+ *
+ * @param query - ContextEntitiesQuery parameters to get entities.
+ * @returns Query options
+ */
+export const contextEntitiesQueryOptions = ({ type, ...restQuery }: ContextEntitiesQuery) => {
+  const user = useUserStore.getState().user;
+  const q = restQuery.q ?? '';
+  const sort = restQuery.sort ?? 'name';
+  const targetUserId = restQuery.targetUserId ?? user.id;
+  return queryOptions({
+    queryKey: entitiesKeys.grid.context({ q, sort, targetUserId, type }),
+    queryFn: () => getContextEntities({ type, ...restQuery }),
+    // TODO(IMPROVEMENT) add query invalidate on update?
+    staleTime: 0,
   });
 };

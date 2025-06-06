@@ -38,7 +38,6 @@ const InviteSearchForm = ({ entity, dialog: isDialog }: Props) => {
     role: z.enum(config.rolesByType.entityRoles).optional(),
     idOrSlug: z.string().optional(),
   });
-
   type FormValues = z.infer<typeof formSchema>;
 
   const formOptions: UseFormProps<FormValues> = useMemo(
@@ -111,7 +110,7 @@ const InviteSearchForm = ({ entity, dialog: isDialog }: Props) => {
             <Send size={16} className="mr-2" />
             {t('common:invite')}
           </SubmitButton>
-          {form.formState.isDirty && (
+          {form.isDirty && (
             <Button type="reset" variant="secondary" onClick={() => form.reset()}>
               {t('common:cancel')}
             </Button>

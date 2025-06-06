@@ -21,16 +21,31 @@ export const checkSlugAvailable = async (params: { slug: string; type: EntityTyp
   return json.success;
 };
 
-export type EntitiesQuery = Parameters<(typeof client)['index']['$get']>['0']['query'];
+export type PageEntitiesQuery = Parameters<(typeof client)['page']['$get']>['0']['query'];
 
 /**
- * Get entities for a given query and optional entity type.
+ * Get page entities for a given query and optional entity type.
  *
- * @param query - EntitiesQuery parameters to get entities.
- * @returns An array of entities based on query.
+ * @param query - PageEntitiesQuery parameters to get page entities.
+ * @returns An array of page entities based on query.
  */
-export const getEntities = async (query: EntitiesQuery) => {
-  const response = await client.index.$get({ query });
+export const getPageEntities = async (query: PageEntitiesQuery) => {
+  const response = await client.page.$get({ query });
+
+  const json = await handleResponse(response);
+  return json.data;
+};
+
+export type ContextEntitiesQuery = Parameters<(typeof client)['context']['$get']>['0']['query'];
+
+/**
+ * Get context entities with membership & members for a given query with target user & context entity type.
+ *
+ * @param query - ContextEntitiesQuery parameters to get context entities with membership & members.
+ * @returns An array of entities with membership & members based on query.
+ */
+export const getContextEntities = async (query: ContextEntitiesQuery) => {
+  const response = await client.context.$get({ query });
 
   const json = await handleResponse(response);
   return json.data;

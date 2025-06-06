@@ -6,11 +6,11 @@ import { db } from '#/db/db';
 import { membershipsTable } from '#/db/schema/memberships';
 import { usersTable } from '#/db/schema/users';
 import { entityTables } from '#/entity-config';
-import type { entityListQuerySchema } from '#/modules/entities/schema';
+import type { pageEntitiesQuerySchema } from '#/modules/entities/schema';
 import { membershipSummarySelect } from '#/modules/memberships/helpers/select';
 import { prepareStringForILikeFilter } from '#/utils/sql';
 
-type EntitiesQueryProps = Omit<z.infer<typeof entityListQuerySchema>, 'targetUserId' | 'targetOrgId'> & {
+type EntitiesQueryProps = Omit<z.infer<typeof pageEntitiesQuerySchema>, 'targetUserId' | 'targetOrgId'> & {
   organizationIds: string[];
   selfId: string;
   userId: string;
