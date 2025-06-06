@@ -1,25 +1,28 @@
+import { OpenAPIHono } from '@hono/zod-openapi';
+import { config } from 'config';
 import { type SQL, and, count, eq, getTableColumns, ilike, inArray, sql } from 'drizzle-orm';
+import type { z } from 'zod';
+
 import { db } from '#/db/db';
 import { membershipsTable } from '#/db/schema/memberships';
 import { organizationsTable } from '#/db/schema/organizations';
-
-import { OpenAPIHono } from '@hono/zod-openapi';
-import { config } from 'config';
 import { type Env, getContextMemberships, getContextUser } from '#/lib/context';
 import { type ErrorType, createError, errorResponse } from '#/lib/errors';
 import { sendSSEToUsers } from '#/lib/sse';
 import { logEvent } from '#/middlewares/logger/log-event';
 import { checkSlugAvailable } from '#/modules/entities/helpers/check-slug';
-import { getMemberCounts, getMemberCountsQuery, getRelatedEntityCounts } from '#/modules/entities/helpers/counts';
+import { getMemberCountsQuery, getRelatedEntityCountsQuery } from '#/modules/entities/helpers/counts';
+import { type ValidEntities, getRelatedEntities } from '#/modules/entities/helpers/get-related-entities';
 import { insertMembership } from '#/modules/memberships/helpers';
 import { membershipSummarySelect } from '#/modules/memberships/helpers/select';
+import organizationRoutes from '#/modules/organizations/routes';
+import type { membershipCountSchema } from '#/modules/organizations/schema';
 import { getValidContextEntity } from '#/permissions/get-context-entity';
 import { splitByAllowance } from '#/permissions/split-by-allowance';
 import { defaultHook } from '#/utils/default-hook';
 import { getIsoDate } from '#/utils/iso-date';
 import { getOrderColumn } from '#/utils/order-column';
 import { prepareStringForILikeFilter } from '#/utils/sql';
-import organizationRoutes from './routes';
 
 const app = new OpenAPIHono<Env>({ defaultHook });
 
@@ -55,7 +58,7 @@ const organizationRouteHandlers = app
     const data = {
       ...createdOrganization,
       membership: createdMembership,
-      counts: { membership: { admin: 1, member: 1, total: 1, pending: 0 } },
+      invitesCount: 0,
     };
 
     return ctx.json({ success: true, data }, 200);
@@ -66,6 +69,7 @@ const organizationRouteHandlers = app
   .openapi(organizationRoutes.getOrganizations, async (ctx) => {
     const { q, sort, order, offset, limit } = ctx.req.valid('query');
     const user = getContextUser();
+    const entityType = 'organization';
 
     const filter: SQL | undefined = q ? ilike(organizationsTable.name, prepareStringForILikeFilter(q)) : undefined;
 
@@ -76,7 +80,7 @@ const organizationRouteHandlers = app
     const memberships = db
       .select()
       .from(membershipsTable)
-      .where(and(eq(membershipsTable.userId, user.id), eq(membershipsTable.contextType, 'organization')))
+      .where(and(eq(membershipsTable.userId, user.id), eq(membershipsTable.contextType, entityType)))
       .as('memberships');
 
     const orderColumn = getOrderColumn(
@@ -91,24 +95,27 @@ const organizationRouteHandlers = app
       order,
     );
 
-    const countsQuery = getMemberCountsQuery('organization');
+    const membershipCountsQuery = getMemberCountsQuery(entityType);
+    const relatedCountsQuery = getRelatedEntityCountsQuery(entityType);
 
+    const validEntities = getRelatedEntities(entityType);
+
+    const relatedJsonPairs = validEntities.map((entity) => `'${entity}', COALESCE("related_counts"."${entity}", 0)`).join(', ');
     const organizations = await db
       .select({
         ...getTableColumns(organizationsTable),
         membership: membershipSummarySelect,
         counts: {
-          membership: sql<{
-            admin: number;
-            member: number;
-            pending: number;
-            total: number;
-          }>`json_build_object('admin', ${countsQuery.admin}, 'member', ${countsQuery.member}, 'pending', ${countsQuery.pending}, 'total', ${countsQuery.member})`,
+          membership: sql<
+            z.infer<typeof membershipCountSchema>
+          >`json_build_object('admin', ${membershipCountsQuery.admin}, 'member', ${membershipCountsQuery.member}, 'pending', ${membershipCountsQuery.pending}, 'total', ${membershipCountsQuery.member})`,
+          related: sql<Record<ValidEntities<'organizationId'>, number>>`json_build_object(${sql.raw(relatedJsonPairs)})`,
         },
       })
       .from(organizationsQuery.as('organizations'))
       .leftJoin(memberships, and(eq(organizationsTable.id, memberships.organizationId), eq(memberships.userId, user.id)))
-      .leftJoin(countsQuery, eq(organizationsTable.id, countsQuery.id))
+      .leftJoin(membershipCountsQuery, eq(organizationsTable.id, membershipCountsQuery.id))
+      .leftJoin(relatedCountsQuery, eq(organizationsTable.id, relatedCountsQuery.id))
       .orderBy(orderColumn)
       .limit(Number(limit))
       .offset(Number(offset));
@@ -164,11 +171,13 @@ const organizationRouteHandlers = app
     const { error, entity: organization, membership } = await getValidContextEntity(ctx, idOrSlug, 'organization', 'read');
     if (error) return ctx.json({ success: false, error }, 400);
 
-    const memberCounts = await getMemberCounts('organization', organization.id);
-    const relatedEntitiesCounts = await getRelatedEntityCounts('organization', organization.id);
+    const memberCountsQuery = getMemberCountsQuery(organization.entityType);
+    const [{ invitesCount }] = await db
+      .select({ invitesCount: memberCountsQuery.pending })
+      .from(memberCountsQuery)
+      .where(eq(memberCountsQuery.id, organization.id));
 
-    const counts = { membership: memberCounts, ...relatedEntitiesCounts };
-    const data = { ...organization, membership, counts };
+    const data = { ...organization, membership, invitesCount };
 
     return ctx.json({ success: true, data }, 200);
   })
@@ -211,15 +220,17 @@ const organizationRouteHandlers = app
 
     logEvent('Organization updated', { organization: updatedOrganization.id });
 
-    const memberCounts = await getMemberCounts('organization', organization.id);
+    const memberCountsQuery = getMemberCountsQuery(organization.entityType);
+    const [{ invitesCount }] = await db
+      .select({ invitesCount: memberCountsQuery.pending })
+      .from(memberCountsQuery)
+      .where(eq(memberCountsQuery.id, organization.id));
 
     // Prepare data
     const data = {
       ...updatedOrganization,
       membership,
-      counts: {
-        membership: memberCounts,
-      },
+      invitesCount,
     };
 
     return ctx.json({ success: true, data }, 200);

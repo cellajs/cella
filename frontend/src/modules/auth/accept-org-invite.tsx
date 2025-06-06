@@ -9,10 +9,14 @@ import AuthErrorNotice from '~/modules/auth/auth-error-notice';
 import { useTokenCheck } from '~/modules/auth/use-token-check';
 import Spinner from '~/modules/common/spinner';
 import { getAndSetMenu } from '~/modules/me/helpers';
+import { organizationsKeys } from '~/modules/organizations/query';
+import type { Organization } from '~/modules/organizations/types';
 import { SubmitButton, buttonVariants } from '~/modules/ui/button';
+import { queryClient } from '~/query/query-client';
 import { AcceptOrgInviteRoute } from '~/routes/auth';
 import { OrganizationRoute } from '~/routes/organizations';
 import { cn } from '~/utils/cn';
+import { membersKeys } from '../memberships/query/options';
 
 // Accept organization invitation when user is signed in
 const AcceptOrgInvite = () => {
@@ -32,8 +36,21 @@ const AcceptOrgInvite = () => {
     mutationFn: acceptOrgInvite,
     onSuccess: () => {
       getAndSetMenu();
+
       toast.success(t('common:invitation_accepted'));
       if (data?.organizationSlug) {
+        // Cancel any ongoing queries for consistency
+        const singleOrgKey = organizationsKeys.single.byIdOrSlug(data.organizationSlug);
+
+        queryClient.setQueryData<Organization>(singleOrgKey, (oldData) => {
+          if (!oldData) return oldData;
+          return { ...oldData, invitesCount: oldData.invitesCount - 1 };
+        });
+
+        queryClient.invalidateQueries({
+          queryKey: membersKeys.table.similarPending({ idOrSlug: data.organizationSlug, entityType: 'organization' }),
+        });
+
         navigate({ to: OrganizationRoute.to, params: { idOrSlug: data.organizationSlug } });
       } else navigate({ to: config.defaultRedirectPath });
     },

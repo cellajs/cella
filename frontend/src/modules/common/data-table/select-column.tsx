@@ -4,10 +4,10 @@ import { useTranslation } from 'react-i18next';
 import { Select, SelectContent, SelectItem, SelectValue } from '~/modules/ui/select';
 
 import type { Member } from '~/modules/memberships/types';
-import type { Organization } from '~/modules/organizations/types';
+import type { OrganizationTable } from '~/modules/organizations/table/table-wrapper';
 import type { User } from '~/modules/users/types';
 
-export const renderSelect = <TRow extends User | Member | Organization>({
+export const renderSelect = <TRow extends User | Member | OrganizationTable>({
   row,
   options,
   onRowChange,

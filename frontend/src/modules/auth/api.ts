@@ -173,10 +173,8 @@ export const checkToken = async ({ id, type }: { id: string; type: TokenType }) 
  * @param token - Invitation token to accept.
  * @returns A boolean indicating success of invitation accept.
  */
-export const acceptOrgInvite = async ({ token }: { token: string }) => {
-  const response = await client['accept-invite'][':token'].$post({
-    param: { token },
-  });
+export const acceptOrgInvite = async (param: { token: string }) => {
+  const response = await client['accept-invite'][':token'].$post({ param });
 
   const json = await handleResponse(response);
   return json.success;

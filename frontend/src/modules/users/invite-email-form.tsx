@@ -36,16 +36,7 @@ export const handleNewInvites = (emails: string[], entity: EntityPage) => {
   queryClient.setQueryData(organizationsKeys.single.byIdOrSlug(entity.slug), (oldEntity: EntityPage) => {
     if (!oldEntity) return oldEntity;
 
-    return {
-      ...oldEntity,
-      counts: {
-        ...oldEntity.counts,
-        membership: {
-          ...oldEntity.counts?.membership,
-          pending: (oldEntity.counts?.membership?.pending ?? 0) + emails.length,
-        },
-      },
-    };
+    return { ...oldEntity, invitesCount: oldEntity.invitesCount ?? 0 + emails.length };
   });
   queryClient.invalidateQueries({
     queryKey: membersKeys.table.pending({ idOrSlug: entity.slug, entityType: entity.entityType, orgIdOrSlug: entity.organizationId || entity.id }),
