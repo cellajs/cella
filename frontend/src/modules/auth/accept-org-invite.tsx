@@ -34,7 +34,7 @@ const AcceptOrgInvite = () => {
     error: acceptInviteError,
   } = useMutation({
     mutationFn: acceptOrgInvite,
-    onSuccess: ({ role }) => {
+    onSuccess: () => {
       getAndSetMenu();
 
       toast.success(t('common:invitation_accepted'));
@@ -43,20 +43,8 @@ const AcceptOrgInvite = () => {
         const singleOrgKey = organizationsKeys.single.byIdOrSlug(data.organizationSlug);
 
         queryClient.setQueryData<Organization>(singleOrgKey, (oldData) => {
-          // context.push([singleOrgKey, oldData]); // Store previous data for rollback if needed
           if (!oldData) return oldData;
-
-          const membershipCounts = { ...oldData.counts.membership, pending: oldData.counts.membership.pending - 1 };
-
-          if (role === 'admin') {
-            membershipCounts.admin += 1;
-            membershipCounts.member -= 1;
-          }
-          if (role === 'member') {
-            membershipCounts.member += 1;
-            membershipCounts.admin -= 1;
-          }
-          return { ...oldData, counts: { ...oldData.counts, membership: membershipCounts } };
+          return { ...oldData, invitesCount: oldData.invitesCount - 1 };
         });
 
         queryClient.invalidateQueries({

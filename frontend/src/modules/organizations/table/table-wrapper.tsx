@@ -11,7 +11,7 @@ import { OrganizationsTableRoute, type organizationsSearchSchema } from '~/route
 import { fullCountsSchema, organizationSchema } from '#/modules/organizations/schema';
 
 const LIMIT = config.requestLimits.organizations;
-const orgTableSchema = organizationSchema.extend({ counts: fullCountsSchema });
+const orgTableSchema = organizationSchema.omit({ invitesCount: true }).extend({ counts: fullCountsSchema });
 
 export type OrganizationsSearch = z.infer<typeof organizationsSearchSchema>;
 export type OrganizationTable = z.infer<typeof orgTableSchema>;

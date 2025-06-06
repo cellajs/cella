@@ -57,7 +57,7 @@ class OrganizationRoutes {
         description: 'Organizations',
         content: {
           'application/json': {
-            schema: successWithPaginationSchema(organizationSchema.extend({ counts: fullCountsSchema })),
+            schema: successWithPaginationSchema(organizationSchema.omit({ invitesCount: true }).extend({ counts: fullCountsSchema })),
           },
         },
       },
@@ -110,7 +110,7 @@ class OrganizationRoutes {
         description: 'Organization',
         content: {
           'application/json': {
-            schema: successWithDataSchema(organizationSchema.extend({ counts: fullCountsSchema })),
+            schema: successWithDataSchema(organizationSchema),
           },
         },
       },

@@ -20,6 +20,7 @@ import { getOrganizations } from '~/modules/organizations/api';
 import CreateOrganizationForm from '~/modules/organizations/create-organization-form';
 import DeleteOrganizations from '~/modules/organizations/delete-organizations';
 import type { OrganizationTable, OrganizationsSearch } from '~/modules/organizations/table/table-wrapper';
+import type { Organization } from '~/modules/organizations/types';
 import CreateNewsletterForm from '~/modules/system/create-newsletter-form';
 import NewsletterPreview from '~/modules/system/newsletter-preview';
 
@@ -61,7 +62,7 @@ export const OrganizationsTableBar = ({
   };
 
   const openDeleteDialog = () => {
-    const callback = (organizations: OrganizationTable[]) => {
+    const callback = (organizations: Organization[]) => {
       const message =
         organizations.length === 1
           ? t('common:success.delete_resource', { resource: t('common:organization') })
@@ -70,7 +71,7 @@ export const OrganizationsTableBar = ({
       clearSelection();
     };
 
-    createDialog(<DeleteOrganizations organizations={selected} dialog callback={(orgs) => callback(orgs as OrganizationTable[])} />, {
+    createDialog(<DeleteOrganizations organizations={selected as unknown as Organization[]} dialog callback={callback} />, {
       id: 'delete-organizations',
       triggerRef: deleteButtonRef,
       className: 'max-w-xl',

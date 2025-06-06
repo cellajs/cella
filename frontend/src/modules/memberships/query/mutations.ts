@@ -15,8 +15,6 @@ import type {
 } from '~/modules/memberships/query/types';
 import type { Member, Membership } from '~/modules/memberships/types';
 import { updateMenuItemMembership } from '~/modules/navigation/menu-sheet/helpers/menu-operations';
-import { organizationsKeys } from '~/modules/organizations/query';
-import type { Organization } from '~/modules/organizations/types';
 import { formatUpdatedData, getQueryItems, getSimilarQueries } from '~/query/helpers/mutate-query';
 import { useMutateQueryData } from '~/query/hooks/use-mutate-query-data';
 import { queryClient } from '~/query/query-client';
@@ -46,32 +44,6 @@ export const useMemberUpdateMutation = () =>
         context.toastMessage = t(`common:success.${muted ? 'mute' : 'unmute'}_resource`, { resource: t(`common:${entityType}`) });
       } else if (role) {
         context.toastMessage = t('common:success.update_item', { item: t('common:role') });
-
-        if (entityType === 'organization') {
-          // Cancel any ongoing queries for consistency
-          const singleOrgKey = organizationsKeys.single.byIdOrSlug(orgIdOrSlug);
-
-          // Cancel all affected queries
-          await queryClient.cancelQueries({ queryKey: singleOrgKey });
-
-          queryClient.setQueryData<Organization>(singleOrgKey, (oldData) => {
-            context.queryContext.push([singleOrgKey, oldData]); // Store previous data for rollback if needed
-            if (!oldData) return oldData;
-
-            const membershipCounts = { ...oldData.counts.membership };
-
-            if (role === 'admin') {
-              membershipCounts.admin += 1;
-              membershipCounts.member -= 1;
-            }
-            if (role === 'member') {
-              membershipCounts.member += 1;
-              membershipCounts.admin -= 1;
-            }
-
-            return { ...oldData, counts: { ...oldData.counts, membership: membershipCounts } };
-          });
-        }
       } else if (order !== undefined) context.toastMessage = t('common:success.update_item', { item: t('common:order') });
 
       // Update membership of ContextEntityType query that was fetched
@@ -176,40 +148,6 @@ export const useMembersDeleteMutation = () =>
         });
 
         context.push([queryKey, previousData]); // Store previous data for rollback if needed
-      }
-
-      if (entityType === 'organization') {
-        // Cancel any ongoing queries for consistency
-        const singleOrgKey = organizationsKeys.single.byIdOrSlug(orgIdOrSlug);
-
-        // Cancel all affected queries
-        await queryClient.cancelQueries({ queryKey: singleOrgKey });
-
-        queryClient.setQueryData<Organization>(singleOrgKey, (oldData) => {
-          context.push([singleOrgKey, oldData]); // Store previous data for rollback if needed
-          if (!oldData) return oldData;
-
-          const initialCounts = oldData.counts.membership;
-
-          // Count how many admins and regular users are being removed
-          const { removedAdmins, removedRegularMembers } = members.reduce(
-            (acc, { membership }) => {
-              if (membership.role === 'admin') acc.removedAdmins++;
-              if (membership.role === 'member') acc.removedRegularMembers++;
-              return acc;
-            },
-            { removedAdmins: 0, removedRegularMembers: 0 },
-          );
-
-          const newMembershipCounts = {
-            admin: Math.max(0, initialCounts.admin - removedAdmins),
-            member: Math.max(0, initialCounts.member - removedRegularMembers),
-            total: Math.max(0, initialCounts.total - ids.length),
-            pending: initialCounts.pending,
-          };
-
-          return { ...oldData, counts: { ...oldData.counts, membership: newMembershipCounts } };
-        });
       }
 
       return context;

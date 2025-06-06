@@ -11,7 +11,7 @@ import { type ErrorType, createError, errorResponse } from '#/lib/errors';
 import { sendSSEToUsers } from '#/lib/sse';
 import { logEvent } from '#/middlewares/logger/log-event';
 import { checkSlugAvailable } from '#/modules/entities/helpers/check-slug';
-import { getMemberCounts, getMemberCountsQuery, getRelatedEntityCounts, getRelatedEntityCountsQuery } from '#/modules/entities/helpers/counts';
+import { getMemberCountsQuery, getRelatedEntityCountsQuery } from '#/modules/entities/helpers/counts';
 import { type ValidEntities, getRelatedEntities } from '#/modules/entities/helpers/get-related-entities';
 import { insertMembership } from '#/modules/memberships/helpers';
 import { membershipSummarySelect } from '#/modules/memberships/helpers/select';
@@ -58,7 +58,7 @@ const organizationRouteHandlers = app
     const data = {
       ...createdOrganization,
       membership: createdMembership,
-      counts: { membership: { admin: 1, member: 1, total: 1, pending: 0 } },
+      invitesCount: 0,
     };
 
     return ctx.json({ success: true, data }, 200);
@@ -171,10 +171,13 @@ const organizationRouteHandlers = app
     const { error, entity: organization, membership } = await getValidContextEntity(ctx, idOrSlug, 'organization', 'read');
     if (error) return ctx.json({ success: false, error }, 400);
 
-    const memberCounts = await getMemberCounts('organization', organization.id);
-    const relatedEntitiesCounts = await getRelatedEntityCounts('organization', organization.id);
+    const memberCountsQuery = getMemberCountsQuery(organization.entityType);
+    const [{ invitesCount }] = await db
+      .select({ invitesCount: memberCountsQuery.pending })
+      .from(memberCountsQuery)
+      .where(eq(memberCountsQuery.id, organization.id));
 
-    const data = { ...organization, membership, counts: { membership: memberCounts, related: relatedEntitiesCounts } };
+    const data = { ...organization, membership, invitesCount };
 
     return ctx.json({ success: true, data }, 200);
   })
@@ -217,15 +220,17 @@ const organizationRouteHandlers = app
 
     logEvent('Organization updated', { organization: updatedOrganization.id });
 
-    const memberCounts = await getMemberCounts('organization', organization.id);
+    const memberCountsQuery = getMemberCountsQuery(organization.entityType);
+    const [{ invitesCount }] = await db
+      .select({ invitesCount: memberCountsQuery.pending })
+      .from(memberCountsQuery)
+      .where(eq(memberCountsQuery.id, organization.id));
 
     // Prepare data
     const data = {
       ...updatedOrganization,
       membership,
-      counts: {
-        membership: memberCounts,
-      },
+      invitesCount,
     };
 
     return ctx.json({ success: true, data }, 200);

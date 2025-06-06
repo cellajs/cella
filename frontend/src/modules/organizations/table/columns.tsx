@@ -12,6 +12,7 @@ import { renderSelect } from '~/modules/common/data-table/select-column';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 import type { OrganizationTable } from '~/modules/organizations/table/table-wrapper';
 import UpdateRow from '~/modules/organizations/table/update-row';
+import type { Organization } from '~/modules/organizations/types';
 import { dateShort } from '~/utils/date-short';
 
 export const useColumns = () => {
@@ -54,7 +55,8 @@ export const useColumns = () => {
         visible: true,
         width: 32,
         renderCell: ({ row, tabIndex }) => {
-          if (row.counts.membership.admin > 0 || row.counts.membership.member > 0) return <UpdateRow organization={row} tabIndex={tabIndex} />;
+          if (row.counts.membership.admin > 0 || row.counts.membership.member > 0)
+            return <UpdateRow organization={row as unknown as Organization} tabIndex={tabIndex} />;
         },
       },
       {

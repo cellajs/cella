@@ -44,7 +44,7 @@ export const organizationSchema = z.object({
   emailDomains: z.array(z.string()),
   authStrategies: z.array(z.string()),
   membership: membershipSummarySchema.nullable(),
-  counts: z.object({ membership: membershipCountSchema }),
+  invitesCount: z.number(),
 });
 
 export const organizationWithMembershipSchema = organizationSchema.extend({ membership: membershipSummarySchema });
