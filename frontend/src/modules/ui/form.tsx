@@ -9,6 +9,7 @@ import {
   FormProvider,
   type FormProviderProps,
   useFormContext,
+  useFormState,
 } from 'react-hook-form';
 
 import { ChevronUp, HelpCircle } from 'lucide-react';
@@ -65,23 +66,35 @@ const FormField = <TFieldValues extends FieldValues = FieldValues, TName extends
 const useFormField = () => {
   const fieldContext = React.useContext(FormFieldContext);
   const itemContext = React.useContext(FormItemContext);
-  const { getFieldState, formState } = useFormContext();
 
-  const fieldState = getFieldState(fieldContext.name, formState);
+  const { control } = useFormContext();
 
   if (!fieldContext) {
     throw new Error('useFormField should be used within <FormField>');
   }
 
+  const { name } = fieldContext;
+
+  const { errors, touchedFields, dirtyFields } = useFormState({ control, name });
+
+  const error = errors?.[name];
+  const isTouched = !!touchedFields?.[name];
+  const isDirty = !!dirtyFields?.[name];
+  const invalid = !!error;
+
   const { id } = itemContext;
+  const formItemId = `${id}-form-item`;
 
   return {
     id,
-    name: fieldContext.name,
-    formItemId: `${id}-form-item`,
-    formDescriptionId: `${id}-form-item-text`,
-    formMessageId: `${id}-form-item-message`,
-    ...fieldState,
+    name,
+    formItemId,
+    formDescriptionId: `${formItemId}-text`,
+    formMessageId: `${formItemId}-message`,
+    error,
+    isTouched,
+    isDirty,
+    invalid,
   };
 };
 
