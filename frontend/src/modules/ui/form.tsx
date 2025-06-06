@@ -76,7 +76,7 @@ const useFormField = () => {
   const { name } = fieldContext;
 
   const { errors, touchedFields, dirtyFields } = useFormState({ control, name });
-
+  // TODO(IMPROVEMENT) add lodash for nested field names ??
   const error = errors?.[name];
   const isTouched = !!touchedFields?.[name];
   const isDirty = !!dirtyFields?.[name];
