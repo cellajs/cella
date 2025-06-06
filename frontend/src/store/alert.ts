@@ -2,8 +2,9 @@ import { config } from 'config';
 import { create } from 'zustand';
 import { createJSONStorage, devtools, persist } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
+import type { downAlertConfig } from '~/modules/common/down-alert';
 
-type DownLevels = 'maintenance' | 'auth_unavailable' | 'offline' | null;
+type DownLevels = keyof typeof downAlertConfig | null;
 
 interface AlertStoreState {
   alertsSeen: string[]; // Seen alert IDs (to prevent duplicate notifications)
