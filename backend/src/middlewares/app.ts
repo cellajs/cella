@@ -22,9 +22,6 @@ app.use('*', observabilityMiddleware);
 // Error and perf monitoring
 app.use('*', monitoringMiddleware);
 
-// Health check for render.com
-app.get('/ping', (c) => c.text('pong'));
-
 // Logger
 app.use('*', logger(logEvent));
 
@@ -46,13 +43,15 @@ app.use('*', csrf({ origin: config.frontendUrl }));
 // Body limit
 app.use('*', dynamicBodyLimit);
 
-// Compress with gzip
-// Apply gzip compression only to GET requests
+// Compress with gzip Apply gzip compression only to GET requests
 app.use('*', (c, next) => {
   if (c.req.method === 'GET') {
     return compress()(c, next);
   }
   return next();
 });
+
+// Health check for render.com
+app.get('/ping', (c) => c.text('pong'));
 
 export default app;

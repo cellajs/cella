@@ -1,5 +1,5 @@
 import { config } from 'config';
-import { AlertTriangle, CloudOff, Construction, X } from 'lucide-react';
+import { AlertTriangle, ClockAlert, CloudOff, Construction, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
 import { useOnlineManager } from '~/hooks/use-online-manager';
@@ -9,21 +9,30 @@ import { Button } from '~/modules/ui/button';
 import { useAlertStore } from '~/store/alert';
 import { useUIStore } from '~/store/ui';
 
-const downAlertConfig = {
+export const downAlertConfig = {
   offline: {
     icon: CloudOff,
     titleKey: 'common:offline',
     textKey: 'common:offline.text',
+    variant: 'destructive',
+  },
+  backend_not_ready: {
+    icon: ClockAlert,
+    titleKey: 'common:backend_not_ready',
+    textKey: 'common:backend_not_ready.text',
+    variant: 'plain',
   },
   maintenance: {
     icon: Construction,
     titleKey: 'common:maintenance_mode',
     textKey: 'common:maintenance_mode.text',
+    variant: 'destructive',
   },
   auth_unavailable: {
     icon: AlertTriangle,
     titleKey: 'common:auth_unavailable',
     textKey: 'common:auth_unavailable.text',
+    variant: 'plain',
   },
 } as const;
 
@@ -36,9 +45,8 @@ export const DownAlert = () => {
 
   useEffect(() => {
     (async () => {
-      if (isOnline && downAlert === 'offline') {
-        setDownAlert(null);
-      }
+      if (isOnline && downAlert === 'offline') setDownAlert(null);
+
       if (!isOnline && !downAlert && !isNetworkAlertClosed) {
         setDownAlert('offline');
         if (!offlineAccess) {
@@ -50,6 +58,23 @@ export const DownAlert = () => {
       }
     })();
   }, [downAlert, isOnline, offlineAccess, isNetworkAlertClosed]);
+
+  useEffect(() => {
+    (async () => {
+      if (!isOnline && downAlert === 'backend_not_ready') setDownAlert(null);
+
+      if (process.env.NODE_ENV !== 'development' || !isOnline) return;
+
+      fetch(`${config.backendUrl}/ping`)
+        .then(({ ok }) => {
+          if (!ok) setDownAlert('backend_not_ready');
+        })
+        .catch(() => setDownAlert('backend_not_ready'));
+
+      const isBackendOnline = await healthCheck(`${config.backendUrl}/ping`, 5000, 1);
+      if (isBackendOnline) setDownAlert(null);
+    })();
+  }, [isOnline]);
 
   const cancelAlert = () => {
     setDownAlert(null);
@@ -76,7 +101,7 @@ export const DownAlert = () => {
 
   return (
     <div className="fixed z-2000 pointer-events-auto max-sm:bottom-20 bottom-4 left-4 right-4 border-0 justify-center">
-      <Alert variant="destructive" className="border-0 w-auto">
+      <Alert variant={alertConfig.variant} className="border-0 w-auto">
         <Button variant="ghost" size="sm" className="absolute top-2 right-2" onClick={cancelAlert}>
           <X size={16} />
         </Button>
