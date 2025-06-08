@@ -20,7 +20,6 @@ const TableCount = ({ count, type, className, isFiltered, children, onResetFilte
 
   return (
     <div className={cn('max-sm:hidden text-sm flex items-center gap-2', className)}>
-      <span className="text-muted-foreground">{t(`common:${type}`)}</span>
       {isFiltered && (
         <Button variant="ghost" onClick={onResetFilters} className="max-sm:hidden">
           <FilterX size={16} className="mr-2" />

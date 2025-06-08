@@ -63,6 +63,10 @@
   padding: 0;
 }
 
+.bn-shadcn.bn-container.inline > p {
+  display: inline;
+}
+
 .bn-shadcn p:has(> .ProseMirror-trailingBreak)::before {
   color: hsl(var(--blocknote-placeholder));
 }
@@ -75,8 +79,7 @@
   font-size: 0.85em;
   line-height: 1rem;
   background: hsl(var(--input) / 0.5);
-  border: 0.05rem solid hsl(var(--ring) / 0.4);
-  padding: 0.25rem;
+  padding: 0.15rem;
   border-radius: 0.25rem;
   color: #e8912d;
 }

@@ -1,6 +1,6 @@
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { TanStackRouterDevtools } from '@tanstack/react-router-devtools';
-import { useRef } from 'react';
+import { useEffect } from 'react';
 import { scan } from 'react-scan';
 import { Button } from '~/modules/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '~/modules/ui/dropdown-menu';
@@ -22,24 +22,36 @@ const debugOptions: DebugItem[] = [
 ];
 
 const DebugToolbars = () => {
-  const isScannerEnabled = useRef(false);
-
+  // Function to handle toggling debug options in different ways
   const debugToggle = (item: DebugItem) => {
     if (item.url) return window.open(item.url);
+
     if (item.id === 'react-scan') {
-      const enable = !isScannerEnabled.current;
+      const prev = localStorage.getItem('react-scan-enabled') === 'true';
+      const enable = !prev;
+      localStorage.setItem('react-scan-enabled', JSON.stringify(enable));
       scan({ showToolbar: enable, enabled: enable });
-      isScannerEnabled.current = enable;
       return;
     }
+
     if (!item.parent || !item.element) return;
 
     const parent = document.querySelector<HTMLElement>(item.parent);
     if (!parent) return;
-    const htmlElement: HTMLButtonElement | null | undefined = parent.querySelector<HTMLButtonElement>(item.element);
+
+    const htmlElement = parent.querySelector<HTMLButtonElement>(item.element);
     if (!htmlElement) return;
+
     htmlElement.click();
   };
+
+  // Check if react-scan is enabled
+  useEffect(() => {
+    const enabled = localStorage.getItem('react-scan-enabled') === 'true';
+    if (enabled) {
+      scan({ showToolbar: true, enabled: true });
+    }
+  }, []);
 
   return (
     <>

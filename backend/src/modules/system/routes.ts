@@ -74,9 +74,7 @@ class SystemRoutes {
     tags: ['system'],
     summary: '',
     description: '',
-    request: {
-      query: z.object({ key: z.string() }),
-    },
+    request: { query: z.object({ key: z.string() }) },
     responses: {
       200: {
         description: 'Presigned URL',
