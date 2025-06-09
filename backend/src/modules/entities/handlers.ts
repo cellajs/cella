@@ -1,7 +1,7 @@
 import { OpenAPIHono, type z } from '@hono/zod-openapi';
+import { config } from 'config';
 import { and, eq, ilike, inArray, isNotNull } from 'drizzle-orm';
 
-import { config } from 'config';
 import { db } from '#/db/db';
 import { membershipsTable } from '#/db/schema/memberships';
 import { usersTable } from '#/db/schema/users';
@@ -12,13 +12,12 @@ import { checkSlugAvailable } from '#/modules/entities/helpers/check-slug';
 import { getEntitiesQuery } from '#/modules/entities/helpers/entities-query';
 import { processEntitiesData } from '#/modules/entities/helpers/process-entities-data';
 import entityRoutes from '#/modules/entities/routes';
-import type { entityListItemSchema } from '#/modules/entities/schema';
 import { membershipSummarySelect } from '#/modules/memberships/helpers/select';
+import { userSummarySelect } from '#/modules/users/helpers/select';
+import type { userSummarySchema } from '#/modules/users/schema';
 import { defaultHook } from '#/utils/default-hook';
 import { getOrderColumn } from '#/utils/order-column';
 import { prepareStringForILikeFilter } from '#/utils/sql';
-import { userSummarySelect } from '../users/helpers/select';
-import type { userSummarySchema } from '../users/schema';
 
 const app = new OpenAPIHono<Env>({ defaultHook });
 
@@ -59,8 +58,7 @@ const entityRouteHandlers = app
 
     // Prepare query and execute in parallel
     const queries = getEntitiesQuery({ q, organizationIds, userId, selfId, type, userMembershipType });
-    // TODO: fix typing in getEntitiesQuery return
-    const queryData = (await Promise.all(queries)) as unknown as (z.infer<typeof entityListItemSchema> & { total: number })[][];
+    const queryData = await Promise.all(queries);
 
     // Aggregate and process result data
     const { counts, items, total } = processEntitiesData(queryData, type);

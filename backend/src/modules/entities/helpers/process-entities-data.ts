@@ -1,16 +1,19 @@
 import { type PageEntityType, config } from 'config';
+import { z } from 'zod';
+import { entityListItemSchema } from '#/modules/entities/schema';
 
-export const processEntitiesData = <T extends { entityType: PageEntityType; total: number }>(queryData: T[][], type?: PageEntityType) => {
-  const itemsData = [];
+const extendedEntitySchema = entityListItemSchema.extend({ total: z.number() });
+type QueryData = z.infer<typeof extendedEntitySchema>;
+
+export const processEntitiesData = (queryData: QueryData[][], type?: PageEntityType) => {
+  const itemsData: Omit<QueryData, 'total'>[] = [];
   const counts: { [key in PageEntityType]?: number } = {};
   let total = 0;
 
   const entities = type ? [type] : config.pageEntityTypes;
 
-  // Initialize counts for each entity type
-  for (const entityType of entities) {
-    counts[entityType] = 0;
-  }
+  // Initialize counts
+  for (const entityType of entities) counts[entityType] = 0;
 
   // Set entity count, total and push items without total
   for (const results of queryData) {
@@ -20,6 +23,7 @@ export const processEntitiesData = <T extends { entityType: PageEntityType; tota
       total += totalValue;
       counts[totalEntityType] = totalValue;
     }
+
     itemsData.push(...results.map(({ total, ...rest }) => rest));
   }
 
