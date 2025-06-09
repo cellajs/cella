@@ -2,9 +2,8 @@ import { useMemo } from 'react';
 import type { Control } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 
-import type { ContextEntityType } from 'config';
 import type { UserMenu, UserMenuItem } from '~/modules/me/types';
-import Combobox from '~/modules/ui/combobox';
+import Combobox, { type ComboBoxOption } from '~/modules/ui/combobox';
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
 import { useNavigationStore } from '~/store/navigation';
 
@@ -14,7 +13,7 @@ interface Props {
   name: string;
   label: string;
   parentType: keyof UserMenu;
-  entityType: ContextEntityType;
+  options?: ComboBoxOption[];
   placeholder?: string;
   required?: boolean;
   disabled?: boolean;
@@ -28,12 +27,14 @@ const convertItemToOption = (item: UserMenuItem) => {
   };
 };
 
-const SelectParentFormField = ({ parentType, control, name, label, entityType, placeholder, required, disabled }: Props) => {
+const SelectParentFormField = ({ parentType, control, name, label, options: passedOptions, placeholder, required, disabled }: Props) => {
   const { t } = useTranslation();
   const { menu } = useNavigationStore();
 
-  const options = useMemo(() => menu[parentType]?.map((item) => convertItemToOption(item)) || [], [menu, parentType, control, name]);
-
+  const options = useMemo(
+    () => passedOptions ?? (menu[parentType]?.map((item) => convertItemToOption(item)) || []),
+    [passedOptions, menu, parentType, control, name],
+  );
   return (
     <FormField
       control={control}
@@ -51,7 +52,7 @@ const SelectParentFormField = ({ parentType, control, name, label, entityType, p
               name={name}
               onChange={onChange}
               disabled={disabled}
-              placeholder={t('common:select_resource', { resource: t(`common:${entityType}`).toLowerCase() })}
+              placeholder={t('common:select_resource', { resource: t(`common:${parentType}`).toLowerCase() })}
               searchPlaceholder={placeholder ? placeholder : t('common:search')}
             />
           </FormControl>
