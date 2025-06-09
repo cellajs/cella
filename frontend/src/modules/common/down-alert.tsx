@@ -1,7 +1,8 @@
 import { config } from 'config';
 import { AlertTriangle, ClockAlert, CloudOff, Construction, X } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
+import { env } from '~/env';
 import { useOnlineManager } from '~/hooks/use-online-manager';
 import { healthCheck } from '~/lib/health-check';
 import { Alert, AlertDescription } from '~/modules/ui/alert';
@@ -36,45 +37,60 @@ export const downAlertConfig = {
   },
 } as const;
 
+const url = `${config.backendUrl}/ping`;
+
 export const DownAlert = () => {
   const { t } = useTranslation();
   const { downAlert, setDownAlert } = useAlertStore();
   const { offlineAccess } = useUIStore();
   const { isOnline } = useOnlineManager();
+
+  const devAlert = useRef(env.VITE_DEV_ALERT);
   const [isNetworkAlertClosed, setIsNetworkAlertClosed] = useState(false);
 
   useEffect(() => {
+    const controller = new AbortController();
+
     (async () => {
       if (isOnline && downAlert === 'offline') setDownAlert(null);
 
-      if (!isOnline && !downAlert && !isNetworkAlertClosed) {
-        setDownAlert('offline');
-        if (!offlineAccess) {
-          const isBackendOnline = await healthCheck(`${config.backendUrl}/ping`);
-          if (isBackendOnline) {
-            setDownAlert(null);
+      if (isOnline || (!downAlert && !isNetworkAlertClosed))
+        if (!isOnline && !downAlert && !isNetworkAlertClosed) {
+          setDownAlert('offline');
+
+          if (!offlineAccess) {
+            const isBackendOnline = await healthCheck({ url, signal: controller.signal });
+            if (isBackendOnline) setDownAlert(null);
           }
         }
-      }
     })();
+
+    return () => controller.abort(); // abort healthCheck if effect is cleaned up early
   }, [downAlert, isOnline, offlineAccess, isNetworkAlertClosed]);
 
   useEffect(() => {
+    if (!isOnline && downAlert === 'backend_not_ready') setDownAlert(null);
+
+    if (process.env.NODE_ENV !== 'development' || !devAlert.current || !isOnline) return;
+
+    useAlertStore.getState().setDownAlert('backend_not_ready');
+
+    const controller = new AbortController();
+
     (async () => {
-      if (!isOnline && downAlert === 'backend_not_ready') setDownAlert(null);
+      if (downAlert === 'backend_not_ready') {
+        const isBackendResponsive = await healthCheck({ url, initDelay: 5000, factor: 1, signal: controller.signal });
 
-      if (process.env.NODE_ENV !== 'development' || !isOnline) return;
-
-      fetch(`${config.backendUrl}/ping`)
-        .then(({ ok }) => {
-          if (!ok) setDownAlert('backend_not_ready');
-        })
-        .catch(() => setDownAlert('backend_not_ready'));
-
-      const isBackendOnline = await healthCheck(`${config.backendUrl}/ping`, 5000, 1);
-      if (isBackendOnline) setDownAlert(null);
+        if (isBackendResponsive && !controller.signal.aborted) {
+          devAlert.current = false;
+          setDownAlert(null);
+        }
+        return;
+      }
     })();
-  }, [isOnline]);
+
+    return () => controller.abort();
+  }, [isOnline, downAlert]);
 
   const cancelAlert = () => {
     setDownAlert(null);
