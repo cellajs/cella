@@ -25,7 +25,7 @@ const year = 31536e6;
  * @returns A string representing the formatted date difference or the full date.
  */
 export const dateMini = (startDate: string, passedLoc: keyof typeof locale, addStr?: string) => {
-  const start = dayjs(startDate);
+  const start = dayjs.utc(startDate).local();
   const end = dayjs();
   const diff = Math.abs(end.diff(start));
 

@@ -15,15 +15,16 @@ import dayjs from 'dayjs';
  */
 export const dateShort = (date?: string | null | Date) => {
   if (!date) return '-';
+  const currentDate = dayjs.utc(date).local();
 
-  return dayjs(date).calendar(null, {
+  return currentDate.calendar(null, {
     sameDay: '[Today], H:mm',
     lastDay: '[Yesterday], H:mm',
     lastWeek: 'dddd, H:mm',
     sameElse: (now: dayjs.Dayjs) => {
-      const monthDiff = now.diff(dayjs(date), 'month');
-      if (monthDiff <= 3) return dayjs(date).format('MMM D, H:mm');
-      return dayjs(date).format('MMM D, YYYY');
+      const monthDiff = now.diff(currentDate, 'month');
+      if (monthDiff <= 3) return currentDate.format('MMM D, H:mm');
+      return currentDate.format('MMM D, YYYY');
     },
   });
 };
