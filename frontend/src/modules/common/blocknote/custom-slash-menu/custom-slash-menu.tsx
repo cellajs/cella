@@ -1,7 +1,7 @@
 import type { DefaultReactSuggestionItem, SuggestionMenuProps } from '@blocknote/react';
 import { useEffect, useRef } from 'react';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
-import { customSlashIndexedItems } from '../blocknote-config';
+import { customSlashIndexedItems } from '~/modules/common/blocknote/blocknote-config';
 
 export const slashMenu = (props: SuggestionMenuProps<DefaultReactSuggestionItem>, originalItemCount: number) => {
   const { items, loadingState, selectedIndex, onItemClick } = props;

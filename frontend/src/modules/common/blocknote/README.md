@@ -190,7 +190,7 @@ Example Usage:
 ```tsx
 const baseFilePanelProps: BaseUppyFilePanelProps = {
   organizationId: "org_12345",
-  onComplete: (result) => console.log("Upload complete", result),
+  onComplete: (result) => console.info("Upload complete", result),
   onError: (error) => console.error("Upload error", error)
 };
 

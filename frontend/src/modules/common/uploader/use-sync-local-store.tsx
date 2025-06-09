@@ -54,7 +54,7 @@ export function useSyncLocalStore(organizationId: string) {
             isUploadingRef.current = false;
           })
           .on('upload', () => {
-            console.log('Sync files upload started');
+            console.info('Sync files upload started');
           })
           .on('transloadit:complete', async (assembly) => {
             if (assembly.error) throw new Error(assembly.error);

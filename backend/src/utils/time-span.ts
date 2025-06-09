@@ -6,8 +6,8 @@ export type TimeSpanUnit = 'ms' | 's' | 'm' | 'h' | 'd' | 'w';
  * @param unit - The unit of the time span. Can be 'ms', 's', 'm', 'h', 'd', or 'w'.
  * @example
  * const timeSpan = new TimeSpan(1, 'h');
- * console.log(timeSpan.milliseconds()); // 3600000
- * console.log(timeSpan.seconds()); // 3600
+ * console.info(timeSpan.milliseconds()); // 3600000
+ * console.info(timeSpan.seconds()); // 3600
  */
 export class TimeSpan {
   constructor(value: number, unit: TimeSpanUnit) {
