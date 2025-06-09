@@ -11,7 +11,7 @@ interface Props {
   direction?: 'left' | 'right';
 }
 
-const FloatingNavButton = ({ id, icon: Icon, onClick, className, direction = 'right' }: Props) => {
+export const FloatingNavButton = ({ id, icon: Icon, onClick, className, direction = 'right' }: Props) => {
   return (
     <Button
       id={id}
@@ -31,5 +31,3 @@ const FloatingNavButton = ({ id, icon: Icon, onClick, className, direction = 'ri
     </Button>
   );
 };
-
-export default FloatingNavButton;
