@@ -15,7 +15,7 @@
   "homepage": "https://cellajs.com",
   "author": "CellaJS <info@cellajs.com>",
   "engines": {
-    "node": ">=20.14.0"
+    "node": ">=24.1.0"
   },
   "type": "module",
   "main": "./src/index.ts",
