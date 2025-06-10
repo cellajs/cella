@@ -33,7 +33,7 @@ interface DialogStoreState {
 
   create: (content: ReactNode, data: DialogData) => string | number;
   update: (id: number | string, updates: Partial<InternalDialog>) => void;
-  remove: (id?: number | string) => void;
+  remove: (id?: number | string, opts?: { isCleanup?: boolean }) => void;
   get: (id: number | string) => InternalDialog | undefined;
 
   triggerRefs: Record<string, TriggerRef | null>;
@@ -66,12 +66,11 @@ export const useDialoger = create<DialogStoreState>((set, get) => ({
     }));
   },
 
-  remove: (id) => {
+  remove: (id, opts) => {
     set((state) => {
       const dialogsToRemove = id ? state.dialogs.filter((d) => d.id === id) : state.dialogs;
 
-      // Assume its a cleanup if no id is provided
-      for (const dialog of dialogsToRemove) dialog.onClose?.(!id);
+      for (const dialog of dialogsToRemove) dialog.onClose?.(opts?.isCleanup);
 
       const dialogs = state.dialogs.filter(({ id }) => !dialogsToRemove.some(({ id: removedId }) => removedId === id));
 

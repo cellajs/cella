@@ -55,7 +55,7 @@ const AttachmentDialogHandler = memo(() => {
   // Separate cleanup when `attachmentDialogId` disappears
   useEffect(() => {
     if (attachmentDialogId) return;
-    removeDialog();
+    removeDialog(attachmentDialogId, { isCleanup: true });
   }, [attachmentDialogId]);
 
   return null;

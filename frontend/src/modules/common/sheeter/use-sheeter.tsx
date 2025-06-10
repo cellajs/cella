@@ -29,7 +29,7 @@ interface SheetStoreState {
 
   create(content: ReactNode, data: SheetData): string;
   update(id: string, updates: Partial<InternalSheet>): void;
-  remove(id?: string): void;
+  remove(id?: string, opts?: { isCleanup?: boolean }): void;
   get(id: string): InternalSheet | undefined;
 
   triggerRefs: Record<string, TriggerRef | null>;
@@ -61,7 +61,7 @@ export const useSheeter = create<SheetStoreState>()((set, get) => ({
     }));
   },
 
-  remove: (id) => {
+  remove: (id, opts) => {
     set((state) => {
       let removeSheets = state.sheets;
 
@@ -71,8 +71,7 @@ export const useSheeter = create<SheetStoreState>()((set, get) => ({
       // If no sheets to remove, return
       if (!removeSheets.length) return { sheets: state.sheets };
 
-      // Call onClose, assume if no id that its a cleanup
-      for (const sheet of removeSheets) sheet.onClose?.(!id);
+      for (const sheet of removeSheets) sheet.onClose?.(opts?.isCleanup);
 
       // Filter them out
       const sheets = state.sheets.filter((sheet) => !removeSheets.some((s) => s.id === sheet.id));

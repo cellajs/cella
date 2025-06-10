@@ -48,7 +48,7 @@ const UserSheetHandler = memo(() => {
 
     return () => {
       clearTimeout(timeoutId);
-      removeSheet();
+      removeSheet(sheetInstanceId, { isCleanup: true });
     };
   }, [userSheetId, orgIdOrSlug]);
 
