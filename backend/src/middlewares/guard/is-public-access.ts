@@ -1,5 +1,6 @@
-import { createMiddleware } from 'hono/factory';
 import type { Env } from '#/lib/context';
+import type { MiddlewareHandler } from 'hono';
+import { createMiddleware } from 'hono/factory';
 
 /**
  * Middleware for routes that are publicly accessible.
@@ -8,6 +9,6 @@ import type { Env } from '#/lib/context';
  * @param _ - Request context (unused here, but required by Hono middleware signature).
  * @param next - The next middleware or route handler.
  */
-export const isPublicAccess = createMiddleware<Env>(async (_, next): Promise<void> => {
+export const isPublicAccess: MiddlewareHandler<Env> = createMiddleware<Env>(async (_, next): Promise<void> => {
   await next();
 });

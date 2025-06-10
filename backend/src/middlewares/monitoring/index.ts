@@ -1,6 +1,7 @@
-import * as Sentry from '@sentry/node';
-import { createMiddleware } from 'hono/factory';
 import type { Env } from '#/lib/context';
+import * as Sentry from '@sentry/node';
+import type { MiddlewareHandler } from 'hono';
+import { createMiddleware } from 'hono/factory';
 
 /**
  * Middleware to monitor and log errors and performance metrics.
@@ -11,7 +12,7 @@ import type { Env } from '#/lib/context';
  * @param ctx - Request/response context.
  * @param next - The next middleware or route handler to call after this middleware completes its work.
  */
-export const monitoringMiddleware = createMiddleware<Env>(async (ctx, next) => {
+export const monitoringMiddleware: MiddlewareHandler<Env> = createMiddleware<Env>(async (ctx, next) => {
   // Attach SDK to context
   ctx.set('sentry', Sentry);
 
