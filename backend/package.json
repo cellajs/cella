@@ -9,9 +9,9 @@
     "quick": "cross-env PGLITE=true tsx scripts/quick.ts && cross-env PGLITE=true pnpm dev",
     "start": "cross-env NODE_ENV=production tsx dist/index.js",
     "dev": "pnpm precompile && cross-env NODE_ENV=development tsx --watch-path=src src/index.ts",
-    "check": "tsc --pretty",
-    "precompile": "tsc -b tsconfig.precompile.json --pretty",
-    "ts:perf": "rm -rf dist && tsc --extendedDiagnostics",
+    "check": "npx tsgo --pretty",
+    "precompile": "npx tsgo tsconfig.precompile.json --pretty",
+    "ts:perf": "rm -rf dist && npx tsgo --extendedDiagnostics",
     "build": "cross-env NODE_ENV=production tsup",
     "build:dev": "tsup",
     "build:staging": "cross-env NODE_ENV=staging tsup",
@@ -109,10 +109,7 @@
     "papaparse": "^5.5.3",
     "tsup": "^8.5.0",
     "tsx": "^4.19.4",
-    "typescript": "^5.8.3"
-  },
-  "exports": {
-    "types": "./dist/src/index.d.ts"
-  },
-  "types": "./dist/src/index.d.ts"
+    "typescript": "^5.8.3",
+    "@typescript/native-preview": "7.0.0-dev.20250610.1"
+  }
 }
