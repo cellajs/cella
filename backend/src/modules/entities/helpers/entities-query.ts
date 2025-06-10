@@ -27,7 +27,7 @@ const expandedSchema = entityBaseSchema.extend({
   total: z.number(),
 });
 
-type ContextQueties = z.infer<typeof expandedSchema>;
+type ContextQueries = z.infer<typeof expandedSchema>;
 
 export const getEntitiesQuery = ({ q, organizationIds, userId, selfId, type, userMembershipType }: EntitiesQueryProps) => {
   return !type
@@ -75,7 +75,7 @@ const getContextEntitiesQuery = ({ q, organizationIds, userId, type }: ContextEn
     })
     .filter((el) => el !== null); // Filter out null values if any entity type is invalid
 
-  return contextQueries as Promise<ContextQueties[]>[];
+  return contextQueries as Promise<ContextQueries[]>[];
 };
 
 /**
