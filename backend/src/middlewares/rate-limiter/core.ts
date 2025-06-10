@@ -1,11 +1,12 @@
 import type { RateLimiterMemory, RateLimiterPostgres } from 'rate-limiter-flexible';
 import { RateLimiterRes } from 'rate-limiter-flexible';
 
-import { createMiddleware } from 'hono/factory';
 import type { Env } from '#/lib/context';
 import { errorResponse } from '#/lib/errors';
 import { getRateLimiterInstance, rateLimitError } from '#/middlewares/rate-limiter/helpers';
 import { getIp } from '#/utils/get-ip';
+import type { MiddlewareHandler } from 'hono';
+import { createMiddleware } from 'hono/factory';
 
 type RateLimitMode = 'limit' | 'success' | 'fail' | 'failseries';
 type RateLimitIdentifier = 'ip' | 'email';
@@ -48,7 +49,12 @@ export const slowOptions = {
  * @returns Middleware handler for rate limiting.
  * @link https://github.com/animir/node-rate-limiter-flexible#readme
  */
-export const rateLimiter = (mode: RateLimitMode, key: string, identifiers: RateLimitIdentifier[], options?: RateLimitOptions) => {
+export const rateLimiter = (
+  mode: RateLimitMode,
+  key: string,
+  identifiers: RateLimitIdentifier[],
+  options?: RateLimitOptions,
+): MiddlewareHandler<Env> => {
   const limiter = getRateLimiterInstance({ ...defaultOptions, ...options, keyPrefix: `${key}_${mode}` });
   const slowLimiter = getRateLimiterInstance({ ...slowOptions, keyPrefix: `${key}_${mode}:slow` });
 

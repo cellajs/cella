@@ -1,9 +1,9 @@
+import type { Env } from '#/lib/context';
+import { errorResponse } from '#/lib/errors';
+import { config } from 'config';
+import type { MiddlewareHandler } from 'hono';
 import { bodyLimit } from 'hono/body-limit';
 import { createMiddleware } from 'hono/factory';
-import { errorResponse } from '#/lib/errors';
-
-import { config } from 'config';
-import type { Env } from '#/lib/context';
 
 /**
  * Middleware to apply dynamic body size limits based on Content-Type.
@@ -11,7 +11,7 @@ import type { Env } from '#/lib/context';
  * - multipart/form-data → `config.fileUploadLimit`
  * - everything else → `config.defaultBodyLimit`
  */
-export const dynamicBodyLimit = createMiddleware<Env>(async (ctx, next) => {
+export const dynamicBodyLimit: MiddlewareHandler<Env> = createMiddleware<Env>(async (ctx, next) => {
   const contentType = ctx.req.header('content-type') ?? '';
 
   const isJson = contentType.includes('application/json');

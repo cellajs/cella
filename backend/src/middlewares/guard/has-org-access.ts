@@ -1,11 +1,12 @@
-import * as Sentry from '@sentry/node';
-import { createMiddleware } from 'hono/factory';
-import { type Env, getContextMemberships, getContextUser } from '#/lib/context';
-export { isAuthenticated } from './is-authenticated';
-import { eq, or } from 'drizzle-orm';
 import { db } from '#/db/db';
 import { organizationsTable } from '#/db/schema/organizations';
+import { type Env, getContextMemberships, getContextUser } from '#/lib/context';
 import { errorResponse } from '#/lib/errors';
+import * as Sentry from '@sentry/node';
+import { eq, or } from 'drizzle-orm';
+import type { MiddlewareHandler } from 'hono';
+import { createMiddleware } from 'hono/factory';
+export { isAuthenticated } from './is-authenticated';
 
 /**
  * Middleware to ensure the user has access to an organization-scoped route.
@@ -16,7 +17,7 @@ import { errorResponse } from '#/lib/errors';
  * @returns Error response or undefined if the user is allowed to proceed.
  */
 
-export const hasOrgAccess = createMiddleware<Env>(async (ctx, next): Promise<Response | undefined> => {
+export const hasOrgAccess: MiddlewareHandler<Env> = createMiddleware<Env>(async (ctx, next): Promise<Response | undefined> => {
   const orgIdOrSlug = ctx.req.param('orgIdOrSlug');
   if (!orgIdOrSlug) return errorResponse(ctx, 400, 'invalid_request', 'error');
 

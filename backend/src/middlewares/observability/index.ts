@@ -1,7 +1,8 @@
-import { createMiddleware } from 'hono/factory';
-import { Counter, Histogram } from 'prom-client';
 import type { Env } from '#/lib/context';
 import { metricsConfig } from '#/middlewares/observability/config';
+import type { MiddlewareHandler } from 'hono';
+import { createMiddleware } from 'hono/factory';
+import { Counter, Histogram } from 'prom-client';
 
 // Prometheus metrics Initialize
 const observabilityRequestDurationHistogram = new Histogram({
@@ -24,7 +25,7 @@ const observabilityRequestsCounter = new Counter({
  * @param ctx - Request/response context.
  * @param next - The next middleware or route handler to call after this middleware completes its work.
  */
-export const observabilityMiddleware = createMiddleware<Env>(async (ctx, next) => {
+export const observabilityMiddleware: MiddlewareHandler<Env> = createMiddleware<Env>(async (ctx, next) => {
   const start = Date.now();
 
   // Incrementing request count
