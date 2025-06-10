@@ -1,9 +1,9 @@
 import { config } from 'config';
-import { Fragment, type RefObject, Suspense, lazy, useMemo } from 'react';
+import { Fragment, Suspense, lazy, useMemo } from 'react';
 import useMounted from '~/hooks/use-mounted';
 import { BarNavButton } from '~/modules/navigation/bar-nav/button';
 import StopImpersonation from '~/modules/navigation/bar-nav/stop-impersonation';
-import type { NavItem, NavItemId } from '~/modules/navigation/types';
+import type { NavItem, TriggerNavItemFn } from '~/modules/navigation/types';
 import { navItems } from '~/nav-config';
 import { useNavigationStore } from '~/store/navigation';
 import { useUIStore } from '~/store/ui';
@@ -11,7 +11,7 @@ import { cn } from '~/utils/cn';
 
 const DebugToolbars = config.mode === 'development' ? lazy(() => import('~/modules/common/debug-toolbars')) : () => null;
 
-const BarNav = ({ onClick }: { onClick: (id: NavItemId, ref: RefObject<HTMLButtonElement | null>) => void }) => {
+const BarNav = ({ triggerNavItem }: { triggerNavItem: TriggerNavItemFn }) => {
   const { hasStarted } = useMounted();
 
   const theme = useUIStore((state) => state.theme);
@@ -46,7 +46,7 @@ const BarNav = ({ onClick }: { onClick: (id: NavItemId, ref: RefObject<HTMLButto
                 )}
               >
                 <Suspense>
-                  <BarNavButton navItem={navItem} isActive={isActive} onClick={(ref) => onClick(navItem.id, ref)} />
+                  <BarNavButton navItem={navItem} isActive={isActive} onClick={(ref) => triggerNavItem(navItem.id, ref)} />
                 </Suspense>
               </li>
             </Fragment>

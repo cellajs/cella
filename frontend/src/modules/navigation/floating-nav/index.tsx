@@ -3,16 +3,16 @@ import { useEffect, useRef, useState } from 'react';
 import useBodyClass from '~/hooks/use-body-class';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import useMounted from '~/hooks/use-mounted';
-import FloatingNavButton from '~/modules/navigation/floating-nav/button';
-import type { NavItemId } from '~/modules/navigation/types';
+import { FloatingNavButton } from '~/modules/navigation/floating-nav/button';
+import type { TriggerNavItemFn } from '~/modules/navigation/types';
 import { navItems } from '~/nav-config';
 
 const SCROLL_THRESHOLD = 10; // Minimum scroll delta to toggle visibility
 
-const FloatingNav = ({ onClick }: { onClick: (id: NavItemId) => void }) => {
-  const isMobile = useBreakpoints('max', 'sm');
+const FloatingNav = ({ triggerNavItem }: { triggerNavItem: TriggerNavItemFn }) => {
   const { hasWaited } = useMounted();
   const routerState = useRouterState();
+  const isMobile = useBreakpoints('max', 'sm');
 
   const [showButtons, setShowButtons] = useState(true);
   const lastScrollY = useRef(0);
@@ -65,7 +65,7 @@ const FloatingNav = ({ onClick }: { onClick: (id: NavItemId) => void }) => {
           className={showButtons ? 'opacity-100' : 'opacity-0 -bottom-12 scale-50'}
           id={navItem.id}
           icon={navItem.icon}
-          onClick={() => onClick(navItem.id)}
+          onClick={() => triggerNavItem(navItem.id)}
           direction={items.length > 1 && index === 0 ? 'left' : 'right'}
         />
       ))}
