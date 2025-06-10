@@ -28,7 +28,7 @@ const Subscription = ({ organization }: { organization: Organization }) => {
   // Download and initialize Paddle instance from CDN
   useEffect(() => {
     initializePaddle({
-      // environment: config.mode === 'development' ? 'sandbox' : 'production',
+      // environment: config.mode === 'production' ? 'production' : 'sandbox',
       environment: 'sandbox',
       token: config.paddleToken,
     }).then((paddleInstance: Paddle | undefined) => {

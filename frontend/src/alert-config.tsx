@@ -16,7 +16,7 @@ if (config.mode === 'development') {
       <>
         <strong className="mr-2">Testing credentials</strong>
         <p>
-          Hi there! New developer? Welcome to Cella! Sign in using <strong>admin-test@cellajs.com</strong> and password <strong>12345678</strong>.
+          Hi there! New developer? Sign in using <strong>admin-test@cellajs.com</strong> and password <strong>12345678</strong>.
         </p>
       </>
     ),

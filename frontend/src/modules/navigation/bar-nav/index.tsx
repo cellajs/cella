@@ -9,7 +9,7 @@ import { useNavigationStore } from '~/store/navigation';
 import { useUIStore } from '~/store/ui';
 import { cn } from '~/utils/cn';
 
-const DebugToolbars = config.mode === 'development' ? lazy(() => import('~/modules/common/debug-toolbars')) : () => null;
+const DebugToolbars = config.mode !== 'production' ? lazy(() => import('~/modules/common/debug-toolbars')) : () => null;
 
 const BarNav = ({ triggerNavItem }: { triggerNavItem: TriggerNavItemFn }) => {
   const { hasStarted } = useMounted();

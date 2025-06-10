@@ -12,13 +12,18 @@ import '~/lib/i18n';
 const root = document.getElementById('root');
 if (!root) throw new Error('Root element not found');
 
+import { type ConfigMode, config } from 'config';
 import { initSentry } from '~/lib/sentry';
 import { RouterWrapper } from '~/modules/common/router-wrapper';
 import { QueryClientProvider } from '~/query/provider';
 import { renderAscii } from '~/utils/ascii';
+import { addBadgeToFavicon } from './utils/add-badge-to-favicon';
 
 // Render ASCII logo in console
 renderAscii();
+
+// Add badge to favicon based on config mode
+addBadgeToFavicon(config.mode as ConfigMode);
 
 // Initialize Sentry if online
 if (navigator.onLine) initSentry();
