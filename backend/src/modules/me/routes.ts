@@ -7,8 +7,8 @@ import { errorResponses, successWithDataSchema, successWithErrorsSchema, success
 import { userSchema, userUpdateBodySchema } from '../users/schema';
 import { meAuthDataSchema, menuSchema, passkeyRegistrationBodySchema, uploadTokenQuerySchema, uploadTokenSchema } from './schema';
 
-class MeRoutes {
-  public getMe = createCustomRoute({
+const meRoutes = {
+  getMe: createCustomRoute({
     method: 'get',
     path: '/',
     guard: isAuthenticated,
@@ -22,9 +22,9 @@ class MeRoutes {
       },
       ...errorResponses,
     },
-  });
+  }),
 
-  public getMyAuthData = createCustomRoute({
+  getMyAuthData: createCustomRoute({
     method: 'get',
     path: '/auth',
     guard: isAuthenticated,
@@ -38,9 +38,9 @@ class MeRoutes {
       },
       ...errorResponses,
     },
-  });
+  }),
 
-  public updateMe = createCustomRoute({
+  updateMe: createCustomRoute({
     method: 'put',
     path: '/',
     guard: isAuthenticated,
@@ -61,9 +61,9 @@ class MeRoutes {
       },
       ...errorResponses,
     },
-  });
+  }),
 
-  public deleteMe = createCustomRoute({
+  deleteMe: createCustomRoute({
     method: 'delete',
     path: '/',
     guard: isAuthenticated,
@@ -77,9 +77,9 @@ class MeRoutes {
       },
       ...errorResponses,
     },
-  });
+  }),
 
-  public getMyMenu = createCustomRoute({
+  getMyMenu: createCustomRoute({
     method: 'get',
     path: '/menu',
     guard: isAuthenticated,
@@ -94,9 +94,9 @@ class MeRoutes {
       },
       ...errorResponses,
     },
-  });
+  }),
 
-  public deleteSessions = createCustomRoute({
+  deleteSessions: createCustomRoute({
     method: 'delete',
     path: '/sessions',
     guard: isAuthenticated,
@@ -116,9 +116,9 @@ class MeRoutes {
       },
       ...errorResponses,
     },
-  });
+  }),
 
-  public deleteMyMembership = createCustomRoute({
+  deleteMyMembership: createCustomRoute({
     method: 'delete',
     path: '/leave',
     guard: isAuthenticated,
@@ -136,9 +136,9 @@ class MeRoutes {
       },
       ...errorResponses,
     },
-  });
+  }),
 
-  public unsubscribeMe = createCustomRoute({
+  unsubscribeMe: createCustomRoute({
     method: 'get',
     path: '/unsubscribe',
     guard: isPublicAccess,
@@ -156,15 +156,15 @@ class MeRoutes {
       },
       ...errorResponses,
     },
-  });
-  public getUploadToken = createCustomRoute({
+  }),
+  getUploadToken: createCustomRoute({
     method: 'get',
     path: '/upload-token',
     guard: isAuthenticated,
     tags: ['me'],
     summary: 'Get upload token',
     description:
-      'This endpoint is used to get an upload token for a user or organization. The token can be used to upload public or private images/files to your S3 bucket using',
+      'This endpoint is used to get an upload token for a user or organization. The token can be used to upload or private images/files to your S3 bucket using',
     request: {
       query: uploadTokenQuerySchema,
     },
@@ -179,16 +179,16 @@ class MeRoutes {
       },
       ...errorResponses,
     },
-  });
+  }),
 
-  public createPasskey = createCustomRoute({
+  createPasskey: createCustomRoute({
     method: 'post',
     path: '/passkey',
     guard: isAuthenticated,
     tags: ['me'],
     summary: 'Create passkey',
     description:
-      'The server associates the public key and the credential ID with the user for future authentication flows and checks the validity of the operation by verifying the signed challenge with the public key.',
+      'The server associates the key and the credential ID with the user for future authentication flows and checks the validity of the operation by verifying the signed challenge with the key.',
     security: [],
     request: {
       body: {
@@ -203,9 +203,9 @@ class MeRoutes {
       },
       ...errorResponses,
     },
-  });
+  }),
 
-  public deletePasskey = createCustomRoute({
+  deletePasskey: createCustomRoute({
     method: 'delete',
     path: '/passkey',
     guard: isAuthenticated,
@@ -220,6 +220,6 @@ class MeRoutes {
       },
       ...errorResponses,
     },
-  });
-}
-export default new MeRoutes();
+  }),
+};
+export default meRoutes;

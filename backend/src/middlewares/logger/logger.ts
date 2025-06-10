@@ -19,7 +19,7 @@ const humanize = (times: string[]) => {
 };
 
 const time = (start: number) => {
-  const delta = performance.now() - start;
+  const delta = Date.now() - start;
   return humanize([delta < 1000 ? `${delta}ms` : `${Math.round(delta / 1000)}s`]);
 };
 
@@ -47,7 +47,7 @@ export const logger = (fn: PrintFunc = console.info) =>
     // Log incoming
     log(fn, LogPrefix.Incoming, logId, method, stripUrl);
 
-    const start = performance.now();
+    const start = Date.now();
     await next();
 
     // Add logging for user and organization ids
