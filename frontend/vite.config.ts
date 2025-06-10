@@ -141,7 +141,7 @@ export default defineConfig(() => {
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,svg,png,svg,ico}'],
-        globIgnores: ['**/shiki.*', '**/shiki/**', 'static/flags/**/*'],
+        globIgnores: ['**/shiki.*', '**/shiki/**', '**/static/flags/**/*'],
         cleanupOutdatedCaches: true,
         clientsClaim: true,
         maximumFileSizeToCacheInBytes: 100 * 1024 * 1024, // 100MB
