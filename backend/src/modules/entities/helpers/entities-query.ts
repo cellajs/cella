@@ -1,13 +1,15 @@
 import { type ContextEntityType, config } from 'config';
 import { type SQLWrapper, and, eq, ilike, inArray, ne, or, sql } from 'drizzle-orm';
-import type { z } from 'zod';
+import { z } from 'zod';
 
 import { db } from '#/db/db';
 import { membershipsTable } from '#/db/schema/memberships';
 import { usersTable } from '#/db/schema/users';
 import { entityTables } from '#/entity-config';
-import type { pageEntitiesQuerySchema } from '#/modules/entities/schema';
+import { entityBaseSchema, type pageEntitiesQuerySchema } from '#/modules/entities/schema';
 import { membershipSummarySelect } from '#/modules/memberships/helpers/select';
+import { membershipSummarySchema } from '#/modules/memberships/schema';
+import { contextEntityTypeSchema } from '#/utils/schema/common';
 import { prepareStringForILikeFilter } from '#/utils/sql';
 
 type EntitiesQueryProps = Omit<z.infer<typeof pageEntitiesQuerySchema>, 'targetUserId' | 'targetOrgId'> & {
@@ -18,6 +20,14 @@ type EntitiesQueryProps = Omit<z.infer<typeof pageEntitiesQuerySchema>, 'targetU
 
 type UserEntitiesQueryProps = Omit<EntitiesQueryProps, 'userId'>;
 type ContextEntitiesQueryProps = Omit<EntitiesQueryProps, 'userMembershipType' | 'selfId' | 'type'> & { type?: ContextEntityType };
+
+const expandedSchema = entityBaseSchema.extend({
+  entityType: contextEntityTypeSchema,
+  membership: membershipSummarySchema.nullable(),
+  total: z.number(),
+});
+
+type ContextQueties = z.infer<typeof expandedSchema>;
 
 export const getEntitiesQuery = ({ q, organizationIds, userId, selfId, type, userMembershipType }: EntitiesQueryProps) => {
   return !type
@@ -65,7 +75,7 @@ const getContextEntitiesQuery = ({ q, organizationIds, userId, type }: ContextEn
     })
     .filter((el) => el !== null); // Filter out null values if any entity type is invalid
 
-  return contextQueries;
+  return contextQueries as Promise<ContextQueties[]>[];
 };
 
 /**
