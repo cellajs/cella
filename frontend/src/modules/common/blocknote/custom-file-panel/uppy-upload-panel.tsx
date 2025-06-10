@@ -13,7 +13,7 @@ import { config } from 'config';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useOnlineManager } from '~/hooks/use-online-manager';
-import { parseUploadedAttachments } from '~/modules/attachments/helpers';
+import { parseUploadedAttachments } from '~/modules/attachments/helpers/parse-uploaded';
 import { customSchema } from '~/modules/common/blocknote/blocknote-config';
 import { focusEditor } from '~/modules/common/blocknote/helpers/focus';
 import type { BaseUppyFilePanelProps } from '~/modules/common/blocknote/types';

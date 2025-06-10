@@ -10,8 +10,13 @@ import { nanoid } from '~/utils/nanoid';
  */
 export const LocalFileStorage = {
   async addData(files: Record<string, CustomUppyFile>, tokenQuery: UploadTokenQuery): Promise<void> {
+    const key = tokenQuery.organizationId ?? nanoid();
     try {
-      await set(tokenQuery.organizationId ?? nanoid(), { files, tokenQuery });
+      // Get existing data (if any)
+      const existing = await get(key);
+      const mergedFiles = { ...(existing?.files ?? {}), ...files };
+
+      await set(key, { files: mergedFiles, tokenQuery });
     } catch (error) {
       console.error('Failed to save data:', error);
     }
