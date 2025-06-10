@@ -94,6 +94,7 @@
   "devDependencies": {
     "@commander-js/extra-typings": "^14.0.0",
     "@faker-js/faker": "^9.8.0",
+    "@ngrok/ngrok": "^1.5.1",
     "@types/jsdom": "^21.1.7",
     "@types/jsonwebtoken": "^9.0.9",
     "@types/node": "^24.0.0",

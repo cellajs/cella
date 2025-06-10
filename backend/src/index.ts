@@ -1,4 +1,5 @@
 import { serve } from '@hono/node-server';
+import ngrok from '@ngrok/ngrok';
 import * as Sentry from '@sentry/node';
 import { nodeProfilingIntegration } from '@sentry/profiling-node';
 import chalk from 'chalk';
@@ -51,6 +52,22 @@ const main = async () => {
       port: Number(env.PORT ?? '4000'),
     },
     () => {
+      if (env.TUNNEL_URL && env.TUNNEL_AUTH_TOKEN) {
+        // Start ngrok after the Hono server is running
+        ngrok
+          .connect({
+            addr: env.TUNNEL_URL,
+            authtoken: env.TUNNEL_AUTH_TOKEN,
+            // Or pass it directly: authtoken: 'YOUR_NGROK_AUTHTOKEN',
+          })
+          .then((listener) => {
+            console.log(`ngrok ingress established at: ${listener.url()}`);
+          })
+          .catch((err) => {
+            console.error('ngrok connection failed:', err);
+          });
+      }
+
       ascii();
       console.info(' ');
       console.info(
