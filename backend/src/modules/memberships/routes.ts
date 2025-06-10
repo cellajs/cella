@@ -2,6 +2,15 @@ import { z } from '@hono/zod-openapi';
 
 import { createCustomRoute } from '#/lib/custom-routes';
 import { hasOrgAccess, isAuthenticated } from '#/middlewares/guard';
+import {
+  memberListQuerySchema,
+  membershipCreateBodySchema,
+  membershipSchema,
+  membershipUpdateBodySchema,
+  pendingInvitationListQuerySchema,
+  pendingInvitationSchema,
+} from '#/modules/memberships/schema';
+import { memberSchema } from '#/modules/users/schema';
 import { entityWithTypeQuerySchema, idInOrgParamSchema, idOrSlugSchema, idsBodySchema, inOrgParamSchema } from '#/utils/schema/common';
 import {
   errorResponses,
@@ -10,18 +19,9 @@ import {
   successWithPaginationSchema,
   successWithoutDataSchema,
 } from '#/utils/schema/responses';
-import { memberSchema } from '../users/schema';
-import {
-  memberListQuerySchema,
-  membershipCreateBodySchema,
-  membershipSchema,
-  membershipUpdateBodySchema,
-  pendingInvitationListQuerySchema,
-  pendingInvitationSchema,
-} from './schema';
 
-class MembershipRoutes {
-  public createMemberships = createCustomRoute({
+const membershipRoutes = {
+  createMemberships: createCustomRoute({
     method: 'post',
     path: '/',
     guard: [isAuthenticated, hasOrgAccess],
@@ -50,9 +50,8 @@ class MembershipRoutes {
       },
       ...errorResponses,
     },
-  });
-
-  public deleteMemberships = createCustomRoute({
+  }),
+  deleteMemberships: createCustomRoute({
     method: 'delete',
     path: '/',
     guard: [isAuthenticated, hasOrgAccess],
@@ -77,9 +76,8 @@ class MembershipRoutes {
       },
       ...errorResponses,
     },
-  });
-
-  public updateMembership = createCustomRoute({
+  }),
+  updateMembership: createCustomRoute({
     method: 'put',
     path: '/{id}',
     guard: [isAuthenticated, hasOrgAccess],
@@ -107,9 +105,8 @@ class MembershipRoutes {
       },
       ...errorResponses,
     },
-  });
-
-  public getMembers = createCustomRoute({
+  }),
+  getMembers: createCustomRoute({
     method: 'get',
     path: '/members',
     guard: [isAuthenticated, hasOrgAccess],
@@ -131,9 +128,8 @@ class MembershipRoutes {
       },
       ...errorResponses,
     },
-  });
-
-  public getPendingInvitations = createCustomRoute({
+  }),
+  getPendingInvitations: createCustomRoute({
     method: 'get',
     path: '/pending',
     guard: [isAuthenticated, hasOrgAccess],
@@ -155,6 +151,6 @@ class MembershipRoutes {
       },
       ...errorResponses,
     },
-  });
-}
-export default new MembershipRoutes();
+  }),
+};
+export default membershipRoutes;

@@ -2,12 +2,12 @@ import { z } from '@hono/zod-openapi';
 import { createCustomRoute } from '#/lib/custom-routes';
 import { hasSystemAccess, isAuthenticated, isPublicAccess } from '#/middlewares/guard';
 import { tokenLimiter } from '#/middlewares/rate-limiter/limiters';
+import { inviteBodySchema, sendNewsletterBodySchema } from '#/modules/system/schema';
 import { booleanQuerySchema } from '#/utils/schema/common';
 import { errorResponses, successWithDataSchema, successWithoutDataSchema } from '#/utils/schema/responses';
-import { inviteBodySchema, sendNewsletterBodySchema } from './schema';
 
-class SystemRoutes {
-  public createInvite = createCustomRoute({
+const systemRoutes = {
+  createInvite: createCustomRoute({
     method: 'post',
     path: '/invite',
     guard: [isAuthenticated, hasSystemAccess],
@@ -34,9 +34,8 @@ class SystemRoutes {
       },
       ...errorResponses,
     },
-  });
-
-  public sendNewsletter = createCustomRoute({
+  }),
+  sendNewsletter: createCustomRoute({
     method: 'post',
     path: '/newsletter',
     guard: [isAuthenticated, hasSystemAccess],
@@ -65,9 +64,8 @@ class SystemRoutes {
       },
       ...errorResponses,
     },
-  });
-
-  public getPresignedUrl = createCustomRoute({
+  }),
+  getPresignedUrl: createCustomRoute({
     method: 'get',
     path: '/presigned-url',
     guard: [isAuthenticated],
@@ -82,9 +80,8 @@ class SystemRoutes {
       },
       ...errorResponses,
     },
-  });
-
-  public paddleWebhook = createCustomRoute({
+  }),
+  paddleWebhook: createCustomRoute({
     method: 'post',
     path: '/paddle-webhook',
     guard: isPublicAccess,
@@ -112,6 +109,6 @@ class SystemRoutes {
       },
       ...errorResponses,
     },
-  });
-}
-export default new SystemRoutes();
+  }),
+};
+export default systemRoutes;

@@ -1,12 +1,12 @@
 import { z } from '@hono/zod-openapi';
 import { createCustomRoute } from '#/lib/custom-routes';
 import { isAuthenticated } from '#/middlewares/guard';
+import { contextEntitiesQuerySchema, contextEntitiesSchema, pageEntitiesQuerySchema, pageEntitiesSchema } from '#/modules/entities/schema';
 import { slugSchema } from '#/utils/schema/common';
 import { errorResponses, successWithDataSchema, successWithoutDataSchema } from '#/utils/schema/responses';
-import { contextEntitiesQuerySchema, contextEntitiesSchema, pageEntitiesQuerySchema, pageEntitiesSchema } from './schema';
 
-class EntityRoutes {
-  public checkSlug = createCustomRoute({
+const entityRoutes = {
+  checkSlug: createCustomRoute({
     method: 'post',
     path: '/check-slug',
     guard: isAuthenticated,
@@ -35,9 +35,8 @@ class EntityRoutes {
       },
       ...errorResponses,
     },
-  });
-
-  public getPageEntities = createCustomRoute({
+  }),
+  getPageEntities: createCustomRoute({
     method: 'get',
     path: '/page',
     guard: isAuthenticated,
@@ -53,9 +52,8 @@ class EntityRoutes {
       },
       ...errorResponses,
     },
-  });
-
-  public geContextEntities = createCustomRoute({
+  }),
+  geContextEntities: createCustomRoute({
     method: 'get',
     path: '/context',
     guard: isAuthenticated,
@@ -71,6 +69,6 @@ class EntityRoutes {
       },
       ...errorResponses,
     },
-  });
-}
-export default new EntityRoutes();
+  }),
+};
+export default entityRoutes;

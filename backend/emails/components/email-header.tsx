@@ -1,6 +1,7 @@
 import { Heading } from 'jsx-email';
+import type { JSX } from 'react';
 
-export const EmailHeader = ({ headerText }: { headerText: string | React.ReactNode }) => (
+export const EmailHeader = ({ headerText }: { headerText: string | React.ReactNode }): JSX.Element => (
   <Heading
     style={{
       margin: '1.875rem 0',

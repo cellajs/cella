@@ -11,8 +11,8 @@ import {
 import { entityParamSchema, idsBodySchema } from '#/utils/schema/common';
 import { errorResponses, successWithDataSchema, successWithErrorsSchema, successWithPaginationSchema } from '#/utils/schema/responses';
 
-class OrganizationRoutes {
-  public createOrganization = createCustomRoute({
+const organizationRoutes = {
+  createOrganization: createCustomRoute({
     method: 'post',
     path: '/',
     guard: isAuthenticated,
@@ -40,9 +40,8 @@ class OrganizationRoutes {
       },
       ...errorResponses,
     },
-  });
-
-  public getOrganizations = createCustomRoute({
+  }),
+  getOrganizations: createCustomRoute({
     method: 'get',
     path: '/',
     guard: [isAuthenticated, hasSystemAccess],
@@ -63,9 +62,8 @@ class OrganizationRoutes {
       },
       ...errorResponses,
     },
-  });
-
-  public updateOrganization = createCustomRoute({
+  }),
+  updateOrganization: createCustomRoute({
     method: 'put',
     path: '/{idOrSlug}',
     guard: [isAuthenticated],
@@ -93,9 +91,8 @@ class OrganizationRoutes {
       },
       ...errorResponses,
     },
-  });
-
-  public getOrganization = createCustomRoute({
+  }),
+  getOrganization: createCustomRoute({
     method: 'get',
     path: '/{idOrSlug}',
     guard: [isAuthenticated],
@@ -116,9 +113,8 @@ class OrganizationRoutes {
       },
       ...errorResponses,
     },
-  });
-
-  public deleteOrganizations = createCustomRoute({
+  }),
+  deleteOrganizations: createCustomRoute({
     method: 'delete',
     path: '/',
     guard: [isAuthenticated],
@@ -141,6 +137,6 @@ class OrganizationRoutes {
       },
       ...errorResponses,
     },
-  });
-}
-export default new OrganizationRoutes();
+  }),
+};
+export default organizationRoutes;

@@ -2,12 +2,12 @@ import { createCustomRoute } from '#/lib/custom-routes';
 import { hasSystemAccess, isAuthenticated, isPublicAccess } from '#/middlewares/guard';
 import { isNoBot } from '#/middlewares/is-no-bot';
 import { spamLimiter } from '#/middlewares/rate-limiter/limiters';
+import { requestCreateBodySchema, requestListQuerySchema, requestSchema } from '#/modules/requests/schema';
 import { idsBodySchema } from '#/utils/schema/common';
 import { errorResponses, successWithDataSchema, successWithPaginationSchema, successWithoutDataSchema } from '#/utils/schema/responses';
-import { requestCreateBodySchema, requestListQuerySchema, requestSchema } from './schema';
 
-class RequestRoutes {
-  public createRequest = createCustomRoute({
+const requestRoutes = {
+  createRequest: createCustomRoute({
     method: 'post',
     path: '/',
     guard: isPublicAccess,
@@ -35,9 +35,8 @@ class RequestRoutes {
       },
       ...errorResponses,
     },
-  });
-
-  public getRequests = createCustomRoute({
+  }),
+  getRequests: createCustomRoute({
     method: 'get',
     path: '/',
     guard: [isAuthenticated, hasSystemAccess],
@@ -58,9 +57,8 @@ class RequestRoutes {
       },
       ...errorResponses,
     },
-  });
-
-  public deleteRequests = createCustomRoute({
+  }),
+  deleteRequests: createCustomRoute({
     method: 'delete',
     path: '/',
     guard: [isAuthenticated, hasSystemAccess],
@@ -83,6 +81,6 @@ class RequestRoutes {
       },
       ...errorResponses,
     },
-  });
-}
-export default new RequestRoutes();
+  }),
+};
+export default requestRoutes;

@@ -1,11 +1,11 @@
 import { createCustomRoute } from '#/lib/custom-routes';
 import { hasSystemAccess, isAuthenticated } from '#/middlewares/guard';
+import { userListQuerySchema, userSchema, userUpdateBodySchema } from '#/modules/users/schema';
 import { entityParamSchema, idsBodySchema } from '#/utils/schema/common';
 import { errorResponses, successWithDataSchema, successWithErrorsSchema, successWithPaginationSchema } from '#/utils/schema/responses';
-import { userListQuerySchema, userSchema, userUpdateBodySchema } from './schema';
 
-class UserRoutes {
-  public getUsers = createCustomRoute({
+const userRoutes = {
+  getUsers: createCustomRoute({
     method: 'get',
     path: '/',
     guard: [isAuthenticated, hasSystemAccess],
@@ -26,9 +26,8 @@ class UserRoutes {
       },
       ...errorResponses,
     },
-  });
-
-  public deleteUsers = createCustomRoute({
+  }),
+  deleteUsers: createCustomRoute({
     method: 'delete',
     path: '/',
     guard: [isAuthenticated, hasSystemAccess],
@@ -51,9 +50,8 @@ class UserRoutes {
       },
       ...errorResponses,
     },
-  });
-
-  public getUser = createCustomRoute({
+  }),
+  getUser: createCustomRoute({
     method: 'get',
     path: '/{idOrSlug}',
     guard: isAuthenticated,
@@ -74,9 +72,8 @@ class UserRoutes {
       },
       ...errorResponses,
     },
-  });
-
-  public updateUser = createCustomRoute({
+  }),
+  updateUser: createCustomRoute({
     method: 'put',
     path: '/{idOrSlug}',
     guard: [isAuthenticated, hasSystemAccess],
@@ -104,6 +101,6 @@ class UserRoutes {
       },
       ...errorResponses,
     },
-  });
-}
-export default new UserRoutes();
+  }),
+};
+export default userRoutes;

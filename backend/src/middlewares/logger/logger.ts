@@ -1,3 +1,4 @@
+import type { MiddlewareHandler } from 'hono';
 import { createMiddleware } from 'hono/factory';
 import type { Env } from '#/lib/context';
 import { nanoid } from '#/utils/nanoid';
@@ -33,7 +34,7 @@ function log(fn: PrintFunc, prefix: string, logId: string, method: string, path:
   fn(out);
 }
 
-export const logger = (fn: PrintFunc = console.info) =>
+export const logger = (fn: PrintFunc = console.info): MiddlewareHandler<Env> =>
   createMiddleware<Env>(async (c, next) => {
     const { method } = c.req;
 

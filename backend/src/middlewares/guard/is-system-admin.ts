@@ -1,3 +1,4 @@
+import type { MiddlewareHandler } from 'hono';
 import { createMiddleware } from 'hono/factory';
 import { type Env, getContextUser } from '#/lib/context';
 import { errorResponse } from '#/lib/errors';
@@ -10,7 +11,7 @@ import { errorResponse } from '#/lib/errors';
  * @param next - The next middleware or route handler to call if the check passes.
  * @returns Error response or undefined if the user is allowed to proceed.
  */
-export const isSystemAdmin = createMiddleware<Env>(async (ctx, next): Promise<Response | undefined> => {
+export const isSystemAdmin: MiddlewareHandler<Env> = createMiddleware<Env>(async (ctx, next): Promise<Response | undefined> => {
   const user = getContextUser();
 
   const isSystemAdmin = user?.role.includes('admin');

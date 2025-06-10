@@ -1,6 +1,7 @@
 import brevo from '@getbrevo/brevo';
 import { config } from 'config';
 import { render } from 'jsx-email';
+import type { ReactElement } from 'react';
 import { env } from '#/env';
 
 const apiInstance = new brevo.TransactionalEmailsApi();
@@ -20,7 +21,18 @@ export type BasicTemplateType = {
   unsubscribeLink?: string;
 };
 
-export const mailer = {
+type Mailer = {
+  prepareEmails<T extends BasicTemplateType, R extends { email: string }>(
+    template: (props: T & R) => ReactElement,
+    staticProps: Partial<T> & BasicTemplateType,
+    recipients: R[],
+    replyTo?: string,
+  ): Promise<void>;
+
+  send(to: string, subject: string, html: string, replyTo?: string): Promise<void>;
+};
+
+export const mailer: Mailer = {
   /**
    * Prepare and send emails to multiple recipients using a provided template.
    * It will render the template for each recipient and send the email.
@@ -38,7 +50,7 @@ export const mailer = {
   ) {
     // In future, batch these in background job if large
     for (const recipient of recipients) {
-      const templateProps: T & R = {
+      const templateProps = {
         ...staticProps,
         ...recipient,
       } as T & R;

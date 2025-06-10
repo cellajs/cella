@@ -1,5 +1,6 @@
 import * as Sentry from '@sentry/node';
 import { eq } from 'drizzle-orm';
+import type { MiddlewareHandler } from 'hono';
 import { createMiddleware } from 'hono/factory';
 import { db } from '#/db/db';
 import { membershipsTable } from '#/db/schema/memberships';
@@ -20,7 +21,7 @@ import { TimeSpan } from '#/utils/time-span';
  * @param next - The next middleware or route handler to call if authentication succeeds.
  * @returns Error response or undefined if the user is allowed to proceed.
  */
-export const isAuthenticated = createMiddleware<Env>(async (ctx, next): Promise<Response | undefined> => {
+export const isAuthenticated: MiddlewareHandler<Env> = createMiddleware<Env>(async (ctx, next): Promise<Response | undefined> => {
   // Get session id from cookie
   const sessionData = await getParsedSessionCookie(ctx);
 
