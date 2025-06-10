@@ -425,5 +425,7 @@
   "offline_cache_miss.text": "Resource unavailable while offline.",
   "delete_confirm.text": "Please confirm you want to delete {{name}}.",
   "already_member": "Already member",
-  "not_processed": "Not processed"
+  "not_processed": "Not processed",
+  "backend_not_ready": "Backend is initializing",
+  "backend_not_ready.text": "The backend is currently compiling and will be ready shortly."
 }

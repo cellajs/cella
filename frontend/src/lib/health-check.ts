@@ -1,25 +1,45 @@
+type HealthCheckParams = {
+  url: string;
+  initDelay?: number;
+  maxDelay?: number;
+  factor?: number;
+  maxAttempts?: number;
+  signal?: AbortSignal;
+};
+
 /**
- * Health check to verify if the backend is online.
+ * Performs a health check by repeatedly pinging a backend URL with exponential backoff.
  *
- * @param url - URL to check.
- * @param maxDelay - Maximum delay in seconds (default 600).
- * @param factor - Delay increase factor (default 1.5).
- * @param maxAttempts - Max attempts before failure (default 10).
+ * @param params - Options for the health check:
+ * @param params.url - URL to ping (required).
+ * @param params.initDelay - Initial delay in ms before retrying. Default: 10000.
+ * @param params.maxDelay - Max delay between retries in seconds. Default: 600.
+ * @param params.factor - Backoff multiplier. Default: 1.5.
+ * @param params.maxAttempts - Max number of attempts. Default: 10.
+ * @param params.signal - Optional AbortSignal to cancel the check.
  *
- * @returns Promise<boolean> - True if the server responds, otherwise false.
+ * @returns Promise resolving to `true` if the backend is reachable, else `false`.
  */
-export const healthCheck = async (
-  url: string,
-  maxDelay = 600, // Maximum 10 minutes
+
+export const healthCheck = async ({
+  url,
+  initDelay = 10000,
+  maxDelay = 600,
   factor = 1.5,
   maxAttempts = 10,
-): Promise<boolean> => {
-  let delay = 10000; // Initial delay 10 second
+  signal,
+}: HealthCheckParams): Promise<boolean> => {
+  let delay = initDelay;
   let attempts = 0;
 
   const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
   while (attempts < maxAttempts) {
+    if (signal?.aborted) {
+      console.debug('Health check aborted.');
+      return false;
+    }
+
     attempts++;
     try {
       console.debug(`Attempt ${attempts}: Pinging ${url}`);
