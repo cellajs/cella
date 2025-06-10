@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import FilePlaceholder from '~/modules/attachments/preview-placeholder';
+import FilePlaceholder from '~/modules/attachments/table/preview/placeholder';
 import { useLocalFile } from '~/modules/attachments/use-local-file';
 
 interface Props {

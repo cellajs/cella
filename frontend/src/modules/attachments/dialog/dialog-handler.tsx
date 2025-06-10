@@ -1,7 +1,7 @@
 import { useParams, useSearch } from '@tanstack/react-router';
 import { memo, useEffect } from 'react';
 import router from '~/lib/router';
-import AttachmentDialog from '~/modules/attachments/attachment-dialog';
+import AttachmentDialog from '~/modules/attachments/dialog';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { fallbackContentRef } from '~/utils/fallback-content-ref';
 
@@ -9,7 +9,6 @@ import { fallbackContentRef } from '~/utils/fallback-content-ref';
  * Handler for attachment dialog.
  * It creates and removes an attachment dialog by listening to `attachmentDialogId` in search parameters.
  */
-
 export const clearAttachmentDialogSearchParams = () => {
   router.navigate({
     to: '.',
