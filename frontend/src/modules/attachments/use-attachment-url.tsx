@@ -1,6 +1,6 @@
 import DOMPurify from 'dompurify';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { LocalFileStorage } from '~/modules/attachments/local-file-storage';
+import { LocalFileStorage } from '~/modules/attachments/helpers/local-file-storage';
 import { useBlobStore } from '~/store/blob'; // Import Zustand store
 import { isCDNUrl } from '~/utils/is-cdn-url';
 

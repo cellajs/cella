@@ -1,6 +1,6 @@
 import { onlineManager } from '@tanstack/react-query';
 import { t } from 'i18next';
-import AttachmentsCarousel, { type CarouselItemData } from '~/modules/attachments/attachments-carousel';
+import AttachmentsCarousel, { type CarouselItemData } from '~/modules/attachments/carousel';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { toaster } from '~/modules/common/toaster';
 

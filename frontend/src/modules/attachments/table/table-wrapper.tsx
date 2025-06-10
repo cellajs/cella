@@ -11,10 +11,10 @@ import BaseDataTable from '~/modules/attachments/table/table';
 import { AttachmentsTableBar } from '~/modules/attachments/table/table-bar';
 import type { Attachment } from '~/modules/attachments/types';
 import { useAttachmentsSync } from '~/modules/attachments/use-sync-attachments';
+import { useSyncLocalStore } from '~/modules/attachments/use-sync-local-store';
 import { AlertWrap } from '~/modules/common/alert-wrap';
 import { useSortColumns } from '~/modules/common/data-table/sort-columns';
 import type { BaseTableMethods } from '~/modules/common/data-table/types';
-import { useSyncLocalStore } from '~/modules/common/uploader/use-sync-local-store';
 import type { EntityPage } from '~/modules/entities/types';
 import type { attachmentsSearchSchema } from '~/routes/organizations';
 

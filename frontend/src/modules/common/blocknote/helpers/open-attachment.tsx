@@ -1,5 +1,5 @@
-import type { CarouselItemData } from '~/modules/attachments/attachments-carousel';
-import { openAttachmentDialog } from '~/modules/attachments/dialog/open-dialog';
+import type { CarouselItemData } from '~/modules/attachments/carousel';
+import { openAttachmentDialog } from '~/modules/attachments/helpers/open-dialog';
 import type { CustomBlockNoteEditor } from '~/modules/common/blocknote/types';
 
 export const openAttachment = async (

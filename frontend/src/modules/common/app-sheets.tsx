@@ -1,4 +1,4 @@
-import AttachmentDialogHandler from '~/modules/attachments/dialog/dialog-handler';
+import AttachmentDialogHandler from '~/modules/attachments/dialog/handler';
 import UserSheetHandler from '~/modules/users/user-sheet-handler';
 
 /**
