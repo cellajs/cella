@@ -43,7 +43,7 @@ const UserCell = ({ user, orgIdOrSlug, tabIndex }: Props) => {
 
         navigate({
           to: '.',
-          replace: true,
+          replace: false,
           resetScroll: false,
           search: (prev) => ({ ...prev, userSheetId: user.id }),
         });

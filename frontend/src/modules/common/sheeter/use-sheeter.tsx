@@ -15,7 +15,7 @@ export type SheetData = {
   scrollableOverlay?: boolean;
   closeSheetOnEsc?: boolean;
   modal?: boolean;
-  onClose?: () => void;
+  onClose?: (isCleanup?: boolean) => void;
 };
 
 export type InternalSheet = SheetData & {
@@ -71,8 +71,8 @@ export const useSheeter = create<SheetStoreState>()((set, get) => ({
       // If no sheets to remove, return
       if (!removeSheets.length) return { sheets: state.sheets };
 
-      // Call onClose hooks
-      for (const sheet of removeSheets) sheet.onClose?.();
+      // Call onClose, assume if no id that its a cleanup
+      for (const sheet of removeSheets) sheet.onClose?.(!id);
 
       // Filter them out
       const sheets = state.sheets.filter((sheet) => !removeSheets.some((s) => s.id === sheet.id));

@@ -18,7 +18,8 @@ const UserSheetHandler = memo(() => {
     if (!userSheetId) return;
 
     const sheetInstanceId = `user-sheet-${userSheetId}`;
-    const triggerRef = getTriggerRef(userSheetId) || fallbackContentRef;
+    const sheetTrigger = getTriggerRef(userSheetId);
+    const triggerRef = sheetTrigger || fallbackContentRef;
 
     // Defer creation to ensure the DOM and state are ready
     const timeoutId = setTimeout(() => {
@@ -27,9 +28,11 @@ const UserSheetHandler = memo(() => {
         triggerRef,
         side: 'right',
         className: 'max-w-full lg:max-w-4xl p-0',
-        // TODO(IMPROVE) find a way to remove a history entry when the sheet is closed. this way perhaps its better
-        // for UX to not do a replace here and in the UserCell
-        onClose: () => {
+
+        onClose: (isCleanup) => {
+          // If trigger, simply do history back
+          if (!isCleanup && sheetTrigger) return history.back();
+
           navigate({
             to: '.',
             replace: true,
@@ -45,7 +48,7 @@ const UserSheetHandler = memo(() => {
 
     return () => {
       clearTimeout(timeoutId);
-      removeSheet(sheetInstanceId);
+      removeSheet();
     };
   }, [userSheetId, orgIdOrSlug]);
 

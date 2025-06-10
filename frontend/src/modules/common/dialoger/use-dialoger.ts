@@ -19,7 +19,7 @@ export type DialogData = {
   container?: DialogContainerOptions;
   title?: string | ReactNode;
   titleContent?: string | ReactNode;
-  onClose?: () => void;
+  onClose?: (isCleanup?: boolean) => void;
 };
 
 export type InternalDialog = DialogData & {
@@ -70,7 +70,8 @@ export const useDialoger = create<DialogStoreState>((set, get) => ({
     set((state) => {
       const dialogsToRemove = id ? state.dialogs.filter((d) => d.id === id) : state.dialogs;
 
-      for (const dialog of dialogsToRemove) dialog.onClose?.();
+      // Assume its a cleanup if no id is provided
+      for (const dialog of dialogsToRemove) dialog.onClose?.(!id);
 
       const dialogs = state.dialogs.filter(({ id }) => !dialogsToRemove.some(({ id: removedId }) => removedId === id));
 

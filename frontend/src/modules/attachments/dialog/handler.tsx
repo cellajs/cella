@@ -33,7 +33,8 @@ const AttachmentDialogHandler = memo(() => {
     if (!attachmentDialogId || !orgIdOrSlug) return;
     if (getDialog('attachment-dialog')) return;
 
-    const triggerRef = getTriggerRef(attachmentDialogId) || fallbackContentRef;
+    const dialogTrigger = getTriggerRef(attachmentDialogId);
+    const triggerRef = dialogTrigger || fallbackContentRef;
 
     createDialog(<AttachmentDialog key={attachmentDialogId} attachmentId={attachmentDialogId} orgIdOrSlug={orgIdOrSlug} />, {
       id: 'attachment-dialog',
@@ -42,9 +43,10 @@ const AttachmentDialogHandler = memo(() => {
       className: 'min-w-full h-screen border-0 p-0 rounded-none flex flex-col mt-0',
       headerClassName: 'absolute p-4 w-full backdrop-blur-xs bg-background/50',
       hideClose: true,
-      onClose: () => {
-        // TODO(IMPROVE) find a way to remove a history entry when the sheet is closed. this way perhaps its better
-        // for UX to not do a replace here and in the column
+      onClose: (isCleanup) => {
+        // If trigger, simply do history back
+        if (!isCleanup && dialogTrigger) return history.back();
+
         clearAttachmentDialogSearchParams();
       },
     });
@@ -53,7 +55,7 @@ const AttachmentDialogHandler = memo(() => {
   // Separate cleanup when `attachmentDialogId` disappears
   useEffect(() => {
     if (attachmentDialogId) return;
-    removeDialog('attachment-dialog');
+    removeDialog();
   }, [attachmentDialogId]);
 
   return null;

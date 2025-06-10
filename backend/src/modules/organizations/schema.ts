@@ -1,9 +1,8 @@
 import { z } from 'zod';
 
-import { config } from 'config';
+import { type EntityType, config } from 'config';
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 import { organizationsTable } from '#/db/schema/organizations';
-import type { ValidEntities } from '#/modules/entities/helpers/get-related-entities';
 import { membershipSummarySchema } from '#/modules/memberships/schema';
 import {
   languageSchema,
@@ -15,18 +14,18 @@ import {
   validUrlSchema,
 } from '#/utils/schema/common';
 
-/** Type assertion to avoid "ReferenceError: Buffer is not defined" when using `hasField`.
- * Redundant fields will be filtered out in `getRelatedEntityCounts`.
- */
-//TODO: find way to fix or can we simplify it?
+// Entity count schema should exclude 'user' and 'organization'
+type FilteredEntityType = Exclude<EntityType, 'user' | 'organization'>;
+
+const isFilteredEntityType = (entityType: EntityType): entityType is FilteredEntityType => {
+  return entityType !== 'user' && entityType !== 'organization';
+};
+
 const entityCountSchema = z.object(
-  [...config.productEntityTypes, ...config.contextEntityTypes].reduce(
-    (acc, key) => {
-      acc[key as ValidEntities<'organizationId'>] = z.number();
-      return acc;
-    },
-    {} as Record<ValidEntities<'organizationId'>, z.ZodNumber>,
-  ),
+  Object.fromEntries(Object.entries(config.entityTypes.filter(isFilteredEntityType)).map(([entityType]) => [entityType, z.number()])) as Record<
+    FilteredEntityType,
+    z.ZodNumber
+  >,
 );
 
 export const membershipCountSchema = z.object({

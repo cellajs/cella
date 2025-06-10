@@ -21,7 +21,7 @@ export const downAlertConfig = {
     icon: ClockAlert,
     titleKey: 'common:backend_not_ready',
     textKey: 'common:backend_not_ready.text',
-    variant: 'plain',
+    variant: 'warning',
   },
   maintenance: {
     icon: Construction,
@@ -39,6 +39,7 @@ export const downAlertConfig = {
 
 const url = `${config.backendUrl}/ping`;
 
+// TODO this needs refactoring, it's messy
 export const DownAlert = () => {
   const { t } = useTranslation();
   const { downAlert, setDownAlert } = useAlertStore();
@@ -58,6 +59,7 @@ export const DownAlert = () => {
         if (!isOnline && !downAlert && !isNetworkAlertClosed) {
           setDownAlert('offline');
 
+          // TODO shouldnt this also be checked if offlineAccess is enabled?
           if (!offlineAccess) {
             const isBackendOnline = await healthCheck({ url, signal: controller.signal });
             if (isBackendOnline) setDownAlert(null);
@@ -78,6 +80,7 @@ export const DownAlert = () => {
     const controller = new AbortController();
 
     (async () => {
+      // TODO perhaps this should go to a handler function on each alert config? or can we make it more generic?
       if (downAlert === 'backend_not_ready') {
         const isBackendResponsive = await healthCheck({ url, initDelay: 5000, factor: 1, signal: controller.signal });
 
