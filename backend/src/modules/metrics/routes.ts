@@ -1,10 +1,10 @@
 import { createCustomRoute } from '#/lib/custom-routes';
 import { hasSystemAccess, isAuthenticated, isPublicAccess } from '#/middlewares/guard';
+import { metricListSchema, metricPublicSchema } from '#/modules/metrics/schema';
 import { errorResponses, successWithDataSchema } from '#/utils/schema/responses';
-import { metricListSchema, metricPublicSchema } from './schema';
 
-class MetricRouteConfig {
-  public getMetrics = createCustomRoute({
+const metricRouteConfig = {
+  getMetrics: createCustomRoute({
     method: 'get',
     path: '/',
     guard: [isAuthenticated, hasSystemAccess],
@@ -22,9 +22,8 @@ class MetricRouteConfig {
       },
       ...errorResponses,
     },
-  });
-
-  public getPublicCounts = createCustomRoute({
+  }),
+  getPublicCounts: createCustomRoute({
     method: 'get',
     path: '/public',
     guard: isPublicAccess,
@@ -42,6 +41,6 @@ class MetricRouteConfig {
       },
       ...errorResponses,
     },
-  });
-}
-export default new MetricRouteConfig();
+  }),
+};
+export default metricRouteConfig;
