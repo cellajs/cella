@@ -1,6 +1,5 @@
-import { useMemo } from 'react';
 import FilePlaceholder from '~/modules/attachments/table/preview/placeholder';
-import { useLocalFile } from '~/modules/attachments/use-local-file';
+import { useAttachmentUrl } from '../../use-attachment-url';
 
 interface Props {
   id: string;
@@ -10,14 +9,11 @@ interface Props {
 }
 
 const AttachmentPreview = ({ id, url: baseUrl, contentType, name }: Props) => {
-  const { localUrl } = useLocalFile(id, contentType);
+  const { url, error } = useAttachmentUrl(id, baseUrl, contentType);
 
-  // Use either remote URL or local URL
-  const url = useMemo(() => {
-    return localUrl.length ? localUrl : baseUrl;
-  }, [baseUrl, localUrl]);
+  if (!url || error) return <FilePlaceholder contentType={contentType} />;
 
-  return url && contentType.includes('image') ? (
+  return (
     <img
       src={url}
       draggable="false"
@@ -26,8 +22,6 @@ const AttachmentPreview = ({ id, url: baseUrl, contentType, name }: Props) => {
       loading="lazy"
       decoding="async"
     />
-  ) : (
-    <FilePlaceholder contentType={contentType} />
   );
 };
 
