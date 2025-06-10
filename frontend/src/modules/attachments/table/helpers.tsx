@@ -1,6 +1,6 @@
 import { config } from 'config';
 import { t } from 'i18next';
-import { parseUploadedAttachments } from '~/modules/attachments/helpers';
+import { parseUploadedAttachments } from '~/modules/attachments/helpers/parse-uploaded';
 import { useAttachmentCreateMutation } from '~/modules/attachments/query/mutations';
 import type { UploadedUppyFile } from '~/modules/common/uploader/types';
 import { useUploader } from '~/modules/common/uploader/use-uploader';

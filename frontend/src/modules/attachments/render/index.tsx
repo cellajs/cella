@@ -1,9 +1,7 @@
-import DOMPurify from 'dompurify';
-import { Suspense, lazy, useMemo } from 'react';
+import { Suspense, lazy } from 'react';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
-import { useLocalFile } from '~/modules/attachments/use-local-file';
 import Spinner from '~/modules/common/spinner';
-import { isCDNUrl } from '~/utils/is-cdn-url';
+import { useAttachmentUrl } from '../use-attachment-url';
 
 // Lazy-loaded components
 const ReactPanZoom = lazy(() => import('~/modules/attachments/render/image'));
@@ -35,24 +33,12 @@ export const AttachmentRender = ({
   onPanStateToggle,
 }: AttachmentRenderProps) => {
   const isMobile = useBreakpoints('max', 'sm');
+  const { url, error } = useAttachmentUrl(id, baseUrl, type);
 
-  const sanitizedUrl = DOMPurify.sanitize(baseUrl);
-  const { localUrl, localFileError } = useLocalFile(id, type);
-
-  const url = useMemo(() => {
-    // Use direct URL for static images
-    if (sanitizedUrl.startsWith('/static/')) return sanitizedUrl;
-
-    // Use either remote URL
-    if (isCDNUrl(sanitizedUrl)) return sanitizedUrl;
-
-    return localUrl.length ? localUrl : null;
-  }, [sanitizedUrl, localUrl]);
-
-  if (sanitizedUrl === localUrl && localFileError) {
+  if (error) {
     return (
       <div className="flex flex-col items-center justify-center h-full w-full bg-background text-muted-foreground">
-        <div className="text-center my-8 text-sm text-red-600">{localFileError}</div>
+        <div className="text-center my-8 text-sm text-red-600">{error}</div>
       </div>
     );
   }

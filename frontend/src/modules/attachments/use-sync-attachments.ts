@@ -5,7 +5,7 @@ import { useEffect } from 'react';
 import { env } from '~/env';
 import { useOnlineManager } from '~/hooks/use-online-manager';
 import { clientConfig } from '~/lib/api';
-import { handleDelete, handleInsert, handleUpdate } from '~/modules/attachments/sync-handlers';
+import { handleDelete, handleInsert, handleUpdate } from '~/modules/attachments/helpers/sync-handlers';
 import type { Attachment } from '~/modules/attachments/types';
 import { useSyncStore } from '~/store/sync';
 import { type CamelToSnakeObject, baseBackoffOptions as backoffOptions, errorHandler, processMessages } from '~/utils/electric-utils';

@@ -1,8 +1,8 @@
 import { config } from 'config';
 import { useEffect, useRef } from 'react';
 import { useOnlineManager } from '~/hooks/use-online-manager';
-import { parseUploadedAttachments } from '~/modules/attachments/helpers';
-import { LocalFileStorage } from '~/modules/attachments/local-file-storage';
+import { LocalFileStorage } from '~/modules/attachments/helpers/local-file-storage';
+import { parseUploadedAttachments } from '~/modules/attachments/helpers/parse-uploaded';
 import { useAttachmentCreateMutation, useAttachmentDeleteMutation } from '~/modules/attachments/query/mutations';
 import type { AttachmentToInsert } from '~/modules/attachments/types';
 import { createBaseTransloaditUppy } from '~/modules/common/uploader/helpers';
