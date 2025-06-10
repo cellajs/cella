@@ -1,5 +1,4 @@
 import { serve } from '@hono/node-server';
-import ngrok from '@ngrok/ngrok';
 import * as Sentry from '@sentry/node';
 import { nodeProfilingIntegration } from '@sentry/profiling-node';
 import chalk from 'chalk';
@@ -11,6 +10,7 @@ import { db, migrateConfig } from '#/db/db';
 import docs from '#/lib/docs';
 import '#/lib/i18n';
 import { config } from 'config';
+import { startNgrokTunnel } from '#/lib/ngrok-tunnel';
 import app from '#/routes';
 import { ascii } from '#/utils/ascii';
 import { env } from './env';
@@ -51,28 +51,18 @@ const main = async () => {
       hostname: '0.0.0.0',
       port: Number(env.PORT ?? '4000'),
     },
-    () => {
-      if (env.TUNNEL_URL && env.TUNNEL_AUTH_TOKEN) {
-        // Start ngrok after the Hono server is running
-        ngrok
-          .connect({
-            addr: env.TUNNEL_URL,
-            authtoken: env.TUNNEL_AUTH_TOKEN,
-            // Or pass it directly: authtoken: 'YOUR_NGROK_AUTHTOKEN',
-          })
-          .then((listener) => {
-            console.log(`ngrok ingress established at: ${listener.url()}`);
-          })
-          .catch((err) => {
-            console.error('ngrok connection failed:', err);
-          });
-      }
+    async (info) => {
+      const tunnelUrl = await startNgrokTunnel(info);
 
       ascii();
       console.info(' ');
-      console.info(
-        `${chalk.greenBright.bold(config.name)} (Frontend) runs on ${chalk.cyanBright.bold(config.frontendUrl)}. Backend: ${chalk.cyanBright.bold(config.backendUrl)}. Docs: ${chalk.cyanBright(`${config.backendUrl}/docs`)}`,
-      );
+
+      console.info(`${chalk.greenBright.bold(config.name)} 
+        Frontend: ${chalk.cyanBright.bold(config.frontendUrl)}. 
+        Backend: ${chalk.cyanBright.bold(config.backendUrl)}. 
+        Tunnel: ${chalk.magentaBright.bold(tunnelUrl || '-')}.;
+        Docs: ${chalk.cyanBright(`${config.backendUrl}/docs`)}.`);
+
       console.info(' ');
     },
   );
