@@ -1,5 +1,6 @@
 import { db } from '#/db/db';
 import { attachmentsTable } from '#/db/schema/attachments';
+import { organizationsTable } from '#/db/schema/organizations';
 import { env } from '#/env';
 import { type Env, getContextMemberships, getContextOrganization, getContextUser } from '#/lib/context';
 import { type ErrorType, createError, errorResponse } from '#/lib/errors';
@@ -17,7 +18,7 @@ import { prepareStringForILikeFilter } from '#/utils/sql';
 import { OpenAPIHono } from '@hono/zod-openapi';
 import { config } from 'config';
 import { type SQL, and, count, eq, ilike, inArray, like, notLike, or } from 'drizzle-orm';
-import { html } from 'hono/html';
+import { html, raw } from 'hono/html';
 import { stream } from 'hono/streaming';
 
 const app = new OpenAPIHono<Env>({ defaultHook });
@@ -260,25 +261,37 @@ const attachmentsRouteHandlers = app
     const [attachment] = await db.select().from(attachmentsTable).where(eq(attachmentsTable.id, id));
     if (!attachment) return errorResponse(ctx, 404, 'not_found', 'warn', 'attachment');
 
-    let redirectUrl = `${config.frontendUrl}/${attachment.organizationId}/attachments?attachmentDialogId=${attachment.id}`;
-    if (attachment.groupId) redirectUrl += `&groupId=${attachment.groupId}`;
+    const [organization] = await db.select().from(organizationsTable).where(eq(organizationsTable.id, attachment.organizationId));
+    if (!organization) return errorResponse(ctx, 404, 'not_found', 'warn', 'organization');
+
+    const url = new URL(`${config.frontendUrl}/organizations/${organization.slug}/attachments`);
+    url.searchParams.set('attachmentDialogId', attachment.id);
+    if (attachment.groupId) url.searchParams.set('groupId', attachment.groupId);
+
+    const redirectUrl = url.toString();
 
     return ctx.html(html`
       <!doctype html>
       <html lang="en">
         <head>
           <meta charset="utf-8" />
+
           <title>${attachment.filename}</title>
-          <meta property="og:image" content="${config.frontendUrl}/static/images/thumbnail.png" />
+          <meta property="og:description" content="View an attachment in ${organization.name}." />
+          <meta name="description" content="View an attachment in ${organization.name}." />
           <meta property="og:url" content="${redirectUrl}" />
+
           <meta property="og:type" content="website" />
-          <meta property="og:site_name" content="Cella" />
-          <meta property="og:locale" content="en_US" />
+          <meta property="og:site_name" content="${config.name}" />
+          <meta property="og:locale" content="${config.defaultLanguage}" />
+          <link rel="logo" type="image/png" href="/static/logo/logo.png" />
+          <link rel="icon" type="image/png" sizes="512x512" href="/static/icons/icon-512x512.png" />
+          <link rel="icon" type="image/png" sizes="192x192" href="/static/icons/icon-192x192.png" />
           <meta name="robots" content="index,follow" />
         </head>
-        <script>
-          window.location.href = '${redirectUrl}';
-        </script>
+      <script>
+        ${raw(`window.location.href = "${redirectUrl}";`)}
+      </script>
       </html>
     `);
   });

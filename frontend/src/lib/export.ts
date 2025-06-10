@@ -106,7 +106,7 @@ const formatRowData = <R extends Row>(row: R, column: Column) => {
   }
   if (column.key === 'role') return row.role ?? row.membership?.role ?? '-';
 
-  const date = dayjs(row[column.key]);
+  const date = dayjs.utc(row[column.key]).local();
   if (date.isValid()) return date.format('lll');
 
   return row[column.key] ?? '-';

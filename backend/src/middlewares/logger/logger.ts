@@ -8,11 +8,13 @@ enum LogPrefix {
   Error = 'err',
 }
 
+/**
+ * Humanizes the time format for logging.
+ * Converts milliseconds to seconds if greater than 1000.
+ */
 const humanize = (times: string[]) => {
   const [delimiter, separator] = [',', '.'];
-
   const orderTimes = times.map((v) => v.replace(/(\d)(?=(\d\d\d)+(?!\d))/g, `$1${delimiter}`));
-
   return orderTimes.join(separator);
 };
 
@@ -46,7 +48,6 @@ export const logger = (fn: PrintFunc = console.info) =>
     log(fn, LogPrefix.Incoming, logId, method, stripUrl);
 
     const start = Date.now();
-
     await next();
 
     // Add logging for user and organization ids

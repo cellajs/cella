@@ -2,9 +2,11 @@ import { FilterX } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '~/modules/ui/button';
+import { cn } from '~/utils/cn';
 
 interface TableCountProps {
   type: string;
+  className?: string;
   count?: number;
   isFiltered?: boolean;
   onResetFilters?: () => void;
@@ -13,11 +15,11 @@ interface TableCountProps {
 /**
  * Displays the count of items in a table
  */
-const TableCount = ({ count, type, isFiltered, children, onResetFilters }: TableCountProps) => {
+const TableCount = ({ count, type, className, isFiltered, children, onResetFilters }: TableCountProps) => {
   const { t } = useTranslation();
 
   return (
-    <div className="max-sm:hidden text-sm flex items-center gap-2">
+    <div className={cn('max-sm:hidden text-sm flex items-center gap-2', className)}>
       {isFiltered && (
         <Button variant="ghost" onClick={onResetFilters} className="max-sm:hidden">
           <FilterX size={16} className="mr-2" />

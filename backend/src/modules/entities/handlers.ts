@@ -1,23 +1,31 @@
 import { OpenAPIHono, type z } from '@hono/zod-openapi';
-import { and, eq, isNotNull } from 'drizzle-orm';
+import { config } from 'config';
+import { and, eq, ilike, inArray, isNotNull } from 'drizzle-orm';
 
 import { db } from '#/db/db';
 import { membershipsTable } from '#/db/schema/memberships';
+import { usersTable } from '#/db/schema/users';
+import { entityTables } from '#/entity-config';
 import { type Env, getContextMemberships, getContextUser } from '#/lib/context';
+import { errorResponse } from '#/lib/errors';
 import { checkSlugAvailable } from '#/modules/entities/helpers/check-slug';
 import { getEntitiesQuery } from '#/modules/entities/helpers/entities-query';
+import { processEntitiesData } from '#/modules/entities/helpers/process-entities-data';
 import entityRoutes from '#/modules/entities/routes';
+import { membershipSummarySelect } from '#/modules/memberships/helpers/select';
+import { userSummarySelect } from '#/modules/users/helpers/select';
+import type { userSummarySchema } from '#/modules/users/schema';
 import { defaultHook } from '#/utils/default-hook';
-import { processEntitiesData } from './helpers/process-entities-data';
-import type { entityListItemSchema } from './schema';
+import { getOrderColumn } from '#/utils/order-column';
+import { prepareStringForILikeFilter } from '#/utils/sql';
 
 const app = new OpenAPIHono<Env>({ defaultHook });
 
 const entityRouteHandlers = app
   /*
-   * Get entities with a limited schema
+   * Get page entities with a limited schema
    */
-  .openapi(entityRoutes.getEntities, async (ctx) => {
+  .openapi(entityRoutes.getPageEntities, async (ctx) => {
     const { q, type, targetUserId, targetOrgId, userMembershipType } = ctx.req.valid('query');
 
     const { id: selfId } = getContextUser();
@@ -50,13 +58,73 @@ const entityRouteHandlers = app
 
     // Prepare query and execute in parallel
     const queries = getEntitiesQuery({ q, organizationIds, userId, selfId, type, userMembershipType });
-    // TODO: fix typing in getEntitiesQuery return
-    const queryData = (await Promise.all(queries)) as unknown as (z.infer<typeof entityListItemSchema> & { total: number })[][];
+    const queryData = await Promise.all(queries);
 
     // Aggregate and process result data
     const { counts, items, total } = processEntitiesData(queryData, type);
 
     return ctx.json({ success: true, data: { items, total, counts } }, 200);
+  })
+  /*
+   * Get all users context entities
+   */
+  .openapi(entityRoutes.geContextEntities, async (ctx) => {
+    const { q, sort, type, targetUserId } = ctx.req.valid('query');
+
+    const { id: selfId } = getContextUser();
+
+    const userId = targetUserId ?? selfId;
+
+    const table = entityTables[type];
+    const entityIdField = config.entityIdFields[type];
+    if (!table) return errorResponse(ctx, 404, 'not_found', 'warn', type);
+
+    const orderColumn = getOrderColumn({ name: table.name, createdAt: table.createdAt }, sort, table.createdAt);
+
+    const entities = await db
+      .select({
+        id: table.id,
+        slug: table.slug,
+        name: table.name,
+        entityType: table.entityType,
+        thumbnailUrl: table.thumbnailUrl,
+        createdAt: table.createdAt,
+        membership: membershipSummarySelect,
+      })
+      .from(table)
+      .innerJoin(
+        membershipsTable,
+        and(eq(membershipsTable[entityIdField], table.id), eq(membershipsTable.userId, userId), eq(membershipsTable.contextType, type)),
+      )
+      .where(q ? ilike(table.name, prepareStringForILikeFilter(q)) : undefined)
+      .orderBy(orderColumn);
+
+    const entityIds = entities.map(({ id }) => id);
+
+    const members = await db
+      .select({
+        userData: userSummarySelect,
+        entityId: membershipsTable[entityIdField],
+      })
+      .from(membershipsTable)
+      .innerJoin(usersTable, eq(usersTable.id, membershipsTable.userId))
+      .where(and(inArray(membershipsTable[entityIdField], entityIds), eq(membershipsTable.contextType, type)));
+
+    // Group members by entityId
+    const membersByEntityId = members.reduce<Record<string, z.infer<typeof userSummarySchema>[]>>((acc, { entityId, userData }) => {
+      if (!entityId) return acc;
+      if (!acc[entityId]) acc[entityId] = [];
+      acc[entityId].push(userData);
+
+      return acc;
+    }, {});
+
+    // Enrich entities with members
+    const data = entities.map((entity) => ({
+      ...entity,
+      members: membersByEntityId[entity.id] ?? [],
+    }));
+    return ctx.json({ success: true, data }, 200);
   })
   /*
    * Check if slug is available

@@ -1,7 +1,8 @@
 import { config } from 'config';
 import { z } from 'zod';
+import { membershipSummarySchema } from '#/modules/memberships/schema';
+import { userSummarySchema } from '#/modules/users/schema';
 import { contextEntityTypeSchema, idSchema, imageUrlSchema, nameSchema, pageEntityTypeSchema, slugSchema } from '#/utils/schema/common';
-import { membershipSummarySchema } from '../memberships/schema';
 
 export const entityBaseSchema = z.object({
   id: idSchema,
@@ -12,22 +13,39 @@ export const entityBaseSchema = z.object({
   bannerUrl: imageUrlSchema.nullable().optional(),
 });
 
+const baseEntityQuerySchema = z.object({
+  q: z.string().optional(),
+  targetUserId: idSchema.optional(),
+});
+
 export const entityListItemSchema = entityBaseSchema.extend({
   email: z.string().optional(),
   entityType: pageEntityTypeSchema,
   membership: membershipSummarySchema.nullable(),
 });
 
-export const entityListSchema = z.object({
+export const pageEntitiesSchema = z.object({
   items: z.array(entityListItemSchema),
   counts: z.record(z.enum(config.pageEntityTypes), z.number().optional()),
   total: z.number(),
 });
 
-export const entityListQuerySchema = z.object({
-  q: z.string().optional(),
+export const pageEntitiesQuerySchema = baseEntityQuerySchema.extend({
   type: pageEntityTypeSchema.optional(),
   targetOrgId: idSchema.optional(),
-  targetUserId: idSchema.optional(),
   userMembershipType: contextEntityTypeSchema.optional(),
+});
+
+export const contextEntitiesSchema = z.array(
+  entityBaseSchema.extend({
+    createdAt: z.string(),
+    entityType: contextEntityTypeSchema,
+    membership: membershipSummarySchema,
+    members: z.array(z.lazy(() => userSummarySchema)),
+  }),
+);
+
+export const contextEntitiesQuerySchema = baseEntityQuerySchema.extend({
+  type: contextEntityTypeSchema,
+  sort: z.enum(['name', 'createdAt']).default('createdAt').optional(),
 });

@@ -12,6 +12,8 @@ export type PageDraggableItemData = DraggableItemData<UserMenuItem, 'menuItem'>;
  */
 export type NavItemId = (typeof navItems)[number]['id'];
 
+export type TriggerNavItemFn = (id: NavItemId, ref?: React.RefObject<HTMLButtonElement | null>) => void | Promise<void>;
+
 export type NavItem = {
   id: NavItemId;
   icon: React.ElementType<LucideProps>;

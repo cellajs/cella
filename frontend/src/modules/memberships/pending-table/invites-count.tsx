@@ -12,8 +12,6 @@ export const MembershipInvitations = ({ entity }: MembershipInvitationsTableProp
   const buttonRef = useRef(null);
   const createSheet = useSheeter((state) => state.create);
 
-  const total = entity.counts?.membership.pending;
-
   const openSheet = () => {
     const SheetComponent = ({ entity }: { entity: EntityPage }) => (
       <Suspense>
@@ -32,11 +30,11 @@ export const MembershipInvitations = ({ entity }: MembershipInvitationsTableProp
     });
   };
 
-  if (total === undefined) return null;
+  if (entity.invitesCount === undefined) return null;
 
   return (
-    <Button ref={buttonRef} disabled={total < 1} variant="ghost" size="xs" className="font-light" onClick={openSheet}>
-      {new Intl.NumberFormat('de-DE').format(total)} {t('common:pending').toLowerCase()}
+    <Button ref={buttonRef} disabled={entity.invitesCount < 1} variant="ghost" size="xs" className="font-light" onClick={openSheet}>
+      {new Intl.NumberFormat('de-DE').format(entity.invitesCount)} {t('common:pending').toLowerCase()}
     </Button>
   );
 };

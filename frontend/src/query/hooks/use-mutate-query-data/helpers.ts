@@ -1,9 +1,9 @@
 import type { QueryKey } from '@tanstack/react-query';
 import type { EntityType } from 'config';
+import type { ContextEntityData } from '~/modules/entities/types';
 import { getQueryKeySortOrder } from '~/query/helpers';
 import type {
   ArbitraryEntityQueryData,
-  ContextEntityTypeData,
   EntityData,
   EntityQueryData,
   InfiniteEntityQueryData,
@@ -93,7 +93,7 @@ export const changeQueryData = (queryKey: QueryKey, items: ItemData[], action: Q
  */
 export const changeArbitraryQueryData = (
   queryKey: QueryKey,
-  items: EntityData[] | ContextEntityTypeData[],
+  items: EntityData[] | ContextEntityData[],
   action: QueryDataActions,
   entityType: EntityType,
   keyToOperateIn?: string,

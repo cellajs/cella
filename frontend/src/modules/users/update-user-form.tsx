@@ -25,6 +25,8 @@ import { useUpdateUserMutation } from '~/modules/users/query';
 import type { User } from '~/modules/users/types';
 import { useUserStore } from '~/store/user';
 
+const formSchema = userUpdateBodySchema;
+type FormValues = z.infer<typeof formSchema>;
 interface UpdateUserFormProps {
   user: User;
   callback?: (user: User) => void;
@@ -32,10 +34,6 @@ interface UpdateUserFormProps {
   hiddenFields?: string[];
   children?: React.ReactNode;
 }
-
-const formSchema = userUpdateBodySchema;
-
-type FormValues = z.infer<typeof formSchema>;
 
 const UpdateUserForm = ({ user, callback, sheet: isSheet, hiddenFields, children }: UpdateUserFormProps) => {
   const { t } = useTranslation();
@@ -72,7 +70,7 @@ const UpdateUserForm = ({ user, callback, sheet: isSheet, hiddenFields, children
   const form = useFormWithDraft<FormValues>(`${formContainerId}-${user.id}`, { formOptions, formContainerId });
 
   // Prevent data loss
-  useBeforeUnload(form.formState.isDirty);
+  useBeforeUnload(form.isDirty);
 
   const onSubmit = (values: FormValues) => {
     if (!user) return;
@@ -155,14 +153,11 @@ const UpdateUserForm = ({ user, callback, sheet: isSheet, hiddenFields, children
         />
 
         <div className="flex flex-col sm:flex-row gap-2">
-          <SubmitButton
-            disabled={!hiddenFields?.length && (!form.formState.isDirty || Object.keys(form.formState.errors).length > 0)}
-            loading={isPending}
-          >
+          <SubmitButton disabled={!hiddenFields?.length && (!form.isDirty || Object.keys(form.formState.errors).length > 0)} loading={isPending}>
             {t(`common:${hiddenFields?.length ? 'continue' : 'save_changes'}`)}
           </SubmitButton>
           {!children && (
-            <Button type="reset" variant="secondary" onClick={() => form.reset()} className={form.formState.isDirty ? '' : 'invisible'}>
+            <Button type="reset" variant="secondary" onClick={() => form.reset()} className={form.isDirty ? '' : 'invisible'}>
               {t('common:cancel')}
             </Button>
           )}

@@ -9,9 +9,12 @@ import dayjs from 'dayjs';
  */
 export const dateIsRecent = (date: string | null, days: number) => {
   if (!date) return false;
-  const convertedDate = new Date(date);
+
+  // Parse the input date as UTC then convert to local
+  const convertedDate = dayjs.utc(date).local();
+
   // Calculate the date days ago and today using dayjs
   const daysAgo = dayjs().subtract(days, 'day');
   const today = dayjs();
-  return dayjs(convertedDate).isBetween(daysAgo, today, null, '[]');
+  return convertedDate.isBetween(daysAgo, today, null, '[]');
 };

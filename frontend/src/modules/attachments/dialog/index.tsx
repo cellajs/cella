@@ -3,7 +3,7 @@ import { FlameKindling, ServerCrash, WifiOff } from 'lucide-react';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useOnlineManager } from '~/hooks/use-online-manager';
-import AttachmentsCarousel from '~/modules/attachments/attachments-carousel';
+import AttachmentsCarousel from '~/modules/attachments/carousel';
 import { groupedAttachmentsQueryOptions } from '~/modules/attachments/query/options';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import Spinner from '~/modules/common/spinner';

@@ -3,6 +3,7 @@ import { type Control, type FieldValues, type Path, useFormContext } from 'react
 import { FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
 import { Input } from '~/modules/ui/input';
 import { Textarea } from '~/modules/ui/textarea';
+import { cn } from '~/utils/cn';
 
 interface Props<TFieldValues extends FieldValues> {
   control: Control<TFieldValues>;
@@ -73,8 +74,7 @@ const InputFormField = <TFieldValues extends FieldValues>({
                 </button>
               )}
               <InputComponent
-                className={inputClassName}
-                style={{ paddingLeft: icon ? '2.25rem' : '' }}
+                className={cn(inputClassName, icon && 'pl-10')}
                 placeholder={placeholder}
                 onFocus={onFocus}
                 readOnly={readOnly}

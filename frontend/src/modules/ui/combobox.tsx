@@ -13,7 +13,7 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { Popover, PopoverContent, PopoverTrigger } from '~/modules/ui/popover';
 import { ScrollArea, ScrollBar } from '~/modules/ui/scroll-area';
 
-interface ComboBoxOption {
+export interface ComboBoxOption {
   value: string;
   label: string;
   url?: string | null;

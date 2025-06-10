@@ -3,12 +3,12 @@ import { type BlockTypeSelectItem, type DragHandleMenuProps, useComponentsContex
 import { useMemo } from 'react';
 import { customBlockTypeSelectItems, getSideMenuItems } from '~/modules/common/blocknote/blocknote-config';
 import { focusEditor } from '~/modules/common/blocknote/helpers/focus';
-import type { BasicBlockTypes, CellaCustomBlockTypes, CustomBlockNoteEditor } from '~/modules/common/blocknote/types';
+import type { CustomBlockNoteEditor, CustomBlockTypes } from '~/modules/common/blocknote/types';
 
 interface ResetBlockTypeItemProp {
   editor: CustomBlockNoteEditor;
   props: DragHandleMenuProps;
-  allowedTypes: (CellaCustomBlockTypes | BasicBlockTypes)[];
+  allowedTypes: CustomBlockTypes[];
 }
 export function ResetBlockTypeItem({ editor, props: { block }, allowedTypes }: ResetBlockTypeItemProp) {
   // biome-ignore lint/style/noNonNullAssertion: required by author
@@ -16,9 +16,10 @@ export function ResetBlockTypeItem({ editor, props: { block }, allowedTypes }: R
   const dict = useDictionary();
 
   const filteredSelectItems = customBlockTypeSelectItems.filter((i) => allowedTypes.includes(i));
+  const selectItemsType: readonly string[] = filteredSelectItems;
 
   const filteredItems = useMemo(() => {
-    return getSideMenuItems(dict).filter((item) => filteredSelectItems.includes(item.type as BasicBlockTypes | CellaCustomBlockTypes));
+    return getSideMenuItems(dict).filter((item) => selectItemsType.includes(item.type));
   }, [editor, dict]);
 
   // Determine if the current block type should be shown
@@ -33,7 +34,7 @@ export function ResetBlockTypeItem({ editor, props: { block }, allowedTypes }: R
 
     // Update the selected block
     editor.updateBlock(block, {
-      type: item.type as Exclude<BasicBlockTypes, 'emoji'> | CellaCustomBlockTypes,
+      type: item.type as Exclude<CustomBlockTypes, 'emoji'>,
       props: item.props, // Pass props (to get heading level: 1 | 2 | 3)
     });
     // to reset editor focus so side menu open state does not block the on blur update

@@ -48,8 +48,7 @@ const TableSearch = ({ value = '', allowOfflineSearch = false, setQuery }: Table
         value={inputValue}
         onChange={(e) => setInputValue(e.target.value)}
         ref={inputRef}
-        style={{ paddingLeft: '2rem' }}
-        className="h-10 w-full border-0 pr-8"
+        className="h-10 w-full border-0 pr-8 pl-10"
         aria-label={t('common:placeholder.search')}
       />
       {/* Clear Button */}
