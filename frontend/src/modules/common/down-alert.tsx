@@ -1,7 +1,8 @@
 import { config } from 'config';
+import { t } from 'i18next';
 import { AlertTriangle, ClockAlert, CloudOff, Construction, X } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
-import { Trans, useTranslation } from 'react-i18next';
+import { Trans } from 'react-i18next';
 import { useOnlineManager } from '~/hooks/use-online-manager';
 import { healthCheck } from '~/lib/health-check';
 import { Alert, AlertDescription } from '~/modules/ui/alert';
@@ -12,26 +13,32 @@ import { useUIStore } from '~/store/ui';
 const downAlertConfig = {
   offline: {
     icon: CloudOff,
-    titleKey: 'common:offline',
+    getTitle: () => <Trans t={t} className="font-bold" i18nKey="common:offline" />,
+    getContent: (dismissAlert: () => void) => {
+      const offlineAccess = useUIStore.getState().offlineAccess;
+      const i18nKey = offlineAccess ? 'common:offline_access.offline' : 'common:offline.text';
+      const components = offlineAccess ? { site_anchor: <button type="button" className="underline" onClick={dismissAlert} /> } : undefined;
+      return <Trans t={t} className="max-sm:hidden" i18nKey={i18nKey} components={components} />;
+    },
     textKey: 'common:offline.text',
     variant: 'destructive',
   },
   backend_not_ready: {
     icon: ClockAlert,
-    titleKey: 'common:backend_not_ready',
-    textKey: 'common:backend_not_ready.text',
+    getTitle: () => <Trans t={t} className="font-bold" i18nKey="common:backend_not_ready" />,
+    getContent: () => <Trans t={t} className="max-sm:hidden" i18nKey="common:backend_not_ready.text" />,
     variant: 'warning',
   },
   maintenance: {
     icon: Construction,
-    titleKey: 'common:maintenance_mode',
-    textKey: 'common:maintenance_mode.text',
+    getTitle: () => <Trans t={t} className="font-bold" i18nKey="common:maintenance_mode" />,
+    getContent: () => <Trans t={t} className="max-sm:hidden" i18nKey="common:maintenance_mode.text" />,
     variant: 'destructive',
   },
   auth_unavailable: {
     icon: AlertTriangle,
-    titleKey: 'common:auth_unavailable',
-    textKey: 'common:auth_unavailable.text',
+    getTitle: () => <Trans t={t} className="font-bold" i18nKey="common:auth_unavailable" />,
+    getContent: () => <Trans t={t} className="max-sm:hidden" i18nKey="common:auth_unavailable.text" />,
     variant: 'plain',
   },
 } as const;
@@ -39,10 +46,7 @@ const downAlertConfig = {
 export type AlertKeys = keyof typeof downAlertConfig;
 
 export const DownAlert = () => {
-  const { t } = useTranslation();
   const { isOnline } = useOnlineManager();
-
-  const { offlineAccess } = useUIStore();
   const { downAlert, setDownAlert } = useAlertStore();
 
   // Track if user manually dismissed alert
@@ -72,40 +76,21 @@ export const DownAlert = () => {
 
   // Triggered by Failed to fetch err on serv helth check and runs a delayed health check fn to wait for backend recovery
   useEffect(() => {
-    if (process.env.NODE_ENV !== 'development' || dismissedAlerts.backend_not_ready || !isOnline) return;
+    if (downAlert !== 'backend_not_ready' || dismissedAlerts.backend_not_ready || !isOnline) return;
 
     const controller = new AbortController();
-    const url = `${config.backendUrl}/ping`;
 
     (async () => {
-      try {
-        await fetch(url);
-      } catch (err) {
-        if (!(err instanceof Error) || !err.message.includes('Failed to fetch')) return;
+      const isBackendResponsive = await healthCheck({ url: `${config.backendUrl}/ping`, initDelay: 5000, factor: 1, signal: controller.signal });
 
-        // Manually trigger backend_not_ready alert
-        setDownAlert('backend_not_ready');
-        const isBackendResponsive = await healthCheck({ url, initDelay: 5000, factor: 1, signal: controller.signal });
-
-        if (isBackendResponsive && !controller.signal.aborted) setDownAlert(null);
-      }
+      if (isBackendResponsive && !controller.signal.aborted) setDownAlert(null);
     })();
 
     return () => controller.abort(); // Cleanup any pending health check
   }, [isOnline, downAlert, dismissedAlerts.backend_not_ready]);
 
   if (!downAlert || dismissedAlerts[downAlert]) return null; // Nothing to show
-  const { titleKey, textKey, icon: Icon, variant } = downAlertConfig[downAlert];
-
-  // Determine i18n key and dynamic components for <Trans />
-  const titleProps = { i18nKey: titleKey };
-  const contentProps =
-    downAlert === 'offline' && offlineAccess
-      ? {
-          i18nKey: 'common:offline_access.offline',
-          components: { site_anchor: <button type="button" className="underline" onClick={dismissAlert} /> },
-        }
-      : { i18nKey: textKey };
+  const { getTitle, getContent, icon: Icon, variant } = downAlertConfig[downAlert];
 
   return (
     <div className="fixed z-2000 pointer-events-auto max-sm:bottom-20 bottom-4 left-4 right-4 border-0 justify-center">
@@ -117,14 +102,9 @@ export const DownAlert = () => {
 
         <Icon size={16} />
         <AlertDescription className="pr-8 font-light">
-          <Trans t={t} className="font-bold" {...titleProps} />
+          {getTitle()}
           <span className="mx-2">&#183;</span>
-          <Trans t={t} className="max-sm:hidden" {...contentProps} />
-
-          {/* Mobile "continue" button */}
-          <button type="button" className="inline-block sm:hidden font-semibold" onClick={dismissAlert}>
-            {t('common:continue')}
-          </button>
+          {getContent(dismissAlert)}
         </AlertDescription>
       </Alert>
     </div>

@@ -1,6 +1,7 @@
 import type { EntityType, Severity } from 'config';
 import type { ClientResponse } from 'hono/client';
 import type { ClientErrorStatusCode, ServerErrorStatusCode } from 'hono/utils/http-status';
+import { useAlertStore } from '~/store/alert';
 
 type HttpErrorStatus = ClientErrorStatusCode | ServerErrorStatusCode;
 
@@ -30,6 +31,11 @@ export const clientConfig = {
     fetch(input, {
       ...init,
       credentials: 'include',
+    }).catch((err) => {
+      if (process.env.NODE_ENV === 'development' && err.message.includes('Failed to fetch')) {
+        useAlertStore.getState().setDownAlert('backend_not_ready');
+      }
+      throw err; // Re-throw so caller can handle
     }),
 };
 
