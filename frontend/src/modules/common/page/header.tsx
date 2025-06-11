@@ -4,27 +4,19 @@ import { ChevronRight, Home, Loader2 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import useScrollTo from '~/hooks/use-scroll-to';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
-import { PageCover } from '~/modules/common/page/page-cover';
+import { PageCover, type PageCoverProps } from '~/modules/common/page/cover';
 import type { EntitySummary } from '~/modules/entities/types';
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbSeparator } from '~/modules/ui/breadcrumb';
 import { baseEntityRoutes } from '~/nav-config';
 
-// PageHeaderProps Interface
-interface PageHeaderProps {
-  title?: string | null;
-  type: EntityType;
-  id: string;
-  isAdmin: boolean;
-  thumbnailUrl?: string | null;
-  bannerUrl?: string | null;
+type PageHeaderProps = Omit<PageCoverProps, 'id' | 'url'> & {
+  entity: Omit<EntitySummary, 'entityType'> & { entityType: EntityType };
   panel?: React.ReactNode;
   parent?: { id: string; fetchFunc: (idOrSlug: string) => Promise<EntitySummary> };
   disableScroll?: boolean;
-  coverUpdateCallback: (bannerUrl: string) => void;
-}
+};
 
-// PageHeader Component
-const PageHeader = ({ title, id, isAdmin, thumbnailUrl, bannerUrl, type, panel, parent, disableScroll, coverUpdateCallback }: PageHeaderProps) => {
+const PageHeader = ({ entity, panel, parent, disableScroll, ...coverProps }: PageHeaderProps) => {
   const [fetchedParent, setFetchedParent] = useState<EntitySummary | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<boolean>(false);
@@ -51,20 +43,20 @@ const PageHeader = ({ title, id, isAdmin, thumbnailUrl, bannerUrl, type, panel, 
 
   return (
     <div className="relative">
-      <PageCover id={id} url={bannerUrl} canUpdate={isAdmin} coverUpdateCallback={coverUpdateCallback} />
+      <PageCover id={entity.id} url={entity.bannerUrl} {...coverProps} />
 
       <div className="absolute flex bottom-0 w-full h-16 bg-background/50 backdrop-blur-xs px-1 py-1" ref={scrollToRef}>
         <AvatarWrap
-          className={type === 'user' ? 'h-24 w-24 -mt-12 text-4xl ml-2 mr-3 border-bg border-opacity-50 border-2 rounded-full' : 'm-2'}
-          type={type}
-          id={id}
-          name={title}
-          url={thumbnailUrl}
+          id={entity.id}
+          name={entity.name}
+          type={entity.entityType}
+          url={entity.thumbnailUrl}
+          className={entity.entityType === 'user' ? 'h-24 w-24 -mt-12 text-4xl ml-2 mr-3 border-bg border-opacity-50 border-2 rounded-full' : 'm-2'}
         />
 
         <div className="flex py-2 flex-col truncate pl-1">
           {/* Page title */}
-          <h1 className="md:text-xl max-sm:-mt-0.5 truncate leading-6 font-semibold">{title}</h1>
+          <h1 className="md:text-xl max-sm:-mt-0.5 truncate leading-6 font-semibold">{entity.name}</h1>
 
           {/* Breadcrumb */}
           <Breadcrumb>
@@ -98,7 +90,7 @@ const PageHeader = ({ title, id, isAdmin, thumbnailUrl, bannerUrl, type, panel, 
                 </>
               )}
               <BreadcrumbItem className="flex items-center">
-                <span>{type}</span>
+                <span>{entity.entityType}</span>
               </BreadcrumbItem>
             </BreadcrumbList>
           </Breadcrumb>
