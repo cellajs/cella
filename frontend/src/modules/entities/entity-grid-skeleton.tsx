@@ -15,7 +15,7 @@ const getDummyEntities = (entityType: BaseEntityGridProps['entityType']) =>
     })),
   }));
 
-export const ColumnSkeleton = ({ entityType }: { entityType: BaseEntityGridProps['entityType'] }) => {
+export const GridSkeleton = ({ entityType }: { entityType: BaseEntityGridProps['entityType'] }) => {
   const entities = getDummyEntities(entityType);
   return (
     <div className="mb-12 grid gap-6 grid-cols-1 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-[repeat(auto-fit,minmax(330px,1fr))]">

@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
-import { useEffect } from 'react';
-import { ColumnSkeleton } from '~/modules/entities/entity-grid-skeleton';
+import { useEffect, useState } from 'react';
+import { GridSkeleton } from '~/modules/entities/entity-grid-skeleton';
 import type { BaseEntityGridProps, EntitySearch } from '~/modules/entities/entity-grid-wrapper';
 import { EntityTile } from '~/modules/entities/entity-tile';
 import { contextEntitiesQueryOptions } from '~/modules/entities/query';
@@ -11,14 +11,25 @@ type Props = BaseEntityGridProps & {
 };
 
 export const EntityGrid = ({ entityType, userId, searchVars, setTotal }: Props) => {
-  const { data: entities = [], isFetching } = useQuery(contextEntitiesQueryOptions({ ...searchVars, type: entityType, targetUserId: userId }));
+  const [initialDone, setInitialDone] = useState(false);
+
+  const {
+    data: entities = [],
+    isLoading,
+    isFetching,
+  } = useQuery(contextEntitiesQueryOptions({ ...searchVars, type: entityType, targetUserId: userId }));
 
   useEffect(() => {
     if (isFetching) return;
     setTotal(entities.length);
   }, [entities.length, isFetching]);
 
-  if (isFetching) return <ColumnSkeleton entityType={entityType} />;
+  useEffect(() => {
+    if (initialDone) return;
+    if (!isLoading) setInitialDone(true);
+  }, [isLoading]);
+
+  if (!initialDone) return <GridSkeleton entityType={entityType} />;
   return (
     <div className="mb-12 grid gap-6 grid-cols-1 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-[repeat(auto-fit,minmax(330px,1fr))]">
       {entities.map((entity) => (
