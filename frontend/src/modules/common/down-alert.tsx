@@ -1,10 +1,7 @@
-import { config } from 'config';
 import { AlertTriangle, ClockAlert, CloudOff, Construction, X } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
-import { env } from '~/env';
 import { useOnlineManager } from '~/hooks/use-online-manager';
-import { healthCheck } from '~/lib/health-check';
 import { Alert, AlertDescription } from '~/modules/ui/alert';
 import { Button } from '~/modules/ui/button';
 import { useAlertStore } from '~/store/alert';
@@ -37,100 +34,61 @@ export const downAlertConfig = {
   },
 } as const;
 
-const url = `${config.backendUrl}/ping`;
-
-// TODO this needs refactoring, it's messy
 export const DownAlert = () => {
   const { t } = useTranslation();
-  const { downAlert, setDownAlert } = useAlertStore();
-  const { offlineAccess } = useUIStore();
   const { isOnline } = useOnlineManager();
 
-  const devAlert = useRef(env.VITE_DEV_ALERT);
-  const [isNetworkAlertClosed, setIsNetworkAlertClosed] = useState(false);
+  const { offlineAccess } = useUIStore();
+  const { downAlert, setDownAlert } = useAlertStore();
 
-  useEffect(() => {
-    const controller = new AbortController();
+  // Track if user manually dismissed alert
+  const [hasDismissed, setHasDismissed] = useState(false);
 
-    (async () => {
-      if (isOnline && downAlert === 'offline') setDownAlert(null);
-
-      if (isOnline || (!downAlert && !isNetworkAlertClosed))
-        if (!isOnline && !downAlert && !isNetworkAlertClosed) {
-          setDownAlert('offline');
-
-          // TODO shouldnt this also be checked if offlineAccess is enabled?
-          if (!offlineAccess) {
-            const isBackendOnline = await healthCheck({ url, signal: controller.signal });
-            if (isBackendOnline) setDownAlert(null);
-          }
-        }
-    })();
-
-    return () => controller.abort(); // abort healthCheck if effect is cleaned up early
-  }, [downAlert, isOnline, offlineAccess, isNetworkAlertClosed]);
-
-  useEffect(() => {
-    if (!isOnline && downAlert === 'backend_not_ready') setDownAlert(null);
-
-    if (process.env.NODE_ENV !== 'development' || !devAlert.current || !isOnline) return;
-
-    useAlertStore.getState().setDownAlert('backend_not_ready');
-
-    const controller = new AbortController();
-
-    (async () => {
-      // TODO perhaps this should go to a handler function on each alert config? or can we make it more generic?
-      if (downAlert === 'backend_not_ready') {
-        const isBackendResponsive = await healthCheck({ url, initDelay: 5000, factor: 1, signal: controller.signal });
-
-        if (isBackendResponsive && !controller.signal.aborted) {
-          devAlert.current = false;
-          setDownAlert(null);
-        }
-        return;
-      }
-    })();
-
-    return () => controller.abort();
-  }, [isOnline, downAlert]);
-
-  const cancelAlert = () => {
+  const dissmissAlert = () => {
+    setHasDismissed(true);
     setDownAlert(null);
-    setIsNetworkAlertClosed(true);
   };
 
-  if (!downAlert) return null;
+  // Based on network status manages "offline" alert
+  useEffect(() => {
+    // Remove offline alert when user is back online
+    if (isOnline && downAlert === 'offline') setDownAlert(null);
 
-  const alertConfig = downAlertConfig[downAlert] || downAlertConfig.offline;
-  const Icon = alertConfig.icon;
+    // Show offline alert only if user hasn't dismissed it manually
+    if (!isOnline && !hasDismissed) setDownAlert('offline');
 
-  const alertText =
-    downAlert === 'offline' && offlineAccess ? (
-      <Trans
-        i18nKey="common:offline_access.offline"
-        t={t}
-        components={{
-          site_anchor: <button type="button" className="underline" onClick={cancelAlert} />,
-        }}
-      />
-    ) : (
-      t(alertConfig.textKey)
-    );
+    // Reset dismissal flag when effect re-runs
+    return () => setHasDismissed(false);
+  }, [downAlert, isOnline]);
+
+  if (!downAlert) return null; // Nothing to show
+  const { titleKey, textKey, icon: Icon, variant } = downAlertConfig[downAlert];
+
+  // Determine i18n key and dynamic components for <Trans />
+  const isOffline = downAlert === 'offline' && offlineAccess;
+  const transProps = isOffline
+    ? {
+        i18nKey: 'common:offline_access.offline',
+        components: { site_anchor: <button type="button" className="underline" onClick={dissmissAlert} /> },
+      }
+    : { i18nKey: textKey };
 
   return (
     <div className="fixed z-2000 pointer-events-auto max-sm:bottom-20 bottom-4 left-4 right-4 border-0 justify-center">
-      <Alert variant={alertConfig.variant} className="border-0 w-auto">
-        <Button variant="ghost" size="sm" className="absolute top-2 right-2" onClick={cancelAlert}>
+      <Alert variant={variant} className="border-0 w-auto">
+        {/* Dismiss Button */}
+        <Button variant="ghost" size="sm" className="absolute top-2 right-2" onClick={dissmissAlert}>
           <X size={16} />
         </Button>
-        <Icon size={16} />
 
+        <Icon size={16} />
         <AlertDescription className="pr-8 font-light">
-          <strong>{t(alertConfig.titleKey)}</strong>
+          <strong>{t(titleKey)}</strong>
           <span className="mx-2">&#183;</span>
-          <span className="max-sm:hidden">{alertText}</span>
-          <button type="button" className="inline-block sm:hidden font-semibold" onClick={cancelAlert}>
+          <Trans t={t} {...transProps} />
+
+          {/* Mobile "continue" button */}
+          <button type="button" className="inline-block sm:hidden font-semibold" onClick={dissmissAlert}>
             {t('common:continue')}
           </button>
         </AlertDescription>
@@ -138,3 +96,45 @@ export const DownAlert = () => {
     </div>
   );
 };
+
+// const devAlert = useRef(env.VITE_DEV_ALERT);
+
+/**
+  //  * Second effect: Handle special "backend_not_ready" alert in development mode.
+  //  * This is triggered by VITE_DEV_ALERT and runs a delayed health check to simulate backend recovery.
+  //  */
+// useEffect(() => {
+//   // If backend_not_ready alert is showing, but we lose connection, reset alert
+//   if (!isOnline && downAlert === 'backend_not_ready') {
+//     cancelAlert();
+//     return;
+//   }
+
+//   // Only run this logic in development when devAlert is true and we’re online
+//   if (process.env.NODE_ENV !== 'development' || !devAlert.current || !isOnline) return;
+
+//   // Manually trigger the backend_not_ready alert
+//   useAlertStore.getState().setDownAlert('backend_not_ready');
+
+//   const controller = new AbortController();
+
+//   (async () => {
+//     if (downAlert === 'backend_not_ready') {
+//       // Wait 5s before checking backend again
+//       const isBackendResponsive = await healthCheck({
+//         url,
+//         initDelay: 5000,
+//         factor: 1,
+//         signal: controller.signal,
+//       });
+
+//       if (isBackendResponsive && !controller.signal.aborted) {
+//         // Backend is up again, dismiss alert and disable dev alert trigger
+//         devAlert.current = false;
+//         setDownAlert(null);
+//       }
+//     }
+//   })();
+
+//   return () => controller.abort(); // Cleanup any pending health check
+// }, [isOnline, downAlert]);
