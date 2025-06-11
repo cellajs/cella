@@ -2,17 +2,14 @@ import { config } from 'config';
 import { create } from 'zustand';
 import { createJSONStorage, devtools, persist } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
-import type { downAlertConfig } from '~/modules/common/down-alert';
-
-type DownLevels = keyof typeof downAlertConfig | null;
-
+import type { AlertKeys } from '~/modules/common/down-alert';
 interface AlertStoreState {
   alertsSeen: string[]; // Seen alert IDs (to prevent duplicate notifications)
-  downAlert: DownLevels; // Down alert type
+  downAlert: AlertKeys | null; // Down alert type
 
   setAlertSeen: (alertSeen: string) => void; // Adds an alert to the seen list
   resetAlertSeen: (alertSeen: string[]) => void; // Resets seen alerts to a new array
-  setDownAlert: (downLevel: DownLevels) => void; // Sets the current down alert type
+  setDownAlert: (downLevel: AlertKeys | null) => void; // Sets the current down alert type
   clearAlertStore: () => void; // Resets to initial state
 }
 
