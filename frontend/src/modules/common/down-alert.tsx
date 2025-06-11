@@ -1,7 +1,9 @@
+import { config } from 'config';
 import { AlertTriangle, ClockAlert, CloudOff, Construction, X } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
 import { useOnlineManager } from '~/hooks/use-online-manager';
+import { healthCheck } from '~/lib/health-check';
 import { Alert, AlertDescription } from '~/modules/ui/alert';
 import { Button } from '~/modules/ui/button';
 import { useAlertStore } from '~/store/alert';
@@ -46,7 +48,6 @@ export const DownAlert = () => {
   // Track if user manually dismissed alert
   const [dismissedAlerts, setDismissedAlerts] = useState({} as Record<AlertKeys, boolean>);
 
-  // const hasRunDevAlert = useRef(false);
   const dismissAlert = useCallback(() => {
     if (!downAlert) return;
     setDismissedAlerts((prev) => ({ ...prev, [downAlert]: true }));
@@ -58,48 +59,42 @@ export const DownAlert = () => {
   // Based on network status manages "offline" alert
   useEffect(() => {
     // Clear offline alert if back online or dismissed
-    if ((isOnline && downAlert === 'offline') || dismissedAlerts.offline) setDownAlert(null);
+    if (isOnline && downAlert === 'offline') setDownAlert(null);
 
     // Show offline alert if offline and not dismissed
-    if (!isOnline && !dismissedAlerts.offline) setDownAlert('offline');
+    if (!isOnline) setDownAlert('offline');
 
     // Reset dismissal when back online
     return () => {
       if (isOnline) resetDismiss('offline');
     };
-  }, [downAlert, isOnline, dismissedAlerts.offline]);
+  }, [downAlert, isOnline]);
 
-  // // Triggered by VITE_DEV_ALERT and runs a delayed health check to simulate backend recovery
-  // useEffect(() => {
-  //   // Only run this logic in development when devAlert is true and we’re online
-  //   console.log("🚀 ~ useEffect ~ hasDismissed:", hasDismissed)
-  //   if (process.env.NODE_ENV !== 'development' || !env.VITE_DEV_ALERT || hasDismissed || hasRunDevAlert.current || !isOnline) return;
+  // Triggered by Failed to fetch err on serv helth check and runs a delayed health check fn to wait for backend recovery
+  useEffect(() => {
+    if (process.env.NODE_ENV !== 'development' || dismissedAlerts.backend_not_ready || !isOnline) return;
 
-  //   const controller = new AbortController();
+    const controller = new AbortController();
+    const url = `${config.backendUrl}/ping`;
 
-  //   // Manually trigger backend_not_ready alert
-  //   useAlertStore.getState().setDownAlert('backend_not_ready');
+    (async () => {
+      try {
+        await fetch(url);
+      } catch (err) {
+        if (!(err instanceof Error) || !err.message.includes('Failed to fetch')) return;
 
-  //   (async () => {
-  //     if (downAlert === 'backend_not_ready') {
-  //       const isBackendResponsive = await healthCheck({
-  //         url: `${config.backendUrl}/ping`,
-  //         initDelay: 5000,
-  //         factor: 1,
-  //         signal: controller.signal,
-  //       });
+        // Manually trigger backend_not_ready alert
+        setDownAlert('backend_not_ready');
+        const isBackendResponsive = await healthCheck({ url, initDelay: 5000, factor: 1, signal: controller.signal });
 
-  //       if (isBackendResponsive && !controller.signal.aborted) {
-  //         hasRunDevAlert.current = true; // Mark as run
-  //         setDownAlert(null);
-  //       }
-  //     }
-  //   })();
+        if (isBackendResponsive && !controller.signal.aborted) setDownAlert(null);
+      }
+    })();
 
-  //   return () => controller.abort(); // Cleanup any pending health check
-  // }, [isOnline, downAlert, hasDismissed]);
+    return () => controller.abort(); // Cleanup any pending health check
+  }, [isOnline, downAlert, dismissedAlerts.backend_not_ready]);
 
-  if (!downAlert) return null; // Nothing to show
+  if (!downAlert || dismissedAlerts[downAlert]) return null; // Nothing to show
   const { titleKey, textKey, icon: Icon, variant } = downAlertConfig[downAlert];
 
   // Determine i18n key and dynamic components for <Trans />
