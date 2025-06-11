@@ -17,6 +17,9 @@ baseApp.use(contextStorage());
 // Add global middleware
 baseApp.route('/', middlewares);
 
+// Health check for render.com
+baseApp.get('/ping', (c) => c.text('pong'));
+
 // Not found handler
 baseApp.notFound((ctx) => {
   return errorResponse(ctx, 404, 'route_not_found', 'warn', undefined, { path: ctx.req.path });

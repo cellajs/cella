@@ -1,8 +1,8 @@
 import { config } from 'config';
+import { t } from 'i18next';
 import { AlertTriangle, ClockAlert, CloudOff, Construction, X } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
-import { Trans, useTranslation } from 'react-i18next';
-import { env } from '~/env';
+import { useCallback, useEffect, useState } from 'react';
+import { Trans } from 'react-i18next';
 import { useOnlineManager } from '~/hooks/use-online-manager';
 import { healthCheck } from '~/lib/health-check';
 import { Alert, AlertDescription } from '~/modules/ui/alert';
@@ -10,129 +10,101 @@ import { Button } from '~/modules/ui/button';
 import { useAlertStore } from '~/store/alert';
 import { useUIStore } from '~/store/ui';
 
-export const downAlertConfig = {
+const downAlertConfig = {
   offline: {
     icon: CloudOff,
-    titleKey: 'common:offline',
+    getTitle: () => <Trans t={t} className="font-bold" i18nKey="common:offline" />,
+    getContent: (dismissAlert: () => void) => {
+      const offlineAccess = useUIStore.getState().offlineAccess;
+      const i18nKey = offlineAccess ? 'common:offline_access.offline' : 'common:offline.text';
+      const components = offlineAccess ? { site_anchor: <button type="button" className="underline" onClick={dismissAlert} /> } : undefined;
+      return <Trans t={t} className="max-sm:hidden" i18nKey={i18nKey} components={components} />;
+    },
     textKey: 'common:offline.text',
     variant: 'destructive',
   },
   backend_not_ready: {
     icon: ClockAlert,
-    titleKey: 'common:backend_not_ready',
-    textKey: 'common:backend_not_ready.text',
+    getTitle: () => <Trans t={t} className="font-bold" i18nKey="common:backend_not_ready" />,
+    getContent: () => <Trans t={t} className="max-sm:hidden" i18nKey="common:backend_not_ready.text" />,
     variant: 'warning',
   },
   maintenance: {
     icon: Construction,
-    titleKey: 'common:maintenance_mode',
-    textKey: 'common:maintenance_mode.text',
+    getTitle: () => <Trans t={t} className="font-bold" i18nKey="common:maintenance_mode" />,
+    getContent: () => <Trans t={t} className="max-sm:hidden" i18nKey="common:maintenance_mode.text" />,
     variant: 'destructive',
   },
   auth_unavailable: {
     icon: AlertTriangle,
-    titleKey: 'common:auth_unavailable',
-    textKey: 'common:auth_unavailable.text',
+    getTitle: () => <Trans t={t} className="font-bold" i18nKey="common:auth_unavailable" />,
+    getContent: () => <Trans t={t} className="max-sm:hidden" i18nKey="common:auth_unavailable.text" />,
     variant: 'plain',
   },
 } as const;
 
-const url = `${config.backendUrl}/ping`;
+export type AlertKeys = keyof typeof downAlertConfig;
 
-// TODO this needs refactoring, it's messy
 export const DownAlert = () => {
-  const { t } = useTranslation();
-  const { downAlert, setDownAlert } = useAlertStore();
-  const { offlineAccess } = useUIStore();
   const { isOnline } = useOnlineManager();
+  const { downAlert, setDownAlert } = useAlertStore();
 
-  const devAlert = useRef(env.VITE_DEV_ALERT);
-  const [isNetworkAlertClosed, setIsNetworkAlertClosed] = useState(false);
+  // Track if user manually dismissed alert
+  const [dismissedAlerts, setDismissedAlerts] = useState({} as Record<AlertKeys, boolean>);
 
-  useEffect(() => {
-    const controller = new AbortController();
-
-    (async () => {
-      if (isOnline && downAlert === 'offline') setDownAlert(null);
-
-      if (isOnline || (!downAlert && !isNetworkAlertClosed))
-        if (!isOnline && !downAlert && !isNetworkAlertClosed) {
-          setDownAlert('offline');
-
-          // TODO shouldnt this also be checked if offlineAccess is enabled?
-          if (!offlineAccess) {
-            const isBackendOnline = await healthCheck({ url, signal: controller.signal });
-            if (isBackendOnline) setDownAlert(null);
-          }
-        }
-    })();
-
-    return () => controller.abort(); // abort healthCheck if effect is cleaned up early
-  }, [downAlert, isOnline, offlineAccess, isNetworkAlertClosed]);
-
-  useEffect(() => {
-    if (!isOnline && downAlert === 'backend_not_ready') setDownAlert(null);
-
-    if (process.env.NODE_ENV !== 'development' || !devAlert.current || !isOnline) return;
-
-    useAlertStore.getState().setDownAlert('backend_not_ready');
-
-    const controller = new AbortController();
-
-    (async () => {
-      // TODO perhaps this should go to a handler function on each alert config? or can we make it more generic?
-      if (downAlert === 'backend_not_ready') {
-        const isBackendResponsive = await healthCheck({ url, initDelay: 5000, factor: 1, signal: controller.signal });
-
-        if (isBackendResponsive && !controller.signal.aborted) {
-          devAlert.current = false;
-          setDownAlert(null);
-        }
-        return;
-      }
-    })();
-
-    return () => controller.abort();
-  }, [isOnline, downAlert]);
-
-  const cancelAlert = () => {
+  const dismissAlert = useCallback(() => {
+    if (!downAlert) return;
+    setDismissedAlerts((prev) => ({ ...prev, [downAlert]: true }));
     setDownAlert(null);
-    setIsNetworkAlertClosed(true);
-  };
+  }, [downAlert]);
 
-  if (!downAlert) return null;
+  const resetDismiss = (key: AlertKeys) => setDismissedAlerts((prev) => ({ ...prev, [key]: false }));
 
-  const alertConfig = downAlertConfig[downAlert] || downAlertConfig.offline;
-  const Icon = alertConfig.icon;
+  // Based on network status manages "offline" alert
+  useEffect(() => {
+    // Clear offline alert if back online or dismissed
+    if (isOnline && downAlert === 'offline') setDownAlert(null);
 
-  const alertText =
-    downAlert === 'offline' && offlineAccess ? (
-      <Trans
-        i18nKey="common:offline_access.offline"
-        t={t}
-        components={{
-          site_anchor: <button type="button" className="underline" onClick={cancelAlert} />,
-        }}
-      />
-    ) : (
-      t(alertConfig.textKey)
-    );
+    // Show offline alert if offline and not dismissed
+    if (!isOnline) setDownAlert('offline');
+
+    // Reset dismissal when back online
+    return () => {
+      if (isOnline) resetDismiss('offline');
+    };
+  }, [downAlert, isOnline]);
+
+  // Triggered by Failed to fetch err on serv helth check and runs a delayed health check fn to wait for backend recovery
+  useEffect(() => {
+    if (downAlert !== 'backend_not_ready' || dismissedAlerts.backend_not_ready || !isOnline) return;
+
+    const controller = new AbortController();
+
+    (async () => {
+      const isBackendResponsive = await healthCheck({ url: `${config.backendUrl}/ping`, initDelay: 5000, factor: 1, signal: controller.signal });
+
+      if (isBackendResponsive && !controller.signal.aborted) setDownAlert(null);
+    })();
+
+    return () => controller.abort(); // Cleanup any pending health check
+  }, [isOnline, downAlert, dismissedAlerts.backend_not_ready]);
+
+  if (!downAlert || dismissedAlerts[downAlert]) return null; // Nothing to show
+  const { getTitle, getContent, icon: Icon, variant } = downAlertConfig[downAlert];
 
   return (
     <div className="fixed z-2000 pointer-events-auto max-sm:bottom-20 bottom-4 left-4 right-4 border-0 justify-center">
-      <Alert variant={alertConfig.variant} className="border-0 w-auto">
-        <Button variant="ghost" size="sm" className="absolute top-2 right-2" onClick={cancelAlert}>
+      <Alert variant={variant} className="border-0 w-auto">
+        {/* Dismiss Button */}
+        <Button variant="ghost" size="sm" className="absolute top-2 right-2" onClick={dismissAlert}>
           <X size={16} />
         </Button>
-        <Icon size={16} />
 
+        <Icon size={16} />
         <AlertDescription className="pr-8 font-light">
-          <strong>{t(alertConfig.titleKey)}</strong>
+          {getTitle()}
           <span className="mx-2">&#183;</span>
-          <span className="max-sm:hidden">{alertText}</span>
-          <button type="button" className="inline-block sm:hidden font-semibold" onClick={cancelAlert}>
-            {t('common:continue')}
-          </button>
+          {getContent(dismissAlert)}
         </AlertDescription>
       </Alert>
     </div>
