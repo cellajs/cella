@@ -19,7 +19,6 @@ const EntityGridWrapper = ({ entityType, userId, isSheet = false }: BaseEntityGr
 
   const [total, setTotal] = useState<number | undefined>(undefined);
 
-  // TODO(CHORE) Fix bar re-render on search
   return (
     <div className="flex flex-col gap-4 h-full">
       <EntityGridBar total={total} searchVars={search} entityType={entityType} setSearch={setSearch} isSheet={isSheet} />
