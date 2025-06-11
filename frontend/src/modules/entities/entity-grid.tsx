@@ -11,14 +11,17 @@ type Props = BaseEntityGridProps & {
 };
 
 export const EntityGrid = ({ entityType, userId, searchVars, setTotal }: Props) => {
-  const { data: entities, isFetching } = useQuery(contextEntitiesQueryOptions({ ...searchVars, type: entityType, targetUserId: userId }));
+  const { data: entities = [], isFetching } = useQuery(contextEntitiesQueryOptions({ ...searchVars, type: entityType, targetUserId: userId }));
 
-  useEffect(() => setTotal(entities?.length), [entities]);
+  useEffect(() => {
+    if (isFetching) return;
+    setTotal(entities.length);
+  }, [entities.length, isFetching]);
 
   if (isFetching) return <ColumnSkeleton entityType={entityType} />;
   return (
     <div className="mb-12 grid gap-6 grid-cols-1 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-[repeat(auto-fit,minmax(330px,1fr))]">
-      {entities?.map((entity) => (
+      {entities.map((entity) => (
         <EntityTile key={entity.id} entity={entity} />
       ))}
     </div>
