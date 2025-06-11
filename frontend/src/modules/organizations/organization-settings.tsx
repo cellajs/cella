@@ -6,7 +6,7 @@ import { Trans, useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { AsideAnchor } from '~/modules/common/aside-anchor';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
-import { PageAside } from '~/modules/common/page/page-aside';
+import { PageAside } from '~/modules/common/page/aside';
 import StickyBox from '~/modules/common/sticky-box';
 import UnsavedBadge from '~/modules/common/unsaved-badge';
 import DeleteOrganizations from '~/modules/organizations/delete-organizations';
