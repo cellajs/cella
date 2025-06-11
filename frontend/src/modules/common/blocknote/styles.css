@@ -183,7 +183,6 @@
 
 .bn-shadcn .bn-editor {
   white-space: pre-wrap !important;
-  word-break: break-word !important;
   padding: 0px !important;
   background: transparent !important;
   height: 100%;
@@ -356,11 +355,6 @@
 
 .inline-content {
   flex-grow: 1;
-}
-
-/* TODO remove when blocknotefix bug with content shown as col  */
-.bn-block-content[data-content-type="numberedListItem"]:before {
-  white-space: nowrap;
 }
 
 /* For showing saved checkListItem */
