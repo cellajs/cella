@@ -28,7 +28,7 @@ const BlockNoteContent = ({
   name,
   required,
   disabled,
-  BaseBlockNoteProps: { excludeBlockTypes = ['bulletListItem', 'numberedListItem', 'checkListItem', 'table', 'notify'], ...restBlockNoteProps },
+  BaseBlockNoteProps: { excludeBlockTypes = ['bulletListItem', 'checkListItem', 'table', 'notify'], ...restBlockNoteProps },
 }: Props) => {
   return (
     <FormField

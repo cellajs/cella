@@ -53,9 +53,7 @@ export const addBadgeToFavicon = (mode: ConfigMode) => {
       newFavicon.href = canvas.toDataURL('image/png');
 
       document.head.removeChild(favicon);
-
       document.head.appendChild(newFavicon);
-      console.log('Badge added to favicon:', letter);
     };
   } catch (error) {
     console.error('Error adding badge to favicon:', error);

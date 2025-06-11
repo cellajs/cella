@@ -23,6 +23,9 @@ export const env = createEnv({
     PORT: z.string().optional(),
     UNSUBSCRIBE_SECRET: z.string(),
 
+    TUNNEL_URL: z.string().default(''),
+    TUNNEL_AUTH_TOKEN: z.string().default(''),
+
     ARGON_SECRET: z.string(),
     COOKIE_SECRET: z.string(),
 

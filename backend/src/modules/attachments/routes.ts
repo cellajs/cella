@@ -1,12 +1,12 @@
 import { z } from 'zod';
 import { createCustomRoute } from '#/lib/custom-routes';
 import { hasOrgAccess, isAuthenticated, isPublicAccess } from '#/middlewares/guard';
+import { attachmentCreateManySchema, attachmentListQuerySchema, attachmentSchema, attachmentUpdateBodySchema } from '#/modules/attachments/schema';
 import { idInOrgParamSchema, idSchema, idsBodySchema, inOrgParamSchema } from '#/utils/schema/common';
 import { errorResponses, successWithDataSchema, successWithErrorsSchema, successWithPaginationSchema } from '#/utils/schema/responses';
-import { attachmentCreateManySchema, attachmentListQuerySchema, attachmentSchema, attachmentUpdateBodySchema } from './schema';
 
-class AttachmentRoutes {
-  public createAttachments = createCustomRoute({
+const attachmentRoutes = {
+  createAttachments: createCustomRoute({
     method: 'post',
     path: '/',
     guard: [isAuthenticated, hasOrgAccess],
@@ -35,9 +35,8 @@ class AttachmentRoutes {
       },
       ...errorResponses,
     },
-  });
-
-  public getAttachments = createCustomRoute({
+  }),
+  getAttachments: createCustomRoute({
     method: 'get',
     path: '/',
     guard: [isAuthenticated, hasOrgAccess],
@@ -59,9 +58,8 @@ class AttachmentRoutes {
       },
       ...errorResponses,
     },
-  });
-
-  public getAttachment = createCustomRoute({
+  }),
+  getAttachment: createCustomRoute({
     method: 'get',
     path: '/{id}',
     guard: [isAuthenticated, hasOrgAccess],
@@ -82,9 +80,8 @@ class AttachmentRoutes {
       },
       ...errorResponses,
     },
-  });
-
-  public updateAttachment = createCustomRoute({
+  }),
+  updateAttachment: createCustomRoute({
     method: 'put',
     path: '/{id}',
     guard: [isAuthenticated, hasOrgAccess],
@@ -112,9 +109,8 @@ class AttachmentRoutes {
       },
       ...errorResponses,
     },
-  });
-
-  public deleteAttachments = createCustomRoute({
+  }),
+  deleteAttachments: createCustomRoute({
     method: 'delete',
     path: '/',
     guard: [isAuthenticated, hasOrgAccess],
@@ -142,9 +138,8 @@ class AttachmentRoutes {
       },
       ...errorResponses,
     },
-  });
-
-  public shapeProxy = createCustomRoute({
+  }),
+  shapeProxy: createCustomRoute({
     method: 'get',
     path: '/shape-proxy',
     guard: [isAuthenticated, hasOrgAccess],
@@ -158,9 +153,8 @@ class AttachmentRoutes {
       },
       ...errorResponses,
     },
-  });
-
-  public redirectToAttachment = createCustomRoute({
+  }),
+  redirectToAttachment: createCustomRoute({
     method: 'get',
     path: '/{id}/link',
     tags: ['attachments'],
@@ -176,9 +170,8 @@ class AttachmentRoutes {
       },
       ...errorResponses,
     },
-  });
-
-  public getAttachmentCover = createCustomRoute({
+  }),
+  getAttachmentCover: createCustomRoute({
     method: 'get',
     path: '/{id}/cover',
     guard: isPublicAccess,
@@ -194,6 +187,6 @@ class AttachmentRoutes {
       },
       ...errorResponses,
     },
-  });
-}
-export default new AttachmentRoutes();
+  }),
+};
+export default attachmentRoutes;

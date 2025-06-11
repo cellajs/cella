@@ -4,7 +4,7 @@ import { Settings } from 'lucide-react';
 import { Suspense, lazy } from 'react';
 import { useTranslation } from 'react-i18next';
 import { FocusViewContainer } from '~/modules/common/focus-view';
-import { PageHeader } from '~/modules/common/page/page-header';
+import { PageHeader } from '~/modules/common/page/header';
 import { toaster } from '~/modules/common/toaster';
 import { useUpdateSelfMutation } from '~/modules/me/query';
 import { useUpdateUserMutation, userQueryOptions } from '~/modules/users/query';
@@ -49,13 +49,9 @@ const UserProfilePage = ({ user: baseUser, isSheet, orgIdOrSlug }: Props) => {
   return (
     <>
       <PageHeader
-        id={user.id}
-        title={user.name}
-        type="user"
+        entity={user}
+        canUpdate={isSelf}
         disableScroll={true}
-        isAdmin={isSelf}
-        thumbnailUrl={user.thumbnailUrl}
-        bannerUrl={user.bannerUrl}
         coverUpdateCallback={coverUpdateCallback}
         panel={
           isSelf && (

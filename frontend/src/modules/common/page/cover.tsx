@@ -12,10 +12,11 @@ export interface PageCoverProps {
   id: string;
   canUpdate: boolean;
   url?: string | null;
+  organizationId?: string;
   coverUpdateCallback: (bannerKey: string) => void;
 }
 
-const PageCover = memo(({ id, canUpdate, url, coverUpdateCallback }: PageCoverProps) => {
+const PageCover = memo(({ id, canUpdate, organizationId, url, coverUpdateCallback }: PageCoverProps) => {
   const { t } = useTranslation();
   const upload = useUploader();
 
@@ -35,9 +36,7 @@ const PageCover = memo(({ id, canUpdate, url, coverUpdateCallback }: PageCoverPr
     upload.create({
       id: 'page-cover',
       isPublic: true,
-      // TODO CHECK if here pass an org Id
-      organizationId: id,
-      personalUpload: false,
+      ...(organizationId ? { organizationId, personalUpload: false } : { personalUpload: true }),
       plugins: ['webcam', 'image-editor', 'url'],
       templateId: 'cover',
       statusEventHandler: {

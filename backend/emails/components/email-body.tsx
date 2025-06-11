@@ -1,6 +1,7 @@
 import { Section } from 'jsx-email';
+import type { JSX } from 'react';
 
-export const EmailBody = ({ children }: { children: React.ReactNode }) => (
+export const EmailBody = ({ children }: { children: React.ReactNode }): JSX.Element => (
   <Section
     style={{
       margin: '0 auto 40px',

@@ -11,6 +11,7 @@ export const alertVariants = cva('relative w-full rounded-lg border p-4 [&>svg~*
       plain: 'text-primary bg-background/80 border-primary/10',
       secondary: 'bg-secondary text-secondary-foreground',
       destructive: 'bg-destructive text-destructive-foreground',
+      warning: 'bg-yellow-700 text-destructive-foreground',
     },
   },
   defaultVariants: {

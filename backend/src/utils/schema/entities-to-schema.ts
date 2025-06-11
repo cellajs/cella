@@ -1,19 +1,14 @@
-import { getTableConfig } from 'drizzle-orm/pg-core';
+import { type EntityType, config } from 'config';
 import { type ZodTypeAny, z } from 'zod';
-import { type EntityTableNames, entityTables } from '#/entity-config';
 
 /**
- * Map over all the entity tables and create a schema for each with their respective table name
+ * Map over all the entities and create a schema for each
  */
 export const mapEntitiesToSchema = <T extends ZodTypeAny>(getSchemaForTable: (tableName: string) => T) => {
   return z.object(
-    Object.values(entityTables).reduce(
-      (acc, table) => {
-        const name = getTableConfig(table).name as EntityTableNames;
-        acc[name] = getSchemaForTable(name); // Use the passed function to define the schema
-        return acc;
-      },
-      {} as Record<EntityTableNames, T>,
-    ),
+    Object.fromEntries(Object.entries(config.entityTypes).map(([entityType]) => [entityType, getSchemaForTable(entityType)])) as Record<
+      EntityType,
+      T
+    >,
   );
 };

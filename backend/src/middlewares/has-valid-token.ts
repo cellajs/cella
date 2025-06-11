@@ -1,4 +1,5 @@
 import { eq } from 'drizzle-orm';
+import type { MiddlewareHandler } from 'hono';
 import { createMiddleware } from 'hono/factory';
 import { db } from '#/db/db';
 import { type TokenModel, tokensTable } from '#/db/schema/tokens';
@@ -14,7 +15,7 @@ import { isExpiredDate } from '#/utils/is-expired-date';
  * @returns Error response or undefined if the token is valid.
  *
  */
-export const hasValidToken = (requiredType: TokenModel['type']) =>
+export const hasValidToken = (requiredType: TokenModel['type']): MiddlewareHandler<Env> =>
   createMiddleware<Env>(async (ctx, next) => {
     // Find token in request
     const token = ctx.req.param('token');

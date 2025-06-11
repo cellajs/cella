@@ -4,8 +4,6 @@ import { createCustomRoute } from '#/lib/custom-routes';
 import { hasSystemAccess, isAuthenticated, isPublicAccess } from '#/middlewares/guard';
 import { hasValidToken } from '#/middlewares/has-valid-token';
 import { emailEnumLimiter, passwordLimiter, spamLimiter, tokenLimiter } from '#/middlewares/rate-limiter/limiters';
-import { cookieSchema, idSchema, passwordSchema, tokenParamSchema } from '#/utils/schema/common';
-import { errorResponses, successWithDataSchema, successWithoutDataSchema } from '#/utils/schema/responses';
 import {
   emailBodySchema,
   emailPasswordBodySchema,
@@ -16,10 +14,12 @@ import {
   passkeyVerificationBodySchema,
   sendVerificationEmailBodySchema,
   tokenWithDataSchema,
-} from './schema';
+} from '#/modules/auth/schema';
+import { cookieSchema, idSchema, passwordSchema, tokenParamSchema } from '#/utils/schema/common';
+import { errorResponses, successWithDataSchema, successWithoutDataSchema } from '#/utils/schema/responses';
 
-class AuthRoutes {
-  public startImpersonation = createCustomRoute({
+const authRoutes = {
+  startImpersonation: createCustomRoute({
     method: 'get',
     path: '/impersonation/start',
     guard: [isAuthenticated, hasSystemAccess],
@@ -41,9 +41,8 @@ class AuthRoutes {
       },
       ...errorResponses,
     },
-  });
-
-  public stopImpersonation = createCustomRoute({
+  }),
+  stopImpersonation: createCustomRoute({
     method: 'get',
     path: '/impersonation/stop',
     guard: isPublicAccess,
@@ -61,9 +60,8 @@ class AuthRoutes {
       },
       ...errorResponses,
     },
-  });
-
-  public checkEmail = createCustomRoute({
+  }),
+  checkEmail: createCustomRoute({
     method: 'post',
     path: '/check-email',
     guard: isPublicAccess,
@@ -92,9 +90,8 @@ class AuthRoutes {
       },
       ...errorResponses,
     },
-  });
-
-  public signUp = createCustomRoute({
+  }),
+  signUp: createCustomRoute({
     method: 'post',
     path: '/sign-up',
     guard: isPublicAccess,
@@ -130,9 +127,8 @@ class AuthRoutes {
       },
       ...errorResponses,
     },
-  });
-
-  public signUpWithToken = createCustomRoute({
+  }),
+  signUpWithToken: createCustomRoute({
     method: 'post',
     path: '/sign-up/{token}',
     guard: isPublicAccess,
@@ -169,9 +165,8 @@ class AuthRoutes {
       },
       ...errorResponses,
     },
-  });
-
-  public sendVerificationEmail = createCustomRoute({
+  }),
+  sendVerificationEmail: createCustomRoute({
     method: 'post',
     path: '/send-verification-email',
     guard: isPublicAccess,
@@ -200,9 +195,8 @@ class AuthRoutes {
       },
       ...errorResponses,
     },
-  });
-
-  public verifyEmail = createCustomRoute({
+  }),
+  verifyEmail: createCustomRoute({
     method: 'post',
     path: '/verify-email/{token}',
     guard: isPublicAccess,
@@ -225,9 +219,8 @@ class AuthRoutes {
       },
       ...errorResponses,
     },
-  });
-
-  public requestPassword = createCustomRoute({
+  }),
+  requestPassword: createCustomRoute({
     method: 'post',
     path: '/request-password',
     guard: isPublicAccess,
@@ -256,9 +249,8 @@ class AuthRoutes {
       },
       ...errorResponses,
     },
-  });
-
-  public createPasswordWithToken = createCustomRoute({
+  }),
+  createPasswordWithToken: createCustomRoute({
     method: 'post',
     path: '/create-password/{token}',
     guard: isPublicAccess,
@@ -288,9 +280,8 @@ class AuthRoutes {
       },
       ...errorResponses,
     },
-  });
-
-  public verifyPasskey = createCustomRoute({
+  }),
+  verifyPasskey: createCustomRoute({
     method: 'post',
     path: '/passkey-verification',
     guard: isPublicAccess,
@@ -321,9 +312,8 @@ class AuthRoutes {
       },
       ...errorResponses,
     },
-  });
-
-  public signIn = createCustomRoute({
+  }),
+  signIn: createCustomRoute({
     method: 'post',
     path: '/sign-in',
     guard: isPublicAccess,
@@ -355,9 +345,8 @@ class AuthRoutes {
       },
       ...errorResponses,
     },
-  });
-
-  public checkToken = createCustomRoute({
+  }),
+  checkToken: createCustomRoute({
     method: 'post',
     path: '/check-token/{id}',
     guard: isPublicAccess,
@@ -380,10 +369,9 @@ class AuthRoutes {
       },
       ...errorResponses,
     },
-  });
-
+  }),
   // Info: this route requires authentication
-  public acceptOrgInvite = createCustomRoute({
+  acceptOrgInvite: createCustomRoute({
     method: 'post',
     path: '/accept-invite/{token}',
     guard: [isAuthenticated],
@@ -405,9 +393,8 @@ class AuthRoutes {
       },
       ...errorResponses,
     },
-  });
-
-  public githubSignIn = createCustomRoute({
+  }),
+  githubSignIn: createCustomRoute({
     method: 'get',
     path: '/github',
     guard: isPublicAccess,
@@ -424,9 +411,8 @@ class AuthRoutes {
       },
       ...errorResponses,
     },
-  });
-
-  public githubSignInCallback = createCustomRoute({
+  }),
+  githubSignInCallback: createCustomRoute({
     method: 'get',
     path: '/github/callback',
     guard: isPublicAccess,
@@ -449,9 +435,8 @@ class AuthRoutes {
       },
       ...errorResponses,
     },
-  });
-
-  public getPasskeyChallenge = createCustomRoute({
+  }),
+  getPasskeyChallenge: createCustomRoute({
     method: 'get',
     path: '/passkey-challenge',
     guard: isPublicAccess,
@@ -470,9 +455,8 @@ class AuthRoutes {
       },
       ...errorResponses,
     },
-  });
-
-  public googleSignIn = createCustomRoute({
+  }),
+  googleSignIn: createCustomRoute({
     method: 'get',
     path: '/google',
     guard: isPublicAccess,
@@ -489,9 +473,8 @@ class AuthRoutes {
       },
       ...errorResponses,
     },
-  });
-
-  public googleSignInCallback = createCustomRoute({
+  }),
+  googleSignInCallback: createCustomRoute({
     method: 'get',
     path: '/google/callback',
     guard: isPublicAccess,
@@ -508,9 +491,8 @@ class AuthRoutes {
       },
       ...errorResponses,
     },
-  });
-
-  public microsoftSignIn = createCustomRoute({
+  }),
+  microsoftSignIn: createCustomRoute({
     method: 'get',
     path: '/microsoft',
     guard: isPublicAccess,
@@ -527,9 +509,8 @@ class AuthRoutes {
       },
       ...errorResponses,
     },
-  });
-
-  public microsoftSignInCallback = createCustomRoute({
+  }),
+  microsoftSignInCallback: createCustomRoute({
     method: 'get',
     path: '/microsoft/callback',
     guard: isPublicAccess,
@@ -546,9 +527,8 @@ class AuthRoutes {
       },
       ...errorResponses,
     },
-  });
-
-  public signOut = createCustomRoute({
+  }),
+  signOut: createCustomRoute({
     method: 'get',
     path: '/sign-out',
     guard: isPublicAccess,
@@ -566,7 +546,7 @@ class AuthRoutes {
       },
       ...errorResponses,
     },
-  });
-}
+  }),
+};
 
-export default new AuthRoutes();
+export default authRoutes;
