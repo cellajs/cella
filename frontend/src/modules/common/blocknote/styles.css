@@ -25,7 +25,6 @@
   --success: 120 100% 40%;
 }
 
-/* TODO(REFACTOR): explore if we can reduce amount of css using just bn vars */
 .bn-shadcn {
   --blocknote-placeholder: 240 3.7% 50%;
   --bn-font-family: "Open Sans", ui-sans-serif, sans-serif;

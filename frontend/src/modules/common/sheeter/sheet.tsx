@@ -87,7 +87,7 @@ export const DesktopSheet = ({ sheet }: SheetProps) => {
       if (navState.keepMenuOpen && navState.navSheetOpen === 'menu') return event.preventDefault();
     }
 
-    // TODO(REVIEW) Close if clicked in app content area
+    // Close sheet if no modal and clicked ouside any sheet + floating content
     const mainContentElement = document.getElementById('app-content-inner');
     if (!modal && mainContentElement?.contains(event.target as Node)) return closeSheet();
   };

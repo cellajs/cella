@@ -29,7 +29,6 @@ const SheetOverlay = React.forwardRef<
 ));
 SheetOverlay.displayName = SheetPrimitive.Overlay.displayName;
 
-// TODO Removed the animate out classes since sheeter has state issues in remove step
 export const sheetVariants = cva(
   'z-114 fixed gap-4 bg-background px-4 shadow-lg transition-transform ease-in-out overflow-y-auto data-[state=open]:duration-300 data-[state=open]:animate-in data-[state=closed]:duration-200 data-[state=closed]:animate-out',
   {
