@@ -1,5 +1,5 @@
 import { onlineManager } from '@tanstack/react-query';
-import { Archive, ArchiveRestore, Bell, BellOff } from 'lucide-react';
+import { Archive, ArchiveRestore, Bell, BellOff, type LucideIcon } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useTranslation } from 'react-i18next';
 import { env } from '~/env';
@@ -13,15 +13,16 @@ import { Button } from '~/modules/ui/button';
 
 interface MenuItemEditProps {
   item: UserMenuItem;
+  icon?: LucideIcon;
 }
 
-export const MenuItemEdit = ({ item }: MenuItemEditProps) => {
+export const MenuItemEdit = ({ item, icon: Icon }: MenuItemEditProps) => {
   const { t } = useTranslation();
 
   const { mutate: updateMembership, status } = useMemberUpdateMutation();
 
-  const handleUpdateMembershipKey = (key: 'archive' | 'mute') => {
-    if (key === 'archive' && item.membership.archived && !onlineManager.isOnline()) {
+  const handleUpdateMembershipKey = (key: 'archived' | 'muted') => {
+    if (key === 'archived' && item.membership.archived && !onlineManager.isOnline()) {
       return toaster(t('common:action.offline.text'), 'warning');
     }
 
@@ -33,8 +34,8 @@ export const MenuItemEdit = ({ item }: MenuItemEditProps) => {
       entityType: item.entityType,
     };
 
-    if (key === 'archive') updatedMembership.archived = !item.membership.archived;
-    if (key === 'mute') updatedMembership.muted = !item.membership.muted;
+    if (key === 'archived') updatedMembership.archived = !item.membership.archived;
+    if (key === 'muted') updatedMembership.muted = !item.membership.muted;
 
     updateMembership(updatedMembership);
   };
@@ -61,6 +62,7 @@ export const MenuItemEdit = ({ item }: MenuItemEditProps) => {
             h-8 w-8 group-data-[submenu=false]/menuOptions:h-6 group-data-[submenu=false]/menuOptions:w-6 group-data-[archived=true]/optionsItem:opacity-70"
         type={item.entityType}
         id={item.id}
+        icon={Icon}
         name={item.name}
         url={item.thumbnailUrl}
       />
@@ -73,13 +75,13 @@ export const MenuItemEdit = ({ item }: MenuItemEditProps) => {
           <MenuItemEditButton
             icon={item.membership.archived ? ArchiveRestore : Archive}
             title={item.membership.archived ? t('common:restore') : t('common:archive')}
-            onClick={() => handleUpdateMembershipKey('archive')}
+            onClick={() => handleUpdateMembershipKey('archived')}
             subitem={!item.submenu}
           />
           <MenuItemEditButton
             icon={item.membership.muted ? Bell : BellOff}
             title={item.membership.muted ? t('common:unmute') : t('common:mute')}
-            onClick={() => handleUpdateMembershipKey('mute')}
+            onClick={() => handleUpdateMembershipKey('muted')}
             subitem={!item.submenu}
           />
         </div>

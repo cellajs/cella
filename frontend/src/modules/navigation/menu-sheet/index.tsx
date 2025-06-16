@@ -60,16 +60,7 @@ export const MenuSheet = memo(() => {
         const menuSection = menuSectionsSchema[entityType];
         if (!menuSection) return null;
 
-        return (
-          <MenuSheetSection
-            entityType={entityType}
-            key={entityType}
-            sectionLabel={menuSection.label}
-            sectionType={entityType}
-            createAction={menuSection.createAction}
-            data={menuData}
-          />
-        );
+        return <MenuSheetSection key={entityType} options={menuSection} data={menuData} />;
       })
       .filter((el) => el !== null);
   }, [menu]);

@@ -10,14 +10,16 @@ import { MenuItemEdit } from '~/modules/navigation/menu-sheet/item-edit';
 import { MenuSheetItemsEdit } from '~/modules/navigation/menu-sheet/items-edit-list';
 import { SectionArchiveButton } from '~/modules/navigation/menu-sheet/section-archive-button';
 import { getDraggableItemData } from '~/utils/get-draggable-item-data';
+import type { MenuSectionOptions } from './section';
 
 type DragDropData = { item: UserMenuItem; itemType: EntityType };
 
 interface MenuItemEditWrapperProps {
   item: UserMenuItem;
   unarchiveItems: UserMenuItem[];
-  shownOption: 'archived' | 'unarchive';
+  isArchived: boolean;
   hideSubmenu: boolean;
+  options?: MenuSectionOptions;
   isSubmenuArchivedVisible?: boolean;
   toggleSubmenuVisibility: (id: string) => void;
 }
@@ -25,7 +27,8 @@ interface MenuItemEditWrapperProps {
 export const MenuItemEditWrapper = ({
   item,
   unarchiveItems,
-  shownOption,
+  isArchived,
+  options,
   isSubmenuArchivedVisible = false,
   hideSubmenu,
   toggleSubmenuVisibility,
@@ -77,7 +80,7 @@ export const MenuItemEditWrapper = ({
   return (
     <li data-submenu={!!item.submenu} className="group/menuOptions relative my-1">
       <div ref={dragRef}>
-        <MenuItemEdit item={item} />
+        <MenuItemEdit item={item} icon={options?.icon} />
         {!item.membership.archived && !!item.submenu?.length && !hideSubmenu && (
           <div
             data-has-archived={!!item.submenu.filter((i) => i.membership.archived).length}
@@ -86,7 +89,7 @@ export const MenuItemEditWrapper = ({
             className="group/archived"
           >
             <ul>
-              <MenuSheetItemsEdit data={item.submenu} shownOption={shownOption} />
+              <MenuSheetItemsEdit data={item.submenu} isArchived={isArchived} />
             </ul>
             <SectionArchiveButton
               archiveToggleClick={() => toggleSubmenuVisibility(item.id)}
@@ -94,7 +97,7 @@ export const MenuItemEditWrapper = ({
             />
             {isSubmenuArchivedVisible && (
               <ul>
-                <MenuSheetItemsEdit data={item.submenu} shownOption="archived" />
+                <MenuSheetItemsEdit data={item.submenu} isArchived={true} />
               </ul>
             )}
           </div>

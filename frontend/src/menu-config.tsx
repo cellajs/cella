@@ -1,18 +1,12 @@
 import type { ContextEntityType } from 'config';
 import i18n from 'i18next';
-import type { LucideProps } from 'lucide-react';
 import type { RefObject } from 'react';
 import router from '~/lib/router';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import UnsavedBadge from '~/modules/common/unsaved-badge';
 import CreateOrganizationForm from '~/modules/organizations/create-organization-form';
 import type { Organization } from '~/modules/organizations/types';
-
-type SectionSchema = {
-  label: string;
-  createAction?: (ref: RefObject<HTMLButtonElement | null>) => void;
-  icon?: React.ElementType<LucideProps>;
-};
+import type { MenuSectionOptions } from './modules/navigation/menu-sheet/section';
 
 /**
  * Create new organization from the menu.
@@ -36,8 +30,8 @@ const createOrganizationAction = (triggerRef: RefObject<HTMLButtonElement | null
 /**
  * Configuration to set menu sections with options for different context entities.
  */
-export const menuSectionsSchema: Partial<Record<ContextEntityType, SectionSchema>> = {
-  organization: { createAction: createOrganizationAction, label: 'common:organizations' },
+export const menuSectionsSchema: Partial<Record<ContextEntityType, MenuSectionOptions>> = {
+  organization: { createAction: createOrganizationAction, label: 'common:organizations', entityType: 'organization' },
 };
 
 /**
