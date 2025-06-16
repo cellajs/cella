@@ -10,12 +10,13 @@ import { db, migrateConfig } from '#/db/db';
 import docs from '#/lib/docs';
 import '#/lib/i18n';
 import { config } from 'config';
-import { startNgrokTunnel } from '#/lib/ngrok-tunnel';
 import app from '#/routes';
 import { ascii } from '#/utils/ascii';
 import { env } from './env';
 
 // import { sdk } from './tracing';
+
+const startTunnel = config.mode === 'development' ? (await import('#/lib/start-tunnel')).default : () => null;
 
 const isPGliteDatabase = (_db: unknown): _db is PgliteDatabase => !!env.PGLITE;
 
@@ -52,16 +53,16 @@ const main = async () => {
       port: Number(env.PORT ?? '4000'),
     },
     async (info) => {
-      const tunnelUrl = await startNgrokTunnel(info);
+      const tunnelUrl = await startTunnel(info);
 
       ascii();
       console.info(' ');
 
       console.info(`${chalk.greenBright.bold(config.name)} 
-        Frontend: ${chalk.cyanBright.bold(config.frontendUrl)}. 
-        Backend: ${chalk.cyanBright.bold(config.backendUrl)}. 
-        Tunnel: ${chalk.magentaBright.bold(tunnelUrl || '-')}.;
-        Docs: ${chalk.cyanBright(`${config.backendUrl}/docs`)}.`);
+        Frontend: ${chalk.cyanBright.bold(config.frontendUrl)} 
+        Backend: ${chalk.cyanBright.bold(config.backendUrl)} 
+        Tunnel: ${chalk.magentaBright.bold(tunnelUrl || '-')}
+        Docs: ${chalk.cyanBright(`${config.backendUrl}/docs`)}`);
 
       console.info(' ');
     },
