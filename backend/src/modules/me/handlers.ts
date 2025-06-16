@@ -117,7 +117,7 @@ const meRouteHandlers = app
           .from(subTable)
           .where(and(eq(membershipsTable.userId, user.id), eq(membershipsTable.contextType, section.subentityType)))
           .orderBy(asc(membershipsTable.order))
-          .innerJoin(membershipsTable, eq(membershipsTable[subentityIdField], subTable.id));
+          .innerJoin(membershipsTable, and(eq(membershipsTable[subentityIdField], subTable.id), isNotNull(membershipsTable.activatedAt)));
       }
 
       return entity.map((entity) => ({

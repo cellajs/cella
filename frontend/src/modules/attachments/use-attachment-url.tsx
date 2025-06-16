@@ -14,11 +14,11 @@ import { isCDNUrl } from '~/utils/is-cdn-url';
  *
  * @param id Unique attachment ID (used to retrieve local file or cache blob URL).
  * @param baseUrl Original URL or path to sanitize and resolve.
- * @param type Optional MIME type used when generating a Blob from local data.
+ * @param type MIME type used when generating a Blob from local data.
  *
  * @returns `{ url: string | null, error: string | null}`
  */
-export const useAttachmentUrl = (id: string, baseUrl: string, type?: string) => {
+export const useAttachmentUrl = (id: string, baseUrl: string, type: string) => {
   const { getBlobUrl, setBlobUrl } = useBlobStore();
 
   const sanitizedUrl = useMemo(() => DOMPurify.sanitize(baseUrl), [baseUrl]);

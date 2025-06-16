@@ -11,7 +11,7 @@ interface Props {
 const AttachmentPreview = ({ id, url: baseUrl, contentType, name }: Props) => {
   const { url, error } = useAttachmentUrl(id, baseUrl, contentType);
 
-  if (!url || error) return <FilePlaceholder contentType={contentType} />;
+  if (!url || error || !contentType.startsWith('image/')) return <FilePlaceholder contentType={contentType} />;
 
   return (
     <img

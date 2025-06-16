@@ -15,14 +15,14 @@ import {
 export type PermittedAction = 'create' | 'read' | 'update' | 'delete';
 
 /**
- * Define hierarchical structure for contexts with roles, and for products without roles.
+ * Define hierarchical structure for context entities with roles, and for product entities without roles.
  */
 const organization = new Context('organization', ['admin', 'member']);
 
 new Product('attachment', new Set([organization]));
 
 /**
- * Initialize the PermissionManager and configure access policies.
+ * Initialize and configure access policies.
  */
 const permissionManager = new PermissionManager('permissionManager');
 
@@ -66,7 +66,7 @@ class AdaptedMembershipAdapter extends MembershipAdapter {
 }
 
 /**
- * Adapter for transforming raw subject data into the expected Subject format.
+ * Adapter for transforming raw subject data into expected Subject format.
  */
 class AdaptedSubjectAdapter extends SubjectAdapter {
   /**

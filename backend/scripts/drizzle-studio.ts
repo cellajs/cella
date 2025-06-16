@@ -14,11 +14,8 @@ dotenv.config({ path: resolve(parentDir, '.env') });
  * Start Drizzle Studio programmatically.
  */
 const startDrizzleStudio = () => {
-  const studioProcess = spawn('npx', ['drizzle-kit', 'studio', '--config', 'drizzle.config.ts', '--port', '4983'], {
-    cwd: parentDir,
-    stdio: 'inherit',
-    shell: true,
-  });
+  const cmd = 'pnpm exec drizzle-kit studio --config drizzle.config.ts --port 4983';
+  const studioProcess = spawn(cmd, { cwd: parentDir, stdio: 'inherit', shell: true });
 
   console.info(' ');
   console.info(`${chalk.greenBright.bold('✔')} Drizzle Studio started`);
