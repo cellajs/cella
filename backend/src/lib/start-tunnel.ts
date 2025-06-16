@@ -1,4 +1,3 @@
-import ngrok from '@ngrok/ngrok';
 import chalk from 'chalk';
 
 import type { AddressInfo } from 'node:net';
@@ -22,6 +21,8 @@ const startTunnel = async (info: AddressInfo): Promise<string | null> => {
   if (!env.TUNNEL_URL || !env.TUNNEL_AUTH_TOKEN) return null;
 
   try {
+    const ngrok = (await import('@ngrok/ngrok')).default;
+
     const listener = await ngrok.connect({
       addr: info.port,
       authtoken: env.TUNNEL_AUTH_TOKEN,

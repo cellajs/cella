@@ -59,10 +59,10 @@ const main = async () => {
       console.info(' ');
 
       console.info(`${chalk.greenBright.bold(config.name)} 
-        Frontend: ${chalk.cyanBright.bold(config.frontendUrl)} 
-        Backend: ${chalk.cyanBright.bold(config.backendUrl)} 
-        Tunnel: ${chalk.magentaBright.bold(tunnelUrl || '-')}
-        Docs: ${chalk.cyanBright(`${config.backendUrl}/docs`)}`);
+Frontend: ${chalk.cyanBright.bold(config.frontendUrl)} 
+Backend: ${chalk.cyanBright.bold(config.backendUrl)} 
+Tunnel: ${chalk.magentaBright.bold(tunnelUrl || '-')}
+Docs: ${chalk.cyanBright(`${config.backendUrl}/docs`)}`);
 
       console.info(' ');
     },
