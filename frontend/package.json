@@ -136,6 +136,7 @@
   },
   "devDependencies": {
     "@faker-js/faker": "^9.8.0",
+    "@hey-api/openapi-ts": "^0.73.0",
     "@react-scan/vite-plugin-react-scan": "^0.1.8",
     "@rollup/plugin-terser": "^0.4.4",
     "@sentry/vite-plugin": "^3.5.0",

@@ -42,9 +42,9 @@ export const clientConfig = {
 // Custom error class to handle API errors
 export class ApiError extends Error {
   status: HttpErrorStatus;
-  type?: string;
+  type: string;
   entityType?: EntityType;
-  severity?: Severity;
+  severity: Severity;
   logId?: string;
   path?: string;
   method?: string;

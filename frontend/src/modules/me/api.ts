@@ -1,7 +1,20 @@
-import { type ContextEntityType, type UploadTemplateId, config } from 'config';
-import { clientConfig, handleResponse } from '~/lib/api';
-import type { UpdateUserParams } from '~/modules/users/api';
 import { meHc } from '#/modules/me/hc';
+import { type UploadTemplateId, config } from 'config';
+import { ApiError, clientConfig, handleResponse } from '~/lib/api';
+import {
+  type AssignPasskeyData,
+  type LeaveEntityData,
+  type UpdateSelfData,
+  assignPasskey,
+  deleteSelf,
+  getMenu,
+  getSelf,
+  getSelfAuthInfo,
+  leaveEntity,
+  removePasskey,
+  terminateSessions,
+  updateSelf,
+} from '~/ts-client';
 
 export const client = meHc(config.backendUrl, clientConfig);
 
@@ -10,11 +23,12 @@ export const client = meHc(config.backendUrl, clientConfig);
  *
  * @returns The user's data.
  */
-export const getSelf = async () => {
-  const response = await client.index.$get();
+export const getMe = async () => {
+  const { data, error } = await getSelf();
 
-  const json = await handleResponse(response);
-  return json.data;
+  if (error) throw new ApiError({ ...error.error, name: 'ApiError' } as ApiError);
+
+  return data.data;
 };
 
 /**
@@ -22,11 +36,12 @@ export const getSelf = async () => {
  *
  * @returns Current user auth data.
  */
-export const getSelfAuthInfo = async () => {
-  const response = await client.auth.$get();
+export const getMeAuthInfo = async () => {
+  const { data, error } = await getSelfAuthInfo();
 
-  const json = await handleResponse(response);
-  return json.data;
+  if (error) throw new ApiError({ ...error.error, name: 'ApiError' } as ApiError);
+
+  return data.data;
 };
 
 /**
@@ -35,33 +50,33 @@ export const getSelfAuthInfo = async () => {
  * @returns The user menu data.
  */
 export const getMyMenu = async () => {
-  const response = await client.menu.$get();
+  const { data, error } = await getMenu();
 
-  const json = await handleResponse(response);
-  return json.data;
+  if (error) throw new ApiError({ ...error.error, name: 'ApiError' } as ApiError);
+
+  return data.data;
 };
 
 /**
  * Update current user details. Updates currently authenticated user information.
  *
- *  @param params User data to update.
+ *  @param body User data to update.
  *  @returns The updated user data.
  */
-export const updateMe = async (params: UpdateUserParams) => {
-  const response = await client.index.$put({
-    json: params,
-  });
+export const updateMe = async (body: UpdateSelfData['body']) => {
+  const { data, error } = await updateSelf({ body });
 
-  const json = await handleResponse(response);
-  return json.data;
+  if (error) throw new ApiError({ ...error.error, name: 'ApiError' } as ApiError);
+
+  return data.data;
 };
 
 /**
  * Delete current user.
  */
 export const deleteMe = async () => {
-  const response = await client.index.$delete();
-  await handleResponse(response);
+  const { error } = await deleteSelf();
+  if (error) throw new ApiError({ ...error.error, name: 'ApiError' } as ApiError);
 };
 
 /**
@@ -70,11 +85,8 @@ export const deleteMe = async () => {
  * @param sessionIds - An array of session IDs to terminate.
  */
 export const deleteMySessions = async (sessionIds: string[]) => {
-  const response = await client.sessions.$delete({
-    json: { ids: sessionIds },
-  });
-
-  await handleResponse(response);
+  const { error } = await terminateSessions({ body: { ids: sessionIds } });
+  if (error) throw new ApiError({ ...error.error, name: 'ApiError' } as ApiError);
 };
 
 export type UploadTokenQuery = { public: boolean; templateId: UploadTemplateId; organizationId?: string };
@@ -94,20 +106,18 @@ export const getUploadToken = async (tokenQuery: UploadTokenQuery) => {
   return json.data;
 };
 
-type RegisterPasskeyProp = Parameters<(typeof client)['passkey']['$post']>['0']['json'];
-
 /**
  * Create a passkey for current user
  *
- * @param data - Passkey registration data.
+ * @param body - Passkey registration data.
  * @returns A boolean indicating success of the passkey registration.
  */
-export const createPasskey = async (data: RegisterPasskeyProp) => {
-  const apiResponse = await client.passkey.$post({
-    json: data,
-  });
-  const json = await handleResponse(apiResponse);
-  return json.success;
+export const createPasskey = async (body: AssignPasskeyData['body']) => {
+  const { data, error } = await assignPasskey({ body });
+
+  if (error) throw new ApiError({ ...error.error, name: 'ApiError' } as ApiError);
+
+  return data.success;
 };
 
 /**
@@ -116,13 +126,12 @@ export const createPasskey = async (data: RegisterPasskeyProp) => {
  * @returns A boolean indicating whether the passkey was successfully removed.
  */
 export const deletePasskey = async () => {
-  const response = await client.passkey.$delete();
+  const { data, error } = await removePasskey();
 
-  const json = await handleResponse(response);
-  return json.success;
+  if (error) throw new ApiError({ ...error.error, name: 'ApiError' } as ApiError);
+
+  return data.success;
 };
-
-export type LeaveEntityQuery = { idOrSlug: string; entityType: ContextEntityType };
 
 /**
  * Remove the current user from a specified entity.
@@ -131,9 +140,10 @@ export type LeaveEntityQuery = { idOrSlug: string; entityType: ContextEntityType
  * @param query.entityType - Type of entity to leave.
  * @returns A boolean indicating whether the user successfully left the entity.
  */
-export const deleteMyMembership = async (query: LeaveEntityQuery) => {
-  const response = await client.leave.$delete({ query });
+export const deleteMyMembership = async (query: LeaveEntityData['query']) => {
+  const { data, error } = await leaveEntity({ query });
 
-  const json = await handleResponse(response);
-  return json.success;
+  if (error) throw new ApiError({ ...error.error, name: 'ApiError' } as ApiError);
+
+  return data.success;
 };

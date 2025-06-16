@@ -5,7 +5,7 @@ import { t } from 'i18next';
 
 import { authenticateWithPasskey, getPasskeyChallenge } from '~/modules/auth/api';
 import { toaster } from '~/modules/common/toaster';
-import { deletePasskey as baseRemovePasskey, createPasskey, getMyMenu, getSelf, getSelfAuthInfo } from '~/modules/me/api';
+import { deletePasskey as baseRemovePasskey, createPasskey, getMe, getMeAuthInfo, getMyMenu } from '~/modules/me/api';
 import { useNavigationStore } from '~/store/navigation';
 import { useUIStore } from '~/store/ui';
 import { useUserStore } from '~/store/user';
@@ -164,7 +164,7 @@ export const deletePasskey = async () => {
  * @returns The user data object.
  */
 export const getAndSetMe = async () => {
-  const user = await getSelf();
+  const user = await getMe();
   const skipLastUser = useUIStore.getState().impersonating;
   useUserStore.getState().setUser(user, skipLastUser);
   return user;
@@ -176,7 +176,7 @@ export const getAndSetMe = async () => {
  * @returns The data object.
  */
 export const getAndSetMeAuthData = async () => {
-  const authInfo = await getSelfAuthInfo();
+  const authInfo = await getMeAuthInfo();
   useUserStore.getState().setMeAuthData(authInfo);
   return authInfo;
 };

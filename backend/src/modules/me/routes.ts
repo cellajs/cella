@@ -13,6 +13,7 @@ const meRoutes = {
     path: '/',
     guard: isAuthenticated,
     tags: ['me'],
+    operationId: 'getSelf',
     summary: 'Get me',
     description: 'Get the current user (me). It includes a `counts` object.',
     responses: {
@@ -29,6 +30,7 @@ const meRoutes = {
     path: '/auth',
     guard: isAuthenticated,
     tags: ['me'],
+    operationId: 'getSelfAuthInfo',
     summary: 'Get self auth data',
     description: 'Get the current user (self). It includes sessions, oauth accounts and sign in options.',
     responses: {
@@ -45,6 +47,7 @@ const meRoutes = {
     path: '/',
     guard: isAuthenticated,
     tags: ['me'],
+    operationId: 'updateSelf',
     summary: 'Update self',
     description: 'Update the current user (self).',
     request: {
@@ -68,6 +71,7 @@ const meRoutes = {
     path: '/',
     guard: isAuthenticated,
     tags: ['me'],
+    operationId: 'deleteSelf',
     summary: 'Delete self',
     description: 'Delete the current user (self).',
     responses: {
@@ -84,6 +88,7 @@ const meRoutes = {
     path: '/menu',
     guard: isAuthenticated,
     tags: ['me'],
+    operationId: 'getMenu',
     summary: 'Get menu',
     description:
       'Receive menu data with all contextual entities of which the current user is a member. It is in essence a restructured list of `memberships` per entity type, with some entity data in it.',
@@ -101,6 +106,7 @@ const meRoutes = {
     path: '/sessions',
     guard: isAuthenticated,
     tags: ['me'],
+    operationId: 'terminateSessions',
     summary: 'Terminate sessions',
     description: 'Terminate sessions of the current user by list of ids.',
     request: {
@@ -123,6 +129,7 @@ const meRoutes = {
     path: '/leave',
     guard: isAuthenticated,
     tags: ['me'],
+    operationId: 'leaveEntity',
     summary: 'Leave entity',
     description: 'Remove your own entity membership by yourself.',
     security: [],
@@ -144,6 +151,7 @@ const meRoutes = {
     guard: isPublicAccess,
     middleware: [tokenLimiter('unsubscribe')],
     tags: ['me'],
+    operationId: 'unsubscribe',
     summary: 'Unsubscribe',
     description: 'Unsubscribe using a personal unsubscribe token.',
     request: {
@@ -162,6 +170,7 @@ const meRoutes = {
     path: '/upload-token',
     guard: isAuthenticated,
     tags: ['me'],
+    operationId: 'getUploadToken',
     summary: 'Get upload token',
     description:
       'This endpoint is used to get an upload token for a user or organization. The token can be used to upload or private images/files to your S3 bucket using',
@@ -186,6 +195,7 @@ const meRoutes = {
     path: '/passkey',
     guard: isAuthenticated,
     tags: ['me'],
+    operationId: 'assignPasskey',
     summary: 'Create passkey',
     description:
       'The server associates the key and the credential ID with the user for future authentication flows and checks the validity of the operation by verifying the signed challenge with the key.',
@@ -210,6 +220,7 @@ const meRoutes = {
     path: '/passkey',
     guard: isAuthenticated,
     tags: ['me'],
+    operationId: 'removePasskey',
     summary: 'Delete passkey',
     description: 'Delete your passkey record.',
     security: [],
