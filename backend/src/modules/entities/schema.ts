@@ -1,8 +1,7 @@
+import { membershipSummarySchema } from '#/modules/memberships/schema';
+import { contextEntityTypeSchema, idSchema, imageUrlSchema, nameSchema, pageEntityTypeSchema, slugSchema } from '#/utils/schema/common';
 import { config } from 'config';
 import { z } from 'zod';
-import { membershipSummarySchema } from '#/modules/memberships/schema';
-import { userSummarySchema } from '#/modules/users/schema';
-import { contextEntityTypeSchema, idSchema, imageUrlSchema, nameSchema, pageEntityTypeSchema, slugSchema } from '#/utils/schema/common';
 
 export const entityBaseSchema = z.object({
   id: idSchema,
@@ -41,7 +40,7 @@ export const contextEntitiesSchema = z.array(
     createdAt: z.string(),
     entityType: contextEntityTypeSchema,
     membership: membershipSummarySchema,
-    members: z.array(z.lazy(() => userSummarySchema).openapi({ type: 'object' })),
+    members: z.array(z.any()),
   }),
 );
 
