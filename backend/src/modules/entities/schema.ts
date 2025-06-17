@@ -41,7 +41,7 @@ export const contextEntitiesSchema = z.array(
     createdAt: z.string(),
     entityType: contextEntityTypeSchema,
     membership: membershipSummarySchema,
-    members: z.array(z.lazy(() => userSummarySchema)),
+    members: z.array(z.lazy(() => userSummarySchema)).openapi({ type: 'array' }),
   }),
 );
 
