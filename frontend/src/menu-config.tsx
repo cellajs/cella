@@ -33,11 +33,3 @@ const createOrganizationAction = (triggerRef: RefObject<HTMLButtonElement | null
 export const menuSectionsSchema: Partial<Record<ContextEntityType, MenuSectionOptions>> = {
   organization: { createAction: createOrganizationAction, label: 'common:organizations', entityType: 'organization' },
 };
-
-/**
- * Configuration to by with key update membership in contextEntity
- */
-//TODO(REFACTOR) find way to avoid usage of it Work poorly on offline access to much entities go through
-export const contextEntityCacheKeys: Record<ContextEntityType, readonly [ContextEntityType]> = {
-  organization: ['organization'],
-};
