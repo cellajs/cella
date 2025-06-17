@@ -8,7 +8,7 @@ if (process.env.NODE_ENV === 'development') {
   console.info('Preparing the development environment: Installing Lefthook, Biome VSCode extension, and compiling TypeScript.');
 
   try {
-    execSync('pnpm --filter backend precompile && lefthook install && code --install-extension biomejs.biome', {
+    execSync('lefthook install && code --install-extension biomejs.biome', {
       stdio: 'inherit',
     });
   } catch (error) {
