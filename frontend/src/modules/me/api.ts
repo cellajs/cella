@@ -15,7 +15,7 @@ import {
   terminateSessions,
   updateSelf,
   uploadToken,
-} from '~/ts-client';
+} from '~/openapi-client';
 
 /**
  * Get the current user's details. Retrieves information about the currently authenticated user.
