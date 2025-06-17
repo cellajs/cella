@@ -45,6 +45,11 @@ const attachmentsRouteHandlers = app
     try {
       let res = await fetch(originUrl.toString());
 
+      // Fetch decompresses the body but doesn't remove the
+      // content-encoding & content-length headers which would
+      // break decoding in the browser.
+      //
+      // See https://github.com/whatwg/fetch/issues/1729
       if (res.headers.get('content-encoding')) {
         const headers = new Headers(res.headers);
         headers.delete('content-encoding');
