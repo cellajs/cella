@@ -42,15 +42,25 @@ const attachmentsRouteHandlers = app
       }
     });
 
-    const res = await fetch(originUrl.toString());
+    try {
+      let res = await fetch(originUrl.toString());
 
-    const headers = new Headers(res.headers);
+      if (res.headers.get('content-encoding')) {
+        const headers = new Headers(res.headers);
+        headers.delete('content-encoding');
+        headers.delete('content-length');
+        res = new Response(res.body, {
+          status: res.status,
+          statusText: res.statusText,
+          headers,
+        });
+      }
 
-    return new Response(res.body, {
-      status: res.status,
-      statusText: res.statusText,
-      headers,
-    });
+      return res;
+    } catch (err) {
+      const error = err instanceof Error ? err : new Error('Unknown electric error');
+      return errorResponse(ctx, 500, 'sync_failed', 'error', undefined, { entityType: 'attachments' }, error);
+    }
   })
   /*
    * Create one or more attachments
