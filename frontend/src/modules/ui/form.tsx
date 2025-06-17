@@ -1,6 +1,9 @@
 import type * as LabelPrimitive from '@radix-ui/react-label';
 import { Slot } from '@radix-ui/react-slot';
+import { get } from 'lodash';
+import { ChevronUp, HelpCircle } from 'lucide-react';
 import * as React from 'react';
+import { useState } from 'react';
 import {
   Controller,
   type ControllerProps,
@@ -11,9 +14,6 @@ import {
   useFormContext,
   useFormState,
 } from 'react-hook-form';
-
-import { ChevronUp, HelpCircle } from 'lucide-react';
-import { useState } from 'react';
 import { Button } from '~/modules/ui/button';
 import { Label } from '~/modules/ui/label';
 import { cn } from '~/utils/cn';
@@ -76,10 +76,9 @@ const useFormField = () => {
   const { name } = fieldContext;
 
   const { errors, touchedFields, dirtyFields } = useFormState({ control, name });
-  // TODO(IMPROVEMENT) add lodash for nested field names ??
-  const error = errors?.[name];
-  const isTouched = !!touchedFields?.[name];
-  const isDirty = !!dirtyFields?.[name];
+  const error = get(errors, name);
+  const isTouched = !!get(touchedFields, name);
+  const isDirty = !!get(dirtyFields, name);
   const invalid = !!error;
 
   const { id } = itemContext;
