@@ -53,7 +53,7 @@
   "confirm.delete_account": "Are you sure you want to delete your account with {{email}} email?",
   "confirm.delete_resource": "Are you sure you want to delete {{resource}} {{name}} ?",
   "confirm.delete_counted_resource": "Are you sure you want to delete {{count}} {{resource}}?",
-  "confirm.remove_members": "Are you sure you want to delete membership of {{emails}} for this {{entity}}?",
+  "confirm.remove_members": "Are you sure you want to delete membership of {{emails}} for this {{entityType}}?",
   "connect": "Connect",
   "contact": "Contact",
   "contact_request": "Contact",

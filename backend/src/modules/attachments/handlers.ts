@@ -42,15 +42,24 @@ const attachmentsRouteHandlers = app
       }
     });
 
-    const res = await fetch(originUrl.toString());
+    try {
+      const { body, headers, status, statusText } = await fetch(originUrl.toString());
 
-    const headers = new Headers(res.headers);
+      // Fetch decompresses the body but doesn't remove the
+      // content-encoding & content-length headers which would
+      // break decoding in the browser.
+      //
+      // See https://github.com/whatwg/fetch/issues/1729
+      const newHeaders = new Headers(headers);
+      newHeaders.delete('content-encoding');
+      newHeaders.delete('content-length');
 
-    return new Response(res.body, {
-      status: res.status,
-      statusText: res.statusText,
-      headers,
-    });
+      // Construct a new Response you control
+      return new Response(body, { status, statusText, headers: newHeaders });
+    } catch (err) {
+      const error = err instanceof Error ? err : new Error('Unknown electric error');
+      return errorResponse(ctx, 500, 'sync_failed', 'error', undefined, { entityType: 'attachments' }, error);
+    }
   })
   /*
    * Create one or more attachments

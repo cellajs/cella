@@ -1,10 +1,10 @@
 import { useMutation } from '@tanstack/react-query';
 import { config } from 'config';
 import { t } from 'i18next';
-import { contextEntityCacheKeys } from '~/menu-config';
 import { toaster } from '~/modules/common/toaster';
 import { getAndSetMenu } from '~/modules/me/helpers';
 import { type RemoveMembersProps, type UpdateMembershipProp, removeMembers, updateMembership } from '~/modules/memberships/api';
+import { resolveParentEntityType } from '~/modules/memberships/query/helpers';
 import { membersKeys } from '~/modules/memberships/query/options';
 import type {
   EntityMembershipContextProp,
@@ -47,9 +47,9 @@ export const useMemberUpdateMutation = () =>
       } else if (order !== undefined) context.toastMessage = t('common:success.update_item', { item: t('common:order') });
 
       // Update membership of ContextEntityType query that was fetched
-      const queryKey = contextEntityCacheKeys[entityType];
-      const mutateCache = useMutateQueryData(queryKey);
-      mutateCache.updateMembership([membershipInfo], entityType);
+      const queryKey = resolveParentEntityType(idOrSlug, entityType);
+      const { updateMembership } = useMutateQueryData(queryKey);
+      updateMembership([membershipInfo], entityType);
 
       // To be able update menu offline
       updateMenuItemMembership(membershipInfo, idOrSlug, entityType);
@@ -80,9 +80,9 @@ export const useMemberUpdateMutation = () =>
     },
     onSuccess: async (updatedMembership, { idOrSlug, entityType, orgIdOrSlug }, { toastMessage }) => {
       // Update membership of ContextEntityType query that was fetched after success
-      const queryKey = contextEntityCacheKeys[entityType];
-      const mutateCache = useMutateQueryData(queryKey);
-      mutateCache.updateMembership([updatedMembership], entityType);
+      const queryKey = resolveParentEntityType(idOrSlug, entityType);
+      const { updateMembership } = useMutateQueryData(queryKey);
+      updateMembership([updatedMembership], entityType);
 
       // To update membership after success
       updateMenuItemMembership(updatedMembership, idOrSlug, entityType);

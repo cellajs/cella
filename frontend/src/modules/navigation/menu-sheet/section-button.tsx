@@ -5,9 +5,9 @@ import { useTranslation } from 'react-i18next';
 import StickyBox from '~/modules/common/sticky-box';
 import { TooltipButton } from '~/modules/common/tooltip-button';
 import type { UserMenuItem } from '~/modules/me/types';
+import type { MenuSectionOptions } from '~/modules/navigation/menu-sheet/section';
 import { Button } from '~/modules/ui/button';
 import { useNavigationStore } from '~/store/navigation';
-import type { MenuSectionOptions } from './section';
 
 interface MenuSectionButtonProps {
   options: MenuSectionOptions;

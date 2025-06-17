@@ -1,7 +1,7 @@
 import { Suspense, lazy } from 'react';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
+import { useAttachmentUrl } from '~/modules/attachments/use-attachment-url';
 import Spinner from '~/modules/common/spinner';
-import { useAttachmentUrl } from '../use-attachment-url';
 
 // Lazy-loaded components
 const ReactPanZoom = lazy(() => import('~/modules/attachments/render/image'));
