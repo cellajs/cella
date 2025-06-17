@@ -170,7 +170,7 @@ const meRoutes = {
     path: '/upload-token',
     guard: isAuthenticated,
     tags: ['me'],
-    operationId: 'getUploadToken',
+    operationId: 'uploadToken',
     summary: 'Get upload token',
     description:
       'This endpoint is used to get an upload token for a user or organization. The token can be used to upload or private images/files to your S3 bucket using',

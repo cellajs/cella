@@ -1,10 +1,10 @@
-import { meHc } from '#/modules/me/hc';
-import { type UploadTemplateId, config } from 'config';
-import { ApiError, clientConfig, handleResponse } from '~/lib/api';
+import type { UploadTemplateId } from 'config';
+import { ApiError } from '~/lib/api';
 import {
   type AssignPasskeyData,
   type LeaveEntityData,
   type UpdateSelfData,
+  type UploadTokenData,
   assignPasskey,
   deleteSelf,
   getMenu,
@@ -14,9 +14,8 @@ import {
   removePasskey,
   terminateSessions,
   updateSelf,
+  uploadToken,
 } from '~/ts-client';
-
-export const client = meHc(config.backendUrl, clientConfig);
 
 /**
  * Get the current user's details. Retrieves information about the currently authenticated user.
@@ -94,16 +93,13 @@ export type UploadTokenQuery = { public: boolean; templateId: UploadTemplateId; 
 /**
  * Get upload token to securely upload files
  */
-export const getUploadToken = async (tokenQuery: UploadTokenQuery) => {
-  const preparedQuery = {
-    ...tokenQuery,
-    public: String(tokenQuery.public),
-  };
+export const getUploadToken = async (tokenQuery: UploadTokenData['query']) => {
+  const query = { ...tokenQuery, public: tokenQuery.public };
+  const { data, error } = await uploadToken({ query });
 
-  const response = await client['upload-token'].$get({ query: preparedQuery });
+  if (error) throw new ApiError({ ...error.error, name: 'ApiError' } as ApiError);
 
-  const json = await handleResponse(response);
-  return json.data;
+  return data.data;
 };
 
 /**

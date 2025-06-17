@@ -3,7 +3,7 @@ import { config } from 'config';
 
 export default defineConfig({
   input: { path: `${config.backendUrl}/openapi.json`, watch: true },
-  output: 'src/ts-client',
+  output: { path: 'src/openapi-client', lint: 'biome', format: 'biome' },
   plugins: [
     {
       name: '@hey-api/client-fetch',
