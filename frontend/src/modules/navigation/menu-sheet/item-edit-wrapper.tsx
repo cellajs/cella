@@ -8,9 +8,9 @@ import type { UserMenuItem } from '~/modules/me/types';
 import { isPageData } from '~/modules/navigation/menu-sheet/helpers';
 import { MenuItemEdit } from '~/modules/navigation/menu-sheet/item-edit';
 import { MenuSheetItemsEdit } from '~/modules/navigation/menu-sheet/items-edit-list';
+import type { MenuSectionOptions } from '~/modules/navigation/menu-sheet/section';
 import { SectionArchiveButton } from '~/modules/navigation/menu-sheet/section-archive-button';
 import { getDraggableItemData } from '~/utils/get-draggable-item-data';
-import type { MenuSectionOptions } from './section';
 
 type DragDropData = { item: UserMenuItem; itemType: EntityType };
 

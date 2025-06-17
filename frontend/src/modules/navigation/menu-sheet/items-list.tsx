@@ -4,9 +4,9 @@ import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { UserMenuItem } from '~/modules/me/types';
 import { MenuSheetItem } from '~/modules/navigation/menu-sheet/item';
+import type { MenuSectionOptions } from '~/modules/navigation/menu-sheet/section';
 import { Button } from '~/modules/ui/button';
 import { useNavigationStore } from '~/store/navigation';
-import type { MenuSectionOptions } from './section';
 
 interface MenuSheetItemsProps {
   data: UserMenuItem[];
