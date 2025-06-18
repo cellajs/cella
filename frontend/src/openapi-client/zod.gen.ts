@@ -1767,16 +1767,16 @@ export const zGetMetricsPublicResponse = z.object({
 
 export const zGetByOrgIdOrSlugAttachmentsShapeProxyParameterOrgIdOrSlug = z.string();
 
-export const zDeleteByOrgIdOrSlugAttachmentsData = z.object({
+export const zDeleteAttachmentsData = z.object({
     ids: z.array(z.string()).min(1).max(50)
 });
 
-export const zDeleteByOrgIdOrSlugAttachmentsParameterOrgIdOrSlug = z.string();
+export const zDeleteAttachmentsParameterOrgIdOrSlug = z.string();
 
 /**
  * Success
  */
-export const zDeleteByOrgIdOrSlugAttachmentsResponse = z.object({
+export const zDeleteAttachmentsResponse = z.object({
     success: z.boolean(),
     errors: z.array(z.object({
         message: z.string(),
@@ -1803,32 +1803,32 @@ export const zDeleteByOrgIdOrSlugAttachmentsResponse = z.object({
     }))
 });
 
-export const zGetByOrgIdOrSlugAttachmentsParameterOrgIdOrSlug = z.string();
+export const zGetAttachmentsParameterOrgIdOrSlug = z.string();
 
-export const zGetByOrgIdOrSlugAttachmentsParameterQ = z.string();
+export const zGetAttachmentsParameterQ = z.string();
 
-export const zGetByOrgIdOrSlugAttachmentsParameterSort = z.enum([
+export const zGetAttachmentsParameterSort = z.enum([
     'id',
     'filename',
     'contentType',
     'createdAt'
 ]);
 
-export const zGetByOrgIdOrSlugAttachmentsParameterOrder = z.enum([
+export const zGetAttachmentsParameterOrder = z.enum([
     'asc',
     'desc'
 ]);
 
-export const zGetByOrgIdOrSlugAttachmentsParameterOffset = z.string().default('0');
+export const zGetAttachmentsParameterOffset = z.string().default('0');
 
-export const zGetByOrgIdOrSlugAttachmentsParameterLimit = z.string().default('40');
+export const zGetAttachmentsParameterLimit = z.string().default('40');
 
-export const zGetByOrgIdOrSlugAttachmentsParameterAttachmentId = z.string();
+export const zGetAttachmentsParameterAttachmentId = z.string();
 
 /**
  * Attachments
  */
-export const zGetByOrgIdOrSlugAttachmentsResponse = z.object({
+export const zGetAttachmentsResponse = z.object({
     success: z.boolean(),
     data: z.object({
         items: z.array(z.object({
@@ -1876,7 +1876,7 @@ export const zGetByOrgIdOrSlugAttachmentsResponse = z.object({
     })
 });
 
-export const zPostByOrgIdOrSlugAttachmentsData = z.array(z.object({
+export const zCreateAttachmentData = z.array(z.object({
     id: z.string().optional(),
     groupId: z.union([
         z.string(),
@@ -1901,12 +1901,12 @@ export const zPostByOrgIdOrSlugAttachmentsData = z.array(z.object({
     organizationId: z.string()
 })).min(1).max(50);
 
-export const zPostByOrgIdOrSlugAttachmentsParameterOrgIdOrSlug = z.string();
+export const zCreateAttachmentParameterOrgIdOrSlug = z.string();
 
 /**
  * Attachment
  */
-export const zPostByOrgIdOrSlugAttachmentsResponse = z.object({
+export const zCreateAttachmentResponse = z.object({
     success: z.boolean(),
     data: z.array(z.object({
         id: z.string(),
@@ -1951,14 +1951,14 @@ export const zPostByOrgIdOrSlugAttachmentsResponse = z.object({
     }))
 });
 
-export const zGetByOrgIdOrSlugAttachmentsByIdParameterId = z.string();
+export const zGetAttachmentParameterId = z.string();
 
-export const zGetByOrgIdOrSlugAttachmentsByIdParameterOrgIdOrSlug = z.string();
+export const zGetAttachmentParameterOrgIdOrSlug = z.string();
 
 /**
  * Attachment
  */
-export const zGetByOrgIdOrSlugAttachmentsByIdResponse = z.object({
+export const zGetAttachmentResponse = z.object({
     success: z.boolean(),
     data: z.object({
         id: z.string(),
@@ -2003,19 +2003,19 @@ export const zGetByOrgIdOrSlugAttachmentsByIdResponse = z.object({
     })
 });
 
-export const zPutByOrgIdOrSlugAttachmentsByIdData = z.object({
+export const zUpdateAttachmentData = z.object({
     name: z.string().optional(),
     originalKey: z.string().optional()
 });
 
-export const zPutByOrgIdOrSlugAttachmentsByIdParameterId = z.string();
+export const zUpdateAttachmentParameterId = z.string();
 
-export const zPutByOrgIdOrSlugAttachmentsByIdParameterOrgIdOrSlug = z.string();
+export const zUpdateAttachmentParameterOrgIdOrSlug = z.string();
 
 /**
  * Attachment was updated
  */
-export const zPutByOrgIdOrSlugAttachmentsByIdResponse = z.object({
+export const zUpdateAttachmentResponse = z.object({
     success: z.boolean(),
     data: z.object({
         id: z.string(),

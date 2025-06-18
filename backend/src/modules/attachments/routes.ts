@@ -1,9 +1,9 @@
-import { z } from 'zod';
 import { createCustomRoute } from '#/lib/custom-routes';
 import { hasOrgAccess, isAuthenticated, isPublicAccess } from '#/middlewares/guard';
 import { attachmentCreateManySchema, attachmentListQuerySchema, attachmentSchema, attachmentUpdateBodySchema } from '#/modules/attachments/schema';
 import { idInOrgParamSchema, idSchema, idsBodySchema, inOrgParamSchema } from '#/utils/schema/common';
 import { errorResponses, successWithDataSchema, successWithErrorsSchema, successWithPaginationSchema } from '#/utils/schema/responses';
+import { z } from 'zod';
 
 const attachmentRoutes = {
   createAttachments: createCustomRoute({
@@ -11,6 +11,7 @@ const attachmentRoutes = {
     path: '/',
     guard: [isAuthenticated, hasOrgAccess],
     tags: ['attachments'],
+     operationId: 'createAttachment',
     summary: 'Create attachments',
     description: 'Create one or more new attachments.',
     request: {
@@ -41,6 +42,7 @@ const attachmentRoutes = {
     path: '/',
     guard: [isAuthenticated, hasOrgAccess],
     tags: ['attachments'],
+    operationId: 'getAttachments',
     summary: 'Get list of attachments',
     description: 'Get attachments for an organization.',
     request: {
@@ -64,6 +66,7 @@ const attachmentRoutes = {
     path: '/{id}',
     guard: [isAuthenticated, hasOrgAccess],
     tags: ['attachments'],
+    operationId: 'getAttachment',
     summary: 'Get attachment',
     description: 'Get an attachment by id.',
     request: {
@@ -86,6 +89,7 @@ const attachmentRoutes = {
     path: '/{id}',
     guard: [isAuthenticated, hasOrgAccess],
     tags: ['attachments'],
+    operationId: 'updateAttachment',
     summary: 'Update attachment',
     description: 'Update attachment by id.',
     request: {
@@ -115,6 +119,7 @@ const attachmentRoutes = {
     path: '/',
     guard: [isAuthenticated, hasOrgAccess],
     tags: ['attachments'],
+    operationId: 'deleteAttachments',
     summary: 'Delete attachments',
     description: 'Delete attachments by their ids',
     request: {
