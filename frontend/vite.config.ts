@@ -1,5 +1,5 @@
 import path from 'node:path';
-
+import tsconfigPaths from 'vite-tsconfig-paths';
 import reactScan from '@react-scan/vite-plugin-react-scan';
 import terser from '@rollup/plugin-terser';
 import { sentryVitePlugin } from '@sentry/vite-plugin';
@@ -22,6 +22,8 @@ const ReactCompilerConfig = {
 // https://vitejs.dev/config/
 export default defineConfig(() => {
   const frontendUrl = new URL(config.frontendUrl);
+
+  const tsconfigFile = process.env.BETA === 'true' ? './tsconfig.beta.json' : './tsconfig.json';
 
   const viteConfig = {
     logLevel: 'info',
@@ -51,6 +53,7 @@ export default defineConfig(() => {
       exclude: [],
     },
     plugins: [
+      tsconfigPaths({ projects: [tsconfigFile] }),
       // TanStackRouterVite(),
       react({
         babel: {
