@@ -1,27 +1,31 @@
 import type { ContextEntityType } from 'config';
-import { Info } from 'lucide-react';
+import { Info, type LucideIcon } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { type RefObject, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { AlertWrap } from '~/modules/common/alert-wrap';
 import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
-import type { UserMenu, UserMenuItem } from '~/modules/me/types';
+import type { UserMenuItem } from '~/modules/me/types';
 import { MenuSheetItemsEdit } from '~/modules/navigation/menu-sheet/items-edit-list';
 import { MenuSheetItems } from '~/modules/navigation/menu-sheet/items-list';
 import { SectionArchiveButton } from '~/modules/navigation/menu-sheet/section-archive-button';
 import { MenuSectionButton } from '~/modules/navigation/menu-sheet/section-button';
 import { useNavigationStore } from '~/store/navigation';
 
-interface MenuSheetSectionProps {
-  data: UserMenuItem[];
-  sectionType: keyof UserMenu;
-  sectionLabel: string;
+export type MenuSectionOptions = {
+  label: string;
   entityType: ContextEntityType;
   createAction?: (ref: RefObject<HTMLButtonElement | null>) => void;
+  icon?: LucideIcon;
+};
+
+interface MenuSheetSectionProps {
+  data: UserMenuItem[];
+  options: MenuSectionOptions;
 }
 
-export const MenuSheetSection = ({ data, sectionType, sectionLabel, entityType, createAction }: MenuSheetSectionProps) => {
+export const MenuSheetSection = ({ data, options }: MenuSheetSectionProps) => {
   const { t } = useTranslation();
   const isMobile = useBreakpoints('max', 'sm');
   const { toggleSection, setNavSheetOpen } = useNavigationStore.getState();
@@ -29,9 +33,9 @@ export const MenuSheetSection = ({ data, sectionType, sectionLabel, entityType, 
 
   const [isEditing, setIsEditing] = useState(false);
 
-  const archivedSectionType = `${sectionType}-archived`;
+  const archivedSectionType = `${options.entityType}-archived`;
   const isArchivedVisible = activeSections?.[archivedSectionType] ?? true;
-  const isSectionVisible = activeSections?.[sectionType] ?? true;
+  const isSectionVisible = activeSections?.[options.entityType] ?? true;
   const archivedCount = data.filter((i) => i.membership.archived).length;
 
   const handleCreateAction = (ref: RefObject<HTMLButtonElement | null>) => {
@@ -39,7 +43,7 @@ export const MenuSheetSection = ({ data, sectionType, sectionLabel, entityType, 
       useSheeter.getState().remove('nav-sheet');
       setNavSheetOpen(null);
     }
-    createAction?.(ref);
+    options.createAction?.(ref);
   };
 
   const toggleIsEditing = () => {
@@ -52,8 +56,7 @@ export const MenuSheetSection = ({ data, sectionType, sectionLabel, entityType, 
     <div className="group/menuSection" data-visible={isSectionVisible}>
       <MenuSectionButton
         data={data}
-        sectionLabel={sectionLabel}
-        sectionType={sectionType}
+        options={options}
         isEditing={isEditing}
         isSectionVisible={isSectionVisible}
         toggleIsEditing={toggleIsEditing}
@@ -81,7 +84,7 @@ export const MenuSheetSection = ({ data, sectionType, sectionLabel, entityType, 
       <AnimatePresence initial={false}>
         {isSectionVisible && (
           <motion.ul
-            key={sectionType}
+            key={options.entityType}
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: 'auto', opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
@@ -89,9 +92,9 @@ export const MenuSheetSection = ({ data, sectionType, sectionLabel, entityType, 
             style={{ overflow: 'hidden' }}
           >
             {isEditing ? (
-              <MenuSheetItemsEdit data={data} shownOption="unarchive" />
+              <MenuSheetItemsEdit data={data} isArchived={false} options={options} />
             ) : (
-              <MenuSheetItems type={entityType} data={data} shownOption="unarchive" createAction={createAction} />
+              <MenuSheetItems type={options.entityType} data={data} isArchived={false} options={options} />
             )}
             {!!data.length && (
               <div className="group/archived" data-has-archived={!!archivedCount} data-submenu={false} data-archived-visible={isArchivedVisible}>
@@ -99,7 +102,7 @@ export const MenuSheetSection = ({ data, sectionType, sectionLabel, entityType, 
                 <AnimatePresence initial={false}>
                   {isArchivedVisible && (
                     <motion.ul
-                      key={`${sectionType}-archived`}
+                      key={`${options.entityType}-archived`}
                       initial={{ height: 0, opacity: 0 }}
                       animate={{ height: 'auto', opacity: 1 }}
                       exit={{ height: 0, opacity: 0 }}
@@ -107,9 +110,9 @@ export const MenuSheetSection = ({ data, sectionType, sectionLabel, entityType, 
                       style={{ overflow: 'hidden' }}
                     >
                       {isEditing ? (
-                        <MenuSheetItemsEdit data={data} shownOption="archived" />
+                        <MenuSheetItemsEdit data={data} isArchived={true} options={options} />
                       ) : (
-                        <MenuSheetItems type={entityType} data={data} createAction={createAction} shownOption="archived" />
+                        <MenuSheetItems type={options.entityType} data={data} options={options} isArchived={true} />
                       )}
                     </motion.ul>
                   )}

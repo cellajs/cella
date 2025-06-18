@@ -16,8 +16,8 @@ import { type ConfigMode, config } from 'config';
 import { initSentry } from '~/lib/sentry';
 import { RouterWrapper } from '~/modules/common/router-wrapper';
 import { QueryClientProvider } from '~/query/provider';
+import { addBadgeToFavicon } from '~/utils/add-badge-to-favicon';
 import { renderAscii } from '~/utils/ascii';
-import { addBadgeToFavicon } from './utils/add-badge-to-favicon';
 
 // Render ASCII logo in console
 renderAscii();

@@ -4,13 +4,13 @@ import { type RefObject, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import StickyBox from '~/modules/common/sticky-box';
 import { TooltipButton } from '~/modules/common/tooltip-button';
-import type { UserMenu, UserMenuItem } from '~/modules/me/types';
+import type { UserMenuItem } from '~/modules/me/types';
+import type { MenuSectionOptions } from '~/modules/navigation/menu-sheet/section';
 import { Button } from '~/modules/ui/button';
 import { useNavigationStore } from '~/store/navigation';
 
 interface MenuSectionButtonProps {
-  sectionType: keyof UserMenu;
-  sectionLabel: string;
+  options: MenuSectionOptions;
   isEditing: boolean;
   isSectionVisible: boolean;
   data: UserMenuItem[];
@@ -18,15 +18,7 @@ interface MenuSectionButtonProps {
   handleCreateAction?: (ref: RefObject<HTMLButtonElement | null>) => void;
 }
 
-export const MenuSectionButton = ({
-  data,
-  sectionType,
-  sectionLabel,
-  isEditing,
-  isSectionVisible,
-  handleCreateAction,
-  toggleIsEditing,
-}: MenuSectionButtonProps) => {
+export const MenuSectionButton = ({ data, options, isEditing, isSectionVisible, handleCreateAction, toggleIsEditing }: MenuSectionButtonProps) => {
   const { t } = useTranslation();
   const toggleSection = useNavigationStore((state) => state.toggleSection);
 
@@ -36,11 +28,11 @@ export const MenuSectionButton = ({
     <StickyBox className="z-10">
       <div className="flex items-center gap-2 z-10 py-3 pb-1 bg-background justify-between px-1 -mx-1">
         <LayoutGroup>
-          <Button onClick={() => toggleSection(sectionType)} className="w-full justify-between" variant="secondary" asChild>
+          <Button onClick={() => toggleSection(options.entityType)} className="w-full justify-between" variant="secondary" asChild>
             <motion.button layout={'size'} transition={{ bounce: 0, duration: 0.2 }}>
               <div className="flex items-center">
                 <motion.span layout={'size'} className="flex items-center">
-                  {t(sectionLabel)}
+                  {t(options.label)}
                 </motion.span>
                 <motion.span
                   initial={{ opacity: 0 }}
@@ -69,7 +61,7 @@ export const MenuSectionButton = ({
                   asChild
                 >
                   <motion.button
-                    key={`sheet-menu-settings-${sectionType}`}
+                    key={`sheet-menu-settings-${options.entityType}`}
                     transition={{ bounce: 0, duration: 0.2 }}
                     initial={{ x: 20, opacity: 0 }}
                     animate={{ x: 0, opacity: 1 }}
@@ -93,7 +85,7 @@ export const MenuSectionButton = ({
                   asChild
                 >
                   <motion.button
-                    key={`sheet-menu-plus-${sectionType}`}
+                    key={`sheet-menu-plus-${options.entityType}`}
                     transition={{ bounce: 0, duration: 0.2, transition: { bounce: 0, duration: 0.1 } }}
                     initial={{ x: 20, opacity: 0 }}
                     animate={{ x: 0, opacity: 1 }}

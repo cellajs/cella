@@ -70,6 +70,10 @@ const membershipRouteHandlers = app
 
     // Fetch existing users based on the provided emails
     const existingUsers = await getUsersByConditions([inArray(emailsTable.email, normalizedEmails)]);
+
+    // Stop if no recipients
+    if (!existingUsers.length) return errorResponse(ctx, 400, 'no_recipients', 'warn');
+
     const userIds = existingUsers.map(({ id }) => id);
 
     // Since a user can have multiple emails, we need to check if the email exists in the emails table
@@ -113,9 +117,16 @@ const membershipRouteHandlers = app
         // If not instant, add to invite list
         if (!instantCreateMembership) return emailsWithIdToInvite.push({ email, userId });
 
-        await insertMembership({ userId: existingUser.id, role, entity, addAssociatedMembership: hasAssociatedMembership });
+        const createdMembership = await insertMembership({ userId: existingUser.id, role, entity, addAssociatedMembership: hasAssociatedMembership });
 
-        // TODO: Add SSE to notify user of instant membership creation
+        sendSSEToUsers([existingUser.id], 'add_entity', {
+          newItem: {
+            ...entity,
+            membership: createdMembership,
+          },
+          sectionName: associatedEntity?.type || entity.entityType,
+          ...(associatedEntity && { parentIdOrSlug: associatedEntity.id }),
+        });
       }),
     );
 
@@ -139,8 +150,7 @@ const membershipRouteHandlers = app
       emailsWithIdToInvite.push({ email, userId: null });
     }
 
-    // Stop if no recipients
-    if (emailsWithIdToInvite.length === 0) return errorResponse(ctx, 400, 'no_recipients', 'warn'); // Stop if no recipients to send invites
+    if (emailsWithIdToInvite.length === 0) ctx.json({ success: true }, 200);
 
     // Generate invitation tokens
     const tokens = emailsWithIdToInvite.map(({ email, userId }) => ({

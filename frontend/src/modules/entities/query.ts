@@ -47,7 +47,6 @@ export const contextEntitiesQueryOptions = ({ type, ...restQuery }: ContextEntit
   return queryOptions({
     queryKey: entitiesKeys.grid.context({ q, sort, targetUserId, type }),
     queryFn: () => getContextEntities({ type, ...restQuery }),
-    // TODO(IMPROVEMENT) add query invalidate on update?
     staleTime: 0,
   });
 };

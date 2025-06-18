@@ -2,9 +2,10 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { UserMenuItem } from '~/modules/me/types';
 import { MenuItemEditWrapper } from '~/modules/navigation/menu-sheet/item-edit-wrapper';
+import type { MenuSectionOptions } from '~/modules/navigation/menu-sheet/section';
 import { useNavigationStore } from '~/store/navigation';
 
-export const MenuSheetItemsEdit = ({ data, shownOption }: { data: UserMenuItem[]; shownOption: 'archived' | 'unarchive' }) => {
+export const MenuSheetItemsEdit = ({ data, isArchived, options }: { data: UserMenuItem[]; options?: MenuSectionOptions; isArchived: boolean }) => {
   const { t } = useTranslation();
   const { hideSubmenu } = useNavigationStore();
   const [submenuVisibility, setSubmenuVisibility] = useState<Record<string, boolean>>({});
@@ -15,7 +16,7 @@ export const MenuSheetItemsEdit = ({ data, shownOption }: { data: UserMenuItem[]
   }
 
   const filteredItems = data
-    .filter((i) => (shownOption === 'archived' ? i.membership.archived : !i.membership.archived))
+    .filter((i) => (isArchived ? i.membership.archived : !i.membership.archived))
     .sort((a, b) => a.membership.order - b.membership.order);
 
   const toggleSubmenuVisibility = (itemId: string) => {
@@ -30,7 +31,8 @@ export const MenuSheetItemsEdit = ({ data, shownOption }: { data: UserMenuItem[]
       key={item.id}
       unarchiveItems={filteredItems}
       item={item}
-      shownOption={shownOption}
+      options={options}
+      isArchived={isArchived}
       hideSubmenu={hideSubmenu}
       isSubmenuArchivedVisible={submenuVisibility[item.id]}
       toggleSubmenuVisibility={toggleSubmenuVisibility}

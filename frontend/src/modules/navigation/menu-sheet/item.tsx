@@ -1,5 +1,6 @@
 import { onlineManager } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
+import type { LucideIcon } from 'lucide-react';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
@@ -11,11 +12,12 @@ import { cn } from '~/utils/cn';
 
 interface MenuSheetItemProps {
   item: UserMenuItem;
+  icon?: LucideIcon;
   className?: string;
   searchResults?: boolean;
 }
 
-export const MenuSheetItem = ({ item, className, searchResults }: MenuSheetItemProps) => {
+export const MenuSheetItem = ({ item, icon: Icon, className, searchResults }: MenuSheetItemProps) => {
   const { t } = useTranslation();
 
   // Build route path for the entity
@@ -53,6 +55,7 @@ export const MenuSheetItem = ({ item, className, searchResults }: MenuSheetItemP
         className="z-1 items-center m-2 mx-3 group-hover/menuItem:font-semibold group-data-[subitem=true]/menuItem:my-2 group-data-[subitem=true]/menuItem:mx-4 group-data-[subitem=true]/menuItem:text-xs h-8 w-8 group-data-[subitem=true]/menuItem:h-6 group-active/menuItem:translate-y-[.05rem] group-data-[subitem=true]/menuItem:w-6"
         type={item.entityType}
         id={item.id}
+        icon={Icon}
         name={item.name}
         url={item.thumbnailUrl}
       />
