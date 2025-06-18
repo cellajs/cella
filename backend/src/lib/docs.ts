@@ -1,7 +1,7 @@
-import type { OpenAPIHono } from '@hono/zod-openapi';
-import { apiReference } from '@scalar/hono-api-reference';
-import { config } from 'config';
 import type { Env } from '#/lib/context';
+import type { OpenAPIHono } from '@hono/zod-openapi';
+import { Scalar } from '@scalar/hono-api-reference';
+import { config } from 'config';
 import { apiModulesList } from './docs-config';
 
 /**
@@ -35,7 +35,7 @@ const docs = (app: OpenAPIHono<Env>) => {
 
   app.get(
     '/docs',
-    apiReference({
+    Scalar({
       url: 'openapi.json',
       defaultHttpClient: {
         targetKey: 'node',

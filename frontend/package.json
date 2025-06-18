@@ -8,7 +8,7 @@
   "scripts": {
     "quick": "cross-env VITE_QUICK=true pnpm dev",
     "dev": "cross-env NODE_ENV=development vite --mode development && node --trace-warnings",
-    "dev:beta": "cross-env NODE_ENV=development vite --mode development && node --trace-warnings",
+    "dev:beta": "pnpm openapi-ts && cross-env NODE_ENV=development vite --mode development && node --trace-warnings",
     "start": "cross-env NODE_ENV=production pnpm preview",
     "check": "tsc --pretty",
     "check:beta": "tsgo --pretty",
@@ -139,6 +139,7 @@
   },
   "devDependencies": {
     "@faker-js/faker": "^9.8.0",
+    "@hey-api/openapi-ts": "^0.73.0",
     "@react-scan/vite-plugin-react-scan": "^0.1.8",
     "@rollup/plugin-terser": "^0.4.4",
     "@sentry/vite-plugin": "^3.5.0",
