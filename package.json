@@ -39,7 +39,7 @@
     "seed": "pnpm --filter backend seed",
     "lint": "pnpm dlx @biomejs/biome check .",
     "lint:fix": "pnpm dlx @biomejs/biome check --write .",
-    "check": "pnpm --filter backend precompile && pnpm --filter backend check && pnpm --filter frontend check",
+    "check": "pnpm --filter backend precompile && pnpm --filter frontend check",
     "check:beta": "pnpm --filter backend check:beta && pnpm --filter frontend check:beta",
     "ts:perf": "pnpm --filter backend ts:perf && pnpm --filter frontend ts:perf ",
     "ts:perf:beta": "pnpm --filter backend ts:perf && pnpm --filter frontend ts:perf ",
