@@ -13,7 +13,7 @@ import { OrganizationsTableRoute, type organizationsSearchSchema } from '~/route
 const LIMIT = config.requestLimits.organizations;
 
 export type OrganizationsSearch = z.infer<typeof organizationsSearchSchema>;
-export type OrganizationTable = z.infer<typeof zGetOrganizationsResponse>;
+export type OrganizationTable = z.infer<typeof zGetOrganizationsResponse>['data']['items'][number];
 
 const OrganizationsTable = () => {
   const { search, setSearch } = useSearchParams<OrganizationsSearch>({ from: OrganizationsTableRoute.id });

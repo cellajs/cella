@@ -231,14 +231,14 @@ export const zPostAuthPasskeyVerificationResponse = z.object({
 /**
  * User deleted
  */
-export const zDeleteSelfResponse = z.object({
+export const zDeleteMeResponse = z.object({
     success: z.boolean()
 });
 
 /**
  * User
  */
-export const zGetSelfResponse = z.object({
+export const zGetMeResponse = z.object({
     success: z.boolean(),
     data: z.object({
         id: z.string(),
@@ -301,7 +301,7 @@ export const zGetSelfResponse = z.object({
     })
 });
 
-export const zUpdateSelfData = z.object({
+export const zPutMeData = z.object({
     bannerUrl: z.union([
         z.string(),
         z.null()
@@ -329,7 +329,7 @@ export const zUpdateSelfData = z.object({
 /**
  * User
  */
-export const zUpdateSelfResponse = z.object({
+export const zPutMeResponse = z.object({
     success: z.boolean(),
     data: z.object({
         id: z.string(),
@@ -395,7 +395,7 @@ export const zUpdateSelfResponse = z.object({
 /**
  * User sign-up info
  */
-export const zGetSelfAuthResponse = z.object({
+export const zGetMeAuthResponse = z.object({
     success: z.boolean(),
     data: z.object({
         oauth: z.array(z.enum([
@@ -442,7 +442,7 @@ export const zGetSelfAuthResponse = z.object({
 /**
  * Menu of user
  */
-export const zGetMenuResponse = z.object({
+export const zGetMeMenuResponse = z.object({
     success: z.boolean(),
     data: z.object({
         organization: z.array(z.object({
