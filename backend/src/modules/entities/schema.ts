@@ -43,8 +43,35 @@ export const contextEntitiesSchema = z.array(
     createdAt: z.string(),
     entityType: contextEntityTypeSchema,
     membership: membershipSummarySchema,
-    members: openapiZ.array(z.lazy(() => userSummarySchema)).openapi({type:'array'}),
-  }),
+    members: openapiZ.array(z.lazy(() => userSummarySchema)).openapi({
+      type: 'array',
+      items: {
+        type: 'object',
+        required: ['id', 'slug', 'name', 'email', 'entityType'],
+        properties: {
+          id: { type: 'string' },
+          slug: { type: 'string' },
+          name: { type: 'string' },
+          thumbnailUrl: {
+            type: ['string', 'null'],
+            nullable: true,
+          },
+          bannerUrl: {
+            type: ['string', 'null'],
+            nullable: true,
+          },
+          email: {
+            type: 'string',
+            format: 'email',
+          },
+          entityType: {
+            type: 'string',
+            enum: ['user'],
+          },
+        },
+      },
+    })
+  })
 );
 
 export const contextEntitiesQuerySchema = baseEntityQuerySchema.extend({

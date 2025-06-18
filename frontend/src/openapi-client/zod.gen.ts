@@ -1586,7 +1586,23 @@ export const zGetEntitiesContextResponse = z.object({
             order: z.number().gte(-140737488355328).lte(140737488355327),
             organizationId: z.string()
         }),
-        members: z.array(z.unknown())
+        members: z.array(z.object({
+            id: z.string(),
+            slug: z.string(),
+            name: z.string(),
+            thumbnailUrl: z.union([
+                z.string(),
+                z.null()
+            ]).optional(),
+            bannerUrl: z.union([
+                z.string(),
+                z.null()
+            ]).optional(),
+            email: z.string().email(),
+            entityType: z.enum([
+                'user'
+            ])
+        }))
     }))
 });
 
