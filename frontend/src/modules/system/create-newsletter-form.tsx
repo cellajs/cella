@@ -6,7 +6,6 @@ import { lazy, Suspense, useMemo, useState } from 'react';
 import type { UseFormProps } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import type { z } from 'zod';
-import { sendNewsletterBodySchema } from '#/modules/system/schema';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import { AlertWrap } from '~/modules/common/alert-wrap';
 import { blocksToHTML } from '~/modules/common/blocknote/helpers';
@@ -19,11 +18,12 @@ import { sendNewsletter } from '~/modules/system/api';
 import { Button, SubmitButton } from '~/modules/ui/button';
 import { Checkbox } from '~/modules/ui/checkbox';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
+import { zPostSystemNewsletterData } from '~/openapi-client/zod.gen';
 import { blocknoteFieldIsDirty } from '~/utils/blocknote-field-is-dirty';
 
 const BlockNoteContent = lazy(() => import('~/modules/common/form-fields/blocknote-content'));
 
-const formSchema = sendNewsletterBodySchema;
+const formSchema = zPostSystemNewsletterData;
 type FormValues = z.infer<typeof formSchema>;
 interface CreateNewsletterFormProps {
   organizationIds: string[];

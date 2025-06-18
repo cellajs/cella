@@ -7,7 +7,6 @@ import { lazy, type RefObject, Suspense, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import type * as z from 'zod';
-import { emailPasswordBodySchema } from '#/modules/auth/schema';
 import { signUp, signUpWithToken } from '~/modules/auth/api';
 import type { TokenData } from '~/modules/auth/types';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
@@ -15,6 +14,7 @@ import Spinner from '~/modules/common/spinner';
 import { Button, SubmitButton } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '~/modules/ui/form';
 import { Input } from '~/modules/ui/input';
+import { zPostAuthSignUpByTokenData } from '~/openapi-client/zod.gen';
 import { AuthenticateRoute } from '~/routes/auth';
 import { defaultOnInvalid } from '~/utils/form-on-invalid';
 
@@ -23,7 +23,7 @@ const LegalText = lazy(() => import('~/modules/marketing/legal-texts'));
 
 const enabledStrategies: readonly string[] = config.enabledAuthenticationStrategies;
 
-const formSchema = emailPasswordBodySchema;
+const formSchema = zPostAuthSignUpByTokenData;
 type FormValues = z.infer<typeof formSchema>;
 
 interface Props {

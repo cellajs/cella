@@ -1,6 +1,7 @@
+import type { entityBaseSchema } from '#/modules/entities/schema';
 import type { z } from 'zod';
-import type { contextEntitiesSchema, entityBaseSchema } from '#/modules/entities/schema';
 import type { MembershipSummary } from '~/modules/memberships/types';
+import { zGetEntitiesContextResponse } from '~/openapi-client/zod.gen';
 
 export type EntitySummary = z.infer<typeof entityBaseSchema>;
 
@@ -11,4 +12,4 @@ export type EntityPage = ContextEntityData & {
   invitesCount?: number;
 };
 
-export type EntityGreidItems = z.infer<typeof contextEntitiesSchema>;
+export type EntityGreidItems = z.infer<typeof zGetEntitiesContextResponse>['data'];

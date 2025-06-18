@@ -6,7 +6,6 @@ import { ArrowRight, ChevronDown } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import type * as z from 'zod';
-import { requestCreateBodySchema } from '#/modules/requests/schema';
 import { LegalNotice } from '~/modules/auth/sign-up-form';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { toaster } from '~/modules/common/toaster';
@@ -14,10 +13,11 @@ import { useCreateRequestMutation } from '~/modules/requests/query';
 import { Button, SubmitButton } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '~/modules/ui/form';
 import { Input } from '~/modules/ui/input';
+import { zCreateRequestData } from '~/openapi-client/zod.gen';
 import { cn } from '~/utils/cn';
 import { defaultOnInvalid } from '~/utils/form-on-invalid';
 
-const formSchema = requestCreateBodySchema;
+const formSchema = zCreateRequestData;
 type FormValues = z.infer<typeof formSchema>;
 
 interface WaitlistFormProps {

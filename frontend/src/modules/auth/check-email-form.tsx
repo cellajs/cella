@@ -5,16 +5,16 @@ import { ArrowRight } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import type * as z from 'zod';
-import { emailBodySchema } from '#/modules/auth/schema';
 import type { ApiError } from '~/lib/api';
 import { checkEmail } from '~/modules/auth/api';
 import type { Step } from '~/modules/auth/types';
 import { SubmitButton } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '~/modules/ui/form';
 import { Input } from '~/modules/ui/input';
+import { zPostAuthCheckEmailData } from '~/openapi-client/zod.gen';
 import { defaultOnInvalid } from '~/utils/form-on-invalid';
 
-const formSchema = emailBodySchema;
+const formSchema = zPostAuthCheckEmailData;
 type FormValues = z.infer<typeof formSchema>;
 interface CheckEmailProps {
   setStep: (step: Step, email: string) => void;

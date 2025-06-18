@@ -11,7 +11,7 @@ const attachmentRoutes = {
     path: '/',
     guard: [isAuthenticated, hasOrgAccess],
     tags: ['attachments'],
-     operationId: 'createAttachment',
+    operationId: 'createAttachment',
     summary: 'Create attachments',
     description: 'Create one or more new attachments.',
     request: {

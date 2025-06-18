@@ -231,14 +231,14 @@ export const zPostAuthPasskeyVerificationResponse = z.object({
 /**
  * User deleted
  */
-export const zDeleteMeResponse = z.object({
+export const zDeleteSelfResponse = z.object({
     success: z.boolean()
 });
 
 /**
  * User
  */
-export const zGetMeResponse = z.object({
+export const zGetSelfResponse = z.object({
     success: z.boolean(),
     data: z.object({
         id: z.string(),
@@ -301,7 +301,7 @@ export const zGetMeResponse = z.object({
     })
 });
 
-export const zPutMeData = z.object({
+export const zUpdateSelfData = z.object({
     bannerUrl: z.union([
         z.string(),
         z.null()
@@ -329,7 +329,7 @@ export const zPutMeData = z.object({
 /**
  * User
  */
-export const zPutMeResponse = z.object({
+export const zUpdateSelfResponse = z.object({
     success: z.boolean(),
     data: z.object({
         id: z.string(),
@@ -395,7 +395,7 @@ export const zPutMeResponse = z.object({
 /**
  * User sign-up info
  */
-export const zGetMeAuthResponse = z.object({
+export const zGetSelfAuthResponse = z.object({
     success: z.boolean(),
     data: z.object({
         oauth: z.array(z.enum([
@@ -442,7 +442,7 @@ export const zGetMeAuthResponse = z.object({
 /**
  * Menu of user
  */
-export const zGetMeMenuResponse = z.object({
+export const zGetMenuResponse = z.object({
     success: z.boolean(),
     data: z.object({
         organization: z.array(z.object({
@@ -905,14 +905,14 @@ export const zPutUsersByIdOrSlugResponse = z.object({
     })
 });
 
-export const zDeleteOrganizationsData = z.object({
+export const zDeleteOrganizationData = z.object({
     ids: z.array(z.string()).min(1).max(50)
 });
 
 /**
  * Success
  */
-export const zDeleteOrganizationsResponse = z.object({
+export const zDeleteOrganizationResponse = z.object({
     success: z.boolean(),
     errors: z.array(z.object({
         message: z.string(),
@@ -1080,7 +1080,7 @@ export const zGetOrganizationsResponse = z.object({
     })
 });
 
-export const zPostOrganizationsData = z.object({
+export const zCreateOrganizationData = z.object({
     name: z.string().min(2).max(100),
     slug: z.string().min(2).max(100)
 });
@@ -1088,7 +1088,7 @@ export const zPostOrganizationsData = z.object({
 /**
  * Organization was created
  */
-export const zPostOrganizationsResponse = z.object({
+export const zCreateOrganizationResponse = z.object({
     success: z.boolean(),
     data: z.object({
         id: z.string(),
@@ -1192,12 +1192,12 @@ export const zPostOrganizationsResponse = z.object({
     })
 });
 
-export const zGetOrganizationsByIdOrSlugParameterIdOrSlug = z.string();
+export const zGetOrganizationParameterIdOrSlug = z.string();
 
 /**
  * Organization
  */
-export const zGetOrganizationsByIdOrSlugResponse = z.object({
+export const zGetOrganizationResponse = z.object({
     success: z.boolean(),
     data: z.object({
         id: z.string(),
@@ -1304,7 +1304,7 @@ export const zGetOrganizationsByIdOrSlugResponse = z.object({
     })
 });
 
-export const zPutOrganizationsByIdOrSlugData = z.object({
+export const zUpdateOrganizationData = z.object({
     slug: z.string().min(2).max(100).optional(),
     name: z.string().min(2).max(100).optional(),
     shortName: z.union([
@@ -1360,12 +1360,12 @@ export const zPutOrganizationsByIdOrSlugData = z.object({
     chatSupport: z.boolean().optional()
 });
 
-export const zPutOrganizationsByIdOrSlugParameterIdOrSlug = z.string();
+export const zUpdateOrganizationParameterIdOrSlug = z.string();
 
 /**
  * Organization was updated
  */
-export const zPutOrganizationsByIdOrSlugResponse = z.object({
+export const zUpdateOrganizationResponse = z.object({
     success: z.boolean(),
     data: z.object({
         id: z.string(),
@@ -1653,14 +1653,14 @@ export const zPostSystemNewsletterResponse = z.object({
     success: z.boolean()
 });
 
-export const zDeleteRequestsData = z.object({
+export const zDeleteRequestData = z.object({
     ids: z.array(z.string()).min(1).max(50)
 });
 
 /**
  * Requests
  */
-export const zDeleteRequestsResponse = z.object({
+export const zDeleteRequestResponse = z.object({
     success: z.boolean()
 });
 
@@ -1707,7 +1707,7 @@ export const zGetRequestsResponse = z.object({
     })
 });
 
-export const zPostRequestsData = z.object({
+export const zCreateRequestData = z.object({
     email: z.string().email().min(1),
     type: z.enum([
         'waitlist',
@@ -1723,7 +1723,7 @@ export const zPostRequestsData = z.object({
 /**
  * Requests
  */
-export const zPostRequestsResponse = z.object({
+export const zCreateRequestResponse = z.object({
     success: z.boolean(),
     data: z.object({
         id: z.string(),

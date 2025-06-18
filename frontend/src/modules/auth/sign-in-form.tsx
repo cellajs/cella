@@ -7,20 +7,20 @@ import { useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import type * as z from 'zod';
-import { emailPasswordBodySchema } from '#/modules/auth/schema';
 import type { ApiError } from '~/lib/api';
 import { signIn } from '~/modules/auth/api';
 import { RequestPasswordDialog } from '~/modules/auth/request-password-dialog';
 import { Button, SubmitButton } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '~/modules/ui/form';
 import { Input } from '~/modules/ui/input';
+import { zPostAuthSignUpByTokenData } from '~/openapi-client/zod.gen';
 import { AuthenticateRoute } from '~/routes/auth';
 import { useUserStore } from '~/store/user';
 import { defaultOnInvalid } from '~/utils/form-on-invalid';
 
 const enabledStrategies: readonly string[] = config.enabledAuthenticationStrategies;
 
-const formSchema = emailPasswordBodySchema;
+const formSchema = zPostAuthSignUpByTokenData;
 type FormValues = z.infer<typeof formSchema>;
 interface Props {
   email: string;
