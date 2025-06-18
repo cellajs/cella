@@ -1,9 +1,8 @@
-import { OpenAPIHono } from '@hono/zod-openapi';
+import { OpenAPIHono, type z } from '@hono/zod-openapi';
 import type { EnabledOauthProvider, MenuSection } from 'config';
 import { config } from 'config';
 import { and, asc, eq, isNotNull } from 'drizzle-orm';
 import { type SSEStreamingApi, streamSSE } from 'hono/streaming';
-import type { z } from 'zod';
 import { db } from '#/db/db';
 import { membershipsTable } from '#/db/schema/memberships';
 import { oauthAccountsTable } from '#/db/schema/oauth-accounts';

@@ -1,5 +1,5 @@
 import { config } from 'config';
-import type { z } from 'zod';
+import type { z } from '@hono/zod-openapi';
 import { membershipsTable } from '#/db/schema/memberships';
 import type { ContextEntityTypeIdFields, GeneratedColumn } from '#/db/types';
 import type { membershipSummarySchema } from '../schema';

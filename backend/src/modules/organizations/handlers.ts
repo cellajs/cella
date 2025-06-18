@@ -1,7 +1,6 @@
-import { OpenAPIHono } from '@hono/zod-openapi';
+import { OpenAPIHono, type z } from '@hono/zod-openapi';
 import { config } from 'config';
 import { and, count, eq, getTableColumns, ilike, inArray, type SQL, sql } from 'drizzle-orm';
-import type { z } from 'zod';
 
 import { db } from '#/db/db';
 import { membershipsTable } from '#/db/schema/memberships';

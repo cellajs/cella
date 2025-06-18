@@ -1,5 +1,5 @@
 import { createSelectSchema } from 'drizzle-zod';
-import { z } from 'zod';
+import { z } from '@hono/zod-openapi';
 import { requestsTable } from '#/db/schema/requests';
 import { paginationQuerySchema } from '#/utils/schema/common';
 

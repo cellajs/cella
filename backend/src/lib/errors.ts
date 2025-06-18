@@ -4,7 +4,7 @@ import { config } from 'config';
 import type { Context } from 'hono';
 import type { ClientErrorStatusCode, ServerErrorStatusCode } from 'hono/utils/http-status';
 import i18n from 'i18next';
-import type { z } from 'zod';
+import type { z } from '@hono/zod-openapi';
 import { externalLogger } from '#/middlewares/logger/external-logger';
 import { logEvent } from '#/middlewares/logger/log-event';
 import type { errorSchema } from '#/utils/schema/responses';

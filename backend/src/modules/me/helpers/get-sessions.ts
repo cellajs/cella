@@ -1,6 +1,6 @@
 import { eq } from 'drizzle-orm';
 import type { Context } from 'hono';
-import type { z } from 'zod';
+import type { z } from '@hono/zod-openapi';
 import { db } from '#/db/db';
 import { sessionsTable } from '#/db/schema/sessions';
 import { getParsedSessionCookie } from '#/modules/auth/helpers/session';

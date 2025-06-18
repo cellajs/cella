@@ -69,6 +69,7 @@
   },
   "pnpm": {
     "overrides": {
+      "zod": "3.25.67",
       "react": "^19.1.0",
       "react-dom": "^19.1.0",
       "@types/react": "^19.1.8",
