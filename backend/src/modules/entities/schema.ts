@@ -43,6 +43,7 @@ export const contextEntitiesSchema = z.array(
     createdAt: z.string(),
     entityType: contextEntityTypeSchema,
     membership: membershipSummarySchema,
+    // TODO find work around
     members: openapiZ.array(z.lazy(() => userSummarySchema)).openapi({
       type: 'array',
       items: {

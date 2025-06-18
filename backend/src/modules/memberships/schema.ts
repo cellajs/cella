@@ -1,27 +1,24 @@
-import { config } from 'config';
-import { createSelectSchema } from 'drizzle-zod';
-import { z } from 'zod';
 import { membershipsTable } from '#/db/schema/memberships';
 import { tokensTable } from '#/db/schema/tokens';
 import { contextEntityTypeSchema, idOrSlugSchema, paginationQuerySchema, validEmailSchema } from '#/utils/schema/common';
+import { config } from 'config';
+import { createSelectSchema } from 'drizzle-zod';
+import { z } from 'zod';
 
-const membershipSummarySelectSchema = createSelectSchema(membershipsTable);
 
 export const membershipSchema = z.object({
-  ...membershipSummarySelectSchema.omit({
+  ...createSelectSchema(membershipsTable).omit({
     activatedAt: true,
     tokenId: true,
   }).shape,
 });
 
 export const membershipSummarySchema = z.object(
-  membershipSummarySelectSchema.omit({
+  membershipSchema.omit({
     createdAt: true,
     createdBy: true,
     modifiedAt: true,
     modifiedBy: true,
-    tokenId: true,
-    activatedAt: true,
   }).shape,
 );
 
@@ -31,7 +28,7 @@ export const membershipCreateBodySchema = z.object({
 });
 
 export const membershipUpdateBodySchema = z.object({
-  role: membershipSummarySelectSchema.shape.role.optional(),
+  role: membershipSchema.shape.role.optional(),
   muted: z.boolean().optional(),
   archived: z.boolean().optional(),
   order: z.number().optional(),

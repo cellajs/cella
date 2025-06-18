@@ -2,6 +2,23 @@
 
 import { z } from 'zod';
 
+export const zBaseEntitySchema = z.object({
+    id: z.string(),
+    slug: z.string(),
+    name: z.string(),
+    thumbnailUrl: z.union([
+        z.string(),
+        z.null()
+    ]).optional(),
+    bannerUrl: z.union([
+        z.string(),
+        z.null()
+    ]).optional(),
+    entityType: z.enum([
+        'organization'
+    ])
+});
+
 export const zPostAuthCheckEmailData = z.object({
     email: z.string().email()
 });
