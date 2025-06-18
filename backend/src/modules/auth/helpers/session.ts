@@ -1,6 +1,3 @@
-import { eq } from 'drizzle-orm';
-import type { Context } from 'hono';
-import type { z } from 'zod';
 import { db } from '#/db/db';
 import { supportedOauthProviders } from '#/db/schema/oauth-accounts';
 import { type SessionModel, sessionsTable } from '#/db/schema/sessions';
@@ -13,10 +10,14 @@ import { nanoid } from '#/utils/nanoid';
 import { encodeLowerCased } from '#/utils/oslo';
 import { sessionCookieSchema } from '#/utils/schema/session-cookie';
 import { createDate, TimeSpan } from '#/utils/time-span';
+import { eq } from 'drizzle-orm';
+import type { Context } from 'hono';
+import type { z } from 'zod';
 import { deleteAuthCookie, getAuthCookie, setAuthCookie } from './cookie';
 import { deviceInfo } from './device-info';
 
 // The authentication strategies supported by cella
+// TODO remove null from authStrategies
 export const supportedAuthStrategies = ['oauth', 'password', 'passkey'] as const;
 
 // Type guard to check if strategy is supported
