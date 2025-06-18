@@ -43,6 +43,8 @@ export const contextEntitiesSchema = z.array(
     createdAt: z.string(),
     entityType: contextEntityTypeSchema,
     membership: membershipSummarySchema,
+    // TODO: better support might arrive for z.lazy in openapi 
+    // @link https://github.com/asteasolutions/zod-to-openapi/issues/247#issuecomment-2985032121
     members: openapiZ.array(z.lazy(() => userSummarySchema)).openapi({
       type: 'array',
       items: {
