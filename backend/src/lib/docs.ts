@@ -21,6 +21,8 @@ const docs = (app: OpenAPIHono<Env>) => {
       "Authentication cookie. Copy the cookie from your network tab and paste it here. If you don't have it, you need to sign in or sign up first.",
   });
 
+  // TODO add uniqe schema that we use on BE 
+  // Review all existing schemas
   app.doc31('/openapi.json', {
     servers: [{ url: config.backendUrl }],
     info: {
