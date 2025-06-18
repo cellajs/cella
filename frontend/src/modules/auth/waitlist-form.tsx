@@ -1,13 +1,12 @@
 import { zodResolver } from '@hookform/resolvers/zod';
+import { onlineManager } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
+import { config } from 'config';
+import { ArrowRight, ChevronDown } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import type * as z from 'zod';
 import { requestCreateBodySchema } from '#/modules/requests/schema';
-
-import { onlineManager } from '@tanstack/react-query';
-import { config } from 'config';
-import { ArrowRight, ChevronDown } from 'lucide-react';
 import { LegalNotice } from '~/modules/auth/sign-up-form';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { toaster } from '~/modules/common/toaster';

@@ -1,9 +1,8 @@
 import { FilterX, Search, X } from 'lucide-react';
-import { createContext, useContext, useState } from 'react';
-import { Button } from '~/modules/ui/button';
-
 import { AnimatePresence, motion } from 'motion/react';
+import { createContext, useContext, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Button } from '~/modules/ui/button';
 import { cn } from '~/utils/cn';
 import { nanoid } from '~/utils/nanoid';
 

@@ -12,7 +12,7 @@ import { getIsoDate } from '#/utils/iso-date';
 import { nanoid } from '#/utils/nanoid';
 import { encodeLowerCased } from '#/utils/oslo';
 import { sessionCookieSchema } from '#/utils/schema/session-cookie';
-import { TimeSpan, createDate } from '#/utils/time-span';
+import { createDate, TimeSpan } from '#/utils/time-span';
 import { deleteAuthCookie, getAuthCookie, setAuthCookie } from './cookie';
 import { deviceInfo } from './device-info';
 

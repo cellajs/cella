@@ -1,4 +1,4 @@
-import { type AnyColumn, type SQLWrapper, asc, desc } from 'drizzle-orm';
+import { type AnyColumn, asc, desc, type SQLWrapper } from 'drizzle-orm';
 
 export const getOrderColumn = <T extends Record<string, AnyColumn | SQLWrapper>, U extends keyof T>(
   sortOptions: T,

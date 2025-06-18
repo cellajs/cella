@@ -1,7 +1,7 @@
 import { getRandomValues } from 'node:crypto';
 import { OpenAPIHono } from '@hono/zod-openapi';
 import { encodeBase64 } from '@oslojs/encoding';
-import { OAuth2RequestError, generateCodeVerifier, generateState } from 'arctic';
+import { generateCodeVerifier, generateState, OAuth2RequestError } from 'arctic';
 import type { EnabledOauthProvider } from 'config';
 import { config } from 'config';
 import { and, desc, eq } from 'drizzle-orm';
@@ -33,9 +33,9 @@ import {
   type GithubUserEmailProps,
   type GithubUserProps,
   type GoogleUserProps,
-  type MicrosoftUserProps,
   githubAuth,
   googleAuth,
+  type MicrosoftUserProps,
   microsoftAuth,
 } from '#/modules/auth/helpers/oauth/oauth-providers';
 import { transformGithubUserData, transformSocialUserData } from '#/modules/auth/helpers/oauth/transform-user-data';
@@ -49,7 +49,7 @@ import { isExpiredDate } from '#/utils/is-expired-date';
 import { getIsoDate } from '#/utils/iso-date';
 import { nanoid } from '#/utils/nanoid';
 import { slugFromEmail } from '#/utils/slug-from-email';
-import { TimeSpan, createDate } from '#/utils/time-span';
+import { createDate, TimeSpan } from '#/utils/time-span';
 import { CreatePasswordEmail, type CreatePasswordEmailProps } from '../../../emails/create-password';
 import { EmailVerificationEmail, type EmailVerificationEmailProps } from '../../../emails/email-verification';
 import authRoutes from './routes';

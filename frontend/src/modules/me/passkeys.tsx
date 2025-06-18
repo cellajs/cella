@@ -1,10 +1,9 @@
 import { Check, Fingerprint, RotateCw, Trash } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Button } from '~/modules/ui/button';
-
 import { deletePasskey, passkeyRegistration } from '~/modules/me/helpers';
 import type { MeAuthData } from '~/modules/me/types';
+import { Button } from '~/modules/ui/button';
 
 const Passkeys = ({ userAuthInfo }: { userAuthInfo: MeAuthData }) => {
   const { t } = useTranslation();

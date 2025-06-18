@@ -1,6 +1,6 @@
 import type { LucideIcon } from 'lucide-react';
 import { motion } from 'motion/react';
-import { type ReactNode, forwardRef } from 'react';
+import { forwardRef, type ReactNode } from 'react';
 import slugify from 'slugify';
 import { Badge } from '~/modules/ui/badge';
 import { Button, type ButtonProps } from '~/modules/ui/button';

@@ -1,5 +1,5 @@
 import { type ContextEntityType, config } from 'config';
-import { type SQLWrapper, and, eq, ilike, inArray, ne, or, sql } from 'drizzle-orm';
+import { and, eq, ilike, inArray, ne, or, type SQLWrapper, sql } from 'drizzle-orm';
 import { z } from 'zod';
 
 import { db } from '#/db/db';

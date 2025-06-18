@@ -12,7 +12,7 @@ import { getAndSetMenu } from '~/modules/me/helpers';
 import { membersKeys } from '~/modules/memberships/query/options';
 import { organizationsKeys } from '~/modules/organizations/query';
 import type { Organization } from '~/modules/organizations/types';
-import { SubmitButton, buttonVariants } from '~/modules/ui/button';
+import { buttonVariants, SubmitButton } from '~/modules/ui/button';
 import { queryClient } from '~/query/query-client';
 import { AcceptOrgInviteRoute } from '~/routes/auth';
 import { OrganizationRoute } from '~/routes/organizations';

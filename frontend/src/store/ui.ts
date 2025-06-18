@@ -1,4 +1,4 @@
-import { type Theme, config } from 'config';
+import { config, type Theme } from 'config';
 import { create } from 'zustand';
 import { createJSONStorage, devtools, persist } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';

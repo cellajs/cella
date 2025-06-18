@@ -7,13 +7,9 @@ interface HamburgerButtonProps {
   toggle: (isOpen: boolean) => void;
   className?: string;
 }
-const HamburgerLine = ({
-  className,
-  lineColor,
-}: {
-  className: string;
-  lineColor: string;
-}) => <div className={cn('ease my-[.19rem] h-0.5 w-6 rounded-full transition duration-300', className)} style={{ backgroundColor: lineColor }} />;
+const HamburgerLine = ({ className, lineColor }: { className: string; lineColor: string }) => (
+  <div className={cn('ease my-[.19rem] h-0.5 w-6 rounded-full transition duration-300', className)} style={{ backgroundColor: lineColor }} />
+);
 
 const HamburgerButton = ({ isOpen, toggle, className }: HamburgerButtonProps) => {
   const mode = useUIStore((state) => state.mode);

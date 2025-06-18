@@ -1,9 +1,8 @@
-import { count } from 'drizzle-orm';
-import { db } from '#/db/db';
-
 import { OpenAPIHono } from '@hono/zod-openapi';
+import { count } from 'drizzle-orm';
 import { getTableConfig } from 'drizzle-orm/pg-core';
 import { register } from 'prom-client';
+import { db } from '#/db/db';
 import { entityTables } from '#/entity-config';
 import type { Env } from '#/lib/context';
 import { metricsConfig } from '#/middlewares/observability/config';

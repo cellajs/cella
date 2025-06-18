@@ -1,10 +1,10 @@
 import type { ContextEntityType } from 'config';
 import { useState } from 'react';
 import type { z } from 'zod';
+import type { contextEntitiesQuerySchema } from '#/modules/entities/schema';
 import useSearchParams from '~/hooks/use-search-params';
 import { EntityGrid } from '~/modules/entities/entity-grid';
 import { EntityGridBar } from '~/modules/entities/entity-grid-bar';
-import type { contextEntitiesQuerySchema } from '#/modules/entities/schema';
 
 export type EntitySearch = Pick<z.infer<typeof contextEntitiesQuerySchema>, 'sort' | 'q'>;
 

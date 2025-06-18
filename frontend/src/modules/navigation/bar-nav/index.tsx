@@ -1,5 +1,5 @@
 import { config } from 'config';
-import { Fragment, Suspense, lazy, useMemo } from 'react';
+import { Fragment, lazy, Suspense, useMemo } from 'react';
 import useMounted from '~/hooks/use-mounted';
 import { BarNavButton } from '~/modules/navigation/bar-nav/button';
 import StopImpersonation from '~/modules/navigation/bar-nav/stop-impersonation';

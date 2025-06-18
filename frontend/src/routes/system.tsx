@@ -1,5 +1,5 @@
 import { createRoute } from '@tanstack/react-router';
-import { Suspense, lazy } from 'react';
+import { lazy, Suspense } from 'react';
 import { z } from 'zod';
 
 import { organizationListQuerySchema } from '#/modules/organizations/schema';

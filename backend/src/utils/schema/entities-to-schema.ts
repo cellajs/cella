@@ -1,4 +1,4 @@
-import { type EntityType, config } from 'config';
+import { config, type EntityType } from 'config';
 import { type ZodTypeAny, z } from 'zod';
 
 /**

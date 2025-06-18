@@ -1,4 +1,4 @@
-import { Suspense, lazy, useRef } from 'react';
+import { lazy, Suspense, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
 import type { EntityPage } from '~/modules/entities/types';

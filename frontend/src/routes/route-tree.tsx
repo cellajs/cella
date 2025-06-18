@@ -1,8 +1,8 @@
 import type { NavItemId } from '~/modules/navigation/types';
 import {
   AcceptOrgInviteRoute,
-  AuthLayoutRoute,
   AuthenticateRoute,
+  AuthLayoutRoute,
   CreatePasswordWithTokenRoute,
   EmailVerificationRoute,
   RequestPasswordRoute,

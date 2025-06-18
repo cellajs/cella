@@ -1,6 +1,3 @@
-import { Button, SubmitButton } from '~/modules/ui/button';
-import { Input } from '~/modules/ui/input';
-
 import { Send } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -8,6 +5,8 @@ import { toast } from 'sonner';
 import { useMutation } from '~/hooks/use-mutations';
 import { requestPasswordEmail } from '~/modules/auth/api';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
+import { Button, SubmitButton } from '~/modules/ui/button';
+import { Input } from '~/modules/ui/input';
 
 export const RequestPasswordForm = ({ email = '' }: { email?: string }) => {
   const { t } = useTranslation();

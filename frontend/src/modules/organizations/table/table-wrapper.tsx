@@ -1,6 +1,7 @@
 import { config } from 'config';
 import { useRef, useState } from 'react';
 import type { z } from 'zod';
+import { fullCountsSchema, organizationSchema } from '#/modules/organizations/schema';
 import useSearchParams from '~/hooks/use-search-params';
 import { useSortColumns } from '~/modules/common/data-table/sort-columns';
 import type { BaseTableMethods } from '~/modules/common/data-table/types';
@@ -8,7 +9,6 @@ import { useColumns } from '~/modules/organizations/table/columns';
 import BaseDataTable from '~/modules/organizations/table/table';
 import { OrganizationsTableBar } from '~/modules/organizations/table/table-bar';
 import { OrganizationsTableRoute, type organizationsSearchSchema } from '~/routes/system';
-import { fullCountsSchema, organizationSchema } from '#/modules/organizations/schema';
 
 const LIMIT = config.requestLimits.organizations;
 const orgTableSchema = organizationSchema.omit({ invitesCount: true }).extend({ counts: fullCountsSchema });

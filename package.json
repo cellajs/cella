@@ -27,7 +27,9 @@
     "lint": "pnpm dlx @biomejs/biome check .",
     "lint:fix": "pnpm dlx @biomejs/biome check --write .",
     "check": "pnpm --filter backend precompile && pnpm --filter backend check && pnpm --filter frontend check",
+    "check:beta": "pnpm --filter backend check:beta && pnpm --filter frontend check:beta",
     "ts:perf": "pnpm --filter backend ts:perf && pnpm --filter frontend ts:perf ",
+    "ts:perf:beta": "pnpm --filter backend ts:perf && pnpm --filter frontend ts:perf ",
     "build": "pnpm -r --parallel clean && pnpm -r --parallel build",
     "build:dev": "pnpm -r --parallel build:dev",
     "build:staging": "pnpm -r --parallel build:staging",
@@ -38,8 +40,9 @@
     "test": "pnpm -r --parallel test"
   },
   "devDependencies": {
-    "@biomejs/biome": "^1.9.4",
+    "@biomejs/biome": "^2.0.0",
     "@evilmartians/lefthook": "^1.11.13",
+    "@typescript/native-preview": "7.0.0-dev.20250617.1",
     "cross-env": "^7.0.3",
     "knip": "^5.60.2",
     "rimraf": "^6.0.1",
@@ -55,8 +58,8 @@
     "overrides": {
       "react": "^19.0.0",
       "react-dom": "^19.0.0",
-      "@types/react": "^19.0.0",
-      "@types/react-dom": "^19.0.0"
+      "@types/react": "^19.1.8",
+      "@types/react-dom": "^19.1.6"
     }
   }
 }

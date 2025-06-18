@@ -1,14 +1,12 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import type React from 'react';
+import { useMemo } from 'react';
 import { type UseFormProps, useWatch } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
+import { toast } from 'sonner';
 import type { z } from 'zod';
-
 // Change this in the future on current schema
 import { organizationCreateBodySchema } from '#/modules/organizations/schema';
-
-import { useMemo } from 'react';
-import { toast } from 'sonner';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import InputFormField from '~/modules/common/form-fields/input';
 import { SlugFormField } from '~/modules/common/form-fields/slug';

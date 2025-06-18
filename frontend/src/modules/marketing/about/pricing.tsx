@@ -1,7 +1,7 @@
 import { useNavigate } from '@tanstack/react-router';
 import { config } from 'config';
 import { Check, Sparkles } from 'lucide-react';
-import { type RefObject, createRef, useRef } from 'react';
+import { createRef, type RefObject, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { WaitlistForm } from '~/modules/auth/waitlist-form';
 import { contactFormHandler } from '~/modules/common/contact-form/contact-form-handler';

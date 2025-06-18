@@ -1,15 +1,13 @@
 import { config } from 'config';
-import { AvatarWrap } from '~/modules/common/avatar-wrap';
-import { Button } from '~/modules/ui/button';
-import { useUIStore } from '~/store/ui';
-import { useUserStore } from '~/store/user';
-
-import { useTranslation } from 'react-i18next';
-
 import { type RefObject, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
+import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { TooltipButton } from '~/modules/common/tooltip-button';
 import AppNavLoader from '~/modules/navigation/bar-nav/loader';
 import type { NavItem } from '~/modules/navigation/types';
+import { Button } from '~/modules/ui/button';
+import { useUIStore } from '~/store/ui';
+import { useUserStore } from '~/store/user';
 
 interface BarNavButtonProps {
   navItem: NavItem;

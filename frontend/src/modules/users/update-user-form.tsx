@@ -1,11 +1,10 @@
 import { zodResolver } from '@hookform/resolvers/zod';
+import { config } from 'config';
 import { useMemo } from 'react';
+import type { UseFormProps } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import type { z } from 'zod';
 import { userUpdateBodySchema } from '#/modules/users/schema';
-
-import { config } from 'config';
-import type { UseFormProps } from 'react-hook-form';
 import { useBeforeUnload } from '~/hooks/use-before-unload';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import useHideElementsById from '~/hooks/use-hide-elements-by-id';

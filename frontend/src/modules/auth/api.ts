@@ -1,6 +1,6 @@
 import { config } from 'config';
-import { clientConfig, handleResponse } from '~/lib/api';
 import { authHc } from '#/modules/auth/hc';
+import { clientConfig, handleResponse } from '~/lib/api';
 
 export const client = authHc(config.backendUrl, clientConfig);
 

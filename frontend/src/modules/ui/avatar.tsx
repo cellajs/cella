@@ -1,5 +1,5 @@
 import * as AvatarPrimitive from '@radix-ui/react-avatar';
-import { type VariantProps, cva } from 'class-variance-authority';
+import { cva, type VariantProps } from 'class-variance-authority';
 import * as React from 'react';
 
 import { cn } from '~/utils/cn';
@@ -53,13 +53,7 @@ type AvatarGroupContextValue = {
 
 const AvatarGroupContext = React.createContext<AvatarGroupContextValue>({});
 
-const AvatarGroupProvider = ({
-  children,
-  limit,
-}: {
-  children?: React.ReactNode;
-  limit?: number;
-}) => {
+const AvatarGroupProvider = ({ children, limit }: { children?: React.ReactNode; limit?: number }) => {
   const [count, setCount] = React.useState<number>(0);
 
   return (

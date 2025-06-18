@@ -1,4 +1,4 @@
-import { type PageEntityType, config } from 'config';
+import { config, type PageEntityType } from 'config';
 import { z } from 'zod';
 import { entityListItemSchema } from '#/modules/entities/schema';
 

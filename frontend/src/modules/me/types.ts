@@ -1,8 +1,8 @@
 import type { InferResponseType } from 'hono';
 import type { z } from 'zod';
+import type { meAuthDataSchema } from '#/modules/me/schema';
 import type { client } from '~/modules/me/api';
 import type { User } from '~/modules/users/types';
-import type { meAuthDataSchema } from '#/modules/me/schema';
 
 export type Session = MeAuthData['sessions'][number];
 export type MeAuthData = z.infer<typeof meAuthDataSchema>;

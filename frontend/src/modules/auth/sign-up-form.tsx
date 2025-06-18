@@ -1,14 +1,13 @@
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useMutation } from '@tanstack/react-query';
 import { useNavigate, useSearch } from '@tanstack/react-router';
+import { config } from 'config';
+import { ArrowRight, ChevronDown } from 'lucide-react';
+import { lazy, type RefObject, Suspense, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import type * as z from 'zod';
 import { emailPasswordBodySchema } from '#/modules/auth/schema';
-
-import { useMutation } from '@tanstack/react-query';
-import { config } from 'config';
-import { ArrowRight, ChevronDown } from 'lucide-react';
-import { type RefObject, Suspense, lazy, useRef } from 'react';
 import { signUp, signUpWithToken } from '~/modules/auth/api';
 import type { TokenData } from '~/modules/auth/types';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';

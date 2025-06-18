@@ -13,7 +13,7 @@ const additionalEntityIdFields = config.contextEntityTypes
     (fields, entityType) => {
       const fieldName = config.entityIdFields[entityType];
       // Ensure the field exists on the table
-      if (Object.prototype.hasOwnProperty.call(membershipsTable, fieldName)) fields[fieldName] = membershipsTable[fieldName];
+      if (Object.hasOwn(membershipsTable, fieldName)) fields[fieldName] = membershipsTable[fieldName];
       return fields;
     },
     {} as Record<Exclude<ContextEntityTypeIdFields, 'organizationId'>, GeneratedColumn>,

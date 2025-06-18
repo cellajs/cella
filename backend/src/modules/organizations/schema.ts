@@ -1,7 +1,6 @@
-import { z } from 'zod';
-
-import { type EntityType, config } from 'config';
+import { config, type EntityType } from 'config';
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
+import { z } from 'zod';
 import { organizationsTable } from '#/db/schema/organizations';
 import { membershipSummarySchema } from '#/modules/memberships/schema';
 import {

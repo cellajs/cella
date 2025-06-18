@@ -1,9 +1,9 @@
-import yoctoSpinner from 'yocto-spinner';
 import colors from 'picocolors';
+import yoctoSpinner from 'yocto-spinner';
 
 import { fetchRemote } from './fetch-remote.ts';
-import { runGitCommand } from './utils/run-git-command.ts';
 import { extractIgnorePatterns, pickByIgnorePatterns } from './utils/ignore-patterns.ts';
+import { runGitCommand } from './utils/run-git-command.ts';
 
 export interface PullUpstreamOptions {
   ignoreFile?: string; // Optional path to an ignore file
@@ -12,12 +12,7 @@ export interface PullUpstreamOptions {
   localBranch: string; // Name of the local branch to merge into
 }
 
-export async function pullUpstream({
-  ignoreFile,
-  ignoreList,
-  upstreamBranch,
-  localBranch,
-}: PullUpstreamOptions): Promise<void> {
+export async function pullUpstream({ ignoreFile, ignoreList, upstreamBranch, localBranch }: PullUpstreamOptions): Promise<void> {
   const targetFolder = process.cwd();
   console.info();
 

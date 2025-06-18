@@ -1,4 +1,4 @@
-import { Suspense, lazy } from 'react';
+import { lazy, Suspense } from 'react';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { useAttachmentUrl } from '~/modules/attachments/use-attachment-url';
 import Spinner from '~/modules/common/spinner';
