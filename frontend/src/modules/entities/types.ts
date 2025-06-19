@@ -1,5 +1,5 @@
 import type { entityBaseSchema } from '#/modules/entities/schema';
-import type { z } from 'zod';
+import type { z } from 'zod/v4';
 import type { MembershipSummary } from '~/modules/memberships/types';
 import { zGetEntitiesContextResponse } from '~/openapi-client/zod.gen';
 

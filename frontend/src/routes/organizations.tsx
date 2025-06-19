@@ -2,7 +2,7 @@ import { onlineManager, useQuery } from '@tanstack/react-query';
 import { createRoute, redirect, useLoaderData, useParams } from '@tanstack/react-router';
 import i18n from 'i18next';
 import { lazy, Suspense } from 'react';
-import { z } from 'zod';
+import { z } from 'zod/v4';
 import { attachmentListQuerySchema } from '#/modules/attachments/schema';
 import { memberListQuerySchema, pendingInvitationListQuerySchema } from '#/modules/memberships/schema';
 import ErrorNotice from '~/modules/common/error-notice';
