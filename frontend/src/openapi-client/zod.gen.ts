@@ -1019,14 +1019,6 @@ export const zGetOrganizationsResponse = z.object({
                 'en',
                 'nl'
             ])).min(1),
-            restrictions: z.union([
-                z.string(),
-                z.number(),
-                z.boolean(),
-                z.null(),
-                z.object({}),
-                z.array(z.unknown())
-            ]),
             notificationEmail: z.union([
                 z.string(),
                 z.null()
@@ -1089,7 +1081,7 @@ export const zGetOrganizationsResponse = z.object({
                     total: z.number()
                 }),
                 related: z.object({
-                    0: z.number()
+                    attachment: z.number()
                 })
             })
         })),
@@ -1146,14 +1138,6 @@ export const zCreateOrganizationResponse = z.object({
             'en',
             'nl'
         ])).min(1),
-        restrictions: z.union([
-            z.string(),
-            z.number(),
-            z.boolean(),
-            z.null(),
-            z.object({}),
-            z.array(z.unknown())
-        ]),
         notificationEmail: z.union([
             z.string(),
             z.null()
@@ -1255,14 +1239,6 @@ export const zGetOrganizationResponse = z.object({
             'en',
             'nl'
         ])).min(1),
-        restrictions: z.union([
-            z.string(),
-            z.number(),
-            z.boolean(),
-            z.null(),
-            z.object({}),
-            z.array(z.unknown())
-        ]),
         notificationEmail: z.union([
             z.string(),
             z.null()
@@ -1423,14 +1399,6 @@ export const zUpdateOrganizationResponse = z.object({
             'en',
             'nl'
         ])).min(1),
-        restrictions: z.union([
-            z.string(),
-            z.number(),
-            z.boolean(),
-            z.null(),
-            z.object({}),
-            z.array(z.unknown())
-        ]),
         notificationEmail: z.union([
             z.string(),
             z.null()
@@ -1548,7 +1516,8 @@ export const zGetEntitiesPageResponse = z.object({
         })),
         counts: z.object({
             user: z.number().optional(),
-            organization: z.number().optional()
+            organization: z.number().optional(),
+            attachment: z.number().optional()
         }),
         total: z.number()
     })
@@ -1792,9 +1761,9 @@ export const zGetMetricsResponse = z.object({
 export const zGetMetricsPublicResponse = z.object({
     success: z.boolean(),
     data: z.object({
-        0: z.number(),
-        1: z.number(),
-        2: z.number()
+        user: z.number(),
+        organization: z.number(),
+        attachment: z.number()
     })
 });
 

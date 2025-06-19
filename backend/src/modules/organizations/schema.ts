@@ -9,9 +9,9 @@ import {
   validSlugSchema,
   validUrlSchema,
 } from '#/utils/schema/common';
+import { z } from '@hono/zod-openapi';
 import { config, type EntityType } from 'config';
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
-import { z } from '@hono/zod-openapi';
 
 // Entity count schema should exclude 'user' and 'organization'
 type FilteredEntityType = Exclude<EntityType, 'user' | 'organization'>;
@@ -21,10 +21,11 @@ const isFilteredEntityType = (entityType: EntityType): entityType is FilteredEnt
 };
 
 const entityCountSchema = z.object(
-  Object.fromEntries(Object.entries(config.entityTypes.filter(isFilteredEntityType)).map(([entityType]) => [entityType, z.number()])) as Record<
-    FilteredEntityType,
-    z.ZodNumber
-  >,
+  Object.fromEntries(
+    config.entityTypes
+      .filter(isFilteredEntityType)
+      .map((entityType) => [entityType, z.number()])
+  ) as Record<FilteredEntityType, z.ZodNumber>
 );
 
 export const membershipCountSchema = z.object({
@@ -37,8 +38,7 @@ export const membershipCountSchema = z.object({
 export const fullCountsSchema = z.object({ membership: membershipCountSchema, related: entityCountSchema });
 
 export const organizationSchema = z.object({
-// TODO remove restrictions from return schema
-  ...createSelectSchema(organizationsTable).shape,
+  ...createSelectSchema(organizationsTable).omit({restrictions: true}).shape,
   languages: z.array(languageSchema).min(1),
   emailDomains: z.array(z.string()),
   authStrategies: z.array(z.string()),

@@ -1,5 +1,5 @@
-import { config, type EntityType } from 'config';
 import { z } from '@hono/zod-openapi';
+import { config, type EntityType } from 'config';
 // TODO deprecated Zod type
 import { ZodTypeAny } from 'zod/v4';
 
@@ -8,7 +8,7 @@ import { ZodTypeAny } from 'zod/v4';
  */
 export const mapEntitiesToSchema = <T extends ZodTypeAny>(getSchemaForTable: (tableName: string) => T) => {
   return z.object(
-    Object.fromEntries(Object.entries(config.entityTypes).map(([entityType]) => [entityType, getSchemaForTable(entityType)])) as Record<
+    Object.fromEntries(config.entityTypes.map((entityType) => [entityType, getSchemaForTable(entityType)])) as Record<
       EntityType,
       T
     >,
