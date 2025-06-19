@@ -1,4 +1,4 @@
-import type { z } from 'zod';
+import type { z } from 'zod/v4';
 import { zGetByOrgIdOrSlugMembershipsMembersResponse, zGetByOrgIdOrSlugMembershipsPendingResponse, zPutByOrgIdOrSlugMembershipsByIdResponse } from '~/openapi-client/zod.gen';
 
 export type Member = z.infer<typeof zGetByOrgIdOrSlugMembershipsMembersResponse>['data']['items'][number];

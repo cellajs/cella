@@ -1,5 +1,5 @@
 import { config } from 'config';
-import { z } from 'zod';
+import { z } from '@hono/zod-openapi';
 
 /*************************************************************************************************
  * Entity schemas

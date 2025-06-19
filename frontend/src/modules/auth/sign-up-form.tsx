@@ -6,7 +6,7 @@ import { ArrowRight, ChevronDown } from 'lucide-react';
 import { lazy, type RefObject, Suspense, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
-import type * as z from 'zod';
+import type { z } from 'zod/v4'
 import { signUp, signUpWithToken } from '~/modules/auth/api';
 import type { TokenData } from '~/modules/auth/types';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';

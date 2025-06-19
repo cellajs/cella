@@ -4,7 +4,7 @@ import { Mail, MessageSquare, Send, User } from 'lucide-react';
 import { lazy, Suspense, useMemo } from 'react';
 import type { SubmitHandler, UseFormProps } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
-import * as z from 'zod';
+import { z } from 'zod/v4';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';

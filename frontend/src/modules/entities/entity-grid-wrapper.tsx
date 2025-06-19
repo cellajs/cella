@@ -1,6 +1,6 @@
 import type { ContextEntityType } from 'config';
 import { useState } from 'react';
-import type { z } from 'zod';
+import type { z } from 'zod/v4';
 import type { contextEntitiesQuerySchema } from '#/modules/entities/schema';
 import useSearchParams from '~/hooks/use-search-params';
 import { EntityGrid } from '~/modules/entities/entity-grid';

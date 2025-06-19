@@ -1,4 +1,4 @@
-import type { z } from 'zod';
+import type { z } from '@hono/zod-openapi';
 import type { attachmentsTable } from '#/db/schema/attachments';
 import { getSignedUrl } from '#/lib/signed-url';
 import type { attachmentSchema } from '#/modules/attachments/schema';

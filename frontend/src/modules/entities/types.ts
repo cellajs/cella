@@ -1,4 +1,4 @@
-import type { z } from 'zod';
+import type { z } from 'zod/v4';
 import type { MembershipSummary } from '~/modules/memberships/types';
 import { zBaseEntitySchema, zGetEntitiesContextResponse } from '~/openapi-client/zod.gen';
 

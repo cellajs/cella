@@ -12,7 +12,7 @@ import { sessionCookieSchema } from '#/utils/schema/session-cookie';
 import { createDate, TimeSpan } from '#/utils/time-span';
 import { eq } from 'drizzle-orm';
 import type { Context } from 'hono';
-import type { z } from 'zod';
+import type { z } from '@hono/zod-openapi';
 import { deleteAuthCookie, getAuthCookie, setAuthCookie } from './cookie';
 import { deviceInfo } from './device-info';
 

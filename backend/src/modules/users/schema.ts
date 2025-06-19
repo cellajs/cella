@@ -1,6 +1,6 @@
 import { config, type EnabledOauthProvider } from 'config';
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
-import { z } from 'zod';
+import { z } from '@hono/zod-openapi';
 import { usersTable } from '#/db/schema/users';
 import { paginationQuerySchema, validImageKeySchema, validNameSchema, validSlugSchema } from '#/utils/schema/common';
 import { entityBaseSchema } from '../entities/schema';

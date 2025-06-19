@@ -4,7 +4,7 @@ import { config } from 'config';
 import { ArrowRight } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
-import type * as z from 'zod';
+import type { z } from 'zod/v4'
 import type { ApiError } from '~/lib/api';
 import { checkEmail } from '~/modules/auth/api';
 import type { Step } from '~/modules/auth/types';

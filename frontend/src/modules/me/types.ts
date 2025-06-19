@@ -1,5 +1,5 @@
 import type { InferResponseType } from 'hono';
-import type { z } from 'zod';
+import type { z } from 'zod/v4';
 import type { client } from '~/modules/me/api';
 import type { User } from '~/modules/users/types';
 import { zGetMeAuthResponse } from '~/openapi-client/zod.gen';
