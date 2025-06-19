@@ -1,6 +1,6 @@
 import type { NavItemId } from '~/modules/navigation/types';
 import {
-  AcceptOrgInviteRoute,
+  AcceptEmailInviteRoute,
   AuthLayoutRoute,
   AuthenticateRoute,
   CreatePasswordWithTokenRoute,
@@ -31,7 +31,7 @@ export const routeTree = rootRoute.addChildren([
     AccessibilityRoute,
     ErrorNoticeRoute,
     SignOutRoute,
-    AcceptOrgInviteRoute,
+    AcceptEmailInviteRoute,
     AuthLayoutRoute.addChildren([
       AuthenticateRoute,
       RequestPasswordRoute,

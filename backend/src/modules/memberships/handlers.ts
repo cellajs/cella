@@ -1,9 +1,5 @@
 import { MemberInviteEmail, type MemberInviteEmailProps } from '../../../emails/member-invite';
 
-import { OpenAPIHono } from '@hono/zod-openapi';
-import { config } from 'config';
-import { and, count, eq, ilike, inArray, isNotNull, isNull, or } from 'drizzle-orm';
-import i18n from 'i18next';
 import { db } from '#/db/db';
 import { emailsTable } from '#/db/schema/emails';
 import { membershipsTable } from '#/db/schema/memberships';
@@ -28,6 +24,10 @@ import { getOrderColumn } from '#/utils/order-column';
 import { slugFromEmail } from '#/utils/slug-from-email';
 import { prepareStringForILikeFilter } from '#/utils/sql';
 import { TimeSpan, createDate } from '#/utils/time-span';
+import { OpenAPIHono } from '@hono/zod-openapi';
+import { config } from 'config';
+import { and, count, eq, ilike, inArray, isNotNull, isNull, or } from 'drizzle-orm';
+import i18n from 'i18next';
 
 const app = new OpenAPIHono<Env>({ defaultHook });
 
@@ -172,7 +172,7 @@ const membershipRouteHandlers = app
     const insertedTokens = await db
       .insert(tokensTable)
       .values(tokens)
-      .returning({ tokenId: tokensTable.id, userId: tokensTable.userId, email: tokensTable.email, token: tokensTable.token });
+      .returning({ tokenId: tokensTable.id, userId: tokensTable.userId, email: tokensTable.email, token: tokensTable.token, role: tokensTable.role });
 
     // Generate inactive memberships after tokens are inserted
     const inactiveMemberships = insertedTokens
@@ -193,6 +193,7 @@ const membershipRouteHandlers = app
       senderName: user.name,
       senderThumbnailUrl: user.thumbnailUrl,
       orgName: entity.name,
+      role,
       subject: i18n.t('backend:email.member_invite.subject', {
         lng: organization.defaultLanguage,
         appName: config.name,

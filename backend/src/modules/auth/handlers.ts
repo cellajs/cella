@@ -1,11 +1,3 @@
-import { getRandomValues } from 'node:crypto';
-import { OpenAPIHono } from '@hono/zod-openapi';
-import { encodeBase64 } from '@oslojs/encoding';
-import { OAuth2RequestError, generateCodeVerifier, generateState } from 'arctic';
-import type { EnabledOauthProvider } from 'config';
-import { config } from 'config';
-import { and, desc, eq } from 'drizzle-orm';
-import i18n from 'i18next';
 import { db } from '#/db/db';
 import { type EmailModel, emailsTable } from '#/db/schema/emails';
 import { membershipsTable } from '#/db/schema/memberships';
@@ -15,6 +7,7 @@ import { sessionsTable } from '#/db/schema/sessions';
 import { tokensTable } from '#/db/schema/tokens';
 import { type UserModel, usersTable } from '#/db/schema/users';
 import { type Env, getContextToken, getContextUser } from '#/lib/context';
+import { resolveEntity } from '#/lib/entity';
 import { type ErrorType, errorRedirect, errorResponse } from '#/lib/errors';
 import { mailer } from '#/lib/mailer';
 import { logEvent } from '#/middlewares/logger/log-event';
@@ -43,6 +36,7 @@ import { verifyPassKeyPublic } from '#/modules/auth/helpers/passkey';
 import { getParsedSessionCookie, invalidateSessionById, setUserSession, validateSession } from '#/modules/auth/helpers/session';
 import { handleCreateUser, handleMembershipTokenUpdate } from '#/modules/auth/helpers/user';
 import { sendVerificationEmail } from '#/modules/auth/helpers/verify-email';
+import authRoutes from '#/modules/auth/routes';
 import { getUserBy } from '#/modules/users/helpers/get-user-by';
 import { defaultHook } from '#/utils/default-hook';
 import { isExpiredDate } from '#/utils/is-expired-date';
@@ -50,9 +44,16 @@ import { getIsoDate } from '#/utils/iso-date';
 import { nanoid } from '#/utils/nanoid';
 import { slugFromEmail } from '#/utils/slug-from-email';
 import { TimeSpan, createDate } from '#/utils/time-span';
+import { OpenAPIHono } from '@hono/zod-openapi';
+import { encodeBase64 } from '@oslojs/encoding';
+import { OAuth2RequestError, generateCodeVerifier, generateState } from 'arctic';
+import type { EnabledOauthProvider } from 'config';
+import { config } from 'config';
+import { and, desc, eq } from 'drizzle-orm';
+import i18n from 'i18next';
+import { getRandomValues } from 'node:crypto';
 import { CreatePasswordEmail, type CreatePasswordEmailProps } from '../../../emails/create-password';
 import { EmailVerificationEmail, type EmailVerificationEmailProps } from '../../../emails/email-verification';
-import authRoutes from './routes';
 
 const enabledStrategies: readonly string[] = config.enabledAuthenticationStrategies;
 const enabledOauthProviders: readonly string[] = config.enabledOauthProviders;
@@ -359,20 +360,20 @@ const authRouteHandlers = app
     // If token is expired, return an error
     if (isExpiredDate(tokenRecord.expiresAt)) return errorResponse(ctx, 401, `${type}_expired`, 'warn', undefined);
 
-    const data = {
+    const baseData = {
       email: tokenRecord.email,
+      role: tokenRecord.role,
       userId: tokenRecord.userId || '',
     };
 
-    if (!tokenRecord.organizationId) return ctx.json({ success: true, data }, 200);
+    if (!tokenRecord.organizationId) return ctx.json({ success: true, data: baseData }, 200);
 
     // If it is a membership invitation, get organization details
     const [organization] = await db.select().from(organizationsTable).where(eq(organizationsTable.id, tokenRecord.organizationId));
     if (!organization) return errorResponse(ctx, 404, 'not_found', 'warn', 'organization');
 
     const dataWithOrg = {
-      email: tokenRecord.email,
-      userId: tokenRecord.userId || '',
+      ...baseData,
       organizationId: organization.id || '',
       organizationName: organization.name || '',
       organizationSlug: organization.slug || '',
@@ -383,7 +384,7 @@ const authRouteHandlers = app
   /*
    * Accept org invite token for signed in users
    */
-  .openapi(authRoutes.acceptOrgInvite, async (ctx) => {
+  .openapi(authRoutes.acceptEmailInvite, async (ctx) => {
     const user = getContextUser();
     const token = getContextToken();
 
@@ -396,15 +397,24 @@ const authRouteHandlers = app
 
     if (emailInfo.userId === user.id && user.id !== token.userId) await handleMembershipTokenUpdate(user.id, token.id);
     // Activate memberships
-    await db
+    const activatedMemberships = await db
       .update(membershipsTable)
       .set({ tokenId: null, activatedAt: getIsoDate() })
-      .where(and(eq(membershipsTable.tokenId, token.id)));
+      .where(and(eq(membershipsTable.tokenId, token.id)))
+      .returning();
+
+    const [targetMembership] = activatedMemberships.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
     // Delete token after all activation, since tokenId is cascaded in membershipTable
     await db.delete(tokensTable).where(eq(tokensTable.id, token.id));
 
-    return ctx.json({ success: true }, 200);
+    const entityIdField = config.entityIdFields[token.entityType];
+    if (!targetMembership[entityIdField]) return errorResponse(ctx, 404, 'not_found', 'warn', token.entityType);
+
+    const entity = await resolveEntity(token.entityType, targetMembership[entityIdField]);
+    if (!entity) return errorResponse(ctx, 404, 'not_found', 'warn', token.entityType);
+
+    return ctx.json({ success: true, data: { ...entity, membership: targetMembership } }, 200);
   })
   /*
    * Start impersonation
