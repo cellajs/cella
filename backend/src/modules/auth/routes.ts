@@ -373,7 +373,7 @@ const authRoutes = {
     },
   }),
   // Info: this route requires authentication
-  acceptEmailInvite: createCustomRoute({
+  acceptEntityInvite: createCustomRoute({
     method: 'post',
     path: '/accept-invite/{token}',
     guard: [isAuthenticated],

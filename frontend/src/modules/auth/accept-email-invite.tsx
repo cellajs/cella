@@ -4,7 +4,7 @@ import { config } from 'config';
 import { Ban, Check } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-import { acceptEmailInvite } from '~/modules/auth/api';
+import { acceptEntityInvite } from '~/modules/auth/api';
 import AuthErrorNotice from '~/modules/auth/auth-error-notice';
 import { useTokenCheck } from '~/modules/auth/use-token-check';
 import Spinner from '~/modules/common/spinner';
@@ -15,25 +15,25 @@ import type { Organization } from '~/modules/organizations/types';
 import { SubmitButton, buttonVariants } from '~/modules/ui/button';
 import { getEntityRoute } from '~/nav-config';
 import { queryClient } from '~/query/query-client';
-import { AcceptEmailInviteRoute } from '~/routes/auth';
+import { AcceptEntityInviteRoute } from '~/routes/auth';
 import { cn } from '~/utils/cn';
 
 // Accept organization invitation when user is signed in
-const AcceptEmailInvite = () => {
+const AcceptEntityInvite = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
 
-  const { token } = useParams({ from: AcceptEmailInviteRoute.id });
-  const { tokenId } = useSearch({ from: AcceptEmailInviteRoute.id });
+  const { token } = useParams({ from: AcceptEntityInviteRoute.id });
+  const { tokenId } = useSearch({ from: AcceptEntityInviteRoute.id });
 
   const { data, isLoading, error } = useTokenCheck('invitation', tokenId);
 
   const {
-    mutate: _acceptEmailInvite,
+    mutate: _acceptEntityInvite,
     isPending,
     error: acceptInviteError,
   } = useMutation({
-    mutationFn: acceptEmailInvite,
+    mutationFn: acceptEntityInvite,
     onSuccess: (entity) => {
       getAndSetMenu();
 
@@ -60,7 +60,7 @@ const AcceptEmailInvite = () => {
   });
 
   // Accept organization invitation
-  const onSubmit = () => _acceptEmailInvite({ token });
+  const onSubmit = () => _acceptEntityInvite({ token });
 
   if (isLoading) return <Spinner className="h-10 w-10" />;
   if (error || acceptInviteError) return <AuthErrorNotice error={error || acceptInviteError} />;
@@ -87,4 +87,4 @@ const AcceptEmailInvite = () => {
   );
 };
 
-export default AcceptEmailInvite;
+export default AcceptEntityInvite;

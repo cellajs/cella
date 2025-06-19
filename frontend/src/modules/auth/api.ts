@@ -173,7 +173,7 @@ export const checkToken = async ({ id, type }: { id: string; type: TokenType }) 
  * @param token - Invitation token to accept.
  * @returns A boolean indicating success of invitation accept.
  */
-export const acceptEmailInvite = async (param: { token: string }) => {
+export const acceptEntityInvite = async (param: { token: string }) => {
   const response = await client['accept-invite'][':token'].$post({ param });
 
   const json = await handleResponse(response);

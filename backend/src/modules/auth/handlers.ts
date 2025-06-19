@@ -384,7 +384,7 @@ const authRouteHandlers = app
   /*
    * Accept org invite token for signed in users
    */
-  .openapi(authRoutes.acceptEmailInvite, async (ctx) => {
+  .openapi(authRoutes.acceptEntityInvite, async (ctx) => {
     const user = getContextUser();
     const token = getContextToken();
 
