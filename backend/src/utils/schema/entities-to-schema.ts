@@ -1,5 +1,7 @@
 import { config, type EntityType } from 'config';
-import { type ZodTypeAny, z } from 'zod';
+import { z } from '@hono/zod-openapi';
+// TODO deprecated Zod type
+import { ZodTypeAny } from 'zod/v4';
 
 /**
  * Map over all the entities and create a schema for each

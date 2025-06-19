@@ -1,9 +1,8 @@
 import { membershipSummarySchema } from '#/modules/memberships/schema';
 import { userSummarySchema } from '#/modules/users/schema';
 import { contextEntityTypeSchema, idSchema, imageUrlSchema, nameSchema, pageEntityTypeSchema, slugSchema } from '#/utils/schema/common';
+import { mapEntitiesToSchema } from '#/utils/schema/entities-to-schema';
 import { z } from '@hono/zod-openapi';
-
-import { config } from 'config';
 
 export const entityBaseSchema = z.object({
   id: idSchema,
@@ -27,7 +26,7 @@ export const entityListItemSchema = entityBaseSchema.extend({
 
 export const pageEntitiesSchema = z.object({
   items: z.array(entityListItemSchema),
-  counts: z.record(z.enum(config.pageEntityTypes), z.number().optional()),
+  counts: mapEntitiesToSchema(() => z.number().optional()),
   total: z.number(),
 });
 
