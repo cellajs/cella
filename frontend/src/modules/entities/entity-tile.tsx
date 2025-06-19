@@ -28,7 +28,7 @@ export const EntityTile = ({ entity }: { entity: EntityGreidItems[number] }) => 
                   <div className="font-semibold leading-3">{entity.name}</div>
                   <div className="text-sm font-light opacity-70 group-hover:opacity-85 transition-opacity">
                     {dateShort(entity.createdAt)}
-                    {entity.membership?.role ? ` | ${t(`common:${entity.membership.role}`)}` : ''}
+                    {entity.membership?.role ? ` | ${t(entity.membership.role, { ns: ['app', 'common'] })}` : ''}
                   </div>
                 </div>
               </div>

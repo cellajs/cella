@@ -21,7 +21,9 @@ const SelectRoleRadio = ({ entityType, onChange, value, className }: Props) => {
         // biome-ignore lint/a11y/noLabelWithoutControl: <explanation>
         <label key={role} className="inline-flex gap-2 items-center cursor-pointer ">
           <RadioGroupItem key={role} value={role} />
-          <span className="text-sm font-normal leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">{t(role)}</span>
+          <span className="text-sm font-normal leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+            {t(role, { ns: ['app', 'common'] })}
+          </span>
         </label>
       ))}
     </RadioGroup>
