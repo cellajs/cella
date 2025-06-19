@@ -1,5 +1,5 @@
 import { GitHub, Google, MicrosoftEntraId } from 'arctic';
-import { type EnabledOauthProvider, config } from 'config';
+import { config, type EnabledOauthProvider } from 'config';
 import { env } from '../../../../env';
 
 export const githubAuth = new GitHub(env.GITHUB_CLIENT_ID || '', env.GITHUB_CLIENT_SECRET || '', `${config.backendAuthUrl}/github/callback`);

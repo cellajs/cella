@@ -1,11 +1,10 @@
-import { dataSeed } from './seeds/data/seed';
-import { organizationsSeed } from './seeds/organizations/seed';
-import { userSeed } from './seeds/user/seed';
-
 import { config } from 'config';
 import { db } from '#/db/db';
 import { organizationsTable } from '#/db/schema/organizations';
 import { usersTable } from '#/db/schema/users';
+import { dataSeed } from './seeds/data/seed';
+import { organizationsSeed } from './seeds/organizations/seed';
+import { userSeed } from './seeds/user/seed';
 
 /**
  * Deletes all tables and resets it with seed data.

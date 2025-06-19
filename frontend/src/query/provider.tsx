@@ -2,7 +2,7 @@ import { QueryClientProvider as BaseQueryClientProvider } from '@tanstack/react-
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
 import { config } from 'config';
 import { useEffect } from 'react';
-import { meQueryOptions, menuQueryOptions } from '~/modules/me/query';
+import { menuQueryOptions, meQueryOptions } from '~/modules/me/query';
 import type { UserMenu, UserMenuItem } from '~/modules/me/types';
 import { queriesToMap } from '~/offline-config';
 import { waitFor } from '~/query/helpers';

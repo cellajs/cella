@@ -1,4 +1,4 @@
-import { type ShapeStreamOptions, isChangeMessage } from '@electric-sql/client';
+import { isChangeMessage, type ShapeStreamOptions } from '@electric-sql/client';
 import { getShapeStream } from '@electric-sql/react';
 import { config } from 'config';
 import { useEffect } from 'react';
@@ -8,7 +8,7 @@ import { clientConfig } from '~/lib/api';
 import { handleDelete, handleInsert, handleUpdate } from '~/modules/attachments/helpers/sync-handlers';
 import type { Attachment } from '~/modules/attachments/types';
 import { useSyncStore } from '~/store/sync';
-import { type CamelToSnakeObject, baseBackoffOptions as backoffOptions, errorHandler, processMessages } from '~/utils/electric-utils';
+import { baseBackoffOptions as backoffOptions, type CamelToSnakeObject, errorHandler, processMessages } from '~/utils/electric-utils';
 
 // Configure ShapeStream options
 const attachmentShape = (organizationId: string, storePrefix: string): ShapeStreamOptions => {

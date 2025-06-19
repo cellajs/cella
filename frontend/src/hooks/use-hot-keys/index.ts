@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { type HotkeyItem, getHotkeyMatcher, shouldFireEvent } from '~/hooks/use-hot-keys/helpers';
+import { getHotkeyMatcher, type HotkeyItem, shouldFireEvent } from '~/hooks/use-hot-keys/helpers';
 
 /**
  * Hook to handle global keyboard shortcuts.

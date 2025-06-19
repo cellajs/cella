@@ -1,4 +1,4 @@
-import { ECDSAPublicKey, decodePKIXECDSASignature, decodeSEC1PublicKey, p256, verifyECDSASignature } from '@oslojs/crypto/ecdsa';
+import { decodePKIXECDSASignature, decodeSEC1PublicKey, ECDSAPublicKey, p256, verifyECDSASignature } from '@oslojs/crypto/ecdsa';
 import { sha256 } from '@oslojs/crypto/sha2';
 import { decodeBase64, encodeBase64 } from '@oslojs/encoding';
 import {

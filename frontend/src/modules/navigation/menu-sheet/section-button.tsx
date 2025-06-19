@@ -86,7 +86,7 @@ export const MenuSectionButton = ({ data, options, isEditing, isSectionVisible, 
                 >
                   <motion.button
                     key={`sheet-menu-plus-${options.entityType}`}
-                    transition={{ bounce: 0, duration: 0.2, transition: { bounce: 0, duration: 0.1 } }}
+                    transition={{ bounce: 0, duration: 0.2 }}
                     initial={{ x: 20, opacity: 0 }}
                     animate={{ x: 0, opacity: 1 }}
                     exit={{ x: 20, opacity: 0 }}

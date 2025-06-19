@@ -1,4 +1,4 @@
-import { type EntityType, config } from 'config';
+import { config, type EntityType } from 'config';
 
 export type Restrictions = Record<Exclude<EntityType, 'organization'>, number>;
 

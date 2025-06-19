@@ -1,16 +1,14 @@
-import { mkdir } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
+import { mkdir } from 'node:fs/promises';
 import { join, relative } from 'node:path';
-import colors from 'picocolors';
 import { downloadTemplate } from 'giget';
+import colors from 'picocolors';
 import yoctoSpinner from 'yocto-spinner';
-
+import { addRemote } from './add-remote.ts';
 import { TEMPLATE_URL } from './constants.ts';
-
-import { install, generate } from './utils/run-package-manager-command.ts';
 import { cleanTemplate } from './utils/clean-template.ts';
 import { runGitCommand } from './utils/run-git-command.ts';
-import { addRemote } from './add-remote.ts';
+import { generate, install } from './utils/run-package-manager-command.ts';
 
 interface CreateOptions {
   projectName: string;

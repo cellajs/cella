@@ -1,6 +1,6 @@
 import type { createRoute } from '@hono/zod-openapi';
 import { config } from 'config';
-import { z } from 'zod';
+import { z } from '@hono/zod-openapi';
 import { entityTypeSchema } from './common';
 
 /**

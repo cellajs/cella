@@ -1,8 +1,7 @@
 import { DragHandleMenu, SideMenu, SideMenuController } from '@blocknote/react';
+import { sideMenuOpenOnTypes } from '~/modules/common/blocknote/blocknote-config';
 import { CustomDragHandleButton } from '~/modules/common/blocknote/custom-side-menu/drag-handle-button';
 import { ResetBlockTypeItem } from '~/modules/common/blocknote/custom-side-menu/reset-block-type';
-
-import { sideMenuOpenOnTypes } from '~/modules/common/blocknote/blocknote-config';
 import type { CustomBlockNoteEditor, CustomBlockTypes } from '~/modules/common/blocknote/types';
 
 // in this menu we have only drag button

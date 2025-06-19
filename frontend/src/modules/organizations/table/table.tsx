@@ -11,7 +11,7 @@ import { toaster } from '~/modules/common/toaster';
 import { getAndSetMenu } from '~/modules/me/helpers';
 import { inviteMembers as changeRole } from '~/modules/memberships/api';
 import { organizationsQueryOptions } from '~/modules/organizations/query';
-import type { OrganizationTable, OrganizationsSearch } from '~/modules/organizations/table/table-wrapper';
+import type { OrganizationsSearch, OrganizationTable } from '~/modules/organizations/table/table-wrapper';
 import { useDataFromInfiniteQuery } from '~/query/hooks/use-data-from-query';
 import { useUserStore } from '~/store/user';
 

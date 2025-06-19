@@ -1,8 +1,7 @@
-import type { z } from 'zod';
-import type { membershipSchema, membershipSummarySchema, pendingInvitationSchema } from '#/modules/memberships/schema';
-import type { memberSchema } from '#/modules/users/schema';
+import type { z } from 'zod/v4';
+import { zGetByOrgIdOrSlugMembershipsMembersResponse, zGetByOrgIdOrSlugMembershipsPendingResponse, zPutByOrgIdOrSlugMembershipsByIdResponse } from '~/openapi-client/zod.gen';
 
-export type Member = z.infer<typeof memberSchema>;
-export type Membership = z.infer<typeof membershipSchema>;
-export type PendingInvitation = z.infer<typeof pendingInvitationSchema>;
-export type MembershipSummary = z.infer<typeof membershipSummarySchema>;
+export type Member = z.infer<typeof zGetByOrgIdOrSlugMembershipsMembersResponse>['data']['items'][number];
+export type Membership = z.infer<typeof zPutByOrgIdOrSlugMembershipsByIdResponse>['data'];
+export type PendingInvitation = z.infer<typeof zGetByOrgIdOrSlugMembershipsPendingResponse>['data']['items'][number];
+export type MembershipSummary = Omit<Membership, 'createdBy' | 'createdAt' | 'modifiedAt' | 'modifiedBy' >

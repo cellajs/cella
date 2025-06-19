@@ -1,10 +1,9 @@
-import { config } from 'config';
-import { db } from '#/db/db';
-import { usersTable } from '#/db/schema/users';
-
 import { faker } from '@faker-js/faker';
 import chalk from 'chalk';
+import { config } from 'config';
+import { db } from '#/db/db';
 import { emailsTable } from '#/db/schema/emails';
+import { usersTable } from '#/db/schema/users';
 import { hashPassword } from '#/modules/auth/helpers/argon2id';
 import { generateUnsubscribeToken } from '#/modules/users/helpers/unsubscribe-token';
 

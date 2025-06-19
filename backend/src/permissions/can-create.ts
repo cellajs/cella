@@ -3,7 +3,7 @@ import type { Context } from 'hono';
 
 import { type Env, getContextMemberships, getContextOrganization } from '#/lib/context';
 import type { EntityModel } from '#/lib/entity';
-import { type ErrorType, createError } from '#/lib/errors';
+import { createError, type ErrorType } from '#/lib/errors';
 import { checkPermission } from '#/permissions/check-if-allowed';
 
 /**

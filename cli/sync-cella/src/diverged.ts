@@ -1,10 +1,10 @@
 import { rm, writeFile } from 'node:fs/promises';
-import yoctoSpinner from 'yocto-spinner';
 import colors from 'picocolors';
+import yoctoSpinner from 'yocto-spinner';
 
 import { fetchRemote } from './fetch-remote.ts';
-import { runGitCommand, getLatestFileCommitInfo } from './utils/run-git-command.ts';
-import { extractIgnorePatterns, excludeByIgnorePatterns } from './utils/ignore-patterns.ts';
+import { excludeByIgnorePatterns, extractIgnorePatterns } from './utils/ignore-patterns.ts';
+import { getLatestFileCommitInfo, runGitCommand } from './utils/run-git-command.ts';
 
 export interface DivergedOptions {
   divergedFile: string;
@@ -20,13 +20,7 @@ type DiffStatInfo = {
   date?: string;
 };
 
-export async function diverged({
-  divergedFile,
-  ignoreFile,
-  ignoreList,
-  upstreamBranch,
-  localBranch,
-}: DivergedOptions): Promise<void> {
+export async function diverged({ divergedFile, ignoreFile, ignoreList, upstreamBranch, localBranch }: DivergedOptions): Promise<void> {
   const targetFolder = process.cwd();
   console.info();
 
@@ -110,9 +104,7 @@ export async function diverged({
     text: 'Filtering diverged files',
   }).start();
 
-  let filteredFiles = divergedFiles
-    .split('\n')
-    .filter((file) => commonFiles.includes(file));
+  let filteredFiles = divergedFiles.split('\n').filter((file) => commonFiles.includes(file));
 
   // Filter files using ignore patterns
   if (ignorePatterns.length > 0) {
@@ -181,21 +173,21 @@ export async function diverged({
 
   filteredFiles.forEach((file) => {
     const info = diffStatMap.get(file);
-  
+
     if (info) {
       const { statLine, hash, date } = info;
-  
+
       // Colorize the output using picocolors
       const coloredHash = hash ? colors.yellow(hash) : colors.dim('no commits');
       const coloredDate = date ? colors.green(date) : colors.dim('N/A');
-  
+
       console.info(`${statLine}\t(${coloredHash} on ${coloredDate})`);
     } else {
       // Fallback: show clickable file path
       console.info(`./${file}`);
     }
   });
-  
+
   console.info('====================');
 
   console.info();

@@ -1,8 +1,7 @@
-import type { RateLimiterMemory, RateLimiterPostgres } from 'rate-limiter-flexible';
-import { RateLimiterRes } from 'rate-limiter-flexible';
-
 import type { MiddlewareHandler } from 'hono';
 import { createMiddleware } from 'hono/factory';
+import type { RateLimiterMemory, RateLimiterPostgres } from 'rate-limiter-flexible';
+import { RateLimiterRes } from 'rate-limiter-flexible';
 import type { Env } from '#/lib/context';
 import { errorResponse } from '#/lib/errors';
 import { getRateLimiterInstance, rateLimitError } from '#/middlewares/rate-limiter/helpers';

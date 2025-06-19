@@ -1,18 +1,17 @@
 import { faker } from '@faker-js/faker';
-import { UniqueEnforcer } from 'enforce-unique';
+import chalk from 'chalk';
 
 import { config } from 'config';
+import { UniqueEnforcer } from 'enforce-unique';
 import slugify from 'slugify';
 import { db } from '#/db/db';
-import { nanoid } from '#/utils/nanoid';
-
-import chalk from 'chalk';
-import { type InsertEmailModel, emailsTable } from '#/db/schema/emails';
+import { emailsTable, type InsertEmailModel } from '#/db/schema/emails';
 import { type InsertMembershipModel, membershipsTable } from '#/db/schema/memberships';
 import { type InsertOrganizationModel, organizationsTable } from '#/db/schema/organizations';
 import { type InsertUserModel, usersTable } from '#/db/schema/users';
 import { hashPassword } from '#/modules/auth/helpers/argon2id';
 import { generateUnsubscribeToken } from '#/modules/users/helpers/unsubscribe-token';
+import { nanoid } from '#/utils/nanoid';
 import { adminUser } from '../user/seed';
 
 const ORGANIZATIONS_COUNT = 100;

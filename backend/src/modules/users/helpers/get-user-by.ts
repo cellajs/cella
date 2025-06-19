@@ -1,4 +1,4 @@
-import { type SQL, and, eq } from 'drizzle-orm';
+import { and, eq, type SQL } from 'drizzle-orm';
 import { db } from '#/db/db';
 import { emailsTable } from '#/db/schema/emails';
 import { type UnsafeUserModel, type UserModel, usersTable } from '#/db/schema/users';

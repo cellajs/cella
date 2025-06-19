@@ -1,14 +1,9 @@
 import { Link, useNavigate } from '@tanstack/react-router';
-
-import { MarketingFooter } from '~/modules/marketing/footer';
-import { MarketingNav } from '~/modules/marketing/nav';
-import { Button, buttonVariants } from '~/modules/ui/button';
-import { cn } from '~/utils/cn';
-
 import { ArrowDown, Check, Copy } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useCopyToClipboard } from '~/hooks/use-copy-to-clipboard';
 import { useScrollSpy } from '~/hooks/use-scroll-spy';
+import CallToAction from '~/modules/marketing/about/call-to-action';
 // import Counters from '~/modules/marketing/about/counters';
 // import FAQ from '~/modules/marketing/about/faq';
 import Features from '~/modules/marketing/about/features';
@@ -17,8 +12,10 @@ import Integrations from '~/modules/marketing/about/integrations';
 import Showcase from '~/modules/marketing/about/showcase';
 // import Pricing from '~/modules/marketing/about/pricing';
 import Why from '~/modules/marketing/about/why';
-
-import CallToAction from '~/modules/marketing/about/call-to-action';
+import { MarketingFooter } from '~/modules/marketing/footer';
+import { MarketingNav } from '~/modules/marketing/nav';
+import { Button, buttonVariants } from '~/modules/ui/button';
+import { cn } from '~/utils/cn';
 import '~/modules/marketing/about/glow-button.css';
 import { AboutSection } from '~/modules/marketing/about/section';
 import { Input } from '~/modules/ui/input';

@@ -1,5 +1,5 @@
 import type { EntityType } from 'config';
-import { type TableConfig, eq, inArray, or } from 'drizzle-orm';
+import { eq, inArray, or, type TableConfig } from 'drizzle-orm';
 import type { PgTableWithColumns } from 'drizzle-orm/pg-core';
 import { db } from '#/db/db';
 import { entityTables } from '#/entity-config';

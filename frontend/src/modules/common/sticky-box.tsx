@@ -91,19 +91,9 @@ onScroll()
 */
 
 type UnsubList = (() => void)[];
-type MeasureFn<T extends object> = (opts: {
-  top: number;
-  left: number;
-  height: number;
-  width: number;
-}) => T;
+type MeasureFn<T extends object> = (opts: { top: number; left: number; height: number; width: number }) => T;
 
-const getDimensions = <T extends object>(opts: {
-  el: HTMLElement | Window;
-  onChange: () => void;
-  unsubs: UnsubList;
-  measure: MeasureFn<T>;
-}): T => {
+const getDimensions = <T extends object>(opts: { el: HTMLElement | Window; onChange: () => void; unsubs: UnsubList; measure: MeasureFn<T> }): T => {
   const { el, onChange, unsubs, measure } = opts;
   if (el === window) {
     const getRect = () => ({ top: 0, left: 0, height: window.innerHeight, width: window.innerWidth });

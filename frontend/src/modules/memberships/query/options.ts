@@ -1,7 +1,7 @@
 import { infiniteQueryOptions } from '@tanstack/react-query';
 import { config } from 'config';
 
-import { type GetMembersParams, type GetMembershipInvitationsParams, getMembers, getPendingInvitations } from '~/modules/memberships/api';
+import { type GetMembershipInvitationsParams, type GetMembersParams, getMembers, getPendingInvitations } from '~/modules/memberships/api';
 
 /**
  * Keys for members related queries. These keys help to uniquely identify different query.

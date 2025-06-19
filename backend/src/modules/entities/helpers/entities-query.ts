@@ -1,6 +1,6 @@
 import { type ContextEntityType, config } from 'config';
-import { type SQLWrapper, and, eq, ilike, inArray, ne, or, sql } from 'drizzle-orm';
-import { z } from 'zod';
+import { and, eq, ilike, inArray, ne, or, type SQLWrapper, sql } from 'drizzle-orm';
+import { z } from '@hono/zod-openapi';
 
 import { db } from '#/db/db';
 import { membershipsTable } from '#/db/schema/memberships';

@@ -1,8 +1,7 @@
-import type { Request } from '~/modules/requests/types';
-
 import { DeleteForm } from '~/modules/common/delete-form';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { useDeleteRequestMutation } from '~/modules/requests/query';
+import type { Request } from '~/modules/requests/types';
 
 interface Props {
   requests: Request[];

@@ -1,5 +1,5 @@
 import { Link, Outlet } from '@tanstack/react-router';
-import { Suspense, lazy } from 'react';
+import { lazy, Suspense } from 'react';
 import useMounted from '~/hooks/use-mounted';
 import { type FooterLinkProps, FooterLinks } from '~/modules/common/app-footer';
 import Logo from '~/modules/common/logo';

@@ -17,6 +17,7 @@ const organizationRoutes = {
     path: '/',
     guard: isAuthenticated,
     tags: ['organizations'],
+    operationId: 'createOrganization',
     summary: 'Create organization',
     description: 'Create a new organization.',
     request: {
@@ -46,6 +47,7 @@ const organizationRoutes = {
     path: '/',
     guard: [isAuthenticated, hasSystemAccess],
     tags: ['organizations'],
+    operationId: 'getOrganizations',
     summary: 'Get list of organizations',
     description: 'Get list of organizations. Currently only available to system admins.',
     request: {
@@ -68,6 +70,7 @@ const organizationRoutes = {
     path: '/{idOrSlug}',
     guard: [isAuthenticated],
     tags: ['organizations'],
+    operationId: 'updateOrganization',
     summary: 'Update organization',
     description: 'Update organization by id or slug.',
     request: {
@@ -97,6 +100,7 @@ const organizationRoutes = {
     path: '/{idOrSlug}',
     guard: [isAuthenticated],
     tags: ['organizations'],
+    operationId: 'getOrganization',
     summary: 'Get organization',
     description: 'Get an organization by id or slug.',
     request: {
@@ -119,6 +123,7 @@ const organizationRoutes = {
     path: '/',
     guard: [isAuthenticated],
     tags: ['organizations'],
+    operationId: 'deleteOrganization',
     summary: 'Delete organizations',
     description: 'Delete organizations by ids.',
     request: {

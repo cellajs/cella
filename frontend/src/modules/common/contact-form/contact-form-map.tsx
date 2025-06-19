@@ -1,4 +1,4 @@
-import { APIProvider, AdvancedMarker, ControlPosition, Map as GMap, InfoWindow, MapControl, useAdvancedMarkerRef } from '@vis.gl/react-google-maps';
+import { AdvancedMarker, APIProvider, ControlPosition, Map as GMap, InfoWindow, MapControl, useAdvancedMarkerRef } from '@vis.gl/react-google-maps';
 import { config } from 'config';
 import { ArrowUpRight, Minus, Plus, X } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';

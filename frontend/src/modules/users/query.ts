@@ -2,7 +2,7 @@ import { infiniteQueryOptions, queryOptions, useMutation } from '@tanstack/react
 import { config } from 'config';
 import type { ApiError } from '~/lib/api';
 
-import { type GetUsersParams, type UpdateUserParams, deleteUsers, getUser, getUsers, updateUser } from '~/modules/users/api';
+import { deleteUsers, type GetUsersParams, getUser, getUsers, type UpdateUserParams, updateUser } from '~/modules/users/api';
 import type { User } from '~/modules/users/types';
 import { useMutateQueryData } from '~/query/hooks/use-mutate-query-data';
 

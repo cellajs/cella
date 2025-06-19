@@ -1,15 +1,12 @@
-import yoctoSpinner from 'yocto-spinner';
+import { rename, unlink } from 'node:fs/promises';
 import colors from 'picocolors';
-
+import yoctoSpinner from 'yocto-spinner';
 import { DEFAULT_CONFIG_FILE } from './constants.ts';
 
-import { rename, unlink } from 'node:fs/promises';
-
 import { fetchRemote } from './fetch-remote.ts';
-import { runGitCommand } from './utils/run-git-command.ts';
-
 import { extractValues } from './utils/config-file.ts';
-import { extractIgnorePatterns, excludeByIgnorePatterns } from './utils/ignore-patterns.ts';
+import { excludeByIgnorePatterns, extractIgnorePatterns } from './utils/ignore-patterns.ts';
+import { runGitCommand } from './utils/run-git-command.ts';
 
 interface Fork {
   name: string;
@@ -22,10 +19,7 @@ export interface PullForkOptions {
   fork: Fork;
 }
 
-export async function pullFork({
-  prBranchName,
-  fork,
-}: PullForkOptions): Promise<void> {
+export async function pullFork({ prBranchName, fork }: PullForkOptions): Promise<void> {
   const targetFolder = process.cwd();
   console.info();
 
@@ -137,17 +131,21 @@ export async function pullFork({
     const localFiles = (await runGitCommand({ targetFolder, command: 'ls-files' })).split('\n').filter(Boolean);
     const filteredLocalFiles = excludeByIgnorePatterns(localFiles, ignorePatterns);
 
-    const uniqueLocalDirs = [...new Set(
-      filteredLocalFiles
-        .map(file => file.split('/').slice(0, -1).join('/'))
-        .filter(dir => dir.includes('/')) // Exclude root-level files
-    )];
+    const uniqueLocalDirs = [
+      ...new Set(
+        filteredLocalFiles
+          .map((file) => file.split('/').slice(0, -1).join('/'))
+          .filter((dir) => dir.includes('/')), // Exclude root-level files
+      ),
+    ];
 
     // List files from the forked branch and filter them
-    const forkedFiles = (await runGitCommand({ targetFolder, command: `ls-tree -r ${fork.name}/${fork.branch} --name-only` })).split('\n').filter(Boolean);
+    const forkedFiles = (await runGitCommand({ targetFolder, command: `ls-tree -r ${fork.name}/${fork.branch} --name-only` }))
+      .split('\n')
+      .filter(Boolean);
     const filteredForkedFiles = excludeByIgnorePatterns(forkedFiles, ignorePatterns);
 
-    const filesToCheckout = filteredForkedFiles.filter(file => {
+    const filesToCheckout = filteredForkedFiles.filter((file) => {
       const fileDir = file.split('/').slice(0, -1).join('/');
       return uniqueLocalDirs.includes(fileDir);
     });
@@ -164,6 +162,8 @@ export async function pullFork({
     process.exit(1);
   }
 
-  console.info(`${colors.green('✔')} Successfully merged changes from ${fork.name}/${fork.branch} to ${prBranchName}, resolving conflicts where necessary.`);
+  console.info(
+    `${colors.green('✔')} Successfully merged changes from ${fork.name}/${fork.branch} to ${prBranchName}, resolving conflicts where necessary.`,
+  );
   console.info();
 }

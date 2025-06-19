@@ -1,5 +1,5 @@
-import { z } from 'zod';
 import { idSchema, passwordSchema } from '#/utils/schema/common';
+import { z } from '@hono/zod-openapi';
 import { userSchema } from '../users/schema';
 
 export const emailBodySchema = z.object({

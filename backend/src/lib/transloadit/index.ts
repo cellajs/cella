@@ -1,10 +1,9 @@
+import crypto from 'node:crypto';
+import { config, type UploadTemplateId } from 'config';
 import { env } from '#/env';
 import { uploadTemplates } from '#/lib/transloadit/templates';
 import { nanoid } from '#/utils/nanoid';
 import { utcDateString } from '#/utils/utc-data-string';
-
-import crypto from 'node:crypto';
-import { type UploadTemplateId, config } from 'config';
 
 export const getParams = (templateId: UploadTemplateId, isPublic: boolean, sub: string) => {
   // Transloadit security requires us to set an expiration date like this

@@ -1,6 +1,6 @@
 import { config } from 'config';
-import { clientConfig, handleResponse } from '~/lib/api';
 import { systemHc } from '#/modules/system/hc';
+import { clientConfig, handleResponse } from '~/lib/api';
 
 export const client = systemHc(config.backendUrl, clientConfig);
 

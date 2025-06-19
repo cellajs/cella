@@ -1,13 +1,8 @@
-import type { Uppy, UppyOptions } from '@uppy/core';
 import type { TemplateStepKeys } from '#/lib/transloadit/types';
-import type { uploadTokenSchema } from '#/modules/me/schema';
-
-import type { UppyFile } from '@uppy/core';
+import type { Uppy, UppyFile, UppyOptions } from '@uppy/core';
 import type { AssemblyResult } from '@uppy/transloadit';
 import type { UploadTemplateId } from 'config';
-import type { z } from 'zod';
 
-export type UploadTokenData = z.infer<typeof uploadTokenSchema>;
 
 type UppyBody = Record<string, unknown>;
 type UppyMeta = { public: boolean; offlineUploaded: boolean };

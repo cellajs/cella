@@ -19,7 +19,7 @@ import UnsavedBadge from '~/modules/common/unsaved-badge';
 import { getOrganizations } from '~/modules/organizations/api';
 import CreateOrganizationForm from '~/modules/organizations/create-organization-form';
 import DeleteOrganizations from '~/modules/organizations/delete-organizations';
-import type { OrganizationTable, OrganizationsSearch } from '~/modules/organizations/table/table-wrapper';
+import type { OrganizationsSearch, OrganizationTable } from '~/modules/organizations/table/table-wrapper';
 import type { Organization } from '~/modules/organizations/types';
 import CreateNewsletterForm from '~/modules/system/create-newsletter-form';
 import NewsletterPreview from '~/modules/system/newsletter-preview';

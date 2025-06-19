@@ -1,13 +1,12 @@
-import { autoScrollForElements } from '@atlaskit/pragmatic-drag-and-drop-auto-scroll/element';
-import { type Edge, extractClosestEdge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge';
 import { combine } from '@atlaskit/pragmatic-drag-and-drop/combine';
 import { monitorForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
+import { autoScrollForElements } from '@atlaskit/pragmatic-drag-and-drop-auto-scroll/element';
+import { type Edge, extractClosestEdge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge';
+import { Link } from '@tanstack/react-router';
 import { config } from 'config';
 import { ArrowLeft, Info, Search } from 'lucide-react';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-
-import { Link } from '@tanstack/react-router';
 import { menuSectionsSchema } from '~/menu-config';
 import { AlertWrap } from '~/modules/common/alert-wrap';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';

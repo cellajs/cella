@@ -1,7 +1,7 @@
 import { type ContextEntityType, config } from 'config';
+import { membershipsHc } from '#/modules/memberships/hc';
 import { clientConfig, handleResponse } from '~/lib/api';
 import type { Member } from '~/modules/memberships/types';
-import { membershipsHc } from '#/modules/memberships/hc';
 
 export const client = membershipsHc(config.backendUrl, clientConfig);
 

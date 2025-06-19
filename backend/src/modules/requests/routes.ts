@@ -4,7 +4,7 @@ import { isNoBot } from '#/middlewares/is-no-bot';
 import { spamLimiter } from '#/middlewares/rate-limiter/limiters';
 import { requestCreateBodySchema, requestListQuerySchema, requestSchema } from '#/modules/requests/schema';
 import { idsBodySchema } from '#/utils/schema/common';
-import { errorResponses, successWithDataSchema, successWithPaginationSchema, successWithoutDataSchema } from '#/utils/schema/responses';
+import { errorResponses, successWithDataSchema, successWithoutDataSchema, successWithPaginationSchema } from '#/utils/schema/responses';
 
 const requestRoutes = {
   createRequest: createCustomRoute({
@@ -13,6 +13,7 @@ const requestRoutes = {
     guard: isPublicAccess,
     middleware: [isNoBot, spamLimiter],
     tags: ['requests'],
+    operationId: 'createRequest',
     summary: 'Create request',
     description: 'Create a request on system level. Request supports waitlist, contact form and newsletter.',
     request: {
@@ -41,6 +42,7 @@ const requestRoutes = {
     path: '/',
     guard: [isAuthenticated, hasSystemAccess],
     tags: ['requests'],
+    operationId: 'getRequests',
     summary: 'Get list of requests',
     description: 'Get list of requests on system level for waitlist, submit contact form or to join newsletter.',
     request: {
@@ -63,6 +65,7 @@ const requestRoutes = {
     path: '/',
     guard: [isAuthenticated, hasSystemAccess],
     tags: ['requests'],
+    operationId: 'deleteRequest',
     summary: 'Delete requests',
     description: 'Delete requests by ids.',
     request: {

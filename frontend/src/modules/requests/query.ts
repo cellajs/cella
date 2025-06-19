@@ -1,7 +1,7 @@
 import { infiniteQueryOptions, useMutation } from '@tanstack/react-query';
 import { config } from 'config';
 import type { ApiError } from '~/lib/api';
-import { type CreateRequestBody, type GetRequestsParams, createRequest, deleteRequests, getRequests } from '~/modules/requests/api';
+import { type CreateRequestBody, createRequest, deleteRequests, type GetRequestsParams, getRequests } from '~/modules/requests/api';
 import type { Request } from '~/modules/requests/types';
 
 /**

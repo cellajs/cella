@@ -6,6 +6,7 @@ import { db } from '#/db/db';
 import { organizationsTable } from '#/db/schema/organizations';
 import { type Env, getContextMemberships, getContextUser } from '#/lib/context';
 import { errorResponse } from '#/lib/errors';
+
 export { isAuthenticated } from './is-authenticated';
 
 /**

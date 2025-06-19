@@ -3,6 +3,7 @@ import { create } from 'zustand';
 import { createJSONStorage, devtools, persist } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
 import type { AlertKeys } from '~/modules/common/down-alert';
+
 interface AlertStoreState {
   alertsSeen: string[]; // Seen alert IDs (to prevent duplicate notifications)
   downAlert: AlertKeys | null; // Down alert type

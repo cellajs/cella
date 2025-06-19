@@ -3,12 +3,11 @@ import { ZapOff } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ExpandableList } from '~/modules/common/expandable-list';
-import { Button } from '~/modules/ui/button';
-
 import { toaster } from '~/modules/common/toaster';
 import { deleteMySessions } from '~/modules/me/api';
 import { SessionTile } from '~/modules/me/session-tile';
 import type { MeAuthData } from '~/modules/me/types';
+import { Button } from '~/modules/ui/button';
 
 const SessionsList = ({ userAuthInfo }: { userAuthInfo: MeAuthData }) => {
   const { t } = useTranslation();

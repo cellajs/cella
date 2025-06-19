@@ -3,7 +3,7 @@ import { config } from 'config';
 import { t } from 'i18next';
 import { toaster } from '~/modules/common/toaster';
 import { getAndSetMenu } from '~/modules/me/helpers';
-import { type RemoveMembersProps, type UpdateMembershipProp, removeMembers, updateMembership } from '~/modules/memberships/api';
+import { type RemoveMembersProps, removeMembers, type UpdateMembershipProp, updateMembership } from '~/modules/memberships/api';
 import { resolveParentEntityType } from '~/modules/memberships/query/helpers';
 import { membersKeys } from '~/modules/memberships/query/options';
 import type {

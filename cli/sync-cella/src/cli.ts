@@ -1,8 +1,8 @@
-import { Command, InvalidArgumentError } from 'commander';
 import { basename, resolve } from 'node:path';
+import { Command, InvalidArgumentError } from 'commander';
 import { NAME, VERSION } from './constants';
+import type { Fork } from './utils/config-file';
 import { validateProjectName } from './utils/validate-project-name';
-import { Fork } from './utils/config-file';
 
 interface CommandOptions {
   configFile?: string;
@@ -36,31 +36,23 @@ export const command = new Command(NAME)
   .argument('[sync-service]')
   .usage('[sync-service] [options]')
   .helpOption('-h, --help', 'Display this help message.')
-  .option(
-    '--config-file <path>',
-    'Explicitly tell the CLI to use this config file.',
-    (name: string) => {
-      name = name.trim();
-      if (!['.js', '.json', '.ts'].some(ext => name.endsWith(ext))) {
-        throw new InvalidArgumentError(`Unsupported config file: ${name}. Supported extensions are ".js", ".json", ".ts".`);
-      }
-      configFile = name;
+  .option('--config-file <path>', 'Explicitly tell the CLI to use this config file.', (name: string) => {
+    name = name.trim();
+    if (!['.js', '.json', '.ts'].some((ext) => name.endsWith(ext))) {
+      throw new InvalidArgumentError(`Unsupported config file: ${name}. Supported extensions are ".js", ".json", ".ts".`);
     }
-  )
-  .option(
-    '--upstream-branch <name>',
-    'Explicitly tell the CLI to use this upstream branch.',
-    (name: string) => {
-      name = name.trim();
-      if (name) {
-        const validation = validateProjectName(basename(resolve(name)));
-        if (!validation.valid) {
-          throw new InvalidArgumentError(`Invalid branch name: ${validation.problems?.[0] || 'Unknown error'}`);
-        }
-        upstreamBranch = name;
+    configFile = name;
+  })
+  .option('--upstream-branch <name>', 'Explicitly tell the CLI to use this upstream branch.', (name: string) => {
+    name = name.trim();
+    if (name) {
+      const validation = validateProjectName(basename(resolve(name)));
+      if (!validation.valid) {
+        throw new InvalidArgumentError(`Invalid branch name: ${validation.problems?.[0] || 'Unknown error'}`);
       }
+      upstreamBranch = name;
     }
-  )
+  })
   .action((name: string) => {
     name = name.trim();
     if (!['diverged', 'pull-upstream', 'pull-fork'].includes(name)) {

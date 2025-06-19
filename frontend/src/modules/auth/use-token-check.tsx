@@ -1,6 +1,6 @@
 import { type UseQueryResult, useQuery } from '@tanstack/react-query';
 import type { ApiError } from '~/lib/api';
-import { type TokenType, checkToken } from '~/modules/auth/api';
+import { checkToken, type TokenType } from '~/modules/auth/api';
 import type { TokenData } from '~/modules/auth/types';
 
 /**

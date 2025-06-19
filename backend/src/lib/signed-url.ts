@@ -1,8 +1,7 @@
-import { env } from '#/env';
-
 import { GetObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { getSignedUrl as s3SignedUrl } from '@aws-sdk/s3-request-presigner';
 import { config } from 'config';
+import { env } from '#/env';
 
 const s3Client = new S3Client({
   region: config.s3Region,

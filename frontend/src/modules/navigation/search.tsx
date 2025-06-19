@@ -1,12 +1,10 @@
-import type { entityListItemSchema } from '#/modules/entities/schema';
-
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
-import { type EntityType, config } from 'config';
+import { config, type EntityType } from 'config';
 import { History, Search, User, X } from 'lucide-react';
 import { Fragment, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { z } from 'zod';
+import type { z } from 'zod/v4';
 import useFocusByRef from '~/hooks/use-focus-by-ref';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
@@ -18,9 +16,10 @@ import { Button } from '~/modules/ui/button';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandSeparator } from '~/modules/ui/command';
 import { ScrollArea } from '~/modules/ui/scroll-area';
 import { entitySearchSections, getEntityRoute } from '~/nav-config';
+import { zGetEntitiesPageResponse } from '~/openapi-client/zod.gen';
 import { useNavigationStore } from '~/store/navigation';
 
-export type EntityListItemType = z.infer<typeof entityListItemSchema>;
+export type EntityListItemType = z.infer<typeof zGetEntitiesPageResponse>['data']['items'][number];
 
 export interface EntitySearchSection {
   id: string;

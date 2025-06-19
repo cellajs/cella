@@ -1,7 +1,7 @@
-import { type Language, config } from 'config';
+import { config, type Language } from 'config';
 import { boolean, index, json, pgTable, varchar } from 'drizzle-orm/pg-core';
 import { usersTable } from '#/db/schema/users';
-import { type Restrictions, defaultRestrictions } from '#/db/utils/organization-restrictions';
+import { defaultRestrictions, type Restrictions } from '#/db/utils/organization-restrictions';
 import { timestampColumns } from '#/db/utils/timestamp-columns';
 import { nanoid } from '#/utils/nanoid';
 

@@ -1,19 +1,16 @@
-import { resolve } from 'node:path';
 import { existsSync } from 'node:fs';
+import { resolve } from 'node:path';
 
-import { input, confirm, select } from '@inquirer/prompts';
+import { confirm, input, select } from '@inquirer/prompts';
 import fileSelector from 'inquirer-file-selector';
 
 import { cli } from './cli.ts';
 import { CELLA_TITLE, DEFAULT_CONFIG_FILE, DEFAULT_DIVERGED_FILE, DEFAULT_UPSTREAM_BRANCH } from './constants.ts';
-
-import { extractValues, Config, Fork } from './utils/config-file.ts';
+import { type DivergedOptions, diverged } from './diverged.ts';
+import { type PullForkOptions, pullFork } from './pull-fork.ts';
+import { type PullUpstreamOptions, pullUpstream } from './pull-upstream.ts';
+import { type Config, extractValues, type Fork } from './utils/config-file.ts';
 import { runGitCommand } from './utils/run-git-command.ts';
-
-import { diverged, DivergedOptions } from './diverged.ts';
-
-import { pullUpstream, PullUpstreamOptions } from './pull-upstream.ts';
-import { pullFork, PullForkOptions } from './pull-fork.ts';
 
 async function main(): Promise<void> {
   console.info(CELLA_TITLE);
@@ -36,15 +33,7 @@ async function main(): Promise<void> {
     }
   }
 
-  const {
-    problems,
-    selectedFile,
-    divergedFile,
-    ignoreFile,
-    ignoreList,
-    upstreamBranch,
-    forks,
-  } = await askForConfigFile(cli.configFile);
+  const { problems, selectedFile, divergedFile, ignoreFile, ignoreList, upstreamBranch, forks } = await askForConfigFile(cli.configFile);
 
   if (problems) {
     console.error('Invalid config file: ' + problems[0]);
@@ -123,18 +112,18 @@ async function main(): Promise<void> {
       if (!proceed) process.exit(1);
     }
   }
-  
+
   if (cli.syncService === 'diverged') {
     const options: DivergedOptions = {
-        divergedFile: cli.divergedFile,
-        ignoreFile: cli.ignoreFile,
-        ignoreList: cli.ignoreList,
-        upstreamBranch: cli.upstreamBranch,
-        localBranch: cli.localBranch,
+      divergedFile: cli.divergedFile,
+      ignoreFile: cli.ignoreFile,
+      ignoreList: cli.ignoreList,
+      upstreamBranch: cli.upstreamBranch,
+      localBranch: cli.localBranch,
     };
     return await diverged(options);
   }
-  
+
   if (cli.syncService === 'pull-fork') {
     if (!cli.prBranchName || !cli.fork) {
       console.error('PR branch name and fork are required for this service.');
@@ -144,11 +133,11 @@ async function main(): Promise<void> {
     const options: PullForkOptions = {
       prBranchName: cli.prBranchName,
       fork: cli.fork,
-    }
+    };
 
     return await pullFork(options);
   }
-  
+
   if (cli.syncService === 'pull-upstream') {
     const options: PullUpstreamOptions = {
       ignoreFile: cli.ignoreFile,

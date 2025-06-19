@@ -1,6 +1,6 @@
 import yoctoSpinner from 'yocto-spinner';
-import { runGitCommand } from './utils/run-git-command.ts';
 import { CELLA_REMOTE_URL } from './constants.ts';
+import { runGitCommand } from './utils/run-git-command.ts';
 
 interface FetchRemoteOptions {
   localBranch: string;
@@ -8,11 +8,7 @@ interface FetchRemoteOptions {
   remoteName?: string; // Optional, defaults to 'upstream'
 }
 
-export async function fetchRemote({
-  localBranch,
-  remoteUrl = CELLA_REMOTE_URL,
-  remoteName = 'upstream',
-}: FetchRemoteOptions): Promise<void> {
+export async function fetchRemote({ localBranch, remoteUrl = CELLA_REMOTE_URL, remoteName = 'upstream' }: FetchRemoteOptions): Promise<void> {
   const targetFolder = process.cwd();
 
   // Spinner for adding remote

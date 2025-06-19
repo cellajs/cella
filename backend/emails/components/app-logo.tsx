@@ -1,6 +1,5 @@
-import { Img } from 'jsx-email';
-
 import { config } from 'config';
+import { Img } from 'jsx-email';
 import type { JSX } from 'react';
 
 export const AppLogo = ({ style }: { style?: React.CSSProperties }): JSX.Element => (

@@ -1,4 +1,4 @@
-import { type ContextEntityType, type ProductEntityType, config } from 'config';
+import { type ContextEntityType, config, type ProductEntityType } from 'config';
 import { entityTables } from '#/entity-config';
 
 // Define a mapped type to check if field name passed as 'T' exists in each table and filter out 'never' types

@@ -54,7 +54,7 @@ const entityRouteHandlers = app
       organizationIds = orgMemberships.map((m) => m.organizationId);
     }
 
-    if (!organizationIds.length) return ctx.json({ success: true, data: { items: [], total: 0, counts: {} } }, 200);
+    if (!organizationIds.length) return ctx.json({ success: true, data: { items: [], total: 0, counts: { user: 0, organization: 0 } } }, 200);
 
     // Prepare query and execute in parallel
     const queries = getEntitiesQuery({ q, organizationIds, userId, selfId, type, userMembershipType });

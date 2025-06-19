@@ -16,8 +16,8 @@ import {
   errorResponses,
   successWithDataSchema,
   successWithErrorsSchema,
-  successWithPaginationSchema,
   successWithoutDataSchema,
+  successWithPaginationSchema,
 } from '#/utils/schema/responses';
 
 const membershipRoutes = {

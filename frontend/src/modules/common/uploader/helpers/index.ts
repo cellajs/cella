@@ -4,7 +4,7 @@ import Transloadit from '@uppy/transloadit';
 import { config } from 'config';
 import { prepareFilesForOffline } from '~/modules/common/uploader/helpers/prepare-for-offline';
 import type { CustomUppy, CustomUppyFile, CustomUppyOpt } from '~/modules/common/uploader/types';
-import { type UploadTokenQuery, getUploadToken } from '~/modules/me/api';
+import { getUploadToken, type UploadTokenQuery } from '~/modules/me/api';
 import { cleanFileName } from '~/utils/clean-file-name';
 import { nanoid } from '~/utils/nanoid';
 

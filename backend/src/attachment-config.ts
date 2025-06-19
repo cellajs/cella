@@ -1,4 +1,4 @@
-import { type PgColumn, index, varchar } from 'drizzle-orm/pg-core';
+import { index, type PgColumn, varchar } from 'drizzle-orm/pg-core';
 import { organizationsTable } from './db/schema/organizations';
 
 /**

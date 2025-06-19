@@ -14,9 +14,6 @@ export function validateProjectName(name: string): ValidationResult {
 
   return {
     valid: false,
-    problems: [
-      ...(nameValidation.errors || []),
-      ...(nameValidation.warnings || []),
-    ],
+    problems: [...(nameValidation.errors || []), ...(nameValidation.warnings || [])],
   };
 }

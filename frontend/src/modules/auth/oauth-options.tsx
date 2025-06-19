@@ -1,5 +1,5 @@
 import { useSearch } from '@tanstack/react-router';
-import { type EnabledOauthProvider, config } from 'config';
+import { config, type EnabledOauthProvider } from 'config';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { githubSignInUrl, googleSignInUrl, microsoftSignInUrl } from '~/modules/auth/api';

@@ -38,9 +38,7 @@ export async function runGitCommand({ targetFolder, command }: RunGitCommandOpti
       if (isGitCommandSuccess(gitCommand, code, errOutput)) {
         resolve(output.trim());
       } else {
-        reject(
-          `Git ${gitCommand} command failed with exit code ${code}, stderr: "${errOutput.trim()}", stdout: "${output.trim()}"`
-        );
+        reject(`Git ${gitCommand} command failed with exit code ${code}, stderr: "${errOutput.trim()}", stdout: "${output.trim()}"`);
       }
     });
 
@@ -57,10 +55,7 @@ export async function runGitCommand({ targetFolder, command }: RunGitCommandOpti
 }
 
 // Get latest commit info for a specific file
-export async function getLatestFileCommitInfo(
-  targetFolder: string,
-  filePath: string
-): Promise<{ hash: string; date: string }> {
+export async function getLatestFileCommitInfo(targetFolder: string, filePath: string): Promise<{ hash: string; date: string }> {
   try {
     const logOutput = await runGitCommand({
       targetFolder,

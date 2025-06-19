@@ -1,9 +1,8 @@
+import { useIsFetching } from '@tanstack/react-query';
 import { config } from 'config';
 import { Home } from 'lucide-react';
-import Logo from '~/modules/common/logo';
-
-import { useIsFetching } from '@tanstack/react-query';
 import useMounted from '~/hooks/use-mounted';
+import Logo from '~/modules/common/logo';
 import { useNavigationStore } from '~/store/navigation';
 
 const AppNavLoader = () => {

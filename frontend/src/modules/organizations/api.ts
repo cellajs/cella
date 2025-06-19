@@ -1,6 +1,6 @@
 import { config } from 'config';
-import { clientConfig, handleResponse } from '~/lib/api';
 import { organizationsHc } from '#/modules/organizations/hc';
+import { clientConfig, handleResponse } from '~/lib/api';
 
 export const client = organizationsHc(config.backendUrl, clientConfig);
 

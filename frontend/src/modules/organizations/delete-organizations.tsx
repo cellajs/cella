@@ -1,8 +1,7 @@
-import type { Organization } from '~/modules/organizations/types';
-
 import { DeleteForm } from '~/modules/common/delete-form';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { useOrganizationDeleteMutation } from '~/modules/organizations/query';
+import type { Organization } from '~/modules/organizations/types';
 
 interface Props {
   organizations: Organization[];

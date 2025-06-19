@@ -1,5 +1,5 @@
 import { createRoute, useLoaderData, useParams } from '@tanstack/react-router';
-import { Suspense, lazy } from 'react';
+import { lazy, Suspense } from 'react';
 import ErrorNotice from '~/modules/common/error-notice';
 import Spinner from '~/modules/common/spinner';
 import { meAuthQueryOptions } from '~/modules/me/query';

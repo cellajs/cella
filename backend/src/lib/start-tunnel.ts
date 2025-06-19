@@ -1,6 +1,5 @@
-import chalk from 'chalk';
-
 import type { AddressInfo } from 'node:net';
+import chalk from 'chalk';
 import { env } from '../env';
 
 /**

@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import { z } from '@hono/zod-openapi';
 import { mapEntitiesToSchema } from '#/utils/schema/entities-to-schema';
 
 export const metricPublicSchema = mapEntitiesToSchema(() => z.number());
