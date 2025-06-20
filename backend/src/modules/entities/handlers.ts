@@ -69,7 +69,7 @@ const entityRouteHandlers = app
    * Get all users context entities
    */
   .openapi(entityRoutes.geContextEntities, async (ctx) => {
-    const { q, sort, type, targetUserId } = ctx.req.valid('query');
+    const { q, sort, type, roles, targetUserId } = ctx.req.valid('query');
 
     const { id: selfId } = getContextUser();
 
@@ -94,7 +94,12 @@ const entityRouteHandlers = app
       .from(table)
       .innerJoin(
         membershipsTable,
-        and(eq(membershipsTable[entityIdField], table.id), eq(membershipsTable.userId, userId), eq(membershipsTable.contextType, type)),
+        and(
+          eq(membershipsTable[entityIdField], table.id),
+          eq(membershipsTable.userId, userId),
+          eq(membershipsTable.contextType, type),
+          ...(roles?.length ? [inArray(membershipsTable.role, roles)] : []),
+        ),
       )
       .where(q ? ilike(table.name, prepareStringForILikeFilter(q)) : undefined)
       .orderBy(orderColumn);

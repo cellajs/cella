@@ -1,23 +1,23 @@
 import { useQuery } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
-import { GridSkeleton } from '~/modules/entities/entity-grid-skeleton';
-import type { BaseEntityGridProps, EntitySearch } from '~/modules/entities/entity-grid-wrapper';
-import { EntityTile } from '~/modules/entities/entity-tile';
+import { EntityItem } from '~/modules/entities/entity-grid/item';
+import { SingleGridSkeleton } from '~/modules/entities/entity-grid/skeleton/single';
+import type { EntitySearch, SingleEntityProps } from '~/modules/entities/entity-grid/types';
 import { contextEntitiesQueryOptions } from '~/modules/entities/query';
 
-type Props = BaseEntityGridProps & {
+type Props = SingleEntityProps & {
   searchVars: EntitySearch;
   setTotal: (newTotal?: number) => void;
 };
 
-export const EntityGrid = ({ entityType, userId, searchVars, setTotal }: Props) => {
+export const SingleEntityGrid = ({ entityType, roles, userId, searchVars, setTotal }: Props) => {
   const [initialDone, setInitialDone] = useState(false);
 
   const {
     data: entities = [],
     isLoading,
     isFetching,
-  } = useQuery(contextEntitiesQueryOptions({ ...searchVars, type: entityType, targetUserId: userId }));
+  } = useQuery(contextEntitiesQueryOptions({ ...searchVars, roles, type: entityType, targetUserId: userId }));
 
   useEffect(() => {
     if (isFetching) return;
@@ -29,11 +29,11 @@ export const EntityGrid = ({ entityType, userId, searchVars, setTotal }: Props) 
     if (!isLoading) setInitialDone(true);
   }, [isLoading]);
 
-  if (!initialDone) return <GridSkeleton entityType={entityType} />;
+  if (!initialDone) return <SingleGridSkeleton entityType={entityType} />;
   return (
     <div className="mb-12 grid gap-6 grid-cols-1 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-[repeat(auto-fit,minmax(330px,1fr))]">
       {entities.map((entity) => (
-        <EntityTile key={entity.id} entity={entity} />
+        <EntityItem key={entity.id} entity={entity} />
       ))}
     </div>
   );

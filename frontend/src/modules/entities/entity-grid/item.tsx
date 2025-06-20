@@ -8,7 +8,7 @@ import { getEntityRoute } from '~/nav-config';
 import { dateShort } from '~/utils/date-short';
 import { numberToColorClass } from '~/utils/number-to-color-class';
 
-export const EntityTile = ({ entity }: { entity: EntityGreidItems[number] }) => {
+export const EntityItem = ({ entity }: { entity: EntityGreidItems[number] }) => {
   const { to, params } = getEntityRoute(entity);
   return (
     <Card className="overflow-hidden transition hover:shadow-sm">
@@ -28,7 +28,7 @@ export const EntityTile = ({ entity }: { entity: EntityGreidItems[number] }) => 
                   <div className="font-semibold leading-3">{entity.name}</div>
                   <div className="text-sm font-light opacity-70 group-hover:opacity-85 transition-opacity">
                     {dateShort(entity.createdAt)}
-                    {entity.membership?.role ? ` | ${t(entity.membership.role, { ns: ['app', 'common'] })}` : ''}
+                    {entity.membership?.role ? ` | ${t(`common:${entity.membership.role}`)}` : ''}
                   </div>
                 </div>
               </div>
