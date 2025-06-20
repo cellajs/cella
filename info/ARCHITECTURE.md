@@ -20,34 +20,34 @@ Cella in general is targeted towards being a template for SaaS development. But 
  * Focused on client-side rendering (CSR) and - once it becomes relevant - static site generation (SSG). This seems to align best with our hybrid idiom to support offline and sync capabilities and reduce 'server dependency'. 
 
 ### Backend
-- [NodeJS](https://nodejs.org)
-- [Hono](https://hono.dev)
-- [Postgres](https://www.postgresql.org)
-- [Drizzle ORM](https://orm.drizzle.team/)
-- [Zod](https://github.com/colinhacks/zod)
-- [OpenAPI](https://www.openapis.org)
-- [JSX Email](https://jsx.email/)
+- [nodejs](https://nodejs.org)
+- [hono](https://hono.dev)
+- [postgres](https://www.postgresql.org)
+- [drizzle orm](https://orm.drizzle.team/)
+- [zod](https://github.com/colinhacks/zod)
+- [openapi](https://www.openapis.org)
+- [jsx email](https://jsx.email/)
 
 ### Frontend
-- [React](https://reactjs.org)
-- [Tanstack Router](https://github.com/tanstack/router)
-- [Tanstack Query](https://github.com/tanstack/query)
-- [Zustand](https://github.com/pmndrs/zustand)
-- [Electric Sync](https://electric-sql.com/)
+- [react](https://reactjs.org)
+- [tanstack router](https://github.com/tanstack/router)
+- [tanstack query](https://github.com/tanstack/query)
+- [zustand](https://github.com/pmndrs/zustand)
+- [electric sync](https://electric-sql.com/)
 
 ### Frontend / UI
-- [React Data Grid](https://github.com/adazzle/react-data-grid)
-- [Shadcn UI](https://ui.shadcn.com)
-- [I18next](https://www.i18next.com)
-- [Lucide icons](https://lucide.dev)
+- [react data grid](https://github.com/adazzle/react-data-grid)
+- [shadcn](https://ui.shadcn.com)
+- [i18next](https://www.i18next.com)
+- [lucide icons](https://lucide.dev)
 
 ### Build tools
 - [pnpm](https://pnpm.io)
-- [Vite](https://vitejs.dev)
-- [Vite-PWA](https://github.com/antfu/vite-plugin-pwa)
-- [Biome](https://biomejs.dev)
-- [Lefthook](https://github.com/evilmartians/lefthook)
-- [PGLite](https://pglite.dev/)
+- [vite](https://vitejs.dev)
+- [vite-pwa](https://github.com/antfu/vite-plugin-pwa)
+- [biome](https://biomejs.dev)
+- [lefthook](https://github.com/evilmartians/lefthook)
+- [pglite](https://pglite.dev/)
 
 
 ## File structure
@@ -81,16 +81,16 @@ Cella in general is targeted towards being a template for SaaS development. But 
 ```
 
 ## Data modeling
-Some of the data tables (check out [/backend/src/db/schema]() ) in cella are an `entity`. Entities can be split in four types:
+Some of the db tables (check out [/backend/src/db/schema]() ) in cella are an `entity`. Entities can be split in four categories:
 * All entities (`user`, `organization`, `attachments`)
-* `PageEntityType`: entityType that can be searched for (`user`, `organization`)
+* `PageEntityType`: 'Pages' that can be searched for (`user`, `organization`)
 * `ContextEntityType`: Has memberships (`organization`)
-* `ProductEntityType`: Content related entities without membership (`attachment`)
+* `ProductEntityType`: Content related, no membership (`attachment`)
 
-The default cella setup has one example product entity - `attachments` - and one context: `organizations`. 
+The example cella setup has one product entity - `attachments` - and one context: `organizations`. But in a typical app you would have a context entity such as a 'bookclub' and more product entities such as 'books' and 'reviews'.
 
 ## API Design
-An OpenAPI is built with [zod-openapi](https://github.com/honojs/middleware/tree/main/packages/zod-openapi). Please read the readme in this middleware before you get started.
+An OpenAPI is built with [zod-openapi](https://github.com/honojs/middleware/tree/main/packages/zod-openapi). Please read the readme in this middleware before you get started. An API reference is created using [scalar](https://github.com/scalar/scalar).
 
 ## Modularity
 Both frontend and backend already have many modules in common, such as `authentication`, `users` and `organizations`. There are more frontend modules however, also for `home`, `marketing`, `navigation`. The benefit of modularity is twofold: better code (readability, portability etc) and to make receiving cella updates possible.
@@ -105,5 +105,6 @@ Zooming in on some of the frontend modules:
 ## Security
 
 Link to valuable resources:
+* https://cheatsheetseries.owasp.org/
 * https://mvsp.dev/mvsp.en/
  
