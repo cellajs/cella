@@ -1,6 +1,6 @@
+import { authHc } from '#/modules/auth/hc';
 import { config } from 'config';
 import { clientConfig, handleResponse } from '~/lib/api';
-import { authHc } from '#/modules/auth/hc';
 
 export const client = authHc(config.backendUrl, clientConfig);
 
@@ -173,11 +173,11 @@ export const checkToken = async ({ id, type }: { id: string; type: TokenType }) 
  * @param token - Invitation token to accept.
  * @returns A boolean indicating success of invitation accept.
  */
-export const acceptOrgInvite = async (param: { token: string }) => {
+export const acceptEntityInvite = async (param: { token: string }) => {
   const response = await client['accept-invite'][':token'].$post({ param });
 
   const json = await handleResponse(response);
-  return json.success;
+  return json.data;
 };
 
 /**

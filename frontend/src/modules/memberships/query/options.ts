@@ -14,7 +14,8 @@ export const membersKeys = {
     members: (filters: GetMembersParams) => [...membersKeys.table.base(), filters] as const,
     similarMembers: (filters: Pick<GetMembersParams, 'orgIdOrSlug' | 'idOrSlug' | 'entityType'>) => [...membersKeys.table.base(), filters] as const,
     pending: (filters: GetMembershipInvitationsParams) => ['invites', ...membersKeys.table.base(), filters] as const,
-    similarPending: (filters: Pick<GetMembershipInvitationsParams, 'idOrSlug' | 'entityType'>) => [...membersKeys.table.base(), filters] as const,
+    similarPending: (filters: Pick<GetMembershipInvitationsParams, 'idOrSlug' | 'entityType'>) =>
+      ['invites', ...membersKeys.table.base(), filters] as const,
   },
   update: () => [...membersKeys.all, 'update'] as const,
   delete: () => [...membersKeys.all, 'delete'] as const,
