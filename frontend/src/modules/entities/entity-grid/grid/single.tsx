@@ -1,16 +1,14 @@
 import { useQuery } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
-import type { BaseEntityGridProps, EntitySearch } from '~/modules/entities/entity-grid';
 import { EntityItem } from '~/modules/entities/entity-grid/item';
 import { SingleGridSkeleton } from '~/modules/entities/entity-grid/skeleton/single';
+import type { EntitySearch, SingleEntityProps } from '~/modules/entities/entity-grid/types';
 import { contextEntitiesQueryOptions } from '~/modules/entities/query';
 
-type GridEntityProps = BaseEntityGridProps['entities'][number];
-type Props = Omit<BaseEntityGridProps, 'entities'> &
-  GridEntityProps & {
-    searchVars: EntitySearch;
-    setTotal: (newTotal?: number) => void;
-  };
+type Props = SingleEntityProps & {
+  searchVars: EntitySearch;
+  setTotal: (newTotal?: number) => void;
+};
 
 export const SingleEntityGrid = ({ entityType, roles, userId, searchVars, setTotal }: Props) => {
   const [initialDone, setInitialDone] = useState(false);

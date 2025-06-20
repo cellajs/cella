@@ -4,9 +4,9 @@ import { FilterBarActions, FilterBarContent, TableFilterBar } from '~/modules/co
 import TableSearch from '~/modules/common/data-table/table-search';
 import { FocusView } from '~/modules/common/focus-view';
 import SelectSort from '~/modules/common/form-fields/select-sort';
-import type { BaseEntityGridProps, EntitySearch } from '~/modules/entities/entity-grid';
+import type { BaseGridCommonProps, EntitySearch } from '~/modules/entities/entity-grid/types';
 
-type Props = Omit<BaseEntityGridProps, 'entities'> & {
+type Props = BaseGridCommonProps & {
   countName: string;
   total?: number;
   searchVars: EntitySearch;

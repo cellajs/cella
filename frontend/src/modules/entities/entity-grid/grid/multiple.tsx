@@ -1,12 +1,12 @@
 import { useQueries } from '@tanstack/react-query';
 import { t } from 'i18next';
 import { Fragment, useEffect, useState } from 'react';
-import type { BaseEntityGridProps, EntitySearch } from '~/modules/entities/entity-grid';
 import { EntityItem } from '~/modules/entities/entity-grid/item';
 import { MultipleGridSkeleton } from '~/modules/entities/entity-grid/skeleton/multiple';
+import type { EntitySearch, MultipleEntityProps } from '~/modules/entities/entity-grid/types';
 import { contextEntitiesQueryOptions } from '~/modules/entities/query';
 
-type Props = BaseEntityGridProps & {
+type Props = MultipleEntityProps & {
   searchVars: EntitySearch;
   setTotal: (newTotal?: number) => void;
 };

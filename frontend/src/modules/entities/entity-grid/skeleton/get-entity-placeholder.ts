@@ -1,7 +1,7 @@
 import type { ContextEntityType } from 'config';
 import { nanoid } from '~/utils/nanoid';
 
-export const getDummyEntities = (entityType: ContextEntityType, number = 10) =>
+export const getEntityPlaceholder = (entityType: ContextEntityType, number = 10) =>
   Array.from({ length: number }).map((_, i) => ({
     id: nanoid(),
     name: `${entityType} ${i}`,
