@@ -150,7 +150,7 @@ const membershipRouteHandlers = app
       emailsWithIdToInvite.push({ email, userId: null });
     }
 
-    if (emailsWithIdToInvite.length === 0) ctx.json({ success: true }, 200);
+    if (emailsWithIdToInvite.length === 0) return ctx.json({ success: true }, 200);
 
     // Generate invitation tokens
     const tokens = emailsWithIdToInvite.map(({ email, userId }) => ({
