@@ -1,15 +1,8 @@
-import { OpenAPIHono } from '@hono/zod-openapi';
-import type { EnabledOauthProvider, MenuSection } from 'config';
-import { config } from 'config';
-import { and, asc, eq, isNotNull } from 'drizzle-orm';
-import { type SSEStreamingApi, streamSSE } from 'hono/streaming';
-import type { z } from 'zod';
 import { db } from '#/db/db';
 import { membershipsTable } from '#/db/schema/memberships';
 import { oauthAccountsTable } from '#/db/schema/oauth-accounts';
 import { passkeysTable } from '#/db/schema/passkeys';
 import { usersTable } from '#/db/schema/users';
-import { entityTables } from '#/entity-config';
 import { env } from '#/env';
 import { type Env, getContextMemberships, getContextUser } from '#/lib/context';
 import { resolveEntity } from '#/lib/entity';
@@ -17,18 +10,25 @@ import { type ErrorType, createError, errorResponse } from '#/lib/errors';
 import { getParams, getSignature } from '#/lib/transloadit';
 import { isAuthenticated } from '#/middlewares/guard';
 import { logEvent } from '#/middlewares/logger/log-event';
+import { deleteAuthCookie, getAuthCookie } from '#/modules/auth/helpers/cookie';
+import { parseAndValidatePasskeyAttestation } from '#/modules/auth/helpers/passkey';
+import { getParsedSessionCookie, invalidateSessionById, invalidateUserSessions, validateSession } from '#/modules/auth/helpers/session';
+import { checkSlugAvailable } from '#/modules/entities/helpers/check-slug';
+import { getUserSessions } from '#/modules/me/helpers/get-sessions';
+import { getUserMenuEntities } from '#/modules/me/helpers/get-user-menu-entities';
+import meRoutes from '#/modules/me/routes';
+import type { menuItemSchema, menuSchema } from '#/modules/me/schema';
 import { getUserBy } from '#/modules/users/helpers/get-user-by';
 import { verifyUnsubscribeToken } from '#/modules/users/helpers/unsubscribe-token';
+import permissionManager from '#/permissions/permissions-config';
 import { defaultHook } from '#/utils/default-hook';
 import { getIsoDate } from '#/utils/iso-date';
-import { deleteAuthCookie, getAuthCookie } from '../auth/helpers/cookie';
-import { parseAndValidatePasskeyAttestation } from '../auth/helpers/passkey';
-import { getParsedSessionCookie, invalidateSessionById, invalidateUserSessions, validateSession } from '../auth/helpers/session';
-import { checkSlugAvailable } from '../entities/helpers/check-slug';
-import { membershipSummarySelect } from '../memberships/helpers/select';
-import { getUserSessions } from './helpers/get-sessions';
-import meRoutes from './routes';
-import type { menuItemSchema, menuSchema } from './schema';
+import { OpenAPIHono } from '@hono/zod-openapi';
+import type { EnabledOauthProvider, MenuSection } from 'config';
+import { config } from 'config';
+import { and, eq } from 'drizzle-orm';
+import { type SSEStreamingApi, streamSSE } from 'hono/streaming';
+import type { z } from 'zod';
 
 type UserMenu = z.infer<typeof menuSchema>;
 type MenuItem = z.infer<typeof menuItemSchema>;
@@ -74,79 +74,37 @@ const meRouteHandlers = app
     const user = getContextUser();
     const memberships = getContextMemberships();
 
-    // Fetch function for each menu section, including handling submenus
-    const fetchMenuItemsForSection = async (section: MenuSection) => {
-      let submenu: MenuItem[] = [];
-      const mainTable = entityTables[section.entityType];
-      const mainEntityIdField = config.entityIdFields[section.entityType];
+    const emptyData = config.menuStructure.reduce((acc, section) => {
+      acc[section.entityType] = [];
+      return acc;
+    }, {} as UserMenu);
 
-      const entity = await db
-        .select({
-          slug: mainTable.slug,
-          id: mainTable.id,
-          createdAt: mainTable.createdAt,
-          modifiedAt: mainTable.modifiedAt,
-          organizationId: membershipSummarySelect.organizationId,
-          name: mainTable.name,
-          entityType: mainTable.entityType,
-          thumbnailUrl: mainTable.thumbnailUrl,
-          membership: membershipSummarySelect,
-        })
-        .from(mainTable)
-        .where(and(eq(membershipsTable.userId, user.id), eq(membershipsTable.contextType, section.entityType)))
-        .orderBy(asc(membershipsTable.order))
-        .innerJoin(membershipsTable, and(eq(membershipsTable[mainEntityIdField], mainTable.id), isNotNull(membershipsTable.activatedAt)));
+    if (!memberships.length) return ctx.json({ success: true, data: emptyData }, 200);
 
-      // If the section has a submenu, fetch the submenu items
-      if (section.subentityType) {
-        const subTable = entityTables[section.subentityType];
-        const subentityIdField = config.entityIdFields[section.subentityType];
+    const buildMenuForSection = async ({ entityType, subentityType }: MenuSection): Promise<MenuItem[]> => {
+      const entities = await getUserMenuEntities(entityType, user.id);
+      const subentities = subentityType ? await getUserMenuEntities(subentityType, user.id) : [];
 
-        submenu = await db
-          .select({
-            slug: subTable.slug,
-            id: subTable.id,
-            createdAt: subTable.createdAt,
-            modifiedAt: subTable.modifiedAt,
-            organizationId: membershipSummarySelect.organizationId,
-            name: subTable.name,
-            entityType: subTable.entityType,
-            thumbnailUrl: subTable.thumbnailUrl,
-            membership: membershipSummarySelect,
-          })
-          .from(subTable)
-          .where(and(eq(membershipsTable.userId, user.id), eq(membershipsTable.contextType, section.subentityType)))
-          .orderBy(asc(membershipsTable.order))
-          .innerJoin(membershipsTable, and(eq(membershipsTable[subentityIdField], subTable.id), isNotNull(membershipsTable.activatedAt)));
-      }
+      const allowedEntities = entities.filter((entity) => permissionManager.isPermissionAllowed([entity.membership], 'read', entity));
 
-      return entity.map((entity) => ({
-        ...entity,
-        submenu: submenu.filter((p) => p.membership[mainEntityIdField] === entity.id),
-      }));
+      return allowedEntities.map((entity) => {
+        const entityIdField = config.entityIdFields[entityType];
+
+        const submenu = subentities.filter(
+          (sub) =>
+            sub.membership[entityIdField] === entity.id && permissionManager.isPermissionAllowed([entity.membership, sub.membership], 'read', sub),
+        );
+        return { ...entity, submenu };
+      });
     };
 
-    // Build the menu data asynchronously
-    const data = async () => {
-      const result = await config.menuStructure.reduce(
-        async (accPromise, section) => {
-          const acc = await accPromise;
-          if (!memberships.length) {
-            acc[section.entityType] = [];
-            return acc;
-          }
+    const menu = {} as UserMenu;
 
-          // Fetch menu items for the current section
-          acc[section.entityType] = await fetchMenuItemsForSection(section);
-          return acc;
-        },
-        Promise.resolve({} as UserMenu),
-      );
+    for (const section of config.menuStructure) {
+      menu[section.entityType] = await buildMenuForSection(section);
+    }
 
-      return result;
-    };
-
-    return ctx.json({ success: true, data: await data() }, 200);
+    return ctx.json({ success: true, data: menu }, 200);
   })
   /*
    * Terminate one or more sessions
