@@ -4,15 +4,16 @@ import { FilterBarActions, FilterBarContent, TableFilterBar } from '~/modules/co
 import TableSearch from '~/modules/common/data-table/table-search';
 import { FocusView } from '~/modules/common/focus-view';
 import SelectSort from '~/modules/common/form-fields/select-sort';
-import type { BaseEntityGridProps, EntitySearch } from '~/modules/entities/entity-grid-wrapper';
+import type { BaseEntityGridProps, EntitySearch } from '~/modules/entities/entity-grid';
 
-type Props = BaseEntityGridProps & {
+type Props = Omit<BaseEntityGridProps, 'entities'> & {
+  countName: string;
   total?: number;
   searchVars: EntitySearch;
   setSearch: (search: EntitySearch) => void;
 };
 
-export const EntityGridBar = ({ total, entityType, searchVars, setSearch, isSheet }: Props) => {
+export const EntityGridBar = ({ total, countName, searchVars, setSearch, isSheet }: Props) => {
   const { q, sort } = searchVars;
 
   const isFiltered = !!q;
@@ -29,7 +30,7 @@ export const EntityGridBar = ({ total, entityType, searchVars, setSearch, isShee
       {/* Filter Bar */}
       <TableFilterBar onResetFilters={onResetFilters} isFiltered={isFiltered}>
         <FilterBarActions>
-          <TableCount count={total} type={entityType} isFiltered={isFiltered} onResetFilters={onResetFilters} />
+          <TableCount count={total} type={countName} isFiltered={isFiltered} onResetFilters={onResetFilters} />
         </FilterBarActions>
         <div className="sm:grow" />
         <FilterBarContent className="max-sm:animate-in max-sm:slide-in-from-left max-sm:fade-in max-sm:duration-300">

@@ -1,21 +1,11 @@
+import type { ContextEntityType } from 'config';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
-import type { BaseEntityGridProps } from '~/modules/entities/entity-grid-wrapper';
+import { getDummyEntities } from '~/modules/entities/entity-grid/skeleton/dummy-entities';
 import { AvatarGroup, AvatarGroupList, AvatarOverflowIndicator } from '~/modules/ui/avatar';
 import { Card, CardContent } from '~/modules/ui/card';
 import { Skeleton } from '~/modules/ui/skeleton';
-import { nanoid } from '~/utils/nanoid';
 
-const getDummyEntities = (entityType: BaseEntityGridProps['entityType']) =>
-  Array.from({ length: 10 }).map((_, i) => ({
-    id: nanoid(),
-    name: `${entityType} ${i}`,
-    members: Array.from({ length: Math.floor(Math.random() * 5) + 1 }).map((_, j) => ({
-      id: nanoid(),
-      name: `Member ${j}`,
-    })),
-  }));
-
-export const GridSkeleton = ({ entityType }: { entityType: BaseEntityGridProps['entityType'] }) => {
+export const SingleGridSkeleton = ({ entityType }: { entityType: ContextEntityType }) => {
   const entities = getDummyEntities(entityType);
   return (
     <div className="mb-12 grid gap-6 grid-cols-1 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-[repeat(auto-fit,minmax(330px,1fr))]">
