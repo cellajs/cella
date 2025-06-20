@@ -38,7 +38,7 @@
     "test": "pnpm -r --parallel test"
   },
   "devDependencies": {
-    "@biomejs/biome": "^1.9.4",
+    "@biomejs/biome": "^2.0.0",
     "@evilmartians/lefthook": "^1.11.13",
     "cross-env": "^7.0.3",
     "knip": "^5.60.2",
