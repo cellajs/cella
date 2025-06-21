@@ -41,7 +41,7 @@ export const useColumns = (entity: EntityPage) => {
         renderHeaderCell: HeaderCell,
         renderCell: ({ row }) => (
           <div className="inline-flex items-center gap-1 relative group h-full w-full">
-            {row.role ? t(`common:${row.role}`) : <span className="text-muted">-</span>}
+            {row.role ? t(row.role, { ns: ['app', 'common'] }) : <span className="text-muted">-</span>}
           </div>
         ),
       },

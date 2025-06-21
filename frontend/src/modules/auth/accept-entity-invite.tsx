@@ -4,62 +4,44 @@ import { config } from 'config';
 import { Ban, Check } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-import { acceptOrgInvite } from '~/modules/auth/api';
+import { acceptEntityInvite } from '~/modules/auth/api';
 import AuthErrorNotice from '~/modules/auth/auth-error-notice';
 import { useTokenCheck } from '~/modules/auth/use-token-check';
 import Spinner from '~/modules/common/spinner';
 import { getAndSetMenu } from '~/modules/me/helpers';
-import { membersKeys } from '~/modules/memberships/query/options';
-import { organizationsKeys } from '~/modules/organizations/query';
-import type { Organization } from '~/modules/organizations/types';
 import { SubmitButton, buttonVariants } from '~/modules/ui/button';
-import { queryClient } from '~/query/query-client';
-import { AcceptOrgInviteRoute } from '~/routes/auth';
-import { OrganizationRoute } from '~/routes/organizations';
+import { getEntityRoute } from '~/nav-config';
+import { AcceptEntityInviteRoute } from '~/routes/auth';
 import { cn } from '~/utils/cn';
 
 // Accept organization invitation when user is signed in
-const AcceptOrgInvite = () => {
+const AcceptEntityInvite = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
 
-  const { token } = useParams({ from: AcceptOrgInviteRoute.id });
-  const { tokenId } = useSearch({ from: AcceptOrgInviteRoute.id });
+  const { token } = useParams({ from: AcceptEntityInviteRoute.id });
+  const { tokenId } = useSearch({ from: AcceptEntityInviteRoute.id });
 
   const { data, isLoading, error } = useTokenCheck('invitation', tokenId);
 
   const {
-    mutate: _acceptOrgInvite,
+    mutate: _acceptEntityInvite,
     isPending,
     error: acceptInviteError,
   } = useMutation({
-    mutationFn: acceptOrgInvite,
-    onSuccess: () => {
-      getAndSetMenu();
+    mutationFn: acceptEntityInvite,
+    onSuccess: async (entity) => {
+      await getAndSetMenu();
 
       toast.success(t('common:invitation_accepted'));
-      if (data?.organizationSlug) {
-        // Cancel any ongoing queries for consistency
-        const singleOrgKey = organizationsKeys.single.byIdOrSlug(data.organizationSlug);
 
-        queryClient.setQueryData<Organization>(singleOrgKey, (oldData) => {
-          if (!oldData) return oldData;
-          return { ...oldData, invitesCount: oldData.invitesCount - 1 };
-        });
-
-        queryClient.invalidateQueries({
-          queryKey: membersKeys.table.similarPending({ idOrSlug: data.organizationSlug, entityType: 'organization' }),
-        });
-
-        navigate({ to: OrganizationRoute.to, params: { idOrSlug: data.organizationSlug } });
-      } else navigate({ to: config.defaultRedirectPath });
+      const { to, params, search } = getEntityRoute(entity);
+      navigate({ to, params, search });
     },
   });
 
   // Accept organization invitation
-  const onSubmit = () => {
-    _acceptOrgInvite({ token });
-  };
+  const onSubmit = () => _acceptEntityInvite({ token });
 
   if (isLoading) return <Spinner className="h-10 w-10" />;
   if (error || acceptInviteError) return <AuthErrorNotice error={error || acceptInviteError} />;
@@ -68,7 +50,7 @@ const AcceptOrgInvite = () => {
   return (
     <>
       <h1 className="text-2xl text-center">{t('common:accept_invite')}</h1>
-      <p className="font-light mb-4">{t('common:accept_invite_text', { email: data.email, organization: data.organizationName })}</p>
+      <p className="font-light mb-4">{t('common:accept_invite_text', { email: data.email, organization: data.organizationName, role: data.role })}</p>
 
       {data.email && (
         <div className="space-y-4">
@@ -86,4 +68,4 @@ const AcceptOrgInvite = () => {
   );
 };
 
-export default AcceptOrgInvite;
+export default AcceptEntityInvite;

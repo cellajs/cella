@@ -1,5 +1,6 @@
-import { z } from 'zod';
 import { idSchema, passwordSchema } from '#/utils/schema/common';
+import { z } from 'zod';
+import { membershipSchema } from '../memberships/schema';
 import { userSchema } from '../users/schema';
 
 export const emailBodySchema = z.object({
@@ -13,6 +14,7 @@ export const emailPasswordBodySchema = z.object({
 
 export const tokenWithDataSchema = z.object({
   email: z.string().email(),
+  role: membershipSchema.shape.role.nullable(),
   userId: idSchema.optional(),
   organizationName: z.string().optional(),
   organizationSlug: z.string().optional(),

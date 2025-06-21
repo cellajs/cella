@@ -50,7 +50,14 @@ export const useColumns = (isAdmin: boolean, isSheet: boolean) => {
         renderHeaderCell: HeaderCell,
         renderCell: ({ row }) => (
           <div className="inline-flex items-center gap-1 relative group h-full w-full">
-            {row.membership ? t(`common:${row.membership.role}`) : <span className="text-muted">-</span>}
+            {row.membership ? (
+              t(row.membership.role, {
+                ns: ['app', 'common'],
+                defaultValue: row.membership.role,
+              })
+            ) : (
+              <span className="text-muted">-</span>
+            )}
           </div>
         ),
         width: 100,

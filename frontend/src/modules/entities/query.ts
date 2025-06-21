@@ -45,7 +45,7 @@ export const contextEntitiesQueryOptions = ({ type, ...restQuery }: ContextEntit
   const sort = restQuery.sort ?? 'name';
   const targetUserId = restQuery.targetUserId ?? user.id;
   return queryOptions({
-    queryKey: entitiesKeys.grid.context({ q, sort, targetUserId, type }),
+    queryKey: entitiesKeys.grid.context({ q, sort, targetUserId, type, roles: restQuery.roles }),
     queryFn: () => getContextEntities({ type, ...restQuery }),
     staleTime: 0,
   });

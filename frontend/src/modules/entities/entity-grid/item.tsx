@@ -8,7 +8,7 @@ import { getEntityRoute } from '~/nav-config';
 import { dateShort } from '~/utils/date-short';
 import { numberToColorClass } from '~/utils/number-to-color-class';
 
-export const EntityTile = ({ entity }: { entity: EntityGreidItems[number] }) => {
+export const EntityItem = ({ entity }: { entity: EntityGreidItems[number] }) => {
   const { to, params } = getEntityRoute(entity);
   return (
     <Card className="overflow-hidden transition hover:shadow-sm">
