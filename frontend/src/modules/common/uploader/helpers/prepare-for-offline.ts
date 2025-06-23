@@ -1,5 +1,5 @@
 import type { AssemblyResponse } from '@uppy/transloadit';
-import { uploadTemplates } from '#/lib/transloadit/templates';
+import { uploadTemplates } from 'config/templates';
 import { LocalFileStorage } from '~/modules/attachments/helpers/local-file-storage';
 import type { CustomUppyFile } from '~/modules/common/uploader/types';
 import type { UploadTokenQuery } from '~/modules/me/api';

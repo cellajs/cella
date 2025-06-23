@@ -4,9 +4,9 @@
     "noEmit": true,
     
     "allowImportingTsExtensions": true,
-    "lib": ["ES2021"],
+    "lib": ["es2022"],
 
-    "rootDir": "./",
+    "rootDir": "../",
     "sourceMap": true,
     "inlineSources": true,
 
@@ -22,6 +22,6 @@
       "#/*": ["./src/*"]
     }
   },
-  "include": ["src/**/*", "drizzle.config.ts", "emails", "scripts", "trigger.config.ts"],
+  "include": ["src/**/*", "drizzle.config.ts", "emails", "scripts", "trigger.config.ts", "../config/*"],
   "exclude": ["**/node_modules", "**/dist", "**/.*/"]
 }

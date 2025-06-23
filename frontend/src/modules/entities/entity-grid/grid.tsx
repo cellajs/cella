@@ -1,6 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
-import { EntityTile } from '~/modules/entities/entity-grid/tile';
 import { GridSkeleton } from '~/modules/entities/entity-grid/skeleton';
 import { contextEntitiesQueryOptions } from '~/modules/entities/query';
 import { EntityGridWrapperProps } from './wrapper';

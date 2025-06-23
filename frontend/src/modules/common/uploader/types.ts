@@ -2,7 +2,7 @@ import type { Uppy, UppyFile, UppyOptions } from '@uppy/core';
 import type { AssemblyResult } from '@uppy/transloadit';
 import type { UploadTemplateId } from 'config';
 
-import type { uploadTemplates } from '#/lib/transloadit/templates';
+import type { uploadTemplates } from 'config/templates';
 
 
 
