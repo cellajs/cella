@@ -11,11 +11,11 @@ interface Props<TData> {
   columns: ColumnOrColumnGroup<TData>[];
   setColumns: Dispatch<SetStateAction<ColumnOrColumnGroup<TData>[]>>;
   className?: string;
-  highDensity?: boolean;
-  toggleDensityView?: (highDensity: boolean) => void;
+  isCompact?: boolean;
+  setIsCompact?: (isCompact: boolean) => void;
 }
 
-const ColumnsView = <TData,>({ columns, setColumns, className = '', highDensity, toggleDensityView }: Props<TData>) => {
+const ColumnsView = <TData,>({ columns, setColumns, className = '', isCompact, setIsCompact }: Props<TData>) => {
   const { t } = useTranslation();
   const [columnSearch, setColumnSearch] = useState('');
 
@@ -53,9 +53,9 @@ const ColumnsView = <TData,>({ columns, setColumns, className = '', highDensity,
                 columns.map((c) =>
                   c.name === column.name
                     ? {
-                        ...c,
-                        visible: !c.visible,
-                      }
+                      ...c,
+                      visible: !c.visible,
+                    }
                     : c,
                 ),
               )
@@ -66,10 +66,10 @@ const ColumnsView = <TData,>({ columns, setColumns, className = '', highDensity,
           </DropdownMenuCheckboxItem>
         ))}
         {/* Not finished, therefore hidden */}
-        {toggleDensityView && highDensity !== undefined && (
-          <Button variant="outline" onClick={() => toggleDensityView(!highDensity)} className="hidden w-full mt-3 gap-2" size="sm">
-            {highDensity ? <UnfoldHorizontal size={16} /> : <FoldHorizontal size={16} />}
-            <span>{highDensity ? t('common:normal_density') : t('common:high_density')}</span>
+        {setIsCompact && isCompact !== undefined && (
+          <Button variant="outline" onClick={() => setIsCompact(!isCompact)} className="hidden w-full mt-3 gap-2" size="sm">
+            {isCompact ? <UnfoldHorizontal size={16} /> : <FoldHorizontal size={16} />}
+            <span>{isCompact ? t('common:normal_density') : t('common:high_density')}</span>
           </Button>
         )}
       </DropdownMenuContent>

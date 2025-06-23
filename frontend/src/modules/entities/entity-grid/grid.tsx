@@ -10,16 +10,18 @@ import { t } from 'i18next';
 import { useInView } from 'react-intersection-observer';
 import { useOnlineManager } from '~/hooks/use-online-manager';
 
+// TODO: can we also include roles and userId in the searchVars? 
 export type EntitySearch = Pick<z.infer<typeof contextEntitiesQuerySchema>, 'sort' | 'q'>;
 
 interface Props extends EntityGridWrapperProps {
   searchVars: EntitySearch;
   setTotalCount: (newTotal?: number) => void;
+  tileComponent: React.ElementType;
   totalCount?: number;
   fetchMore?: () => void;
 }
 
-export const BaseEntityGrid = ({ entityType, roles, userId, searchVars, setTotalCount, totalCount, fetchMore }: Props) => {
+export const BaseEntityGrid = ({ tileComponent: TileComponent, entityType, roles, userId, searchVars, setTotalCount, totalCount, fetchMore }: Props) => {
   const { isOnline } = useOnlineManager();
 
   const [initialDone, setInitialDone] = useState(false);
@@ -64,7 +66,7 @@ export const BaseEntityGrid = ({ entityType, roles, userId, searchVars, setTotal
     <>
       <div className="mb-12 grid gap-6 grid-cols-1 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-[repeat(auto-fit,minmax(330px,1fr))]">
         {entities.map((entity) => (
-          <EntityTile key={entity.id} entity={entity} />
+          <TileComponent key={entity.id} entity={entity} />
         ))}
 
         {/* Infinite loading measure ref */}

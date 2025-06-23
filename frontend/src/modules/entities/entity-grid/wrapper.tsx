@@ -4,12 +4,15 @@ import useSearchParams from '~/hooks/use-search-params';
 import { EntityGridBar } from '~/modules/entities/entity-grid/bar';
 import { BaseEntityGrid, EntitySearch } from '~/modules/entities/entity-grid/grid';
 import type { MembershipRoles } from '~/modules/memberships/types';
+import { EntityTile } from './tile';
 
+// TODO use filterOptions to include roles and userId and possibly other filters in the future
 export interface EntityGridWrapperProps {
   entityType: ContextEntityType;
   roles?: MembershipRoles[];
   isSheet?: boolean;
   userId?: string;
+  tileComponent?: React.ElementType;
 }
 
 const EntityGridWrapper = (props: EntityGridWrapperProps) => {
@@ -30,6 +33,7 @@ const EntityGridWrapper = (props: EntityGridWrapperProps) => {
         searchVars={search}
         totalCount={totalCount}
         setTotalCount={setTotalCount}
+        tileComponent={props.tileComponent || EntityTile}
       />
     </div>
   );

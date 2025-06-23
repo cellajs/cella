@@ -29,7 +29,7 @@ const GridSkeletonItem = ({ membersCount }: { membersCount: number }) => {
           </div>
         </div>
       </div>
-      <div className="flex items-center justify-stretch gap-3 pt-3">
+      <div className="flex items-center justify-stretch gap-3 pt-4">
         <div className="grow" />
         {Array.from({ length: membersCount }).map((_, index) => (
           <div key={index} className="h-8 w-8 bg-gray-600 border-2 border-secondary -ml-6 rounded-full" />
