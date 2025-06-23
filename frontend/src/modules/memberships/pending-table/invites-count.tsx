@@ -2,12 +2,12 @@ import { lazy, Suspense, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
 import type { EntityPage } from '~/modules/entities/types';
-import type { MembershipInvitationsTableProps } from '~/modules/memberships/pending-table/table-wrapper';
+import type { PendingInvitationsTableProps } from '~/modules/memberships/pending-table/table-wrapper';
 import { Button } from '~/modules/ui/button';
 
 const MembershipInvitationsTable = lazy(() => import('~/modules/memberships/pending-table/table-wrapper'));
 
-export const MembershipInvitations = ({ entity }: MembershipInvitationsTableProps) => {
+export const MembershipInvitations = ({ entity }: PendingInvitationsTableProps) => {
   const { t } = useTranslation();
   const buttonRef = useRef(null);
   const createSheet = useSheeter((state) => state.create);

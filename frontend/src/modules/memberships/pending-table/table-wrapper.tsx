@@ -7,19 +7,19 @@ import type { BaseTableMethods } from '~/modules/common/data-table/types';
 import type { EntityPage } from '~/modules/entities/types';
 import { useColumns } from '~/modules/memberships/pending-table/columns';
 import BaseDataTable from '~/modules/memberships/pending-table/table';
-import { MembershipInvitationsTableBar } from '~/modules/memberships/pending-table/table-bar';
+import { PendingInvitationsTableBar } from '~/modules/memberships/pending-table/table-bar';
 import type { pendingInvitationsSearchSchema } from '~/routes/organizations';
 
 const LIMIT = config.requestLimits.pendingInvitations;
 
-export type MembershipInvitationsSearch = z.infer<typeof pendingInvitationsSearchSchema>;
+export type PendingInvitationsSearch = z.infer<typeof pendingInvitationsSearchSchema>;
 
-export interface MembershipInvitationsTableProps {
+export interface PendingInvitationsTableProps {
   entity: EntityPage;
 }
 
-export const MembershipInvitationsTable = ({ entity }: MembershipInvitationsTableProps) => {
-  const { search, setSearch } = useSearchParams<MembershipInvitationsSearch>({ saveDataInSearch: false });
+export const MembershipInvitationsTable = ({ entity }: PendingInvitationsTableProps) => {
+  const { search, setSearch } = useSearchParams<PendingInvitationsSearch>({ saveDataInSearch: false });
   const dataTableRef = useRef<BaseTableMethods | null>(null);
 
   // Table state
@@ -35,7 +35,7 @@ export const MembershipInvitationsTable = ({ entity }: MembershipInvitationsTabl
 
   return (
     <div className="flex flex-col gap-4 h-full">
-      <MembershipInvitationsTableBar total={total} />
+      <PendingInvitationsTableBar total={total} />
       <BaseDataTable
         ref={dataTableRef}
         entity={entity}
