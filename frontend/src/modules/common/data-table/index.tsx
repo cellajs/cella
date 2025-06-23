@@ -192,7 +192,7 @@ export const DataTable = <TData,>({
               )}
               {/* All is loaded */}
               {!isFetching && !error && !!totalCount && totalCount <= rows.length && (
-                <div className="opacity-50 w-full text-xl  mt-4 text-center">
+                <div className="opacity-50 w-full text-xl mt-4 text-center">
                   <div>&#183;</div>
                   <div className="-mt-5">&#183;</div>
                   <div className="-mt-5">&#183;</div>

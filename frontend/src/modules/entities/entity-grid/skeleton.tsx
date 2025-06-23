@@ -1,12 +1,16 @@
+import useMounted from '~/hooks/use-mounted';
 import { Skeleton } from '~/modules/ui/skeleton';
 
 export const GridSkeleton = () => {
+  const { hasStarted } = useMounted();
+
+
   const items = Array.from({ length: 6 }, () => ({
     membersCount: Math.floor(Math.random() * 4) + 1,
   }));
 
   return (
-    <div className="mb-12 grid gap-6 grid-cols-1 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-[repeat(auto-fit,minmax(330px,1fr))]">
+    <div className={`${hasStarted ? 'opacity-100' : 'opacity-0'} mb-12 grid gap-6 grid-cols-1 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-[repeat(auto-fit,minmax(330px,1fr))]`}>
       {items.map((item, index) => (
         <GridSkeletonItem key={index} membersCount={item.membersCount} />
       ))}

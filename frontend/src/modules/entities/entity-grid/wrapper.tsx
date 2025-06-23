@@ -16,11 +16,11 @@ const EntityGridWrapper = (props: EntityGridWrapperProps) => {
   const { isSheet = false, userId } = props;
   const { search, setSearch } = useSearchParams<EntitySearch>({ saveDataInSearch: !isSheet });
 
-  const [total, setTotal] = useState<number | undefined>(undefined);
+  const [totalCount, setTotalCount] = useState<number | undefined>(undefined);
 
   return (
     <div className="flex flex-col gap-4 h-full">
-      <EntityGridBar total={total} searchVars={search} countName={props.entityType} setSearch={setSearch} isSheet={isSheet} />
+      <EntityGridBar totalCount={totalCount} searchVars={search} countName={props.entityType} setSearch={setSearch} isSheet={isSheet} />
 
       <BaseEntityGrid
         entityType={props.entityType}
@@ -28,7 +28,8 @@ const EntityGridWrapper = (props: EntityGridWrapperProps) => {
         userId={userId}
         isSheet={isSheet}
         searchVars={search}
-        setTotal={setTotal}
+        totalCount={totalCount}
+        setTotalCount={setTotalCount}
       />
     </div>
   );

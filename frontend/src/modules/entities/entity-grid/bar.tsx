@@ -10,11 +10,11 @@ type Props = {
   countName: string;
   searchVars: EntitySearch;
   setSearch: (search: EntitySearch) => void;
-  total?: number;
+  totalCount?: number;
   isSheet?: boolean;
 };
 
-export const EntityGridBar = ({ total, countName, searchVars, setSearch, isSheet }: Props) => {
+export const EntityGridBar = ({ totalCount, countName, searchVars, setSearch, isSheet }: Props) => {
   const { q, sort } = searchVars;
 
   const isFiltered = !!q;
@@ -31,7 +31,7 @@ export const EntityGridBar = ({ total, countName, searchVars, setSearch, isSheet
       {/* Filter Bar */}
       <TableFilterBar onResetFilters={onResetFilters} isFiltered={isFiltered}>
         <FilterBarActions>
-          <TableCount count={total} type={countName} isFiltered={isFiltered} onResetFilters={onResetFilters} />
+          <TableCount count={totalCount} type={countName} isFiltered={isFiltered} onResetFilters={onResetFilters} />
         </FilterBarActions>
         <div className="sm:grow" />
         <FilterBarContent className="max-sm:animate-in max-sm:slide-in-from-left max-sm:fade-in max-sm:duration-300">
