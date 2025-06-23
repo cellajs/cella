@@ -6,6 +6,7 @@ import { errorResponses, successWithDataSchema, successWithErrorsSchema, success
 
 const userRoutes = {
   getUsers: createCustomRoute({
+    operationId: 'getUsers',
     method: 'get',
     path: '/',
     guard: [isAuthenticated, hasSystemAccess],
@@ -28,6 +29,7 @@ const userRoutes = {
     },
   }),
   deleteUsers: createCustomRoute({
+    operationId: 'deleteUsers',
     method: 'delete',
     path: '/',
     guard: [isAuthenticated, hasSystemAccess],
@@ -52,6 +54,7 @@ const userRoutes = {
     },
   }),
   getUser: createCustomRoute({
+    operationId: 'getUser',
     method: 'get',
     path: '/{idOrSlug}',
     guard: isAuthenticated,
@@ -74,6 +77,7 @@ const userRoutes = {
     },
   }),
   updateUser: createCustomRoute({
+    operationId: 'updateUser',
     method: 'put',
     path: '/{idOrSlug}',
     guard: [isAuthenticated, hasSystemAccess],

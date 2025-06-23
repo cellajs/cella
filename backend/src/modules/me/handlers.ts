@@ -1,3 +1,8 @@
+import { OpenAPIHono, type z } from '@hono/zod-openapi';
+import type { EnabledOauthProvider, MenuSection } from 'config';
+import { config } from 'config';
+import { and, eq } from 'drizzle-orm';
+import { type SSEStreamingApi, streamSSE } from 'hono/streaming';
 import { db } from '#/db/db';
 import { membershipsTable } from '#/db/schema/memberships';
 import { oauthAccountsTable } from '#/db/schema/oauth-accounts';
@@ -6,7 +11,7 @@ import { usersTable } from '#/db/schema/users';
 import { env } from '#/env';
 import { type Env, getContextMemberships, getContextUser } from '#/lib/context';
 import { resolveEntity } from '#/lib/entity';
-import { type ErrorType, createError, errorResponse } from '#/lib/errors';
+import { createError, type ErrorType, errorResponse } from '#/lib/errors';
 import { getParams, getSignature } from '#/lib/transloadit';
 import { isAuthenticated } from '#/middlewares/guard';
 import { logEvent } from '#/middlewares/logger/log-event';
@@ -23,12 +28,6 @@ import { verifyUnsubscribeToken } from '#/modules/users/helpers/unsubscribe-toke
 import permissionManager from '#/permissions/permissions-config';
 import { defaultHook } from '#/utils/default-hook';
 import { getIsoDate } from '#/utils/iso-date';
-import { OpenAPIHono } from '@hono/zod-openapi';
-import type { EnabledOauthProvider, MenuSection } from 'config';
-import { config } from 'config';
-import { and, eq } from 'drizzle-orm';
-import { type SSEStreamingApi, streamSSE } from 'hono/streaming';
-import type { z } from 'zod';
 
 type UserMenu = z.infer<typeof menuSchema>;
 type MenuItem = z.infer<typeof menuItemSchema>;
@@ -52,7 +51,7 @@ const meRouteHandlers = app
   /*
    * Get my auth data
    */
-  .openapi(meRoutes.getMyAuthData, async (ctx) => {
+  .openapi(meRoutes.getMyAuth, async (ctx) => {
     const user = getContextUser();
 
     const getPasskey = db.select().from(passkeysTable).where(eq(passkeysTable.userEmail, user.email));

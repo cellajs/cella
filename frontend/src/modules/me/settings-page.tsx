@@ -1,31 +1,29 @@
-import { Check, Send, Trash } from 'lucide-react';
-import { SimpleHeader } from '~/modules/common/simple-header';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/modules/ui/card';
-
-import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
-import { Button } from '~/modules/ui/button';
-import { useUserStore } from '~/store/user';
-
 import { onlineManager } from '@tanstack/react-query';
 import { useLoaderData } from '@tanstack/react-router';
 import { config } from 'config';
+import { Check, Send, Trash } from 'lucide-react';
 import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { requestPasswordEmail } from '~/modules/auth/api';
 import { mapOauthProviders } from '~/modules/auth/oauth-options';
 import { AsideAnchor } from '~/modules/common/aside-anchor';
+import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import HelpText from '~/modules/common/help-text';
 import { PageAside } from '~/modules/common/page/aside';
+import { SimpleHeader } from '~/modules/common/simple-header';
 import StickyBox from '~/modules/common/sticky-box';
 import { toaster } from '~/modules/common/toaster';
 import UnsavedBadge from '~/modules/common/unsaved-badge';
 import DeleteSelf from '~/modules/me/delete-self';
 import Passkeys from '~/modules/me/passkeys';
 import SessionsList from '~/modules/me/sessions-list';
+import { Button } from '~/modules/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/modules/ui/card';
 import UpdateUserForm from '~/modules/users/update-user-form';
 import { UserSettingsRoute } from '~/routes/users';
 import { useUIStore } from '~/store/ui';
+import { useUserStore } from '~/store/user';
 
 const tabs = [
   { id: 'general', label: 'common:general' },

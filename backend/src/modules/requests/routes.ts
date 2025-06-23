@@ -4,10 +4,11 @@ import { isNoBot } from '#/middlewares/is-no-bot';
 import { spamLimiter } from '#/middlewares/rate-limiter/limiters';
 import { requestCreateBodySchema, requestListQuerySchema, requestSchema } from '#/modules/requests/schema';
 import { idsBodySchema } from '#/utils/schema/common';
-import { errorResponses, successWithDataSchema, successWithPaginationSchema, successWithoutDataSchema } from '#/utils/schema/responses';
+import { errorResponses, successWithDataSchema, successWithoutDataSchema, successWithPaginationSchema } from '#/utils/schema/responses';
 
 const requestRoutes = {
   createRequest: createCustomRoute({
+    operationId: 'createRequest',
     method: 'post',
     path: '/',
     guard: isPublicAccess,
@@ -37,6 +38,7 @@ const requestRoutes = {
     },
   }),
   getRequests: createCustomRoute({
+    operationId: 'getRequests',
     method: 'get',
     path: '/',
     guard: [isAuthenticated, hasSystemAccess],
@@ -59,6 +61,7 @@ const requestRoutes = {
     },
   }),
   deleteRequests: createCustomRoute({
+    operationId: 'deleteRequest',
     method: 'delete',
     path: '/',
     guard: [isAuthenticated, hasSystemAccess],

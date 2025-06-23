@@ -7,6 +7,7 @@ import { errorResponses, successWithDataSchema, successWithoutDataSchema } from 
 
 const entityRoutes = {
   checkSlug: createCustomRoute({
+    operationId: 'checkSlug',
     method: 'post',
     path: '/check-slug',
     guard: isAuthenticated,
@@ -37,6 +38,7 @@ const entityRoutes = {
     },
   }),
   getPageEntities: createCustomRoute({
+    operationId: 'getPageEntities',
     method: 'get',
     path: '/page',
     guard: isAuthenticated,
@@ -54,6 +56,7 @@ const entityRoutes = {
     },
   }),
   geContextEntities: createCustomRoute({
+    operationId: 'getContextEntities',
     method: 'get',
     path: '/context',
     guard: isAuthenticated,

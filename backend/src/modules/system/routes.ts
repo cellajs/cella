@@ -8,6 +8,7 @@ import { errorResponses, successWithDataSchema, successWithoutDataSchema } from 
 
 const systemRoutes = {
   createInvite: createCustomRoute({
+    operationId: 'createInvite',
     method: 'post',
     path: '/invite',
     guard: [isAuthenticated, hasSystemAccess],
@@ -36,6 +37,7 @@ const systemRoutes = {
     },
   }),
   sendNewsletter: createCustomRoute({
+    operationId: 'sendNewsletter',
     method: 'post',
     path: '/newsletter',
     guard: [isAuthenticated, hasSystemAccess],
@@ -66,6 +68,7 @@ const systemRoutes = {
     },
   }),
   getPresignedUrl: createCustomRoute({
+    operationId: 'getPresignedUrl',
     method: 'get',
     path: '/presigned-url',
     guard: [isAuthenticated],
@@ -82,6 +85,7 @@ const systemRoutes = {
     },
   }),
   paddleWebhook: createCustomRoute({
+    operationId: 'paddleWebhook',
     method: 'post',
     path: '/paddle-webhook',
     guard: isPublicAccess,

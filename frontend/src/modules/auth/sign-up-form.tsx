@@ -1,14 +1,12 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useNavigate, useSearch } from '@tanstack/react-router';
-import { useForm } from 'react-hook-form';
-import { useTranslation } from 'react-i18next';
-import type * as z from 'zod';
-import { emailPasswordBodySchema } from '#/modules/auth/schema';
-
 import { useMutation } from '@tanstack/react-query';
+import { useNavigate, useSearch } from '@tanstack/react-router';
 import { config } from 'config';
 import { ArrowRight, ChevronDown } from 'lucide-react';
-import { type RefObject, Suspense, lazy, useRef } from 'react';
+import { lazy, type RefObject, Suspense, useRef } from 'react';
+import { useForm } from 'react-hook-form';
+import { useTranslation } from 'react-i18next';
+import type { z } from 'zod/v4'
 import { signUp, signUpWithToken } from '~/modules/auth/api';
 import type { TokenData } from '~/modules/auth/types';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
@@ -16,6 +14,7 @@ import Spinner from '~/modules/common/spinner';
 import { Button, SubmitButton } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '~/modules/ui/form';
 import { Input } from '~/modules/ui/input';
+import { zSignUpData } from '~/openapi-client/zod.gen';
 import { AuthenticateRoute } from '~/routes/auth';
 import { defaultOnInvalid } from '~/utils/form-on-invalid';
 
@@ -24,7 +23,7 @@ const LegalText = lazy(() => import('~/modules/marketing/legal-texts'));
 
 const enabledStrategies: readonly string[] = config.enabledAuthenticationStrategies;
 
-const formSchema = emailPasswordBodySchema;
+const formSchema = zSignUpData.shape.body.unwrap();
 type FormValues = z.infer<typeof formSchema>;
 
 interface Props {

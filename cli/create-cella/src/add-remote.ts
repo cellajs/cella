@@ -1,6 +1,6 @@
 import yoctoSpinner from 'yocto-spinner';
-import { runGitCommand } from './utils/run-git-command.ts';
 import { CELLA_REMOTE_URL } from './constants.ts';
+import { runGitCommand } from './utils/run-git-command.ts';
 
 interface AddRemoteOptions {
   targetFolder: string;
@@ -8,12 +8,7 @@ interface AddRemoteOptions {
   remoteName?: string; // Optional, defaults to 'upstream'
 }
 
-export async function addRemote({
-  targetFolder,
-  remoteUrl = CELLA_REMOTE_URL,
-  remoteName = 'upstream',
-}: AddRemoteOptions): Promise<void> {
-
+export async function addRemote({ targetFolder, remoteUrl = CELLA_REMOTE_URL, remoteName = 'upstream' }: AddRemoteOptions): Promise<void> {
   // Spinner for adding remote
   const remoteSpinner = yoctoSpinner({
     text: 'Adding remote',

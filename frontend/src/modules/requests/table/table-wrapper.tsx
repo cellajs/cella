@@ -1,6 +1,6 @@
 import { config } from 'config';
 import { useRef, useState } from 'react';
-import type { z } from 'zod';
+import type { z } from 'zod/v4';
 import useSearchParams from '~/hooks/use-search-params';
 import { useSortColumns } from '~/modules/common/data-table/sort-columns';
 import type { BaseTableMethods } from '~/modules/common/data-table/types';

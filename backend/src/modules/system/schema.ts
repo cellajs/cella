@@ -1,5 +1,5 @@
 import { config } from 'config';
-import { z } from 'zod';
+import { z } from '@hono/zod-openapi';
 import { userSchema } from '../users/schema';
 
 export const inviteBodySchema = z.object({

@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import { z } from '@hono/zod-openapi';
 import { createCustomRoute } from '#/lib/custom-routes';
 import { isAuthenticated, isPublicAccess } from '#/middlewares/guard';
 import { tokenLimiter } from '#/middlewares/rate-limiter/limiters';
@@ -9,6 +9,7 @@ import { meAuthDataSchema, menuSchema, passkeyRegistrationBodySchema, uploadToke
 
 const meRoutes = {
   getMe: createCustomRoute({
+    operationId: 'getMe',
     method: 'get',
     path: '/',
     guard: isAuthenticated,
@@ -24,7 +25,8 @@ const meRoutes = {
     },
   }),
 
-  getMyAuthData: createCustomRoute({
+  getMyAuth: createCustomRoute({
+    operationId: 'getMyAuth',
     method: 'get',
     path: '/auth',
     guard: isAuthenticated,
@@ -41,6 +43,7 @@ const meRoutes = {
   }),
 
   updateMe: createCustomRoute({
+    operationId: 'updateMe',
     method: 'put',
     path: '/',
     guard: isAuthenticated,
@@ -64,6 +67,7 @@ const meRoutes = {
   }),
 
   deleteMe: createCustomRoute({
+    operationId: 'deleteMe',
     method: 'delete',
     path: '/',
     guard: isAuthenticated,
@@ -80,6 +84,7 @@ const meRoutes = {
   }),
 
   getMyMenu: createCustomRoute({
+    operationId: 'getMyMenu',
     method: 'get',
     path: '/menu',
     guard: isAuthenticated,
@@ -97,6 +102,7 @@ const meRoutes = {
   }),
 
   deleteSessions: createCustomRoute({
+    operationId: 'deleteSessions',
     method: 'delete',
     path: '/sessions',
     guard: isAuthenticated,
@@ -119,6 +125,7 @@ const meRoutes = {
   }),
 
   deleteMyMembership: createCustomRoute({
+    operationId: 'deleteMyMembership',
     method: 'delete',
     path: '/leave',
     guard: isAuthenticated,
@@ -139,6 +146,7 @@ const meRoutes = {
   }),
 
   unsubscribeMe: createCustomRoute({
+    operationId: 'unsubscribeMe',
     method: 'get',
     path: '/unsubscribe',
     guard: isPublicAccess,
@@ -157,7 +165,9 @@ const meRoutes = {
       ...errorResponses,
     },
   }),
+
   getUploadToken: createCustomRoute({
+    operationId: 'getUploadToken',
     method: 'get',
     path: '/upload-token',
     guard: isAuthenticated,
@@ -182,6 +192,7 @@ const meRoutes = {
   }),
 
   createPasskey: createCustomRoute({
+    operationId: 'createPasskey',
     method: 'post',
     path: '/passkey',
     guard: isAuthenticated,
@@ -206,6 +217,7 @@ const meRoutes = {
   }),
 
   deletePasskey: createCustomRoute({
+    operationId: 'deletePasskey',
     method: 'delete',
     path: '/passkey',
     guard: isAuthenticated,

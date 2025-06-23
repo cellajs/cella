@@ -1,6 +1,5 @@
-import type { z } from 'zod';
-import type { InsertAttachmentModel } from '#/db/schema/attachments';
-import type { attachmentSchema } from '#/modules/attachments/schema';
+import type { z } from 'zod/v4';
+import { zCreateAttachmentData, zCreateAttachmentResponse } from '~/openapi-client/zod.gen';
 
-export type Attachment = z.infer<typeof attachmentSchema>;
-export type AttachmentToInsert = InsertAttachmentModel & { type: string };
+export type Attachment = z.infer<typeof zCreateAttachmentResponse>['data'][number];
+export type AttachmentToInsert = z.infer<typeof zCreateAttachmentData>['body'][number] & { type: string };

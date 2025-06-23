@@ -1,14 +1,14 @@
 import { Link } from '@tanstack/react-router';
 import { t } from 'i18next';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
-import type { EntityGreidItems } from '~/modules/entities/types';
+import type { EntityGridItem } from '~/modules/entities/types';
 import { AvatarGroup, AvatarGroupList, AvatarOverflowIndicator } from '~/modules/ui/avatar';
 import { Card, CardContent } from '~/modules/ui/card';
 import { getEntityRoute } from '~/nav-config';
 import { dateShort } from '~/utils/date-short';
 import { numberToColorClass } from '~/utils/number-to-color-class';
 
-export const EntityItem = ({ entity }: { entity: EntityGreidItems[number] }) => {
+export const EntityTile = ({ entity }: { entity: EntityGridItem }) => {
   const { to, params } = getEntityRoute(entity);
   return (
     <Card className="overflow-hidden transition hover:shadow-sm">

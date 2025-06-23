@@ -1,6 +1,5 @@
-import { forwardRef, memo, useEffect, useImperativeHandle } from 'react';
-
 import { Paperclip } from 'lucide-react';
+import { forwardRef, memo, useEffect, useImperativeHandle } from 'react';
 import type { RowsChangeData, SortColumn } from 'react-data-grid';
 import { useTranslation } from 'react-i18next';
 import useOfflineTableSearch from '~/hooks/use-offline-table-search';

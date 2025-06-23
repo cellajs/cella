@@ -16,12 +16,13 @@ import {
   errorResponses,
   successWithDataSchema,
   successWithErrorsSchema,
-  successWithPaginationSchema,
   successWithoutDataSchema,
+  successWithPaginationSchema,
 } from '#/utils/schema/responses';
 
 const membershipRoutes = {
   createMemberships: createCustomRoute({
+    operationId: 'createMemberships',
     method: 'post',
     path: '/',
     guard: [isAuthenticated, hasOrgAccess],
@@ -52,6 +53,7 @@ const membershipRoutes = {
     },
   }),
   deleteMemberships: createCustomRoute({
+    operationId: 'deleteMemberships',
     method: 'delete',
     path: '/',
     guard: [isAuthenticated, hasOrgAccess],
@@ -78,6 +80,7 @@ const membershipRoutes = {
     },
   }),
   updateMembership: createCustomRoute({
+    operationId: 'updateMembership',
     method: 'put',
     path: '/{id}',
     guard: [isAuthenticated, hasOrgAccess],
@@ -107,6 +110,7 @@ const membershipRoutes = {
     },
   }),
   getMembers: createCustomRoute({
+    operationId: 'getMembers',
     method: 'get',
     path: '/members',
     guard: [isAuthenticated, hasOrgAccess],
@@ -130,6 +134,7 @@ const membershipRoutes = {
     },
   }),
   getPendingInvitations: createCustomRoute({
+    operationId: 'getPendingInvitations',
     method: 'get',
     path: '/pending',
     guard: [isAuthenticated, hasOrgAccess],

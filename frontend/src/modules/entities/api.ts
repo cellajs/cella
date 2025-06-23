@@ -1,6 +1,6 @@
-import { type EntityType, config } from 'config';
-import { clientConfig, handleResponse } from '~/lib/api';
+import { config, type EntityType } from 'config';
 import { entitiesHc } from '#/modules/entities/hc';
+import { clientConfig, handleResponse } from '~/lib/api';
 
 export const client = entitiesHc(config.backendUrl, clientConfig);
 

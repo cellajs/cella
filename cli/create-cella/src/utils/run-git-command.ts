@@ -38,9 +38,7 @@ export async function runGitCommand({ targetFolder, command }: RunGitCommandOpti
       if (isGitCommandSuccess(gitCommand, code, errOutput)) {
         resolve(output.trim());
       } else {
-        reject(
-          `Git ${gitCommand} command failed with exit code ${code}, stderr: "${errOutput.trim()}", stdout: "${output.trim()}"`
-        );
+        reject(`Git ${gitCommand} command failed with exit code ${code}, stderr: "${errOutput.trim()}", stdout: "${output.trim()}"`);
       }
     });
 

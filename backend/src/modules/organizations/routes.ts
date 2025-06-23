@@ -13,6 +13,7 @@ import { errorResponses, successWithDataSchema, successWithErrorsSchema, success
 
 const organizationRoutes = {
   createOrganization: createCustomRoute({
+    operationId: 'createOrganization',
     method: 'post',
     path: '/',
     guard: isAuthenticated,
@@ -42,6 +43,7 @@ const organizationRoutes = {
     },
   }),
   getOrganizations: createCustomRoute({
+    operationId: 'getOrganizations',
     method: 'get',
     path: '/',
     guard: [isAuthenticated, hasSystemAccess],
@@ -64,6 +66,7 @@ const organizationRoutes = {
     },
   }),
   updateOrganization: createCustomRoute({
+    operationId: 'updateOrganization',
     method: 'put',
     path: '/{idOrSlug}',
     guard: [isAuthenticated],
@@ -93,6 +96,7 @@ const organizationRoutes = {
     },
   }),
   getOrganization: createCustomRoute({
+    operationId: 'getOrganization',
     method: 'get',
     path: '/{idOrSlug}',
     guard: [isAuthenticated],
@@ -115,6 +119,7 @@ const organizationRoutes = {
     },
   }),
   deleteOrganizations: createCustomRoute({
+    operationId: 'deleteOrganizations',
     method: 'delete',
     path: '/',
     guard: [isAuthenticated],

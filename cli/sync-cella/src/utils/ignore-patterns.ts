@@ -24,18 +24,11 @@ async function extractFromIgnoreFile(ignoreFile: string): Promise<string[]> {
 
 // Extract patterns from the ignore list
 function extractFromIgnoreList(ignoreList: IgnoreList): string[] {
-  return Array.isArray(ignoreList)
-    ? ignoreList
-    : ignoreList
-    ? ignoreList.split(',')
-    : [];
+  return Array.isArray(ignoreList) ? ignoreList : ignoreList ? ignoreList.split(',') : [];
 }
 
 // Extract ignore patterns based on provided list or file
-export async function extractIgnorePatterns({
-  ignoreList,
-  ignoreFile,
-}: ExtractIgnorePatternsOptions): Promise<string[]> {
+export async function extractIgnorePatterns({ ignoreList, ignoreFile }: ExtractIgnorePatternsOptions): Promise<string[]> {
   if (ignoreList && ignoreList.length > 0) {
     return extractFromIgnoreList(ignoreList);
   } else if (ignoreFile && (await fileExists(ignoreFile))) {
@@ -49,9 +42,9 @@ function patternToRegex(pattern: string): RegExp {
   // Escape special regex characters and convert wildcards
   const escapedPattern = pattern
     .replace(/([.*+?^${}()|[\]\\])/g, '\\$1') // Escape special characters
-    .replace(/\\\*/g, '.*')                   // Convert '*' to '.*'
-    .replace(/\\\?/g, '.');                   // Convert '?' to '.'
-  
+    .replace(/\\\*/g, '.*') // Convert '*' to '.*'
+    .replace(/\\\?/g, '.'); // Convert '?' to '.'
+
   return new RegExp(`^${escapedPattern}$`);
 }
 

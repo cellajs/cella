@@ -1,4 +1,4 @@
-import type { z } from 'zod';
-import type { requestSchema } from '#/modules/requests/schema';
+import type { z } from 'zod/v4';
+import { zGetRequestsResponse } from '~/openapi-client/zod.gen';
 
-export type Request = z.infer<typeof requestSchema>;
+export type Request = z.infer<typeof zGetRequestsResponse>['data']['items'][number];

@@ -6,6 +6,7 @@
     "skipLibCheck": true,
 
     /* Bundler mode */
+    "jsx": "react-jsx",
     "moduleResolution": "Bundler",
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
@@ -20,7 +21,6 @@
 
     /* Type checking */
     "incremental": true,
-    "declaration": true,
     "composite": true
   }
 }

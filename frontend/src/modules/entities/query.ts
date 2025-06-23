@@ -1,5 +1,5 @@
 import { keepPreviousData, queryOptions } from '@tanstack/react-query';
-import { type ContextEntitiesQuery, type PageEntitiesQuery, getContextEntities, getPageEntities } from '~/modules/entities/api';
+import { type ContextEntitiesQuery, getContextEntities, getPageEntities, type PageEntitiesQuery } from '~/modules/entities/api';
 import { useUserStore } from '~/store/user';
 
 /**

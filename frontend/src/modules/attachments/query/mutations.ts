@@ -4,10 +4,10 @@ import { t } from 'i18next';
 import { toast } from 'sonner';
 import {
   type CreateAttachmentParams,
-  type DeleteAttachmentsParams,
-  type UpdateAttachmentParams,
   createAttachments,
+  type DeleteAttachmentsParams,
   deleteAttachments,
+  type UpdateAttachmentParams,
   updateAttachment,
 } from '~/modules/attachments/api';
 import { attachmentsKeys } from '~/modules/attachments/query/options';

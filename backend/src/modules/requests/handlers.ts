@@ -1,5 +1,5 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
-import { type SQL, and, count, eq, getTableColumns, ilike, inArray, sql } from 'drizzle-orm';
+import { and, count, eq, getTableColumns, ilike, inArray, type SQL, sql } from 'drizzle-orm';
 
 import { db } from '#/db/db';
 import { type RequestModel, requestsTable } from '#/db/schema/requests';

@@ -35,7 +35,7 @@
 }
 
 .rdg-cell:not([role="columnheader"]) {
-  border-top: .05rem solid var(--rdg-border-color);
+  border-top: 0.05rem solid var(--rdg-border-color);
 }
 
 .rdg-cell[role="columnheader"] {

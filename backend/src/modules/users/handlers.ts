@@ -1,11 +1,10 @@
-import { and, count, eq, ilike, inArray, or } from 'drizzle-orm';
-
 import { OpenAPIHono } from '@hono/zod-openapi';
+import { and, count, eq, ilike, inArray, or } from 'drizzle-orm';
 import { db } from '#/db/db';
 import { membershipsTable } from '#/db/schema/memberships';
 import { usersTable } from '#/db/schema/users';
 import { type Env, getContextMemberships, getContextUser } from '#/lib/context';
-import { type ErrorType, createError, errorResponse } from '#/lib/errors';
+import { createError, type ErrorType, errorResponse } from '#/lib/errors';
 import { logEvent } from '#/middlewares/logger/log-event';
 import { getUsersByConditions } from '#/modules/users/helpers/get-user-by';
 import { defaultHook } from '#/utils/default-hook';

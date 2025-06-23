@@ -1,17 +1,16 @@
 #!/usr/bin/env tsx
 
-import { basename, resolve } from 'node:path';
 import { existsSync } from 'node:fs';
+import { basename, resolve } from 'node:path';
+import { confirm, input, select } from '@inquirer/prompts';
 import colors from 'picocolors';
 
-import { input, confirm, select } from '@inquirer/prompts';
-
 import { cli } from './cli';
-import { extractPackageJsonVersionFromUri } from './utils/extract-package-json-version-from-uri';
-import { validateProjectName } from './utils/validate-project-name.ts';
-import { isEmptyDirectory } from './utils/is-empty-directory.ts';
+import { AUTHOR, DESCRIPTION, GITHUB, LOGO, TEMPLATE_URL, VERSION, WEBSITE } from './constants.ts';
 import { create } from './create.ts';
-import { LOGO, VERSION, WEBSITE, AUTHOR, GITHUB, DESCRIPTION, TEMPLATE_URL } from './constants.ts';
+import { extractPackageJsonVersionFromUri } from './utils/extract-package-json-version-from-uri';
+import { isEmptyDirectory } from './utils/is-empty-directory.ts';
+import { validateProjectName } from './utils/validate-project-name.ts';
 
 interface CreateOptions {
   projectName: string;

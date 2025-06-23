@@ -4,7 +4,7 @@ import { Send } from 'lucide-react';
 import { useMemo } from 'react';
 import type { UseFormProps } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
-import { z } from 'zod';
+import { z } from 'zod/v4';
 
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import { useMutation } from '~/hooks/use-mutations';
@@ -38,6 +38,7 @@ const InviteSearchForm = ({ entity, dialog: isDialog }: Props) => {
     role: z.enum(config.rolesByType.entityRoles).optional(),
     idOrSlug: z.string().optional(),
   });
+  
   type FormValues = z.infer<typeof formSchema>;
 
   const formOptions: UseFormProps<FormValues> = useMemo(

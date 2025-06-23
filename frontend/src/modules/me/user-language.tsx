@@ -1,5 +1,5 @@
 import { onlineManager } from '@tanstack/react-query';
-import { type Language, config } from 'config';
+import { config, type Language } from 'config';
 import i18n from 'i18next';
 import { useTranslation } from 'react-i18next';
 import CountryFlag from '~/modules/common/country-flag';

@@ -1,4 +1,4 @@
-import { type Language, config } from 'config';
+import { config, type Language } from 'config';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import CountryFlag from '~/modules/common/country-flag';

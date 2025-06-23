@@ -1,13 +1,11 @@
-import { sendNewsletterBodySchema } from '#/modules/system/schema';
-
 import { zodResolver } from '@hookform/resolvers/zod';
 import type { CheckedState } from '@radix-ui/react-checkbox';
 import { useMutation } from '@tanstack/react-query';
 import { Info, Send } from 'lucide-react';
-import { Suspense, lazy, useMemo, useState } from 'react';
+import { lazy, Suspense, useMemo, useState } from 'react';
 import type { UseFormProps } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
-import type { z } from 'zod';
+import type { z } from 'zod/v4';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import { AlertWrap } from '~/modules/common/alert-wrap';
 import { blocksToHTML } from '~/modules/common/blocknote/helpers';
@@ -20,11 +18,13 @@ import { sendNewsletter } from '~/modules/system/api';
 import { Button, SubmitButton } from '~/modules/ui/button';
 import { Checkbox } from '~/modules/ui/checkbox';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
+import { zSendNewsletterData } from '~/openapi-client/zod.gen';
 import { blocknoteFieldIsDirty } from '~/utils/blocknote-field-is-dirty';
 
 const BlockNoteContent = lazy(() => import('~/modules/common/form-fields/blocknote-content'));
 
-const formSchema = sendNewsletterBodySchema;
+const formSchema = zSendNewsletterData.shape.body;
+
 type FormValues = z.infer<typeof formSchema>;
 interface CreateNewsletterFormProps {
   organizationIds: string[];

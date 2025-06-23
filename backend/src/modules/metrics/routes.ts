@@ -5,6 +5,7 @@ import { errorResponses, successWithDataSchema } from '#/utils/schema/responses'
 
 const metricRouteConfig = {
   getMetrics: createCustomRoute({
+    operationId: 'getMetrics',
     method: 'get',
     path: '/',
     guard: [isAuthenticated, hasSystemAccess],
@@ -24,6 +25,7 @@ const metricRouteConfig = {
     },
   }),
   getPublicCounts: createCustomRoute({
+    operationId: 'getPublicCounts',
     method: 'get',
     path: '/public',
     guard: isPublicAccess,

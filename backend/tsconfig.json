@@ -2,20 +2,13 @@
   "extends": "../tsconfig.json",
   "compilerOptions": {
     "noEmit": true,
+    
     "allowImportingTsExtensions": true,
     "lib": ["ES2021"],
 
-    /* Bundler mode */
-    "jsx": "react-jsx",
-
-    /* Build */
-    "declaration": true,
-
-    "declarationMap": true,
     "rootDir": "./",
     "sourceMap": true,
     "inlineSources": true,
-    "outDir": "./dist",
 
     // Set `sourceRoot` to  "/" to strip the build path prefix
     // from generated source code references.

@@ -1,5 +1,5 @@
 import { useMutation } from '@tanstack/react-query';
-import { type EntityType, config } from 'config';
+import { config, type EntityType } from 'config';
 import { Undo } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { type Control, useFormContext, useWatch } from 'react-hook-form';

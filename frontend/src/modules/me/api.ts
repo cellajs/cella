@@ -1,16 +1,16 @@
-import { type ContextEntityType, type UploadTemplateId, config } from 'config';
+import { type ContextEntityType, config, type UploadTemplateId } from 'config';
+import { meHc } from '#/modules/me/hc';
 import { clientConfig, handleResponse } from '~/lib/api';
 import type { UpdateUserParams } from '~/modules/users/api';
-import { meHc } from '#/modules/me/hc';
 
-export const client = meHc(config.backendUrl, clientConfig);
+export const client: ReturnType<typeof meHc> = meHc(config.backendUrl, clientConfig);
 
 /**
  * Get the current user's details. Retrieves information about the currently authenticated user.
  *
  * @returns The user's data.
  */
-export const getSelf = async () => {
+export const getMe = async () => {
   const response = await client.index.$get();
 
   const json = await handleResponse(response);
@@ -22,7 +22,7 @@ export const getSelf = async () => {
  *
  * @returns Current user auth data.
  */
-export const getSelfAuthInfo = async () => {
+export const getMyAuth = async () => {
   const response = await client.auth.$get();
 
   const json = await handleResponse(response);

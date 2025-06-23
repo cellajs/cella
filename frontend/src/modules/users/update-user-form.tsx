@@ -1,11 +1,9 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useMemo } from 'react';
-import { useTranslation } from 'react-i18next';
-import type { z } from 'zod';
-import { userUpdateBodySchema } from '#/modules/users/schema';
-
 import { config } from 'config';
+import { useMemo } from 'react';
 import type { UseFormProps } from 'react-hook-form';
+import { useTranslation } from 'react-i18next';
+import type { z } from 'zod/v4';
 import { useBeforeUnload } from '~/hooks/use-before-unload';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import useHideElementsById from '~/hooks/use-hide-elements-by-id';
@@ -23,9 +21,11 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 import { Input } from '~/modules/ui/input';
 import { useUpdateUserMutation } from '~/modules/users/query';
 import type { User } from '~/modules/users/types';
+import { zUpdateUserData } from '~/openapi-client/zod.gen';
 import { useUserStore } from '~/store/user';
 
-const formSchema = userUpdateBodySchema;
+const formSchema = zUpdateUserData.shape.body.unwrap();
+
 type FormValues = z.infer<typeof formSchema>;
 interface UpdateUserFormProps {
   user: User;

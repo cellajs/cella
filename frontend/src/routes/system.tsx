@@ -1,6 +1,6 @@
 import { createRoute } from '@tanstack/react-router';
-import { Suspense, lazy } from 'react';
-import { z } from 'zod';
+import { lazy, Suspense } from 'react';
+import { z } from 'zod/v4';
 
 import { organizationListQuerySchema } from '#/modules/organizations/schema';
 import { requestListQuerySchema } from '#/modules/requests/schema';
