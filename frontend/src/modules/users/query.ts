@@ -41,16 +41,21 @@ export const userQueryOptions = (idOrSlug: string) =>
  * @param param.limit - Number of items per page (default is configured in `config.requestLimits.users`).
  * @returns Infinite query options.
  */
-export const usersQueryOptions = ({ q = '', sort: initialSort, order: initialOrder, role, limit = config.requestLimits.users }: GetUsersParams) => {
-  const sort = initialSort || 'createdAt';
-  const order = initialOrder || 'desc';
+export const usersQueryOptions = ({ q = '', sort: _sort, order: _order, role, limit: _limit }: Omit<GetUsersParams, 'limit'> & { limit?: number}) => {
+  const sort = _sort || 'createdAt';
+  const order = _order || 'desc';
+  const limit = String(_limit || config.requestLimits.users);
 
   const queryKey = usersKeys.table.entries({ q, sort, order, role });
 
   return infiniteQueryOptions({
     queryKey,
     initialPageParam: { page: 0, offset: 0 },
-    queryFn: async ({ pageParam: { page, offset }, signal }) => await getUsers({ page, q, sort, order, role, limit, offset }, signal),
+    queryFn: async ({ pageParam: { page, offset: _offset }, signal }) => {
+      const offset = String(_offset || page * Number(limit));
+
+      return await getUsers({ q, sort, order, role, limit, offset }, signal)
+    },
     getNextPageParam: (_lastPage, allPages) => {
       const page = allPages.length;
       const offset = allPages.reduce((acc, page) => acc + page.items.length, 0);

@@ -4,11 +4,7 @@ import { clientConfig, handleResponse } from '~/lib/api';
 
 export const client = usersHc(config.backendUrl, clientConfig);
 
-export type GetUsersParams = Omit<Parameters<(typeof client.index)['$get']>['0']['query'], 'limit' | 'offset'> & {
-  limit?: number;
-  offset?: number;
-  page?: number;
-};
+export type GetUsersParams = Parameters<(typeof client.index)['$get']>['0']['query'];
 
 /**
  * Get a user by slug or ID.
@@ -25,21 +21,8 @@ export const getUser = async (idOrSlug: string) => {
   return json.data;
 };
 
-/**
- * Get a list of users with optional filters and pagination.
- *
- * @param param.q - Search query for filtering users(default is an empty string).
- * @param param.role - Optional Role `"admin" | "member"` to filter results.
- * @param param.sort - Field to sort by (default is 'id').
- * @param param.order - Order of sorting (default is 'asc').
- * @param param.limit - Number of items per page (default: `config.requestLimits.users`).
- * @param param.page - Page number.
- * @param param.offset - Optional offset.
- * @param signal - Optional abort signal for cancelling the request.
- * @returns The list of users matching the search query and filters.
- */
 export const getUsers = async (
-  { q, sort = 'id', order = 'asc', page = 0, limit = config.requestLimits.users, role, offset }: GetUsersParams,
+  { q, sort, order, limit, role, offset }: GetUsersParams,
   signal?: AbortSignal,
 ) => {
   const response = await client.index.$get(
@@ -49,8 +32,8 @@ export const getUsers = async (
         sort,
         order,
         role,
-        offset: typeof offset === 'number' ? String(offset) : String(page * limit),
-        limit: String(limit),
+        offset,
+        limit,
       },
     },
     {

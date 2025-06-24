@@ -14,7 +14,7 @@ import { useStepper } from '~/modules/common/stepper/use-stepper';
 import { toaster } from '~/modules/common/toaster';
 import type { EntityPage } from '~/modules/entities/types';
 import { type InviteMemberProps, inviteMembers } from '~/modules/memberships/api';
-import { membersKeys } from '~/modules/memberships/query/options';
+import { membersKeys } from '~/modules/memberships/query';
 import { organizationsKeys } from '~/modules/organizations/query';
 import { invite as inviteSystem, type SystemInviteProps } from '~/modules/system/api';
 import { Badge } from '~/modules/ui/badge';

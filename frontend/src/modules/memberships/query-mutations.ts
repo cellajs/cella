@@ -4,16 +4,15 @@ import { t } from 'i18next';
 import { toaster } from '~/modules/common/toaster';
 import { getAndSetMenu } from '~/modules/me/helpers';
 import { type RemoveMembersProps, type UpdateMembershipProp, removeMembers, updateMembership } from '~/modules/memberships/api';
-import { resolveParentEntityType } from '~/modules/memberships/query/helpers';
-import { membersKeys } from '~/modules/memberships/query/options';
-import type {
+import { resolveParentEntityType } from '~/modules/memberships/helpers';
+import { membersKeys } from '~/modules/memberships/query';
+import type { Member, Membership,
   EntityMembershipContextProp,
   InfiniteMemberQueryData,
   MemberContextProp,
   MemberQueryData,
   MutationUpdateMembership,
-} from '~/modules/memberships/query/types';
-import type { Member, Membership } from '~/modules/memberships/types';
+} from '~/modules/memberships/types';
 import { updateMenuItemMembership } from '~/modules/navigation/menu-sheet/helpers/menu-operations';
 import { formatUpdatedData, getQueryItems, getSimilarQueries } from '~/query/helpers/mutate-query';
 import { useMutateQueryData } from '~/query/hooks/use-mutate-query-data';

@@ -3,7 +3,7 @@ import { useEffect, useRef } from 'react';
 import { useOnlineManager } from '~/hooks/use-online-manager';
 import { LocalFileStorage } from '~/modules/attachments/helpers/local-file-storage';
 import { parseUploadedAttachments } from '~/modules/attachments/helpers/parse-uploaded';
-import { useAttachmentCreateMutation, useAttachmentDeleteMutation } from '~/modules/attachments/query/mutations';
+import { useAttachmentCreateMutation, useAttachmentDeleteMutation } from '~/modules/attachments/query-mutations';
 import type { AttachmentToInsert } from '~/modules/attachments/types';
 import { createBaseTransloaditUppy } from '~/modules/common/uploader/helpers';
 import type { UploadedUppyFile } from '~/modules/common/uploader/types';
@@ -72,7 +72,7 @@ export function useSyncLocalStore(organizationId: string) {
         for (const file of files) localUppy.addFile({ ...file, name: file.name || `${file.type}-${file.id}` });
 
         await localUppy.upload();
-      } catch (err) {}
+      } catch (err) { }
     };
 
     syncStoreAttachments();

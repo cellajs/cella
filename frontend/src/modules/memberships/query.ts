@@ -41,21 +41,25 @@ export const membersQueryOptions = ({
   orgIdOrSlug,
   entityType,
   q = '',
-  sort: initialSort,
-  order: initialOrder,
+  sort: _sort,
+  order: _order,
   role,
-  limit = config.requestLimits.members,
-}: GetMembersParams) => {
-  const sort = initialSort || 'createdAt';
-  const order = initialOrder || 'desc';
+  limit: _limit,
+}: Omit<GetMembersParams, 'limit'> & {limit?:number}) => {
+  const sort = _sort || 'createdAt';
+  const order = _order || 'desc';
+  const limit = String(_limit || config.requestLimits.members);
 
   const queryKey = membersKeys.table.members({ idOrSlug, entityType, orgIdOrSlug, q, sort, order, role });
 
   return infiniteQueryOptions({
     queryKey,
     initialPageParam: { page: 0, offset: 0 },
-    queryFn: async ({ pageParam: { page, offset }, signal }) =>
-      await getMembers({ page, q, sort, order, role, limit, idOrSlug, orgIdOrSlug, entityType, offset }, signal),
+    queryFn: async ({ pageParam: { page, offset: _offset }, signal }) => {
+            const offset = String(_offset || page * Number(limit));
+
+      return await getMembers({ q, sort, order, role, limit, idOrSlug, orgIdOrSlug, entityType, offset }, signal)
+    },
     getNextPageParam: (_lastPage, allPages) => {
       const page = allPages.length;
       const offset = allPages.reduce((acc, page) => acc + page.items.length, 0);
@@ -83,20 +87,25 @@ export const pendingInvitationsQueryOptions = ({
   orgIdOrSlug,
   entityType,
   q = '',
-  sort: initialSort,
-  order: initialOrder,
-  limit = config.requestLimits.pendingInvitations,
-}: GetMembershipInvitationsParams) => {
-  const sort = initialSort || 'createdAt';
-  const order = initialOrder || 'desc';
+  sort: _sort,
+  order: _order,
+  limit: _limit,
+}: Omit<GetMembershipInvitationsParams, 'limit'> & {limit?:number}) => {
+  const sort = _sort || 'createdAt';
+  const order = _order || 'desc';
+  const limit = String(_limit || config.requestLimits.pendingInvitations);
 
   const queryKey = membersKeys.table.pending({ idOrSlug, entityType, orgIdOrSlug, q, sort, order });
 
   return infiniteQueryOptions({
     queryKey,
     initialPageParam: { page: 0, offset: 0 },
-    queryFn: async ({ pageParam: { page, offset }, signal }) =>
-      await getPendingInvitations({ page, q, sort, order, limit, idOrSlug, orgIdOrSlug, entityType, offset }, signal),
+    queryFn: async ({ pageParam: { page, offset: _offset }, signal }) =>
+      {
+        const offset = String(_offset || page * Number(limit));
+        
+        return await getPendingInvitations({ q, sort, order, limit, idOrSlug, orgIdOrSlug, entityType, offset }, signal)
+      },
     getNextPageParam: (_lastPage, allPages) => {
       const page = allPages.length;
       const offset = allPages.reduce((acc, page) => acc + page.items.length, 0);

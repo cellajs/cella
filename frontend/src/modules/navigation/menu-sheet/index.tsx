@@ -13,7 +13,7 @@ import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
 import type { UserMenuItem } from '~/modules/me/types';
-import { useMemberUpdateMutation } from '~/modules/memberships/query/mutations';
+import { useMemberUpdateMutation } from '~/modules/memberships/query-mutations';
 import { AccountSheet } from '~/modules/navigation/account-sheet';
 import { getRelativeItemOrder, isPageData } from '~/modules/navigation/menu-sheet/helpers';
 import { MenuSheetItem } from '~/modules/navigation/menu-sheet/item';

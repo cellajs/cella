@@ -1,5 +1,5 @@
-import { attachmentsKeys } from '~/modules/attachments/query/options';
-import type { AttachmentInfiniteQueryData } from '~/modules/attachments/query/types';
+import { attachmentsKeys } from '~/modules/attachments/query';
+import type { AttachmentInfiniteQueryData } from '~/modules/attachments/types';
 import type { Attachment } from '~/modules/attachments/types';
 import { getQueryKeySortOrder } from '~/query/helpers';
 import { getSimilarQueries } from '~/query/helpers/mutate-query';

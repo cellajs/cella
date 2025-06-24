@@ -1,4 +1,4 @@
-import { useAttachmentDeleteMutation } from '~/modules/attachments/query/mutations';
+import { useAttachmentDeleteMutation } from '~/modules/attachments/query-mutations';
 import type { Attachment } from '~/modules/attachments/types';
 import { DeleteForm } from '~/modules/common/delete-form';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';

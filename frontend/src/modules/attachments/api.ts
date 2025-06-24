@@ -28,29 +28,13 @@ export const createAttachments = async ({ attachments, orgIdOrSlug }: CreateAtta
   return json.data;
 };
 
-export type GetAttachmentsParams = Omit<Parameters<(typeof client)['index']['$get']>['0']['query'], 'limit' | 'offset'> & {
+export type GetAttachmentsParams = Parameters<(typeof client)['index']['$get']>['0']['query'] & {
   orgIdOrSlug: string;
-  limit?: number;
-  offset?: number;
-  page?: number;
 };
 
-/**
- * Get a list of attachments with pagination and filters
- *
- * @param param.orgIdOrSlug - The organization ID or slug.
- * @param param.q - Optional search query to filter results.
- * @param param.sort - Field to sort by (defaults to 'id').
- * @param param.order - Sort order `'asc' | 'desc'` (defaults to 'asc').
- * @param param.page - Page number.
- * @param param.limit - Maximum number of attachments to fetch per page.
- * @param param.offset - Optional offset.
- * @param param.attachmentId - Optional attachmentId to get all attachments of same group.
- * @param signal - Optional abort signal for cancelling the request.
- * @returns A paginated list of attachments.
- */
+
 export const getAttachments = async (
-  { orgIdOrSlug, q, sort = 'id', order = 'asc', attachmentId, page = 0, limit = config.requestLimits.attachments, offset }: GetAttachmentsParams,
+  { orgIdOrSlug, q, sort, order, attachmentId, limit, offset }: GetAttachmentsParams,
   signal?: AbortSignal,
 ) => {
   const response = await client.index.$get(
@@ -60,8 +44,8 @@ export const getAttachments = async (
         sort,
         order,
         attachmentId,
-        offset: typeof offset === 'number' ? String(offset) : String(page * limit),
-        limit: String(limit),
+        offset,
+        limit,
       },
       param: { orgIdOrSlug },
     },

@@ -10,8 +10,8 @@ import {
   type UpdateAttachmentParams,
   updateAttachment,
 } from '~/modules/attachments/api';
-import { attachmentsKeys } from '~/modules/attachments/query/options';
-import type { AttachmentContextProp, AttachmentInfiniteQueryData, AttachmentQueryData } from '~/modules/attachments/query/types';
+import { attachmentsKeys } from '~/modules/attachments/query';
+import type { AttachmentContextProp, AttachmentInfiniteQueryData, AttachmentQueryData } from '~/modules/attachments/types';
 import type { Attachment } from '~/modules/attachments/types';
 import { toaster } from '~/modules/common/toaster';
 import { getQueryKeySortOrder } from '~/query/helpers';

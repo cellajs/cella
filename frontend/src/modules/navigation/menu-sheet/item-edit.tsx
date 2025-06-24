@@ -7,8 +7,8 @@ import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import Spinner from '~/modules/common/spinner';
 import { toaster } from '~/modules/common/toaster';
 import type { UserMenuItem } from '~/modules/me/types';
-import { useMemberUpdateMutation } from '~/modules/memberships/query/mutations';
-import type { MutationUpdateMembership } from '~/modules/memberships/query/types';
+import { useMemberUpdateMutation } from '~/modules/memberships/query-mutations';
+import type { MutationUpdateMembership } from '~/modules/memberships/types';
 import { Button } from '~/modules/ui/button';
 
 interface MenuItemEditProps {

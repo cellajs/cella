@@ -54,19 +54,24 @@ export const groupedAttachmentsQueryOptions = ({ orgIdOrSlug, attachmentId }: Pi
 export const attachmentsQueryOptions = ({
   orgIdOrSlug,
   q = '',
-  sort: initialSort,
-  order: initialOrder,
-  limit = config.requestLimits.attachments,
-}: Omit<GetAttachmentsParams, 'groupId'>) => {
-  const sort = initialSort || 'createdAt';
-  const order = initialOrder || 'desc';
+  sort: _sort,
+  order: _order,
+  limit: _limit,
+}: Omit<GetAttachmentsParams, 'groupId' | 'limit'> & { limit?: number }) => {
+  const sort = _sort || 'createdAt';
+  const order = _order || 'desc';
+  const limit = String(_limit || config.requestLimits.attachments);
 
   const queryKey = attachmentsKeys.list.table({ orgIdOrSlug, q, sort, order });
 
   return infiniteQueryOptions({
     queryKey,
     initialPageParam: { page: 0, offset: 0 },
-    queryFn: async ({ pageParam: { page, offset }, signal }) => await getAttachments({ page, q, sort, order, limit, orgIdOrSlug, offset }, signal),
+    queryFn: async ({ pageParam: { page, offset: _offset }, signal }) => {
+      const offset = String(_offset || page * Number(limit));
+      
+      return await getAttachments({ q, sort, order, limit, orgIdOrSlug, offset }, signal)
+    },
     getNextPageParam: (_lastPage, allPages) => {
       const page = allPages.length;
       const offset = allPages.reduce((acc, page) => acc + page.items.length, 0);

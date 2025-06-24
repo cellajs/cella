@@ -9,7 +9,7 @@ import AuthErrorNotice from '~/modules/auth/auth-error-notice';
 import { useTokenCheck } from '~/modules/auth/use-token-check';
 import Spinner from '~/modules/common/spinner';
 import { getAndSetMenu } from '~/modules/me/helpers';
-import { membersKeys } from '~/modules/memberships/query/options';
+import { membersKeys } from '~/modules/memberships/query';
 import { organizationsKeys } from '~/modules/organizations/query';
 import type { Organization } from '~/modules/organizations/types';
 import { SubmitButton, buttonVariants } from '~/modules/ui/button';

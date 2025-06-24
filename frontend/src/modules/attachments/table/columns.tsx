@@ -15,7 +15,7 @@ import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import Spinner from '~/modules/common/spinner';
 import type { EntityPage } from '~/modules/entities/types';
-import { membersKeys } from '~/modules/memberships/query/options';
+import { membersKeys } from '~/modules/memberships/query';
 import { Button } from '~/modules/ui/button';
 import { Input } from '~/modules/ui/input';
 import { findUserFromCache } from '~/modules/users/helpers';

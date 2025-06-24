@@ -87,30 +87,13 @@ type RequiredGetMembersParams = {
   entityType: ContextEntityType;
 };
 
-type OptionalGetMembersParams = Omit<Parameters<(typeof client)['members']['$get']>['0']['query'], 'limit' | 'offset'> & {
-  limit?: number;
-  offset?: number;
-  page?: number;
-};
+type OptionalGetMembersParams = Parameters<(typeof client)['members']['$get']>['0']['query'];
 
 // Combined type
 export type GetMembersParams = RequiredGetMembersParams & OptionalGetMembersParams;
 
 /**
  * Get a list of members with pagination and filters
- *
- * @param param.idOrSlug - ID or slug of entity.
- * @param param.entityType - Type of entity.
- * @param param.orgIdOrSlug - Organization ID or slug associated with the entity.
- * @param param.q - Optional search query to filter results.
- * @param param.sort - Field to sort by (defaults to 'id').
- * @param param.order - Sort order `'asc' | 'desc'` (defaults to 'asc').
- * @param param.role - Optional Role `"admin" | "member"` to filter results.
- * @param param.page - Page number.
- * @param param.limit - Maximum number of members per page (defaults to `config.requestLimits.members`).
- * @param param.offset - Optional offset.
- * @param signal - Optional abort signal for cancelling the request.
- * @returns A paginated list of members.
  */
 export const getMembers = async (
   {
@@ -118,11 +101,10 @@ export const getMembers = async (
     orgIdOrSlug,
     entityType,
     q,
-    sort = 'id',
-    order = 'asc',
+    sort,
+    order,
     role,
-    page = 0,
-    limit = config.requestLimits.members,
+    limit,
     offset,
   }: GetMembersParams,
   signal?: AbortSignal,
@@ -135,8 +117,8 @@ export const getMembers = async (
         q,
         sort,
         order,
-        offset: typeof offset === 'number' ? String(offset) : String(page * limit),
-        limit: String(limit),
+        offset,
+        limit,
         role,
       },
       param: { orgIdOrSlug },
@@ -158,11 +140,7 @@ export const getMembers = async (
 
 // Combined type
 export type GetMembershipInvitationsParams = RequiredGetMembersParams &
-  Omit<Parameters<(typeof client)['pending']['$get']>['0']['query'], 'limit' | 'offset'> & {
-    limit?: number;
-    offset?: number;
-    page?: number;
-  };
+  Parameters<(typeof client)['pending']['$get']>['0']['query'];
 
 /**
  * Get a list of invited members in an entity with pagination and filters
@@ -186,10 +164,9 @@ export const getPendingInvitations = async (
     orgIdOrSlug,
     entityType,
     q,
-    sort = 'createdAt',
-    order = 'asc',
-    page = 0,
-    limit = config.requestLimits.pendingInvitations,
+    sort,
+    order,
+    limit,
     offset,
   }: GetMembershipInvitationsParams,
   signal?: AbortSignal,
@@ -202,8 +179,8 @@ export const getPendingInvitations = async (
         q,
         sort,
         order,
-        offset: typeof offset === 'number' ? String(offset) : String(page * limit),
-        limit: String(limit),
+        offset,
+        limit,
       },
       param: { orgIdOrSlug },
     },

@@ -1,6 +1,6 @@
-import { attachmentsQueryOptions } from '~/modules/attachments/query/options';
+import { attachmentsQueryOptions } from '~/modules/attachments/query';
 import type { UserMenuItem } from '~/modules/me/types';
-import { membersQueryOptions } from '~/modules/memberships/query/options';
+import { membersQueryOptions } from '~/modules/memberships/query';
 import { organizationQueryOptions } from '~/modules/organizations/query';
 
 /**
