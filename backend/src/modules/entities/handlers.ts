@@ -66,9 +66,9 @@ const entityRouteHandlers = app
     return ctx.json({ success: true, data: { items, total, counts } }, 200);
   })
   /*
-   * Get all users context entities
+   * Get all users' context entities
    */
-  .openapi(entityRoutes.geContextEntities, async (ctx) => {
+  .openapi(entityRoutes.getContextEntities, async (ctx) => {
     const { q, sort, type, roles, targetUserId } = ctx.req.valid('query');
 
     const { id: selfId } = getContextUser();

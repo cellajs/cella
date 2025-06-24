@@ -55,7 +55,7 @@ const entityRoutes = {
       ...errorResponses,
     },
   }),
-  geContextEntities: createCustomRoute({
+  getContextEntities: createCustomRoute({
     operationId: 'getContextEntities',
     method: 'get',
     path: '/context',

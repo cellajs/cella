@@ -4,13 +4,13 @@ import { GridSkeleton } from '~/modules/entities/entity-grid/skeleton';
 import { contextEntitiesQueryOptions } from '~/modules/entities/query';
 import { EntityGridWrapperProps } from './wrapper';
 import z from 'zod/v4';
-import { contextEntitiesQuerySchema } from '#/modules/entities/schema';
 import { t } from 'i18next';
 import { useInView } from 'react-intersection-observer';
 import { useOnlineManager } from '~/hooks/use-online-manager';
+import { zGetContextEntitiesData } from '~/openapi-client/zod.gen';
 
 // TODO: can we also include roles and userId in the searchVars? 
-export type EntitySearch = Pick<z.infer<typeof contextEntitiesQuerySchema>, 'sort' | 'q'>;
+export type EntitySearch = Pick<z.infer<typeof zGetContextEntitiesData>['query'], 'sort' | 'q'>;
 
 interface Props extends EntityGridWrapperProps {
   searchVars: EntitySearch;

@@ -2,8 +2,11 @@
 
 import { z } from 'zod/v4';
 
-export const zBaseEntitySchema = z.object({
+export const zUserSummarySchema = z.object({
     id: z.string(),
+    entityType: z.enum([
+        'user'
+    ]),
     slug: z.string(),
     name: z.string(),
     thumbnailUrl: z.union([
@@ -14,9 +17,24 @@ export const zBaseEntitySchema = z.object({
         z.string(),
         z.null()
     ]).optional(),
+    email: z.string().email()
+});
+
+export const zBaseEntitySchema = z.object({
+    id: z.string(),
     entityType: z.enum([
         'organization'
-    ])
+    ]),
+    slug: z.string(),
+    name: z.string(),
+    thumbnailUrl: z.union([
+        z.string(),
+        z.null()
+    ]).optional(),
+    bannerUrl: z.union([
+        z.string(),
+        z.null()
+    ]).optional()
 });
 
 export const zCheckEmailData = z.object({

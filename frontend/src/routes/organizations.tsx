@@ -3,14 +3,13 @@ import { createRoute, redirect, useLoaderData, useParams } from '@tanstack/react
 import i18n from 'i18next';
 import { lazy, Suspense } from 'react';
 import { z } from 'zod/v4';
-import { attachmentListQuerySchema } from '#/modules/attachments/schema';
-import { memberListQuerySchema, pendingInvitationListQuerySchema } from '#/modules/memberships/schema';
 import ErrorNotice from '~/modules/common/error-notice';
 import { toaster } from '~/modules/common/toaster';
 import { organizationQueryOptions } from '~/modules/organizations/query';
 import { queryClient } from '~/query/query-client';
 import { AppRoute } from '~/routes/base';
 import { noDirectAccess } from '~/utils/no-direct-access';
+import { zGetAttachmentsData, zGetMembersData, zGetPendingInvitationsData } from '~/openapi-client/zod.gen';
 
 //Lazy-loaded components
 const OrganizationPage = lazy(() => import('~/modules/organizations/organization-page'));
@@ -19,13 +18,11 @@ const AttachmentsTable = lazy(() => import('~/modules/attachments/table/table-wr
 const OrganizationSettings = lazy(() => import('~/modules/organizations/organization-settings'));
 
 // Search query schema
-export const membersSearchSchema = memberListQuerySchema
-  .pick({ q: true, sort: true, order: true, role: true })
-  .extend({ userSheetId: z.string().optional() });
+export const membersSearchSchema = zGetMembersData.shape.query.pick({ q: true, sort: true, order: true, role: true }).extend({ userSheetId: z.string().optional() });
 
-export const pendingInvitationsSearchSchema = pendingInvitationListQuerySchema.pick({ sort: true, order: true });
+export const pendingInvitationsSearchSchema = zGetPendingInvitationsData.shape.query.pick({ sort: true, order: true });
 
-export const attachmentsSearchSchema = attachmentListQuerySchema.pick({ q: true, sort: true, order: true }).extend({
+export const attachmentsSearchSchema = zGetAttachmentsData.shape.query.pick({ q: true, sort: true, order: true }).extend({
   attachmentDialogId: z.string().optional(),
   groupId: z.string().optional(),
 });

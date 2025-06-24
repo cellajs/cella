@@ -3,6 +3,8 @@ import type { OpenAPIHono } from '@hono/zod-openapi';
 import { Scalar } from '@scalar/hono-api-reference';
 import { config } from 'config';
 import { apiModulesList } from './docs-config';
+import { userSummarySchema } from '#/modules/users/schema';
+import { entityBaseSchema } from '#/modules/entities/schema';
 
 /**
  * Generate OpenAPI documentation using hono/zod-openapi and scalar/hono-api-reference
@@ -21,25 +23,9 @@ const docs = (app: OpenAPIHono<Env>) => {
       "Authentication cookie. Copy the cookie from your network tab and paste it here. If you don't have it, you need to sign in or sign up first.",
   });
 
-  registry.registerComponent('schemas', 'BaseEntitySchema', {
-    type: 'object',
-    required: ['id', 'slug', 'name', 'email', 'entityType'],
-    properties: {
-      id: { type: 'string' },
-      slug: { type: 'string' },
-      name: { type: 'string' },
-      thumbnailUrl: {
-        type: ['string', 'null'],
-      },
-      bannerUrl: {
-        type: ['string', 'null'],
-      },
-      entityType: {
-        type: 'string',
-        enum: [...config.contextEntityTypes],
-      },
-    },
-  });
+  registry.register('UserSummarySchema', userSummarySchema)
+  registry.register('BaseEntitySchema', entityBaseSchema)
+
 
   // TODO add uniqe schema that we use on BE 
   // Review all existing schemas
