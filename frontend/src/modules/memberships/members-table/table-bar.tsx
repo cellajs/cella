@@ -110,10 +110,10 @@ export const MembersTableBar = ({
   const fetchExport = async (limit: number) => {
     const { items } = await getMembers({
       q,
-      sort,
-      order,
+      sort: sort || 'createdAt',
+      order: order || 'asc',
       role,
-      limit,
+      limit: String(limit),
       idOrSlug: entity.slug,
       orgIdOrSlug: entity.organizationId || entity.id,
       entityType: entity.entityType,
