@@ -67,6 +67,7 @@ const organizationRouteHandlers = app
    */
   .openapi(organizationRoutes.getOrganizations, async (ctx) => {
     const { q, sort, order, offset, limit } = ctx.req.valid('query');
+    
     const user = getContextUser();
     const entityType = 'organization';
 

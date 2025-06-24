@@ -41,6 +41,7 @@ export const clientConfig = {
 
 // Custom error class to handle API errors
 export class ApiError extends Error {
+  name: string;
   status: HttpErrorStatus;
   type?: string;
   entityType?: EntityType;
@@ -54,6 +55,7 @@ export class ApiError extends Error {
 
   constructor(error: ApiError) {
     super(error.message);
+    this.name = error.type || 'ApiError';
     this.status = error.status;
     this.type = error.type;
     this.entityType = error.entityType;

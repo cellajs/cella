@@ -37,6 +37,7 @@ export const membershipCountSchema = z.object({
 
 export const fullCountsSchema = z.object({ membership: membershipCountSchema, related: entityCountSchema });
 
+// TODO: shouldnt we use an enum for auth strategies?
 export const organizationSchema = z.object({
   ...createSelectSchema(organizationsTable).omit({restrictions: true}).shape,
   languages: z.array(languageSchema).min(1),

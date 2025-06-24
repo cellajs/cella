@@ -55,6 +55,7 @@ export const createError = (
   const organization = getContextOrganization();
 
   const error: ErrorType = {
+    name: err?.name || 'ApiError',
     message,
     type: type,
     status,

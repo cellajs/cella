@@ -4,5 +4,5 @@ import { config } from 'config'
 export default defineConfig({
   input: { path: `${config.backendUrl}/openapi.json`, watch: true },
   output: { path: 'src/openapi-client', lint: 'biome', format: 'biome' },
-  plugins: ['zod'],
+  plugins: ['zod', { name: '@hey-api/sdk' }, { name: '@hey-api/typescript' }],
 })

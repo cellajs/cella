@@ -1,7 +1,7 @@
 import { infiniteQueryOptions, queryOptions, useMutation } from '@tanstack/react-query';
 import { config } from 'config';
 
-import type { ApiError } from '~/lib/api';
+import { ApiError } from '~/lib/api';
 import { addMenuItem, deleteMenuItem, updateMenuItem } from '~/modules/navigation/menu-sheet/helpers/menu-operations';
 import {
   type CreateOrganizationParams,
@@ -9,11 +9,11 @@ import {
   deleteOrganizations,
   type GetOrganizationsParams,
   getOrganization,
-  getOrganizations,
   type UpdateOrganizationBody,
   updateOrganization,
 } from '~/modules/organizations/api';
 import type { Organization, OrganizationWithMembership } from '~/modules/organizations/types';
+import { getOrganizations } from '~/openapi-client';
 import { useMutateQueryData } from '~/query/hooks/use-mutate-query-data';
 
 /**
@@ -78,7 +78,11 @@ export const organizationsQueryOptions = ({
     queryFn: async ({ pageParam: { page, offset: _offset }, signal }) => {
       const offset = String(_offset || page * Number(limit));
 
-      return await getOrganizations({ q, sort, order, limit, offset }, signal)
+      const response = await getOrganizations({ query: {q, sort, order, limit, offset }, signal })
+      if (response.error) throw new ApiError(response.error.error as ApiError);
+      if (response.data.data) return response.data.data;
+      
+      throw new Error('Failed to GET /organizations');
     },
     getNextPageParam: (_lastPage, allPages) => {
       const page = allPages.length;

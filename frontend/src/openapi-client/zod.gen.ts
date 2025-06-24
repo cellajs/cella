@@ -749,6 +749,7 @@ export const zDeleteSessionsData = z.object({
 export const zDeleteSessionsResponse = z.object({
     success: z.boolean(),
     errors: z.array(z.object({
+        name: z.string(),
         message: z.string(),
         type: z.string(),
         status: z.number(),
@@ -885,6 +886,7 @@ export const zDeleteUsersData = z.object({
 export const zDeleteUsersResponse = z.object({
     success: z.boolean(),
     errors: z.array(z.object({
+        name: z.string(),
         message: z.string(),
         type: z.string(),
         status: z.number(),
@@ -1194,6 +1196,7 @@ export const zDeleteOrganizationsData = z.object({
 export const zDeleteOrganizationsResponse = z.object({
     success: z.boolean(),
     errors: z.array(z.object({
+        name: z.string(),
         message: z.string(),
         type: z.string(),
         status: z.number(),
@@ -2143,6 +2146,7 @@ export const zDeleteAttachmentsData = z.object({
 export const zDeleteAttachmentsResponse = z.object({
     success: z.boolean(),
     errors: z.array(z.object({
+        name: z.string(),
         message: z.string(),
         type: z.string(),
         status: z.number(),
@@ -2481,6 +2485,7 @@ export const zDeleteMembershipsData = z.object({
 export const zDeleteMembershipsResponse = z.object({
     success: z.boolean(),
     errors: z.array(z.object({
+        name: z.string(),
         message: z.string(),
         type: z.string(),
         status: z.number(),
