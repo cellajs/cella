@@ -120,6 +120,7 @@ const typeToBlocknoteKeys: Record<CustomBlockTypes, SlashItemKeys[]> = {
   video: ['video'],
   audio: ['audio'],
   emoji: ['emoji'],
+  toggleListItem: []
 };
 
 // Indexed items (max 9 for quick number-based selection)

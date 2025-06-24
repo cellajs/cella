@@ -140,7 +140,7 @@
   },
   "devDependencies": {
     "@faker-js/faker": "^9.8.0",
-    "@hey-api/openapi-ts": "^0.76.0",
+    "@hey-api/openapi-ts": "^0.77.0",
     "@react-scan/vite-plugin-react-scan": "^0.1.8",
     "@rollup/plugin-terser": "^0.4.4",
     "@sentry/vite-plugin": "^3.5.0",
@@ -149,7 +149,7 @@
     "@tanstack/router-plugin": "^1.121.34",
     "@types/canvas-confetti": "^1.9.0",
     "@types/lodash": "^4.17.18",
-    "@types/node": "^24.0.3",
+    "@types/node": "^24.0.4",
     "@types/react": "^19.1.8",
     "@types/react-dom": "^19.1.6",
     "@types/zxcvbn": "^4.4.5",

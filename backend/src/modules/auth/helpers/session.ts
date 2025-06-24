@@ -1,6 +1,5 @@
 import { db } from '#/db/db';
-import { supportedOauthProviders } from '#/db/schema/oauth-accounts';
-import { type SessionModel, sessionsTable } from '#/db/schema/sessions';
+import { authStrategiesEnum, type SessionModel, sessionsTable } from '#/db/schema/sessions';
 import { type UserModel, usersTable } from '#/db/schema/users';
 import { logEvent } from '#/middlewares/logger/log-event';
 import { userSelect } from '#/modules/users/helpers/select';
@@ -16,35 +15,14 @@ import type { z } from '@hono/zod-openapi';
 import { deleteAuthCookie, getAuthCookie, setAuthCookie } from './cookie';
 import { deviceInfo } from './device-info';
 
-// The authentication strategies supported by cella
-// TODO remove null from authStrategies
-export const supportedAuthStrategies = ['oauth', 'password', 'passkey'] as const;
-
-// Type guard to check if strategy is supported
-const isAuthStrategy = (strategy: string): strategy is (typeof allSupportedStrategies)[number] => {
-  const [, ...elseStrategies] = supportedAuthStrategies;
-  const allSupportedStrategies = [...supportedOauthProviders, ...elseStrategies];
-  return (allSupportedStrategies as string[]).includes(strategy);
-};
-
-// Validate auth strategy
-const validateAuthStrategy = (strategy: string) => (isAuthStrategy(strategy) ? strategy : null);
-
 /**
  * Sets a user session and stores it in the database.
  * Generates a session token, records device information, and optionally associates an admin user for impersonation.
- *
- * @param ctx - Request/response context.
- * @param userId - ID of the user being signed in.
- * @param strategy - The authentication strategy `'impersonation' | 'regular'`.
- * @param adminUserId - Optional , id of the admin user if the session is an impersonation.
  */
-export const setUserSession = async (ctx: Context, userId: UserModel['id'], strategy: string, adminUserId?: UserModel['id']) => {
+export const setUserSession = async (ctx: Context, userId: UserModel['id'], strategy: (typeof authStrategiesEnum)[number], adminUserId?: UserModel['id']) => {
   // Get device information
   const device = deviceInfo(ctx);
 
-  // Validate auth strategy
-  const authStrategy = strategy === 'impersonation' ? null : validateAuthStrategy(strategy);
 
   // Generate session token and store the hashed version in db
   const sessionToken = nanoid(40);
@@ -53,12 +31,12 @@ export const setUserSession = async (ctx: Context, userId: UserModel['id'], stra
   const session = {
     token: hashedSessionToken,
     userId,
-    type: strategy === 'impersonation' ? ('impersonation' as const) : ('regular' as const),
+    type: adminUserId ? ('impersonation' as const) : ('regular' as const),
     deviceName: device.name,
     deviceType: device.type,
     deviceOs: device.os,
     browser: device.browser,
-    authStrategy,
+    authStrategy: strategy,
     createdAt: getIsoDate(),
     expiresAt: createDate(new TimeSpan(1, 'w')), // 1 week from now
   };
@@ -67,7 +45,7 @@ export const setUserSession = async (ctx: Context, userId: UserModel['id'], stra
   await db.insert(sessionsTable).values(session);
 
   // Set expiration time span
-  const timeSpan = strategy === 'impersonation' ? new TimeSpan(1, 'h') : new TimeSpan(1, 'w');
+  const timeSpan = adminUserId ? new TimeSpan(1, 'h') : new TimeSpan(1, 'w');
 
   const cookieContent = `${hashedSessionToken}.${adminUserId ?? ''}`;
 
@@ -75,7 +53,7 @@ export const setUserSession = async (ctx: Context, userId: UserModel['id'], stra
   await setAuthCookie(ctx, 'session', cookieContent, timeSpan);
 
   // If it's an impersonation session, we can stop here
-  if (strategy === 'impersonation') return;
+  if (adminUserId) return;
 
   // Update last sign in date
   const lastSignInAt = getIsoDate();

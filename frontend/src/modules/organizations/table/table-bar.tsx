@@ -104,10 +104,9 @@ export const OrganizationsTableBar = ({
     });
   };
 
-  // TODO(REFACTOR): these fetchExports can be done with react-query?
   const fetchExport = async (limit: number) => {
     const response = await getOrganizations({ query: { limit: String(limit), q, sort: sort || 'createdAt', order: order || 'asc', offset: '0' } });
-    return response.data?.data.items;
+    return response!.data.items;
   };
 
   return (

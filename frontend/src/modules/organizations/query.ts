@@ -77,12 +77,9 @@ export const organizationsQueryOptions = ({
     initialPageParam: { page: 0, offset: 0 },
     queryFn: async ({ pageParam: { page, offset: _offset }, signal }) => {
       const offset = String(_offset || page * Number(limit));
+      const response = await getOrganizations({ query: {q, sort, order, limit, offset }, signal });
+      return response!.data;
 
-      const response = await getOrganizations({ query: {q, sort, order, limit, offset }, signal })
-      if (response.error) throw new ApiError(response.error.error as ApiError);
-      if (response.data.data) return response.data.data;
-      
-      throw new Error('Failed to GET /organizations');
     },
     getNextPageParam: (_lastPage, allPages) => {
       const page = allPages.length;

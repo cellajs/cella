@@ -23,7 +23,8 @@ export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends 
  * Check if user with email address exists.
  */
 export const checkEmail = <ThrowOnError extends boolean = false>(options?: Options<CheckEmailData, ThrowOnError>) => {
-    return (options?.client ?? _heyApiClient).post<CheckEmailResponses, CheckEmailErrors, ThrowOnError>({
+    return (options?.client ?? _heyApiClient).post<CheckEmailResponses, CheckEmailErrors, ThrowOnError, 'data'>({
+        responseStyle: 'data',
         url: '/auth/check-email',
         ...options,
         headers: {
@@ -38,7 +39,8 @@ export const checkEmail = <ThrowOnError extends boolean = false>(options?: Optio
  * Sign up with email and password. User will receive a verification email.
  */
 export const signUp = <ThrowOnError extends boolean = false>(options?: Options<SignUpData, ThrowOnError>) => {
-    return (options?.client ?? _heyApiClient).post<SignUpResponses, SignUpErrors, ThrowOnError>({
+    return (options?.client ?? _heyApiClient).post<SignUpResponses, SignUpErrors, ThrowOnError, 'data'>({
+        responseStyle: 'data',
         url: '/auth/sign-up',
         ...options,
         headers: {
@@ -53,7 +55,8 @@ export const signUp = <ThrowOnError extends boolean = false>(options?: Options<S
  * Sign up with email and password to accept system or organization invitation.
  */
 export const signUpWithToken = <ThrowOnError extends boolean = false>(options: Options<SignUpWithTokenData, ThrowOnError>) => {
-    return (options.client ?? _heyApiClient).post<SignUpWithTokenResponses, SignUpWithTokenErrors, ThrowOnError>({
+    return (options.client ?? _heyApiClient).post<SignUpWithTokenResponses, SignUpWithTokenErrors, ThrowOnError, 'data'>({
+        responseStyle: 'data',
         url: '/auth/sign-up/{token}',
         ...options,
         headers: {
@@ -68,7 +71,8 @@ export const signUpWithToken = <ThrowOnError extends boolean = false>(options: O
  * Resend verification email to user based on token id.
  */
 export const sendVerificationEmail = <ThrowOnError extends boolean = false>(options?: Options<SendVerificationEmailData, ThrowOnError>) => {
-    return (options?.client ?? _heyApiClient).post<SendVerificationEmailResponses, SendVerificationEmailErrors, ThrowOnError>({
+    return (options?.client ?? _heyApiClient).post<SendVerificationEmailResponses, SendVerificationEmailErrors, ThrowOnError, 'data'>({
+        responseStyle: 'data',
         url: '/auth/send-verification-email',
         ...options,
         headers: {
@@ -83,7 +87,8 @@ export const sendVerificationEmail = <ThrowOnError extends boolean = false>(opti
  * Verify email address by token from the verification email. Receive a user session when successful.
  */
 export const verifyEmail = <ThrowOnError extends boolean = false>(options: Options<VerifyEmailData, ThrowOnError>) => {
-    return (options.client ?? _heyApiClient).post<VerifyEmailResponses, VerifyEmailErrors, ThrowOnError>({
+    return (options.client ?? _heyApiClient).post<VerifyEmailResponses, VerifyEmailErrors, ThrowOnError, 'data'>({
+        responseStyle: 'data',
         url: '/auth/verify-email/{token}',
         ...options
     });
@@ -94,7 +99,8 @@ export const verifyEmail = <ThrowOnError extends boolean = false>(options: Optio
  * An email will be sent with a link to create a password.
  */
 export const requestPassword = <ThrowOnError extends boolean = false>(options?: Options<RequestPasswordData, ThrowOnError>) => {
-    return (options?.client ?? _heyApiClient).post<RequestPasswordResponses, RequestPasswordErrors, ThrowOnError>({
+    return (options?.client ?? _heyApiClient).post<RequestPasswordResponses, RequestPasswordErrors, ThrowOnError, 'data'>({
+        responseStyle: 'data',
         url: '/auth/request-password',
         ...options,
         headers: {
@@ -109,7 +115,8 @@ export const requestPassword = <ThrowOnError extends boolean = false>(options?: 
  * Submit new password and directly receive a user session.
  */
 export const createPasswordWithToken = <ThrowOnError extends boolean = false>(options: Options<CreatePasswordWithTokenData, ThrowOnError>) => {
-    return (options.client ?? _heyApiClient).post<CreatePasswordWithTokenResponses, CreatePasswordWithTokenErrors, ThrowOnError>({
+    return (options.client ?? _heyApiClient).post<CreatePasswordWithTokenResponses, CreatePasswordWithTokenErrors, ThrowOnError, 'data'>({
+        responseStyle: 'data',
         url: '/auth/create-password/{token}',
         ...options,
         headers: {
@@ -124,7 +131,8 @@ export const createPasswordWithToken = <ThrowOnError extends boolean = false>(op
  * Sign in with email and password.
  */
 export const signIn = <ThrowOnError extends boolean = false>(options?: Options<SignInData, ThrowOnError>) => {
-    return (options?.client ?? _heyApiClient).post<SignInResponses, SignInErrors, ThrowOnError>({
+    return (options?.client ?? _heyApiClient).post<SignInResponses, SignInErrors, ThrowOnError, 'data'>({
+        responseStyle: 'data',
         url: '/auth/sign-in',
         ...options,
         headers: {
@@ -139,7 +147,7 @@ export const signIn = <ThrowOnError extends boolean = false>(options?: Options<S
  * This endpoint is used to check if a token is still valid. It is used to provide direct user feedback on tokens such as reset password and invitation.
  */
 export const checkToken = <ThrowOnError extends boolean = false>(options: Options<CheckTokenData, ThrowOnError>) => {
-    return (options.client ?? _heyApiClient).post<CheckTokenResponses, CheckTokenErrors, ThrowOnError>({
+    return (options.client ?? _heyApiClient).post<CheckTokenResponses, CheckTokenErrors, ThrowOnError, 'data'>({
         security: [
             {
                 in: 'cookie',
@@ -147,6 +155,7 @@ export const checkToken = <ThrowOnError extends boolean = false>(options: Option
                 type: 'apiKey'
             }
         ],
+        responseStyle: 'data',
         url: '/auth/check-token/{id}',
         ...options
     });
@@ -157,7 +166,7 @@ export const checkToken = <ThrowOnError extends boolean = false>(options: Option
  * Accept invitation token
  */
 export const acceptEntityInvite = <ThrowOnError extends boolean = false>(options: Options<AcceptEntityInviteData, ThrowOnError>) => {
-    return (options.client ?? _heyApiClient).post<AcceptEntityInviteResponses, AcceptEntityInviteErrors, ThrowOnError>({
+    return (options.client ?? _heyApiClient).post<AcceptEntityInviteResponses, AcceptEntityInviteErrors, ThrowOnError, 'data'>({
         security: [
             {
                 in: 'cookie',
@@ -165,6 +174,7 @@ export const acceptEntityInvite = <ThrowOnError extends boolean = false>(options
                 type: 'apiKey'
             }
         ],
+        responseStyle: 'data',
         url: '/auth/accept-invite/{token}',
         ...options
     });
@@ -175,7 +185,7 @@ export const acceptEntityInvite = <ThrowOnError extends boolean = false>(options
  * System admin impersonates a selected user by id by receiving a special impersonation session.
  */
 export const startImpersonation = <ThrowOnError extends boolean = false>(options: Options<StartImpersonationData, ThrowOnError>) => {
-    return (options.client ?? _heyApiClient).get<StartImpersonationResponses, StartImpersonationErrors, ThrowOnError>({
+    return (options.client ?? _heyApiClient).get<StartImpersonationResponses, StartImpersonationErrors, ThrowOnError, 'data'>({
         security: [
             {
                 in: 'cookie',
@@ -183,6 +193,7 @@ export const startImpersonation = <ThrowOnError extends boolean = false>(options
                 type: 'apiKey'
             }
         ],
+        responseStyle: 'data',
         url: '/auth/impersonation/start',
         ...options
     });
@@ -193,7 +204,7 @@ export const startImpersonation = <ThrowOnError extends boolean = false>(options
  * Stop impersonating by clearing impersonation session.
  */
 export const stopImpersonation = <ThrowOnError extends boolean = false>(options?: Options<StopImpersonationData, ThrowOnError>) => {
-    return (options?.client ?? _heyApiClient).get<StopImpersonationResponses, StopImpersonationErrors, ThrowOnError>({
+    return (options?.client ?? _heyApiClient).get<StopImpersonationResponses, StopImpersonationErrors, ThrowOnError, 'data'>({
         security: [
             {
                 in: 'cookie',
@@ -201,6 +212,7 @@ export const stopImpersonation = <ThrowOnError extends boolean = false>(options?
                 type: 'apiKey'
             }
         ],
+        responseStyle: 'data',
         url: '/auth/impersonation/stop',
         ...options
     });
@@ -211,7 +223,7 @@ export const stopImpersonation = <ThrowOnError extends boolean = false>(options?
  * Sign out yourself and clear session.
  */
 export const signOut = <ThrowOnError extends boolean = false>(options?: Options<SignOutData, ThrowOnError>) => {
-    return (options?.client ?? _heyApiClient).get<SignOutResponses, SignOutErrors, ThrowOnError>({
+    return (options?.client ?? _heyApiClient).get<SignOutResponses, SignOutErrors, ThrowOnError, 'data'>({
         security: [
             {
                 in: 'cookie',
@@ -219,6 +231,7 @@ export const signOut = <ThrowOnError extends boolean = false>(options?: Options<
                 type: 'apiKey'
             }
         ],
+        responseStyle: 'data',
         url: '/auth/sign-out',
         ...options
     });
@@ -229,7 +242,8 @@ export const signOut = <ThrowOnError extends boolean = false>(options?: Options<
  * Authenticate with Github to sign in or sign up. A `connect` (userId),`redirect` or `token` query parameter can be used to connect account, redirect to a specific page or to accept invitation.
  */
 export const githubSignIn = <ThrowOnError extends boolean = false>(options: Options<GithubSignInData, ThrowOnError>) => {
-    return (options.client ?? _heyApiClient).get<unknown, GithubSignInErrors, ThrowOnError>({
+    return (options.client ?? _heyApiClient).get<unknown, GithubSignInErrors, ThrowOnError, 'data'>({
+        responseStyle: 'data',
         url: '/auth/github',
         ...options
     });
@@ -240,7 +254,8 @@ export const githubSignIn = <ThrowOnError extends boolean = false>(options: Opti
  * Authenticate with Google to sign in or sign up. A `connect` (userId),`redirect` or `token` query parameter can be used to connect account, redirect to a specific page or to accept invitation.
  */
 export const googleSignIn = <ThrowOnError extends boolean = false>(options: Options<GoogleSignInData, ThrowOnError>) => {
-    return (options.client ?? _heyApiClient).get<unknown, GoogleSignInErrors, ThrowOnError>({
+    return (options.client ?? _heyApiClient).get<unknown, GoogleSignInErrors, ThrowOnError, 'data'>({
+        responseStyle: 'data',
         url: '/auth/google',
         ...options
     });
@@ -251,7 +266,8 @@ export const googleSignIn = <ThrowOnError extends boolean = false>(options: Opti
  * Authenticate with Microsoft to sign in or sign up.  A `connect` (userId),`redirect` or `token` query parameter can be used to connect account, redirect to a specific page or to accept invitation.
  */
 export const microsoftSignIn = <ThrowOnError extends boolean = false>(options: Options<MicrosoftSignInData, ThrowOnError>) => {
-    return (options.client ?? _heyApiClient).get<unknown, MicrosoftSignInErrors, ThrowOnError>({
+    return (options.client ?? _heyApiClient).get<unknown, MicrosoftSignInErrors, ThrowOnError, 'data'>({
+        responseStyle: 'data',
         url: '/auth/microsoft',
         ...options
     });
@@ -262,7 +278,8 @@ export const microsoftSignIn = <ThrowOnError extends boolean = false>(options: O
  * Callback to receive authorization and basic user data from Github.
  */
 export const githubSignInCallback = <ThrowOnError extends boolean = false>(options: Options<GithubSignInCallbackData, ThrowOnError>) => {
-    return (options.client ?? _heyApiClient).get<unknown, GithubSignInCallbackErrors, ThrowOnError>({
+    return (options.client ?? _heyApiClient).get<unknown, GithubSignInCallbackErrors, ThrowOnError, 'data'>({
+        responseStyle: 'data',
         url: '/auth/github/callback',
         ...options
     });
@@ -273,7 +290,8 @@ export const githubSignInCallback = <ThrowOnError extends boolean = false>(optio
  * Callback to receive authorization and basic user data from Google.
  */
 export const googleSignInCallback = <ThrowOnError extends boolean = false>(options: Options<GoogleSignInCallbackData, ThrowOnError>) => {
-    return (options.client ?? _heyApiClient).get<unknown, GoogleSignInCallbackErrors, ThrowOnError>({
+    return (options.client ?? _heyApiClient).get<unknown, GoogleSignInCallbackErrors, ThrowOnError, 'data'>({
+        responseStyle: 'data',
         url: '/auth/google/callback',
         ...options
     });
@@ -284,7 +302,8 @@ export const googleSignInCallback = <ThrowOnError extends boolean = false>(optio
  * Callback to receive authorization and basic user data from Microsoft.
  */
 export const microsoftSignInCallback = <ThrowOnError extends boolean = false>(options: Options<MicrosoftSignInCallbackData, ThrowOnError>) => {
-    return (options.client ?? _heyApiClient).get<unknown, MicrosoftSignInCallbackErrors, ThrowOnError>({
+    return (options.client ?? _heyApiClient).get<unknown, MicrosoftSignInCallbackErrors, ThrowOnError, 'data'>({
+        responseStyle: 'data',
         url: '/auth/microsoft/callback',
         ...options
     });
@@ -295,7 +314,8 @@ export const microsoftSignInCallback = <ThrowOnError extends boolean = false>(op
  * Handing over the challenge: this results in a key pair, private and public key being created on the device.
  */
 export const getPasskeyChallenge = <ThrowOnError extends boolean = false>(options?: Options<GetPasskeyChallengeData, ThrowOnError>) => {
-    return (options?.client ?? _heyApiClient).get<GetPasskeyChallengeResponses, GetPasskeyChallengeErrors, ThrowOnError>({
+    return (options?.client ?? _heyApiClient).get<GetPasskeyChallengeResponses, GetPasskeyChallengeErrors, ThrowOnError, 'data'>({
+        responseStyle: 'data',
         url: '/auth/passkey-challenge',
         ...options
     });
@@ -306,7 +326,7 @@ export const getPasskeyChallenge = <ThrowOnError extends boolean = false>(option
  * Verify passkey by checking the validity of signature with public key.
  */
 export const verifyPasskey = <ThrowOnError extends boolean = false>(options?: Options<VerifyPasskeyData, ThrowOnError>) => {
-    return (options?.client ?? _heyApiClient).post<VerifyPasskeyResponses, VerifyPasskeyErrors, ThrowOnError>({
+    return (options?.client ?? _heyApiClient).post<VerifyPasskeyResponses, VerifyPasskeyErrors, ThrowOnError, 'data'>({
         security: [
             {
                 in: 'cookie',
@@ -314,6 +334,7 @@ export const verifyPasskey = <ThrowOnError extends boolean = false>(options?: Op
                 type: 'apiKey'
             }
         ],
+        responseStyle: 'data',
         url: '/auth/passkey-verification',
         ...options,
         headers: {
@@ -328,7 +349,7 @@ export const verifyPasskey = <ThrowOnError extends boolean = false>(options?: Op
  * Delete the current user (self).
  */
 export const deleteMe = <ThrowOnError extends boolean = false>(options?: Options<DeleteMeData, ThrowOnError>) => {
-    return (options?.client ?? _heyApiClient).delete<DeleteMeResponses, DeleteMeErrors, ThrowOnError>({
+    return (options?.client ?? _heyApiClient).delete<DeleteMeResponses, DeleteMeErrors, ThrowOnError, 'data'>({
         security: [
             {
                 in: 'cookie',
@@ -336,6 +357,7 @@ export const deleteMe = <ThrowOnError extends boolean = false>(options?: Options
                 type: 'apiKey'
             }
         ],
+        responseStyle: 'data',
         url: '/me',
         ...options
     });
@@ -346,7 +368,7 @@ export const deleteMe = <ThrowOnError extends boolean = false>(options?: Options
  * Get the current user (me). It includes a `counts` object.
  */
 export const getMe = <ThrowOnError extends boolean = false>(options?: Options<GetMeData, ThrowOnError>) => {
-    return (options?.client ?? _heyApiClient).get<GetMeResponses, GetMeErrors, ThrowOnError>({
+    return (options?.client ?? _heyApiClient).get<GetMeResponses, GetMeErrors, ThrowOnError, 'data'>({
         security: [
             {
                 in: 'cookie',
@@ -354,6 +376,7 @@ export const getMe = <ThrowOnError extends boolean = false>(options?: Options<Ge
                 type: 'apiKey'
             }
         ],
+        responseStyle: 'data',
         url: '/me',
         ...options
     });
@@ -364,7 +387,7 @@ export const getMe = <ThrowOnError extends boolean = false>(options?: Options<Ge
  * Update the current user (self).
  */
 export const updateMe = <ThrowOnError extends boolean = false>(options?: Options<UpdateMeData, ThrowOnError>) => {
-    return (options?.client ?? _heyApiClient).put<UpdateMeResponses, UpdateMeErrors, ThrowOnError>({
+    return (options?.client ?? _heyApiClient).put<UpdateMeResponses, UpdateMeErrors, ThrowOnError, 'data'>({
         security: [
             {
                 in: 'cookie',
@@ -372,6 +395,7 @@ export const updateMe = <ThrowOnError extends boolean = false>(options?: Options
                 type: 'apiKey'
             }
         ],
+        responseStyle: 'data',
         url: '/me',
         ...options,
         headers: {
@@ -386,7 +410,7 @@ export const updateMe = <ThrowOnError extends boolean = false>(options?: Options
  * Get the current user (self). It includes sessions, oauth accounts and sign in options.
  */
 export const getMyAuth = <ThrowOnError extends boolean = false>(options?: Options<GetMyAuthData, ThrowOnError>) => {
-    return (options?.client ?? _heyApiClient).get<GetMyAuthResponses, GetMyAuthErrors, ThrowOnError>({
+    return (options?.client ?? _heyApiClient).get<GetMyAuthResponses, GetMyAuthErrors, ThrowOnError, 'data'>({
         security: [
             {
                 in: 'cookie',
@@ -394,6 +418,7 @@ export const getMyAuth = <ThrowOnError extends boolean = false>(options?: Option
                 type: 'apiKey'
             }
         ],
+        responseStyle: 'data',
         url: '/me/auth',
         ...options
     });
@@ -404,7 +429,7 @@ export const getMyAuth = <ThrowOnError extends boolean = false>(options?: Option
  * Receive menu data with all contextual entities of which the current user is a member. It is in essence a restructured list of `memberships` per entity type, with some entity data in it.
  */
 export const getMyMenu = <ThrowOnError extends boolean = false>(options?: Options<GetMyMenuData, ThrowOnError>) => {
-    return (options?.client ?? _heyApiClient).get<GetMyMenuResponses, GetMyMenuErrors, ThrowOnError>({
+    return (options?.client ?? _heyApiClient).get<GetMyMenuResponses, GetMyMenuErrors, ThrowOnError, 'data'>({
         security: [
             {
                 in: 'cookie',
@@ -412,6 +437,7 @@ export const getMyMenu = <ThrowOnError extends boolean = false>(options?: Option
                 type: 'apiKey'
             }
         ],
+        responseStyle: 'data',
         url: '/me/menu',
         ...options
     });
@@ -422,7 +448,7 @@ export const getMyMenu = <ThrowOnError extends boolean = false>(options?: Option
  * Terminate sessions of the current user by list of ids.
  */
 export const deleteSessions = <ThrowOnError extends boolean = false>(options?: Options<DeleteSessionsData, ThrowOnError>) => {
-    return (options?.client ?? _heyApiClient).delete<DeleteSessionsResponses, DeleteSessionsErrors, ThrowOnError>({
+    return (options?.client ?? _heyApiClient).delete<DeleteSessionsResponses, DeleteSessionsErrors, ThrowOnError, 'data'>({
         security: [
             {
                 in: 'cookie',
@@ -430,6 +456,7 @@ export const deleteSessions = <ThrowOnError extends boolean = false>(options?: O
                 type: 'apiKey'
             }
         ],
+        responseStyle: 'data',
         url: '/me/sessions',
         ...options,
         headers: {
@@ -444,7 +471,8 @@ export const deleteSessions = <ThrowOnError extends boolean = false>(options?: O
  * Remove your own entity membership by yourself.
  */
 export const deleteMyMembership = <ThrowOnError extends boolean = false>(options: Options<DeleteMyMembershipData, ThrowOnError>) => {
-    return (options.client ?? _heyApiClient).delete<DeleteMyMembershipResponses, DeleteMyMembershipErrors, ThrowOnError>({
+    return (options.client ?? _heyApiClient).delete<DeleteMyMembershipResponses, DeleteMyMembershipErrors, ThrowOnError, 'data'>({
+        responseStyle: 'data',
         url: '/me/leave',
         ...options
     });
@@ -455,7 +483,8 @@ export const deleteMyMembership = <ThrowOnError extends boolean = false>(options
  * Delete your passkey record.
  */
 export const deletePasskey = <ThrowOnError extends boolean = false>(options?: Options<DeletePasskeyData, ThrowOnError>) => {
-    return (options?.client ?? _heyApiClient).delete<DeletePasskeyResponses, DeletePasskeyErrors, ThrowOnError>({
+    return (options?.client ?? _heyApiClient).delete<DeletePasskeyResponses, DeletePasskeyErrors, ThrowOnError, 'data'>({
+        responseStyle: 'data',
         url: '/me/passkey',
         ...options
     });
@@ -466,7 +495,8 @@ export const deletePasskey = <ThrowOnError extends boolean = false>(options?: Op
  * The server associates the key and the credential ID with the user for future authentication flows and checks the validity of the operation by verifying the signed challenge with the key.
  */
 export const createPasskey = <ThrowOnError extends boolean = false>(options: Options<CreatePasskeyData, ThrowOnError>) => {
-    return (options.client ?? _heyApiClient).post<CreatePasskeyResponses, CreatePasskeyErrors, ThrowOnError>({
+    return (options.client ?? _heyApiClient).post<CreatePasskeyResponses, CreatePasskeyErrors, ThrowOnError, 'data'>({
+        responseStyle: 'data',
         url: '/me/passkey',
         ...options,
         headers: {
@@ -481,7 +511,7 @@ export const createPasskey = <ThrowOnError extends boolean = false>(options: Opt
  * This endpoint is used to get an upload token for a user or organization. The token can be used to upload or private images/files to your S3 bucket using
  */
 export const getUploadToken = <ThrowOnError extends boolean = false>(options: Options<GetUploadTokenData, ThrowOnError>) => {
-    return (options.client ?? _heyApiClient).get<GetUploadTokenResponses, GetUploadTokenErrors, ThrowOnError>({
+    return (options.client ?? _heyApiClient).get<GetUploadTokenResponses, GetUploadTokenErrors, ThrowOnError, 'data'>({
         security: [
             {
                 in: 'cookie',
@@ -489,6 +519,7 @@ export const getUploadToken = <ThrowOnError extends boolean = false>(options: Op
                 type: 'apiKey'
             }
         ],
+        responseStyle: 'data',
         url: '/me/upload-token',
         ...options
     });
@@ -499,7 +530,7 @@ export const getUploadToken = <ThrowOnError extends boolean = false>(options: Op
  * Unsubscribe using a personal unsubscribe token.
  */
 export const unsubscribeMe = <ThrowOnError extends boolean = false>(options: Options<UnsubscribeMeData, ThrowOnError>) => {
-    return (options.client ?? _heyApiClient).get<unknown, UnsubscribeMeErrors, ThrowOnError>({
+    return (options.client ?? _heyApiClient).get<unknown, UnsubscribeMeErrors, ThrowOnError, 'data'>({
         security: [
             {
                 in: 'cookie',
@@ -507,6 +538,7 @@ export const unsubscribeMe = <ThrowOnError extends boolean = false>(options: Opt
                 type: 'apiKey'
             }
         ],
+        responseStyle: 'data',
         url: '/me/unsubscribe',
         ...options
     });
@@ -517,7 +549,7 @@ export const unsubscribeMe = <ThrowOnError extends boolean = false>(options: Opt
  * Delete users from system by list of ids.
  */
 export const deleteUsers = <ThrowOnError extends boolean = false>(options?: Options<DeleteUsersData, ThrowOnError>) => {
-    return (options?.client ?? _heyApiClient).delete<DeleteUsersResponses, DeleteUsersErrors, ThrowOnError>({
+    return (options?.client ?? _heyApiClient).delete<DeleteUsersResponses, DeleteUsersErrors, ThrowOnError, 'data'>({
         security: [
             {
                 in: 'cookie',
@@ -525,6 +557,7 @@ export const deleteUsers = <ThrowOnError extends boolean = false>(options?: Opti
                 type: 'apiKey'
             }
         ],
+        responseStyle: 'data',
         url: '/users',
         ...options,
         headers: {
@@ -539,7 +572,7 @@ export const deleteUsers = <ThrowOnError extends boolean = false>(options?: Opti
  * Get a list of users on system level.
  */
 export const getUsers = <ThrowOnError extends boolean = false>(options: Options<GetUsersData, ThrowOnError>) => {
-    return (options.client ?? _heyApiClient).get<GetUsersResponses, GetUsersErrors, ThrowOnError>({
+    return (options.client ?? _heyApiClient).get<GetUsersResponses, GetUsersErrors, ThrowOnError, 'data'>({
         security: [
             {
                 in: 'cookie',
@@ -547,6 +580,7 @@ export const getUsers = <ThrowOnError extends boolean = false>(options: Options<
                 type: 'apiKey'
             }
         ],
+        responseStyle: 'data',
         url: '/users',
         ...options
     });
@@ -557,7 +591,7 @@ export const getUsers = <ThrowOnError extends boolean = false>(options: Options<
  * Get a user by id or slug.
  */
 export const getUser = <ThrowOnError extends boolean = false>(options: Options<GetUserData, ThrowOnError>) => {
-    return (options.client ?? _heyApiClient).get<GetUserResponses, GetUserErrors, ThrowOnError>({
+    return (options.client ?? _heyApiClient).get<GetUserResponses, GetUserErrors, ThrowOnError, 'data'>({
         security: [
             {
                 in: 'cookie',
@@ -565,6 +599,7 @@ export const getUser = <ThrowOnError extends boolean = false>(options: Options<G
                 type: 'apiKey'
             }
         ],
+        responseStyle: 'data',
         url: '/users/{idOrSlug}',
         ...options
     });
@@ -575,7 +610,7 @@ export const getUser = <ThrowOnError extends boolean = false>(options: Options<G
  * Update a user by id or slug.
  */
 export const updateUser = <ThrowOnError extends boolean = false>(options: Options<UpdateUserData, ThrowOnError>) => {
-    return (options.client ?? _heyApiClient).put<UpdateUserResponses, UpdateUserErrors, ThrowOnError>({
+    return (options.client ?? _heyApiClient).put<UpdateUserResponses, UpdateUserErrors, ThrowOnError, 'data'>({
         security: [
             {
                 in: 'cookie',
@@ -583,6 +618,7 @@ export const updateUser = <ThrowOnError extends boolean = false>(options: Option
                 type: 'apiKey'
             }
         ],
+        responseStyle: 'data',
         url: '/users/{idOrSlug}',
         ...options,
         headers: {
@@ -597,7 +633,7 @@ export const updateUser = <ThrowOnError extends boolean = false>(options: Option
  * Delete organizations by ids.
  */
 export const deleteOrganizations = <ThrowOnError extends boolean = false>(options?: Options<DeleteOrganizationsData, ThrowOnError>) => {
-    return (options?.client ?? _heyApiClient).delete<DeleteOrganizationsResponses, DeleteOrganizationsErrors, ThrowOnError>({
+    return (options?.client ?? _heyApiClient).delete<DeleteOrganizationsResponses, DeleteOrganizationsErrors, ThrowOnError, 'data'>({
         security: [
             {
                 in: 'cookie',
@@ -605,6 +641,7 @@ export const deleteOrganizations = <ThrowOnError extends boolean = false>(option
                 type: 'apiKey'
             }
         ],
+        responseStyle: 'data',
         url: '/organizations',
         ...options,
         headers: {
@@ -619,7 +656,7 @@ export const deleteOrganizations = <ThrowOnError extends boolean = false>(option
  * Get list of organizations. Currently only available to system admins.
  */
 export const getOrganizations = <ThrowOnError extends boolean = false>(options: Options<GetOrganizationsData, ThrowOnError>) => {
-    return (options.client ?? _heyApiClient).get<GetOrganizationsResponses, GetOrganizationsErrors, ThrowOnError>({
+    return (options.client ?? _heyApiClient).get<GetOrganizationsResponses, GetOrganizationsErrors, ThrowOnError, 'data'>({
         security: [
             {
                 in: 'cookie',
@@ -627,6 +664,7 @@ export const getOrganizations = <ThrowOnError extends boolean = false>(options: 
                 type: 'apiKey'
             }
         ],
+        responseStyle: 'data',
         url: '/organizations',
         ...options
     });
@@ -637,7 +675,7 @@ export const getOrganizations = <ThrowOnError extends boolean = false>(options: 
  * Create a new organization.
  */
 export const createOrganization = <ThrowOnError extends boolean = false>(options: Options<CreateOrganizationData, ThrowOnError>) => {
-    return (options.client ?? _heyApiClient).post<CreateOrganizationResponses, CreateOrganizationErrors, ThrowOnError>({
+    return (options.client ?? _heyApiClient).post<CreateOrganizationResponses, CreateOrganizationErrors, ThrowOnError, 'data'>({
         security: [
             {
                 in: 'cookie',
@@ -645,6 +683,7 @@ export const createOrganization = <ThrowOnError extends boolean = false>(options
                 type: 'apiKey'
             }
         ],
+        responseStyle: 'data',
         url: '/organizations',
         ...options,
         headers: {
@@ -659,7 +698,7 @@ export const createOrganization = <ThrowOnError extends boolean = false>(options
  * Get an organization by id or slug.
  */
 export const getOrganization = <ThrowOnError extends boolean = false>(options: Options<GetOrganizationData, ThrowOnError>) => {
-    return (options.client ?? _heyApiClient).get<GetOrganizationResponses, GetOrganizationErrors, ThrowOnError>({
+    return (options.client ?? _heyApiClient).get<GetOrganizationResponses, GetOrganizationErrors, ThrowOnError, 'data'>({
         security: [
             {
                 in: 'cookie',
@@ -667,6 +706,7 @@ export const getOrganization = <ThrowOnError extends boolean = false>(options: O
                 type: 'apiKey'
             }
         ],
+        responseStyle: 'data',
         url: '/organizations/{idOrSlug}',
         ...options
     });
@@ -677,7 +717,7 @@ export const getOrganization = <ThrowOnError extends boolean = false>(options: O
  * Update organization by id or slug.
  */
 export const updateOrganization = <ThrowOnError extends boolean = false>(options: Options<UpdateOrganizationData, ThrowOnError>) => {
-    return (options.client ?? _heyApiClient).put<UpdateOrganizationResponses, UpdateOrganizationErrors, ThrowOnError>({
+    return (options.client ?? _heyApiClient).put<UpdateOrganizationResponses, UpdateOrganizationErrors, ThrowOnError, 'data'>({
         security: [
             {
                 in: 'cookie',
@@ -685,6 +725,7 @@ export const updateOrganization = <ThrowOnError extends boolean = false>(options
                 type: 'apiKey'
             }
         ],
+        responseStyle: 'data',
         url: '/organizations/{idOrSlug}',
         ...options,
         headers: {
@@ -699,7 +740,7 @@ export const updateOrganization = <ThrowOnError extends boolean = false>(options
  * Get page entities such as users and organizations. It returns a paginated list of entities to which the user has access. The schema is limited to common fields.
  */
 export const getPageEntities = <ThrowOnError extends boolean = false>(options?: Options<GetPageEntitiesData, ThrowOnError>) => {
-    return (options?.client ?? _heyApiClient).get<GetPageEntitiesResponses, GetPageEntitiesErrors, ThrowOnError>({
+    return (options?.client ?? _heyApiClient).get<GetPageEntitiesResponses, GetPageEntitiesErrors, ThrowOnError, 'data'>({
         security: [
             {
                 in: 'cookie',
@@ -707,6 +748,7 @@ export const getPageEntities = <ThrowOnError extends boolean = false>(options?: 
                 type: 'apiKey'
             }
         ],
+        responseStyle: 'data',
         url: '/entities/page',
         ...options
     });
@@ -717,7 +759,7 @@ export const getPageEntities = <ThrowOnError extends boolean = false>(options?: 
  * Get context entities such organizations of specified user. It returns list of entities based of requested tpye to which the user are part of. With user membership & other members of entity.
  */
 export const getContextEntities = <ThrowOnError extends boolean = false>(options: Options<GetContextEntitiesData, ThrowOnError>) => {
-    return (options.client ?? _heyApiClient).get<GetContextEntitiesResponses, GetContextEntitiesErrors, ThrowOnError>({
+    return (options.client ?? _heyApiClient).get<GetContextEntitiesResponses, GetContextEntitiesErrors, ThrowOnError, 'data'>({
         security: [
             {
                 in: 'cookie',
@@ -725,6 +767,7 @@ export const getContextEntities = <ThrowOnError extends boolean = false>(options
                 type: 'apiKey'
             }
         ],
+        responseStyle: 'data',
         url: '/entities/context',
         ...options
     });
@@ -735,7 +778,7 @@ export const getContextEntities = <ThrowOnError extends boolean = false>(options
  * This endpoint is used to check if a slug is available among ALL contextual entities such as organizations.
  */
 export const checkSlug = <ThrowOnError extends boolean = false>(options?: Options<CheckSlugData, ThrowOnError>) => {
-    return (options?.client ?? _heyApiClient).post<CheckSlugResponses, CheckSlugErrors, ThrowOnError>({
+    return (options?.client ?? _heyApiClient).post<CheckSlugResponses, CheckSlugErrors, ThrowOnError, 'data'>({
         security: [
             {
                 in: 'cookie',
@@ -743,6 +786,7 @@ export const checkSlug = <ThrowOnError extends boolean = false>(options?: Option
                 type: 'apiKey'
             }
         ],
+        responseStyle: 'data',
         url: '/entities/check-slug',
         ...options,
         headers: {
@@ -757,7 +801,7 @@ export const checkSlug = <ThrowOnError extends boolean = false>(options?: Option
  * Invite one or more users to system by email address.
  */
 export const createInvite = <ThrowOnError extends boolean = false>(options?: Options<CreateInviteData, ThrowOnError>) => {
-    return (options?.client ?? _heyApiClient).post<CreateInviteResponses, CreateInviteErrors, ThrowOnError>({
+    return (options?.client ?? _heyApiClient).post<CreateInviteResponses, CreateInviteErrors, ThrowOnError, 'data'>({
         security: [
             {
                 in: 'cookie',
@@ -765,6 +809,7 @@ export const createInvite = <ThrowOnError extends boolean = false>(options?: Opt
                 type: 'apiKey'
             }
         ],
+        responseStyle: 'data',
         url: '/system/invite',
         ...options,
         headers: {
@@ -775,7 +820,7 @@ export const createInvite = <ThrowOnError extends boolean = false>(options?: Opt
 };
 
 export const getPresignedUrl = <ThrowOnError extends boolean = false>(options: Options<GetPresignedUrlData, ThrowOnError>) => {
-    return (options.client ?? _heyApiClient).get<GetPresignedUrlResponses, GetPresignedUrlErrors, ThrowOnError>({
+    return (options.client ?? _heyApiClient).get<GetPresignedUrlResponses, GetPresignedUrlErrors, ThrowOnError, 'data'>({
         security: [
             {
                 in: 'cookie',
@@ -783,6 +828,7 @@ export const getPresignedUrl = <ThrowOnError extends boolean = false>(options: O
                 type: 'apiKey'
             }
         ],
+        responseStyle: 'data',
         url: '/system/presigned-url',
         ...options
     });
@@ -793,7 +839,7 @@ export const getPresignedUrl = <ThrowOnError extends boolean = false>(options: O
  * Paddle webhook for subscription events
  */
 export const paddleWebhook = <ThrowOnError extends boolean = false>(options?: Options<PaddleWebhookData, ThrowOnError>) => {
-    return (options?.client ?? _heyApiClient).post<PaddleWebhookResponses, PaddleWebhookErrors, ThrowOnError>({
+    return (options?.client ?? _heyApiClient).post<PaddleWebhookResponses, PaddleWebhookErrors, ThrowOnError, 'data'>({
         security: [
             {
                 in: 'cookie',
@@ -801,6 +847,7 @@ export const paddleWebhook = <ThrowOnError extends boolean = false>(options?: Op
                 type: 'apiKey'
             }
         ],
+        responseStyle: 'data',
         url: '/system/paddle-webhook',
         ...options,
         headers: {
@@ -815,7 +862,7 @@ export const paddleWebhook = <ThrowOnError extends boolean = false>(options?: Op
  * Send a newsletter to requested organizations members.
  */
 export const sendNewsletter = <ThrowOnError extends boolean = false>(options: Options<SendNewsletterData, ThrowOnError>) => {
-    return (options.client ?? _heyApiClient).post<SendNewsletterResponses, SendNewsletterErrors, ThrowOnError>({
+    return (options.client ?? _heyApiClient).post<SendNewsletterResponses, SendNewsletterErrors, ThrowOnError, 'data'>({
         security: [
             {
                 in: 'cookie',
@@ -823,6 +870,7 @@ export const sendNewsletter = <ThrowOnError extends boolean = false>(options: Op
                 type: 'apiKey'
             }
         ],
+        responseStyle: 'data',
         url: '/system/newsletter',
         ...options,
         headers: {
@@ -837,7 +885,7 @@ export const sendNewsletter = <ThrowOnError extends boolean = false>(options: Op
  * Delete requests by ids.
  */
 export const deleteRequest = <ThrowOnError extends boolean = false>(options?: Options<DeleteRequestData, ThrowOnError>) => {
-    return (options?.client ?? _heyApiClient).delete<DeleteRequestResponses, DeleteRequestErrors, ThrowOnError>({
+    return (options?.client ?? _heyApiClient).delete<DeleteRequestResponses, DeleteRequestErrors, ThrowOnError, 'data'>({
         security: [
             {
                 in: 'cookie',
@@ -845,6 +893,7 @@ export const deleteRequest = <ThrowOnError extends boolean = false>(options?: Op
                 type: 'apiKey'
             }
         ],
+        responseStyle: 'data',
         url: '/requests',
         ...options,
         headers: {
@@ -859,7 +908,7 @@ export const deleteRequest = <ThrowOnError extends boolean = false>(options?: Op
  * Get list of requests on system level for waitlist, submit contact form or to join newsletter.
  */
 export const getRequests = <ThrowOnError extends boolean = false>(options: Options<GetRequestsData, ThrowOnError>) => {
-    return (options.client ?? _heyApiClient).get<GetRequestsResponses, GetRequestsErrors, ThrowOnError>({
+    return (options.client ?? _heyApiClient).get<GetRequestsResponses, GetRequestsErrors, ThrowOnError, 'data'>({
         security: [
             {
                 in: 'cookie',
@@ -867,6 +916,7 @@ export const getRequests = <ThrowOnError extends boolean = false>(options: Optio
                 type: 'apiKey'
             }
         ],
+        responseStyle: 'data',
         url: '/requests',
         ...options
     });
@@ -877,7 +927,7 @@ export const getRequests = <ThrowOnError extends boolean = false>(options: Optio
  * Create a request on system level. Request supports waitlist, contact form and newsletter.
  */
 export const createRequest = <ThrowOnError extends boolean = false>(options?: Options<CreateRequestData, ThrowOnError>) => {
-    return (options?.client ?? _heyApiClient).post<CreateRequestResponses, CreateRequestErrors, ThrowOnError>({
+    return (options?.client ?? _heyApiClient).post<CreateRequestResponses, CreateRequestErrors, ThrowOnError, 'data'>({
         security: [
             {
                 in: 'cookie',
@@ -885,6 +935,7 @@ export const createRequest = <ThrowOnError extends boolean = false>(options?: Op
                 type: 'apiKey'
             }
         ],
+        responseStyle: 'data',
         url: '/requests',
         ...options,
         headers: {
@@ -899,7 +950,7 @@ export const createRequest = <ThrowOnError extends boolean = false>(options?: Op
  * EXPERIMENTAL. Receive node observability metrics.
  */
 export const getMetrics = <ThrowOnError extends boolean = false>(options?: Options<GetMetricsData, ThrowOnError>) => {
-    return (options?.client ?? _heyApiClient).get<GetMetricsResponses, GetMetricsErrors, ThrowOnError>({
+    return (options?.client ?? _heyApiClient).get<GetMetricsResponses, GetMetricsErrors, ThrowOnError, 'data'>({
         security: [
             {
                 in: 'cookie',
@@ -907,6 +958,7 @@ export const getMetrics = <ThrowOnError extends boolean = false>(options?: Optio
                 type: 'apiKey'
             }
         ],
+        responseStyle: 'data',
         url: '/metrics',
         ...options
     });
@@ -917,7 +969,7 @@ export const getMetrics = <ThrowOnError extends boolean = false>(options?: Optio
  * Get a count of all entities (ie. users, organizations). 1 minute in-memory cache.
  */
 export const getPublicCounts = <ThrowOnError extends boolean = false>(options?: Options<GetPublicCountsData, ThrowOnError>) => {
-    return (options?.client ?? _heyApiClient).get<GetPublicCountsResponses, GetPublicCountsErrors, ThrowOnError>({
+    return (options?.client ?? _heyApiClient).get<GetPublicCountsResponses, GetPublicCountsErrors, ThrowOnError, 'data'>({
         security: [
             {
                 in: 'cookie',
@@ -925,6 +977,7 @@ export const getPublicCounts = <ThrowOnError extends boolean = false>(options?: 
                 type: 'apiKey'
             }
         ],
+        responseStyle: 'data',
         url: '/metrics/public',
         ...options
     });
@@ -935,7 +988,7 @@ export const getPublicCounts = <ThrowOnError extends boolean = false>(options?: 
  * Get shape proxy for attachments to keep attachment data in sync.
  */
 export const shapeProxy = <ThrowOnError extends boolean = false>(options: Options<ShapeProxyData, ThrowOnError>) => {
-    return (options.client ?? _heyApiClient).get<ShapeProxyResponses, ShapeProxyErrors, ThrowOnError>({
+    return (options.client ?? _heyApiClient).get<ShapeProxyResponses, ShapeProxyErrors, ThrowOnError, 'data'>({
         security: [
             {
                 in: 'cookie',
@@ -943,6 +996,7 @@ export const shapeProxy = <ThrowOnError extends boolean = false>(options: Option
                 type: 'apiKey'
             }
         ],
+        responseStyle: 'data',
         url: '/{orgIdOrSlug}/attachments/shape-proxy',
         ...options
     });
@@ -953,7 +1007,7 @@ export const shapeProxy = <ThrowOnError extends boolean = false>(options: Option
  * Delete attachments by their ids
  */
 export const deleteAttachments = <ThrowOnError extends boolean = false>(options: Options<DeleteAttachmentsData, ThrowOnError>) => {
-    return (options.client ?? _heyApiClient).delete<DeleteAttachmentsResponses, DeleteAttachmentsErrors, ThrowOnError>({
+    return (options.client ?? _heyApiClient).delete<DeleteAttachmentsResponses, DeleteAttachmentsErrors, ThrowOnError, 'data'>({
         security: [
             {
                 in: 'cookie',
@@ -961,6 +1015,7 @@ export const deleteAttachments = <ThrowOnError extends boolean = false>(options:
                 type: 'apiKey'
             }
         ],
+        responseStyle: 'data',
         url: '/{orgIdOrSlug}/attachments',
         ...options,
         headers: {
@@ -975,7 +1030,7 @@ export const deleteAttachments = <ThrowOnError extends boolean = false>(options:
  * Get attachments for an organization.
  */
 export const getAttachments = <ThrowOnError extends boolean = false>(options: Options<GetAttachmentsData, ThrowOnError>) => {
-    return (options.client ?? _heyApiClient).get<GetAttachmentsResponses, GetAttachmentsErrors, ThrowOnError>({
+    return (options.client ?? _heyApiClient).get<GetAttachmentsResponses, GetAttachmentsErrors, ThrowOnError, 'data'>({
         security: [
             {
                 in: 'cookie',
@@ -983,6 +1038,7 @@ export const getAttachments = <ThrowOnError extends boolean = false>(options: Op
                 type: 'apiKey'
             }
         ],
+        responseStyle: 'data',
         url: '/{orgIdOrSlug}/attachments',
         ...options
     });
@@ -993,7 +1049,7 @@ export const getAttachments = <ThrowOnError extends boolean = false>(options: Op
  * Create one or more new attachments.
  */
 export const createAttachment = <ThrowOnError extends boolean = false>(options: Options<CreateAttachmentData, ThrowOnError>) => {
-    return (options.client ?? _heyApiClient).post<CreateAttachmentResponses, CreateAttachmentErrors, ThrowOnError>({
+    return (options.client ?? _heyApiClient).post<CreateAttachmentResponses, CreateAttachmentErrors, ThrowOnError, 'data'>({
         security: [
             {
                 in: 'cookie',
@@ -1001,6 +1057,7 @@ export const createAttachment = <ThrowOnError extends boolean = false>(options: 
                 type: 'apiKey'
             }
         ],
+        responseStyle: 'data',
         url: '/{orgIdOrSlug}/attachments',
         ...options,
         headers: {
@@ -1015,7 +1072,7 @@ export const createAttachment = <ThrowOnError extends boolean = false>(options: 
  * Get an attachment by id.
  */
 export const getAttachment = <ThrowOnError extends boolean = false>(options: Options<GetAttachmentData, ThrowOnError>) => {
-    return (options.client ?? _heyApiClient).get<GetAttachmentResponses, GetAttachmentErrors, ThrowOnError>({
+    return (options.client ?? _heyApiClient).get<GetAttachmentResponses, GetAttachmentErrors, ThrowOnError, 'data'>({
         security: [
             {
                 in: 'cookie',
@@ -1023,6 +1080,7 @@ export const getAttachment = <ThrowOnError extends boolean = false>(options: Opt
                 type: 'apiKey'
             }
         ],
+        responseStyle: 'data',
         url: '/{orgIdOrSlug}/attachments/{id}',
         ...options
     });
@@ -1033,7 +1091,7 @@ export const getAttachment = <ThrowOnError extends boolean = false>(options: Opt
  * Update attachment by id.
  */
 export const updateAttachment = <ThrowOnError extends boolean = false>(options: Options<UpdateAttachmentData, ThrowOnError>) => {
-    return (options.client ?? _heyApiClient).put<UpdateAttachmentResponses, UpdateAttachmentErrors, ThrowOnError>({
+    return (options.client ?? _heyApiClient).put<UpdateAttachmentResponses, UpdateAttachmentErrors, ThrowOnError, 'data'>({
         security: [
             {
                 in: 'cookie',
@@ -1041,6 +1099,7 @@ export const updateAttachment = <ThrowOnError extends boolean = false>(options: 
                 type: 'apiKey'
             }
         ],
+        responseStyle: 'data',
         url: '/{orgIdOrSlug}/attachments/{id}',
         ...options,
         headers: {
@@ -1055,7 +1114,7 @@ export const updateAttachment = <ThrowOnError extends boolean = false>(options: 
  * Get attachment cover image by id.
  */
 export const getAttachmentCover = <ThrowOnError extends boolean = false>(options: Options<GetAttachmentCoverData, ThrowOnError>) => {
-    return (options.client ?? _heyApiClient).get<GetAttachmentCoverResponses, GetAttachmentCoverErrors, ThrowOnError>({
+    return (options.client ?? _heyApiClient).get<GetAttachmentCoverResponses, GetAttachmentCoverErrors, ThrowOnError, 'data'>({
         security: [
             {
                 in: 'cookie',
@@ -1063,6 +1122,7 @@ export const getAttachmentCover = <ThrowOnError extends boolean = false>(options
                 type: 'apiKey'
             }
         ],
+        responseStyle: 'data',
         url: '/{orgIdOrSlug}/attachments/{id}/cover',
         ...options
     });
@@ -1073,7 +1133,7 @@ export const getAttachmentCover = <ThrowOnError extends boolean = false>(options
  * Redirect to attachment by id.
  */
 export const redirectToAttachment = <ThrowOnError extends boolean = false>(options: Options<RedirectToAttachmentData, ThrowOnError>) => {
-    return (options.client ?? _heyApiClient).get<RedirectToAttachmentResponses, RedirectToAttachmentErrors, ThrowOnError>({
+    return (options.client ?? _heyApiClient).get<RedirectToAttachmentResponses, RedirectToAttachmentErrors, ThrowOnError, 'data'>({
         security: [
             {
                 in: 'cookie',
@@ -1081,6 +1141,7 @@ export const redirectToAttachment = <ThrowOnError extends boolean = false>(optio
                 type: 'apiKey'
             }
         ],
+        responseStyle: 'data',
         url: '/{orgIdOrSlug}/attachments/{id}/link',
         ...options
     });
@@ -1091,7 +1152,7 @@ export const redirectToAttachment = <ThrowOnError extends boolean = false>(optio
  * Delete memberships by their ids. This will remove the membership but not delete any user(s).
  */
 export const deleteMemberships = <ThrowOnError extends boolean = false>(options: Options<DeleteMembershipsData, ThrowOnError>) => {
-    return (options.client ?? _heyApiClient).delete<DeleteMembershipsResponses, DeleteMembershipsErrors, ThrowOnError>({
+    return (options.client ?? _heyApiClient).delete<DeleteMembershipsResponses, DeleteMembershipsErrors, ThrowOnError, 'data'>({
         security: [
             {
                 in: 'cookie',
@@ -1099,6 +1160,7 @@ export const deleteMemberships = <ThrowOnError extends boolean = false>(options:
                 type: 'apiKey'
             }
         ],
+        responseStyle: 'data',
         url: '/{orgIdOrSlug}/memberships',
         ...options,
         headers: {
@@ -1113,7 +1175,7 @@ export const deleteMemberships = <ThrowOnError extends boolean = false>(options:
  * Create memberships (invite members that may or may not exist in the system) to an entity such as an organization.
  */
 export const createMemberships = <ThrowOnError extends boolean = false>(options: Options<CreateMembershipsData, ThrowOnError>) => {
-    return (options.client ?? _heyApiClient).post<CreateMembershipsResponses, CreateMembershipsErrors, ThrowOnError>({
+    return (options.client ?? _heyApiClient).post<CreateMembershipsResponses, CreateMembershipsErrors, ThrowOnError, 'data'>({
         security: [
             {
                 in: 'cookie',
@@ -1121,6 +1183,7 @@ export const createMemberships = <ThrowOnError extends boolean = false>(options:
                 type: 'apiKey'
             }
         ],
+        responseStyle: 'data',
         url: '/{orgIdOrSlug}/memberships',
         ...options,
         headers: {
@@ -1135,7 +1198,7 @@ export const createMemberships = <ThrowOnError extends boolean = false>(options:
  * Update role, muted, or archived status in a membership.
  */
 export const updateMembership = <ThrowOnError extends boolean = false>(options: Options<UpdateMembershipData, ThrowOnError>) => {
-    return (options.client ?? _heyApiClient).put<UpdateMembershipResponses, UpdateMembershipErrors, ThrowOnError>({
+    return (options.client ?? _heyApiClient).put<UpdateMembershipResponses, UpdateMembershipErrors, ThrowOnError, 'data'>({
         security: [
             {
                 in: 'cookie',
@@ -1143,6 +1206,7 @@ export const updateMembership = <ThrowOnError extends boolean = false>(options: 
                 type: 'apiKey'
             }
         ],
+        responseStyle: 'data',
         url: '/{orgIdOrSlug}/memberships/{id}',
         ...options,
         headers: {
@@ -1157,7 +1221,7 @@ export const updateMembership = <ThrowOnError extends boolean = false>(options: 
  * Get members of a context entity by id or slug. It returns members (users) with their membership.
  */
 export const getMembers = <ThrowOnError extends boolean = false>(options: Options<GetMembersData, ThrowOnError>) => {
-    return (options.client ?? _heyApiClient).get<GetMembersResponses, GetMembersErrors, ThrowOnError>({
+    return (options.client ?? _heyApiClient).get<GetMembersResponses, GetMembersErrors, ThrowOnError, 'data'>({
         security: [
             {
                 in: 'cookie',
@@ -1165,6 +1229,7 @@ export const getMembers = <ThrowOnError extends boolean = false>(options: Option
                 type: 'apiKey'
             }
         ],
+        responseStyle: 'data',
         url: '/{orgIdOrSlug}/memberships/members',
         ...options
     });
@@ -1175,7 +1240,7 @@ export const getMembers = <ThrowOnError extends boolean = false>(options: Option
  * Get pending membership invitations from a context entity by id or slug. It returns invite info.
  */
 export const getPendingInvitations = <ThrowOnError extends boolean = false>(options: Options<GetPendingInvitationsData, ThrowOnError>) => {
-    return (options.client ?? _heyApiClient).get<GetPendingInvitationsResponses, GetPendingInvitationsErrors, ThrowOnError>({
+    return (options.client ?? _heyApiClient).get<GetPendingInvitationsResponses, GetPendingInvitationsErrors, ThrowOnError, 'data'>({
         security: [
             {
                 in: 'cookie',
@@ -1183,6 +1248,7 @@ export const getPendingInvitations = <ThrowOnError extends boolean = false>(opti
                 type: 'apiKey'
             }
         ],
+        responseStyle: 'data',
         url: '/{orgIdOrSlug}/memberships/pending',
         ...options
     });

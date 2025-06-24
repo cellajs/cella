@@ -3,11 +3,15 @@ import { usersTable } from '#/db/schema/users';
 import { timestampColumns } from '#/db/utils/timestamp-columns';
 import { nanoid } from '#/utils/nanoid';
 
+
+export const sessionTypeEnum = ['regular', 'impersonation'] as const;
+export const authStrategiesEnum = ['github', 'google', 'microsoft', 'password', 'passkey', 'email'] as const;
+
 export const sessionsTable = pgTable('sessions', {
   id: varchar().primaryKey().$defaultFn(nanoid),
   token: varchar().notNull(),
   type: varchar({
-    enum: ['regular', 'impersonation'],
+    enum: sessionTypeEnum,
   })
     .notNull()
     .default('regular'),
@@ -21,8 +25,8 @@ export const sessionsTable = pgTable('sessions', {
   deviceOs: varchar(),
   browser: varchar(),
   authStrategy: varchar({
-    enum: ['github', 'google', 'microsoft', 'password', 'passkey'],
-  }),
+    enum: authStrategiesEnum,
+  }).notNull(),
   createdAt: timestampColumns.createdAt,
   expiresAt: timestampColumns.expiresAt,
 });

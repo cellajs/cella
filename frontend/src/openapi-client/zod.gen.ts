@@ -643,7 +643,8 @@ export const zGetMyAuthResponse = z.object({
                 'google',
                 'microsoft',
                 'password',
-                'passkey'
+                'passkey',
+                'email'
             ]),
             createdAt: z.string(),
             expiresAt: z.string(),

@@ -3178,7 +3178,7 @@ export type GetMyAuthResponses = {
                 deviceType: 'desktop' | 'mobile';
                 deviceOs: string | null;
                 browser: string | null;
-                authStrategy: 'github' | 'google' | 'microsoft' | 'password' | 'passkey';
+                authStrategy: 'github' | 'google' | 'microsoft' | 'password' | 'passkey' | 'email';
                 createdAt: string;
                 expiresAt: string;
                 isCurrent: boolean;

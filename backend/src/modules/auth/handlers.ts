@@ -225,7 +225,7 @@ const authRouteHandlers = app
     await db.delete(tokensTable).where(eq(tokensTable.id, token.id));
 
     // Sign in user
-    await setUserSession(ctx, token.userId, 'email_verification');
+    await setUserSession(ctx, token.userId, 'email');
 
     return ctx.json({ success: true }, 200);
   })
@@ -304,7 +304,7 @@ const authRouteHandlers = app
     ]);
 
     // Sign in user
-    await setUserSession(ctx, user.id, 'password_reset');
+    await setUserSession(ctx, user.id, 'password');
 
     return ctx.json({ success: true }, 200);
   })
@@ -429,7 +429,7 @@ const authRouteHandlers = app
       return errorResponse(ctx, 401, 'unauthorized', 'warn');
     }
 
-    await setUserSession(ctx, targetUserId, 'impersonation', user.id);
+    await setUserSession(ctx, targetUserId, 'password', user.id);
 
     logEvent('Started impersonation', { admin: user.id, user: targetUserId });
 
