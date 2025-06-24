@@ -25,7 +25,7 @@ export type PageEntitiesQuery = Parameters<(typeof client)['page']['$get']>['0']
 
 /**
  * Get page entities for a given query and optional entity type.
- *
+ * 
  * @param query - PageEntitiesQuery parameters to get page entities.
  * @returns An array of page entities based on query.
  */

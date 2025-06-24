@@ -24,11 +24,7 @@ export const createRequest = async (requestInfo: CreateRequestBody) => {
   return json.success;
 };
 
-export type GetRequestsParams = Omit<Parameters<(typeof client.index)['$get']>['0']['query'], 'limit' | 'offset'> & {
-  limit?: number;
-  offset?: number;
-  page?: number;
-};
+export type GetRequestsParams = Parameters<(typeof client.index)['$get']>['0']['query'];
 
 /**
  * Retrieves a paginated list of action requests.
@@ -37,14 +33,13 @@ export type GetRequestsParams = Omit<Parameters<(typeof client.index)['$get']>['
  * @param params.q - Search query.
  * @param params.sort - Sort field (default: 'id').
  * @param params.order - Sort order `'asc' | 'desc'` (default: 'asc').
- * @param params.page - Page number (default: 0).
  * @param params.limit - Number of items per page (default: `config.requestLimits.requests`).
  * @param params.offset - offset.
  * @param signal - Optional AbortSignal to cancel the request.
  * @returns A list of requests.
  */
 export const getRequests = async (
-  { q, sort = 'id', order = 'asc', page = 0, limit = config.requestLimits.requests, offset }: GetRequestsParams,
+  { q, sort, order, limit, offset }: GetRequestsParams,
   signal?: AbortSignal,
 ) => {
   const response = await client.index.$get(
@@ -53,8 +48,8 @@ export const getRequests = async (
         q,
         sort,
         order,
-        offset: typeof offset === 'number' ? String(offset) : String(page * limit),
-        limit: String(limit),
+        offset,
+        limit,
       },
     },
     {

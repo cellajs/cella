@@ -62,19 +62,24 @@ export const organizationQueryOptions = (idOrSlug: string) =>
  */
 export const organizationsQueryOptions = ({
   q = '',
-  sort: initialSort,
-  order: initialOrder,
-  limit = config.requestLimits.organizations,
-}: GetOrganizationsParams) => {
-  const sort = initialSort || 'createdAt';
-  const order = initialOrder || 'desc';
+  sort: _sort,
+  order: _order,
+  limit: _limit,
+}: Omit<GetOrganizationsParams, 'limit'> & { limit?: number }) => {
+  const sort = _sort || 'createdAt';
+  const order = _order || 'desc';
+  const limit = String(_limit || config.requestLimits.organizations);
 
   const queryKey = organizationsKeys.table.entries({ q, sort, order });
 
   return infiniteQueryOptions({
     queryKey,
     initialPageParam: { page: 0, offset: 0 },
-    queryFn: async ({ pageParam: { page, offset }, signal }) => await getOrganizations({ page, q, sort, order, limit, offset }, signal),
+    queryFn: async ({ pageParam: { page, offset: _offset }, signal }) => {
+      const offset = String(_offset || page * Number(limit));
+
+      return await getOrganizations({ q, sort, order, limit, offset }, signal)
+    },
     getNextPageParam: (_lastPage, allPages) => {
       const page = allPages.length;
       const offset = allPages.reduce((acc, page) => acc + page.items.length, 0);

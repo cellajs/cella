@@ -36,11 +36,7 @@ export const getOrganization = async (idOrSlug: string) => {
   return json.data;
 };
 
-export type GetOrganizationsParams = Omit<Parameters<(typeof client.index)['$get']>['0']['query'], 'limit' | 'offset'> & {
-  limit?: number;
-  offset?: number;
-  page?: number;
-};
+export type GetOrganizationsParams = Parameters<(typeof client.index)['$get']>['0']['query'];
 
 /**
  * Get a list of organizations with optional filters and pagination.
@@ -48,14 +44,13 @@ export type GetOrganizationsParams = Omit<Parameters<(typeof client.index)['$get
  * @param param.q - Optional search query to filter results.
  * @param param.sort - Field to sort by (defaults to 'id').
  * @param param.order - Sort order `'asc' | 'desc'` (defaults to 'asc').
- * @param param.page - Page number.
  * @param param.limit - Maximum number of organizations per page (defaults to `config.requestLimits.organizations`).
  * @param param.offset - Optional offset.
  * @param signal - Optional abort signal for cancelling the request.
  * @returns The list of organizations matching the search query and filters.
  */
 export const getOrganizations = async (
-  { q, sort = 'id', order = 'asc', page = 0, limit = config.requestLimits.organizations, offset }: GetOrganizationsParams,
+  { q, sort, order, limit, offset }: GetOrganizationsParams,
   signal?: AbortSignal,
 ) => {
   const response = await client.index.$get(
@@ -64,8 +59,8 @@ export const getOrganizations = async (
         q,
         sort,
         order,
-        offset: typeof offset === 'number' ? String(offset) : String(page * limit),
-        limit: String(limit),
+        offset,
+        limit,
       },
     },
     {

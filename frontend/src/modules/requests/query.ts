@@ -30,19 +30,24 @@ export const requestsKeys = {
  */
 export const requestsQueryOptions = ({
   q = '',
-  sort: initialSort,
-  order: initialOrder,
-  limit = config.requestLimits.requests,
-}: GetRequestsParams) => {
-  const sort = initialSort || 'createdAt';
-  const order = initialOrder || 'desc';
+  sort: _sort,
+  order: _order,
+  limit: _limit,
+}: Omit<GetRequestsParams, 'limit'> & {limit?: number}) => {
+  const sort = _sort || 'createdAt';
+  const order = _order || 'asc';
+  const limit = String(_limit || config.requestLimits.requests);
 
   const queryKey = requestsKeys.table.entries({ q, sort, order });
 
   return infiniteQueryOptions({
     queryKey,
     initialPageParam: { page: 0, offset: 0 },
-    queryFn: async ({ pageParam: { page, offset }, signal }) => await getRequests({ page, q, sort, order, limit, offset }, signal),
+    queryFn: async ({ pageParam: { page, offset: _offset }, signal }) => {
+      const offset = String(_offset || page * Number(limit));
+
+      return await getRequests({ q, sort, order, limit, offset }, signal)
+    },
     getNextPageParam: (_lastPage, allPages) => {
       const page = allPages.length;
       const offset = allPages.reduce((acc, page) => acc + page.items.length, 0);

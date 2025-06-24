@@ -92,7 +92,7 @@ export const RequestsTableBar = ({ total, selected, searchVars, setSearch, colum
   };
 
   const fetchExport = async (limit: number) => {
-    const { items } = await getRequests({ q, sort, order, limit });
+    const { items } = await getRequests({ q, sort: sort || 'createdAt', order: order || 'asc', limit: String(limit) });
     return items;
   };
 
