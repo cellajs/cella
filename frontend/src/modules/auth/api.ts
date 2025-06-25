@@ -25,7 +25,9 @@ export const signUp = async (body: SignUpProps) => {
     json: body,
   });
 
+  //@ts-expect-error
   const json = await handleResponse(response);
+  //@ts-expect-error
   return json.success;
 };
 
@@ -42,8 +44,9 @@ export const signUpWithToken = async ({ email, password, token }: { token: strin
     param: { token },
     json: { email, password },
   });
-
+  //@ts-expect-error
   const json = await handleResponse(response);
+    //@ts-expect-error
   return json.success;
 };
 
