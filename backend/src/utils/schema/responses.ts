@@ -48,14 +48,6 @@ export const successWithErrorsSchema = () =>
   });
 
 /**
- * Schema for a failed response with errors.
- */
-export const failWithErrorSchema = z.object({
-  success: z.boolean().default(false),
-  error: errorSchema,
-});
-
-/**
  * Set of common error responses with descriptions and schemas.  Includes: 400, 401, 403, 404, 429.
  */
 export const errorResponses = {

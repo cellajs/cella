@@ -1917,7 +1917,7 @@ export const zSendNewsletterData = z.object({
  */
 export const zSendNewsletterResponse = z.boolean();
 
-export const zDeleteRequestData = z.object({
+export const zDeleteRequestsData = z.object({
     body: z.object({
         ids: z.array(z.string()).min(1).max(50)
     }).optional(),
@@ -1928,7 +1928,7 @@ export const zDeleteRequestData = z.object({
 /**
  * Requests
  */
-export const zDeleteRequestResponse = z.boolean();
+export const zDeleteRequestsResponse = z.boolean();
 
 export const zGetRequestsData = z.object({
     body: z.never().optional(),

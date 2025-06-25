@@ -5714,7 +5714,7 @@ export type SendNewsletterResponses = {
 
 export type SendNewsletterResponse = SendNewsletterResponses[keyof SendNewsletterResponses];
 
-export type DeleteRequestData = {
+export type DeleteRequestsData = {
     body?: {
         ids: Array<string>;
     };
@@ -5723,7 +5723,7 @@ export type DeleteRequestData = {
     url: '/requests';
 };
 
-export type DeleteRequestErrors = {
+export type DeleteRequestsErrors = {
     /**
      * Bad request: problem processing request.
      */
@@ -5811,16 +5811,16 @@ export type DeleteRequestErrors = {
     };
 };
 
-export type DeleteRequestError = DeleteRequestErrors[keyof DeleteRequestErrors];
+export type DeleteRequestsError = DeleteRequestsErrors[keyof DeleteRequestsErrors];
 
-export type DeleteRequestResponses = {
+export type DeleteRequestsResponses = {
     /**
      * Requests
      */
     200: boolean;
 };
 
-export type DeleteRequestResponse = DeleteRequestResponses[keyof DeleteRequestResponses];
+export type DeleteRequestsResponse = DeleteRequestsResponses[keyof DeleteRequestsResponses];
 
 export type GetRequestsData = {
     body?: never;

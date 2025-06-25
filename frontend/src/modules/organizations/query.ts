@@ -138,7 +138,7 @@ export const useOrganizationUpdateMutation = () => {
 export const useOrganizationDeleteMutation = () => {
   return useMutation<void, ApiError, Organization[]>({
     mutationKey: organizationsKeys.delete(),
-    mutationFn: async (organizations) =>{
+    mutationFn: async (organizations) => {
       const ids = organizations.map(({ id }) => id)
       await deleteOrganizations({ body: { ids }, throwOnError: true });
     },

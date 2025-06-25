@@ -13,12 +13,11 @@ import type { BaseTableBarProps, BaseTableMethods } from '~/modules/common/data-
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { FocusView } from '~/modules/common/focus-view';
 import { toaster } from '~/modules/common/toaster';
-import { getRequests } from '~/modules/requests/api';
 import DeleteRequests from '~/modules/requests/delete-requests';
 import { requestsKeys } from '~/modules/requests/query';
 import type { RequestsSearch } from '~/modules/requests/table/table-wrapper';
 import type { Request } from '~/modules/requests/types';
-import { systemInvite } from '~/openapi-client';
+import { getRequests, systemInvite } from '~/openapi-client';
 import { useMutateQueryData } from '~/query/hooks/use-mutate-query-data';
 
 type RequestsTableBarProps = BaseTableMethods & BaseTableBarProps<Request, RequestsSearch>;
@@ -81,7 +80,7 @@ export const RequestsTableBar = ({ total, selected, searchVars, setSearch, colum
 
     try {
       // Send invite to users
-      await systemInvite({  body: { emails }, throwOnError: true });
+      await systemInvite({ body: { emails }, throwOnError: true });
       toaster(t('common:success.user_invited'), 'success');
 
       mutateQuery.update(updatedWaitLists);
@@ -92,8 +91,8 @@ export const RequestsTableBar = ({ total, selected, searchVars, setSearch, colum
   };
 
   const fetchExport = async (limit: number) => {
-    const { items } = await getRequests({ q, sort: sort || 'createdAt', order: order || 'asc', limit: String(limit) });
-    return items;
+    const response = await getRequests({ query: { q, sort: sort || 'createdAt', order: order || 'asc', limit: String(limit), offset: '0' }, throwOnError: true });
+    return response.items;
   };
 
   return (

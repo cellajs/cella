@@ -4,7 +4,7 @@ import { and, count, eq, getTableColumns, ilike, inArray, type SQL, sql } from '
 import { db } from '#/db/db';
 import { type RequestModel, requestsTable } from '#/db/schema/requests';
 import type { Env } from '#/lib/context';
-import { errorResponse } from '#/lib/errors';
+import { errorResponse, ErrorType } from '#/lib/errors';
 import { sendSlackMessage } from '#/lib/notifications';
 import requestRoutes from '#/modules/requests/routes';
 import { getUserBy } from '#/modules/users/helpers/get-user-by';
@@ -99,11 +99,15 @@ const requestRouteHandlers = app
 
     // Convert the ids to an array
     const toDeleteIds = Array.isArray(ids) ? ids : [ids];
+    if (!toDeleteIds.length) return errorResponse(ctx, 400, 'invalid_request', 'error', 'organization');
 
     // Delete the requests
     await db.delete(requestsTable).where(inArray(requestsTable.id, toDeleteIds));
 
-    return ctx.json(true, 200);
+    // Map errors of requests user is not allowed to delete
+    const errors: ErrorType[] = [];
+
+    return ctx.json({ success: true, errors }, 200);
   });
 
 export default requestRouteHandlers;
