@@ -1,7 +1,7 @@
-import { type ContextEntityType, config, type UploadTemplateId } from 'config';
 import { meHc } from '#/modules/me/hc';
+import { config, type ContextEntityType, type UploadTemplateId } from 'config';
 import { clientConfig, handleResponse } from '~/lib/api';
-import type { UpdateUserParams } from '~/modules/users/api';
+import { UpdateUserData } from '~/openapi-client';
 
 export const client: ReturnType<typeof meHc> = meHc(config.backendUrl, clientConfig);
 
@@ -47,7 +47,7 @@ export const getMyMenu = async () => {
  *  @param params User data to update.
  *  @returns The updated user data.
  */
-export const updateMe = async (params: UpdateUserParams) => {
+export const updateMe = async (params: NonNullable<UpdateUserData['body']>) => {
   const response = await client.index.$put({
     json: params,
   });
