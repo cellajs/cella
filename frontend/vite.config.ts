@@ -12,7 +12,7 @@ import { createHtmlPlugin } from 'vite-plugin-html';
 import { VitePWA } from 'vite-plugin-pwa';
 import { viteStaticCopy } from 'vite-plugin-static-copy';
 import { config } from '../config';
-
+import { replaceZodImport } from './src/zod-import-fix';
 // import { TanStackRouterVite } from '@tanstack/router-plugin/vite'
 
 const ReactCompilerConfig = {
@@ -52,7 +52,9 @@ export default defineConfig(() => {
     optimizeDeps: {
       exclude: [],
     },
+    clearScreen: false,
     plugins: [
+      replaceZodImport(),
       tsconfigPaths({ projects: [tsconfigFile] }),
       // TanStackRouterVite(),
       react({
