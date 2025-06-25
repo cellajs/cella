@@ -6,5 +6,8 @@ import { config } from 'config'
 export default defineConfig({
   input: { path: `${config.backendUrl}/openapi.json`, watch: false },
   output: { path: 'src/openapi-client', lint: 'biome', format: 'biome' },
-  plugins: ['zod', { name: '@hey-api/sdk', responseStyle: 'data'}],
+  plugins: ['zod', { name: '@hey-api/sdk', responseStyle: 'data'},  {
+      name: '@hey-api/client-fetch',
+      runtimeConfigPath: './hey-api.ts', 
+    },],
 })

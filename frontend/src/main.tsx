@@ -18,7 +18,6 @@ import { RouterWrapper } from '~/modules/common/router-wrapper';
 import { QueryClientProvider } from '~/query/provider';
 import { addBadgeToFavicon } from '~/utils/add-badge-to-favicon';
 import { renderAscii } from '~/utils/ascii';
-import { client } from '~/openapi-client/client.gen';
 
 // Render ASCII logo in console
 renderAscii();
@@ -29,15 +28,6 @@ addBadgeToFavicon(config.mode as ConfigMode);
 // Initialize Sentry if online
 if (navigator.onLine) initSentry();
 
-
-// Set up openapi client config
-client.setConfig({
-  baseUrl: config.backendUrl,
-  responseStyle: 'data',
-  throwOnError: true,
-  fetch: (input, init = {}) =>
-    fetch(input, { ...init, credentials: 'include' }),
-});
 
 ReactDOM.createRoot(root).render(
   <StrictMode>

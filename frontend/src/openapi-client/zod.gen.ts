@@ -41,7 +41,6 @@ export const zCheckEmailData = z.object({
     body: z.object({
         email: z.string().email()
     }).optional(),
-    headers: z.never().optional(),
     path: z.never().optional(),
     query: z.never().optional()
 });
@@ -58,7 +57,6 @@ export const zSignUpData = z.object({
         email: z.string().email(),
         password: z.string().min(8).max(100)
     }).optional(),
-    headers: z.never().optional(),
     path: z.never().optional(),
     query: z.never().optional()
 });
@@ -75,7 +73,6 @@ export const zSignUpWithTokenData = z.object({
         email: z.string().email(),
         password: z.string().min(8).max(100)
     }).optional(),
-    headers: z.never().optional(),
     path: z.object({
         token: z.string()
     }),
@@ -94,7 +91,6 @@ export const zSendVerificationEmailData = z.object({
         tokenId: z.string().optional(),
         userId: z.string().optional()
     }).optional(),
-    headers: z.never().optional(),
     path: z.never().optional(),
     query: z.never().optional()
 });
@@ -108,7 +104,6 @@ export const zSendVerificationEmailResponse = z.object({
 
 export const zVerifyEmailData = z.object({
     body: z.never().optional(),
-    headers: z.never().optional(),
     path: z.object({
         token: z.string()
     }),
@@ -126,7 +121,6 @@ export const zRequestPasswordData = z.object({
     body: z.object({
         email: z.string().email()
     }).optional(),
-    headers: z.never().optional(),
     path: z.never().optional(),
     query: z.never().optional()
 });
@@ -142,7 +136,6 @@ export const zCreatePasswordWithTokenData = z.object({
     body: z.object({
         password: z.string().min(8).max(100)
     }).optional(),
-    headers: z.never().optional(),
     path: z.object({
         token: z.string()
     }),
@@ -161,7 +154,6 @@ export const zSignInData = z.object({
         email: z.string().email(),
         password: z.string().min(8).max(100)
     }).optional(),
-    headers: z.never().optional(),
     path: z.never().optional(),
     query: z.never().optional()
 });
@@ -178,7 +170,6 @@ export const zSignInResponse = z.object({
 
 export const zCheckTokenData = z.object({
     body: z.never().optional(),
-    headers: z.never().optional(),
     path: z.object({
         id: z.string()
     }),
@@ -214,7 +205,6 @@ export const zCheckTokenResponse = z.object({
 
 export const zAcceptEntityInviteData = z.object({
     body: z.never().optional(),
-    headers: z.never().optional(),
     path: z.object({
         token: z.string()
     }),
@@ -262,7 +252,6 @@ export const zAcceptEntityInviteResponse = z.object({
 
 export const zStartImpersonationData = z.object({
     body: z.never().optional(),
-    headers: z.never().optional(),
     path: z.never().optional(),
     query: z.object({
         targetUserId: z.string()
@@ -278,7 +267,6 @@ export const zStartImpersonationResponse = z.object({
 
 export const zStopImpersonationData = z.object({
     body: z.never().optional(),
-    headers: z.never().optional(),
     path: z.never().optional(),
     query: z.never().optional()
 });
@@ -292,7 +280,6 @@ export const zStopImpersonationResponse = z.object({
 
 export const zSignOutData = z.object({
     body: z.never().optional(),
-    headers: z.never().optional(),
     path: z.never().optional(),
     query: z.never().optional()
 });
@@ -306,7 +293,6 @@ export const zSignOutResponse = z.object({
 
 export const zGithubSignInData = z.object({
     body: z.never().optional(),
-    headers: z.never().optional(),
     path: z.never().optional(),
     query: z.object({
         type: z.enum([
@@ -322,7 +308,6 @@ export const zGithubSignInData = z.object({
 
 export const zGoogleSignInData = z.object({
     body: z.never().optional(),
-    headers: z.never().optional(),
     path: z.never().optional(),
     query: z.object({
         type: z.enum([
@@ -338,7 +323,6 @@ export const zGoogleSignInData = z.object({
 
 export const zMicrosoftSignInData = z.object({
     body: z.never().optional(),
-    headers: z.never().optional(),
     path: z.never().optional(),
     query: z.object({
         type: z.enum([
@@ -354,7 +338,6 @@ export const zMicrosoftSignInData = z.object({
 
 export const zGithubSignInCallbackData = z.object({
     body: z.never().optional(),
-    headers: z.never().optional(),
     path: z.never().optional(),
     query: z.object({
         code: z.string(),
@@ -367,7 +350,6 @@ export const zGithubSignInCallbackData = z.object({
 
 export const zGoogleSignInCallbackData = z.object({
     body: z.never().optional(),
-    headers: z.never().optional(),
     path: z.never().optional(),
     query: z.object({
         code: z.string(),
@@ -377,7 +359,6 @@ export const zGoogleSignInCallbackData = z.object({
 
 export const zMicrosoftSignInCallbackData = z.object({
     body: z.never().optional(),
-    headers: z.never().optional(),
     path: z.never().optional(),
     query: z.object({
         code: z.string(),
@@ -387,7 +368,6 @@ export const zMicrosoftSignInCallbackData = z.object({
 
 export const zGetPasskeyChallengeData = z.object({
     body: z.never().optional(),
-    headers: z.never().optional(),
     path: z.never().optional(),
     query: z.never().optional()
 });
@@ -406,7 +386,6 @@ export const zVerifyPasskeyData = z.object({
         signature: z.string(),
         userEmail: z.string()
     }).optional(),
-    headers: z.never().optional(),
     path: z.never().optional(),
     query: z.never().optional()
 });
@@ -420,7 +399,6 @@ export const zVerifyPasskeyResponse = z.object({
 
 export const zDeleteMeData = z.object({
     body: z.never().optional(),
-    headers: z.never().optional(),
     path: z.never().optional(),
     query: z.never().optional()
 });
@@ -434,7 +412,6 @@ export const zDeleteMeResponse = z.object({
 
 export const zGetMeData = z.object({
     body: z.never().optional(),
-    headers: z.never().optional(),
     path: z.never().optional(),
     query: z.never().optional()
 });
@@ -530,7 +507,6 @@ export const zUpdateMeData = z.object({
         ]).optional(),
         slug: z.string().min(2).max(100).optional()
     }).optional(),
-    headers: z.never().optional(),
     path: z.never().optional(),
     query: z.never().optional()
 });
@@ -603,7 +579,6 @@ export const zUpdateMeResponse = z.object({
 
 export const zGetMyAuthData = z.object({
     body: z.never().optional(),
-    headers: z.never().optional(),
     path: z.never().optional(),
     query: z.never().optional()
 });
@@ -658,7 +633,6 @@ export const zGetMyAuthResponse = z.object({
 
 export const zGetMyMenuData = z.object({
     body: z.never().optional(),
-    headers: z.never().optional(),
     path: z.never().optional(),
     query: z.never().optional()
 });
@@ -742,7 +716,6 @@ export const zDeleteSessionsData = z.object({
     body: z.object({
         ids: z.array(z.string()).min(1)
     }).optional(),
-    headers: z.never().optional(),
     path: z.never().optional(),
     query: z.never().optional()
 });
@@ -780,7 +753,6 @@ export const zDeleteSessionsResponse = z.object({
 
 export const zDeleteMyMembershipData = z.object({
     body: z.never().optional(),
-    headers: z.never().optional(),
     path: z.never().optional(),
     query: z.object({
         idOrSlug: z.string(),
@@ -799,7 +771,6 @@ export const zDeleteMyMembershipResponse = z.object({
 
 export const zDeletePasskeyData = z.object({
     body: z.never().optional(),
-    headers: z.never().optional(),
     path: z.never().optional(),
     query: z.never().optional()
 });
@@ -817,7 +788,6 @@ export const zCreatePasskeyData = z.object({
         attestationObject: z.string(),
         clientDataJSON: z.string()
     }),
-    headers: z.never().optional(),
     path: z.never().optional(),
     query: z.never().optional()
 });
@@ -831,7 +801,6 @@ export const zCreatePasskeyResponse = z.object({
 
 export const zGetUploadTokenData = z.object({
     body: z.never().optional(),
-    headers: z.never().optional(),
     path: z.never().optional(),
     query: z.object({
         public: z.union([
@@ -868,7 +837,6 @@ export const zGetUploadTokenResponse = z.object({
 
 export const zUnsubscribeMeData = z.object({
     body: z.never().optional(),
-    headers: z.never().optional(),
     path: z.never().optional(),
     query: z.object({
         token: z.string()
@@ -879,7 +847,6 @@ export const zDeleteUsersData = z.object({
     body: z.object({
         ids: z.array(z.string()).min(1).max(50)
     }).optional(),
-    headers: z.never().optional(),
     path: z.never().optional(),
     query: z.never().optional()
 });
@@ -917,7 +884,6 @@ export const zDeleteUsersResponse = z.object({
 
 export const zGetUsersData = z.object({
     body: z.never().optional(),
-    headers: z.never().optional(),
     path: z.never().optional(),
     query: z.object({
         q: z.string().optional(),
@@ -1014,7 +980,6 @@ export const zGetUsersResponse = z.object({
 
 export const zGetUserData = z.object({
     body: z.never().optional(),
-    headers: z.never().optional(),
     path: z.object({
         idOrSlug: z.string()
     }),
@@ -1112,7 +1077,6 @@ export const zUpdateUserData = z.object({
         ]).optional(),
         slug: z.string().min(2).max(100).optional()
     }).optional(),
-    headers: z.never().optional(),
     path: z.object({
         idOrSlug: z.string()
     }),
@@ -1189,7 +1153,6 @@ export const zDeleteOrganizationsData = z.object({
     body: z.object({
         ids: z.array(z.string()).min(1).max(50)
     }).optional(),
-    headers: z.never().optional(),
     path: z.never().optional(),
     query: z.never().optional()
 });
@@ -1227,7 +1190,6 @@ export const zDeleteOrganizationsResponse = z.object({
 
 export const zGetOrganizationsData = z.object({
     body: z.never().optional(),
-    headers: z.never().optional(),
     path: z.never().optional(),
     query: z.object({
         q: z.string().optional(),
@@ -1366,7 +1328,6 @@ export const zCreateOrganizationData = z.object({
         name: z.string().min(2).max(100),
         slug: z.string().min(2).max(100)
     }),
-    headers: z.never().optional(),
     path: z.never().optional(),
     query: z.never().optional()
 });
@@ -1472,7 +1433,6 @@ export const zCreateOrganizationResponse = z.object({
 
 export const zGetOrganizationData = z.object({
     body: z.never().optional(),
-    headers: z.never().optional(),
     path: z.object({
         idOrSlug: z.string()
     }),
@@ -1637,7 +1597,6 @@ export const zUpdateOrganizationData = z.object({
         authStrategies: z.array(z.string()).optional(),
         chatSupport: z.boolean().optional()
     }).optional(),
-    headers: z.never().optional(),
     path: z.object({
         idOrSlug: z.string()
     }),
@@ -1748,7 +1707,6 @@ export const zUpdateOrganizationResponse = z.object({
 
 export const zGetPageEntitiesData = z.object({
     body: z.never().optional(),
-    headers: z.never().optional(),
     path: z.never().optional(),
     query: z.object({
         q: z.string().optional(),
@@ -1817,7 +1775,6 @@ export const zGetPageEntitiesResponse = z.object({
 
 export const zGetContextEntitiesData = z.object({
     body: z.never().optional(),
-    headers: z.never().optional(),
     path: z.never().optional(),
     query: z.object({
         q: z.string().optional(),
@@ -1899,7 +1856,6 @@ export const zCheckSlugData = z.object({
     body: z.object({
         slug: z.string()
     }).optional(),
-    headers: z.never().optional(),
     path: z.never().optional(),
     query: z.never().optional()
 });
@@ -1915,7 +1871,6 @@ export const zCreateInviteData = z.object({
     body: z.object({
         emails: z.array(z.string().email()).min(1).max(50)
     }).optional(),
-    headers: z.never().optional(),
     path: z.never().optional(),
     query: z.never().optional()
 });
@@ -1929,7 +1884,6 @@ export const zCreateInviteResponse = z.object({
 
 export const zGetPresignedUrlData = z.object({
     body: z.never().optional(),
-    headers: z.never().optional(),
     path: z.never().optional(),
     query: z.object({
         key: z.string()
@@ -1946,7 +1900,6 @@ export const zGetPresignedUrlResponse = z.object({
 
 export const zPaddleWebhookData = z.object({
     body: z.unknown().optional(),
-    headers: z.never().optional(),
     path: z.never().optional(),
     query: z.never().optional()
 });
@@ -1968,7 +1921,6 @@ export const zSendNewsletterData = z.object({
         subject: z.string(),
         content: z.string()
     }),
-    headers: z.never().optional(),
     path: z.never().optional(),
     query: z.object({
         toSelf: z.union([
@@ -1989,7 +1941,6 @@ export const zDeleteRequestData = z.object({
     body: z.object({
         ids: z.array(z.string()).min(1).max(50)
     }).optional(),
-    headers: z.never().optional(),
     path: z.never().optional(),
     query: z.never().optional()
 });
@@ -2003,7 +1954,6 @@ export const zDeleteRequestResponse = z.object({
 
 export const zGetRequestsData = z.object({
     body: z.never().optional(),
-    headers: z.never().optional(),
     path: z.never().optional(),
     query: z.object({
         q: z.string().optional(),
@@ -2060,7 +2010,6 @@ export const zCreateRequestData = z.object({
             z.null()
         ])
     }).optional(),
-    headers: z.never().optional(),
     path: z.never().optional(),
     query: z.never().optional()
 });
@@ -2089,7 +2038,6 @@ export const zCreateRequestResponse = z.object({
 
 export const zGetMetricsData = z.object({
     body: z.never().optional(),
-    headers: z.never().optional(),
     path: z.never().optional(),
     query: z.never().optional()
 });
@@ -2107,7 +2055,6 @@ export const zGetMetricsResponse = z.object({
 
 export const zGetPublicCountsData = z.object({
     body: z.never().optional(),
-    headers: z.never().optional(),
     path: z.never().optional(),
     query: z.never().optional()
 });
@@ -2126,7 +2073,6 @@ export const zGetPublicCountsResponse = z.object({
 
 export const zShapeProxyData = z.object({
     body: z.never().optional(),
-    headers: z.never().optional(),
     path: z.object({
         orgIdOrSlug: z.string()
     }),
@@ -2137,7 +2083,6 @@ export const zDeleteAttachmentsData = z.object({
     body: z.object({
         ids: z.array(z.string()).min(1).max(50)
     }).optional(),
-    headers: z.never().optional(),
     path: z.object({
         orgIdOrSlug: z.string()
     }),
@@ -2177,7 +2122,6 @@ export const zDeleteAttachmentsResponse = z.object({
 
 export const zGetAttachmentsData = z.object({
     body: z.never().optional(),
-    headers: z.never().optional(),
     path: z.object({
         orgIdOrSlug: z.string()
     }),
@@ -2275,7 +2219,6 @@ export const zCreateAttachmentData = z.object({
         ]).optional(),
         organizationId: z.string()
     })).min(1).max(50),
-    headers: z.never().optional(),
     path: z.object({
         orgIdOrSlug: z.string()
     }),
@@ -2332,7 +2275,6 @@ export const zCreateAttachmentResponse = z.object({
 
 export const zGetAttachmentData = z.object({
     body: z.never().optional(),
-    headers: z.never().optional(),
     path: z.object({
         id: z.string(),
         orgIdOrSlug: z.string()
@@ -2393,7 +2335,6 @@ export const zUpdateAttachmentData = z.object({
         name: z.string().optional(),
         originalKey: z.string().optional()
     }).optional(),
-    headers: z.never().optional(),
     path: z.object({
         id: z.string(),
         orgIdOrSlug: z.string()
@@ -2451,7 +2392,6 @@ export const zUpdateAttachmentResponse = z.object({
 
 export const zGetAttachmentCoverData = z.object({
     body: z.never().optional(),
-    headers: z.never().optional(),
     path: z.object({
         id: z.string()
     }),
@@ -2460,7 +2400,6 @@ export const zGetAttachmentCoverData = z.object({
 
 export const zRedirectToAttachmentData = z.object({
     body: z.never().optional(),
-    headers: z.never().optional(),
     path: z.object({
         id: z.string()
     }),
@@ -2471,7 +2410,6 @@ export const zDeleteMembershipsData = z.object({
     body: z.object({
         ids: z.array(z.string()).min(1).max(50)
     }).optional(),
-    headers: z.never().optional(),
     path: z.object({
         orgIdOrSlug: z.string()
     }),
@@ -2522,7 +2460,6 @@ export const zCreateMembershipsData = z.object({
             'admin'
         ])
     }).optional(),
-    headers: z.never().optional(),
     path: z.object({
         orgIdOrSlug: z.string()
     }),
@@ -2551,7 +2488,6 @@ export const zUpdateMembershipData = z.object({
         archived: z.boolean().optional(),
         order: z.number().optional()
     }).optional(),
-    headers: z.never().optional(),
     path: z.object({
         id: z.string(),
         orgIdOrSlug: z.string()
@@ -2596,7 +2532,6 @@ export const zUpdateMembershipResponse = z.object({
 
 export const zGetMembersData = z.object({
     body: z.never().optional(),
-    headers: z.never().optional(),
     path: z.object({
         orgIdOrSlug: z.string().optional()
     }).optional(),
@@ -2713,7 +2648,6 @@ export const zGetMembersResponse = z.object({
 
 export const zGetPendingInvitationsData = z.object({
     body: z.never().optional(),
-    headers: z.never().optional(),
     path: z.object({
         orgIdOrSlug: z.string()
     }),
