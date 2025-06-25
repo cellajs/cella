@@ -18,7 +18,7 @@ import DeleteRequests from '~/modules/requests/delete-requests';
 import { requestsKeys } from '~/modules/requests/query';
 import type { RequestsSearch } from '~/modules/requests/table/table-wrapper';
 import type { Request } from '~/modules/requests/types';
-import { invite } from '~/modules/system/api';
+import { systemInvite } from '~/openapi-client';
 import { useMutateQueryData } from '~/query/hooks/use-mutate-query-data';
 
 type RequestsTableBarProps = BaseTableMethods & BaseTableBarProps<Request, RequestsSearch>;
@@ -81,7 +81,7 @@ export const RequestsTableBar = ({ total, selected, searchVars, setSearch, colum
 
     try {
       // Send invite to users
-      await invite({ emails, role: 'user' });
+      await systemInvite({  body: { emails }, throwOnError: true });
       toaster(t('common:success.user_invited'), 'success');
 
       mutateQuery.update(updatedWaitLists);

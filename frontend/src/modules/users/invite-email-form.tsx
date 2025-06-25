@@ -16,10 +16,10 @@ import type { EntityPage } from '~/modules/entities/types';
 import { type InviteMemberProps, inviteMembers } from '~/modules/memberships/api';
 import { membersKeys } from '~/modules/memberships/query';
 import { organizationsKeys } from '~/modules/organizations/query';
-import { invite as inviteSystem, type SystemInviteProps } from '~/modules/system/api';
 import { Badge } from '~/modules/ui/badge';
 import { Button, SubmitButton } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
+import { systemInvite } from '~/openapi-client';
 import { queryClient } from '~/query/query-client';
 
 interface Props {
@@ -74,9 +74,9 @@ const InviteEmailForm = ({ entity, dialog: isDialog, children }: Props) => {
 
   // It uses inviteSystem if no entity type is provided
   const { mutate: invite, isPending } = useMutation({
-    mutationFn: (values: FormValues) => {
-      if (!entity) return inviteSystem(values as SystemInviteProps);
-      return inviteMembers({
+    mutationFn: async (values: FormValues) => {
+      if (!entity) return await  systemInvite({ body: { emails: values.emails }, throwOnError: true });
+      return await inviteMembers({
         ...values,
         idOrSlug: entity.id,
         entityType: entity.entityType,

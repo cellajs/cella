@@ -5278,7 +5278,7 @@ export type CheckSlugResponses = {
 
 export type CheckSlugResponse = CheckSlugResponses[keyof CheckSlugResponses];
 
-export type CreateInviteData = {
+export type SystemInviteData = {
     body?: {
         emails: Array<string>;
     };
@@ -5287,7 +5287,7 @@ export type CreateInviteData = {
     url: '/system/invite';
 };
 
-export type CreateInviteErrors = {
+export type SystemInviteErrors = {
     /**
      * Bad request: problem processing request.
      */
@@ -5375,16 +5375,16 @@ export type CreateInviteErrors = {
     };
 };
 
-export type CreateInviteError = CreateInviteErrors[keyof CreateInviteErrors];
+export type SystemInviteError = SystemInviteErrors[keyof SystemInviteErrors];
 
-export type CreateInviteResponses = {
+export type SystemInviteResponses = {
     /**
      * Invitations are sent
      */
     200: boolean;
 };
 
-export type CreateInviteResponse = CreateInviteResponses[keyof CreateInviteResponses];
+export type SystemInviteResponse = SystemInviteResponses[keyof SystemInviteResponses];
 
 export type GetPresignedUrlData = {
     body?: never;

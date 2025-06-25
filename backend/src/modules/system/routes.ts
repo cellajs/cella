@@ -8,7 +8,7 @@ import { z } from '@hono/zod-openapi';
 
 const systemRoutes = {
   createInvite: createCustomRoute({
-    operationId: 'createInvite',
+    operationId: 'systemInvite',
     method: 'post',
     path: '/invite',
     guard: [isAuthenticated, hasSystemAccess],

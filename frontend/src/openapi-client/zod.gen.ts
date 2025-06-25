@@ -1851,7 +1851,7 @@ export const zCheckSlugData = z.object({
  */
 export const zCheckSlugResponse = z.boolean();
 
-export const zCreateInviteData = z.object({
+export const zSystemInviteData = z.object({
     body: z.object({
         emails: z.array(z.string().email()).min(1).max(50)
     }).optional(),
@@ -1862,7 +1862,7 @@ export const zCreateInviteData = z.object({
 /**
  * Invitations are sent
  */
-export const zCreateInviteResponse = z.boolean();
+export const zSystemInviteResponse = z.boolean();
 
 export const zGetPresignedUrlData = z.object({
     body: z.never().optional(),
