@@ -1,15 +1,15 @@
 import { createCustomRoute } from '#/lib/custom-routes';
 import { hasSystemAccess, isAuthenticated } from '#/middlewares/guard';
 import {
-  fullCountsSchema,
-  organizationCreateBodySchema,
-  organizationListQuerySchema,
-  organizationSchema,
-  organizationUpdateBodySchema,
-  organizationWithMembershipSchema,
+    fullCountsSchema,
+    organizationCreateBodySchema,
+    organizationListQuerySchema,
+    organizationSchema,
+    organizationUpdateBodySchema,
+    organizationWithMembershipSchema,
 } from '#/modules/organizations/schema';
 import { entityParamSchema, idsBodySchema } from '#/utils/schema/common';
-import { errorResponses, successWithDataSchema, successWithErrorsSchema, successWithPaginationSchema } from '#/utils/schema/responses';
+import { errorResponses, paginationSchema, successWithErrorsSchema } from '#/utils/schema/responses';
 
 const organizationRoutes = {
   createOrganization: createCustomRoute({
@@ -33,11 +33,7 @@ const organizationRoutes = {
     responses: {
       200: {
         description: 'Organization was created',
-        content: {
-          'application/json': {
-            schema: successWithDataSchema(organizationWithMembershipSchema),
-          },
-        },
+        content: { 'application/json': { schema: organizationWithMembershipSchema } },
       },
       ...errorResponses,
     },
@@ -58,7 +54,7 @@ const organizationRoutes = {
         description: 'Organizations',
         content: {
           'application/json': {
-            schema: successWithPaginationSchema(organizationSchema.omit({ invitesCount: true }).extend({ counts: fullCountsSchema })),
+            schema: paginationSchema(organizationSchema.omit({ invitesCount: true }).extend({ counts: fullCountsSchema })),
           },
         },
       },
@@ -86,11 +82,7 @@ const organizationRoutes = {
     responses: {
       200: {
         description: 'Organization was updated',
-        content: {
-          'application/json': {
-            schema: successWithDataSchema(organizationSchema),
-          },
-        },
+        content: { 'application/json': { schema: organizationSchema } },
       },
       ...errorResponses,
     },
@@ -109,11 +101,7 @@ const organizationRoutes = {
     responses: {
       200: {
         description: 'Organization',
-        content: {
-          'application/json': {
-            schema: successWithDataSchema(organizationSchema),
-          },
-        },
+        content: { 'application/json': { schema: organizationSchema } },
       },
       ...errorResponses,
     },

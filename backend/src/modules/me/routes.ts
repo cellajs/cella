@@ -1,9 +1,9 @@
-import { z } from '@hono/zod-openapi';
 import { createCustomRoute } from '#/lib/custom-routes';
 import { isAuthenticated, isPublicAccess } from '#/middlewares/guard';
 import { tokenLimiter } from '#/middlewares/rate-limiter/limiters';
 import { entityWithTypeQuerySchema } from '#/utils/schema/common';
-import { errorResponses, successWithDataSchema, successWithErrorsSchema, successWithoutDataSchema } from '#/utils/schema/responses';
+import { errorResponses, successWithErrorsSchema, successWithoutDataSchema } from '#/utils/schema/responses';
+import { z } from '@hono/zod-openapi';
 import { userSchema, userUpdateBodySchema } from '../users/schema';
 import { meAuthDataSchema, menuSchema, passkeyRegistrationBodySchema, uploadTokenQuerySchema, uploadTokenSchema } from './schema';
 
@@ -19,7 +19,7 @@ const meRoutes = {
     responses: {
       200: {
         description: 'User',
-        content: { 'application/json': { schema: successWithDataSchema(userSchema) } },
+        content: { 'application/json': { schema: userSchema } },
       },
       ...errorResponses,
     },
@@ -36,7 +36,7 @@ const meRoutes = {
     responses: {
       200: {
         description: 'User sign-up info',
-        content: { 'application/json': { schema: successWithDataSchema(meAuthDataSchema) } },
+        content: { 'application/json': { schema: meAuthDataSchema } },
       },
       ...errorResponses,
     },
@@ -56,11 +56,7 @@ const meRoutes = {
     responses: {
       200: {
         description: 'User',
-        content: {
-          'application/json': {
-            schema: successWithDataSchema(userSchema),
-          },
-        },
+        content: { 'application/json': { schema: userSchema } },
       },
       ...errorResponses,
     },
@@ -95,7 +91,7 @@ const meRoutes = {
     responses: {
       200: {
         description: 'Menu of user',
-        content: { 'application/json': { schema: successWithDataSchema(menuSchema) } },
+        content: { 'application/json': { schema: menuSchema } },
       },
       ...errorResponses,
     },
@@ -181,11 +177,7 @@ const meRoutes = {
     responses: {
       200: {
         description: 'Upload token with a scope for a user or organization',
-        content: {
-          'application/json': {
-            schema: successWithDataSchema(uploadTokenSchema),
-          },
-        },
+        content: { 'application/json': { schema: uploadTokenSchema } },
       },
       ...errorResponses,
     },

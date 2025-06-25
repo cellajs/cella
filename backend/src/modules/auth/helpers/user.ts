@@ -1,6 +1,3 @@
-import { config } from 'config';
-import { and, eq } from 'drizzle-orm';
-import type { Context } from 'hono';
 import { db } from '#/db/db';
 import { emailsTable } from '#/db/schema/emails';
 import { oauthAccountsTable } from '#/db/schema/oauth-accounts';
@@ -13,6 +10,9 @@ import { insertMembership } from '#/modules/memberships/helpers';
 import { generateUnsubscribeToken } from '#/modules/users/helpers/unsubscribe-token';
 import { getIsoDate } from '#/utils/iso-date';
 import { nanoid } from '#/utils/nanoid';
+import { config } from 'config';
+import { and, eq } from 'drizzle-orm';
+import type { Context } from 'hono';
 import { checkSlugAvailable } from '../../entities/helpers/check-slug';
 import type { Provider } from './oauth/oauth-providers';
 import { setUserSession } from './session';
@@ -88,7 +88,7 @@ export const handleCreateUser = async ({ ctx, newUser, redirectUrl, provider, me
     if (redirectUrl) return ctx.redirect(redirectUrl, 302);
 
     // Return
-    return ctx.json({ success: true }, 200);
+    return ctx.json(true, 200);
   } catch (error) {
     // If the email already exists, return an error
     if (error instanceof Error && error.message.startsWith('duplicate key')) {

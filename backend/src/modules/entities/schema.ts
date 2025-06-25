@@ -1,5 +1,4 @@
 import { membershipSummarySchema } from '#/modules/memberships/schema';
-import { userSummarySchema } from '#/modules/users/schema';
 import { contextEntityTypeSchema, idSchema, imageUrlSchema, nameSchema, pageEntityTypeSchema, slugSchema } from '#/utils/schema/common';
 import { mapEntitiesToSchema } from '#/utils/schema/entities-to-schema';
 import { z } from '@hono/zod-openapi';
@@ -17,6 +16,13 @@ const baseEntityQuerySchema = z.object({
   q: z.string().optional(),
   targetUserId: idSchema.optional(),
 });
+
+// Declared here to avoid circular dependencies
+export const userSummarySchema = entityBaseSchema.extend({
+  email: z.email(),
+  entityType: z.literal('user'),
+});
+
 
 export const entityListItemSchema = entityBaseSchema.extend({
   email: z.string().optional(),
@@ -40,36 +46,7 @@ export const contextEntitiesSchema = z.array(
   entityBaseSchema.extend({
     createdAt: z.string(),
     membership: membershipSummarySchema,
-    // TODO(BLOCKING): better support might arrive for z.lazy in openapi 
-    // @link https://github.com/asteasolutions/zod-to-openapi/issues/247#issuecomment-2985032121
-    members: z.array(z.lazy(() => userSummarySchema)).openapi({
-      type: 'array',
-      items: {
-        type: 'object',
-        required: ['id', 'slug', 'name', 'email', 'entityType'],
-        properties: {
-          id: { type: 'string' },
-          slug: { type: 'string' },
-          name: { type: 'string' },
-          thumbnailUrl: {
-            type: ['string', 'null'],
-            nullable: true,
-          },
-          bannerUrl: {
-            type: ['string', 'null'],
-            nullable: true,
-          },
-          email: {
-            type: 'string',
-            format: 'email',
-          },
-          entityType: {
-            type: 'string',
-            enum: ['user'],
-          },
-        },
-      },
-    })
+    members: z.array(userSummarySchema)
   })
 );
 

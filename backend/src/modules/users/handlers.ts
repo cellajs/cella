@@ -1,16 +1,16 @@
-import { OpenAPIHono } from '@hono/zod-openapi';
-import { and, count, eq, ilike, inArray, or } from 'drizzle-orm';
 import { db } from '#/db/db';
 import { membershipsTable } from '#/db/schema/memberships';
 import { usersTable } from '#/db/schema/users';
 import { type Env, getContextMemberships, getContextUser } from '#/lib/context';
-import { createError, type ErrorType, errorResponse } from '#/lib/errors';
+import { createError, errorResponse, type ErrorType } from '#/lib/errors';
 import { logEvent } from '#/middlewares/logger/log-event';
 import { getUsersByConditions } from '#/modules/users/helpers/get-user-by';
 import { defaultHook } from '#/utils/default-hook';
 import { getIsoDate } from '#/utils/iso-date';
 import { getOrderColumn } from '#/utils/order-column';
 import { prepareStringForILikeFilter } from '#/utils/sql';
+import { OpenAPIHono } from '@hono/zod-openapi';
+import { and, count, eq, ilike, inArray, or } from 'drizzle-orm';
 import { checkSlugAvailable } from '../entities/helpers/check-slug';
 import { userSelect } from './helpers/select';
 import userRoutes from './routes';
@@ -73,7 +73,7 @@ const usersRouteHandlers = app
 
     const items = (await usersQuery.limit(Number(limit)).offset(Number(offset))).map(({ users }) => users);
 
-    return ctx.json({ success: true, data: { items, total } }, 200);
+    return ctx.json( { items, total }, 200);
   })
   /*
    * Delete users
@@ -111,7 +111,7 @@ const usersRouteHandlers = app
 
     // Ifuser doesn't have permission to delete, return error
     if (allowedTargets.length === 0) {
-      return ctx.json({ success: false, errors: errors }, 200);
+      return ctx.json({ success: false, errors }, 200);
     }
 
     // Delete the users
@@ -124,7 +124,7 @@ const usersRouteHandlers = app
 
     logEvent('Users deleted');
 
-    return ctx.json({ success: true, errors: errors }, 200);
+    return ctx.json({ success: true, errors }, 200);
   })
   /*
    * Get a user by id or slug
@@ -134,9 +134,8 @@ const usersRouteHandlers = app
     const user = getContextUser();
     const memberships = getContextMemberships();
 
-    if (idOrSlug === user.id || idOrSlug === user.slug) {
-      return ctx.json({ success: true, data: user }, 200);
-    }
+    if (idOrSlug === user.id || idOrSlug === user.slug) return ctx.json(user, 200);
+    
 
     const [targetUser] = await getUsersByConditions([or(eq(usersTable.id, idOrSlug), eq(usersTable.slug, idOrSlug))]);
 
@@ -153,7 +152,7 @@ const usersRouteHandlers = app
 
     if (user.role !== 'admin' && !jointMembership) return errorResponse(ctx, 403, 'forbidden', 'warn', 'user', { user: targetUser.id });
 
-    return ctx.json({ success: true, data: targetUser }, 200);
+    return ctx.json(targetUser, 200);
   })
   /*
    * Update a user by id or slug
@@ -193,7 +192,7 @@ const usersRouteHandlers = app
 
     logEvent('User updated', { user: updatedUser.id });
 
-    return ctx.json({ success: true, data: updatedUser }, 200);
+    return ctx.json(updatedUser, 200);
   });
 
 export default usersRouteHandlers;

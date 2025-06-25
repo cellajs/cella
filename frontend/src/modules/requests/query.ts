@@ -1,8 +1,9 @@
 import { infiniteQueryOptions, useMutation } from '@tanstack/react-query';
 import { config } from 'config';
 import type { ApiError } from '~/lib/api';
-import { type CreateRequestBody, createRequest, deleteRequests, type GetRequestsParams, getRequests } from '~/modules/requests/api';
+import { type CreateRequestBody, type GetRequestsParams, createRequest, deleteRequests, getRequests } from '~/modules/requests/api';
 import type { Request } from '~/modules/requests/types';
+import { CreateRequestResponses } from '~/openapi-client';
 
 /**
  * Keys for request related queries. These keys help to uniquely identify different query. For managing query caching and invalidation.
@@ -62,7 +63,7 @@ export const requestsQueryOptions = ({
  * @returns Mutation hook for creating a new request.
  */
 export const useCreateRequestMutation = () => {
-  return useMutation<boolean, ApiError, CreateRequestBody>({
+  return useMutation<CreateRequestResponses[200], ApiError, CreateRequestBody>({
     mutationKey: requestsKeys.create(),
     mutationFn: createRequest,
   });

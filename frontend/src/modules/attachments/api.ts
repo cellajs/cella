@@ -1,5 +1,5 @@
-import { config } from 'config';
 import { attachmentsHc } from '#/modules/attachments/hc';
+import { config } from 'config';
 import { clientConfig, handleResponse } from '~/lib/api';
 
 export const client = attachmentsHc(config.backendUrl, clientConfig);
@@ -24,8 +24,7 @@ export type CreateAttachmentParams = { attachments: Parameters<(typeof client.in
  */
 export const createAttachments = async ({ attachments, orgIdOrSlug }: CreateAttachmentParams) => {
   const response = await client.index.$post({ param: { orgIdOrSlug }, json: attachments });
-  const json = await handleResponse(response);
-  return json.data;
+  return await handleResponse(response);
 };
 
 export type GetAttachmentsParams = Parameters<(typeof client)['index']['$get']>['0']['query'] & {
@@ -60,8 +59,7 @@ export const getAttachments = async (
     },
   );
 
-  const json = await handleResponse(response);
-  return json.data;
+  return await handleResponse(response);
 };
 
 /**
@@ -73,8 +71,7 @@ export const getAttachments = async (
  */
 export const getAttachment = async ({ orgIdOrSlug, id }: { orgIdOrSlug: string; id: string }) => {
   const response = await client[':id'].$get({ param: { orgIdOrSlug, id } });
-  const json = await handleResponse(response);
-  return json.data;
+  return await handleResponse(response);
 };
 
 // Type definition for the parameters to update an attachment
@@ -97,8 +94,7 @@ export const updateAttachment = async ({ orgIdOrSlug, id, ...params }: UpdateAtt
     json: params,
   });
 
-  const json = await handleResponse(response);
-  return json.data;
+  return await handleResponse(response);
 };
 
 export type DeleteAttachmentsParams = Parameters<(typeof client)['index']['$delete']>['0']['json'] & {

@@ -13,8 +13,7 @@ export const client: ReturnType<typeof meHc> = meHc(config.backendUrl, clientCon
 export const getMe = async () => {
   const response = await client.index.$get();
 
-  const json = await handleResponse(response);
-  return json.data;
+  return await handleResponse(response);
 };
 
 /**
@@ -25,8 +24,7 @@ export const getMe = async () => {
 export const getMyAuth = async () => {
   const response = await client.auth.$get();
 
-  const json = await handleResponse(response);
-  return json.data;
+  return await handleResponse(response);
 };
 
 /**
@@ -37,8 +35,7 @@ export const getMyAuth = async () => {
 export const getMyMenu = async () => {
   const response = await client.menu.$get();
 
-  const json = await handleResponse(response);
-  return json.data;
+  return await handleResponse(response);
 };
 
 /**
@@ -52,8 +49,7 @@ export const updateMe = async (params: NonNullable<UpdateUserData['body']>) => {
     json: params,
   });
 
-  const json = await handleResponse(response);
-  return json.data;
+  return await handleResponse(response);
 };
 
 /**
@@ -90,8 +86,7 @@ export const getUploadToken = async (tokenQuery: UploadTokenQuery) => {
 
   const response = await client['upload-token'].$get({ query: preparedQuery });
 
-  const json = await handleResponse(response);
-  return json.data;
+  return await handleResponse(response);
 };
 
 type RegisterPasskeyProp = Parameters<(typeof client)['passkey']['$post']>['0']['json'];
@@ -106,8 +101,7 @@ export const createPasskey = async (data: RegisterPasskeyProp) => {
   const apiResponse = await client.passkey.$post({
     json: data,
   });
-  const json = await handleResponse(apiResponse);
-  return json.success;
+  return await handleResponse(apiResponse);
 };
 
 /**
@@ -118,8 +112,7 @@ export const createPasskey = async (data: RegisterPasskeyProp) => {
 export const deletePasskey = async () => {
   const response = await client.passkey.$delete();
 
-  const json = await handleResponse(response);
-  return json.success;
+  return await handleResponse(response);
 };
 
 export type LeaveEntityQuery = { idOrSlug: string; entityType: ContextEntityType };
@@ -134,6 +127,5 @@ export type LeaveEntityQuery = { idOrSlug: string; entityType: ContextEntityType
 export const deleteMyMembership = async (query: LeaveEntityQuery) => {
   const response = await client.leave.$delete({ query });
 
-  const json = await handleResponse(response);
-  return json.success;
+  return await handleResponse(response);
 };

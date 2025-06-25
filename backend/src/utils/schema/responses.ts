@@ -1,6 +1,6 @@
 import type { createRoute } from '@hono/zod-openapi';
-import { config } from 'config';
 import { z } from '@hono/zod-openapi';
+import { config } from 'config';
 import { entityTypeSchema } from './common';
 
 /**
@@ -9,28 +9,16 @@ import { entityTypeSchema } from './common';
 type Responses = Parameters<typeof createRoute>[0]['responses'];
 
 /**
- * Schema for a successful response without data.
+ * Schema for a response without data.
  */
-export const successWithoutDataSchema = z.object({ success: z.boolean() });
+export const successWithoutDataSchema = z.boolean()
 
 /**
- * Schema for a successful response with data.
- */
-export const successWithDataSchema = <T extends z.ZodTypeAny>(schema: T) => z.object({ success: z.boolean(), data: schema });
-
-/**
- * Schema for a successful response with paginated data
+ * Schema for a response with paginated data
  *
  * @param schema - The schema for the items in the paginated data. Data object has `items` and `total` properties.
  */
-export const successWithPaginationSchema = <T extends z.ZodTypeAny>(schema: T) =>
-  z.object({
-    success: z.boolean(),
-    data: z.object({
-      items: schema.array(),
-      total: z.number(),
-    }),
-  });
+export const paginationSchema = <T extends z.ZodTypeAny>(schema: T) => z.object({ items: schema.array(), total: z.number()})
 
 /**
  * Schema for errors in a response.
@@ -75,7 +63,7 @@ export const errorResponses = {
     description: 'Bad request: problem processing request.',
     content: {
       'application/json': {
-        schema: failWithErrorSchema,
+        schema: errorSchema,
       },
     },
   },
@@ -83,7 +71,7 @@ export const errorResponses = {
     description: 'Unauthorized: authentication required.',
     content: {
       'application/json': {
-        schema: failWithErrorSchema,
+        schema: errorSchema,
       },
     },
   },
@@ -91,7 +79,7 @@ export const errorResponses = {
     description: 'Forbidden: insufficient permissions.',
     content: {
       'application/json': {
-        schema: failWithErrorSchema,
+        schema: errorSchema,
       },
     },
   },
@@ -99,7 +87,7 @@ export const errorResponses = {
     description: 'Not found: resource does not exist.',
     content: {
       'application/json': {
-        schema: failWithErrorSchema,
+        schema: errorSchema,
       },
     },
   },
@@ -107,7 +95,7 @@ export const errorResponses = {
     description: 'Rate limit: too many requests.',
     content: {
       'application/json': {
-        schema: failWithErrorSchema,
+        schema: errorSchema,
       },
     },
   },

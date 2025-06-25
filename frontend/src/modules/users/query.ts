@@ -31,7 +31,7 @@ export const usersKeys = {
 export const userQueryOptions = (idOrSlug: string) =>
   queryOptions({ queryKey: usersKeys.single.byIdOrSlug(idOrSlug), queryFn: async () => {
     const response = await getUser({path: { idOrSlug }, throwOnError: true });
-    return response.data
+    return response
   } });
 
 /**
@@ -56,7 +56,7 @@ export const usersQueryOptions = ({ q = '', sort: _sort, order: _order, role, li
     queryFn: async ({ pageParam: { page, offset: _offset }, signal }) => {
       const offset = String(_offset || page * Number(limit));
       const response = await getUsers({ query: { q, sort, order, role, limit, offset }, signal, throwOnError: true });
-      return response.data;
+      return response;
     },
     getNextPageParam: (_lastPage, allPages) => {
       const page = allPages.length;
@@ -76,7 +76,7 @@ export const useUpdateUserMutation = () => {
     mutationKey: usersKeys.update(),
     mutationFn: async ({ idOrSlug, ...body }) => {
       const response = await updateUser({path: { idOrSlug }, body, throwOnError: true });
-      return response.data;
+      return response;
     },
     onSuccess: (updatedUser) => {
       const mutateCache = useMutateQueryData(usersKeys.table.base(), () => usersKeys.single.base, ['update']);

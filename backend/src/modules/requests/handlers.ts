@@ -56,7 +56,7 @@ const requestRouteHandlers = app
       wasInvited: false,
     };
 
-    return ctx.json({ success: true, data }, 200);
+    return ctx.json(data, 200);
   })
   /*
    *  Get list of requests for system admins
@@ -89,7 +89,7 @@ const requestRouteHandlers = app
 
     const items = await db.select().from(requestsQuery.as('requests')).orderBy(orderColumn).limit(Number(limit)).offset(Number(offset));
 
-    return ctx.json({ success: true, data: { items, total } }, 200);
+    return ctx.json({ items, total }, 200);
   })
   /*
    *  Delete requests
@@ -103,7 +103,7 @@ const requestRouteHandlers = app
     // Delete the requests
     await db.delete(requestsTable).where(inArray(requestsTable.id, toDeleteIds));
 
-    return ctx.json({ success: true }, 200);
+    return ctx.json(true, 200);
   });
 
 export default requestRouteHandlers;

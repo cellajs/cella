@@ -25,10 +25,7 @@ export const signUp = async (body: SignUpProps) => {
     json: body,
   });
 
-  //@ts-expect-error
-  const json = await handleResponse(response);
-  //@ts-expect-error
-  return json.success;
+  return await handleResponse(response);
 };
 
 /**
@@ -44,10 +41,8 @@ export const signUpWithToken = async ({ email, password, token }: { token: strin
     param: { token },
     json: { email, password },
   });
-  //@ts-expect-error
-  const json = await handleResponse(response);
-    //@ts-expect-error
-  return json.success;
+
+  return await handleResponse(response);
 };
 
 /**
@@ -61,8 +56,7 @@ export const checkEmail = async (email: string) => {
     json: { email },
   });
 
-  const json = await handleResponse(response);
-  return json.success;
+  return await handleResponse(response);
 };
 
 /**
@@ -92,8 +86,7 @@ export const signIn = async ({ email, password }: SignInProps) => {
     json: { email, password },
   });
 
-  const json = await handleResponse(response);
-  return json.data.emailVerified;
+  return await handleResponse(response);
 };
 
 /**
@@ -107,8 +100,7 @@ export const impersonationStart = async (targetUserId: string) => {
     query: { targetUserId },
   });
 
-  const json = await handleResponse(response);
-  return json.success;
+  return await handleResponse(response);
 };
 
 /**
@@ -166,8 +158,7 @@ export const checkToken = async ({ id, type }: { id: string; type: TokenType }) 
     query: { type },
   });
 
-  const json = await handleResponse(response);
-  return json.data;
+  return await handleResponse(response);
 };
 
 /**
@@ -179,8 +170,7 @@ export const checkToken = async ({ id, type }: { id: string; type: TokenType }) 
 export const acceptEntityInvite = async (param: { token: string }) => {
   const response = await client['accept-invite'][':token'].$post({ param });
 
-  const json = await handleResponse(response);
-  return json.data;
+  return await handleResponse(response);
 };
 
 /**
@@ -221,6 +211,5 @@ export const authenticateWithPasskey = async (data: AuthWithPasskeyProp) => {
     json: data,
   });
 
-  const json = await handleResponse(response);
-  return json.success;
+  return await handleResponse(response);
 };

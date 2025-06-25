@@ -1,9 +1,9 @@
-import { z } from '@hono/zod-openapi';
 import { createCustomRoute } from '#/lib/custom-routes';
 import { isAuthenticated } from '#/middlewares/guard';
 import { contextEntitiesQuerySchema, contextEntitiesSchema, pageEntitiesQuerySchema, pageEntitiesSchema } from '#/modules/entities/schema';
 import { slugSchema } from '#/utils/schema/common';
-import { errorResponses, successWithDataSchema, successWithoutDataSchema } from '#/utils/schema/responses';
+import { errorResponses, successWithoutDataSchema } from '#/utils/schema/responses';
+import { z } from '@hono/zod-openapi';
 
 const entityRoutes = {
   checkSlug: createCustomRoute({
@@ -50,7 +50,7 @@ const entityRoutes = {
     responses: {
       200: {
         description: 'Page entities',
-        content: { 'application/json': { schema: successWithDataSchema(pageEntitiesSchema) } },
+        content: { 'application/json': { schema: pageEntitiesSchema } },
       },
       ...errorResponses,
     },
@@ -68,7 +68,7 @@ const entityRoutes = {
     responses: {
       200: {
         description: 'Context entities',
-        content: { 'application/json': { schema: successWithDataSchema(contextEntitiesSchema) } },
+        content: { 'application/json': { schema: contextEntitiesSchema } },
       },
       ...errorResponses,
     },

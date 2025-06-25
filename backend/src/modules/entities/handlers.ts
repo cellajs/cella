@@ -12,9 +12,9 @@ import { checkSlugAvailable } from '#/modules/entities/helpers/check-slug';
 import { getEntitiesQuery } from '#/modules/entities/helpers/entities-query';
 import { processEntitiesData } from '#/modules/entities/helpers/process-entities-data';
 import entityRoutes from '#/modules/entities/routes';
+import type { userSummarySchema } from '#/modules/entities/schema';
 import { membershipSummarySelect } from '#/modules/memberships/helpers/select';
 import { userSummarySelect } from '#/modules/users/helpers/select';
-import type { userSummarySchema } from '#/modules/users/schema';
 import { defaultHook } from '#/utils/default-hook';
 import { getOrderColumn } from '#/utils/order-column';
 import { prepareStringForILikeFilter } from '#/utils/sql';
@@ -55,7 +55,7 @@ const entityRouteHandlers = app
       organizationIds = orgMemberships.map((m) => m.organizationId);
     }
 
-    if (!organizationIds.length) return ctx.json({ success: true, data: { items: [], total: 0, counts: { user: 0, organization: 0 } } }, 200);
+    if (!organizationIds.length) return ctx.json( { items: [], total: 0, counts: { user: 0, organization: 0 } }, 200);
 
     // Prepare query and execute in parallel
     const queries = getEntitiesQuery({ q, organizationIds, userId, selfId, type, userMembershipType });
@@ -64,7 +64,7 @@ const entityRouteHandlers = app
     // Aggregate and process result data
     const { counts, items, total } = processEntitiesData(queryData, type);
 
-    return ctx.json({ success: true, data: { items, total, counts } }, 200);
+    return ctx.json( { items, total, counts }, 200);
   })
   /*
    * Get all users' context entities
@@ -130,7 +130,7 @@ const entityRouteHandlers = app
       ...entity,
       members: membersByEntityId[entity.id] ?? [],
     }));
-    return ctx.json({ success: true, data }, 200);
+    return ctx.json(data, 200);
   })
   /*
    * Check if slug is available
@@ -140,7 +140,7 @@ const entityRouteHandlers = app
 
     const slugAvailable = await checkSlugAvailable(slug);
 
-    return ctx.json({ success: slugAvailable }, 200);
+    return ctx.json(slugAvailable, 200);
   });
 
 export default entityRouteHandlers;

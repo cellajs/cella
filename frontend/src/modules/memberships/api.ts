@@ -1,5 +1,5 @@
-import { type ContextEntityType, config } from 'config';
 import { membershipsHc } from '#/modules/memberships/hc';
+import { type ContextEntityType, config } from 'config';
 import { clientConfig, handleResponse } from '~/lib/api';
 import type { Member } from '~/modules/memberships/types';
 
@@ -77,8 +77,7 @@ export const updateMembership = async (values: UpdateMembershipProp) => {
     json: { role, archived, muted, order },
   });
 
-  const json = await handleResponse(response);
-  return json.data;
+  return await handleResponse(response);
 };
 
 type RequiredGetMembersParams = {
@@ -134,8 +133,7 @@ export const getMembers = async (
     },
   );
 
-  const json = await handleResponse(response);
-  return json.data;
+  return await handleResponse(response);
 };
 
 // Combined type
@@ -195,6 +193,5 @@ export const getPendingInvitations = async (
     },
   );
 
-  const json = await handleResponse(response);
-  return json.data;
+  return await handleResponse(response);
 };

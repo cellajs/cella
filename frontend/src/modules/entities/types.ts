@@ -12,4 +12,4 @@ export type EntityPage = ContextEntityData & {
 };
 
 // We have getContext and getPageEntities, make more clear which is which
-export type EntityGridItem = z.infer<typeof zGetContextEntitiesResponse>['data'][number];
+export type EntityGridItem = z.infer<typeof zGetContextEntitiesResponse>[number];

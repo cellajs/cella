@@ -1,5 +1,5 @@
-import { config } from 'config';
 import { requestsHc } from '#/modules/requests/hc';
+import { config } from 'config';
 import { clientConfig, handleResponse } from '~/lib/api';
 
 export const client = requestsHc(config.backendUrl, clientConfig);
@@ -20,8 +20,7 @@ export const createRequest = async (requestInfo: CreateRequestBody) => {
     json: requestInfo,
   });
 
-  const json = await handleResponse(response);
-  return json.success;
+  return await handleResponse(response);
 };
 
 export type GetRequestsParams = Parameters<(typeof client.index)['$get']>['0']['query'];
@@ -63,8 +62,7 @@ export const getRequests = async (
     },
   );
 
-  const json = await handleResponse(response);
-  return json.data;
+  return await handleResponse(response);
 };
 
 /**
@@ -78,6 +76,5 @@ export const deleteRequests = async (ids: string[]) => {
     json: { ids },
   });
 
-  const json = await handleResponse(response);
-  return json.success;
+  return await handleResponse(response);
 };

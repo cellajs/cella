@@ -27,7 +27,7 @@ import { getEntityRoute } from "~/nav-config";
 import { zGetPageEntitiesResponse } from "~/openapi-client/zod.gen";
 import { useNavigationStore } from "~/store/navigation";
 
-export type EntityListItem = z.infer<typeof zGetPageEntitiesResponse>['data']['items'][number];
+export type EntityListItem = z.infer<typeof zGetPageEntitiesResponse>['items'][number];
 
 export interface EntitySearchSection {
 	id: string;

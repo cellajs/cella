@@ -2,7 +2,7 @@ import type { z } from 'zod/v4';
 import { zCreateAttachmentData, zCreateAttachmentResponse } from '~/openapi-client/zod.gen';
 import type { ContextQueryProp, InfiniteQueryData, QueryData } from '~/query/types';
 
-export type Attachment = z.infer<typeof zCreateAttachmentResponse>['data'][number];
+export type Attachment = z.infer<typeof zCreateAttachmentResponse>[number];
 export type AttachmentToInsert = z.infer<typeof zCreateAttachmentData>['body'][number] & { type: string };
 
 export type AttachmentQueryData = QueryData<Attachment>;

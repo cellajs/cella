@@ -16,14 +16,12 @@ type HttpErrorStatus = ClientErrorStatusCode | ServerErrorStatusCode;
  * @throws ApiError for expected errors, generic error for unknown issues.
  */
 // biome-ignore lint/suspicious/noExplicitAny: any is used to allow any type of response
-export const handleResponse = async <T extends Record<string, any>, U extends ClientResponse<T, number, 'json'>>(response: U) => {
+export const handleResponse = async <T extends any, U extends ClientResponse<T, number, 'json'>>(response: U) => {
   const json = await response.json();
 
   if (response.ok) return json as Awaited<ReturnType<Extract<U, { status: 200 }>['json']>>;
 
-  if ('error' in json) throw new ApiError(json.error);
-
-  throw new Error('Unknown error');
+  throw new ApiError(json as ApiError);
 };
 
 export const clientConfig = {

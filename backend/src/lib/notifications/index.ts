@@ -1,7 +1,7 @@
+import { logEvent } from '#/middlewares/logger/log-event';
 import { Novu } from '@novu/api';
 import { UpdateSubscriberChannelRequestDtoProviderId as ProviderEnum } from '@novu/api/models/components';
 import { config } from 'config';
-import { logEvent } from '#/middlewares/logger/log-event';
 import { novuConfig } from './novu-config';
 
 /**

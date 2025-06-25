@@ -1,13 +1,13 @@
+import { externalLogger } from '#/middlewares/logger/external-logger';
+import { logEvent } from '#/middlewares/logger/log-event';
+import type { errorSchema } from '#/utils/schema/responses';
+import type { z } from '@hono/zod-openapi';
 import * as Sentry from '@sentry/node';
 import type { EntityType, Severity } from 'config';
 import { config } from 'config';
 import type { Context } from 'hono';
 import type { ClientErrorStatusCode, ServerErrorStatusCode } from 'hono/utils/http-status';
 import i18n from 'i18next';
-import type { z } from '@hono/zod-openapi';
-import { externalLogger } from '#/middlewares/logger/external-logger';
-import { logEvent } from '#/middlewares/logger/log-event';
-import type { errorSchema } from '#/utils/schema/responses';
 import { type Env, getContextOrganization, getContextUser } from './context';
 import type locales from './i18n-locales';
 
@@ -104,7 +104,7 @@ export const errorResponse = (
 ) => {
   const error: ErrorType = createError(ctx, status, type, severity, entityType, eventData, err);
 
-  return ctx.json({ success: false, error }, status as 400); // TODO(BLOCKED): Review type assertion (as 400) https://github.com/honojs/hono/issues/2719
+  return ctx.json(error, status as 400); // TODO(BLOCKED): Review type assertion (as 400) https://github.com/honojs/hono/issues/2719
 };
 
 /**

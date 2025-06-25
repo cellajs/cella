@@ -5,16 +5,15 @@ import { emailEnumLimiter, passwordLimiter, spamLimiter, tokenLimiter } from '#/
 import {
   emailBodySchema,
   emailPasswordBodySchema,
-  emailVerifiedSchema,
   oauthCallbackQuerySchema,
   oauthQuerySchema,
   passkeyChallengeQuerySchema,
   passkeyVerificationBodySchema,
   sendVerificationEmailBodySchema,
-  tokenWithDataSchema,
+  tokenWithDataSchema
 } from '#/modules/auth/schema';
 import { cookieSchema, idSchema, passwordSchema, tokenParamSchema } from '#/utils/schema/common';
-import { errorResponses, successWithDataSchema, successWithoutDataSchema } from '#/utils/schema/responses';
+import { errorResponses, successWithoutDataSchema } from '#/utils/schema/responses';
 import { z } from '@hono/zod-openapi';
 import { config } from 'config';
 import { entityBaseSchema } from '../entities/schema';
@@ -350,11 +349,7 @@ const authRoutes = {
         headers: z.object({
           'Set-Cookie': cookieSchema,
         }),
-        content: {
-          'application/json': {
-            schema: successWithDataSchema(emailVerifiedSchema),
-          },
-        },
+        content: { 'application/json': { schema: successWithoutDataSchema } },
       },
       ...errorResponses,
     },
@@ -377,7 +372,7 @@ const authRoutes = {
         description: 'Token is valid',
         content: {
           'application/json': {
-            schema: successWithDataSchema(tokenWithDataSchema),
+            schema: tokenWithDataSchema,
           },
         },
       },
@@ -401,12 +396,11 @@ const authRoutes = {
         description: 'Invitation was accepted',
         content: {
           'application/json': {
-            schema: successWithDataSchema(
+            schema: 
               entityBaseSchema.extend({
                 createdAt: z.string(),
                 membership: membershipSummarySchema,
               }),
-            ),
           },
         },
       },

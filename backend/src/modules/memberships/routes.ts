@@ -3,21 +3,20 @@ import { z } from '@hono/zod-openapi';
 import { createCustomRoute } from '#/lib/custom-routes';
 import { hasOrgAccess, isAuthenticated } from '#/middlewares/guard';
 import {
-  memberListQuerySchema,
-  membershipCreateBodySchema,
-  membershipSchema,
-  membershipUpdateBodySchema,
-  pendingInvitationListQuerySchema,
-  pendingInvitationSchema,
+    memberListQuerySchema,
+    membershipCreateBodySchema,
+    membershipSchema,
+    membershipUpdateBodySchema,
+    pendingInvitationListQuerySchema,
+    pendingInvitationSchema,
 } from '#/modules/memberships/schema';
 import { memberSchema } from '#/modules/users/schema';
 import { entityWithTypeQuerySchema, idInOrgParamSchema, idOrSlugSchema, idsBodySchema, inOrgParamSchema } from '#/utils/schema/common';
 import {
-  errorResponses,
-  successWithDataSchema,
-  successWithErrorsSchema,
-  successWithoutDataSchema,
-  successWithPaginationSchema,
+    errorResponses,
+    paginationSchema,
+    successWithErrorsSchema,
+    successWithoutDataSchema
 } from '#/utils/schema/responses';
 
 const membershipRoutes = {
@@ -43,11 +42,7 @@ const membershipRoutes = {
     responses: {
       200: {
         description: 'Invitation was sent',
-        content: {
-          'application/json': {
-            schema: successWithoutDataSchema,
-          },
-        },
+        content: { 'application/json': { schema: successWithoutDataSchema } },
       },
       ...errorResponses,
     },
@@ -100,11 +95,7 @@ const membershipRoutes = {
     responses: {
       200: {
         description: 'Membership updated',
-        content: {
-          'application/json': {
-            schema: successWithDataSchema(membershipSchema),
-          },
-        },
+        content: { 'application/json': { schema: membershipSchema } },
       },
       ...errorResponses,
     },
@@ -126,7 +117,7 @@ const membershipRoutes = {
         description: 'Members',
         content: {
           'application/json': {
-            schema: successWithPaginationSchema(memberSchema),
+            schema: paginationSchema(memberSchema),
           },
         },
       },
@@ -150,7 +141,7 @@ const membershipRoutes = {
         description: 'Invited members',
         content: {
           'application/json': {
-            schema: successWithPaginationSchema(pendingInvitationSchema),
+            schema: paginationSchema(pendingInvitationSchema),
           },
         },
       },

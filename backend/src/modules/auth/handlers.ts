@@ -1,10 +1,3 @@
-import { getRandomValues } from 'node:crypto';
-import { OpenAPIHono } from '@hono/zod-openapi';
-import { encodeBase64 } from '@oslojs/encoding';
-import { generateCodeVerifier, generateState, OAuth2RequestError } from 'arctic';
-import { config, type EnabledOauthProvider } from 'config';
-import { and, desc, eq } from 'drizzle-orm';
-import i18n from 'i18next';
 import { db } from '#/db/db';
 import { type EmailModel, emailsTable } from '#/db/schema/emails';
 import { membershipsTable } from '#/db/schema/memberships';
@@ -15,7 +8,7 @@ import { tokensTable } from '#/db/schema/tokens';
 import { type UserModel, usersTable } from '#/db/schema/users';
 import { type Env, getContextToken, getContextUser } from '#/lib/context';
 import { resolveEntity } from '#/lib/entity';
-import { type ErrorType, errorRedirect, errorResponse } from '#/lib/errors';
+import { errorRedirect, errorResponse, type ErrorType } from '#/lib/errors';
 import { mailer } from '#/lib/mailer';
 import { logEvent } from '#/middlewares/logger/log-event';
 import { hashPassword, verifyPasswordHash } from '#/modules/auth/helpers/argon2id';
@@ -30,13 +23,13 @@ import {
 } from '#/modules/auth/helpers/oauth/cookies';
 import { findExistingUsers, getOauthRedirectUrl, handleExistingUser } from '#/modules/auth/helpers/oauth/index';
 import {
+  githubAuth,
   type GithubUserEmailProps,
   type GithubUserProps,
-  type GoogleUserProps,
-  githubAuth,
   googleAuth,
-  type MicrosoftUserProps,
+  type GoogleUserProps,
   microsoftAuth,
+  type MicrosoftUserProps,
 } from '#/modules/auth/helpers/oauth/oauth-providers';
 import { transformGithubUserData, transformSocialUserData } from '#/modules/auth/helpers/oauth/transform-user-data';
 import { verifyPassKeyPublic } from '#/modules/auth/helpers/passkey';
@@ -50,9 +43,16 @@ import { isExpiredDate } from '#/utils/is-expired-date';
 import { getIsoDate } from '#/utils/iso-date';
 import { nanoid } from '#/utils/nanoid';
 import { slugFromEmail } from '#/utils/slug-from-email';
+import { createDate, TimeSpan } from '#/utils/time-span';
+import { OpenAPIHono } from '@hono/zod-openapi';
+import { encodeBase64 } from '@oslojs/encoding';
+import { generateCodeVerifier, generateState, OAuth2RequestError } from 'arctic';
+import { config, type EnabledOauthProvider } from 'config';
+import { and, desc, eq } from 'drizzle-orm';
+import i18n from 'i18next';
+import { getRandomValues } from 'node:crypto';
 import { CreatePasswordEmail, type CreatePasswordEmailProps } from '../../../emails/create-password';
 import { EmailVerificationEmail, type EmailVerificationEmailProps } from '../../../emails/email-verification';
-import { createDate, TimeSpan } from '#/utils/time-span';
 
 const enabledStrategies: readonly string[] = config.enabledAuthenticationStrategies;
 const enabledOauthProviders: readonly string[] = config.enabledOauthProviders;
@@ -80,7 +80,7 @@ const authRouteHandlers = app
     const user = await getUserBy('email', email.toLowerCase());
     if (!user) return errorResponse(ctx, 404, 'not_found', 'warn', 'user');
 
-    return ctx.json({ success: true }, 200);
+    return ctx.json(true, 200);
   })
   /*
    * Sign up with email & password.
@@ -206,7 +206,7 @@ const authRouteHandlers = app
 
     logEvent('Verification email sent', { user: user.id });
 
-    return ctx.json({ success: true }, 200);
+    return ctx.json(true, 200);
   })
   /*
    * Verify email
@@ -227,7 +227,7 @@ const authRouteHandlers = app
     // Sign in user
     await setUserSession(ctx, token.userId, 'email');
 
-    return ctx.json({ success: true }, 200);
+    return ctx.json(true, 200);
   })
   /*
    * Request reset password email
@@ -268,7 +268,7 @@ const authRouteHandlers = app
 
     logEvent('Create password link sent', { user: user.id });
 
-    return ctx.json({ success: true }, 200);
+    return ctx.json(true, 200);
   })
   /*
    * Create password with token
@@ -306,7 +306,7 @@ const authRouteHandlers = app
     // Sign in user
     await setUserSession(ctx, user.id, 'password');
 
-    return ctx.json({ success: true }, 200);
+    return ctx.json(true, 200);
   })
   /*
    * Sign in with email and password
@@ -342,7 +342,7 @@ const authRouteHandlers = app
     // Sign in user
     else await setUserSession(ctx, user.id, 'password');
 
-    return ctx.json({ success: true, data: { emailVerified: emailInfo.verified } }, 200);
+    return ctx.json(emailInfo.verified, 200);
   })
   /*
    * Check token (token validation)
@@ -365,7 +365,7 @@ const authRouteHandlers = app
       userId: tokenRecord.userId || '',
     };
 
-    if (!tokenRecord.organizationId) return ctx.json({ success: true, data: baseData }, 200);
+    if (!tokenRecord.organizationId) return ctx.json( baseData, 200);
 
     // If it is a membership invitation, get organization details
     const [organization] = await db.select().from(organizationsTable).where(eq(organizationsTable.id, tokenRecord.organizationId));
@@ -378,7 +378,7 @@ const authRouteHandlers = app
       organizationSlug: organization.slug || '',
     };
 
-    return ctx.json({ success: true, data: dataWithOrg }, 200);
+    return ctx.json( dataWithOrg, 200);
   })
   /*
    * Accept org invite token for signed in users
@@ -413,7 +413,7 @@ const authRouteHandlers = app
     const entity = await resolveEntity(token.entityType, targetMembership[entityIdField]);
     if (!entity) return errorResponse(ctx, 404, 'not_found', 'warn', token.entityType);
 
-    return ctx.json({ success: true, data: { ...entity, membership: targetMembership } }, 200);
+    return ctx.json( { ...entity, membership: targetMembership }, 200);
   })
   /*
    * Start impersonation
@@ -433,7 +433,7 @@ const authRouteHandlers = app
 
     logEvent('Started impersonation', { admin: user.id, user: targetUserId });
 
-    return ctx.json({ success: true }, 200);
+    return ctx.json(true, 200);
   })
   /*
    * Stop impersonation
@@ -468,7 +468,7 @@ const authRouteHandlers = app
 
     logEvent('Stopped impersonation', { admin: adminUserId || 'na', user: session.userId });
 
-    return ctx.json({ success: true }, 200);
+    return ctx.json(true, 200);
   })
   /*
    * Sign out
@@ -490,7 +490,7 @@ const authRouteHandlers = app
 
     logEvent('User signed out', { user: session?.userId || 'na' });
 
-    return ctx.json({ success: true }, 200);
+    return ctx.json(true, 200);
   })
   /*
    * Github authentication
@@ -506,7 +506,7 @@ const authRouteHandlers = app
     if (type === 'invite') error = await handleOAuthInvitation(ctx);
     if (type === 'connect') error = await handleOAuthConnection(ctx);
 
-    if (error) return ctx.json({ success: false, error }, error.status as 400 | 403 | 404);
+    if (error) return ctx.json(error, error.status as 400 | 403 | 404);
 
     const state = generateState();
     const url = githubAuth.createAuthorizationURL(state, githubScopes);
@@ -526,7 +526,7 @@ const authRouteHandlers = app
     if (type === 'invite') error = await handleOAuthInvitation(ctx);
     if (type === 'connect') error = await handleOAuthConnection(ctx);
 
-    if (error) return ctx.json({ success: false, error }, error.status as 400 | 403 | 404);
+    if (error) return ctx.json(error, error.status as 400 | 403 | 404);
 
     const state = generateState();
     const codeVerifier = generateCodeVerifier();
@@ -546,7 +546,7 @@ const authRouteHandlers = app
     if (type === 'invite') error = await handleOAuthInvitation(ctx);
     if (type === 'connect') error = await handleOAuthConnection(ctx);
 
-    if (error) return ctx.json({ success: false, error }, error.status as 400 | 403 | 404);
+    if (error) return ctx.json(error, error.status as 400 | 403 | 404);
 
     const state = generateState();
     const codeVerifier = generateCodeVerifier();
@@ -833,7 +833,7 @@ const authRouteHandlers = app
     }
 
     await setUserSession(ctx, user.id, 'passkey');
-    return ctx.json({ success: true }, 200);
+    return ctx.json(true, 200);
   });
 
 export default authRouteHandlers;

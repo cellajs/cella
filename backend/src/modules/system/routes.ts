@@ -1,10 +1,10 @@
-import { z } from '@hono/zod-openapi';
 import { createCustomRoute } from '#/lib/custom-routes';
 import { hasSystemAccess, isAuthenticated, isPublicAccess } from '#/middlewares/guard';
 import { tokenLimiter } from '#/middlewares/rate-limiter/limiters';
 import { inviteBodySchema, sendNewsletterBodySchema } from '#/modules/system/schema';
 import { booleanQuerySchema } from '#/utils/schema/common';
-import { errorResponses, successWithDataSchema, successWithoutDataSchema } from '#/utils/schema/responses';
+import { errorResponses, successWithoutDataSchema } from '#/utils/schema/responses';
+import { z } from '@hono/zod-openapi';
 
 const systemRoutes = {
   createInvite: createCustomRoute({
@@ -79,7 +79,7 @@ const systemRoutes = {
     responses: {
       200: {
         description: 'Presigned URL',
-        content: { 'application/json': { schema: successWithDataSchema(z.string()) } },
+        content: { 'application/json': { schema: z.string() } },
       },
       ...errorResponses,
     },

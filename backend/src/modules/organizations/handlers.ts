@@ -6,7 +6,7 @@ import { db } from '#/db/db';
 import { membershipsTable } from '#/db/schema/memberships';
 import { organizationsTable } from '#/db/schema/organizations';
 import { type Env, getContextMemberships, getContextUser } from '#/lib/context';
-import { createError, type ErrorType, errorResponse } from '#/lib/errors';
+import { createError, errorResponse, type ErrorType } from '#/lib/errors';
 import { sendSSEToUsers } from '#/lib/sse';
 import { logEvent } from '#/middlewares/logger/log-event';
 import { checkSlugAvailable } from '#/modules/entities/helpers/check-slug';
@@ -60,7 +60,7 @@ const organizationRouteHandlers = app
       invitesCount: 0,
     };
 
-    return ctx.json({ success: true, data }, 200);
+    return ctx.json(data, 200);
   })
   /*
    * Get list of organizations
@@ -120,7 +120,7 @@ const organizationRouteHandlers = app
       .limit(Number(limit))
       .offset(Number(offset));
 
-    return ctx.json({ success: true, data: { items: organizations, total } }, 200);
+    return ctx.json( { items: organizations, total }, 200);
   })
   /*
    * Delete organizations by ids
@@ -160,7 +160,7 @@ const organizationRouteHandlers = app
 
     logEvent('Organizations deleted', { ids: allowedIds.join() });
 
-    return ctx.json({ success: true, errors: errors }, 200);
+    return ctx.json({ success: true, errors }, 200);
   })
   /*
    * Get organization by id or slug
@@ -169,7 +169,7 @@ const organizationRouteHandlers = app
     const { idOrSlug } = ctx.req.valid('param');
 
     const { error, entity: organization, membership } = await getValidContextEntity(ctx, idOrSlug, 'organization', 'read');
-    if (error) return ctx.json({ success: false, error }, 400);
+    if (error) return ctx.json(error, 400);
 
     const memberCountsQuery = getMemberCountsQuery(organization.entityType);
     const [{ invitesCount }] = await db
@@ -179,7 +179,7 @@ const organizationRouteHandlers = app
 
     const data = { ...organization, membership, invitesCount };
 
-    return ctx.json({ success: true, data }, 200);
+    return ctx.json(data, 200);
   })
   /*
    * Update an organization by id or slug
@@ -188,7 +188,7 @@ const organizationRouteHandlers = app
     const { idOrSlug } = ctx.req.valid('param');
 
     const { error, entity: organization, membership } = await getValidContextEntity(ctx, idOrSlug, 'organization', 'update');
-    if (error) return ctx.json({ success: false, error }, 400);
+    if (error) return ctx.json(error, 400);
 
     const user = getContextUser();
 
@@ -233,7 +233,7 @@ const organizationRouteHandlers = app
       invitesCount,
     };
 
-    return ctx.json({ success: true, data }, 200);
+    return ctx.json(data, 200);
   });
 
 export default organizationRouteHandlers;

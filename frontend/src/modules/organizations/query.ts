@@ -39,7 +39,7 @@ export const organizationQueryOptions = (idOrSlug: string) =>
     queryKey: organizationsKeys.single.byIdOrSlug(idOrSlug),
     queryFn: async() =>{
       const response = await getOrganization({ path: { idOrSlug }, throwOnError: true });
-      return response.data;
+      return response;
     },
   });
 
@@ -72,7 +72,7 @@ export const organizationsQueryOptions = ({
     queryFn: async ({ pageParam: { page, offset: _offset }, signal }) => {
       const offset = String(_offset || page * Number(limit));
       const response = await getOrganizations({ query: {q, sort, order, limit, offset }, signal, throwOnError: true, });
-      return response.data;
+      return response;
     },
     getNextPageParam: (_lastPage, allPages) => {
       const page = allPages.length;
@@ -93,7 +93,7 @@ export const useOrganizationCreateMutation = () => {
     mutationKey: organizationsKeys.create(),
     mutationFn: async (body) => {
       const response = await createOrganization({ body, throwOnError: true })
-      return response.data;
+      return response;
     },
     onSuccess: (createdOrganization) => {
       const mutateCache = useMutateQueryData(organizationsKeys.table.base());
@@ -116,7 +116,7 @@ export const useOrganizationUpdateMutation = () => {
     mutationKey: organizationsKeys.update(),
     mutationFn: async ({ idOrSlug, body }) =>  {
       const response = await updateOrganization({ body, path: { idOrSlug }, throwOnError: true });
-      return response.data;
+      return response;
     },
     onSuccess: (updatedOrganization) => {
       // Update menuItem in store, only if it has membership is not null

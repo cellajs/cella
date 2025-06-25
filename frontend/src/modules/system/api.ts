@@ -1,5 +1,5 @@
-import { config } from 'config';
 import { systemHc } from '#/modules/system/hc';
+import { config } from 'config';
 import { clientConfig, handleResponse } from '~/lib/api';
 
 export const client = systemHc(config.backendUrl, clientConfig);
@@ -40,8 +40,7 @@ export const sendNewsletter = async ({ body, toSelf = false }: { body: Newslette
     query: { toSelf },
   });
 
-  const json = await handleResponse(response);
-  return json.success;
+  return await handleResponse(response);
 };
 
 export const getPresignedUrl = async ({ key }: { key: string }) => {
@@ -49,6 +48,5 @@ export const getPresignedUrl = async ({ key }: { key: string }) => {
     query: { key },
   });
 
-  const json = await handleResponse(response);
-  return json.data;
+  return await handleResponse(response);
 };

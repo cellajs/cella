@@ -1,11 +1,11 @@
-import { type ContextEntityType, config } from 'config';
-import { createSelectSchema } from 'drizzle-zod';
-import { z } from '@hono/zod-openapi';
 import { sessionsTable } from '#/db/schema/sessions';
 import { entityBaseSchema } from '#/modules/entities/schema';
 import { membershipSummarySchema } from '#/modules/memberships/schema';
 import { enabledOauthProvidersEnum } from '#/modules/users/schema';
 import { booleanQuerySchema } from '#/utils/schema/common';
+import { z } from '@hono/zod-openapi';
+import { type ContextEntityType, config } from 'config';
+import { createSelectSchema } from 'drizzle-zod';
 
 export const sessionSchema = createSelectSchema(sessionsTable).omit({ token: true }).extend({ isCurrent: z.boolean() });
 
@@ -20,7 +20,7 @@ export const menuItemSchema = entityBaseSchema.omit({ bannerUrl: true }).extend(
   modifiedAt: z.string().nullable(),
   membership: membershipSummarySchema,
   organizationId: membershipSummarySchema.shape.organizationId.optional(),
-});
+})
 
 const menuItemListSchema = z.array(
   z.object({

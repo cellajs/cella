@@ -2,7 +2,7 @@ import { createCustomRoute } from '#/lib/custom-routes';
 import { hasOrgAccess, isAuthenticated, isPublicAccess } from '#/middlewares/guard';
 import { attachmentCreateManySchema, attachmentListQuerySchema, attachmentSchema, attachmentUpdateBodySchema } from '#/modules/attachments/schema';
 import { idInOrgParamSchema, idSchema, idsBodySchema, inOrgParamSchema } from '#/utils/schema/common';
-import { errorResponses, successWithDataSchema, successWithErrorsSchema, successWithPaginationSchema } from '#/utils/schema/responses';
+import { errorResponses, paginationSchema, successWithErrorsSchema } from '#/utils/schema/responses';
 import { z } from '@hono/zod-openapi';
 
 const attachmentRoutes = {
@@ -30,7 +30,7 @@ const attachmentRoutes = {
         description: 'Attachment',
         content: {
           'application/json': {
-            schema: successWithDataSchema(z.array(attachmentSchema)),
+            schema: z.array(attachmentSchema),
           },
         },
       },
@@ -54,7 +54,7 @@ const attachmentRoutes = {
         description: 'Attachments',
         content: {
           'application/json': {
-            schema: successWithPaginationSchema(attachmentSchema),
+            schema: paginationSchema(attachmentSchema),
           },
         },
       },
@@ -77,7 +77,7 @@ const attachmentRoutes = {
         description: 'Attachment',
         content: {
           'application/json': {
-            schema: successWithDataSchema(attachmentSchema),
+            schema: attachmentSchema,
           },
         },
       },
@@ -107,7 +107,7 @@ const attachmentRoutes = {
         description: 'Attachment was updated',
         content: {
           'application/json': {
-            schema: successWithDataSchema(attachmentSchema),
+            schema: attachmentSchema,
           },
         },
       },

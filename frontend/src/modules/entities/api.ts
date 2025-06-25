@@ -1,5 +1,5 @@
-import { config, type EntityType } from 'config';
 import { entitiesHc } from '#/modules/entities/hc';
+import { config, type EntityType } from 'config';
 import { clientConfig, handleResponse } from '~/lib/api';
 
 export const client = entitiesHc(config.backendUrl, clientConfig);
@@ -17,8 +17,7 @@ export const checkSlugAvailable = async (params: { slug: string; type: EntityTyp
     json: params,
   });
 
-  const json = await handleResponse(response);
-  return json.success;
+  return await handleResponse(response);
 };
 
 export type PageEntitiesQuery = Parameters<(typeof client)['page']['$get']>['0']['query'];
@@ -32,8 +31,7 @@ export type PageEntitiesQuery = Parameters<(typeof client)['page']['$get']>['0']
 export const getPageEntities = async (query: PageEntitiesQuery) => {
   const response = await client.page.$get({ query });
 
-  const json = await handleResponse(response);
-  return json.data;
+  return await handleResponse(response);
 };
 
 export type ContextEntitiesQuery = Parameters<(typeof client)['context']['$get']>['0']['query'];
@@ -47,6 +45,5 @@ export type ContextEntitiesQuery = Parameters<(typeof client)['context']['$get']
 export const getContextEntities = async (query: ContextEntitiesQuery) => {
   const response = await client.context.$get({ query });
 
-  const json = await handleResponse(response);
-  return json.data;
+  return await handleResponse(response);
 };

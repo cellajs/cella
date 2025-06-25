@@ -2,6 +2,23 @@
 
 import { z } from 'zod/v4';
 
+export const zBaseEntitySchema = z.object({
+    id: z.string(),
+    entityType: z.enum([
+        'organization'
+    ]),
+    slug: z.string(),
+    name: z.string(),
+    thumbnailUrl: z.union([
+        z.string(),
+        z.null()
+    ]).optional(),
+    bannerUrl: z.union([
+        z.string(),
+        z.null()
+    ]).optional()
+});
+
 export const zUserSummarySchema = z.object({
     id: z.string(),
     entityType: z.enum([
@@ -20,21 +37,73 @@ export const zUserSummarySchema = z.object({
     email: z.string().email()
 });
 
-export const zBaseEntitySchema = z.object({
-    id: z.string(),
-    entityType: z.enum([
-        'organization'
-    ]),
-    slug: z.string(),
-    name: z.string(),
-    thumbnailUrl: z.union([
-        z.string(),
-        z.null()
-    ]).optional(),
-    bannerUrl: z.union([
-        z.string(),
-        z.null()
-    ]).optional()
+export const zMenuSchema = z.object({
+    organization: z.array(z.object({
+        id: z.string(),
+        entityType: z.enum([
+            'organization'
+        ]),
+        slug: z.string(),
+        name: z.string(),
+        thumbnailUrl: z.union([
+            z.string(),
+            z.null()
+        ]).optional(),
+        createdAt: z.string(),
+        modifiedAt: z.union([
+            z.string(),
+            z.null()
+        ]),
+        membership: z.object({
+            id: z.string(),
+            contextType: z.enum([
+                'organization'
+            ]),
+            userId: z.string(),
+            role: z.enum([
+                'member',
+                'admin'
+            ]),
+            archived: z.boolean(),
+            muted: z.boolean(),
+            order: z.number().gte(-140737488355328).lte(140737488355327),
+            organizationId: z.string()
+        }),
+        organizationId: z.string().optional(),
+        submenu: z.array(z.object({
+            id: z.string(),
+            entityType: z.enum([
+                'organization'
+            ]),
+            slug: z.string(),
+            name: z.string(),
+            thumbnailUrl: z.union([
+                z.string(),
+                z.null()
+            ]).optional(),
+            createdAt: z.string(),
+            modifiedAt: z.union([
+                z.string(),
+                z.null()
+            ]),
+            membership: z.object({
+                id: z.string(),
+                contextType: z.enum([
+                    'organization'
+                ]),
+                userId: z.string(),
+                role: z.enum([
+                    'member',
+                    'admin'
+                ]),
+                archived: z.boolean(),
+                muted: z.boolean(),
+                order: z.number().gte(-140737488355328).lte(140737488355327),
+                organizationId: z.string()
+            }),
+            organizationId: z.string().optional()
+        })).optional()
+    }))
 });
 
 export const zCheckEmailData = z.object({
@@ -48,9 +117,7 @@ export const zCheckEmailData = z.object({
 /**
  * Email exists
  */
-export const zCheckEmailResponse = z.object({
-    success: z.boolean()
-});
+export const zCheckEmailResponse = z.boolean();
 
 export const zSignUpData = z.object({
     body: z.object({
@@ -64,9 +131,7 @@ export const zSignUpData = z.object({
 /**
  * User signed up
  */
-export const zSignUpResponse = z.object({
-    success: z.boolean()
-});
+export const zSignUpResponse = z.boolean();
 
 export const zSignUpWithTokenData = z.object({
     body: z.object({
@@ -82,9 +147,7 @@ export const zSignUpWithTokenData = z.object({
 /**
  * User signed up
  */
-export const zSignUpWithTokenResponse = z.object({
-    success: z.boolean()
-});
+export const zSignUpWithTokenResponse = z.boolean();
 
 export const zSendVerificationEmailData = z.object({
     body: z.object({
@@ -98,9 +161,7 @@ export const zSendVerificationEmailData = z.object({
 /**
  * Verification email sent
  */
-export const zSendVerificationEmailResponse = z.object({
-    success: z.boolean()
-});
+export const zSendVerificationEmailResponse = z.boolean();
 
 export const zVerifyEmailData = z.object({
     body: z.never().optional(),
@@ -113,9 +174,7 @@ export const zVerifyEmailData = z.object({
 /**
  * Verified & session given
  */
-export const zVerifyEmailResponse = z.object({
-    success: z.boolean()
-});
+export const zVerifyEmailResponse = z.boolean();
 
 export const zRequestPasswordData = z.object({
     body: z.object({
@@ -128,9 +187,7 @@ export const zRequestPasswordData = z.object({
 /**
  * Password reset email sent
  */
-export const zRequestPasswordResponse = z.object({
-    success: z.boolean()
-});
+export const zRequestPasswordResponse = z.boolean();
 
 export const zCreatePasswordWithTokenData = z.object({
     body: z.object({
@@ -145,9 +202,7 @@ export const zCreatePasswordWithTokenData = z.object({
 /**
  * Password created
  */
-export const zCreatePasswordWithTokenResponse = z.object({
-    success: z.boolean()
-});
+export const zCreatePasswordWithTokenResponse = z.boolean();
 
 export const zSignInData = z.object({
     body: z.object({
@@ -161,12 +216,7 @@ export const zSignInData = z.object({
 /**
  * User signed in
  */
-export const zSignInResponse = z.object({
-    success: z.boolean(),
-    data: z.object({
-        emailVerified: z.boolean()
-    })
-});
+export const zSignInResponse = z.boolean();
 
 export const zCheckTokenData = z.object({
     body: z.never().optional(),
@@ -186,21 +236,18 @@ export const zCheckTokenData = z.object({
  * Token is valid
  */
 export const zCheckTokenResponse = z.object({
-    success: z.boolean(),
-    data: z.object({
-        email: z.string().email(),
-        role: z.union([
-            z.enum([
-                'member',
-                'admin'
-            ]),
-            z.null()
+    email: z.string().email(),
+    role: z.union([
+        z.enum([
+            'member',
+            'admin'
         ]),
-        userId: z.string().optional(),
-        organizationName: z.string().optional(),
-        organizationSlug: z.string().optional(),
-        organizationId: z.string().optional()
-    })
+        z.null()
+    ]),
+    userId: z.string().optional(),
+    organizationName: z.string().optional(),
+    organizationSlug: z.string().optional(),
+    organizationId: z.string().optional()
 });
 
 export const zAcceptEntityInviteData = z.object({
@@ -215,38 +262,35 @@ export const zAcceptEntityInviteData = z.object({
  * Invitation was accepted
  */
 export const zAcceptEntityInviteResponse = z.object({
-    success: z.boolean(),
-    data: z.object({
+    id: z.string(),
+    entityType: z.enum([
+        'organization'
+    ]),
+    slug: z.string(),
+    name: z.string(),
+    thumbnailUrl: z.union([
+        z.string(),
+        z.null()
+    ]).optional(),
+    bannerUrl: z.union([
+        z.string(),
+        z.null()
+    ]).optional(),
+    createdAt: z.string(),
+    membership: z.object({
         id: z.string(),
-        entityType: z.enum([
+        contextType: z.enum([
             'organization'
         ]),
-        slug: z.string(),
-        name: z.string(),
-        thumbnailUrl: z.union([
-            z.string(),
-            z.null()
-        ]).optional(),
-        bannerUrl: z.union([
-            z.string(),
-            z.null()
-        ]).optional(),
-        createdAt: z.string(),
-        membership: z.object({
-            id: z.string(),
-            contextType: z.enum([
-                'organization'
-            ]),
-            userId: z.string(),
-            role: z.enum([
-                'member',
-                'admin'
-            ]),
-            archived: z.boolean(),
-            muted: z.boolean(),
-            order: z.number().gte(-140737488355328).lte(140737488355327),
-            organizationId: z.string()
-        })
+        userId: z.string(),
+        role: z.enum([
+            'member',
+            'admin'
+        ]),
+        archived: z.boolean(),
+        muted: z.boolean(),
+        order: z.number().gte(-140737488355328).lte(140737488355327),
+        organizationId: z.string()
     })
 });
 
@@ -261,9 +305,7 @@ export const zStartImpersonationData = z.object({
 /**
  * Impersonating
  */
-export const zStartImpersonationResponse = z.object({
-    success: z.boolean()
-});
+export const zStartImpersonationResponse = z.boolean();
 
 export const zStopImpersonationData = z.object({
     body: z.never().optional(),
@@ -274,9 +316,7 @@ export const zStopImpersonationData = z.object({
 /**
  * Stopped impersonating
  */
-export const zStopImpersonationResponse = z.object({
-    success: z.boolean()
-});
+export const zStopImpersonationResponse = z.boolean();
 
 export const zSignOutData = z.object({
     body: z.never().optional(),
@@ -287,9 +327,7 @@ export const zSignOutData = z.object({
 /**
  * User signed out
  */
-export const zSignOutResponse = z.object({
-    success: z.boolean()
-});
+export const zSignOutResponse = z.boolean();
 
 export const zGithubSignInData = z.object({
     body: z.never().optional(),
@@ -393,9 +431,7 @@ export const zVerifyPasskeyData = z.object({
 /**
  * Passkey verified
  */
-export const zVerifyPasskeyResponse = z.object({
-    success: z.boolean()
-});
+export const zVerifyPasskeyResponse = z.boolean();
 
 export const zDeleteMeData = z.object({
     body: z.never().optional(),
@@ -406,9 +442,7 @@ export const zDeleteMeData = z.object({
 /**
  * User deleted
  */
-export const zDeleteMeResponse = z.object({
-    success: z.boolean()
-});
+export const zDeleteMeResponse = z.boolean();
 
 export const zGetMeData = z.object({
     body: z.never().optional(),
@@ -420,66 +454,63 @@ export const zGetMeData = z.object({
  * User
  */
 export const zGetMeResponse = z.object({
-    success: z.boolean(),
-    data: z.object({
-        id: z.string(),
-        entityType: z.enum([
-            'user'
-        ]),
-        name: z.string(),
-        description: z.union([
-            z.string(),
-            z.null()
-        ]),
-        slug: z.string(),
-        thumbnailUrl: z.union([
-            z.string(),
-            z.null()
-        ]),
-        bannerUrl: z.union([
-            z.string(),
-            z.null()
-        ]),
-        email: z.string().email(),
-        firstName: z.union([
-            z.string(),
-            z.null()
-        ]),
-        lastName: z.union([
-            z.string(),
-            z.null()
-        ]),
-        language: z.enum([
-            'en',
-            'nl'
-        ]),
-        newsletter: z.boolean(),
-        role: z.enum([
-            'user',
-            'admin'
-        ]),
-        createdAt: z.string(),
-        modifiedAt: z.union([
-            z.string(),
-            z.null()
-        ]),
-        lastSeenAt: z.union([
-            z.string(),
-            z.null()
-        ]),
-        lastStartedAt: z.union([
-            z.string(),
-            z.null()
-        ]),
-        lastSignInAt: z.union([
-            z.string(),
-            z.null()
-        ]),
-        modifiedBy: z.union([
-            z.string(),
-            z.null()
-        ])
-    })
+    id: z.string(),
+    entityType: z.enum([
+        'user'
+    ]),
+    name: z.string(),
+    description: z.union([
+        z.string(),
+        z.null()
+    ]),
+    slug: z.string(),
+    thumbnailUrl: z.union([
+        z.string(),
+        z.null()
+    ]),
+    bannerUrl: z.union([
+        z.string(),
+        z.null()
+    ]),
+    email: z.string().email(),
+    firstName: z.union([
+        z.string(),
+        z.null()
+    ]),
+    lastName: z.union([
+        z.string(),
+        z.null()
+    ]),
+    language: z.enum([
+        'en',
+        'nl'
+    ]),
+    newsletter: z.boolean(),
+    role: z.enum([
+        'user',
+        'admin'
+    ]),
+    createdAt: z.string(),
+    modifiedAt: z.union([
+        z.string(),
+        z.null()
+    ]),
+    lastSeenAt: z.union([
+        z.string(),
+        z.null()
+    ]),
+    lastStartedAt: z.union([
+        z.string(),
+        z.null()
+    ]),
+    lastSignInAt: z.union([
+        z.string(),
+        z.null()
+    ]),
+    modifiedBy: z.union([
+        z.string(),
+        z.null()
+    ])
 });
 
 export const zUpdateMeData = z.object({
@@ -515,66 +546,63 @@ export const zUpdateMeData = z.object({
  * User
  */
 export const zUpdateMeResponse = z.object({
-    success: z.boolean(),
-    data: z.object({
-        id: z.string(),
-        entityType: z.enum([
-            'user'
-        ]),
-        name: z.string(),
-        description: z.union([
-            z.string(),
-            z.null()
-        ]),
-        slug: z.string(),
-        thumbnailUrl: z.union([
-            z.string(),
-            z.null()
-        ]),
-        bannerUrl: z.union([
-            z.string(),
-            z.null()
-        ]),
-        email: z.string().email(),
-        firstName: z.union([
-            z.string(),
-            z.null()
-        ]),
-        lastName: z.union([
-            z.string(),
-            z.null()
-        ]),
-        language: z.enum([
-            'en',
-            'nl'
-        ]),
-        newsletter: z.boolean(),
-        role: z.enum([
-            'user',
-            'admin'
-        ]),
-        createdAt: z.string(),
-        modifiedAt: z.union([
-            z.string(),
-            z.null()
-        ]),
-        lastSeenAt: z.union([
-            z.string(),
-            z.null()
-        ]),
-        lastStartedAt: z.union([
-            z.string(),
-            z.null()
-        ]),
-        lastSignInAt: z.union([
-            z.string(),
-            z.null()
-        ]),
-        modifiedBy: z.union([
-            z.string(),
-            z.null()
-        ])
-    })
+    id: z.string(),
+    entityType: z.enum([
+        'user'
+    ]),
+    name: z.string(),
+    description: z.union([
+        z.string(),
+        z.null()
+    ]),
+    slug: z.string(),
+    thumbnailUrl: z.union([
+        z.string(),
+        z.null()
+    ]),
+    bannerUrl: z.union([
+        z.string(),
+        z.null()
+    ]),
+    email: z.string().email(),
+    firstName: z.union([
+        z.string(),
+        z.null()
+    ]),
+    lastName: z.union([
+        z.string(),
+        z.null()
+    ]),
+    language: z.enum([
+        'en',
+        'nl'
+    ]),
+    newsletter: z.boolean(),
+    role: z.enum([
+        'user',
+        'admin'
+    ]),
+    createdAt: z.string(),
+    modifiedAt: z.union([
+        z.string(),
+        z.null()
+    ]),
+    lastSeenAt: z.union([
+        z.string(),
+        z.null()
+    ]),
+    lastStartedAt: z.union([
+        z.string(),
+        z.null()
+    ]),
+    lastSignInAt: z.union([
+        z.string(),
+        z.null()
+    ]),
+    modifiedBy: z.union([
+        z.string(),
+        z.null()
+    ])
 });
 
 export const zGetMyAuthData = z.object({
@@ -587,48 +615,45 @@ export const zGetMyAuthData = z.object({
  * User sign-up info
  */
 export const zGetMyAuthResponse = z.object({
-    success: z.boolean(),
-    data: z.object({
-        oauth: z.array(z.enum([
-            'github'
-        ])),
-        passkey: z.boolean(),
-        sessions: z.array(z.object({
-            id: z.string(),
-            type: z.enum([
-                'regular',
-                'impersonation'
-            ]),
-            userId: z.string(),
-            deviceName: z.union([
-                z.string(),
-                z.null()
-            ]),
-            deviceType: z.enum([
-                'desktop',
-                'mobile'
-            ]),
-            deviceOs: z.union([
-                z.string(),
-                z.null()
-            ]),
-            browser: z.union([
-                z.string(),
-                z.null()
-            ]),
-            authStrategy: z.enum([
-                'github',
-                'google',
-                'microsoft',
-                'password',
-                'passkey',
-                'email'
-            ]),
-            createdAt: z.string(),
-            expiresAt: z.string(),
-            isCurrent: z.boolean()
-        }))
-    })
+    oauth: z.array(z.enum([
+        'github'
+    ])),
+    passkey: z.boolean(),
+    sessions: z.array(z.object({
+        id: z.string(),
+        type: z.enum([
+            'regular',
+            'impersonation'
+        ]),
+        userId: z.string(),
+        deviceName: z.union([
+            z.string(),
+            z.null()
+        ]),
+        deviceType: z.enum([
+            'desktop',
+            'mobile'
+        ]),
+        deviceOs: z.union([
+            z.string(),
+            z.null()
+        ]),
+        browser: z.union([
+            z.string(),
+            z.null()
+        ]),
+        authStrategy: z.enum([
+            'github',
+            'google',
+            'microsoft',
+            'password',
+            'passkey',
+            'email'
+        ]),
+        createdAt: z.string(),
+        expiresAt: z.string(),
+        isCurrent: z.boolean()
+    }))
 });
 
 export const zGetMyMenuData = z.object({
@@ -641,9 +666,39 @@ export const zGetMyMenuData = z.object({
  * Menu of user
  */
 export const zGetMyMenuResponse = z.object({
-    success: z.boolean(),
-    data: z.object({
-        organization: z.array(z.object({
+    organization: z.array(z.object({
+        id: z.string(),
+        entityType: z.enum([
+            'organization'
+        ]),
+        slug: z.string(),
+        name: z.string(),
+        thumbnailUrl: z.union([
+            z.string(),
+            z.null()
+        ]).optional(),
+        createdAt: z.string(),
+        modifiedAt: z.union([
+            z.string(),
+            z.null()
+        ]),
+        membership: z.object({
+            id: z.string(),
+            contextType: z.enum([
+                'organization'
+            ]),
+            userId: z.string(),
+            role: z.enum([
+                'member',
+                'admin'
+            ]),
+            archived: z.boolean(),
+            muted: z.boolean(),
+            order: z.number().gte(-140737488355328).lte(140737488355327),
+            organizationId: z.string()
+        }),
+        organizationId: z.string().optional(),
+        submenu: z.array(z.object({
             id: z.string(),
             entityType: z.enum([
                 'organization'
@@ -674,42 +729,9 @@ export const zGetMyMenuResponse = z.object({
                 order: z.number().gte(-140737488355328).lte(140737488355327),
                 organizationId: z.string()
             }),
-            organizationId: z.string().optional(),
-            submenu: z.array(z.object({
-                id: z.string(),
-                entityType: z.enum([
-                    'organization'
-                ]),
-                slug: z.string(),
-                name: z.string(),
-                thumbnailUrl: z.union([
-                    z.string(),
-                    z.null()
-                ]).optional(),
-                createdAt: z.string(),
-                modifiedAt: z.union([
-                    z.string(),
-                    z.null()
-                ]),
-                membership: z.object({
-                    id: z.string(),
-                    contextType: z.enum([
-                        'organization'
-                    ]),
-                    userId: z.string(),
-                    role: z.enum([
-                        'member',
-                        'admin'
-                    ]),
-                    archived: z.boolean(),
-                    muted: z.boolean(),
-                    order: z.number().gte(-140737488355328).lte(140737488355327),
-                    organizationId: z.string()
-                }),
-                organizationId: z.string().optional()
-            })).optional()
-        }))
-    })
+            organizationId: z.string().optional()
+        })).optional()
+    }))
 });
 
 export const zDeleteSessionsData = z.object({
@@ -765,9 +787,7 @@ export const zDeleteMyMembershipData = z.object({
 /**
  * Membership removed
  */
-export const zDeleteMyMembershipResponse = z.object({
-    success: z.boolean()
-});
+export const zDeleteMyMembershipResponse = z.boolean();
 
 export const zDeletePasskeyData = z.object({
     body: z.never().optional(),
@@ -778,9 +798,7 @@ export const zDeletePasskeyData = z.object({
 /**
  * Passkey removed
  */
-export const zDeletePasskeyResponse = z.object({
-    success: z.boolean()
-});
+export const zDeletePasskeyResponse = z.boolean();
 
 export const zCreatePasskeyData = z.object({
     body: z.object({
@@ -795,9 +813,7 @@ export const zCreatePasskeyData = z.object({
 /**
  * Passkey created
  */
-export const zCreatePasskeyResponse = z.object({
-    success: z.boolean()
-});
+export const zCreatePasskeyResponse = z.boolean();
 
 export const zGetUploadTokenData = z.object({
     body: z.never().optional(),
@@ -820,17 +836,14 @@ export const zGetUploadTokenData = z.object({
  * Upload token with a scope for a user or organization
  */
 export const zGetUploadTokenResponse = z.object({
-    success: z.boolean(),
-    data: z.object({
-        public: z.boolean(),
-        sub: z.string(),
-        s3: z.boolean(),
-        signature: z.string(),
-        params: z.object({
-            auth: z.object({
-                key: z.string(),
-                expires: z.string().optional()
-            })
+    public: z.boolean(),
+    sub: z.string(),
+    s3: z.boolean(),
+    signature: z.string(),
+    params: z.object({
+        auth: z.object({
+            key: z.string(),
+            expires: z.string().optional()
         })
     })
 });
@@ -913,85 +926,7 @@ export const zGetUsersData = z.object({
  * Users
  */
 export const zGetUsersResponse = z.object({
-    success: z.boolean(),
-    data: z.object({
-        items: z.array(z.object({
-            id: z.string(),
-            entityType: z.enum([
-                'user'
-            ]),
-            name: z.string(),
-            description: z.union([
-                z.string(),
-                z.null()
-            ]),
-            slug: z.string(),
-            thumbnailUrl: z.union([
-                z.string(),
-                z.null()
-            ]),
-            bannerUrl: z.union([
-                z.string(),
-                z.null()
-            ]),
-            email: z.string().email(),
-            firstName: z.union([
-                z.string(),
-                z.null()
-            ]),
-            lastName: z.union([
-                z.string(),
-                z.null()
-            ]),
-            language: z.enum([
-                'en',
-                'nl'
-            ]),
-            newsletter: z.boolean(),
-            role: z.enum([
-                'user',
-                'admin'
-            ]),
-            createdAt: z.string(),
-            modifiedAt: z.union([
-                z.string(),
-                z.null()
-            ]),
-            lastSeenAt: z.union([
-                z.string(),
-                z.null()
-            ]),
-            lastStartedAt: z.union([
-                z.string(),
-                z.null()
-            ]),
-            lastSignInAt: z.union([
-                z.string(),
-                z.null()
-            ]),
-            modifiedBy: z.union([
-                z.string(),
-                z.null()
-            ])
-        })),
-        total: z.number()
-    })
-});
-
-export const zGetUserData = z.object({
-    body: z.never().optional(),
-    path: z.object({
-        idOrSlug: z.string()
-    }),
-    query: z.never().optional()
-});
-
-/**
- * User
- */
-export const zGetUserResponse = z.object({
-    success: z.boolean(),
-    data: z.object({
+    items: z.array(z.object({
         id: z.string(),
         entityType: z.enum([
             'user'
@@ -1049,7 +984,79 @@ export const zGetUserResponse = z.object({
             z.string(),
             z.null()
         ])
-    })
+    })),
+    total: z.number()
+});
+
+export const zGetUserData = z.object({
+    body: z.never().optional(),
+    path: z.object({
+        idOrSlug: z.string()
+    }),
+    query: z.never().optional()
+});
+
+/**
+ * User
+ */
+export const zGetUserResponse = z.object({
+    id: z.string(),
+    entityType: z.enum([
+        'user'
+    ]),
+    name: z.string(),
+    description: z.union([
+        z.string(),
+        z.null()
+    ]),
+    slug: z.string(),
+    thumbnailUrl: z.union([
+        z.string(),
+        z.null()
+    ]),
+    bannerUrl: z.union([
+        z.string(),
+        z.null()
+    ]),
+    email: z.string().email(),
+    firstName: z.union([
+        z.string(),
+        z.null()
+    ]),
+    lastName: z.union([
+        z.string(),
+        z.null()
+    ]),
+    language: z.enum([
+        'en',
+        'nl'
+    ]),
+    newsletter: z.boolean(),
+    role: z.enum([
+        'user',
+        'admin'
+    ]),
+    createdAt: z.string(),
+    modifiedAt: z.union([
+        z.string(),
+        z.null()
+    ]),
+    lastSeenAt: z.union([
+        z.string(),
+        z.null()
+    ]),
+    lastStartedAt: z.union([
+        z.string(),
+        z.null()
+    ]),
+    lastSignInAt: z.union([
+        z.string(),
+        z.null()
+    ]),
+    modifiedBy: z.union([
+        z.string(),
+        z.null()
+    ])
 });
 
 export const zUpdateUserData = z.object({
@@ -1087,66 +1094,63 @@ export const zUpdateUserData = z.object({
  * User
  */
 export const zUpdateUserResponse = z.object({
-    success: z.boolean(),
-    data: z.object({
-        id: z.string(),
-        entityType: z.enum([
-            'user'
-        ]),
-        name: z.string(),
-        description: z.union([
-            z.string(),
-            z.null()
-        ]),
-        slug: z.string(),
-        thumbnailUrl: z.union([
-            z.string(),
-            z.null()
-        ]),
-        bannerUrl: z.union([
-            z.string(),
-            z.null()
-        ]),
-        email: z.string().email(),
-        firstName: z.union([
-            z.string(),
-            z.null()
-        ]),
-        lastName: z.union([
-            z.string(),
-            z.null()
-        ]),
-        language: z.enum([
-            'en',
-            'nl'
-        ]),
-        newsletter: z.boolean(),
-        role: z.enum([
-            'user',
-            'admin'
-        ]),
-        createdAt: z.string(),
-        modifiedAt: z.union([
-            z.string(),
-            z.null()
-        ]),
-        lastSeenAt: z.union([
-            z.string(),
-            z.null()
-        ]),
-        lastStartedAt: z.union([
-            z.string(),
-            z.null()
-        ]),
-        lastSignInAt: z.union([
-            z.string(),
-            z.null()
-        ]),
-        modifiedBy: z.union([
-            z.string(),
-            z.null()
-        ])
-    })
+    id: z.string(),
+    entityType: z.enum([
+        'user'
+    ]),
+    name: z.string(),
+    description: z.union([
+        z.string(),
+        z.null()
+    ]),
+    slug: z.string(),
+    thumbnailUrl: z.union([
+        z.string(),
+        z.null()
+    ]),
+    bannerUrl: z.union([
+        z.string(),
+        z.null()
+    ]),
+    email: z.string().email(),
+    firstName: z.union([
+        z.string(),
+        z.null()
+    ]),
+    lastName: z.union([
+        z.string(),
+        z.null()
+    ]),
+    language: z.enum([
+        'en',
+        'nl'
+    ]),
+    newsletter: z.boolean(),
+    role: z.enum([
+        'user',
+        'admin'
+    ]),
+    createdAt: z.string(),
+    modifiedAt: z.union([
+        z.string(),
+        z.null()
+    ]),
+    lastSeenAt: z.union([
+        z.string(),
+        z.null()
+    ]),
+    lastStartedAt: z.union([
+        z.string(),
+        z.null()
+    ]),
+    lastSignInAt: z.union([
+        z.string(),
+        z.null()
+    ]),
+    modifiedBy: z.union([
+        z.string(),
+        z.null()
+    ])
 });
 
 export const zDeleteOrganizationsData = z.object({
@@ -1212,239 +1216,7 @@ export const zGetOrganizationsData = z.object({
  * Organizations
  */
 export const zGetOrganizationsResponse = z.object({
-    success: z.boolean(),
-    data: z.object({
-        items: z.array(z.object({
-            id: z.string(),
-            entityType: z.enum([
-                'organization'
-            ]),
-            name: z.string(),
-            description: z.union([
-                z.string(),
-                z.null()
-            ]),
-            slug: z.string(),
-            thumbnailUrl: z.union([
-                z.string(),
-                z.null()
-            ]),
-            bannerUrl: z.union([
-                z.string(),
-                z.null()
-            ]),
-            shortName: z.union([
-                z.string(),
-                z.null()
-            ]),
-            country: z.union([
-                z.string(),
-                z.null()
-            ]),
-            timezone: z.union([
-                z.string(),
-                z.null()
-            ]),
-            defaultLanguage: z.enum([
-                'en',
-                'nl'
-            ]),
-            languages: z.array(z.enum([
-                'en',
-                'nl'
-            ])).min(1),
-            notificationEmail: z.union([
-                z.string(),
-                z.null()
-            ]),
-            emailDomains: z.array(z.string()),
-            color: z.union([
-                z.string(),
-                z.null()
-            ]),
-            logoUrl: z.union([
-                z.string(),
-                z.null()
-            ]),
-            websiteUrl: z.union([
-                z.string(),
-                z.null()
-            ]),
-            welcomeText: z.union([
-                z.string(),
-                z.null()
-            ]),
-            authStrategies: z.array(z.string()),
-            chatSupport: z.boolean(),
-            createdAt: z.string(),
-            createdBy: z.union([
-                z.string(),
-                z.null()
-            ]),
-            modifiedAt: z.union([
-                z.string(),
-                z.null()
-            ]),
-            modifiedBy: z.union([
-                z.string(),
-                z.null()
-            ]),
-            membership: z.union([
-                z.object({
-                    id: z.string(),
-                    contextType: z.enum([
-                        'organization'
-                    ]),
-                    userId: z.string(),
-                    role: z.enum([
-                        'member',
-                        'admin'
-                    ]),
-                    archived: z.boolean(),
-                    muted: z.boolean(),
-                    order: z.number().gte(-140737488355328).lte(140737488355327),
-                    organizationId: z.string()
-                }),
-                z.null()
-            ]),
-            counts: z.object({
-                membership: z.object({
-                    admin: z.number(),
-                    member: z.number(),
-                    pending: z.number(),
-                    total: z.number()
-                }),
-                related: z.object({
-                    attachment: z.number()
-                })
-            })
-        })),
-        total: z.number()
-    })
-});
-
-export const zCreateOrganizationData = z.object({
-    body: z.object({
-        name: z.string().min(2).max(100),
-        slug: z.string().min(2).max(100)
-    }),
-    path: z.never().optional(),
-    query: z.never().optional()
-});
-
-/**
- * Organization was created
- */
-export const zCreateOrganizationResponse = z.object({
-    success: z.boolean(),
-    data: z.object({
-        id: z.string(),
-        entityType: z.enum([
-            'organization'
-        ]),
-        name: z.string(),
-        description: z.union([
-            z.string(),
-            z.null()
-        ]),
-        slug: z.string(),
-        thumbnailUrl: z.union([
-            z.string(),
-            z.null()
-        ]),
-        bannerUrl: z.union([
-            z.string(),
-            z.null()
-        ]),
-        shortName: z.union([
-            z.string(),
-            z.null()
-        ]),
-        country: z.union([
-            z.string(),
-            z.null()
-        ]),
-        timezone: z.union([
-            z.string(),
-            z.null()
-        ]),
-        defaultLanguage: z.enum([
-            'en',
-            'nl'
-        ]),
-        languages: z.array(z.enum([
-            'en',
-            'nl'
-        ])).min(1),
-        notificationEmail: z.union([
-            z.string(),
-            z.null()
-        ]),
-        emailDomains: z.array(z.string()),
-        color: z.union([
-            z.string(),
-            z.null()
-        ]),
-        logoUrl: z.union([
-            z.string(),
-            z.null()
-        ]),
-        websiteUrl: z.union([
-            z.string(),
-            z.null()
-        ]),
-        welcomeText: z.union([
-            z.string(),
-            z.null()
-        ]),
-        authStrategies: z.array(z.string()),
-        chatSupport: z.boolean(),
-        createdAt: z.string(),
-        createdBy: z.union([
-            z.string(),
-            z.null()
-        ]),
-        modifiedAt: z.union([
-            z.string(),
-            z.null()
-        ]),
-        modifiedBy: z.union([
-            z.string(),
-            z.null()
-        ]),
-        membership: z.object({
-            id: z.string(),
-            contextType: z.enum([
-                'organization'
-            ]),
-            userId: z.string(),
-            role: z.enum([
-                'member',
-                'admin'
-            ]),
-            archived: z.boolean(),
-            muted: z.boolean(),
-            order: z.number().gte(-140737488355328).lte(140737488355327),
-            organizationId: z.string()
-        }),
-        invitesCount: z.number()
-    })
-});
-
-export const zGetOrganizationData = z.object({
-    body: z.never().optional(),
-    path: z.object({
-        idOrSlug: z.string()
-    }),
-    query: z.never().optional()
-});
-
-/**
- * Organization
- */
-export const zGetOrganizationResponse = z.object({
-    success: z.boolean(),
-    data: z.object({
+    items: z.array(z.object({
         id: z.string(),
         entityType: z.enum([
             'organization'
@@ -1537,8 +1309,231 @@ export const zGetOrganizationResponse = z.object({
             }),
             z.null()
         ]),
-        invitesCount: z.number()
-    })
+        counts: z.object({
+            membership: z.object({
+                admin: z.number(),
+                member: z.number(),
+                pending: z.number(),
+                total: z.number()
+            }),
+            related: z.object({
+                attachment: z.number()
+            })
+        })
+    })),
+    total: z.number()
+});
+
+export const zCreateOrganizationData = z.object({
+    body: z.object({
+        name: z.string().min(2).max(100),
+        slug: z.string().min(2).max(100)
+    }),
+    path: z.never().optional(),
+    query: z.never().optional()
+});
+
+/**
+ * Organization was created
+ */
+export const zCreateOrganizationResponse = z.object({
+    id: z.string(),
+    entityType: z.enum([
+        'organization'
+    ]),
+    name: z.string(),
+    description: z.union([
+        z.string(),
+        z.null()
+    ]),
+    slug: z.string(),
+    thumbnailUrl: z.union([
+        z.string(),
+        z.null()
+    ]),
+    bannerUrl: z.union([
+        z.string(),
+        z.null()
+    ]),
+    shortName: z.union([
+        z.string(),
+        z.null()
+    ]),
+    country: z.union([
+        z.string(),
+        z.null()
+    ]),
+    timezone: z.union([
+        z.string(),
+        z.null()
+    ]),
+    defaultLanguage: z.enum([
+        'en',
+        'nl'
+    ]),
+    languages: z.array(z.enum([
+        'en',
+        'nl'
+    ])).min(1),
+    notificationEmail: z.union([
+        z.string(),
+        z.null()
+    ]),
+    emailDomains: z.array(z.string()),
+    color: z.union([
+        z.string(),
+        z.null()
+    ]),
+    logoUrl: z.union([
+        z.string(),
+        z.null()
+    ]),
+    websiteUrl: z.union([
+        z.string(),
+        z.null()
+    ]),
+    welcomeText: z.union([
+        z.string(),
+        z.null()
+    ]),
+    authStrategies: z.array(z.string()),
+    chatSupport: z.boolean(),
+    createdAt: z.string(),
+    createdBy: z.union([
+        z.string(),
+        z.null()
+    ]),
+    modifiedAt: z.union([
+        z.string(),
+        z.null()
+    ]),
+    modifiedBy: z.union([
+        z.string(),
+        z.null()
+    ]),
+    membership: z.object({
+        id: z.string(),
+        contextType: z.enum([
+            'organization'
+        ]),
+        userId: z.string(),
+        role: z.enum([
+            'member',
+            'admin'
+        ]),
+        archived: z.boolean(),
+        muted: z.boolean(),
+        order: z.number().gte(-140737488355328).lte(140737488355327),
+        organizationId: z.string()
+    }),
+    invitesCount: z.number()
+});
+
+export const zGetOrganizationData = z.object({
+    body: z.never().optional(),
+    path: z.object({
+        idOrSlug: z.string()
+    }),
+    query: z.never().optional()
+});
+
+/**
+ * Organization
+ */
+export const zGetOrganizationResponse = z.object({
+    id: z.string(),
+    entityType: z.enum([
+        'organization'
+    ]),
+    name: z.string(),
+    description: z.union([
+        z.string(),
+        z.null()
+    ]),
+    slug: z.string(),
+    thumbnailUrl: z.union([
+        z.string(),
+        z.null()
+    ]),
+    bannerUrl: z.union([
+        z.string(),
+        z.null()
+    ]),
+    shortName: z.union([
+        z.string(),
+        z.null()
+    ]),
+    country: z.union([
+        z.string(),
+        z.null()
+    ]),
+    timezone: z.union([
+        z.string(),
+        z.null()
+    ]),
+    defaultLanguage: z.enum([
+        'en',
+        'nl'
+    ]),
+    languages: z.array(z.enum([
+        'en',
+        'nl'
+    ])).min(1),
+    notificationEmail: z.union([
+        z.string(),
+        z.null()
+    ]),
+    emailDomains: z.array(z.string()),
+    color: z.union([
+        z.string(),
+        z.null()
+    ]),
+    logoUrl: z.union([
+        z.string(),
+        z.null()
+    ]),
+    websiteUrl: z.union([
+        z.string(),
+        z.null()
+    ]),
+    welcomeText: z.union([
+        z.string(),
+        z.null()
+    ]),
+    authStrategies: z.array(z.string()),
+    chatSupport: z.boolean(),
+    createdAt: z.string(),
+    createdBy: z.union([
+        z.string(),
+        z.null()
+    ]),
+    modifiedAt: z.union([
+        z.string(),
+        z.null()
+    ]),
+    modifiedBy: z.union([
+        z.string(),
+        z.null()
+    ]),
+    membership: z.union([
+        z.object({
+            id: z.string(),
+            contextType: z.enum([
+                'organization'
+            ]),
+            userId: z.string(),
+            role: z.enum([
+                'member',
+                'admin'
+            ]),
+            archived: z.boolean(),
+            muted: z.boolean(),
+            order: z.number().gte(-140737488355328).lte(140737488355327),
+            organizationId: z.string()
+        }),
+        z.null()
+    ]),
+    invitesCount: z.number()
 });
 
 export const zUpdateOrganizationData = z.object({
@@ -1607,102 +1602,99 @@ export const zUpdateOrganizationData = z.object({
  * Organization was updated
  */
 export const zUpdateOrganizationResponse = z.object({
-    success: z.boolean(),
-    data: z.object({
-        id: z.string(),
-        entityType: z.enum([
-            'organization'
-        ]),
-        name: z.string(),
-        description: z.union([
-            z.string(),
-            z.null()
-        ]),
-        slug: z.string(),
-        thumbnailUrl: z.union([
-            z.string(),
-            z.null()
-        ]),
-        bannerUrl: z.union([
-            z.string(),
-            z.null()
-        ]),
-        shortName: z.union([
-            z.string(),
-            z.null()
-        ]),
-        country: z.union([
-            z.string(),
-            z.null()
-        ]),
-        timezone: z.union([
-            z.string(),
-            z.null()
-        ]),
-        defaultLanguage: z.enum([
-            'en',
-            'nl'
-        ]),
-        languages: z.array(z.enum([
-            'en',
-            'nl'
-        ])).min(1),
-        notificationEmail: z.union([
-            z.string(),
-            z.null()
-        ]),
-        emailDomains: z.array(z.string()),
-        color: z.union([
-            z.string(),
-            z.null()
-        ]),
-        logoUrl: z.union([
-            z.string(),
-            z.null()
-        ]),
-        websiteUrl: z.union([
-            z.string(),
-            z.null()
-        ]),
-        welcomeText: z.union([
-            z.string(),
-            z.null()
-        ]),
-        authStrategies: z.array(z.string()),
-        chatSupport: z.boolean(),
-        createdAt: z.string(),
-        createdBy: z.union([
-            z.string(),
-            z.null()
-        ]),
-        modifiedAt: z.union([
-            z.string(),
-            z.null()
-        ]),
-        modifiedBy: z.union([
-            z.string(),
-            z.null()
-        ]),
-        membership: z.union([
-            z.object({
-                id: z.string(),
-                contextType: z.enum([
-                    'organization'
-                ]),
-                userId: z.string(),
-                role: z.enum([
-                    'member',
-                    'admin'
-                ]),
-                archived: z.boolean(),
-                muted: z.boolean(),
-                order: z.number().gte(-140737488355328).lte(140737488355327),
-                organizationId: z.string()
-            }),
-            z.null()
-        ]),
-        invitesCount: z.number()
-    })
+    id: z.string(),
+    entityType: z.enum([
+        'organization'
+    ]),
+    name: z.string(),
+    description: z.union([
+        z.string(),
+        z.null()
+    ]),
+    slug: z.string(),
+    thumbnailUrl: z.union([
+        z.string(),
+        z.null()
+    ]),
+    bannerUrl: z.union([
+        z.string(),
+        z.null()
+    ]),
+    shortName: z.union([
+        z.string(),
+        z.null()
+    ]),
+    country: z.union([
+        z.string(),
+        z.null()
+    ]),
+    timezone: z.union([
+        z.string(),
+        z.null()
+    ]),
+    defaultLanguage: z.enum([
+        'en',
+        'nl'
+    ]),
+    languages: z.array(z.enum([
+        'en',
+        'nl'
+    ])).min(1),
+    notificationEmail: z.union([
+        z.string(),
+        z.null()
+    ]),
+    emailDomains: z.array(z.string()),
+    color: z.union([
+        z.string(),
+        z.null()
+    ]),
+    logoUrl: z.union([
+        z.string(),
+        z.null()
+    ]),
+    websiteUrl: z.union([
+        z.string(),
+        z.null()
+    ]),
+    welcomeText: z.union([
+        z.string(),
+        z.null()
+    ]),
+    authStrategies: z.array(z.string()),
+    chatSupport: z.boolean(),
+    createdAt: z.string(),
+    createdBy: z.union([
+        z.string(),
+        z.null()
+    ]),
+    modifiedAt: z.union([
+        z.string(),
+        z.null()
+    ]),
+    modifiedBy: z.union([
+        z.string(),
+        z.null()
+    ]),
+    membership: z.union([
+        z.object({
+            id: z.string(),
+            contextType: z.enum([
+                'organization'
+            ]),
+            userId: z.string(),
+            role: z.enum([
+                'member',
+                'admin'
+            ]),
+            archived: z.boolean(),
+            muted: z.boolean(),
+            order: z.number().gte(-140737488355328).lte(140737488355327),
+            organizationId: z.string()
+        }),
+        z.null()
+    ]),
+    invitesCount: z.number()
 });
 
 export const zGetPageEntitiesData = z.object({
@@ -1726,51 +1718,48 @@ export const zGetPageEntitiesData = z.object({
  * Page entities
  */
 export const zGetPageEntitiesResponse = z.object({
-    success: z.boolean(),
-    data: z.object({
-        items: z.array(z.object({
-            id: z.string(),
-            entityType: z.enum([
-                'user',
-                'organization'
-            ]),
-            slug: z.string(),
-            name: z.string(),
-            thumbnailUrl: z.union([
-                z.string(),
-                z.null()
-            ]).optional(),
-            bannerUrl: z.union([
-                z.string(),
-                z.null()
-            ]).optional(),
-            email: z.string().optional(),
-            membership: z.union([
-                z.object({
-                    id: z.string(),
-                    contextType: z.enum([
-                        'organization'
-                    ]),
-                    userId: z.string(),
-                    role: z.enum([
-                        'member',
-                        'admin'
-                    ]),
-                    archived: z.boolean(),
-                    muted: z.boolean(),
-                    order: z.number().gte(-140737488355328).lte(140737488355327),
-                    organizationId: z.string()
-                }),
-                z.null()
-            ])
-        })),
-        counts: z.object({
-            user: z.number().optional(),
-            organization: z.number().optional(),
-            attachment: z.number().optional()
-        }),
-        total: z.number()
-    })
+    items: z.array(z.object({
+        id: z.string(),
+        entityType: z.enum([
+            'user',
+            'organization'
+        ]),
+        slug: z.string(),
+        name: z.string(),
+        thumbnailUrl: z.union([
+            z.string(),
+            z.null()
+        ]).optional(),
+        bannerUrl: z.union([
+            z.string(),
+            z.null()
+        ]).optional(),
+        email: z.string().optional(),
+        membership: z.union([
+            z.object({
+                id: z.string(),
+                contextType: z.enum([
+                    'organization'
+                ]),
+                userId: z.string(),
+                role: z.enum([
+                    'member',
+                    'admin'
+                ]),
+                archived: z.boolean(),
+                muted: z.boolean(),
+                order: z.number().gte(-140737488355328).lte(140737488355327),
+                organizationId: z.string()
+            }),
+            z.null()
+        ])
+    })),
+    counts: z.object({
+        user: z.number().optional(),
+        organization: z.number().optional(),
+        attachment: z.number().optional()
+    }),
+    total: z.number()
 });
 
 export const zGetContextEntitiesData = z.object({
@@ -1799,12 +1788,41 @@ export const zGetContextEntitiesData = z.object({
 /**
  * Context entities
  */
-export const zGetContextEntitiesResponse = z.object({
-    success: z.boolean(),
-    data: z.array(z.object({
+export const zGetContextEntitiesResponse = z.array(z.object({
+    id: z.string(),
+    entityType: z.enum([
+        'organization'
+    ]),
+    slug: z.string(),
+    name: z.string(),
+    thumbnailUrl: z.union([
+        z.string(),
+        z.null()
+    ]).optional(),
+    bannerUrl: z.union([
+        z.string(),
+        z.null()
+    ]).optional(),
+    createdAt: z.string(),
+    membership: z.object({
+        id: z.string(),
+        contextType: z.enum([
+            'organization'
+        ]),
+        userId: z.string(),
+        role: z.enum([
+            'member',
+            'admin'
+        ]),
+        archived: z.boolean(),
+        muted: z.boolean(),
+        order: z.number().gte(-140737488355328).lte(140737488355327),
+        organizationId: z.string()
+    }),
+    members: z.array(z.object({
         id: z.string(),
         entityType: z.enum([
-            'organization'
+            'user'
         ]),
         slug: z.string(),
         name: z.string(),
@@ -1816,41 +1834,9 @@ export const zGetContextEntitiesResponse = z.object({
             z.string(),
             z.null()
         ]).optional(),
-        createdAt: z.string(),
-        membership: z.object({
-            id: z.string(),
-            contextType: z.enum([
-                'organization'
-            ]),
-            userId: z.string(),
-            role: z.enum([
-                'member',
-                'admin'
-            ]),
-            archived: z.boolean(),
-            muted: z.boolean(),
-            order: z.number().gte(-140737488355328).lte(140737488355327),
-            organizationId: z.string()
-        }),
-        members: z.array(z.object({
-            id: z.string(),
-            slug: z.string(),
-            name: z.string(),
-            thumbnailUrl: z.union([
-                z.string(),
-                z.null()
-            ]).optional(),
-            bannerUrl: z.union([
-                z.string(),
-                z.null()
-            ]).optional(),
-            email: z.string().email(),
-            entityType: z.enum([
-                'user'
-            ])
-        }))
+        email: z.string().email()
     }))
-});
+}));
 
 export const zCheckSlugData = z.object({
     body: z.object({
@@ -1863,9 +1849,7 @@ export const zCheckSlugData = z.object({
 /**
  * Slug is available
  */
-export const zCheckSlugResponse = z.object({
-    success: z.boolean()
-});
+export const zCheckSlugResponse = z.boolean();
 
 export const zCreateInviteData = z.object({
     body: z.object({
@@ -1878,9 +1862,7 @@ export const zCreateInviteData = z.object({
 /**
  * Invitations are sent
  */
-export const zCreateInviteResponse = z.object({
-    success: z.boolean()
-});
+export const zCreateInviteResponse = z.boolean();
 
 export const zGetPresignedUrlData = z.object({
     body: z.never().optional(),
@@ -1893,10 +1875,7 @@ export const zGetPresignedUrlData = z.object({
 /**
  * Presigned URL
  */
-export const zGetPresignedUrlResponse = z.object({
-    success: z.boolean(),
-    data: z.string()
-});
+export const zGetPresignedUrlResponse = z.string();
 
 export const zPaddleWebhookData = z.object({
     body: z.unknown().optional(),
@@ -1907,9 +1886,7 @@ export const zPaddleWebhookData = z.object({
 /**
  * Paddle webhook received
  */
-export const zPaddleWebhookResponse = z.object({
-    success: z.boolean()
-});
+export const zPaddleWebhookResponse = z.boolean();
 
 export const zSendNewsletterData = z.object({
     body: z.object({
@@ -1933,9 +1910,7 @@ export const zSendNewsletterData = z.object({
 /**
  * Organization
  */
-export const zSendNewsletterResponse = z.object({
-    success: z.boolean()
-});
+export const zSendNewsletterResponse = z.boolean();
 
 export const zDeleteRequestData = z.object({
     body: z.object({
@@ -1948,9 +1923,7 @@ export const zDeleteRequestData = z.object({
 /**
  * Requests
  */
-export const zDeleteRequestResponse = z.object({
-    success: z.boolean()
-});
+export const zDeleteRequestResponse = z.boolean();
 
 export const zGetRequestsData = z.object({
     body: z.never().optional(),
@@ -1976,25 +1949,22 @@ export const zGetRequestsData = z.object({
  * Requests
  */
 export const zGetRequestsResponse = z.object({
-    success: z.boolean(),
-    data: z.object({
-        items: z.array(z.object({
-            id: z.string(),
-            message: z.union([
-                z.string(),
-                z.null()
-            ]),
-            email: z.string(),
-            type: z.enum([
-                'waitlist',
-                'newsletter',
-                'contact'
-            ]),
-            createdAt: z.string(),
-            wasInvited: z.boolean()
-        })),
-        total: z.number()
-    })
+    items: z.array(z.object({
+        id: z.string(),
+        message: z.union([
+            z.string(),
+            z.null()
+        ]),
+        email: z.string(),
+        type: z.enum([
+            'waitlist',
+            'newsletter',
+            'contact'
+        ]),
+        createdAt: z.string(),
+        wasInvited: z.boolean()
+    })),
+    total: z.number()
 });
 
 export const zCreateRequestData = z.object({
@@ -2018,22 +1988,19 @@ export const zCreateRequestData = z.object({
  * Requests
  */
 export const zCreateRequestResponse = z.object({
-    success: z.boolean(),
-    data: z.object({
-        id: z.string(),
-        message: z.union([
-            z.string(),
-            z.null()
-        ]),
-        email: z.string(),
-        type: z.enum([
-            'waitlist',
-            'newsletter',
-            'contact'
-        ]),
-        createdAt: z.string(),
-        wasInvited: z.boolean()
-    })
+    id: z.string(),
+    message: z.union([
+        z.string(),
+        z.null()
+    ]),
+    email: z.string(),
+    type: z.enum([
+        'waitlist',
+        'newsletter',
+        'contact'
+    ]),
+    createdAt: z.string(),
+    wasInvited: z.boolean()
 });
 
 export const zGetMetricsData = z.object({
@@ -2045,13 +2012,10 @@ export const zGetMetricsData = z.object({
 /**
  * Metrics
  */
-export const zGetMetricsResponse = z.object({
-    success: z.boolean(),
-    data: z.array(z.object({
-        date: z.string(),
-        count: z.number()
-    }))
-});
+export const zGetMetricsResponse = z.array(z.object({
+    date: z.string(),
+    count: z.number()
+}));
 
 export const zGetPublicCountsData = z.object({
     body: z.never().optional(),
@@ -2063,12 +2027,9 @@ export const zGetPublicCountsData = z.object({
  * Public counts
  */
 export const zGetPublicCountsResponse = z.object({
-    success: z.boolean(),
-    data: z.object({
-        user: z.number(),
-        organization: z.number(),
-        attachment: z.number()
-    })
+    user: z.number(),
+    organization: z.number(),
+    attachment: z.number()
 });
 
 export const zShapeProxyData = z.object({
@@ -2147,51 +2108,48 @@ export const zGetAttachmentsData = z.object({
  * Attachments
  */
 export const zGetAttachmentsResponse = z.object({
-    success: z.boolean(),
-    data: z.object({
-        items: z.array(z.object({
-            id: z.string(),
-            name: z.string(),
-            entityType: z.enum([
-                'attachment'
-            ]),
-            groupId: z.union([
-                z.string(),
-                z.null()
-            ]),
-            filename: z.string(),
-            contentType: z.string(),
-            convertedContentType: z.union([
-                z.string(),
-                z.null()
-            ]),
-            size: z.string(),
-            createdAt: z.string(),
-            createdBy: z.union([
-                z.string(),
-                z.null()
-            ]),
-            modifiedAt: z.union([
-                z.string(),
-                z.null()
-            ]),
-            modifiedBy: z.union([
-                z.string(),
-                z.null()
-            ]),
-            organizationId: z.string(),
-            url: z.string(),
-            thumbnailUrl: z.union([
-                z.string(),
-                z.null()
-            ]),
-            convertedUrl: z.union([
-                z.string(),
-                z.null()
-            ])
-        })),
-        total: z.number()
-    })
+    items: z.array(z.object({
+        id: z.string(),
+        name: z.string(),
+        entityType: z.enum([
+            'attachment'
+        ]),
+        groupId: z.union([
+            z.string(),
+            z.null()
+        ]),
+        filename: z.string(),
+        contentType: z.string(),
+        convertedContentType: z.union([
+            z.string(),
+            z.null()
+        ]),
+        size: z.string(),
+        createdAt: z.string(),
+        createdBy: z.union([
+            z.string(),
+            z.null()
+        ]),
+        modifiedAt: z.union([
+            z.string(),
+            z.null()
+        ]),
+        modifiedBy: z.union([
+            z.string(),
+            z.null()
+        ]),
+        organizationId: z.string(),
+        url: z.string(),
+        thumbnailUrl: z.union([
+            z.string(),
+            z.null()
+        ]),
+        convertedUrl: z.union([
+            z.string(),
+            z.null()
+        ])
+    })),
+    total: z.number()
 });
 
 export const zCreateAttachmentData = z.object({
@@ -2228,50 +2186,47 @@ export const zCreateAttachmentData = z.object({
 /**
  * Attachment
  */
-export const zCreateAttachmentResponse = z.object({
-    success: z.boolean(),
-    data: z.array(z.object({
-        id: z.string(),
-        name: z.string(),
-        entityType: z.enum([
-            'attachment'
-        ]),
-        groupId: z.union([
-            z.string(),
-            z.null()
-        ]),
-        filename: z.string(),
-        contentType: z.string(),
-        convertedContentType: z.union([
-            z.string(),
-            z.null()
-        ]),
-        size: z.string(),
-        createdAt: z.string(),
-        createdBy: z.union([
-            z.string(),
-            z.null()
-        ]),
-        modifiedAt: z.union([
-            z.string(),
-            z.null()
-        ]),
-        modifiedBy: z.union([
-            z.string(),
-            z.null()
-        ]),
-        organizationId: z.string(),
-        url: z.string(),
-        thumbnailUrl: z.union([
-            z.string(),
-            z.null()
-        ]),
-        convertedUrl: z.union([
-            z.string(),
-            z.null()
-        ])
-    }))
-});
+export const zCreateAttachmentResponse = z.array(z.object({
+    id: z.string(),
+    name: z.string(),
+    entityType: z.enum([
+        'attachment'
+    ]),
+    groupId: z.union([
+        z.string(),
+        z.null()
+    ]),
+    filename: z.string(),
+    contentType: z.string(),
+    convertedContentType: z.union([
+        z.string(),
+        z.null()
+    ]),
+    size: z.string(),
+    createdAt: z.string(),
+    createdBy: z.union([
+        z.string(),
+        z.null()
+    ]),
+    modifiedAt: z.union([
+        z.string(),
+        z.null()
+    ]),
+    modifiedBy: z.union([
+        z.string(),
+        z.null()
+    ]),
+    organizationId: z.string(),
+    url: z.string(),
+    thumbnailUrl: z.union([
+        z.string(),
+        z.null()
+    ]),
+    convertedUrl: z.union([
+        z.string(),
+        z.null()
+    ])
+}));
 
 export const zGetAttachmentData = z.object({
     body: z.never().optional(),
@@ -2286,48 +2241,45 @@ export const zGetAttachmentData = z.object({
  * Attachment
  */
 export const zGetAttachmentResponse = z.object({
-    success: z.boolean(),
-    data: z.object({
-        id: z.string(),
-        name: z.string(),
-        entityType: z.enum([
-            'attachment'
-        ]),
-        groupId: z.union([
-            z.string(),
-            z.null()
-        ]),
-        filename: z.string(),
-        contentType: z.string(),
-        convertedContentType: z.union([
-            z.string(),
-            z.null()
-        ]),
-        size: z.string(),
-        createdAt: z.string(),
-        createdBy: z.union([
-            z.string(),
-            z.null()
-        ]),
-        modifiedAt: z.union([
-            z.string(),
-            z.null()
-        ]),
-        modifiedBy: z.union([
-            z.string(),
-            z.null()
-        ]),
-        organizationId: z.string(),
-        url: z.string(),
-        thumbnailUrl: z.union([
-            z.string(),
-            z.null()
-        ]),
-        convertedUrl: z.union([
-            z.string(),
-            z.null()
-        ])
-    })
+    id: z.string(),
+    name: z.string(),
+    entityType: z.enum([
+        'attachment'
+    ]),
+    groupId: z.union([
+        z.string(),
+        z.null()
+    ]),
+    filename: z.string(),
+    contentType: z.string(),
+    convertedContentType: z.union([
+        z.string(),
+        z.null()
+    ]),
+    size: z.string(),
+    createdAt: z.string(),
+    createdBy: z.union([
+        z.string(),
+        z.null()
+    ]),
+    modifiedAt: z.union([
+        z.string(),
+        z.null()
+    ]),
+    modifiedBy: z.union([
+        z.string(),
+        z.null()
+    ]),
+    organizationId: z.string(),
+    url: z.string(),
+    thumbnailUrl: z.union([
+        z.string(),
+        z.null()
+    ]),
+    convertedUrl: z.union([
+        z.string(),
+        z.null()
+    ])
 });
 
 export const zUpdateAttachmentData = z.object({
@@ -2346,48 +2298,45 @@ export const zUpdateAttachmentData = z.object({
  * Attachment was updated
  */
 export const zUpdateAttachmentResponse = z.object({
-    success: z.boolean(),
-    data: z.object({
-        id: z.string(),
-        name: z.string(),
-        entityType: z.enum([
-            'attachment'
-        ]),
-        groupId: z.union([
-            z.string(),
-            z.null()
-        ]),
-        filename: z.string(),
-        contentType: z.string(),
-        convertedContentType: z.union([
-            z.string(),
-            z.null()
-        ]),
-        size: z.string(),
-        createdAt: z.string(),
-        createdBy: z.union([
-            z.string(),
-            z.null()
-        ]),
-        modifiedAt: z.union([
-            z.string(),
-            z.null()
-        ]),
-        modifiedBy: z.union([
-            z.string(),
-            z.null()
-        ]),
-        organizationId: z.string(),
-        url: z.string(),
-        thumbnailUrl: z.union([
-            z.string(),
-            z.null()
-        ]),
-        convertedUrl: z.union([
-            z.string(),
-            z.null()
-        ])
-    })
+    id: z.string(),
+    name: z.string(),
+    entityType: z.enum([
+        'attachment'
+    ]),
+    groupId: z.union([
+        z.string(),
+        z.null()
+    ]),
+    filename: z.string(),
+    contentType: z.string(),
+    convertedContentType: z.union([
+        z.string(),
+        z.null()
+    ]),
+    size: z.string(),
+    createdAt: z.string(),
+    createdBy: z.union([
+        z.string(),
+        z.null()
+    ]),
+    modifiedAt: z.union([
+        z.string(),
+        z.null()
+    ]),
+    modifiedBy: z.union([
+        z.string(),
+        z.null()
+    ]),
+    organizationId: z.string(),
+    url: z.string(),
+    thumbnailUrl: z.union([
+        z.string(),
+        z.null()
+    ]),
+    convertedUrl: z.union([
+        z.string(),
+        z.null()
+    ])
 });
 
 export const zGetAttachmentCoverData = z.object({
@@ -2474,9 +2423,7 @@ export const zCreateMembershipsData = z.object({
 /**
  * Invitation was sent
  */
-export const zCreateMembershipsResponse = z.object({
-    success: z.boolean()
-});
+export const zCreateMembershipsResponse = z.boolean();
 
 export const zUpdateMembershipData = z.object({
     body: z.object({
@@ -2499,35 +2446,32 @@ export const zUpdateMembershipData = z.object({
  * Membership updated
  */
 export const zUpdateMembershipResponse = z.object({
-    success: z.boolean(),
-    data: z.object({
-        id: z.string(),
-        contextType: z.enum([
-            'organization'
-        ]),
-        userId: z.string(),
-        role: z.enum([
-            'member',
-            'admin'
-        ]),
-        createdAt: z.string(),
-        createdBy: z.union([
-            z.string(),
-            z.null()
-        ]),
-        modifiedAt: z.union([
-            z.string(),
-            z.null()
-        ]),
-        modifiedBy: z.union([
-            z.string(),
-            z.null()
-        ]),
-        archived: z.boolean(),
-        muted: z.boolean(),
-        order: z.number().gte(-140737488355328).lte(140737488355327),
-        organizationId: z.string()
-    })
+    id: z.string(),
+    contextType: z.enum([
+        'organization'
+    ]),
+    userId: z.string(),
+    role: z.enum([
+        'member',
+        'admin'
+    ]),
+    createdAt: z.string(),
+    createdBy: z.union([
+        z.string(),
+        z.null()
+    ]),
+    modifiedAt: z.union([
+        z.string(),
+        z.null()
+    ]),
+    modifiedBy: z.union([
+        z.string(),
+        z.null()
+    ]),
+    archived: z.boolean(),
+    muted: z.boolean(),
+    order: z.number().gte(-140737488355328).lte(140737488355327),
+    organizationId: z.string()
 });
 
 export const zGetMembersData = z.object({
@@ -2566,84 +2510,81 @@ export const zGetMembersData = z.object({
  * Members
  */
 export const zGetMembersResponse = z.object({
-    success: z.boolean(),
-    data: z.object({
-        items: z.array(z.object({
+    items: z.array(z.object({
+        id: z.string(),
+        entityType: z.enum([
+            'user'
+        ]),
+        name: z.string(),
+        description: z.union([
+            z.string(),
+            z.null()
+        ]),
+        slug: z.string(),
+        thumbnailUrl: z.union([
+            z.string(),
+            z.null()
+        ]),
+        bannerUrl: z.union([
+            z.string(),
+            z.null()
+        ]),
+        email: z.string().email(),
+        firstName: z.union([
+            z.string(),
+            z.null()
+        ]),
+        lastName: z.union([
+            z.string(),
+            z.null()
+        ]),
+        language: z.enum([
+            'en',
+            'nl'
+        ]),
+        newsletter: z.boolean(),
+        role: z.enum([
+            'user',
+            'admin'
+        ]),
+        createdAt: z.string(),
+        modifiedAt: z.union([
+            z.string(),
+            z.null()
+        ]),
+        lastSeenAt: z.union([
+            z.string(),
+            z.null()
+        ]),
+        lastStartedAt: z.union([
+            z.string(),
+            z.null()
+        ]),
+        lastSignInAt: z.union([
+            z.string(),
+            z.null()
+        ]),
+        modifiedBy: z.union([
+            z.string(),
+            z.null()
+        ]),
+        membership: z.object({
             id: z.string(),
-            entityType: z.enum([
-                'user'
+            contextType: z.enum([
+                'organization'
             ]),
-            name: z.string(),
-            description: z.union([
-                z.string(),
-                z.null()
-            ]),
-            slug: z.string(),
-            thumbnailUrl: z.union([
-                z.string(),
-                z.null()
-            ]),
-            bannerUrl: z.union([
-                z.string(),
-                z.null()
-            ]),
-            email: z.string().email(),
-            firstName: z.union([
-                z.string(),
-                z.null()
-            ]),
-            lastName: z.union([
-                z.string(),
-                z.null()
-            ]),
-            language: z.enum([
-                'en',
-                'nl'
-            ]),
-            newsletter: z.boolean(),
+            userId: z.string(),
             role: z.enum([
-                'user',
+                'member',
                 'admin'
             ]),
-            createdAt: z.string(),
-            modifiedAt: z.union([
-                z.string(),
-                z.null()
-            ]),
-            lastSeenAt: z.union([
-                z.string(),
-                z.null()
-            ]),
-            lastStartedAt: z.union([
-                z.string(),
-                z.null()
-            ]),
-            lastSignInAt: z.union([
-                z.string(),
-                z.null()
-            ]),
-            modifiedBy: z.union([
-                z.string(),
-                z.null()
-            ]),
-            membership: z.object({
-                id: z.string(),
-                contextType: z.enum([
-                    'organization'
-                ]),
-                userId: z.string(),
-                role: z.enum([
-                    'member',
-                    'admin'
-                ]),
-                archived: z.boolean(),
-                muted: z.boolean(),
-                order: z.number().gte(-140737488355328).lte(140737488355327),
-                organizationId: z.string()
-            })
-        })),
-        total: z.number()
-    })
+            archived: z.boolean(),
+            muted: z.boolean(),
+            order: z.number().gte(-140737488355328).lte(140737488355327),
+            organizationId: z.string()
+        })
+    })),
+    total: z.number()
 });
 
 export const zGetPendingInvitationsData = z.object({
@@ -2677,26 +2618,23 @@ export const zGetPendingInvitationsData = z.object({
  * Invited members
  */
 export const zGetPendingInvitationsResponse = z.object({
-    success: z.boolean(),
-    data: z.object({
-        items: z.array(z.object({
-            id: z.string(),
-            email: z.string(),
-            createdAt: z.string(),
-            createdBy: z.union([
-                z.string(),
-                z.null()
-            ]),
-            expiresAt: z.string(),
-            name: z.union([
-                z.string(),
-                z.null()
-            ]),
-            role: z.enum([
-                'member',
-                'admin'
-            ])
-        })),
-        total: z.number()
-    })
+    items: z.array(z.object({
+        id: z.string(),
+        email: z.string(),
+        createdAt: z.string(),
+        createdBy: z.union([
+            z.string(),
+            z.null()
+        ]),
+        expiresAt: z.string(),
+        name: z.union([
+            z.string(),
+            z.null()
+        ]),
+        role: z.enum([
+            'member',
+            'admin'
+        ])
+    })),
+    total: z.number()
 });
