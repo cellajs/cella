@@ -1154,7 +1154,7 @@ export type CheckTokenResponses = {
         success: boolean;
         data: {
             email: string;
-            role: 'member' | 'admin';
+            role: ('member' | 'admin') | null;
             userId?: string;
             organizationName?: string;
             organizationSlug?: string;
@@ -8961,11 +8961,11 @@ export type GetPendingInvitationsResponses = {
             items: Array<{
                 id: string;
                 email: string;
-                role: 'member' | 'admin';
                 createdAt: string;
                 createdBy: string | null;
                 expiresAt: string;
                 name: string | null;
+                role: 'member' | 'admin';
             }>;
             total: number;
         };

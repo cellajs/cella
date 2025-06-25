@@ -14,7 +14,7 @@ export const emailPasswordBodySchema = z.object({
 
 export const tokenWithDataSchema = z.object({
   email: z.string().email(),
-  role: membershipSchema.shape.role.nullable(),
+  role: z.union([membershipSchema.shape.role, z.null()]),
   userId: idSchema.optional(),
   organizationName: z.string().optional(),
   organizationSlug: z.string().optional(),

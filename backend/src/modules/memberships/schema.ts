@@ -50,8 +50,7 @@ export const pendingInvitationSchema = createSelectSchema(tokensTable)
   .pick({
     id: true,
     email: true,
-    role: true,
     createdAt: true,
     createdBy: true,
   })
-  .extend({ expiresAt: z.string(), name: z.string().nullable() });
+  .extend({ expiresAt: z.string(), name: z.string().nullable(), role: membershipSchema.shape.role });

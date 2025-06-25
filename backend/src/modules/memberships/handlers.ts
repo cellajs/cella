@@ -406,7 +406,7 @@ const membershipRouteHandlers = app
       id: tokensTable.id,
       name: usersTable.name,
       email: tokensTable.email,
-      role: tokensTable.role,
+      role: membershipsTable.role,
       expiresAt: tokensTable.expiresAt,
       createdAt: tokensTable.createdAt,
       createdBy: tokensTable.createdBy,
