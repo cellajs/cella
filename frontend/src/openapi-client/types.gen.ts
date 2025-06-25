@@ -5173,6 +5173,7 @@ export type GetContextEntitiesResponse = GetContextEntitiesResponses[keyof GetCo
 export type CheckSlugData = {
     body?: {
         slug: string;
+        entityType: 'user' | 'organization' | 'attachment';
     };
     path?: never;
     query?: never;

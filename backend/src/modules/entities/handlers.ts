@@ -136,9 +136,9 @@ const entityRouteHandlers = app
    * Check if slug is available
    */
   .openapi(entityRoutes.checkSlug, async (ctx) => {
-    const { slug } = ctx.req.valid('json');
+    const { slug, entityType } = ctx.req.valid('json');
 
-    const slugAvailable = await checkSlugAvailable(slug);
+    const slugAvailable = await checkSlugAvailable(slug, entityType);
 
     return ctx.json(slugAvailable, 200);
   });

@@ -1840,7 +1840,12 @@ export const zGetContextEntitiesResponse = z.array(z.object({
 
 export const zCheckSlugData = z.object({
     body: z.object({
-        slug: z.string()
+        slug: z.string(),
+        entityType: z.enum([
+            'user',
+            'organization',
+            'attachment'
+        ])
     }).optional(),
     path: z.never().optional(),
     query: z.never().optional()

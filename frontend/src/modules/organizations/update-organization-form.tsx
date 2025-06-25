@@ -85,7 +85,7 @@ const UpdateOrganizationForm = ({ organization, callback, sheet: isSheet }: Prop
         <InputFormField control={form.control} name="name" label={t('common:name')} required />
         <SlugFormField
           control={form.control}
-          type="organization"
+          entityType="organization"
           label={t('common:resource_handle', { resource: t('common:organization') })}
           description={t('common:resource_handle.text', { resource: t('common:organization').toLowerCase() })}
           previousSlug={organization.slug}

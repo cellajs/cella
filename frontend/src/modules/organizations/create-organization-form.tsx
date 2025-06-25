@@ -69,7 +69,7 @@ const CreateOrganizationForm = ({ labelDirection = 'top', children, callback }: 
         <InputFormField control={form.control} name="name" label={t('common:name')} required />
         <SlugFormField
           control={form.control}
-          type="organization"
+          entityType="organization"
           label={t('common:resource_handle', { resource: t('common:organization') })}
           description={t('common:resource_handle.text', { resource: t('common:organization').toLowerCase() })}
           nameValue={name}
