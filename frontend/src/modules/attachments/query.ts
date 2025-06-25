@@ -1,8 +1,8 @@
 import { infiniteQueryOptions, queryOptions } from '@tanstack/react-query';
 import { config } from 'config';
+import { getAttachments, GetAttachmentsData } from '~/openapi-client';
 
-import { type GetAttachmentsParams, getAttachments } from '~/modules/attachments/api';
-
+type GetAttachmentsParams = GetAttachmentsData['path'] & Omit<GetAttachmentsData['query'], 'limit' | 'offset'>;
 /**
  * Keys for attachments related queries. These keys help to uniquely identify different query.
  * For managing query caching and invalidation.
@@ -33,7 +33,13 @@ export const groupedAttachmentsQueryOptions = ({ orgIdOrSlug, attachmentId }: Pi
 
   return queryOptions({
     queryKey,
-    queryFn: () => getAttachments({ attachmentId, orgIdOrSlug }),
+    queryFn: async () => {
+      return await getAttachments({ 
+        query: { attachmentId, offset: String(0), limit : String(config.requestLimits.attachments) },  
+        path: {orgIdOrSlug}, 
+        throwOnError: true
+      })
+    },
     staleTime: 0,
     gcTime: 0,
   });
@@ -70,7 +76,7 @@ export const attachmentsQueryOptions = ({
     queryFn: async ({ pageParam: { page, offset: _offset }, signal }) => {
       const offset = String(_offset || page * Number(limit));
       
-      return await getAttachments({ q, sort, order, limit, orgIdOrSlug, offset }, signal)
+      return await getAttachments({ query: { q, sort, order, limit, offset }, path: { orgIdOrSlug }, signal, throwOnError: true  });
     },
     getNextPageParam: (_lastPage, allPages) => {
       const page = allPages.length;
