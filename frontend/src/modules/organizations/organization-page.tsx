@@ -33,7 +33,7 @@ const OrganizationPage = () => {
 
   const coverUpdateCallback = (bannerUrl: string) => {
     mutate(
-      { idOrSlug: organization.slug, json: { bannerUrl } },
+      { idOrSlug: organization.slug, body: { bannerUrl } },
       {
         onSuccess: () => toaster(t('common:success.upload_cover'), 'success'),
         onError: () => toaster(t('error:image_upload_failed'), 'error'),

@@ -58,13 +58,13 @@ const UpdateOrganizationForm = ({ organization, callback, sheet: isSheet }: Prop
   // Prevent data loss
   useBeforeUnload(form.isDirty);
 
-  const onSubmit = (json: FormValues) => {
+  const onSubmit = (body: FormValues) => {
     mutate(
-      { idOrSlug: organization.slug, json },
+      { idOrSlug: organization.slug, body },
       {
         onSuccess: (updatedOrganization) => {
           if (isSheet) useSheeter.getState().remove(formContainerId);
-          form.reset(json);
+          form.reset(body);
           toaster(t('common:success.update_resource', { resource: t('common:organization') }), 'success');
           callback?.(updatedOrganization);
         },
