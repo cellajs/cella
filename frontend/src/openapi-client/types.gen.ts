@@ -87,7 +87,7 @@ export type CheckEmailErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Unauthorized: authentication required.
@@ -104,7 +104,7 @@ export type CheckEmailErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Forbidden: insufficient permissions.
@@ -121,7 +121,7 @@ export type CheckEmailErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Not found: resource does not exist.
@@ -138,7 +138,7 @@ export type CheckEmailErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Rate limit: too many requests.
@@ -155,7 +155,7 @@ export type CheckEmailErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
 };
 
@@ -196,7 +196,7 @@ export type SignUpErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Unauthorized: authentication required.
@@ -213,7 +213,7 @@ export type SignUpErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Forbidden: insufficient permissions.
@@ -230,7 +230,7 @@ export type SignUpErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Not found: resource does not exist.
@@ -247,7 +247,7 @@ export type SignUpErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Rate limit: too many requests.
@@ -264,7 +264,7 @@ export type SignUpErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
 };
 
@@ -307,7 +307,7 @@ export type SignUpWithTokenErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Unauthorized: authentication required.
@@ -324,7 +324,7 @@ export type SignUpWithTokenErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Forbidden: insufficient permissions.
@@ -341,7 +341,7 @@ export type SignUpWithTokenErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Not found: resource does not exist.
@@ -358,7 +358,7 @@ export type SignUpWithTokenErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Rate limit: too many requests.
@@ -375,7 +375,7 @@ export type SignUpWithTokenErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
 };
 
@@ -416,7 +416,7 @@ export type SendVerificationEmailErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Unauthorized: authentication required.
@@ -433,7 +433,7 @@ export type SendVerificationEmailErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Forbidden: insufficient permissions.
@@ -450,7 +450,7 @@ export type SendVerificationEmailErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Not found: resource does not exist.
@@ -467,7 +467,7 @@ export type SendVerificationEmailErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Rate limit: too many requests.
@@ -484,7 +484,7 @@ export type SendVerificationEmailErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
 };
 
@@ -524,7 +524,7 @@ export type VerifyEmailErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Unauthorized: authentication required.
@@ -541,7 +541,7 @@ export type VerifyEmailErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Forbidden: insufficient permissions.
@@ -558,7 +558,7 @@ export type VerifyEmailErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Not found: resource does not exist.
@@ -575,7 +575,7 @@ export type VerifyEmailErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Rate limit: too many requests.
@@ -592,7 +592,7 @@ export type VerifyEmailErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
 };
 
@@ -632,7 +632,7 @@ export type RequestPasswordErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Unauthorized: authentication required.
@@ -649,7 +649,7 @@ export type RequestPasswordErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Forbidden: insufficient permissions.
@@ -666,7 +666,7 @@ export type RequestPasswordErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Not found: resource does not exist.
@@ -683,7 +683,7 @@ export type RequestPasswordErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Rate limit: too many requests.
@@ -700,7 +700,7 @@ export type RequestPasswordErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
 };
 
@@ -742,7 +742,7 @@ export type CreatePasswordWithTokenErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Unauthorized: authentication required.
@@ -759,7 +759,7 @@ export type CreatePasswordWithTokenErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Forbidden: insufficient permissions.
@@ -776,7 +776,7 @@ export type CreatePasswordWithTokenErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Not found: resource does not exist.
@@ -793,7 +793,7 @@ export type CreatePasswordWithTokenErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Rate limit: too many requests.
@@ -810,7 +810,7 @@ export type CreatePasswordWithTokenErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
 };
 
@@ -851,7 +851,7 @@ export type SignInErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Unauthorized: authentication required.
@@ -868,7 +868,7 @@ export type SignInErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Forbidden: insufficient permissions.
@@ -885,7 +885,7 @@ export type SignInErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Not found: resource does not exist.
@@ -902,7 +902,7 @@ export type SignInErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Rate limit: too many requests.
@@ -919,7 +919,7 @@ export type SignInErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
 };
 
@@ -961,7 +961,7 @@ export type CheckTokenErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Unauthorized: authentication required.
@@ -978,7 +978,7 @@ export type CheckTokenErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Forbidden: insufficient permissions.
@@ -995,7 +995,7 @@ export type CheckTokenErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Not found: resource does not exist.
@@ -1012,7 +1012,7 @@ export type CheckTokenErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Rate limit: too many requests.
@@ -1029,7 +1029,7 @@ export type CheckTokenErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
 };
 
@@ -1076,7 +1076,7 @@ export type AcceptEntityInviteErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Unauthorized: authentication required.
@@ -1093,7 +1093,7 @@ export type AcceptEntityInviteErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Forbidden: insufficient permissions.
@@ -1110,7 +1110,7 @@ export type AcceptEntityInviteErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Not found: resource does not exist.
@@ -1127,7 +1127,7 @@ export type AcceptEntityInviteErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Rate limit: too many requests.
@@ -1144,7 +1144,7 @@ export type AcceptEntityInviteErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
 };
 
@@ -1202,7 +1202,7 @@ export type StartImpersonationErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Unauthorized: authentication required.
@@ -1219,7 +1219,7 @@ export type StartImpersonationErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Forbidden: insufficient permissions.
@@ -1236,7 +1236,7 @@ export type StartImpersonationErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Not found: resource does not exist.
@@ -1253,7 +1253,7 @@ export type StartImpersonationErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Rate limit: too many requests.
@@ -1270,7 +1270,7 @@ export type StartImpersonationErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
 };
 
@@ -1308,7 +1308,7 @@ export type StopImpersonationErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Unauthorized: authentication required.
@@ -1325,7 +1325,7 @@ export type StopImpersonationErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Forbidden: insufficient permissions.
@@ -1342,7 +1342,7 @@ export type StopImpersonationErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Not found: resource does not exist.
@@ -1359,7 +1359,7 @@ export type StopImpersonationErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Rate limit: too many requests.
@@ -1376,7 +1376,7 @@ export type StopImpersonationErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
 };
 
@@ -1414,7 +1414,7 @@ export type SignOutErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Unauthorized: authentication required.
@@ -1431,7 +1431,7 @@ export type SignOutErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Forbidden: insufficient permissions.
@@ -1448,7 +1448,7 @@ export type SignOutErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Not found: resource does not exist.
@@ -1465,7 +1465,7 @@ export type SignOutErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Rate limit: too many requests.
@@ -1482,7 +1482,7 @@ export type SignOutErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
 };
 
@@ -1525,7 +1525,7 @@ export type GithubSignInErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Unauthorized: authentication required.
@@ -1542,7 +1542,7 @@ export type GithubSignInErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Forbidden: insufficient permissions.
@@ -1559,7 +1559,7 @@ export type GithubSignInErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Not found: resource does not exist.
@@ -1576,7 +1576,7 @@ export type GithubSignInErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Rate limit: too many requests.
@@ -1593,7 +1593,7 @@ export type GithubSignInErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
 };
 
@@ -1627,7 +1627,7 @@ export type GoogleSignInErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Unauthorized: authentication required.
@@ -1644,7 +1644,7 @@ export type GoogleSignInErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Forbidden: insufficient permissions.
@@ -1661,7 +1661,7 @@ export type GoogleSignInErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Not found: resource does not exist.
@@ -1678,7 +1678,7 @@ export type GoogleSignInErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Rate limit: too many requests.
@@ -1695,7 +1695,7 @@ export type GoogleSignInErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
 };
 
@@ -1729,7 +1729,7 @@ export type MicrosoftSignInErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Unauthorized: authentication required.
@@ -1746,7 +1746,7 @@ export type MicrosoftSignInErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Forbidden: insufficient permissions.
@@ -1763,7 +1763,7 @@ export type MicrosoftSignInErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Not found: resource does not exist.
@@ -1780,7 +1780,7 @@ export type MicrosoftSignInErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Rate limit: too many requests.
@@ -1797,7 +1797,7 @@ export type MicrosoftSignInErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
 };
 
@@ -1832,7 +1832,7 @@ export type GithubSignInCallbackErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Unauthorized: authentication required.
@@ -1849,7 +1849,7 @@ export type GithubSignInCallbackErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Forbidden: insufficient permissions.
@@ -1866,7 +1866,7 @@ export type GithubSignInCallbackErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Not found: resource does not exist.
@@ -1883,7 +1883,7 @@ export type GithubSignInCallbackErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Rate limit: too many requests.
@@ -1900,7 +1900,7 @@ export type GithubSignInCallbackErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
 };
 
@@ -1932,7 +1932,7 @@ export type GoogleSignInCallbackErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Unauthorized: authentication required.
@@ -1949,7 +1949,7 @@ export type GoogleSignInCallbackErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Forbidden: insufficient permissions.
@@ -1966,7 +1966,7 @@ export type GoogleSignInCallbackErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Not found: resource does not exist.
@@ -1983,7 +1983,7 @@ export type GoogleSignInCallbackErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Rate limit: too many requests.
@@ -2000,7 +2000,7 @@ export type GoogleSignInCallbackErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
 };
 
@@ -2032,7 +2032,7 @@ export type MicrosoftSignInCallbackErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Unauthorized: authentication required.
@@ -2049,7 +2049,7 @@ export type MicrosoftSignInCallbackErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Forbidden: insufficient permissions.
@@ -2066,7 +2066,7 @@ export type MicrosoftSignInCallbackErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Not found: resource does not exist.
@@ -2083,7 +2083,7 @@ export type MicrosoftSignInCallbackErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Rate limit: too many requests.
@@ -2100,7 +2100,7 @@ export type MicrosoftSignInCallbackErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
 };
 
@@ -2129,7 +2129,7 @@ export type GetPasskeyChallengeErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Unauthorized: authentication required.
@@ -2146,7 +2146,7 @@ export type GetPasskeyChallengeErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Forbidden: insufficient permissions.
@@ -2163,7 +2163,7 @@ export type GetPasskeyChallengeErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Not found: resource does not exist.
@@ -2180,7 +2180,7 @@ export type GetPasskeyChallengeErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Rate limit: too many requests.
@@ -2197,7 +2197,7 @@ export type GetPasskeyChallengeErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
 };
 
@@ -2242,7 +2242,7 @@ export type VerifyPasskeyErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Unauthorized: authentication required.
@@ -2259,7 +2259,7 @@ export type VerifyPasskeyErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Forbidden: insufficient permissions.
@@ -2276,7 +2276,7 @@ export type VerifyPasskeyErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Not found: resource does not exist.
@@ -2293,7 +2293,7 @@ export type VerifyPasskeyErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Rate limit: too many requests.
@@ -2310,7 +2310,7 @@ export type VerifyPasskeyErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
 };
 
@@ -2348,7 +2348,7 @@ export type DeleteMeErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Unauthorized: authentication required.
@@ -2365,7 +2365,7 @@ export type DeleteMeErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Forbidden: insufficient permissions.
@@ -2382,7 +2382,7 @@ export type DeleteMeErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Not found: resource does not exist.
@@ -2399,7 +2399,7 @@ export type DeleteMeErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Rate limit: too many requests.
@@ -2416,7 +2416,7 @@ export type DeleteMeErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
 };
 
@@ -2454,7 +2454,7 @@ export type GetMeErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Unauthorized: authentication required.
@@ -2471,7 +2471,7 @@ export type GetMeErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Forbidden: insufficient permissions.
@@ -2488,7 +2488,7 @@ export type GetMeErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Not found: resource does not exist.
@@ -2505,7 +2505,7 @@ export type GetMeErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Rate limit: too many requests.
@@ -2522,7 +2522,7 @@ export type GetMeErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
 };
 
@@ -2588,7 +2588,7 @@ export type UpdateMeErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Unauthorized: authentication required.
@@ -2605,7 +2605,7 @@ export type UpdateMeErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Forbidden: insufficient permissions.
@@ -2622,7 +2622,7 @@ export type UpdateMeErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Not found: resource does not exist.
@@ -2639,7 +2639,7 @@ export type UpdateMeErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Rate limit: too many requests.
@@ -2656,7 +2656,7 @@ export type UpdateMeErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
 };
 
@@ -2714,7 +2714,7 @@ export type GetMyAuthErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Unauthorized: authentication required.
@@ -2731,7 +2731,7 @@ export type GetMyAuthErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Forbidden: insufficient permissions.
@@ -2748,7 +2748,7 @@ export type GetMyAuthErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Not found: resource does not exist.
@@ -2765,7 +2765,7 @@ export type GetMyAuthErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Rate limit: too many requests.
@@ -2782,7 +2782,7 @@ export type GetMyAuthErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
 };
 
@@ -2836,7 +2836,7 @@ export type GetMyMenuErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Unauthorized: authentication required.
@@ -2853,7 +2853,7 @@ export type GetMyMenuErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Forbidden: insufficient permissions.
@@ -2870,7 +2870,7 @@ export type GetMyMenuErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Not found: resource does not exist.
@@ -2887,7 +2887,7 @@ export type GetMyMenuErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Rate limit: too many requests.
@@ -2904,7 +2904,7 @@ export type GetMyMenuErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
 };
 
@@ -2985,7 +2985,7 @@ export type DeleteSessionsErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Unauthorized: authentication required.
@@ -3002,7 +3002,7 @@ export type DeleteSessionsErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Forbidden: insufficient permissions.
@@ -3019,7 +3019,7 @@ export type DeleteSessionsErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Not found: resource does not exist.
@@ -3036,7 +3036,7 @@ export type DeleteSessionsErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Rate limit: too many requests.
@@ -3053,7 +3053,7 @@ export type DeleteSessionsErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
 };
 
@@ -3077,7 +3077,7 @@ export type DeleteSessionsResponses = {
             method?: string;
             timestamp?: string;
             userId?: string;
-            org?: string;
+            organizationId?: string;
         }>;
     };
 };
@@ -3110,7 +3110,7 @@ export type DeleteMyMembershipErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Unauthorized: authentication required.
@@ -3127,7 +3127,7 @@ export type DeleteMyMembershipErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Forbidden: insufficient permissions.
@@ -3144,7 +3144,7 @@ export type DeleteMyMembershipErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Not found: resource does not exist.
@@ -3161,7 +3161,7 @@ export type DeleteMyMembershipErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Rate limit: too many requests.
@@ -3178,7 +3178,7 @@ export type DeleteMyMembershipErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
 };
 
@@ -3216,7 +3216,7 @@ export type DeletePasskeyErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Unauthorized: authentication required.
@@ -3233,7 +3233,7 @@ export type DeletePasskeyErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Forbidden: insufficient permissions.
@@ -3250,7 +3250,7 @@ export type DeletePasskeyErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Not found: resource does not exist.
@@ -3267,7 +3267,7 @@ export type DeletePasskeyErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Rate limit: too many requests.
@@ -3284,7 +3284,7 @@ export type DeletePasskeyErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
 };
 
@@ -3326,7 +3326,7 @@ export type CreatePasskeyErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Unauthorized: authentication required.
@@ -3343,7 +3343,7 @@ export type CreatePasskeyErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Forbidden: insufficient permissions.
@@ -3360,7 +3360,7 @@ export type CreatePasskeyErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Not found: resource does not exist.
@@ -3377,7 +3377,7 @@ export type CreatePasskeyErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Rate limit: too many requests.
@@ -3394,7 +3394,7 @@ export type CreatePasskeyErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
 };
 
@@ -3436,7 +3436,7 @@ export type GetUploadTokenErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Unauthorized: authentication required.
@@ -3453,7 +3453,7 @@ export type GetUploadTokenErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Forbidden: insufficient permissions.
@@ -3470,7 +3470,7 @@ export type GetUploadTokenErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Not found: resource does not exist.
@@ -3487,7 +3487,7 @@ export type GetUploadTokenErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Rate limit: too many requests.
@@ -3504,7 +3504,7 @@ export type GetUploadTokenErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
 };
 
@@ -3559,7 +3559,7 @@ export type UnsubscribeMeErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Unauthorized: authentication required.
@@ -3576,7 +3576,7 @@ export type UnsubscribeMeErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Forbidden: insufficient permissions.
@@ -3593,7 +3593,7 @@ export type UnsubscribeMeErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Not found: resource does not exist.
@@ -3610,7 +3610,7 @@ export type UnsubscribeMeErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Rate limit: too many requests.
@@ -3627,7 +3627,7 @@ export type UnsubscribeMeErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
 };
 
@@ -3658,7 +3658,7 @@ export type DeleteUsersErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Unauthorized: authentication required.
@@ -3675,7 +3675,7 @@ export type DeleteUsersErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Forbidden: insufficient permissions.
@@ -3692,7 +3692,7 @@ export type DeleteUsersErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Not found: resource does not exist.
@@ -3709,7 +3709,7 @@ export type DeleteUsersErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Rate limit: too many requests.
@@ -3726,7 +3726,7 @@ export type DeleteUsersErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
 };
 
@@ -3750,7 +3750,7 @@ export type DeleteUsersResponses = {
             method?: string;
             timestamp?: string;
             userId?: string;
-            org?: string;
+            organizationId?: string;
         }>;
     };
 };
@@ -3787,7 +3787,7 @@ export type GetUsersErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Unauthorized: authentication required.
@@ -3804,7 +3804,7 @@ export type GetUsersErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Forbidden: insufficient permissions.
@@ -3821,7 +3821,7 @@ export type GetUsersErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Not found: resource does not exist.
@@ -3838,7 +3838,7 @@ export type GetUsersErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Rate limit: too many requests.
@@ -3855,7 +3855,7 @@ export type GetUsersErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
 };
 
@@ -3918,7 +3918,7 @@ export type GetUserErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Unauthorized: authentication required.
@@ -3935,7 +3935,7 @@ export type GetUserErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Forbidden: insufficient permissions.
@@ -3952,7 +3952,7 @@ export type GetUserErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Not found: resource does not exist.
@@ -3969,7 +3969,7 @@ export type GetUserErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Rate limit: too many requests.
@@ -3986,7 +3986,7 @@ export type GetUserErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
 };
 
@@ -4054,7 +4054,7 @@ export type UpdateUserErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Unauthorized: authentication required.
@@ -4071,7 +4071,7 @@ export type UpdateUserErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Forbidden: insufficient permissions.
@@ -4088,7 +4088,7 @@ export type UpdateUserErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Not found: resource does not exist.
@@ -4105,7 +4105,7 @@ export type UpdateUserErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Rate limit: too many requests.
@@ -4122,7 +4122,7 @@ export type UpdateUserErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
 };
 
@@ -4182,7 +4182,7 @@ export type DeleteOrganizationsErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Unauthorized: authentication required.
@@ -4199,7 +4199,7 @@ export type DeleteOrganizationsErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Forbidden: insufficient permissions.
@@ -4216,7 +4216,7 @@ export type DeleteOrganizationsErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Not found: resource does not exist.
@@ -4233,7 +4233,7 @@ export type DeleteOrganizationsErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Rate limit: too many requests.
@@ -4250,7 +4250,7 @@ export type DeleteOrganizationsErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
 };
 
@@ -4274,7 +4274,7 @@ export type DeleteOrganizationsResponses = {
             method?: string;
             timestamp?: string;
             userId?: string;
-            org?: string;
+            organizationId?: string;
         }>;
     };
 };
@@ -4310,7 +4310,7 @@ export type GetOrganizationsErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Unauthorized: authentication required.
@@ -4327,7 +4327,7 @@ export type GetOrganizationsErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Forbidden: insufficient permissions.
@@ -4344,7 +4344,7 @@ export type GetOrganizationsErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Not found: resource does not exist.
@@ -4361,7 +4361,7 @@ export type GetOrganizationsErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Rate limit: too many requests.
@@ -4378,7 +4378,7 @@ export type GetOrganizationsErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
 };
 
@@ -4468,7 +4468,7 @@ export type CreateOrganizationErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Unauthorized: authentication required.
@@ -4485,7 +4485,7 @@ export type CreateOrganizationErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Forbidden: insufficient permissions.
@@ -4502,7 +4502,7 @@ export type CreateOrganizationErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Not found: resource does not exist.
@@ -4519,7 +4519,7 @@ export type CreateOrganizationErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Rate limit: too many requests.
@@ -4536,7 +4536,7 @@ export type CreateOrganizationErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
 };
 
@@ -4612,7 +4612,7 @@ export type GetOrganizationErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Unauthorized: authentication required.
@@ -4629,7 +4629,7 @@ export type GetOrganizationErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Forbidden: insufficient permissions.
@@ -4646,7 +4646,7 @@ export type GetOrganizationErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Not found: resource does not exist.
@@ -4663,7 +4663,7 @@ export type GetOrganizationErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Rate limit: too many requests.
@@ -4680,7 +4680,7 @@ export type GetOrganizationErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
 };
 
@@ -4774,7 +4774,7 @@ export type UpdateOrganizationErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Unauthorized: authentication required.
@@ -4791,7 +4791,7 @@ export type UpdateOrganizationErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Forbidden: insufficient permissions.
@@ -4808,7 +4808,7 @@ export type UpdateOrganizationErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Not found: resource does not exist.
@@ -4825,7 +4825,7 @@ export type UpdateOrganizationErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Rate limit: too many requests.
@@ -4842,7 +4842,7 @@ export type UpdateOrganizationErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
 };
 
@@ -4922,7 +4922,7 @@ export type GetPageEntitiesErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Unauthorized: authentication required.
@@ -4939,7 +4939,7 @@ export type GetPageEntitiesErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Forbidden: insufficient permissions.
@@ -4956,7 +4956,7 @@ export type GetPageEntitiesErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Not found: resource does not exist.
@@ -4973,7 +4973,7 @@ export type GetPageEntitiesErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Rate limit: too many requests.
@@ -4990,7 +4990,7 @@ export type GetPageEntitiesErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
 };
 
@@ -5060,7 +5060,7 @@ export type GetContextEntitiesErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Unauthorized: authentication required.
@@ -5077,7 +5077,7 @@ export type GetContextEntitiesErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Forbidden: insufficient permissions.
@@ -5094,7 +5094,7 @@ export type GetContextEntitiesErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Not found: resource does not exist.
@@ -5111,7 +5111,7 @@ export type GetContextEntitiesErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Rate limit: too many requests.
@@ -5128,7 +5128,7 @@ export type GetContextEntitiesErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
 };
 
@@ -5196,7 +5196,7 @@ export type CheckSlugErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Unauthorized: authentication required.
@@ -5213,7 +5213,7 @@ export type CheckSlugErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Forbidden: insufficient permissions.
@@ -5230,7 +5230,7 @@ export type CheckSlugErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Not found: resource does not exist.
@@ -5247,7 +5247,7 @@ export type CheckSlugErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Rate limit: too many requests.
@@ -5264,7 +5264,7 @@ export type CheckSlugErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
 };
 
@@ -5304,7 +5304,7 @@ export type SystemInviteErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Unauthorized: authentication required.
@@ -5321,7 +5321,7 @@ export type SystemInviteErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Forbidden: insufficient permissions.
@@ -5338,7 +5338,7 @@ export type SystemInviteErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Not found: resource does not exist.
@@ -5355,7 +5355,7 @@ export type SystemInviteErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Rate limit: too many requests.
@@ -5372,7 +5372,7 @@ export type SystemInviteErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
 };
 
@@ -5412,7 +5412,7 @@ export type GetPresignedUrlErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Unauthorized: authentication required.
@@ -5429,7 +5429,7 @@ export type GetPresignedUrlErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Forbidden: insufficient permissions.
@@ -5446,7 +5446,7 @@ export type GetPresignedUrlErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Not found: resource does not exist.
@@ -5463,7 +5463,7 @@ export type GetPresignedUrlErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Rate limit: too many requests.
@@ -5480,7 +5480,7 @@ export type GetPresignedUrlErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
 };
 
@@ -5518,7 +5518,7 @@ export type PaddleWebhookErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Unauthorized: authentication required.
@@ -5535,7 +5535,7 @@ export type PaddleWebhookErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Forbidden: insufficient permissions.
@@ -5552,7 +5552,7 @@ export type PaddleWebhookErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Not found: resource does not exist.
@@ -5569,7 +5569,7 @@ export type PaddleWebhookErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Rate limit: too many requests.
@@ -5586,7 +5586,7 @@ export type PaddleWebhookErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
 };
 
@@ -5631,7 +5631,7 @@ export type SendNewsletterErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Unauthorized: authentication required.
@@ -5648,7 +5648,7 @@ export type SendNewsletterErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Forbidden: insufficient permissions.
@@ -5665,7 +5665,7 @@ export type SendNewsletterErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Not found: resource does not exist.
@@ -5682,7 +5682,7 @@ export type SendNewsletterErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Rate limit: too many requests.
@@ -5699,7 +5699,7 @@ export type SendNewsletterErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
 };
 
@@ -5739,7 +5739,7 @@ export type DeleteRequestsErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Unauthorized: authentication required.
@@ -5756,7 +5756,7 @@ export type DeleteRequestsErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Forbidden: insufficient permissions.
@@ -5773,7 +5773,7 @@ export type DeleteRequestsErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Not found: resource does not exist.
@@ -5790,7 +5790,7 @@ export type DeleteRequestsErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Rate limit: too many requests.
@@ -5807,7 +5807,7 @@ export type DeleteRequestsErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
 };
 
@@ -5831,7 +5831,7 @@ export type DeleteRequestsResponses = {
             method?: string;
             timestamp?: string;
             userId?: string;
-            org?: string;
+            organizationId?: string;
         }>;
     };
 };
@@ -5867,7 +5867,7 @@ export type GetRequestsErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Unauthorized: authentication required.
@@ -5884,7 +5884,7 @@ export type GetRequestsErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Forbidden: insufficient permissions.
@@ -5901,7 +5901,7 @@ export type GetRequestsErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Not found: resource does not exist.
@@ -5918,7 +5918,7 @@ export type GetRequestsErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Rate limit: too many requests.
@@ -5935,7 +5935,7 @@ export type GetRequestsErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
 };
 
@@ -5987,7 +5987,7 @@ export type CreateRequestErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Unauthorized: authentication required.
@@ -6004,7 +6004,7 @@ export type CreateRequestErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Forbidden: insufficient permissions.
@@ -6021,7 +6021,7 @@ export type CreateRequestErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Not found: resource does not exist.
@@ -6038,7 +6038,7 @@ export type CreateRequestErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Rate limit: too many requests.
@@ -6055,7 +6055,7 @@ export type CreateRequestErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
 };
 
@@ -6100,7 +6100,7 @@ export type GetMetricsErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Unauthorized: authentication required.
@@ -6117,7 +6117,7 @@ export type GetMetricsErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Forbidden: insufficient permissions.
@@ -6134,7 +6134,7 @@ export type GetMetricsErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Not found: resource does not exist.
@@ -6151,7 +6151,7 @@ export type GetMetricsErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Rate limit: too many requests.
@@ -6168,7 +6168,7 @@ export type GetMetricsErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
 };
 
@@ -6209,7 +6209,7 @@ export type GetPublicCountsErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Unauthorized: authentication required.
@@ -6226,7 +6226,7 @@ export type GetPublicCountsErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Forbidden: insufficient permissions.
@@ -6243,7 +6243,7 @@ export type GetPublicCountsErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Not found: resource does not exist.
@@ -6260,7 +6260,7 @@ export type GetPublicCountsErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Rate limit: too many requests.
@@ -6277,7 +6277,7 @@ export type GetPublicCountsErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
 };
 
@@ -6321,7 +6321,7 @@ export type ShapeProxyErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Unauthorized: authentication required.
@@ -6338,7 +6338,7 @@ export type ShapeProxyErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Forbidden: insufficient permissions.
@@ -6355,7 +6355,7 @@ export type ShapeProxyErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Not found: resource does not exist.
@@ -6372,7 +6372,7 @@ export type ShapeProxyErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Rate limit: too many requests.
@@ -6389,7 +6389,7 @@ export type ShapeProxyErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
 };
 
@@ -6429,7 +6429,7 @@ export type DeleteAttachmentsErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Unauthorized: authentication required.
@@ -6446,7 +6446,7 @@ export type DeleteAttachmentsErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Forbidden: insufficient permissions.
@@ -6463,7 +6463,7 @@ export type DeleteAttachmentsErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Not found: resource does not exist.
@@ -6480,7 +6480,7 @@ export type DeleteAttachmentsErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Rate limit: too many requests.
@@ -6497,7 +6497,7 @@ export type DeleteAttachmentsErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
 };
 
@@ -6521,7 +6521,7 @@ export type DeleteAttachmentsResponses = {
             method?: string;
             timestamp?: string;
             userId?: string;
-            org?: string;
+            organizationId?: string;
         }>;
     };
 };
@@ -6560,7 +6560,7 @@ export type GetAttachmentsErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Unauthorized: authentication required.
@@ -6577,7 +6577,7 @@ export type GetAttachmentsErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Forbidden: insufficient permissions.
@@ -6594,7 +6594,7 @@ export type GetAttachmentsErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Not found: resource does not exist.
@@ -6611,7 +6611,7 @@ export type GetAttachmentsErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Rate limit: too many requests.
@@ -6628,7 +6628,7 @@ export type GetAttachmentsErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
 };
 
@@ -6699,7 +6699,7 @@ export type CreateAttachmentErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Unauthorized: authentication required.
@@ -6716,7 +6716,7 @@ export type CreateAttachmentErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Forbidden: insufficient permissions.
@@ -6733,7 +6733,7 @@ export type CreateAttachmentErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Not found: resource does not exist.
@@ -6750,7 +6750,7 @@ export type CreateAttachmentErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Rate limit: too many requests.
@@ -6767,7 +6767,7 @@ export type CreateAttachmentErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
 };
 
@@ -6825,7 +6825,7 @@ export type GetAttachmentErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Unauthorized: authentication required.
@@ -6842,7 +6842,7 @@ export type GetAttachmentErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Forbidden: insufficient permissions.
@@ -6859,7 +6859,7 @@ export type GetAttachmentErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Not found: resource does not exist.
@@ -6876,7 +6876,7 @@ export type GetAttachmentErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Rate limit: too many requests.
@@ -6893,7 +6893,7 @@ export type GetAttachmentErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
 };
 
@@ -6954,7 +6954,7 @@ export type UpdateAttachmentErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Unauthorized: authentication required.
@@ -6971,7 +6971,7 @@ export type UpdateAttachmentErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Forbidden: insufficient permissions.
@@ -6988,7 +6988,7 @@ export type UpdateAttachmentErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Not found: resource does not exist.
@@ -7005,7 +7005,7 @@ export type UpdateAttachmentErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Rate limit: too many requests.
@@ -7022,7 +7022,7 @@ export type UpdateAttachmentErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
 };
 
@@ -7079,7 +7079,7 @@ export type GetAttachmentCoverErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Unauthorized: authentication required.
@@ -7096,7 +7096,7 @@ export type GetAttachmentCoverErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Forbidden: insufficient permissions.
@@ -7113,7 +7113,7 @@ export type GetAttachmentCoverErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Not found: resource does not exist.
@@ -7130,7 +7130,7 @@ export type GetAttachmentCoverErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Rate limit: too many requests.
@@ -7147,7 +7147,7 @@ export type GetAttachmentCoverErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
 };
 
@@ -7185,7 +7185,7 @@ export type RedirectToAttachmentErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Unauthorized: authentication required.
@@ -7202,7 +7202,7 @@ export type RedirectToAttachmentErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Forbidden: insufficient permissions.
@@ -7219,7 +7219,7 @@ export type RedirectToAttachmentErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Not found: resource does not exist.
@@ -7236,7 +7236,7 @@ export type RedirectToAttachmentErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Rate limit: too many requests.
@@ -7253,7 +7253,7 @@ export type RedirectToAttachmentErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
 };
 
@@ -7296,7 +7296,7 @@ export type DeleteMembershipsErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Unauthorized: authentication required.
@@ -7313,7 +7313,7 @@ export type DeleteMembershipsErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Forbidden: insufficient permissions.
@@ -7330,7 +7330,7 @@ export type DeleteMembershipsErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Not found: resource does not exist.
@@ -7347,7 +7347,7 @@ export type DeleteMembershipsErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Rate limit: too many requests.
@@ -7364,7 +7364,7 @@ export type DeleteMembershipsErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
 };
 
@@ -7388,7 +7388,7 @@ export type DeleteMembershipsResponses = {
             method?: string;
             timestamp?: string;
             userId?: string;
-            org?: string;
+            organizationId?: string;
         }>;
     };
 };
@@ -7426,7 +7426,7 @@ export type CreateMembershipsErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Unauthorized: authentication required.
@@ -7443,7 +7443,7 @@ export type CreateMembershipsErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Forbidden: insufficient permissions.
@@ -7460,7 +7460,7 @@ export type CreateMembershipsErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Not found: resource does not exist.
@@ -7477,7 +7477,7 @@ export type CreateMembershipsErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Rate limit: too many requests.
@@ -7494,7 +7494,7 @@ export type CreateMembershipsErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
 };
 
@@ -7540,7 +7540,7 @@ export type UpdateMembershipErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Unauthorized: authentication required.
@@ -7557,7 +7557,7 @@ export type UpdateMembershipErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Forbidden: insufficient permissions.
@@ -7574,7 +7574,7 @@ export type UpdateMembershipErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Not found: resource does not exist.
@@ -7591,7 +7591,7 @@ export type UpdateMembershipErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Rate limit: too many requests.
@@ -7608,7 +7608,7 @@ export type UpdateMembershipErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
 };
 
@@ -7670,7 +7670,7 @@ export type GetMembersErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Unauthorized: authentication required.
@@ -7687,7 +7687,7 @@ export type GetMembersErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Forbidden: insufficient permissions.
@@ -7704,7 +7704,7 @@ export type GetMembersErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Not found: resource does not exist.
@@ -7721,7 +7721,7 @@ export type GetMembersErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Rate limit: too many requests.
@@ -7738,7 +7738,7 @@ export type GetMembersErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
 };
 
@@ -7819,7 +7819,7 @@ export type GetPendingInvitationsErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Unauthorized: authentication required.
@@ -7836,7 +7836,7 @@ export type GetPendingInvitationsErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Forbidden: insufficient permissions.
@@ -7853,7 +7853,7 @@ export type GetPendingInvitationsErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Not found: resource does not exist.
@@ -7870,7 +7870,7 @@ export type GetPendingInvitationsErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
     /**
      * Rate limit: too many requests.
@@ -7887,7 +7887,7 @@ export type GetPendingInvitationsErrors = {
         method?: string;
         timestamp?: string;
         userId?: string;
-        org?: string;
+        organizationId?: string;
     };
 };
 

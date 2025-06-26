@@ -769,7 +769,7 @@ export const zDeleteSessionsResponse = z.object({
         method: z.string().optional(),
         timestamp: z.string().optional(),
         userId: z.string().optional(),
-        org: z.string().optional()
+        organizationId: z.string().optional()
     }))
 });
 
@@ -891,7 +891,7 @@ export const zDeleteUsersResponse = z.object({
         method: z.string().optional(),
         timestamp: z.string().optional(),
         userId: z.string().optional(),
-        org: z.string().optional()
+        organizationId: z.string().optional()
     }))
 });
 
@@ -1188,7 +1188,7 @@ export const zDeleteOrganizationsResponse = z.object({
         method: z.string().optional(),
         timestamp: z.string().optional(),
         userId: z.string().optional(),
-        org: z.string().optional()
+        organizationId: z.string().optional()
     }))
 });
 
@@ -1952,7 +1952,7 @@ export const zDeleteRequestsResponse = z.object({
         method: z.string().optional(),
         timestamp: z.string().optional(),
         userId: z.string().optional(),
-        org: z.string().optional()
+        organizationId: z.string().optional()
     }))
 });
 
@@ -2108,7 +2108,7 @@ export const zDeleteAttachmentsResponse = z.object({
         method: z.string().optional(),
         timestamp: z.string().optional(),
         userId: z.string().optional(),
-        org: z.string().optional()
+        organizationId: z.string().optional()
     }))
 });
 
@@ -2428,7 +2428,7 @@ export const zDeleteMembershipsResponse = z.object({
         method: z.string().optional(),
         timestamp: z.string().optional(),
         userId: z.string().optional(),
-        org: z.string().optional()
+        organizationId: z.string().optional()
     }))
 });
 
