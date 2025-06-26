@@ -1,13 +1,10 @@
 import { createRoute } from '@tanstack/react-router';
-import { Suspense, lazy } from 'react';
-import { z } from 'zod';
-
-import { organizationListQuerySchema } from '#/modules/organizations/schema';
-import { requestListQuerySchema } from '#/modules/requests/schema';
-import { userListQuerySchema } from '#/modules/users/schema';
+import { lazy, Suspense } from 'react';
+import { z } from 'zod/v4';
 
 import ErrorNotice from '~/modules/common/error-notice';
 import SystemPage from '~/modules/system/system-page';
+import { zGetOrganizationsData, zGetRequestsData, zGetUsersData } from '~/openapi-client/zod.gen';
 import { AppRoute } from '~/routes/base';
 import { noDirectAccess } from '~/utils/no-direct-access';
 
@@ -18,10 +15,10 @@ const RequestsTable = lazy(() => import('~/modules/requests/table/table-wrapper'
 const RequestsPerMinute = lazy(() => import('~/modules/metrics/requests-per-minute'));
 
 // Search query schemas
-export const organizationsSearchSchema = organizationListQuerySchema.pick({ q: true, sort: true, order: true });
-const baseUsersSearchSchema = userListQuerySchema.pick({ q: true, sort: true, order: true, role: true });
+export const organizationsSearchSchema = zGetOrganizationsData.shape.query.pick({ q: true, sort: true, order: true });
+const baseUsersSearchSchema = zGetUsersData.shape.query.pick({ q: true, sort: true, order: true, role: true });
 export const usersSearchSchema = z.object({ ...baseUsersSearchSchema.shape, userSheetId: z.string().optional() });
-export const requestSearchSchema = requestListQuerySchema.pick({ q: true, sort: true, order: true });
+export const requestSearchSchema = zGetRequestsData.shape.query.pick({ q: true, sort: true, order: true });
 
 export const SystemRoute = createRoute({
   path: '/system',

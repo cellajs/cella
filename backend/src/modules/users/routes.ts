@@ -2,10 +2,11 @@ import { createCustomRoute } from '#/lib/custom-routes';
 import { hasSystemAccess, isAuthenticated } from '#/middlewares/guard';
 import { userListQuerySchema, userSchema, userUpdateBodySchema } from '#/modules/users/schema';
 import { entityParamSchema, idsBodySchema } from '#/utils/schema/common';
-import { errorResponses, successWithDataSchema, successWithErrorsSchema, successWithPaginationSchema } from '#/utils/schema/responses';
+import { errorResponses, paginationSchema, successWithErrorsSchema } from '#/utils/schema/responses';
 
 const userRoutes = {
   getUsers: createCustomRoute({
+    operationId: 'getUsers',
     method: 'get',
     path: '/',
     guard: [isAuthenticated, hasSystemAccess],
@@ -20,7 +21,7 @@ const userRoutes = {
         description: 'Users',
         content: {
           'application/json': {
-            schema: successWithPaginationSchema(userSchema),
+            schema: paginationSchema(userSchema),
           },
         },
       },
@@ -28,6 +29,7 @@ const userRoutes = {
     },
   }),
   deleteUsers: createCustomRoute({
+    operationId: 'deleteUsers',
     method: 'delete',
     path: '/',
     guard: [isAuthenticated, hasSystemAccess],
@@ -52,6 +54,7 @@ const userRoutes = {
     },
   }),
   getUser: createCustomRoute({
+    operationId: 'getUser',
     method: 'get',
     path: '/{idOrSlug}',
     guard: isAuthenticated,
@@ -64,16 +67,13 @@ const userRoutes = {
     responses: {
       200: {
         description: 'User',
-        content: {
-          'application/json': {
-            schema: successWithDataSchema(userSchema),
-          },
-        },
+        content: { 'application/json': { schema: userSchema } },
       },
       ...errorResponses,
     },
   }),
   updateUser: createCustomRoute({
+    operationId: 'updateUser',
     method: 'put',
     path: '/{idOrSlug}',
     guard: [isAuthenticated, hasSystemAccess],
@@ -93,11 +93,7 @@ const userRoutes = {
     responses: {
       200: {
         description: 'User',
-        content: {
-          'application/json': {
-            schema: successWithDataSchema(userSchema),
-          },
-        },
+        content: { 'application/json': { schema: userSchema } },
       },
       ...errorResponses,
     },

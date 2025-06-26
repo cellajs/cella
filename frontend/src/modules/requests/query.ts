@@ -1,8 +1,15 @@
 import { infiniteQueryOptions, useMutation } from '@tanstack/react-query';
 import { config } from 'config';
 import type { ApiError } from '~/lib/api';
-import { type CreateRequestBody, type GetRequestsParams, createRequest, deleteRequests, getRequests } from '~/modules/requests/api';
 import type { Request } from '~/modules/requests/types';
+import {
+  type CreateRequestData,
+  type CreateRequestResponses,
+  createRequest,
+  deleteRequests,
+  type GetRequestsData,
+  getRequests,
+} from '~/openapi-client';
 
 /**
  * Keys for request related queries. These keys help to uniquely identify different query. For managing query caching and invalidation.
@@ -11,7 +18,7 @@ export const requestsKeys = {
   all: ['requests'] as const,
   table: {
     base: () => [...requestsKeys.all, 'table'] as const,
-    entries: (filters: GetRequestsParams) => [...requestsKeys.table.base(), filters] as const,
+    entries: (filters: Omit<GetRequestsData['query'], 'limit' | 'offset'>) => [...requestsKeys.table.base(), filters] as const,
   },
   create: () => [...requestsKeys.all, 'create'],
   delete: () => [...requestsKeys.all, 'delete'],
@@ -30,19 +37,23 @@ export const requestsKeys = {
  */
 export const requestsQueryOptions = ({
   q = '',
-  sort: initialSort,
-  order: initialOrder,
-  limit = config.requestLimits.requests,
-}: GetRequestsParams) => {
-  const sort = initialSort || 'createdAt';
-  const order = initialOrder || 'desc';
+  sort: _sort,
+  order: _order,
+  limit: _limit,
+}: Omit<GetRequestsData['query'], 'limit' | 'offset'> & { limit?: number }) => {
+  const sort = _sort || 'createdAt';
+  const order = _order || 'asc';
+  const limit = String(_limit || config.requestLimits.requests);
 
   const queryKey = requestsKeys.table.entries({ q, sort, order });
 
   return infiniteQueryOptions({
     queryKey,
     initialPageParam: { page: 0, offset: 0 },
-    queryFn: async ({ pageParam: { page, offset }, signal }) => await getRequests({ page, q, sort, order, limit, offset }, signal),
+    queryFn: async ({ pageParam: { page, offset: _offset }, signal }) => {
+      const offset = String(_offset || page * Number(limit));
+      return await getRequests({ query: { q, sort, order, limit, offset }, signal, throwOnError: true });
+    },
     getNextPageParam: (_lastPage, allPages) => {
       const page = allPages.length;
       const offset = allPages.reduce((acc, page) => acc + page.items.length, 0);
@@ -57,9 +68,9 @@ export const requestsQueryOptions = ({
  * @returns Mutation hook for creating a new request.
  */
 export const useCreateRequestMutation = () => {
-  return useMutation<boolean, ApiError, CreateRequestBody>({
+  return useMutation<CreateRequestResponses[200], ApiError, CreateRequestData['body']>({
     mutationKey: requestsKeys.create(),
-    mutationFn: createRequest,
+    mutationFn: (body) => createRequest({ body, throwOnError: true }),
   });
 };
 
@@ -71,6 +82,10 @@ export const useCreateRequestMutation = () => {
 export const useDeleteRequestMutation = () => {
   return useMutation<boolean, ApiError, Request[]>({
     mutationKey: requestsKeys.delete(),
-    mutationFn: (requests) => deleteRequests(requests.map(({ id }) => id)),
+    mutationFn: async (requests) => {
+      const ids = requests.map(({ id }) => id);
+      await deleteRequests({ body: { ids }, throwOnError: true });
+      return true;
+    },
   });
 };

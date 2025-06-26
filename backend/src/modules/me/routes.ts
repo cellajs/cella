@@ -1,14 +1,15 @@
-import { z } from 'zod';
+import { z } from '@hono/zod-openapi';
 import { createCustomRoute } from '#/lib/custom-routes';
 import { isAuthenticated, isPublicAccess } from '#/middlewares/guard';
 import { tokenLimiter } from '#/middlewares/rate-limiter/limiters';
 import { entityWithTypeQuerySchema } from '#/utils/schema/common';
-import { errorResponses, successWithDataSchema, successWithErrorsSchema, successWithoutDataSchema } from '#/utils/schema/responses';
+import { errorResponses, successWithErrorsSchema, successWithoutDataSchema } from '#/utils/schema/responses';
 import { userSchema, userUpdateBodySchema } from '../users/schema';
 import { meAuthDataSchema, menuSchema, passkeyRegistrationBodySchema, uploadTokenQuerySchema, uploadTokenSchema } from './schema';
 
 const meRoutes = {
   getMe: createCustomRoute({
+    operationId: 'getMe',
     method: 'get',
     path: '/',
     guard: isAuthenticated,
@@ -18,13 +19,14 @@ const meRoutes = {
     responses: {
       200: {
         description: 'User',
-        content: { 'application/json': { schema: successWithDataSchema(userSchema) } },
+        content: { 'application/json': { schema: userSchema } },
       },
       ...errorResponses,
     },
   }),
 
-  getMyAuthData: createCustomRoute({
+  getMyAuth: createCustomRoute({
+    operationId: 'getMyAuth',
     method: 'get',
     path: '/auth',
     guard: isAuthenticated,
@@ -34,13 +36,14 @@ const meRoutes = {
     responses: {
       200: {
         description: 'User sign-up info',
-        content: { 'application/json': { schema: successWithDataSchema(meAuthDataSchema) } },
+        content: { 'application/json': { schema: meAuthDataSchema } },
       },
       ...errorResponses,
     },
   }),
 
   updateMe: createCustomRoute({
+    operationId: 'updateMe',
     method: 'put',
     path: '/',
     guard: isAuthenticated,
@@ -53,17 +56,14 @@ const meRoutes = {
     responses: {
       200: {
         description: 'User',
-        content: {
-          'application/json': {
-            schema: successWithDataSchema(userSchema),
-          },
-        },
+        content: { 'application/json': { schema: userSchema } },
       },
       ...errorResponses,
     },
   }),
 
   deleteMe: createCustomRoute({
+    operationId: 'deleteMe',
     method: 'delete',
     path: '/',
     guard: isAuthenticated,
@@ -80,6 +80,7 @@ const meRoutes = {
   }),
 
   getMyMenu: createCustomRoute({
+    operationId: 'getMyMenu',
     method: 'get',
     path: '/menu',
     guard: isAuthenticated,
@@ -90,13 +91,14 @@ const meRoutes = {
     responses: {
       200: {
         description: 'Menu of user',
-        content: { 'application/json': { schema: successWithDataSchema(menuSchema) } },
+        content: { 'application/json': { schema: menuSchema } },
       },
       ...errorResponses,
     },
   }),
 
   deleteSessions: createCustomRoute({
+    operationId: 'deleteSessions',
     method: 'delete',
     path: '/sessions',
     guard: isAuthenticated,
@@ -119,6 +121,7 @@ const meRoutes = {
   }),
 
   deleteMyMembership: createCustomRoute({
+    operationId: 'deleteMyMembership',
     method: 'delete',
     path: '/leave',
     guard: isAuthenticated,
@@ -139,6 +142,7 @@ const meRoutes = {
   }),
 
   unsubscribeMe: createCustomRoute({
+    operationId: 'unsubscribeMe',
     method: 'get',
     path: '/unsubscribe',
     guard: isPublicAccess,
@@ -157,7 +161,9 @@ const meRoutes = {
       ...errorResponses,
     },
   }),
+
   getUploadToken: createCustomRoute({
+    operationId: 'getUploadToken',
     method: 'get',
     path: '/upload-token',
     guard: isAuthenticated,
@@ -165,23 +171,18 @@ const meRoutes = {
     summary: 'Get upload token',
     description:
       'This endpoint is used to get an upload token for a user or organization. The token can be used to upload or private images/files to your S3 bucket using',
-    request: {
-      query: uploadTokenQuerySchema,
-    },
+    request: { query: uploadTokenQuerySchema },
     responses: {
       200: {
         description: 'Upload token with a scope for a user or organization',
-        content: {
-          'application/json': {
-            schema: successWithDataSchema(uploadTokenSchema),
-          },
-        },
+        content: { 'application/json': { schema: uploadTokenSchema } },
       },
       ...errorResponses,
     },
   }),
 
   createPasskey: createCustomRoute({
+    operationId: 'createPasskey',
     method: 'post',
     path: '/passkey',
     guard: isAuthenticated,
@@ -206,6 +207,7 @@ const meRoutes = {
   }),
 
   deletePasskey: createCustomRoute({
+    operationId: 'deletePasskey',
     method: 'delete',
     path: '/passkey',
     guard: isAuthenticated,

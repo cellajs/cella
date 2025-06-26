@@ -1,10 +1,9 @@
 import { useInView } from 'react-intersection-observer';
 
 import AttachmentsCarousel, { type CarouselItemData } from '~/modules/attachments/carousel';
+import DeviceFrame from '~/modules/marketing/device-mockup/frame';
 import { useUIStore } from '~/store/ui';
 import { cn } from '~/utils/cn';
-
-import DeviceFrame from '~/modules/marketing/device-mockup/frame';
 
 type DeviceType = 'mobile' | 'tablet' | 'pc';
 type MockupItem = Pick<CarouselItemData, 'url' | 'id' | 'name'>;

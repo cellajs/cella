@@ -1,4 +1,4 @@
-import { type Paddle, initializePaddle } from '@paddle/paddle-js';
+import { initializePaddle, type Paddle } from '@paddle/paddle-js';
 import { onlineManager } from '@tanstack/react-query';
 import { config } from 'config';
 import { useEffect, useState } from 'react';

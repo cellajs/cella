@@ -1,5 +1,5 @@
 import { HttpInstrumentation } from '@opentelemetry/instrumentation-http';
-import { Resource, processDetector } from '@opentelemetry/resources';
+import { processDetector, Resource } from '@opentelemetry/resources';
 import { NodeSDK } from '@opentelemetry/sdk-node';
 import { ConsoleSpanExporter } from '@opentelemetry/sdk-trace-node';
 import { ATTR_SERVICE_NAME, ATTR_SERVICE_VERSION } from '@opentelemetry/semantic-conventions';

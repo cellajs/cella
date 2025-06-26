@@ -1,5 +1,3 @@
-import { MemberInviteEmail, type MemberInviteEmailProps } from '../../../emails/member-invite';
-
 import { OpenAPIHono } from '@hono/zod-openapi';
 import { config } from 'config';
 import { and, count, eq, ilike, inArray, isNotNull, isNull, or } from 'drizzle-orm';
@@ -11,7 +9,7 @@ import { tokensTable } from '#/db/schema/tokens';
 import { usersTable } from '#/db/schema/users';
 import { type Env, getContextMemberships, getContextOrganization, getContextUser } from '#/lib/context';
 import { resolveEntity } from '#/lib/entity';
-import { type ErrorType, createError, errorResponse } from '#/lib/errors';
+import { createError, type ErrorType, errorResponse } from '#/lib/errors';
 import { mailer } from '#/lib/mailer';
 import { sendSSEToUsers } from '#/lib/sse';
 import { logEvent } from '#/middlewares/logger/log-event';
@@ -27,7 +25,8 @@ import { nanoid } from '#/utils/nanoid';
 import { getOrderColumn } from '#/utils/order-column';
 import { slugFromEmail } from '#/utils/slug-from-email';
 import { prepareStringForILikeFilter } from '#/utils/sql';
-import { TimeSpan, createDate } from '#/utils/time-span';
+import { createDate, TimeSpan } from '#/utils/time-span';
+import { MemberInviteEmail, type MemberInviteEmailProps } from '../../../emails/member-invite';
 
 const app = new OpenAPIHono<Env>({ defaultHook });
 
@@ -41,7 +40,7 @@ const membershipRouteHandlers = app
 
     // Validate entity existence and check user permission for updates
     const { error, entity } = await getValidContextEntity(ctx, idOrSlug, passedEntityType, 'update');
-    if (error) return ctx.json({ success: false, error });
+    if (error) return ctx.json(error, 400);
 
     // Extract entity details
     const { entityType, id: entityId } = entity;
@@ -150,7 +149,7 @@ const membershipRouteHandlers = app
       emailsWithIdToInvite.push({ email, userId: null });
     }
 
-    if (emailsWithIdToInvite.length === 0) ctx.json({ success: true }, 200);
+    if (emailsWithIdToInvite.length === 0) return ctx.json(true, 200);
 
     // Generate invitation tokens
     const tokens = emailsWithIdToInvite.map(({ email, userId }) => ({
@@ -172,7 +171,7 @@ const membershipRouteHandlers = app
     const insertedTokens = await db
       .insert(tokensTable)
       .values(tokens)
-      .returning({ tokenId: tokensTable.id, userId: tokensTable.userId, email: tokensTable.email, token: tokensTable.token });
+      .returning({ tokenId: tokensTable.id, userId: tokensTable.userId, email: tokensTable.email, token: tokensTable.token, role: tokensTable.role });
 
     // Generate inactive memberships after tokens are inserted
     const inactiveMemberships = insertedTokens
@@ -193,6 +192,7 @@ const membershipRouteHandlers = app
       senderName: user.name,
       senderThumbnailUrl: user.thumbnailUrl,
       orgName: entity.name,
+      role,
       subject: i18n.t('backend:email.member_invite.subject', {
         lng: organization.defaultLanguage,
         appName: config.name,
@@ -205,7 +205,7 @@ const membershipRouteHandlers = app
 
     logEvent(`${insertedTokens.length} users invited to organization`, { organization: organization.id }); // Log invitation event
 
-    return ctx.json({ success: true }, 200);
+    return ctx.json(true, 200);
   })
   /*
    * Delete memberships to remove users from entity
@@ -216,7 +216,7 @@ const membershipRouteHandlers = app
     const { ids } = ctx.req.valid('json');
 
     const { error, entity } = await getValidContextEntity(ctx, idOrSlug, entityType, 'delete');
-    if (error) return ctx.json({ success: false, error }, 400);
+    if (error) return ctx.json(error, 400);
 
     const entityIdField = config.entityIdFields[entityType];
 
@@ -241,7 +241,7 @@ const membershipRouteHandlers = app
     }
 
     // If the user doesn't have permission to delete any of the memberships, return an error
-    if (targets.length === 0) return ctx.json({ success: false, errors: errors }, 200);
+    if (targets.length === 0) return ctx.json({ success: false, errors }, 200);
 
     // Delete the memberships
     await db.delete(membershipsTable).where(
@@ -296,7 +296,7 @@ const membershipRouteHandlers = app
     // Check if user has permission to update someone elses membership role
     if (role) {
       const { error } = await getValidContextEntity(ctx, membershipContextId, updatedType, 'update');
-      if (error) return ctx.json({ success: false, error }, 400);
+      if (error) return ctx.json(error, 400);
     }
 
     // If archived changed, set lowest order in relevant memberships
@@ -333,7 +333,7 @@ const membershipRouteHandlers = app
 
     logEvent('Membership updated', { user: updatedMembership.userId, membership: updatedMembership.id });
 
-    return ctx.json({ success: true, data: updatedMembership }, 200);
+    return ctx.json(updatedMembership, 200);
   })
   /*
    * Get members by entity id/slug and type
@@ -386,7 +386,7 @@ const membershipRouteHandlers = app
     const members = await membersQuery.orderBy(orderColumn).limit(Number(limit)).offset(Number(offset));
     const items = members.map(({ user, membership }) => ({ ...user, membership }));
 
-    return ctx.json({ success: true, data: { items, total } }, 200);
+    return ctx.json({ items, total }, 200);
   })
   /*
    * Get pending membership invitations by entity id/slug and type
@@ -398,7 +398,7 @@ const membershipRouteHandlers = app
     const organization = getContextOrganization();
 
     const { error, entity } = await getValidContextEntity(ctx, idOrSlug, entityType, 'read');
-    if (error) return ctx.json({ success: false, error }, 400);
+    if (error) return ctx.json(error, 400);
 
     const entityIdField = config.entityIdFields[entity.entityType];
 
@@ -406,7 +406,7 @@ const membershipRouteHandlers = app
       id: tokensTable.id,
       name: usersTable.name,
       email: tokensTable.email,
-      role: tokensTable.role,
+      role: membershipsTable.role,
       expiresAt: tokensTable.expiresAt,
       createdAt: tokensTable.createdAt,
       createdBy: tokensTable.createdBy,
@@ -432,7 +432,7 @@ const membershipRouteHandlers = app
 
     const items = await pendingInvitationsQuery.limit(Number(limit)).offset(Number(offset));
 
-    return ctx.json({ success: true, data: { items, total } }, 200);
+    return ctx.json({ items, total }, 200);
   });
 
 export default membershipRouteHandlers;

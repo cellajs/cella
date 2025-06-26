@@ -1,7 +1,7 @@
 import type { ContextEntityType } from 'config';
 import { DeleteForm } from '~/modules/common/delete-form';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
-import { useMembersDeleteMutation } from '~/modules/memberships/query/mutations';
+import { useMembersDeleteMutation } from '~/modules/memberships/query-mutations';
 import type { Member } from '~/modules/memberships/types';
 
 interface Props {

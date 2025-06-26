@@ -1,8 +1,7 @@
-import { config } from 'config';
-import { z } from 'zod';
+import { z } from '@hono/zod-openapi';
 import { membershipSummarySchema } from '#/modules/memberships/schema';
-import { userSummarySchema } from '#/modules/users/schema';
 import { contextEntityTypeSchema, idSchema, imageUrlSchema, nameSchema, pageEntityTypeSchema, slugSchema } from '#/utils/schema/common';
+import { mapEntitiesToSchema } from '#/utils/schema/entities-to-schema';
 
 export const entityBaseSchema = z.object({
   id: idSchema,
@@ -18,6 +17,12 @@ const baseEntityQuerySchema = z.object({
   targetUserId: idSchema.optional(),
 });
 
+// Declared here to avoid circular dependencies
+export const userSummarySchema = entityBaseSchema.extend({
+  email: z.email(),
+  entityType: z.literal('user'),
+});
+
 export const entityListItemSchema = entityBaseSchema.extend({
   email: z.string().optional(),
   entityType: pageEntityTypeSchema,
@@ -26,7 +31,7 @@ export const entityListItemSchema = entityBaseSchema.extend({
 
 export const pageEntitiesSchema = z.object({
   items: z.array(entityListItemSchema),
-  counts: z.record(z.enum(config.pageEntityTypes), z.number().optional()),
+  counts: mapEntitiesToSchema(() => z.number().optional()),
   total: z.number(),
 });
 
@@ -39,13 +44,17 @@ export const pageEntitiesQuerySchema = baseEntityQuerySchema.extend({
 export const contextEntitiesSchema = z.array(
   entityBaseSchema.extend({
     createdAt: z.string(),
-    entityType: contextEntityTypeSchema,
     membership: membershipSummarySchema,
-    members: z.array(z.lazy(() => userSummarySchema)),
+    members: z.array(userSummarySchema),
   }),
 );
 
 export const contextEntitiesQuerySchema = baseEntityQuerySchema.extend({
+  roles: z.preprocess((val) => {
+    if (typeof val === 'string') return [val]; // wrap single string as array
+    if (Array.isArray(val)) return val;
+    return undefined;
+  }, z.array(membershipSummarySchema.shape.role).optional()),
   type: contextEntityTypeSchema,
   sort: z.enum(['name', 'createdAt']).default('createdAt').optional(),
 });

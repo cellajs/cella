@@ -4,10 +4,11 @@ import { isNoBot } from '#/middlewares/is-no-bot';
 import { spamLimiter } from '#/middlewares/rate-limiter/limiters';
 import { requestCreateBodySchema, requestListQuerySchema, requestSchema } from '#/modules/requests/schema';
 import { idsBodySchema } from '#/utils/schema/common';
-import { errorResponses, successWithDataSchema, successWithPaginationSchema, successWithoutDataSchema } from '#/utils/schema/responses';
+import { errorResponses, paginationSchema, successWithErrorsSchema } from '#/utils/schema/responses';
 
 const requestRoutes = {
   createRequest: createCustomRoute({
+    operationId: 'createRequest',
     method: 'post',
     path: '/',
     guard: isPublicAccess,
@@ -27,16 +28,13 @@ const requestRoutes = {
     responses: {
       200: {
         description: 'Requests',
-        content: {
-          'application/json': {
-            schema: successWithDataSchema(requestSchema),
-          },
-        },
+        content: { 'application/json': { schema: requestSchema } },
       },
       ...errorResponses,
     },
   }),
   getRequests: createCustomRoute({
+    operationId: 'getRequests',
     method: 'get',
     path: '/',
     guard: [isAuthenticated, hasSystemAccess],
@@ -51,7 +49,7 @@ const requestRoutes = {
         description: 'Requests',
         content: {
           'application/json': {
-            schema: successWithPaginationSchema(requestSchema),
+            schema: paginationSchema(requestSchema),
           },
         },
       },
@@ -59,6 +57,7 @@ const requestRoutes = {
     },
   }),
   deleteRequests: createCustomRoute({
+    operationId: 'deleteRequests',
     method: 'delete',
     path: '/',
     guard: [isAuthenticated, hasSystemAccess],
@@ -75,7 +74,7 @@ const requestRoutes = {
         description: 'Requests',
         content: {
           'application/json': {
-            schema: successWithoutDataSchema,
+            schema: successWithErrorsSchema(),
           },
         },
       },

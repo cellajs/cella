@@ -1,17 +1,17 @@
 import { useSearch } from '@tanstack/react-router';
-import { type EnabledOauthProvider, config } from 'config';
+import { config, type EnabledOauthProvider } from 'config';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { githubSignInUrl, googleSignInUrl, microsoftSignInUrl } from '~/modules/auth/api';
 import type { Step } from '~/modules/auth/types';
 import { Button } from '~/modules/ui/button';
 import { AuthenticateRoute } from '~/routes/auth';
 import { useUIStore } from '~/store/ui';
 
+// TODO change assign of urls
 export const mapOauthProviders = [
-  { id: 'github', name: 'Github', url: githubSignInUrl },
-  { id: 'google', name: 'Google', url: googleSignInUrl },
-  { id: 'microsoft', name: 'Microsoft', url: microsoftSignInUrl },
+  { id: 'github', name: 'Github', url: `${config.backendUrl}/auth/github` },
+  { id: 'google', name: 'Google', url: `${config.backendUrl}/auth/google` },
+  { id: 'microsoft', name: 'Microsoft', url: `${config.backendUrl}/auth/microsoft` },
 ];
 interface OauthOptions {
   id: EnabledOauthProvider;

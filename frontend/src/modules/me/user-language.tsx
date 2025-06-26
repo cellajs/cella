@@ -1,12 +1,12 @@
 import { onlineManager } from '@tanstack/react-query';
-import { type Language, config } from 'config';
+import { config, type Language } from 'config';
 import i18n from 'i18next';
 import { useTranslation } from 'react-i18next';
 import CountryFlag from '~/modules/common/country-flag';
 import { toaster } from '~/modules/common/toaster';
-import { updateMe } from '~/modules/me/api';
 import { Button } from '~/modules/ui/button';
 import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuTrigger } from '~/modules/ui/dropdown-menu';
+import { updateMe } from '~/openapi-client';
 import { useUserStore } from '~/store/user';
 import { cn } from '~/utils/cn';
 
@@ -29,7 +29,7 @@ const UserLanguage = ({ align = 'end', triggerClassName = '', contentClassName =
     i18n.changeLanguage(lng);
 
     if (!user) return;
-    updateMe({ language: lng }).then((res) => {
+    updateMe({ body: { language: lng }, throwOnError: true }).then((res) => {
       updateUser(res);
     });
   };

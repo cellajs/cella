@@ -4,7 +4,7 @@ import { useBreakpoints } from '~/hooks/use-breakpoints';
 import HeaderCell from '~/modules/common/data-table/header-cell';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 import type { EntityPage } from '~/modules/entities/types';
-import { membersKeys } from '~/modules/memberships/query/options';
+import { membersKeys } from '~/modules/memberships/query';
 import type { PendingInvitation } from '~/modules/memberships/types';
 import { findUserFromCache } from '~/modules/users/helpers';
 import UserCell from '~/modules/users/user-cell';
@@ -41,7 +41,7 @@ export const useColumns = (entity: EntityPage) => {
         renderHeaderCell: HeaderCell,
         renderCell: ({ row }) => (
           <div className="inline-flex items-center gap-1 relative group h-full w-full">
-            {row.role ? t(`common:${row.role}`) : <span className="text-muted">-</span>}
+            {row.role ? t(row.role, { ns: ['app', 'common'] }) : <span className="text-muted">-</span>}
           </div>
         ),
       },

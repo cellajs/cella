@@ -1,22 +1,22 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useNavigate, useParams, useSearch } from '@tanstack/react-router';
-import { useForm } from 'react-hook-form';
-import { useTranslation } from 'react-i18next';
-import * as z from 'zod';
-import { Button, SubmitButton } from '~/modules/ui/button';
-
 import { useMutation } from '@tanstack/react-query';
+import { useNavigate, useParams, useSearch } from '@tanstack/react-router';
 import { config } from 'config';
 import { ArrowRight } from 'lucide-react';
-import { Suspense, lazy, useRef } from 'react';
-import { createPassword } from '~/modules/auth/api';
+import { lazy, Suspense, useRef } from 'react';
+import { useForm } from 'react-hook-form';
+import { useTranslation } from 'react-i18next';
+import { z } from 'zod/v4';
+import type { ApiError } from '~/lib/api';
 import AuthErrorNotice from '~/modules/auth/auth-error-notice';
 import { RequestPasswordDialog } from '~/modules/auth/request-password-dialog';
 import { useTokenCheck } from '~/modules/auth/use-token-check';
 import Spinner from '~/modules/common/spinner';
 import { toaster } from '~/modules/common/toaster';
+import { Button, SubmitButton } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '~/modules/ui/form';
 import { Input } from '~/modules/ui/input';
+import { type CreatePasswordData, type CreatePasswordResponse, createPassword } from '~/openapi-client';
 import { CreatePasswordWithTokenRoute } from '~/routes/auth';
 import { defaultOnInvalid } from '~/utils/form-on-invalid';
 
@@ -42,8 +42,8 @@ const CreatePasswordForm = () => {
     mutate: _createPassword,
     isPending,
     error: resetPasswordError,
-  } = useMutation({
-    mutationFn: createPassword,
+  } = useMutation<CreatePasswordResponse, ApiError, CreatePasswordData['body'] & CreatePasswordData['path']>({
+    mutationFn: ({ token, password }) => createPassword({ path: { token }, body: { password }, throwOnError: true }),
     onSuccess: () => {
       toaster(t('common:success.password_reset'), 'success');
       navigate({ to: config.defaultRedirectPath });

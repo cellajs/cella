@@ -1,12 +1,10 @@
-import type { entityListItemSchema } from '#/modules/entities/schema';
-
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
-import { type EntityType, config } from 'config';
+import { config, type EntityType } from 'config';
 import { History, Search, User, X } from 'lucide-react';
 import { Fragment, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { z } from 'zod';
+import type { z } from 'zod/v4';
 import useFocusByRef from '~/hooks/use-focus-by-ref';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
@@ -17,10 +15,11 @@ import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandSeparator } from '~/modules/ui/command';
 import { ScrollArea } from '~/modules/ui/scroll-area';
-import { entitySearchSections, getEntityRoute } from '~/nav-config';
+import { getEntityRoute } from '~/nav-config';
+import type { zGetPageEntitiesResponse } from '~/openapi-client/zod.gen';
 import { useNavigationStore } from '~/store/navigation';
 
-export type EntityListItemType = z.infer<typeof entityListItemSchema>;
+export type EntityListItem = z.infer<typeof zGetPageEntitiesResponse>['items'][number];
 
 export interface EntitySearchSection {
   id: string;
@@ -70,7 +69,7 @@ export const AppSearch = () => {
 
   const { data: items, isFetching } = useQuery(entitiesQueryOptions({ q: searchValue }));
 
-  const onSelectItem = (item: EntityListItemType) => {
+  const onSelectItem = (item: EntityListItem) => {
     // Update recent searches with the search value
     updateRecentSearches(searchValue);
 
@@ -113,12 +112,22 @@ export const AppSearch = () => {
               <>
                 {!!searchValue.length && !isFetching && (
                   <CommandEmpty className="h-full sm:h-[36vh]">
-                    <ContentPlaceholder icon={Search} title={t('common:no_resource_found', { resource: t('common:results').toLowerCase() })} />
+                    <ContentPlaceholder
+                      icon={Search}
+                      title={t('common:no_resource_found', {
+                        resource: t('common:results').toLowerCase(),
+                      })}
+                    />
                   </CommandEmpty>
                 )}
                 {searchValue.length === 0 && (
                   <CommandEmpty className="h-full sm:h-[36vh]">
-                    <ContentPlaceholder icon={Search} title={t('common:global_search.text', { appName: config.name })} />
+                    <ContentPlaceholder
+                      icon={Search}
+                      title={t('common:global_search.text', {
+                        appName: config.name,
+                      })}
+                    />
                   </CommandEmpty>
                 )}
                 {!!recentSearches.length && (
@@ -151,27 +160,32 @@ export const AppSearch = () => {
               </>
             )}
             {items.total > 0 &&
-              entitySearchSections.map((section) => {
-                const filteredItems = items.items.filter((el) => el.entityType === section.type);
+              config.pageEntityTypes.map((entityType) => {
+                const filteredItems = items.items.filter((el) => el.entityType === entityType);
                 // Skip rendering if no items match the section type
                 if (filteredItems.length === 0) return null;
 
                 return (
-                  <Fragment key={section.id}>
+                  <Fragment key={entityType}>
                     <CommandSeparator />
                     <CommandGroup className="">
-                      <StickyBox className="z-10 px-2 py-1.5 text-xs font-medium text-muted-foreground bg-popover">{t(section.label)}</StickyBox>
-                      {filteredItems.map((item: EntityListItemType) => {
+                      <StickyBox className="z-10 px-2 py-1.5 text-xs font-medium text-muted-foreground bg-popover">
+                        {t(entityType, {
+                          ns: ['app', 'common'],
+                          defaultValue: entityType,
+                        })}
+                      </StickyBox>
+                      {filteredItems.map((item: EntityListItem) => {
                         return (
                           <CommandItem
-                            data-already-member={section.type !== 'user' && item.membership !== null}
+                            data-already-member={entityType !== 'user' && item.membership !== null}
                             key={item.id}
-                            disabled={section.type !== 'user' && item.membership === null}
+                            disabled={entityType !== 'user' && item.membership === null}
                             className="w-full justify-between group"
                             onSelect={() => onSelectItem(item)}
                           >
                             <div className="flex space-x-2 items-center outline-0 ring-0 group">
-                              <AvatarWrap type={section.type} className="h-8 w-8" id={item.id} name={item.name} url={item.thumbnailUrl} />
+                              <AvatarWrap type={entityType} className="h-8 w-8" id={item.id} name={item.name} url={item.thumbnailUrl} />
                               <span className="group-data-[already-member=true]:hover:underline underline-offset-4 truncate font-medium">
                                 {item.name}
                               </span>

@@ -1,28 +1,26 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useNavigate, useSearch } from '@tanstack/react-router';
-import { useForm } from 'react-hook-form';
-import { useTranslation } from 'react-i18next';
-import type * as z from 'zod';
-import { emailPasswordBodySchema } from '#/modules/auth/schema';
-
-import { Button, SubmitButton } from '~/modules/ui/button';
-import { Form, FormControl, FormField, FormItem, FormMessage } from '~/modules/ui/form';
-import { Input } from '~/modules/ui/input';
-
 import { useMutation } from '@tanstack/react-query';
+import { useNavigate, useSearch } from '@tanstack/react-router';
 import { config } from 'config';
 import { ArrowRight, ChevronDown } from 'lucide-react';
 import { useRef } from 'react';
+import { useForm } from 'react-hook-form';
+import { useTranslation } from 'react-i18next';
+import type { z } from 'zod/v4';
 import type { ApiError } from '~/lib/api';
-import { signIn } from '~/modules/auth/api';
 import { RequestPasswordDialog } from '~/modules/auth/request-password-dialog';
+import { Button, SubmitButton } from '~/modules/ui/button';
+import { Form, FormControl, FormField, FormItem, FormMessage } from '~/modules/ui/form';
+import { Input } from '~/modules/ui/input';
+import { type SignInData, type SignInResponse, signIn } from '~/openapi-client';
+import { zSignUpData } from '~/openapi-client/zod.gen';
 import { AuthenticateRoute } from '~/routes/auth';
 import { useUserStore } from '~/store/user';
 import { defaultOnInvalid } from '~/utils/form-on-invalid';
 
 const enabledStrategies: readonly string[] = config.enabledAuthenticationStrategies;
 
-const formSchema = emailPasswordBodySchema;
+const formSchema = zSignUpData.shape.body.unwrap();
 type FormValues = z.infer<typeof formSchema>;
 interface Props {
   email: string;
@@ -48,8 +46,8 @@ export const SignInForm = ({ email, resetSteps, emailEnabled }: Props) => {
   });
 
   // Handle sign in
-  const { mutate: _signIn, isPending } = useMutation({
-    mutationFn: signIn,
+  const { mutate: _signIn, isPending } = useMutation<SignInResponse, ApiError, NonNullable<SignInData['body']>>({
+    mutationFn: (body) => signIn({ body, throwOnError: true }),
     onSuccess: (emailVerified) => {
       if (!emailVerified) return navigate({ to: '/auth/email-verification', replace: true });
 
@@ -70,7 +68,7 @@ export const SignInForm = ({ email, resetSteps, emailEnabled }: Props) => {
     },
   });
 
-  const onSubmit = (values: FormValues) => _signIn({ ...values });
+  const onSubmit = (body: FormValues) => _signIn({ ...body });
 
   const resetAuth = () => {
     clearUserStore();

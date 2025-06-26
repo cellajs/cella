@@ -4,7 +4,7 @@ import type { BaseUppyFilePanelProps, CommonBlockNoteProps } from '~/modules/com
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
 
 type Props = {
-  // biome-ignore lint/suspicious/noExplicitAny: <explanation>
+  // biome-ignore lint/suspicious/noExplicitAny: unable to infer type due to dynamic data structure
   control: Control<any>;
   name: string;
   disabled?: boolean;

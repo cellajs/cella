@@ -26,7 +26,7 @@ const SelectRole = ({ entity = false, onChange, value, className }: SelectRolePr
         <SelectItem value={'all'}> {t('common:all')}</SelectItem>
         {roles.map((role) => (
           <SelectItem key={role} value={role}>
-            {t(role)}
+            {t(role, { ns: ['app', 'common'] })}
           </SelectItem>
         ))}
       </SelectContent>

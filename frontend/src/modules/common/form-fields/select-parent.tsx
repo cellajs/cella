@@ -8,7 +8,7 @@ import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modu
 import { useNavigationStore } from '~/store/navigation';
 
 interface Props {
-  // biome-ignore lint/suspicious/noExplicitAny: <explanation>
+  // biome-ignore lint/suspicious/noExplicitAny: unable to infer type due to dynamic data structure
   control: Control<any>;
   name: string;
   label: string;

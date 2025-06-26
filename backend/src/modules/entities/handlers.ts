@@ -12,9 +12,9 @@ import { checkSlugAvailable } from '#/modules/entities/helpers/check-slug';
 import { getEntitiesQuery } from '#/modules/entities/helpers/entities-query';
 import { processEntitiesData } from '#/modules/entities/helpers/process-entities-data';
 import entityRoutes from '#/modules/entities/routes';
+import type { userSummarySchema } from '#/modules/entities/schema';
 import { membershipSummarySelect } from '#/modules/memberships/helpers/select';
 import { userSummarySelect } from '#/modules/users/helpers/select';
-import type { userSummarySchema } from '#/modules/users/schema';
 import { defaultHook } from '#/utils/default-hook';
 import { getOrderColumn } from '#/utils/order-column';
 import { prepareStringForILikeFilter } from '#/utils/sql';
@@ -24,6 +24,7 @@ const app = new OpenAPIHono<Env>({ defaultHook });
 const entityRouteHandlers = app
   /*
    * Get page entities with a limited schema
+   TODO getPageEntities and getContextEntities should be merged into a single endpoint? Also why does BaseEntitySchema only include the organization entityType?
    */
   .openapi(entityRoutes.getPageEntities, async (ctx) => {
     const { q, type, targetUserId, targetOrgId, userMembershipType } = ctx.req.valid('query');
@@ -54,7 +55,7 @@ const entityRouteHandlers = app
       organizationIds = orgMemberships.map((m) => m.organizationId);
     }
 
-    if (!organizationIds.length) return ctx.json({ success: true, data: { items: [], total: 0, counts: {} } }, 200);
+    if (!organizationIds.length) return ctx.json({ items: [], total: 0, counts: { user: 0, organization: 0 } }, 200);
 
     // Prepare query and execute in parallel
     const queries = getEntitiesQuery({ q, organizationIds, userId, selfId, type, userMembershipType });
@@ -63,13 +64,13 @@ const entityRouteHandlers = app
     // Aggregate and process result data
     const { counts, items, total } = processEntitiesData(queryData, type);
 
-    return ctx.json({ success: true, data: { items, total, counts } }, 200);
+    return ctx.json({ items, total, counts }, 200);
   })
   /*
-   * Get all users context entities
+   * Get all users' context entities
    */
-  .openapi(entityRoutes.geContextEntities, async (ctx) => {
-    const { q, sort, type, targetUserId } = ctx.req.valid('query');
+  .openapi(entityRoutes.getContextEntities, async (ctx) => {
+    const { q, sort, type, roles, targetUserId } = ctx.req.valid('query');
 
     const { id: selfId } = getContextUser();
 
@@ -94,7 +95,12 @@ const entityRouteHandlers = app
       .from(table)
       .innerJoin(
         membershipsTable,
-        and(eq(membershipsTable[entityIdField], table.id), eq(membershipsTable.userId, userId), eq(membershipsTable.contextType, type)),
+        and(
+          eq(membershipsTable[entityIdField], table.id),
+          eq(membershipsTable.userId, userId),
+          eq(membershipsTable.contextType, type),
+          ...(roles?.length ? [inArray(membershipsTable.role, roles)] : []),
+        ),
       )
       .where(q ? ilike(table.name, prepareStringForILikeFilter(q)) : undefined)
       .orderBy(orderColumn);
@@ -124,17 +130,17 @@ const entityRouteHandlers = app
       ...entity,
       members: membersByEntityId[entity.id] ?? [],
     }));
-    return ctx.json({ success: true, data }, 200);
+    return ctx.json(data, 200);
   })
   /*
    * Check if slug is available
    */
   .openapi(entityRoutes.checkSlug, async (ctx) => {
-    const { slug } = ctx.req.valid('json');
+    const { slug, entityType } = ctx.req.valid('json');
 
-    const slugAvailable = await checkSlugAvailable(slug);
+    const slugAvailable = await checkSlugAvailable(slug, entityType);
 
-    return ctx.json({ success: slugAvailable }, 200);
+    return ctx.json(slugAvailable, 200);
   });
 
 export default entityRouteHandlers;

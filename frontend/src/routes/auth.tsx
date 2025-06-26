@@ -1,7 +1,7 @@
 import { createRoute, redirect } from '@tanstack/react-router';
 import { config } from 'config';
-import { z } from 'zod';
-import AcceptOrgInvite from '~/modules/auth/accept-org-invite';
+import { z } from 'zod/v4';
+import AcceptEntityInvite from '~/modules/auth/accept-entity-invite';
 import AuthPage from '~/modules/auth/auth-layout';
 import CreatePasswordForm from '~/modules/auth/create-password-form';
 import EmailVerification from '~/modules/auth/email-verification';
@@ -74,7 +74,7 @@ export const VerifyEmailWithTokenRoute = createRoute({
   component: () => <VerifyEmail />,
 });
 
-export const AcceptOrgInviteRoute = createRoute({
+export const AcceptEntityInviteRoute = createRoute({
   validateSearch: z.object({ tokenId: z.string() }),
   path: '/invitation/$token',
   staticData: { pageTitle: 'Join organization', isAuth: false },
@@ -89,7 +89,7 @@ export const AcceptOrgInviteRoute = createRoute({
       throw redirect({ to: '/auth/authenticate', search: { token: params.token, tokenId: search.tokenId } });
     }
   },
-  component: () => <AcceptOrgInvite />,
+  component: () => <AcceptEntityInvite />,
 });
 
 export const UnsubscribedRoute = createRoute({

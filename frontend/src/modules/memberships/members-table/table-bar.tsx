@@ -15,12 +15,12 @@ import { FocusView } from '~/modules/common/focus-view';
 import SelectRole from '~/modules/common/form-fields/select-role';
 import { toaster } from '~/modules/common/toaster';
 import UnsavedBadge from '~/modules/common/unsaved-badge';
-import { getMembers } from '~/modules/memberships/api';
 import type { MemberSearch, MembersTableProps } from '~/modules/memberships/members-table/table-wrapper';
 import { MembershipInvitations } from '~/modules/memberships/pending-table/invites-count';
 import RemoveMembersForm from '~/modules/memberships/remove-member-form';
 import type { Member } from '~/modules/memberships/types';
 import InviteUsers from '~/modules/users/invite-users';
+import { getMembers } from '~/openapi-client';
 
 type MembersTableBarProps = MembersTableProps & BaseTableMethods & BaseTableBarProps<Member, MemberSearch>;
 
@@ -109,14 +109,18 @@ export const MembersTableBar = ({
 
   const fetchExport = async (limit: number) => {
     const { items } = await getMembers({
-      q,
-      sort,
-      order,
-      role,
-      limit,
-      idOrSlug: entity.slug,
-      orgIdOrSlug: entity.organizationId || entity.id,
-      entityType: entity.entityType,
+      query: {
+        q,
+        sort: sort || 'createdAt',
+        order: order || 'asc',
+        role,
+        limit: String(limit),
+        offset: '0',
+        idOrSlug: entity.slug,
+        entityType: entity.entityType,
+      },
+      path: { orgIdOrSlug: entity.organizationId || entity.id },
+      throwOnError: true,
     });
     return items;
   };

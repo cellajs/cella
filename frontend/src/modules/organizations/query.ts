@@ -3,17 +3,17 @@ import { config } from 'config';
 
 import type { ApiError } from '~/lib/api';
 import { addMenuItem, deleteMenuItem, updateMenuItem } from '~/modules/navigation/menu-sheet/helpers/menu-operations';
+import type { Organization, OrganizationWithMembership } from '~/modules/organizations/types';
 import {
-  type CreateOrganizationParams,
-  type GetOrganizationsParams,
-  type UpdateOrganizationBody,
+  type CreateOrganizationData,
   createOrganization,
   deleteOrganizations,
+  type GetOrganizationsData,
   getOrganization,
   getOrganizations,
+  type UpdateOrganizationData,
   updateOrganization,
-} from '~/modules/organizations/api';
-import type { Organization, OrganizationWithMembership } from '~/modules/organizations/types';
+} from '~/openapi-client';
 import { useMutateQueryData } from '~/query/hooks/use-mutate-query-data';
 
 /**
@@ -24,7 +24,7 @@ export const organizationsKeys = {
   all: ['organizations'] as const,
   table: {
     base: () => [...organizationsKeys.all, 'table'] as const,
-    entries: (filters: GetOrganizationsParams) => [...organizationsKeys.table.base(), filters] as const,
+    entries: (filters: Omit<GetOrganizationsData['query'], 'limit' | 'offset'>) => [...organizationsKeys.table.base(), filters] as const,
   },
   single: {
     base: ['organization'] as const,
@@ -46,7 +46,7 @@ export const organizationsKeys = {
 export const organizationQueryOptions = (idOrSlug: string) =>
   queryOptions({
     queryKey: organizationsKeys.single.byIdOrSlug(idOrSlug),
-    queryFn: () => getOrganization(idOrSlug),
+    queryFn: async () => getOrganization({ path: { idOrSlug }, throwOnError: true }),
   });
 
 /**
@@ -62,19 +62,23 @@ export const organizationQueryOptions = (idOrSlug: string) =>
  */
 export const organizationsQueryOptions = ({
   q = '',
-  sort: initialSort,
-  order: initialOrder,
-  limit = config.requestLimits.organizations,
-}: GetOrganizationsParams) => {
-  const sort = initialSort || 'createdAt';
-  const order = initialOrder || 'desc';
+  sort: _sort,
+  order: _order,
+  limit: _limit,
+}: Omit<GetOrganizationsData['query'], 'limit' | 'offset'> & { limit?: number }) => {
+  const sort = _sort || 'createdAt';
+  const order = _order || 'desc';
+  const limit = String(_limit || config.requestLimits.organizations);
 
   const queryKey = organizationsKeys.table.entries({ q, sort, order });
 
   return infiniteQueryOptions({
     queryKey,
     initialPageParam: { page: 0, offset: 0 },
-    queryFn: async ({ pageParam: { page, offset }, signal }) => await getOrganizations({ page, q, sort, order, limit, offset }, signal),
+    queryFn: async ({ pageParam: { page, offset: _offset }, signal }) => {
+      const offset = String(_offset || page * Number(limit));
+      return await getOrganizations({ query: { q, sort, order, limit, offset }, signal, throwOnError: true });
+    },
     getNextPageParam: (_lastPage, allPages) => {
       const page = allPages.length;
       const offset = allPages.reduce((acc, page) => acc + page.items.length, 0);
@@ -90,9 +94,9 @@ export const organizationsQueryOptions = ({
  * @returns The mutation hook for creating an organization.
  */
 export const useOrganizationCreateMutation = () => {
-  return useMutation<OrganizationWithMembership, ApiError, CreateOrganizationParams>({
+  return useMutation<OrganizationWithMembership, ApiError, CreateOrganizationData['body']>({
     mutationKey: organizationsKeys.create(),
-    mutationFn: createOrganization,
+    mutationFn: (body) => createOrganization({ body, throwOnError: true }),
     onSuccess: (createdOrganization) => {
       const mutateCache = useMutateQueryData(organizationsKeys.table.base());
 
@@ -110,9 +114,9 @@ export const useOrganizationCreateMutation = () => {
  * @returns The mutation hook for updating an organization.
  */
 export const useOrganizationUpdateMutation = () => {
-  return useMutation<Organization, ApiError, { idOrSlug: string; json: UpdateOrganizationBody }>({
+  return useMutation<Organization, ApiError, { idOrSlug: string; body: UpdateOrganizationData['body'] }>({
     mutationKey: organizationsKeys.update(),
-    mutationFn: updateOrganization,
+    mutationFn: ({ idOrSlug, body }) => updateOrganization({ body, path: { idOrSlug }, throwOnError: true }),
     onSuccess: (updatedOrganization) => {
       // Update menuItem in store, only if it has membership is not null
       if (updatedOrganization.membership) updateMenuItem({ ...updatedOrganization, membership: updatedOrganization.membership });
@@ -133,7 +137,10 @@ export const useOrganizationUpdateMutation = () => {
 export const useOrganizationDeleteMutation = () => {
   return useMutation<void, ApiError, Organization[]>({
     mutationKey: organizationsKeys.delete(),
-    mutationFn: (organizations) => deleteOrganizations(organizations.map(({ id }) => id)),
+    mutationFn: async (organizations) => {
+      const ids = organizations.map(({ id }) => id);
+      await deleteOrganizations({ body: { ids }, throwOnError: true });
+    },
     onSuccess: (_, organizations) => {
       const mutateCache = useMutateQueryData(organizationsKeys.table.base(), () => organizationsKeys.single.base, ['remove']);
 

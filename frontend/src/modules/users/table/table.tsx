@@ -7,7 +7,7 @@ import { DataTable } from '~/modules/common/data-table';
 import { tablePropsAreEqual } from '~/modules/common/data-table/table-props-are-equal';
 import type { BaseTableMethods, BaseTableProps } from '~/modules/common/data-table/types';
 import { toaster } from '~/modules/common/toaster';
-import { useUpdateUserMutation, usersQueryOptions } from '~/modules/users/query';
+import { usersQueryOptions, useUpdateUserMutation } from '~/modules/users/query';
 import type { UsersSearch } from '~/modules/users/table/table-wrapper';
 import type { User } from '~/modules/users/types';
 import { useDataFromInfiniteQuery } from '~/query/hooks/use-data-from-query';

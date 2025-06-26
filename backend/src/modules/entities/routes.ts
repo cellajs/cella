@@ -2,11 +2,12 @@ import { z } from '@hono/zod-openapi';
 import { createCustomRoute } from '#/lib/custom-routes';
 import { isAuthenticated } from '#/middlewares/guard';
 import { contextEntitiesQuerySchema, contextEntitiesSchema, pageEntitiesQuerySchema, pageEntitiesSchema } from '#/modules/entities/schema';
-import { slugSchema } from '#/utils/schema/common';
-import { errorResponses, successWithDataSchema, successWithoutDataSchema } from '#/utils/schema/responses';
+import { entityTypeSchema, slugSchema } from '#/utils/schema/common';
+import { errorResponses, successWithoutDataSchema } from '#/utils/schema/responses';
 
 const entityRoutes = {
   checkSlug: createCustomRoute({
+    operationId: 'checkSlug',
     method: 'post',
     path: '/check-slug',
     guard: isAuthenticated,
@@ -19,6 +20,7 @@ const entityRoutes = {
           'application/json': {
             schema: z.object({
               slug: slugSchema,
+              entityType: entityTypeSchema,
             }),
           },
         },
@@ -37,6 +39,7 @@ const entityRoutes = {
     },
   }),
   getPageEntities: createCustomRoute({
+    operationId: 'getPageEntities',
     method: 'get',
     path: '/page',
     guard: isAuthenticated,
@@ -48,12 +51,13 @@ const entityRoutes = {
     responses: {
       200: {
         description: 'Page entities',
-        content: { 'application/json': { schema: successWithDataSchema(pageEntitiesSchema) } },
+        content: { 'application/json': { schema: pageEntitiesSchema } },
       },
       ...errorResponses,
     },
   }),
-  geContextEntities: createCustomRoute({
+  getContextEntities: createCustomRoute({
+    operationId: 'getContextEntities',
     method: 'get',
     path: '/context',
     guard: isAuthenticated,
@@ -65,7 +69,7 @@ const entityRoutes = {
     responses: {
       200: {
         description: 'Context entities',
-        content: { 'application/json': { schema: successWithDataSchema(contextEntitiesSchema) } },
+        content: { 'application/json': { schema: contextEntitiesSchema } },
       },
       ...errorResponses,
     },

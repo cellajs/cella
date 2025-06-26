@@ -1,4 +1,4 @@
-import { type VariantProps, cva } from 'class-variance-authority';
+import { cva, type VariantProps } from 'class-variance-authority';
 import useEmblaCarousel, { type UseEmblaCarouselType } from 'embla-carousel-react';
 import { ArrowLeft, ArrowRight } from 'lucide-react';
 import * as React from 'react';
@@ -137,7 +137,7 @@ const Carousel = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivEl
           onMouseEnter={handleMouseEnter}
           onMouseLeave={handleMouseLeave}
           className={cn('relative', className)}
-          // biome-ignore lint/a11y/useSemanticElements: <explanation>
+          // biome-ignore lint/a11y/useSemanticElements: visual structure prioritized here
           role="region"
           aria-roledescription="carousel"
           {...props}
@@ -277,7 +277,7 @@ const CarouselDots = React.forwardRef<HTMLDivElement, CarouselDotsProps>(({ clas
         <button
           type="button"
           key={`dot-${
-            // biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
+            // biome-ignore lint/suspicious/noArrayIndexKey: list is static and will not be reordered
             index
           }`}
           role="tab"

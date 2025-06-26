@@ -1,9 +1,8 @@
-import { count } from 'drizzle-orm';
-import { db } from '#/db/db';
-
 import { OpenAPIHono } from '@hono/zod-openapi';
+import { count } from 'drizzle-orm';
 import { getTableConfig } from 'drizzle-orm/pg-core';
 import { register } from 'prom-client';
+import { db } from '#/db/db';
 import { entityTables } from '#/entity-config';
 import type { Env } from '#/lib/context';
 import { metricsConfig } from '#/middlewares/observability/config';
@@ -32,7 +31,7 @@ const metricRouteHandlers = app
     // get duration metrics
     // const parsedDurationMetrics = parsePromMetrics(metrics, metricsConfig.requestDuration.name);
 
-    return ctx.json({ success: true, data: requestsPerMinute }, 200);
+    return ctx.json(requestsPerMinute, 200);
   })
   /*
    * Get public counts with caching
@@ -44,7 +43,7 @@ const metricRouteHandlers = app
     // Use cache if valid
     if (cached) {
       const isExpired = cached.expiresAt <= Date.now();
-      if (!isExpired) return ctx.json({ success: true, data: cached.data }, 200);
+      if (!isExpired) return ctx.json(cached.data, 200);
     }
 
     // Fetch new counts from the database
@@ -62,7 +61,7 @@ const metricRouteHandlers = app
     const expiresAt = Date.now() + new TimeSpan(1, 'm').milliseconds();
     publicCountsCache.set(cacheKey, { data, expiresAt });
 
-    return ctx.json({ success: true, data }, 200);
+    return ctx.json(data, 200);
   });
 
 export default metricRouteHandlers;

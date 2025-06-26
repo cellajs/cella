@@ -1,5 +1,5 @@
-import type { z } from 'zod';
-import type { userSchema, userSummarySchema } from '#/modules/users/schema';
+import type { z } from 'zod/v4';
+import type { zGetUserResponse, zUserSummarySchema } from '~/openapi-client/zod.gen';
 
-export type User = z.infer<typeof userSchema>;
-export type UserSummary = z.infer<typeof userSummarySchema>;
+export type User = z.infer<typeof zGetUserResponse>;
+export type UserSummary = z.infer<typeof zUserSummarySchema>;

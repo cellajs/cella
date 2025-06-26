@@ -1,5 +1,5 @@
 import { keepPreviousData, queryOptions } from '@tanstack/react-query';
-import { type ContextEntitiesQuery, type PageEntitiesQuery, getContextEntities, getPageEntities } from '~/modules/entities/api';
+import { type GetContextEntitiesData, type GetPageEntitiesData, getContextEntities, getPageEntities } from '~/openapi-client';
 import { useUserStore } from '~/store/user';
 
 /**
@@ -11,7 +11,7 @@ export const entitiesKeys = {
   search: (searchQuery: string) => [...entitiesKeys.all, 'search', searchQuery] as const,
   grid: {
     base: () => [...entitiesKeys.all, 'greed'] as const,
-    context: (filters: ContextEntitiesQuery) => [...entitiesKeys.grid.base(), filters] as const,
+    context: (filters: GetContextEntitiesData['query']) => [...entitiesKeys.grid.base(), filters] as const,
   },
 };
 
@@ -21,11 +21,11 @@ export const entitiesKeys = {
  * @param query - PageEntitiesQuery parameters to get entities.
  * @returns Query options
  */
-export const entitiesQueryOptions = (query: PageEntitiesQuery) => {
+export const entitiesQueryOptions = (query: NonNullable<GetPageEntitiesData['query']>) => {
   const searchQuery = query.q ?? '';
   return queryOptions({
     queryKey: entitiesKeys.search(searchQuery),
-    queryFn: () => getPageEntities(query),
+    queryFn: () => getPageEntities({ query, throwOnError: true }),
     staleTime: 0,
     enabled: searchQuery.trim().length > 0, // to avoid issues with spaces
     initialData: { items: [], total: 0, counts: {} },
@@ -39,14 +39,14 @@ export const entitiesQueryOptions = (query: PageEntitiesQuery) => {
  * @param query - ContextEntitiesQuery parameters to get entities.
  * @returns Query options
  */
-export const contextEntitiesQueryOptions = ({ type, ...restQuery }: ContextEntitiesQuery) => {
+export const contextEntitiesQueryOptions = (query: GetContextEntitiesData['query']) => {
   const user = useUserStore.getState().user;
-  const q = restQuery.q ?? '';
-  const sort = restQuery.sort ?? 'name';
-  const targetUserId = restQuery.targetUserId ?? user.id;
+  const q = query.q ?? '';
+  const sort = query.sort ?? 'name';
+  const targetUserId = query.targetUserId ?? user.id;
   return queryOptions({
-    queryKey: entitiesKeys.grid.context({ q, sort, targetUserId, type }),
-    queryFn: () => getContextEntities({ type, ...restQuery }),
+    queryKey: entitiesKeys.grid.context({ q, sort, targetUserId, type: query.type, roles: query.roles }),
+    queryFn: () => getContextEntities({ query, throwOnError: true }),
     staleTime: 0,
   });
 };

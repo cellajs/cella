@@ -146,7 +146,6 @@ export const DataTable = <TData,>({
                   renderCheckbox: ({ onChange, ...props }) => {
                     const withShift = useRef(false);
 
-                    // biome-ignore lint/performance/noDelete: necessary evil to prevent JS warnings
                     delete props.indeterminate;
 
                     const handleChange = (checked: boolean) => {
@@ -192,7 +191,7 @@ export const DataTable = <TData,>({
               )}
               {/* All is loaded */}
               {!isFetching && !error && !!totalCount && totalCount <= rows.length && (
-                <div className="opacity-50 w-full text-xl  mt-4 text-center">
+                <div className="opacity-50 w-full text-xl mt-4 text-center">
                   <div>&#183;</div>
                   <div className="-mt-5">&#183;</div>
                   <div className="-mt-5">&#183;</div>

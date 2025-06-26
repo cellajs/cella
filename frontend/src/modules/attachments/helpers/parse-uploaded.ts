@@ -1,11 +1,11 @@
-import { uploadTemplates } from '#/lib/transloadit/templates';
+import { uploadTemplates } from 'config/templates';
 
 import type { AttachmentToInsert } from '~/modules/attachments/types';
 import type { UploadedUppyFile } from '~/modules/common/uploader/types';
 import { nanoid } from '~/utils/nanoid';
 
 export const parseUploadedAttachments = (result: UploadedUppyFile<'attachment'>, organizationId: string, groupId = nanoid()) => {
-  const uploadedAttachments: AttachmentToInsert[] = [];
+  const uploadedAttachments: (AttachmentToInsert & { id: string })[] = [];
 
   // Process original files
   const originalFiles = result[':original'] || [];

@@ -1,6 +1,6 @@
 import type { LucideIcon } from 'lucide-react';
 
-// biome-ignore lint/suspicious/noExplicitAny: <explanation>
+// biome-ignore lint/suspicious/noExplicitAny: unable to infer type due to dynamic data structure
 type IconType = LucideIcon | React.ComponentType<any> | undefined;
 
 type StepItem = {

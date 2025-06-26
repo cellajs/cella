@@ -42,7 +42,7 @@ export const TO_EDIT: Record<string, { regexMatch: RegExp; replaceWith: string }
       replaceWith: "enabledAuthenticationStrategies: ['password', 'passkey'] as const,",
     },
     {
-      regexMatch: /uploadEnabled\:\s*(true|false),/g,
+      regexMatch: /uploadEnabled:\s*(true|false),/g,
       replaceWith: "uploadEnabled: false,",
     },
     {

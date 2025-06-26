@@ -44,6 +44,7 @@ export const useAttachmentUrl = (id: string, baseUrl: string, type: string) => {
       return;
     }
 
+    // If  URL is not a remote static path, we assume it's a local file
     const fetchLocal = async () => {
       try {
         const file = await LocalFileStorage.getFile(id);

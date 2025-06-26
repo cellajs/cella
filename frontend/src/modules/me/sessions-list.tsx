@@ -3,12 +3,11 @@ import { ZapOff } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ExpandableList } from '~/modules/common/expandable-list';
-import { Button } from '~/modules/ui/button';
-
 import { toaster } from '~/modules/common/toaster';
-import { deleteMySessions } from '~/modules/me/api';
 import { SessionTile } from '~/modules/me/session-tile';
 import type { MeAuthData } from '~/modules/me/types';
+import { Button } from '~/modules/ui/button';
+import { deleteSessions } from '~/openapi-client';
 
 const SessionsList = ({ userAuthInfo }: { userAuthInfo: MeAuthData }) => {
   const { t } = useTranslation();
@@ -19,22 +18,22 @@ const SessionsList = ({ userAuthInfo }: { userAuthInfo: MeAuthData }) => {
   const sessions = Array.from(allSessions).sort((a) => (a.isCurrent ? -1 : 1));
 
   // Terminate one or all sessions
-  const { mutate: _deleteMySessions, isPending } = useMutation({
-    mutationFn: deleteMySessions,
-    onSuccess(_, variables) {
+  const { mutate: deleteMySessions, isPending } = useMutation({
+    mutationFn: async (ids: string[]) => {
+      await deleteSessions({ body: { ids }, throwOnError: true });
+      return ids;
+    },
+    onSuccess(ids) {
       if (!allSessions.length) return;
-      setAllSessions(allSessions.filter((session) => !variables.includes(session.id)));
+      setAllSessions(allSessions.filter((session) => !ids.includes(session.id)));
 
-      toaster(
-        variables.length === 1 ? t('common:success.session_terminated', { id: variables[0] }) : t('common:success.sessions_terminated'),
-        'success',
-      );
+      toaster(ids.length === 1 ? t('common:success.session_terminated', { id: ids[0] }) : t('common:success.sessions_terminated'), 'success');
     },
   });
 
   const onDeleteSession = (ids: string[]) => {
     if (!onlineManager.isOnline()) return toaster(t('common:action.offline.text'), 'warning');
-    _deleteMySessions(ids);
+    deleteMySessions(ids);
   };
 
   return (

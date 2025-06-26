@@ -1,4 +1,4 @@
-import { type Theme, config } from 'config';
+import { config, type Theme } from 'config';
 import { useEffect } from 'react';
 import { type Mode, useUIStore } from '~/store/ui';
 import { hexToHsl } from '~/utils/hex-to-hsl';

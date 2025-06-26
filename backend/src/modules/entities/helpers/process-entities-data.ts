@@ -1,5 +1,5 @@
-import { type PageEntityType, config } from 'config';
-import { z } from 'zod';
+import { z } from '@hono/zod-openapi';
+import { config, type PageEntityType } from 'config';
 import { entityListItemSchema } from '#/modules/entities/schema';
 
 const extendedEntitySchema = entityListItemSchema.extend({ total: z.number() });

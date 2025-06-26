@@ -30,7 +30,7 @@ export const observabilityMiddleware: MiddlewareHandler<Env> = createMiddleware<
 
   // Incrementing request count
   const currentCounter = await observabilityRequestsCounter.get();
-  observabilityRequestsCounter.inc({ requestsNumber: currentCounter.values.length + 1, date: new Date().getTime() });
+  observabilityRequestsCounter.inc({ requestsNumber: currentCounter.values.length + 1, date: Date.now() });
 
   // Measure request duration and record it in the histogram
   const duration = (Date.now() - start) / 1000; // Convert milliseconds to seconds

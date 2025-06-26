@@ -12,16 +12,11 @@ import {
 } from '#/modules/memberships/schema';
 import { memberSchema } from '#/modules/users/schema';
 import { entityWithTypeQuerySchema, idInOrgParamSchema, idOrSlugSchema, idsBodySchema, inOrgParamSchema } from '#/utils/schema/common';
-import {
-  errorResponses,
-  successWithDataSchema,
-  successWithErrorsSchema,
-  successWithPaginationSchema,
-  successWithoutDataSchema,
-} from '#/utils/schema/responses';
+import { errorResponses, paginationSchema, successWithErrorsSchema, successWithoutDataSchema } from '#/utils/schema/responses';
 
 const membershipRoutes = {
   createMemberships: createCustomRoute({
+    operationId: 'membershipInvite',
     method: 'post',
     path: '/',
     guard: [isAuthenticated, hasOrgAccess],
@@ -42,16 +37,13 @@ const membershipRoutes = {
     responses: {
       200: {
         description: 'Invitation was sent',
-        content: {
-          'application/json': {
-            schema: successWithoutDataSchema,
-          },
-        },
+        content: { 'application/json': { schema: successWithoutDataSchema } },
       },
       ...errorResponses,
     },
   }),
   deleteMemberships: createCustomRoute({
+    operationId: 'deleteMemberships',
     method: 'delete',
     path: '/',
     guard: [isAuthenticated, hasOrgAccess],
@@ -78,6 +70,7 @@ const membershipRoutes = {
     },
   }),
   updateMembership: createCustomRoute({
+    operationId: 'updateMembership',
     method: 'put',
     path: '/{id}',
     guard: [isAuthenticated, hasOrgAccess],
@@ -97,16 +90,13 @@ const membershipRoutes = {
     responses: {
       200: {
         description: 'Membership updated',
-        content: {
-          'application/json': {
-            schema: successWithDataSchema(membershipSchema),
-          },
-        },
+        content: { 'application/json': { schema: membershipSchema } },
       },
       ...errorResponses,
     },
   }),
   getMembers: createCustomRoute({
+    operationId: 'getMembers',
     method: 'get',
     path: '/members',
     guard: [isAuthenticated, hasOrgAccess],
@@ -122,7 +112,7 @@ const membershipRoutes = {
         description: 'Members',
         content: {
           'application/json': {
-            schema: successWithPaginationSchema(memberSchema),
+            schema: paginationSchema(memberSchema),
           },
         },
       },
@@ -130,6 +120,7 @@ const membershipRoutes = {
     },
   }),
   getPendingInvitations: createCustomRoute({
+    operationId: 'getPendingInvitations',
     method: 'get',
     path: '/pending',
     guard: [isAuthenticated, hasOrgAccess],
@@ -145,7 +136,7 @@ const membershipRoutes = {
         description: 'Invited members',
         content: {
           'application/json': {
-            schema: successWithPaginationSchema(pendingInvitationSchema),
+            schema: paginationSchema(pendingInvitationSchema),
           },
         },
       },

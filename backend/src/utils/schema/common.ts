@@ -1,5 +1,5 @@
+import { z } from '@hono/zod-openapi';
 import { config } from 'config';
-import { z } from 'zod';
 
 /*************************************************************************************************
  * Entity schemas
@@ -75,7 +75,8 @@ export const entityWithTypeQuerySchema = z.object({ idOrSlug: idOrSlugSchema, en
 export const booleanQuerySchema = z
   .union([z.string(), z.boolean()])
   .default('false')
-  .transform((v) => v === true || v === 'true');
+  .transform((v) => v === true || v === 'true')
+  .pipe(z.boolean());
 
 const offsetRefine = (value: string | undefined) => Number(value) >= 0;
 const limitRefine = (value: string | undefined) => Number(value) > 0 && Number(value) <= 1000;

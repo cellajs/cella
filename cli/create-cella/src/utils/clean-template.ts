@@ -2,19 +2,13 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import colors from 'picocolors';
 
-import { TO_CLEAN, TO_REMOVE, TO_COPY, TO_EDIT } from '../constants.ts';
+import { TO_CLEAN, TO_COPY, TO_EDIT, TO_REMOVE } from '../constants.ts';
 
 /**
  * Cleans the specified template by removing designated folders and files.
  * @param params - Parameters containing the target folder and project name.
  */
-export async function cleanTemplate({
-  targetFolder,
-  projectName,
-}: {
-  targetFolder: string;
-  projectName: string;
-}): Promise<void> {
+export async function cleanTemplate({ targetFolder, projectName }: { targetFolder: string; projectName: string }): Promise<void> {
   // Change the current working directory to targetFolder if not already set
   if (process.cwd() !== targetFolder) {
     process.chdir(targetFolder);
@@ -34,7 +28,7 @@ export async function cleanTemplate({
         TO_CLEAN.map((folderPath) => {
           const absolutePath = path.resolve(targetFolder, folderPath);
           return removeFolderContents(absolutePath);
-        })
+        }),
       );
 
       // Remove specified files and folders
@@ -42,14 +36,15 @@ export async function cleanTemplate({
         TO_REMOVE.map((filePath) => {
           const absolutePath = path.resolve(targetFolder, filePath);
           return removeFileOrFolder(absolutePath);
-        })
+        }),
       );
 
       // Edit specific files
-      await Promise.all(Object.entries(TO_EDIT).map(async ([filePath, edits]) => {
+      await Promise.all(
+        Object.entries(TO_EDIT).map(async ([filePath, edits]) => {
           const absolutePath = path.resolve(targetFolder, filePath);
           await editFile(absolutePath, edits);
-        })
+        }),
       );
 
       resolve();
@@ -81,7 +76,7 @@ export async function removeFolderContents(folderPath: string): Promise<void> {
         // If it's a file, remove it
         await fs.rm(filePath);
       }
-    })
+    }),
   );
 }
 
@@ -122,7 +117,7 @@ export async function copyFile(src: string, dest: string): Promise<void> {
  * @param filePath - The path of the file to edit.
  * @param edits - The list of edits to apply.
  */
-export async function editFile(filePath: string, edits: Array<{regexMatch: RegExp; replaceWith: string }>): Promise<void> {
+export async function editFile(filePath: string, edits: Array<{ regexMatch: RegExp; replaceWith: string }>): Promise<void> {
   try {
     await fs.access(filePath);
 
@@ -139,7 +134,6 @@ export async function editFile(filePath: string, edits: Array<{regexMatch: RegEx
     if (fileContent !== updatedContent) {
       await fs.writeFile(filePath, updatedContent, 'utf8');
     }
-
   } catch (err: any) {
     if (err.code === 'ENOENT') {
       console.info(`\n${colors.yellow('⚠')} Source file "${filePath}" does not exist > Skip edit`);

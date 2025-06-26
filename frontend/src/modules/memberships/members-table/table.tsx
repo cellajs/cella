@@ -4,8 +4,8 @@ import { DataTable } from '~/modules/common/data-table';
 import { tablePropsAreEqual } from '~/modules/common/data-table/table-props-are-equal';
 import type { BaseTableMethods, BaseTableProps } from '~/modules/common/data-table/types';
 import type { MemberSearch, MembersTableProps } from '~/modules/memberships/members-table/table-wrapper';
-import { useMemberUpdateMutation } from '~/modules/memberships/query/mutations';
-import { membersQueryOptions } from '~/modules/memberships/query/options';
+import { membersQueryOptions } from '~/modules/memberships/query';
+import { useMemberUpdateMutation } from '~/modules/memberships/query-mutations';
 import type { Member } from '~/modules/memberships/types';
 import { useDataFromInfiniteQuery } from '~/query/hooks/use-data-from-query';
 

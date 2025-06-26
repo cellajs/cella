@@ -1,10 +1,9 @@
 import { config } from 'config';
-import { useRef, useState } from 'react';
-import type { z } from 'zod';
-
 import { Info } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
+import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import type { z } from 'zod/v4';
 import useSearchParams from '~/hooks/use-search-params';
 import { useColumns } from '~/modules/attachments/table/columns';
 import BaseDataTable from '~/modules/attachments/table/table';
@@ -42,10 +41,10 @@ const AttachmentsTable = ({ entity, canUpload = true, isSheet = false }: Attachm
 
   const [total, setTotal] = useState<number | undefined>(undefined);
   const [selected, setSelected] = useState<Attachment[]>([]);
-  const [highDensity, setHighDensity] = useState(false);
+  const [isCompact, setIsCompact] = useState(false);
 
   // Build columns
-  const [columns, setColumns] = useState(useColumns(entity, isSheet, highDensity));
+  const [columns, setColumns] = useState(useColumns(entity, isSheet, isCompact));
   const { sortColumns, setSortColumns } = useSortColumns(sort, order, setSearch);
 
   const clearSelection = () => {
@@ -65,10 +64,10 @@ const AttachmentsTable = ({ entity, canUpload = true, isSheet = false }: Attachm
         clearSelection={clearSelection}
         isSheet={isSheet}
         canUpload={canUpload}
-        highDensity={highDensity}
-        toggleDensityView={setHighDensity}
+        isCompact={isCompact}
+        setIsCompact={setIsCompact}
       />
-      <div className={(highDensity && 'high-density') || ''}>
+      <div className={(isCompact && 'isCompact') || ''}>
         {/* Explainer alert box */}
         <AnimatePresence initial={false}>
           {!!total && (

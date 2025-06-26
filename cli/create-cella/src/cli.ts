@@ -32,11 +32,7 @@ const packageManager = 'pnpm';
 
 // Set up the CLI command using Commander
 export const command = new Command(NAME)
-  .version(
-    VERSION,
-    '-v, --version',
-    `Output the current version of ${NAME}.`
-  )
+  .version(VERSION, '-v, --version', `Output the current version of ${NAME}.`)
   .argument('[directory]', 'The directory name for the new project.')
   .usage('[directory] [options]')
   .helpOption('-h, --help', 'Display this help message.')
@@ -45,43 +41,35 @@ export const command = new Command(NAME)
   .option('--skip-generate', 'Skip generating SQL files.', false)
   .option('--skip-clean', 'Skip cleaning the `cella` template.', false)
   .option('--skip-git', 'Skip initializing a git repository.', false)
-  .option(
-    '--new-branch-name <name>',
-    'Specify a new branch name to create and use.',
-    (name: string) => {
-        if (typeof name === 'string') {
-            name = name.trim();
-        }
-
-        if (name) {
-            const validation = validateProjectName(basename(resolve(name)));
-
-            if (!validation.valid) {
-              throw new InvalidArgumentError(
-                `Invalid branch name: ${validation.problems[0]}`
-              );
-            }
-      
-            createNewBranch = true;
-            newBranchName = name;
-        }
-    }
-  )
-  .action((name: string) => {
+  .option('--new-branch-name <name>', 'Specify a new branch name to create and use.', (name: string) => {
     if (typeof name === 'string') {
-        name = name.trim();
+      name = name.trim();
     }
 
     if (name) {
-        const validation = validateProjectName(basename(resolve(name)));
+      const validation = validateProjectName(basename(resolve(name)));
 
-        if (!validation.valid) {
-            throw new InvalidArgumentError(
-                `Invalid project name: ${validation.problems[0]}`
-            );
-        }
+      if (!validation.valid) {
+        throw new InvalidArgumentError(`Invalid branch name: ${validation.problems[0]}`);
+      }
 
-        directory = name;
+      createNewBranch = true;
+      newBranchName = name;
+    }
+  })
+  .action((name: string) => {
+    if (typeof name === 'string') {
+      name = name.trim();
+    }
+
+    if (name) {
+      const validation = validateProjectName(basename(resolve(name)));
+
+      if (!validation.valid) {
+        throw new InvalidArgumentError(`Invalid project name: ${validation.problems[0]}`);
+      }
+
+      directory = name;
     }
   })
   .parse();

@@ -9,11 +9,7 @@ import type { Organization } from '~/modules/organizations/types';
 import { Button } from '~/modules/ui/button';
 import { useNavigationStore } from '~/store/navigation';
 
-const StepperFooter = ({
-  organization,
-}: {
-  organization?: Organization | null;
-}) => {
+const StepperFooter = ({ organization }: { organization?: Organization | null }) => {
   const { nextStep, isOptionalStep, hasCompletedAllSteps, activeStep } = useStepper();
   const { t } = useTranslation();
   const { menu, setFinishedOnboarding } = useNavigationStore();

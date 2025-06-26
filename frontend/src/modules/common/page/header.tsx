@@ -1,5 +1,5 @@
 import { Link } from '@tanstack/react-router';
-import { type EntityType, config } from 'config';
+import { config, type EntityType } from 'config';
 import { ChevronRight, Home, Loader2 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import useScrollTo from '~/hooks/use-scroll-to';

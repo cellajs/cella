@@ -1,9 +1,8 @@
 import { getRandomValues } from 'node:crypto';
 import { OpenAPIHono } from '@hono/zod-openapi';
 import { encodeBase64 } from '@oslojs/encoding';
-import { OAuth2RequestError, generateCodeVerifier, generateState } from 'arctic';
-import type { EnabledOauthProvider } from 'config';
-import { config } from 'config';
+import { generateCodeVerifier, generateState, OAuth2RequestError } from 'arctic';
+import { config, type EnabledOauthProvider } from 'config';
 import { and, desc, eq } from 'drizzle-orm';
 import i18n from 'i18next';
 import { db } from '#/db/db';
@@ -15,6 +14,7 @@ import { sessionsTable } from '#/db/schema/sessions';
 import { tokensTable } from '#/db/schema/tokens';
 import { type UserModel, usersTable } from '#/db/schema/users';
 import { type Env, getContextToken, getContextUser } from '#/lib/context';
+import { resolveEntity } from '#/lib/entity';
 import { type ErrorType, errorRedirect, errorResponse } from '#/lib/errors';
 import { mailer } from '#/lib/mailer';
 import { logEvent } from '#/middlewares/logger/log-event';
@@ -33,9 +33,9 @@ import {
   type GithubUserEmailProps,
   type GithubUserProps,
   type GoogleUserProps,
-  type MicrosoftUserProps,
   githubAuth,
   googleAuth,
+  type MicrosoftUserProps,
   microsoftAuth,
 } from '#/modules/auth/helpers/oauth/oauth-providers';
 import { transformGithubUserData, transformSocialUserData } from '#/modules/auth/helpers/oauth/transform-user-data';
@@ -43,16 +43,16 @@ import { verifyPassKeyPublic } from '#/modules/auth/helpers/passkey';
 import { getParsedSessionCookie, invalidateSessionById, setUserSession, validateSession } from '#/modules/auth/helpers/session';
 import { handleCreateUser, handleMembershipTokenUpdate } from '#/modules/auth/helpers/user';
 import { sendVerificationEmail } from '#/modules/auth/helpers/verify-email';
+import authRoutes from '#/modules/auth/routes';
 import { getUserBy } from '#/modules/users/helpers/get-user-by';
 import { defaultHook } from '#/utils/default-hook';
 import { isExpiredDate } from '#/utils/is-expired-date';
 import { getIsoDate } from '#/utils/iso-date';
 import { nanoid } from '#/utils/nanoid';
 import { slugFromEmail } from '#/utils/slug-from-email';
-import { TimeSpan, createDate } from '#/utils/time-span';
+import { createDate, TimeSpan } from '#/utils/time-span';
 import { CreatePasswordEmail, type CreatePasswordEmailProps } from '../../../emails/create-password';
 import { EmailVerificationEmail, type EmailVerificationEmailProps } from '../../../emails/email-verification';
-import authRoutes from './routes';
 
 const enabledStrategies: readonly string[] = config.enabledAuthenticationStrategies;
 const enabledOauthProviders: readonly string[] = config.enabledOauthProviders;
@@ -80,7 +80,7 @@ const authRouteHandlers = app
     const user = await getUserBy('email', email.toLowerCase());
     if (!user) return errorResponse(ctx, 404, 'not_found', 'warn', 'user');
 
-    return ctx.json({ success: true }, 200);
+    return ctx.json(true, 200);
   })
   /*
    * Sign up with email & password.
@@ -206,7 +206,7 @@ const authRouteHandlers = app
 
     logEvent('Verification email sent', { user: user.id });
 
-    return ctx.json({ success: true }, 200);
+    return ctx.json(true, 200);
   })
   /*
    * Verify email
@@ -225,9 +225,9 @@ const authRouteHandlers = app
     await db.delete(tokensTable).where(eq(tokensTable.id, token.id));
 
     // Sign in user
-    await setUserSession(ctx, token.userId, 'email_verification');
+    await setUserSession(ctx, token.userId, 'email');
 
-    return ctx.json({ success: true }, 200);
+    return ctx.json(true, 200);
   })
   /*
    * Request reset password email
@@ -268,7 +268,7 @@ const authRouteHandlers = app
 
     logEvent('Create password link sent', { user: user.id });
 
-    return ctx.json({ success: true }, 200);
+    return ctx.json(true, 200);
   })
   /*
    * Create password with token
@@ -304,9 +304,9 @@ const authRouteHandlers = app
     ]);
 
     // Sign in user
-    await setUserSession(ctx, user.id, 'password_reset');
+    await setUserSession(ctx, user.id, 'password');
 
-    return ctx.json({ success: true }, 200);
+    return ctx.json(true, 200);
   })
   /*
    * Sign in with email and password
@@ -342,7 +342,7 @@ const authRouteHandlers = app
     // Sign in user
     else await setUserSession(ctx, user.id, 'password');
 
-    return ctx.json({ success: true, data: { emailVerified: emailInfo.verified } }, 200);
+    return ctx.json(emailInfo.verified, 200);
   })
   /*
    * Check token (token validation)
@@ -359,31 +359,31 @@ const authRouteHandlers = app
     // If token is expired, return an error
     if (isExpiredDate(tokenRecord.expiresAt)) return errorResponse(ctx, 401, `${type}_expired`, 'warn', undefined);
 
-    const data = {
+    const baseData = {
       email: tokenRecord.email,
+      role: tokenRecord.role,
       userId: tokenRecord.userId || '',
     };
 
-    if (!tokenRecord.organizationId) return ctx.json({ success: true, data }, 200);
+    if (!tokenRecord.organizationId) return ctx.json(baseData, 200);
 
     // If it is a membership invitation, get organization details
     const [organization] = await db.select().from(organizationsTable).where(eq(organizationsTable.id, tokenRecord.organizationId));
     if (!organization) return errorResponse(ctx, 404, 'not_found', 'warn', 'organization');
 
     const dataWithOrg = {
-      email: tokenRecord.email,
-      userId: tokenRecord.userId || '',
+      ...baseData,
       organizationId: organization.id || '',
       organizationName: organization.name || '',
       organizationSlug: organization.slug || '',
     };
 
-    return ctx.json({ success: true, data: dataWithOrg }, 200);
+    return ctx.json(dataWithOrg, 200);
   })
   /*
    * Accept org invite token for signed in users
    */
-  .openapi(authRoutes.acceptOrgInvite, async (ctx) => {
+  .openapi(authRoutes.acceptEntityInvite, async (ctx) => {
     const user = getContextUser();
     const token = getContextToken();
 
@@ -396,15 +396,24 @@ const authRouteHandlers = app
 
     if (emailInfo.userId === user.id && user.id !== token.userId) await handleMembershipTokenUpdate(user.id, token.id);
     // Activate memberships
-    await db
+    const activatedMemberships = await db
       .update(membershipsTable)
       .set({ tokenId: null, activatedAt: getIsoDate() })
-      .where(and(eq(membershipsTable.tokenId, token.id)));
+      .where(and(eq(membershipsTable.tokenId, token.id)))
+      .returning();
+
+    const [targetMembership] = activatedMemberships.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
     // Delete token after all activation, since tokenId is cascaded in membershipTable
     await db.delete(tokensTable).where(eq(tokensTable.id, token.id));
 
-    return ctx.json({ success: true }, 200);
+    const entityIdField = config.entityIdFields[token.entityType];
+    if (!targetMembership[entityIdField]) return errorResponse(ctx, 404, 'not_found', 'warn', token.entityType);
+
+    const entity = await resolveEntity(token.entityType, targetMembership[entityIdField]);
+    if (!entity) return errorResponse(ctx, 404, 'not_found', 'warn', token.entityType);
+
+    return ctx.json({ ...entity, membership: targetMembership }, 200);
   })
   /*
    * Start impersonation
@@ -420,11 +429,11 @@ const authRouteHandlers = app
       return errorResponse(ctx, 401, 'unauthorized', 'warn');
     }
 
-    await setUserSession(ctx, targetUserId, 'impersonation', user.id);
+    await setUserSession(ctx, targetUserId, 'password', user.id);
 
     logEvent('Started impersonation', { admin: user.id, user: targetUserId });
 
-    return ctx.json({ success: true }, 200);
+    return ctx.json(true, 200);
   })
   /*
    * Stop impersonation
@@ -459,7 +468,7 @@ const authRouteHandlers = app
 
     logEvent('Stopped impersonation', { admin: adminUserId || 'na', user: session.userId });
 
-    return ctx.json({ success: true }, 200);
+    return ctx.json(true, 200);
   })
   /*
    * Sign out
@@ -481,7 +490,7 @@ const authRouteHandlers = app
 
     logEvent('User signed out', { user: session?.userId || 'na' });
 
-    return ctx.json({ success: true }, 200);
+    return ctx.json(true, 200);
   })
   /*
    * Github authentication
@@ -497,7 +506,7 @@ const authRouteHandlers = app
     if (type === 'invite') error = await handleOAuthInvitation(ctx);
     if (type === 'connect') error = await handleOAuthConnection(ctx);
 
-    if (error) return ctx.json({ success: false, error }, error.status as 400 | 403 | 404);
+    if (error) return ctx.json(error, error.status as 400 | 403 | 404);
 
     const state = generateState();
     const url = githubAuth.createAuthorizationURL(state, githubScopes);
@@ -517,7 +526,7 @@ const authRouteHandlers = app
     if (type === 'invite') error = await handleOAuthInvitation(ctx);
     if (type === 'connect') error = await handleOAuthConnection(ctx);
 
-    if (error) return ctx.json({ success: false, error }, error.status as 400 | 403 | 404);
+    if (error) return ctx.json(error, error.status as 400 | 403 | 404);
 
     const state = generateState();
     const codeVerifier = generateCodeVerifier();
@@ -537,7 +546,7 @@ const authRouteHandlers = app
     if (type === 'invite') error = await handleOAuthInvitation(ctx);
     if (type === 'connect') error = await handleOAuthConnection(ctx);
 
-    if (error) return ctx.json({ success: false, error }, error.status as 400 | 403 | 404);
+    if (error) return ctx.json(error, error.status as 400 | 403 | 404);
 
     const state = generateState();
     const codeVerifier = generateCodeVerifier();
@@ -824,7 +833,7 @@ const authRouteHandlers = app
     }
 
     await setUserSession(ctx, user.id, 'passkey');
-    return ctx.json({ success: true }, 200);
+    return ctx.json(true, 200);
   });
 
 export default authRouteHandlers;

@@ -7,7 +7,6 @@ import { emailEnumLimiter, passwordLimiter, spamLimiter, tokenLimiter } from '#/
 import {
   emailBodySchema,
   emailPasswordBodySchema,
-  emailVerifiedSchema,
   oauthCallbackQuerySchema,
   oauthQuerySchema,
   passkeyChallengeQuerySchema,
@@ -16,10 +15,13 @@ import {
   tokenWithDataSchema,
 } from '#/modules/auth/schema';
 import { cookieSchema, idSchema, passwordSchema, tokenParamSchema } from '#/utils/schema/common';
-import { errorResponses, successWithDataSchema, successWithoutDataSchema } from '#/utils/schema/responses';
+import { errorResponses, successWithoutDataSchema } from '#/utils/schema/responses';
+import { entityBaseSchema } from '../entities/schema';
+import { membershipSummarySchema } from '../memberships/schema';
 
 const authRoutes = {
   startImpersonation: createCustomRoute({
+    operationId: 'startImpersonation',
     method: 'get',
     path: '/impersonation/start',
     guard: [isAuthenticated, hasSystemAccess],
@@ -43,6 +45,7 @@ const authRoutes = {
     },
   }),
   stopImpersonation: createCustomRoute({
+    operationId: 'stopImpersonation',
     method: 'get',
     path: '/impersonation/stop',
     guard: isPublicAccess,
@@ -62,6 +65,7 @@ const authRoutes = {
     },
   }),
   checkEmail: createCustomRoute({
+    operationId: 'checkEmail',
     method: 'post',
     path: '/check-email',
     guard: isPublicAccess,
@@ -92,6 +96,7 @@ const authRoutes = {
     },
   }),
   signUp: createCustomRoute({
+    operationId: 'signUp',
     method: 'post',
     path: '/sign-up',
     guard: isPublicAccess,
@@ -129,6 +134,7 @@ const authRoutes = {
     },
   }),
   signUpWithToken: createCustomRoute({
+    operationId: 'signUpWithToken',
     method: 'post',
     path: '/sign-up/{token}',
     guard: isPublicAccess,
@@ -167,6 +173,7 @@ const authRoutes = {
     },
   }),
   sendVerificationEmail: createCustomRoute({
+    operationId: 'sendVerificationEmail',
     method: 'post',
     path: '/send-verification-email',
     guard: isPublicAccess,
@@ -197,6 +204,7 @@ const authRoutes = {
     },
   }),
   verifyEmail: createCustomRoute({
+    operationId: 'verifyEmail',
     method: 'post',
     path: '/verify-email/{token}',
     guard: isPublicAccess,
@@ -221,6 +229,7 @@ const authRoutes = {
     },
   }),
   requestPassword: createCustomRoute({
+    operationId: 'requestPassword',
     method: 'post',
     path: '/request-password',
     guard: isPublicAccess,
@@ -251,6 +260,7 @@ const authRoutes = {
     },
   }),
   createPasswordWithToken: createCustomRoute({
+    operationId: 'createPassword',
     method: 'post',
     path: '/create-password/{token}',
     guard: isPublicAccess,
@@ -282,6 +292,7 @@ const authRoutes = {
     },
   }),
   verifyPasskey: createCustomRoute({
+    operationId: 'signInWithPasskey',
     method: 'post',
     path: '/passkey-verification',
     guard: isPublicAccess,
@@ -314,6 +325,7 @@ const authRoutes = {
     },
   }),
   signIn: createCustomRoute({
+    operationId: 'signIn',
     method: 'post',
     path: '/sign-in',
     guard: isPublicAccess,
@@ -337,16 +349,13 @@ const authRoutes = {
         headers: z.object({
           'Set-Cookie': cookieSchema,
         }),
-        content: {
-          'application/json': {
-            schema: successWithDataSchema(emailVerifiedSchema),
-          },
-        },
+        content: { 'application/json': { schema: successWithoutDataSchema } },
       },
       ...errorResponses,
     },
   }),
   checkToken: createCustomRoute({
+    operationId: 'checkToken',
     method: 'post',
     path: '/check-token/{id}',
     guard: isPublicAccess,
@@ -363,15 +372,15 @@ const authRoutes = {
         description: 'Token is valid',
         content: {
           'application/json': {
-            schema: successWithDataSchema(tokenWithDataSchema),
+            schema: tokenWithDataSchema,
           },
         },
       },
       ...errorResponses,
     },
   }),
-  // Info: this route requires authentication
-  acceptOrgInvite: createCustomRoute({
+  acceptEntityInvite: createCustomRoute({
+    operationId: 'acceptEntityInvite',
     method: 'post',
     path: '/accept-invite/{token}',
     guard: [isAuthenticated],
@@ -387,7 +396,10 @@ const authRoutes = {
         description: 'Invitation was accepted',
         content: {
           'application/json': {
-            schema: successWithoutDataSchema,
+            schema: entityBaseSchema.extend({
+              createdAt: z.string(),
+              membership: membershipSummarySchema,
+            }),
           },
         },
       },
@@ -395,6 +407,7 @@ const authRoutes = {
     },
   }),
   githubSignIn: createCustomRoute({
+    operationId: 'githubSignIn',
     method: 'get',
     path: '/github',
     guard: isPublicAccess,
@@ -413,6 +426,7 @@ const authRoutes = {
     },
   }),
   githubSignInCallback: createCustomRoute({
+    operationId: 'githubSignInCallback',
     method: 'get',
     path: '/github/callback',
     guard: isPublicAccess,
@@ -437,6 +451,7 @@ const authRoutes = {
     },
   }),
   getPasskeyChallenge: createCustomRoute({
+    operationId: 'getPasskeyChallenge',
     method: 'get',
     path: '/passkey-challenge',
     guard: isPublicAccess,
@@ -457,6 +472,7 @@ const authRoutes = {
     },
   }),
   googleSignIn: createCustomRoute({
+    operationId: 'googleSignIn',
     method: 'get',
     path: '/google',
     guard: isPublicAccess,
@@ -475,6 +491,7 @@ const authRoutes = {
     },
   }),
   googleSignInCallback: createCustomRoute({
+    operationId: 'googleSignInCallback',
     method: 'get',
     path: '/google/callback',
     guard: isPublicAccess,
@@ -493,6 +510,7 @@ const authRoutes = {
     },
   }),
   microsoftSignIn: createCustomRoute({
+    operationId: 'microsoftSignIn',
     method: 'get',
     path: '/microsoft',
     guard: isPublicAccess,
@@ -511,6 +529,7 @@ const authRoutes = {
     },
   }),
   microsoftSignInCallback: createCustomRoute({
+    operationId: 'microsoftSignInCallback',
     method: 'get',
     path: '/microsoft/callback',
     guard: isPublicAccess,
@@ -529,6 +548,7 @@ const authRoutes = {
     },
   }),
   signOut: createCustomRoute({
+    operationId: 'signOut',
     method: 'get',
     path: '/sign-out',
     guard: isPublicAccess,

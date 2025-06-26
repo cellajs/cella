@@ -1,5 +1,4 @@
-import { z } from 'zod';
-
+import { z } from '@hono/zod-openapi';
 import { type ContextEntityType, config } from 'config';
 import { createSelectSchema } from 'drizzle-zod';
 import { sessionsTable } from '#/db/schema/sessions';

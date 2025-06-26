@@ -16,13 +16,13 @@ import { SheetTabs } from '~/modules/common/sheet-tabs';
 import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
 import { toaster } from '~/modules/common/toaster';
 import UnsavedBadge from '~/modules/common/unsaved-badge';
-import { getOrganizations } from '~/modules/organizations/api';
 import CreateOrganizationForm from '~/modules/organizations/create-organization-form';
 import DeleteOrganizations from '~/modules/organizations/delete-organizations';
-import type { OrganizationTable, OrganizationsSearch } from '~/modules/organizations/table/table-wrapper';
+import type { OrganizationsSearch, OrganizationTable } from '~/modules/organizations/table/table-wrapper';
 import type { Organization } from '~/modules/organizations/types';
 import CreateNewsletterForm from '~/modules/system/create-newsletter-form';
 import NewsletterPreview from '~/modules/system/newsletter-preview';
+import { getOrganizations } from '~/openapi-client';
 
 type OrganizationsTableBarProps = BaseTableMethods & BaseTableBarProps<OrganizationTable, OrganizationsSearch>;
 
@@ -105,8 +105,11 @@ export const OrganizationsTableBar = ({
   };
 
   const fetchExport = async (limit: number) => {
-    const { items } = await getOrganizations({ limit, q, sort, order });
-    return items;
+    const response = await getOrganizations({
+      query: { limit: String(limit), q, sort: sort || 'createdAt', order: order || 'asc', offset: '0' },
+      throwOnError: true,
+    });
+    return response.items;
   };
 
   return (

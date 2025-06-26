@@ -3,10 +3,10 @@ import { config } from 'config';
 import { UserX } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-import { impersonationStop } from '~/modules/auth/api';
 import { TooltipButton } from '~/modules/common/tooltip-button';
 import { getAndSetMe, getAndSetMenu } from '~/modules/me/helpers';
 import { Button } from '~/modules/ui/button';
+import { stopImpersonation as breakImpersonation } from '~/openapi-client';
 import { useUIStore } from '~/store/ui';
 
 const StopImpersonation = () => {
@@ -16,7 +16,7 @@ const StopImpersonation = () => {
   const { impersonating, setImpersonating } = useUIStore();
 
   const stopImpersonation = async () => {
-    await impersonationStop();
+    await breakImpersonation();
     setImpersonating(false);
     await Promise.all([getAndSetMe(), getAndSetMenu()]);
     navigate({ to: config.defaultRedirectPath, replace: true });

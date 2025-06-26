@@ -56,7 +56,7 @@ const UserCell = ({ user, orgIdOrSlug, tabIndex }: Props) => {
         name={user.name}
         url={user.thumbnailUrl}
       />
-      <span className="[.high-density_&]:hidden group-hover:underline underline-offset-3 decoration-foreground/20 group-active:decoration-foreground/50 group-active:translate-y-[.05rem] truncate font-medium">
+      <span className="[.isCompact_&]:hidden group-hover:underline underline-offset-3 decoration-foreground/20 group-active:decoration-foreground/50 group-active:translate-y-[.05rem] truncate font-medium">
         {user.name || '-'}
       </span>
     </Link>

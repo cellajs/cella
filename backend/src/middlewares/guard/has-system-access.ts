@@ -1,8 +1,7 @@
+import type { MiddlewareHandler } from 'hono';
 import { every } from 'hono/combine';
 import { ipRestriction } from 'hono/ip-restriction';
 import { errorResponse } from '#/lib/errors';
-
-import type { MiddlewareHandler } from 'hono';
 import { getIp } from '#/utils/get-ip';
 import { env } from '../../env';
 import { isSystemAdmin } from './is-system-admin';
