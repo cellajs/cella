@@ -1,3 +1,5 @@
+import { z } from '@hono/zod-openapi';
+import { config } from 'config';
 import { createCustomRoute } from '#/lib/custom-routes';
 import { hasSystemAccess, isAuthenticated, isPublicAccess } from '#/middlewares/guard';
 import { hasValidToken } from '#/middlewares/has-valid-token';
@@ -10,12 +12,10 @@ import {
   passkeyChallengeQuerySchema,
   passkeyVerificationBodySchema,
   sendVerificationEmailBodySchema,
-  tokenWithDataSchema
+  tokenWithDataSchema,
 } from '#/modules/auth/schema';
 import { cookieSchema, idSchema, passwordSchema, tokenParamSchema } from '#/utils/schema/common';
 import { errorResponses, successWithoutDataSchema } from '#/utils/schema/responses';
-import { z } from '@hono/zod-openapi';
-import { config } from 'config';
 import { entityBaseSchema } from '../entities/schema';
 import { membershipSummarySchema } from '../memberships/schema';
 
@@ -396,11 +396,10 @@ const authRoutes = {
         description: 'Invitation was accepted',
         content: {
           'application/json': {
-            schema: 
-              entityBaseSchema.extend({
-                createdAt: z.string(),
-                membership: membershipSummarySchema,
-              }),
+            schema: entityBaseSchema.extend({
+              createdAt: z.string(),
+              membership: membershipSummarySchema,
+            }),
           },
         },
       },

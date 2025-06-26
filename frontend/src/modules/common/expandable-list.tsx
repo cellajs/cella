@@ -25,7 +25,7 @@ export const ExpandableList = <T,>({ items, renderItem, initialDisplayCount, alw
       {items.map((item, index) => {
         const isInitiallyVisible = index < initialDisplayCount;
         return (
-          // biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
+          // biome-ignore lint/suspicious/noArrayIndexKey: list is static and will not be reordered
           <AnimatePresence key={index}>
             {isInitiallyVisible || expanded ? (
               <motion.div

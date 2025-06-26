@@ -18,7 +18,7 @@ import { organizationsKeys } from '~/modules/organizations/query';
 import { Badge } from '~/modules/ui/badge';
 import { Button, SubmitButton } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
-import { membershipInvite, MembershipInviteData, systemInvite } from '~/openapi-client';
+import { type MembershipInviteData, membershipInvite, systemInvite } from '~/openapi-client';
 import { queryClient } from '~/query/query-client';
 
 interface Props {
@@ -49,9 +49,7 @@ const InviteEmailForm = ({ entity, dialog: isDialog, children }: Props) => {
   const { nextStep } = useStepper();
 
   const baseSchema = z.object({
-    emails: z
-      .array(z.email(t('common:invalid.email')))
-      .min(1, { message: t('common:invalid.min_items', { items_count: 'one', item: 'email' }) }),
+    emails: z.array(z.email(t('common:invalid.email'))).min(1, { message: t('common:invalid.min_items', { items_count: 'one', item: 'email' }) }),
   });
   const schemaWithRole = baseSchema.extend({ role: z.enum(config.rolesByType.entityRoles) });
 
@@ -75,12 +73,12 @@ const InviteEmailForm = ({ entity, dialog: isDialog, children }: Props) => {
   // It uses inviteSystem if no entity type is provided
   const { mutate: invite, isPending } = useMutation({
     mutationFn: async (body: FormValues) => {
-      if (!entity) return await  systemInvite({ body, throwOnError: true });
+      if (!entity) return await systemInvite({ body, throwOnError: true });
       return await membershipInvite({
         query: { idOrSlug: entity.id, entityType: entity.entityType },
-        path: { orgIdOrSlug: entity.organizationId || entity.id }, 
-        body: body as MembershipInviteData['body'], 
-        throwOnError: true 
+        path: { orgIdOrSlug: entity.organizationId || entity.id },
+        body: body as MembershipInviteData['body'],
+        throwOnError: true,
       });
     },
     onSuccess: (_, { emails }) => {
@@ -115,19 +113,21 @@ const InviteEmailForm = ({ entity, dialog: isDialog, children }: Props) => {
             </FormItem>
           )}
         />
-        { entity && <FormField
-          control={form.control}
-          name="role"
-          render={({ field: { value, onChange } }) => (
-            <FormItem className="flex-row ml-3 gap-4 items-center">
-              <FormLabel>{t('common:role')}</FormLabel>
-              <FormControl>
-                <SelectRoleRadio value={value} entityType={entity?.entityType} onChange={onChange} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />}
+        {entity && (
+          <FormField
+            control={form.control}
+            name="role"
+            render={({ field: { value, onChange } }) => (
+              <FormItem className="flex-row ml-3 gap-4 items-center">
+                <FormLabel>{t('common:role')}</FormLabel>
+                <FormControl>
+                  <SelectRoleRadio value={value} entityType={entity?.entityType} onChange={onChange} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        )}
 
         <div className="flex flex-col sm:flex-row gap-2">
           <SubmitButton loading={isPending} className="relative">

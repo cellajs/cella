@@ -3,13 +3,13 @@ import { useNavigate, useParams, useSearch } from '@tanstack/react-router';
 import { config } from 'config';
 import { ArrowRight, Check, Mail } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { ApiError } from '~/lib/api';
+import type { ApiError } from '~/lib/api';
 import AuthErrorNotice from '~/modules/auth/auth-error-notice';
 import { useTokenCheck } from '~/modules/auth/use-token-check';
 import Spinner from '~/modules/common/spinner';
 import { toaster } from '~/modules/common/toaster';
 import { Button } from '~/modules/ui/button';
-import { sendVerificationEmail, verifyEmail, VerifyEmailResponse } from '~/openapi-client';
+import { sendVerificationEmail, type VerifyEmailResponse, verifyEmail } from '~/openapi-client';
 import { VerifyEmailWithTokenRoute } from '~/routes/auth';
 
 const VerifyEmail = () => {
@@ -23,7 +23,7 @@ const VerifyEmail = () => {
 
   // Verify email with token
   const { mutate: verify, isPending: isVerifying } = useMutation<VerifyEmailResponse, ApiError>({
-    mutationFn: () => verifyEmail({ path : { token }, throwOnError: true }),
+    mutationFn: () => verifyEmail({ path: { token }, throwOnError: true }),
     onSuccess: () => {
       toaster(t('common:success.email_verified'), 'success');
       navigate({ to: config.welcomeRedirectPath });

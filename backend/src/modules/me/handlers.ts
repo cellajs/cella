@@ -1,3 +1,8 @@
+import { OpenAPIHono, type z } from '@hono/zod-openapi';
+import type { EnabledOauthProvider, MenuSection } from 'config';
+import { config } from 'config';
+import { and, eq } from 'drizzle-orm';
+import { type SSEStreamingApi, streamSSE } from 'hono/streaming';
 import { db } from '#/db/db';
 import { membershipsTable } from '#/db/schema/memberships';
 import { oauthAccountsTable } from '#/db/schema/oauth-accounts';
@@ -6,7 +11,7 @@ import { usersTable } from '#/db/schema/users';
 import { env } from '#/env';
 import { type Env, getContextMemberships, getContextUser } from '#/lib/context';
 import { resolveEntity } from '#/lib/entity';
-import { createError, errorResponse, type ErrorType } from '#/lib/errors';
+import { createError, type ErrorType, errorResponse } from '#/lib/errors';
 import { getParams, getSignature } from '#/lib/transloadit';
 import { isAuthenticated } from '#/middlewares/guard';
 import { logEvent } from '#/middlewares/logger/log-event';
@@ -23,11 +28,6 @@ import { verifyUnsubscribeToken } from '#/modules/users/helpers/unsubscribe-toke
 import permissionManager from '#/permissions/permissions-config';
 import { defaultHook } from '#/utils/default-hook';
 import { getIsoDate } from '#/utils/iso-date';
-import { OpenAPIHono, type z } from '@hono/zod-openapi';
-import type { EnabledOauthProvider, MenuSection } from 'config';
-import { config } from 'config';
-import { and, eq } from 'drizzle-orm';
-import { type SSEStreamingApi, streamSSE } from 'hono/streaming';
 
 type UserMenu = z.infer<typeof menuSchema>;
 type MenuItem = z.infer<typeof menuItemSchema>;
@@ -46,7 +46,7 @@ const meRouteHandlers = app
     // Update last visit date
     await db.update(usersTable).set({ lastStartedAt: getIsoDate() }).where(eq(usersTable.id, user.id));
 
-    return ctx.json( user, 200);
+    return ctx.json(user, 200);
   })
   /*
    * Get my auth data
@@ -64,7 +64,7 @@ const meRouteHandlers = app
 
     console.info('Valid OAuth accounts:', validOAuthAccounts);
 
-    return ctx.json( { oauth: validOAuthAccounts, passkey: !!passkeys.length, sessions }, 200);
+    return ctx.json({ oauth: validOAuthAccounts, passkey: !!passkeys.length, sessions }, 200);
   })
   /*
    * Get my user menu
@@ -78,7 +78,7 @@ const meRouteHandlers = app
       return acc;
     }, {} as UserMenu);
 
-    if (!memberships.length) return ctx.json( emptyData, 200);
+    if (!memberships.length) return ctx.json(emptyData, 200);
 
     const buildMenuForSection = async ({ entityType, subentityType }: MenuSection): Promise<MenuItem[]> => {
       const entities = await getUserMenuEntities(entityType, user.id);
@@ -103,7 +103,7 @@ const meRouteHandlers = app
       menu[section.entityType] = await buildMenuForSection(section);
     }
 
-    return ctx.json( menu, 200);
+    return ctx.json(menu, 200);
   })
   /*
    * Terminate one or more sessions
@@ -251,7 +251,7 @@ const meRouteHandlers = app
 
       const token = { sub, public: isPublic, s3: !!env.S3_ACCESS_KEY_ID, params, signature };
 
-      return ctx.json( token, 200);
+      return ctx.json(token, 200);
     } catch (error) {
       return errorResponse(ctx, 500, 'missing_auth_key', 'error');
     }

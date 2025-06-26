@@ -55,7 +55,7 @@ const entityRouteHandlers = app
       organizationIds = orgMemberships.map((m) => m.organizationId);
     }
 
-    if (!organizationIds.length) return ctx.json( { items: [], total: 0, counts: { user: 0, organization: 0 } }, 200);
+    if (!organizationIds.length) return ctx.json({ items: [], total: 0, counts: { user: 0, organization: 0 } }, 200);
 
     // Prepare query and execute in parallel
     const queries = getEntitiesQuery({ q, organizationIds, userId, selfId, type, userMembershipType });
@@ -64,7 +64,7 @@ const entityRouteHandlers = app
     // Aggregate and process result data
     const { counts, items, total } = processEntitiesData(queryData, type);
 
-    return ctx.json( { items, total, counts }, 200);
+    return ctx.json({ items, total, counts }, 200);
   })
   /*
    * Get all users' context entities

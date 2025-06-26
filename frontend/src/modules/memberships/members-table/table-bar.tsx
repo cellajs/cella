@@ -108,16 +108,20 @@ export const MembersTableBar = ({
   };
 
   const fetchExport = async (limit: number) => {
-    const { items } = await getMembers( {query:{
-      q,
-      sort: sort || 'createdAt',
-      order: order || 'asc',
-      role,
-      limit: String(limit),
-      offset: '0',
-      idOrSlug: entity.slug,
-      entityType: entity.entityType,
-    }, path: { orgIdOrSlug: entity.organizationId || entity.id }, throwOnError: true} );
+    const { items } = await getMembers({
+      query: {
+        q,
+        sort: sort || 'createdAt',
+        order: order || 'asc',
+        role,
+        limit: String(limit),
+        offset: '0',
+        idOrSlug: entity.slug,
+        entityType: entity.entityType,
+      },
+      path: { orgIdOrSlug: entity.organizationId || entity.id },
+      throwOnError: true,
+    });
     return items;
   };
 

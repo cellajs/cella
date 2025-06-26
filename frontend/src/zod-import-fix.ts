@@ -1,6 +1,6 @@
-import { Plugin } from 'vite';
 import fs from 'fs';
 import path from 'path';
+import type { Plugin } from 'vite';
 
 export function replaceZodImport(): Plugin {
   const openApiPath = path.resolve(__dirname, './openapi-client/zod.gen.ts');

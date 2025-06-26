@@ -4,8 +4,6 @@ import type { UploadTemplateId } from 'config';
 
 import type { uploadTemplates } from 'config/templates';
 
-
-
 type UppyBody = Record<string, unknown>;
 type UppyMeta = { public: boolean; offlineUploaded: boolean };
 

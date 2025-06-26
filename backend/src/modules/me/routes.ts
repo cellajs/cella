@@ -1,9 +1,9 @@
+import { z } from '@hono/zod-openapi';
 import { createCustomRoute } from '#/lib/custom-routes';
 import { isAuthenticated, isPublicAccess } from '#/middlewares/guard';
 import { tokenLimiter } from '#/middlewares/rate-limiter/limiters';
 import { entityWithTypeQuerySchema } from '#/utils/schema/common';
 import { errorResponses, successWithErrorsSchema, successWithoutDataSchema } from '#/utils/schema/responses';
-import { z } from '@hono/zod-openapi';
 import { userSchema, userUpdateBodySchema } from '../users/schema';
 import { meAuthDataSchema, menuSchema, passkeyRegistrationBodySchema, uploadTokenQuerySchema, uploadTokenSchema } from './schema';
 

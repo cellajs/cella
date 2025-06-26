@@ -12,7 +12,7 @@ import { RequestPasswordDialog } from '~/modules/auth/request-password-dialog';
 import { Button, SubmitButton } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '~/modules/ui/form';
 import { Input } from '~/modules/ui/input';
-import { signIn, SignInData, SignInResponse } from '~/openapi-client';
+import { type SignInData, type SignInResponse, signIn } from '~/openapi-client';
 import { zSignUpData } from '~/openapi-client/zod.gen';
 import { AuthenticateRoute } from '~/routes/auth';
 import { useUserStore } from '~/store/user';

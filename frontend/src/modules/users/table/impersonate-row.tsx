@@ -17,7 +17,7 @@ interface Props {
 
 const handleStartImpersonation = async (targetUserId: string) => {
   try {
-    await startImpersonation({ query : { targetUserId }, throwOnError: true });
+    await startImpersonation({ query: { targetUserId }, throwOnError: true });
     useUIStore.getState().setImpersonating(true);
     await Promise.all([getAndSetMe(), getAndSetMenu()]);
     toast.success(i18n.t('common:success.impersonated'));

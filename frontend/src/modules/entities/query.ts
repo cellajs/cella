@@ -1,5 +1,5 @@
 import { keepPreviousData, queryOptions } from '@tanstack/react-query';
-import { getContextEntities, GetContextEntitiesData, getPageEntities, GetPageEntitiesData } from '~/openapi-client';
+import { type GetContextEntitiesData, type GetPageEntitiesData, getContextEntities, getPageEntities } from '~/openapi-client';
 import { useUserStore } from '~/store/user';
 
 /**
@@ -25,7 +25,7 @@ export const entitiesQueryOptions = (query: NonNullable<GetPageEntitiesData['que
   const searchQuery = query.q ?? '';
   return queryOptions({
     queryKey: entitiesKeys.search(searchQuery),
-    queryFn: () => getPageEntities({query, throwOnError: true}),
+    queryFn: () => getPageEntities({ query, throwOnError: true }),
     staleTime: 0,
     enabled: searchQuery.trim().length > 0, // to avoid issues with spaces
     initialData: { items: [], total: 0, counts: {} },
@@ -39,7 +39,7 @@ export const entitiesQueryOptions = (query: NonNullable<GetPageEntitiesData['que
  * @param query - ContextEntitiesQuery parameters to get entities.
  * @returns Query options
  */
-export const contextEntitiesQueryOptions = (query : GetContextEntitiesData['query']) => {
+export const contextEntitiesQueryOptions = (query: GetContextEntitiesData['query']) => {
   const user = useUserStore.getState().user;
   const q = query.q ?? '';
   const sort = query.sort ?? 'name';

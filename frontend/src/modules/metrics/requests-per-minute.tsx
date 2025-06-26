@@ -20,7 +20,7 @@ function RequestsPerMinute() {
   const [metrics, setMetrics] = useState<Metrics[]>([]);
 
   useEffect(() => {
-    getMetrics({throwOnError: true}).then((data) => setMetrics(data));
+    getMetrics({ throwOnError: true }).then((data) => setMetrics(data));
   }, []);
 
   return (

@@ -2,7 +2,7 @@ import type { ContextEntityType } from 'config';
 import { useState } from 'react';
 import useSearchParams from '~/hooks/use-search-params';
 import { EntityGridBar } from '~/modules/entities/entity-grid/bar';
-import { BaseEntityGrid, EntitySearch } from '~/modules/entities/entity-grid/grid';
+import { BaseEntityGrid, type EntitySearch } from '~/modules/entities/entity-grid/grid';
 import type { MembershipRoles } from '~/modules/memberships/types';
 import { EntityTile } from './tile';
 

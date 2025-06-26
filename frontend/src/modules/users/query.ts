@@ -2,7 +2,7 @@ import { infiniteQueryOptions, queryOptions, useMutation } from '@tanstack/react
 import { config } from 'config';
 import type { ApiError } from '~/lib/api';
 import type { User } from '~/modules/users/types';
-import { deleteUsers, getUser, getUsers, GetUsersData, updateUser, UpdateUserData } from '~/openapi-client';
+import { deleteUsers, type GetUsersData, getUser, getUsers, type UpdateUserData, updateUser } from '~/openapi-client';
 import { useMutateQueryData } from '~/query/hooks/use-mutate-query-data';
 
 /**
@@ -29,7 +29,7 @@ export const usersKeys = {
  * @returns Query options.
  */
 export const userQueryOptions = (idOrSlug: string) =>
-  queryOptions({ queryKey: usersKeys.single.byIdOrSlug(idOrSlug), queryFn: () => getUser({path: { idOrSlug }, throwOnError: true })});
+  queryOptions({ queryKey: usersKeys.single.byIdOrSlug(idOrSlug), queryFn: () => getUser({ path: { idOrSlug }, throwOnError: true }) });
 
 /**
  * Infinite query options to get a paginated list of users.
@@ -40,7 +40,13 @@ export const userQueryOptions = (idOrSlug: string) =>
  * @param param.limit - Number of items per page (default is configured in `config.requestLimits.users`).
  * @returns Infinite query options.
  */
-export const usersQueryOptions = ({ q = '', sort: _sort, order: _order, role, limit: _limit }: Omit<GetUsersData['query'], 'limit' | 'offset'> & { limit?: number}) => {
+export const usersQueryOptions = ({
+  q = '',
+  sort: _sort,
+  order: _order,
+  role,
+  limit: _limit,
+}: Omit<GetUsersData['query'], 'limit' | 'offset'> & { limit?: number }) => {
   const sort = _sort || 'createdAt';
   const order = _order || 'desc';
   const limit = String(_limit || config.requestLimits.users);
@@ -70,7 +76,7 @@ export const usersQueryOptions = ({ q = '', sort: _sort, order: _order, role, li
 export const useUpdateUserMutation = () => {
   return useMutation<User, ApiError, UpdateUserData['body'] & { idOrSlug: string }>({
     mutationKey: usersKeys.update(),
-    mutationFn: ({ idOrSlug, ...body }) => updateUser({path: { idOrSlug }, body, throwOnError: true }),
+    mutationFn: ({ idOrSlug, ...body }) => updateUser({ path: { idOrSlug }, body, throwOnError: true }),
     onSuccess: (updatedUser) => {
       const mutateCache = useMutateQueryData(usersKeys.table.base(), () => usersKeys.single.base, ['update']);
 

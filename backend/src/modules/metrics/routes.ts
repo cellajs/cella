@@ -16,7 +16,7 @@ const metricRouteConfig = {
       200: {
         description: 'Metrics',
         content: { 'application/json': { schema: metricListSchema } },
-},
+      },
       ...errorResponses,
     },
   }),

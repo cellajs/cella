@@ -32,12 +32,10 @@ const InviteSearchForm = ({ entity, dialog: isDialog }: Props) => {
   if (!entity) return null;
 
   const formSchema = z.object({
-    emails: z
-    .array(z.email(t('common:invalid.email')))
-    .min(1, { message: t('common:invalid.min_items', { items_count: 'one', item: 'email' }) }),
+    emails: z.array(z.email(t('common:invalid.email'))).min(1, { message: t('common:invalid.min_items', { items_count: 'one', item: 'email' }) }),
     role: z.enum(config.rolesByType.entityRoles),
   });
-  
+
   type FormValues = z.infer<typeof formSchema>;
 
   const formOptions: UseFormProps<FormValues> = useMemo(
@@ -59,7 +57,7 @@ const InviteSearchForm = ({ entity, dialog: isDialog }: Props) => {
       return membershipInvite({
         body,
         query: { idOrSlug: entity.id, entityType: entity.entityType || 'organization' },
-        path: {  orgIdOrSlug: entity.organizationId || entity.id },
+        path: { orgIdOrSlug: entity.organizationId || entity.id },
         throwOnError: true,
       });
     },

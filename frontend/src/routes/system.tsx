@@ -4,9 +4,9 @@ import { z } from 'zod/v4';
 
 import ErrorNotice from '~/modules/common/error-notice';
 import SystemPage from '~/modules/system/system-page';
+import { zGetOrganizationsData, zGetRequestsData, zGetUsersData } from '~/openapi-client/zod.gen';
 import { AppRoute } from '~/routes/base';
 import { noDirectAccess } from '~/utils/no-direct-access';
-import { zGetOrganizationsData, zGetRequestsData, zGetUsersData } from '~/openapi-client/zod.gen';
 
 // Lazy-loaded route components
 const OrganizationsTable = lazy(() => import('~/modules/organizations/table/table-wrapper'));

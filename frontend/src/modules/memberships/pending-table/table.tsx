@@ -37,7 +37,7 @@ const BaseDataTable = memo(
 
     // Expose methods via ref using useImperativeHandle
     useImperativeHandle(ref, () => ({
-      clearSelection: () => { },
+      clearSelection: () => {},
     }));
 
     return (

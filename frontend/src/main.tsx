@@ -28,7 +28,6 @@ addBadgeToFavicon(config.mode as ConfigMode);
 // Initialize Sentry if online
 if (navigator.onLine) initSentry();
 
-
 ReactDOM.createRoot(root).render(
   <StrictMode>
     <Themer />

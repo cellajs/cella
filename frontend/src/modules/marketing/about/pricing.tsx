@@ -78,7 +78,7 @@ const Pricing = () => {
 
               <ul className="mt-4 space-y-2">
                 {Array.from({ length: featureCount }).map((_, featureIndex) => (
-                  // biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
+                  // biome-ignore lint/suspicious/noArrayIndexKey: list is static and will not be reordered
                   <li key={`${id}-${featureIndex}`} className="flex text-sm font-light items-center">
                     <Check className="mr-2 p-1 text-sm text-success" />
                     {t(`about:pricing.plan_${planIndex + 1}.${featureIndex + 1}`)}

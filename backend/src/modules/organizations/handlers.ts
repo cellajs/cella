@@ -6,7 +6,7 @@ import { db } from '#/db/db';
 import { membershipsTable } from '#/db/schema/memberships';
 import { organizationsTable } from '#/db/schema/organizations';
 import { type Env, getContextMemberships, getContextUser } from '#/lib/context';
-import { createError, errorResponse, type ErrorType } from '#/lib/errors';
+import { createError, type ErrorType, errorResponse } from '#/lib/errors';
 import { sendSSEToUsers } from '#/lib/sse';
 import { logEvent } from '#/middlewares/logger/log-event';
 import { checkSlugAvailable } from '#/modules/entities/helpers/check-slug';
@@ -67,7 +67,7 @@ const organizationRouteHandlers = app
    */
   .openapi(organizationRoutes.getOrganizations, async (ctx) => {
     const { q, sort, order, offset, limit } = ctx.req.valid('query');
-    
+
     const user = getContextUser();
     const entityType = 'organization';
 
@@ -120,7 +120,7 @@ const organizationRouteHandlers = app
       .limit(Number(limit))
       .offset(Number(offset));
 
-    return ctx.json( { items: organizations, total }, 200);
+    return ctx.json({ items: organizations, total }, 200);
   })
   /*
    * Delete organizations by ids

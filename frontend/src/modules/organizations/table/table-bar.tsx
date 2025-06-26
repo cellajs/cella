@@ -105,7 +105,10 @@ export const OrganizationsTableBar = ({
   };
 
   const fetchExport = async (limit: number) => {
-    const response = await getOrganizations({ query: { limit: String(limit), q, sort: sort || 'createdAt', order: order || 'asc', offset: '0' }, throwOnError: true });
+    const response = await getOrganizations({
+      query: { limit: String(limit), q, sort: sort || 'createdAt', order: order || 'asc', offset: '0' },
+      throwOnError: true,
+    });
     return response.items;
   };
 

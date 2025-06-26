@@ -45,7 +45,7 @@ const HorizontalStep = React.forwardRef<HTMLDivElement, StepSharedProps>((props,
   const errorIcon = errorIconProp || errorIconContext;
 
   return (
-    // biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
+    // biome-ignore lint/a11y/useKeyWithClickEvents: element is not keyboard-focusable and handled intentionally via mouse
     <div
       aria-disabled={!hasVisited}
       className={cn(

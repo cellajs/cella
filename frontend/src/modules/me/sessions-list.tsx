@@ -27,10 +27,7 @@ const SessionsList = ({ userAuthInfo }: { userAuthInfo: MeAuthData }) => {
       if (!allSessions.length) return;
       setAllSessions(allSessions.filter((session) => !ids.includes(session.id)));
 
-      toaster(
-        ids.length === 1 ? t('common:success.session_terminated', { id: ids[0] }) : t('common:success.sessions_terminated'),
-        'success',
-      );
+      toaster(ids.length === 1 ? t('common:success.session_terminated', { id: ids[0] }) : t('common:success.sessions_terminated'), 'success');
     },
   });
 

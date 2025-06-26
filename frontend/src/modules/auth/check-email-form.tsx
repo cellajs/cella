@@ -4,13 +4,13 @@ import { config } from 'config';
 import { ArrowRight } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
-import { type z } from 'zod/v4';
+import type { z } from 'zod/v4';
 import type { ApiError } from '~/lib/api';
 import type { Step } from '~/modules/auth/types';
 import { SubmitButton } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '~/modules/ui/form';
 import { Input } from '~/modules/ui/input';
-import { checkEmail, CheckEmailData, CheckEmailResponse } from '~/openapi-client';
+import { type CheckEmailData, type CheckEmailResponse, checkEmail } from '~/openapi-client';
 import { zCheckEmailData } from '~/openapi-client/zod.gen';
 import { defaultOnInvalid } from '~/utils/form-on-invalid';
 

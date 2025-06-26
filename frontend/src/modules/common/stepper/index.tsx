@@ -121,7 +121,7 @@ const VerticalContent = ({ children }: { children: React.ReactNode }) => {
       {React.Children.map(children, (child, i) => {
         const isCompletedStep =
           (React.isValidElement(child) &&
-            // biome-ignore lint/suspicious/noExplicitAny: <explanation>
+            // biome-ignore lint/suspicious/noExplicitAny: unable to infer type due to dynamic data structure
             (child.props as any).isCompletedStep) ??
           i < activeStep;
         const isLastStep = i === stepCount - 1;
@@ -163,5 +163,5 @@ const HorizontalContent = ({ children }: { children: React.ReactNode }) => {
   );
 };
 
-export { Stepper, Step, useStepper };
-export type { StepProps, StepperProps, StepItem };
+export { Step, Stepper, useStepper };
+export type { StepItem, StepProps, StepperProps };

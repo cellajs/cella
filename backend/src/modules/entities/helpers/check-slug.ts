@@ -1,5 +1,5 @@
+import { config, type EntityType } from 'config';
 import { resolveEntity } from '#/lib/entity';
-import { config, EntityType } from 'config';
 
 /**
  * Checks if a slug is available across all entity types. Resolves the availability of the slug for each entity.

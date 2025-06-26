@@ -1,7 +1,7 @@
+import { z } from '@hono/zod-openapi';
 import { membershipSummarySchema } from '#/modules/memberships/schema';
 import { contextEntityTypeSchema, idSchema, imageUrlSchema, nameSchema, pageEntityTypeSchema, slugSchema } from '#/utils/schema/common';
 import { mapEntitiesToSchema } from '#/utils/schema/entities-to-schema';
-import { z } from '@hono/zod-openapi';
 
 export const entityBaseSchema = z.object({
   id: idSchema,
@@ -22,7 +22,6 @@ export const userSummarySchema = entityBaseSchema.extend({
   email: z.email(),
   entityType: z.literal('user'),
 });
-
 
 export const entityListItemSchema = entityBaseSchema.extend({
   email: z.string().optional(),
@@ -46,8 +45,8 @@ export const contextEntitiesSchema = z.array(
   entityBaseSchema.extend({
     createdAt: z.string(),
     membership: membershipSummarySchema,
-    members: z.array(userSummarySchema)
-  })
+    members: z.array(userSummarySchema),
+  }),
 );
 
 export const contextEntitiesQuerySchema = baseEntityQuerySchema.extend({

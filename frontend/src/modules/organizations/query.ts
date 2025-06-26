@@ -1,10 +1,19 @@
 import { infiniteQueryOptions, queryOptions, useMutation } from '@tanstack/react-query';
 import { config } from 'config';
 
-import { ApiError } from '~/lib/api';
+import type { ApiError } from '~/lib/api';
 import { addMenuItem, deleteMenuItem, updateMenuItem } from '~/modules/navigation/menu-sheet/helpers/menu-operations';
 import type { Organization, OrganizationWithMembership } from '~/modules/organizations/types';
-import { createOrganization, CreateOrganizationData, deleteOrganizations, getOrganization, getOrganizations, GetOrganizationsData, updateOrganization, UpdateOrganizationData } from '~/openapi-client';
+import {
+  type CreateOrganizationData,
+  createOrganization,
+  deleteOrganizations,
+  type GetOrganizationsData,
+  getOrganization,
+  getOrganizations,
+  type UpdateOrganizationData,
+  updateOrganization,
+} from '~/openapi-client';
 import { useMutateQueryData } from '~/query/hooks/use-mutate-query-data';
 
 /**
@@ -37,7 +46,7 @@ export const organizationsKeys = {
 export const organizationQueryOptions = (idOrSlug: string) =>
   queryOptions({
     queryKey: organizationsKeys.single.byIdOrSlug(idOrSlug),
-    queryFn: async() => getOrganization({ path: { idOrSlug }, throwOnError: true })
+    queryFn: async () => getOrganization({ path: { idOrSlug }, throwOnError: true }),
   });
 
 /**
@@ -68,7 +77,7 @@ export const organizationsQueryOptions = ({
     initialPageParam: { page: 0, offset: 0 },
     queryFn: async ({ pageParam: { page, offset: _offset }, signal }) => {
       const offset = String(_offset || page * Number(limit));
-      return await getOrganizations({ query: {q, sort, order, limit, offset }, signal, throwOnError: true, });
+      return await getOrganizations({ query: { q, sort, order, limit, offset }, signal, throwOnError: true });
     },
     getNextPageParam: (_lastPage, allPages) => {
       const page = allPages.length;
@@ -87,7 +96,7 @@ export const organizationsQueryOptions = ({
 export const useOrganizationCreateMutation = () => {
   return useMutation<OrganizationWithMembership, ApiError, CreateOrganizationData['body']>({
     mutationKey: organizationsKeys.create(),
-    mutationFn: (body) =>  createOrganization({ body, throwOnError: true }),
+    mutationFn: (body) => createOrganization({ body, throwOnError: true }),
     onSuccess: (createdOrganization) => {
       const mutateCache = useMutateQueryData(organizationsKeys.table.base());
 
@@ -129,7 +138,7 @@ export const useOrganizationDeleteMutation = () => {
   return useMutation<void, ApiError, Organization[]>({
     mutationKey: organizationsKeys.delete(),
     mutationFn: async (organizations) => {
-      const ids = organizations.map(({ id }) => id)
+      const ids = organizations.map(({ id }) => id);
       await deleteOrganizations({ body: { ids }, throwOnError: true });
     },
     onSuccess: (_, organizations) => {

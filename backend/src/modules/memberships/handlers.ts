@@ -1,3 +1,7 @@
+import { OpenAPIHono } from '@hono/zod-openapi';
+import { config } from 'config';
+import { and, count, eq, ilike, inArray, isNotNull, isNull, or } from 'drizzle-orm';
+import i18n from 'i18next';
 import { db } from '#/db/db';
 import { emailsTable } from '#/db/schema/emails';
 import { membershipsTable } from '#/db/schema/memberships';
@@ -5,7 +9,7 @@ import { tokensTable } from '#/db/schema/tokens';
 import { usersTable } from '#/db/schema/users';
 import { type Env, getContextMemberships, getContextOrganization, getContextUser } from '#/lib/context';
 import { resolveEntity } from '#/lib/entity';
-import { createError, errorResponse, type ErrorType } from '#/lib/errors';
+import { createError, type ErrorType, errorResponse } from '#/lib/errors';
 import { mailer } from '#/lib/mailer';
 import { sendSSEToUsers } from '#/lib/sse';
 import { logEvent } from '#/middlewares/logger/log-event';
@@ -22,10 +26,6 @@ import { getOrderColumn } from '#/utils/order-column';
 import { slugFromEmail } from '#/utils/slug-from-email';
 import { prepareStringForILikeFilter } from '#/utils/sql';
 import { createDate, TimeSpan } from '#/utils/time-span';
-import { OpenAPIHono } from '@hono/zod-openapi';
-import { config } from 'config';
-import { and, count, eq, ilike, inArray, isNotNull, isNull, or } from 'drizzle-orm';
-import i18n from 'i18next';
 import { MemberInviteEmail, type MemberInviteEmailProps } from '../../../emails/member-invite';
 
 const app = new OpenAPIHono<Env>({ defaultHook });
@@ -333,7 +333,7 @@ const membershipRouteHandlers = app
 
     logEvent('Membership updated', { user: updatedMembership.userId, membership: updatedMembership.id });
 
-    return ctx.json( updatedMembership, 200);
+    return ctx.json(updatedMembership, 200);
   })
   /*
    * Get members by entity id/slug and type
@@ -386,7 +386,7 @@ const membershipRouteHandlers = app
     const members = await membersQuery.orderBy(orderColumn).limit(Number(limit)).offset(Number(offset));
     const items = members.map(({ user, membership }) => ({ ...user, membership }));
 
-    return ctx.json( { items, total }, 200);
+    return ctx.json({ items, total }, 200);
   })
   /*
    * Get pending membership invitations by entity id/slug and type
@@ -432,7 +432,7 @@ const membershipRouteHandlers = app
 
     const items = await pendingInvitationsQuery.limit(Number(limit)).offset(Number(offset));
 
-    return ctx.json( { items, total }, 200);
+    return ctx.json({ items, total }, 200);
   });
 
 export default membershipRouteHandlers;

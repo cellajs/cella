@@ -72,7 +72,7 @@ export function useSyncLocalStore(organizationId: string) {
         for (const file of files) localUppy.addFile({ ...file, name: file.name || `${file.type}-${file.id}` });
 
         await localUppy.upload();
-      } catch (err) { }
+      } catch (err) {}
     };
 
     syncStoreAttachments();

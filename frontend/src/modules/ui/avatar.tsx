@@ -37,7 +37,7 @@ const avatarBadgeVariants = cva('absolute w-4 h-4 rounded-full bg-background fle
 });
 
 export interface AvatarBadgeProps extends React.HTMLAttributes<HTMLDivElement>, VariantProps<typeof avatarBadgeVariants> {
-  // biome-ignore lint/suspicious/noExplicitAny: <explanation>
+  // biome-ignore lint/suspicious/noExplicitAny: unable to infer type due to dynamic data structure
   children?: React.ReactElement<any, string | React.JSXElementConstructor<any>> | null | never[];
 }
 

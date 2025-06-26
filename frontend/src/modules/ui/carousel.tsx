@@ -277,7 +277,7 @@ const CarouselDots = React.forwardRef<HTMLDivElement, CarouselDotsProps>(({ clas
         <button
           type="button"
           key={`dot-${
-            // biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
+            // biome-ignore lint/suspicious/noArrayIndexKey: list is static and will not be reordered
             index
           }`}
           role="tab"

@@ -12,12 +12,7 @@ import {
 } from '#/modules/memberships/schema';
 import { memberSchema } from '#/modules/users/schema';
 import { entityWithTypeQuerySchema, idInOrgParamSchema, idOrSlugSchema, idsBodySchema, inOrgParamSchema } from '#/utils/schema/common';
-import {
-  errorResponses,
-  paginationSchema,
-  successWithErrorsSchema,
-  successWithoutDataSchema
-} from '#/utils/schema/responses';
+import { errorResponses, paginationSchema, successWithErrorsSchema, successWithoutDataSchema } from '#/utils/schema/responses';
 
 const membershipRoutes = {
   createMemberships: createCustomRoute({

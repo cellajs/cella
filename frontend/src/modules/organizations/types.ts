@@ -1,5 +1,5 @@
 import type { z } from 'zod/v4';
-import { zCreateOrganizationResponse, zGetOrganizationResponse } from '~/openapi-client/zod.gen';
+import type { zCreateOrganizationResponse, zGetOrganizationResponse } from '~/openapi-client/zod.gen';
 
 export type Organization = z.infer<typeof zGetOrganizationResponse>;
-export type OrganizationWithMembership = z.infer<typeof zCreateOrganizationResponse>
+export type OrganizationWithMembership = z.infer<typeof zCreateOrganizationResponse>;

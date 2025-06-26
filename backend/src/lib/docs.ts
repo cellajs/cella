@@ -1,9 +1,9 @@
+import type { OpenAPIHono } from '@hono/zod-openapi';
+import { Scalar } from '@scalar/hono-api-reference';
+import { config } from 'config';
 import type { Env } from '#/lib/context';
 import { entityBaseSchema, userSummarySchema } from '#/modules/entities/schema';
 import { menuSchema } from '#/modules/me/schema';
-import { type OpenAPIHono } from '@hono/zod-openapi';
-import { Scalar } from '@scalar/hono-api-reference';
-import { config } from 'config';
 import { apiModulesList } from './docs-config';
 
 /**
@@ -23,11 +23,11 @@ const docs = (app: OpenAPIHono<Env>) => {
       "Authentication cookie. Copy the cookie from your network tab and paste it here. If you don't have it, you need to sign in or sign up first.",
   });
 
-  registry.register('BaseEntitySchema', entityBaseSchema)
-  registry.register('UserSummarySchema', userSummarySchema)
-  registry.register('MenuSchema', menuSchema)
+  registry.register('BaseEntitySchema', entityBaseSchema);
+  registry.register('UserSummarySchema', userSummarySchema);
+  registry.register('MenuSchema', menuSchema);
 
-  // TODO add uniqe schema that we use on BE 
+  // TODO add uniqe schema that we use on BE
   // Review all existing schemas
   app.doc31('/openapi.json', {
     servers: [{ url: config.backendUrl }],

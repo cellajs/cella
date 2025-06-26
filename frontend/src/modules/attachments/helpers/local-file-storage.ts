@@ -1,6 +1,6 @@
 import { del, get, keys, set } from 'idb-keyval';
 import type { CustomUppyFile } from '~/modules/common/uploader/types';
-import { UploadTockenQuery } from '~/modules/me/types';
+import type { UploadTockenQuery } from '~/modules/me/types';
 import { nanoid } from '~/utils/nanoid';
 
 /**

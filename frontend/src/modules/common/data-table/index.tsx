@@ -146,7 +146,6 @@ export const DataTable = <TData,>({
                   renderCheckbox: ({ onChange, ...props }) => {
                     const withShift = useRef(false);
 
-                    // biome-ignore lint/performance/noDelete: necessary evil to prevent JS warnings
                     delete props.indeterminate;
 
                     const handleChange = (checked: boolean) => {

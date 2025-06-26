@@ -1,3 +1,6 @@
+import { config } from 'config';
+import { and, eq } from 'drizzle-orm';
+import type { Context } from 'hono';
 import { db } from '#/db/db';
 import { emailsTable } from '#/db/schema/emails';
 import { oauthAccountsTable } from '#/db/schema/oauth-accounts';
@@ -10,9 +13,6 @@ import { insertMembership } from '#/modules/memberships/helpers';
 import { generateUnsubscribeToken } from '#/modules/users/helpers/unsubscribe-token';
 import { getIsoDate } from '#/utils/iso-date';
 import { nanoid } from '#/utils/nanoid';
-import { config } from 'config';
-import { and, eq } from 'drizzle-orm';
-import type { Context } from 'hono';
 import { checkSlugAvailable } from '../../entities/helpers/check-slug';
 import type { Provider } from './oauth/oauth-providers';
 import { setUserSession } from './session';

@@ -139,8 +139,9 @@ export const MarketingNav = () => {
           <SheetHiddenTitle>Navigation</SheetHiddenTitle>
           <div
             ref={ref}
-            className={`flex mt-2 flex-col gap-2 md:hidden items-stretch transition-opacity duration-200 ease-in-out ${inView && showSheet ? 'opacity-100 delay-300' : 'opacity-0'
-              }`}
+            className={`flex mt-2 flex-col gap-2 md:hidden items-stretch transition-opacity duration-200 ease-in-out ${
+              inView && showSheet ? 'opacity-100 delay-300' : 'opacity-0'
+            }`}
           >
             <div className="flex justify-between mb-4">
               <HamburgerButton className="-ml-2 mt-3" isOpen={showSheet} toggle={setShowSheet} />

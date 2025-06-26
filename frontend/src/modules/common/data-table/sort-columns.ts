@@ -3,7 +3,7 @@ import type { SortColumn } from 'react-data-grid';
 type Sort = SortColumn['columnKey'];
 type Order = 'asc' | 'desc';
 
-// biome-ignore lint/suspicious/noExplicitAny: <explanation>
+// biome-ignore lint/suspicious/noExplicitAny: unable to infer type due to dynamic data structure
 type SetSearch = (newValues: any) => void;
 
 /**

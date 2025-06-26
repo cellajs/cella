@@ -4,7 +4,7 @@ import { and, count, eq, getTableColumns, ilike, inArray, type SQL, sql } from '
 import { db } from '#/db/db';
 import { type RequestModel, requestsTable } from '#/db/schema/requests';
 import type { Env } from '#/lib/context';
-import { errorResponse, ErrorType } from '#/lib/errors';
+import { type ErrorType, errorResponse } from '#/lib/errors';
 import { sendSlackMessage } from '#/lib/notifications';
 import requestRoutes from '#/modules/requests/routes';
 import { getUserBy } from '#/modules/users/helpers/get-user-by';

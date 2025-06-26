@@ -3,7 +3,7 @@ import type { ApiError } from '~/lib/api';
 import { getAndSetMe, getAndSetMeAuthData, getAndSetMenu } from '~/modules/me/helpers';
 import { usersKeys } from '~/modules/users/query';
 import type { User } from '~/modules/users/types';
-import { updateMe, UpdateUserData } from '~/openapi-client';
+import { type UpdateUserData, updateMe } from '~/openapi-client';
 import { queryClient } from '~/query/query-client';
 import { useUserStore } from '~/store/user';
 

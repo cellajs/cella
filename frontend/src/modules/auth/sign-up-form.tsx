@@ -7,14 +7,21 @@ import { lazy, type RefObject, Suspense, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import type { z } from 'zod/v4';
-import { ApiError } from '~/lib/api';
+import type { ApiError } from '~/lib/api';
 import type { TokenData } from '~/modules/auth/types';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import Spinner from '~/modules/common/spinner';
 import { Button, SubmitButton } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '~/modules/ui/form';
 import { Input } from '~/modules/ui/input';
-import { signUp, SignUpData, SignUpResponse, signUpWithToken, SignUpWithTokenData, SignUpWithTokenResponse } from '~/openapi-client';
+import {
+  type SignUpData,
+  type SignUpResponse,
+  type SignUpWithTokenData,
+  type SignUpWithTokenResponse,
+  signUp,
+  signUpWithToken,
+} from '~/openapi-client';
 import { zSignUpData } from '~/openapi-client/zod.gen';
 import { AuthenticateRoute } from '~/routes/auth';
 import { defaultOnInvalid } from '~/utils/form-on-invalid';
@@ -49,8 +56,12 @@ export const SignUpForm = ({ tokenData, email, resetSteps, emailEnabled }: Props
   });
 
   // Handle sign up with token to accept invitation
-  const { mutate: _signUpWithToken, isPending: isPendingWithToken } = useMutation<SignUpWithTokenResponse, ApiError, NonNullable<SignUpWithTokenData['body']> & SignUpWithTokenData['path']>({
-    mutationFn: ({ token, ...body}) => signUpWithToken({ body, path: { token }, throwOnError: true }),
+  const { mutate: _signUpWithToken, isPending: isPendingWithToken } = useMutation<
+    SignUpWithTokenResponse,
+    ApiError,
+    NonNullable<SignUpWithTokenData['body']> & SignUpWithTokenData['path']
+  >({
+    mutationFn: ({ token, ...body }) => signUpWithToken({ body, path: { token }, throwOnError: true }),
     onSuccess: () => {
       // Redirect to organization invitation page if there is a membership invitation
       const isMemberInvitation = tokenData?.organizationSlug && token && tokenId;

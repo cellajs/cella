@@ -11,7 +11,7 @@ import { getAndSetMenu } from '~/modules/me/helpers';
 import { membersKeys } from '~/modules/memberships/query';
 import { organizationsKeys } from '~/modules/organizations/query';
 import type { Organization } from '~/modules/organizations/types';
-import { SubmitButton, buttonVariants } from '~/modules/ui/button';
+import { buttonVariants, SubmitButton } from '~/modules/ui/button';
 import { getEntityRoute } from '~/nav-config';
 import { acceptEntityInvite } from '~/openapi-client';
 import { queryClient } from '~/query/query-client';

@@ -6,10 +6,10 @@ import { z } from 'zod/v4';
 import ErrorNotice from '~/modules/common/error-notice';
 import { toaster } from '~/modules/common/toaster';
 import { organizationQueryOptions } from '~/modules/organizations/query';
+import { zGetAttachmentsData, zGetMembersData, zGetPendingInvitationsData } from '~/openapi-client/zod.gen';
 import { queryClient } from '~/query/query-client';
 import { AppRoute } from '~/routes/base';
 import { noDirectAccess } from '~/utils/no-direct-access';
-import { zGetAttachmentsData, zGetMembersData, zGetPendingInvitationsData } from '~/openapi-client/zod.gen';
 
 //Lazy-loaded components
 const OrganizationPage = lazy(() => import('~/modules/organizations/organization-page'));
@@ -18,7 +18,9 @@ const AttachmentsTable = lazy(() => import('~/modules/attachments/table/table-wr
 const OrganizationSettings = lazy(() => import('~/modules/organizations/organization-settings'));
 
 // Search query schema
-export const membersSearchSchema = zGetMembersData.shape.query.pick({ q: true, sort: true, order: true, role: true }).extend({ userSheetId: z.string().optional() });
+export const membersSearchSchema = zGetMembersData.shape.query
+  .pick({ q: true, sort: true, order: true, role: true })
+  .extend({ userSheetId: z.string().optional() });
 
 export const pendingInvitationsSearchSchema = zGetPendingInvitationsData.shape.query.pick({ sort: true, order: true });
 

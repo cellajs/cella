@@ -1,5 +1,8 @@
+import type { z } from '@hono/zod-openapi';
+import { eq } from 'drizzle-orm';
+import type { Context } from 'hono';
 import { db } from '#/db/db';
-import { authStrategiesEnum, type SessionModel, sessionsTable } from '#/db/schema/sessions';
+import { type authStrategiesEnum, type SessionModel, sessionsTable } from '#/db/schema/sessions';
 import { type UserModel, usersTable } from '#/db/schema/users';
 import { logEvent } from '#/middlewares/logger/log-event';
 import { userSelect } from '#/modules/users/helpers/select';
@@ -9,9 +12,6 @@ import { nanoid } from '#/utils/nanoid';
 import { encodeLowerCased } from '#/utils/oslo';
 import { sessionCookieSchema } from '#/utils/schema/session-cookie';
 import { createDate, TimeSpan } from '#/utils/time-span';
-import { eq } from 'drizzle-orm';
-import type { Context } from 'hono';
-import type { z } from '@hono/zod-openapi';
 import { deleteAuthCookie, getAuthCookie, setAuthCookie } from './cookie';
 import { deviceInfo } from './device-info';
 
@@ -19,10 +19,14 @@ import { deviceInfo } from './device-info';
  * Sets a user session and stores it in the database.
  * Generates a session token, records device information, and optionally associates an admin user for impersonation.
  */
-export const setUserSession = async (ctx: Context, userId: UserModel['id'], strategy: (typeof authStrategiesEnum)[number], adminUserId?: UserModel['id']) => {
+export const setUserSession = async (
+  ctx: Context,
+  userId: UserModel['id'],
+  strategy: (typeof authStrategiesEnum)[number],
+  adminUserId?: UserModel['id'],
+) => {
   // Get device information
   const device = deviceInfo(ctx);
-
 
   // Generate session token and store the hashed version in db
   const sessionToken = nanoid(40);

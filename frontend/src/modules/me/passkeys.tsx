@@ -20,11 +20,11 @@ const Passkeys = ({ userAuthInfo }: { userAuthInfo: MeAuthData }) => {
   };
 
   /**
-* Deletes an existing passkey for current user.
-*
-* @throws Error if there is an issue with removing the passkey.
-* @returns True if the passkey was successfully removed, otherwise false.
-*/
+   * Deletes an existing passkey for current user.
+   *
+   * @throws Error if there is an issue with removing the passkey.
+   * @returns True if the passkey was successfully removed, otherwise false.
+   */
   const handleDeletePasskey = async () => {
     if (!onlineManager.isOnline()) return toaster(t('common:action.offline.text'), 'warning');
 
@@ -37,7 +37,6 @@ const Passkeys = ({ userAuthInfo }: { userAuthInfo: MeAuthData }) => {
       setHasPasskey(false);
       toaster(t('common:success.passkey_removed'), 'success');
       useUserStore.getState().setMeAuthData({ passkey: false });
-
     } catch (error) {
       console.error('Error removing passkey:', error);
       toaster(t('error:passkey_remove_failed'), 'error');

@@ -91,7 +91,10 @@ export const RequestsTableBar = ({ total, selected, searchVars, setSearch, colum
   };
 
   const fetchExport = async (limit: number) => {
-    const response = await getRequests({ query: { q, sort: sort || 'createdAt', order: order || 'asc', limit: String(limit), offset: '0' }, throwOnError: true });
+    const response = await getRequests({
+      query: { q, sort: sort || 'createdAt', order: order || 'asc', limit: String(limit), offset: '0' },
+      throwOnError: true,
+    });
     return response.items;
   };
 

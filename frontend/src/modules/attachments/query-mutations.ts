@@ -3,7 +3,15 @@ import { config } from 'config';
 import { t } from 'i18next';
 import { toast } from 'sonner';
 import { attachmentsKeys } from '~/modules/attachments/query';
-import type { Attachment, AttachmentContextProp, AttachmentInfiniteQueryData, AttachmentQueryData, CreateAttachmentParams, DeleteAttachmentsParams, UpdateAttachmentParams } from '~/modules/attachments/types';
+import type {
+  Attachment,
+  AttachmentContextProp,
+  AttachmentInfiniteQueryData,
+  AttachmentQueryData,
+  CreateAttachmentParams,
+  DeleteAttachmentsParams,
+  UpdateAttachmentParams,
+} from '~/modules/attachments/types';
 import { toaster } from '~/modules/common/toaster';
 import { createAttachment, deleteAttachments, updateAttachment } from '~/openapi-client';
 import { getQueryKeySortOrder } from '~/query/helpers';
@@ -11,7 +19,6 @@ import { compareQueryKeys } from '~/query/helpers/compare-query-keys';
 import { formatUpdatedData, getQueryItems, getSimilarQueries } from '~/query/helpers/mutate-query';
 import { queryClient } from '~/query/query-client';
 import { nanoid } from '~/utils/nanoid';
-
 
 const limit = config.requestLimits.attachments;
 
@@ -27,7 +34,7 @@ const handleError = (action: 'create' | 'update' | 'delete' | 'deleteMany', cont
 export const useAttachmentCreateMutation = () =>
   useMutation<Attachment[], Error, CreateAttachmentParams, AttachmentContextProp[]>({
     mutationKey: attachmentsKeys.create(),
-    mutationFn: async ({attachments, orgIdOrSlug }) => {
+    mutationFn: async ({ attachments, orgIdOrSlug }) => {
       return await createAttachment({ body: attachments, path: { orgIdOrSlug }, throwOnError: true });
     },
     onMutate: async (variables) => {
@@ -207,7 +214,7 @@ export const useAttachmentDeleteMutation = () =>
     mutationKey: attachmentsKeys.delete(),
     mutationFn: async ({ ids, orgIdOrSlug }) => {
       const response = await deleteAttachments({ body: { ids }, path: { orgIdOrSlug }, throwOnError: true });
-      return response.success
+      return response.success;
     },
     onMutate: async (variables) => {
       const { ids, orgIdOrSlug } = variables;

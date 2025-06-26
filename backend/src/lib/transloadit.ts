@@ -1,7 +1,7 @@
 import crypto from 'node:crypto';
 import { config, type UploadTemplateId } from 'config';
-import { env } from '#/env';
 import { uploadTemplates } from 'config/templates';
+import { env } from '#/env';
 import { nanoid } from '#/utils/nanoid';
 import { utcDateString } from '#/utils/utc-data-string';
 

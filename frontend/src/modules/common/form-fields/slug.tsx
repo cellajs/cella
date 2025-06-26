@@ -7,14 +7,14 @@ import { useTranslation } from 'react-i18next';
 import slugify from 'slugify';
 import { useMeasure } from '~/hooks/use-measure';
 import { useOnlineManager } from '~/hooks/use-online-manager';
-import { ApiError } from '~/lib/api';
+import type { ApiError } from '~/lib/api';
 import { Button } from '~/modules/ui/button';
 import { FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
 import { Input } from '~/modules/ui/input';
-import { checkSlug as checkSlugAvailable, CheckSlugData } from '~/openapi-client';
+import { type CheckSlugData, checkSlug as checkSlugAvailable } from '~/openapi-client';
 
 interface SlugFieldProps {
-  // biome-ignore lint/suspicious/noExplicitAny: <explanation>
+  // biome-ignore lint/suspicious/noExplicitAny: unable to infer type due to dynamic data structure
   control: Control<any>;
   label: string;
   nameValue?: string;

@@ -1,5 +1,5 @@
-import { idSchema, passwordSchema } from '#/utils/schema/common';
 import { z } from '@hono/zod-openapi';
+import { idSchema, passwordSchema } from '#/utils/schema/common';
 import { membershipSchema } from '../memberships/schema';
 import { userSchema } from '../users/schema';
 
@@ -25,7 +25,6 @@ export const sendVerificationEmailBodySchema = z.object({
   tokenId: z.string().optional(),
   userId: z.string().optional(),
 });
-
 
 export const passkeyChallengeQuerySchema = z.object({ challengeBase64: z.string() });
 

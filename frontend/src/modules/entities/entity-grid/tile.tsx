@@ -16,8 +16,9 @@ export const EntityTile = ({ entity }: { entity: EntityGridItem }) => {
         <Link to={to} params={params} className="w-full relative group tile-link focus-visible:outline-none focus-visible:ring-0">
           {typeof window !== 'undefined' && (
             <div
-              className={`relative flex flex-col -mx-4 -mt-6 bg-cover bg-center aspect-[3/1] bg-opacity-80 ${entity.bannerUrl ? '' : numberToColorClass(entity.id)
-                }`}
+              className={`relative flex flex-col -mx-4 -mt-6 bg-cover bg-center aspect-[3/1] bg-opacity-80 ${
+                entity.bannerUrl ? '' : numberToColorClass(entity.id)
+              }`}
               style={entity.bannerUrl ? { backgroundImage: `url(${entity.bannerUrl})` } : {}}
             >
               <div className="grow" />

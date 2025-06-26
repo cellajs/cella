@@ -7,7 +7,7 @@ import type { UseFormProps } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import type { z } from 'zod/v4';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
-import { ApiError } from '~/lib/api';
+import type { ApiError } from '~/lib/api';
 import { AlertWrap } from '~/modules/common/alert-wrap';
 import { blocksToHTML } from '~/modules/common/blocknote/helpers';
 import InputFormField from '~/modules/common/form-fields/input';
@@ -18,7 +18,7 @@ import { toaster } from '~/modules/common/toaster';
 import { Button, SubmitButton } from '~/modules/ui/button';
 import { Checkbox } from '~/modules/ui/checkbox';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
-import { sendNewsletter, SendNewsletterData } from '~/openapi-client';
+import { type SendNewsletterData, sendNewsletter } from '~/openapi-client';
 import { zSendNewsletterData } from '~/openapi-client/zod.gen';
 import { blocknoteFieldIsDirty } from '~/utils/blocknote-field-is-dirty';
 
@@ -50,9 +50,9 @@ const CreateNewsletterForm = ({ organizationIds, callback }: CreateNewsletterFor
   const form = useFormWithDraft<FormValues>(formContainerId, { formOptions });
 
   // Send newsletter
-  const { mutate: _sendNewsletter, isPending } = useMutation<boolean, ApiError, {body :SendNewsletterData['body']} & SendNewsletterData['query']>({
+  const { mutate: _sendNewsletter, isPending } = useMutation<boolean, ApiError, { body: SendNewsletterData['body'] } & SendNewsletterData['query']>({
     mutationFn: async ({ body, toSelf }) => {
-      return await sendNewsletter({ body, query: { toSelf }, throwOnError: true, });
+      return await sendNewsletter({ body, query: { toSelf }, throwOnError: true });
     },
     onSuccess: () => {
       if (testOnly) return toaster(t('common:success.test_email'), 'success');

@@ -1,3 +1,10 @@
+import { getRandomValues } from 'node:crypto';
+import { OpenAPIHono } from '@hono/zod-openapi';
+import { encodeBase64 } from '@oslojs/encoding';
+import { generateCodeVerifier, generateState, OAuth2RequestError } from 'arctic';
+import { config, type EnabledOauthProvider } from 'config';
+import { and, desc, eq } from 'drizzle-orm';
+import i18n from 'i18next';
 import { db } from '#/db/db';
 import { type EmailModel, emailsTable } from '#/db/schema/emails';
 import { membershipsTable } from '#/db/schema/memberships';
@@ -8,7 +15,7 @@ import { tokensTable } from '#/db/schema/tokens';
 import { type UserModel, usersTable } from '#/db/schema/users';
 import { type Env, getContextToken, getContextUser } from '#/lib/context';
 import { resolveEntity } from '#/lib/entity';
-import { errorRedirect, errorResponse, type ErrorType } from '#/lib/errors';
+import { type ErrorType, errorRedirect, errorResponse } from '#/lib/errors';
 import { mailer } from '#/lib/mailer';
 import { logEvent } from '#/middlewares/logger/log-event';
 import { hashPassword, verifyPasswordHash } from '#/modules/auth/helpers/argon2id';
@@ -23,13 +30,13 @@ import {
 } from '#/modules/auth/helpers/oauth/cookies';
 import { findExistingUsers, getOauthRedirectUrl, handleExistingUser } from '#/modules/auth/helpers/oauth/index';
 import {
-  githubAuth,
   type GithubUserEmailProps,
   type GithubUserProps,
-  googleAuth,
   type GoogleUserProps,
-  microsoftAuth,
+  githubAuth,
+  googleAuth,
   type MicrosoftUserProps,
+  microsoftAuth,
 } from '#/modules/auth/helpers/oauth/oauth-providers';
 import { transformGithubUserData, transformSocialUserData } from '#/modules/auth/helpers/oauth/transform-user-data';
 import { verifyPassKeyPublic } from '#/modules/auth/helpers/passkey';
@@ -44,13 +51,6 @@ import { getIsoDate } from '#/utils/iso-date';
 import { nanoid } from '#/utils/nanoid';
 import { slugFromEmail } from '#/utils/slug-from-email';
 import { createDate, TimeSpan } from '#/utils/time-span';
-import { OpenAPIHono } from '@hono/zod-openapi';
-import { encodeBase64 } from '@oslojs/encoding';
-import { generateCodeVerifier, generateState, OAuth2RequestError } from 'arctic';
-import { config, type EnabledOauthProvider } from 'config';
-import { and, desc, eq } from 'drizzle-orm';
-import i18n from 'i18next';
-import { getRandomValues } from 'node:crypto';
 import { CreatePasswordEmail, type CreatePasswordEmailProps } from '../../../emails/create-password';
 import { EmailVerificationEmail, type EmailVerificationEmailProps } from '../../../emails/email-verification';
 
@@ -365,7 +365,7 @@ const authRouteHandlers = app
       userId: tokenRecord.userId || '',
     };
 
-    if (!tokenRecord.organizationId) return ctx.json( baseData, 200);
+    if (!tokenRecord.organizationId) return ctx.json(baseData, 200);
 
     // If it is a membership invitation, get organization details
     const [organization] = await db.select().from(organizationsTable).where(eq(organizationsTable.id, tokenRecord.organizationId));
@@ -378,7 +378,7 @@ const authRouteHandlers = app
       organizationSlug: organization.slug || '',
     };
 
-    return ctx.json( dataWithOrg, 200);
+    return ctx.json(dataWithOrg, 200);
   })
   /*
    * Accept org invite token for signed in users
@@ -413,7 +413,7 @@ const authRouteHandlers = app
     const entity = await resolveEntity(token.entityType, targetMembership[entityIdField]);
     if (!entity) return errorResponse(ctx, 404, 'not_found', 'warn', token.entityType);
 
-    return ctx.json( { ...entity, membership: targetMembership }, 200);
+    return ctx.json({ ...entity, membership: targetMembership }, 200);
   })
   /*
    * Start impersonation

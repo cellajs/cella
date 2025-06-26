@@ -41,7 +41,7 @@ const BaseDataTable = memo(
         if (!organization.membership?.role) continue;
 
         changeRole({
-          query:{
+          query: {
             idOrSlug: organization.id,
             entityType: 'organization',
           },

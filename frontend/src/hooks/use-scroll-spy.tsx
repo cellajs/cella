@@ -51,7 +51,6 @@ export const useScrollSpy = ({ sectionIds = [] }: { sectionIds: string[] }) => {
 
     observer.current = new IntersectionObserver((observedEntries) => {
       // Update entries in the ref
-      // biome-ignore lint/complexity/noForEach: <explanation>
       observedEntries.forEach((entry) => {
         const id = entry.target.id.replace('-anchor-wrap', '');
         if (id) {
@@ -88,7 +87,6 @@ export const useScrollSpy = ({ sectionIds = [] }: { sectionIds: string[] }) => {
       }
     }, options);
 
-    // biome-ignore lint/complexity/noForEach: <explanation>
     sectionIds.forEach((id) => {
       const element = document.getElementById(`${id}-anchor-wrap`);
       if (element) observer.current?.observe(element);

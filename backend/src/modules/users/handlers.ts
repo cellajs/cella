@@ -1,16 +1,16 @@
+import { OpenAPIHono } from '@hono/zod-openapi';
+import { and, count, eq, ilike, inArray, or } from 'drizzle-orm';
 import { db } from '#/db/db';
 import { membershipsTable } from '#/db/schema/memberships';
 import { usersTable } from '#/db/schema/users';
 import { type Env, getContextMemberships, getContextUser } from '#/lib/context';
-import { createError, errorResponse, type ErrorType } from '#/lib/errors';
+import { createError, type ErrorType, errorResponse } from '#/lib/errors';
 import { logEvent } from '#/middlewares/logger/log-event';
 import { getUsersByConditions } from '#/modules/users/helpers/get-user-by';
 import { defaultHook } from '#/utils/default-hook';
 import { getIsoDate } from '#/utils/iso-date';
 import { getOrderColumn } from '#/utils/order-column';
 import { prepareStringForILikeFilter } from '#/utils/sql';
-import { OpenAPIHono } from '@hono/zod-openapi';
-import { and, count, eq, ilike, inArray, or } from 'drizzle-orm';
 import { checkSlugAvailable } from '../entities/helpers/check-slug';
 import { userSelect } from './helpers/select';
 import userRoutes from './routes';
@@ -73,7 +73,7 @@ const usersRouteHandlers = app
 
     const items = (await usersQuery.limit(Number(limit)).offset(Number(offset))).map(({ users }) => users);
 
-    return ctx.json( { items, total }, 200);
+    return ctx.json({ items, total }, 200);
   })
   /*
    * Delete users
@@ -135,7 +135,6 @@ const usersRouteHandlers = app
     const memberships = getContextMemberships();
 
     if (idOrSlug === user.id || idOrSlug === user.slug) return ctx.json(user, 200);
-    
 
     const [targetUser] = await getUsersByConditions([or(eq(usersTable.id, idOrSlug), eq(usersTable.slug, idOrSlug))]);
 

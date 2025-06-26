@@ -1,12 +1,12 @@
 import { createCustomRoute } from '#/lib/custom-routes';
 import { hasSystemAccess, isAuthenticated } from '#/middlewares/guard';
 import {
-    fullCountsSchema,
-    organizationCreateBodySchema,
-    organizationListQuerySchema,
-    organizationSchema,
-    organizationUpdateBodySchema,
-    organizationWithMembershipSchema,
+  fullCountsSchema,
+  organizationCreateBodySchema,
+  organizationListQuerySchema,
+  organizationSchema,
+  organizationUpdateBodySchema,
+  organizationWithMembershipSchema,
 } from '#/modules/organizations/schema';
 import { entityParamSchema, idsBodySchema } from '#/utils/schema/common';
 import { errorResponses, paginationSchema, successWithErrorsSchema } from '#/utils/schema/responses';

@@ -101,13 +101,7 @@ export const AttachmentsTableBar = ({
       </TableFilterBar>
 
       {/* Columns view */}
-      <ColumnsView
-        className="max-lg:hidden"
-        columns={columns}
-        setColumns={setColumns}
-        isCompact={isCompact}
-        setIsCompact={setIsCompact}
-      />
+      <ColumnsView className="max-lg:hidden" columns={columns} setColumns={setColumns} isCompact={isCompact} setIsCompact={setIsCompact} />
 
       {/* Focus view */}
       {!isSheet && <FocusView iconOnly />}

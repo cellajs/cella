@@ -119,7 +119,7 @@ const systemRouteHandlers = app
 
     const url = await getSignedUrl(key);
 
-    return ctx.json( url, 200);
+    return ctx.json(url, 200);
   })
   /*
    * Paddle webhook

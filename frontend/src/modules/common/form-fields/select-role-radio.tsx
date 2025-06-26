@@ -18,7 +18,7 @@ const SelectRoleRadio = ({ entityType, onChange, value, className }: Props) => {
   return (
     <RadioGroup value={value} onValueChange={onChange} className={cn('inline-flex gap-4 items-center', className)}>
       {roles.map((role) => (
-        // biome-ignore lint/a11y/noLabelWithoutControl: <explanation>
+        // biome-ignore lint/a11y/noLabelWithoutControl: label is for visual grouping only, no input needed
         <label key={role} className="inline-flex gap-2 items-center cursor-pointer ">
           <RadioGroupItem key={role} value={role} />
           <span className="text-sm font-normal leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">

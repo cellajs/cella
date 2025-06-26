@@ -1,5 +1,5 @@
 import { type UseQueryResult, useQuery } from '@tanstack/react-query';
-import { config } from 'config';
+import type { config } from 'config';
 import type { ApiError } from '~/lib/api';
 import type { TokenData } from '~/modules/auth/types';
 import { checkToken } from '~/openapi-client';
@@ -17,7 +17,7 @@ export const useTokenCheck = (type: TokenType, id?: string, enabled = true): Use
     queryKey: [],
     queryFn: async () => {
       if (!id) throw new Error('Token ID is required');
-      return checkToken({ path : { id }, query: { type } });
+      return checkToken({ path: { id }, query: { type } });
     },
     enabled,
   });

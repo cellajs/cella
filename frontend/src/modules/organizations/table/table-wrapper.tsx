@@ -7,7 +7,7 @@ import type { BaseTableMethods } from '~/modules/common/data-table/types';
 import { useColumns } from '~/modules/organizations/table/columns';
 import BaseDataTable from '~/modules/organizations/table/table';
 import { OrganizationsTableBar } from '~/modules/organizations/table/table-bar';
-import { zGetOrganizationsResponse } from '~/openapi-client/zod.gen';
+import type { zGetOrganizationsResponse } from '~/openapi-client/zod.gen';
 import { OrganizationsTableRoute, type organizationsSearchSchema } from '~/routes/system';
 
 const LIMIT = config.requestLimits.organizations;

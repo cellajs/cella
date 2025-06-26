@@ -1,9 +1,14 @@
+import { OpenAPIHono } from '@hono/zod-openapi';
+import { config } from 'config';
+import { and, count, eq, ilike, inArray, like, notLike, or, type SQL } from 'drizzle-orm';
+import { html, raw } from 'hono/html';
+import { stream } from 'hono/streaming';
 import { db } from '#/db/db';
 import { attachmentsTable } from '#/db/schema/attachments';
 import { organizationsTable } from '#/db/schema/organizations';
 import { env } from '#/env';
 import { type Env, getContextMemberships, getContextOrganization, getContextUser } from '#/lib/context';
-import { createError, errorResponse, type ErrorType } from '#/lib/errors';
+import { createError, type ErrorType, errorResponse } from '#/lib/errors';
 import { logEvent } from '#/middlewares/logger/log-event';
 import { processAttachmentUrls, processAttachmentUrlsBatch } from '#/modules/attachments/helpers/process-attachment-urls';
 import attachmentRoutes from '#/modules/attachments/routes';
@@ -14,11 +19,6 @@ import { getIsoDate } from '#/utils/iso-date';
 import { nanoid } from '#/utils/nanoid';
 import { getOrderColumn } from '#/utils/order-column';
 import { prepareStringForILikeFilter } from '#/utils/sql';
-import { OpenAPIHono } from '@hono/zod-openapi';
-import { config } from 'config';
-import { and, count, eq, ilike, inArray, like, notLike, or, type SQL } from 'drizzle-orm';
-import { html, raw } from 'hono/html';
-import { stream } from 'hono/streaming';
 
 const app = new OpenAPIHono<Env>({ defaultHook });
 
@@ -145,7 +145,7 @@ const attachmentsRouteHandlers = app
 
       const items = await processAttachmentUrlsBatch([targetAttachment]);
       // return target attachment itself if no groupId
-      if (!targetAttachment.groupId) return ctx.json( { items, total: 1 }, 200);
+      if (!targetAttachment.groupId) return ctx.json({ items, total: 1 }, 200);
 
       // add filter attachments by groupId
       filters.push(eq(attachmentsTable.groupId, targetAttachment.groupId));
@@ -163,7 +163,7 @@ const attachmentsRouteHandlers = app
 
     const items = await processAttachmentUrlsBatch(attachments);
 
-    return ctx.json( { items, total }, 200);
+    return ctx.json({ items, total }, 200);
   })
   /*
    * Get attachment by id
@@ -256,7 +256,7 @@ const attachmentsRouteHandlers = app
 
     return stream(ctx, async (stream) => {
       // const coverStreamWeb = nodeStreamToWebStream(coverStream);
-      // biome-ignore lint/suspicious/noExplicitAny: <explanation>
+      // biome-ignore lint/suspicious/noExplicitAny: unable to infer type due to dynamic data structure
       await stream.pipe({} as any);
     });
   })

@@ -7,7 +7,7 @@ import { lazy, Suspense, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod/v4';
-import { ApiError } from '~/lib/api';
+import type { ApiError } from '~/lib/api';
 import AuthErrorNotice from '~/modules/auth/auth-error-notice';
 import { RequestPasswordDialog } from '~/modules/auth/request-password-dialog';
 import { useTokenCheck } from '~/modules/auth/use-token-check';
@@ -16,7 +16,7 @@ import { toaster } from '~/modules/common/toaster';
 import { Button, SubmitButton } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '~/modules/ui/form';
 import { Input } from '~/modules/ui/input';
-import { createPassword, CreatePasswordData, CreatePasswordResponse } from '~/openapi-client';
+import { type CreatePasswordData, type CreatePasswordResponse, createPassword } from '~/openapi-client';
 import { CreatePasswordWithTokenRoute } from '~/routes/auth';
 import { defaultOnInvalid } from '~/utils/form-on-invalid';
 
