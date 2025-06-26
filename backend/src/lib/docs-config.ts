@@ -1,5 +1,9 @@
 export const apiModulesList = [
-  { name: 'me', description: 'Current user endpoints. Split from `users` due to different authorization flow.' },
+  {
+    name: 'me',
+    description: `Endpoints related to the *current user*, meaning the user associated with the active session making the request.
+                  These routes are distinct from general \`users\` endpoints: while \`users\` may operate on any user in the system, \`me\` endpoints are scoped exclusively to the *current user* and follow a different authorization flow.`,
+  },
   { name: 'users', description: '`user` is also an entity, but NOT a contextual entity.' },
   {
     name: 'memberships',
