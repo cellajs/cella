@@ -9,10 +9,9 @@
 
     "paths": {
       "~/*": ["./src/*"],
-      "#/*": ["../backend/src/*"]
     }
   },
 
-  "include": ["src/**/*", "vite.config.ts", "../config/*", "../backend/**/*", "../locales/*"],
+  "include": ["src/**/*", "vite.config.ts", "../config/*", "../locales/*"],
   "exclude": ["**/node_modules", "**/dist", "**/.*/"]
 }
