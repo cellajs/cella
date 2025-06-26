@@ -5,7 +5,7 @@ import { t } from 'i18next';
 
 import { authenticateWithPasskey, getPasskeyChallenge } from '~/modules/auth/api';
 import { toaster } from '~/modules/common/toaster';
-import { deletePasskey as baseRemovePasskey, createPasskey, getMyMenu, getMe, getMyAuth } from '~/modules/me/api';
+import { createPasskey, getMe, getMyAuth, getMyMenu } from '~/openapi-client';
 import { useNavigationStore } from '~/store/navigation';
 import { useUIStore } from '~/store/ui';
 import { useUserStore } from '~/store/user';
@@ -72,7 +72,7 @@ export const passkeyRegistration = async () => {
       clientDataJSON: encodeBase64(new Uint8Array(response.clientDataJSON)),
     };
 
-    const result = await createPasskey(credentialData);
+    const result = await createPasskey({ body: credentialData, throwOnError: true });
 
     if (!result) toaster(t('error:passkey_add_failed'), 'error');
 
@@ -132,39 +132,13 @@ export const passkeyAuth = async (userEmail: string, callback?: () => void) => {
 };
 
 /**
- * Deletes an existing passkey for current user.
- *
- * @throws Error if there is an issue with removing the passkey.
- * @returns True if the passkey was successfully removed, otherwise false.
- */
-export const deletePasskey = async () => {
-  if (!onlineManager.isOnline()) return toaster(t('common:action.offline.text'), 'warning');
-
-  try {
-    const result = await baseRemovePasskey();
-    if (!result) {
-      toaster(t('error:passkey_remove_failed'), 'error');
-
-      return false;
-    }
-    toaster(t('common:success.passkey_removed'), 'success');
-    useUserStore.getState().setMeAuthData({ passkey: false });
-    return true;
-  } catch (error) {
-    console.error('Error removing passkey:', error);
-    toaster(t('error:passkey_remove_failed'), 'error');
-    return false;
-  }
-};
-
-/**
  * Retrieves the current user's information and updates the user store.
  * If the user is impersonating, it does not update the last user.
  *
  * @returns The user data object.
  */
 export const getAndSetMe = async () => {
-  const user = await getMe();
+  const user = await getMe({ throwOnError: true });
   const skipLastUser = useUIStore.getState().impersonating;
   useUserStore.getState().setUser(user, skipLastUser);
   return user;
@@ -176,7 +150,7 @@ export const getAndSetMe = async () => {
  * @returns The data object.
  */
 export const getAndSetMeAuthData = async () => {
-  const authInfo = await getMyAuth();
+  const authInfo = await getMyAuth({ throwOnError: true });
   useUserStore.getState().setMeAuthData(authInfo);
   return authInfo;
 };

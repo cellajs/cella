@@ -34,8 +34,8 @@ export const errorSchema = z.object({
   path: z.string().optional(), // Optional request path
   method: z.string().optional(), // Optional HTTP method
   timestamp: z.string().optional(), // Optional timestamp
-  usr: z.string().optional(), // Optional user identifier
-  org: z.string().optional(), // Optional organization identifier
+  userId: z.string().optional(), // Optional user identifier
+  organizationId: z.string().optional(), // Optional organization identifier
 });
 
 /**

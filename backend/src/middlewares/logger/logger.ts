@@ -26,11 +26,11 @@ const time = (start: number) => {
 
 type PrintFunc = (str: string) => void;
 
-function log(fn: PrintFunc, prefix: string, logId: string, method: string, path: string, status = 0, elapsed?: string, user?: string, org?: string) {
+function log(fn: PrintFunc, prefix: string, logId: string, method: string, path: string, status = 0, elapsed?: string, userId?: string, organizationId?: string) {
   const out =
     prefix === LogPrefix.Incoming
       ? `${prefix} ${logId} ${method} ${path}`
-      : `${prefix} ${logId} ${method} ${path} ${status} ${elapsed} ${user}@${org}`;
+      : `${prefix} ${logId} ${method} ${path} ${status} ${elapsed} ${userId}@${organizationId}`;
   fn(out);
 }
 

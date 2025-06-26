@@ -768,7 +768,7 @@ export const zDeleteSessionsResponse = z.object({
         path: z.string().optional(),
         method: z.string().optional(),
         timestamp: z.string().optional(),
-        usr: z.string().optional(),
+        userId: z.string().optional(),
         org: z.string().optional()
     }))
 });
@@ -890,7 +890,7 @@ export const zDeleteUsersResponse = z.object({
         path: z.string().optional(),
         method: z.string().optional(),
         timestamp: z.string().optional(),
-        usr: z.string().optional(),
+        userId: z.string().optional(),
         org: z.string().optional()
     }))
 });
@@ -1187,7 +1187,7 @@ export const zDeleteOrganizationsResponse = z.object({
         path: z.string().optional(),
         method: z.string().optional(),
         timestamp: z.string().optional(),
-        usr: z.string().optional(),
+        userId: z.string().optional(),
         org: z.string().optional()
     }))
 });
@@ -1928,7 +1928,33 @@ export const zDeleteRequestsData = z.object({
 /**
  * Requests
  */
-export const zDeleteRequestsResponse = z.boolean();
+export const zDeleteRequestsResponse = z.object({
+    success: z.boolean(),
+    errors: z.array(z.object({
+        name: z.string(),
+        message: z.string(),
+        type: z.string(),
+        status: z.number(),
+        severity: z.enum([
+            'debug',
+            'log',
+            'info',
+            'warn',
+            'error'
+        ]),
+        entityType: z.enum([
+            'user',
+            'organization',
+            'attachment'
+        ]).optional(),
+        logId: z.string().optional(),
+        path: z.string().optional(),
+        method: z.string().optional(),
+        timestamp: z.string().optional(),
+        userId: z.string().optional(),
+        org: z.string().optional()
+    }))
+});
 
 export const zGetRequestsData = z.object({
     body: z.never().optional(),
@@ -2081,7 +2107,7 @@ export const zDeleteAttachmentsResponse = z.object({
         path: z.string().optional(),
         method: z.string().optional(),
         timestamp: z.string().optional(),
-        usr: z.string().optional(),
+        userId: z.string().optional(),
         org: z.string().optional()
     }))
 });
@@ -2401,7 +2427,7 @@ export const zDeleteMembershipsResponse = z.object({
         path: z.string().optional(),
         method: z.string().optional(),
         timestamp: z.string().optional(),
-        usr: z.string().optional(),
+        userId: z.string().optional(),
         org: z.string().optional()
     }))
 });

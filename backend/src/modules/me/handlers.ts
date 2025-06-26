@@ -165,7 +165,7 @@ const meRouteHandlers = app
       .where(eq(usersTable.id, user.id))
       .returning();
 
-    return ctx.json( updatedUser, 200);
+    return ctx.json(updatedUser, 200);
   })
   /*
    * Delete current user (me)

@@ -48,8 +48,8 @@ export class ApiError extends Error {
   path?: string;
   method?: string;
   timestamp?: string;
-  usr?: string;
-  org?: string;
+  userId?: string;
+  organizationId?: string;
 
   constructor(error: ApiError) {
     super(error.message);
@@ -62,7 +62,7 @@ export class ApiError extends Error {
     this.path = error.path;
     this.method = error.method;
     this.timestamp = error.timestamp;
-    this.usr = error.usr;
-    this.org = error.org;
+    this.userId = error.userId;
+    this.organizationId = error.organizationId;
   }
 }

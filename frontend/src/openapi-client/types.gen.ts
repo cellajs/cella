@@ -86,7 +86,7 @@ export type CheckEmailErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -103,7 +103,7 @@ export type CheckEmailErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -120,7 +120,7 @@ export type CheckEmailErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -137,7 +137,7 @@ export type CheckEmailErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -154,7 +154,7 @@ export type CheckEmailErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
 };
@@ -195,7 +195,7 @@ export type SignUpErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -212,7 +212,7 @@ export type SignUpErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -229,7 +229,7 @@ export type SignUpErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -246,7 +246,7 @@ export type SignUpErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -263,7 +263,7 @@ export type SignUpErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
 };
@@ -306,7 +306,7 @@ export type SignUpWithTokenErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -323,7 +323,7 @@ export type SignUpWithTokenErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -340,7 +340,7 @@ export type SignUpWithTokenErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -357,7 +357,7 @@ export type SignUpWithTokenErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -374,7 +374,7 @@ export type SignUpWithTokenErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
 };
@@ -415,7 +415,7 @@ export type SendVerificationEmailErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -432,7 +432,7 @@ export type SendVerificationEmailErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -449,7 +449,7 @@ export type SendVerificationEmailErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -466,7 +466,7 @@ export type SendVerificationEmailErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -483,7 +483,7 @@ export type SendVerificationEmailErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
 };
@@ -523,7 +523,7 @@ export type VerifyEmailErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -540,7 +540,7 @@ export type VerifyEmailErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -557,7 +557,7 @@ export type VerifyEmailErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -574,7 +574,7 @@ export type VerifyEmailErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -591,7 +591,7 @@ export type VerifyEmailErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
 };
@@ -631,7 +631,7 @@ export type RequestPasswordErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -648,7 +648,7 @@ export type RequestPasswordErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -665,7 +665,7 @@ export type RequestPasswordErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -682,7 +682,7 @@ export type RequestPasswordErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -699,7 +699,7 @@ export type RequestPasswordErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
 };
@@ -741,7 +741,7 @@ export type CreatePasswordWithTokenErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -758,7 +758,7 @@ export type CreatePasswordWithTokenErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -775,7 +775,7 @@ export type CreatePasswordWithTokenErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -792,7 +792,7 @@ export type CreatePasswordWithTokenErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -809,7 +809,7 @@ export type CreatePasswordWithTokenErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
 };
@@ -850,7 +850,7 @@ export type SignInErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -867,7 +867,7 @@ export type SignInErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -884,7 +884,7 @@ export type SignInErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -901,7 +901,7 @@ export type SignInErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -918,7 +918,7 @@ export type SignInErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
 };
@@ -960,7 +960,7 @@ export type CheckTokenErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -977,7 +977,7 @@ export type CheckTokenErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -994,7 +994,7 @@ export type CheckTokenErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -1011,7 +1011,7 @@ export type CheckTokenErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -1028,7 +1028,7 @@ export type CheckTokenErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
 };
@@ -1075,7 +1075,7 @@ export type AcceptEntityInviteErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -1092,7 +1092,7 @@ export type AcceptEntityInviteErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -1109,7 +1109,7 @@ export type AcceptEntityInviteErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -1126,7 +1126,7 @@ export type AcceptEntityInviteErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -1143,7 +1143,7 @@ export type AcceptEntityInviteErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
 };
@@ -1201,7 +1201,7 @@ export type StartImpersonationErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -1218,7 +1218,7 @@ export type StartImpersonationErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -1235,7 +1235,7 @@ export type StartImpersonationErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -1252,7 +1252,7 @@ export type StartImpersonationErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -1269,7 +1269,7 @@ export type StartImpersonationErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
 };
@@ -1307,7 +1307,7 @@ export type StopImpersonationErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -1324,7 +1324,7 @@ export type StopImpersonationErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -1341,7 +1341,7 @@ export type StopImpersonationErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -1358,7 +1358,7 @@ export type StopImpersonationErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -1375,7 +1375,7 @@ export type StopImpersonationErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
 };
@@ -1413,7 +1413,7 @@ export type SignOutErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -1430,7 +1430,7 @@ export type SignOutErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -1447,7 +1447,7 @@ export type SignOutErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -1464,7 +1464,7 @@ export type SignOutErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -1481,7 +1481,7 @@ export type SignOutErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
 };
@@ -1524,7 +1524,7 @@ export type GithubSignInErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -1541,7 +1541,7 @@ export type GithubSignInErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -1558,7 +1558,7 @@ export type GithubSignInErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -1575,7 +1575,7 @@ export type GithubSignInErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -1592,7 +1592,7 @@ export type GithubSignInErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
 };
@@ -1626,7 +1626,7 @@ export type GoogleSignInErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -1643,7 +1643,7 @@ export type GoogleSignInErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -1660,7 +1660,7 @@ export type GoogleSignInErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -1677,7 +1677,7 @@ export type GoogleSignInErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -1694,7 +1694,7 @@ export type GoogleSignInErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
 };
@@ -1728,7 +1728,7 @@ export type MicrosoftSignInErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -1745,7 +1745,7 @@ export type MicrosoftSignInErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -1762,7 +1762,7 @@ export type MicrosoftSignInErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -1779,7 +1779,7 @@ export type MicrosoftSignInErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -1796,7 +1796,7 @@ export type MicrosoftSignInErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
 };
@@ -1831,7 +1831,7 @@ export type GithubSignInCallbackErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -1848,7 +1848,7 @@ export type GithubSignInCallbackErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -1865,7 +1865,7 @@ export type GithubSignInCallbackErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -1882,7 +1882,7 @@ export type GithubSignInCallbackErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -1899,7 +1899,7 @@ export type GithubSignInCallbackErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
 };
@@ -1931,7 +1931,7 @@ export type GoogleSignInCallbackErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -1948,7 +1948,7 @@ export type GoogleSignInCallbackErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -1965,7 +1965,7 @@ export type GoogleSignInCallbackErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -1982,7 +1982,7 @@ export type GoogleSignInCallbackErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -1999,7 +1999,7 @@ export type GoogleSignInCallbackErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
 };
@@ -2031,7 +2031,7 @@ export type MicrosoftSignInCallbackErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -2048,7 +2048,7 @@ export type MicrosoftSignInCallbackErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -2065,7 +2065,7 @@ export type MicrosoftSignInCallbackErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -2082,7 +2082,7 @@ export type MicrosoftSignInCallbackErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -2099,7 +2099,7 @@ export type MicrosoftSignInCallbackErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
 };
@@ -2128,7 +2128,7 @@ export type GetPasskeyChallengeErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -2145,7 +2145,7 @@ export type GetPasskeyChallengeErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -2162,7 +2162,7 @@ export type GetPasskeyChallengeErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -2179,7 +2179,7 @@ export type GetPasskeyChallengeErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -2196,7 +2196,7 @@ export type GetPasskeyChallengeErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
 };
@@ -2241,7 +2241,7 @@ export type VerifyPasskeyErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -2258,7 +2258,7 @@ export type VerifyPasskeyErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -2275,7 +2275,7 @@ export type VerifyPasskeyErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -2292,7 +2292,7 @@ export type VerifyPasskeyErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -2309,7 +2309,7 @@ export type VerifyPasskeyErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
 };
@@ -2347,7 +2347,7 @@ export type DeleteMeErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -2364,7 +2364,7 @@ export type DeleteMeErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -2381,7 +2381,7 @@ export type DeleteMeErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -2398,7 +2398,7 @@ export type DeleteMeErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -2415,7 +2415,7 @@ export type DeleteMeErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
 };
@@ -2453,7 +2453,7 @@ export type GetMeErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -2470,7 +2470,7 @@ export type GetMeErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -2487,7 +2487,7 @@ export type GetMeErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -2504,7 +2504,7 @@ export type GetMeErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -2521,7 +2521,7 @@ export type GetMeErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
 };
@@ -2587,7 +2587,7 @@ export type UpdateMeErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -2604,7 +2604,7 @@ export type UpdateMeErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -2621,7 +2621,7 @@ export type UpdateMeErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -2638,7 +2638,7 @@ export type UpdateMeErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -2655,7 +2655,7 @@ export type UpdateMeErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
 };
@@ -2713,7 +2713,7 @@ export type GetMyAuthErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -2730,7 +2730,7 @@ export type GetMyAuthErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -2747,7 +2747,7 @@ export type GetMyAuthErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -2764,7 +2764,7 @@ export type GetMyAuthErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -2781,7 +2781,7 @@ export type GetMyAuthErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
 };
@@ -2835,7 +2835,7 @@ export type GetMyMenuErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -2852,7 +2852,7 @@ export type GetMyMenuErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -2869,7 +2869,7 @@ export type GetMyMenuErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -2886,7 +2886,7 @@ export type GetMyMenuErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -2903,7 +2903,7 @@ export type GetMyMenuErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
 };
@@ -2984,7 +2984,7 @@ export type DeleteSessionsErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -3001,7 +3001,7 @@ export type DeleteSessionsErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -3018,7 +3018,7 @@ export type DeleteSessionsErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -3035,7 +3035,7 @@ export type DeleteSessionsErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -3052,7 +3052,7 @@ export type DeleteSessionsErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
 };
@@ -3076,7 +3076,7 @@ export type DeleteSessionsResponses = {
             path?: string;
             method?: string;
             timestamp?: string;
-            usr?: string;
+            userId?: string;
             org?: string;
         }>;
     };
@@ -3109,7 +3109,7 @@ export type DeleteMyMembershipErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -3126,7 +3126,7 @@ export type DeleteMyMembershipErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -3143,7 +3143,7 @@ export type DeleteMyMembershipErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -3160,7 +3160,7 @@ export type DeleteMyMembershipErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -3177,7 +3177,7 @@ export type DeleteMyMembershipErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
 };
@@ -3215,7 +3215,7 @@ export type DeletePasskeyErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -3232,7 +3232,7 @@ export type DeletePasskeyErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -3249,7 +3249,7 @@ export type DeletePasskeyErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -3266,7 +3266,7 @@ export type DeletePasskeyErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -3283,7 +3283,7 @@ export type DeletePasskeyErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
 };
@@ -3325,7 +3325,7 @@ export type CreatePasskeyErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -3342,7 +3342,7 @@ export type CreatePasskeyErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -3359,7 +3359,7 @@ export type CreatePasskeyErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -3376,7 +3376,7 @@ export type CreatePasskeyErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -3393,7 +3393,7 @@ export type CreatePasskeyErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
 };
@@ -3435,7 +3435,7 @@ export type GetUploadTokenErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -3452,7 +3452,7 @@ export type GetUploadTokenErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -3469,7 +3469,7 @@ export type GetUploadTokenErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -3486,7 +3486,7 @@ export type GetUploadTokenErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -3503,7 +3503,7 @@ export type GetUploadTokenErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
 };
@@ -3558,7 +3558,7 @@ export type UnsubscribeMeErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -3575,7 +3575,7 @@ export type UnsubscribeMeErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -3592,7 +3592,7 @@ export type UnsubscribeMeErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -3609,7 +3609,7 @@ export type UnsubscribeMeErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -3626,7 +3626,7 @@ export type UnsubscribeMeErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
 };
@@ -3657,7 +3657,7 @@ export type DeleteUsersErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -3674,7 +3674,7 @@ export type DeleteUsersErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -3691,7 +3691,7 @@ export type DeleteUsersErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -3708,7 +3708,7 @@ export type DeleteUsersErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -3725,7 +3725,7 @@ export type DeleteUsersErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
 };
@@ -3749,7 +3749,7 @@ export type DeleteUsersResponses = {
             path?: string;
             method?: string;
             timestamp?: string;
-            usr?: string;
+            userId?: string;
             org?: string;
         }>;
     };
@@ -3786,7 +3786,7 @@ export type GetUsersErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -3803,7 +3803,7 @@ export type GetUsersErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -3820,7 +3820,7 @@ export type GetUsersErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -3837,7 +3837,7 @@ export type GetUsersErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -3854,7 +3854,7 @@ export type GetUsersErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
 };
@@ -3917,7 +3917,7 @@ export type GetUserErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -3934,7 +3934,7 @@ export type GetUserErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -3951,7 +3951,7 @@ export type GetUserErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -3968,7 +3968,7 @@ export type GetUserErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -3985,7 +3985,7 @@ export type GetUserErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
 };
@@ -4053,7 +4053,7 @@ export type UpdateUserErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -4070,7 +4070,7 @@ export type UpdateUserErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -4087,7 +4087,7 @@ export type UpdateUserErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -4104,7 +4104,7 @@ export type UpdateUserErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -4121,7 +4121,7 @@ export type UpdateUserErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
 };
@@ -4181,7 +4181,7 @@ export type DeleteOrganizationsErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -4198,7 +4198,7 @@ export type DeleteOrganizationsErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -4215,7 +4215,7 @@ export type DeleteOrganizationsErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -4232,7 +4232,7 @@ export type DeleteOrganizationsErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -4249,7 +4249,7 @@ export type DeleteOrganizationsErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
 };
@@ -4273,7 +4273,7 @@ export type DeleteOrganizationsResponses = {
             path?: string;
             method?: string;
             timestamp?: string;
-            usr?: string;
+            userId?: string;
             org?: string;
         }>;
     };
@@ -4309,7 +4309,7 @@ export type GetOrganizationsErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -4326,7 +4326,7 @@ export type GetOrganizationsErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -4343,7 +4343,7 @@ export type GetOrganizationsErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -4360,7 +4360,7 @@ export type GetOrganizationsErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -4377,7 +4377,7 @@ export type GetOrganizationsErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
 };
@@ -4467,7 +4467,7 @@ export type CreateOrganizationErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -4484,7 +4484,7 @@ export type CreateOrganizationErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -4501,7 +4501,7 @@ export type CreateOrganizationErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -4518,7 +4518,7 @@ export type CreateOrganizationErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -4535,7 +4535,7 @@ export type CreateOrganizationErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
 };
@@ -4611,7 +4611,7 @@ export type GetOrganizationErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -4628,7 +4628,7 @@ export type GetOrganizationErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -4645,7 +4645,7 @@ export type GetOrganizationErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -4662,7 +4662,7 @@ export type GetOrganizationErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -4679,7 +4679,7 @@ export type GetOrganizationErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
 };
@@ -4773,7 +4773,7 @@ export type UpdateOrganizationErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -4790,7 +4790,7 @@ export type UpdateOrganizationErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -4807,7 +4807,7 @@ export type UpdateOrganizationErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -4824,7 +4824,7 @@ export type UpdateOrganizationErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -4841,7 +4841,7 @@ export type UpdateOrganizationErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
 };
@@ -4921,7 +4921,7 @@ export type GetPageEntitiesErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -4938,7 +4938,7 @@ export type GetPageEntitiesErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -4955,7 +4955,7 @@ export type GetPageEntitiesErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -4972,7 +4972,7 @@ export type GetPageEntitiesErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -4989,7 +4989,7 @@ export type GetPageEntitiesErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
 };
@@ -5059,7 +5059,7 @@ export type GetContextEntitiesErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -5076,7 +5076,7 @@ export type GetContextEntitiesErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -5093,7 +5093,7 @@ export type GetContextEntitiesErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -5110,7 +5110,7 @@ export type GetContextEntitiesErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -5127,7 +5127,7 @@ export type GetContextEntitiesErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
 };
@@ -5195,7 +5195,7 @@ export type CheckSlugErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -5212,7 +5212,7 @@ export type CheckSlugErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -5229,7 +5229,7 @@ export type CheckSlugErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -5246,7 +5246,7 @@ export type CheckSlugErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -5263,7 +5263,7 @@ export type CheckSlugErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
 };
@@ -5303,7 +5303,7 @@ export type SystemInviteErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -5320,7 +5320,7 @@ export type SystemInviteErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -5337,7 +5337,7 @@ export type SystemInviteErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -5354,7 +5354,7 @@ export type SystemInviteErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -5371,7 +5371,7 @@ export type SystemInviteErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
 };
@@ -5411,7 +5411,7 @@ export type GetPresignedUrlErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -5428,7 +5428,7 @@ export type GetPresignedUrlErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -5445,7 +5445,7 @@ export type GetPresignedUrlErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -5462,7 +5462,7 @@ export type GetPresignedUrlErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -5479,7 +5479,7 @@ export type GetPresignedUrlErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
 };
@@ -5517,7 +5517,7 @@ export type PaddleWebhookErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -5534,7 +5534,7 @@ export type PaddleWebhookErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -5551,7 +5551,7 @@ export type PaddleWebhookErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -5568,7 +5568,7 @@ export type PaddleWebhookErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -5585,7 +5585,7 @@ export type PaddleWebhookErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
 };
@@ -5630,7 +5630,7 @@ export type SendNewsletterErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -5647,7 +5647,7 @@ export type SendNewsletterErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -5664,7 +5664,7 @@ export type SendNewsletterErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -5681,7 +5681,7 @@ export type SendNewsletterErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -5698,7 +5698,7 @@ export type SendNewsletterErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
 };
@@ -5738,7 +5738,7 @@ export type DeleteRequestsErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -5755,7 +5755,7 @@ export type DeleteRequestsErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -5772,7 +5772,7 @@ export type DeleteRequestsErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -5789,7 +5789,7 @@ export type DeleteRequestsErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -5806,7 +5806,7 @@ export type DeleteRequestsErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
 };
@@ -5817,7 +5817,23 @@ export type DeleteRequestsResponses = {
     /**
      * Requests
      */
-    200: boolean;
+    200: {
+        success: boolean;
+        errors: Array<{
+            name: string;
+            message: string;
+            type: string;
+            status: number;
+            severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
+            entityType?: 'user' | 'organization' | 'attachment';
+            logId?: string;
+            path?: string;
+            method?: string;
+            timestamp?: string;
+            userId?: string;
+            org?: string;
+        }>;
+    };
 };
 
 export type DeleteRequestsResponse = DeleteRequestsResponses[keyof DeleteRequestsResponses];
@@ -5850,7 +5866,7 @@ export type GetRequestsErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -5867,7 +5883,7 @@ export type GetRequestsErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -5884,7 +5900,7 @@ export type GetRequestsErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -5901,7 +5917,7 @@ export type GetRequestsErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -5918,7 +5934,7 @@ export type GetRequestsErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
 };
@@ -5970,7 +5986,7 @@ export type CreateRequestErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -5987,7 +6003,7 @@ export type CreateRequestErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -6004,7 +6020,7 @@ export type CreateRequestErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -6021,7 +6037,7 @@ export type CreateRequestErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -6038,7 +6054,7 @@ export type CreateRequestErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
 };
@@ -6083,7 +6099,7 @@ export type GetMetricsErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -6100,7 +6116,7 @@ export type GetMetricsErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -6117,7 +6133,7 @@ export type GetMetricsErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -6134,7 +6150,7 @@ export type GetMetricsErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -6151,7 +6167,7 @@ export type GetMetricsErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
 };
@@ -6192,7 +6208,7 @@ export type GetPublicCountsErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -6209,7 +6225,7 @@ export type GetPublicCountsErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -6226,7 +6242,7 @@ export type GetPublicCountsErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -6243,7 +6259,7 @@ export type GetPublicCountsErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -6260,7 +6276,7 @@ export type GetPublicCountsErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
 };
@@ -6304,7 +6320,7 @@ export type ShapeProxyErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -6321,7 +6337,7 @@ export type ShapeProxyErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -6338,7 +6354,7 @@ export type ShapeProxyErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -6355,7 +6371,7 @@ export type ShapeProxyErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -6372,7 +6388,7 @@ export type ShapeProxyErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
 };
@@ -6412,7 +6428,7 @@ export type DeleteAttachmentsErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -6429,7 +6445,7 @@ export type DeleteAttachmentsErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -6446,7 +6462,7 @@ export type DeleteAttachmentsErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -6463,7 +6479,7 @@ export type DeleteAttachmentsErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -6480,7 +6496,7 @@ export type DeleteAttachmentsErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
 };
@@ -6504,7 +6520,7 @@ export type DeleteAttachmentsResponses = {
             path?: string;
             method?: string;
             timestamp?: string;
-            usr?: string;
+            userId?: string;
             org?: string;
         }>;
     };
@@ -6543,7 +6559,7 @@ export type GetAttachmentsErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -6560,7 +6576,7 @@ export type GetAttachmentsErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -6577,7 +6593,7 @@ export type GetAttachmentsErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -6594,7 +6610,7 @@ export type GetAttachmentsErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -6611,7 +6627,7 @@ export type GetAttachmentsErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
 };
@@ -6682,7 +6698,7 @@ export type CreateAttachmentErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -6699,7 +6715,7 @@ export type CreateAttachmentErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -6716,7 +6732,7 @@ export type CreateAttachmentErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -6733,7 +6749,7 @@ export type CreateAttachmentErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -6750,7 +6766,7 @@ export type CreateAttachmentErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
 };
@@ -6808,7 +6824,7 @@ export type GetAttachmentErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -6825,7 +6841,7 @@ export type GetAttachmentErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -6842,7 +6858,7 @@ export type GetAttachmentErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -6859,7 +6875,7 @@ export type GetAttachmentErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -6876,7 +6892,7 @@ export type GetAttachmentErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
 };
@@ -6937,7 +6953,7 @@ export type UpdateAttachmentErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -6954,7 +6970,7 @@ export type UpdateAttachmentErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -6971,7 +6987,7 @@ export type UpdateAttachmentErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -6988,7 +7004,7 @@ export type UpdateAttachmentErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -7005,7 +7021,7 @@ export type UpdateAttachmentErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
 };
@@ -7062,7 +7078,7 @@ export type GetAttachmentCoverErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -7079,7 +7095,7 @@ export type GetAttachmentCoverErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -7096,7 +7112,7 @@ export type GetAttachmentCoverErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -7113,7 +7129,7 @@ export type GetAttachmentCoverErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -7130,7 +7146,7 @@ export type GetAttachmentCoverErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
 };
@@ -7168,7 +7184,7 @@ export type RedirectToAttachmentErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -7185,7 +7201,7 @@ export type RedirectToAttachmentErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -7202,7 +7218,7 @@ export type RedirectToAttachmentErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -7219,7 +7235,7 @@ export type RedirectToAttachmentErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -7236,7 +7252,7 @@ export type RedirectToAttachmentErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
 };
@@ -7279,7 +7295,7 @@ export type DeleteMembershipsErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -7296,7 +7312,7 @@ export type DeleteMembershipsErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -7313,7 +7329,7 @@ export type DeleteMembershipsErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -7330,7 +7346,7 @@ export type DeleteMembershipsErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -7347,7 +7363,7 @@ export type DeleteMembershipsErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
 };
@@ -7371,7 +7387,7 @@ export type DeleteMembershipsResponses = {
             path?: string;
             method?: string;
             timestamp?: string;
-            usr?: string;
+            userId?: string;
             org?: string;
         }>;
     };
@@ -7409,7 +7425,7 @@ export type CreateMembershipsErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -7426,7 +7442,7 @@ export type CreateMembershipsErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -7443,7 +7459,7 @@ export type CreateMembershipsErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -7460,7 +7476,7 @@ export type CreateMembershipsErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -7477,7 +7493,7 @@ export type CreateMembershipsErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
 };
@@ -7523,7 +7539,7 @@ export type UpdateMembershipErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -7540,7 +7556,7 @@ export type UpdateMembershipErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -7557,7 +7573,7 @@ export type UpdateMembershipErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -7574,7 +7590,7 @@ export type UpdateMembershipErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -7591,7 +7607,7 @@ export type UpdateMembershipErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
 };
@@ -7653,7 +7669,7 @@ export type GetMembersErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -7670,7 +7686,7 @@ export type GetMembersErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -7687,7 +7703,7 @@ export type GetMembersErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -7704,7 +7720,7 @@ export type GetMembersErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -7721,7 +7737,7 @@ export type GetMembersErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
 };
@@ -7802,7 +7818,7 @@ export type GetPendingInvitationsErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -7819,7 +7835,7 @@ export type GetPendingInvitationsErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -7836,7 +7852,7 @@ export type GetPendingInvitationsErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -7853,7 +7869,7 @@ export type GetPendingInvitationsErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
     /**
@@ -7870,7 +7886,7 @@ export type GetPendingInvitationsErrors = {
         path?: string;
         method?: string;
         timestamp?: string;
-        usr?: string;
+        userId?: string;
         org?: string;
     };
 };

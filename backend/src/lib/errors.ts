@@ -64,8 +64,8 @@ export const createError = (
     path: ctx.req.path,
     method: ctx.req.method,
     entityType,
-    usr: user?.id,
-    org: organization?.id,
+    userId: user?.id,
+    organizationId: organization?.id,
   };
 
   if (err || ['warn', 'error'].includes(severity)) {
