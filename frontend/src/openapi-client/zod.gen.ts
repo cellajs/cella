@@ -189,7 +189,7 @@ export const zRequestPasswordData = z.object({
  */
 export const zRequestPasswordResponse = z.boolean();
 
-export const zCreatePasswordWithTokenData = z.object({
+export const zCreatePasswordData = z.object({
     body: z.object({
         password: z.string().min(8).max(100)
     }).optional(),
@@ -202,7 +202,7 @@ export const zCreatePasswordWithTokenData = z.object({
 /**
  * Password created
  */
-export const zCreatePasswordWithTokenResponse = z.boolean();
+export const zCreatePasswordResponse = z.boolean();
 
 export const zSignInData = z.object({
     body: z.object({
@@ -417,7 +417,7 @@ export const zGetPasskeyChallengeResponse = z.object({
     challengeBase64: z.string()
 });
 
-export const zVerifyPasskeyData = z.object({
+export const zSignInWithPasskeyData = z.object({
     body: z.object({
         clientDataJSON: z.string(),
         authenticatorData: z.string(),
@@ -431,7 +431,7 @@ export const zVerifyPasskeyData = z.object({
 /**
  * Passkey verified
  */
-export const zVerifyPasskeyResponse = z.boolean();
+export const zSignInWithPasskeyResponse = z.boolean();
 
 export const zDeleteMeData = z.object({
     body: z.never().optional(),

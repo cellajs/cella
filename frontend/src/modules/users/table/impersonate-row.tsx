@@ -3,11 +3,11 @@ import i18n from 'i18next';
 import { VenetianMask } from 'lucide-react';
 import { toast } from 'sonner';
 import router from '~/lib/router';
-import { impersonationStart } from '~/modules/auth/api';
 import { toaster } from '~/modules/common/toaster';
 import { getAndSetMe, getAndSetMenu } from '~/modules/me/helpers';
 import { Button } from '~/modules/ui/button';
 import type { User } from '~/modules/users/types';
+import { startImpersonation } from '~/openapi-client';
 import { useUIStore } from '~/store/ui';
 
 interface Props {
@@ -15,9 +15,9 @@ interface Props {
   tabIndex: number;
 }
 
-const handleStartImpersonation = async (userId: string) => {
+const handleStartImpersonation = async (targetUserId: string) => {
   try {
-    await impersonationStart(userId);
+    await startImpersonation({ query : { targetUserId }, throwOnError: true });
     useUIStore.getState().setImpersonating(true);
     await Promise.all([getAndSetMe(), getAndSetMenu()]);
     toast.success(i18n.t('common:success.impersonated'));

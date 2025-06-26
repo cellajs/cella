@@ -5,7 +5,6 @@ import { Check, Send, Trash } from 'lucide-react';
 import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-import { requestPasswordEmail } from '~/modules/auth/api';
 import { mapOauthProviders } from '~/modules/auth/oauth-options';
 import { AsideAnchor } from '~/modules/common/aside-anchor';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
@@ -21,6 +20,7 @@ import SessionsList from '~/modules/me/sessions-list';
 import { Button } from '~/modules/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/modules/ui/card';
 import UpdateUserForm from '~/modules/users/update-user-form';
+import { requestPassword } from '~/openapi-client';
 import { UserSettingsRoute } from '~/routes/users';
 import { useUIStore } from '~/store/ui';
 import { useUserStore } from '~/store/user';
@@ -51,7 +51,7 @@ const UserSettingsPage = () => {
 
     try {
       setDisabledResetPassword(true);
-      requestPasswordEmail(user.email);
+      requestPassword({ body: { email: user.email }, throwOnError: true });
       toast.success(t('common:success.reset_password_email', { email: user.email }));
     } catch {
     } finally {

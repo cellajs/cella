@@ -715,7 +715,7 @@ export type RequestPasswordResponses = {
 
 export type RequestPasswordResponse = RequestPasswordResponses[keyof RequestPasswordResponses];
 
-export type CreatePasswordWithTokenData = {
+export type CreatePasswordData = {
     body?: {
         password: string;
     };
@@ -726,7 +726,7 @@ export type CreatePasswordWithTokenData = {
     url: '/auth/create-password/{token}';
 };
 
-export type CreatePasswordWithTokenErrors = {
+export type CreatePasswordErrors = {
     /**
      * Bad request: problem processing request.
      */
@@ -814,16 +814,16 @@ export type CreatePasswordWithTokenErrors = {
     };
 };
 
-export type CreatePasswordWithTokenError = CreatePasswordWithTokenErrors[keyof CreatePasswordWithTokenErrors];
+export type CreatePasswordError = CreatePasswordErrors[keyof CreatePasswordErrors];
 
-export type CreatePasswordWithTokenResponses = {
+export type CreatePasswordResponses = {
     /**
      * Password created
      */
     200: boolean;
 };
 
-export type CreatePasswordWithTokenResponse = CreatePasswordWithTokenResponses[keyof CreatePasswordWithTokenResponses];
+export type CreatePasswordResponse = CreatePasswordResponses[keyof CreatePasswordResponses];
 
 export type SignInData = {
     body?: {
@@ -2214,7 +2214,7 @@ export type GetPasskeyChallengeResponses = {
 
 export type GetPasskeyChallengeResponse = GetPasskeyChallengeResponses[keyof GetPasskeyChallengeResponses];
 
-export type VerifyPasskeyData = {
+export type SignInWithPasskeyData = {
     body?: {
         clientDataJSON: string;
         authenticatorData: string;
@@ -2226,7 +2226,7 @@ export type VerifyPasskeyData = {
     url: '/auth/passkey-verification';
 };
 
-export type VerifyPasskeyErrors = {
+export type SignInWithPasskeyErrors = {
     /**
      * Bad request: problem processing request.
      */
@@ -2314,16 +2314,16 @@ export type VerifyPasskeyErrors = {
     };
 };
 
-export type VerifyPasskeyError = VerifyPasskeyErrors[keyof VerifyPasskeyErrors];
+export type SignInWithPasskeyError = SignInWithPasskeyErrors[keyof SignInWithPasskeyErrors];
 
-export type VerifyPasskeyResponses = {
+export type SignInWithPasskeyResponses = {
     /**
      * Passkey verified
      */
     200: boolean;
 };
 
-export type VerifyPasskeyResponse = VerifyPasskeyResponses[keyof VerifyPasskeyResponses];
+export type SignInWithPasskeyResponse = SignInWithPasskeyResponses[keyof SignInWithPasskeyResponses];
 
 export type DeleteMeData = {
     body?: never;

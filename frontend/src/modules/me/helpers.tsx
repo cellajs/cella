@@ -2,10 +2,8 @@ import { decodeBase64, encodeBase64 } from '@oslojs/encoding';
 import { onlineManager } from '@tanstack/react-query';
 import { config } from 'config';
 import { t } from 'i18next';
-
-import { authenticateWithPasskey, getPasskeyChallenge } from '~/modules/auth/api';
 import { toaster } from '~/modules/common/toaster';
-import { createPasskey, getMe, getMyAuth, getMyMenu } from '~/openapi-client';
+import { createPasskey, getMe, getMyAuth, getMyMenu, getPasskeyChallenge, signInWithPasskey } from '~/openapi-client';
 import { useNavigationStore } from '~/store/navigation';
 import { useUIStore } from '~/store/ui';
 import { useUserStore } from '~/store/user';
@@ -28,7 +26,7 @@ export const passkeyRegistration = async () => {
 
   try {
     // Random bytes generated on each attempt.
-    const { challengeBase64 } = await getPasskeyChallenge();
+    const { challengeBase64 } = await getPasskeyChallenge({ throwOnError: true });
 
     // random ID for the authenticator
     const userId = new Uint8Array(20);
@@ -102,7 +100,7 @@ export const passkeyRegistration = async () => {
 export const passkeyAuth = async (userEmail: string, callback?: () => void) => {
   try {
     // Random bytes generated on each attempt
-    const { challengeBase64 } = await getPasskeyChallenge();
+    const { challengeBase64 } = await getPasskeyChallenge({ throwOnError: true });
 
     const credential = await navigator.credentials.get({
       publicKey: {
@@ -123,7 +121,7 @@ export const passkeyAuth = async (userEmail: string, callback?: () => void) => {
       userEmail,
     };
 
-    const success = await authenticateWithPasskey(credentialData);
+    const success = await signInWithPasskey({ body: credentialData, throwOnError: true });
     if (success) callback?.();
     else toaster(t('error:passkey_sign_in'), 'error');
   } catch (err) {

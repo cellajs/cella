@@ -260,7 +260,7 @@ const authRoutes = {
     },
   }),
   createPasswordWithToken: createCustomRoute({
-    operationId: 'createPasswordWithToken',
+    operationId: 'createPassword',
     method: 'post',
     path: '/create-password/{token}',
     guard: isPublicAccess,
@@ -292,7 +292,7 @@ const authRoutes = {
     },
   }),
   verifyPasskey: createCustomRoute({
-    operationId: 'verifyPasskey',
+    operationId: 'signInWithPasskey',
     method: 'post',
     path: '/passkey-verification',
     guard: isPublicAccess,

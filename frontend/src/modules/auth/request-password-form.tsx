@@ -3,10 +3,11 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { useMutation } from '~/hooks/use-mutations';
-import { requestPasswordEmail } from '~/modules/auth/api';
+import { ApiError } from '~/lib/api';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { Button, SubmitButton } from '~/modules/ui/button';
 import { Input } from '~/modules/ui/input';
+import { requestPassword, RequestPasswordResponse } from '~/openapi-client';
 
 export const RequestPasswordForm = ({ email = '' }: { email?: string }) => {
   const { t } = useTranslation();
@@ -16,8 +17,8 @@ export const RequestPasswordForm = ({ email = '' }: { email?: string }) => {
   const [emailValue, setEmailValue] = useState(email);
 
   // Send create/reset password email
-  const { mutate: _requestPasswordEmail, isPending } = useMutation({
-    mutationFn: requestPasswordEmail,
+  const { mutate: requestPasswordEmail, isPending } = useMutation<RequestPasswordResponse, ApiError, string>({
+    mutationFn: (email) => requestPassword({ body: { email }, throwOnError: true }),
     onSuccess: () => {
       toast.success(t('common:success.reset_link_sent'));
       useDialoger.getState().remove();
@@ -38,7 +39,7 @@ export const RequestPasswordForm = ({ email = '' }: { email?: string }) => {
         required
       />
       <div className="flex flex-col sm:flex-row gap-2">
-        <SubmitButton disabled={!emailValue} loading={isPending} onClick={() => _requestPasswordEmail(emailValue)}>
+        <SubmitButton disabled={!emailValue} loading={isPending} onClick={() => requestPasswordEmail(emailValue)}>
           <Send size={16} className="mr-2" />
           {t('common:send_reset_link')}
         </SubmitButton>
