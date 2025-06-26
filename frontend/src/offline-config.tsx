@@ -1,8 +1,7 @@
-import { attachmentsQueryOptions } from '~/modules/attachments/query/options';
-import { membersQueryOptions } from '~/modules/memberships/query/options';
-import { organizationQueryOptions } from '~/modules/organizations/query';
-
+import { attachmentsQueryOptions } from '~/modules/attachments/query';
 import type { UserMenuItem } from '~/modules/me/types';
+import { membersQueryOptions } from '~/modules/memberships/query';
+import { organizationQueryOptions } from '~/modules/organizations/query';
 
 /**
  * This function returns queries that need to be prefetched based on the entity of the item.

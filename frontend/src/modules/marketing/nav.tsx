@@ -2,9 +2,8 @@ import { Link, useNavigate } from '@tanstack/react-router';
 import { config } from 'config';
 import { Github } from 'lucide-react';
 import { useState } from 'react';
-import { useInView } from 'react-intersection-observer';
-
 import { useTranslation } from 'react-i18next';
+import { useInView } from 'react-intersection-observer';
 import HamburgerButton from '~/modules/common/hamburger';
 import Logo from '~/modules/common/logo';
 import type { AboutSectionId } from '~/modules/marketing/about/about-page';
@@ -46,6 +45,7 @@ export const MarketingNav = () => {
         key={id}
         draggable="false"
         onClick={(e) => {
+          setShowSheet(false);
           if (window.location.hash !== `#${hash}`) return;
           if (!hash) return;
           e.preventDefault();
@@ -153,6 +153,7 @@ export const MarketingNav = () => {
                 size="lg"
                 className="sm:hidden"
                 onClick={() => {
+                  setShowSheet(false);
                   openInNewTab(config.company.githubUrl);
                 }}
               >

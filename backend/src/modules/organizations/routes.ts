@@ -9,10 +9,11 @@ import {
   organizationWithMembershipSchema,
 } from '#/modules/organizations/schema';
 import { entityParamSchema, idsBodySchema } from '#/utils/schema/common';
-import { errorResponses, successWithDataSchema, successWithErrorsSchema, successWithPaginationSchema } from '#/utils/schema/responses';
+import { errorResponses, paginationSchema, successWithErrorsSchema } from '#/utils/schema/responses';
 
 const organizationRoutes = {
   createOrganization: createCustomRoute({
+    operationId: 'createOrganization',
     method: 'post',
     path: '/',
     guard: isAuthenticated,
@@ -32,16 +33,13 @@ const organizationRoutes = {
     responses: {
       200: {
         description: 'Organization was created',
-        content: {
-          'application/json': {
-            schema: successWithDataSchema(organizationWithMembershipSchema),
-          },
-        },
+        content: { 'application/json': { schema: organizationWithMembershipSchema } },
       },
       ...errorResponses,
     },
   }),
   getOrganizations: createCustomRoute({
+    operationId: 'getOrganizations',
     method: 'get',
     path: '/',
     guard: [isAuthenticated, hasSystemAccess],
@@ -56,7 +54,7 @@ const organizationRoutes = {
         description: 'Organizations',
         content: {
           'application/json': {
-            schema: successWithPaginationSchema(organizationSchema.omit({ invitesCount: true }).extend({ counts: fullCountsSchema })),
+            schema: paginationSchema(organizationSchema.omit({ invitesCount: true }).extend({ counts: fullCountsSchema })),
           },
         },
       },
@@ -64,6 +62,7 @@ const organizationRoutes = {
     },
   }),
   updateOrganization: createCustomRoute({
+    operationId: 'updateOrganization',
     method: 'put',
     path: '/{idOrSlug}',
     guard: [isAuthenticated],
@@ -83,16 +82,13 @@ const organizationRoutes = {
     responses: {
       200: {
         description: 'Organization was updated',
-        content: {
-          'application/json': {
-            schema: successWithDataSchema(organizationSchema),
-          },
-        },
+        content: { 'application/json': { schema: organizationSchema } },
       },
       ...errorResponses,
     },
   }),
   getOrganization: createCustomRoute({
+    operationId: 'getOrganization',
     method: 'get',
     path: '/{idOrSlug}',
     guard: [isAuthenticated],
@@ -105,16 +101,13 @@ const organizationRoutes = {
     responses: {
       200: {
         description: 'Organization',
-        content: {
-          'application/json': {
-            schema: successWithDataSchema(organizationSchema),
-          },
-        },
+        content: { 'application/json': { schema: organizationSchema } },
       },
       ...errorResponses,
     },
   }),
   deleteOrganizations: createCustomRoute({
+    operationId: 'deleteOrganizations',
     method: 'delete',
     path: '/',
     guard: [isAuthenticated],

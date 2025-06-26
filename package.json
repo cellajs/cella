@@ -1,74 +1,79 @@
 {
-	"name": "@cellajs/cella",
-	"version": "0.0.2",
-	"private": false,
-	"license": "MIT",
-	"repository": "https://github.com/cellajs/cella",
-	"description": "Cella is a TypeScript template to create powerful web apps with sync and offline capabilities.",
-	"keywords": [
-		"template",
-		"monorepo",
-		"fullstack",
-		"typescript",
-		"hono",
-		"drizzle",
-		"shadcn",
-		"postgres",
-		"react",
-		"vite",
-		"pwa"
-	],
-	"author": "CellaJS <info@cellajs.com>",
-	"homepage": "https://cellajs.com",
-	"type": "module",
-	"engines": {
-		"node": ">=24.1.0"
-	},
-	"publishConfig": {
-		"access": "public"
-	},
-	"scripts": {
-		"prepare": "node prepare.js",
-		"quick": "cross-env FORCE_COLOR=1 pnpm -r --parallel --stream quick",
-		"docker": "pnpm --filter backend docker:up --detach",
-		"stop": "pnpm -r --parallel --stream stop",
-		"generate": "pnpm --filter backend generate",
-		"clean": "rimraf backend/dist frontend/dist frontend/stats",
-		"dev": "pnpm clean && cross-env FORCE_COLOR=1 pnpm -r --parallel --stream dev",
-		"seed": "pnpm --filter backend seed",
-		"lint": "pnpm dlx @biomejs/biome check .",
-		"lint:fix": "pnpm dlx @biomejs/biome check --write .",
-		"check": "pnpm --filter backend precompile && pnpm --filter backend check && pnpm --filter frontend check",
-		"ts:perf": "pnpm --filter backend ts:perf && pnpm --filter frontend ts:perf ",
-		"build": "pnpm -r --parallel clean && pnpm -r --parallel build",
-		"build:dev": "pnpm -r --parallel build:dev",
-		"build:staging": "pnpm -r --parallel build:staging",
-		"start": "pnpm -r --parallel start",
-		"upstream:pull": "tsx ./cli/sync-cella/index.ts pull-upstream --config-file cella.config.js",
-		"fork:pull": "tsx ./cli/sync-cella/index.ts pull-fork --config-file cella.config.js",
-		"diverged": "tsx ./cli/sync-cella/index.ts diverged --config-file cella.config.js",
-		"test": "pnpm -r --parallel test"
-	},
-	"devDependencies": {
-		"@biomejs/biome": "^2.0.0",
-		"@evilmartians/lefthook": "^1.11.14",
-		"cross-env": "^7.0.3",
-		"knip": "^5.61.2",
-		"rimraf": "^6.0.1",
-		"tsx": "^4.20.3",
-		"typescript": "^5.8.3",
-		"vitest": "^3.2.4"
-	},
-	"packageManager": "pnpm@9.1.2",
-	"dependencies": {
-		"dotenv": "^16.5.0"
-	},
-	"pnpm": {
-		"overrides": {
-			"react": "^19.0.0",
-			"react-dom": "^19.0.0",
-			"@types/react": "^19.0.0",
-			"@types/react-dom": "^19.0.0"
-		}
-	}
+  "name": "@cellajs/cella",
+  "version": "0.0.2",
+  "private": false,
+  "license": "MIT",
+  "repository": "https://github.com/cellajs/cella",
+  "description": "Cella is a TypeScript template to create powerful web apps with sync and offline capabilities.",
+  "keywords": [
+    "template",
+    "monorepo",
+    "fullstack",
+    "typescript",
+    "hono",
+    "drizzle",
+    "shadcn",
+    "postgres",
+    "react",
+    "vite",
+    "pwa"
+  ],
+  "author": "CellaJS <info@cellajs.com>",
+  "homepage": "https://cellajs.com",
+  "type": "module",
+  "engines": {
+    "node": ">=24.1.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "prepare": "node prepare.js",
+    "quick": "cross-env FORCE_COLOR=1 pnpm -r --parallel --stream quick",
+    "docker": "pnpm --filter backend docker:up --detach",
+    "stop": "pnpm -r --parallel --stream stop",
+    "generate": "pnpm --filter backend generate",
+    "clean": "rimraf backend/dist frontend/dist frontend/stats",
+    "dev": "pnpm clean && cross-env FORCE_COLOR=1 pnpm -r --parallel --stream dev",
+    "dev:beta": "pnpm clean && tsx scripts/beta-dev.ts",
+    "seed": "pnpm --filter backend seed",
+    "lint": "pnpm dlx @biomejs/biome check .",
+    "lint:fix": "pnpm dlx @biomejs/biome check --write .",
+    "check": "pnpm --filter backend precompile && pnpm --filter frontend check",
+    "check:beta": "pnpm --filter backend check:beta && pnpm --filter frontend check:beta",
+    "tsperf": "pnpm --filter backend tsperf && pnpm --filter frontend tsperf ",
+    "tsperf:beta": "pnpm --filter backend tsperf:beta && pnpm --filter frontend tsperf:beta ",
+    "build": "pnpm -r --parallel clean && pnpm -r --parallel build",
+    "build:dev": "pnpm -r --parallel build:dev",
+    "build:staging": "pnpm -r --parallel build:staging",
+    "start": "pnpm -r --parallel start",
+    "upstream:pull": "tsx ./cli/sync-cella/index.ts pull-upstream --config-file cella.config.js",
+    "fork:pull": "tsx ./cli/sync-cella/index.ts pull-fork --config-file cella.config.js",
+    "diverged": "tsx ./cli/sync-cella/index.ts diverged --config-file cella.config.js",
+    "test": "pnpm -r --parallel test"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.0.5",
+    "@evilmartians/lefthook": "^1.11.14",
+    "@typescript/native-preview": "7.0.0-dev.20250623.1",
+    "cross-env": "^7.0.3",
+    "knip": "^5.61.2",
+    "rimraf": "^6.0.1",
+    "tsx": "^4.20.3",
+    "typescript": "^5.8.3",
+    "vitest": "^3.2.4"
+  },
+  "packageManager": "pnpm@9.1.2",
+  "dependencies": {
+    "dotenv": "^16.5.0"
+  },
+  "pnpm": {
+    "overrides": {
+      "zod": "3.25.67",
+      "react": "^19.1.0",
+      "react-dom": "^19.1.0",
+      "@types/react": "^19.1.8",
+      "@types/react-dom": "^19.1.6"
+    }
+  }
 }

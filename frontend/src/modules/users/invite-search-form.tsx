@@ -4,7 +4,7 @@ import { Send } from 'lucide-react';
 import { useMemo } from 'react';
 import type { UseFormProps } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
-import { z } from 'zod';
+import { z } from 'zod/v4';
 
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import { useMutation } from '~/hooks/use-mutations';
@@ -12,12 +12,12 @@ import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import SelectRoleRadio from '~/modules/common/form-fields/select-role-radio';
 import { toaster } from '~/modules/common/toaster';
 import type { EntityPage } from '~/modules/entities/types';
-import { type InviteMemberProps, inviteMembers } from '~/modules/memberships/api';
 import { Badge } from '~/modules/ui/badge';
 import { Button, SubmitButton } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
 import { handleNewInvites } from '~/modules/users/invite-email-form';
 import { UserCombobox } from '~/modules/users/user-combobox';
+import { membershipInvite } from '~/openapi-client';
 
 interface Props {
   entity?: EntityPage;
@@ -32,12 +32,10 @@ const InviteSearchForm = ({ entity, dialog: isDialog }: Props) => {
   if (!entity) return null;
 
   const formSchema = z.object({
-    emails: z
-      .array(z.string().email(t('common:invalid.email')))
-      .min(1, { message: t('common:invalid.min_items', { items_count: 'one', item: 'email' }) }),
-    role: z.enum(config.rolesByType.entityRoles).optional(),
-    idOrSlug: z.string().optional(),
+    emails: z.array(z.email(t('common:invalid.email'))).min(1, { message: t('common:invalid.min_items', { items_count: 'one', item: 'email' }) }),
+    role: z.enum(config.rolesByType.entityRoles),
   });
+
   type FormValues = z.infer<typeof formSchema>;
 
   const formOptions: UseFormProps<FormValues> = useMemo(
@@ -55,13 +53,13 @@ const InviteSearchForm = ({ entity, dialog: isDialog }: Props) => {
   const form = useFormWithDraft<FormValues>(`invite-users${entity ? `-${entity?.id}` : ''}`, { formOptions, formContainerId });
 
   const { mutate: invite, isPending } = useMutation({
-    mutationFn: (values: FormValues) => {
-      return inviteMembers({
-        ...values,
-        idOrSlug: entity.id,
-        entityType: entity.entityType || 'organization',
-        orgIdOrSlug: entity.organizationId || entity.id,
-      } as InviteMemberProps);
+    mutationFn: (body: FormValues) => {
+      return membershipInvite({
+        body,
+        query: { idOrSlug: entity.id, entityType: entity.entityType || 'organization' },
+        path: { orgIdOrSlug: entity.organizationId || entity.id },
+        throwOnError: true,
+      });
     },
     onSuccess: (_, { emails }) => {
       form.reset(undefined, { keepDirtyValues: true });

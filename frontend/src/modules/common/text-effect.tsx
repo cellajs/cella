@@ -31,7 +31,7 @@ export const TextEffect = ({ text, className = '' }: TextEffectProps) => {
       className={cn('text-xl text-center font-medium sm:text-4xl md:text-5xl md:leading-[4rem]', className)}
     >
       {letters.map((word, i) => (
-        // biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
+        // biome-ignore lint/suspicious/noArrayIndexKey: list is static and will not be reordered
         <motion.span key={`${word}-${i}`} variants={variants} custom={i}>
           {word}
         </motion.span>

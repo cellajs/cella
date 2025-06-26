@@ -1,4 +1,4 @@
-import { type UseInfiniteQueryOptions, type UseQueryOptions, onlineManager } from '@tanstack/react-query';
+import { onlineManager, type UseInfiniteQueryOptions, type UseQueryOptions } from '@tanstack/react-query';
 
 import { queryClient } from '~/query/query-client';
 import type { InferType } from '~/query/types';

@@ -1,6 +1,6 @@
 import { createRoute, redirect } from '@tanstack/react-router';
 import { config } from 'config';
-import { z } from 'zod';
+import { z } from 'zod/v4';
 import AcceptEntityInvite from '~/modules/auth/accept-entity-invite';
 import AuthPage from '~/modules/auth/auth-layout';
 import CreatePasswordForm from '~/modules/auth/create-password-form';

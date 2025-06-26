@@ -22,7 +22,7 @@ import { getUsersByConditions } from '#/modules/users/helpers/get-user-by';
 import { defaultHook } from '#/utils/default-hook';
 import { nanoid } from '#/utils/nanoid';
 import { slugFromEmail } from '#/utils/slug-from-email';
-import { TimeSpan, createDate } from '#/utils/time-span';
+import { createDate, TimeSpan } from '#/utils/time-span';
 import { NewsletterEmail, type NewsletterEmailProps } from '../../../emails/newsletter';
 import { SystemInviteEmail, type SystemInviteEmailProps } from '../../../emails/system-invite';
 
@@ -109,7 +109,7 @@ const systemRouteHandlers = app
 
     logEvent('Users invited on system level');
 
-    return ctx.json({ success: true }, 200);
+    return ctx.json(true, 200);
   })
   /*
    * Get presigned URL
@@ -119,7 +119,7 @@ const systemRouteHandlers = app
 
     const url = await getSignedUrl(key);
 
-    return ctx.json({ success: true, data: url }, 200);
+    return ctx.json(url, 200);
   })
   /*
    * Paddle webhook
@@ -150,7 +150,7 @@ const systemRouteHandlers = app
       }
     }
 
-    return ctx.json({ success: true }, 200);
+    return ctx.json(true, 200);
   })
   /*
    * Send newsletter to one or more roles members of one or more organizations
@@ -211,7 +211,7 @@ const systemRouteHandlers = app
 
     logEvent('Newsletter sent', { amount: recipients.length });
 
-    return ctx.json({ success: true }, 200);
+    return ctx.json(true, 200);
   });
 
 export default systemRouteHandlers;

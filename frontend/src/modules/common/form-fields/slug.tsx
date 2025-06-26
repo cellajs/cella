@@ -1,5 +1,5 @@
 import { useMutation } from '@tanstack/react-query';
-import { type EntityType, config } from 'config';
+import { config, type EntityType } from 'config';
 import { Undo } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { type Control, useFormContext, useWatch } from 'react-hook-form';
@@ -7,29 +7,30 @@ import { useTranslation } from 'react-i18next';
 import slugify from 'slugify';
 import { useMeasure } from '~/hooks/use-measure';
 import { useOnlineManager } from '~/hooks/use-online-manager';
-import { checkSlugAvailable } from '~/modules/entities/api';
+import type { ApiError } from '~/lib/api';
 import { Button } from '~/modules/ui/button';
 import { FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
 import { Input } from '~/modules/ui/input';
+import { type CheckSlugData, checkSlug as checkSlugAvailable } from '~/openapi-client';
 
 interface SlugFieldProps {
-  // biome-ignore lint/suspicious/noExplicitAny: <explanation>
+  // biome-ignore lint/suspicious/noExplicitAny: unable to infer type due to dynamic data structure
   control: Control<any>;
   label: string;
   nameValue?: string;
   description?: string;
   previousSlug?: string;
-  type: EntityType;
+  entityType: EntityType;
 }
 
-export const SlugFormField = ({ control, label, previousSlug, description, nameValue, type }: SlugFieldProps) => {
+export const SlugFormField = ({ control, label, previousSlug, description, nameValue, entityType }: SlugFieldProps) => {
   const { t } = useTranslation();
   const { isOnline } = useOnlineManager();
 
   const [isDeviating, setDeviating] = useState(false);
   const [isSlugAvailable, setSlugAvailable] = useState<'available' | 'blank' | 'notAvailable'>('blank');
 
-  const prefix = `${config.frontendUrl.replace(/^https?:\/\//, '')}/${type === 'organization' ? '' : `${type}s/`}`;
+  const prefix = `${config.frontendUrl.replace(/^https?:\/\//, '')}/${entityType === 'organization' ? '' : `${entityType}s/`}`;
 
   const inputClassName = `${isSlugAvailable !== 'blank' && 'ring-2 sm:focus-visible:ring-2'}
                           ${isSlugAvailable === 'available' && 'ring-green-500 focus-visible:ring-green-500'}
@@ -45,9 +46,11 @@ export const SlugFormField = ({ control, label, previousSlug, description, nameV
   const slug = useWatch({ control: form.control, name: 'slug' });
 
   // Check if slug is available
-  const { mutate: checkAvailability } = useMutation({
+  const { mutate: checkAvailability } = useMutation<boolean, ApiError, NonNullable<CheckSlugData['body']>>({
     mutationKey: ['slug'],
-    mutationFn: checkSlugAvailable,
+    mutationFn: async (body) => {
+      return await checkSlugAvailable({ body, throwOnError: true });
+    },
     onSuccess: (isAvailable) => {
       if (isValidSlug(slug)) form.clearErrors('slug');
       if (isAvailable && isValidSlug(slug)) return setSlugAvailable('available');
@@ -69,8 +72,7 @@ export const SlugFormField = ({ control, label, previousSlug, description, nameV
     if (isValidSlug(slug)) {
       if (!isOnline) return;
 
-      const params = { slug, type };
-      return checkAvailability(params);
+      return checkAvailability({ slug, entityType });
     }
     if (!isValidSlug(slug)) return setSlugAvailable('notAvailable');
   }, [slug]);
@@ -123,7 +125,7 @@ export const SlugFormField = ({ control, label, previousSlug, description, nameV
               <Input
                 className={inputClassName}
                 style={getStyle()}
-                type={type}
+                type={entityType}
                 onFocus={() => setDeviating(true)}
                 value={formFieldValue || ''}
                 {...rest}

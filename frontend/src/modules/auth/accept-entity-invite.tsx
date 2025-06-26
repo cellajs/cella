@@ -4,13 +4,13 @@ import { config } from 'config';
 import { Ban, Check } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-import { acceptEntityInvite } from '~/modules/auth/api';
 import AuthErrorNotice from '~/modules/auth/auth-error-notice';
 import { useTokenCheck } from '~/modules/auth/use-token-check';
 import Spinner from '~/modules/common/spinner';
 import { getAndSetMenu } from '~/modules/me/helpers';
-import { SubmitButton, buttonVariants } from '~/modules/ui/button';
+import { buttonVariants, SubmitButton } from '~/modules/ui/button';
 import { getEntityRoute } from '~/nav-config';
+import { acceptEntityInvite } from '~/openapi-client';
 import { AcceptEntityInviteRoute } from '~/routes/auth';
 import { cn } from '~/utils/cn';
 
@@ -29,7 +29,7 @@ const AcceptEntityInvite = () => {
     isPending,
     error: acceptInviteError,
   } = useMutation({
-    mutationFn: acceptEntityInvite,
+    mutationFn: () => acceptEntityInvite({ path: { token }, throwOnError: true }),
     onSuccess: async (entity) => {
       await getAndSetMenu();
 
@@ -41,7 +41,7 @@ const AcceptEntityInvite = () => {
   });
 
   // Accept organization invitation
-  const onSubmit = () => _acceptEntityInvite({ token });
+  const onSubmit = () => _acceptEntityInvite();
 
   if (isLoading) return <Spinner className="h-10 w-10" />;
   if (error || acceptInviteError) return <AuthErrorNotice error={error || acceptInviteError} />;

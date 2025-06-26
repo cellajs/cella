@@ -1,13 +1,10 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useMemo } from 'react';
-import { useTranslation } from 'react-i18next';
-import { z } from 'zod';
-import { type InviteMemberProps, inviteMembers } from '~/modules/memberships/api';
-import { type SystemInviteProps, invite as inviteSystem } from '~/modules/system/api';
-
 import { config } from 'config';
 import { Send } from 'lucide-react';
+import { useMemo } from 'react';
 import type { UseFormProps } from 'react-hook-form';
+import { useTranslation } from 'react-i18next';
+import { z } from 'zod/v4';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import { useMutation } from '~/hooks/use-mutations';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
@@ -16,11 +13,12 @@ import SelectRoleRadio from '~/modules/common/form-fields/select-role-radio';
 import { useStepper } from '~/modules/common/stepper/use-stepper';
 import { toaster } from '~/modules/common/toaster';
 import type { EntityPage } from '~/modules/entities/types';
-import { membersKeys } from '~/modules/memberships/query/options';
+import { membersKeys } from '~/modules/memberships/query';
 import { organizationsKeys } from '~/modules/organizations/query';
 import { Badge } from '~/modules/ui/badge';
 import { Button, SubmitButton } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
+import { type MembershipInviteData, membershipInvite, systemInvite } from '~/openapi-client';
 import { queryClient } from '~/query/query-client';
 
 interface Props {
@@ -50,13 +48,12 @@ const InviteEmailForm = ({ entity, dialog: isDialog, children }: Props) => {
   const { t } = useTranslation();
   const { nextStep } = useStepper();
 
-  const formSchema = z.object({
-    emails: z
-      .array(z.string().email(t('common:invalid.email')))
-      .min(1, { message: t('common:invalid.min_items', { items_count: 'one', item: 'email' }) }),
-    role: z.enum(config.rolesByType.allRoles),
-    idOrSlug: z.string().optional(),
+  const baseSchema = z.object({
+    emails: z.array(z.email(t('common:invalid.email'))).min(1, { message: t('common:invalid.min_items', { items_count: 'one', item: 'email' }) }),
   });
+  const schemaWithRole = baseSchema.extend({ role: z.enum(config.rolesByType.entityRoles) });
+
+  const formSchema = z.union([baseSchema, schemaWithRole]);
   type FormValues = z.infer<typeof formSchema>;
 
   const formOptions: UseFormProps<FormValues> = useMemo(
@@ -64,7 +61,7 @@ const InviteEmailForm = ({ entity, dialog: isDialog, children }: Props) => {
       resolver: zodResolver(formSchema),
       defaultValues: {
         emails: [],
-        role: entity ? 'member' : 'user',
+        role: 'member',
       },
     }),
     [],
@@ -75,14 +72,14 @@ const InviteEmailForm = ({ entity, dialog: isDialog, children }: Props) => {
 
   // It uses inviteSystem if no entity type is provided
   const { mutate: invite, isPending } = useMutation({
-    mutationFn: (values: FormValues) => {
-      if (!entity) return inviteSystem(values as SystemInviteProps);
-      return inviteMembers({
-        ...values,
-        idOrSlug: entity.id,
-        entityType: entity.entityType,
-        orgIdOrSlug: entity.organizationId || entity.id,
-      } as InviteMemberProps);
+    mutationFn: async (body: FormValues) => {
+      if (!entity) return await systemInvite({ body, throwOnError: true });
+      return await membershipInvite({
+        query: { idOrSlug: entity.id, entityType: entity.entityType },
+        path: { orgIdOrSlug: entity.organizationId || entity.id },
+        body: body as MembershipInviteData['body'],
+        throwOnError: true,
+      });
     },
     onSuccess: (_, { emails }) => {
       form.reset(undefined, { keepDirtyValues: true });
@@ -116,19 +113,21 @@ const InviteEmailForm = ({ entity, dialog: isDialog, children }: Props) => {
             </FormItem>
           )}
         />
-        <FormField
-          control={form.control}
-          name="role"
-          render={({ field: { value, onChange } }) => (
-            <FormItem className="flex-row ml-3 gap-4 items-center">
-              <FormLabel>{t('common:role')}</FormLabel>
-              <FormControl>
-                <SelectRoleRadio value={value} entityType={entity?.entityType} onChange={onChange} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+        {entity && (
+          <FormField
+            control={form.control}
+            name="role"
+            render={({ field: { value, onChange } }) => (
+              <FormItem className="flex-row ml-3 gap-4 items-center">
+                <FormLabel>{t('common:role')}</FormLabel>
+                <FormControl>
+                  <SelectRoleRadio value={value} entityType={entity?.entityType} onChange={onChange} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        )}
 
         <div className="flex flex-col sm:flex-row gap-2">
           <SubmitButton loading={isPending} className="relative">

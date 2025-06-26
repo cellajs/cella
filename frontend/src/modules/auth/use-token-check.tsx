@@ -1,21 +1,23 @@
 import { type UseQueryResult, useQuery } from '@tanstack/react-query';
+import type { config } from 'config';
 import type { ApiError } from '~/lib/api';
-import { type TokenType, checkToken } from '~/modules/auth/api';
 import type { TokenData } from '~/modules/auth/types';
+import { checkToken } from '~/openapi-client';
 
+type TokenType = (typeof config.tokenTypes)[number];
 /**
  *  Check token by ID
  *
  * @param type Type of the token (`"email_verification" | "password_reset" | "invitation"`)
- * @param tokenId Token ID to check
+ * @param id Token ID to check
  * @param enabled (Default true) Enable the query
  */
-export const useTokenCheck = (type: TokenType, tokenId?: string, enabled = true): UseQueryResult<TokenData | undefined, ApiError> => {
+export const useTokenCheck = (type: TokenType, id?: string, enabled = true): UseQueryResult<TokenData | undefined, ApiError> => {
   return useQuery({
     queryKey: [],
     queryFn: async () => {
-      if (!tokenId) throw new Error('Token ID is required');
-      return checkToken({ id: tokenId, type });
+      if (!id) throw new Error('Token ID is required');
+      return checkToken({ path: { id }, query: { type } });
     },
     enabled,
   });

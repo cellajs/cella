@@ -1,9 +1,8 @@
 import { Link } from '@tanstack/react-router';
 import { CircleUserRound, LogOut, type LucideProps, Settings, Wrench } from 'lucide-react';
 import type React from 'react';
-import { useTranslation } from 'react-i18next';
-
 import { useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { useOnlineManager } from '~/hooks/use-online-manager';
 import { AppFooter } from '~/modules/common/app-footer';

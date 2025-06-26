@@ -15,7 +15,7 @@ import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import Spinner from '~/modules/common/spinner';
 import type { EntityPage } from '~/modules/entities/types';
-import { membersKeys } from '~/modules/memberships/query/options';
+import { membersKeys } from '~/modules/memberships/query';
 import { Button } from '~/modules/ui/button';
 import { Input } from '~/modules/ui/input';
 import { findUserFromCache } from '~/modules/users/helpers';
@@ -24,7 +24,7 @@ import { useUserStore } from '~/store/user';
 import { dateShort } from '~/utils/date-short';
 import { isCDNUrl } from '~/utils/is-cdn-url';
 
-export const useColumns = (entity: EntityPage, isSheet: boolean, highDensity: boolean) => {
+export const useColumns = (entity: EntityPage, isSheet: boolean, isCompact: boolean) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const storeUser = useUserStore((state) => state.user);
@@ -210,8 +210,8 @@ export const useColumns = (entity: EntityPage, isSheet: boolean, highDensity: bo
       name: t('common:created_by'),
       sortable: false,
       visible: false,
-      minWidth: highDensity ? null : 120,
-      width: highDensity ? 50 : null,
+      minWidth: isCompact ? null : 120,
+      width: isCompact ? 50 : null,
       renderHeaderCell: HeaderCell,
       renderCell: ({ row, tabIndex }) => {
         if (!row.createdBy) return <span className="text-muted">-</span>;
@@ -238,7 +238,7 @@ export const useColumns = (entity: EntityPage, isSheet: boolean, highDensity: bo
       name: t('common:modified_by'),
       sortable: false,
       visible: false,
-      width: highDensity ? 80 : 120,
+      width: isCompact ? 80 : 120,
       renderHeaderCell: HeaderCell,
       renderCell: ({ row, tabIndex }) => {
         if (!row.modifiedBy) return <span className="text-muted">-</span>;

@@ -1,18 +1,17 @@
+import { config, type EnabledOauthProvider } from 'config';
 import { and, eq, or } from 'drizzle-orm';
 import type { Context } from 'hono';
-import { oauthAccountsTable } from '#/db/schema/oauth-accounts';
-import { type UserModel, usersTable } from '#/db/schema/users';
-import { setUserSession } from '../session';
-
-import { type EnabledOauthProvider, config } from 'config';
 import { db } from '#/db/db';
 import { emailsTable } from '#/db/schema/emails';
+import { oauthAccountsTable } from '#/db/schema/oauth-accounts';
 import { tokensTable } from '#/db/schema/tokens';
+import { type UserModel, usersTable } from '#/db/schema/users';
 import { errorRedirect } from '#/lib/errors';
 import { getUsersByConditions } from '#/modules/users/helpers/get-user-by';
 import { isRedirectUrl } from '#/utils/is-redirect-url';
 import { getIsoDate } from '#/utils/iso-date';
 import { getAuthCookie } from '../cookie';
+import { setUserSession } from '../session';
 import { sendVerificationEmail } from '../verify-email';
 import type { Provider } from './oauth-providers';
 import type { TransformedUser } from './transform-user-data';

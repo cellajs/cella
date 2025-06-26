@@ -1,6 +1,5 @@
 import type { DropdownMenuContentProps } from '@radix-ui/react-dropdown-menu';
-import type { ReactNode } from 'react';
-import type { RefObject } from 'react';
+import type { ReactNode, RefObject } from 'react';
 import { create } from 'zustand';
 
 export type DropdownData = {

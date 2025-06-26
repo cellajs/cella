@@ -4,12 +4,12 @@ import { useTranslation } from 'react-i18next';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { DataTable } from '~/modules/common/data-table';
 import type { BaseTableMethods, BaseTableProps } from '~/modules/common/data-table/types';
-import type { MembershipInvitationsSearch, MembershipInvitationsTableProps } from '~/modules/memberships/pending-table/table-wrapper';
-import { pendingInvitationsQueryOptions } from '~/modules/memberships/query/options';
+import type { PendingInvitationsSearch, PendingInvitationsTableProps } from '~/modules/memberships/pending-table/table-wrapper';
+import { pendingInvitationsQueryOptions } from '~/modules/memberships/query';
 import type { PendingInvitation } from '~/modules/memberships/types';
 import { useDataFromInfiniteQuery } from '~/query/hooks/use-data-from-query';
 
-type BaseDataTableProps = MembershipInvitationsTableProps & Omit<BaseTableProps<PendingInvitation, MembershipInvitationsSearch>, 'setSelected'>;
+type BaseDataTableProps = PendingInvitationsTableProps & Omit<BaseTableProps<PendingInvitation, PendingInvitationsSearch>, 'setSelected'>;
 
 const BaseDataTable = memo(
   forwardRef<BaseTableMethods, BaseDataTableProps>(({ entity, columns, searchVars, sortColumns, setSortColumns, setTotal }, ref) => {

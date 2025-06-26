@@ -1,9 +1,9 @@
-import { type ContextEntityType, type ProductEntityType, config } from 'config';
+import { type ContextEntityType, config, type ProductEntityType } from 'config';
 import type { Context } from 'hono';
 
 import { type Env, getContextMemberships, getContextOrganization, getContextUser } from '#/lib/context';
 import { type EntityModel, resolveEntity } from '#/lib/entity';
-import { type ErrorType, createError } from '#/lib/errors';
+import { createError, type ErrorType } from '#/lib/errors';
 import { checkPermission } from '#/permissions/check-if-allowed';
 import type { PermittedAction } from '#/permissions/permissions-config';
 

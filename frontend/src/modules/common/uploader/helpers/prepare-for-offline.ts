@@ -1,9 +1,8 @@
-import { uploadTemplates } from '#/lib/transloadit/templates';
-
 import type { AssemblyResponse } from '@uppy/transloadit';
+import { uploadTemplates } from 'config/templates';
 import { LocalFileStorage } from '~/modules/attachments/helpers/local-file-storage';
 import type { CustomUppyFile } from '~/modules/common/uploader/types';
-import type { UploadTokenQuery } from '~/modules/me/api';
+import type { UploadTockenQuery } from '~/modules/me/types';
 
 /**
  * Prepares files for offline storage and returns successfully uploaded files.
@@ -12,7 +11,7 @@ import type { UploadTokenQuery } from '~/modules/me/api';
  * @returns An array of files that were successfully prepared for offline storage.
  */
 // TODO(IMPROVEMENT) handle offline video audio & file
-export const prepareFilesForOffline = async (files: Record<string, CustomUppyFile>, tokenQuery: UploadTokenQuery) => {
+export const prepareFilesForOffline = async (files: Record<string, CustomUppyFile>, tokenQuery: UploadTockenQuery) => {
   console.warn('Files will be stored offline in indexedDB.');
 
   const template = uploadTemplates.attachment;

@@ -4,10 +4,11 @@ import { hasSystemAccess, isAuthenticated, isPublicAccess } from '#/middlewares/
 import { tokenLimiter } from '#/middlewares/rate-limiter/limiters';
 import { inviteBodySchema, sendNewsletterBodySchema } from '#/modules/system/schema';
 import { booleanQuerySchema } from '#/utils/schema/common';
-import { errorResponses, successWithDataSchema, successWithoutDataSchema } from '#/utils/schema/responses';
+import { errorResponses, successWithoutDataSchema } from '#/utils/schema/responses';
 
 const systemRoutes = {
   createInvite: createCustomRoute({
+    operationId: 'systemInvite',
     method: 'post',
     path: '/invite',
     guard: [isAuthenticated, hasSystemAccess],
@@ -36,6 +37,7 @@ const systemRoutes = {
     },
   }),
   sendNewsletter: createCustomRoute({
+    operationId: 'sendNewsletter',
     method: 'post',
     path: '/newsletter',
     guard: [isAuthenticated, hasSystemAccess],
@@ -66,6 +68,7 @@ const systemRoutes = {
     },
   }),
   getPresignedUrl: createCustomRoute({
+    operationId: 'getPresignedUrl',
     method: 'get',
     path: '/presigned-url',
     guard: [isAuthenticated],
@@ -76,12 +79,13 @@ const systemRoutes = {
     responses: {
       200: {
         description: 'Presigned URL',
-        content: { 'application/json': { schema: successWithDataSchema(z.string()) } },
+        content: { 'application/json': { schema: z.string() } },
       },
       ...errorResponses,
     },
   }),
   paddleWebhook: createCustomRoute({
+    operationId: 'paddleWebhook',
     method: 'post',
     path: '/paddle-webhook',
     guard: isPublicAccess,

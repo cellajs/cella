@@ -1,3 +1,8 @@
+import { OpenAPIHono, type z } from '@hono/zod-openapi';
+import type { EnabledOauthProvider, MenuSection } from 'config';
+import { config } from 'config';
+import { and, eq } from 'drizzle-orm';
+import { type SSEStreamingApi, streamSSE } from 'hono/streaming';
 import { db } from '#/db/db';
 import { membershipsTable } from '#/db/schema/memberships';
 import { oauthAccountsTable } from '#/db/schema/oauth-accounts';
@@ -6,7 +11,7 @@ import { usersTable } from '#/db/schema/users';
 import { env } from '#/env';
 import { type Env, getContextMemberships, getContextUser } from '#/lib/context';
 import { resolveEntity } from '#/lib/entity';
-import { type ErrorType, createError, errorResponse } from '#/lib/errors';
+import { createError, type ErrorType, errorResponse } from '#/lib/errors';
 import { getParams, getSignature } from '#/lib/transloadit';
 import { isAuthenticated } from '#/middlewares/guard';
 import { logEvent } from '#/middlewares/logger/log-event';
@@ -23,12 +28,6 @@ import { verifyUnsubscribeToken } from '#/modules/users/helpers/unsubscribe-toke
 import permissionManager from '#/permissions/permissions-config';
 import { defaultHook } from '#/utils/default-hook';
 import { getIsoDate } from '#/utils/iso-date';
-import { OpenAPIHono } from '@hono/zod-openapi';
-import type { EnabledOauthProvider, MenuSection } from 'config';
-import { config } from 'config';
-import { and, eq } from 'drizzle-orm';
-import { type SSEStreamingApi, streamSSE } from 'hono/streaming';
-import type { z } from 'zod';
 
 type UserMenu = z.infer<typeof menuSchema>;
 type MenuItem = z.infer<typeof menuItemSchema>;
@@ -47,12 +46,12 @@ const meRouteHandlers = app
     // Update last visit date
     await db.update(usersTable).set({ lastStartedAt: getIsoDate() }).where(eq(usersTable.id, user.id));
 
-    return ctx.json({ success: true, data: user }, 200);
+    return ctx.json(user, 200);
   })
   /*
    * Get my auth data
    */
-  .openapi(meRoutes.getMyAuthData, async (ctx) => {
+  .openapi(meRoutes.getMyAuth, async (ctx) => {
     const user = getContextUser();
 
     const getPasskey = db.select().from(passkeysTable).where(eq(passkeysTable.userEmail, user.email));
@@ -65,7 +64,7 @@ const meRouteHandlers = app
 
     console.info('Valid OAuth accounts:', validOAuthAccounts);
 
-    return ctx.json({ success: true, data: { oauth: validOAuthAccounts, passkey: !!passkeys.length, sessions } }, 200);
+    return ctx.json({ oauth: validOAuthAccounts, passkey: !!passkeys.length, sessions }, 200);
   })
   /*
    * Get my user menu
@@ -79,7 +78,7 @@ const meRouteHandlers = app
       return acc;
     }, {} as UserMenu);
 
-    if (!memberships.length) return ctx.json({ success: true, data: emptyData }, 200);
+    if (!memberships.length) return ctx.json(emptyData, 200);
 
     const buildMenuForSection = async ({ entityType, subentityType }: MenuSection): Promise<MenuItem[]> => {
       const entities = await getUserMenuEntities(entityType, user.id);
@@ -104,7 +103,7 @@ const meRouteHandlers = app
       menu[section.entityType] = await buildMenuForSection(section);
     }
 
-    return ctx.json({ success: true, data: menu }, 200);
+    return ctx.json(menu, 200);
   })
   /*
    * Terminate one or more sessions
@@ -132,7 +131,7 @@ const meRouteHandlers = app
       }),
     );
 
-    return ctx.json({ success: true, errors: errors }, 200);
+    return ctx.json({ success: true, errors }, 200);
   })
   /*
    * Update current user (me)
@@ -166,7 +165,7 @@ const meRouteHandlers = app
       .where(eq(usersTable.id, user.id))
       .returning();
 
-    return ctx.json({ success: true, data: updatedUser }, 200);
+    return ctx.json(updatedUser, 200);
   })
   /*
    * Delete current user (me)
@@ -185,7 +184,7 @@ const meRouteHandlers = app
     deleteAuthCookie(ctx, 'session');
     logEvent('User deleted itself', { user: user.id });
 
-    return ctx.json({ success: true }, 200);
+    return ctx.json(true, 200);
   })
   /*
    * Delete one of my entity memberships
@@ -207,7 +206,7 @@ const meRouteHandlers = app
 
     logEvent('User left entity', { user: user.id });
 
-    return ctx.json({ success: true }, 200);
+    return ctx.json(true, 200);
   })
   /*
    * Create passkey
@@ -223,7 +222,7 @@ const meRouteHandlers = app
     // Save public key in the database
     await db.insert(passkeysTable).values({ userEmail, credentialId, publicKey });
 
-    return ctx.json({ success: true }, 200);
+    return ctx.json(true, 200);
   })
   /*
    * Delete passkey
@@ -233,7 +232,7 @@ const meRouteHandlers = app
 
     await db.delete(passkeysTable).where(eq(passkeysTable.userEmail, user.email));
 
-    return ctx.json({ success: true }, 200);
+    return ctx.json(true, 200);
   })
   /*
    * Get upload token
@@ -252,7 +251,7 @@ const meRouteHandlers = app
 
       const token = { sub, public: isPublic, s3: !!env.S3_ACCESS_KEY_ID, params, signature };
 
-      return ctx.json({ success: true, data: token }, 200);
+      return ctx.json(token, 200);
     } catch (error) {
       return errorResponse(ctx, 500, 'missing_auth_key', 'error');
     }

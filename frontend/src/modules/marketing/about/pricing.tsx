@@ -1,7 +1,7 @@
 import { useNavigate } from '@tanstack/react-router';
 import { config } from 'config';
 import { Check, Sparkles } from 'lucide-react';
-import { type RefObject, createRef, useRef } from 'react';
+import { createRef, type RefObject, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { WaitlistForm } from '~/modules/auth/waitlist-form';
 import { contactFormHandler } from '~/modules/common/contact-form/contact-form-handler';
@@ -78,7 +78,7 @@ const Pricing = () => {
 
               <ul className="mt-4 space-y-2">
                 {Array.from({ length: featureCount }).map((_, featureIndex) => (
-                  // biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
+                  // biome-ignore lint/suspicious/noArrayIndexKey: list is static and will not be reordered
                   <li key={`${id}-${featureIndex}`} className="flex text-sm font-light items-center">
                     <Check className="mr-2 p-1 text-sm text-success" />
                     {t(`about:pricing.plan_${planIndex + 1}.${featureIndex + 1}`)}

@@ -3,7 +3,7 @@ import React from 'react';
 import { Tooltip, TooltipContent, TooltipPortal, TooltipTrigger } from '~/modules/ui/tooltip';
 
 interface TooltipButtonProps extends React.ComponentPropsWithoutRef<typeof TooltipPrimitive.Content> {
-  // biome-ignore lint/suspicious/noExplicitAny: <explanation>
+  // biome-ignore lint/suspicious/noExplicitAny: unable to infer type due to dynamic data structure
   children: React.ReactElement<{ ref?: React.Ref<any> }>;
   toolTipContent: string;
   disabled?: boolean;

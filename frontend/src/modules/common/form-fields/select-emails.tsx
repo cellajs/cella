@@ -180,7 +180,7 @@ export const SelectEmails = (props: SelectEmailsProps) => {
         onChange?.([...emails, ...validEmails]);
       }
 
-      // biome-ignore lint/suspicious/noSelfCompare: <explanation>
+      // biome-ignore lint/suspicious/noSelfCompare: required pattern to handle edge cases in validation
       if (inputValue !== inputValue) {
         onChangeInput?.(inputValue);
       }
@@ -292,7 +292,7 @@ export const SelectEmails = (props: SelectEmailsProps) => {
   }, [props.emails, validateEmail]);
 
   return (
-    // biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
+    // biome-ignore lint/a11y/useKeyWithClickEvents: element is not keyboard-focusable and handled intentionally via mouse
     <div
       className={cn(
         inputClass,

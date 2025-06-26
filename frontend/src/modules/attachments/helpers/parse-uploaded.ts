@@ -1,4 +1,4 @@
-import { uploadTemplates } from '#/lib/transloadit/templates';
+import { uploadTemplates } from 'config/templates';
 
 import type { AttachmentToInsert } from '~/modules/attachments/types';
 import type { UploadedUppyFile } from '~/modules/common/uploader/types';

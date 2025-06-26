@@ -7,10 +7,10 @@ import {
   defaultInlineContentSpecs,
   defaultStyleSpecs,
 } from '@blocknote/core';
-import { type DefaultReactSuggestionItem, blockTypeSelectItems, getDefaultReactSlashMenuItems } from '@blocknote/react';
+import { blockTypeSelectItems, type DefaultReactSuggestionItem, getDefaultReactSlashMenuItems } from '@blocknote/react';
 
 import { MentionSchema } from '~/modules/common/blocknote/custom-elements/mention/mention';
-import { Notify, getSlashNotifySlashItem } from '~/modules/common/blocknote/custom-elements/notify';
+import { getSlashNotifySlashItem, Notify } from '~/modules/common/blocknote/custom-elements/notify';
 
 import type {
   BlockAlignTypes,
@@ -120,6 +120,7 @@ const typeToBlocknoteKeys: Record<CustomBlockTypes, SlashItemKeys[]> = {
   video: ['video'],
   audio: ['audio'],
   emoji: ['emoji'],
+  toggleListItem: [],
 };
 
 // Indexed items (max 9 for quick number-based selection)

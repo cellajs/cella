@@ -1,5 +1,5 @@
+import { z } from '@hono/zod-openapi';
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
-import { z } from 'zod';
 import { paginationQuerySchema } from '#/utils/schema/common';
 import { attachmentsTable } from '../../db/schema/attachments';
 

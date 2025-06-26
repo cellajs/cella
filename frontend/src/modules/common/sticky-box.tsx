@@ -2,7 +2,7 @@ import { type ComponentProps, useEffect, useRef, useState } from 'react';
 
 const getScrollParent = (node: HTMLElement) => {
   let parent: HTMLElement | null = node;
-  // biome-ignore lint/suspicious/noAssignInExpressions: <explanation>
+  // biome-ignore lint/suspicious/noAssignInExpressions: required for short-circuit assignment pattern
   while ((parent = parent.parentElement)) {
     const overflowYVal = getComputedStyle(parent, null).getPropertyValue('overflow-y');
     if (parent === document.body) return window;
@@ -91,19 +91,9 @@ onScroll()
 */
 
 type UnsubList = (() => void)[];
-type MeasureFn<T extends object> = (opts: {
-  top: number;
-  left: number;
-  height: number;
-  width: number;
-}) => T;
+type MeasureFn<T extends object> = (opts: { top: number; left: number; height: number; width: number }) => T;
 
-const getDimensions = <T extends object>(opts: {
-  el: HTMLElement | Window;
-  onChange: () => void;
-  unsubs: UnsubList;
-  measure: MeasureFn<T>;
-}): T => {
+const getDimensions = <T extends object>(opts: { el: HTMLElement | Window; onChange: () => void; unsubs: UnsubList; measure: MeasureFn<T> }): T => {
   const { el, onChange, unsubs, measure } = opts;
   if (el === window) {
     const getRect = () => ({ top: 0, left: 0, height: window.innerHeight, width: window.innerWidth });
@@ -391,7 +381,6 @@ export const useStickyBox = ({ offsetTop = 0, offsetBottom = 0, bottom = false, 
     handleScroll(); // Initial check
 
     return () => {
-      // biome-ignore lint/complexity/noForEach: <explanation>
       unsubs.forEach((fn) => fn());
       window.removeEventListener('scroll', handleScroll);
     };

@@ -1,14 +1,11 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import type React from 'react';
+import { useMemo } from 'react';
 import { type UseFormProps, useWatch } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
-import type { z } from 'zod';
-
-// Change this in the future on current schema
-import { organizationCreateBodySchema } from '#/modules/organizations/schema';
-
-import { useMemo } from 'react';
 import { toast } from 'sonner';
+import type { z } from 'zod/v4';
+// Change this in the future on current schema
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import InputFormField from '~/modules/common/form-fields/input';
 import { SlugFormField } from '~/modules/common/form-fields/slug';
@@ -17,6 +14,7 @@ import { useOrganizationCreateMutation } from '~/modules/organizations/query';
 import type { Organization } from '~/modules/organizations/types';
 import { Button, SubmitButton } from '~/modules/ui/button';
 import { Form, type LabelDirectionType } from '~/modules/ui/form';
+import { zCreateOrganizationData } from '~/openapi-client/zod.gen';
 
 interface Props {
   callback?: (org: Organization) => void;
@@ -25,7 +23,7 @@ interface Props {
   children?: React.ReactNode;
 }
 
-const formSchema = organizationCreateBodySchema;
+const formSchema = zCreateOrganizationData.shape.body;
 type FormValues = z.infer<typeof formSchema>;
 
 const CreateOrganizationForm = ({ labelDirection = 'top', children, callback }: Props) => {
@@ -71,7 +69,7 @@ const CreateOrganizationForm = ({ labelDirection = 'top', children, callback }: 
         <InputFormField control={form.control} name="name" label={t('common:name')} required />
         <SlugFormField
           control={form.control}
-          type="organization"
+          entityType="organization"
           label={t('common:resource_handle', { resource: t('common:organization') })}
           description={t('common:resource_handle.text', { resource: t('common:organization').toLowerCase() })}
           nameValue={name}

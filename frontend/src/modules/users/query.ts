@@ -1,9 +1,8 @@
 import { infiniteQueryOptions, queryOptions, useMutation } from '@tanstack/react-query';
 import { config } from 'config';
 import type { ApiError } from '~/lib/api';
-
-import { type GetUsersParams, type UpdateUserParams, deleteUsers, getUser, getUsers, updateUser } from '~/modules/users/api';
 import type { User } from '~/modules/users/types';
+import { deleteUsers, type GetUsersData, getUser, getUsers, type UpdateUserData, updateUser } from '~/openapi-client';
 import { useMutateQueryData } from '~/query/hooks/use-mutate-query-data';
 
 /**
@@ -13,7 +12,7 @@ export const usersKeys = {
   all: ['users'] as const,
   table: {
     base: () => [...usersKeys.all, 'table'] as const,
-    entries: (filters?: GetUsersParams) => [...usersKeys.table.base(), filters] as const,
+    entries: (filters?: Omit<GetUsersData['query'], 'limit' | 'offset'>) => [...usersKeys.table.base(), filters] as const,
   },
   single: {
     base: ['user'] as const,
@@ -30,7 +29,7 @@ export const usersKeys = {
  * @returns Query options.
  */
 export const userQueryOptions = (idOrSlug: string) =>
-  queryOptions({ queryKey: usersKeys.single.byIdOrSlug(idOrSlug), queryFn: () => getUser(idOrSlug) });
+  queryOptions({ queryKey: usersKeys.single.byIdOrSlug(idOrSlug), queryFn: () => getUser({ path: { idOrSlug }, throwOnError: true }) });
 
 /**
  * Infinite query options to get a paginated list of users.
@@ -41,16 +40,26 @@ export const userQueryOptions = (idOrSlug: string) =>
  * @param param.limit - Number of items per page (default is configured in `config.requestLimits.users`).
  * @returns Infinite query options.
  */
-export const usersQueryOptions = ({ q = '', sort: initialSort, order: initialOrder, role, limit = config.requestLimits.users }: GetUsersParams) => {
-  const sort = initialSort || 'createdAt';
-  const order = initialOrder || 'desc';
+export const usersQueryOptions = ({
+  q = '',
+  sort: _sort,
+  order: _order,
+  role,
+  limit: _limit,
+}: Omit<GetUsersData['query'], 'limit' | 'offset'> & { limit?: number }) => {
+  const sort = _sort || 'createdAt';
+  const order = _order || 'desc';
+  const limit = String(_limit || config.requestLimits.users);
 
   const queryKey = usersKeys.table.entries({ q, sort, order, role });
 
   return infiniteQueryOptions({
     queryKey,
     initialPageParam: { page: 0, offset: 0 },
-    queryFn: async ({ pageParam: { page, offset }, signal }) => await getUsers({ page, q, sort, order, role, limit, offset }, signal),
+    queryFn: async ({ pageParam: { page, offset: _offset }, signal }) => {
+      const offset = String(_offset || page * Number(limit));
+      return await getUsers({ query: { q, sort, order, role, limit, offset }, signal, throwOnError: true });
+    },
     getNextPageParam: (_lastPage, allPages) => {
       const page = allPages.length;
       const offset = allPages.reduce((acc, page) => acc + page.items.length, 0);
@@ -65,9 +74,9 @@ export const usersQueryOptions = ({ q = '', sort: initialSort, order: initialOrd
  * @returns The mutation hook for updating the user.
  */
 export const useUpdateUserMutation = () => {
-  return useMutation<User, ApiError, UpdateUserParams & { idOrSlug: string }>({
+  return useMutation<User, ApiError, UpdateUserData['body'] & { idOrSlug: string }>({
     mutationKey: usersKeys.update(),
-    mutationFn: updateUser,
+    mutationFn: ({ idOrSlug, ...body }) => updateUser({ path: { idOrSlug }, body, throwOnError: true }),
     onSuccess: (updatedUser) => {
       const mutateCache = useMutateQueryData(usersKeys.table.base(), () => usersKeys.single.base, ['update']);
 
@@ -86,7 +95,10 @@ export const useUpdateUserMutation = () => {
 export const useUserDeleteMutation = () => {
   return useMutation<void, ApiError, User[]>({
     mutationKey: usersKeys.delete(),
-    mutationFn: (users) => deleteUsers(users.map(({ id }) => id)),
+    mutationFn: async (users) => {
+      const ids = users.map(({ id }) => id);
+      await deleteUsers({ body: { ids }, throwOnError: true });
+    },
     onSuccess: (_, users) => {
       const mutateCache = useMutateQueryData(usersKeys.table.base(), () => usersKeys.single.base, ['remove']);
 

@@ -88,7 +88,7 @@ export const handleCreateUser = async ({ ctx, newUser, redirectUrl, provider, me
     if (redirectUrl) return ctx.redirect(redirectUrl, 302);
 
     // Return
-    return ctx.json({ success: true }, 200);
+    return ctx.json(true, 200);
   } catch (error) {
     // If the email already exists, return an error
     if (error instanceof Error && error.message.startsWith('duplicate key')) {

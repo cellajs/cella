@@ -6,7 +6,7 @@ import ScreenCapture from '@uppy/screen-capture';
 import { COMPANION_ALLOWED_HOSTS, COMPANION_URL } from '@uppy/transloadit';
 import Url from '@uppy/url';
 import Webcam, { type WebcamOptions } from '@uppy/webcam';
-import { type UploadTemplateId, config } from 'config';
+import { config, type UploadTemplateId } from 'config';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toaster } from '~/modules/common/toaster';

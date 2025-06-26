@@ -18,8 +18,8 @@ import { FocusView } from '~/modules/common/focus-view';
 type AttachmentsTableBarProps = AttachmentsTableProps &
   BaseTableMethods &
   BaseTableBarProps<Attachment, AttachmentSearch> & {
-    highDensity: boolean;
-    toggleDensityView: (highDensity: boolean) => void;
+    isCompact: boolean;
+    setIsCompact: (isCompact: boolean) => void;
   };
 
 export const AttachmentsTableBar = ({
@@ -30,8 +30,8 @@ export const AttachmentsTableBar = ({
   setSearch,
   columns,
   setColumns,
-  highDensity,
-  toggleDensityView,
+  isCompact,
+  setIsCompact,
   clearSelection,
   isSheet = false,
   canUpload = true,
@@ -101,13 +101,7 @@ export const AttachmentsTableBar = ({
       </TableFilterBar>
 
       {/* Columns view */}
-      <ColumnsView
-        className="max-lg:hidden"
-        columns={columns}
-        setColumns={setColumns}
-        highDensity={highDensity}
-        toggleDensityView={toggleDensityView}
-      />
+      <ColumnsView className="max-lg:hidden" columns={columns} setColumns={setColumns} isCompact={isCompact} setIsCompact={setIsCompact} />
 
       {/* Focus view */}
       {!isSheet && <FocusView iconOnly />}

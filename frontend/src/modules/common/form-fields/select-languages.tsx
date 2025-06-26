@@ -1,4 +1,4 @@
-import { type Language, config } from 'config';
+import { config, type Language } from 'config';
 import { Check, ChevronDown } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';

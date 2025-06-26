@@ -5,20 +5,24 @@ import { Check, UserRoundX } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toaster } from '~/modules/common/toaster';
-import { deleteMyMembership } from '~/modules/me/api';
 import { deleteMenuItem } from '~/modules/navigation/menu-sheet/helpers/menu-operations';
 import type { Organization } from '~/modules/organizations/types';
 import { Button } from '~/modules/ui/button';
 import { Command, CommandGroup, CommandItem, CommandList } from '~/modules/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '~/modules/ui/popover';
+import { deleteMyMembership } from '~/openapi-client';
 
 const LeaveButton = ({ organization }: { organization: Organization }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [openPopover, setOpenPopover] = useState(false);
 
+  // TODO the code is not isomorphic, shouldn't it also clear cache for this organization?
   const { mutate: _deleteMyMembership } = useMutation({
-    mutationFn: deleteMyMembership,
+    mutationFn: async () => {
+      const idOrSlug = organization.id;
+      return await deleteMyMembership({ query: { idOrSlug, entityType: 'organization' }, throwOnError: true });
+    },
     onSuccess: () => {
       toaster(t('common:success.you_left_organization'), 'success');
       navigate({ to: config.defaultRedirectPath, replace: true });
@@ -28,9 +32,7 @@ const LeaveButton = ({ organization }: { organization: Organization }) => {
 
   const onLeave = () => {
     if (!onlineManager.isOnline()) return toaster(t('common:action.offline.text'), 'warning');
-    const queryParams = { idOrSlug: organization.slug, entityType: 'organization' as const };
-
-    _deleteMyMembership(queryParams);
+    _deleteMyMembership();
   };
 
   return (

@@ -8,7 +8,7 @@ import { toaster } from '~/modules/common/toaster';
 import type { UserMenuItem } from '~/modules/me/types';
 import { AccountSheet } from '~/modules/navigation/account-sheet';
 import { MenuSheet } from '~/modules/navigation/menu-sheet';
-import { AppSearch, type EntityListItemType } from '~/modules/navigation/search';
+import { AppSearch, type EntityListItem } from '~/modules/navigation/search';
 import type { EntityRoute } from '~/modules/navigation/types';
 import { OrganizationRoute } from '~/routes/organizations';
 import { UserProfileRoute } from '~/routes/users';
@@ -61,7 +61,7 @@ export const defaultFooterLinks: FooterLinkProps[] = [
  * Since each app has its own entity structure or hierarchy, we need to resolve them dynamically in some cases.
  * For example to get/search entities and for items in the menu sheet.
  */
-export const getEntityRoute = (item: UserMenuItem | EntityListItemType): EntityRoute => {
+export const getEntityRoute = (item: UserMenuItem | EntityListItem): EntityRoute => {
   const { entityType, id, slug } = item;
 
   const to = baseEntityRoutes[entityType].to;

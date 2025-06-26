@@ -1,12 +1,13 @@
-import { z } from 'zod';
+import { z } from '@hono/zod-openapi';
 import { createCustomRoute } from '#/lib/custom-routes';
 import { hasOrgAccess, isAuthenticated, isPublicAccess } from '#/middlewares/guard';
 import { attachmentCreateManySchema, attachmentListQuerySchema, attachmentSchema, attachmentUpdateBodySchema } from '#/modules/attachments/schema';
 import { idInOrgParamSchema, idSchema, idsBodySchema, inOrgParamSchema } from '#/utils/schema/common';
-import { errorResponses, successWithDataSchema, successWithErrorsSchema, successWithPaginationSchema } from '#/utils/schema/responses';
+import { errorResponses, paginationSchema, successWithErrorsSchema } from '#/utils/schema/responses';
 
 const attachmentRoutes = {
   createAttachments: createCustomRoute({
+    operationId: 'createAttachment',
     method: 'post',
     path: '/',
     guard: [isAuthenticated, hasOrgAccess],
@@ -29,7 +30,7 @@ const attachmentRoutes = {
         description: 'Attachment',
         content: {
           'application/json': {
-            schema: successWithDataSchema(z.array(attachmentSchema)),
+            schema: z.array(attachmentSchema),
           },
         },
       },
@@ -37,6 +38,7 @@ const attachmentRoutes = {
     },
   }),
   getAttachments: createCustomRoute({
+    operationId: 'getAttachments',
     method: 'get',
     path: '/',
     guard: [isAuthenticated, hasOrgAccess],
@@ -52,7 +54,7 @@ const attachmentRoutes = {
         description: 'Attachments',
         content: {
           'application/json': {
-            schema: successWithPaginationSchema(attachmentSchema),
+            schema: paginationSchema(attachmentSchema),
           },
         },
       },
@@ -60,6 +62,7 @@ const attachmentRoutes = {
     },
   }),
   getAttachment: createCustomRoute({
+    operationId: 'getAttachment',
     method: 'get',
     path: '/{id}',
     guard: [isAuthenticated, hasOrgAccess],
@@ -74,7 +77,7 @@ const attachmentRoutes = {
         description: 'Attachment',
         content: {
           'application/json': {
-            schema: successWithDataSchema(attachmentSchema),
+            schema: attachmentSchema,
           },
         },
       },
@@ -82,6 +85,7 @@ const attachmentRoutes = {
     },
   }),
   updateAttachment: createCustomRoute({
+    operationId: 'updateAttachment',
     method: 'put',
     path: '/{id}',
     guard: [isAuthenticated, hasOrgAccess],
@@ -103,7 +107,7 @@ const attachmentRoutes = {
         description: 'Attachment was updated',
         content: {
           'application/json': {
-            schema: successWithDataSchema(attachmentSchema),
+            schema: attachmentSchema,
           },
         },
       },
@@ -111,6 +115,7 @@ const attachmentRoutes = {
     },
   }),
   deleteAttachments: createCustomRoute({
+    operationId: 'deleteAttachments',
     method: 'delete',
     path: '/',
     guard: [isAuthenticated, hasOrgAccess],
@@ -140,6 +145,7 @@ const attachmentRoutes = {
     },
   }),
   shapeProxy: createCustomRoute({
+    operationId: 'shapeProxy',
     method: 'get',
     path: '/shape-proxy',
     guard: [isAuthenticated, hasOrgAccess],
@@ -155,6 +161,7 @@ const attachmentRoutes = {
     },
   }),
   redirectToAttachment: createCustomRoute({
+    operationId: 'redirectToAttachment',
     method: 'get',
     path: '/{id}/link',
     tags: ['attachments'],
@@ -172,6 +179,7 @@ const attachmentRoutes = {
     },
   }),
   getAttachmentCover: createCustomRoute({
+    operationId: 'getAttachmentCover',
     method: 'get',
     path: '/{id}/cover',
     guard: isPublicAccess,

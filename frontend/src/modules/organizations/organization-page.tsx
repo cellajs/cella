@@ -1,14 +1,13 @@
 import { useSuspenseQuery } from '@tanstack/react-query';
 import { Outlet, useParams } from '@tanstack/react-router';
+import { lazy, Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
 import { FocusViewContainer } from '~/modules/common/focus-view';
 import { PageHeader } from '~/modules/common/page/header';
 import { PageNav, type PageTab } from '~/modules/common/page/nav';
-import { OrganizationRoute } from '~/routes/organizations';
-
-import { Suspense, lazy } from 'react';
 import { toaster } from '~/modules/common/toaster';
 import { organizationQueryOptions, useOrganizationUpdateMutation } from '~/modules/organizations/query';
+import { OrganizationRoute } from '~/routes/organizations';
 import { useUserStore } from '~/store/user';
 
 const LeaveButton = lazy(() => import('~/modules/organizations/leave-button'));
@@ -34,7 +33,7 @@ const OrganizationPage = () => {
 
   const coverUpdateCallback = (bannerUrl: string) => {
     mutate(
-      { idOrSlug: organization.slug, json: { bannerUrl } },
+      { idOrSlug: organization.slug, body: { bannerUrl } },
       {
         onSuccess: () => toaster(t('common:success.upload_cover'), 'success'),
         onError: () => toaster(t('error:image_upload_failed'), 'error'),

@@ -31,7 +31,7 @@ async function extractFromJson(configFile: string): Promise<Config> {
 // Function to extract paths using dynamic import for ES modules
 async function extractUsingDynamicImport(configFile: string): Promise<Config> {
   try {
-    const { config } = await import(resolve(configFile)) as { config: Config };
+    const { config } = (await import(resolve(configFile))) as { config: Config };
 
     return extractConfig(config);
   } catch (error) {
@@ -45,16 +45,12 @@ function extractConfig(config: Config): Config {
     const ignoreFile = config.ignoreFile || null;
     const ignoreList = Array.isArray(config.ignoreList) ? config.ignoreList : [];
     const upstreamBranch = config.upstreamBranch;
-    const forks = (Array.isArray(config.forks) ? config.forks : []).filter(
-      (fork): fork is Fork => !!fork.name && !!fork.remoteUrl && !!fork.branch
-    );  
+    const forks = (Array.isArray(config.forks) ? config.forks : []).filter((fork): fork is Fork => !!fork.name && !!fork.remoteUrl && !!fork.branch);
 
     return { divergedFile, ignoreFile, ignoreList, upstreamBranch, forks };
-
-  } catch(error) {
+  } catch (error) {
     return { divergedFile: null, ignoreFile: null, ignoreList: [], forks: [], problems: [`Error reading config settings: ${error}`] };
   }
-  
 }
 
 // Main function to decide which extraction method to use
@@ -66,6 +62,12 @@ export async function extractValues(configFile: string): Promise<Config> {
   } else if (fileExt === '.js' || fileExt === '.ts') {
     return extractUsingDynamicImport(configFile);
   } else {
-    return { divergedFile: null, ignoreFile: null, ignoreList: [], forks: [], problems: [`Unsupported file format: ${fileExt}. Only .json, .ts, and .js are supported.`] };
+    return {
+      divergedFile: null,
+      ignoreFile: null,
+      ignoreList: [],
+      forks: [],
+      problems: [`Unsupported file format: ${fileExt}. Only .json, .ts, and .js are supported.`],
+    };
   }
 }

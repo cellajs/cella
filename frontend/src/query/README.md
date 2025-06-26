@@ -50,34 +50,6 @@ Creating a query options function alongside your query key factories is a great 
   `(lastPage, allPages, lastPageParam, allPageParams) => TPageParam | undefined | null`  
   If there is no next page available, return `undefined` or `null` to indicate so.
 
-**Query options Example**:
-
-```ts
-export const organizationQueryOptions = (idOrSlug: string) =>
-  queryOptions({
-    queryKey: organizationsKeys.single.byIdOrSlug(idOrSlug),
-    queryFn: () => getOrganization(idOrSlug)
-  });
-```
-
-**Infinite query options Example**:
-
-```ts
-// Build query to get attachments with infinite scroll
-export const attachmentsQueryOptions = ({ orgIdOrSlug, q = "", sort: initialSort, order: initialOrder, limit = LIMIT }: GetAttachmentsParams) => {
-  const sort = initialSort || "createdAt";
-  const order = initialOrder || "desc";
-
-  const queryKey = attachmentsKeys.table({ orgIdOrSlug, q, sort, order });
-
-  return infiniteQueryOptions({
-    queryKey,
-    initialPageParam: 0,
-    queryFn: async ({ pageParam: page, signal }) => await getAttachments({ page, q, sort, order, limit, orgIdOrSlug, offset: page * limit }, signal),
-    getNextPageParam: (_lastPage, allPages) => allPages.length
-  });
-};
-```
 
 ## 3. Optimistic Updates
 

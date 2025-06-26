@@ -43,7 +43,7 @@ export const useColumns = () => {
               name={row.name}
               url={row.thumbnailUrl}
             />
-            <span className="[.high-density_&]:hidden group-hover:underline underline-offset-3 decoration-foreground/20 group-active:decoration-foreground/50 group-active:translate-y-[.05rem] truncate font-medium">
+            <span className="[.isCompact_&]:hidden group-hover:underline underline-offset-3 decoration-foreground/20 group-active:decoration-foreground/50 group-active:translate-y-[.05rem] truncate font-medium">
               {row.name || '-'}
             </span>
           </Link>

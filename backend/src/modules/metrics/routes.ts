@@ -1,10 +1,11 @@
 import { createCustomRoute } from '#/lib/custom-routes';
 import { hasSystemAccess, isAuthenticated, isPublicAccess } from '#/middlewares/guard';
 import { metricListSchema, metricPublicSchema } from '#/modules/metrics/schema';
-import { errorResponses, successWithDataSchema } from '#/utils/schema/responses';
+import { errorResponses } from '#/utils/schema/responses';
 
 const metricRouteConfig = {
   getMetrics: createCustomRoute({
+    operationId: 'getMetrics',
     method: 'get',
     path: '/',
     guard: [isAuthenticated, hasSystemAccess],
@@ -14,16 +15,13 @@ const metricRouteConfig = {
     responses: {
       200: {
         description: 'Metrics',
-        content: {
-          'application/json': {
-            schema: successWithDataSchema(metricListSchema),
-          },
-        },
+        content: { 'application/json': { schema: metricListSchema } },
       },
       ...errorResponses,
     },
   }),
   getPublicCounts: createCustomRoute({
+    operationId: 'getPublicCounts',
     method: 'get',
     path: '/public',
     guard: isPublicAccess,
@@ -33,11 +31,7 @@ const metricRouteConfig = {
     responses: {
       200: {
         description: 'Public counts',
-        content: {
-          'application/json': {
-            schema: successWithDataSchema(metricPublicSchema),
-          },
-        },
+        content: { 'application/json': { schema: metricPublicSchema } },
       },
       ...errorResponses,
     },

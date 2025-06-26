@@ -1,5 +1,5 @@
+import { z } from '@hono/zod-openapi';
 import { idSchema, passwordSchema } from '#/utils/schema/common';
-import { z } from 'zod';
 import { membershipSchema } from '../memberships/schema';
 import { userSchema } from '../users/schema';
 
@@ -13,8 +13,8 @@ export const emailPasswordBodySchema = z.object({
 });
 
 export const tokenWithDataSchema = z.object({
-  email: z.string().email(),
-  role: membershipSchema.shape.role.nullable(),
+  email: z.email(),
+  role: z.union([membershipSchema.shape.role, z.null()]),
   userId: idSchema.optional(),
   organizationName: z.string().optional(),
   organizationSlug: z.string().optional(),
@@ -24,10 +24,6 @@ export const tokenWithDataSchema = z.object({
 export const sendVerificationEmailBodySchema = z.object({
   tokenId: z.string().optional(),
   userId: z.string().optional(),
-});
-
-export const emailVerifiedSchema = z.object({
-  emailVerified: z.boolean(),
 });
 
 export const passkeyChallengeQuerySchema = z.object({ challengeBase64: z.string() });

@@ -111,7 +111,7 @@ const VerticalStep = React.forwardRef<HTMLDivElement, VerticalStepProps>((props,
   };
 
   return (
-    // biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
+    // biome-ignore lint/a11y/useKeyWithClickEvents: element is not keyboard-focusable and handled intentionally via mouse
     <div
       ref={ref}
       className={cn(

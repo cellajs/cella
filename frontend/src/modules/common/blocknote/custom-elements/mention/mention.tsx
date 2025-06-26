@@ -1,4 +1,4 @@
-import { type DefaultReactGridSuggestionItem, createReactInlineContentSpec } from '@blocknote/react';
+import { createReactInlineContentSpec, type DefaultReactGridSuggestionItem } from '@blocknote/react';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import type { CustomBlockNoteEditor } from '~/modules/common/blocknote/types';
 import type { Member } from '~/modules/memberships/types';

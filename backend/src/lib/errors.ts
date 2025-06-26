@@ -1,11 +1,10 @@
+import type { z } from '@hono/zod-openapi';
 import * as Sentry from '@sentry/node';
+import type { EntityType, Severity } from 'config';
 import { config } from 'config';
 import type { Context } from 'hono';
 import type { ClientErrorStatusCode, ServerErrorStatusCode } from 'hono/utils/http-status';
 import i18n from 'i18next';
-import type { z } from 'zod';
-
-import type { EntityType, Severity } from 'config';
 import { externalLogger } from '#/middlewares/logger/external-logger';
 import { logEvent } from '#/middlewares/logger/log-event';
 import type { errorSchema } from '#/utils/schema/responses';
@@ -56,6 +55,7 @@ export const createError = (
   const organization = getContextOrganization();
 
   const error: ErrorType = {
+    name: err?.name || 'ApiError',
     message,
     type: type,
     status,
@@ -64,8 +64,8 @@ export const createError = (
     path: ctx.req.path,
     method: ctx.req.method,
     entityType,
-    usr: user?.id,
-    org: organization?.id,
+    userId: user?.id,
+    organizationId: organization?.id,
   };
 
   if (err || ['warn', 'error'].includes(severity)) {
@@ -104,7 +104,7 @@ export const errorResponse = (
 ) => {
   const error: ErrorType = createError(ctx, status, type, severity, entityType, eventData, err);
 
-  return ctx.json({ success: false, error }, status as 400); // TODO(BLOCKED): Review type assertion (as 400) https://github.com/honojs/hono/issues/2719
+  return ctx.json(error, status as 400); // TODO(BLOCKED): Review type assertion (as 400) https://github.com/honojs/hono/issues/2719
 };
 
 /**

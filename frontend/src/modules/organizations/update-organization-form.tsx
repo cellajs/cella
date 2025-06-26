@@ -2,7 +2,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { config } from 'config';
 import type { UseFormProps } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
-import type { z } from 'zod';
+import type { z } from 'zod/v4';
 import { useBeforeUnload } from '~/hooks/use-before-unload';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import AvatarFormField from '~/modules/common/form-fields/avatar';
@@ -20,9 +20,10 @@ import { useOrganizationUpdateMutation } from '~/modules/organizations/query';
 import type { Organization } from '~/modules/organizations/types';
 import { Button, SubmitButton } from '~/modules/ui/button';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
-import { organizationUpdateBodySchema } from '#/modules/organizations/schema';
+import { zUpdateOrganizationData } from '~/openapi-client/zod.gen';
 
-const formSchema = organizationUpdateBodySchema;
+const formSchema = zUpdateOrganizationData.shape.body.unwrap();
+
 type FormValues = z.infer<typeof formSchema>;
 interface Props {
   organization: Organization;
@@ -57,13 +58,13 @@ const UpdateOrganizationForm = ({ organization, callback, sheet: isSheet }: Prop
   // Prevent data loss
   useBeforeUnload(form.isDirty);
 
-  const onSubmit = (json: FormValues) => {
+  const onSubmit = (body: FormValues) => {
     mutate(
-      { idOrSlug: organization.slug, json },
+      { idOrSlug: organization.slug, body },
       {
         onSuccess: (updatedOrganization) => {
           if (isSheet) useSheeter.getState().remove(formContainerId);
-          form.reset(json);
+          form.reset(body);
           toaster(t('common:success.update_resource', { resource: t('common:organization') }), 'success');
           callback?.(updatedOrganization);
         },
@@ -84,7 +85,7 @@ const UpdateOrganizationForm = ({ organization, callback, sheet: isSheet }: Prop
         <InputFormField control={form.control} name="name" label={t('common:name')} required />
         <SlugFormField
           control={form.control}
-          type="organization"
+          entityType="organization"
           label={t('common:resource_handle', { resource: t('common:organization') })}
           description={t('common:resource_handle.text', { resource: t('common:organization').toLowerCase() })}
           previousSlug={organization.slug}

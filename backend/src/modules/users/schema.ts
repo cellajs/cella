@@ -1,27 +1,20 @@
+import { z } from '@hono/zod-openapi';
+import { config, type EnabledOauthProvider } from 'config';
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
-import { z } from 'zod';
-
-import { type EnabledOauthProvider, config } from 'config';
 import { usersTable } from '#/db/schema/users';
 import { paginationQuerySchema, validImageKeySchema, validNameSchema, validSlugSchema } from '#/utils/schema/common';
-import { entityBaseSchema } from '../entities/schema';
 import { membershipSummarySchema } from '../memberships/schema';
 
 export const enabledOauthProvidersEnum = z.enum(config.enabledOauthProviders as unknown as [EnabledOauthProvider]);
 
 const userSelectSchema = createSelectSchema(usersTable, {
-  email: z.string().email(),
+  email: z.email(),
 }).omit({
   hashedPassword: true,
   unsubscribeToken: true,
 });
 
 export const userSchema = z.object({ ...userSelectSchema.shape });
-
-export const userSummarySchema = entityBaseSchema.extend({
-  email: z.string().email(),
-  entityType: z.literal('user'),
-});
 
 export const memberSchema = z.object({
   ...userSchema.shape,

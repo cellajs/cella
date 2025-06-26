@@ -1,5 +1,5 @@
+import type { z } from '@hono/zod-openapi';
 import { config } from 'config';
-import type { z } from 'zod';
 import { membershipsTable } from '#/db/schema/memberships';
 import type { ContextEntityTypeIdFields, GeneratedColumn } from '#/db/types';
 import type { membershipSummarySchema } from '../schema';
@@ -13,7 +13,7 @@ const additionalEntityIdFields = config.contextEntityTypes
     (fields, entityType) => {
       const fieldName = config.entityIdFields[entityType];
       // Ensure the field exists on the table
-      if (Object.prototype.hasOwnProperty.call(membershipsTable, fieldName)) fields[fieldName] = membershipsTable[fieldName];
+      if (Object.hasOwn(membershipsTable, fieldName)) fields[fieldName] = membershipsTable[fieldName];
       return fields;
     },
     {} as Record<Exclude<ContextEntityTypeIdFields, 'organizationId'>, GeneratedColumn>,

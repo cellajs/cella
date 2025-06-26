@@ -1,11 +1,10 @@
-import { forwardRef, memo, useEffect, useImperativeHandle } from 'react';
-
 import { Paperclip } from 'lucide-react';
+import { forwardRef, memo, useEffect, useImperativeHandle } from 'react';
 import type { RowsChangeData, SortColumn } from 'react-data-grid';
 import { useTranslation } from 'react-i18next';
 import useOfflineTableSearch from '~/hooks/use-offline-table-search';
-import { useAttachmentUpdateMutation } from '~/modules/attachments/query/mutations';
-import { attachmentsQueryOptions } from '~/modules/attachments/query/options';
+import { attachmentsQueryOptions } from '~/modules/attachments/query';
+import { useAttachmentUpdateMutation } from '~/modules/attachments/query-mutations';
 import type { AttachmentSearch, AttachmentsTableProps } from '~/modules/attachments/table/table-wrapper';
 import type { Attachment } from '~/modules/attachments/types';
 import ContentPlaceholder from '~/modules/common/content-placeholder';

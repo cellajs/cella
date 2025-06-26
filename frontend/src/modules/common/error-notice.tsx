@@ -141,9 +141,9 @@ const ErrorNotice = ({ error, resetErrorBoundary, level }: ErrorNoticeProps) => 
                         <div className="font-medium pr-4 place-self-end">Severity</div>
                         <div>{error.severity || 'na'}</div>
                         <div className="font-medium pr-4 place-self-end">User ID</div>
-                        <div>{error.usr || 'na'}</div>
+                        <div>{error.userId || 'na'}</div>
                         <div className="font-medium pr-4 place-self-end">Organization ID</div>
-                        <div>{error.org || 'na'}</div>
+                        <div>{error.organizationId || 'na'}</div>
                       </div>
                     </motion.div>
                   )}

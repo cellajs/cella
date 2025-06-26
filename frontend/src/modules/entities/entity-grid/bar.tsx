@@ -4,16 +4,17 @@ import { FilterBarActions, FilterBarContent, TableFilterBar } from '~/modules/co
 import TableSearch from '~/modules/common/data-table/table-search';
 import { FocusView } from '~/modules/common/focus-view';
 import SelectSort from '~/modules/common/form-fields/select-sort';
-import type { BaseGridCommonProps, EntitySearch } from '~/modules/entities/entity-grid/types';
+import type { EntitySearch } from './grid';
 
-type Props = BaseGridCommonProps & {
+type Props = {
   countName: string;
-  total?: number;
   searchVars: EntitySearch;
   setSearch: (search: EntitySearch) => void;
+  totalCount?: number;
+  isSheet?: boolean;
 };
 
-export const EntityGridBar = ({ total, countName, searchVars, setSearch, isSheet }: Props) => {
+export const EntityGridBar = ({ totalCount, countName, searchVars, setSearch, isSheet }: Props) => {
   const { q, sort } = searchVars;
 
   const isFiltered = !!q;
@@ -30,7 +31,7 @@ export const EntityGridBar = ({ total, countName, searchVars, setSearch, isSheet
       {/* Filter Bar */}
       <TableFilterBar onResetFilters={onResetFilters} isFiltered={isFiltered}>
         <FilterBarActions>
-          <TableCount count={total} type={countName} isFiltered={isFiltered} onResetFilters={onResetFilters} />
+          <TableCount count={totalCount} type={countName} isFiltered={isFiltered} onResetFilters={onResetFilters} />
         </FilterBarActions>
         <div className="sm:grow" />
         <FilterBarContent className="max-sm:animate-in max-sm:slide-in-from-left max-sm:fade-in max-sm:duration-300">

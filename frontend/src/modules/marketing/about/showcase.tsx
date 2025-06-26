@@ -1,6 +1,6 @@
 import { config } from 'config';
 import { ArrowUpRight } from 'lucide-react';
-import { Suspense, lazy } from 'react';
+import { lazy, Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
 import Spinner from '~/modules/common/spinner';
 import { nanoid } from '~/utils/nanoid';
