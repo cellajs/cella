@@ -1,8 +1,11 @@
 import { infiniteQueryOptions } from '@tanstack/react-query';
 import { config } from 'config';
 
-import { type GetMembershipInvitationsParams, type GetMembersParams, getMembers, getPendingInvitations } from '~/modules/memberships/api';
+import { getMembers, GetMembersData, getPendingInvitations, GetPendingInvitationsData } from '~/openapi-client';
 
+
+type  GetMembershipInvitationsParams = Omit<GetPendingInvitationsData['query'], 'limit' | 'offset'> & GetPendingInvitationsData['path'] 
+type GetMembersParams = Omit<GetMembersData['query'], 'limit' | 'offset'> & GetMembersData['path']
 /**
  * Keys for members related queries. These keys help to uniquely identify different query.
  * For managing query caching and invalidation.
@@ -45,7 +48,7 @@ export const membersQueryOptions = ({
   order: _order,
   role,
   limit: _limit,
-}: Omit<GetMembersParams, 'limit'> & {limit?:number}) => {
+}: GetMembersParams & {limit?:number}) => {
   const sort = _sort || 'createdAt';
   const order = _order || 'desc';
   const limit = String(_limit || config.requestLimits.members);
@@ -56,9 +59,9 @@ export const membersQueryOptions = ({
     queryKey,
     initialPageParam: { page: 0, offset: 0 },
     queryFn: async ({ pageParam: { page, offset: _offset }, signal }) => {
-            const offset = String(_offset || page * Number(limit));
+      const offset = String(_offset || page * Number(limit));
 
-      return await getMembers({ q, sort, order, role, limit, idOrSlug, orgIdOrSlug, entityType, offset }, signal)
+      return await getMembers({ query: { q, sort, order, role, limit, idOrSlug, entityType, offset }, path : { orgIdOrSlug },  signal, throwOnError: true });
     },
     getNextPageParam: (_lastPage, allPages) => {
       const page = allPages.length;
@@ -90,7 +93,7 @@ export const pendingInvitationsQueryOptions = ({
   sort: _sort,
   order: _order,
   limit: _limit,
-}: Omit<GetMembershipInvitationsParams, 'limit'> & {limit?:number}) => {
+}: GetMembershipInvitationsParams & { limit?: number } ) => {
   const sort = _sort || 'createdAt';
   const order = _order || 'desc';
   const limit = String(_limit || config.requestLimits.pendingInvitations);
@@ -103,8 +106,7 @@ export const pendingInvitationsQueryOptions = ({
     queryFn: async ({ pageParam: { page, offset: _offset }, signal }) =>
       {
         const offset = String(_offset || page * Number(limit));
-        
-        return await getPendingInvitations({ q, sort, order, limit, idOrSlug, orgIdOrSlug, entityType, offset }, signal)
+        return await getPendingInvitations({query: { q, sort, order, limit, idOrSlug, entityType, offset } , path : { orgIdOrSlug}, signal , throwOnError: true});
       },
     getNextPageParam: (_lastPage, allPages) => {
       const page = allPages.length;

@@ -769,7 +769,7 @@ export const zDeleteSessionsResponse = z.object({
         method: z.string().optional(),
         timestamp: z.string().optional(),
         userId: z.string().optional(),
-        org: z.string().optional()
+        organizationId: z.string().optional()
     }))
 });
 
@@ -891,7 +891,7 @@ export const zDeleteUsersResponse = z.object({
         method: z.string().optional(),
         timestamp: z.string().optional(),
         userId: z.string().optional(),
-        org: z.string().optional()
+        organizationId: z.string().optional()
     }))
 });
 
@@ -1188,7 +1188,7 @@ export const zDeleteOrganizationsResponse = z.object({
         method: z.string().optional(),
         timestamp: z.string().optional(),
         userId: z.string().optional(),
-        org: z.string().optional()
+        organizationId: z.string().optional()
     }))
 });
 
@@ -1952,7 +1952,7 @@ export const zDeleteRequestsResponse = z.object({
         method: z.string().optional(),
         timestamp: z.string().optional(),
         userId: z.string().optional(),
-        org: z.string().optional()
+        organizationId: z.string().optional()
     }))
 });
 
@@ -2108,7 +2108,7 @@ export const zDeleteAttachmentsResponse = z.object({
         method: z.string().optional(),
         timestamp: z.string().optional(),
         userId: z.string().optional(),
-        org: z.string().optional()
+        organizationId: z.string().optional()
     }))
 });
 
@@ -2428,11 +2428,11 @@ export const zDeleteMembershipsResponse = z.object({
         method: z.string().optional(),
         timestamp: z.string().optional(),
         userId: z.string().optional(),
-        org: z.string().optional()
+        organizationId: z.string().optional()
     }))
 });
 
-export const zCreateMembershipsData = z.object({
+export const zMembershipInviteData = z.object({
     body: z.object({
         emails: z.array(z.string().min(4).max(100)).min(1).max(50),
         role: z.enum([
@@ -2454,7 +2454,7 @@ export const zCreateMembershipsData = z.object({
 /**
  * Invitation was sent
  */
-export const zCreateMembershipsResponse = z.boolean();
+export const zMembershipInviteResponse = z.boolean();
 
 export const zUpdateMembershipData = z.object({
     body: z.object({

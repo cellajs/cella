@@ -9,9 +9,9 @@ import { tablePropsAreEqual } from '~/modules/common/data-table/table-props-are-
 import type { BaseTableMethods, BaseTableProps } from '~/modules/common/data-table/types';
 import { toaster } from '~/modules/common/toaster';
 import { getAndSetMenu } from '~/modules/me/helpers';
-import { inviteMembers as changeRole } from '~/modules/memberships/api';
 import { organizationsQueryOptions } from '~/modules/organizations/query';
 import type { OrganizationsSearch, OrganizationTable } from '~/modules/organizations/table/table-wrapper';
+import { membershipInvite as changeRole } from '~/openapi-client';
 import { useDataFromInfiniteQuery } from '~/query/hooks/use-data-from-query';
 import { useUserStore } from '~/store/user';
 
@@ -41,11 +41,16 @@ const BaseDataTable = memo(
         if (!organization.membership?.role) continue;
 
         changeRole({
-          idOrSlug: organization.id,
-          emails: [user.email],
-          role: organization.membership?.role,
-          entityType: 'organization',
-          orgIdOrSlug: organization.id,
+          query:{
+            idOrSlug: organization.id,
+            entityType: 'organization',
+          },
+          path: { orgIdOrSlug: organization.id },
+          body: {
+            emails: [user.email],
+            role: organization.membership?.role,
+          },
+          throwOnError: true,
         })
           .then(() => {
             getAndSetMenu();

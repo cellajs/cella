@@ -1,6 +1,6 @@
 import { del, get, keys, set } from 'idb-keyval';
 import type { CustomUppyFile } from '~/modules/common/uploader/types';
-import { GetUploadTokenData } from '~/openapi-client';
+import { UploadTockenQuery } from '~/modules/me/types';
 import { nanoid } from '~/utils/nanoid';
 
 /**
@@ -9,7 +9,7 @@ import { nanoid } from '~/utils/nanoid';
  * @link https://github.com/jakearchibald/idb-keyval
  */
 export const LocalFileStorage = {
-  async addData(files: Record<string, CustomUppyFile>, tokenQuery: GetUploadTokenData['query']): Promise<void> {
+  async addData(files: Record<string, CustomUppyFile>, tokenQuery: UploadTockenQuery): Promise<void> {
     const key = tokenQuery.organizationId ?? nanoid();
     try {
       // Get existing data (if any)
@@ -24,7 +24,7 @@ export const LocalFileStorage = {
 
   async getData(organizationId: string) {
     try {
-      return await get<{ files: Record<string, CustomUppyFile>; tokenQuery: GetUploadTokenData['query'] }>(organizationId);
+      return await get<{ files: Record<string, CustomUppyFile>; tokenQuery: UploadTockenQuery }>(organizationId);
     } catch (error) {
       console.error('Failed to retrieve data:', error);
     }

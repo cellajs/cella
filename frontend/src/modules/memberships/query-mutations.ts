@@ -3,24 +3,27 @@ import { config } from 'config';
 import { t } from 'i18next';
 import { toaster } from '~/modules/common/toaster';
 import { getAndSetMenu } from '~/modules/me/helpers';
-import { type RemoveMembersProps, type UpdateMembershipProp, removeMembers, updateMembership } from '~/modules/memberships/api';
 import { resolveParentEntityType } from '~/modules/memberships/helpers';
 import { membersKeys } from '~/modules/memberships/query';
-import type { Member, Membership,
+import type {
+  DeleteMembership,
   EntityMembershipContextProp,
   InfiniteMemberQueryData,
+  Member,
   MemberContextProp,
   MemberQueryData,
+  Membership,
   MutationUpdateMembership,
 } from '~/modules/memberships/types';
 import { updateMenuItemMembership } from '~/modules/navigation/menu-sheet/helpers/menu-operations';
+import { deleteMemberships, updateMembership } from '~/openapi-client';
 import { formatUpdatedData, getQueryItems, getSimilarQueries } from '~/query/helpers/mutate-query';
 import { useMutateQueryData } from '~/query/hooks/use-mutate-query-data';
 import { queryClient } from '~/query/query-client';
 
 const limit = config.requestLimits.members;
 
-const onError = (_: Error, __: MutationUpdateMembership | RemoveMembersProps, context?: MemberContextProp[]) => {
+const onError = (_: Error, __: MutationUpdateMembership | DeleteMembership, context?: MemberContextProp[]) => {
   if (context?.length) {
     for (const [queryKey, previousData] of context) queryClient.setQueryData(queryKey, previousData);
   }
@@ -29,7 +32,9 @@ const onError = (_: Error, __: MutationUpdateMembership | RemoveMembersProps, co
 export const useMemberUpdateMutation = () =>
   useMutation<Membership, Error, MutationUpdateMembership, EntityMembershipContextProp>({
     mutationKey: membersKeys.update(),
-    mutationFn: updateMembership,
+    mutationFn: async ({id, orgIdOrSlug, entityType, idOrSlug, ...body}) => { 
+      return await updateMembership({ body, path: { id, orgIdOrSlug }, throwOnError: true })
+    },
     onMutate: async (variables) => {
       const { idOrSlug, entityType, orgIdOrSlug, ...membershipInfo } = variables;
       const { archived, muted, role, order } = membershipInfo;
@@ -118,9 +123,12 @@ export const useMemberUpdateMutation = () =>
   });
 
 export const useMembersDeleteMutation = () =>
-  useMutation<void, Error, RemoveMembersProps, MemberContextProp[]>({
+  useMutation<void, Error, DeleteMembership, MemberContextProp[]>({
     mutationKey: membersKeys.delete(),
-    mutationFn: removeMembers,
+    mutationFn: async ({ idOrSlug, entityType, orgIdOrSlug, members }) => {
+      const ids = members.map(({ id }) => id);
+      await deleteMemberships({ query: { idOrSlug, entityType } , body: { ids }, path: { orgIdOrSlug }, throwOnError: true });
+    },
     onMutate: async (variables) => {
       const { members, idOrSlug, entityType, orgIdOrSlug } = variables;
       const ids = members.map(({ id }) => id);
@@ -155,7 +163,7 @@ export const useMembersDeleteMutation = () =>
     onError,
   });
 
-const updateMembers = (members: Member[], variables: Omit<UpdateMembershipProp, 'idOrSlug' | 'entityType' | 'orgIdOrSlug'>) => {
+const updateMembers = (members: Member[], variables: Omit<MutationUpdateMembership, 'idOrSlug' | 'entityType' | 'orgIdOrSlug'>) => {
   return members.map((member) => {
     // Update the task itself
     if (member.membership.id === variables.id) return { ...member, membership: { ...member.membership, ...variables } };

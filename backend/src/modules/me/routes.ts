@@ -171,9 +171,7 @@ const meRoutes = {
     summary: 'Get upload token',
     description:
       'This endpoint is used to get an upload token for a user or organization. The token can be used to upload or private images/files to your S3 bucket using',
-    request: {
-      query: uploadTokenQuerySchema,
-    },
+    request: { query: uploadTokenQuerySchema },
     responses: {
       200: {
         description: 'Upload token with a scope for a user or organization',

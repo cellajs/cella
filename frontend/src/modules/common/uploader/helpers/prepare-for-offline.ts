@@ -2,7 +2,7 @@ import type { AssemblyResponse } from '@uppy/transloadit';
 import { uploadTemplates } from 'config/templates';
 import { LocalFileStorage } from '~/modules/attachments/helpers/local-file-storage';
 import type { CustomUppyFile } from '~/modules/common/uploader/types';
-import type { GetUploadTokenData } from '~/openapi-client';
+import { UploadTockenQuery } from '~/modules/me/types';
 
 /**
  * Prepares files for offline storage and returns successfully uploaded files.
@@ -11,7 +11,7 @@ import type { GetUploadTokenData } from '~/openapi-client';
  * @returns An array of files that were successfully prepared for offline storage.
  */
 // TODO(IMPROVEMENT) handle offline video audio & file
-export const prepareFilesForOffline = async (files: Record<string, CustomUppyFile>, tokenQuery: GetUploadTokenData['query']) => {
+export const prepareFilesForOffline = async (files: Record<string, CustomUppyFile>, tokenQuery: UploadTockenQuery) => {
   console.warn('Files will be stored offline in indexedDB.');
 
   const template = uploadTemplates.attachment;

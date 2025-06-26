@@ -4,7 +4,8 @@ import Transloadit from '@uppy/transloadit';
 import { config } from 'config';
 import { prepareFilesForOffline } from '~/modules/common/uploader/helpers/prepare-for-offline';
 import type { CustomUppy, CustomUppyFile, CustomUppyOpt } from '~/modules/common/uploader/types';
-import { getUploadToken, GetUploadTokenData } from '~/openapi-client';
+import { UploadTockenQuery } from '~/modules/me/types';
+import { getUploadToken } from '~/openapi-client';
 import { cleanFileName } from '~/utils/clean-file-name';
 import { nanoid } from '~/utils/nanoid';
 
@@ -17,7 +18,7 @@ import { nanoid } from '~/utils/nanoid';
  * @param withTransloadit - Optional flag to control whether to integrate Transloadit plugin. Defaults to true.
  * @returns A new Uppy instance configured with the specified options, and Transloadit if enabled.
  */
-export const createBaseTransloaditUppy = async (uppyOptions: CustomUppyOpt, tokenQuery: GetUploadTokenData['query']): Promise<CustomUppy> => {
+export const createBaseTransloaditUppy = async (uppyOptions: CustomUppyOpt, tokenQuery: UploadTockenQuery): Promise<CustomUppy> => {
   const uppy = new Uppy({
     ...uppyOptions,
     meta: { public: tokenQuery.public, offlineUploaded: !onlineManager.isOnline() },
