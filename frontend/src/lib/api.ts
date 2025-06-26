@@ -1,45 +1,14 @@
 import type { EntityType, Severity } from 'config';
-import type { ClientResponse } from 'hono/client';
 import type { ClientErrorStatusCode, ServerErrorStatusCode } from 'hono/utils/http-status';
-import { useAlertStore } from '~/store/alert';
-
-type HttpErrorStatus = ClientErrorStatusCode | ServerErrorStatusCode;
-
-/**
- * Handles an API response, parsing the JSON and throwing an error if necessary.
- *
- * If the response is successful, it returns the parsed JSON. If the response contains an error,
- * it throws an `ApiError` with the error details. Otherwise, it throws a generic error.
- *
- * @param response - Client response object to handle.
- * @returns Parsed JSON from response.
- * @throws ApiError for expected errors, generic error for unknown issues.
- */
-export const handleResponse = async <T, U extends ClientResponse<T, number, 'json'>>(response: U) => {
-  const json = await response.json();
-
-  if (response.ok) return json as Awaited<ReturnType<Extract<U, { status: 200 }>['json']>>;
-
-  throw new ApiError(json as ApiError);
-};
 
 export const clientConfig = {
-  fetch: (input: RequestInfo | URL, init?: RequestInit) =>
-    fetch(input, {
-      ...init,
-      credentials: 'include',
-    }).catch((err) => {
-      if (process.env.NODE_ENV === 'development' && err.message.includes('Failed to fetch')) {
-        useAlertStore.getState().setDownAlert('backend_not_ready');
-      }
-      throw err; // Re-throw so caller can handle
-    }),
+  fetch: (input: RequestInfo | URL, init?: RequestInit) => fetch(input, { ...init, credentials: 'include' }),
 };
 
 // Custom error class to handle API errors
 export class ApiError extends Error {
   name: string;
-  status: HttpErrorStatus;
+  status: ClientErrorStatusCode | ServerErrorStatusCode;
   type?: string;
   entityType?: EntityType;
   severity?: Severity;
