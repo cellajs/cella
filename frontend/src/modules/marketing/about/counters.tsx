@@ -20,7 +20,7 @@ const Counters = () => {
   const [countValues, setCountValues] = useState(initialObject);
 
   useEffect(() => {
-    getPublicCounts({ throwOnError: true }).then((resp) => setCountValues(resp));
+    getPublicCounts().then((resp) => setCountValues(resp));
   }, []);
 
   return (

@@ -80,7 +80,7 @@ export const RequestsTableBar = ({ total, selected, searchVars, setSearch, colum
 
     try {
       // Send invite to users
-      await systemInvite({ body: { emails }, throwOnError: true });
+      await systemInvite({ body: { emails } });
       toaster(t('common:success.user_invited'), 'success');
 
       mutateQuery.update(updatedWaitLists);

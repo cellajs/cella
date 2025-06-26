@@ -34,7 +34,7 @@ export const CheckEmailForm = ({ setStep, emailEnabled }: CheckEmailProps) => {
   });
 
   const { mutate: _checkEmail, isPending } = useMutation<CheckEmailResponse, ApiError, CheckEmailData['body']>({
-    mutationFn: (body) => checkEmail({ body, throwOnError: true }),
+    mutationFn: (body) => checkEmail({ body }),
     onSuccess: () => setStep('signIn', form.getValues('email')),
     onError: (error: ApiError) => {
       let nextStep: Step = 'inviteOnly';

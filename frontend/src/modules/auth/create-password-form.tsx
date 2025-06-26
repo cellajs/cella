@@ -43,7 +43,7 @@ const CreatePasswordForm = () => {
     isPending,
     error: resetPasswordError,
   } = useMutation<CreatePasswordResponse, ApiError, CreatePasswordData['body'] & CreatePasswordData['path']>({
-    mutationFn: ({ token, password }) => createPassword({ path: { token }, body: { password }, throwOnError: true }),
+    mutationFn: ({ token, password }) => createPassword({ path: { token }, body: { password } }),
     onSuccess: () => {
       toaster(t('common:success.password_reset'), 'success');
       navigate({ to: config.defaultRedirectPath });

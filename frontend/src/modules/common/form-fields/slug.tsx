@@ -49,7 +49,7 @@ export const SlugFormField = ({ control, label, previousSlug, description, nameV
   const { mutate: checkAvailability } = useMutation<boolean, ApiError, NonNullable<CheckSlugData['body']>>({
     mutationKey: ['slug'],
     mutationFn: async (body) => {
-      return await checkSlugAvailable({ body, throwOnError: true });
+      return await checkSlugAvailable({ body });
     },
     onSuccess: (isAvailable) => {
       if (isValidSlug(slug)) form.clearErrors('slug');

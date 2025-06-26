@@ -33,7 +33,7 @@ export const useMemberUpdateMutation = () =>
   useMutation<Membership, Error, MutationUpdateMembership, EntityMembershipContextProp>({
     mutationKey: membersKeys.update(),
     mutationFn: async ({ id, orgIdOrSlug, entityType, idOrSlug, ...body }) => {
-      return await updateMembership({ body, path: { id, orgIdOrSlug }, throwOnError: true });
+      return await updateMembership({ body, path: { id, orgIdOrSlug } });
     },
     onMutate: async (variables) => {
       const { idOrSlug, entityType, orgIdOrSlug, ...membershipInfo } = variables;
@@ -127,7 +127,7 @@ export const useMembersDeleteMutation = () =>
     mutationKey: membersKeys.delete(),
     mutationFn: async ({ idOrSlug, entityType, orgIdOrSlug, members }) => {
       const ids = members.map(({ id }) => id);
-      await deleteMemberships({ query: { idOrSlug, entityType }, body: { ids }, path: { orgIdOrSlug }, throwOnError: true });
+      await deleteMemberships({ query: { idOrSlug, entityType }, body: { ids }, path: { orgIdOrSlug } });
     },
     onMutate: async (variables) => {
       const { members, idOrSlug, entityType, orgIdOrSlug } = variables;

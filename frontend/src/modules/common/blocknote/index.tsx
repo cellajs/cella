@@ -98,7 +98,7 @@ export const BlockNote = ({
     // TODO(BLOCKING) remove image blick (https://github.com/TypeCellOS/BlockNote/issues/1570)
     resolveFileUrl: (key) => {
       if (!key.length) return Promise.resolve('');
-      return getPresignedUrl({ query: { key }, throwOnError: true });
+      return getPresignedUrl({ query: { key } });
     },
   });
 

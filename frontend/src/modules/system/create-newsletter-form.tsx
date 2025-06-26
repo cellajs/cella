@@ -52,7 +52,7 @@ const CreateNewsletterForm = ({ organizationIds, callback }: CreateNewsletterFor
   // Send newsletter
   const { mutate: _sendNewsletter, isPending } = useMutation<boolean, ApiError, { body: SendNewsletterData['body'] } & SendNewsletterData['query']>({
     mutationFn: async ({ body, toSelf }) => {
-      return await sendNewsletter({ body, query: { toSelf }, throwOnError: true });
+      return await sendNewsletter({ body, query: { toSelf } });
     },
     onSuccess: () => {
       if (testOnly) return toaster(t('common:success.test_email'), 'success');

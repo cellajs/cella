@@ -26,7 +26,7 @@ export const passkeyRegistration = async () => {
 
   try {
     // Random bytes generated on each attempt.
-    const { challengeBase64 } = await getPasskeyChallenge({ throwOnError: true });
+    const { challengeBase64 } = await getPasskeyChallenge();
 
     // random ID for the authenticator
     const userId = new Uint8Array(20);
@@ -70,7 +70,7 @@ export const passkeyRegistration = async () => {
       clientDataJSON: encodeBase64(new Uint8Array(response.clientDataJSON)),
     };
 
-    const result = await createPasskey({ body: credentialData, throwOnError: true });
+    const result = await createPasskey({ body: credentialData });
 
     if (!result) toaster(t('error:passkey_add_failed'), 'error');
 
@@ -100,7 +100,7 @@ export const passkeyRegistration = async () => {
 export const passkeyAuth = async (userEmail: string, callback?: () => void) => {
   try {
     // Random bytes generated on each attempt
-    const { challengeBase64 } = await getPasskeyChallenge({ throwOnError: true });
+    const { challengeBase64 } = await getPasskeyChallenge();
 
     const credential = await navigator.credentials.get({
       publicKey: {
@@ -121,7 +121,7 @@ export const passkeyAuth = async (userEmail: string, callback?: () => void) => {
       userEmail,
     };
 
-    const success = await signInWithPasskey({ body: credentialData, throwOnError: true });
+    const success = await signInWithPasskey({ body: credentialData });
     if (success) callback?.();
     else toaster(t('error:passkey_sign_in'), 'error');
   } catch (err) {
@@ -136,7 +136,7 @@ export const passkeyAuth = async (userEmail: string, callback?: () => void) => {
  * @returns The user data object.
  */
 export const getAndSetMe = async () => {
-  const user = await getMe({ throwOnError: true });
+  const user = await getMe();
   const skipLastUser = useUIStore.getState().impersonating;
   useUserStore.getState().setUser(user, skipLastUser);
   return user;
@@ -148,7 +148,7 @@ export const getAndSetMe = async () => {
  * @returns The data object.
  */
 export const getAndSetMeAuthData = async () => {
-  const authInfo = await getMyAuth({ throwOnError: true });
+  const authInfo = await getMyAuth();
   useUserStore.getState().setMeAuthData(authInfo);
   return authInfo;
 };

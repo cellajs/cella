@@ -51,7 +51,7 @@ const UserSettingsPage = () => {
 
     try {
       setDisabledResetPassword(true);
-      requestPassword({ body: { email: user.email }, throwOnError: true });
+      requestPassword({ body: { email: user.email } });
       toast.success(t('common:success.reset_password_email', { email: user.email }));
     } catch {
     } finally {

@@ -29,7 +29,7 @@ const AcceptEntityInvite = () => {
     isPending,
     error: acceptInviteError,
   } = useMutation({
-    mutationFn: () => acceptEntityInvite({ path: { token }, throwOnError: true }),
+    mutationFn: () => acceptEntityInvite({ path: { token } }),
     onSuccess: async (entity) => {
       await getAndSetMenu();
 

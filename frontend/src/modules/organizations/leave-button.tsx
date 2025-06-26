@@ -21,7 +21,7 @@ const LeaveButton = ({ organization }: { organization: Organization }) => {
   const { mutate: _deleteMyMembership } = useMutation({
     mutationFn: async () => {
       const idOrSlug = organization.id;
-      return await deleteMyMembership({ query: { idOrSlug, entityType: 'organization' }, throwOnError: true });
+      return await deleteMyMembership({ query: { idOrSlug, entityType: 'organization' } });
     },
     onSuccess: () => {
       toaster(t('common:success.you_left_organization'), 'success');

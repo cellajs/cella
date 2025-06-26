@@ -8,6 +8,7 @@ export default defineConfig({
   output: { path: 'src/openapi-client', lint: 'biome', format: 'biome' },
   plugins: ['zod', { name: '@hey-api/sdk', responseStyle: 'data'},  {
       name: '@hey-api/client-fetch',
+      throwOnError: true,
       runtimeConfigPath: './hey-api.ts', 
     },],
 })

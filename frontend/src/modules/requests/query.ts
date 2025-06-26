@@ -52,7 +52,7 @@ export const requestsQueryOptions = ({
     initialPageParam: { page: 0, offset: 0 },
     queryFn: async ({ pageParam: { page, offset: _offset }, signal }) => {
       const offset = String(_offset || page * Number(limit));
-      return await getRequests({ query: { q, sort, order, limit, offset }, signal, throwOnError: true });
+      return await getRequests({ query: { q, sort, order, limit, offset }, signal });
     },
     getNextPageParam: (_lastPage, allPages) => {
       const page = allPages.length;
@@ -70,7 +70,7 @@ export const requestsQueryOptions = ({
 export const useCreateRequestMutation = () => {
   return useMutation<CreateRequestResponses[200], ApiError, CreateRequestData['body']>({
     mutationKey: requestsKeys.create(),
-    mutationFn: (body) => createRequest({ body, throwOnError: true }),
+    mutationFn: (body) => createRequest({ body }),
   });
 };
 
@@ -84,7 +84,7 @@ export const useDeleteRequestMutation = () => {
     mutationKey: requestsKeys.delete(),
     mutationFn: async (requests) => {
       const ids = requests.map(({ id }) => id);
-      await deleteRequests({ body: { ids }, throwOnError: true });
+      await deleteRequests({ body: { ids } });
       return true;
     },
   });

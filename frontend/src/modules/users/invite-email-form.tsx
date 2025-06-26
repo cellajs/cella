@@ -73,7 +73,7 @@ const InviteEmailForm = ({ entity, dialog: isDialog, children }: Props) => {
   // It uses inviteSystem if no entity type is provided
   const { mutate: invite, isPending } = useMutation({
     mutationFn: async (body: FormValues) => {
-      if (!entity) return await systemInvite({ body, throwOnError: true });
+      if (!entity) return await systemInvite({ body });
       return await membershipInvite({
         query: { idOrSlug: entity.id, entityType: entity.entityType },
         path: { orgIdOrSlug: entity.organizationId || entity.id },

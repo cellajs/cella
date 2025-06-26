@@ -21,7 +21,7 @@ const DeleteSelf = ({ callback, dialog: isDialog }: Props) => {
 
   const { mutate: _deleteMe, isPending } = useMutation({
     mutationFn: async () => {
-      await deleteMe({ throwOnError: true });
+      await deleteMe();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: usersKeys.single.byIdOrSlug(user.id) });

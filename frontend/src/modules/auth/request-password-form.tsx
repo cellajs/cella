@@ -18,7 +18,7 @@ export const RequestPasswordForm = ({ email = '' }: { email?: string }) => {
 
   // Send create/reset password email
   const { mutate: requestPasswordEmail, isPending } = useMutation<RequestPasswordResponse, ApiError, string>({
-    mutationFn: (email) => requestPassword({ body: { email }, throwOnError: true }),
+    mutationFn: (email) => requestPassword({ body: { email } }),
     onSuccess: () => {
       toast.success(t('common:success.reset_link_sent'));
       useDialoger.getState().remove();

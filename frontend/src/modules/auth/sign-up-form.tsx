@@ -51,7 +51,7 @@ export const SignUpForm = ({ tokenData, email, resetSteps, emailEnabled }: Props
 
   // Handle basic sign up
   const { mutate: _signUp, isPending } = useMutation<SignUpResponse, ApiError, NonNullable<SignUpData['body']>>({
-    mutationFn: (body) => signUp({ body, throwOnError: true }),
+    mutationFn: (body) => signUp({ body }),
     onSuccess: () => navigate({ to: '/auth/email-verification', replace: true }),
   });
 
@@ -61,7 +61,7 @@ export const SignUpForm = ({ tokenData, email, resetSteps, emailEnabled }: Props
     ApiError,
     NonNullable<SignUpWithTokenData['body']> & SignUpWithTokenData['path']
   >({
-    mutationFn: ({ token, ...body }) => signUpWithToken({ body, path: { token }, throwOnError: true }),
+    mutationFn: ({ token, ...body }) => signUpWithToken({ body, path: { token } }),
     onSuccess: () => {
       // Redirect to organization invitation page if there is a membership invitation
       const isMemberInvitation = tokenData?.organizationSlug && token && tokenId;

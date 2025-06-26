@@ -20,7 +20,7 @@ const SessionsList = ({ userAuthInfo }: { userAuthInfo: MeAuthData }) => {
   // Terminate one or all sessions
   const { mutate: deleteMySessions, isPending } = useMutation({
     mutationFn: async (ids: string[]) => {
-      await deleteSessions({ body: { ids }, throwOnError: true });
+      await deleteSessions({ body: { ids } });
       return ids;
     },
     onSuccess(ids) {

@@ -20,6 +20,7 @@ export const client = createClient(
   createClientConfig(
     createConfig<ClientOptions>({
       baseUrl: 'http://localhost:4000',
+      throwOnError: true,
     }),
   ),
 );

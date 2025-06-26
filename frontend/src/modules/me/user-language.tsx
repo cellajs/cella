@@ -29,7 +29,7 @@ const UserLanguage = ({ align = 'end', triggerClassName = '', contentClassName =
     i18n.changeLanguage(lng);
 
     if (!user) return;
-    updateMe({ body: { language: lng }, throwOnError: true }).then((res) => {
+    updateMe({ body: { language: lng } }).then((res) => {
       updateUser(res);
     });
   };

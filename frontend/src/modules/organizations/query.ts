@@ -46,7 +46,7 @@ export const organizationsKeys = {
 export const organizationQueryOptions = (idOrSlug: string) =>
   queryOptions({
     queryKey: organizationsKeys.single.byIdOrSlug(idOrSlug),
-    queryFn: async () => getOrganization({ path: { idOrSlug }, throwOnError: true }),
+    queryFn: async () => getOrganization({ path: { idOrSlug } }),
   });
 
 /**
@@ -77,7 +77,7 @@ export const organizationsQueryOptions = ({
     initialPageParam: { page: 0, offset: 0 },
     queryFn: async ({ pageParam: { page, offset: _offset }, signal }) => {
       const offset = String(_offset || page * Number(limit));
-      return await getOrganizations({ query: { q, sort, order, limit, offset }, signal, throwOnError: true });
+      return await getOrganizations({ query: { q, sort, order, limit, offset }, signal });
     },
     getNextPageParam: (_lastPage, allPages) => {
       const page = allPages.length;
@@ -96,7 +96,7 @@ export const organizationsQueryOptions = ({
 export const useOrganizationCreateMutation = () => {
   return useMutation<OrganizationWithMembership, ApiError, CreateOrganizationData['body']>({
     mutationKey: organizationsKeys.create(),
-    mutationFn: (body) => createOrganization({ body, throwOnError: true }),
+    mutationFn: (body) => createOrganization({ body }),
     onSuccess: (createdOrganization) => {
       const mutateCache = useMutateQueryData(organizationsKeys.table.base());
 
@@ -116,7 +116,7 @@ export const useOrganizationCreateMutation = () => {
 export const useOrganizationUpdateMutation = () => {
   return useMutation<Organization, ApiError, { idOrSlug: string; body: UpdateOrganizationData['body'] }>({
     mutationKey: organizationsKeys.update(),
-    mutationFn: ({ idOrSlug, body }) => updateOrganization({ body, path: { idOrSlug }, throwOnError: true }),
+    mutationFn: ({ idOrSlug, body }) => updateOrganization({ body, path: { idOrSlug } }),
     onSuccess: (updatedOrganization) => {
       // Update menuItem in store, only if it has membership is not null
       if (updatedOrganization.membership) updateMenuItem({ ...updatedOrganization, membership: updatedOrganization.membership });
@@ -139,7 +139,7 @@ export const useOrganizationDeleteMutation = () => {
     mutationKey: organizationsKeys.delete(),
     mutationFn: async (organizations) => {
       const ids = organizations.map(({ id }) => id);
-      await deleteOrganizations({ body: { ids }, throwOnError: true });
+      await deleteOrganizations({ body: { ids } });
     },
     onSuccess: (_, organizations) => {
       const mutateCache = useMutateQueryData(organizationsKeys.table.base(), () => organizationsKeys.single.base, ['remove']);
