@@ -180,7 +180,7 @@ export const SelectEmails = (props: SelectEmailsProps) => {
         onChange?.([...emails, ...validEmails]);
       }
 
-      // biome-ignore lint/suspicious/noSelfCompare: <explanation>
+      // biome-ignore lint/suspicious/noSelfCompare: required pattern to handle edge cases in validation
       if (inputValue !== inputValue) {
         onChangeInput?.(inputValue);
       }

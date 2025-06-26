@@ -137,7 +137,7 @@ const Carousel = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivEl
           onMouseEnter={handleMouseEnter}
           onMouseLeave={handleMouseLeave}
           className={cn('relative', className)}
-          // biome-ignore lint/a11y/useSemanticElements: <explanation>
+          // biome-ignore lint/a11y/useSemanticElements: visual structure prioritized here
           role="region"
           aria-roledescription="carousel"
           {...props}

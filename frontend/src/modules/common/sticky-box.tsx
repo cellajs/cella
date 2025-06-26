@@ -2,7 +2,7 @@ import { type ComponentProps, useEffect, useRef, useState } from 'react';
 
 const getScrollParent = (node: HTMLElement) => {
   let parent: HTMLElement | null = node;
-  // biome-ignore lint/suspicious/noAssignInExpressions: <explanation>
+  // biome-ignore lint/suspicious/noAssignInExpressions: required for short-circuit assignment pattern
   while ((parent = parent.parentElement)) {
     const overflowYVal = getComputedStyle(parent, null).getPropertyValue('overflow-y');
     if (parent === document.body) return window;
@@ -381,7 +381,6 @@ export const useStickyBox = ({ offsetTop = 0, offsetBottom = 0, bottom = false, 
     handleScroll(); // Initial check
 
     return () => {
-      // biome-ignore lint/complexity/noForEach: <explanation>
       unsubs.forEach((fn) => fn());
       window.removeEventListener('scroll', handleScroll);
     };
