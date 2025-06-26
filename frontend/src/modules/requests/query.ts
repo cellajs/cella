@@ -2,7 +2,7 @@ import { infiniteQueryOptions, useMutation } from '@tanstack/react-query';
 import { config } from 'config';
 import type { ApiError } from '~/lib/api';
 import type { Request } from '~/modules/requests/types';
-import { createRequest, CreateRequestResponses, getRequests, GetRequestsData, deleteRequests, CreateRequestData } from '~/openapi-client';
+import { createRequest, CreateRequestData, CreateRequestResponses, deleteRequests, getRequests, GetRequestsData } from '~/openapi-client';
 
 /**
  * Keys for request related queries. These keys help to uniquely identify different query. For managing query caching and invalidation.
@@ -45,9 +45,7 @@ export const requestsQueryOptions = ({
     initialPageParam: { page: 0, offset: 0 },
     queryFn: async ({ pageParam: { page, offset: _offset }, signal }) => {
       const offset = String(_offset || page * Number(limit));
-
-      const response = await getRequests({query: { q, sort, order, limit, offset }, signal, throwOnError: true})
-       return response;
+      return await getRequests({query: { q, sort, order, limit, offset }, signal, throwOnError: true})
     },
     getNextPageParam: (_lastPage, allPages) => {
       const page = allPages.length;
@@ -65,10 +63,7 @@ export const requestsQueryOptions = ({
 export const useCreateRequestMutation = () => {
   return useMutation<CreateRequestResponses[200], ApiError, CreateRequestData['body']>({
     mutationKey: requestsKeys.create(),
-    mutationFn: async (body) => {
-      const response = await createRequest({ body, throwOnError: true })
-      return response;
-    },
+    mutationFn: (body) => createRequest({ body, throwOnError: true })
   });
 };
 

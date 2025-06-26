@@ -37,10 +37,7 @@ export const organizationsKeys = {
 export const organizationQueryOptions = (idOrSlug: string) =>
   queryOptions({
     queryKey: organizationsKeys.single.byIdOrSlug(idOrSlug),
-    queryFn: async() =>{
-      const response = await getOrganization({ path: { idOrSlug }, throwOnError: true });
-      return response;
-    },
+    queryFn: async() => getOrganization({ path: { idOrSlug }, throwOnError: true })
   });
 
 /**
@@ -71,8 +68,7 @@ export const organizationsQueryOptions = ({
     initialPageParam: { page: 0, offset: 0 },
     queryFn: async ({ pageParam: { page, offset: _offset }, signal }) => {
       const offset = String(_offset || page * Number(limit));
-      const response = await getOrganizations({ query: {q, sort, order, limit, offset }, signal, throwOnError: true, });
-      return response;
+      return await getOrganizations({ query: {q, sort, order, limit, offset }, signal, throwOnError: true, });
     },
     getNextPageParam: (_lastPage, allPages) => {
       const page = allPages.length;
@@ -91,10 +87,7 @@ export const organizationsQueryOptions = ({
 export const useOrganizationCreateMutation = () => {
   return useMutation<OrganizationWithMembership, ApiError, CreateOrganizationData['body']>({
     mutationKey: organizationsKeys.create(),
-    mutationFn: async (body) => {
-      const response = await createOrganization({ body, throwOnError: true })
-      return response;
-    },
+    mutationFn: (body) =>  createOrganization({ body, throwOnError: true }),
     onSuccess: (createdOrganization) => {
       const mutateCache = useMutateQueryData(organizationsKeys.table.base());
 
@@ -114,10 +107,7 @@ export const useOrganizationCreateMutation = () => {
 export const useOrganizationUpdateMutation = () => {
   return useMutation<Organization, ApiError, { idOrSlug: string; body: UpdateOrganizationData['body'] }>({
     mutationKey: organizationsKeys.update(),
-    mutationFn: async ({ idOrSlug, body }) =>  {
-      const response = await updateOrganization({ body, path: { idOrSlug }, throwOnError: true });
-      return response;
-    },
+    mutationFn: ({ idOrSlug, body }) => updateOrganization({ body, path: { idOrSlug }, throwOnError: true }),
     onSuccess: (updatedOrganization) => {
       // Update menuItem in store, only if it has membership is not null
       if (updatedOrganization.membership) updateMenuItem({ ...updatedOrganization, membership: updatedOrganization.membership });

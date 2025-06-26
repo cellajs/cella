@@ -25,9 +25,7 @@ export const entitiesQueryOptions = (query: NonNullable<GetPageEntitiesData['que
   const searchQuery = query.q ?? '';
   return queryOptions({
     queryKey: entitiesKeys.search(searchQuery),
-    queryFn: async () =>{ 
-      return await getPageEntities({query, throwOnError: true});
-    },
+    queryFn: () => getPageEntities({query, throwOnError: true}),
     staleTime: 0,
     enabled: searchQuery.trim().length > 0, // to avoid issues with spaces
     initialData: { items: [], total: 0, counts: {} },
@@ -48,9 +46,7 @@ export const contextEntitiesQueryOptions = (query : GetContextEntitiesData['quer
   const targetUserId = query.targetUserId ?? user.id;
   return queryOptions({
     queryKey: entitiesKeys.grid.context({ q, sort, targetUserId, type: query.type, roles: query.roles }),
-    queryFn: async () =>{
-      return await  getContextEntities({ query, throwOnError: true });
-    },
+    queryFn: () => getContextEntities({ query, throwOnError: true }),
     staleTime: 0,
   });
 };

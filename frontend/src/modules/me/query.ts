@@ -47,10 +47,7 @@ export const menuQueryOptions = () => queryOptions({ queryKey: meKeys.menu(), qu
 export const useUpdateSelfMutation = () => {
   return useMutation<User, ApiError, Omit<UpdateUserData['body'], 'role'>>({
     mutationKey: meKeys.update(),
-    mutationFn: async (body) => {
-      const response = await updateMe({ body, throwOnError: true });
-      return response;
-    },
+    mutationFn: (body) => updateMe({ body, throwOnError: true }),
     onSuccess: (updatedUser) => {
       const updateUser = useUserStore.getState().updateUser;
 

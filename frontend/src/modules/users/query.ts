@@ -29,10 +29,7 @@ export const usersKeys = {
  * @returns Query options.
  */
 export const userQueryOptions = (idOrSlug: string) =>
-  queryOptions({ queryKey: usersKeys.single.byIdOrSlug(idOrSlug), queryFn: async () => {
-    const response = await getUser({path: { idOrSlug }, throwOnError: true });
-    return response
-  } });
+  queryOptions({ queryKey: usersKeys.single.byIdOrSlug(idOrSlug), queryFn: () => getUser({path: { idOrSlug }, throwOnError: true })});
 
 /**
  * Infinite query options to get a paginated list of users.
@@ -55,8 +52,7 @@ export const usersQueryOptions = ({ q = '', sort: _sort, order: _order, role, li
     initialPageParam: { page: 0, offset: 0 },
     queryFn: async ({ pageParam: { page, offset: _offset }, signal }) => {
       const offset = String(_offset || page * Number(limit));
-      const response = await getUsers({ query: { q, sort, order, role, limit, offset }, signal, throwOnError: true });
-      return response;
+      return await getUsers({ query: { q, sort, order, role, limit, offset }, signal, throwOnError: true });
     },
     getNextPageParam: (_lastPage, allPages) => {
       const page = allPages.length;
@@ -74,10 +70,7 @@ export const usersQueryOptions = ({ q = '', sort: _sort, order: _order, role, li
 export const useUpdateUserMutation = () => {
   return useMutation<User, ApiError, UpdateUserData['body'] & { idOrSlug: string }>({
     mutationKey: usersKeys.update(),
-    mutationFn: async ({ idOrSlug, ...body }) => {
-      const response = await updateUser({path: { idOrSlug }, body, throwOnError: true });
-      return response;
-    },
+    mutationFn: ({ idOrSlug, ...body }) => updateUser({path: { idOrSlug }, body, throwOnError: true }),
     onSuccess: (updatedUser) => {
       const mutateCache = useMutateQueryData(usersKeys.table.base(), () => usersKeys.single.base, ['update']);
 

@@ -33,13 +33,11 @@ export const groupedAttachmentsQueryOptions = ({ orgIdOrSlug, attachmentId }: Pi
 
   return queryOptions({
     queryKey,
-    queryFn: async () => {
-      return await getAttachments({ 
+    queryFn: () => getAttachments({ 
         query: { attachmentId, offset: String(0), limit : String(config.requestLimits.attachments) },  
         path: {orgIdOrSlug}, 
         throwOnError: true
-      })
-    },
+      }),
     staleTime: 0,
     gcTime: 0,
   });
@@ -75,7 +73,6 @@ export const attachmentsQueryOptions = ({
     initialPageParam: { page: 0, offset: 0 },
     queryFn: async ({ pageParam: { page, offset: _offset }, signal }) => {
       const offset = String(_offset || page * Number(limit));
-      
       return await getAttachments({ query: { q, sort, order, limit, offset }, path: { orgIdOrSlug }, signal, throwOnError: true  });
     },
     getNextPageParam: (_lastPage, allPages) => {
