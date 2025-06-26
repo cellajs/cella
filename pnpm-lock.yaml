@@ -319,23 +319,23 @@ importers:
         specifier: ^12.1.0
         version: 12.1.0
       cross-spawn:
-        specifier: ^7.0.3
+        specifier: ^7.0.6
         version: 7.0.6
       inquirer-file-selector:
         specifier: ^0.4.0
         version: 0.4.0
       picocolors:
-        specifier: ^1.1.0
+        specifier: ^1.1.1
         version: 1.1.1
       validate-npm-package-name:
         specifier: ^5.0.1
         version: 5.0.1
       yocto-spinner:
-        specifier: ^0.1.0
-        version: 0.1.0
+        specifier: ^0.1.2
+        version: 0.1.2
     devDependencies:
       tsx:
-        specifier: ^4.19.2
+        specifier: ^4.20.3
         version: 4.20.3
 
   config: {}
@@ -1275,6 +1275,11 @@ packages:
     engines: {node: '>=6.0.0'}
     hasBin: true
 
+  '@babel/parser@7.27.7':
+    resolution: {integrity: sha512-qnzXzDXdr/po3bOTbTIQZ7+TxNKxpkN5IifVLXS+r7qwynkZfPyjZfE7hCXbo7IoO9TNcSyibgONsf2HauUd3Q==}
+    engines: {node: '>=6.0.0'}
+    hasBin: true
+
   '@babel/plugin-bugfix-firefox-class-in-computed-class-key@7.27.1':
     resolution: {integrity: sha512-QPG3C9cCVRQLxAVwmefEmwdTanECuUBMQZ/ym5kiw3XKCGA7qkuQLcjWWHcrD/GKbn/WmJwaezfuuAOcyKlRPA==}
     engines: {node: '>=6.9.0'}
@@ -1696,6 +1701,10 @@ packages:
 
   '@babel/types@7.27.6':
     resolution: {integrity: sha512-ETyHEk2VHHvl9b9jZP5IHPavHYk57EhanlRRuae9XCpb/j5bDCbPPMOBfCWhnl/7EDJz0jEMCi/RhccCE8r1+Q==}
+    engines: {node: '>=6.9.0'}
+
+  '@babel/types@7.27.7':
+    resolution: {integrity: sha512-8OLQgDScAOHXnAz2cV+RfzzNMipuLVBz2biuAJFMV9bfkNf393je3VM8CLkjQodW5+iWsSJdSgSWT6rsZoXHPw==}
     engines: {node: '>=6.9.0'}
 
   '@bandwidth/messaging@4.1.7':
@@ -2609,6 +2618,7 @@ packages:
 
   '@evilmartians/lefthook@1.11.14':
     resolution: {integrity: sha512-vh6lqXVwh7uhI5C/gKB7InW8RyMFYXN27U4Hlum8ZBcDrOviF9fmcBJf4C6ZboWkD3j8v1qp4psc3bwynhPlTQ==}
+    cpu: [x64, arm64, ia32]
     os: [darwin, linux, win32]
     hasBin: true
 
@@ -2828,6 +2838,10 @@ packages:
 
   '@inquirer/expand@3.0.1':
     resolution: {integrity: sha512-ToG8d6RIbnVpbdPdiN7BCxZGiHOTomOX94C2FaT5KOHupV40tKEDozp12res6cMIfRKrXLJyexAZhWVHgbALSQ==}
+    engines: {node: '>=18'}
+
+  '@inquirer/figures@1.0.12':
+    resolution: {integrity: sha512-MJttijd8rMFcKJC8NYmprWr6hD3r9Gd9qUC0XwPNwoEPWSMVJwA2MlXxF+nhZZNMY+HXsWa+o7KY2emWYIn0jQ==}
     engines: {node: '>=18'}
 
   '@inquirer/figures@1.0.6':
@@ -12031,6 +12045,10 @@ packages:
     resolution: {integrity: sha512-sBra0N4uhNn5UibnOz/HJxB1a0tzZ5zXbqnDe+tfRR3BGy+BmOrzrnQCZRJI7C++JiSZaPygPeNon4QCUmMQ4g==}
     engines: {node: '>=18.19'}
 
+  yocto-spinner@0.1.2:
+    resolution: {integrity: sha512-VfmLIh/ZSZOJnVRQZc/dvpPP90lWL4G0bmxQMP0+U/2vKBA8GSpcBuWv17y7F+CZItRuO97HN1wdbb4p10uhOg==}
+    engines: {node: '>=18.19'}
+
   yoctocolors-cjs@2.1.2:
     resolution: {integrity: sha512-cYVsTjKl8b+FrnidjibDWskAv7UKOfcwaVZdp/it9n1s9fU3IkgDbhdIRKCW4JDsAlECJY0ytoVPT3sK6kideA==}
     engines: {node: '>=18'}
@@ -13270,6 +13288,11 @@ snapshots:
     dependencies:
       '@babel/types': 7.27.6
 
+  '@babel/parser@7.27.7':
+    dependencies:
+      '@babel/types': 7.27.7
+    optional: true
+
   '@babel/plugin-bugfix-firefox-class-in-computed-class-key@7.27.1(@babel/core@7.27.4)':
     dependencies:
       '@babel/core': 7.27.4
@@ -13803,6 +13826,12 @@ snapshots:
     dependencies:
       '@babel/helper-string-parser': 7.27.1
       '@babel/helper-validator-identifier': 7.27.1
+
+  '@babel/types@7.27.7':
+    dependencies:
+      '@babel/helper-string-parser': 7.27.1
+      '@babel/helper-validator-identifier': 7.27.1
+    optional: true
 
   '@bandwidth/messaging@4.1.7':
     dependencies:
@@ -14750,7 +14779,7 @@ snapshots:
 
   '@inquirer/core@9.2.1':
     dependencies:
-      '@inquirer/figures': 1.0.6
+      '@inquirer/figures': 1.0.12
       '@inquirer/type': 2.0.0
       '@types/mute-stream': 0.0.4
       '@types/node': 22.15.33
@@ -14774,6 +14803,8 @@ snapshots:
       '@inquirer/core': 9.2.1
       '@inquirer/type': 2.0.0
       yoctocolors-cjs: 2.1.2
+
+  '@inquirer/figures@1.0.12': {}
 
   '@inquirer/figures@1.0.6': {}
 
@@ -19029,7 +19060,7 @@ snapshots:
 
   '@vue/compiler-core@3.5.13':
     dependencies:
-      '@babel/parser': 7.27.5
+      '@babel/parser': 7.27.7
       '@vue/shared': 3.5.13
       entities: 4.5.0
       estree-walker: 2.0.2
@@ -19044,7 +19075,7 @@ snapshots:
 
   '@vue/compiler-sfc@3.5.13':
     dependencies:
-      '@babel/parser': 7.27.5
+      '@babel/parser': 7.27.7
       '@vue/compiler-core': 3.5.13
       '@vue/compiler-dom': 3.5.13
       '@vue/compiler-ssr': 3.5.13
@@ -21401,7 +21432,7 @@ snapshots:
   inquirer-file-selector@0.4.0:
     dependencies:
       '@inquirer/core': 9.2.1
-      '@inquirer/figures': 1.0.6
+      '@inquirer/figures': 1.0.12
       chalk: 5.4.1
 
   internal-slot@1.1.0:
@@ -25629,6 +25660,10 @@ snapshots:
   yocto-queue@1.2.1: {}
 
   yocto-spinner@0.1.0:
+    dependencies:
+      yoctocolors: 2.1.1
+
+  yocto-spinner@0.1.2:
     dependencies:
       yoctocolors: 2.1.1
 
