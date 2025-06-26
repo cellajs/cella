@@ -64,7 +64,6 @@ export const membersQueryOptions = ({
         query: { q, sort, order, role, limit, idOrSlug, entityType, offset },
         path: { orgIdOrSlug },
         signal,
-        throwOnError: true,
       });
     },
     getNextPageParam: (_lastPage, allPages) => {
@@ -113,7 +112,6 @@ export const pendingInvitationsQueryOptions = ({
         query: { q, sort, order, limit, idOrSlug, entityType, offset },
         path: { orgIdOrSlug },
         signal,
-        throwOnError: true,
       });
     },
     getNextPageParam: (_lastPage, allPages) => {

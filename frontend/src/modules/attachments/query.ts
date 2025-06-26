@@ -37,7 +37,6 @@ export const groupedAttachmentsQueryOptions = ({ orgIdOrSlug, attachmentId }: Pi
       getAttachments({
         query: { attachmentId, offset: String(0), limit: String(config.requestLimits.attachments) },
         path: { orgIdOrSlug },
-        throwOnError: true,
       }),
     staleTime: 0,
     gcTime: 0,

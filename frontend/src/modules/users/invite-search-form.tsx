@@ -58,7 +58,6 @@ const InviteSearchForm = ({ entity, dialog: isDialog }: Props) => {
         body,
         query: { idOrSlug: entity.id, entityType: entity.entityType || 'organization' },
         path: { orgIdOrSlug: entity.organizationId || entity.id },
-        throwOnError: true,
       });
     },
     onSuccess: (_, { emails }) => {

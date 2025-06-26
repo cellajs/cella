@@ -120,7 +120,6 @@ export const MembersTableBar = ({
         entityType: entity.entityType,
       },
       path: { orgIdOrSlug: entity.organizationId || entity.id },
-      throwOnError: true,
     });
     return items;
   };

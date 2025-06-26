@@ -50,7 +50,6 @@ const BaseDataTable = memo(
             emails: [user.email],
             role: organization.membership?.role,
           },
-          throwOnError: true,
         })
           .then(() => {
             getAndSetMenu();

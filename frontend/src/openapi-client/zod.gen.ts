@@ -70,6 +70,21 @@ export const zMenuSchema = z.object({
   ),
 });
 
+export const zApiError = z.object({
+  name: z.string(),
+  message: z.string(),
+  type: z.string(),
+  status: z.number(),
+  severity: z.enum(['debug', 'log', 'info', 'warn', 'error']),
+  entityType: z.enum(['user', 'organization', 'attachment']).optional(),
+  logId: z.string().optional(),
+  path: z.string().optional(),
+  method: z.string().optional(),
+  timestamp: z.string().optional(),
+  userId: z.string().optional(),
+  organizationId: z.string().optional(),
+});
+
 export const zCheckEmailData = z.object({
   body: z
     .object({
@@ -563,22 +578,7 @@ export const zDeleteSessionsData = z.object({
  */
 export const zDeleteSessionsResponse = z.object({
   success: z.boolean(),
-  errors: z.array(
-    z.object({
-      name: z.string(),
-      message: z.string(),
-      type: z.string(),
-      status: z.number(),
-      severity: z.enum(['debug', 'log', 'info', 'warn', 'error']),
-      entityType: z.enum(['user', 'organization', 'attachment']).optional(),
-      logId: z.string().optional(),
-      path: z.string().optional(),
-      method: z.string().optional(),
-      timestamp: z.string().optional(),
-      userId: z.string().optional(),
-      organizationId: z.string().optional(),
-    }),
-  ),
+  errors: z.array(zApiError),
 });
 
 export const zDeleteMyMembershipData = z.object({
@@ -670,22 +670,7 @@ export const zDeleteUsersData = z.object({
  */
 export const zDeleteUsersResponse = z.object({
   success: z.boolean(),
-  errors: z.array(
-    z.object({
-      name: z.string(),
-      message: z.string(),
-      type: z.string(),
-      status: z.number(),
-      severity: z.enum(['debug', 'log', 'info', 'warn', 'error']),
-      entityType: z.enum(['user', 'organization', 'attachment']).optional(),
-      logId: z.string().optional(),
-      path: z.string().optional(),
-      method: z.string().optional(),
-      timestamp: z.string().optional(),
-      userId: z.string().optional(),
-      organizationId: z.string().optional(),
-    }),
-  ),
+  errors: z.array(zApiError),
 });
 
 export const zGetUsersData = z.object({
@@ -822,22 +807,7 @@ export const zDeleteOrganizationsData = z.object({
  */
 export const zDeleteOrganizationsResponse = z.object({
   success: z.boolean(),
-  errors: z.array(
-    z.object({
-      name: z.string(),
-      message: z.string(),
-      type: z.string(),
-      status: z.number(),
-      severity: z.enum(['debug', 'log', 'info', 'warn', 'error']),
-      entityType: z.enum(['user', 'organization', 'attachment']).optional(),
-      logId: z.string().optional(),
-      path: z.string().optional(),
-      method: z.string().optional(),
-      timestamp: z.string().optional(),
-      userId: z.string().optional(),
-      organizationId: z.string().optional(),
-    }),
-  ),
+  errors: z.array(zApiError),
 });
 
 export const zGetOrganizationsData = z.object({
@@ -1276,22 +1246,7 @@ export const zDeleteRequestsData = z.object({
  */
 export const zDeleteRequestsResponse = z.object({
   success: z.boolean(),
-  errors: z.array(
-    z.object({
-      name: z.string(),
-      message: z.string(),
-      type: z.string(),
-      status: z.number(),
-      severity: z.enum(['debug', 'log', 'info', 'warn', 'error']),
-      entityType: z.enum(['user', 'organization', 'attachment']).optional(),
-      logId: z.string().optional(),
-      path: z.string().optional(),
-      method: z.string().optional(),
-      timestamp: z.string().optional(),
-      userId: z.string().optional(),
-      organizationId: z.string().optional(),
-    }),
-  ),
+  errors: z.array(zApiError),
 });
 
 export const zGetRequestsData = z.object({
@@ -1403,22 +1358,7 @@ export const zDeleteAttachmentsData = z.object({
  */
 export const zDeleteAttachmentsResponse = z.object({
   success: z.boolean(),
-  errors: z.array(
-    z.object({
-      name: z.string(),
-      message: z.string(),
-      type: z.string(),
-      status: z.number(),
-      severity: z.enum(['debug', 'log', 'info', 'warn', 'error']),
-      entityType: z.enum(['user', 'organization', 'attachment']).optional(),
-      logId: z.string().optional(),
-      path: z.string().optional(),
-      method: z.string().optional(),
-      timestamp: z.string().optional(),
-      userId: z.string().optional(),
-      organizationId: z.string().optional(),
-    }),
-  ),
+  errors: z.array(zApiError),
 });
 
 export const zGetAttachmentsData = z.object({
@@ -1614,22 +1554,7 @@ export const zDeleteMembershipsData = z.object({
  */
 export const zDeleteMembershipsResponse = z.object({
   success: z.boolean(),
-  errors: z.array(
-    z.object({
-      name: z.string(),
-      message: z.string(),
-      type: z.string(),
-      status: z.number(),
-      severity: z.enum(['debug', 'log', 'info', 'warn', 'error']),
-      entityType: z.enum(['user', 'organization', 'attachment']).optional(),
-      logId: z.string().optional(),
-      path: z.string().optional(),
-      method: z.string().optional(),
-      timestamp: z.string().optional(),
-      userId: z.string().optional(),
-      organizationId: z.string().optional(),
-    }),
-  ),
+  errors: z.array(zApiError),
 });
 
 export const zMembershipInviteData = z.object({

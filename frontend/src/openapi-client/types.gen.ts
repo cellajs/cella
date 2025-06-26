@@ -62,6 +62,21 @@ export type MenuSchema = {
   }>;
 };
 
+export type ApiError = {
+  name: string;
+  message: string;
+  type: string;
+  status: number;
+  severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
+  entityType?: 'user' | 'organization' | 'attachment';
+  logId?: string;
+  path?: string;
+  method?: string;
+  timestamp?: string;
+  userId?: string;
+  organizationId?: string;
+};
+
 export type CheckEmailData = {
   body?: {
     email: string;
@@ -75,88 +90,23 @@ export type CheckEmailErrors = {
   /**
    * Bad request: problem processing request.
    */
-  400: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  400: ApiError;
   /**
    * Unauthorized: authentication required.
    */
-  401: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  401: ApiError;
   /**
    * Forbidden: insufficient permissions.
    */
-  403: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  403: ApiError;
   /**
    * Not found: resource does not exist.
    */
-  404: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  404: ApiError;
   /**
    * Rate limit: too many requests.
    */
-  429: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  429: ApiError;
 };
 
 export type CheckEmailError = CheckEmailErrors[keyof CheckEmailErrors];
@@ -184,88 +134,23 @@ export type SignUpErrors = {
   /**
    * Bad request: problem processing request.
    */
-  400: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  400: ApiError;
   /**
    * Unauthorized: authentication required.
    */
-  401: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  401: ApiError;
   /**
    * Forbidden: insufficient permissions.
    */
-  403: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  403: ApiError;
   /**
    * Not found: resource does not exist.
    */
-  404: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  404: ApiError;
   /**
    * Rate limit: too many requests.
    */
-  429: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  429: ApiError;
 };
 
 export type SignUpError = SignUpErrors[keyof SignUpErrors];
@@ -295,88 +180,23 @@ export type SignUpWithTokenErrors = {
   /**
    * Bad request: problem processing request.
    */
-  400: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  400: ApiError;
   /**
    * Unauthorized: authentication required.
    */
-  401: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  401: ApiError;
   /**
    * Forbidden: insufficient permissions.
    */
-  403: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  403: ApiError;
   /**
    * Not found: resource does not exist.
    */
-  404: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  404: ApiError;
   /**
    * Rate limit: too many requests.
    */
-  429: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  429: ApiError;
 };
 
 export type SignUpWithTokenError = SignUpWithTokenErrors[keyof SignUpWithTokenErrors];
@@ -404,88 +224,23 @@ export type SendVerificationEmailErrors = {
   /**
    * Bad request: problem processing request.
    */
-  400: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  400: ApiError;
   /**
    * Unauthorized: authentication required.
    */
-  401: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  401: ApiError;
   /**
    * Forbidden: insufficient permissions.
    */
-  403: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  403: ApiError;
   /**
    * Not found: resource does not exist.
    */
-  404: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  404: ApiError;
   /**
    * Rate limit: too many requests.
    */
-  429: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  429: ApiError;
 };
 
 export type SendVerificationEmailError = SendVerificationEmailErrors[keyof SendVerificationEmailErrors];
@@ -512,88 +267,23 @@ export type VerifyEmailErrors = {
   /**
    * Bad request: problem processing request.
    */
-  400: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  400: ApiError;
   /**
    * Unauthorized: authentication required.
    */
-  401: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  401: ApiError;
   /**
    * Forbidden: insufficient permissions.
    */
-  403: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  403: ApiError;
   /**
    * Not found: resource does not exist.
    */
-  404: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  404: ApiError;
   /**
    * Rate limit: too many requests.
    */
-  429: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  429: ApiError;
 };
 
 export type VerifyEmailError = VerifyEmailErrors[keyof VerifyEmailErrors];
@@ -620,88 +310,23 @@ export type RequestPasswordErrors = {
   /**
    * Bad request: problem processing request.
    */
-  400: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  400: ApiError;
   /**
    * Unauthorized: authentication required.
    */
-  401: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  401: ApiError;
   /**
    * Forbidden: insufficient permissions.
    */
-  403: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  403: ApiError;
   /**
    * Not found: resource does not exist.
    */
-  404: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  404: ApiError;
   /**
    * Rate limit: too many requests.
    */
-  429: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  429: ApiError;
 };
 
 export type RequestPasswordError = RequestPasswordErrors[keyof RequestPasswordErrors];
@@ -730,88 +355,23 @@ export type CreatePasswordErrors = {
   /**
    * Bad request: problem processing request.
    */
-  400: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  400: ApiError;
   /**
    * Unauthorized: authentication required.
    */
-  401: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  401: ApiError;
   /**
    * Forbidden: insufficient permissions.
    */
-  403: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  403: ApiError;
   /**
    * Not found: resource does not exist.
    */
-  404: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  404: ApiError;
   /**
    * Rate limit: too many requests.
    */
-  429: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  429: ApiError;
 };
 
 export type CreatePasswordError = CreatePasswordErrors[keyof CreatePasswordErrors];
@@ -839,88 +399,23 @@ export type SignInErrors = {
   /**
    * Bad request: problem processing request.
    */
-  400: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  400: ApiError;
   /**
    * Unauthorized: authentication required.
    */
-  401: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  401: ApiError;
   /**
    * Forbidden: insufficient permissions.
    */
-  403: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  403: ApiError;
   /**
    * Not found: resource does not exist.
    */
-  404: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  404: ApiError;
   /**
    * Rate limit: too many requests.
    */
-  429: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  429: ApiError;
 };
 
 export type SignInError = SignInErrors[keyof SignInErrors];
@@ -949,88 +444,23 @@ export type CheckTokenErrors = {
   /**
    * Bad request: problem processing request.
    */
-  400: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  400: ApiError;
   /**
    * Unauthorized: authentication required.
    */
-  401: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  401: ApiError;
   /**
    * Forbidden: insufficient permissions.
    */
-  403: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  403: ApiError;
   /**
    * Not found: resource does not exist.
    */
-  404: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  404: ApiError;
   /**
    * Rate limit: too many requests.
    */
-  429: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  429: ApiError;
 };
 
 export type CheckTokenError = CheckTokenErrors[keyof CheckTokenErrors];
@@ -1064,88 +494,23 @@ export type AcceptEntityInviteErrors = {
   /**
    * Bad request: problem processing request.
    */
-  400: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  400: ApiError;
   /**
    * Unauthorized: authentication required.
    */
-  401: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  401: ApiError;
   /**
    * Forbidden: insufficient permissions.
    */
-  403: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  403: ApiError;
   /**
    * Not found: resource does not exist.
    */
-  404: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  404: ApiError;
   /**
    * Rate limit: too many requests.
    */
-  429: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  429: ApiError;
 };
 
 export type AcceptEntityInviteError = AcceptEntityInviteErrors[keyof AcceptEntityInviteErrors];
@@ -1190,88 +555,23 @@ export type StartImpersonationErrors = {
   /**
    * Bad request: problem processing request.
    */
-  400: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  400: ApiError;
   /**
    * Unauthorized: authentication required.
    */
-  401: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  401: ApiError;
   /**
    * Forbidden: insufficient permissions.
    */
-  403: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  403: ApiError;
   /**
    * Not found: resource does not exist.
    */
-  404: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  404: ApiError;
   /**
    * Rate limit: too many requests.
    */
-  429: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  429: ApiError;
 };
 
 export type StartImpersonationError = StartImpersonationErrors[keyof StartImpersonationErrors];
@@ -1296,88 +596,23 @@ export type StopImpersonationErrors = {
   /**
    * Bad request: problem processing request.
    */
-  400: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  400: ApiError;
   /**
    * Unauthorized: authentication required.
    */
-  401: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  401: ApiError;
   /**
    * Forbidden: insufficient permissions.
    */
-  403: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  403: ApiError;
   /**
    * Not found: resource does not exist.
    */
-  404: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  404: ApiError;
   /**
    * Rate limit: too many requests.
    */
-  429: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  429: ApiError;
 };
 
 export type StopImpersonationError = StopImpersonationErrors[keyof StopImpersonationErrors];
@@ -1402,88 +637,23 @@ export type SignOutErrors = {
   /**
    * Bad request: problem processing request.
    */
-  400: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  400: ApiError;
   /**
    * Unauthorized: authentication required.
    */
-  401: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  401: ApiError;
   /**
    * Forbidden: insufficient permissions.
    */
-  403: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  403: ApiError;
   /**
    * Not found: resource does not exist.
    */
-  404: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  404: ApiError;
   /**
    * Rate limit: too many requests.
    */
-  429: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  429: ApiError;
 };
 
 export type SignOutError = SignOutErrors[keyof SignOutErrors];
@@ -1513,88 +683,23 @@ export type GithubSignInErrors = {
   /**
    * Bad request: problem processing request.
    */
-  400: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  400: ApiError;
   /**
    * Unauthorized: authentication required.
    */
-  401: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  401: ApiError;
   /**
    * Forbidden: insufficient permissions.
    */
-  403: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  403: ApiError;
   /**
    * Not found: resource does not exist.
    */
-  404: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  404: ApiError;
   /**
    * Rate limit: too many requests.
    */
-  429: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  429: ApiError;
 };
 
 export type GithubSignInError = GithubSignInErrors[keyof GithubSignInErrors];
@@ -1615,88 +720,23 @@ export type GoogleSignInErrors = {
   /**
    * Bad request: problem processing request.
    */
-  400: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  400: ApiError;
   /**
    * Unauthorized: authentication required.
    */
-  401: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  401: ApiError;
   /**
    * Forbidden: insufficient permissions.
    */
-  403: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  403: ApiError;
   /**
    * Not found: resource does not exist.
    */
-  404: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  404: ApiError;
   /**
    * Rate limit: too many requests.
    */
-  429: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  429: ApiError;
 };
 
 export type GoogleSignInError = GoogleSignInErrors[keyof GoogleSignInErrors];
@@ -1717,88 +757,23 @@ export type MicrosoftSignInErrors = {
   /**
    * Bad request: problem processing request.
    */
-  400: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  400: ApiError;
   /**
    * Unauthorized: authentication required.
    */
-  401: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  401: ApiError;
   /**
    * Forbidden: insufficient permissions.
    */
-  403: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  403: ApiError;
   /**
    * Not found: resource does not exist.
    */
-  404: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  404: ApiError;
   /**
    * Rate limit: too many requests.
    */
-  429: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  429: ApiError;
 };
 
 export type MicrosoftSignInError = MicrosoftSignInErrors[keyof MicrosoftSignInErrors];
@@ -1820,88 +795,23 @@ export type GithubSignInCallbackErrors = {
   /**
    * Bad request: problem processing request.
    */
-  400: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  400: ApiError;
   /**
    * Unauthorized: authentication required.
    */
-  401: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  401: ApiError;
   /**
    * Forbidden: insufficient permissions.
    */
-  403: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  403: ApiError;
   /**
    * Not found: resource does not exist.
    */
-  404: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  404: ApiError;
   /**
    * Rate limit: too many requests.
    */
-  429: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  429: ApiError;
 };
 
 export type GithubSignInCallbackError = GithubSignInCallbackErrors[keyof GithubSignInCallbackErrors];
@@ -1920,88 +830,23 @@ export type GoogleSignInCallbackErrors = {
   /**
    * Bad request: problem processing request.
    */
-  400: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  400: ApiError;
   /**
    * Unauthorized: authentication required.
    */
-  401: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  401: ApiError;
   /**
    * Forbidden: insufficient permissions.
    */
-  403: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  403: ApiError;
   /**
    * Not found: resource does not exist.
    */
-  404: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  404: ApiError;
   /**
    * Rate limit: too many requests.
    */
-  429: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  429: ApiError;
 };
 
 export type GoogleSignInCallbackError = GoogleSignInCallbackErrors[keyof GoogleSignInCallbackErrors];
@@ -2020,88 +865,23 @@ export type MicrosoftSignInCallbackErrors = {
   /**
    * Bad request: problem processing request.
    */
-  400: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  400: ApiError;
   /**
    * Unauthorized: authentication required.
    */
-  401: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  401: ApiError;
   /**
    * Forbidden: insufficient permissions.
    */
-  403: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  403: ApiError;
   /**
    * Not found: resource does not exist.
    */
-  404: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  404: ApiError;
   /**
    * Rate limit: too many requests.
    */
-  429: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  429: ApiError;
 };
 
 export type MicrosoftSignInCallbackError = MicrosoftSignInCallbackErrors[keyof MicrosoftSignInCallbackErrors];
@@ -2117,88 +897,23 @@ export type GetPasskeyChallengeErrors = {
   /**
    * Bad request: problem processing request.
    */
-  400: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  400: ApiError;
   /**
    * Unauthorized: authentication required.
    */
-  401: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  401: ApiError;
   /**
    * Forbidden: insufficient permissions.
    */
-  403: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  403: ApiError;
   /**
    * Not found: resource does not exist.
    */
-  404: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  404: ApiError;
   /**
    * Rate limit: too many requests.
    */
-  429: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  429: ApiError;
 };
 
 export type GetPasskeyChallengeError = GetPasskeyChallengeErrors[keyof GetPasskeyChallengeErrors];
@@ -2230,88 +945,23 @@ export type SignInWithPasskeyErrors = {
   /**
    * Bad request: problem processing request.
    */
-  400: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  400: ApiError;
   /**
    * Unauthorized: authentication required.
    */
-  401: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  401: ApiError;
   /**
    * Forbidden: insufficient permissions.
    */
-  403: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  403: ApiError;
   /**
    * Not found: resource does not exist.
    */
-  404: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  404: ApiError;
   /**
    * Rate limit: too many requests.
    */
-  429: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  429: ApiError;
 };
 
 export type SignInWithPasskeyError = SignInWithPasskeyErrors[keyof SignInWithPasskeyErrors];
@@ -2336,88 +986,23 @@ export type DeleteMeErrors = {
   /**
    * Bad request: problem processing request.
    */
-  400: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  400: ApiError;
   /**
    * Unauthorized: authentication required.
    */
-  401: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  401: ApiError;
   /**
    * Forbidden: insufficient permissions.
    */
-  403: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  403: ApiError;
   /**
    * Not found: resource does not exist.
    */
-  404: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  404: ApiError;
   /**
    * Rate limit: too many requests.
    */
-  429: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  429: ApiError;
 };
 
 export type DeleteMeError = DeleteMeErrors[keyof DeleteMeErrors];
@@ -2442,88 +1027,23 @@ export type GetMeErrors = {
   /**
    * Bad request: problem processing request.
    */
-  400: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  400: ApiError;
   /**
    * Unauthorized: authentication required.
    */
-  401: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  401: ApiError;
   /**
    * Forbidden: insufficient permissions.
    */
-  403: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  403: ApiError;
   /**
    * Not found: resource does not exist.
    */
-  404: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  404: ApiError;
   /**
    * Rate limit: too many requests.
    */
-  429: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  429: ApiError;
 };
 
 export type GetMeError = GetMeErrors[keyof GetMeErrors];
@@ -2576,88 +1096,23 @@ export type UpdateMeErrors = {
   /**
    * Bad request: problem processing request.
    */
-  400: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  400: ApiError;
   /**
    * Unauthorized: authentication required.
    */
-  401: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  401: ApiError;
   /**
    * Forbidden: insufficient permissions.
    */
-  403: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  403: ApiError;
   /**
    * Not found: resource does not exist.
    */
-  404: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  404: ApiError;
   /**
    * Rate limit: too many requests.
    */
-  429: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  429: ApiError;
 };
 
 export type UpdateMeError = UpdateMeErrors[keyof UpdateMeErrors];
@@ -2702,88 +1157,23 @@ export type GetMyAuthErrors = {
   /**
    * Bad request: problem processing request.
    */
-  400: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  400: ApiError;
   /**
    * Unauthorized: authentication required.
    */
-  401: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  401: ApiError;
   /**
    * Forbidden: insufficient permissions.
    */
-  403: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  403: ApiError;
   /**
    * Not found: resource does not exist.
    */
-  404: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  404: ApiError;
   /**
    * Rate limit: too many requests.
    */
-  429: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  429: ApiError;
 };
 
 export type GetMyAuthError = GetMyAuthErrors[keyof GetMyAuthErrors];
@@ -2824,88 +1214,23 @@ export type GetMyMenuErrors = {
   /**
    * Bad request: problem processing request.
    */
-  400: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  400: ApiError;
   /**
    * Unauthorized: authentication required.
    */
-  401: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  401: ApiError;
   /**
    * Forbidden: insufficient permissions.
    */
-  403: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  403: ApiError;
   /**
    * Not found: resource does not exist.
    */
-  404: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  404: ApiError;
   /**
    * Rate limit: too many requests.
    */
-  429: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  429: ApiError;
 };
 
 export type GetMyMenuError = GetMyMenuErrors[keyof GetMyMenuErrors];
@@ -2973,88 +1298,23 @@ export type DeleteSessionsErrors = {
   /**
    * Bad request: problem processing request.
    */
-  400: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  400: ApiError;
   /**
    * Unauthorized: authentication required.
    */
-  401: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  401: ApiError;
   /**
    * Forbidden: insufficient permissions.
    */
-  403: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  403: ApiError;
   /**
    * Not found: resource does not exist.
    */
-  404: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  404: ApiError;
   /**
    * Rate limit: too many requests.
    */
-  429: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  429: ApiError;
 };
 
 export type DeleteSessionsError = DeleteSessionsErrors[keyof DeleteSessionsErrors];
@@ -3065,20 +1325,7 @@ export type DeleteSessionsResponses = {
    */
   200: {
     success: boolean;
-    errors: Array<{
-      name: string;
-      message: string;
-      type: string;
-      status: number;
-      severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-      entityType?: 'user' | 'organization' | 'attachment';
-      logId?: string;
-      path?: string;
-      method?: string;
-      timestamp?: string;
-      userId?: string;
-      organizationId?: string;
-    }>;
+    errors: Array<ApiError>;
   };
 };
 
@@ -3098,88 +1345,23 @@ export type DeleteMyMembershipErrors = {
   /**
    * Bad request: problem processing request.
    */
-  400: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  400: ApiError;
   /**
    * Unauthorized: authentication required.
    */
-  401: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  401: ApiError;
   /**
    * Forbidden: insufficient permissions.
    */
-  403: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  403: ApiError;
   /**
    * Not found: resource does not exist.
    */
-  404: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  404: ApiError;
   /**
    * Rate limit: too many requests.
    */
-  429: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  429: ApiError;
 };
 
 export type DeleteMyMembershipError = DeleteMyMembershipErrors[keyof DeleteMyMembershipErrors];
@@ -3204,88 +1386,23 @@ export type DeletePasskeyErrors = {
   /**
    * Bad request: problem processing request.
    */
-  400: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  400: ApiError;
   /**
    * Unauthorized: authentication required.
    */
-  401: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  401: ApiError;
   /**
    * Forbidden: insufficient permissions.
    */
-  403: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  403: ApiError;
   /**
    * Not found: resource does not exist.
    */
-  404: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  404: ApiError;
   /**
    * Rate limit: too many requests.
    */
-  429: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  429: ApiError;
 };
 
 export type DeletePasskeyError = DeletePasskeyErrors[keyof DeletePasskeyErrors];
@@ -3314,88 +1431,23 @@ export type CreatePasskeyErrors = {
   /**
    * Bad request: problem processing request.
    */
-  400: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  400: ApiError;
   /**
    * Unauthorized: authentication required.
    */
-  401: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  401: ApiError;
   /**
    * Forbidden: insufficient permissions.
    */
-  403: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  403: ApiError;
   /**
    * Not found: resource does not exist.
    */
-  404: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  404: ApiError;
   /**
    * Rate limit: too many requests.
    */
-  429: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  429: ApiError;
 };
 
 export type CreatePasskeyError = CreatePasskeyErrors[keyof CreatePasskeyErrors];
@@ -3424,88 +1476,23 @@ export type GetUploadTokenErrors = {
   /**
    * Bad request: problem processing request.
    */
-  400: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  400: ApiError;
   /**
    * Unauthorized: authentication required.
    */
-  401: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  401: ApiError;
   /**
    * Forbidden: insufficient permissions.
    */
-  403: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  403: ApiError;
   /**
    * Not found: resource does not exist.
    */
-  404: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  404: ApiError;
   /**
    * Rate limit: too many requests.
    */
-  429: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  429: ApiError;
 };
 
 export type GetUploadTokenError = GetUploadTokenErrors[keyof GetUploadTokenErrors];
@@ -3549,88 +1536,23 @@ export type UnsubscribeMeErrors = {
   /**
    * Bad request: problem processing request.
    */
-  400: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  400: ApiError;
   /**
    * Unauthorized: authentication required.
    */
-  401: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  401: ApiError;
   /**
    * Forbidden: insufficient permissions.
    */
-  403: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  403: ApiError;
   /**
    * Not found: resource does not exist.
    */
-  404: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  404: ApiError;
   /**
    * Rate limit: too many requests.
    */
-  429: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  429: ApiError;
 };
 
 export type UnsubscribeMeError = UnsubscribeMeErrors[keyof UnsubscribeMeErrors];
@@ -3648,88 +1570,23 @@ export type DeleteUsersErrors = {
   /**
    * Bad request: problem processing request.
    */
-  400: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  400: ApiError;
   /**
    * Unauthorized: authentication required.
    */
-  401: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  401: ApiError;
   /**
    * Forbidden: insufficient permissions.
    */
-  403: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  403: ApiError;
   /**
    * Not found: resource does not exist.
    */
-  404: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  404: ApiError;
   /**
    * Rate limit: too many requests.
    */
-  429: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  429: ApiError;
 };
 
 export type DeleteUsersError = DeleteUsersErrors[keyof DeleteUsersErrors];
@@ -3740,20 +1597,7 @@ export type DeleteUsersResponses = {
    */
   200: {
     success: boolean;
-    errors: Array<{
-      name: string;
-      message: string;
-      type: string;
-      status: number;
-      severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-      entityType?: 'user' | 'organization' | 'attachment';
-      logId?: string;
-      path?: string;
-      method?: string;
-      timestamp?: string;
-      userId?: string;
-      organizationId?: string;
-    }>;
+    errors: Array<ApiError>;
   };
 };
 
@@ -3777,88 +1621,23 @@ export type GetUsersErrors = {
   /**
    * Bad request: problem processing request.
    */
-  400: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  400: ApiError;
   /**
    * Unauthorized: authentication required.
    */
-  401: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  401: ApiError;
   /**
    * Forbidden: insufficient permissions.
    */
-  403: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  403: ApiError;
   /**
    * Not found: resource does not exist.
    */
-  404: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  404: ApiError;
   /**
    * Rate limit: too many requests.
    */
-  429: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  429: ApiError;
 };
 
 export type GetUsersError = GetUsersErrors[keyof GetUsersErrors];
@@ -3908,88 +1687,23 @@ export type GetUserErrors = {
   /**
    * Bad request: problem processing request.
    */
-  400: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  400: ApiError;
   /**
    * Unauthorized: authentication required.
    */
-  401: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  401: ApiError;
   /**
    * Forbidden: insufficient permissions.
    */
-  403: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  403: ApiError;
   /**
    * Not found: resource does not exist.
    */
-  404: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  404: ApiError;
   /**
    * Rate limit: too many requests.
    */
-  429: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  429: ApiError;
 };
 
 export type GetUserError = GetUserErrors[keyof GetUserErrors];
@@ -4044,88 +1758,23 @@ export type UpdateUserErrors = {
   /**
    * Bad request: problem processing request.
    */
-  400: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  400: ApiError;
   /**
    * Unauthorized: authentication required.
    */
-  401: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  401: ApiError;
   /**
    * Forbidden: insufficient permissions.
    */
-  403: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  403: ApiError;
   /**
    * Not found: resource does not exist.
    */
-  404: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  404: ApiError;
   /**
    * Rate limit: too many requests.
    */
-  429: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  429: ApiError;
 };
 
 export type UpdateUserError = UpdateUserErrors[keyof UpdateUserErrors];
@@ -4172,88 +1821,23 @@ export type DeleteOrganizationsErrors = {
   /**
    * Bad request: problem processing request.
    */
-  400: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  400: ApiError;
   /**
    * Unauthorized: authentication required.
    */
-  401: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  401: ApiError;
   /**
    * Forbidden: insufficient permissions.
    */
-  403: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  403: ApiError;
   /**
    * Not found: resource does not exist.
    */
-  404: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  404: ApiError;
   /**
    * Rate limit: too many requests.
    */
-  429: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  429: ApiError;
 };
 
 export type DeleteOrganizationsError = DeleteOrganizationsErrors[keyof DeleteOrganizationsErrors];
@@ -4264,20 +1848,7 @@ export type DeleteOrganizationsResponses = {
    */
   200: {
     success: boolean;
-    errors: Array<{
-      name: string;
-      message: string;
-      type: string;
-      status: number;
-      severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-      entityType?: 'user' | 'organization' | 'attachment';
-      logId?: string;
-      path?: string;
-      method?: string;
-      timestamp?: string;
-      userId?: string;
-      organizationId?: string;
-    }>;
+    errors: Array<ApiError>;
   };
 };
 
@@ -4300,88 +1871,23 @@ export type GetOrganizationsErrors = {
   /**
    * Bad request: problem processing request.
    */
-  400: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  400: ApiError;
   /**
    * Unauthorized: authentication required.
    */
-  401: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  401: ApiError;
   /**
    * Forbidden: insufficient permissions.
    */
-  403: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  403: ApiError;
   /**
    * Not found: resource does not exist.
    */
-  404: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  404: ApiError;
   /**
    * Rate limit: too many requests.
    */
-  429: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  429: ApiError;
 };
 
 export type GetOrganizationsError = GetOrganizationsErrors[keyof GetOrganizationsErrors];
@@ -4458,88 +1964,23 @@ export type CreateOrganizationErrors = {
   /**
    * Bad request: problem processing request.
    */
-  400: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  400: ApiError;
   /**
    * Unauthorized: authentication required.
    */
-  401: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  401: ApiError;
   /**
    * Forbidden: insufficient permissions.
    */
-  403: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  403: ApiError;
   /**
    * Not found: resource does not exist.
    */
-  404: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  404: ApiError;
   /**
    * Rate limit: too many requests.
    */
-  429: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  429: ApiError;
 };
 
 export type CreateOrganizationError = CreateOrganizationErrors[keyof CreateOrganizationErrors];
@@ -4602,88 +2043,23 @@ export type GetOrganizationErrors = {
   /**
    * Bad request: problem processing request.
    */
-  400: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  400: ApiError;
   /**
    * Unauthorized: authentication required.
    */
-  401: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  401: ApiError;
   /**
    * Forbidden: insufficient permissions.
    */
-  403: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  403: ApiError;
   /**
    * Not found: resource does not exist.
    */
-  404: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  404: ApiError;
   /**
    * Rate limit: too many requests.
    */
-  429: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  429: ApiError;
 };
 
 export type GetOrganizationError = GetOrganizationErrors[keyof GetOrganizationErrors];
@@ -4764,88 +2140,23 @@ export type UpdateOrganizationErrors = {
   /**
    * Bad request: problem processing request.
    */
-  400: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  400: ApiError;
   /**
    * Unauthorized: authentication required.
    */
-  401: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  401: ApiError;
   /**
    * Forbidden: insufficient permissions.
    */
-  403: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  403: ApiError;
   /**
    * Not found: resource does not exist.
    */
-  404: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  404: ApiError;
   /**
    * Rate limit: too many requests.
    */
-  429: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  429: ApiError;
 };
 
 export type UpdateOrganizationError = UpdateOrganizationErrors[keyof UpdateOrganizationErrors];
@@ -4912,88 +2223,23 @@ export type GetPageEntitiesErrors = {
   /**
    * Bad request: problem processing request.
    */
-  400: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  400: ApiError;
   /**
    * Unauthorized: authentication required.
    */
-  401: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  401: ApiError;
   /**
    * Forbidden: insufficient permissions.
    */
-  403: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  403: ApiError;
   /**
    * Not found: resource does not exist.
    */
-  404: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  404: ApiError;
   /**
    * Rate limit: too many requests.
    */
-  429: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  429: ApiError;
 };
 
 export type GetPageEntitiesError = GetPageEntitiesErrors[keyof GetPageEntitiesErrors];
@@ -5050,88 +2296,23 @@ export type GetContextEntitiesErrors = {
   /**
    * Bad request: problem processing request.
    */
-  400: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  400: ApiError;
   /**
    * Unauthorized: authentication required.
    */
-  401: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  401: ApiError;
   /**
    * Forbidden: insufficient permissions.
    */
-  403: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  403: ApiError;
   /**
    * Not found: resource does not exist.
    */
-  404: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  404: ApiError;
   /**
    * Rate limit: too many requests.
    */
-  429: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  429: ApiError;
 };
 
 export type GetContextEntitiesError = GetContextEntitiesErrors[keyof GetContextEntitiesErrors];
@@ -5186,88 +2367,23 @@ export type CheckSlugErrors = {
   /**
    * Bad request: problem processing request.
    */
-  400: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  400: ApiError;
   /**
    * Unauthorized: authentication required.
    */
-  401: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  401: ApiError;
   /**
    * Forbidden: insufficient permissions.
    */
-  403: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  403: ApiError;
   /**
    * Not found: resource does not exist.
    */
-  404: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  404: ApiError;
   /**
    * Rate limit: too many requests.
    */
-  429: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  429: ApiError;
 };
 
 export type CheckSlugError = CheckSlugErrors[keyof CheckSlugErrors];
@@ -5294,88 +2410,23 @@ export type SystemInviteErrors = {
   /**
    * Bad request: problem processing request.
    */
-  400: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  400: ApiError;
   /**
    * Unauthorized: authentication required.
    */
-  401: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  401: ApiError;
   /**
    * Forbidden: insufficient permissions.
    */
-  403: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  403: ApiError;
   /**
    * Not found: resource does not exist.
    */
-  404: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  404: ApiError;
   /**
    * Rate limit: too many requests.
    */
-  429: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  429: ApiError;
 };
 
 export type SystemInviteError = SystemInviteErrors[keyof SystemInviteErrors];
@@ -5402,88 +2453,23 @@ export type GetPresignedUrlErrors = {
   /**
    * Bad request: problem processing request.
    */
-  400: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  400: ApiError;
   /**
    * Unauthorized: authentication required.
    */
-  401: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  401: ApiError;
   /**
    * Forbidden: insufficient permissions.
    */
-  403: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  403: ApiError;
   /**
    * Not found: resource does not exist.
    */
-  404: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  404: ApiError;
   /**
    * Rate limit: too many requests.
    */
-  429: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  429: ApiError;
 };
 
 export type GetPresignedUrlError = GetPresignedUrlErrors[keyof GetPresignedUrlErrors];
@@ -5508,88 +2494,23 @@ export type PaddleWebhookErrors = {
   /**
    * Bad request: problem processing request.
    */
-  400: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  400: ApiError;
   /**
    * Unauthorized: authentication required.
    */
-  401: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  401: ApiError;
   /**
    * Forbidden: insufficient permissions.
    */
-  403: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  403: ApiError;
   /**
    * Not found: resource does not exist.
    */
-  404: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  404: ApiError;
   /**
    * Rate limit: too many requests.
    */
-  429: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  429: ApiError;
 };
 
 export type PaddleWebhookError = PaddleWebhookErrors[keyof PaddleWebhookErrors];
@@ -5621,88 +2542,23 @@ export type SendNewsletterErrors = {
   /**
    * Bad request: problem processing request.
    */
-  400: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  400: ApiError;
   /**
    * Unauthorized: authentication required.
    */
-  401: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  401: ApiError;
   /**
    * Forbidden: insufficient permissions.
    */
-  403: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  403: ApiError;
   /**
    * Not found: resource does not exist.
    */
-  404: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  404: ApiError;
   /**
    * Rate limit: too many requests.
    */
-  429: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  429: ApiError;
 };
 
 export type SendNewsletterError = SendNewsletterErrors[keyof SendNewsletterErrors];
@@ -5729,88 +2585,23 @@ export type DeleteRequestsErrors = {
   /**
    * Bad request: problem processing request.
    */
-  400: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  400: ApiError;
   /**
    * Unauthorized: authentication required.
    */
-  401: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  401: ApiError;
   /**
    * Forbidden: insufficient permissions.
    */
-  403: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  403: ApiError;
   /**
    * Not found: resource does not exist.
    */
-  404: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  404: ApiError;
   /**
    * Rate limit: too many requests.
    */
-  429: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  429: ApiError;
 };
 
 export type DeleteRequestsError = DeleteRequestsErrors[keyof DeleteRequestsErrors];
@@ -5821,20 +2612,7 @@ export type DeleteRequestsResponses = {
    */
   200: {
     success: boolean;
-    errors: Array<{
-      name: string;
-      message: string;
-      type: string;
-      status: number;
-      severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-      entityType?: 'user' | 'organization' | 'attachment';
-      logId?: string;
-      path?: string;
-      method?: string;
-      timestamp?: string;
-      userId?: string;
-      organizationId?: string;
-    }>;
+    errors: Array<ApiError>;
   };
 };
 
@@ -5857,88 +2635,23 @@ export type GetRequestsErrors = {
   /**
    * Bad request: problem processing request.
    */
-  400: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  400: ApiError;
   /**
    * Unauthorized: authentication required.
    */
-  401: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  401: ApiError;
   /**
    * Forbidden: insufficient permissions.
    */
-  403: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  403: ApiError;
   /**
    * Not found: resource does not exist.
    */
-  404: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  404: ApiError;
   /**
    * Rate limit: too many requests.
    */
-  429: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  429: ApiError;
 };
 
 export type GetRequestsError = GetRequestsErrors[keyof GetRequestsErrors];
@@ -5977,88 +2690,23 @@ export type CreateRequestErrors = {
   /**
    * Bad request: problem processing request.
    */
-  400: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  400: ApiError;
   /**
    * Unauthorized: authentication required.
    */
-  401: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  401: ApiError;
   /**
    * Forbidden: insufficient permissions.
    */
-  403: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  403: ApiError;
   /**
    * Not found: resource does not exist.
    */
-  404: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  404: ApiError;
   /**
    * Rate limit: too many requests.
    */
-  429: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  429: ApiError;
 };
 
 export type CreateRequestError = CreateRequestErrors[keyof CreateRequestErrors];
@@ -6090,88 +2738,23 @@ export type GetMetricsErrors = {
   /**
    * Bad request: problem processing request.
    */
-  400: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  400: ApiError;
   /**
    * Unauthorized: authentication required.
    */
-  401: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  401: ApiError;
   /**
    * Forbidden: insufficient permissions.
    */
-  403: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  403: ApiError;
   /**
    * Not found: resource does not exist.
    */
-  404: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  404: ApiError;
   /**
    * Rate limit: too many requests.
    */
-  429: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  429: ApiError;
 };
 
 export type GetMetricsError = GetMetricsErrors[keyof GetMetricsErrors];
@@ -6199,88 +2782,23 @@ export type GetPublicCountsErrors = {
   /**
    * Bad request: problem processing request.
    */
-  400: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  400: ApiError;
   /**
    * Unauthorized: authentication required.
    */
-  401: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  401: ApiError;
   /**
    * Forbidden: insufficient permissions.
    */
-  403: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  403: ApiError;
   /**
    * Not found: resource does not exist.
    */
-  404: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  404: ApiError;
   /**
    * Rate limit: too many requests.
    */
-  429: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  429: ApiError;
 };
 
 export type GetPublicCountsError = GetPublicCountsErrors[keyof GetPublicCountsErrors];
@@ -6311,88 +2829,23 @@ export type ShapeProxyErrors = {
   /**
    * Bad request: problem processing request.
    */
-  400: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  400: ApiError;
   /**
    * Unauthorized: authentication required.
    */
-  401: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  401: ApiError;
   /**
    * Forbidden: insufficient permissions.
    */
-  403: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  403: ApiError;
   /**
    * Not found: resource does not exist.
    */
-  404: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  404: ApiError;
   /**
    * Rate limit: too many requests.
    */
-  429: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  429: ApiError;
 };
 
 export type ShapeProxyError = ShapeProxyErrors[keyof ShapeProxyErrors];
@@ -6419,88 +2872,23 @@ export type DeleteAttachmentsErrors = {
   /**
    * Bad request: problem processing request.
    */
-  400: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  400: ApiError;
   /**
    * Unauthorized: authentication required.
    */
-  401: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  401: ApiError;
   /**
    * Forbidden: insufficient permissions.
    */
-  403: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  403: ApiError;
   /**
    * Not found: resource does not exist.
    */
-  404: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  404: ApiError;
   /**
    * Rate limit: too many requests.
    */
-  429: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  429: ApiError;
 };
 
 export type DeleteAttachmentsError = DeleteAttachmentsErrors[keyof DeleteAttachmentsErrors];
@@ -6511,20 +2899,7 @@ export type DeleteAttachmentsResponses = {
    */
   200: {
     success: boolean;
-    errors: Array<{
-      name: string;
-      message: string;
-      type: string;
-      status: number;
-      severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-      entityType?: 'user' | 'organization' | 'attachment';
-      logId?: string;
-      path?: string;
-      method?: string;
-      timestamp?: string;
-      userId?: string;
-      organizationId?: string;
-    }>;
+    errors: Array<ApiError>;
   };
 };
 
@@ -6550,88 +2925,23 @@ export type GetAttachmentsErrors = {
   /**
    * Bad request: problem processing request.
    */
-  400: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  400: ApiError;
   /**
    * Unauthorized: authentication required.
    */
-  401: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  401: ApiError;
   /**
    * Forbidden: insufficient permissions.
    */
-  403: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  403: ApiError;
   /**
    * Not found: resource does not exist.
    */
-  404: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  404: ApiError;
   /**
    * Rate limit: too many requests.
    */
-  429: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  429: ApiError;
 };
 
 export type GetAttachmentsError = GetAttachmentsErrors[keyof GetAttachmentsErrors];
@@ -6689,88 +2999,23 @@ export type CreateAttachmentErrors = {
   /**
    * Bad request: problem processing request.
    */
-  400: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  400: ApiError;
   /**
    * Unauthorized: authentication required.
    */
-  401: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  401: ApiError;
   /**
    * Forbidden: insufficient permissions.
    */
-  403: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  403: ApiError;
   /**
    * Not found: resource does not exist.
    */
-  404: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  404: ApiError;
   /**
    * Rate limit: too many requests.
    */
-  429: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  429: ApiError;
 };
 
 export type CreateAttachmentError = CreateAttachmentErrors[keyof CreateAttachmentErrors];
@@ -6815,88 +3060,23 @@ export type GetAttachmentErrors = {
   /**
    * Bad request: problem processing request.
    */
-  400: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  400: ApiError;
   /**
    * Unauthorized: authentication required.
    */
-  401: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  401: ApiError;
   /**
    * Forbidden: insufficient permissions.
    */
-  403: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  403: ApiError;
   /**
    * Not found: resource does not exist.
    */
-  404: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  404: ApiError;
   /**
    * Rate limit: too many requests.
    */
-  429: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  429: ApiError;
 };
 
 export type GetAttachmentError = GetAttachmentErrors[keyof GetAttachmentErrors];
@@ -6944,88 +3124,23 @@ export type UpdateAttachmentErrors = {
   /**
    * Bad request: problem processing request.
    */
-  400: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  400: ApiError;
   /**
    * Unauthorized: authentication required.
    */
-  401: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  401: ApiError;
   /**
    * Forbidden: insufficient permissions.
    */
-  403: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  403: ApiError;
   /**
    * Not found: resource does not exist.
    */
-  404: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  404: ApiError;
   /**
    * Rate limit: too many requests.
    */
-  429: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  429: ApiError;
 };
 
 export type UpdateAttachmentError = UpdateAttachmentErrors[keyof UpdateAttachmentErrors];
@@ -7069,88 +3184,23 @@ export type GetAttachmentCoverErrors = {
   /**
    * Bad request: problem processing request.
    */
-  400: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  400: ApiError;
   /**
    * Unauthorized: authentication required.
    */
-  401: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  401: ApiError;
   /**
    * Forbidden: insufficient permissions.
    */
-  403: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  403: ApiError;
   /**
    * Not found: resource does not exist.
    */
-  404: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  404: ApiError;
   /**
    * Rate limit: too many requests.
    */
-  429: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  429: ApiError;
 };
 
 export type GetAttachmentCoverError = GetAttachmentCoverErrors[keyof GetAttachmentCoverErrors];
@@ -7175,88 +3225,23 @@ export type RedirectToAttachmentErrors = {
   /**
    * Bad request: problem processing request.
    */
-  400: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  400: ApiError;
   /**
    * Unauthorized: authentication required.
    */
-  401: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  401: ApiError;
   /**
    * Forbidden: insufficient permissions.
    */
-  403: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  403: ApiError;
   /**
    * Not found: resource does not exist.
    */
-  404: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  404: ApiError;
   /**
    * Rate limit: too many requests.
    */
-  429: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  429: ApiError;
 };
 
 export type RedirectToAttachmentError = RedirectToAttachmentErrors[keyof RedirectToAttachmentErrors];
@@ -7286,88 +3271,23 @@ export type DeleteMembershipsErrors = {
   /**
    * Bad request: problem processing request.
    */
-  400: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  400: ApiError;
   /**
    * Unauthorized: authentication required.
    */
-  401: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  401: ApiError;
   /**
    * Forbidden: insufficient permissions.
    */
-  403: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  403: ApiError;
   /**
    * Not found: resource does not exist.
    */
-  404: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  404: ApiError;
   /**
    * Rate limit: too many requests.
    */
-  429: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  429: ApiError;
 };
 
 export type DeleteMembershipsError = DeleteMembershipsErrors[keyof DeleteMembershipsErrors];
@@ -7378,20 +3298,7 @@ export type DeleteMembershipsResponses = {
    */
   200: {
     success: boolean;
-    errors: Array<{
-      name: string;
-      message: string;
-      type: string;
-      status: number;
-      severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-      entityType?: 'user' | 'organization' | 'attachment';
-      logId?: string;
-      path?: string;
-      method?: string;
-      timestamp?: string;
-      userId?: string;
-      organizationId?: string;
-    }>;
+    errors: Array<ApiError>;
   };
 };
 
@@ -7416,88 +3323,23 @@ export type MembershipInviteErrors = {
   /**
    * Bad request: problem processing request.
    */
-  400: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  400: ApiError;
   /**
    * Unauthorized: authentication required.
    */
-  401: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  401: ApiError;
   /**
    * Forbidden: insufficient permissions.
    */
-  403: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  403: ApiError;
   /**
    * Not found: resource does not exist.
    */
-  404: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  404: ApiError;
   /**
    * Rate limit: too many requests.
    */
-  429: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  429: ApiError;
 };
 
 export type MembershipInviteError = MembershipInviteErrors[keyof MembershipInviteErrors];
@@ -7530,88 +3372,23 @@ export type UpdateMembershipErrors = {
   /**
    * Bad request: problem processing request.
    */
-  400: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  400: ApiError;
   /**
    * Unauthorized: authentication required.
    */
-  401: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  401: ApiError;
   /**
    * Forbidden: insufficient permissions.
    */
-  403: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  403: ApiError;
   /**
    * Not found: resource does not exist.
    */
-  404: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  404: ApiError;
   /**
    * Rate limit: too many requests.
    */
-  429: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  429: ApiError;
 };
 
 export type UpdateMembershipError = UpdateMembershipErrors[keyof UpdateMembershipErrors];
@@ -7660,88 +3437,23 @@ export type GetMembersErrors = {
   /**
    * Bad request: problem processing request.
    */
-  400: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  400: ApiError;
   /**
    * Unauthorized: authentication required.
    */
-  401: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  401: ApiError;
   /**
    * Forbidden: insufficient permissions.
    */
-  403: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  403: ApiError;
   /**
    * Not found: resource does not exist.
    */
-  404: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  404: ApiError;
   /**
    * Rate limit: too many requests.
    */
-  429: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  429: ApiError;
 };
 
 export type GetMembersError = GetMembersErrors[keyof GetMembersErrors];
@@ -7809,88 +3521,23 @@ export type GetPendingInvitationsErrors = {
   /**
    * Bad request: problem processing request.
    */
-  400: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  400: ApiError;
   /**
    * Unauthorized: authentication required.
    */
-  401: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  401: ApiError;
   /**
    * Forbidden: insufficient permissions.
    */
-  403: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  403: ApiError;
   /**
    * Not found: resource does not exist.
    */
-  404: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  404: ApiError;
   /**
    * Rate limit: too many requests.
    */
-  429: {
-    name: string;
-    message: string;
-    type: string;
-    status: number;
-    severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
-    entityType?: 'user' | 'organization' | 'attachment';
-    logId?: string;
-    path?: string;
-    method?: string;
-    timestamp?: string;
-    userId?: string;
-    organizationId?: string;
-  };
+  429: ApiError;
 };
 
 export type GetPendingInvitationsError = GetPendingInvitationsErrors[keyof GetPendingInvitationsErrors];

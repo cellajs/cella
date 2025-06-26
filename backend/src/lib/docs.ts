@@ -4,6 +4,7 @@ import { config } from 'config';
 import type { Env } from '#/lib/context';
 import { entityBaseSchema, userSummarySchema } from '#/modules/entities/schema';
 import { menuSchema } from '#/modules/me/schema';
+import { errorSchema } from '#/utils/schema/responses';
 import { apiModulesList } from './docs-config';
 
 /**
@@ -26,6 +27,7 @@ const docs = (app: OpenAPIHono<Env>) => {
   registry.register('BaseEntitySchema', entityBaseSchema);
   registry.register('UserSummarySchema', userSummarySchema);
   registry.register('MenuSchema', menuSchema);
+  registry.register('ApiError', errorSchema);
 
   // TODO add uniqe schema that we use on BE
   // Review all existing schemas

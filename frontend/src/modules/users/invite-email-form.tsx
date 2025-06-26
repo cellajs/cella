@@ -78,7 +78,6 @@ const InviteEmailForm = ({ entity, dialog: isDialog, children }: Props) => {
         query: { idOrSlug: entity.id, entityType: entity.entityType },
         path: { orgIdOrSlug: entity.organizationId || entity.id },
         body: body as MembershipInviteData['body'],
-        throwOnError: true,
       });
     },
     onSuccess: (_, { emails }) => {
