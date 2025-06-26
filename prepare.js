@@ -1,5 +1,5 @@
-import { execSync } from 'node:child_process';
 import dotenv from 'dotenv';
+import { execSync } from 'node:child_process';
 
 dotenv.config({ path: './backend/.env' });
 
@@ -8,7 +8,7 @@ if (process.env.NODE_ENV === 'development') {
   console.info('Preparing the development environment: Installing Lefthook, Biome VSCode extension, and compiling TypeScript.');
 
   try {
-    execSync('pnpm --filter backend precompile && lefthook install && code --install-extension biomejs.biome', {
+    execSync('pnpm lefthook install && code --install-extension biomejs.biome', {
       stdio: 'inherit',
     });
   } catch (error) {

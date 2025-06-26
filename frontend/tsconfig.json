@@ -8,11 +8,10 @@
     "types": ["vite/client", "vite-plugin-pwa/client"],
 
     "paths": {
-      "~/*": ["./src/*"],
-      "#/*": ["../backend/src/*"]
+      "~/*": ["./src/*"]
     }
   },
 
-  "include": ["src/**/*", "vite.config.ts", "../config/*", "../backend/**/*", "../locales/*", "hey-api.ts"],
+  "include": ["src/**/*", "vite.config.ts", "../config/*", "../locales/*", "hey-api.ts"],
   "exclude": ["**/node_modules", "**/dist", "**/.*/"]
 }
