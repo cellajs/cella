@@ -1,6 +1,6 @@
 import { infiniteQueryOptions, queryOptions } from '@tanstack/react-query';
 import { config } from 'config';
-import { type GetAttachmentsData, getAttachments } from '~/openapi-client';
+import { type GetAttachmentsData, getAttachments } from '~/api.gen';
 
 type GetAttachmentsParams = GetAttachmentsData['path'] & Omit<GetAttachmentsData['query'], 'limit' | 'offset'>;
 /**

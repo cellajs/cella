@@ -153,7 +153,7 @@
     "@types/react": "^19.1.8",
     "@types/react-dom": "^19.1.6",
     "@types/zxcvbn": "^4.4.5",
-    "@typescript/native-preview": "7.0.0-dev.20250623.1",
+    "@typescript/native-preview": "7.0.0-dev.20250627.1",
     "@vitejs/plugin-basic-ssl": "^2.0.0",
     "@vitejs/plugin-react": "^4.6.0",
     "babel-plugin-react-compiler": "19.1.0-rc.2",

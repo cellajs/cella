@@ -1,6 +1,6 @@
 import { infiniteQueryOptions } from '@tanstack/react-query';
 import { config } from 'config';
-import { type GetMembersData, type GetPendingInvitationsData, getMembers, getPendingInvitations } from '~/openapi-client';
+import { type GetMembersData, type GetPendingInvitationsData, getMembers, getPendingInvitations } from '~/api.gen';
 
 type GetMembershipInvitationsParams = Omit<GetPendingInvitationsData['query'], 'limit' | 'offset'> & GetPendingInvitationsData['path'];
 type GetMembersParams = Omit<GetMembersData['query'], 'limit' | 'offset'> & GetMembersData['path'];

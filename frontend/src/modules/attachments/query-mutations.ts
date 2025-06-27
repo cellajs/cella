@@ -2,6 +2,7 @@ import { useMutation } from '@tanstack/react-query';
 import { config } from 'config';
 import { t } from 'i18next';
 import { toast } from 'sonner';
+import { createAttachment, deleteAttachments, updateAttachment } from '~/api.gen';
 import { attachmentsKeys } from '~/modules/attachments/query';
 import type {
   Attachment,
@@ -13,7 +14,6 @@ import type {
   UpdateAttachmentParams,
 } from '~/modules/attachments/types';
 import { toaster } from '~/modules/common/toaster';
-import { createAttachment, deleteAttachments, updateAttachment } from '~/openapi-client';
 import { getQueryKeySortOrder } from '~/query/helpers';
 import { compareQueryKeys } from '~/query/helpers/compare-query-keys';
 import { formatUpdatedData, getQueryItems, getSimilarQueries } from '~/query/helpers/mutate-query';

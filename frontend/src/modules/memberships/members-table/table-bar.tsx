@@ -2,6 +2,7 @@ import { onlineManager } from '@tanstack/react-query';
 import { Mail, Trash, XSquare } from 'lucide-react';
 import { useRef } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
+import { getMembers } from '~/api.gen';
 import ColumnsView from '~/modules/common/data-table/columns-view';
 import Export from '~/modules/common/data-table/export';
 import { TableBarButton } from '~/modules/common/data-table/table-bar-button';
@@ -20,7 +21,6 @@ import { MembershipInvitations } from '~/modules/memberships/pending-table/invit
 import RemoveMembersForm from '~/modules/memberships/remove-member-form';
 import type { Member } from '~/modules/memberships/types';
 import InviteUsers from '~/modules/users/invite-users';
-import { getMembers } from '~/openapi-client';
 
 type MembersTableBarProps = MembersTableProps & BaseTableMethods & BaseTableBarProps<Member, MemberSearch>;
 

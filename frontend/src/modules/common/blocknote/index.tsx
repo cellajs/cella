@@ -28,7 +28,7 @@ import { useUIStore } from '~/store/ui';
 import '@blocknote/shadcn/style.css';
 import '~/modules/common/blocknote/app-specific-custom/styles.css';
 import '~/modules/common/blocknote/styles.css';
-import { getPresignedUrl } from '~/openapi-client';
+import { getPresignedUrl } from '~/api.gen';
 
 type BlockNoteProps =
   | (CommonBlockNoteProps & {

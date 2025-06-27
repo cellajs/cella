@@ -1,6 +1,6 @@
 import type { z } from 'zod/v4';
+import type { zEntityBaseSchema, zGetContextEntitiesResponse } from '~/api.gen/zod.gen';
 import type { MembershipSummary } from '~/modules/memberships/types';
-import type { zEntityBaseSchema, zGetContextEntitiesResponse } from '~/openapi-client/zod.gen';
 
 export type EntitySummary = z.infer<typeof zEntityBaseSchema>;
 

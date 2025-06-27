@@ -4,13 +4,13 @@ import { config } from 'config';
 import { Check, UserRoundX } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { deleteMyMembership } from '~/api.gen';
 import { toaster } from '~/modules/common/toaster';
 import { deleteMenuItem } from '~/modules/navigation/menu-sheet/helpers/menu-operations';
 import type { Organization } from '~/modules/organizations/types';
 import { Button } from '~/modules/ui/button';
 import { Command, CommandGroup, CommandItem, CommandList } from '~/modules/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '~/modules/ui/popover';
-import { deleteMyMembership } from '~/openapi-client';
 
 const LeaveButton = ({ organization }: { organization: Organization }) => {
   const { t } = useTranslation();

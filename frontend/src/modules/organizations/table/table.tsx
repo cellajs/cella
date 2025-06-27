@@ -3,6 +3,7 @@ import { Bird } from 'lucide-react';
 import { forwardRef, memo, useEffect, useImperativeHandle } from 'react';
 import type { RowsChangeData, SortColumn } from 'react-data-grid';
 import { useTranslation } from 'react-i18next';
+import { membershipInvite as changeRole } from '~/api.gen';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { DataTable } from '~/modules/common/data-table';
 import { tablePropsAreEqual } from '~/modules/common/data-table/table-props-are-equal';
@@ -11,7 +12,6 @@ import { toaster } from '~/modules/common/toaster';
 import { getAndSetMenu } from '~/modules/me/helpers';
 import { organizationsQueryOptions } from '~/modules/organizations/query';
 import type { OrganizationsSearch, OrganizationTable } from '~/modules/organizations/table/table-wrapper';
-import { membershipInvite as changeRole } from '~/openapi-client';
 import { useDataFromInfiniteQuery } from '~/query/hooks/use-data-from-query';
 import { useUserStore } from '~/store/user';
 

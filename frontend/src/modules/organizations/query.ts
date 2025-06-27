@@ -1,9 +1,5 @@
 import { infiniteQueryOptions, queryOptions, useMutation } from '@tanstack/react-query';
 import { config } from 'config';
-
-import type { ApiError } from '~/lib/api';
-import { addMenuItem, deleteMenuItem, updateMenuItem } from '~/modules/navigation/menu-sheet/helpers/menu-operations';
-import type { Organization, OrganizationWithMembership } from '~/modules/organizations/types';
 import {
   type CreateOrganizationData,
   createOrganization,
@@ -13,7 +9,10 @@ import {
   getOrganizations,
   type UpdateOrganizationData,
   updateOrganization,
-} from '~/openapi-client';
+} from '~/api.gen';
+import type { ApiError } from '~/lib/api';
+import { addMenuItem, deleteMenuItem, updateMenuItem } from '~/modules/navigation/menu-sheet/helpers/menu-operations';
+import type { Organization, OrganizationWithMembership } from '~/modules/organizations/types';
 import { useMutateQueryData } from '~/query/hooks/use-mutate-query-data';
 
 /**

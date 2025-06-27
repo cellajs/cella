@@ -3,10 +3,10 @@ import { createRoute, redirect, useLoaderData, useParams } from '@tanstack/react
 import i18n from 'i18next';
 import { lazy, Suspense } from 'react';
 import { z } from 'zod/v4';
+import { zGetAttachmentsData, zGetMembersData, zGetPendingInvitationsData } from '~/api.gen/zod.gen';
 import ErrorNotice from '~/modules/common/error-notice';
 import { toaster } from '~/modules/common/toaster';
 import { organizationQueryOptions } from '~/modules/organizations/query';
-import { zGetAttachmentsData, zGetMembersData, zGetPendingInvitationsData } from '~/openapi-client/zod.gen';
 import { queryClient } from '~/query/query-client';
 import { AppRoute } from '~/routes/base';
 import { noDirectAccess } from '~/utils/no-direct-access';

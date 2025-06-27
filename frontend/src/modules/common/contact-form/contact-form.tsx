@@ -4,6 +4,7 @@ import { lazy, Suspense, useMemo } from 'react';
 import type { SubmitHandler, UseFormProps } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod/v4';
+import { zCreateRequestData } from '~/api.gen/zod.gen';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
@@ -12,7 +13,6 @@ import { toaster } from '~/modules/common/toaster';
 import { useCreateRequestMutation } from '~/modules/requests/query';
 import { Button, SubmitButton } from '~/modules/ui/button';
 import { Form } from '~/modules/ui/form';
-import { zCreateRequestData } from '~/openapi-client/zod.gen';
 import { useUserStore } from '~/store/user';
 
 const ContactFormMap = lazy(() => import('~/modules/common/contact-form/contact-form-map'));

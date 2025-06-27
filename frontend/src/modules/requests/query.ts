@@ -1,15 +1,8 @@
 import { infiniteQueryOptions, useMutation } from '@tanstack/react-query';
 import { config } from 'config';
+import { type CreateRequestData, type CreateRequestResponses, createRequest, deleteRequests, type GetRequestsData, getRequests } from '~/api.gen';
 import type { ApiError } from '~/lib/api';
 import type { Request } from '~/modules/requests/types';
-import {
-  type CreateRequestData,
-  type CreateRequestResponses,
-  createRequest,
-  deleteRequests,
-  type GetRequestsData,
-  getRequests,
-} from '~/openapi-client';
 
 /**
  * Keys for request related queries. These keys help to uniquely identify different query. For managing query caching and invalidation.

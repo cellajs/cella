@@ -42,7 +42,7 @@
 - [Deployment](/info/DEPLOYMENT.md)
 
 ## Requirements
-- Make sure you have node installed with `node -v`. Install Node 20.x or 22.x. (ie. [Volta](https://docs.volta.sh/guide/)).
+- Make sure you have node installed with `node -v`. Install Node 24.x. (ie. [Volta](https://docs.volta.sh/guide/)).
 - Ideally you work with [git over ssh](https://docs.github.com/en/authentication/connecting-to-github-with-ssh).
 
 <br>

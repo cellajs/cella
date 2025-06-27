@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Bar, BarChart, CartesianGrid, XAxis } from 'recharts';
+import { getMetrics } from '~/api.gen';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/modules/ui/card';
 import { type ChartConfig, ChartContainer } from '~/modules/ui/chart';
-import { getMetrics } from '~/openapi-client';
 
 export const description = 'An interactive bar chart';
 

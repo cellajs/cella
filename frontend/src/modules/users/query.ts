@@ -1,8 +1,8 @@
 import { infiniteQueryOptions, queryOptions, useMutation } from '@tanstack/react-query';
 import { config } from 'config';
+import { deleteUsers, type GetUsersData, getUser, getUsers, type UpdateUserData, updateUser } from '~/api.gen';
 import type { ApiError } from '~/lib/api';
 import type { User } from '~/modules/users/types';
-import { deleteUsers, type GetUsersData, getUser, getUsers, type UpdateUserData, updateUser } from '~/openapi-client';
 import { useMutateQueryData } from '~/query/hooks/use-mutate-query-data';
 
 /**

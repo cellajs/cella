@@ -5,13 +5,13 @@ import { useEffect, useState } from 'react';
 import { type Control, useFormContext, useWatch } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import slugify from 'slugify';
+import { type CheckSlugData, checkSlug as checkSlugAvailable } from '~/api.gen';
 import { useMeasure } from '~/hooks/use-measure';
 import { useOnlineManager } from '~/hooks/use-online-manager';
 import type { ApiError } from '~/lib/api';
 import { Button } from '~/modules/ui/button';
 import { FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
 import { Input } from '~/modules/ui/input';
-import { type CheckSlugData, checkSlug as checkSlugAvailable } from '~/openapi-client';
 
 interface SlugFieldProps {
   // biome-ignore lint/suspicious/noExplicitAny: unable to infer type due to dynamic data structure

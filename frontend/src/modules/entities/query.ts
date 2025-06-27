@@ -1,5 +1,5 @@
 import { keepPreviousData, queryOptions } from '@tanstack/react-query';
-import { type GetContextEntitiesData, type GetPageEntitiesData, getContextEntities, getPageEntities } from '~/openapi-client';
+import { type GetContextEntitiesData, type GetPageEntitiesData, getContextEntities, getPageEntities } from '~/api.gen';
 import { useUserStore } from '~/store/user';
 
 /**

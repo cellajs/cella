@@ -1,6 +1,7 @@
 import { useMutation } from '@tanstack/react-query';
 import { config } from 'config';
 import { t } from 'i18next';
+import { deleteMemberships, updateMembership } from '~/api.gen';
 import { toaster } from '~/modules/common/toaster';
 import { getAndSetMenu } from '~/modules/me/helpers';
 import { resolveParentEntityType } from '~/modules/memberships/helpers';
@@ -16,7 +17,6 @@ import type {
   MutationUpdateMembership,
 } from '~/modules/memberships/types';
 import { updateMenuItemMembership } from '~/modules/navigation/menu-sheet/helpers/menu-operations';
-import { deleteMemberships, updateMembership } from '~/openapi-client';
 import { formatUpdatedData, getQueryItems, getSimilarQueries } from '~/query/helpers/mutate-query';
 import { useMutateQueryData } from '~/query/hooks/use-mutate-query-data';
 import { queryClient } from '~/query/query-client';
