@@ -54,7 +54,7 @@ export const config = {
     'frontend/src/styling/gradients.css',
     'frontend/src/routes/route-tree.tsx',
     'frontend/src/routes/marketing.tsx',
-    'frontend/src/openapi-client/*',
+    'frontend/src/api.gen/*',
     'frontend/src/modules/common/logo.tsx',
     'frontend/src/modules/common/bg-animation/*',
     'frontend/src/modules/common/blocknote/blocknote-config.ts',
