@@ -64,7 +64,6 @@ export const slashMenu = (props: SuggestionMenuProps<DefaultReactSuggestionItem>
             aria-selected={selectedIndex === index}
             onMouseDown={(e) => triggerItemClick(item, e)}
             onKeyDown={() => {}}
-            // biome-ignore lint/a11y/useSemanticElements: req by author
             role="button"
             tabIndex={0}
           >

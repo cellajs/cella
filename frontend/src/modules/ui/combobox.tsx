@@ -79,7 +79,6 @@ const Combobox = ({
         <Button
           ref={ref}
           variant="input"
-          // biome-ignore lint/a11y/useSemanticElements: visual structure prioritized here
           role="combobox"
           aria-expanded={open}
           className="w-full justify-between truncate font-normal"
