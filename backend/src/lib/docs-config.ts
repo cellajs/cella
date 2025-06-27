@@ -16,7 +16,12 @@ export const apiModulesList = [
       Each membership includes role information and status flags such as \`archived\` or \`muted\`.  
       Memberships can also reference parent entities, enabling hierarchical context.`,
   },
-  { name: 'organizations', description: 'Organizations - `organization` - are a core `entity`.' },
+  {
+    name: 'organizations',
+    description: `Endpoints for managing \`organizations\`, which are core contextual entities.  
+      Organizations are the highest ancestor in the parent hierarchy.  
+      They define access boundaries and are often the minimal primary scope for permission and resource management.`,
+  },
   { name: 'requests', description: 'Receive contact form, newsletter and waitlist requests.' },
   { name: 'entities', description: 'Endpoints that span across entities.' },
   { name: 'system', description: 'Endpoints that are system-wide or system (admin) related.' },
