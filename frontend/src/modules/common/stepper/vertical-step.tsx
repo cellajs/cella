@@ -128,6 +128,7 @@ const VerticalStep = React.forwardRef<HTMLDivElement, VerticalStepProps>((props,
       data-clickable={clickable || !!onClickStep}
       data-invalid={localIsError}
       onClick={() => onClickStep?.(index || 0, setStep) || onClickStepGeneral?.(index || 0, setStep)}
+      onKeyDown={() => {}}
     >
       {steps.length > 1 && (
         <div

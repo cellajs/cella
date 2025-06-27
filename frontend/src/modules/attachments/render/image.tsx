@@ -12,7 +12,7 @@ type RenderImageProps = {
   ref?: React.Ref<HTMLImageElement>;
   customButton?: React.ReactNode;
   resetImageState?: boolean;
-  imageClass?: string;
+  imageClassName?: string;
   showButtons?: boolean;
   onPanStateToggle?: (state: boolean) => void;
 };
@@ -33,7 +33,7 @@ const ControlButton = ({ tooltipContent, onClick, icon, className }: ControlButt
 );
 
 const RenderImage = forwardRef<HTMLImageElement, RenderImageProps>(
-  ({ image, alt, resetImageState, showButtons, imageClass, onPanStateToggle }, forwardedRef) => {
+  ({ image, alt, resetImageState, showButtons, imageClassName, onPanStateToggle }, forwardedRef) => {
     const [dx, setDx] = useState(0);
     const [dy, setDy] = useState(0);
 
@@ -128,7 +128,7 @@ const RenderImage = forwardRef<HTMLImageElement, RenderImageProps>(
           key={dx}
         >
           {/* Image */}
-          <img ref={imgRef} style={{ transform: `rotate(${rotation * 90}deg)`, width: '100%' }} className={imageClass} src={image} alt={alt} />
+          <img ref={imgRef} style={{ transform: `rotate(${rotation * 90}deg)`, width: '100%' }} className={imageClassName} src={image} alt={alt} />
         </ImageViewer>
       </>
     );
