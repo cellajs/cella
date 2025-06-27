@@ -1,7 +1,14 @@
 import { getAuthToken } from '../core/auth';
-import type { QuerySerializer, QuerySerializerOptions } from '../core/bodySerializer';
+import type {
+  QuerySerializer,
+  QuerySerializerOptions,
+} from '../core/bodySerializer';
 import { jsonBodySerializer } from '../core/bodySerializer';
-import { serializeArrayParam, serializeObjectParam, serializePrimitiveParam } from '../core/pathSerializer';
+import {
+  serializeArrayParam,
+  serializeObjectParam,
+  serializePrimitiveParam,
+} from '../core/pathSerializer';
 import type { Client, ClientOptions, Config, RequestOptions } from './types';
 
 interface PathSerializer {
@@ -44,7 +51,10 @@ const defaultPathSerializer = ({ path, url: _url }: PathSerializer) => {
       }
 
       if (Array.isArray(value)) {
-        url = url.replace(match, serializeArrayParam({ explode, name, style, value }));
+        url = url.replace(
+          match,
+          serializeArrayParam({ explode, name, style, value }),
+        );
         continue;
       }
 
@@ -73,14 +83,20 @@ const defaultPathSerializer = ({ path, url: _url }: PathSerializer) => {
         continue;
       }
 
-      const replaceValue = encodeURIComponent(style === 'label' ? `.${value as string}` : (value as string));
+      const replaceValue = encodeURIComponent(
+        style === 'label' ? `.${value as string}` : (value as string),
+      );
       url = url.replace(match, replaceValue);
     }
   }
   return url;
 };
 
-export const createQuerySerializer = <T = unknown>({ allowReserved, array, object }: QuerySerializerOptions = {}) => {
+export const createQuerySerializer = <T = unknown>({
+  allowReserved,
+  array,
+  object,
+}: QuerySerializerOptions = {}) => {
   const querySerializer = (queryParams: T) => {
     const search: string[] = [];
     if (queryParams && typeof queryParams === 'object') {
@@ -129,7 +145,9 @@ export const createQuerySerializer = <T = unknown>({ allowReserved, array, objec
 /**
  * Infers parseAs value from provided Content-Type header.
  */
-export const getParseAs = (contentType: string | null): Exclude<Config['parseAs'], 'auto'> => {
+export const getParseAs = (
+  contentType: string | null,
+): Exclude<Config['parseAs'], 'auto'> => {
   if (!contentType) {
     // If no Content-Type header is provided, the best we can do is return the raw response body,
     // which is effectively the same as the 'stream' option.
@@ -142,7 +160,10 @@ export const getParseAs = (contentType: string | null): Exclude<Config['parseAs'
     return;
   }
 
-  if (cleanContent.startsWith('application/json') || cleanContent.endsWith('+json')) {
+  if (
+    cleanContent.startsWith('application/json') ||
+    cleanContent.endsWith('+json')
+  ) {
     return 'json';
   }
 
@@ -150,7 +171,11 @@ export const getParseAs = (contentType: string | null): Exclude<Config['parseAs'
     return 'formData';
   }
 
-  if (['application/', 'audio/', 'image/', 'video/'].some((type) => cleanContent.startsWith(type))) {
+  if (
+    ['application/', 'audio/', 'image/', 'video/'].some((type) =>
+      cleanContent.startsWith(type),
+    )
+  ) {
     return 'blob';
   }
 
@@ -202,7 +227,10 @@ export const buildUrl: Client['buildUrl'] = (options) => {
     baseUrl: options.baseUrl as string,
     path: options.path,
     query: options.query,
-    querySerializer: typeof options.querySerializer === 'function' ? options.querySerializer : createQuerySerializer(options.querySerializer),
+    querySerializer:
+      typeof options.querySerializer === 'function'
+        ? options.querySerializer
+        : createQuerySerializer(options.querySerializer),
     url: options.url,
   });
   return url;
@@ -245,14 +273,17 @@ export const mergeConfigs = (a: Config, b: Config): Config => {
   return config;
 };
 
-export const mergeHeaders = (...headers: Array<Required<Config>['headers'] | undefined>): Headers => {
+export const mergeHeaders = (
+  ...headers: Array<Required<Config>['headers'] | undefined>
+): Headers => {
   const mergedHeaders = new Headers();
   for (const header of headers) {
     if (!header || typeof header !== 'object') {
       continue;
     }
 
-    const iterator = header instanceof Headers ? header.entries() : Object.entries(header);
+    const iterator =
+      header instanceof Headers ? header.entries() : Object.entries(header);
 
     for (const [key, value] of iterator) {
       if (value === null) {
@@ -264,18 +295,33 @@ export const mergeHeaders = (...headers: Array<Required<Config>['headers'] | und
       } else if (value !== undefined) {
         // assume object headers are meant to be JSON stringified, i.e. their
         // content value in OpenAPI specification is 'application/json'
-        mergedHeaders.set(key, typeof value === 'object' ? JSON.stringify(value) : (value as string));
+        mergedHeaders.set(
+          key,
+          typeof value === 'object' ? JSON.stringify(value) : (value as string),
+        );
       }
     }
   }
   return mergedHeaders;
 };
 
-type ErrInterceptor<Err, Res, Req, Options> = (error: Err, response: Res, request: Req, options: Options) => Err | Promise<Err>;
+type ErrInterceptor<Err, Res, Req, Options> = (
+  error: Err,
+  response: Res,
+  request: Req,
+  options: Options,
+) => Err | Promise<Err>;
 
-type ReqInterceptor<Req, Options> = (request: Req, options: Options) => Req | Promise<Req>;
+type ReqInterceptor<Req, Options> = (
+  request: Req,
+  options: Options,
+) => Req | Promise<Req>;
 
-type ResInterceptor<Res, Req, Options> = (response: Res, request: Req, options: Options) => Res | Promise<Res>;
+type ResInterceptor<Res, Req, Options> = (
+  response: Res,
+  request: Req,
+  options: Options,
+) => Res | Promise<Res>;
 
 class Interceptors<Interceptor> {
   _fns: (Interceptor | null)[];
@@ -326,9 +372,15 @@ class Interceptors<Interceptor> {
 // `createInterceptors()` response, meant for external use as it does not
 // expose internals
 export interface Middleware<Req, Res, Err, Options> {
-  error: Pick<Interceptors<ErrInterceptor<Err, Res, Req, Options>>, 'eject' | 'use'>;
+  error: Pick<
+    Interceptors<ErrInterceptor<Err, Res, Req, Options>>,
+    'eject' | 'use'
+  >;
   request: Pick<Interceptors<ReqInterceptor<Req, Options>>, 'eject' | 'use'>;
-  response: Pick<Interceptors<ResInterceptor<Res, Req, Options>>, 'eject' | 'use'>;
+  response: Pick<
+    Interceptors<ResInterceptor<Res, Req, Options>>,
+    'eject' | 'use'
+  >;
 }
 
 // do not add `Middleware` as return type so we can use _fns internally

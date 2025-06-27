@@ -12,15 +12,9 @@ import { createClientConfig } from '../api-config';
  * `setConfig()`. This is useful for example if you're using Next.js
  * to ensure your client always has the correct values.
  */
-export type CreateClientConfig<T extends DefaultClientOptions = ClientOptions> = (
-  override?: Config<DefaultClientOptions & T>,
-) => Config<Required<DefaultClientOptions> & T>;
+export type CreateClientConfig<T extends DefaultClientOptions = ClientOptions> = (override?: Config<DefaultClientOptions & T>) => Config<Required<DefaultClientOptions> & T>;
 
-export const client = createClient(
-  createClientConfig(
-    createConfig<ClientOptions>({
-      baseUrl: 'http://localhost:4000',
-      throwOnError: true,
-    }),
-  ),
-);
+export const client = createClient(createClientConfig(createConfig<ClientOptions>({
+    baseUrl: 'http://localhost:4000',
+    throwOnError: true
+})));
