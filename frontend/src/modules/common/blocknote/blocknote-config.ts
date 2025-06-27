@@ -11,7 +11,7 @@ import { blockTypeSelectItems, type DefaultReactSuggestionItem, getDefaultReactS
 
 import { MentionSchema } from '~/modules/common/blocknote/custom-elements/mention/mention';
 import { getSlashNotifySlashItem, Notify } from '~/modules/common/blocknote/custom-elements/notify';
-
+import { baseBlocknoteTypeToKeys } from '~/modules/common/blocknote/type-to-keys';
 import type {
   BlockAlignTypes,
   BlockStyleTypes,
@@ -106,23 +106,7 @@ export const getSideMenuItems = (dict: Dictionary) => [...blockTypeSelectItems(d
 /**
  *  Slash Menu Configuration
  */
-const typeToBlocknoteKeys: Record<CustomBlockTypes, SlashItemKeys[]> = {
-  table: ['table'],
-  notify: ['notify'],
-  paragraph: ['paragraph'],
-  heading: ['heading', 'heading_2', 'heading_3'],
-  quote: ['quote'],
-  codeBlock: ['code_block'],
-  bulletListItem: ['bullet_list'],
-  numberedListItem: ['numbered_list'],
-  checkListItem: ['check_list'],
-  file: ['file'],
-  image: ['image'],
-  video: ['video'],
-  audio: ['audio'],
-  emoji: ['emoji'],
-  toggleListItem: ['toggle_list'],
-};
+const typeToBlocknoteKeys: Record<CustomBlockTypes, SlashItemKeys[]> = { ...baseBlocknoteTypeToKeys };
 
 // Indexed items (max 9 for quick number-based selection)
 export const customSlashIndexedItems: SlashIndexedItems = ['image', 'video', 'file', 'bulletListItem', 'numberedListItem', 'checkListItem', 'notify'];
