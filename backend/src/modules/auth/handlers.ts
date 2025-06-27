@@ -583,8 +583,8 @@ const authRouteHandlers = app
         fetch('https://api.github.com/user/emails', { headers }),
       ]);
 
-      const githubUser: GithubUserProps = await githubUserResponse.json();
-      const githubUserEmails: GithubUserEmailProps[] = await githubUserEmailsResponse.json();
+      const githubUser = (await githubUserResponse.json()) as GithubUserProps;
+      const githubUserEmails = (await githubUserEmailsResponse.json()) as GithubUserEmailProps[];
       const transformedUser = transformGithubUserData(githubUser, githubUserEmails);
 
       const provider = { id: strategy, userId: String(githubUser.id) };
@@ -661,7 +661,7 @@ const authRouteHandlers = app
       // Get user info from google
       const response = await fetch('https://openidconnect.googleapis.com/v1/userinfo', { headers });
 
-      const googleUser: GoogleUserProps = await response.json();
+      const googleUser = (await response.json()) as GoogleUserProps;
       const transformedUser = transformSocialUserData(googleUser);
 
       const provider = { id: strategy, userId: googleUser.sub };
@@ -738,7 +738,7 @@ const authRouteHandlers = app
       // Get user info from microsoft
       const response = await fetch('https://graph.microsoft.com/oidc/userinfo', { headers });
 
-      const microsoftUser: MicrosoftUserProps = await response.json();
+      const microsoftUser = (await response.json()) as MicrosoftUserProps;
       const transformedUser = transformSocialUserData(microsoftUser);
 
       const provider = { id: strategy, userId: microsoftUser.sub };

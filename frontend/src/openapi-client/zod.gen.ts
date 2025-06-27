@@ -11,29 +11,6 @@ export const zEntityBaseSchema = z.object({
   bannerUrl: z.union([z.string(), z.null()]).optional(),
 });
 
-export const zEntityListItemSchema = z.object({
-  id: z.string(),
-  entityType: z.enum(['user', 'organization']),
-  slug: z.string(),
-  name: z.string(),
-  thumbnailUrl: z.union([z.string(), z.null()]).optional(),
-  bannerUrl: z.union([z.string(), z.null()]).optional(),
-  email: z.string().optional(),
-  membership: z.union([
-    z.object({
-      id: z.string(),
-      contextType: z.enum(['organization']),
-      userId: z.string(),
-      role: z.enum(['member', 'admin']),
-      archived: z.boolean(),
-      muted: z.boolean(),
-      order: z.number().gte(-140737488355328).lte(140737488355327),
-      organizationId: z.string(),
-    }),
-    z.null(),
-  ]),
-});
-
 export const zUserSummarySchema = z.object({
   id: z.string(),
   entityType: z.enum(['user']),
@@ -117,6 +94,29 @@ export const zApiError = z.object({
   timestamp: z.string().optional(),
   userId: z.string().optional(),
   organizationId: z.string().optional(),
+});
+
+export const zEntityListItemSchema = z.object({
+  id: z.string(),
+  entityType: z.enum(['user', 'organization']),
+  slug: z.string(),
+  name: z.string(),
+  thumbnailUrl: z.union([z.string(), z.null()]).optional(),
+  bannerUrl: z.union([z.string(), z.null()]).optional(),
+  email: z.string().optional(),
+  membership: z.union([
+    z.object({
+      id: z.string(),
+      contextType: z.enum(['organization']),
+      userId: z.string(),
+      role: z.enum(['member', 'admin']),
+      archived: z.boolean(),
+      muted: z.boolean(),
+      order: z.number().gte(-140737488355328).lte(140737488355327),
+      organizationId: z.string(),
+    }),
+    z.null(),
+  ]),
 });
 
 export const zCheckEmailData = z.object({

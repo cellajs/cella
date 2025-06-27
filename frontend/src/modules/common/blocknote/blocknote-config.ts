@@ -105,6 +105,7 @@ export const getSideMenuItems = (dict: Dictionary) => [...blockTypeSelectItems(d
 /**
  *  Slash Menu Configuration
  */
+// TODO (CHORE) handle toggleListItem
 const typeToBlocknoteKeys: Record<CustomBlockTypes, SlashItemKeys[]> = {
   table: ['table'],
   notify: ['notify'],

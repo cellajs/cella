@@ -2,11 +2,11 @@ import type { OpenAPIHono } from '@hono/zod-openapi';
 import { Scalar } from '@scalar/hono-api-reference';
 import { config } from 'config';
 import type { Env } from '#/lib/context';
-import { entityBaseSchema, entityListItemSchema, userSummarySchema } from '#/modules/entities/schema';
+import { apiModulesList, registerAppSchema } from '#/lib/docs-config';
+import { entityBaseSchema, userSummarySchema } from '#/modules/entities/schema';
 import { menuSchema } from '#/modules/me/schema';
 import { membershipSummarySchema } from '#/modules/memberships/schema';
 import { errorSchema } from '#/utils/schema/responses';
-import { apiModulesList } from './docs-config';
 
 /**
  * Generate OpenAPI documentation using hono/zod-openapi and scalar/hono-api-reference
@@ -28,11 +28,12 @@ const docs = (app: OpenAPIHono<Env>) => {
 
   // Register lower-level schemas
   registry.register('EntityBaseSchema', entityBaseSchema);
-  registry.register('EntityListItemSchema', entityListItemSchema);
   registry.register('UserSummarySchema', userSummarySchema);
   registry.register('MembershipSummarySchema', membershipSummarySchema);
   registry.register('MenuSchema', menuSchema);
   registry.register('ApiError', errorSchema);
+
+  registerAppSchema(registry);
 
   // TODO add uniqe schema that we use on BE
   // Review all existing schemas

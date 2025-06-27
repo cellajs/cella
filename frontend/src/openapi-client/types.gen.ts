@@ -9,26 +9,6 @@ export type EntityBaseSchema = {
   bannerUrl?: string | null;
 };
 
-export type EntityListItemSchema = {
-  id: string;
-  entityType: 'user' | 'organization';
-  slug: string;
-  name: string;
-  thumbnailUrl?: string | null;
-  bannerUrl?: string | null;
-  email?: string;
-  membership: {
-    id: string;
-    contextType: 'organization';
-    userId: string;
-    role: 'member' | 'admin';
-    archived: boolean;
-    muted: boolean;
-    order: number;
-    organizationId: string;
-  } | null;
-};
-
 export type UserSummarySchema = {
   id: string;
   entityType: 'user';
@@ -106,6 +86,26 @@ export type ApiError = {
   timestamp?: string;
   userId?: string;
   organizationId?: string;
+};
+
+export type EntityListItemSchema = {
+  id: string;
+  entityType: 'user' | 'organization';
+  slug: string;
+  name: string;
+  thumbnailUrl?: string | null;
+  bannerUrl?: string | null;
+  email?: string;
+  membership: {
+    id: string;
+    contextType: 'organization';
+    userId: string;
+    role: 'member' | 'admin';
+    archived: boolean;
+    muted: boolean;
+    order: number;
+    organizationId: string;
+  } | null;
 };
 
 export type CheckEmailData = {
