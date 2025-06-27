@@ -83,6 +83,7 @@ export const allowedTypes: CustomBlockTypes[] = [
   'bulletListItem',
   'numberedListItem',
   'checkListItem',
+  'toggleListItem',
   'image',
   'video',
   'audio',
@@ -105,7 +106,6 @@ export const getSideMenuItems = (dict: Dictionary) => [...blockTypeSelectItems(d
 /**
  *  Slash Menu Configuration
  */
-// TODO (CHORE) handle toggleListItem
 const typeToBlocknoteKeys: Record<CustomBlockTypes, SlashItemKeys[]> = {
   table: ['table'],
   notify: ['notify'],
@@ -121,14 +121,24 @@ const typeToBlocknoteKeys: Record<CustomBlockTypes, SlashItemKeys[]> = {
   video: ['video'],
   audio: ['audio'],
   emoji: ['emoji'],
-  toggleListItem: [],
+  toggleListItem: ['toggle_list'],
 };
 
 // Indexed items (max 9 for quick number-based selection)
 export const customSlashIndexedItems: SlashIndexedItems = ['image', 'video', 'file', 'bulletListItem', 'numberedListItem', 'checkListItem', 'notify'];
 
 // Non-indexed items (accessed via browsing)
-export const customSlashNotIndexedItems: CustomBlockTypes[] = ['table', 'audio', 'heading', 'paragraph', 'codeBlock', 'quote', 'emoji'];
+export const customSlashNotIndexedItems: CustomBlockTypes[] = [
+  'table',
+  'audio',
+  'heading',
+  'paragraph',
+  'codeBlock',
+  'quote',
+  'emoji',
+  'toggleListItem',
+  'checkListItem',
+];
 
 // Generate the complete Slash menu items list
 export const getSlashMenuItems = (editor: CustomBlockNoteEditor, allowedTypes: CustomBlockTypes[]): DefaultReactSuggestionItem[] => {

@@ -35,7 +35,6 @@ const docs = (app: OpenAPIHono<Env>) => {
 
   registerAppSchema(registry);
 
-  // TODO add uniqe schema that we use on BE
   // Review all existing schemas
   app.doc31('/openapi.json', {
     servers: [{ url: config.backendUrl }],
