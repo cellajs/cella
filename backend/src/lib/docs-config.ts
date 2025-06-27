@@ -2,9 +2,14 @@ export const apiModulesList = [
   {
     name: 'me',
     description: `Endpoints related to the *current user*, meaning the user associated with the active session making the request.
-                  These routes are distinct from general \`users\` endpoints: while \`users\` may operate on any user in the system, \`me\` endpoints are scoped exclusively to the *current user* and follow a different authorization flow.`,
+      These routes are distinct from general \`users\` endpoints: while \`users\` may operate on any user in the system, \`me\` endpoints are scoped exclusively to the *current user* and follow a different authorization flow.`,
   },
-  { name: 'users', description: '`user` is also an entity, but NOT a contextual entity.' },
+  {
+    name: 'users',
+    description: `Endpoints for managing *users* at the system level.
+      Unlike contextual entities (such as \`organizations\`), a \`user\` is a "global" entity and not scoped to a specific context.
+      These endpoints are intended for administrative operations on any user in the system.`,
+  },
   {
     name: 'memberships',
     description:
