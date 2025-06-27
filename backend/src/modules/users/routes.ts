@@ -35,7 +35,7 @@ const userRoutes = {
     guard: [isAuthenticated, hasSystemAccess],
     tags: ['users'],
     summary: 'Delete users',
-    description: 'Deletes one or more *users* from the system based on a list of IDs.',
+    description: 'Deletes one or more *users* from the system based on a list of IDs. This also removes the user\'s memberships (cascade) and sets references to the user to `null` where applicable.',
     request: {
       body: {
         content: { 'application/json': { schema: idsBodySchema() } },

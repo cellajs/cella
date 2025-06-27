@@ -12,8 +12,9 @@ export const apiModulesList = [
   },
   {
     name: 'memberships',
-    description:
-      'Memberships represent one-to-one relations between a `user` and a contextual `entity`, such as an `organization`. It contains a role and archived, muted status. It also contains parent entities.',
+    description: `Endpoints for managing *memberships*, which represent one-to-one relationships between a \`user\` and a contextual \`entity\` (e.g., an \`organization\`).  
+      Each membership includes role information and status flags such as \`archived\` or \`muted\`.  
+      Memberships can also reference parent entities, enabling hierarchical context.`,
   },
   { name: 'organizations', description: 'Organizations - `organization` - are a core `entity`.' },
   { name: 'requests', description: 'Receive contact form, newsletter and waitlist requests.' },
