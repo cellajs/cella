@@ -7,8 +7,8 @@
   },
   "scripts": {
     "quick": "cross-env VITE_QUICK=true pnpm dev",
-    "dev": "cross-env NODE_ENV=development pnpm openapi:generate & vite --mode development && node --trace-warnings",
-    "openapi:generate": "wait-on http://localhost:4000/ping && pnpm openapi-ts",
+    "dev": "cross-env NODE_ENV=development pnpm generate & vite --mode development && node --trace-warnings",
+    "generate": "wait-on http://localhost:4000/ping && pnpm openapi-ts",
     "start": "cross-env NODE_ENV=production pnpm preview",
     "check": "tsc --pretty",
     "check:beta": "tsgo --pretty",

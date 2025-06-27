@@ -31,7 +31,7 @@ export const SystemInviteEmail = ({ name, lng, senderName, systemInviteLink }: S
       <EmailHeader
         headerText={
           <div
-            // biome-ignore lint/security/noDangerouslySetInnerHtml: <explanation>
+            // biome-ignore lint/security/noDangerouslySetInnerHtml: trusted HTML content from a secure source
             dangerouslySetInnerHTML={{
               __html: i18n.t('backend:email.system_invite.title', { appName, lng }),
             }}
@@ -42,7 +42,7 @@ export const SystemInviteEmail = ({ name, lng, senderName, systemInviteLink }: S
         <Text>
           <p style={{ marginBottom: '4px' }}>{name && i18n.t('backend:email.hi', { lng, name })}</p>
           <span
-            // biome-ignore lint/security/noDangerouslySetInnerHtml: <explanation>
+            // biome-ignore lint/security/noDangerouslySetInnerHtml: trusted HTML content from a secure source
             dangerouslySetInnerHTML={{
               __html: i18n.t('backend:email.system_invite.text', { lng, appName, senderName }),
             }}

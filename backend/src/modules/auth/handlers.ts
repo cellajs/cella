@@ -16,6 +16,7 @@ import { type UserModel, usersTable } from '#/db/schema/users';
 import { type Env, getContextToken, getContextUser } from '#/lib/context';
 import { resolveEntity } from '#/lib/entity';
 import { type ErrorType, errorRedirect, errorResponse } from '#/lib/errors';
+import { eventManager } from '#/lib/events';
 import { mailer } from '#/lib/mailer';
 import { logEvent } from '#/middlewares/logger/log-event';
 import { hashPassword, verifyPasswordHash } from '#/modules/auth/helpers/argon2id';
@@ -412,6 +413,8 @@ const authRouteHandlers = app
 
     const entity = await resolveEntity(token.entityType, targetMembership[entityIdField]);
     if (!entity) return errorResponse(ctx, 404, 'not_found', 'warn', token.entityType);
+
+    eventManager.emit('acceptedMembership', targetMembership);
 
     return ctx.json({ ...entity, membership: targetMembership }, 200);
   })

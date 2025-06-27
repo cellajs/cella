@@ -2,13 +2,36 @@
 
 import { z } from 'zod/v4';
 
-export const zBaseEntitySchema = z.object({
+export const zEntityBaseSchema = z.object({
   id: z.string(),
   entityType: z.enum(['organization']),
   slug: z.string(),
   name: z.string(),
   thumbnailUrl: z.union([z.string(), z.null()]).optional(),
   bannerUrl: z.union([z.string(), z.null()]).optional(),
+});
+
+export const zEntityListItemSchema = z.object({
+  id: z.string(),
+  entityType: z.enum(['user', 'organization']),
+  slug: z.string(),
+  name: z.string(),
+  thumbnailUrl: z.union([z.string(), z.null()]).optional(),
+  bannerUrl: z.union([z.string(), z.null()]).optional(),
+  email: z.string().optional(),
+  membership: z.union([
+    z.object({
+      id: z.string(),
+      contextType: z.enum(['organization']),
+      userId: z.string(),
+      role: z.enum(['member', 'admin']),
+      archived: z.boolean(),
+      muted: z.boolean(),
+      order: z.number().gte(-140737488355328).lte(140737488355327),
+      organizationId: z.string(),
+    }),
+    z.null(),
+  ]),
 });
 
 export const zUserSummarySchema = z.object({
@@ -19,6 +42,17 @@ export const zUserSummarySchema = z.object({
   thumbnailUrl: z.union([z.string(), z.null()]).optional(),
   bannerUrl: z.union([z.string(), z.null()]).optional(),
   email: z.string().email(),
+});
+
+export const zMembershipSummarySchema = z.object({
+  id: z.string(),
+  contextType: z.enum(['organization']),
+  userId: z.string(),
+  role: z.enum(['member', 'admin']),
+  archived: z.boolean(),
+  muted: z.boolean(),
+  order: z.number().gte(-140737488355328).lte(140737488355327),
+  organizationId: z.string(),
 });
 
 export const zMenuSchema = z.object({
