@@ -14,6 +14,7 @@ import { viteStaticCopy } from 'vite-plugin-static-copy';
 import { config } from '../config';
 import { replaceZodImport } from './src/zod-import-fix';
 // import { TanStackRouterVite } from '@tanstack/router-plugin/vite'
+import { heyApiPlugin } from '@hey-api/vite-plugin';
 
 const ReactCompilerConfig = {
   /* ... */
@@ -53,6 +54,27 @@ export default defineConfig(() => {
     clearScreen: false,
     plugins: [
       replaceZodImport(),
+      heyApiPlugin({
+        config: {
+          input: {
+            path: `${config.backendUrl}/openapi.json`,
+            watch: false
+          },
+          output: {
+            path: './src/api.gen',
+            lint: 'biome',
+            format: 'biome'
+          },
+          plugins: [
+            'zod',
+            { name: '@hey-api/sdk', responseStyle: 'data' },
+            {
+              name: '@hey-api/client-fetch',
+              throwOnError: true,
+              runtimeConfigPath: './src/api-config.ts',
+            },],
+        }
+      }),
       tsconfigPaths({ projects: ['./tsconfig.json'] }),
       // TanStackRouterVite(),
       react({
@@ -63,11 +85,11 @@ export default defineConfig(() => {
       tailwindcss(),
       config.sentSentrySourceMaps
         ? sentryVitePlugin({
-            disable: config.mode === 'development',
-            org: config.slug,
-            project: config.slug,
-            authToken: process.env.SENTRY_AUTH_TOKEN,
-          })
+          disable: config.mode === 'development',
+          org: config.slug,
+          project: config.slug,
+          authToken: process.env.SENTRY_AUTH_TOKEN,
+        })
         : undefined,
       viteStaticCopy({
         targets: [

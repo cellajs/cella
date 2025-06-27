@@ -7,8 +7,7 @@
   },
   "scripts": {
     "quick": "cross-env VITE_QUICK=true pnpm dev",
-    "dev": "cross-env NODE_ENV=development pnpm generate & vite --mode development && node --trace-warnings",
-    "generate": "wait-on http://localhost:4000/ping && pnpm openapi-ts",
+    "dev": "wait-on http://localhost:4000/ping && cross-env NODE_ENV=development vite --mode development && node --trace-warnings",
     "start": "cross-env NODE_ENV=production pnpm preview",
     "check": "tsc --pretty",
     "check:beta": "tsgo --pretty",
@@ -34,6 +33,7 @@
     "@floating-ui/dom": "^1.7.1",
     "@floating-ui/react": "^0.27.12",
     "@github/mini-throttle": "^2.1.1",
+    "@hey-api/vite-plugin": "^0.2.0",
     "@hookform/resolvers": "5.1.0",
     "@oslojs/encoding": "^1.1.0",
     "@paddle/paddle-js": "^1.4.2",

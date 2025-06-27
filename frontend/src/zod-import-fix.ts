@@ -2,8 +2,12 @@ import fs from 'node:fs';
 import path from 'node:path';
 import type { Plugin } from 'vite';
 
+/**
+ * Temporary vite plugin to replace Zod imports in generated OpenAPI client files.
+ * This is necessary due to the change in Zod's import path in version 4.
+ */
 export function replaceZodImport(): Plugin {
-  const openApiPath = path.resolve(__dirname, './openapi-client/zod.gen.ts');
+  const checkFilePath = path.resolve(__dirname, './api.gen/zod.gen.ts');
 
   return {
     name: 'patch-openapi-client-zod-imports',
@@ -11,19 +15,24 @@ export function replaceZodImport(): Plugin {
 
     configureServer(server) {
       // Watch the specific file
-      server.watcher.add(openApiPath);
+      server.watcher.add(checkFilePath);
+
+      // Initial patch if the file already exists
+      if (fs.existsSync(checkFilePath)) {
+        patchZodImports(path.dirname(checkFilePath));
+      }
 
       server.watcher.on('change', (filePath) => {
-        if (path.resolve(filePath) === openApiPath) {
+        if (path.resolve(filePath) === checkFilePath) {
           console.log(`[patch] Detected change in: ${filePath}`);
-          patchZodImports(path.dirname(openApiPath));
+          patchZodImports(path.dirname(checkFilePath));
         }
       });
 
       server.watcher.on('add', (filePath) => {
-        if (path.resolve(filePath) === openApiPath) {
+        if (path.resolve(filePath) === checkFilePath) {
           console.log(`[patch] New file added: ${filePath}`);
-          patchZodImports(path.dirname(openApiPath));
+          patchZodImports(path.dirname(checkFilePath));
         }
       });
     },
