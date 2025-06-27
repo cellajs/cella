@@ -15,6 +15,8 @@ import { config } from '../config';
 import { replaceZodImport } from './src/zod-import-fix';
 // import { TanStackRouterVite } from '@tanstack/router-plugin/vite'
 import { heyApiPlugin } from '@hey-api/vite-plugin';
+import { openApiConfig } from './openapi-ts.config';
+import { watchBackendOpenApi } from './src/openapi-watch-mode';
 
 const ReactCompilerConfig = {
   /* ... */
@@ -54,27 +56,8 @@ export default defineConfig(() => {
     clearScreen: false,
     plugins: [
       replaceZodImport(),
-      heyApiPlugin({
-        config: {
-          input: {
-            path: `${config.backendUrl}/openapi.json`,
-            watch: false
-          },
-          output: {
-            path: './src/api.gen',
-            lint: 'biome',
-            format: 'biome'
-          },
-          plugins: [
-            'zod',
-            { name: '@hey-api/sdk', responseStyle: 'data' },
-            {
-              name: '@hey-api/client-fetch',
-              throwOnError: true,
-              runtimeConfigPath: './src/api-config.ts',
-            },],
-        }
-      }),
+      watchBackendOpenApi(),
+      heyApiPlugin({ config: openApiConfig }),
       tsconfigPaths({ projects: ['./tsconfig.json'] }),
       // TanStackRouterVite(),
       react({
