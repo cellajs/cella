@@ -5,6 +5,7 @@ import { useMemo } from 'react';
 import type { UseFormProps } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod/v4';
+import { type MembershipInviteData, membershipInvite, systemInvite } from '~/api.gen';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import { useMutation } from '~/hooks/use-mutations';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
@@ -18,7 +19,6 @@ import { organizationsKeys } from '~/modules/organizations/query';
 import { Badge } from '~/modules/ui/badge';
 import { Button, SubmitButton } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
-import { type MembershipInviteData, membershipInvite, systemInvite } from '~/openapi-client';
 import { queryClient } from '~/query/query-client';
 
 interface Props {
@@ -73,12 +73,11 @@ const InviteEmailForm = ({ entity, dialog: isDialog, children }: Props) => {
   // It uses inviteSystem if no entity type is provided
   const { mutate: invite, isPending } = useMutation({
     mutationFn: async (body: FormValues) => {
-      if (!entity) return await systemInvite({ body, throwOnError: true });
+      if (!entity) return await systemInvite({ body });
       return await membershipInvite({
         query: { idOrSlug: entity.id, entityType: entity.entityType },
         path: { orgIdOrSlug: entity.organizationId || entity.id },
         body: body as MembershipInviteData['body'],
-        throwOnError: true,
       });
     },
     onSuccess: (_, { emails }) => {

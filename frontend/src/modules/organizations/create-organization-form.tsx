@@ -5,6 +5,7 @@ import { type UseFormProps, useWatch } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import type { z } from 'zod/v4';
+import { zCreateOrganizationData } from '~/api.gen/zod.gen';
 // Change this in the future on current schema
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import InputFormField from '~/modules/common/form-fields/input';
@@ -14,7 +15,6 @@ import { useOrganizationCreateMutation } from '~/modules/organizations/query';
 import type { Organization } from '~/modules/organizations/types';
 import { Button, SubmitButton } from '~/modules/ui/button';
 import { Form, type LabelDirectionType } from '~/modules/ui/form';
-import { zCreateOrganizationData } from '~/openapi-client/zod.gen';
 
 interface Props {
   callback?: (org: Organization) => void;

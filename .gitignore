@@ -27,7 +27,6 @@ dist-ssr
 .env
 .env.*
 !.env.example
-!.env.local
 
 # Cache
 *.tsbuildinfo
@@ -38,10 +37,8 @@ dist-ssr
 # Other
 .netlify
 .wrangler
-backend/files
 frontend/stats.html
-frontend/src/generated
-*.zip
+.trigger
 
-## Cella
+# Cella
 cella.diverged.txt

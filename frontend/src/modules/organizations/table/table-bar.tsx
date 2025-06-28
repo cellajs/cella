@@ -2,6 +2,7 @@ import { config } from 'config';
 import { Mailbox, Plus, Trash, XSquare } from 'lucide-react';
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
+import { getOrganizations } from '~/api.gen';
 import ColumnsView from '~/modules/common/data-table/columns-view';
 import Export from '~/modules/common/data-table/export';
 import { TableBarButton } from '~/modules/common/data-table/table-bar-button';
@@ -22,7 +23,6 @@ import type { OrganizationsSearch, OrganizationTable } from '~/modules/organizat
 import type { Organization } from '~/modules/organizations/types';
 import CreateNewsletterForm from '~/modules/system/create-newsletter-form';
 import NewsletterPreview from '~/modules/system/newsletter-preview';
-import { getOrganizations } from '~/openapi-client';
 
 type OrganizationsTableBarProps = BaseTableMethods & BaseTableBarProps<OrganizationTable, OrganizationsSearch>;
 
@@ -107,7 +107,6 @@ export const OrganizationsTableBar = ({
   const fetchExport = async (limit: number) => {
     const response = await getOrganizations({
       query: { limit: String(limit), q, sort: sort || 'createdAt', order: order || 'asc', offset: '0' },
-      throwOnError: true,
     });
     return response.items;
   };

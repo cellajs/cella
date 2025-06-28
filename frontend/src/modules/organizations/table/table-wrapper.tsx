@@ -1,13 +1,13 @@
 import { config } from 'config';
 import { useRef, useState } from 'react';
 import type { z } from 'zod/v4';
+import type { zGetOrganizationsResponse } from '~/api.gen/zod.gen';
 import useSearchParams from '~/hooks/use-search-params';
 import { useSortColumns } from '~/modules/common/data-table/sort-columns';
 import type { BaseTableMethods } from '~/modules/common/data-table/types';
 import { useColumns } from '~/modules/organizations/table/columns';
 import BaseDataTable from '~/modules/organizations/table/table';
 import { OrganizationsTableBar } from '~/modules/organizations/table/table-bar';
-import type { zGetOrganizationsResponse } from '~/openapi-client/zod.gen';
 import { OrganizationsTableRoute, type organizationsSearchSchema } from '~/routes/system';
 
 const LIMIT = config.requestLimits.organizations;

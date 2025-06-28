@@ -10,8 +10,8 @@ import '@uppy/audio/dist/style.css';
 import '@uppy/dashboard/dist/style.min.css';
 import '@uppy/image-editor/dist/style.css';
 import '@uppy/screen-capture/dist/style.css';
-import '@uppy/webcam/dist/style.css';
 import '@uppy/url/dist/style.css';
+import '@uppy/webcam/dist/style.css';
 import '~/modules/common/uploader/uppy.css';
 
 export const Uploader = () => {

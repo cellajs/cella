@@ -16,6 +16,7 @@ import { type UserModel, usersTable } from '#/db/schema/users';
 import { type Env, getContextToken, getContextUser } from '#/lib/context';
 import { resolveEntity } from '#/lib/entity';
 import { type ErrorType, errorRedirect, errorResponse } from '#/lib/errors';
+import { eventManager } from '#/lib/events';
 import { mailer } from '#/lib/mailer';
 import { logEvent } from '#/middlewares/logger/log-event';
 import { hashPassword, verifyPasswordHash } from '#/modules/auth/helpers/argon2id';
@@ -413,6 +414,8 @@ const authRouteHandlers = app
     const entity = await resolveEntity(token.entityType, targetMembership[entityIdField]);
     if (!entity) return errorResponse(ctx, 404, 'not_found', 'warn', token.entityType);
 
+    eventManager.emit('acceptedMembership', targetMembership);
+
     return ctx.json({ ...entity, membership: targetMembership }, 200);
   })
   /*
@@ -580,8 +583,8 @@ const authRouteHandlers = app
         fetch('https://api.github.com/user/emails', { headers }),
       ]);
 
-      const githubUser: GithubUserProps = await githubUserResponse.json();
-      const githubUserEmails: GithubUserEmailProps[] = await githubUserEmailsResponse.json();
+      const githubUser = (await githubUserResponse.json()) as GithubUserProps;
+      const githubUserEmails = (await githubUserEmailsResponse.json()) as GithubUserEmailProps[];
       const transformedUser = transformGithubUserData(githubUser, githubUserEmails);
 
       const provider = { id: strategy, userId: String(githubUser.id) };
@@ -658,7 +661,7 @@ const authRouteHandlers = app
       // Get user info from google
       const response = await fetch('https://openidconnect.googleapis.com/v1/userinfo', { headers });
 
-      const googleUser: GoogleUserProps = await response.json();
+      const googleUser = (await response.json()) as GoogleUserProps;
       const transformedUser = transformSocialUserData(googleUser);
 
       const provider = { id: strategy, userId: googleUser.sub };
@@ -735,7 +738,7 @@ const authRouteHandlers = app
       // Get user info from microsoft
       const response = await fetch('https://graph.microsoft.com/oidc/userinfo', { headers });
 
-      const microsoftUser: MicrosoftUserProps = await response.json();
+      const microsoftUser = (await response.json()) as MicrosoftUserProps;
       const transformedUser = transformSocialUserData(microsoftUser);
 
       const provider = { id: strategy, userId: microsoftUser.sub };

@@ -22,7 +22,7 @@ export const EmailVerificationEmail = ({ lng, verificationLink }: EmailVerificat
       <EmailBody>
         <Text>
           <span
-            // biome-ignore lint/security/noDangerouslySetInnerHtml: <explanation>
+            // biome-ignore lint/security/noDangerouslySetInnerHtml: trusted HTML content from a secure source
             dangerouslySetInnerHTML={{
               __html: i18n.t('backend:email.email_verification.text', { lng, appName }),
             }}

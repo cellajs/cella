@@ -4,13 +4,13 @@ import { config } from 'config';
 import { Ban, Check } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
+import { acceptEntityInvite } from '~/api.gen';
 import AuthErrorNotice from '~/modules/auth/auth-error-notice';
 import { useTokenCheck } from '~/modules/auth/use-token-check';
 import Spinner from '~/modules/common/spinner';
 import { getAndSetMenu } from '~/modules/me/helpers';
 import { buttonVariants, SubmitButton } from '~/modules/ui/button';
 import { getEntityRoute } from '~/nav-config';
-import { acceptEntityInvite } from '~/openapi-client';
 import { AcceptEntityInviteRoute } from '~/routes/auth';
 import { cn } from '~/utils/cn';
 
@@ -29,7 +29,7 @@ const AcceptEntityInvite = () => {
     isPending,
     error: acceptInviteError,
   } = useMutation({
-    mutationFn: () => acceptEntityInvite({ path: { token }, throwOnError: true }),
+    mutationFn: () => acceptEntityInvite({ path: { token } }),
     onSuccess: async (entity) => {
       await getAndSetMenu();
 

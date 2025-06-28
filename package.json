@@ -35,11 +35,10 @@
     "generate": "pnpm --filter backend generate",
     "clean": "rimraf backend/dist frontend/dist frontend/stats",
     "dev": "pnpm clean && cross-env FORCE_COLOR=1 pnpm -r --parallel --stream dev",
-    "dev:beta": "pnpm clean && tsx scripts/beta-dev.ts",
     "seed": "pnpm --filter backend seed",
     "lint": "pnpm dlx @biomejs/biome check .",
     "lint:fix": "pnpm dlx @biomejs/biome check --write .",
-    "check": "pnpm --filter backend precompile && pnpm --filter frontend check",
+    "check": "pnpm --filter backend check && pnpm --filter frontend check",
     "check:beta": "pnpm --filter backend check:beta && pnpm --filter frontend check:beta",
     "tsperf": "pnpm --filter backend tsperf && pnpm --filter frontend tsperf ",
     "tsperf:beta": "pnpm --filter backend tsperf:beta && pnpm --filter frontend tsperf:beta ",
@@ -53,9 +52,9 @@
     "test": "pnpm -r --parallel test"
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.0.5",
+    "@biomejs/biome": "^2.0.6",
     "@evilmartians/lefthook": "^1.11.14",
-    "@typescript/native-preview": "7.0.0-dev.20250623.1",
+    "@typescript/native-preview": "7.0.0-dev.20250627.1",
     "cross-env": "^7.0.3",
     "knip": "^5.61.2",
     "rimraf": "^6.0.1",
@@ -63,9 +62,8 @@
     "typescript": "^5.8.3",
     "vitest": "^3.2.4"
   },
-  "packageManager": "pnpm@9.1.2",
   "dependencies": {
-    "dotenv": "^16.5.0"
+    "dotenv": "^16.6.0"
   },
   "pnpm": {
     "overrides": {

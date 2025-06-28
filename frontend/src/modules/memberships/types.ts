@@ -1,7 +1,7 @@
 import type { ContextEntityType, config } from 'config';
 import type { z } from 'zod/v4';
-import type { DeleteMembershipsData, UpdateMembershipData } from '~/openapi-client';
-import type { zGetMembersResponse, zGetPendingInvitationsResponse, zUpdateMembershipResponse } from '~/openapi-client/zod.gen';
+import type { DeleteMembershipsData, UpdateMembershipData } from '~/api.gen';
+import type { zGetMembersResponse, zGetPendingInvitationsResponse, zUpdateMembershipResponse } from '~/api.gen/zod.gen';
 import type { ContextQueryProp, InfiniteQueryData, QueryData } from '~/query/types';
 export type Member = z.infer<typeof zGetMembersResponse>['items'][number];
 export type Membership = z.infer<typeof zUpdateMembershipResponse>;

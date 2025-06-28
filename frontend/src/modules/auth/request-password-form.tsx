@@ -2,12 +2,12 @@ import { Send } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
+import { type RequestPasswordResponse, requestPassword } from '~/api.gen';
 import { useMutation } from '~/hooks/use-mutations';
 import type { ApiError } from '~/lib/api';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { Button, SubmitButton } from '~/modules/ui/button';
 import { Input } from '~/modules/ui/input';
-import { type RequestPasswordResponse, requestPassword } from '~/openapi-client';
 
 export const RequestPasswordForm = ({ email = '' }: { email?: string }) => {
   const { t } = useTranslation();
@@ -18,7 +18,7 @@ export const RequestPasswordForm = ({ email = '' }: { email?: string }) => {
 
   // Send create/reset password email
   const { mutate: requestPasswordEmail, isPending } = useMutation<RequestPasswordResponse, ApiError, string>({
-    mutationFn: (email) => requestPassword({ body: { email }, throwOnError: true }),
+    mutationFn: (email) => requestPassword({ body: { email } }),
     onSuccess: () => {
       toast.success(t('common:success.reset_link_sent'));
       useDialoger.getState().remove();

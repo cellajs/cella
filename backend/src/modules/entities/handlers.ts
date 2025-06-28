@@ -24,7 +24,7 @@ const app = new OpenAPIHono<Env>({ defaultHook });
 const entityRouteHandlers = app
   /*
    * Get page entities with a limited schema
-   TODO getPageEntities and getContextEntities should be merged into a single endpoint? Also why does BaseEntitySchema only include the organization entityType?
+   TODO getPageEntities and getContextEntities should be merged into a single endpoint? Also why does EntityBaseSchema only include the organization entityType?
    */
   .openapi(entityRoutes.getPageEntities, async (ctx) => {
     const { q, type, targetUserId, targetOrgId, userMembershipType } = ctx.req.valid('query');

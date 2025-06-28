@@ -1,5 +1,5 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
-import { and, count, eq, ilike, inArray, or } from 'drizzle-orm';
+import { and, count, eq, ilike, inArray, or, type SQL } from 'drizzle-orm';
 import { db } from '#/db/db';
 import { membershipsTable } from '#/db/schema/memberships';
 import { usersTable } from '#/db/schema/users';
@@ -55,10 +55,10 @@ const usersRouteHandlers = app
       order,
     );
 
-    const filters = [];
+    const filters: SQL[] = [];
     if (q) {
       const query = prepareStringForILikeFilter(q);
-      filters.push(or(ilike(usersTable.name, query), ilike(usersTable.email, query)));
+      filters.push(or(ilike(usersTable.name, query), ilike(usersTable.email, query)) as SQL);
     }
     if (role) filters.push(eq(usersTable.role, role));
 

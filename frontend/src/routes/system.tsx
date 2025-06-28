@@ -1,10 +1,9 @@
 import { createRoute } from '@tanstack/react-router';
 import { lazy, Suspense } from 'react';
 import { z } from 'zod/v4';
-
+import { zGetOrganizationsData, zGetRequestsData, zGetUsersData } from '~/api.gen/zod.gen';
 import ErrorNotice from '~/modules/common/error-notice';
 import SystemPage from '~/modules/system/system-page';
-import { zGetOrganizationsData, zGetRequestsData, zGetUsersData } from '~/openapi-client/zod.gen';
 import { AppRoute } from '~/routes/base';
 import { noDirectAccess } from '~/utils/no-direct-access';
 

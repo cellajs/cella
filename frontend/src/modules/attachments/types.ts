@@ -1,6 +1,7 @@
 import type { z } from 'zod/v4';
-import type { CreateAttachmentData, DeleteAttachmentsData, UpdateAttachmentData } from '~/openapi-client';
-import type { zCreateAttachmentData, zCreateAttachmentResponse } from '~/openapi-client/zod.gen';
+
+import type { CreateAttachmentData, DeleteAttachmentsData, UpdateAttachmentData } from '~/api.gen';
+import type { zCreateAttachmentData, zCreateAttachmentResponse } from '~/api.gen/zod.gen';
 import type { ContextQueryProp, InfiniteQueryData, QueryData } from '~/query/types';
 
 export type Attachment = z.infer<typeof zCreateAttachmentResponse>[number];

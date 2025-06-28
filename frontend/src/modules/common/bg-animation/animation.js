@@ -256,7 +256,7 @@ const create_shader = (vert, frag_source, uniform_names) => {
   gl.attachShader(shader, vert);
   gl.attachShader(shader, frag);
   gl.linkProgram(shader);
-  // biome-ignore lint/suspicious/noAssignInExpressions: <explanation>
+  // biome-ignore lint/suspicious/noAssignInExpressions: this assignment is intentional and needed inside the condition
   uniform_names.map((name) => (shader[name] = gl.getUniformLocation(shader, name)));
   return shader;
 };

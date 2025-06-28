@@ -2,6 +2,7 @@ import { config } from 'config';
 import { LockOpen, Trash, XSquare } from 'lucide-react';
 import { useMemo, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
+import { getRequests, systemInvite } from '~/api.gen';
 import ColumnsView from '~/modules/common/data-table/columns-view';
 import Export from '~/modules/common/data-table/export';
 import { TableBarButton } from '~/modules/common/data-table/table-bar-button';
@@ -17,7 +18,6 @@ import DeleteRequests from '~/modules/requests/delete-requests';
 import { requestsKeys } from '~/modules/requests/query';
 import type { RequestsSearch } from '~/modules/requests/table/table-wrapper';
 import type { Request } from '~/modules/requests/types';
-import { getRequests, systemInvite } from '~/openapi-client';
 import { useMutateQueryData } from '~/query/hooks/use-mutate-query-data';
 
 type RequestsTableBarProps = BaseTableMethods & BaseTableBarProps<Request, RequestsSearch>;
@@ -80,7 +80,7 @@ export const RequestsTableBar = ({ total, selected, searchVars, setSearch, colum
 
     try {
       // Send invite to users
-      await systemInvite({ body: { emails }, throwOnError: true });
+      await systemInvite({ body: { emails } });
       toaster(t('common:success.user_invited'), 'success');
 
       mutateQuery.update(updatedWaitLists);
@@ -93,7 +93,6 @@ export const RequestsTableBar = ({ total, selected, searchVars, setSearch, colum
   const fetchExport = async (limit: number) => {
     const response = await getRequests({
       query: { q, sort: sort || 'createdAt', order: order || 'asc', limit: String(limit), offset: '0' },
-      throwOnError: true,
     });
     return response.items;
   };

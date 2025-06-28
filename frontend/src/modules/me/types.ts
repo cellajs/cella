@@ -1,7 +1,7 @@
 import type { z } from 'zod/v4';
+import type { GetUploadTokenData } from '~/api.gen';
+import type { zGetMyAuthResponse, zMenuSchema } from '~/api.gen/zod.gen';
 import type { User } from '~/modules/users/types';
-import type { GetUploadTokenData } from '~/openapi-client';
-import type { zGetMyAuthResponse, zMenuSchema } from '~/openapi-client/zod.gen';
 
 export type MeAuthData = z.infer<typeof zGetMyAuthResponse>;
 export type Session = MeAuthData['sessions'][number];

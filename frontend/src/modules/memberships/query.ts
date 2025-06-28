@@ -1,7 +1,6 @@
 import { infiniteQueryOptions } from '@tanstack/react-query';
 import { config } from 'config';
-
-import { type GetMembersData, type GetPendingInvitationsData, getMembers, getPendingInvitations } from '~/openapi-client';
+import { type GetMembersData, type GetPendingInvitationsData, getMembers, getPendingInvitations } from '~/api.gen';
 
 type GetMembershipInvitationsParams = Omit<GetPendingInvitationsData['query'], 'limit' | 'offset'> & GetPendingInvitationsData['path'];
 type GetMembersParams = Omit<GetMembersData['query'], 'limit' | 'offset'> & GetMembersData['path'];
@@ -64,7 +63,6 @@ export const membersQueryOptions = ({
         query: { q, sort, order, role, limit, idOrSlug, entityType, offset },
         path: { orgIdOrSlug },
         signal,
-        throwOnError: true,
       });
     },
     getNextPageParam: (_lastPage, allPages) => {
@@ -113,7 +111,6 @@ export const pendingInvitationsQueryOptions = ({
         query: { q, sort, order, limit, idOrSlug, entityType, offset },
         path: { orgIdOrSlug },
         signal,
-        throwOnError: true,
       });
     },
     getNextPageParam: (_lastPage, allPages) => {

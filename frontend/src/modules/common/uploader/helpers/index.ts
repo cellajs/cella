@@ -2,10 +2,10 @@ import { onlineManager } from '@tanstack/react-query';
 import { Uppy } from '@uppy/core';
 import Transloadit from '@uppy/transloadit';
 import { config } from 'config';
+import { getUploadToken } from '~/api.gen';
 import { prepareFilesForOffline } from '~/modules/common/uploader/helpers/prepare-for-offline';
 import type { CustomUppy, CustomUppyFile, CustomUppyOpt } from '~/modules/common/uploader/types';
 import type { UploadTockenQuery } from '~/modules/me/types';
-import { getUploadToken } from '~/openapi-client';
 import { cleanFileName } from '~/utils/clean-file-name';
 import { nanoid } from '~/utils/nanoid';
 

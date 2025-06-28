@@ -1,0 +1,1 @@
+ALTER TABLE "sessions" ALTER COLUMN "auth_strategy" SET NOT NULL;

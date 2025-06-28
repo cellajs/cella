@@ -46,6 +46,8 @@ const meRoutes = {
     operationId: 'updateMe',
     method: 'put',
     path: '/',
+    'x-wbut': 'dsfsd',
+    extensions: { 'x-wbut': 'dsfsd' },
     guard: isAuthenticated,
     tags: ['me'],
     summary: 'Update self',

@@ -1,8 +1,8 @@
 import { type UseQueryResult, useQuery } from '@tanstack/react-query';
 import type { config } from 'config';
+import { checkToken } from '~/api.gen';
 import type { ApiError } from '~/lib/api';
 import type { TokenData } from '~/modules/auth/types';
-import { checkToken } from '~/openapi-client';
 
 type TokenType = (typeof config.tokenTypes)[number];
 /**

@@ -5,7 +5,7 @@ import { useMemo } from 'react';
 import type { UseFormProps } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod/v4';
-
+import { membershipInvite } from '~/api.gen';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import { useMutation } from '~/hooks/use-mutations';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
@@ -17,7 +17,6 @@ import { Button, SubmitButton } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
 import { handleNewInvites } from '~/modules/users/invite-email-form';
 import { UserCombobox } from '~/modules/users/user-combobox';
-import { membershipInvite } from '~/openapi-client';
 
 interface Props {
   entity?: EntityPage;
@@ -58,7 +57,6 @@ const InviteSearchForm = ({ entity, dialog: isDialog }: Props) => {
         body,
         query: { idOrSlug: entity.id, entityType: entity.entityType || 'organization' },
         path: { orgIdOrSlug: entity.organizationId || entity.id },
-        throwOnError: true,
       });
     },
     onSuccess: (_, { emails }) => {

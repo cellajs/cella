@@ -1,15 +1,8 @@
 import { infiniteQueryOptions, useMutation } from '@tanstack/react-query';
 import { config } from 'config';
+import { type CreateRequestData, type CreateRequestResponses, createRequest, deleteRequests, type GetRequestsData, getRequests } from '~/api.gen';
 import type { ApiError } from '~/lib/api';
 import type { Request } from '~/modules/requests/types';
-import {
-  type CreateRequestData,
-  type CreateRequestResponses,
-  createRequest,
-  deleteRequests,
-  type GetRequestsData,
-  getRequests,
-} from '~/openapi-client';
 
 /**
  * Keys for request related queries. These keys help to uniquely identify different query. For managing query caching and invalidation.
@@ -52,7 +45,7 @@ export const requestsQueryOptions = ({
     initialPageParam: { page: 0, offset: 0 },
     queryFn: async ({ pageParam: { page, offset: _offset }, signal }) => {
       const offset = String(_offset || page * Number(limit));
-      return await getRequests({ query: { q, sort, order, limit, offset }, signal, throwOnError: true });
+      return await getRequests({ query: { q, sort, order, limit, offset }, signal });
     },
     getNextPageParam: (_lastPage, allPages) => {
       const page = allPages.length;
@@ -70,7 +63,7 @@ export const requestsQueryOptions = ({
 export const useCreateRequestMutation = () => {
   return useMutation<CreateRequestResponses[200], ApiError, CreateRequestData['body']>({
     mutationKey: requestsKeys.create(),
-    mutationFn: (body) => createRequest({ body, throwOnError: true }),
+    mutationFn: (body) => createRequest({ body }),
   });
 };
 
@@ -84,7 +77,7 @@ export const useDeleteRequestMutation = () => {
     mutationKey: requestsKeys.delete(),
     mutationFn: async (requests) => {
       const ids = requests.map(({ id }) => id);
-      await deleteRequests({ body: { ids }, throwOnError: true });
+      await deleteRequests({ body: { ids } });
       return true;
     },
   });

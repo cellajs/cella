@@ -1,5 +1,5 @@
-import { type RegisteredRouter, useSearch } from '@tanstack/react-router';
-import type { UseSearchResult } from '@tanstack/router-core';
+import { useSearch } from '@tanstack/react-router';
+import type { RegisteredRouter, UseSearchResult } from '@tanstack/router-core';
 import { useEffect, useMemo } from 'react';
 import { useOnlineManager } from '~/hooks/use-online-manager';
 

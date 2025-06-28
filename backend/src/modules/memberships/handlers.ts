@@ -10,6 +10,7 @@ import { usersTable } from '#/db/schema/users';
 import { type Env, getContextMemberships, getContextOrganization, getContextUser } from '#/lib/context';
 import { resolveEntity } from '#/lib/entity';
 import { createError, type ErrorType, errorResponse } from '#/lib/errors';
+import { eventManager } from '#/lib/events';
 import { mailer } from '#/lib/mailer';
 import { sendSSEToUsers } from '#/lib/sse';
 import { logEvent } from '#/middlewares/logger/log-event';
@@ -117,6 +118,8 @@ const membershipRouteHandlers = app
         if (!instantCreateMembership) return emailsWithIdToInvite.push({ email, userId });
 
         const createdMembership = await insertMembership({ userId: existingUser.id, role, entity, addAssociatedMembership: hasAssociatedMembership });
+
+        eventManager.emit('instantMembershipCreation', createdMembership);
 
         sendSSEToUsers([existingUser.id], 'add_entity', {
           newItem: {

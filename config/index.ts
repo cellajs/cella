@@ -1,9 +1,9 @@
 import _default from './default';
-import { mergeDeep } from './utils';
 import development from './development';
 import production from './production';
 import staging from './staging';
 import tunnel from './tunnel';
+import { mergeDeep } from './utils';
 
 /**
  * All entities in this app

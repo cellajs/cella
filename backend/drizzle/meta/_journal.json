@@ -8,6 +8,13 @@
       "when": 1747982100851,
       "tag": "0000_military_hulk",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1751004347476,
+      "tag": "0001_medical_sprite",
+      "breakpoints": true
     }
   ]
 }

@@ -12,7 +12,7 @@ export const CustomSlashMenu = ({ editor, allowedTypes }: { editor: CustomBlockN
     <SuggestionMenuController
       triggerCharacter={'/'}
       getItems={async (query) => filterSuggestionItems(slashMenuItems, query)}
-      suggestionMenuComponent={(props) => slashMenu(props, slashMenuItems.length)}
+      suggestionMenuComponent={(props) => slashMenu(props, slashMenuItems.length, allowedTypes)}
     />
   );
 };
