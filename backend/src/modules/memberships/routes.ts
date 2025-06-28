@@ -22,7 +22,7 @@ const membershipRoutes = {
     guard: [isAuthenticated, hasOrgAccess],
     tags: ['memberships'],
     summary: 'Create memberships',
-    description: 'Create memberships (invite members that may or may not exist in the system) to an entity such as an organization.',
+    description: 'Creates one or more *memberships*, inviting users (existing or new) to a contextual entity such as an organization.',
     request: {
       params: inOrgParamSchema,
       query: entityWithTypeQuerySchema,
@@ -49,7 +49,7 @@ const membershipRoutes = {
     guard: [isAuthenticated, hasOrgAccess],
     tags: ['memberships'],
     summary: 'Delete memberships',
-    description: 'Delete memberships by their ids. This will remove the membership but not delete any user(s).',
+    description: 'Deletes one or more *memberships* by ID. This removes the membership but does not delete the associated user(s).',
     request: {
       params: inOrgParamSchema,
       query: entityWithTypeQuerySchema,
@@ -76,7 +76,7 @@ const membershipRoutes = {
     guard: [isAuthenticated, hasOrgAccess],
     tags: ['memberships'],
     summary: 'Update membership',
-    description: 'Update role, muted, or archived status in a membership.',
+    description: 'Updates the *membership* metadata, such as role, `muted`, or `archived` status.',
     request: {
       params: idInOrgParamSchema,
       body: {
@@ -102,7 +102,7 @@ const membershipRoutes = {
     guard: [isAuthenticated, hasOrgAccess],
     tags: ['memberships'],
     summary: 'Get list of members',
-    description: 'Get members of a context entity by id or slug. It returns members (users) with their membership.',
+    description: 'Retrieves members (users) of a contextual entity by ID or slug, including their associated *membership* data.',
     request: {
       params: z.object({ orgIdOrSlug: idOrSlugSchema.optional() }),
       query: memberListQuerySchema,
@@ -126,7 +126,7 @@ const membershipRoutes = {
     guard: [isAuthenticated, hasOrgAccess],
     tags: ['memberships'],
     summary: 'Get list of invitations',
-    description: 'Get pending membership invitations from a context entity by id or slug. It returns invite info.',
+    description: 'Returns pending *membership* invitations for a contextual entity, identified by ID or slug.',
     request: {
       params: inOrgParamSchema,
       query: pendingInvitationListQuerySchema,

@@ -19,7 +19,7 @@ const organizationRoutes = {
     guard: isAuthenticated,
     tags: ['organizations'],
     summary: 'Create organization',
-    description: 'Create a new organization.',
+    description: 'Creates a new *organization*.',
     request: {
       body: {
         required: true,
@@ -45,7 +45,7 @@ const organizationRoutes = {
     guard: [isAuthenticated, hasSystemAccess],
     tags: ['organizations'],
     summary: 'Get list of organizations',
-    description: 'Get list of organizations. Currently only available to system admins.',
+    description: 'Returns a list of *organizations* at the system level.',
     request: {
       query: organizationListQuerySchema,
     },
@@ -68,7 +68,7 @@ const organizationRoutes = {
     guard: [isAuthenticated],
     tags: ['organizations'],
     summary: 'Update organization',
-    description: 'Update organization by id or slug.',
+    description: 'Updates an *organization* by ID or slug.',
     request: {
       params: entityParamSchema,
       body: {
@@ -94,7 +94,7 @@ const organizationRoutes = {
     guard: [isAuthenticated],
     tags: ['organizations'],
     summary: 'Get organization',
-    description: 'Get an organization by id or slug.',
+    description: 'Retrieves an *organization* by ID or slug.',
     request: {
       params: entityParamSchema,
     },
@@ -113,7 +113,7 @@ const organizationRoutes = {
     guard: [isAuthenticated],
     tags: ['organizations'],
     summary: 'Delete organizations',
-    description: 'Delete organizations by ids.',
+    description: 'Deletes one or more *organizations* by ID.',
     request: {
       body: {
         content: { 'application/json': { schema: idsBodySchema() } },
