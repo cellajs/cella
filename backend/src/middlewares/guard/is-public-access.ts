@@ -12,6 +12,3 @@ import type { Env } from '#/lib/context';
 export const isPublicAccess: MiddlewareHandler<Env> = createMiddleware<Env>(async (_, next): Promise<void> => {
   await next();
 });
-
-// biome-ignore lint/suspicious/noExplicitAny: Metadata for OpenAPI documentation (more metadata can be added later)
-(isPublicAccess as any).__openapi = { name: 'isPublicAccess' };
