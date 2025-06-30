@@ -597,9 +597,6 @@ importers:
       locales:
         specifier: workspace:*
         version: link:../locales
-      lodash:
-        specifier: ^4.17.21
-        version: 4.17.21
       lucide-react:
         specifier: ^0.507.0
         version: 0.507.0(react@19.1.0)
@@ -718,9 +715,6 @@ importers:
       '@types/canvas-confetti':
         specifier: ^1.9.0
         version: 1.9.0
-      '@types/lodash':
-        specifier: ^4.17.19
-        version: 4.17.19
       '@types/node':
         specifier: ^24.0.4
         version: 24.0.4

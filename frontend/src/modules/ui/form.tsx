@@ -1,6 +1,5 @@
 import type * as LabelPrimitive from '@radix-ui/react-label';
 import { Slot } from '@radix-ui/react-slot';
-import { get } from 'lodash';
 import { ChevronUp, HelpCircle } from 'lucide-react';
 import * as React from 'react';
 import { useState } from 'react';
@@ -17,6 +16,7 @@ import {
 import { Button } from '~/modules/ui/button';
 import { Label } from '~/modules/ui/label';
 import { cn } from '~/utils/cn';
+import { getNestedValue } from '~/utils/get-nested-value';
 
 export type LabelDirectionType = 'top' | 'left';
 const LabelDirectionContext = React.createContext<LabelDirectionType | string>('top');
@@ -76,9 +76,9 @@ const useFormField = () => {
   const { name } = fieldContext;
 
   const { errors, touchedFields, dirtyFields } = useFormState({ control, name });
-  const error = get(errors, name);
-  const isTouched = !!get(touchedFields, name);
-  const isDirty = !!get(dirtyFields, name);
+  const error = getNestedValue(errors, name);
+  const isTouched = !!getNestedValue(touchedFields, name);
+  const isDirty = !!getNestedValue(dirtyFields, name);
   const invalid = !!error;
 
   const { id } = itemContext;
