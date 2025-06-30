@@ -1142,7 +1142,7 @@ export const zGetPageEntitiesResponse = z.object({
   total: z.number(),
 });
 
-export const zGetContextEntitiesData = z.object({
+export const zGetEntitiesWithAdminsData = z.object({
   body: z.never().optional(),
   path: z.never().optional(),
   query: z.object({
@@ -1157,7 +1157,7 @@ export const zGetContextEntitiesData = z.object({
 /**
  * Context entities
  */
-export const zGetContextEntitiesResponse = z.array(
+export const zGetEntitiesWithAdminsResponse = z.array(
   z.object({
     id: z.string(),
     entityType: z.enum(['organization']),
@@ -1176,7 +1176,7 @@ export const zGetContextEntitiesResponse = z.array(
       order: z.number().gte(-140737488355328).lte(140737488355327),
       organizationId: z.string(),
     }),
-    members: z.array(
+    admins: z.array(
       z.object({
         id: z.string(),
         entityType: z.enum(['user']),

@@ -67,9 +67,9 @@ const entityRouteHandlers = app
     return ctx.json({ items, total, counts }, 200);
   })
   /*
-   * Get all users' context entities
+   * Get all users' context entities with admins
    */
-  .openapi(entityRoutes.getContextEntities, async (ctx) => {
+  .openapi(entityRoutes.getEntitiesWithAdmins, async (ctx) => {
     const { q, sort, type, roles, targetUserId } = ctx.req.valid('query');
 
     const { id: selfId } = getContextUser();
@@ -107,17 +107,17 @@ const entityRouteHandlers = app
 
     const entityIds = entities.map(({ id }) => id);
 
-    const members = await db
+    const admins = await db
       .select({
         userData: userSummarySelect,
         entityId: membershipsTable[entityIdField],
       })
       .from(membershipsTable)
       .innerJoin(usersTable, eq(usersTable.id, membershipsTable.userId))
-      .where(and(inArray(membershipsTable[entityIdField], entityIds), eq(membershipsTable.contextType, type)));
+      .where(and(inArray(membershipsTable[entityIdField], entityIds), eq(membershipsTable.contextType, type), eq(membershipsTable.role, 'admin')));
 
-    // Group members by entityId
-    const membersByEntityId = members.reduce<Record<string, z.infer<typeof userSummarySchema>[]>>((acc, { entityId, userData }) => {
+    // Group admins by entityId
+    const membersByEntityId = admins.reduce<Record<string, z.infer<typeof userSummarySchema>[]>>((acc, { entityId, userData }) => {
       if (!entityId) return acc;
       if (!acc[entityId]) acc[entityId] = [];
       acc[entityId].push(userData);
@@ -125,10 +125,10 @@ const entityRouteHandlers = app
       return acc;
     }, {});
 
-    // Enrich entities with members
+    // Enrich entities with admins
     const data = entities.map((entity) => ({
       ...entity,
-      members: membersByEntityId[entity.id] ?? [],
+      admins: membersByEntityId[entity.id] ?? [],
     }));
     return ctx.json(data, 200);
   })

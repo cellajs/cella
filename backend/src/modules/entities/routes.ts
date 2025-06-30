@@ -56,8 +56,8 @@ const entityRoutes = {
       ...errorResponses,
     },
   }),
-  getContextEntities: createCustomRoute({
-    operationId: 'getContextEntities',
+  getEntitiesWithAdmins: createCustomRoute({
+    operationId: 'getEntitiesWithAdmins',
     method: 'get',
     path: '/context',
     guard: isAuthenticated,
