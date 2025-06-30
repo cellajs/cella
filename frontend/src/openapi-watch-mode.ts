@@ -40,14 +40,14 @@ const getConfigInputPath = (input: unknown) => {
   throw new Error('Path missing path in openapi Config');
 };
 
-const filePath = getConfigInputPath(openApiConfig.input);
-
-const hashFile = () => {
-  const content = readFileSync(filePath);
-  return createHash('sha256').update(content).digest('hex');
-};
-
 export const watchBackendOpenApi = (): Plugin => {
+  const filePath = getConfigInputPath(openApiConfig.input);
+
+  const hashFile = () => {
+    const content = readFileSync(filePath);
+    return createHash('sha256').update(content).digest('hex');
+  };
+
   let previousHash = hashFile();
   let watcher: fs.FSWatcher | null = null;
   let debounceTimer: NodeJS.Timeout | null = null;
