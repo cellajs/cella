@@ -45,7 +45,11 @@ export const apiModulesList = [
     description: `*Authentication* endpoints supporting multiple sign-in methods, including email/password, OAuth (Google, Microsoft, GitHub), and passkeys (WebAuthn).  
       These routes cover user sign-up, sign-in, password recovery, email verification, account linking, and impersonation for system admins.`,
   },
-  { name: 'attachments', description: 'Be able to leverage different attachment types within an entity.' },
+  {
+    name: 'attachments',
+    description: `Endpoints for managing file based *attachments* (e.g. images, PDFs, documents) linked to entities such as organizations or users.
+      Files are uploaded directly by the client; the API handles metadata registration, linking, access, and preview utilities.`,
+  },
   { name: 'metrics', description: 'Observability endpoints.' },
 ];
 
