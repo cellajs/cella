@@ -52,7 +52,7 @@ const docs = async (app: OpenAPIHono<Env>) => {
   app.doc31('/openapi.json', openApiConfig);
 
   // Get JSON doc and save to file
-  const openApiDoc = app.getOpenAPIDocument(openApiConfig);
+  const openApiDoc = app.getOpenAPI31Document(openApiConfig);
   fs.writeFile('./openapi.cache.json', JSON.stringify(openApiDoc, null, 2));
 
   app.get(
