@@ -1,6 +1,6 @@
 import { exec } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import fs, { readFileSync, watchFile } from 'node:fs';
+import fs, { readFileSync } from 'node:fs';
 import { URL } from 'node:url';
 import type { Plugin } from 'vite';
 import { openApiConfig } from '../openapi-ts.config';
@@ -20,10 +20,6 @@ const fileExists = (path: string) => {
   } catch {
     return false;
   }
-};
-const hashFile = () => {
-  const content = readFileSync(filePath);
-  return createHash('sha256').update(content).digest('hex');
 };
 
 const getConfigInputPath = (input: unknown) => {
@@ -46,23 +42,52 @@ const getConfigInputPath = (input: unknown) => {
 
 const filePath = getConfigInputPath(openApiConfig.input);
 
+const hashFile = () => {
+  const content = readFileSync(filePath);
+  return createHash('sha256').update(content).digest('hex');
+};
+
 export const watchBackendOpenApi = (): Plugin => {
   let previousHash = hashFile();
-
-  watchFile(filePath, () => {
-    const newHash = hashFile();
-
-    if (newHash !== previousHash) {
-      previousHash = newHash;
-      exec('pnpm openapi-ts', (err, stdout, stderr) => {
-        if (err) console.error('[openapi-ts] Error:', err);
-        else console.info('[openapi-ts] Regenerated typings:\n', stdout || stderr);
-      });
-    }
-  });
+  let watcher: fs.FSWatcher | null = null;
 
   return {
     name: 'watch-backend-openapi',
     apply: 'serve',
+    // Called when plugin is initialized (on Vite start or restart)
+    buildStart() {
+      // If a watcher exists from previous plugin instance, close it
+      if (watcher) {
+        watcher.close();
+        watcher = null;
+      }
+
+      // Create new watcher
+      watcher = fs.watch(filePath, (eventType) => {
+        if (eventType === 'change') {
+          try {
+            const newHash = hashFile();
+            if (newHash !== previousHash) {
+              console.log(23);
+              previousHash = newHash;
+              exec('pnpm openapi-ts', (err, stdout, stderr) => {
+                if (err) console.error('[openapi-ts] Error:', err);
+                else console.info('[openapi-ts] Regenerated typings:\n', stdout || stderr);
+              });
+            }
+          } catch (e) {
+            console.error('[openapi-ts] Failed to read or hash file:', e);
+          }
+        }
+      });
+    },
+
+    // Called when Vite server is stopping — clean up watcher here
+    closeBundle() {
+      if (watcher) {
+        watcher.close();
+        watcher = null;
+      }
+    },
   };
 };
