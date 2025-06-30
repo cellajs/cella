@@ -377,7 +377,7 @@ const membershipRouteHandlers = app
 
     const membersQuery = db
       .select({
-        user: userSelect,
+        ...userSelect,
         membership: membershipSummarySelect,
       })
       .from(usersTable)
@@ -386,8 +386,7 @@ const membershipRouteHandlers = app
 
     const [{ total }] = await db.select({ total: count() }).from(membersQuery.as('memberships'));
 
-    const members = await membersQuery.orderBy(orderColumn).limit(Number(limit)).offset(Number(offset));
-    const items = members.map(({ user, membership }) => ({ ...user, membership }));
+    const items = await membersQuery.orderBy(orderColumn).limit(Number(limit)).offset(Number(offset));
 
     return ctx.json({ items, total }, 200);
   })
