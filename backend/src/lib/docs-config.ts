@@ -29,7 +29,11 @@ export const apiModulesList = [
     name: 'requests',
     description: 'Endpoints for handling incoming *requests* such as contact form submissions, newsletter signups, and waitlist entries.',
   },
-  { name: 'entities', description: 'Endpoints that span across entities.' },
+  {
+    name: 'entities',
+    description: `Endpoints that operate across multiple *entity types*, such as \`users\` and \`organizations\`.  
+      *Entities* are identifiable domain objects often contextual, hierarchical (with parent/child relationships), or actor-like.`,
+  },
   { name: 'system', description: 'Endpoints that are system-wide or system (admin) related.' },
   {
     name: 'auth',

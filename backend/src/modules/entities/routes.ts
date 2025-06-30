@@ -13,7 +13,8 @@ const entityRoutes = {
     guard: isAuthenticated,
     tags: ['entities'],
     summary: 'Check if slug is available',
-    description: 'This endpoint is used to check if a slug is available among ALL contextual entities such as organizations.',
+    description:
+      'Checks whether a given slug is available across all entities (e.g. *organizations*, *users*). Useful for creating or updating *entities*.',
     request: {
       body: {
         content: {
@@ -46,7 +47,7 @@ const entityRoutes = {
     tags: ['entities'],
     summary: 'Get list of page entities',
     description:
-      'Get page entities such as users and organizations. It returns a paginated list of entities to which the user has access. The schema is limited to common fields.',
+      'Returns a paginated list of *entities* (e.g. *users*, *organizations*) the current user has access to. The response includes only fields common to all entities.',
     request: { query: pageEntitiesQuerySchema },
     responses: {
       200: {
@@ -64,7 +65,7 @@ const entityRoutes = {
     tags: ['entities'],
     summary: 'Get all of context user entities',
     description:
-      'Get context entities such organizations of specified user. It returns list of entities based of requested tpye to which the user are part of. With user membership & other members of entity.',
+      'Returns all contextual *entities* (e.g. *organizations*) the specified user is a member of, including their membership data and, optionally, other members of each entity.',
     request: { query: contextEntitiesQuerySchema },
     responses: {
       200: {
