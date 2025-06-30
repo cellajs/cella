@@ -50,7 +50,11 @@ export const apiModulesList = [
     description: `Endpoints for managing file based *attachments* (e.g. images, PDFs, documents) linked to entities such as organizations or users.
       Files are uploaded directly by the client; the API handles metadata registration, linking, access, and preview utilities.`,
   },
-  { name: 'metrics', description: 'Observability endpoints.' },
+  {
+    name: 'metrics',
+    description: `Endpoints for retrieving system level statistics and basic observability data.
+      Includes internal metrics as well as simple, high level counts for entities such as \`users\` and \`organizations\`.`,
+  },
 ];
 
 /**
