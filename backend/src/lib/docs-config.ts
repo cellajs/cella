@@ -42,7 +42,8 @@ export const apiModulesList = [
   },
   {
     name: 'auth',
-    description: 'Multiple authentication methods are included: email/password combination, OAuth and passkey support.',
+    description: `*Authentication* endpoints supporting multiple sign-in methods, including email/password, OAuth (Google, Microsoft, GitHub), and passkeys (WebAuthn).  
+      These routes cover user sign-up, sign-in, password recovery, email verification, account linking, and impersonation for system admins.`,
   },
   { name: 'attachments', description: 'Be able to leverage different attachment types within an entity.' },
   { name: 'metrics', description: 'Observability endpoints.' },
