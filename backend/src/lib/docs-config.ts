@@ -25,7 +25,10 @@ export const apiModulesList = [
       Organizations are the highest ancestor in the parent hierarchy.  
       They define access boundaries and are often the minimal primary scope for permission and resource management.`,
   },
-  { name: 'requests', description: 'Receive contact form, newsletter and waitlist requests.' },
+  {
+    name: 'requests',
+    description: 'Endpoints for handling incoming *requests* such as contact form submissions, newsletter signups, and waitlist entries.',
+  },
   { name: 'entities', description: 'Endpoints that span across entities.' },
   { name: 'system', description: 'Endpoints that are system-wide or system (admin) related.' },
   {
