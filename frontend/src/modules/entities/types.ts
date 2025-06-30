@@ -1,5 +1,5 @@
 import type { z } from 'zod/v4';
-import type { zEntityBaseSchema, zGetContextEntitiesResponse } from '~/api.gen/zod.gen';
+import type { zEntityBaseSchema, zGetEntitiesWithAdminsResponse } from '~/api.gen/zod.gen';
 import type { MembershipSummary } from '~/modules/memberships/types';
 
 export type EntitySummary = z.infer<typeof zEntityBaseSchema>;
@@ -12,4 +12,4 @@ export type EntityPage = ContextEntityData & {
 };
 
 // We have getContext and getPageEntities, make more clear which is which
-export type EntityGridItem = z.infer<typeof zGetContextEntitiesResponse>[number];
+export type EntityGridItem = z.infer<typeof zGetEntitiesWithAdminsResponse>[number];

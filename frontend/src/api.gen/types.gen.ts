@@ -2308,7 +2308,7 @@ export type GetPageEntitiesResponses = {
 
 export type GetPageEntitiesResponse = GetPageEntitiesResponses[keyof GetPageEntitiesResponses];
 
-export type GetContextEntitiesData = {
+export type GetEntitiesWithAdminsData = {
     body?: never;
     path?: never;
     query: {
@@ -2321,7 +2321,7 @@ export type GetContextEntitiesData = {
     url: '/entities/context';
 };
 
-export type GetContextEntitiesErrors = {
+export type GetEntitiesWithAdminsErrors = {
     /**
      * Bad request: problem processing request.
      */
@@ -2344,9 +2344,9 @@ export type GetContextEntitiesErrors = {
     429: ApiError;
 };
 
-export type GetContextEntitiesError = GetContextEntitiesErrors[keyof GetContextEntitiesErrors];
+export type GetEntitiesWithAdminsError = GetEntitiesWithAdminsErrors[keyof GetEntitiesWithAdminsErrors];
 
-export type GetContextEntitiesResponses = {
+export type GetEntitiesWithAdminsResponses = {
     /**
      * Context entities
      */
@@ -2368,7 +2368,7 @@ export type GetContextEntitiesResponses = {
             order: number;
             organizationId: string;
         };
-        members: Array<{
+        admins: Array<{
             id: string;
             entityType: 'user';
             slug: string;
@@ -2380,7 +2380,7 @@ export type GetContextEntitiesResponses = {
     }>;
 };
 
-export type GetContextEntitiesResponse = GetContextEntitiesResponses[keyof GetContextEntitiesResponses];
+export type GetEntitiesWithAdminsResponse = GetEntitiesWithAdminsResponses[keyof GetEntitiesWithAdminsResponses];
 
 export type CheckSlugData = {
     body?: {

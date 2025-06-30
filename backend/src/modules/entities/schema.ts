@@ -45,7 +45,7 @@ export const contextEntitiesSchema = z.array(
   entityBaseSchema.extend({
     createdAt: z.string(),
     membership: membershipSummarySchema,
-    members: z.array(userSummarySchema),
+    admins: z.array(userSummarySchema),
   }),
 );
 

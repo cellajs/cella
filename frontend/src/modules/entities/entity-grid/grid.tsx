@@ -3,14 +3,14 @@ import { t } from 'i18next';
 import { useEffect, useState } from 'react';
 import { useInView } from 'react-intersection-observer';
 import type z from 'zod/v4';
-import type { zGetContextEntitiesData } from '~/api.gen/zod.gen';
+import type { zGetEntitiesWithAdminsData } from '~/api.gen/zod.gen';
 import { useOnlineManager } from '~/hooks/use-online-manager';
 import { GridSkeleton } from '~/modules/entities/entity-grid/skeleton';
 import { contextEntitiesQueryOptions } from '~/modules/entities/query';
 import type { EntityGridWrapperProps } from './wrapper';
 
 // TODO: can we also include roles and userId in the searchVars?
-export type EntitySearch = Pick<z.infer<typeof zGetContextEntitiesData>['query'], 'sort' | 'q'>;
+export type EntitySearch = Pick<z.infer<typeof zGetEntitiesWithAdminsData>['query'], 'sort' | 'q'>;
 
 interface Props extends EntityGridWrapperProps {
   searchVars: EntitySearch;
@@ -70,8 +70,8 @@ export const BaseEntityGrid = ({
   if (!initialDone) return <GridSkeleton />;
 
   return (
-    <>
-      <div className="mb-12 grid gap-6 grid-cols-1 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-[repeat(auto-fit,minmax(330px,1fr))]">
+    <div className="mb-12">
+      <div className="grid gap-6 grid-cols-1 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-[repeat(auto-fit,minmax(330px,1fr))]">
         {entities.map((entity) => (
           <TileComponent key={entity.id} entity={entity} />
         ))}
@@ -104,6 +104,6 @@ export const BaseEntityGrid = ({
       )}
       {/* Error */}
       {error && <div className="text-center my-8 text-sm text-red-600">{t('error:load_more_failed')}</div>}
-    </>
+    </div>
   );
 };

@@ -19,3 +19,6 @@ export const isSystemAdmin: MiddlewareHandler<Env> = createMiddleware<Env>(async
 
   await next();
 });
+
+// biome-ignore lint/suspicious/noExplicitAny: Metadata for OpenAPI documentation (more metadata can be added later)
+(isSystemAdmin as any).__openapi = { name: 'isSystemAdmin' };

@@ -54,7 +54,7 @@ const PageHeader = ({ entity, panel, parent, disableScroll, ...coverProps }: Pag
           className={entity.entityType === 'user' ? 'h-24 w-24 -mt-12 text-4xl ml-2 mr-3 border-bg border-opacity-50 border-2 rounded-full' : 'm-2'}
         />
 
-        <div className="flex py-2 flex-col truncate pl-1">
+        <div className="flex py-1.5 flex-col truncate pl-1">
           {/* Page title */}
           <h1 className="md:text-xl max-sm:-mt-0.5 truncate leading-6 font-semibold">{entity.name}</h1>
 
