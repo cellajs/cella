@@ -72,7 +72,7 @@ const meRoutes = {
     tags: ['me'],
     summary: 'Delete self',
     description:
-      'Deletes the *current user*. This also removes the user\'s memberships (cascade) and sets references to the user to `null` where applicable.',
+      "Deletes the *current user*. This also removes the user's memberships (cascade) and sets references to the user to `null` where applicable.",
     responses: {
       200: {
         description: 'User deleted',

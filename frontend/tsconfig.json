@@ -12,6 +12,6 @@
     }
   },
 
-  "include": ["src/**/*", "vite.config.ts", "../config/*", "../locales/*", "src/api-config.ts"],
+  "include": ["src/**/*", "vite.config.ts", "../config/*", "../locales/*", "src/api-config.ts", "openapi-ts.config.ts"],
   "exclude": ["**/node_modules", "**/dist", "**/.*/"]
 }
