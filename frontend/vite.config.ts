@@ -55,9 +55,6 @@ export default defineConfig(() => {
     },
     clearScreen: false,
     plugins: [
-      replaceZodImport(),
-      watchBackendOpenApi(),
-      heyApiPlugin({ config: openApiConfig }),
       tsconfigPaths({ projects: ['./tsconfig.json'] }),
       // TanStackRouterVite(),
       react({
@@ -160,7 +157,9 @@ export default defineConfig(() => {
   if (config.frontendUrl.includes('https')) viteConfig.plugins?.push([basicSsl()]);
   if (config.mode === 'development')
     viteConfig.plugins?.push([
-
+      replaceZodImport(),
+      watchBackendOpenApi(),
+      heyApiPlugin({ config: openApiConfig }),
       reactScan({
         enable: false,
         scanOptions: {
