@@ -70,8 +70,8 @@ export const BaseEntityGrid = ({
   if (!initialDone) return <GridSkeleton />;
 
   return (
-    <>
-      <div className="mb-12 grid gap-6 grid-cols-1 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-[repeat(auto-fit,minmax(330px,1fr))]">
+    <div className="mb-12">
+      <div className="grid gap-6 grid-cols-1 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-[repeat(auto-fit,minmax(330px,1fr))]">
         {entities.map((entity) => (
           <TileComponent key={entity.id} entity={entity} />
         ))}
@@ -104,6 +104,6 @@ export const BaseEntityGrid = ({
       )}
       {/* Error */}
       {error && <div className="text-center my-8 text-sm text-red-600">{t('error:load_more_failed')}</div>}
-    </>
+    </div>
   );
 };
