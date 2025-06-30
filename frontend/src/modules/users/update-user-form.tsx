@@ -113,13 +113,19 @@ const UpdateUserForm = ({ user, callback, sheet: isSheet, hiddenFields, children
           />
         )}
 
-        <div id="email-form-item-container" className="flex-col flex gap-2">
-          <FormLabel>{t('common:email')}</FormLabel>
-          <FormControl>
-            <Input value={user.email} autoComplete="off" disabled />
-          </FormControl>
-          <FormMessage />
-        </div>
+        <FormField
+          control={form.control}
+          name="newsletter"
+          render={() => (
+            <FormItem id="email-form-item-container" className="flex-col flex gap-2" name="email">
+              <FormLabel>{t('common:email')}</FormLabel>
+              <FormControl>
+                <Input value={user.email} autoComplete="off" disabled />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
         <FormField
           control={form.control}

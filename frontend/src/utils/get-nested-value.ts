@@ -12,6 +12,11 @@ export const getNestedValue = <TObject extends object, TPath extends Array<strin
   // Exit early if the input is not a valid object
   if (obj == null || typeof obj !== 'object') return undefined;
 
+  // Early return if path is neither string nor array
+  if (typeof path !== 'string' && !(Array.isArray(path) && path.every((key) => typeof key === 'string' || typeof key === 'number'))) {
+    return undefined;
+  }
+
   // Convert string path to array format, e.g. "a.b[0].c" -> ['a', 'b', 0, 'c']
   const pathArray = Array.isArray(path)
     ? path
