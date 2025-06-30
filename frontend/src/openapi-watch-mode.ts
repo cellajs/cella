@@ -50,39 +50,47 @@ const hashFile = () => {
 export const watchBackendOpenApi = (): Plugin => {
   let previousHash = hashFile();
   let watcher: fs.FSWatcher | null = null;
+  let debounceTimer: NodeJS.Timeout | null = null;
 
   return {
     name: 'watch-backend-openapi',
     apply: 'serve',
-    // Called when plugin is initialized (on Vite start or restart)
+
+    // Called when Vite starts or restarts plugin
     buildStart() {
-      // If a watcher exists from previous plugin instance, close it
+      // Close watcher if exist it to avoid duplicate watchers and memory leaks
       if (watcher) {
         watcher.close();
         watcher = null;
       }
 
-      // Create new watcher
       watcher = fs.watch(filePath, (eventType) => {
         if (eventType === 'change') {
-          try {
-            const newHash = hashFile();
-            if (newHash !== previousHash) {
-              console.log(23);
-              previousHash = newHash;
-              exec('pnpm openapi-ts', (err, stdout, stderr) => {
-                if (err) console.error('[openapi-ts] Error:', err);
-                else console.info('[openapi-ts] Regenerated typings:\n', stdout || stderr);
-              });
+          // If a debounce timer exists, clear it to
+          if (debounceTimer) clearTimeout(debounceTimer);
+
+          debounceTimer = setTimeout(() => {
+            try {
+              const newHash = hashFile();
+
+              if (newHash !== previousHash) {
+                previousHash = newHash;
+
+                // Run regeneration command
+                exec('pnpm openapi-ts', (err, stdout, stderr) => {
+                  if (err) console.error('[openapi-ts] Error:', err);
+                  else console.info('[openapi-ts] Regenerated typings:\n', stdout || stderr);
+                });
+              }
+            } catch (e) {
+              console.error('[openapi-ts] Failed to read or hash file:', e);
             }
-          } catch (e) {
-            console.error('[openapi-ts] Failed to read or hash file:', e);
-          }
+          }, 100); // Debounce delay to batch multiple rapid changes
         }
       });
     },
 
-    // Called when Vite server is stopping — clean up watcher here
+    // Called when Vite server is shutting down or the plugin is being disposed
     closeBundle() {
       if (watcher) {
         watcher.close();
