@@ -32,9 +32,6 @@ export const config = {
   // Which scripts to run when seeding the database
   seedScripts: ['pnpm run seed:user', 'pnpm run seed:organizations'],
 
-  // Sensitive fields to omit from user object
-  sensitiveFields: ['hashedPassword', 'unsubscribeToken'] as const,
-
   // API docs settings
   apiVersion: 'v1',
   apiDescription:
