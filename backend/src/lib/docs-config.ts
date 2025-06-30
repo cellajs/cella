@@ -35,7 +35,11 @@ export const apiModulesList = [
       *Entities* are identifiable domain objects that may be contextual, hierarchical (with parent/child relations), or actor-like.
       These endpoints offer shared logic across modules, including slug validation and entity visibility.`,
   },
-  { name: 'system', description: 'Endpoints that are system-wide or system (admin) related.' },
+  {
+    name: 'system',
+    description: `*System level* endpoints for administrative actions and platform wide functionality.
+      These endpoints support operations such as user invitations, file uploads, and webhook handling.`,
+  },
   {
     name: 'auth',
     description: 'Multiple authentication methods are included: email/password combination, OAuth and passkey support.',
