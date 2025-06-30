@@ -3,7 +3,7 @@ import { defineConfig } from '@hey-api/openapi-ts';
 
 export const openApiConfig: UserConfig = {
   input: {
-    path: '../backend/openapi.json',
+    path: '../backend/openapi.cache.json',
     watch: false,
   },
   output: {

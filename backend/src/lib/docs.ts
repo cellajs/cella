@@ -1,13 +1,13 @@
+import fs from 'node:fs/promises';
+import type { OpenAPIHono } from '@hono/zod-openapi';
+import { Scalar } from '@scalar/hono-api-reference';
+import { config } from 'config';
 import type { Env } from '#/lib/context';
 import { apiModulesList, registerAppSchema } from '#/lib/docs-config';
 import { entityBaseSchema, userSummarySchema } from '#/modules/entities/schema';
 import { menuSchema } from '#/modules/me/schema';
 import { membershipSummarySchema } from '#/modules/memberships/schema';
 import { errorSchema } from '#/utils/schema/responses';
-import type { OpenAPIHono } from '@hono/zod-openapi';
-import { Scalar } from '@scalar/hono-api-reference';
-import { config } from 'config';
-import fs from 'node:fs/promises';
 
 /**
  * Generate OpenAPI documentation using hono/zod-openapi and scalar/hono-api-reference
@@ -53,7 +53,7 @@ const docs = async (app: OpenAPIHono<Env>) => {
 
   // Get JSON doc and save to file
   const openApiDoc = app.getOpenAPIDocument(openApiConfig);
-  fs.writeFile('./openapi.json', JSON.stringify(openApiDoc, null, 2));
+  fs.writeFile('./openapi.cache.json', JSON.stringify(openApiDoc, null, 2));
 
   app.get(
     '/docs',
