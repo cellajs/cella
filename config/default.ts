@@ -37,8 +37,12 @@ export const config = {
 
   // API docs settings
   apiVersion: 'v1',
-  apiDescription:
-    '(ATTENTION: PRERELEASE!) This API documentation is split in modules. The documentation is based upon zod schemas that are converted to openapi using hono middleware: zod-openapi.',
+  apiDescription: `⚠️ ATTENTION: PRERELEASE!
+  
+This API is organized into modules based on logical domains (e.g. \`auth\`, \`organizations\`, \`memberships\`).
+Each module includes a set of endpoints that expose functionality related to a specific resource or cross resource logic.
+
+The documentation is generated from source code using \`zod\` schemas, converted into OpenAPI via \`zod-openapi\` and served through the \`hono\` framework.`,
 
   // Payment with Paddle
   // paddleToken: 'live_ba8bb57b62089459e4f4fd1da8c',
