@@ -20,6 +20,7 @@ import { Button, SubmitButton } from '~/modules/ui/button';
 import { Checkbox } from '~/modules/ui/checkbox';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
 import { Input } from '~/modules/ui/input';
+import { Label } from '~/modules/ui/label';
 import { useUpdateUserMutation } from '~/modules/users/query';
 import type { User } from '~/modules/users/types';
 import { useUserStore } from '~/store/user';
@@ -113,19 +114,10 @@ const UpdateUserForm = ({ user, callback, sheet: isSheet, hiddenFields, children
           />
         )}
 
-        <FormField
-          control={form.control}
-          name="newsletter"
-          render={() => (
-            <FormItem id="email-form-item-container" className="flex-col flex gap-2" name="email">
-              <FormLabel>{t('common:email')}</FormLabel>
-              <FormControl>
-                <Input value={user.email} autoComplete="off" disabled />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+        <div id="email-form-item-container" className="flex-col flex gap-2">
+          <Label>{t('common:email')}</Label>
+          <Input value={user.email} autoComplete="off" disabled />
+        </div>
 
         <FormField
           control={form.control}

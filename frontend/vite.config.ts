@@ -160,6 +160,7 @@ export default defineConfig(() => {
   if (config.frontendUrl.includes('https')) viteConfig.plugins?.push([basicSsl()]);
   if (config.mode === 'development')
     viteConfig.plugins?.push([
+
       reactScan({
         enable: false,
         scanOptions: {
