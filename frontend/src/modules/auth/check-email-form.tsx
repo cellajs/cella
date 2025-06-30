@@ -5,13 +5,13 @@ import { ArrowRight } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import type { z } from 'zod/v4';
+import { type CheckEmailData, type CheckEmailResponse, checkEmail } from '~/api.gen';
+import { zCheckEmailData } from '~/api.gen/zod.gen';
 import type { ApiError } from '~/lib/api';
 import type { Step } from '~/modules/auth/types';
 import { SubmitButton } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '~/modules/ui/form';
 import { Input } from '~/modules/ui/input';
-import { type CheckEmailData, type CheckEmailResponse, checkEmail } from '~/openapi-client';
-import { zCheckEmailData } from '~/openapi-client/zod.gen';
 import { defaultOnInvalid } from '~/utils/form-on-invalid';
 
 const formSchema = zCheckEmailData.shape.body.unwrap();
@@ -34,7 +34,7 @@ export const CheckEmailForm = ({ setStep, emailEnabled }: CheckEmailProps) => {
   });
 
   const { mutate: _checkEmail, isPending } = useMutation<CheckEmailResponse, ApiError, CheckEmailData['body']>({
-    mutationFn: (body) => checkEmail({ body, throwOnError: true }),
+    mutationFn: (body) => checkEmail({ body }),
     onSuccess: () => setStep('signIn', form.getValues('email')),
     onError: (error: ApiError) => {
       let nextStep: Step = 'inviteOnly';

@@ -1,9 +1,9 @@
 import { queryOptions, useMutation } from '@tanstack/react-query';
+import { type UpdateUserData, updateMe } from '~/api.gen';
 import type { ApiError } from '~/lib/api';
 import { getAndSetMe, getAndSetMeAuthData, getAndSetMenu } from '~/modules/me/helpers';
 import { usersKeys } from '~/modules/users/query';
 import type { User } from '~/modules/users/types';
-import { type UpdateUserData, updateMe } from '~/openapi-client';
 import { queryClient } from '~/query/query-client';
 import { useUserStore } from '~/store/user';
 
@@ -47,7 +47,7 @@ export const menuQueryOptions = () => queryOptions({ queryKey: meKeys.menu(), qu
 export const useUpdateSelfMutation = () => {
   return useMutation<User, ApiError, Omit<UpdateUserData['body'], 'role'>>({
     mutationKey: meKeys.update(),
-    mutationFn: (body) => updateMe({ body, throwOnError: true }),
+    mutationFn: (body) => updateMe({ body }),
     onSuccess: (updatedUser) => {
       const updateUser = useUserStore.getState().updateUser;
 

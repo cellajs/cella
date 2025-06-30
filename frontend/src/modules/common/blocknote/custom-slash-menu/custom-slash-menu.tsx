@@ -2,12 +2,13 @@ import type { DefaultReactSuggestionItem, SuggestionMenuProps } from '@blocknote
 import { useEffect, useRef } from 'react';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { customSlashIndexedItems } from '~/modules/common/blocknote/blocknote-config';
+import type { CustomBlockTypes } from '~/modules/common/blocknote/types';
 
-export const slashMenu = (props: SuggestionMenuProps<DefaultReactSuggestionItem>, originalItemCount: number) => {
+export const slashMenu = (props: SuggestionMenuProps<DefaultReactSuggestionItem>, originalItemCount: number, allowedTypes: CustomBlockTypes[]) => {
   const { items, loadingState, selectedIndex, onItemClick } = props;
   const itemRefs = useRef<(HTMLDivElement | null)[]>([]);
   const isMobile = useBreakpoints('max', 'sm');
-  const indexedItemCount = customSlashIndexedItems.length;
+  const indexedItemCount = customSlashIndexedItems.filter((item) => allowedTypes.includes(item)).length;
 
   const handleKeyPress = async (e: KeyboardEvent) => {
     const { key: pressedKey } = e;
@@ -64,7 +65,6 @@ export const slashMenu = (props: SuggestionMenuProps<DefaultReactSuggestionItem>
             aria-selected={selectedIndex === index}
             onMouseDown={(e) => triggerItemClick(item, e)}
             onKeyDown={() => {}}
-            // biome-ignore lint/a11y/useSemanticElements: req by author
             role="button"
             tabIndex={0}
           >

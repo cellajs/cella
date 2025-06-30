@@ -2,12 +2,12 @@ import { onlineManager, useMutation } from '@tanstack/react-query';
 import { ZapOff } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { deleteSessions } from '~/api.gen';
 import { ExpandableList } from '~/modules/common/expandable-list';
 import { toaster } from '~/modules/common/toaster';
 import { SessionTile } from '~/modules/me/session-tile';
 import type { MeAuthData } from '~/modules/me/types';
 import { Button } from '~/modules/ui/button';
-import { deleteSessions } from '~/openapi-client';
 
 const SessionsList = ({ userAuthInfo }: { userAuthInfo: MeAuthData }) => {
   const { t } = useTranslation();
@@ -20,7 +20,7 @@ const SessionsList = ({ userAuthInfo }: { userAuthInfo: MeAuthData }) => {
   // Terminate one or all sessions
   const { mutate: deleteMySessions, isPending } = useMutation({
     mutationFn: async (ids: string[]) => {
-      await deleteSessions({ body: { ids }, throwOnError: true });
+      await deleteSessions({ body: { ids } });
       return ids;
     },
     onSuccess(ids) {

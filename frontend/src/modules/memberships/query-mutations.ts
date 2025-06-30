@@ -1,6 +1,7 @@
 import { useMutation } from '@tanstack/react-query';
 import { config } from 'config';
 import { t } from 'i18next';
+import { deleteMemberships, updateMembership } from '~/api.gen';
 import { toaster } from '~/modules/common/toaster';
 import { getAndSetMenu } from '~/modules/me/helpers';
 import { resolveParentEntityType } from '~/modules/memberships/helpers';
@@ -16,7 +17,6 @@ import type {
   MutationUpdateMembership,
 } from '~/modules/memberships/types';
 import { updateMenuItemMembership } from '~/modules/navigation/menu-sheet/helpers/menu-operations';
-import { deleteMemberships, updateMembership } from '~/openapi-client';
 import { formatUpdatedData, getQueryItems, getSimilarQueries } from '~/query/helpers/mutate-query';
 import { useMutateQueryData } from '~/query/hooks/use-mutate-query-data';
 import { queryClient } from '~/query/query-client';
@@ -33,7 +33,7 @@ export const useMemberUpdateMutation = () =>
   useMutation<Membership, Error, MutationUpdateMembership, EntityMembershipContextProp>({
     mutationKey: membersKeys.update(),
     mutationFn: async ({ id, orgIdOrSlug, entityType, idOrSlug, ...body }) => {
-      return await updateMembership({ body, path: { id, orgIdOrSlug }, throwOnError: true });
+      return await updateMembership({ body, path: { id, orgIdOrSlug } });
     },
     onMutate: async (variables) => {
       const { idOrSlug, entityType, orgIdOrSlug, ...membershipInfo } = variables;
@@ -127,7 +127,7 @@ export const useMembersDeleteMutation = () =>
     mutationKey: membersKeys.delete(),
     mutationFn: async ({ idOrSlug, entityType, orgIdOrSlug, members }) => {
       const ids = members.map(({ id }) => id);
-      await deleteMemberships({ query: { idOrSlug, entityType }, body: { ids }, path: { orgIdOrSlug }, throwOnError: true });
+      await deleteMemberships({ query: { idOrSlug, entityType }, body: { ids }, path: { orgIdOrSlug } });
     },
     onMutate: async (variables) => {
       const { members, idOrSlug, entityType, orgIdOrSlug } = variables;

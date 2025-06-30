@@ -1,5 +1,5 @@
 import { keepPreviousData, queryOptions } from '@tanstack/react-query';
-import { type GetContextEntitiesData, type GetPageEntitiesData, getContextEntities, getPageEntities } from '~/openapi-client';
+import { type GetEntitiesWithAdminsData, type GetPageEntitiesData, getEntitiesWithAdmins, getPageEntities } from '~/api.gen';
 import { useUserStore } from '~/store/user';
 
 /**
@@ -11,7 +11,7 @@ export const entitiesKeys = {
   search: (searchQuery: string) => [...entitiesKeys.all, 'search', searchQuery] as const,
   grid: {
     base: () => [...entitiesKeys.all, 'greed'] as const,
-    context: (filters: GetContextEntitiesData['query']) => [...entitiesKeys.grid.base(), filters] as const,
+    context: (filters: GetEntitiesWithAdminsData['query']) => [...entitiesKeys.grid.base(), filters] as const,
   },
 };
 
@@ -25,7 +25,7 @@ export const entitiesQueryOptions = (query: NonNullable<GetPageEntitiesData['que
   const searchQuery = query.q ?? '';
   return queryOptions({
     queryKey: entitiesKeys.search(searchQuery),
-    queryFn: () => getPageEntities({ query, throwOnError: true }),
+    queryFn: () => getPageEntities({ query }),
     staleTime: 0,
     enabled: searchQuery.trim().length > 0, // to avoid issues with spaces
     initialData: { items: [], total: 0, counts: {} },
@@ -39,14 +39,14 @@ export const entitiesQueryOptions = (query: NonNullable<GetPageEntitiesData['que
  * @param query - ContextEntitiesQuery parameters to get entities.
  * @returns Query options
  */
-export const contextEntitiesQueryOptions = (query: GetContextEntitiesData['query']) => {
+export const contextEntitiesQueryOptions = (query: GetEntitiesWithAdminsData['query']) => {
   const user = useUserStore.getState().user;
   const q = query.q ?? '';
   const sort = query.sort ?? 'name';
   const targetUserId = query.targetUserId ?? user.id;
   return queryOptions({
     queryKey: entitiesKeys.grid.context({ q, sort, targetUserId, type: query.type, roles: query.roles }),
-    queryFn: () => getContextEntities({ query, throwOnError: true }),
+    queryFn: () => getEntitiesWithAdmins({ query }),
     staleTime: 0,
   });
 };

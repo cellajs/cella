@@ -1,6 +1,6 @@
 import { infiniteQueryOptions, queryOptions } from '@tanstack/react-query';
 import { config } from 'config';
-import { type GetAttachmentsData, getAttachments } from '~/openapi-client';
+import { type GetAttachmentsData, getAttachments } from '~/api.gen';
 
 type GetAttachmentsParams = GetAttachmentsData['path'] & Omit<GetAttachmentsData['query'], 'limit' | 'offset'>;
 /**
@@ -37,7 +37,6 @@ export const groupedAttachmentsQueryOptions = ({ orgIdOrSlug, attachmentId }: Pi
       getAttachments({
         query: { attachmentId, offset: String(0), limit: String(config.requestLimits.attachments) },
         path: { orgIdOrSlug },
-        throwOnError: true,
       }),
     staleTime: 0,
     gcTime: 0,
@@ -74,7 +73,7 @@ export const attachmentsQueryOptions = ({
     initialPageParam: { page: 0, offset: 0 },
     queryFn: async ({ pageParam: { page, offset: _offset }, signal }) => {
       const offset = String(_offset || page * Number(limit));
-      return await getAttachments({ query: { q, sort, order, limit, offset }, path: { orgIdOrSlug }, signal, throwOnError: true });
+      return await getAttachments({ query: { q, sort, order, limit, offset }, path: { orgIdOrSlug }, signal });
     },
     getNextPageParam: (_lastPage, allPages) => {
       const page = allPages.length;

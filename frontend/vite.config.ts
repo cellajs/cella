@@ -1,11 +1,11 @@
-import path from 'node:path';
-import tsconfigPaths from 'vite-tsconfig-paths';
 import reactScan from '@react-scan/vite-plugin-react-scan';
 import terser from '@rollup/plugin-terser';
 import { sentryVitePlugin } from '@sentry/vite-plugin';
 import tailwindcss from '@tailwindcss/vite';
 import basicSsl from '@vitejs/plugin-basic-ssl';
 import react from '@vitejs/plugin-react';
+import path from 'node:path';
+import tsconfigPaths from 'vite-tsconfig-paths';
 // import { visualizer } from 'rollup-plugin-visualizer';
 import { defineConfig, type UserConfig } from 'vite';
 import { createHtmlPlugin } from 'vite-plugin-html';
@@ -14,6 +14,9 @@ import { viteStaticCopy } from 'vite-plugin-static-copy';
 import { config } from '../config';
 import { replaceZodImport } from './src/zod-import-fix';
 // import { TanStackRouterVite } from '@tanstack/router-plugin/vite'
+import { heyApiPlugin } from '@hey-api/vite-plugin';
+import { openApiConfig } from './openapi-ts.config';
+import { watchBackendOpenApi } from './src/openapi-watch-mode';
 
 const ReactCompilerConfig = {
   /* ... */
@@ -22,8 +25,6 @@ const ReactCompilerConfig = {
 // https://vitejs.dev/config/
 export default defineConfig(() => {
   const frontendUrl = new URL(config.frontendUrl);
-
-  const tsconfigFile = process.env.BETA === 'true' ? './tsconfig.beta.json' : './tsconfig.json';
 
   const viteConfig = {
     logLevel: 'info',
@@ -55,7 +56,9 @@ export default defineConfig(() => {
     clearScreen: false,
     plugins: [
       replaceZodImport(),
-      tsconfigPaths({ projects: [tsconfigFile] }),
+      watchBackendOpenApi(),
+      heyApiPlugin({ config: openApiConfig }),
+      tsconfigPaths({ projects: ['./tsconfig.json'] }),
       // TanStackRouterVite(),
       react({
         babel: {
@@ -65,11 +68,11 @@ export default defineConfig(() => {
       tailwindcss(),
       config.sentSentrySourceMaps
         ? sentryVitePlugin({
-            disable: config.mode === 'development',
-            org: config.slug,
-            project: config.slug,
-            authToken: process.env.SENTRY_AUTH_TOKEN,
-          })
+          disable: config.mode === 'development',
+          org: config.slug,
+          project: config.slug,
+          authToken: process.env.SENTRY_AUTH_TOKEN,
+        })
         : undefined,
       viteStaticCopy({
         targets: [

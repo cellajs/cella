@@ -15,11 +15,12 @@ export interface MemberInviteEmailProps extends BasicTemplateType {
   memberInviteLink: string;
   senderName: string;
   orgName: string;
+  role: (typeof config.rolesByType.entityRoles)[number];
 }
 
 const appName = config.name;
 
-export const MemberInviteEmail = ({ name, lng, senderName, orgName, memberInviteLink }: MemberInviteEmailProps) => {
+export const MemberInviteEmail = ({ name, lng, senderName, role, orgName, memberInviteLink }: MemberInviteEmailProps) => {
   return (
     <EmailContainer previewText={i18n.t('backend:email.member_invite.preview', { lng, orgName, appName })}>
       {senderName && (
@@ -33,7 +34,7 @@ export const MemberInviteEmail = ({ name, lng, senderName, orgName, memberInvite
       <EmailHeader
         headerText={
           <div
-            // biome-ignore lint/security/noDangerouslySetInnerHtml: <explanation>
+            // biome-ignore lint/security/noDangerouslySetInnerHtml: trusted HTML content from a secure source
             dangerouslySetInnerHTML={{
               __html: i18n.t('backend:email.member_invite.title', { lng, orgName }),
             }}
@@ -44,13 +45,12 @@ export const MemberInviteEmail = ({ name, lng, senderName, orgName, memberInvite
         <Text>
           <p style={{ marginBottom: '4px' }}>{name && i18n.t('backend:email.hi', { lng, name })}</p>
           <span
-            // biome-ignore lint/security/noDangerouslySetInnerHtml: <explanation>
+            // biome-ignore lint/security/noDangerouslySetInnerHtml: trusted HTML content from a secure source
             dangerouslySetInnerHTML={{
-              __html: i18n.t('backend:email.member_invite.text', { lng, orgName, appName, senderName }),
+              __html: i18n.t('backend:email.member_invite.text', { lng, orgName, appName, senderName, role }),
             }}
           />
         </Text>
-
         {/* User is sent to org invite page, where this invitation token will be used to accept invitation. If not already signed in, 
         it will either forward user to sign in if user exists, or to sign up if user does not exist. */}
         <EmailButton ButtonText={i18n.t('common:accept', { lng })} href={memberInviteLink} />

@@ -12,7 +12,7 @@ const userRoutes = {
     guard: [isAuthenticated, hasSystemAccess],
     tags: ['users'],
     summary: 'Get list of users',
-    description: 'Get a list of users on system level.',
+    description: 'Returns a list of *users* at the system level.',
     request: {
       query: userListQuerySchema,
     },
@@ -35,7 +35,8 @@ const userRoutes = {
     guard: [isAuthenticated, hasSystemAccess],
     tags: ['users'],
     summary: 'Delete users',
-    description: 'Delete users from system by list of ids.',
+    description:
+      "Deletes one or more *users* from the system based on a list of IDs. This also removes the user's memberships (cascade) and sets references to the user to `null` where applicable.",
     request: {
       body: {
         content: { 'application/json': { schema: idsBodySchema() } },
@@ -60,7 +61,7 @@ const userRoutes = {
     guard: isAuthenticated,
     tags: ['users'],
     summary: 'Get user',
-    description: 'Get a user by id or slug.',
+    description: 'Retrieves a *user* by ID or slug.',
     request: {
       params: entityParamSchema,
     },
@@ -79,7 +80,7 @@ const userRoutes = {
     guard: [isAuthenticated, hasSystemAccess],
     tags: ['users'],
     summary: 'Update user',
-    description: 'Update a user by id or slug.',
+    description: 'Updates a *user* identified by ID or slug.',
     request: {
       params: entityParamSchema,
       body: {

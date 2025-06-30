@@ -18,7 +18,7 @@ const BreadcrumbList = React.forwardRef<HTMLOListElement, React.ComponentPropsWi
 BreadcrumbList.displayName = 'BreadcrumbList';
 
 const BreadcrumbItem = React.forwardRef<HTMLLIElement, React.ComponentPropsWithoutRef<'li'>>(({ className, ...props }, ref) => (
-  <li ref={ref} className={cn('inline-flex items-center text-sm leading-4 font-light', className)} {...props} />
+  <li ref={ref} className={cn('inline-flex items-center text-sm font-light', className)} {...props} />
 ));
 BreadcrumbItem.displayName = 'BreadcrumbItem';
 
@@ -58,6 +58,6 @@ const BreadcrumbEllipsis = ({ className, ...props }: React.ComponentProps<'span'
     <span className="sr-only">More</span>
   </span>
 );
-BreadcrumbEllipsis.displayName = 'BreadcrumbElipssis';
+BreadcrumbEllipsis.displayName = 'BreadcrumbElipsis';
 
-export { Breadcrumb, BreadcrumbList, BreadcrumbItem, BreadcrumbLink, BreadcrumbPage, BreadcrumbSeparator, BreadcrumbEllipsis };
+export { Breadcrumb, BreadcrumbEllipsis, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator };

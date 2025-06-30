@@ -1,10 +1,10 @@
 import { useMutation } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
+import { deleteMe } from '~/api.gen';
 import { DeleteForm } from '~/modules/common/delete-form';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { usersKeys } from '~/modules/users/query';
 import type { User } from '~/modules/users/types';
-import { deleteMe } from '~/openapi-client';
 import { queryClient } from '~/query/query-client';
 import { useUserStore } from '~/store/user';
 
@@ -21,7 +21,7 @@ const DeleteSelf = ({ callback, dialog: isDialog }: Props) => {
 
   const { mutate: _deleteMe, isPending } = useMutation({
     mutationFn: async () => {
-      await deleteMe({ throwOnError: true });
+      await deleteMe();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: usersKeys.single.byIdOrSlug(user.id) });

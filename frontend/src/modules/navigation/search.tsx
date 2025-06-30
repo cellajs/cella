@@ -5,6 +5,7 @@ import { History, Search, User, X } from 'lucide-react';
 import { Fragment, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { z } from 'zod/v4';
+import type { zGetPageEntitiesResponse } from '~/api.gen/zod.gen';
 import useFocusByRef from '~/hooks/use-focus-by-ref';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
@@ -16,7 +17,6 @@ import { Button } from '~/modules/ui/button';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandSeparator } from '~/modules/ui/command';
 import { ScrollArea } from '~/modules/ui/scroll-area';
 import { getEntityRoute } from '~/nav-config';
-import type { zGetPageEntitiesResponse } from '~/openapi-client/zod.gen';
 import { useNavigationStore } from '~/store/navigation';
 
 export type EntityListItem = z.infer<typeof zGetPageEntitiesResponse>['items'][number];

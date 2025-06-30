@@ -28,7 +28,7 @@ import { useUIStore } from '~/store/ui';
 import '@blocknote/shadcn/style.css';
 import '~/modules/common/blocknote/app-specific-custom/styles.css';
 import '~/modules/common/blocknote/styles.css';
-import { getPresignedUrl } from '~/openapi-client';
+import { getPresignedUrl } from '~/api.gen';
 
 type BlockNoteProps =
   | (CommonBlockNoteProps & {
@@ -98,7 +98,7 @@ export const BlockNote = ({
     // TODO(BLOCKING) remove image blick (https://github.com/TypeCellOS/BlockNote/issues/1570)
     resolveFileUrl: (key) => {
       if (!key.length) return Promise.resolve('');
-      return getPresignedUrl({ query: { key }, throwOnError: true });
+      return getPresignedUrl({ query: { key } });
     },
   });
 

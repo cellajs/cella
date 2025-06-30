@@ -258,7 +258,7 @@ const TagInput = React.forwardRef<HTMLInputElement, TagInputProps>((props, ref) 
 
   return (
     <div className="flex flex-col relative" ref={ref}>
-      {/* biome-ignore lint/a11y/useKeyWithClickEvents: Make sure all clicks on the wrapper activate focus */}
+      {/* biome-ignore lint/a11y/useKeyWithClickEvents: element is not keyboard-focusable and handled intentionally via mouse  */}
       <div
         id="tag-input-wrapper"
         onClick={handleClick}

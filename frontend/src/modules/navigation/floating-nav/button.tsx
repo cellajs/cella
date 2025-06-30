@@ -20,7 +20,7 @@ export const FloatingNavButton = ({ id, icon: Icon, onClick, className, directio
       variant="secondary"
       onClick={onClick}
       className={cn(
-        `fixed z-105 w-14 h-14 flex items-center shadow-lg bg-secondary/80 hover:bg-secondary justify-center rounded-full bottom-4 
+        `fixed z-105 w-14 h-14 flex items-center shadow-lg bg-secondary hover:bg-secondary justify-center rounded-full bottom-4 
         transition-all duration-300 ease-in-out transform opacity-100 active:scale-95
         data-[direction=left]:left-4 data-[direction=right]:right-4`,
         className,

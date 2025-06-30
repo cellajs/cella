@@ -1,12 +1,11 @@
-import { type ContextEntityType, config } from 'config';
+import type { ContextEntityType } from 'config';
 import { useNavigationStore } from '~/store/navigation';
 
 export const resolveParentEntityType = (idOrSlug: string, targetType: ContextEntityType): readonly ContextEntityType[] => {
   const { menu } = useNavigationStore.getState();
 
-  for (const parentType of config.contextEntityTypes) {
-    const entries = menu[parentType] ?? [];
-    if (!entries.length) continue;
+  for (const entries of Object.values(menu)) {
+    if (!entries?.length) continue;
 
     // Direct match in top-level items
     const directMatch = entries.find(({ id, slug, entityType }) => (id === idOrSlug || slug === idOrSlug) && entityType === targetType);

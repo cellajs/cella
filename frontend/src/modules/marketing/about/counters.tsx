@@ -3,9 +3,9 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useInView } from 'react-intersection-observer';
 import { CountUp } from 'use-count-up';
+import { getPublicCounts } from '~/api.gen';
 import { counts } from '~/modules/marketing/marketing-config';
 import { Card, CardContent, CardHeader, CardTitle } from '~/modules/ui/card';
-import { getPublicCounts } from '~/openapi-client';
 
 const Counters = () => {
   const { t } = useTranslation();
@@ -20,7 +20,7 @@ const Counters = () => {
   const [countValues, setCountValues] = useState(initialObject);
 
   useEffect(() => {
-    getPublicCounts({ throwOnError: true }).then((resp) => setCountValues(resp));
+    getPublicCounts().then((resp) => setCountValues(resp));
   }, []);
 
   return (

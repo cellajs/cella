@@ -2,6 +2,7 @@ import { useMutation } from '@tanstack/react-query';
 import { config } from 'config';
 import { t } from 'i18next';
 import { toast } from 'sonner';
+import { createAttachment, deleteAttachments, updateAttachment } from '~/api.gen';
 import { attachmentsKeys } from '~/modules/attachments/query';
 import type {
   Attachment,
@@ -13,7 +14,6 @@ import type {
   UpdateAttachmentParams,
 } from '~/modules/attachments/types';
 import { toaster } from '~/modules/common/toaster';
-import { createAttachment, deleteAttachments, updateAttachment } from '~/openapi-client';
 import { getQueryKeySortOrder } from '~/query/helpers';
 import { compareQueryKeys } from '~/query/helpers/compare-query-keys';
 import { formatUpdatedData, getQueryItems, getSimilarQueries } from '~/query/helpers/mutate-query';
@@ -35,7 +35,7 @@ export const useAttachmentCreateMutation = () =>
   useMutation<Attachment[], Error, CreateAttachmentParams, AttachmentContextProp[]>({
     mutationKey: attachmentsKeys.create(),
     mutationFn: async ({ attachments, orgIdOrSlug }) => {
-      return await createAttachment({ body: attachments, path: { orgIdOrSlug }, throwOnError: true });
+      return await createAttachment({ body: attachments, path: { orgIdOrSlug } });
     },
     onMutate: async (variables) => {
       const { attachments, orgIdOrSlug } = variables;
@@ -150,7 +150,7 @@ export const useAttachmentUpdateMutation = () =>
   useMutation<Attachment, Error, UpdateAttachmentParams, AttachmentContextProp[]>({
     mutationKey: attachmentsKeys.update(),
     mutationFn: async ({ id, orgIdOrSlug, ...body }) => {
-      return await updateAttachment({ body, path: { id, orgIdOrSlug }, throwOnError: true });
+      return await updateAttachment({ body, path: { id, orgIdOrSlug } });
     },
     onMutate: async (variables: UpdateAttachmentParams) => {
       const { orgIdOrSlug } = variables;
@@ -213,7 +213,7 @@ export const useAttachmentDeleteMutation = () =>
   useMutation<boolean, Error, DeleteAttachmentsParams, AttachmentContextProp[]>({
     mutationKey: attachmentsKeys.delete(),
     mutationFn: async ({ ids, orgIdOrSlug }) => {
-      const response = await deleteAttachments({ body: { ids }, path: { orgIdOrSlug }, throwOnError: true });
+      const response = await deleteAttachments({ body: { ids }, path: { orgIdOrSlug } });
       return response.success;
     },
     onMutate: async (variables) => {

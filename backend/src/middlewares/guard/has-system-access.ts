@@ -20,3 +20,6 @@ export const hasSystemAccess: MiddlewareHandler = every(
     return errorResponse(c, 422, 'forbidden', 'warn', undefined);
   }),
 );
+
+// biome-ignore lint/suspicious/noExplicitAny: Metadata for OpenAPI documentation (more metadata can be added later)
+(hasSystemAccess as any).__openapi = { name: 'hasSystemAccess' };

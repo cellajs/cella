@@ -66,9 +66,9 @@ import type {
   GetAttachmentsData,
   GetAttachmentsErrors,
   GetAttachmentsResponses,
-  GetContextEntitiesData,
-  GetContextEntitiesErrors,
-  GetContextEntitiesResponses,
+  GetEntitiesWithAdminsData,
+  GetEntitiesWithAdminsErrors,
+  GetEntitiesWithAdminsResponses,
   GetMeData,
   GetMeErrors,
   GetMembersData,
@@ -212,9 +212,11 @@ export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends 
 
 /**
  * Check if email exists
+ * 🌐 Public access.
+ *
  * Check if user with email address exists.
  */
-export const checkEmail = <ThrowOnError extends boolean = false>(options?: Options<CheckEmailData, ThrowOnError>) => {
+export const checkEmail = <ThrowOnError extends boolean = true>(options?: Options<CheckEmailData, ThrowOnError>) => {
   return (options?.client ?? _heyApiClient).post<CheckEmailResponses, CheckEmailErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     url: '/auth/check-email',
@@ -228,9 +230,11 @@ export const checkEmail = <ThrowOnError extends boolean = false>(options?: Optio
 
 /**
  * Sign up with password
+ * 🌐 Public access.
+ *
  * Sign up with email and password. User will receive a verification email.
  */
-export const signUp = <ThrowOnError extends boolean = false>(options?: Options<SignUpData, ThrowOnError>) => {
+export const signUp = <ThrowOnError extends boolean = true>(options?: Options<SignUpData, ThrowOnError>) => {
   return (options?.client ?? _heyApiClient).post<SignUpResponses, SignUpErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     url: '/auth/sign-up',
@@ -244,9 +248,11 @@ export const signUp = <ThrowOnError extends boolean = false>(options?: Options<S
 
 /**
  * Sign up to accept invite
+ * 🌐 Public access.
+ *
  * Sign up with email and password to accept system or organization invitation.
  */
-export const signUpWithToken = <ThrowOnError extends boolean = false>(options: Options<SignUpWithTokenData, ThrowOnError>) => {
+export const signUpWithToken = <ThrowOnError extends boolean = true>(options: Options<SignUpWithTokenData, ThrowOnError>) => {
   return (options.client ?? _heyApiClient).post<SignUpWithTokenResponses, SignUpWithTokenErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     url: '/auth/sign-up/{token}',
@@ -260,9 +266,11 @@ export const signUpWithToken = <ThrowOnError extends boolean = false>(options: O
 
 /**
  * Resend verification email
+ * 🌐 Public access.
+ *
  * Resend verification email to user based on token id.
  */
-export const sendVerificationEmail = <ThrowOnError extends boolean = false>(options?: Options<SendVerificationEmailData, ThrowOnError>) => {
+export const sendVerificationEmail = <ThrowOnError extends boolean = true>(options?: Options<SendVerificationEmailData, ThrowOnError>) => {
   return (options?.client ?? _heyApiClient).post<SendVerificationEmailResponses, SendVerificationEmailErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     url: '/auth/send-verification-email',
@@ -276,9 +284,11 @@ export const sendVerificationEmail = <ThrowOnError extends boolean = false>(opti
 
 /**
  * Verify email by token
+ * 🌐 Public access.
+ *
  * Verify email address by token from the verification email. Receive a user session when successful.
  */
-export const verifyEmail = <ThrowOnError extends boolean = false>(options: Options<VerifyEmailData, ThrowOnError>) => {
+export const verifyEmail = <ThrowOnError extends boolean = true>(options: Options<VerifyEmailData, ThrowOnError>) => {
   return (options.client ?? _heyApiClient).post<VerifyEmailResponses, VerifyEmailErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     url: '/auth/verify-email/{token}',
@@ -288,9 +298,11 @@ export const verifyEmail = <ThrowOnError extends boolean = false>(options: Optio
 
 /**
  * Request new password
+ * 🌐 Public access.
+ *
  * An email will be sent with a link to create a password.
  */
-export const requestPassword = <ThrowOnError extends boolean = false>(options?: Options<RequestPasswordData, ThrowOnError>) => {
+export const requestPassword = <ThrowOnError extends boolean = true>(options?: Options<RequestPasswordData, ThrowOnError>) => {
   return (options?.client ?? _heyApiClient).post<RequestPasswordResponses, RequestPasswordErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     url: '/auth/request-password',
@@ -304,9 +316,11 @@ export const requestPassword = <ThrowOnError extends boolean = false>(options?: 
 
 /**
  * Create password by token
+ * 🌐 Public access.
+ *
  * Submit new password and directly receive a user session.
  */
-export const createPassword = <ThrowOnError extends boolean = false>(options: Options<CreatePasswordData, ThrowOnError>) => {
+export const createPassword = <ThrowOnError extends boolean = true>(options: Options<CreatePasswordData, ThrowOnError>) => {
   return (options.client ?? _heyApiClient).post<CreatePasswordResponses, CreatePasswordErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     url: '/auth/create-password/{token}',
@@ -320,9 +334,11 @@ export const createPassword = <ThrowOnError extends boolean = false>(options: Op
 
 /**
  * Sign in with password
+ * 🌐 Public access.
+ *
  * Sign in with email and password.
  */
-export const signIn = <ThrowOnError extends boolean = false>(options?: Options<SignInData, ThrowOnError>) => {
+export const signIn = <ThrowOnError extends boolean = true>(options?: Options<SignInData, ThrowOnError>) => {
   return (options?.client ?? _heyApiClient).post<SignInResponses, SignInErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     url: '/auth/sign-in',
@@ -336,9 +352,11 @@ export const signIn = <ThrowOnError extends boolean = false>(options?: Options<S
 
 /**
  * Token validation check
+ * 🌐 Public access.
+ *
  * This endpoint is used to check if a token is still valid. It is used to provide direct user feedback on tokens such as reset password and invitation.
  */
-export const checkToken = <ThrowOnError extends boolean = false>(options: Options<CheckTokenData, ThrowOnError>) => {
+export const checkToken = <ThrowOnError extends boolean = true>(options: Options<CheckTokenData, ThrowOnError>) => {
   return (options.client ?? _heyApiClient).post<CheckTokenResponses, CheckTokenErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     security: [
@@ -355,9 +373,11 @@ export const checkToken = <ThrowOnError extends boolean = false>(options: Option
 
 /**
  * Accept invitation
+ * 🛡️ Requires authentication.
+ *
  * Accept invitation token
  */
-export const acceptEntityInvite = <ThrowOnError extends boolean = false>(options: Options<AcceptEntityInviteData, ThrowOnError>) => {
+export const acceptEntityInvite = <ThrowOnError extends boolean = true>(options: Options<AcceptEntityInviteData, ThrowOnError>) => {
   return (options.client ?? _heyApiClient).post<AcceptEntityInviteResponses, AcceptEntityInviteErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     security: [
@@ -374,9 +394,11 @@ export const acceptEntityInvite = <ThrowOnError extends boolean = false>(options
 
 /**
  * Start impersonating
+ * 🛡️ Requires authentication (system access).
+ *
  * System admin impersonates a selected user by id by receiving a special impersonation session.
  */
-export const startImpersonation = <ThrowOnError extends boolean = false>(options: Options<StartImpersonationData, ThrowOnError>) => {
+export const startImpersonation = <ThrowOnError extends boolean = true>(options: Options<StartImpersonationData, ThrowOnError>) => {
   return (options.client ?? _heyApiClient).get<StartImpersonationResponses, StartImpersonationErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     security: [
@@ -393,9 +415,11 @@ export const startImpersonation = <ThrowOnError extends boolean = false>(options
 
 /**
  * Stop impersonating
+ * 🌐 Public access.
+ *
  * Stop impersonating by clearing impersonation session.
  */
-export const stopImpersonation = <ThrowOnError extends boolean = false>(options?: Options<StopImpersonationData, ThrowOnError>) => {
+export const stopImpersonation = <ThrowOnError extends boolean = true>(options?: Options<StopImpersonationData, ThrowOnError>) => {
   return (options?.client ?? _heyApiClient).get<StopImpersonationResponses, StopImpersonationErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     security: [
@@ -412,9 +436,11 @@ export const stopImpersonation = <ThrowOnError extends boolean = false>(options?
 
 /**
  * Sign out
+ * 🌐 Public access.
+ *
  * Sign out yourself and clear session.
  */
-export const signOut = <ThrowOnError extends boolean = false>(options?: Options<SignOutData, ThrowOnError>) => {
+export const signOut = <ThrowOnError extends boolean = true>(options?: Options<SignOutData, ThrowOnError>) => {
   return (options?.client ?? _heyApiClient).get<SignOutResponses, SignOutErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     security: [
@@ -431,9 +457,11 @@ export const signOut = <ThrowOnError extends boolean = false>(options?: Options<
 
 /**
  * Authenticate with GitHub
+ * 🌐 Public access.
+ *
  * Authenticate with Github to sign in or sign up. A `connect` (userId),`redirect` or `token` query parameter can be used to connect account, redirect to a specific page or to accept invitation.
  */
-export const githubSignIn = <ThrowOnError extends boolean = false>(options: Options<GithubSignInData, ThrowOnError>) => {
+export const githubSignIn = <ThrowOnError extends boolean = true>(options: Options<GithubSignInData, ThrowOnError>) => {
   return (options.client ?? _heyApiClient).get<unknown, GithubSignInErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     url: '/auth/github',
@@ -443,9 +471,11 @@ export const githubSignIn = <ThrowOnError extends boolean = false>(options: Opti
 
 /**
  * Authenticate with Google
+ * 🌐 Public access.
+ *
  * Authenticate with Google to sign in or sign up. A `connect` (userId),`redirect` or `token` query parameter can be used to connect account, redirect to a specific page or to accept invitation.
  */
-export const googleSignIn = <ThrowOnError extends boolean = false>(options: Options<GoogleSignInData, ThrowOnError>) => {
+export const googleSignIn = <ThrowOnError extends boolean = true>(options: Options<GoogleSignInData, ThrowOnError>) => {
   return (options.client ?? _heyApiClient).get<unknown, GoogleSignInErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     url: '/auth/google',
@@ -455,9 +485,11 @@ export const googleSignIn = <ThrowOnError extends boolean = false>(options: Opti
 
 /**
  * Authenticate with Microsoft
+ * 🌐 Public access.
+ *
  * Authenticate with Microsoft to sign in or sign up.  A `connect` (userId),`redirect` or `token` query parameter can be used to connect account, redirect to a specific page or to accept invitation.
  */
-export const microsoftSignIn = <ThrowOnError extends boolean = false>(options: Options<MicrosoftSignInData, ThrowOnError>) => {
+export const microsoftSignIn = <ThrowOnError extends boolean = true>(options: Options<MicrosoftSignInData, ThrowOnError>) => {
   return (options.client ?? _heyApiClient).get<unknown, MicrosoftSignInErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     url: '/auth/microsoft',
@@ -467,9 +499,11 @@ export const microsoftSignIn = <ThrowOnError extends boolean = false>(options: O
 
 /**
  * Callback for GitHub
+ * 🌐 Public access.
+ *
  * Callback to receive authorization and basic user data from Github.
  */
-export const githubSignInCallback = <ThrowOnError extends boolean = false>(options: Options<GithubSignInCallbackData, ThrowOnError>) => {
+export const githubSignInCallback = <ThrowOnError extends boolean = true>(options: Options<GithubSignInCallbackData, ThrowOnError>) => {
   return (options.client ?? _heyApiClient).get<unknown, GithubSignInCallbackErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     url: '/auth/github/callback',
@@ -479,9 +513,11 @@ export const githubSignInCallback = <ThrowOnError extends boolean = false>(optio
 
 /**
  * Callback for Google
+ * 🌐 Public access.
+ *
  * Callback to receive authorization and basic user data from Google.
  */
-export const googleSignInCallback = <ThrowOnError extends boolean = false>(options: Options<GoogleSignInCallbackData, ThrowOnError>) => {
+export const googleSignInCallback = <ThrowOnError extends boolean = true>(options: Options<GoogleSignInCallbackData, ThrowOnError>) => {
   return (options.client ?? _heyApiClient).get<unknown, GoogleSignInCallbackErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     url: '/auth/google/callback',
@@ -491,9 +527,11 @@ export const googleSignInCallback = <ThrowOnError extends boolean = false>(optio
 
 /**
  * Callback for Microsoft
+ * 🌐 Public access.
+ *
  * Callback to receive authorization and basic user data from Microsoft.
  */
-export const microsoftSignInCallback = <ThrowOnError extends boolean = false>(options: Options<MicrosoftSignInCallbackData, ThrowOnError>) => {
+export const microsoftSignInCallback = <ThrowOnError extends boolean = true>(options: Options<MicrosoftSignInCallbackData, ThrowOnError>) => {
   return (options.client ?? _heyApiClient).get<unknown, MicrosoftSignInCallbackErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     url: '/auth/microsoft/callback',
@@ -503,9 +541,11 @@ export const microsoftSignInCallback = <ThrowOnError extends boolean = false>(op
 
 /**
  * Get passkey challenge
+ * 🌐 Public access.
+ *
  * Handing over the challenge: this results in a key pair, private and public key being created on the device.
  */
-export const getPasskeyChallenge = <ThrowOnError extends boolean = false>(options?: Options<GetPasskeyChallengeData, ThrowOnError>) => {
+export const getPasskeyChallenge = <ThrowOnError extends boolean = true>(options?: Options<GetPasskeyChallengeData, ThrowOnError>) => {
   return (options?.client ?? _heyApiClient).get<GetPasskeyChallengeResponses, GetPasskeyChallengeErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     url: '/auth/passkey-challenge',
@@ -515,9 +555,11 @@ export const getPasskeyChallenge = <ThrowOnError extends boolean = false>(option
 
 /**
  * Verify passkey
+ * 🌐 Public access.
+ *
  * Verify passkey by checking the validity of signature with public key.
  */
-export const signInWithPasskey = <ThrowOnError extends boolean = false>(options?: Options<SignInWithPasskeyData, ThrowOnError>) => {
+export const signInWithPasskey = <ThrowOnError extends boolean = true>(options?: Options<SignInWithPasskeyData, ThrowOnError>) => {
   return (options?.client ?? _heyApiClient).post<SignInWithPasskeyResponses, SignInWithPasskeyErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     security: [
@@ -538,9 +580,11 @@ export const signInWithPasskey = <ThrowOnError extends boolean = false>(options?
 
 /**
  * Delete self
- * Delete the current user (self).
+ * 🛡️ Requires authentication.
+ *
+ * Deletes the *current user*. This also removes the user's memberships (cascade) and sets references to the user to `null` where applicable.
  */
-export const deleteMe = <ThrowOnError extends boolean = false>(options?: Options<DeleteMeData, ThrowOnError>) => {
+export const deleteMe = <ThrowOnError extends boolean = true>(options?: Options<DeleteMeData, ThrowOnError>) => {
   return (options?.client ?? _heyApiClient).delete<DeleteMeResponses, DeleteMeErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     security: [
@@ -556,10 +600,12 @@ export const deleteMe = <ThrowOnError extends boolean = false>(options?: Options
 };
 
 /**
- * Get me
- * Get the current user (me). It includes a `counts` object.
+ * Get self
+ * 🛡️ Requires authentication.
+ *
+ * Returns the *current user*.
  */
-export const getMe = <ThrowOnError extends boolean = false>(options?: Options<GetMeData, ThrowOnError>) => {
+export const getMe = <ThrowOnError extends boolean = true>(options?: Options<GetMeData, ThrowOnError>) => {
   return (options?.client ?? _heyApiClient).get<GetMeResponses, GetMeErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     security: [
@@ -576,9 +622,11 @@ export const getMe = <ThrowOnError extends boolean = false>(options?: Options<Ge
 
 /**
  * Update self
- * Update the current user (self).
+ * 🛡️ Requires authentication.
+ *
+ * Updates the *current user*.
  */
-export const updateMe = <ThrowOnError extends boolean = false>(options?: Options<UpdateMeData, ThrowOnError>) => {
+export const updateMe = <ThrowOnError extends boolean = true>(options?: Options<UpdateMeData, ThrowOnError>) => {
   return (options?.client ?? _heyApiClient).put<UpdateMeResponses, UpdateMeErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     security: [
@@ -598,10 +646,12 @@ export const updateMe = <ThrowOnError extends boolean = false>(options?: Options
 };
 
 /**
- * Get self auth data
- * Get the current user (self). It includes sessions, oauth accounts and sign in options.
+ * Get authentication data
+ * 🛡️ Requires authentication.
+ *
+ * Returns the authentication related date of the *current user*, including sessions, OAuth accounts, and sign in options.
  */
-export const getMyAuth = <ThrowOnError extends boolean = false>(options?: Options<GetMyAuthData, ThrowOnError>) => {
+export const getMyAuth = <ThrowOnError extends boolean = true>(options?: Options<GetMyAuthData, ThrowOnError>) => {
   return (options?.client ?? _heyApiClient).get<GetMyAuthResponses, GetMyAuthErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     security: [
@@ -618,9 +668,11 @@ export const getMyAuth = <ThrowOnError extends boolean = false>(options?: Option
 
 /**
  * Get menu
- * Receive menu data with all contextual entities of which the current user is a member. It is in essence a restructured list of `memberships` per entity type, with some entity data in it.
+ * 🛡️ Requires authentication.
+ *
+ * Returns a structured list of contextual entities the *current user* is a member of, grouped by the entity type and enriched with both `memebrship` and `entity` data.
  */
-export const getMyMenu = <ThrowOnError extends boolean = false>(options?: Options<GetMyMenuData, ThrowOnError>) => {
+export const getMyMenu = <ThrowOnError extends boolean = true>(options?: Options<GetMyMenuData, ThrowOnError>) => {
   return (options?.client ?? _heyApiClient).get<GetMyMenuResponses, GetMyMenuErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     security: [
@@ -637,9 +689,11 @@ export const getMyMenu = <ThrowOnError extends boolean = false>(options?: Option
 
 /**
  * Terminate sessions
- * Terminate sessions of the current user by list of ids.
+ * 🛡️ Requires authentication.
+ *
+ * Ends one or more sessions for the *current user* based on provided session IDs.
  */
-export const deleteSessions = <ThrowOnError extends boolean = false>(options?: Options<DeleteSessionsData, ThrowOnError>) => {
+export const deleteSessions = <ThrowOnError extends boolean = true>(options?: Options<DeleteSessionsData, ThrowOnError>) => {
   return (options?.client ?? _heyApiClient).delete<DeleteSessionsResponses, DeleteSessionsErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     security: [
@@ -660,9 +714,11 @@ export const deleteSessions = <ThrowOnError extends boolean = false>(options?: O
 
 /**
  * Leave entity
- * Remove your own entity membership by yourself.
+ * 🛡️ Requires authentication.
+ *
+ * Removes the *current user* from an entity they are a member of.
  */
-export const deleteMyMembership = <ThrowOnError extends boolean = false>(options: Options<DeleteMyMembershipData, ThrowOnError>) => {
+export const deleteMyMembership = <ThrowOnError extends boolean = true>(options: Options<DeleteMyMembershipData, ThrowOnError>) => {
   return (options.client ?? _heyApiClient).delete<DeleteMyMembershipResponses, DeleteMyMembershipErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     url: '/me/leave',
@@ -672,9 +728,11 @@ export const deleteMyMembership = <ThrowOnError extends boolean = false>(options
 
 /**
  * Delete passkey
- * Delete your passkey record.
+ * 🛡️ Requires authentication.
+ *
+ * Removes the *current user's* registered passkey credential.
  */
-export const deletePasskey = <ThrowOnError extends boolean = false>(options?: Options<DeletePasskeyData, ThrowOnError>) => {
+export const deletePasskey = <ThrowOnError extends boolean = true>(options?: Options<DeletePasskeyData, ThrowOnError>) => {
   return (options?.client ?? _heyApiClient).delete<DeletePasskeyResponses, DeletePasskeyErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     url: '/me/passkey',
@@ -684,9 +742,11 @@ export const deletePasskey = <ThrowOnError extends boolean = false>(options?: Op
 
 /**
  * Create passkey
- * The server associates the key and the credential ID with the user for future authentication flows and checks the validity of the operation by verifying the signed challenge with the key.
+ * 🛡️ Requires authentication.
+ *
+ * Registers a passkey for passwordless authentication by verifying a signed challenge and linking it to the *current user*.
  */
-export const createPasskey = <ThrowOnError extends boolean = false>(options: Options<CreatePasskeyData, ThrowOnError>) => {
+export const createPasskey = <ThrowOnError extends boolean = true>(options: Options<CreatePasskeyData, ThrowOnError>) => {
   return (options.client ?? _heyApiClient).post<CreatePasskeyResponses, CreatePasskeyErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     url: '/me/passkey',
@@ -700,9 +760,11 @@ export const createPasskey = <ThrowOnError extends boolean = false>(options: Opt
 
 /**
  * Get upload token
- * This endpoint is used to get an upload token for a user or organization. The token can be used to upload or private images/files to your S3 bucket using
+ * 🛡️ Requires authentication.
+ *
+ * Generates and returns an upload token for uploading files or images to a private S3 bucket, scoped to the *current user* and organization
  */
-export const getUploadToken = <ThrowOnError extends boolean = false>(options: Options<GetUploadTokenData, ThrowOnError>) => {
+export const getUploadToken = <ThrowOnError extends boolean = true>(options: Options<GetUploadTokenData, ThrowOnError>) => {
   return (options.client ?? _heyApiClient).get<GetUploadTokenResponses, GetUploadTokenErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     security: [
@@ -719,9 +781,11 @@ export const getUploadToken = <ThrowOnError extends boolean = false>(options: Op
 
 /**
  * Unsubscribe
- * Unsubscribe using a personal unsubscribe token.
+ * 🌐 Public access.
+ *
+ * Unsubscribes the user from email notifications using a personal unsubscribe token. No authentication is required, as the token implicitly identifies the *current user*.
  */
-export const unsubscribeMe = <ThrowOnError extends boolean = false>(options: Options<UnsubscribeMeData, ThrowOnError>) => {
+export const unsubscribeMe = <ThrowOnError extends boolean = true>(options: Options<UnsubscribeMeData, ThrowOnError>) => {
   return (options.client ?? _heyApiClient).get<unknown, UnsubscribeMeErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     security: [
@@ -738,9 +802,11 @@ export const unsubscribeMe = <ThrowOnError extends boolean = false>(options: Opt
 
 /**
  * Delete users
- * Delete users from system by list of ids.
+ * 🛡️ Requires authentication (system access).
+ *
+ * Deletes one or more *users* from the system based on a list of IDs. This also removes the user's memberships (cascade) and sets references to the user to `null` where applicable.
  */
-export const deleteUsers = <ThrowOnError extends boolean = false>(options?: Options<DeleteUsersData, ThrowOnError>) => {
+export const deleteUsers = <ThrowOnError extends boolean = true>(options?: Options<DeleteUsersData, ThrowOnError>) => {
   return (options?.client ?? _heyApiClient).delete<DeleteUsersResponses, DeleteUsersErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     security: [
@@ -761,9 +827,11 @@ export const deleteUsers = <ThrowOnError extends boolean = false>(options?: Opti
 
 /**
  * Get list of users
- * Get a list of users on system level.
+ * 🛡️ Requires authentication (system access).
+ *
+ * Returns a list of *users* at the system level.
  */
-export const getUsers = <ThrowOnError extends boolean = false>(options: Options<GetUsersData, ThrowOnError>) => {
+export const getUsers = <ThrowOnError extends boolean = true>(options: Options<GetUsersData, ThrowOnError>) => {
   return (options.client ?? _heyApiClient).get<GetUsersResponses, GetUsersErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     security: [
@@ -780,9 +848,11 @@ export const getUsers = <ThrowOnError extends boolean = false>(options: Options<
 
 /**
  * Get user
- * Get a user by id or slug.
+ * 🛡️ Requires authentication.
+ *
+ * Retrieves a *user* by ID or slug.
  */
-export const getUser = <ThrowOnError extends boolean = false>(options: Options<GetUserData, ThrowOnError>) => {
+export const getUser = <ThrowOnError extends boolean = true>(options: Options<GetUserData, ThrowOnError>) => {
   return (options.client ?? _heyApiClient).get<GetUserResponses, GetUserErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     security: [
@@ -799,9 +869,11 @@ export const getUser = <ThrowOnError extends boolean = false>(options: Options<G
 
 /**
  * Update user
- * Update a user by id or slug.
+ * 🛡️ Requires authentication (system access).
+ *
+ * Updates a *user* identified by ID or slug.
  */
-export const updateUser = <ThrowOnError extends boolean = false>(options: Options<UpdateUserData, ThrowOnError>) => {
+export const updateUser = <ThrowOnError extends boolean = true>(options: Options<UpdateUserData, ThrowOnError>) => {
   return (options.client ?? _heyApiClient).put<UpdateUserResponses, UpdateUserErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     security: [
@@ -822,9 +894,11 @@ export const updateUser = <ThrowOnError extends boolean = false>(options: Option
 
 /**
  * Delete organizations
- * Delete organizations by ids.
+ * 🛡️ Requires authentication.
+ *
+ * Deletes one or more *organizations* by ID.
  */
-export const deleteOrganizations = <ThrowOnError extends boolean = false>(options?: Options<DeleteOrganizationsData, ThrowOnError>) => {
+export const deleteOrganizations = <ThrowOnError extends boolean = true>(options?: Options<DeleteOrganizationsData, ThrowOnError>) => {
   return (options?.client ?? _heyApiClient).delete<DeleteOrganizationsResponses, DeleteOrganizationsErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     security: [
@@ -845,9 +919,11 @@ export const deleteOrganizations = <ThrowOnError extends boolean = false>(option
 
 /**
  * Get list of organizations
- * Get list of organizations. Currently only available to system admins.
+ * 🛡️ Requires authentication (system access).
+ *
+ * Returns a list of *organizations* at the system level.
  */
-export const getOrganizations = <ThrowOnError extends boolean = false>(options: Options<GetOrganizationsData, ThrowOnError>) => {
+export const getOrganizations = <ThrowOnError extends boolean = true>(options: Options<GetOrganizationsData, ThrowOnError>) => {
   return (options.client ?? _heyApiClient).get<GetOrganizationsResponses, GetOrganizationsErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     security: [
@@ -864,9 +940,11 @@ export const getOrganizations = <ThrowOnError extends boolean = false>(options: 
 
 /**
  * Create organization
- * Create a new organization.
+ * 🛡️ Requires authentication.
+ *
+ * Creates a new *organization*.
  */
-export const createOrganization = <ThrowOnError extends boolean = false>(options: Options<CreateOrganizationData, ThrowOnError>) => {
+export const createOrganization = <ThrowOnError extends boolean = true>(options: Options<CreateOrganizationData, ThrowOnError>) => {
   return (options.client ?? _heyApiClient).post<CreateOrganizationResponses, CreateOrganizationErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     security: [
@@ -887,9 +965,11 @@ export const createOrganization = <ThrowOnError extends boolean = false>(options
 
 /**
  * Get organization
- * Get an organization by id or slug.
+ * 🛡️ Requires authentication.
+ *
+ * Retrieves an *organization* by ID or slug.
  */
-export const getOrganization = <ThrowOnError extends boolean = false>(options: Options<GetOrganizationData, ThrowOnError>) => {
+export const getOrganization = <ThrowOnError extends boolean = true>(options: Options<GetOrganizationData, ThrowOnError>) => {
   return (options.client ?? _heyApiClient).get<GetOrganizationResponses, GetOrganizationErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     security: [
@@ -906,9 +986,11 @@ export const getOrganization = <ThrowOnError extends boolean = false>(options: O
 
 /**
  * Update organization
- * Update organization by id or slug.
+ * 🛡️ Requires authentication.
+ *
+ * Updates an *organization* by ID or slug.
  */
-export const updateOrganization = <ThrowOnError extends boolean = false>(options: Options<UpdateOrganizationData, ThrowOnError>) => {
+export const updateOrganization = <ThrowOnError extends boolean = true>(options: Options<UpdateOrganizationData, ThrowOnError>) => {
   return (options.client ?? _heyApiClient).put<UpdateOrganizationResponses, UpdateOrganizationErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     security: [
@@ -929,9 +1011,11 @@ export const updateOrganization = <ThrowOnError extends boolean = false>(options
 
 /**
  * Get list of page entities
+ * 🛡️ Requires authentication.
+ *
  * Get page entities such as users and organizations. It returns a paginated list of entities to which the user has access. The schema is limited to common fields.
  */
-export const getPageEntities = <ThrowOnError extends boolean = false>(options?: Options<GetPageEntitiesData, ThrowOnError>) => {
+export const getPageEntities = <ThrowOnError extends boolean = true>(options?: Options<GetPageEntitiesData, ThrowOnError>) => {
   return (options?.client ?? _heyApiClient).get<GetPageEntitiesResponses, GetPageEntitiesErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     security: [
@@ -948,10 +1032,12 @@ export const getPageEntities = <ThrowOnError extends boolean = false>(options?: 
 
 /**
  * Get all of context user entities
+ * 🛡️ Requires authentication.
+ *
  * Get context entities such organizations of specified user. It returns list of entities based of requested tpye to which the user are part of. With user membership & other members of entity.
  */
-export const getContextEntities = <ThrowOnError extends boolean = false>(options: Options<GetContextEntitiesData, ThrowOnError>) => {
-  return (options.client ?? _heyApiClient).get<GetContextEntitiesResponses, GetContextEntitiesErrors, ThrowOnError, 'data'>({
+export const getEntitiesWithAdmins = <ThrowOnError extends boolean = true>(options: Options<GetEntitiesWithAdminsData, ThrowOnError>) => {
+  return (options.client ?? _heyApiClient).get<GetEntitiesWithAdminsResponses, GetEntitiesWithAdminsErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     security: [
       {
@@ -967,9 +1053,11 @@ export const getContextEntities = <ThrowOnError extends boolean = false>(options
 
 /**
  * Check if slug is available
+ * 🛡️ Requires authentication.
+ *
  * This endpoint is used to check if a slug is available among ALL contextual entities such as organizations.
  */
-export const checkSlug = <ThrowOnError extends boolean = false>(options?: Options<CheckSlugData, ThrowOnError>) => {
+export const checkSlug = <ThrowOnError extends boolean = true>(options?: Options<CheckSlugData, ThrowOnError>) => {
   return (options?.client ?? _heyApiClient).post<CheckSlugResponses, CheckSlugErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     security: [
@@ -990,9 +1078,11 @@ export const checkSlug = <ThrowOnError extends boolean = false>(options?: Option
 
 /**
  * Invite to system
+ * 🛡️ Requires authentication (system access).
+ *
  * Invite one or more users to system by email address.
  */
-export const systemInvite = <ThrowOnError extends boolean = false>(options?: Options<SystemInviteData, ThrowOnError>) => {
+export const systemInvite = <ThrowOnError extends boolean = true>(options?: Options<SystemInviteData, ThrowOnError>) => {
   return (options?.client ?? _heyApiClient).post<SystemInviteResponses, SystemInviteErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     security: [
@@ -1011,7 +1101,10 @@ export const systemInvite = <ThrowOnError extends boolean = false>(options?: Opt
   });
 };
 
-export const getPresignedUrl = <ThrowOnError extends boolean = false>(options: Options<GetPresignedUrlData, ThrowOnError>) => {
+/**
+ * 🛡️ Requires authentication.
+ */
+export const getPresignedUrl = <ThrowOnError extends boolean = true>(options: Options<GetPresignedUrlData, ThrowOnError>) => {
   return (options.client ?? _heyApiClient).get<GetPresignedUrlResponses, GetPresignedUrlErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     security: [
@@ -1028,9 +1121,11 @@ export const getPresignedUrl = <ThrowOnError extends boolean = false>(options: O
 
 /**
  * Paddle webhook
+ * 🌐 Public access.
+ *
  * Paddle webhook for subscription events
  */
-export const paddleWebhook = <ThrowOnError extends boolean = false>(options?: Options<PaddleWebhookData, ThrowOnError>) => {
+export const paddleWebhook = <ThrowOnError extends boolean = true>(options?: Options<PaddleWebhookData, ThrowOnError>) => {
   return (options?.client ?? _heyApiClient).post<PaddleWebhookResponses, PaddleWebhookErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     security: [
@@ -1051,9 +1146,11 @@ export const paddleWebhook = <ThrowOnError extends boolean = false>(options?: Op
 
 /**
  * Newsletter to members
+ * 🛡️ Requires authentication (system access).
+ *
  * Send a newsletter to requested organizations members.
  */
-export const sendNewsletter = <ThrowOnError extends boolean = false>(options: Options<SendNewsletterData, ThrowOnError>) => {
+export const sendNewsletter = <ThrowOnError extends boolean = true>(options: Options<SendNewsletterData, ThrowOnError>) => {
   return (options.client ?? _heyApiClient).post<SendNewsletterResponses, SendNewsletterErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     security: [
@@ -1074,9 +1171,11 @@ export const sendNewsletter = <ThrowOnError extends boolean = false>(options: Op
 
 /**
  * Delete requests
+ * 🛡️ Requires authentication (system access).
+ *
  * Delete requests by ids.
  */
-export const deleteRequests = <ThrowOnError extends boolean = false>(options?: Options<DeleteRequestsData, ThrowOnError>) => {
+export const deleteRequests = <ThrowOnError extends boolean = true>(options?: Options<DeleteRequestsData, ThrowOnError>) => {
   return (options?.client ?? _heyApiClient).delete<DeleteRequestsResponses, DeleteRequestsErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     security: [
@@ -1097,9 +1196,11 @@ export const deleteRequests = <ThrowOnError extends boolean = false>(options?: O
 
 /**
  * Get list of requests
+ * 🛡️ Requires authentication (system access).
+ *
  * Get list of requests on system level for waitlist, submit contact form or to join newsletter.
  */
-export const getRequests = <ThrowOnError extends boolean = false>(options: Options<GetRequestsData, ThrowOnError>) => {
+export const getRequests = <ThrowOnError extends boolean = true>(options: Options<GetRequestsData, ThrowOnError>) => {
   return (options.client ?? _heyApiClient).get<GetRequestsResponses, GetRequestsErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     security: [
@@ -1116,9 +1217,11 @@ export const getRequests = <ThrowOnError extends boolean = false>(options: Optio
 
 /**
  * Create request
+ * 🌐 Public access.
+ *
  * Create a request on system level. Request supports waitlist, contact form and newsletter.
  */
-export const createRequest = <ThrowOnError extends boolean = false>(options?: Options<CreateRequestData, ThrowOnError>) => {
+export const createRequest = <ThrowOnError extends boolean = true>(options?: Options<CreateRequestData, ThrowOnError>) => {
   return (options?.client ?? _heyApiClient).post<CreateRequestResponses, CreateRequestErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     security: [
@@ -1139,9 +1242,11 @@ export const createRequest = <ThrowOnError extends boolean = false>(options?: Op
 
 /**
  * Get metrics
+ * 🛡️ Requires authentication (system access).
+ *
  * EXPERIMENTAL. Receive node observability metrics.
  */
-export const getMetrics = <ThrowOnError extends boolean = false>(options?: Options<GetMetricsData, ThrowOnError>) => {
+export const getMetrics = <ThrowOnError extends boolean = true>(options?: Options<GetMetricsData, ThrowOnError>) => {
   return (options?.client ?? _heyApiClient).get<GetMetricsResponses, GetMetricsErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     security: [
@@ -1158,9 +1263,11 @@ export const getMetrics = <ThrowOnError extends boolean = false>(options?: Optio
 
 /**
  * Get public counts
+ * 🌐 Public access.
+ *
  * Get a count of all entities (ie. users, organizations). 1 minute in-memory cache.
  */
-export const getPublicCounts = <ThrowOnError extends boolean = false>(options?: Options<GetPublicCountsData, ThrowOnError>) => {
+export const getPublicCounts = <ThrowOnError extends boolean = true>(options?: Options<GetPublicCountsData, ThrowOnError>) => {
   return (options?.client ?? _heyApiClient).get<GetPublicCountsResponses, GetPublicCountsErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     security: [
@@ -1177,9 +1284,11 @@ export const getPublicCounts = <ThrowOnError extends boolean = false>(options?: 
 
 /**
  * Shape proxy
+ * 🛡️ Requires authentication (organization access).
+ *
  * Get shape proxy for attachments to keep attachment data in sync.
  */
-export const shapeProxy = <ThrowOnError extends boolean = false>(options: Options<ShapeProxyData, ThrowOnError>) => {
+export const shapeProxy = <ThrowOnError extends boolean = true>(options: Options<ShapeProxyData, ThrowOnError>) => {
   return (options.client ?? _heyApiClient).get<ShapeProxyResponses, ShapeProxyErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     security: [
@@ -1196,9 +1305,11 @@ export const shapeProxy = <ThrowOnError extends boolean = false>(options: Option
 
 /**
  * Delete attachments
+ * 🛡️ Requires authentication (organization access).
+ *
  * Delete attachments by their ids
  */
-export const deleteAttachments = <ThrowOnError extends boolean = false>(options: Options<DeleteAttachmentsData, ThrowOnError>) => {
+export const deleteAttachments = <ThrowOnError extends boolean = true>(options: Options<DeleteAttachmentsData, ThrowOnError>) => {
   return (options.client ?? _heyApiClient).delete<DeleteAttachmentsResponses, DeleteAttachmentsErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     security: [
@@ -1219,9 +1330,11 @@ export const deleteAttachments = <ThrowOnError extends boolean = false>(options:
 
 /**
  * Get list of attachments
+ * 🛡️ Requires authentication (organization access).
+ *
  * Get attachments for an organization.
  */
-export const getAttachments = <ThrowOnError extends boolean = false>(options: Options<GetAttachmentsData, ThrowOnError>) => {
+export const getAttachments = <ThrowOnError extends boolean = true>(options: Options<GetAttachmentsData, ThrowOnError>) => {
   return (options.client ?? _heyApiClient).get<GetAttachmentsResponses, GetAttachmentsErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     security: [
@@ -1238,9 +1351,11 @@ export const getAttachments = <ThrowOnError extends boolean = false>(options: Op
 
 /**
  * Create attachments
+ * 🛡️ Requires authentication (organization access).
+ *
  * Create one or more new attachments.
  */
-export const createAttachment = <ThrowOnError extends boolean = false>(options: Options<CreateAttachmentData, ThrowOnError>) => {
+export const createAttachment = <ThrowOnError extends boolean = true>(options: Options<CreateAttachmentData, ThrowOnError>) => {
   return (options.client ?? _heyApiClient).post<CreateAttachmentResponses, CreateAttachmentErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     security: [
@@ -1261,9 +1376,11 @@ export const createAttachment = <ThrowOnError extends boolean = false>(options: 
 
 /**
  * Get attachment
+ * 🛡️ Requires authentication (organization access).
+ *
  * Get an attachment by id.
  */
-export const getAttachment = <ThrowOnError extends boolean = false>(options: Options<GetAttachmentData, ThrowOnError>) => {
+export const getAttachment = <ThrowOnError extends boolean = true>(options: Options<GetAttachmentData, ThrowOnError>) => {
   return (options.client ?? _heyApiClient).get<GetAttachmentResponses, GetAttachmentErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     security: [
@@ -1280,9 +1397,11 @@ export const getAttachment = <ThrowOnError extends boolean = false>(options: Opt
 
 /**
  * Update attachment
+ * 🛡️ Requires authentication (organization access).
+ *
  * Update attachment by id.
  */
-export const updateAttachment = <ThrowOnError extends boolean = false>(options: Options<UpdateAttachmentData, ThrowOnError>) => {
+export const updateAttachment = <ThrowOnError extends boolean = true>(options: Options<UpdateAttachmentData, ThrowOnError>) => {
   return (options.client ?? _heyApiClient).put<UpdateAttachmentResponses, UpdateAttachmentErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     security: [
@@ -1303,9 +1422,11 @@ export const updateAttachment = <ThrowOnError extends boolean = false>(options: 
 
 /**
  * Get attachment cover
+ * 🌐 Public access.
+ *
  * Get attachment cover image by id.
  */
-export const getAttachmentCover = <ThrowOnError extends boolean = false>(options: Options<GetAttachmentCoverData, ThrowOnError>) => {
+export const getAttachmentCover = <ThrowOnError extends boolean = true>(options: Options<GetAttachmentCoverData, ThrowOnError>) => {
   return (options.client ?? _heyApiClient).get<GetAttachmentCoverResponses, GetAttachmentCoverErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     security: [
@@ -1322,9 +1443,11 @@ export const getAttachmentCover = <ThrowOnError extends boolean = false>(options
 
 /**
  * Redirect to attachment
+ * 🌐 Public access.
+ *
  * Redirect to attachment by id.
  */
-export const redirectToAttachment = <ThrowOnError extends boolean = false>(options: Options<RedirectToAttachmentData, ThrowOnError>) => {
+export const redirectToAttachment = <ThrowOnError extends boolean = true>(options: Options<RedirectToAttachmentData, ThrowOnError>) => {
   return (options.client ?? _heyApiClient).get<RedirectToAttachmentResponses, RedirectToAttachmentErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     security: [
@@ -1341,9 +1464,11 @@ export const redirectToAttachment = <ThrowOnError extends boolean = false>(optio
 
 /**
  * Delete memberships
- * Delete memberships by their ids. This will remove the membership but not delete any user(s).
+ * 🛡️ Requires authentication (organization access).
+ *
+ * Deletes one or more *memberships* by ID. This removes the membership but does not delete the associated user(s).
  */
-export const deleteMemberships = <ThrowOnError extends boolean = false>(options: Options<DeleteMembershipsData, ThrowOnError>) => {
+export const deleteMemberships = <ThrowOnError extends boolean = true>(options: Options<DeleteMembershipsData, ThrowOnError>) => {
   return (options.client ?? _heyApiClient).delete<DeleteMembershipsResponses, DeleteMembershipsErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     security: [
@@ -1364,9 +1489,11 @@ export const deleteMemberships = <ThrowOnError extends boolean = false>(options:
 
 /**
  * Create memberships
- * Create memberships (invite members that may or may not exist in the system) to an entity such as an organization.
+ * 🛡️ Requires authentication (organization access).
+ *
+ * Creates one or more *memberships*, inviting users (existing or new) to a contextual entity such as an organization.
  */
-export const membershipInvite = <ThrowOnError extends boolean = false>(options: Options<MembershipInviteData, ThrowOnError>) => {
+export const membershipInvite = <ThrowOnError extends boolean = true>(options: Options<MembershipInviteData, ThrowOnError>) => {
   return (options.client ?? _heyApiClient).post<MembershipInviteResponses, MembershipInviteErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     security: [
@@ -1387,9 +1514,11 @@ export const membershipInvite = <ThrowOnError extends boolean = false>(options: 
 
 /**
  * Update membership
- * Update role, muted, or archived status in a membership.
+ * 🛡️ Requires authentication (organization access).
+ *
+ * Updates the *membership* metadata, such as role, `muted`, or `archived` status.
  */
-export const updateMembership = <ThrowOnError extends boolean = false>(options: Options<UpdateMembershipData, ThrowOnError>) => {
+export const updateMembership = <ThrowOnError extends boolean = true>(options: Options<UpdateMembershipData, ThrowOnError>) => {
   return (options.client ?? _heyApiClient).put<UpdateMembershipResponses, UpdateMembershipErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     security: [
@@ -1410,9 +1539,11 @@ export const updateMembership = <ThrowOnError extends boolean = false>(options: 
 
 /**
  * Get list of members
- * Get members of a context entity by id or slug. It returns members (users) with their membership.
+ * 🛡️ Requires authentication (organization access).
+ *
+ * Retrieves members (users) of a contextual entity by ID or slug, including their associated *membership* data.
  */
-export const getMembers = <ThrowOnError extends boolean = false>(options: Options<GetMembersData, ThrowOnError>) => {
+export const getMembers = <ThrowOnError extends boolean = true>(options: Options<GetMembersData, ThrowOnError>) => {
   return (options.client ?? _heyApiClient).get<GetMembersResponses, GetMembersErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     security: [
@@ -1429,9 +1560,11 @@ export const getMembers = <ThrowOnError extends boolean = false>(options: Option
 
 /**
  * Get list of invitations
- * Get pending membership invitations from a context entity by id or slug. It returns invite info.
+ * 🛡️ Requires authentication (organization access).
+ *
+ * Returns pending *membership* invitations for a contextual entity, identified by ID or slug.
  */
-export const getPendingInvitations = <ThrowOnError extends boolean = false>(options: Options<GetPendingInvitationsData, ThrowOnError>) => {
+export const getPendingInvitations = <ThrowOnError extends boolean = true>(options: Options<GetPendingInvitationsData, ThrowOnError>) => {
   return (options.client ?? _heyApiClient).get<GetPendingInvitationsResponses, GetPendingInvitationsErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     security: [

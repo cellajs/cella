@@ -4,15 +4,15 @@ import { config } from 'config';
 import { Check, UserRoundX } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { deleteMyMembership } from '~/api.gen';
 import { toaster } from '~/modules/common/toaster';
+import type { EntitySummary } from '~/modules/entities/types';
 import { deleteMenuItem } from '~/modules/navigation/menu-sheet/helpers/menu-operations';
-import type { Organization } from '~/modules/organizations/types';
 import { Button } from '~/modules/ui/button';
 import { Command, CommandGroup, CommandItem, CommandList } from '~/modules/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '~/modules/ui/popover';
-import { deleteMyMembership } from '~/openapi-client';
 
-const LeaveButton = ({ organization }: { organization: Organization }) => {
+const LeaveButton = ({ entity }: { entity: EntitySummary }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [openPopover, setOpenPopover] = useState(false);
@@ -20,13 +20,13 @@ const LeaveButton = ({ organization }: { organization: Organization }) => {
   // TODO the code is not isomorphic, shouldn't it also clear cache for this organization?
   const { mutate: _deleteMyMembership } = useMutation({
     mutationFn: async () => {
-      const idOrSlug = organization.id;
-      return await deleteMyMembership({ query: { idOrSlug, entityType: 'organization' }, throwOnError: true });
+      const idOrSlug = entity.id;
+      return await deleteMyMembership({ query: { idOrSlug, entityType: entity.entityType } });
     },
     onSuccess: () => {
-      toaster(t('common:success.you_left_organization'), 'success');
+      toaster(t('common:success.you_left_entity', { entity: entity.entityType }), 'success');
       navigate({ to: config.defaultRedirectPath, replace: true });
-      deleteMenuItem(organization.id);
+      deleteMenuItem(entity.id);
     },
   });
 

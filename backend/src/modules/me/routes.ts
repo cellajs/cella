@@ -14,8 +14,8 @@ const meRoutes = {
     path: '/',
     guard: isAuthenticated,
     tags: ['me'],
-    summary: 'Get me',
-    description: 'Get the current user (me). It includes a `counts` object.',
+    summary: 'Get self',
+    description: 'Returns the *current user*.',
     responses: {
       200: {
         description: 'User',
@@ -31,8 +31,8 @@ const meRoutes = {
     path: '/auth',
     guard: isAuthenticated,
     tags: ['me'],
-    summary: 'Get self auth data',
-    description: 'Get the current user (self). It includes sessions, oauth accounts and sign in options.',
+    summary: 'Get authentication data',
+    description: 'Returns the authentication related date of the *current user*, including sessions, OAuth accounts, and sign in options.',
     responses: {
       200: {
         description: 'User sign-up info',
@@ -46,10 +46,12 @@ const meRoutes = {
     operationId: 'updateMe',
     method: 'put',
     path: '/',
+    'x-wbut': 'dsfsd',
+    extensions: { 'x-wbut': 'dsfsd' },
     guard: isAuthenticated,
     tags: ['me'],
     summary: 'Update self',
-    description: 'Update the current user (self).',
+    description: 'Updates the *current user*.',
     request: {
       body: { content: { 'application/json': { schema: userUpdateBodySchema } } },
     },
@@ -69,7 +71,8 @@ const meRoutes = {
     guard: isAuthenticated,
     tags: ['me'],
     summary: 'Delete self',
-    description: 'Delete the current user (self).',
+    description:
+      "Deletes the *current user*. This also removes the user's memberships (cascade) and sets references to the user to `null` where applicable.",
     responses: {
       200: {
         description: 'User deleted',
@@ -87,7 +90,7 @@ const meRoutes = {
     tags: ['me'],
     summary: 'Get menu',
     description:
-      'Receive menu data with all contextual entities of which the current user is a member. It is in essence a restructured list of `memberships` per entity type, with some entity data in it.',
+      'Returns a structured list of contextual entities the *current user* is a member of, grouped by the entity type and enriched with both `memebrship` and `entity` data.',
     responses: {
       200: {
         description: 'Menu of user',
@@ -104,7 +107,7 @@ const meRoutes = {
     guard: isAuthenticated,
     tags: ['me'],
     summary: 'Terminate sessions',
-    description: 'Terminate sessions of the current user by list of ids.',
+    description: 'Ends one or more sessions for the *current user* based on provided session IDs.',
     request: {
       body: {
         content: { 'application/json': { schema: z.object({ ids: z.array(z.string()).min(1, 'Add at least one item') }) } },
@@ -127,7 +130,7 @@ const meRoutes = {
     guard: isAuthenticated,
     tags: ['me'],
     summary: 'Leave entity',
-    description: 'Remove your own entity membership by yourself.',
+    description: 'Removes the *current user* from an entity they are a member of.',
     security: [],
     request: {
       query: entityWithTypeQuerySchema,
@@ -149,7 +152,8 @@ const meRoutes = {
     middleware: [tokenLimiter('unsubscribe')],
     tags: ['me'],
     summary: 'Unsubscribe',
-    description: 'Unsubscribe using a personal unsubscribe token.',
+    description:
+      'Unsubscribes the user from email notifications using a personal unsubscribe token. No authentication is required, as the token implicitly identifies the *current user*.',
     request: {
       query: z.object({ token: z.string() }),
     },
@@ -170,7 +174,7 @@ const meRoutes = {
     tags: ['me'],
     summary: 'Get upload token',
     description:
-      'This endpoint is used to get an upload token for a user or organization. The token can be used to upload or private images/files to your S3 bucket using',
+      'Generates and returns an upload token for uploading files or images to a private S3 bucket, scoped to the *current user* and organization',
     request: { query: uploadTokenQuerySchema },
     responses: {
       200: {
@@ -188,8 +192,7 @@ const meRoutes = {
     guard: isAuthenticated,
     tags: ['me'],
     summary: 'Create passkey',
-    description:
-      'The server associates the key and the credential ID with the user for future authentication flows and checks the validity of the operation by verifying the signed challenge with the key.',
+    description: 'Registers a passkey for passwordless authentication by verifying a signed challenge and linking it to the *current user*.',
     security: [],
     request: {
       body: {
@@ -213,7 +216,7 @@ const meRoutes = {
     guard: isAuthenticated,
     tags: ['me'],
     summary: 'Delete passkey',
-    description: 'Delete your passkey record.',
+    description: "Removes the *current user's* registered passkey credential.",
     security: [],
     responses: {
       200: {

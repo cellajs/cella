@@ -2,12 +2,12 @@ import { onlineManager } from '@tanstack/react-query';
 import { Check, Fingerprint, RotateCw, Trash } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { deletePasskey } from '~/api.gen';
+import { toaster } from '~/modules/common/toaster';
 import { passkeyRegistration } from '~/modules/me/helpers';
 import type { MeAuthData } from '~/modules/me/types';
 import { Button } from '~/modules/ui/button';
-import { deletePasskey } from '~/openapi-client';
 import { useUserStore } from '~/store/user';
-import { toaster } from '../common/toaster';
 
 const Passkeys = ({ userAuthInfo }: { userAuthInfo: MeAuthData }) => {
   const { t } = useTranslation();

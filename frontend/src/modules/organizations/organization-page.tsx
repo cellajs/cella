@@ -10,7 +10,7 @@ import { organizationQueryOptions, useOrganizationUpdateMutation } from '~/modul
 import { OrganizationRoute } from '~/routes/organizations';
 import { useUserStore } from '~/store/user';
 
-const LeaveButton = lazy(() => import('~/modules/organizations/leave-button'));
+const LeaveButton = lazy(() => import('~/modules/memberships/leave-button'));
 
 const organizationTabs: PageTab[] = [
   { id: 'members', label: 'common:members', path: '/organizations/$idOrSlug/members' },
@@ -51,7 +51,7 @@ const OrganizationPage = () => {
         panel={
           organization.membership && (
             <Suspense>
-              <LeaveButton organization={organization} />
+              <LeaveButton entity={organization} />
             </Suspense>
           )
         }
