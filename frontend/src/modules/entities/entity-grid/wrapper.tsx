@@ -8,30 +8,30 @@ import type { MembershipRoles } from '~/modules/memberships/types';
 // TODO use filterOptions to include roles and userId and possibly other filters in the future
 export interface EntityGridWrapperProps {
   entityType: ContextEntityType;
-  roles?: MembershipRoles[];
-  focusView?: boolean;
   userId?: string;
+  focusView?: boolean;
+  saveDataInSearch?: boolean;
+  roles?: MembershipRoles[];
   tileComponent?: React.ElementType;
 }
 
-const EntityGridWrapper = (props: EntityGridWrapperProps) => {
-  const { userId, focusView = true } = props;
-  const { search, setSearch } = useSearchParams<EntitySearch>({ saveDataInSearch: false });
+const EntityGridWrapper = ({ entityType, userId, roles, focusView = true, saveDataInSearch = true, tileComponent }: EntityGridWrapperProps) => {
+  const { search, setSearch } = useSearchParams<EntitySearch>({ saveDataInSearch });
 
   const [totalCount, setTotalCount] = useState<number | undefined>(undefined);
 
   return (
     <div className="flex flex-col gap-4 h-full">
-      <EntityGridBar totalCount={totalCount} searchVars={search} countName={props.entityType} setSearch={setSearch} focusView={focusView} />
+      <EntityGridBar totalCount={totalCount} searchVars={search} countName={entityType} setSearch={setSearch} focusView={focusView} />
 
       <BaseEntityGrid
-        entityType={props.entityType}
-        roles={props.roles}
+        entityType={entityType}
+        roles={roles}
         userId={userId}
         searchVars={search}
         totalCount={totalCount}
         setTotalCount={setTotalCount}
-        tileComponent={props.tileComponent}
+        tileComponent={tileComponent}
       />
     </div>
   );
