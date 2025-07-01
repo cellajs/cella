@@ -6,9 +6,9 @@ import type z from 'zod/v4';
 import type { zGetEntitiesWithAdminsData } from '~/api.gen/zod.gen';
 import { useOnlineManager } from '~/hooks/use-online-manager';
 import { GridSkeleton } from '~/modules/entities/entity-grid/skeleton';
+import { EntityTile } from '~/modules/entities/entity-grid/tile';
+import type { EntityGridWrapperProps } from '~/modules/entities/entity-grid/wrapper';
 import { contextEntitiesQueryOptions } from '~/modules/entities/query';
-import { EntityTile } from './tile';
-import type { EntityGridWrapperProps } from './wrapper';
 
 // TODO: can we also include roles and userId in the searchVars?
 export type EntitySearch = Pick<z.infer<typeof zGetEntitiesWithAdminsData>['query'], 'sort' | 'q'>;

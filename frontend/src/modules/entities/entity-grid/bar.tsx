@@ -4,7 +4,7 @@ import { FilterBarActions, FilterBarContent, TableFilterBar } from '~/modules/co
 import TableSearch from '~/modules/common/data-table/table-search';
 import { FocusView } from '~/modules/common/focus-view';
 import SelectSort from '~/modules/common/form-fields/select-sort';
-import type { EntitySearch } from './grid';
+import type { EntitySearch } from '~/modules/entities/entity-grid/grid';
 
 type Props = {
   countName: string;

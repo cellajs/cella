@@ -214,7 +214,7 @@ export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends 
  * Check if email exists
  * 🌐 Public access.
  *
- * Check if user with email address exists.
+ * Checks if a user with the specified email address exists in the system.
  */
 export const checkEmail = <ThrowOnError extends boolean = true>(options?: Options<CheckEmailData, ThrowOnError>) => {
   return (options?.client ?? _heyApiClient).post<CheckEmailResponses, CheckEmailErrors, ThrowOnError, 'data'>({
@@ -232,7 +232,7 @@ export const checkEmail = <ThrowOnError extends boolean = true>(options?: Option
  * Sign up with password
  * 🌐 Public access.
  *
- * Sign up with email and password. User will receive a verification email.
+ * Registers a new user using an email and password. Sends a verification email upon successful sign up.
  */
 export const signUp = <ThrowOnError extends boolean = true>(options?: Options<SignUpData, ThrowOnError>) => {
   return (options?.client ?? _heyApiClient).post<SignUpResponses, SignUpErrors, ThrowOnError, 'data'>({
@@ -250,7 +250,7 @@ export const signUp = <ThrowOnError extends boolean = true>(options?: Options<Si
  * Sign up to accept invite
  * 🌐 Public access.
  *
- * Sign up with email and password to accept system or organization invitation.
+ * Registers a user using an email and password in response to a system or organization invitation.
  */
 export const signUpWithToken = <ThrowOnError extends boolean = true>(options: Options<SignUpWithTokenData, ThrowOnError>) => {
   return (options.client ?? _heyApiClient).post<SignUpWithTokenResponses, SignUpWithTokenErrors, ThrowOnError, 'data'>({
@@ -268,7 +268,7 @@ export const signUpWithToken = <ThrowOnError extends boolean = true>(options: Op
  * Resend verification email
  * 🌐 Public access.
  *
- * Resend verification email to user based on token id.
+ * Resends the email verification message to a user using the provided token ID.
  */
 export const sendVerificationEmail = <ThrowOnError extends boolean = true>(options?: Options<SendVerificationEmailData, ThrowOnError>) => {
   return (options?.client ?? _heyApiClient).post<SendVerificationEmailResponses, SendVerificationEmailErrors, ThrowOnError, 'data'>({
@@ -286,7 +286,7 @@ export const sendVerificationEmail = <ThrowOnError extends boolean = true>(optio
  * Verify email by token
  * 🌐 Public access.
  *
- * Verify email address by token from the verification email. Receive a user session when successful.
+ * Verifies a user's email using a token from their verification email. Grants a session upon success.
  */
 export const verifyEmail = <ThrowOnError extends boolean = true>(options: Options<VerifyEmailData, ThrowOnError>) => {
   return (options.client ?? _heyApiClient).post<VerifyEmailResponses, VerifyEmailErrors, ThrowOnError, 'data'>({
@@ -300,7 +300,7 @@ export const verifyEmail = <ThrowOnError extends boolean = true>(options: Option
  * Request new password
  * 🌐 Public access.
  *
- * An email will be sent with a link to create a password.
+ * Sends an email with a link to reset the user's password.
  */
 export const requestPassword = <ThrowOnError extends boolean = true>(options?: Options<RequestPasswordData, ThrowOnError>) => {
   return (options?.client ?? _heyApiClient).post<RequestPasswordResponses, RequestPasswordErrors, ThrowOnError, 'data'>({
@@ -318,7 +318,7 @@ export const requestPassword = <ThrowOnError extends boolean = true>(options?: O
  * Create password by token
  * 🌐 Public access.
  *
- * Submit new password and directly receive a user session.
+ * Sets a new password using a token and grants a session immediately upon success.
  */
 export const createPassword = <ThrowOnError extends boolean = true>(options: Options<CreatePasswordData, ThrowOnError>) => {
   return (options.client ?? _heyApiClient).post<CreatePasswordResponses, CreatePasswordErrors, ThrowOnError, 'data'>({
@@ -336,7 +336,7 @@ export const createPassword = <ThrowOnError extends boolean = true>(options: Opt
  * Sign in with password
  * 🌐 Public access.
  *
- * Sign in with email and password.
+ * Authenticates an existing user using their email and password.
  */
 export const signIn = <ThrowOnError extends boolean = true>(options?: Options<SignInData, ThrowOnError>) => {
   return (options?.client ?? _heyApiClient).post<SignInResponses, SignInErrors, ThrowOnError, 'data'>({
@@ -354,7 +354,7 @@ export const signIn = <ThrowOnError extends boolean = true>(options?: Options<Si
  * Token validation check
  * 🌐 Public access.
  *
- * This endpoint is used to check if a token is still valid. It is used to provide direct user feedback on tokens such as reset password and invitation.
+ * Checks if a token (e.g. for password reset, email verification, or invite) is still valid.
  */
 export const checkToken = <ThrowOnError extends boolean = true>(options: Options<CheckTokenData, ThrowOnError>) => {
   return (options.client ?? _heyApiClient).post<CheckTokenResponses, CheckTokenErrors, ThrowOnError, 'data'>({
@@ -375,7 +375,7 @@ export const checkToken = <ThrowOnError extends boolean = true>(options: Options
  * Accept invitation
  * 🛡️ Requires authentication.
  *
- * Accept invitation token
+ * Accepts an invitation token and activates the associated membership or system access.
  */
 export const acceptEntityInvite = <ThrowOnError extends boolean = true>(options: Options<AcceptEntityInviteData, ThrowOnError>) => {
   return (options.client ?? _heyApiClient).post<AcceptEntityInviteResponses, AcceptEntityInviteErrors, ThrowOnError, 'data'>({
@@ -396,7 +396,7 @@ export const acceptEntityInvite = <ThrowOnError extends boolean = true>(options:
  * Start impersonating
  * 🛡️ Requires authentication (system access).
  *
- * System admin impersonates a selected user by id by receiving a special impersonation session.
+ * Allows a system admin to impersonate a specific user by ID, returning a temporary impersonation session.
  */
 export const startImpersonation = <ThrowOnError extends boolean = true>(options: Options<StartImpersonationData, ThrowOnError>) => {
   return (options.client ?? _heyApiClient).get<StartImpersonationResponses, StartImpersonationErrors, ThrowOnError, 'data'>({
@@ -417,7 +417,7 @@ export const startImpersonation = <ThrowOnError extends boolean = true>(options:
  * Stop impersonating
  * 🌐 Public access.
  *
- * Stop impersonating by clearing impersonation session.
+ * Ends impersonation by clearing the current impersonation session and restoring the admin context.
  */
 export const stopImpersonation = <ThrowOnError extends boolean = true>(options?: Options<StopImpersonationData, ThrowOnError>) => {
   return (options?.client ?? _heyApiClient).get<StopImpersonationResponses, StopImpersonationErrors, ThrowOnError, 'data'>({
@@ -438,7 +438,7 @@ export const stopImpersonation = <ThrowOnError extends boolean = true>(options?:
  * Sign out
  * 🌐 Public access.
  *
- * Sign out yourself and clear session.
+ * Signs out the *current user* and clears the active session.
  */
 export const signOut = <ThrowOnError extends boolean = true>(options?: Options<SignOutData, ThrowOnError>) => {
   return (options?.client ?? _heyApiClient).get<SignOutResponses, SignOutErrors, ThrowOnError, 'data'>({
@@ -459,7 +459,7 @@ export const signOut = <ThrowOnError extends boolean = true>(options?: Options<S
  * Authenticate with GitHub
  * 🌐 Public access.
  *
- * Authenticate with Github to sign in or sign up. A `connect` (userId),`redirect` or `token` query parameter can be used to connect account, redirect to a specific page or to accept invitation.
+ * Starts OAuth authentication with GitHub. Supports account connection (`connect`), redirect (`redirect`), or invite token (`token`).
  */
 export const githubSignIn = <ThrowOnError extends boolean = true>(options: Options<GithubSignInData, ThrowOnError>) => {
   return (options.client ?? _heyApiClient).get<unknown, GithubSignInErrors, ThrowOnError, 'data'>({
@@ -473,7 +473,7 @@ export const githubSignIn = <ThrowOnError extends boolean = true>(options: Optio
  * Authenticate with Google
  * 🌐 Public access.
  *
- * Authenticate with Google to sign in or sign up. A `connect` (userId),`redirect` or `token` query parameter can be used to connect account, redirect to a specific page or to accept invitation.
+ * Starts OAuth authentication with Google. Supports account connection (`connect`), redirect (`redirect`), or invite token (`token`).
  */
 export const googleSignIn = <ThrowOnError extends boolean = true>(options: Options<GoogleSignInData, ThrowOnError>) => {
   return (options.client ?? _heyApiClient).get<unknown, GoogleSignInErrors, ThrowOnError, 'data'>({
@@ -487,7 +487,7 @@ export const googleSignIn = <ThrowOnError extends boolean = true>(options: Optio
  * Authenticate with Microsoft
  * 🌐 Public access.
  *
- * Authenticate with Microsoft to sign in or sign up.  A `connect` (userId),`redirect` or `token` query parameter can be used to connect account, redirect to a specific page or to accept invitation.
+ * Starts OAuth authentication with Microsoft. Supports account connection (`connect`), redirect (`redirect`), or invite token (`token`).
  */
 export const microsoftSignIn = <ThrowOnError extends boolean = true>(options: Options<MicrosoftSignInData, ThrowOnError>) => {
   return (options.client ?? _heyApiClient).get<unknown, MicrosoftSignInErrors, ThrowOnError, 'data'>({
@@ -501,7 +501,7 @@ export const microsoftSignIn = <ThrowOnError extends boolean = true>(options: Op
  * Callback for GitHub
  * 🌐 Public access.
  *
- * Callback to receive authorization and basic user data from Github.
+ * Handles GitHub OAuth callback, retrieves user identity, and establishes a session or links account.
  */
 export const githubSignInCallback = <ThrowOnError extends boolean = true>(options: Options<GithubSignInCallbackData, ThrowOnError>) => {
   return (options.client ?? _heyApiClient).get<unknown, GithubSignInCallbackErrors, ThrowOnError, 'data'>({
@@ -515,7 +515,7 @@ export const githubSignInCallback = <ThrowOnError extends boolean = true>(option
  * Callback for Google
  * 🌐 Public access.
  *
- * Callback to receive authorization and basic user data from Google.
+ * Handles Google OAuth callback, retrieves user identity, and establishes a session or links account.
  */
 export const googleSignInCallback = <ThrowOnError extends boolean = true>(options: Options<GoogleSignInCallbackData, ThrowOnError>) => {
   return (options.client ?? _heyApiClient).get<unknown, GoogleSignInCallbackErrors, ThrowOnError, 'data'>({
@@ -529,7 +529,7 @@ export const googleSignInCallback = <ThrowOnError extends boolean = true>(option
  * Callback for Microsoft
  * 🌐 Public access.
  *
- * Callback to receive authorization and basic user data from Microsoft.
+ * Handles Microsoft OAuth callback, retrieves user identity, and establishes a session or links account.
  */
 export const microsoftSignInCallback = <ThrowOnError extends boolean = true>(options: Options<MicrosoftSignInCallbackData, ThrowOnError>) => {
   return (options.client ?? _heyApiClient).get<unknown, MicrosoftSignInCallbackErrors, ThrowOnError, 'data'>({
@@ -543,7 +543,7 @@ export const microsoftSignInCallback = <ThrowOnError extends boolean = true>(opt
  * Get passkey challenge
  * 🌐 Public access.
  *
- * Handing over the challenge: this results in a key pair, private and public key being created on the device.
+ * Initiates the passkey registration or authentication flow by generating a device bound challenge.
  */
 export const getPasskeyChallenge = <ThrowOnError extends boolean = true>(options?: Options<GetPasskeyChallengeData, ThrowOnError>) => {
   return (options?.client ?? _heyApiClient).get<GetPasskeyChallengeResponses, GetPasskeyChallengeErrors, ThrowOnError, 'data'>({
@@ -557,7 +557,7 @@ export const getPasskeyChallenge = <ThrowOnError extends boolean = true>(options
  * Verify passkey
  * 🌐 Public access.
  *
- * Verify passkey by checking the validity of signature with public key.
+ * Validates the signed challenge and completes passkey based authentication.
  */
 export const signInWithPasskey = <ThrowOnError extends boolean = true>(options?: Options<SignInWithPasskeyData, ThrowOnError>) => {
   return (options?.client ?? _heyApiClient).post<SignInWithPasskeyResponses, SignInWithPasskeyErrors, ThrowOnError, 'data'>({
@@ -1013,7 +1013,10 @@ export const updateOrganization = <ThrowOnError extends boolean = true>(options:
  * Get list of page entities
  * 🛡️ Requires authentication.
  *
- * Get page entities such as users and organizations. It returns a paginated list of entities to which the user has access. The schema is limited to common fields.
+ * Returns a paginated list of *entities* (e.g. *users*, *organizations*) the current user has access to.
+ * Can optionally include the current user's enrollment information for each entity (when applicable).
+ * You can also provide a specific user ID to retrieve the entities that *user* is enrolled in, useful for profile views or access audits.
+ * The response includes only fields shared across all entity types, such as `id`, `slug`, and `name`.
  */
 export const getPageEntities = <ThrowOnError extends boolean = true>(options?: Options<GetPageEntitiesData, ThrowOnError>) => {
   return (options?.client ?? _heyApiClient).get<GetPageEntitiesResponses, GetPageEntitiesErrors, ThrowOnError, 'data'>({
@@ -1034,7 +1037,8 @@ export const getPageEntities = <ThrowOnError extends boolean = true>(options?: O
  * Get all of context user entities
  * 🛡️ Requires authentication.
  *
- * Get context entities such organizations of specified user. It returns list of entities based of requested tpye to which the user are part of. With user membership & other members of entity.
+ * Returns all *contextual entities* (e.g. *organizations*) the specified user is a member of.
+ * Each result includes the user's membership data and a list of other users with administrator roles within the same entity.
  */
 export const getEntitiesWithAdmins = <ThrowOnError extends boolean = true>(options: Options<GetEntitiesWithAdminsData, ThrowOnError>) => {
   return (options.client ?? _heyApiClient).get<GetEntitiesWithAdminsResponses, GetEntitiesWithAdminsErrors, ThrowOnError, 'data'>({
@@ -1055,7 +1059,8 @@ export const getEntitiesWithAdmins = <ThrowOnError extends boolean = true>(optio
  * Check if slug is available
  * 🛡️ Requires authentication.
  *
- * This endpoint is used to check if a slug is available among ALL contextual entities such as organizations.
+ * Checks whether a given slug is available across all entity types (e.g. *organizations*, *users*).
+ * Primarily used to prevent slug collisions before creating or updating an entity.
  */
 export const checkSlug = <ThrowOnError extends boolean = true>(options?: Options<CheckSlugData, ThrowOnError>) => {
   return (options?.client ?? _heyApiClient).post<CheckSlugResponses, CheckSlugErrors, ThrowOnError, 'data'>({
@@ -1080,7 +1085,7 @@ export const checkSlug = <ThrowOnError extends boolean = true>(options?: Options
  * Invite to system
  * 🛡️ Requires authentication (system access).
  *
- * Invite one or more users to system by email address.
+ * Invites one or more users to the system via email. Can be used to onboard system level users or admins.
  */
 export const systemInvite = <ThrowOnError extends boolean = true>(options?: Options<SystemInviteData, ThrowOnError>) => {
   return (options?.client ?? _heyApiClient).post<SystemInviteResponses, SystemInviteErrors, ThrowOnError, 'data'>({
@@ -1102,7 +1107,10 @@ export const systemInvite = <ThrowOnError extends boolean = true>(options?: Opti
 };
 
 /**
+ * Get presigned URL
  * 🛡️ Requires authentication.
+ *
+ * Generates and returns a presigned URL for uploading files to an S3 bucket.
  */
 export const getPresignedUrl = <ThrowOnError extends boolean = true>(options: Options<GetPresignedUrlData, ThrowOnError>) => {
   return (options.client ?? _heyApiClient).get<GetPresignedUrlResponses, GetPresignedUrlErrors, ThrowOnError, 'data'>({
@@ -1120,10 +1128,10 @@ export const getPresignedUrl = <ThrowOnError extends boolean = true>(options: Op
 };
 
 /**
- * Paddle webhook
+ * Paddle webhook (WIP)
  * 🌐 Public access.
  *
- * Paddle webhook for subscription events
+ * Receives and handles Paddle subscription events such as purchases, renewals, and cancellations.
  */
 export const paddleWebhook = <ThrowOnError extends boolean = true>(options?: Options<PaddleWebhookData, ThrowOnError>) => {
   return (options?.client ?? _heyApiClient).post<PaddleWebhookResponses, PaddleWebhookErrors, ThrowOnError, 'data'>({
@@ -1148,7 +1156,7 @@ export const paddleWebhook = <ThrowOnError extends boolean = true>(options?: Opt
  * Newsletter to members
  * 🛡️ Requires authentication (system access).
  *
- * Send a newsletter to requested organizations members.
+ * Sends a newsletter to members of one or more specified organizations.
  */
 export const sendNewsletter = <ThrowOnError extends boolean = true>(options: Options<SendNewsletterData, ThrowOnError>) => {
   return (options.client ?? _heyApiClient).post<SendNewsletterResponses, SendNewsletterErrors, ThrowOnError, 'data'>({
@@ -1173,7 +1181,7 @@ export const sendNewsletter = <ThrowOnError extends boolean = true>(options: Opt
  * Delete requests
  * 🛡️ Requires authentication (system access).
  *
- * Delete requests by ids.
+ * Deletes one or more *requests* from the system by their IDs.
  */
 export const deleteRequests = <ThrowOnError extends boolean = true>(options?: Options<DeleteRequestsData, ThrowOnError>) => {
   return (options?.client ?? _heyApiClient).delete<DeleteRequestsResponses, DeleteRequestsErrors, ThrowOnError, 'data'>({
@@ -1198,7 +1206,7 @@ export const deleteRequests = <ThrowOnError extends boolean = true>(options?: Op
  * Get list of requests
  * 🛡️ Requires authentication (system access).
  *
- * Get list of requests on system level for waitlist, submit contact form or to join newsletter.
+ * Returns a list of submitted *requests* across all types: contact form, newsletter, and waitlist.
  */
 export const getRequests = <ThrowOnError extends boolean = true>(options: Options<GetRequestsData, ThrowOnError>) => {
   return (options.client ?? _heyApiClient).get<GetRequestsResponses, GetRequestsErrors, ThrowOnError, 'data'>({
@@ -1219,7 +1227,7 @@ export const getRequests = <ThrowOnError extends boolean = true>(options: Option
  * Create request
  * 🌐 Public access.
  *
- * Create a request on system level. Request supports waitlist, contact form and newsletter.
+ * Submits a new *request* to the system. Supported types include contact form, newsletter signup, and waitlist entry.
  */
 export const createRequest = <ThrowOnError extends boolean = true>(options?: Options<CreateRequestData, ThrowOnError>) => {
   return (options?.client ?? _heyApiClient).post<CreateRequestResponses, CreateRequestErrors, ThrowOnError, 'data'>({
@@ -1244,7 +1252,8 @@ export const createRequest = <ThrowOnError extends boolean = true>(options?: Opt
  * Get metrics
  * 🛡️ Requires authentication (system access).
  *
- * EXPERIMENTAL. Receive node observability metrics.
+ * EXPERIMENTAL. Returns raw system observability data (e.g. node level statistics or runtime insights).
+ * Primarily intended for internal monitoring and diagnostics.
  */
 export const getMetrics = <ThrowOnError extends boolean = true>(options?: Options<GetMetricsData, ThrowOnError>) => {
   return (options?.client ?? _heyApiClient).get<GetMetricsResponses, GetMetricsErrors, ThrowOnError, 'data'>({
@@ -1265,7 +1274,8 @@ export const getMetrics = <ThrowOnError extends boolean = true>(options?: Option
  * Get public counts
  * 🌐 Public access.
  *
- * Get a count of all entities (ie. users, organizations). 1 minute in-memory cache.
+ * Returns basic count metrics for entity types such as `users` and `organizations`.
+ * This endpoint is public and uses a 1 minute in memory cache for performance.
  */
 export const getPublicCounts = <ThrowOnError extends boolean = true>(options?: Options<GetPublicCountsData, ThrowOnError>) => {
   return (options?.client ?? _heyApiClient).get<GetPublicCountsResponses, GetPublicCountsErrors, ThrowOnError, 'data'>({
@@ -1286,7 +1296,9 @@ export const getPublicCounts = <ThrowOnError extends boolean = true>(options?: O
  * Shape proxy
  * 🛡️ Requires authentication (organization access).
  *
- * Get shape proxy for attachments to keep attachment data in sync.
+ * Proxies requests to ElectricSQL's shape endpoint for the `attachments` table.
+ * Used by clients to synchronize local data with server state via the shape log system.
+ * This endpoint ensures required query parameters are forwarded and response headers are adjusted for browser compatibility.
  */
 export const shapeProxy = <ThrowOnError extends boolean = true>(options: Options<ShapeProxyData, ThrowOnError>) => {
   return (options.client ?? _heyApiClient).get<ShapeProxyResponses, ShapeProxyErrors, ThrowOnError, 'data'>({
@@ -1307,7 +1319,7 @@ export const shapeProxy = <ThrowOnError extends boolean = true>(options: Options
  * Delete attachments
  * 🛡️ Requires authentication (organization access).
  *
- * Delete attachments by their ids
+ * Deletes one or more *attachment* records by ID. This does not delete the underlying file in storage.
  */
 export const deleteAttachments = <ThrowOnError extends boolean = true>(options: Options<DeleteAttachmentsData, ThrowOnError>) => {
   return (options.client ?? _heyApiClient).delete<DeleteAttachmentsResponses, DeleteAttachmentsErrors, ThrowOnError, 'data'>({
@@ -1332,7 +1344,7 @@ export const deleteAttachments = <ThrowOnError extends boolean = true>(options: 
  * Get list of attachments
  * 🛡️ Requires authentication (organization access).
  *
- * Get attachments for an organization.
+ * Retrieves all *attachments* associated with a specific entity, such as an organization.
  */
 export const getAttachments = <ThrowOnError extends boolean = true>(options: Options<GetAttachmentsData, ThrowOnError>) => {
   return (options.client ?? _heyApiClient).get<GetAttachmentsResponses, GetAttachmentsErrors, ThrowOnError, 'data'>({
@@ -1353,7 +1365,7 @@ export const getAttachments = <ThrowOnError extends boolean = true>(options: Opt
  * Create attachments
  * 🛡️ Requires authentication (organization access).
  *
- * Create one or more new attachments.
+ * Registers one or more new *attachments* after client side upload. Includes metadata like name, type, and linked entity.
  */
 export const createAttachment = <ThrowOnError extends boolean = true>(options: Options<CreateAttachmentData, ThrowOnError>) => {
   return (options.client ?? _heyApiClient).post<CreateAttachmentResponses, CreateAttachmentErrors, ThrowOnError, 'data'>({
@@ -1378,7 +1390,7 @@ export const createAttachment = <ThrowOnError extends boolean = true>(options: O
  * Get attachment
  * 🛡️ Requires authentication (organization access).
  *
- * Get an attachment by id.
+ * Fetches metadata and access details for a single *attachment* by ID.
  */
 export const getAttachment = <ThrowOnError extends boolean = true>(options: Options<GetAttachmentData, ThrowOnError>) => {
   return (options.client ?? _heyApiClient).get<GetAttachmentResponses, GetAttachmentErrors, ThrowOnError, 'data'>({
@@ -1399,7 +1411,7 @@ export const getAttachment = <ThrowOnError extends boolean = true>(options: Opti
  * Update attachment
  * 🛡️ Requires authentication (organization access).
  *
- * Update attachment by id.
+ * Updates metadata of an *attachment*, such as its name or associated entity.
  */
 export const updateAttachment = <ThrowOnError extends boolean = true>(options: Options<UpdateAttachmentData, ThrowOnError>) => {
   return (options.client ?? _heyApiClient).put<UpdateAttachmentResponses, UpdateAttachmentErrors, ThrowOnError, 'data'>({
@@ -1424,7 +1436,7 @@ export const updateAttachment = <ThrowOnError extends boolean = true>(options: O
  * Get attachment cover
  * 🌐 Public access.
  *
- * Get attachment cover image by id.
+ * Returns a preview or cover image for a file, when available (e.g. first page of a PDF or image thumbnail).
  */
 export const getAttachmentCover = <ThrowOnError extends boolean = true>(options: Options<GetAttachmentCoverData, ThrowOnError>) => {
   return (options.client ?? _heyApiClient).get<GetAttachmentCoverResponses, GetAttachmentCoverErrors, ThrowOnError, 'data'>({
@@ -1445,7 +1457,7 @@ export const getAttachmentCover = <ThrowOnError extends boolean = true>(options:
  * Redirect to attachment
  * 🌐 Public access.
  *
- * Redirect to attachment by id.
+ * Redirects to the file's public or presigned URL, depending on storage visibility.
  */
 export const redirectToAttachment = <ThrowOnError extends boolean = true>(options: Options<RedirectToAttachmentData, ThrowOnError>) => {
   return (options.client ?? _heyApiClient).get<RedirectToAttachmentResponses, RedirectToAttachmentErrors, ThrowOnError, 'data'>({
