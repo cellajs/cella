@@ -11,10 +11,10 @@ type Props = {
   searchVars: EntitySearch;
   setSearch: (search: EntitySearch) => void;
   totalCount?: number;
-  isSheet?: boolean;
+  focusView?: boolean;
 };
 
-export const EntityGridBar = ({ totalCount, countName, searchVars, setSearch, isSheet }: Props) => {
+export const EntityGridBar = ({ totalCount, countName, searchVars, setSearch, focusView }: Props) => {
   const { q, sort } = searchVars;
 
   const isFiltered = !!q;
@@ -41,7 +41,7 @@ export const EntityGridBar = ({ totalCount, countName, searchVars, setSearch, is
       </TableFilterBar>
 
       {/* Focus view */}
-      {!isSheet && <FocusView iconOnly />}
+      {focusView && <FocusView iconOnly />}
     </TableBarContainer>
   );
 };

@@ -7,6 +7,7 @@ import type { zGetEntitiesWithAdminsData } from '~/api.gen/zod.gen';
 import { useOnlineManager } from '~/hooks/use-online-manager';
 import { GridSkeleton } from '~/modules/entities/entity-grid/skeleton';
 import { contextEntitiesQueryOptions } from '~/modules/entities/query';
+import { EntityTile } from './tile';
 import type { EntityGridWrapperProps } from './wrapper';
 
 // TODO: can we also include roles and userId in the searchVars?
@@ -15,13 +16,12 @@ export type EntitySearch = Pick<z.infer<typeof zGetEntitiesWithAdminsData>['quer
 interface Props extends EntityGridWrapperProps {
   searchVars: EntitySearch;
   setTotalCount: (newTotal?: number) => void;
-  tileComponent: React.ElementType;
   totalCount?: number;
   fetchMore?: () => void;
 }
 
 export const BaseEntityGrid = ({
-  tileComponent: TileComponent,
+  tileComponent: TileComponent = EntityTile,
   entityType,
   roles,
   userId,
