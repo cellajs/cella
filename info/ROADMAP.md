@@ -7,7 +7,6 @@ Last update: May 21,2025
 * Security improvements in authentication and authorization
 * Vitest + Playwright + Storybook
 * Code refactors
-* TypeScript perf improvements
 * Write many more tests
 * Navigation UI improvements
 * Table grid (mobile) UI improvements

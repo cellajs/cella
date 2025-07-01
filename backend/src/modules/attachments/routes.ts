@@ -169,7 +169,7 @@ const attachmentRoutes = {
     guard: isPublicAccess,
     tags: ['attachments'],
     summary: 'Redirect to attachment',
-    description: 'Redirects to the file\'s public or presigned URL, depending on storage visibility.',
+    description: "Redirects to the file's public or presigned URL, depending on storage visibility.",
     request: {
       params: z.object({ id: idSchema }),
     },

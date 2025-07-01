@@ -43,3 +43,5 @@ frontend/stats.html
 
 # Cella
 cella.diverged.txt
+*storybook.log
+storybook-static
