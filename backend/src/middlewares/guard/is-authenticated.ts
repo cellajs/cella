@@ -61,6 +61,3 @@ export const isAuthenticated: MiddlewareHandler<Env> = createMiddleware<Env>(asy
 
   await next();
 });
-
-// biome-ignore lint/suspicious/noExplicitAny: Metadata for OpenAPI documentation (more metadata can be added later)
-(isAuthenticated as any).__openapi = { name: 'isAuthenticated' };

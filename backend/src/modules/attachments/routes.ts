@@ -13,7 +13,7 @@ const attachmentRoutes = {
     guard: [isAuthenticated, hasOrgAccess],
     tags: ['attachments'],
     summary: 'Create attachments',
-    description: 'Create one or more new attachments.',
+    description: 'Registers one or more new *attachments* after client side upload. Includes metadata like name, type, and linked entity.',
     request: {
       params: inOrgParamSchema,
       body: {
@@ -44,7 +44,7 @@ const attachmentRoutes = {
     guard: [isAuthenticated, hasOrgAccess],
     tags: ['attachments'],
     summary: 'Get list of attachments',
-    description: 'Get attachments for an organization.',
+    description: 'Retrieves all *attachments* associated with a specific entity, such as an organization.',
     request: {
       params: inOrgParamSchema,
       query: attachmentListQuerySchema,
@@ -68,7 +68,7 @@ const attachmentRoutes = {
     guard: [isAuthenticated, hasOrgAccess],
     tags: ['attachments'],
     summary: 'Get attachment',
-    description: 'Get an attachment by id.',
+    description: 'Fetches metadata and access details for a single *attachment* by ID.',
     request: {
       params: idInOrgParamSchema,
     },
@@ -91,7 +91,7 @@ const attachmentRoutes = {
     guard: [isAuthenticated, hasOrgAccess],
     tags: ['attachments'],
     summary: 'Update attachment',
-    description: 'Update attachment by id.',
+    description: 'Updates metadata of an *attachment*, such as its name or associated entity.',
     request: {
       params: idInOrgParamSchema,
       body: {
@@ -121,7 +121,7 @@ const attachmentRoutes = {
     guard: [isAuthenticated, hasOrgAccess],
     tags: ['attachments'],
     summary: 'Delete attachments',
-    description: 'Delete attachments by their ids',
+    description: 'Deletes one or more *attachment* records by ID. This does not delete the underlying file in storage.',
     request: {
       params: inOrgParamSchema,
       body: {
@@ -151,7 +151,9 @@ const attachmentRoutes = {
     guard: [isAuthenticated, hasOrgAccess],
     tags: ['attachments'],
     summary: 'Shape proxy',
-    description: 'Get shape proxy for attachments to keep attachment data in sync.',
+    description: `Proxies requests to ElectricSQL\'s shape endpoint for the \`attachments\` table.
+      Used by clients to synchronize local data with server state via the shape log system.
+      This endpoint ensures required query parameters are forwarded and response headers are adjusted for browser compatibility.`,
     request: { params: inOrgParamSchema },
     responses: {
       200: {
@@ -164,10 +166,10 @@ const attachmentRoutes = {
     operationId: 'redirectToAttachment',
     method: 'get',
     path: '/{id}/link',
-    tags: ['attachments'],
     guard: isPublicAccess,
+    tags: ['attachments'],
     summary: 'Redirect to attachment',
-    description: 'Redirect to attachment by id.',
+    description: 'Redirects to the file\'s public or presigned URL, depending on storage visibility.',
     request: {
       params: z.object({ id: idSchema }),
     },
@@ -185,7 +187,7 @@ const attachmentRoutes = {
     guard: isPublicAccess,
     tags: ['attachments'],
     summary: 'Get attachment cover',
-    description: 'Get attachment cover image by id.',
+    description: 'Returns a preview or cover image for a file, when available (e.g. first page of a PDF or image thumbnail).',
     request: {
       params: z.object({ id: idSchema }),
     },
