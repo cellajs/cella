@@ -9,6 +9,7 @@ export const userSelect = (() => {
   return safeUserSelect;
 })();
 
+// TODO can we infer the props from the schema? https://chatgpt.com/s/t_6863d9e60880819183725fd04a76631c
 /**
  * User select for summary only.
  */
