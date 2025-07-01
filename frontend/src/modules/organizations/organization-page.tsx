@@ -56,7 +56,7 @@ const OrganizationPage = () => {
                 buttonProps={{
                   size: 'xs',
                   variant: 'ghost',
-                  className: 'w-full rounded-md flex justify-start gap-2 items-center leading-normal cursor-pointer',
+                  className: 'leading-normal cursor-pointer',
                 }}
               />
             </Suspense>

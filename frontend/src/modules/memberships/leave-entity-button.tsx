@@ -8,10 +8,11 @@ import { toaster } from '~/modules/common/toaster';
 import type { EntitySummary } from '~/modules/entities/types';
 import { deleteMenuItem } from '~/modules/navigation/menu-sheet/helpers/menu-operations';
 import { Button, type ButtonProps } from '~/modules/ui/button';
+import { cn } from '~/utils/cn';
 
-export type LeaveEntityButtonProps = { entity: EntitySummary; buttonProps?: ButtonProps };
+export type LeaveEntityButtonProps = { entity: EntitySummary; redirectPath?: string; buttonProps?: ButtonProps; callback?: () => void };
 
-export const LeaveEntityButton = ({ entity, buttonProps }: LeaveEntityButtonProps) => {
+export const LeaveEntityButton = ({ entity, buttonProps, redirectPath = config.defaultRedirectPath, callback }: LeaveEntityButtonProps) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
 
@@ -23,8 +24,9 @@ export const LeaveEntityButton = ({ entity, buttonProps }: LeaveEntityButtonProp
     },
     onSuccess: () => {
       toaster(t('common:success.you_left_entity', { entity: entity.entityType }), 'success');
-      navigate({ to: config.defaultRedirectPath, replace: true });
+      navigate({ to: redirectPath, replace: true });
       deleteMenuItem(entity.id);
+      callback?.();
     },
   });
 
@@ -43,7 +45,13 @@ export const LeaveEntityButton = ({ entity, buttonProps }: LeaveEntityButtonProp
   };
 
   return (
-    <Button onClick={handleLeave} onKeyDown={handleKeyDown} {...buttonProps} aria-label="Leave">
+    <Button
+      onClick={handleLeave}
+      onKeyDown={handleKeyDown}
+      {...buttonProps}
+      className={cn('flex justify-start gap-2 items-center w-full rounded-md', buttonProps?.className)}
+      aria-label="Leave"
+    >
       <UserRoundX size={16} />
       <span className="ml-1">{t('common:leave')}</span>
     </Button>
