@@ -97,7 +97,7 @@ const formatDate = (date: Date | undefined) => {
     : '';
 };
 
-const isValidDate = (date: Date | undefined) => (date ? !isNaN(date.getTime()) : false);
+const isValidDate = (date: Date | undefined) => (date ? !Number.isNaN(date.getTime()) : false);
 
 /**
  * Combination of the calendar and an input field that allows typing a date.

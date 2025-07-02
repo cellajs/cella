@@ -18,6 +18,7 @@ const meta: Meta<typeof Carousel> = {
     <Carousel {...args}>
       <CarouselContent>
         {Array.from({ length: 5 }).map((_, index) => (
+          // biome-ignore lint/suspicious/noArrayIndexKey: testing purposes
           <CarouselItem key={index}>
             <div className="bg-card flex aspect-square items-center justify-center rounded border p-6">
               <span className="text-4xl font-semibold">{index + 1}</span>
@@ -51,6 +52,7 @@ export const Size: Story = {
     <Carousel {...args} className="mx-12 w-full max-w-xs">
       <CarouselContent>
         {Array.from({ length: 5 }).map((_, index) => (
+          // biome-ignore lint/suspicious/noArrayIndexKey: testing purposes
           <CarouselItem key={index} className="basis-1/3">
             <div className="bg-card flex aspect-square items-center justify-center rounded border p-6">
               <span className="text-4xl font-semibold">{index + 1}</span>
