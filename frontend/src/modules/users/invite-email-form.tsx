@@ -5,47 +5,25 @@ import { useMemo } from 'react';
 import type { UseFormProps } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod/v4';
-import { type MembershipInviteData, membershipInvite, systemInvite } from '~/api.gen';
+import { systemInvite as baseSystemInvite } from '~/api.gen';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import { useMutation } from '~/hooks/use-mutations';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { SelectEmails } from '~/modules/common/form-fields/select-emails';
 import SelectRoleRadio from '~/modules/common/form-fields/select-role-radio';
 import { useStepper } from '~/modules/common/stepper/use-stepper';
-import { toaster } from '~/modules/common/toaster';
 import type { EntityPage } from '~/modules/entities/types';
+import type { InviteMember } from '~/modules/memberships/types';
 import { Badge } from '~/modules/ui/badge';
 import { Button, SubmitButton } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
-import { queryClient } from '~/query/query-client';
+import { useInviteMemberMutation } from '../memberships/query-mutations';
 
 interface Props {
   entity?: EntityPage;
   dialog?: boolean;
   children?: React.ReactNode;
 }
-
-/**
- * Add new invites to the organization count and invalidate the invites table query.
- */
-// TODO(DAVID) move from here and add explanation to create single keys by patern we have in `organizationsKeys`
-export const handleNewInvites = (emails: string[], entity: EntityPage) => {
-  const { id, slug, entityType } = entity;
-  queryClient.setQueryData([entityType, id], (oldEntity: EntityPage) => {
-    if (!oldEntity) return oldEntity;
-
-    return { ...oldEntity, invitesCount: oldEntity.invitesCount ?? 0 + emails.length };
-  });
-  queryClient.setQueryData([entityType, slug], (oldEntity: EntityPage) => {
-    if (!oldEntity) return oldEntity;
-
-    return { ...oldEntity, invitesCount: oldEntity.invitesCount ?? 0 + emails.length };
-  });
-  // TODO(DAVID) make right pending invalidation
-  // queryClient.invalidateQueries({
-  //   queryKey: membersKeys.table.pending({ idOrSlug: entity.slug, entityType: entity.entityType, orgIdOrSlug: entity.organizationId || entity.id }),
-  // });
-};
 
 /**
  * Form for inviting users by email.
@@ -76,32 +54,19 @@ const InviteEmailForm = ({ entity, dialog: isDialog, children }: Props) => {
   const formContainerId = 'invite-users';
   const form = useFormWithDraft<FormValues>(`invite-users${entity ? `-${entity?.id}` : ''}`, { formOptions, formContainerId });
 
-  // It uses inviteSystem if no entity type is provided
-  const { mutate: invite, isPending } = useMutation({
-    mutationFn: async (body: FormValues) => {
-      if (!entity) return await systemInvite({ body });
-      return await membershipInvite({
-        query: { idOrSlug: entity.id, entityType: entity.entityType },
-        path: { orgIdOrSlug: entity.organizationId || entity.id },
-        body: body as MembershipInviteData['body'],
-      });
-    },
-    onSuccess: (_, { emails }) => {
-      form.reset(undefined, { keepDirtyValues: true });
+  const onSuccess = () => {
+    form.reset(undefined, { keepDirtyValues: true });
+    if (isDialog) useDialoger.getState().remove();
 
-      if (isDialog) useDialoger.getState().remove();
-      toaster(t('common:success.user_invited'), 'success');
-      if (entity) handleNewInvites(emails, entity);
-
-      // Since this form is also used in onboarding, we need to call the next step
-      // This should ideally be done through the callback, but we need to refactor stepper
-      nextStep?.();
-    },
-  });
-
-  const onSubmit = (values: FormValues) => {
-    invite(values);
+    // Since this form is also used in onboarding, we need to call the next step
+    // This should ideally be done through the callback, but we need to refactor stepper
+    nextStep?.();
   };
+
+  const { mutate: membershipInvite, isPending } = useInviteMemberMutation();
+  const { mutate: systemInvite } = useMutation({ mutationFn: (body: FormValues) => baseSystemInvite({ body }), onSuccess });
+
+  const onSubmit = (values: FormValues) => (entity ? membershipInvite({ ...values, entity } as InviteMember, { onSuccess }) : systemInvite(values));
 
   return (
     <Form {...form}>

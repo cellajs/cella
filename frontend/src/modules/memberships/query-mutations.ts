@@ -1,8 +1,10 @@
 import { useMutation } from '@tanstack/react-query';
 import { config } from 'config';
 import { t } from 'i18next';
-import { deleteMemberships, updateMembership } from '~/api.gen';
+import { deleteMemberships, type MembershipInviteResponse, membershipInvite, updateMembership } from '~/api.gen';
+import type { ApiError } from '~/lib/api';
 import { toaster } from '~/modules/common/toaster';
+import type { EntityPage } from '~/modules/entities/types';
 import { getAndSetMenu } from '~/modules/me/helpers';
 import { resolveParentEntityType } from '~/modules/memberships/helpers';
 import { membersKeys } from '~/modules/memberships/query';
@@ -10,6 +12,7 @@ import type {
   DeleteMembership,
   EntityMembershipContextProp,
   InfiniteMemberQueryData,
+  InviteMember,
   Member,
   MemberContextProp,
   MemberQueryData,
@@ -23,14 +26,45 @@ import { queryClient } from '~/query/query-client';
 
 const limit = config.requestLimits.members;
 
-const onError = (_: Error, __: MutationUpdateMembership | DeleteMembership, context?: MemberContextProp[]) => {
+const onError = (_: ApiError, __: InviteMember | MutationUpdateMembership | DeleteMembership, context?: MemberContextProp[]) => {
   if (context?.length) {
     for (const [queryKey, previousData] of context) queryClient.setQueryData(queryKey, previousData);
   }
 };
 
+export const useInviteMemberMutation = () =>
+  useMutation<MembershipInviteResponse, ApiError, InviteMember, undefined>({
+    mutationKey: membersKeys.update(),
+    mutationFn: ({ entity, ...body }) =>
+      membershipInvite({
+        body,
+        query: { idOrSlug: entity.id, entityType: entity.entityType },
+        path: { orgIdOrSlug: entity.organizationId || entity.id },
+      }),
+    onSuccess: async (_, { entity: { id, slug, entityType }, emails }) => {
+      toaster(t('common:success.user_invited'), 'success');
+      const updateInvitesCount = (oldEntity: EntityPage | undefined) => {
+        if (!oldEntity) return oldEntity;
+        // Ensure invitesCount is a number, add emails.length
+        const currentCount = typeof oldEntity.invitesCount === 'number' ? oldEntity.invitesCount : 0;
+        return { ...oldEntity, invitesCount: currentCount + emails.length };
+      };
+
+      // TODO(DAVID) move from here and add explanation to create single keys by patern we have in `organizationsKeys`
+      // Try cache update for both id and slug
+      queryClient.setQueryData([entityType, id], updateInvitesCount);
+      queryClient.setQueryData([entityType, slug], updateInvitesCount);
+
+      // TODO(DAVID) make right pending invalidation
+      // queryClient.invalidateQueries({
+      //   queryKey: membersKeys.table.pending({ idOrSlug: entity.slug, entityType: entity.entityType, orgIdOrSlug: entity.organizationId || entity.id }),
+      // });
+    },
+    onError,
+  });
+
 export const useMemberUpdateMutation = () =>
-  useMutation<Membership, Error, MutationUpdateMembership, EntityMembershipContextProp>({
+  useMutation<Membership, ApiError, MutationUpdateMembership, EntityMembershipContextProp>({
     mutationKey: membersKeys.update(),
     mutationFn: async ({ id, orgIdOrSlug, entityType, idOrSlug, ...body }) => {
       return await updateMembership({ body, path: { id, orgIdOrSlug } });
@@ -39,7 +73,7 @@ export const useMemberUpdateMutation = () =>
       const { idOrSlug, entityType, orgIdOrSlug, ...membershipInfo } = variables;
       const { archived, muted, role, order } = membershipInfo;
 
-      // Store previous query data for rollback if an error occurs
+      // Store previous query data for rollback if an Apierror occurs
       const context = { queryContext: [] as MemberContextProp[], toastMessage: t('common:success.update_item', { item: t('common:membership') }) };
 
       if (archived !== undefined) {
@@ -123,7 +157,7 @@ export const useMemberUpdateMutation = () =>
   });
 
 export const useMembersDeleteMutation = () =>
-  useMutation<void, Error, DeleteMembership, MemberContextProp[]>({
+  useMutation<void, ApiError, DeleteMembership, MemberContextProp[]>({
     mutationKey: membersKeys.delete(),
     mutationFn: async ({ idOrSlug, entityType, orgIdOrSlug, members }) => {
       const ids = members.map(({ id }) => id);
@@ -133,7 +167,7 @@ export const useMembersDeleteMutation = () =>
       const { members, idOrSlug, entityType, orgIdOrSlug } = variables;
       const ids = members.map(({ id }) => id);
 
-      const context: MemberContextProp[] = []; // previous query data for rollback if an error occurs
+      const context: MemberContextProp[] = []; // previous query data for rollback if an Apierror occurs
 
       // Get affected queries
       const similarKey = membersKeys.table.similarMembers({ idOrSlug, entityType, orgIdOrSlug });
