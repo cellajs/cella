@@ -41,7 +41,7 @@ export const useInviteMemberMutation = () =>
         query: { idOrSlug: entity.id, entityType: entity.entityType },
         path: { orgIdOrSlug: entity.organizationId || entity.id },
       }),
-    onSuccess: async (_, { entity: { id, slug, entityType }, emails }) => {
+    onSuccess: async (_, { entity: { id, slug, entityType, organizationId }, emails }) => {
       toaster(t('common:success.user_invited'), 'success');
       const updateInvitesCount = (oldEntity: EntityPage | undefined) => {
         if (!oldEntity) return oldEntity;
@@ -55,10 +55,9 @@ export const useInviteMemberMutation = () =>
       queryClient.setQueryData([entityType, id], updateInvitesCount);
       queryClient.setQueryData([entityType, slug], updateInvitesCount);
 
-      // TODO(DAVID) make right pending invalidation
-      // queryClient.invalidateQueries({
-      //   queryKey: membersKeys.table.pending({ idOrSlug: entity.slug, entityType: entity.entityType, orgIdOrSlug: entity.organizationId || entity.id }),
-      // });
+      queryClient.invalidateQueries({
+        queryKey: membersKeys.table.pending({ idOrSlug: slug, entityType: entityType, orgIdOrSlug: organizationId || id }),
+      });
     },
     onError,
   });
