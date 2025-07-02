@@ -14,8 +14,6 @@ import SelectRoleRadio from '~/modules/common/form-fields/select-role-radio';
 import { useStepper } from '~/modules/common/stepper/use-stepper';
 import { toaster } from '~/modules/common/toaster';
 import type { EntityPage } from '~/modules/entities/types';
-import { membersKeys } from '~/modules/memberships/query';
-import { organizationsKeys } from '~/modules/organizations/query';
 import { Badge } from '~/modules/ui/badge';
 import { Button, SubmitButton } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
@@ -30,15 +28,23 @@ interface Props {
 /**
  * Add new invites to the organization count and invalidate the invites table query.
  */
+// TODO(DAVID) move from here and add explanation to create single keys by patern we have in `organizationsKeys`
 export const handleNewInvites = (emails: string[], entity: EntityPage) => {
-  queryClient.setQueryData(organizationsKeys.single.byIdOrSlug(entity.slug), (oldEntity: EntityPage) => {
+  const { id, slug, entityType } = entity;
+  queryClient.setQueryData([entityType, id], (oldEntity: EntityPage) => {
     if (!oldEntity) return oldEntity;
 
     return { ...oldEntity, invitesCount: oldEntity.invitesCount ?? 0 + emails.length };
   });
-  queryClient.invalidateQueries({
-    queryKey: membersKeys.table.pending({ idOrSlug: entity.slug, entityType: entity.entityType, orgIdOrSlug: entity.organizationId || entity.id }),
+  queryClient.setQueryData([entityType, slug], (oldEntity: EntityPage) => {
+    if (!oldEntity) return oldEntity;
+
+    return { ...oldEntity, invitesCount: oldEntity.invitesCount ?? 0 + emails.length };
   });
+  // TODO(DAVID) make right pending invalidation
+  // queryClient.invalidateQueries({
+  //   queryKey: membersKeys.table.pending({ idOrSlug: entity.slug, entityType: entity.entityType, orgIdOrSlug: entity.organizationId || entity.id }),
+  // });
 };
 
 /**
