@@ -31,6 +31,8 @@ const SSE = () => {
     }
   };
 
+  // TODO(DAVID) create event on accept
+  useSSE('accept_invite', (e) => console.log(e));
   useSSE('add_entity', (e) => addEntity(e));
   useSSE('update_entity', (e) => updateEntity(e));
   useSSE('remove_entity', (e) => removeEntity(e));

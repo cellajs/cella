@@ -41,14 +41,22 @@ export const useInviteMemberMutation = () =>
         query: { idOrSlug: entity.id, entityType: entity.entityType },
         path: { orgIdOrSlug: entity.organizationId || entity.id },
       }),
-    onSuccess: async (_, { entity: { id, slug, entityType, organizationId }, emails }) => {
+    onSuccess: async (invitedMembers, { entity: { id, slug, entityType, organizationId } }) => {
       toaster(t('common:success.user_invited'), 'success');
       const updateInvitesCount = (oldEntity: EntityPage | undefined) => {
         if (!oldEntity) return oldEntity;
         // Ensure invitesCount is a number, add emails.length
         const currentCount = typeof oldEntity.invitesCount === 'number' ? oldEntity.invitesCount : 0;
-        return { ...oldEntity, invitesCount: currentCount + emails.length };
+        return { ...oldEntity, invitesCount: currentCount + invitedMembers };
       };
+
+      // TODO(DAVID) handle case when with org by slug
+      if (organizationId) {
+        queryClient.setQueryData(['organization', organizationId], updateInvitesCount);
+        queryClient.invalidateQueries({
+          queryKey: membersKeys.table.pending({ idOrSlug: organizationId, entityType: 'organization', orgIdOrSlug: organizationId }),
+        });
+      }
 
       // TODO(DAVID) move from here and add explanation to create single keys by patern we have in `organizationsKeys`
       // Try cache update for both id and slug
@@ -56,7 +64,7 @@ export const useInviteMemberMutation = () =>
       queryClient.setQueryData([entityType, slug], updateInvitesCount);
 
       queryClient.invalidateQueries({
-        queryKey: membersKeys.table.pending({ idOrSlug: slug, entityType: entityType, orgIdOrSlug: organizationId || id }),
+        queryKey: membersKeys.table.pending({ idOrSlug: slug, entityType, orgIdOrSlug: organizationId || id }),
       });
     },
     onError,
