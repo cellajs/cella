@@ -1,11 +1,11 @@
 import type { Preview } from '@storybook/react-vite'
-
+import '../src/styling/tailwind.css';
 const preview: Preview = {
   parameters: {
     controls: {
       matchers: {
-       color: /(background|color)$/i,
-       date: /Date$/i,
+        color: /(background|color)$/i,
+        date: /Date$/i,
       },
     },
 

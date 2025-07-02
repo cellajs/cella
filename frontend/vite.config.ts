@@ -5,7 +5,6 @@ import tailwindcss from '@tailwindcss/vite';
 import basicSsl from '@vitejs/plugin-basic-ssl';
 import react from '@vitejs/plugin-react';
 import path from 'node:path';
-import tsconfigPaths from 'vite-tsconfig-paths';
 // import { visualizer } from 'rollup-plugin-visualizer';
 import { defineConfig, type UserConfig } from 'vite';
 import { createHtmlPlugin } from 'vite-plugin-html';
@@ -55,7 +54,6 @@ const viteConfig = {
   },
   clearScreen: false,
   plugins: [
-    tsconfigPaths({ projects: ['./tsconfig.json'] }),
     // TanStackRouterVite(),
     react({
       babel: {
@@ -102,7 +100,6 @@ const viteConfig = {
   resolve: {
     alias: {
       '~': path.resolve(__dirname, './src'),
-      '#': path.resolve(__dirname, '../backend/src'),
     },
   },
   define: {
