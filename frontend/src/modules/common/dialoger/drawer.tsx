@@ -23,7 +23,7 @@ export default function DrawerDialog({ dialog }: DialogProp) {
     <Drawer key={id} open={open} dismissible={!isDropdownOpen} onOpenChange={onOpenChange} onClose={closeDialog} noBodyStyles>
       <DrawerContent id={String(id)} onEscapeKeyDown={closeDialog} className={className}>
         <DrawerHeader className={`${title || description ? headerClassName : 'hidden'} pt-6`}>
-          <DrawerTitle className={`${title ? '' : 'hidden'} text-left min-h-6`}>{titleContent}</DrawerTitle>
+          <DrawerTitle className={`${title ? '' : 'hidden'}`}>{titleContent}</DrawerTitle>
           <DrawerDescription className={`${description ? '' : 'hidden'}`}>{description}</DrawerDescription>
         </DrawerHeader>
         <div className="px-3 pb-3">{content}</div>
