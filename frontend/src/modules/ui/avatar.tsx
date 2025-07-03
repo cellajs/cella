@@ -1,7 +1,6 @@
 import * as AvatarPrimitive from '@radix-ui/react-avatar';
 import { cva, type VariantProps } from 'class-variance-authority';
 import * as React from 'react';
-
 import { cn } from '~/utils/cn';
 
 const Avatar = React.forwardRef<React.ComponentRef<typeof AvatarPrimitive.Root>, React.ComponentPropsWithoutRef<typeof AvatarPrimitive.Root>>(
@@ -87,20 +86,20 @@ const AvatarGroup = React.forwardRef<HTMLDivElement, AvatarGroupProps>(({ childr
 AvatarGroup.displayName = 'AvatarGroup';
 
 const AvatarGroupList = ({ children }: { children?: React.ReactNode }) => {
-  const { limit, setCount, count } = useAvatarGroupContext();
+  const { limit, setCount } = useAvatarGroupContext();
+
+  const childArray = React.Children.toArray(children);
+  const count = childArray.length;
 
   React.useEffect(() => {
-    setCount?.(React.Children.count(children));
-  }, [children, setCount]);
+    setCount?.(count);
+  }, [count, setCount]);
 
-  // Determine if we need to display an additional avatar  or overflow
-  // Ensures that we show the maximum number of avatars specified by 'limit'.
-  // If current count is less than or equal to limit, we display all the avatars.
-  // If count exceeds limit, we show only 'limit' avatars and an overflow indicator to represent the additional avatars.
-  const additionalCount = !limit || !count || count - 1 <= limit ? 1 : 0;
+  if (!limit || count <= limit) {
+    return <>{childArray}</>; // No overflow, show all
+  }
 
-  // Show only the first 'limit + additionalCount' children
-  return <>{limit ? React.Children.toArray(children).slice(0, limit + additionalCount) : children}</>;
+  return <>{childArray.slice(0, limit - 1)}</>; // Reserve one spot for the overflow
 };
 
 export interface AvatarOverflowIndicatorProps extends React.HTMLAttributes<HTMLSpanElement> {}
@@ -109,7 +108,7 @@ const AvatarOverflowIndicator = React.forwardRef<HTMLSpanElement, React.HTMLAttr
   ({ className, ...props }, ref) => {
     const { limit, count } = useAvatarGroupContext();
     // Determine if we need to display an additional avatar  or overflow
-    if (!limit || !count || count - 1 <= limit) return null;
+    if (!limit || !count || count <= limit) return null;
     // Show the overflow count
     return (
       <span
@@ -117,7 +116,7 @@ const AvatarOverflowIndicator = React.forwardRef<HTMLSpanElement, React.HTMLAttr
         className={cn('relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-background shadow-xs', className)}
         {...props}
       >
-        +{count - limit}
+        +{count - limit + 1}
       </span>
     );
   },

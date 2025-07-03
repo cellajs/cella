@@ -313,7 +313,7 @@
   "settings.text": "Update your account settings and preferences",
   "short_name": "Short name",
   "show_all": "Show all",
-  "show_archived.offline.text": "Unarchived content is not available during when offline.",
+  "show_archived.offline.text": "Unarchived content is not available when offline.",
   "show_less": "Show less",
   "sign_in": "Sign in",
   "sign_in_as": "Sign in as",

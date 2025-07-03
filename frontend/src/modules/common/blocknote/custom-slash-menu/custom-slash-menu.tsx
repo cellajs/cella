@@ -57,6 +57,8 @@ export const slashMenu = (props: SuggestionMenuProps<DefaultReactSuggestionItem>
       {items.map((item, index) => (
         <div key={item.title}>
           {!isMobile && index === indexedItemCount && items.length === originalItemCount && <hr className="slash-menu-separator" />}
+          {/** biome-ignore lint/a11y/useSemanticElements: TODO(REVIEW) */}
+          {/** biome-ignore lint/a11y/useAriaPropsSupportedByRole: TODO(REVIEW) */}
           <div
             ref={(el) => {
               itemRefs.current[index] = el;
