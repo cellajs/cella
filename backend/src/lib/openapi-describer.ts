@@ -66,7 +66,17 @@ export function enhanceOpenAPIDescription(original: string | undefined, middlewa
 
   // Add more sections here if needed (logging, etc.)
 
-  return [...sections, original?.trim() ?? ''].filter(Boolean).join('\n\n').trim();
+  const combinedSections = sections
+    .filter(Boolean)
+    .map((line) => line + '  ') // add two spaces at line end
+    .join('\n');
+  const originalDesc = original?.trim() ?? '';
+
+  if (combinedSections && originalDesc) {
+    return `${combinedSections}\n\n${originalDesc}`.trim();
+  }
+
+  return (combinedSections || originalDesc).trim();
 }
 
 /**
@@ -131,6 +141,6 @@ function getIcon(category: MiddlewareDescriptor['category'], level?: MiddlewareD
     return '🛡️'; // Default for scoped-only auth
   }
 
-  if (category === 'rate-limit') return '⏳';
+  if (category === 'rate-limit') return '⏳'; // Placeholder for rate limit icon
   return undefined;
 }

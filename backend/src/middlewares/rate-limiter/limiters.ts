@@ -21,7 +21,19 @@ export const passwordLimiter: MiddlewareHandler<Env> = rateLimiter('failseries',
 /**
  * Prevent brute force attacks by systematically trying tokens or secrets. Blocks IP for 30 minutes after 5 consecutive failed requests in 1 hour
  */
-export const tokenLimiter = (tokenType: string): MiddlewareHandler<Env> => rateLimiter('failseries', `token_${tokenType}`, ['ip']);
+export const tokenLimiter = (tokenType: string): MiddlewareHandler<Env> => {
+  const tokenRateLimiter = rateLimiter('failseries', `token_${tokenType}`, ['ip']);
+
+  // Register the token rate limiter with OpenAPI documentation
+  registerMiddlewareDescription({
+    name: `token_${tokenType}Limiter`,
+    middleware: tokenRateLimiter,
+    category: 'rate-limit',
+    label: `token_${tokenType} (5/h)`,
+  });
+
+  return tokenRateLimiter;
+};
 
 /**
  * Registers the ratelimmiters middleware for OpenAPI documentation.
@@ -38,12 +50,12 @@ registerMiddlewareDescription({
   name: 'emailEnumLimiter',
   middleware: emailEnumLimiter,
   category: 'rate-limit',
-  label: 'Email enum (5/h, 30m block)',
+  label: 'Email (5/h)',
 });
 
 registerMiddlewareDescription({
   name: 'passwordLimiter',
   middleware: passwordLimiter,
   category: 'rate-limit',
-  label: 'Password attempts (5/h, 30m block)',
+  label: 'Password (5/h)',
 });

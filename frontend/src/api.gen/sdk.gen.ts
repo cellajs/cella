@@ -213,8 +213,7 @@ export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends 
 /**
  * Check if email exists
  * 🌐 Public access
- *
- * ⏳ Email enum (5/h, 30m block)
+ * ⏳ Email (5/h)
  *
  * Checks if a user with the specified email address exists in the system.
  */
@@ -233,8 +232,7 @@ export const checkEmail = <ThrowOnError extends boolean = true>(options?: Option
 /**
  * Sign up with password
  * 🌐 Public access
- *
- * ⏳ Spam (10/h), Email enum (5/h, 30m block)
+ * ⏳ Spam (10/h), Email (5/h)
  *
  * Registers a new user using an email and password. Sends a verification email upon successful sign up.
  */
@@ -253,8 +251,7 @@ export const signUp = <ThrowOnError extends boolean = true>(options?: Options<Si
 /**
  * Sign up to accept invite
  * 🌐 Public access
- *
- * ⏳ Spam (10/h), Email enum (5/h, 30m block)
+ * ⏳ Spam (10/h), Email (5/h)
  *
  * Registers a user using an email and password in response to a system or organization invitation.
  */
@@ -273,7 +270,6 @@ export const signUpWithToken = <ThrowOnError extends boolean = true>(options: Op
 /**
  * Resend verification email
  * 🌐 Public access
- *
  * ⏳ Spam (10/h)
  *
  * Resends the email verification message to a user using the provided token ID.
@@ -293,6 +289,7 @@ export const sendVerificationEmail = <ThrowOnError extends boolean = true>(optio
 /**
  * Verify email by token
  * 🌐 Public access
+ * ⏳ token_email_verification (5/h)
  *
  * Verifies a user's email using a token from their verification email. Grants a session upon success.
  */
@@ -307,8 +304,7 @@ export const verifyEmail = <ThrowOnError extends boolean = true>(options: Option
 /**
  * Request new password
  * 🌐 Public access
- *
- * ⏳ Spam (10/h), Email enum (5/h, 30m block)
+ * ⏳ Spam (10/h), Email (5/h)
  *
  * Sends an email with a link to reset the user's password.
  */
@@ -327,6 +323,7 @@ export const requestPassword = <ThrowOnError extends boolean = true>(options?: O
 /**
  * Create password by token
  * 🌐 Public access
+ * ⏳ token_password_reset (5/h)
  *
  * Sets a new password using a token and grants a session immediately upon success.
  */
@@ -345,8 +342,7 @@ export const createPassword = <ThrowOnError extends boolean = true>(options: Opt
 /**
  * Sign in with password
  * 🌐 Public access
- *
- * ⏳ Password attempts (5/h, 30m block)
+ * ⏳ Password (5/h)
  *
  * Authenticates an existing user using their email and password.
  */
@@ -386,6 +382,7 @@ export const checkToken = <ThrowOnError extends boolean = true>(options: Options
 /**
  * Accept invitation
  * 🛡️ Requires authentication
+ * ⏳ token_invitation (5/h)
  *
  * Accepts an invitation token and activates the associated membership or system access.
  */
@@ -512,6 +509,7 @@ export const microsoftSignIn = <ThrowOnError extends boolean = true>(options: Op
 /**
  * Callback for GitHub
  * 🌐 Public access
+ * ⏳ token_github (5/h)
  *
  * Handles GitHub OAuth callback, retrieves user identity, and establishes a session or links account.
  */
@@ -526,6 +524,7 @@ export const githubSignInCallback = <ThrowOnError extends boolean = true>(option
 /**
  * Callback for Google
  * 🌐 Public access
+ * ⏳ token_google (5/h)
  *
  * Handles Google OAuth callback, retrieves user identity, and establishes a session or links account.
  */
@@ -540,6 +539,7 @@ export const googleSignInCallback = <ThrowOnError extends boolean = true>(option
 /**
  * Callback for Microsoft
  * 🌐 Public access
+ * ⏳ token_microsoft (5/h)
  *
  * Handles Microsoft OAuth callback, retrieves user identity, and establishes a session or links account.
  */
@@ -568,6 +568,7 @@ export const getPasskeyChallenge = <ThrowOnError extends boolean = true>(options
 /**
  * Verify passkey
  * 🌐 Public access
+ * ⏳ token_passkey (5/h)
  *
  * Validates the signed challenge and completes passkey based authentication.
  */
@@ -794,6 +795,7 @@ export const getUploadToken = <ThrowOnError extends boolean = true>(options: Opt
 /**
  * Unsubscribe
  * 🌐 Public access
+ * ⏳ token_unsubscribe (5/h)
  *
  * Unsubscribes the user from email notifications using a personal unsubscribe token. No authentication is required, as the token implicitly identifies the *current user*.
  */
@@ -1142,6 +1144,7 @@ export const getPresignedUrl = <ThrowOnError extends boolean = true>(options: Op
 /**
  * Paddle webhook (WIP)
  * 🌐 Public access
+ * ⏳ token_paddle (5/h)
  *
  * Receives and handles Paddle subscription events such as purchases, renewals, and cancellations.
  */
@@ -1238,7 +1241,6 @@ export const getRequests = <ThrowOnError extends boolean = true>(options: Option
 /**
  * Create request
  * 🌐 Public access
- *
  * ⏳ Spam (10/h)
  *
  * Submits a new *request* to the system. Supported types include contact form, newsletter signup, and waitlist entry.
