@@ -43,25 +43,18 @@ export const useInviteMemberMutation = () =>
       }),
     onSuccess: async (invitedMembers, { entity: { id, slug, entityType, organizationId } }) => {
       toaster(t('common:success.user_invited'), 'success');
-      const updateInvitesCount = (oldEntity: EntityPage | undefined) => {
-        if (!oldEntity) return oldEntity;
-        // Ensure invitesCount is a number, add emails.length
-        const currentCount = typeof oldEntity.invitesCount === 'number' ? oldEntity.invitesCount : 0;
-        return { ...oldEntity, invitesCount: currentCount + invitedMembers };
-      };
 
       // TODO(DAVID) handle case when with org by slug
-      if (organizationId) {
-        queryClient.setQueryData(['organization', organizationId], updateInvitesCount);
+      if (entityType !== 'organization' && organizationId) {
+        queryClient.setQueryData<EntityPage>(['organization', organizationId], (data) => updateInvitesCount(data, invitedMembers));
         queryClient.invalidateQueries({
           queryKey: membersKeys.table.pending({ idOrSlug: organizationId, entityType: 'organization', orgIdOrSlug: organizationId }),
         });
       }
 
-      // TODO(DAVID) move from here and add explanation to create single keys by patern we have in `organizationsKeys`
       // Try cache update for both id and slug
-      queryClient.setQueryData([entityType, id], updateInvitesCount);
-      queryClient.setQueryData([entityType, slug], updateInvitesCount);
+      queryClient.setQueryData<EntityPage>([entityType, id], (data) => updateInvitesCount(data, invitedMembers));
+      queryClient.setQueryData<EntityPage>([entityType, slug], (data) => updateInvitesCount(data, invitedMembers));
 
       queryClient.invalidateQueries({
         queryKey: membersKeys.table.pending({ idOrSlug: slug, entityType, orgIdOrSlug: organizationId || id }),
@@ -221,4 +214,11 @@ const deletedMembers = (members: Member[], ids: string[]) => {
       return member;
     })
     .filter(Boolean) as Member[];
+};
+
+export const updateInvitesCount = (oldEntity: EntityPage | undefined, updateCount: number) => {
+  if (!oldEntity) return oldEntity;
+  // Ensure invitesCount is a number, add emails.length
+  const currentCount = typeof oldEntity.invitesCount === 'number' ? oldEntity.invitesCount : 0;
+  return { ...oldEntity, invitesCount: currentCount + updateCount };
 };

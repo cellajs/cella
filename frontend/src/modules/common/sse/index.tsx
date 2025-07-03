@@ -1,6 +1,10 @@
 import { useSSE } from '~/modules/common/sse/use-sse';
+import type { EntityPage } from '~/modules/entities/types';
 import type { UserMenuItem } from '~/modules/me/types';
+import { membersKeys } from '~/modules/memberships/query';
+import { updateInvitesCount } from '~/modules/memberships/query-mutations';
 import { addMenuItem, deleteMenuItem, updateMenuItem } from '~/modules/navigation/menu-sheet/helpers/menu-operations';
+import { queryClient } from '~/query/query-client';
 
 const SSE = () => {
   const addEntity = (e: MessageEvent<string>) => {
@@ -31,11 +35,34 @@ const SSE = () => {
     }
   };
 
-  // TODO(DAVID) create event on accept
-  useSSE('accept_invite', (e) => console.log(e));
+  const updateInvites = (e: MessageEvent<string>) => {
+    try {
+      const entity = JSON.parse(e.data);
+      const { id, slug, entityType, organizationId } = entity;
+      const count = -1;
+      if (entityType !== 'organization' && organizationId) {
+        queryClient.setQueryData<EntityPage>(['organization', organizationId], (data) => updateInvitesCount(data, count));
+        queryClient.invalidateQueries({
+          queryKey: membersKeys.table.pending({ idOrSlug: organizationId, entityType: 'organization', orgIdOrSlug: organizationId }),
+        });
+      }
+
+      // Try cache update for both id and slug
+      queryClient.setQueryData<EntityPage>([entityType, id], (data) => updateInvitesCount(data, count));
+      queryClient.setQueryData<EntityPage>([entityType, slug], (data) => updateInvitesCount(data, count));
+
+      queryClient.invalidateQueries({
+        queryKey: membersKeys.table.pending({ idOrSlug: slug, entityType, orgIdOrSlug: organizationId || id }),
+      });
+    } catch (error) {
+      console.error('Error parsing main accept invite item event', error);
+    }
+  };
+
   useSSE('add_entity', (e) => addEntity(e));
   useSSE('update_entity', (e) => updateEntity(e));
   useSSE('remove_entity', (e) => removeEntity(e));
+  useSSE('accept_invite', (e) => updateInvites(e));
 
   return null;
 };
