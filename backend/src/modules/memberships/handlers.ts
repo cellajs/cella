@@ -152,7 +152,7 @@ const membershipRouteHandlers = app
       emailsWithIdToInvite.push({ email, userId: null });
     }
 
-    if (emailsWithIdToInvite.length === 0) return ctx.json(true, 200);
+    if (emailsWithIdToInvite.length === 0) return ctx.json(0, 200);
 
     // Generate invitation tokens
     const tokens = emailsWithIdToInvite.map(({ email, userId }) => ({
@@ -206,9 +206,22 @@ const membershipRouteHandlers = app
 
     await mailer.prepareEmails<MemberInviteEmailProps, (typeof recipients)[number]>(MemberInviteEmail, emailProps, recipients, user.email);
 
+    const adminMembersIds = Array.from(
+      new Set(
+        memberships
+          .filter(({ contextType, role }) => (contextType === 'organization' || contextType === entity.entityType) && role === 'admin')
+          .map(({ userId }) => userId),
+      ),
+    );
+    sendSSEToUsers(adminMembersIds, 'invite_members', {
+      targetEntity: entity,
+      organization,
+      invitesCount: recipients.length,
+    });
+
     logEvent(`${insertedTokens.length} users invited to organization`, { organization: organization.id }); // Log invitation event
 
-    return ctx.json(true, 200);
+    return ctx.json(recipients.length, 200);
   })
   /*
    * Delete memberships to remove users from entity

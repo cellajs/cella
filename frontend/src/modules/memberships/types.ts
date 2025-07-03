@@ -1,7 +1,8 @@
 import type { ContextEntityType, config } from 'config';
 import type { z } from 'zod/v4';
-import type { DeleteMembershipsData, UpdateMembershipData } from '~/api.gen';
+import type { DeleteMembershipsData, MembershipInviteData, UpdateMembershipData } from '~/api.gen';
 import type { zGetMembersResponse, zGetPendingInvitationsResponse, zUpdateMembershipResponse } from '~/api.gen/zod.gen';
+import type { EntityPage } from '~/modules/entities/types';
 import type { ContextQueryProp, InfiniteQueryData, QueryData } from '~/query/types';
 export type Member = z.infer<typeof zGetMembersResponse>['items'][number];
 export type Membership = z.infer<typeof zUpdateMembershipResponse>;
@@ -14,6 +15,8 @@ export type InfiniteMemberQueryData = InfiniteQueryData<Member>;
 export type MemberContextProp = ContextQueryProp<Member, string | null>;
 
 export type EntityMembershipContextProp = { queryContext: MemberContextProp[]; toastMessage: string };
+
+export type InviteMember = NonNullable<MembershipInviteData['body']> & { entity: EntityPage };
 
 type UpdateMembershipProp = NonNullable<UpdateMembershipData['body']> & UpdateMembershipData['path'];
 export type MutationUpdateMembership = {

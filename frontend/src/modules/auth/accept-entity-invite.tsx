@@ -14,7 +14,7 @@ import { getEntityRoute } from '~/nav-config';
 import { AcceptEntityInviteRoute } from '~/routes/auth';
 import { cn } from '~/utils/cn';
 
-// Accept organization invitation when user is signed in
+// Accept entity invitation when user is signed in
 const AcceptEntityInvite = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
