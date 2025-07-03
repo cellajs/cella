@@ -206,6 +206,19 @@ const membershipRouteHandlers = app
 
     await mailer.prepareEmails<MemberInviteEmailProps, (typeof recipients)[number]>(MemberInviteEmail, emailProps, recipients, user.email);
 
+    const adminMembersIds = Array.from(
+      new Set(
+        memberships
+          .filter(({ contextType, role }) => (contextType === 'organization' || contextType === entity.entityType) && role === 'admin')
+          .map(({ userId }) => userId),
+      ),
+    );
+    sendSSEToUsers(adminMembersIds, 'invite_members', {
+      targetEntity: entity,
+      organization,
+      invitesCount: recipients.length,
+    });
+
     logEvent(`${insertedTokens.length} users invited to organization`, { organization: organization.id }); // Log invitation event
 
     return ctx.json(recipients.length, 200);

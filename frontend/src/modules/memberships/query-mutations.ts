@@ -4,7 +4,6 @@ import { t } from 'i18next';
 import { deleteMemberships, type MembershipInviteResponse, membershipInvite, updateMembership } from '~/api.gen';
 import type { ApiError } from '~/lib/api';
 import { toaster } from '~/modules/common/toaster';
-import type { EntityPage } from '~/modules/entities/types';
 import { getAndSetMenu } from '~/modules/me/helpers';
 import { resolveParentEntityType } from '~/modules/memberships/helpers';
 import { membersKeys } from '~/modules/memberships/query';
@@ -23,7 +22,7 @@ import { updateMenuItemMembership } from '~/modules/navigation/menu-sheet/helper
 import { formatUpdatedData, getQueryItems, getSimilarQueries } from '~/query/helpers/mutate-query';
 import { useMutateQueryData } from '~/query/hooks/use-mutate-query-data';
 import { queryClient } from '~/query/query-client';
-import { useNavigationStore } from '~/store/navigation';
+import type { ContextEntityData, EntityPage } from '../entities/types';
 
 const limit = config.requestLimits.members;
 
@@ -42,32 +41,7 @@ export const useInviteMemberMutation = () =>
         query: { idOrSlug: entity.id, entityType: entity.entityType },
         path: { orgIdOrSlug: entity.organizationId || entity.id },
       }),
-    onSuccess: async (invitedMembers, { entity: { id, slug, entityType, organizationId } }) => {
-      toaster(t('common:success.user_invited'), 'success');
-      // TODO(IMPROVEMENT) add SSE event instead for admins so, every admin can track invite
-
-      // If the entity is not an organization but belongs to one, update its cache too
-      if (entityType !== 'organization' && organizationId) {
-        const { menu } = useNavigationStore.getState();
-        const organization = menu.organization.find(({ id }) => id === organizationId);
-        if (organization) {
-          queryClient.setQueryData<EntityPage>(['organization', organization.id], (data) => updateInvitesCount(data, invitedMembers));
-          queryClient.setQueryData<EntityPage>(['organization', organization.slug], (data) => updateInvitesCount(data, invitedMembers));
-
-          queryClient.invalidateQueries({
-            queryKey: membersKeys.table.pending({ idOrSlug: organization.slug, entityType: 'organization', orgIdOrSlug: organization.id }),
-          });
-        }
-      }
-
-      // Try cache update for both id and slug
-      queryClient.setQueryData<EntityPage>([entityType, id], (data) => updateInvitesCount(data, invitedMembers));
-      queryClient.setQueryData<EntityPage>([entityType, slug], (data) => updateInvitesCount(data, invitedMembers));
-
-      queryClient.invalidateQueries({
-        queryKey: membersKeys.table.pending({ idOrSlug: slug, entityType, orgIdOrSlug: organizationId || id }),
-      });
-    },
+    onSuccess: () => toaster(t('common:success.user_invited'), 'success'),
     onError,
   });
 
@@ -224,7 +198,24 @@ const deletedMembers = (members: Member[], ids: string[]) => {
     .filter(Boolean) as Member[];
 };
 
-export const updateInvitesCount = (oldEntity: EntityPage | undefined, updateCount: number) => {
+export const handlePendingInvites = (targetEntity: ContextEntityData, organization: ContextEntityData, invitesCount: number) => {
+  const { id, slug, entityType } = targetEntity;
+  // If the entity is not an organization but belongs to one, update its cache too
+  if (entityType !== 'organization') {
+    const { id: orgId, slug: orgSlug, entityType: orgEntityType } = organization;
+    queryClient.setQueryData<EntityPage>([orgEntityType, orgId], (data) => updateInvitesCount(data, invitesCount));
+    queryClient.setQueryData<EntityPage>([orgEntityType, orgSlug], (data) => updateInvitesCount(data, invitesCount));
+
+    queryClient.invalidateQueries({ queryKey: membersKeys.table.pending({ idOrSlug: orgSlug, entityType: orgEntityType, orgIdOrSlug: orgId }) });
+  }
+
+  // Try cache update for both id and slug
+  queryClient.setQueryData<EntityPage>([entityType, id], (data) => updateInvitesCount(data, invitesCount));
+  queryClient.setQueryData<EntityPage>([entityType, slug], (data) => updateInvitesCount(data, invitesCount));
+
+  queryClient.invalidateQueries({ queryKey: membersKeys.table.pending({ idOrSlug: slug, entityType, orgIdOrSlug: organization.id }) });
+};
+const updateInvitesCount = (oldEntity: EntityPage | undefined, updateCount: number) => {
   if (!oldEntity) return oldEntity;
   // Ensure invitesCount is a number, add emails.length
   const currentCount = typeof oldEntity.invitesCount === 'number' ? oldEntity.invitesCount : 0;
