@@ -5,6 +5,7 @@ import { membersKeys } from '~/modules/memberships/query';
 import { updateInvitesCount } from '~/modules/memberships/query-mutations';
 import { addMenuItem, deleteMenuItem, updateMenuItem } from '~/modules/navigation/menu-sheet/helpers/menu-operations';
 import { queryClient } from '~/query/query-client';
+import { useNavigationStore } from '~/store/navigation';
 
 const SSE = () => {
   const addEntity = (e: MessageEvent<string>) => {
@@ -40,11 +41,18 @@ const SSE = () => {
       const entity = JSON.parse(e.data);
       const { id, slug, entityType, organizationId } = entity;
       const count = -1;
+      // If the entity is not an organization but belongs to one, update its cache too
       if (entityType !== 'organization' && organizationId) {
-        queryClient.setQueryData<EntityPage>(['organization', organizationId], (data) => updateInvitesCount(data, count));
-        queryClient.invalidateQueries({
-          queryKey: membersKeys.table.pending({ idOrSlug: organizationId, entityType: 'organization', orgIdOrSlug: organizationId }),
-        });
+        const { menu } = useNavigationStore.getState();
+        const organization = menu.organization.find(({ id }) => id === organizationId);
+        if (organization) {
+          queryClient.setQueryData<EntityPage>(['organization', organization.id], (data) => updateInvitesCount(data, count));
+          queryClient.setQueryData<EntityPage>(['organization', organization.slug], (data) => updateInvitesCount(data, count));
+
+          queryClient.invalidateQueries({
+            queryKey: membersKeys.table.pending({ idOrSlug: organization.slug, entityType: 'organization', orgIdOrSlug: organization.id }),
+          });
+        }
       }
 
       // Try cache update for both id and slug

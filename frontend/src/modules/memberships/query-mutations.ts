@@ -23,6 +23,7 @@ import { updateMenuItemMembership } from '~/modules/navigation/menu-sheet/helper
 import { formatUpdatedData, getQueryItems, getSimilarQueries } from '~/query/helpers/mutate-query';
 import { useMutateQueryData } from '~/query/hooks/use-mutate-query-data';
 import { queryClient } from '~/query/query-client';
+import { useNavigationStore } from '~/store/navigation';
 
 const limit = config.requestLimits.members;
 
@@ -43,13 +44,20 @@ export const useInviteMemberMutation = () =>
       }),
     onSuccess: async (invitedMembers, { entity: { id, slug, entityType, organizationId } }) => {
       toaster(t('common:success.user_invited'), 'success');
+      // TODO(IMPROVEMENT) add SSE event instead for admins so, every admin can track invite
 
-      // TODO(DAVID) handle case when with org by slug
+      // If the entity is not an organization but belongs to one, update its cache too
       if (entityType !== 'organization' && organizationId) {
-        queryClient.setQueryData<EntityPage>(['organization', organizationId], (data) => updateInvitesCount(data, invitedMembers));
-        queryClient.invalidateQueries({
-          queryKey: membersKeys.table.pending({ idOrSlug: organizationId, entityType: 'organization', orgIdOrSlug: organizationId }),
-        });
+        const { menu } = useNavigationStore.getState();
+        const organization = menu.organization.find(({ id }) => id === organizationId);
+        if (organization) {
+          queryClient.setQueryData<EntityPage>(['organization', organization.id], (data) => updateInvitesCount(data, invitedMembers));
+          queryClient.setQueryData<EntityPage>(['organization', organization.slug], (data) => updateInvitesCount(data, invitedMembers));
+
+          queryClient.invalidateQueries({
+            queryKey: membersKeys.table.pending({ idOrSlug: organization.slug, entityType: 'organization', orgIdOrSlug: organization.id }),
+          });
+        }
       }
 
       // Try cache update for both id and slug
