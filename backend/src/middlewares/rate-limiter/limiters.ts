@@ -27,13 +27,20 @@ export const tokenLimiter = (tokenType: string): MiddlewareHandler<Env> => rateL
  * Registers the ratelimmiters middleware for OpenAPI documentation.
  * This allows the middleware to be recognized and described in the API documentation.
  */
-registerMiddlewareDescription({ name: 'spamLimiter', middleware: spamLimiter, category: 'rate-limit', label: 'Spam (10/h)' });
+registerMiddlewareDescription({
+  name: 'spamLimiter',
+  middleware: spamLimiter,
+  category: 'rate-limit',
+  label: 'Spam (10/h)',
+});
+
 registerMiddlewareDescription({
   name: 'emailEnumLimiter',
   middleware: emailEnumLimiter,
   category: 'rate-limit',
   label: 'Email enum (5/h, 30m block)',
 });
+
 registerMiddlewareDescription({
   name: 'passwordLimiter',
   middleware: passwordLimiter,

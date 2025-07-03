@@ -49,4 +49,9 @@ export const hasOrgAccess: MiddlewareHandler<Env> = createMiddleware<Env>(async 
  * Registers the `hasOrgAccess` middleware for OpenAPI documentation.
  * This allows the middleware to be recognized and described in the API documentation.
  */
-registerMiddlewareDescription({ name: 'hasOrgAccess', middleware: hasOrgAccess, category: 'auth', scopes: ['org'] });
+registerMiddlewareDescription({
+  name: 'hasOrgAccess',
+  middleware: hasOrgAccess,
+  category: 'auth',
+  scopes: ['org'],
+});

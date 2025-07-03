@@ -18,4 +18,10 @@ export const isPublicAccess: MiddlewareHandler<Env> = createMiddleware<Env>(asyn
  * Registers the `isPublicAccess` middleware for OpenAPI documentation.
  * This allows the middleware to be recognized and described in the API documentation.
  */
-registerMiddlewareDescription({ name: 'isPublicAccess', middleware: isPublicAccess, category: 'auth', level: 'public', label: 'Public access' });
+registerMiddlewareDescription({
+  name: 'isPublicAccess',
+  middleware: isPublicAccess,
+  category: 'auth',
+  level: 'public',
+  label: 'Public access',
+});

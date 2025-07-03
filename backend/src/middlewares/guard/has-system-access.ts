@@ -26,4 +26,9 @@ export const hasSystemAccess: MiddlewareHandler = every(
  * Registers the `hasSystemAccess` middleware for OpenAPI documentation.
  * This allows the middleware to be recognized and described in the API documentation.
  */
-registerMiddlewareDescription({ name: 'hasSystemAccess', middleware: hasSystemAccess, category: 'auth', scopes: ['system'] });
+registerMiddlewareDescription({
+  name: 'hasSystemAccess',
+  middleware: hasSystemAccess,
+  category: 'auth',
+  scopes: ['system'],
+});
