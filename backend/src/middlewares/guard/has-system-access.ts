@@ -2,6 +2,7 @@ import type { MiddlewareHandler } from 'hono';
 import { every } from 'hono/combine';
 import { ipRestriction } from 'hono/ip-restriction';
 import { errorResponse } from '#/lib/errors';
+import { registerMiddlewareDescription } from '#/lib/openapi-describer';
 import { getIp } from '#/utils/get-ip';
 import { env } from '../../env';
 import { isSystemAdmin } from './is-system-admin';
@@ -20,3 +21,9 @@ export const hasSystemAccess: MiddlewareHandler = every(
     return errorResponse(c, 422, 'forbidden', 'warn', undefined);
   }),
 );
+
+/**
+ * Registers the `hasSystemAccess` middleware for OpenAPI documentation.
+ * This allows the middleware to be recognized and described in the API documentation.
+ */
+registerMiddlewareDescription({ name: 'hasSystemAccess', middleware: hasSystemAccess, category: 'auth', scopes: ['system'] });

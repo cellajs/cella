@@ -7,6 +7,7 @@ import { membershipsTable } from '#/db/schema/memberships';
 import { usersTable } from '#/db/schema/users';
 import type { Env } from '#/lib/context';
 import { errorResponse } from '#/lib/errors';
+import { registerMiddlewareDescription } from '#/lib/openapi-describer';
 import { deleteAuthCookie } from '#/modules/auth/helpers/cookie';
 import { getParsedSessionCookie, validateSession } from '#/modules/auth/helpers/session';
 import { membershipSummarySelect } from '#/modules/memberships/helpers/select';
@@ -60,4 +61,16 @@ export const isAuthenticated: MiddlewareHandler<Env> = createMiddleware<Env>(asy
   ctx.set('memberships', memberships);
 
   await next();
+});
+
+/**
+ * Registers the `isAuthenticated` middleware for OpenAPI documentation.
+ * This allows the middleware to be recognized and described in the API documentation.
+ */
+registerMiddlewareDescription({
+  name: 'isAuthenticated',
+  middleware: isAuthenticated,
+  category: 'auth',
+  level: 'authenticated',
+  label: 'Requires authentication',
 });

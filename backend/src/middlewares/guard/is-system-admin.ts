@@ -2,6 +2,7 @@ import type { MiddlewareHandler } from 'hono';
 import { createMiddleware } from 'hono/factory';
 import { type Env, getContextUser } from '#/lib/context';
 import { errorResponse } from '#/lib/errors';
+import { registerMiddlewareDescription } from '#/lib/openapi-describer';
 
 /**
  * Middleware to check if user is a system admin based on their role.
@@ -19,3 +20,9 @@ export const isSystemAdmin: MiddlewareHandler<Env> = createMiddleware<Env>(async
 
   await next();
 });
+
+/**
+ * Registers the `isSystemAdmin` middleware for OpenAPI documentation.
+ * This allows the middleware to be recognized and described in the API documentation.
+ */
+registerMiddlewareDescription({ name: 'isSystemAdmin', middleware: isSystemAdmin, category: 'auth', scopes: ['system'] });
