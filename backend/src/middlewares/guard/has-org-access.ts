@@ -6,8 +6,7 @@ import { db } from '#/db/db';
 import { organizationsTable } from '#/db/schema/organizations';
 import { type Env, getContextMemberships, getContextUser } from '#/lib/context';
 import { errorResponse } from '#/lib/errors';
-
-export { isAuthenticated } from './is-authenticated';
+import { registerMiddlewareDescription } from '#/lib/openapi-describer';
 
 /**
  * Middleware to ensure the user has access to an organization-scoped route.
@@ -44,4 +43,15 @@ export const hasOrgAccess: MiddlewareHandler<Env> = createMiddleware<Env>(async 
   Sentry.setTag('organization_slug', orgWithMembership.slug);
 
   await next();
+});
+
+/**
+ * Registers the `hasOrgAccess` middleware for OpenAPI documentation.
+ * This allows the middleware to be recognized and described in the API documentation.
+ */
+registerMiddlewareDescription({
+  name: 'hasOrgAccess',
+  middleware: hasOrgAccess,
+  category: 'auth',
+  scopes: ['org'],
 });
