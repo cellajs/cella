@@ -51,15 +51,13 @@ export const CustomDragHandleButton = <
     icon: <GripVertical size={22} data-test="dragHandle" />,
   };
 
+  if (!hasDropdown) return <Components.SideMenu.Button {...baseButtonProps} onClick={handleButtonClick} label="Drag button" draggable />;
+
   return (
-    <Components.Generic.Menu.Root onOpenChange={(open: boolean) => (open ? freezeMenu() : unfreezeMenu())} position={position}>
-      {hasDropdown ? (
-        <Components.Generic.Menu.Trigger>
-          <Components.SideMenu.Button {...baseButtonProps} label="Open side menu" draggable />
-        </Components.Generic.Menu.Trigger>
-      ) : (
-        <Components.SideMenu.Button {...baseButtonProps} onClick={handleButtonClick} label="Drag button" draggable />
-      )}
+    <Components.Generic.Menu.Root onOpenChange={(open) => (open ? freezeMenu() : unfreezeMenu())} position={position}>
+      <Components.Generic.Menu.Trigger>
+        <Components.SideMenu.Button {...baseButtonProps} label="Open side menu" draggable />
+      </Components.Generic.Menu.Trigger>
 
       <DragHandleContent block={block} />
     </Components.Generic.Menu.Root>

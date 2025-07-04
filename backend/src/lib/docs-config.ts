@@ -25,15 +25,36 @@ export const apiModulesList = [
       Organizations are the highest ancestor in the parent hierarchy.  
       They define access boundaries and are often the minimal primary scope for permission and resource management.`,
   },
-  { name: 'requests', description: 'Receive contact form, newsletter and waitlist requests.' },
-  { name: 'entities', description: 'Endpoints that span across entities.' },
-  { name: 'system', description: 'Endpoints that are system-wide or system (admin) related.' },
+  {
+    name: 'requests',
+    description: 'Endpoints for handling incoming *requests* such as contact form submissions, newsletter signups, and waitlist entries.',
+  },
+  {
+    name: 'entities',
+    description: `Endpoints that operate across multiple *entity types*, such as \`users\` and \`organizations\`.
+      *Entities* are identifiable domain objects that may be contextual, hierarchical (with parent/child relations), or actor-like.
+      These endpoints offer shared logic across modules, including slug validation and entity visibility.`,
+  },
+  {
+    name: 'system',
+    description: `*System level* endpoints for administrative actions and platform wide functionality.
+      These endpoints support operations such as user invitations, file uploads, and webhook handling.`,
+  },
   {
     name: 'auth',
-    description: 'Multiple authentication methods are included: email/password combination, OAuth and passkey support.',
+    description: `*Authentication* endpoints supporting multiple sign-in methods, including email/password, OAuth (Google, Microsoft, GitHub), and passkeys (WebAuthn).  
+      These routes cover user sign-up, sign-in, password recovery, email verification, account linking, and impersonation for system admins.`,
   },
-  { name: 'attachments', description: 'Be able to leverage different attachment types within an entity.' },
-  { name: 'metrics', description: 'Observability endpoints.' },
+  {
+    name: 'attachments',
+    description: `Endpoints for managing file based *attachments* (e.g. images, PDFs, documents) linked to entities such as organizations or users.
+      Files are uploaded directly by the client; the API handles metadata registration, linking, access, and preview utilities.`,
+  },
+  {
+    name: 'metrics',
+    description: `Endpoints for retrieving system level statistics and basic observability data.
+      Includes internal metrics as well as simple, high level counts for entities such as \`users\` and \`organizations\`.`,
+  },
 ];
 
 /**

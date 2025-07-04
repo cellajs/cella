@@ -1,7 +1,8 @@
 import { useMutation } from '@tanstack/react-query';
 import { config } from 'config';
 import { t } from 'i18next';
-import { deleteMemberships, updateMembership } from '~/api.gen';
+import { deleteMemberships, type MembershipInviteResponse, membershipInvite, updateMembership } from '~/api.gen';
+import type { ApiError } from '~/lib/api';
 import { toaster } from '~/modules/common/toaster';
 import { getAndSetMenu } from '~/modules/me/helpers';
 import { resolveParentEntityType } from '~/modules/memberships/helpers';
@@ -10,6 +11,7 @@ import type {
   DeleteMembership,
   EntityMembershipContextProp,
   InfiniteMemberQueryData,
+  InviteMember,
   Member,
   MemberContextProp,
   MemberQueryData,
@@ -20,17 +22,31 @@ import { updateMenuItemMembership } from '~/modules/navigation/menu-sheet/helper
 import { formatUpdatedData, getQueryItems, getSimilarQueries } from '~/query/helpers/mutate-query';
 import { useMutateQueryData } from '~/query/hooks/use-mutate-query-data';
 import { queryClient } from '~/query/query-client';
+import type { ContextEntityData, EntityPage } from '../entities/types';
 
 const limit = config.requestLimits.members;
 
-const onError = (_: Error, __: MutationUpdateMembership | DeleteMembership, context?: MemberContextProp[]) => {
+const onError = (_: ApiError, __: InviteMember | MutationUpdateMembership | DeleteMembership, context?: MemberContextProp[]) => {
   if (context?.length) {
     for (const [queryKey, previousData] of context) queryClient.setQueryData(queryKey, previousData);
   }
 };
 
+export const useInviteMemberMutation = () =>
+  useMutation<MembershipInviteResponse, ApiError, InviteMember, undefined>({
+    mutationKey: membersKeys.update(),
+    mutationFn: ({ entity, ...body }) =>
+      membershipInvite({
+        body,
+        query: { idOrSlug: entity.id, entityType: entity.entityType },
+        path: { orgIdOrSlug: entity.organizationId || entity.id },
+      }),
+    onSuccess: () => toaster(t('common:success.user_invited'), 'success'),
+    onError,
+  });
+
 export const useMemberUpdateMutation = () =>
-  useMutation<Membership, Error, MutationUpdateMembership, EntityMembershipContextProp>({
+  useMutation<Membership, ApiError, MutationUpdateMembership, EntityMembershipContextProp>({
     mutationKey: membersKeys.update(),
     mutationFn: async ({ id, orgIdOrSlug, entityType, idOrSlug, ...body }) => {
       return await updateMembership({ body, path: { id, orgIdOrSlug } });
@@ -39,7 +55,7 @@ export const useMemberUpdateMutation = () =>
       const { idOrSlug, entityType, orgIdOrSlug, ...membershipInfo } = variables;
       const { archived, muted, role, order } = membershipInfo;
 
-      // Store previous query data for rollback if an error occurs
+      // Store previous query data for rollback if an Apierror occurs
       const context = { queryContext: [] as MemberContextProp[], toastMessage: t('common:success.update_item', { item: t('common:membership') }) };
 
       if (archived !== undefined) {
@@ -123,7 +139,7 @@ export const useMemberUpdateMutation = () =>
   });
 
 export const useMembersDeleteMutation = () =>
-  useMutation<void, Error, DeleteMembership, MemberContextProp[]>({
+  useMutation<void, ApiError, DeleteMembership, MemberContextProp[]>({
     mutationKey: membersKeys.delete(),
     mutationFn: async ({ idOrSlug, entityType, orgIdOrSlug, members }) => {
       const ids = members.map(({ id }) => id);
@@ -133,7 +149,7 @@ export const useMembersDeleteMutation = () =>
       const { members, idOrSlug, entityType, orgIdOrSlug } = variables;
       const ids = members.map(({ id }) => id);
 
-      const context: MemberContextProp[] = []; // previous query data for rollback if an error occurs
+      const context: MemberContextProp[] = []; // previous query data for rollback if an Apierror occurs
 
       // Get affected queries
       const similarKey = membersKeys.table.similarMembers({ idOrSlug, entityType, orgIdOrSlug });
@@ -180,4 +196,28 @@ const deletedMembers = (members: Member[], ids: string[]) => {
       return member;
     })
     .filter(Boolean) as Member[];
+};
+
+export const handlePendingInvites = (targetEntity: ContextEntityData, organization: ContextEntityData, invitesCount: number) => {
+  const { id, slug, entityType } = targetEntity;
+  // If the entity is not an organization but belongs to one, update its cache too
+  if (entityType !== 'organization') {
+    const { id: orgId, slug: orgSlug, entityType: orgEntityType } = organization;
+    queryClient.setQueryData<EntityPage>([orgEntityType, orgId], (data) => updateInvitesCount(data, invitesCount));
+    queryClient.setQueryData<EntityPage>([orgEntityType, orgSlug], (data) => updateInvitesCount(data, invitesCount));
+
+    queryClient.invalidateQueries({ queryKey: membersKeys.table.pending({ idOrSlug: orgSlug, entityType: orgEntityType, orgIdOrSlug: orgId }) });
+  }
+
+  // Try cache update for both id and slug
+  queryClient.setQueryData<EntityPage>([entityType, id], (data) => updateInvitesCount(data, invitesCount));
+  queryClient.setQueryData<EntityPage>([entityType, slug], (data) => updateInvitesCount(data, invitesCount));
+
+  queryClient.invalidateQueries({ queryKey: membersKeys.table.pending({ idOrSlug: slug, entityType, orgIdOrSlug: organization.id }) });
+};
+const updateInvitesCount = (oldEntity: EntityPage | undefined, updateCount: number) => {
+  if (!oldEntity) return oldEntity;
+  // Ensure invitesCount is a number, add emails.length
+  const currentCount = typeof oldEntity.invitesCount === 'number' ? oldEntity.invitesCount : 0;
+  return { ...oldEntity, invitesCount: currentCount + updateCount };
 };

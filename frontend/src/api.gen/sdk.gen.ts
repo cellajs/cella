@@ -212,9 +212,16 @@ export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends 
 
 /**
  * Check if email exists
- * 🌐 Public access.
+ * 🌐 Public access
+ * ⏳ Email (5/h)
  *
- * Check if user with email address exists.
+ * Checks if a user with the specified email address exists in the system.
+ *
+ * **POST /auth/check-email** ·· [checkEmail](http://localhost:4000/docs#tag/auth/post/auth/check-email) ·· _auth_
+ *
+ * @param {checkEmailData} options
+ * @param {string=} options.body.email - `string` (optional)
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
 export const checkEmail = <ThrowOnError extends boolean = true>(options?: Options<CheckEmailData, ThrowOnError>) => {
   return (options?.client ?? _heyApiClient).post<CheckEmailResponses, CheckEmailErrors, ThrowOnError, 'data'>({
@@ -230,9 +237,17 @@ export const checkEmail = <ThrowOnError extends boolean = true>(options?: Option
 
 /**
  * Sign up with password
- * 🌐 Public access.
+ * 🌐 Public access
+ * ⏳ Spam (10/h), Email (5/h)
  *
- * Sign up with email and password. User will receive a verification email.
+ * Registers a new user using an email and password. Sends a verification email upon successful sign up.
+ *
+ * **POST /auth/sign-up** ·· [signUp](http://localhost:4000/docs#tag/auth/post/auth/sign-up) ·· _auth_
+ *
+ * @param {signUpData} options
+ * @param {string=} options.body.email - `string` (optional)
+ * @param {string=} options.body.password - `string` (optional)
+ * @returns Possible status codes: 200, 302, 400, 401, 403, 404, 429
  */
 export const signUp = <ThrowOnError extends boolean = true>(options?: Options<SignUpData, ThrowOnError>) => {
   return (options?.client ?? _heyApiClient).post<SignUpResponses, SignUpErrors, ThrowOnError, 'data'>({
@@ -248,9 +263,18 @@ export const signUp = <ThrowOnError extends boolean = true>(options?: Options<Si
 
 /**
  * Sign up to accept invite
- * 🌐 Public access.
+ * 🌐 Public access
+ * ⏳ Spam (10/h), Email (5/h)
  *
- * Sign up with email and password to accept system or organization invitation.
+ * Registers a user using an email and password in response to a system or organization invitation.
+ *
+ * **POST /auth/sign-up/{token}** ·· [signUpWithToken](http://localhost:4000/docs#tag/auth/post/auth/sign-up/{token}) ·· _auth_
+ *
+ * @param {signUpWithTokenData} options
+ * @param {string} options.path.token - `string`
+ * @param {string=} options.body.email - `string` (optional)
+ * @param {string=} options.body.password - `string` (optional)
+ * @returns Possible status codes: 200, 302, 400, 401, 403, 404, 429
  */
 export const signUpWithToken = <ThrowOnError extends boolean = true>(options: Options<SignUpWithTokenData, ThrowOnError>) => {
   return (options.client ?? _heyApiClient).post<SignUpWithTokenResponses, SignUpWithTokenErrors, ThrowOnError, 'data'>({
@@ -266,9 +290,17 @@ export const signUpWithToken = <ThrowOnError extends boolean = true>(options: Op
 
 /**
  * Resend verification email
- * 🌐 Public access.
+ * 🌐 Public access
+ * ⏳ Spam (10/h)
  *
- * Resend verification email to user based on token id.
+ * Resends the email verification message to a user using the provided token ID.
+ *
+ * **POST /auth/send-verification-email** ·· [sendVerificationEmail](http://localhost:4000/docs#tag/auth/post/auth/send-verification-email) ·· _auth_
+ *
+ * @param {sendVerificationEmailData} options
+ * @param {string=} options.body.tokenId - `string` (optional)
+ * @param {string=} options.body.userId - `string` (optional)
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
 export const sendVerificationEmail = <ThrowOnError extends boolean = true>(options?: Options<SendVerificationEmailData, ThrowOnError>) => {
   return (options?.client ?? _heyApiClient).post<SendVerificationEmailResponses, SendVerificationEmailErrors, ThrowOnError, 'data'>({
@@ -284,9 +316,16 @@ export const sendVerificationEmail = <ThrowOnError extends boolean = true>(optio
 
 /**
  * Verify email by token
- * 🌐 Public access.
+ * 🌐 Public access
+ * ⏳ token_email_verification (5/h)
  *
- * Verify email address by token from the verification email. Receive a user session when successful.
+ * Verifies a user's email using a token from their verification email. Grants a session upon success.
+ *
+ * **POST /auth/verify-email/{token}** ·· [verifyEmail](http://localhost:4000/docs#tag/auth/post/auth/verify-email/{token}) ·· _auth_
+ *
+ * @param {verifyEmailData} options
+ * @param {string} options.path.token - `string`
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
 export const verifyEmail = <ThrowOnError extends boolean = true>(options: Options<VerifyEmailData, ThrowOnError>) => {
   return (options.client ?? _heyApiClient).post<VerifyEmailResponses, VerifyEmailErrors, ThrowOnError, 'data'>({
@@ -298,9 +337,16 @@ export const verifyEmail = <ThrowOnError extends boolean = true>(options: Option
 
 /**
  * Request new password
- * 🌐 Public access.
+ * 🌐 Public access
+ * ⏳ Spam (10/h), Email (5/h)
  *
- * An email will be sent with a link to create a password.
+ * Sends an email with a link to reset the user's password.
+ *
+ * **POST /auth/request-password** ·· [requestPassword](http://localhost:4000/docs#tag/auth/post/auth/request-password) ·· _auth_
+ *
+ * @param {requestPasswordData} options
+ * @param {string=} options.body.email - `string` (optional)
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
 export const requestPassword = <ThrowOnError extends boolean = true>(options?: Options<RequestPasswordData, ThrowOnError>) => {
   return (options?.client ?? _heyApiClient).post<RequestPasswordResponses, RequestPasswordErrors, ThrowOnError, 'data'>({
@@ -316,9 +362,17 @@ export const requestPassword = <ThrowOnError extends boolean = true>(options?: O
 
 /**
  * Create password by token
- * 🌐 Public access.
+ * 🌐 Public access
+ * ⏳ token_password_reset (5/h)
  *
- * Submit new password and directly receive a user session.
+ * Sets a new password using a token and grants a session immediately upon success.
+ *
+ * **POST /auth/create-password/{token}** ·· [createPassword](http://localhost:4000/docs#tag/auth/post/auth/create-password/{token}) ·· _auth_
+ *
+ * @param {createPasswordData} options
+ * @param {string} options.path.token - `string`
+ * @param {string=} options.body.password - `string` (optional)
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
 export const createPassword = <ThrowOnError extends boolean = true>(options: Options<CreatePasswordData, ThrowOnError>) => {
   return (options.client ?? _heyApiClient).post<CreatePasswordResponses, CreatePasswordErrors, ThrowOnError, 'data'>({
@@ -334,9 +388,17 @@ export const createPassword = <ThrowOnError extends boolean = true>(options: Opt
 
 /**
  * Sign in with password
- * 🌐 Public access.
+ * 🌐 Public access
+ * ⏳ Password (5/h)
  *
- * Sign in with email and password.
+ * Authenticates an existing user using their email and password.
+ *
+ * **POST /auth/sign-in** ·· [signIn](http://localhost:4000/docs#tag/auth/post/auth/sign-in) ·· _auth_
+ *
+ * @param {signInData} options
+ * @param {string=} options.body.email - `string` (optional)
+ * @param {string=} options.body.password - `string` (optional)
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
 export const signIn = <ThrowOnError extends boolean = true>(options?: Options<SignInData, ThrowOnError>) => {
   return (options?.client ?? _heyApiClient).post<SignInResponses, SignInErrors, ThrowOnError, 'data'>({
@@ -352,9 +414,16 @@ export const signIn = <ThrowOnError extends boolean = true>(options?: Options<Si
 
 /**
  * Token validation check
- * 🌐 Public access.
+ * 🌐 Public access
  *
- * This endpoint is used to check if a token is still valid. It is used to provide direct user feedback on tokens such as reset password and invitation.
+ * Checks if a token (e.g. for password reset, email verification, or invite) is still valid.
+ *
+ * **POST /auth/check-token/{id}** ·· [checkToken](http://localhost:4000/docs#tag/auth/post/auth/check-token/{id}) ·· _auth_
+ *
+ * @param {checkTokenData} options
+ * @param {string} options.path.id - `string`
+ * @param {enum} options.query.type - `enum`
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
 export const checkToken = <ThrowOnError extends boolean = true>(options: Options<CheckTokenData, ThrowOnError>) => {
   return (options.client ?? _heyApiClient).post<CheckTokenResponses, CheckTokenErrors, ThrowOnError, 'data'>({
@@ -373,9 +442,16 @@ export const checkToken = <ThrowOnError extends boolean = true>(options: Options
 
 /**
  * Accept invitation
- * 🛡️ Requires authentication.
+ * 🛡️ Requires authentication
+ * ⏳ token_invitation (5/h)
  *
- * Accept invitation token
+ * Accepts an invitation token and activates the associated membership or system access.
+ *
+ * **POST /auth/accept-invite/{token}** ·· [acceptEntityInvite](http://localhost:4000/docs#tag/auth/post/auth/accept-invite/{token}) ·· _auth_
+ *
+ * @param {acceptEntityInviteData} options
+ * @param {string} options.path.token - `string`
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
 export const acceptEntityInvite = <ThrowOnError extends boolean = true>(options: Options<AcceptEntityInviteData, ThrowOnError>) => {
   return (options.client ?? _heyApiClient).post<AcceptEntityInviteResponses, AcceptEntityInviteErrors, ThrowOnError, 'data'>({
@@ -394,9 +470,15 @@ export const acceptEntityInvite = <ThrowOnError extends boolean = true>(options:
 
 /**
  * Start impersonating
- * 🛡️ Requires authentication (system access).
+ * 🛡️ Requires authentication (system access)
  *
- * System admin impersonates a selected user by id by receiving a special impersonation session.
+ * Allows a system admin to impersonate a specific user by ID, returning a temporary impersonation session.
+ *
+ * **GET /auth/impersonation/start** ·· [startImpersonation](http://localhost:4000/docs#tag/auth/get/auth/impersonation/start) ·· _auth_
+ *
+ * @param {startImpersonationData} options
+ * @param {string} options.query.targetuserid - `string`
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
 export const startImpersonation = <ThrowOnError extends boolean = true>(options: Options<StartImpersonationData, ThrowOnError>) => {
   return (options.client ?? _heyApiClient).get<StartImpersonationResponses, StartImpersonationErrors, ThrowOnError, 'data'>({
@@ -415,9 +497,14 @@ export const startImpersonation = <ThrowOnError extends boolean = true>(options:
 
 /**
  * Stop impersonating
- * 🌐 Public access.
+ * 🌐 Public access
  *
- * Stop impersonating by clearing impersonation session.
+ * Ends impersonation by clearing the current impersonation session and restoring the admin context.
+ *
+ * **GET /auth/impersonation/stop** ·· [stopImpersonation](http://localhost:4000/docs#tag/auth/get/auth/impersonation/stop) ·· _auth_
+ *
+ * @param {stopImpersonationData} options
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
 export const stopImpersonation = <ThrowOnError extends boolean = true>(options?: Options<StopImpersonationData, ThrowOnError>) => {
   return (options?.client ?? _heyApiClient).get<StopImpersonationResponses, StopImpersonationErrors, ThrowOnError, 'data'>({
@@ -436,9 +523,14 @@ export const stopImpersonation = <ThrowOnError extends boolean = true>(options?:
 
 /**
  * Sign out
- * 🌐 Public access.
+ * 🌐 Public access
  *
- * Sign out yourself and clear session.
+ * Signs out the *current user* and clears the active session.
+ *
+ * **GET /auth/sign-out** ·· [signOut](http://localhost:4000/docs#tag/auth/get/auth/sign-out) ·· _auth_
+ *
+ * @param {signOutData} options
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
 export const signOut = <ThrowOnError extends boolean = true>(options?: Options<SignOutData, ThrowOnError>) => {
   return (options?.client ?? _heyApiClient).get<SignOutResponses, SignOutErrors, ThrowOnError, 'data'>({
@@ -457,9 +549,18 @@ export const signOut = <ThrowOnError extends boolean = true>(options?: Options<S
 
 /**
  * Authenticate with GitHub
- * 🌐 Public access.
+ * 🌐 Public access
  *
- * Authenticate with Github to sign in or sign up. A `connect` (userId),`redirect` or `token` query parameter can be used to connect account, redirect to a specific page or to accept invitation.
+ * Starts OAuth authentication with GitHub. Supports account connection (`connect`), redirect (`redirect`), or invite token (`token`).
+ *
+ * **GET /auth/github** ·· [githubSignIn](http://localhost:4000/docs#tag/auth/get/auth/github) ·· _auth_
+ *
+ * @param {githubSignInData} options
+ * @param {enum} options.query.type - `enum`
+ * @param {string=} options.query.redirect - `string` (optional)
+ * @param {string=} options.query.connect - `string` (optional)
+ * @param {string=} options.query.token - `string` (optional)
+ * @returns Possible status codes: 302, 400, 401, 403, 404, 429
  */
 export const githubSignIn = <ThrowOnError extends boolean = true>(options: Options<GithubSignInData, ThrowOnError>) => {
   return (options.client ?? _heyApiClient).get<unknown, GithubSignInErrors, ThrowOnError, 'data'>({
@@ -471,9 +572,18 @@ export const githubSignIn = <ThrowOnError extends boolean = true>(options: Optio
 
 /**
  * Authenticate with Google
- * 🌐 Public access.
+ * 🌐 Public access
  *
- * Authenticate with Google to sign in or sign up. A `connect` (userId),`redirect` or `token` query parameter can be used to connect account, redirect to a specific page or to accept invitation.
+ * Starts OAuth authentication with Google. Supports account connection (`connect`), redirect (`redirect`), or invite token (`token`).
+ *
+ * **GET /auth/google** ·· [googleSignIn](http://localhost:4000/docs#tag/auth/get/auth/google) ·· _auth_
+ *
+ * @param {googleSignInData} options
+ * @param {enum} options.query.type - `enum`
+ * @param {string=} options.query.redirect - `string` (optional)
+ * @param {string=} options.query.connect - `string` (optional)
+ * @param {string=} options.query.token - `string` (optional)
+ * @returns Possible status codes: 302, 400, 401, 403, 404, 429
  */
 export const googleSignIn = <ThrowOnError extends boolean = true>(options: Options<GoogleSignInData, ThrowOnError>) => {
   return (options.client ?? _heyApiClient).get<unknown, GoogleSignInErrors, ThrowOnError, 'data'>({
@@ -485,9 +595,18 @@ export const googleSignIn = <ThrowOnError extends boolean = true>(options: Optio
 
 /**
  * Authenticate with Microsoft
- * 🌐 Public access.
+ * 🌐 Public access
  *
- * Authenticate with Microsoft to sign in or sign up.  A `connect` (userId),`redirect` or `token` query parameter can be used to connect account, redirect to a specific page or to accept invitation.
+ * Starts OAuth authentication with Microsoft. Supports account connection (`connect`), redirect (`redirect`), or invite token (`token`).
+ *
+ * **GET /auth/microsoft** ·· [microsoftSignIn](http://localhost:4000/docs#tag/auth/get/auth/microsoft) ·· _auth_
+ *
+ * @param {microsoftSignInData} options
+ * @param {enum} options.query.type - `enum`
+ * @param {string=} options.query.redirect - `string` (optional)
+ * @param {string=} options.query.connect - `string` (optional)
+ * @param {string=} options.query.token - `string` (optional)
+ * @returns Possible status codes: 302, 400, 401, 403, 404, 429
  */
 export const microsoftSignIn = <ThrowOnError extends boolean = true>(options: Options<MicrosoftSignInData, ThrowOnError>) => {
   return (options.client ?? _heyApiClient).get<unknown, MicrosoftSignInErrors, ThrowOnError, 'data'>({
@@ -499,9 +618,20 @@ export const microsoftSignIn = <ThrowOnError extends boolean = true>(options: Op
 
 /**
  * Callback for GitHub
- * 🌐 Public access.
+ * 🌐 Public access
+ * ⏳ token_github (5/h)
  *
- * Callback to receive authorization and basic user data from Github.
+ * Handles GitHub OAuth callback, retrieves user identity, and establishes a session or links account.
+ *
+ * **GET /auth/github/callback** ·· [githubSignInCallback](http://localhost:4000/docs#tag/auth/get/auth/github/callback) ·· _auth_
+ *
+ * @param {githubSignInCallbackData} options
+ * @param {string} options.query.code - `string`
+ * @param {string} options.query.state - `string`
+ * @param {string=} options.query.error - `string` (optional)
+ * @param {string=} options.query.error_description - `string` (optional)
+ * @param {string=} options.query.error_uri - `string` (optional)
+ * @returns Possible status codes: 302, 400, 401, 403, 404, 429
  */
 export const githubSignInCallback = <ThrowOnError extends boolean = true>(options: Options<GithubSignInCallbackData, ThrowOnError>) => {
   return (options.client ?? _heyApiClient).get<unknown, GithubSignInCallbackErrors, ThrowOnError, 'data'>({
@@ -513,9 +643,17 @@ export const githubSignInCallback = <ThrowOnError extends boolean = true>(option
 
 /**
  * Callback for Google
- * 🌐 Public access.
+ * 🌐 Public access
+ * ⏳ token_google (5/h)
  *
- * Callback to receive authorization and basic user data from Google.
+ * Handles Google OAuth callback, retrieves user identity, and establishes a session or links account.
+ *
+ * **GET /auth/google/callback** ·· [googleSignInCallback](http://localhost:4000/docs#tag/auth/get/auth/google/callback) ·· _auth_
+ *
+ * @param {googleSignInCallbackData} options
+ * @param {string} options.query.code - `string`
+ * @param {string} options.query.state - `string`
+ * @returns Possible status codes: 302, 400, 401, 403, 404, 429
  */
 export const googleSignInCallback = <ThrowOnError extends boolean = true>(options: Options<GoogleSignInCallbackData, ThrowOnError>) => {
   return (options.client ?? _heyApiClient).get<unknown, GoogleSignInCallbackErrors, ThrowOnError, 'data'>({
@@ -527,9 +665,17 @@ export const googleSignInCallback = <ThrowOnError extends boolean = true>(option
 
 /**
  * Callback for Microsoft
- * 🌐 Public access.
+ * 🌐 Public access
+ * ⏳ token_microsoft (5/h)
  *
- * Callback to receive authorization and basic user data from Microsoft.
+ * Handles Microsoft OAuth callback, retrieves user identity, and establishes a session or links account.
+ *
+ * **GET /auth/microsoft/callback** ·· [microsoftSignInCallback](http://localhost:4000/docs#tag/auth/get/auth/microsoft/callback) ·· _auth_
+ *
+ * @param {microsoftSignInCallbackData} options
+ * @param {string} options.query.code - `string`
+ * @param {string} options.query.state - `string`
+ * @returns Possible status codes: 302, 400, 401, 403, 404, 429
  */
 export const microsoftSignInCallback = <ThrowOnError extends boolean = true>(options: Options<MicrosoftSignInCallbackData, ThrowOnError>) => {
   return (options.client ?? _heyApiClient).get<unknown, MicrosoftSignInCallbackErrors, ThrowOnError, 'data'>({
@@ -541,9 +687,14 @@ export const microsoftSignInCallback = <ThrowOnError extends boolean = true>(opt
 
 /**
  * Get passkey challenge
- * 🌐 Public access.
+ * 🌐 Public access
  *
- * Handing over the challenge: this results in a key pair, private and public key being created on the device.
+ * Initiates the passkey registration or authentication flow by generating a device bound challenge.
+ *
+ * **GET /auth/passkey-challenge** ·· [getPasskeyChallenge](http://localhost:4000/docs#tag/auth/get/auth/passkey-challenge) ·· _auth_
+ *
+ * @param {getPasskeyChallengeData} options
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
 export const getPasskeyChallenge = <ThrowOnError extends boolean = true>(options?: Options<GetPasskeyChallengeData, ThrowOnError>) => {
   return (options?.client ?? _heyApiClient).get<GetPasskeyChallengeResponses, GetPasskeyChallengeErrors, ThrowOnError, 'data'>({
@@ -555,9 +706,19 @@ export const getPasskeyChallenge = <ThrowOnError extends boolean = true>(options
 
 /**
  * Verify passkey
- * 🌐 Public access.
+ * 🌐 Public access
+ * ⏳ token_passkey (5/h)
  *
- * Verify passkey by checking the validity of signature with public key.
+ * Validates the signed challenge and completes passkey based authentication.
+ *
+ * **POST /auth/passkey-verification** ·· [signInWithPasskey](http://localhost:4000/docs#tag/auth/post/auth/passkey-verification) ·· _auth_
+ *
+ * @param {signInWithPasskeyData} options
+ * @param {string=} options.body.clientDataJSON - `string` (optional)
+ * @param {string=} options.body.authenticatorData - `string` (optional)
+ * @param {string=} options.body.signature - `string` (optional)
+ * @param {string=} options.body.userEmail - `string` (optional)
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
 export const signInWithPasskey = <ThrowOnError extends boolean = true>(options?: Options<SignInWithPasskeyData, ThrowOnError>) => {
   return (options?.client ?? _heyApiClient).post<SignInWithPasskeyResponses, SignInWithPasskeyErrors, ThrowOnError, 'data'>({
@@ -580,9 +741,14 @@ export const signInWithPasskey = <ThrowOnError extends boolean = true>(options?:
 
 /**
  * Delete self
- * 🛡️ Requires authentication.
+ * 🛡️ Requires authentication
  *
  * Deletes the *current user*. This also removes the user's memberships (cascade) and sets references to the user to `null` where applicable.
+ *
+ * **DELETE /me** ·· [deleteMe](http://localhost:4000/docs#tag/me/delete/me) ·· _me_
+ *
+ * @param {deleteMeData} options
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
 export const deleteMe = <ThrowOnError extends boolean = true>(options?: Options<DeleteMeData, ThrowOnError>) => {
   return (options?.client ?? _heyApiClient).delete<DeleteMeResponses, DeleteMeErrors, ThrowOnError, 'data'>({
@@ -601,9 +767,14 @@ export const deleteMe = <ThrowOnError extends boolean = true>(options?: Options<
 
 /**
  * Get self
- * 🛡️ Requires authentication.
+ * 🛡️ Requires authentication
  *
  * Returns the *current user*.
+ *
+ * **GET /me** ·· [getMe](http://localhost:4000/docs#tag/me/get/me) ·· _me_
+ *
+ * @param {getMeData} options
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
 export const getMe = <ThrowOnError extends boolean = true>(options?: Options<GetMeData, ThrowOnError>) => {
   return (options?.client ?? _heyApiClient).get<GetMeResponses, GetMeErrors, ThrowOnError, 'data'>({
@@ -622,9 +793,21 @@ export const getMe = <ThrowOnError extends boolean = true>(options?: Options<Get
 
 /**
  * Update self
- * 🛡️ Requires authentication.
+ * 🛡️ Requires authentication
  *
  * Updates the *current user*.
+ *
+ * **PUT /me** ·· [updateMe](http://localhost:4000/docs#tag/me/put/me) ·· _me_
+ *
+ * @param {updateMeData} options
+ * @param {string | null=} options.body.bannerUrl - `string | null` (optional)
+ * @param {string | null=} options.body.firstName - `string | null` (optional)
+ * @param {string | null=} options.body.lastName - `string | null` (optional)
+ * @param {enum=} options.body.language - `enum` (optional)
+ * @param {boolean=} options.body.newsletter - `boolean` (optional)
+ * @param {string | null=} options.body.thumbnailUrl - `string | null` (optional)
+ * @param {string=} options.body.slug - `string` (optional)
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
 export const updateMe = <ThrowOnError extends boolean = true>(options?: Options<UpdateMeData, ThrowOnError>) => {
   return (options?.client ?? _heyApiClient).put<UpdateMeResponses, UpdateMeErrors, ThrowOnError, 'data'>({
@@ -647,9 +830,14 @@ export const updateMe = <ThrowOnError extends boolean = true>(options?: Options<
 
 /**
  * Get authentication data
- * 🛡️ Requires authentication.
+ * 🛡️ Requires authentication
  *
  * Returns the authentication related date of the *current user*, including sessions, OAuth accounts, and sign in options.
+ *
+ * **GET /me/auth** ·· [getMyAuth](http://localhost:4000/docs#tag/me/get/me/auth) ·· _me_
+ *
+ * @param {getMyAuthData} options
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
 export const getMyAuth = <ThrowOnError extends boolean = true>(options?: Options<GetMyAuthData, ThrowOnError>) => {
   return (options?.client ?? _heyApiClient).get<GetMyAuthResponses, GetMyAuthErrors, ThrowOnError, 'data'>({
@@ -668,9 +856,14 @@ export const getMyAuth = <ThrowOnError extends boolean = true>(options?: Options
 
 /**
  * Get menu
- * 🛡️ Requires authentication.
+ * 🛡️ Requires authentication
  *
  * Returns a structured list of contextual entities the *current user* is a member of, grouped by the entity type and enriched with both `memebrship` and `entity` data.
+ *
+ * **GET /me/menu** ·· [getMyMenu](http://localhost:4000/docs#tag/me/get/me/menu) ·· _me_
+ *
+ * @param {getMyMenuData} options
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
 export const getMyMenu = <ThrowOnError extends boolean = true>(options?: Options<GetMyMenuData, ThrowOnError>) => {
   return (options?.client ?? _heyApiClient).get<GetMyMenuResponses, GetMyMenuErrors, ThrowOnError, 'data'>({
@@ -689,9 +882,15 @@ export const getMyMenu = <ThrowOnError extends boolean = true>(options?: Options
 
 /**
  * Terminate sessions
- * 🛡️ Requires authentication.
+ * 🛡️ Requires authentication
  *
  * Ends one or more sessions for the *current user* based on provided session IDs.
+ *
+ * **DELETE /me/sessions** ·· [deleteSessions](http://localhost:4000/docs#tag/me/delete/me/sessions) ·· _me_
+ *
+ * @param {deleteSessionsData} options
+ * @param {any[]=} options.body.ids - `any[]` (optional)
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
 export const deleteSessions = <ThrowOnError extends boolean = true>(options?: Options<DeleteSessionsData, ThrowOnError>) => {
   return (options?.client ?? _heyApiClient).delete<DeleteSessionsResponses, DeleteSessionsErrors, ThrowOnError, 'data'>({
@@ -714,9 +913,16 @@ export const deleteSessions = <ThrowOnError extends boolean = true>(options?: Op
 
 /**
  * Leave entity
- * 🛡️ Requires authentication.
+ * 🛡️ Requires authentication
  *
  * Removes the *current user* from an entity they are a member of.
+ *
+ * **DELETE /me/leave** ·· [deleteMyMembership](http://localhost:4000/docs#tag/me/delete/me/leave) ·· _me_
+ *
+ * @param {deleteMyMembershipData} options
+ * @param {string | string} options.query.idorslug - `string | string`
+ * @param {enum} options.query.entitytype - `enum`
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
 export const deleteMyMembership = <ThrowOnError extends boolean = true>(options: Options<DeleteMyMembershipData, ThrowOnError>) => {
   return (options.client ?? _heyApiClient).delete<DeleteMyMembershipResponses, DeleteMyMembershipErrors, ThrowOnError, 'data'>({
@@ -728,9 +934,14 @@ export const deleteMyMembership = <ThrowOnError extends boolean = true>(options:
 
 /**
  * Delete passkey
- * 🛡️ Requires authentication.
+ * 🛡️ Requires authentication
  *
  * Removes the *current user's* registered passkey credential.
+ *
+ * **DELETE /me/passkey** ·· [deletePasskey](http://localhost:4000/docs#tag/me/delete/me/passkey) ·· _me_
+ *
+ * @param {deletePasskeyData} options
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
 export const deletePasskey = <ThrowOnError extends boolean = true>(options?: Options<DeletePasskeyData, ThrowOnError>) => {
   return (options?.client ?? _heyApiClient).delete<DeletePasskeyResponses, DeletePasskeyErrors, ThrowOnError, 'data'>({
@@ -742,9 +953,17 @@ export const deletePasskey = <ThrowOnError extends boolean = true>(options?: Opt
 
 /**
  * Create passkey
- * 🛡️ Requires authentication.
+ * 🛡️ Requires authentication
  *
  * Registers a passkey for passwordless authentication by verifying a signed challenge and linking it to the *current user*.
+ *
+ * **POST /me/passkey** ·· [createPasskey](http://localhost:4000/docs#tag/me/post/me/passkey) ·· _me_
+ *
+ * @param {createPasskeyData} options
+ * @param {string=} options.body.userEmail - `string` (optional)
+ * @param {string=} options.body.attestationObject - `string` (optional)
+ * @param {string=} options.body.clientDataJSON - `string` (optional)
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
 export const createPasskey = <ThrowOnError extends boolean = true>(options: Options<CreatePasskeyData, ThrowOnError>) => {
   return (options.client ?? _heyApiClient).post<CreatePasskeyResponses, CreatePasskeyErrors, ThrowOnError, 'data'>({
@@ -760,9 +979,17 @@ export const createPasskey = <ThrowOnError extends boolean = true>(options: Opti
 
 /**
  * Get upload token
- * 🛡️ Requires authentication.
+ * 🛡️ Requires authentication
  *
  * Generates and returns an upload token for uploading files or images to a private S3 bucket, scoped to the *current user* and organization
+ *
+ * **GET /me/upload-token** ·· [getUploadToken](http://localhost:4000/docs#tag/me/get/me/upload-token) ·· _me_
+ *
+ * @param {getUploadTokenData} options
+ * @param {string | boolean=} options.query.public - `string | boolean` (optional)
+ * @param {string=} options.query.organizationid - `string` (optional)
+ * @param {enum} options.query.templateid - `enum`
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
 export const getUploadToken = <ThrowOnError extends boolean = true>(options: Options<GetUploadTokenData, ThrowOnError>) => {
   return (options.client ?? _heyApiClient).get<GetUploadTokenResponses, GetUploadTokenErrors, ThrowOnError, 'data'>({
@@ -781,9 +1008,16 @@ export const getUploadToken = <ThrowOnError extends boolean = true>(options: Opt
 
 /**
  * Unsubscribe
- * 🌐 Public access.
+ * 🌐 Public access
+ * ⏳ token_unsubscribe (5/h)
  *
  * Unsubscribes the user from email notifications using a personal unsubscribe token. No authentication is required, as the token implicitly identifies the *current user*.
+ *
+ * **GET /me/unsubscribe** ·· [unsubscribeMe](http://localhost:4000/docs#tag/me/get/me/unsubscribe) ·· _me_
+ *
+ * @param {unsubscribeMeData} options
+ * @param {string} options.query.token - `string`
+ * @returns Possible status codes: 302, 400, 401, 403, 404, 429
  */
 export const unsubscribeMe = <ThrowOnError extends boolean = true>(options: Options<UnsubscribeMeData, ThrowOnError>) => {
   return (options.client ?? _heyApiClient).get<unknown, UnsubscribeMeErrors, ThrowOnError, 'data'>({
@@ -802,9 +1036,15 @@ export const unsubscribeMe = <ThrowOnError extends boolean = true>(options: Opti
 
 /**
  * Delete users
- * 🛡️ Requires authentication (system access).
+ * 🛡️ Requires authentication (system access)
  *
  * Deletes one or more *users* from the system based on a list of IDs. This also removes the user's memberships (cascade) and sets references to the user to `null` where applicable.
+ *
+ * **DELETE /users** ·· [deleteUsers](http://localhost:4000/docs#tag/users/delete/users) ·· _users_
+ *
+ * @param {deleteUsersData} options
+ * @param {any[]=} options.body.ids - `any[]` (optional)
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
 export const deleteUsers = <ThrowOnError extends boolean = true>(options?: Options<DeleteUsersData, ThrowOnError>) => {
   return (options?.client ?? _heyApiClient).delete<DeleteUsersResponses, DeleteUsersErrors, ThrowOnError, 'data'>({
@@ -827,9 +1067,20 @@ export const deleteUsers = <ThrowOnError extends boolean = true>(options?: Optio
 
 /**
  * Get list of users
- * 🛡️ Requires authentication (system access).
+ * 🛡️ Requires authentication (system access)
  *
  * Returns a list of *users* at the system level.
+ *
+ * **GET /users** ·· [getUsers](http://localhost:4000/docs#tag/users/get/users) ·· _users_
+ *
+ * @param {getUsersData} options
+ * @param {string=} options.query.q - `string` (optional)
+ * @param {enum=} options.query.sort - `enum` (optional)
+ * @param {enum=} options.query.order - `enum` (optional)
+ * @param {string} options.query.offset - `string`
+ * @param {string} options.query.limit - `string`
+ * @param {enum=} options.query.role - `enum` (optional)
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
 export const getUsers = <ThrowOnError extends boolean = true>(options: Options<GetUsersData, ThrowOnError>) => {
   return (options.client ?? _heyApiClient).get<GetUsersResponses, GetUsersErrors, ThrowOnError, 'data'>({
@@ -848,9 +1099,15 @@ export const getUsers = <ThrowOnError extends boolean = true>(options: Options<G
 
 /**
  * Get user
- * 🛡️ Requires authentication.
+ * 🛡️ Requires authentication
  *
  * Retrieves a *user* by ID or slug.
+ *
+ * **GET /users/{idOrSlug}** ·· [getUser](http://localhost:4000/docs#tag/users/get/users/{idOrSlug}) ·· _users_
+ *
+ * @param {getUserData} options
+ * @param {string | string} options.path.idorslug - `string | string`
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
 export const getUser = <ThrowOnError extends boolean = true>(options: Options<GetUserData, ThrowOnError>) => {
   return (options.client ?? _heyApiClient).get<GetUserResponses, GetUserErrors, ThrowOnError, 'data'>({
@@ -869,9 +1126,22 @@ export const getUser = <ThrowOnError extends boolean = true>(options: Options<Ge
 
 /**
  * Update user
- * 🛡️ Requires authentication (system access).
+ * 🛡️ Requires authentication (system access)
  *
  * Updates a *user* identified by ID or slug.
+ *
+ * **PUT /users/{idOrSlug}** ·· [updateUser](http://localhost:4000/docs#tag/users/put/users/{idOrSlug}) ·· _users_
+ *
+ * @param {updateUserData} options
+ * @param {string | string} options.path.idorslug - `string | string`
+ * @param {string | null=} options.body.bannerUrl - `string | null` (optional)
+ * @param {string | null=} options.body.firstName - `string | null` (optional)
+ * @param {string | null=} options.body.lastName - `string | null` (optional)
+ * @param {enum=} options.body.language - `enum` (optional)
+ * @param {boolean=} options.body.newsletter - `boolean` (optional)
+ * @param {string | null=} options.body.thumbnailUrl - `string | null` (optional)
+ * @param {string=} options.body.slug - `string` (optional)
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
 export const updateUser = <ThrowOnError extends boolean = true>(options: Options<UpdateUserData, ThrowOnError>) => {
   return (options.client ?? _heyApiClient).put<UpdateUserResponses, UpdateUserErrors, ThrowOnError, 'data'>({
@@ -894,9 +1164,15 @@ export const updateUser = <ThrowOnError extends boolean = true>(options: Options
 
 /**
  * Delete organizations
- * 🛡️ Requires authentication.
+ * 🛡️ Requires authentication
  *
  * Deletes one or more *organizations* by ID.
+ *
+ * **DELETE /organizations** ·· [deleteOrganizations](http://localhost:4000/docs#tag/organizations/delete/organizations) ·· _organizations_
+ *
+ * @param {deleteOrganizationsData} options
+ * @param {any[]=} options.body.ids - `any[]` (optional)
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
 export const deleteOrganizations = <ThrowOnError extends boolean = true>(options?: Options<DeleteOrganizationsData, ThrowOnError>) => {
   return (options?.client ?? _heyApiClient).delete<DeleteOrganizationsResponses, DeleteOrganizationsErrors, ThrowOnError, 'data'>({
@@ -919,9 +1195,19 @@ export const deleteOrganizations = <ThrowOnError extends boolean = true>(options
 
 /**
  * Get list of organizations
- * 🛡️ Requires authentication (system access).
+ * 🛡️ Requires authentication (system access)
  *
  * Returns a list of *organizations* at the system level.
+ *
+ * **GET /organizations** ·· [getOrganizations](http://localhost:4000/docs#tag/organizations/get/organizations) ·· _organizations_
+ *
+ * @param {getOrganizationsData} options
+ * @param {string=} options.query.q - `string` (optional)
+ * @param {enum=} options.query.sort - `enum` (optional)
+ * @param {enum=} options.query.order - `enum` (optional)
+ * @param {string} options.query.offset - `string`
+ * @param {string} options.query.limit - `string`
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
 export const getOrganizations = <ThrowOnError extends boolean = true>(options: Options<GetOrganizationsData, ThrowOnError>) => {
   return (options.client ?? _heyApiClient).get<GetOrganizationsResponses, GetOrganizationsErrors, ThrowOnError, 'data'>({
@@ -940,9 +1226,16 @@ export const getOrganizations = <ThrowOnError extends boolean = true>(options: O
 
 /**
  * Create organization
- * 🛡️ Requires authentication.
+ * 🛡️ Requires authentication
  *
  * Creates a new *organization*.
+ *
+ * **POST /organizations** ·· [createOrganization](http://localhost:4000/docs#tag/organizations/post/organizations) ·· _organizations_
+ *
+ * @param {createOrganizationData} options
+ * @param {string=} options.body.name - `string` (optional)
+ * @param {string=} options.body.slug - `string` (optional)
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
 export const createOrganization = <ThrowOnError extends boolean = true>(options: Options<CreateOrganizationData, ThrowOnError>) => {
   return (options.client ?? _heyApiClient).post<CreateOrganizationResponses, CreateOrganizationErrors, ThrowOnError, 'data'>({
@@ -965,9 +1258,15 @@ export const createOrganization = <ThrowOnError extends boolean = true>(options:
 
 /**
  * Get organization
- * 🛡️ Requires authentication.
+ * 🛡️ Requires authentication
  *
  * Retrieves an *organization* by ID or slug.
+ *
+ * **GET /organizations/{idOrSlug}** ·· [getOrganization](http://localhost:4000/docs#tag/organizations/get/organizations/{idOrSlug}) ·· _organizations_
+ *
+ * @param {getOrganizationData} options
+ * @param {string | string} options.path.idorslug - `string | string`
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
 export const getOrganization = <ThrowOnError extends boolean = true>(options: Options<GetOrganizationData, ThrowOnError>) => {
   return (options.client ?? _heyApiClient).get<GetOrganizationResponses, GetOrganizationErrors, ThrowOnError, 'data'>({
@@ -986,9 +1285,32 @@ export const getOrganization = <ThrowOnError extends boolean = true>(options: Op
 
 /**
  * Update organization
- * 🛡️ Requires authentication.
+ * 🛡️ Requires authentication
  *
  * Updates an *organization* by ID or slug.
+ *
+ * **PUT /organizations/{idOrSlug}** ·· [updateOrganization](http://localhost:4000/docs#tag/organizations/put/organizations/{idOrSlug}) ·· _organizations_
+ *
+ * @param {updateOrganizationData} options
+ * @param {string | string} options.path.idorslug - `string | string`
+ * @param {string=} options.body.slug - `string` (optional)
+ * @param {string=} options.body.name - `string` (optional)
+ * @param {string | null=} options.body.shortName - `string | null` (optional)
+ * @param {string | null=} options.body.country - `string | null` (optional)
+ * @param {string | null=} options.body.timezone - `string | null` (optional)
+ * @param {enum=} options.body.defaultLanguage - `enum` (optional)
+ * @param {any[]=} options.body.languages - `any[]` (optional)
+ * @param {string | null=} options.body.notificationEmail - `string | null` (optional)
+ * @param {any[]=} options.body.emailDomains - `any[]` (optional)
+ * @param {string | null=} options.body.color - `string | null` (optional)
+ * @param {string | null=} options.body.thumbnailUrl - `string | null` (optional)
+ * @param {string | null=} options.body.logoUrl - `string | null` (optional)
+ * @param {string | null=} options.body.bannerUrl - `string | null` (optional)
+ * @param {string | null=} options.body.websiteUrl - `string | null` (optional)
+ * @param {string | null=} options.body.welcomeText - `string | null` (optional)
+ * @param {any[]=} options.body.authStrategies - `any[]` (optional)
+ * @param {boolean=} options.body.chatSupport - `boolean` (optional)
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
 export const updateOrganization = <ThrowOnError extends boolean = true>(options: Options<UpdateOrganizationData, ThrowOnError>) => {
   return (options.client ?? _heyApiClient).put<UpdateOrganizationResponses, UpdateOrganizationErrors, ThrowOnError, 'data'>({
@@ -1011,9 +1333,22 @@ export const updateOrganization = <ThrowOnError extends boolean = true>(options:
 
 /**
  * Get list of page entities
- * 🛡️ Requires authentication.
+ * 🛡️ Requires authentication
  *
- * Get page entities such as users and organizations. It returns a paginated list of entities to which the user has access. The schema is limited to common fields.
+ * Returns a paginated list of *entities* (e.g. *users*, *organizations*) the current user has access to.
+ * Can optionally include the current user's enrollment information for each entity (when applicable).
+ * You can also provide a specific user ID to retrieve the entities that *user* is enrolled in, useful for profile views or access audits.
+ * The response includes only fields shared across all entity types, such as `id`, `slug`, and `name`.
+ *
+ * **GET /entities/page** ·· [getPageEntities](http://localhost:4000/docs#tag/entities/get/entities/page) ·· _entities_
+ *
+ * @param {getPageEntitiesData} options
+ * @param {string=} options.query.q - `string` (optional)
+ * @param {string=} options.query.targetuserid - `string` (optional)
+ * @param {enum=} options.query.type - `enum` (optional)
+ * @param {string=} options.query.targetorgid - `string` (optional)
+ * @param {enum=} options.query.usermembershiptype - `enum` (optional)
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
 export const getPageEntities = <ThrowOnError extends boolean = true>(options?: Options<GetPageEntitiesData, ThrowOnError>) => {
   return (options?.client ?? _heyApiClient).get<GetPageEntitiesResponses, GetPageEntitiesErrors, ThrowOnError, 'data'>({
@@ -1032,9 +1367,20 @@ export const getPageEntities = <ThrowOnError extends boolean = true>(options?: O
 
 /**
  * Get all of context user entities
- * 🛡️ Requires authentication.
+ * 🛡️ Requires authentication
  *
- * Get context entities such organizations of specified user. It returns list of entities based of requested tpye to which the user are part of. With user membership & other members of entity.
+ * Returns all *contextual entities* (e.g. *organizations*) the specified user is a member of.
+ * Each result includes the user's membership data and a list of other users with administrator roles within the same entity.
+ *
+ * **GET /entities/context** ·· [getEntitiesWithAdmins](http://localhost:4000/docs#tag/entities/get/entities/context) ·· _entities_
+ *
+ * @param {getEntitiesWithAdminsData} options
+ * @param {string=} options.query.q - `string` (optional)
+ * @param {string=} options.query.targetuserid - `string` (optional)
+ * @param {any[] | null=} options.query.roles - `any[] | null` (optional)
+ * @param {enum} options.query.type - `enum`
+ * @param {enum=} options.query.sort - `enum` (optional)
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
 export const getEntitiesWithAdmins = <ThrowOnError extends boolean = true>(options: Options<GetEntitiesWithAdminsData, ThrowOnError>) => {
   return (options.client ?? _heyApiClient).get<GetEntitiesWithAdminsResponses, GetEntitiesWithAdminsErrors, ThrowOnError, 'data'>({
@@ -1053,9 +1399,17 @@ export const getEntitiesWithAdmins = <ThrowOnError extends boolean = true>(optio
 
 /**
  * Check if slug is available
- * 🛡️ Requires authentication.
+ * 🛡️ Requires authentication
  *
- * This endpoint is used to check if a slug is available among ALL contextual entities such as organizations.
+ * Checks whether a given slug is available across all entity types (e.g. *organizations*, *users*).
+ * Primarily used to prevent slug collisions before creating or updating an entity.
+ *
+ * **POST /entities/check-slug** ·· [checkSlug](http://localhost:4000/docs#tag/entities/post/entities/check-slug) ·· _entities_
+ *
+ * @param {checkSlugData} options
+ * @param {string=} options.body.slug - `string` (optional)
+ * @param {enum=} options.body.entityType - `enum` (optional)
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
 export const checkSlug = <ThrowOnError extends boolean = true>(options?: Options<CheckSlugData, ThrowOnError>) => {
   return (options?.client ?? _heyApiClient).post<CheckSlugResponses, CheckSlugErrors, ThrowOnError, 'data'>({
@@ -1078,9 +1432,15 @@ export const checkSlug = <ThrowOnError extends boolean = true>(options?: Options
 
 /**
  * Invite to system
- * 🛡️ Requires authentication (system access).
+ * 🛡️ Requires authentication (system access)
  *
- * Invite one or more users to system by email address.
+ * Invites one or more users to the system via email. Can be used to onboard system level users or admins.
+ *
+ * **POST /system/invite** ·· [systemInvite](http://localhost:4000/docs#tag/system/post/system/invite) ·· _system_
+ *
+ * @param {systemInviteData} options
+ * @param {any[]=} options.body.emails - `any[]` (optional)
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
 export const systemInvite = <ThrowOnError extends boolean = true>(options?: Options<SystemInviteData, ThrowOnError>) => {
   return (options?.client ?? _heyApiClient).post<SystemInviteResponses, SystemInviteErrors, ThrowOnError, 'data'>({
@@ -1102,7 +1462,16 @@ export const systemInvite = <ThrowOnError extends boolean = true>(options?: Opti
 };
 
 /**
- * 🛡️ Requires authentication.
+ * Get presigned URL
+ * 🛡️ Requires authentication
+ *
+ * Generates and returns a presigned URL for uploading files to an S3 bucket.
+ *
+ * **GET /system/presigned-url** ·· [getPresignedUrl](http://localhost:4000/docs#tag/system/get/system/presigned-url) ·· _system_
+ *
+ * @param {getPresignedUrlData} options
+ * @param {string} options.query.key - `string`
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
 export const getPresignedUrl = <ThrowOnError extends boolean = true>(options: Options<GetPresignedUrlData, ThrowOnError>) => {
   return (options.client ?? _heyApiClient).get<GetPresignedUrlResponses, GetPresignedUrlErrors, ThrowOnError, 'data'>({
@@ -1120,10 +1489,16 @@ export const getPresignedUrl = <ThrowOnError extends boolean = true>(options: Op
 };
 
 /**
- * Paddle webhook
- * 🌐 Public access.
+ * Paddle webhook (WIP)
+ * 🌐 Public access
+ * ⏳ token_paddle (5/h)
  *
- * Paddle webhook for subscription events
+ * Receives and handles Paddle subscription events such as purchases, renewals, and cancellations.
+ *
+ * **POST /system/paddle-webhook** ·· [paddleWebhook](http://localhost:4000/docs#tag/system/post/system/paddle-webhook) ·· _system_
+ *
+ * @param {paddleWebhookData} options
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
 export const paddleWebhook = <ThrowOnError extends boolean = true>(options?: Options<PaddleWebhookData, ThrowOnError>) => {
   return (options?.client ?? _heyApiClient).post<PaddleWebhookResponses, PaddleWebhookErrors, ThrowOnError, 'data'>({
@@ -1146,9 +1521,19 @@ export const paddleWebhook = <ThrowOnError extends boolean = true>(options?: Opt
 
 /**
  * Newsletter to members
- * 🛡️ Requires authentication (system access).
+ * 🛡️ Requires authentication (system access)
  *
- * Send a newsletter to requested organizations members.
+ * Sends a newsletter to members of one or more specified organizations.
+ *
+ * **POST /system/newsletter** ·· [sendNewsletter](http://localhost:4000/docs#tag/system/post/system/newsletter) ·· _system_
+ *
+ * @param {sendNewsletterData} options
+ * @param {string | boolean=} options.query.toself - `string | boolean` (optional)
+ * @param {any[]=} options.body.organizationIds - `any[]` (optional)
+ * @param {any[]=} options.body.roles - `any[]` (optional)
+ * @param {string=} options.body.subject - `string` (optional)
+ * @param {string=} options.body.content - `string` (optional)
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
 export const sendNewsletter = <ThrowOnError extends boolean = true>(options: Options<SendNewsletterData, ThrowOnError>) => {
   return (options.client ?? _heyApiClient).post<SendNewsletterResponses, SendNewsletterErrors, ThrowOnError, 'data'>({
@@ -1171,9 +1556,15 @@ export const sendNewsletter = <ThrowOnError extends boolean = true>(options: Opt
 
 /**
  * Delete requests
- * 🛡️ Requires authentication (system access).
+ * 🛡️ Requires authentication (system access)
  *
- * Delete requests by ids.
+ * Deletes one or more *requests* from the system by their IDs.
+ *
+ * **DELETE /requests** ·· [deleteRequests](http://localhost:4000/docs#tag/requests/delete/requests) ·· _requests_
+ *
+ * @param {deleteRequestsData} options
+ * @param {any[]=} options.body.ids - `any[]` (optional)
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
 export const deleteRequests = <ThrowOnError extends boolean = true>(options?: Options<DeleteRequestsData, ThrowOnError>) => {
   return (options?.client ?? _heyApiClient).delete<DeleteRequestsResponses, DeleteRequestsErrors, ThrowOnError, 'data'>({
@@ -1196,9 +1587,19 @@ export const deleteRequests = <ThrowOnError extends boolean = true>(options?: Op
 
 /**
  * Get list of requests
- * 🛡️ Requires authentication (system access).
+ * 🛡️ Requires authentication (system access)
  *
- * Get list of requests on system level for waitlist, submit contact form or to join newsletter.
+ * Returns a list of submitted *requests* across all types: contact form, newsletter, and waitlist.
+ *
+ * **GET /requests** ·· [getRequests](http://localhost:4000/docs#tag/requests/get/requests) ·· _requests_
+ *
+ * @param {getRequestsData} options
+ * @param {string=} options.query.q - `string` (optional)
+ * @param {enum=} options.query.sort - `enum` (optional)
+ * @param {enum=} options.query.order - `enum` (optional)
+ * @param {string} options.query.offset - `string`
+ * @param {string} options.query.limit - `string`
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
 export const getRequests = <ThrowOnError extends boolean = true>(options: Options<GetRequestsData, ThrowOnError>) => {
   return (options.client ?? _heyApiClient).get<GetRequestsResponses, GetRequestsErrors, ThrowOnError, 'data'>({
@@ -1217,9 +1618,18 @@ export const getRequests = <ThrowOnError extends boolean = true>(options: Option
 
 /**
  * Create request
- * 🌐 Public access.
+ * 🌐 Public access
+ * ⏳ Spam (10/h)
  *
- * Create a request on system level. Request supports waitlist, contact form and newsletter.
+ * Submits a new *request* to the system. Supported types include contact form, newsletter signup, and waitlist entry.
+ *
+ * **POST /requests** ·· [createRequest](http://localhost:4000/docs#tag/requests/post/requests) ·· _requests_
+ *
+ * @param {createRequestData} options
+ * @param {string=} options.body.email - `string` (optional)
+ * @param {enum=} options.body.type - `enum` (optional)
+ * @param {string | null=} options.body.message - `string | null` (optional)
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
 export const createRequest = <ThrowOnError extends boolean = true>(options?: Options<CreateRequestData, ThrowOnError>) => {
   return (options?.client ?? _heyApiClient).post<CreateRequestResponses, CreateRequestErrors, ThrowOnError, 'data'>({
@@ -1242,9 +1652,15 @@ export const createRequest = <ThrowOnError extends boolean = true>(options?: Opt
 
 /**
  * Get metrics
- * 🛡️ Requires authentication (system access).
+ * 🛡️ Requires authentication (system access)
  *
- * EXPERIMENTAL. Receive node observability metrics.
+ * EXPERIMENTAL. Returns raw system observability data (e.g. node level statistics or runtime insights).
+ * Primarily intended for internal monitoring and diagnostics.
+ *
+ * **GET /metrics** ·· [getMetrics](http://localhost:4000/docs#tag/metrics/get/metrics) ·· _metrics_
+ *
+ * @param {getMetricsData} options
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
 export const getMetrics = <ThrowOnError extends boolean = true>(options?: Options<GetMetricsData, ThrowOnError>) => {
   return (options?.client ?? _heyApiClient).get<GetMetricsResponses, GetMetricsErrors, ThrowOnError, 'data'>({
@@ -1263,9 +1679,15 @@ export const getMetrics = <ThrowOnError extends boolean = true>(options?: Option
 
 /**
  * Get public counts
- * 🌐 Public access.
+ * 🌐 Public access
  *
- * Get a count of all entities (ie. users, organizations). 1 minute in-memory cache.
+ * Returns basic count metrics for entity types such as `users` and `organizations`.
+ * This endpoint is public and uses a 1 minute in memory cache for performance.
+ *
+ * **GET /metrics/public** ·· [getPublicCounts](http://localhost:4000/docs#tag/metrics/get/metrics/public) ·· _metrics_
+ *
+ * @param {getPublicCountsData} options
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
 export const getPublicCounts = <ThrowOnError extends boolean = true>(options?: Options<GetPublicCountsData, ThrowOnError>) => {
   return (options?.client ?? _heyApiClient).get<GetPublicCountsResponses, GetPublicCountsErrors, ThrowOnError, 'data'>({
@@ -1284,9 +1706,17 @@ export const getPublicCounts = <ThrowOnError extends boolean = true>(options?: O
 
 /**
  * Shape proxy
- * 🛡️ Requires authentication (organization access).
+ * 🛡️ Requires authentication (org access)
  *
- * Get shape proxy for attachments to keep attachment data in sync.
+ * Proxies requests to ElectricSQL's shape endpoint for the `attachments` table.
+ * Used by clients to synchronize local data with server state via the shape log system.
+ * This endpoint ensures required query parameters are forwarded and response headers are adjusted for browser compatibility.
+ *
+ * **GET /{orgIdOrSlug}/attachments/shape-proxy** ·· [shapeProxy](http://localhost:4000/docs#tag/attachments/get/{orgIdOrSlug}/attachments/shape-proxy) ·· _attachments_
+ *
+ * @param {shapeProxyData} options
+ * @param {string | string} options.path.orgidorslug - `string | string`
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
 export const shapeProxy = <ThrowOnError extends boolean = true>(options: Options<ShapeProxyData, ThrowOnError>) => {
   return (options.client ?? _heyApiClient).get<ShapeProxyResponses, ShapeProxyErrors, ThrowOnError, 'data'>({
@@ -1305,9 +1735,16 @@ export const shapeProxy = <ThrowOnError extends boolean = true>(options: Options
 
 /**
  * Delete attachments
- * 🛡️ Requires authentication (organization access).
+ * 🛡️ Requires authentication (org access)
  *
- * Delete attachments by their ids
+ * Deletes one or more *attachment* records by ID. This does not delete the underlying file in storage.
+ *
+ * **DELETE /{orgIdOrSlug}/attachments** ·· [deleteAttachments](http://localhost:4000/docs#tag/attachments/delete/{orgIdOrSlug}/attachments) ·· _attachments_
+ *
+ * @param {deleteAttachmentsData} options
+ * @param {string | string} options.path.orgidorslug - `string | string`
+ * @param {any[]=} options.body.ids - `any[]` (optional)
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
 export const deleteAttachments = <ThrowOnError extends boolean = true>(options: Options<DeleteAttachmentsData, ThrowOnError>) => {
   return (options.client ?? _heyApiClient).delete<DeleteAttachmentsResponses, DeleteAttachmentsErrors, ThrowOnError, 'data'>({
@@ -1330,9 +1767,21 @@ export const deleteAttachments = <ThrowOnError extends boolean = true>(options: 
 
 /**
  * Get list of attachments
- * 🛡️ Requires authentication (organization access).
+ * 🛡️ Requires authentication (org access)
  *
- * Get attachments for an organization.
+ * Retrieves all *attachments* associated with a specific entity, such as an organization.
+ *
+ * **GET /{orgIdOrSlug}/attachments** ·· [getAttachments](http://localhost:4000/docs#tag/attachments/get/{orgIdOrSlug}/attachments) ·· _attachments_
+ *
+ * @param {getAttachmentsData} options
+ * @param {string | string} options.path.orgidorslug - `string | string`
+ * @param {string=} options.query.q - `string` (optional)
+ * @param {enum=} options.query.sort - `enum` (optional)
+ * @param {enum=} options.query.order - `enum` (optional)
+ * @param {string} options.query.offset - `string`
+ * @param {string} options.query.limit - `string`
+ * @param {string=} options.query.attachmentid - `string` (optional)
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
 export const getAttachments = <ThrowOnError extends boolean = true>(options: Options<GetAttachmentsData, ThrowOnError>) => {
   return (options.client ?? _heyApiClient).get<GetAttachmentsResponses, GetAttachmentsErrors, ThrowOnError, 'data'>({
@@ -1351,9 +1800,15 @@ export const getAttachments = <ThrowOnError extends boolean = true>(options: Opt
 
 /**
  * Create attachments
- * 🛡️ Requires authentication (organization access).
+ * 🛡️ Requires authentication (org access)
  *
- * Create one or more new attachments.
+ * Registers one or more new *attachments* after client side upload. Includes metadata like name, type, and linked entity.
+ *
+ * **POST /{orgIdOrSlug}/attachments** ·· [createAttachment](http://localhost:4000/docs#tag/attachments/post/{orgIdOrSlug}/attachments) ·· _attachments_
+ *
+ * @param {createAttachmentData} options
+ * @param {string | string} options.path.orgidorslug - `string | string`
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
 export const createAttachment = <ThrowOnError extends boolean = true>(options: Options<CreateAttachmentData, ThrowOnError>) => {
   return (options.client ?? _heyApiClient).post<CreateAttachmentResponses, CreateAttachmentErrors, ThrowOnError, 'data'>({
@@ -1376,9 +1831,16 @@ export const createAttachment = <ThrowOnError extends boolean = true>(options: O
 
 /**
  * Get attachment
- * 🛡️ Requires authentication (organization access).
+ * 🛡️ Requires authentication (org access)
  *
- * Get an attachment by id.
+ * Fetches metadata and access details for a single *attachment* by ID.
+ *
+ * **GET /{orgIdOrSlug}/attachments/{id}** ·· [getAttachment](http://localhost:4000/docs#tag/attachments/get/{orgIdOrSlug}/attachments/{id}) ·· _attachments_
+ *
+ * @param {getAttachmentData} options
+ * @param {string} options.path.id - `string`
+ * @param {string | string} options.path.orgidorslug - `string | string`
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
 export const getAttachment = <ThrowOnError extends boolean = true>(options: Options<GetAttachmentData, ThrowOnError>) => {
   return (options.client ?? _heyApiClient).get<GetAttachmentResponses, GetAttachmentErrors, ThrowOnError, 'data'>({
@@ -1397,9 +1859,18 @@ export const getAttachment = <ThrowOnError extends boolean = true>(options: Opti
 
 /**
  * Update attachment
- * 🛡️ Requires authentication (organization access).
+ * 🛡️ Requires authentication (org access)
  *
- * Update attachment by id.
+ * Updates metadata of an *attachment*, such as its name or associated entity.
+ *
+ * **PUT /{orgIdOrSlug}/attachments/{id}** ·· [updateAttachment](http://localhost:4000/docs#tag/attachments/put/{orgIdOrSlug}/attachments/{id}) ·· _attachments_
+ *
+ * @param {updateAttachmentData} options
+ * @param {string} options.path.id - `string`
+ * @param {string | string} options.path.orgidorslug - `string | string`
+ * @param {string=} options.body.name - `string` (optional)
+ * @param {string=} options.body.originalKey - `string` (optional)
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
 export const updateAttachment = <ThrowOnError extends boolean = true>(options: Options<UpdateAttachmentData, ThrowOnError>) => {
   return (options.client ?? _heyApiClient).put<UpdateAttachmentResponses, UpdateAttachmentErrors, ThrowOnError, 'data'>({
@@ -1422,9 +1893,15 @@ export const updateAttachment = <ThrowOnError extends boolean = true>(options: O
 
 /**
  * Get attachment cover
- * 🌐 Public access.
+ * 🌐 Public access
  *
- * Get attachment cover image by id.
+ * Returns a preview or cover image for a file, when available (e.g. first page of a PDF or image thumbnail).
+ *
+ * **GET /{orgIdOrSlug}/attachments/{id}/cover** ·· [getAttachmentCover](http://localhost:4000/docs#tag/attachments/get/{orgIdOrSlug}/attachments/{id}/cover) ·· _attachments_
+ *
+ * @param {getAttachmentCoverData} options
+ * @param {string} options.path.id - `string`
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
 export const getAttachmentCover = <ThrowOnError extends boolean = true>(options: Options<GetAttachmentCoverData, ThrowOnError>) => {
   return (options.client ?? _heyApiClient).get<GetAttachmentCoverResponses, GetAttachmentCoverErrors, ThrowOnError, 'data'>({
@@ -1443,9 +1920,15 @@ export const getAttachmentCover = <ThrowOnError extends boolean = true>(options:
 
 /**
  * Redirect to attachment
- * 🌐 Public access.
+ * 🌐 Public access
  *
- * Redirect to attachment by id.
+ * Redirects to the file's public or presigned URL, depending on storage visibility.
+ *
+ * **GET /{orgIdOrSlug}/attachments/{id}/link** ·· [redirectToAttachment](http://localhost:4000/docs#tag/attachments/get/{orgIdOrSlug}/attachments/{id}/link) ·· _attachments_
+ *
+ * @param {redirectToAttachmentData} options
+ * @param {string} options.path.id - `string`
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
 export const redirectToAttachment = <ThrowOnError extends boolean = true>(options: Options<RedirectToAttachmentData, ThrowOnError>) => {
   return (options.client ?? _heyApiClient).get<RedirectToAttachmentResponses, RedirectToAttachmentErrors, ThrowOnError, 'data'>({
@@ -1464,9 +1947,18 @@ export const redirectToAttachment = <ThrowOnError extends boolean = true>(option
 
 /**
  * Delete memberships
- * 🛡️ Requires authentication (organization access).
+ * 🛡️ Requires authentication (org access)
  *
  * Deletes one or more *memberships* by ID. This removes the membership but does not delete the associated user(s).
+ *
+ * **DELETE /{orgIdOrSlug}/memberships** ·· [deleteMemberships](http://localhost:4000/docs#tag/memberships/delete/{orgIdOrSlug}/memberships) ·· _memberships_
+ *
+ * @param {deleteMembershipsData} options
+ * @param {string | string} options.path.orgidorslug - `string | string`
+ * @param {string | string} options.query.idorslug - `string | string`
+ * @param {enum} options.query.entitytype - `enum`
+ * @param {any[]=} options.body.ids - `any[]` (optional)
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
 export const deleteMemberships = <ThrowOnError extends boolean = true>(options: Options<DeleteMembershipsData, ThrowOnError>) => {
   return (options.client ?? _heyApiClient).delete<DeleteMembershipsResponses, DeleteMembershipsErrors, ThrowOnError, 'data'>({
@@ -1489,9 +1981,19 @@ export const deleteMemberships = <ThrowOnError extends boolean = true>(options: 
 
 /**
  * Create memberships
- * 🛡️ Requires authentication (organization access).
+ * 🛡️ Requires authentication (org access)
  *
  * Creates one or more *memberships*, inviting users (existing or new) to a contextual entity such as an organization.
+ *
+ * **POST /{orgIdOrSlug}/memberships** ·· [membershipInvite](http://localhost:4000/docs#tag/memberships/post/{orgIdOrSlug}/memberships) ·· _memberships_
+ *
+ * @param {membershipInviteData} options
+ * @param {string | string} options.path.orgidorslug - `string | string`
+ * @param {string | string} options.query.idorslug - `string | string`
+ * @param {enum} options.query.entitytype - `enum`
+ * @param {any[]=} options.body.emails - `any[]` (optional)
+ * @param {enum=} options.body.role - `enum` (optional)
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
 export const membershipInvite = <ThrowOnError extends boolean = true>(options: Options<MembershipInviteData, ThrowOnError>) => {
   return (options.client ?? _heyApiClient).post<MembershipInviteResponses, MembershipInviteErrors, ThrowOnError, 'data'>({
@@ -1514,9 +2016,20 @@ export const membershipInvite = <ThrowOnError extends boolean = true>(options: O
 
 /**
  * Update membership
- * 🛡️ Requires authentication (organization access).
+ * 🛡️ Requires authentication (org access)
  *
  * Updates the *membership* metadata, such as role, `muted`, or `archived` status.
+ *
+ * **PUT /{orgIdOrSlug}/memberships/{id}** ·· [updateMembership](http://localhost:4000/docs#tag/memberships/put/{orgIdOrSlug}/memberships/{id}) ·· _memberships_
+ *
+ * @param {updateMembershipData} options
+ * @param {string} options.path.id - `string`
+ * @param {string | string} options.path.orgidorslug - `string | string`
+ * @param {enum=} options.body.role - `enum` (optional)
+ * @param {boolean=} options.body.muted - `boolean` (optional)
+ * @param {boolean=} options.body.archived - `boolean` (optional)
+ * @param {number=} options.body.order - `number` (optional)
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
 export const updateMembership = <ThrowOnError extends boolean = true>(options: Options<UpdateMembershipData, ThrowOnError>) => {
   return (options.client ?? _heyApiClient).put<UpdateMembershipResponses, UpdateMembershipErrors, ThrowOnError, 'data'>({
@@ -1539,9 +2052,23 @@ export const updateMembership = <ThrowOnError extends boolean = true>(options: O
 
 /**
  * Get list of members
- * 🛡️ Requires authentication (organization access).
+ * 🛡️ Requires authentication (org access)
  *
  * Retrieves members (users) of a contextual entity by ID or slug, including their associated *membership* data.
+ *
+ * **GET /{orgIdOrSlug}/memberships/members** ·· [getMembers](http://localhost:4000/docs#tag/memberships/get/{orgIdOrSlug}/memberships/members) ·· _memberships_
+ *
+ * @param {getMembersData} options
+ * @param {string | string=} options.path.orgidorslug - `string | string` (optional)
+ * @param {string=} options.query.q - `string` (optional)
+ * @param {enum=} options.query.sort - `enum` (optional)
+ * @param {enum=} options.query.order - `enum` (optional)
+ * @param {string} options.query.offset - `string`
+ * @param {string} options.query.limit - `string`
+ * @param {string | string} options.query.idorslug - `string | string`
+ * @param {enum} options.query.entitytype - `enum`
+ * @param {enum=} options.query.role - `enum` (optional)
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
 export const getMembers = <ThrowOnError extends boolean = true>(options: Options<GetMembersData, ThrowOnError>) => {
   return (options.client ?? _heyApiClient).get<GetMembersResponses, GetMembersErrors, ThrowOnError, 'data'>({
@@ -1560,9 +2087,22 @@ export const getMembers = <ThrowOnError extends boolean = true>(options: Options
 
 /**
  * Get list of invitations
- * 🛡️ Requires authentication (organization access).
+ * 🛡️ Requires authentication (org access)
  *
  * Returns pending *membership* invitations for a contextual entity, identified by ID or slug.
+ *
+ * **GET /{orgIdOrSlug}/memberships/pending** ·· [getPendingInvitations](http://localhost:4000/docs#tag/memberships/get/{orgIdOrSlug}/memberships/pending) ·· _memberships_
+ *
+ * @param {getPendingInvitationsData} options
+ * @param {string | string} options.path.orgidorslug - `string | string`
+ * @param {string=} options.query.q - `string` (optional)
+ * @param {enum=} options.query.sort - `enum` (optional)
+ * @param {enum=} options.query.order - `enum` (optional)
+ * @param {string} options.query.offset - `string`
+ * @param {string} options.query.limit - `string`
+ * @param {string | string} options.query.idorslug - `string | string`
+ * @param {enum} options.query.entitytype - `enum`
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
 export const getPendingInvitations = <ThrowOnError extends boolean = true>(options: Options<GetPendingInvitationsData, ThrowOnError>) => {
   return (options.client ?? _heyApiClient).get<GetPendingInvitationsResponses, GetPendingInvitationsErrors, ThrowOnError, 'data'>({

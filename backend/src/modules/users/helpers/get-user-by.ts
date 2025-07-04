@@ -1,13 +1,12 @@
-import { and, eq, type SQL } from 'drizzle-orm';
+import { and, eq, getTableColumns, type SQL } from 'drizzle-orm';
 import { db } from '#/db/db';
 import { emailsTable } from '#/db/schema/emails';
 import { type UnsafeUserModel, type UserModel, usersTable } from '#/db/schema/users';
 import { userSelect } from '#/modules/users/helpers/select';
 
-type SafeQuery = typeof userSelect;
-type UnsafeQuery = typeof usersTable;
+type SafeField = keyof typeof userSelect;
 
-type SafeField = Extract<keyof SafeQuery, keyof SafeQuery['_']['columns']>;
+type UnsafeQuery = typeof usersTable;
 type UnsafeField = Extract<keyof UnsafeQuery, keyof UnsafeQuery['_']['columns']>;
 
 type SelectType = 'unsafe' | 'safe';
@@ -31,19 +30,19 @@ export async function getUserBy(
   value: string,
   type: SelectType = 'safe',
 ): Promise<UserModel | UnsafeUserModel | null> {
-  const select = type === 'unsafe' ? usersTable : userSelect;
+  const select = type === 'unsafe' ? getTableColumns(usersTable) : userSelect;
 
   // Check if the field is 'email' to handle it differently
   const conditions = field === 'email' ? eq(emailsTable.email, value) : eq(usersTable[field], value);
 
   const [result] = await db
-    .select({ user: select })
+    .select({ ...select })
     .from(usersTable)
     .leftJoin(emailsTable, eq(usersTable.id, emailsTable.userId))
     .where(conditions)
     .limit(1);
 
-  return result?.user ?? null;
+  return result ?? null;
 }
 
 // Overload signatures
@@ -60,15 +59,13 @@ export function getUsersByConditions(whereArray: (SQL<unknown> | undefined)[], t
  * @returns A promise that resolves to an array of UserModel or UnsafeUserModel based on the `type`.
  */
 export async function getUsersByConditions(whereArray: (SQL<unknown> | undefined)[], type?: SelectType): Promise<UserModel[] | UnsafeUserModel[]> {
-  const select = type === 'unsafe' ? usersTable : userSelect;
+  const select = type === 'unsafe' ? getTableColumns(usersTable) : userSelect;
 
   // Always join emailsTable
-  const result = await db
-    .select({ user: select })
+  return await db
+    .select({ ...select })
     .from(usersTable)
     .leftJoin(emailsTable, eq(usersTable.id, emailsTable.userId))
     .where(and(...whereArray.filter(Boolean))) // filter out undefined conditions
     .execute();
-
-  return result.map(({ user }) => user);
 }

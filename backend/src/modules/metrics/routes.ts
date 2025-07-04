@@ -11,7 +11,8 @@ const metricRouteConfig = {
     guard: [isAuthenticated, hasSystemAccess],
     tags: ['metrics'],
     summary: 'Get metrics',
-    description: 'EXPERIMENTAL. Receive node observability metrics.',
+    description: `EXPERIMENTAL. Returns raw system observability data (e.g. node level statistics or runtime insights).
+      Primarily intended for internal monitoring and diagnostics.`,
     responses: {
       200: {
         description: 'Metrics',
@@ -27,7 +28,8 @@ const metricRouteConfig = {
     guard: isPublicAccess,
     tags: ['metrics'],
     summary: 'Get public counts',
-    description: 'Get a count of all entities (ie. users, organizations). 1 minute in-memory cache.',
+    description: `Returns basic count metrics for entity types such as \`users\` and \`organizations\`.
+      This endpoint is public and uses a 1 minute in memory cache for performance.`,
     responses: {
       200: {
         description: 'Public counts',

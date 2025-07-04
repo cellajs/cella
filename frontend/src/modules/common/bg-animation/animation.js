@@ -207,7 +207,7 @@ let webGLRenderer = null;
 
 // Configuration for circles on background
 // Maximum number of circles allowed
-const maxAmountOfCircles = 2000;
+const maxAmountOfCircles = 200;
 
 // Minimum radius for circles
 const minCircleRadius = 0.0625;

@@ -63,7 +63,7 @@ const usersRouteHandlers = app
     if (role) filters.push(eq(usersTable.role, role));
 
     const usersQuery = db
-      .select({ users: userSelect })
+      .select({ ...userSelect })
       .from(usersTable)
       .where(filters.length > 0 ? and(...filters) : undefined)
       .orderBy(orderColumn)
@@ -71,7 +71,7 @@ const usersRouteHandlers = app
 
     const [{ total }] = await db.select({ total: count() }).from(usersQuery.as('users'));
 
-    const items = (await usersQuery.limit(Number(limit)).offset(Number(offset))).map(({ users }) => users);
+    const items = await usersQuery.limit(Number(limit)).offset(Number(offset));
 
     return ctx.json({ items, total }, 200);
   })

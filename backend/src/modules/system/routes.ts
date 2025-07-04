@@ -14,7 +14,7 @@ const systemRoutes = {
     guard: [isAuthenticated, hasSystemAccess],
     tags: ['system'],
     summary: 'Invite to system',
-    description: 'Invite one or more users to system by email address.',
+    description: 'Invites one or more users to the system via email. Can be used to onboard system level users or admins.',
     request: {
       body: {
         content: {
@@ -43,7 +43,7 @@ const systemRoutes = {
     guard: [isAuthenticated, hasSystemAccess],
     tags: ['system'],
     summary: 'Newsletter to members',
-    description: 'Send a newsletter to requested organizations members.',
+    description: 'Sends a newsletter to members of one or more specified organizations.',
     request: {
       query: z.object({ toSelf: booleanQuerySchema }),
       body: {
@@ -73,8 +73,8 @@ const systemRoutes = {
     path: '/presigned-url',
     guard: [isAuthenticated],
     tags: ['system'],
-    summary: '',
-    description: '',
+    summary: 'Get presigned URL',
+    description: 'Generates and returns a presigned URL for uploading files to an S3 bucket.',
     request: { query: z.object({ key: z.string() }) },
     responses: {
       200: {
@@ -91,8 +91,8 @@ const systemRoutes = {
     guard: isPublicAccess,
     middleware: [tokenLimiter('paddle')],
     tags: ['system'],
-    summary: 'Paddle webhook',
-    description: 'Paddle webhook for subscription events',
+    summary: 'Paddle webhook (WIP)',
+    description: 'Receives and handles Paddle subscription events such as purchases, renewals, and cancellations.',
     request: {
       body: {
         content: {

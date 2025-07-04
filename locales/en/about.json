@@ -76,9 +76,9 @@
   "title_6": "Pricing (conceptual)",
   "title_7": "FAQs",
   "why": "Read why we built Cella",
-  "why.text_1": "A narrow stack makes it easier for the OS community to collaborate on production grade requirements.",
+  "why.text_1": "A narrow stack makes it easier for an OS community to collaborate on production grade requirements.",
   "why.text_2": "Generic OpenAPI for authentication, organizations and users. A configurable authorization manager is included.",
-  "why.text_3": "Rely on a proven CRUD API which can - where its required - be upgraded with sync streams and offline access.",
+  "why.text_3": "Rely on proven CRUD APIs which can - where its required - be upgraded with sync streams and offline access.",
   "why.title_1": "Single stack",
   "why.title_2": "Prebuilt endpoints",
   "why.title_3": "Hybrid approach"

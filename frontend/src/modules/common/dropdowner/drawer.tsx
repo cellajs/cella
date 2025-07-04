@@ -22,7 +22,15 @@ export default function DropdownDrawer({ dropdown }: { dropdown: InternalDropdow
 
   return (
     <Drawer key={id} open={true} onOpenChange={onOpenChange} onClose={closeDialog} noBodyStyles>
-      <DrawerContent id={String(id)} onEscapeKeyDown={closeDialog} className="z-301 max-h-[70vh]" isDropdown>
+      <DrawerContent
+        id={String(id)}
+        onEscapeKeyDown={closeDialog}
+        className="z-301 max-h-[70vh]"
+        isDropdown
+        // TODO(REFACTOR) review dropdowner usage inside dialog including draver
+        // because on dropdowner close in dialog usage of useDropdowner.getState().dropdown return null due timing
+        onClick={({ stopPropagation }) => stopPropagation()}
+      >
         <DrawerHeader className="p-0">
           <VisuallyHidden>
             <DrawerTitle>Choose</DrawerTitle>

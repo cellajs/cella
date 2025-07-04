@@ -13,7 +13,8 @@ const entityRoutes = {
     guard: isAuthenticated,
     tags: ['entities'],
     summary: 'Check if slug is available',
-    description: 'This endpoint is used to check if a slug is available among ALL contextual entities such as organizations.',
+    description: `Checks whether a given slug is available across all entity types (e.g. *organizations*, *users*).
+      Primarily used to prevent slug collisions before creating or updating an entity.`,
     request: {
       body: {
         content: {
@@ -45,8 +46,10 @@ const entityRoutes = {
     guard: isAuthenticated,
     tags: ['entities'],
     summary: 'Get list of page entities',
-    description:
-      'Get page entities such as users and organizations. It returns a paginated list of entities to which the user has access. The schema is limited to common fields.',
+    description: `Returns a paginated list of *entities* (e.g. *users*, *organizations*) the current user has access to.
+      Can optionally include the current user's enrollment information for each entity (when applicable).
+      You can also provide a specific user ID to retrieve the entities that *user* is enrolled in, useful for profile views or access audits.
+      The response includes only fields shared across all entity types, such as \`id\`, \`slug\`, and \`name\`.`,
     request: { query: pageEntitiesQuerySchema },
     responses: {
       200: {
@@ -63,8 +66,8 @@ const entityRoutes = {
     guard: isAuthenticated,
     tags: ['entities'],
     summary: 'Get all of context user entities',
-    description:
-      'Get context entities such organizations of specified user. It returns list of entities based of requested tpye to which the user are part of. With user membership & other members of entity.',
+    description: `Returns all *contextual entities* (e.g. *organizations*) the specified user is a member of.  
+      Each result includes the user's membership data and a list of other users with administrator roles within the same entity.`,
     request: { query: contextEntitiesQuerySchema },
     responses: {
       200: {

@@ -3377,9 +3377,9 @@ export type MembershipInviteError = MembershipInviteErrors[keyof MembershipInvit
 
 export type MembershipInviteResponses = {
   /**
-   * Invitation was sent
+   * Number of sended invitations
    */
-  200: boolean;
+  200: number;
 };
 
 export type MembershipInviteResponse = MembershipInviteResponses[keyof MembershipInviteResponses];

@@ -1608,9 +1608,9 @@ export const zMembershipInviteData = z.object({
 });
 
 /**
- * Invitation was sent
+ * Number of sended invitations
  */
-export const zMembershipInviteResponse = z.boolean();
+export const zMembershipInviteResponse = z.number();
 
 export const zUpdateMembershipData = z.object({
   body: z

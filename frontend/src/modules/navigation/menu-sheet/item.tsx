@@ -61,11 +61,11 @@ export const MenuSheetItem = ({ item, icon: Icon, className, searchResults }: Me
       />
       <div className="truncate grow flex flex-col justify-center pr-2 text-left group-data-[subitem=true]/menuItem:pl-0">
         <div
-          className={`truncate leading-5 transition-spacing text-md group-hover/menuItem:delay-300 pt-1.5 duration-100 ease-in-out ${!searchResults && 'pt-3.5 group-data-[subitem=true]/menuItem:pt-3'} sm:group-hover/menuItem:pt-1.5! group-active/menuItem:translate-y-[.05rem] group-data-[subitem=true]/menuItem:text-sm group-data-[subitem=true]/menuItem:font-light  group-data-[subitem=true]/menuItem:leading-4`}
+          className={`truncate leading-5 transition-spacing text-md group-hover/menuItem:delay-300 pt-1.5 duration-100 ease-in-out ${!searchResults && 'pt-3.5 group-data-[subitem=true]/menuItem:pt-2'} sm:group-hover/menuItem:pt-[0.06rem]! group-active/menuItem:translate-y-[.05rem] group-data-[subitem=true]/menuItem:text-sm group-data-[subitem=true]/menuItem:font-light`}
         >
           {item.name}
         </div>
-        <div className="text-muted-foreground text-xs sm:group-data-[subitem=true]/menuItem:leading-3">
+        <div className="text-muted-foreground text-xs">
           {searchResults && (
             <span className="absolute transition-opacity duration-100 delay-100 ease-in-out sm:group-hover/menuItem:opacity-0">
               {t(item.entityType, { ns: ['app', 'common'] })}

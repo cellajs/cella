@@ -27,7 +27,7 @@ const authRoutes = {
     guard: [isAuthenticated, hasSystemAccess],
     tags: ['auth'],
     summary: 'Start impersonating',
-    description: 'System admin impersonates a selected user by id by receiving a special impersonation session.',
+    description: 'Allows a system admin to impersonate a specific user by ID, returning a temporary impersonation session.',
     request: { query: z.object({ targetUserId: z.string() }) },
     responses: {
       200: {
@@ -51,7 +51,7 @@ const authRoutes = {
     guard: isPublicAccess,
     tags: ['auth'],
     summary: 'Stop impersonating',
-    description: 'Stop impersonating by clearing impersonation session.',
+    description: 'Ends impersonation by clearing the current impersonation session and restoring the admin context.',
     responses: {
       200: {
         description: 'Stopped impersonating',
@@ -72,7 +72,7 @@ const authRoutes = {
     middleware: [emailEnumLimiter],
     tags: ['auth'],
     summary: 'Check if email exists',
-    description: 'Check if user with email address exists.',
+    description: 'Checks if a user with the specified email address exists in the system.',
     security: [],
     request: {
       body: {
@@ -103,7 +103,7 @@ const authRoutes = {
     middleware: [spamLimiter, emailEnumLimiter],
     tags: ['auth'],
     summary: 'Sign up with password',
-    description: 'Sign up with email and password. User will receive a verification email.',
+    description: 'Registers a new user using an email and password. Sends a verification email upon successful sign up.',
     security: [],
     request: {
       body: {
@@ -141,7 +141,7 @@ const authRoutes = {
     middleware: [spamLimiter, emailEnumLimiter, hasValidToken('invitation')],
     tags: ['auth'],
     summary: 'Sign up to accept invite',
-    description: 'Sign up with email and password to accept system or organization invitation.',
+    description: 'Registers a user using an email and password in response to a system or organization invitation.',
     security: [],
     request: {
       params: tokenParamSchema,
@@ -180,7 +180,7 @@ const authRoutes = {
     middleware: [spamLimiter],
     tags: ['auth'],
     summary: 'Resend verification email',
-    description: 'Resend verification email to user based on token id.',
+    description: 'Resends the email verification message to a user using the provided token ID.',
     security: [],
     request: {
       body: {
@@ -211,7 +211,7 @@ const authRoutes = {
     middleware: [tokenLimiter('email_verification'), hasValidToken('email_verification')],
     tags: ['auth'],
     summary: 'Verify email by token',
-    description: 'Verify email address by token from the verification email. Receive a user session when successful.',
+    description: "Verifies a user's email using a token from their verification email. Grants a session upon success.",
     security: [],
     request: {
       params: tokenParamSchema,
@@ -236,7 +236,7 @@ const authRoutes = {
     middleware: [spamLimiter, emailEnumLimiter],
     tags: ['auth'],
     summary: 'Request new password',
-    description: 'An email will be sent with a link to create a password.',
+    description: "Sends an email with a link to reset the user's password.",
     security: [],
     request: {
       body: {
@@ -267,7 +267,7 @@ const authRoutes = {
     middleware: [tokenLimiter('password_reset'), hasValidToken('password_reset')],
     tags: ['auth'],
     summary: 'Create password by token',
-    description: 'Submit new password and directly receive a user session.',
+    description: 'Sets a new password using a token and grants a session immediately upon success.',
     security: [],
     request: {
       params: z.object({ token: z.string() }),
@@ -299,7 +299,7 @@ const authRoutes = {
     middleware: [tokenLimiter('passkey')],
     tags: ['auth'],
     summary: 'Verify passkey',
-    description: 'Verify passkey by checking the validity of signature with public key.',
+    description: 'Validates the signed challenge and completes passkey based authentication.',
     request: {
       body: {
         content: {
@@ -332,7 +332,7 @@ const authRoutes = {
     middleware: [passwordLimiter],
     tags: ['auth'],
     summary: 'Sign in with password',
-    description: 'Sign in with email and password.',
+    description: 'Authenticates an existing user using their email and password.',
     security: [],
     request: {
       body: {
@@ -361,8 +361,7 @@ const authRoutes = {
     guard: isPublicAccess,
     tags: ['auth'],
     summary: 'Token validation check',
-    description:
-      'This endpoint is used to check if a token is still valid. It is used to provide direct user feedback on tokens such as reset password and invitation.',
+    description: 'Checks if a token (e.g. for password reset, email verification, or invite) is still valid.',
     request: {
       params: z.object({ id: idSchema }),
       query: z.object({ type: z.enum(config.tokenTypes) }),
@@ -387,7 +386,7 @@ const authRoutes = {
     middleware: [tokenLimiter('invitation'), hasValidToken('invitation')],
     tags: ['auth'],
     summary: 'Accept invitation',
-    description: 'Accept invitation token',
+    description: 'Accepts an invitation token and activates the associated membership or system access.',
     request: {
       params: tokenParamSchema,
     },
@@ -414,7 +413,7 @@ const authRoutes = {
     tags: ['auth'],
     summary: 'Authenticate with GitHub',
     description:
-      'Authenticate with Github to sign in or sign up. A `connect` (userId),`redirect` or `token` query parameter can be used to connect account, redirect to a specific page or to accept invitation.',
+      'Starts OAuth authentication with GitHub. Supports account connection (`connect`), redirect (`redirect`), or invite token (`token`).',
     security: [],
     request: { query: oauthQuerySchema },
     responses: {
@@ -433,7 +432,7 @@ const authRoutes = {
     middleware: [tokenLimiter('github')],
     tags: ['auth'],
     summary: 'Callback for GitHub',
-    description: 'Callback to receive authorization and basic user data from Github.',
+    description: 'Handles GitHub OAuth callback, retrieves user identity, and establishes a session or links account.',
     security: [],
     request: {
       query: oauthCallbackQuerySchema.extend({
@@ -457,7 +456,7 @@ const authRoutes = {
     guard: isPublicAccess,
     tags: ['auth'],
     summary: 'Get passkey challenge',
-    description: 'Handing over the challenge: this results in a key pair, private and public key being created on the device.',
+    description: 'Initiates the passkey registration or authentication flow by generating a device bound challenge.',
     security: [],
     responses: {
       200: {
@@ -479,7 +478,7 @@ const authRoutes = {
     tags: ['auth'],
     summary: 'Authenticate with Google',
     description:
-      'Authenticate with Google to sign in or sign up. A `connect` (userId),`redirect` or `token` query parameter can be used to connect account, redirect to a specific page or to accept invitation.',
+      'Starts OAuth authentication with Google. Supports account connection (`connect`), redirect (`redirect`), or invite token (`token`).',
     security: [],
     request: { query: oauthQuerySchema },
     responses: {
@@ -498,7 +497,7 @@ const authRoutes = {
     middleware: [tokenLimiter('google')],
     tags: ['auth'],
     summary: 'Callback for Google',
-    description: 'Callback to receive authorization and basic user data from Google.',
+    description: 'Handles Google OAuth callback, retrieves user identity, and establishes a session or links account.',
     security: [],
     request: { query: oauthCallbackQuerySchema },
     responses: {
@@ -517,7 +516,7 @@ const authRoutes = {
     tags: ['auth'],
     summary: 'Authenticate with Microsoft',
     description:
-      'Authenticate with Microsoft to sign in or sign up.  A `connect` (userId),`redirect` or `token` query parameter can be used to connect account, redirect to a specific page or to accept invitation.',
+      'Starts OAuth authentication with Microsoft. Supports account connection (`connect`), redirect (`redirect`), or invite token (`token`).',
     security: [],
     request: { query: oauthQuerySchema },
     responses: {
@@ -536,7 +535,7 @@ const authRoutes = {
     middleware: [tokenLimiter('microsoft')],
     tags: ['auth'],
     summary: 'Callback for Microsoft',
-    description: 'Callback to receive authorization and basic user data from Microsoft.',
+    description: 'Handles Microsoft OAuth callback, retrieves user identity, and establishes a session or links account.',
     security: [],
     request: { query: oauthCallbackQuerySchema },
     responses: {
@@ -554,7 +553,7 @@ const authRoutes = {
     guard: isPublicAccess,
     tags: ['auth'],
     summary: 'Sign out',
-    description: 'Sign out yourself and clear session.',
+    description: 'Signs out the *current user* and clears the active session.',
     responses: {
       200: {
         description: 'User signed out',

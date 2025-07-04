@@ -18,6 +18,13 @@ export interface PendingInvitationsTableProps {
   entity: EntityPage;
 }
 
+/**
+ * Renders a button that opens a sheet with pending membership invitations.
+ *
+ * To make this component work properly in your app, make sure that:
+ *  - Passed entity has `invitesCount` field, like it's done in organization.
+ *  - Query key factory is set up for this entity type, similar to `organizationsKeys.single`.
+ */
 export const MembershipInvitationsTable = ({ entity }: PendingInvitationsTableProps) => {
   const { search, setSearch } = useSearchParams<PendingInvitationsSearch>({ saveDataInSearch: false });
   const dataTableRef = useRef<BaseTableMethods | null>(null);

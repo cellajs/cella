@@ -79,7 +79,7 @@ const Combobox = ({
         <Button
           ref={ref}
           variant="input"
-          role="combobox"
+          aria-haspopup="listbox"
           aria-expanded={open}
           className="w-full justify-between truncate font-normal"
           disabled={disabled}

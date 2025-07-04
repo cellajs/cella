@@ -50,15 +50,18 @@ export const CellaCustomBlockTypeSelect = () => {
 
   const fullItems = useMemo(
     () =>
-      filteredItems.map((item) => {
-        const { icon: Icon, isSelected, name } = item;
-        return {
-          title: name,
-          icon: <Icon size={16} />,
-          onClick: () => handleItemClick(item),
-          isSelected: isSelected(block),
-        };
-      }),
+      // TODO(CHORE)remove filtering when fix toggle button type
+      filteredItems
+        .filter((el) => !el.name.toLowerCase().includes('toggle'))
+        .map((item) => {
+          const { icon: Icon, isSelected, name } = item;
+          return {
+            title: name,
+            icon: <Icon size={16} />,
+            onClick: () => handleItemClick(item),
+            isSelected: isSelected(block),
+          };
+        }),
     [block, filteredItems, editor, selectedBlocks],
   );
 
@@ -76,7 +79,7 @@ export const CellaCustomBlockTypeSelect = () => {
           <ChevronDown size={16} />
         </Components.FormattingToolbar.Button>
       </Components.Generic.Menu.Trigger>
-      <Components.Generic.Menu.Dropdown data-radix-popper-content-wrapper className="bn-shadcn bn-menu-dropdown">
+      <Components.Generic.Menu.Dropdown className="p-2">
         {fullItems.map(({ title, icon, isSelected, onClick }) => (
           <Components.Generic.Menu.Item className="bn-menu-item" key={title} onClick={onClick} icon={icon} checked={isSelected}>
             {title}

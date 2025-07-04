@@ -5,17 +5,14 @@ import { useMemo } from 'react';
 import type { UseFormProps } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod/v4';
-import { membershipInvite } from '~/api.gen';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
-import { useMutation } from '~/hooks/use-mutations';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import SelectRoleRadio from '~/modules/common/form-fields/select-role-radio';
-import { toaster } from '~/modules/common/toaster';
 import type { EntityPage } from '~/modules/entities/types';
+import { useInviteMemberMutation } from '~/modules/memberships/query-mutations';
 import { Badge } from '~/modules/ui/badge';
 import { Button, SubmitButton } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
-import { handleNewInvites } from '~/modules/users/invite-email-form';
 import { UserCombobox } from '~/modules/users/user-combobox';
 
 interface Props {
@@ -51,24 +48,18 @@ const InviteSearchForm = ({ entity, dialog: isDialog }: Props) => {
   const formContainerId = 'invite-users';
   const form = useFormWithDraft<FormValues>(`invite-users${entity ? `-${entity?.id}` : ''}`, { formOptions, formContainerId });
 
-  const { mutate: invite, isPending } = useMutation({
-    mutationFn: (body: FormValues) => {
-      return membershipInvite({
-        body,
-        query: { idOrSlug: entity.id, entityType: entity.entityType || 'organization' },
-        path: { orgIdOrSlug: entity.organizationId || entity.id },
-      });
-    },
-    onSuccess: (_, { emails }) => {
-      form.reset(undefined, { keepDirtyValues: true });
-      if (isDialog) useDialoger.getState().remove();
-      toaster(t('common:success.user_invited'), 'success');
-      if (entity) handleNewInvites(emails, entity);
-    },
-  });
+  const { mutate: invite, isPending } = useInviteMemberMutation();
 
   const onSubmit = (values: FormValues) => {
-    invite(values);
+    invite(
+      { ...values, entity },
+      {
+        onSuccess: () => {
+          form.reset(undefined, { keepDirtyValues: true });
+          if (isDialog) useDialoger.getState().remove();
+        },
+      },
+    );
   };
 
   if (form.loading) return null;
