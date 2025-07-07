@@ -12,9 +12,9 @@ export const GridSkeleton = () => {
     <div
       className={`${hasStarted ? 'opacity-100' : 'opacity-0'} mb-12 grid gap-6 grid-cols-1 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-[repeat(auto-fit,minmax(330px,1fr))]`}
     >
-      {items.map((item) => (
-        // biome-ignore lint/correctness/useJsxKeyInIterable: skeleton don't need keys in this design
-        <GridSkeletonItem membersCount={item.membersCount} />
+      {items.map((item, index) => (
+        // biome-ignore lint/suspicious/noArrayIndexKey: static keys are fine here as this is a skeleton
+        <GridSkeletonItem key={index} membersCount={item.membersCount} />
       ))}
     </div>
   );

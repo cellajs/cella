@@ -15,7 +15,7 @@ const requestRoutes = {
     middleware: [isNoBot, spamLimiter],
     tags: ['requests'],
     summary: 'Create request',
-    description: 'Create a request on system level. Request supports waitlist, contact form and newsletter.',
+    description: 'Submits a new *request* to the system. Supported types include contact form, newsletter signup, and waitlist entry.',
     request: {
       body: {
         content: {
@@ -40,7 +40,7 @@ const requestRoutes = {
     guard: [isAuthenticated, hasSystemAccess],
     tags: ['requests'],
     summary: 'Get list of requests',
-    description: 'Get list of requests on system level for waitlist, submit contact form or to join newsletter.',
+    description: 'Returns a list of submitted *requests* across all types: contact form, newsletter, and waitlist.',
     request: {
       query: requestListQuerySchema,
     },
@@ -63,7 +63,7 @@ const requestRoutes = {
     guard: [isAuthenticated, hasSystemAccess],
     tags: ['requests'],
     summary: 'Delete requests',
-    description: 'Delete requests by ids.',
+    description: 'Deletes one or more *requests* from the system by their IDs.',
     request: {
       body: {
         content: { 'application/json': { schema: idsBodySchema() } },

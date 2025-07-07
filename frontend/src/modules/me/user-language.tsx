@@ -40,7 +40,7 @@ const UserLanguage = ({ align = 'end', triggerClassName = '', contentClassName =
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" size="icon" className={triggerClassName} aria-label="Change language">
-          <span className="font-light">{language.toUpperCase()}</span>
+          <span className="font-[400]">{language.toUpperCase()}</span>
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align={align} className={cn('w-48 p-1', contentClassName)}>

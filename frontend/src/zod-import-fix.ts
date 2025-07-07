@@ -24,14 +24,12 @@ export function replaceZodImport(): Plugin {
 
       server.watcher.on('change', (filePath) => {
         if (path.resolve(filePath) === checkFilePath) {
-          console.log(`[patch] Detected change in: ${filePath}`);
           patchZodImports(path.dirname(checkFilePath));
         }
       });
 
       server.watcher.on('add', (filePath) => {
         if (path.resolve(filePath) === checkFilePath) {
-          console.log(`[patch] New file added: ${filePath}`);
           patchZodImports(path.dirname(checkFilePath));
         }
       });
@@ -54,7 +52,7 @@ function patchZodImports(targetDir: string) {
 
     if (updated !== content) {
       fs.writeFileSync(file, updated, 'utf-8');
-      console.log(`[patched] ${file}`);
+      console.info(`🩹 Patched ${file}`);
     }
   }
 }

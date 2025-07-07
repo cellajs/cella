@@ -1,13 +1,19 @@
+import { getTableColumns } from 'drizzle-orm';
 import { usersTable } from '#/db/schema/users';
-import { extractKeys } from '#/utils/schema/extract-keys';
-import { omitKeys } from '#/utils/schema/omit-keys';
 
 /**
  * Safe user select. Sensitive fields are omitted.
  */
-export const userSelect = omitKeys(usersTable, ['hashedPassword', 'unsubscribeToken']);
+export const userSelect = (() => {
+  const { hashedPassword, unsubscribeToken, ...safeUserSelect } = getTableColumns(usersTable);
+  return safeUserSelect;
+})();
 
+// TODO can we infer the props from the schema? https://chatgpt.com/s/t_6863d9e60880819183725fd04a76631c
 /**
  * User select for summary only.
  */
-export const userSummarySelect = extractKeys(usersTable, ['id', 'name', 'email', 'entityType', 'thumbnailUrl', 'bannerUrl', 'slug']);
+export const userSummarySelect = (() => {
+  const { id, name, email, entityType, thumbnailUrl, bannerUrl, slug } = getTableColumns(usersTable);
+  return { id, name, email, entityType, thumbnailUrl, bannerUrl, slug };
+})();
