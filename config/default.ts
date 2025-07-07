@@ -16,7 +16,7 @@ export const config = {
   statusUrl: 'https://status.cellajs.com',
   productionUrl: 'https://cellajs.com',
 
-  description: 'Cella is a comprehensive TypeScript template to build web apps with sync engine. MIT licensed.',
+  description: 'Cella is a TypeScript template to build web apps with sync engine. MIT licensed.',
   keywords:
     'starter kit, fullstack, monorepo, typescript, hono, honojs, drizzle, shadcn, react, postgres, pwa, offline, instant updates, realtime data, sync engine',
 
@@ -273,8 +273,8 @@ export default config;
 
 export type DeepPartial<T> = T extends object
   ? {
-      [P in keyof T]?: DeepPartial<T[P]>;
-    }
+    [P in keyof T]?: DeepPartial<T[P]>;
+  }
   : T;
 
 export type Config = DeepPartial<typeof config>;
