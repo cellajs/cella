@@ -23,7 +23,7 @@ const errorSearchSchema = z.object({
 });
 
 export const rootRoute = createRootRouteWithContext()({
-  staticData: { pageTitle: '', isAuth: false },
+  staticData: { isAuth: false },
   component: () => <Root />,
   errorComponent: ({ error }) => <ErrorNotice level="root" error={error} />,
   notFoundComponent: () => {
@@ -44,7 +44,7 @@ export const rootRoute = createRootRouteWithContext()({
 
 export const PublicRoute = createRoute({
   id: 'public-layout',
-  staticData: { pageTitle: '', isAuth: false },
+  staticData: { isAuth: false },
   getParentRoute: () => rootRoute,
   component: () => <PublicLayout />,
   beforeLoad: async ({ location, cause }) => {
@@ -66,7 +66,7 @@ export const PublicRoute = createRoute({
 
 export const AppRoute = createRoute({
   id: 'app-layout',
-  staticData: { pageTitle: '', isAuth: false },
+  staticData: { isAuth: false },
   getParentRoute: () => rootRoute,
   component: () => (
     <Suspense fallback={<Spinner className="mt-[45vh] h-10 w-10" />}>
@@ -115,7 +115,8 @@ export const AppRoute = createRoute({
 export const ErrorNoticeRoute = createRoute({
   path: '/error',
   validateSearch: errorSearchSchema,
-  staticData: { pageTitle: 'Error', isAuth: false },
+  staticData: { isAuth: false },
+  head: () => ({ meta: [{ title: 'Error' }] }),
   getParentRoute: () => PublicRoute,
   component: () => <ErrorNotice level="public" />,
 });

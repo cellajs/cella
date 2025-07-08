@@ -7,28 +7,32 @@ import { PublicRoute, rootRoute } from '~/routes/base';
 
 export const AboutRoute = createRoute({
   path: '/about',
-  staticData: { pageTitle: 'About', isAuth: false },
+  staticData: { isAuth: false },
+  head: () => ({ meta: [{ title: 'About' }] }),
   getParentRoute: () => PublicRoute,
   component: () => <AboutPage />,
 });
 
 export const ContactRoute = createRoute({
   path: '/contact',
-  staticData: { pageTitle: 'Contact', isAuth: false },
+  staticData: { isAuth: false },
+  head: () => ({ meta: [{ title: 'Contact' }] }),
   getParentRoute: () => rootRoute,
   component: () => <ContactPage />,
 });
 
 export const LegalRoute = createRoute({
   path: '/legal',
-  staticData: { pageTitle: 'Legal', isAuth: false },
+  staticData: { isAuth: false },
+  head: () => ({ meta: [{ title: 'Legal' }] }),
   getParentRoute: () => rootRoute,
   component: () => <LegalPage />,
 });
 
 export const AccessibilityRoute = createRoute({
   path: '/accessibility',
-  staticData: { pageTitle: 'Accessibility', isAuth: false },
+  staticData: { isAuth: false },
+  head: () => ({ meta: [{ title: 'Accessibility' }] }),
   getParentRoute: () => rootRoute,
   component: () => <AccessibilityPage />,
 });

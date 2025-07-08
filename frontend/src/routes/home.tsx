@@ -8,7 +8,7 @@ const Welcome = lazy(() => import('~/modules/home/welcome-page'));
 
 export const HomeRoute = createRoute({
   path: '/',
-  staticData: { pageTitle: 'Home', isAuth: true },
+  staticData: { isAuth: true },
   getParentRoute: () => AppRoute,
   component: () => <Home />,
 });
@@ -16,14 +16,16 @@ export const HomeRoute = createRoute({
 // We need an alias for '/' to forward users better if coming from backend
 export const HomeAliasRoute = createRoute({
   path: '/home',
-  staticData: { pageTitle: 'Home', isAuth: true },
+  staticData: { isAuth: true },
+  head: () => ({ meta: [{ title: 'Home' }] }),
   getParentRoute: () => AppRoute,
   component: () => <Home />,
 });
 
 export const WelcomeRoute = createRoute({
   path: '/welcome',
-  staticData: { pageTitle: 'Welcome', isAuth: true },
+  staticData: { isAuth: true },
+  head: () => ({ meta: [{ title: 'Welcome' }] }),
   getParentRoute: () => AppRoute,
   beforeLoad: ({ cause }) => {
     if (cause !== 'enter') return;
