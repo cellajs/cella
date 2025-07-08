@@ -91,7 +91,7 @@
     "react-i18next": "^15.6.0",
     "slugify": "^1.6.6",
     "ua-parser-js": "^2.0.4",
-    "zod": "3.25.75"
+    "zod": "3.25.67"
   },
   "devDependencies": {
     "@commander-js/extra-typings": "^14.0.0",
