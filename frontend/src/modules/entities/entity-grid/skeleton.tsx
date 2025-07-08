@@ -33,9 +33,9 @@ const GridSkeletonItem = ({ membersCount }: { membersCount: number }) => {
       </div>
       <div className="flex items-center justify-stretch gap-3 pt-4">
         <div className="grow" />
-        {Array.from({ length: membersCount }).map(() => (
-          // biome-ignore lint/correctness/useJsxKeyInIterable: skeleton don't need keys in this design
-          <div className="h-8 w-8 bg-gray-600 border-2 border-secondary -ml-6 rounded-full" />
+        {Array.from({ length: membersCount }).map((_, index) => (
+          // biome-ignore lint/suspicious/noArrayIndexKey: static keys are fine here as this is a skeleton
+          <div key={index} className="h-8 w-8 bg-gray-600 border-2 border-secondary -ml-6 rounded-full" />
         ))}
       </div>
     </Skeleton>
