@@ -13,6 +13,7 @@ import { menuQueryOptions, meQueryOptions } from '~/modules/me/query';
 import { onError } from '~/query/on-error';
 import { queryClient } from '~/query/query-client';
 import { useUserStore } from '~/store/user';
+import appTitle from '~/utils/app-title';
 
 // Lazy load main App component, which is behind authentication
 const AppLayout = lazy(() => import('~/modules/common/app-layout'));
@@ -116,7 +117,7 @@ export const ErrorNoticeRoute = createRoute({
   path: '/error',
   validateSearch: errorSearchSchema,
   staticData: { isAuth: false },
-  head: () => ({ meta: [{ title: 'Error' }] }),
+  head: () => ({ meta: [{ title: appTitle('Error') }] }),
   getParentRoute: () => PublicRoute,
   component: () => <ErrorNotice level="public" />,
 });

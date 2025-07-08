@@ -64,7 +64,7 @@ export const UserInOrganizationProfileRoute = createRoute({
 export const UserSettingsRoute = createRoute({
   path: '/settings',
   staticData: { isAuth: true },
-  head: () => ({ meta: [{ title: 'Settings' }] }),
+  head: () => ({ meta: [{ title: appTitle('Settings') }] }),
   getParentRoute: () => AppRoute,
   loader: async () => {
     const userAuthOptions = meAuthQueryOptions();

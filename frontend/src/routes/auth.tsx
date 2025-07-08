@@ -14,6 +14,7 @@ import { meQueryOptions } from '~/modules/me/query';
 import { queryClient } from '~/query/query-client';
 import { PublicRoute } from '~/routes/base';
 import { useUserStore } from '~/store/user';
+import appTitle from '~/utils/app-title';
 
 export const AuthLayoutRoute = createRoute({
   id: 'auth-layout',
@@ -31,7 +32,7 @@ export const AuthenticateRoute = createRoute({
     fromRoot: z.boolean().optional(),
   }),
   staticData: { isAuth: false },
-  head: () => ({ meta: [{ title: 'Authenticate' }] }),
+  head: () => ({ meta: [{ title: appTitle('Authenticate') }] }),
   getParentRoute: () => AuthLayoutRoute,
   beforeLoad: async ({ cause, search }) => {
     // Only check auth if entering to prevent loop
@@ -48,7 +49,7 @@ export const AuthenticateRoute = createRoute({
 export const RequestPasswordRoute = createRoute({
   path: '/auth/request-password',
   staticData: { isAuth: false },
-  head: () => ({ meta: [{ title: 'Request password' }] }),
+  head: () => ({ meta: [{ title: appTitle('Request password') }] }),
   getParentRoute: () => AuthLayoutRoute,
   component: () => <RequestPasswordForm />,
 });
@@ -57,7 +58,7 @@ export const CreatePasswordWithTokenRoute = createRoute({
   validateSearch: z.object({ tokenId: z.string() }),
   path: '/auth/create-password/$token',
   staticData: { isAuth: false },
-  head: () => ({ meta: [{ title: 'Create password' }] }),
+  head: () => ({ meta: [{ title: appTitle('Create password') }] }),
   getParentRoute: () => AuthLayoutRoute,
   component: () => <CreatePasswordForm />,
 });
@@ -65,7 +66,7 @@ export const CreatePasswordWithTokenRoute = createRoute({
 export const EmailVerificationRoute = createRoute({
   path: '/auth/email-verification',
   staticData: { isAuth: false },
-  head: () => ({ meta: [{ title: 'Email verification' }] }),
+  head: () => ({ meta: [{ title: appTitle('Email verification') }] }),
   getParentRoute: () => AuthLayoutRoute,
   component: () => <EmailVerification />,
 });
@@ -74,7 +75,7 @@ export const VerifyEmailWithTokenRoute = createRoute({
   validateSearch: z.object({ tokenId: z.string() }),
   path: '/auth/verify-email/$token',
   staticData: { isAuth: false },
-  head: () => ({ meta: [{ title: 'Verify email' }] }),
+  head: () => ({ meta: [{ title: appTitle('Verify email') }] }),
   getParentRoute: () => AuthLayoutRoute,
   component: () => <VerifyEmail />,
 });
@@ -83,7 +84,7 @@ export const AcceptEntityInviteRoute = createRoute({
   validateSearch: z.object({ tokenId: z.string() }),
   path: '/invitation/$token',
   staticData: { isAuth: false },
-  head: () => ({ meta: [{ title: 'Join' }] }),
+  head: () => ({ meta: [{ title: appTitle('Join') }] }),
   beforeLoad: async ({ params, search }) => {
     try {
       const queryOptions = meQueryOptions();
@@ -101,7 +102,7 @@ export const AcceptEntityInviteRoute = createRoute({
 export const UnsubscribedRoute = createRoute({
   path: '/auth/unsubscribed',
   staticData: { isAuth: false },
-  head: () => ({ meta: [{ title: 'Unsubscribed' }] }),
+  head: () => ({ meta: [{ title: appTitle('Unsubscribed') }] }),
   getParentRoute: () => AuthLayoutRoute,
   component: () => <Unsubscribed />,
 });
@@ -110,7 +111,7 @@ export const SignOutRoute = createRoute({
   path: '/sign-out',
   validateSearch: z.object({ force: z.boolean().optional() }),
   staticData: { isAuth: false },
-  head: () => ({ meta: [{ title: 'Sign out' }] }),
+  head: () => ({ meta: [{ title: appTitle('Sign out') }] }),
   getParentRoute: () => PublicRoute,
   component: () => <SignOut />,
 });

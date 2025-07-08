@@ -5,6 +5,7 @@ import { zGetOrganizationsData, zGetRequestsData, zGetUsersData } from '~/api.ge
 import ErrorNotice from '~/modules/common/error-notice';
 import SystemPage from '~/modules/system/system-page';
 import { AppRoute } from '~/routes/base';
+import appTitle from '~/utils/app-title';
 import { noDirectAccess } from '~/utils/no-direct-access';
 
 // Lazy-loaded route components
@@ -32,7 +33,7 @@ export const UsersTableRoute = createRoute({
   path: '/users',
   validateSearch: usersSearchSchema,
   staticData: { isAuth: true },
-  head: () => ({ meta: [{ title: 'Users' }] }),
+  head: () => ({ meta: [{ title: appTitle('Users') }] }),
   getParentRoute: () => SystemRoute,
   loaderDeps: ({ search: { q, sort, order, role } }) => ({ q, sort, order, role }),
   component: () => (
@@ -46,7 +47,7 @@ export const OrganizationsTableRoute = createRoute({
   path: '/organizations',
   validateSearch: organizationsSearchSchema,
   staticData: { isAuth: true },
-  head: () => ({ meta: [{ title: 'Organizations' }] }),
+  head: () => ({ meta: [{ title: appTitle('Organizations') }] }),
   getParentRoute: () => SystemRoute,
   loaderDeps: ({ search: { q, sort, order } }) => ({ q, sort, order }),
   component: () => (
@@ -60,7 +61,7 @@ export const RequestsTableRoute = createRoute({
   path: '/requests',
   validateSearch: requestSearchSchema,
   staticData: { isAuth: true },
-  head: () => ({ meta: [{ title: 'Requests' }] }),
+  head: () => ({ meta: [{ title: appTitle('Requests') }] }),
   getParentRoute: () => SystemRoute,
   loaderDeps: ({ search: { q, sort, order } }) => ({ q, sort, order }),
   component: () => (
@@ -74,7 +75,7 @@ export const MetricsRoute = createRoute({
   path: '/metrics',
   validateSearch: requestSearchSchema,
   staticData: { isAuth: true },
-  head: () => ({ meta: [{ title: 'Metrics' }] }),
+  head: () => ({ meta: [{ title: appTitle('Metrics') }] }),
   getParentRoute: () => SystemRoute,
   component: () => (
     <Suspense>
