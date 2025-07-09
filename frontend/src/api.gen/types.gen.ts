@@ -1947,7 +1947,7 @@ export type GetOrganizationsResponses = {
       logoUrl: string | null;
       websiteUrl: string | null;
       welcomeText: string | null;
-      authStrategies: Array<string>;
+      authStrategies: Array<'github' | 'google' | 'microsoft' | 'password' | 'passkey' | 'email'>;
       chatSupport: boolean;
       createdAt: string;
       createdBy: string | null;
@@ -2039,7 +2039,7 @@ export type CreateOrganizationResponses = {
     logoUrl: string | null;
     websiteUrl: string | null;
     welcomeText: string | null;
-    authStrategies: Array<string>;
+    authStrategies: Array<'github' | 'google' | 'microsoft' | 'password' | 'passkey' | 'email'>;
     chatSupport: boolean;
     createdAt: string;
     createdBy: string | null;
@@ -2118,7 +2118,7 @@ export type GetOrganizationResponses = {
     logoUrl: string | null;
     websiteUrl: string | null;
     welcomeText: string | null;
-    authStrategies: Array<string>;
+    authStrategies: Array<'github' | 'google' | 'microsoft' | 'password' | 'passkey' | 'email'>;
     chatSupport: boolean;
     createdAt: string;
     createdBy: string | null;
@@ -2157,7 +2157,7 @@ export type UpdateOrganizationData = {
     bannerUrl?: string | null;
     websiteUrl?: string | null;
     welcomeText?: string | null;
-    authStrategies?: Array<string>;
+    authStrategies?: Array<'github' | 'google' | 'microsoft' | 'password' | 'passkey' | 'email'>;
     chatSupport?: boolean;
   };
   path: {
@@ -2215,7 +2215,7 @@ export type UpdateOrganizationResponses = {
     logoUrl: string | null;
     websiteUrl: string | null;
     welcomeText: string | null;
-    authStrategies: Array<string>;
+    authStrategies: Array<'github' | 'google' | 'microsoft' | 'password' | 'passkey' | 'email'>;
     chatSupport: boolean;
     createdAt: string;
     createdBy: string | null;

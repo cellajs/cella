@@ -2,7 +2,7 @@ import type { z } from '@hono/zod-openapi';
 import { eq } from 'drizzle-orm';
 import type { Context } from 'hono';
 import { db } from '#/db/db';
-import { type authStrategiesEnum, type SessionModel, sessionsTable } from '#/db/schema/sessions';
+import { type AuthStrategy, type SessionModel, sessionsTable } from '#/db/schema/sessions';
 import { type UserModel, usersTable } from '#/db/schema/users';
 import { logEvent } from '#/middlewares/logger/log-event';
 import { userSelect } from '#/modules/users/helpers/select';
@@ -19,12 +19,7 @@ import { deviceInfo } from './device-info';
  * Sets a user session and stores it in the database.
  * Generates a session token, records device information, and optionally associates an admin user for impersonation.
  */
-export const setUserSession = async (
-  ctx: Context,
-  userId: UserModel['id'],
-  strategy: (typeof authStrategiesEnum)[number],
-  adminUserId?: UserModel['id'],
-) => {
+export const setUserSession = async (ctx: Context, userId: UserModel['id'], strategy: AuthStrategy, adminUserId?: UserModel['id']) => {
   // Get device information
   const device = deviceInfo(ctx);
 

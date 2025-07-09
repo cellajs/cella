@@ -27,8 +27,8 @@ const openDropdown = (row: User, triggerRef: RefObject<HTMLButtonElement | null>
     // Only on cancel we need to remove manually
     const callback = ({ status }: CallbackArgs<User[]>) => {
       // Use update if there are more options in the dropdown
-      // if (status === 'settle') update({ content: <RowDropdown /> });
-      if (status === 'settle') remove();
+      // if (status === 'success') update({ content: <RowDropdown /> });
+      if (status) remove();
     };
 
     const handleDeleteClick = () => {

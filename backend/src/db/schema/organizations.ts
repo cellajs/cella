@@ -4,6 +4,7 @@ import { usersTable } from '#/db/schema/users';
 import { defaultRestrictions, type Restrictions } from '#/db/utils/organization-restrictions';
 import { timestampColumns } from '#/db/utils/timestamp-columns';
 import { nanoid } from '#/utils/nanoid';
+import type { AuthStrategy } from './sessions';
 
 const languagesEnum = config.languages;
 
@@ -32,7 +33,7 @@ export const organizationsTable = pgTable(
     logoUrl: varchar(),
     websiteUrl: varchar(),
     welcomeText: varchar(),
-    authStrategies: json().$type<string[]>().notNull().default([]),
+    authStrategies: json().$type<AuthStrategy[]>().notNull().default([]),
     chatSupport: boolean().notNull().default(false),
     createdAt: timestampColumns.createdAt,
     createdBy: varchar().references(() => usersTable.id, { onDelete: 'set null' }),

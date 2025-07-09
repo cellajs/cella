@@ -2,6 +2,7 @@ import { z } from '@hono/zod-openapi';
 import { config, type EntityType } from 'config';
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 import { organizationsTable } from '#/db/schema/organizations';
+import { authStrategiesEnum } from '#/db/schema/sessions';
 import { membershipSummarySchema } from '#/modules/memberships/schema';
 import {
   languageSchema,
@@ -36,12 +37,11 @@ export const membershipCountSchema = z.object({
 
 export const fullCountsSchema = z.object({ membership: membershipCountSchema, related: entityCountSchema });
 
-// TODO: shouldnt we use an enum for auth strategies?
 export const organizationSchema = z.object({
   ...createSelectSchema(organizationsTable).omit({ restrictions: true }).shape,
   languages: z.array(languageSchema).min(1),
   emailDomains: z.array(z.string()),
-  authStrategies: z.array(z.string()),
+  authStrategies: z.array(z.enum(authStrategiesEnum)),
   membership: membershipSummarySchema.nullable(),
   invitesCount: z.number(),
 });
@@ -60,7 +60,7 @@ export const organizationUpdateBodySchema = createInsertSchema(organizationsTabl
   languages: z.array(languageSchema).min(1),
   defaultLanguage: languageSchema.optional(),
   emailDomains: validDomainsSchema,
-  authStrategies: z.array(z.string()).optional(),
+  authStrategies: z.array(z.enum(authStrategiesEnum)).optional(),
   websiteUrl: validUrlSchema.nullable(),
   thumbnailUrl: validImageKeySchema.nullable(),
   bannerUrl: validImageKeySchema.nullable(),

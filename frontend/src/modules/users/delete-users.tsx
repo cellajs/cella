@@ -24,15 +24,15 @@ const DeleteUsers = ({ users, callback, dialog: isDialog }: Props) => {
 
     _deleteUsers(users, {
       onSuccess: () => {
-        if (isDialog) removeDialog();
         callback?.({ data: users, status: 'success' });
+        if (isDialog) removeDialog();
       },
     });
   };
 
   const onCancel = () => {
-    if (isDialog) removeDialog();
     callback?.({ status: 'settle' });
+    if (isDialog) removeDialog();
   };
 
   return <DeleteForm onDelete={onDelete} onCancel={onCancel} pending={isPending} />;
