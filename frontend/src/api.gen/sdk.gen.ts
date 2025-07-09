@@ -960,7 +960,6 @@ export const deletePasskey = <ThrowOnError extends boolean = true>(options?: Opt
  * **POST /me/passkey** ·· [createPasskey](http://localhost:4000/docs#tag/me/post/me/passkey) ·· _me_
  *
  * @param {createPasskeyData} options
- * @param {string=} options.body.userEmail - `string` (optional)
  * @param {string=} options.body.attestationObject - `string` (optional)
  * @param {string=} options.body.clientDataJSON - `string` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429

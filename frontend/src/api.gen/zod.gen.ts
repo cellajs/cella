@@ -642,7 +642,6 @@ export const zDeletePasskeyResponse = z.boolean();
 
 export const zCreatePasskeyData = z.object({
   body: z.object({
-    userEmail: z.string(),
     attestationObject: z.string(),
     clientDataJSON: z.string(),
   }),

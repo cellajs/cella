@@ -214,7 +214,8 @@ const meRouteHandlers = app
    * Create passkey
    */
   .openapi(meRoutes.createPasskey, async (ctx) => {
-    const { attestationObject, clientDataJSON, userEmail } = ctx.req.valid('json');
+    const { attestationObject, clientDataJSON } = ctx.req.valid('json');
+    const user = getContextUser();
 
     const challengeFromCookie = await getAuthCookie(ctx, 'passkey_challenge');
     if (!challengeFromCookie) return errorResponse(ctx, 401, 'invalid_credentials', 'error');
@@ -222,7 +223,7 @@ const meRouteHandlers = app
     const { credentialId, publicKey } = parseAndValidatePasskeyAttestation(clientDataJSON, attestationObject, challengeFromCookie);
 
     // Save public key in the database
-    await db.insert(passkeysTable).values({ userEmail, credentialId, publicKey });
+    await db.insert(passkeysTable).values({ userEmail: user.email, credentialId, publicKey });
 
     return ctx.json(true, 200);
   })

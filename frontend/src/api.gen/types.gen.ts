@@ -1449,7 +1449,6 @@ export type DeletePasskeyResponse = DeletePasskeyResponses[keyof DeletePasskeyRe
 
 export type CreatePasskeyData = {
   body: {
-    userEmail: string;
     attestationObject: string;
     clientDataJSON: string;
   };
