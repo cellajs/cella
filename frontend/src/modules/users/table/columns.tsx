@@ -1,15 +1,20 @@
+import i18n from 'i18next';
+import { Pencil, Trash } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import CheckboxColumn from '~/modules/common/data-table/checkbox-column';
 import HeaderCell from '~/modules/common/data-table/header-cell';
-import TableEllipsis from '~/modules/common/data-table/table-ellipsis';
-import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
+import TableEllipsis, { type EllipsisOption } from '~/modules/common/data-table/table-ellipsis';
+import type { CallbackArgs, ColumnOrColumnGroup } from '~/modules/common/data-table/types';
+import { useDropdowner } from '~/modules/common/dropdowner/use-dropdowner';
+import { PopConfirm } from '~/modules/common/popconfirm';
 import ImpersonateRow from '~/modules/users/table/impersonate-row';
-import UpdateRow from '~/modules/users/table/update-row';
+import UpdateRow, { openUpdateUserSheet } from '~/modules/users/table/update-row';
 import type { User } from '~/modules/users/types';
 import UserCell from '~/modules/users/user-cell';
 import { dateShort } from '~/utils/date-short';
+import DeleteUsers from '../delete-users';
 
 export const useColumns = () => {
   const { t } = useTranslation();
@@ -48,7 +53,38 @@ export const useColumns = () => {
         visible: isMobile,
         sortable: false,
         width: 32,
-        renderCell: ({ row, tabIndex }) => <TableEllipsis row={row} tabIndex={tabIndex} />,
+        renderCell: ({ row, tabIndex }) => {
+          const ellipsisOptions: EllipsisOption<User>[] = [
+            {
+              label: i18n.t('common:edit'),
+              icon: Pencil,
+              onSelect: (row, triggerRef) => {
+                useDropdowner.getState().remove();
+                openUpdateUserSheet(row, triggerRef);
+              },
+            },
+            {
+              label: i18n.t('common:delete'),
+              icon: Trash,
+              onSelect: (row) => {
+                const { update } = useDropdowner.getState();
+                const callback = ({ status }: CallbackArgs<User[]>) => {
+                  if (status) useDropdowner.getState().remove();
+                };
+
+                update({
+                  content: (
+                    <PopConfirm title={i18n.t('common:delete_confirm.text', { name: row.name })}>
+                      <DeleteUsers users={[row]} callback={callback} />
+                    </PopConfirm>
+                  ),
+                });
+              },
+            },
+          ];
+
+          return <TableEllipsis row={row} tabIndex={tabIndex} options={ellipsisOptions} />;
+        },
       },
       {
         key: 'email',

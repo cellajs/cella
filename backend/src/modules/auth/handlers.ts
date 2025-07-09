@@ -56,7 +56,7 @@ import { createDate, TimeSpan } from '#/utils/time-span';
 import { CreatePasswordEmail, type CreatePasswordEmailProps } from '../../../emails/create-password';
 import { EmailVerificationEmail, type EmailVerificationEmailProps } from '../../../emails/email-verification';
 
-const enabledStrategies: readonly string[] = config.enabledAuthenticationStrategies;
+const enabledStrategies: readonly string[] = config.enabledAuthStrategies;
 const enabledOauthProviders: readonly string[] = config.enabledOauthProviders;
 
 // Scopes for OAuth providers

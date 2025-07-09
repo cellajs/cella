@@ -3,12 +3,13 @@ import { lazy, Suspense } from 'react';
 import Home from '~/modules/home';
 import { AppRoute } from '~/routes/base';
 import { useNavigationStore } from '~/store/navigation';
+import appTitle from '~/utils/app-title';
 
 const Welcome = lazy(() => import('~/modules/home/welcome-page'));
 
 export const HomeRoute = createRoute({
   path: '/',
-  staticData: { pageTitle: 'Home', isAuth: true },
+  staticData: { isAuth: true },
   getParentRoute: () => AppRoute,
   component: () => <Home />,
 });
@@ -16,14 +17,16 @@ export const HomeRoute = createRoute({
 // We need an alias for '/' to forward users better if coming from backend
 export const HomeAliasRoute = createRoute({
   path: '/home',
-  staticData: { pageTitle: 'Home', isAuth: true },
+  staticData: { isAuth: true },
+  head: () => ({ meta: [{ title: appTitle('Home') }] }),
   getParentRoute: () => AppRoute,
   component: () => <Home />,
 });
 
 export const WelcomeRoute = createRoute({
   path: '/welcome',
-  staticData: { pageTitle: 'Welcome', isAuth: true },
+  staticData: { isAuth: true },
+  head: () => ({ meta: [{ title: appTitle('Welcome') }] }),
   getParentRoute: () => AppRoute,
   beforeLoad: ({ cause }) => {
     if (cause !== 'enter') return;

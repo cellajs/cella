@@ -61,7 +61,12 @@ export const MenuSheetItem = ({ item, icon: Icon, className, searchResults }: Me
       />
       <div className="truncate grow flex flex-col justify-center pr-2 text-left group-data-[subitem=true]/menuItem:pl-0">
         <div
-          className={`truncate leading-5 transition-spacing text-md group-hover/menuItem:delay-300 pt-1.5 duration-100 ease-in-out ${!searchResults && 'pt-3.5 group-data-[subitem=true]/menuItem:pt-2'} sm:group-hover/menuItem:pt-[0.06rem]! group-active/menuItem:translate-y-[.05rem] group-data-[subitem=true]/menuItem:text-sm group-data-[subitem=true]/menuItem:font-light`}
+          className={cn(
+            'truncate leading-5 transition-spacing text-md group-hover/menuItem:delay-300 pt-1 duration-100 ease-in-out',
+            !searchResults && 'pt-3.5 group-data-[subitem=true]/menuItem:pt-2',
+            searchResults ? '' : isSubitem ? 'sm:group-hover/menuItem:pt-[0.06rem]!' : 'sm:group-hover/menuItem:pt-[0.3rem]!',
+            'group-active/menuItem:translate-y-[.05rem] group-data-[subitem=true]/menuItem:text-sm group-data-[subitem=true]/menuItem:font-light',
+          )}
         >
           {item.name}
         </div>

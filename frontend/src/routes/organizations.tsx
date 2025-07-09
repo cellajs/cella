@@ -9,6 +9,7 @@ import { toaster } from '~/modules/common/toaster';
 import { organizationQueryOptions } from '~/modules/organizations/query';
 import { queryClient } from '~/query/query-client';
 import { AppRoute } from '~/routes/base';
+import appTitle from '~/utils/app-title';
 import { noDirectAccess } from '~/utils/no-direct-access';
 
 //Lazy-loaded components
@@ -31,7 +32,7 @@ export const attachmentsSearchSchema = zGetAttachmentsData.shape.query.pick({ q:
 
 export const OrganizationRoute = createRoute({
   path: '/organizations/$idOrSlug',
-  staticData: { pageTitle: 'Organization', isAuth: true },
+  staticData: { isAuth: true },
   beforeLoad: async ({ location, params: { idOrSlug } }) => {
     noDirectAccess(location.pathname, idOrSlug, '/members');
 
@@ -49,6 +50,10 @@ export const OrganizationRoute = createRoute({
   loader: async ({ context: { organization } }) => {
     return organization;
   },
+  head: (ctx) => {
+    const organization = ctx.match.context.organization;
+    return { meta: [{ title: appTitle(organization.name) }] };
+  },
   getParentRoute: () => AppRoute,
   errorComponent: ({ error }) => <ErrorNotice level="app" error={error} />,
   component: () => {
@@ -65,9 +70,10 @@ export const OrganizationRoute = createRoute({
 export const OrganizationMembersRoute = createRoute({
   path: '/members',
   validateSearch: membersSearchSchema,
-  staticData: { pageTitle: 'members', isAuth: true },
+  staticData: { isAuth: true },
   getParentRoute: () => OrganizationRoute,
   loaderDeps: ({ search: { q, sort, order, role } }) => ({ q, sort, order, role }),
+
   component: () => {
     const loaderData = useLoaderData({ from: OrganizationRoute.id });
 
@@ -86,7 +92,7 @@ export const OrganizationMembersRoute = createRoute({
 export const OrganizationAttachmentsRoute = createRoute({
   path: '/attachments',
   validateSearch: attachmentsSearchSchema,
-  staticData: { pageTitle: 'attachments', isAuth: true },
+  staticData: { isAuth: true },
   getParentRoute: () => OrganizationRoute,
   loaderDeps: ({ search: { q, sort, order } }) => ({ q, sort, order }),
   component: () => {
@@ -106,7 +112,7 @@ export const OrganizationAttachmentsRoute = createRoute({
 
 export const OrganizationSettingsRoute = createRoute({
   path: '/settings',
-  staticData: { pageTitle: 'settings', isAuth: true },
+  staticData: { isAuth: true },
   getParentRoute: () => OrganizationRoute,
   component: () => {
     const loaderData = useLoaderData({ from: OrganizationRoute.id });

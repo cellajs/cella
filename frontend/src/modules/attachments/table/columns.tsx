@@ -1,6 +1,7 @@
 import { Link, useNavigate } from '@tanstack/react-router';
 import { config } from 'config';
-import { Cloud, CloudOff, CopyCheckIcon, CopyIcon, Download } from 'lucide-react';
+import i18n from 'i18next';
+import { Cloud, CloudOff, CopyCheckIcon, CopyIcon, Download, Trash } from 'lucide-react';
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import useDownloader from 'react-use-downloader';
@@ -11,9 +12,13 @@ import AttachmentPreview from '~/modules/attachments/table/preview';
 import type { Attachment } from '~/modules/attachments/types';
 import CheckboxColumn from '~/modules/common/data-table/checkbox-column';
 import HeaderCell from '~/modules/common/data-table/header-cell';
-import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
+import TableEllipsis, { type EllipsisOption } from '~/modules/common/data-table/table-ellipsis';
+import type { CallbackArgs, ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
+import { useDropdowner } from '~/modules/common/dropdowner/use-dropdowner';
+import { PopConfirm } from '~/modules/common/popconfirm';
 import Spinner from '~/modules/common/spinner';
+import { toaster } from '~/modules/common/toaster';
 import type { EntityPage } from '~/modules/entities/types';
 import { membersKeys } from '~/modules/memberships/query';
 import { Button } from '~/modules/ui/button';
@@ -23,6 +28,7 @@ import UserCell from '~/modules/users/user-cell';
 import { useUserStore } from '~/store/user';
 import { dateShort } from '~/utils/date-short';
 import { isCDNUrl } from '~/utils/is-cdn-url';
+import DeleteAttachments from '../delete-attachments';
 
 export const useColumns = (entity: EntityPage, isSheet: boolean, isCompact: boolean) => {
   const { t } = useTranslation();
@@ -33,7 +39,8 @@ export const useColumns = (entity: EntityPage, isSheet: boolean, isCompact: bool
   const isMobile = useBreakpoints('max', 'sm', false);
   const isAdmin = entity.membership?.role === 'admin' || storeUser?.role === 'admin';
 
-  const thumbnailColumn: ColumnOrColumnGroup<Attachment>[] = [
+  const columns: ColumnOrColumnGroup<Attachment>[] = [
+    CheckboxColumn,
     {
       key: 'thumbnail',
       name: '',
@@ -77,9 +84,21 @@ export const useColumns = (entity: EntityPage, isSheet: boolean, isCompact: bool
         );
       },
     },
-  ];
-
-  const AttachmentInfoColumns: ColumnOrColumnGroup<Attachment>[] = [
+    {
+      key: 'name',
+      name: t('common:name'),
+      editable: true,
+      visible: true,
+      sortable: false,
+      minWidth: 180,
+      renderHeaderCell: HeaderCell,
+      renderCell: ({ row }) => <span className="font-medium">{row.name || '-'}</span>,
+      ...(isAdmin && {
+        renderEditCell: ({ row, onRowChange }) => (
+          <Input value={row.name} onChange={(e) => onRowChange({ ...row, name: e.target.value })} autoFocus />
+        ),
+      }),
+    },
     {
       key: 'storeType',
       name: '',
@@ -102,7 +121,7 @@ export const useColumns = (entity: EntityPage, isSheet: boolean, isCompact: bool
     {
       key: 'url',
       name: '',
-      visible: true,
+      visible: !isMobile,
       sortable: false,
       width: 32,
       renderCell: ({ row, tabIndex }) => {
@@ -153,27 +172,55 @@ export const useColumns = (entity: EntityPage, isSheet: boolean, isCompact: bool
         );
       },
     },
-  ];
-
-  const columns: ColumnOrColumnGroup<Attachment>[] = [
-    CheckboxColumn,
-    ...thumbnailColumn,
     {
-      key: 'name',
-      name: t('common:name'),
-      editable: true,
-      visible: true,
+      key: 'ellipsis',
+      name: '',
+      visible: isMobile,
       sortable: false,
-      minWidth: 180,
-      renderHeaderCell: HeaderCell,
-      renderCell: ({ row }) => <span className="font-medium">{row.name || '-'}</span>,
-      ...(isAdmin && {
-        renderEditCell: ({ row, onRowChange }) => (
-          <Input value={row.name} onChange={(e) => onRowChange({ ...row, name: e.target.value })} autoFocus />
-        ),
-      }),
+      width: 32,
+      renderCell: ({ row, tabIndex }) => {
+        const { copyToClipboard } = useCopyToClipboard();
+
+        const isInCloud = isCDNUrl(row.url);
+        if (!isInCloud) return <div className="text-muted text-center w-full">-</div>;
+        const ellipsisOptions: EllipsisOption<Attachment>[] = [
+          {
+            label: i18n.t('common:delete'),
+            icon: Trash,
+            onSelect: (row) => {
+              const { update } = useDropdowner.getState();
+              const callback = ({ status }: CallbackArgs<Attachment[]>) => {
+                if (status) useDropdowner.getState().remove();
+              };
+
+              update({
+                content: (
+                  <PopConfirm title={i18n.t('common:delete_confirm.text', { name: row.name })}>
+                    <DeleteAttachments entity={entity} attachments={[row]} callback={callback} />
+                  </PopConfirm>
+                ),
+              });
+            },
+          },
+        ];
+
+        if (isInCloud) {
+          const shareLink = `${config.backendUrl}/${row.organizationId}/attachments/${row.id}/link`;
+
+          ellipsisOptions.push({
+            label: i18n.t('common:copy_url'),
+            icon: CopyIcon,
+            onSelect: () => {
+              copyToClipboard(shareLink);
+              toaster(t('common:success.copy_url'), 'success');
+              useDropdowner.getState().remove();
+            },
+          });
+        }
+
+        return <TableEllipsis row={row} tabIndex={tabIndex} options={ellipsisOptions} />;
+      },
     },
-    ...AttachmentInfoColumns,
     {
       key: 'filename',
       name: t('common:filename'),

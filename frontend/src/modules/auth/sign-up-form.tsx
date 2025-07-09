@@ -22,7 +22,7 @@ import { defaultOnInvalid } from '~/utils/form-on-invalid';
 const PasswordStrength = lazy(() => import('~/modules/auth/password-strength'));
 const LegalText = lazy(() => import('~/modules/marketing/legal-texts'));
 
-const enabledStrategies: readonly string[] = config.enabledAuthenticationStrategies;
+const enabledStrategies: readonly string[] = config.enabledAuthStrategies;
 
 const formSchema = zSignUpData.shape.body.unwrap();
 type FormValues = z.infer<typeof formSchema>;

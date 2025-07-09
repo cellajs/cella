@@ -5,6 +5,7 @@ import { nanoid } from '#/utils/nanoid';
 
 export const sessionTypeEnum = ['regular', 'impersonation'] as const;
 export const authStrategiesEnum = ['github', 'google', 'microsoft', 'password', 'passkey', 'email'] as const;
+export type AuthStrategy = (typeof authStrategiesEnum)[number];
 
 export const sessionsTable = pgTable('sessions', {
   id: varchar().primaryKey().$defaultFn(nanoid),

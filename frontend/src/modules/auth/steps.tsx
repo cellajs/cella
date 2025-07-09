@@ -17,7 +17,7 @@ import Spinner from '~/modules/common/spinner';
 import { AuthenticateRoute } from '~/routes/auth';
 import { useUserStore } from '~/store/user';
 
-const enabledStrategies: readonly string[] = config.enabledAuthenticationStrategies;
+const enabledStrategies: readonly string[] = config.enabledAuthStrategies;
 const emailEnabled = enabledStrategies.includes('password') || enabledStrategies.includes('passkey');
 
 const AuthSteps = () => {

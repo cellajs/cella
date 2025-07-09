@@ -111,8 +111,8 @@ The documentation is generated from source code using \`zod\` schemas, converted
   fileUploadLimit: 20 * 1024 * 1024, // 20mb
   defaultBodyLimit: 1 * 1024 * 1024, // 1mb
 
-  // Allowed oauth strategies providers
-  enabledAuthenticationStrategies: ['password', 'passkey', 'oauth'] as const,
+  // Enabled auth strategies providers
+  enabledAuthStrategies: ['password', 'passkey', 'oauth'] as const,
 
   // OAuth providers
   enabledOauthProviders: ['github'] as const,

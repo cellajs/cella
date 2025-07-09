@@ -39,7 +39,6 @@ export function useUploadUppy() {
       restrictions: {
         ...uppyRestrictions,
         ...restrictions,
-        // TODO(IMPROVEMENT) Allow offline upload of audio, file & video?
         allowedFileTypes,
       },
     };

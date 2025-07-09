@@ -18,7 +18,7 @@ import { AuthenticateRoute } from '~/routes/auth';
 import { useUserStore } from '~/store/user';
 import { defaultOnInvalid } from '~/utils/form-on-invalid';
 
-const enabledStrategies: readonly string[] = config.enabledAuthenticationStrategies;
+const enabledStrategies: readonly string[] = config.enabledAuthStrategies;
 
 const formSchema = zSignUpData.shape.body.unwrap();
 type FormValues = z.infer<typeof formSchema>;

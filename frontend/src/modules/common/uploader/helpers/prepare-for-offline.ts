@@ -10,7 +10,6 @@ import type { UploadTockenQuery } from '~/modules/me/types';
  * @param files - Fle object containing metadata and upload details.
  * @returns An array of files that were successfully prepared for offline storage.
  */
-// TODO(IMPROVEMENT) handle offline video audio & file
 export const prepareFilesForOffline = async (files: Record<string, CustomUppyFile>, tokenQuery: UploadTockenQuery) => {
   console.warn('Files will be stored offline in indexedDB.');
 

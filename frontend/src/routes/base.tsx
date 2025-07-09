@@ -13,6 +13,7 @@ import { menuQueryOptions, meQueryOptions } from '~/modules/me/query';
 import { onError } from '~/query/on-error';
 import { queryClient } from '~/query/query-client';
 import { useUserStore } from '~/store/user';
+import appTitle from '~/utils/app-title';
 
 // Lazy load main App component, which is behind authentication
 const AppLayout = lazy(() => import('~/modules/common/app-layout'));
@@ -23,7 +24,7 @@ const errorSearchSchema = z.object({
 });
 
 export const rootRoute = createRootRouteWithContext()({
-  staticData: { pageTitle: '', isAuth: false },
+  staticData: { isAuth: false },
   component: () => <Root />,
   errorComponent: ({ error }) => <ErrorNotice level="root" error={error} />,
   notFoundComponent: () => {
@@ -44,7 +45,7 @@ export const rootRoute = createRootRouteWithContext()({
 
 export const PublicRoute = createRoute({
   id: 'public-layout',
-  staticData: { pageTitle: '', isAuth: false },
+  staticData: { isAuth: false },
   getParentRoute: () => rootRoute,
   component: () => <PublicLayout />,
   beforeLoad: async ({ location, cause }) => {
@@ -66,7 +67,7 @@ export const PublicRoute = createRoute({
 
 export const AppRoute = createRoute({
   id: 'app-layout',
-  staticData: { pageTitle: '', isAuth: false },
+  staticData: { isAuth: false },
   getParentRoute: () => rootRoute,
   component: () => (
     <Suspense fallback={<Spinner className="mt-[45vh] h-10 w-10" />}>
@@ -115,7 +116,8 @@ export const AppRoute = createRoute({
 export const ErrorNoticeRoute = createRoute({
   path: '/error',
   validateSearch: errorSearchSchema,
-  staticData: { pageTitle: 'Error', isAuth: false },
+  staticData: { isAuth: false },
+  head: () => ({ meta: [{ title: appTitle('Error') }] }),
   getParentRoute: () => PublicRoute,
   component: () => <ErrorNotice level="public" />,
 });

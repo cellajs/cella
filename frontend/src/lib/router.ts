@@ -22,9 +22,8 @@ declare module '@tanstack/react-router' {
     router: typeof router;
   }
 
-  // Required pageTitle in static data
+  // Required props in staticData
   interface StaticDataRouteOption {
-    pageTitle: string | null;
     isAuth: boolean;
   }
 }

@@ -6,18 +6,23 @@ import { meAuthQueryOptions } from '~/modules/me/query';
 import { userQueryOptions } from '~/modules/users/query';
 import { queryClient } from '~/query/query-client';
 import { AppRoute } from '~/routes/base';
+import appTitle from '~/utils/app-title';
 
 const UserProfilePage = lazy(() => import('~/modules/users/profile-page'));
 const UserSettingsPage = lazy(() => import('~/modules/me/settings-page'));
 
 export const UserProfileRoute = createRoute({
   path: '/users/$idOrSlug',
-  staticData: { pageTitle: 'Profile', isAuth: true },
+  staticData: { isAuth: true },
   getParentRoute: () => AppRoute,
   loader: async ({ params: { idOrSlug } }) => {
     const userOptions = userQueryOptions(idOrSlug);
     const options = { ...userOptions, revalidateIfStale: true };
     return queryClient.ensureQueryData(options);
+  },
+  head: (ctx) => {
+    const user = ctx.match.loaderData;
+    return { meta: [{ title: appTitle(user?.name) }] };
   },
   errorComponent: ({ error }) => <ErrorNotice level="app" error={error} />,
   component: () => {
@@ -33,12 +38,16 @@ export const UserProfileRoute = createRoute({
 
 export const UserInOrganizationProfileRoute = createRoute({
   path: '/$orgIdOrSlug/users/$idOrSlug',
-  staticData: { pageTitle: 'Profile', isAuth: true },
+  staticData: { isAuth: true },
   getParentRoute: () => AppRoute,
   loader: async ({ params: { idOrSlug } }) => {
     const userOptions = userQueryOptions(idOrSlug);
     const options = { ...userOptions, revalidateIfStale: true };
     return queryClient.ensureQueryData(options);
+  },
+  head: (ctx) => {
+    const user = ctx.match.loaderData;
+    return { meta: [{ title: appTitle(user?.name) }] };
   },
   errorComponent: ({ error }) => <ErrorNotice level="app" error={error} />,
   component: () => {
@@ -54,7 +63,8 @@ export const UserInOrganizationProfileRoute = createRoute({
 
 export const UserSettingsRoute = createRoute({
   path: '/settings',
-  staticData: { pageTitle: 'Settings', isAuth: true },
+  staticData: { isAuth: true },
+  head: () => ({ meta: [{ title: appTitle('Settings') }] }),
   getParentRoute: () => AppRoute,
   loader: async () => {
     const userAuthOptions = meAuthQueryOptions();
