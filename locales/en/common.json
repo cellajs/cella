@@ -427,5 +427,7 @@
   "already_member": "Already member",
   "not_processed": "Not processed",
   "backend_not_ready": "Backend initializing",
-  "backend_not_ready.text": "It`s likely the backend is compiling and will be ready shortly."
+  "backend_not_ready.text": "It`s likely the backend is compiling and will be ready shortly.",
+  "copy_url": "Copy URL",
+  "success.copy_url": "URL has been copied!"
 }

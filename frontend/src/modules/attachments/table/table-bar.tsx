@@ -1,7 +1,7 @@
 import { Trash, Upload, XSquare } from 'lucide-react';
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import DeleteAttachmentsForm from '~/modules/attachments/delete-attachments-form';
+import DeleteAttachments from '~/modules/attachments/delete-attachments';
 import { useAttachmentsUploadDialog } from '~/modules/attachments/table/helpers';
 import type { AttachmentSearch, AttachmentsTableProps } from '~/modules/attachments/table/table-wrapper';
 import type { Attachment } from '~/modules/attachments/types';
@@ -58,7 +58,7 @@ export const AttachmentsTableBar = ({
   };
 
   const openDeleteDialog = () => {
-    createDialog(<DeleteAttachmentsForm entity={entity} dialog attachments={selected} callback={clearSelection} />, {
+    createDialog(<DeleteAttachments entity={entity} dialog attachments={selected} callback={clearSelection} />, {
       id: 'delete-attachments',
       triggerRef: deleteButtonRef,
       className: 'max-w-xl',

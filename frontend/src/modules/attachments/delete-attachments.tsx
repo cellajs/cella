@@ -1,5 +1,6 @@
 import { useAttachmentDeleteMutation } from '~/modules/attachments/query-mutations';
 import type { Attachment } from '~/modules/attachments/types';
+import type { CallbackArgs } from '~/modules/common/data-table/types';
 import { DeleteForm } from '~/modules/common/delete-form';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import type { EntityPage } from '~/modules/entities/types';
@@ -8,10 +9,10 @@ interface Props {
   entity: EntityPage;
   attachments: Attachment[];
   dialog?: boolean;
-  callback?: (attachments: Attachment[]) => void;
+  callback?: (args: CallbackArgs<Attachment[]>) => void;
 }
 
-const DeleteAttachmentsForm = ({ attachments, entity, callback, dialog: isDialog }: Props) => {
+const DeleteAttachments = ({ attachments, entity, callback, dialog: isDialog }: Props) => {
   const removeDialog = useDialoger((state) => state.remove);
   const { mutate: deleteAttachments, isPending } = useAttachmentDeleteMutation();
 
@@ -21,10 +22,10 @@ const DeleteAttachmentsForm = ({ attachments, entity, callback, dialog: isDialog
     deleteAttachments({ ids: attachments.map(({ id }) => id), orgIdOrSlug });
 
     if (isDialog) removeDialog();
-    callback?.(attachments);
+    callback?.({ data: attachments, status: 'success' });
   };
 
   return <DeleteForm allowOfflineDelete={true} onDelete={onDelete} onCancel={() => removeDialog()} pending={isPending} />;
 };
 
-export default DeleteAttachmentsForm;
+export default DeleteAttachments;
