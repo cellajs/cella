@@ -1,5 +1,5 @@
 import type { z } from '@hono/zod-openapi';
-import { eq } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 import type { Context } from 'hono';
 import { db } from '#/db/db';
 import { type AuthStrategy, type SessionModel, sessionsTable } from '#/db/schema/sessions';
@@ -80,7 +80,7 @@ export const validateSession = async (hashedSessionToken: string) => {
 
   // Check if the session has expired and invalidate it if so
   if (isExpiredDate(session.expiresAt)) {
-    await invalidateSessionById(session.id);
+    await invalidateSessionById(session.id, session.userId);
     return { session: null, user: null };
   }
 
@@ -88,13 +88,13 @@ export const validateSession = async (hashedSessionToken: string) => {
 };
 
 // Invalidate all sessions based on user id
-export const invalidateUserSessions = async (userId: UserModel['id']) => {
+export const invalidateAllUserSessions = async (userId: UserModel['id']) => {
   await db.delete(sessionsTable).where(eq(sessionsTable.userId, userId));
 };
 
 // Invalidate single session with session id
-export const invalidateSessionById = async (id: string) => {
-  await db.delete(sessionsTable).where(eq(sessionsTable.id, id));
+export const invalidateSessionById = async (id: string, userId: string) => {
+  await db.delete(sessionsTable).where(and(eq(sessionsTable.id, id), eq(sessionsTable.userId, userId)));
 };
 
 export const getParsedSessionCookie = async (ctx: Context, deleteAfterAttempt = false): Promise<z.infer<typeof sessionCookieSchema> | null> => {

@@ -464,7 +464,7 @@ const authRouteHandlers = app
     const { session } = await validateSession(sessionToken);
     if (!session) return errorResponse(ctx, 401, 'unauthorized', 'warn');
 
-    await invalidateSessionById(session.id);
+    await invalidateSessionById(session.id, session.userId);
     if (adminUserId) {
       const [adminsLastSession] = await db
         .select()
@@ -474,7 +474,7 @@ const authRouteHandlers = app
         .limit(1);
 
       if (isExpiredDate(adminsLastSession.expiresAt)) {
-        await invalidateSessionById(adminsLastSession.id);
+        await invalidateSessionById(adminsLastSession.id, adminUserId);
         return errorResponse(ctx, 401, 'unauthorized', 'warn');
       }
 
@@ -501,7 +501,7 @@ const authRouteHandlers = app
 
     // Find session & invalidate
     const { session } = await validateSession(sessionData.sessionToken);
-    if (session) await invalidateSessionById(session.id);
+    if (session) await invalidateSessionById(session.id, session.userId);
 
     // Delete session cookie
     deleteAuthCookie(ctx, 'session');

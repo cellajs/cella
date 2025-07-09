@@ -100,8 +100,8 @@ const meRoutes = {
     },
   }),
 
-  deleteSessions: createCustomRoute({
-    operationId: 'deleteSessions',
+  deleteMySessions: createCustomRoute({
+    operationId: 'deleteMySessions',
     method: 'delete',
     path: '/sessions',
     guard: isAuthenticated,

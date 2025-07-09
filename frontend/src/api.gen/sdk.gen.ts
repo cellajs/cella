@@ -42,6 +42,9 @@ import type {
   DeleteMyMembershipData,
   DeleteMyMembershipErrors,
   DeleteMyMembershipResponses,
+  DeleteMySessionsData,
+  DeleteMySessionsErrors,
+  DeleteMySessionsResponses,
   DeleteOrganizationsData,
   DeleteOrganizationsErrors,
   DeleteOrganizationsResponses,
@@ -51,9 +54,6 @@ import type {
   DeleteRequestsData,
   DeleteRequestsErrors,
   DeleteRequestsResponses,
-  DeleteSessionsData,
-  DeleteSessionsErrors,
-  DeleteSessionsResponses,
   DeleteUsersData,
   DeleteUsersErrors,
   DeleteUsersResponses,
@@ -886,14 +886,14 @@ export const getMyMenu = <ThrowOnError extends boolean = true>(options?: Options
  *
  * Ends one or more sessions for the *current user* based on provided session IDs.
  *
- * **DELETE /me/sessions** ·· [deleteSessions](http://localhost:4000/docs#tag/me/delete/me/sessions) ·· _me_
+ * **DELETE /me/sessions** ·· [deleteMySessions](http://localhost:4000/docs#tag/me/delete/me/sessions) ·· _me_
  *
- * @param {deleteSessionsData} options
+ * @param {deleteMySessionsData} options
  * @param {any[]=} options.body.ids - `any[]` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
-export const deleteSessions = <ThrowOnError extends boolean = true>(options?: Options<DeleteSessionsData, ThrowOnError>) => {
-  return (options?.client ?? _heyApiClient).delete<DeleteSessionsResponses, DeleteSessionsErrors, ThrowOnError, 'data'>({
+export const deleteMySessions = <ThrowOnError extends boolean = true>(options?: Options<DeleteMySessionsData, ThrowOnError>) => {
+  return (options?.client ?? _heyApiClient).delete<DeleteMySessionsResponses, DeleteMySessionsErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     security: [
       {

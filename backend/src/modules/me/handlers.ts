@@ -17,7 +17,7 @@ import { isAuthenticated } from '#/middlewares/guard';
 import { logEvent } from '#/middlewares/logger/log-event';
 import { deleteAuthCookie, getAuthCookie } from '#/modules/auth/helpers/cookie';
 import { parseAndValidatePasskeyAttestation } from '#/modules/auth/helpers/passkey';
-import { getParsedSessionCookie, invalidateSessionById, invalidateUserSessions, validateSession } from '#/modules/auth/helpers/session';
+import { getParsedSessionCookie, invalidateAllUserSessions, invalidateSessionById, validateSession } from '#/modules/auth/helpers/session';
 import { checkSlugAvailable } from '#/modules/entities/helpers/check-slug';
 import { getUserSessions } from '#/modules/me/helpers/get-sessions';
 import { getUserMenuEntities } from '#/modules/me/helpers/get-user-menu-entities';
@@ -106,10 +106,11 @@ const meRouteHandlers = app
     return ctx.json(menu, 200);
   })
   /*
-   * Terminate one or more sessions
+   * Terminate one or more of my sessions
    */
-  .openapi(meRoutes.deleteSessions, async (ctx) => {
+  .openapi(meRoutes.deleteMySessions, async (ctx) => {
     const { ids } = ctx.req.valid('json');
+    const user = getContextUser();
 
     const sessionIds = Array.isArray(ids) ? ids : [ids];
 
@@ -123,8 +124,7 @@ const meRouteHandlers = app
       sessionIds.map(async (id) => {
         try {
           if (session && id === session.id) deleteAuthCookie(ctx, 'session');
-
-          await invalidateSessionById(id);
+          await invalidateSessionById(id, user.id);
         } catch (error) {
           errors.push(createError(ctx, 404, 'not_found', 'warn', undefined, { session: id }));
         }
@@ -143,6 +143,8 @@ const meRouteHandlers = app
 
     const { bannerUrl, firstName, lastName, language, newsletter, thumbnailUrl, slug } = ctx.req.valid('json');
 
+    const name = [firstName, lastName].filter(Boolean).join(' ') || slug;
+
     if (slug && slug !== user.slug) {
       const slugAvailable = await checkSlugAvailable(slug);
       if (!slugAvailable) return errorResponse(ctx, 409, 'slug_exists', 'warn', 'user', { slug });
@@ -158,7 +160,7 @@ const meRouteHandlers = app
         newsletter,
         thumbnailUrl,
         slug,
-        name: [firstName, lastName].filter(Boolean).join(' ') || slug,
+        name,
         modifiedAt: getIsoDate(),
         modifiedBy: user.id,
       })
@@ -180,7 +182,7 @@ const meRouteHandlers = app
     await db.delete(usersTable).where(eq(usersTable.id, user.id));
 
     // Invalidate sessions
-    await invalidateUserSessions(user.id);
+    await invalidateAllUserSessions(user.id);
     deleteAuthCookie(ctx, 'session');
     logEvent('User deleted itself', { user: user.id });
 

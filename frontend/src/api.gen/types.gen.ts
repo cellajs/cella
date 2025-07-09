@@ -1316,7 +1316,7 @@ export type GetMyMenuResponses = {
 
 export type GetMyMenuResponse = GetMyMenuResponses[keyof GetMyMenuResponses];
 
-export type DeleteSessionsData = {
+export type DeleteMySessionsData = {
   body?: {
     ids: Array<string>;
   };
@@ -1325,7 +1325,7 @@ export type DeleteSessionsData = {
   url: '/me/sessions';
 };
 
-export type DeleteSessionsErrors = {
+export type DeleteMySessionsErrors = {
   /**
    * Bad request: problem processing request.
    */
@@ -1348,9 +1348,9 @@ export type DeleteSessionsErrors = {
   429: ApiError;
 };
 
-export type DeleteSessionsError = DeleteSessionsErrors[keyof DeleteSessionsErrors];
+export type DeleteMySessionsError = DeleteMySessionsErrors[keyof DeleteMySessionsErrors];
 
-export type DeleteSessionsResponses = {
+export type DeleteMySessionsResponses = {
   /**
    * Success
    */
@@ -1360,7 +1360,7 @@ export type DeleteSessionsResponses = {
   };
 };
 
-export type DeleteSessionsResponse = DeleteSessionsResponses[keyof DeleteSessionsResponses];
+export type DeleteMySessionsResponse = DeleteMySessionsResponses[keyof DeleteMySessionsResponses];
 
 export type DeleteMyMembershipData = {
   body?: never;

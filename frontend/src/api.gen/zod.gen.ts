@@ -597,7 +597,7 @@ export const zGetMyMenuResponse = z.object({
   ),
 });
 
-export const zDeleteSessionsData = z.object({
+export const zDeleteMySessionsData = z.object({
   body: z
     .object({
       ids: z.array(z.string()).min(1),
@@ -610,7 +610,7 @@ export const zDeleteSessionsData = z.object({
 /**
  * Success
  */
-export const zDeleteSessionsResponse = z.object({
+export const zDeleteMySessionsResponse = z.object({
   success: z.boolean(),
   errors: z.array(zApiError),
 });
