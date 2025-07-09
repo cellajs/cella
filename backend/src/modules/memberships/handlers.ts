@@ -357,8 +357,11 @@ const membershipRouteHandlers = app
   .openapi(membershipRoutes.getMembers, async (ctx) => {
     const { idOrSlug, entityType, q, sort, order, offset, limit, role } = ctx.req.valid('query');
 
-    const entity = await resolveEntity(entityType, idOrSlug);
-    if (!entity) return errorResponse(ctx, 404, 'not_found', 'warn', entityType);
+    const organization = getContextOrganization();
+
+    // Validate entity existence and check read permission
+    const { error, entity } = await getValidContextEntity(ctx, idOrSlug, entityType, 'read');
+    if (error) return ctx.json(error, 400);
 
     const entityIdField = config.entityIdFields[entity.entityType];
 
@@ -366,6 +369,7 @@ const membershipRouteHandlers = app
     const $or = q ? [ilike(usersTable.name, prepareStringForILikeFilter(q)), ilike(usersTable.email, prepareStringForILikeFilter(q))] : [];
 
     const membersFilters = [
+      eq(membershipsTable.organizationId, organization.id),
       eq(membershipsTable[entityIdField], entity.id),
       eq(membershipsTable.contextType, entityType),
       isNull(membershipsTable.tokenId),
