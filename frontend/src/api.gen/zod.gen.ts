@@ -1314,7 +1314,7 @@ export const zGetRequestsResponse = z.object({
 export const zCreateRequestData = z.object({
   body: z
     .object({
-      email: z.string().email().min(1),
+      email: z.string().email(),
       type: z.enum(['waitlist', 'newsletter', 'contact']),
       message: z.union([z.string(), z.null()]),
     })

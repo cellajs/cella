@@ -8,7 +8,7 @@ const requestSelectSchema = createSelectSchema(requestsTable);
 export const requestSchema = requestSelectSchema.omit({ tokenId: true }).extend({ wasInvited: z.boolean() });
 
 export const requestCreateBodySchema = z.object({
-  email: z.string().min(1).email(),
+  email: z.email(),
   type: requestSchema.shape.type,
   message: z.string().nullable(),
 });
