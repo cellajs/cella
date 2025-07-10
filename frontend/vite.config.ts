@@ -122,6 +122,7 @@ viteConfig.plugins?.push(
       name: config.name,
       short_name: config.name,
       description: config.description,
+      theme_color: '#333333',
       icons: [
         {
           src: '/static/icons/icon-192x192.png',
