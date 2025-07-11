@@ -24,6 +24,7 @@ export const tokenWithDataSchema = z.object({
 export const sendVerificationEmailBodySchema = z.object({
   tokenId: z.string().optional(),
   userId: z.string().optional(),
+  linkedOauthAccountId: z.string().optional(),
 });
 
 export const passkeyChallengeQuerySchema = z.object({ challengeBase64: z.string() });

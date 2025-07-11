@@ -8,10 +8,11 @@ import i18n from 'i18next';
 import { db } from '#/db/db';
 import { type EmailModel, emailsTable } from '#/db/schema/emails';
 import { membershipsTable } from '#/db/schema/memberships';
+import { oauthAccountsTable } from '#/db/schema/oauth-accounts';
 import { organizationsTable } from '#/db/schema/organizations';
 import { passkeysTable } from '#/db/schema/passkeys';
 import { sessionsTable } from '#/db/schema/sessions';
-import { tokensTable } from '#/db/schema/tokens';
+import { type TokenModel, tokensTable } from '#/db/schema/tokens';
 import { type UserModel, usersTable } from '#/db/schema/users';
 import { type Env, getContextToken, getContextUser } from '#/lib/context';
 import { resolveEntity } from '#/lib/entity';
@@ -44,7 +45,7 @@ import { transformGithubUserData, transformSocialUserData } from '#/modules/auth
 import { verifyPassKeyPublic } from '#/modules/auth/helpers/passkey';
 import { getParsedSessionCookie, invalidateSessionById, setUserSession, validateSession } from '#/modules/auth/helpers/session';
 import { handleCreateUser, handleMembershipTokenUpdate } from '#/modules/auth/helpers/user';
-import { sendVerificationEmail } from '#/modules/auth/helpers/verify-email';
+import { createNewVerificationToken, sendVerificationEmail } from '#/modules/auth/helpers/verify-email';
 import authRoutes from '#/modules/auth/routes';
 import { getUserBy } from '#/modules/users/helpers/get-user-by';
 import { defaultHook } from '#/utils/default-hook';
@@ -140,74 +141,78 @@ const authRouteHandlers = app
 
     return await handleCreateUser({ ctx, newUser, membershipInviteTokenId, emailVerified: true });
   })
+
   /*
-   * Send verification email, also used to resend verification email.
+   * Send verification email, this is used for:
+   * - Verify the `email` after sign up
+   * - Resend verification email
+   * - Verify (providerId + email) after OAuth sign up
    */
   .openapi(authRoutes.sendVerificationEmail, async (ctx) => {
-    const { userId, tokenId } = ctx.req.valid('json');
+    const { userId, tokenId, linkedOauthAccountId } = ctx.req.valid('json');
+
+    /**
+     * ⚠️ Warning
+     * ↓↓↓ Ugly code below ↓↓↓
+     *
+     * - Just trying some things out, will be refactored later!
+     * - Nice weekend :)
+     */
 
     let user: UserModel | null = null;
+    let verificationType: TokenModel['type'] = 'email_verification';
 
-    // Get user
-    if (userId) user = await getUserBy('id', userId);
-    else if (tokenId) {
+    // Fetch user
+    if (linkedOauthAccountId) {
+      verificationType = 'oauth_email_verification';
+
+      const [linkedOauthAccount] = await db.select().from(oauthAccountsTable).where(eq(oauthAccountsTable.id, linkedOauthAccountId));
+
+      if (!linkedOauthAccount || !linkedOauthAccount.userId) return errorResponse(ctx, 404, 'not_found', 'warn');
+
+      user = await getUserBy('id', linkedOauthAccount.userId);
+    } else if (userId) {
+      user = await getUserBy('id', userId);
+    } else if (tokenId) {
       const [tokenRecord] = await db.select().from(tokensTable).where(eq(tokensTable.id, tokenId));
       if (!tokenRecord || !tokenRecord.userId) return errorResponse(ctx, 404, 'not_found', 'warn');
       user = await getUserBy('id', tokenRecord.userId);
+
+      if (tokenRecord.type === 'oauth_email_verification') {
+        verificationType = 'oauth_email_verification';
+      }
     }
 
     // Check if user exists
-    if (!user) return errorResponse(ctx, 404, 'not_found', 'warn', 'user');
+    if (!user) {
+      return errorResponse(ctx, 404, 'not_found', 'warn', 'user');
+    }
 
-    const [emailInUse]: (EmailModel | undefined)[] = await db
-      .select()
-      .from(emailsTable)
-      .where(and(eq(emailsTable.email, user.email), eq(emailsTable.verified, true)));
+    // Check if email is already verified (for email_verification)
+    if (verificationType === 'email_verification') {
+      const [emailInUse]: (EmailModel | undefined)[] = await db
+        .select()
+        .from(emailsTable)
+        .where(and(eq(emailsTable.email, user.email), eq(emailsTable.verified, true)));
+      if (emailInUse) return errorResponse(ctx, 409, 'email_exists', 'warn', 'user');
+    }
 
-    if (emailInUse) return errorResponse(ctx, 409, 'email_exists', 'warn', 'user');
+    // Create a new verification token
+    const tokenRecord = await createNewVerificationToken(verificationType, user);
 
-    // Delete previous
-    await db.delete(tokensTable).where(and(eq(tokensTable.userId, user.id), eq(tokensTable.type, 'email_verification')));
-
-    const token = nanoid(40);
-
-    const [tokenRecord] = await db
-      .insert(tokensTable)
-      .values({
-        token,
-        type: 'email_verification',
-        userId: user.id,
-        email: user.email,
-        createdBy: user.id,
-        expiresAt: createDate(new TimeSpan(2, 'h')),
-      })
-      .returning();
-
-    await db
-      .insert(emailsTable)
-      .values({ email: user.email, userId: user.id, tokenId: tokenRecord.id })
-      .onConflictDoUpdate({
-        target: emailsTable.email,
-        where: eq(emailsTable.verified, false), // Only update if NOT verified
-        set: {
-          tokenId: tokenRecord.id,
-          userId: user.id,
-        },
-      });
-
-    // Send email
+    // Prepare email
     const lng = user.language;
-    const verificationLink = `${config.frontendUrl}/auth/verify-email/${token}?tokenId=${tokenRecord.id}`;
+    const verificationLink = `${config.frontendUrl}/auth/verify-email/${tokenRecord.token}?tokenId=${tokenRecord.id}`;
     const subject = i18n.t('backend:email.email_verification.subject', { lng, appName: config.name });
     const staticProps = { verificationLink, subject, lng };
     const recipients = [{ email: user.email }];
 
+    // Send email
     type Recipient = { email: string };
-
     mailer.prepareEmails<EmailVerificationEmailProps, Recipient>(EmailVerificationEmail, staticProps, recipients);
 
+    // Notify event
     logEvent('Verification email sent', { user: user.id });
-
     return ctx.json(true, 200);
   })
   /*
@@ -576,23 +581,31 @@ const authRouteHandlers = app
    * Github authentication callback
    */
   .openapi(authRoutes.githubSignInCallback, async (ctx) => {
+    // If `error` or missing `code`, stop early
     const { code, state, error } = ctx.req.valid('query');
+    if (error || !code) {
+      return errorRedirect(ctx, 'oauth_failed', 'error');
+    }
 
-    // redirect if there is no code or error in callback
-    if (error || !code) return errorRedirect(ctx, 'oauth_failed', 'error');
-
+    // Check if `oauth` and `github` is enabled
     const strategy = 'github' as EnabledOauthProvider;
-    if (!isOAuthEnabled(strategy)) return errorResponse(ctx, 400, 'unsupported_oauth', 'error', undefined, { strategy });
+    if (!isOAuthEnabled(strategy)) {
+      return errorResponse(ctx, 400, 'unsupported_oauth', 'error', undefined, { strategy });
+    }
 
-    const stateCookie = await getAuthCookie(ctx, 'oauth_state');
     // Verify state
-    if (!state || !stateCookie || stateCookie !== state) return errorResponse(ctx, 401, 'invalid_state', 'warn', undefined, { strategy });
+    const stateCookie = await getAuthCookie(ctx, 'oauth_state');
+    if (!state || !stateCookie || stateCookie !== state) {
+      return errorResponse(ctx, 401, 'invalid_state', 'warn', undefined, { strategy });
+    }
 
     try {
+      // Validate `authorization code`
       const githubValidation = await githubAuth.validateAuthorizationCode(code);
-      const headers = { Authorization: `Bearer ${githubValidation.accessToken()}` };
 
-      // Parallel API calls to GitHub
+      // Fetch user profile from `GitHub`
+      const githubAccessToken = githubValidation.accessToken();
+      const headers = { Authorization: `Bearer ${githubAccessToken}` };
       const [githubUserResponse, githubUserEmailsResponse] = await Promise.all([
         fetch('https://api.github.com/user', { headers }),
         fetch('https://api.github.com/user/emails', { headers }),
@@ -600,37 +613,41 @@ const authRouteHandlers = app
 
       const githubUser = (await githubUserResponse.json()) as GithubUserProps;
       const githubUserEmails = (await githubUserEmailsResponse.json()) as GithubUserEmailProps[];
-      const transformedUser = transformGithubUserData(githubUser, githubUserEmails);
+      const userProfile = transformGithubUserData(githubUser, githubUserEmails);
 
-      const provider = { id: strategy, userId: String(githubUser.id) };
-
-      // Check account linking and invitation token handling
+      // Restore the `context` of the auth flow (e.g., invitation, connection)
       const { connectUserId, inviteToken } = await getOauthCookies(ctx);
 
-      // Find existing user based on email, connectUserId, or invite token id
-      const existingUsers = await findExistingUsers(transformedUser.email, connectUserId, inviteToken?.id ?? null);
+      // Find `existing user` based on `email`, `connectUserId`, or `invite token id`
+      const existingUsers = await findExistingUsers(userProfile.email, connectUserId, inviteToken?.id ?? null);
+      if (existingUsers.length > 1) {
+        return errorRedirect(ctx, 'oauth_mismatch', 'warn');
+      }
 
-      // Make sure we have only one user
-      if (existingUsers.length > 1) return errorRedirect(ctx, 'oauth_mismatch', 'warn');
       const existingUser = existingUsers[0] ?? null;
 
-      // If registration is disabled and no existing user and not invite throw to error
-      if (!config.has.registrationEnabled && !existingUser && !inviteToken) return errorRedirect(ctx, 'sign_up_restricted', 'info');
+      // If `registration` is disabled → Only allow `existing users` or `invited users`
+      if (!config.has.registrationEnabled && !existingUser && !inviteToken) {
+        return errorRedirect(ctx, 'sign_up_restricted', 'info');
+      }
 
-      // Get the redirect URL based on whether a new user or invite token exists
+      // Build redirect URL based on whether it's a first sign-in or not
       const firstSignIn = !connectUserId && !existingUser;
       const redirectUrl = await getOauthRedirectUrl(ctx, firstSignIn);
 
-      // If the user already exists, use existing user logic
+      // Prepare Provider object for the OAuth account
+      const provider = { id: strategy, userId: String(githubUser.id) };
+
+      // `Existing user` → Proceed with OAuth data (e.g., linking account, verifying...)
       if (existingUser) {
-        return await handleExistingUser(ctx, existingUser, transformedUser, provider, connectUserId, redirectUrl);
+        return await handleExistingUser(ctx, existingUser, userProfile, provider, connectUserId, redirectUrl);
       }
 
-      // Create new user and OAuth account
+      // `New user` → Create it and then proceed with OAuth data (e.g., linking account, verifying...)
       return await handleCreateUser({
         ctx,
-        newUser: transformedUser,
-        emailVerified: transformedUser.emailVerified,
+        newUser: userProfile,
+        emailVerified: userProfile.emailVerified,
         redirectUrl,
         provider,
         ...(inviteToken && inviteToken.type === 'membership' && { tokenId: inviteToken.id }),
@@ -657,57 +674,66 @@ const authRouteHandlers = app
    */
   .openapi(authRoutes.googleSignInCallback, async (ctx) => {
     const { state, code } = ctx.req.valid('query');
+
+    // Check if `oauth` and `google` is enabled
     const strategy = 'google' as EnabledOauthProvider;
+    if (!isOAuthEnabled(strategy)) {
+      return errorResponse(ctx, 400, 'unsupported_oauth', 'error', undefined, { strategy });
+    }
 
-    if (!isOAuthEnabled(strategy)) return errorResponse(ctx, 400, 'unsupported_oauth', 'error', undefined, { strategy });
-
+    // Verify state
     const storedState = await getAuthCookie(ctx, 'oauth_state');
     const storedCodeVerifier = await getAuthCookie(ctx, 'oauth_code_verifier');
 
-    // verify state
     if (!code || !storedState || !storedCodeVerifier || state !== storedState) {
       return errorResponse(ctx, 401, 'invalid_state', 'warn', undefined, { strategy });
     }
 
     try {
+      // Validate `authorization code`
       const googleValidation = await googleAuth.validateAuthorizationCode(code, storedCodeVerifier);
-      const headers = { Authorization: `Bearer ${googleValidation.accessToken()}` };
 
-      // Get user info from google
+      // Fetch user profile from `Google`
+      const googleAccessToken = googleValidation.accessToken();
+      const headers = { Authorization: `Bearer ${googleAccessToken}` };
       const response = await fetch('https://openidconnect.googleapis.com/v1/userinfo', { headers });
 
       const googleUser = (await response.json()) as GoogleUserProps;
-      const transformedUser = transformSocialUserData(googleUser);
+      const userProfile = transformSocialUserData(googleUser);
 
-      const provider = { id: strategy, userId: googleUser.sub };
-
-      // Check account linking and invitation token handling
+      // Restore the `context` of the auth flow (e.g., invitation, connection)
       const { connectUserId, inviteToken } = await getOauthCookies(ctx);
 
-      // Find existing user based on email, connectUserId, or invite token id
-      const existingUsers = await findExistingUsers(transformedUser.email, connectUserId, inviteToken?.id ?? null);
+      // Find `existing user` based on `email`, `connectUserId`, or `invite token id`
+      const existingUsers = await findExistingUsers(userProfile.email, connectUserId, inviteToken?.id ?? null);
+      if (existingUsers.length > 1) {
+        return errorRedirect(ctx, 'oauth_mismatch', 'warn');
+      }
 
-      // Make sure we have only one user
-      if (existingUsers.length > 1) return errorRedirect(ctx, 'oauth_mismatch', 'warn');
       const existingUser = existingUsers[0] ?? null;
 
-      // If registration is disabled and no existing user and not invite throw to error
-      if (!config.has.registrationEnabled && !existingUser && !inviteToken) return errorRedirect(ctx, 'sign_up_restricted', 'info');
+      // If `registration` is disabled → Only allow `existing users` or `invited users`
+      if (!config.has.registrationEnabled && !existingUser && !inviteToken) {
+        return errorRedirect(ctx, 'sign_up_restricted', 'info');
+      }
 
-      // Get the redirect URL based on whether a new user or invite token exists
+      // Build redirect URL based on whether it's a first sign-in or not
       const firstSignIn = !connectUserId && !existingUser;
       const redirectUrl = await getOauthRedirectUrl(ctx, firstSignIn);
 
-      // If the user already exists, use existing user logic
+      // Prepare Provider object for the OAuth account
+      const provider = { id: strategy, userId: googleUser.sub };
+
+      // `Existing user` → Proceed with OAuth data (e.g., linking account, verifying...)
       if (existingUser) {
-        return await handleExistingUser(ctx, existingUser, transformedUser, provider, connectUserId, redirectUrl);
+        return await handleExistingUser(ctx, existingUser, userProfile, provider, connectUserId, redirectUrl);
       }
 
-      // Create a new user and associated OAuth account
+      // `New user` → Create it and then proceed with OAuth data (e.g., linking account, verifying...)
       return await handleCreateUser({
         ctx,
-        newUser: transformedUser,
-        emailVerified: transformedUser.emailVerified,
+        newUser: userProfile,
+        emailVerified: userProfile.emailVerified,
         redirectUrl,
         provider,
         ...(inviteToken?.type === 'membership' && { tokenId: inviteToken.id }), // Conditionally add tokenId if membership invitation
@@ -734,53 +760,62 @@ const authRouteHandlers = app
    */
   .openapi(authRoutes.microsoftSignInCallback, async (ctx) => {
     const { state, code } = ctx.req.valid('query');
+
+    // Check if `oauth` and `microsoft` is enabled
     const strategy = 'microsoft' as EnabledOauthProvider;
+    if (!isOAuthEnabled(strategy)) {
+      return errorResponse(ctx, 400, 'unsupported_oauth', 'error', undefined, { strategy });
+    }
 
-    if (!isOAuthEnabled(strategy)) return errorResponse(ctx, 400, 'unsupported_oauth', 'error', undefined, { strategy });
-
+    // Verify state
     const storedState = await getAuthCookie(ctx, 'oauth_state');
     const storedCodeVerifier = await getAuthCookie(ctx, 'oauth_code_verifier');
 
-    // verify state
     if (!code || !storedState || !storedCodeVerifier || state !== storedState) {
       return errorResponse(ctx, 401, 'invalid_state', 'warn', undefined, { strategy });
     }
 
     try {
+      // Validate `authorization code`
       const microsoftValidation = await microsoftAuth.validateAuthorizationCode(code, storedCodeVerifier);
-      const headers = { Authorization: `Bearer ${microsoftValidation.accessToken()}` };
 
-      // Get user info from microsoft
+      // Fetch user profile from `microsoft`
+      const microsoftAccessToken = microsoftValidation.accessToken();
+      const headers = { Authorization: `Bearer ${microsoftAccessToken}` };
       const response = await fetch('https://graph.microsoft.com/oidc/userinfo', { headers });
 
       const microsoftUser = (await response.json()) as MicrosoftUserProps;
       const transformedUser = transformSocialUserData(microsoftUser);
 
-      const provider = { id: strategy, userId: microsoftUser.sub };
-
-      // Check account linking and invitation token handling
+      // Restore the `context` of the auth flow (e.g., invitation, connection)
       const { connectUserId, inviteToken } = await getOauthCookies(ctx);
 
-      // Find existing user based on email, connectUserId, or invite token id
+      // Find `existing user` based on `email`, `connectUserId`, or `invite token id`
       const existingUsers = await findExistingUsers(transformedUser.email, connectUserId, inviteToken?.id ?? null);
+      if (existingUsers.length > 1) {
+        return errorRedirect(ctx, 'oauth_mismatch', 'warn');
+      }
 
-      // Make sure we have only one user
-      if (existingUsers.length > 1) return errorRedirect(ctx, 'oauth_mismatch', 'warn');
       const existingUser = existingUsers[0] ?? null;
 
-      // If registration is disabled and no existing user and not invite throw to error
-      if (!config.has.registrationEnabled && !existingUser && !inviteToken) return errorRedirect(ctx, 'sign_up_restricted', 'info');
+      // If `registration` is disabled → Only allow `existing users` or `invited users`
+      if (!config.has.registrationEnabled && !existingUser && !inviteToken) {
+        return errorRedirect(ctx, 'sign_up_restricted', 'info');
+      }
 
-      // Get the redirect URL based on whether a new user or invite token exists
+      // Build redirect URL based on whether it's a first sign-in or not
       const firstSignIn = !connectUserId && !existingUser;
       const redirectUrl = await getOauthRedirectUrl(ctx, firstSignIn);
 
-      // If the user already exists, use existing user logic
+      // Prepare Provider object for the OAuth account
+      const provider = { id: strategy, userId: microsoftUser.sub };
+
+      // `Existing user` → Proceed with OAuth data (e.g., linking account, verifying...)
       if (existingUser) {
         return await handleExistingUser(ctx, existingUser, transformedUser, provider, connectUserId, redirectUrl);
       }
 
-      // Create new user and oauth account
+      // `New user` → Create it and then proceed with OAuth data (e.g., linking account, verifying...)
       return await handleCreateUser({
         ctx,
         newUser: transformedUser,

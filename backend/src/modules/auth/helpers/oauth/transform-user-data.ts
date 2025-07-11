@@ -22,8 +22,11 @@ export type TransformedUser = {
  * @throws - If no email is found in user data.
  */
 export const transformSocialUserData = (user: GoogleUserProps | MicrosoftUserProps): TransformedUser => {
-  if (!user.email) throw new Error('no_email_found');
+  if (!user.email) {
+    throw new Error('no_email_found');
+  }
 
+  // Normalize user data
   const email = user.email.toLowerCase();
 
   return {
@@ -31,7 +34,7 @@ export const transformSocialUserData = (user: GoogleUserProps | MicrosoftUserPro
     slug: slugFromEmail(email),
     email,
     name: user.name,
-    emailVerified: 'email_verified' in user ? user.email_verified : false,
+    emailVerified: false, // ← To align all providers (e.g. Microsoft, Google, Linkedin...), we treat each other as not trustworthy
     thumbnailUrl: user.picture,
     firstName: user.given_name,
     lastName: user.family_name,
@@ -48,9 +51,13 @@ export const transformSocialUserData = (user: GoogleUserProps | MicrosoftUserPro
  * @throws - If no email is found in user data.
  */
 export const transformGithubUserData = (user: GithubUserProps, emails: GithubUserEmailProps[]): TransformedUser => {
+  // Check required primary email
   const primaryEmail = emails.find((email) => email.primary);
-  if (!primaryEmail) throw new Error('no_email_found');
+  if (!primaryEmail) {
+    throw new Error('no_email_found');
+  }
 
+  // Normalize user data
   const email = primaryEmail.email.toLowerCase();
   const slug = slugify(user.login, { lower: true, strict: true });
   const { firstName, lastName } = splitFullName(user.name || slug);
@@ -60,7 +67,7 @@ export const transformGithubUserData = (user: GithubUserProps, emails: GithubUse
     slug,
     email,
     name: user.name || user.login,
-    emailVerified: primaryEmail.verified,
+    emailVerified: false, // ← To align all providers (e.g. Microsoft, Google, Linkedin...), we treat each other as not trustworthy
     thumbnailUrl: user.avatar_url,
     firstName,
     lastName,

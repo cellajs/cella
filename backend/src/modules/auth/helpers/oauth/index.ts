@@ -3,16 +3,15 @@ import { and, eq, or } from 'drizzle-orm';
 import type { Context } from 'hono';
 import { db } from '#/db/db';
 import { emailsTable } from '#/db/schema/emails';
-import { oauthAccountsTable } from '#/db/schema/oauth-accounts';
+import { type OauthAccountsModel, oauthAccountsTable } from '#/db/schema/oauth-accounts';
 import { tokensTable } from '#/db/schema/tokens';
 import { type UserModel, usersTable } from '#/db/schema/users';
 import { errorRedirect } from '#/lib/errors';
 import { getUsersByConditions } from '#/modules/users/helpers/get-user-by';
 import { isRedirectUrl } from '#/utils/is-redirect-url';
-import { getIsoDate } from '#/utils/iso-date';
 import { getAuthCookie } from '../cookie';
 import { setUserSession } from '../session';
-import { sendVerificationEmail } from '../verify-email';
+import { sendOauthVerificationEmail } from '../verify-email';
 import type { Provider } from './oauth-providers';
 import type { TransformedUser } from './transform-user-data';
 
@@ -25,83 +24,110 @@ export const getOauthRedirectUrl = async (ctx: Context, firstSignIn?: boolean) =
   return isRedirectUrl(baseRedirect) ? baseRedirect : `${config.frontendUrl}${baseRedirect}`;
 };
 
+/**
+ * Handle `existing user` during OAuth sign-in, basically there are two scenarios:
+ * 1. The user has an `verified linked OAuth account` → Just login!
+ * 2. The user has `not` a verified linked Oauth account yet → Link the account and verify it!
+ *
+ * @param ctx - Hono context.
+ * @param existingUser - The existing user model.
+ * @param userProfile - Transformed user profile data from the OAuth provider.
+ * @param provider - The OAuth provider information.
+ * @param connectUserId - Optional user ID to connect the OAuth account to.
+ * @param redirectUrl - The URL to redirect to after handling the existing user.
+ *
+ * @returns - Redirects to the appropriate URL based on the user's OAuth account status.
+ */
 export const handleExistingUser = async (
   ctx: Context,
   existingUser: UserModel,
-  transformedUser: TransformedUser,
+  userProfile: TransformedUser,
   provider: Provider,
   connectUserId: string | null,
   redirectUrl: string,
 ) => {
-  // Check if the user has a linked OAuth account
-  const [existingOauth] = await db
+  // Fetch `linked oauth account`
+  let [linkedOauthAccount] = await db
     .select()
     .from(oauthAccountsTable)
-    .where(and(eq(oauthAccountsTable.providerUserId, provider.userId), eq(oauthAccountsTable.providerId, provider.id)));
+    .where(
+      and(
+        eq(oauthAccountsTable.providerUserId, provider.userId),
+        eq(oauthAccountsTable.providerId, provider.id),
+        eq(oauthAccountsTable.email, userProfile.email),
+      ),
+    );
 
-  // Update the existing user if OAuth is not yet linked
-  if (!existingOauth) {
-    const { slug, name, emailVerified, ...providerUser } = transformedUser;
-    return await updateExistingUser(ctx, existingUser, provider.id, { providerUser, redirectUrl, emailVerified });
-  }
-
-  // Ensure the correct user is linking their account
-  if (existingOauth && connectUserId && existingOauth.userId !== connectUserId) {
+  // Ensure `linked oauth account` user ID matches the given `connect user ID`
+  if (linkedOauthAccount && connectUserId && linkedOauthAccount.userId !== connectUserId) {
     return errorRedirect(ctx, 'oauth_mismatch', 'warn');
   }
+
+  // If no linked oauth account found, create a new one
+  if (!linkedOauthAccount) {
+    linkedOauthAccount = await createLinkedOauthAccount(provider.id, userProfile, existingUser);
+  }
+
+  // If no verified linked oauth account → Verify it! (don't update any user data before verification!)
+  if (!linkedOauthAccount?.emailVerified) {
+    sendOauthVerificationEmail(linkedOauthAccount.id);
+    return ctx.redirect(`${config.frontendUrl}/auth/email-verification`, 302);
+  }
+
+  // Update user with OAuth provider data
+  await updateExistingUser(existingUser, userProfile);
 
   // Set the user session and redirect
   await setUserSession(ctx, existingUser.id, provider.id);
   return ctx.redirect(redirectUrl, 302);
 };
 
-interface Params {
-  providerUser: Pick<UserModel, 'thumbnailUrl' | 'firstName' | 'lastName' | 'id' | 'email'>;
-  emailVerified: boolean;
-  redirectUrl: string;
-}
+/**
+ * Create a new linked OAuth account for an existing user.
+ *
+ * @param providerId - The ID of the OAuth provider.
+ * @param userProfile - The transformed user profile data from the OAuth provider.
+ * @param existingUser - The existing user model to link the OAuth account to.
+ *
+ * @returns - The newly created OAuth account model.
+ */
+export const createLinkedOauthAccount = async (
+  providerId: EnabledOauthProvider,
+  userProfile: TransformedUser,
+  existingUser: UserModel,
+): Promise<OauthAccountsModel> => {
+  const [linkedOauthAccount] = await db
+    .insert(oauthAccountsTable)
+    .values({
+      providerId,
+      providerUserId: userProfile.id,
+      userId: existingUser.id,
+      email: userProfile.email,
+      verified: userProfile.emailVerified,
+    })
+    .returning();
+
+  return linkedOauthAccount;
+};
 
 /**
- * Update existing user
+ * Update existing user with OAuth provider data.
  *
- * @param ctx - Request/response context
- * @param existingUser - Existing user model
- * @param providerId - OAuth provider ID
- * @param params - Parameters for updating the user
+ * @param existingUser - The existing user model to update.
+ * @param userProfile - The transformed user profile data from the OAuth provider.
+ *
+ * @returns - A promise that resolves when the user is updated.
+ *
  */
-const updateExistingUser = async (ctx: Context, existingUser: UserModel, providerId: EnabledOauthProvider, params: Params) => {
-  const { providerUser, emailVerified, redirectUrl } = params;
-
-  await db.insert(oauthAccountsTable).values({ providerId, providerUserId: providerUser.id, userId: existingUser.id });
-
-  // Update user with auth provider data if not already present
+const updateExistingUser = async (existingUser: UserModel, userProfile: Pick<UserModel, 'thumbnailUrl' | 'firstName' | 'lastName'>) => {
   await db
     .update(usersTable)
     .set({
-      thumbnailUrl: existingUser.thumbnailUrl || providerUser.thumbnailUrl,
-      firstName: existingUser.firstName || providerUser.firstName,
-      lastName: existingUser.lastName || providerUser.lastName,
+      thumbnailUrl: existingUser.thumbnailUrl || userProfile.thumbnailUrl,
+      firstName: existingUser.firstName || userProfile.firstName,
+      lastName: existingUser.lastName || userProfile.lastName,
     })
     .where(eq(usersTable.id, existingUser.id));
-
-  // Send verification email if not verified and redirect to verify page
-  if (!emailVerified) {
-    sendVerificationEmail(providerUser.id);
-    return ctx.redirect(`${config.frontendUrl}/auth/email-verification`, 302);
-  }
-
-  await db
-    .insert(emailsTable)
-    .values({ email: providerUser.email, userId: existingUser.id, verified: true, verifiedAt: getIsoDate() })
-    .onConflictDoUpdate({
-      target: emailsTable.email,
-      set: { userId: existingUser.id, verifiedAt: getIsoDate(), verified: true },
-    });
-
-  // Sign in user
-  await setUserSession(ctx, existingUser.id, providerId);
-
-  return ctx.redirect(redirectUrl, 302);
 };
 
 /**
