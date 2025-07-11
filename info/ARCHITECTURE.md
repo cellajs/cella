@@ -8,7 +8,7 @@ Cella in general is targeted towards being a template for SaaS development. But 
 * focused on user generated content that requires some form of authentication/authorization. So either semi-public or private access.
 * Requires a great UX on different device, but native apps are not a direct priority
 * Development budget and time is limited
-* Fullstack development is seens as beneficial to work effectively and to provide engineering stability. 
+* Fullstack development is seen as beneficial to work effectively and to provide engineering stability. 
 
 ### Core aspects
  * Type safe, without overdoing it. 
