@@ -65,7 +65,6 @@ const InviteEmailForm = ({ entity, dialog: isDialog, children }: Props) => {
   const { mutate: systemInvite } = useMutation({ mutationFn: (body: FormValues) => baseSystemInvite({ body }), onSuccess });
 
   const onSubmit = (values: FormValues) => {
-    console.log(values);
     entity ? membershipInvite({ ...values, entity } as InviteMember, { onSuccess }) : systemInvite(values);
   };
 
