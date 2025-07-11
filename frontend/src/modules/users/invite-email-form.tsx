@@ -32,12 +32,10 @@ const InviteEmailForm = ({ entity, dialog: isDialog, children }: Props) => {
   const { t } = useTranslation();
   const { nextStep } = useStepper();
 
-  const baseSchema = z.object({
+  const formSchema = z.object({
     emails: z.array(z.email(t('common:invalid.email'))).min(1, { message: t('common:invalid.min_items', { items_count: 'one', item: 'email' }) }),
+    role: z.enum(config.rolesByType.entityRoles).optional(),
   });
-  const schemaWithRole = baseSchema.extend({ role: z.enum(config.rolesByType.entityRoles) });
-
-  const formSchema = z.union([baseSchema, schemaWithRole]);
   type FormValues = z.infer<typeof formSchema>;
 
   const formOptions: UseFormProps<FormValues> = useMemo(
@@ -66,7 +64,10 @@ const InviteEmailForm = ({ entity, dialog: isDialog, children }: Props) => {
   const { mutate: membershipInvite, isPending } = useInviteMemberMutation();
   const { mutate: systemInvite } = useMutation({ mutationFn: (body: FormValues) => baseSystemInvite({ body }), onSuccess });
 
-  const onSubmit = (values: FormValues) => (entity ? membershipInvite({ ...values, entity } as InviteMember, { onSuccess }) : systemInvite(values));
+  const onSubmit = (values: FormValues) => {
+    console.log(values);
+    entity ? membershipInvite({ ...values, entity } as InviteMember, { onSuccess }) : systemInvite(values);
+  };
 
   return (
     <Form {...form}>

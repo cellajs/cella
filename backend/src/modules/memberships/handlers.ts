@@ -59,7 +59,7 @@ const membershipRouteHandlers = app
 
     // Check create restrictions
     if (membersRestrictions !== 0 && currentOrgMemberships.length + emails.length > membersRestrictions) {
-      return errorResponse(ctx, 403, 'restrict_by_org', 'warn', 'attachment');
+      return errorResponse(ctx, 403, 'restrict_by_org', 'warn', entityType);
     }
 
     // Normalize emails
@@ -70,10 +70,6 @@ const membershipRouteHandlers = app
 
     // Fetch existing users based on the provided emails
     const existingUsers = await getUsersByConditions([inArray(emailsTable.email, normalizedEmails)]);
-
-    // Stop if no recipients
-    if (!existingUsers.length) return errorResponse(ctx, 400, 'no_recipients', 'warn');
-
     const userIds = existingUsers.map(({ id }) => id);
 
     // Since a user can have multiple emails, we need to check if the email exists in the emails table
