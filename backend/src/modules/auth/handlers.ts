@@ -47,6 +47,7 @@ import { handleCreateUser, handleMembershipTokenUpdate } from '#/modules/auth/he
 import { sendVerificationEmail } from '#/modules/auth/helpers/verify-email';
 import authRoutes from '#/modules/auth/routes';
 import { getUserBy } from '#/modules/users/helpers/get-user-by';
+import { userSelect } from '#/modules/users/helpers/select';
 import { defaultHook } from '#/utils/default-hook';
 import { isExpiredDate } from '#/utils/is-expired-date';
 import { getIsoDate } from '#/utils/iso-date';
@@ -55,7 +56,6 @@ import { slugFromEmail } from '#/utils/slug-from-email';
 import { createDate, TimeSpan } from '#/utils/time-span';
 import { CreatePasswordEmail, type CreatePasswordEmailProps } from '../../../emails/create-password';
 import { EmailVerificationEmail, type EmailVerificationEmailProps } from '../../../emails/email-verification';
-import { userSelect } from '../users/helpers/select';
 
 const enabledStrategies: readonly string[] = config.enabledAuthStrategies;
 const enabledOauthProviders: readonly string[] = config.enabledOauthProviders;

@@ -26,6 +26,7 @@ baseApp.notFound((ctx) => {
 
 // Error handler
 baseApp.onError((err, ctx) => {
+  // TODO improve not recreate it in errorResponse and just send it out
   if (err instanceof CustomError) return errorResponse(ctx, err.status, err.type, err.severity, err.entityType);
   return errorResponse(ctx, 500, 'server_error', 'error', undefined, {}, err);
 });
