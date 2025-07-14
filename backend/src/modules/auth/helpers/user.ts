@@ -3,7 +3,6 @@ import { and, eq } from 'drizzle-orm';
 import type { Context } from 'hono';
 import { db } from '#/db/db';
 import { emailsTable } from '#/db/schema/emails';
-import { oauthAccountsTable } from '#/db/schema/oauth-accounts';
 import { tokensTable } from '#/db/schema/tokens';
 import { type InsertUserModel, usersTable } from '#/db/schema/users';
 import { resolveEntity } from '#/lib/entity';
@@ -14,9 +13,10 @@ import { generateUnsubscribeToken } from '#/modules/users/helpers/unsubscribe-to
 import { getIsoDate } from '#/utils/iso-date';
 import { nanoid } from '#/utils/nanoid';
 import { checkSlugAvailable } from '../../entities/helpers/check-slug';
+import { createLinkedOauthAccount } from './oauth';
 import type { Provider } from './oauth/oauth-providers';
 import { setUserSession } from './session';
-import { sendVerificationEmail } from './verify-email';
+import { sendOauthVerificationEmail, sendVerificationEmail } from './verify-email';
 
 interface HandleCreateUserProps {
   ctx: Context;
@@ -45,8 +45,10 @@ export const handleCreateUser = async ({ ctx, newUser, redirectUrl, provider, me
   const slugAvailable = await checkSlugAvailable(newUser.slug);
 
   try {
-    // Insert new user into database
+    // Normalize email
     const userEmail = newUser.email.toLowerCase();
+
+    // Insert new user into database
     const [user] = await db
       .insert(usersTable)
       .values({
@@ -61,15 +63,20 @@ export const handleCreateUser = async ({ ctx, newUser, redirectUrl, provider, me
       .returning();
 
     // If a provider is passed, insert oauth account
-    if (provider) {
-      await db.insert(oauthAccountsTable).values({ providerId: provider.id, providerUserId: provider.userId, userId: user.id });
-    }
+    const linkedOauthAccount = provider ? await createLinkedOauthAccount(provider.id, newUser, user) : null;
+
     // If signing up with token, update it with new user id and insert membership if applicable
     if (membershipInviteTokenId) await handleMembershipTokenUpdate(user.id, membershipInviteTokenId);
 
     // If email is not verified, send verification email. Otherwise, create verified email record and  sign in user
-    if (!emailVerified) sendVerificationEmail(user.id);
-    else {
+    if (!emailVerified) {
+      if (!linkedOauthAccount) {
+        sendVerificationEmail(user.id);
+      }
+      if (linkedOauthAccount) {
+        sendOauthVerificationEmail(linkedOauthAccount.id);
+      }
+    } else {
       // Delete any unverified email under a different user
       await db.delete(emailsTable).where(and(eq(emailsTable.email, userEmail), eq(emailsTable.verified, false)));
 
