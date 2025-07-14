@@ -2,7 +2,7 @@ import { OpenAPIHono } from '@hono/zod-openapi';
 import { config } from 'config';
 import { contextStorage } from 'hono/context-storage';
 import type { Env } from '#/lib/context';
-import { errorResponse } from './lib/errors';
+import { CustomError, errorResponse } from './lib/errors';
 import middlewares from './middlewares/app';
 
 const baseApp = new OpenAPIHono<Env>();
@@ -26,6 +26,7 @@ baseApp.notFound((ctx) => {
 
 // Error handler
 baseApp.onError((err, ctx) => {
+  if (err instanceof CustomError) return errorResponse(ctx, err.status, err.type, err.severity, err.entityType);
   return errorResponse(ctx, 500, 'server_error', 'error', undefined, {}, err);
 });
 

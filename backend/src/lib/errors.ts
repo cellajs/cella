@@ -26,6 +26,23 @@ export type EventData = {
   readonly [key: string]: number | string | boolean | null;
 };
 
+export class CustomError extends Error {
+  name: string;
+  status: HttpErrorStatus;
+  type: SimplifiedErrorKey;
+  severity?: Severity;
+  entityType?: EntityType;
+
+  constructor(error: CustomError) {
+    super(error.message);
+    this.name = error.type || 'CustomError';
+    this.status = error.status;
+    this.type = error.type;
+    this.severity = error.severity || 'error';
+    this.entityType = error.entityType;
+  }
+}
+
 /**
  * Create an error object, log it if needed, and return the error details.
  *
