@@ -2,46 +2,27 @@ import { onlineManager } from '@tanstack/react-query';
 import { Check, Fingerprint, RotateCw, Trash } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { deletePasskey } from '~/api.gen';
 import { toaster } from '~/modules/common/toaster';
 import { passkeyRegistration } from '~/modules/me/helpers';
 import type { MeAuthData } from '~/modules/me/types';
 import { Button } from '~/modules/ui/button';
-import { useUserStore } from '~/store/user';
+import { useDeletePasskeyMutation } from './query';
 
 const Passkeys = ({ userAuthInfo }: { userAuthInfo: MeAuthData }) => {
   const { t } = useTranslation();
 
   const [hasPasskey, setHasPasskey] = useState(userAuthInfo.passkey);
 
+  const { mutate: deletePasskey } = useDeletePasskeyMutation();
   const handlePasskeyRegistration = async () => {
     const success = await passkeyRegistration();
     if (success) setHasPasskey(true);
   };
 
-  /**
-   * Deletes an existing passkey for current user.
-   *
-   * @throws Error if there is an issue with removing the passkey.
-   * @returns True if the passkey was successfully removed, otherwise false.
-   */
-  const handleDeletePasskey = async () => {
+  const handleDeletePasskey = () => {
     if (!onlineManager.isOnline()) return toaster(t('common:action.offline.text'), 'warning');
 
-    // TODO use react-query for consistency in error handling and code?
-    try {
-      const result = await deletePasskey();
-      if (!result) return toaster(t('error:passkey_remove_failed'), 'error');
-
-      // Success
-      setHasPasskey(false);
-      toaster(t('common:success.passkey_removed'), 'success');
-      useUserStore.getState().setMeAuthData({ passkey: false });
-    } catch (error) {
-      console.error('Error removing passkey:', error);
-      toaster(t('error:passkey_remove_failed'), 'error');
-      return false;
-    }
+    deletePasskey(void 0, { onSuccess: () => setHasPasskey(false) });
   };
 
   return (
