@@ -15,7 +15,7 @@ import { tokensTable } from '#/db/schema/tokens';
 import { type UserModel, usersTable } from '#/db/schema/users';
 import { type Env, getContextToken, getContextUser } from '#/lib/context';
 import { resolveEntity } from '#/lib/entity';
-import { type ErrorType, errorRedirect, errorResponse } from '#/lib/errors';
+import { errorRedirect, errorResponse } from '#/lib/errors';
 import { eventManager } from '#/lib/events';
 import { mailer } from '#/lib/mailer';
 import { sendSSEToUsers } from '#/lib/sse';
@@ -518,13 +518,9 @@ const authRouteHandlers = app
 
     if (redirect) await handleOAuthRedirect(ctx, redirect);
 
-    let error: ErrorType | null = null;
-
     // If sign up is disabled, stop early
-    if (type === 'invite') error = await handleOAuthInvitation(ctx);
-    if (type === 'connect') error = await handleOAuthConnection(ctx);
-
-    if (error) return ctx.json(error, error.status as 400 | 403 | 404);
+    if (type === 'invite') await handleOAuthInvitation(ctx);
+    if (type === 'connect') await handleOAuthConnection(ctx);
 
     const state = generateState();
     const url = githubAuth.createAuthorizationURL(state, githubScopes);
@@ -538,13 +534,10 @@ const authRouteHandlers = app
     const { type, redirect } = ctx.req.valid('query');
 
     if (redirect) await handleOAuthRedirect(ctx, redirect);
-    let error: ErrorType | null = null;
 
     // If sign up is disabled, stop early
-    if (type === 'invite') error = await handleOAuthInvitation(ctx);
-    if (type === 'connect') error = await handleOAuthConnection(ctx);
-
-    if (error) return ctx.json(error, error.status as 400 | 403 | 404);
+    if (type === 'invite') await handleOAuthInvitation(ctx);
+    if (type === 'connect') await handleOAuthConnection(ctx);
 
     const state = generateState();
     const codeVerifier = generateCodeVerifier();
@@ -559,12 +552,9 @@ const authRouteHandlers = app
     const { type, redirect } = ctx.req.valid('query');
 
     if (redirect) await handleOAuthRedirect(ctx, redirect);
-    let error: ErrorType | null = null;
 
-    if (type === 'invite') error = await handleOAuthInvitation(ctx);
-    if (type === 'connect') error = await handleOAuthConnection(ctx);
-
-    if (error) return ctx.json(error, error.status as 400 | 403 | 404);
+    if (type === 'invite') handleOAuthInvitation(ctx);
+    if (type === 'connect') handleOAuthConnection(ctx);
 
     const state = generateState();
     const codeVerifier = generateCodeVerifier();

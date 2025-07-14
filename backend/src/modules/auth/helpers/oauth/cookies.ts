@@ -3,7 +3,7 @@ import { eq } from 'drizzle-orm';
 import type { Context } from 'hono';
 import { db } from '#/db/db';
 import { tokensTable } from '#/db/schema/tokens';
-import { createError } from '#/lib/errors';
+import { ApiError } from '#/lib/newErrors';
 import { logEvent } from '#/middlewares/logger/log-event';
 import { isExpiredDate } from '#/utils/is-expired-date';
 import { isRedirectUrl } from '#/utils/is-redirect-url';
@@ -89,13 +89,13 @@ export const handleOAuthRedirect = async (ctx: Context, passedRedirect: string) 
  */
 export const handleOAuthInvitation = async (ctx: Context) => {
   const token = ctx.req.query('token');
-  if (!token) return createError(ctx, 404, 'invitation_not_found', 'warn');
+  if (!token) throw new ApiError({ status: 404, type: 'invitation_not_found', severity: 'warn' });
 
   // Fetch token record
   const [tokenRecord] = await db.select().from(tokensTable).where(eq(tokensTable.token, token));
-  if (!tokenRecord) return createError(ctx, 404, 'invitation_not_found', 'warn');
-  if (isExpiredDate(tokenRecord.expiresAt)) return createError(ctx, 403, 'expired_token', 'warn');
-  if (tokenRecord.type !== 'invitation') return createError(ctx, 400, 'invalid_token', 'error');
+  if (!tokenRecord) throw new ApiError({ status: 404, type: 'invitation_not_found', severity: 'warn' });
+  if (isExpiredDate(tokenRecord.expiresAt)) throw new ApiError({ status: 403, type: 'expired_token', severity: 'warn' });
+  if (tokenRecord.type !== 'invitation') throw new ApiError({ status: 400, type: 'invalid_token', severity: 'error' });
 
   // Determine redirection based on entity presence
   const isMembershipInvite = !!tokenRecord.entityType;
@@ -120,14 +120,13 @@ export const handleOAuthInvitation = async (ctx: Context) => {
 export const handleOAuthConnection = async (ctx: Context) => {
   const connectingUserId = ctx.req.query('connect');
 
-  if (!connectingUserId) return createError(ctx, 404, 'oauth_connection_not_found', 'error');
+  if (!connectingUserId) throw new ApiError({ status: 404, type: 'oauth_connection_not_found', severity: 'error' });
 
   const sessionData = await getParsedSessionCookie(ctx);
-  if (!sessionData) return createError(ctx, 401, 'no_session', 'warn');
+  if (!sessionData) throw new ApiError({ status: 401, type: 'no_session', severity: 'warn' });
 
   const { user } = await validateSession(sessionData.sessionToken);
-  if (user?.id !== connectingUserId) return createError(ctx, 403, 'user_mismatch', 'warn');
+  if (user?.id !== connectingUserId) throw new ApiError({ status: 403, type: 'user_mismatch', severity: 'warn' });
 
   await setAuthCookie(ctx, 'oauth_connect_user_id', connectingUserId, oauthCookieExpires);
-  return null;
 };

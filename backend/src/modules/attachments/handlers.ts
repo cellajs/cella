@@ -171,8 +171,7 @@ const attachmentsRouteHandlers = app
   .openapi(attachmentRoutes.getAttachment, async (ctx) => {
     const { id } = ctx.req.valid('param');
 
-    const { error, entity: attachment } = await getValidProductEntity(ctx, id, 'attachment', 'organization', 'read');
-    if (error) return ctx.json(error, 400);
+    const attachment = await getValidProductEntity(id, 'attachment', 'organization', 'read');
 
     const data = await processAttachmentUrls(attachment);
 
@@ -184,8 +183,7 @@ const attachmentsRouteHandlers = app
   .openapi(attachmentRoutes.updateAttachment, async (ctx) => {
     const { id } = ctx.req.valid('param');
 
-    const { error } = await getValidProductEntity(ctx, id, 'attachment', 'organization', 'update');
-    if (error) return ctx.json(error, 400);
+    await getValidProductEntity(id, 'attachment', 'organization', 'update');
 
     const user = getContextUser();
     const updatedFields = ctx.req.valid('json');

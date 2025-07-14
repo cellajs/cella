@@ -40,8 +40,7 @@ const membershipRouteHandlers = app
     const { idOrSlug, entityType: passedEntityType } = ctx.req.valid('query');
 
     // Validate entity existence and check user permission for updates
-    const { error, entity } = await getValidContextEntity(ctx, idOrSlug, passedEntityType, 'update');
-    if (error) return ctx.json(error, 400);
+    const { entity } = await getValidContextEntity(idOrSlug, passedEntityType, 'update');
 
     // Extract entity details
     const { entityType, id: entityId } = entity;
@@ -225,8 +224,7 @@ const membershipRouteHandlers = app
     const { entityType, idOrSlug } = ctx.req.valid('query');
     const { ids } = ctx.req.valid('json');
 
-    const { error, entity } = await getValidContextEntity(ctx, idOrSlug, entityType, 'delete');
-    if (error) return ctx.json(error, 400);
+    const { entity } = await getValidContextEntity(idOrSlug, entityType, 'delete');
 
     const entityIdField = config.entityIdFields[entityType];
 
@@ -304,10 +302,7 @@ const membershipRouteHandlers = app
     if (!membershipContext) return errorResponse(ctx, 404, 'not_found', 'warn', updatedType);
 
     // Check if user has permission to update someone elses membership role
-    if (role) {
-      const { error } = await getValidContextEntity(ctx, membershipContextId, updatedType, 'update');
-      if (error) return ctx.json(error, 400);
-    }
+    if (role) await getValidContextEntity(membershipContextId, updatedType, 'update');
 
     // If archived changed, set lowest order in relevant memberships
     if (archived !== undefined && archived !== membershipToUpdate.archived) {
@@ -354,8 +349,7 @@ const membershipRouteHandlers = app
     const organization = getContextOrganization();
 
     // Validate entity existence and check read permission
-    const { error, entity } = await getValidContextEntity(ctx, idOrSlug, entityType, 'read');
-    if (error) return ctx.json(error, 400);
+    const { entity } = await getValidContextEntity(idOrSlug, entityType, 'read');
 
     const entityIdField = config.entityIdFields[entity.entityType];
 
@@ -410,8 +404,7 @@ const membershipRouteHandlers = app
     // Scope request to organization
     const organization = getContextOrganization();
 
-    const { error, entity } = await getValidContextEntity(ctx, idOrSlug, entityType, 'read');
-    if (error) return ctx.json(error, 400);
+    const { entity } = await getValidContextEntity(idOrSlug, entityType, 'read');
 
     const entityIdField = config.entityIdFields[entity.entityType];
 
