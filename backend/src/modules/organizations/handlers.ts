@@ -32,6 +32,13 @@ const organizationRouteHandlers = app
   .openapi(organizationRoutes.createOrganization, async (ctx) => {
     const { name, slug } = ctx.req.valid('json');
     const user = getContextUser();
+    const memberships = getContextMemberships();
+
+    const createdOrgsCount = memberships.reduce((count, m) => {
+      return m.contextType === 'organization' && m.createdBy === user.id ? count + 1 : count;
+    }, 0);
+
+    if (createdOrgsCount === 5) return errorResponse(ctx, 403, 'restrict_by_app', 'warn', 'organization');
 
     // Check if slug is available
     const slugAvailable = await checkSlugAvailable(slug);
