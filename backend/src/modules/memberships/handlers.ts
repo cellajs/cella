@@ -50,11 +50,6 @@ const membershipRouteHandlers = app
     const user = getContextUser();
     const organization = getContextOrganization();
 
-    const currentOrgMemberships = await db
-      .select()
-      .from(membershipsTable)
-      .where(and(eq(membershipsTable.contextType, 'organization'), eq(membershipsTable.organizationId, organization.id)));
-
     // Normalize emails
     const normalizedEmails = emails.map((email) => email.toLowerCase());
 
@@ -144,8 +139,12 @@ const membershipRouteHandlers = app
     if (emailsWithIdToInvite.length === 0) return ctx.json(0, 200);
 
     // Check create restrictions
+    const [{ currentOrgMemberships }] = await db
+      .select({ currentOrgMemberships: count() })
+      .from(membershipsTable)
+      .where(and(eq(membershipsTable.contextType, 'organization'), eq(membershipsTable.organizationId, organization.id)));
     const membersRestrictions = organization.restrictions.user;
-    if (membersRestrictions !== 0 && currentOrgMemberships.length + emailsWithIdToInvite.length > membersRestrictions) {
+    if (membersRestrictions !== 0 && currentOrgMemberships + emailsWithIdToInvite.length > membersRestrictions) {
       return errorResponse(ctx, 403, 'restrict_by_org', 'warn', entityType);
     }
 
