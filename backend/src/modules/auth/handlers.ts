@@ -55,6 +55,7 @@ import { slugFromEmail } from '#/utils/slug-from-email';
 import { createDate, TimeSpan } from '#/utils/time-span';
 import { CreatePasswordEmail, type CreatePasswordEmailProps } from '../../../emails/create-password';
 import { EmailVerificationEmail, type EmailVerificationEmailProps } from '../../../emails/email-verification';
+import { userSelect } from '../users/helpers/select';
 
 const enabledStrategies: readonly string[] = config.enabledAuthStrategies;
 const enabledOauthProviders: readonly string[] = config.enabledOauthProviders;
@@ -217,6 +218,13 @@ const authRouteHandlers = app
     const token = getContextToken();
     if (!token || !token.userId) return errorResponse(ctx, 400, 'invalid_request', 'error');
 
+    const [user] = await db
+      .select({ ...userSelect })
+      .from(usersTable)
+      .where(eq(usersTable.id, token.userId));
+
+    if (!user) return errorResponse(ctx, 404, 'not_found', 'error', 'user');
+
     // Set email verified
     await db
       .update(emailsTable)
@@ -227,7 +235,7 @@ const authRouteHandlers = app
     await db.delete(tokensTable).where(eq(tokensTable.id, token.id));
 
     // Sign in user
-    await setUserSession(ctx, token.userId, 'email');
+    await setUserSession(ctx, user, 'email');
 
     return ctx.json(true, 200);
   })
@@ -306,7 +314,7 @@ const authRouteHandlers = app
     ]);
 
     // Sign in user
-    await setUserSession(ctx, user.id, 'password');
+    await setUserSession(ctx, user, 'password');
 
     return ctx.json(true, 200);
   })
@@ -342,7 +350,7 @@ const authRouteHandlers = app
     // If email is not verified, send verification email
     if (!emailInfo.verified) sendVerificationEmail(user.id);
     // Sign in user
-    else await setUserSession(ctx, user.id, 'password');
+    else await setUserSession(ctx, user, 'password');
 
     return ctx.json(emailInfo.verified, 200);
   })
@@ -439,7 +447,14 @@ const authRouteHandlers = app
   .openapi(authRoutes.startImpersonation, async (ctx) => {
     const { targetUserId } = ctx.req.valid('query');
 
-    const user = getContextUser();
+    const [user] = await db
+      .select({ ...userSelect })
+      .from(usersTable)
+      .where(eq(usersTable.id, targetUserId));
+
+    if (!user) return errorResponse(ctx, 404, 'not_found', 'error', 'user');
+
+    const adminUser = getContextUser();
     const sessionData = await getParsedSessionCookie(ctx);
 
     if (!sessionData) {
@@ -447,7 +462,7 @@ const authRouteHandlers = app
       return errorResponse(ctx, 401, 'unauthorized', 'warn');
     }
 
-    await setUserSession(ctx, targetUserId, 'password', user.id);
+    await setUserSession(ctx, user, 'password', adminUser);
 
     logEvent('Started impersonation', { admin: user.id, user: targetUserId });
 
@@ -850,7 +865,7 @@ const authRouteHandlers = app
       }
     }
 
-    await setUserSession(ctx, user.id, 'passkey');
+    await setUserSession(ctx, user, 'passkey');
     return ctx.json(true, 200);
   });
 

@@ -19,7 +19,10 @@ import { deviceInfo } from './device-info';
  * Sets a user session and stores it in the database.
  * Generates a session token, records device information, and optionally associates an admin user for impersonation.
  */
-export const setUserSession = async (ctx: Context, userId: UserModel['id'], strategy: AuthStrategy, adminUserId?: UserModel['id']) => {
+export const setUserSession = async (ctx: Context, user: UserModel, strategy: AuthStrategy, adminUser?: UserModel) => {
+  if (!adminUser && user.role === 'admin') {
+    //TODO check Ip
+  }
   // Get device information
   const device = deviceInfo(ctx);
 
@@ -29,8 +32,8 @@ export const setUserSession = async (ctx: Context, userId: UserModel['id'], stra
 
   const session = {
     token: hashedSessionToken,
-    userId,
-    type: adminUserId ? ('impersonation' as const) : ('regular' as const),
+    userId: adminUser ? adminUser.id : user.id,
+    type: adminUser ? ('impersonation' as const) : ('regular' as const),
     deviceName: device.name,
     deviceType: device.type,
     deviceOs: device.os,
@@ -44,20 +47,20 @@ export const setUserSession = async (ctx: Context, userId: UserModel['id'], stra
   await db.insert(sessionsTable).values(session);
 
   // Set expiration time span
-  const timeSpan = adminUserId ? new TimeSpan(1, 'h') : new TimeSpan(1, 'w');
+  const timeSpan = adminUser ? new TimeSpan(1, 'h') : new TimeSpan(1, 'w');
 
-  const cookieContent = `${hashedSessionToken}.${adminUserId ?? ''}`;
+  const cookieContent = `${hashedSessionToken}.${adminUser ?? ''}`;
 
   // Set session cookie with the unhashed version
   await setAuthCookie(ctx, 'session', cookieContent, timeSpan);
 
   // If it's an impersonation session, we can stop here
-  if (adminUserId) return;
+  if (adminUser) return;
 
   // Update last sign in date
   const lastSignInAt = getIsoDate();
-  await db.update(usersTable).set({ lastSignInAt }).where(eq(usersTable.id, userId));
-  logEvent('User signed in', { user: userId, strategy });
+  await db.update(usersTable).set({ lastSignInAt }).where(eq(usersTable.id, user.id));
+  logEvent('User signed in', { user: user.id, strategy });
 };
 
 /**
