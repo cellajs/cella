@@ -242,7 +242,6 @@
 
 .slash-menu-item {
   border-radius: 0.25rem;
-  cursor: pointer;
   font-size: 0.888rem;
   min-width: 14rem;
   align-items: center;
@@ -250,8 +249,6 @@
   height: 2.25rem;
   flex-direction: row;
   justify-content: space-between;
-  padding-left: 0.5rem;
-  padding-right: 0.5rem;
 }
 
 .slash-menu-item-badge {
