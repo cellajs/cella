@@ -50,17 +50,10 @@ const membershipRouteHandlers = app
     const user = getContextUser();
     const organization = getContextOrganization();
 
-    const membersRestrictions = organization.restrictions.user;
-
     const currentOrgMemberships = await db
       .select()
       .from(membershipsTable)
       .where(and(eq(membershipsTable.contextType, 'organization'), eq(membershipsTable.organizationId, organization.id)));
-
-    // Check create restrictions
-    if (membersRestrictions !== 0 && currentOrgMemberships.length + emails.length > membersRestrictions) {
-      return errorResponse(ctx, 403, 'restrict_by_org', 'warn', entityType);
-    }
 
     // Normalize emails
     const normalizedEmails = emails.map((email) => email.toLowerCase());
@@ -149,6 +142,12 @@ const membershipRouteHandlers = app
     }
 
     if (emailsWithIdToInvite.length === 0) return ctx.json(0, 200);
+
+    // Check create restrictions
+    const membersRestrictions = organization.restrictions.user;
+    if (membersRestrictions !== 0 && currentOrgMemberships.length + emailsWithIdToInvite.length > membersRestrictions) {
+      return errorResponse(ctx, 403, 'restrict_by_org', 'warn', entityType);
+    }
 
     // Generate invitation tokens
     const tokens = emailsWithIdToInvite.map(({ email, userId }) => ({
