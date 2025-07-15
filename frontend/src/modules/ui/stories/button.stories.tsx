@@ -1,7 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Loader2, Mail } from 'lucide-react';
-
-import { Button } from '../button';
+import { Button } from '~/modules/ui/button';
 
 /**
  * Displays a button or a component that looks like a button.

@@ -1,6 +1,6 @@
 import { z } from '@hono/zod-openapi';
 import { config } from 'config';
-import { userSchema } from '../users/schema';
+import { userSchema } from '#/modules/users/schema';
 
 export const inviteBodySchema = z.object({
   emails: userSchema.shape.email.array().min(1).max(50),

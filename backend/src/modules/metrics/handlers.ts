@@ -8,9 +8,9 @@ import type { Env } from '#/lib/context';
 import { metricsConfig } from '#/middlewares/observability/config';
 import { calculateRequestsPerMinute } from '#/modules/metrics/helpers/calculate-requests-per-minute';
 import { parsePromMetrics } from '#/modules/metrics/helpers/parse-prom-metrics';
+import metricRoutes from '#/modules/metrics/routes';
 import { defaultHook } from '#/utils/default-hook';
 import { TimeSpan } from '#/utils/time-span';
-import metricRoutes from './routes';
 
 const app = new OpenAPIHono<Env>({ defaultHook });
 

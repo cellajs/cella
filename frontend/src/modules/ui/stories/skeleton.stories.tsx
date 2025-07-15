@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
-import { Skeleton } from '../skeleton';
+import { Skeleton } from '~/modules/ui/skeleton';
 
 /**
  * Use to show a placeholder while content is loading.

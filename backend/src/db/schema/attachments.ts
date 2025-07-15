@@ -1,8 +1,8 @@
 import { pgTable, varchar } from 'drizzle-orm/pg-core';
+import { attachmentRelations } from '#/attachment-config';
+import { usersTable } from '#/db/schema/users';
+import { timestampColumns } from '#/db/utils/timestamp-columns';
 import { nanoid } from '#/utils/nanoid';
-import { attachmentRelations } from '../../attachment-config';
-import { timestampColumns } from '../utils/timestamp-columns';
-import { usersTable } from './users';
 
 export const attachmentsTable = pgTable(
   'attachments',

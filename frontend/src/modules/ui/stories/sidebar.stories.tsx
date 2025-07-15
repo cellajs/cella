@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Calendar, ChevronUp, Home, Inbox, Search, Settings, User2 } from 'lucide-react';
 import { userEvent } from 'storybook/test';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../dropdown-menu';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '~/modules/ui/dropdown-menu';
 import {
   Sidebar,
   SidebarContent,
@@ -15,7 +15,7 @@ import {
   SidebarMenuItem,
   SidebarProvider,
   SidebarTrigger,
-} from '../sidebar';
+} from '~/modules/ui/sidebar';
 
 /**
  * A composable, themeable and customizable sidebar component.

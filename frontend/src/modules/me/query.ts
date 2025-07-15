@@ -2,12 +2,12 @@ import { queryOptions, useMutation } from '@tanstack/react-query';
 import { t } from 'i18next';
 import { deletePasskey, type UpdateUserData, updateMe } from '~/api.gen';
 import type { ApiError } from '~/lib/api';
+import { toaster } from '~/modules/common/toaster';
 import { getAndSetMe, getAndSetMeAuthData, getAndSetMenu } from '~/modules/me/helpers';
 import { usersKeys } from '~/modules/users/query';
 import type { User } from '~/modules/users/types';
 import { queryClient } from '~/query/query-client';
 import { useUserStore } from '~/store/user';
-import { toaster } from '../common/toaster';
 
 /**
  * Keys for current authenticated user(self) related queries. These keys help to uniquely identify different query.

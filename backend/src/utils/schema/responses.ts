@@ -1,7 +1,7 @@
 import type { createRoute } from '@hono/zod-openapi';
 import { z } from '@hono/zod-openapi';
 import { config } from 'config';
-import { entityTypeSchema } from './common';
+import { entityTypeSchema } from '#/utils/schema/common';
 
 /**
  * Type alias for the responses parameter of createRoute.

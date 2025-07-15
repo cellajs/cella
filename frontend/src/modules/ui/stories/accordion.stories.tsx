@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { expect, userEvent, waitFor, within } from 'storybook/test';
 
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '../accordion';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '~/modules/ui/accordion';
 
 /**
  * A vertically stacked set of interactive headings that each reveal a section

@@ -9,14 +9,14 @@ import { type InsertUserModel, usersTable } from '#/db/schema/users';
 import { resolveEntity } from '#/lib/entity';
 import { ApiError } from '#/lib/errors';
 import { logEvent } from '#/middlewares/logger/log-event';
+import type { Provider } from '#/modules/auth/helpers/oauth/oauth-providers';
+import { setUserSession } from '#/modules/auth/helpers/session';
+import { sendVerificationEmail } from '#/modules/auth/helpers/verify-email';
+import { checkSlugAvailable } from '#/modules/entities/helpers/check-slug';
 import { insertMembership } from '#/modules/memberships/helpers';
 import { generateUnsubscribeToken } from '#/modules/users/helpers/unsubscribe-token';
 import { getIsoDate } from '#/utils/iso-date';
 import { nanoid } from '#/utils/nanoid';
-import { checkSlugAvailable } from '../../entities/helpers/check-slug';
-import type { Provider } from './oauth/oauth-providers';
-import { setUserSession } from './session';
-import { sendVerificationEmail } from './verify-email';
 
 interface HandleCreateUserProps {
   ctx: Context;

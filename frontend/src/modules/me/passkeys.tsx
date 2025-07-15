@@ -4,9 +4,9 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toaster } from '~/modules/common/toaster';
 import { passkeyRegistration } from '~/modules/me/helpers';
+import { useDeletePasskeyMutation } from '~/modules/me/query';
 import type { MeAuthData } from '~/modules/me/types';
 import { Button } from '~/modules/ui/button';
-import { useDeletePasskeyMutation } from './query';
 
 const Passkeys = ({ userAuthInfo }: { userAuthInfo: MeAuthData }) => {
   const { t } = useTranslation();

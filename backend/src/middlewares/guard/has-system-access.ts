@@ -3,9 +3,9 @@ import { every } from 'hono/combine';
 import { ipRestriction } from 'hono/ip-restriction';
 import { ApiError } from '#/lib/errors';
 import { registerMiddlewareDescription } from '#/lib/openapi-describer';
+import { isSystemAdmin } from '#/middlewares/guard/is-system-admin';
 import { getIp } from '#/utils/get-ip';
 import { env } from '../../env';
-import { isSystemAdmin } from './is-system-admin';
 
 const allowList = env.REMOTE_SYSTEM_ACCESS_IP.split(',') || [];
 

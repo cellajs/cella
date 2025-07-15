@@ -1,8 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { useMemo } from 'react';
 import { Area, AreaChart, Bar, BarChart, CartesianGrid, Label, Line, LineChart, Pie, PieChart, XAxis } from 'recharts';
-
-import { type ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent } from '../chart';
+import { type ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent } from '~/modules/ui/chart';
 
 const multiSeriesData = [
   { month: 'January', desktop: 186, mobile: 80 },

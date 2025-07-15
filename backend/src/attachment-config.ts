@@ -1,5 +1,5 @@
 import { index, type PgColumn, varchar } from 'drizzle-orm/pg-core';
-import { organizationsTable } from './db/schema/organizations';
+import { organizationsTable } from '#/db/schema/organizations';
 
 /**
  * Include app-specific entity relations - or custom columns - in attachments table.

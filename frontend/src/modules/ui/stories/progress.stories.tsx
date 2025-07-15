@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
-import { Progress } from '../progress';
+import { Progress } from '~/modules/ui/progress';
 
 /**
  * Displays an indicator showing the completion progress of a task, typically

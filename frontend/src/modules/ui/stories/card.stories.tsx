@@ -1,8 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { BellRing } from 'lucide-react';
-
-import { Button } from '../button';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../card';
+import { Button } from '~/modules/ui/button';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '~/modules/ui/card';
 
 const notifications = [
   {

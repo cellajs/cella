@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Info } from 'lucide-react';
 import { expect, userEvent } from 'storybook/test';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../collapsible';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '~/modules/ui/collapsible';
 
 /**
  * An interactive component which expands/collapses a panel.

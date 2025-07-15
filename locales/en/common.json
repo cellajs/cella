@@ -246,7 +246,7 @@
   "password_confirmation": "Password confirmation",
   "pending": "Pending",
   "pending_invitations": "Pending invitations",
-  "pending_invitations.text": "Manage users invited to join this {{entity}}.",
+  "pending_invitations.text": "Manage users invited to join this {{entityType}}.",
   "period": "Period",
   "placeholder.email_domains": "Add email domains",
   "placeholder.search": "Search",

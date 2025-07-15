@@ -3579,9 +3579,9 @@ export type GetPendingInvitationsResponses = {
       email: string;
       createdAt: string;
       createdBy: string | null;
+      role: 'member' | 'admin';
       expiresAt: string;
       name: string | null;
-      role: 'member' | 'admin';
     }>;
     total: number;
   };

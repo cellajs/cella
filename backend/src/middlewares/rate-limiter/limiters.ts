@@ -1,7 +1,7 @@
 import type { MiddlewareHandler } from 'hono';
 import type { Env } from '#/lib/context';
 import { registerMiddlewareDescription } from '#/lib/openapi-describer';
-import { rateLimiter } from './core';
+import { rateLimiter } from '#/middlewares/rate-limiter/core';
 
 /**
  * Email spam limit for endpoints where emails are sent to others. Max 10 requests per hour. For sign up with password, reset password, public requests etc.
