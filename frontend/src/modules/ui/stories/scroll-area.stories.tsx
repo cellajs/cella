@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
-import { ScrollArea } from '../scroll-area';
+import { ScrollArea } from '~/modules/ui/scroll-area';
 
 /**
  * Augments native scroll functionality for custom, cross-browser styling.

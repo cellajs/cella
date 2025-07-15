@@ -7,6 +7,7 @@ import { useTranslation } from 'react-i18next';
 import useDownloader from 'react-use-downloader';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { useCopyToClipboard } from '~/hooks/use-copy-to-clipboard';
+import DeleteAttachments from '~/modules/attachments/delete-attachments';
 import { formatBytes } from '~/modules/attachments/table/helpers';
 import AttachmentPreview from '~/modules/attachments/table/preview';
 import type { Attachment } from '~/modules/attachments/types';
@@ -28,7 +29,6 @@ import UserCell from '~/modules/users/user-cell';
 import { useUserStore } from '~/store/user';
 import { dateShort } from '~/utils/date-short';
 import { isCDNUrl } from '~/utils/is-cdn-url';
-import DeleteAttachments from '../delete-attachments';
 
 export const useColumns = (entity: EntityPage, isSheet: boolean, isCompact: boolean) => {
   const { t } = useTranslation();

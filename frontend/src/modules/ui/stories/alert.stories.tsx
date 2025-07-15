@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { AlertCircle } from 'lucide-react';
 
-import { Alert, AlertDescription, AlertTitle } from '../alert';
+import { Alert, AlertDescription, AlertTitle } from '~/modules/ui/alert';
 
 /**
  * Displays a callout for user attention.

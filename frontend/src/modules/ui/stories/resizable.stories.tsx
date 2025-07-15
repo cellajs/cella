@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { fn } from 'storybook/test';
-import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '../resizable';
+import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '~/modules/ui/resizable';
 
 /**
  * Accessible resizable panel groups and layouts with keyboard support.
