@@ -1,8 +1,8 @@
 import { Novu } from '@novu/api';
 import { UpdateSubscriberChannelRequestDtoProviderId as ProviderEnum } from '@novu/api/models/components';
 import { config } from 'config';
+import { novuConfig } from '#/lib/notifications/novu-config';
 import { logEvent } from '#/middlewares/logger/log-event';
-import { novuConfig } from './novu-config';
 
 /**
  * Sends a Slack message via Novu to notify about new contact form submissions or waitlist requests.

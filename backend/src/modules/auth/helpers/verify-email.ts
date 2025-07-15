@@ -1,6 +1,6 @@
 import { config } from 'config';
 import { logEvent } from '#/middlewares/logger/log-event';
-import authRoutes from '../routes';
+import authRoutes from '#/modules/auth/routes';
 
 /**
  * Trigger the backend to send a verification email to the user.

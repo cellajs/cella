@@ -5,11 +5,11 @@ import { db } from '#/db/db';
 import { tokensTable } from '#/db/schema/tokens';
 import { createError } from '#/lib/errors';
 import { logEvent } from '#/middlewares/logger/log-event';
+import { type CookieName, deleteAuthCookie, getAuthCookie, setAuthCookie } from '#/modules/auth/helpers/cookie';
+import { getParsedSessionCookie, validateSession } from '#/modules/auth/helpers/session';
 import { isExpiredDate } from '#/utils/is-expired-date';
 import { isRedirectUrl } from '#/utils/is-redirect-url';
 import { TimeSpan } from '#/utils/time-span';
-import { type CookieName, deleteAuthCookie, getAuthCookie, setAuthCookie } from '../cookie';
-import { getParsedSessionCookie, validateSession } from '../session';
 
 export const oauthCookieExpires = new TimeSpan(5, 'm');
 

@@ -6,14 +6,14 @@ import { usersTable } from '#/db/schema/users';
 import { type Env, getContextMemberships, getContextUser } from '#/lib/context';
 import { createError, type ErrorType, errorResponse } from '#/lib/errors';
 import { logEvent } from '#/middlewares/logger/log-event';
+import { checkSlugAvailable } from '#/modules/entities/helpers/check-slug';
 import { getUsersByConditions } from '#/modules/users/helpers/get-user-by';
+import { userSelect } from '#/modules/users/helpers/select';
+import userRoutes from '#/modules/users/routes';
 import { defaultHook } from '#/utils/default-hook';
 import { getIsoDate } from '#/utils/iso-date';
 import { getOrderColumn } from '#/utils/order-column';
 import { prepareStringForILikeFilter } from '#/utils/sql';
-import { checkSlugAvailable } from '../entities/helpers/check-slug';
-import { userSelect } from './helpers/select';
-import userRoutes from './routes';
 
 const app = new OpenAPIHono<Env>({ defaultHook });
 

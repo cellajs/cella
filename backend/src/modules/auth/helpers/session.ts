@@ -5,6 +5,8 @@ import { db } from '#/db/db';
 import { type AuthStrategy, type SessionModel, sessionsTable } from '#/db/schema/sessions';
 import { type UserModel, usersTable } from '#/db/schema/users';
 import { logEvent } from '#/middlewares/logger/log-event';
+import { deleteAuthCookie, getAuthCookie, setAuthCookie } from '#/modules/auth/helpers/cookie';
+import { deviceInfo } from '#/modules/auth/helpers/device-info';
 import { userSelect } from '#/modules/users/helpers/select';
 import { isExpiredDate } from '#/utils/is-expired-date';
 import { getIsoDate } from '#/utils/iso-date';
@@ -12,8 +14,6 @@ import { nanoid } from '#/utils/nanoid';
 import { encodeLowerCased } from '#/utils/oslo';
 import { sessionCookieSchema } from '#/utils/schema/session-cookie';
 import { createDate, TimeSpan } from '#/utils/time-span';
-import { deleteAuthCookie, getAuthCookie, setAuthCookie } from './cookie';
-import { deviceInfo } from './device-info';
 
 /**
  * Sets a user session and stores it in the database.

@@ -1,7 +1,7 @@
 import { config } from 'config';
 import { boolean, foreignKey, index, pgTable, timestamp, varchar } from 'drizzle-orm/pg-core';
+import { timestampColumns } from '#/db/utils/timestamp-columns';
 import { nanoid } from '#/utils/nanoid';
-import { timestampColumns } from '../utils/timestamp-columns';
 
 const roleEnum = config.rolesByType.systemRoles;
 const languagesEnum = config.languages;

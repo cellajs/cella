@@ -1,7 +1,7 @@
 import { config } from 'config';
 import { varchar } from 'drizzle-orm/pg-core';
+import type { ContextEntityTypeColumns } from '#/db/types';
 import { entityTables } from '#/entity-config';
-import type { ContextEntityTypeColumns } from '../types';
 
 /**
  * Helper function to generate fields dynamically based on `config.contextEntityTypes`,

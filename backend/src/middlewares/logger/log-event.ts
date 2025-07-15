@@ -1,6 +1,6 @@
 import type { Severity } from 'config';
 import type { EventData } from '#/lib/errors';
-import { externalLogger } from './external-logger';
+import { externalLogger } from '#/middlewares/logger/external-logger';
 
 /**
  * Logs significant events with optional additional data to console and an external logging service.
