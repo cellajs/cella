@@ -11,7 +11,7 @@ import { usersTable } from '#/db/schema/users';
 import { env } from '#/env';
 import { type Env, getContextMemberships, getContextUser } from '#/lib/context';
 import { resolveEntity } from '#/lib/entity';
-import { createError, type ErrorType, errorResponse } from '#/lib/errors';
+import { ApiError, createError, type ErrorType } from '#/lib/errors';
 import { getParams, getSignature } from '#/lib/transloadit';
 import { isAuthenticated } from '#/middlewares/guard';
 import { logEvent } from '#/middlewares/logger/log-event';
@@ -139,7 +139,7 @@ const meRouteHandlers = app
   .openapi(meRoutes.updateMe, async (ctx) => {
     const user = getContextUser();
 
-    if (!user) return errorResponse(ctx, 404, 'not_found', 'warn', 'user', { user: 'self' });
+    if (!user) throw new ApiError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'user', eventData: { user: 'self' } });
 
     const { bannerUrl, firstName, lastName, language, newsletter, thumbnailUrl, slug } = ctx.req.valid('json');
 
@@ -147,7 +147,7 @@ const meRouteHandlers = app
 
     if (slug && slug !== user.slug) {
       const slugAvailable = await checkSlugAvailable(slug);
-      if (!slugAvailable) return errorResponse(ctx, 409, 'slug_exists', 'warn', 'user', { slug });
+      if (!slugAvailable) throw new ApiError({ status: 409, type: 'slug_exists', severity: 'warn', entityType: 'user', eventData: { slug } });
     }
 
     const [updatedUser] = await db
@@ -176,7 +176,7 @@ const meRouteHandlers = app
     const user = getContextUser();
 
     // Check if user exists
-    if (!user) return errorResponse(ctx, 404, 'not_found', 'warn', 'user', { user: 'self' });
+    if (!user) throw new ApiError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'user', eventData: { user: 'self' } });
 
     // Delete user
     await db.delete(usersTable).where(eq(usersTable.id, user.id));
@@ -197,7 +197,7 @@ const meRouteHandlers = app
     const { entityType, idOrSlug } = ctx.req.valid('query');
 
     const entity = await resolveEntity(entityType, idOrSlug);
-    if (!entity) return errorResponse(ctx, 404, 'not_found', 'warn', entityType);
+    if (!entity) throw new ApiError({ status: 404, type: 'not_found', severity: 'warn', entityType });
 
     const entityIdField = config.entityIdFields[entityType];
 
@@ -218,7 +218,7 @@ const meRouteHandlers = app
     const user = getContextUser();
 
     const challengeFromCookie = await getAuthCookie(ctx, 'passkey_challenge');
-    if (!challengeFromCookie) return errorResponse(ctx, 401, 'invalid_credentials', 'error');
+    if (!challengeFromCookie) throw new ApiError({ status: 401, type: 'invalid_credentials', severity: 'error' });
 
     const { credentialId, publicKey } = parseAndValidatePasskeyAttestation(clientDataJSON, attestationObject, challengeFromCookie);
 
@@ -256,7 +256,7 @@ const meRouteHandlers = app
 
       return ctx.json(token, 200);
     } catch (error) {
-      return errorResponse(ctx, 500, 'missing_auth_key', 'error');
+      throw new ApiError({ status: 500, type: 'missing_auth_key', severity: 'error' });
     }
   })
   /*
@@ -267,11 +267,11 @@ const meRouteHandlers = app
 
     // Check if token exists
     const user = await getUserBy('unsubscribeToken', token, 'unsafe');
-    if (!user) return errorResponse(ctx, 404, 'not_found', 'warn', 'user');
+    if (!user) throw new ApiError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'user' });
 
     // Verify token
     const isValid = verifyUnsubscribeToken(user.email, token);
-    if (!isValid) return errorResponse(ctx, 401, 'unsubscribe_failed', 'warn', 'user');
+    if (!isValid) throw new ApiError({ status: 401, type: 'unsubscribe_failed', severity: 'warn', entityType: 'user' });
 
     // Update user
     await db.update(usersTable).set({ newsletter: false }).where(eq(usersTable.id, user.id));

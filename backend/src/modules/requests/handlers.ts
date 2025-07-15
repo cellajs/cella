@@ -4,7 +4,7 @@ import { and, count, eq, getTableColumns, ilike, inArray, type SQL, sql } from '
 import { db } from '#/db/db';
 import { type RequestModel, requestsTable } from '#/db/schema/requests';
 import type { Env } from '#/lib/context';
-import { type ErrorType, errorResponse } from '#/lib/errors';
+import { ApiError } from '#/lib/errors';
 import { sendSlackMessage } from '#/lib/notifications';
 import requestRoutes from '#/modules/requests/routes';
 import { getUserBy } from '#/modules/users/helpers/get-user-by';
@@ -28,7 +28,7 @@ const requestRouteHandlers = app
 
     if (type === 'waitlist') {
       const existingUser = await getUserBy('email', loweredEmail);
-      if (existingUser) return errorResponse(ctx, 400, 'request_email_is_user', 'info');
+      if (existingUser) throw new ApiError({ status: 400, type: 'request_email_is_user' });
     }
 
     // Check if not duplicate for unique requests
@@ -37,7 +37,7 @@ const requestRouteHandlers = app
         .select()
         .from(requestsTable)
         .where(and(eq(requestsTable.email, loweredEmail), inArray(requestsTable.type, uniqueRequests)));
-      if (existingRequest?.type === type) return errorResponse(ctx, 409, 'request_exists', 'info');
+      if (existingRequest?.type === type) throw new ApiError({ status: 409, type: 'request_exists' });
     }
     const { tokenId, ...requestsSelect } = getTableColumns(requestsTable);
 
@@ -99,15 +99,12 @@ const requestRouteHandlers = app
 
     // Convert the ids to an array
     const toDeleteIds = Array.isArray(ids) ? ids : [ids];
-    if (!toDeleteIds.length) return errorResponse(ctx, 400, 'invalid_request', 'error', 'organization');
+    if (!toDeleteIds.length) throw new ApiError({ status: 400, type: 'invalid_request', severity: 'error' });
 
     // Delete the requests
     await db.delete(requestsTable).where(inArray(requestsTable.id, toDeleteIds));
 
-    // Map errors of requests user is not allowed to delete
-    const errors: ErrorType[] = [];
-
-    return ctx.json({ success: true, errors }, 200);
+    return ctx.json({ success: true, errors: [] }, 200);
   });
 
 export default requestRouteHandlers;

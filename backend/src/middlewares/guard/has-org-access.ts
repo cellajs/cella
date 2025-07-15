@@ -5,7 +5,7 @@ import { createMiddleware } from 'hono/factory';
 import { db } from '#/db/db';
 import { organizationsTable } from '#/db/schema/organizations';
 import { type Env, getContextMemberships, getContextUser } from '#/lib/context';
-import { errorResponse } from '#/lib/errors';
+import { ApiError } from '#/lib/errors';
 import { registerMiddlewareDescription } from '#/lib/openapi-describer';
 
 /**
@@ -17,9 +17,9 @@ import { registerMiddlewareDescription } from '#/lib/openapi-describer';
  * @returns Error response or undefined if the user is allowed to proceed.
  */
 
-export const hasOrgAccess: MiddlewareHandler<Env> = createMiddleware<Env>(async (ctx, next): Promise<Response | undefined> => {
+export const hasOrgAccess: MiddlewareHandler<Env> = createMiddleware<Env>(async (ctx, next) => {
   const orgIdOrSlug = ctx.req.param('orgIdOrSlug');
-  if (!orgIdOrSlug) return errorResponse(ctx, 400, 'invalid_request', 'error');
+  if (!orgIdOrSlug) throw new ApiError({ status: 400, type: 'invalid_request', severity: 'error' });
 
   const memberships = getContextMemberships();
   const user = getContextUser();
@@ -29,12 +29,13 @@ export const hasOrgAccess: MiddlewareHandler<Env> = createMiddleware<Env>(async 
   const idOrSlugFilter = or(eq(organizationsTable.id, orgIdOrSlug), eq(organizationsTable.slug, orgIdOrSlug));
   const [organization] = await db.select().from(organizationsTable).where(idOrSlugFilter);
 
-  if (!organization) return errorResponse(ctx, 404, 'not_found', 'warn', 'organization');
+  if (!organization) throw new ApiError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'organization' });
 
   // Check if user has access to organization (or is a system admin)
   const orgMembership = memberships.find((m) => m.organizationId === organization.id && m.contextType === 'organization') || null;
-  if (!isSystemAdmin && !orgMembership) return errorResponse(ctx, 403, 'forbidden', 'warn', 'organization');
-
+  if (!isSystemAdmin && !orgMembership) {
+    throw new ApiError({ status: 403, type: 'forbidden', severity: 'warn', entityType: 'organization' });
+  }
   const orgWithMembership = { ...organization, membership: orgMembership };
 
   // Set organization with membership (can be null for system admins!) in context

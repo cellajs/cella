@@ -1,7 +1,7 @@
 import { type ContextEntityType, config, type ProductEntityType } from 'config';
 import { getContextMemberships, getContextOrganization, getContextUser } from '#/lib/context';
 import { type EntityModel, resolveEntity } from '#/lib/entity';
-import { ApiError } from '#/lib/newErrors';
+import { ApiError } from '#/lib/errors';
 import { checkPermission } from '#/permissions/check-if-allowed';
 import type { PermittedAction } from '#/permissions/permissions-config';
 

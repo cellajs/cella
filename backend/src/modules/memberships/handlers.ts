@@ -9,7 +9,7 @@ import { tokensTable } from '#/db/schema/tokens';
 import { usersTable } from '#/db/schema/users';
 import { type Env, getContextMemberships, getContextOrganization, getContextUser } from '#/lib/context';
 import { resolveEntity } from '#/lib/entity';
-import { createError, type ErrorType, errorResponse } from '#/lib/errors';
+import { ApiError, createError, type ErrorType } from '#/lib/errors';
 import { eventManager } from '#/lib/events';
 import { mailer } from '#/lib/mailer';
 import { sendSSEToUsers } from '#/lib/sse';
@@ -144,7 +144,7 @@ const membershipRouteHandlers = app
       .where(and(eq(membershipsTable.contextType, 'organization'), eq(membershipsTable.organizationId, organization.id)));
     const membersRestrictions = organization.restrictions.user;
     if (membersRestrictions !== 0 && currentOrgMemberships + emailsWithIdToInvite.length > membersRestrictions) {
-      return errorResponse(ctx, 403, 'restrict_by_org', 'warn', entityType);
+      throw new ApiError({ status: 403, type: 'restrict_by_org', severity: 'warn', entityType });
     }
 
     // Generate invitation tokens
@@ -290,16 +290,18 @@ const membershipRouteHandlers = app
       .where(and(eq(membershipsTable.id, membershipId), eq(membershipsTable.organizationId, organization.id)))
       .limit(1);
 
-    if (!membershipToUpdate) return errorResponse(ctx, 404, 'not_found', 'warn', 'user', { membership: membershipId });
+    if (!membershipToUpdate) {
+      throw new ApiError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'user', eventData: { membership: membershipId } });
+    }
 
     const updatedType = membershipToUpdate.contextType;
     const updatedEntityIdField = config.entityIdFields[updatedType];
 
     const membershipContextId = membershipToUpdate[updatedEntityIdField];
-    if (!membershipContextId) return errorResponse(ctx, 404, 'not_found', 'warn', updatedType);
+    if (!membershipContextId) throw new ApiError({ status: 404, type: 'not_found', severity: 'warn', entityType: updatedType });
 
     const membershipContext = await resolveEntity(updatedType, membershipContextId);
-    if (!membershipContext) return errorResponse(ctx, 404, 'not_found', 'warn', updatedType);
+    if (!membershipContext) throw new ApiError({ status: 404, type: 'not_found', severity: 'warn', entityType: updatedType });
 
     // Check if user has permission to update someone elses membership role
     if (role) await getValidContextEntity(membershipContextId, updatedType, 'update');

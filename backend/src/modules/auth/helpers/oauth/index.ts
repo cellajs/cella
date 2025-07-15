@@ -6,7 +6,7 @@ import { emailsTable } from '#/db/schema/emails';
 import { oauthAccountsTable } from '#/db/schema/oauth-accounts';
 import { tokensTable } from '#/db/schema/tokens';
 import { type UserModel, usersTable } from '#/db/schema/users';
-import { errorRedirect } from '#/lib/errors';
+import { ApiError } from '#/lib/errors';
 import { getUsersByConditions } from '#/modules/users/helpers/get-user-by';
 import { isRedirectUrl } from '#/utils/is-redirect-url';
 import { getIsoDate } from '#/utils/iso-date';
@@ -47,7 +47,7 @@ export const handleExistingUser = async (
 
   // Ensure the correct user is linking their account
   if (existingOauth && connectUserId && existingOauth.userId !== connectUserId) {
-    return errorRedirect(ctx, 'oauth_mismatch', 'warn');
+    throw new ApiError({ status: 403, type: 'oauth_mismatch', severity: 'warn', redirectToFrontend: true });
   }
 
   // Set the user session and redirect

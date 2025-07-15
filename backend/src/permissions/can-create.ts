@@ -2,7 +2,7 @@ import type { ContextEntityType, ProductEntityType } from 'config';
 
 import { getContextMemberships, getContextOrganization } from '#/lib/context';
 import type { EntityModel } from '#/lib/entity';
-import { ApiError } from '#/lib/newErrors';
+import { ApiError } from '#/lib/errors';
 import { checkPermission } from '#/permissions/check-if-allowed';
 
 /**
