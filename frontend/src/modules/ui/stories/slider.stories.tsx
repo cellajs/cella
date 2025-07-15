@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
-import { Slider } from '../slider';
+import { Slider } from '~/modules/ui/slider';
 
 /**
  * An input where the user selects a value from within a given range.

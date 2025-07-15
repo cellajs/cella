@@ -6,10 +6,10 @@ import { csrf } from 'hono/csrf';
 import { secureHeaders } from 'hono/secure-headers';
 import type { Env } from '#/lib/context';
 import { dynamicBodyLimit } from '#/middlewares/body-limit';
+import { logEvent } from '#/middlewares/logger/log-event';
+import { logger } from '#/middlewares/logger/logger';
+import { monitoringMiddleware } from '#/middlewares/monitoring';
 import { observabilityMiddleware } from '#/middlewares/observability';
-import { logEvent } from './logger/log-event';
-import { logger } from './logger/logger';
-import { monitoringMiddleware } from './monitoring';
 
 const app = new OpenAPIHono<Env>();
 

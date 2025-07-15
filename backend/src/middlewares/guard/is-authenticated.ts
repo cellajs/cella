@@ -57,7 +57,10 @@ export const isAuthenticated: MiddlewareHandler<Env> = createMiddleware<Env>(asy
   });
 
   // Fetch user's memberships from the database
-  const memberships = await db.select(membershipSummarySelect).from(membershipsTable).where(eq(membershipsTable.userId, user.id));
+  const memberships = await db
+    .select({ ...membershipSummarySelect, createdBy: membershipsTable.createdBy })
+    .from(membershipsTable)
+    .where(eq(membershipsTable.userId, user.id));
   ctx.set('memberships', memberships);
 
   await next();

@@ -3,11 +3,11 @@ import { CalendarIcon, ChevronDownIcon } from 'lucide-react';
 import { useState } from 'react';
 import { action } from 'storybook/actions';
 import { expect, userEvent, waitFor, within } from 'storybook/test';
-import { Button } from '../button';
-import { Calendar } from '../calendar';
-import { Input } from '../input';
-import { Label } from '../label';
-import { Popover, PopoverContent, PopoverTrigger } from '../popover';
+import { Button } from '~/modules/ui/button';
+import { Calendar } from '~/modules/ui/calendar';
+import { Input } from '~/modules/ui/input';
+import { Label } from '~/modules/ui/label';
+import { Popover, PopoverContent, PopoverTrigger } from '~/modules/ui/popover';
 
 /**
  * A window overlaid on either the primary window or another dialog window,

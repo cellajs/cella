@@ -13,11 +13,11 @@ import { SelectEmails } from '~/modules/common/form-fields/select-emails';
 import SelectRoleRadio from '~/modules/common/form-fields/select-role-radio';
 import { useStepper } from '~/modules/common/stepper/use-stepper';
 import type { EntityPage } from '~/modules/entities/types';
+import { useInviteMemberMutation } from '~/modules/memberships/query-mutations';
 import type { InviteMember } from '~/modules/memberships/types';
 import { Badge } from '~/modules/ui/badge';
 import { Button, SubmitButton } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
-import { useInviteMemberMutation } from '../memberships/query-mutations';
 
 interface Props {
   entity?: EntityPage;

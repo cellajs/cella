@@ -419,7 +419,7 @@ const membershipRouteHandlers = app
       id: tokensTable.id,
       name: usersTable.name,
       email: tokensTable.email,
-      role: membershipsTable.role,
+      role: tokensTable.role,
       expiresAt: tokensTable.expiresAt,
       createdAt: tokensTable.createdAt,
       createdBy: tokensTable.createdBy,
@@ -430,15 +430,16 @@ const membershipRouteHandlers = app
     const pendingInvitationsQuery = db
       .select(invitedMemberSelect)
       .from(tokensTable)
+      .leftJoin(usersTable, eq(usersTable.id, tokensTable.userId))
       .where(
         and(
           eq(tokensTable.type, 'invitation'),
           eq(tokensTable.entityType, entity.entityType),
           eq(tokensTable[entityIdField], entity.id),
           eq(tokensTable.organizationId, organization.id),
+          isNotNull(tokensTable.role),
         ),
       )
-      .leftJoin(usersTable, eq(usersTable.id, tokensTable.userId))
       .orderBy(orderColumn);
 
     const [{ total }] = await db.select({ total: count() }).from(pendingInvitationsQuery.as('invites'));

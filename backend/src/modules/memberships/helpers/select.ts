@@ -2,7 +2,7 @@ import type { z } from '@hono/zod-openapi';
 import { config } from 'config';
 import { membershipsTable } from '#/db/schema/memberships';
 import type { ContextEntityTypeIdFields, GeneratedColumn } from '#/db/types';
-import type { membershipSummarySchema } from '../schema';
+import type { membershipSummarySchema } from '#/modules/memberships/schema';
 
 export type MembershipSummary = z.infer<typeof membershipSummarySchema>;
 

@@ -1,8 +1,8 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
-import { Button } from '../button';
-import { Label } from '../label';
-import { Textarea } from '../textarea';
+import { Button } from '~/modules/ui/button';
+import { Label } from '~/modules/ui/label';
+import { Textarea } from '~/modules/ui/textarea';
 
 /**
  * Displays a form textarea or a component that looks like a textarea.

@@ -1,8 +1,8 @@
 import { boolean, pgTable, timestamp, varchar } from 'drizzle-orm/pg-core';
+import { tokensTable } from '#/db/schema/tokens';
 import { usersTable } from '#/db/schema/users';
 import { timestampColumns } from '#/db/utils/timestamp-columns';
 import { nanoid } from '#/utils/nanoid';
-import { tokensTable } from './tokens';
 
 export const emailsTable = pgTable('emails', {
   id: varchar().primaryKey().$defaultFn(nanoid),

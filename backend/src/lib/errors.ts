@@ -5,11 +5,11 @@ import { config } from 'config';
 import type { Context } from 'hono';
 import type { ClientErrorStatusCode, ServerErrorStatusCode } from 'hono/utils/http-status';
 import i18n from 'i18next';
+import { type Env, getContextOrganization, getContextUser } from '#/lib/context';
+import type locales from '#/lib/i18n-locales';
 import { externalLogger } from '#/middlewares/logger/external-logger';
 import { logEvent } from '#/middlewares/logger/log-event';
 import type { errorSchema } from '#/utils/schema/responses';
-import { type Env, getContextOrganization, getContextUser } from './context';
-import type locales from './i18n-locales';
 
 type StripPrefix<T, Prefix extends string> = T extends `${Prefix}${infer Rest}` ? Rest : T;
 type ErrorKey = keyof (typeof locales)['en']['error'];

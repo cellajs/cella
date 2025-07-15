@@ -14,10 +14,10 @@ import {
   sendVerificationEmailBodySchema,
   tokenWithDataSchema,
 } from '#/modules/auth/schema';
+import { entityBaseSchema } from '#/modules/entities/schema';
+import { membershipSummarySchema } from '#/modules/memberships/schema';
 import { cookieSchema, idSchema, passwordSchema, tokenParamSchema } from '#/utils/schema/common';
 import { errorResponses, successWithoutDataSchema } from '#/utils/schema/responses';
-import { entityBaseSchema } from '../entities/schema';
-import { membershipSummarySchema } from '../memberships/schema';
 
 const authRoutes = {
   startImpersonation: createCustomRoute({

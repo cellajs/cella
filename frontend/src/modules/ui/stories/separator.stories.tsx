@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
-import { Separator } from '../separator';
+import { Separator } from '~/modules/ui/separator';
 
 /**
  * Visually or semantically separates content.

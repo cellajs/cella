@@ -4,6 +4,7 @@ import { t } from 'i18next';
 import { deleteMemberships, type MembershipInviteResponse, membershipInvite, updateMembership } from '~/api.gen';
 import type { ApiError } from '~/lib/api';
 import { toaster } from '~/modules/common/toaster';
+import type { ContextEntityData, EntityPage } from '~/modules/entities/types';
 import { getAndSetMenu } from '~/modules/me/helpers';
 import { resolveParentEntityType } from '~/modules/memberships/helpers';
 import { membersKeys } from '~/modules/memberships/query';
@@ -22,7 +23,6 @@ import { updateMenuItemMembership } from '~/modules/navigation/menu-sheet/helper
 import { formatUpdatedData, getQueryItems, getSimilarQueries } from '~/query/helpers/mutate-query';
 import { useMutateQueryData } from '~/query/hooks/use-mutate-query-data';
 import { queryClient } from '~/query/query-client';
-import type { ContextEntityData, EntityPage } from '../entities/types';
 
 const limit = config.requestLimits.members;
 

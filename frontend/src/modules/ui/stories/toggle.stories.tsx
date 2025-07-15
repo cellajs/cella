@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Bold, Italic } from 'lucide-react';
 
-import { Toggle } from '../toggle';
+import { Toggle } from '~/modules/ui/toggle';
 
 /**
  * A two-state button that can be either on or off.

@@ -9,12 +9,12 @@ import TableEllipsis, { type EllipsisOption } from '~/modules/common/data-table/
 import type { CallbackArgs, ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 import { useDropdowner } from '~/modules/common/dropdowner/use-dropdowner';
 import { PopConfirm } from '~/modules/common/popconfirm';
+import DeleteUsers from '~/modules/users/delete-users';
 import ImpersonateRow from '~/modules/users/table/impersonate-row';
 import UpdateRow, { openUpdateUserSheet } from '~/modules/users/table/update-row';
 import type { User } from '~/modules/users/types';
 import UserCell from '~/modules/users/user-cell';
 import { dateShort } from '~/utils/date-short';
-import DeleteUsers from '../delete-users';
 
 export const useColumns = () => {
   const { t } = useTranslation();

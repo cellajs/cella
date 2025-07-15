@@ -1,8 +1,8 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { expect, userEvent, waitFor } from 'storybook/test';
 
-import { Label } from '../label';
-import { RadioGroup, RadioGroupItem } from '../radio-group';
+import { Label } from '~/modules/ui/label';
+import { RadioGroup, RadioGroupItem } from '~/modules/ui/radio-group';
 
 /**
  * A set of checkable buttons—known as radio buttons—where no more than one of

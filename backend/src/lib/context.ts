@@ -24,7 +24,7 @@ export type Env = {
   Variables: {
     user: UserModel;
     organization: OrganizationModel & { membership: MembershipSummary | null };
-    memberships: MembershipSummary[];
+    memberships: (MembershipSummary & { createdBy: string | null })[];
     token: TokenModel;
     logId: string;
     sentry: typeof Sentry;

@@ -2,7 +2,7 @@ import type { MiddlewareHandler } from 'hono';
 import { createMiddleware } from 'hono/factory';
 import { isbot } from 'isbot';
 import type { Env } from '#/lib/context';
-import { errorResponse } from '../lib/errors';
+import { errorResponse } from '#/lib/errors';
 
 /**
  * Middleware to block bot requests based on the User-Agent header.

@@ -8,7 +8,7 @@ import organizationRouteHandlers from '#/modules/organizations/handlers';
 import requestRouteHandlers from '#/modules/requests/handlers';
 import systemRouteHandlers from '#/modules/system/handlers';
 import userRouteHandlers from '#/modules/users/handlers';
-import baseApp from './server';
+import baseApp from '#/server';
 
 // Define backend routes of your app
 const app = baseApp
