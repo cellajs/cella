@@ -78,48 +78,40 @@ const usersRouteHandlers = app
   /*
    * Delete users
    */
-  // TODO to be alike split by allowance
   .openapi(userRoutes.deleteUsers, async (ctx) => {
     const { ids } = ctx.req.valid('json');
-    const user = getContextUser();
+    const { role: contextUserRole, id: contextUserId } = getContextUser();
 
     // Convert the user ids to an array
-    const userIds = Array.isArray(ids) ? ids : [ids];
+    const toDeleteIds = Array.isArray(ids) ? ids : [ids];
+    if (!toDeleteIds.length) throw new ApiError({ status: 400, type: 'invalid_request', severity: 'error', entityType: 'user' });
 
-    // Get the users
-    const targets = await getUsersByConditions([inArray(usersTable.id, userIds)]);
+    // Fetch users by IDs
+    const targets = await getUsersByConditions([inArray(usersTable.id, toDeleteIds)]);
 
-    // Check if the users exist
+    const foundIds = new Set(targets.map(({ id }) => id));
+    const allowedIds: string[] = [];
     const rejectedIds: string[] = [];
 
-    for (const id of userIds) {
-      if (!targets.some((target) => target.id === id)) rejectedIds.push(id);
-    }
-
-    // Filter out users that the user doesn't have permission to delete
-    const allowedTargets = targets.filter((target) => {
-      const userId = target.id;
-
-      if (user.role !== 'admin' && user.id !== userId) {
-        rejectedIds.push(userId);
-        return false;
+    for (const targetId of toDeleteIds) {
+      // Not found in DB
+      if (!foundIds.has(targetId)) {
+        rejectedIds.push(targetId);
+        continue; // Skip to next
       }
 
-      return true;
-    });
+      const isAllowed = contextUserRole === 'admin' || contextUserId === targetId;
+      if (isAllowed) allowedIds.push(targetId);
+      else rejectedIds.push(targetId); // Found but not authorized
+    }
 
     // Ifuser doesn't have permission to delete, return error
-    if (allowedTargets.length === 0) return ctx.json({ success: false, rejectedIds }, 200);
+    if (!allowedIds.length) throw new ApiError({ status: 403, type: 'forbidden', severity: 'warn', entityType: 'user' });
 
-    // Delete the users
-    await db.delete(usersTable).where(
-      inArray(
-        usersTable.id,
-        allowedTargets.map((target) => target.id),
-      ),
-    );
+    // Delete allowed users
+    await db.delete(usersTable).where(inArray(usersTable.id, allowedIds));
 
-    logEvent('Users deleted');
+    logEvent('Users deleted', { ids: allowedIds.join() });
 
     return ctx.json({ success: true, rejectedIds }, 200);
   })
