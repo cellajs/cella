@@ -9,7 +9,7 @@ import { tokensTable } from '#/db/schema/tokens';
 import { usersTable } from '#/db/schema/users';
 import { type Env, getContextMemberships, getContextOrganization, getContextUser } from '#/lib/context';
 import { resolveEntity } from '#/lib/entity';
-import { ApiError, createError, type ErrorType } from '#/lib/errors';
+import { ApiError } from '#/lib/errors';
 import { eventManager } from '#/lib/events';
 import { mailer } from '#/lib/mailer';
 import { sendSSEToUsers } from '#/lib/sse';
@@ -231,8 +231,6 @@ const membershipRouteHandlers = app
     // Convert ids to an array
     const membershipIds = Array.isArray(ids) ? ids : [ids];
 
-    const errors: ErrorType[] = [];
-
     const filters = [eq(membershipsTable.contextType, entityType), eq(membershipsTable[entityIdField], entity.id)];
 
     // Get target memberships
@@ -242,14 +240,14 @@ const membershipRouteHandlers = app
       .where(and(inArray(membershipsTable.userId, membershipIds), ...filters));
 
     // Check if membership exist
+    const rejectedIds: string[] = [];
+
     for (const id of membershipIds) {
-      if (!targets.some((target) => target.userId === id)) {
-        errors.push(createError(ctx, 404, 'not_found', 'warn', entityType, { user: id }));
-      }
+      if (!targets.some((target) => target.userId === id)) rejectedIds.push(id);
     }
 
     // If the user doesn't have permission to delete any of the memberships, return an error
-    if (targets.length === 0) return ctx.json({ success: false, errors }, 200);
+    if (targets.length === 0) return ctx.json({ success: false, rejectedIds }, 200);
 
     // Delete the memberships
     await db.delete(membershipsTable).where(
@@ -268,7 +266,7 @@ const membershipRouteHandlers = app
       logEvent('Member deleted', { membership: targetMembership.id });
     }
 
-    return ctx.json({ success: true, errors }, 200);
+    return ctx.json({ success: true, rejectedIds }, 200);
   })
   /*
    * Update user membership

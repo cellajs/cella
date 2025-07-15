@@ -11,7 +11,7 @@ import { usersTable } from '#/db/schema/users';
 import { env } from '#/env';
 import { type Env, getContextMemberships, getContextUser } from '#/lib/context';
 import { resolveEntity } from '#/lib/entity';
-import { ApiError, createError, type ErrorType } from '#/lib/errors';
+import { ApiError } from '#/lib/errors';
 import { getParams, getSignature } from '#/lib/transloadit';
 import { isAuthenticated } from '#/middlewares/guard';
 import { logEvent } from '#/middlewares/logger/log-event';
@@ -118,7 +118,7 @@ const meRouteHandlers = app
 
     const { session } = currentSessionData ? await validateSession(currentSessionData.sessionToken) : {};
 
-    const errors: ErrorType[] = [];
+    const rejectedIds: string[] = [];
 
     await Promise.all(
       sessionIds.map(async (id) => {
@@ -126,12 +126,13 @@ const meRouteHandlers = app
           if (session && id === session.id) deleteAuthCookie(ctx, 'session');
           await invalidateSessionById(id, user.id);
         } catch (error) {
-          errors.push(createError(ctx, 404, 'not_found', 'warn', undefined, { session: id }));
+          // Could be not found, not owned by user, etc.
+          rejectedIds.push(id);
         }
       }),
     );
 
-    return ctx.json({ success: true, errors }, 200);
+    return ctx.json({ success: true, rejectedIds }, 200);
   })
   /*
    * Update current user (me)

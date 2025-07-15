@@ -2,7 +2,7 @@ import { createCustomRoute } from '#/lib/custom-routes';
 import { hasSystemAccess, isAuthenticated } from '#/middlewares/guard';
 import { userListQuerySchema, userSchema, userUpdateBodySchema } from '#/modules/users/schema';
 import { entityParamSchema, idsBodySchema } from '#/utils/schema/common';
-import { errorResponses, paginationSchema, successWithErrorsSchema } from '#/utils/schema/responses';
+import { errorResponses, paginationSchema, successWithRejectedIdsSchema } from '#/utils/schema/responses';
 
 const userRoutes = {
   getUsers: createCustomRoute({
@@ -47,7 +47,7 @@ const userRoutes = {
         description: 'Success',
         content: {
           'application/json': {
-            schema: successWithErrorsSchema(),
+            schema: successWithRejectedIdsSchema(),
           },
         },
       },

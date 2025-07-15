@@ -8,7 +8,7 @@ import { attachmentsTable } from '#/db/schema/attachments';
 import { organizationsTable } from '#/db/schema/organizations';
 import { env } from '#/env';
 import { type Env, getContextMemberships, getContextOrganization, getContextUser } from '#/lib/context';
-import { ApiError, createError, type ErrorType } from '#/lib/errors';
+import { ApiError } from '#/lib/errors';
 import { logEvent } from '#/middlewares/logger/log-event';
 import { processAttachmentUrls, processAttachmentUrlsBatch } from '#/modules/attachments/helpers/process-attachment-urls';
 import attachmentRoutes from '#/modules/attachments/routes';
@@ -221,10 +221,8 @@ const attachmentsRouteHandlers = app
     const toDeleteIds = Array.isArray(ids) ? ids : [ids];
     if (!toDeleteIds.length) throw new ApiError({ status: 400, type: 'invalid_request', severity: 'error', entityType: 'attachment' });
 
-    const { allowedIds, disallowedIds } = await splitByAllowance('delete', 'attachment', toDeleteIds, memberships);
+    const { allowedIds, disallowedIds: rejectedIds } = await splitByAllowance('delete', 'attachment', toDeleteIds, memberships);
 
-    // Map errors for disallowed ids
-    const errors: ErrorType[] = disallowedIds.map((id) => createError(ctx, 404, 'not_found', 'warn', 'attachment', { attachment: id }));
     if (!allowedIds.length) throw new ApiError({ status: 403, type: 'forbidden', severity: 'warn', entityType: 'attachment' });
 
     // Delete the attachments
@@ -232,7 +230,7 @@ const attachmentsRouteHandlers = app
 
     logEvent('Attachments deleted', { ids: allowedIds.join() });
 
-    return ctx.json({ success: true, errors }, 200);
+    return ctx.json({ success: true, rejectedIds }, 200);
   })
   /*
    * Get attachment cover

@@ -6,7 +6,7 @@ import { db } from '#/db/db';
 import { membershipsTable } from '#/db/schema/memberships';
 import { organizationsTable } from '#/db/schema/organizations';
 import { type Env, getContextMemberships, getContextUser } from '#/lib/context';
-import { ApiError, createError, type ErrorType } from '#/lib/errors';
+import { ApiError } from '#/lib/errors';
 import { sendSSEToUsers } from '#/lib/sse';
 import { logEvent } from '#/middlewares/logger/log-event';
 import { checkSlugAvailable } from '#/modules/entities/helpers/check-slug';
@@ -142,11 +142,8 @@ const organizationRouteHandlers = app
     if (!toDeleteIds.length) throw new ApiError({ status: 400, type: 'invalid_request', severity: 'error', entityType: 'organization' });
 
     // Split ids into allowed and disallowed
-    const { allowedIds, disallowedIds } = await splitByAllowance('delete', 'organization', toDeleteIds, memberships);
+    const { allowedIds, disallowedIds: rejectedIds } = await splitByAllowance('delete', 'organization', toDeleteIds, memberships);
     if (!allowedIds.length) throw new ApiError({ status: 403, type: 'forbidden', severity: 'warn', entityType: 'organization' });
-
-    // Map errors of organization user is not allowed to delete
-    const errors: ErrorType[] = disallowedIds.map((id) => createError(ctx, 404, 'not_found', 'warn', 'organization', { organization: id }));
 
     // Get ids of members for organizations
     const memberIds = await db
@@ -167,7 +164,7 @@ const organizationRouteHandlers = app
 
     logEvent('Organizations deleted', { ids: allowedIds.join() });
 
-    return ctx.json({ success: true, errors }, 200);
+    return ctx.json({ success: true, rejectedIds }, 200);
   })
   /*
    * Get organization by id or slug

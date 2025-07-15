@@ -25,6 +25,6 @@ baseApp.notFound(() => {
 });
 
 // Error handler
-baseApp.onError((err, ctx) => handleApiError(ctx, err));
+baseApp.onError(handleApiError);
 
 export default baseApp;

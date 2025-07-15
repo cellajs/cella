@@ -4,7 +4,7 @@ import { db } from '#/db/db';
 import { membershipsTable } from '#/db/schema/memberships';
 import { usersTable } from '#/db/schema/users';
 import { type Env, getContextMemberships, getContextUser } from '#/lib/context';
-import { ApiError, createError, type ErrorType } from '#/lib/errors';
+import { ApiError } from '#/lib/errors';
 import { logEvent } from '#/middlewares/logger/log-event';
 import { getUsersByConditions } from '#/modules/users/helpers/get-user-by';
 import { defaultHook } from '#/utils/default-hook';
@@ -78,6 +78,7 @@ const usersRouteHandlers = app
   /*
    * Delete users
    */
+  // TODO to be alike split by allowance
   .openapi(userRoutes.deleteUsers, async (ctx) => {
     const { ids } = ctx.req.valid('json');
     const user = getContextUser();
@@ -85,16 +86,14 @@ const usersRouteHandlers = app
     // Convert the user ids to an array
     const userIds = Array.isArray(ids) ? ids : [ids];
 
-    const errors: ErrorType[] = [];
-
     // Get the users
     const targets = await getUsersByConditions([inArray(usersTable.id, userIds)]);
 
     // Check if the users exist
+    const rejectedIds: string[] = [];
+
     for (const id of userIds) {
-      if (!targets.some((target) => target.id === id)) {
-        errors.push(createError(ctx, 404, 'not_found', 'warn', 'user', { user: id }));
-      }
+      if (!targets.some((target) => target.id === id)) rejectedIds.push(id);
     }
 
     // Filter out users that the user doesn't have permission to delete
@@ -102,7 +101,7 @@ const usersRouteHandlers = app
       const userId = target.id;
 
       if (user.role !== 'admin' && user.id !== userId) {
-        errors.push(createError(ctx, 403, 'delete_resource_forbidden', 'warn', 'user', { user: userId }));
+        rejectedIds.push(userId);
         return false;
       }
 
@@ -110,9 +109,7 @@ const usersRouteHandlers = app
     });
 
     // Ifuser doesn't have permission to delete, return error
-    if (allowedTargets.length === 0) {
-      return ctx.json({ success: false, errors }, 200);
-    }
+    if (allowedTargets.length === 0) return ctx.json({ success: false, rejectedIds }, 200);
 
     // Delete the users
     await db.delete(usersTable).where(
@@ -124,7 +121,7 @@ const usersRouteHandlers = app
 
     logEvent('Users deleted');
 
-    return ctx.json({ success: true, errors }, 200);
+    return ctx.json({ success: true, rejectedIds }, 200);
   })
   /*
    * Get a user by id or slug
