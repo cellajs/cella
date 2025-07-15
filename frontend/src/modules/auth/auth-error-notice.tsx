@@ -24,9 +24,9 @@ const AuthErrorNotice = ({ error, children }: { error: ErrorNoticeError; childre
   return (
     <Card className="bg-transparent border-0">
       <CardHeader className="text-center p-0">
-        <CardTitle className="text-2xl mb-2 justify-center">{getErrorTitle(t, error, errorFromQuery) || t('error:error')}</CardTitle>
+        <CardTitle className="text-2xl mb-2 justify-center">{getErrorTitle(error, errorFromQuery)}</CardTitle>
         <CardDescription className="text-lg">
-          <span>{getErrorText(t, error, errorFromQuery) || t('error:reported_try_or_contact')}</span>
+          <span>{getErrorText(error, errorFromQuery)}</span>
           <span className="ml-1">{severity === 'warn' && t('error:contact_mistake')}</span>
           <span className="ml-1">{severity === 'error' && t('error:try_again_later')}</span>
         </CardDescription>

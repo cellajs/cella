@@ -21,7 +21,7 @@ export class ApiError extends Error {
 
   constructor(error: ApiError) {
     super(error.message);
-    this.name = error.type || 'ApiError';
+    this.name = error.name;
     this.status = error.status;
     this.type = error.type;
     this.entityType = error.entityType;
