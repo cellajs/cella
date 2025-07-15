@@ -35,15 +35,13 @@ export const getErrorTitle = (error?: ErrorNoticeError, errorFromQuery?: string)
   if (error instanceof SearchParamError) return i18n.t('error:invalid_param');
 
   if (error instanceof ApiError) {
-    const { type, entityType, message } = error;
+    const { type, entityType, name } = error;
     if (entityType && type) return i18n.t(`error:resource_${type}`, { resource: i18n.t(entityType) });
 
     if (type) return i18n.t(`error:${type}`);
 
-    if (message) return message;
+    if (name) return name;
   }
-
-  if (error.name) return error.name;
 
   // Fallback if none of the above matched
   return i18n.t('error:error');
