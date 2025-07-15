@@ -21,8 +21,8 @@ type SimplifiedErrorKey = StripPrefix<`error:${ErrorKey & string}`, 'error:'>;
 type HttpErrorStatus = ClientErrorStatusCode | ServerErrorStatusCode;
 
 type ConstructedError = {
-  name?: Error['name'];
-  message?: Error['message'];
+  name?: ErrorSchemaType['name'];
+  message?: ErrorSchemaType['message'];
   type: SimplifiedErrorKey;
   status: HttpErrorStatus;
   severity?: ErrorSchemaType['severity'];
@@ -66,7 +66,7 @@ export const handleApiError: ErrorHandler<Env> = (err, ctx) => {
         });
 
   const { redirectToFrontend, ...error } = apiError;
-  const { severity, type, message, eventData } = error;
+  const { severity, type, message, status, eventData } = error;
 
   // Redirect to the frontend error page with query parameters for error details
   if (redirectToFrontend) {
@@ -98,5 +98,5 @@ export const handleApiError: ErrorHandler<Env> = (err, ctx) => {
     logEvent(message, eventData, severity);
   }
 
-  return ctx.json(enrichedError, enrichedError.status as 400); // TODO(BLOCKED): Review type assertion (as 400) https://github.com/honojs/hono/issues/2719
+  return ctx.json(enrichedError, status);
 };
