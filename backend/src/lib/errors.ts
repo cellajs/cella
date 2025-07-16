@@ -48,6 +48,11 @@ export class ApiError extends Error {
     this.redirectToFrontend = error.redirectToFrontend || false;
     this.meta = error.meta;
     this.originalError = error.originalError;
+
+    if (error.originalError) {
+      this.stack = error.originalError.stack;
+      this.cause = error.originalError;
+    }
   }
 }
 
@@ -86,12 +91,11 @@ export const handleApiError: ErrorHandler<Env> = (err, ctx) => {
     organizationId: organization?.id,
     timestamp: getIsoDate(),
   };
-
   // Logging
   if (['warn', 'error'].includes(severity)) {
     // To external logger and monitoring service
+    Sentry.captureException(enrichedError);
     if (externalLogger) externalLogger[severity](message, undefined, enrichedError);
-    Sentry.captureException(originalError);
     if (originalError) console.error(originalError);
   } else if (meta) {
     // Significant (non-error) events with additional data

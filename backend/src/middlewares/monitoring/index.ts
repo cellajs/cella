@@ -2,6 +2,7 @@ import * as Sentry from '@sentry/node';
 import type { MiddlewareHandler } from 'hono';
 import { createMiddleware } from 'hono/factory';
 import type { Env } from '#/lib/context';
+import { ApiError } from '#/lib/errors';
 
 /**
  * Middleware to monitor and log errors and performance metrics.
@@ -39,7 +40,7 @@ export const monitoringMiddleware: MiddlewareHandler<Env> = createMiddleware<Env
   });
 
   // In case ctx.error is set but not thrown
-  if (ctx.error) {
+  if (ctx.error && !(ctx.error instanceof ApiError)) {
     Sentry.captureException(ctx.error);
   }
 });
