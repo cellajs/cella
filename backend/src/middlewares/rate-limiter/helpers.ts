@@ -2,7 +2,7 @@ import type { Context } from 'hono';
 import { type IRateLimiterPostgresOptions, RateLimiterMemory, RateLimiterPostgres, type RateLimiterRes } from 'rate-limiter-flexible';
 import { db } from '#/db/db';
 import { env } from '#/env';
-import { errorResponse } from '#/lib/errors';
+import { ApiError } from '#/lib/errors';
 import { defaultOptions } from '#/middlewares/rate-limiter/core';
 
 /**
@@ -28,7 +28,7 @@ export const getRateLimiterInstance = (options: Omit<IRateLimiterPostgresOptions
  */
 export const rateLimitError = (ctx: Context, limitState: RateLimiterRes, rateLimitKey: string) => {
   ctx.header('Retry-After', getRetryAfter(limitState.msBeforeNext));
-  return errorResponse(ctx, 429, 'too_many_requests', 'warn', undefined, { rateLimitKey });
+  throw new ApiError({ status: 429, type: 'too_many_requests', severity: 'warn', eventData: { rateLimitKey } });
 };
 
 /**

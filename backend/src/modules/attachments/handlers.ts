@@ -8,7 +8,7 @@ import { attachmentsTable } from '#/db/schema/attachments';
 import { organizationsTable } from '#/db/schema/organizations';
 import { env } from '#/env';
 import { type Env, getContextMemberships, getContextOrganization, getContextUser } from '#/lib/context';
-import { createError, type ErrorType, errorResponse } from '#/lib/errors';
+import { ApiError } from '#/lib/errors';
 import { logEvent } from '#/middlewares/logger/log-event';
 import { processAttachmentUrls, processAttachmentUrlsBatch } from '#/modules/attachments/helpers/process-attachment-urls';
 import attachmentRoutes from '#/modules/attachments/routes';
@@ -57,7 +57,7 @@ const attachmentsRouteHandlers = app
       return new Response(body, { status, statusText, headers: newHeaders });
     } catch (err) {
       const error = err instanceof Error ? err : new Error('Unknown electric error');
-      return errorResponse(ctx, 500, 'sync_failed', 'error', undefined, { entityType: 'attachments' }, error);
+      throw new ApiError({ name: error.name, message: error.message, status: 500, type: 'sync_failed', severity: 'error', entityType: 'attachment' });
     }
   })
   /*
@@ -70,13 +70,16 @@ const attachmentsRouteHandlers = app
     const attachmentRestrictions = organization.restrictions.attachment;
 
     if (attachmentRestrictions !== 0 && newAttachments.length > attachmentRestrictions) {
-      return errorResponse(ctx, 403, 'restrict_by_org', 'warn', 'attachment');
+      throw new ApiError({ status: 403, type: 'restrict_by_org', severity: 'warn', entityType: 'attachment' });
     }
 
-    const currentAttachments = await db.select().from(attachmentsTable).where(eq(attachmentsTable.organizationId, organization.id));
+    const [{ currentAttachments }] = await db
+      .select({ currentAttachments: count() })
+      .from(attachmentsTable)
+      .where(eq(attachmentsTable.organizationId, organization.id));
 
-    if (attachmentRestrictions !== 0 && currentAttachments.length + newAttachments.length > attachmentRestrictions) {
-      return errorResponse(ctx, 403, 'restrict_by_org', 'warn', 'attachment');
+    if (attachmentRestrictions !== 0 && currentAttachments + newAttachments.length > attachmentRestrictions) {
+      throw new ApiError({ status: 403, type: 'restrict_by_org', severity: 'warn', entityType: 'attachment' });
     }
 
     const user = getContextUser();
@@ -141,7 +144,9 @@ const attachmentsRouteHandlers = app
     if (attachmentId) {
       // Retrieve target attachment
       const [targetAttachment] = await db.select().from(attachmentsTable).where(eq(attachmentsTable.id, attachmentId)).limit(1);
-      if (!targetAttachment) return errorResponse(ctx, 404, 'not_found', 'warn', 'attachment', { attachmentId });
+      if (!targetAttachment) {
+        throw new ApiError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'attachment', eventData: { attachmentId } });
+      }
 
       const items = await processAttachmentUrlsBatch([targetAttachment]);
       // return target attachment itself if no groupId
@@ -171,8 +176,7 @@ const attachmentsRouteHandlers = app
   .openapi(attachmentRoutes.getAttachment, async (ctx) => {
     const { id } = ctx.req.valid('param');
 
-    const { error, entity: attachment } = await getValidProductEntity(ctx, id, 'attachment', 'organization', 'read');
-    if (error) return ctx.json(error, 400);
+    const attachment = await getValidProductEntity(id, 'attachment', 'organization', 'read');
 
     const data = await processAttachmentUrls(attachment);
 
@@ -184,8 +188,7 @@ const attachmentsRouteHandlers = app
   .openapi(attachmentRoutes.updateAttachment, async (ctx) => {
     const { id } = ctx.req.valid('param');
 
-    const { error } = await getValidProductEntity(ctx, id, 'attachment', 'organization', 'update');
-    if (error) return ctx.json(error, 400);
+    await getValidProductEntity(id, 'attachment', 'organization', 'update');
 
     const user = getContextUser();
     const updatedFields = ctx.req.valid('json');
@@ -216,20 +219,18 @@ const attachmentsRouteHandlers = app
 
     // Convert the ids to an array
     const toDeleteIds = Array.isArray(ids) ? ids : [ids];
-    if (!toDeleteIds.length) return errorResponse(ctx, 400, 'invalid_request', 'error', 'attachment');
+    if (!toDeleteIds.length) throw new ApiError({ status: 400, type: 'invalid_request', severity: 'error', entityType: 'attachment' });
 
-    const { allowedIds, disallowedIds } = await splitByAllowance('delete', 'attachment', toDeleteIds, memberships);
+    const { allowedIds, disallowedIds: rejectedIds } = await splitByAllowance('delete', 'attachment', toDeleteIds, memberships);
 
-    // Map errors for disallowed ids
-    const errors: ErrorType[] = disallowedIds.map((id) => createError(ctx, 404, 'not_found', 'warn', 'attachment', { attachment: id }));
-    if (!allowedIds.length) return errorResponse(ctx, 403, 'forbidden', 'warn', 'attachment');
+    if (!allowedIds.length) throw new ApiError({ status: 403, type: 'forbidden', severity: 'warn', entityType: 'attachment' });
 
     // Delete the attachments
     await db.delete(attachmentsTable).where(inArray(attachmentsTable.id, allowedIds));
 
     logEvent('Attachments deleted', { ids: allowedIds.join() });
 
-    return ctx.json({ success: true, errors }, 200);
+    return ctx.json({ success: true, rejectedIds }, 200);
   })
   /*
    * Get attachment cover
@@ -239,7 +240,7 @@ const attachmentsRouteHandlers = app
 
     const [attachment] = await db.select().from(attachmentsTable).where(eq(attachmentsTable.id, id));
 
-    if (!attachment) return errorResponse(ctx, 404, 'not_found', 'warn', 'attachment');
+    if (!attachment) throw new ApiError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'attachment' });
 
     // let createdByUser: UserModel | undefined;
 
@@ -267,10 +268,10 @@ const attachmentsRouteHandlers = app
     const { id } = ctx.req.valid('param');
 
     const [attachment] = await db.select().from(attachmentsTable).where(eq(attachmentsTable.id, id));
-    if (!attachment) return errorResponse(ctx, 404, 'not_found', 'warn', 'attachment');
+    if (!attachment) throw new ApiError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'attachment' });
 
     const [organization] = await db.select().from(organizationsTable).where(eq(organizationsTable.id, attachment.organizationId));
-    if (!organization) return errorResponse(ctx, 404, 'not_found', 'warn', 'organization');
+    if (!organization) throw new ApiError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'organization' });
 
     const url = new URL(`${config.frontendUrl}/organizations/${organization.slug}/attachments`);
     url.searchParams.set('attachmentDialogId', attachment.id);

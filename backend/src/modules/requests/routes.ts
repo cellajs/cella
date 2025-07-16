@@ -4,7 +4,7 @@ import { isNoBot } from '#/middlewares/is-no-bot';
 import { spamLimiter } from '#/middlewares/rate-limiter/limiters';
 import { requestCreateBodySchema, requestListQuerySchema, requestSchema } from '#/modules/requests/schema';
 import { idsBodySchema } from '#/utils/schema/common';
-import { errorResponses, paginationSchema, successWithErrorsSchema } from '#/utils/schema/responses';
+import { errorResponses, paginationSchema, successWithoutDataSchema } from '#/utils/schema/responses';
 
 const requestRoutes = {
   createRequest: createCustomRoute({
@@ -74,7 +74,7 @@ const requestRoutes = {
         description: 'Requests',
         content: {
           'application/json': {
-            schema: successWithErrorsSchema(),
+            schema: successWithoutDataSchema,
           },
         },
       },

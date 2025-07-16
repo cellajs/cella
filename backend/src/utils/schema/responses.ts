@@ -41,12 +41,12 @@ export const errorSchema = z
   .openapi('ApiError');
 
 /**
- * Schema for a successful response with errors.
+ * Schema for a successful response with disallowed IDs.
  */
-export const successWithErrorsSchema = () =>
+export const successWithRejectedIdsSchema = () =>
   z.object({
     success: z.boolean(),
-    errors: z.array(errorSchema),
+    rejectedIds: z.array(z.string()),
   });
 
 /**

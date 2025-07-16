@@ -9,7 +9,7 @@ import {
   organizationWithMembershipSchema,
 } from '#/modules/organizations/schema';
 import { entityParamSchema, idsBodySchema } from '#/utils/schema/common';
-import { errorResponses, paginationSchema, successWithErrorsSchema } from '#/utils/schema/responses';
+import { errorResponses, paginationSchema, successWithRejectedIdsSchema } from '#/utils/schema/responses';
 
 const organizationRoutes = {
   createOrganization: createCustomRoute({
@@ -124,7 +124,7 @@ const organizationRoutes = {
         description: 'Success',
         content: {
           'application/json': {
-            schema: successWithErrorsSchema(),
+            schema: successWithRejectedIdsSchema(),
           },
         },
       },

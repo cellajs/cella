@@ -1356,7 +1356,7 @@ export type DeleteMySessionsResponses = {
    */
   200: {
     success: boolean;
-    errors: Array<ApiError>;
+    rejectedIds: Array<string>;
   };
 };
 
@@ -1627,7 +1627,7 @@ export type DeleteUsersResponses = {
    */
   200: {
     success: boolean;
-    errors: Array<ApiError>;
+    rejectedIds: Array<string>;
   };
 };
 
@@ -1878,7 +1878,7 @@ export type DeleteOrganizationsResponses = {
    */
   200: {
     success: boolean;
-    errors: Array<ApiError>;
+    rejectedIds: Array<string>;
   };
 };
 
@@ -2640,10 +2640,7 @@ export type DeleteRequestsResponses = {
   /**
    * Requests
    */
-  200: {
-    success: boolean;
-    errors: Array<ApiError>;
-  };
+  200: boolean;
 };
 
 export type DeleteRequestsResponse = DeleteRequestsResponses[keyof DeleteRequestsResponses];
@@ -2929,7 +2926,7 @@ export type DeleteAttachmentsResponses = {
    */
   200: {
     success: boolean;
-    errors: Array<ApiError>;
+    rejectedIds: Array<string>;
   };
 };
 
@@ -3328,7 +3325,7 @@ export type DeleteMembershipsResponses = {
    */
   200: {
     success: boolean;
-    errors: Array<ApiError>;
+    rejectedIds: Array<string>;
   };
 };
 

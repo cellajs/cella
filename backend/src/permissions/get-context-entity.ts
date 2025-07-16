@@ -1,9 +1,8 @@
 import { type ContextEntityType, config } from 'config';
-import type { Context } from 'hono';
 
-import { type Env, getContextMemberships, getContextOrganization, getContextUser } from '#/lib/context';
+import { getContextMemberships, getContextOrganization, getContextUser } from '#/lib/context';
 import { type EntityModel, resolveEntity } from '#/lib/entity';
-import { createError, type ErrorType } from '#/lib/errors';
+import { ApiError } from '#/lib/errors';
 import type { MembershipSummary } from '#/modules/memberships/helpers/select';
 import { checkPermission } from '#/permissions/check-if-allowed';
 import type { PermittedAction } from '#/permissions/permissions-config';
@@ -16,7 +15,6 @@ import type { PermittedAction } from '#/permissions/permissions-config';
  *
  * It returns either an error object or an object with the resolved entity + membership and without error.
  *
- * @param ctx - The request context.
  * @param entityType - The type of entity (e.g., organization, project).
  * @param action - Action to check `"create" | "read" | "update" | "delete"`.
  * @param idOrSlug - entity id or slug.
@@ -26,36 +24,33 @@ import type { PermittedAction } from '#/permissions/permissions-config';
  *   - `error`: Error object or `null` if no error occurred.
  */
 export const getValidContextEntity = async <T extends ContextEntityType>(
-  ctx: Context<Env>,
   idOrSlug: string,
   entityType: T,
   action: Exclude<PermittedAction, 'create'>,
-): Promise<{ error: ErrorType; entity: null; membership: null } | { error: null; entity: EntityModel<T>; membership: MembershipSummary | null }> => {
+): Promise<{ error: null; entity: EntityModel<T>; membership: MembershipSummary | null }> => {
   const user = getContextUser();
   const memberships = getContextMemberships();
   const isSystemAdmin = user.role === 'admin';
 
-  const nullData = { entity: null, membership: null };
-
   // Step 1: Resolve entity
   const entity = (await resolveEntity(entityType, idOrSlug)) || null;
-  if (!entity) return { error: createError(ctx, 404, 'not_found', 'warn', entityType), ...nullData };
+  if (!entity) throw new ApiError({ status: 404, type: 'not_found', severity: 'warn' });
 
   // Step 2: Permission check
   const isAllowed = checkPermission(memberships, action, entity);
-  if (!isAllowed) return { error: createError(ctx, 403, 'forbidden', 'warn', entityType), ...nullData };
+  if (!isAllowed) throw new ApiError({ status: 403, type: 'forbidden', severity: 'warn' });
 
   // Step 3: Membership check
   const entityIdField = config.entityIdFields[entity.entityType];
   const membership = memberships.find((m) => m[entityIdField] === entity.id && m.contextType === entityType) || null;
 
-  if (!membership && !isSystemAdmin) return { error: createError(ctx, 400, 'invalid_request', 'error', entityType), ...nullData };
+  if (!membership && !isSystemAdmin) throw new ApiError({ status: 400, type: 'invalid_request', severity: 'error' });
 
   // Step 4: Organization check
   const org = getContextOrganization();
   if (membership?.organizationId && org) {
     const organizationMatches = membership.organizationId === org.id;
-    if (!organizationMatches) return { error: createError(ctx, 400, 'invalid_request', 'error', entityType), ...nullData };
+    if (!organizationMatches) throw new ApiError({ status: 400, type: 'invalid_request', severity: 'error', entityType });
   }
 
   return { error: null, entity, membership };
