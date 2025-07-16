@@ -33,6 +33,7 @@ export class ApiError extends Error {
   redirectToFrontend: boolean;
   entityType?: ErrorSchemaType['entityType'];
   eventData?: EventData;
+  originalError?: Error;
 
   constructor(error: ConstructedError) {
     const apiErrorMessage = i18n.t(`error:${error.type}.text`, { defaultValue: error.message ?? 'Unknown error' });
@@ -44,6 +45,7 @@ export class ApiError extends Error {
     this.severity = error.severity || 'info';
     this.redirectToFrontend = error.redirectToFrontend || false;
     this.eventData = error.eventData;
+    this.originalError = error.originalError;
   }
 }
 
@@ -57,9 +59,10 @@ export const handleApiError: ErrorHandler<Env> = (err, ctx) => {
           status: 500,
           type: 'server_error',
           severity: 'error',
+          originalError: err,
         });
 
-  const { redirectToFrontend, ...error } = apiError;
+  const { redirectToFrontend, originalError, ...error } = apiError;
   const { severity, type, message, status, eventData } = error;
 
   // Redirect to the frontend error page with query parameters for error details
@@ -86,7 +89,8 @@ export const handleApiError: ErrorHandler<Env> = (err, ctx) => {
   if (['warn', 'error'].includes(severity)) {
     // To external logger and monitoring service
     if (externalLogger) externalLogger[severity](message, undefined, enrichedError);
-    Sentry.captureException(apiError);
+    Sentry.captureException(originalError);
+    if (originalError) console.error(originalError);
   } else if (eventData) {
     // Significant (non-error) events with additional data
     logEvent(message, eventData, severity);

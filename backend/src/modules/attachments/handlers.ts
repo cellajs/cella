@@ -57,7 +57,15 @@ const attachmentsRouteHandlers = app
       return new Response(body, { status, statusText, headers: newHeaders });
     } catch (err) {
       const error = err instanceof Error ? err : new Error('Unknown electric error');
-      throw new ApiError({ name: error.name, message: error.message, status: 500, type: 'sync_failed', severity: 'error', entityType: 'attachment' });
+      throw new ApiError({
+        name: error.name,
+        message: error.message,
+        status: 500,
+        type: 'sync_failed',
+        severity: 'error',
+        entityType: 'attachment',
+        originalError: error,
+      });
     }
   })
   /*
