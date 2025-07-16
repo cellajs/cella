@@ -51,8 +51,7 @@ The documentation is generated from source code using \`zod\` schemas, converted
     donate: 'pri_01hq8da4mn9s0z0da7chh0ntb9',
   },
 
-  // sentryDsn: 'https://0f6c6e4d1e825242d9d5b0b73faa97fa@o4506897995399168.ingest.us.sentry.io/4506898171559936',
-  sentryDsn: 'https://85d8f59345c02e2ef9f8afd0d01e62cb@o4506228920942592.ingest.us.sentry.io/4509677977010176',
+  sentryDsn: 'https://0f6c6e4d1e825242d9d5b0b73faa97fa@o4506897995399168.ingest.us.sentry.io/4506898171559936',
   sentSentrySourceMaps: true,
 
   // Customer support with Gleap
