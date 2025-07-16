@@ -12,7 +12,7 @@ import type { errorSchema } from '#/utils/schema/error';
 
 type ErrorSchemaType = z.infer<typeof errorSchema>;
 export type ErrorMeta = { readonly [key: string]: number | string | boolean | null };
-type ErrorKey = keyof (typeof locales)['en']['error'];
+export type ErrorKey = keyof (typeof locales)['en']['error'];
 
 type ConstructedError = {
   type: ErrorKey;
