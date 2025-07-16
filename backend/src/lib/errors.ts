@@ -1,46 +1,40 @@
 import type { z } from '@hono/zod-openapi';
 import * as Sentry from '@sentry/node';
-import { config, type EntityType, type Severity } from 'config';
+import { config } from 'config';
 import type { ErrorHandler } from 'hono';
-import type { ClientErrorStatusCode, ServerErrorStatusCode } from 'hono/utils/http-status';
 import i18n from 'i18next';
 import { type Env, getContextOrganization, getContextUser } from '#/lib/context';
-import type locales from '#/lib/i18n-locales';
 import { externalLogger } from '#/middlewares/logger/external-logger';
 import { logEvent } from '#/middlewares/logger/log-event';
 import { getIsoDate } from '#/utils/iso-date';
-import type { errorSchema } from '#/utils/schema/responses';
+import type { errorSchema } from '#/utils/schema/error';
 
 type ErrorSchemaType = z.infer<typeof errorSchema>;
 export type EventData = { readonly [key: string]: number | string | boolean | null };
 
-type StripPrefix<T, Prefix extends string> = T extends `${Prefix}${infer Rest}` ? Rest : T;
-type ErrorKey = keyof (typeof locales)['en']['error'];
-type SimplifiedErrorKey = StripPrefix<`error:${ErrorKey & string}`, 'error:'>;
-
-type HttpErrorStatus = ClientErrorStatusCode | ServerErrorStatusCode;
-
 type ConstructedError = {
+  type: ErrorSchemaType['type'];
+  status: ErrorSchemaType['status'];
   name?: ErrorSchemaType['name'];
   message?: ErrorSchemaType['message'];
-  type: SimplifiedErrorKey;
-  status: HttpErrorStatus;
   severity?: ErrorSchemaType['severity'];
   entityType?: ErrorSchemaType['entityType'];
   eventData?: EventData;
+  originalError?: Error;
+  redirectToFrontend?: boolean;
 };
 
 // Custom error class to handle API errors
 export class ApiError extends Error {
   name: Error['name'];
-  status: HttpErrorStatus;
-  type: SimplifiedErrorKey;
-  severity: Severity;
+  status: ErrorSchemaType['status'];
+  type: ErrorSchemaType['type'];
+  severity: ErrorSchemaType['severity'];
   redirectToFrontend: boolean;
-  entityType?: EntityType;
-  eventData?: { readonly [key: string]: number | string | boolean | null };
+  entityType?: ErrorSchemaType['entityType'];
+  eventData?: EventData;
 
-  constructor(error: ConstructedError & { redirectToFrontend?: boolean }) {
+  constructor(error: ConstructedError) {
     const apiErrorMessage = i18n.t(`error:${error.type}.text`, { defaultValue: error.message ?? 'Unknown error' });
     super(apiErrorMessage);
     this.name = error.name ?? i18n.t(`error:${error.type}`, { defaultValue: 'ApiError' });
