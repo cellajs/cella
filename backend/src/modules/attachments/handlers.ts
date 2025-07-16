@@ -153,7 +153,7 @@ const attachmentsRouteHandlers = app
       // Retrieve target attachment
       const [targetAttachment] = await db.select().from(attachmentsTable).where(eq(attachmentsTable.id, attachmentId)).limit(1);
       if (!targetAttachment) {
-        throw new ApiError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'attachment', eventData: { attachmentId } });
+        throw new ApiError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'attachment', meta: { attachmentId } });
       }
 
       const items = await processAttachmentUrlsBatch([targetAttachment]);

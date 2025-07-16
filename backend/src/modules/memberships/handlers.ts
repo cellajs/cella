@@ -289,7 +289,7 @@ const membershipRouteHandlers = app
       .limit(1);
 
     if (!membershipToUpdate) {
-      throw new ApiError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'user', eventData: { membership: membershipId } });
+      throw new ApiError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'user', meta: { membership: membershipId } });
     }
 
     const updatedType = membershipToUpdate.contextType;

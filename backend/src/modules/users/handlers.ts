@@ -127,7 +127,7 @@ const usersRouteHandlers = app
 
     const [targetUser] = await getUsersByConditions([or(eq(usersTable.id, idOrSlug), eq(usersTable.slug, idOrSlug))]);
 
-    if (!targetUser) throw new ApiError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'user', eventData: { user: idOrSlug } });
+    if (!targetUser) throw new ApiError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'user', meta: { user: idOrSlug } });
 
     const targetUserMembership = await db
       .select()
@@ -139,7 +139,7 @@ const usersRouteHandlers = app
     );
 
     if (user.role !== 'admin' && !jointMembership)
-      throw new ApiError({ status: 403, type: 'forbidden', severity: 'warn', entityType: 'user', eventData: { user: targetUser.id } });
+      throw new ApiError({ status: 403, type: 'forbidden', severity: 'warn', entityType: 'user', meta: { user: targetUser.id } });
 
     return ctx.json(targetUser, 200);
   })
@@ -152,14 +152,14 @@ const usersRouteHandlers = app
     const user = getContextUser();
 
     const [targetUser] = await getUsersByConditions([or(eq(usersTable.id, idOrSlug), eq(usersTable.slug, idOrSlug))]);
-    if (!targetUser) throw new ApiError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'user', eventData: { user: idOrSlug } });
+    if (!targetUser) throw new ApiError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'user', meta: { user: idOrSlug } });
 
     const { bannerUrl, firstName, lastName, language, newsletter, thumbnailUrl, slug } = ctx.req.valid('json');
 
     // Check if slug is available
     if (slug && slug !== targetUser.slug) {
       const slugAvailable = await checkSlugAvailable(slug);
-      if (!slugAvailable) throw new ApiError({ status: 409, type: 'slug_exists', severity: 'warn', entityType: 'user', eventData: { slug } });
+      if (!slugAvailable) throw new ApiError({ status: 409, type: 'slug_exists', severity: 'warn', entityType: 'user', meta: { slug } });
     }
 
     const [updatedUser] = await db

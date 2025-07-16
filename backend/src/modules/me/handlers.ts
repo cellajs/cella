@@ -140,7 +140,7 @@ const meRouteHandlers = app
   .openapi(meRoutes.updateMe, async (ctx) => {
     const user = getContextUser();
 
-    if (!user) throw new ApiError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'user', eventData: { user: 'self' } });
+    if (!user) throw new ApiError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'user', meta: { user: 'self' } });
 
     const { bannerUrl, firstName, lastName, language, newsletter, thumbnailUrl, slug } = ctx.req.valid('json');
 
@@ -148,7 +148,7 @@ const meRouteHandlers = app
 
     if (slug && slug !== user.slug) {
       const slugAvailable = await checkSlugAvailable(slug);
-      if (!slugAvailable) throw new ApiError({ status: 409, type: 'slug_exists', severity: 'warn', entityType: 'user', eventData: { slug } });
+      if (!slugAvailable) throw new ApiError({ status: 409, type: 'slug_exists', severity: 'warn', entityType: 'user', meta: { slug } });
     }
 
     const [updatedUser] = await db
@@ -177,7 +177,7 @@ const meRouteHandlers = app
     const user = getContextUser();
 
     // Check if user exists
-    if (!user) throw new ApiError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'user', eventData: { user: 'self' } });
+    if (!user) throw new ApiError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'user', meta: { user: 'self' } });
 
     // Delete user
     await db.delete(usersTable).where(eq(usersTable.id, user.id));

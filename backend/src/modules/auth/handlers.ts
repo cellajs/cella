@@ -96,7 +96,7 @@ const authRouteHandlers = app
     // Verify if strategy allowed
     const strategy = 'password';
     if (!enabledStrategies.includes(strategy)) {
-      throw new ApiError({ status: 400, type: 'forbidden_strategy', severity: 'error', eventData: { strategy } });
+      throw new ApiError({ status: 400, type: 'forbidden_strategy', severity: 'error', meta: { strategy } });
     }
 
     // Stop if sign up is disabled and no invitation
@@ -124,7 +124,7 @@ const authRouteHandlers = app
     // Verify if strategy allowed
     const strategy = 'password';
     if (!enabledStrategies.includes(strategy)) {
-      throw new ApiError({ status: 400, type: 'forbidden_strategy', severity: 'error', eventData: { strategy } });
+      throw new ApiError({ status: 400, type: 'forbidden_strategy', severity: 'error', meta: { strategy } });
     }
 
     // Delete token to not needed anymore (if no membership invitation)
@@ -282,7 +282,7 @@ const authRouteHandlers = app
     // Verify if strategy allowed
     const strategy = 'password';
     if (!enabledStrategies.includes(strategy)) {
-      throw new ApiError({ status: 400, type: 'forbidden_strategy', severity: 'error', eventData: { strategy } });
+      throw new ApiError({ status: 400, type: 'forbidden_strategy', severity: 'error', meta: { strategy } });
     }
 
     // If the token is not found or expired
@@ -295,7 +295,7 @@ const authRouteHandlers = app
 
     // If the user is not found
     if (!user) {
-      throw new ApiError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'user', eventData: { userId: token.userId } });
+      throw new ApiError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'user', meta: { userId: token.userId } });
     }
 
     // Hash password
@@ -323,7 +323,7 @@ const authRouteHandlers = app
     // Verify if strategy allowed
     const strategy = 'password';
     if (!enabledStrategies.includes(strategy)) {
-      throw new ApiError({ status: 400, type: 'forbidden_strategy', severity: 'error', eventData: { strategy } });
+      throw new ApiError({ status: 400, type: 'forbidden_strategy', severity: 'error', meta: { strategy } });
     }
 
     const loweredEmail = email.toLowerCase();
@@ -576,13 +576,13 @@ const authRouteHandlers = app
 
     const strategy = 'github' as EnabledOauthProvider;
     if (!isOAuthEnabled(strategy)) {
-      throw new ApiError({ status: 400, type: 'unsupported_oauth', severity: 'error', eventData: { strategy } });
+      throw new ApiError({ status: 400, type: 'unsupported_oauth', severity: 'error', meta: { strategy } });
     }
 
     const stateCookie = await getAuthCookie(ctx, 'oauth_state');
     // Verify state
     if (!state || !stateCookie || stateCookie !== state) {
-      throw new ApiError({ status: 401, type: 'invalid_state', severity: 'warn', eventData: { strategy } });
+      throw new ApiError({ status: 401, type: 'invalid_state', severity: 'warn', meta: { strategy } });
     }
 
     try {
@@ -637,13 +637,13 @@ const authRouteHandlers = app
     } catch (error) {
       // Handle invalid credentials
       if (error instanceof OAuth2RequestError) {
-        throw new ApiError({ status: 401, type: 'invalid_credentials', severity: 'warn', eventData: { strategy } });
+        throw new ApiError({ status: 401, type: 'invalid_credentials', severity: 'warn', meta: { strategy } });
       }
 
       if (error instanceof Error) {
         const errorMessage = error.message;
         logEvent('Error signing in with GitHub', { strategy, errorMessage }, 'error');
-        throw new ApiError({ status: 401, type: 'oauth_failed', severity: 'warn', eventData: { strategy } });
+        throw new ApiError({ status: 401, type: 'oauth_failed', severity: 'warn', meta: { strategy } });
       }
 
       throw error;
@@ -659,7 +659,7 @@ const authRouteHandlers = app
     const strategy = 'google' as EnabledOauthProvider;
 
     if (!isOAuthEnabled(strategy)) {
-      throw new ApiError({ status: 400, type: 'unsupported_oauth', severity: 'error', eventData: { strategy } });
+      throw new ApiError({ status: 400, type: 'unsupported_oauth', severity: 'error', meta: { strategy } });
     }
 
     const storedState = await getAuthCookie(ctx, 'oauth_state');
@@ -667,7 +667,7 @@ const authRouteHandlers = app
 
     // verify state
     if (!code || !storedState || !storedCodeVerifier || state !== storedState) {
-      throw new ApiError({ status: 401, type: 'invalid_state', severity: 'warn', eventData: { strategy } });
+      throw new ApiError({ status: 401, type: 'invalid_state', severity: 'warn', meta: { strategy } });
     }
 
     try {
@@ -717,13 +717,13 @@ const authRouteHandlers = app
     } catch (error) {
       // Handle invalid credentials
       if (error instanceof OAuth2RequestError) {
-        throw new ApiError({ status: 401, type: 'invalid_credentials', severity: 'warn', eventData: { strategy } });
+        throw new ApiError({ status: 401, type: 'invalid_credentials', severity: 'warn', meta: { strategy } });
       }
 
       if (error instanceof Error) {
         const errorMessage = error.message;
         logEvent('Error signing in with Google', { strategy, errorMessage }, 'error');
-        throw new ApiError({ status: 401, type: 'oauth_failed', severity: 'warn', eventData: { strategy } });
+        throw new ApiError({ status: 401, type: 'oauth_failed', severity: 'warn', meta: { strategy } });
       }
 
       throw error;
@@ -739,7 +739,7 @@ const authRouteHandlers = app
     const strategy = 'microsoft' as EnabledOauthProvider;
 
     if (!isOAuthEnabled(strategy)) {
-      throw new ApiError({ status: 400, type: 'unsupported_oauth', severity: 'error', eventData: { strategy } });
+      throw new ApiError({ status: 400, type: 'unsupported_oauth', severity: 'error', meta: { strategy } });
     }
 
     const storedState = await getAuthCookie(ctx, 'oauth_state');
@@ -747,7 +747,7 @@ const authRouteHandlers = app
 
     // verify state
     if (!code || !storedState || !storedCodeVerifier || state !== storedState) {
-      throw new ApiError({ status: 401, type: 'invalid_state', severity: 'warn', eventData: { strategy } });
+      throw new ApiError({ status: 401, type: 'invalid_state', severity: 'warn', meta: { strategy } });
     }
 
     try {
@@ -799,13 +799,13 @@ const authRouteHandlers = app
     } catch (error) {
       // Handle invalid credentials
       if (error instanceof OAuth2RequestError) {
-        throw new ApiError({ status: 401, type: 'invalid_credentials', severity: 'warn', eventData: { strategy } });
+        throw new ApiError({ status: 401, type: 'invalid_credentials', severity: 'warn', meta: { strategy } });
       }
 
       if (error instanceof Error) {
         const errorMessage = error.message;
         logEvent('Error signing in with Microsoft', { strategy, errorMessage }, 'error');
-        throw new ApiError({ status: 401, type: 'oauth_failed', severity: 'warn', eventData: { strategy } });
+        throw new ApiError({ status: 401, type: 'oauth_failed', severity: 'warn', meta: { strategy } });
       }
 
       throw error;
@@ -836,22 +836,22 @@ const authRouteHandlers = app
 
     // Retrieve user and challenge record
     const user = await getUserBy('email', userEmail.toLowerCase());
-    if (!user) throw new ApiError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'user', eventData: { strategy } });
+    if (!user) throw new ApiError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'user', meta: { strategy } });
     // Check if passkey challenge exists
     const challengeFromCookie = await getAuthCookie(ctx, 'passkey_challenge');
-    if (!challengeFromCookie) throw new ApiError({ status: 401, type: 'invalid_credentials', severity: 'warn', eventData: { strategy } });
+    if (!challengeFromCookie) throw new ApiError({ status: 401, type: 'invalid_credentials', severity: 'warn', meta: { strategy } });
     // Get passkey credentials
     const [credentials] = await db.select().from(passkeysTable).where(eq(passkeysTable.userEmail, userEmail));
-    if (!credentials) throw new ApiError({ status: 404, type: 'not_found', severity: 'warn', eventData: { strategy } });
+    if (!credentials) throw new ApiError({ status: 404, type: 'not_found', severity: 'warn', meta: { strategy } });
 
     try {
       const isValid = await verifyPassKeyPublic(signature, authenticatorData, clientDataJSON, credentials.publicKey, challengeFromCookie);
-      if (!isValid) throw new ApiError({ status: 401, type: 'invalid_token', severity: 'warn', eventData: { strategy } });
+      if (!isValid) throw new ApiError({ status: 401, type: 'invalid_token', severity: 'warn', meta: { strategy } });
     } catch (error) {
       if (error instanceof Error) {
         const errorMessage = error.message;
         logEvent('Error verifying passkey', { strategy, errorMessage }, 'error');
-        throw new ApiError({ status: 500, type: 'passkey_failed', severity: 'error', eventData: { strategy } });
+        throw new ApiError({ status: 500, type: 'passkey_failed', severity: 'error', meta: { strategy } });
       }
     }
 

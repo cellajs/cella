@@ -28,7 +28,7 @@ export const getRateLimiterInstance = (options: Omit<IRateLimiterPostgresOptions
  */
 export const rateLimitError = (ctx: Context, limitState: RateLimiterRes, rateLimitKey: string) => {
   ctx.header('Retry-After', getRetryAfter(limitState.msBeforeNext));
-  throw new ApiError({ status: 429, type: 'too_many_requests', severity: 'warn', eventData: { rateLimitKey } });
+  throw new ApiError({ status: 429, type: 'too_many_requests', severity: 'warn', meta: { rateLimitKey } });
 };
 
 /**

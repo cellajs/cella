@@ -11,7 +11,7 @@ import { getIsoDate } from '#/utils/iso-date';
 import type { errorSchema } from '#/utils/schema/error';
 
 type ErrorSchemaType = z.infer<typeof errorSchema>;
-export type EventData = { readonly [key: string]: number | string | boolean | null };
+export type ErrorMeta = { readonly [key: string]: number | string | boolean | null };
 type ErrorKey = keyof (typeof locales)['en']['error'];
 
 type ConstructedError = {
@@ -21,7 +21,7 @@ type ConstructedError = {
   message?: ErrorSchemaType['message'];
   severity?: ErrorSchemaType['severity'];
   entityType?: ErrorSchemaType['entityType'];
-  eventData?: EventData;
+  meta?: ErrorMeta;
   originalError?: Error;
   redirectToFrontend?: boolean;
 };
@@ -34,7 +34,7 @@ export class ApiError extends Error {
   severity: ErrorSchemaType['severity'];
   redirectToFrontend: boolean;
   entityType?: ErrorSchemaType['entityType'];
-  eventData?: EventData;
+  meta?: ErrorMeta;
   originalError?: Error;
 
   constructor(error: ConstructedError) {
@@ -46,7 +46,7 @@ export class ApiError extends Error {
     this.entityType = error.entityType;
     this.severity = error.severity || 'info';
     this.redirectToFrontend = error.redirectToFrontend || false;
-    this.eventData = error.eventData;
+    this.meta = error.meta;
     this.originalError = error.originalError;
   }
 }
@@ -65,7 +65,7 @@ export const handleApiError: ErrorHandler<Env> = (err, ctx) => {
         });
 
   const { redirectToFrontend, originalError, ...error } = apiError;
-  const { severity, type, message, eventData } = error;
+  const { severity, type, message, meta } = error;
 
   // Redirect to the frontend error page with query parameters for error details
   if (redirectToFrontend) {
@@ -93,9 +93,9 @@ export const handleApiError: ErrorHandler<Env> = (err, ctx) => {
     if (externalLogger) externalLogger[severity](message, undefined, enrichedError);
     Sentry.captureException(originalError);
     if (originalError) console.error(originalError);
-  } else if (eventData) {
+  } else if (meta) {
     // Significant (non-error) events with additional data
-    logEvent(message, eventData, severity);
+    logEvent(message, meta, severity);
   }
 
   return ctx.json(enrichedError, enrichedError.status);
