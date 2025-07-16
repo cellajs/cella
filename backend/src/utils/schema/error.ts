@@ -1,9 +1,7 @@
 import { z } from '@hono/zod-openapi';
 import { config } from 'config';
-import locales from '#/lib/i18n-locales';
 import { entityTypeSchema } from '#/utils/schema/common';
 
-const errorTypeSchema = z.enum(Object.keys(locales.en.error) as [keyof typeof locales.en.error]);
 const ClientErrorStatusCodeEnum = z.union([
   z.literal(400),
   z.literal(401),
@@ -56,7 +54,7 @@ export const errorSchema = z
   .object({
     name: z.string(), // Error name
     message: z.string(), // Error message
-    type: errorTypeSchema, // Error type identifier
+    type: z.string(), // Error type identifier
     status: z.union([ClientErrorStatusCodeEnum, ServerErrorStatusCodeEnum]), // HTTP status code
     severity: z.enum(config.severityLevels), // Severity level
     entityType: entityTypeSchema.optional(), // Optional related entity type

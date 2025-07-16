@@ -4,6 +4,7 @@ import { config } from 'config';
 import type { ErrorHandler } from 'hono';
 import i18n from 'i18next';
 import { type Env, getContextOrganization, getContextUser } from '#/lib/context';
+import type locales from '#/lib/i18n-locales';
 import { externalLogger } from '#/middlewares/logger/external-logger';
 import { logEvent } from '#/middlewares/logger/log-event';
 import { getIsoDate } from '#/utils/iso-date';
@@ -11,9 +12,10 @@ import type { errorSchema } from '#/utils/schema/error';
 
 type ErrorSchemaType = z.infer<typeof errorSchema>;
 export type EventData = { readonly [key: string]: number | string | boolean | null };
+type ErrorKey = keyof (typeof locales)['en']['error'];
 
 type ConstructedError = {
-  type: ErrorSchemaType['type'];
+  type: ErrorKey;
   status: ErrorSchemaType['status'];
   name?: ErrorSchemaType['name'];
   message?: ErrorSchemaType['message'];
@@ -63,7 +65,7 @@ export const handleApiError: ErrorHandler<Env> = (err, ctx) => {
         });
 
   const { redirectToFrontend, originalError, ...error } = apiError;
-  const { severity, type, message, status, eventData } = error;
+  const { severity, type, message, eventData } = error;
 
   // Redirect to the frontend error page with query parameters for error details
   if (redirectToFrontend) {
@@ -96,5 +98,5 @@ export const handleApiError: ErrorHandler<Env> = (err, ctx) => {
     logEvent(message, eventData, severity);
   }
 
-  return ctx.json(enrichedError, status);
+  return ctx.json(enrichedError, enrichedError.status);
 };
