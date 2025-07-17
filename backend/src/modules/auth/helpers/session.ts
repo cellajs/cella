@@ -4,10 +4,13 @@ import type { Context } from 'hono';
 import { db } from '#/db/db';
 import { type AuthStrategy, type SessionModel, sessionsTable } from '#/db/schema/sessions';
 import { type UserModel, usersTable } from '#/db/schema/users';
+import { env } from '#/env';
+import { ApiError } from '#/lib/errors';
 import { logEvent } from '#/middlewares/logger/log-event';
 import { deleteAuthCookie, getAuthCookie, setAuthCookie } from '#/modules/auth/helpers/cookie';
 import { deviceInfo } from '#/modules/auth/helpers/device-info';
 import { userSelect } from '#/modules/users/helpers/select';
+import { getIp } from '#/utils/get-ip';
 import { isExpiredDate } from '#/utils/is-expired-date';
 import { getIsoDate } from '#/utils/iso-date';
 import { nanoid } from '#/utils/nanoid';
@@ -19,7 +22,16 @@ import { createDate, TimeSpan } from '#/utils/time-span';
  * Sets a user session and stores it in the database.
  * Generates a session token, records device information, and optionally associates an admin user for impersonation.
  */
-export const setUserSession = async (ctx: Context, userId: UserModel['id'], strategy: AuthStrategy, adminUserId?: UserModel['id']) => {
+export const setUserSession = async (ctx: Context, user: UserModel, strategy: AuthStrategy, adminUser?: UserModel) => {
+  if ((!adminUser && user.role === 'admin') || adminUser) {
+    const ip = getIp(ctx);
+    const allowList = (env.REMOTE_SYSTEM_ACCESS_IP ?? '').split(',');
+    const allowAll = allowList.includes('*');
+
+    if (!allowAll && (!ip || !allowList.includes(ip))) {
+      throw new ApiError({ status: 403, type: 'forbidden', name: 'forbidden', message: 'System admin login not allowed from this IP' });
+    }
+  }
   // Get device information
   const device = deviceInfo(ctx);
 
@@ -29,8 +41,8 @@ export const setUserSession = async (ctx: Context, userId: UserModel['id'], stra
 
   const session = {
     token: hashedSessionToken,
-    userId,
-    type: adminUserId ? ('impersonation' as const) : ('regular' as const),
+    userId: user.id,
+    type: adminUser ? ('impersonation' as const) : ('regular' as const),
     deviceName: device.name,
     deviceType: device.type,
     deviceOs: device.os,
@@ -44,20 +56,20 @@ export const setUserSession = async (ctx: Context, userId: UserModel['id'], stra
   await db.insert(sessionsTable).values(session);
 
   // Set expiration time span
-  const timeSpan = adminUserId ? new TimeSpan(1, 'h') : new TimeSpan(1, 'w');
+  const timeSpan = adminUser ? new TimeSpan(1, 'h') : new TimeSpan(1, 'w');
 
-  const cookieContent = `${hashedSessionToken}.${adminUserId ?? ''}`;
+  const cookieContent = `${hashedSessionToken}.${adminUser ?? ''}`;
 
   // Set session cookie with the unhashed version
   await setAuthCookie(ctx, 'session', cookieContent, timeSpan);
 
   // If it's an impersonation session, we can stop here
-  if (adminUserId) return;
+  if (adminUser) return;
 
   // Update last sign in date
   const lastSignInAt = getIsoDate();
-  await db.update(usersTable).set({ lastSignInAt }).where(eq(usersTable.id, userId));
-  logEvent('User signed in', { user: userId, strategy });
+  await db.update(usersTable).set({ lastSignInAt }).where(eq(usersTable.id, user.id));
+  logEvent('User signed in', { user: user.id, strategy });
 };
 
 /**

@@ -81,7 +81,7 @@ export const handleCreateUser = async ({ ctx, newUser, redirectUrl, provider, me
         verifiedAt: getIsoDate(),
       });
 
-      await setUserSession(ctx, user.id, provider?.id || 'password');
+      await setUserSession(ctx, user, provider?.id || 'password');
     }
 
     // Redirect to URL if provided
