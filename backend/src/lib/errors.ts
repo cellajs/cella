@@ -6,7 +6,6 @@ import i18n from 'i18next';
 import { type Env, getContextOrganization, getContextUser } from '#/lib/context';
 import type locales from '#/lib/i18n-locales';
 import { externalLogger } from '#/middlewares/logger/external-logger';
-import { logEvent } from '#/middlewares/logger/log-event';
 import { getIsoDate } from '#/utils/iso-date';
 import type { errorSchema } from '#/utils/schema/error';
 
@@ -40,8 +39,9 @@ export class ApiError extends Error {
   originalError?: Error;
 
   constructor(error: ConstructedError) {
-    const apiErrorMessage = i18n.t(`error:${error.type}.text`, { defaultValue: error.message ?? 'Unknown error' });
-    super(apiErrorMessage);
+    const messageFallback = error.message ?? i18n.t(`error:${error.type}`, { defaultValue: error.name ?? 'Unknown error' });
+    const message = i18n.t(`error:${error.type}.text`, { defaultValue: messageFallback });
+    super(message);
     this.name = error.name ?? i18n.t(`error:${error.type}`, { defaultValue: 'ApiError' });
     this.status = error.status;
     this.type = error.type;
@@ -51,9 +51,11 @@ export class ApiError extends Error {
     this.meta = error.meta;
     this.originalError = error.originalError;
 
-    if (error.originalError) {
+    if (error.originalError?.stack) {
       this.stack = error.originalError.stack;
-      this.cause = error.originalError;
+    }
+    if (error.originalError?.cause) {
+      this.cause = error.originalError.cause;
     }
   }
 }
@@ -71,8 +73,9 @@ export const handleApiError: ErrorHandler<Env> = (err, ctx) => {
           originalError: err,
         });
 
-  const { redirectToFrontend, originalError, ...error } = apiError;
-  const { severity, type, message, meta } = error;
+  // Get  non-enumerable 'stack', 'message', and 'cause'. These do NOT get included when using the spread operator (...)
+  const { redirectToFrontend, originalError, message, cause, stack, ...error } = apiError;
+  const { severity, type, meta } = error;
 
   // Redirect to the frontend error page with query parameters for error details
   if (redirectToFrontend) {
@@ -84,8 +87,11 @@ export const handleApiError: ErrorHandler<Env> = (err, ctx) => {
   const user = getContextUser();
   const organization = getContextOrganization();
 
-  const enrichedError: ErrorSchemaType = {
+  const enrichedError = {
     ...error,
+    stack,
+    cause,
+    message,
     logId: ctx.get('logId'),
     path: ctx.req.path,
     method: ctx.req.method,
@@ -93,16 +99,20 @@ export const handleApiError: ErrorHandler<Env> = (err, ctx) => {
     organizationId: organization?.id,
     timestamp: getIsoDate(),
   };
-  // Logging
-  if (['warn', 'error'].includes(severity)) {
-    // To external logger and monitoring service
-    Sentry.captureException(enrichedError);
-    if (externalLogger) externalLogger[severity](message, undefined, enrichedError);
-    if (originalError) console.error(originalError);
-  } else if (meta) {
-    // Significant (non-error) events with additional data
-    logEvent(message, meta, severity);
+
+  // Send to Sentry
+  if (severity === 'error' || severity === 'warn') {
+    const level = severity === 'warn' ? 'warning' : severity;
+    Sentry.captureException(enrichedError, { level });
   }
+
+  // External logger
+  if (externalLogger?.[severity]) externalLogger[severity](message, undefined, enrichedError);
+
+  // Console logging
+  console[severity](`[${severity.toUpperCase()}] ${message}`);
+  if (meta) console[severity]('Meta:', meta);
+  if (stack) console.error(stack);
 
   return ctx.json(enrichedError, enrichedError.status);
 };
