@@ -1,6 +1,6 @@
 import { onlineManager } from '@tanstack/react-query';
 import { useLoaderData } from '@tanstack/react-router';
-import { config } from 'config';
+import { config, type EnabledOauthProvider } from 'config';
 import { Check, Send, Trash } from 'lucide-react';
 import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -80,11 +80,19 @@ const UserSettingsPage = () => {
     );
   };
 
-  const authenticateWithProvider = (provider: (typeof mapOauthProviders)[number]) => {
+  const authenticateWithProvider = (provider: EnabledOauthProvider) => {
     if (!onlineManager.isOnline()) return toaster(t('common:action.offline.text'), 'warning');
 
     // Proceed to OAuth URL with redirect and connect
-    window.location.href = `${provider.url}?connect=${user.id}&type=connect&redirect=${encodeURIComponent(window.location.href)}`;
+    try {
+      const baseUrl = `${config.backendAuthUrl}/${provider}`;
+      const params = new URLSearchParams({ connect: user.id, type: 'connect', redirect: window.location.href });
+
+      const providerUrl = `${baseUrl}?${params.toString()}`;
+      window.location.assign(providerUrl);
+    } catch (error) {
+      toaster(t('common:url_malformed'), 'error');
+    }
   };
 
   return (
@@ -157,7 +165,7 @@ const UserSettingsPage = () => {
                       </div>
                     );
                   return (
-                    <Button key={provider.id} type="button" variant="plain" onClick={() => authenticateWithProvider(provider)}>
+                    <Button key={provider.id} type="button" variant="plain" onClick={() => authenticateWithProvider(provider.id)}>
                       <img
                         src={`/static/images/${provider.id}-icon.svg`}
                         alt={provider.id}

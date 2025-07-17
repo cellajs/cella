@@ -1,5 +1,4 @@
-import i18next from 'i18next';
-import i18n from 'i18next';
+import { default as i18n, default as i18next } from 'i18next';
 import { ApiError } from '~/lib/api';
 import router from '~/lib/router';
 import { flushStoresAndCache } from '~/modules/auth/sign-out';
@@ -9,25 +8,21 @@ import { useAlertStore } from '~/store/alert';
 /**
  * Fallback messages for common 400 errors
  */
-const fallbackMessages = (t: (typeof i18n)['t']) => ({
-  400: t('error:bad_request_action'),
-  401: t('error:unauthorized_action'),
-  403: t('error:forbidden_action'),
-  404: t('error:not_found'),
-  429: t('error:too_many_requests'),
-});
+const fallbackMessages = {
+  400: i18n.t('error:bad_request_action'),
+  401: i18n.t('error:unauthorized_action'),
+  403: i18n.t('error:forbidden_action'),
+  404: i18n.t('error:not_found'),
+  429: i18n.t('error:too_many_requests'),
+};
 
-const getErrorMessage = (error: ApiError) => {
-  const statusCode = Number(error.status);
-  const fallback = fallbackMessages(i18n.t);
-
-  if (error.entityType && i18next.exists(`error:resource_${error.type}`)) {
-    return i18n.t(`error:resource_${error.type}`, { resource: i18n.t(error.entityType) });
+const getErrorMessage = ({ type, entityType, message, status }: ApiError) => {
+  if (entityType && type && i18next.exists(`error:resource_${type}`)) {
+    return i18n.t(`error:resource_${type}`, { resource: i18n.t(entityType) });
   }
-  if (error.type && i18next.exists(`error:${error.type}`)) return i18n.t(`error:${error.type}`);
-  if (error.message) return error.message;
+  if (type && i18next.exists(`error:${type}`)) return i18n.t(`error:${type}`);
 
-  return fallback[statusCode as keyof typeof fallback] || 'Unknown error occurred';
+  return message || fallbackMessages[status as keyof typeof fallbackMessages] || 'Unknown error occurred';
 };
 
 /**
@@ -55,7 +50,7 @@ export const onError = (error: Error | ApiError) => {
 
     // Show toast
     const toastType = error.severity === 'error' ? 'error' : error.severity === 'warn' ? 'warning' : 'info';
-    toaster(errorMessage || error.message, toastType);
+    toaster(errorMessage, toastType);
 
     // Redirect to sign-in page if the user is not authenticated (unless already on /auth/*)
     if (statusCode === 401 && !location.pathname.startsWith('/auth/')) {

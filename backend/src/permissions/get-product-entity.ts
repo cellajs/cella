@@ -1,9 +1,7 @@
 import { type ContextEntityType, config, type ProductEntityType } from 'config';
-import type { Context } from 'hono';
-
-import { type Env, getContextMemberships, getContextOrganization, getContextUser } from '#/lib/context';
+import { getContextMemberships, getContextOrganization, getContextUser } from '#/lib/context';
 import { type EntityModel, resolveEntity } from '#/lib/entity';
-import { createError, type ErrorType } from '#/lib/errors';
+import { ApiError } from '#/lib/errors';
 import { checkPermission } from '#/permissions/check-if-allowed';
 import type { PermittedAction } from '#/permissions/permissions-config';
 
@@ -15,7 +13,6 @@ import type { PermittedAction } from '#/permissions/permissions-config';
  *
  * It returns either an error object or an object with the resolved entity without error.
  *
- * @param ctx - Request context.
  * @param idOrSlug - Product id or slug.
  * @param entityType - Product entity type.
  * @param contextEntityType: One of context entity types, that the product entity belongs to (e.g., "organization", "project").
@@ -25,25 +22,22 @@ import type { PermittedAction } from '#/permissions/permissions-config';
  *   - `error`: Error object or `null` if no error occurred.
  */
 export const getValidProductEntity = async <K extends ProductEntityType>(
-  ctx: Context<Env>,
   idOrSlug: string,
   entityType: K,
   contextEntityType: ContextEntityType,
   action: Exclude<PermittedAction, 'create'>,
-): Promise<{ error: ErrorType; entity: null } | { error: null; entity: EntityModel<K> }> => {
-  const nullResult = { entity: null };
-
+): Promise<EntityModel<K>> => {
   const user = getContextUser();
   const memberships = getContextMemberships();
   const isSystemAdmin = user.role === 'admin';
 
   // Step 1: Resolve entity
   const entity = await resolveEntity(entityType, idOrSlug);
-  if (!entity) return { error: createError(ctx, 404, 'not_found', 'warn', entityType), ...nullResult };
+  if (!entity) throw new ApiError({ status: 404, type: 'not_found', severity: 'warn', entityType });
 
   // Step 2: Permission check
   const isAllowed = checkPermission(memberships, action, entity);
-  if (!isAllowed) return { error: createError(ctx, 403, 'forbidden', 'warn', entityType), ...nullResult };
+  if (!isAllowed) throw new ApiError({ status: 403, type: 'forbidden', severity: 'warn', entityType });
 
   // Step 3: Membership check
   const entityIdField = config.entityIdFields[contextEntityType];
@@ -51,12 +45,12 @@ export const getValidProductEntity = async <K extends ProductEntityType>(
 
   const membership = memberships.find((m) => m.contextType === contextEntityType && m[entityIdField] === entityId) || null;
 
-  if (!membership && !isSystemAdmin) return { error: createError(ctx, 400, 'invalid_request', 'error', entityType), ...nullResult };
+  if (!membership && !isSystemAdmin) throw new ApiError({ status: 400, type: 'invalid_request', severity: 'error', entityType });
 
   // Step 4: Organization check
   const org = getContextOrganization();
-  if (membership?.organizationId && org && membership.organizationId !== org.id)
-    return { error: createError(ctx, 400, 'invalid_request', 'error', entityType), ...nullResult };
-
-  return { error: null, entity };
+  if (membership?.organizationId && org && membership.organizationId !== org.id) {
+    throw new ApiError({ status: 400, type: 'invalid_request', severity: 'error', entityType });
+  }
+  return entity;
 };

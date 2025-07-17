@@ -3,7 +3,7 @@ import { createMiddleware } from 'hono/factory';
 import type { RateLimiterMemory, RateLimiterPostgres } from 'rate-limiter-flexible';
 import { RateLimiterRes } from 'rate-limiter-flexible';
 import type { Env } from '#/lib/context';
-import { errorResponse } from '#/lib/errors';
+import { ApiError } from '#/lib/errors';
 import { getRateLimiterInstance, rateLimitError } from '#/middlewares/rate-limiter/helpers';
 import { getIp } from '#/utils/get-ip';
 
@@ -62,8 +62,7 @@ export const rateLimiter = (
     const body = ctx.req.header('content-type') === 'application/json' ? ((await ctx.req.raw.clone().json()) as { email?: string }) : undefined;
 
     // Stop if ip is an identifier and not available
-    if (!ipAddr && identifiers.includes('ip')) return errorResponse(ctx, 403, 'forbidden', 'warn');
-
+    if (!ipAddr && identifiers.includes('ip')) throw new ApiError({ status: 403, type: 'forbidden', severity: 'warn' });
     // Generate rate limit key
     let rateLimitKey = '';
     if (identifiers.includes('email')) rateLimitKey += body?.email || '';

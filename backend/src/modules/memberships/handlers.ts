@@ -9,7 +9,7 @@ import { tokensTable } from '#/db/schema/tokens';
 import { usersTable } from '#/db/schema/users';
 import { type Env, getContextMemberships, getContextOrganization, getContextUser } from '#/lib/context';
 import { resolveEntity } from '#/lib/entity';
-import { createError, type ErrorType, errorResponse } from '#/lib/errors';
+import { ApiError } from '#/lib/errors';
 import { eventManager } from '#/lib/events';
 import { mailer } from '#/lib/mailer';
 import { sendSSEToUsers } from '#/lib/sse';
@@ -40,8 +40,7 @@ const membershipRouteHandlers = app
     const { idOrSlug, entityType: passedEntityType } = ctx.req.valid('query');
 
     // Validate entity existence and check user permission for updates
-    const { error, entity } = await getValidContextEntity(ctx, idOrSlug, passedEntityType, 'update');
-    if (error) return ctx.json(error, 400);
+    const { entity } = await getValidContextEntity(idOrSlug, passedEntityType, 'update');
 
     // Extract entity details
     const { entityType, id: entityId } = entity;
@@ -145,7 +144,7 @@ const membershipRouteHandlers = app
       .where(and(eq(membershipsTable.contextType, 'organization'), eq(membershipsTable.organizationId, organization.id)));
     const membersRestrictions = organization.restrictions.user;
     if (membersRestrictions !== 0 && currentOrgMemberships + emailsWithIdToInvite.length > membersRestrictions) {
-      return errorResponse(ctx, 403, 'restrict_by_org', 'warn', entityType);
+      throw new ApiError({ status: 403, type: 'restrict_by_org', severity: 'warn', entityType });
     }
 
     // Generate invitation tokens
@@ -225,15 +224,12 @@ const membershipRouteHandlers = app
     const { entityType, idOrSlug } = ctx.req.valid('query');
     const { ids } = ctx.req.valid('json');
 
-    const { error, entity } = await getValidContextEntity(ctx, idOrSlug, entityType, 'delete');
-    if (error) return ctx.json(error, 400);
+    const { entity } = await getValidContextEntity(idOrSlug, entityType, 'delete');
 
     const entityIdField = config.entityIdFields[entityType];
 
     // Convert ids to an array
     const membershipIds = Array.isArray(ids) ? ids : [ids];
-
-    const errors: ErrorType[] = [];
 
     const filters = [eq(membershipsTable.contextType, entityType), eq(membershipsTable[entityIdField], entity.id)];
 
@@ -244,14 +240,14 @@ const membershipRouteHandlers = app
       .where(and(inArray(membershipsTable.userId, membershipIds), ...filters));
 
     // Check if membership exist
+    const rejectedIds: string[] = [];
+
     for (const id of membershipIds) {
-      if (!targets.some((target) => target.userId === id)) {
-        errors.push(createError(ctx, 404, 'not_found', 'warn', entityType, { user: id }));
-      }
+      if (!targets.some((target) => target.userId === id)) rejectedIds.push(id);
     }
 
     // If the user doesn't have permission to delete any of the memberships, return an error
-    if (targets.length === 0) return ctx.json({ success: false, errors }, 200);
+    if (targets.length === 0) return ctx.json({ success: false, rejectedIds }, 200);
 
     // Delete the memberships
     await db.delete(membershipsTable).where(
@@ -270,7 +266,7 @@ const membershipRouteHandlers = app
       logEvent('Member deleted', { membership: targetMembership.id });
     }
 
-    return ctx.json({ success: true, errors }, 200);
+    return ctx.json({ success: true, rejectedIds }, 200);
   })
   /*
    * Update user membership
@@ -292,22 +288,21 @@ const membershipRouteHandlers = app
       .where(and(eq(membershipsTable.id, membershipId), eq(membershipsTable.organizationId, organization.id)))
       .limit(1);
 
-    if (!membershipToUpdate) return errorResponse(ctx, 404, 'not_found', 'warn', 'user', { membership: membershipId });
+    if (!membershipToUpdate) {
+      throw new ApiError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'user', meta: { membership: membershipId } });
+    }
 
     const updatedType = membershipToUpdate.contextType;
     const updatedEntityIdField = config.entityIdFields[updatedType];
 
     const membershipContextId = membershipToUpdate[updatedEntityIdField];
-    if (!membershipContextId) return errorResponse(ctx, 404, 'not_found', 'warn', updatedType);
+    if (!membershipContextId) throw new ApiError({ status: 404, type: 'not_found', severity: 'warn', entityType: updatedType });
 
     const membershipContext = await resolveEntity(updatedType, membershipContextId);
-    if (!membershipContext) return errorResponse(ctx, 404, 'not_found', 'warn', updatedType);
+    if (!membershipContext) throw new ApiError({ status: 404, type: 'not_found', severity: 'warn', entityType: updatedType });
 
     // Check if user has permission to update someone elses membership role
-    if (role) {
-      const { error } = await getValidContextEntity(ctx, membershipContextId, updatedType, 'update');
-      if (error) return ctx.json(error, 400);
-    }
+    if (role) await getValidContextEntity(membershipContextId, updatedType, 'update');
 
     // If archived changed, set lowest order in relevant memberships
     if (archived !== undefined && archived !== membershipToUpdate.archived) {
@@ -354,8 +349,7 @@ const membershipRouteHandlers = app
     const organization = getContextOrganization();
 
     // Validate entity existence and check read permission
-    const { error, entity } = await getValidContextEntity(ctx, idOrSlug, entityType, 'read');
-    if (error) return ctx.json(error, 400);
+    const { entity } = await getValidContextEntity(idOrSlug, entityType, 'read');
 
     const entityIdField = config.entityIdFields[entity.entityType];
 
@@ -410,8 +404,7 @@ const membershipRouteHandlers = app
     // Scope request to organization
     const organization = getContextOrganization();
 
-    const { error, entity } = await getValidContextEntity(ctx, idOrSlug, entityType, 'read');
-    if (error) return ctx.json(error, 400);
+    const { entity } = await getValidContextEntity(idOrSlug, entityType, 'read');
 
     const entityIdField = config.entityIdFields[entity.entityType];
 

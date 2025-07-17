@@ -8,6 +8,7 @@ import { toaster } from '~/modules/common/toaster';
 import type { EntitySummary } from '~/modules/entities/types';
 import { deleteMenuItem } from '~/modules/navigation/menu-sheet/helpers/menu-operations';
 import { Button, type ButtonProps } from '~/modules/ui/button';
+import { queryClient } from '~/query/query-client';
 import { cn } from '~/utils/cn';
 
 export type LeaveEntityButtonProps = { entity: EntitySummary; redirectPath?: string; buttonProps?: ButtonProps; callback?: () => void };
@@ -16,7 +17,6 @@ export const LeaveEntityButton = ({ entity, buttonProps, redirectPath = config.d
   const { t } = useTranslation();
   const navigate = useNavigate();
 
-  // TODO the code is not isomorphic, shouldn't it also clear cache for this organization?
   const { mutate: leaveEntity } = useMutation({
     mutationFn: async () => {
       const idOrSlug = entity.id;
@@ -25,6 +25,13 @@ export const LeaveEntityButton = ({ entity, buttonProps, redirectPath = config.d
     onSuccess: () => {
       toaster(t('common:success.you_left_entity', { entity: entity.entityType }), 'success');
       navigate({ to: redirectPath, replace: true });
+
+      // Clear related cache entries
+      // Note: works if queryKeys are structured like `organizationsKeys.single`
+      queryClient.removeQueries({
+        predicate: ({ queryKey }) => queryKey.includes(entity.entityType) && queryKey.some((k) => k === entity.id || k === entity.slug),
+      });
+
       deleteMenuItem(entity.id);
       callback?.();
     },

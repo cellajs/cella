@@ -7,7 +7,7 @@ import { apiModulesList, registerAppSchema } from '#/lib/docs-config';
 import { entityBaseSchema, userSummarySchema } from '#/modules/entities/schema';
 import { menuSchema } from '#/modules/me/schema';
 import { membershipSummarySchema } from '#/modules/memberships/schema';
-import { errorSchema } from '#/utils/schema/responses';
+import { errorSchema } from '#/utils/schema/error';
 
 /**
  * Generate OpenAPI documentation using hono/zod-openapi and scalar/hono-api-reference

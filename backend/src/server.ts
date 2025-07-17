@@ -2,7 +2,7 @@ import { OpenAPIHono } from '@hono/zod-openapi';
 import { config } from 'config';
 import { contextStorage } from 'hono/context-storage';
 import type { Env } from '#/lib/context';
-import { CustomError, errorResponse } from '#/lib/errors';
+import { ApiError, handleApiError } from '#/lib/errors';
 import middlewares from '#/middlewares/app';
 
 const baseApp = new OpenAPIHono<Env>();
@@ -20,15 +20,11 @@ baseApp.route('/', middlewares);
 baseApp.get('/ping', (c) => c.text('pong'));
 
 // Not found handler
-baseApp.notFound((ctx) => {
-  return errorResponse(ctx, 404, 'route_not_found', 'warn', undefined, { path: ctx.req.path });
+baseApp.notFound(() => {
+  throw new ApiError({ status: 404, type: 'route_not_found', severity: 'warn' });
 });
 
 // Error handler
-baseApp.onError((err, ctx) => {
-  // TODO improve not recreate it in errorResponse and just send it out
-  if (err instanceof CustomError) return errorResponse(ctx, err.status, err.type, err.severity, err.entityType);
-  return errorResponse(ctx, 500, 'server_error', 'error', undefined, {}, err);
-});
+baseApp.onError(handleApiError);
 
 export default baseApp;

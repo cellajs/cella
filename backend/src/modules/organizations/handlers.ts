@@ -6,7 +6,7 @@ import { db } from '#/db/db';
 import { membershipsTable } from '#/db/schema/memberships';
 import { organizationsTable } from '#/db/schema/organizations';
 import { type Env, getContextMemberships, getContextUser } from '#/lib/context';
-import { createError, type ErrorType, errorResponse } from '#/lib/errors';
+import { ApiError } from '#/lib/errors';
 import { sendSSEToUsers } from '#/lib/sse';
 import { logEvent } from '#/middlewares/logger/log-event';
 import { checkSlugAvailable } from '#/modules/entities/helpers/check-slug';
@@ -38,11 +38,11 @@ const organizationRouteHandlers = app
       return m.contextType === 'organization' && m.createdBy === user.id ? count + 1 : count;
     }, 0);
 
-    if (createdOrgsCount === 5) return errorResponse(ctx, 403, 'restrict_by_app', 'warn', 'organization');
+    if (createdOrgsCount === 5) throw new ApiError({ status: 403, type: 'restrict_by_app', severity: 'warn', entityType: 'organization' });
 
     // Check if slug is available
     const slugAvailable = await checkSlugAvailable(slug);
-    if (!slugAvailable) return errorResponse(ctx, 409, 'slug_exists', 'warn', 'organization', { slug });
+    if (!slugAvailable) throw new ApiError({ status: 409, type: 'slug_exists', severity: 'warn', entityType: 'organization', meta: { slug } });
 
     const [createdOrganization] = await db
       .insert(organizationsTable)
@@ -139,14 +139,11 @@ const organizationRouteHandlers = app
 
     // Convert the ids to an array
     const toDeleteIds = Array.isArray(ids) ? ids : [ids];
-    if (!toDeleteIds.length) return errorResponse(ctx, 400, 'invalid_request', 'error', 'organization');
+    if (!toDeleteIds.length) throw new ApiError({ status: 400, type: 'invalid_request', severity: 'error', entityType: 'organization' });
 
     // Split ids into allowed and disallowed
-    const { allowedIds, disallowedIds } = await splitByAllowance('delete', 'organization', toDeleteIds, memberships);
-    if (!allowedIds.length) return errorResponse(ctx, 403, 'forbidden', 'warn', 'organization');
-
-    // Map errors of organization user is not allowed to delete
-    const errors: ErrorType[] = disallowedIds.map((id) => createError(ctx, 404, 'not_found', 'warn', 'organization', { organization: id }));
+    const { allowedIds, disallowedIds: rejectedIds } = await splitByAllowance('delete', 'organization', toDeleteIds, memberships);
+    if (!allowedIds.length) throw new ApiError({ status: 403, type: 'forbidden', severity: 'warn', entityType: 'organization' });
 
     // Get ids of members for organizations
     const memberIds = await db
@@ -167,7 +164,7 @@ const organizationRouteHandlers = app
 
     logEvent('Organizations deleted', { ids: allowedIds.join() });
 
-    return ctx.json({ success: true, errors }, 200);
+    return ctx.json({ success: true, rejectedIds }, 200);
   })
   /*
    * Get organization by id or slug
@@ -175,8 +172,7 @@ const organizationRouteHandlers = app
   .openapi(organizationRoutes.getOrganization, async (ctx) => {
     const { idOrSlug } = ctx.req.valid('param');
 
-    const { error, entity: organization, membership } = await getValidContextEntity(ctx, idOrSlug, 'organization', 'read');
-    if (error) return ctx.json(error, 400);
+    const { entity: organization, membership } = await getValidContextEntity(idOrSlug, 'organization', 'read');
 
     const memberCountsQuery = getMemberCountsQuery(organization.entityType);
     const [{ invitesCount }] = await db
@@ -194,8 +190,7 @@ const organizationRouteHandlers = app
   .openapi(organizationRoutes.updateOrganization, async (ctx) => {
     const { idOrSlug } = ctx.req.valid('param');
 
-    const { error, entity: organization, membership } = await getValidContextEntity(ctx, idOrSlug, 'organization', 'update');
-    if (error) return ctx.json(error, 400);
+    const { entity: organization, membership } = await getValidContextEntity(idOrSlug, 'organization', 'update');
 
     const user = getContextUser();
 
@@ -204,7 +199,7 @@ const organizationRouteHandlers = app
 
     if (slug && slug !== organization.slug) {
       const slugAvailable = await checkSlugAvailable(slug);
-      if (!slugAvailable) return errorResponse(ctx, 409, 'slug_exists', 'warn', 'organization', { slug });
+      if (!slugAvailable) throw new ApiError({ status: 409, type: 'slug_exists', severity: 'warn', entityType: 'organization', meta: { slug } });
     }
 
     const [updatedOrganization] = await db

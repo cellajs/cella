@@ -5,7 +5,7 @@ import { db } from '#/db/db';
 import { type AuthStrategy, type SessionModel, sessionsTable } from '#/db/schema/sessions';
 import { type UserModel, usersTable } from '#/db/schema/users';
 import { env } from '#/env';
-import { CustomError } from '#/lib/errors';
+import { ApiError } from '#/lib/errors';
 import { logEvent } from '#/middlewares/logger/log-event';
 import { deleteAuthCookie, getAuthCookie, setAuthCookie } from '#/modules/auth/helpers/cookie';
 import { deviceInfo } from '#/modules/auth/helpers/device-info';
@@ -29,7 +29,7 @@ export const setUserSession = async (ctx: Context, user: UserModel, strategy: Au
     const allowAll = allowList.includes('*');
 
     if (!allowAll && (!ip || !allowList.includes(ip))) {
-      throw new CustomError({ name: 'forbidden', message: 'System admin login not allowed from this IP', status: 403, type: 'forbidden' });
+      throw new ApiError({ status: 403, type: 'forbidden', name: 'forbidden', message: 'System admin login not allowed from this IP' });
     }
   }
   // Get device information

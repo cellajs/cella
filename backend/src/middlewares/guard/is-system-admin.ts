@@ -1,7 +1,7 @@
 import type { MiddlewareHandler } from 'hono';
 import { createMiddleware } from 'hono/factory';
 import { type Env, getContextUser } from '#/lib/context';
-import { errorResponse } from '#/lib/errors';
+import { ApiError } from '#/lib/errors';
 import { registerMiddlewareDescription } from '#/lib/openapi-describer';
 
 /**
@@ -12,11 +12,11 @@ import { registerMiddlewareDescription } from '#/lib/openapi-describer';
  * @param next - The next middleware or route handler to call if the check passes.
  * @returns Error response or undefined if the user is allowed to proceed.
  */
-export const isSystemAdmin: MiddlewareHandler<Env> = createMiddleware<Env>(async (ctx, next): Promise<Response | undefined> => {
+export const isSystemAdmin: MiddlewareHandler<Env> = createMiddleware<Env>(async (_, next) => {
   const user = getContextUser();
 
   const isSystemAdmin = user?.role.includes('admin');
-  if (!isSystemAdmin) return errorResponse(ctx, 403, 'no_sysadmin', 'warn', undefined, { user: user.id });
+  if (!isSystemAdmin) throw new ApiError({ status: 403, type: 'no_sysadmin', severity: 'warn', meta: { user: user.id } });
 
   await next();
 });

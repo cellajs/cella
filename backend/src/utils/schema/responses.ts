@@ -1,7 +1,6 @@
 import type { createRoute } from '@hono/zod-openapi';
 import { z } from '@hono/zod-openapi';
-import { config } from 'config';
-import { entityTypeSchema } from '#/utils/schema/common';
+import { errorSchema } from '#/utils/schema/error';
 
 /**
  * Type alias for the responses parameter of createRoute.
@@ -21,32 +20,12 @@ export const successWithoutDataSchema = z.boolean();
 export const paginationSchema = <T extends z.ZodTypeAny>(schema: T) => z.object({ items: schema.array(), total: z.number() });
 
 /**
- * Schema for errors in a response.
+ * Schema for a successful response with disallowed IDs.
  */
-export const errorSchema = z
-  .object({
-    name: z.string(), // Error name
-    message: z.string(), // Error message
-    type: z.string(), // Error type identifier
-    status: z.number(), // HTTP status code
-    severity: z.enum(config.severityLevels), // Severity level
-    entityType: entityTypeSchema.optional(), // Optional related entity type
-    logId: z.string().optional(), // Optional log identifier
-    path: z.string().optional(), // Optional request path
-    method: z.string().optional(), // Optional HTTP method
-    timestamp: z.string().optional(), // Optional timestamp
-    userId: z.string().optional(), // Optional user identifier
-    organizationId: z.string().optional(), // Optional organization identifier
-  })
-  .openapi('ApiError');
-
-/**
- * Schema for a successful response with errors.
- */
-export const successWithErrorsSchema = () =>
+export const successWithRejectedIdsSchema = () =>
   z.object({
     success: z.boolean(),
-    errors: z.array(errorSchema),
+    rejectedIds: z.array(z.string()),
   });
 
 /**
@@ -57,7 +36,7 @@ export const errorResponses = {
     description: 'Bad request: problem processing request.',
     content: {
       'application/json': {
-        schema: errorSchema,
+        schema: errorSchema.extend({ status: z.literal(400) }),
       },
     },
   },
@@ -65,7 +44,7 @@ export const errorResponses = {
     description: 'Unauthorized: authentication required.',
     content: {
       'application/json': {
-        schema: errorSchema,
+        schema: errorSchema.extend({ status: z.literal(401) }),
       },
     },
   },
@@ -73,7 +52,7 @@ export const errorResponses = {
     description: 'Forbidden: insufficient permissions.',
     content: {
       'application/json': {
-        schema: errorSchema,
+        schema: errorSchema.extend({ status: z.literal(403) }),
       },
     },
   },
@@ -81,7 +60,7 @@ export const errorResponses = {
     description: 'Not found: resource does not exist.',
     content: {
       'application/json': {
-        schema: errorSchema,
+        schema: errorSchema.extend({ status: z.literal(404) }),
       },
     },
   },
@@ -89,7 +68,7 @@ export const errorResponses = {
     description: 'Rate limit: too many requests.',
     content: {
       'application/json': {
-        schema: errorSchema,
+        schema: errorSchema.extend({ status: z.literal(429) }),
       },
     },
   },

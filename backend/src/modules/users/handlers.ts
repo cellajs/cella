@@ -4,7 +4,7 @@ import { db } from '#/db/db';
 import { membershipsTable } from '#/db/schema/memberships';
 import { usersTable } from '#/db/schema/users';
 import { type Env, getContextMemberships, getContextUser } from '#/lib/context';
-import { createError, type ErrorType, errorResponse } from '#/lib/errors';
+import { ApiError } from '#/lib/errors';
 import { logEvent } from '#/middlewares/logger/log-event';
 import { checkSlugAvailable } from '#/modules/entities/helpers/check-slug';
 import { getUsersByConditions } from '#/modules/users/helpers/get-user-by';
@@ -80,51 +80,40 @@ const usersRouteHandlers = app
    */
   .openapi(userRoutes.deleteUsers, async (ctx) => {
     const { ids } = ctx.req.valid('json');
-    const user = getContextUser();
+    const { role: contextUserRole, id: contextUserId } = getContextUser();
 
     // Convert the user ids to an array
-    const userIds = Array.isArray(ids) ? ids : [ids];
+    const toDeleteIds = Array.isArray(ids) ? ids : [ids];
+    if (!toDeleteIds.length) throw new ApiError({ status: 400, type: 'invalid_request', severity: 'error', entityType: 'user' });
 
-    const errors: ErrorType[] = [];
+    // Fetch users by IDs
+    const targets = await getUsersByConditions([inArray(usersTable.id, toDeleteIds)]);
 
-    // Get the users
-    const targets = await getUsersByConditions([inArray(usersTable.id, userIds)]);
+    const foundIds = new Set(targets.map(({ id }) => id));
+    const allowedIds: string[] = [];
+    const rejectedIds: string[] = [];
 
-    // Check if the users exist
-    for (const id of userIds) {
-      if (!targets.some((target) => target.id === id)) {
-        errors.push(createError(ctx, 404, 'not_found', 'warn', 'user', { user: id }));
+    for (const targetId of toDeleteIds) {
+      // Not found in DB
+      if (!foundIds.has(targetId)) {
+        rejectedIds.push(targetId);
+        continue; // Skip to next
       }
+
+      const isAllowed = contextUserRole === 'admin' || contextUserId === targetId;
+      if (isAllowed) allowedIds.push(targetId);
+      else rejectedIds.push(targetId); // Found but not authorized
     }
-
-    // Filter out users that the user doesn't have permission to delete
-    const allowedTargets = targets.filter((target) => {
-      const userId = target.id;
-
-      if (user.role !== 'admin' && user.id !== userId) {
-        errors.push(createError(ctx, 403, 'delete_resource_forbidden', 'warn', 'user', { user: userId }));
-        return false;
-      }
-
-      return true;
-    });
 
     // Ifuser doesn't have permission to delete, return error
-    if (allowedTargets.length === 0) {
-      return ctx.json({ success: false, errors }, 200);
-    }
+    if (!allowedIds.length) throw new ApiError({ status: 403, type: 'forbidden', severity: 'warn', entityType: 'user' });
 
-    // Delete the users
-    await db.delete(usersTable).where(
-      inArray(
-        usersTable.id,
-        allowedTargets.map((target) => target.id),
-      ),
-    );
+    // Delete allowed users
+    await db.delete(usersTable).where(inArray(usersTable.id, allowedIds));
 
-    logEvent('Users deleted');
+    logEvent('Users deleted', { ids: allowedIds.join() });
 
-    return ctx.json({ success: true, errors }, 200);
+    return ctx.json({ success: true, rejectedIds }, 200);
   })
   /*
    * Get a user by id or slug
@@ -138,7 +127,7 @@ const usersRouteHandlers = app
 
     const [targetUser] = await getUsersByConditions([or(eq(usersTable.id, idOrSlug), eq(usersTable.slug, idOrSlug))]);
 
-    if (!targetUser) return errorResponse(ctx, 404, 'not_found', 'warn', 'user', { user: idOrSlug });
+    if (!targetUser) throw new ApiError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'user', meta: { user: idOrSlug } });
 
     const targetUserMembership = await db
       .select()
@@ -149,7 +138,8 @@ const usersRouteHandlers = app
       targetUserMembership.some((targetMembership) => targetMembership.organizationId === membership.organizationId),
     );
 
-    if (user.role !== 'admin' && !jointMembership) return errorResponse(ctx, 403, 'forbidden', 'warn', 'user', { user: targetUser.id });
+    if (user.role !== 'admin' && !jointMembership)
+      throw new ApiError({ status: 403, type: 'forbidden', severity: 'warn', entityType: 'user', meta: { user: targetUser.id } });
 
     return ctx.json(targetUser, 200);
   })
@@ -162,14 +152,14 @@ const usersRouteHandlers = app
     const user = getContextUser();
 
     const [targetUser] = await getUsersByConditions([or(eq(usersTable.id, idOrSlug), eq(usersTable.slug, idOrSlug))]);
-    if (!targetUser) return errorResponse(ctx, 404, 'not_found', 'warn', 'user', { user: idOrSlug });
+    if (!targetUser) throw new ApiError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'user', meta: { user: idOrSlug } });
 
     const { bannerUrl, firstName, lastName, language, newsletter, thumbnailUrl, slug } = ctx.req.valid('json');
 
     // Check if slug is available
     if (slug && slug !== targetUser.slug) {
       const slugAvailable = await checkSlugAvailable(slug);
-      if (!slugAvailable) return errorResponse(ctx, 409, 'slug_exists', 'warn', 'user', { slug });
+      if (!slugAvailable) throw new ApiError({ status: 409, type: 'slug_exists', severity: 'warn', entityType: 'user', meta: { slug } });
     }
 
     const [updatedUser] = await db

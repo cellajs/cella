@@ -12,7 +12,7 @@ import {
 } from '#/modules/memberships/schema';
 import { memberSchema } from '#/modules/users/schema';
 import { entityWithTypeQuerySchema, idInOrgParamSchema, idOrSlugSchema, idsBodySchema, inOrgParamSchema } from '#/utils/schema/common';
-import { errorResponses, paginationSchema, successWithErrorsSchema } from '#/utils/schema/responses';
+import { errorResponses, paginationSchema, successWithRejectedIdsSchema } from '#/utils/schema/responses';
 
 const membershipRoutes = {
   createMemberships: createCustomRoute({
@@ -62,7 +62,7 @@ const membershipRoutes = {
         description: 'Success',
         content: {
           'application/json': {
-            schema: successWithErrorsSchema(),
+            schema: successWithRejectedIdsSchema(),
           },
         },
       },
