@@ -144,10 +144,7 @@ const systemRouteHandlers = app
         }
       }
     } catch (error) {
-      if (error instanceof Error) {
-        const errorMessage = error.message;
-        logEvent('Error handling paddle webhook', { errorMessage }, 'error');
-      }
+      if (error instanceof Error) logEvent('Error handling paddle webhook', { errorMessage: error.message }, 'error');
     }
 
     return ctx.json(true, 200);

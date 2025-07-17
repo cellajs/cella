@@ -16,7 +16,7 @@ export const isSystemAdmin: MiddlewareHandler<Env> = createMiddleware<Env>(async
   const user = getContextUser();
 
   const isSystemAdmin = user?.role.includes('admin');
-  if (!isSystemAdmin) throw new ApiError({ status: 403, type: 'no_sysadmin', severity: 'warn', eventData: { user: user.id } });
+  if (!isSystemAdmin) throw new ApiError({ status: 403, type: 'no_sysadmin', severity: 'warn', meta: { user: user.id } });
 
   await next();
 });

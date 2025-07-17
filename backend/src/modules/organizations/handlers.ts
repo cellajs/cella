@@ -42,7 +42,7 @@ const organizationRouteHandlers = app
 
     // Check if slug is available
     const slugAvailable = await checkSlugAvailable(slug);
-    if (!slugAvailable) throw new ApiError({ status: 409, type: 'slug_exists', severity: 'warn', entityType: 'organization', eventData: { slug } });
+    if (!slugAvailable) throw new ApiError({ status: 409, type: 'slug_exists', severity: 'warn', entityType: 'organization', meta: { slug } });
 
     const [createdOrganization] = await db
       .insert(organizationsTable)
@@ -199,7 +199,7 @@ const organizationRouteHandlers = app
 
     if (slug && slug !== organization.slug) {
       const slugAvailable = await checkSlugAvailable(slug);
-      if (!slugAvailable) throw new ApiError({ status: 409, type: 'slug_exists', severity: 'warn', entityType: 'organization', eventData: { slug } });
+      if (!slugAvailable) throw new ApiError({ status: 409, type: 'slug_exists', severity: 'warn', entityType: 'organization', meta: { slug } });
     }
 
     const [updatedOrganization] = await db

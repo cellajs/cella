@@ -95,12 +95,6 @@ export const handleCreateUser = async ({ ctx, newUser, redirectUrl, provider, me
       throw new ApiError({ status: 409, type: 'email_exists', severity: 'warn' });
     }
 
-    if (error instanceof Error) {
-      const strategy = provider ? provider.id : 'password';
-      const errorMessage = error.message;
-      logEvent('Error creating user', { strategy, errorMessage }, 'error');
-    }
-
     throw error;
   }
 };
