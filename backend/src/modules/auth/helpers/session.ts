@@ -58,7 +58,7 @@ export const setUserSession = async (ctx: Context, user: UserModel, strategy: Au
   // Set expiration time span
   const timeSpan = adminUser ? new TimeSpan(1, 'h') : new TimeSpan(1, 'w');
 
-  const cookieContent = `${hashedSessionToken}.${adminUser ?? ''}`;
+  const cookieContent = `${hashedSessionToken}.${adminUser?.id ?? ''}`;
 
   // Set session cookie with the unhashed version
   await setAuthCookie(ctx, 'session', cookieContent, timeSpan);
