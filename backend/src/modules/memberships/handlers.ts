@@ -63,7 +63,7 @@ const membershipRouteHandlers = app
     const existingEmails = await db.select().from(emailsTable).where(inArray(emailsTable.email, normalizedEmails));
 
     // Fetch all existing memberships by organizationId
-    const memberships = await db
+    const membershipsOfExistingUsers = await db
       .select()
       .from(membershipsTable)
       .where(and(eq(membershipsTable.organizationId, organization.id), inArray(membershipsTable.userId, userIds)));
@@ -84,7 +84,7 @@ const membershipRouteHandlers = app
         const { id: userId, email } = existingUser;
 
         // Filter memberships for current user
-        const userMemberships = memberships.filter(({ userId: id }) => id === userId);
+        const userMemberships = membershipsOfExistingUsers.filter(({ userId: id }) => id === userId);
 
         // Check if the user is already a member of the target entity
         const hasTargetMembership = userMemberships.some((m) => m[targetEntityIdField] === entityId);
@@ -199,13 +199,14 @@ const membershipRouteHandlers = app
 
     await mailer.prepareEmails<MemberInviteEmailProps, (typeof recipients)[number]>(MemberInviteEmail, emailProps, recipients, user.email);
 
-    const adminMembersIds = Array.from(
-      new Set(
-        memberships
-          .filter(({ contextType, role }) => (contextType === 'organization' || contextType === entity.entityType) && role === 'admin')
-          .map(({ userId }) => userId),
-      ),
-    );
+    // Fetch all existing memberships by organizationId
+    const adminMemberships = await db
+      .selectDistinctOn([membershipsTable.userId], { userId: membershipsTable.userId })
+      .from(membershipsTable)
+      .where(and(eq(membershipsTable.organizationId, organization.id), eq(membershipsTable.role, 'admin')));
+
+    const adminMembersIds = adminMemberships.map(({ userId }) => userId);
+
     sendSSEToUsers(adminMembersIds, 'invite_members', {
       targetEntity: entity,
       organization,
