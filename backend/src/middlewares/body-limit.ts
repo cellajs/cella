@@ -3,7 +3,7 @@ import type { MiddlewareHandler } from 'hono';
 import { bodyLimit } from 'hono/body-limit';
 import { createMiddleware } from 'hono/factory';
 import type { Env } from '#/lib/context';
-import { errorResponse } from '#/lib/errors';
+import { ApiError } from '#/lib/errors';
 
 /**
  * Middleware to apply dynamic body size limits based on Content-Type.
@@ -21,10 +21,8 @@ export const dynamicBodyLimit: MiddlewareHandler<Env> = createMiddleware<Env>(as
 
   const limit = bodyLimit({
     maxSize,
-    onError: (ctx) => {
-      return errorResponse(ctx, 413, 'body_too_large', 'warn', undefined, {
-        path: ctx.req.path,
-      });
+    onError: () => {
+      throw new ApiError({ status: 413, type: 'body_too_large', severity: 'warn' });
     },
   });
 

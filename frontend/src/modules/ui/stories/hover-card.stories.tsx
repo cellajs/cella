@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { expect, userEvent, waitFor, within } from 'storybook/test';
 
-import { HoverCard, HoverCardContent, HoverCardTrigger } from '../hover-card';
+import { HoverCard, HoverCardContent, HoverCardTrigger } from '~/modules/ui/hover-card';
 
 /**
  * For sighted users to preview content available behind a link.

@@ -40,7 +40,6 @@ export const menuSchema = z.object(
 );
 
 export const passkeyRegistrationBodySchema = z.object({
-  userEmail: z.string(),
   attestationObject: z.string(),
   clientDataJSON: z.string(),
 });

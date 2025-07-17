@@ -1,8 +1,8 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { expect, userEvent } from 'storybook/test';
 
-import { Label } from '../label';
-import { Switch } from '../switch';
+import { Label } from '~/modules/ui/label';
+import { Switch } from '~/modules/ui/switch';
 
 /**
  * A control that allows the user to toggle between checked and not checked.

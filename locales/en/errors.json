@@ -124,6 +124,7 @@
   "user_mismatch.text": "The user you are trying to access is not the same as the one authenticated.",
   "oauth_connection_not_found": "Failed to connect, required data missing.",
   "restrict_by_org": "Action is restricted due to your organization's policies.",
+  "restrict_by_app": "Action is restricted due to app policies.",
   "form.invalid_type": "Invalid type",
   "form.too_small": "Value is too small",
   "form.too_big": "Value is too big",

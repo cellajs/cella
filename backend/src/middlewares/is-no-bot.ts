@@ -2,7 +2,7 @@ import type { MiddlewareHandler } from 'hono';
 import { createMiddleware } from 'hono/factory';
 import { isbot } from 'isbot';
 import type { Env } from '#/lib/context';
-import { errorResponse } from '../lib/errors';
+import { ApiError } from '#/lib/errors';
 
 /**
  * Middleware to block bot requests based on the User-Agent header.
@@ -13,5 +13,5 @@ export const isNoBot: MiddlewareHandler<Env> = createMiddleware<Env>(async (ctx,
 
   // Prevent crawlers from causing spam
   if (!isbot(userAgent)) await next();
-  else errorResponse(ctx, 403, 'maybe_bot', 'warn');
+  else throw new ApiError({ status: 403, type: 'maybe_bot', severity: 'warn' });
 });

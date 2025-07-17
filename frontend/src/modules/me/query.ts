@@ -1,6 +1,8 @@
 import { queryOptions, useMutation } from '@tanstack/react-query';
-import { type UpdateUserData, updateMe } from '~/api.gen';
+import { t } from 'i18next';
+import { deletePasskey, type UpdateUserData, updateMe } from '~/api.gen';
 import type { ApiError } from '~/lib/api';
+import { toaster } from '~/modules/common/toaster';
 import { getAndSetMe, getAndSetMeAuthData, getAndSetMenu } from '~/modules/me/helpers';
 import { usersKeys } from '~/modules/users/query';
 import type { User } from '~/modules/users/types';
@@ -55,5 +57,25 @@ export const useUpdateSelfMutation = () => {
       updateUser(updatedUser);
     },
     gcTime: 1000 * 10,
+  });
+};
+
+/**
+ * Mutation hook for deleting current user (self) passkey
+ *
+ * @returns The mutation hook for deleting passkey.
+ */
+export const useDeletePasskeyMutation = () => {
+  return useMutation<boolean, ApiError, void>({
+    mutationKey: [...meKeys.all, 'delete', 'passkey'],
+    mutationFn: () => deletePasskey(),
+    onSuccess: () => {
+      toaster(t('common:success.passkey_removed'), 'success');
+      useUserStore.getState().setMeAuthData({ passkey: false });
+    },
+    onError(error) {
+      console.error('Error removing passkey:', error);
+      toaster(t('error:passkey_remove_failed'), 'error');
+    },
   });
 };

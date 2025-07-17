@@ -8,11 +8,11 @@ import { dateShort } from '~/utils/date-short';
 
 interface SessionTileProps {
   session: Session;
-  deleteMySessions: (sessionIds: string[]) => void;
+  handleDeleteSessions: (sessionIds: string[]) => void;
   isPending: boolean;
 }
 
-export const SessionTile = ({ session, deleteMySessions, isPending }: SessionTileProps) => {
+export const SessionTile = ({ session, handleDeleteSessions, isPending }: SessionTileProps) => {
   const { t } = useTranslation();
 
   return (
@@ -47,7 +47,7 @@ export const SessionTile = ({ session, deleteMySessions, isPending }: SessionTil
           </div>
         </div>
         {!session.isCurrent && (
-          <Button variant="plain" size="sm" className="text-sm ml-auto" disabled={isPending} onClick={() => deleteMySessions([session.id])}>
+          <Button variant="plain" size="sm" className="text-sm ml-auto" disabled={isPending} onClick={() => handleDeleteSessions([session.id])}>
             <ZapOff size={16} />
             <span className="ml-1 max-md:hidden">{t('common:terminate')}</span>
           </Button>

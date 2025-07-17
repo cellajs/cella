@@ -1,10 +1,10 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { useState } from 'react';
 import { expect, fn, userEvent, within } from 'storybook/test';
-import type { InputNumberProp } from '../input-number';
+import type { InputNumberProp } from '~/modules/ui/input-number';
 
-import { InputNumber } from '../input-number';
-import { Label } from '../label';
+import { InputNumber } from '~/modules/ui/input-number';
+import { Label } from '~/modules/ui/label';
 
 // Wrapper component for testing with state
 const ControlledInputNumber = ({ initialValue = 0, ...props }: { initialValue?: number } & InputNumberProp) => {

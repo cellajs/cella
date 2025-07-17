@@ -11,13 +11,13 @@ import { usersTable } from '#/db/schema/users';
 import { env } from '#/env';
 import { type Env, getContextMemberships, getContextUser } from '#/lib/context';
 import { resolveEntity } from '#/lib/entity';
-import { createError, type ErrorType, errorResponse } from '#/lib/errors';
+import { ApiError } from '#/lib/errors';
 import { getParams, getSignature } from '#/lib/transloadit';
 import { isAuthenticated } from '#/middlewares/guard';
 import { logEvent } from '#/middlewares/logger/log-event';
 import { deleteAuthCookie, getAuthCookie } from '#/modules/auth/helpers/cookie';
 import { parseAndValidatePasskeyAttestation } from '#/modules/auth/helpers/passkey';
-import { getParsedSessionCookie, invalidateSessionById, invalidateUserSessions, validateSession } from '#/modules/auth/helpers/session';
+import { getParsedSessionCookie, invalidateAllUserSessions, invalidateSessionById, validateSession } from '#/modules/auth/helpers/session';
 import { checkSlugAvailable } from '#/modules/entities/helpers/check-slug';
 import { getUserSessions } from '#/modules/me/helpers/get-sessions';
 import { getUserMenuEntities } from '#/modules/me/helpers/get-user-menu-entities';
@@ -106,10 +106,11 @@ const meRouteHandlers = app
     return ctx.json(menu, 200);
   })
   /*
-   * Terminate one or more sessions
+   * Terminate one or more of my sessions
    */
-  .openapi(meRoutes.deleteSessions, async (ctx) => {
+  .openapi(meRoutes.deleteMySessions, async (ctx) => {
     const { ids } = ctx.req.valid('json');
+    const user = getContextUser();
 
     const sessionIds = Array.isArray(ids) ? ids : [ids];
 
@@ -117,21 +118,21 @@ const meRouteHandlers = app
 
     const { session } = currentSessionData ? await validateSession(currentSessionData.sessionToken) : {};
 
-    const errors: ErrorType[] = [];
+    const rejectedIds: string[] = [];
 
     await Promise.all(
       sessionIds.map(async (id) => {
         try {
           if (session && id === session.id) deleteAuthCookie(ctx, 'session');
-
-          await invalidateSessionById(id);
+          await invalidateSessionById(id, user.id);
         } catch (error) {
-          errors.push(createError(ctx, 404, 'not_found', 'warn', undefined, { session: id }));
+          // Could be not found, not owned by user, etc.
+          rejectedIds.push(id);
         }
       }),
     );
 
-    return ctx.json({ success: true, errors }, 200);
+    return ctx.json({ success: true, rejectedIds }, 200);
   })
   /*
    * Update current user (me)
@@ -139,13 +140,15 @@ const meRouteHandlers = app
   .openapi(meRoutes.updateMe, async (ctx) => {
     const user = getContextUser();
 
-    if (!user) return errorResponse(ctx, 404, 'not_found', 'warn', 'user', { user: 'self' });
+    if (!user) throw new ApiError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'user', meta: { user: 'self' } });
 
     const { bannerUrl, firstName, lastName, language, newsletter, thumbnailUrl, slug } = ctx.req.valid('json');
 
+    const name = [firstName, lastName].filter(Boolean).join(' ') || slug;
+
     if (slug && slug !== user.slug) {
       const slugAvailable = await checkSlugAvailable(slug);
-      if (!slugAvailable) return errorResponse(ctx, 409, 'slug_exists', 'warn', 'user', { slug });
+      if (!slugAvailable) throw new ApiError({ status: 409, type: 'slug_exists', severity: 'warn', entityType: 'user', meta: { slug } });
     }
 
     const [updatedUser] = await db
@@ -158,7 +161,7 @@ const meRouteHandlers = app
         newsletter,
         thumbnailUrl,
         slug,
-        name: [firstName, lastName].filter(Boolean).join(' ') || slug,
+        name,
         modifiedAt: getIsoDate(),
         modifiedBy: user.id,
       })
@@ -174,13 +177,13 @@ const meRouteHandlers = app
     const user = getContextUser();
 
     // Check if user exists
-    if (!user) return errorResponse(ctx, 404, 'not_found', 'warn', 'user', { user: 'self' });
+    if (!user) throw new ApiError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'user', meta: { user: 'self' } });
 
     // Delete user
     await db.delete(usersTable).where(eq(usersTable.id, user.id));
 
     // Invalidate sessions
-    await invalidateUserSessions(user.id);
+    await invalidateAllUserSessions(user.id);
     deleteAuthCookie(ctx, 'session');
     logEvent('User deleted itself', { user: user.id });
 
@@ -195,7 +198,7 @@ const meRouteHandlers = app
     const { entityType, idOrSlug } = ctx.req.valid('query');
 
     const entity = await resolveEntity(entityType, idOrSlug);
-    if (!entity) return errorResponse(ctx, 404, 'not_found', 'warn', entityType);
+    if (!entity) throw new ApiError({ status: 404, type: 'not_found', severity: 'warn', entityType });
 
     const entityIdField = config.entityIdFields[entityType];
 
@@ -212,15 +215,16 @@ const meRouteHandlers = app
    * Create passkey
    */
   .openapi(meRoutes.createPasskey, async (ctx) => {
-    const { attestationObject, clientDataJSON, userEmail } = ctx.req.valid('json');
+    const { attestationObject, clientDataJSON } = ctx.req.valid('json');
+    const user = getContextUser();
 
     const challengeFromCookie = await getAuthCookie(ctx, 'passkey_challenge');
-    if (!challengeFromCookie) return errorResponse(ctx, 401, 'invalid_credentials', 'error');
+    if (!challengeFromCookie) throw new ApiError({ status: 401, type: 'invalid_credentials', severity: 'error' });
 
     const { credentialId, publicKey } = parseAndValidatePasskeyAttestation(clientDataJSON, attestationObject, challengeFromCookie);
 
     // Save public key in the database
-    await db.insert(passkeysTable).values({ userEmail, credentialId, publicKey });
+    await db.insert(passkeysTable).values({ userEmail: user.email, credentialId, publicKey });
 
     return ctx.json(true, 200);
   })
@@ -253,7 +257,7 @@ const meRouteHandlers = app
 
       return ctx.json(token, 200);
     } catch (error) {
-      return errorResponse(ctx, 500, 'missing_auth_key', 'error');
+      throw new ApiError({ status: 500, type: 'missing_auth_key', severity: 'error' });
     }
   })
   /*
@@ -264,11 +268,11 @@ const meRouteHandlers = app
 
     // Check if token exists
     const user = await getUserBy('unsubscribeToken', token, 'unsafe');
-    if (!user) return errorResponse(ctx, 404, 'not_found', 'warn', 'user');
+    if (!user) throw new ApiError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'user' });
 
     // Verify token
     const isValid = verifyUnsubscribeToken(user.email, token);
-    if (!isValid) return errorResponse(ctx, 401, 'unsubscribe_failed', 'warn', 'user');
+    if (!isValid) throw new ApiError({ status: 401, type: 'unsubscribe_failed', severity: 'warn', entityType: 'user' });
 
     // Update user
     await db.update(usersTable).set({ newsletter: false }).where(eq(usersTable.id, user.id));

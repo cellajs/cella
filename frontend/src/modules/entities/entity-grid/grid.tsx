@@ -10,7 +10,8 @@ import { EntityTile } from '~/modules/entities/entity-grid/tile';
 import type { EntityGridWrapperProps } from '~/modules/entities/entity-grid/wrapper';
 import { contextEntitiesQueryOptions } from '~/modules/entities/query';
 
-// TODO: can we also include roles and userId in the searchVars?
+// TODO (BLOCKING): Can we also include roles and userId in the searchVars?
+// @hey-api/openapi-ts incorrectly creates schema, imo due to z.preprocess combined with .optional(), `null | undefined` instead `undefined`
 export type EntitySearch = Pick<z.infer<typeof zGetEntitiesWithAdminsData>['query'], 'sort' | 'q'>;
 
 interface Props extends EntityGridWrapperProps {

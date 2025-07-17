@@ -15,7 +15,7 @@ import { tokensTable } from '#/db/schema/tokens';
 import { type UserModel, usersTable } from '#/db/schema/users';
 import { type Env, getContextToken, getContextUser } from '#/lib/context';
 import { resolveEntity } from '#/lib/entity';
-import { type ErrorType, errorRedirect, errorResponse } from '#/lib/errors';
+import { ApiError } from '#/lib/errors';
 import { eventManager } from '#/lib/events';
 import { mailer } from '#/lib/mailer';
 import { sendSSEToUsers } from '#/lib/sse';
@@ -80,7 +80,8 @@ const authRouteHandlers = app
     const { email } = ctx.req.valid('json');
 
     const user = await getUserBy('email', email.toLowerCase());
-    if (!user) return errorResponse(ctx, 404, 'not_found', 'warn', 'user');
+
+    if (!user) throw new ApiError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'user' });
 
     return ctx.json(true, 200);
   })
@@ -95,12 +96,11 @@ const authRouteHandlers = app
     // Verify if strategy allowed
     const strategy = 'password';
     if (!enabledStrategies.includes(strategy)) {
-      return errorResponse(ctx, 400, 'forbidden_strategy', 'error', undefined, { strategy });
+      throw new ApiError({ status: 400, type: 'forbidden_strategy', severity: 'error', meta: { strategy } });
     }
 
     // Stop if sign up is disabled and no invitation
-    if (!config.has.registrationEnabled) return errorResponse(ctx, 403, 'sign_up_restricted', 'info');
-
+    if (!config.has.registrationEnabled) throw new ApiError({ status: 403, type: 'sign_up_restricted' });
     const hashedPassword = await hashPassword(password);
     const slug = slugFromEmail(email);
 
@@ -118,13 +118,13 @@ const authRouteHandlers = app
     const userId = nanoid();
 
     const validToken = getContextToken();
-    if (!validToken) return errorResponse(ctx, 400, 'invalid_request', 'error');
+    if (!validToken) throw new ApiError({ status: 400, type: 'invalid_request', severity: 'error' });
 
     const membershipInvite = !!validToken.entityType;
     // Verify if strategy allowed
     const strategy = 'password';
     if (!enabledStrategies.includes(strategy)) {
-      return errorResponse(ctx, 400, 'forbidden_strategy', 'error', undefined, { strategy });
+      throw new ApiError({ status: 400, type: 'forbidden_strategy', severity: 'error', meta: { strategy } });
     }
 
     // Delete token to not needed anymore (if no membership invitation)
@@ -152,19 +152,19 @@ const authRouteHandlers = app
     if (userId) user = await getUserBy('id', userId);
     else if (tokenId) {
       const [tokenRecord] = await db.select().from(tokensTable).where(eq(tokensTable.id, tokenId));
-      if (!tokenRecord || !tokenRecord.userId) return errorResponse(ctx, 404, 'not_found', 'warn');
+      if (!tokenRecord || !tokenRecord.userId) throw new ApiError({ status: 404, type: 'not_found', severity: 'warn' });
       user = await getUserBy('id', tokenRecord.userId);
     }
 
     // Check if user exists
-    if (!user) return errorResponse(ctx, 404, 'not_found', 'warn', 'user');
+    if (!user) throw new ApiError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'user' });
 
     const [emailInUse]: (EmailModel | undefined)[] = await db
       .select()
       .from(emailsTable)
       .where(and(eq(emailsTable.email, user.email), eq(emailsTable.verified, true)));
 
-    if (emailInUse) return errorResponse(ctx, 409, 'email_exists', 'warn', 'user');
+    if (emailInUse) throw new ApiError({ status: 409, type: 'email_exists', severity: 'warn', entityType: 'user' });
 
     // Delete previous
     await db.delete(tokensTable).where(and(eq(tokensTable.userId, user.id), eq(tokensTable.type, 'email_verification')));
@@ -215,7 +215,7 @@ const authRouteHandlers = app
    */
   .openapi(authRoutes.verifyEmail, async (ctx) => {
     const token = getContextToken();
-    if (!token || !token.userId) return errorResponse(ctx, 400, 'invalid_request', 'error');
+    if (!token || !token.userId) throw new ApiError({ status: 400, type: 'invalid_request', severity: 'error' });
 
     // Set email verified
     await db
@@ -238,7 +238,7 @@ const authRouteHandlers = app
     const { email } = ctx.req.valid('json');
 
     const user = await getUserBy('email', email.toLowerCase());
-    if (!user) return errorResponse(ctx, 401, 'invalid_email', 'warn');
+    if (!user) throw new ApiError({ status: 404, type: 'invalid_email', severity: 'warn', entityType: 'user' });
 
     // Delete old token if exists
     await db.delete(tokensTable).where(and(eq(tokensTable.userId, user.id), eq(tokensTable.type, 'password_reset')));
@@ -282,11 +282,11 @@ const authRouteHandlers = app
     // Verify if strategy allowed
     const strategy = 'password';
     if (!enabledStrategies.includes(strategy)) {
-      return errorResponse(ctx, 400, 'forbidden_strategy', 'error', undefined, { strategy });
+      throw new ApiError({ status: 400, type: 'forbidden_strategy', severity: 'error', meta: { strategy } });
     }
 
     // If the token is not found or expired
-    if (!token || !token.userId) return errorResponse(ctx, 401, 'invalid_token', 'warn');
+    if (!token || !token.userId) throw new ApiError({ status: 401, type: 'invalid_token', severity: 'warn' });
 
     // Delete token to prevent reuse
     await db.delete(tokensTable).where(and(eq(tokensTable.id, token.id), eq(tokensTable.type, 'password_reset')));
@@ -294,7 +294,9 @@ const authRouteHandlers = app
     const user = await getUserBy('id', token.userId);
 
     // If the user is not found
-    if (!user) return errorResponse(ctx, 404, 'not_found', 'warn', 'user', { userId: token.userId });
+    if (!user) {
+      throw new ApiError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'user', meta: { userId: token.userId } });
+    }
 
     // Hash password
     const hashedPassword = await hashPassword(password);
@@ -321,7 +323,7 @@ const authRouteHandlers = app
     // Verify if strategy allowed
     const strategy = 'password';
     if (!enabledStrategies.includes(strategy)) {
-      return errorResponse(ctx, 400, 'forbidden_strategy', 'error', undefined, { strategy });
+      throw new ApiError({ status: 400, type: 'forbidden_strategy', severity: 'error', meta: { strategy } });
     }
 
     const loweredEmail = email.toLowerCase();
@@ -332,12 +334,11 @@ const authRouteHandlers = app
     ]);
 
     // If user is not found or doesn't have password
-    if (!user) return errorResponse(ctx, 404, 'not_found', 'warn', 'user');
-    if (!user.hashedPassword) return errorResponse(ctx, 403, 'no_password_found', 'warn');
-
+    if (!user) throw new ApiError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'user' });
+    if (!user.hashedPassword) throw new ApiError({ status: 403, type: 'no_password_found', severity: 'warn' });
     // Verify password
     const validPassword = await verifyPasswordHash(user.hashedPassword, password);
-    if (!validPassword) return errorResponse(ctx, 403, 'invalid_password', 'warn');
+    if (!validPassword) throw new ApiError({ status: 403, type: 'invalid_password', severity: 'warn' });
 
     // If email is not verified, send verification email
     if (!emailInfo.verified) sendVerificationEmail(user.id);
@@ -356,10 +357,10 @@ const authRouteHandlers = app
 
     // Check if token exists
     const [tokenRecord] = await db.select().from(tokensTable).where(eq(tokensTable.id, id));
-    if (!tokenRecord) return errorResponse(ctx, 404, `${type}_not_found`, 'warn');
+    if (!tokenRecord) throw new ApiError({ status: 404, type: `${type}_not_found`, severity: 'warn' });
 
     // If token is expired, return an error
-    if (isExpiredDate(tokenRecord.expiresAt)) return errorResponse(ctx, 401, `${type}_expired`, 'warn', undefined);
+    if (isExpiredDate(tokenRecord.expiresAt)) throw new ApiError({ status: 401, type: `${type}_expired`, severity: 'warn' });
 
     const baseData = {
       email: tokenRecord.email,
@@ -371,7 +372,7 @@ const authRouteHandlers = app
 
     // If it is a membership invitation, get organization details
     const [organization] = await db.select().from(organizationsTable).where(eq(organizationsTable.id, tokenRecord.organizationId));
-    if (!organization) return errorResponse(ctx, 404, 'not_found', 'warn', 'organization');
+    if (!organization) throw new ApiError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'organization' });
 
     const dataWithOrg = {
       ...baseData,
@@ -390,11 +391,13 @@ const authRouteHandlers = app
     const token = getContextToken();
 
     // Make sure its an organization invitation
-    if (!token.entityType) return errorResponse(ctx, 401, 'invalid_token', 'warn');
+    if (!token.entityType) throw new ApiError({ status: 401, type: 'invalid_token', severity: 'warn' });
 
     const [emailInfo] = await db.select().from(emailsTable).where(eq(emailsTable.email, token.email));
     // Make sure correct user accepts invitation (for example another user could have a sessions and click on email invite of another user)
-    if (user.id !== token.userId && (!emailInfo || emailInfo.userId !== user.id)) return errorResponse(ctx, 401, 'user_mismatch', 'warn');
+    if (user.id !== token.userId && (!emailInfo || emailInfo.userId !== user.id)) {
+      throw new ApiError({ status: 401, type: 'user_mismatch', severity: 'warn' });
+    }
 
     if (emailInfo.userId === user.id && user.id !== token.userId) await handleMembershipTokenUpdate(user.id, token.id);
     // Activate memberships
@@ -410,10 +413,10 @@ const authRouteHandlers = app
     await db.delete(tokensTable).where(eq(tokensTable.id, token.id));
 
     const entityIdField = config.entityIdFields[token.entityType];
-    if (!targetMembership[entityIdField]) return errorResponse(ctx, 404, 'not_found', 'warn', token.entityType);
+    if (!targetMembership[entityIdField]) throw new ApiError({ status: 404, type: 'not_found', severity: 'warn', entityType: token.entityType });
 
     const entity = await resolveEntity(token.entityType, targetMembership[entityIdField]);
-    if (!entity) return errorResponse(ctx, 404, 'not_found', 'warn', token.entityType);
+    if (!entity) throw new ApiError({ status: 404, type: 'not_found', severity: 'warn', entityType: token.entityType });
 
     eventManager.emit('acceptedMembership', targetMembership);
 
@@ -444,7 +447,7 @@ const authRouteHandlers = app
 
     if (!sessionData) {
       deleteAuthCookie(ctx, 'session');
-      return errorResponse(ctx, 401, 'unauthorized', 'warn');
+      throw new ApiError({ status: 401, type: 'unauthorized', severity: 'warn' });
     }
 
     await setUserSession(ctx, targetUserId, 'password', user.id);
@@ -458,13 +461,13 @@ const authRouteHandlers = app
    */
   .openapi(authRoutes.stopImpersonation, async (ctx) => {
     const sessionData = await getParsedSessionCookie(ctx, true);
-    if (!sessionData) return errorResponse(ctx, 401, 'unauthorized', 'warn');
+    if (!sessionData) throw new ApiError({ status: 401, type: 'unauthorized', severity: 'warn' });
 
     const { sessionToken, adminUserId } = sessionData;
     const { session } = await validateSession(sessionToken);
-    if (!session) return errorResponse(ctx, 401, 'unauthorized', 'warn');
+    if (!session) throw new ApiError({ status: 401, type: 'unauthorized', severity: 'warn' });
 
-    await invalidateSessionById(session.id);
+    await invalidateSessionById(session.id, session.userId);
     if (adminUserId) {
       const [adminsLastSession] = await db
         .select()
@@ -474,8 +477,8 @@ const authRouteHandlers = app
         .limit(1);
 
       if (isExpiredDate(adminsLastSession.expiresAt)) {
-        await invalidateSessionById(adminsLastSession.id);
-        return errorResponse(ctx, 401, 'unauthorized', 'warn');
+        await invalidateSessionById(adminsLastSession.id, adminUserId);
+        throw new ApiError({ status: 401, type: 'unauthorized', severity: 'warn' });
       }
 
       const expireTimeSpan = new TimeSpan(adminsLastSession.expiresAt.getTime() - Date.now(), 'ms');
@@ -496,12 +499,12 @@ const authRouteHandlers = app
 
     if (!sessionData) {
       deleteAuthCookie(ctx, 'session');
-      return errorResponse(ctx, 401, 'unauthorized', 'warn');
+      throw new ApiError({ status: 401, type: 'unauthorized', severity: 'warn' });
     }
 
     // Find session & invalidate
     const { session } = await validateSession(sessionData.sessionToken);
-    if (session) await invalidateSessionById(session.id);
+    if (session) await invalidateSessionById(session.id, session.userId);
 
     // Delete session cookie
     deleteAuthCookie(ctx, 'session');
@@ -518,13 +521,9 @@ const authRouteHandlers = app
 
     if (redirect) await handleOAuthRedirect(ctx, redirect);
 
-    let error: ErrorType | null = null;
-
     // If sign up is disabled, stop early
-    if (type === 'invite') error = await handleOAuthInvitation(ctx);
-    if (type === 'connect') error = await handleOAuthConnection(ctx);
-
-    if (error) return ctx.json(error, error.status as 400 | 403 | 404);
+    if (type === 'invite') await handleOAuthInvitation(ctx);
+    if (type === 'connect') await handleOAuthConnection(ctx);
 
     const state = generateState();
     const url = githubAuth.createAuthorizationURL(state, githubScopes);
@@ -538,13 +537,10 @@ const authRouteHandlers = app
     const { type, redirect } = ctx.req.valid('query');
 
     if (redirect) await handleOAuthRedirect(ctx, redirect);
-    let error: ErrorType | null = null;
 
     // If sign up is disabled, stop early
-    if (type === 'invite') error = await handleOAuthInvitation(ctx);
-    if (type === 'connect') error = await handleOAuthConnection(ctx);
-
-    if (error) return ctx.json(error, error.status as 400 | 403 | 404);
+    if (type === 'invite') await handleOAuthInvitation(ctx);
+    if (type === 'connect') await handleOAuthConnection(ctx);
 
     const state = generateState();
     const codeVerifier = generateCodeVerifier();
@@ -559,12 +555,9 @@ const authRouteHandlers = app
     const { type, redirect } = ctx.req.valid('query');
 
     if (redirect) await handleOAuthRedirect(ctx, redirect);
-    let error: ErrorType | null = null;
 
-    if (type === 'invite') error = await handleOAuthInvitation(ctx);
-    if (type === 'connect') error = await handleOAuthConnection(ctx);
-
-    if (error) return ctx.json(error, error.status as 400 | 403 | 404);
+    if (type === 'invite') handleOAuthInvitation(ctx);
+    if (type === 'connect') handleOAuthConnection(ctx);
 
     const state = generateState();
     const codeVerifier = generateCodeVerifier();
@@ -579,14 +572,18 @@ const authRouteHandlers = app
     const { code, state, error } = ctx.req.valid('query');
 
     // redirect if there is no code or error in callback
-    if (error || !code) return errorRedirect(ctx, 'oauth_failed', 'error');
+    if (error || !code) throw new ApiError({ status: 400, type: 'oauth_failed', severity: 'warn', redirectToFrontend: true });
 
     const strategy = 'github' as EnabledOauthProvider;
-    if (!isOAuthEnabled(strategy)) return errorResponse(ctx, 400, 'unsupported_oauth', 'error', undefined, { strategy });
+    if (!isOAuthEnabled(strategy)) {
+      throw new ApiError({ status: 400, type: 'unsupported_oauth', severity: 'error', meta: { strategy } });
+    }
 
     const stateCookie = await getAuthCookie(ctx, 'oauth_state');
     // Verify state
-    if (!state || !stateCookie || stateCookie !== state) return errorResponse(ctx, 401, 'invalid_state', 'warn', undefined, { strategy });
+    if (!state || !stateCookie || stateCookie !== state) {
+      throw new ApiError({ status: 401, type: 'invalid_state', severity: 'warn', meta: { strategy } });
+    }
 
     try {
       const githubValidation = await githubAuth.validateAuthorizationCode(code);
@@ -611,11 +608,13 @@ const authRouteHandlers = app
       const existingUsers = await findExistingUsers(transformedUser.email, connectUserId, inviteToken?.id ?? null);
 
       // Make sure we have only one user
-      if (existingUsers.length > 1) return errorRedirect(ctx, 'oauth_mismatch', 'warn');
+      if (existingUsers.length > 1) throw new ApiError({ status: 403, type: 'oauth_mismatch', severity: 'warn', redirectToFrontend: true });
       const existingUser = existingUsers[0] ?? null;
 
       // If registration is disabled and no existing user and not invite throw to error
-      if (!config.has.registrationEnabled && !existingUser && !inviteToken) return errorRedirect(ctx, 'sign_up_restricted', 'info');
+      if (!config.has.registrationEnabled && !existingUser && !inviteToken) {
+        throw new ApiError({ status: 403, type: 'sign_up_restricted', redirectToFrontend: true });
+      }
 
       // Get the redirect URL based on whether a new user or invite token exists
       const firstSignIn = !connectUserId && !existingUser;
@@ -636,18 +635,8 @@ const authRouteHandlers = app
         ...(inviteToken && inviteToken.type === 'membership' && { tokenId: inviteToken.id }),
       });
     } catch (error) {
-      // Handle invalid credentials
-      if (error instanceof OAuth2RequestError) {
-        return errorResponse(ctx, 401, 'invalid_credentials', 'warn', undefined, { strategy });
-      }
-
-      if (error instanceof Error) {
-        const errorMessage = error.message;
-        logEvent('Error signing in with GitHub', { strategy, errorMessage }, 'error');
-        return errorResponse(ctx, 401, 'oauth_failed', 'warn', undefined, { strategy });
-      }
-
-      throw error;
+      const type = error instanceof OAuth2RequestError ? 'invalid_credentials' : 'oauth_failed';
+      throw new ApiError({ status: 401, type, severity: 'warn', meta: { strategy }, ...(error instanceof Error ? { originalError: error } : {}) });
     } finally {
       clearOauthSession(ctx);
     }
@@ -659,14 +648,16 @@ const authRouteHandlers = app
     const { state, code } = ctx.req.valid('query');
     const strategy = 'google' as EnabledOauthProvider;
 
-    if (!isOAuthEnabled(strategy)) return errorResponse(ctx, 400, 'unsupported_oauth', 'error', undefined, { strategy });
+    if (!isOAuthEnabled(strategy)) {
+      throw new ApiError({ status: 400, type: 'unsupported_oauth', severity: 'error', meta: { strategy } });
+    }
 
     const storedState = await getAuthCookie(ctx, 'oauth_state');
     const storedCodeVerifier = await getAuthCookie(ctx, 'oauth_code_verifier');
 
     // verify state
     if (!code || !storedState || !storedCodeVerifier || state !== storedState) {
-      return errorResponse(ctx, 401, 'invalid_state', 'warn', undefined, { strategy });
+      throw new ApiError({ status: 401, type: 'invalid_state', severity: 'warn', meta: { strategy } });
     }
 
     try {
@@ -688,12 +679,13 @@ const authRouteHandlers = app
       const existingUsers = await findExistingUsers(transformedUser.email, connectUserId, inviteToken?.id ?? null);
 
       // Make sure we have only one user
-      if (existingUsers.length > 1) return errorRedirect(ctx, 'oauth_mismatch', 'warn');
+      if (existingUsers.length > 1) throw new ApiError({ status: 403, type: 'oauth_mismatch', severity: 'warn', redirectToFrontend: true });
       const existingUser = existingUsers[0] ?? null;
 
       // If registration is disabled and no existing user and not invite throw to error
-      if (!config.has.registrationEnabled && !existingUser && !inviteToken) return errorRedirect(ctx, 'sign_up_restricted', 'info');
-
+      if (!config.has.registrationEnabled && !existingUser && !inviteToken) {
+        throw new ApiError({ status: 403, type: 'sign_up_restricted', redirectToFrontend: true });
+      }
       // Get the redirect URL based on whether a new user or invite token exists
       const firstSignIn = !connectUserId && !existingUser;
       const redirectUrl = await getOauthRedirectUrl(ctx, firstSignIn);
@@ -713,18 +705,8 @@ const authRouteHandlers = app
         ...(inviteToken?.type === 'membership' && { tokenId: inviteToken.id }), // Conditionally add tokenId if membership invitation
       });
     } catch (error) {
-      // Handle invalid credentials
-      if (error instanceof OAuth2RequestError) {
-        return errorResponse(ctx, 401, 'invalid_credentials', 'warn', undefined, { strategy });
-      }
-
-      if (error instanceof Error) {
-        const errorMessage = error.message;
-        logEvent('Error signing in with Google', { strategy, errorMessage }, 'error');
-        return errorResponse(ctx, 401, 'oauth_failed', 'warn', undefined, { strategy });
-      }
-
-      throw error;
+      const type = error instanceof OAuth2RequestError ? 'invalid_credentials' : 'oauth_failed';
+      throw new ApiError({ status: 401, type, severity: 'warn', meta: { strategy }, ...(error instanceof Error ? { originalError: error } : {}) });
     } finally {
       clearOauthSession(ctx);
     }
@@ -736,14 +718,16 @@ const authRouteHandlers = app
     const { state, code } = ctx.req.valid('query');
     const strategy = 'microsoft' as EnabledOauthProvider;
 
-    if (!isOAuthEnabled(strategy)) return errorResponse(ctx, 400, 'unsupported_oauth', 'error', undefined, { strategy });
+    if (!isOAuthEnabled(strategy)) {
+      throw new ApiError({ status: 400, type: 'unsupported_oauth', severity: 'error', meta: { strategy } });
+    }
 
     const storedState = await getAuthCookie(ctx, 'oauth_state');
     const storedCodeVerifier = await getAuthCookie(ctx, 'oauth_code_verifier');
 
     // verify state
     if (!code || !storedState || !storedCodeVerifier || state !== storedState) {
-      return errorResponse(ctx, 401, 'invalid_state', 'warn', undefined, { strategy });
+      throw new ApiError({ status: 401, type: 'invalid_state', severity: 'warn', meta: { strategy } });
     }
 
     try {
@@ -765,11 +749,14 @@ const authRouteHandlers = app
       const existingUsers = await findExistingUsers(transformedUser.email, connectUserId, inviteToken?.id ?? null);
 
       // Make sure we have only one user
-      if (existingUsers.length > 1) return errorRedirect(ctx, 'oauth_mismatch', 'warn');
+      if (existingUsers.length > 1) throw new ApiError({ status: 403, type: 'oauth_mismatch', severity: 'warn', redirectToFrontend: true });
+
       const existingUser = existingUsers[0] ?? null;
 
       // If registration is disabled and no existing user and not invite throw to error
-      if (!config.has.registrationEnabled && !existingUser && !inviteToken) return errorRedirect(ctx, 'sign_up_restricted', 'info');
+      if (!config.has.registrationEnabled && !existingUser && !inviteToken) {
+        throw new ApiError({ status: 403, type: 'sign_up_restricted', redirectToFrontend: true });
+      }
 
       // Get the redirect URL based on whether a new user or invite token exists
       const firstSignIn = !connectUserId && !existingUser;
@@ -790,18 +777,8 @@ const authRouteHandlers = app
         ...(inviteToken && inviteToken.type === 'membership' && { tokenId: inviteToken.id }),
       });
     } catch (error) {
-      // Handle invalid credentials
-      if (error instanceof OAuth2RequestError) {
-        return errorResponse(ctx, 401, 'invalid_credentials', 'warn', undefined, { strategy });
-      }
-
-      if (error instanceof Error) {
-        const errorMessage = error.message;
-        logEvent('Error signing in with Microsoft', { strategy, errorMessage }, 'error');
-        return errorResponse(ctx, 401, 'oauth_failed', 'warn', undefined, { strategy });
-      }
-
-      throw error;
+      const type = error instanceof OAuth2RequestError ? 'invalid_credentials' : 'oauth_failed';
+      throw new ApiError({ status: 401, type, severity: 'warn', meta: { strategy }, ...(error instanceof Error ? { originalError: error } : {}) });
     } finally {
       clearOauthSession(ctx);
     }
@@ -829,24 +806,20 @@ const authRouteHandlers = app
 
     // Retrieve user and challenge record
     const user = await getUserBy('email', userEmail.toLowerCase());
-    if (!user) return errorResponse(ctx, 404, 'not_found', 'warn', 'user', { strategy });
-
+    if (!user) throw new ApiError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'user', meta: { strategy } });
     // Check if passkey challenge exists
     const challengeFromCookie = await getAuthCookie(ctx, 'passkey_challenge');
-    if (!challengeFromCookie) return errorResponse(ctx, 401, 'invalid_credentials', 'warn', undefined, { strategy });
-
+    if (!challengeFromCookie) throw new ApiError({ status: 401, type: 'invalid_credentials', severity: 'warn', meta: { strategy } });
     // Get passkey credentials
     const [credentials] = await db.select().from(passkeysTable).where(eq(passkeysTable.userEmail, userEmail));
-    if (!credentials) return errorResponse(ctx, 404, 'not_found', 'warn', undefined, { strategy });
+    if (!credentials) throw new ApiError({ status: 404, type: 'not_found', severity: 'warn', meta: { strategy } });
 
     try {
       const isValid = await verifyPassKeyPublic(signature, authenticatorData, clientDataJSON, credentials.publicKey, challengeFromCookie);
-      if (!isValid) return errorResponse(ctx, 401, 'invalid_token', 'warn', undefined, { strategy });
+      if (!isValid) throw new ApiError({ status: 401, type: 'invalid_token', severity: 'warn', meta: { strategy } });
     } catch (error) {
       if (error instanceof Error) {
-        const errorMessage = error.message;
-        logEvent('Error verifying passkey', { strategy, errorMessage }, 'error');
-        return errorResponse(ctx, 500, 'passkey_failed', 'error', undefined, { strategy });
+        throw new ApiError({ status: 500, type: 'passkey_failed', severity: 'error', meta: { strategy }, originalError: error });
       }
     }
 

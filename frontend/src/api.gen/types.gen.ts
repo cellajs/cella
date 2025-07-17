@@ -77,7 +77,47 @@ export type ApiError = {
   name: string;
   message: string;
   type: string;
-  status: number;
+  status:
+    | 400
+    | 401
+    | 402
+    | 403
+    | 404
+    | 405
+    | 406
+    | 407
+    | 408
+    | 409
+    | 410
+    | 411
+    | 412
+    | 413
+    | 414
+    | 415
+    | 416
+    | 417
+    | 418
+    | 421
+    | 422
+    | 423
+    | 424
+    | 425
+    | 426
+    | 428
+    | 429
+    | 431
+    | 451
+    | 500
+    | 501
+    | 502
+    | 503
+    | 504
+    | 505
+    | 506
+    | 507
+    | 508
+    | 510
+    | 511;
   severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
   entityType?: 'user' | 'organization' | 'attachment';
   logId?: string;
@@ -121,23 +161,33 @@ export type CheckEmailErrors = {
   /**
    * Bad request: problem processing request.
    */
-  400: ApiError;
+  400: ApiError & {
+    status?: 400;
+  };
   /**
    * Unauthorized: authentication required.
    */
-  401: ApiError;
+  401: ApiError & {
+    status?: 401;
+  };
   /**
    * Forbidden: insufficient permissions.
    */
-  403: ApiError;
+  403: ApiError & {
+    status?: 403;
+  };
   /**
    * Not found: resource does not exist.
    */
-  404: ApiError;
+  404: ApiError & {
+    status?: 404;
+  };
   /**
    * Rate limit: too many requests.
    */
-  429: ApiError;
+  429: ApiError & {
+    status?: 429;
+  };
 };
 
 export type CheckEmailError = CheckEmailErrors[keyof CheckEmailErrors];
@@ -165,23 +215,33 @@ export type SignUpErrors = {
   /**
    * Bad request: problem processing request.
    */
-  400: ApiError;
+  400: ApiError & {
+    status?: 400;
+  };
   /**
    * Unauthorized: authentication required.
    */
-  401: ApiError;
+  401: ApiError & {
+    status?: 401;
+  };
   /**
    * Forbidden: insufficient permissions.
    */
-  403: ApiError;
+  403: ApiError & {
+    status?: 403;
+  };
   /**
    * Not found: resource does not exist.
    */
-  404: ApiError;
+  404: ApiError & {
+    status?: 404;
+  };
   /**
    * Rate limit: too many requests.
    */
-  429: ApiError;
+  429: ApiError & {
+    status?: 429;
+  };
 };
 
 export type SignUpError = SignUpErrors[keyof SignUpErrors];
@@ -211,23 +271,33 @@ export type SignUpWithTokenErrors = {
   /**
    * Bad request: problem processing request.
    */
-  400: ApiError;
+  400: ApiError & {
+    status?: 400;
+  };
   /**
    * Unauthorized: authentication required.
    */
-  401: ApiError;
+  401: ApiError & {
+    status?: 401;
+  };
   /**
    * Forbidden: insufficient permissions.
    */
-  403: ApiError;
+  403: ApiError & {
+    status?: 403;
+  };
   /**
    * Not found: resource does not exist.
    */
-  404: ApiError;
+  404: ApiError & {
+    status?: 404;
+  };
   /**
    * Rate limit: too many requests.
    */
-  429: ApiError;
+  429: ApiError & {
+    status?: 429;
+  };
 };
 
 export type SignUpWithTokenError = SignUpWithTokenErrors[keyof SignUpWithTokenErrors];
@@ -255,23 +325,33 @@ export type SendVerificationEmailErrors = {
   /**
    * Bad request: problem processing request.
    */
-  400: ApiError;
+  400: ApiError & {
+    status?: 400;
+  };
   /**
    * Unauthorized: authentication required.
    */
-  401: ApiError;
+  401: ApiError & {
+    status?: 401;
+  };
   /**
    * Forbidden: insufficient permissions.
    */
-  403: ApiError;
+  403: ApiError & {
+    status?: 403;
+  };
   /**
    * Not found: resource does not exist.
    */
-  404: ApiError;
+  404: ApiError & {
+    status?: 404;
+  };
   /**
    * Rate limit: too many requests.
    */
-  429: ApiError;
+  429: ApiError & {
+    status?: 429;
+  };
 };
 
 export type SendVerificationEmailError = SendVerificationEmailErrors[keyof SendVerificationEmailErrors];
@@ -298,23 +378,33 @@ export type VerifyEmailErrors = {
   /**
    * Bad request: problem processing request.
    */
-  400: ApiError;
+  400: ApiError & {
+    status?: 400;
+  };
   /**
    * Unauthorized: authentication required.
    */
-  401: ApiError;
+  401: ApiError & {
+    status?: 401;
+  };
   /**
    * Forbidden: insufficient permissions.
    */
-  403: ApiError;
+  403: ApiError & {
+    status?: 403;
+  };
   /**
    * Not found: resource does not exist.
    */
-  404: ApiError;
+  404: ApiError & {
+    status?: 404;
+  };
   /**
    * Rate limit: too many requests.
    */
-  429: ApiError;
+  429: ApiError & {
+    status?: 429;
+  };
 };
 
 export type VerifyEmailError = VerifyEmailErrors[keyof VerifyEmailErrors];
@@ -341,23 +431,33 @@ export type RequestPasswordErrors = {
   /**
    * Bad request: problem processing request.
    */
-  400: ApiError;
+  400: ApiError & {
+    status?: 400;
+  };
   /**
    * Unauthorized: authentication required.
    */
-  401: ApiError;
+  401: ApiError & {
+    status?: 401;
+  };
   /**
    * Forbidden: insufficient permissions.
    */
-  403: ApiError;
+  403: ApiError & {
+    status?: 403;
+  };
   /**
    * Not found: resource does not exist.
    */
-  404: ApiError;
+  404: ApiError & {
+    status?: 404;
+  };
   /**
    * Rate limit: too many requests.
    */
-  429: ApiError;
+  429: ApiError & {
+    status?: 429;
+  };
 };
 
 export type RequestPasswordError = RequestPasswordErrors[keyof RequestPasswordErrors];
@@ -386,23 +486,33 @@ export type CreatePasswordErrors = {
   /**
    * Bad request: problem processing request.
    */
-  400: ApiError;
+  400: ApiError & {
+    status?: 400;
+  };
   /**
    * Unauthorized: authentication required.
    */
-  401: ApiError;
+  401: ApiError & {
+    status?: 401;
+  };
   /**
    * Forbidden: insufficient permissions.
    */
-  403: ApiError;
+  403: ApiError & {
+    status?: 403;
+  };
   /**
    * Not found: resource does not exist.
    */
-  404: ApiError;
+  404: ApiError & {
+    status?: 404;
+  };
   /**
    * Rate limit: too many requests.
    */
-  429: ApiError;
+  429: ApiError & {
+    status?: 429;
+  };
 };
 
 export type CreatePasswordError = CreatePasswordErrors[keyof CreatePasswordErrors];
@@ -430,23 +540,33 @@ export type SignInErrors = {
   /**
    * Bad request: problem processing request.
    */
-  400: ApiError;
+  400: ApiError & {
+    status?: 400;
+  };
   /**
    * Unauthorized: authentication required.
    */
-  401: ApiError;
+  401: ApiError & {
+    status?: 401;
+  };
   /**
    * Forbidden: insufficient permissions.
    */
-  403: ApiError;
+  403: ApiError & {
+    status?: 403;
+  };
   /**
    * Not found: resource does not exist.
    */
-  404: ApiError;
+  404: ApiError & {
+    status?: 404;
+  };
   /**
    * Rate limit: too many requests.
    */
-  429: ApiError;
+  429: ApiError & {
+    status?: 429;
+  };
 };
 
 export type SignInError = SignInErrors[keyof SignInErrors];
@@ -475,23 +595,33 @@ export type CheckTokenErrors = {
   /**
    * Bad request: problem processing request.
    */
-  400: ApiError;
+  400: ApiError & {
+    status?: 400;
+  };
   /**
    * Unauthorized: authentication required.
    */
-  401: ApiError;
+  401: ApiError & {
+    status?: 401;
+  };
   /**
    * Forbidden: insufficient permissions.
    */
-  403: ApiError;
+  403: ApiError & {
+    status?: 403;
+  };
   /**
    * Not found: resource does not exist.
    */
-  404: ApiError;
+  404: ApiError & {
+    status?: 404;
+  };
   /**
    * Rate limit: too many requests.
    */
-  429: ApiError;
+  429: ApiError & {
+    status?: 429;
+  };
 };
 
 export type CheckTokenError = CheckTokenErrors[keyof CheckTokenErrors];
@@ -525,23 +655,33 @@ export type AcceptEntityInviteErrors = {
   /**
    * Bad request: problem processing request.
    */
-  400: ApiError;
+  400: ApiError & {
+    status?: 400;
+  };
   /**
    * Unauthorized: authentication required.
    */
-  401: ApiError;
+  401: ApiError & {
+    status?: 401;
+  };
   /**
    * Forbidden: insufficient permissions.
    */
-  403: ApiError;
+  403: ApiError & {
+    status?: 403;
+  };
   /**
    * Not found: resource does not exist.
    */
-  404: ApiError;
+  404: ApiError & {
+    status?: 404;
+  };
   /**
    * Rate limit: too many requests.
    */
-  429: ApiError;
+  429: ApiError & {
+    status?: 429;
+  };
 };
 
 export type AcceptEntityInviteError = AcceptEntityInviteErrors[keyof AcceptEntityInviteErrors];
@@ -586,23 +726,33 @@ export type StartImpersonationErrors = {
   /**
    * Bad request: problem processing request.
    */
-  400: ApiError;
+  400: ApiError & {
+    status?: 400;
+  };
   /**
    * Unauthorized: authentication required.
    */
-  401: ApiError;
+  401: ApiError & {
+    status?: 401;
+  };
   /**
    * Forbidden: insufficient permissions.
    */
-  403: ApiError;
+  403: ApiError & {
+    status?: 403;
+  };
   /**
    * Not found: resource does not exist.
    */
-  404: ApiError;
+  404: ApiError & {
+    status?: 404;
+  };
   /**
    * Rate limit: too many requests.
    */
-  429: ApiError;
+  429: ApiError & {
+    status?: 429;
+  };
 };
 
 export type StartImpersonationError = StartImpersonationErrors[keyof StartImpersonationErrors];
@@ -627,23 +777,33 @@ export type StopImpersonationErrors = {
   /**
    * Bad request: problem processing request.
    */
-  400: ApiError;
+  400: ApiError & {
+    status?: 400;
+  };
   /**
    * Unauthorized: authentication required.
    */
-  401: ApiError;
+  401: ApiError & {
+    status?: 401;
+  };
   /**
    * Forbidden: insufficient permissions.
    */
-  403: ApiError;
+  403: ApiError & {
+    status?: 403;
+  };
   /**
    * Not found: resource does not exist.
    */
-  404: ApiError;
+  404: ApiError & {
+    status?: 404;
+  };
   /**
    * Rate limit: too many requests.
    */
-  429: ApiError;
+  429: ApiError & {
+    status?: 429;
+  };
 };
 
 export type StopImpersonationError = StopImpersonationErrors[keyof StopImpersonationErrors];
@@ -668,23 +828,33 @@ export type SignOutErrors = {
   /**
    * Bad request: problem processing request.
    */
-  400: ApiError;
+  400: ApiError & {
+    status?: 400;
+  };
   /**
    * Unauthorized: authentication required.
    */
-  401: ApiError;
+  401: ApiError & {
+    status?: 401;
+  };
   /**
    * Forbidden: insufficient permissions.
    */
-  403: ApiError;
+  403: ApiError & {
+    status?: 403;
+  };
   /**
    * Not found: resource does not exist.
    */
-  404: ApiError;
+  404: ApiError & {
+    status?: 404;
+  };
   /**
    * Rate limit: too many requests.
    */
-  429: ApiError;
+  429: ApiError & {
+    status?: 429;
+  };
 };
 
 export type SignOutError = SignOutErrors[keyof SignOutErrors];
@@ -714,23 +884,33 @@ export type GithubSignInErrors = {
   /**
    * Bad request: problem processing request.
    */
-  400: ApiError;
+  400: ApiError & {
+    status?: 400;
+  };
   /**
    * Unauthorized: authentication required.
    */
-  401: ApiError;
+  401: ApiError & {
+    status?: 401;
+  };
   /**
    * Forbidden: insufficient permissions.
    */
-  403: ApiError;
+  403: ApiError & {
+    status?: 403;
+  };
   /**
    * Not found: resource does not exist.
    */
-  404: ApiError;
+  404: ApiError & {
+    status?: 404;
+  };
   /**
    * Rate limit: too many requests.
    */
-  429: ApiError;
+  429: ApiError & {
+    status?: 429;
+  };
 };
 
 export type GithubSignInError = GithubSignInErrors[keyof GithubSignInErrors];
@@ -751,23 +931,33 @@ export type GoogleSignInErrors = {
   /**
    * Bad request: problem processing request.
    */
-  400: ApiError;
+  400: ApiError & {
+    status?: 400;
+  };
   /**
    * Unauthorized: authentication required.
    */
-  401: ApiError;
+  401: ApiError & {
+    status?: 401;
+  };
   /**
    * Forbidden: insufficient permissions.
    */
-  403: ApiError;
+  403: ApiError & {
+    status?: 403;
+  };
   /**
    * Not found: resource does not exist.
    */
-  404: ApiError;
+  404: ApiError & {
+    status?: 404;
+  };
   /**
    * Rate limit: too many requests.
    */
-  429: ApiError;
+  429: ApiError & {
+    status?: 429;
+  };
 };
 
 export type GoogleSignInError = GoogleSignInErrors[keyof GoogleSignInErrors];
@@ -788,23 +978,33 @@ export type MicrosoftSignInErrors = {
   /**
    * Bad request: problem processing request.
    */
-  400: ApiError;
+  400: ApiError & {
+    status?: 400;
+  };
   /**
    * Unauthorized: authentication required.
    */
-  401: ApiError;
+  401: ApiError & {
+    status?: 401;
+  };
   /**
    * Forbidden: insufficient permissions.
    */
-  403: ApiError;
+  403: ApiError & {
+    status?: 403;
+  };
   /**
    * Not found: resource does not exist.
    */
-  404: ApiError;
+  404: ApiError & {
+    status?: 404;
+  };
   /**
    * Rate limit: too many requests.
    */
-  429: ApiError;
+  429: ApiError & {
+    status?: 429;
+  };
 };
 
 export type MicrosoftSignInError = MicrosoftSignInErrors[keyof MicrosoftSignInErrors];
@@ -826,23 +1026,33 @@ export type GithubSignInCallbackErrors = {
   /**
    * Bad request: problem processing request.
    */
-  400: ApiError;
+  400: ApiError & {
+    status?: 400;
+  };
   /**
    * Unauthorized: authentication required.
    */
-  401: ApiError;
+  401: ApiError & {
+    status?: 401;
+  };
   /**
    * Forbidden: insufficient permissions.
    */
-  403: ApiError;
+  403: ApiError & {
+    status?: 403;
+  };
   /**
    * Not found: resource does not exist.
    */
-  404: ApiError;
+  404: ApiError & {
+    status?: 404;
+  };
   /**
    * Rate limit: too many requests.
    */
-  429: ApiError;
+  429: ApiError & {
+    status?: 429;
+  };
 };
 
 export type GithubSignInCallbackError = GithubSignInCallbackErrors[keyof GithubSignInCallbackErrors];
@@ -861,23 +1071,33 @@ export type GoogleSignInCallbackErrors = {
   /**
    * Bad request: problem processing request.
    */
-  400: ApiError;
+  400: ApiError & {
+    status?: 400;
+  };
   /**
    * Unauthorized: authentication required.
    */
-  401: ApiError;
+  401: ApiError & {
+    status?: 401;
+  };
   /**
    * Forbidden: insufficient permissions.
    */
-  403: ApiError;
+  403: ApiError & {
+    status?: 403;
+  };
   /**
    * Not found: resource does not exist.
    */
-  404: ApiError;
+  404: ApiError & {
+    status?: 404;
+  };
   /**
    * Rate limit: too many requests.
    */
-  429: ApiError;
+  429: ApiError & {
+    status?: 429;
+  };
 };
 
 export type GoogleSignInCallbackError = GoogleSignInCallbackErrors[keyof GoogleSignInCallbackErrors];
@@ -896,23 +1116,33 @@ export type MicrosoftSignInCallbackErrors = {
   /**
    * Bad request: problem processing request.
    */
-  400: ApiError;
+  400: ApiError & {
+    status?: 400;
+  };
   /**
    * Unauthorized: authentication required.
    */
-  401: ApiError;
+  401: ApiError & {
+    status?: 401;
+  };
   /**
    * Forbidden: insufficient permissions.
    */
-  403: ApiError;
+  403: ApiError & {
+    status?: 403;
+  };
   /**
    * Not found: resource does not exist.
    */
-  404: ApiError;
+  404: ApiError & {
+    status?: 404;
+  };
   /**
    * Rate limit: too many requests.
    */
-  429: ApiError;
+  429: ApiError & {
+    status?: 429;
+  };
 };
 
 export type MicrosoftSignInCallbackError = MicrosoftSignInCallbackErrors[keyof MicrosoftSignInCallbackErrors];
@@ -928,23 +1158,33 @@ export type GetPasskeyChallengeErrors = {
   /**
    * Bad request: problem processing request.
    */
-  400: ApiError;
+  400: ApiError & {
+    status?: 400;
+  };
   /**
    * Unauthorized: authentication required.
    */
-  401: ApiError;
+  401: ApiError & {
+    status?: 401;
+  };
   /**
    * Forbidden: insufficient permissions.
    */
-  403: ApiError;
+  403: ApiError & {
+    status?: 403;
+  };
   /**
    * Not found: resource does not exist.
    */
-  404: ApiError;
+  404: ApiError & {
+    status?: 404;
+  };
   /**
    * Rate limit: too many requests.
    */
-  429: ApiError;
+  429: ApiError & {
+    status?: 429;
+  };
 };
 
 export type GetPasskeyChallengeError = GetPasskeyChallengeErrors[keyof GetPasskeyChallengeErrors];
@@ -976,23 +1216,33 @@ export type SignInWithPasskeyErrors = {
   /**
    * Bad request: problem processing request.
    */
-  400: ApiError;
+  400: ApiError & {
+    status?: 400;
+  };
   /**
    * Unauthorized: authentication required.
    */
-  401: ApiError;
+  401: ApiError & {
+    status?: 401;
+  };
   /**
    * Forbidden: insufficient permissions.
    */
-  403: ApiError;
+  403: ApiError & {
+    status?: 403;
+  };
   /**
    * Not found: resource does not exist.
    */
-  404: ApiError;
+  404: ApiError & {
+    status?: 404;
+  };
   /**
    * Rate limit: too many requests.
    */
-  429: ApiError;
+  429: ApiError & {
+    status?: 429;
+  };
 };
 
 export type SignInWithPasskeyError = SignInWithPasskeyErrors[keyof SignInWithPasskeyErrors];
@@ -1017,23 +1267,33 @@ export type DeleteMeErrors = {
   /**
    * Bad request: problem processing request.
    */
-  400: ApiError;
+  400: ApiError & {
+    status?: 400;
+  };
   /**
    * Unauthorized: authentication required.
    */
-  401: ApiError;
+  401: ApiError & {
+    status?: 401;
+  };
   /**
    * Forbidden: insufficient permissions.
    */
-  403: ApiError;
+  403: ApiError & {
+    status?: 403;
+  };
   /**
    * Not found: resource does not exist.
    */
-  404: ApiError;
+  404: ApiError & {
+    status?: 404;
+  };
   /**
    * Rate limit: too many requests.
    */
-  429: ApiError;
+  429: ApiError & {
+    status?: 429;
+  };
 };
 
 export type DeleteMeError = DeleteMeErrors[keyof DeleteMeErrors];
@@ -1058,23 +1318,33 @@ export type GetMeErrors = {
   /**
    * Bad request: problem processing request.
    */
-  400: ApiError;
+  400: ApiError & {
+    status?: 400;
+  };
   /**
    * Unauthorized: authentication required.
    */
-  401: ApiError;
+  401: ApiError & {
+    status?: 401;
+  };
   /**
    * Forbidden: insufficient permissions.
    */
-  403: ApiError;
+  403: ApiError & {
+    status?: 403;
+  };
   /**
    * Not found: resource does not exist.
    */
-  404: ApiError;
+  404: ApiError & {
+    status?: 404;
+  };
   /**
    * Rate limit: too many requests.
    */
-  429: ApiError;
+  429: ApiError & {
+    status?: 429;
+  };
 };
 
 export type GetMeError = GetMeErrors[keyof GetMeErrors];
@@ -1127,23 +1397,33 @@ export type UpdateMeErrors = {
   /**
    * Bad request: problem processing request.
    */
-  400: ApiError;
+  400: ApiError & {
+    status?: 400;
+  };
   /**
    * Unauthorized: authentication required.
    */
-  401: ApiError;
+  401: ApiError & {
+    status?: 401;
+  };
   /**
    * Forbidden: insufficient permissions.
    */
-  403: ApiError;
+  403: ApiError & {
+    status?: 403;
+  };
   /**
    * Not found: resource does not exist.
    */
-  404: ApiError;
+  404: ApiError & {
+    status?: 404;
+  };
   /**
    * Rate limit: too many requests.
    */
-  429: ApiError;
+  429: ApiError & {
+    status?: 429;
+  };
 };
 
 export type UpdateMeError = UpdateMeErrors[keyof UpdateMeErrors];
@@ -1188,23 +1468,33 @@ export type GetMyAuthErrors = {
   /**
    * Bad request: problem processing request.
    */
-  400: ApiError;
+  400: ApiError & {
+    status?: 400;
+  };
   /**
    * Unauthorized: authentication required.
    */
-  401: ApiError;
+  401: ApiError & {
+    status?: 401;
+  };
   /**
    * Forbidden: insufficient permissions.
    */
-  403: ApiError;
+  403: ApiError & {
+    status?: 403;
+  };
   /**
    * Not found: resource does not exist.
    */
-  404: ApiError;
+  404: ApiError & {
+    status?: 404;
+  };
   /**
    * Rate limit: too many requests.
    */
-  429: ApiError;
+  429: ApiError & {
+    status?: 429;
+  };
 };
 
 export type GetMyAuthError = GetMyAuthErrors[keyof GetMyAuthErrors];
@@ -1245,23 +1535,33 @@ export type GetMyMenuErrors = {
   /**
    * Bad request: problem processing request.
    */
-  400: ApiError;
+  400: ApiError & {
+    status?: 400;
+  };
   /**
    * Unauthorized: authentication required.
    */
-  401: ApiError;
+  401: ApiError & {
+    status?: 401;
+  };
   /**
    * Forbidden: insufficient permissions.
    */
-  403: ApiError;
+  403: ApiError & {
+    status?: 403;
+  };
   /**
    * Not found: resource does not exist.
    */
-  404: ApiError;
+  404: ApiError & {
+    status?: 404;
+  };
   /**
    * Rate limit: too many requests.
    */
-  429: ApiError;
+  429: ApiError & {
+    status?: 429;
+  };
 };
 
 export type GetMyMenuError = GetMyMenuErrors[keyof GetMyMenuErrors];
@@ -1316,7 +1616,7 @@ export type GetMyMenuResponses = {
 
 export type GetMyMenuResponse = GetMyMenuResponses[keyof GetMyMenuResponses];
 
-export type DeleteSessionsData = {
+export type DeleteMySessionsData = {
   body?: {
     ids: Array<string>;
   };
@@ -1325,42 +1625,52 @@ export type DeleteSessionsData = {
   url: '/me/sessions';
 };
 
-export type DeleteSessionsErrors = {
+export type DeleteMySessionsErrors = {
   /**
    * Bad request: problem processing request.
    */
-  400: ApiError;
+  400: ApiError & {
+    status?: 400;
+  };
   /**
    * Unauthorized: authentication required.
    */
-  401: ApiError;
+  401: ApiError & {
+    status?: 401;
+  };
   /**
    * Forbidden: insufficient permissions.
    */
-  403: ApiError;
+  403: ApiError & {
+    status?: 403;
+  };
   /**
    * Not found: resource does not exist.
    */
-  404: ApiError;
+  404: ApiError & {
+    status?: 404;
+  };
   /**
    * Rate limit: too many requests.
    */
-  429: ApiError;
+  429: ApiError & {
+    status?: 429;
+  };
 };
 
-export type DeleteSessionsError = DeleteSessionsErrors[keyof DeleteSessionsErrors];
+export type DeleteMySessionsError = DeleteMySessionsErrors[keyof DeleteMySessionsErrors];
 
-export type DeleteSessionsResponses = {
+export type DeleteMySessionsResponses = {
   /**
    * Success
    */
   200: {
     success: boolean;
-    errors: Array<ApiError>;
+    rejectedIds: Array<string>;
   };
 };
 
-export type DeleteSessionsResponse = DeleteSessionsResponses[keyof DeleteSessionsResponses];
+export type DeleteMySessionsResponse = DeleteMySessionsResponses[keyof DeleteMySessionsResponses];
 
 export type DeleteMyMembershipData = {
   body?: never;
@@ -1376,23 +1686,33 @@ export type DeleteMyMembershipErrors = {
   /**
    * Bad request: problem processing request.
    */
-  400: ApiError;
+  400: ApiError & {
+    status?: 400;
+  };
   /**
    * Unauthorized: authentication required.
    */
-  401: ApiError;
+  401: ApiError & {
+    status?: 401;
+  };
   /**
    * Forbidden: insufficient permissions.
    */
-  403: ApiError;
+  403: ApiError & {
+    status?: 403;
+  };
   /**
    * Not found: resource does not exist.
    */
-  404: ApiError;
+  404: ApiError & {
+    status?: 404;
+  };
   /**
    * Rate limit: too many requests.
    */
-  429: ApiError;
+  429: ApiError & {
+    status?: 429;
+  };
 };
 
 export type DeleteMyMembershipError = DeleteMyMembershipErrors[keyof DeleteMyMembershipErrors];
@@ -1417,23 +1737,33 @@ export type DeletePasskeyErrors = {
   /**
    * Bad request: problem processing request.
    */
-  400: ApiError;
+  400: ApiError & {
+    status?: 400;
+  };
   /**
    * Unauthorized: authentication required.
    */
-  401: ApiError;
+  401: ApiError & {
+    status?: 401;
+  };
   /**
    * Forbidden: insufficient permissions.
    */
-  403: ApiError;
+  403: ApiError & {
+    status?: 403;
+  };
   /**
    * Not found: resource does not exist.
    */
-  404: ApiError;
+  404: ApiError & {
+    status?: 404;
+  };
   /**
    * Rate limit: too many requests.
    */
-  429: ApiError;
+  429: ApiError & {
+    status?: 429;
+  };
 };
 
 export type DeletePasskeyError = DeletePasskeyErrors[keyof DeletePasskeyErrors];
@@ -1449,7 +1779,6 @@ export type DeletePasskeyResponse = DeletePasskeyResponses[keyof DeletePasskeyRe
 
 export type CreatePasskeyData = {
   body: {
-    userEmail: string;
     attestationObject: string;
     clientDataJSON: string;
   };
@@ -1462,23 +1791,33 @@ export type CreatePasskeyErrors = {
   /**
    * Bad request: problem processing request.
    */
-  400: ApiError;
+  400: ApiError & {
+    status?: 400;
+  };
   /**
    * Unauthorized: authentication required.
    */
-  401: ApiError;
+  401: ApiError & {
+    status?: 401;
+  };
   /**
    * Forbidden: insufficient permissions.
    */
-  403: ApiError;
+  403: ApiError & {
+    status?: 403;
+  };
   /**
    * Not found: resource does not exist.
    */
-  404: ApiError;
+  404: ApiError & {
+    status?: 404;
+  };
   /**
    * Rate limit: too many requests.
    */
-  429: ApiError;
+  429: ApiError & {
+    status?: 429;
+  };
 };
 
 export type CreatePasskeyError = CreatePasskeyErrors[keyof CreatePasskeyErrors];
@@ -1507,23 +1846,33 @@ export type GetUploadTokenErrors = {
   /**
    * Bad request: problem processing request.
    */
-  400: ApiError;
+  400: ApiError & {
+    status?: 400;
+  };
   /**
    * Unauthorized: authentication required.
    */
-  401: ApiError;
+  401: ApiError & {
+    status?: 401;
+  };
   /**
    * Forbidden: insufficient permissions.
    */
-  403: ApiError;
+  403: ApiError & {
+    status?: 403;
+  };
   /**
    * Not found: resource does not exist.
    */
-  404: ApiError;
+  404: ApiError & {
+    status?: 404;
+  };
   /**
    * Rate limit: too many requests.
    */
-  429: ApiError;
+  429: ApiError & {
+    status?: 429;
+  };
 };
 
 export type GetUploadTokenError = GetUploadTokenErrors[keyof GetUploadTokenErrors];
@@ -1567,23 +1916,33 @@ export type UnsubscribeMeErrors = {
   /**
    * Bad request: problem processing request.
    */
-  400: ApiError;
+  400: ApiError & {
+    status?: 400;
+  };
   /**
    * Unauthorized: authentication required.
    */
-  401: ApiError;
+  401: ApiError & {
+    status?: 401;
+  };
   /**
    * Forbidden: insufficient permissions.
    */
-  403: ApiError;
+  403: ApiError & {
+    status?: 403;
+  };
   /**
    * Not found: resource does not exist.
    */
-  404: ApiError;
+  404: ApiError & {
+    status?: 404;
+  };
   /**
    * Rate limit: too many requests.
    */
-  429: ApiError;
+  429: ApiError & {
+    status?: 429;
+  };
 };
 
 export type UnsubscribeMeError = UnsubscribeMeErrors[keyof UnsubscribeMeErrors];
@@ -1601,23 +1960,33 @@ export type DeleteUsersErrors = {
   /**
    * Bad request: problem processing request.
    */
-  400: ApiError;
+  400: ApiError & {
+    status?: 400;
+  };
   /**
    * Unauthorized: authentication required.
    */
-  401: ApiError;
+  401: ApiError & {
+    status?: 401;
+  };
   /**
    * Forbidden: insufficient permissions.
    */
-  403: ApiError;
+  403: ApiError & {
+    status?: 403;
+  };
   /**
    * Not found: resource does not exist.
    */
-  404: ApiError;
+  404: ApiError & {
+    status?: 404;
+  };
   /**
    * Rate limit: too many requests.
    */
-  429: ApiError;
+  429: ApiError & {
+    status?: 429;
+  };
 };
 
 export type DeleteUsersError = DeleteUsersErrors[keyof DeleteUsersErrors];
@@ -1628,7 +1997,7 @@ export type DeleteUsersResponses = {
    */
   200: {
     success: boolean;
-    errors: Array<ApiError>;
+    rejectedIds: Array<string>;
   };
 };
 
@@ -1652,23 +2021,33 @@ export type GetUsersErrors = {
   /**
    * Bad request: problem processing request.
    */
-  400: ApiError;
+  400: ApiError & {
+    status?: 400;
+  };
   /**
    * Unauthorized: authentication required.
    */
-  401: ApiError;
+  401: ApiError & {
+    status?: 401;
+  };
   /**
    * Forbidden: insufficient permissions.
    */
-  403: ApiError;
+  403: ApiError & {
+    status?: 403;
+  };
   /**
    * Not found: resource does not exist.
    */
-  404: ApiError;
+  404: ApiError & {
+    status?: 404;
+  };
   /**
    * Rate limit: too many requests.
    */
-  429: ApiError;
+  429: ApiError & {
+    status?: 429;
+  };
 };
 
 export type GetUsersError = GetUsersErrors[keyof GetUsersErrors];
@@ -1718,23 +2097,33 @@ export type GetUserErrors = {
   /**
    * Bad request: problem processing request.
    */
-  400: ApiError;
+  400: ApiError & {
+    status?: 400;
+  };
   /**
    * Unauthorized: authentication required.
    */
-  401: ApiError;
+  401: ApiError & {
+    status?: 401;
+  };
   /**
    * Forbidden: insufficient permissions.
    */
-  403: ApiError;
+  403: ApiError & {
+    status?: 403;
+  };
   /**
    * Not found: resource does not exist.
    */
-  404: ApiError;
+  404: ApiError & {
+    status?: 404;
+  };
   /**
    * Rate limit: too many requests.
    */
-  429: ApiError;
+  429: ApiError & {
+    status?: 429;
+  };
 };
 
 export type GetUserError = GetUserErrors[keyof GetUserErrors];
@@ -1789,23 +2178,33 @@ export type UpdateUserErrors = {
   /**
    * Bad request: problem processing request.
    */
-  400: ApiError;
+  400: ApiError & {
+    status?: 400;
+  };
   /**
    * Unauthorized: authentication required.
    */
-  401: ApiError;
+  401: ApiError & {
+    status?: 401;
+  };
   /**
    * Forbidden: insufficient permissions.
    */
-  403: ApiError;
+  403: ApiError & {
+    status?: 403;
+  };
   /**
    * Not found: resource does not exist.
    */
-  404: ApiError;
+  404: ApiError & {
+    status?: 404;
+  };
   /**
    * Rate limit: too many requests.
    */
-  429: ApiError;
+  429: ApiError & {
+    status?: 429;
+  };
 };
 
 export type UpdateUserError = UpdateUserErrors[keyof UpdateUserErrors];
@@ -1852,23 +2251,33 @@ export type DeleteOrganizationsErrors = {
   /**
    * Bad request: problem processing request.
    */
-  400: ApiError;
+  400: ApiError & {
+    status?: 400;
+  };
   /**
    * Unauthorized: authentication required.
    */
-  401: ApiError;
+  401: ApiError & {
+    status?: 401;
+  };
   /**
    * Forbidden: insufficient permissions.
    */
-  403: ApiError;
+  403: ApiError & {
+    status?: 403;
+  };
   /**
    * Not found: resource does not exist.
    */
-  404: ApiError;
+  404: ApiError & {
+    status?: 404;
+  };
   /**
    * Rate limit: too many requests.
    */
-  429: ApiError;
+  429: ApiError & {
+    status?: 429;
+  };
 };
 
 export type DeleteOrganizationsError = DeleteOrganizationsErrors[keyof DeleteOrganizationsErrors];
@@ -1879,7 +2288,7 @@ export type DeleteOrganizationsResponses = {
    */
   200: {
     success: boolean;
-    errors: Array<ApiError>;
+    rejectedIds: Array<string>;
   };
 };
 
@@ -1902,23 +2311,33 @@ export type GetOrganizationsErrors = {
   /**
    * Bad request: problem processing request.
    */
-  400: ApiError;
+  400: ApiError & {
+    status?: 400;
+  };
   /**
    * Unauthorized: authentication required.
    */
-  401: ApiError;
+  401: ApiError & {
+    status?: 401;
+  };
   /**
    * Forbidden: insufficient permissions.
    */
-  403: ApiError;
+  403: ApiError & {
+    status?: 403;
+  };
   /**
    * Not found: resource does not exist.
    */
-  404: ApiError;
+  404: ApiError & {
+    status?: 404;
+  };
   /**
    * Rate limit: too many requests.
    */
-  429: ApiError;
+  429: ApiError & {
+    status?: 429;
+  };
 };
 
 export type GetOrganizationsError = GetOrganizationsErrors[keyof GetOrganizationsErrors];
@@ -1995,23 +2414,33 @@ export type CreateOrganizationErrors = {
   /**
    * Bad request: problem processing request.
    */
-  400: ApiError;
+  400: ApiError & {
+    status?: 400;
+  };
   /**
    * Unauthorized: authentication required.
    */
-  401: ApiError;
+  401: ApiError & {
+    status?: 401;
+  };
   /**
    * Forbidden: insufficient permissions.
    */
-  403: ApiError;
+  403: ApiError & {
+    status?: 403;
+  };
   /**
    * Not found: resource does not exist.
    */
-  404: ApiError;
+  404: ApiError & {
+    status?: 404;
+  };
   /**
    * Rate limit: too many requests.
    */
-  429: ApiError;
+  429: ApiError & {
+    status?: 429;
+  };
 };
 
 export type CreateOrganizationError = CreateOrganizationErrors[keyof CreateOrganizationErrors];
@@ -2074,23 +2503,33 @@ export type GetOrganizationErrors = {
   /**
    * Bad request: problem processing request.
    */
-  400: ApiError;
+  400: ApiError & {
+    status?: 400;
+  };
   /**
    * Unauthorized: authentication required.
    */
-  401: ApiError;
+  401: ApiError & {
+    status?: 401;
+  };
   /**
    * Forbidden: insufficient permissions.
    */
-  403: ApiError;
+  403: ApiError & {
+    status?: 403;
+  };
   /**
    * Not found: resource does not exist.
    */
-  404: ApiError;
+  404: ApiError & {
+    status?: 404;
+  };
   /**
    * Rate limit: too many requests.
    */
-  429: ApiError;
+  429: ApiError & {
+    status?: 429;
+  };
 };
 
 export type GetOrganizationError = GetOrganizationErrors[keyof GetOrganizationErrors];
@@ -2171,23 +2610,33 @@ export type UpdateOrganizationErrors = {
   /**
    * Bad request: problem processing request.
    */
-  400: ApiError;
+  400: ApiError & {
+    status?: 400;
+  };
   /**
    * Unauthorized: authentication required.
    */
-  401: ApiError;
+  401: ApiError & {
+    status?: 401;
+  };
   /**
    * Forbidden: insufficient permissions.
    */
-  403: ApiError;
+  403: ApiError & {
+    status?: 403;
+  };
   /**
    * Not found: resource does not exist.
    */
-  404: ApiError;
+  404: ApiError & {
+    status?: 404;
+  };
   /**
    * Rate limit: too many requests.
    */
-  429: ApiError;
+  429: ApiError & {
+    status?: 429;
+  };
 };
 
 export type UpdateOrganizationError = UpdateOrganizationErrors[keyof UpdateOrganizationErrors];
@@ -2254,23 +2703,33 @@ export type GetPageEntitiesErrors = {
   /**
    * Bad request: problem processing request.
    */
-  400: ApiError;
+  400: ApiError & {
+    status?: 400;
+  };
   /**
    * Unauthorized: authentication required.
    */
-  401: ApiError;
+  401: ApiError & {
+    status?: 401;
+  };
   /**
    * Forbidden: insufficient permissions.
    */
-  403: ApiError;
+  403: ApiError & {
+    status?: 403;
+  };
   /**
    * Not found: resource does not exist.
    */
-  404: ApiError;
+  404: ApiError & {
+    status?: 404;
+  };
   /**
    * Rate limit: too many requests.
    */
-  429: ApiError;
+  429: ApiError & {
+    status?: 429;
+  };
 };
 
 export type GetPageEntitiesError = GetPageEntitiesErrors[keyof GetPageEntitiesErrors];
@@ -2327,23 +2786,33 @@ export type GetEntitiesWithAdminsErrors = {
   /**
    * Bad request: problem processing request.
    */
-  400: ApiError;
+  400: ApiError & {
+    status?: 400;
+  };
   /**
    * Unauthorized: authentication required.
    */
-  401: ApiError;
+  401: ApiError & {
+    status?: 401;
+  };
   /**
    * Forbidden: insufficient permissions.
    */
-  403: ApiError;
+  403: ApiError & {
+    status?: 403;
+  };
   /**
    * Not found: resource does not exist.
    */
-  404: ApiError;
+  404: ApiError & {
+    status?: 404;
+  };
   /**
    * Rate limit: too many requests.
    */
-  429: ApiError;
+  429: ApiError & {
+    status?: 429;
+  };
 };
 
 export type GetEntitiesWithAdminsError = GetEntitiesWithAdminsErrors[keyof GetEntitiesWithAdminsErrors];
@@ -2398,23 +2867,33 @@ export type CheckSlugErrors = {
   /**
    * Bad request: problem processing request.
    */
-  400: ApiError;
+  400: ApiError & {
+    status?: 400;
+  };
   /**
    * Unauthorized: authentication required.
    */
-  401: ApiError;
+  401: ApiError & {
+    status?: 401;
+  };
   /**
    * Forbidden: insufficient permissions.
    */
-  403: ApiError;
+  403: ApiError & {
+    status?: 403;
+  };
   /**
    * Not found: resource does not exist.
    */
-  404: ApiError;
+  404: ApiError & {
+    status?: 404;
+  };
   /**
    * Rate limit: too many requests.
    */
-  429: ApiError;
+  429: ApiError & {
+    status?: 429;
+  };
 };
 
 export type CheckSlugError = CheckSlugErrors[keyof CheckSlugErrors];
@@ -2441,23 +2920,33 @@ export type SystemInviteErrors = {
   /**
    * Bad request: problem processing request.
    */
-  400: ApiError;
+  400: ApiError & {
+    status?: 400;
+  };
   /**
    * Unauthorized: authentication required.
    */
-  401: ApiError;
+  401: ApiError & {
+    status?: 401;
+  };
   /**
    * Forbidden: insufficient permissions.
    */
-  403: ApiError;
+  403: ApiError & {
+    status?: 403;
+  };
   /**
    * Not found: resource does not exist.
    */
-  404: ApiError;
+  404: ApiError & {
+    status?: 404;
+  };
   /**
    * Rate limit: too many requests.
    */
-  429: ApiError;
+  429: ApiError & {
+    status?: 429;
+  };
 };
 
 export type SystemInviteError = SystemInviteErrors[keyof SystemInviteErrors];
@@ -2484,23 +2973,33 @@ export type GetPresignedUrlErrors = {
   /**
    * Bad request: problem processing request.
    */
-  400: ApiError;
+  400: ApiError & {
+    status?: 400;
+  };
   /**
    * Unauthorized: authentication required.
    */
-  401: ApiError;
+  401: ApiError & {
+    status?: 401;
+  };
   /**
    * Forbidden: insufficient permissions.
    */
-  403: ApiError;
+  403: ApiError & {
+    status?: 403;
+  };
   /**
    * Not found: resource does not exist.
    */
-  404: ApiError;
+  404: ApiError & {
+    status?: 404;
+  };
   /**
    * Rate limit: too many requests.
    */
-  429: ApiError;
+  429: ApiError & {
+    status?: 429;
+  };
 };
 
 export type GetPresignedUrlError = GetPresignedUrlErrors[keyof GetPresignedUrlErrors];
@@ -2525,23 +3024,33 @@ export type PaddleWebhookErrors = {
   /**
    * Bad request: problem processing request.
    */
-  400: ApiError;
+  400: ApiError & {
+    status?: 400;
+  };
   /**
    * Unauthorized: authentication required.
    */
-  401: ApiError;
+  401: ApiError & {
+    status?: 401;
+  };
   /**
    * Forbidden: insufficient permissions.
    */
-  403: ApiError;
+  403: ApiError & {
+    status?: 403;
+  };
   /**
    * Not found: resource does not exist.
    */
-  404: ApiError;
+  404: ApiError & {
+    status?: 404;
+  };
   /**
    * Rate limit: too many requests.
    */
-  429: ApiError;
+  429: ApiError & {
+    status?: 429;
+  };
 };
 
 export type PaddleWebhookError = PaddleWebhookErrors[keyof PaddleWebhookErrors];
@@ -2573,23 +3082,33 @@ export type SendNewsletterErrors = {
   /**
    * Bad request: problem processing request.
    */
-  400: ApiError;
+  400: ApiError & {
+    status?: 400;
+  };
   /**
    * Unauthorized: authentication required.
    */
-  401: ApiError;
+  401: ApiError & {
+    status?: 401;
+  };
   /**
    * Forbidden: insufficient permissions.
    */
-  403: ApiError;
+  403: ApiError & {
+    status?: 403;
+  };
   /**
    * Not found: resource does not exist.
    */
-  404: ApiError;
+  404: ApiError & {
+    status?: 404;
+  };
   /**
    * Rate limit: too many requests.
    */
-  429: ApiError;
+  429: ApiError & {
+    status?: 429;
+  };
 };
 
 export type SendNewsletterError = SendNewsletterErrors[keyof SendNewsletterErrors];
@@ -2616,23 +3135,33 @@ export type DeleteRequestsErrors = {
   /**
    * Bad request: problem processing request.
    */
-  400: ApiError;
+  400: ApiError & {
+    status?: 400;
+  };
   /**
    * Unauthorized: authentication required.
    */
-  401: ApiError;
+  401: ApiError & {
+    status?: 401;
+  };
   /**
    * Forbidden: insufficient permissions.
    */
-  403: ApiError;
+  403: ApiError & {
+    status?: 403;
+  };
   /**
    * Not found: resource does not exist.
    */
-  404: ApiError;
+  404: ApiError & {
+    status?: 404;
+  };
   /**
    * Rate limit: too many requests.
    */
-  429: ApiError;
+  429: ApiError & {
+    status?: 429;
+  };
 };
 
 export type DeleteRequestsError = DeleteRequestsErrors[keyof DeleteRequestsErrors];
@@ -2641,10 +3170,7 @@ export type DeleteRequestsResponses = {
   /**
    * Requests
    */
-  200: {
-    success: boolean;
-    errors: Array<ApiError>;
-  };
+  200: boolean;
 };
 
 export type DeleteRequestsResponse = DeleteRequestsResponses[keyof DeleteRequestsResponses];
@@ -2666,23 +3192,33 @@ export type GetRequestsErrors = {
   /**
    * Bad request: problem processing request.
    */
-  400: ApiError;
+  400: ApiError & {
+    status?: 400;
+  };
   /**
    * Unauthorized: authentication required.
    */
-  401: ApiError;
+  401: ApiError & {
+    status?: 401;
+  };
   /**
    * Forbidden: insufficient permissions.
    */
-  403: ApiError;
+  403: ApiError & {
+    status?: 403;
+  };
   /**
    * Not found: resource does not exist.
    */
-  404: ApiError;
+  404: ApiError & {
+    status?: 404;
+  };
   /**
    * Rate limit: too many requests.
    */
-  429: ApiError;
+  429: ApiError & {
+    status?: 429;
+  };
 };
 
 export type GetRequestsError = GetRequestsErrors[keyof GetRequestsErrors];
@@ -2721,23 +3257,33 @@ export type CreateRequestErrors = {
   /**
    * Bad request: problem processing request.
    */
-  400: ApiError;
+  400: ApiError & {
+    status?: 400;
+  };
   /**
    * Unauthorized: authentication required.
    */
-  401: ApiError;
+  401: ApiError & {
+    status?: 401;
+  };
   /**
    * Forbidden: insufficient permissions.
    */
-  403: ApiError;
+  403: ApiError & {
+    status?: 403;
+  };
   /**
    * Not found: resource does not exist.
    */
-  404: ApiError;
+  404: ApiError & {
+    status?: 404;
+  };
   /**
    * Rate limit: too many requests.
    */
-  429: ApiError;
+  429: ApiError & {
+    status?: 429;
+  };
 };
 
 export type CreateRequestError = CreateRequestErrors[keyof CreateRequestErrors];
@@ -2769,23 +3315,33 @@ export type GetMetricsErrors = {
   /**
    * Bad request: problem processing request.
    */
-  400: ApiError;
+  400: ApiError & {
+    status?: 400;
+  };
   /**
    * Unauthorized: authentication required.
    */
-  401: ApiError;
+  401: ApiError & {
+    status?: 401;
+  };
   /**
    * Forbidden: insufficient permissions.
    */
-  403: ApiError;
+  403: ApiError & {
+    status?: 403;
+  };
   /**
    * Not found: resource does not exist.
    */
-  404: ApiError;
+  404: ApiError & {
+    status?: 404;
+  };
   /**
    * Rate limit: too many requests.
    */
-  429: ApiError;
+  429: ApiError & {
+    status?: 429;
+  };
 };
 
 export type GetMetricsError = GetMetricsErrors[keyof GetMetricsErrors];
@@ -2813,23 +3369,33 @@ export type GetPublicCountsErrors = {
   /**
    * Bad request: problem processing request.
    */
-  400: ApiError;
+  400: ApiError & {
+    status?: 400;
+  };
   /**
    * Unauthorized: authentication required.
    */
-  401: ApiError;
+  401: ApiError & {
+    status?: 401;
+  };
   /**
    * Forbidden: insufficient permissions.
    */
-  403: ApiError;
+  403: ApiError & {
+    status?: 403;
+  };
   /**
    * Not found: resource does not exist.
    */
-  404: ApiError;
+  404: ApiError & {
+    status?: 404;
+  };
   /**
    * Rate limit: too many requests.
    */
-  429: ApiError;
+  429: ApiError & {
+    status?: 429;
+  };
 };
 
 export type GetPublicCountsError = GetPublicCountsErrors[keyof GetPublicCountsErrors];
@@ -2860,23 +3426,33 @@ export type ShapeProxyErrors = {
   /**
    * Bad request: problem processing request.
    */
-  400: ApiError;
+  400: ApiError & {
+    status?: 400;
+  };
   /**
    * Unauthorized: authentication required.
    */
-  401: ApiError;
+  401: ApiError & {
+    status?: 401;
+  };
   /**
    * Forbidden: insufficient permissions.
    */
-  403: ApiError;
+  403: ApiError & {
+    status?: 403;
+  };
   /**
    * Not found: resource does not exist.
    */
-  404: ApiError;
+  404: ApiError & {
+    status?: 404;
+  };
   /**
    * Rate limit: too many requests.
    */
-  429: ApiError;
+  429: ApiError & {
+    status?: 429;
+  };
 };
 
 export type ShapeProxyError = ShapeProxyErrors[keyof ShapeProxyErrors];
@@ -2903,23 +3479,33 @@ export type DeleteAttachmentsErrors = {
   /**
    * Bad request: problem processing request.
    */
-  400: ApiError;
+  400: ApiError & {
+    status?: 400;
+  };
   /**
    * Unauthorized: authentication required.
    */
-  401: ApiError;
+  401: ApiError & {
+    status?: 401;
+  };
   /**
    * Forbidden: insufficient permissions.
    */
-  403: ApiError;
+  403: ApiError & {
+    status?: 403;
+  };
   /**
    * Not found: resource does not exist.
    */
-  404: ApiError;
+  404: ApiError & {
+    status?: 404;
+  };
   /**
    * Rate limit: too many requests.
    */
-  429: ApiError;
+  429: ApiError & {
+    status?: 429;
+  };
 };
 
 export type DeleteAttachmentsError = DeleteAttachmentsErrors[keyof DeleteAttachmentsErrors];
@@ -2930,7 +3516,7 @@ export type DeleteAttachmentsResponses = {
    */
   200: {
     success: boolean;
-    errors: Array<ApiError>;
+    rejectedIds: Array<string>;
   };
 };
 
@@ -2956,23 +3542,33 @@ export type GetAttachmentsErrors = {
   /**
    * Bad request: problem processing request.
    */
-  400: ApiError;
+  400: ApiError & {
+    status?: 400;
+  };
   /**
    * Unauthorized: authentication required.
    */
-  401: ApiError;
+  401: ApiError & {
+    status?: 401;
+  };
   /**
    * Forbidden: insufficient permissions.
    */
-  403: ApiError;
+  403: ApiError & {
+    status?: 403;
+  };
   /**
    * Not found: resource does not exist.
    */
-  404: ApiError;
+  404: ApiError & {
+    status?: 404;
+  };
   /**
    * Rate limit: too many requests.
    */
-  429: ApiError;
+  429: ApiError & {
+    status?: 429;
+  };
 };
 
 export type GetAttachmentsError = GetAttachmentsErrors[keyof GetAttachmentsErrors];
@@ -3030,23 +3626,33 @@ export type CreateAttachmentErrors = {
   /**
    * Bad request: problem processing request.
    */
-  400: ApiError;
+  400: ApiError & {
+    status?: 400;
+  };
   /**
    * Unauthorized: authentication required.
    */
-  401: ApiError;
+  401: ApiError & {
+    status?: 401;
+  };
   /**
    * Forbidden: insufficient permissions.
    */
-  403: ApiError;
+  403: ApiError & {
+    status?: 403;
+  };
   /**
    * Not found: resource does not exist.
    */
-  404: ApiError;
+  404: ApiError & {
+    status?: 404;
+  };
   /**
    * Rate limit: too many requests.
    */
-  429: ApiError;
+  429: ApiError & {
+    status?: 429;
+  };
 };
 
 export type CreateAttachmentError = CreateAttachmentErrors[keyof CreateAttachmentErrors];
@@ -3091,23 +3697,33 @@ export type GetAttachmentErrors = {
   /**
    * Bad request: problem processing request.
    */
-  400: ApiError;
+  400: ApiError & {
+    status?: 400;
+  };
   /**
    * Unauthorized: authentication required.
    */
-  401: ApiError;
+  401: ApiError & {
+    status?: 401;
+  };
   /**
    * Forbidden: insufficient permissions.
    */
-  403: ApiError;
+  403: ApiError & {
+    status?: 403;
+  };
   /**
    * Not found: resource does not exist.
    */
-  404: ApiError;
+  404: ApiError & {
+    status?: 404;
+  };
   /**
    * Rate limit: too many requests.
    */
-  429: ApiError;
+  429: ApiError & {
+    status?: 429;
+  };
 };
 
 export type GetAttachmentError = GetAttachmentErrors[keyof GetAttachmentErrors];
@@ -3155,23 +3771,33 @@ export type UpdateAttachmentErrors = {
   /**
    * Bad request: problem processing request.
    */
-  400: ApiError;
+  400: ApiError & {
+    status?: 400;
+  };
   /**
    * Unauthorized: authentication required.
    */
-  401: ApiError;
+  401: ApiError & {
+    status?: 401;
+  };
   /**
    * Forbidden: insufficient permissions.
    */
-  403: ApiError;
+  403: ApiError & {
+    status?: 403;
+  };
   /**
    * Not found: resource does not exist.
    */
-  404: ApiError;
+  404: ApiError & {
+    status?: 404;
+  };
   /**
    * Rate limit: too many requests.
    */
-  429: ApiError;
+  429: ApiError & {
+    status?: 429;
+  };
 };
 
 export type UpdateAttachmentError = UpdateAttachmentErrors[keyof UpdateAttachmentErrors];
@@ -3215,23 +3841,33 @@ export type GetAttachmentCoverErrors = {
   /**
    * Bad request: problem processing request.
    */
-  400: ApiError;
+  400: ApiError & {
+    status?: 400;
+  };
   /**
    * Unauthorized: authentication required.
    */
-  401: ApiError;
+  401: ApiError & {
+    status?: 401;
+  };
   /**
    * Forbidden: insufficient permissions.
    */
-  403: ApiError;
+  403: ApiError & {
+    status?: 403;
+  };
   /**
    * Not found: resource does not exist.
    */
-  404: ApiError;
+  404: ApiError & {
+    status?: 404;
+  };
   /**
    * Rate limit: too many requests.
    */
-  429: ApiError;
+  429: ApiError & {
+    status?: 429;
+  };
 };
 
 export type GetAttachmentCoverError = GetAttachmentCoverErrors[keyof GetAttachmentCoverErrors];
@@ -3256,23 +3892,33 @@ export type RedirectToAttachmentErrors = {
   /**
    * Bad request: problem processing request.
    */
-  400: ApiError;
+  400: ApiError & {
+    status?: 400;
+  };
   /**
    * Unauthorized: authentication required.
    */
-  401: ApiError;
+  401: ApiError & {
+    status?: 401;
+  };
   /**
    * Forbidden: insufficient permissions.
    */
-  403: ApiError;
+  403: ApiError & {
+    status?: 403;
+  };
   /**
    * Not found: resource does not exist.
    */
-  404: ApiError;
+  404: ApiError & {
+    status?: 404;
+  };
   /**
    * Rate limit: too many requests.
    */
-  429: ApiError;
+  429: ApiError & {
+    status?: 429;
+  };
 };
 
 export type RedirectToAttachmentError = RedirectToAttachmentErrors[keyof RedirectToAttachmentErrors];
@@ -3302,23 +3948,33 @@ export type DeleteMembershipsErrors = {
   /**
    * Bad request: problem processing request.
    */
-  400: ApiError;
+  400: ApiError & {
+    status?: 400;
+  };
   /**
    * Unauthorized: authentication required.
    */
-  401: ApiError;
+  401: ApiError & {
+    status?: 401;
+  };
   /**
    * Forbidden: insufficient permissions.
    */
-  403: ApiError;
+  403: ApiError & {
+    status?: 403;
+  };
   /**
    * Not found: resource does not exist.
    */
-  404: ApiError;
+  404: ApiError & {
+    status?: 404;
+  };
   /**
    * Rate limit: too many requests.
    */
-  429: ApiError;
+  429: ApiError & {
+    status?: 429;
+  };
 };
 
 export type DeleteMembershipsError = DeleteMembershipsErrors[keyof DeleteMembershipsErrors];
@@ -3329,7 +3985,7 @@ export type DeleteMembershipsResponses = {
    */
   200: {
     success: boolean;
-    errors: Array<ApiError>;
+    rejectedIds: Array<string>;
   };
 };
 
@@ -3354,23 +4010,33 @@ export type MembershipInviteErrors = {
   /**
    * Bad request: problem processing request.
    */
-  400: ApiError;
+  400: ApiError & {
+    status?: 400;
+  };
   /**
    * Unauthorized: authentication required.
    */
-  401: ApiError;
+  401: ApiError & {
+    status?: 401;
+  };
   /**
    * Forbidden: insufficient permissions.
    */
-  403: ApiError;
+  403: ApiError & {
+    status?: 403;
+  };
   /**
    * Not found: resource does not exist.
    */
-  404: ApiError;
+  404: ApiError & {
+    status?: 404;
+  };
   /**
    * Rate limit: too many requests.
    */
-  429: ApiError;
+  429: ApiError & {
+    status?: 429;
+  };
 };
 
 export type MembershipInviteError = MembershipInviteErrors[keyof MembershipInviteErrors];
@@ -3403,23 +4069,33 @@ export type UpdateMembershipErrors = {
   /**
    * Bad request: problem processing request.
    */
-  400: ApiError;
+  400: ApiError & {
+    status?: 400;
+  };
   /**
    * Unauthorized: authentication required.
    */
-  401: ApiError;
+  401: ApiError & {
+    status?: 401;
+  };
   /**
    * Forbidden: insufficient permissions.
    */
-  403: ApiError;
+  403: ApiError & {
+    status?: 403;
+  };
   /**
    * Not found: resource does not exist.
    */
-  404: ApiError;
+  404: ApiError & {
+    status?: 404;
+  };
   /**
    * Rate limit: too many requests.
    */
-  429: ApiError;
+  429: ApiError & {
+    status?: 429;
+  };
 };
 
 export type UpdateMembershipError = UpdateMembershipErrors[keyof UpdateMembershipErrors];
@@ -3468,23 +4144,33 @@ export type GetMembersErrors = {
   /**
    * Bad request: problem processing request.
    */
-  400: ApiError;
+  400: ApiError & {
+    status?: 400;
+  };
   /**
    * Unauthorized: authentication required.
    */
-  401: ApiError;
+  401: ApiError & {
+    status?: 401;
+  };
   /**
    * Forbidden: insufficient permissions.
    */
-  403: ApiError;
+  403: ApiError & {
+    status?: 403;
+  };
   /**
    * Not found: resource does not exist.
    */
-  404: ApiError;
+  404: ApiError & {
+    status?: 404;
+  };
   /**
    * Rate limit: too many requests.
    */
-  429: ApiError;
+  429: ApiError & {
+    status?: 429;
+  };
 };
 
 export type GetMembersError = GetMembersErrors[keyof GetMembersErrors];
@@ -3552,23 +4238,33 @@ export type GetPendingInvitationsErrors = {
   /**
    * Bad request: problem processing request.
    */
-  400: ApiError;
+  400: ApiError & {
+    status?: 400;
+  };
   /**
    * Unauthorized: authentication required.
    */
-  401: ApiError;
+  401: ApiError & {
+    status?: 401;
+  };
   /**
    * Forbidden: insufficient permissions.
    */
-  403: ApiError;
+  403: ApiError & {
+    status?: 403;
+  };
   /**
    * Not found: resource does not exist.
    */
-  404: ApiError;
+  404: ApiError & {
+    status?: 404;
+  };
   /**
    * Rate limit: too many requests.
    */
-  429: ApiError;
+  429: ApiError & {
+    status?: 429;
+  };
 };
 
 export type GetPendingInvitationsError = GetPendingInvitationsErrors[keyof GetPendingInvitationsErrors];
@@ -3583,9 +4279,9 @@ export type GetPendingInvitationsResponses = {
       email: string;
       createdAt: string;
       createdBy: string | null;
+      role: 'member' | 'admin';
       expiresAt: string;
       name: string | null;
-      role: 'member' | 'admin';
     }>;
     total: number;
   };

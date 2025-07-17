@@ -7,16 +7,16 @@ import { oauthAccountsTable } from '#/db/schema/oauth-accounts';
 import { tokensTable } from '#/db/schema/tokens';
 import { type InsertUserModel, usersTable } from '#/db/schema/users';
 import { resolveEntity } from '#/lib/entity';
-import { errorResponse } from '#/lib/errors';
+import { ApiError } from '#/lib/errors';
 import { logEvent } from '#/middlewares/logger/log-event';
+import type { Provider } from '#/modules/auth/helpers/oauth/oauth-providers';
+import { setUserSession } from '#/modules/auth/helpers/session';
+import { sendVerificationEmail } from '#/modules/auth/helpers/verify-email';
+import { checkSlugAvailable } from '#/modules/entities/helpers/check-slug';
 import { insertMembership } from '#/modules/memberships/helpers';
 import { generateUnsubscribeToken } from '#/modules/users/helpers/unsubscribe-token';
 import { getIsoDate } from '#/utils/iso-date';
 import { nanoid } from '#/utils/nanoid';
-import { checkSlugAvailable } from '../../entities/helpers/check-slug';
-import type { Provider } from './oauth/oauth-providers';
-import { setUserSession } from './session';
-import { sendVerificationEmail } from './verify-email';
 
 interface HandleCreateUserProps {
   ctx: Context;
@@ -92,13 +92,7 @@ export const handleCreateUser = async ({ ctx, newUser, redirectUrl, provider, me
   } catch (error) {
     // If the email already exists, return an error
     if (error instanceof Error && error.message.startsWith('duplicate key')) {
-      return errorResponse(ctx, 409, 'email_exists', 'warn');
-    }
-
-    if (error instanceof Error) {
-      const strategy = provider ? provider.id : 'password';
-      const errorMessage = error.message;
-      logEvent('Error creating user', { strategy, errorMessage }, 'error');
+      throw new ApiError({ status: 409, type: 'email_exists', severity: 'warn' });
     }
 
     throw error;

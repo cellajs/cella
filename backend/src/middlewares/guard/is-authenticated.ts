@@ -6,7 +6,7 @@ import { db } from '#/db/db';
 import { membershipsTable } from '#/db/schema/memberships';
 import { usersTable } from '#/db/schema/users';
 import type { Env } from '#/lib/context';
-import { errorResponse } from '#/lib/errors';
+import { ApiError } from '#/lib/errors';
 import { registerMiddlewareDescription } from '#/lib/openapi-describer';
 import { deleteAuthCookie } from '#/modules/auth/helpers/cookie';
 import { getParsedSessionCookie, validateSession } from '#/modules/auth/helpers/session';
@@ -22,14 +22,14 @@ import { TimeSpan } from '#/utils/time-span';
  * @param next - The next middleware or route handler to call if authentication succeeds.
  * @returns Error response or undefined if the user is allowed to proceed.
  */
-export const isAuthenticated: MiddlewareHandler<Env> = createMiddleware<Env>(async (ctx, next): Promise<Response | undefined> => {
+export const isAuthenticated: MiddlewareHandler<Env> = createMiddleware<Env>(async (ctx, next) => {
   // Get session id from cookie
   const sessionData = await getParsedSessionCookie(ctx);
 
   // If no session id is found (or its corrupted/deprecated), remove session cookie
   if (!sessionData) {
     deleteAuthCookie(ctx, 'session');
-    return errorResponse(ctx, 401, 'no_session', 'warn');
+    throw new ApiError({ status: 401, type: 'no_session', severity: 'warn' });
   }
 
   // Validate session
@@ -38,7 +38,7 @@ export const isAuthenticated: MiddlewareHandler<Env> = createMiddleware<Env>(asy
   // If session validation fails or user not found, remove cookie
   if (!session || !user) {
     deleteAuthCookie(ctx, 'session');
-    return errorResponse(ctx, 401, 'no_session', 'warn');
+    throw new ApiError({ status: 401, type: 'no_session', severity: 'warn' });
   }
 
   // Update user last seen date
@@ -57,7 +57,10 @@ export const isAuthenticated: MiddlewareHandler<Env> = createMiddleware<Env>(asy
   });
 
   // Fetch user's memberships from the database
-  const memberships = await db.select(membershipSummarySelect).from(membershipsTable).where(eq(membershipsTable.userId, user.id));
+  const memberships = await db
+    .select({ ...membershipSummarySelect, createdBy: membershipsTable.createdBy })
+    .from(membershipsTable)
+    .where(eq(membershipsTable.userId, user.id));
   ctx.set('memberships', memberships);
 
   await next();

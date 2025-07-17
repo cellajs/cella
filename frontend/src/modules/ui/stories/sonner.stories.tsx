@@ -3,8 +3,8 @@ import { toast } from 'sonner';
 import { action } from 'storybook/actions';
 import { expect, userEvent, waitFor, within } from 'storybook/test';
 
-import { Button } from '../button';
-import { Toaster } from '../sonner';
+import { Button } from '~/modules/ui/button';
+import { Toaster } from '~/modules/ui/sonner';
 
 /**
  * An opinionated toast component for React.

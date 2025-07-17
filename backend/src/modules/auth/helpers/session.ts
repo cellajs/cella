@@ -1,10 +1,12 @@
 import type { z } from '@hono/zod-openapi';
-import { eq } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 import type { Context } from 'hono';
 import { db } from '#/db/db';
 import { type AuthStrategy, type SessionModel, sessionsTable } from '#/db/schema/sessions';
 import { type UserModel, usersTable } from '#/db/schema/users';
 import { logEvent } from '#/middlewares/logger/log-event';
+import { deleteAuthCookie, getAuthCookie, setAuthCookie } from '#/modules/auth/helpers/cookie';
+import { deviceInfo } from '#/modules/auth/helpers/device-info';
 import { userSelect } from '#/modules/users/helpers/select';
 import { isExpiredDate } from '#/utils/is-expired-date';
 import { getIsoDate } from '#/utils/iso-date';
@@ -12,8 +14,6 @@ import { nanoid } from '#/utils/nanoid';
 import { encodeLowerCased } from '#/utils/oslo';
 import { sessionCookieSchema } from '#/utils/schema/session-cookie';
 import { createDate, TimeSpan } from '#/utils/time-span';
-import { deleteAuthCookie, getAuthCookie, setAuthCookie } from './cookie';
-import { deviceInfo } from './device-info';
 
 /**
  * Sets a user session and stores it in the database.
@@ -80,7 +80,7 @@ export const validateSession = async (hashedSessionToken: string) => {
 
   // Check if the session has expired and invalidate it if so
   if (isExpiredDate(session.expiresAt)) {
-    await invalidateSessionById(session.id);
+    await invalidateSessionById(session.id, session.userId);
     return { session: null, user: null };
   }
 
@@ -88,13 +88,13 @@ export const validateSession = async (hashedSessionToken: string) => {
 };
 
 // Invalidate all sessions based on user id
-export const invalidateUserSessions = async (userId: UserModel['id']) => {
+export const invalidateAllUserSessions = async (userId: UserModel['id']) => {
   await db.delete(sessionsTable).where(eq(sessionsTable.userId, userId));
 };
 
 // Invalidate single session with session id
-export const invalidateSessionById = async (id: string) => {
-  await db.delete(sessionsTable).where(eq(sessionsTable.id, id));
+export const invalidateSessionById = async (id: string, userId: string) => {
+  await db.delete(sessionsTable).where(and(eq(sessionsTable.id, id), eq(sessionsTable.userId, userId)));
 };
 
 export const getParsedSessionCookie = async (ctx: Context, deleteAfterAttempt = false): Promise<z.infer<typeof sessionCookieSchema> | null> => {

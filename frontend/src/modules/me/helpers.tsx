@@ -65,13 +65,11 @@ export const passkeyRegistration = async () => {
     if (!(response instanceof AuthenticatorAttestationResponse)) throw new Error('Unexpected response type');
 
     const credentialData = {
-      userEmail: user.email,
       attestationObject: encodeBase64(new Uint8Array(response.attestationObject)),
       clientDataJSON: encodeBase64(new Uint8Array(response.clientDataJSON)),
     };
 
     const result = await createPasskey({ body: credentialData });
-
     if (!result) toaster(t('error:passkey_add_failed'), 'error');
 
     toaster(t('common:success.passkey_added'), 'success');

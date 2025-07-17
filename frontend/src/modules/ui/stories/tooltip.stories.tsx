@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Plus } from 'lucide-react';
 import { expect, userEvent, waitFor, within } from 'storybook/test';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../tooltip';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '~/modules/ui/tooltip';
 
 /**
  * A popup that displays information related to an element when the element

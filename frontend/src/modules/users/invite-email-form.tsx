@@ -13,11 +13,11 @@ import { SelectEmails } from '~/modules/common/form-fields/select-emails';
 import SelectRoleRadio from '~/modules/common/form-fields/select-role-radio';
 import { useStepper } from '~/modules/common/stepper/use-stepper';
 import type { EntityPage } from '~/modules/entities/types';
+import { useInviteMemberMutation } from '~/modules/memberships/query-mutations';
 import type { InviteMember } from '~/modules/memberships/types';
 import { Badge } from '~/modules/ui/badge';
 import { Button, SubmitButton } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
-import { useInviteMemberMutation } from '../memberships/query-mutations';
 
 interface Props {
   entity?: EntityPage;
@@ -32,12 +32,10 @@ const InviteEmailForm = ({ entity, dialog: isDialog, children }: Props) => {
   const { t } = useTranslation();
   const { nextStep } = useStepper();
 
-  const baseSchema = z.object({
+  const formSchema = z.object({
     emails: z.array(z.email(t('common:invalid.email'))).min(1, { message: t('common:invalid.min_items', { items_count: 'one', item: 'email' }) }),
+    role: z.enum(config.rolesByType.entityRoles).optional(),
   });
-  const schemaWithRole = baseSchema.extend({ role: z.enum(config.rolesByType.entityRoles) });
-
-  const formSchema = z.union([baseSchema, schemaWithRole]);
   type FormValues = z.infer<typeof formSchema>;
 
   const formOptions: UseFormProps<FormValues> = useMemo(
@@ -66,7 +64,9 @@ const InviteEmailForm = ({ entity, dialog: isDialog, children }: Props) => {
   const { mutate: membershipInvite, isPending } = useInviteMemberMutation();
   const { mutate: systemInvite } = useMutation({ mutationFn: (body: FormValues) => baseSystemInvite({ body }), onSuccess });
 
-  const onSubmit = (values: FormValues) => (entity ? membershipInvite({ ...values, entity } as InviteMember, { onSuccess }) : systemInvite(values));
+  const onSubmit = (values: FormValues) => {
+    entity ? membershipInvite({ ...values, entity } as InviteMember, { onSuccess }) : systemInvite(values);
+  };
 
   return (
     <Form {...form}>

@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Bold, Italic, Underline } from 'lucide-react';
 
-import { ToggleGroup, ToggleGroupItem } from '../toggle-group';
+import { ToggleGroup, ToggleGroupItem } from '~/modules/ui/toggle-group';
 
 /**
  * A set of two-state buttons that can be toggled on or off.

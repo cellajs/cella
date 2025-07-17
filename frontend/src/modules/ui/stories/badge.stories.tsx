@@ -1,6 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-
-import { Badge } from '../badge';
+import { Badge } from '~/modules/ui/badge';
 
 /**
  * Displays a badge or a component that looks like a badge.

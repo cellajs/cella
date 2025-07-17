@@ -1,9 +1,10 @@
 import { SearchParamError, useRouterState } from '@tanstack/react-router';
-import type { TFunction } from 'i18next';
+import i18n from 'i18next';
 import { ChevronUp, Home, MessageCircleQuestion, RefreshCw } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { type RefObject, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+
 import { ApiError } from '~/lib/api';
 import { AppFooter } from '~/modules/common/app-footer';
 import { contactFormHandler } from '~/modules/common/contact-form/contact-form-handler';
@@ -26,36 +27,43 @@ export const handleAskForHelp = (ref: RefObject<HTMLButtonElement | null>) => {
   window.Gleap.openConversations();
 };
 
-export const getErrorTitle = (t: TFunction, error?: ErrorNoticeError, errorFromQuery?: string) => {
-  if (errorFromQuery) return t(`error:${errorFromQuery}`);
-  if (!error) return;
+export const getErrorTitle = (error?: ErrorNoticeError, errorFromQuery?: string): string => {
+  if (errorFromQuery) return i18n.t(`error:${errorFromQuery}`);
 
-  if (error instanceof SearchParamError) return t('error:invalid_param');
+  if (!error) return i18n.t('error:error');
 
-  if ('status' in error) {
-    if (error.entityType) return t(`error:resource_${error.type}`, { resource: t(error.entityType) });
-    if (error.type) return t(`error:${error.type}`);
-    if (error.message) return error.message;
+  if (error instanceof SearchParamError) return i18n.t('error:invalid_param');
+
+  if (error instanceof ApiError) {
+    const { type, entityType, name } = error;
+    if (entityType && type) return i18n.t(`error:resource_${type}`, { resource: i18n.t(entityType) });
+
+    if (type) return i18n.t(`error:${type}`);
+
+    if (name) return name;
   }
 
-  if (error.name) return error.name;
+  // Fallback if none of the above matched
+  return i18n.t('error:error');
 };
 
-export const getErrorText = (t: TFunction, error?: ErrorNoticeError, errorFromQuery?: string) => {
-  if (errorFromQuery) return t(`error:${errorFromQuery}.text`);
-  if (!error) return;
+export const getErrorText = (error?: ErrorNoticeError, errorFromQuery?: string) => {
+  if (errorFromQuery) return i18n.t(`error:${errorFromQuery}.text`);
+  if (!error) return i18n.t('error:reported_try_or_contact');
 
-  if (error instanceof SearchParamError) return t('error:invalid_param.text');
+  if (error instanceof SearchParamError) return i18n.t('error:invalid_param.text');
 
-  if ('status' in error) {
+  if (error instanceof ApiError) {
+    const { severity, type, entityType, message } = error;
     // Check if the error has an entityType
-    if (error.entityType) return t(`error:resource_${error.type}.text`, { resource: error.entityType });
+    if (entityType && type) return i18n.t(`error:resource_${type}.text`, { resource: entityType });
     // If no entityType, check if error has a type
-    if (error.type) return t(`error:${error.type}.text`);
-    if (error.message) return error.message;
-  }
+    if (type) return i18n.t(`error:${type}.text`);
 
-  if (error instanceof ApiError && error.severity === 'info') return error.message;
+    if (severity === 'info') return message;
+  }
+  if (error.message) return error.message;
+  return i18n.t('error:reported_try_or_contact');
 };
 
 /**
@@ -95,9 +103,9 @@ const ErrorNotice = ({ error, resetErrorBoundary, level }: ErrorNoticeProps) => 
         <div className="mt-auto mb-auto">
           <Card className="max-w-[36rem] m-4">
             <CardHeader className="text-center">
-              <CardTitle className="text-2xl mb-2 justify-center">{getErrorTitle(t, error, errorFromQuery) || t('error:error')}</CardTitle>
+              <CardTitle className="text-2xl mb-2 justify-center">{getErrorTitle(error, errorFromQuery)}</CardTitle>
               <CardDescription className="text-lg">
-                <span>{getErrorText(t, error, errorFromQuery) || t('error:reported_try_or_contact')}</span>
+                <span>{getErrorText(error, errorFromQuery)}</span>
                 <span className="ml-1">{severity === 'warn' && t('error:contact_mistake')}</span>
                 <span className="ml-1">{severity === 'error' && t('error:try_again_later')}</span>
               </CardDescription>

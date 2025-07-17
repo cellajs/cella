@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { expect, userEvent, within } from 'storybook/test';
-import { Checkbox } from '../checkbox';
-import { Label } from '../label';
+import { Checkbox } from '~/modules/ui/checkbox';
+import { Label } from '~/modules/ui/label';
 
 /**
  * A control that allows the user to toggle between checked and not checked.

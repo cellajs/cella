@@ -6,7 +6,7 @@ import type { CustomBlockTypes } from '~/modules/common/blocknote/types';
 
 export const slashMenu = (props: SuggestionMenuProps<DefaultReactSuggestionItem>, originalItemCount: number, allowedTypes: CustomBlockTypes[]) => {
   const { items, loadingState, selectedIndex, onItemClick } = props;
-  const itemRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const itemRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const isMobile = useBreakpoints('max', 'sm');
   const indexedItemCount = customSlashIndexedItems.filter((item) => allowedTypes.includes(item)).length;
 
@@ -22,7 +22,7 @@ export const slashMenu = (props: SuggestionMenuProps<DefaultReactSuggestionItem>
     return triggerItemClick(item, e);
   };
 
-  const triggerItemClick = (item: DefaultReactSuggestionItem, event: KeyboardEvent | React.MouseEvent<HTMLDivElement, MouseEvent>) => {
+  const triggerItemClick = (item: DefaultReactSuggestionItem, event: KeyboardEvent | React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
     event.preventDefault();
     onItemClick?.(item);
   };
@@ -55,19 +55,17 @@ export const slashMenu = (props: SuggestionMenuProps<DefaultReactSuggestionItem>
   return (
     <div className="slash-menu">
       {items.map((item, index) => (
-        <div key={item.title}>
+        <div role="tablist" key={item.title}>
           {!isMobile && index === indexedItemCount && items.length === originalItemCount && <hr className="slash-menu-separator" />}
-          {/** biome-ignore lint/a11y/useSemanticElements: TODO(REVIEW) */}
-          {/** biome-ignore lint/a11y/useAriaPropsSupportedByRole: TODO(REVIEW) */}
-          <div
+          <button
             ref={(el) => {
               itemRefs.current[index] = el;
             }}
-            className="slash-menu-item"
+            role="tab"
+            type="button"
             aria-selected={selectedIndex === index}
+            className="slash-menu-item !px-[0.5rem]"
             onMouseDown={(e) => triggerItemClick(item, e)}
-            onKeyDown={() => {}}
-            role="button"
             tabIndex={0}
           >
             <div className="flex items-center gap-3 mr-2 text-sm">
@@ -77,7 +75,7 @@ export const slashMenu = (props: SuggestionMenuProps<DefaultReactSuggestionItem>
             {!isMobile && items.length === originalItemCount && index < indexedItemCount && (
               <span className="slash-menu-item-badge">{index + 1}</span>
             )}
-          </div>
+          </button>
         </div>
       ))}
     </div>
