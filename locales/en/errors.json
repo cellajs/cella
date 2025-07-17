@@ -1,4 +1,7 @@
 {
+
+  "admin_login_forbidden": "Login forbidden",
+  "admin_login_forbidden.text": "Access denied: system admin login from this IP is not permitted.",
   "bad_request_action": "Bad request: Server could not process the request",
   "body_too_large": "Request body too large",
   "body_too_large.text": "The request body is too large. Please try again later or contact support.",
