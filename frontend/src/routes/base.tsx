@@ -74,11 +74,11 @@ export const AppRoute = createRoute({
       <AppLayout />
     </Suspense>
   ),
-  loader: async ({ location, cause }) => {
+  beforeLoad: async ({ location, cause }) => {
     if (cause !== 'enter') return;
 
     try {
-      console.debug('Fetch me & menu while entering app ', location.pathname);
+      console.debug('Fetching me before entering app:', location.pathname);
 
       // If offline, try to use stored user
       const storedUser = useUserStore.getState().user;
@@ -88,13 +88,7 @@ export const AppRoute = createRoute({
       }
 
       // Fetch and set user
-      const user = await queryClient.ensureQueryData({ ...meQueryOptions(), revalidateIfStale: true });
-
-      // Defer menu loading (won't block rendering)
-      if (user)
-        return {
-          menuData: await defer(queryClient.ensureQueryData({ ...menuQueryOptions(), revalidateIfStale: true })),
-        };
+      await queryClient.ensureQueryData({ ...meQueryOptions(), revalidateIfStale: true });
     } catch (error) {
       if (error instanceof Error) {
         Sentry.captureException(error);
@@ -110,6 +104,20 @@ export const AppRoute = createRoute({
 
     // If location is root and has user, redirect to home
     if (location.pathname === '/') throw redirect({ to: config.defaultRedirectPath, replace: true });
+  },
+  loader: async ({ cause }) => {
+    if (cause !== 'enter') return;
+
+    try {
+      console.debug('Fetching menu while loading app:', location.pathname);
+
+      return await defer(queryClient.ensureQueryData({ ...menuQueryOptions(), revalidateIfStale: true }));
+    } catch (error) {
+      if (error instanceof Error) {
+        Sentry.captureException(error);
+        onError(error);
+      }
+    }
   },
 });
 
