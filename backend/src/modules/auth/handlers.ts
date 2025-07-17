@@ -635,18 +635,8 @@ const authRouteHandlers = app
         ...(inviteToken && inviteToken.type === 'membership' && { tokenId: inviteToken.id }),
       });
     } catch (error) {
-      // Handle invalid credentials
-      if (error instanceof OAuth2RequestError) {
-        throw new ApiError({ status: 401, type: 'invalid_credentials', severity: 'warn', meta: { strategy } });
-      }
-
-      if (error instanceof Error) {
-        const errorMessage = error.message;
-        logEvent('Error signing in with GitHub', { strategy, errorMessage }, 'error');
-        throw new ApiError({ status: 401, type: 'oauth_failed', severity: 'warn', meta: { strategy } });
-      }
-
-      throw error;
+      const type = error instanceof OAuth2RequestError ? 'invalid_credentials' : 'oauth_failed';
+      throw new ApiError({ status: 401, type, severity: 'warn', meta: { strategy }, ...(error instanceof Error ? { originalError: error } : {}) });
     } finally {
       clearOauthSession(ctx);
     }
@@ -715,18 +705,8 @@ const authRouteHandlers = app
         ...(inviteToken?.type === 'membership' && { tokenId: inviteToken.id }), // Conditionally add tokenId if membership invitation
       });
     } catch (error) {
-      // Handle invalid credentials
-      if (error instanceof OAuth2RequestError) {
-        throw new ApiError({ status: 401, type: 'invalid_credentials', severity: 'warn', meta: { strategy } });
-      }
-
-      if (error instanceof Error) {
-        const errorMessage = error.message;
-        logEvent('Error signing in with Google', { strategy, errorMessage }, 'error');
-        throw new ApiError({ status: 401, type: 'oauth_failed', severity: 'warn', meta: { strategy } });
-      }
-
-      throw error;
+      const type = error instanceof OAuth2RequestError ? 'invalid_credentials' : 'oauth_failed';
+      throw new ApiError({ status: 401, type, severity: 'warn', meta: { strategy }, ...(error instanceof Error ? { originalError: error } : {}) });
     } finally {
       clearOauthSession(ctx);
     }
@@ -797,18 +777,8 @@ const authRouteHandlers = app
         ...(inviteToken && inviteToken.type === 'membership' && { tokenId: inviteToken.id }),
       });
     } catch (error) {
-      // Handle invalid credentials
-      if (error instanceof OAuth2RequestError) {
-        throw new ApiError({ status: 401, type: 'invalid_credentials', severity: 'warn', meta: { strategy } });
-      }
-
-      if (error instanceof Error) {
-        const errorMessage = error.message;
-        logEvent('Error signing in with Microsoft', { strategy, errorMessage }, 'error');
-        throw new ApiError({ status: 401, type: 'oauth_failed', severity: 'warn', meta: { strategy } });
-      }
-
-      throw error;
+      const type = error instanceof OAuth2RequestError ? 'invalid_credentials' : 'oauth_failed';
+      throw new ApiError({ status: 401, type, severity: 'warn', meta: { strategy }, ...(error instanceof Error ? { originalError: error } : {}) });
     } finally {
       clearOauthSession(ctx);
     }
@@ -849,9 +819,7 @@ const authRouteHandlers = app
       if (!isValid) throw new ApiError({ status: 401, type: 'invalid_token', severity: 'warn', meta: { strategy } });
     } catch (error) {
       if (error instanceof Error) {
-        const errorMessage = error.message;
-        logEvent('Error verifying passkey', { strategy, errorMessage }, 'error');
-        throw new ApiError({ status: 500, type: 'passkey_failed', severity: 'error', meta: { strategy } });
+        throw new ApiError({ status: 500, type: 'passkey_failed', severity: 'error', meta: { strategy }, originalError: error });
       }
     }
 
