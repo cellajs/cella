@@ -12,6 +12,7 @@ import UnsavedBadge from '~/modules/common/unsaved-badge';
 import DeleteOrganizations from '~/modules/organizations/delete-organizations';
 // import Subscription from '~/modules/organizations/subscription';
 import type { Organization } from '~/modules/organizations/types';
+import UpdateOrganizationDetailsForm from '~/modules/organizations/update-organization-details-form';
 import UpdateOrganizationForm from '~/modules/organizations/update-organization-form';
 import { Button } from '~/modules/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/modules/ui/card';
@@ -19,6 +20,7 @@ import { OrganizationSettingsRoute } from '~/routes/organizations';
 
 const tabs = [
   { id: 'general', label: 'common:general' },
+  { id: 'details', label: 'common:details' },
   // { id: 'subscription', label: 'common:subscription' },
   { id: 'delete-organization', label: 'common:delete_resource', resource: 'common:organization' },
 ];
@@ -68,6 +70,30 @@ const OrganizationSettings = ({ organization }: { organization: Organization }) 
             </CardHeader>
             <CardContent>
               <UpdateOrganizationForm
+                organization={organization}
+                callback={(organization) => {
+                  if (idOrSlug !== organization.slug) {
+                    navigate({
+                      to: '/organizations/$idOrSlug/settings',
+                      params: { idOrSlug: organization.slug },
+                      replace: true,
+                    });
+                  }
+                }}
+              />
+            </CardContent>
+          </Card>
+        </AsideAnchor>
+
+        <AsideAnchor id="details" extraOffset>
+          <Card id="update-organization-details">
+            <CardHeader>
+              <CardTitle>
+                <UnsavedBadge title={t('common:details')} />
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <UpdateOrganizationDetailsForm
                 organization={organization}
                 callback={(organization) => {
                   if (idOrSlug !== organization.slug) {

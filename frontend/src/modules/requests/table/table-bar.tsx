@@ -126,7 +126,7 @@ export const RequestsTableBar = ({ total, selected, searchVars, setSearch, colum
               <TableBarButton variant="ghost" onClick={clearSelection} icon={XSquare} label={t('common:clear')} />
             </>
           )}
-          {selected.length === 0 && <TableCount count={total} type="request" isFiltered={isFiltered} onResetFilters={onResetFilters} />}
+          {selected.length === 0 && <TableCount count={total} label="common:request" isFiltered={isFiltered} onResetFilters={onResetFilters} />}
         </FilterBarActions>
 
         <div className="sm:grow" />

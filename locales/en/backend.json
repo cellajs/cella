@@ -12,7 +12,7 @@
   "email.invite_expires": "This link will expire in 7 days.",
   "email.member_invite.preview": "Invited to {{orgName}} on {{appName}}",
   "email.member_invite.subject": "Invitation to {{entity}}",
-  "email.member_invite.text": "You have been invited to <strong>{{orgName}}</strong> on <strong>{{appName}}</strong> by {{senderName}}.",
+  "email.member_invite.text": "{{senderName}} has invited you to join <strong>{{orgName}}</strong> on <strong>{{appName}}</strong> as a <strong>{{role}}</strong>",
   "email.member_invite.title": "You have been invited to join <strong>{{orgName}}</strong>",
   "email.newsletter.title": "You received a newsletter as a member of {{orgName}}",
   "email.support_email": "Contact support",

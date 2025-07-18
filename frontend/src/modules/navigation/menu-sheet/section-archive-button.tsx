@@ -21,7 +21,7 @@ export const SectionArchiveButton = ({ archiveToggleClick, archivedCount }: Sect
         group-data-[submenu=true]/archived:h-8"
       >
         <div className="w-12 py-2 flex justify-center items-center">
-          <Archive size={16} className="mr-0.5 items-center opacity-75" />
+          <Archive size={16} className="ml-2 items-center opacity-75" />
         </div>
         <div className="truncate grow text-left p-2 pl-2 opacity-75">
           <span className="text-sm group-data-[submenu=true]/archived:text-xs">{t('common:archived')}</span>

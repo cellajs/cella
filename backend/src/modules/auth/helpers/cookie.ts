@@ -28,7 +28,7 @@ export type CookieName =
 export const setAuthCookie = async (ctx: Context, name: CookieName, content: string, timeSpan: TimeSpan) => {
   const versionedName = `${config.slug}-${name}-${config.cookieVersion}`;
   const options = {
-    secure: isProduction,
+    secure: config.mode !== 'development',
     path: '/',
     domain: isProduction ? config.domain : undefined,
     httpOnly: true,

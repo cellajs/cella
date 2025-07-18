@@ -19,7 +19,8 @@
     "baseUrl": ".",
 
     "paths": {
-      "#/*": ["./src/*"]
+      "#/*": ["./src/*"],
+      "#json/*": ["../json/*"],
     }
   },
   "include": ["src/**/*", "drizzle.config.ts", "emails", "scripts", "trigger.config.ts", "../config/*"],

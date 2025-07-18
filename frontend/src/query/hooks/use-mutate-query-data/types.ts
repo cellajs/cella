@@ -8,7 +8,6 @@ export interface ItemData {
 }
 
 export type EntityData = { id: string; entityType: EntityType };
-
 export type QueryDataActions = 'create' | 'update' | 'remove' | 'updateMembership';
 
 export type EntityQueryData = QueryData<ItemData>;

@@ -6,10 +6,10 @@ export default {
   debug: false,
 
   domain: 'cella.dev',
-  frontendUrl: 'https://cella.dev',
-  backendUrl: 'https://api.cella.dev',
-  backendAuthUrl: 'https://api.cella.dev/auth',
-  electricUrl: 'https://electric.cella.dev',
+  frontendUrl: 'https://staging.cella.dev',
+  backendUrl: 'https://api-staging.cella.dev',
+  backendAuthUrl: 'https://api-staging.cella.dev/auth',
+  electricUrl: 'https://electric-staging.cella.dev',
 
   // Hide chat widget in staging
   gleapToken: undefined,

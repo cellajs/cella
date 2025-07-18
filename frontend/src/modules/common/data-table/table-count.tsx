@@ -5,7 +5,7 @@ import { Button } from '~/modules/ui/button';
 import { cn } from '~/utils/cn';
 
 interface TableCountProps {
-  type: string;
+  label: string;
   className?: string;
   count?: number;
   isFiltered?: boolean;
@@ -15,7 +15,7 @@ interface TableCountProps {
 /**
  * Displays the count of items in a table
  */
-const TableCount = ({ count, type, className, isFiltered, children, onResetFilters }: TableCountProps) => {
+const TableCount = ({ count, label, className, isFiltered, children, onResetFilters }: TableCountProps) => {
   const { t } = useTranslation();
 
   return (
@@ -29,7 +29,7 @@ const TableCount = ({ count, type, className, isFiltered, children, onResetFilte
       {typeof count === 'number' && (
         <div className="flex items-center gap-1 text-muted-foreground">
           <span>{new Intl.NumberFormat('de-DE').format(count)}</span>
-          <span>{t(`common:${type}${count === 1 ? '' : 's'}`).toLowerCase()}</span>
+          <span>{t(label, { count }).toLowerCase()}</span>
           {isFiltered && <span>{` ${t('common:found')}`}</span>}
         </div>
       )}

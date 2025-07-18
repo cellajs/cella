@@ -1,5 +1,8 @@
+import { Users } from 'lucide-react';
 import { forwardRef, memo, useEffect, useImperativeHandle } from 'react';
 import type { RowsChangeData, SortColumn } from 'react-data-grid';
+import { useTranslation } from 'react-i18next';
+import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { DataTable } from '~/modules/common/data-table';
 import { tablePropsAreEqual } from '~/modules/common/data-table/table-props-are-equal';
 import type { BaseTableMethods, BaseTableProps } from '~/modules/common/data-table/types';
@@ -13,6 +16,8 @@ type BaseDataTableProps = MembersTableProps & BaseTableProps<Member, MemberSearc
 
 const BaseDataTable = memo(
   forwardRef<BaseTableMethods, BaseDataTableProps>(({ entity, columns, searchVars, sortColumns, setSortColumns, setTotal, setSelected }, ref) => {
+    const { t } = useTranslation();
+
     const entityType = entity.entityType;
     const organizationId = entity.organizationId || entity.id;
 
@@ -92,6 +97,7 @@ const BaseDataTable = memo(
           onSelectedRowsChange,
           sortColumns,
           onSortColumnsChange,
+          NoRowsComponent: <ContentPlaceholder icon={Users} title={t('common:no_resource_yet', { resource: t('common:members').toLowerCase() })} />,
         }}
       />
     );
