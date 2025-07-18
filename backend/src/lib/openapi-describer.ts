@@ -68,7 +68,7 @@ export function enhanceOpenAPIDescription(original: string | undefined, middlewa
 
   const combinedSections = sections
     .filter(Boolean)
-    .map((line) => line + '  ') // add two spaces at line end
+    .map((line) => `${line}  `) // add two spaces at line end
     .join('\n');
   const originalDesc = original?.trim() ?? '';
 
