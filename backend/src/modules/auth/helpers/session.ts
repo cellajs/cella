@@ -28,7 +28,7 @@ export const setUserSession = async (ctx: Context, user: UserModel, strategy: Au
     const allowList = (env.REMOTE_SYSTEM_ACCESS_IP ?? '').split(',');
     const allowAll = allowList.includes('*');
 
-    if (!allowAll && (!ip || !allowList.includes(ip))) throw new ApiError({ status: 403, type: 'admin_login_forbidden', severity: 'warn' });
+    if (!allowAll && (!ip || !allowList.includes(ip))) throw new ApiError({ status: 403, type: 'system_access_forbidden', severity: 'warn' });
   }
   // Get device information
   const device = deviceInfo(ctx);
