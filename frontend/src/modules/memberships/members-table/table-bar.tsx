@@ -149,7 +149,7 @@ export const MembersTableBar = ({
               isAdmin && <TableBarButton ref={inviteButtonRef} icon={Mail} label={t('common:invite')} onClick={() => openInviteDialog()} />
             )}
             {selected.length === 0 && (
-              <TableCount count={total} type="member" isFiltered={isFiltered} onResetFilters={onResetFilters}>
+              <TableCount count={total} label="common:member" isFiltered={isFiltered} onResetFilters={onResetFilters}>
                 {isAdmin && !isFiltered && <MembershipInvitations entity={entity} />}
               </TableCount>
             )}

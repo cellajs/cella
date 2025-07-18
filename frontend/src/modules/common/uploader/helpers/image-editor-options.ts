@@ -8,7 +8,7 @@ const baseCropperOptions = {
   responsive: true,
   guides: false,
   center: false,
-  highlight: false,
+  Highlight: false,
   movable: false,
   rotatable: false,
   scalable: false,

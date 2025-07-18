@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import timezones from '~/json/timezones.json';
+import timezones from '#json/timezones.json';
 import Combobox from '~/modules/ui/combobox';
 
 const SelectTimezone = ({ onChange }: { onChange: (value: string) => void }) => {

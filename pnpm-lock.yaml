@@ -769,6 +769,9 @@ importers:
       cross-env:
         specifier: ^7.0.3
         version: 7.0.3
+      hono:
+        specifier: 4.8.5
+        version: 4.8.5
       playwright:
         specifier: ^1.54.1
         version: 1.54.1

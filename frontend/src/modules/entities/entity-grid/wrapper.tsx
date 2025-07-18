@@ -8,6 +8,7 @@ import type { MembershipRoles } from '~/modules/memberships/types';
 // TODO use filterOptions to include roles and userId and possibly other filters in the future
 export interface EntityGridWrapperProps {
   entityType: ContextEntityType;
+  label: string;
   userId?: string;
   focusView?: boolean;
   saveDataInSearch?: boolean;
@@ -15,17 +16,26 @@ export interface EntityGridWrapperProps {
   tileComponent?: React.ElementType;
 }
 
-const EntityGridWrapper = ({ entityType, userId, roles, focusView = true, saveDataInSearch = true, tileComponent }: EntityGridWrapperProps) => {
+const EntityGridWrapper = ({
+  entityType,
+  label,
+  userId,
+  roles,
+  focusView = true,
+  saveDataInSearch = true,
+  tileComponent,
+}: EntityGridWrapperProps) => {
   const { search, setSearch } = useSearchParams<EntitySearch>({ saveDataInSearch });
 
   const [totalCount, setTotalCount] = useState<number | undefined>(undefined);
 
   return (
     <div className="flex flex-col gap-4 h-full">
-      <EntityGridBar totalCount={totalCount} searchVars={search} countName={entityType} setSearch={setSearch} focusView={focusView} />
+      <EntityGridBar totalCount={totalCount} searchVars={search} label={label} setSearch={setSearch} focusView={focusView} />
 
       <BaseEntityGrid
         entityType={entityType}
+        label={label}
         roles={roles}
         userId={userId}
         searchVars={search}

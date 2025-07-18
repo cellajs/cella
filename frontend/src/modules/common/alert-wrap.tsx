@@ -23,14 +23,15 @@ export type AlertWrap = {
 export const AlertWrap = ({ id, icon: Icon, children, className = '', title = '', variant = 'default' }: AlertWrap) => {
   const { t } = useTranslation();
   const { alertsSeen, setAlertSeen, downAlert } = useAlertStore();
+
   const showAlert = !alertsSeen.includes(id);
-  const closeAlert = () => setAlertSeen(id);
+  const setAsSeen = () => setAlertSeen(id);
 
   if (downAlert || !showAlert) return;
 
   return (
     <Alert variant={variant} className={cn('relative', className)}>
-      <Button variant="ghost" size="sm" className="absolute top-2 right-2" onClick={closeAlert}>
+      <Button variant="ghost" size="sm" className="absolute top-2 right-2" onClick={setAsSeen}>
         <X size={16} />
       </Button>
       {Icon && <Icon size={16} />}

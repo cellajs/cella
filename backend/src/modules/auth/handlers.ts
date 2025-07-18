@@ -590,6 +590,12 @@ const authRouteHandlers = app
   .openapi(authRoutes.githubSignInCallback, async (ctx) => {
     const { code, state, error } = ctx.req.valid('query');
 
+    // Handle redirect flow for custom app use (e.g not auth)
+    try {
+      const parsedState = JSON.parse(atob(state));
+      if (parsedState.redirectUrl) return ctx.redirect(`${parsedState.redirectUrl}?code=${code}&state=${state}&error=${error}`, 302);
+    } catch (_) {} // silently ignore (standard OAuth state)
+
     // redirect if there is no code or error in callback
     if (error || !code) throw new ApiError({ status: 400, type: 'oauth_failed', severity: 'warn', redirectToFrontend: true });
 

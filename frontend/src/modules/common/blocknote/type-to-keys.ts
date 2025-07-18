@@ -1,6 +1,5 @@
 import type { CustomBlockTypes, SlashItemKeys } from '~/modules/common/blocknote/types';
 
-// TODO (FIX) toggle button subbmit form
 export const baseBlocknoteTypeToKeys: Record<CustomBlockTypes, SlashItemKeys[]> = {
   table: ['table'],
   notify: ['notify'],

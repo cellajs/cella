@@ -22,6 +22,7 @@ import { defaultHook } from '#/utils/default-hook';
 import { getIsoDate } from '#/utils/iso-date';
 import { getOrderColumn } from '#/utils/order-column';
 import { prepareStringForILikeFilter } from '#/utils/sql';
+import { defaultWelcomeText } from '#json/text-blocks.json';
 
 const app = new OpenAPIHono<Env>({ defaultHook });
 
@@ -51,6 +52,7 @@ const organizationRouteHandlers = app
         shortName: name,
         slug,
         languages: [config.defaultLanguage],
+        welcomeText: defaultWelcomeText,
         defaultLanguage: config.defaultLanguage,
         createdBy: user.id,
       })

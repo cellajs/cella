@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import countries from '~/json/countries.json';
+import countries from '#json/countries.json';
 import CountryFlag from '~/modules/common/country-flag';
 import Combobox from '~/modules/ui/combobox';
 

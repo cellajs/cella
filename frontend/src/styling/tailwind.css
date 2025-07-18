@@ -119,6 +119,15 @@
     }
   }
 
+  /* Disable clicking scrolbar tracks to change position */
+  .scrollbar-track {
+    pointer-events: none;
+  }
+
+  .scrollbar-track .scrollbar-thumb {
+    pointer-events: auto;
+  }
+
   /* Overwrite elements for focus view when table is present in it  */
   body.focus-view-table,
   .focus-view-table .focus-view-container {
@@ -145,5 +154,11 @@
   .tsqd-open-btn-container,
   .TanStackRouterDevtools > button {
     display: none !important;
+  }
+
+  .guest-mode .guest-restrict {
+    opacity: 0.5;
+    pointer-events: none;
+    cursor: not-allowed;
   }
 }

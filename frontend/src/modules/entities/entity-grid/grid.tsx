@@ -1,10 +1,12 @@
 import { useQuery } from '@tanstack/react-query';
 import { t } from 'i18next';
+import { Bird, Search } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useInView } from 'react-intersection-observer';
 import type z from 'zod';
 import type { zGetEntitiesWithAdminsData } from '~/api.gen/zod.gen';
 import { useOnlineManager } from '~/hooks/use-online-manager';
+import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { GridSkeleton } from '~/modules/entities/entity-grid/skeleton';
 import { EntityTile } from '~/modules/entities/entity-grid/tile';
 import type { EntityGridWrapperProps } from '~/modules/entities/entity-grid/wrapper';
@@ -24,6 +26,7 @@ interface Props extends EntityGridWrapperProps {
 export const BaseEntityGrid = ({
   tileComponent: TileComponent = EntityTile,
   entityType,
+  label,
   roles,
   userId,
   searchVars,
@@ -43,6 +46,8 @@ export const BaseEntityGrid = ({
     isFetching,
     error,
   } = useQuery(contextEntitiesQueryOptions({ ...searchVars, roles, type: entityType, targetUserId: userId }));
+
+  const isFiltered = !!searchVars.q;
 
   useEffect(() => {
     if (isFetching) return;
@@ -69,6 +74,12 @@ export const BaseEntityGrid = ({
   }, [isLoading]);
 
   if (!initialDone) return <GridSkeleton />;
+
+  if (!isFetching && !error && !isFiltered && !totalCount)
+    return <ContentPlaceholder icon={Bird} title={t('common:no_resource_yet', { resource: t(label, { count: 0 }).toLowerCase() })} />;
+
+  if (!isFetching && !error && !totalCount)
+    return <ContentPlaceholder icon={Search} title={t('common:no_resource_found', { resource: t(label, { count: 0 }).toLowerCase() })} />;
 
   return (
     <div className="mb-12">

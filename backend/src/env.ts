@@ -18,8 +18,8 @@ export const env = createEnv({
       .string()
       .optional()
       .transform((v) => v === 'true'),
-    DATABASE_URL: z.string().url(),
-    NODE_ENV: z.union([z.literal('development'), z.literal('production'), z.literal('test')]),
+    DATABASE_URL: z.url(),
+    NODE_ENV: z.union([z.literal('development'), z.literal('production'), z.literal('staging'), z.literal('tunnel')]),
     PORT: z.string().optional(),
     UNSUBSCRIBE_SECRET: z.string(),
 
@@ -60,6 +60,8 @@ export const env = createEnv({
     S3_ACCESS_KEY_SECRET: z.string().default(''),
 
     TRIGGER_SECRET_KEY: z.string().optional(),
+
+    WEBHOOK_SECRET: z.string().optional(),
   },
   runtimeEnv: process.env,
   emptyStringAsUndefined: true,

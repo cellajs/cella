@@ -83,6 +83,7 @@ const UpdateOrganizationForm = ({ organization, callback, sheet: isSheet }: Prop
           entity={organization}
         />
         <InputFormField control={form.control} name="name" label={t('common:name')} required />
+        <InputFormField control={form.control} name="shortName" label={t('common:short_name')} required />
         <SlugFormField
           control={form.control}
           entityType="organization"
@@ -90,7 +91,6 @@ const UpdateOrganizationForm = ({ organization, callback, sheet: isSheet }: Prop
           description={t('common:resource_handle.text', { resource: t('common:organization').toLowerCase() })}
           previousSlug={organization.slug}
         />
-        <InputFormField control={form.control} name="shortName" label={t('common:short_name')} required />
         <DomainsFormField control={form.control} label={t('common:email_domains')} description={t('common:email_domains.text')} />
         <InputFormField
           control={form.control}
@@ -169,6 +169,21 @@ const UpdateOrganizationForm = ({ organization, callback, sheet: isSheet }: Prop
             </FormItem>
           )}
         />
+
+        {/* NOT IN USE ATM <Collapsible>
+          <CollapsibleTrigger asChild>
+            <Button variant="ghost" className="group w-full font-normal opacity-70 hover:opacity-100" size="sm">
+              <UnfoldVertical size={16} className="group-data-[state=open]:hidden" />
+              <FoldVertical size={16} className="hidden group-data-[state=open]:block" />
+              <span className="ml-2">
+                <span className="block group-data-[state=open]:hidden">{t('common:show_advanced_settings')}</span>
+                <span className="hidden group-data-[state=open]:block">{t('common:hide_advanced_settings')}</span>
+              </span>
+            </Button>
+          </CollapsibleTrigger>
+          <CollapsibleContent className='mt-3 flex flex-col gap-4'>
+          </CollapsibleContent>
+        </Collapsible> */}
 
         <div className="flex flex-col sm:flex-row gap-2">
           <SubmitButton disabled={!form.isDirty} loading={isPending}>
