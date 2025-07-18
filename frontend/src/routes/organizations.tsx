@@ -73,7 +73,6 @@ export const OrganizationMembersRoute = createRoute({
   staticData: { isAuth: true },
   getParentRoute: () => OrganizationRoute,
   loaderDeps: ({ search: { q, sort, order, role } }) => ({ q, sort, order, role }),
-
   component: () => {
     const loaderData = useLoaderData({ from: OrganizationRoute.id });
 
@@ -104,7 +103,7 @@ export const OrganizationAttachmentsRoute = createRoute({
     if (!organization) return;
     return (
       <Suspense>
-        <AttachmentsTable key={organization.id} entity={organization} />
+        <AttachmentsTable canUpload={false} key={organization.id} entity={organization} />
       </Suspense>
     );
   },

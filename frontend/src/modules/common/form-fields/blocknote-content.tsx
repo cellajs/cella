@@ -1,5 +1,5 @@
 import type { Control } from 'react-hook-form';
-import { BlockNote } from '~/modules/common/blocknote';
+import BlockNote from '~/modules/common/blocknote';
 import type { BaseUppyFilePanelProps, CommonBlockNoteProps } from '~/modules/common/blocknote/types';
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
 
@@ -10,6 +10,7 @@ type Props = {
   disabled?: boolean;
   BaseBlockNoteProps: Omit<CommonBlockNoteProps, 'defaultValue' | 'updateData' | 'filePanel' | 'baseFilePanelProps'> & {
     baseFilePanelProps: BaseUppyFilePanelProps;
+    autofocus?: boolean;
   };
 } & (
   | {
@@ -28,7 +29,7 @@ const BlockNoteContent = ({
   name,
   required,
   disabled,
-  BaseBlockNoteProps: { excludeBlockTypes = ['bulletListItem', 'checkListItem', 'table', 'notify'], ...restBlockNoteProps },
+  BaseBlockNoteProps: { excludeBlockTypes = ['bulletListItem', 'checkListItem', 'table', 'notify'], autofocus, ...restBlockNoteProps },
 }: Props) => {
   return (
     <FormField
@@ -44,7 +45,14 @@ const BlockNoteContent = ({
               </FormLabel>
             )}
             <FormControl>
-              <BlockNote type="create" defaultValue={value} excludeBlockTypes={excludeBlockTypes} updateData={onChange} {...restBlockNoteProps} />
+              <BlockNote
+                autofocus={autofocus}
+                type="create"
+                defaultValue={value}
+                excludeBlockTypes={excludeBlockTypes}
+                updateData={onChange}
+                {...restBlockNoteProps}
+              />
             </FormControl>
             <FormMessage />
           </FormItem>

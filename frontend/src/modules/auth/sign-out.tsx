@@ -51,7 +51,8 @@ export const SignOut = () => {
         toaster(t('common:success.signed_out'), 'success');
         navigate({ to: '/about', replace: true });
       } catch (error) {
-        toaster(t('common:error.signed_out_failed'), 'error');
+        toaster(t('common:already_signed_out'), 'warning');
+        navigate({ to: '/about', replace: true });
       }
     };
 

@@ -35,6 +35,7 @@
     "generate": "pnpm --filter backend generate",
     "clean": "rimraf backend/dist frontend/dist frontend/stats",
     "dev": "pnpm clean && cross-env FORCE_COLOR=1 pnpm -r --parallel --stream dev",
+    "tunnel": "pnpm clean && cross-env FORCE_COLOR=1 pnpm -r --parallel --stream tunnel",
     "seed": "pnpm --filter backend seed",
     "lint": "pnpm dlx @biomejs/biome check .",
     "lint:fix": "pnpm dlx @biomejs/biome check --write .",

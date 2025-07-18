@@ -9,6 +9,7 @@
     "quick": "cross-env PGLITE=true tsx scripts/quick.ts && cross-env PGLITE=true pnpm dev",
     "start": "cross-env NODE_ENV=production tsx dist/index.js",
     "dev": "cross-env NODE_ENV=development tsx --watch-path=src src/index.ts",
+    "tunnel": "cross-env NODE_ENV=tunnel tsx --watch-path=src src/index.ts",
     "check": "tsc --pretty",
     "check:beta": "tsgo --pretty",
     "tsperf": "rm -rf dist && tsc --extendedDiagnostics",

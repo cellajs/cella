@@ -11,7 +11,11 @@ export const HomeRoute = createRoute({
   path: '/',
   staticData: { isAuth: true },
   getParentRoute: () => AppRoute,
-  component: () => <Home />,
+  component: () => (
+    <Suspense>
+      <Home />
+    </Suspense>
+  ),
 });
 
 // We need an alias for '/' to forward users better if coming from backend
@@ -20,7 +24,11 @@ export const HomeAliasRoute = createRoute({
   staticData: { isAuth: true },
   head: () => ({ meta: [{ title: appTitle('Home') }] }),
   getParentRoute: () => AppRoute,
-  component: () => <Home />,
+  component: () => (
+    <Suspense>
+      <Home />
+    </Suspense>
+  ),
 });
 
 export const WelcomeRoute = createRoute({

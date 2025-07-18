@@ -7,14 +7,14 @@ import SelectSort from '~/modules/common/form-fields/select-sort';
 import type { EntitySearch } from '~/modules/entities/entity-grid/grid';
 
 type Props = {
-  countName: string;
+  label: string;
   searchVars: EntitySearch;
   setSearch: (search: EntitySearch) => void;
   totalCount?: number;
   focusView?: boolean;
 };
 
-export const EntityGridBar = ({ totalCount, countName, searchVars, setSearch, focusView }: Props) => {
+export const EntityGridBar = ({ totalCount, label, searchVars, setSearch, focusView }: Props) => {
   const { q, sort } = searchVars;
 
   const isFiltered = !!q;
@@ -31,7 +31,7 @@ export const EntityGridBar = ({ totalCount, countName, searchVars, setSearch, fo
       {/* Filter Bar */}
       <TableFilterBar onResetFilters={onResetFilters} isFiltered={isFiltered}>
         <FilterBarActions>
-          <TableCount count={totalCount} type={countName} isFiltered={isFiltered} onResetFilters={onResetFilters} />
+          <TableCount count={totalCount} label={label} isFiltered={isFiltered} onResetFilters={onResetFilters} />
         </FilterBarActions>
         <div className="sm:grow" />
         <FilterBarContent className="max-sm:animate-in max-sm:slide-in-from-left max-sm:fade-in max-sm:duration-300">

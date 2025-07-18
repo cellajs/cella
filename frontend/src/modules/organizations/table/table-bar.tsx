@@ -153,7 +153,7 @@ export const OrganizationsTableBar = ({
               />
             )
           )}
-          {selected.length === 0 && <TableCount count={total} type="organization" isFiltered={isFiltered} onResetFilters={onResetFilters} />}
+          {selected.length === 0 && <TableCount count={total} label="common:organization" isFiltered={isFiltered} onResetFilters={onResetFilters} />}
         </FilterBarActions>
 
         <div className="sm:grow" />

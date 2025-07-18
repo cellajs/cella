@@ -48,7 +48,7 @@ type BlockNoteProps =
       baseFilePanelProps?: never;
     });
 
-export const BlockNote = ({
+const BlockNote = ({
   id,
   type,
   className = '',
@@ -243,3 +243,5 @@ export const BlockNote = ({
     </BlockNoteView>
   );
 };
+
+export default BlockNote;

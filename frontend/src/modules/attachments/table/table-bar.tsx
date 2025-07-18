@@ -92,7 +92,7 @@ export const AttachmentsTableBar = ({
           ) : (
             showUpload && <TableBarButton icon={Upload} label={t('common:upload')} onClick={() => open(entity.id)} />
           )}
-          {selected.length === 0 && <TableCount count={total} type="attachment" isFiltered={isFiltered} onResetFilters={onResetFilters} />}
+          {selected.length === 0 && <TableCount count={total} label="common:attachment" isFiltered={isFiltered} onResetFilters={onResetFilters} />}
         </FilterBarActions>
         <div className="sm:grow" />
         <FilterBarContent className="max-sm:animate-in max-sm:slide-in-from-left max-sm:fade-in max-sm:duration-300">
