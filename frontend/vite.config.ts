@@ -98,6 +98,7 @@ const viteConfig = {
   ],
   resolve: {
     alias: {
+      '#json': path.resolve(__dirname, '../json'),
       '~': path.resolve(__dirname, './src'),
     },
   },

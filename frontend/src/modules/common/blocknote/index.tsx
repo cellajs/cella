@@ -33,10 +33,12 @@ import { getPresignedUrl } from '~/api.gen';
 type BlockNoteProps =
   | (CommonBlockNoteProps & {
       type: 'edit' | 'create';
+      autofocus?: boolean;
       updateData: (strBlocks: string) => void;
     })
   | (CommonBlockNoteProps & {
       type: 'preview';
+      autofocus?: never;
       editable?: never;
       updateData?: never;
       onEscapeClick?: never;
@@ -57,6 +59,7 @@ export const BlockNote = ({
   codeBlockDefaultLanguage = 'text',
   editable = type !== 'preview',
   sideMenu = true,
+  autofocus,
   slashMenu = true,
   formattingToolbar = true,
   emojis = true,
@@ -183,8 +186,9 @@ export const BlockNote = ({
   }, [passedContent]);
 
   // TODO(BLOCKING) https://github.com/TypeCellOS/BlockNote/issues/891
+  // Fix to focus editor after rendering
   useEffect(() => {
-    if (type === 'preview' || !editable || !editor) return;
+    if (!autofocus || !editable || !editor) return;
 
     const intervalID = setInterval(() => {
       focusEditor(editor);
