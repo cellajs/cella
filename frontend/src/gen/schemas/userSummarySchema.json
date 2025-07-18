@@ -1,0 +1,1 @@
+{"type":"object","properties":{"id":{"type":"string"},"entityType":{"type":"string","enum":["user"]},"slug":{"type":"string"},"name":{"type":"string"},"thumbnailUrl":{"type":["string","null"]},"bannerUrl":{"type":["string","null"]},"email":{"type":"string","format":"email"}},"required":["id","entityType","slug","name","email"],"x-readme-ref-name":"UserSummarySchema"}

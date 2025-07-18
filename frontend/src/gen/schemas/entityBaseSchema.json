@@ -1,0 +1,1 @@
+{"type":"object","properties":{"id":{"type":"string"},"entityType":{"type":"string","enum":["organization"]},"slug":{"type":"string"},"name":{"type":"string"},"thumbnailUrl":{"type":["string","null"]},"bannerUrl":{"type":["string","null"]}},"required":["id","entityType","slug","name"],"x-readme-ref-name":"EntityBaseSchema"}

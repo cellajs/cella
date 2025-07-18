@@ -1,4 +1,8 @@
-import type { ArrayStyle, ObjectStyle, SerializerOptions } from './pathSerializer';
+import type {
+  ArrayStyle,
+  ObjectStyle,
+  SerializerOptions,
+} from './pathSerializer';
 
 export type QuerySerializer = (query: Record<string, unknown>) => string;
 
@@ -10,7 +14,11 @@ export interface QuerySerializerOptions {
   object?: SerializerOptions<ObjectStyle>;
 }
 
-const serializeFormDataPair = (data: FormData, key: string, value: unknown): void => {
+const serializeFormDataPair = (
+  data: FormData,
+  key: string,
+  value: unknown,
+): void => {
   if (typeof value === 'string' || value instanceof Blob) {
     data.append(key, value);
   } else {
@@ -18,7 +26,11 @@ const serializeFormDataPair = (data: FormData, key: string, value: unknown): voi
   }
 };
 
-const serializeUrlSearchParamsPair = (data: URLSearchParams, key: string, value: unknown): void => {
+const serializeUrlSearchParamsPair = (
+  data: URLSearchParams,
+  key: string,
+  value: unknown,
+): void => {
   if (typeof value === 'string') {
     data.append(key, value);
   } else {
@@ -27,7 +39,9 @@ const serializeUrlSearchParamsPair = (data: URLSearchParams, key: string, value:
 };
 
 export const formDataBodySerializer = {
-  bodySerializer: <T extends Record<string, any> | Array<Record<string, any>>>(body: T): FormData => {
+  bodySerializer: <T extends Record<string, any> | Array<Record<string, any>>>(
+    body: T,
+  ): FormData => {
     const data = new FormData();
 
     Object.entries(body).forEach(([key, value]) => {
@@ -46,11 +60,16 @@ export const formDataBodySerializer = {
 };
 
 export const jsonBodySerializer = {
-  bodySerializer: <T>(body: T): string => JSON.stringify(body, (_key, value) => (typeof value === 'bigint' ? value.toString() : value)),
+  bodySerializer: <T>(body: T): string =>
+    JSON.stringify(body, (_key, value) =>
+      typeof value === 'bigint' ? value.toString() : value,
+    ),
 };
 
 export const urlSearchParamsBodySerializer = {
-  bodySerializer: <T extends Record<string, any> | Array<Record<string, any>>>(body: T): string => {
+  bodySerializer: <T extends Record<string, any> | Array<Record<string, any>>>(
+    body: T,
+  ): string => {
     const data = new URLSearchParams();
 
     Object.entries(body).forEach(([key, value]) => {
