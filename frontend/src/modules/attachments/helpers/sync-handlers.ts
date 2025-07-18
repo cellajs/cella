@@ -39,19 +39,37 @@ export const handleInsert = (orgIdOrSlug: string, newAttachments: Attachment[]) 
 };
 
 // Handle attachment update
-export const handleUpdate = (orgIdOrSlug: string, updatedAttachments: Partial<Attachment>[]) => {
+export const handleUpdate = (
+  orgIdOrSlug: string,
+  updatedAttachments: (Partial<Attachment> & {
+    id: string;
+  })[],
+) => {
+  const deduplicatedMap = updatedAttachments.reduce((map, attachment) => {
+    const existing = map.get(attachment.id);
+    if (!existing) return map.set(attachment.id, attachment);
+
+    const first = attachment.modifiedAt && new Date(attachment.modifiedAt).getTime();
+    const second = existing.modifiedAt && new Date(existing.modifiedAt).getTime();
+
+    // Decide latest by modifiedAt or else prefer current (later in array)
+    const latestIsCurrent = first && second ? first > second : true;
+
+    // Merge: keep all keys, but prefer latest attachment's values
+    const merged = latestIsCurrent ? { ...existing, ...attachment } : { ...attachment, ...existing };
+
+    return map.set(attachment.id, merged);
+  }, new Map<string, Partial<Attachment> & { id: string }>());
+
   const queries = getSimilarQueries(attachmentsKeys.list.similarTable({ orgIdOrSlug }));
 
   for (const [queryKey] of queries) {
     queryClient.setQueryData<AttachmentInfiniteQueryData>(queryKey, (data) => {
       if (!data) return;
 
-      // Create a map for quick lookup of updated attachments
-      const updatesMap = new Map(updatedAttachments.map((attachment) => [attachment.id, attachment]));
-
       // Batch update matching attachments
       const pages = data.pages.map(({ items, total }) => ({
-        items: items.map((a) => (updatesMap.has(a.id) ? { ...a, ...updatesMap.get(a.id) } : a)),
+        items: items.map((a) => (deduplicatedMap.has(a.id) ? { ...a, ...deduplicatedMap.get(a.id) } : a)),
         total,
       }));
 
