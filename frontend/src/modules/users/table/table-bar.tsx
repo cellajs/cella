@@ -47,6 +47,7 @@ export const UsersTableBar = ({ total, selected, searchVars, setSearch, columns,
     clearSelection();
   };
 
+  // TODO: use a ref for container?
   const openInviteDialog = () => {
     createDialog(<InviteUsers mode={'email'} dialog />, {
       id: 'invite-users',

@@ -46,7 +46,7 @@ export const usersQueryOptions = ({
   order: _order,
   role,
   limit: _limit,
-}: Omit<GetUsersData['query'], 'limit' | 'offset'> & { limit?: number }) => {
+}: Omit<NonNullable<GetUsersData['query']>, 'limit' | 'offset'> & { limit?: number }) => {
   const sort = _sort || 'createdAt';
   const order = _order || 'desc';
   const limit = String(_limit || config.requestLimits.users);

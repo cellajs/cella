@@ -33,7 +33,7 @@ export const requestsQueryOptions = ({
   sort: _sort,
   order: _order,
   limit: _limit,
-}: Omit<GetRequestsData['query'], 'limit' | 'offset'> & { limit?: number }) => {
+}: Omit<NonNullable<GetRequestsData['query']>, 'limit' | 'offset'> & { limit?: number }) => {
   const sort = _sort || 'createdAt';
   const order = _order || 'asc';
   const limit = String(_limit || config.requestLimits.requests);

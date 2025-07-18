@@ -4,7 +4,7 @@ import { Send } from 'lucide-react';
 import { useMemo } from 'react';
 import type { UseFormProps } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
-import { z } from 'zod/v4';
+import { z } from 'zod';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import SelectRoleRadio from '~/modules/common/form-fields/select-role-radio';
@@ -14,6 +14,7 @@ import { Badge } from '~/modules/ui/badge';
 import { Button, SubmitButton } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
 import { UserCombobox } from '~/modules/users/user-combobox';
+import { toaster } from '../common/toaster';
 
 interface Props {
   entity?: EntityPage;
@@ -56,6 +57,7 @@ const InviteSearchForm = ({ entity, dialog: isDialog }: Props) => {
       {
         onSuccess: () => {
           form.reset(undefined, { keepDirtyValues: true });
+          toaster(t('common:success.user_invited'), 'success');
           if (isDialog) useDialoger.getState().remove();
         },
       },

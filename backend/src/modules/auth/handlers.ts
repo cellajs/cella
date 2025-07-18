@@ -47,6 +47,7 @@ import { handleCreateUser, handleMembershipTokenUpdate } from '#/modules/auth/he
 import { sendVerificationEmail } from '#/modules/auth/helpers/verify-email';
 import authRoutes from '#/modules/auth/routes';
 import { getUserBy } from '#/modules/users/helpers/get-user-by';
+import { userSelect } from '#/modules/users/helpers/select';
 import { defaultHook } from '#/utils/default-hook';
 import { isExpiredDate } from '#/utils/is-expired-date';
 import { getIsoDate } from '#/utils/iso-date';
@@ -217,6 +218,15 @@ const authRouteHandlers = app
     const token = getContextToken();
     if (!token || !token.userId) throw new ApiError({ status: 400, type: 'invalid_request', severity: 'error' });
 
+    const [user] = await db
+      .select({ ...userSelect })
+      .from(usersTable)
+      .where(eq(usersTable.id, token.userId));
+
+    if (!user) {
+      throw new ApiError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'user', meta: { userId: token.userId } });
+    }
+
     // Set email verified
     await db
       .update(emailsTable)
@@ -227,7 +237,7 @@ const authRouteHandlers = app
     await db.delete(tokensTable).where(eq(tokensTable.id, token.id));
 
     // Sign in user
-    await setUserSession(ctx, token.userId, 'email');
+    await setUserSession(ctx, user, 'email');
 
     return ctx.json(true, 200);
   })
@@ -308,7 +318,7 @@ const authRouteHandlers = app
     ]);
 
     // Sign in user
-    await setUserSession(ctx, user.id, 'password');
+    await setUserSession(ctx, user, 'password');
 
     return ctx.json(true, 200);
   })
@@ -343,7 +353,7 @@ const authRouteHandlers = app
     // If email is not verified, send verification email
     if (!emailInfo.verified) sendVerificationEmail(user.id);
     // Sign in user
-    else await setUserSession(ctx, user.id, 'password');
+    else await setUserSession(ctx, user, 'password');
 
     return ctx.json(emailInfo.verified, 200);
   })
@@ -442,7 +452,16 @@ const authRouteHandlers = app
   .openapi(authRoutes.startImpersonation, async (ctx) => {
     const { targetUserId } = ctx.req.valid('query');
 
-    const user = getContextUser();
+    const [user] = await db
+      .select({ ...userSelect })
+      .from(usersTable)
+      .where(eq(usersTable.id, targetUserId));
+
+    if (!user) {
+      throw new ApiError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'user', meta: { userId: targetUserId } });
+    }
+
+    const adminUser = getContextUser();
     const sessionData = await getParsedSessionCookie(ctx);
 
     if (!sessionData) {
@@ -450,7 +469,7 @@ const authRouteHandlers = app
       throw new ApiError({ status: 401, type: 'unauthorized', severity: 'warn' });
     }
 
-    await setUserSession(ctx, targetUserId, 'password', user.id);
+    await setUserSession(ctx, user, 'password', adminUser);
 
     logEvent('Started impersonation', { admin: user.id, user: targetUserId });
 
@@ -823,7 +842,7 @@ const authRouteHandlers = app
       }
     }
 
-    await setUserSession(ctx, user.id, 'passkey');
+    await setUserSession(ctx, user, 'passkey');
     return ctx.json(true, 200);
   });
 

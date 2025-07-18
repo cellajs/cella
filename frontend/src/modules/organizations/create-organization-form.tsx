@@ -4,7 +4,7 @@ import { useMemo } from 'react';
 import { type UseFormProps, useWatch } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-import type { z } from 'zod/v4';
+import type { z } from 'zod';
 import { zCreateOrganizationData } from '~/api.gen/zod.gen';
 // Change this in the future on current schema
 import { useFormWithDraft } from '~/hooks/use-draft-form';

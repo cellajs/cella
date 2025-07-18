@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { t } from 'i18next';
 import { useEffect, useState } from 'react';
 import { useInView } from 'react-intersection-observer';
-import type z from 'zod/v4';
+import type z from 'zod';
 import type { zGetEntitiesWithAdminsData } from '~/api.gen/zod.gen';
 import { useOnlineManager } from '~/hooks/use-online-manager';
 import { GridSkeleton } from '~/modules/entities/entity-grid/skeleton';

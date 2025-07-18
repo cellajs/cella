@@ -41,7 +41,6 @@ export const useInviteMemberMutation = () =>
         query: { idOrSlug: entity.id, entityType: entity.entityType },
         path: { orgIdOrSlug: entity.organizationId || entity.id },
       }),
-    onSuccess: () => toaster(t('common:success.user_invited'), 'success'),
     onError,
   });
 

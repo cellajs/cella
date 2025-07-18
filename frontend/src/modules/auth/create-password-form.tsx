@@ -6,7 +6,7 @@ import { ArrowRight } from 'lucide-react';
 import { lazy, Suspense, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
-import { z } from 'zod/v4';
+import { z } from 'zod';
 import { type CreatePasswordData, type CreatePasswordResponse, createPassword } from '~/api.gen';
 import type { ApiError } from '~/lib/api';
 import AuthErrorNotice from '~/modules/auth/auth-error-notice';

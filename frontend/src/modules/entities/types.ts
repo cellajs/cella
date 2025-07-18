@@ -1,4 +1,4 @@
-import type { z } from 'zod/v4';
+import type { z } from 'zod';
 import type { zEntityBaseSchema, zGetEntitiesWithAdminsResponse } from '~/api.gen/zod.gen';
 import type { MembershipSummary } from '~/modules/memberships/types';
 

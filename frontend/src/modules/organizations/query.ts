@@ -64,7 +64,7 @@ export const organizationsQueryOptions = ({
   sort: _sort,
   order: _order,
   limit: _limit,
-}: Omit<GetOrganizationsData['query'], 'limit' | 'offset'> & { limit?: number }) => {
+}: Omit<NonNullable<GetOrganizationsData['query']>, 'limit' | 'offset'> & { limit?: number }) => {
   const sort = _sort || 'createdAt';
   const order = _order || 'desc';
   const limit = String(_limit || config.requestLimits.organizations);

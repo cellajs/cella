@@ -1076,13 +1076,13 @@ export const deleteUsers = <ThrowOnError extends boolean = true>(options?: Optio
  * @param {string=} options.query.q - `string` (optional)
  * @param {enum=} options.query.sort - `enum` (optional)
  * @param {enum=} options.query.order - `enum` (optional)
- * @param {string} options.query.offset - `string`
- * @param {string} options.query.limit - `string`
+ * @param {string=} options.query.offset - `string` (optional)
+ * @param {string=} options.query.limit - `string` (optional)
  * @param {enum=} options.query.role - `enum` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
-export const getUsers = <ThrowOnError extends boolean = true>(options: Options<GetUsersData, ThrowOnError>) => {
-  return (options.client ?? _heyApiClient).get<GetUsersResponses, GetUsersErrors, ThrowOnError, 'data'>({
+export const getUsers = <ThrowOnError extends boolean = true>(options?: Options<GetUsersData, ThrowOnError>) => {
+  return (options?.client ?? _heyApiClient).get<GetUsersResponses, GetUsersErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     security: [
       {
@@ -1204,12 +1204,12 @@ export const deleteOrganizations = <ThrowOnError extends boolean = true>(options
  * @param {string=} options.query.q - `string` (optional)
  * @param {enum=} options.query.sort - `enum` (optional)
  * @param {enum=} options.query.order - `enum` (optional)
- * @param {string} options.query.offset - `string`
- * @param {string} options.query.limit - `string`
+ * @param {string=} options.query.offset - `string` (optional)
+ * @param {string=} options.query.limit - `string` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
-export const getOrganizations = <ThrowOnError extends boolean = true>(options: Options<GetOrganizationsData, ThrowOnError>) => {
-  return (options.client ?? _heyApiClient).get<GetOrganizationsResponses, GetOrganizationsErrors, ThrowOnError, 'data'>({
+export const getOrganizations = <ThrowOnError extends boolean = true>(options?: Options<GetOrganizationsData, ThrowOnError>) => {
+  return (options?.client ?? _heyApiClient).get<GetOrganizationsResponses, GetOrganizationsErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     security: [
       {
@@ -1596,12 +1596,12 @@ export const deleteRequests = <ThrowOnError extends boolean = true>(options?: Op
  * @param {string=} options.query.q - `string` (optional)
  * @param {enum=} options.query.sort - `enum` (optional)
  * @param {enum=} options.query.order - `enum` (optional)
- * @param {string} options.query.offset - `string`
- * @param {string} options.query.limit - `string`
+ * @param {string=} options.query.offset - `string` (optional)
+ * @param {string=} options.query.limit - `string` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
-export const getRequests = <ThrowOnError extends boolean = true>(options: Options<GetRequestsData, ThrowOnError>) => {
-  return (options.client ?? _heyApiClient).get<GetRequestsResponses, GetRequestsErrors, ThrowOnError, 'data'>({
+export const getRequests = <ThrowOnError extends boolean = true>(options?: Options<GetRequestsData, ThrowOnError>) => {
+  return (options?.client ?? _heyApiClient).get<GetRequestsResponses, GetRequestsErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     security: [
       {
@@ -1777,8 +1777,8 @@ export const deleteAttachments = <ThrowOnError extends boolean = true>(options: 
  * @param {string=} options.query.q - `string` (optional)
  * @param {enum=} options.query.sort - `enum` (optional)
  * @param {enum=} options.query.order - `enum` (optional)
- * @param {string} options.query.offset - `string`
- * @param {string} options.query.limit - `string`
+ * @param {string=} options.query.offset - `string` (optional)
+ * @param {string=} options.query.limit - `string` (optional)
  * @param {string=} options.query.attachmentid - `string` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
@@ -2062,8 +2062,8 @@ export const updateMembership = <ThrowOnError extends boolean = true>(options: O
  * @param {string=} options.query.q - `string` (optional)
  * @param {enum=} options.query.sort - `enum` (optional)
  * @param {enum=} options.query.order - `enum` (optional)
- * @param {string} options.query.offset - `string`
- * @param {string} options.query.limit - `string`
+ * @param {string=} options.query.offset - `string` (optional)
+ * @param {string=} options.query.limit - `string` (optional)
  * @param {string | string} options.query.idorslug - `string | string`
  * @param {enum} options.query.entitytype - `enum`
  * @param {enum=} options.query.role - `enum` (optional)
@@ -2097,8 +2097,8 @@ export const getMembers = <ThrowOnError extends boolean = true>(options: Options
  * @param {string=} options.query.q - `string` (optional)
  * @param {enum=} options.query.sort - `enum` (optional)
  * @param {enum=} options.query.order - `enum` (optional)
- * @param {string} options.query.offset - `string`
- * @param {string} options.query.limit - `string`
+ * @param {string=} options.query.offset - `string` (optional)
+ * @param {string=} options.query.limit - `string` (optional)
  * @param {string | string} options.query.idorslug - `string | string`
  * @param {enum} options.query.entitytype - `enum`
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429

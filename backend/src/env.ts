@@ -1,7 +1,7 @@
 import { env as dotenv } from '@dotenv-run/core';
 import { createEnv } from '@t3-oss/env-core';
 import { config } from 'config';
-import { z } from 'zod/v4';
+import { z } from 'zod';
 
 dotenv({
   root: '../..',

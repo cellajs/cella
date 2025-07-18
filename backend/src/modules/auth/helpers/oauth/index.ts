@@ -51,7 +51,7 @@ export const handleExistingUser = async (
   }
 
   // Set the user session and redirect
-  await setUserSession(ctx, existingUser.id, provider.id);
+  await setUserSession(ctx, existingUser, provider.id);
   return ctx.redirect(redirectUrl, 302);
 };
 
@@ -99,7 +99,7 @@ const updateExistingUser = async (ctx: Context, existingUser: UserModel, provide
     });
 
   // Sign in user
-  await setUserSession(ctx, existingUser.id, providerId);
+  await setUserSession(ctx, existingUser, providerId);
 
   return ctx.redirect(redirectUrl, 302);
 };

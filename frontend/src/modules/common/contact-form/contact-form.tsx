@@ -3,7 +3,7 @@ import { Mail, MessageSquare, Send, User } from 'lucide-react';
 import { lazy, Suspense, useMemo } from 'react';
 import type { SubmitHandler, UseFormProps } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
-import { z } from 'zod/v4';
+import { z } from 'zod';
 import { zCreateRequestData } from '~/api.gen/zod.gen';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { useFormWithDraft } from '~/hooks/use-draft-form';

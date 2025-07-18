@@ -1,5 +1,5 @@
 import type { Hook } from '@hono/zod-openapi';
-import { ZodError } from 'zod/v4';
+import { ZodError } from 'zod';
 import type { Env } from '#/lib/context';
 import { ApiError, type ErrorKey } from '#/lib/errors';
 

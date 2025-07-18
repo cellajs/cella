@@ -2,7 +2,7 @@ import { onlineManager, useQuery } from '@tanstack/react-query';
 import { createRoute, redirect, useLoaderData, useParams } from '@tanstack/react-router';
 import i18n from 'i18next';
 import { lazy, Suspense } from 'react';
-import { z } from 'zod/v4';
+import { z } from 'zod';
 import { zGetAttachmentsData, zGetMembersData, zGetPendingInvitationsData } from '~/api.gen/zod.gen';
 import ErrorNotice from '~/modules/common/error-notice';
 import { toaster } from '~/modules/common/toaster';
@@ -25,7 +25,7 @@ export const membersSearchSchema = zGetMembersData.shape.query
 
 export const pendingInvitationsSearchSchema = zGetPendingInvitationsData.shape.query.pick({ sort: true, order: true });
 
-export const attachmentsSearchSchema = zGetAttachmentsData.shape.query.pick({ q: true, sort: true, order: true }).extend({
+export const attachmentsSearchSchema = zGetAttachmentsData.shape.query.unwrap().pick({ q: true, sort: true, order: true }).extend({
   attachmentDialogId: z.string().optional(),
   groupId: z.string().optional(),
 });

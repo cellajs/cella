@@ -1,5 +1,5 @@
 import { EventEmitter } from 'node:events';
-import type { z } from 'zod/v4';
+import type { z } from 'zod';
 import type { membershipSummarySchema } from '#/modules/memberships/schema';
 
 type Events = {

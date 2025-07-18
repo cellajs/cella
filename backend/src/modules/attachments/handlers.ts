@@ -227,7 +227,7 @@ const attachmentsRouteHandlers = app
 
     // Convert the ids to an array
     const toDeleteIds = Array.isArray(ids) ? ids : [ids];
-    if (!toDeleteIds.length) throw new ApiError({ status: 400, type: 'invalid_request', severity: 'error', entityType: 'attachment' });
+    if (!toDeleteIds.length) throw new ApiError({ status: 400, type: 'invalid_request', severity: 'warn', entityType: 'attachment' });
 
     const { allowedIds, disallowedIds: rejectedIds } = await splitByAllowance('delete', 'attachment', toDeleteIds, memberships);
 

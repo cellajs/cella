@@ -11,7 +11,6 @@ import { createHtmlPlugin } from 'vite-plugin-html';
 import { VitePWA } from 'vite-plugin-pwa';
 import { viteStaticCopy } from 'vite-plugin-static-copy';
 import { config } from '../config';
-import { replaceZodImport } from './src/zod-import-fix';
 // import { TanStackRouterVite } from '@tanstack/router-plugin/vite'
 import { heyApiPlugin } from '@hey-api/vite-plugin';
 import { openApiConfig } from './openapi-ts.config';
@@ -155,7 +154,6 @@ viteConfig.plugins?.push(
 if (config.frontendUrl.includes('https')) viteConfig.plugins?.push([basicSsl()]);
 if (config.mode === 'development' && !isStorybook)
   viteConfig.plugins?.push([
-    replaceZodImport(),
     watchBackendOpenApi(),
     heyApiPlugin({ config: openApiConfig }),
     reactScan({
