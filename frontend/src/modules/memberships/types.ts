@@ -1,5 +1,5 @@
 import type { ContextEntityType, config } from 'config';
-import type { z } from 'zod/v4';
+import type { z } from 'zod';
 import type { DeleteMembershipsData, MembershipInviteData, UpdateMembershipData } from '~/api.gen';
 import type { zGetMembersResponse, zGetPendingInvitationsResponse, zUpdateMembershipResponse } from '~/api.gen/zod.gen';
 import type { EntityPage } from '~/modules/entities/types';

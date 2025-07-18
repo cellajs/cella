@@ -2006,12 +2006,12 @@ export type DeleteUsersResponse = DeleteUsersResponses[keyof DeleteUsersResponse
 export type GetUsersData = {
   body?: never;
   path?: never;
-  query: {
+  query?: {
     q?: string;
     sort?: 'id' | 'name' | 'email' | 'role' | 'createdAt' | 'lastSeenAt' | 'membershipCount';
     order?: 'asc' | 'desc';
-    offset: string;
-    limit: string;
+    offset?: string;
+    limit?: string;
     role?: 'user' | 'admin';
   };
   url: '/users';
@@ -2297,12 +2297,12 @@ export type DeleteOrganizationsResponse = DeleteOrganizationsResponses[keyof Del
 export type GetOrganizationsData = {
   body?: never;
   path?: never;
-  query: {
+  query?: {
     q?: string;
     sort?: 'id' | 'name' | 'userRole' | 'createdAt';
     order?: 'asc' | 'desc';
-    offset: string;
-    limit: string;
+    offset?: string;
+    limit?: string;
   };
   url: '/organizations';
 };
@@ -3178,12 +3178,12 @@ export type DeleteRequestsResponse = DeleteRequestsResponses[keyof DeleteRequest
 export type GetRequestsData = {
   body?: never;
   path?: never;
-  query: {
+  query?: {
     q?: string;
     sort?: 'id' | 'email' | 'type' | 'createdAt';
     order?: 'asc' | 'desc';
-    offset: string;
-    limit: string;
+    offset?: string;
+    limit?: string;
   };
   url: '/requests';
 };
@@ -3527,12 +3527,12 @@ export type GetAttachmentsData = {
   path: {
     orgIdOrSlug: string;
   };
-  query: {
+  query?: {
     q?: string;
     sort?: 'id' | 'filename' | 'contentType' | 'createdAt';
     order?: 'asc' | 'desc';
-    offset: string;
-    limit: string;
+    offset?: string;
+    limit?: string;
     attachmentId?: string;
   };
   url: '/{orgIdOrSlug}/attachments';
@@ -4131,8 +4131,8 @@ export type GetMembersData = {
     q?: string;
     sort?: 'id' | 'name' | 'email' | 'role' | 'createdAt' | 'lastSeenAt';
     order?: 'asc' | 'desc';
-    offset: string;
-    limit: string;
+    offset?: string;
+    limit?: string;
     idOrSlug: string;
     entityType: 'organization';
     role?: 'member' | 'admin';
@@ -4226,8 +4226,8 @@ export type GetPendingInvitationsData = {
     q?: string;
     sort?: 'email' | 'role' | 'expiresAt' | 'createdAt' | 'createdBy';
     order?: 'asc' | 'desc';
-    offset: string;
-    limit: string;
+    offset?: string;
+    limit?: string;
     idOrSlug: string;
     entityType: 'organization';
   };

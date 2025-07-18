@@ -1,4 +1,4 @@
-import type { z } from 'zod/v4';
+import type { z } from 'zod';
 import type { GetUploadTokenData } from '~/api.gen';
 import type { zGetMyAuthResponse, zMenuSchema } from '~/api.gen/zod.gen';
 import type { User } from '~/modules/users/types';

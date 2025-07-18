@@ -3,7 +3,7 @@ import { Info } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { z } from 'zod/v4';
+import type { z } from 'zod';
 import useSearchParams from '~/hooks/use-search-params';
 import { useColumns } from '~/modules/attachments/table/columns';
 import BaseDataTable from '~/modules/attachments/table/table';

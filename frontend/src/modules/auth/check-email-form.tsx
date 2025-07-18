@@ -4,7 +4,7 @@ import { config } from 'config';
 import { ArrowRight } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
-import type { z } from 'zod/v4';
+import type { z } from 'zod';
 import { type CheckEmailData, type CheckEmailResponse, checkEmail } from '~/api.gen';
 import { zCheckEmailData } from '~/api.gen/zod.gen';
 import type { ApiError } from '~/lib/api';

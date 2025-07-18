@@ -6,7 +6,7 @@ import { ArrowRight, ChevronDown } from 'lucide-react';
 import { useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
-import type { z } from 'zod/v4';
+import type { z } from 'zod';
 import { type SignInData, type SignInResponse, signIn } from '~/api.gen';
 import { zSignUpData } from '~/api.gen/zod.gen';
 import type { ApiError } from '~/lib/api';

@@ -4,7 +4,7 @@ import { Send } from 'lucide-react';
 import { useMemo } from 'react';
 import type { UseFormProps } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
-import { z } from 'zod/v4';
+import { z } from 'zod';
 import { systemInvite as baseSystemInvite } from '~/api.gen';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import { useMutation } from '~/hooks/use-mutations';
@@ -18,6 +18,7 @@ import type { InviteMember } from '~/modules/memberships/types';
 import { Badge } from '~/modules/ui/badge';
 import { Button, SubmitButton } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
+import { toaster } from '../common/toaster';
 
 interface Props {
   entity?: EntityPage;
@@ -55,6 +56,8 @@ const InviteEmailForm = ({ entity, dialog: isDialog, children }: Props) => {
   const onSuccess = () => {
     form.reset(undefined, { keepDirtyValues: true });
     if (isDialog) useDialoger.getState().remove();
+
+    toaster(t('common:success.user_invited'), 'success');
 
     // Since this form is also used in onboarding, we need to call the next step
     // This should ideally be done through the callback, but we need to refactor stepper

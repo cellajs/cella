@@ -4,7 +4,7 @@ import { config, type EntityType } from 'config';
 import { History, Search, User, X } from 'lucide-react';
 import { Fragment, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { z } from 'zod/v4';
+import type { z } from 'zod';
 import type { zGetPageEntitiesResponse } from '~/api.gen/zod.gen';
 import useFocusByRef from '~/hooks/use-focus-by-ref';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';

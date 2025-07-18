@@ -1,6 +1,6 @@
 import { z } from '@hono/zod-openapi';
 import { config, type EntityType } from 'config';
-import type { ZodType } from 'zod/v4';
+import type { ZodType } from 'zod';
 
 /**
  * Map over all the entities and create a schema for each

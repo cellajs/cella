@@ -4,7 +4,7 @@ import { createRootRouteWithContext, createRoute, defer, redirect } from '@tanst
 import { config } from 'config';
 import i18n from 'i18next';
 import { lazy, Suspense } from 'react';
-import { z } from 'zod/v4';
+import { z } from 'zod';
 import ErrorNotice from '~/modules/common/error-notice';
 import { PublicLayout } from '~/modules/common/public-layout';
 import { Root } from '~/modules/common/root';

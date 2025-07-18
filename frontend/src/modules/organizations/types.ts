@@ -1,4 +1,4 @@
-import type { z } from 'zod/v4';
+import type { z } from 'zod';
 import type { zCreateOrganizationResponse, zGetOrganizationResponse } from '~/api.gen/zod.gen';
 
 export type Organization = z.infer<typeof zGetOrganizationResponse>;

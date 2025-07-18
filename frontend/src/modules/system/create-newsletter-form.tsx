@@ -5,7 +5,7 @@ import { Info, Send } from 'lucide-react';
 import { lazy, Suspense, useMemo, useState } from 'react';
 import type { UseFormProps } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
-import type { z } from 'zod/v4';
+import type { z } from 'zod';
 import { type SendNewsletterData, sendNewsletter } from '~/api.gen';
 import { zSendNewsletterData } from '~/api.gen/zod.gen';
 import { useFormWithDraft } from '~/hooks/use-draft-form';

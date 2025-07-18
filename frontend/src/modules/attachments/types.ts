@@ -1,4 +1,4 @@
-import type { z } from 'zod/v4';
+import type { z } from 'zod';
 
 import type { CreateAttachmentData, DeleteAttachmentsData, UpdateAttachmentData } from '~/api.gen';
 import type { zCreateAttachmentData, zCreateAttachmentResponse } from '~/api.gen/zod.gen';

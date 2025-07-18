@@ -2,7 +2,7 @@ import { infiniteQueryOptions, queryOptions } from '@tanstack/react-query';
 import { config } from 'config';
 import { type GetAttachmentsData, getAttachments } from '~/api.gen';
 
-type GetAttachmentsParams = GetAttachmentsData['path'] & Omit<GetAttachmentsData['query'], 'limit' | 'offset'>;
+type GetAttachmentsParams = GetAttachmentsData['path'] & Omit<NonNullable<GetAttachmentsData['query']>, 'limit' | 'offset'>;
 /**
  * Keys for attachments related queries. These keys help to uniquely identify different query.
  * For managing query caching and invalidation.
