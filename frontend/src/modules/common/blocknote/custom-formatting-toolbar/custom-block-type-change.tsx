@@ -50,18 +50,15 @@ export const CellaCustomBlockTypeSelect = () => {
 
   const fullItems = useMemo(
     () =>
-      // TODO(CHORE)remove filtering when fix toggle button type
-      filteredItems
-        .filter((el) => !el.name.toLowerCase().includes('toggle'))
-        .map((item) => {
-          const { icon: Icon, isSelected, name } = item;
-          return {
-            title: name,
-            icon: <Icon size={16} />,
-            onClick: () => handleItemClick(item),
-            isSelected: isSelected(block),
-          };
-        }),
+      filteredItems.map((item) => {
+        const { icon: Icon, isSelected, name } = item;
+        return {
+          title: name,
+          icon: <Icon size={16} />,
+          onClick: () => handleItemClick(item),
+          isSelected: isSelected(block),
+        };
+      }),
     [block, filteredItems, editor, selectedBlocks],
   );
 

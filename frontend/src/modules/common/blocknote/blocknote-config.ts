@@ -100,8 +100,7 @@ export const customBlockTypeSelectItems: CustomBlockTypes[] = ['heading', 'parag
 export const sideMenuOpenOnTypes: CustomBlockTypes[] = ['paragraph', 'heading', 'bulletListItem', 'numberedListItem', 'checkListItem'];
 
 // Generate side menu items based on dictionary input
-// TODO(CHORE)remove filtering when fix toggle button type
-export const getSideMenuItems = (dict: Dictionary) => [...blockTypeSelectItems(dict).filter(({ name }) => !name.toLowerCase().includes('toggle'))];
+export const getSideMenuItems = (dict: Dictionary) => [...blockTypeSelectItems(dict)];
 
 /**
  *  Slash Menu Configuration
@@ -127,11 +126,7 @@ export const customSlashNotIndexedItems: CustomBlockTypes[] = [
 // Generate the complete Slash menu items list
 export const getSlashMenuItems = (editor: CustomBlockNoteEditor, allowedTypes: CustomBlockTypes[]): DefaultReactSuggestionItem[] => {
   // Get all available slash items
-  // TODO(CHORE)remove filtering when fix toggle button type
-  const baseItems = [
-    ...getDefaultReactSlashMenuItems(editor).filter(({ title }) => !title.toLowerCase().includes('toggle')),
-    getSlashNotifySlashItem(editor),
-  ];
+  const baseItems = [...getDefaultReactSlashMenuItems(editor), getSlashNotifySlashItem(editor)];
 
   // Filter allowed indexed and non-indexed types once
   const allowedIndexed = customSlashIndexedItems.filter((type) => allowedTypes.includes(type));
