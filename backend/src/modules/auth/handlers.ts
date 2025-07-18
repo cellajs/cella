@@ -13,6 +13,7 @@ import { passkeysTable } from '#/db/schema/passkeys';
 import { sessionsTable } from '#/db/schema/sessions';
 import { tokensTable } from '#/db/schema/tokens';
 import { type UserModel, usersTable } from '#/db/schema/users';
+import { env } from '#/env';
 import { type Env, getContextToken, getContextUser } from '#/lib/context';
 import { resolveEntity } from '#/lib/entity';
 import { ApiError } from '#/lib/errors';
@@ -64,6 +65,11 @@ const enabledOauthProviders: readonly string[] = config.enabledOauthProviders;
 const githubScopes = ['user:email'];
 const googleScopes = ['profile', 'email'];
 const microsoftScopes = ['profile', 'email'];
+
+// When no microsoft tenant is configured, we use common with openid scope
+if (!env.MICROSOFT_TENANT_ID) {
+  microsoftScopes.push('openid');
+}
 
 // Check if oauth provider is enabled by config
 function isOAuthEnabled(provider: EnabledOauthProvider): boolean {

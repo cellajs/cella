@@ -7,7 +7,7 @@ export const githubAuth = new GitHub(env.GITHUB_CLIENT_ID || '', env.GITHUB_CLIE
 export const googleAuth = new Google(env.GOOGLE_CLIENT_ID || '', env.GOOGLE_CLIENT_SECRET || '', `${config.backendAuthUrl}/google/callback`);
 
 export const microsoftAuth = new MicrosoftEntraId(
-  env.MICROSOFT_TENANT_ID || '',
+  env.MICROSOFT_TENANT_ID || 'common', // Use 'common' if no tenant is specified
   env.MICROSOFT_CLIENT_ID || '',
   env.MICROSOFT_CLIENT_SECRET || '',
   `${config.backendAuthUrl}/microsoft/callback`,
