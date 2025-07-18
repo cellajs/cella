@@ -1,13 +1,5 @@
 import type { Client, Config, RequestOptions } from './types';
-import {
-  buildUrl,
-  createConfig,
-  createInterceptors,
-  getParseAs,
-  mergeConfigs,
-  mergeHeaders,
-  setAuthParams,
-} from './utils';
+import { buildUrl, createConfig, createInterceptors, getParseAs, mergeConfigs, mergeHeaders, setAuthParams } from './utils';
 
 type ReqInit = Omit<RequestInit, 'body' | 'headers'> & {
   body?: any;
@@ -24,12 +16,7 @@ export const createClient = (config: Config = {}): Client => {
     return getConfig();
   };
 
-  const interceptors = createInterceptors<
-    Request,
-    Response,
-    unknown,
-    RequestOptions
-  >();
+  const interceptors = createInterceptors<Request, Response, unknown, RequestOptions>();
 
   const request: Client['request'] = async (options) => {
     const opts = {
@@ -90,10 +77,7 @@ export const createClient = (config: Config = {}): Client => {
     };
 
     if (response.ok) {
-      if (
-        response.status === 204 ||
-        response.headers.get('Content-Length') === '0'
-      ) {
+      if (response.status === 204 || response.headers.get('Content-Length') === '0') {
         return opts.responseStyle === 'data'
           ? {}
           : {
@@ -102,10 +86,7 @@ export const createClient = (config: Config = {}): Client => {
             };
       }
 
-      const parseAs =
-        (opts.parseAs === 'auto'
-          ? getParseAs(response.headers.get('Content-Type'))
-          : opts.parseAs) ?? 'json';
+      const parseAs = (opts.parseAs === 'auto' ? getParseAs(response.headers.get('Content-Type')) : opts.parseAs) ?? 'json';
 
       let data: any;
       switch (parseAs) {

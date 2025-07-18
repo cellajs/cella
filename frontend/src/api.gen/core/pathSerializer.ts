@@ -1,6 +1,4 @@
-interface SerializeOptions<T>
-  extends SerializePrimitiveOptions,
-    SerializerOptions<T> {}
+interface SerializeOptions<T> extends SerializePrimitiveOptions, SerializerOptions<T> {}
 
 interface SerializePrimitiveOptions {
   allowReserved?: boolean;
@@ -74,9 +72,7 @@ export const serializeArrayParam = ({
   value: unknown[];
 }) => {
   if (!explode) {
-    const joinedValues = (
-      allowReserved ? value : value.map((v) => encodeURIComponent(v as string))
-    ).join(separatorArrayNoExplode(style));
+    const joinedValues = (allowReserved ? value : value.map((v) => encodeURIComponent(v as string))).join(separatorArrayNoExplode(style));
     switch (style) {
       case 'label':
         return `.${joinedValues}`;
@@ -103,24 +99,16 @@ export const serializeArrayParam = ({
       });
     })
     .join(separator);
-  return style === 'label' || style === 'matrix'
-    ? separator + joinedValues
-    : joinedValues;
+  return style === 'label' || style === 'matrix' ? separator + joinedValues : joinedValues;
 };
 
-export const serializePrimitiveParam = ({
-  allowReserved,
-  name,
-  value,
-}: SerializePrimitiveParam) => {
+export const serializePrimitiveParam = ({ allowReserved, name, value }: SerializePrimitiveParam) => {
   if (value === undefined || value === null) {
     return '';
   }
 
   if (typeof value === 'object') {
-    throw new Error(
-      'Deeply-nested arrays/objects aren’t supported. Provide your own `querySerializer()` to handle these.',
-    );
+    throw new Error('Deeply-nested arrays/objects aren’t supported. Provide your own `querySerializer()` to handle these.');
   }
 
   return `${name}=${allowReserved ? value : encodeURIComponent(value)}`;
@@ -144,11 +132,7 @@ export const serializeObjectParam = ({
   if (style !== 'deepObject' && !explode) {
     let values: string[] = [];
     Object.entries(value).forEach(([key, v]) => {
-      values = [
-        ...values,
-        key,
-        allowReserved ? (v as string) : encodeURIComponent(v as string),
-      ];
+      values = [...values, key, allowReserved ? (v as string) : encodeURIComponent(v as string)];
     });
     const joinedValues = values.join(',');
     switch (style) {
@@ -173,7 +157,5 @@ export const serializeObjectParam = ({
       }),
     )
     .join(separator);
-  return style === 'label' || style === 'matrix'
-    ? separator + joinedValues
-    : joinedValues;
+  return style === 'label' || style === 'matrix' ? separator + joinedValues : joinedValues;
 };

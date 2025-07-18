@@ -181,7 +181,7 @@ export async function create({
   console.info(colors.cyan(`  ${packageManager} seed`));
   console.info();
 
-  console.info(`Once running, you can sign in using:`);
+  console.info('Once running, you can sign in using:');
   console.info(`email: ${colors.greenBright('admin-test@cellajs.com')}`);
   console.info(`password: ${colors.greenBright('12345678')}`);
   console.info();

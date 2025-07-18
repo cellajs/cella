@@ -65,8 +65,8 @@ export async function diverged({ divergedFile, ignoreFile, ignoreList, upstreamB
     text: 'Finding diverged files between upstream and local branch',
   }).start();
 
-  let divergedFiles: string = '';
-  let divergedDiff: string = '';
+  let divergedFiles = '';
+  let divergedDiff = '';
 
   try {
     // Get the list of diverged files by comparing local branch and upstream branch
