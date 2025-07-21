@@ -230,10 +230,10 @@ const BlockNote = ({
       {slashMenu && <CustomSlashMenu editor={editor} allowedTypes={allowedBlockTypes} headingLevels={headingLevels} />}
 
       {/* Hide formatting toolbar on mobile */}
-      {!isMobile && formattingToolbar && <CustomFormattingToolbar />}
+      {!isMobile && formattingToolbar && <CustomFormattingToolbar headingLevels={headingLevels} />}
 
       {/* By default hides on mobile */}
-      {sideMenu && <CustomSideMenu editor={editor} allowedTypes={allowedBlockTypes} />}
+      {sideMenu && <CustomSideMenu editor={editor} allowedTypes={allowedBlockTypes} headingLevels={headingLevels} />}
 
       {/* To avoid rendering "0" */}
       {members?.length ? <Mention members={members} editor={editor} /> : null}

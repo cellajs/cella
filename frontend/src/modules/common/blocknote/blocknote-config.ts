@@ -94,6 +94,8 @@ export const allowedTypes: CustomBlockTypes[] = [
 // Blocks to witch can be switched
 export const customBlockTypeSelectItems: CustomBlockTypes[] = ['heading', 'paragraph', 'bulletListItem', 'numberedListItem', 'checkListItem'];
 
+export const typeToBlocknoteKeys: Record<CustomBlockTypes, SlashItemKeys[]> = { ...baseBlocknoteTypeToKeys };
+
 /**
  *  Side Menu Configuration
  */
@@ -106,7 +108,6 @@ export const getSideMenuItems = (dict: Dictionary) => [...blockTypeSelectItems(d
 /**
  *  Slash Menu Configuration
  */
-const typeToBlocknoteKeys: Record<CustomBlockTypes, SlashItemKeys[]> = { ...baseBlocknoteTypeToKeys };
 
 // Indexed items (max 9 for quick number-based selection)
 export const customSlashIndexedItems: SlashIndexedItems = ['image', 'video', 'file', 'bulletListItem', 'numberedListItem', 'checkListItem', 'notify'];
@@ -146,7 +147,7 @@ export const getSlashMenuItems = (
   const filteredHeading = heading.filter((el) => {
     const match = el.match(/(?:_)?(\d)$/); // match ending digit with optional underscore (handles "heading_2" or "toggle_heading_3")
     const level = match ? Number.parseInt(match[1], 10) : 1; // "heading" (no number) defaults to level 1
-    return headingLevels.includes(level as 1 | 2 | 3 | 4 | 5 | 6);
+    return headingLevels.includes(level as (typeof headingLevels)[number]);
   });
 
   const validTypeToBlocknoteKeys = { ...restTypeToKeys, heading: filteredHeading };

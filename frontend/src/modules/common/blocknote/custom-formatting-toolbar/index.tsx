@@ -15,8 +15,9 @@ import { CustomTextAlignSelect } from '~/modules/common/blocknote/custom-formatt
 import { CellaCustomBlockTypeSelect } from '~/modules/common/blocknote/custom-formatting-toolbar/custom-block-type-change';
 import { CustomTextStyleSelect } from '~/modules/common/blocknote/custom-formatting-toolbar/custom-text-type-change';
 import { FileOpenPreviewButton } from '~/modules/common/blocknote/custom-formatting-toolbar/open-preview-button';
+import type { CustomBlockNoteMenuProps } from '~/modules/common/blocknote/types';
 
-export const CustomFormattingToolbar = () => (
+export const CustomFormattingToolbar = ({ headingLevels }: { headingLevels: CustomBlockNoteMenuProps['headingLevels'] }) => (
   <FormattingToolbarController
     formattingToolbar={() => {
       // to be able to use in sheet
@@ -31,7 +32,7 @@ export const CustomFormattingToolbar = () => (
       }, []);
       return (
         <FormattingToolbar>
-          {customFormattingToolBarConfig.blockTypeSelect && <CellaCustomBlockTypeSelect />}
+          {customFormattingToolBarConfig.blockTypeSelect && <CellaCustomBlockTypeSelect headingLevels={headingLevels} />}
           {customFormattingToolBarConfig.blockStyleSelect && <CustomTextStyleSelect />}
           {customFormattingToolBarConfig.blockAlignSelect && <CustomTextAlignSelect />}
 

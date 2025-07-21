@@ -3,14 +3,16 @@ import { type BlockTypeSelectItem, type DragHandleMenuProps, useComponentsContex
 import { useMemo } from 'react';
 import { customBlockTypeSelectItems, getSideMenuItems } from '~/modules/common/blocknote/blocknote-config';
 import { focusEditor } from '~/modules/common/blocknote/helpers/focus';
-import type { CustomBlockNoteEditor, CustomBlockTypes } from '~/modules/common/blocknote/types';
+import type { CommonBlockNoteProps, CustomBlockNoteEditor, CustomBlockTypes } from '~/modules/common/blocknote/types';
 
 interface ResetBlockTypeItemProp {
   editor: CustomBlockNoteEditor;
   props: DragHandleMenuProps;
   allowedTypes: CustomBlockTypes[];
+  headingLevels: NonNullable<CommonBlockNoteProps['headingLevels']>;
 }
-export function ResetBlockTypeItem({ editor, props: { block }, allowedTypes }: ResetBlockTypeItemProp) {
+
+export function ResetBlockTypeItem({ editor, props: { block }, allowedTypes, headingLevels }: ResetBlockTypeItemProp) {
   // biome-ignore lint/style/noNonNullAssertion: required by author
   const Components = useComponentsContext()!;
   const dict = useDictionary();
@@ -19,8 +21,15 @@ export function ResetBlockTypeItem({ editor, props: { block }, allowedTypes }: R
   const selectItemsType: readonly string[] = filteredSelectItems;
 
   const filteredItems = useMemo(() => {
-    return getSideMenuItems(dict).filter((item) => selectItemsType.includes(item.type));
-  }, [editor, dict]);
+    return getSideMenuItems(dict).filter((item) => {
+      if (!selectItemsType.includes(item.type)) return false;
+
+      if (item.type === 'heading' && typeof item.props?.level === 'number') {
+        return headingLevels.includes(item.props.level as (typeof headingLevels)[number]);
+      }
+      return true;
+    });
+  }, [editor, dict, selectItemsType, headingLevels]);
 
   // Determine if the current block type should be shown
   const shouldShow = useMemo(() => filteredItems.some((item) => item.type === block.type), [block.type, filteredItems]);

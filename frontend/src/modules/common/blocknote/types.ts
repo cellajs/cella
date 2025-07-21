@@ -86,3 +86,9 @@ export type CommonBlockNoteProps = {
   | { filePanel?: never; baseFilePanelProps: BaseUppyFilePanelProps }
   | { filePanel?: never; baseFilePanelProps?: never }
 );
+
+export type CustomBlockNoteMenuProps = {
+  editor: CustomBlockNoteEditor;
+  allowedTypes: CustomBlockTypes[];
+  headingLevels: NonNullable<CommonBlockNoteProps['headingLevels']>;
+};
