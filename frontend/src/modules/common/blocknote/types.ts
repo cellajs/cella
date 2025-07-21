@@ -1,9 +1,11 @@
+import type { BlockNoteEditorOptions } from '@blocknote/core';
 import type { FilePanelProps } from '@blocknote/react';
 import type React from 'react';
 import type { customSchema, supportedLanguages } from '~/modules/common/blocknote/blocknote-config';
 import type { UploadedUppyFile } from '~/modules/common/uploader/types';
 import type { Member } from '~/modules/memberships/types';
 
+type CustomSchema = typeof customSchema;
 export type CustomBlockNoteEditor = typeof customSchema.BlockNoteEditor;
 export type CustomBlock = typeof customSchema.Block;
 
@@ -63,6 +65,9 @@ export type CommonBlockNoteProps = {
   editable?: boolean;
   className?: string;
   codeBlockDefaultLanguage?: keyof typeof supportedLanguages;
+  headingLevels?: NonNullable<
+    BlockNoteEditorOptions<CustomSchema['blockSchema'], CustomSchema['inlineContentSchema'], CustomSchema['styleSchema']>['heading']
+  >['levels'];
   sideMenu?: boolean;
   slashMenu?: boolean;
   formattingToolbar?: boolean;

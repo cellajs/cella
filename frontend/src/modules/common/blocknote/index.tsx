@@ -26,9 +26,9 @@ import type { CommonBlockNoteProps, CustomBlockFileTypes, CustomBlockNoteEditor,
 import { useUIStore } from '~/store/ui';
 
 import '@blocknote/shadcn/style.css';
+import { getPresignedUrl } from '~/api.gen';
 import '~/modules/common/blocknote/app-specific-custom/styles.css';
 import '~/modules/common/blocknote/styles.css';
-import { getPresignedUrl } from '~/api.gen';
 
 type BlockNoteProps =
   | (CommonBlockNoteProps & {
@@ -56,6 +56,7 @@ const BlockNote = ({
   trailingBlock = true,
   clickOpensPreview = false, // click on FileBlock opens preview (in case, type is 'preview' or not editable)
   // Editor functional
+  headingLevels = [1, 2, 3],
   codeBlockDefaultLanguage = 'text',
   editable = type !== 'preview',
   sideMenu = true,
@@ -96,6 +97,7 @@ const BlockNote = ({
       supportedLanguages,
       createHighlighter: codeBlock.createHighlighter,
     },
+    heading: { levels: headingLevels },
     trailingBlock,
     dictionary: getDictionary(),
     // TODO(BLOCKING) remove image blick (https://github.com/TypeCellOS/BlockNote/issues/1570)
@@ -225,7 +227,7 @@ const BlockNote = ({
       onBlur={handleBlur}
       {...(type === 'create' && { onChange: handleUpdateData })}
     >
-      {slashMenu && <CustomSlashMenu editor={editor} allowedTypes={allowedBlockTypes} />}
+      {slashMenu && <CustomSlashMenu editor={editor} allowedTypes={allowedBlockTypes} headingLevels={headingLevels} />}
 
       {/* Hide formatting toolbar on mobile */}
       {!isMobile && formattingToolbar && <CustomFormattingToolbar />}

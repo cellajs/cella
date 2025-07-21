@@ -3,10 +3,18 @@ import { SuggestionMenuController } from '@blocknote/react';
 
 import { getSlashMenuItems } from '~/modules/common/blocknote/blocknote-config';
 import { slashMenu } from '~/modules/common/blocknote/custom-slash-menu/custom-slash-menu';
-import type { CustomBlockNoteEditor, CustomBlockTypes } from '~/modules/common/blocknote/types';
+import type { CommonBlockNoteProps, CustomBlockNoteEditor, CustomBlockTypes } from '~/modules/common/blocknote/types';
 
-export const CustomSlashMenu = ({ editor, allowedTypes }: { editor: CustomBlockNoteEditor; allowedTypes: CustomBlockTypes[] }) => {
-  const slashMenuItems = getSlashMenuItems(editor, allowedTypes);
+export const CustomSlashMenu = ({
+  editor,
+  allowedTypes,
+  headingLevels,
+}: {
+  editor: CustomBlockNoteEditor;
+  allowedTypes: CustomBlockTypes[];
+  headingLevels: NonNullable<CommonBlockNoteProps['headingLevels']>;
+}) => {
+  const slashMenuItems = getSlashMenuItems(editor, allowedTypes, headingLevels);
 
   return (
     <SuggestionMenuController
