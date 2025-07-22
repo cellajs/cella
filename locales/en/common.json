@@ -388,7 +388,8 @@
   "success.update_item": "{{item}} updated.",
   "success.update_resource": "{{resource}} has been updated.",
   "success.upload_cover": "Cover has been saved.",
-  "success.user_invited": "Users invited.",
+  "success.users_invited": "Users invited.",
+  "success.resource_count_invited": "{{count}} {{resource}} invited.",
   "success.waitlist_request": "Waitlist request for {{appName}} received!",
   "success.you_joined_entity": "You have joined the {{entity}}.",
   "success.you_left_entity": "You have left the {{entity}}.",
@@ -445,5 +446,6 @@
   "write": "Write",
   "year": "year",
   "your_role": "Your role",
-  "already_signed_out": "Already signed out"
+  "already_signed_out": "Already signed out",
+  "still_not_accepted": "{{count}} of {{total}} haven't accepted the invitation yet."
 }

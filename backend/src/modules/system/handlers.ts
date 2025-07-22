@@ -43,13 +43,17 @@ const systemRouteHandlers = app
     const senderThumbnailUrl = user.thumbnailUrl;
     const subject = i18n.t('backend:email.system_invite.subject', { lng, appName: config.name });
 
+    const normalizedEmails = emails.map((email) => email.toLowerCase());
+
+    if (!normalizedEmails.length) throw new ApiError({ status: 400, type: 'no_recipients', severity: 'warn' });
+
     // Query to filter out invitations on same email
     const existingInvitesQuery = db
       .select()
       .from(tokensTable)
       .where(
         and(
-          inArray(tokensTable.email, emails),
+          inArray(tokensTable.email, normalizedEmails),
           eq(tokensTable.type, 'invitation'),
           // Make sure its a system invitation
           isNull(tokensTable.entityType),
@@ -57,16 +61,20 @@ const systemRouteHandlers = app
         ),
       );
 
-    const [existingUsers, existingInvites] = await Promise.all([getUsersByConditions([inArray(emailsTable.email, emails)]), existingInvitesQuery]);
+    const [existingUsers, existingInvites] = await Promise.all([
+      getUsersByConditions([inArray(emailsTable.email, normalizedEmails)]),
+      existingInvitesQuery,
+    ]);
 
     // Create a set of emails from both existing users and invitations
     const existingEmails = new Set([...existingUsers.map((user) => user.email), ...existingInvites.map((invite) => invite.email)]);
 
     // Filter out emails that already user or has invitations
-    const recipientEmails = emails.filter((email) => !existingEmails.has(email));
+    const recipientEmails = normalizedEmails.filter((email) => !existingEmails.has(email));
+    const rejectedItems = normalizedEmails.filter((email) => existingEmails.has(email));
 
     // Stop if no recipients
-    if (recipientEmails.length === 0) throw new ApiError({ status: 400, type: 'no_recipients', severity: 'warn' });
+    if (recipientEmails.length === 0) return ctx.json({ success: true, rejectedItems, invitesSended: 0 }, 200);
 
     // Generate tokens
     const tokens = recipientEmails.map((email) => {
@@ -109,7 +117,7 @@ const systemRouteHandlers = app
 
     logEvent('Users invited on system level');
 
-    return ctx.json(true, 200);
+    return ctx.json({ success: true, rejectedItems, invitesSended: recipients.length }, 200);
   })
   /*
    * Get presigned URL

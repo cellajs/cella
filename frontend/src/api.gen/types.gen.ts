@@ -2955,7 +2955,11 @@ export type SystemInviteResponses = {
   /**
    * Invitations are sent
    */
-  200: boolean;
+  200: {
+    success: boolean;
+    rejectedItems: Array<string>;
+    invitesSended: number;
+  };
 };
 
 export type SystemInviteResponse = SystemInviteResponses[keyof SystemInviteResponses];

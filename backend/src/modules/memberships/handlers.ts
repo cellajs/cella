@@ -39,6 +39,10 @@ const membershipRouteHandlers = app
     const { emails, role } = ctx.req.valid('json');
     const { idOrSlug, entityType: passedEntityType } = ctx.req.valid('query');
 
+    // Normalize emails
+    const normalizedEmails = emails.map((email) => email.toLowerCase());
+    if (!normalizedEmails.length) throw new ApiError({ status: 400, type: 'no_recipients', severity: 'warn' });
+
     // Validate entity existence and check user permission for updates
     const { entity } = await getValidContextEntity(idOrSlug, passedEntityType, 'update');
 
@@ -48,9 +52,6 @@ const membershipRouteHandlers = app
 
     const user = getContextUser();
     const organization = getContextOrganization();
-
-    // Normalize emails
-    const normalizedEmails = emails.map((email) => email.toLowerCase());
 
     // Determine main entity details (if applicable)
     const associatedEntity = getAssociatedEntityDetails(entity);

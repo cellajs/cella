@@ -1263,7 +1263,11 @@ export const zSystemInviteData = z.object({
 /**
  * Invitations are sent
  */
-export const zSystemInviteResponse = z.boolean();
+export const zSystemInviteResponse = z.object({
+  success: z.boolean(),
+  rejectedItems: z.array(z.string()),
+  invitesSended: z.number(),
+});
 
 export const zGetPresignedUrlData = z.object({
   body: z.never().optional(),

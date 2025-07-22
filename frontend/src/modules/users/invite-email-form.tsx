@@ -53,11 +53,19 @@ const InviteEmailForm = ({ entity, dialog: isDialog, children }: Props) => {
   const formContainerId = 'invite-users';
   const form = useFormWithDraft<FormValues>(`invite-users${entity ? `-${entity?.id}` : ''}`, { formOptions, formContainerId });
 
-  const onSuccess = () => {
+  const onSuccess = ({ invitesSended, rejectedItems }: { rejectedItems: string[]; invitesSended: number }, { emails }: { emails: string[] }) => {
     form.reset(undefined, { keepDirtyValues: true });
     if (isDialog) useDialoger.getState().remove();
 
-    toaster(t('common:success.user_invited'), 'success');
+    if (invitesSended > 0) {
+      const resource = t(`common:${invitesSended === 1 ? 'user' : 'users'}`).toLowerCase();
+      toaster(t('common:success.resource_count_invited', { count: invitesSended, resource }), 'success');
+    }
+    if (rejectedItems.length) {
+      toaster(t('common:still_not_accepted', { count: rejectedItems.length, total: emails.length }), 'info');
+    }
+
+    toaster(t('common:no_recipients'), 'warning');
 
     // Since this form is also used in onboarding, we need to call the next step
     // This should ideally be done through the callback, but we need to refactor stepper

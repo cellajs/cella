@@ -81,7 +81,7 @@ export const RequestsTableBar = ({ total, selected, searchVars, setSearch, colum
     try {
       // Send invite to users
       await systemInvite({ body: { emails } });
-      toaster(t('common:success.user_invited'), 'success');
+      toaster(t('common:success.users_invited'), 'success');
 
       mutateQuery.update(updatedWaitLists);
       clearSelection();
