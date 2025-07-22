@@ -20,22 +20,18 @@ export const TooltipButton = React.forwardRef<HTMLDivElement, TooltipButtonProps
   ({ children, toolTipContent, disabled, side = 'bottom', sideOffset = 8, className, hideWhenDetached, portal = true, ...props }, _ref) => {
     if (disabled) return children;
 
+    const content = (
+      <TooltipContent side={side} {...props} sideOffset={sideOffset} hideWhenDetached={hideWhenDetached}>
+        {toolTipContent}
+      </TooltipContent>
+    );
+
     return (
       <Tooltip>
-        <TooltipTrigger className={className} asChild>
-          {children}
+        <TooltipTrigger asChild>
+          <div className={className}>{children}</div>
         </TooltipTrigger>
-        {portal ? (
-          <TooltipPortal>
-            <TooltipContent side={side} {...props} sideOffset={sideOffset} hideWhenDetached={hideWhenDetached}>
-              {toolTipContent}
-            </TooltipContent>
-          </TooltipPortal>
-        ) : (
-          <TooltipContent side={side} {...props} sideOffset={sideOffset} hideWhenDetached={hideWhenDetached}>
-            {toolTipContent}
-          </TooltipContent>
-        )}
+        {portal ? <TooltipPortal>{content}</TooltipPortal> : content}
       </Tooltip>
     );
   },
