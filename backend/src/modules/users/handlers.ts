@@ -1,5 +1,3 @@
-import { OpenAPIHono } from '@hono/zod-openapi';
-import { and, count, eq, ilike, inArray, or, type SQL } from 'drizzle-orm';
 import { db } from '#/db/db';
 import { membershipsTable } from '#/db/schema/memberships';
 import { usersTable } from '#/db/schema/users';
@@ -14,6 +12,8 @@ import { defaultHook } from '#/utils/default-hook';
 import { getIsoDate } from '#/utils/iso-date';
 import { getOrderColumn } from '#/utils/order-column';
 import { prepareStringForILikeFilter } from '#/utils/sql';
+import { OpenAPIHono } from '@hono/zod-openapi';
+import { and, count, eq, ilike, inArray, or, type SQL } from 'drizzle-orm';
 
 const app = new OpenAPIHono<Env>({ defaultHook });
 
@@ -91,18 +91,18 @@ const usersRouteHandlers = app
 
     const foundIds = new Set(targets.map(({ id }) => id));
     const allowedIds: string[] = [];
-    const rejectedIds: string[] = [];
+    const rejectedItems: string[] = [];
 
     for (const targetId of toDeleteIds) {
       // Not found in DB
       if (!foundIds.has(targetId)) {
-        rejectedIds.push(targetId);
+        rejectedItems.push(targetId);
         continue; // Skip to next
       }
 
       const isAllowed = contextUserRole === 'admin' || contextUserId === targetId;
       if (isAllowed) allowedIds.push(targetId);
-      else rejectedIds.push(targetId); // Found but not authorized
+      else rejectedItems.push(targetId); // Found but not authorized
     }
 
     // Ifuser doesn't have permission to delete, return error
@@ -113,7 +113,7 @@ const usersRouteHandlers = app
 
     logEvent('Users deleted', { ids: allowedIds.join() });
 
-    return ctx.json({ success: true, rejectedIds }, 200);
+    return ctx.json({ success: true, rejectedItems }, 200);
   })
   /*
    * Get a user by id or slug

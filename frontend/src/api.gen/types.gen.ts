@@ -1666,7 +1666,7 @@ export type DeleteMySessionsResponses = {
    */
   200: {
     success: boolean;
-    rejectedIds: Array<string>;
+    rejectedItems: Array<string>;
   };
 };
 
@@ -1997,7 +1997,7 @@ export type DeleteUsersResponses = {
    */
   200: {
     success: boolean;
-    rejectedIds: Array<string>;
+    rejectedItems: Array<string>;
   };
 };
 
@@ -2288,7 +2288,7 @@ export type DeleteOrganizationsResponses = {
    */
   200: {
     success: boolean;
-    rejectedIds: Array<string>;
+    rejectedItems: Array<string>;
   };
 };
 
@@ -3516,7 +3516,7 @@ export type DeleteAttachmentsResponses = {
    */
   200: {
     success: boolean;
-    rejectedIds: Array<string>;
+    rejectedItems: Array<string>;
   };
 };
 
@@ -3985,7 +3985,7 @@ export type DeleteMembershipsResponses = {
    */
   200: {
     success: boolean;
-    rejectedIds: Array<string>;
+    rejectedItems: Array<string>;
   };
 };
 
@@ -4045,7 +4045,11 @@ export type MembershipInviteResponses = {
   /**
    * Number of sended invitations
    */
-  200: number;
+  200: {
+    success: boolean;
+    rejectedItems: Array<string>;
+    invitesSended: number;
+  };
 };
 
 export type MembershipInviteResponse = MembershipInviteResponses[keyof MembershipInviteResponses];

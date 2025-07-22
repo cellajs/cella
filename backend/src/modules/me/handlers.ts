@@ -118,7 +118,7 @@ const meRouteHandlers = app
 
     const { session } = currentSessionData ? await validateSession(currentSessionData.sessionToken) : {};
 
-    const rejectedIds: string[] = [];
+    const rejectedItems: string[] = [];
 
     await Promise.all(
       sessionIds.map(async (id) => {
@@ -127,12 +127,12 @@ const meRouteHandlers = app
           await invalidateSessionById(id, user.id);
         } catch (error) {
           // Could be not found, not owned by user, etc.
-          rejectedIds.push(id);
+          rejectedItems.push(id);
         }
       }),
     );
 
-    return ctx.json({ success: true, rejectedIds }, 200);
+    return ctx.json({ success: true, rejectedItems }, 200);
   })
   /*
    * Update current user (me)

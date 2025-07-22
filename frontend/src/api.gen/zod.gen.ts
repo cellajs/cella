@@ -653,7 +653,7 @@ export const zDeleteMySessionsData = z.object({
  */
 export const zDeleteMySessionsResponse = z.object({
   success: z.boolean(),
-  rejectedIds: z.array(z.string()),
+  rejectedItems: z.array(z.string()),
 });
 
 export const zDeleteMyMembershipData = z.object({
@@ -744,7 +744,7 @@ export const zDeleteUsersData = z.object({
  */
 export const zDeleteUsersResponse = z.object({
   success: z.boolean(),
-  rejectedIds: z.array(z.string()),
+  rejectedItems: z.array(z.string()),
 });
 
 export const zGetUsersData = z.object({
@@ -883,7 +883,7 @@ export const zDeleteOrganizationsData = z.object({
  */
 export const zDeleteOrganizationsResponse = z.object({
   success: z.boolean(),
-  rejectedIds: z.array(z.string()),
+  rejectedItems: z.array(z.string()),
 });
 
 export const zGetOrganizationsData = z.object({
@@ -1435,7 +1435,7 @@ export const zDeleteAttachmentsData = z.object({
  */
 export const zDeleteAttachmentsResponse = z.object({
   success: z.boolean(),
-  rejectedIds: z.array(z.string()),
+  rejectedItems: z.array(z.string()),
 });
 
 export const zGetAttachmentsData = z.object({
@@ -1633,7 +1633,7 @@ export const zDeleteMembershipsData = z.object({
  */
 export const zDeleteMembershipsResponse = z.object({
   success: z.boolean(),
-  rejectedIds: z.array(z.string()),
+  rejectedItems: z.array(z.string()),
 });
 
 export const zMembershipInviteData = z.object({
@@ -1655,7 +1655,11 @@ export const zMembershipInviteData = z.object({
 /**
  * Number of sended invitations
  */
-export const zMembershipInviteResponse = z.number();
+export const zMembershipInviteResponse = z.object({
+  success: z.boolean(),
+  rejectedItems: z.array(z.string()),
+  invitesSended: z.number(),
+});
 
 export const zUpdateMembershipData = z.object({
   body: z

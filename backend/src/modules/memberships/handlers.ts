@@ -1,7 +1,3 @@
-import { OpenAPIHono } from '@hono/zod-openapi';
-import { config } from 'config';
-import { and, count, eq, ilike, inArray, isNotNull, isNull, or } from 'drizzle-orm';
-import i18n from 'i18next';
 import { db } from '#/db/db';
 import { emailsTable } from '#/db/schema/emails';
 import { membershipsTable } from '#/db/schema/memberships';
@@ -27,6 +23,10 @@ import { getOrderColumn } from '#/utils/order-column';
 import { slugFromEmail } from '#/utils/slug-from-email';
 import { prepareStringForILikeFilter } from '#/utils/sql';
 import { createDate, TimeSpan } from '#/utils/time-span';
+import { OpenAPIHono } from '@hono/zod-openapi';
+import { config } from 'config';
+import { and, count, eq, ilike, inArray, isNotNull, isNull, or } from 'drizzle-orm';
+import i18n from 'i18next';
 import { MemberInviteEmail, type MemberInviteEmailProps } from '../../../emails/member-invite';
 
 const app = new OpenAPIHono<Env>({ defaultHook });
@@ -135,7 +135,7 @@ const membershipRouteHandlers = app
       emailsWithIdToInvite.push({ email, userId: null });
     }
 
-    if (emailsWithIdToInvite.length === 0) return ctx.json(0, 200);
+    if (emailsWithIdToInvite.length === 0) ctx.json({ success: true, rejectedItems: normalizedEmails, invitesSended: 0 });
 
     // Check create restrictions
     const [{ currentOrgMemberships }] = await db
@@ -215,7 +215,8 @@ const membershipRouteHandlers = app
 
     logEvent(`${insertedTokens.length} users invited to organization`, { organization: organization.id }); // Log invitation event
 
-    return ctx.json(recipients.length, 200);
+    const rejectedItems = normalizedEmails.filter((email) => !recipients.some((recipient) => recipient.email === email));
+    return ctx.json({ success: true, rejectedItems, invitesSended: recipients.length }, 200);
   })
   /*
    * Delete memberships to remove users from entity
@@ -241,14 +242,14 @@ const membershipRouteHandlers = app
       .where(and(inArray(membershipsTable.userId, membershipIds), ...filters));
 
     // Check if membership exist
-    const rejectedIds: string[] = [];
+    const rejectedItems: string[] = [];
 
     for (const id of membershipIds) {
-      if (!targets.some((target) => target.userId === id)) rejectedIds.push(id);
+      if (!targets.some((target) => target.userId === id)) rejectedItems.push(id);
     }
 
     // If the user doesn't have permission to delete any of the memberships, return an error
-    if (targets.length === 0) return ctx.json({ success: false, rejectedIds }, 200);
+    if (targets.length === 0) return ctx.json({ success: false, rejectedItems }, 200);
 
     // Delete the memberships
     await db.delete(membershipsTable).where(
@@ -267,7 +268,7 @@ const membershipRouteHandlers = app
       logEvent('Member deleted', { membership: targetMembership.id });
     }
 
-    return ctx.json({ success: true, rejectedIds }, 200);
+    return ctx.json({ success: true, rejectedItems }, 200);
   })
   /*
    * Update user membership
@@ -428,7 +429,6 @@ const membershipRouteHandlers = app
       .where(
         and(
           eq(tokensTable.type, 'invitation'),
-          eq(tokensTable.entityType, entity.entityType),
           eq(tokensTable[entityIdField], entity.id),
           eq(tokensTable.organizationId, organization.id),
           isNotNull(tokensTable.role),

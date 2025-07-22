@@ -1,11 +1,11 @@
-import { z } from '@hono/zod-openapi';
 import { createCustomRoute } from '#/lib/custom-routes';
 import { isAuthenticated, isPublicAccess } from '#/middlewares/guard';
 import { tokenLimiter } from '#/middlewares/rate-limiter/limiters';
 import { meAuthDataSchema, menuSchema, passkeyRegistrationBodySchema, uploadTokenQuerySchema, uploadTokenSchema } from '#/modules/me/schema';
 import { userSchema, userUpdateBodySchema } from '#/modules/users/schema';
 import { entityWithTypeQuerySchema } from '#/utils/schema/common';
-import { errorResponses, successWithoutDataSchema, successWithRejectedIdsSchema } from '#/utils/schema/responses';
+import { errorResponses, successWithoutDataSchema, successWithRejectedItemsSchema } from '#/utils/schema/responses';
+import { z } from '@hono/zod-openapi';
 
 const meRoutes = {
   getMe: createCustomRoute({
@@ -117,7 +117,7 @@ const meRoutes = {
     responses: {
       200: {
         description: 'Success',
-        content: { 'application/json': { schema: successWithRejectedIdsSchema() } },
+        content: { 'application/json': { schema: successWithRejectedItemsSchema } },
       },
       ...errorResponses,
     },

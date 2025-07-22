@@ -1,9 +1,9 @@
-import { z } from '@hono/zod-openapi';
 import { createCustomRoute } from '#/lib/custom-routes';
 import { hasOrgAccess, isAuthenticated, isPublicAccess } from '#/middlewares/guard';
 import { attachmentCreateManySchema, attachmentListQuerySchema, attachmentSchema, attachmentUpdateBodySchema } from '#/modules/attachments/schema';
 import { idInOrgParamSchema, idSchema, idsBodySchema, inOrgParamSchema } from '#/utils/schema/common';
-import { errorResponses, paginationSchema, successWithRejectedIdsSchema } from '#/utils/schema/responses';
+import { errorResponses, paginationSchema, successWithRejectedItemsSchema } from '#/utils/schema/responses';
+import { z } from '@hono/zod-openapi';
 
 const attachmentRoutes = {
   createAttachments: createCustomRoute({
@@ -137,7 +137,7 @@ const attachmentRoutes = {
         description: 'Success',
         content: {
           'application/json': {
-            schema: successWithRejectedIdsSchema(),
+            schema: successWithRejectedItemsSchema,
           },
         },
       },

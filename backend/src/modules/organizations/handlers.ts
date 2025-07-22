@@ -144,7 +144,7 @@ const organizationRouteHandlers = app
     if (!toDeleteIds.length) throw new ApiError({ status: 400, type: 'invalid_request', severity: 'error', entityType: 'organization' });
 
     // Split ids into allowed and disallowed
-    const { allowedIds, disallowedIds: rejectedIds } = await splitByAllowance('delete', 'organization', toDeleteIds, memberships);
+    const { allowedIds, disallowedIds: rejectedItems } = await splitByAllowance('delete', 'organization', toDeleteIds, memberships);
     if (!allowedIds.length) throw new ApiError({ status: 403, type: 'forbidden', severity: 'warn', entityType: 'organization' });
 
     // Get ids of members for organizations
@@ -166,7 +166,7 @@ const organizationRouteHandlers = app
 
     logEvent('Organizations deleted', { ids: allowedIds.join() });
 
-    return ctx.json({ success: true, rejectedIds }, 200);
+    return ctx.json({ success: true, rejectedItems }, 200);
   })
   /*
    * Get organization by id or slug

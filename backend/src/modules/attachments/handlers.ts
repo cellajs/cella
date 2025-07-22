@@ -1,8 +1,3 @@
-import { OpenAPIHono } from '@hono/zod-openapi';
-import { config } from 'config';
-import { and, count, eq, ilike, inArray, like, notLike, or, type SQL } from 'drizzle-orm';
-import { html, raw } from 'hono/html';
-import { stream } from 'hono/streaming';
 import { db } from '#/db/db';
 import { attachmentsTable } from '#/db/schema/attachments';
 import { organizationsTable } from '#/db/schema/organizations';
@@ -19,6 +14,11 @@ import { getIsoDate } from '#/utils/iso-date';
 import { nanoid } from '#/utils/nanoid';
 import { getOrderColumn } from '#/utils/order-column';
 import { prepareStringForILikeFilter } from '#/utils/sql';
+import { OpenAPIHono } from '@hono/zod-openapi';
+import { config } from 'config';
+import { and, count, eq, ilike, inArray, like, notLike, or, type SQL } from 'drizzle-orm';
+import { html, raw } from 'hono/html';
+import { stream } from 'hono/streaming';
 
 const app = new OpenAPIHono<Env>({ defaultHook });
 
@@ -229,7 +229,7 @@ const attachmentsRouteHandlers = app
     const toDeleteIds = Array.isArray(ids) ? ids : [ids];
     if (!toDeleteIds.length) throw new ApiError({ status: 400, type: 'invalid_request', severity: 'warn', entityType: 'attachment' });
 
-    const { allowedIds, disallowedIds: rejectedIds } = await splitByAllowance('delete', 'attachment', toDeleteIds, memberships);
+    const { allowedIds, disallowedIds: rejectedItems } = await splitByAllowance('delete', 'attachment', toDeleteIds, memberships);
 
     if (!allowedIds.length) throw new ApiError({ status: 403, type: 'forbidden', severity: 'warn', entityType: 'attachment' });
 
@@ -238,7 +238,7 @@ const attachmentsRouteHandlers = app
 
     logEvent('Attachments deleted', { ids: allowedIds.join() });
 
-    return ctx.json({ success: true, rejectedIds }, 200);
+    return ctx.json({ success: true, rejectedItems }, 200);
   })
   /*
    * Get attachment cover

@@ -1,6 +1,6 @@
+import { errorSchema } from '#/utils/schema/error';
 import type { createRoute } from '@hono/zod-openapi';
 import { z } from '@hono/zod-openapi';
-import { errorSchema } from '#/utils/schema/error';
 
 /**
  * Type alias for the responses parameter of createRoute.
@@ -22,11 +22,10 @@ export const paginationSchema = <T extends z.ZodTypeAny>(schema: T) => z.object(
 /**
  * Schema for a successful response with disallowed IDs.
  */
-export const successWithRejectedIdsSchema = () =>
-  z.object({
-    success: z.boolean(),
-    rejectedIds: z.array(z.string()),
-  });
+export const successWithRejectedItemsSchema = z.object({
+  success: z.boolean(),
+  rejectedItems: z.array(z.string()),
+});
 
 /**
  * Set of common error responses with descriptions and schemas.  Includes: 400, 401, 403, 404, 429.
