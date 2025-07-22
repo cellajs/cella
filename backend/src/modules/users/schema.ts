@@ -1,9 +1,9 @@
-import { z } from '@hono/zod-openapi';
-import { config, type EnabledOauthProvider } from 'config';
-import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 import { usersTable } from '#/db/schema/users';
 import { membershipSummarySchema } from '#/modules/memberships/schema';
 import { paginationQuerySchema, validImageKeySchema, validNameSchema, validSlugSchema } from '#/utils/schema/common';
+import { z } from '@hono/zod-openapi';
+import { config, type EnabledOauthProvider } from 'config';
+import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 
 export const enabledOauthProvidersEnum = z.enum(config.enabledOauthProviders as unknown as [EnabledOauthProvider]);
 
@@ -39,9 +39,7 @@ export const userUpdateBodySchema = createInsertSchema(usersTable, {
   })
   .partial();
 
-export const userListQuerySchema = paginationQuerySchema.merge(
-  z.object({
-    sort: z.enum(['id', 'name', 'email', 'role', 'createdAt', 'lastSeenAt', 'membershipCount']).default('createdAt').optional(),
-    role: z.enum(config.rolesByType.systemRoles).default('user').optional(),
-  }),
-);
+export const userListQuerySchema = paginationQuerySchema.extend({
+  sort: z.enum(['id', 'name', 'email', 'role', 'createdAt', 'lastSeenAt', 'membershipCount']).default('createdAt').optional(),
+  role: z.enum(config.rolesByType.systemRoles).optional(),
+});

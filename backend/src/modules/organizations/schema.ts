@@ -1,6 +1,3 @@
-import { z } from '@hono/zod-openapi';
-import { config, type EntityType } from 'config';
-import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 import { organizationsTable } from '#/db/schema/organizations';
 import { authStrategiesEnum } from '#/db/schema/sessions';
 import { membershipSummarySchema } from '#/modules/memberships/schema';
@@ -13,6 +10,9 @@ import {
   validSlugSchema,
   validUrlSchema,
 } from '#/utils/schema/common';
+import { z } from '@hono/zod-openapi';
+import { config, type EntityType } from 'config';
+import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 
 // Entity count schema should exclude 'user' and 'organization'
 type FilteredEntityType = Exclude<EntityType, 'user' | 'organization'>;
@@ -87,8 +87,6 @@ export const organizationUpdateBodySchema = createInsertSchema(organizationsTabl
   })
   .partial();
 
-export const organizationListQuerySchema = paginationQuerySchema.merge(
-  z.object({
-    sort: z.enum(['id', 'name', 'userRole', 'createdAt']).default('createdAt').optional(),
-  }),
-);
+export const organizationListQuerySchema = paginationQuerySchema.extend({
+  sort: z.enum(['id', 'name', 'userRole', 'createdAt']).default('createdAt').optional(),
+});

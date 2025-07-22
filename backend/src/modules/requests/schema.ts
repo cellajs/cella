@@ -1,7 +1,7 @@
-import { z } from '@hono/zod-openapi';
-import { createSelectSchema } from 'drizzle-zod';
 import { requestsTable } from '#/db/schema/requests';
 import { paginationQuerySchema } from '#/utils/schema/common';
+import { z } from '@hono/zod-openapi';
+import { createSelectSchema } from 'drizzle-zod';
 
 const requestSelectSchema = createSelectSchema(requestsTable);
 
@@ -13,8 +13,6 @@ export const requestCreateBodySchema = z.object({
   message: z.string().nullable(),
 });
 
-export const requestListQuerySchema = paginationQuerySchema.merge(
-  z.object({
-    sort: z.enum(['id', 'email', 'type', 'createdAt']).default('createdAt').optional(),
-  }),
-);
+export const requestListQuerySchema = paginationQuerySchema.extend({
+  sort: z.enum(['id', 'email', 'type', 'createdAt']).default('createdAt').optional(),
+});
