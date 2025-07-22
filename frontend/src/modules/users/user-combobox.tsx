@@ -4,6 +4,7 @@ import { Check, ChevronsUpDown, Search, User, Users2, X } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { useDebounce } from '~/hooks/use-debounce';
 import { useMeasure } from '~/hooks/use-measure';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
@@ -23,6 +24,7 @@ interface Props {
 
 export const UserCombobox = ({ value, onChange, entity }: Props) => {
   const { t } = useTranslation();
+  const isMobile = useBreakpoints('max', 'sm');
   const { ref, bounds } = useMeasure<HTMLDivElement>();
   const entityIdField = config.entityIdFields[entity.entityType];
 
@@ -154,17 +156,17 @@ export const UserCombobox = ({ value, onChange, entity }: Props) => {
                               <div className="flex space-x-2 items-center outline-0 ring-0 group">
                                 <AvatarWrap type={entityType} className="h-8 w-8" id={id} name={name} url={thumbnailUrl} />
                                 <span className="group-hover:underline group-data-[already-member=true]:no-underline underline-offset-4 truncate font-medium">
-                                  {name}
+                                  {isMobile ? email : name}
                                 </span>
                               </div>
 
-                              <div className="flex items-center">
+                              <div className="flex items-center gap-2 min-w-0">
                                 <Badge size="sm" variant="plain" className="group-data-[already-member=true]:flex hidden gap-1">
                                   <User size={14} />
                                   <span className="max-sm:hidden font-light">{t('common:already_member')}</span>
                                 </Badge>
                                 <Check size={16} strokeWidth={3} className="flex text-success group-data-[was-selected=false]:hidden" />
-                                <span className="font-light flex group-data-[already-member=true]:hidden group-data-[was-selected=true]:hidden">
+                                <span className="font-light max-sm:hidden group-data-[already-member=true]:hidden group-data-[was-selected=true]:hidden">
                                   {email}
                                 </span>
                               </div>
