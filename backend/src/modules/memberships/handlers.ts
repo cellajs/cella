@@ -136,7 +136,7 @@ const membershipRouteHandlers = app
       emailsWithIdToInvite.push({ email, userId: null });
     }
 
-    if (emailsWithIdToInvite.length === 0) ctx.json({ success: true, rejectedItems: normalizedEmails, invitesSended: 0 });
+    if (emailsWithIdToInvite.length === 0) ctx.json({ success: false, rejectedItems: normalizedEmails, invitesSended: 0 }, 200);
 
     // Check create restrictions
     const [{ currentOrgMemberships }] = await db
