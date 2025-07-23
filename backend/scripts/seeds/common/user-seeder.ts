@@ -1,5 +1,5 @@
 import { EntitySeeder } from './entity-seeder';
-import { type InsertUserModel, type UserModel } from '#/db/schema/users';
+import { type InsertUserModel } from '#/db/schema/users';
 import { faker } from '@faker-js/faker';
 import { nanoid } from 'nanoid';
 import slugify from 'slugify';
