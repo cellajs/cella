@@ -13,11 +13,8 @@ export const mapOauthProviders = [
   { id: 'google', name: 'Google' },
   { id: 'microsoft', name: 'Microsoft' },
 ] as const;
-interface OauthOptions {
-  id: EnabledOauthProvider;
-  name: string;
-  url: string;
-}
+
+type OauthProviders = (typeof mapOauthProviders)[number];
 
 interface OauthOptionsProps {
   actionType: Step;
@@ -33,14 +30,14 @@ const OauthOptions = ({ actionType = 'signIn' }: OauthOptionsProps) => {
   const mode = useUIStore((state) => state.mode);
   const { token, redirect } = useSearch({ from: AuthenticateRoute.id });
 
-  const [loading, setLoading] = useState(false);
+  const [loadingProvider, setLoadingProvider] = useState<EnabledOauthProvider | null>(null);
 
   const redirectPath = redirect?.startsWith('/') ? redirect : '';
   const actionText = actionType === 'signIn' ? t('common:sign_in') : actionType === 'signUp' ? t('common:sign_up') : t('common:continue');
 
   const authenticateWithProvider = async (provider: EnabledOauthProvider) => {
     try {
-      setLoading(true);
+      setLoadingProvider(provider);
 
       const baseUrl = `${config.backendAuthUrl}/${provider}`;
       const params = new URLSearchParams();
@@ -52,11 +49,10 @@ const OauthOptions = ({ actionType = 'signIn' }: OauthOptionsProps) => {
       } else params.set('type', 'auth');
 
       const providerUrl = `${baseUrl}?${params.toString()}`;
-
       window.location.assign(providerUrl);
     } catch (error) {
       toaster(t('common:url_malformed'), 'error');
-      setLoading(false);
+      setLoadingProvider(null);
     }
   };
 
@@ -66,12 +62,13 @@ const OauthOptions = ({ actionType = 'signIn' }: OauthOptionsProps) => {
     <div data-mode={mode} className="group flex flex-col space-y-2">
       {config.enabledOauthProviders.map((provider) => {
         // Map provider data
-        const providerData = mapOauthProviders.find((p) => p.id === provider);
-        if (!providerData) return;
+        const providerData = mapOauthProviders.find((p): p is OauthProviders & { id: typeof provider } => p.id === provider);
+
+        if (!providerData) return null;
 
         return (
           <Button
-            loading={loading}
+            loading={loadingProvider === provider}
             key={provider}
             type="button"
             variant="outline"
