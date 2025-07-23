@@ -1,10 +1,3 @@
-import { getRandomValues } from 'node:crypto';
-import { OpenAPIHono } from '@hono/zod-openapi';
-import { encodeBase64 } from '@oslojs/encoding';
-import { generateCodeVerifier, generateState, OAuth2RequestError } from 'arctic';
-import { config, type EnabledOauthProvider } from 'config';
-import { and, desc, eq } from 'drizzle-orm';
-import i18n from 'i18next';
 import { db } from '#/db/db';
 import { type EmailModel, emailsTable } from '#/db/schema/emails';
 import { membershipsTable } from '#/db/schema/memberships';
@@ -32,13 +25,13 @@ import {
 } from '#/modules/auth/helpers/oauth/cookies';
 import { findExistingUsers, getOauthRedirectUrl, handleExistingUser } from '#/modules/auth/helpers/oauth/index';
 import {
+  githubAuth,
   type GithubUserEmailProps,
   type GithubUserProps,
-  type GoogleUserProps,
-  githubAuth,
   googleAuth,
-  type MicrosoftUserProps,
+  type GoogleUserProps,
   microsoftAuth,
+  type MicrosoftUserProps,
 } from '#/modules/auth/helpers/oauth/oauth-providers';
 import { transformGithubUserData, transformSocialUserData } from '#/modules/auth/helpers/oauth/transform-user-data';
 import { verifyPassKeyPublic } from '#/modules/auth/helpers/passkey';
@@ -54,6 +47,13 @@ import { getIsoDate } from '#/utils/iso-date';
 import { nanoid } from '#/utils/nanoid';
 import { slugFromEmail } from '#/utils/slug-from-email';
 import { createDate, TimeSpan } from '#/utils/time-span';
+import { OpenAPIHono } from '@hono/zod-openapi';
+import { encodeBase64 } from '@oslojs/encoding';
+import { generateCodeVerifier, generateState, OAuth2RequestError } from 'arctic';
+import { config, type EnabledOauthProvider } from 'config';
+import { and, desc, eq } from 'drizzle-orm';
+import i18n from 'i18next';
+import { getRandomValues } from 'node:crypto';
 import { CreatePasswordEmail, type CreatePasswordEmailProps } from '../../../emails/create-password';
 import { EmailVerificationEmail, type EmailVerificationEmailProps } from '../../../emails/email-verification';
 
@@ -601,13 +601,13 @@ const authRouteHandlers = app
 
     const strategy = 'github' as EnabledOauthProvider;
     if (!isOAuthEnabled(strategy)) {
-      throw new ApiError({ status: 400, type: 'unsupported_oauth', severity: 'error', meta: { strategy } });
+      throw new ApiError({ status: 400, type: 'unsupported_oauth', severity: 'error', meta: { strategy }, redirectToFrontend: true });
     }
 
     const stateCookie = await getAuthCookie(ctx, 'oauth_state');
     // Verify state
     if (!state || !stateCookie || stateCookie !== state) {
-      throw new ApiError({ status: 401, type: 'invalid_state', severity: 'warn', meta: { strategy } });
+      throw new ApiError({ status: 401, type: 'invalid_state', severity: 'warn', meta: { strategy }, redirectToFrontend: true });
     }
 
     try {
@@ -661,7 +661,14 @@ const authRouteHandlers = app
       });
     } catch (error) {
       const type = error instanceof OAuth2RequestError ? 'invalid_credentials' : 'oauth_failed';
-      throw new ApiError({ status: 401, type, severity: 'warn', meta: { strategy }, ...(error instanceof Error ? { originalError: error } : {}) });
+      throw new ApiError({
+        status: 401,
+        type,
+        severity: 'warn',
+        meta: { strategy },
+        redirectToFrontend: true,
+        ...(error instanceof Error ? { originalError: error } : {}),
+      });
     } finally {
       clearOauthSession(ctx);
     }
@@ -674,7 +681,7 @@ const authRouteHandlers = app
     const strategy = 'google' as EnabledOauthProvider;
 
     if (!isOAuthEnabled(strategy)) {
-      throw new ApiError({ status: 400, type: 'unsupported_oauth', severity: 'error', meta: { strategy } });
+      throw new ApiError({ status: 400, type: 'unsupported_oauth', severity: 'error', meta: { strategy }, redirectToFrontend: true });
     }
 
     const storedState = await getAuthCookie(ctx, 'oauth_state');
@@ -682,7 +689,7 @@ const authRouteHandlers = app
 
     // verify state
     if (!code || !storedState || !storedCodeVerifier || state !== storedState) {
-      throw new ApiError({ status: 401, type: 'invalid_state', severity: 'warn', meta: { strategy } });
+      throw new ApiError({ status: 401, type: 'invalid_state', severity: 'warn', meta: { strategy }, redirectToFrontend: true });
     }
 
     try {
@@ -731,7 +738,14 @@ const authRouteHandlers = app
       });
     } catch (error) {
       const type = error instanceof OAuth2RequestError ? 'invalid_credentials' : 'oauth_failed';
-      throw new ApiError({ status: 401, type, severity: 'warn', meta: { strategy }, ...(error instanceof Error ? { originalError: error } : {}) });
+      throw new ApiError({
+        status: 401,
+        type,
+        severity: 'warn',
+        meta: { strategy },
+        redirectToFrontend: true,
+        ...(error instanceof Error ? { originalError: error } : {}),
+      });
     } finally {
       clearOauthSession(ctx);
     }
@@ -744,7 +758,7 @@ const authRouteHandlers = app
     const strategy = 'microsoft' as EnabledOauthProvider;
 
     if (!isOAuthEnabled(strategy)) {
-      throw new ApiError({ status: 400, type: 'unsupported_oauth', severity: 'error', meta: { strategy } });
+      throw new ApiError({ status: 400, type: 'unsupported_oauth', severity: 'error', meta: { strategy }, redirectToFrontend: true });
     }
 
     const storedState = await getAuthCookie(ctx, 'oauth_state');
@@ -752,7 +766,7 @@ const authRouteHandlers = app
 
     // verify state
     if (!code || !storedState || !storedCodeVerifier || state !== storedState) {
-      throw new ApiError({ status: 401, type: 'invalid_state', severity: 'warn', meta: { strategy } });
+      throw new ApiError({ status: 401, type: 'invalid_state', severity: 'warn', meta: { strategy }, redirectToFrontend: true });
     }
 
     try {
@@ -803,7 +817,14 @@ const authRouteHandlers = app
       });
     } catch (error) {
       const type = error instanceof OAuth2RequestError ? 'invalid_credentials' : 'oauth_failed';
-      throw new ApiError({ status: 401, type, severity: 'warn', meta: { strategy }, ...(error instanceof Error ? { originalError: error } : {}) });
+      throw new ApiError({
+        status: 401,
+        type,
+        severity: 'warn',
+        meta: { strategy },
+        redirectToFrontend: true,
+        ...(error instanceof Error ? { originalError: error } : {}),
+      });
     } finally {
       clearOauthSession(ctx);
     }
