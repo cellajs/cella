@@ -1,11 +1,11 @@
 import {
   BlockNoteSchema,
   type CodeBlockOptions,
+  type DefaultSuggestionItem,
+  type Dictionary,
   defaultBlockSpecs,
   defaultInlineContentSpecs,
   defaultStyleSpecs,
-  type DefaultSuggestionItem,
-  type Dictionary,
 } from '@blocknote/core';
 import { blockTypeSelectItems, type DefaultReactSuggestionItem, getDefaultReactSlashMenuItems } from '@blocknote/react';
 

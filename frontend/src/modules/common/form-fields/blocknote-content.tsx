@@ -10,7 +10,6 @@ type Props = {
   disabled?: boolean;
   BaseBlockNoteProps: Omit<CommonBlockNoteProps, 'defaultValue' | 'updateData' | 'filePanel' | 'baseFilePanelProps'> & {
     baseFilePanelProps: BaseUppyFilePanelProps;
-    autofocus?: boolean;
   };
 } & (
   | {
@@ -29,7 +28,7 @@ const BlockNoteContent = ({
   name,
   required,
   disabled,
-  BaseBlockNoteProps: { excludeBlockTypes = ['bulletListItem', 'checkListItem', 'table', 'notify'], autofocus, ...restBlockNoteProps },
+  BaseBlockNoteProps: { excludeBlockTypes = ['bulletListItem', 'checkListItem', 'table', 'notify'], ...restBlockNoteProps },
 }: Props) => {
   return (
     <FormField
@@ -45,14 +44,7 @@ const BlockNoteContent = ({
               </FormLabel>
             )}
             <FormControl>
-              <BlockNote
-                autofocus={autofocus}
-                type="create"
-                defaultValue={value}
-                excludeBlockTypes={excludeBlockTypes}
-                updateData={onChange}
-                {...restBlockNoteProps}
-              />
+              <BlockNote type="create" defaultValue={value} excludeBlockTypes={excludeBlockTypes} updateData={onChange} {...restBlockNoteProps} />
             </FormControl>
             <FormMessage />
           </FormItem>
