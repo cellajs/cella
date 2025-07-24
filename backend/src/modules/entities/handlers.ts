@@ -114,7 +114,14 @@ const entityRouteHandlers = app
       })
       .from(membershipsTable)
       .innerJoin(usersTable, eq(usersTable.id, membershipsTable.userId))
-      .where(and(inArray(membershipsTable[entityIdField], entityIds), eq(membershipsTable.contextType, type), eq(membershipsTable.role, 'admin')));
+      .where(
+        and(
+          inArray(membershipsTable[entityIdField], entityIds),
+          eq(membershipsTable.contextType, type),
+          eq(membershipsTable.role, 'admin'),
+          isNotNull(membershipsTable.activatedAt),
+        ),
+      );
 
     // Group admins by entityId
     const membersByEntityId = admins.reduce<Record<string, z.infer<typeof userSummarySchema>[]>>((acc, { entityId, userData }) => {

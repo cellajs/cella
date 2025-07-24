@@ -18,6 +18,7 @@ const attachmentShape = (organizationId: string, storePrefix: string): ShapeStre
     params,
     backoffOptions,
     fetchClient: clientConfig.fetch,
+    // TODO add handle of API errors
     onError: (error) => {
       const retry = errorHandler(error, storePrefix);
       return retry ? { params } : undefined;

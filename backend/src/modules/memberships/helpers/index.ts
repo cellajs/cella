@@ -1,11 +1,11 @@
-import { type ContextEntityType, config } from 'config';
-import { and, eq, max } from 'drizzle-orm';
 import { db } from '#/db/db';
 import { type MembershipModel, membershipsTable } from '#/db/schema/memberships';
 import type { EntityModel } from '#/lib/entity';
 import { logEvent } from '#/middlewares/logger/log-event';
 import { membershipSummarySelect } from '#/modules/memberships/helpers/select';
 import { getIsoDate } from '#/utils/iso-date';
+import { type ContextEntityType, config } from 'config';
+import { and, eq, max } from 'drizzle-orm';
 
 type BaseEntityModel = EntityModel<ContextEntityType> & {
   organizationId?: string;
@@ -73,7 +73,11 @@ export const insertMembership = async <T extends BaseEntityModel>({
         ),
       );
 
-    if (!hasOrgMembership.length) await db.insert(membershipsTable).values({ ...baseMembership, contextType: 'organization' });
+    if (!hasOrgMembership.length)
+      await db
+        .insert(membershipsTable)
+        .values({ ...baseMembership, contextType: 'organization' })
+        .onConflictDoNothing();
   }
 
   // Insert associated entity membership first (if applicable)

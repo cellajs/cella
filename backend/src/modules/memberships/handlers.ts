@@ -1,7 +1,3 @@
-import { OpenAPIHono } from '@hono/zod-openapi';
-import { config } from 'config';
-import { and, count, eq, ilike, inArray, isNotNull, isNull, or } from 'drizzle-orm';
-import i18n from 'i18next';
 import { db } from '#/db/db';
 import { emailsTable } from '#/db/schema/emails';
 import { membershipsTable } from '#/db/schema/memberships';
@@ -27,6 +23,10 @@ import { getOrderColumn } from '#/utils/order-column';
 import { slugFromEmail } from '#/utils/slug-from-email';
 import { prepareStringForILikeFilter } from '#/utils/sql';
 import { createDate, TimeSpan } from '#/utils/time-span';
+import { OpenAPIHono } from '@hono/zod-openapi';
+import { config } from 'config';
+import { and, count, eq, ilike, inArray, isNotNull, isNull, or } from 'drizzle-orm';
+import i18n from 'i18next';
 import { MemberInviteEmail, type MemberInviteEmailProps } from '../../../emails/member-invite';
 
 const app = new OpenAPIHono<Env>({ defaultHook });
@@ -88,12 +88,15 @@ const membershipRouteHandlers = app
         const userMemberships = membershipsOfExistingUsers.filter(({ userId: id }) => id === userId);
 
         // Check if the user is already a member of the target entity
-        const hasTargetMembership = userMemberships.some((m) => m[targetEntityIdField] === entityId);
-        if (hasTargetMembership) return logEvent(`User already member of ${entityType}`, { user: userId, id: entityId });
+        const targetMembership = userMemberships.find((m) => m[targetEntityIdField] === entityId);
+        if (targetMembership) {
+          const message = targetMembership.activatedAt === null ? `User already invited to ${entityType}` : `User already member of ${entityType}`;
+          return logEvent(message, { user: userId, id: entityId });
+        }
 
         // Check for associated memberships and organization memberships
-        const hasAssociatedMembership = associatedEntity ? userMemberships.some((m) => m[associatedEntity.field] === associatedEntity.id) : false;
-        const hasOrgMembership = userMemberships.some(({ organizationId }) => organizationId === organization.id);
+        const addAssociatedMembership = associatedEntity ? userMemberships.some((m) => m[associatedEntity.field] === associatedEntity.id) : false;
+        const hasOrgMembership = userMemberships.some((m) => m.organizationId === organization.id && m.activatedAt !== null);
 
         // Determine if membership should be created instantly
         const instantCreateMembership = (entityType !== 'organization' && hasOrgMembership) || (user.role === 'admin' && userId === user.id);
@@ -101,7 +104,7 @@ const membershipRouteHandlers = app
         // If not instant, add to invite list
         if (!instantCreateMembership) return emailsWithIdToInvite.push({ email, userId });
 
-        const createdMembership = await insertMembership({ userId: existingUser.id, role, entity, addAssociatedMembership: hasAssociatedMembership });
+        const createdMembership = await insertMembership({ userId: existingUser.id, role, entity, addAssociatedMembership });
 
         eventManager.emit('instantMembershipCreation', createdMembership);
 
@@ -158,7 +161,7 @@ const membershipRouteHandlers = app
       expiresAt: createDate(new TimeSpan(7, 'd')),
       role,
       userId,
-      entityType: entityType,
+      entityType,
       [targetEntityIdField]: entityId,
       ...(associatedEntity && { [associatedEntity.field]: associatedEntity.id }), // Include associated entity if applicable
       ...(entityType !== 'organization' && { organizationId: organization.id }), // Add org ID if not an organization
@@ -204,7 +207,14 @@ const membershipRouteHandlers = app
     const adminMemberships = await db
       .selectDistinctOn([membershipsTable.userId], { userId: membershipsTable.userId })
       .from(membershipsTable)
-      .where(and(eq(membershipsTable.organizationId, organization.id), eq(membershipsTable.role, 'admin')));
+      .where(
+        and(
+          eq(membershipsTable.organizationId, organization.id),
+          eq(membershipsTable.role, 'admin'),
+          eq(membershipsTable.archived, false),
+          isNotNull(membershipsTable.activatedAt),
+        ),
+      );
 
     const adminMembersIds = adminMemberships.map(({ userId }) => userId);
 
@@ -234,13 +244,18 @@ const membershipRouteHandlers = app
     // Convert ids to an array
     const membershipIds = Array.isArray(ids) ? ids : [ids];
 
-    const filters = [eq(membershipsTable.contextType, entityType), eq(membershipsTable[entityIdField], entity.id)];
-
     // Get target memberships
     const targets = await db
       .select()
       .from(membershipsTable)
-      .where(and(inArray(membershipsTable.userId, membershipIds), ...filters));
+      .where(
+        and(
+          inArray(membershipsTable.userId, membershipIds),
+          eq(membershipsTable.contextType, entityType),
+          eq(membershipsTable[entityIdField], entity.id),
+          isNotNull(membershipsTable.activatedAt),
+        ),
+      );
 
     // Check if membership exist
     const rejectedItems: string[] = [];
@@ -288,7 +303,9 @@ const membershipRouteHandlers = app
     const [membershipToUpdate] = await db
       .select()
       .from(membershipsTable)
-      .where(and(eq(membershipsTable.id, membershipId), eq(membershipsTable.organizationId, organization.id)))
+      .where(
+        and(eq(membershipsTable.id, membershipId), isNotNull(membershipsTable.activatedAt), eq(membershipsTable.organizationId, organization.id)),
+      )
       .limit(1);
 
     if (!membershipToUpdate) {

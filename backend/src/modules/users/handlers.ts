@@ -1,5 +1,3 @@
-import { OpenAPIHono } from '@hono/zod-openapi';
-import { and, count, eq, ilike, inArray, or, type SQL } from 'drizzle-orm';
 import { db } from '#/db/db';
 import { membershipsTable } from '#/db/schema/memberships';
 import { usersTable } from '#/db/schema/users';
@@ -14,6 +12,8 @@ import { defaultHook } from '#/utils/default-hook';
 import { getIsoDate } from '#/utils/iso-date';
 import { getOrderColumn } from '#/utils/order-column';
 import { prepareStringForILikeFilter } from '#/utils/sql';
+import { OpenAPIHono } from '@hono/zod-openapi';
+import { and, count, eq, ilike, inArray, isNotNull, or, type SQL } from 'drizzle-orm';
 
 const app = new OpenAPIHono<Env>({ defaultHook });
 
@@ -132,8 +132,11 @@ const usersRouteHandlers = app
     const targetUserMembership = await db
       .select()
       .from(membershipsTable)
-      .where(and(eq(membershipsTable.userId, targetUser.id), eq(membershipsTable.contextType, 'organization')));
+      .where(
+        and(eq(membershipsTable.userId, targetUser.id), eq(membershipsTable.contextType, 'organization'), isNotNull(membershipsTable.activatedAt)),
+      );
 
+    // TODO review jointMembership?
     const jointMembership = memberships.find((membership) =>
       targetUserMembership.some((targetMembership) => targetMembership.organizationId === membership.organizationId),
     );
