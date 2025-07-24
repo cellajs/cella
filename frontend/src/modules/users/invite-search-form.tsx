@@ -8,13 +8,13 @@ import { z } from 'zod';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import SelectRoleRadio from '~/modules/common/form-fields/select-role-radio';
+import { toaster } from '~/modules/common/toaster';
 import type { EntityPage } from '~/modules/entities/types';
 import { useInviteMemberMutation } from '~/modules/memberships/query-mutations';
 import { Badge } from '~/modules/ui/badge';
 import { Button, SubmitButton } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
 import { UserCombobox } from '~/modules/users/user-combobox';
-import { toaster } from '../common/toaster';
 
 interface Props {
   entity?: EntityPage;
@@ -38,10 +38,7 @@ const InviteSearchForm = ({ entity, dialog: isDialog }: Props) => {
   const formOptions: UseFormProps<FormValues> = useMemo(
     () => ({
       resolver: zodResolver(formSchema),
-      defaultValues: {
-        emails: [],
-        role: 'member',
-      },
+      defaultValues: { emails: [], role: 'member' },
     }),
     [],
   );
@@ -61,9 +58,8 @@ const InviteSearchForm = ({ entity, dialog: isDialog }: Props) => {
             const resource = t(`common:${invitesSended === 1 ? 'user' : 'users'}`).toLowerCase();
             toaster(t('common:success.resource_count_invited', { count: invitesSended, resource }), 'success');
           }
-          if (rejectedItems.length) {
-            toaster(t('common:still_not_accepted', { count: rejectedItems.length, total: emails.length }), 'info');
-          }
+          if (rejectedItems.length) toaster(t('common:still_not_accepted', { count: rejectedItems.length, total: emails.length }), 'info');
+
           if (isDialog) useDialoger.getState().remove();
         },
       },
