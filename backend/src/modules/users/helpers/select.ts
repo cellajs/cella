@@ -1,5 +1,6 @@
-import { getTableColumns } from 'drizzle-orm';
 import { usersTable } from '#/db/schema/users';
+import { userSummarySchema } from '#/modules/entities/schema';
+import { getTableColumns } from 'drizzle-orm';
 
 /**
  * Safe user select. Sensitive fields are omitted.
@@ -9,11 +10,16 @@ export const userSelect = (() => {
   return safeUserSelect;
 })();
 
-// TODO can we infer the props from the schema? https://chatgpt.com/s/t_6863d9e60880819183725fd04a76631c
+// Infer types of user summary columns
+type TableColumns = (typeof usersTable)['_']['columns'];
+type UserSummaryKeys = keyof typeof userSummarySchema.shape;
+type UserSummarySelect = Pick<TableColumns, UserSummaryKeys>;
+
 /**
  * User select for summary only.
  */
-export const userSummarySelect = (() => {
-  const { id, name, email, entityType, thumbnailUrl, bannerUrl, slug } = getTableColumns(usersTable);
-  return { id, name, email, entityType, thumbnailUrl, bannerUrl, slug };
+export const userSummarySelect: UserSummarySelect = (() => {
+  const userColumns = getTableColumns(usersTable);
+  const entries = Object.entries(userSummarySchema.shape).map(([key]) => [key, userColumns[key as UserSummaryKeys]]);
+  return Object.fromEntries(entries) as UserSummarySelect;
 })();
