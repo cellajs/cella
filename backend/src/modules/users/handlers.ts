@@ -120,29 +120,39 @@ const usersRouteHandlers = app
    */
   .openapi(userRoutes.getUser, async (ctx) => {
     const { idOrSlug } = ctx.req.valid('param');
-    const user = getContextUser();
-    const memberships = getContextMemberships();
+    const requestingUser = getContextUser();
+    const requesterMemberships = getContextMemberships();
 
-    if (idOrSlug === user.id || idOrSlug === user.slug) return ctx.json(user, 200);
+    if (idOrSlug === requestingUser.id || idOrSlug === requestingUser.slug) return ctx.json(requestingUser, 200);
 
     const [targetUser] = await getUsersByConditions([or(eq(usersTable.id, idOrSlug), eq(usersTable.slug, idOrSlug))]);
 
     if (!targetUser) throw new ApiError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'user', meta: { user: idOrSlug } });
 
-    const targetUserMembership = await db
+    const requesterOrgIds = requesterMemberships.filter((m) => m.contextType === 'organization').map((m) => m.organizationId);
+
+    const [sharedMembership] = await db
       .select()
       .from(membershipsTable)
       .where(
-        and(eq(membershipsTable.userId, targetUser.id), eq(membershipsTable.contextType, 'organization'), isNotNull(membershipsTable.activatedAt)),
-      );
+        and(
+          eq(membershipsTable.userId, targetUser.id),
+          eq(membershipsTable.contextType, 'organization'),
+          isNotNull(membershipsTable.activatedAt),
+          inArray(membershipsTable.organizationId, requesterOrgIds),
+        ),
+      )
+      .limit(1);
 
-    // TODO review jointMembership?
-    const jointMembership = memberships.find((membership) =>
-      targetUserMembership.some((targetMembership) => targetMembership.organizationId === membership.organizationId),
-    );
-
-    if (user.role !== 'admin' && !jointMembership)
-      throw new ApiError({ status: 403, type: 'forbidden', severity: 'warn', entityType: 'user', meta: { user: targetUser.id } });
+    if (requestingUser.role !== 'admin' && !sharedMembership) {
+      throw new ApiError({
+        status: 403,
+        type: 'forbidden',
+        severity: 'warn',
+        entityType: 'user',
+        meta: { user: targetUser.id },
+      });
+    }
 
     return ctx.json(targetUser, 200);
   })
