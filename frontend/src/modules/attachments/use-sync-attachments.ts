@@ -1,25 +1,37 @@
-import { isChangeMessage, type ShapeStreamOptions } from '@electric-sql/client';
+import { FetchError, isChangeMessage, type ShapeStreamOptions } from '@electric-sql/client';
 import { getShapeStream } from '@electric-sql/react';
 import { config } from 'config';
+import type { ClientErrorStatusCode, ServerErrorStatusCode } from 'hono/utils/http-status';
 import { useEffect } from 'react';
 import { env } from '~/env';
 import { useOnlineManager } from '~/hooks/use-online-manager';
-import { clientConfig } from '~/lib/api';
+import { ApiError, clientConfig } from '~/lib/api';
 import { handleDelete, handleInsert, handleUpdate } from '~/modules/attachments/helpers/sync-handlers';
 import type { Attachment } from '~/modules/attachments/types';
+import { toaster } from '~/modules/common/toaster';
 import { useSyncStore } from '~/store/sync';
 import { baseBackoffOptions as backoffOptions, type CamelToSnakeObject, errorHandler, processMessages } from '~/utils/electric-utils';
 
 // Configure ShapeStream options
 const attachmentShape = (organizationId: string, storePrefix: string): ShapeStreamOptions => {
   const params = { where: `organization_id = '${organizationId}'` };
+
   return {
     url: new URL(`/${organizationId}/attachments/shape-proxy`, config.backendUrl).href,
     params,
     backoffOptions,
     fetchClient: clientConfig.fetch,
-    // TODO add handle of API errors
     onError: (error) => {
+      if (error instanceof FetchError && error.json) {
+        const status = error.status as ClientErrorStatusCode | ServerErrorStatusCode;
+        const defaultApiErrFields = { name: error.name, status, message: 'Unknown Fetch error' };
+        const apiErr = new ApiError({ ...defaultApiErrFields, ...error.json });
+
+        const message = typeof apiErr.meta?.toastMessage === 'string' ? apiErr.meta.toastMessage : `Attachment sync failed: ${apiErr.message}`;
+
+        toaster(message, 'warning');
+        return;
+      }
       const retry = errorHandler(error, storePrefix);
       return retry ? { params } : undefined;
     },
