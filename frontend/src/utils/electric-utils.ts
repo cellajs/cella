@@ -51,29 +51,32 @@ export const snakeToCamel = (str: string) => str.replace(/_([a-z])/g, (_, letter
 export const electricOnError = (error: Error, storePrefix: string, params: ExternalParamsRecord<Row<never>> | undefined) => {
   // Handle backend error response
   if (error instanceof FetchError && error.json) {
+    // TODO find info about offset & handle error
+    const jsonData = error.json as { errors?: Record<string, unknown> };
+    const syncErrors = jsonData.errors ?? {};
+    const errorKeys = Object.keys(syncErrors);
+    if (errorKeys.some((errKey) => errKey === 'offset' || 'handle')) {
+      // Handle stream-related internal sync errors
+      const staleKeys = useSyncStore.getState().getKeysByPrefix(storePrefix);
+
+      if (staleKeys.length) {
+        for (const key of staleKeys) useSyncStore.getState().removeSyncData(key);
+        console.info('Sync stale data cleared.');
+      }
+
+      return { params }; // Retry
+    }
+
     const status = error.status as ClientErrorStatusCode | ServerErrorStatusCode;
 
     // Safely rehydrate API error
     const apiErr = new ApiError({ name: error.name, status, message: error.message ?? 'Unknown Fetch error', ...error.json });
 
-    const message = typeof apiErr.meta?.toastMessage === 'string' ? apiErr.meta.toastMessage : `Attachment sync failed: ${apiErr.message}`;
+    const message = typeof apiErr.meta?.toastMessage === 'string' ? apiErr.meta.toastMessage : `Sync failed: ${apiErr.message}`;
 
     toaster(message, 'warning');
     return;
   }
-
-  // Handle stream-related internal sync errors
-  if (error.message.includes('offset') || error.message.includes('handle')) {
-    const staleKeys = useSyncStore.getState().getKeysByPrefix(storePrefix);
-
-    if (staleKeys.length) {
-      for (const key of staleKeys) useSyncStore.getState().removeSyncData(key);
-      console.info('Sync stale data cleared.');
-    }
-
-    return { params }; // Retry
-  }
-
   // Fallback for unrecognized errors
   console.warn('Unhandled sync error. Stopping ShapeStream.', error);
   return;
