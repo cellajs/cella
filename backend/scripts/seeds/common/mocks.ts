@@ -10,12 +10,21 @@ import { InsertOrganizationModel, OrganizationModel } from "#/db/schema/organiza
 import { UniqueEnforcer } from "enforce-unique";
 import { InsertMembershipModel } from "#/db/schema/memberships";
 
+// Enforces uniqueness 
 const organizationName = new UniqueEnforcer();
 const userSlug = new UniqueEnforcer();
 const userEmail = new UniqueEnforcer();
 
+// Tracks the current order offset for memberships per context
 const membershipOrderMap: Map<string, number> = new Map();
 
+/**
+ * Returns a unique order offset for a given context (e.g., organization ID).
+ * Ensures incremental order values for memberships within the same context.
+ * 
+ * @param contextId - Unique identifier for the context (typically organization ID).
+ * @returns The current offset value (starting from 1), multiplied by 10 elsewhere.
+ */
 export const getMembershipOrderOffset = (contextId: string): number => {
   if (!membershipOrderMap.has(contextId)) {
     membershipOrderMap.set(contextId, membershipOrderMap.size + 1);
@@ -23,6 +32,12 @@ export const getMembershipOrderOffset = (contextId: string): number => {
   return membershipOrderMap.get(contextId)!;
 }
 
+/**
+ * Generates a mock organization record with realistic values.
+ * Enforces unique organization names.
+ *
+ * @returns A valid InsertOrganizationModel object.
+ */
 export const mockOrganization = (): InsertOrganizationModel => {
   const name = organizationName.enforce(() => faker.company.name());
 
@@ -40,6 +55,13 @@ export const mockOrganization = (): InsertOrganizationModel => {
   };
 };
 
+/**
+ * Generates a mock user with a given hashed password.
+ * Enforces unique email and slug.
+ *
+ * @param hashedPassword - Pre-generated hashed password to assign to the user.
+ * @returns A valid InsertUserModel object.
+ */
 export const mockUser = (hashedPassword: string): InsertUserModel => {
   const firstAndLastName = { firstName: faker.person.firstName(), lastName: faker.person.lastName() };
   const email = userEmail.enforce(() => faker.internet.email(firstAndLastName).toLocaleLowerCase());
@@ -61,7 +83,15 @@ export const mockUser = (hashedPassword: string): InsertUserModel => {
   };
 };
 
-
+/**
+ * Generates a fixed "Admin" user with provided ID, email, and password.
+ * Used for default admin seeding.
+ *
+ * @param id - The fixed ID to assign.
+ * @param email - Admin email address.
+ * @param hashedPassword - Hashed password for the admin.
+ * @returns A valid InsertUserModel for the admin user.
+ */
 export const mockAdmin = (id: string, email: string, hashedPassword: string): InsertUserModel => {
   return {
     id,
@@ -80,6 +110,12 @@ export const mockAdmin = (id: string, email: string, hashedPassword: string): In
   }
 }
 
+/**
+ * Generates a verified email record for a given user.
+ *
+ * @param user - The user for whom the email record is created.
+ * @returns A valid InsertEmailModel.
+ */
 export const mockEmail = (user: UserModel): InsertEmailModel => {
   return {
     email: user.email,
@@ -89,6 +125,14 @@ export const mockEmail = (user: UserModel): InsertEmailModel => {
   }
 }
 
+/**
+ * Generates a mock membership linking a user to an organization.
+ * Ensures consistent ordering via the `getMembershipOrderOffset` function.
+ *
+ * @param organization - The organization the user will belong to.
+ * @param user - The user to assign membership to.
+ * @returns A valid InsertMembershipModel.
+ */
 export const mockOrganizationMembership = (organization: OrganizationModel, user: UserModel): InsertMembershipModel => {
   return {
     id: nanoid(),
@@ -102,6 +146,13 @@ export const mockOrganizationMembership = (organization: OrganizationModel, user
   }
 }
 
+/**
+ * Utility function to generate an array of mock records using a factory function.
+ *
+ * @param factory - A function that generates a single mock record.
+ * @param count - Number of records to generate.
+ * @returns An array of generated mock records.
+ */
 export function mockMany<T>(factory: () => T, count: number): T[] {
   const items: T[] = [];
   for (let i = 0; i < count; i++) {
