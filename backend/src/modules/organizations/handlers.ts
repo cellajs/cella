@@ -1,6 +1,6 @@
 import { OpenAPIHono, type z } from '@hono/zod-openapi';
 import { config } from 'config';
-import { and, count, eq, getTableColumns, ilike, inArray, type SQL, sql } from 'drizzle-orm';
+import { and, count, eq, getTableColumns, ilike, inArray, isNotNull, type SQL, sql } from 'drizzle-orm';
 
 import { db } from '#/db/db';
 import { membershipsTable } from '#/db/schema/memberships';
@@ -89,7 +89,7 @@ const organizationRouteHandlers = app
     const memberships = db
       .select()
       .from(membershipsTable)
-      .where(and(eq(membershipsTable.userId, user.id), eq(membershipsTable.contextType, entityType)))
+      .where(and(eq(membershipsTable.userId, user.id), eq(membershipsTable.contextType, entityType), isNotNull(membershipsTable.activatedAt)))
       .as('memberships');
 
     const orderColumn = getOrderColumn(
@@ -151,7 +151,14 @@ const organizationRouteHandlers = app
     const memberIds = await db
       .select({ id: membershipsTable.userId })
       .from(membershipsTable)
-      .where(and(eq(membershipsTable.contextType, 'organization'), inArray(membershipsTable.organizationId, allowedIds)));
+      .where(
+        and(
+          eq(membershipsTable.contextType, 'organization'),
+          inArray(membershipsTable.organizationId, allowedIds),
+          eq(membershipsTable.archived, false),
+          isNotNull(membershipsTable.activatedAt),
+        ),
+      );
 
     // Delete the organizations
     await db.delete(organizationsTable).where(inArray(organizationsTable.id, allowedIds));
@@ -217,7 +224,14 @@ const organizationRouteHandlers = app
     const organizationMemberships = await db
       .select(membershipSummarySelect)
       .from(membershipsTable)
-      .where(and(eq(membershipsTable.contextType, 'organization'), eq(membershipsTable.organizationId, organization.id)));
+      .where(
+        and(
+          eq(membershipsTable.contextType, 'organization'),
+          eq(membershipsTable.organizationId, organization.id),
+          eq(membershipsTable.archived, false),
+          isNotNull(membershipsTable.activatedAt),
+        ),
+      );
 
     // Send SSE events to organization members
     for (const member of organizationMemberships) sendSSEToUsers([member.userId], 'update_entity', { ...updatedOrganization, member });

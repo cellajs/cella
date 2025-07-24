@@ -1,7 +1,3 @@
-import * as Sentry from '@sentry/node';
-import { eq } from 'drizzle-orm';
-import type { MiddlewareHandler } from 'hono';
-import { createMiddleware } from 'hono/factory';
 import { db } from '#/db/db';
 import { membershipsTable } from '#/db/schema/memberships';
 import { usersTable } from '#/db/schema/users';
@@ -12,6 +8,10 @@ import { deleteAuthCookie } from '#/modules/auth/helpers/cookie';
 import { getParsedSessionCookie, validateSession } from '#/modules/auth/helpers/session';
 import { membershipSummarySelect } from '#/modules/memberships/helpers/select';
 import { TimeSpan } from '#/utils/time-span';
+import * as Sentry from '@sentry/node';
+import { and, eq, isNotNull } from 'drizzle-orm';
+import type { MiddlewareHandler } from 'hono';
+import { createMiddleware } from 'hono/factory';
 
 /**
  * Middleware to ensure that the user is authenticated by checking the session cookie.
@@ -60,7 +60,7 @@ export const isAuthenticated: MiddlewareHandler<Env> = createMiddleware<Env>(asy
   const memberships = await db
     .select({ ...membershipSummarySelect, createdBy: membershipsTable.createdBy })
     .from(membershipsTable)
-    .where(eq(membershipsTable.userId, user.id));
+    .where(and(eq(membershipsTable.userId, user.id), isNotNull(membershipsTable.activatedAt)));
   ctx.set('memberships', memberships);
 
   await next();

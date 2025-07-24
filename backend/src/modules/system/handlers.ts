@@ -176,14 +176,22 @@ const systemRouteHandlers = app
         orgName: organizationsTable.name,
       })
       .from(membershipsTable)
-      .innerJoin(usersTable, and(eq(usersTable.id, membershipsTable.userId)))
-      // eq(usersTable.emailVerified, true) // maybe add for only confirmed emails
+      // TODO(CHORE) decide with filters
+      .innerJoin(
+        usersTable,
+        and(
+          eq(usersTable.id, membershipsTable.userId),
+          // eq(usersTable.emailVerified, true) // maybe add for only confirmed emails
+        ),
+      )
       .innerJoin(organizationsTable, eq(organizationsTable.id, membershipsTable.organizationId))
       .where(
         and(
           eq(membershipsTable.contextType, 'organization'),
           inArray(membershipsTable.organizationId, organizationIds),
           inArray(membershipsTable.role, roles),
+          // isNotNull(membershipsTable.activatedAt), send to invited users also??
+          // eq(membershipsTable.archived, false ), send to users who archived??
           eq(usersTable.newsletter, true),
         ),
       );
