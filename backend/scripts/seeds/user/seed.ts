@@ -5,9 +5,8 @@ import { emailsTable } from '#/db/schema/emails';
 import { usersTable } from '#/db/schema/users';
 import { defaultAdminUser } from '../common/admin';
 import { isUserAlreadySeeded as isAlreadySeeded } from '../common/is-already-seeded';
-import { AdminSeeder } from '../common/admin-seeder';
-import { EmailSeeder } from '../common/email-seeder';
 import { hashPassword } from '#/modules/auth/helpers/argon2id';
+import { mockAdmin, mockEmail } from '../common/mocks';
 
 /**
  * Seed an admin user to access app first time
@@ -23,12 +22,7 @@ export const userSeed = async () => {
   const hashed = await hashPassword(defaultAdminUser.password);
 
   // Make admin user → Insert into the database  
-  const adminSeeder = new AdminSeeder(
-    defaultAdminUser.id,
-    defaultAdminUser.email,
-    hashed,
-  );
-  const adminRecord = adminSeeder.make();
+  const adminRecord = mockAdmin(defaultAdminUser.id, defaultAdminUser.email, hashed);
 
   const [adminUser] = await db
     .insert(usersTable)
@@ -37,8 +31,7 @@ export const userSeed = async () => {
     .onConflictDoNothing();
 
   // Make email record → Insert into the database
-  const emailSeeder = new EmailSeeder();
-  const emailRecord = emailSeeder.make(adminUser);
+  const emailRecord = mockEmail(adminUser);
 
   await db
     .insert(emailsTable)
