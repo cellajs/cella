@@ -8,7 +8,7 @@ import { clientConfig } from '~/lib/api';
 import { handleDelete, handleInsert, handleUpdate } from '~/modules/attachments/helpers/sync-handlers';
 import type { Attachment } from '~/modules/attachments/types';
 import { useSyncStore } from '~/store/sync';
-import { baseBackoffOptions as backoffOptions, type CamelToSnakeObject, electricOnError, processMessages } from '~/utils/electric-utils';
+import { baseBackoffOptions as backoffOptions, type CamelToSnakeObject, handleSyncError, processMessages } from '~/utils/electric-utils';
 
 // Configure ShapeStream options
 const attachmentShape = (organizationId: string, storePrefix: string): ShapeStreamOptions => {
@@ -19,7 +19,7 @@ const attachmentShape = (organizationId: string, storePrefix: string): ShapeStre
     params,
     backoffOptions,
     fetchClient: clientConfig.fetch,
-    onError: (error) => electricOnError(error, storePrefix, params),
+    onError: (error) => handleSyncError(error, storePrefix, params),
   };
 };
 

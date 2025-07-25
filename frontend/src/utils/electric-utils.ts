@@ -48,36 +48,44 @@ const parseRawData = <T>(rawData: CamelToSnakeObject<T>): T => {
 
 export const snakeToCamel = (str: string) => str.replace(/_([a-z])/g, (_, letter) => letter.toUpperCase());
 
-export const electricOnError = (error: Error, storePrefix: string, params: ExternalParamsRecord<Row<never>> | undefined) => {
-  // Handle backend error response
+export const handleSyncError = (error: Error, storePrefix: string, params: ExternalParamsRecord<Row<never>> | undefined) => {
   if (error instanceof FetchError && error.json) {
-    // TODO find info about offset & handle error
-    const jsonData = error.json as { errors?: Record<string, unknown> };
-    const syncErrors = jsonData.errors ?? {};
-    const errorKeys = Object.keys(syncErrors);
-    if (errorKeys.some((errKey) => errKey === 'offset' || 'handle')) {
-      // Handle stream-related internal sync errors
-      const staleKeys = useSyncStore.getState().getKeysByPrefix(storePrefix);
+    const responseJson = error.json;
 
-      if (staleKeys.length) {
-        for (const key of staleKeys) useSyncStore.getState().removeSyncData(key);
-        console.info('Sync stale data cleared.');
+    if ('errors' in responseJson) {
+      const syncErrors = responseJson.errors ?? {};
+      const syncErrorKeys = Object.keys(syncErrors);
+
+      // Check for internal stream sync errors (like offset or handle mismatches)
+      const hasStreamError = syncErrorKeys.some((key) => key === 'offset' || key === 'handle');
+
+      if (hasStreamError) {
+        const relatedKeys = useSyncStore.getState().getKeysByPrefix(storePrefix);
+
+        if (relatedKeys.length) {
+          for (const key of relatedKeys) useSyncStore.getState().removeSyncData(key);
+          console.info('[Sync] Cleared stale local sync data for prefix:', storePrefix);
+        }
+
+        return { params }; // Retry with original params
       }
 
-      return { params }; // Retry
+      console.error('[Sync] Unexpected fetch sync error from server:', error);
+      return;
     }
 
+    // Handle generic backend sync error response
     const status = error.status as ClientErrorStatusCode | ServerErrorStatusCode;
 
-    // Safely rehydrate API error
-    const apiErr = new ApiError({ name: error.name, status, message: error.message ?? 'Unknown Fetch error', ...error.json });
+    const apiError = new ApiError({ name: error.name, status, message: error.message ?? 'Unknown error during sync', ...responseJson });
 
-    const message = typeof apiErr.meta?.toastMessage === 'string' ? apiErr.meta.toastMessage : `Sync failed: ${apiErr.message}`;
+    const toastMsg = typeof apiError.meta?.toastMessage === 'string' ? apiError.meta.toastMessage : `Sync failed: ${apiError.message}`;
 
-    toaster(message, 'warning');
+    toaster(toastMsg, 'warning');
     return;
   }
-  // Fallback for unrecognized errors
-  console.warn('Unhandled sync error. Stopping ShapeStream.', error);
+
+  // Fallback for unknown or unexpected errors
+  console.error('[Sync] Unhandled error. Sync stopped.', error);
   return;
 };

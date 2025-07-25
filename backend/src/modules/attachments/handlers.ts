@@ -1,8 +1,3 @@
-import { OpenAPIHono } from '@hono/zod-openapi';
-import { config } from 'config';
-import { and, count, eq, ilike, inArray, like, notLike, or, type SQL } from 'drizzle-orm';
-import { html, raw } from 'hono/html';
-import { stream } from 'hono/streaming';
 import { db } from '#/db/db';
 import { attachmentsTable } from '#/db/schema/attachments';
 import { organizationsTable } from '#/db/schema/organizations';
@@ -19,6 +14,11 @@ import { getIsoDate } from '#/utils/iso-date';
 import { nanoid } from '#/utils/nanoid';
 import { getOrderColumn } from '#/utils/order-column';
 import { prepareStringForILikeFilter } from '#/utils/sql';
+import { OpenAPIHono } from '@hono/zod-openapi';
+import { config } from 'config';
+import { and, count, eq, ilike, inArray, like, notLike, or, type SQL } from 'drizzle-orm';
+import { html, raw } from 'hono/html';
+import { stream } from 'hono/streaming';
 
 const app = new OpenAPIHono<Env>({ defaultHook });
 
@@ -29,6 +29,15 @@ const attachmentsRouteHandlers = app
    */
   .openapi(attachmentRoutes.shapeProxy, async (ctx) => {
     const url = new URL(ctx.req.url);
+    const organization = getContextOrganization();
+
+    // Extract organization IDs from `where` clause
+    const whereParam = url.searchParams.get('where') ?? '';
+    const [requestedOrganizationId] = [...whereParam.matchAll(/organization_id = '([^']+)'/g)].map((m) => m[1]);
+
+    if (requestedOrganizationId !== organization.id) {
+      throw new ApiError({ status: 403, type: 'forbidden', severity: 'warn', meta: { toastMessage: 'Denied: organization mismatch.' } });
+    }
 
     // Construct the upstream URL
     const originUrl = new URL(`${config.electricUrl}/v1/shape?table=attachments&api_secret=${env.ELECTRIC_API_SECRET}`);
