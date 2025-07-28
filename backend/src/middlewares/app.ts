@@ -6,8 +6,7 @@ import { csrf } from 'hono/csrf';
 import { secureHeaders } from 'hono/secure-headers';
 import type { Env } from '#/lib/context';
 import { dynamicBodyLimit } from '#/middlewares/body-limit';
-import { logEvent } from '#/middlewares/logger/log-event';
-import { logger } from '#/middlewares/logger/logger';
+import { pinoMiddleware } from '#/middlewares/logger/pino';
 import { monitoringMiddleware } from '#/middlewares/monitoring';
 import { observabilityMiddleware } from '#/middlewares/observability';
 
@@ -23,7 +22,7 @@ app.use('*', observabilityMiddleware);
 app.use('*', monitoringMiddleware);
 
 // Logger
-app.use('*', logger(logEvent));
+app.use('*', pinoMiddleware);
 
 const electricHeaders = ['electric-cursor', 'electric-handle', 'electric-schema', 'electric-offset', 'electric-up-to-date'];
 const corsOptions: Parameters<typeof cors>[0] = {

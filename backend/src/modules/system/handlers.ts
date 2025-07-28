@@ -16,10 +16,10 @@ import { type Env, getContextUser } from '#/lib/context';
 import { ApiError } from '#/lib/errors';
 import { mailer } from '#/lib/mailer';
 import { getSignedUrl } from '#/lib/signed-url';
-import { logEvent } from '#/middlewares/logger/log-event';
 import systemRoutes from '#/modules/system/routes';
 import { getUsersByConditions } from '#/modules/users/helpers/get-user-by';
 import { defaultHook } from '#/utils/default-hook';
+import { logEvent } from '#/utils/logger';
 import { nanoid } from '#/utils/nanoid';
 import { slugFromEmail } from '#/utils/slug-from-email';
 import { createDate, TimeSpan } from '#/utils/time-span';
@@ -115,7 +115,7 @@ const systemRouteHandlers = app
     const staticProps = { senderName, senderThumbnailUrl, subject, lng };
     await mailer.prepareEmails<SystemInviteEmailProps, Recipient>(SystemInviteEmail, staticProps, recipients, user.email);
 
-    logEvent('Users invited on system level');
+    logEvent({ msg: 'Users invited on system level' });
 
     return ctx.json({ success: true, rejectedItems, invitesSended: recipients.length }, 200);
   })
@@ -141,18 +141,17 @@ const systemRouteHandlers = app
         const eventData = paddle.webhooks.unmarshal(rawRequestBody, env.PADDLE_WEBHOOK_KEY || '', signature);
         switch ((await eventData)?.eventType) {
           case EventName.SubscriptionCreated:
-            logEvent(`Subscription ${(await eventData)?.data.id} was created`, {
-              ecent: JSON.stringify(eventData),
-            });
+            logEvent({ msg: `Subscription ${(await eventData)?.data.id} was created`, meta: { eventData } });
             break;
           default:
-            logEvent('Unhandled paddle event', {
-              event: JSON.stringify(eventData),
+            logEvent({
+              msg: 'Unhandled paddle event',
+              meta: { eventData },
             });
         }
       }
     } catch (error) {
-      if (error instanceof Error) logEvent('Error handling paddle webhook', { errorMessage: error.message }, 'error');
+      if (error instanceof Error) logEvent({ msg: 'Error handling paddle webhook', meta: { errorMessage: error.message }, severity: 'error' });
     }
 
     return ctx.json(true, 200);
@@ -222,7 +221,7 @@ const systemRouteHandlers = app
     const staticProps = { content, subject, testEmail: toSelf, lng: user.language };
     await mailer.prepareEmails<NewsletterEmailProps, Recipient>(NewsletterEmail, staticProps, recipients, user.email);
 
-    logEvent('Newsletter sent', { amount: recipients.length });
+    logEvent({ msg: 'Newsletter sent', meta: { amount: recipients.length } });
 
     return ctx.json(true, 200);
   });

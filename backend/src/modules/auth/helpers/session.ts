@@ -6,13 +6,13 @@ import { type AuthStrategy, type SessionModel, sessionsTable } from '#/db/schema
 import { type UserModel, usersTable } from '#/db/schema/users';
 import { env } from '#/env';
 import { ApiError } from '#/lib/errors';
-import { logEvent } from '#/middlewares/logger/log-event';
 import { deleteAuthCookie, getAuthCookie, setAuthCookie } from '#/modules/auth/helpers/cookie';
 import { deviceInfo } from '#/modules/auth/helpers/device-info';
 import { userSelect } from '#/modules/users/helpers/select';
 import { getIp } from '#/utils/get-ip';
 import { isExpiredDate } from '#/utils/is-expired-date';
 import { getIsoDate } from '#/utils/iso-date';
+import { logEvent } from '#/utils/logger';
 import { nanoid } from '#/utils/nanoid';
 import { encodeLowerCased } from '#/utils/oslo';
 import { sessionCookieSchema } from '#/utils/schema/session-cookie';
@@ -67,7 +67,7 @@ export const setUserSession = async (ctx: Context, user: UserModel, strategy: Au
   // Update last sign in date
   const lastSignInAt = getIsoDate();
   await db.update(usersTable).set({ lastSignInAt }).where(eq(usersTable.id, user.id));
-  logEvent('User signed in', { user: user.id, strategy });
+  logEvent({ msg: 'User signed in', meta: { user: user.id, strategy } });
 };
 
 /**

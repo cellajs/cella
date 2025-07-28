@@ -1,24 +1,24 @@
+import { OpenAPIHono } from '@hono/zod-openapi';
+import { config } from 'config';
+import { and, count, eq, ilike, inArray, like, notLike, or, type SQL } from 'drizzle-orm';
+import { html, raw } from 'hono/html';
+import { stream } from 'hono/streaming';
 import { db } from '#/db/db';
 import { attachmentsTable } from '#/db/schema/attachments';
 import { organizationsTable } from '#/db/schema/organizations';
 import { env } from '#/env';
 import { type Env, getContextMemberships, getContextOrganization, getContextUser } from '#/lib/context';
 import { ApiError } from '#/lib/errors';
-import { logEvent } from '#/middlewares/logger/log-event';
 import { processAttachmentUrls, processAttachmentUrlsBatch } from '#/modules/attachments/helpers/process-attachment-urls';
 import attachmentRoutes from '#/modules/attachments/routes';
 import { getValidProductEntity } from '#/permissions/get-product-entity';
 import { splitByAllowance } from '#/permissions/split-by-allowance';
 import { defaultHook } from '#/utils/default-hook';
 import { getIsoDate } from '#/utils/iso-date';
+import { logEvent } from '#/utils/logger';
 import { nanoid } from '#/utils/nanoid';
 import { getOrderColumn } from '#/utils/order-column';
 import { prepareStringForILikeFilter } from '#/utils/sql';
-import { OpenAPIHono } from '@hono/zod-openapi';
-import { config } from 'config';
-import { and, count, eq, ilike, inArray, like, notLike, or, type SQL } from 'drizzle-orm';
-import { html, raw } from 'hono/html';
-import { stream } from 'hono/streaming';
 
 const app = new OpenAPIHono<Env>({ defaultHook });
 
@@ -114,7 +114,7 @@ const attachmentsRouteHandlers = app
 
     const data = await processAttachmentUrlsBatch(createdAttachments);
 
-    logEvent(`${createdAttachments.length} attachments have been created`);
+    logEvent({ msg: `${createdAttachments.length} attachments have been created` });
 
     return ctx.json(data, 200);
   })
@@ -220,7 +220,7 @@ const attachmentsRouteHandlers = app
       .where(eq(attachmentsTable.id, id))
       .returning();
 
-    logEvent('Attachment updated', { attachment: updatedAttachment.id });
+    logEvent({ msg: 'Attachment updated', meta: { attachment: updatedAttachment.id } });
 
     const data = await processAttachmentUrls(updatedAttachment);
 
@@ -245,7 +245,7 @@ const attachmentsRouteHandlers = app
     // Delete the attachments
     await db.delete(attachmentsTable).where(inArray(attachmentsTable.id, allowedIds));
 
-    logEvent('Attachments deleted', { ids: allowedIds.join() });
+    logEvent({ msg: 'Attachments deleted', meta: { allowedIds } });
 
     return ctx.json({ success: true, rejectedItems }, 200);
   })

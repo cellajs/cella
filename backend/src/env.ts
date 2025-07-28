@@ -59,6 +59,8 @@ export const env = createEnv({
     S3_ACCESS_KEY_ID: z.string().default(''),
     S3_ACCESS_KEY_SECRET: z.string().default(''),
 
+    PINO_LOG_LEVEL: z.string().default(config.mode === 'production' ? 'info' : 'debug'),
+
     TRIGGER_SECRET_KEY: z.string().optional(),
 
     WEBHOOK_SECRET: z.string().optional(),
