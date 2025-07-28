@@ -5,6 +5,7 @@ export default defineConfig({
   resolve: {
     alias: {
       '#': path.resolve(__dirname, './src'),
+      '#json': path.resolve(__dirname, '../json'),
     },
   },
   test: {
