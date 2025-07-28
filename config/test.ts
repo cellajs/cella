@@ -1,5 +1,11 @@
 import type { Config } from './default';
 
+/**
+ * Ensure that this file does not include or use any sensitive information.
+ * This file is used in the test environment and should not contain any production/staging/development secrets.
+ * Use it to override default settings for testing purposes.
+ * Make sure to keep it minimal and focused on the test environment (must run on localhost).
+ */
 export default {
   mode: 'test',
   name: 'Cella TEST',
@@ -11,19 +17,15 @@ export default {
   backendAuthUrl: 'http://localhost:4000/auth',
   electricUrl: 'http://localhost:4200',
 
-  s3BucketPrefix: 'cella-development',
+  s3BucketPrefix: 'cella-test',
 
-  // Hide chat widget in development
+  // Hide chat widget in test
   gleapToken: undefined,
 
   // Payment with Paddle
-  paddleToken: 'test_85052d6574ab68d36b341e0afc8',
+  paddleToken: '',
   paddlePriceIds: {
-    donate: 'pri_01hq8da4mn9s0z0da7chh0ntb9',
+    donate: '',
   },
 
-  // Optional settings
-  has: {
-    registrationEnabled: true, // Allow users to sign up. If false, the app is by invitation only
-  },
 } satisfies Config;
