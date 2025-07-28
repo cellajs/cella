@@ -1,15 +1,6 @@
 import pino from 'pino';
 import { env } from './env';
 
-const transport = pino.transport({
-  target: 'pino-pretty',
-  options: {
-    colorize: false,
-    singleLine: true,
-    ignore: 'pid,hostname,level',
-  },
-});
-
 export const middlewareLogger = pino(
   {
     level: 'trace',
@@ -18,20 +9,34 @@ export const middlewareLogger = pino(
       censor: '[REDACTED]',
     },
   },
-  transport,
+  pino.transport({
+    target: 'pino-pretty',
+    options: {
+      colorize: false,
+      singleLine: true,
+      ignore: 'pid,hostname,level',
+    },
+  }),
 );
 
 export const pinoLogger = pino(
   {
     level: env.PINO_LOG_LEVEL,
     formatters: {
-      level: (label) => ({ severity: label.toUpperCase() }),
+      level: (label) => ({ level: label.toUpperCase() }),
     },
-    timestamp: pino.stdTimeFunctions.isoTime,
     redact: {
       paths: ['user.hashedPassword', 'user.unsubscribeToken'],
       censor: '[REDACTED]',
     },
   },
-  transport,
+  pino.transport({
+    target: 'pino-pretty',
+    options: {
+      colorize: true,
+      singleLine: true,
+      levelFirst: true,
+      ignore: 'pid,hostname,time',
+    },
+  }),
 );
