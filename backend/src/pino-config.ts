@@ -1,3 +1,4 @@
+import { config } from 'config';
 import pino from 'pino';
 import { env } from './env';
 
@@ -22,6 +23,8 @@ export const middlewareLogger = pino(
 export const pinoLogger = pino(
   {
     level: env.PINO_LOG_LEVEL,
+    customLevels: config.severityLevels,
+    useOnlyCustomLevels: true,
     formatters: {
       level: (label) => ({ level: label.toUpperCase() }),
     },

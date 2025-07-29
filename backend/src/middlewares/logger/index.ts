@@ -1,7 +1,7 @@
-import { externalLogger } from '#/middlewares/logger/external-logger';
 import { middlewareLogger } from '#/pino-config';
 import { nanoid } from '#/utils/nanoid';
 import type { MiddlewareHandler } from 'hono';
+import { logToExternal } from './external-logger';
 
 const ANSI = {
   reset: '\x1b[0m',
@@ -40,7 +40,7 @@ export const loggerMiddleware: MiddlewareHandler = async (ctx, next) => {
 
 const logTrace = (message: string) => {
   middlewareLogger.trace(message);
-  if (externalLogger) externalLogger.info(message);
+  logToExternal('info', message);
 };
 
 // ANSI coloring for status codes

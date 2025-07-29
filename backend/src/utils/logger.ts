@@ -1,16 +1,6 @@
-import type { Severity } from 'config';
-import type { Level } from 'pino';
-import { externalLogger } from '#/middlewares/logger/external-logger';
+import { logToExternal } from '#/middlewares/logger/external-logger';
 import { pinoLogger } from '#/pino-config';
-
-const consoleMethodMap: Record<Level, Severity> = {
-  fatal: 'error',
-  error: 'error',
-  warn: 'warn',
-  info: 'info',
-  debug: 'debug',
-  trace: 'debug',
-};
+import { config, type Severity } from 'config';
 
 /**
  * Logs significant events with optional additional data to console and an external logging service.
@@ -19,17 +9,19 @@ const consoleMethodMap: Record<Level, Severity> = {
  * @param meta - Optional additional data to log along with the event message.
  * @param severity - `'fatal' | 'trace' | 'debug' | 'log' | 'info' | 'warn' | 'error'`, Severity of event, defaults to 'info'.
  */
-export const logEvent = ({ msg, meta, severity = 'info' }: { msg: string; meta?: object; severity?: Level }): void => {
+export const logEvent = ({ msg, meta, severity = 'info' }: { msg: string; meta?: object; severity?: Severity }): void => {
   // Log to Pino
   if (meta) pinoLogger[severity](meta, msg);
   else pinoLogger[severity](msg);
 
   // Log to external logger
-  const consoleMethod = consoleMethodMap[severity];
-  const externalLogFn = externalLogger?.[consoleMethod];
+  logToExternal(severity, msg, meta);
+};
 
-  if (typeof externalLogFn === 'function') {
-    const args: [string, undefined?, object?] = meta ? [msg, undefined, meta] : [msg];
-    externalLogFn(...args);
-  }
+export const getNodeLoggerLevel = (severity: Severity): 'error' | 'warn' | 'info' | 'debug' => {
+  const severityValue = config.severityLevels[severity];
+  if (severityValue >= config.severityLevels.error) return 'error';
+  if (severityValue >= config.severityLevels.warn) return 'warn';
+  if (severityValue >= config.severityLevels.info) return 'info';
+  return 'debug';
 };

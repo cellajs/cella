@@ -1,13 +1,14 @@
+import { type Env, getContextOrganization, getContextUser } from '#/lib/context';
+import type locales from '#/lib/i18n-locales';
+import { logToExternal } from '#/middlewares/logger/external-logger';
+import { getIsoDate } from '#/utils/iso-date';
+import { getNodeLoggerLevel } from '#/utils/logger';
+import type { errorSchema } from '#/utils/schema/error';
 import type { z } from '@hono/zod-openapi';
 import * as Sentry from '@sentry/node';
 import { config } from 'config';
 import type { ErrorHandler } from 'hono';
 import i18n from 'i18next';
-import { type Env, getContextOrganization, getContextUser } from '#/lib/context';
-import type locales from '#/lib/i18n-locales';
-import { externalLogger } from '#/middlewares/logger/external-logger';
-import { getIsoDate } from '#/utils/iso-date';
-import type { errorSchema } from '#/utils/schema/error';
 
 type ErrorSchemaType = z.infer<typeof errorSchema>;
 export type ErrorMeta = { readonly [key: string]: number | string | boolean | null };
@@ -107,11 +108,12 @@ export const handleApiError: ErrorHandler<Env> = (err, ctx) => {
   }
 
   // External logger
-  if (externalLogger?.[severity]) externalLogger[severity](message, undefined, enrichedError);
+  logToExternal(severity, message, enrichedError);
 
   // Console logging
-  console[severity](`[${severity.toUpperCase()}] ${message}`);
-  if (meta) console[severity]('Meta:', meta);
+  const nodeSevernity = getNodeLoggerLevel(severity);
+  console[nodeSevernity](`[${severity.toUpperCase()}] ${message}`);
+  if (meta) console[nodeSevernity]('Meta:', meta);
   if (stack) console.error(stack);
 
   return ctx.json(enrichedError, enrichedError.status);
