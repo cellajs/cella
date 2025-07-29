@@ -67,9 +67,14 @@ export const LocalFileStorage = {
   },
 
   async setSyncStatus(orgId: string, syncStatus: SyncStatus): Promise<void> {
-    const data = await get<StoredOfflineData>(orgId);
-    if (!data) return;
-    await set(orgId, { ...data, syncStatus });
+    try {
+      const data = await get<StoredOfflineData>(orgId);
+      if (!data) return;
+      await set(orgId, { ...data, syncStatus });
+    } catch (error) {
+      console.error(`Failed to set new sync status for ${orgId}:`, error);
+      return undefined;
+    }
   },
 
   async removeData(organizationId: string): Promise<void> {
