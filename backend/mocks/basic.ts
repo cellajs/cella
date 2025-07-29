@@ -1,7 +1,7 @@
 import { InsertEmailModel } from "#/db/schema/emails";
 import { InsertUserModel, UserModel } from "#/db/schema/users";
 import { faker } from "@faker-js/faker";
-import { pastIsoDate } from "./past-iso-date";
+import { pastIsoDate } from "./utils";
 import { generateUnsubscribeToken } from "#/modules/users/helpers/unsubscribe-token";
 import { config } from "config";
 import { nanoid } from "nanoid";

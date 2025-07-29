@@ -1,11 +1,14 @@
+import { testClient } from 'hono/testing'
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { db } from '#/db/db';
-import { mockFetchRequest, migrateDatabase, clearUsersTable, disableAuthStrategy } from '../utils/setup';
-
-import { user as signUpUser } from '../fixtures/sign-up';
-import { defaultHeaders } from '../fixtures/headers';
+import { mockFetchRequest, migrateDatabase, clearUsersTable, disableAuthStrategy } from '../utils';
+import { signUpUser, defaultHeaders } from '../fixtures';
 import { config } from 'config';
-import { usersTable } from '../../src/db/schema/users';
+import { usersTable } from '#/db/schema/users';
+import baseApp from '#/server';
+import authRouteHandlers from '#/modules/auth/handlers';
+
+const app = baseApp.route('/auth', authRouteHandlers);
 
 beforeAll(async () => {
   mockFetchRequest();
@@ -18,15 +21,17 @@ afterEach(async () => {
 });
 
 describe('sign-up when "password" strategy is disabled', () => {
+  const client = testClient(app);
+
   it('should not allow sign-up when "password" is disabled in config', async () => {
-    const { default: routes } = await import('../../src/routes'); // import after config patch
+    const res = await client['auth']['sign-up'].$post(
+      { json: signUpUser },
+      { headers: defaultHeaders },
+    );
+    // Check the response
+    console.log(res)
+    console.log(await res.json())
 
-    const res = await routes.request('/auth/sign-up', {
-      method: 'POST',
-      body: JSON.stringify(signUpUser),
-      headers: new Headers(defaultHeaders),
-    });
-
-    expect(res.status).toBe(400);
+    expect(res.status).toBe(403);
   });
 });

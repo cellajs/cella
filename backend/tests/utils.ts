@@ -46,6 +46,15 @@ export async function clearUsersTable(db: any, usersTable: any) {
 }
 
 /**
+ * Clear the emails table in the database.
+ * @param {any} db - The database instance.
+ * @param {any} usersTable - The users table schema.
+ */
+export async function clearEmailsTable(db: any, emailsTable: any) {
+  return db.delete(emailsTable);
+}
+
+/**
  * Disable the specified authentication strategy in the configuration.
  * @param {any} config - The configuration object.
  * @param {string} strategy - The authentication strategy to disable.

@@ -6,3 +6,11 @@ export const defaultHeaders = {
   'Content-Type': 'application/json',
   'x-forwarded-for': '123.123.123.123',
 };
+
+/**
+ * It provides a consistent user object that can be used across multiple tests.
+ */
+export const signUpUser = {
+  email: 'test-user@cella.com',
+  password: 'aStrongPassword123!',
+}

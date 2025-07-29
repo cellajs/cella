@@ -1,12 +1,13 @@
 import { db } from '#/db/db';
+import { eq } from 'drizzle-orm';
 import { faker } from '@faker-js/faker';
 import { nanoid } from 'nanoid';
 import slugify from 'slugify';
-import { generateUnsubscribeToken } from '../../src/modules/users/helpers/unsubscribe-token';
-import { hashPassword } from '../../src/modules/auth/helpers/argon2id';
-import { pastIsoDate } from '../utils/past-iso-date';
-import { usersTable } from '../../src/db/schema/users';
-import { emailsTable } from '../../src/db/schema/emails';
+import { generateUnsubscribeToken } from '#/modules/users/helpers/unsubscribe-token';
+import { hashPassword } from '#/modules/auth/helpers/argon2id';
+import { pastIsoDate } from '../mocks/utils';
+import { type UserModel, usersTable } from '#/db/schema/users';
+import { emailsTable } from '#/db/schema/emails';
 
 /**
  * Helper function to create a user in the database.
@@ -45,3 +46,15 @@ export async function createUser(email: string, password: string) {
     createdAt: pastIsoDate(),
   });
 };
+
+/**
+ * Helper function to retrieve a user by email from the database.
+ * @param email - The email of the user to retrieve.
+ * @returns 
+ */
+export async function getUserByEmail(email: string):Promise<UserModel[]> {
+  return await db
+    .select()
+    .from(usersTable)
+    .where(eq(usersTable.email, email))
+}

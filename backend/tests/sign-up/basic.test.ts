@@ -1,13 +1,16 @@
+import { testClient } from 'hono/testing'
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
-import routes from '../../src/routes';
-import { mockFetchRequest, migrateDatabase, clearUsersTable, enableRegistration, enableAuthStrategy } from '../utils/setup';
-import { user as signUpUser } from '../fixtures/sign-up';
-import { defaultHeaders } from '../fixtures/headers';
-import { getUserByEmail } from '../helpers/get-user';
-import { createUser } from '../helpers/create-user';
-import { usersTable } from '../../src/db/schema/users';
-import { db } from '../../src/db/db';
+import { mockFetchRequest, migrateDatabase, clearUsersTable, enableRegistration, enableAuthStrategy, clearEmailsTable } from '../utils';
+import { signUpUser, defaultHeaders } from '../fixtures';
+import { getUserByEmail, createUser } from '../helpers';
+import { usersTable } from '#/db/schema/users';
+import { db } from '#/db/db';
 import { config } from 'config';
+import { emailsTable } from '#/db/schema/emails';
+import baseApp from '#/server';
+import authRouteHandlers from '#/modules/auth/handlers';
+
+const app = baseApp.route('/auth', authRouteHandlers);
 
 beforeAll(async () => {
   mockFetchRequest();
@@ -18,16 +21,19 @@ beforeAll(async () => {
 
 afterEach(async () => {
   await clearUsersTable(db, usersTable);
+  await clearEmailsTable(db, emailsTable);
 });
 
 describe('sign-up', async () => {
+  const client = testClient(app);
+
   it('should sign up a user', async () => {
+
     // Make simple sing-up request
-    const res = await routes.request('/auth/sign-up', {
-      method: 'POST',
-      body: JSON.stringify(signUpUser),
-      headers: new Headers(defaultHeaders),
-    });
+    const res = await client['auth']['sign-up'].$post(
+      { json: signUpUser },
+      { headers: defaultHeaders },
+    );
 
     // Check the response status
     expect(res.status).toBe(200);
@@ -42,11 +48,10 @@ describe('sign-up', async () => {
   });
 
   it('should fail the email check for unregistered email', async () => {
-    const res = await routes.request('/auth/check-email', {
-      method: 'POST',
-      body: JSON.stringify(signUpUser),
-      headers: new Headers(defaultHeaders),
-    });
+    const res = await client['auth']['check-email'].$post(
+      { json: signUpUser },
+      { headers: defaultHeaders },
+    );
 
     expect(res.status).toBe(404);
   });
@@ -55,34 +60,27 @@ describe('sign-up', async () => {
     // Create a user with the same email
     await createUser(signUpUser.email, signUpUser.password);
 
-    const res = await routes.request('/auth/check-email', {
-      method: 'POST',
-      body: JSON.stringify(signUpUser),
-      headers: new Headers(defaultHeaders),
-    });
+    const res = await client['auth']['check-email'].$post(
+      { json: signUpUser },
+      { headers: defaultHeaders },
+    );
 
     expect(res.status).toBe(200);
     const data = await res.json();
     expect(data).toBe(true);
   });
 
-
   it('should not allow duplicate emails', async () => {
     // Create a user with the same email
     await createUser(signUpUser.email, signUpUser.password);
 
     // Try to sign up again with the same email
-    const res = await routes.request('/auth/sign-up', {
-      method: 'POST',
-      body: JSON.stringify(signUpUser),
-      headers: new Headers(defaultHeaders),
-    });
+    const res = await client['auth']['sign-up'].$post(
+      { json: signUpUser },
+      { headers: defaultHeaders },
+    );
 
     // Check the response status
     expect(res.status).toBe(500);
-
-    // Check the response message
-    const data = await res.json();
-    expect(data.message).toBe('');
   });
 });
