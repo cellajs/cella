@@ -1,57 +1,44 @@
-import { faker } from '@faker-js/faker';
 import chalk from 'chalk';
 import { config } from 'config';
 import { db } from '#/db/db';
 import { emailsTable } from '#/db/schema/emails';
 import { usersTable } from '#/db/schema/users';
+import { defaultAdminUser } from '../common/admin';
+import { isUserSeeded as isAlreadySeeded } from '../common/is-seeded';
 import { hashPassword } from '#/modules/auth/helpers/argon2id';
-import { generateUnsubscribeToken } from '#/modules/users/helpers/unsubscribe-token';
-
-export const adminUser = {
-  password: '12345678',
-  email: 'admin-test@cellajs.com',
-  id: 'admin12345678',
-};
+import { mockAdmin, mockEmail } from '../common/mocks';
 
 /**
  * Seed an admin user to access app first time
  */
 export const userSeed = async () => {
+  // Case: Production mode → skip seeding
   if (config.mode === 'production') return console.error('Not allowed in production.');
 
-  const usersInTable = await db.select().from(usersTable).limit(1);
+  // Case: Records already exist → skip seeding
+  if (await isAlreadySeeded()) return console.warn('Users table is not empty → skip seeding');
 
-  if (usersInTable.length > 0) return console.warn('Users table is not empty, skipping seed');
+  // Hash default admin password
+  const hashed = await hashPassword(defaultAdminUser.password);
 
-  // Create admin user
-  await db
+  // Make admin user → Insert into the database  
+  const adminRecord = mockAdmin(defaultAdminUser.id, defaultAdminUser.email, hashed);
+
+  const [adminUser] = await db
     .insert(usersTable)
-    .values({
-      id: adminUser.id,
-      email: adminUser.email,
-      name: 'Admin User',
-      language: config.defaultLanguage,
-      slug: 'admin-user',
-      role: 'admin',
-      unsubscribeToken: generateUnsubscribeToken(adminUser.email),
-      hashedPassword: await hashPassword(adminUser.password),
-    })
+    .values(adminRecord)
+    .returning()
     .onConflictDoNothing();
 
-  // Create admin user email
+  // Make email record → Insert into the database
+  const emailRecord = mockEmail(adminUser);
+
   await db
     .insert(emailsTable)
-    .values({
-      email: adminUser.email,
-      userId: adminUser.id,
-      verified: true,
-      verifiedAt: faker.date.past().toISOString(),
-    })
+    .values(emailRecord)
     .onConflictDoNothing();
 
-  console.info(' ');
   console.info(
-    `${chalk.greenBright.bold('✔')} Created admin user with verified email ${chalk.greenBright.bold(adminUser.email)} and password ${chalk.greenBright.bold(adminUser.password)}.`,
+    ` \n${chalk.greenBright.bold('✔')} Created admin user with verified email ${chalk.greenBright.bold(adminUser.email)} and password ${chalk.greenBright.bold(defaultAdminUser.password)}.\n `,
   );
-  console.info(' ');
 };
