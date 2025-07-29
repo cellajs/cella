@@ -1,19 +1,19 @@
+import { OpenAPIHono } from '@hono/zod-openapi';
+import { and, count, eq, ilike, inArray, isNotNull, or, type SQL } from 'drizzle-orm';
 import { db } from '#/db/db';
 import { membershipsTable } from '#/db/schema/memberships';
 import { usersTable } from '#/db/schema/users';
 import { type Env, getContextMemberships, getContextUser } from '#/lib/context';
 import { ApiError } from '#/lib/errors';
-import { logEvent } from '#/middlewares/logger/log-event';
 import { checkSlugAvailable } from '#/modules/entities/helpers/check-slug';
 import { getUsersByConditions } from '#/modules/users/helpers/get-user-by';
 import { userSelect } from '#/modules/users/helpers/select';
 import userRoutes from '#/modules/users/routes';
 import { defaultHook } from '#/utils/default-hook';
 import { getIsoDate } from '#/utils/iso-date';
+import { logEvent } from '#/utils/logger';
 import { getOrderColumn } from '#/utils/order-column';
 import { prepareStringForILikeFilter } from '#/utils/sql';
-import { OpenAPIHono } from '@hono/zod-openapi';
-import { and, count, eq, ilike, inArray, isNotNull, or, type SQL } from 'drizzle-orm';
 
 const app = new OpenAPIHono<Env>({ defaultHook });
 
@@ -111,7 +111,7 @@ const usersRouteHandlers = app
     // Delete allowed users
     await db.delete(usersTable).where(inArray(usersTable.id, allowedIds));
 
-    logEvent('Users deleted', { ids: allowedIds.join() });
+    logEvent({ msg: 'Users deleted', meta: allowedIds });
 
     return ctx.json({ success: true, rejectedItems }, 200);
   })
@@ -192,7 +192,7 @@ const usersRouteHandlers = app
       .where(eq(usersTable.id, targetUser.id))
       .returning();
 
-    logEvent('User updated', { user: updatedUser.id });
+    logEvent({ msg: 'User updated', meta: { user: updatedUser.id } });
 
     return ctx.json(updatedUser, 200);
   });

@@ -14,7 +14,6 @@ import { resolveEntity } from '#/lib/entity';
 import { ApiError } from '#/lib/errors';
 import { getParams, getSignature } from '#/lib/transloadit';
 import { isAuthenticated } from '#/middlewares/guard';
-import { logEvent } from '#/middlewares/logger/log-event';
 import { deleteAuthCookie, getAuthCookie } from '#/modules/auth/helpers/cookie';
 import { parseAndValidatePasskeyAttestation } from '#/modules/auth/helpers/passkey';
 import { getParsedSessionCookie, invalidateAllUserSessions, invalidateSessionById, validateSession } from '#/modules/auth/helpers/session';
@@ -28,6 +27,7 @@ import { verifyUnsubscribeToken } from '#/modules/users/helpers/unsubscribe-toke
 import permissionManager from '#/permissions/permissions-config';
 import { defaultHook } from '#/utils/default-hook';
 import { getIsoDate } from '#/utils/iso-date';
+import { logEvent } from '#/utils/logger';
 
 type UserMenu = z.infer<typeof menuSchema>;
 type MenuItem = z.infer<typeof menuItemSchema>;
@@ -183,7 +183,7 @@ const meRouteHandlers = app
     // Invalidate sessions
     await invalidateAllUserSessions(user.id);
     deleteAuthCookie(ctx, 'session');
-    logEvent('User deleted itself', { user: user.id });
+    logEvent({ msg: 'User deleted itself', meta: { user: user.id } });
 
     return ctx.json(true, 200);
   })
@@ -205,7 +205,7 @@ const meRouteHandlers = app
       .delete(membershipsTable)
       .where(and(eq(membershipsTable.userId, user.id), eq(membershipsTable.contextType, entityType), eq(membershipsTable[entityIdField], entity.id)));
 
-    logEvent('User left entity', { user: user.id });
+    logEvent({ msg: 'User left entity', meta: { user: user.id } });
 
     return ctx.json(true, 200);
   })

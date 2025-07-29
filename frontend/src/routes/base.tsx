@@ -5,6 +5,7 @@ import { config } from 'config';
 import i18n from 'i18next';
 import { lazy, Suspense } from 'react';
 import { z } from 'zod';
+import { zApiError } from '~/api.gen/zod.gen';
 import ErrorNotice from '~/modules/common/error-notice';
 import { PublicLayout } from '~/modules/common/public-layout';
 import { Root } from '~/modules/common/root';
@@ -20,7 +21,7 @@ const AppLayout = lazy(() => import('~/modules/common/app-layout'));
 
 const errorSearchSchema = z.object({
   error: z.string().optional(),
-  severity: z.enum(config.severityLevels).optional(),
+  severity: zApiError.shape.severity.optional(),
 });
 
 export const rootRoute = createRootRouteWithContext()({
