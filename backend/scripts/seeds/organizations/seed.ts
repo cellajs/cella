@@ -1,156 +1,123 @@
 import { faker } from '@faker-js/faker';
 import chalk from 'chalk';
+import { eq } from 'drizzle-orm';
 
-import { config } from 'config';
-import { UniqueEnforcer } from 'enforce-unique';
-import slugify from 'slugify';
 import { db } from '#/db/db';
-import { emailsTable, type InsertEmailModel } from '#/db/schema/emails';
-import { type InsertMembershipModel, membershipsTable } from '#/db/schema/memberships';
-import { type InsertOrganizationModel, organizationsTable } from '#/db/schema/organizations';
-import { type InsertUserModel, usersTable } from '#/db/schema/users';
+import { emailsTable } from '#/db/schema/emails';
+import { InsertMembershipModel, membershipsTable } from '#/db/schema/memberships';
+import { OrganizationModel, organizationsTable } from '#/db/schema/organizations';
+import { UserModel, usersTable } from '#/db/schema/users';
+import { defaultAdminUser } from '../common/admin';
+import { isOrganizationAlreadySeeded as isAlreadySeeded } from '../common/is-already-seeded';
+import { mockMany, mockOrganization, mockUser, mockEmail, mockOrganizationMembership, getMembershipOrderOffset } from '../common/mocks';
 import { hashPassword } from '#/modules/auth/helpers/argon2id';
-import { generateUnsubscribeToken } from '#/modules/users/helpers/unsubscribe-token';
-import { nanoid } from '#/utils/nanoid';
-import { adminUser } from '../user/seed';
 
 const ORGANIZATIONS_COUNT = 100;
 const MEMBERS_COUNT = 100;
 const SYSTEM_ADMIN_MEMBERSHIP_COUNT = 10;
-
-const pastIsoDate = () => faker.date.past().toISOString();
+const PLAIN_USER_PASSWORD = '12345678';
 
 // Seed organizations with data
 export const organizationsSeed = async () => {
-  console.info(' ');
-  console.info('◔ Seeding organizations...');
+  console.info(' \n◔ Seeding organizations...');
 
-  const organizationsInTable = await db.select().from(organizationsTable).limit(1);
+  // Case: Records already exist → skip seeding
+  if (await isAlreadySeeded()) return console.warn('Organizations table not empty → skip seeding');
 
-  if (organizationsInTable.length > 0) return console.warn('Organizations table is not empty, skipping seed');
+  // Make many organizations → Insert into the database
+  const organizationRecords = mockMany(mockOrganization, ORGANIZATIONS_COUNT);
+  const organizations = await db
+    .insert(organizationsTable)
+    .values(organizationRecords)
+    .returning()
+    .onConflictDoNothing();
 
-  const organizationsUniqueEnforcer = new UniqueEnforcer();
+  console.info(' \n◔ Seeding members and memberships, this can take a while...');
 
-  const organizations: (InsertOrganizationModel & {
-    id: string;
-  })[] = Array.from({
-    length: ORGANIZATIONS_COUNT,
-  }).map(() => {
-    const name = organizationsUniqueEnforcer.enforce(() => faker.company.name());
+  // Fetch the default admin user
+  const [adminUser] = await db
+    .select()
+    .from(usersTable)
+    .where(eq(usersTable.id, defaultAdminUser.id))
+    .limit(1);
 
-    return {
-      id: nanoid(),
-      name,
-      slug: slugify(name, { lower: true, strict: true }),
-      bannerUrl: null,
-      color: faker.color.rgb(),
-      chatSupport: faker.datatype.boolean(),
-      country: faker.location.country(),
-      createdAt: pastIsoDate(),
-      logoUrl: faker.image.url(),
-      thumbnailUrl: null,
-    };
-  });
+  const adminMemberships: InsertMembershipModel[] = [];
+  const hashed = await hashPassword(PLAIN_USER_PASSWORD);
 
-  await db.insert(organizationsTable).values(organizations).onConflictDoNothing();
-  console.info(' ');
-  console.info('◔ Seeding members and memberships, this can take a while...');
-
-  const hashedPassword = await hashPassword('12345678');
-
-  const usersSlugUniqueEnforcer = new UniqueEnforcer();
-  const usersEmailUniqueEnforcer = new UniqueEnforcer();
-
-  let usersCount = 0;
-  let organizationsCount = 0;
-  let membershipsCount = 0;
-  let adminMembershipsOrder = 1;
-  let adminOrganizationsCount = 0;
-
-  // Create 100 users for each organization
   for (const organization of organizations) {
-    organizationsCount++;
+    // Make many users → Insert into the database
+    const userRecords = mockMany(() => mockUser(hashed), MEMBERS_COUNT);
+    const users = await db
+      .insert(usersTable)
+      .values(userRecords)
+      .returning()
+      .onConflictDoNothing();
 
-    const insertUsers: InsertUserModel[] = Array.from({ length: MEMBERS_COUNT }).map(() => {
-      const firstName = faker.person.firstName();
-      const lastName = faker.person.lastName();
-      const firstAndLastName = { firstName, lastName };
+    // Make email record for each user → Insert into the database
+    const emailRecords = users.map(mockEmail);
 
-      const name = faker.person.fullName(firstAndLastName);
-      const email = usersEmailUniqueEnforcer.enforce(() => faker.internet.email(firstAndLastName).toLocaleLowerCase());
-      const slug = usersSlugUniqueEnforcer.enforce(() => slugify(faker.internet.username(firstAndLastName), { lower: true, strict: true }), {
-        maxTime: 500,
-        maxRetries: 500,
-      });
+    await db
+      .insert(emailsTable)
+      .values(emailRecords)
+      .onConflictDoNothing();
 
-      return {
-        id: nanoid(),
-        firstName,
-        lastName,
-        thumbnailUrl: null,
-        language: config.defaultLanguage,
-        name,
-        email,
-        unsubscribeToken: generateUnsubscribeToken(email),
-        hashedPassword,
-        slug,
-        avatarUrl: null,
-        newsletter: faker.datatype.boolean(),
-        createdAt: pastIsoDate(),
-      };
-    });
+    const membershipRecords = users.map(user => mockOrganizationMembership(organization, user));
 
-    usersCount += insertUsers.length;
+    // Insert memberships into the database
+    await db
+      .insert(membershipsTable)
+      .values(membershipRecords)
+      .onConflictDoNothing();
 
-    const users = await db.insert(usersTable).values(insertUsers).returning().onConflictDoNothing();
-
-    const insertUsersEmails: InsertEmailModel[] = users.map((user) => ({
-      email: user.email,
-      userId: user.id,
-      verified: true,
-      verifiedAt: faker.date.past().toISOString(),
-    }));
-    await db.insert(emailsTable).values(insertUsersEmails).onConflictDoNothing();
-
-    // Create 100 memberships for each organization
-    const memberships: InsertMembershipModel[] = users.map((user) => {
-      return {
-        id: nanoid(),
-        userId: user.id,
-        organizationId: organization.id,
-        contextType: 'organization',
-        role: faker.helpers.arrayElement(['admin', 'member']),
-        createdAt: pastIsoDate(),
-        order: organizationsCount * 10,
-        activatedAt: pastIsoDate(),
-      };
-    });
-
-    // Loop over organizations
-
-    // Add Admin user to every even organization, but limit to a certain number
-    if (organizationsCount % 2 === 0 && adminOrganizationsCount < SYSTEM_ADMIN_MEMBERSHIP_COUNT) {
-      memberships.push({
-        id: nanoid(),
-        userId: adminUser.id,
-        organizationId: organization.id,
-        contextType: 'organization',
-        archived: faker.datatype.boolean(0.5),
-        role: faker.helpers.arrayElement(['admin', 'member']),
-        createdAt: pastIsoDate(),
-        order: adminMembershipsOrder,
-        activatedAt: pastIsoDate(),
-      });
-      adminMembershipsOrder = adminMembershipsOrder + 10;
-      adminOrganizationsCount++; // Increment the counter
-    }
-
-    membershipsCount += memberships.length;
-
-    await db.insert(membershipsTable).values(memberships).onConflictDoNothing();
+    // Add admin membership if the organization is in an even position
+    addAdminMembership(
+      adminUser,
+      organization,
+      adminMemberships,
+    );
   }
 
-  console.info(' ');
-  console.info(`${chalk.greenBright.bold('✔')} Created ${ORGANIZATIONS_COUNT} organizations with ${MEMBERS_COUNT} members each`);
-  console.info(' ');
+  // Insert admin memberships into the database
+  if (adminMemberships.length) {
+    await db
+      .insert(membershipsTable)
+      .values(adminMemberships)
+      .onConflictDoNothing();
+  }
+
+  console.info(` \n${chalk.greenBright.bold('✔')} Created ${ORGANIZATIONS_COUNT} organizations with ${MEMBERS_COUNT} members each\n `);
 };
+
+/**
+ * Adds an admin membership to `adminMemberships`.
+ * Conditions for adding:
+ * - The organization must be in an even position.
+ * - The number of existing admin memberships must be less than the system-defined limit.
+ *
+ * The function mutates the `adminMemberships` array by pushing a new, adjusted membership.
+ *
+ * @param adminUser - The admin user to assign the membership to.
+ * @param organization - The organization the admin should be added to.
+ * @param adminMemberships - An array tracking admin memberships already created.
+ */
+const addAdminMembership = (
+  adminUser: UserModel,
+  organization: OrganizationModel,
+  adminMemberships: InsertMembershipModel[]
+) => {
+  // Case: Organization is not in an even position → skip admin membership
+   if (getMembershipOrderOffset(organization.id)  % 2 !== 0) return;
+
+  // Case: Exceeded the system admin membership count → skip admin membership
+  if (adminMemberships.length >= SYSTEM_ADMIN_MEMBERSHIP_COUNT) return;
+
+  // Make admin membership
+  const membership = mockOrganizationMembership(organization, adminUser);
+
+  // Adjust the admin membership
+  membership.archived = faker.datatype.boolean(0.5);
+  membership.order = 1 + adminMemberships.length * 10;
+
+  // Add admin membership to the list
+  adminMemberships.push(membership);
+}
