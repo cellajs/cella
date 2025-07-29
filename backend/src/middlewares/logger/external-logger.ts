@@ -1,6 +1,6 @@
-import { getNodeLoggerLevel } from '#/utils/logger';
 import { Logtail as BetterStackLogger } from '@logtail/node';
 import { config, type Severity } from 'config';
+import { getNodeLoggerLevel } from '#/utils/logger';
 import { env } from '../../env';
 
 const opts = env.BETTERSTACK_INGESTING_HOST ? { endpoint: `https://${env.BETTERSTACK_INGESTING_HOST}` } : {};

@@ -1,6 +1,6 @@
+import type { MiddlewareHandler } from 'hono';
 import { middlewareLogger } from '#/pino-config';
 import { nanoid } from '#/utils/nanoid';
-import type { MiddlewareHandler } from 'hono';
 import { logToExternal } from './external-logger';
 
 const ANSI = {

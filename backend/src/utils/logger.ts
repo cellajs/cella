@@ -1,6 +1,6 @@
+import { config, type Severity } from 'config';
 import { logToExternal } from '#/middlewares/logger/external-logger';
 import { pinoLogger } from '#/pino-config';
-import { config, type Severity } from 'config';
 
 /**
  * Logs significant events with optional additional data to console and an external logging service.

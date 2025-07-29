@@ -1,14 +1,14 @@
-import type { Env } from '#/lib/context';
-import { dynamicBodyLimit } from '#/middlewares/body-limit';
-import { loggerMiddleware } from '#/middlewares/logger';
-import { monitoringMiddleware } from '#/middlewares/monitoring';
-import { observabilityMiddleware } from '#/middlewares/observability';
 import { OpenAPIHono } from '@hono/zod-openapi';
 import { config } from 'config';
 import { compress } from 'hono/compress';
 import { cors } from 'hono/cors';
 import { csrf } from 'hono/csrf';
 import { secureHeaders } from 'hono/secure-headers';
+import type { Env } from '#/lib/context';
+import { dynamicBodyLimit } from '#/middlewares/body-limit';
+import { loggerMiddleware } from '#/middlewares/logger';
+import { monitoringMiddleware } from '#/middlewares/monitoring';
+import { observabilityMiddleware } from '#/middlewares/observability';
 
 const app = new OpenAPIHono<Env>();
 
