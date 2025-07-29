@@ -1,3 +1,10 @@
+import { getRandomValues } from 'node:crypto';
+import { OpenAPIHono } from '@hono/zod-openapi';
+import { encodeBase64 } from '@oslojs/encoding';
+import { generateCodeVerifier, generateState, OAuth2RequestError } from 'arctic';
+import { config, type EnabledOauthProvider } from 'config';
+import { and, desc, eq, isNotNull } from 'drizzle-orm';
+import i18n from 'i18next';
 import { db } from '#/db/db';
 import { type EmailModel, emailsTable } from '#/db/schema/emails';
 import { membershipsTable } from '#/db/schema/memberships';
@@ -12,7 +19,6 @@ import { ApiError } from '#/lib/errors';
 import { eventManager } from '#/lib/events';
 import { mailer } from '#/lib/mailer';
 import { sendSSEToUsers } from '#/lib/sse';
-import { logEvent } from '#/middlewares/logger/log-event';
 import { hashPassword, verifyPasswordHash } from '#/modules/auth/helpers/argon2id';
 import { deleteAuthCookie, getAuthCookie, setAuthCookie } from '#/modules/auth/helpers/cookie';
 import {
@@ -25,13 +31,13 @@ import {
 } from '#/modules/auth/helpers/oauth/cookies';
 import { findExistingUsers, getOauthRedirectUrl, handleExistingUser } from '#/modules/auth/helpers/oauth/index';
 import {
-  githubAuth,
   type GithubUserEmailProps,
   type GithubUserProps,
-  googleAuth,
   type GoogleUserProps,
-  microsoftAuth,
+  githubAuth,
+  googleAuth,
   type MicrosoftUserProps,
+  microsoftAuth,
 } from '#/modules/auth/helpers/oauth/oauth-providers';
 import { transformGithubUserData, transformSocialUserData } from '#/modules/auth/helpers/oauth/transform-user-data';
 import { verifyPassKeyPublic } from '#/modules/auth/helpers/passkey';
@@ -44,16 +50,10 @@ import { userSelect } from '#/modules/users/helpers/select';
 import { defaultHook } from '#/utils/default-hook';
 import { isExpiredDate } from '#/utils/is-expired-date';
 import { getIsoDate } from '#/utils/iso-date';
+import { logEvent } from '#/utils/logger';
 import { nanoid } from '#/utils/nanoid';
 import { slugFromEmail } from '#/utils/slug-from-email';
 import { createDate, TimeSpan } from '#/utils/time-span';
-import { OpenAPIHono } from '@hono/zod-openapi';
-import { encodeBase64 } from '@oslojs/encoding';
-import { generateCodeVerifier, generateState, OAuth2RequestError } from 'arctic';
-import { config, type EnabledOauthProvider } from 'config';
-import { and, desc, eq, isNotNull } from 'drizzle-orm';
-import i18n from 'i18next';
-import { getRandomValues } from 'node:crypto';
 import { CreatePasswordEmail, type CreatePasswordEmailProps } from '../../../emails/create-password';
 import { EmailVerificationEmail, type EmailVerificationEmailProps } from '../../../emails/email-verification';
 
@@ -207,7 +207,7 @@ const authRouteHandlers = app
 
     mailer.prepareEmails<EmailVerificationEmailProps, Recipient>(EmailVerificationEmail, staticProps, recipients);
 
-    logEvent('Verification email sent', { user: user.id });
+    logEvent({ msg: 'Verification email sent', meta: { user: user.id } });
 
     return ctx.json(true, 200);
   })
@@ -278,7 +278,7 @@ const authRouteHandlers = app
 
     mailer.prepareEmails<CreatePasswordEmailProps, Recipient>(CreatePasswordEmail, staticProps, recipients);
 
-    logEvent('Create password link sent', { user: user.id });
+    logEvent({ msg: 'Create password link sent', meta: { user: user.id } });
 
     return ctx.json(true, 200);
   })
@@ -477,7 +477,7 @@ const authRouteHandlers = app
 
     await setUserSession(ctx, user, 'password', adminUser);
 
-    logEvent('Started impersonation', { admin: user.id, user: targetUserId });
+    logEvent({ msg: 'Started impersonation', meta: { admin: user.id, user: targetUserId } });
 
     return ctx.json(true, 200);
   })
@@ -512,7 +512,7 @@ const authRouteHandlers = app
       await setAuthCookie(ctx, 'session', cookieContent, expireTimeSpan);
     }
 
-    logEvent('Stopped impersonation', { admin: adminUserId || 'na', user: session.userId });
+    logEvent({ msg: 'Stopped impersonation', meta: { admin: adminUserId || 'na', user: session.userId } });
 
     return ctx.json(true, 200);
   })
@@ -534,7 +534,7 @@ const authRouteHandlers = app
     // Delete session cookie
     deleteAuthCookie(ctx, 'session');
 
-    logEvent('User signed out', { user: session?.userId || 'na' });
+    logEvent({ msg: 'User signed out', meta: { user: session?.userId || 'na' } });
 
     return ctx.json(true, 200);
   })

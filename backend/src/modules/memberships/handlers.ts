@@ -1,3 +1,7 @@
+import { OpenAPIHono } from '@hono/zod-openapi';
+import { config } from 'config';
+import { and, count, eq, ilike, inArray, isNotNull, isNull, or } from 'drizzle-orm';
+import i18n from 'i18next';
 import { db } from '#/db/db';
 import { emailsTable } from '#/db/schema/emails';
 import { membershipsTable } from '#/db/schema/memberships';
@@ -9,7 +13,6 @@ import { ApiError } from '#/lib/errors';
 import { eventManager } from '#/lib/events';
 import { mailer } from '#/lib/mailer';
 import { sendSSEToUsers } from '#/lib/sse';
-import { logEvent } from '#/middlewares/logger/log-event';
 import { getAssociatedEntityDetails, insertMembership } from '#/modules/memberships/helpers';
 import { membershipSummarySelect } from '#/modules/memberships/helpers/select';
 import membershipRoutes from '#/modules/memberships/routes';
@@ -18,15 +21,12 @@ import { userSelect } from '#/modules/users/helpers/select';
 import { getValidContextEntity } from '#/permissions/get-context-entity';
 import { defaultHook } from '#/utils/default-hook';
 import { getIsoDate } from '#/utils/iso-date';
+import { logEvent } from '#/utils/logger';
 import { nanoid } from '#/utils/nanoid';
 import { getOrderColumn } from '#/utils/order-column';
 import { slugFromEmail } from '#/utils/slug-from-email';
 import { prepareStringForILikeFilter } from '#/utils/sql';
 import { createDate, TimeSpan } from '#/utils/time-span';
-import { OpenAPIHono } from '@hono/zod-openapi';
-import { config } from 'config';
-import { and, count, eq, ilike, inArray, isNotNull, isNull, or } from 'drizzle-orm';
-import i18n from 'i18next';
 import { MemberInviteEmail, type MemberInviteEmailProps } from '../../../emails/member-invite';
 
 const app = new OpenAPIHono<Env>({ defaultHook });
@@ -90,8 +90,9 @@ const membershipRouteHandlers = app
         // Check if the user is already a member of the target entity
         const targetMembership = userMemberships.find((m) => m[targetEntityIdField] === entityId);
         if (targetMembership) {
-          const message = targetMembership.activatedAt === null ? `User already invited to ${entityType}` : `User already member of ${entityType}`;
-          return logEvent(message, { user: userId, id: entityId });
+          const msg = targetMembership.activatedAt === null ? `User already invited to ${entityType}` : `User already member of ${entityType}`;
+          logEvent({ msg, meta: { user: userId, id: entityId } });
+          return;
         }
 
         // Check for associated memberships and organization memberships
@@ -132,7 +133,7 @@ const membershipRouteHandlers = app
           return isSameEmail && isRecent;
         })
       ) {
-        logEvent('Invitation to pending user by email address already sent recently', { id: entityId });
+        logEvent({ msg: 'Invitation to pending user by email address already sent recently', meta: { id: entityId } });
         continue;
       }
 
@@ -224,7 +225,7 @@ const membershipRouteHandlers = app
       invitesCount: recipients.length,
     });
 
-    logEvent(`${insertedTokens.length} users invited to organization`, { organization: organization.id }); // Log invitation event
+    logEvent({ msg: `${insertedTokens.length} users invited to ${entity.entityType}`, meta: entity }); // Log invitation event
 
     const rejectedItems = normalizedEmails.filter((email) => !recipients.some((recipient) => recipient.email === email));
     return ctx.json({ success: true, rejectedItems, invitesSended: recipients.length }, 200);
@@ -275,14 +276,11 @@ const membershipRouteHandlers = app
       ),
     );
 
-    // Send SSE events for the memberships that were deleted
-    for (const targetMembership of targets) {
-      // Send the event to the user if they are a member of the organization
-      const memberIds = targets.map((el) => el.userId);
-      sendSSEToUsers(memberIds, 'remove_entity', { id: entity.id, entityType: entity.entityType });
+    // Send the event to the user if they are a member of the organization
+    const memberIds = targets.map((el) => el.userId);
+    sendSSEToUsers(memberIds, 'remove_entity', { id: entity.id, entityType: entity.entityType });
 
-      logEvent('Member deleted', { membership: targetMembership.id });
-    }
+    logEvent({ msg: 'Deleted members', meta: { memberIds } });
 
     return ctx.json({ success: true, rejectedItems }, 200);
   })
@@ -356,7 +354,7 @@ const membershipRouteHandlers = app
       });
     }
 
-    logEvent('Membership updated', { user: updatedMembership.userId, membership: updatedMembership.id });
+    logEvent({ msg: 'Membership updated', meta: { user: updatedMembership.userId, membership: updatedMembership.id } });
 
     return ctx.json(updatedMembership, 200);
   })

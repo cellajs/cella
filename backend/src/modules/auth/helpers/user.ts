@@ -8,7 +8,6 @@ import { tokensTable } from '#/db/schema/tokens';
 import { type InsertUserModel, usersTable } from '#/db/schema/users';
 import { resolveEntity } from '#/lib/entity';
 import { ApiError } from '#/lib/errors';
-import { logEvent } from '#/middlewares/logger/log-event';
 import type { Provider } from '#/modules/auth/helpers/oauth/oauth-providers';
 import { setUserSession } from '#/modules/auth/helpers/session';
 import { sendVerificationEmail } from '#/modules/auth/helpers/verify-email';
@@ -16,6 +15,7 @@ import { checkSlugAvailable } from '#/modules/entities/helpers/check-slug';
 import { insertMembership } from '#/modules/memberships/helpers';
 import { generateUnsubscribeToken } from '#/modules/users/helpers/unsubscribe-token';
 import { getIsoDate } from '#/utils/iso-date';
+import { logEvent } from '#/utils/logger';
 import { nanoid } from '#/utils/nanoid';
 
 interface HandleCreateUserProps {
@@ -121,7 +121,7 @@ export const handleMembershipTokenUpdate = async (userId: string, tokenId: strin
   } catch (error) {
     if (error instanceof Error) {
       const errorMessage = error.message;
-      logEvent('Error inserting membership from token data', { userId, tokenId, errorMessage }, 'error');
+      logEvent({ msg: 'Error inserting membership from token data', meta: { userId, tokenId, errorMessage }, severity: 'error' });
     }
 
     throw error;

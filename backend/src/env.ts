@@ -1,6 +1,6 @@
 import { env as dotenv } from '@dotenv-run/core';
 import { createEnv } from '@t3-oss/env-core';
-import { config } from 'config';
+import { config, type Severity } from 'config';
 import { z } from 'zod';
 
 dotenv({
@@ -58,6 +58,8 @@ export const env = createEnv({
 
     S3_ACCESS_KEY_ID: z.string().default(''),
     S3_ACCESS_KEY_SECRET: z.string().default(''),
+
+    PINO_LOG_LEVEL: z.enum(Object.keys(config.severityLevels) as [Severity, ...Severity[]]).default(config.mode === 'production' ? 'info' : 'debug'),
 
     TRIGGER_SECRET_KEY: z.string().optional(),
 

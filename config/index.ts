@@ -55,7 +55,7 @@ export type Theme = keyof typeof _default.theme.colors | 'none';
 /**
  * Severity levels to be used in error handling
  */
-export type Severity = (typeof _default.severityLevels)[number];
+export type Severity = keyof typeof _default.severityLevels
 
 export const configModes = {
   development,

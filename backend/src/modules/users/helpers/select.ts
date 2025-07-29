@@ -1,6 +1,6 @@
+import { getTableColumns } from 'drizzle-orm';
 import { usersTable } from '#/db/schema/users';
 import { userSummarySchema } from '#/modules/entities/schema';
-import { getTableColumns } from 'drizzle-orm';
 
 /**
  * Safe user select. Sensitive fields are omitted.

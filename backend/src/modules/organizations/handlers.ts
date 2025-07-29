@@ -1,14 +1,12 @@
 import { OpenAPIHono, type z } from '@hono/zod-openapi';
 import { config } from 'config';
 import { and, count, eq, getTableColumns, ilike, inArray, isNotNull, type SQL, sql } from 'drizzle-orm';
-
 import { db } from '#/db/db';
 import { membershipsTable } from '#/db/schema/memberships';
 import { organizationsTable } from '#/db/schema/organizations';
 import { type Env, getContextMemberships, getContextUser } from '#/lib/context';
 import { ApiError } from '#/lib/errors';
 import { sendSSEToUsers } from '#/lib/sse';
-import { logEvent } from '#/middlewares/logger/log-event';
 import { checkSlugAvailable } from '#/modules/entities/helpers/check-slug';
 import { getMemberCountsQuery, getRelatedEntityCountsQuery } from '#/modules/entities/helpers/counts';
 import { getRelatedEntities, type ValidEntities } from '#/modules/entities/helpers/get-related-entities';
@@ -20,6 +18,7 @@ import { getValidContextEntity } from '#/permissions/get-context-entity';
 import { splitByAllowance } from '#/permissions/split-by-allowance';
 import { defaultHook } from '#/utils/default-hook';
 import { getIsoDate } from '#/utils/iso-date';
+import { logEvent } from '#/utils/logger';
 import { getOrderColumn } from '#/utils/order-column';
 import { prepareStringForILikeFilter } from '#/utils/sql';
 import { defaultWelcomeText } from '#json/text-blocks.json';
@@ -58,7 +57,7 @@ const organizationRouteHandlers = app
       })
       .returning();
 
-    logEvent('Organization created', { organization: createdOrganization.id });
+    logEvent({ msg: 'Organization created', meta: { organization: createdOrganization.id } });
 
     // Insert membership
     const createdMembership = await insertMembership({ userId: user.id, role: 'admin', entity: createdOrganization });
@@ -171,7 +170,7 @@ const organizationRouteHandlers = app
       sendSSEToUsers(userIds, 'remove_entity', { id, entityType: 'organization' });
     }
 
-    logEvent('Organizations deleted', { ids: allowedIds.join() });
+    logEvent({ msg: 'Organizations deleted', meta: { allowedIds } });
 
     return ctx.json({ success: true, rejectedItems }, 200);
   })
@@ -236,7 +235,7 @@ const organizationRouteHandlers = app
     // Send SSE events to organization members
     for (const member of organizationMemberships) sendSSEToUsers([member.userId], 'update_entity', { ...updatedOrganization, member });
 
-    logEvent('Organization updated', { organization: updatedOrganization.id });
+    logEvent({ msg: 'Organization updated', meta: { organization: updatedOrganization.id } });
 
     const memberCountsQuery = getMemberCountsQuery(organization.entityType);
     const [{ invitesCount }] = await db

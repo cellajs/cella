@@ -239,7 +239,14 @@ The documentation is generated from source code using \`zod\` schemas, converted
   /**
    * Error handling
    */
-  severityLevels: ['debug', 'log', 'info', 'warn', 'error'] as const,
+  severityLevels: {
+    fatal: 60,
+    error: 50,
+    warn: 40,
+    info: 30,
+    debug: 20,
+    trace: 10,
+  } as const,
 
   /**
    * UI settings
