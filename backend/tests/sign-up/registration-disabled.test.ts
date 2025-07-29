@@ -28,6 +28,5 @@ describe('sign-up when "registrationEnabled" disabled', () => {
     });
 
     expect(res.status).toBe(403);
-    console.log(res)
   });
 });

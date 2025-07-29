@@ -30,7 +30,7 @@ export function mockFetchRequest() {
  * @param {any} db - The database instance.
  * @param {string} migrationsFolder - The folder containing migration files.
  */
-export async function migrateDatabase(db: any, migrationsFolder = 'drizzle') {
+export async function migrateDatabase(db: any, migrationsFolder: string = 'drizzle') {
   return migrate(db, {
     migrationsFolder: path.resolve(process.cwd(), migrationsFolder),
   });

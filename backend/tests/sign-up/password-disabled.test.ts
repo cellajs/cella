@@ -28,6 +28,5 @@ describe('sign-up when "password" strategy is disabled', () => {
     });
 
     expect(res.status).toBe(400);
-    console.log(res)
   });
 });
