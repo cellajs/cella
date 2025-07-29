@@ -4,7 +4,7 @@ import { db } from '#/db/db';
 import { emailsTable } from '#/db/schema/emails';
 import { usersTable } from '#/db/schema/users';
 import { defaultAdminUser } from '../common/admin';
-import { isUserAlreadySeeded as isAlreadySeeded } from '../common/is-already-seeded';
+import { isUserSeeded as isAlreadySeeded } from '../common/is-seeded';
 import { hashPassword } from '#/modules/auth/helpers/argon2id';
 import { mockAdmin, mockEmail } from '../common/mocks';
 

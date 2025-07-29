@@ -75,7 +75,7 @@
     "drizzle-orm": "^0.44.3",
     "drizzle-zod": "0.8.2",
     "enforce-unique": "^1.3.0",
-    "hono": "4.8.5",
+    "hono": "4.8.10",
     "i18next": "^25.3.2",
     "isbot": "^5.1.28",
     "jsdom": "^26.1.0",
@@ -92,7 +92,7 @@
     "react-i18next": "^15.6.0",
     "slugify": "^1.6.6",
     "ua-parser-js": "^2.0.4",
-    "zod": "4.0.5"
+    "zod": "4.0.11"
   },
   "devDependencies": {
     "@commander-js/extra-typings": "^14.0.0",
@@ -105,7 +105,7 @@
     "@types/pg": "^8.15.4",
     "@types/react": "^19.1.8",
     "@types/ua-parser-js": "^0.7.39",
-    "@typescript/native-preview": "7.0.0-dev.20250721.1",
+    "@typescript/native-preview": "7.0.0-dev.20250728.1",
     "chalk": "^5.4.1",
     "commander": "^14.0.0",
     "cross-env": "^7.0.3",

@@ -6,7 +6,7 @@ import { usersTable } from "#/db/schema/users";
  * Checks if there is at least one organization seeded in the database.
  * @returns A promise that resolves to `true` if the organizations table contains any records, otherwise `false`.
  */
-export const isOrganizationAlreadySeeded = async () => {
+export const isOrganizationSeeded = async () => {
   const organizationsInTable = await db
     .select()
     .from(organizationsTable)
@@ -19,7 +19,7 @@ export const isOrganizationAlreadySeeded = async () => {
  * Checks if there is at least one user seeded in the database.
  * @returns A promise that resolves to `true` if the users table contains any records, otherwise `false`.
  */
-export const isUserAlreadySeeded = async () => {
+export const isUserSeeded = async () => {
   const usersInTable = await db
     .select()
     .from(usersTable)

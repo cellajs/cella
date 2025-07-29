@@ -62,8 +62,6 @@ const meRouteHandlers = app
       .map((el) => el.providerId)
       .filter((provider): provider is EnabledOauthProvider => config.enabledOauthProviders.includes(provider as EnabledOauthProvider));
 
-    console.info('Valid OAuth accounts:', validOAuthAccounts);
-
     return ctx.json({ oauth: validOAuthAccounts, passkey: !!passkeys.length, sessions }, 200);
   })
   /*
