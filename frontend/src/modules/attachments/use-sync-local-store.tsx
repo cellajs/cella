@@ -12,8 +12,9 @@ export function useSyncLocalStore(organizationId: string) {
   const { isOnline } = useOnlineManager();
   const { mutate: createAttachments } = useAttachmentCreateMutation();
   const { mutate: deleteAttachments } = useAttachmentDeleteMutation();
+  const { getData: fetchStoredFiles, removeData: deleteStoredFiles, setSyncStatus: updateStoredFilesSyncStatus } = LocalFileStorage;
 
-  const isUploadingRef = useRef(false);
+  const isSyncingRef = useRef(false); // Prevent double trigger
 
   const onComplete = (attachments: AttachmentToInsert[], storedIds: string[]) => {
     createAttachments({ attachments, orgIdOrSlug: organizationId });
@@ -21,16 +22,20 @@ export function useSyncLocalStore(organizationId: string) {
   };
 
   useEffect(() => {
-    if (!isOnline || isUploadingRef.current || !config.has.uploadEnabled) return;
+    if (!isOnline || !config.has.uploadEnabled) return;
+    if (isSyncingRef.current) return; // Skip if already syncing
 
     const syncStoreAttachments = async () => {
-      isUploadingRef.current = true;
-      const storageData = await LocalFileStorage.getData(organizationId);
+      isSyncingRef.current = true;
+      const storageData = await fetchStoredFiles(organizationId);
 
-      if (!storageData) return;
+      if (!storageData || storageData.syncStatus !== 'idle') return;
 
       const files = Object.values(storageData.files);
-      if (!files.length) return;
+      if (!files.length) {
+        isSyncingRef.current = false;
+        return;
+      }
 
       try {
         const localUppy = await createBaseTransloaditUppy(
@@ -49,12 +54,14 @@ export function useSyncLocalStore(organizationId: string) {
         );
 
         localUppy
-          .on('error', (err) => {
+          .on('error', async (err) => {
             console.error('Sync files upload error:', err);
-            isUploadingRef.current = false;
+            await updateStoredFilesSyncStatus(organizationId, 'idle');
+            isSyncingRef.current = false;
           })
-          .on('upload', () => {
+          .on('upload', async () => {
             console.info('Sync files upload started');
+            await updateStoredFilesSyncStatus(organizationId, 'processing');
           })
           .on('transloadit:complete', async (assembly) => {
             if (assembly.error) throw new Error(assembly.error);
@@ -63,18 +70,27 @@ export function useSyncLocalStore(organizationId: string) {
             const ids = files.map(({ id }) => id);
             onComplete(attachments, ids);
             // Clean up offline files from IndexedDB
-            await LocalFileStorage.removeData(organizationId);
+            await deleteStoredFiles(organizationId);
             console.info('🗑️ Successfully uploaded files removed from IndexedDB.');
-
-            isUploadingRef.current = false;
+            isSyncingRef.current = false;
           });
 
         for (const file of files) localUppy.addFile({ ...file, name: file.name || `${file.type}-${file.id}` });
 
         await localUppy.upload();
-      } catch (err) {}
+      } catch (err) {
+        isSyncingRef.current = false;
+      }
     };
 
     syncStoreAttachments();
   }, [isOnline]);
+
+  // Ensures that any in-progress sync is marked as idle, so the next page load can correctly start syncing again.
+  useEffect(() => {
+    const handleBeforeUnload = async () => await updateStoredFilesSyncStatus(organizationId, 'idle');
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, []);
 }
