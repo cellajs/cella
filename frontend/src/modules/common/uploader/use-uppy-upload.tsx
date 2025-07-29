@@ -29,7 +29,7 @@ export function useUploadUppy() {
 
     let isMounted = true;
     let localUppy: CustomUppy | null = null;
-    const isUploadFullyEnabled = config.has.uploadEnabled && onlineManager.isOnline();
+    const isUploadFullyEnabled = config.has.uploadEnabled;
 
     const { isPublic, templateId = 'attachment', organizationId, restrictions, plugins = [], statusEventHandler = {} } = uploaderData;
 
