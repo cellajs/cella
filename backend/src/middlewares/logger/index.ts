@@ -1,7 +1,7 @@
-import type { MiddlewareHandler } from 'hono';
+import { logToExternal } from '#/middlewares/logger/external-logger';
 import { middlewareLogger } from '#/pino-config';
 import { nanoid } from '#/utils/nanoid';
-import { logToExternal } from './external-logger';
+import type { MiddlewareHandler } from 'hono';
 
 const ANSI = {
   reset: '\x1b[0m',
