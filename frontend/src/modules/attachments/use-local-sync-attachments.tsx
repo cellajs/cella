@@ -8,7 +8,7 @@ import type { AttachmentToInsert } from '~/modules/attachments/types';
 import { createBaseTransloaditUppy } from '~/modules/common/uploader/helpers';
 import type { UploadedUppyFile } from '~/modules/common/uploader/types';
 
-export function useSyncLocalStore(organizationId: string) {
+export const useLocalSyncAttachments = (organizationId: string) => {
   const { isOnline } = useOnlineManager();
   const { mutate: createAttachments } = useAttachmentCreateMutation();
   const { mutate: deleteAttachments } = useAttachmentDeleteMutation();
@@ -100,4 +100,4 @@ export function useSyncLocalStore(organizationId: string) {
 
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, []);
-}
+};

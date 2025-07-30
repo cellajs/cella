@@ -29,7 +29,7 @@ type RawAttachment = CamelToSnakeObject<Attachment>;
  * Hook to receive attachments updates in real-time for a specific organization using electric ShapeStream
  * @param organizationId - Organization ID
  */
-export const useAttachmentsSync = (organizationId: string) => {
+export const useElectricSyncAttachments = (organizationId: string) => {
   const { isOnline } = useOnlineManager();
   const { getSyncData, setSyncData } = useSyncStore();
 
