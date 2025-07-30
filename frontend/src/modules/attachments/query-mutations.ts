@@ -3,6 +3,7 @@ import { config } from 'config';
 import { t } from 'i18next';
 import { toast } from 'sonner';
 import { createAttachment, deleteAttachments, updateAttachment } from '~/api.gen';
+import { LocalFileStorage } from '~/modules/attachments/helpers/local-file-storage';
 import { attachmentsKeys } from '~/modules/attachments/query';
 import type {
   Attachment,
@@ -19,7 +20,6 @@ import { compareQueryKeys } from '~/query/helpers/compare-query-keys';
 import { formatUpdatedData, getQueryItems, getSimilarQueries } from '~/query/helpers/mutate-query';
 import { queryClient } from '~/query/query-client';
 import { nanoid } from '~/utils/nanoid';
-import { LocalFileStorage } from './helpers/local-file-storage';
 
 const limit = config.requestLimits.attachments;
 

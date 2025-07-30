@@ -2,9 +2,9 @@ import { useParams, useSearch } from '@tanstack/react-router';
 import { memo, useEffect } from 'react';
 import router from '~/lib/router';
 import AttachmentDialog from '~/modules/attachments/dialog';
+import { LocalFileStorage } from '~/modules/attachments/helpers/local-file-storage';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { fallbackContentRef } from '~/utils/fallback-content-ref';
-import { LocalFileStorage } from '../helpers/local-file-storage';
 
 /**
  * Handler for attachment dialog.
