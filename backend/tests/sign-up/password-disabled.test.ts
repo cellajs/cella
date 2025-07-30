@@ -1,23 +1,19 @@
 import { testClient } from 'hono/testing'
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
-import { db } from '#/db/db';
-import { mockFetchRequest, migrateDatabase, clearUsersTable, disableAuthStrategy } from '../utils';
+import { mockFetchRequest, migrateDatabase, clearDatabase, setTestConfig } from '../setup';
 import { signUpUser, defaultHeaders } from '../fixtures';
-import { config } from 'config';
-import { usersTable } from '#/db/schema/users';
-import baseApp from '#/server';
-import authRouteHandlers from '#/modules/auth/handlers';
-
-const app = baseApp.route('/auth', authRouteHandlers);
+import { authApp as app } from '../setup'
 
 beforeAll(async () => {
   mockFetchRequest();
-  await migrateDatabase(db);
-  disableAuthStrategy(config, 'password');
+  await migrateDatabase();
+  setTestConfig({
+    enabledAuthStrategies: [],
+  });
 });
 
 afterEach(async () => {
-  await clearUsersTable(db, usersTable);
+  await clearDatabase();
 });
 
 describe('sign-up when "password" strategy is disabled', () => {

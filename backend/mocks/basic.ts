@@ -10,6 +10,14 @@ import { InsertOrganizationModel, OrganizationModel } from "#/db/schema/organiza
 import { UniqueEnforcer } from "enforce-unique";
 import { InsertMembershipModel } from "#/db/schema/memberships";
 
+/**
+ * Type: Optional overrides for mock user generation.
+ * Allows customization of specific fields while keeping others random.
+ */
+type MockUserOptionalOverrides = Partial<{
+  email: string;
+}>;
+
 // Enforces uniqueness 
 const organizationName = new UniqueEnforcer();
 const userSlug = new UniqueEnforcer();
@@ -54,14 +62,6 @@ export const mockOrganization = (): InsertOrganizationModel => {
     thumbnailUrl: null,
   };
 };
-
-/**
- * Optional overrides for mock user generation.
- * Allows customization of specific fields while keeping others random.
- */
-type MockUserOptionalOverrides = Partial<{
-  email: string;
-}>;
 
 /**
  * Generates a mock user with a given hashed password.

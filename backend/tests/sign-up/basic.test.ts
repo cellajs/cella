@@ -1,27 +1,21 @@
 import { testClient } from 'hono/testing'
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
-import { mockFetchRequest, migrateDatabase, clearUsersTable, enableRegistration, enableAuthStrategy, clearEmailsTable } from '../utils';
+import { mockFetchRequest, migrateDatabase, clearDatabase, setTestConfig } from '../setup';
 import { signUpUser, defaultHeaders } from '../fixtures';
 import { getUserByEmail, createUser } from '../helpers';
-import { usersTable } from '#/db/schema/users';
-import { db } from '#/db/db';
-import { config } from 'config';
-import { emailsTable } from '#/db/schema/emails';
-import baseApp from '#/server';
-import authRouteHandlers from '#/modules/auth/handlers';
-
-const app = baseApp.route('/auth', authRouteHandlers);
+import { authApp as app } from '../setup'
 
 beforeAll(async () => {
   mockFetchRequest();
-  await migrateDatabase(db);
-  enableAuthStrategy(config, 'password');
-  enableRegistration(config);
+  await migrateDatabase();
+  setTestConfig({
+    enabledAuthStrategies: ['password'],
+    registrationEnabled: true,
+  });
 });
 
 afterEach(async () => {
-  await clearUsersTable(db, usersTable);
-  await clearEmailsTable(db, emailsTable);
+  await clearDatabase();
 });
 
 describe('sign-up', async () => {

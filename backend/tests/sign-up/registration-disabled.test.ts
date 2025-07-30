@@ -1,23 +1,19 @@
 import { testClient } from 'hono/testing'
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
-import { db } from '#/db/db';
-import { mockFetchRequest, migrateDatabase, disableRegistration, clearUsersTable } from '../utils';
+import { mockFetchRequest, migrateDatabase, setTestConfig, clearDatabase } from '../setup';
 import { signUpUser, defaultHeaders } from '../fixtures';
-import { usersTable } from '#/db/schema/users';
-import { config } from 'config';
-import baseApp from '#/server';
-import authRouteHandlers from '#/modules/auth/handlers';
-
-const app = baseApp.route('/auth', authRouteHandlers);
+import { authApp as app } from '../setup'
 
 beforeAll(async () => {
   mockFetchRequest();
-  await migrateDatabase(db);
-  disableRegistration(config);
+  await migrateDatabase();
+  setTestConfig({
+    registrationEnabled: false,
+  });
 });
 
 afterEach(async () => {
-  await clearUsersTable(db, usersTable);
+  await clearDatabase();
 });
 
 describe('sign-up when "registrationEnabled" disabled', () => {

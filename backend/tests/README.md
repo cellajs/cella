@@ -11,17 +11,11 @@ tests/
 │ ├── password-disabled.test.ts # Sign-up flow when password auth is disabled
 │ └── registration-disabled.test.ts # Sign-up flow when registration is disabled
 │
-├── fixtures/
-│ ├── headers.ts # Reusable request headers (e.g. defaultHeaders)
-│ └── sign-up.ts # Fixture data for sign-up tests
+├── fixtures.ts # Test constants (e.g. dumb data, headers, base configs)
 │
-├── helpers/
-│ ├── create-user.ts # Programmatically insert user into DB
-│ └── get-user.ts # Utility to query user from DB
+├── helpers.ts # Test logic helpers (e.g. inserting/fetching domain models)
 │
-├── utils/
-│ ├── setup.ts # Shared setup utilities (e.g. mock fetch, DB migration, config toggles)
-│ └── past-iso-date.ts # Utility to generate a past ISO date
+├── setup.ts  # Test environment control (e.g. DB, config, app mock, lifecycle utilities)
 │
 └── README.md
 ```
