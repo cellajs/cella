@@ -8,7 +8,7 @@ import { InsertMembershipModel, membershipsTable } from '#/db/schema/memberships
 import { OrganizationModel, organizationsTable } from '#/db/schema/organizations';
 import { UserModel, usersTable } from '#/db/schema/users';
 import { defaultAdminUser } from '../fixtures';
-import { isOrganizationAlreadySeeded as isAlreadySeeded } from '../utils';
+import { isOrganizationSeeded as isAlreadySeeded } from '../utils';
 import { mockMany, mockOrganization, mockUser, mockEmail, mockOrganizationMembership, getMembershipOrderOffset } from '../../../mocks/basic';
 import { hashPassword } from '#/modules/auth/helpers/argon2id';
 

@@ -1,6 +1,6 @@
 import { config } from 'config';
-import { logEvent } from '#/middlewares/logger/log-event';
 import authRoutes from '#/modules/auth/routes';
+import { logEvent } from '#/utils/logger';
 
 /**
  * Trigger the backend to send a verification email to the user.
@@ -15,6 +15,6 @@ export const sendVerificationEmail = (userId: string) => {
       body: JSON.stringify({ userId }),
     });
   } catch (err) {
-    return logEvent('Verification email could not be sent');
+    return logEvent({ msg: 'Verification email could not be sent' });
   }
 };

@@ -118,7 +118,7 @@ export type ApiError = {
     | 508
     | 510
     | 511;
-  severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
+  severity: 'fatal' | 'error' | 'warn' | 'info' | 'debug' | 'trace';
   entityType?: 'user' | 'organization' | 'attachment';
   logId?: string;
   path?: string;

@@ -4,11 +4,11 @@ import type { Context } from 'hono';
 import { db } from '#/db/db';
 import { tokensTable } from '#/db/schema/tokens';
 import { ApiError } from '#/lib/errors';
-import { logEvent } from '#/middlewares/logger/log-event';
 import { type CookieName, deleteAuthCookie, getAuthCookie, setAuthCookie } from '#/modules/auth/helpers/cookie';
 import { getParsedSessionCookie, validateSession } from '#/modules/auth/helpers/session';
 import { isExpiredDate } from '#/utils/is-expired-date';
 import { isRedirectUrl } from '#/utils/is-redirect-url';
+import { logEvent } from '#/utils/logger';
 import { TimeSpan } from '#/utils/time-span';
 
 export const oauthCookieExpires = new TimeSpan(5, 'm');
@@ -17,18 +17,18 @@ export const oauthCookieExpires = new TimeSpan(5, 'm');
  * Creates an OAuth session by setting the necessary cookies and ensuring session validity before redirecting to the OAuth provider.
  *
  * @param ctx - Request/response context.
- * @param provider - OAuth provider (e.g., Google, GitHub, Microsoft).
+ * @param strategy - OAuth provider (e.g., Google, GitHub, Microsoft).
  * @param url - URL of the OAuth provider's authorization endpoint.
  * @param state - OAuth state parameter to prevent CSRF attacks.
  * @param codeVerifier - Optional, code verifier for PKCE.
  * @returns Redirect response to the OAuth provider's authorization URL.
  */
-export const createOauthSession = async (ctx: Context, provider: string, url: URL, state: string, codeVerifier?: string) => {
+export const createOauthSession = async (ctx: Context, strategy: string, url: URL, state: string, codeVerifier?: string) => {
   await setAuthCookie(ctx, 'oauth_state', state, oauthCookieExpires);
 
   if (codeVerifier) await setAuthCookie(ctx, 'oauth_code_verifier', codeVerifier, oauthCookieExpires);
 
-  logEvent('User redirected', { strategy: provider });
+  logEvent({ msg: 'User redirected', meta: { strategy } });
 
   return ctx.redirect(url.toString(), 302);
 };
