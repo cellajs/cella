@@ -12,13 +12,17 @@ export function useSyncLocalStore(organizationId: string) {
   const { isOnline } = useOnlineManager();
   const { mutate: createAttachments } = useAttachmentCreateMutation();
   const { mutate: deleteAttachments } = useAttachmentDeleteMutation();
-  const { getData: fetchStoredFiles, removeData: deleteStoredFiles, setSyncStatus: updateStoredFilesSyncStatus } = LocalFileStorage;
+  const { getData: fetchStoredFiles, setSyncStatus: updateStoredFilesSyncStatus } = LocalFileStorage;
 
   const isSyncingRef = useRef(false); // Prevent double trigger
 
   const onComplete = (attachments: AttachmentToInsert[], storedIds: string[]) => {
-    createAttachments({ attachments, orgIdOrSlug: organizationId });
-    deleteAttachments({ orgIdOrSlug: organizationId, localDeleted: storedIds, backendToDelete: [] });
+    createAttachments({ localCreation: false, attachments, orgIdOrSlug: organizationId });
+    // Clean up offline files from IndexedDB
+    deleteAttachments(
+      { localDeletionIds: storedIds, serverDeletionIds: [], orgIdOrSlug: organizationId },
+      { onSuccess: () => console.info('🗑️ Successfully uploaded files removed from IndexedDB.') },
+    );
   };
 
   useEffect(() => {
@@ -69,9 +73,6 @@ export function useSyncLocalStore(organizationId: string) {
 
             const ids = files.map(({ id }) => id);
             onComplete(attachments, ids);
-            // Clean up offline files from IndexedDB
-            await deleteStoredFiles(organizationId);
-            console.info('🗑️ Successfully uploaded files removed from IndexedDB.');
             isSyncingRef.current = false;
           });
 

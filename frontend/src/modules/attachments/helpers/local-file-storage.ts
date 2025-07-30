@@ -1,5 +1,4 @@
 import { del, get, keys, set } from 'idb-keyval';
-import type { AttachmentDeletionPartition } from '~/modules/attachments/types';
 import type { CustomUppyFile } from '~/modules/common/uploader/types';
 import type { UploadTockenQuery } from '~/modules/me/types';
 import { nanoid } from '~/utils/nanoid';
@@ -78,21 +77,10 @@ export const LocalFileStorage = {
     }
   },
 
-  async removeData(organizationId: string): Promise<void> {
-    try {
-      await del(organizationId);
-    } catch (error) {
-      console.error(`Failed to delete data (${organizationId}):`, error);
-    }
-  },
-
-  async removeFiles(fileIds: string[]): Promise<AttachmentDeletionPartition> {
-    const remaining = new Set(fileIds); // files NOT found locally
-    const localRemoved = new Set<string>(); // files deleted locally
-
+  async removeFiles(fileIds: string[]): Promise<void> {
     try {
       const storageKeys = await keys();
-      if (!storageKeys.length) return { localDeleted: [], backendToDelete: fileIds };
+      if (!storageKeys.length) return;
 
       const fileIdSet = new Set(fileIds);
 
@@ -112,12 +100,6 @@ export const LocalFileStorage = {
             const allFilesMatch = fileKeys.every((id) => fileIdSet.has(id));
 
             if (allFilesMatch) {
-              // All files in the group are being deleted
-              fileKeys.forEach((id) => {
-                remaining.delete(id);
-                localRemoved.add(id);
-              });
-
               await del(groupKey);
               return;
             }
@@ -128,8 +110,6 @@ export const LocalFileStorage = {
             for (const fileId of Object.keys(group.files)) {
               if (fileIdSet.has(fileId)) {
                 delete group.files[fileId];
-                remaining.delete(fileId); // no longer needs backend deletion
-                localRemoved.add(fileId); // tracked as removed locally
                 modified = true;
               }
             }
@@ -141,9 +121,6 @@ export const LocalFileStorage = {
       console.error('Failed to remove files:', error);
     }
 
-    return {
-      localDeleted: Array.from(localRemoved),
-      backendToDelete: Array.from(remaining), // those not found locally, should be sent to backend
-    };
+    return;
   },
 };

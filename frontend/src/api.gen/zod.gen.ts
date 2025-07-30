@@ -127,7 +127,7 @@ export const zApiError = z.object({
     z.unknown(),
     z.unknown(),
   ]),
-  severity: z.enum(['debug', 'log', 'info', 'warn', 'error']),
+  severity: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace']),
   entityType: z.enum(['user', 'organization', 'attachment']).optional(),
   logId: z.string().optional(),
   path: z.string().optional(),

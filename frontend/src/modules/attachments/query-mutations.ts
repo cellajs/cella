@@ -19,6 +19,7 @@ import { compareQueryKeys } from '~/query/helpers/compare-query-keys';
 import { formatUpdatedData, getQueryItems, getSimilarQueries } from '~/query/helpers/mutate-query';
 import { queryClient } from '~/query/query-client';
 import { nanoid } from '~/utils/nanoid';
+import { LocalFileStorage } from './helpers/local-file-storage';
 
 const limit = config.requestLimits.attachments;
 
@@ -34,7 +35,11 @@ const handleError = (action: 'create' | 'update' | 'delete' | 'deleteMany', cont
 export const useAttachmentCreateMutation = () =>
   useMutation<Attachment[], Error, CreateAttachmentParams, AttachmentContextProp[]>({
     mutationKey: attachmentsKeys.create(),
-    mutationFn: async ({ attachments, orgIdOrSlug }) => {
+    mutationFn: async ({ localCreation, attachments, orgIdOrSlug }) => {
+      if (localCreation) {
+        console.info('Attachments uploaded locally:', attachments);
+        return [];
+      }
       return await createAttachment({ body: attachments, path: { orgIdOrSlug } });
     },
     onMutate: async (variables) => {
@@ -100,7 +105,10 @@ export const useAttachmentCreateMutation = () =>
       return context;
     },
 
-    onSuccess: async (createdAttachments, { orgIdOrSlug }, context) => {
+    onSuccess: async (createdAttachments, { localCreation, orgIdOrSlug }, context) => {
+      // Avoid on succusses actions if there was local creation
+      if (localCreation) return;
+
       // Get affected queries
       const similarKey = attachmentsKeys.list.similarTable({ orgIdOrSlug });
       const queries = getSimilarQueries<Attachment>(similarKey);
@@ -212,22 +220,23 @@ export const useAttachmentUpdateMutation = () =>
 export const useAttachmentDeleteMutation = () =>
   useMutation<boolean, Error, DeleteAttachmentsParams, AttachmentContextProp[]>({
     mutationKey: attachmentsKeys.delete(),
-    mutationFn: async ({ backendToDelete, orgIdOrSlug }) => {
-      // If there are no valid IDs to send to BE, skip request
-      if (!backendToDelete.length) {
-        console.info('All attachments were local-only, nothing to delete on the backend.');
+    mutationFn: async ({ localDeletionIds, serverDeletionIds, orgIdOrSlug }) => {
+      if (localDeletionIds.length) {
+        await LocalFileStorage.removeFiles(localDeletionIds);
+        console.info(`${localDeletionIds.length} Attachments were deleted locally`);
         return true;
       }
+      if (serverDeletionIds.length) {
+        const response = await deleteAttachments({ body: { ids: serverDeletionIds }, path: { orgIdOrSlug } });
 
-      // Delete remaining files on the backend
-      const response = await deleteAttachments({ body: { ids: backendToDelete }, path: { orgIdOrSlug } });
-
-      return response.success;
+        return response.success;
+      }
+      return false;
     },
     onMutate: async (variables) => {
-      const { backendToDelete, localDeleted, orgIdOrSlug } = variables;
+      const { localDeletionIds, serverDeletionIds, orgIdOrSlug } = variables;
 
-      const ids = [...backendToDelete, ...localDeleted];
+      const ids = [...localDeletionIds, ...serverDeletionIds];
 
       const context: AttachmentContextProp[] = []; // previous query data for rollback if an error occurs
 
@@ -255,13 +264,5 @@ export const useAttachmentDeleteMutation = () =>
 
       return context;
     },
-    onSuccess: (_, { backendToDelete }) => {
-      const message =
-        backendToDelete.length === 1
-          ? t('common:success.delete_resource', { resource: t('common:attachment') })
-          : t('common:success.delete_counted_resources', { count: backendToDelete.length, resources: t('common:attachments').toLowerCase() });
-
-      toaster(message, 'success');
-    },
-    onError: (_, { backendToDelete }, context) => handleError(backendToDelete.length > 1 ? 'deleteMany' : 'delete', context),
+    onError: (_, { serverDeletionIds }, context) => handleError(serverDeletionIds.length > 1 ? 'deleteMany' : 'delete', context),
   });
