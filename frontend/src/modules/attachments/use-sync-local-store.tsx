@@ -17,11 +17,14 @@ export function useSyncLocalStore(organizationId: string) {
   const isSyncingRef = useRef(false); // Prevent double trigger
 
   const onComplete = (attachments: AttachmentToInsert[], storedIds: string[]) => {
-    createAttachments({ localCreation: false, attachments, orgIdOrSlug: organizationId });
+    createAttachments(
+      { localCreation: false, attachments, orgIdOrSlug: organizationId },
+      { onSuccess: () => console.info('Successfully synced attachments to server:', attachments) },
+    );
     // Clean up offline files from IndexedDB
     deleteAttachments(
       { localDeletionIds: storedIds, serverDeletionIds: [], orgIdOrSlug: organizationId },
-      { onSuccess: () => console.info('🗑️ Successfully uploaded files removed from IndexedDB.') },
+      { onSuccess: () => console.info('Successfully removed uploaded files from IndexedDB.') },
     );
   };
 
@@ -33,7 +36,10 @@ export function useSyncLocalStore(organizationId: string) {
       isSyncingRef.current = true;
       const storageData = await fetchStoredFiles(organizationId);
 
-      if (!storageData || storageData.syncStatus !== 'idle') return;
+      if (!storageData || storageData.syncStatus !== 'idle') {
+        isSyncingRef.current = false;
+        return;
+      }
 
       const files = Object.values(storageData.files);
       if (!files.length) {

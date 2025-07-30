@@ -223,12 +223,10 @@ export const useAttachmentDeleteMutation = () =>
     mutationFn: async ({ localDeletionIds, serverDeletionIds, orgIdOrSlug }) => {
       if (localDeletionIds.length) {
         await LocalFileStorage.removeFiles(localDeletionIds);
-        console.info(`${localDeletionIds.length} Attachments were deleted locally`);
         return true;
       }
       if (serverDeletionIds.length) {
         const response = await deleteAttachments({ body: { ids: serverDeletionIds }, path: { orgIdOrSlug } });
-
         return response.success;
       }
       return false;
