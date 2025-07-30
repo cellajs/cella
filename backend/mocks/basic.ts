@@ -56,15 +56,23 @@ export const mockOrganization = (): InsertOrganizationModel => {
 };
 
 /**
+ * Optional overrides for mock user generation.
+ * Allows customization of specific fields while keeping others random.
+ */
+type MockUserOptionalOverrides = Partial<{
+  email: string;
+}>;
+
+/**
  * Generates a mock user with a given hashed password.
  * Enforces unique email and slug.
  *
  * @param hashedPassword - Pre-generated hashed password to assign to the user.
  * @returns A valid InsertUserModel object.
  */
-export const mockUser = (hashedPassword: string): InsertUserModel => {
+export const mockUser = (hashedPassword: string, overrides: MockUserOptionalOverrides = {}): InsertUserModel => {
   const firstAndLastName = { firstName: faker.person.firstName(), lastName: faker.person.lastName() };
-  const email = userEmail.enforce(() => faker.internet.email(firstAndLastName).toLocaleLowerCase());
+  const email = overrides.email ?? userEmail.enforce(() => faker.internet.email(firstAndLastName).toLowerCase());
   const slug = userSlug.enforce(() => slugify(faker.internet.username(firstAndLastName), { lower: true, strict: true }), { maxTime: 500, maxRetries: 500 })
 
   return {
