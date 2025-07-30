@@ -221,15 +221,17 @@ export const useAttachmentDeleteMutation = () =>
   useMutation<boolean, Error, DeleteAttachmentsParams, AttachmentContextProp[]>({
     mutationKey: attachmentsKeys.delete(),
     mutationFn: async ({ localDeletionIds, serverDeletionIds, orgIdOrSlug }) => {
-      if (localDeletionIds.length) {
-        await LocalFileStorage.removeFiles(localDeletionIds);
-        return true;
-      }
+      const localResult = true;
+      let serverResult = true;
+
+      if (localDeletionIds.length) await LocalFileStorage.removeFiles(localDeletionIds);
+
       if (serverDeletionIds.length) {
         const response = await deleteAttachments({ body: { ids: serverDeletionIds }, path: { orgIdOrSlug } });
-        return response.success;
+        serverResult = response.success;
       }
-      return false;
+
+      return localResult && serverResult;
     },
     onMutate: async (variables) => {
       const { localDeletionIds, serverDeletionIds, orgIdOrSlug } = variables;
