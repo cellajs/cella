@@ -1,3 +1,4 @@
+import { LocalFileStorage } from '~/modules/attachments/helpers/local-file-storage';
 import { useAttachmentDeleteMutation } from '~/modules/attachments/query-mutations';
 import type { Attachment } from '~/modules/attachments/types';
 import type { CallbackArgs } from '~/modules/common/data-table/types';
@@ -19,7 +20,10 @@ const DeleteAttachments = ({ attachments, entity, callback, dialog: isDialog }: 
   const orgIdOrSlug = entity.membership?.organizationId || entity.id;
 
   const onDelete = async () => {
-    deleteAttachments({ ids: attachments.map(({ id }) => id), orgIdOrSlug });
+    const ids = attachments.map(({ id }) => id);
+    // Remove locally stored files
+    const attachmentIds = await LocalFileStorage.removeFiles(ids);
+    deleteAttachments({ ...attachmentIds, orgIdOrSlug });
 
     if (isDialog) removeDialog();
     callback?.({ data: attachments, status: 'success' });

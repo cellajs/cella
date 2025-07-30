@@ -212,12 +212,22 @@ export const useAttachmentUpdateMutation = () =>
 export const useAttachmentDeleteMutation = () =>
   useMutation<boolean, Error, DeleteAttachmentsParams, AttachmentContextProp[]>({
     mutationKey: attachmentsKeys.delete(),
-    mutationFn: async ({ ids, orgIdOrSlug }) => {
-      const response = await deleteAttachments({ body: { ids }, path: { orgIdOrSlug } });
+    mutationFn: async ({ backendToDelete, orgIdOrSlug }) => {
+      // If there are no valid IDs to send to BE, skip request
+      if (!backendToDelete.length) {
+        console.info('All attachments were local-only, nothing to delete on the backend.');
+        return true;
+      }
+
+      // Delete remaining files on the backend
+      const response = await deleteAttachments({ body: { ids: backendToDelete }, path: { orgIdOrSlug } });
+
       return response.success;
     },
     onMutate: async (variables) => {
-      const { ids, orgIdOrSlug } = variables;
+      const { backendToDelete, localDeleted, orgIdOrSlug } = variables;
+
+      const ids = [...backendToDelete, ...localDeleted];
 
       const context: AttachmentContextProp[] = []; // previous query data for rollback if an error occurs
 
@@ -245,13 +255,13 @@ export const useAttachmentDeleteMutation = () =>
 
       return context;
     },
-    onSuccess: (_, { ids }) => {
+    onSuccess: (_, { backendToDelete }) => {
       const message =
-        ids.length === 1
+        backendToDelete.length === 1
           ? t('common:success.delete_resource', { resource: t('common:attachment') })
-          : t('common:success.delete_counted_resources', { count: ids.length, resources: t('common:attachments').toLowerCase() });
+          : t('common:success.delete_counted_resources', { count: backendToDelete.length, resources: t('common:attachments').toLowerCase() });
 
       toaster(message, 'success');
     },
-    onError: (_, { ids }, context) => handleError(ids.length > 1 ? 'deleteMany' : 'delete', context),
+    onError: (_, { backendToDelete }, context) => handleError(backendToDelete.length > 1 ? 'deleteMany' : 'delete', context),
   });

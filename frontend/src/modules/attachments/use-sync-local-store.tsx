@@ -18,7 +18,7 @@ export function useSyncLocalStore(organizationId: string) {
 
   const onComplete = (attachments: AttachmentToInsert[], storedIds: string[]) => {
     createAttachments({ attachments, orgIdOrSlug: organizationId });
-    deleteAttachments({ orgIdOrSlug: organizationId, ids: storedIds });
+    deleteAttachments({ orgIdOrSlug: organizationId, localDeleted: storedIds, backendToDelete: [] });
   };
 
   useEffect(() => {
