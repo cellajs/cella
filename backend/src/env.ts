@@ -1,3 +1,4 @@
+import { additionalEnvSchema } from '#/custom-env';
 import { env as dotenv } from '@dotenv-run/core';
 import { createEnv } from '@t3-oss/env-core';
 import { config, type Severity } from 'config';
@@ -61,9 +62,7 @@ export const env = createEnv({
 
     PINO_LOG_LEVEL: z.enum(Object.keys(config.severityLevels) as [Severity, ...Severity[]]).default(config.mode === 'production' ? 'info' : 'debug'),
 
-    TRIGGER_SECRET_KEY: z.string().optional(),
-
-    WEBHOOK_SECRET: z.string().optional(),
+    ...additionalEnvSchema.shape,
   },
   runtimeEnv: process.env,
   emptyStringAsUndefined: true,
