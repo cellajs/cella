@@ -78,12 +78,6 @@ export const handleApiError: ErrorHandler<Env> = (err, ctx) => {
   const { redirectToFrontend, originalError, message, cause, stack, ...error } = apiError;
   const { severity, type, meta } = error;
 
-  // Redirect to the frontend error page with query parameters for error details
-  if (redirectToFrontend) {
-    const redirectUrl = `${config.frontendUrl}/error?error=${type}&severity=${severity}`;
-    return ctx.redirect(redirectUrl, 302);
-  }
-
   // Get the current user and organization from context
   const user = getContextUser();
   const organization = getContextOrganization();
@@ -115,6 +109,12 @@ export const handleApiError: ErrorHandler<Env> = (err, ctx) => {
   console[nodeSevernity](`[${severity.toUpperCase()}] ${message}`);
   if (meta) console[nodeSevernity]('Meta:', meta);
   if (stack) console.error(stack);
+
+  // Redirect to the frontend error page with query parameters for error details
+  if (redirectToFrontend) {
+    const redirectUrl = `${config.frontendUrl}/error?error=${type}&severity=${severity}`;
+    return ctx.redirect(redirectUrl, 302);
+  }
 
   return ctx.json(enrichedError, enrichedError.status);
 };
