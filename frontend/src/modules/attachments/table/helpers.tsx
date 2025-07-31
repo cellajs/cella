@@ -1,3 +1,4 @@
+import { onlineManager } from '@tanstack/react-query';
 import { config } from 'config';
 import { t } from 'i18next';
 import { parseUploadedAttachments } from '~/modules/attachments/helpers/parse-uploaded';
@@ -14,7 +15,7 @@ export const useAttachmentsUploadDialog = () => {
   const open = (organizationId: string) => {
     const onComplete = (result: UploadedUppyFile<'attachment'>) => {
       const attachments = parseUploadedAttachments(result, organizationId);
-      createAttachments({ attachments, orgIdOrSlug: organizationId });
+      createAttachments({ localCreation: !onlineManager.isOnline(), attachments, orgIdOrSlug: organizationId });
       useUploader.getState().remove();
     };
 

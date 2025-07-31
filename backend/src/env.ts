@@ -1,8 +1,8 @@
-import { additionalEnvSchema } from '#/custom-env';
 import { env as dotenv } from '@dotenv-run/core';
 import { createEnv } from '@t3-oss/env-core';
 import { config, type Severity } from 'config';
 import { z } from 'zod';
+import { additionalEnvSchema } from '#/custom-env';
 
 dotenv({
   root: '../..',
