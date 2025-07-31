@@ -1,5 +1,5 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
-import { config } from 'config';
+import { appConfig } from 'config';
 import { compress } from 'hono/compress';
 import { cors } from 'hono/cors';
 import { csrf } from 'hono/csrf';
@@ -26,7 +26,7 @@ app.use('*', loggerMiddleware);
 
 const electricHeaders = ['electric-cursor', 'electric-handle', 'electric-schema', 'electric-offset', 'electric-up-to-date'];
 const corsOptions: Parameters<typeof cors>[0] = {
-  origin: config.frontendUrl,
+  origin: appConfig.frontendUrl,
   credentials: true,
   allowMethods: ['GET', 'HEAD', 'PUT', 'POST', 'DELETE'],
   allowHeaders: [],
@@ -37,7 +37,7 @@ const corsOptions: Parameters<typeof cors>[0] = {
 app.use('*', cors(corsOptions));
 
 // CSRF protection
-app.use('*', csrf({ origin: config.frontendUrl }));
+app.use('*', csrf({ origin: appConfig.frontendUrl }));
 
 // Body limit
 app.use('*', dynamicBodyLimit);

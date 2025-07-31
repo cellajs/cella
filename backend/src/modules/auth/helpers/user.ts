@@ -1,4 +1,4 @@
-import { config } from 'config';
+import { appConfig } from 'config';
 import { and, eq } from 'drizzle-orm';
 import type { Context } from 'hono';
 import { db } from '#/db/db';
@@ -55,7 +55,7 @@ export const handleCreateUser = async ({ ctx, newUser, redirectUrl, provider, me
         email: userEmail,
         name: newUser.name,
         unsubscribeToken: generateUnsubscribeToken(userEmail),
-        language: config.defaultLanguage,
+        language: appConfig.defaultLanguage,
         hashedPassword: newUser.hashedPassword,
       })
       .returning();
@@ -108,7 +108,7 @@ export const handleMembershipTokenUpdate = async (userId: string, tokenId: strin
     // Validate if the token has an entityType and role (must be a membership invite)
     if (!entityType || !role) throw new Error('Token is not a valid membership invite.');
 
-    const entityIdField = config.entityIdFields[entityType];
+    const entityIdField = appConfig.entityIdFields[entityType];
     // Validate if the token contains the required entity ID field
     if (!token[entityIdField]) throw new Error(`Token is missing entity ID field for ${entityType}.`);
 

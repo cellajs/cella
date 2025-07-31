@@ -1,5 +1,5 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
-import { config } from 'config';
+import { appConfig } from 'config';
 import { and, count, eq, ilike, inArray, isNotNull, isNull, or } from 'drizzle-orm';
 import i18n from 'i18next';
 import { db } from '#/db/db';
@@ -48,7 +48,7 @@ const membershipRouteHandlers = app
 
     // Extract entity details
     const { entityType, id: entityId } = entity;
-    const targetEntityIdField = config.entityIdFields[entityType];
+    const targetEntityIdField = appConfig.entityIdFields[entityType];
 
     const user = getContextUser();
     const organization = getContextOrganization();
@@ -186,7 +186,7 @@ const membershipRouteHandlers = app
     const recipients = insertedTokens.map(({ email, tokenId, token }) => ({
       email,
       name: slugFromEmail(email),
-      memberInviteLink: `${config.frontendUrl}/invitation/${token}?tokenId=${tokenId}`,
+      memberInviteLink: `${appConfig.frontendUrl}/invitation/${token}?tokenId=${tokenId}`,
     }));
 
     const emailProps = {
@@ -196,7 +196,7 @@ const membershipRouteHandlers = app
       role,
       subject: i18n.t('backend:email.member_invite.subject', {
         lng: organization.defaultLanguage,
-        appName: config.name,
+        appName: appConfig.name,
         entityType: organization.name,
       }),
       lng: organization.defaultLanguage,
@@ -240,7 +240,7 @@ const membershipRouteHandlers = app
 
     const { entity } = await getValidContextEntity(idOrSlug, entityType, 'delete');
 
-    const entityIdField = config.entityIdFields[entityType];
+    const entityIdField = appConfig.entityIdFields[entityType];
 
     // Convert ids to an array
     const membershipIds = Array.isArray(ids) ? ids : [ids];
@@ -311,7 +311,7 @@ const membershipRouteHandlers = app
     }
 
     const updatedType = membershipToUpdate.contextType;
-    const updatedEntityIdField = config.entityIdFields[updatedType];
+    const updatedEntityIdField = appConfig.entityIdFields[updatedType];
 
     const membershipContextId = membershipToUpdate[updatedEntityIdField];
     if (!membershipContextId) throw new ApiError({ status: 404, type: 'not_found', severity: 'warn', entityType: updatedType });
@@ -369,7 +369,7 @@ const membershipRouteHandlers = app
     // Validate entity existence and check read permission
     const { entity } = await getValidContextEntity(idOrSlug, entityType, 'read');
 
-    const entityIdField = config.entityIdFields[entity.entityType];
+    const entityIdField = appConfig.entityIdFields[entity.entityType];
 
     // Build search filters
     const $or = q ? [ilike(usersTable.name, prepareStringForILikeFilter(q)), ilike(usersTable.email, prepareStringForILikeFilter(q))] : [];
@@ -424,7 +424,7 @@ const membershipRouteHandlers = app
 
     const { entity } = await getValidContextEntity(idOrSlug, entityType, 'read');
 
-    const entityIdField = config.entityIdFields[entity.entityType];
+    const entityIdField = appConfig.entityIdFields[entity.entityType];
 
     const invitedMemberSelect = {
       id: tokensTable.id,

@@ -1,6 +1,6 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
 import { EventName, Paddle } from '@paddle/paddle-node-sdk';
-import { config } from 'config';
+import { appConfig } from 'config';
 import { and, eq, inArray, isNull, lt } from 'drizzle-orm';
 import i18n from 'i18next';
 
@@ -41,7 +41,7 @@ const systemRouteHandlers = app
     const lng = user.language;
     const senderName = user.name;
     const senderThumbnailUrl = user.thumbnailUrl;
-    const subject = i18n.t('backend:email.system_invite.subject', { lng, appName: config.name });
+    const subject = i18n.t('backend:email.system_invite.subject', { lng, appName: appConfig.name });
 
     const normalizedEmails = emails.map((email) => email.toLowerCase());
 
@@ -106,7 +106,7 @@ const systemRouteHandlers = app
       email: tokenRecord.email,
       lng: lng,
       name: slugFromEmail(tokenRecord.email),
-      systemInviteLink: `${config.frontendUrl}/auth/authenticate?token=${tokenRecord.token}&tokenId=${tokenRecord.id}`,
+      systemInviteLink: `${appConfig.frontendUrl}/auth/authenticate?token=${tokenRecord.token}&tokenId=${tokenRecord.id}`,
     }));
 
     type Recipient = (typeof recipients)[number];
@@ -201,7 +201,7 @@ const systemRouteHandlers = app
     // Add unsubscribe link to each recipient
     let recipients = recipientsRecords.map(({ newsletter, unsubscribeToken, ...recipient }) => ({
       ...recipient,
-      unsubscribeLink: `${config.backendUrl}/unsubscribe?token=${unsubscribeToken}`,
+      unsubscribeLink: `${appConfig.backendUrl}/unsubscribe?token=${unsubscribeToken}`,
     }));
 
     // If toSelf is true, send the email only to self
@@ -210,7 +210,7 @@ const systemRouteHandlers = app
         {
           email: user.email,
           name: user.name,
-          unsubscribeLink: `${config.backendUrl}/unsubscribe?token=NOTOKEN`,
+          unsubscribeLink: `${appConfig.backendUrl}/unsubscribe?token=NOTOKEN`,
           orgName: 'TEST EMAIL ORGANIZATION',
         },
       ];

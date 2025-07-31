@@ -1,5 +1,5 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
-import { config } from 'config';
+import { appConfig } from 'config';
 import { contextStorage } from 'hono/context-storage';
 import type { Env } from '#/lib/context';
 import { ApiError, handleApiError } from '#/lib/errors';
@@ -8,7 +8,7 @@ import middlewares from '#/middlewares/app';
 const baseApp = new OpenAPIHono<Env>();
 
 // Redirect favicon
-baseApp.get('/favicon.ico', (c) => c.redirect(`${config.frontendUrl}/favicon.ico`, 301));
+baseApp.get('/favicon.ico', (c) => c.redirect(`${appConfig.frontendUrl}/favicon.ico`, 301));
 
 // Add context storage
 baseApp.use(contextStorage());

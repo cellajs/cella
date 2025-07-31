@@ -1,4 +1,4 @@
-import { config } from 'config';
+import { appConfig } from 'config';
 import { Building2, Cloud, Github, Users } from 'lucide-react';
 import { nanoid } from '~/utils/nanoid';
 
@@ -9,7 +9,7 @@ import { nanoid } from '~/utils/nanoid';
 export const marketingNavConfig = [
   { id: 'features', url: '/about', hash: 'features' },
   // { id: 'pricing', url: '/about', hash: 'pricing' },
-  { id: 'docs', url: `${config.backendUrl}/docs`, hash: '' },
+  { id: 'docs', url: `${appConfig.backendUrl}/docs`, hash: '' },
 ];
 
 /*************************************************************************************************
@@ -17,8 +17,8 @@ export const marketingNavConfig = [
  ************************************************************************************************/
 
 export const socials = [
-  { title: 'BlueSky', href: config.company.blueskyUrl, icon: Cloud },
-  { title: 'GitHub', href: config.company.githubUrl, icon: Github },
+  { title: 'BlueSky', href: appConfig.company.blueskyUrl, icon: Cloud },
+  { title: 'GitHub', href: appConfig.company.githubUrl, icon: Github },
 ];
 
 export const footerSections = [
@@ -33,7 +33,7 @@ export const footerSections = [
     title: 'common:documentation',
     hideOnMobile: true,
     links: [
-      { title: 'common:api_docs', href: `${config.backendUrl}/docs` },
+      { title: 'common:api_docs', href: `${appConfig.backendUrl}/docs` },
       { title: 'common:architecture', href: 'https://github.com/cellajs/cella/blob/main/info/ARCHITECTURE.md' },
       { title: 'common:roadmap', href: 'https://github.com/cellajs/cella/blob/main/info/ROADMAP.md' },
     ],
@@ -93,7 +93,7 @@ export const pricingPlans: PricingPlan[] = [
  ************************************************************************************************/
 
 export const faqsData = [
-  { id: 'production-ready', link: config.company.githubUrl },
+  { id: 'production-ready', link: appConfig.company.githubUrl },
   { id: 'cella-vs-next' },
   { id: 'alternative-to-nextjs' },
   { id: 'cella-made-in-europe' },

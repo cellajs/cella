@@ -1,5 +1,5 @@
 import { z } from '@hono/zod-openapi';
-import { type ContextEntityType, config } from 'config';
+import { appConfig, type ContextEntityType } from 'config';
 import { createSelectSchema } from 'drizzle-zod';
 import { sessionsTable } from '#/db/schema/sessions';
 import { entityBaseSchema } from '#/modules/entities/schema';
@@ -30,7 +30,7 @@ const menuItemListSchema = z.array(
 );
 
 export const menuSchema = z.object(
-  config.menuStructure.reduce(
+  appConfig.menuStructure.reduce(
     (acc, { entityType }) => {
       acc[entityType] = menuItemListSchema;
       return acc;
@@ -63,5 +63,5 @@ export const uploadTokenSchema = z.object({
 export const uploadTokenQuerySchema = z.object({
   public: booleanQuerySchema,
   organizationId: z.string().optional(),
-  templateId: z.enum(config.uploadTemplateIds),
+  templateId: z.enum(appConfig.uploadTemplateIds),
 });

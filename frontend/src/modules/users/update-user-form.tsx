@@ -1,5 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { config } from 'config';
+import { appConfig } from 'config';
 import { useMemo } from 'react';
 import type { UseFormProps } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
@@ -130,7 +130,7 @@ const UpdateUserForm = ({ user, callback, sheet: isSheet, hiddenFields, children
               </FormLabel>
               <FormDescription>{t('common:placeholder.select_language')}</FormDescription>
               <FormControl>
-                <SelectLanguage options={[...config.languages]} value={field.value ?? config.defaultLanguage} onChange={field.onChange} />
+                <SelectLanguage options={[...appConfig.languages]} value={field.value ?? appConfig.defaultLanguage} onChange={field.onChange} />
               </FormControl>
               <FormMessage />
             </FormItem>

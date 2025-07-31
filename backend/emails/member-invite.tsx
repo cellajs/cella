@@ -1,4 +1,4 @@
-import { config } from 'config';
+import { appConfig } from 'config';
 import i18n from 'i18next';
 import { Column, Row, Text } from 'jsx-email';
 
@@ -15,10 +15,10 @@ export interface MemberInviteEmailProps extends BasicTemplateType {
   memberInviteLink: string;
   senderName: string;
   orgName: string;
-  role: (typeof config.rolesByType.entityRoles)[number];
+  role: (typeof appConfig.rolesByType.entityRoles)[number];
 }
 
-const appName = config.name;
+const appName = appConfig.name;
 
 export const MemberInviteEmail = ({ name, lng, senderName, role, orgName, memberInviteLink }: MemberInviteEmailProps) => {
   return (

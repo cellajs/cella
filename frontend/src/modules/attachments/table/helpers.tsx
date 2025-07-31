@@ -1,4 +1,4 @@
-import { config } from 'config';
+import { appConfig } from 'config';
 import { t } from 'i18next';
 import { parseUploadedAttachments } from '~/modules/attachments/helpers/parse-uploaded';
 import { useAttachmentCreateMutation } from '~/modules/attachments/query-mutations';
@@ -6,7 +6,7 @@ import type { UploadedUppyFile } from '~/modules/common/uploader/types';
 import { useUploader } from '~/modules/common/uploader/use-uploader';
 
 const maxNumberOfFiles = 20;
-const maxTotalFileSize = maxNumberOfFiles * config.uppy.defaultRestrictions.maxFileSize; // for maxNumberOfFiles files at 10MB max each
+const maxTotalFileSize = maxNumberOfFiles * appConfig.uppy.defaultRestrictions.maxFileSize; // for maxNumberOfFiles files at 10MB max each
 
 export const useAttachmentsUploadDialog = () => {
   const { mutate: createAttachments } = useAttachmentCreateMutation();

@@ -1,7 +1,7 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation } from '@tanstack/react-query';
 import { useNavigate, useParams, useSearch } from '@tanstack/react-router';
-import { config } from 'config';
+import { appConfig } from 'config';
 import { ArrowRight } from 'lucide-react';
 import { lazy, Suspense, useRef } from 'react';
 import { useForm } from 'react-hook-form';
@@ -46,7 +46,7 @@ const CreatePasswordForm = () => {
     mutationFn: ({ token, password }) => createPassword({ path: { token }, body: { password } }),
     onSuccess: () => {
       toaster(t('common:success.password_reset'), 'success');
-      navigate({ to: config.defaultRedirectPath });
+      navigate({ to: appConfig.defaultRedirectPath });
     },
   });
 

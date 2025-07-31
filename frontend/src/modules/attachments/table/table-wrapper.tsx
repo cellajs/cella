@@ -1,4 +1,4 @@
-import { config } from 'config';
+import { appConfig } from 'config';
 import { Info } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { useRef, useState } from 'react';
@@ -17,7 +17,7 @@ import type { BaseTableMethods } from '~/modules/common/data-table/types';
 import type { EntityPage } from '~/modules/entities/types';
 import type { attachmentsSearchSchema } from '~/routes/organizations';
 
-const LIMIT = config.requestLimits.attachments;
+const LIMIT = appConfig.requestLimits.attachments;
 
 export type AttachmentSearch = z.infer<typeof attachmentsSearchSchema>;
 export interface AttachmentsTableProps {

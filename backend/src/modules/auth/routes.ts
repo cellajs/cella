@@ -1,5 +1,5 @@
 import { z } from '@hono/zod-openapi';
-import { config } from 'config';
+import { appConfig } from 'config';
 import { createCustomRoute } from '#/lib/custom-routes';
 import { hasSystemAccess, isAuthenticated, isPublicAccess } from '#/middlewares/guard';
 import { hasValidToken } from '#/middlewares/has-valid-token';
@@ -364,7 +364,7 @@ const authRoutes = {
     description: 'Checks if a token (e.g. for password reset, email verification, or invite) is still valid.',
     request: {
       params: z.object({ id: idSchema }),
-      query: z.object({ type: z.enum(config.tokenTypes) }),
+      query: z.object({ type: z.enum(appConfig.tokenTypes) }),
     },
     responses: {
       200: {

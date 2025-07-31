@@ -1,5 +1,5 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
-import { config } from 'config';
+import { appConfig } from 'config';
 import { and, count, eq, ilike, inArray, like, notLike, or, type SQL } from 'drizzle-orm';
 import { html, raw } from 'hono/html';
 import { stream } from 'hono/streaming';
@@ -40,7 +40,7 @@ const attachmentsRouteHandlers = app
     }
 
     // Construct the upstream URL
-    const originUrl = new URL(`${config.electricUrl}/v1/shape?table=attachments&api_secret=${env.ELECTRIC_API_SECRET}`);
+    const originUrl = new URL(`${appConfig.electricUrl}/v1/shape?table=attachments&api_secret=${env.ELECTRIC_API_SECRET}`);
 
     // Copy over the relevant query params that the Electric client adds
     // so that we return the right part of the Shape log.
@@ -131,7 +131,7 @@ const attachmentsRouteHandlers = app
     const filters: SQL[] = [
       eq(attachmentsTable.organizationId, organization.id),
       // If s3 is off, show attachments that not have a public CDN URL only to users that create it because in that case attachments stored in IndexedDB
-      ...(!config.has.uploadEnabled
+      ...(!appConfig.has.uploadEnabled
         ? [
             or(
               and(eq(attachmentsTable.createdBy, user.id), like(attachmentsTable.originalKey, 'blob:http%')),
@@ -290,7 +290,7 @@ const attachmentsRouteHandlers = app
     const [organization] = await db.select().from(organizationsTable).where(eq(organizationsTable.id, attachment.organizationId));
     if (!organization) throw new ApiError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'organization' });
 
-    const url = new URL(`${config.frontendUrl}/organizations/${organization.slug}/attachments`);
+    const url = new URL(`${appConfig.frontendUrl}/organizations/${organization.slug}/attachments`);
     url.searchParams.set('attachmentDialogId', attachment.id);
     if (attachment.groupId) url.searchParams.set('groupId', attachment.groupId);
 
@@ -308,8 +308,8 @@ const attachmentsRouteHandlers = app
           <meta property="og:url" content="${redirectUrl}" />
 
           <meta property="og:type" content="website" />
-          <meta property="og:site_name" content="${config.name}" />
-          <meta property="og:locale" content="${config.defaultLanguage}" />
+          <meta property="og:site_name" content="${appConfig.name}" />
+          <meta property="og:locale" content="${appConfig.defaultLanguage}" />
           <link rel="logo" type="image/png" href="/static/logo/logo.png" />
           <link rel="icon" type="image/png" sizes="512x512" href="/static/icons/icon-512x512.png" />
           <link rel="icon" type="image/png" sizes="192x192" href="/static/icons/icon-192x192.png" />

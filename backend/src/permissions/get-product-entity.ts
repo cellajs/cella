@@ -1,4 +1,4 @@
-import { type ContextEntityType, config, type ProductEntityType } from 'config';
+import { appConfig, type ContextEntityType, type ProductEntityType } from 'config';
 import { getContextMemberships, getContextOrganization, getContextUser } from '#/lib/context';
 import { type EntityModel, resolveEntity } from '#/lib/entity';
 import { ApiError } from '#/lib/errors';
@@ -40,7 +40,7 @@ export const getValidProductEntity = async <K extends ProductEntityType>(
   if (!isAllowed) throw new ApiError({ status: 403, type: 'forbidden', severity: 'warn', entityType });
 
   // Step 3: Membership check
-  const entityIdField = config.entityIdFields[contextEntityType];
+  const entityIdField = appConfig.entityIdFields[contextEntityType];
   const entityId = (entity as Record<string, unknown>)[entityIdField];
 
   const membership = memberships.find((m) => m.contextType === contextEntityType && m[entityIdField] === entityId) || null;

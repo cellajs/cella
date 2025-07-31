@@ -1,5 +1,5 @@
 import { useNavigate, useSearch } from '@tanstack/react-router';
-import { config } from 'config';
+import { appConfig } from 'config';
 import { Fingerprint } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { Step } from '~/modules/auth/types';
@@ -19,7 +19,7 @@ const PasskeyOption = ({ email, actionType = 'signIn' }: PasskeyOptionProps) => 
   const mode = useUIStore((state) => state.mode);
 
   const { redirect } = useSearch({ from: AuthenticateRoute.id });
-  const redirectPath = redirect?.startsWith('/') ? redirect : config.defaultRedirectPath;
+  const redirectPath = redirect?.startsWith('/') ? redirect : appConfig.defaultRedirectPath;
 
   const successCallback = () => {
     navigate({ to: redirectPath, replace: true });

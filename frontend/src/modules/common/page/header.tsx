@@ -1,5 +1,5 @@
 import { Link } from '@tanstack/react-router';
-import { config, type EntityType } from 'config';
+import { appConfig, type EntityType } from 'config';
 import { ChevronRight, Home, Loader2 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import useScrollTo from '~/hooks/use-scroll-to';
@@ -63,7 +63,7 @@ const PageHeader = ({ entity, panel, parent, disableScroll, ...coverProps }: Pag
             <BreadcrumbList>
               <BreadcrumbItem className="max-sm:hidden">
                 <BreadcrumbLink className="p-0.5" asChild>
-                  <Link to={config.defaultRedirectPath}>
+                  <Link to={appConfig.defaultRedirectPath}>
                     <Home size={12} />
                   </Link>
                 </BreadcrumbLink>

@@ -2,7 +2,7 @@ import { getRandomValues } from 'node:crypto';
 import { OpenAPIHono } from '@hono/zod-openapi';
 import { encodeBase64 } from '@oslojs/encoding';
 import { generateCodeVerifier, generateState, OAuth2RequestError } from 'arctic';
-import { config, type EnabledOauthProvider } from 'config';
+import { appConfig, type EnabledOauthProvider } from 'config';
 import { and, desc, eq, isNotNull } from 'drizzle-orm';
 import i18n from 'i18next';
 import { db } from '#/db/db';
@@ -57,15 +57,15 @@ import { createDate, TimeSpan } from '#/utils/time-span';
 import { CreatePasswordEmail, type CreatePasswordEmailProps } from '../../../emails/create-password';
 import { EmailVerificationEmail, type EmailVerificationEmailProps } from '../../../emails/email-verification';
 
-const enabledStrategies: readonly string[] = config.enabledAuthStrategies;
-const enabledOauthProviders: readonly string[] = config.enabledOauthProviders;
+const enabledStrategies: readonly string[] = appConfig.enabledAuthStrategies;
+const enabledOauthProviders: readonly string[] = appConfig.enabledOauthProviders;
 
 // Scopes for OAuth providers
 const githubScopes = ['user:email'];
 const googleScopes = ['profile', 'email'];
 const microsoftScopes = ['profile', 'email'];
 
-// Check if oauth provider is enabled by config
+// Check if oauth provider is enabled by appConfig
 function isOAuthEnabled(provider: EnabledOauthProvider): boolean {
   if (!enabledStrategies.includes('oauth')) return false;
   return enabledOauthProviders.includes(provider);
@@ -101,7 +101,7 @@ const authRouteHandlers = app
     }
 
     // Stop if sign up is disabled and no invitation
-    if (!config.has.registrationEnabled) throw new ApiError({ status: 403, type: 'sign_up_restricted' });
+    if (!appConfig.has.registrationEnabled) throw new ApiError({ status: 403, type: 'sign_up_restricted' });
     const hashedPassword = await hashPassword(password);
     const slug = slugFromEmail(email);
 
@@ -198,8 +198,8 @@ const authRouteHandlers = app
 
     // Send email
     const lng = user.language;
-    const verificationLink = `${config.frontendUrl}/auth/verify-email/${token}?tokenId=${tokenRecord.id}`;
-    const subject = i18n.t('backend:email.email_verification.subject', { lng, appName: config.name });
+    const verificationLink = `${appConfig.frontendUrl}/auth/verify-email/${token}?tokenId=${tokenRecord.id}`;
+    const subject = i18n.t('backend:email.email_verification.subject', { lng, appName: appConfig.name });
     const staticProps = { verificationLink, subject, lng };
     const recipients = [{ email: user.email }];
 
@@ -269,8 +269,8 @@ const authRouteHandlers = app
 
     // Send email
     const lng = user.language;
-    const createPasswordLink = `${config.frontendUrl}/auth/create-password/${token}?tokenId=${tokenRecord.id}`;
-    const subject = i18n.t('backend:email.create_password.subject', { lng, appName: config.name });
+    const createPasswordLink = `${appConfig.frontendUrl}/auth/create-password/${token}?tokenId=${tokenRecord.id}`;
+    const subject = i18n.t('backend:email.create_password.subject', { lng, appName: appConfig.name });
     const staticProps = { createPasswordLink, subject, lng };
     const recipients = [{ email: user.email }];
 
@@ -422,7 +422,7 @@ const authRouteHandlers = app
     // Delete token after all activation, since tokenId is cascaded in membershipTable
     await db.delete(tokensTable).where(eq(tokensTable.id, token.id));
 
-    const entityIdField = config.entityIdFields[token.entityType];
+    const entityIdField = appConfig.entityIdFields[token.entityType];
     if (!targetMembership[entityIdField]) throw new ApiError({ status: 404, type: 'not_found', severity: 'warn', entityType: token.entityType });
 
     const entity = await resolveEntity(token.entityType, targetMembership[entityIdField]);
@@ -643,7 +643,7 @@ const authRouteHandlers = app
       const existingUser = existingUsers[0] ?? null;
 
       // If registration is disabled and no existing user and not invite throw to error
-      if (!config.has.registrationEnabled && !existingUser && !inviteToken) {
+      if (!appConfig.has.registrationEnabled && !existingUser && !inviteToken) {
         throw new ApiError({ status: 403, type: 'sign_up_restricted', redirectToFrontend: true });
       }
 
@@ -721,7 +721,7 @@ const authRouteHandlers = app
       const existingUser = existingUsers[0] ?? null;
 
       // If registration is disabled and no existing user and not invite throw to error
-      if (!config.has.registrationEnabled && !existingUser && !inviteToken) {
+      if (!appConfig.has.registrationEnabled && !existingUser && !inviteToken) {
         throw new ApiError({ status: 403, type: 'sign_up_restricted', redirectToFrontend: true });
       }
       // Get the redirect URL based on whether a new user or invite token exists
@@ -799,7 +799,7 @@ const authRouteHandlers = app
       const existingUser = existingUsers[0] ?? null;
 
       // If registration is disabled and no existing user and not invite throw to error
-      if (!config.has.registrationEnabled && !existingUser && !inviteToken) {
+      if (!appConfig.has.registrationEnabled && !existingUser && !inviteToken) {
         throw new ApiError({ status: 403, type: 'sign_up_restricted', redirectToFrontend: true });
       }
 

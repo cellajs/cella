@@ -1,5 +1,5 @@
 import { OpenAPIHono, type z } from '@hono/zod-openapi';
-import { config } from 'config';
+import { appConfig } from 'config';
 import { and, eq, ilike, inArray, isNotNull } from 'drizzle-orm';
 
 import { db } from '#/db/db';
@@ -77,7 +77,7 @@ const entityRouteHandlers = app
     const userId = targetUserId ?? selfId;
 
     const table = entityTables[type];
-    const entityIdField = config.entityIdFields[type];
+    const entityIdField = appConfig.entityIdFields[type];
     if (!table) throw new ApiError({ status: 404, type: 'not_found', severity: 'warn', entityType: type });
 
     const orderColumn = getOrderColumn({ name: table.name, createdAt: table.createdAt }, sort, table.createdAt);

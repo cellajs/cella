@@ -1,4 +1,4 @@
-import { config } from 'config';
+import { appConfig } from 'config';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
@@ -30,7 +30,7 @@ export const useDraftStore = create<DraftStoreState>()(
         getForm: <T>(key: string): T | undefined => get().forms[key] as T | undefined,
         clearForms: () => set({ forms: {} }),
       }),
-      { version: 1, name: `${config.slug}-drafts`, storage: createJSONStorage(() => sessionStorage) },
+      { version: 1, name: `${appConfig.slug}-drafts`, storage: createJSONStorage(() => sessionStorage) },
     ),
   ),
 );

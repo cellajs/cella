@@ -1,4 +1,4 @@
-import { type ContextEntityType, config } from 'config';
+import { appConfig, type ContextEntityType } from 'config';
 
 import { getContextMemberships, getContextOrganization, getContextUser } from '#/lib/context';
 import { type EntityModel, resolveEntity } from '#/lib/entity';
@@ -41,7 +41,7 @@ export const getValidContextEntity = async <T extends ContextEntityType>(
   if (!isAllowed) throw new ApiError({ status: 403, type: 'forbidden', severity: 'warn' });
 
   // Step 3: Membership check
-  const entityIdField = config.entityIdFields[entity.entityType];
+  const entityIdField = appConfig.entityIdFields[entity.entityType];
   const membership = memberships.find((m) => m[entityIdField] === entity.id && m.contextType === entityType) || null;
 
   if (!membership && !isSystemAdmin) throw new ApiError({ status: 400, type: 'invalid_request', severity: 'error' });

@@ -1,5 +1,5 @@
 import { useMutation } from '@tanstack/react-query';
-import { config } from 'config';
+import { appConfig } from 'config';
 import { t } from 'i18next';
 import { toast } from 'sonner';
 import { createAttachment, deleteAttachments, updateAttachment } from '~/api.gen';
@@ -20,7 +20,7 @@ import { formatUpdatedData, getQueryItems, getSimilarQueries } from '~/query/hel
 import { queryClient } from '~/query/query-client';
 import { nanoid } from '~/utils/nanoid';
 
-const limit = config.requestLimits.attachments;
+const limit = appConfig.requestLimits.attachments;
 
 const handleError = (action: 'create' | 'update' | 'delete' | 'deleteMany', context?: AttachmentContextProp[]) => {
   if (context?.length) {

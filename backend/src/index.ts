@@ -9,14 +9,14 @@ import { migrate as pgliteMigrate } from 'drizzle-orm/pglite/migrator';
 import { db, migrateConfig } from '#/db/db';
 import docs from '#/lib/docs';
 import '#/lib/i18n';
-import { config } from 'config';
+import { appConfig } from 'config';
 import app from '#/routes';
 import { ascii } from '#/utils/ascii';
 import { env } from './env';
 
 // import { sdk } from './tracing';
 
-const startTunnel = config.mode === 'tunnel' ? (await import('#/lib/start-tunnel')).default : () => null;
+const startTunnel = appConfig.mode === 'tunnel' ? (await import('#/lib/start-tunnel')).default : () => null;
 
 const isPGliteDatabase = (_db: unknown): _db is PgliteDatabase => !!env.PGLITE;
 
@@ -25,9 +25,9 @@ docs(app);
 
 // Init monitoring instance
 Sentry.init({
-  enabled: !!config.sentryDsn,
-  dsn: config.sentryDsn,
-  environment: config.mode,
+  enabled: !!appConfig.sentryDsn,
+  dsn: appConfig.sentryDsn,
+  environment: appConfig.mode,
   integrations: [nodeProfilingIntegration()],
   // Tracing to capture 100% of transactions
   tracesSampleRate: 1.0,
@@ -58,11 +58,11 @@ const main = async () => {
       ascii();
       console.info(' ');
 
-      console.info(`${chalk.greenBright.bold(config.name)} 
-Frontend: ${chalk.cyanBright.bold(config.frontendUrl)} 
-Backend: ${chalk.cyanBright.bold(config.backendUrl)} 
+      console.info(`${chalk.greenBright.bold(appConfig.name)} 
+Frontend: ${chalk.cyanBright.bold(appConfig.frontendUrl)} 
+Backend: ${chalk.cyanBright.bold(appConfig.backendUrl)} 
 Tunnel: ${chalk.magentaBright.bold(tunnelUrl || '-')}
-Docs: ${chalk.cyanBright(`${config.backendUrl}/docs`)}`);
+Docs: ${chalk.cyanBright(`${appConfig.backendUrl}/docs`)}`);
 
       console.info(' ');
     },

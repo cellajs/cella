@@ -1,6 +1,6 @@
 import { OpenAPIHono, type z } from '@hono/zod-openapi';
 import type { EnabledOauthProvider, MenuSection } from 'config';
-import { config } from 'config';
+import { appConfig } from 'config';
 import { and, eq } from 'drizzle-orm';
 import { type SSEStreamingApi, streamSSE } from 'hono/streaming';
 import { db } from '#/db/db';
@@ -60,7 +60,7 @@ const meRouteHandlers = app
 
     const validOAuthAccounts = oauthAccounts
       .map((el) => el.providerId)
-      .filter((provider): provider is EnabledOauthProvider => config.enabledOauthProviders.includes(provider as EnabledOauthProvider));
+      .filter((provider): provider is EnabledOauthProvider => appConfig.enabledOauthProviders.includes(provider as EnabledOauthProvider));
 
     return ctx.json({ oauth: validOAuthAccounts, passkey: !!passkeys.length, sessions }, 200);
   })
@@ -71,7 +71,7 @@ const meRouteHandlers = app
     const user = getContextUser();
     const memberships = getContextMemberships();
 
-    const emptyData = config.menuStructure.reduce((acc, section) => {
+    const emptyData = appConfig.menuStructure.reduce((acc, section) => {
       acc[section.entityType] = [];
       return acc;
     }, {} as UserMenu);
@@ -85,7 +85,7 @@ const meRouteHandlers = app
       const allowedEntities = entities.filter((entity) => permissionManager.isPermissionAllowed([entity.membership], 'read', entity));
 
       return allowedEntities.map((entity) => {
-        const entityIdField = config.entityIdFields[entityType];
+        const entityIdField = appConfig.entityIdFields[entityType];
 
         const submenu = subentities.filter(
           (sub) =>
@@ -97,7 +97,7 @@ const meRouteHandlers = app
 
     const menu = {} as UserMenu;
 
-    for (const section of config.menuStructure) {
+    for (const section of appConfig.menuStructure) {
       menu[section.entityType] = await buildMenuForSection(section);
     }
 
@@ -198,7 +198,7 @@ const meRouteHandlers = app
     const entity = await resolveEntity(entityType, idOrSlug);
     if (!entity) throw new ApiError({ status: 404, type: 'not_found', severity: 'warn', entityType });
 
-    const entityIdField = config.entityIdFields[entityType];
+    const entityIdField = appConfig.entityIdFields[entityType];
 
     // Delete the memberships
     await db
@@ -244,7 +244,7 @@ const meRouteHandlers = app
     const user = getContextUser();
 
     // This will be used to as first part of S3 key
-    const sub = [config.s3BucketPrefix, organizationId, user.id].filter(Boolean).join('/');
+    const sub = [appConfig.s3BucketPrefix, organizationId, user.id].filter(Boolean).join('/');
 
     try {
       const params = getParams(templateId, isPublic, sub);
@@ -275,7 +275,7 @@ const meRouteHandlers = app
     // Update user
     await db.update(usersTable).set({ newsletter: false }).where(eq(usersTable.id, user.id));
 
-    const redirectUrl = `${config.frontendUrl}/auth/unsubscribed`;
+    const redirectUrl = `${appConfig.frontendUrl}/auth/unsubscribed`;
     return ctx.redirect(redirectUrl, 302);
   })
   /*

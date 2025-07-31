@@ -1,5 +1,5 @@
 import { OpenAPIHono, type z } from '@hono/zod-openapi';
-import { config } from 'config';
+import { appConfig } from 'config';
 import { and, count, eq, getTableColumns, ilike, inArray, isNotNull, type SQL, sql } from 'drizzle-orm';
 import { db } from '#/db/db';
 import { membershipsTable } from '#/db/schema/memberships';
@@ -50,9 +50,9 @@ const organizationRouteHandlers = app
         name,
         shortName: name,
         slug,
-        languages: [config.defaultLanguage],
+        languages: [appConfig.defaultLanguage],
         welcomeText: defaultWelcomeText,
-        defaultLanguage: config.defaultLanguage,
+        defaultLanguage: appConfig.defaultLanguage,
         createdBy: user.id,
       })
       .returning();

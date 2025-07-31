@@ -1,4 +1,4 @@
-import { config } from 'config';
+import { appConfig } from 'config';
 import { useTranslation } from 'react-i18next';
 import { useOnlineManager } from '~/hooks/use-online-manager';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '~/modules/ui/select';
@@ -15,7 +15,7 @@ const SelectRole = ({ entity = false, onChange, value, className }: SelectRolePr
   const { t } = useTranslation();
   const { isOnline } = useOnlineManager();
 
-  const roles = entity ? config.rolesByType.entityRoles : config.rolesByType.systemRoles;
+  const roles = entity ? appConfig.rolesByType.entityRoles : appConfig.rolesByType.systemRoles;
 
   return (
     <Select value={value === undefined || value === 'all' ? 'all' : value} onValueChange={(role) => onChange(role === 'all' ? undefined : role)}>

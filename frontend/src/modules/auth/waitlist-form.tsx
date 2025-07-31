@@ -1,7 +1,7 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { onlineManager } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
-import { config } from 'config';
+import { appConfig } from 'config';
 import { ArrowRight, ChevronDown } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
@@ -49,7 +49,7 @@ export const WaitlistForm = ({ email, buttonContent, emailField, dialog: isDialo
     createRequest(body, {
       onSuccess: () => {
         navigate({ to: '/about', replace: true });
-        toaster(t('common:success.waitlist_request', { appName: config.name }), 'success');
+        toaster(t('common:success.waitlist_request', { appName: appConfig.name }), 'success');
 
         if (isDialog) useDialoger.getState().remove();
         callback?.();

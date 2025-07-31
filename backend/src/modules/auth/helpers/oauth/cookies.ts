@@ -1,4 +1,4 @@
-import { config } from 'config';
+import { appConfig } from 'config';
 import { eq } from 'drizzle-orm';
 import type { Context } from 'hono';
 import { db } from '#/db/db';
@@ -75,7 +75,7 @@ export const getOauthCookies = async (ctx: Context) => {
  */
 export const handleOAuthRedirect = async (ctx: Context, passedRedirect: string) => {
   // Ensure the redirect URL is absolute and valid
-  const redirectUrl = isRedirectUrl(passedRedirect) ? passedRedirect : `${config.frontendUrl}${passedRedirect}`;
+  const redirectUrl = isRedirectUrl(passedRedirect) ? passedRedirect : `${appConfig.frontendUrl}${passedRedirect}`;
 
   // Set the redirect URL in the authentication cookie
   await setAuthCookie(ctx, 'oauth_redirect', redirectUrl, oauthCookieExpires);

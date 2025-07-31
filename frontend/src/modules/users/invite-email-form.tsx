@@ -1,5 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { config } from 'config';
+import { appConfig } from 'config';
 import { Send } from 'lucide-react';
 import { useMemo } from 'react';
 import type { UseFormProps } from 'react-hook-form';
@@ -35,7 +35,7 @@ const InviteEmailForm = ({ entity, dialog: isDialog, children }: Props) => {
 
   const formSchema = z.object({
     emails: z.array(z.email(t('common:invalid.email'))).min(1, { message: t('common:invalid.min_items', { items_count: 'one', item: 'email' }) }),
-    role: z.enum(config.rolesByType.entityRoles).optional(),
+    role: z.enum(appConfig.rolesByType.entityRoles).optional(),
   });
   type FormValues = z.infer<typeof formSchema>;
 

@@ -1,4 +1,4 @@
-import { config } from 'config';
+import { appConfig } from 'config';
 import { Ban, Circle, type LucideProps, Moon, Sun } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '~/modules/ui/button';
@@ -23,7 +23,7 @@ const UserTheme = ({ size = 24, buttonClassName = '', contentClassName = '' }: U
     { id: 'dark', label: t('common:dark'), icon: Moon },
   ] as const;
 
-  const themes = objectEntries(config.theme.colors);
+  const themes = objectEntries(appConfig.theme.colors);
 
   function Icon({ icon: Icon }: { icon: React.ElementType<LucideProps> }) {
     return <Icon size={16} />;
@@ -39,7 +39,11 @@ const UserTheme = ({ size = 24, buttonClassName = '', contentClassName = '' }: U
         onCheckedChange={() => setMode(mode === 'light' ? 'dark' : 'light')}
         aria-label={'changeTheme'}
         thumb={
-          mode === 'light' ? <Sun size={size} strokeWidth={config.theme.strokeWidth} /> : <Moon size={size} strokeWidth={config.theme.strokeWidth} />
+          mode === 'light' ? (
+            <Sun size={size} strokeWidth={appConfig.theme.strokeWidth} />
+          ) : (
+            <Moon size={size} strokeWidth={appConfig.theme.strokeWidth} />
+          )
         }
       />
     );
@@ -48,9 +52,9 @@ const UserTheme = ({ size = 24, buttonClassName = '', contentClassName = '' }: U
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" size="icon" className={buttonClassName} aria-label="Change theme">
           {mode === 'light' ? (
-            <Sun size={size} strokeWidth={config.theme.strokeWidth} />
+            <Sun size={size} strokeWidth={appConfig.theme.strokeWidth} />
           ) : (
-            <Moon size={size} strokeWidth={config.theme.strokeWidth} />
+            <Moon size={size} strokeWidth={appConfig.theme.strokeWidth} />
           )}
         </Button>
       </DropdownMenuTrigger>

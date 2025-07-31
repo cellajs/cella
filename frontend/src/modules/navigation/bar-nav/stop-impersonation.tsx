@@ -1,5 +1,5 @@
 import { useNavigate } from '@tanstack/react-router';
-import { config } from 'config';
+import { appConfig } from 'config';
 import { UserX } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
@@ -19,7 +19,7 @@ const StopImpersonation = () => {
     await breakImpersonation();
     setImpersonating(false);
     await Promise.all([getAndSetMe(), getAndSetMenu()]);
-    navigate({ to: config.defaultRedirectPath, replace: true });
+    navigate({ to: appConfig.defaultRedirectPath, replace: true });
     toast.success(t('common:success.stopped_impersonation'));
   };
 

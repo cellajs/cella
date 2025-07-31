@@ -1,4 +1,4 @@
-import { config, type EnabledOauthProvider } from 'config';
+import { appConfig, type EnabledOauthProvider } from 'config';
 import { and, eq, or } from 'drizzle-orm';
 import type { Context } from 'hono';
 import { db } from '#/db/db';
@@ -20,9 +20,9 @@ import { getIsoDate } from '#/utils/iso-date';
 export const getOauthRedirectUrl = async (ctx: Context, firstSignIn?: boolean) => {
   const redirectCookie = await getAuthCookie(ctx, 'oauth_redirect');
 
-  const baseRedirect = redirectCookie || (firstSignIn && config.welcomeRedirectPath) || config.defaultRedirectPath;
+  const baseRedirect = redirectCookie || (firstSignIn && appConfig.welcomeRedirectPath) || appConfig.defaultRedirectPath;
 
-  return isRedirectUrl(baseRedirect) ? baseRedirect : `${config.frontendUrl}${baseRedirect}`;
+  return isRedirectUrl(baseRedirect) ? baseRedirect : `${appConfig.frontendUrl}${baseRedirect}`;
 };
 
 export const handleExistingUser = async (
@@ -87,7 +87,7 @@ const updateExistingUser = async (ctx: Context, existingUser: UserModel, provide
   // Send verification email if not verified and redirect to verify page
   if (!emailVerified) {
     sendVerificationEmail(providerUser.id);
-    return ctx.redirect(`${config.frontendUrl}/auth/email-verification`, 302);
+    return ctx.redirect(`${appConfig.frontendUrl}/auth/email-verification`, 302);
   }
 
   await db

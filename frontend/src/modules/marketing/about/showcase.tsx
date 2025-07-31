@@ -1,4 +1,4 @@
-import { config } from 'config';
+import { appConfig } from 'config';
 import { ArrowUpRight } from 'lucide-react';
 import { lazy, Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -39,7 +39,7 @@ const Showcase = () => {
                         {t(title)}
                         <ArrowUpRight
                           size={16}
-                          strokeWidth={config.theme.strokeWidth}
+                          strokeWidth={appConfig.theme.strokeWidth}
                           className="inline-block text-primary -mt-2 ml-1 opacity-50 group-hover:opacity-100"
                         />
                       </h3>
