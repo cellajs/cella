@@ -1,17 +1,18 @@
-import { config } from 'config';
-import { boolean, doublePrecision, timestamp, varchar } from 'drizzle-orm/pg-core';
 import { tokensTable } from '#/db/schema/tokens';
 import { usersTable } from '#/db/schema/users';
 import { generateContextEntityTypeFields } from '#/db/utils/generate-context-entity-fields';
 import { generateTable } from '#/db/utils/generate-table';
 import { timestampColumns } from '#/db/utils/timestamp-columns';
 import { nanoid } from '#/utils/nanoid';
+import { config } from 'config';
+import { boolean, doublePrecision, timestamp, varchar } from 'drizzle-orm/pg-core';
 
 const roleEnum = config.rolesByType.entityRoles;
 
 const { organizationId, ...otherEntityIdColumns } = generateContextEntityTypeFields();
 
 const baseColumns = {
+  createdAt: timestampColumns.createdAt,
   id: varchar().primaryKey().$defaultFn(nanoid),
   contextType: varchar({ enum: config.contextEntityTypes }).notNull(),
   userId: varchar()
@@ -20,7 +21,6 @@ const baseColumns = {
   role: varchar({ enum: roleEnum }).notNull().default('member'),
   tokenId: varchar().references(() => tokensTable.id, { onDelete: 'cascade' }),
   activatedAt: timestamp({ mode: 'string' }),
-  createdAt: timestampColumns.createdAt,
   createdBy: varchar().references(() => usersTable.id, { onDelete: 'set null' }),
   modifiedAt: timestampColumns.modifiedAt,
   modifiedBy: varchar().references(() => usersTable.id, { onDelete: 'set null' }),

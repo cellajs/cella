@@ -1,4 +1,5 @@
 CREATE TABLE "attachments" (
+	"created_at" timestamp DEFAULT now() NOT NULL,
 	"id" varchar PRIMARY KEY NOT NULL,
 	"name" varchar DEFAULT 'attachment' NOT NULL,
 	"entity_type" varchar DEFAULT 'attachment' NOT NULL,
@@ -10,7 +11,6 @@ CREATE TABLE "attachments" (
 	"original_key" varchar NOT NULL,
 	"converted_key" varchar,
 	"thumbnail_key" varchar,
-	"created_at" timestamp DEFAULT now() NOT NULL,
 	"created_by" varchar,
 	"modified_at" timestamp,
 	"modified_by" varchar,
@@ -18,24 +18,24 @@ CREATE TABLE "attachments" (
 );
 --> statement-breakpoint
 CREATE TABLE "emails" (
+	"created_at" timestamp DEFAULT now() NOT NULL,
 	"id" varchar PRIMARY KEY NOT NULL,
 	"email" varchar NOT NULL,
 	"verified" boolean DEFAULT false NOT NULL,
 	"token_id" varchar,
 	"user_id" varchar NOT NULL,
-	"created_at" timestamp DEFAULT now() NOT NULL,
 	"verified_at" timestamp,
 	CONSTRAINT "emails_email_unique" UNIQUE("email")
 );
 --> statement-breakpoint
 CREATE TABLE "memberships" (
+	"created_at" timestamp DEFAULT now() NOT NULL,
 	"id" varchar PRIMARY KEY NOT NULL,
 	"context_type" varchar NOT NULL,
 	"user_id" varchar NOT NULL,
 	"role" varchar DEFAULT 'member' NOT NULL,
 	"token_id" varchar,
 	"activated_at" timestamp,
-	"created_at" timestamp DEFAULT now() NOT NULL,
 	"created_by" varchar,
 	"modified_at" timestamp,
 	"modified_by" varchar,
@@ -54,6 +54,7 @@ CREATE TABLE "oauth_accounts" (
 );
 --> statement-breakpoint
 CREATE TABLE "organizations" (
+	"created_at" timestamp DEFAULT now() NOT NULL,
 	"id" varchar PRIMARY KEY NOT NULL,
 	"entity_type" varchar DEFAULT 'organization' NOT NULL,
 	"name" varchar NOT NULL,
@@ -75,7 +76,6 @@ CREATE TABLE "organizations" (
 	"welcome_text" varchar,
 	"auth_strategies" json DEFAULT '[]'::json NOT NULL,
 	"chat_support" boolean DEFAULT false NOT NULL,
-	"created_at" timestamp DEFAULT now() NOT NULL,
 	"created_by" varchar,
 	"modified_at" timestamp,
 	"modified_by" varchar,
@@ -91,15 +91,16 @@ CREATE TABLE "passkeys" (
 );
 --> statement-breakpoint
 CREATE TABLE "requests" (
+	"created_at" timestamp DEFAULT now() NOT NULL,
 	"id" varchar PRIMARY KEY NOT NULL,
 	"message" varchar,
 	"email" varchar NOT NULL,
 	"type" varchar NOT NULL,
-	"token_id" varchar,
-	"created_at" timestamp DEFAULT now() NOT NULL
+	"token_id" varchar
 );
 --> statement-breakpoint
 CREATE TABLE "sessions" (
+	"created_at" timestamp DEFAULT now() NOT NULL,
 	"id" varchar PRIMARY KEY NOT NULL,
 	"token" varchar NOT NULL,
 	"type" varchar DEFAULT 'regular' NOT NULL,
@@ -108,12 +109,12 @@ CREATE TABLE "sessions" (
 	"device_type" varchar DEFAULT 'desktop' NOT NULL,
 	"device_os" varchar,
 	"browser" varchar,
-	"auth_strategy" varchar,
-	"created_at" timestamp DEFAULT now() NOT NULL,
+	"auth_strategy" varchar NOT NULL,
 	"expires_at" timestamp with time zone NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE "tokens" (
+	"created_at" timestamp DEFAULT now() NOT NULL,
 	"id" varchar PRIMARY KEY NOT NULL,
 	"token" varchar NOT NULL,
 	"type" varchar NOT NULL,
@@ -121,13 +122,13 @@ CREATE TABLE "tokens" (
 	"entity_type" varchar,
 	"role" varchar,
 	"user_id" varchar,
-	"created_at" timestamp DEFAULT now() NOT NULL,
 	"created_by" varchar,
 	"expires_at" timestamp with time zone NOT NULL,
 	"organization_id" varchar
 );
 --> statement-breakpoint
 CREATE TABLE "users" (
+	"created_at" timestamp DEFAULT now() NOT NULL,
 	"id" varchar PRIMARY KEY NOT NULL,
 	"entity_type" varchar DEFAULT 'user' NOT NULL,
 	"name" varchar NOT NULL,
@@ -143,7 +144,6 @@ CREATE TABLE "users" (
 	"language" varchar DEFAULT 'en' NOT NULL,
 	"newsletter" boolean DEFAULT false NOT NULL,
 	"role" varchar DEFAULT 'user' NOT NULL,
-	"created_at" timestamp DEFAULT now() NOT NULL,
 	"modified_at" timestamp,
 	"last_seen_at" timestamp,
 	"last_started_at" timestamp,
