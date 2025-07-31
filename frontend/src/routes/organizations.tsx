@@ -103,7 +103,7 @@ export const OrganizationAttachmentsRoute = createRoute({
     if (!organization) return;
     return (
       <Suspense>
-        <AttachmentsTable canUpload={false} key={organization.id} entity={organization} />
+        <AttachmentsTable canUpload={true} key={organization.id} entity={organization} />
       </Suspense>
     );
   },

@@ -1,14 +1,14 @@
-import type { z } from '@hono/zod-openapi';
-import * as Sentry from '@sentry/node';
-import { appConfig } from 'config';
-import type { ErrorHandler } from 'hono';
-import i18n from 'i18next';
 import { type Env, getContextOrganization, getContextUser } from '#/lib/context';
 import type locales from '#/lib/i18n-locales';
 import { logToExternal } from '#/middlewares/logger/external-logger';
 import { getIsoDate } from '#/utils/iso-date';
 import { getNodeLoggerLevel } from '#/utils/logger';
 import type { errorSchema } from '#/utils/schema/error';
+import type { z } from '@hono/zod-openapi';
+import * as Sentry from '@sentry/node';
+import { appConfig } from 'config';
+import type { ErrorHandler } from 'hono';
+import i18n from 'i18next';
 
 type ErrorSchemaType = z.infer<typeof errorSchema>;
 type ErrorMeta = { readonly [key: string]: number | string | boolean | null };

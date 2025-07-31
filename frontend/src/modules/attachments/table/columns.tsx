@@ -50,7 +50,7 @@ export const useColumns = (entity: EntityPage, isSheet: boolean, isCompact: bool
       renderCell: ({ row: { id, url, thumbnailUrl, filename, contentType, groupId, convertedUrl }, tabIndex }) => {
         const cellRef = useRef<HTMLAnchorElement | null>(null);
 
-        if (!thumbnailUrl && !convertedUrl && !url.startsWith('blob:http'))
+        if (!thumbnailUrl && !convertedUrl && !url?.startsWith('blob:http'))
           return (
             <div className="flex space-x-2 items-center justify-center w-full h-full">
               <AttachmentPreview id={id} url={url} name={filename} contentType={contentType} />
