@@ -1,5 +1,5 @@
 import typographyPlugin from '@tailwindcss/typography';
-import { config } from 'config';
+import { appConfig } from 'config';
 import type { Config } from 'tailwindcss';
 import animatePlugin from 'tailwindcss-animate';
 /** @type {Config} */
@@ -8,7 +8,7 @@ export default {
   darkMode: 'class',
   content: ['./src/**/*.{ts,tsx}', '../config/**/*.{ts,tsx}'],
   theme: {
-    screens: config.theme.screenSizes,
+    screens: appConfig.theme.screenSizes,
     container: {
       center: true,
       padding: '.75rem',
