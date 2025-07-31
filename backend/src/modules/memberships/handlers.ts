@@ -25,7 +25,7 @@ import { prepareStringForILikeFilter } from '#/utils/sql';
 import { createDate, TimeSpan } from '#/utils/time-span';
 import { OpenAPIHono } from '@hono/zod-openapi';
 import { appConfig } from 'config';
-import { and, count, eq, gt, ilike, inArray, isNotNull, isNull, or } from 'drizzle-orm';
+import { and, count, eq, gt, ilike, inArray, isNotNull, isNull, ne, or } from 'drizzle-orm';
 import i18n from 'i18next';
 import { MemberInviteEmail, type MemberInviteEmailProps } from '../../../emails/member-invite';
 
@@ -57,30 +57,79 @@ const membershipRouteHandlers = app
     const organization = getContextOrganization();
 
     // Fetch all existing tokens by organizationId
-    const existingTokens = await db
-      .selectDistinctOn([tokensTable.email])
-      .from(tokensTable)
-      .where(
-        and(
-          eq(tokensTable.organizationId, organization.id),
-          eq(tokensTable.type, 'invitation'),
-          inArray(tokensTable.email, normalizedEmails),
-          isNotNull(tokensTable.entityType),
-          gt(tokensTable.expiresAt, new Date()),
+    const [directEntityInvites, organizationWideInvites] = await Promise.all([
+      // Invites directly tied to a specific entity (e.g., project, team, etc.)
+      db
+        .select()
+        .from(tokensTable)
+        .where(
+          and(
+            eq(tokensTable[targetEntityIdField], entityId),
+            eq(tokensTable.type, 'invitation'),
+            inArray(tokensTable.email, normalizedEmails),
+            eq(tokensTable.entityType, entityType),
+            gt(tokensTable.expiresAt, new Date()),
+          ),
         ),
-      );
 
-    const alreadyInvitedEmails = new Set(existingTokens.map(({ email }) => email));
+      // Invites across the whole organization (same email)
+      db
+        .select()
+        .from(tokensTable)
+        .where(
+          and(
+            eq(tokensTable.organizationId, organization.id),
+            eq(tokensTable.type, 'invitation'),
+            ne(tokensTable.entityType, entityType),
+            isNotNull(tokensTable.entityType),
+            inArray(tokensTable.email, normalizedEmails),
+            gt(tokensTable.expiresAt, new Date()),
+          ),
+        ),
+    ]);
+
+    // Map invited emails for filtering
+    const directlyInvitedEmails = new Set(directEntityInvites.map(({ email }) => email));
+    const organizationInvitedEmails = new Set(organizationWideInvites.map(({ email }) => email));
+
+    // Log existing direct entity invites
+    logEvent({
+      msg: `Skipped ${directlyInvitedEmails.size} emails due to existing invitations`,
+      meta: { id: entityId, emails: Array.from(directlyInvitedEmails) },
+    });
+    // Log existing direct entity invites
 
     logEvent({
-      msg: `Skipped ${alreadyInvitedEmails.size} emails due to existing invitations`,
-      meta: { id: entityId, emails: Array.from(alreadyInvitedEmails) },
+      msg: `Re-associated ${organizationInvitedEmails.size} existing invites to target entity`,
+      meta: {
+        id: entityId,
+        emails: Array.from(organizationInvitedEmails),
+      },
     });
 
-    const emailsToInvite = normalizedEmails.filter((email) => !alreadyInvitedEmails.has(email));
+    // Update organization-wide tokens to point to the current entity (if needed)
+    await Promise.all(
+      organizationWideInvites
+        .filter((token) => !directlyInvitedEmails.has(token.email)) // make sure we don't touch those already fully set
+        .map((token) =>
+          db
+            .update(tokensTable)
+            .set({
+              entityType: entityType,
+              [targetEntityIdField]: entityId,
+              ...(associatedEntity && { [associatedEntity.field]: associatedEntity.id }),
+              expiresAt: createDate(new TimeSpan(7, 'd')), // 7 days from now
+            })
+            .where(eq(tokensTable.id, token.id)),
+        ),
+    );
+
+    // Exclude already-invited emails (in both direct & org scope)
+    const emailsToInvite = normalizedEmails.filter((email) => !directlyInvitedEmails.has(email) && !organizationInvitedEmails.has(email));
 
     // Fetch existing users based on the provided emails
-    const existingUsers = await getUsersByConditions([inArray(emailsTable.email, normalizedEmails)]);
+    //TODO(DAVID) Handle existing users
+    const existingUsers = await getUsersByConditions([inArray(emailsTable.email, emailsToInvite)]);
     const userIds = existingUsers.map(({ id }) => id);
 
     // Fetch all existing memberships by organizationId
@@ -91,7 +140,6 @@ const membershipRouteHandlers = app
 
     // Map for lookup of existing users by email
     // Identify emails without associated users, nor with existing tokens
-    // TODO(DAVID) check how to deal with user have invite to org and you send new one for another org
     const emailsWithIdToInvite: { email: string; userId: string | null }[] = emailsToInvite.map((email) => ({ email, userId: null }));
 
     // Process existing users
