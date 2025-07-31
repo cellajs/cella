@@ -1,4 +1,4 @@
-import { config } from 'config';
+import { appConfig } from 'config';
 import { and, eq } from 'drizzle-orm';
 import type { Context } from 'hono';
 import { db } from '#/db/db';
@@ -7,7 +7,7 @@ import { oauthAccountsTable } from '#/db/schema/oauth-accounts';
 import { tokensTable } from '#/db/schema/tokens';
 import { type InsertUserModel, usersTable } from '#/db/schema/users';
 import { resolveEntity } from '#/lib/entity';
-import { ApiError } from '#/lib/errors';
+import { AppError } from '#/lib/errors';
 import type { Provider } from '#/modules/auth/helpers/oauth/oauth-providers';
 import { setUserSession } from '#/modules/auth/helpers/session';
 import { sendVerificationEmail } from '#/modules/auth/helpers/verify-email';
@@ -55,7 +55,7 @@ export const handleCreateUser = async ({ ctx, newUser, redirectUrl, provider, me
         email: userEmail,
         name: newUser.name,
         unsubscribeToken: generateUnsubscribeToken(userEmail),
-        language: config.defaultLanguage,
+        language: appConfig.defaultLanguage,
         hashedPassword: newUser.hashedPassword,
       })
       .returning();
@@ -92,7 +92,7 @@ export const handleCreateUser = async ({ ctx, newUser, redirectUrl, provider, me
   } catch (error) {
     // If the email already exists, return an error
     if (error instanceof Error && error.message.startsWith('duplicate key')) {
-      throw new ApiError({ status: 409, type: 'email_exists', severity: 'warn' });
+      throw new AppError({ status: 409, type: 'email_exists', severity: 'warn' });
     }
 
     throw error;
@@ -108,7 +108,7 @@ export const handleMembershipTokenUpdate = async (userId: string, tokenId: strin
     // Validate if the token has an entityType and role (must be a membership invite)
     if (!entityType || !role) throw new Error('Token is not a valid membership invite.');
 
-    const entityIdField = config.entityIdFields[entityType];
+    const entityIdField = appConfig.entityIdFields[entityType];
     // Validate if the token contains the required entity ID field
     if (!token[entityIdField]) throw new Error(`Token is missing entity ID field for ${entityType}.`);
 

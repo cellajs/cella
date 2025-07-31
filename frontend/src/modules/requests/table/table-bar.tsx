@@ -1,4 +1,4 @@
-import { config } from 'config';
+import { appConfig } from 'config';
 import { LockOpen, Trash, XSquare } from 'lucide-react';
 import { useMemo, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -140,7 +140,7 @@ export const RequestsTableBar = ({ total, selected, searchVars, setSearch, colum
       <ColumnsView className="max-lg:hidden" columns={columns} setColumns={setColumns} />
 
       {/* Export */}
-      <Export className="max-lg:hidden" filename={`${config.slug}-requests`} columns={columns} fetchRows={fetchExport} />
+      <Export className="max-lg:hidden" filename={`${appConfig.slug}-requests`} columns={columns} fetchRows={fetchExport} />
 
       {/* Focus view */}
       <FocusView iconOnly />

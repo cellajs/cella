@@ -1,4 +1,4 @@
-import { config } from 'config';
+import { appConfig } from 'config';
 import { useEffect, useRef } from 'react';
 import { LocalFileStorage } from '~/modules/attachments/helpers/local-file-storage';
 import { attachmentsQueryOptions } from '~/modules/attachments/query';
@@ -8,6 +8,7 @@ import { formatUpdatedData, getQueryItems } from '~/query/helpers/mutate-query';
 import { queryClient } from '~/query/query-client';
 import { nanoid } from '~/utils/nanoid';
 
+const limit = appConfig.requestLimits.attachments;
 export const useMergeLocalAttachments = (organizationId: string, { q, sort, order }: AttachmentSearch) => {
   const { getData: fetchStoredFiles } = LocalFileStorage;
 
@@ -44,7 +45,7 @@ export const useMergeLocalAttachments = (organizationId: string, { q, sort, orde
         organizationId,
       }));
 
-      const queryOptions = attachmentsQueryOptions({ orgIdOrSlug: organizationId, q, sort, order, limit: config.requestLimits.attachments });
+      const queryOptions = attachmentsQueryOptions({ orgIdOrSlug: organizationId, q, sort, order, limit });
 
       await queryClient.prefetchInfiniteQuery(queryOptions);
 
@@ -58,7 +59,7 @@ export const useMergeLocalAttachments = (organizationId: string, { q, sort, orde
         if (!filtered.length) return existingData;
 
         const updatedItems = order === 'asc' ? [...existingItems, ...filtered] : [...filtered, ...existingItems];
-        return formatUpdatedData(existingData, updatedItems, config.requestLimits.attachments, filtered.length);
+        return formatUpdatedData(existingData, updatedItems, limit, filtered.length);
       });
       enrichedRef.current = true;
     };

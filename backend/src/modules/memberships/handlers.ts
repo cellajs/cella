@@ -5,7 +5,7 @@ import { tokensTable } from '#/db/schema/tokens';
 import { usersTable } from '#/db/schema/users';
 import { type Env, getContextMemberships, getContextOrganization, getContextUser } from '#/lib/context';
 import { resolveEntity } from '#/lib/entity';
-import { ApiError } from '#/lib/errors';
+import { AppError } from '#/lib/errors';
 import { eventManager } from '#/lib/events';
 import { mailer } from '#/lib/mailer';
 import { sendSSEToUsers } from '#/lib/sse';
@@ -24,7 +24,7 @@ import { slugFromEmail } from '#/utils/slug-from-email';
 import { prepareStringForILikeFilter } from '#/utils/sql';
 import { createDate, TimeSpan } from '#/utils/time-span';
 import { OpenAPIHono } from '@hono/zod-openapi';
-import { config } from 'config';
+import { appConfig } from 'config';
 import { and, count, eq, ilike, inArray, isNotNull, isNull, or } from 'drizzle-orm';
 import i18n from 'i18next';
 import { MemberInviteEmail, type MemberInviteEmailProps } from '../../../emails/member-invite';
@@ -41,14 +41,14 @@ const membershipRouteHandlers = app
 
     // Normalize emails
     const normalizedEmails = emails.map((email) => email.toLowerCase());
-    if (!normalizedEmails.length) throw new ApiError({ status: 400, type: 'no_recipients', severity: 'warn' });
+    if (!normalizedEmails.length) throw new AppError({ status: 400, type: 'no_recipients', severity: 'warn' });
 
     // Validate entity existence and check user permission for updates
     const { entity } = await getValidContextEntity(idOrSlug, passedEntityType, 'update');
 
     // Extract entity details
     const { entityType, id: entityId } = entity;
-    const targetEntityIdField = config.entityIdFields[entityType];
+    const targetEntityIdField = appConfig.entityIdFields[entityType];
 
     const user = getContextUser();
     const organization = getContextOrganization();
@@ -149,7 +149,7 @@ const membershipRouteHandlers = app
       .where(and(eq(membershipsTable.contextType, 'organization'), eq(membershipsTable.organizationId, organization.id)));
     const membersRestrictions = organization.restrictions.user;
     if (membersRestrictions !== 0 && currentOrgMemberships + emailsWithIdToInvite.length > membersRestrictions) {
-      throw new ApiError({ status: 403, type: 'restrict_by_org', severity: 'warn', entityType });
+      throw new AppError({ status: 403, type: 'restrict_by_org', severity: 'warn', entityType });
     }
 
     // Generate invitation tokens
@@ -186,7 +186,7 @@ const membershipRouteHandlers = app
     const recipients = insertedTokens.map(({ email, tokenId, token }) => ({
       email,
       name: slugFromEmail(email),
-      memberInviteLink: `${config.frontendUrl}/invitation/${token}?tokenId=${tokenId}`,
+      memberInviteLink: `${appConfig.frontendUrl}/invitation/${token}?tokenId=${tokenId}`,
     }));
 
     const emailProps = {
@@ -196,7 +196,7 @@ const membershipRouteHandlers = app
       role,
       subject: i18n.t('backend:email.member_invite.subject', {
         lng: organization.defaultLanguage,
-        appName: config.name,
+        appName: appConfig.name,
         entityType: organization.name,
       }),
       lng: organization.defaultLanguage,
@@ -240,7 +240,7 @@ const membershipRouteHandlers = app
 
     const { entity } = await getValidContextEntity(idOrSlug, entityType, 'delete');
 
-    const entityIdField = config.entityIdFields[entityType];
+    const entityIdField = appConfig.entityIdFields[entityType];
 
     // Convert ids to an array
     const membershipIds = Array.isArray(ids) ? ids : [ids];
@@ -307,17 +307,17 @@ const membershipRouteHandlers = app
       .limit(1);
 
     if (!membershipToUpdate) {
-      throw new ApiError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'user', meta: { membership: membershipId } });
+      throw new AppError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'user', meta: { membership: membershipId } });
     }
 
     const updatedType = membershipToUpdate.contextType;
-    const updatedEntityIdField = config.entityIdFields[updatedType];
+    const updatedEntityIdField = appConfig.entityIdFields[updatedType];
 
     const membershipContextId = membershipToUpdate[updatedEntityIdField];
-    if (!membershipContextId) throw new ApiError({ status: 404, type: 'not_found', severity: 'warn', entityType: updatedType });
+    if (!membershipContextId) throw new AppError({ status: 404, type: 'not_found', severity: 'warn', entityType: updatedType });
 
     const membershipContext = await resolveEntity(updatedType, membershipContextId);
-    if (!membershipContext) throw new ApiError({ status: 404, type: 'not_found', severity: 'warn', entityType: updatedType });
+    if (!membershipContext) throw new AppError({ status: 404, type: 'not_found', severity: 'warn', entityType: updatedType });
 
     // Check if user has permission to update someone elses membership role
     if (role) await getValidContextEntity(membershipContextId, updatedType, 'update');
@@ -369,7 +369,7 @@ const membershipRouteHandlers = app
     // Validate entity existence and check read permission
     const { entity } = await getValidContextEntity(idOrSlug, entityType, 'read');
 
-    const entityIdField = config.entityIdFields[entity.entityType];
+    const entityIdField = appConfig.entityIdFields[entity.entityType];
 
     // Build search filters
     const $or = q ? [ilike(usersTable.name, prepareStringForILikeFilter(q)), ilike(usersTable.email, prepareStringForILikeFilter(q))] : [];
@@ -424,7 +424,7 @@ const membershipRouteHandlers = app
 
     const { entity } = await getValidContextEntity(idOrSlug, entityType, 'read');
 
-    const entityIdField = config.entityIdFields[entity.entityType];
+    const entityIdField = appConfig.entityIdFields[entity.entityType];
 
     const invitedMemberSelect = {
       id: tokensTable.id,

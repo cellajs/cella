@@ -2,7 +2,7 @@ import { getRandomValues } from 'node:crypto';
 import { OpenAPIHono } from '@hono/zod-openapi';
 import { encodeBase64 } from '@oslojs/encoding';
 import { generateCodeVerifier, generateState, OAuth2RequestError } from 'arctic';
-import { config, type EnabledOauthProvider } from 'config';
+import { appConfig, type EnabledOauthProvider } from 'config';
 import { and, desc, eq, isNotNull } from 'drizzle-orm';
 import i18n from 'i18next';
 import { db } from '#/db/db';
@@ -15,7 +15,7 @@ import { tokensTable } from '#/db/schema/tokens';
 import { type UserModel, usersTable } from '#/db/schema/users';
 import { type Env, getContextToken, getContextUser } from '#/lib/context';
 import { resolveEntity } from '#/lib/entity';
-import { ApiError } from '#/lib/errors';
+import { AppError } from '#/lib/errors';
 import { eventManager } from '#/lib/events';
 import { mailer } from '#/lib/mailer';
 import { sendSSEToUsers } from '#/lib/sse';
@@ -57,15 +57,15 @@ import { createDate, TimeSpan } from '#/utils/time-span';
 import { CreatePasswordEmail, type CreatePasswordEmailProps } from '../../../emails/create-password';
 import { EmailVerificationEmail, type EmailVerificationEmailProps } from '../../../emails/email-verification';
 
-const enabledStrategies: readonly string[] = config.enabledAuthStrategies;
-const enabledOauthProviders: readonly string[] = config.enabledOauthProviders;
+const enabledStrategies: readonly string[] = appConfig.enabledAuthStrategies;
+const enabledOauthProviders: readonly string[] = appConfig.enabledOauthProviders;
 
 // Scopes for OAuth providers
 const githubScopes = ['user:email'];
 const googleScopes = ['profile', 'email'];
 const microsoftScopes = ['profile', 'email'];
 
-// Check if oauth provider is enabled by config
+// Check if oauth provider is enabled by appConfig
 function isOAuthEnabled(provider: EnabledOauthProvider): boolean {
   if (!enabledStrategies.includes('oauth')) return false;
   return enabledOauthProviders.includes(provider);
@@ -82,7 +82,7 @@ const authRouteHandlers = app
 
     const user = await getUserBy('email', email.toLowerCase());
 
-    if (!user) throw new ApiError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'user' });
+    if (!user) throw new AppError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'user' });
 
     return ctx.json(true, 200);
   })
@@ -97,11 +97,11 @@ const authRouteHandlers = app
     // Verify if strategy allowed
     const strategy = 'password';
     if (!enabledStrategies.includes(strategy)) {
-      throw new ApiError({ status: 400, type: 'forbidden_strategy', severity: 'error', meta: { strategy } });
+      throw new AppError({ status: 400, type: 'forbidden_strategy', severity: 'error', meta: { strategy } });
     }
 
     // Stop if sign up is disabled and no invitation
-    if (!config.has.registrationEnabled) throw new ApiError({ status: 403, type: 'sign_up_restricted' });
+    if (!appConfig.has.registrationEnabled) throw new AppError({ status: 403, type: 'sign_up_restricted' });
     const hashedPassword = await hashPassword(password);
     const slug = slugFromEmail(email);
 
@@ -119,13 +119,13 @@ const authRouteHandlers = app
     const userId = nanoid();
 
     const validToken = getContextToken();
-    if (!validToken) throw new ApiError({ status: 400, type: 'invalid_request', severity: 'error' });
+    if (!validToken) throw new AppError({ status: 400, type: 'invalid_request', severity: 'error' });
 
     const membershipInvite = !!validToken.entityType;
     // Verify if strategy allowed
     const strategy = 'password';
     if (!enabledStrategies.includes(strategy)) {
-      throw new ApiError({ status: 400, type: 'forbidden_strategy', severity: 'error', meta: { strategy } });
+      throw new AppError({ status: 400, type: 'forbidden_strategy', severity: 'error', meta: { strategy } });
     }
 
     // Delete token to not needed anymore (if no membership invitation)
@@ -153,19 +153,19 @@ const authRouteHandlers = app
     if (userId) user = await getUserBy('id', userId);
     else if (tokenId) {
       const [tokenRecord] = await db.select().from(tokensTable).where(eq(tokensTable.id, tokenId));
-      if (!tokenRecord || !tokenRecord.userId) throw new ApiError({ status: 404, type: 'not_found', severity: 'warn' });
+      if (!tokenRecord || !tokenRecord.userId) throw new AppError({ status: 404, type: 'not_found', severity: 'warn' });
       user = await getUserBy('id', tokenRecord.userId);
     }
 
     // Check if user exists
-    if (!user) throw new ApiError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'user' });
+    if (!user) throw new AppError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'user' });
 
     const [emailInUse]: (EmailModel | undefined)[] = await db
       .select()
       .from(emailsTable)
       .where(and(eq(emailsTable.email, user.email), eq(emailsTable.verified, true)));
 
-    if (emailInUse) throw new ApiError({ status: 409, type: 'email_exists', severity: 'warn', entityType: 'user' });
+    if (emailInUse) throw new AppError({ status: 409, type: 'email_exists', severity: 'warn', entityType: 'user' });
 
     // Delete previous
     await db.delete(tokensTable).where(and(eq(tokensTable.userId, user.id), eq(tokensTable.type, 'email_verification')));
@@ -198,8 +198,8 @@ const authRouteHandlers = app
 
     // Send email
     const lng = user.language;
-    const verificationLink = `${config.frontendUrl}/auth/verify-email/${token}?tokenId=${tokenRecord.id}`;
-    const subject = i18n.t('backend:email.email_verification.subject', { lng, appName: config.name });
+    const verificationLink = `${appConfig.frontendUrl}/auth/verify-email/${token}?tokenId=${tokenRecord.id}`;
+    const subject = i18n.t('backend:email.email_verification.subject', { lng, appName: appConfig.name });
     const staticProps = { verificationLink, subject, lng };
     const recipients = [{ email: user.email }];
 
@@ -216,7 +216,7 @@ const authRouteHandlers = app
    */
   .openapi(authRoutes.verifyEmail, async (ctx) => {
     const token = getContextToken();
-    if (!token || !token.userId) throw new ApiError({ status: 400, type: 'invalid_request', severity: 'error' });
+    if (!token || !token.userId) throw new AppError({ status: 400, type: 'invalid_request', severity: 'error' });
 
     const [user] = await db
       .select({ ...userSelect })
@@ -224,7 +224,7 @@ const authRouteHandlers = app
       .where(eq(usersTable.id, token.userId));
 
     if (!user) {
-      throw new ApiError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'user', meta: { userId: token.userId } });
+      throw new AppError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'user', meta: { userId: token.userId } });
     }
 
     // Set email verified
@@ -248,7 +248,7 @@ const authRouteHandlers = app
     const { email } = ctx.req.valid('json');
 
     const user = await getUserBy('email', email.toLowerCase());
-    if (!user) throw new ApiError({ status: 404, type: 'invalid_email', severity: 'warn', entityType: 'user' });
+    if (!user) throw new AppError({ status: 404, type: 'invalid_email', severity: 'warn', entityType: 'user' });
 
     // Delete old token if exists
     await db.delete(tokensTable).where(and(eq(tokensTable.userId, user.id), eq(tokensTable.type, 'password_reset')));
@@ -269,8 +269,8 @@ const authRouteHandlers = app
 
     // Send email
     const lng = user.language;
-    const createPasswordLink = `${config.frontendUrl}/auth/create-password/${token}?tokenId=${tokenRecord.id}`;
-    const subject = i18n.t('backend:email.create_password.subject', { lng, appName: config.name });
+    const createPasswordLink = `${appConfig.frontendUrl}/auth/create-password/${token}?tokenId=${tokenRecord.id}`;
+    const subject = i18n.t('backend:email.create_password.subject', { lng, appName: appConfig.name });
     const staticProps = { createPasswordLink, subject, lng };
     const recipients = [{ email: user.email }];
 
@@ -292,11 +292,11 @@ const authRouteHandlers = app
     // Verify if strategy allowed
     const strategy = 'password';
     if (!enabledStrategies.includes(strategy)) {
-      throw new ApiError({ status: 400, type: 'forbidden_strategy', severity: 'error', meta: { strategy } });
+      throw new AppError({ status: 400, type: 'forbidden_strategy', severity: 'error', meta: { strategy } });
     }
 
     // If the token is not found or expired
-    if (!token || !token.userId) throw new ApiError({ status: 401, type: 'invalid_token', severity: 'warn' });
+    if (!token || !token.userId) throw new AppError({ status: 401, type: 'invalid_token', severity: 'warn' });
 
     // Delete token to prevent reuse
     await db.delete(tokensTable).where(and(eq(tokensTable.id, token.id), eq(tokensTable.type, 'password_reset')));
@@ -305,7 +305,7 @@ const authRouteHandlers = app
 
     // If the user is not found
     if (!user) {
-      throw new ApiError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'user', meta: { userId: token.userId } });
+      throw new AppError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'user', meta: { userId: token.userId } });
     }
 
     // Hash password
@@ -333,7 +333,7 @@ const authRouteHandlers = app
     // Verify if strategy allowed
     const strategy = 'password';
     if (!enabledStrategies.includes(strategy)) {
-      throw new ApiError({ status: 400, type: 'forbidden_strategy', severity: 'error', meta: { strategy } });
+      throw new AppError({ status: 400, type: 'forbidden_strategy', severity: 'error', meta: { strategy } });
     }
 
     const loweredEmail = email.toLowerCase();
@@ -344,11 +344,11 @@ const authRouteHandlers = app
     ]);
 
     // If user is not found or doesn't have password
-    if (!user) throw new ApiError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'user' });
-    if (!user.hashedPassword) throw new ApiError({ status: 403, type: 'no_password_found', severity: 'warn' });
+    if (!user) throw new AppError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'user' });
+    if (!user.hashedPassword) throw new AppError({ status: 403, type: 'no_password_found', severity: 'warn' });
     // Verify password
     const validPassword = await verifyPasswordHash(user.hashedPassword, password);
-    if (!validPassword) throw new ApiError({ status: 403, type: 'invalid_password', severity: 'warn' });
+    if (!validPassword) throw new AppError({ status: 403, type: 'invalid_password', severity: 'warn' });
 
     // If email is not verified, send verification email
     if (!emailInfo.verified) sendVerificationEmail(user.id);
@@ -367,10 +367,10 @@ const authRouteHandlers = app
 
     // Check if token exists
     const [tokenRecord] = await db.select().from(tokensTable).where(eq(tokensTable.id, id));
-    if (!tokenRecord) throw new ApiError({ status: 404, type: `${type}_not_found`, severity: 'warn' });
+    if (!tokenRecord) throw new AppError({ status: 404, type: `${type}_not_found`, severity: 'warn' });
 
     // If token is expired, return an error
-    if (isExpiredDate(tokenRecord.expiresAt)) throw new ApiError({ status: 401, type: `${type}_expired`, severity: 'warn' });
+    if (isExpiredDate(tokenRecord.expiresAt)) throw new AppError({ status: 401, type: `${type}_expired`, severity: 'warn' });
 
     const baseData = {
       email: tokenRecord.email,
@@ -382,7 +382,7 @@ const authRouteHandlers = app
 
     // If it is a membership invitation, get organization details
     const [organization] = await db.select().from(organizationsTable).where(eq(organizationsTable.id, tokenRecord.organizationId));
-    if (!organization) throw new ApiError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'organization' });
+    if (!organization) throw new AppError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'organization' });
 
     const dataWithOrg = {
       ...baseData,
@@ -401,12 +401,12 @@ const authRouteHandlers = app
     const token = getContextToken();
 
     // Make sure its an organization invitation
-    if (!token.entityType) throw new ApiError({ status: 401, type: 'invalid_token', severity: 'warn' });
+    if (!token.entityType) throw new AppError({ status: 401, type: 'invalid_token', severity: 'warn' });
 
     const [emailInfo] = await db.select().from(emailsTable).where(eq(emailsTable.email, token.email));
     // Make sure correct user accepts invitation (for example another user could have a sessions and click on email invite of another user)
     if (user.id !== token.userId && (!emailInfo || emailInfo.userId !== user.id)) {
-      throw new ApiError({ status: 401, type: 'user_mismatch', severity: 'warn' });
+      throw new AppError({ status: 401, type: 'user_mismatch', severity: 'warn' });
     }
 
     if (emailInfo.userId === user.id && user.id !== token.userId) await handleMembershipTokenUpdate(user.id, token.id);
@@ -422,11 +422,11 @@ const authRouteHandlers = app
     // Delete token after all activation, since tokenId is cascaded in membershipTable
     await db.delete(tokensTable).where(eq(tokensTable.id, token.id));
 
-    const entityIdField = config.entityIdFields[token.entityType];
-    if (!targetMembership[entityIdField]) throw new ApiError({ status: 404, type: 'not_found', severity: 'warn', entityType: token.entityType });
+    const entityIdField = appConfig.entityIdFields[token.entityType];
+    if (!targetMembership[entityIdField]) throw new AppError({ status: 404, type: 'not_found', severity: 'warn', entityType: token.entityType });
 
     const entity = await resolveEntity(token.entityType, targetMembership[entityIdField]);
-    if (!entity) throw new ApiError({ status: 404, type: 'not_found', severity: 'warn', entityType: token.entityType });
+    if (!entity) throw new AppError({ status: 404, type: 'not_found', severity: 'warn', entityType: token.entityType });
 
     eventManager.emit('acceptedMembership', targetMembership);
 
@@ -464,7 +464,7 @@ const authRouteHandlers = app
       .where(eq(usersTable.id, targetUserId));
 
     if (!user) {
-      throw new ApiError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'user', meta: { userId: targetUserId } });
+      throw new AppError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'user', meta: { userId: targetUserId } });
     }
 
     const adminUser = getContextUser();
@@ -472,7 +472,7 @@ const authRouteHandlers = app
 
     if (!sessionData) {
       deleteAuthCookie(ctx, 'session');
-      throw new ApiError({ status: 401, type: 'unauthorized', severity: 'warn' });
+      throw new AppError({ status: 401, type: 'unauthorized', severity: 'warn' });
     }
 
     await setUserSession(ctx, user, 'password', adminUser);
@@ -486,11 +486,11 @@ const authRouteHandlers = app
    */
   .openapi(authRoutes.stopImpersonation, async (ctx) => {
     const sessionData = await getParsedSessionCookie(ctx, true);
-    if (!sessionData) throw new ApiError({ status: 401, type: 'unauthorized', severity: 'warn' });
+    if (!sessionData) throw new AppError({ status: 401, type: 'unauthorized', severity: 'warn' });
 
     const { sessionToken, adminUserId } = sessionData;
     const { session } = await validateSession(sessionToken);
-    if (!session) throw new ApiError({ status: 401, type: 'unauthorized', severity: 'warn' });
+    if (!session) throw new AppError({ status: 401, type: 'unauthorized', severity: 'warn' });
 
     await invalidateSessionById(session.id, session.userId);
     if (adminUserId) {
@@ -503,7 +503,7 @@ const authRouteHandlers = app
 
       if (isExpiredDate(adminsLastSession.expiresAt)) {
         await invalidateSessionById(adminsLastSession.id, adminUserId);
-        throw new ApiError({ status: 401, type: 'unauthorized', severity: 'warn' });
+        throw new AppError({ status: 401, type: 'unauthorized', severity: 'warn' });
       }
 
       const expireTimeSpan = new TimeSpan(adminsLastSession.expiresAt.getTime() - Date.now(), 'ms');
@@ -524,7 +524,7 @@ const authRouteHandlers = app
 
     if (!sessionData) {
       deleteAuthCookie(ctx, 'session');
-      throw new ApiError({ status: 401, type: 'unauthorized', severity: 'warn' });
+      throw new AppError({ status: 401, type: 'unauthorized', severity: 'warn' });
     }
 
     // Find session & invalidate
@@ -603,17 +603,17 @@ const authRouteHandlers = app
     } catch (_) {} // silently ignore (standard OAuth state)
 
     // redirect if there is no code or error in callback
-    if (error || !code) throw new ApiError({ status: 400, type: 'oauth_failed', severity: 'warn', redirectToFrontend: true });
+    if (error || !code) throw new AppError({ status: 400, type: 'oauth_failed', severity: 'warn', redirectToFrontend: true });
 
     const strategy = 'github' as EnabledOauthProvider;
     if (!isOAuthEnabled(strategy)) {
-      throw new ApiError({ status: 400, type: 'unsupported_oauth', severity: 'error', meta: { strategy }, redirectToFrontend: true });
+      throw new AppError({ status: 400, type: 'unsupported_oauth', severity: 'error', meta: { strategy }, redirectToFrontend: true });
     }
 
     const stateCookie = await getAuthCookie(ctx, 'oauth_state');
     // Verify state
     if (!state || !stateCookie || stateCookie !== state) {
-      throw new ApiError({ status: 401, type: 'invalid_state', severity: 'warn', meta: { strategy }, redirectToFrontend: true });
+      throw new AppError({ status: 401, type: 'invalid_state', severity: 'warn', meta: { strategy }, redirectToFrontend: true });
     }
 
     try {
@@ -639,12 +639,12 @@ const authRouteHandlers = app
       const existingUsers = await findExistingUsers(transformedUser.email, connectUserId, inviteToken?.id ?? null);
 
       // Make sure we have only one user
-      if (existingUsers.length > 1) throw new ApiError({ status: 403, type: 'oauth_mismatch', severity: 'warn', redirectToFrontend: true });
+      if (existingUsers.length > 1) throw new AppError({ status: 403, type: 'oauth_mismatch', severity: 'warn', redirectToFrontend: true });
       const existingUser = existingUsers[0] ?? null;
 
       // If registration is disabled and no existing user and not invite throw to error
-      if (!config.has.registrationEnabled && !existingUser && !inviteToken) {
-        throw new ApiError({ status: 403, type: 'sign_up_restricted', redirectToFrontend: true });
+      if (!appConfig.has.registrationEnabled && !existingUser && !inviteToken) {
+        throw new AppError({ status: 403, type: 'sign_up_restricted', redirectToFrontend: true });
       }
 
       // Get the redirect URL based on whether a new user or invite token exists
@@ -667,7 +667,7 @@ const authRouteHandlers = app
       });
     } catch (error) {
       const type = error instanceof OAuth2RequestError ? 'invalid_credentials' : 'oauth_failed';
-      throw new ApiError({
+      throw new AppError({
         status: 401,
         type,
         severity: 'warn',
@@ -687,7 +687,7 @@ const authRouteHandlers = app
     const strategy = 'google' as EnabledOauthProvider;
 
     if (!isOAuthEnabled(strategy)) {
-      throw new ApiError({ status: 400, type: 'unsupported_oauth', severity: 'error', meta: { strategy }, redirectToFrontend: true });
+      throw new AppError({ status: 400, type: 'unsupported_oauth', severity: 'error', meta: { strategy }, redirectToFrontend: true });
     }
 
     const storedState = await getAuthCookie(ctx, 'oauth_state');
@@ -695,7 +695,7 @@ const authRouteHandlers = app
 
     // verify state
     if (!code || !storedState || !storedCodeVerifier || state !== storedState) {
-      throw new ApiError({ status: 401, type: 'invalid_state', severity: 'warn', meta: { strategy }, redirectToFrontend: true });
+      throw new AppError({ status: 401, type: 'invalid_state', severity: 'warn', meta: { strategy }, redirectToFrontend: true });
     }
 
     try {
@@ -717,12 +717,12 @@ const authRouteHandlers = app
       const existingUsers = await findExistingUsers(transformedUser.email, connectUserId, inviteToken?.id ?? null);
 
       // Make sure we have only one user
-      if (existingUsers.length > 1) throw new ApiError({ status: 403, type: 'oauth_mismatch', severity: 'warn', redirectToFrontend: true });
+      if (existingUsers.length > 1) throw new AppError({ status: 403, type: 'oauth_mismatch', severity: 'warn', redirectToFrontend: true });
       const existingUser = existingUsers[0] ?? null;
 
       // If registration is disabled and no existing user and not invite throw to error
-      if (!config.has.registrationEnabled && !existingUser && !inviteToken) {
-        throw new ApiError({ status: 403, type: 'sign_up_restricted', redirectToFrontend: true });
+      if (!appConfig.has.registrationEnabled && !existingUser && !inviteToken) {
+        throw new AppError({ status: 403, type: 'sign_up_restricted', redirectToFrontend: true });
       }
       // Get the redirect URL based on whether a new user or invite token exists
       const firstSignIn = !connectUserId && !existingUser;
@@ -744,7 +744,7 @@ const authRouteHandlers = app
       });
     } catch (error) {
       const type = error instanceof OAuth2RequestError ? 'invalid_credentials' : 'oauth_failed';
-      throw new ApiError({
+      throw new AppError({
         status: 401,
         type,
         severity: 'warn',
@@ -764,7 +764,7 @@ const authRouteHandlers = app
     const strategy = 'microsoft' as EnabledOauthProvider;
 
     if (!isOAuthEnabled(strategy)) {
-      throw new ApiError({ status: 400, type: 'unsupported_oauth', severity: 'error', meta: { strategy }, redirectToFrontend: true });
+      throw new AppError({ status: 400, type: 'unsupported_oauth', severity: 'error', meta: { strategy }, redirectToFrontend: true });
     }
 
     const storedState = await getAuthCookie(ctx, 'oauth_state');
@@ -772,7 +772,7 @@ const authRouteHandlers = app
 
     // verify state
     if (!code || !storedState || !storedCodeVerifier || state !== storedState) {
-      throw new ApiError({ status: 401, type: 'invalid_state', severity: 'warn', meta: { strategy }, redirectToFrontend: true });
+      throw new AppError({ status: 401, type: 'invalid_state', severity: 'warn', meta: { strategy }, redirectToFrontend: true });
     }
 
     try {
@@ -794,13 +794,13 @@ const authRouteHandlers = app
       const existingUsers = await findExistingUsers(transformedUser.email, connectUserId, inviteToken?.id ?? null);
 
       // Make sure we have only one user
-      if (existingUsers.length > 1) throw new ApiError({ status: 403, type: 'oauth_mismatch', severity: 'warn', redirectToFrontend: true });
+      if (existingUsers.length > 1) throw new AppError({ status: 403, type: 'oauth_mismatch', severity: 'warn', redirectToFrontend: true });
 
       const existingUser = existingUsers[0] ?? null;
 
       // If registration is disabled and no existing user and not invite throw to error
-      if (!config.has.registrationEnabled && !existingUser && !inviteToken) {
-        throw new ApiError({ status: 403, type: 'sign_up_restricted', redirectToFrontend: true });
+      if (!appConfig.has.registrationEnabled && !existingUser && !inviteToken) {
+        throw new AppError({ status: 403, type: 'sign_up_restricted', redirectToFrontend: true });
       }
 
       // Get the redirect URL based on whether a new user or invite token exists
@@ -823,7 +823,7 @@ const authRouteHandlers = app
       });
     } catch (error) {
       const type = error instanceof OAuth2RequestError ? 'invalid_credentials' : 'oauth_failed';
-      throw new ApiError({
+      throw new AppError({
         status: 401,
         type,
         severity: 'warn',
@@ -858,20 +858,20 @@ const authRouteHandlers = app
 
     // Retrieve user and challenge record
     const user = await getUserBy('email', userEmail.toLowerCase());
-    if (!user) throw new ApiError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'user', meta: { strategy } });
+    if (!user) throw new AppError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'user', meta: { strategy } });
     // Check if passkey challenge exists
     const challengeFromCookie = await getAuthCookie(ctx, 'passkey_challenge');
-    if (!challengeFromCookie) throw new ApiError({ status: 401, type: 'invalid_credentials', severity: 'warn', meta: { strategy } });
+    if (!challengeFromCookie) throw new AppError({ status: 401, type: 'invalid_credentials', severity: 'warn', meta: { strategy } });
     // Get passkey credentials
     const [credentials] = await db.select().from(passkeysTable).where(eq(passkeysTable.userEmail, userEmail));
-    if (!credentials) throw new ApiError({ status: 404, type: 'not_found', severity: 'warn', meta: { strategy } });
+    if (!credentials) throw new AppError({ status: 404, type: 'not_found', severity: 'warn', meta: { strategy } });
 
     try {
       const isValid = await verifyPassKeyPublic(signature, authenticatorData, clientDataJSON, credentials.publicKey, challengeFromCookie);
-      if (!isValid) throw new ApiError({ status: 401, type: 'invalid_token', severity: 'warn', meta: { strategy } });
+      if (!isValid) throw new AppError({ status: 401, type: 'invalid_token', severity: 'warn', meta: { strategy } });
     } catch (error) {
       if (error instanceof Error) {
-        throw new ApiError({ status: 500, type: 'passkey_failed', severity: 'error', meta: { strategy }, originalError: error });
+        throw new AppError({ status: 500, type: 'passkey_failed', severity: 'error', meta: { strategy }, originalError: error });
       }
     }
 

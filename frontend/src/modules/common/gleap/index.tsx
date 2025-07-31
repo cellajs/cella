@@ -1,4 +1,4 @@
-import { config } from 'config';
+import { appConfig } from 'config';
 import Gleap from 'gleap';
 import { useEffect } from 'react';
 import { useOnlineManager } from '~/hooks/use-online-manager';
@@ -13,7 +13,7 @@ declare global {
 }
 
 window.ononline = () => {
-  Gleap.initialize(config.gleapToken);
+  Gleap.initialize(appConfig.gleapToken);
 };
 
 window.onoffline = () => {
@@ -21,7 +21,7 @@ window.onoffline = () => {
 };
 
 // Initialize Gleap if online
-if (navigator.onLine) Gleap.initialize(config.gleapToken);
+if (navigator.onLine) Gleap.initialize(appConfig.gleapToken);
 
 const setGleapUser = (user: User) => {
   if (!window.Gleap) return;

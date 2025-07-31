@@ -1,10 +1,9 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
 import { and, count, eq, getTableColumns, ilike, inArray, type SQL, sql } from 'drizzle-orm';
-
 import { db } from '#/db/db';
 import { type RequestModel, requestsTable } from '#/db/schema/requests';
 import type { Env } from '#/lib/context';
-import { ApiError } from '#/lib/errors';
+import { AppError } from '#/lib/errors';
 import { sendSlackMessage } from '#/lib/notifications';
 import requestRoutes from '#/modules/requests/routes';
 import { getUserBy } from '#/modules/users/helpers/get-user-by';
@@ -28,7 +27,7 @@ const requestRouteHandlers = app
 
     if (type === 'waitlist') {
       const existingUser = await getUserBy('email', loweredEmail);
-      if (existingUser) throw new ApiError({ status: 400, type: 'request_email_is_user' });
+      if (existingUser) throw new AppError({ status: 400, type: 'request_email_is_user' });
     }
 
     // Check if not duplicate for unique requests
@@ -37,7 +36,7 @@ const requestRouteHandlers = app
         .select()
         .from(requestsTable)
         .where(and(eq(requestsTable.email, loweredEmail), inArray(requestsTable.type, uniqueRequests)));
-      if (existingRequest?.type === type) throw new ApiError({ status: 409, type: 'request_exists' });
+      if (existingRequest?.type === type) throw new AppError({ status: 409, type: 'request_exists' });
     }
     const { tokenId, ...requestsSelect } = getTableColumns(requestsTable);
 
@@ -99,7 +98,7 @@ const requestRouteHandlers = app
 
     // Convert the ids to an array
     const toDeleteIds = Array.isArray(ids) ? ids : [ids];
-    if (!toDeleteIds.length) throw new ApiError({ status: 400, type: 'invalid_request', severity: 'error' });
+    if (!toDeleteIds.length) throw new AppError({ status: 400, type: 'invalid_request', severity: 'error' });
 
     // Delete the requests
     await db.delete(requestsTable).where(inArray(requestsTable.id, toDeleteIds));

@@ -6,7 +6,7 @@ import ScreenCapture from '@uppy/screen-capture';
 import { COMPANION_ALLOWED_HOSTS, COMPANION_URL } from '@uppy/transloadit';
 import Url from '@uppy/url';
 import Webcam, { type WebcamOptions } from '@uppy/webcam';
-import { config, type UploadTemplateId } from 'config';
+import { appConfig, type UploadTemplateId } from 'config';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toaster } from '~/modules/common/toaster';
@@ -15,7 +15,7 @@ import { getImageEditorOptions } from '~/modules/common/uploader/helpers/image-e
 import type { CustomUppy, CustomUppyOpt, UploadedUppyFile } from '~/modules/common/uploader/types';
 import { useUploader } from '~/modules/common/uploader/use-uploader';
 
-const uppyRestrictions = config.uppy.defaultRestrictions;
+const uppyRestrictions = appConfig.uppy.defaultRestrictions;
 
 export function useUploadUppy() {
   const { t } = useTranslation();
@@ -29,7 +29,7 @@ export function useUploadUppy() {
 
     let isMounted = true;
     let localUppy: CustomUppy | null = null;
-    const isUploadFullyEnabled = config.has.uploadEnabled;
+    const isUploadFullyEnabled = appConfig.has.uploadEnabled && onlineManager.isOnline();
 
     const { isPublic, templateId = 'attachment', organizationId, restrictions, plugins = [], statusEventHandler = {} } = uploaderData;
 
@@ -49,7 +49,7 @@ export function useUploadUppy() {
 
         localUppy
           .on('files-added', () => {
-            if (onlineManager.isOnline() && !config.has.uploadEnabled) toaster(t('common:file_upload_warning'), 'warning');
+            if (onlineManager.isOnline() && !appConfig.has.uploadEnabled) toaster(t('common:file_upload_warning'), 'warning');
           })
           .on('file-editor:complete', (file) => {
             console.info('File editor complete:', file);

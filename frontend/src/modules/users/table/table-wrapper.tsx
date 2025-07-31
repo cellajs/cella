@@ -1,4 +1,4 @@
-import { config } from 'config';
+import { appConfig } from 'config';
 import { useRef, useState } from 'react';
 import type { z } from 'zod';
 import useSearchParams from '~/hooks/use-search-params';
@@ -10,7 +10,7 @@ import { UsersTableBar } from '~/modules/users/table/table-bar';
 import type { User } from '~/modules/users/types';
 import { UsersTableRoute, type usersSearchSchema } from '~/routes/system';
 
-const LIMIT = config.requestLimits.users;
+const LIMIT = appConfig.requestLimits.users;
 
 export type UsersSearch = z.infer<typeof usersSearchSchema>;
 

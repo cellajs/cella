@@ -1,8 +1,8 @@
-import { config } from 'config';
+import { appConfig } from 'config';
 import type { Step } from '~/modules/auth/types';
 
 export const shouldShowDivider = (hasPasskey: boolean, step: Step): boolean => {
-  const enabledStrategies: readonly string[] = config.enabledAuthStrategies;
+  const enabledStrategies: readonly string[] = appConfig.enabledAuthStrategies;
 
   // Get enabled authentication strategies
   const isOAuthEnabled = enabledStrategies.includes('oauth');

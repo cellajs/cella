@@ -1,5 +1,5 @@
 import { onlineManager } from '@tanstack/react-query';
-import { config } from 'config';
+import { appConfig } from 'config';
 import { Upload } from 'lucide-react';
 import { memo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -25,7 +25,7 @@ const PageCover = memo(({ id, canUpdate, organizationId, url, coverUpdateCallbac
   const [coverUrl, setCoverUrl] = useState(url);
 
   const handleUpdateURL = (bannerKey: string) => {
-    const bannerUrl = `${config.publicCDNUrl}/${bannerKey}`;
+    const bannerUrl = `${appConfig.publicCDNUrl}/${bannerKey}`;
     setCoverUrl(bannerUrl);
     coverUpdateCallback(bannerUrl);
   };
@@ -55,7 +55,7 @@ const PageCover = memo(({ id, canUpdate, organizationId, url, coverUpdateCallbac
       className={`relative flex bg-cover bg-center h-32 ${numberToColorClass(id)} data-[url=true]:h-[20vw] min-h-40 sm:min-w-52`}
       style={coverUrl ? { backgroundImage: `url(${coverUrl})` } : {}}
     >
-      {canUpdate && config.has.uploadEnabled && (
+      {canUpdate && appConfig.has.uploadEnabled && (
         <Button
           ref={uploadButtonRef}
           variant="secondary"

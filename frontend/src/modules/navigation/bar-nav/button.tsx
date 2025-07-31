@@ -1,4 +1,4 @@
-import { config } from 'config';
+import { appConfig } from 'config';
 import { type RefObject, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
@@ -47,7 +47,7 @@ export const BarNavButton = ({ navItem, isActive, onClick }: BarNavButtonProps) 
         ) : navItem.id === 'home' ? (
           <AppNavLoader />
         ) : (
-          <navItem.icon className="group-hover:scale-110 transition-transform" strokeWidth={config.theme.strokeWidth} />
+          <navItem.icon className="group-hover:scale-110 transition-transform" strokeWidth={appConfig.theme.strokeWidth} />
         )}
       </Button>
     </TooltipButton>

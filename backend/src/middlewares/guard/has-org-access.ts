@@ -5,7 +5,7 @@ import { createMiddleware } from 'hono/factory';
 import { db } from '#/db/db';
 import { organizationsTable } from '#/db/schema/organizations';
 import { type Env, getContextMemberships, getContextUser } from '#/lib/context';
-import { ApiError } from '#/lib/errors';
+import { AppError } from '#/lib/errors';
 import { registerMiddlewareDescription } from '#/lib/openapi-describer';
 
 /**
@@ -19,7 +19,7 @@ import { registerMiddlewareDescription } from '#/lib/openapi-describer';
 
 export const hasOrgAccess: MiddlewareHandler<Env> = createMiddleware<Env>(async (ctx, next) => {
   const orgIdOrSlug = ctx.req.param('orgIdOrSlug');
-  if (!orgIdOrSlug) throw new ApiError({ status: 400, type: 'invalid_request', severity: 'error' });
+  if (!orgIdOrSlug) throw new AppError({ status: 400, type: 'invalid_request', severity: 'error' });
 
   const memberships = getContextMemberships();
   const user = getContextUser();
@@ -29,12 +29,12 @@ export const hasOrgAccess: MiddlewareHandler<Env> = createMiddleware<Env>(async 
   const idOrSlugFilter = or(eq(organizationsTable.id, orgIdOrSlug), eq(organizationsTable.slug, orgIdOrSlug));
   const [organization] = await db.select().from(organizationsTable).where(idOrSlugFilter);
 
-  if (!organization) throw new ApiError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'organization' });
+  if (!organization) throw new AppError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'organization' });
 
   // Check if user has access to organization (or is a system admin)
   const orgMembership = memberships.find((m) => m.organizationId === organization.id && m.contextType === 'organization') || null;
   if (!isSystemAdmin && !orgMembership) {
-    throw new ApiError({ status: 403, type: 'forbidden', severity: 'warn', entityType: 'organization' });
+    throw new AppError({ status: 403, type: 'forbidden', severity: 'warn', entityType: 'organization' });
   }
   const orgWithMembership = { ...organization, membership: orgMembership };
 

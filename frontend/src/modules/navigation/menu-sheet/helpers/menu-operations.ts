@@ -1,4 +1,4 @@
-import { type ContextEntityType, config } from 'config';
+import { appConfig, type ContextEntityType } from 'config';
 import type { UserMenu, UserMenuItem } from '~/modules/me/types';
 import type { MembershipSummary } from '~/modules/memberships/types';
 import { useNavigationStore } from '~/store/navigation';
@@ -6,7 +6,7 @@ import { useNavigationStore } from '~/store/navigation';
 const useTransformOnMenuItems = (transform: (items: UserMenuItem[]) => UserMenuItem[]) => {
   const { menu } = useNavigationStore.getState();
 
-  const updatedMenu = config.menuStructure.reduce(
+  const updatedMenu = appConfig.menuStructure.reduce(
     (acc, { entityType }) => {
       if (menu[entityType]) acc[entityType] = transform(menu[entityType]);
       return acc;
@@ -96,7 +96,7 @@ export const updateMenuItemMembership = (membershipInfo: Partial<MembershipSumma
   const menu = useNavigationStore.getState().menu;
 
   // Find section that corresponds to given entity type
-  const menuSection = config.menuStructure.find((el) => el.entityType === entityType || el.subentityType === entityType);
+  const menuSection = appConfig.menuStructure.find((el) => el.entityType === entityType || el.subentityType === entityType);
   if (!menuSection) return;
 
   // Select menu entities based on section's entity type

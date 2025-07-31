@@ -1,7 +1,7 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation } from '@tanstack/react-query';
 import { useNavigate, useSearch } from '@tanstack/react-router';
-import { config } from 'config';
+import { appConfig } from 'config';
 import { ArrowRight, ChevronDown } from 'lucide-react';
 import { lazy, type RefObject, Suspense, useRef } from 'react';
 import { useForm } from 'react-hook-form';
@@ -22,7 +22,7 @@ import { defaultOnInvalid } from '~/utils/form-on-invalid';
 const PasswordStrength = lazy(() => import('~/modules/auth/password-strength'));
 const LegalText = lazy(() => import('~/modules/marketing/legal-texts'));
 
-const enabledStrategies: readonly string[] = config.enabledAuthStrategies;
+const enabledStrategies: readonly string[] = appConfig.enabledAuthStrategies;
 
 const formSchema = zSignUpData.shape.body.unwrap();
 type FormValues = z.infer<typeof formSchema>;
@@ -58,7 +58,7 @@ export const SignUpForm = ({ tokenData, email, resetSteps, emailEnabled }: Props
     onSuccess: () => {
       // Redirect to organization invitation page if there is a membership invitation
       const isMemberInvitation = tokenData?.organizationSlug && token && tokenId;
-      const redirectPath = isMemberInvitation ? '/invitation/$token' : config.welcomeRedirectPath;
+      const redirectPath = isMemberInvitation ? '/invitation/$token' : appConfig.welcomeRedirectPath;
       return navigate({ to: redirectPath, replace: true, ...(token && tokenId && { params: { token }, search: { tokenId } }) });
     },
   });
@@ -172,7 +172,7 @@ export const LegalNotice = ({ email, mode = 'signup' }: { email: string; mode?: 
       <Button ref={privacyButtonRef} type="button" variant="link" className="p-0 h-auto" onClick={openDialog('privacy', privacyButtonRef)}>
         {t('common:privacy_policy').toLocaleLowerCase()}
       </Button>
-      <span>of {config.company.name}.</span>
+      <span>of {appConfig.company.name}.</span>
     </p>
   );
 };

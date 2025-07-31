@@ -1,5 +1,5 @@
 import { createRoute, redirect } from '@tanstack/react-router';
-import { config } from 'config';
+import { appConfig } from 'config';
 import { z } from 'zod';
 import AcceptEntityInvite from '~/modules/auth/accept-entity-invite';
 import AuthPage from '~/modules/auth/auth-layout';
@@ -41,7 +41,7 @@ export const AuthenticateRoute = createRoute({
     // If stored user, redirect to home
     const storedUser = useUserStore.getState().user;
     if (!storedUser) return;
-    throw redirect({ to: config.defaultRedirectPath, replace: true });
+    throw redirect({ to: appConfig.defaultRedirectPath, replace: true });
   },
   component: () => <AuthSteps />,
 });

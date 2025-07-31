@@ -1,6 +1,6 @@
 import { OpenAPIHono, type z } from '@hono/zod-openapi';
 import type { EnabledOauthProvider, MenuSection } from 'config';
-import { config } from 'config';
+import { appConfig } from 'config';
 import { and, eq } from 'drizzle-orm';
 import { type SSEStreamingApi, streamSSE } from 'hono/streaming';
 import { db } from '#/db/db';
@@ -11,7 +11,7 @@ import { usersTable } from '#/db/schema/users';
 import { env } from '#/env';
 import { type Env, getContextMemberships, getContextUser } from '#/lib/context';
 import { resolveEntity } from '#/lib/entity';
-import { ApiError } from '#/lib/errors';
+import { AppError } from '#/lib/errors';
 import { getParams, getSignature } from '#/lib/transloadit';
 import { isAuthenticated } from '#/middlewares/guard';
 import { deleteAuthCookie, getAuthCookie } from '#/modules/auth/helpers/cookie';
@@ -60,7 +60,7 @@ const meRouteHandlers = app
 
     const validOAuthAccounts = oauthAccounts
       .map((el) => el.providerId)
-      .filter((provider): provider is EnabledOauthProvider => config.enabledOauthProviders.includes(provider as EnabledOauthProvider));
+      .filter((provider): provider is EnabledOauthProvider => appConfig.enabledOauthProviders.includes(provider as EnabledOauthProvider));
 
     return ctx.json({ oauth: validOAuthAccounts, passkey: !!passkeys.length, sessions }, 200);
   })
@@ -71,7 +71,7 @@ const meRouteHandlers = app
     const user = getContextUser();
     const memberships = getContextMemberships();
 
-    const emptyData = config.menuStructure.reduce((acc, section) => {
+    const emptyData = appConfig.menuStructure.reduce((acc, section) => {
       acc[section.entityType] = [];
       return acc;
     }, {} as UserMenu);
@@ -85,7 +85,7 @@ const meRouteHandlers = app
       const allowedEntities = entities.filter((entity) => permissionManager.isPermissionAllowed([entity.membership], 'read', entity));
 
       return allowedEntities.map((entity) => {
-        const entityIdField = config.entityIdFields[entityType];
+        const entityIdField = appConfig.entityIdFields[entityType];
 
         const submenu = subentities.filter(
           (sub) =>
@@ -97,7 +97,7 @@ const meRouteHandlers = app
 
     const menu = {} as UserMenu;
 
-    for (const section of config.menuStructure) {
+    for (const section of appConfig.menuStructure) {
       menu[section.entityType] = await buildMenuForSection(section);
     }
 
@@ -138,7 +138,7 @@ const meRouteHandlers = app
   .openapi(meRoutes.updateMe, async (ctx) => {
     const user = getContextUser();
 
-    if (!user) throw new ApiError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'user', meta: { user: 'self' } });
+    if (!user) throw new AppError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'user', meta: { user: 'self' } });
 
     const { bannerUrl, firstName, lastName, language, newsletter, thumbnailUrl, slug } = ctx.req.valid('json');
 
@@ -146,7 +146,7 @@ const meRouteHandlers = app
 
     if (slug && slug !== user.slug) {
       const slugAvailable = await checkSlugAvailable(slug);
-      if (!slugAvailable) throw new ApiError({ status: 409, type: 'slug_exists', severity: 'warn', entityType: 'user', meta: { slug } });
+      if (!slugAvailable) throw new AppError({ status: 409, type: 'slug_exists', severity: 'warn', entityType: 'user', meta: { slug } });
     }
 
     const [updatedUser] = await db
@@ -175,7 +175,7 @@ const meRouteHandlers = app
     const user = getContextUser();
 
     // Check if user exists
-    if (!user) throw new ApiError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'user', meta: { user: 'self' } });
+    if (!user) throw new AppError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'user', meta: { user: 'self' } });
 
     // Delete user
     await db.delete(usersTable).where(eq(usersTable.id, user.id));
@@ -196,9 +196,9 @@ const meRouteHandlers = app
     const { entityType, idOrSlug } = ctx.req.valid('query');
 
     const entity = await resolveEntity(entityType, idOrSlug);
-    if (!entity) throw new ApiError({ status: 404, type: 'not_found', severity: 'warn', entityType });
+    if (!entity) throw new AppError({ status: 404, type: 'not_found', severity: 'warn', entityType });
 
-    const entityIdField = config.entityIdFields[entityType];
+    const entityIdField = appConfig.entityIdFields[entityType];
 
     // Delete the memberships
     await db
@@ -217,7 +217,7 @@ const meRouteHandlers = app
     const user = getContextUser();
 
     const challengeFromCookie = await getAuthCookie(ctx, 'passkey_challenge');
-    if (!challengeFromCookie) throw new ApiError({ status: 401, type: 'invalid_credentials', severity: 'error' });
+    if (!challengeFromCookie) throw new AppError({ status: 401, type: 'invalid_credentials', severity: 'error' });
 
     const { credentialId, publicKey } = parseAndValidatePasskeyAttestation(clientDataJSON, attestationObject, challengeFromCookie);
 
@@ -244,7 +244,7 @@ const meRouteHandlers = app
     const user = getContextUser();
 
     // This will be used to as first part of S3 key
-    const sub = [config.s3BucketPrefix, organizationId, user.id].filter(Boolean).join('/');
+    const sub = [appConfig.s3BucketPrefix, organizationId, user.id].filter(Boolean).join('/');
 
     try {
       const params = getParams(templateId, isPublic, sub);
@@ -255,7 +255,7 @@ const meRouteHandlers = app
 
       return ctx.json(token, 200);
     } catch (error) {
-      throw new ApiError({ status: 500, type: 'missing_auth_key', severity: 'error' });
+      throw new AppError({ status: 500, type: 'missing_auth_key', severity: 'error' });
     }
   })
   /*
@@ -266,16 +266,16 @@ const meRouteHandlers = app
 
     // Check if token exists
     const user = await getUserBy('unsubscribeToken', token, 'unsafe');
-    if (!user) throw new ApiError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'user' });
+    if (!user) throw new AppError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'user' });
 
     // Verify token
     const isValid = verifyUnsubscribeToken(user.email, token);
-    if (!isValid) throw new ApiError({ status: 401, type: 'unsubscribe_failed', severity: 'warn', entityType: 'user' });
+    if (!isValid) throw new AppError({ status: 401, type: 'unsubscribe_failed', severity: 'warn', entityType: 'user' });
 
     // Update user
     await db.update(usersTable).set({ newsletter: false }).where(eq(usersTable.id, user.id));
 
-    const redirectUrl = `${config.frontendUrl}/auth/unsubscribed`;
+    const redirectUrl = `${appConfig.frontendUrl}/auth/unsubscribed`;
     return ctx.redirect(redirectUrl, 302);
   })
   /*

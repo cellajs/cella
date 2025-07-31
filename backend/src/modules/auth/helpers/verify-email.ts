@@ -1,4 +1,4 @@
-import { config } from 'config';
+import { appConfig } from 'config';
 import authRoutes from '#/modules/auth/routes';
 import { logEvent } from '#/utils/logger';
 
@@ -9,7 +9,7 @@ import { logEvent } from '#/utils/logger';
  */
 export const sendVerificationEmail = (userId: string) => {
   try {
-    fetch(config.backendAuthUrl + authRoutes.sendVerificationEmail.path, {
+    fetch(appConfig.backendAuthUrl + authRoutes.sendVerificationEmail.path, {
       method: authRoutes.sendVerificationEmail.method,
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ userId }),

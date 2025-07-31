@@ -1,4 +1,4 @@
-import { type ContextEntityType, config } from 'config';
+import { appConfig, type ContextEntityType } from 'config';
 import { and, asc, eq, isNotNull } from 'drizzle-orm';
 import { db } from '#/db/db';
 import { membershipsTable } from '#/db/schema/memberships';
@@ -8,7 +8,7 @@ import { membershipSummarySelect } from '#/modules/memberships/helpers/select';
 // Get user menu items with membership info for a given entity type
 export const getUserMenuEntities = async (entityType: ContextEntityType, userId: string) => {
   const table = entityTables[entityType];
-  const entityIdField = config.entityIdFields[entityType];
+  const entityIdField = appConfig.entityIdFields[entityType];
 
   return await db
     .select({

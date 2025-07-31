@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { config } from 'config';
+import { appConfig } from 'config';
 import { Check, ChevronsUpDown, Search, User, Users2, X } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { useCallback, useEffect, useState } from 'react';
@@ -26,7 +26,7 @@ export const UserCombobox = ({ value, onChange, entity }: Props) => {
   const { t } = useTranslation();
   const isMobile = useBreakpoints('max', 'sm');
   const { ref, bounds } = useMeasure<HTMLDivElement>();
-  const entityIdField = config.entityIdFields[entity.entityType];
+  const entityIdField = appConfig.entityIdFields[entity.entityType];
 
   const [open, setOpen] = useState(false);
   const [selected, setSelected] = useState<string[]>(value);
@@ -125,7 +125,7 @@ export const UserCombobox = ({ value, onChange, entity }: Props) => {
                     </CommandEmpty>
                   ) : (
                     <CommandEmpty>
-                      <ContentPlaceholder icon={Users2} title={t('common:invite_members_search.text', { appName: config.name })} />
+                      <ContentPlaceholder icon={Users2} title={t('common:invite_members_search.text', { appName: appConfig.name })} />
                     </CommandEmpty>
                   )}
                 </motion.div>

@@ -1,5 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { config } from 'config';
+import { appConfig } from 'config';
 import type { UseFormProps } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import type { z } from 'zod';
@@ -126,7 +126,7 @@ const UpdateOrganizationForm = ({ organization, callback, sheet: isSheet }: Prop
 
             // If defaultLanguage is not selected languages, set first language
             const languages = form.getValues('languages') || [];
-            const correctValue = field.value && languages.includes(field.value) ? field.value : languages[0] || config.defaultLanguage;
+            const correctValue = field.value && languages.includes(field.value) ? field.value : languages[0] || appConfig.defaultLanguage;
 
             return (
               <FormItem name="defaultLanguage">

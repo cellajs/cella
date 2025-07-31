@@ -1,4 +1,4 @@
-import { config } from 'config';
+import { appConfig } from 'config';
 import i18n from 'i18next';
 import { Link, Text } from 'jsx-email';
 import { AppLogo } from './app-logo';
@@ -21,7 +21,7 @@ export const EmailReplyTo = ({ email, emailText }: { email?: string; emailText?:
         </Link>
       )}
       ・
-      <Link style={link} href={`mailto:${config.supportEmail}`}>
+      <Link style={link} href={`mailto:${appConfig.supportEmail}`}>
         {i18n.t('backend:email.support_email')}
       </Link>
       {!email && '・'}

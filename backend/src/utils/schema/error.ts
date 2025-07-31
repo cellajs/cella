@@ -1,5 +1,5 @@
 import { z } from '@hono/zod-openapi';
-import { config, type Severity } from 'config';
+import { appConfig, type Severity } from 'config';
 import { entityTypeSchema } from '#/utils/schema/common';
 
 const ClientErrorStatusCodeEnum = z.union([
@@ -56,7 +56,7 @@ export const errorSchema = z
     message: z.string(), // Error message
     type: z.string(), // Error type identifier
     status: z.union([ClientErrorStatusCodeEnum, ServerErrorStatusCodeEnum]), // HTTP status code
-    severity: z.enum(Object.keys(config.severityLevels) as [Severity, ...Severity[]]), // Severity level
+    severity: z.enum(Object.keys(appConfig.severityLevels) as [Severity, ...Severity[]]), // Severity level
     entityType: entityTypeSchema.optional(), // Optional related entity type
     logId: z.string().optional(), // Optional log identifier
     path: z.string().optional(), // Optional request path

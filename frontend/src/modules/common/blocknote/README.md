@@ -124,7 +124,7 @@ export const getSlashMenuItems = (editor: CustomBlockNoteEditor, allowedTypes: r
 
 ## Allowed Types
 
-The `allowedTypes` property in `blocknote-config.ts` defines the basic block types that Blocknote will handle. Types assigned to `allowedTypes` will be used by default. You can exclude some of the types by specifying them in the <BlockNote /> component configuration. This allows you to tailor the editor to specific needs.
+The `allowedTypes` property in `blocknote-appConfig.ts` defines the basic block types that Blocknote will handle. Types assigned to `allowedTypes` will be used by default. You can exclude some of the types by specifying them in the <BlockNote /> component configuration. This allows you to tailor the editor to specific needs.
 
 Example Usage:
 
@@ -177,7 +177,7 @@ To enable and use the default `UppyFilePanel`, you need to:
   Ensure your `config` object includes valid Transloadit settings and enable upload feature with:
 
   ```ts
-  config.has.uploadEnabled = true;
+  appConfig.has.uploadEnabled = true;
   ```
 
 - **Pass baseFilePanelProps:**

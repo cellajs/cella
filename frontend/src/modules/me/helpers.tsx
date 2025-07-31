@@ -1,6 +1,6 @@
 import { decodeBase64, encodeBase64 } from '@oslojs/encoding';
 import { onlineManager } from '@tanstack/react-query';
-import { config } from 'config';
+import { appConfig } from 'config';
 import { t } from 'i18next';
 import { createPasskey, getMe, getMyAuth, getMyMenu, getPasskeyChallenge, signInWithPasskey } from '~/api.gen';
 import { toaster } from '~/modules/common/toaster';
@@ -32,9 +32,9 @@ export const passkeyRegistration = async () => {
     const userId = new Uint8Array(20);
     crypto.getRandomValues(userId);
 
-    const isDevelopment = config.mode === 'development';
+    const isDevelopment = appConfig.mode === 'development';
 
-    const nameOnDevice = isDevelopment ? `${user.email} for ${config.name}` : user.email;
+    const nameOnDevice = isDevelopment ? `${user.email} for ${appConfig.name}` : user.email;
     const credential = await navigator.credentials.create({
       publicKey: {
         challenge: decodeBase64(challengeBase64),
@@ -44,8 +44,8 @@ export const passkeyRegistration = async () => {
           displayName: user.name || user.email,
         },
         rp: {
-          id: isDevelopment ? 'localhost' : config.domain,
-          name: config.name,
+          id: isDevelopment ? 'localhost' : appConfig.domain,
+          name: appConfig.name,
         },
         pubKeyCredParams: [
           { type: 'public-key', alg: -7 }, // ES256

@@ -1,12 +1,12 @@
-import type { ContextEntityType, config } from 'config';
+import type { appConfig, ContextEntityType } from 'config';
 import type { PgColumn, PgVarcharBuilderInitial } from 'drizzle-orm/pg-core';
 
 /**
  * Type representing the fields used to identify an entity within a context entity.
  */
 export type ContextEntityTypeIdFields = {
-  [K in keyof typeof config.entityIdFields]: K extends ContextEntityType ? (typeof config.entityIdFields)[K] : never;
-}[keyof typeof config.entityIdFields];
+  [K in keyof typeof appConfig.entityIdFields]: K extends ContextEntityType ? (typeof appConfig.entityIdFields)[K] : never;
+}[keyof typeof appConfig.entityIdFields];
 
 /**
  * Necessary to pass type-checking for the generated columns.

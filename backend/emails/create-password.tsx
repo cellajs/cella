@@ -1,4 +1,4 @@
-import { config } from 'config';
+import { appConfig } from 'config';
 import i18n from 'i18next';
 import { Link, Text } from 'jsx-email';
 
@@ -14,9 +14,9 @@ export interface CreatePasswordEmailProps extends BasicTemplateType {
   createPasswordLink: string;
 }
 
-const baseUrl = config.frontendUrl;
+const baseUrl = appConfig.frontendUrl;
 const createPasswordUrl = `${baseUrl}/auth/request-password`;
-const appName = config.name;
+const appName = appConfig.name;
 
 export const CreatePasswordEmail = ({ name, lng, createPasswordLink }: CreatePasswordEmailProps) => {
   return (

@@ -1,4 +1,4 @@
-import { config } from 'config';
+import { appConfig } from 'config';
 import { useEffect, useRef } from 'react';
 import { useOnlineManager } from '~/hooks/use-online-manager';
 import { LocalFileStorage } from '~/modules/attachments/helpers/local-file-storage';
@@ -29,8 +29,7 @@ export const useLocalSyncAttachments = (organizationId: string) => {
   };
 
   useEffect(() => {
-    if (!isOnline || !config.has.uploadEnabled) return;
-    if (isSyncingRef.current) return; // Skip if already syncing
+    if (!isOnline || isSyncingRef.current || !appConfig.has.uploadEnabled) return;
 
     const syncStoreAttachments = async () => {
       isSyncingRef.current = true;

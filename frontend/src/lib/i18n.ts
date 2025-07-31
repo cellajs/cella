@@ -1,4 +1,4 @@
-import { config } from 'config';
+import { appConfig } from 'config';
 import i18n, { type InitOptions } from 'i18next';
 import LanguageDetector from 'i18next-browser-languagedetector';
 import Backend from 'i18next-http-backend';
@@ -16,9 +16,9 @@ const initOptions: InitOptions = {
   debug: env.VITE_DEBUG_I18N,
   ns: ['common', 'app', 'about', 'error'],
   partialBundledLanguages: true,
-  supportedLngs: config.languages,
+  supportedLngs: appConfig.languages,
   load: 'languageOnly',
-  fallbackLng: config.defaultLanguage,
+  fallbackLng: appConfig.defaultLanguage,
   interpolation: {
     escapeValue: false, // React escapes by default
   },

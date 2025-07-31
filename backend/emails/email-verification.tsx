@@ -1,4 +1,4 @@
-import { config } from 'config';
+import { appConfig } from 'config';
 import i18n from 'i18next';
 import { Text } from 'jsx-email';
 import type { BasicTemplateType } from '../src/lib/mailer';
@@ -9,7 +9,7 @@ import { EmailButton } from './components/email-button';
 import { EmailHeader } from './components/email-header';
 import { Footer } from './components/footer';
 
-const appName = config.name;
+const appName = appConfig.name;
 
 export interface EmailVerificationEmailProps extends BasicTemplateType {
   verificationLink: string;
