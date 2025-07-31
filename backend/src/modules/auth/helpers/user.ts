@@ -7,7 +7,7 @@ import { oauthAccountsTable } from '#/db/schema/oauth-accounts';
 import { tokensTable } from '#/db/schema/tokens';
 import { type InsertUserModel, usersTable } from '#/db/schema/users';
 import { resolveEntity } from '#/lib/entity';
-import { ApiError } from '#/lib/errors';
+import { AppError } from '#/lib/errors';
 import type { Provider } from '#/modules/auth/helpers/oauth/oauth-providers';
 import { setUserSession } from '#/modules/auth/helpers/session';
 import { sendVerificationEmail } from '#/modules/auth/helpers/verify-email';
@@ -92,7 +92,7 @@ export const handleCreateUser = async ({ ctx, newUser, redirectUrl, provider, me
   } catch (error) {
     // If the email already exists, return an error
     if (error instanceof Error && error.message.startsWith('duplicate key')) {
-      throw new ApiError({ status: 409, type: 'email_exists', severity: 'warn' });
+      throw new AppError({ status: 409, type: 'email_exists', severity: 'warn' });
     }
 
     throw error;

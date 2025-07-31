@@ -1,8 +1,7 @@
 import { appConfig, type ContextEntityType } from 'config';
-
 import { getContextMemberships, getContextOrganization, getContextUser } from '#/lib/context';
 import { type EntityModel, resolveEntity } from '#/lib/entity';
-import { ApiError } from '#/lib/errors';
+import { AppError } from '#/lib/errors';
 import type { MembershipSummary } from '#/modules/memberships/helpers/select';
 import { checkPermission } from '#/permissions/check-if-allowed';
 import type { PermittedAction } from '#/permissions/permissions-config';
@@ -34,23 +33,23 @@ export const getValidContextEntity = async <T extends ContextEntityType>(
 
   // Step 1: Resolve entity
   const entity = (await resolveEntity(entityType, idOrSlug)) || null;
-  if (!entity) throw new ApiError({ status: 404, type: 'not_found', severity: 'warn' });
+  if (!entity) throw new AppError({ status: 404, type: 'not_found', severity: 'warn' });
 
   // Step 2: Permission check
   const isAllowed = checkPermission(memberships, action, entity);
-  if (!isAllowed) throw new ApiError({ status: 403, type: 'forbidden', severity: 'warn' });
+  if (!isAllowed) throw new AppError({ status: 403, type: 'forbidden', severity: 'warn' });
 
   // Step 3: Membership check
   const entityIdField = appConfig.entityIdFields[entity.entityType];
   const membership = memberships.find((m) => m[entityIdField] === entity.id && m.contextType === entityType) || null;
 
-  if (!membership && !isSystemAdmin) throw new ApiError({ status: 400, type: 'invalid_request', severity: 'error' });
+  if (!membership && !isSystemAdmin) throw new AppError({ status: 400, type: 'invalid_request', severity: 'error' });
 
   // Step 4: Organization check
   const org = getContextOrganization();
   if (membership?.organizationId && org) {
     const organizationMatches = membership.organizationId === org.id;
-    if (!organizationMatches) throw new ApiError({ status: 400, type: 'invalid_request', severity: 'error', entityType });
+    if (!organizationMatches) throw new AppError({ status: 400, type: 'invalid_request', severity: 'error', entityType });
   }
 
   return { error: null, entity, membership };

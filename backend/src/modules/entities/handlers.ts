@@ -1,13 +1,12 @@
 import { OpenAPIHono, type z } from '@hono/zod-openapi';
 import { appConfig } from 'config';
 import { and, eq, ilike, inArray, isNotNull } from 'drizzle-orm';
-
 import { db } from '#/db/db';
 import { membershipsTable } from '#/db/schema/memberships';
 import { usersTable } from '#/db/schema/users';
 import { entityTables } from '#/entity-config';
 import { type Env, getContextMemberships, getContextUser } from '#/lib/context';
-import { ApiError } from '#/lib/errors';
+import { AppError } from '#/lib/errors';
 import { checkSlugAvailable } from '#/modules/entities/helpers/check-slug';
 import { getEntitiesQuery } from '#/modules/entities/helpers/entities-query';
 import { processEntitiesData } from '#/modules/entities/helpers/process-entities-data';
@@ -78,7 +77,7 @@ const entityRouteHandlers = app
 
     const table = entityTables[type];
     const entityIdField = appConfig.entityIdFields[type];
-    if (!table) throw new ApiError({ status: 404, type: 'not_found', severity: 'warn', entityType: type });
+    if (!table) throw new AppError({ status: 404, type: 'not_found', severity: 'warn', entityType: type });
 
     const orderColumn = getOrderColumn({ name: table.name, createdAt: table.createdAt }, sort, table.createdAt);
 

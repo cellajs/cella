@@ -8,7 +8,7 @@ import { attachmentsTable } from '#/db/schema/attachments';
 import { organizationsTable } from '#/db/schema/organizations';
 import { env } from '#/env';
 import { type Env, getContextMemberships, getContextOrganization, getContextUser } from '#/lib/context';
-import { ApiError } from '#/lib/errors';
+import { AppError } from '#/lib/errors';
 import { processAttachmentUrls, processAttachmentUrlsBatch } from '#/modules/attachments/helpers/process-attachment-urls';
 import attachmentRoutes from '#/modules/attachments/routes';
 import { getValidProductEntity } from '#/permissions/get-product-entity';
@@ -36,7 +36,7 @@ const attachmentsRouteHandlers = app
     const [requestedOrganizationId] = [...whereParam.matchAll(/organization_id = '([^']+)'/g)].map((m) => m[1]);
 
     if (requestedOrganizationId !== organization.id) {
-      throw new ApiError({ status: 403, type: 'forbidden', severity: 'warn', meta: { toastMessage: 'Denied: organization mismatch.' } });
+      throw new AppError({ status: 403, type: 'forbidden', severity: 'warn', meta: { toastMessage: 'Denied: organization mismatch.' } });
     }
 
     // Construct the upstream URL
@@ -66,7 +66,7 @@ const attachmentsRouteHandlers = app
       return new Response(body, { status, statusText, headers: newHeaders });
     } catch (err) {
       const error = err instanceof Error ? err : new Error('Unknown electric error');
-      throw new ApiError({
+      throw new AppError({
         name: error.name,
         message: error.message,
         status: 500,
@@ -87,7 +87,7 @@ const attachmentsRouteHandlers = app
     const attachmentRestrictions = organization.restrictions.attachment;
 
     if (attachmentRestrictions !== 0 && newAttachments.length > attachmentRestrictions) {
-      throw new ApiError({ status: 403, type: 'restrict_by_org', severity: 'warn', entityType: 'attachment' });
+      throw new AppError({ status: 403, type: 'restrict_by_org', severity: 'warn', entityType: 'attachment' });
     }
 
     const [{ currentAttachments }] = await db
@@ -96,7 +96,7 @@ const attachmentsRouteHandlers = app
       .where(eq(attachmentsTable.organizationId, organization.id));
 
     if (attachmentRestrictions !== 0 && currentAttachments + newAttachments.length > attachmentRestrictions) {
-      throw new ApiError({ status: 403, type: 'restrict_by_org', severity: 'warn', entityType: 'attachment' });
+      throw new AppError({ status: 403, type: 'restrict_by_org', severity: 'warn', entityType: 'attachment' });
     }
 
     const user = getContextUser();
@@ -162,7 +162,7 @@ const attachmentsRouteHandlers = app
       // Retrieve target attachment
       const [targetAttachment] = await db.select().from(attachmentsTable).where(eq(attachmentsTable.id, attachmentId)).limit(1);
       if (!targetAttachment) {
-        throw new ApiError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'attachment', meta: { attachmentId } });
+        throw new AppError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'attachment', meta: { attachmentId } });
       }
 
       const items = await processAttachmentUrlsBatch([targetAttachment]);
@@ -236,11 +236,11 @@ const attachmentsRouteHandlers = app
 
     // Convert the ids to an array
     const toDeleteIds = Array.isArray(ids) ? ids : [ids];
-    if (!toDeleteIds.length) throw new ApiError({ status: 400, type: 'invalid_request', severity: 'warn', entityType: 'attachment' });
+    if (!toDeleteIds.length) throw new AppError({ status: 400, type: 'invalid_request', severity: 'warn', entityType: 'attachment' });
 
     const { allowedIds, disallowedIds: rejectedItems } = await splitByAllowance('delete', 'attachment', toDeleteIds, memberships);
 
-    if (!allowedIds.length) throw new ApiError({ status: 403, type: 'forbidden', severity: 'warn', entityType: 'attachment' });
+    if (!allowedIds.length) throw new AppError({ status: 403, type: 'forbidden', severity: 'warn', entityType: 'attachment' });
 
     // Delete the attachments
     await db.delete(attachmentsTable).where(inArray(attachmentsTable.id, allowedIds));
@@ -257,7 +257,7 @@ const attachmentsRouteHandlers = app
 
     const [attachment] = await db.select().from(attachmentsTable).where(eq(attachmentsTable.id, id));
 
-    if (!attachment) throw new ApiError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'attachment' });
+    if (!attachment) throw new AppError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'attachment' });
 
     // let createdByUser: UserModel | undefined;
 
@@ -285,10 +285,10 @@ const attachmentsRouteHandlers = app
     const { id } = ctx.req.valid('param');
 
     const [attachment] = await db.select().from(attachmentsTable).where(eq(attachmentsTable.id, id));
-    if (!attachment) throw new ApiError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'attachment' });
+    if (!attachment) throw new AppError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'attachment' });
 
     const [organization] = await db.select().from(organizationsTable).where(eq(organizationsTable.id, attachment.organizationId));
-    if (!organization) throw new ApiError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'organization' });
+    if (!organization) throw new AppError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'organization' });
 
     const url = new URL(`${appConfig.frontendUrl}/organizations/${organization.slug}/attachments`);
     url.searchParams.set('attachmentDialogId', attachment.id);

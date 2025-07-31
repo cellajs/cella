@@ -1,14 +1,14 @@
+import type { z } from '@hono/zod-openapi';
+import * as Sentry from '@sentry/node';
+import { appConfig } from 'config';
+import type { ErrorHandler } from 'hono';
+import i18n from 'i18next';
 import { type Env, getContextOrganization, getContextUser } from '#/lib/context';
 import type locales from '#/lib/i18n-locales';
 import { logToExternal } from '#/middlewares/logger/external-logger';
 import { getIsoDate } from '#/utils/iso-date';
 import { getNodeLoggerLevel } from '#/utils/logger';
 import type { errorSchema } from '#/utils/schema/error';
-import type { z } from '@hono/zod-openapi';
-import * as Sentry from '@sentry/node';
-import { appConfig } from 'config';
-import type { ErrorHandler } from 'hono';
-import i18n from 'i18next';
 
 type ErrorSchemaType = z.infer<typeof errorSchema>;
 type ErrorMeta = { readonly [key: string]: number | string | boolean | null };
@@ -28,8 +28,8 @@ type ConstructedError = {
   redirectToFrontend?: boolean;
 };
 
-// Custom error class to handle API errors
-export class ApiError extends Error {
+// Custom error class to handle App errors
+export class AppError extends Error {
   name: Error['name'];
   status: ErrorSchemaType['status'];
   type: ErrorSchemaType['type'];
@@ -61,12 +61,12 @@ export class ApiError extends Error {
   }
 }
 
-export const handleApiError: ErrorHandler<Env> = (err, ctx) => {
-  // Normalize error to ApiError if possible
+export const handleAppError: ErrorHandler<Env> = (err, ctx) => {
+  // Normalize error to AppError if possible
   const apiError =
-    err instanceof ApiError
+    err instanceof AppError
       ? err
-      : new ApiError({
+      : new AppError({
           name: err.name ?? 'ApiError',
           status: 500,
           type: 'server_error',

@@ -5,7 +5,7 @@ import { db } from '#/db/db';
 import { membershipsTable } from '#/db/schema/memberships';
 import { organizationsTable } from '#/db/schema/organizations';
 import { type Env, getContextMemberships, getContextUser } from '#/lib/context';
-import { ApiError } from '#/lib/errors';
+import { AppError } from '#/lib/errors';
 import { sendSSEToUsers } from '#/lib/sse';
 import { checkSlugAvailable } from '#/modules/entities/helpers/check-slug';
 import { getMemberCountsQuery, getRelatedEntityCountsQuery } from '#/modules/entities/helpers/counts';
@@ -38,11 +38,11 @@ const organizationRouteHandlers = app
       return m.contextType === 'organization' && m.createdBy === user.id ? count + 1 : count;
     }, 0);
 
-    if (createdOrgsCount === 5) throw new ApiError({ status: 403, type: 'restrict_by_app', severity: 'warn', entityType: 'organization' });
+    if (createdOrgsCount === 5) throw new AppError({ status: 403, type: 'restrict_by_app', severity: 'warn', entityType: 'organization' });
 
     // Check if slug is available
     const slugAvailable = await checkSlugAvailable(slug);
-    if (!slugAvailable) throw new ApiError({ status: 409, type: 'slug_exists', severity: 'warn', entityType: 'organization', meta: { slug } });
+    if (!slugAvailable) throw new AppError({ status: 409, type: 'slug_exists', severity: 'warn', entityType: 'organization', meta: { slug } });
 
     const [createdOrganization] = await db
       .insert(organizationsTable)
@@ -140,11 +140,11 @@ const organizationRouteHandlers = app
 
     // Convert the ids to an array
     const toDeleteIds = Array.isArray(ids) ? ids : [ids];
-    if (!toDeleteIds.length) throw new ApiError({ status: 400, type: 'invalid_request', severity: 'error', entityType: 'organization' });
+    if (!toDeleteIds.length) throw new AppError({ status: 400, type: 'invalid_request', severity: 'error', entityType: 'organization' });
 
     // Split ids into allowed and disallowed
     const { allowedIds, disallowedIds: rejectedItems } = await splitByAllowance('delete', 'organization', toDeleteIds, memberships);
-    if (!allowedIds.length) throw new ApiError({ status: 403, type: 'forbidden', severity: 'warn', entityType: 'organization' });
+    if (!allowedIds.length) throw new AppError({ status: 403, type: 'forbidden', severity: 'warn', entityType: 'organization' });
 
     // Get ids of members for organizations
     const memberIds = await db
@@ -207,7 +207,7 @@ const organizationRouteHandlers = app
 
     if (slug && slug !== organization.slug) {
       const slugAvailable = await checkSlugAvailable(slug);
-      if (!slugAvailable) throw new ApiError({ status: 409, type: 'slug_exists', severity: 'warn', entityType: 'organization', meta: { slug } });
+      if (!slugAvailable) throw new AppError({ status: 409, type: 'slug_exists', severity: 'warn', entityType: 'organization', meta: { slug } });
     }
 
     const [updatedOrganization] = await db

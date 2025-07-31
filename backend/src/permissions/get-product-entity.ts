@@ -1,7 +1,7 @@
 import { appConfig, type ContextEntityType, type ProductEntityType } from 'config';
 import { getContextMemberships, getContextOrganization, getContextUser } from '#/lib/context';
 import { type EntityModel, resolveEntity } from '#/lib/entity';
-import { ApiError } from '#/lib/errors';
+import { AppError } from '#/lib/errors';
 import { checkPermission } from '#/permissions/check-if-allowed';
 import type { PermittedAction } from '#/permissions/permissions-config';
 
@@ -33,11 +33,11 @@ export const getValidProductEntity = async <K extends ProductEntityType>(
 
   // Step 1: Resolve entity
   const entity = await resolveEntity(entityType, idOrSlug);
-  if (!entity) throw new ApiError({ status: 404, type: 'not_found', severity: 'warn', entityType });
+  if (!entity) throw new AppError({ status: 404, type: 'not_found', severity: 'warn', entityType });
 
   // Step 2: Permission check
   const isAllowed = checkPermission(memberships, action, entity);
-  if (!isAllowed) throw new ApiError({ status: 403, type: 'forbidden', severity: 'warn', entityType });
+  if (!isAllowed) throw new AppError({ status: 403, type: 'forbidden', severity: 'warn', entityType });
 
   // Step 3: Membership check
   const entityIdField = appConfig.entityIdFields[contextEntityType];
@@ -45,12 +45,12 @@ export const getValidProductEntity = async <K extends ProductEntityType>(
 
   const membership = memberships.find((m) => m.contextType === contextEntityType && m[entityIdField] === entityId) || null;
 
-  if (!membership && !isSystemAdmin) throw new ApiError({ status: 400, type: 'invalid_request', severity: 'error', entityType });
+  if (!membership && !isSystemAdmin) throw new AppError({ status: 400, type: 'invalid_request', severity: 'error', entityType });
 
   // Step 4: Organization check
   const org = getContextOrganization();
   if (membership?.organizationId && org && membership.organizationId !== org.id) {
-    throw new ApiError({ status: 400, type: 'invalid_request', severity: 'error', entityType });
+    throw new AppError({ status: 400, type: 'invalid_request', severity: 'error', entityType });
   }
   return entity;
 };
