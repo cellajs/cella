@@ -1,4 +1,4 @@
-import { config, type Severity } from 'config';
+import { appConfig, type Severity } from 'config';
 import { logToExternal } from '#/middlewares/logger/external-logger';
 import { pinoLogger } from '#/pino-config';
 
@@ -19,9 +19,9 @@ export const logEvent = ({ msg, meta, severity = 'info' }: { msg: string; meta?:
 };
 
 export const getNodeLoggerLevel = (severity: Severity): 'error' | 'warn' | 'info' | 'debug' => {
-  const severityValue = config.severityLevels[severity];
-  if (severityValue >= config.severityLevels.error) return 'error';
-  if (severityValue >= config.severityLevels.warn) return 'warn';
-  if (severityValue >= config.severityLevels.info) return 'info';
+  const severityValue = appConfig.severityLevels[severity];
+  if (severityValue >= appConfig.severityLevels.error) return 'error';
+  if (severityValue >= appConfig.severityLevels.warn) return 'warn';
+  if (severityValue >= appConfig.severityLevels.info) return 'info';
   return 'debug';
 };

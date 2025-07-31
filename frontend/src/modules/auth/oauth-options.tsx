@@ -1,5 +1,5 @@
 import { useSearch } from '@tanstack/react-router';
-import { config, type EnabledOauthProvider } from 'config';
+import { appConfig, type EnabledOauthProvider } from 'config';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Step } from '~/modules/auth/types';
@@ -39,7 +39,7 @@ const OauthOptions = ({ actionType = 'signIn' }: OauthOptionsProps) => {
     try {
       setLoadingProvider(provider);
 
-      const baseUrl = `${config.backendAuthUrl}/${provider}`;
+      const baseUrl = `${appConfig.backendAuthUrl}/${provider}`;
       const params = new URLSearchParams();
 
       params.set('redirect', redirectPath);
@@ -56,11 +56,11 @@ const OauthOptions = ({ actionType = 'signIn' }: OauthOptionsProps) => {
     }
   };
 
-  if (config.enabledOauthProviders.length < 1) return null;
+  if (appConfig.enabledOauthProviders.length < 1) return null;
 
   return (
     <div data-mode={mode} className="group flex flex-col space-y-2">
-      {config.enabledOauthProviders.map((provider) => {
+      {appConfig.enabledOauthProviders.map((provider) => {
         // Map provider data
         const providerData = mapOauthProviders.find((p): p is OauthProviders & { id: typeof provider } => p.id === provider);
 

@@ -1,5 +1,5 @@
 import { onlineManager } from '@tanstack/react-query';
-import { config, type Language } from 'config';
+import { appConfig, type Language } from 'config';
 import i18n from 'i18next';
 import { useTranslation } from 'react-i18next';
 import { updateMe } from '~/api.gen';
@@ -34,7 +34,7 @@ const UserLanguage = ({ align = 'end', triggerClassName = '', contentClassName =
     });
   };
 
-  if (config.languages.length < 2) return null;
+  if (appConfig.languages.length < 2) return null;
 
   return (
     <DropdownMenu>
@@ -44,7 +44,7 @@ const UserLanguage = ({ align = 'end', triggerClassName = '', contentClassName =
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align={align} className={cn('w-48 p-1', contentClassName)}>
-        {config.languages.map((lang) => (
+        {appConfig.languages.map((lang) => (
           <DropdownMenuCheckboxItem
             key={lang}
             checked={language === lang}

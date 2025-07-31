@@ -7,17 +7,22 @@ import AttachmentsCarousel from '~/modules/attachments/carousel';
 import { groupedAttachmentsQueryOptions } from '~/modules/attachments/query';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import Spinner from '~/modules/common/spinner';
+import type { CustomUppyFile } from '~/modules/common/uploader/types';
 
 interface AttachmentDialogProps {
   attachmentId: string;
   orgIdOrSlug: string;
+  localAttachment?: CustomUppyFile;
 }
 
-const AttachmentDialog = ({ attachmentId, orgIdOrSlug }: AttachmentDialogProps) => {
+const AttachmentDialog = ({ attachmentId, orgIdOrSlug, localAttachment }: AttachmentDialogProps) => {
   const { t } = useTranslation();
   const { isOnline } = useOnlineManager();
 
-  const { data, isError, isLoading } = useQuery({ ...groupedAttachmentsQueryOptions({ attachmentId, orgIdOrSlug }), enabled: isOnline });
+  const { data, error, isLoading } = useQuery({
+    ...groupedAttachmentsQueryOptions({ attachmentId, orgIdOrSlug }),
+    enabled: isOnline && !localAttachment,
+  });
 
   const attachments = useMemo(() => data?.items ?? [], [data?.items]);
 
@@ -26,7 +31,11 @@ const AttachmentDialog = ({ attachmentId, orgIdOrSlug }: AttachmentDialogProps) 
     return index === -1 ? 0 : index;
   }, [attachmentId, attachments]);
 
-  if (isError) return <ContentPlaceholder icon={ServerCrash} title={t('error:request_failed')} />;
+  if (localAttachment?.preview) {
+    return <AttachmentsCarousel items={[{ ...localAttachment, url: localAttachment.preview }]} isDialog saveInSearchParams={false} />;
+  }
+
+  if (error) return <ContentPlaceholder icon={ServerCrash} title={t('error:request_failed')} />;
 
   // Show a loading spinner if no cache exists and data is still loading
   if (isLoading) {

@@ -1,5 +1,5 @@
 import { useSearch } from '@tanstack/react-router';
-import { config } from 'config';
+import { appConfig } from 'config';
 import { Lock } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -17,7 +17,7 @@ import Spinner from '~/modules/common/spinner';
 import { AuthenticateRoute } from '~/routes/auth';
 import { useUserStore } from '~/store/user';
 
-const enabledStrategies: readonly string[] = config.enabledAuthStrategies;
+const enabledStrategies: readonly string[] = appConfig.enabledAuthStrategies;
 const emailEnabled = enabledStrategies.includes('password') || enabledStrategies.includes('passkey');
 
 const AuthSteps = () => {
@@ -76,7 +76,7 @@ const AuthSteps = () => {
       {step === 'inviteOnly' && (
         <>
           <h1 className="text-2xl text-center pb-2 mt-4">{t('common:hi')}</h1>
-          <h2 className="text-xl text-center pb-4 mt-4">{t('common:invite_only.text', { appName: config.name })}</h2>
+          <h2 className="text-xl text-center pb-4 mt-4">{t('common:invite_only.text', { appName: appConfig.name })}</h2>
         </>
       )}
 

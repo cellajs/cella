@@ -1,6 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation } from '@tanstack/react-query';
-import { config } from 'config';
+import { appConfig } from 'config';
 import { ArrowRight } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
@@ -26,7 +26,7 @@ export const CheckEmailForm = ({ setStep, emailEnabled }: CheckEmailProps) => {
   const { t } = useTranslation();
 
   const isMobile = window.innerWidth < 640;
-  const title = config.has.registrationEnabled ? t('common:sign_in_or_up') : t('common:sign_in');
+  const title = appConfig.has.registrationEnabled ? t('common:sign_in_or_up') : t('common:sign_in');
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -40,9 +40,9 @@ export const CheckEmailForm = ({ setStep, emailEnabled }: CheckEmailProps) => {
       let nextStep: Step = 'inviteOnly';
 
       // If registration is enabled or user has a token, proceed to sign up
-      if (config.has.registrationEnabled) nextStep = 'signUp';
+      if (appConfig.has.registrationEnabled) nextStep = 'signUp';
       // If registration is disabled and user has no token, proceed to waitlist
-      else if (config.has.waitlist) nextStep = 'waitlist';
+      else if (appConfig.has.waitlist) nextStep = 'waitlist';
 
       if (error.status === 404) return setStep(nextStep, form.getValues('email'));
       return null;

@@ -1,14 +1,9 @@
-import { OpenAPIHono } from '@hono/zod-openapi';
-import { config } from 'config';
-import { and, count, eq, ilike, inArray, like, notLike, or, type SQL } from 'drizzle-orm';
-import { html, raw } from 'hono/html';
-import { stream } from 'hono/streaming';
 import { db } from '#/db/db';
 import { attachmentsTable } from '#/db/schema/attachments';
 import { organizationsTable } from '#/db/schema/organizations';
 import { env } from '#/env';
 import { type Env, getContextMemberships, getContextOrganization, getContextUser } from '#/lib/context';
-import { ApiError } from '#/lib/errors';
+import { AppError } from '#/lib/errors';
 import { processAttachmentUrls, processAttachmentUrlsBatch } from '#/modules/attachments/helpers/process-attachment-urls';
 import attachmentRoutes from '#/modules/attachments/routes';
 import { getValidProductEntity } from '#/permissions/get-product-entity';
@@ -19,6 +14,11 @@ import { logEvent } from '#/utils/logger';
 import { nanoid } from '#/utils/nanoid';
 import { getOrderColumn } from '#/utils/order-column';
 import { prepareStringForILikeFilter } from '#/utils/sql';
+import { OpenAPIHono } from '@hono/zod-openapi';
+import { appConfig } from 'config';
+import { and, count, eq, ilike, inArray, or, type SQL } from 'drizzle-orm';
+import { html, raw } from 'hono/html';
+import { stream } from 'hono/streaming';
 
 const app = new OpenAPIHono<Env>({ defaultHook });
 
@@ -36,11 +36,11 @@ const attachmentsRouteHandlers = app
     const [requestedOrganizationId] = [...whereParam.matchAll(/organization_id = '([^']+)'/g)].map((m) => m[1]);
 
     if (requestedOrganizationId !== organization.id) {
-      throw new ApiError({ status: 403, type: 'forbidden', severity: 'warn', meta: { toastMessage: 'Denied: organization mismatch.' } });
+      throw new AppError({ status: 403, type: 'forbidden', severity: 'warn', meta: { toastMessage: 'Denied: organization mismatch.' } });
     }
 
     // Construct the upstream URL
-    const originUrl = new URL(`${config.electricUrl}/v1/shape?table=attachments&api_secret=${env.ELECTRIC_API_SECRET}`);
+    const originUrl = new URL(`${appConfig.electricUrl}/v1/shape?table=attachments&api_secret=${env.ELECTRIC_API_SECRET}`);
 
     // Copy over the relevant query params that the Electric client adds
     // so that we return the right part of the Shape log.
@@ -66,7 +66,7 @@ const attachmentsRouteHandlers = app
       return new Response(body, { status, statusText, headers: newHeaders });
     } catch (err) {
       const error = err instanceof Error ? err : new Error('Unknown electric error');
-      throw new ApiError({
+      throw new AppError({
         name: error.name,
         message: error.message,
         status: 500,
@@ -87,7 +87,7 @@ const attachmentsRouteHandlers = app
     const attachmentRestrictions = organization.restrictions.attachment;
 
     if (attachmentRestrictions !== 0 && newAttachments.length > attachmentRestrictions) {
-      throw new ApiError({ status: 403, type: 'restrict_by_org', severity: 'warn', entityType: 'attachment' });
+      throw new AppError({ status: 403, type: 'restrict_by_org', severity: 'warn', entityType: 'attachment' });
     }
 
     const [{ currentAttachments }] = await db
@@ -96,7 +96,7 @@ const attachmentsRouteHandlers = app
       .where(eq(attachmentsTable.organizationId, organization.id));
 
     if (attachmentRestrictions !== 0 && currentAttachments + newAttachments.length > attachmentRestrictions) {
-      throw new ApiError({ status: 403, type: 'restrict_by_org', severity: 'warn', entityType: 'attachment' });
+      throw new AppError({ status: 403, type: 'restrict_by_org', severity: 'warn', entityType: 'attachment' });
     }
 
     const user = getContextUser();
@@ -124,22 +124,10 @@ const attachmentsRouteHandlers = app
   .openapi(attachmentRoutes.getAttachments, async (ctx) => {
     const { q, sort, order, offset, limit, attachmentId } = ctx.req.valid('query');
 
-    const user = getContextUser();
     const organization = getContextOrganization();
 
     // Filter at least by valid organization
-    const filters: SQL[] = [
-      eq(attachmentsTable.organizationId, organization.id),
-      // If s3 is off, show attachments that not have a public CDN URL only to users that create it because in that case attachments stored in IndexedDB
-      ...(!config.has.uploadEnabled
-        ? [
-            or(
-              and(eq(attachmentsTable.createdBy, user.id), like(attachmentsTable.originalKey, 'blob:http%')),
-              notLike(attachmentsTable.originalKey, 'blob:http%'),
-            ) as SQL,
-          ]
-        : []),
-    ];
+    const filters = [eq(attachmentsTable.organizationId, organization.id)];
 
     if (q) {
       const query = prepareStringForILikeFilter(q);
@@ -162,7 +150,7 @@ const attachmentsRouteHandlers = app
       // Retrieve target attachment
       const [targetAttachment] = await db.select().from(attachmentsTable).where(eq(attachmentsTable.id, attachmentId)).limit(1);
       if (!targetAttachment) {
-        throw new ApiError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'attachment', meta: { attachmentId } });
+        throw new AppError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'attachment', meta: { attachmentId } });
       }
 
       const items = await processAttachmentUrlsBatch([targetAttachment]);
@@ -236,11 +224,11 @@ const attachmentsRouteHandlers = app
 
     // Convert the ids to an array
     const toDeleteIds = Array.isArray(ids) ? ids : [ids];
-    if (!toDeleteIds.length) throw new ApiError({ status: 400, type: 'invalid_request', severity: 'warn', entityType: 'attachment' });
+    if (!toDeleteIds.length) throw new AppError({ status: 400, type: 'invalid_request', severity: 'warn', entityType: 'attachment' });
 
     const { allowedIds, disallowedIds: rejectedItems } = await splitByAllowance('delete', 'attachment', toDeleteIds, memberships);
 
-    if (!allowedIds.length) throw new ApiError({ status: 403, type: 'forbidden', severity: 'warn', entityType: 'attachment' });
+    if (!allowedIds.length) throw new AppError({ status: 403, type: 'forbidden', severity: 'warn', entityType: 'attachment' });
 
     // Delete the attachments
     await db.delete(attachmentsTable).where(inArray(attachmentsTable.id, allowedIds));
@@ -257,7 +245,7 @@ const attachmentsRouteHandlers = app
 
     const [attachment] = await db.select().from(attachmentsTable).where(eq(attachmentsTable.id, id));
 
-    if (!attachment) throw new ApiError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'attachment' });
+    if (!attachment) throw new AppError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'attachment' });
 
     // let createdByUser: UserModel | undefined;
 
@@ -285,12 +273,12 @@ const attachmentsRouteHandlers = app
     const { id } = ctx.req.valid('param');
 
     const [attachment] = await db.select().from(attachmentsTable).where(eq(attachmentsTable.id, id));
-    if (!attachment) throw new ApiError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'attachment' });
+    if (!attachment) throw new AppError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'attachment' });
 
     const [organization] = await db.select().from(organizationsTable).where(eq(organizationsTable.id, attachment.organizationId));
-    if (!organization) throw new ApiError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'organization' });
+    if (!organization) throw new AppError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'organization' });
 
-    const url = new URL(`${config.frontendUrl}/organizations/${organization.slug}/attachments`);
+    const url = new URL(`${appConfig.frontendUrl}/organizations/${organization.slug}/attachments`);
     url.searchParams.set('attachmentDialogId', attachment.id);
     if (attachment.groupId) url.searchParams.set('groupId', attachment.groupId);
 
@@ -308,8 +296,8 @@ const attachmentsRouteHandlers = app
           <meta property="og:url" content="${redirectUrl}" />
 
           <meta property="og:type" content="website" />
-          <meta property="og:site_name" content="${config.name}" />
-          <meta property="og:locale" content="${config.defaultLanguage}" />
+          <meta property="og:site_name" content="${appConfig.name}" />
+          <meta property="og:locale" content="${appConfig.defaultLanguage}" />
           <link rel="logo" type="image/png" href="/static/logo/logo.png" />
           <link rel="icon" type="image/png" sizes="512x512" href="/static/icons/icon-512x512.png" />
           <link rel="icon" type="image/png" sizes="192x192" href="/static/icons/icon-192x192.png" />

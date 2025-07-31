@@ -1,18 +1,18 @@
-import 'react-data-grid/lib/styles.css';
-import { config } from 'config';
+import { appConfig } from 'config';
 import { Search } from 'lucide-react';
 import { type Key, type ReactNode, useEffect, useRef, useState } from 'react';
 import { type CellMouseArgs, type CellMouseEvent, DataGrid, type RenderRowProps, type RowsChangeData, type SortColumn } from 'react-data-grid';
+import 'react-data-grid/lib/styles.css';
 import { useTranslation } from 'react-i18next';
 import { useInView } from 'react-intersection-observer';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { useOnlineManager } from '~/hooks/use-online-manager';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
+import '~/modules/common/data-table/style.css';
 import { DataTableSkeleton } from '~/modules/common/data-table/table-skeleton';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 import { useTableTooltip } from '~/modules/common/data-table/use-table-tooltip';
 import { Checkbox } from '~/modules/ui/checkbox';
-import '~/modules/common/data-table/style.css';
 
 interface DataTableProps<TData> {
   columns: ColumnOrColumnGroup<TData>[];
@@ -73,7 +73,7 @@ export const DataTable = <TData,>({
   rowKeyGetter,
   error,
   isLoading,
-  limit = config.requestLimits.default,
+  limit = appConfig.requestLimits.default,
   isFetching,
   NoRowsComponent,
   isFiltered,

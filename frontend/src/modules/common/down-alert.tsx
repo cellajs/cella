@@ -1,4 +1,4 @@
-import { config } from 'config';
+import { appConfig } from 'config';
 import { t } from 'i18next';
 import { AlertTriangle, ClockAlert, CloudOff, Construction, X } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
@@ -81,7 +81,7 @@ export const DownAlert = () => {
     const controller = new AbortController();
 
     (async () => {
-      const isBackendResponsive = await healthCheck({ url: `${config.backendUrl}/ping`, initDelay: 5000, factor: 1, signal: controller.signal });
+      const isBackendResponsive = await healthCheck({ url: `${appConfig.backendUrl}/ping`, initDelay: 5000, factor: 1, signal: controller.signal });
 
       if (isBackendResponsive && !controller.signal.aborted) setDownAlert(null);
     })();

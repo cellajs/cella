@@ -1,4 +1,4 @@
-import { config, type EnabledOauthProvider } from 'config';
+import { appConfig, type EnabledOauthProvider } from 'config';
 import { and, eq, or } from 'drizzle-orm';
 import type { Context } from 'hono';
 import { db } from '#/db/db';
@@ -6,7 +6,7 @@ import { emailsTable } from '#/db/schema/emails';
 import { oauthAccountsTable } from '#/db/schema/oauth-accounts';
 import { tokensTable } from '#/db/schema/tokens';
 import { type UserModel, usersTable } from '#/db/schema/users';
-import { ApiError } from '#/lib/errors';
+import { AppError } from '#/lib/errors';
 import { getAuthCookie } from '#/modules/auth/helpers/cookie';
 import type { Provider } from '#/modules/auth/helpers/oauth/oauth-providers';
 import type { TransformedUser } from '#/modules/auth/helpers/oauth/transform-user-data';
@@ -20,9 +20,9 @@ import { getIsoDate } from '#/utils/iso-date';
 export const getOauthRedirectUrl = async (ctx: Context, firstSignIn?: boolean) => {
   const redirectCookie = await getAuthCookie(ctx, 'oauth_redirect');
 
-  const baseRedirect = redirectCookie || (firstSignIn && config.welcomeRedirectPath) || config.defaultRedirectPath;
+  const baseRedirect = redirectCookie || (firstSignIn && appConfig.welcomeRedirectPath) || appConfig.defaultRedirectPath;
 
-  return isRedirectUrl(baseRedirect) ? baseRedirect : `${config.frontendUrl}${baseRedirect}`;
+  return isRedirectUrl(baseRedirect) ? baseRedirect : `${appConfig.frontendUrl}${baseRedirect}`;
 };
 
 export const handleExistingUser = async (
@@ -47,7 +47,7 @@ export const handleExistingUser = async (
 
   // Ensure the correct user is linking their account
   if (existingOauth && connectUserId && existingOauth.userId !== connectUserId) {
-    throw new ApiError({ status: 403, type: 'oauth_mismatch', severity: 'warn', redirectToFrontend: true });
+    throw new AppError({ status: 403, type: 'oauth_mismatch', severity: 'warn', redirectToFrontend: true });
   }
 
   // Set the user session and redirect
@@ -87,7 +87,7 @@ const updateExistingUser = async (ctx: Context, existingUser: UserModel, provide
   // Send verification email if not verified and redirect to verify page
   if (!emailVerified) {
     sendVerificationEmail(providerUser.id);
-    return ctx.redirect(`${config.frontendUrl}/auth/email-verification`, 302);
+    return ctx.redirect(`${appConfig.frontendUrl}/auth/email-verification`, 302);
   }
 
   await db

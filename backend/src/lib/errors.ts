@@ -6,15 +6,15 @@ import { getNodeLoggerLevel } from '#/utils/logger';
 import type { errorSchema } from '#/utils/schema/error';
 import type { z } from '@hono/zod-openapi';
 import * as Sentry from '@sentry/node';
-import { config } from 'config';
+import { appConfig } from 'config';
 import type { ErrorHandler } from 'hono';
 import i18n from 'i18next';
 
 type ErrorSchemaType = z.infer<typeof errorSchema>;
-export type ErrorMeta = { readonly [key: string]: number | string | boolean | null };
+type ErrorMeta = { readonly [key: string]: number | string | boolean | null };
 
 type AllErrorKeys = keyof (typeof locales)['en']['error'];
-export type ErrorKey = Exclude<AllErrorKeys, `${string}.text`>;
+type ErrorKey = Exclude<AllErrorKeys, `${string}.text`>;
 
 type ConstructedError = {
   type: ErrorKey;
@@ -28,8 +28,8 @@ type ConstructedError = {
   redirectToFrontend?: boolean;
 };
 
-// Custom error class to handle API errors
-export class ApiError extends Error {
+// Custom error class to handle App errors
+export class AppError extends Error {
   name: Error['name'];
   status: ErrorSchemaType['status'];
   type: ErrorSchemaType['type'];
@@ -61,12 +61,12 @@ export class ApiError extends Error {
   }
 }
 
-export const handleApiError: ErrorHandler<Env> = (err, ctx) => {
-  // Normalize error to ApiError if possible
+export const handleAppError: ErrorHandler<Env> = (err, ctx) => {
+  // Normalize error to AppError if possible
   const apiError =
-    err instanceof ApiError
+    err instanceof AppError
       ? err
-      : new ApiError({
+      : new AppError({
           name: err.name ?? 'ApiError',
           status: 500,
           type: 'server_error',
@@ -112,7 +112,7 @@ export const handleApiError: ErrorHandler<Env> = (err, ctx) => {
 
   // Redirect to the frontend error page with query parameters for error details
   if (redirectToFrontend) {
-    const redirectUrl = `${config.frontendUrl}/error?error=${type}&severity=${severity}`;
+    const redirectUrl = `${appConfig.frontendUrl}/error?error=${type}&severity=${severity}`;
     return ctx.redirect(redirectUrl, 302);
   }
 

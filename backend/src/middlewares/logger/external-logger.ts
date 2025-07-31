@@ -1,5 +1,5 @@
 import { Logtail as BetterStackLogger } from '@logtail/node';
-import { config, type Severity } from 'config';
+import { appConfig, type Severity } from 'config';
 import { getNodeLoggerLevel } from '#/utils/logger';
 import { env } from '../../env';
 
@@ -16,5 +16,5 @@ export const logToExternal = (severity: Severity, message: string, meta?: object
   if (!externalLogger) return;
 
   const level = getNodeLoggerLevel(severity);
-  externalLogger[level](message, { ...(meta ?? {}), severityCode: config.severityLevels[severity] });
+  externalLogger[level](message, { ...(meta ?? {}), severityCode: appConfig.severityLevels[severity] });
 };

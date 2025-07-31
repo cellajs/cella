@@ -1,5 +1,5 @@
 import { Link, useNavigate } from '@tanstack/react-router';
-import { config } from 'config';
+import { appConfig } from 'config';
 import { Github } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -108,17 +108,17 @@ export const MarketingNav = () => {
 
             <UserTheme buttonClassName="max-xs:hidden mr-2" />
 
-            {config.company.githubUrl && (
+            {appConfig.company.githubUrl && (
               <Button
                 variant="ghost"
                 aria-label="Github repository"
                 className="max-sm:hidden"
                 size="icon"
                 onClick={() => {
-                  openInNewTab(config.company.githubUrl);
+                  openInNewTab(appConfig.company.githubUrl);
                 }}
               >
-                <Github strokeWidth={config.theme.strokeWidth} />
+                <Github strokeWidth={appConfig.theme.strokeWidth} />
               </Button>
             )}
 
@@ -148,16 +148,16 @@ export const MarketingNav = () => {
               <UserTheme buttonClassName="absolute top-5 right-5 xs:hidden" />
             </div>
             {renderNavItems()}
-            {config.company.githubUrl && (
+            {appConfig.company.githubUrl && (
               <Button
                 size="lg"
                 className="sm:hidden"
                 onClick={() => {
                   setShowSheet(false);
-                  openInNewTab(config.company.githubUrl);
+                  openInNewTab(appConfig.company.githubUrl);
                 }}
               >
-                <Github className="mr-2" strokeWidth={config.theme.strokeWidth} />
+                <Github className="mr-2" strokeWidth={appConfig.theme.strokeWidth} />
                 Github
               </Button>
             )}

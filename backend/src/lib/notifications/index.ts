@@ -1,6 +1,6 @@
 import { Novu } from '@novu/api';
 import { UpdateSubscriberChannelRequestDtoProviderId as ProviderEnum } from '@novu/api/models/components';
-import { config } from 'config';
+import { appConfig } from 'config';
 import { novuConfig } from '#/lib/notifications/novu-config';
 import { logEvent } from '#/utils/logger';
 
@@ -11,15 +11,15 @@ export const sendSlackMessage = async (prefix: string, email: string) => {
   try {
     const { secretKey, serverURL, slackWebhookUrl, subscriberId, workflowId } = novuConfig;
 
-    if (!secretKey || !slackWebhookUrl) return logEvent({ msg: 'Missing required Novu config values (API key or Slack webhook).' });
+    if (!secretKey || !slackWebhookUrl) return logEvent({ msg: 'Missing required Novu appConfig values (API key or Slack webhook).' });
 
     const novu = new Novu({ secretKey, serverURL });
 
     // Upsert subscriber to ensure it's created or reused
     await novu.subscribers.create({
       subscriberId,
-      firstName: config.company.name,
-      email: config.company.email,
+      firstName: appConfig.company.name,
+      email: appConfig.company.email,
     });
 
     // Set Slack webhook credentials for subscriber

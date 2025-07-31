@@ -1,6 +1,6 @@
 import { onlineManager } from '@tanstack/react-query';
 import { useLoaderData } from '@tanstack/react-router';
-import { config, type EnabledOauthProvider } from 'config';
+import { appConfig, type EnabledOauthProvider } from 'config';
 import { Check, Send, Trash } from 'lucide-react';
 import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -85,7 +85,7 @@ const UserSettingsPage = () => {
 
     // Proceed to OAuth URL with redirect and connect
     try {
-      const baseUrl = `${config.backendAuthUrl}/${provider}`;
+      const baseUrl = `${appConfig.backendAuthUrl}/${provider}`;
       const params = new URLSearchParams({ connect: user.id, type: 'connect', redirect: window.location.href });
 
       const providerUrl = `${baseUrl}?${params.toString()}`;
@@ -148,7 +148,7 @@ const UserSettingsPage = () => {
               </HelpText>
 
               <div className="flex flex-col sm:items-start gap-2 mb-6">
-                {config.enabledOauthProviders.map((id) => {
+                {appConfig.enabledOauthProviders.map((id) => {
                   const provider = mapOauthProviders.find((provider) => provider.id === id);
                   if (!provider) return;
                   if (userAuthInfo.oauth.includes(id))
@@ -196,7 +196,7 @@ const UserSettingsPage = () => {
           <Card className="mx-auto sm:w-full">
             <CardHeader>
               <CardTitle>{t('common:delete_account')}</CardTitle>
-              <CardDescription>{t('common:delete_account.text', { appName: config.name })}</CardDescription>
+              <CardDescription>{t('common:delete_account.text', { appName: appConfig.name })}</CardDescription>
             </CardHeader>
             <CardContent>
               <Button ref={deleteButtonRef} variant="destructive" className="w-full sm:w-auto" onClick={openDeleteDialog}>

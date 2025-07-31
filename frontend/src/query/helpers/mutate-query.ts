@@ -126,7 +126,5 @@ const getExact = <T>(passedQueryKey: QueryKey): [QueryKey, InfiniteQueryData<T> 
  * @returns An array of matching query keys and their corresponding data.
  */
 export const getSimilarQueries = <T>(passedQueryKey: QueryKey): [QueryKey, InfiniteQueryData<T> | QueryData<T> | undefined][] => {
-  return queryClient.getQueriesData<InfiniteQueryData<T> | QueryData<T>>({
-    queryKey: passedQueryKey,
-  });
+  return queryClient.getQueriesData<InfiniteQueryData<T> | QueryData<T>>({ queryKey: passedQueryKey });
 };

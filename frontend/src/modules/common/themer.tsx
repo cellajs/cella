@@ -1,4 +1,4 @@
-import { config, type Theme } from 'config';
+import { appConfig, type Theme } from 'config';
 import { useEffect } from 'react';
 import { type Mode, useUIStore } from '~/store/ui';
 import { hexToHsl } from '~/utils/hex-to-hsl';
@@ -14,7 +14,7 @@ const setThemeColor = (passedTheme: Theme) => {
   if (passedTheme === 'none') return root.classList.remove('theme-base');
   root.classList.add('theme-base');
 
-  const color = config.theme.colors[passedTheme];
+  const color = appConfig.theme.colors[passedTheme];
   // replace comas so tailwind can operate with color var
   const hslColor = hexToHsl(color).replaceAll(',', '');
 

@@ -5,7 +5,7 @@ import { db } from '#/db/db';
 import { type AuthStrategy, type SessionModel, sessionsTable } from '#/db/schema/sessions';
 import { type UserModel, usersTable } from '#/db/schema/users';
 import { env } from '#/env';
-import { ApiError } from '#/lib/errors';
+import { AppError } from '#/lib/errors';
 import { deleteAuthCookie, getAuthCookie, setAuthCookie } from '#/modules/auth/helpers/cookie';
 import { deviceInfo } from '#/modules/auth/helpers/device-info';
 import { userSelect } from '#/modules/users/helpers/select';
@@ -28,7 +28,7 @@ export const setUserSession = async (ctx: Context, user: UserModel, strategy: Au
     const allowList = (env.REMOTE_SYSTEM_ACCESS_IP ?? '').split(',');
     const allowAll = allowList.includes('*');
 
-    if (!allowAll && (!ip || !allowList.includes(ip))) throw new ApiError({ status: 403, type: 'system_access_forbidden', severity: 'warn' });
+    if (!allowAll && (!ip || !allowList.includes(ip))) throw new AppError({ status: 403, type: 'system_access_forbidden', severity: 'warn' });
   }
   // Get device information
   const device = deviceInfo(ctx);

@@ -1,6 +1,6 @@
 import { Link } from '@tanstack/react-router';
 import clsx from 'clsx';
-import { config } from 'config';
+import { appConfig } from 'config';
 import { useTranslation } from 'react-i18next';
 
 import Logo from '~/modules/common/logo';
@@ -10,8 +10,8 @@ import SubscribeNewsletterForm from '~/modules/marketing/subscribe-newsletter-fo
 import { isCDNUrl } from '~/utils/is-cdn-url';
 
 const currentYear = new Date().getFullYear();
-const companyName = config.company.name;
-const productName = config.name;
+const companyName = appConfig.company.name;
+const productName = appConfig.name;
 
 function FooterLinks() {
   const { t } = useTranslation();
@@ -70,7 +70,7 @@ export const MarketingFooter = () => {
             <FooterLinks />
             <div className="">
               <div className="font-display text-sm font-semibold tracking-wider text-white/50">{t('common:request_info')}</div>
-              <div className="mt-4 text-sm text-white/90">{t('common:request_info.text', { appName: config.name })}</div>
+              <div className="mt-4 text-sm text-white/90">{t('common:request_info.text', { appName: appConfig.name })}</div>
               <SubscribeNewsletterForm />
             </div>
           </div>

@@ -1,5 +1,5 @@
 import { useNavigate } from '@tanstack/react-router';
-import { config } from 'config';
+import { appConfig } from 'config';
 import { useEffect, useState } from 'react';
 import { OnboardingCompleted } from '~/modules/home/onboarding/completed';
 import type { OnboardingStates } from '~/modules/home/onboarding/steps';
@@ -14,7 +14,7 @@ const WelcomePage = () => {
   const [onboarding, setOnboarding] = useState<OnboardingStates>(finishedOnboarding ? 'completed' : 'start');
 
   const onOpenChange = () => {
-    navigate({ to: config.defaultRedirectPath, replace: true });
+    navigate({ to: appConfig.defaultRedirectPath, replace: true });
   };
 
   // Close onboarding on escape key if not focused on form

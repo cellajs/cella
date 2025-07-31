@@ -1,21 +1,21 @@
 import { z } from '@hono/zod-openapi';
-import { config } from 'config';
+import { appConfig } from 'config';
 
 /*************************************************************************************************
  * Entity schemas
  ************************************************************************************************/
 
 /** Enum schema for entity types */
-export const entityTypeSchema = z.enum(config.entityTypes);
+export const entityTypeSchema = z.enum(appConfig.entityTypes);
 
 /** Enum schema for page entity types */
-export const pageEntityTypeSchema = z.enum(config.pageEntityTypes);
+export const pageEntityTypeSchema = z.enum(appConfig.pageEntityTypes);
 
 /** Enum schema for context entity types */
-export const contextEntityTypeSchema = z.enum(config.contextEntityTypes);
+export const contextEntityTypeSchema = z.enum(appConfig.contextEntityTypes);
 
 /** Enum schema for product entity types */
-export const productEntityTypeSchema = z.enum(config.productEntityTypes);
+export const productEntityTypeSchema = z.enum(appConfig.productEntityTypes);
 
 /*************************************************************************************************
  * Common properties schemas
@@ -43,7 +43,7 @@ export const idOrSlugSchema = idSchema.or(slugSchema);
 export const passwordSchema = z.string().min(8).max(100);
 
 /** Schema for supported languages (enum) */
-export const languageSchema = z.enum(config.languages);
+export const languageSchema = z.enum(appConfig.languages);
 
 /*************************************************************************************************
  * Common param schemas
@@ -89,7 +89,7 @@ export const paginationQuerySchema = z.object({
   offset: z.string().default('0').optional().refine(offsetRefine, 'Must be number greater or equal to 0'), // Pagination offset
   limit: z
     .string()
-    .default(`${config.requestLimits.default}`)
+    .default(`${appConfig.requestLimits.default}`)
     .optional()
     .refine(limitRefine, 'Must be a number greater than 0 and less than or equal to 1000'), // Pagination limit
 });

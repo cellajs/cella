@@ -1,8 +1,9 @@
 import { useMutation } from '@tanstack/react-query';
-import { config } from 'config';
+import { appConfig } from 'config';
 import { t } from 'i18next';
 import { toast } from 'sonner';
 import { createAttachment, deleteAttachments, updateAttachment } from '~/api.gen';
+import { LocalFileStorage } from '~/modules/attachments/helpers/local-file-storage';
 import { attachmentsKeys } from '~/modules/attachments/query';
 import type {
   Attachment,
@@ -20,7 +21,7 @@ import { formatUpdatedData, getQueryItems, getSimilarQueries } from '~/query/hel
 import { queryClient } from '~/query/query-client';
 import { nanoid } from '~/utils/nanoid';
 
-const limit = config.requestLimits.attachments;
+const limit = appConfig.requestLimits.attachments;
 
 const handleError = (action: 'create' | 'update' | 'delete' | 'deleteMany', context?: AttachmentContextProp[]) => {
   if (context?.length) {
@@ -34,7 +35,11 @@ const handleError = (action: 'create' | 'update' | 'delete' | 'deleteMany', cont
 export const useAttachmentCreateMutation = () =>
   useMutation<Attachment[], Error, CreateAttachmentParams, AttachmentContextProp[]>({
     mutationKey: attachmentsKeys.create(),
-    mutationFn: async ({ attachments, orgIdOrSlug }) => {
+    mutationFn: async ({ localCreation, attachments, orgIdOrSlug }) => {
+      if (localCreation) {
+        console.info('Attachments uploaded locally:', attachments);
+        return [];
+      }
       return await createAttachment({ body: attachments, path: { orgIdOrSlug } });
     },
     onMutate: async (variables) => {
@@ -100,7 +105,10 @@ export const useAttachmentCreateMutation = () =>
       return context;
     },
 
-    onSuccess: async (createdAttachments, { orgIdOrSlug }, context) => {
+    onSuccess: async (createdAttachments, { localCreation, orgIdOrSlug }, context) => {
+      // Avoid on succusses actions if there was local creation
+      if (localCreation) return;
+
       // Get affected queries
       const similarKey = attachmentsKeys.list.similarTable({ orgIdOrSlug });
       const queries = getSimilarQueries<Attachment>(similarKey);
@@ -212,12 +220,23 @@ export const useAttachmentUpdateMutation = () =>
 export const useAttachmentDeleteMutation = () =>
   useMutation<boolean, Error, DeleteAttachmentsParams, AttachmentContextProp[]>({
     mutationKey: attachmentsKeys.delete(),
-    mutationFn: async ({ ids, orgIdOrSlug }) => {
-      const response = await deleteAttachments({ body: { ids }, path: { orgIdOrSlug } });
-      return response.success;
+    mutationFn: async ({ localDeletionIds, serverDeletionIds, orgIdOrSlug }) => {
+      const localResult = true;
+      let serverResult = true;
+
+      if (localDeletionIds.length) await LocalFileStorage.removeFiles(localDeletionIds);
+
+      if (serverDeletionIds.length) {
+        const response = await deleteAttachments({ body: { ids: serverDeletionIds }, path: { orgIdOrSlug } });
+        serverResult = response.success;
+      }
+
+      return localResult && serverResult;
     },
     onMutate: async (variables) => {
-      const { ids, orgIdOrSlug } = variables;
+      const { localDeletionIds, serverDeletionIds, orgIdOrSlug } = variables;
+
+      const ids = [...localDeletionIds, ...serverDeletionIds];
 
       const context: AttachmentContextProp[] = []; // previous query data for rollback if an error occurs
 
@@ -245,13 +264,5 @@ export const useAttachmentDeleteMutation = () =>
 
       return context;
     },
-    onSuccess: (_, { ids }) => {
-      const message =
-        ids.length === 1
-          ? t('common:success.delete_resource', { resource: t('common:attachment') })
-          : t('common:success.delete_counted_resources', { count: ids.length, resources: t('common:attachments').toLowerCase() });
-
-      toaster(message, 'success');
-    },
-    onError: (_, { ids }, context) => handleError(ids.length > 1 ? 'deleteMany' : 'delete', context),
+    onError: (_, { serverDeletionIds }, context) => handleError(serverDeletionIds.length > 1 ? 'deleteMany' : 'delete', context),
   });

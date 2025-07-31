@@ -1,5 +1,5 @@
 import { infiniteQueryOptions, useMutation } from '@tanstack/react-query';
-import { config } from 'config';
+import { appConfig } from 'config';
 import { type CreateRequestData, type CreateRequestResponses, createRequest, deleteRequests, type GetRequestsData, getRequests } from '~/api.gen';
 import type { ApiError } from '~/lib/api';
 import type { Request } from '~/modules/requests/types';
@@ -25,7 +25,7 @@ export const requestsKeys = {
  * @param param.q - Search query for filtering requests(default is an empty string).
  * @param param.sort - Field to sort by (default is 'createdAt').
  * @param param.order - Order of sorting (default is 'desc').
- * @param param.limit - Number of items per page (default: `config.requestLimits.requests`).
+ * @param param.limit - Number of items per page (default: `appConfig.requestLimits.requests`).
  * @returns Infinite query options.
  */
 export const requestsQueryOptions = ({
@@ -36,7 +36,7 @@ export const requestsQueryOptions = ({
 }: Omit<NonNullable<GetRequestsData['query']>, 'limit' | 'offset'> & { limit?: number }) => {
   const sort = _sort || 'createdAt';
   const order = _order || 'asc';
-  const limit = String(_limit || config.requestLimits.requests);
+  const limit = String(_limit || appConfig.requestLimits.requests);
 
   const queryKey = requestsKeys.table.entries({ q, sort, order });
 

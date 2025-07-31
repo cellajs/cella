@@ -1,6 +1,6 @@
 import { useMutation } from '@tanstack/react-query';
 import { useNavigate, useParams, useSearch } from '@tanstack/react-router';
-import { config } from 'config';
+import { appConfig } from 'config';
 import { ArrowRight, Check, Mail } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { sendVerificationEmail, type VerifyEmailResponse, verifyEmail } from '~/api.gen';
@@ -26,7 +26,7 @@ const VerifyEmail = () => {
     mutationFn: () => verifyEmail({ path: { token } }),
     onSuccess: () => {
       toaster(t('common:success.email_verified'), 'success');
-      navigate({ to: config.welcomeRedirectPath });
+      navigate({ to: appConfig.welcomeRedirectPath });
     },
   });
 

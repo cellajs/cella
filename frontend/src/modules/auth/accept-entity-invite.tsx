@@ -1,6 +1,6 @@
 import { useMutation } from '@tanstack/react-query';
 import { Link, useNavigate, useParams, useSearch } from '@tanstack/react-router';
-import { config } from 'config';
+import { appConfig } from 'config';
 import { Ban, Check } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
@@ -58,7 +58,7 @@ const AcceptEntityInvite = () => {
             <Check size={16} strokeWidth={3} className="mr-2" />
             {t('common:accept')}
           </SubmitButton>
-          <Link to={config.defaultRedirectPath} preload={false} className={cn('w-full', buttonVariants({ variant: 'secondary' }))}>
+          <Link to={appConfig.defaultRedirectPath} preload={false} className={cn('w-full', buttonVariants({ variant: 'secondary' }))}>
             <Ban size={16} className="mr-2" />
             {t('common:decline')}
           </Link>

@@ -1,4 +1,4 @@
-import { config } from 'config';
+import { appConfig } from 'config';
 import { ArrowUpRight, CalendarCheck, Mail, MapPin, PhoneCall } from 'lucide-react';
 
 import { useTranslation } from 'react-i18next';
@@ -6,13 +6,13 @@ import ContactFormMap from '~/modules/common/contact-form/contact-form';
 import MarketingLayout from '~/modules/marketing/layout';
 
 const methods = [
-  { icon: MapPin, title: 'common:visit', link: config.company.googleMapsUrl, text: config.company.streetAddress },
-  { icon: Mail, title: 'common:email', link: `mailto:${config.company.email}`, text: config.company.email },
+  { icon: MapPin, title: 'common:visit', link: appConfig.company.googleMapsUrl, text: appConfig.company.streetAddress },
+  { icon: Mail, title: 'common:email', link: `mailto:${appConfig.company.email}`, text: appConfig.company.email },
 ];
 
-if (config.company.scheduleCallUrl)
-  methods.push({ icon: CalendarCheck, title: 'common:book', link: config.company.scheduleCallUrl, text: 'common:schedule_call.text' });
-if (config.company.tel) methods.push({ icon: PhoneCall, title: 'common:call', link: `tel:${config.company.tel}`, text: config.company.tel });
+if (appConfig.company.scheduleCallUrl)
+  methods.push({ icon: CalendarCheck, title: 'common:book', link: appConfig.company.scheduleCallUrl, text: 'common:schedule_call.text' });
+if (appConfig.company.tel) methods.push({ icon: PhoneCall, title: 'common:call', link: `tel:${appConfig.company.tel}`, text: appConfig.company.tel });
 
 const ContactPage = () => {
   const { t } = useTranslation();
@@ -39,7 +39,7 @@ const ContactPage = () => {
                     {t(method.text)}
                     <ArrowUpRight
                       size={16}
-                      strokeWidth={config.theme.strokeWidth}
+                      strokeWidth={appConfig.theme.strokeWidth}
                       className="inline-block text-primary -mt-2 ml-1 opacity-50 group-hover:opacity-100"
                     />
                   </a>

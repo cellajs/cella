@@ -11,6 +11,6 @@ export type AttachmentQueryData = QueryData<Attachment>;
 export type AttachmentInfiniteQueryData = InfiniteQueryData<Attachment>;
 export type AttachmentContextProp = ContextQueryProp<Attachment, string[] | null>;
 
-export type CreateAttachmentParams = { attachments: CreateAttachmentData['body'] } & CreateAttachmentData['path'];
-export type UpdateAttachmentParams = NonNullable<UpdateAttachmentData['body']> & UpdateAttachmentData['path'];
-export type DeleteAttachmentsParams = DeleteAttachmentsData['body'] & DeleteAttachmentsData['path'];
+export type CreateAttachmentParams = { localCreation: boolean; attachments: CreateAttachmentData['body'] } & CreateAttachmentData['path'];
+export type UpdateAttachmentParams = UpdateAttachmentData['body'] & UpdateAttachmentData['path'];
+export type DeleteAttachmentsParams = { localDeletionIds: string[]; serverDeletionIds: string[] } & DeleteAttachmentsData['path'];

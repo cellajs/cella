@@ -1,9 +1,9 @@
-import { config } from 'config';
+import { appConfig } from 'config';
 import { eq } from 'drizzle-orm';
 import type { Context } from 'hono';
 import { db } from '#/db/db';
 import { tokensTable } from '#/db/schema/tokens';
-import { ApiError } from '#/lib/errors';
+import { AppError } from '#/lib/errors';
 import { type CookieName, deleteAuthCookie, getAuthCookie, setAuthCookie } from '#/modules/auth/helpers/cookie';
 import { getParsedSessionCookie, validateSession } from '#/modules/auth/helpers/session';
 import { isExpiredDate } from '#/utils/is-expired-date';
@@ -75,7 +75,7 @@ export const getOauthCookies = async (ctx: Context) => {
  */
 export const handleOAuthRedirect = async (ctx: Context, passedRedirect: string) => {
   // Ensure the redirect URL is absolute and valid
-  const redirectUrl = isRedirectUrl(passedRedirect) ? passedRedirect : `${config.frontendUrl}${passedRedirect}`;
+  const redirectUrl = isRedirectUrl(passedRedirect) ? passedRedirect : `${appConfig.frontendUrl}${passedRedirect}`;
 
   // Set the redirect URL in the authentication cookie
   await setAuthCookie(ctx, 'oauth_redirect', redirectUrl, oauthCookieExpires);
@@ -89,13 +89,13 @@ export const handleOAuthRedirect = async (ctx: Context, passedRedirect: string) 
  */
 export const handleOAuthInvitation = async (ctx: Context) => {
   const token = ctx.req.query('token');
-  if (!token) throw new ApiError({ status: 404, type: 'invitation_not_found', severity: 'warn' });
+  if (!token) throw new AppError({ status: 404, type: 'invitation_not_found', severity: 'warn' });
 
   // Fetch token record
   const [tokenRecord] = await db.select().from(tokensTable).where(eq(tokensTable.token, token));
-  if (!tokenRecord) throw new ApiError({ status: 404, type: 'invitation_not_found', severity: 'warn' });
-  if (isExpiredDate(tokenRecord.expiresAt)) throw new ApiError({ status: 403, type: 'expired_token', severity: 'warn' });
-  if (tokenRecord.type !== 'invitation') throw new ApiError({ status: 400, type: 'invalid_token', severity: 'error' });
+  if (!tokenRecord) throw new AppError({ status: 404, type: 'invitation_not_found', severity: 'warn' });
+  if (isExpiredDate(tokenRecord.expiresAt)) throw new AppError({ status: 403, type: 'expired_token', severity: 'warn' });
+  if (tokenRecord.type !== 'invitation') throw new AppError({ status: 400, type: 'invalid_token', severity: 'error' });
 
   // Determine redirection based on entity presence
   const isMembershipInvite = !!tokenRecord.entityType;
@@ -120,13 +120,13 @@ export const handleOAuthInvitation = async (ctx: Context) => {
 export const handleOAuthConnection = async (ctx: Context) => {
   const connectingUserId = ctx.req.query('connect');
 
-  if (!connectingUserId) throw new ApiError({ status: 404, type: 'oauth_connection_not_found', severity: 'error' });
+  if (!connectingUserId) throw new AppError({ status: 404, type: 'oauth_connection_not_found', severity: 'error' });
 
   const sessionData = await getParsedSessionCookie(ctx);
-  if (!sessionData) throw new ApiError({ status: 401, type: 'no_session', severity: 'warn' });
+  if (!sessionData) throw new AppError({ status: 401, type: 'no_session', severity: 'warn' });
 
   const { user } = await validateSession(sessionData.sessionToken);
-  if (user?.id !== connectingUserId) throw new ApiError({ status: 403, type: 'user_mismatch', severity: 'warn' });
+  if (user?.id !== connectingUserId) throw new AppError({ status: 403, type: 'user_mismatch', severity: 'warn' });
 
   await setAuthCookie(ctx, 'oauth_connect_user_id', connectingUserId, oauthCookieExpires);
 };

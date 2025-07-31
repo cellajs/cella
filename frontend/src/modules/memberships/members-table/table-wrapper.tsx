@@ -1,4 +1,4 @@
-import { config } from 'config';
+import { appConfig } from 'config';
 import { useRef, useState } from 'react';
 import type { z } from 'zod';
 import useSearchParams from '~/hooks/use-search-params';
@@ -11,7 +11,7 @@ import { MembersTableBar } from '~/modules/memberships/members-table/table-bar';
 import type { Member } from '~/modules/memberships/types';
 import type { membersSearchSchema } from '~/routes/organizations';
 
-const LIMIT = config.requestLimits.members;
+const LIMIT = appConfig.requestLimits.members;
 
 export type MemberSearch = z.infer<typeof membersSearchSchema>;
 export interface MembersTableProps {

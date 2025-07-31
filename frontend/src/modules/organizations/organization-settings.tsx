@@ -1,5 +1,5 @@
 import { useNavigate, useParams } from '@tanstack/react-router';
-import { config } from 'config';
+import { appConfig } from 'config';
 import { Trash } from 'lucide-react';
 import { useRef } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
@@ -39,7 +39,7 @@ const OrganizationSettings = ({ organization }: { organization: Organization }) 
         organizations={[organization]}
         callback={() => {
           toast.success(t('common:success.delete_resource', { resource: t('common:organization') }));
-          navigate({ to: config.defaultRedirectPath, replace: true });
+          navigate({ to: appConfig.defaultRedirectPath, replace: true });
         }}
       />,
       {

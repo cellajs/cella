@@ -1,5 +1,5 @@
 import { z } from '@hono/zod-openapi';
-import { config, type EntityType } from 'config';
+import { appConfig, type EntityType } from 'config';
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 import { organizationsTable } from '#/db/schema/organizations';
 import { authStrategiesEnum } from '#/db/schema/sessions';
@@ -22,7 +22,7 @@ const isFilteredEntityType = (entityType: EntityType): entityType is FilteredEnt
 };
 
 const entityCountSchema = z.object(
-  Object.fromEntries(config.entityTypes.filter(isFilteredEntityType).map((entityType) => [entityType, z.number()])) as Record<
+  Object.fromEntries(appConfig.entityTypes.filter(isFilteredEntityType).map((entityType) => [entityType, z.number()])) as Record<
     FilteredEntityType,
     z.ZodNumber
   >,
