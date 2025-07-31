@@ -1,3 +1,7 @@
+import { OpenAPIHono } from '@hono/zod-openapi';
+import { appConfig } from 'config';
+import { and, count, eq, gt, ilike, inArray, isNotNull, isNull, ne, or } from 'drizzle-orm';
+import i18n from 'i18next';
 import { db } from '#/db/db';
 import { emailsTable } from '#/db/schema/emails';
 import { membershipsTable } from '#/db/schema/memberships';
@@ -23,10 +27,6 @@ import { getOrderColumn } from '#/utils/order-column';
 import { slugFromEmail } from '#/utils/slug-from-email';
 import { prepareStringForILikeFilter } from '#/utils/sql';
 import { createDate, TimeSpan } from '#/utils/time-span';
-import { OpenAPIHono } from '@hono/zod-openapi';
-import { appConfig } from 'config';
-import { and, count, eq, gt, ilike, inArray, isNotNull, isNull, ne, or } from 'drizzle-orm';
-import i18n from 'i18next';
 import { MemberInviteEmail, type MemberInviteEmailProps } from '../../../emails/member-invite';
 
 const app = new OpenAPIHono<Env>({ defaultHook });
@@ -97,8 +97,7 @@ const membershipRouteHandlers = app
       msg: `Skipped ${directlyInvitedEmails.size} emails due to existing invitations`,
       meta: { id: entityId, emails: Array.from(directlyInvitedEmails) },
     });
-    // Log existing direct entity invites
-
+    // Log re-associated entity invites
     logEvent({
       msg: `Re-associated ${organizationInvitedEmails.size} existing invites to target entity`,
       meta: {
@@ -118,7 +117,7 @@ const membershipRouteHandlers = app
               entityType: entityType,
               [targetEntityIdField]: entityId,
               ...(associatedEntity && { [associatedEntity.field]: associatedEntity.id }),
-              expiresAt: createDate(new TimeSpan(7, 'd')), // 7 days from now
+              expiresAt: createDate(new TimeSpan(7, 'd')),
             })
             .where(eq(tokensTable.id, token.id)),
         ),
@@ -127,17 +126,31 @@ const membershipRouteHandlers = app
     // Exclude already-invited emails (in both direct & org scope)
     const emailsToInvite = normalizedEmails.filter((email) => !directlyInvitedEmails.has(email) && !organizationInvitedEmails.has(email));
 
-    // Fetch existing users based on the provided emails
-    //TODO(DAVID) Handle existing users
+    // Fetch existing users based and their memberships on the provided emails
     const existingUsers = await getUsersByConditions([inArray(emailsTable.email, emailsToInvite)]);
-    const userIds = existingUsers.map(({ id }) => id);
-
-    // Fetch all existing memberships by organizationId
     const membershipsOfExistingUsers = await db
       .select()
       .from(membershipsTable)
-      .where(and(eq(membershipsTable.organizationId, organization.id), isNull(membershipsTable.tokenId), inArray(membershipsTable.userId, userIds)));
+      .where(
+        and(
+          eq(membershipsTable.organizationId, organization.id),
+          isNull(membershipsTable.tokenId),
+          inArray(
+            membershipsTable.userId,
+            existingUsers.map(({ id }) => id),
+          ),
+        ),
+      );
 
+    // const usersWithMemberships = await db
+    //     .select({
+    //       ...userSelect,
+    //       memberships: sql`json_agg(${membershipsTable}.*)`.as('memberships'),
+    //     })
+    //     .from(usersTable)
+    //     .leftJoin(membershipsTable, eq(membershipsTable.userId, usersTable.id))
+    //     .where(eq(usersTable.id, user.id))
+    //     .groupBy(usersTable.id);
     // Map for lookup of existing users by email
     // Identify emails without associated users, nor with existing tokens
     const emailsWithIdToInvite: { email: string; userId: string | null }[] = emailsToInvite.map((email) => ({ email, userId: null }));
@@ -158,8 +171,7 @@ const membershipRouteHandlers = app
         }
 
         // Check for organization memberships
-        const hasOrgMembership = userMemberships.some((m) => m.organizationId === organization.id);
-
+        const hasOrgMembership = userMemberships.some((m) => m.contextType === 'organization' && m.organizationId === organization.id);
         // Determine if membership should be created instantly
         const instantCreateMembership = (entityType !== 'organization' && hasOrgMembership) || (user.role === 'admin' && userId === user.id);
 
