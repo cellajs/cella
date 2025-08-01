@@ -32,7 +32,7 @@ export const loggerMiddleware: MiddlewareHandler = async (ctx, next) => {
   const coloredStatus = formatStatus(res.status);
   const message = getStatusMessage(res.status);
 
-  const outgoingLogLine = `${base}  ${coloredStatus} ${path} (${duration}ms) ${message}`;
+  const outgoingLogLine = `${base} ${coloredStatus} ${path} (${duration}ms) ${message}`;
 
   // Log outgoing
   logTrace(outgoingLogLine);
