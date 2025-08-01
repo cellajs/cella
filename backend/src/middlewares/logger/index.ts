@@ -20,9 +20,9 @@ export const loggerMiddleware: MiddlewareHandler = async (ctx, next) => {
   const reqId = nanoid();
   ctx.set('logId', reqId);
 
-  const base = `reqId-${reqId} ${method}`;
+  const base = `${reqId} ${method}`;
+  const incomingLogLine = `${base} ${path}`;
 
-  const incomingLogLine = `${base} ${path} - Incoming Request`;
   // Log incoming
   logTrace(incomingLogLine);
 
@@ -32,7 +32,7 @@ export const loggerMiddleware: MiddlewareHandler = async (ctx, next) => {
   const coloredStatus = formatStatus(res.status);
   const message = getStatusMessage(res.status);
 
-  const outgoingLogLine = `${base}  ${coloredStatus} ${path} (${duration}ms) - ${message}`;
+  const outgoingLogLine = `${base}  ${coloredStatus} ${path} (${duration}ms) ${message}`;
 
   // Log outgoing
   logTrace(outgoingLogLine);
@@ -52,7 +52,7 @@ const formatStatus = (code: number): string => {
 
 // Friendly message for status
 const getStatusMessage = (code: number): string => {
-  if (code >= 500) return 'Server Error';
-  if (code >= 400) return 'Request Failed';
-  return 'Request completed';
+  if (code >= 500) return ' - server error';
+  if (code >= 400) return ' - request failed';
+  return '';
 };
