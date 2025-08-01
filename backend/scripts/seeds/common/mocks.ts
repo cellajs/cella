@@ -1,14 +1,14 @@
 import { InsertEmailModel } from "#/db/schema/emails";
+import { InsertMembershipModel } from "#/db/schema/memberships";
+import { InsertOrganizationModel, OrganizationModel } from "#/db/schema/organizations";
 import { InsertUserModel, UserModel } from "#/db/schema/users";
-import { faker } from "@faker-js/faker";
-import { pastIsoDate } from "./past-iso-date";
 import { generateUnsubscribeToken } from "#/modules/users/helpers/unsubscribe-token";
-import { config } from "config";
+import { faker } from "@faker-js/faker";
+import { appConfig } from "config";
+import { UniqueEnforcer } from "enforce-unique";
 import { nanoid } from "nanoid";
 import slugify from "slugify";
-import { InsertOrganizationModel, OrganizationModel } from "#/db/schema/organizations";
-import { UniqueEnforcer } from "enforce-unique";
-import { InsertMembershipModel } from "#/db/schema/memberships";
+import { pastIsoDate } from "./past-iso-date";
 
 // Enforces uniqueness 
 const organizationName = new UniqueEnforcer();
@@ -72,7 +72,7 @@ export const mockUser = (hashedPassword: string): InsertUserModel => {
     firstName: firstAndLastName.firstName,
     lastName: firstAndLastName.lastName,
     thumbnailUrl: null,
-    language: config.defaultLanguage,
+    language: appConfig.defaultLanguage,
     name: faker.person.fullName(firstAndLastName),
     email,
     unsubscribeToken: generateUnsubscribeToken(email),
@@ -103,7 +103,7 @@ export const mockAdmin = (id: string, email: string, hashedPassword: string): In
     email,
     unsubscribeToken: generateUnsubscribeToken(email),
     hashedPassword,
-    language: config.defaultLanguage,
+    language: appConfig.defaultLanguage,
     thumbnailUrl: null,
     newsletter: false,
     createdAt: pastIsoDate(),
@@ -139,7 +139,7 @@ export const mockOrganizationMembership = (organization: OrganizationModel, user
     userId: user.id,
     organizationId: organization.id,
     contextType: 'organization',
-    role: faker.helpers.arrayElement(config.rolesByType.entityRoles),
+    role: faker.helpers.arrayElement(appConfig.rolesByType.entityRoles),
     order: getMembershipOrderOffset(organization.id) * 10,
     createdAt: pastIsoDate(),
     activatedAt: pastIsoDate(),

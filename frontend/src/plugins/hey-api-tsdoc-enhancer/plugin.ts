@@ -1,4 +1,4 @@
-import { config } from '../../../../config';
+import { appConfig } from '../../../../config';
 import type { TsdocEnhancer } from './types';
 
 /**
@@ -30,7 +30,7 @@ export const handler: TsdocEnhancer['Handler'] = ({ plugin }) => {
     ];
 
     // Generate @see links to docs
-    const seeTags = tags.map((tag) => `[${operation.id}](${config.backendUrl}/docs#tag/${tag}/${operation.method}${path})`);
+    const seeTags = tags.map((tag) => `[${operation.id}](${appConfig.backendUrl}/docs#tag/${tag}/${operation.method}${path})`);
 
     // Compose TSDoc enhancements
     const tsdocEnhancements = [

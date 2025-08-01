@@ -1,10 +1,10 @@
 import { timestampColumns } from '#/db/utils/timestamp-columns';
 import { nanoid } from '#/utils/nanoid';
-import { config } from 'config';
+import { appConfig } from 'config';
 import { boolean, foreignKey, index, pgTable, timestamp, varchar } from 'drizzle-orm/pg-core';
 
-const roleEnum = config.rolesByType.systemRoles;
-const languagesEnum = config.languages;
+const roleEnum = appConfig.rolesByType.systemRoles;
+const languagesEnum = appConfig.languages;
 
 /**
  * Users table contains all users. It is used to store user information such as name, email, password, etc.
@@ -30,7 +30,7 @@ export const usersTable = pgTable(
     unsubscribeToken: varchar().unique().$defaultFn(nanoid).notNull(),
     firstName: varchar(),
     lastName: varchar(),
-    language: varchar({ enum: languagesEnum }).notNull().default(config.defaultLanguage),
+    language: varchar({ enum: languagesEnum }).notNull().default(appConfig.defaultLanguage),
     newsletter: boolean().notNull().default(false),
     role: varchar({ enum: roleEnum }).notNull().default('user'),
     modifiedAt: timestampColumns.modifiedAt,

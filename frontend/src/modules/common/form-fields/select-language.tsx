@@ -1,4 +1,4 @@
-import { config, type Language } from 'config';
+import { appConfig, type Language } from 'config';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import CountryFlag from '~/modules/common/country-flag';
@@ -17,7 +17,7 @@ export const SelectLanguage = ({ value, options, onChange }: SelectLanguageProps
   return (
     <Select
       name="language"
-      disabled={config.languages.length < 2}
+      disabled={appConfig.languages.length < 2}
       open={open}
       onOpenChange={setOpen}
       onValueChange={(lang: Language) => {
@@ -29,7 +29,7 @@ export const SelectLanguage = ({ value, options, onChange }: SelectLanguageProps
         <SelectValue placeholder={t('common:placeholder.select_language')} />
       </SelectTrigger>
       <SelectContent>
-        {config.languages.map((lang) => {
+        {appConfig.languages.map((lang) => {
           const disabled = !options.includes(lang);
           return (
             <SelectItem key={lang} value={lang} disabled={disabled} className="truncate">

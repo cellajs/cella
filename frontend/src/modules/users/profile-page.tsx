@@ -60,7 +60,7 @@ const UserProfilePage = ({ user: baseUser, isSheet, orgIdOrSlug }: Props) => {
                 to="/settings"
                 draggable="false"
                 tabIndex={0}
-                className="inline-flex items-center justify-center whitespace-nowrap h-9 rounded-md px-3 text-sm font-medium ring-offset-background transition-colors focus-visible:outline-hidden sm:focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 bg-primary text-primary-foreground hover:bg-primary/80"
+                className="inline-flex items-center justify-center whitespace-nowrap h-9 rounded-md px-3 text-sm font-medium ring-offset-background transition-colors focus-effect bg-primary text-primary-foreground hover:bg-primary/80"
               >
                 <Settings size={16} />
                 <span className="max-sm:hidden ml-1">{t('common:settings')}</span>

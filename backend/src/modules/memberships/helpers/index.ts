@@ -1,4 +1,4 @@
-import { type ContextEntityType, config } from 'config';
+import { appConfig, type ContextEntityType } from 'config';
 import { and, eq, max } from 'drizzle-orm';
 import { db } from '#/db/db';
 import { type MembershipModel, membershipsTable } from '#/db/schema/memberships';
@@ -47,7 +47,7 @@ export const insertMembership = async <T extends BaseEntityModel>({
     .from(membershipsTable)
     .where(eq(membershipsTable.userId, userId));
 
-  const entityIdField = config.entityIdFields[entity.entityType];
+  const entityIdField = appConfig.entityIdFields[entity.entityType];
   const associatedEntity = getAssociatedEntityDetails(entity);
 
   const baseMembership = {
@@ -109,10 +109,10 @@ export const insertMembership = async <T extends BaseEntityModel>({
 };
 
 export const getAssociatedEntityDetails = <T extends ContextEntityType>(entity: EntityModel<T>) => {
-  const relation = config.menuStructure.find((rel) => rel.subentityType === entity.entityType);
+  const relation = appConfig.menuStructure.find((rel) => rel.subentityType === entity.entityType);
   if (!relation) return null;
   const type = relation.entityType;
-  const field = config.entityIdFields[type] ?? null;
+  const field = appConfig.entityIdFields[type] ?? null;
   if (!field || !(field in entity)) return null;
 
   const id = entity[field as keyof typeof entity] as string;

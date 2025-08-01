@@ -1,12 +1,12 @@
 import { onlineManager } from '@tanstack/react-query';
 import { useLoaderData } from '@tanstack/react-router';
-import { config, type EnabledOauthProvider } from 'config';
+import { appConfig, type EnabledOAuthProvider } from 'config';
 import { Check, Send, Trash } from 'lucide-react';
 import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { requestPassword } from '~/api.gen';
-import { mapOauthProviders } from '~/modules/auth/oauth-options';
+import { mapOAuthProviders } from '~/modules/auth/oauth-options';
 import { AsideAnchor } from '~/modules/common/aside-anchor';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import HelpText from '~/modules/common/help-text';
@@ -46,6 +46,7 @@ const UserSettingsPage = () => {
   const invertClass = mode === 'dark' ? 'invert' : '';
 
   // Request a password reset email
+  // TODO: use a mutation hook for this? Then we also have better error handling?
   const requestResetPasswordClick = () => {
     if (!onlineManager.isOnline()) return toaster(t('common:action.offline.text'), 'warning');
 
@@ -55,9 +56,7 @@ const UserSettingsPage = () => {
       toast.success(t('common:success.reset_password_email', { email: user.email }));
     } catch {
     } finally {
-      setTimeout(() => {
-        setDisabledResetPassword(false);
-      }, 60000);
+      setTimeout(() => setDisabledResetPassword(false), 60000);
     }
   };
 
@@ -80,13 +79,13 @@ const UserSettingsPage = () => {
     );
   };
 
-  const authenticateWithProvider = (provider: EnabledOauthProvider) => {
+  const authenticateWithProvider = (provider: EnabledOAuthProvider) => {
     if (!onlineManager.isOnline()) return toaster(t('common:action.offline.text'), 'warning');
 
     // Proceed to OAuth URL with redirect and connect
     try {
-      const baseUrl = `${config.backendAuthUrl}/${provider}`;
-      const params = new URLSearchParams({ connect: user.id, type: 'connect', redirect: window.location.href });
+      const baseUrl = `${appConfig.backendAuthUrl}/${provider}`;
+      const params = new URLSearchParams({ connect: user.id, type: 'connect', redirect: encodeURIComponent(window.location.pathname) });
 
       const providerUrl = `${baseUrl}?${params.toString()}`;
       window.location.assign(providerUrl);
@@ -147,13 +146,13 @@ const UserSettingsPage = () => {
                 <p className="font-semibold">{t('common:oauth')}</p>
               </HelpText>
 
-              <div className="flex flex-col sm:items-start gap-2 mb-6">
-                {config.enabledOauthProviders.map((id) => {
-                  const provider = mapOauthProviders.find((provider) => provider.id === id);
+              <div className="flex flex-col sm:items-start gap-3 mb-6">
+                {appConfig.enabledOAuthProviders.map((id) => {
+                  const provider = mapOAuthProviders.find((provider) => provider.id === id);
                   if (!provider) return;
                   if (userAuthInfo.oauth.includes(id))
                     return (
-                      <div key={provider.id} className="flex items-center justify-center px-3 gap-2">
+                      <div key={provider.id} className="flex items-center justify-center px-3 py-2 gap-2">
                         <img
                           src={`/static/images/${provider.id}-icon.svg`}
                           alt={provider.id}
@@ -165,7 +164,13 @@ const UserSettingsPage = () => {
                       </div>
                     );
                   return (
-                    <Button key={provider.id} type="button" variant="plain" onClick={() => authenticateWithProvider(provider.id)}>
+                    // Assert is necessary because apps might not have all providers enabled
+                    <Button
+                      key={provider.id}
+                      type="button"
+                      variant="plain"
+                      onClick={() => authenticateWithProvider(provider.id as EnabledOAuthProvider)}
+                    >
                       <img
                         src={`/static/images/${provider.id}-icon.svg`}
                         alt={provider.id}
@@ -196,7 +201,7 @@ const UserSettingsPage = () => {
           <Card className="mx-auto sm:w-full">
             <CardHeader>
               <CardTitle>{t('common:delete_account')}</CardTitle>
-              <CardDescription>{t('common:delete_account.text', { appName: config.name })}</CardDescription>
+              <CardDescription>{t('common:delete_account.text', { appName: appConfig.name })}</CardDescription>
             </CardHeader>
             <CardContent>
               <Button ref={deleteButtonRef} variant="destructive" className="w-full sm:w-auto" onClick={openDeleteDialog}>

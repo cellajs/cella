@@ -1,16 +1,11 @@
-import { config } from 'config';
-import { and, eq } from 'drizzle-orm';
-import type { Context } from 'hono';
+import { appConfig } from 'config';
+import { and, eq, isNull } from 'drizzle-orm';
 import { db } from '#/db/db';
 import { emailsTable } from '#/db/schema/emails';
-import { oauthAccountsTable } from '#/db/schema/oauth-accounts';
 import { tokensTable } from '#/db/schema/tokens';
-import { type InsertUserModel, usersTable } from '#/db/schema/users';
+import { type InsertUserModel, type UserModel, usersTable } from '#/db/schema/users';
 import { resolveEntity } from '#/lib/entity';
-import { ApiError } from '#/lib/errors';
-import type { Provider } from '#/modules/auth/helpers/oauth/oauth-providers';
-import { setUserSession } from '#/modules/auth/helpers/session';
-import { sendVerificationEmail } from '#/modules/auth/helpers/verify-email';
+import { AppError } from '#/lib/errors';
 import { checkSlugAvailable } from '#/modules/entities/helpers/check-slug';
 import { insertMembership } from '#/modules/memberships/helpers';
 import { generateUnsubscribeToken } from '#/modules/users/helpers/unsubscribe-token';
@@ -19,10 +14,7 @@ import { logEvent } from '#/utils/logger';
 import { nanoid } from '#/utils/nanoid';
 
 interface HandleCreateUserProps {
-  ctx: Context;
   newUser: Omit<InsertUserModel, 'unsubscribeToken'>;
-  redirectUrl?: string;
-  provider?: Provider;
   membershipInviteTokenId?: string | null;
   emailVerified?: boolean;
 }
@@ -32,70 +24,61 @@ interface HandleCreateUserProps {
  * Inserts the user into the database, processes OAuth accounts, and sends verification emails.
  * Sets a user session upon successful sign-up.
  *
- * @param ctx - Request/response context.
  * @param newUser - New user data for registration(InsertUserModel).
- * @param redirectUrl - Optional, URL to redirect the user to after successful sign-up.
- * @param provider - Optional, OAuth provider data for linking the user.
  * @param membershipInviteTokenId - Optional, token ID to associate with the new user.
  * @param emailVerified - Optional, new user email verified.
  * @returns Error response or Redirect response or Response
  */
-export const handleCreateUser = async ({ ctx, newUser, redirectUrl, provider, membershipInviteTokenId, emailVerified }: HandleCreateUserProps) => {
+export const handleCreateUser = async ({ newUser, membershipInviteTokenId, emailVerified }: HandleCreateUserProps): Promise<UserModel> => {
+  // If signing up while having an unclaimed invitation token, abort and resend that invitation instead to prevent conflicts later
+  const [inviteToken] = await db
+    .select()
+    .from(tokensTable)
+    .where(and(eq(tokensTable.email, newUser.email), eq(tokensTable.type, 'invitation'), isNull(tokensTable.userId)));
+
+  if (inviteToken) throw new AppError({ status: 403, type: 'invite_takes_priority', severity: 'warn' });
+
   // Check if slug is available
   const slugAvailable = await checkSlugAvailable(newUser.slug);
 
+  // Insert new user into database
   try {
-    // Insert new user into database
-    const userEmail = newUser.email.toLowerCase();
+    const normalizedEmail = newUser.email.toLowerCase().trim();
+
     const [user] = await db
       .insert(usersTable)
       .values({
         slug: slugAvailable ? newUser.slug : `${newUser.slug}-${nanoid(5)}`,
         firstName: newUser.firstName,
-        email: userEmail,
+        email: normalizedEmail,
         name: newUser.name,
-        unsubscribeToken: generateUnsubscribeToken(userEmail),
-        language: config.defaultLanguage,
+        unsubscribeToken: generateUnsubscribeToken(normalizedEmail),
+        language: appConfig.defaultLanguage,
         hashedPassword: newUser.hashedPassword,
       })
       .returning();
 
-    // If a provider is passed, insert oauth account
-    if (provider) {
-      await db.insert(oauthAccountsTable).values({ providerId: provider.id, providerUserId: provider.userId, userId: user.id });
-    }
     // If signing up with token, update it with new user id and insert membership if applicable
     if (membershipInviteTokenId) await handleMembershipTokenUpdate(user.id, membershipInviteTokenId);
 
-    // If email is not verified, send verification email. Otherwise, create verified email record and  sign in user
-    if (!emailVerified) sendVerificationEmail(user.id);
-    else {
+    // If email is verified, create verified email record
+    if (emailVerified) {
       // Delete any unverified email under a different user
-      await db.delete(emailsTable).where(and(eq(emailsTable.email, userEmail), eq(emailsTable.verified, false)));
+      await db.delete(emailsTable).where(and(eq(emailsTable.email, normalizedEmail), eq(emailsTable.verified, false)));
 
       // Insert new email entry
       await db.insert(emailsTable).values({
-        email: userEmail,
+        email: normalizedEmail,
         userId: user.id,
         verified: true,
         verifiedAt: getIsoDate(),
       });
-
-      await setUserSession(ctx, user, provider?.id || 'password');
     }
 
-    // Redirect to URL if provided
-    if (redirectUrl) return ctx.redirect(redirectUrl, 302);
-
-    // Return
-    return ctx.json(true, 200);
+    return user;
   } catch (error) {
-    // If the email already exists, return an error
-    if (error instanceof Error && error.message.startsWith('duplicate key')) {
-      throw new ApiError({ status: 409, type: 'email_exists', severity: 'warn' });
-    }
-
-    throw error;
+    // If user with this email already exists, return an error
+    throw new AppError({ status: 409, type: 'email_exists', severity: 'warn' });
   }
 };
 
@@ -108,7 +91,7 @@ export const handleMembershipTokenUpdate = async (userId: string, tokenId: strin
     // Validate if the token has an entityType and role (must be a membership invite)
     if (!entityType || !role) throw new Error('Token is not a valid membership invite.');
 
-    const entityIdField = config.entityIdFields[entityType];
+    const entityIdField = appConfig.entityIdFields[entityType];
     // Validate if the token contains the required entity ID field
     if (!token[entityIdField]) throw new Error(`Token is missing entity ID field for ${entityType}.`);
 
@@ -116,7 +99,7 @@ export const handleMembershipTokenUpdate = async (userId: string, tokenId: strin
     // If the entity cannot be found, throw an error
     if (!entity) throw new Error(`Unable to resolve entity (${entityType}) using the token's entity ID.`);
 
-    // Insert membership for user into entity
+    // Insert membership for user into entity, but not yet activated
     await insertMembership({ userId, role, entity, tokenId });
   } catch (error) {
     if (error instanceof Error) {

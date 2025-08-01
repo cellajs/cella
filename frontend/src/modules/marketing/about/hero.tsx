@@ -1,4 +1,4 @@
-import { config } from 'config';
+import { appConfig } from 'config';
 import { Trans, useTranslation } from 'react-i18next';
 import { useInView } from 'react-intersection-observer';
 import { Badge } from '~/modules/ui/badge';
@@ -58,7 +58,7 @@ export const Hero = ({ title, subtitle, text, children, badgeText }: HeroProps) 
 
 export const BackgroundCurve = () => {
   const mode = useUIStore((state) => state.mode);
-  const fillColor = mode === 'dark' ? config.theme.colorDarkBackground : '#fff';
+  const fillColor = mode === 'dark' ? appConfig.theme.colorDarkBackground : '#fff';
 
   return (
     <svg viewBox="0 0 800 400" className="transition" aria-hidden="true">

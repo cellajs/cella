@@ -1,5 +1,5 @@
 {
-  "id": "dc322010-d65c-4baa-8451-02784541f0fa",
+  "id": "727b17a3-f074-4db2-92c1-bb650749e21c",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -435,6 +435,19 @@
       "name": "oauth_accounts",
       "schema": "",
       "columns": {
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "id": {
+          "name": "id",
+          "type": "varchar",
+          "primaryKey": true,
+          "notNull": true
+        },
         "provider_id": {
           "name": "provider_id",
           "type": "varchar",
@@ -447,18 +460,36 @@
           "primaryKey": false,
           "notNull": true
         },
+        "email": {
+          "name": "email",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "verified": {
+          "name": "verified",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "verified_at": {
+          "name": "verified_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "tenant_id": {
+          "name": "tenant_id",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
         "user_id": {
           "name": "user_id",
           "type": "varchar",
           "primaryKey": false,
           "notNull": true
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
         }
       },
       "indexes": {},
@@ -477,16 +508,18 @@
           "onUpdate": "no action"
         }
       },
-      "compositePrimaryKeys": {
-        "oauth_accounts_provider_id_provider_user_id_pk": {
-          "name": "oauth_accounts_provider_id_provider_user_id_pk",
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "oauth_accounts_providerId_providerUserId_email_unique": {
+          "name": "oauth_accounts_providerId_providerUserId_email_unique",
+          "nullsNotDistinct": false,
           "columns": [
             "provider_id",
-            "provider_user_id"
+            "provider_user_id",
+            "email"
           ]
         }
       },
-      "uniqueConstraints": {},
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false
@@ -1030,6 +1063,12 @@
           "primaryKey": false,
           "notNull": false
         },
+        "oauth_account_id": {
+          "name": "oauth_account_id",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
         "created_by": {
           "name": "created_by",
           "type": "varchar",
@@ -1062,6 +1101,19 @@
             "id"
           ],
           "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "tokens_oauth_account_id_oauth_accounts_id_fk": {
+          "name": "tokens_oauth_account_id_oauth_accounts_id_fk",
+          "tableFrom": "tokens",
+          "tableTo": "oauth_accounts",
+          "columnsFrom": [
+            "oauth_account_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
           "onUpdate": "no action"
         },
         "tokens_created_by_users_id_fk": {

@@ -3,10 +3,10 @@ import { usersTable } from '#/db/schema/users';
 import { defaultRestrictions, type Restrictions } from '#/db/utils/organization-restrictions';
 import { timestampColumns } from '#/db/utils/timestamp-columns';
 import { nanoid } from '#/utils/nanoid';
-import { config, type Language } from 'config';
+import { appConfig, type Language } from 'config';
 import { boolean, index, json, pgTable, varchar } from 'drizzle-orm/pg-core';
 
-const languagesEnum = config.languages;
+const languagesEnum = appConfig.languages;
 
 export const organizationsTable = pgTable(
   'organizations',
@@ -24,8 +24,8 @@ export const organizationsTable = pgTable(
     shortName: varchar(),
     country: varchar(),
     timezone: varchar(),
-    defaultLanguage: varchar({ enum: languagesEnum }).notNull().default(config.defaultLanguage),
-    languages: json().$type<Language[]>().notNull().default([config.defaultLanguage]),
+    defaultLanguage: varchar({ enum: languagesEnum }).notNull().default(appConfig.defaultLanguage),
+    languages: json().$type<Language[]>().notNull().default([appConfig.defaultLanguage]),
     restrictions: json().$type<Restrictions>().notNull().default(defaultRestrictions()),
     notificationEmail: varchar(),
     emailDomains: json().$type<string[]>().notNull().default([]),

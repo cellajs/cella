@@ -283,7 +283,11 @@ const CarouselDots = React.forwardRef<HTMLDivElement, CarouselDotsProps>(({ clas
           aria-selected={current === index ? 'true' : 'false'}
           aria-label={`Slide ${index + 1}`}
           onClick={() => api?.scrollTo(index)}
-          className={cn(dotsVariants({ size, gap, className }), 'cursor-pointer leading-3', current === index ? 'text-foreground' : 'text-muted')}
+          className={cn(
+            dotsVariants({ size, gap, className }),
+            'cursor-pointer leading-3 focus-effect',
+            current === index ? 'text-foreground' : 'text-muted',
+          )}
         >
           ●
         </button>

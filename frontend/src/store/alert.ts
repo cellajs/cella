@@ -1,4 +1,4 @@
-import { config } from 'config';
+import { appConfig } from 'config';
 import { create } from 'zustand';
 import { createJSONStorage, devtools, persist } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
@@ -15,7 +15,7 @@ interface AlertStoreState {
 }
 
 // Initial store state, using config to determine maintenance mode
-const initStore: Pick<AlertStoreState, 'alertsSeen' | 'downAlert'> = { downAlert: config.maintenance ? 'maintenance' : null, alertsSeen: [] };
+const initStore: Pick<AlertStoreState, 'alertsSeen' | 'downAlert'> = { downAlert: appConfig.maintenance ? 'maintenance' : null, alertsSeen: [] };
 
 export const useAlertStore = create<AlertStoreState>()(
   devtools(
@@ -42,7 +42,7 @@ export const useAlertStore = create<AlertStoreState>()(
         }),
         {
           version: 1,
-          name: `${config.slug}-alerts`,
+          name: `${appConfig.slug}-alerts`,
           partialize: (state) => ({
             alertsSeen: state.alertsSeen,
             downAlert: state.downAlert,

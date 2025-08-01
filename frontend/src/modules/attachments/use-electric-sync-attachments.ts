@@ -1,6 +1,6 @@
 import { isChangeMessage, type ShapeStreamOptions } from '@electric-sql/client';
 import { getShapeStream } from '@electric-sql/react';
-import { config } from 'config';
+import { appConfig } from 'config';
 import { useEffect } from 'react';
 import { env } from '~/env';
 import { useOnlineManager } from '~/hooks/use-online-manager';
@@ -15,7 +15,7 @@ const attachmentShape = (organizationId: string, storePrefix: string): ShapeStre
   const params = { where: `organization_id = '${organizationId}'` };
 
   return {
-    url: new URL(`/${organizationId}/attachments/shape-proxy`, config.backendUrl).href,
+    url: new URL(`/${organizationId}/attachments/shape-proxy`, appConfig.backendUrl).href,
     params,
     backoffOptions,
     fetchClient: clientConfig.fetch,
@@ -29,7 +29,7 @@ type RawAttachment = CamelToSnakeObject<Attachment>;
  * Hook to receive attachments updates in real-time for a specific organization using electric ShapeStream
  * @param organizationId - Organization ID
  */
-export const useAttachmentsSync = (organizationId: string) => {
+export const useElectricSyncAttachments = (organizationId: string) => {
   const { isOnline } = useOnlineManager();
   const { getSyncData, setSyncData } = useSyncStore();
 
@@ -37,7 +37,7 @@ export const useAttachmentsSync = (organizationId: string) => {
 
   useEffect(() => {
     // Exit if offline, sync is disabled, s3 upload is disabled, or in quick mode
-    if (!isOnline || !config.has.sync || !config.has.uploadEnabled || env.VITE_QUICK) return;
+    if (!isOnline || !appConfig.has.sync || !appConfig.has.uploadEnabled || env.VITE_QUICK) return;
 
     const controller = new AbortController();
     // if any params of `attachmentShape` changes need to delete sync data from store

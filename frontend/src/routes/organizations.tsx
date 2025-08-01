@@ -47,12 +47,10 @@ export const OrganizationRoute = createRoute({
     }
     return { organization };
   },
-  loader: async ({ context: { organization } }) => {
-    return organization;
-  },
+  loader: ({ context: { organization } }) => organization,
   head: (ctx) => {
-    const organization = ctx.match.context.organization;
-    return { meta: [{ title: appTitle(organization.name) }] };
+    const organization = ctx.match.loaderData;
+    return { meta: [{ title: appTitle(organization?.name) }] };
   },
   getParentRoute: () => AppRoute,
   errorComponent: ({ error }) => <ErrorNotice level="app" error={error} />,
@@ -103,7 +101,7 @@ export const OrganizationAttachmentsRoute = createRoute({
     if (!organization) return;
     return (
       <Suspense>
-        <AttachmentsTable canUpload={false} key={organization.id} entity={organization} />
+        <AttachmentsTable canUpload={true} key={organization.id} entity={organization} />
       </Suspense>
     );
   },

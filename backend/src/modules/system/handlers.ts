@@ -1,9 +1,8 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
 import { EventName, Paddle } from '@paddle/paddle-node-sdk';
-import { config } from 'config';
+import { appConfig } from 'config';
 import { and, eq, inArray, isNull, lt } from 'drizzle-orm';
 import i18n from 'i18next';
-
 import { db } from '#/db/db';
 import { emailsTable } from '#/db/schema/emails';
 import { membershipsTable } from '#/db/schema/memberships';
@@ -13,7 +12,7 @@ import { tokensTable } from '#/db/schema/tokens';
 import { usersTable } from '#/db/schema/users';
 import { env } from '#/env';
 import { type Env, getContextUser } from '#/lib/context';
-import { ApiError } from '#/lib/errors';
+import { AppError } from '#/lib/errors';
 import { mailer } from '#/lib/mailer';
 import { getSignedUrl } from '#/lib/signed-url';
 import systemRoutes from '#/modules/system/routes';
@@ -41,11 +40,11 @@ const systemRouteHandlers = app
     const lng = user.language;
     const senderName = user.name;
     const senderThumbnailUrl = user.thumbnailUrl;
-    const subject = i18n.t('backend:email.system_invite.subject', { lng, appName: config.name });
+    const subject = i18n.t('backend:email.system_invite.subject', { lng, appName: appConfig.name });
 
-    const normalizedEmails = emails.map((email) => email.toLowerCase());
+    const normalizedEmails = emails.map((email) => email.toLowerCase().trim());
 
-    if (!normalizedEmails.length) throw new ApiError({ status: 400, type: 'no_recipients', severity: 'warn' });
+    if (!normalizedEmails.length) throw new AppError({ status: 400, type: 'no_recipients', severity: 'warn' });
 
     // Query to filter out invitations on same email
     const existingInvitesQuery = db
@@ -82,7 +81,7 @@ const systemRouteHandlers = app
       return {
         token,
         type: 'invitation' as const,
-        email: email.toLowerCase(),
+        email: email.toLowerCase().trim(),
         createdBy: user.id,
         expiresAt: createDate(new TimeSpan(7, 'd')),
       };
@@ -106,7 +105,7 @@ const systemRouteHandlers = app
       email: tokenRecord.email,
       lng: lng,
       name: slugFromEmail(tokenRecord.email),
-      systemInviteLink: `${config.frontendUrl}/auth/authenticate?token=${tokenRecord.token}&tokenId=${tokenRecord.id}`,
+      systemInviteLink: `${appConfig.frontendUrl}/auth/authenticate?token=${tokenRecord.token}&tokenId=${tokenRecord.id}`,
     }));
 
     type Recipient = (typeof recipients)[number];
@@ -196,12 +195,12 @@ const systemRouteHandlers = app
       );
 
     // Stop if no recipients
-    if (!recipientsRecords.length && !toSelf) throw new ApiError({ status: 400, type: 'no_recipients', severity: 'warn' });
+    if (!recipientsRecords.length && !toSelf) throw new AppError({ status: 400, type: 'no_recipients', severity: 'warn' });
 
     // Add unsubscribe link to each recipient
     let recipients = recipientsRecords.map(({ newsletter, unsubscribeToken, ...recipient }) => ({
       ...recipient,
-      unsubscribeLink: `${config.backendUrl}/unsubscribe?token=${unsubscribeToken}`,
+      unsubscribeLink: `${appConfig.backendUrl}/unsubscribe?token=${unsubscribeToken}`,
     }));
 
     // If toSelf is true, send the email only to self
@@ -210,7 +209,7 @@ const systemRouteHandlers = app
         {
           email: user.email,
           name: user.name,
-          unsubscribeLink: `${config.backendUrl}/unsubscribe?token=NOTOKEN`,
+          unsubscribeLink: `${appConfig.backendUrl}/unsubscribe?token=NOTOKEN`,
           orgName: 'TEST EMAIL ORGANIZATION',
         },
       ];

@@ -46,11 +46,16 @@ CREATE TABLE "memberships" (
 );
 --> statement-breakpoint
 CREATE TABLE "oauth_accounts" (
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	"id" varchar PRIMARY KEY NOT NULL,
 	"provider_id" varchar NOT NULL,
 	"provider_user_id" varchar NOT NULL,
+	"email" varchar NOT NULL,
+	"verified" boolean DEFAULT false NOT NULL,
+	"verified_at" timestamp,
+	"tenant_id" varchar,
 	"user_id" varchar NOT NULL,
-	"created_at" timestamp DEFAULT now() NOT NULL,
-	CONSTRAINT "oauth_accounts_provider_id_provider_user_id_pk" PRIMARY KEY("provider_id","provider_user_id")
+	CONSTRAINT "oauth_accounts_providerId_providerUserId_email_unique" UNIQUE("provider_id","provider_user_id","email")
 );
 --> statement-breakpoint
 CREATE TABLE "organizations" (
@@ -122,6 +127,7 @@ CREATE TABLE "tokens" (
 	"entity_type" varchar,
 	"role" varchar,
 	"user_id" varchar,
+	"oauth_account_id" varchar,
 	"created_by" varchar,
 	"expires_at" timestamp with time zone NOT NULL,
 	"organization_id" varchar
@@ -171,6 +177,7 @@ ALTER TABLE "passkeys" ADD CONSTRAINT "passkeys_user_email_users_email_fk" FOREI
 ALTER TABLE "requests" ADD CONSTRAINT "requests_token_id_tokens_id_fk" FOREIGN KEY ("token_id") REFERENCES "public"."tokens"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "sessions" ADD CONSTRAINT "sessions_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "tokens" ADD CONSTRAINT "tokens_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "tokens" ADD CONSTRAINT "tokens_oauth_account_id_oauth_accounts_id_fk" FOREIGN KEY ("oauth_account_id") REFERENCES "public"."oauth_accounts"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "tokens" ADD CONSTRAINT "tokens_created_by_users_id_fk" FOREIGN KEY ("created_by") REFERENCES "public"."users"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "tokens" ADD CONSTRAINT "tokens_organization_id_organizations_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "users" ADD CONSTRAINT "users_modified_by_users_id_fk" FOREIGN KEY ("modified_by") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint

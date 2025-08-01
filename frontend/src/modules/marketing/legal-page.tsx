@@ -1,4 +1,4 @@
-import { config } from 'config';
+import { appConfig } from 'config';
 import { lazy } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AsideAnchor } from '~/modules/common/aside-anchor';
@@ -33,7 +33,7 @@ export const LegalPage = () => {
       <div className="container md:flex md:flex-row mt-4 md:mt-8 mx-auto gap-4">
         <div className="mx-auto md:min-w-48 md:w-[30%] md:mt-3">
           <StickyBox className="z-10 max-md:block!">
-            <SimpleHeader className="p-3" text={t('common:legal_text', { appName: config.name })} />
+            <SimpleHeader className="p-3" text={t('common:legal_text', { appName: appConfig.name })} />
             <PageAside tabs={tabs} className="py-2" setFocus />
           </StickyBox>
         </div>

@@ -1,5 +1,5 @@
 import { infiniteQueryOptions } from '@tanstack/react-query';
-import { config } from 'config';
+import { appConfig } from 'config';
 import { type GetMembersData, type GetPendingInvitationsData, getMembers, getPendingInvitations } from '~/api.gen';
 
 type GetMembershipInvitationsParams = Omit<GetPendingInvitationsData['query'], 'limit' | 'offset'> & GetPendingInvitationsData['path'];
@@ -34,7 +34,7 @@ export const membersKeys = {
  * @param param.role - Role of the members to filter by.
  * @param param.sort - Field to sort by (default is 'createdAt').
  * @param param.order - Order of sorting (default is 'desc').
- * @param param.limit - Number of items per page (default is configured in `config.requestLimits.members`).
+ * @param param.limit - Number of items per page (default is configured in `appConfig.requestLimits.members`).
  * @returns Infinite query options.
  */
 export const membersQueryOptions = ({
@@ -49,7 +49,7 @@ export const membersQueryOptions = ({
 }: GetMembersParams & { limit?: number }) => {
   const sort = _sort || 'createdAt';
   const order = _order || 'desc';
-  const limit = String(_limit || config.requestLimits.members);
+  const limit = String(_limit || appConfig.requestLimits.members);
 
   const queryKey = membersKeys.table.members({ idOrSlug, entityType, orgIdOrSlug, q, sort, order, role });
 
@@ -84,7 +84,7 @@ export const membersQueryOptions = ({
  * @param param.q - Optional search query to filter invited members by (default is an empty string).
  * @param param.sort - Field to sort by (default is 'createdAt').
  * @param param.order - Order of sorting (default is 'desc').
- * @param param.limit - Number of items per page (default is configured in `config.requestLimits.pendingInvitations`).
+ * @param param.limit - Number of items per page (default is configured in `appConfig.requestLimits.pendingInvitations`).
  * @returns Infinite query options.
  */
 export const pendingInvitationsQueryOptions = ({
@@ -98,7 +98,7 @@ export const pendingInvitationsQueryOptions = ({
 }: GetMembershipInvitationsParams & { limit?: number }) => {
   const sort = _sort || 'createdAt';
   const order = _order || 'desc';
-  const limit = String(_limit || config.requestLimits.pendingInvitations);
+  const limit = String(_limit || appConfig.requestLimits.pendingInvitations);
 
   const queryKey = membersKeys.table.pending({ idOrSlug, entityType, orgIdOrSlug, q, sort, order });
 

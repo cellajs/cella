@@ -1,5 +1,5 @@
 import type { PGlite } from '@electric-sql/pglite';
-import { config } from 'config';
+import { appConfig } from 'config';
 import { type DrizzleConfig, sql } from 'drizzle-orm';
 import { type NodePgClient, drizzle as pgDrizzle } from 'drizzle-orm/node-postgres';
 import type { PgDatabase } from 'drizzle-orm/pg-core';
@@ -7,7 +7,7 @@ import { drizzle as pgliteDrizzle } from 'drizzle-orm/pglite';
 import { env } from '../env';
 
 export const dbConfig: DrizzleConfig = {
-  logger: config.debug,
+  logger: appConfig.debug,
   casing: 'snake_case',
 };
 

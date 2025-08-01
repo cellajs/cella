@@ -1,4 +1,4 @@
-import { config } from 'config';
+import { appConfig } from 'config';
 import i18n from 'i18next';
 import { Link, Text } from 'jsx-email';
 
@@ -13,14 +13,14 @@ export const Footer = () => (
       padding: '0rem 1.5rem',
     }}
   >
-    {config.name}・{config.company.streetAddress}・{config.company.city}・{config.company.country}, {config.company.postcode}・
+    {appConfig.name}・{appConfig.company.streetAddress}・{appConfig.company.city}・{appConfig.company.country}, {appConfig.company.postcode}・
     <Link
       style={{
         color: '#0366d6',
         fontSize: '.75rem',
         lineHeight: '1.13rem',
       }}
-      href={`mailto:${config.supportEmail}`}
+      href={`mailto:${appConfig.supportEmail}`}
     >
       {i18n.t('backend:email.support_email')}
     </Link>

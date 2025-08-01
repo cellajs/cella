@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
-import { config, type EntityType } from 'config';
+import { appConfig, type EntityType } from 'config';
 import { History, Search, User, X } from 'lucide-react';
 import { Fragment, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -125,7 +125,7 @@ export const AppSearch = () => {
                     <ContentPlaceholder
                       icon={Search}
                       title={t('common:global_search.text', {
-                        appName: config.name,
+                        appName: appConfig.name,
                       })}
                     />
                   </CommandEmpty>
@@ -160,7 +160,7 @@ export const AppSearch = () => {
               </>
             )}
             {items.total > 0 &&
-              config.pageEntityTypes.map((entityType) => {
+              appConfig.pageEntityTypes.map((entityType) => {
                 const filteredItems = items.items.filter((el) => el.entityType === entityType);
                 // Skip rendering if no items match the section type
                 if (filteredItems.length === 0) return null;

@@ -5,30 +5,8 @@ import { useTranslation } from 'react-i18next';
 import { signOut } from '~/api.gen';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { toaster } from '~/modules/common/toaster';
-import type { MeUser } from '~/modules/me/types';
-import { queryClient } from '~/query/query-client';
 import { SignOutRoute } from '~/routes/auth';
-import { useAlertStore } from '~/store/alert';
-import { useDraftStore } from '~/store/draft';
-import { useNavigationStore } from '~/store/navigation';
-import { useSyncStore } from '~/store/sync';
-import { useUIStore } from '~/store/ui';
-import { useUserStore } from '~/store/user';
-
-export const flushStoresAndCache = (removeAccount?: boolean) => {
-  queryClient.clear();
-  useUserStore.setState({ user: null as unknown as MeUser });
-  useSyncStore.setState({ data: {} });
-  useDraftStore.getState().clearForms();
-  useNavigationStore.getState().clearNavigationStore();
-  useUIStore.getState().setImpersonating(false);
-
-  if (!removeAccount) return;
-  // Clear below on remove account
-  useAlertStore.getState().clearAlertStore();
-  useUIStore.getState().clearUIStore();
-  useUserStore.setState({ lastUser: null as unknown as MeUser, passkey: false, oauth: [] });
-};
+import { flushStores } from '~/utils/flush-stores';
 
 // Sign out user and clear all stores and query cache
 export const SignOut = () => {
@@ -46,11 +24,12 @@ export const SignOut = () => {
 
     const handleSignOut = async () => {
       try {
-        await signOut();
-        flushStoresAndCache(!!force);
+        flushStores(!!force);
+        if (!force) await signOut();
         toaster(t('common:success.signed_out'), 'success');
         navigate({ to: '/about', replace: true });
       } catch (error) {
+        console.error('Sign out error:', error);
         toaster(t('common:already_signed_out'), 'warning');
         navigate({ to: '/about', replace: true });
       }

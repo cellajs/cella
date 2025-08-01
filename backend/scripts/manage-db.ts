@@ -1,7 +1,7 @@
-import { config } from 'config';
 import { db } from '#/db/db';
 import { organizationsTable } from '#/db/schema/organizations';
 import { usersTable } from '#/db/schema/users';
+import { appConfig } from 'config';
 import { dataSeed } from './seeds/data/seed';
 import { organizationsSeed } from './seeds/organizations/seed';
 import { userSeed } from './seeds/user/seed';
@@ -11,7 +11,7 @@ import { userSeed } from './seeds/user/seed';
  * Can't be run in production.
  */
 export const resetDb = async () => {
-  if (config.mode === 'production') return console.error('Not allowed in production.');
+  if (appConfig.mode === 'production') return console.error('Not allowed in production.');
 
   await deleteTables();
 
@@ -28,7 +28,7 @@ export const resetDb = async () => {
 
  */
 export const clearDb = async () => {
-  if (config.mode === 'production') return console.error('Not allowed in production.');
+  if (appConfig.mode === 'production') return console.error('Not allowed in production.');
 
   await deleteTables();
   console.info('Database clearing complete.');

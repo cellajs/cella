@@ -1,4 +1,4 @@
-import { config } from 'config';
+import { appConfig } from 'config';
 import { t } from 'i18next';
 import { Info } from 'lucide-react';
 import type { AlertWrap } from '~/modules/common/alert-wrap';
@@ -6,7 +6,7 @@ import type { AlertWrap } from '~/modules/common/alert-wrap';
 const alerts: AlertWrap[] = [];
 
 // Explain how to sign in using test account
-if (config.mode === 'development') {
+if (appConfig.mode === 'development') {
   alerts.push({
     id: 'test-credentials',
     modes: ['public'],
@@ -24,7 +24,7 @@ if (config.mode === 'development') {
 }
 
 // In production mode, show a notice that the app is a pre-release version
-if (config.mode === 'production') {
+if (appConfig.mode === 'production') {
   alerts.push({
     id: 'prerelease',
     modes: ['app'],

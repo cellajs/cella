@@ -6,7 +6,7 @@ import { db } from '#/db/db';
 import { membershipsTable } from '#/db/schema/memberships';
 import { usersTable } from '#/db/schema/users';
 import type { Env } from '#/lib/context';
-import { ApiError } from '#/lib/errors';
+import { AppError } from '#/lib/errors';
 import { registerMiddlewareDescription } from '#/lib/openapi-describer';
 import { deleteAuthCookie } from '#/modules/auth/helpers/cookie';
 import { getParsedSessionCookie, validateSession } from '#/modules/auth/helpers/session';
@@ -29,7 +29,7 @@ export const isAuthenticated: MiddlewareHandler<Env> = createMiddleware<Env>(asy
   // If no session id is found (or its corrupted/deprecated), remove session cookie
   if (!sessionData) {
     deleteAuthCookie(ctx, 'session');
-    throw new ApiError({ status: 401, type: 'no_session', severity: 'warn' });
+    throw new AppError({ status: 401, type: 'no_session', severity: 'warn' });
   }
 
   // Validate session
@@ -38,7 +38,7 @@ export const isAuthenticated: MiddlewareHandler<Env> = createMiddleware<Env>(asy
   // If session validation fails or user not found, remove cookie
   if (!session || !user) {
     deleteAuthCookie(ctx, 'session');
-    throw new ApiError({ status: 401, type: 'no_session', severity: 'warn' });
+    throw new AppError({ status: 401, type: 'no_session', severity: 'warn' });
   }
 
   // Update user last seen date

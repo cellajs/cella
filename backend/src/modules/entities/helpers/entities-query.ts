@@ -1,5 +1,5 @@
 import { z } from '@hono/zod-openapi';
-import { type ContextEntityType, config } from 'config';
+import { appConfig, type ContextEntityType } from 'config';
 import { and, eq, ilike, inArray, ne, or, type SQLWrapper, sql } from 'drizzle-orm';
 
 import { db } from '#/db/db';
@@ -42,12 +42,12 @@ export const getEntitiesQuery = ({ q, organizationIds, userId, selfId, type, use
  * and match the provided search query. Default will return query for all context entities if type is not provided.
  */
 const getContextEntitiesQuery = ({ q, organizationIds, userId, type }: ContextEntitiesQueryProps) => {
-  const contextEntities = type ? [type] : config.contextEntityTypes;
+  const contextEntities = type ? [type] : appConfig.contextEntityTypes;
 
   const contextQueries = contextEntities
     .map((entityType) => {
       const table = entityTables[entityType];
-      const entityIdField = config.entityIdFields[entityType];
+      const entityIdField = appConfig.entityIdFields[entityType];
       if (!table) return null;
 
       const filters = [
