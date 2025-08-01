@@ -1,7 +1,3 @@
-import { OpenAPIHono } from '@hono/zod-openapi';
-import { appConfig } from 'config';
-import { and, count, eq, gt, ilike, inArray, isNotNull, isNull, or, sql } from 'drizzle-orm';
-import i18n from 'i18next';
 import { db } from '#/db/db';
 import { emailsTable } from '#/db/schema/emails';
 import { type MembershipModel, membershipsTable } from '#/db/schema/memberships';
@@ -26,6 +22,10 @@ import { getOrderColumn } from '#/utils/order-column';
 import { slugFromEmail } from '#/utils/slug-from-email';
 import { prepareStringForILikeFilter } from '#/utils/sql';
 import { createDate, TimeSpan } from '#/utils/time-span';
+import { OpenAPIHono } from '@hono/zod-openapi';
+import { appConfig } from 'config';
+import { and, count, eq, gt, ilike, inArray, isNotNull, isNull, or, sql } from 'drizzle-orm';
+import i18n from 'i18next';
 import { MemberInviteEmail, type MemberInviteEmailProps } from '../../../emails/member-invite';
 
 const app = new OpenAPIHono<Env>({ defaultHook });
@@ -277,12 +277,7 @@ const membershipRouteHandlers = app
       .select()
       .from(membershipsTable)
       .where(
-        and(
-          inArray(membershipsTable.userId, membershipIds),
-          eq(membershipsTable.contextType, entityType),
-          eq(membershipsTable[entityIdField], entity.id),
-          isNotNull(membershipsTable.activatedAt),
-        ),
+        and(inArray(membershipsTable.userId, membershipIds), eq(membershipsTable[entityIdField], entity.id), isNotNull(membershipsTable.activatedAt)),
       );
 
     // Check if membership exist
