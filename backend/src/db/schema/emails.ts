@@ -1,8 +1,8 @@
+import { boolean, pgTable, timestamp, varchar } from 'drizzle-orm/pg-core';
 import { tokensTable } from '#/db/schema/tokens';
 import { usersTable } from '#/db/schema/users';
 import { timestampColumns } from '#/db/utils/timestamp-columns';
 import { nanoid } from '#/utils/nanoid';
-import { boolean, pgTable, timestamp, varchar } from 'drizzle-orm/pg-core';
 
 export const emailsTable = pgTable('emails', {
   createdAt: timestampColumns.createdAt,

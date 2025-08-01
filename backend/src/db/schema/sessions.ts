@@ -1,7 +1,7 @@
+import { pgTable, varchar } from 'drizzle-orm/pg-core';
 import { usersTable } from '#/db/schema/users';
 import { timestampColumns } from '#/db/utils/timestamp-columns';
 import { nanoid } from '#/utils/nanoid';
-import { pgTable, varchar } from 'drizzle-orm/pg-core';
 
 export const sessionTypeEnum = ['regular', 'impersonation'] as const;
 export const authStrategiesEnum = ['github', 'google', 'microsoft', 'password', 'passkey', 'email'] as const;

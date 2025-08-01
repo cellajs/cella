@@ -1,10 +1,10 @@
+import { appConfig, type Language } from 'config';
+import { boolean, index, json, pgTable, varchar } from 'drizzle-orm/pg-core';
 import type { AuthStrategy } from '#/db/schema/sessions';
 import { usersTable } from '#/db/schema/users';
 import { defaultRestrictions, type Restrictions } from '#/db/utils/organization-restrictions';
 import { timestampColumns } from '#/db/utils/timestamp-columns';
 import { nanoid } from '#/utils/nanoid';
-import { appConfig, type Language } from 'config';
-import { boolean, index, json, pgTable, varchar } from 'drizzle-orm/pg-core';
 
 const languagesEnum = appConfig.languages;
 

@@ -1,7 +1,7 @@
+import { boolean, pgTable, timestamp, unique, varchar } from 'drizzle-orm/pg-core';
 import { usersTable } from '#/db/schema/users';
 import { timestampColumns } from '#/db/utils/timestamp-columns';
 import { nanoid } from '#/utils/nanoid';
-import { boolean, pgTable, timestamp, unique, varchar } from 'drizzle-orm/pg-core';
 
 export const supportedOAuthProviders = ['github', 'google', 'microsoft'] as const;
 
