@@ -24,7 +24,7 @@ import { prepareStringForILikeFilter } from '#/utils/sql';
 import { createDate, TimeSpan } from '#/utils/time-span';
 import { OpenAPIHono } from '@hono/zod-openapi';
 import { appConfig } from 'config';
-import { and, count, eq, gt, ilike, inArray, isNotNull, isNull, ne, or, sql } from 'drizzle-orm';
+import { and, count, eq, gt, ilike, inArray, isNotNull, isNull, or, sql } from 'drizzle-orm';
 import i18n from 'i18next';
 import { MemberInviteEmail, type MemberInviteEmailProps } from '../../../emails/member-invite';
 
@@ -56,39 +56,24 @@ const membershipRouteHandlers = app
     const organization = getContextOrganization();
 
     // Fetch all existing tokens by organizationId
-    const [directEntityInvites, organizationWideInvites] = await Promise.all([
-      // Invites directly tied to a specific entity (e.g., project, team, etc.)
-      db
-        .select()
-        .from(tokensTable)
-        .where(
-          and(
-            eq(tokensTable[targetEntityIdField], entityId),
-            eq(tokensTable.type, 'invitation'),
-            inArray(tokensTable.email, normalizedEmails),
-            eq(tokensTable.entityType, entityType),
-            gt(tokensTable.expiresAt, new Date()),
-          ),
+    const allInvitesToken = await db
+      .select()
+      .from(tokensTable)
+      .where(
+        and(
+          eq(tokensTable.organizationId, organization.id),
+          eq(tokensTable.type, 'invitation'),
+          inArray(tokensTable.email, normalizedEmails),
+          isNotNull(tokensTable.entityType),
+          gt(tokensTable.expiresAt, new Date()),
         ),
+      );
 
-      // Invites across the whole organization (same email)
-      db
-        .select()
-        .from(tokensTable)
-        .where(
-          and(
-            eq(tokensTable.organizationId, organization.id),
-            eq(tokensTable.type, 'invitation'),
-            ne(tokensTable.entityType, entityType),
-            isNotNull(tokensTable.entityType),
-            inArray(tokensTable.email, normalizedEmails),
-            gt(tokensTable.expiresAt, new Date()),
-          ),
-        ),
-    ]);
-
+    const organizationWideInvites = allInvitesToken.filter((token) => token.entityType !== entityType);
     // Map invited emails for filtering
-    const directlyInvitedEmails = new Set(directEntityInvites.map(({ email }) => email));
+    const directlyInvitedEmails = new Set(
+      allInvitesToken.filter((token) => token[targetEntityIdField] === entityId && token.entityType === entityType).map(({ email }) => email),
+    );
     const organizationInvitedEmails = new Set(organizationWideInvites.map(({ email }) => email));
 
     // Log existing direct entity invites
