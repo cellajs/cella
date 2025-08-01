@@ -1,4 +1,4 @@
-import { config } from 'config';
+import { appConfig } from 'config';
 import { Undo } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -36,7 +36,7 @@ export const OnboardingCompleted = () => {
       )}
       <h1 className="text-3xl font-bold">{t('app:onboarding_completed')}</h1>
       <p className="text-xl text-foreground/90 md:text-2xl max-w-md font-light md:leading-9 pb-8">
-        {t('app:onboarding_completed.text', { appName: config.name })}
+        {t('app:onboarding_completed.text', { appName: appConfig.name })}
       </p>
     </div>
   );

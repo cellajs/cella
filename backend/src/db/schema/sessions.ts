@@ -8,6 +8,7 @@ export const authStrategiesEnum = ['github', 'google', 'microsoft', 'password', 
 export type AuthStrategy = (typeof authStrategiesEnum)[number];
 
 export const sessionsTable = pgTable('sessions', {
+  createdAt: timestampColumns.createdAt,
   id: varchar().primaryKey().$defaultFn(nanoid),
   token: varchar().notNull(),
   type: varchar({
@@ -27,7 +28,6 @@ export const sessionsTable = pgTable('sessions', {
   authStrategy: varchar({
     enum: authStrategiesEnum,
   }).notNull(),
-  createdAt: timestampColumns.createdAt,
   expiresAt: timestampColumns.expiresAt,
 });
 

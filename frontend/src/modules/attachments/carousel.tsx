@@ -164,11 +164,14 @@ const AttachmentsCarousel = ({ items = [], isDialog = false, itemIndex = 0, save
 
       {items.length > 1 && (
         <>
-          <CarouselPrevious className="left-4 lg:left-8 opacity-0 transition-opacity group-hover:opacity-70 shadow-md" />
-          <CarouselNext ref={nextButtonRef} className="right-4 lg:right-8 opacity-0 transition-opacity group-hover:opacity-70 shadow-md" />
+          <CarouselPrevious className="left-4 lg:left-8 opacity-0 transition-opacity group-hover:opacity-70 focus-visible:opacity-90 shadow-md" />
+          <CarouselNext
+            ref={nextButtonRef}
+            className="right-4 lg:right-8 opacity-0 transition-opacity group-hover:opacity-70 focus-visible:opacity-90 shadow-md"
+          />
         </>
       )}
-      {!isDialog && <CarouselDots size="sm" gap="lg" className="relative mt-[calc(1rem+2%)]" />}
+      {!isDialog && <CarouselDots size="sm" gap="lg" className="relative mt-[calc(1rem+2%)] p-1" />}
     </BaseCarousel>
   );
 };

@@ -1,5 +1,5 @@
 import crypto from 'node:crypto';
-import { config, type UploadTemplateId } from 'config';
+import { appConfig, type UploadTemplateId } from 'config';
 import { uploadTemplates } from 'config/templates';
 import { env } from '#/env';
 import { nanoid } from '#/utils/nanoid';
@@ -32,8 +32,8 @@ export const getParams = (templateId: UploadTemplateId, isPublic: boolean, sub: 
         // Use is also based on template data
         use: template.use,
         robot: '/s3/store',
-        credentials: isPublic ? config.s3PublicBucket : config.s3PrivateBucket,
-        host: config.s3Host,
+        credentials: isPublic ? appConfig.s3PublicBucket : appConfig.s3PrivateBucket,
+        host: appConfig.s3Host,
         no_vhost: true,
         url_prefix: '',
         acl: isPublic ? 'public-read' : 'private',

@@ -13,8 +13,6 @@ export const requestCreateBodySchema = z.object({
   message: z.string().nullable(),
 });
 
-export const requestListQuerySchema = paginationQuerySchema.merge(
-  z.object({
-    sort: z.enum(['id', 'email', 'type', 'createdAt']).default('createdAt').optional(),
-  }),
-);
+export const requestListQuerySchema = paginationQuerySchema.extend({
+  sort: z.enum(['id', 'email', 'type', 'createdAt']).default('createdAt').optional(),
+});

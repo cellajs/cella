@@ -34,6 +34,7 @@ const BaseDataTable = memo(
       error,
       fetchNextPage,
     } = useDataFromInfiniteQuery(attachmentsQueryOptions({ orgIdOrSlug, q, sort, order, limit }));
+
     const attachmentUpdateMutation = useAttachmentUpdateMutation();
 
     const rows = useOfflineTableSearch({

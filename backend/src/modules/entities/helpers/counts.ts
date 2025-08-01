@@ -1,5 +1,5 @@
-import { type ContextEntityType, config, type ProductEntityType } from 'config';
-import { and, count, eq, isNull, type SelectedFields, type SQL, type SQLWrapper, sql } from 'drizzle-orm';
+import { appConfig, type ContextEntityType, type ProductEntityType } from 'config';
+import { and, count, eq, isNotNull, type SelectedFields, type SQL, type SQLWrapper, sql } from 'drizzle-orm';
 import type { PgColumn, SubqueryWithSelection } from 'drizzle-orm/pg-core';
 import { db } from '#/db/db';
 import { membershipsTable } from '#/db/schema/memberships';
@@ -18,7 +18,7 @@ type EntityIdColumnNames = keyof (typeof membershipsTable)['_']['columns'];
  * @returns Query object that can be executed
  */
 export const getMemberCountsQuery = (entityType: ContextEntityType) => {
-  const targetEntityIdField = config.entityIdFields[entityType];
+  const targetEntityIdField = appConfig.entityIdFields[entityType];
   const entityIdColumn = membershipsTable[targetEntityIdField as EntityIdColumnNames];
   if (!entityIdColumn) throw new Error(`Entity ${entityType} does not have an ID column defined`);
 
@@ -29,7 +29,7 @@ export const getMemberCountsQuery = (entityType: ContextEntityType) => {
       invites: count().as('invites'),
     })
     .from(tokensTable)
-    .where(and(eq(tokensTable.entityType, entityType), eq(tokensTable.type, 'invitation'), isNull(tokensTable.userId)))
+    .where(and(eq(tokensTable.type, 'invitation'), isNotNull(tokensTable.userId), isNotNull(tokensTable.entityType)))
     .groupBy(tokensTable[targetEntityIdField])
     .as('invites');
 
@@ -47,7 +47,7 @@ export const getMemberCountsQuery = (entityType: ContextEntityType) => {
     })
     .from(membershipsTable)
     .leftJoin(inviteCountSubquery, eq(entityIdColumn, inviteCountSubquery.id))
-    .where(eq(membershipsTable.contextType, entityType))
+    .where(and(eq(membershipsTable.contextType, entityType), isNotNull(membershipsTable.activatedAt)))
     .groupBy(entityIdColumn, inviteCountSubquery.invites)
     .as('membership_counts');
 };
@@ -89,7 +89,7 @@ export const getRelatedEntityCounts = async (
   entityId: string,
   countConditions: Partial<Record<ProductEntityType | ContextEntityType, SQL>> = {},
 ) => {
-  const entityIdField = config.entityIdFields[entityType];
+  const entityIdField = appConfig.entityIdFields[entityType];
 
   // Only keep entity types that actually contain the ID field we care about
   const validEntities = getRelatedEntities(entityType);
@@ -116,7 +116,7 @@ export const getRelatedEntityCounts = async (
 };
 
 export const getRelatedEntityCountsQuery = (entityType: ContextEntityType) => {
-  const entityIdField = config.entityIdFields[entityType];
+  const entityIdField = appConfig.entityIdFields[entityType];
   const table = entityTables[entityType];
   if (!table) throw new Error(`Invalid entityType: ${entityType}`);
 

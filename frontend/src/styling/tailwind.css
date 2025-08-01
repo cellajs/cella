@@ -31,6 +31,12 @@
   }
 }
 
+@layer components {
+  .focus-effect {
+    @apply focus-visible:outline-none sm:focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2;
+  }
+}
+
 @layer base {
   .bn-container.bn-shadcn,
   :root {

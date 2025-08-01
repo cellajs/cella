@@ -1,4 +1,4 @@
-import { config } from 'config';
+import { appConfig } from 'config';
 import { useEffect, useState } from 'react';
 
 // Store global state in a module-level variable
@@ -6,7 +6,7 @@ let currentBreakpoint = '';
 const listeners = new Set<(breakpoint: string) => void>();
 
 // Sort breakpoints once for efficiency
-const breakpoints: { [key: string]: string } = config.theme.screenSizes;
+const breakpoints: { [key: string]: string } = appConfig.theme.screenSizes;
 const sortedBreakpoints = Object.keys(breakpoints).sort((a, b) => Number.parseInt(breakpoints[a], 10) - Number.parseInt(breakpoints[b], 10));
 
 // Function to get the matched breakpoint based on window width

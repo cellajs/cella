@@ -1,5 +1,5 @@
 import { useNavigate } from '@tanstack/react-router';
-import { config } from 'config';
+import { appConfig } from 'config';
 import { useTranslation } from 'react-i18next';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { Button } from '~/modules/ui/button';
@@ -12,7 +12,7 @@ export const SkipOrganization = () => {
   const onDelete = () => {
     removeDialog('skip-org-creation');
     navigate({
-      to: config.defaultRedirectPath,
+      to: appConfig.defaultRedirectPath,
       replace: true,
     });
   };

@@ -1,5 +1,5 @@
 import { Link } from '@tanstack/react-router';
-import { config } from 'config';
+import { appConfig } from 'config';
 import { Shield, UserRound } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -71,7 +71,7 @@ export const useColumns = () => {
           renderSelect({
             row,
             onRowChange,
-            options: config.rolesByType.entityRoles,
+            options: appConfig.rolesByType.entityRoles,
           }),
       },
       {

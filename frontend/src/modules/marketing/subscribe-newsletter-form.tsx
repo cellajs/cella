@@ -1,4 +1,4 @@
-import { config } from 'config';
+import { appConfig } from 'config';
 import { Send } from 'lucide-react';
 import { useRef } from 'react';
 
@@ -23,7 +23,7 @@ const SubscribeNewsletterForm = () => {
       { email, type: 'newsletter', message: null },
       {
         onSuccess: () => {
-          toaster(t('common:success.newsletter_sign_up', { appName: config.name }), 'success');
+          toaster(t('common:success.newsletter_sign_up', { appName: appConfig.name }), 'success');
           formRef.current?.reset();
         },
       },

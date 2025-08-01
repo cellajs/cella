@@ -1,4 +1,4 @@
-import { config } from 'config';
+import { appConfig } from 'config';
 import type { CustomUppyOpt } from '~/modules/common/uploader/types';
 
 const typeMap: Record<string, string[]> = {
@@ -19,7 +19,7 @@ const formatCategories = (categories: string[]) => {
 };
 
 export const generateRestrictionNote = (passedRestrictions?: Partial<CustomUppyOpt['restrictions']>): string => {
-  const { allowedFileTypes, minNumberOfFiles, maxNumberOfFiles, maxFileSize } = { ...config.uppy.defaultRestrictions, ...passedRestrictions };
+  const { allowedFileTypes, minNumberOfFiles, maxNumberOfFiles, maxFileSize } = { ...appConfig.uppy.defaultRestrictions, ...passedRestrictions };
 
   const categories = (() => {
     // If '*/*' is present, allow all categories

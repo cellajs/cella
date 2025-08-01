@@ -33,6 +33,7 @@ dist-ssr
 .sentryclirc
 .million
 .db
+.rendered
 backend/openapi.cache.json
 
 # Other

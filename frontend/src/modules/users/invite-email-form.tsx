@@ -1,5 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { config } from 'config';
+import { appConfig } from 'config';
 import { Send } from 'lucide-react';
 import { useMemo } from 'react';
 import type { UseFormProps } from 'react-hook-form';
@@ -12,13 +12,13 @@ import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { SelectEmails } from '~/modules/common/form-fields/select-emails';
 import SelectRoleRadio from '~/modules/common/form-fields/select-role-radio';
 import { useStepper } from '~/modules/common/stepper/use-stepper';
+import { toaster } from '~/modules/common/toaster';
 import type { EntityPage } from '~/modules/entities/types';
 import { useInviteMemberMutation } from '~/modules/memberships/query-mutations';
 import type { InviteMember } from '~/modules/memberships/types';
 import { Badge } from '~/modules/ui/badge';
 import { Button, SubmitButton } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
-import { toaster } from '../common/toaster';
 
 interface Props {
   entity?: EntityPage;
@@ -35,7 +35,7 @@ const InviteEmailForm = ({ entity, dialog: isDialog, children }: Props) => {
 
   const formSchema = z.object({
     emails: z.array(z.email(t('common:invalid.email'))).min(1, { message: t('common:invalid.min_items', { items_count: 'one', item: 'email' }) }),
-    role: z.enum(config.rolesByType.entityRoles).optional(),
+    role: z.enum(appConfig.rolesByType.entityRoles).optional(),
   });
   type FormValues = z.infer<typeof formSchema>;
 
@@ -53,11 +53,15 @@ const InviteEmailForm = ({ entity, dialog: isDialog, children }: Props) => {
   const formContainerId = 'invite-users';
   const form = useFormWithDraft<FormValues>(`invite-users${entity ? `-${entity?.id}` : ''}`, { formOptions, formContainerId });
 
-  const onSuccess = () => {
+  const onSuccess = ({ invitesSended, rejectedItems }: { rejectedItems: string[]; invitesSended: number }, { emails }: { emails: string[] }) => {
     form.reset(undefined, { keepDirtyValues: true });
     if (isDialog) useDialoger.getState().remove();
 
-    toaster(t('common:success.user_invited'), 'success');
+    if (invitesSended > 0) {
+      const resource = t(`common:${invitesSended === 1 ? 'user' : 'users'}`).toLowerCase();
+      toaster(t('common:success.resource_count_invited', { count: invitesSended, resource }), 'success');
+    }
+    if (rejectedItems.length) toaster(t('common:still_not_accepted', { count: rejectedItems.length, total: emails.length }), 'info');
 
     // Since this form is also used in onboarding, we need to call the next step
     // This should ideally be done through the callback, but we need to refactor stepper

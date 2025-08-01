@@ -8,7 +8,6 @@ import {
   RequestPasswordRoute,
   SignOutRoute,
   UnsubscribedRoute,
-  VerifyEmailWithTokenRoute,
 } from '~/routes/auth';
 import { AppRoute, ErrorNoticeRoute, PublicRoute, rootRoute } from '~/routes/base';
 import { HomeAliasRoute, HomeRoute, WelcomeRoute } from '~/routes/home';
@@ -32,14 +31,7 @@ export const routeTree = rootRoute.addChildren([
     ErrorNoticeRoute,
     SignOutRoute,
     AcceptEntityInviteRoute,
-    AuthLayoutRoute.addChildren([
-      AuthenticateRoute,
-      RequestPasswordRoute,
-      CreatePasswordWithTokenRoute,
-      EmailVerificationRoute,
-      VerifyEmailWithTokenRoute,
-      UnsubscribedRoute,
-    ]),
+    AuthLayoutRoute.addChildren([AuthenticateRoute, RequestPasswordRoute, CreatePasswordWithTokenRoute, EmailVerificationRoute, UnsubscribedRoute]),
   ]),
   AppRoute.addChildren([
     HomeRoute,

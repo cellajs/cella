@@ -1,6 +1,6 @@
 import { AdvancedMarker, APIProvider, ControlPosition, Map as GMap, InfoWindow, MapControl, useAdvancedMarkerRef } from '@vis.gl/react-google-maps';
-import { config } from 'config';
-import { ArrowUpRight, Minus, Plus, X } from 'lucide-react';
+import { appConfig } from 'config';
+import { ArrowUpRight, Milestone, Minus, Plus, X } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { useState } from 'react';
 import { ErrorBoundary } from 'react-error-boundary';
@@ -41,21 +41,27 @@ const MarkerWithInfoWindow = ({ position }: { position: { lat: number; lng: numb
   return (
     <>
       <AdvancedMarker ref={markerRef} onClick={() => setInfowindowOpen(true)} position={position} title="More info">
-        <img src={Logo} width="30" height="30" alt={config.name} />
+        <img src={Logo} width="30" height="30" alt={appConfig.name} />
       </AdvancedMarker>
 
       {infowindowOpen && (
         <InfoWindow headerDisabled={true} anchor={marker}>
-          <div className="text-xs text-slate-800 min-w-32">
+          <div className="text-xs text-slate-800 min-w-36 p-1">
             <div className="flex justify-between items-center">
-              <strong className="text-sm ">{config.company.name}</strong>
+              <strong className="text-sm ">{appConfig.company.name}</strong>
               <Button onClick={() => setInfowindowOpen(false)} size="micro" variant="ghost">
                 <X size={14} />
               </Button>
             </div>
-            <span className="block">{config.company.streetAddress}</span>
-            <span className="block">{config.company.country}</span>
-            <a href={config.company.googleMapsUrl} target="_blank" className="font-semibold flex mt-1" rel="noreferrer">
+            <span className="block">{appConfig.company.streetAddress}</span>
+            <span className="block">{appConfig.company.country}</span>
+            <a
+              href={appConfig.company.googleMapsUrl}
+              target="_blank"
+              className="font-semibold flex mt-1 rounded-md p-1 focus-effect"
+              rel="noreferrer"
+            >
+              <Milestone size={12} strokeWidth={2.5} className="mr-1" />
               {t('common:get_directions')}
               <ArrowUpRight size={12} className="ml-1 opacity-50" />
             </a>
@@ -89,11 +95,11 @@ const CustomZoomControl = ({ controlPosition, zoom, onZoomChange }: CustomZoomCo
 
 const ContactFormMap = () => {
   const mode = useUIStore((state) => state.mode);
-  const [zoom, setZoom] = useState(config.company.mapZoom);
+  const [zoom, setZoom] = useState(appConfig.company.mapZoom);
   const [mapConfig] = useState<MapConfig>(mode === 'dark' ? mapStyles[1] : mapStyles[0]);
   const { hasStarted } = useMounted();
 
-  if (!config.company.coordinates || !config.googleMapsKey) return null;
+  if (!appConfig.company.coordinates || !appConfig.googleMapsKey) return null;
 
   return (
     <ErrorBoundary
@@ -101,7 +107,7 @@ const ContactFormMap = () => {
     >
       <div className="md:pb-12 w-full h-full">
         <div className="w-full h-full rounded-sm overflow-hidden bg-accent">
-          <APIProvider apiKey={config.googleMapsKey} libraries={['marker']}>
+          <APIProvider apiKey={appConfig.googleMapsKey} libraries={['marker']}>
             <AnimatePresence>
               {hasStarted && (
                 <motion.div
@@ -117,11 +123,11 @@ const ContactFormMap = () => {
                     mapTypeId={mapConfig.mapTypeId}
                     gestureHandling="greedy"
                     disableDefaultUI
-                    defaultCenter={config.company.coordinates}
+                    defaultCenter={appConfig.company.coordinates}
                     zoom={zoom}
-                    defaultZoom={config.company.mapZoom}
+                    defaultZoom={appConfig.company.mapZoom}
                   >
-                    <MarkerWithInfoWindow position={config.company.coordinates} />
+                    <MarkerWithInfoWindow position={appConfig.company.coordinates} />
                     <CustomZoomControl controlPosition={ControlPosition.LEFT_BOTTOM} zoom={zoom} onZoomChange={setZoom} />
                   </GMap>
                 </motion.div>

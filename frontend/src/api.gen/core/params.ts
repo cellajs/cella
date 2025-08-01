@@ -3,11 +3,21 @@ type Slot = 'body' | 'headers' | 'path' | 'query';
 export type Field =
   | {
       in: Exclude<Slot, 'body'>;
+      /**
+       * Field name. This is the name we want the user to see and use.
+       */
       key: string;
+      /**
+       * Field mapped name. This is the name we want to use in the request.
+       * If omitted, we use the same value as `key`.
+       */
       map?: string;
     }
   | {
       in: Extract<Slot, 'body'>;
+      /**
+       * Key isn't required for bodies.
+       */
       key?: string;
       map?: string;
     };
@@ -71,10 +81,7 @@ const stripEmptySlots = (params: Params) => {
   }
 };
 
-export const buildClientParams = (
-  args: ReadonlyArray<unknown>,
-  fields: FieldsConfig,
-) => {
+export const buildClientParams = (args: ReadonlyArray<unknown>, fields: FieldsConfig) => {
   const params: Params = {
     body: {},
     headers: {},
@@ -111,19 +118,13 @@ export const buildClientParams = (
           const name = field.map || key;
           (params[field.in] as Record<string, unknown>)[name] = value;
         } else {
-          const extra = extraPrefixes.find(([prefix]) =>
-            key.startsWith(prefix),
-          );
+          const extra = extraPrefixes.find(([prefix]) => key.startsWith(prefix));
 
           if (extra) {
             const [prefix, slot] = extra;
-            (params[slot] as Record<string, unknown>)[
-              key.slice(prefix.length)
-            ] = value;
+            (params[slot] as Record<string, unknown>)[key.slice(prefix.length)] = value;
           } else {
-            for (const [slot, allowed] of Object.entries(
-              config.allowExtra ?? {},
-            )) {
+            for (const [slot, allowed] of Object.entries(config.allowExtra ?? {})) {
               if (allowed) {
                 (params[slot as Slot] as Record<string, unknown>)[key] = value;
                 break;

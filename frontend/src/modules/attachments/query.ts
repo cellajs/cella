@@ -1,5 +1,5 @@
 import { infiniteQueryOptions, queryOptions } from '@tanstack/react-query';
-import { config } from 'config';
+import { appConfig } from 'config';
 import { type GetAttachmentsData, getAttachments } from '~/api.gen';
 
 type GetAttachmentsParams = GetAttachmentsData['path'] & Omit<NonNullable<GetAttachmentsData['query']>, 'limit' | 'offset'>;
@@ -35,7 +35,7 @@ export const groupedAttachmentsQueryOptions = ({ orgIdOrSlug, attachmentId }: Pi
     queryKey,
     queryFn: () =>
       getAttachments({
-        query: { attachmentId, offset: String(0), limit: String(config.requestLimits.attachments) },
+        query: { attachmentId, offset: String(0), limit: String(appConfig.requestLimits.attachments) },
         path: { orgIdOrSlug },
       }),
     staleTime: 0,
@@ -52,7 +52,7 @@ export const groupedAttachmentsQueryOptions = ({ orgIdOrSlug, attachmentId }: Pi
  * @param param.q - Optional search query for filtering attachments.
  * @param param.sort - Field to sort by (default: 'createdAt').
  * @param param.order - Order of sorting (default: 'desc').
- * @param param.limit - Number of items per page (default: `config.requestLimits.attachments`).
+ * @param param.limit - Number of items per page (default: `appConfig.requestLimits.attachments`).
  * @returns Infinite query options.
  */
 export const attachmentsQueryOptions = ({
@@ -64,7 +64,7 @@ export const attachmentsQueryOptions = ({
 }: Omit<GetAttachmentsParams, 'groupId' | 'limit'> & { limit?: number }) => {
   const sort = _sort || 'createdAt';
   const order = _order || 'desc';
-  const limit = String(_limit || config.requestLimits.attachments);
+  const limit = String(_limit || appConfig.requestLimits.attachments);
 
   const queryKey = attachmentsKeys.list.table({ orgIdOrSlug, q, sort, order });
 

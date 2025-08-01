@@ -1,7 +1,7 @@
 /**
  * Entry point for the `tsdoc-enhancer` plugin.
  *
- * Re-exports the configuration factory and types for use in your OpenAPI config.
+ * Re-exports the configuration factory and types for use in your OpenAPI appConfig.
  *
  * @example
  * ```ts

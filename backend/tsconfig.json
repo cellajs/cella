@@ -15,9 +15,6 @@
     // This improves issue grouping in Sentry.
     "sourceRoot": "/",
 
-    // Alias `#/*` imports to `./src/*`
-    "baseUrl": ".",
-
     "paths": {
       "#/*": ["./src/*"],
       "#json/*": ["../json/*"],

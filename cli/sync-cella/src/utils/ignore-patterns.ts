@@ -31,7 +31,8 @@ function extractFromIgnoreList(ignoreList: IgnoreList): string[] {
 export async function extractIgnorePatterns({ ignoreList, ignoreFile }: ExtractIgnorePatternsOptions): Promise<string[]> {
   if (ignoreList && ignoreList.length > 0) {
     return extractFromIgnoreList(ignoreList);
-  } else if (ignoreFile && (await fileExists(ignoreFile))) {
+  }
+  if (ignoreFile && (await fileExists(ignoreFile))) {
     return await extractFromIgnoreFile(ignoreFile);
   }
   return [];

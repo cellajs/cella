@@ -1,4 +1,4 @@
-import { config } from 'config';
+import { appConfig } from 'config';
 import { Mailbox, Plus, Trash, XSquare } from 'lucide-react';
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -167,7 +167,13 @@ export const OrganizationsTableBar = ({
       <ColumnsView className="max-lg:hidden" columns={columns} setColumns={setColumns} />
 
       {/* Export */}
-      <Export className="max-lg:hidden" filename={`${config.slug}-organizations`} columns={columns} selectedRows={selected} fetchRows={fetchExport} />
+      <Export
+        className="max-lg:hidden"
+        filename={`${appConfig.slug}-organizations`}
+        columns={columns}
+        selectedRows={selected}
+        fetchRows={fetchExport}
+      />
 
       {/* Focus view */}
       <FocusView iconOnly />

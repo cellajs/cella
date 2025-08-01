@@ -1,8 +1,7 @@
 import type { ContextEntityType, ProductEntityType } from 'config';
-
 import { getContextMemberships, getContextOrganization } from '#/lib/context';
 import type { EntityModel } from '#/lib/entity';
-import { ApiError } from '#/lib/errors';
+import { AppError } from '#/lib/errors';
 import { checkPermission } from '#/permissions/check-if-allowed';
 
 /**
@@ -20,10 +19,10 @@ export const canCreateEntity = <K extends Exclude<ContextEntityType, 'organizati
 
   // Step 1: Permission check
   const isAllowed = checkPermission(memberships, 'create', entity);
-  if (!isAllowed) throw new ApiError({ status: 403, type: 'forbidden', severity: 'warn', entityType });
+  if (!isAllowed) throw new AppError({ status: 403, type: 'forbidden', severity: 'warn', entityType });
 
   // Step 2: Organization ownership check
   if (org && 'organizationId' in entity && entity.organizationId !== org.id) {
-    throw new ApiError({ status: 400, type: 'invalid_request', severity: 'error', entityType });
+    throw new AppError({ status: 400, type: 'invalid_request', severity: 'error', entityType });
   }
 };

@@ -5,7 +5,7 @@ import { contactFormHandler } from '~/modules/common/contact-form/contact-form-h
 import Logo from '~/modules/common/logo';
 import UserLanguage from '~/modules/me/user-language';
 import UserTheme from '~/modules/me/user-theme';
-import { Button } from '~/modules/ui/button';
+import { Button, buttonVariants } from '~/modules/ui/button';
 import { defaultFooterLinks } from '~/nav-config';
 import { cn } from '~/utils/cn';
 
@@ -19,10 +19,8 @@ export const FooterLink = ({ id, href }: FooterLinkProps) => {
 
   return (
     <li>
-      <Link to={href} draggable="false">
-        <Button variant="ghost" className="font-light" size="xs">
-          {t(`common:${id}`)}
-        </Button>
+      <Link to={href} draggable="false" className={cn(buttonVariants({ size: 'xs', variant: 'ghost' }), 'font-light')}>
+        {t(`common:${id}`)}
       </Link>
     </li>
   );
@@ -66,7 +64,11 @@ export const AppFooter = ({ className = '' }) => {
       <div className="flex items-center gap-4">
         <UserLanguage align="start" contentClassName="z-110" />
         <div className="mr-1 font-light text-muted first:hidden">|</div>
-        <Link to="/about" draggable="false" className="hover:scale-105 transition-transform active:translate-y-[.05rem]">
+        <Link
+          to="/about"
+          draggable="false"
+          className="hover:scale-105 transition-transform active:translate-y-[.05rem] rounded-md focus-visible:outline-hidden sm:focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-4"
+        >
           <Logo height={25} />
         </Link>
         <div className="ml-1 font-light text-muted">|</div>

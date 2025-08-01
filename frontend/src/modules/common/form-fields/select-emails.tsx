@@ -82,7 +82,7 @@ export const SelectEmails = (props: SelectEmailsProps) => {
       const addEmails = (email: string) => {
         if (!allowDuplicate) {
           for (let i = 0, l = emails.length; i < l; i++) {
-            if (emails[i].toLowerCase() === email.toLowerCase()) {
+            if (emails[i].toLowerCase() === email.toLowerCase().trim()) {
               return false;
             }
           }

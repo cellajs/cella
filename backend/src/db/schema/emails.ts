@@ -5,6 +5,7 @@ import { timestampColumns } from '#/db/utils/timestamp-columns';
 import { nanoid } from '#/utils/nanoid';
 
 export const emailsTable = pgTable('emails', {
+  createdAt: timestampColumns.createdAt,
   id: varchar().primaryKey().$defaultFn(nanoid),
   email: varchar().notNull().unique(),
   verified: boolean().notNull().default(false),
@@ -12,7 +13,6 @@ export const emailsTable = pgTable('emails', {
   userId: varchar()
     .notNull()
     .references(() => usersTable.id, { onDelete: 'cascade' }),
-  createdAt: timestampColumns.createdAt,
   verifiedAt: timestamp({ mode: 'string' }),
 });
 

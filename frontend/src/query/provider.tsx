@@ -1,6 +1,6 @@
 import { QueryClientProvider as BaseQueryClientProvider } from '@tanstack/react-query';
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
-import { config } from 'config';
+import { appConfig } from 'config';
 import { useEffect } from 'react';
 import { menuQueryOptions, meQueryOptions } from '~/modules/me/query';
 import type { UserMenu, UserMenuItem } from '~/modules/me/types';
@@ -24,7 +24,7 @@ export const QueryClientProvider = ({ children }: { children: React.ReactNode })
   const { offlineAccess, toggleOfflineAccess } = useUIStore();
 
   // Disable offline access if PWA is not enabled in the config
-  if (!config.has.pwa && offlineAccess) toggleOfflineAccess();
+  if (!appConfig.has.pwa && offlineAccess) toggleOfflineAccess();
 
   useEffect(() => {
     // Exit early if offline access is disabled or no stored user is available

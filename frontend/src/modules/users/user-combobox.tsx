@@ -1,9 +1,10 @@
 import { useQuery } from '@tanstack/react-query';
-import { config } from 'config';
+import { appConfig } from 'config';
 import { Check, ChevronsUpDown, Search, User, Users2, X } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { useDebounce } from '~/hooks/use-debounce';
 import { useMeasure } from '~/hooks/use-measure';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
@@ -23,8 +24,9 @@ interface Props {
 
 export const UserCombobox = ({ value, onChange, entity }: Props) => {
   const { t } = useTranslation();
+  const isMobile = useBreakpoints('max', 'sm');
   const { ref, bounds } = useMeasure<HTMLDivElement>();
-  const entityIdField = config.entityIdFields[entity.entityType];
+  const entityIdField = appConfig.entityIdFields[entity.entityType];
 
   const [open, setOpen] = useState(false);
   const [selected, setSelected] = useState<string[]>(value);
@@ -123,7 +125,7 @@ export const UserCombobox = ({ value, onChange, entity }: Props) => {
                     </CommandEmpty>
                   ) : (
                     <CommandEmpty>
-                      <ContentPlaceholder icon={Users2} title={t('common:invite_members_search.text', { appName: config.name })} />
+                      <ContentPlaceholder icon={Users2} title={t('common:invite_members_search.text', { appName: appConfig.name })} />
                     </CommandEmpty>
                   )}
                 </motion.div>
@@ -139,33 +141,38 @@ export const UserCombobox = ({ value, onChange, entity }: Props) => {
                   >
                     <ScrollArea>
                       <CommandGroup>
-                        {data.items.map((user) => (
-                          <CommandItem
-                            data-was-selected={selected.some((u) => u === user.email)}
-                            data-already-member={user.membership && user.membership[entityIdField] === entity.id}
-                            disabled={!user.membership || user.membership[entityIdField] === entity.id}
-                            key={user.id}
-                            className="w-full justify-between group"
-                            onSelect={() => {
-                              if (user.email) onSelect(user.email);
-                            }}
-                          >
-                            <div className="flex space-x-2 items-center outline-0 ring-0 group">
-                              <AvatarWrap type={user.entityType} className="h-8 w-8" id={user.id} name={user.name} url={user.thumbnailUrl} />
-                              <span className="group-hover:underline group-data-[already-member=true]:no-underline underline-offset-4 truncate font-medium">
-                                {user.name}
-                              </span>
-                            </div>
+                        {data.items.map(({ id, name, email, membership, entityType, thumbnailUrl }) => {
+                          if (!email) return null;
+                          const disabled = !membership || membership[entityIdField] === entity.id;
+                          return (
+                            <CommandItem
+                              data-was-selected={selected.some((u) => u === email)}
+                              data-already-member={membership && membership[entityIdField] === entity.id}
+                              disabled={disabled}
+                              key={id}
+                              className="w-full justify-between group"
+                              onSelect={() => onSelect(email)}
+                            >
+                              <div className="flex space-x-2 items-center outline-0 ring-0 group">
+                                <AvatarWrap type={entityType} className="h-8 w-8" id={id} name={name} url={thumbnailUrl} />
+                                <span className="group-hover:underline group-data-[already-member=true]:no-underline underline-offset-4 truncate font-medium">
+                                  {isMobile ? email : name}
+                                </span>
+                              </div>
 
-                            <div className="flex items-center">
-                              <Badge size="sm" variant="plain" className=" group-data-[already-member=true]:flex hidden gap-1">
-                                <User size={14} />
-                                <span className="max-sm:hidden font-light">{t('common:already_member')}</span>
-                              </Badge>
-                              <Check size={16} strokeWidth={3} className="text-success group-data-[was-selected=false]:invisible" />
-                            </div>
-                          </CommandItem>
-                        ))}
+                              <div className="flex items-center gap-2 min-w-0">
+                                <Badge size="sm" variant="plain" className="group-data-[already-member=true]:flex hidden gap-1">
+                                  <User size={14} />
+                                  <span className="max-sm:hidden font-light">{t('common:already_member')}</span>
+                                </Badge>
+                                <Check size={16} strokeWidth={3} className="flex text-success group-data-[was-selected=false]:hidden" />
+                                <span className="font-light max-sm:hidden group-data-[already-member=true]:hidden group-data-[was-selected=true]:hidden">
+                                  {email}
+                                </span>
+                              </div>
+                            </CommandItem>
+                          );
+                        })}
                       </CommandGroup>
                     </ScrollArea>
                   </motion.div>

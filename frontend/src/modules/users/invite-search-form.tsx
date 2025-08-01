@@ -1,5 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { config } from 'config';
+import { appConfig } from 'config';
 import { Send } from 'lucide-react';
 import { useMemo } from 'react';
 import type { UseFormProps } from 'react-hook-form';
@@ -8,13 +8,13 @@ import { z } from 'zod';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import SelectRoleRadio from '~/modules/common/form-fields/select-role-radio';
+import { toaster } from '~/modules/common/toaster';
 import type { EntityPage } from '~/modules/entities/types';
 import { useInviteMemberMutation } from '~/modules/memberships/query-mutations';
 import { Badge } from '~/modules/ui/badge';
 import { Button, SubmitButton } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
 import { UserCombobox } from '~/modules/users/user-combobox';
-import { toaster } from '../common/toaster';
 
 interface Props {
   entity?: EntityPage;
@@ -30,7 +30,7 @@ const InviteSearchForm = ({ entity, dialog: isDialog }: Props) => {
 
   const formSchema = z.object({
     emails: z.array(z.email(t('common:invalid.email'))).min(1, { message: t('common:invalid.min_items', { items_count: 'one', item: 'email' }) }),
-    role: z.enum(config.rolesByType.entityRoles),
+    role: z.enum(appConfig.rolesByType.entityRoles),
   });
 
   type FormValues = z.infer<typeof formSchema>;
@@ -38,10 +38,7 @@ const InviteSearchForm = ({ entity, dialog: isDialog }: Props) => {
   const formOptions: UseFormProps<FormValues> = useMemo(
     () => ({
       resolver: zodResolver(formSchema),
-      defaultValues: {
-        emails: [],
-        role: 'member',
-      },
+      defaultValues: { emails: [], role: 'member' },
     }),
     [],
   );
@@ -55,9 +52,14 @@ const InviteSearchForm = ({ entity, dialog: isDialog }: Props) => {
     invite(
       { ...values, entity },
       {
-        onSuccess: () => {
+        onSuccess: ({ invitesSended, rejectedItems }, { emails }) => {
           form.reset(undefined, { keepDirtyValues: true });
-          toaster(t('common:success.user_invited'), 'success');
+          if (invitesSended > 0) {
+            const resource = t(`common:${invitesSended === 1 ? 'user' : 'users'}`).toLowerCase();
+            toaster(t('common:success.resource_count_invited', { count: invitesSended, resource }), 'success');
+          }
+          if (rejectedItems.length) toaster(t('common:still_not_accepted', { count: rejectedItems.length, total: emails.length }), 'info');
+
           if (isDialog) useDialoger.getState().remove();
         },
       },

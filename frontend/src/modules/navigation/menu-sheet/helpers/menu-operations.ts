@@ -1,4 +1,4 @@
-import { type ContextEntityType, config } from 'config';
+import { appConfig, type ContextEntityType } from 'config';
 import type { UserMenu, UserMenuItem } from '~/modules/me/types';
 import type { MembershipSummary } from '~/modules/memberships/types';
 import { useNavigationStore } from '~/store/navigation';
@@ -6,7 +6,7 @@ import { useNavigationStore } from '~/store/navigation';
 const useTransformOnMenuItems = (transform: (items: UserMenuItem[]) => UserMenuItem[]) => {
   const { menu } = useNavigationStore.getState();
 
-  const updatedMenu = config.menuStructure.reduce(
+  const updatedMenu = appConfig.menuStructure.reduce(
     (acc, { entityType }) => {
       if (menu[entityType]) acc[entityType] = transform(menu[entityType]);
       return acc;
@@ -81,7 +81,7 @@ export const updateMenuItem = (updatedEntity: UserMenuItem) => {
     });
   };
 
-  return useTransformOnMenuItems(update); // use update on every menu item by storage type from menu config
+  return useTransformOnMenuItems(update); // Use update on every menu item by storage type from menu config
 };
 
 /**
@@ -96,7 +96,7 @@ export const updateMenuItemMembership = (membershipInfo: Partial<MembershipSumma
   const menu = useNavigationStore.getState().menu;
 
   // Find section that corresponds to given entity type
-  const menuSection = config.menuStructure.find((el) => el.entityType === entityType || el.subentityType === entityType);
+  const menuSection = appConfig.menuStructure.find((el) => el.entityType === entityType || el.subentityType === entityType);
   if (!menuSection) return;
 
   // Select menu entities based on section's entity type
@@ -139,5 +139,5 @@ export const deleteMenuItem = (itemId: string) => {
       .filter((item) => item.id !== itemId && item.organizationId !== itemId)
       .map((item) => (item.submenu ? { ...item, submenu: remove(item.submenu) } : item));
 
-  return useTransformOnMenuItems(remove); // use remove on every menu item by storage type from menu config
+  return useTransformOnMenuItems(remove); // Use remove on every menu item by storage type from menu config
 };

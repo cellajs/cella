@@ -1,5 +1,5 @@
 import { HeadContent, Outlet } from '@tanstack/react-router';
-import { config } from 'config';
+import { appConfig } from 'config';
 import { Suspense } from 'react';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 
@@ -19,7 +19,9 @@ function Root() {
   // Lazy load
   const GleapSupport = useLazyComponent(
     () =>
-      config.gleapToken && isOnline ? import('~/modules/common/gleap') : new Promise<{ default: () => null }>((res) => res({ default: () => null })),
+      appConfig.gleapToken && isOnline
+        ? import('~/modules/common/gleap')
+        : new Promise<{ default: () => null }>((res) => res({ default: () => null })),
     5000,
   ); // 5 seconds delay
 

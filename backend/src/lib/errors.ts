@@ -1,19 +1,20 @@
 import type { z } from '@hono/zod-openapi';
 import * as Sentry from '@sentry/node';
-import { config } from 'config';
+import { appConfig } from 'config';
 import type { ErrorHandler } from 'hono';
 import i18n from 'i18next';
 import { type Env, getContextOrganization, getContextUser } from '#/lib/context';
 import type locales from '#/lib/i18n-locales';
-import { externalLogger } from '#/middlewares/logger/external-logger';
+import { logToExternal } from '#/middlewares/logger/external-logger';
 import { getIsoDate } from '#/utils/iso-date';
+import { getNodeLoggerLevel } from '#/utils/logger';
 import type { errorSchema } from '#/utils/schema/error';
 
 type ErrorSchemaType = z.infer<typeof errorSchema>;
-export type ErrorMeta = { readonly [key: string]: number | string | boolean | null };
+type ErrorMeta = { readonly [key: string]: number | string | boolean | null };
 
 type AllErrorKeys = keyof (typeof locales)['en']['error'];
-export type ErrorKey = Exclude<AllErrorKeys, `${string}.text`>;
+type ErrorKey = Exclude<AllErrorKeys, `${string}.text`>;
 
 type ConstructedError = {
   type: ErrorKey;
@@ -24,16 +25,16 @@ type ConstructedError = {
   entityType?: ErrorSchemaType['entityType'];
   meta?: ErrorMeta;
   originalError?: Error;
-  redirectToFrontend?: boolean;
+  isRedirect?: boolean;
 };
 
-// Custom error class to handle API errors
-export class ApiError extends Error {
+// Custom error class to handle App errors
+export class AppError extends Error {
   name: Error['name'];
   status: ErrorSchemaType['status'];
   type: ErrorSchemaType['type'];
   severity: ErrorSchemaType['severity'];
-  redirectToFrontend: boolean;
+  isRedirect: boolean;
   entityType?: ErrorSchemaType['entityType'];
   meta?: ErrorMeta;
   originalError?: Error;
@@ -47,7 +48,7 @@ export class ApiError extends Error {
     this.type = error.type;
     this.entityType = error.entityType;
     this.severity = error.severity || 'info';
-    this.redirectToFrontend = error.redirectToFrontend || false;
+    this.isRedirect = error.isRedirect || false;
     this.meta = error.meta;
     this.originalError = error.originalError;
 
@@ -60,12 +61,12 @@ export class ApiError extends Error {
   }
 }
 
-export const handleApiError: ErrorHandler<Env> = (err, ctx) => {
-  // Normalize error to ApiError if possible
+export const handleAppError: ErrorHandler<Env> = (err, ctx) => {
+  // Normalize error to AppError if possible
   const apiError =
-    err instanceof ApiError
+    err instanceof AppError
       ? err
-      : new ApiError({
+      : new AppError({
           name: err.name ?? 'ApiError',
           status: 500,
           type: 'server_error',
@@ -74,14 +75,8 @@ export const handleApiError: ErrorHandler<Env> = (err, ctx) => {
         });
 
   // Get  non-enumerable 'stack', 'message', and 'cause'. These do NOT get included when using the spread operator (...)
-  const { redirectToFrontend, originalError, message, cause, stack, ...error } = apiError;
+  const { isRedirect, originalError, message, cause, stack, ...error } = apiError;
   const { severity, type, meta } = error;
-
-  // Redirect to the frontend error page with query parameters for error details
-  if (redirectToFrontend) {
-    const redirectUrl = `${config.frontendUrl}/error?error=${type}&severity=${severity}`;
-    return ctx.redirect(redirectUrl, 302);
-  }
 
   // Get the current user and organization from context
   const user = getContextUser();
@@ -101,18 +96,25 @@ export const handleApiError: ErrorHandler<Env> = (err, ctx) => {
   };
 
   // Send to Sentry
-  if (severity === 'error' || severity === 'warn') {
-    const level = severity === 'warn' ? 'warning' : severity;
+  if (['warn', 'error', 'fatal'].includes(severity)) {
+    const level = severity === 'warn' ? 'warning' : 'error';
     Sentry.captureException(enrichedError, { level });
   }
 
   // External logger
-  if (externalLogger?.[severity]) externalLogger[severity](message, undefined, enrichedError);
+  logToExternal(severity, message, enrichedError);
 
   // Console logging
-  console[severity](`[${severity.toUpperCase()}] ${message}`);
-  if (meta) console[severity]('Meta:', meta);
+  const nodeSevernity = getNodeLoggerLevel(severity);
+  console[nodeSevernity](`[${severity.toUpperCase()}] ${message}`);
+  if (meta) console[nodeSevernity]('Meta:', meta);
   if (stack) console.error(stack);
+
+  // Redirect to the frontend error page with query parameters for error details
+  if (isRedirect) {
+    const redirectUrl = `${appConfig.frontendUrl}/error?error=${type}&severity=${severity}`;
+    return ctx.redirect(redirectUrl, 302);
+  }
 
   return ctx.json(enrichedError, enrichedError.status);
 };

@@ -1,7 +1,7 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation } from '@tanstack/react-query';
 import { useNavigate, useParams, useSearch } from '@tanstack/react-router';
-import { config } from 'config';
+import { appConfig } from 'config';
 import { ArrowRight } from 'lucide-react';
 import { lazy, Suspense, useRef } from 'react';
 import { useForm } from 'react-hook-form';
@@ -11,7 +11,7 @@ import { type CreatePasswordData, type CreatePasswordResponse, createPassword } 
 import type { ApiError } from '~/lib/api';
 import AuthErrorNotice from '~/modules/auth/auth-error-notice';
 import { RequestPasswordDialog } from '~/modules/auth/request-password-dialog';
-import { useTokenCheck } from '~/modules/auth/use-token-check';
+import { useCheckToken } from '~/modules/auth/use-token-check';
 import Spinner from '~/modules/common/spinner';
 import { toaster } from '~/modules/common/toaster';
 import { Button, SubmitButton } from '~/modules/ui/button';
@@ -34,7 +34,7 @@ const CreatePasswordForm = () => {
   const { token } = useParams({ from: CreatePasswordWithTokenRoute.id });
   const { tokenId } = useSearch({ from: CreatePasswordWithTokenRoute.id });
 
-  const { data, isLoading, error } = useTokenCheck('email_verification', tokenId);
+  const { data, isLoading, error } = useCheckToken('email_verification', tokenId);
   const isMobile = window.innerWidth < 640;
 
   // Reset password & sign in
@@ -46,7 +46,7 @@ const CreatePasswordForm = () => {
     mutationFn: ({ token, password }) => createPassword({ path: { token }, body: { password } }),
     onSuccess: () => {
       toaster(t('common:success.password_reset'), 'success');
-      navigate({ to: config.defaultRedirectPath });
+      navigate({ to: appConfig.defaultRedirectPath });
     },
   });
 

@@ -1,16 +1,16 @@
 import { z } from '@hono/zod-openapi';
-import { type ContextEntityType, config } from 'config';
+import { appConfig, type ContextEntityType } from 'config';
 import { createSelectSchema } from 'drizzle-zod';
 import { sessionsTable } from '#/db/schema/sessions';
 import { entityBaseSchema } from '#/modules/entities/schema';
 import { membershipSummarySchema } from '#/modules/memberships/schema';
-import { enabledOauthProvidersEnum } from '#/modules/users/schema';
+import { enabledOAuthProvidersEnum } from '#/modules/users/schema';
 import { booleanQuerySchema } from '#/utils/schema/common';
 
 export const sessionSchema = createSelectSchema(sessionsTable).omit({ token: true }).extend({ isCurrent: z.boolean() });
 
 export const meAuthDataSchema = z.object({
-  oauth: z.array(enabledOauthProvidersEnum),
+  oauth: z.array(enabledOAuthProvidersEnum),
   passkey: z.boolean(),
   sessions: z.array(sessionSchema.extend({ expiresAt: z.string() })),
 });
@@ -30,7 +30,7 @@ const menuItemListSchema = z.array(
 );
 
 export const menuSchema = z.object(
-  config.menuStructure.reduce(
+  appConfig.menuStructure.reduce(
     (acc, { entityType }) => {
       acc[entityType] = menuItemListSchema;
       return acc;
@@ -63,5 +63,5 @@ export const uploadTokenSchema = z.object({
 export const uploadTokenQuerySchema = z.object({
   public: booleanQuerySchema,
   organizationId: z.string().optional(),
-  templateId: z.enum(config.uploadTemplateIds),
+  templateId: z.enum(appConfig.uploadTemplateIds),
 });

@@ -11,8 +11,9 @@ import {
 import { ChevronDown } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { customBlockTypeSelectItems } from '~/modules/common/blocknote/blocknote-config';
+import type { CustomBlockNoteMenuProps } from '~/modules/common/blocknote/types';
 
-export const CellaCustomBlockTypeSelect = () => {
+export const CellaCustomBlockTypeSelect = ({ headingLevels }: { headingLevels: CustomBlockNoteMenuProps['headingLevels'] }) => {
   // biome-ignore lint/style/noNonNullAssertion: required by author
   const Components = useComponentsContext()!;
   const dict = useDictionary();
@@ -24,7 +25,17 @@ export const CellaCustomBlockTypeSelect = () => {
 
   const [block, setBlock] = useState(editor.getTextCursorPosition().block);
 
-  const filteredItems = useMemo(() => blockTypeSelectItems(dict).filter(({ type }) => itemsType.includes(type)), [editor, dict]);
+  const filteredItems = useMemo(
+    () =>
+      blockTypeSelectItems(dict).filter(({ type, props }) => {
+        if (!itemsType.includes(type)) return false;
+        if (type === 'heading' && typeof props?.level === 'number') {
+          return headingLevels.includes(props.level as (typeof headingLevels)[number]);
+        }
+        return true;
+      }),
+    [editor, dict],
+  );
 
   const shouldShow = useMemo(() => filteredItems.some((item) => item.type === block.type), [block.type, filteredItems]);
 

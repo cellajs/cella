@@ -12,7 +12,7 @@ import {
 } from '#/modules/memberships/schema';
 import { memberSchema } from '#/modules/users/schema';
 import { entityWithTypeQuerySchema, idInOrgParamSchema, idOrSlugSchema, idsBodySchema, inOrgParamSchema } from '#/utils/schema/common';
-import { errorResponses, paginationSchema, successWithRejectedIdsSchema } from '#/utils/schema/responses';
+import { errorResponses, paginationSchema, successWithRejectedItemsSchema } from '#/utils/schema/responses';
 
 const membershipRoutes = {
   createMemberships: createCustomRoute({
@@ -37,7 +37,7 @@ const membershipRoutes = {
     responses: {
       200: {
         description: 'Number of sended invitations',
-        content: { 'application/json': { schema: z.number() } },
+        content: { 'application/json': { schema: successWithRejectedItemsSchema.extend({ invitesSended: z.number() }) } },
       },
       ...errorResponses,
     },
@@ -62,7 +62,7 @@ const membershipRoutes = {
         description: 'Success',
         content: {
           'application/json': {
-            schema: successWithRejectedIdsSchema(),
+            schema: successWithRejectedItemsSchema,
           },
         },
       },

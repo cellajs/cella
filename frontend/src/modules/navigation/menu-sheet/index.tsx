@@ -3,7 +3,7 @@ import { monitorForElements } from '@atlaskit/pragmatic-drag-and-drop/element/ad
 import { autoScrollForElements } from '@atlaskit/pragmatic-drag-and-drop-auto-scroll/element';
 import { type Edge, extractClosestEdge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge';
 import { Link } from '@tanstack/react-router';
-import { config } from 'config';
+import { appConfig } from 'config';
 import { ArrowLeft, Info, Search } from 'lucide-react';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -27,7 +27,7 @@ import { useNavigationStore } from '~/store/navigation';
 import { useUserStore } from '~/store/user';
 import { cn } from '~/utils/cn';
 
-const pwaEnabled = config.has.pwa;
+const pwaEnabled = appConfig.has.pwa;
 
 export const MenuSheet = memo(() => {
   const { t } = useTranslation();
@@ -53,7 +53,7 @@ export const MenuSheet = memo(() => {
   }, [searchResults]);
 
   const renderedSections = useMemo(() => {
-    return config.menuStructure
+    return appConfig.menuStructure
       .map(({ entityType }) => {
         const menuData = menu[entityType];
         const menuSection = menuSectionsSchema[entityType];
@@ -171,7 +171,7 @@ export const MenuSheet = memo(() => {
                 </label>
               </div>
               {pwaEnabled && <OfflineAccessSwitch />}
-              {config.menuStructure.some(({ subentityType }) => subentityType) && (
+              {appConfig.menuStructure.some(({ subentityType }) => subentityType) && (
                 <div className="flex items-center gap-4 ml-1">
                   <Switch size="xs" id="hideSubmenu" checked={hideSubmenu} onCheckedChange={toggleHideSubmenu} ria-label={t('common:nested_menu')} />
                   <label htmlFor="hideSubmenu" className="cursor-pointer select-none text-sm font-medium leading-none">

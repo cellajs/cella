@@ -1,5 +1,5 @@
 import { useNavigate } from '@tanstack/react-router';
-import { config } from 'config';
+import { appConfig } from 'config';
 import { Check, Sparkles } from 'lucide-react';
 import { createRef, type RefObject, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -31,7 +31,7 @@ const Pricing = () => {
         drawerOnMobile: true,
         className: 'sm:max-w-2xl',
         title: t('common:waitlist_request'),
-        description: t('common:waitlist_request.text', { appName: config.name }),
+        description: t('common:waitlist_request.text', { appName: appConfig.name }),
       });
     }
   };
@@ -60,7 +60,7 @@ const Pricing = () => {
             <div className="mt-4">
               <h3 className="text-center text-2xl flex w-full justify-center font-bold">
                 {t(title)}
-                {popular && <Sparkles className="ml-1 w-5 text-primary" strokeWidth={config.theme.strokeWidth} />}
+                {popular && <Sparkles className="ml-1 w-5 text-primary" strokeWidth={appConfig.theme.strokeWidth} />}
               </h3>
               <div className="flex items-center justify-center mt-4 text-gray-600 dark:text-gray-400">
                 {discount && (

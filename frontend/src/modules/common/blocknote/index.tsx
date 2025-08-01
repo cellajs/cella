@@ -26,19 +26,17 @@ import type { CommonBlockNoteProps, CustomBlockFileTypes, CustomBlockNoteEditor,
 import { useUIStore } from '~/store/ui';
 
 import '@blocknote/shadcn/style.css';
+import { getPresignedUrl } from '~/api.gen';
 import '~/modules/common/blocknote/app-specific-custom/styles.css';
 import '~/modules/common/blocknote/styles.css';
-import { getPresignedUrl } from '~/api.gen';
 
 type BlockNoteProps =
   | (CommonBlockNoteProps & {
       type: 'edit' | 'create';
-      autofocus?: boolean;
       updateData: (strBlocks: string) => void;
     })
   | (CommonBlockNoteProps & {
       type: 'preview';
-      autofocus?: never;
       editable?: never;
       updateData?: never;
       onEscapeClick?: never;
@@ -56,10 +54,10 @@ const BlockNote = ({
   trailingBlock = true,
   clickOpensPreview = false, // click on FileBlock opens preview (in case, type is 'preview' or not editable)
   // Editor functional
+  headingLevels = [1, 2, 3],
   codeBlockDefaultLanguage = 'text',
   editable = type !== 'preview',
   sideMenu = true,
-  autofocus,
   slashMenu = true,
   formattingToolbar = true,
   emojis = true,
@@ -96,6 +94,7 @@ const BlockNote = ({
       supportedLanguages,
       createHighlighter: codeBlock.createHighlighter,
     },
+    heading: { levels: headingLevels },
     trailingBlock,
     dictionary: getDictionary(),
     // TODO(BLOCKING) remove image blick (https://github.com/TypeCellOS/BlockNote/issues/1570)
@@ -186,9 +185,8 @@ const BlockNote = ({
   }, [passedContent]);
 
   // TODO(BLOCKING) https://github.com/TypeCellOS/BlockNote/issues/891
-  // Fix to focus editor after rendering
   useEffect(() => {
-    if (!autofocus || !editable || !editor) return;
+    if (!editable || !editor) return;
 
     const intervalID = setInterval(() => {
       focusEditor(editor);
@@ -225,13 +223,13 @@ const BlockNote = ({
       onBlur={handleBlur}
       {...(type === 'create' && { onChange: handleUpdateData })}
     >
-      {slashMenu && <CustomSlashMenu editor={editor} allowedTypes={allowedBlockTypes} />}
+      {slashMenu && <CustomSlashMenu editor={editor} allowedTypes={allowedBlockTypes} headingLevels={headingLevels} />}
 
       {/* Hide formatting toolbar on mobile */}
-      {!isMobile && formattingToolbar && <CustomFormattingToolbar />}
+      {!isMobile && formattingToolbar && <CustomFormattingToolbar headingLevels={headingLevels} />}
 
       {/* By default hides on mobile */}
-      {sideMenu && <CustomSideMenu editor={editor} allowedTypes={allowedBlockTypes} />}
+      {sideMenu && <CustomSideMenu editor={editor} allowedTypes={allowedBlockTypes} headingLevels={headingLevels} />}
 
       {/* To avoid rendering "0" */}
       {members?.length ? <Mention members={members} editor={editor} /> : null}

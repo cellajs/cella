@@ -12,7 +12,7 @@ import '~/lib/i18n';
 const root = document.getElementById('root');
 if (!root) throw new Error('Root element not found');
 
-import { type ConfigMode, config } from 'config';
+import { appConfig, type ConfigMode } from 'config';
 import { initSentry } from '~/lib/sentry';
 import { RouterWrapper } from '~/modules/common/router-wrapper';
 import { QueryClientProvider } from '~/query/provider';
@@ -23,7 +23,7 @@ import { renderAscii } from '~/utils/ascii';
 renderAscii();
 
 // Add badge to favicon based on config mode
-addBadgeToFavicon(config.mode as ConfigMode);
+addBadgeToFavicon(appConfig.mode as ConfigMode);
 
 // Initialize Sentry if online
 if (navigator.onLine) initSentry();

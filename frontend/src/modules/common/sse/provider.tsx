@@ -1,4 +1,4 @@
-import { config } from 'config';
+import { appConfig } from 'config';
 import { createContext, createElement, type FC, useEffect, useState } from 'react';
 import { useOnlineManager } from '~/hooks/use-online-manager';
 import { getAndSetMe, getAndSetMenu } from '~/modules/me/helpers';
@@ -17,7 +17,7 @@ export const SSEProvider: FC<Props> = ({ children }) => {
   const [source, setSource] = useState<EventSource | null>(null);
 
   const createSource = (reconnectAttempt = false) => {
-    const source = new EventSource(`${config.backendUrl}/me/sse`, {
+    const source = new EventSource(`${appConfig.backendUrl}/me/sse`, {
       withCredentials: true,
     });
 

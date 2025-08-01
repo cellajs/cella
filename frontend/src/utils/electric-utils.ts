@@ -1,4 +1,7 @@
-import type { BackoffOptions, ChangeMessage } from '@electric-sql/client';
+import { type BackoffOptions, type ChangeMessage, type ExternalParamsRecord, FetchError, type Row } from '@electric-sql/client';
+import type { ClientErrorStatusCode, ServerErrorStatusCode } from 'hono/utils/http-status';
+import { ApiError } from '~/lib/api';
+import { toaster } from '~/modules/common/toaster';
 import { useSyncStore } from '~/store/sync';
 
 // Convert camelCase to snake_case
@@ -45,21 +48,44 @@ const parseRawData = <T>(rawData: CamelToSnakeObject<T>): T => {
 
 export const snakeToCamel = (str: string) => str.replace(/_([a-z])/g, (_, letter) => letter.toUpperCase());
 
-export const errorHandler = (error: Error, storePrefix: string) => {
-  // Check if the error message indicates an "offset" or "handle" issue
-  if (error.message.includes('offset') || error.message.includes('handle')) {
-    // Remove stale sync data related to this shape
-    const staleKeys = useSyncStore.getState().getKeysByPrefix(storePrefix);
-    if (!staleKeys.length) {
-      console.warn('No stale data found. Stopping ShapeStream.');
-      return false; // Stop syncing
-    }
-    for (const key of staleKeys) useSyncStore.getState().removeSyncData(key);
+export const handleSyncError = (error: Error, storePrefix: string, params: ExternalParamsRecord<Row<never>> | undefined) => {
+  if (error instanceof FetchError && error.json) {
+    const responseJson = error.json;
 
-    console.info('Stale data cleared. Retrying sync...');
-    return true; // Retry syncing
+    if ('errors' in responseJson) {
+      const syncErrors = responseJson.errors ?? {};
+      const syncErrorKeys = Object.keys(syncErrors);
+
+      // Check for internal stream sync errors (like offset or handle mismatches)
+      const hasStreamError = syncErrorKeys.some((key) => key === 'offset' || key === 'handle');
+
+      if (hasStreamError) {
+        const relatedKeys = useSyncStore.getState().getKeysByPrefix(storePrefix);
+
+        if (relatedKeys.length) {
+          for (const key of relatedKeys) useSyncStore.getState().removeSyncData(key);
+          console.info('[Sync] Cleared stale local sync data for prefix:', storePrefix);
+        }
+
+        return { params }; // Retry with original params
+      }
+
+      console.error('[Sync] Unexpected fetch sync error from server:', error);
+      return;
+    }
+
+    // Handle generic backend sync error response
+    const status = error.status as ClientErrorStatusCode | ServerErrorStatusCode;
+
+    const apiError = new ApiError({ name: error.name, status, message: error.message ?? 'Unknown error during sync', ...responseJson });
+
+    const toastMsg = typeof apiError.meta?.toastMessage === 'string' ? apiError.meta.toastMessage : `Sync failed: ${apiError.message}`;
+
+    toaster(toastMsg, 'warning');
+    return;
   }
 
-  console.warn('Unhandled sync error. Stopping ShapeStream.');
-  return false; // Stop syncing
+  // Fallback for unknown or unexpected errors
+  console.error('[Sync] Unhandled error. Sync stopped.', error);
+  return;
 };

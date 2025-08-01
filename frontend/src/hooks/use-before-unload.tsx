@@ -1,4 +1,4 @@
-import { config } from 'config';
+import { appConfig } from 'config';
 import { useEffect } from 'react';
 
 /**
@@ -16,7 +16,7 @@ export const useBeforeUnload = (isChanged: boolean) => {
 
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
       // In development mode, log a message instead of showing the dialog
-      if (isChanged && config.mode === 'development') {
+      if (isChanged && appConfig.mode === 'development') {
         return console.info('Beforeunload warning is triggered but not shown in dev mode.');
       }
 
