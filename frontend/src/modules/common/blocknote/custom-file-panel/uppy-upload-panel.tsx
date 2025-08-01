@@ -9,7 +9,7 @@ import ScreenCapture from '@uppy/screen-capture';
 import { COMPANION_ALLOWED_HOSTS, COMPANION_URL } from '@uppy/transloadit';
 import Url from '@uppy/url';
 import Webcam, { type WebcamOptions } from '@uppy/webcam';
-import { config } from 'config';
+import { appConfig } from 'config';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useOnlineManager } from '~/hooks/use-online-manager';
@@ -59,7 +59,7 @@ const UppyFilePanel = ({ onComplete, onError, organizationId, block }: BaseUppyF
   const blockType = (block.type as keyof typeof basicBlockTypes) || 'file';
   const uppyOptions: CustomUppyOpt = {
     restrictions: {
-      ...config.uppy.defaultRestrictions,
+      ...appConfig.uppy.defaultRestrictions,
       allowedFileTypes: basicBlockTypes[blockType].allowedFileTypes,
     },
   };
@@ -136,7 +136,9 @@ const UppyFilePanel = ({ onComplete, onError, organizationId, block }: BaseUppyF
           return;
         }
         setUppy(localUppy);
-      } catch (err) {}
+      } catch (err) {
+        // TODO: send to Sentry
+      }
     };
 
     initializeUppy();

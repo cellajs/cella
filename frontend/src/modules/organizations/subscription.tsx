@@ -1,6 +1,6 @@
 import { initializePaddle, type Paddle } from '@paddle/paddle-js';
 import { onlineManager } from '@tanstack/react-query';
-import { config } from 'config';
+import { appConfig } from 'config';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toaster } from '~/modules/common/toaster';
@@ -28,9 +28,9 @@ const Subscription = ({ organization }: { organization: Organization }) => {
   // Download and initialize Paddle instance from CDN
   useEffect(() => {
     initializePaddle({
-      // environment: config.mode === 'production' ? 'production' : 'sandbox',
+      // environment: appConfig.mode === 'production' ? 'production' : 'sandbox',
       environment: 'sandbox',
-      token: config.paddleToken,
+      token: appConfig.paddleToken,
     }).then((paddleInstance: Paddle | undefined) => {
       if (paddleInstance) {
         setPaddle(paddleInstance);
@@ -40,7 +40,7 @@ const Subscription = ({ organization }: { organization: Organization }) => {
 
   return (
     <>
-      <Button variant="plain" className="max-sm:w-full w-40" onClick={() => openCheckout(config.paddlePriceIds.donate)}>
+      <Button variant="plain" className="max-sm:w-full w-40" onClick={() => openCheckout(appConfig.paddlePriceIds.donate)}>
         {t('common:checkout')}
       </Button>
     </>

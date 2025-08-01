@@ -1,5 +1,5 @@
 import { Link, useNavigate } from '@tanstack/react-router';
-import { config } from 'config';
+import { appConfig } from 'config';
 import i18n from 'i18next';
 import { Cloud, CloudOff, CopyCheckIcon, CopyIcon, Download, Trash } from 'lucide-react';
 import { useRef } from 'react';
@@ -50,7 +50,7 @@ export const useColumns = (entity: EntityPage, isSheet: boolean, isCompact: bool
       renderCell: ({ row: { id, url, thumbnailUrl, filename, contentType, groupId, convertedUrl }, tabIndex }) => {
         const cellRef = useRef<HTMLAnchorElement | null>(null);
 
-        if (!thumbnailUrl && !convertedUrl && !url.startsWith('blob:http'))
+        if (!thumbnailUrl && !convertedUrl && !url?.startsWith('blob:http'))
           return (
             <div className="flex space-x-2 items-center justify-center w-full h-full">
               <AttachmentPreview id={id} url={url} name={filename} contentType={contentType} />
@@ -129,7 +129,7 @@ export const useColumns = (entity: EntityPage, isSheet: boolean, isCompact: bool
         const isInCloud = isCDNUrl(row.url);
         if (!isInCloud) return <div className="text-muted text-center w-full">-</div>;
 
-        const shareLink = `${config.backendUrl}/${row.organizationId}/attachments/${row.id}/link`;
+        const shareLink = `${appConfig.backendUrl}/${row.organizationId}/attachments/${row.id}/link`;
         return (
           <Button
             variant="cell"
@@ -205,7 +205,7 @@ export const useColumns = (entity: EntityPage, isSheet: boolean, isCompact: bool
         ];
 
         if (isInCloud) {
-          const shareLink = `${config.backendUrl}/${row.organizationId}/attachments/${row.id}/link`;
+          const shareLink = `${appConfig.backendUrl}/${row.organizationId}/attachments/${row.id}/link`;
 
           ellipsisOptions.push({
             label: i18n.t('common:copy_url'),

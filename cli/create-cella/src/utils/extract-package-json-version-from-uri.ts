@@ -8,7 +8,7 @@ import axios from 'axios';
  * @param branch {string} - The branch name (defaults to 'main').
  * @returns {Promise<string>} - The version from the package.json file.
  */
-export async function extractPackageJsonVersionFromUri(repositoryUrl: string, branch: string = 'main'): Promise<string> {
+export async function extractPackageJsonVersionFromUri(repositoryUrl: string, branch = 'main'): Promise<string> {
   // Extract owner and repo from the URL
   const [owner, repo] = repositoryUrl.replace('github:', '').split('/');
 

@@ -1,4 +1,4 @@
-import { config } from 'config';
+import { appConfig } from 'config';
 import { useRef, useState } from 'react';
 import type { z } from 'zod';
 import useSearchParams from '~/hooks/use-search-params';
@@ -10,7 +10,7 @@ import BaseDataTable from '~/modules/memberships/pending-table/table';
 import { PendingInvitationsTableBar } from '~/modules/memberships/pending-table/table-bar';
 import type { pendingInvitationsSearchSchema } from '~/routes/organizations';
 
-const LIMIT = config.requestLimits.pendingInvitations;
+const LIMIT = appConfig.requestLimits.pendingInvitations;
 
 export type PendingInvitationsSearch = z.infer<typeof pendingInvitationsSearchSchema>;
 

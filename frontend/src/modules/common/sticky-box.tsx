@@ -108,7 +108,7 @@ const getDimensions = <T extends object>(opts: { el: HTMLElement | Window; onCha
   }
   const mResult = measure((el as HTMLElement).getBoundingClientRect());
   const handler: ResizeObserverCallback = () => {
-    // note the e[0].contentRect is different from `getBoundingClientRect`
+    // Note the e[0].contentRect is different from `getBoundingClientRect`
     Object.assign(mResult, measure((el as HTMLElement).getBoundingClientRect()));
     onChange();
   };

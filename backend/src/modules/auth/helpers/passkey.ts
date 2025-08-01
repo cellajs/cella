@@ -11,7 +11,7 @@ import {
   parseAuthenticatorData,
   parseClientDataJSON,
 } from '@oslojs/webauthn';
-import { config } from 'config';
+import { appConfig } from 'config';
 
 /**
  * Parses and validates passkey attestation data.
@@ -38,7 +38,7 @@ export const parseAndValidatePasskeyAttestation = (
 
   if (attestationStatement.format !== AttestationStatementFormat.None) throw new Error('Invalid attestation statement format');
   // Use "localhost" for localhost
-  if (!authenticatorData.verifyRelyingPartyIdHash(config.mode === 'development' ? 'localhost' : config.domain)) {
+  if (!authenticatorData.verifyRelyingPartyIdHash(appConfig.mode === 'development' ? 'localhost' : appConfig.domain)) {
     throw new Error('Invalid relying party ID hash');
   }
 
@@ -61,7 +61,7 @@ export const parseAndValidatePasskeyAttestation = (
   if (encodeBase64(clientData.challenge) !== challengeFromCookie) throw new Error('Invalid challenge');
 
   // Use "http://localhost:PORT" for localhost
-  if (clientData.origin !== config.frontendUrl) throw new Error('Invalid origin');
+  if (clientData.origin !== appConfig.frontendUrl) throw new Error('Invalid origin');
 
   if (clientData.crossOrigin !== null && clientData.crossOrigin) throw new Error('Invalid origin');
 
@@ -103,7 +103,7 @@ export const verifyPassKeyPublic = async (
 
   const authenticatorData = parseAuthenticatorData(decodedAuthenticatorObject);
   // Use "localhost" for localhost
-  if (!authenticatorData.verifyRelyingPartyIdHash(config.mode === 'development' ? 'localhost' : config.domain)) {
+  if (!authenticatorData.verifyRelyingPartyIdHash(appConfig.mode === 'development' ? 'localhost' : appConfig.domain)) {
     throw new Error('Invalid relying party ID hash');
   }
   if (!authenticatorData.userPresent || !authenticatorData.userVerified) throw new Error('User must be present and verified');
@@ -113,7 +113,7 @@ export const verifyPassKeyPublic = async (
 
   if (encodeBase64(clientData.challenge) !== challengeFromCookie) throw new Error('Invalid challenge');
   // Use "http://localhost:PORT" for localhost
-  if (clientData.origin !== config.frontendUrl) throw new Error('Invalid origin');
+  if (clientData.origin !== appConfig.frontendUrl) throw new Error('Invalid origin');
 
   if (clientData.crossOrigin !== null && clientData.crossOrigin) throw new Error('Invalid origin');
 

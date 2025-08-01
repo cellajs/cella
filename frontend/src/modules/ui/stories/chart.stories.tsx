@@ -83,7 +83,10 @@ export const StackedAreaChart: Story = {
       >
         <CartesianGrid vertical={false} />
         <XAxis dataKey="month" tickLine={false} axisLine={false} tickMargin={8} tickFormatter={(value) => value.slice(0, 3)} />
-        <ChartTooltip cursor={false} content={<ChartTooltipContent indicator="dot" />} />
+        <ChartTooltip
+          cursor={false}
+          content={<ChartTooltipContent indicator="dot" payload={[]} coordinate={{ x: 0, y: 0 }} accessibilityLayer={false} />}
+        />
         <Area dataKey="mobile" type="natural" fill="var(--color-mobile)" fillOpacity={0.4} stroke="var(--color-mobile)" stackId="a" />
         <Area dataKey="desktop" type="natural" fill="var(--color-desktop)" fillOpacity={0.4} stroke="var(--color-desktop)" stackId="a" />
       </AreaChart>
@@ -103,7 +106,10 @@ export const StackedBarChart: Story = {
       <BarChart accessibilityLayer data={multiSeriesData}>
         <CartesianGrid vertical={false} />
         <XAxis dataKey="month" tickLine={false} tickMargin={10} axisLine={false} tickFormatter={(value) => value.slice(0, 3)} />
-        <ChartTooltip cursor={false} content={<ChartTooltipContent indicator="dashed" />} />
+        <ChartTooltip
+          cursor={false}
+          content={<ChartTooltipContent indicator="dashed" payload={[]} coordinate={{ x: 0, y: 0 }} accessibilityLayer={false} />}
+        />
         <Bar dataKey="desktop" fill="var(--color-desktop)" radius={4} />
         <Bar dataKey="mobile" fill="var(--color-mobile)" radius={4} />
       </BarChart>
@@ -130,7 +136,10 @@ export const MultiLineChart: Story = {
       >
         <CartesianGrid vertical={false} />
         <XAxis dataKey="month" tickLine={false} axisLine={false} tickMargin={8} tickFormatter={(value) => value.slice(0, 3)} />
-        <ChartTooltip cursor={false} content={<ChartTooltipContent hideLabel />} />
+        <ChartTooltip
+          cursor={false}
+          content={<ChartTooltipContent hideLabel payload={[]} coordinate={{ x: 0, y: 0 }} accessibilityLayer={false} />}
+        />
         <Line dataKey="desktop" type="natural" stroke="var(--color-desktop)" strokeWidth={2} dot={false} />
         <Line dataKey="mobile" type="natural" stroke="var(--color-mobile)" strokeWidth={2} dot={false} />
       </LineChart>
@@ -152,7 +161,10 @@ export const DoughnutChart: Story = {
     return (
       <ChartContainer {...args}>
         <PieChart>
-          <ChartTooltip cursor={false} content={<ChartTooltipContent hideLabel />} />
+          <ChartTooltip
+            cursor={false}
+            content={<ChartTooltipContent hideLabel payload={[]} coordinate={{ x: 0, y: 0 }} accessibilityLayer={false} />}
+          />
           <Pie data={singleSeriesData} dataKey="visitors" nameKey="browser" innerRadius={48} strokeWidth={5}>
             <Label
               content={({ viewBox }) => {

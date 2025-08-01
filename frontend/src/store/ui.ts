@@ -1,4 +1,4 @@
-import { config, type Theme } from 'config';
+import { appConfig, type Theme } from 'config';
 import { create } from 'zustand';
 import { createJSONStorage, devtools, persist } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
@@ -68,7 +68,7 @@ export const useUIStore = create<UIStoreState>()(
       })),
       {
         version: 1,
-        name: `${config.slug}-ui`,
+        name: `${appConfig.slug}-ui`,
         partialize: (state) => ({
           offlineAccess: state.offlineAccess,
           impersonating: state.impersonating,

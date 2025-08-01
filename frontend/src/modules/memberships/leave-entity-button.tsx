@@ -1,6 +1,6 @@
 import { onlineManager, useMutation } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
-import { config } from 'config';
+import { appConfig } from 'config';
 import { UserRoundX } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { deleteMyMembership } from '~/api.gen';
@@ -13,7 +13,7 @@ import { cn } from '~/utils/cn';
 
 export type LeaveEntityButtonProps = { entity: EntitySummary; redirectPath?: string; buttonProps?: ButtonProps; callback?: () => void };
 
-export const LeaveEntityButton = ({ entity, buttonProps, redirectPath = config.defaultRedirectPath, callback }: LeaveEntityButtonProps) => {
+export const LeaveEntityButton = ({ entity, buttonProps, redirectPath = appConfig.defaultRedirectPath, callback }: LeaveEntityButtonProps) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
 

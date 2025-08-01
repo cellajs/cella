@@ -1,7 +1,7 @@
 import fs from 'node:fs/promises';
 import type { OpenAPIHono } from '@hono/zod-openapi';
 import { Scalar } from '@scalar/hono-api-reference';
-import { config } from 'config';
+import { appConfig } from 'config';
 import type { Env } from '#/lib/context';
 import { apiModulesList, registerAppSchema } from '#/lib/docs-config';
 import { entityBaseSchema, userSummarySchema } from '#/modules/entities/schema';
@@ -22,7 +22,7 @@ const docs = async (app: OpenAPIHono<Env>) => {
   registry.registerComponent('securitySchemes', 'cookieAuth', {
     type: 'apiKey',
     in: 'cookie',
-    name: `${config.slug}-session-${config.apiVersion}`,
+    name: `${appConfig.slug}-session-${appConfig.apiVersion}`,
     description:
       "Authentication cookie. Copy the cookie from your network tab and paste it here. If you don't have it, you need to sign in or sign up first.",
   });
@@ -37,11 +37,11 @@ const docs = async (app: OpenAPIHono<Env>) => {
   registerAppSchema(registry);
 
   const openApiConfig = {
-    servers: [{ url: config.backendUrl }],
+    servers: [{ url: appConfig.backendUrl }],
     info: {
-      title: `${config.name} API`,
-      version: config.apiVersion,
-      description: config.apiDescription,
+      title: `${appConfig.name} API`,
+      version: appConfig.apiVersion,
+      description: appConfig.apiDescription,
     },
     openapi: '3.1.0',
     tags,

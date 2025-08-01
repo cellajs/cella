@@ -1,11 +1,11 @@
-import { type ContextEntityType, config } from 'config';
+import { appConfig, type ContextEntityType } from 'config';
 import { and, eq, max } from 'drizzle-orm';
 import { db } from '#/db/db';
 import { type MembershipModel, membershipsTable } from '#/db/schema/memberships';
 import type { EntityModel } from '#/lib/entity';
-import { logEvent } from '#/middlewares/logger/log-event';
 import { membershipSummarySelect } from '#/modules/memberships/helpers/select';
 import { getIsoDate } from '#/utils/iso-date';
+import { logEvent } from '#/utils/logger';
 
 type BaseEntityModel = EntityModel<ContextEntityType> & {
   organizationId?: string;
@@ -47,7 +47,7 @@ export const insertMembership = async <T extends BaseEntityModel>({
     .from(membershipsTable)
     .where(eq(membershipsTable.userId, userId));
 
-  const entityIdField = config.entityIdFields[entity.entityType];
+  const entityIdField = appConfig.entityIdFields[entity.entityType];
   const associatedEntity = getAssociatedEntityDetails(entity);
 
   const baseMembership = {
@@ -73,7 +73,11 @@ export const insertMembership = async <T extends BaseEntityModel>({
         ),
       );
 
-    if (!hasOrgMembership.length) await db.insert(membershipsTable).values({ ...baseMembership, contextType: 'organization' });
+    if (!hasOrgMembership.length)
+      await db
+        .insert(membershipsTable)
+        .values({ ...baseMembership, contextType: 'organization' })
+        .onConflictDoNothing();
   }
 
   // Insert associated entity membership first (if applicable)
@@ -99,16 +103,16 @@ export const insertMembership = async <T extends BaseEntityModel>({
     })
     .returning(membershipSummarySelect);
 
-  logEvent(`User added to ${entity.entityType}`, { user: userId, id: entity.id }); // Log event
+  logEvent({ msg: `User added to ${entity.entityType}`, meta: { user: userId, id: entity.id } }); // Log event
 
   return result;
 };
 
 export const getAssociatedEntityDetails = <T extends ContextEntityType>(entity: EntityModel<T>) => {
-  const relation = config.menuStructure.find((rel) => rel.subentityType === entity.entityType);
+  const relation = appConfig.menuStructure.find((rel) => rel.subentityType === entity.entityType);
   if (!relation) return null;
   const type = relation.entityType;
-  const field = config.entityIdFields[type] ?? null;
+  const field = appConfig.entityIdFields[type] ?? null;
   if (!field || !(field in entity)) return null;
 
   const id = entity[field as keyof typeof entity] as string;

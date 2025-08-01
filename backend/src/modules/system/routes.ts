@@ -4,7 +4,7 @@ import { hasSystemAccess, isAuthenticated, isPublicAccess } from '#/middlewares/
 import { tokenLimiter } from '#/middlewares/rate-limiter/limiters';
 import { inviteBodySchema, sendNewsletterBodySchema } from '#/modules/system/schema';
 import { booleanQuerySchema } from '#/utils/schema/common';
-import { errorResponses, successWithoutDataSchema } from '#/utils/schema/responses';
+import { errorResponses, successWithoutDataSchema, successWithRejectedItemsSchema } from '#/utils/schema/responses';
 
 const systemRoutes = {
   createInvite: createCustomRoute({
@@ -27,11 +27,7 @@ const systemRoutes = {
     responses: {
       200: {
         description: 'Invitations are sent',
-        content: {
-          'application/json': {
-            schema: successWithoutDataSchema,
-          },
-        },
+        content: { 'application/json': { schema: successWithRejectedItemsSchema.extend({ invitesSended: z.number() }) } },
       },
       ...errorResponses,
     },

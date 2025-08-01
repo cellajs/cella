@@ -1,9 +1,8 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
 import { EventName, Paddle } from '@paddle/paddle-node-sdk';
-import { config } from 'config';
+import { appConfig } from 'config';
 import { and, eq, inArray, isNull, lt } from 'drizzle-orm';
 import i18n from 'i18next';
-
 import { db } from '#/db/db';
 import { emailsTable } from '#/db/schema/emails';
 import { membershipsTable } from '#/db/schema/memberships';
@@ -13,13 +12,13 @@ import { tokensTable } from '#/db/schema/tokens';
 import { usersTable } from '#/db/schema/users';
 import { env } from '#/env';
 import { type Env, getContextUser } from '#/lib/context';
-import { ApiError } from '#/lib/errors';
+import { AppError } from '#/lib/errors';
 import { mailer } from '#/lib/mailer';
 import { getSignedUrl } from '#/lib/signed-url';
-import { logEvent } from '#/middlewares/logger/log-event';
 import systemRoutes from '#/modules/system/routes';
 import { getUsersByConditions } from '#/modules/users/helpers/get-user-by';
 import { defaultHook } from '#/utils/default-hook';
+import { logEvent } from '#/utils/logger';
 import { nanoid } from '#/utils/nanoid';
 import { slugFromEmail } from '#/utils/slug-from-email';
 import { createDate, TimeSpan } from '#/utils/time-span';
@@ -41,7 +40,11 @@ const systemRouteHandlers = app
     const lng = user.language;
     const senderName = user.name;
     const senderThumbnailUrl = user.thumbnailUrl;
-    const subject = i18n.t('backend:email.system_invite.subject', { lng, appName: config.name });
+    const subject = i18n.t('backend:email.system_invite.subject', { lng, appName: appConfig.name });
+
+    const normalizedEmails = emails.map((email) => email.toLowerCase().trim());
+
+    if (!normalizedEmails.length) throw new AppError({ status: 400, type: 'no_recipients', severity: 'warn' });
 
     // Query to filter out invitations on same email
     const existingInvitesQuery = db
@@ -49,7 +52,7 @@ const systemRouteHandlers = app
       .from(tokensTable)
       .where(
         and(
-          inArray(tokensTable.email, emails),
+          inArray(tokensTable.email, normalizedEmails),
           eq(tokensTable.type, 'invitation'),
           // Make sure its a system invitation
           isNull(tokensTable.entityType),
@@ -57,16 +60,20 @@ const systemRouteHandlers = app
         ),
       );
 
-    const [existingUsers, existingInvites] = await Promise.all([getUsersByConditions([inArray(emailsTable.email, emails)]), existingInvitesQuery]);
+    const [existingUsers, existingInvites] = await Promise.all([
+      getUsersByConditions([inArray(emailsTable.email, normalizedEmails)]),
+      existingInvitesQuery,
+    ]);
 
     // Create a set of emails from both existing users and invitations
     const existingEmails = new Set([...existingUsers.map((user) => user.email), ...existingInvites.map((invite) => invite.email)]);
 
     // Filter out emails that already user or has invitations
-    const recipientEmails = emails.filter((email) => !existingEmails.has(email));
+    const recipientEmails = normalizedEmails.filter((email) => !existingEmails.has(email));
+    const rejectedItems = normalizedEmails.filter((email) => existingEmails.has(email));
 
     // Stop if no recipients
-    if (recipientEmails.length === 0) throw new ApiError({ status: 400, type: 'no_recipients', severity: 'warn' });
+    if (recipientEmails.length === 0) return ctx.json({ success: false, rejectedItems, invitesSended: 0 }, 200);
 
     // Generate tokens
     const tokens = recipientEmails.map((email) => {
@@ -74,7 +81,7 @@ const systemRouteHandlers = app
       return {
         token,
         type: 'invitation' as const,
-        email: email.toLowerCase(),
+        email: email.toLowerCase().trim(),
         createdBy: user.id,
         expiresAt: createDate(new TimeSpan(7, 'd')),
       };
@@ -98,7 +105,7 @@ const systemRouteHandlers = app
       email: tokenRecord.email,
       lng: lng,
       name: slugFromEmail(tokenRecord.email),
-      systemInviteLink: `${config.frontendUrl}/auth/authenticate?token=${tokenRecord.token}&tokenId=${tokenRecord.id}`,
+      systemInviteLink: `${appConfig.frontendUrl}/auth/authenticate?token=${tokenRecord.token}&tokenId=${tokenRecord.id}`,
     }));
 
     type Recipient = (typeof recipients)[number];
@@ -107,9 +114,9 @@ const systemRouteHandlers = app
     const staticProps = { senderName, senderThumbnailUrl, subject, lng };
     await mailer.prepareEmails<SystemInviteEmailProps, Recipient>(SystemInviteEmail, staticProps, recipients, user.email);
 
-    logEvent('Users invited on system level');
+    logEvent({ msg: 'Users invited on system level' });
 
-    return ctx.json(true, 200);
+    return ctx.json({ success: true, rejectedItems, invitesSended: recipients.length }, 200);
   })
   /*
    * Get presigned URL
@@ -133,18 +140,17 @@ const systemRouteHandlers = app
         const eventData = paddle.webhooks.unmarshal(rawRequestBody, env.PADDLE_WEBHOOK_KEY || '', signature);
         switch ((await eventData)?.eventType) {
           case EventName.SubscriptionCreated:
-            logEvent(`Subscription ${(await eventData)?.data.id} was created`, {
-              ecent: JSON.stringify(eventData),
-            });
+            logEvent({ msg: `Subscription ${(await eventData)?.data.id} was created`, meta: { eventData } });
             break;
           default:
-            logEvent('Unhandled paddle event', {
-              event: JSON.stringify(eventData),
+            logEvent({
+              msg: 'Unhandled paddle event',
+              meta: { eventData },
             });
         }
       }
     } catch (error) {
-      if (error instanceof Error) logEvent('Error handling paddle webhook', { errorMessage: error.message }, 'error');
+      if (error instanceof Error) logEvent({ msg: 'Error handling paddle webhook', meta: { errorMessage: error.message }, severity: 'error' });
     }
 
     return ctx.json(true, 200);
@@ -168,25 +174,33 @@ const systemRouteHandlers = app
         orgName: organizationsTable.name,
       })
       .from(membershipsTable)
-      .innerJoin(usersTable, and(eq(usersTable.id, membershipsTable.userId)))
-      // eq(usersTable.emailVerified, true) // maybe add for only confirmed emails
+      // TODO(CHORE) decide with filters
+      .innerJoin(
+        usersTable,
+        and(
+          eq(usersTable.id, membershipsTable.userId),
+          // eq(usersTable.emailVerified, true) // maybe add for only confirmed emails
+        ),
+      )
       .innerJoin(organizationsTable, eq(organizationsTable.id, membershipsTable.organizationId))
       .where(
         and(
           eq(membershipsTable.contextType, 'organization'),
           inArray(membershipsTable.organizationId, organizationIds),
           inArray(membershipsTable.role, roles),
+          // isNotNull(membershipsTable.activatedAt), send to invited users also??
+          // eq(membershipsTable.archived, false ), send to users who archived??
           eq(usersTable.newsletter, true),
         ),
       );
 
     // Stop if no recipients
-    if (!recipientsRecords.length && !toSelf) throw new ApiError({ status: 400, type: 'no_recipients', severity: 'warn' });
+    if (!recipientsRecords.length && !toSelf) throw new AppError({ status: 400, type: 'no_recipients', severity: 'warn' });
 
     // Add unsubscribe link to each recipient
     let recipients = recipientsRecords.map(({ newsletter, unsubscribeToken, ...recipient }) => ({
       ...recipient,
-      unsubscribeLink: `${config.backendUrl}/unsubscribe?token=${unsubscribeToken}`,
+      unsubscribeLink: `${appConfig.backendUrl}/unsubscribe?token=${unsubscribeToken}`,
     }));
 
     // If toSelf is true, send the email only to self
@@ -195,7 +209,7 @@ const systemRouteHandlers = app
         {
           email: user.email,
           name: user.name,
-          unsubscribeLink: `${config.backendUrl}/unsubscribe?token=NOTOKEN`,
+          unsubscribeLink: `${appConfig.backendUrl}/unsubscribe?token=NOTOKEN`,
           orgName: 'TEST EMAIL ORGANIZATION',
         },
       ];
@@ -206,7 +220,7 @@ const systemRouteHandlers = app
     const staticProps = { content, subject, testEmail: toSelf, lng: user.language };
     await mailer.prepareEmails<NewsletterEmailProps, Recipient>(NewsletterEmail, staticProps, recipients, user.email);
 
-    logEvent('Newsletter sent', { amount: recipients.length });
+    logEvent({ msg: 'Newsletter sent', meta: { amount: recipients.length } });
 
     return ctx.json(true, 200);
   });

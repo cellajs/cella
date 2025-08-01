@@ -1,4 +1,4 @@
-import { config } from 'config';
+import { appConfig } from 'config';
 import { create } from 'zustand';
 import { createJSONStorage, devtools, persist } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
@@ -40,7 +40,7 @@ interface NavigationStoreState {
 }
 
 // Defines the initial menu structure, excluding submenu items
-const initialMenuState: UserMenu = config.menuStructure.reduce((acc, { entityType }) => {
+const initialMenuState: UserMenu = appConfig.menuStructure.reduce((acc, { entityType }) => {
   acc[entityType] = [];
   return acc;
 }, {} as UserMenu);
@@ -76,6 +76,7 @@ const initStore: InitStore = {
 
 /**
  * Navigation store for managing navigation state: menu, recent searches, onboarding
+ * TODO: We should make this either per-user or store it in db
  */
 export const useNavigationStore = create<NavigationStoreState>()(
   devtools(
@@ -142,14 +143,13 @@ export const useNavigationStore = create<NavigationStoreState>()(
             });
           },
           clearNavigationStore: () =>
-            set((state) => ({
-              ...state,
-              ...initStore,
-            })),
+            set((state) => {
+              state.menu = initialMenuState;
+            }),
         }),
         {
           version: 6,
-          name: `${config.slug}-navigation`,
+          name: `${appConfig.slug}-navigation`,
           partialize: (state) => ({
             menu: state.menu,
             keepOpenPreference: state.keepOpenPreference,

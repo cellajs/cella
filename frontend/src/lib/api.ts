@@ -18,6 +18,7 @@ export class ApiError extends Error {
   timestamp?: string;
   userId?: string;
   organizationId?: string;
+  meta?: { readonly [key: string]: number | string | boolean | null };
 
   constructor(error: ApiError) {
     super(error.message);
@@ -32,5 +33,6 @@ export class ApiError extends Error {
     this.timestamp = error.timestamp;
     this.userId = error.userId;
     this.organizationId = error.organizationId;
+    this.meta = error.meta;
   }
 }

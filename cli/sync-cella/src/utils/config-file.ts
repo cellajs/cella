@@ -59,15 +59,15 @@ export async function extractValues(configFile: string): Promise<Config> {
 
   if (fileExt === '.json') {
     return extractFromJson(configFile);
-  } else if (fileExt === '.js' || fileExt === '.ts') {
-    return extractUsingDynamicImport(configFile);
-  } else {
-    return {
-      divergedFile: null,
-      ignoreFile: null,
-      ignoreList: [],
-      forks: [],
-      problems: [`Unsupported file format: ${fileExt}. Only .json, .ts, and .js are supported.`],
-    };
   }
+  if (fileExt === '.js' || fileExt === '.ts') {
+    return extractUsingDynamicImport(configFile);
+  }
+  return {
+    divergedFile: null,
+    ignoreFile: null,
+    ignoreList: [],
+    forks: [],
+    problems: [`Unsupported file format: ${fileExt}. Only .json, .ts, and .js are supported.`],
+  };
 }

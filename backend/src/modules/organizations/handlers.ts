@@ -1,14 +1,12 @@
 import { OpenAPIHono, type z } from '@hono/zod-openapi';
-import { config } from 'config';
-import { and, count, eq, getTableColumns, ilike, inArray, type SQL, sql } from 'drizzle-orm';
-
+import { appConfig } from 'config';
+import { and, count, eq, getTableColumns, ilike, inArray, isNotNull, type SQL, sql } from 'drizzle-orm';
 import { db } from '#/db/db';
 import { membershipsTable } from '#/db/schema/memberships';
 import { organizationsTable } from '#/db/schema/organizations';
 import { type Env, getContextMemberships, getContextUser } from '#/lib/context';
-import { ApiError } from '#/lib/errors';
+import { AppError } from '#/lib/errors';
 import { sendSSEToUsers } from '#/lib/sse';
-import { logEvent } from '#/middlewares/logger/log-event';
 import { checkSlugAvailable } from '#/modules/entities/helpers/check-slug';
 import { getMemberCountsQuery, getRelatedEntityCountsQuery } from '#/modules/entities/helpers/counts';
 import { getRelatedEntities, type ValidEntities } from '#/modules/entities/helpers/get-related-entities';
@@ -20,6 +18,7 @@ import { getValidContextEntity } from '#/permissions/get-context-entity';
 import { splitByAllowance } from '#/permissions/split-by-allowance';
 import { defaultHook } from '#/utils/default-hook';
 import { getIsoDate } from '#/utils/iso-date';
+import { logEvent } from '#/utils/logger';
 import { getOrderColumn } from '#/utils/order-column';
 import { prepareStringForILikeFilter } from '#/utils/sql';
 import { defaultWelcomeText } from '#json/text-blocks.json';
@@ -39,11 +38,11 @@ const organizationRouteHandlers = app
       return m.contextType === 'organization' && m.createdBy === user.id ? count + 1 : count;
     }, 0);
 
-    if (createdOrgsCount === 5) throw new ApiError({ status: 403, type: 'restrict_by_app', severity: 'warn', entityType: 'organization' });
+    if (createdOrgsCount === 5) throw new AppError({ status: 403, type: 'restrict_by_app', severity: 'warn', entityType: 'organization' });
 
     // Check if slug is available
     const slugAvailable = await checkSlugAvailable(slug);
-    if (!slugAvailable) throw new ApiError({ status: 409, type: 'slug_exists', severity: 'warn', entityType: 'organization', meta: { slug } });
+    if (!slugAvailable) throw new AppError({ status: 409, type: 'slug_exists', severity: 'warn', entityType: 'organization', meta: { slug } });
 
     const [createdOrganization] = await db
       .insert(organizationsTable)
@@ -51,14 +50,14 @@ const organizationRouteHandlers = app
         name,
         shortName: name,
         slug,
-        languages: [config.defaultLanguage],
+        languages: [appConfig.defaultLanguage],
         welcomeText: defaultWelcomeText,
-        defaultLanguage: config.defaultLanguage,
+        defaultLanguage: appConfig.defaultLanguage,
         createdBy: user.id,
       })
       .returning();
 
-    logEvent('Organization created', { organization: createdOrganization.id });
+    logEvent({ msg: 'Organization created', meta: { organization: createdOrganization.id } });
 
     // Insert membership
     const createdMembership = await insertMembership({ userId: user.id, role: 'admin', entity: createdOrganization });
@@ -89,7 +88,7 @@ const organizationRouteHandlers = app
     const memberships = db
       .select()
       .from(membershipsTable)
-      .where(and(eq(membershipsTable.userId, user.id), eq(membershipsTable.contextType, entityType)))
+      .where(and(eq(membershipsTable.userId, user.id), eq(membershipsTable.contextType, entityType), isNotNull(membershipsTable.activatedAt)))
       .as('memberships');
 
     const orderColumn = getOrderColumn(
@@ -141,17 +140,24 @@ const organizationRouteHandlers = app
 
     // Convert the ids to an array
     const toDeleteIds = Array.isArray(ids) ? ids : [ids];
-    if (!toDeleteIds.length) throw new ApiError({ status: 400, type: 'invalid_request', severity: 'error', entityType: 'organization' });
+    if (!toDeleteIds.length) throw new AppError({ status: 400, type: 'invalid_request', severity: 'error', entityType: 'organization' });
 
     // Split ids into allowed and disallowed
-    const { allowedIds, disallowedIds: rejectedIds } = await splitByAllowance('delete', 'organization', toDeleteIds, memberships);
-    if (!allowedIds.length) throw new ApiError({ status: 403, type: 'forbidden', severity: 'warn', entityType: 'organization' });
+    const { allowedIds, disallowedIds: rejectedItems } = await splitByAllowance('delete', 'organization', toDeleteIds, memberships);
+    if (!allowedIds.length) throw new AppError({ status: 403, type: 'forbidden', severity: 'warn', entityType: 'organization' });
 
     // Get ids of members for organizations
     const memberIds = await db
       .select({ id: membershipsTable.userId })
       .from(membershipsTable)
-      .where(and(eq(membershipsTable.contextType, 'organization'), inArray(membershipsTable.organizationId, allowedIds)));
+      .where(
+        and(
+          eq(membershipsTable.contextType, 'organization'),
+          inArray(membershipsTable.organizationId, allowedIds),
+          eq(membershipsTable.archived, false),
+          isNotNull(membershipsTable.activatedAt),
+        ),
+      );
 
     // Delete the organizations
     await db.delete(organizationsTable).where(inArray(organizationsTable.id, allowedIds));
@@ -164,9 +170,9 @@ const organizationRouteHandlers = app
       sendSSEToUsers(userIds, 'remove_entity', { id, entityType: 'organization' });
     }
 
-    logEvent('Organizations deleted', { ids: allowedIds.join() });
+    logEvent({ msg: 'Organizations deleted', meta: { allowedIds } });
 
-    return ctx.json({ success: true, rejectedIds }, 200);
+    return ctx.json({ success: true, rejectedItems }, 200);
   })
   /*
    * Get organization by id or slug
@@ -201,7 +207,7 @@ const organizationRouteHandlers = app
 
     if (slug && slug !== organization.slug) {
       const slugAvailable = await checkSlugAvailable(slug);
-      if (!slugAvailable) throw new ApiError({ status: 409, type: 'slug_exists', severity: 'warn', entityType: 'organization', meta: { slug } });
+      if (!slugAvailable) throw new AppError({ status: 409, type: 'slug_exists', severity: 'warn', entityType: 'organization', meta: { slug } });
     }
 
     const [updatedOrganization] = await db
@@ -217,12 +223,19 @@ const organizationRouteHandlers = app
     const organizationMemberships = await db
       .select(membershipSummarySelect)
       .from(membershipsTable)
-      .where(and(eq(membershipsTable.contextType, 'organization'), eq(membershipsTable.organizationId, organization.id)));
+      .where(
+        and(
+          eq(membershipsTable.contextType, 'organization'),
+          eq(membershipsTable.organizationId, organization.id),
+          eq(membershipsTable.archived, false),
+          isNotNull(membershipsTable.activatedAt),
+        ),
+      );
 
     // Send SSE events to organization members
     for (const member of organizationMemberships) sendSSEToUsers([member.userId], 'update_entity', { ...updatedOrganization, member });
 
-    logEvent('Organization updated', { organization: updatedOrganization.id });
+    logEvent({ msg: 'Organization updated', meta: { organization: updatedOrganization.id } });
 
     const memberCountsQuery = getMemberCountsQuery(organization.entityType);
     const [{ invitesCount }] = await db

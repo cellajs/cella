@@ -1,19 +1,19 @@
 import { GitHub, Google, MicrosoftEntraId } from 'arctic';
-import { config, type EnabledOauthProvider } from 'config';
+import { appConfig, type EnabledOAuthProvider } from 'config';
 import { env } from '../../../../env';
 
-export const githubAuth = new GitHub(env.GITHUB_CLIENT_ID || '', env.GITHUB_CLIENT_SECRET || '', `${config.backendAuthUrl}/github/callback`);
+export const githubAuth = new GitHub(env.GITHUB_CLIENT_ID || '', env.GITHUB_CLIENT_SECRET || '', `${appConfig.backendAuthUrl}/github/callback`);
 
-export const googleAuth = new Google(env.GOOGLE_CLIENT_ID || '', env.GOOGLE_CLIENT_SECRET || '', `${config.backendAuthUrl}/google/callback`);
+export const googleAuth = new Google(env.GOOGLE_CLIENT_ID || '', env.GOOGLE_CLIENT_SECRET || '', `${appConfig.backendAuthUrl}/google/callback`);
 
 export const microsoftAuth = new MicrosoftEntraId(
-  env.MICROSOFT_TENANT_ID || '',
+  env.MICROSOFT_TENANT_ID || 'common', // Use 'common' if no tenant is specified
   env.MICROSOFT_CLIENT_ID || '',
   env.MICROSOFT_CLIENT_SECRET || '',
-  `${config.backendAuthUrl}/microsoft/callback`,
+  `${appConfig.backendAuthUrl}/microsoft/callback`,
 );
 
-export type Provider = { id: EnabledOauthProvider; userId: string };
+export type Provider = { id: EnabledOAuthProvider; userId: string };
 
 export interface GithubUserProps {
   avatar_url: string;
@@ -70,8 +70,8 @@ export interface GoogleUserProps {
 export interface MicrosoftUserProps {
   sub: string;
   name: string;
-  given_name: string;
-  family_name: string;
+  givenname: string;
+  familyname: string;
   picture: string;
   email: string | undefined;
 }

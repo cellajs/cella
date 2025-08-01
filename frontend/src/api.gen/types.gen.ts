@@ -118,7 +118,7 @@ export type ApiError = {
     | 508
     | 510
     | 511;
-  severity: 'debug' | 'log' | 'info' | 'warn' | 'error';
+  severity: 'fatal' | 'error' | 'warn' | 'info' | 'debug' | 'trace';
   entityType?: 'user' | 'organization' | 'attachment';
   logId?: string;
   path?: string;
@@ -311,17 +311,17 @@ export type SignUpWithTokenResponses = {
 
 export type SignUpWithTokenResponse = SignUpWithTokenResponses[keyof SignUpWithTokenResponses];
 
-export type SendVerificationEmailData = {
+export type ResendInvitationData = {
   body?: {
+    email: string;
     tokenId?: string;
-    userId?: string;
   };
   path?: never;
   query?: never;
-  url: '/auth/send-verification-email';
+  url: '/auth/resend-invitation';
 };
 
-export type SendVerificationEmailErrors = {
+export type ResendInvitationErrors = {
   /**
    * Bad request: problem processing request.
    */
@@ -354,23 +354,26 @@ export type SendVerificationEmailErrors = {
   };
 };
 
-export type SendVerificationEmailError = SendVerificationEmailErrors[keyof SendVerificationEmailErrors];
+export type ResendInvitationError = ResendInvitationErrors[keyof ResendInvitationErrors];
 
-export type SendVerificationEmailResponses = {
+export type ResendInvitationResponses = {
   /**
-   * Verification email sent
+   * Invitation email sent
    */
   200: boolean;
 };
 
-export type SendVerificationEmailResponse = SendVerificationEmailResponses[keyof SendVerificationEmailResponses];
+export type ResendInvitationResponse = ResendInvitationResponses[keyof ResendInvitationResponses];
 
 export type VerifyEmailData = {
   body?: never;
   path: {
     token: string;
   };
-  query?: never;
+  query: {
+    redirect?: string;
+    tokenId: string;
+  };
   url: '/auth/verify-email/{token}';
 };
 
@@ -408,15 +411,6 @@ export type VerifyEmailErrors = {
 };
 
 export type VerifyEmailError = VerifyEmailErrors[keyof VerifyEmailErrors];
-
-export type VerifyEmailResponses = {
-  /**
-   * Verified & session given
-   */
-  200: boolean;
-};
-
-export type VerifyEmailResponse = VerifyEmailResponses[keyof VerifyEmailResponses];
 
 export type RequestPasswordData = {
   body?: {
@@ -580,7 +574,7 @@ export type SignInResponses = {
 
 export type SignInResponse = SignInResponses[keyof SignInResponses];
 
-export type CheckTokenData = {
+export type RefreshTokenData = {
   body?: never;
   path: {
     id: string;
@@ -588,10 +582,10 @@ export type CheckTokenData = {
   query: {
     type: 'email_verification' | 'password_reset' | 'invitation';
   };
-  url: '/auth/check-token/{id}';
+  url: '/auth/refresh-token/{id}';
 };
 
-export type CheckTokenErrors = {
+export type RefreshTokenErrors = {
   /**
    * Bad request: problem processing request.
    */
@@ -624,9 +618,9 @@ export type CheckTokenErrors = {
   };
 };
 
-export type CheckTokenError = CheckTokenErrors[keyof CheckTokenErrors];
+export type RefreshTokenError = RefreshTokenErrors[keyof RefreshTokenErrors];
 
-export type CheckTokenResponses = {
+export type RefreshTokenResponses = {
   /**
    * Token is valid
    */
@@ -640,7 +634,7 @@ export type CheckTokenResponses = {
   };
 };
 
-export type CheckTokenResponse = CheckTokenResponses[keyof CheckTokenResponses];
+export type RefreshTokenResponse = RefreshTokenResponses[keyof RefreshTokenResponses];
 
 export type AcceptEntityInviteData = {
   body?: never;
@@ -1504,7 +1498,7 @@ export type GetMyAuthResponses = {
    * User sign-up info
    */
   200: {
-    oauth: Array<'github'>;
+    oauth: Array<'github' | 'microsoft'>;
     passkey: boolean;
     sessions: Array<{
       id: string;
@@ -1666,7 +1660,7 @@ export type DeleteMySessionsResponses = {
    */
   200: {
     success: boolean;
-    rejectedIds: Array<string>;
+    rejectedItems: Array<string>;
   };
 };
 
@@ -1997,7 +1991,7 @@ export type DeleteUsersResponses = {
    */
   200: {
     success: boolean;
-    rejectedIds: Array<string>;
+    rejectedItems: Array<string>;
   };
 };
 
@@ -2288,7 +2282,7 @@ export type DeleteOrganizationsResponses = {
    */
   200: {
     success: boolean;
-    rejectedIds: Array<string>;
+    rejectedItems: Array<string>;
   };
 };
 
@@ -2955,7 +2949,11 @@ export type SystemInviteResponses = {
   /**
    * Invitations are sent
    */
-  200: boolean;
+  200: {
+    success: boolean;
+    rejectedItems: Array<string>;
+    invitesSended: number;
+  };
 };
 
 export type SystemInviteResponse = SystemInviteResponses[keyof SystemInviteResponses];
@@ -3516,7 +3514,7 @@ export type DeleteAttachmentsResponses = {
    */
   200: {
     success: boolean;
-    rejectedIds: Array<string>;
+    rejectedItems: Array<string>;
   };
 };
 
@@ -3985,7 +3983,7 @@ export type DeleteMembershipsResponses = {
    */
   200: {
     success: boolean;
-    rejectedIds: Array<string>;
+    rejectedItems: Array<string>;
   };
 };
 
@@ -4045,7 +4043,11 @@ export type MembershipInviteResponses = {
   /**
    * Number of sended invitations
    */
-  200: number;
+  200: {
+    success: boolean;
+    rejectedItems: Array<string>;
+    invitesSended: number;
+  };
 };
 
 export type MembershipInviteResponse = MembershipInviteResponses[keyof MembershipInviteResponses];

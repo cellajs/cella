@@ -197,9 +197,8 @@ async function askForConfigFile(configFile?: string): Promise<Config & { selecte
       return await askForConfigFile();
     }
     return { ...extracted, selectedFile };
-  } else {
-    return await askForConfigFile();
   }
+  return await askForConfigFile();
 }
 
 main().catch(console.error);

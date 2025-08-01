@@ -20,6 +20,13 @@ pnpm seed
 pnpm dev
 ```
 
+## To check your types & format + fix code style
+
+```bash
+pnpm check
+```
+
+
 ## Customize & contribute
 
 1. Customize your config in `/config/default.ts`

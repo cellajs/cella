@@ -1,21 +1,21 @@
-import { config } from 'config';
+import { appConfig } from 'config';
 import type { Context } from 'hono';
 import { deleteCookie, getCookie, getSignedCookie, setCookie, setSignedCookie } from 'hono/cookie';
 import type { CookieOptions } from 'hono/utils/cookie';
 import type { TimeSpan } from '#/utils/time-span';
 import { env } from '../../../env';
 
-const isProduction = config.mode === 'production';
+const isProduction = appConfig.mode === 'production';
 
 export type CookieName =
   | 'session'
-  | 'oauth_state'
-  | 'oauth_code_verifier'
-  | 'oauth_redirect'
-  | 'oauth_connect_user_id'
-  | 'oauth_invite_token_id'
-  | 'oauth_invite_token_type'
-  | 'passkey_challenge';
+  | 'oauth-state'
+  | 'oauth-code-verifier'
+  | 'oauth-redirect'
+  | 'oauth-connect-user-id'
+  | 'oauth-invite-token-id'
+  | 'oauth-invite-token-type'
+  | 'passkey-challenge';
 
 /**
  * Sets an authentication cookie.
@@ -26,13 +26,13 @@ export type CookieName =
  * @param timeSpan - Duration for which the cookie is valid.
  */
 export const setAuthCookie = async (ctx: Context, name: CookieName, content: string, timeSpan: TimeSpan) => {
-  const versionedName = `${config.slug}-${name}-${config.cookieVersion}`;
+  const versionedName = `${appConfig.slug}-${name}-${appConfig.cookieVersion}`;
   const options = {
-    secure: config.mode !== 'development',
+    secure: appConfig.mode !== 'development',
     path: '/',
-    domain: isProduction ? config.domain : undefined,
+    domain: isProduction ? appConfig.domain : undefined,
     httpOnly: true,
-    sameSite: config.mode === 'tunnel' ? 'none' : 'lax', // ATTENTION: Strict is possible if you use a proxy for api
+    sameSite: appConfig.mode === 'tunnel' ? 'none' : 'lax', // ATTENTION: Strict is possible if you use a proxy for api
     maxAge: timeSpan.seconds(),
   } satisfies CookieOptions;
   isProduction ? await setSignedCookie(ctx, versionedName, content, env.COOKIE_SECRET, options) : setCookie(ctx, versionedName, content, options);
@@ -46,7 +46,7 @@ export const setAuthCookie = async (ctx: Context, name: CookieName, content: str
  * @returns The content stored in the cookie.
  */
 export const getAuthCookie = async (ctx: Context, name: CookieName) => {
-  const versionedName = `${config.slug}-${name}-${config.cookieVersion}`;
+  const versionedName = `${appConfig.slug}-${name}-${appConfig.cookieVersion}`;
 
   const content = isProduction ? await getSignedCookie(ctx, env.COOKIE_SECRET, versionedName) : getCookie(ctx, versionedName);
   return content;
@@ -60,11 +60,11 @@ export const getAuthCookie = async (ctx: Context, name: CookieName) => {
  * @returns Deleted value
  */
 export const deleteAuthCookie = (ctx: Context, name: CookieName) => {
-  const versionedName = `${config.slug}-${name}-${config.cookieVersion}`;
+  const versionedName = `${appConfig.slug}-${name}-${appConfig.cookieVersion}`;
 
   return deleteCookie(ctx, versionedName, {
     path: '/',
     secure: isProduction,
-    domain: isProduction ? config.domain : undefined,
+    domain: isProduction ? appConfig.domain : undefined,
   });
 };

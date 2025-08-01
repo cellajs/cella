@@ -1,4 +1,4 @@
-import { config } from 'config';
+import { appConfig } from 'config';
 import i18n from 'i18next';
 import { Column, Row, Text } from 'jsx-email';
 import type { BasicTemplateType } from '../src/lib/mailer';
@@ -15,7 +15,7 @@ export interface SystemInviteEmailProps extends BasicTemplateType {
   senderName: string;
 }
 
-const appName = config.name;
+const appName = appConfig.name;
 
 export const SystemInviteEmail = ({ name, lng, senderName, systemInviteLink }: SystemInviteEmailProps) => {
   return (

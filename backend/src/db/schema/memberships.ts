@@ -1,4 +1,4 @@
-import { config } from 'config';
+import { appConfig } from 'config';
 import { boolean, doublePrecision, timestamp, varchar } from 'drizzle-orm/pg-core';
 import { tokensTable } from '#/db/schema/tokens';
 import { usersTable } from '#/db/schema/users';
@@ -7,13 +7,13 @@ import { generateTable } from '#/db/utils/generate-table';
 import { timestampColumns } from '#/db/utils/timestamp-columns';
 import { nanoid } from '#/utils/nanoid';
 
-const roleEnum = config.rolesByType.entityRoles;
+const roleEnum = appConfig.rolesByType.entityRoles;
 
 const { organizationId, ...otherEntityIdColumns } = generateContextEntityTypeFields();
 
 const baseColumns = {
   id: varchar().primaryKey().$defaultFn(nanoid),
-  contextType: varchar({ enum: config.contextEntityTypes }).notNull(),
+  contextType: varchar({ enum: appConfig.contextEntityTypes }).notNull(),
   userId: varchar()
     .notNull()
     .references(() => usersTable.id, { onDelete: 'cascade' }),

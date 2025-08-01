@@ -1,4 +1,4 @@
-import { config } from 'config';
+import { appConfig } from 'config';
 import { useEffect, useRef } from 'react';
 import { useOnlineManager } from '~/hooks/use-online-manager';
 import { LocalFileStorage } from '~/modules/attachments/helpers/local-file-storage';
@@ -8,29 +8,44 @@ import type { AttachmentToInsert } from '~/modules/attachments/types';
 import { createBaseTransloaditUppy } from '~/modules/common/uploader/helpers';
 import type { UploadedUppyFile } from '~/modules/common/uploader/types';
 
-export function useSyncLocalStore(organizationId: string) {
+// TODO: Send catched errors to Sentry and add jsdoc comment here
+export const useLocalSyncAttachments = (organizationId: string) => {
   const { isOnline } = useOnlineManager();
   const { mutate: createAttachments } = useAttachmentCreateMutation();
   const { mutate: deleteAttachments } = useAttachmentDeleteMutation();
+  const { getData: fetchStoredFiles, setSyncStatus: updateStoredFilesSyncStatus } = LocalFileStorage;
 
-  const isUploadingRef = useRef(false);
+  const isSyncingRef = useRef(false); // Prevent double trigger
 
   const onComplete = (attachments: AttachmentToInsert[], storedIds: string[]) => {
-    createAttachments({ attachments, orgIdOrSlug: organizationId });
-    deleteAttachments({ orgIdOrSlug: organizationId, ids: storedIds });
+    createAttachments(
+      { localCreation: false, attachments, orgIdOrSlug: organizationId },
+      { onSuccess: () => console.info('Successfully synced attachments to server:', attachments) },
+    );
+    // Clean up offline files from IndexedDB
+    deleteAttachments(
+      { localDeletionIds: storedIds, serverDeletionIds: [], orgIdOrSlug: organizationId },
+      { onSuccess: () => console.info('Successfully removed uploaded files from IndexedDB.') },
+    );
   };
 
   useEffect(() => {
-    if (!isOnline || isUploadingRef.current || !config.has.uploadEnabled) return;
+    if (!isOnline || isSyncingRef.current || !appConfig.has.uploadEnabled) return;
 
     const syncStoreAttachments = async () => {
-      isUploadingRef.current = true;
-      const storageData = await LocalFileStorage.getData(organizationId);
+      isSyncingRef.current = true;
+      const storageData = await fetchStoredFiles(organizationId);
 
-      if (!storageData) return;
+      if (!storageData || storageData.syncStatus !== 'idle') {
+        isSyncingRef.current = false;
+        return;
+      }
 
       const files = Object.values(storageData.files);
-      if (!files.length) return;
+      if (!files.length) {
+        isSyncingRef.current = false;
+        return;
+      }
 
       try {
         const localUppy = await createBaseTransloaditUppy(
@@ -49,12 +64,14 @@ export function useSyncLocalStore(organizationId: string) {
         );
 
         localUppy
-          .on('error', (err) => {
+          .on('error', async (err) => {
             console.error('Sync files upload error:', err);
-            isUploadingRef.current = false;
+            await updateStoredFilesSyncStatus(organizationId, 'idle');
+            isSyncingRef.current = false;
           })
-          .on('upload', () => {
+          .on('upload', async () => {
             console.info('Sync files upload started');
+            await updateStoredFilesSyncStatus(organizationId, 'processing');
           })
           .on('transloadit:complete', async (assembly) => {
             if (assembly.error) throw new Error(assembly.error);
@@ -62,19 +79,25 @@ export function useSyncLocalStore(organizationId: string) {
 
             const ids = files.map(({ id }) => id);
             onComplete(attachments, ids);
-            // Clean up offline files from IndexedDB
-            await LocalFileStorage.removeData(organizationId);
-            console.info('🗑️ Successfully uploaded files removed from IndexedDB.');
-
-            isUploadingRef.current = false;
+            isSyncingRef.current = false;
           });
 
         for (const file of files) localUppy.addFile({ ...file, name: file.name || `${file.type}-${file.id}` });
 
         await localUppy.upload();
-      } catch (err) {}
+      } catch (err) {
+        isSyncingRef.current = false;
+      }
     };
 
     syncStoreAttachments();
   }, [isOnline]);
-}
+
+  // Ensures that any in-progress sync is marked as idle, so the next page load can correctly start syncing again.
+  useEffect(() => {
+    const handleBeforeUnload = async () => await updateStoredFilesSyncStatus(organizationId, 'idle');
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, []);
+};

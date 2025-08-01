@@ -1,9 +1,9 @@
 import { default as i18n, default as i18next } from 'i18next';
 import { ApiError } from '~/lib/api';
 import router from '~/lib/router';
-import { flushStoresAndCache } from '~/modules/auth/sign-out';
 import { toaster } from '~/modules/common/toaster';
 import { useAlertStore } from '~/store/alert';
+import { flushStores } from '~/utils/flush-stores';
 
 /**
  * Fallback messages for common 400 errors
@@ -59,11 +59,14 @@ export const onError = (error: Error | ApiError) => {
       };
 
       // Save the current path as a redirect
-      if (location.pathname?.length > 2) {
-        redirectOptions.search = { redirect: location.pathname };
+      if (location.pathname) {
+        const url = new URL(location.href);
+        const redirectPath = url.pathname + url.search;
+        redirectOptions.search = { redirect: redirectPath };
       }
 
-      flushStoresAndCache();
+      // Flush sensitive stores and navigate to the sign-in page
+      flushStores();
       router.navigate(redirectOptions);
     }
   }

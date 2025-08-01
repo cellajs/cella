@@ -1,26 +1,23 @@
 import { useSearch } from '@tanstack/react-router';
-import { config, type EnabledOauthProvider } from 'config';
+import { appConfig, type EnabledOAuthProvider } from 'config';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { Step } from '~/modules/auth/types';
+import type { AuthStep } from '~/modules/auth/types';
 import { toaster } from '~/modules/common/toaster';
 import { Button } from '~/modules/ui/button';
 import { AuthenticateRoute } from '~/routes/auth';
 import { useUIStore } from '~/store/ui';
 
-export const mapOauthProviders = [
+export const mapOAuthProviders = [
   { id: 'github', name: 'Github' },
   { id: 'google', name: 'Google' },
   { id: 'microsoft', name: 'Microsoft' },
 ] as const;
-interface OauthOptions {
-  id: EnabledOauthProvider;
-  name: string;
-  url: string;
-}
 
-interface OauthOptionsProps {
-  actionType: Step;
+type OAuthProviders = (typeof mapOAuthProviders)[number];
+
+interface OAuthOptionsProps {
+  actionType: AuthStep;
 }
 
 /**
@@ -28,50 +25,50 @@ interface OauthOptionsProps {
  *
  * @param actionType The action type to perform
  */
-const OauthOptions = ({ actionType = 'signIn' }: OauthOptionsProps) => {
+const OAuthOptions = ({ actionType = 'signIn' }: OAuthOptionsProps) => {
   const { t } = useTranslation();
   const mode = useUIStore((state) => state.mode);
   const { token, redirect } = useSearch({ from: AuthenticateRoute.id });
 
-  const [loading, setLoading] = useState(false);
+  const [loadingProvider, setLoadingProvider] = useState<EnabledOAuthProvider | null>(null);
 
-  const redirectPath = redirect?.startsWith('/') ? redirect : '';
+  const redirectPath = redirect?.startsWith('/') ? redirect : appConfig.defaultRedirectPath;
   const actionText = actionType === 'signIn' ? t('common:sign_in') : actionType === 'signUp' ? t('common:sign_up') : t('common:continue');
 
-  const authenticateWithProvider = async (provider: EnabledOauthProvider) => {
+  const authenticateWithProvider = async (provider: EnabledOAuthProvider) => {
     try {
-      setLoading(true);
+      setLoadingProvider(provider);
 
-      const baseUrl = `${config.backendAuthUrl}/${provider}`;
+      const baseUrl = `${appConfig.backendAuthUrl}/${provider}`;
       const params = new URLSearchParams();
 
-      params.set('redirect', redirectPath);
+      params.set('redirect', encodeURIComponent(redirectPath));
       if (token) {
         params.set('token', token);
         params.set('type', 'invite');
       } else params.set('type', 'auth');
 
       const providerUrl = `${baseUrl}?${params.toString()}`;
-
       window.location.assign(providerUrl);
     } catch (error) {
       toaster(t('common:url_malformed'), 'error');
-      setLoading(false);
+      setLoadingProvider(null);
     }
   };
 
-  if (config.enabledOauthProviders.length < 1) return null;
+  if (appConfig.enabledOAuthProviders.length < 1) return null;
 
   return (
     <div data-mode={mode} className="group flex flex-col space-y-2">
-      {config.enabledOauthProviders.map((provider) => {
+      {appConfig.enabledOAuthProviders.map((provider) => {
         // Map provider data
-        const providerData = mapOauthProviders.find((p) => p.id === provider);
-        if (!providerData) return;
+        const providerData = mapOAuthProviders.find((p): p is OAuthProviders & { id: typeof provider } => p.id === provider);
+
+        if (!providerData) return null;
 
         return (
           <Button
-            loading={loading}
+            loading={loadingProvider === provider}
             key={provider}
             type="button"
             variant="outline"
@@ -95,4 +92,4 @@ const OauthOptions = ({ actionType = 'signIn' }: OauthOptionsProps) => {
   );
 };
 
-export default OauthOptions;
+export default OAuthOptions;

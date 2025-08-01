@@ -1,17 +1,17 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
-import { and, count, eq, ilike, inArray, or, type SQL } from 'drizzle-orm';
+import { and, count, eq, ilike, inArray, isNotNull, or, type SQL } from 'drizzle-orm';
 import { db } from '#/db/db';
 import { membershipsTable } from '#/db/schema/memberships';
 import { usersTable } from '#/db/schema/users';
 import { type Env, getContextMemberships, getContextUser } from '#/lib/context';
-import { ApiError } from '#/lib/errors';
-import { logEvent } from '#/middlewares/logger/log-event';
+import { AppError } from '#/lib/errors';
 import { checkSlugAvailable } from '#/modules/entities/helpers/check-slug';
 import { getUsersByConditions } from '#/modules/users/helpers/get-user-by';
 import { userSelect } from '#/modules/users/helpers/select';
 import userRoutes from '#/modules/users/routes';
 import { defaultHook } from '#/utils/default-hook';
 import { getIsoDate } from '#/utils/iso-date';
+import { logEvent } from '#/utils/logger';
 import { getOrderColumn } from '#/utils/order-column';
 import { prepareStringForILikeFilter } from '#/utils/sql';
 
@@ -84,62 +84,75 @@ const usersRouteHandlers = app
 
     // Convert the user ids to an array
     const toDeleteIds = Array.isArray(ids) ? ids : [ids];
-    if (!toDeleteIds.length) throw new ApiError({ status: 400, type: 'invalid_request', severity: 'error', entityType: 'user' });
+    if (!toDeleteIds.length) throw new AppError({ status: 400, type: 'invalid_request', severity: 'error', entityType: 'user' });
 
     // Fetch users by IDs
     const targets = await getUsersByConditions([inArray(usersTable.id, toDeleteIds)]);
 
     const foundIds = new Set(targets.map(({ id }) => id));
     const allowedIds: string[] = [];
-    const rejectedIds: string[] = [];
+    const rejectedItems: string[] = [];
 
     for (const targetId of toDeleteIds) {
       // Not found in DB
       if (!foundIds.has(targetId)) {
-        rejectedIds.push(targetId);
+        rejectedItems.push(targetId);
         continue; // Skip to next
       }
 
       const isAllowed = contextUserRole === 'admin' || contextUserId === targetId;
       if (isAllowed) allowedIds.push(targetId);
-      else rejectedIds.push(targetId); // Found but not authorized
+      else rejectedItems.push(targetId); // Found but not authorized
     }
 
     // Ifuser doesn't have permission to delete, return error
-    if (!allowedIds.length) throw new ApiError({ status: 403, type: 'forbidden', severity: 'warn', entityType: 'user' });
+    if (!allowedIds.length) throw new AppError({ status: 403, type: 'forbidden', severity: 'warn', entityType: 'user' });
 
     // Delete allowed users
     await db.delete(usersTable).where(inArray(usersTable.id, allowedIds));
 
-    logEvent('Users deleted', { ids: allowedIds.join() });
+    logEvent({ msg: 'Users deleted', meta: allowedIds });
 
-    return ctx.json({ success: true, rejectedIds }, 200);
+    return ctx.json({ success: true, rejectedItems }, 200);
   })
   /*
    * Get a user by id or slug
    */
   .openapi(userRoutes.getUser, async (ctx) => {
     const { idOrSlug } = ctx.req.valid('param');
-    const user = getContextUser();
-    const memberships = getContextMemberships();
+    const requestingUser = getContextUser();
+    const requesterMemberships = getContextMemberships();
 
-    if (idOrSlug === user.id || idOrSlug === user.slug) return ctx.json(user, 200);
+    if (idOrSlug === requestingUser.id || idOrSlug === requestingUser.slug) return ctx.json(requestingUser, 200);
 
     const [targetUser] = await getUsersByConditions([or(eq(usersTable.id, idOrSlug), eq(usersTable.slug, idOrSlug))]);
 
-    if (!targetUser) throw new ApiError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'user', meta: { user: idOrSlug } });
+    if (!targetUser) throw new AppError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'user', meta: { user: idOrSlug } });
 
-    const targetUserMembership = await db
+    const requesterOrgIds = requesterMemberships.filter((m) => m.contextType === 'organization').map((m) => m.organizationId);
+
+    const [sharedMembership] = await db
       .select()
       .from(membershipsTable)
-      .where(and(eq(membershipsTable.userId, targetUser.id), eq(membershipsTable.contextType, 'organization')));
+      .where(
+        and(
+          eq(membershipsTable.userId, targetUser.id),
+          eq(membershipsTable.contextType, 'organization'),
+          isNotNull(membershipsTable.activatedAt),
+          inArray(membershipsTable.organizationId, requesterOrgIds),
+        ),
+      )
+      .limit(1);
 
-    const jointMembership = memberships.find((membership) =>
-      targetUserMembership.some((targetMembership) => targetMembership.organizationId === membership.organizationId),
-    );
-
-    if (user.role !== 'admin' && !jointMembership)
-      throw new ApiError({ status: 403, type: 'forbidden', severity: 'warn', entityType: 'user', meta: { user: targetUser.id } });
+    if (requestingUser.role !== 'admin' && !sharedMembership) {
+      throw new AppError({
+        status: 403,
+        type: 'forbidden',
+        severity: 'warn',
+        entityType: 'user',
+        meta: { user: targetUser.id },
+      });
+    }
 
     return ctx.json(targetUser, 200);
   })
@@ -152,14 +165,14 @@ const usersRouteHandlers = app
     const user = getContextUser();
 
     const [targetUser] = await getUsersByConditions([or(eq(usersTable.id, idOrSlug), eq(usersTable.slug, idOrSlug))]);
-    if (!targetUser) throw new ApiError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'user', meta: { user: idOrSlug } });
+    if (!targetUser) throw new AppError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'user', meta: { user: idOrSlug } });
 
     const { bannerUrl, firstName, lastName, language, newsletter, thumbnailUrl, slug } = ctx.req.valid('json');
 
     // Check if slug is available
     if (slug && slug !== targetUser.slug) {
       const slugAvailable = await checkSlugAvailable(slug);
-      if (!slugAvailable) throw new ApiError({ status: 409, type: 'slug_exists', severity: 'warn', entityType: 'user', meta: { slug } });
+      if (!slugAvailable) throw new AppError({ status: 409, type: 'slug_exists', severity: 'warn', entityType: 'user', meta: { slug } });
     }
 
     const [updatedUser] = await db
@@ -179,7 +192,7 @@ const usersRouteHandlers = app
       .where(eq(usersTable.id, targetUser.id))
       .returning();
 
-    logEvent('User updated', { user: updatedUser.id });
+    logEvent({ msg: 'User updated', meta: { user: updatedUser.id } });
 
     return ctx.json(updatedUser, 200);
   });

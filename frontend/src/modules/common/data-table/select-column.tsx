@@ -1,5 +1,5 @@
 import { SelectTrigger } from '@radix-ui/react-select';
-import type { config } from 'config';
+import type { appConfig } from 'config';
 import { useTranslation } from 'react-i18next';
 import type { Member } from '~/modules/memberships/types';
 import type { OrganizationTable } from '~/modules/organizations/table/table-wrapper';
@@ -13,7 +13,7 @@ export const renderSelect = <TRow extends User | Member | OrganizationTable>({
 }: {
   row: TRow;
   onRowChange: (row: TRow, commitChanges?: boolean) => void;
-  options: typeof config.rolesByType.entityRoles | typeof config.rolesByType.systemRoles;
+  options: typeof appConfig.rolesByType.entityRoles | typeof appConfig.rolesByType.systemRoles;
 }) => {
   const { t } = useTranslation();
 

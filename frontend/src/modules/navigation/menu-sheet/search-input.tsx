@@ -1,4 +1,4 @@
-import { config } from 'config';
+import { appConfig } from 'config';
 import { Search, XCircle } from 'lucide-react';
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -38,7 +38,7 @@ export const MenuSheetSearchInput = ({ menu, searchTerm, setSearchTerm, searchRe
           return isMatch ? [item, ...filteredSubmenu] : filteredSubmenu;
         });
 
-      return config.menuStructure.flatMap(({ entityType }) => filterItems(menu[entityType]));
+      return appConfig.menuStructure.flatMap(({ entityType }) => filterItems(menu[entityType]));
     };
     searchResultsChange(filterResults());
   }, [searchTerm, menu]);

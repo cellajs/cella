@@ -1,5 +1,5 @@
 import { infiniteQueryOptions, queryOptions, useMutation } from '@tanstack/react-query';
-import { config } from 'config';
+import { appConfig } from 'config';
 import { deleteUsers, type GetUsersData, getUser, getUsers, type UpdateUserData, updateUser } from '~/api.gen';
 import type { ApiError } from '~/lib/api';
 import type { User } from '~/modules/users/types';
@@ -37,7 +37,7 @@ export const userQueryOptions = (idOrSlug: string) =>
  * @param param.q - Optional search query to filter users by (default is an empty string).
  * @param param.sort - Field to sort by (default is 'createdAt').
  * @param param.order - Order of sorting (default is 'desc').
- * @param param.limit - Number of items per page (default is configured in `config.requestLimits.users`).
+ * @param param.limit - Number of items per page (default is configured in `appConfig.requestLimits.users`).
  * @returns Infinite query options.
  */
 export const usersQueryOptions = ({
@@ -49,7 +49,7 @@ export const usersQueryOptions = ({
 }: Omit<NonNullable<GetUsersData['query']>, 'limit' | 'offset'> & { limit?: number }) => {
   const sort = _sort || 'createdAt';
   const order = _order || 'desc';
-  const limit = String(_limit || config.requestLimits.users);
+  const limit = String(_limit || appConfig.requestLimits.users);
 
   const queryKey = usersKeys.table.entries({ q, sort, order, role });
 

@@ -24,6 +24,10 @@ export const HomeAliasRoute = createRoute({
   staticData: { isAuth: true },
   head: () => ({ meta: [{ title: appTitle('Home') }] }),
   getParentRoute: () => AppRoute,
+  beforeLoad: () => {
+    const finishedOnboarding = useNavigationStore.getState().finishedOnboarding;
+    if (!finishedOnboarding) throw redirect({ to: '/welcome' });
+  },
   component: () => (
     <Suspense>
       <Home />
@@ -36,8 +40,7 @@ export const WelcomeRoute = createRoute({
   staticData: { isAuth: true },
   head: () => ({ meta: [{ title: appTitle('Welcome') }] }),
   getParentRoute: () => AppRoute,
-  beforeLoad: ({ cause }) => {
-    if (cause !== 'enter') return;
+  beforeLoad: () => {
     const finishedOnboarding = useNavigationStore.getState().finishedOnboarding;
     if (finishedOnboarding) throw redirect({ to: '/home' });
   },

@@ -1,11 +1,11 @@
 import { Link } from '@tanstack/react-router';
-import { config } from 'config';
+import { appConfig } from 'config';
 import type { LegalTypes } from '~/modules/marketing/legal-page';
 
 const LegalTexts = ({ textFor }: { textFor: LegalTypes }) => {
-  const appName = config.name;
-  const companyFull = config.company.name;
-  const companyShort = config.company.shortName;
+  const appName = appConfig.name;
+  const companyFull = appConfig.company.name;
+  const companyShort = appConfig.company.shortName;
 
   if (textFor === 'terms')
     return (
@@ -37,8 +37,8 @@ const LegalTexts = ({ textFor }: { textFor: LegalTypes }) => {
             First of all, great to have you here! However, there are some rules you need to agree to before you use this application and services
             (“Services”). When we use the word “Services,” we mean the {appName} web-based application and all applications and functionalities within
             it, available through
-            <a className="mx-1" href={config.frontendUrl} target="_blank" rel="noreferrer">
-              {config.frontendUrl}
+            <a className="mx-1" href={appConfig.frontendUrl} target="_blank" rel="noreferrer">
+              {appConfig.frontendUrl}
             </a>
             but also under sub domains and other domains of our clients, sometimes under an alternative name given by the client. If you have any
             questions, comments, or concerns regarding these Terms or the Services, please contact {companyFull}.

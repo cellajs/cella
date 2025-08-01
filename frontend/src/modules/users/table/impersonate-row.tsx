@@ -1,4 +1,4 @@
-import { config } from 'config';
+import { appConfig } from 'config';
 import i18n from 'i18next';
 import { VenetianMask } from 'lucide-react';
 import { toast } from 'sonner';
@@ -21,7 +21,7 @@ const handleStartImpersonation = async (targetUserId: string) => {
     useUIStore.getState().setImpersonating(true);
     await Promise.all([getAndSetMe(), getAndSetMenu()]);
     toast.success(i18n.t('common:success.impersonated'));
-    router.navigate({ to: config.defaultRedirectPath, replace: true });
+    router.navigate({ to: appConfig.defaultRedirectPath, replace: true });
   } catch (error) {
     toaster(i18n.t('error:impersonation_failed'), 'error');
     console.error(error);

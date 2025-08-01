@@ -1,7 +1,7 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation } from '@tanstack/react-query';
 import { useNavigate, useSearch } from '@tanstack/react-router';
-import { config } from 'config';
+import { appConfig } from 'config';
 import { ArrowRight, ChevronDown } from 'lucide-react';
 import { useRef } from 'react';
 import { useForm } from 'react-hook-form';
@@ -18,7 +18,7 @@ import { AuthenticateRoute } from '~/routes/auth';
 import { useUserStore } from '~/store/user';
 import { defaultOnInvalid } from '~/utils/form-on-invalid';
 
-const enabledStrategies: readonly string[] = config.enabledAuthStrategies;
+const enabledStrategies: readonly string[] = appConfig.enabledAuthStrategies;
 
 const formSchema = zSignUpData.shape.body.unwrap();
 type FormValues = z.infer<typeof formSchema>;
@@ -35,8 +35,9 @@ export const SignInForm = ({ email, resetSteps, emailEnabled }: Props) => {
   const passwordRef = useRef<HTMLInputElement>(null);
 
   const { lastUser, clearUserStore } = useUserStore();
-  const { redirect, token, tokenId } = useSearch({ from: AuthenticateRoute.id });
+  const { redirect: encodedRedirect, token, tokenId } = useSearch({ from: AuthenticateRoute.id });
 
+  const redirect = decodeURIComponent(encodedRedirect || '');
   const isMobile = window.innerWidth < 640;
 
   // Set up form
@@ -49,9 +50,9 @@ export const SignInForm = ({ email, resetSteps, emailEnabled }: Props) => {
   const { mutate: _signIn, isPending } = useMutation<SignInResponse, ApiError, NonNullable<SignInData['body']>>({
     mutationFn: (body) => signIn({ body }),
     onSuccess: (emailVerified) => {
-      if (!emailVerified) return navigate({ to: '/auth/email-verification', replace: true });
+      if (!emailVerified) return navigate({ to: '/auth/email-verification/$reason', params: { reason: 'signin' }, replace: true });
 
-      const redirectPath = token && tokenId ? '/invitation/$token' : redirect?.startsWith('/') ? redirect : config.defaultRedirectPath;
+      const redirectPath = token && tokenId ? '/invitation/$token' : redirect?.startsWith('/') ? redirect : appConfig.defaultRedirectPath;
 
       navigate({
         to: redirectPath,

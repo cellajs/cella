@@ -15,6 +15,7 @@ import { baseBlocknoteTypeToKeys } from '~/modules/common/blocknote/type-to-keys
 import type {
   BlockAlignTypes,
   BlockStyleTypes,
+  CommonBlockNoteProps,
   CustomBlockNoteEditor,
   CustomBlockTypes,
   CustomFormatToolBarConfig,
@@ -93,6 +94,8 @@ export const allowedTypes: CustomBlockTypes[] = [
 // Blocks to witch can be switched
 export const customBlockTypeSelectItems: CustomBlockTypes[] = ['heading', 'paragraph', 'bulletListItem', 'numberedListItem', 'checkListItem'];
 
+export const typeToBlocknoteKeys: Record<CustomBlockTypes, SlashItemKeys[]> = { ...baseBlocknoteTypeToKeys };
+
 /**
  *  Side Menu Configuration
  */
@@ -105,7 +108,6 @@ export const getSideMenuItems = (dict: Dictionary) => [...blockTypeSelectItems(d
 /**
  *  Slash Menu Configuration
  */
-const typeToBlocknoteKeys: Record<CustomBlockTypes, SlashItemKeys[]> = { ...baseBlocknoteTypeToKeys };
 
 // Indexed items (max 9 for quick number-based selection)
 export const customSlashIndexedItems: SlashIndexedItems = ['image', 'video', 'file', 'bulletListItem', 'numberedListItem', 'checkListItem', 'notify'];
@@ -124,7 +126,11 @@ export const customSlashNotIndexedItems: CustomBlockTypes[] = [
 ];
 
 // Generate the complete Slash menu items list
-export const getSlashMenuItems = (editor: CustomBlockNoteEditor, allowedTypes: CustomBlockTypes[]): DefaultReactSuggestionItem[] => {
+export const getSlashMenuItems = (
+  editor: CustomBlockNoteEditor,
+  allowedTypes: CustomBlockTypes[],
+  headingLevels: NonNullable<CommonBlockNoteProps['headingLevels']>,
+): DefaultReactSuggestionItem[] => {
   // Get all available slash items
   const baseItems = [...getDefaultReactSlashMenuItems(editor), getSlashNotifySlashItem(editor)];
 
@@ -135,8 +141,19 @@ export const getSlashMenuItems = (editor: CustomBlockNoteEditor, allowedTypes: C
   // Combine allowed types in order
   const orderedTypes = [...allowedIndexed, ...allowedNotIndexed];
 
+  const { heading, ...restTypeToKeys } = typeToBlocknoteKeys;
+
+  // Filter heading keys like "heading", "heading_2", "toggle_heading_3", etc.
+  const filteredHeading = heading.filter((el) => {
+    const match = el.match(/(?:_)?(\d)$/); // match ending digit with optional underscore (handles "heading_2" or "toggle_heading_3")
+    const level = match ? Number.parseInt(match[1], 10) : 1; // "heading" (no number) defaults to level 1
+    return headingLevels.includes(level as (typeof headingLevels)[number]);
+  });
+
+  const validTypeToBlocknoteKeys = { ...restTypeToKeys, heading: filteredHeading };
+
   // Create a sort order map where keys map to their index in orderedTypes
-  const sortOrder = new Map(orderedTypes.flatMap((type, index) => typeToBlocknoteKeys[type].map((key) => [key, index])));
+  const sortOrder = new Map(orderedTypes.flatMap((type, index) => validTypeToBlocknoteKeys[type].map((key) => [key, index])));
 
   // Filter items that have keys present in sortOrder, then sort by that index
   const filteredSortedItems = baseItems

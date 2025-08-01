@@ -1,7 +1,7 @@
 import { onlineManager } from '@tanstack/react-query';
 import { Uppy } from '@uppy/core';
 import Transloadit from '@uppy/transloadit';
-import { config } from 'config';
+import { appConfig } from 'config';
 import { getUploadToken } from '~/api.gen';
 import { prepareFilesForOffline } from '~/modules/common/uploader/helpers/prepare-for-offline';
 import type { CustomUppy, CustomUppyFile, CustomUppyOpt } from '~/modules/common/uploader/types';
@@ -25,7 +25,7 @@ export const createBaseTransloaditUppy = async (uppyOptions: CustomUppyOpt, toke
     onBeforeFileAdded,
     onBeforeUpload: (files) => {
       // Determine if we can upload based on online status and s3 configuration
-      const canUpload = onlineManager.isOnline() && config.has.uploadEnabled;
+      const canUpload = onlineManager.isOnline() && appConfig.has.uploadEnabled;
 
       // Clean up file names
       for (const file of Object.values(files)) {
@@ -37,7 +37,7 @@ export const createBaseTransloaditUppy = async (uppyOptions: CustomUppyOpt, toke
       if (canUpload) return true;
       // If not online, prepare the files for offline storage and emit transloadit:complete event
       prepareFilesForOffline(files, tokenQuery).then((assembly) => uppy.emit('transloadit:complete', assembly));
-      return config.has.uploadEnabled; // Prevent upload if s3 is unavailable
+      return appConfig.has.uploadEnabled; // Prevent upload if s3 is unavailable
     },
   });
 
@@ -55,6 +55,7 @@ export const createBaseTransloaditUppy = async (uppyOptions: CustomUppyOpt, toke
 
     return uppy;
   } catch (err) {
+    // TODO send to Sentry
     if (err instanceof Error && err.message.includes('Failed to fetch') && !onlineManager.isOnline()) return uppy;
     throw new Error('Failed to get upload token');
   }
@@ -63,5 +64,9 @@ export const createBaseTransloaditUppy = async (uppyOptions: CustomUppyOpt, toke
 const onBeforeFileAdded = (file: CustomUppyFile) => {
   // Simplify file ID and add content type to meta
   file.id = nanoid();
+
+  // Generate preview for all file types using blob URL
+  if (!file.preview && file.data instanceof Blob) file.preview = URL.createObjectURL(file.data);
+
   return file;
 };

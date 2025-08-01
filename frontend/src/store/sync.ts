@@ -1,5 +1,5 @@
 import type { Offset } from '@electric-sql/client';
-import { config } from 'config';
+import { appConfig } from 'config';
 import { create } from 'zustand';
 import { createJSONStorage, devtools, persist } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
@@ -37,7 +37,7 @@ export const useSyncStore = create<SyncStoreState>()(
       })),
       {
         version: 1,
-        name: `${config.slug}-sync-data-store`,
+        name: `${appConfig.slug}-sync-data-store`,
         storage: createJSONStorage(() => localStorage),
       },
     ),

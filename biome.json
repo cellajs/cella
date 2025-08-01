@@ -1,7 +1,6 @@
 {
-  "$schema": "https://biomejs.dev/schemas/2.0.6/schema.json",
   "files": {
-    "includes": ["backend/src/**", "frontend/src/**", "!frontend/src/api.gen", "locales", "frontend/openapi-ts.config.ts"]
+    "includes": ["backend/src/**", "frontend/src/**", "src/**", "locales", "frontend/openapi-ts.config.ts"]
   },
   "linter": {
     "enabled": true,
