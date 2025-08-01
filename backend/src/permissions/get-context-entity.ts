@@ -1,10 +1,10 @@
-import { appConfig, type ContextEntityType } from 'config';
 import { getContextMemberships, getContextOrganization, getContextUser } from '#/lib/context';
 import { type EntityModel, resolveEntity } from '#/lib/entity';
 import { AppError } from '#/lib/errors';
 import type { MembershipSummary } from '#/modules/memberships/helpers/select';
 import { checkPermission } from '#/permissions/check-if-allowed';
 import type { PermittedAction } from '#/permissions/permissions-config';
+import { appConfig, type ContextEntityType } from 'config';
 
 /**
  * Checks if user has permission to perform an action on a context entity.
@@ -12,7 +12,7 @@ import type { PermittedAction } from '#/permissions/permissions-config';
  * Resolves context entity based on the given type and ID/slug, checks user permissions (including system admins),
  * and retrieves the user's membership for the entity.
  *
- * It returns either an error object or an object with the resolved entity + membership and without error.
+ * It returns either object with the resolved entity + membership
  *
  * @param entityType - The type of entity (e.g., organization, project).
  * @param action - Action to check `"create" | "read" | "update" | "delete"`.
@@ -20,13 +20,12 @@ import type { PermittedAction } from '#/permissions/permissions-config';
  * @returns An object with:
  *   - `entity`: Resolved context entity or `null` if not found.
  *   - `membership`: User's membership or `null` if not found.
- *   - `error`: Error object or `null` if no error occurred.
  */
 export const getValidContextEntity = async <T extends ContextEntityType>(
   idOrSlug: string,
   entityType: T,
   action: Exclude<PermittedAction, 'create'>,
-): Promise<{ error: null; entity: EntityModel<T>; membership: MembershipSummary | null }> => {
+): Promise<{ entity: EntityModel<T>; membership: MembershipSummary | null }> => {
   const user = getContextUser();
   const memberships = getContextMemberships();
   const isSystemAdmin = user.role === 'admin';
@@ -52,5 +51,5 @@ export const getValidContextEntity = async <T extends ContextEntityType>(
     if (!organizationMatches) throw new AppError({ status: 400, type: 'invalid_request', severity: 'error', entityType });
   }
 
-  return { error: null, entity, membership };
+  return { entity, membership };
 };
