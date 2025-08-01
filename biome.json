@@ -1,6 +1,16 @@
 {
   "files": {
-    "includes": ["backend/src/**", "frontend/src/**", "src/**", "locales", "frontend/openapi-ts.config.ts"]
+    "includes": [
+      "backend/src/**",
+      "frontend/src/**",
+      "src/**",
+      "locales",
+      "frontend/openapi-ts.config.ts",
+      "!frontend/src/api.gen/client/*",
+      "!frontend/src/api.gen/core/*",
+      "!frontend/src/api.gen/client.gen.ts",
+      "!frontend/src/api.gen/index.ts"
+    ]
   },
   "linter": {
     "enabled": true,
@@ -32,7 +42,7 @@
       },
       "style": {
         "useEnumInitializers": "off",
-        "noParameterAssign": "error",
+        "noParameterAssign": "off",
         "useAsConstAssertion": "error",
         "useDefaultParameterLast": "error",
         "useSelfClosingElements": "error",
@@ -52,7 +62,8 @@
   },
   "javascript": {
     "formatter": {
-      "quoteStyle": "single"
+      "quoteStyle": "single",
+      "jsxQuoteStyle": "double"
     }
   },
   "json": {

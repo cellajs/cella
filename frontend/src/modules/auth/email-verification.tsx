@@ -10,7 +10,7 @@ const EmailVerification = () => {
   return (
     <div className="text-center">
       <h1 className="text-2xl">{t('common:almost_there')}</h1>
-      <p className="font-light my-4">{t('common:request_verification.text', { reason: t('common:request_verification.' + reason) })}</p>
+      <p className="font-light my-4">{t('common:request_verification.text', { reason: t(`common:request_verification.${reason}`) })}</p>
 
       {reason === 'signup' && <LegalNotice mode="verify" />}
     </div>
