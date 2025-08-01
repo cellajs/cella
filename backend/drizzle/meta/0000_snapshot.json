@@ -1,5 +1,5 @@
 {
-  "id": "b833e5bb-ab59-4cfc-89e4-8aeb2890570a",
+  "id": "727b17a3-f074-4db2-92c1-bb650749e21c",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -8,6 +8,13 @@
       "name": "attachments",
       "schema": "",
       "columns": {
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
         "id": {
           "name": "id",
           "type": "varchar",
@@ -75,13 +82,6 @@
           "type": "varchar",
           "primaryKey": false,
           "notNull": false
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
         },
         "created_by": {
           "name": "created_by",
@@ -176,6 +176,13 @@
       "name": "emails",
       "schema": "",
       "columns": {
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
         "id": {
           "name": "id",
           "type": "varchar",
@@ -206,13 +213,6 @@
           "type": "varchar",
           "primaryKey": false,
           "notNull": true
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
         },
         "verified_at": {
           "name": "verified_at",
@@ -268,6 +268,13 @@
       "name": "memberships",
       "schema": "",
       "columns": {
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
         "id": {
           "name": "id",
           "type": "varchar",
@@ -304,13 +311,6 @@
           "type": "timestamp",
           "primaryKey": false,
           "notNull": false
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
         },
         "created_by": {
           "name": "created_by",
@@ -435,6 +435,19 @@
       "name": "oauth_accounts",
       "schema": "",
       "columns": {
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "id": {
+          "name": "id",
+          "type": "varchar",
+          "primaryKey": true,
+          "notNull": true
+        },
         "provider_id": {
           "name": "provider_id",
           "type": "varchar",
@@ -447,18 +460,36 @@
           "primaryKey": false,
           "notNull": true
         },
+        "email": {
+          "name": "email",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "verified": {
+          "name": "verified",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "verified_at": {
+          "name": "verified_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "tenant_id": {
+          "name": "tenant_id",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
         "user_id": {
           "name": "user_id",
           "type": "varchar",
           "primaryKey": false,
           "notNull": true
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
         }
       },
       "indexes": {},
@@ -477,16 +508,18 @@
           "onUpdate": "no action"
         }
       },
-      "compositePrimaryKeys": {
-        "oauth_accounts_provider_id_provider_user_id_pk": {
-          "name": "oauth_accounts_provider_id_provider_user_id_pk",
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "oauth_accounts_providerId_providerUserId_email_unique": {
+          "name": "oauth_accounts_providerId_providerUserId_email_unique",
+          "nullsNotDistinct": false,
           "columns": [
             "provider_id",
-            "provider_user_id"
+            "provider_user_id",
+            "email"
           ]
         }
       },
-      "uniqueConstraints": {},
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false
@@ -495,6 +528,13 @@
       "name": "organizations",
       "schema": "",
       "columns": {
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
         "id": {
           "name": "id",
           "type": "varchar",
@@ -627,13 +667,6 @@
           "primaryKey": false,
           "notNull": true,
           "default": false
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
         },
         "created_by": {
           "name": "created_by",
@@ -790,6 +823,13 @@
       "name": "requests",
       "schema": "",
       "columns": {
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
         "id": {
           "name": "id",
           "type": "varchar",
@@ -819,13 +859,6 @@
           "type": "varchar",
           "primaryKey": false,
           "notNull": false
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
         }
       },
       "indexes": {
@@ -885,6 +918,13 @@
       "name": "sessions",
       "schema": "",
       "columns": {
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
         "id": {
           "name": "id",
           "type": "varchar",
@@ -939,14 +979,7 @@
           "name": "auth_strategy",
           "type": "varchar",
           "primaryKey": false,
-          "notNull": false
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
+          "notNull": true
         },
         "expires_at": {
           "name": "expires_at",
@@ -981,6 +1014,13 @@
       "name": "tokens",
       "schema": "",
       "columns": {
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
         "id": {
           "name": "id",
           "type": "varchar",
@@ -1023,12 +1063,11 @@
           "primaryKey": false,
           "notNull": false
         },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp",
+        "oauth_account_id": {
+          "name": "oauth_account_id",
+          "type": "varchar",
           "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
+          "notNull": false
         },
         "created_by": {
           "name": "created_by",
@@ -1062,6 +1101,19 @@
             "id"
           ],
           "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "tokens_oauth_account_id_oauth_accounts_id_fk": {
+          "name": "tokens_oauth_account_id_oauth_accounts_id_fk",
+          "tableFrom": "tokens",
+          "tableTo": "oauth_accounts",
+          "columnsFrom": [
+            "oauth_account_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
           "onUpdate": "no action"
         },
         "tokens_created_by_users_id_fk": {
@@ -1101,6 +1153,13 @@
       "name": "users",
       "schema": "",
       "columns": {
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
         "id": {
           "name": "id",
           "type": "varchar",
@@ -1194,13 +1253,6 @@
           "primaryKey": false,
           "notNull": true,
           "default": "'user'"
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
         },
         "modified_at": {
           "name": "modified_at",

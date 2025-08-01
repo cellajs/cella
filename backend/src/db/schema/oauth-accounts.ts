@@ -1,13 +1,14 @@
-import { boolean, pgTable, timestamp, unique, varchar } from 'drizzle-orm/pg-core';
 import { usersTable } from '#/db/schema/users';
 import { timestampColumns } from '#/db/utils/timestamp-columns';
 import { nanoid } from '#/utils/nanoid';
+import { boolean, pgTable, timestamp, unique, varchar } from 'drizzle-orm/pg-core';
 
 export const supportedOAuthProviders = ['github', 'google', 'microsoft'] as const;
 
 export const oauthAccountsTable = pgTable(
   'oauth_accounts',
   {
+    createdAt: timestampColumns.createdAt,
     id: varchar().primaryKey().$defaultFn(nanoid),
     providerId: varchar({ enum: supportedOAuthProviders }).notNull(),
     providerUserId: varchar().notNull(),
@@ -18,7 +19,6 @@ export const oauthAccountsTable = pgTable(
     userId: varchar()
       .notNull()
       .references(() => usersTable.id, { onDelete: 'cascade' }),
-    createdAt: timestampColumns.createdAt,
   },
   (table) => ({
     // Composite unique constraint on (providerId, providerUserId, email)

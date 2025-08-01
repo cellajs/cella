@@ -487,6 +487,7 @@ export const zGetMeData = z.object({
  * User
  */
 export const zGetMeResponse = z.object({
+  createdAt: z.string(),
   id: z.string(),
   entityType: z.enum(['user']),
   name: z.string(),
@@ -500,7 +501,6 @@ export const zGetMeResponse = z.object({
   language: z.enum(['en', 'nl']),
   newsletter: z.boolean(),
   role: z.enum(['user', 'admin']),
-  createdAt: z.string(),
   modifiedAt: z.union([z.string(), z.null()]),
   lastSeenAt: z.union([z.string(), z.null()]),
   lastStartedAt: z.union([z.string(), z.null()]),
@@ -528,6 +528,7 @@ export const zUpdateMeData = z.object({
  * User
  */
 export const zUpdateMeResponse = z.object({
+  createdAt: z.string(),
   id: z.string(),
   entityType: z.enum(['user']),
   name: z.string(),
@@ -541,7 +542,6 @@ export const zUpdateMeResponse = z.object({
   language: z.enum(['en', 'nl']),
   newsletter: z.boolean(),
   role: z.enum(['user', 'admin']),
-  createdAt: z.string(),
   modifiedAt: z.union([z.string(), z.null()]),
   lastSeenAt: z.union([z.string(), z.null()]),
   lastStartedAt: z.union([z.string(), z.null()]),
@@ -563,6 +563,7 @@ export const zGetMyAuthResponse = z.object({
   passkey: z.boolean(),
   sessions: z.array(
     z.object({
+      createdAt: z.string(),
       id: z.string(),
       type: z.enum(['regular', 'impersonation']),
       userId: z.string(),
@@ -571,7 +572,6 @@ export const zGetMyAuthResponse = z.object({
       deviceOs: z.union([z.string(), z.null()]),
       browser: z.union([z.string(), z.null()]),
       authStrategy: z.enum(['github', 'google', 'microsoft', 'password', 'passkey', 'email']),
-      createdAt: z.string(),
       expiresAt: z.string(),
       isCurrent: z.boolean(),
     }),
@@ -766,6 +766,7 @@ export const zGetUsersData = z.object({
 export const zGetUsersResponse = z.object({
   items: z.array(
     z.object({
+      createdAt: z.string(),
       id: z.string(),
       entityType: z.enum(['user']),
       name: z.string(),
@@ -779,7 +780,6 @@ export const zGetUsersResponse = z.object({
       language: z.enum(['en', 'nl']),
       newsletter: z.boolean(),
       role: z.enum(['user', 'admin']),
-      createdAt: z.string(),
       modifiedAt: z.union([z.string(), z.null()]),
       lastSeenAt: z.union([z.string(), z.null()]),
       lastStartedAt: z.union([z.string(), z.null()]),
@@ -802,6 +802,7 @@ export const zGetUserData = z.object({
  * User
  */
 export const zGetUserResponse = z.object({
+  createdAt: z.string(),
   id: z.string(),
   entityType: z.enum(['user']),
   name: z.string(),
@@ -815,7 +816,6 @@ export const zGetUserResponse = z.object({
   language: z.enum(['en', 'nl']),
   newsletter: z.boolean(),
   role: z.enum(['user', 'admin']),
-  createdAt: z.string(),
   modifiedAt: z.union([z.string(), z.null()]),
   lastSeenAt: z.union([z.string(), z.null()]),
   lastStartedAt: z.union([z.string(), z.null()]),
@@ -845,6 +845,7 @@ export const zUpdateUserData = z.object({
  * User
  */
 export const zUpdateUserResponse = z.object({
+  createdAt: z.string(),
   id: z.string(),
   entityType: z.enum(['user']),
   name: z.string(),
@@ -858,7 +859,6 @@ export const zUpdateUserResponse = z.object({
   language: z.enum(['en', 'nl']),
   newsletter: z.boolean(),
   role: z.enum(['user', 'admin']),
-  createdAt: z.string(),
   modifiedAt: z.union([z.string(), z.null()]),
   lastSeenAt: z.union([z.string(), z.null()]),
   lastStartedAt: z.union([z.string(), z.null()]),
@@ -904,6 +904,7 @@ export const zGetOrganizationsData = z.object({
 export const zGetOrganizationsResponse = z.object({
   items: z.array(
     z.object({
+      createdAt: z.string(),
       id: z.string(),
       entityType: z.enum(['organization']),
       name: z.string(),
@@ -924,7 +925,6 @@ export const zGetOrganizationsResponse = z.object({
       welcomeText: z.union([z.string(), z.null()]),
       authStrategies: z.array(z.enum(['github', 'google', 'microsoft', 'password', 'passkey', 'email'])),
       chatSupport: z.boolean(),
-      createdAt: z.string(),
       createdBy: z.union([z.string(), z.null()]),
       modifiedAt: z.union([z.string(), z.null()]),
       modifiedBy: z.union([z.string(), z.null()]),
@@ -970,6 +970,7 @@ export const zCreateOrganizationData = z.object({
  * Organization was created
  */
 export const zCreateOrganizationResponse = z.object({
+  createdAt: z.string(),
   id: z.string(),
   entityType: z.enum(['organization']),
   name: z.string(),
@@ -990,7 +991,6 @@ export const zCreateOrganizationResponse = z.object({
   welcomeText: z.union([z.string(), z.null()]),
   authStrategies: z.array(z.enum(['github', 'google', 'microsoft', 'password', 'passkey', 'email'])),
   chatSupport: z.boolean(),
-  createdAt: z.string(),
   createdBy: z.union([z.string(), z.null()]),
   modifiedAt: z.union([z.string(), z.null()]),
   modifiedBy: z.union([z.string(), z.null()]),
@@ -1019,6 +1019,7 @@ export const zGetOrganizationData = z.object({
  * Organization
  */
 export const zGetOrganizationResponse = z.object({
+  createdAt: z.string(),
   id: z.string(),
   entityType: z.enum(['organization']),
   name: z.string(),
@@ -1039,7 +1040,6 @@ export const zGetOrganizationResponse = z.object({
   welcomeText: z.union([z.string(), z.null()]),
   authStrategies: z.array(z.enum(['github', 'google', 'microsoft', 'password', 'passkey', 'email'])),
   chatSupport: z.boolean(),
-  createdAt: z.string(),
   createdBy: z.union([z.string(), z.null()]),
   modifiedAt: z.union([z.string(), z.null()]),
   modifiedBy: z.union([z.string(), z.null()]),
@@ -1091,6 +1091,7 @@ export const zUpdateOrganizationData = z.object({
  * Organization was updated
  */
 export const zUpdateOrganizationResponse = z.object({
+  createdAt: z.string(),
   id: z.string(),
   entityType: z.enum(['organization']),
   name: z.string(),
@@ -1111,7 +1112,6 @@ export const zUpdateOrganizationResponse = z.object({
   welcomeText: z.union([z.string(), z.null()]),
   authStrategies: z.array(z.enum(['github', 'google', 'microsoft', 'password', 'passkey', 'email'])),
   chatSupport: z.boolean(),
-  createdAt: z.string(),
   createdBy: z.union([z.string(), z.null()]),
   modifiedAt: z.union([z.string(), z.null()]),
   modifiedBy: z.union([z.string(), z.null()]),
@@ -1343,11 +1343,11 @@ export const zGetRequestsData = z.object({
 export const zGetRequestsResponse = z.object({
   items: z.array(
     z.object({
+      createdAt: z.string(),
       id: z.string(),
       message: z.union([z.string(), z.null()]),
       email: z.string(),
       type: z.enum(['waitlist', 'newsletter', 'contact']),
-      createdAt: z.string(),
       wasInvited: z.boolean(),
     }),
   ),
@@ -1370,11 +1370,11 @@ export const zCreateRequestData = z.object({
  * Requests
  */
 export const zCreateRequestResponse = z.object({
+  createdAt: z.string(),
   id: z.string(),
   message: z.union([z.string(), z.null()]),
   email: z.string(),
   type: z.enum(['waitlist', 'newsletter', 'contact']),
-  createdAt: z.string(),
   wasInvited: z.boolean(),
 });
 
@@ -1460,6 +1460,7 @@ export const zGetAttachmentsData = z.object({
 export const zGetAttachmentsResponse = z.object({
   items: z.array(
     z.object({
+      createdAt: z.string(),
       id: z.string(),
       name: z.string(),
       entityType: z.enum(['attachment']),
@@ -1468,7 +1469,6 @@ export const zGetAttachmentsResponse = z.object({
       contentType: z.string(),
       convertedContentType: z.union([z.string(), z.null()]),
       size: z.string(),
-      createdAt: z.string(),
       createdBy: z.union([z.string(), z.null()]),
       modifiedAt: z.union([z.string(), z.null()]),
       modifiedBy: z.union([z.string(), z.null()]),
@@ -1510,6 +1510,7 @@ export const zCreateAttachmentData = z.object({
  */
 export const zCreateAttachmentResponse = z.array(
   z.object({
+    createdAt: z.string(),
     id: z.string(),
     name: z.string(),
     entityType: z.enum(['attachment']),
@@ -1518,7 +1519,6 @@ export const zCreateAttachmentResponse = z.array(
     contentType: z.string(),
     convertedContentType: z.union([z.string(), z.null()]),
     size: z.string(),
-    createdAt: z.string(),
     createdBy: z.union([z.string(), z.null()]),
     modifiedAt: z.union([z.string(), z.null()]),
     modifiedBy: z.union([z.string(), z.null()]),
@@ -1542,6 +1542,7 @@ export const zGetAttachmentData = z.object({
  * Attachment
  */
 export const zGetAttachmentResponse = z.object({
+  createdAt: z.string(),
   id: z.string(),
   name: z.string(),
   entityType: z.enum(['attachment']),
@@ -1550,7 +1551,6 @@ export const zGetAttachmentResponse = z.object({
   contentType: z.string(),
   convertedContentType: z.union([z.string(), z.null()]),
   size: z.string(),
-  createdAt: z.string(),
   createdBy: z.union([z.string(), z.null()]),
   modifiedAt: z.union([z.string(), z.null()]),
   modifiedBy: z.union([z.string(), z.null()]),
@@ -1578,6 +1578,7 @@ export const zUpdateAttachmentData = z.object({
  * Attachment was updated
  */
 export const zUpdateAttachmentResponse = z.object({
+  createdAt: z.string(),
   id: z.string(),
   name: z.string(),
   entityType: z.enum(['attachment']),
@@ -1586,7 +1587,6 @@ export const zUpdateAttachmentResponse = z.object({
   contentType: z.string(),
   convertedContentType: z.union([z.string(), z.null()]),
   size: z.string(),
-  createdAt: z.string(),
   createdBy: z.union([z.string(), z.null()]),
   modifiedAt: z.union([z.string(), z.null()]),
   modifiedBy: z.union([z.string(), z.null()]),
@@ -1680,11 +1680,11 @@ export const zUpdateMembershipData = z.object({
  * Membership updated
  */
 export const zUpdateMembershipResponse = z.object({
+  createdAt: z.string(),
   id: z.string(),
   contextType: z.enum(['organization']),
   userId: z.string(),
   role: z.enum(['member', 'admin']),
-  createdAt: z.string(),
   createdBy: z.union([z.string(), z.null()]),
   modifiedAt: z.union([z.string(), z.null()]),
   modifiedBy: z.union([z.string(), z.null()]),
@@ -1719,6 +1719,7 @@ export const zGetMembersData = z.object({
 export const zGetMembersResponse = z.object({
   items: z.array(
     z.object({
+      createdAt: z.string(),
       id: z.string(),
       entityType: z.enum(['user']),
       name: z.string(),
@@ -1732,7 +1733,6 @@ export const zGetMembersResponse = z.object({
       language: z.enum(['en', 'nl']),
       newsletter: z.boolean(),
       role: z.enum(['user', 'admin']),
-      createdAt: z.string(),
       modifiedAt: z.union([z.string(), z.null()]),
       lastSeenAt: z.union([z.string(), z.null()]),
       lastStartedAt: z.union([z.string(), z.null()]),

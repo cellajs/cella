@@ -1,10 +1,11 @@
-import { boolean, pgTable, timestamp, varchar } from 'drizzle-orm/pg-core';
 import { tokensTable } from '#/db/schema/tokens';
 import { usersTable } from '#/db/schema/users';
 import { timestampColumns } from '#/db/utils/timestamp-columns';
 import { nanoid } from '#/utils/nanoid';
+import { boolean, pgTable, timestamp, varchar } from 'drizzle-orm/pg-core';
 
 export const emailsTable = pgTable('emails', {
+  createdAt: timestampColumns.createdAt,
   id: varchar().primaryKey().$defaultFn(nanoid),
   email: varchar().notNull().unique(),
   verified: boolean().notNull().default(false),
@@ -12,7 +13,6 @@ export const emailsTable = pgTable('emails', {
   userId: varchar()
     .notNull()
     .references(() => usersTable.id, { onDelete: 'cascade' }),
-  createdAt: timestampColumns.createdAt,
   verifiedAt: timestamp({ mode: 'string' }),
 });
 

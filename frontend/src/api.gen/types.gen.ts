@@ -1348,6 +1348,7 @@ export type GetMeResponses = {
    * User
    */
   200: {
+    createdAt: string;
     id: string;
     entityType: 'user';
     name: string;
@@ -1361,7 +1362,6 @@ export type GetMeResponses = {
     language: 'en' | 'nl';
     newsletter: boolean;
     role: 'user' | 'admin';
-    createdAt: string;
     modifiedAt: string | null;
     lastSeenAt: string | null;
     lastStartedAt: string | null;
@@ -1427,6 +1427,7 @@ export type UpdateMeResponses = {
    * User
    */
   200: {
+    createdAt: string;
     id: string;
     entityType: 'user';
     name: string;
@@ -1440,7 +1441,6 @@ export type UpdateMeResponses = {
     language: 'en' | 'nl';
     newsletter: boolean;
     role: 'user' | 'admin';
-    createdAt: string;
     modifiedAt: string | null;
     lastSeenAt: string | null;
     lastStartedAt: string | null;
@@ -1501,6 +1501,7 @@ export type GetMyAuthResponses = {
     oauth: Array<'github' | 'microsoft'>;
     passkey: boolean;
     sessions: Array<{
+      createdAt: string;
       id: string;
       type: 'regular' | 'impersonation';
       userId: string;
@@ -1509,7 +1510,6 @@ export type GetMyAuthResponses = {
       deviceOs: string | null;
       browser: string | null;
       authStrategy: 'github' | 'google' | 'microsoft' | 'password' | 'passkey' | 'email';
-      createdAt: string;
       expiresAt: string;
       isCurrent: boolean;
     }>;
@@ -2052,6 +2052,7 @@ export type GetUsersResponses = {
    */
   200: {
     items: Array<{
+      createdAt: string;
       id: string;
       entityType: 'user';
       name: string;
@@ -2065,7 +2066,6 @@ export type GetUsersResponses = {
       language: 'en' | 'nl';
       newsletter: boolean;
       role: 'user' | 'admin';
-      createdAt: string;
       modifiedAt: string | null;
       lastSeenAt: string | null;
       lastStartedAt: string | null;
@@ -2127,6 +2127,7 @@ export type GetUserResponses = {
    * User
    */
   200: {
+    createdAt: string;
     id: string;
     entityType: 'user';
     name: string;
@@ -2140,7 +2141,6 @@ export type GetUserResponses = {
     language: 'en' | 'nl';
     newsletter: boolean;
     role: 'user' | 'admin';
-    createdAt: string;
     modifiedAt: string | null;
     lastSeenAt: string | null;
     lastStartedAt: string | null;
@@ -2208,6 +2208,7 @@ export type UpdateUserResponses = {
    * User
    */
   200: {
+    createdAt: string;
     id: string;
     entityType: 'user';
     name: string;
@@ -2221,7 +2222,6 @@ export type UpdateUserResponses = {
     language: 'en' | 'nl';
     newsletter: boolean;
     role: 'user' | 'admin';
-    createdAt: string;
     modifiedAt: string | null;
     lastSeenAt: string | null;
     lastStartedAt: string | null;
@@ -2342,6 +2342,7 @@ export type GetOrganizationsResponses = {
    */
   200: {
     items: Array<{
+      createdAt: string;
       id: string;
       entityType: 'organization';
       name: string;
@@ -2362,7 +2363,6 @@ export type GetOrganizationsResponses = {
       welcomeText: string | null;
       authStrategies: Array<'github' | 'google' | 'microsoft' | 'password' | 'passkey' | 'email'>;
       chatSupport: boolean;
-      createdAt: string;
       createdBy: string | null;
       modifiedAt: string | null;
       modifiedBy: string | null;
@@ -2444,6 +2444,7 @@ export type CreateOrganizationResponses = {
    * Organization was created
    */
   200: {
+    createdAt: string;
     id: string;
     entityType: 'organization';
     name: string;
@@ -2464,7 +2465,6 @@ export type CreateOrganizationResponses = {
     welcomeText: string | null;
     authStrategies: Array<'github' | 'google' | 'microsoft' | 'password' | 'passkey' | 'email'>;
     chatSupport: boolean;
-    createdAt: string;
     createdBy: string | null;
     modifiedAt: string | null;
     modifiedBy: string | null;
@@ -2533,6 +2533,7 @@ export type GetOrganizationResponses = {
    * Organization
    */
   200: {
+    createdAt: string;
     id: string;
     entityType: 'organization';
     name: string;
@@ -2553,7 +2554,6 @@ export type GetOrganizationResponses = {
     welcomeText: string | null;
     authStrategies: Array<'github' | 'google' | 'microsoft' | 'password' | 'passkey' | 'email'>;
     chatSupport: boolean;
-    createdAt: string;
     createdBy: string | null;
     modifiedAt: string | null;
     modifiedBy: string | null;
@@ -2640,6 +2640,7 @@ export type UpdateOrganizationResponses = {
    * Organization was updated
    */
   200: {
+    createdAt: string;
     id: string;
     entityType: 'organization';
     name: string;
@@ -2660,7 +2661,6 @@ export type UpdateOrganizationResponses = {
     welcomeText: string | null;
     authStrategies: Array<'github' | 'google' | 'microsoft' | 'password' | 'passkey' | 'email'>;
     chatSupport: boolean;
-    createdAt: string;
     createdBy: string | null;
     modifiedAt: string | null;
     modifiedBy: string | null;
@@ -3227,11 +3227,11 @@ export type GetRequestsResponses = {
    */
   200: {
     items: Array<{
+      createdAt: string;
       id: string;
       message: string | null;
       email: string;
       type: 'waitlist' | 'newsletter' | 'contact';
-      createdAt: string;
       wasInvited: boolean;
     }>;
     total: number;
@@ -3291,11 +3291,11 @@ export type CreateRequestResponses = {
    * Requests
    */
   200: {
+    createdAt: string;
     id: string;
     message: string | null;
     email: string;
     type: 'waitlist' | 'newsletter' | 'contact';
-    createdAt: string;
     wasInvited: boolean;
   };
 };
@@ -3577,6 +3577,7 @@ export type GetAttachmentsResponses = {
    */
   200: {
     items: Array<{
+      createdAt: string;
       id: string;
       name: string;
       entityType: 'attachment';
@@ -3585,7 +3586,6 @@ export type GetAttachmentsResponses = {
       contentType: string;
       convertedContentType: string | null;
       size: string;
-      createdAt: string;
       createdBy: string | null;
       modifiedAt: string | null;
       modifiedBy: string | null;
@@ -3660,6 +3660,7 @@ export type CreateAttachmentResponses = {
    * Attachment
    */
   200: Array<{
+    createdAt: string;
     id: string;
     name: string;
     entityType: 'attachment';
@@ -3668,7 +3669,6 @@ export type CreateAttachmentResponses = {
     contentType: string;
     convertedContentType: string | null;
     size: string;
-    createdAt: string;
     createdBy: string | null;
     modifiedAt: string | null;
     modifiedBy: string | null;
@@ -3731,6 +3731,7 @@ export type GetAttachmentResponses = {
    * Attachment
    */
   200: {
+    createdAt: string;
     id: string;
     name: string;
     entityType: 'attachment';
@@ -3739,7 +3740,6 @@ export type GetAttachmentResponses = {
     contentType: string;
     convertedContentType: string | null;
     size: string;
-    createdAt: string;
     createdBy: string | null;
     modifiedAt: string | null;
     modifiedBy: string | null;
@@ -3805,6 +3805,7 @@ export type UpdateAttachmentResponses = {
    * Attachment was updated
    */
   200: {
+    createdAt: string;
     id: string;
     name: string;
     entityType: 'attachment';
@@ -3813,7 +3814,6 @@ export type UpdateAttachmentResponses = {
     contentType: string;
     convertedContentType: string | null;
     size: string;
-    createdAt: string;
     createdBy: string | null;
     modifiedAt: string | null;
     modifiedBy: string | null;
@@ -4107,11 +4107,11 @@ export type UpdateMembershipResponses = {
    * Membership updated
    */
   200: {
+    createdAt: string;
     id: string;
     contextType: 'organization';
     userId: string;
     role: 'member' | 'admin';
-    createdAt: string;
     createdBy: string | null;
     modifiedAt: string | null;
     modifiedBy: string | null;
@@ -4183,6 +4183,7 @@ export type GetMembersResponses = {
    */
   200: {
     items: Array<{
+      createdAt: string;
       id: string;
       entityType: 'user';
       name: string;
@@ -4196,7 +4197,6 @@ export type GetMembersResponses = {
       language: 'en' | 'nl';
       newsletter: boolean;
       role: 'user' | 'admin';
-      createdAt: string;
       modifiedAt: string | null;
       lastSeenAt: string | null;
       lastStartedAt: string | null;
