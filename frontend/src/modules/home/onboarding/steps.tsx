@@ -67,7 +67,7 @@ const Onboarding = ({ onboarding = 'start', onboardingToStepper }: OnboardingPro
                       )}
                       {id === 'invitation' && organization && (
                         <InviteUsers entity={organization} mode="email">
-                          <StepperFooter organization={organization} />
+                          <StepperFooter />
                         </InviteUsers>
                       )}
                     </CardContent>

@@ -36,7 +36,7 @@ export type MenuSection = {
 /**
  * OAuth providers enabled in this app
  */
-export type EnabledOauthProvider = (typeof appConfig.enabledOauthProviders)[number];
+export type EnabledOAuthProvider = (typeof appConfig.enabledOAuthProviders)[number];
 
 /**
  * Upload template IDs

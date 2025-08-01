@@ -8,7 +8,7 @@ import type { z } from 'zod';
 import { type CheckEmailData, type CheckEmailResponse, checkEmail } from '~/api.gen';
 import { zCheckEmailData } from '~/api.gen/zod.gen';
 import type { ApiError } from '~/lib/api';
-import type { Step } from '~/modules/auth/types';
+import type { AuthStep } from '~/modules/auth/types';
 import { SubmitButton } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '~/modules/ui/form';
 import { Input } from '~/modules/ui/input';
@@ -18,7 +18,7 @@ const formSchema = zCheckEmailData.shape.body.unwrap();
 
 type FormValues = z.infer<typeof formSchema>;
 interface CheckEmailProps {
-  setStep: (step: Step, email: string) => void;
+  setStep: (step: AuthStep, email: string, error?: ApiError) => void;
   emailEnabled: boolean;
 }
 
@@ -37,7 +37,12 @@ export const CheckEmailForm = ({ setStep, emailEnabled }: CheckEmailProps) => {
     mutationFn: (body) => checkEmail({ body }),
     onSuccess: () => setStep('signIn', form.getValues('email')),
     onError: (error: ApiError) => {
-      let nextStep: Step = 'inviteOnly';
+      let nextStep: AuthStep = 'inviteOnly';
+
+      // If there is an unclaimed invitation token, redirect to error page
+      if (error.type === 'invite_takes_priority') {
+        return setStep('error', form.getValues('email'), error);
+      }
 
       // If registration is enabled or user has a token, proceed to sign up
       if (appConfig.has.registrationEnabled) nextStep = 'signUp';

@@ -78,6 +78,7 @@ export const RequestsTableBar = ({ total, selected, searchVars, setSearch, colum
       wasInvited: true,
     }));
 
+    // TODO use a mutation hook for this?
     try {
       // Send invite to users
       await systemInvite({ body: { emails } });

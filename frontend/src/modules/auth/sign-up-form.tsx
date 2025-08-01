@@ -10,7 +10,7 @@ import type { z } from 'zod';
 import { type SignUpData, type SignUpResponse, type SignUpWithTokenData, type SignUpWithTokenResponse, signUp, signUpWithToken } from '~/api.gen';
 import { zSignUpData } from '~/api.gen/zod.gen';
 import type { ApiError } from '~/lib/api';
-import type { TokenData } from '~/modules/auth/types';
+import type { AuthStep, TokenData } from '~/modules/auth/types';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import Spinner from '~/modules/common/spinner';
 import { Button, SubmitButton } from '~/modules/ui/button';
@@ -30,11 +30,12 @@ type FormValues = z.infer<typeof formSchema>;
 interface Props {
   tokenData: TokenData | undefined;
   email: string;
+  setStep: (step: AuthStep, email: string, error?: ApiError) => void;
   resetSteps: () => void;
   emailEnabled: boolean;
 }
 
-export const SignUpForm = ({ tokenData, email, resetSteps, emailEnabled }: Props) => {
+export const SignUpForm = ({ tokenData, email, setStep, resetSteps, emailEnabled }: Props) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
 
@@ -45,7 +46,13 @@ export const SignUpForm = ({ tokenData, email, resetSteps, emailEnabled }: Props
   // Handle basic sign up
   const { mutate: _signUp, isPending } = useMutation<SignUpResponse, ApiError, NonNullable<SignUpData['body']>>({
     mutationFn: (body) => signUp({ body }),
-    onSuccess: () => navigate({ to: '/auth/email-verification', replace: true }),
+    onSuccess: () => navigate({ to: '/auth/email-verification/$reason', params: { reason: 'signup' }, replace: true }),
+    onError: (error: ApiError) => {
+      // If there is an unclaimed invitation token, redirect to error page
+      if (error.type === 'invite_takes_priority') {
+        return setStep('error', form.getValues('email'), error);
+      }
+    },
   });
 
   // Handle sign up with token to accept invitation
@@ -58,7 +65,7 @@ export const SignUpForm = ({ tokenData, email, resetSteps, emailEnabled }: Props
     onSuccess: () => {
       // Redirect to organization invitation page if there is a membership invitation
       const isMemberInvitation = tokenData?.organizationSlug && token && tokenId;
-      const redirectPath = isMemberInvitation ? '/invitation/$token' : appConfig.welcomeRedirectPath;
+      const redirectPath = isMemberInvitation ? '/invitation/$token' : appConfig.defaultRedirectPath;
       return navigate({ to: redirectPath, replace: true, ...(token && tokenId && { params: { token }, search: { tokenId } }) });
     },
   });
@@ -92,7 +99,7 @@ export const SignUpForm = ({ tokenData, email, resetSteps, emailEnabled }: Props
         )}
       </h1>
 
-      <LegalNotice email={email} />
+      <LegalNotice email={email} mode="signup" />
 
       {emailEnabled && (
         <form onSubmit={form.handleSubmit(onSubmit, defaultOnInvalid)} className="space-y-4">
@@ -140,7 +147,7 @@ export const SignUpForm = ({ tokenData, email, resetSteps, emailEnabled }: Props
   );
 };
 
-export const LegalNotice = ({ email, mode = 'signup' }: { email: string; mode?: 'waitlist' | 'signup' }) => {
+export const LegalNotice = ({ email = '', mode = 'signup' }: { email?: string; mode?: 'waitlist' | 'signup' | 'verify' }) => {
   const { t } = useTranslation();
   const createDialog = useDialoger((state) => state.create);
 
@@ -163,13 +170,15 @@ export const LegalNotice = ({ email, mode = 'signup' }: { email: string; mode?: 
   };
 
   return (
-    <p className="font-light text-sm text-center space-x-1">
-      <span>{mode === 'signup' ? t('common:legal_notice.text', { email }) : t('common:legal_notice_waitlist.text', { email })}</span>
-      <Button ref={termsButtonRef} type="button" variant="link" className="p-0 h-auto" onClick={openDialog('terms', termsButtonRef)}>
+    <p className="font-light text-center space-x-0.5">
+      <span>{mode === 'signup' && t('common:legal_notice.text', { email })}</span>
+      <span>{mode === 'waitlist' && t('common:legal_notice_waitlist.text', { email })}</span>
+      <span>{mode === 'verify' && t('common:request_verification.legal_notice')}</span>
+      <Button ref={termsButtonRef} type="button" variant="link" className="p-0 text-base h-auto" onClick={openDialog('terms', termsButtonRef)}>
         {t('common:terms').toLocaleLowerCase()}
       </Button>
       <span>&</span>
-      <Button ref={privacyButtonRef} type="button" variant="link" className="p-0 h-auto" onClick={openDialog('privacy', privacyButtonRef)}>
+      <Button ref={privacyButtonRef} type="button" variant="link" className="p-0 text-base h-auto" onClick={openDialog('privacy', privacyButtonRef)}>
         {t('common:privacy_policy').toLocaleLowerCase()}
       </Button>
       <span>of {appConfig.company.name}.</span>

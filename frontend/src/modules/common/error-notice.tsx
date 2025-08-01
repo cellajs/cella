@@ -172,7 +172,7 @@ const ErrorNotice = ({ error, resetErrorBoundary, level }: ErrorNoticeProps) => 
               {severity && ['warn', 'error'].includes(severity) && (
                 <Button ref={contactButtonRef} variant="plain" onClick={() => handleAskForHelp(contactButtonRef)}>
                   <MessageCircleQuestion size={16} className="mr-2" />
-                  {t('common:ask_for_help')}
+                  {t('common:contact_support')}
                 </Button>
               )}
             </CardFooter>

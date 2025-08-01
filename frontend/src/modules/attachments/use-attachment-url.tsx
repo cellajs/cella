@@ -61,6 +61,7 @@ export const useAttachmentUrl = (id: string, baseUrl: string, type: string) => {
           setUrl(objectUrl);
         }
       } catch (e) {
+        // TODO send to Sentry
         console.error(e);
         if (e instanceof Error) setError(`Failed to load file: ${e.message}`);
       }

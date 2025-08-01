@@ -1,6 +1,6 @@
 import { AdvancedMarker, APIProvider, ControlPosition, Map as GMap, InfoWindow, MapControl, useAdvancedMarkerRef } from '@vis.gl/react-google-maps';
 import { appConfig } from 'config';
-import { ArrowUpRight, Minus, Plus, X } from 'lucide-react';
+import { ArrowUpRight, Milestone, Minus, Plus, X } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { useState } from 'react';
 import { ErrorBoundary } from 'react-error-boundary';
@@ -46,7 +46,7 @@ const MarkerWithInfoWindow = ({ position }: { position: { lat: number; lng: numb
 
       {infowindowOpen && (
         <InfoWindow headerDisabled={true} anchor={marker}>
-          <div className="text-xs text-slate-800 min-w-32">
+          <div className="text-xs text-slate-800 min-w-36 p-1">
             <div className="flex justify-between items-center">
               <strong className="text-sm ">{appConfig.company.name}</strong>
               <Button onClick={() => setInfowindowOpen(false)} size="micro" variant="ghost">
@@ -55,7 +55,13 @@ const MarkerWithInfoWindow = ({ position }: { position: { lat: number; lng: numb
             </div>
             <span className="block">{appConfig.company.streetAddress}</span>
             <span className="block">{appConfig.company.country}</span>
-            <a href={appConfig.company.googleMapsUrl} target="_blank" className="font-semibold flex mt-1" rel="noreferrer">
+            <a
+              href={appConfig.company.googleMapsUrl}
+              target="_blank"
+              className="font-semibold flex mt-1 rounded-md p-1 focus-effect"
+              rel="noreferrer"
+            >
+              <Milestone size={12} strokeWidth={2.5} className="mr-1" />
               {t('common:get_directions')}
               <ArrowUpRight size={12} className="ml-1 opacity-50" />
             </a>

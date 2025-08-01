@@ -46,8 +46,8 @@ export const TO_EDIT: Record<string, { regexMatch: RegExp; replaceWith: string }
       replaceWith: "uploadEnabled: false,",
     },
     {
-      regexMatch: /enabledOauthProviders:\s*\[[^\]]+\]\s*as\s*const,/g,
-      replaceWith: "enabledOauthProviders: [] as const,",
+      regexMatch: /enabledOAuthProviders:\s*\[[^\]]+\]\s*as\s*const,/g,
+      replaceWith: "enabledOAuthProviders: [] as const,",
     },
   ],
 };

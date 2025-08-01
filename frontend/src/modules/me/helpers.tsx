@@ -119,6 +119,7 @@ export const passkeyAuth = async (userEmail: string, callback?: () => void) => {
       userEmail,
     };
 
+    // TODO can we use a mutation hook for this? if not, we should handle errors better, send to Sentry.
     const success = await signInWithPasskey({ body: credentialData });
     if (success) callback?.();
     else toaster(t('error:passkey_sign_in'), 'error');

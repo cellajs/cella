@@ -12,10 +12,11 @@ import { Footer } from './components/footer';
 const appName = appConfig.name;
 
 export interface EmailVerificationEmailProps extends BasicTemplateType {
-  verificationLink: string;
+  verificationLink: URL;
+  email: string;
 }
 
-export const EmailVerificationEmail = ({ lng, verificationLink }: EmailVerificationEmailProps) => {
+export const EmailVerificationEmail = ({ lng, verificationLink, email }: EmailVerificationEmailProps) => {
   return (
     <EmailContainer previewText={i18n.t('backend:email.email_verification.preview', { appName, lng })}>
       <EmailHeader headerText={i18n.t('backend:email.email_verification.preview', { appName, lng })} />
@@ -24,7 +25,7 @@ export const EmailVerificationEmail = ({ lng, verificationLink }: EmailVerificat
           <span
             // biome-ignore lint/security/noDangerouslySetInnerHtml: trusted HTML content from a secure source
             dangerouslySetInnerHTML={{
-              __html: i18n.t('backend:email.email_verification.text', { lng, appName }),
+              __html: i18n.t('backend:email.email_verification.text', { lng, appName, email }),
             }}
           />
         </Text>

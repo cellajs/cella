@@ -4,13 +4,13 @@ import { createSelectSchema } from 'drizzle-zod';
 import { sessionsTable } from '#/db/schema/sessions';
 import { entityBaseSchema } from '#/modules/entities/schema';
 import { membershipSummarySchema } from '#/modules/memberships/schema';
-import { enabledOauthProvidersEnum } from '#/modules/users/schema';
+import { enabledOAuthProvidersEnum } from '#/modules/users/schema';
 import { booleanQuerySchema } from '#/utils/schema/common';
 
 export const sessionSchema = createSelectSchema(sessionsTable).omit({ token: true }).extend({ isCurrent: z.boolean() });
 
 export const meAuthDataSchema = z.object({
-  oauth: z.array(enabledOauthProvidersEnum),
+  oauth: z.array(enabledOAuthProvidersEnum),
   passkey: z.boolean(),
   sessions: z.array(sessionSchema.extend({ expiresAt: z.string() })),
 });

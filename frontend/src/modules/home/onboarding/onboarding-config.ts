@@ -1,6 +1,6 @@
 import i18n from 'i18next';
 import type { StepItem } from '~/modules/common/stepper/types';
-import { useDraftStore } from '~/store/draft';
+import { useNavigationStore } from '~/store/navigation';
 
 /**
  * Define the onboarding steps
@@ -13,6 +13,6 @@ export const onboardingSteps: StepItem[] = [
 
 // Add the options you want to execute when onboarding is finished
 export const onboardingFinishCallback = () => {
-  // For example, clears all draft forms
-  useDraftStore.setState({ forms: {} });
+  // Set the finished onboarding state to true
+  useNavigationStore.getState().setFinishedOnboarding();
 };

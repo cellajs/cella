@@ -80,12 +80,12 @@ export const MarketingNav = () => {
               to="/about"
               hash=""
               replace={location.pathname === '/about'}
-              className="md:ml-2 sm:mr-2 md:mr-4 pr-4 hover:opacity-90 active:scale-95 relative"
+              className="md:ml-1 sm:mr-1 md:mr-2 md:pr-4 hover:opacity-90 active:scale-95 relative p-0.5 rounded-md focus-effect"
               aria-label="Go to about page"
             >
               <Logo height={36} />
 
-              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" className="absolute top-0 right-0">
+              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" className="max-md:hidden absolute top-0.5 right-0.5">
                 <title>We support Ukraine</title>
                 <g fill="none">
                   <path
@@ -139,12 +139,11 @@ export const MarketingNav = () => {
           <SheetHiddenTitle>Navigation</SheetHiddenTitle>
           <div
             ref={ref}
-            className={`flex mt-2 flex-col gap-2 md:hidden items-stretch transition-opacity duration-200 ease-in-out ${
+            className={`flex mt-2 flex-col pt-14 gap-2 md:hidden items-stretch transition-opacity duration-200 ease-in-out ${
               inView && showSheet ? 'opacity-100 delay-300' : 'opacity-0'
             }`}
           >
             <div className="flex justify-between mb-4">
-              <HamburgerButton className="-ml-2 mt-3" isOpen={showSheet} toggle={setShowSheet} />
               <UserTheme buttonClassName="absolute top-5 right-5 xs:hidden" />
             </div>
             {renderNavItems()}

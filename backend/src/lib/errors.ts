@@ -25,7 +25,7 @@ type ConstructedError = {
   entityType?: ErrorSchemaType['entityType'];
   meta?: ErrorMeta;
   originalError?: Error;
-  redirectToFrontend?: boolean;
+  isRedirect?: boolean;
 };
 
 // Custom error class to handle App errors
@@ -34,7 +34,7 @@ export class AppError extends Error {
   status: ErrorSchemaType['status'];
   type: ErrorSchemaType['type'];
   severity: ErrorSchemaType['severity'];
-  redirectToFrontend: boolean;
+  isRedirect: boolean;
   entityType?: ErrorSchemaType['entityType'];
   meta?: ErrorMeta;
   originalError?: Error;
@@ -48,7 +48,7 @@ export class AppError extends Error {
     this.type = error.type;
     this.entityType = error.entityType;
     this.severity = error.severity || 'info';
-    this.redirectToFrontend = error.redirectToFrontend || false;
+    this.isRedirect = error.isRedirect || false;
     this.meta = error.meta;
     this.originalError = error.originalError;
 
@@ -75,7 +75,7 @@ export const handleAppError: ErrorHandler<Env> = (err, ctx) => {
         });
 
   // Get  non-enumerable 'stack', 'message', and 'cause'. These do NOT get included when using the spread operator (...)
-  const { redirectToFrontend, originalError, message, cause, stack, ...error } = apiError;
+  const { isRedirect, originalError, message, cause, stack, ...error } = apiError;
   const { severity, type, meta } = error;
 
   // Get the current user and organization from context
@@ -111,7 +111,7 @@ export const handleAppError: ErrorHandler<Env> = (err, ctx) => {
   if (stack) console.error(stack);
 
   // Redirect to the frontend error page with query parameters for error details
-  if (redirectToFrontend) {
+  if (isRedirect) {
     const redirectUrl = `${appConfig.frontendUrl}/error?error=${type}&severity=${severity}`;
     return ctx.redirect(redirectUrl, 302);
   }

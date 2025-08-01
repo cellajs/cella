@@ -7,7 +7,7 @@ export const AppNavState = () => {
   const { navSheetOpen, setKeepMenuOpen, keepOpenPreference } = useNavigationStore();
   const isDesktop = useBreakpoints('min', 'xl', true);
 
-  // useRef to store the previous value of navSheetOpen
+  // UseRef to store the previous value of navSheetOpen
   const prevSheetRef = useRef<string | null>(null);
 
   // Update the previous sheet when navSheetOpen changes

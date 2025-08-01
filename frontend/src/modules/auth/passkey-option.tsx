@@ -2,14 +2,14 @@ import { useNavigate, useSearch } from '@tanstack/react-router';
 import { appConfig } from 'config';
 import { Fingerprint } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import type { Step } from '~/modules/auth/types';
+import type { AuthStep } from '~/modules/auth/types';
 import { passkeyAuth } from '~/modules/me/helpers';
 import { Button } from '~/modules/ui/button';
 import { AuthenticateRoute } from '~/routes/auth';
 import { useUIStore } from '~/store/ui';
 
 interface PasskeyOptionProps {
-  actionType: Step;
+  actionType: AuthStep;
   email: string;
 }
 

@@ -1,5 +1,6 @@
 import { appConfig } from 'config';
 import { varchar } from 'drizzle-orm/pg-core';
+import { oauthAccountsTable } from '#/db/schema/oauth-accounts';
 import { usersTable } from '#/db/schema/users';
 import { generateContextEntityTypeFields } from '#/db/utils/generate-context-entity-fields';
 import { generateTable } from '#/db/utils/generate-table';
@@ -18,6 +19,7 @@ const baseColumns = {
   entityType: varchar({ enum: appConfig.contextEntityTypes }),
   role: varchar({ enum: roleEnum }),
   userId: varchar().references(() => usersTable.id, { onDelete: 'cascade' }),
+  oauthAccountId: varchar().references(() => oauthAccountsTable.id, { onDelete: 'set null' }),
   createdAt: timestampColumns.createdAt,
   createdBy: varchar().references(() => usersTable.id, { onDelete: 'set null' }),
   expiresAt: timestampColumns.expiresAt,

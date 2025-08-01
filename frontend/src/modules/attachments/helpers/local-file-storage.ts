@@ -11,6 +11,7 @@ type StoredOfflineData = {
 
 type SyncStatus = 'idle' | 'processing';
 
+// TODO: Send catched errors to Sentry
 /**
  * Store files in IndexedDB when user is offline or when s3 is not configured
  *

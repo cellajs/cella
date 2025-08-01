@@ -81,7 +81,7 @@ export const updateMenuItem = (updatedEntity: UserMenuItem) => {
     });
   };
 
-  return useTransformOnMenuItems(update); // use update on every menu item by storage type from menu config
+  return useTransformOnMenuItems(update); // Use update on every menu item by storage type from menu config
 };
 
 /**
@@ -139,5 +139,5 @@ export const deleteMenuItem = (itemId: string) => {
       .filter((item) => item.id !== itemId && item.organizationId !== itemId)
       .map((item) => (item.submenu ? { ...item, submenu: remove(item.submenu) } : item));
 
-  return useTransformOnMenuItems(remove); // use remove on every menu item by storage type from menu config
+  return useTransformOnMenuItems(remove); // Use remove on every menu item by storage type from menu config
 };

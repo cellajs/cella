@@ -42,7 +42,7 @@ const systemRouteHandlers = app
     const senderThumbnailUrl = user.thumbnailUrl;
     const subject = i18n.t('backend:email.system_invite.subject', { lng, appName: appConfig.name });
 
-    const normalizedEmails = emails.map((email) => email.toLowerCase());
+    const normalizedEmails = emails.map((email) => email.toLowerCase().trim());
 
     if (!normalizedEmails.length) throw new AppError({ status: 400, type: 'no_recipients', severity: 'warn' });
 
@@ -81,7 +81,7 @@ const systemRouteHandlers = app
       return {
         token,
         type: 'invitation' as const,
-        email: email.toLowerCase(),
+        email: email.toLowerCase().trim(),
         createdBy: user.id,
         expiresAt: createDate(new TimeSpan(7, 'd')),
       };

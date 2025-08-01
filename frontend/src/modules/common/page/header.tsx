@@ -25,6 +25,7 @@ const PageHeader = ({ entity, panel, parent, disableScroll, ...coverProps }: Pag
   // Scroll to page header on load
   if (!disableScroll) useScrollTo(scrollToRef);
 
+  // TODO add comment and send errors to Sentry
   useEffect(() => {
     if (!parent) return;
 

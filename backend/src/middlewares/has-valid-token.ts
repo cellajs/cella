@@ -17,12 +17,16 @@ import { isExpiredDate } from '#/utils/is-expired-date';
  */
 export const hasValidToken = (requiredType: TokenModel['type']): MiddlewareHandler<Env> =>
   createMiddleware<Env>(async (ctx, next) => {
+    // For email verification, redirect to frontend
+    const isRedirect = requiredType === 'email_verification';
+
     // Find token in request
     const token = ctx.req.param('token');
-    if (!token) throw new AppError({ status: 400, type: 'invalid_request', severity: 'error' });
+    if (!token) throw new AppError({ status: 400, type: 'invalid_request', severity: 'error', isRedirect });
 
     // Check if token exists
     const [tokenRecord] = await db.select().from(tokensTable).where(eq(tokensTable.token, token));
+
     if (!tokenRecord) {
       throw new AppError({ status: 404, type: `${requiredType}_not_found`, severity: 'warn', meta: { requiredType } });
     }

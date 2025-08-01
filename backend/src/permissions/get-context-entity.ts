@@ -1,10 +1,10 @@
+import { appConfig, type ContextEntityType } from 'config';
 import { getContextMemberships, getContextOrganization, getContextUser } from '#/lib/context';
 import { type EntityModel, resolveEntity } from '#/lib/entity';
 import { AppError } from '#/lib/errors';
 import type { MembershipSummary } from '#/modules/memberships/helpers/select';
 import { checkPermission } from '#/permissions/check-if-allowed';
 import type { PermittedAction } from '#/permissions/permissions-config';
-import { appConfig, type ContextEntityType } from 'config';
 
 /**
  * Checks if user has permission to perform an action on a context entity.

@@ -1,6 +1,6 @@
 import type { z } from 'zod';
-import type { zCheckTokenResponse } from '~/api.gen/zod.gen';
+import type { zRefreshTokenResponse } from '~/api.gen/zod.gen';
 
-export type TokenData = z.infer<typeof zCheckTokenResponse>;
+export type TokenData = z.infer<typeof zRefreshTokenResponse>;
 
-export type Step = 'checkEmail' | 'signIn' | 'signUp' | 'inviteOnly' | 'waitlist';
+export type AuthStep = 'checkEmail' | 'signIn' | 'signUp' | 'inviteOnly' | 'waitlist' | 'error';

@@ -4,6 +4,7 @@ import { handlePendingInvites } from '~/modules/memberships/query-mutations';
 import { addMenuItem, deleteMenuItem, updateMenuItem } from '~/modules/navigation/menu-sheet/helpers/menu-operations';
 import { useNavigationStore } from '~/store/navigation';
 
+// TODO add comments and send errors to sentry
 const SSE = () => {
   const addEntity = (e: MessageEvent<string>) => {
     try {

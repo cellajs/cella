@@ -1,11 +1,11 @@
 import { z } from '@hono/zod-openapi';
-import { appConfig, type EnabledOauthProvider } from 'config';
+import { appConfig, type EnabledOAuthProvider } from 'config';
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 import { usersTable } from '#/db/schema/users';
 import { membershipSummarySchema } from '#/modules/memberships/schema';
 import { paginationQuerySchema, validImageKeySchema, validNameSchema, validSlugSchema } from '#/utils/schema/common';
 
-export const enabledOauthProvidersEnum = z.enum(appConfig.enabledOauthProviders as unknown as [EnabledOauthProvider]);
+export const enabledOAuthProvidersEnum = z.enum(appConfig.enabledOAuthProviders as unknown as [EnabledOAuthProvider]);
 
 const userSelectSchema = createSelectSchema(usersTable, {
   email: z.email(),

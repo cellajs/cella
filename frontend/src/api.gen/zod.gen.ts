@@ -209,11 +209,11 @@ export const zSignUpWithTokenData = z.object({
  */
 export const zSignUpWithTokenResponse = z.boolean();
 
-export const zSendVerificationEmailData = z.object({
+export const zResendInvitationData = z.object({
   body: z.optional(
     z.object({
+      email: z.email(),
       tokenId: z.optional(z.string()),
-      userId: z.optional(z.string()),
     }),
   ),
   path: z.optional(z.never()),
@@ -221,22 +221,20 @@ export const zSendVerificationEmailData = z.object({
 });
 
 /**
- * Verification email sent
+ * Invitation email sent
  */
-export const zSendVerificationEmailResponse = z.boolean();
+export const zResendInvitationResponse = z.boolean();
 
 export const zVerifyEmailData = z.object({
   body: z.optional(z.never()),
   path: z.object({
     token: z.string(),
   }),
-  query: z.optional(z.never()),
+  query: z.object({
+    redirect: z.optional(z.string()),
+    tokenId: z.string(),
+  }),
 });
-
-/**
- * Verified & session given
- */
-export const zVerifyEmailResponse = z.boolean();
 
 export const zRequestPasswordData = z.object({
   body: z.optional(
@@ -286,7 +284,7 @@ export const zSignInData = z.object({
  */
 export const zSignInResponse = z.boolean();
 
-export const zCheckTokenData = z.object({
+export const zRefreshTokenData = z.object({
   body: z.optional(z.never()),
   path: z.object({
     id: z.string(),
@@ -299,7 +297,7 @@ export const zCheckTokenData = z.object({
 /**
  * Token is valid
  */
-export const zCheckTokenResponse = z.object({
+export const zRefreshTokenResponse = z.object({
   email: z.email(),
   role: z.union([z.enum(['member', 'admin']), z.null()]),
   userId: z.optional(z.string()),
@@ -561,7 +559,7 @@ export const zGetMyAuthData = z.object({
  * User sign-up info
  */
 export const zGetMyAuthResponse = z.object({
-  oauth: z.array(z.enum(['github'])),
+  oauth: z.array(z.enum(['github', 'microsoft'])),
   passkey: z.boolean(),
   sessions: z.array(
     z.object({

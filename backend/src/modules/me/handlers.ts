@@ -1,3 +1,8 @@
+import { OpenAPIHono, type z } from '@hono/zod-openapi';
+import type { EnabledOAuthProvider, MenuSection } from 'config';
+import { appConfig } from 'config';
+import { and, eq } from 'drizzle-orm';
+import { type SSEStreamingApi, streamSSE } from 'hono/streaming';
 import { db } from '#/db/db';
 import { membershipsTable } from '#/db/schema/memberships';
 import { oauthAccountsTable } from '#/db/schema/oauth-accounts';
@@ -23,11 +28,6 @@ import permissionManager from '#/permissions/permissions-config';
 import { defaultHook } from '#/utils/default-hook';
 import { getIsoDate } from '#/utils/iso-date';
 import { logEvent } from '#/utils/logger';
-import { OpenAPIHono, type z } from '@hono/zod-openapi';
-import type { EnabledOauthProvider, MenuSection } from 'config';
-import { appConfig } from 'config';
-import { and, eq } from 'drizzle-orm';
-import { type SSEStreamingApi, streamSSE } from 'hono/streaming';
 
 type UserMenu = z.infer<typeof menuSchema>;
 type MenuItem = z.infer<typeof menuItemSchema>;
@@ -60,7 +60,7 @@ const meRouteHandlers = app
 
     const validOAuthAccounts = oauthAccounts
       .map((el) => el.providerId)
-      .filter((provider): provider is EnabledOauthProvider => appConfig.enabledOauthProviders.includes(provider as EnabledOauthProvider));
+      .filter((provider): provider is EnabledOAuthProvider => appConfig.enabledOAuthProviders.includes(provider as EnabledOAuthProvider));
 
     return ctx.json({ oauth: validOAuthAccounts, passkey: !!passkeys.length, sessions }, 200);
   })
@@ -216,7 +216,7 @@ const meRouteHandlers = app
     const { attestationObject, clientDataJSON } = ctx.req.valid('json');
     const user = getContextUser();
 
-    const challengeFromCookie = await getAuthCookie(ctx, 'passkey_challenge');
+    const challengeFromCookie = await getAuthCookie(ctx, 'passkey-challenge');
     if (!challengeFromCookie) throw new AppError({ status: 401, type: 'invalid_credentials', severity: 'error' });
 
     const { credentialId, publicKey } = parseAndValidatePasskeyAttestation(clientDataJSON, attestationObject, challengeFromCookie);
@@ -274,8 +274,7 @@ const meRouteHandlers = app
 
     // Update user
     await db.update(usersTable).set({ newsletter: false }).where(eq(usersTable.id, user.id));
-
-    const redirectUrl = `${appConfig.frontendUrl}/auth/unsubscribed`;
+    const redirectUrl = new URL('/auth/unsubscribed', appConfig.frontendUrl);
     return ctx.redirect(redirectUrl, 302);
   })
   /*

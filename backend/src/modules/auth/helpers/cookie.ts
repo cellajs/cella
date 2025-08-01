@@ -9,13 +9,13 @@ const isProduction = appConfig.mode === 'production';
 
 export type CookieName =
   | 'session'
-  | 'oauth_state'
-  | 'oauth_code_verifier'
-  | 'oauth_redirect'
-  | 'oauth_connect_user_id'
-  | 'oauth_invite_token_id'
-  | 'oauth_invite_token_type'
-  | 'passkey_challenge';
+  | 'oauth-state'
+  | 'oauth-code-verifier'
+  | 'oauth-redirect'
+  | 'oauth-connect-user-id'
+  | 'oauth-invite-token-id'
+  | 'oauth-invite-token-type'
+  | 'passkey-challenge';
 
 /**
  * Sets an authentication cookie.

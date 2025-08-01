@@ -55,6 +55,7 @@ export const createBaseTransloaditUppy = async (uppyOptions: CustomUppyOpt, toke
 
     return uppy;
   } catch (err) {
+    // TODO send to Sentry
     if (err instanceof Error && err.message.includes('Failed to fetch') && !onlineManager.isOnline()) return uppy;
     throw new Error('Failed to get upload token');
   }

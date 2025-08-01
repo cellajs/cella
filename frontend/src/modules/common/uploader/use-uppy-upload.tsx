@@ -95,6 +95,7 @@ export function useUploadUppy() {
         }
         setUppy(localUppy);
       } catch (err) {
+        // TODO: send to Sentry
         const message = err instanceof Error ? err.message : 'Failed to initialize upload';
         setError(message);
       }

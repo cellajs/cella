@@ -59,11 +59,11 @@ export const legalLinks = [
 
 export const features = [
   { icon: 'hono' },
+  { icon: 'vite' },
   { icon: 'react' },
   { icon: 'drizzle' },
   { icon: 'shadcn' },
   { icon: 'openapi' },
-  { icon: 'vite' },
   { icon: 'tanstack' },
   { icon: 'electric' },
 ];

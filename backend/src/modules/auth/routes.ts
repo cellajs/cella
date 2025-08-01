@@ -11,7 +11,6 @@ import {
   oauthQuerySchema,
   passkeyChallengeQuerySchema,
   passkeyVerificationBodySchema,
-  sendVerificationEmailBodySchema,
   tokenWithDataSchema,
 } from '#/modules/auth/schema';
 import { entityBaseSchema } from '#/modules/entities/schema';
@@ -172,28 +171,28 @@ const authRoutes = {
       ...errorResponses,
     },
   }),
-  sendVerificationEmail: createCustomRoute({
-    operationId: 'sendVerificationEmail',
+  resendInvitation: createCustomRoute({
+    operationId: 'resendInvitation',
     method: 'post',
-    path: '/send-verification-email',
+    path: '/resend-invitation',
     guard: isPublicAccess,
     middleware: [spamLimiter],
     tags: ['auth'],
-    summary: 'Resend verification email',
-    description: 'Resends the email verification message to a user using the provided token ID.',
+    summary: 'Resend invitation',
+    description: 'Resends an invitation email to a new or existing user using the provided email address and token ID.',
     security: [],
     request: {
       body: {
         content: {
           'application/json': {
-            schema: sendVerificationEmailBodySchema,
+            schema: z.object({ email: z.email(), tokenId: z.string().optional() }),
           },
         },
       },
     },
     responses: {
       200: {
-        description: 'Verification email sent',
+        description: 'Invitation email sent',
         content: {
           'application/json': {
             schema: successWithoutDataSchema,
@@ -205,7 +204,7 @@ const authRoutes = {
   }),
   verifyEmail: createCustomRoute({
     operationId: 'verifyEmail',
-    method: 'post',
+    method: 'get',
     path: '/verify-email/{token}',
     guard: isPublicAccess,
     middleware: [tokenLimiter('email_verification'), hasValidToken('email_verification')],
@@ -215,15 +214,12 @@ const authRoutes = {
     security: [],
     request: {
       params: tokenParamSchema,
+      query: z.object({ redirect: z.string().optional(), tokenId: z.string() }),
     },
     responses: {
-      200: {
-        description: 'Verified & session given',
-        content: {
-          'application/json': {
-            schema: successWithoutDataSchema,
-          },
-        },
+      302: {
+        description: 'Session created and redirected',
+        headers: z.object({ Location: z.string() }),
       },
       ...errorResponses,
     },
@@ -354,14 +350,15 @@ const authRoutes = {
       ...errorResponses,
     },
   }),
-  checkToken: createCustomRoute({
-    operationId: 'checkToken',
+  refreshToken: createCustomRoute({
+    operationId: 'refreshToken',
     method: 'post',
-    path: '/check-token/{id}',
+    path: '/refresh-token/{id}',
     guard: isPublicAccess,
     tags: ['auth'],
-    summary: 'Token validation check',
-    description: 'Checks if a token (e.g. for password reset, email verification, or invite) is still valid.',
+    summary: 'Token validation and nonce retrieval',
+    description:
+      'Checks if a token (e.g. for password reset, email verification, or invite) is still valid and returns basic data and a nonce for further actions.',
     request: {
       params: z.object({ id: idSchema }),
       query: z.object({ type: z.enum(appConfig.tokenTypes) }),
@@ -424,6 +421,7 @@ const authRoutes = {
       ...errorResponses,
     },
   }),
+  // TODO - we should rate limit repetitive calls to this endpoint with email as identifier instead of IP
   githubSignInCallback: createCustomRoute({
     operationId: 'githubSignInCallback',
     method: 'get',

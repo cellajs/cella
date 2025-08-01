@@ -1,12 +1,9 @@
-import { appConfig } from 'config';
-
 /**
- * Validate base url for redirects. Its valid if it starts with the public CDN, private CDN or frontend URL.
+ * Validate base path for redirects. If its valid, it returns the path.
  */
-export const isRedirectUrl = (url?: string) => {
-  if (!url) return false;
-  if (url.startsWith(appConfig.publicCDNUrl)) return true;
-  if (url.startsWith(appConfig.privateCDNUrl)) return true;
-  if (url.startsWith(appConfig.frontendUrl)) return true;
-  return false;
-};
+export function isValidRedirectPath(path: unknown) {
+  if (typeof path !== 'string') return false;
+  if (!path.startsWith('/')) return false; // Must be a relative path
+  if (path.startsWith('/api/')) return false; // Avoid API paths
+  return path;
+}

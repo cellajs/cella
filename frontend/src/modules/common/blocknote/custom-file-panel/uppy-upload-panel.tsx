@@ -136,7 +136,9 @@ const UppyFilePanel = ({ onComplete, onError, organizationId, block }: BaseUppyF
           return;
         }
         setUppy(localUppy);
-      } catch (err) {}
+      } catch (err) {
+        // TODO: send to Sentry
+      }
     };
 
     initializeUppy();

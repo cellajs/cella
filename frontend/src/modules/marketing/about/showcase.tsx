@@ -34,7 +34,7 @@ const Showcase = () => {
               <div className="w-full" key={item.id}>
                 <div className="flex">
                   <div className="w-full">
-                    <a href={item.url} target="_blank" rel="noreferrer">
+                    <a href={item.url} target="_blank" rel="noreferrer" className="rounded-md focus-effect block">
                       <h3 className="mb-2 text-xl group font-medium 2xl:text-[1.38rem]">
                         {t(title)}
                         <ArrowUpRight

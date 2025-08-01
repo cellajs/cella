@@ -24,7 +24,6 @@ const ContactPage = () => {
         <p className="mb-8 text-muted-foreground text-center sm:text-left sm:text-lg">{t('common:contact_us.text')}</p>
         <ContactFormMap />
       </div>
-
       <div className="container mb-12 mx-auto">
         <div className="flex flex-wrap justify-evenly gap-2">
           {methods.map((method) => (
@@ -35,7 +34,12 @@ const ContactPage = () => {
               <div className="text-center">
                 <h4 className="mb-3 text-lg font-semibold">{t(method.title)}</h4>
                 <p>
-                  <a href={method.link} className="hover:underline underline-offset-4 text-sm sm:text-base group" target="_blank" rel="noreferrer">
+                  <a
+                    href={method.link}
+                    className="hover:underline underline-offset-4 text-sm sm:text-base group p-0.5 rounded-md focus-effect"
+                    target="_blank"
+                    rel="noreferrer"
+                  >
                     {t(method.text)}
                     <ArrowUpRight
                       size={16}

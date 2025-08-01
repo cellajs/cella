@@ -76,6 +76,7 @@ const initStore: InitStore = {
 
 /**
  * Navigation store for managing navigation state: menu, recent searches, onboarding
+ * TODO: We should make this either per-user or store it in db
  */
 export const useNavigationStore = create<NavigationStoreState>()(
   devtools(
@@ -142,10 +143,9 @@ export const useNavigationStore = create<NavigationStoreState>()(
             });
           },
           clearNavigationStore: () =>
-            set((state) => ({
-              ...state,
-              ...initStore,
-            })),
+            set((state) => {
+              state.menu = initialMenuState;
+            }),
         }),
         {
           version: 6,
