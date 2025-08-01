@@ -35,9 +35,12 @@ export const passkeyRegistration = async () => {
     const isDevelopment = appConfig.mode === 'development';
 
     const nameOnDevice = isDevelopment ? `${user.email} for ${appConfig.name}` : user.email;
+    const raw = decodeBase64(challengeBase64);
+    const challenge = new Uint8Array(raw); // ensures proper ArrayBuffer
+
     const credential = await navigator.credentials.create({
       publicKey: {
-        challenge: decodeBase64(challengeBase64),
+        challenge,
         user: {
           id: userId,
           name: nameOnDevice,
@@ -100,13 +103,10 @@ export const passkeyAuth = async (userEmail: string, callback?: () => void) => {
     // Random bytes generated on each attempt
     const { challengeBase64 } = await getPasskeyChallenge();
 
-    const credential = await navigator.credentials.get({
-      publicKey: {
-        challenge: decodeBase64(challengeBase64),
-        userVerification: 'required',
-      },
-    });
+    const raw = decodeBase64(challengeBase64);
+    const challenge = new Uint8Array(raw); // ensures proper ArrayBuffer
 
+    const credential = await navigator.credentials.get({ publicKey: { challenge, userVerification: 'required' } });
     if (!(credential instanceof PublicKeyCredential)) throw new Error('Failed to create public key');
 
     const { response } = credential;
