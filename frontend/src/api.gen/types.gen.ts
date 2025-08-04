@@ -1676,6 +1676,7 @@ export type GetMyInvitesResponses = {
       bannerUrl?: string | null;
       email: string;
     } | null;
+    token: string;
   }>;
 };
 

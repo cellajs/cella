@@ -1,15 +1,19 @@
-import { useSuspenseQuery } from '@tanstack/react-query';
+import { useMutation, useSuspenseQuery } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
 import { Origami } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { toast } from 'sonner';
+import { acceptEntityInvite, type AcceptEntityInviteResponse, type ApiError, type GetMyInvitesResponse } from '~/api.gen';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { ExpandableList } from '~/modules/common/expandable-list';
-import { meInvitesQueryOptions } from '~/modules/me/query';
+import { getAndSetMenu } from '~/modules/me/helpers';
+import { meInvitesQueryOptions, meKeys } from '~/modules/me/query';
 import { Button } from '~/modules/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '~/modules/ui/card';
 import UserCell from '~/modules/users/user-cell';
 import { getEntityRoute } from '~/nav-config';
+import { queryClient } from '~/query/query-client';
 import { dateShort } from '~/utils/date-short';
 
 export const EntityInvites = () => {
@@ -17,6 +21,18 @@ export const EntityInvites = () => {
 
   const queryOptions = meInvitesQueryOptions();
   const { data: invites } = useSuspenseQuery(queryOptions);
+
+  const { mutate: _acceptEntityInvite } = useMutation<AcceptEntityInviteResponse, ApiError, string>({
+    mutationFn: (token) => acceptEntityInvite({ path: { token } }),
+    onSuccess: async (acceptedEntity) => {
+      await getAndSetMenu();
+      queryClient.setQueryData<GetMyInvitesResponse>(meKeys.invites(), (oldData) => {
+        if (!oldData) return oldData;
+        return oldData.filter((invite) => invite.entity.id !== acceptedEntity.id);
+      });
+      toast.success(t('common:invitation_accepted'));
+    },
+  });
 
   if (!invites?.length) return <ContentPlaceholder icon={Origami} title={t('common:dont_have_any_invites')} className="mt-[20vh]" />;
 
@@ -35,7 +51,7 @@ export const EntityInvites = () => {
           </div>
           <ExpandableList
             items={invites}
-            renderItem={({ entity, invitedBy, expiresAt }) => {
+            renderItem={({ entity, invitedBy, expiresAt, token }) => {
               const { to, params, search } = getEntityRoute({ ...entity, membership: null });
 
               const isExpired = new Date(expiresAt) < new Date();
@@ -55,7 +71,7 @@ export const EntityInvites = () => {
                   </Link>
                   {invitedBy ? <UserCell user={invitedBy} tabIndex={0} /> : '-'}
                   <span>{isExpired ? 'Expired' : dateShort(expiresAt)}</span>
-                  <Button className="w-[60%] ml-auto" size="xs" variant="darkSuccess" disabled={isExpired}>
+                  <Button className="w-[60%] ml-auto" size="xs" variant="darkSuccess" disabled={isExpired} onClick={() => _acceptEntityInvite(token)}>
                     {t('common:accept')}
                   </Button>
                 </div>

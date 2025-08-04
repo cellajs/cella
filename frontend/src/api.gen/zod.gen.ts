@@ -669,6 +669,7 @@ export const zGetMyInvitesResponse = z.array(
       }),
       z.null(),
     ]),
+    token: z.string(),
   }),
 );
 
