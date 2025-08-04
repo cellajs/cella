@@ -1,11 +1,18 @@
-import { z } from '@hono/zod-openapi';
 import { createCustomRoute } from '#/lib/custom-routes';
 import { isAuthenticated, isPublicAccess } from '#/middlewares/guard';
 import { tokenLimiter } from '#/middlewares/rate-limiter/limiters';
-import { meAuthDataSchema, menuSchema, passkeyRegistrationBodySchema, uploadTokenQuerySchema, uploadTokenSchema } from '#/modules/me/schema';
+import {
+  meAuthDataSchema,
+  menuSchema,
+  passkeyRegistrationBodySchema,
+  uploadTokenQuerySchema,
+  uploadTokenSchema,
+  userInvitationsSchema,
+} from '#/modules/me/schema';
 import { userSchema, userUpdateBodySchema } from '#/modules/users/schema';
 import { entityWithTypeQuerySchema } from '#/utils/schema/common';
 import { errorResponses, successWithoutDataSchema, successWithRejectedItemsSchema } from '#/utils/schema/responses';
+import { z } from '@hono/zod-openapi';
 
 const meRoutes = {
   getMe: createCustomRoute({
@@ -37,6 +44,41 @@ const meRoutes = {
       200: {
         description: 'User sign-up info',
         content: { 'application/json': { schema: meAuthDataSchema } },
+      },
+      ...errorResponses,
+    },
+  }),
+
+  getMyMenu: createCustomRoute({
+    operationId: 'getMyMenu',
+    method: 'get',
+    path: '/menu',
+    guard: isAuthenticated,
+    tags: ['me'],
+    summary: 'Get menu',
+    description:
+      'Returns a structured list of contextual entities the *current user* is a member of, grouped by the entity type and enriched with both `memebrship` and `entity` data.',
+    responses: {
+      200: {
+        description: 'Menu of user',
+        content: { 'application/json': { schema: menuSchema } },
+      },
+      ...errorResponses,
+    },
+  }),
+
+  getMyInvites: createCustomRoute({
+    operationId: 'getMyInvites',
+    method: 'get',
+    path: '/invites',
+    guard: isAuthenticated,
+    tags: ['me'],
+    summary: 'Get invites',
+    description: 'Returns a list of entity invites associated with the *current user*.',
+    responses: {
+      200: {
+        description: 'Invites of user',
+        content: { 'application/json': { schema: userInvitationsSchema } },
       },
       ...errorResponses,
     },
@@ -77,24 +119,6 @@ const meRoutes = {
       200: {
         description: 'User deleted',
         content: { 'application/json': { schema: successWithoutDataSchema } },
-      },
-      ...errorResponses,
-    },
-  }),
-
-  getMyMenu: createCustomRoute({
-    operationId: 'getMyMenu',
-    method: 'get',
-    path: '/menu',
-    guard: isAuthenticated,
-    tags: ['me'],
-    summary: 'Get menu',
-    description:
-      'Returns a structured list of contextual entities the *current user* is a member of, grouped by the entity type and enriched with both `memebrship` and `entity` data.',
-    responses: {
-      200: {
-        description: 'Menu of user',
-        content: { 'application/json': { schema: menuSchema } },
       },
       ...errorResponses,
     },

@@ -1,13 +1,10 @@
-import { OpenAPIHono, type z } from '@hono/zod-openapi';
-import type { EnabledOAuthProvider, MenuSection } from 'config';
-import { appConfig } from 'config';
-import { and, eq } from 'drizzle-orm';
-import { type SSEStreamingApi, streamSSE } from 'hono/streaming';
 import { db } from '#/db/db';
 import { membershipsTable } from '#/db/schema/memberships';
 import { oauthAccountsTable } from '#/db/schema/oauth-accounts';
 import { passkeysTable } from '#/db/schema/passkeys';
+import { tokensTable } from '#/db/schema/tokens';
 import { usersTable } from '#/db/schema/users';
+import { entityTables } from '#/entity-config';
 import { env } from '#/env';
 import { type Env, getContextMemberships, getContextUser } from '#/lib/context';
 import { resolveEntity } from '#/lib/entity';
@@ -23,11 +20,17 @@ import { getUserMenuEntities } from '#/modules/me/helpers/get-user-menu-entities
 import meRoutes from '#/modules/me/routes';
 import type { menuItemSchema, menuSchema } from '#/modules/me/schema';
 import { getUserBy } from '#/modules/users/helpers/get-user-by';
+import { userSummarySelect } from '#/modules/users/helpers/select';
 import { verifyUnsubscribeToken } from '#/modules/users/helpers/unsubscribe-token';
 import permissionManager from '#/permissions/permissions-config';
 import { defaultHook } from '#/utils/default-hook';
 import { getIsoDate } from '#/utils/iso-date';
 import { logEvent } from '#/utils/logger';
+import { OpenAPIHono, type z } from '@hono/zod-openapi';
+import type { EnabledOAuthProvider, MenuSection } from 'config';
+import { appConfig } from 'config';
+import { and, eq, isNotNull } from 'drizzle-orm';
+import { type SSEStreamingApi, streamSSE } from 'hono/streaming';
 
 type UserMenu = z.infer<typeof menuSchema>;
 type MenuItem = z.infer<typeof menuItemSchema>;
@@ -102,6 +105,43 @@ const meRouteHandlers = app
     }
 
     return ctx.json(menu, 200);
+  })
+  /*
+   * Get my invites data
+   */
+  .openapi(meRoutes.getMyInvites, async (ctx) => {
+    const user = getContextUser();
+
+    const pendingInvites = await Promise.all(
+      appConfig.contextEntityTypes.map((entityType) => {
+        const entityTable = entityTables[entityType];
+        const entityIdField = appConfig.entityIdFields[entityType];
+        const entitySelect = {
+          id: entityTable.id,
+          entityType: entityTable.entityType,
+          slug: entityTable.slug,
+          name: entityTable.name,
+          thumbnailUrl: entityTable.thumbnailUrl,
+          bannerUrl: entityTable.bannerUrl,
+        };
+
+        return db
+          .select({ entity: entitySelect, invitedBy: userSummarySelect, expiresAt: tokensTable.expiresAt })
+          .from(tokensTable)
+          .leftJoin(usersTable, eq(usersTable.id, tokensTable.createdBy))
+          .innerJoin(entityTable, eq(entityTable.id, tokensTable[entityIdField]))
+          .where(
+            and(
+              eq(tokensTable.type, 'invitation'),
+              eq(tokensTable.entityType, entityType),
+              eq(tokensTable.userId, user.id),
+              isNotNull(tokensTable.role),
+            ),
+          );
+      }),
+    );
+
+    return ctx.json(pendingInvites.flat(), 200);
   })
   /*
    * Terminate one or more of my sessions

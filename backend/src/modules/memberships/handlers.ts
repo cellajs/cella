@@ -1,7 +1,3 @@
-import { OpenAPIHono } from '@hono/zod-openapi';
-import { appConfig } from 'config';
-import { and, count, eq, gt, ilike, inArray, isNotNull, isNull, or, sql } from 'drizzle-orm';
-import i18n from 'i18next';
 import { db } from '#/db/db';
 import { emailsTable } from '#/db/schema/emails';
 import { type MembershipModel, membershipsTable } from '#/db/schema/memberships';
@@ -26,6 +22,10 @@ import { getOrderColumn } from '#/utils/order-column';
 import { slugFromEmail } from '#/utils/slug-from-email';
 import { prepareStringForILikeFilter } from '#/utils/sql';
 import { createDate, TimeSpan } from '#/utils/time-span';
+import { OpenAPIHono } from '@hono/zod-openapi';
+import { appConfig } from 'config';
+import { and, count, eq, gt, ilike, inArray, isNotNull, isNull, or, sql } from 'drizzle-orm';
+import i18n from 'i18next';
 import { MemberInviteEmail, type MemberInviteEmailProps } from '../../../emails/member-invite';
 
 const app = new OpenAPIHono<Env>({ defaultHook });
@@ -76,19 +76,24 @@ const membershipRouteHandlers = app
     );
     const organizationInvitedEmails = new Set(organizationWideInvites.map(({ email }) => email));
 
-    // Log existing direct entity invites
-    logEvent({
-      msg: `Skipped ${directlyInvitedEmails.size} emails due to existing invitations`,
-      meta: { id: entityId, emails: Array.from(directlyInvitedEmails) },
-    });
-    // Log re-associated entity invites
-    logEvent({
-      msg: `Re-associated ${organizationInvitedEmails.size} existing invites to target entity`,
-      meta: {
-        id: entityId,
-        emails: Array.from(organizationInvitedEmails),
-      },
-    });
+    if (directlyInvitedEmails.size) {
+      // Log existing direct entity invites
+      logEvent({
+        msg: `Skipped ${directlyInvitedEmails.size} emails due to existing invitations`,
+        meta: { id: entityId, emails: Array.from(directlyInvitedEmails) },
+      });
+    }
+
+    if (organizationInvitedEmails.size) {
+      // Log re-associated entity invites
+      logEvent({
+        msg: `Re-associated ${organizationInvitedEmails.size} existing invites to target entity`,
+        meta: {
+          id: entityId,
+          emails: Array.from(organizationInvitedEmails),
+        },
+      });
+    }
 
     // Update organization-wide tokens to point to the current entity (if needed)
     await Promise.all(
@@ -108,14 +113,19 @@ const membershipRouteHandlers = app
     );
 
     // Exclude already-invited emails (in both direct & org scope)
-    const emailsToInvite = normalizedEmails.filter((email) => !directlyInvitedEmails.has(email) && !organizationInvitedEmails.has(email));
+    const emailsWithoutInvitations = normalizedEmails.filter((email) => !directlyInvitedEmails.has(email) && !organizationInvitedEmails.has(email));
 
     // Fetch existing users based and their memberships on the provided emails
     const existingUsers = await db
       .select({
         id: userSelect.id,
         email: userSelect.email,
-        userMemberships: sql<MembershipModel[]>`coalesce(jsonb_agg(${membershipsTable}.*), '[]'::jsonb)`.as('memberships'),
+        userMemberships: sql<MembershipModel[]>`
+        coalesce(
+          jsonb_agg(${membershipsTable}.*) 
+          FILTER (WHERE ${membershipsTable}.id IS NOT NULL
+        ), '[]'::jsonb)
+        `.as('memberships'),
       })
       .from(usersTable)
       .leftJoin(emailsTable, eq(usersTable.id, emailsTable.userId))
@@ -123,8 +133,11 @@ const membershipRouteHandlers = app
         membershipsTable,
         and(eq(membershipsTable.userId, usersTable.id), eq(membershipsTable.organizationId, organization.id), isNull(membershipsTable.tokenId)),
       )
-      .where(and(inArray(emailsTable.email, emailsToInvite)))
+      .where(and(inArray(emailsTable.email, emailsWithoutInvitations)))
       .groupBy(usersTable.id);
+
+    // Exclude already-invited emails (in both direct & org scope)
+    const emailsToInvite = emailsWithoutInvitations.filter((email) => existingUsers.some((user) => user.email !== email));
 
     // Map for lookup of existing users by email
     // Identify emails without associated users, nor with existing tokens
