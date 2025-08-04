@@ -37,6 +37,8 @@ export const EntityInvites = () => {
             items={invites}
             renderItem={({ entity, invitedBy, expiresAt }) => {
               const { to, params, search } = getEntityRoute({ ...entity, membership: null });
+
+              const isExpired = new Date(expiresAt) < new Date();
               return (
                 <div className="grid grid-cols-4 col-end- items-center gap-4 py-2">
                   <Link to={to} params={params} search={search} draggable="false" className="flex space-x-2 items-center outline-0 ring-0 group">
@@ -52,15 +54,15 @@ export const EntityInvites = () => {
                     </span>
                   </Link>
                   {invitedBy ? <UserCell user={invitedBy} tabIndex={0} /> : '-'}
-                  <span>{new Date(expiresAt) < new Date() ? 'Expired' : dateShort(expiresAt)}</span>
-                  <Button size="xs" className="w-[60%] ml-auto" variant="darkSuccess">
-                    {t('common:retry')}
+                  <span>{isExpired ? 'Expired' : dateShort(expiresAt)}</span>
+                  <Button className="w-[60%] ml-auto" size="xs" variant="darkSuccess" disabled={isExpired}>
+                    {t('common:accept')}
                   </Button>
                 </div>
               );
             }}
             initialDisplayCount={2}
-            expandText="common:all_invites"
+            expandText="common:show_all_invites"
           />
         </div>
       </CardContent>

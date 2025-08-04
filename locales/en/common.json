@@ -455,5 +455,6 @@
   "entity": "Entity",
   "action": "Action",
   "success.resend_invitation": "A new invitation email has been sent!",
-  "dont_have_any_invites":"No invites yet. When someone invites you to join their entity, you'll see it here."
+  "dont_have_any_invites":"No invites yet. When someone invites you to join their entity, you'll see it here.",
+  "show_all_invites":"Show all invites"
 }
