@@ -866,7 +866,7 @@ export type GithubSignInData = {
   body?: never;
   path?: never;
   query: {
-    type: 'auth' | 'connect' | 'invite' | 'verify';
+    type: 'auth' | 'connect' | 'invite';
     redirect?: string;
     connect?: string;
     token?: string;
@@ -913,7 +913,7 @@ export type GoogleSignInData = {
   body?: never;
   path?: never;
   query: {
-    type: 'auth' | 'connect' | 'invite' | 'verify';
+    type: 'auth' | 'connect' | 'invite';
     redirect?: string;
     connect?: string;
     token?: string;
@@ -960,7 +960,7 @@ export type MicrosoftSignInData = {
   body?: never;
   path?: never;
   query: {
-    type: 'auth' | 'connect' | 'invite' | 'verify';
+    type: 'auth' | 'connect' | 'invite';
     redirect?: string;
     connect?: string;
     token?: string;
@@ -4113,7 +4113,7 @@ export type MembershipInviteError = MembershipInviteErrors[keyof MembershipInvit
 
 export type MembershipInviteResponses = {
   /**
-   * Number of sent invitations
+   * Number of sended invitations
    */
   200: {
     success: boolean;

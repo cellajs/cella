@@ -1,9 +1,9 @@
 import { ArrowUpRight } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import CountryFlag from '~/modules/common/country-flag';
+import { integrations } from '~/modules/marketing/marketing-config';
 import { ScrollArea, ScrollBar } from '~/modules/ui/scroll-area';
 import { useUIStore } from '~/store/ui';
-import { integrations } from '~/modules/marketing/marketing-config';
 
 export interface Integration {
   name: string;

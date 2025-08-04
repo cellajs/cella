@@ -3,7 +3,7 @@ import { Link } from '@tanstack/react-router';
 import { Origami } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-import { acceptEntityInvite, type AcceptEntityInviteResponse, type ApiError, type GetMyInvitesResponse } from '~/api.gen';
+import { type AcceptEntityInviteResponse, type ApiError, acceptEntityInvite, type GetMyInvitesResponse } from '~/api.gen';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { ExpandableList } from '~/modules/common/expandable-list';
