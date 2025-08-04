@@ -55,15 +55,17 @@ export const clearOAuthSession = (ctx: Context) => {
  * @returns - An object containing `connectUserId`, `inviteTokenId` and `inviteTokenType`, all or either can be null.
  */
 export const getOAuthCookies = async (ctx: Context) => {
-  const [connectUserId, inviteTokenId, inviteTokenType] = await Promise.all([
+  const [connectUserId, inviteTokenId, inviteTokenType, verifyTokenId] = await Promise.all([
     getAuthCookie(ctx, 'oauth-connect-user-id'),
     getAuthCookie(ctx, 'oauth-invite-token-id'),
     getAuthCookie(ctx, 'oauth-invite-token-type'),
+    getAuthCookie(ctx, 'oauth-verify-token-id'),
   ]);
 
   return {
     connectUserId: connectUserId || null,
     inviteToken: inviteTokenId && inviteTokenType ? { id: inviteTokenId, type: inviteTokenType } : null,
+    verifyTokenId: verifyTokenId || null,
   };
 };
 
@@ -131,4 +133,51 @@ export const handleOAuthConnection = async (ctx: Context) => {
   if (user?.id !== connectingUserId) throw new AppError({ status: 403, type: 'user_mismatch', severity: 'warn', isRedirect: true });
 
   await setAuthCookie(ctx, 'oauth-connect-user-id', connectingUserId, oauthCookieExpires);
+};
+
+/**
+ * Handles verify an OAuth account to a user.
+ * Ensures given token is valid
+ *
+ * @param ctx Request context
+ * @returns Error object if validation fails, otherwise null
+ */
+export const handleOAuthVerify = async (ctx: Context) => {
+  // Find token in request
+  const token = ctx.req.query('token');
+  if (!token) throw new AppError({ status: 400, type: 'invalid_request', severity: 'error', isRedirect: true });
+
+  // Check if token exists
+  const [tokenRecord] = await db.select().from(tokensTable).where(eq(tokensTable.token, token));
+
+  if (!tokenRecord) {
+    throw new AppError({
+      status: 404,
+      type: 'email_verification_not_found',
+      severity: 'warn',
+      meta: { requiredType: 'email_verification_not_found' },
+    });
+  }
+  // If token is expired, return an error
+  if (isExpiredDate(tokenRecord.expiresAt)) {
+    throw new AppError({
+      status: 401,
+      type: 'email_verification_not_found',
+      severity: 'warn',
+      meta: { requiredType: 'email_verification_not_found' },
+    });
+  }
+  // Check if token type matches the required type (if specified)
+  if (tokenRecord.type !== 'email_verification') {
+    throw new AppError({ status: 401, type: 'invalid_token', severity: 'warn', meta: { requiredType: 'email_verification_not_found' } });
+  }
+
+  // Determine redirection based on entity presence
+  const isMembershipInvite = !!tokenRecord.entityType;
+  const redirectPath = isMembershipInvite ? `/invitation/${tokenRecord.token}?tokenId=${tokenRecord.id}` : appConfig.defaultRedirectPath;
+
+  // Set authentication cookies
+  await Promise.all([setAuthCookie(ctx, 'oauth-verify-token-id', tokenRecord.id, oauthCookieExpires), setOAuthRedirect(ctx, redirectPath)]);
+
+  return null;
 };

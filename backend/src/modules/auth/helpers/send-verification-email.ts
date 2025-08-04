@@ -98,11 +98,26 @@ export const sendVerificationEmail = async ({ userId, oauthAccountId, redirectPa
 
   // Send email
   const lng = user.language;
-  const verificationLink = new URL(`/auth/verify-email/${token}`, appConfig.backendAuthUrl);
-  verificationLink.searchParams.set('tokenId', tokenRecord.id);
 
-  if (redirectPath) verificationLink.searchParams.set('redirect', encodeURIComponent(redirectPath));
+  // Create verification link
+  const verifyPath = !oauthAccount ? `/auth/verify-email/${token}` : `/auth/${oauthAccount.providerId}`;
+  const verificationLink = new URL(verifyPath, appConfig.backendAuthUrl);
 
+  // Add query parameters
+  if (!oauthAccount) {
+    verificationLink.searchParams.set('tokenId', tokenRecord.id);
+  }
+
+  if (oauthAccount) {
+    verificationLink.searchParams.set('token', token);
+    verificationLink.searchParams.set('type', 'verify');
+  }
+
+  if (redirectPath) {
+    verificationLink.searchParams.set('redirect', encodeURIComponent(redirectPath));
+  }
+
+  // Prepare & send email
   const subject = i18n.t('backend:email.email_verification.subject', { lng, appName: appConfig.name });
   const staticProps = { verificationLink, subject, lng };
   const recipients = [{ email }];

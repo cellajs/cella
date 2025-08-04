@@ -376,7 +376,7 @@ export const zGithubSignInData = z.object({
   body: z.optional(z.never()),
   path: z.optional(z.never()),
   query: z.object({
-    type: z.enum(['auth', 'connect', 'invite']),
+    type: z.enum(['auth', 'connect', 'invite', 'verify']),
     redirect: z.optional(z.string()),
     connect: z.optional(z.string()),
     token: z.optional(z.string()),
@@ -387,7 +387,7 @@ export const zGoogleSignInData = z.object({
   body: z.optional(z.never()),
   path: z.optional(z.never()),
   query: z.object({
-    type: z.enum(['auth', 'connect', 'invite']),
+    type: z.enum(['auth', 'connect', 'invite', 'verify']),
     redirect: z.optional(z.string()),
     connect: z.optional(z.string()),
     token: z.optional(z.string()),
@@ -398,7 +398,7 @@ export const zMicrosoftSignInData = z.object({
   body: z.optional(z.never()),
   path: z.optional(z.never()),
   query: z.object({
-    type: z.enum(['auth', 'connect', 'invite']),
+    type: z.enum(['auth', 'connect', 'invite', 'verify']),
     redirect: z.optional(z.string()),
     connect: z.optional(z.string()),
     token: z.optional(z.string()),
