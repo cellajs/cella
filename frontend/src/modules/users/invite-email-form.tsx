@@ -53,13 +53,16 @@ const InviteEmailForm = ({ entity, dialog: isDialog, children }: Props) => {
   const formContainerId = 'invite-users';
   const form = useFormWithDraft<FormValues>(`invite-users${entity ? `-${entity?.id}` : ''}`, { formOptions, formContainerId });
 
-  const onSuccess = ({ invitesSended, rejectedItems }: { rejectedItems: string[]; invitesSended: number }, { emails }: { emails: string[] }) => {
+  const onSuccess = (
+    { invitesSentCount, rejectedItems }: { rejectedItems: string[]; invitesSentCount: number },
+    { emails }: { emails: string[] },
+  ) => {
     form.reset(undefined, { keepDirtyValues: true });
     if (isDialog) useDialoger.getState().remove();
 
-    if (invitesSended > 0) {
-      const resource = t(`common:${invitesSended === 1 ? 'user' : 'users'}`).toLowerCase();
-      toaster(t('common:success.resource_count_invited', { count: invitesSended, resource }), 'success');
+    if (invitesSentCount > 0) {
+      const resource = t(`common:${invitesSentCount === 1 ? 'user' : 'users'}`).toLowerCase();
+      toaster(t('common:success.resource_count_invited', { count: invitesSentCount, resource }), 'success');
     }
     if (rejectedItems.length) toaster(t('common:still_not_accepted', { count: rejectedItems.length, total: emails.length }), 'info');
 

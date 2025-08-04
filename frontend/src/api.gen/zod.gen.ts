@@ -1261,7 +1261,7 @@ export const zSystemInviteData = z.object({
 export const zSystemInviteResponse = z.object({
   success: z.boolean(),
   rejectedItems: z.array(z.string()),
-  invitesSended: z.number(),
+  invitesSentCount: z.number(),
 });
 
 export const zGetPresignedUrlData = z.object({
@@ -1657,7 +1657,7 @@ export const zMembershipInviteData = z.object({
 export const zMembershipInviteResponse = z.object({
   success: z.boolean(),
   rejectedItems: z.array(z.string()),
-  invitesSended: z.number(),
+  invitesSentCount: z.number(),
 });
 
 export const zUpdateMembershipData = z.object({

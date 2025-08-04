@@ -181,7 +181,7 @@ const membershipRouteHandlers = app
       }),
     );
 
-    if (!emailsWithIdToInvite.length) return ctx.json({ success: false, rejectedItems: normalizedEmails, invitesSended: 0 }, 200);
+    if (!emailsWithIdToInvite.length) return ctx.json({ success: false, rejectedItems: normalizedEmails, invitesSentCount: 0 }, 200);
 
     // Check create restrictions
     const [{ currentOrgMemberships }] = await db
@@ -268,7 +268,7 @@ const membershipRouteHandlers = app
     logEvent({ msg: `${insertedTokens.length} users invited to ${entity.entityType}`, meta: entity }); // Log invitation event
 
     const rejectedItems = normalizedEmails.filter((email) => !recipients.some((recipient) => recipient.email === email));
-    return ctx.json({ success: true, rejectedItems, invitesSended: recipients.length }, 200);
+    return ctx.json({ success: true, rejectedItems, invitesSentCount: recipients.length }, 200);
   })
   /*
    * Delete memberships to remove users from entity

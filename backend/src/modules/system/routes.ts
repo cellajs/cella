@@ -27,7 +27,7 @@ const systemRoutes = {
     responses: {
       200: {
         description: 'Invitations are sent',
-        content: { 'application/json': { schema: successWithRejectedItemsSchema.extend({ invitesSended: z.number() }) } },
+        content: { 'application/json': { schema: successWithRejectedItemsSchema.extend({ invitesSentCount: z.number() }) } },
       },
       ...errorResponses,
     },
