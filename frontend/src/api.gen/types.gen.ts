@@ -4113,7 +4113,7 @@ export type MembershipInviteError = MembershipInviteErrors[keyof MembershipInvit
 
 export type MembershipInviteResponses = {
   /**
-   * Number of sended invitations
+   * Number of sent invitations
    */
   200: {
     success: boolean;

@@ -1689,7 +1689,7 @@ export const zMembershipInviteData = z.object({
 });
 
 /**
- * Number of sended invitations
+ * Number of sent invitations
  */
 export const zMembershipInviteResponse = z.object({
   success: z.boolean(),
