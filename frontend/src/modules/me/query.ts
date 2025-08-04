@@ -1,6 +1,6 @@
 import { queryOptions, useMutation } from '@tanstack/react-query';
 import { t } from 'i18next';
-import { deletePasskey, type UpdateUserData, updateMe } from '~/api.gen';
+import { deletePasskey, getMyInvites, type UpdateUserData, updateMe } from '~/api.gen';
 import type { ApiError } from '~/lib/api';
 import { toaster } from '~/modules/common/toaster';
 import { getAndSetMe, getAndSetMeAuthData, getAndSetMenu } from '~/modules/me/helpers';
@@ -17,6 +17,7 @@ export const meKeys = {
   all: ['me'] as const,
   menu: () => [...meKeys.all, 'menu'] as const,
   auth: () => [...meKeys.all, 'auth'] as const,
+  invites: () => [...meKeys.all, 'invites'] as const,
   update: () => [...meKeys.all, 'update'] as const,
 };
 
@@ -40,6 +41,13 @@ export const meAuthQueryOptions = () => queryOptions({ queryKey: meKeys.auth(), 
  * @returns Query options.
  */
 export const menuQueryOptions = () => queryOptions({ queryKey: meKeys.menu(), queryFn: getAndSetMenu });
+
+/**
+ * Query options for fetching the current authenticated user's invites.
+ *
+ * @returns Query options.
+ */
+export const meInvitesQueryOptions = () => queryOptions({ queryKey: meKeys.invites(), queryFn: () => getMyInvites() });
 
 /**
  * Mutation hook for updating current user (self)
