@@ -3,8 +3,9 @@ import { useTranslation } from 'react-i18next';
 import CountryFlag from '~/modules/common/country-flag';
 import { ScrollArea, ScrollBar } from '~/modules/ui/scroll-area';
 import { useUIStore } from '~/store/ui';
+import { integrations } from '~/modules/marketing/marketing-config';
 
-interface Integrations {
+export interface Integration {
   name: string;
   planned?: boolean;
   url: string;
@@ -13,17 +14,6 @@ interface Integrations {
   country: string;
 }
 
-const integrations: Integrations[] = [
-  { name: 'Transloadit', country: 'DE', url: 'transloadit.com', id: 'transloadit' },
-  { name: 'Better Stack', invert: true, country: 'CZ', url: 'betterstack.com', id: 'betterstack' },
-  { name: 'Paddle', country: 'GB', url: 'paddle.com', id: 'paddle' },
-  { name: 'BlockNote', country: 'NL', url: 'blocknotejs.org', id: 'blocknote' },
-  { name: 'Brevo', country: 'FR', url: 'brevo.com', id: 'brevo' },
-  { name: 'Sentry', country: 'US', url: 'sentry.io', id: 'sentry' },
-  { name: 'Gleap', country: 'AT', url: 'gleap.io', id: 'gleap' },
-  // { name: 'Novu', country: 'IL', url: 'novu.co', id: 'novu' },
-];
-
 const Integrations = () => {
   const { t } = useTranslation();
   const mode = useUIStore((state) => state.mode);
@@ -31,9 +21,9 @@ const Integrations = () => {
   return (
     <ScrollArea className="w-full" orientation="horizontal" size="defaultHorizontal">
       <div className="flex w-max space-x-4 py-8 px-2">
-        {integrations.map(({ planned, url, id, name, invert, country }, index) => {
-          const text = `about:integrations.text_${index + 1}`;
-          const purpose = `about:integrations.purpose_${index + 1}`;
+        {integrations.map(({ planned, url, id, name, invert, country }) => {
+          const text = `about:integrations.${id}_text`;
+          const purpose = `about:integrations.${id}_purpose`;
 
           return (
             <a

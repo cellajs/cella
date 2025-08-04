@@ -10,6 +10,16 @@ import { pricingPlans } from '~/modules/marketing/marketing-config';
 import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
 
+export interface PricingPlan {
+  id: string;
+  action: 'sign_in' | 'contact_us' | 'waitlist_request';
+  priceId: string | null;
+  featureCount: number;
+  borderColor: string;
+  popular?: boolean;
+  discount?: string;
+}
+
 const isFlexLayout = pricingPlans.length < 3;
 
 const Pricing = () => {
