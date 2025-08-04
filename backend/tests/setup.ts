@@ -14,11 +14,9 @@ import path from 'node:path';
 import { migrate } from 'drizzle-orm/pglite/migrator';
 import { usersTable } from '#/db/schema/users';
 import { emailsTable } from '#/db/schema/emails';
+import { tokensTable } from '#/db/schema/tokens';
 import { db } from '#/db/db';
-
-import baseApp from '#/server';
-import authRouteHandlers from '#/modules/auth/handlers';
-import { config } from 'config';
+import { appConfig } from 'config';
 
 /**
  * Types
@@ -30,11 +28,12 @@ type ConfigOverride = {
   registrationEnabled?: boolean;
 };
 
-/**
- * Base application route for authentication.
- * This sets up the authentication routes that can be used in tests.
- */
-export const authApp = baseApp.route('/auth', authRouteHandlers);
+export async function getAuthApp() {
+  const { default: baseApp } = await import('#/server');
+  const { default: authRouteHandlers } = await import('#/modules/auth/handlers');
+
+  return baseApp.route('/auth', authRouteHandlers);
+}
 
 /**
  * Mock the global fetch request to avoid actual network calls during tests.
@@ -62,8 +61,9 @@ export async function migrateDatabase(migrationsFolder: string = 'drizzle') {
  * Clear the database by removing all users and emails.
  */
 export async function clearDatabase() {
-  await db.delete(usersTable);
+  await db.delete(tokensTable);
   await db.delete(emailsTable);
+  await db.delete(usersTable);
 }
 
 /**
@@ -74,10 +74,10 @@ export async function clearDatabase() {
 export function setTestConfig(overrides: ConfigOverride) {
   if (overrides.enabledAuthStrategies) {
     // Maybe not the best way to cast, but config.enabledAuthStrategies is a readonly fixed
-    config.enabledAuthStrategies = overrides.enabledAuthStrategies as unknown as typeof config.enabledAuthStrategies;
+    appConfig.enabledAuthStrategies = overrides.enabledAuthStrategies as unknown as typeof appConfig.enabledAuthStrategies;
   }
 
   if (overrides.registrationEnabled !== undefined) {
-    config.has.registrationEnabled = overrides.registrationEnabled;
+    appConfig.has.registrationEnabled = overrides.registrationEnabled;
   }
 }

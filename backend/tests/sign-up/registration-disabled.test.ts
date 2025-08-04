@@ -1,22 +1,23 @@
 import { testClient } from 'hono/testing'
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
-import { mockFetchRequest, migrateDatabase, setTestConfig, clearDatabase } from '../setup';
+import { mockFetchRequest, migrateDatabase, setTestConfig, clearDatabase, getAuthApp } from '../setup';
 import { signUpUser, defaultHeaders } from '../fixtures';
-import { authApp as app } from '../setup'
+
+setTestConfig({
+  registrationEnabled: false,
+});
 
 beforeAll(async () => {
   mockFetchRequest();
   await migrateDatabase();
-  setTestConfig({
-    registrationEnabled: false,
-  });
 });
 
 afterEach(async () => {
   await clearDatabase();
 });
 
-describe('sign-up when "registrationEnabled" disabled', () => {
+describe('sign-up when "registrationEnabled" disabled', async () => {
+  const app = await getAuthApp();
   const client = testClient(app);
 
   it('should not allow sign-up when "registrationEnabled" is disabled in config', async () => {

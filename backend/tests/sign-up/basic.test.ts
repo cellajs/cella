@@ -1,17 +1,23 @@
 import { testClient } from 'hono/testing'
-import { afterEach, beforeAll, describe, expect, it } from 'vitest';
-import { mockFetchRequest, migrateDatabase, clearDatabase, setTestConfig } from '../setup';
+import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
+import { mockFetchRequest, migrateDatabase, clearDatabase, setTestConfig, getAuthApp } from '../setup';
 import { signUpUser, defaultHeaders } from '../fixtures';
 import { getUserByEmail, createUser } from '../helpers';
-import { authApp as app } from '../setup'
+
+setTestConfig({
+  enabledAuthStrategies: ['password'],
+  registrationEnabled: true,
+});
 
 beforeAll(async () => {
   mockFetchRequest();
   await migrateDatabase();
-  setTestConfig({
-    enabledAuthStrategies: ['password'],
-    registrationEnabled: true,
-  });
+
+  // Tmp solution: Mock the sendVerificationEmail function to avoid background running tasks...
+  // Later we should only mock the email sending part, not the whole function. 
+  vi.mock('#/modules/auth/helpers/send-verification-email', () => ({
+    sendVerificationEmail: vi.fn().mockResolvedValue(undefined)
+  }));
 });
 
 afterEach(async () => {
@@ -19,6 +25,7 @@ afterEach(async () => {
 });
 
 describe('sign-up', async () => {
+  const app = await getAuthApp();
   const client = testClient(app);
 
   it('should sign up a user', async () => {
@@ -75,6 +82,6 @@ describe('sign-up', async () => {
     );
 
     // Check the response status
-    expect(res.status).toBe(500);
+    expect(res.status).toBe(409);
   });
 });
