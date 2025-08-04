@@ -73,7 +73,7 @@ const systemRouteHandlers = app
     const rejectedItems = normalizedEmails.filter((email) => existingEmails.has(email));
 
     // Stop if no recipients
-    if (recipientEmails.length === 0) return ctx.json({ success: false, rejectedItems, invitesSended: 0 }, 200);
+    if (recipientEmails.length === 0) return ctx.json({ success: false, rejectedItems, invitesSentCount: 0 }, 200);
 
     // Generate tokens
     const tokens = recipientEmails.map((email) => {
@@ -116,7 +116,7 @@ const systemRouteHandlers = app
 
     logEvent({ msg: 'Users invited on system level' });
 
-    return ctx.json({ success: true, rejectedItems, invitesSended: recipients.length }, 200);
+    return ctx.json({ success: true, rejectedItems, invitesSentCount: recipients.length }, 200);
   })
   /*
    * Get presigned URL

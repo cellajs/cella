@@ -3023,7 +3023,7 @@ export type SystemInviteResponses = {
   200: {
     success: boolean;
     rejectedItems: Array<string>;
-    invitesSended: number;
+    invitesSentCount: number;
   };
 };
 
@@ -4117,7 +4117,7 @@ export type MembershipInviteResponses = {
   200: {
     success: boolean;
     rejectedItems: Array<string>;
-    invitesSended: number;
+    invitesSentCount: number;
   };
 };
 

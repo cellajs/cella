@@ -52,11 +52,11 @@ const InviteSearchForm = ({ entity, dialog: isDialog }: Props) => {
     invite(
       { ...values, entity },
       {
-        onSuccess: ({ invitesSended, rejectedItems }, { emails }) => {
+        onSuccess: ({ invitesSentCount, rejectedItems }, { emails }) => {
           form.reset(undefined, { keepDirtyValues: true });
-          if (invitesSended > 0) {
-            const resource = t(`common:${invitesSended === 1 ? 'user' : 'users'}`).toLowerCase();
-            toaster(t('common:success.resource_count_invited', { count: invitesSended, resource }), 'success');
+          if (invitesSentCount > 0) {
+            const resource = t(`common:${invitesSentCount === 1 ? 'user' : 'users'}`).toLowerCase();
+            toaster(t('common:success.resource_count_invited', { count: invitesSentCount, resource }), 'success');
           }
           if (rejectedItems.length) toaster(t('common:still_not_accepted', { count: rejectedItems.length, total: emails.length }), 'info');
 

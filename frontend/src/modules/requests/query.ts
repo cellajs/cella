@@ -1,8 +1,20 @@
 import { infiniteQueryOptions, useMutation } from '@tanstack/react-query';
 import { appConfig } from 'config';
-import { type CreateRequestData, type CreateRequestResponses, createRequest, deleteRequests, type GetRequestsData, getRequests } from '~/api.gen';
+import { t } from 'i18next';
+import {
+  type CreateRequestData,
+  type CreateRequestResponse,
+  createRequest,
+  deleteRequests,
+  type GetRequestsData,
+  getRequests,
+  type SystemInviteData,
+  type SystemInviteResponse,
+  systemInvite,
+} from '~/api.gen';
 import type { ApiError } from '~/lib/api';
 import type { Request } from '~/modules/requests/types';
+import { toaster } from '../common/toaster';
 
 /**
  * Keys for request related queries. These keys help to uniquely identify different query. For managing query caching and invalidation.
@@ -13,6 +25,7 @@ export const requestsKeys = {
     base: () => [...requestsKeys.all, 'table'] as const,
     entries: (filters: Omit<GetRequestsData['query'], 'limit' | 'offset'>) => [...requestsKeys.table.base(), filters] as const,
   },
+  approve: () => [...requestsKeys.all, 'approve'],
   create: () => [...requestsKeys.all, 'create'],
   delete: () => [...requestsKeys.all, 'delete'],
 };
@@ -61,9 +74,23 @@ export const requestsQueryOptions = ({
  * @returns Mutation hook for creating a new request.
  */
 export const useCreateRequestMutation = () => {
-  return useMutation<CreateRequestResponses[200], ApiError, CreateRequestData['body']>({
+  return useMutation<CreateRequestResponse, ApiError, CreateRequestData['body']>({
     mutationKey: requestsKeys.create(),
     mutationFn: (body) => createRequest({ body }),
+  });
+};
+
+/**
+ * Mutation hook for approving user access requests by sending invites.
+ *
+ * @returns A mutation that sends an invitation email to a user who has requested access.
+ */
+export const useSendApprovalInviteMutation = () => {
+  return useMutation<SystemInviteResponse, ApiError, SystemInviteData['body']>({
+    mutationKey: requestsKeys.approve(),
+    mutationFn: async (body) => await systemInvite({ body }),
+    onSuccess: () => toaster(t('common:success.users_invited'), 'success'),
+    onError: () => toaster(t('error:bad_request_action'), 'error'),
   });
 };
 

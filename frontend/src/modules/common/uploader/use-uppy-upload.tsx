@@ -1,3 +1,4 @@
+import * as Sentry from '@sentry/react';
 import { onlineManager } from '@tanstack/react-query';
 import Audio from '@uppy/audio';
 import type { Body, Meta } from '@uppy/core';
@@ -95,7 +96,7 @@ export function useUploadUppy() {
         }
         setUppy(localUppy);
       } catch (err) {
-        // TODO: send to Sentry
+        Sentry.captureException(err);
         const message = err instanceof Error ? err.message : 'Failed to initialize upload';
         setError(message);
       }

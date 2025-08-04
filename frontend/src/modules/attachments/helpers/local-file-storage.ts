@@ -1,3 +1,4 @@
+import * as Sentry from '@sentry/react';
 import { del, get, keys, set } from 'idb-keyval';
 import type { CustomUppyFile } from '~/modules/common/uploader/types';
 import type { UploadTockenQuery } from '~/modules/me/types';
@@ -11,7 +12,6 @@ type StoredOfflineData = {
 
 type SyncStatus = 'idle' | 'processing';
 
-// TODO: Send catched errors to Sentry
 /**
  * Store files in IndexedDB when user is offline or when s3 is not configured
  *
@@ -39,6 +39,7 @@ export const LocalFileStorage = {
       const mergedFiles = { ...(existing?.files ?? {}), ...files };
       await set(key, { files: mergedFiles, tokenQuery, syncStatus: 'idle' });
     } catch (error) {
+      Sentry.captureException(error);
       console.error('Failed to save data:', error);
     }
   },
@@ -47,6 +48,7 @@ export const LocalFileStorage = {
     try {
       return await get<StoredOfflineData>(organizationId);
     } catch (error) {
+      Sentry.captureException(error);
       console.error('Failed to retrieve data:', error);
     }
   },
@@ -62,6 +64,7 @@ export const LocalFileStorage = {
       }
       return undefined;
     } catch (error) {
+      Sentry.captureException(error);
       console.error(`Failed to retrieve file (${fileId}):`, error);
       return undefined;
     }
@@ -73,6 +76,7 @@ export const LocalFileStorage = {
       if (!data) return;
       await set(orgId, { ...data, syncStatus });
     } catch (error) {
+      Sentry.captureException(error);
       console.error(`Failed to set new sync status for ${orgId}:`, error);
       return undefined;
     }
@@ -119,6 +123,7 @@ export const LocalFileStorage = {
           }),
       );
     } catch (error) {
+      Sentry.captureException(error);
       console.error('Failed to remove files:', error);
     }
 
