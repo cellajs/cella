@@ -7,9 +7,9 @@ import { emailsTable } from '#/db/schema/emails';
 import { InsertMembershipModel, membershipsTable } from '#/db/schema/memberships';
 import { OrganizationModel, organizationsTable } from '#/db/schema/organizations';
 import { UserModel, usersTable } from '#/db/schema/users';
-import { defaultAdminUser } from '../common/admin';
-import { isOrganizationSeeded as isAlreadySeeded } from '../common/is-seeded';
-import { mockMany, mockOrganization, mockUser, mockEmail, mockOrganizationMembership, getMembershipOrderOffset } from '../common/mocks';
+import { defaultAdminUser } from '../fixtures';
+import { isOrganizationSeeded as isAlreadySeeded } from '../utils';
+import { mockMany, mockOrganization, mockUser, mockEmail, mockOrganizationMembership, getMembershipOrderOffset } from '../../../mocks/basic';
 import { hashPassword } from '#/modules/auth/helpers/argon2id';
 
 const ORGANIZATIONS_COUNT = 100;
@@ -106,7 +106,7 @@ const addAdminMembership = (
   adminMemberships: InsertMembershipModel[]
 ) => {
   // Case: Organization is not in an even position → skip admin membership
-   if (getMembershipOrderOffset(organization.id)  % 2 !== 0) return;
+  if (getMembershipOrderOffset(organization.id) % 2 !== 0) return;
 
   // Case: Exceeded the system admin membership count → skip admin membership
   if (adminMemberships.length >= SYSTEM_ADMIN_MEMBERSHIP_COUNT) return;

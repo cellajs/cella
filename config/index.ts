@@ -1,6 +1,7 @@
 import _default from './default';
 import development from './development';
 import production from './production';
+import test from './test';
 import staging from './staging';
 import tunnel from './tunnel';
 import { mergeDeep } from './utils';
@@ -62,6 +63,7 @@ export const configModes = {
   tunnel,
   staging,
   production,
+  test,
 } as const;
 
 export type ConfigMode = keyof typeof configModes;
