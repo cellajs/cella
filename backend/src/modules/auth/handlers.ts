@@ -58,6 +58,7 @@ import { nanoid } from '#/utils/nanoid';
 import { slugFromEmail } from '#/utils/slug-from-email';
 import { createDate, TimeSpan } from '#/utils/time-span';
 import { CreatePasswordEmail, type CreatePasswordEmailProps } from '../../../emails/create-password';
+import { MemberInviteEmail, type MemberInviteEmailProps } from '../../../emails/member-invite';
 
 const enabledStrategies: readonly string[] = appConfig.enabledAuthStrategies;
 const enabledOAuthProviders: readonly string[] = appConfig.enabledOAuthProviders;
@@ -167,7 +168,7 @@ const authRouteHandlers = app
     return ctx.json(true, 200);
   })
   /*
-   * Resend invitation email, also used to resend verification email.
+   * Resend invitation email for organization invites.
    */
   .openapi(authRoutes.resendInvitation, async (ctx) => {
     const { email, tokenId } = ctx.req.valid('json');
@@ -187,9 +188,49 @@ const authRouteHandlers = app
       .select()
       .from(tokensTable)
       .where(and(...filters));
-    if (!tokenRecord || !tokenRecord.userId) throw new AppError({ status: 404, type: 'not_found', severity: 'warn' });
+    if (!tokenRecord) throw new AppError({ status: 404, type: 'not_found', severity: 'warn' });
+    if (!tokenRecord.userId || !tokenRecord.role || !tokenRecord.organizationId)
+      throw new AppError({ status: 401, type: 'invalid_request', severity: 'warn' });
 
-    // TODO add function that creates and sends invitation email with existing token and tokenId. However, if token is beyond 50% expired, it should remove the old token and create a new token and send it.
+    // Generate new token
+    const newToken = {
+      ...tokenRecord,
+      id: nanoid(),
+      token: nanoid(40), // unique hashed token
+      createdBy: user.id,
+      expiresAt: createDate(new TimeSpan(7, 'd')),
+    };
+
+    // Get organization data
+    const [organization] = await db.select().from(organizationsTable).where(eq(organizationsTable.id, tokenRecord.organizationId));
+    if (!organization) throw new AppError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'organization' });
+
+    // Insert token first
+    const [insertedToken] = await db.insert(tokensTable).values(newToken).returning({ tokenId: tokensTable.id, token: tokensTable.token });
+
+    // Prepare and send invitation email
+    const recipient = {
+      email: user.email,
+      name: slugFromEmail(user.email),
+      memberInviteLink: `${appConfig.frontendUrl}/invitation/${insertedToken.token}?tokenId=${insertedToken.tokenId}`,
+    };
+
+    const emailProps = {
+      senderName: user.name,
+      senderThumbnailUrl: user.thumbnailUrl,
+      orgName: organization.name,
+      role: tokenRecord.role,
+      subject: i18n.t('backend:email.member_invite.subject', {
+        lng: organization.defaultLanguage,
+        appName: appConfig.name,
+        entityType: organization.name,
+      }),
+      lng: organization.defaultLanguage,
+    };
+
+    await mailer.prepareEmails<MemberInviteEmailProps, typeof recipient>(MemberInviteEmail, emailProps, [recipient], user.email);
+
+    logEvent({ msg: 'Invitation has been resent', meta: organization }); // Log invitation event
 
     // Return
     return ctx.json(true, 200);

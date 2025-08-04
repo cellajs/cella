@@ -1,6 +1,8 @@
 import { appConfig } from 'config';
 import { Building2, Cloud, Github, Users } from 'lucide-react';
 import { nanoid } from '~/utils/nanoid';
+import type { Integration } from './about/integrations';
+import type { PricingPlan } from './about/pricing';
 
 /*************************************************************************************************
  * Nav
@@ -58,29 +60,34 @@ export const legalLinks = [
  ************************************************************************************************/
 
 export const features = [
-  { icon: 'hono' },
-  { icon: 'vite' },
-  { icon: 'react' },
-  { icon: 'drizzle' },
-  { icon: 'shadcn' },
-  { icon: 'openapi' },
-  { icon: 'tanstack' },
-  { icon: 'electric' },
+  { id: 'hono' },
+  { id: 'vite' },
+  { id: 'react' },
+  { id: 'drizzle' },
+  { id: 'electric' },
+  { id: 'shadcn' },
+  { id: 'openapi' },
+  { id: 'tanstack' },
+];
+
+/*************************************************************************************************
+ * About - Integrations
+ ************************************************************************************************/
+
+export const integrations: Integration[] = [
+  { name: 'Transloadit', country: 'DE', url: 'transloadit.com', id: 'transloadit' },
+  { name: 'Better Stack', invert: true, country: 'CZ', url: 'betterstack.com', id: 'betterstack' },
+  { name: 'Paddle', country: 'GB', url: 'paddle.com', id: 'paddle' },
+  { name: 'BlockNote', country: 'NL', url: 'blocknotejs.org', id: 'blocknote' },
+  { name: 'Brevo', country: 'FR', url: 'brevo.com', id: 'brevo' },
+  { name: 'Sentry', country: 'US', url: 'sentry.io', id: 'sentry' },
+  { name: 'Gleap', country: 'AT', url: 'gleap.io', id: 'gleap' },
+  // { name: 'Novu', country: 'IL', url: 'novu.co', id: 'novu' },
 ];
 
 /*************************************************************************************************
  * About - Pricing plan
  ************************************************************************************************/
-
-interface PricingPlan {
-  id: string;
-  action: 'sign_in' | 'contact_us' | 'waitlist_request';
-  priceId: string | null;
-  featureCount: number;
-  borderColor: string;
-  popular?: boolean;
-  discount?: string;
-}
 
 export const pricingPlans: PricingPlan[] = [
   { id: 'donate', action: 'contact_us', priceId: null, featureCount: 5, borderColor: '' },

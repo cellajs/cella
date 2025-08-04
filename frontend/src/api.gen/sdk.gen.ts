@@ -73,6 +73,9 @@ import type {
   GetMyMenuData,
   GetMyMenuResponses,
   GetMyMenuErrors,
+  GetMyInvitesData,
+  GetMyInvitesResponses,
+  GetMyInvitesErrors,
   DeleteMySessionsData,
   DeleteMySessionsResponses,
   DeleteMySessionsErrors,
@@ -877,6 +880,32 @@ export const getMyMenu = <ThrowOnError extends boolean = true>(options?: Options
       },
     ],
     url: '/me/menu',
+    ...options,
+  });
+};
+
+/**
+ * Get invites
+ * 🛡️ Requires authentication
+ *
+ * Returns a list of entity invites associated with the *current user*.
+ *
+ * **GET /me/invites** ·· [getMyInvites](http://localhost:4000/docs#tag/me/get/me/invites) ·· _me_
+ *
+ * @param {getMyInvitesData} options
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
+ */
+export const getMyInvites = <ThrowOnError extends boolean = true>(options?: Options<GetMyInvitesData, ThrowOnError>) => {
+  return (options?.client ?? _heyApiClient).get<GetMyInvitesResponses, GetMyInvitesErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [
+      {
+        in: 'cookie',
+        name: 'cella-session-v1',
+        type: 'apiKey',
+      },
+    ],
+    url: '/me/invites',
     ...options,
   });
 };
