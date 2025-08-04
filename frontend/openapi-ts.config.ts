@@ -12,6 +12,11 @@ export const openApiConfig: UserConfig = {
     lint: 'biome',
     format: 'biome',
   },
+  parser: {
+    transforms: {
+      readWrite: false,
+    },
+  },
   plugins: [
     TsdocEnhancer({ myOption: true }),
     'zod',

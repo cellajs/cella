@@ -2,7 +2,7 @@ import { appConfig } from 'config';
 import { LockOpen, Trash, XSquare } from 'lucide-react';
 import { useMemo, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { getRequests, systemInvite } from '~/api.gen';
+import { getRequests } from '~/api.gen';
 import ColumnsView from '~/modules/common/data-table/columns-view';
 import Export from '~/modules/common/data-table/export';
 import { TableBarButton } from '~/modules/common/data-table/table-bar-button';
@@ -15,7 +15,7 @@ import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { FocusView } from '~/modules/common/focus-view';
 import { toaster } from '~/modules/common/toaster';
 import DeleteRequests from '~/modules/requests/delete-requests';
-import { requestsKeys } from '~/modules/requests/query';
+import { requestsKeys, useSendApprovalInviteMutation } from '~/modules/requests/query';
 import type { RequestsSearch } from '~/modules/requests/table/table-wrapper';
 import type { Request } from '~/modules/requests/types';
 import { useMutateQueryData } from '~/query/hooks/use-mutate-query-data';
@@ -34,6 +34,8 @@ export const RequestsTableBar = ({ total, selected, searchVars, setSearch, colum
   const isFiltered = !!q;
 
   const mutateQuery = useMutateQueryData(requestsKeys.table.base());
+
+  const { mutateAsync: approveRequests } = useSendApprovalInviteMutation();
 
   // Drop selected Rows on search
   const onSearch = (searchString: string) => {
@@ -69,7 +71,7 @@ export const RequestsTableBar = ({ total, selected, searchVars, setSearch, colum
     });
   };
 
-  const inviteSelected = async () => {
+  const approveSelectedRequests = () => {
     const waitlistRequests = selected.filter(({ type }) => type === 'waitlist');
     const emails = waitlistRequests.map(({ email }) => email);
 
@@ -78,17 +80,15 @@ export const RequestsTableBar = ({ total, selected, searchVars, setSearch, colum
       wasInvited: true,
     }));
 
-    // TODO use a mutation hook for this?
-    try {
-      // Send invite to users
-      await systemInvite({ body: { emails } });
-      toaster(t('common:success.users_invited'), 'success');
-
-      mutateQuery.update(updatedWaitLists);
-      clearSelection();
-    } catch (error) {
-      toaster(t('error:bad_request_action'), 'error');
-    }
+    approveRequests(
+      { emails },
+      {
+        onSuccess: () => {
+          mutateQuery.update(updatedWaitLists);
+          clearSelection();
+        },
+      },
+    );
   };
 
   const fetchExport = async (limit: number) => {
@@ -112,7 +112,7 @@ export const RequestsTableBar = ({ total, selected, searchVars, setSearch, colum
                   className="relative"
                   label={t('common:invite')}
                   icon={LockOpen}
-                  onClick={inviteSelected}
+                  onClick={approveSelectedRequests}
                 />
               )}
               <TableBarButton

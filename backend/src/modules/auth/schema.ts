@@ -32,7 +32,7 @@ export const passkeyVerificationBodySchema = z.object({
 
 export const oauthQuerySchema = z
   .object({
-    type: z.enum(['auth', 'connect', 'invite']),
+    type: z.enum(['auth', 'connect', 'invite', 'verify']),
     redirect: z.string().optional(),
     connect: z.string().optional(),
     token: z.string().optional(),

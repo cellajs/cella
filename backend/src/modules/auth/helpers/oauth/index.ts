@@ -15,6 +15,7 @@ import { setUserSession } from '#/modules/auth/helpers/session';
 import { handleCreateUser } from '#/modules/auth/helpers/user';
 import { getUsersByConditions } from '#/modules/users/helpers/get-user-by';
 import { isValidRedirectPath } from '#/utils/is-redirect-url';
+import { getIsoDate } from '#/utils/iso-date';
 
 /**
  * Retrieves the OAuth redirect path from a cookie, or falls back to a default.
@@ -180,6 +181,74 @@ export const inviteFlow = async (
   return await handleUnverifiedOAuthAccount(ctx, newOAuthAccount, 'invite');
 };
 
+export const verifyFlow = async (
+  ctx: Context,
+  providerUser: TransformedUser,
+  provider: EnabledOAuthProvider,
+  verifyTokenId: TokenModel['id'],
+  oauthAccount: OAuthAccountModel | null = null,
+): Promise<Response> => {
+  // Token not found → invalid verification
+  const verifyToken = await getVerifyToken(verifyTokenId);
+
+  if (!verifyToken) {
+    throw new AppError({ status: 403, type: 'oauth_token_missing', severity: 'warn', isRedirect: true });
+  }
+
+  // No OauthAccount → invalid verification
+  if (!oauthAccount) {
+    throw new AppError({ status: 409, type: 'oauth_mismatch', severity: 'warn', isRedirect: true });
+  }
+
+  // Invalid token settings → invalid verification
+  if (
+    verifyToken.type !== 'email_verification' ||
+    verifyToken.email !== providerUser.email ||
+    verifyToken.oauthAccountId !== oauthAccount.id ||
+    oauthAccount.providerId !== provider
+  ) {
+    throw new AppError({ status: 409, type: 'oauth_mismatch', severity: 'warn', isRedirect: true });
+  }
+
+  const user = await getUserByOAuthAccount(oauthAccount);
+
+  // Somehow already linked + verified → log in the user
+  if (oauthAccount.verified) {
+    return await handleVerifiedOAuthAccount(ctx, user, oauthAccount);
+  }
+
+  // Verify oauthAccount
+  await db
+    .update(oauthAccountsTable)
+    .set({ verified: true, verifiedAt: getIsoDate() })
+    .where(
+      and(
+        eq(oauthAccountsTable.id, verifyToken.oauthAccountId),
+        eq(oauthAccountsTable.userId, user.id),
+        eq(oauthAccountsTable.email, verifyToken.email),
+      ),
+    );
+
+  // Add email to emails table if it doesn't exist
+  await db.insert(emailsTable).values({ email: verifyToken.email, userId: user.id, verified: true, verifiedAt: getIsoDate() }).onConflictDoNothing();
+
+  // Set email verified if it exists
+  await db
+    .update(emailsTable)
+    .set({ verified: true, verifiedAt: getIsoDate() })
+    .where(
+      and(
+        eq(emailsTable.tokenId, verifyToken.id),
+        eq(emailsTable.userId, user.id),
+        eq(emailsTable.email, verifyToken.email),
+        eq(emailsTable.verified, false),
+      ),
+    );
+
+  // Verification successful → redirect to the verified OAuth account handler
+  return await handleVerifiedOAuthAccount(ctx, user, oauthAccount);
+};
+
 /**
  * Retrieves an OAuth account based on provider user ID, provider ID, and email.
  *
@@ -244,6 +313,18 @@ const createOAuthAccount = async (
  */
 const getInvitationToken = async (inviteTokenId: TokenModel['id']): Promise<TokenModel | null> => {
   const [token] = await db.select().from(tokensTable).where(eq(tokensTable.id, inviteTokenId));
+
+  return token ?? null;
+};
+
+/**
+ * Fetches a verification token by its ID.
+ *
+ * @param verifyTokenId - The token ID to search for.
+ * @returns The token if found, or null otherwise.
+ */
+const getVerifyToken = async (verifyTokenId: TokenModel['id']): Promise<TokenModel | null> => {
+  const [token] = await db.select().from(tokensTable).where(eq(tokensTable.id, verifyTokenId));
 
   return token ?? null;
 };

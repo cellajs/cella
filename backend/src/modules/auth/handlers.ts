@@ -8,7 +8,6 @@ import i18n from 'i18next';
 import { db } from '#/db/db';
 import { emailsTable } from '#/db/schema/emails';
 import { membershipsTable } from '#/db/schema/memberships';
-import { oauthAccountsTable } from '#/db/schema/oauth-accounts';
 import { organizationsTable } from '#/db/schema/organizations';
 import { passkeysTable } from '#/db/schema/passkeys';
 import { sessionsTable } from '#/db/schema/sessions';
@@ -29,9 +28,10 @@ import {
   getOAuthCookies,
   handleOAuthConnection,
   handleOAuthInvitation,
+  handleOAuthVerify,
   setOAuthRedirect,
 } from '#/modules/auth/helpers/oauth/cookies';
-import { basicFlow, connectFlow, getOAuthAccount, inviteFlow } from '#/modules/auth/helpers/oauth/index';
+import { basicFlow, connectFlow, getOAuthAccount, inviteFlow, verifyFlow } from '#/modules/auth/helpers/oauth/index';
 import {
   type GithubUserEmailProps,
   type GithubUserProps,
@@ -58,6 +58,7 @@ import { nanoid } from '#/utils/nanoid';
 import { slugFromEmail } from '#/utils/slug-from-email';
 import { createDate, TimeSpan } from '#/utils/time-span';
 import { CreatePasswordEmail, type CreatePasswordEmailProps } from '../../../emails/create-password';
+import { MemberInviteEmail, type MemberInviteEmailProps } from '../../../emails/member-invite';
 
 const enabledStrategies: readonly string[] = appConfig.enabledAuthStrategies;
 const enabledOAuthProviders: readonly string[] = appConfig.enabledOAuthProviders;
@@ -167,7 +168,7 @@ const authRouteHandlers = app
     return ctx.json(true, 200);
   })
   /*
-   * Resend invitation email, also used to resend verification email.
+   * Resend invitation email for organization invites.
    */
   .openapi(authRoutes.resendInvitation, async (ctx) => {
     const { email, tokenId } = ctx.req.valid('json');
@@ -187,9 +188,49 @@ const authRouteHandlers = app
       .select()
       .from(tokensTable)
       .where(and(...filters));
-    if (!tokenRecord || !tokenRecord.userId) throw new AppError({ status: 404, type: 'not_found', severity: 'warn' });
+    if (!tokenRecord) throw new AppError({ status: 404, type: 'not_found', severity: 'warn' });
+    if (!tokenRecord.userId || !tokenRecord.role || !tokenRecord.organizationId)
+      throw new AppError({ status: 401, type: 'invalid_request', severity: 'warn' });
 
-    // TODO add function that creates and sends invitation email with existing token and tokenId. However, if token is beyond 50% expired, it should remove the old token and create a new token and send it.
+    // Generate new token
+    const newToken = {
+      ...tokenRecord,
+      id: nanoid(),
+      token: nanoid(40), // unique hashed token
+      createdBy: user.id,
+      expiresAt: createDate(new TimeSpan(7, 'd')),
+    };
+
+    // Get organization data
+    const [organization] = await db.select().from(organizationsTable).where(eq(organizationsTable.id, tokenRecord.organizationId));
+    if (!organization) throw new AppError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'organization' });
+
+    // Insert token first
+    const [insertedToken] = await db.insert(tokensTable).values(newToken).returning({ tokenId: tokensTable.id, token: tokensTable.token });
+
+    // Prepare and send invitation email
+    const recipient = {
+      email: user.email,
+      name: slugFromEmail(user.email),
+      memberInviteLink: `${appConfig.frontendUrl}/invitation/${insertedToken.token}?tokenId=${insertedToken.tokenId}`,
+    };
+
+    const emailProps = {
+      senderName: user.name,
+      senderThumbnailUrl: user.thumbnailUrl,
+      orgName: organization.name,
+      role: tokenRecord.role,
+      subject: i18n.t('backend:email.member_invite.subject', {
+        lng: organization.defaultLanguage,
+        appName: appConfig.name,
+        entityType: organization.name,
+      }),
+      lng: organization.defaultLanguage,
+    };
+
+    await mailer.prepareEmails<MemberInviteEmailProps, typeof recipient>(MemberInviteEmail, emailProps, [recipient], user.email);
+
+    logEvent({ msg: 'Invitation has been resent', meta: organization }); // Log invitation event
 
     // Return
     return ctx.json(true, 200);
@@ -206,6 +247,11 @@ const authRouteHandlers = app
     // No token in context
     const token = getContextToken();
     if (!token || !token.userId) throw new AppError({ status: 400, type: 'invalid_request', severity: 'error' });
+
+    // Only allow verify emails for "password" strategy (Oauth verification is handled by Oauth callback handlers)
+    if (token.oauthAccountId) {
+      throw new AppError({ status: 400, type: 'invalid_request', severity: 'error' });
+    }
 
     // Get user
     const [user] = await db
@@ -230,26 +276,6 @@ const authRouteHandlers = app
           eq(emailsTable.verified, false),
         ),
       );
-
-    // Verify oauthAccount if linked in verification token. Also add email to emails table if not exists
-    if (token.oauthAccountId) {
-      await db
-        .update(oauthAccountsTable)
-        .set({ verified: true, verifiedAt: getIsoDate() })
-        .where(
-          and(
-            eq(oauthAccountsTable.id, token.oauthAccountId),
-            eq(oauthAccountsTable.userId, token.userId),
-            eq(oauthAccountsTable.email, token.email),
-          ),
-        );
-
-      // Add email to emails table if it doesn't exist
-      await db
-        .insert(emailsTable)
-        .values({ email: token.email, userId: token.userId, verified: true, verifiedAt: getIsoDate() })
-        .onConflictDoNothing();
-    }
 
     // Delete token(s) to prevent reuse
     await db.delete(tokensTable).where(eq(tokensTable.id, token.id));
@@ -580,6 +606,7 @@ const authRouteHandlers = app
     if (redirect) await setOAuthRedirect(ctx, redirect);
     if (type === 'invite') await handleOAuthInvitation(ctx);
     if (type === 'connect') await handleOAuthConnection(ctx);
+    if (type === 'verify') await handleOAuthVerify(ctx);
 
     // Generate a `state` to prevent CSRF, and build URL with scope.
     const state = generateState();
@@ -598,6 +625,7 @@ const authRouteHandlers = app
     if (redirect) await setOAuthRedirect(ctx, redirect);
     if (type === 'invite') await handleOAuthInvitation(ctx);
     if (type === 'connect') await handleOAuthConnection(ctx);
+    if (type === 'verify') await handleOAuthVerify(ctx);
 
     // Generate a `state`, PKCE, and scoped URL.
     const state = generateState();
@@ -617,6 +645,9 @@ const authRouteHandlers = app
     if (redirect) await setOAuthRedirect(ctx, redirect);
     if (type === 'invite') await handleOAuthInvitation(ctx);
     if (type === 'connect') await handleOAuthConnection(ctx);
+    if (type === 'verify') await handleOAuthVerify(ctx);
+
+    console.log('Microsoft OAuth sign in initiated');
 
     // Generate a `state`, PKCE, and scoped URL.
     const state = generateState();
@@ -679,12 +710,12 @@ const authRouteHandlers = app
 
       // Restore Context: linked oauthAccount, invitation or account linking
       const oauthAccount = await getOAuthAccount(providerUser.id, strategy, providerUser.email);
-      const { connectUserId, inviteToken } = await getOAuthCookies(ctx);
+      const { connectUserId, inviteToken, verifyTokenId } = await getOAuthCookies(ctx);
 
       // Handle different OAuth flows based on context
       if (connectUserId) return await connectFlow(ctx, providerUser, strategy, connectUserId, oauthAccount);
-
       if (inviteToken) return await inviteFlow(ctx, providerUser, strategy, inviteToken.id, oauthAccount);
+      if (verifyTokenId) return await verifyFlow(ctx, providerUser, strategy, verifyTokenId, oauthAccount);
 
       return await basicFlow(ctx, providerUser, strategy, oauthAccount);
     } catch (error) {
@@ -737,12 +768,12 @@ const authRouteHandlers = app
 
       // Restore Context: linked oauthAccount, invitation or account linking
       const oauthAccount = await getOAuthAccount(providerUser.id, strategy, providerUser.email);
-      const { connectUserId, inviteToken } = await getOAuthCookies(ctx);
+      const { connectUserId, inviteToken, verifyTokenId } = await getOAuthCookies(ctx);
 
       // Handle different OAuth flows based on context
       if (connectUserId) return await connectFlow(ctx, providerUser, strategy, connectUserId, oauthAccount);
-
       if (inviteToken) return await inviteFlow(ctx, providerUser, strategy, inviteToken.id, oauthAccount);
+      if (verifyTokenId) return await verifyFlow(ctx, providerUser, strategy, verifyTokenId, oauthAccount);
 
       return await basicFlow(ctx, providerUser, strategy, oauthAccount);
     } catch (error) {
@@ -795,12 +826,12 @@ const authRouteHandlers = app
 
       // Restore Context: linked oauthAccount, invitation or account linking
       const oauthAccount = await getOAuthAccount(providerUser.id, strategy, providerUser.email);
-      const { connectUserId, inviteToken } = await getOAuthCookies(ctx);
+      const { connectUserId, inviteToken, verifyTokenId } = await getOAuthCookies(ctx);
 
       // Handle different OAuth flows based on context
       if (connectUserId) return await connectFlow(ctx, providerUser, strategy, connectUserId, oauthAccount);
-
       if (inviteToken) return await inviteFlow(ctx, providerUser, strategy, inviteToken.id, oauthAccount);
+      if (verifyTokenId) return await verifyFlow(ctx, providerUser, strategy, verifyTokenId, oauthAccount);
 
       return await basicFlow(ctx, providerUser, strategy, oauthAccount);
     } catch (error) {

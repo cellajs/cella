@@ -1,11 +1,11 @@
-import { onlineManager } from '@tanstack/react-query';
+import { onlineManager, useMutation } from '@tanstack/react-query';
 import { useLoaderData } from '@tanstack/react-router';
 import { appConfig, type EnabledOAuthProvider } from 'config';
 import { Check, Send, Trash } from 'lucide-react';
 import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-import { requestPassword } from '~/api.gen';
+import { type ApiError, type RequestPasswordData, type RequestPasswordResponse, requestPassword } from '~/api.gen';
 import { mapOAuthProviders } from '~/modules/auth/oauth-options';
 import { AsideAnchor } from '~/modules/common/aside-anchor';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
@@ -33,31 +33,29 @@ const tabs = [
 ];
 
 const UserSettingsPage = () => {
+  const { t } = useTranslation();
   const { user } = useUserStore();
   const mode = useUIStore((state) => state.mode);
-  const { t } = useTranslation();
-
-  const deleteButtonRef = useRef(null);
-
   // Get user auth info from route
   const userAuthInfo = useLoaderData({ from: UserSettingsRoute.id });
+
+  const deleteButtonRef = useRef(null);
 
   const [disabledResetPassword, setDisabledResetPassword] = useState(false);
   const invertClass = mode === 'dark' ? 'invert' : '';
 
+  const { mutate: requestPasswordChange } = useMutation<RequestPasswordResponse, ApiError | Error, NonNullable<RequestPasswordData['body']>>({
+    mutationFn: async (body) => await requestPassword({ body }),
+    onSuccess: () => toast.success(t('common:success.reset_password_email', { email: user.email })),
+    onSettled: () => setTimeout(() => setDisabledResetPassword(false), 60000),
+  });
+
   // Request a password reset email
-  // TODO: use a mutation hook for this? Then we also have better error handling?
   const requestResetPasswordClick = () => {
     if (!onlineManager.isOnline()) return toaster(t('common:action.offline.text'), 'warning');
 
-    try {
-      setDisabledResetPassword(true);
-      requestPassword({ body: { email: user.email } });
-      toast.success(t('common:success.reset_password_email', { email: user.email }));
-    } catch {
-    } finally {
-      setTimeout(() => setDisabledResetPassword(false), 60000);
-    }
+    setDisabledResetPassword(true);
+    requestPasswordChange({ email: user.email });
   };
 
   // Delete account

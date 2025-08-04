@@ -36,8 +36,8 @@ const membershipRoutes = {
     },
     responses: {
       200: {
-        description: 'Number of sended invitations',
-        content: { 'application/json': { schema: successWithRejectedItemsSchema.extend({ invitesSended: z.number() }) } },
+        description: 'Number of sent invitations',
+        content: { 'application/json': { schema: successWithRejectedItemsSchema.extend({ invitesSentCount: z.number() }) } },
       },
       ...errorResponses,
     },

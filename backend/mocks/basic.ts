@@ -2,13 +2,21 @@ import { InsertEmailModel } from "#/db/schema/emails";
 import { InsertMembershipModel } from "#/db/schema/memberships";
 import { InsertOrganizationModel, OrganizationModel } from "#/db/schema/organizations";
 import { InsertUserModel, UserModel } from "#/db/schema/users";
-import { generateUnsubscribeToken } from "#/modules/users/helpers/unsubscribe-token";
 import { faker } from "@faker-js/faker";
+import { pastIsoDate } from "./utils";
+import { generateUnsubscribeToken } from "#/modules/users/helpers/unsubscribe-token";
 import { appConfig } from "config";
 import { UniqueEnforcer } from "enforce-unique";
 import { nanoid } from "nanoid";
 import slugify from "slugify";
-import { pastIsoDate } from "./past-iso-date";
+
+/**
+ * Type: Optional overrides for mock user generation.
+ * Allows customization of specific fields while keeping others random.
+ */
+type MockUserOptionalOverrides = Partial<{
+  email: string;
+}>;
 
 // Enforces uniqueness 
 const organizationName = new UniqueEnforcer();
@@ -62,9 +70,9 @@ export const mockOrganization = (): InsertOrganizationModel => {
  * @param hashedPassword - Pre-generated hashed password to assign to the user.
  * @returns A valid InsertUserModel object.
  */
-export const mockUser = (hashedPassword: string): InsertUserModel => {
+export const mockUser = (hashedPassword: string, overrides: MockUserOptionalOverrides = {}): InsertUserModel => {
   const firstAndLastName = { firstName: faker.person.firstName(), lastName: faker.person.lastName() };
-  const email = userEmail.enforce(() => faker.internet.email(firstAndLastName).toLocaleLowerCase());
+  const email = overrides.email ?? userEmail.enforce(() => faker.internet.email(firstAndLastName).toLowerCase());
   const slug = userSlug.enforce(() => slugify(faker.internet.username(firstAndLastName), { lower: true, strict: true }), { maxTime: 500, maxRetries: 500 })
 
   return {

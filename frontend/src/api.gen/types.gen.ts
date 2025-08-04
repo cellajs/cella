@@ -1610,6 +1610,78 @@ export type GetMyMenuResponses = {
 
 export type GetMyMenuResponse = GetMyMenuResponses[keyof GetMyMenuResponses];
 
+export type GetMyInvitesData = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: '/me/invites';
+};
+
+export type GetMyInvitesErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: ApiError & {
+    status?: 400;
+  };
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: ApiError & {
+    status?: 401;
+  };
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ApiError & {
+    status?: 403;
+  };
+  /**
+   * Not found: resource does not exist.
+   */
+  404: ApiError & {
+    status?: 404;
+  };
+  /**
+   * Rate limit: too many requests.
+   */
+  429: ApiError & {
+    status?: 429;
+  };
+};
+
+export type GetMyInvitesError = GetMyInvitesErrors[keyof GetMyInvitesErrors];
+
+export type GetMyInvitesResponses = {
+  /**
+   * Invites of user
+   */
+  200: Array<{
+    entity: {
+      id: string;
+      entityType: 'organization';
+      slug: string;
+      name: string;
+      thumbnailUrl?: string | null;
+      bannerUrl?: string | null;
+      organizationId?: string;
+    };
+    expiresAt: string;
+    invitedBy: {
+      id: string;
+      entityType: 'user';
+      slug: string;
+      name: string;
+      thumbnailUrl?: string | null;
+      bannerUrl?: string | null;
+      email: string;
+    } | null;
+    token: string;
+  }>;
+};
+
+export type GetMyInvitesResponse = GetMyInvitesResponses[keyof GetMyInvitesResponses];
+
 export type DeleteMySessionsData = {
   body?: {
     ids: Array<string>;
@@ -2952,7 +3024,7 @@ export type SystemInviteResponses = {
   200: {
     success: boolean;
     rejectedItems: Array<string>;
-    invitesSended: number;
+    invitesSentCount: number;
   };
 };
 
@@ -4046,7 +4118,7 @@ export type MembershipInviteResponses = {
   200: {
     success: boolean;
     rejectedItems: Array<string>;
-    invitesSended: number;
+    invitesSentCount: number;
   };
 };
 

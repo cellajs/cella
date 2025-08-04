@@ -2,7 +2,7 @@ import { z } from '@hono/zod-openapi';
 import { appConfig, type ContextEntityType } from 'config';
 import { createSelectSchema } from 'drizzle-zod';
 import { sessionsTable } from '#/db/schema/sessions';
-import { entityBaseSchema } from '#/modules/entities/schema';
+import { entityBaseSchema, userSummarySchema } from '#/modules/entities/schema';
 import { membershipSummarySchema } from '#/modules/memberships/schema';
 import { enabledOAuthProvidersEnum } from '#/modules/users/schema';
 import { booleanQuerySchema } from '#/utils/schema/common';
@@ -65,3 +65,12 @@ export const uploadTokenQuerySchema = z.object({
   organizationId: z.string().optional(),
   templateId: z.enum(appConfig.uploadTemplateIds),
 });
+
+export const userInvitationsSchema = z.array(
+  z.object({
+    entity: entityBaseSchema.extend({ organizationId: z.string().optional() }),
+    expiresAt: z.date(),
+    invitedBy: userSummarySchema.nullable(),
+    token: z.string(),
+  }),
+);

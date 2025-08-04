@@ -636,6 +636,43 @@ export const zGetMyMenuResponse = z.object({
   ),
 });
 
+export const zGetMyInvitesData = z.object({
+  body: z.optional(z.never()),
+  path: z.optional(z.never()),
+  query: z.optional(z.never()),
+});
+
+/**
+ * Invites of user
+ */
+export const zGetMyInvitesResponse = z.array(
+  z.object({
+    entity: z.object({
+      id: z.string(),
+      entityType: z.enum(['organization']),
+      slug: z.string(),
+      name: z.string(),
+      thumbnailUrl: z.optional(z.union([z.string(), z.null()])),
+      bannerUrl: z.optional(z.union([z.string(), z.null()])),
+      organizationId: z.optional(z.string()),
+    }),
+    expiresAt: z.iso.date(),
+    invitedBy: z.union([
+      z.object({
+        id: z.string(),
+        entityType: z.enum(['user']),
+        slug: z.string(),
+        name: z.string(),
+        thumbnailUrl: z.optional(z.union([z.string(), z.null()])),
+        bannerUrl: z.optional(z.union([z.string(), z.null()])),
+        email: z.email(),
+      }),
+      z.null(),
+    ]),
+    token: z.string(),
+  }),
+);
+
 export const zDeleteMySessionsData = z.object({
   body: z.optional(
     z.object({
@@ -1261,7 +1298,7 @@ export const zSystemInviteData = z.object({
 export const zSystemInviteResponse = z.object({
   success: z.boolean(),
   rejectedItems: z.array(z.string()),
-  invitesSended: z.number(),
+  invitesSentCount: z.number(),
 });
 
 export const zGetPresignedUrlData = z.object({
@@ -1657,7 +1694,7 @@ export const zMembershipInviteData = z.object({
 export const zMembershipInviteResponse = z.object({
   success: z.boolean(),
   rejectedItems: z.array(z.string()),
-  invitesSended: z.number(),
+  invitesSentCount: z.number(),
 });
 
 export const zUpdateMembershipData = z.object({
