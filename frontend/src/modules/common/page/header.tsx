@@ -1,3 +1,4 @@
+import * as Sentry from '@sentry/react';
 import { Link } from '@tanstack/react-router';
 import { appConfig, type EntityType } from 'config';
 import { ChevronRight, Home, Loader2 } from 'lucide-react';
@@ -25,7 +26,7 @@ const PageHeader = ({ entity, panel, parent, disableScroll, ...coverProps }: Pag
   // Scroll to page header on load
   if (!disableScroll) useScrollTo(scrollToRef);
 
-  // TODO add comment and send errors to Sentry
+  // Fetch parent entity details if `parent` prop is provided
   useEffect(() => {
     if (!parent) return;
 
@@ -36,6 +37,7 @@ const PageHeader = ({ entity, panel, parent, disableScroll, ...coverProps }: Pag
         setFetchedParent(data);
         setLoading(false);
       } catch (err) {
+        Sentry.captureException(err);
         setError(true);
         setLoading(false);
       }
