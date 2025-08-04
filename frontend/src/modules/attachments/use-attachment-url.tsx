@@ -1,3 +1,4 @@
+import * as Sentry from '@sentry/react';
 import DOMPurify from 'dompurify';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { LocalFileStorage } from '~/modules/attachments/helpers/local-file-storage';
@@ -61,9 +62,11 @@ export const useAttachmentUrl = (id: string, baseUrl: string, type: string) => {
           setUrl(objectUrl);
         }
       } catch (e) {
-        // TODO send to Sentry
         console.error(e);
-        if (e instanceof Error) setError(`Failed to load file: ${e.message}`);
+        if (e instanceof Error) {
+          Sentry.captureException(e);
+          setError(`Failed to load file: ${e.message}`);
+        }
       }
     };
 
