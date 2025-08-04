@@ -1,8 +1,11 @@
 import { Link } from '@tanstack/react-router';
+import { useTranslation } from 'react-i18next';
 import { Card, CardContent, CardHeader, CardTitle } from '~/modules/ui/card';
+import { getEntityRoute } from '~/nav-config';
 import { dateShort } from '~/utils/date-short';
 import { AvatarWrap } from '../common/avatar-wrap';
 import { ExpandableList } from '../common/expandable-list';
+import type { EntityListItem } from '../navigation/search';
 import { Button } from '../ui/button';
 import UserCell from '../users/user-cell';
 
@@ -123,52 +126,47 @@ const invites = [
 ];
 
 export const EntityInvites = () => {
+  const { t } = useTranslation();
   return (
-    <Card>
+    <Card className="mt-6">
       <CardHeader className="p-4 border-b">
-        <CardTitle>Pending invites</CardTitle>
+        <CardTitle>{t('common:pending_invitations')}</CardTitle>
       </CardHeader>
       <CardContent className="p-4">
         <div className="flex flex-col gap-2">
           <div className="grid grid-cols-4 font-medium text-sm p-2 border-b">
-            <span>Entity</span>
-            <span>Invited by</span>
-            <span>Expires</span>
-            <span className="ml-auto">Action</span>
+            <span>{t('common:entity')}</span>
+            <span>{t('common:invited_by')}</span>
+            <span>{t('common:expires_at')}</span>
+            <span className="ml-auto">{t('common:action')}</span>
           </div>
           <ExpandableList
             items={invites}
-            renderItem={(invites) => (
-              <div className="grid grid-cols-4 col-end- items-center gap-4 py-2">
-                <Link
-                  to="/organizations/$idOrSlug/members"
-                  draggable="false"
-                  params={{ idOrSlug: invites.entity.slug }}
-                  className="flex space-x-2 items-center outline-0 ring-0 group"
-                >
-                  <AvatarWrap
-                    type="organization"
-                    className="h-10 w-10 group-active:translate-y-[.05rem] group-hover:font-semibold"
-                    id={invites.entity.id}
-                    name={invites.entity.name}
-                    url={invites.entity.logoUrl}
-                  />
-                  <span className="group-hover:underline underline-offset-3 decoration-foreground/20 group-active:decoration-foreground/50 group-active:translate-y-[.05rem] truncate font-medium">
-                    {invites.entity.name || '-'}
-                  </span>
-                </Link>
-                <UserCell
-                  user={{ ...invites.invitedBy, entityType: 'user' }}
-                  tabIndex={0}
-                  orgIdOrSlug={invites.entity.organizationId || invites.entity.id}
-                />
-                <span>{new Date(invites.expiresIn) < new Date() ? 'Expired' : dateShort(invites.expiresIn)}</span>
-                <Button size="xs" className="w-[60%] ml-auto" variant="darkSuccess">
-                  Retry
-                </Button>
-              </div>
-            )}
-            initialDisplayCount={3}
+            renderItem={({ entity, invitedBy, expiresIn }) => {
+              const { to, params, search } = getEntityRoute(entity as unknown as EntityListItem);
+              return (
+                <div className="grid grid-cols-4 col-end- items-center gap-4 py-2">
+                  <Link to={to} params={params} search={search} draggable="false" className="flex space-x-2 items-center outline-0 ring-0 group">
+                    <AvatarWrap
+                      type="organization"
+                      className="h-10 w-10 group-active:translate-y-[.05rem] group-hover:font-semibold"
+                      id={entity.id}
+                      name={entity.name}
+                      url={entity.logoUrl}
+                    />
+                    <span className="group-hover:underline underline-offset-3 decoration-foreground/20 group-active:decoration-foreground/50 group-active:translate-y-[.05rem] truncate font-medium">
+                      {entity.name}
+                    </span>
+                  </Link>
+                  <UserCell user={{ ...invitedBy, entityType: 'user' }} tabIndex={0} />
+                  <span>{new Date(expiresIn) < new Date() ? 'Expired' : dateShort(expiresIn)}</span>
+                  <Button size="xs" className="w-[60%] ml-auto" variant="darkSuccess">
+                    {t('common:retry')}
+                  </Button>
+                </div>
+              );
+            }}
+            initialDisplayCount={2}
             expandText="common:all_invites"
           />
         </div>

@@ -452,5 +452,7 @@
   "still_not_accepted": "{{count}} of {{total}} haven't accepted the invitation yet.",
   "sign_out_first": "Sign out first",
   "resend": "Resend",
+  "entity": "Entity",
+  "action": "Action",
   "success.resend_invitation": "A new invitation email has been sent!"
 }

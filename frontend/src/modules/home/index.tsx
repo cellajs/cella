@@ -12,7 +12,7 @@ const Home = () => {
     <div className="px-3 md:px-6">
       <SimpleHeader heading={t('common:home')} text={t('common:home.text', { appName: appConfig.name })} className="container pt-4 md:pt-6" />
       <EntityInvites />
-      <ContentPlaceholder icon={HomeIcon} title="Home page" className="mt-[20vh]" />
+      <ContentPlaceholder icon={HomeIcon} title="Home page" className="mt-20" />
     </div>
   );
 };
