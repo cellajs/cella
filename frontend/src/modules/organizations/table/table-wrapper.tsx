@@ -1,4 +1,4 @@
-import { config } from 'config';
+import { appConfig } from 'config';
 import { useRef, useState } from 'react';
 import type { z } from 'zod';
 import type { zGetOrganizationsResponse } from '~/api.gen/zod.gen';
@@ -10,7 +10,7 @@ import BaseDataTable from '~/modules/organizations/table/table';
 import { OrganizationsTableBar } from '~/modules/organizations/table/table-bar';
 import { OrganizationsTableRoute, type organizationsSearchSchema } from '~/routes/system';
 
-const LIMIT = config.requestLimits.organizations;
+const LIMIT = appConfig.requestLimits.organizations;
 
 export type OrganizationsSearch = z.infer<typeof organizationsSearchSchema>;
 export type OrganizationTable = z.infer<typeof zGetOrganizationsResponse>['items'][number];

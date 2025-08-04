@@ -1,4 +1,4 @@
-import { config } from 'config';
+import { appConfig } from 'config';
 import i18n from 'i18next';
 import { create } from 'zustand';
 import { createJSONStorage, devtools, persist } from 'zustand/middleware';
@@ -74,7 +74,7 @@ export const useUserStore = create<UserStoreState>()(
       })),
       {
         version: 2,
-        name: `${config.slug}-user`,
+        name: `${appConfig.slug}-user`,
         partialize: (state) => ({
           user: state.user,
           oauth: state.oauth,

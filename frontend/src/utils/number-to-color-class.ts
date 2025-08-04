@@ -1,4 +1,4 @@
-import { config } from 'config';
+import { appConfig } from 'config';
 
 // Generate a number from a string (ie. to choose a color)
 function generateNumber(id: string) {
@@ -20,5 +20,5 @@ function generateNumber(id: string) {
 export const numberToColorClass = (id?: string) => {
   if (!id) return 'bg-gray-300';
   const index = generateNumber(id) || 0;
-  return config.placeholderColors[index];
+  return appConfig.placeholderColors[index];
 };

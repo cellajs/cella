@@ -1,4 +1,4 @@
-import { config, type Language } from 'config';
+import { appConfig, type Language } from 'config';
 import { Check, ChevronDown } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -31,7 +31,7 @@ export const SelectLanguages = ({ value, onChange }: SelectLanguagesProps) => {
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <Button
-          disabled={config.languages.length < 2}
+          disabled={appConfig.languages.length < 2}
           ref={ref}
           variant="input"
           aria-label="Select language"
@@ -59,7 +59,7 @@ export const SelectLanguages = ({ value, onChange }: SelectLanguagesProps) => {
         <Command className="relative rounded-lg">
           <CommandList>
             <CommandGroup>
-              {config.languages.map((lang) => (
+              {appConfig.languages.map((lang) => (
                 <CommandItem
                   key={lang}
                   value={lang}

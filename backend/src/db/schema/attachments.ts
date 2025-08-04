@@ -7,6 +7,7 @@ import { nanoid } from '#/utils/nanoid';
 export const attachmentsTable = pgTable(
   'attachments',
   {
+    createdAt: timestampColumns.createdAt,
     id: varchar().primaryKey().$defaultFn(nanoid),
     name: varchar().notNull().default('attachment'),
     entityType: varchar({ enum: ['attachment'] })
@@ -21,7 +22,6 @@ export const attachmentsTable = pgTable(
     originalKey: varchar().notNull(),
     convertedKey: varchar(),
     thumbnailKey: varchar(),
-    createdAt: timestampColumns.createdAt,
     createdBy: varchar().references(() => usersTable.id, {
       onDelete: 'set null',
     }),

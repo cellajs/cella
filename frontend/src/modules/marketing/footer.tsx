@@ -1,6 +1,6 @@
 import { Link } from '@tanstack/react-router';
 import clsx from 'clsx';
-import { config } from 'config';
+import { appConfig } from 'config';
 import { useTranslation } from 'react-i18next';
 
 import Logo from '~/modules/common/logo';
@@ -10,8 +10,8 @@ import SubscribeNewsletterForm from '~/modules/marketing/subscribe-newsletter-fo
 import { isCDNUrl } from '~/utils/is-cdn-url';
 
 const currentYear = new Date().getFullYear();
-const companyName = config.company.name;
-const productName = config.name;
+const companyName = appConfig.company.name;
+const productName = appConfig.name;
 
 function FooterLinks() {
   const { t } = useTranslation();
@@ -28,7 +28,7 @@ function FooterLinks() {
                 const target = isCDNUrl(link.href) ? '_blank' : '_self';
                 return (
                   <li key={link.title} className="mt-4">
-                    <Link to={link.href} target={target} className="underline-offset-4 transition hover:underline">
+                    <Link to={link.href} target={target} className="underline-offset-4 transition hover:underline rounded-sm p-1 focus-effect">
                       {t(link.title)}
                     </Link>
                   </li>
@@ -70,7 +70,7 @@ export const MarketingFooter = () => {
             <FooterLinks />
             <div className="">
               <div className="font-display text-sm font-semibold tracking-wider text-white/50">{t('common:request_info')}</div>
-              <div className="mt-4 text-sm text-white/90">{t('common:request_info.text', { appName: config.name })}</div>
+              <div className="mt-4 text-sm text-white/90">{t('common:request_info.text', { appName: appConfig.name })}</div>
               <SubscribeNewsletterForm />
             </div>
           </div>
@@ -83,15 +83,15 @@ export const MarketingFooter = () => {
             onClick={() => {
               scrollTo(0, 0);
             }}
-            className="mt-12 hover:opacity-90 active:scale-95"
+            className="mt-12 hover:opacity-90 active:scale-95 rounded-sm p-1 focus-effect"
           >
             <Logo textColor="white" iconColor="#793f599e" />
           </Link>
 
-          <ul className="mb-12 mt-6 flex flex-wrap justify-center gap-x-6 gap-y-4 border-t border-white/20 pt-12 text-center text-sm text-white/60">
+          <ul className="mb-12 mt-6 flex flex-wrap justify-center gap-x-4 gap-y-4 border-t border-white/20 pt-12 text-center text-sm text-white/60">
             {legalLinks.map((link) => (
               <li key={link.title}>
-                <Link to={link.href} draggable="false" className="underline-offset-4 transition hover:underline">
+                <Link to={link.href} draggable="false" className="underline-offset-4 transition hover:underline rounded-sm p-1 focus-effect">
                   {t(link.title)}
                 </Link>
               </li>

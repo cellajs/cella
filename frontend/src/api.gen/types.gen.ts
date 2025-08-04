@@ -311,17 +311,17 @@ export type SignUpWithTokenResponses = {
 
 export type SignUpWithTokenResponse = SignUpWithTokenResponses[keyof SignUpWithTokenResponses];
 
-export type SendVerificationEmailData = {
+export type ResendInvitationData = {
   body?: {
+    email: string;
     tokenId?: string;
-    userId?: string;
   };
   path?: never;
   query?: never;
-  url: '/auth/send-verification-email';
+  url: '/auth/resend-invitation';
 };
 
-export type SendVerificationEmailErrors = {
+export type ResendInvitationErrors = {
   /**
    * Bad request: problem processing request.
    */
@@ -354,23 +354,26 @@ export type SendVerificationEmailErrors = {
   };
 };
 
-export type SendVerificationEmailError = SendVerificationEmailErrors[keyof SendVerificationEmailErrors];
+export type ResendInvitationError = ResendInvitationErrors[keyof ResendInvitationErrors];
 
-export type SendVerificationEmailResponses = {
+export type ResendInvitationResponses = {
   /**
-   * Verification email sent
+   * Invitation email sent
    */
   200: boolean;
 };
 
-export type SendVerificationEmailResponse = SendVerificationEmailResponses[keyof SendVerificationEmailResponses];
+export type ResendInvitationResponse = ResendInvitationResponses[keyof ResendInvitationResponses];
 
 export type VerifyEmailData = {
   body?: never;
   path: {
     token: string;
   };
-  query?: never;
+  query: {
+    redirect?: string;
+    tokenId: string;
+  };
   url: '/auth/verify-email/{token}';
 };
 
@@ -408,15 +411,6 @@ export type VerifyEmailErrors = {
 };
 
 export type VerifyEmailError = VerifyEmailErrors[keyof VerifyEmailErrors];
-
-export type VerifyEmailResponses = {
-  /**
-   * Verified & session given
-   */
-  200: boolean;
-};
-
-export type VerifyEmailResponse = VerifyEmailResponses[keyof VerifyEmailResponses];
 
 export type RequestPasswordData = {
   body?: {
@@ -580,7 +574,7 @@ export type SignInResponses = {
 
 export type SignInResponse = SignInResponses[keyof SignInResponses];
 
-export type CheckTokenData = {
+export type RefreshTokenData = {
   body?: never;
   path: {
     id: string;
@@ -588,10 +582,10 @@ export type CheckTokenData = {
   query: {
     type: 'email_verification' | 'password_reset' | 'invitation';
   };
-  url: '/auth/check-token/{id}';
+  url: '/auth/refresh-token/{id}';
 };
 
-export type CheckTokenErrors = {
+export type RefreshTokenErrors = {
   /**
    * Bad request: problem processing request.
    */
@@ -624,9 +618,9 @@ export type CheckTokenErrors = {
   };
 };
 
-export type CheckTokenError = CheckTokenErrors[keyof CheckTokenErrors];
+export type RefreshTokenError = RefreshTokenErrors[keyof RefreshTokenErrors];
 
-export type CheckTokenResponses = {
+export type RefreshTokenResponses = {
   /**
    * Token is valid
    */
@@ -640,7 +634,7 @@ export type CheckTokenResponses = {
   };
 };
 
-export type CheckTokenResponse = CheckTokenResponses[keyof CheckTokenResponses];
+export type RefreshTokenResponse = RefreshTokenResponses[keyof RefreshTokenResponses];
 
 export type AcceptEntityInviteData = {
   body?: never;
@@ -1354,6 +1348,7 @@ export type GetMeResponses = {
    * User
    */
   200: {
+    createdAt: string;
     id: string;
     entityType: 'user';
     name: string;
@@ -1367,7 +1362,6 @@ export type GetMeResponses = {
     language: 'en' | 'nl';
     newsletter: boolean;
     role: 'user' | 'admin';
-    createdAt: string;
     modifiedAt: string | null;
     lastSeenAt: string | null;
     lastStartedAt: string | null;
@@ -1433,6 +1427,7 @@ export type UpdateMeResponses = {
    * User
    */
   200: {
+    createdAt: string;
     id: string;
     entityType: 'user';
     name: string;
@@ -1446,7 +1441,6 @@ export type UpdateMeResponses = {
     language: 'en' | 'nl';
     newsletter: boolean;
     role: 'user' | 'admin';
-    createdAt: string;
     modifiedAt: string | null;
     lastSeenAt: string | null;
     lastStartedAt: string | null;
@@ -1504,9 +1498,10 @@ export type GetMyAuthResponses = {
    * User sign-up info
    */
   200: {
-    oauth: Array<'github'>;
+    oauth: Array<'github' | 'microsoft'>;
     passkey: boolean;
     sessions: Array<{
+      createdAt: string;
       id: string;
       type: 'regular' | 'impersonation';
       userId: string;
@@ -1515,7 +1510,6 @@ export type GetMyAuthResponses = {
       deviceOs: string | null;
       browser: string | null;
       authStrategy: 'github' | 'google' | 'microsoft' | 'password' | 'passkey' | 'email';
-      createdAt: string;
       expiresAt: string;
       isCurrent: boolean;
     }>;
@@ -2058,6 +2052,7 @@ export type GetUsersResponses = {
    */
   200: {
     items: Array<{
+      createdAt: string;
       id: string;
       entityType: 'user';
       name: string;
@@ -2071,7 +2066,6 @@ export type GetUsersResponses = {
       language: 'en' | 'nl';
       newsletter: boolean;
       role: 'user' | 'admin';
-      createdAt: string;
       modifiedAt: string | null;
       lastSeenAt: string | null;
       lastStartedAt: string | null;
@@ -2133,6 +2127,7 @@ export type GetUserResponses = {
    * User
    */
   200: {
+    createdAt: string;
     id: string;
     entityType: 'user';
     name: string;
@@ -2146,7 +2141,6 @@ export type GetUserResponses = {
     language: 'en' | 'nl';
     newsletter: boolean;
     role: 'user' | 'admin';
-    createdAt: string;
     modifiedAt: string | null;
     lastSeenAt: string | null;
     lastStartedAt: string | null;
@@ -2214,6 +2208,7 @@ export type UpdateUserResponses = {
    * User
    */
   200: {
+    createdAt: string;
     id: string;
     entityType: 'user';
     name: string;
@@ -2227,7 +2222,6 @@ export type UpdateUserResponses = {
     language: 'en' | 'nl';
     newsletter: boolean;
     role: 'user' | 'admin';
-    createdAt: string;
     modifiedAt: string | null;
     lastSeenAt: string | null;
     lastStartedAt: string | null;
@@ -2348,6 +2342,7 @@ export type GetOrganizationsResponses = {
    */
   200: {
     items: Array<{
+      createdAt: string;
       id: string;
       entityType: 'organization';
       name: string;
@@ -2368,7 +2363,6 @@ export type GetOrganizationsResponses = {
       welcomeText: string | null;
       authStrategies: Array<'github' | 'google' | 'microsoft' | 'password' | 'passkey' | 'email'>;
       chatSupport: boolean;
-      createdAt: string;
       createdBy: string | null;
       modifiedAt: string | null;
       modifiedBy: string | null;
@@ -2450,6 +2444,7 @@ export type CreateOrganizationResponses = {
    * Organization was created
    */
   200: {
+    createdAt: string;
     id: string;
     entityType: 'organization';
     name: string;
@@ -2470,7 +2465,6 @@ export type CreateOrganizationResponses = {
     welcomeText: string | null;
     authStrategies: Array<'github' | 'google' | 'microsoft' | 'password' | 'passkey' | 'email'>;
     chatSupport: boolean;
-    createdAt: string;
     createdBy: string | null;
     modifiedAt: string | null;
     modifiedBy: string | null;
@@ -2539,6 +2533,7 @@ export type GetOrganizationResponses = {
    * Organization
    */
   200: {
+    createdAt: string;
     id: string;
     entityType: 'organization';
     name: string;
@@ -2559,7 +2554,6 @@ export type GetOrganizationResponses = {
     welcomeText: string | null;
     authStrategies: Array<'github' | 'google' | 'microsoft' | 'password' | 'passkey' | 'email'>;
     chatSupport: boolean;
-    createdAt: string;
     createdBy: string | null;
     modifiedAt: string | null;
     modifiedBy: string | null;
@@ -2646,6 +2640,7 @@ export type UpdateOrganizationResponses = {
    * Organization was updated
    */
   200: {
+    createdAt: string;
     id: string;
     entityType: 'organization';
     name: string;
@@ -2666,7 +2661,6 @@ export type UpdateOrganizationResponses = {
     welcomeText: string | null;
     authStrategies: Array<'github' | 'google' | 'microsoft' | 'password' | 'passkey' | 'email'>;
     chatSupport: boolean;
-    createdAt: string;
     createdBy: string | null;
     modifiedAt: string | null;
     modifiedBy: string | null;
@@ -3233,11 +3227,11 @@ export type GetRequestsResponses = {
    */
   200: {
     items: Array<{
+      createdAt: string;
       id: string;
       message: string | null;
       email: string;
       type: 'waitlist' | 'newsletter' | 'contact';
-      createdAt: string;
       wasInvited: boolean;
     }>;
     total: number;
@@ -3297,11 +3291,11 @@ export type CreateRequestResponses = {
    * Requests
    */
   200: {
+    createdAt: string;
     id: string;
     message: string | null;
     email: string;
     type: 'waitlist' | 'newsletter' | 'contact';
-    createdAt: string;
     wasInvited: boolean;
   };
 };
@@ -3583,6 +3577,7 @@ export type GetAttachmentsResponses = {
    */
   200: {
     items: Array<{
+      createdAt: string;
       id: string;
       name: string;
       entityType: 'attachment';
@@ -3591,7 +3586,6 @@ export type GetAttachmentsResponses = {
       contentType: string;
       convertedContentType: string | null;
       size: string;
-      createdAt: string;
       createdBy: string | null;
       modifiedAt: string | null;
       modifiedBy: string | null;
@@ -3666,6 +3660,7 @@ export type CreateAttachmentResponses = {
    * Attachment
    */
   200: Array<{
+    createdAt: string;
     id: string;
     name: string;
     entityType: 'attachment';
@@ -3674,7 +3669,6 @@ export type CreateAttachmentResponses = {
     contentType: string;
     convertedContentType: string | null;
     size: string;
-    createdAt: string;
     createdBy: string | null;
     modifiedAt: string | null;
     modifiedBy: string | null;
@@ -3737,6 +3731,7 @@ export type GetAttachmentResponses = {
    * Attachment
    */
   200: {
+    createdAt: string;
     id: string;
     name: string;
     entityType: 'attachment';
@@ -3745,7 +3740,6 @@ export type GetAttachmentResponses = {
     contentType: string;
     convertedContentType: string | null;
     size: string;
-    createdAt: string;
     createdBy: string | null;
     modifiedAt: string | null;
     modifiedBy: string | null;
@@ -3811,6 +3805,7 @@ export type UpdateAttachmentResponses = {
    * Attachment was updated
    */
   200: {
+    createdAt: string;
     id: string;
     name: string;
     entityType: 'attachment';
@@ -3819,7 +3814,6 @@ export type UpdateAttachmentResponses = {
     contentType: string;
     convertedContentType: string | null;
     size: string;
-    createdAt: string;
     createdBy: string | null;
     modifiedAt: string | null;
     modifiedBy: string | null;
@@ -4113,11 +4107,11 @@ export type UpdateMembershipResponses = {
    * Membership updated
    */
   200: {
+    createdAt: string;
     id: string;
     contextType: 'organization';
     userId: string;
     role: 'member' | 'admin';
-    createdAt: string;
     createdBy: string | null;
     modifiedAt: string | null;
     modifiedBy: string | null;
@@ -4189,6 +4183,7 @@ export type GetMembersResponses = {
    */
   200: {
     items: Array<{
+      createdAt: string;
       id: string;
       entityType: 'user';
       name: string;
@@ -4202,7 +4197,6 @@ export type GetMembersResponses = {
       language: 'en' | 'nl';
       newsletter: boolean;
       role: 'user' | 'admin';
-      createdAt: string;
       modifiedAt: string | null;
       lastSeenAt: string | null;
       lastStartedAt: string | null;

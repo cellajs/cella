@@ -1,5 +1,5 @@
 import chalk from 'chalk';
-import { config } from 'config';
+import { appConfig } from 'config';
 import { db } from '#/db/db';
 import { emailsTable } from '#/db/schema/emails';
 import { usersTable } from '#/db/schema/users';
@@ -13,7 +13,7 @@ import { mockAdmin, mockEmail } from '../../../mocks/basic';
  */
 export const userSeed = async () => {
   // Case: Production mode → skip seeding
-  if (config.mode === 'production') return console.error('Not allowed in production.');
+  if (appConfig.mode === 'production') return console.error('Not allowed in production.');
 
   // Case: Records already exist → skip seeding
   if (await isAlreadySeeded()) return console.warn('Users table is not empty → skip seeding');

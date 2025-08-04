@@ -1,5 +1,5 @@
 import { useMutation } from '@tanstack/react-query';
-import { config } from 'config';
+import { appConfig } from 'config';
 import { t } from 'i18next';
 import { deleteMemberships, type MembershipInviteResponse, membershipInvite, updateMembership } from '~/api.gen';
 import type { ApiError } from '~/lib/api';
@@ -24,7 +24,7 @@ import { formatUpdatedData, getQueryItems, getSimilarQueries } from '~/query/hel
 import { useMutateQueryData } from '~/query/hooks/use-mutate-query-data';
 import { queryClient } from '~/query/query-client';
 
-const limit = config.requestLimits.members;
+const limit = appConfig.requestLimits.members;
 
 const onError = (_: ApiError, __: InviteMember | MutationUpdateMembership | DeleteMembership, context?: MemberContextProp[]) => {
   if (context?.length) {

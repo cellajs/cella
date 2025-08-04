@@ -115,7 +115,7 @@ The documentation is generated from source code using \`zod\` schemas, converted
   enabledAuthStrategies: ['password', 'passkey', 'oauth'] as const,
 
   // OAuth providers
-  enabledOauthProviders: ['github'] as const,
+  enabledOAuthProviders: ['github', 'microsoft'] as const,
 
   // Token types
   tokenTypes: ['email_verification', 'password_reset', 'invitation'] as const,
@@ -124,7 +124,7 @@ The documentation is generated from source code using \`zod\` schemas, converted
   has: {
     pwa: true, // Progressive Web App support for preloading static assets and offline support
     sync: true, // Realtime updates and sync using Electric Sync
-    registrationEnabled: false, // Allow users to sign up. If false, the app is by invitation only
+    registrationEnabled: true, // Allow users to sign up. If false, the app is by invitation only
     waitlist: true, // Suggest a waitlist for unknown emails when sign up is disabled,
     uploadEnabled: true, // s3 fully configured, if false, files will be stored in local browser (indexedDB)
   },

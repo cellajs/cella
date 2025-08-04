@@ -1,12 +1,12 @@
-import { additionalEnvSchema } from '#/custom-env';
 import { env as dotenv } from '@dotenv-run/core';
 import { createEnv } from '@t3-oss/env-core';
-import { config, type Severity } from 'config';
+import { appConfig, type Severity } from 'config';
 import { z } from 'zod';
+import { additionalEnvSchema } from '#/custom-env';
 
 dotenv({
   root: '../..',
-  verbose: config.debug,
+  verbose: appConfig.debug,
   files: ['.env'],
 });
 
@@ -60,7 +60,9 @@ export const env = createEnv({
     S3_ACCESS_KEY_ID: z.string().default(''),
     S3_ACCESS_KEY_SECRET: z.string().default(''),
 
-    PINO_LOG_LEVEL: z.enum(Object.keys(config.severityLevels) as [Severity, ...Severity[]]).default(config.mode === 'production' ? 'info' : 'debug'),
+    PINO_LOG_LEVEL: z
+      .enum(Object.keys(appConfig.severityLevels) as [Severity, ...Severity[]])
+      .default(appConfig.mode === 'production' ? 'info' : 'debug'),
 
     ...additionalEnvSchema.shape,
   },

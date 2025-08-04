@@ -1,7 +1,7 @@
 import type { MiddlewareHandler } from 'hono';
 import { every } from 'hono/combine';
 import { ipRestriction } from 'hono/ip-restriction';
-import { ApiError } from '#/lib/errors';
+import { AppError } from '#/lib/errors';
 import { registerMiddlewareDescription } from '#/lib/openapi-describer';
 import { isSystemAdmin } from '#/middlewares/guard/is-system-admin';
 import { getIp } from '#/utils/get-ip';
@@ -18,7 +18,7 @@ const allowList = env.REMOTE_SYSTEM_ACCESS_IP.split(',') || [];
 export const hasSystemAccess: MiddlewareHandler = every(
   isSystemAdmin,
   ipRestriction(getIp, { allowList }, async () => {
-    throw new ApiError({ status: 422, type: 'forbidden', severity: 'warn' });
+    throw new AppError({ status: 422, type: 'forbidden', severity: 'warn' });
   }),
 );
 

@@ -1,5 +1,5 @@
 import { z } from '@hono/zod-openapi';
-import { config, type PageEntityType } from 'config';
+import { appConfig, type PageEntityType } from 'config';
 import { entityListItemSchema } from '#/modules/entities/schema';
 
 const extendedEntitySchema = entityListItemSchema.extend({ total: z.number() });
@@ -10,7 +10,7 @@ export const processEntitiesData = (queryData: QueryData[][], type?: PageEntityT
   const counts: { [key in PageEntityType]?: number } = {};
   let total = 0;
 
-  const entities = type ? [type] : config.pageEntityTypes;
+  const entities = type ? [type] : appConfig.pageEntityTypes;
 
   // Initialize counts
   for (const entityType of entities) counts[entityType] = 0;

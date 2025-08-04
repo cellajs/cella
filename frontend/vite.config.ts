@@ -10,7 +10,7 @@ import { defineConfig, type UserConfig } from 'vite';
 import { createHtmlPlugin } from 'vite-plugin-html';
 import { VitePWA } from 'vite-plugin-pwa';
 import { viteStaticCopy } from 'vite-plugin-static-copy';
-import { config } from '../config';
+import { appConfig } from '../config';
 // import { TanStackRouterVite } from '@tanstack/router-plugin/vite'
 import { heyApiPlugin } from '@hey-api/vite-plugin';
 import { openApiConfig } from './openapi-ts.config';
@@ -22,7 +22,7 @@ const ReactCompilerConfig = {
 
 const isStorybook = process.env.STORYBOOK === 'true';
 
-const frontendUrl = new URL(config.frontendUrl);
+const frontendUrl = new URL(appConfig.frontendUrl);
 
 const viteConfig = {
   logLevel: 'info',
@@ -60,11 +60,11 @@ const viteConfig = {
       },
     }),
     tailwindcss(),
-    config.sentSentrySourceMaps
+    appConfig.sentSentrySourceMaps
       ? sentryVitePlugin({
-        disable: config.mode === 'development',
-        org: config.slug,
-        project: config.slug,
+        disable: appConfig.mode === 'development',
+        org: appConfig.slug,
+        project: appConfig.slug,
         authToken: process.env.SENTRY_AUTH_TOKEN,
       })
       : undefined,
@@ -80,12 +80,12 @@ const viteConfig = {
       template: './index.html',
       inject: {
         data: {
-          title: config.name,
-          description: config.description,
-          keywords: config.keywords,
-          author: config.company.name,
-          color: config.themeColor,
-          url: config.frontendUrl,
+          title: appConfig.name,
+          description: appConfig.description,
+          keywords: appConfig.keywords,
+          author: appConfig.company.name,
+          color: appConfig.themeColor,
+          url: appConfig.frontendUrl,
         },
       },
     }),
@@ -112,16 +112,16 @@ const viteConfig = {
 
 viteConfig.plugins?.push(
   VitePWA({
-    disable: !config.has.pwa,
+    disable: !appConfig.has.pwa,
     devOptions: {
       enabled: false,
       navigateFallback: 'index.html',
       suppressWarnings: true,
     },
     manifest: {
-      name: config.name,
-      short_name: config.name,
-      description: config.description,
+      name: appConfig.name,
+      short_name: appConfig.name,
+      description: appConfig.description,
       theme_color: '#333333',
       icons: [
         {
@@ -152,8 +152,8 @@ viteConfig.plugins?.push(
     },
   }),
 );
-if (config.frontendUrl.includes('https')) viteConfig.plugins?.push([basicSsl()]);
-if (config.mode === 'development' && !isStorybook)
+if (appConfig.frontendUrl.includes('https')) viteConfig.plugins?.push([basicSsl()]);
+if (appConfig.mode === 'development' && !isStorybook)
   viteConfig.plugins?.push([
     watchBackendOpenApi(),
     heyApiPlugin({ config: openApiConfig }),

@@ -1,11 +1,11 @@
-import { config, type EntityType } from 'config';
+import { appConfig, type EntityType } from 'config';
 
 export type Restrictions = Record<Exclude<EntityType, 'organization'>, number>;
 
 export const defaultRestrictions = (): Restrictions => {
-  const defaultConfig: Partial<Restrictions> = config.defaultOrganizationRestrictions;
+  const defaultConfig: Partial<Restrictions> = appConfig.defaultOrganizationRestrictions;
 
-  return config.entityTypes
+  return appConfig.entityTypes
     .filter((entityType) => entityType !== 'organization')
     .reduce((acc, entityType) => {
       acc[entityType] = defaultConfig[entityType] ?? 0;

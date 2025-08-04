@@ -73,7 +73,7 @@ pnpm install && pnpm quick
 ```
 
 ### B. Full setup
-For a full setup with sync capabilities, you need Docker. It will allow you to run Postgres + electric-sync. Install [Orbstack](https://orbstack.dev/) or [Docker](https://docs.docker.com/get-docker/).
+For a full setup with sync capabilities, you need to run postgres + electric-sync. Install [Orbstack](https://orbstack.dev/) or [Docker](https://docs.docker.com/get-docker/).
 
 ```bash
 pnpm install

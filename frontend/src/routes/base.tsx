@@ -1,7 +1,7 @@
 import * as Sentry from '@sentry/react';
 import { onlineManager } from '@tanstack/react-query';
 import { createRootRouteWithContext, createRoute, defer, redirect } from '@tanstack/react-router';
-import { config } from 'config';
+import { appConfig } from 'config';
 import i18n from 'i18next';
 import { lazy, Suspense } from 'react';
 import { z } from 'zod';
@@ -100,11 +100,14 @@ export const AppRoute = createRoute({
       if (location.pathname === '/') throw redirect({ to: '/about', replace: true });
 
       console.info('Not authenticated -> redirect to sign in');
-      throw redirect({ to: '/auth/authenticate', search: { fromRoot: true, redirect: location.pathname } });
+
+      const url = new URL(location.pathname, window.location.origin);
+      const redirectPath = url.pathname + url.search;
+      throw redirect({ to: '/auth/authenticate', search: { fromRoot: true, redirect: redirectPath } });
     }
 
     // If location is root and has user, redirect to home
-    if (location.pathname === '/') throw redirect({ to: config.defaultRedirectPath, replace: true });
+    if (location.pathname === '/') throw redirect({ to: appConfig.defaultRedirectPath, replace: true });
   },
   loader: async ({ cause }) => {
     if (cause !== 'enter') return;

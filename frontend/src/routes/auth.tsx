@@ -1,5 +1,5 @@
 import { createRoute, redirect } from '@tanstack/react-router';
-import { config } from 'config';
+import { appConfig } from 'config';
 import { z } from 'zod';
 import AcceptEntityInvite from '~/modules/auth/accept-entity-invite';
 import AuthPage from '~/modules/auth/auth-layout';
@@ -9,7 +9,6 @@ import { RequestPasswordForm } from '~/modules/auth/request-password-form';
 import { SignOut } from '~/modules/auth/sign-out';
 import AuthSteps from '~/modules/auth/steps';
 import Unsubscribed from '~/modules/auth/unsubscribed';
-import VerifyEmail from '~/modules/auth/verify-email';
 import { meQueryOptions } from '~/modules/me/query';
 import { queryClient } from '~/query/query-client';
 import { PublicRoute } from '~/routes/base';
@@ -41,7 +40,7 @@ export const AuthenticateRoute = createRoute({
     // If stored user, redirect to home
     const storedUser = useUserStore.getState().user;
     if (!storedUser) return;
-    throw redirect({ to: config.defaultRedirectPath, replace: true });
+    throw redirect({ to: appConfig.defaultRedirectPath, replace: true });
   },
   component: () => <AuthSteps />,
 });
@@ -64,26 +63,17 @@ export const CreatePasswordWithTokenRoute = createRoute({
 });
 
 export const EmailVerificationRoute = createRoute({
-  path: '/auth/email-verification',
+  path: '/auth/email-verification/$reason',
   staticData: { isAuth: false },
   head: () => ({ meta: [{ title: appTitle('Email verification') }] }),
   getParentRoute: () => AuthLayoutRoute,
   component: () => <EmailVerification />,
 });
 
-export const VerifyEmailWithTokenRoute = createRoute({
-  validateSearch: z.object({ tokenId: z.string() }),
-  path: '/auth/verify-email/$token',
-  staticData: { isAuth: false },
-  head: () => ({ meta: [{ title: appTitle('Verify email') }] }),
-  getParentRoute: () => AuthLayoutRoute,
-  component: () => <VerifyEmail />,
-});
-
 export const AcceptEntityInviteRoute = createRoute({
   validateSearch: z.object({ tokenId: z.string() }),
   path: '/invitation/$token',
-  staticData: { isAuth: false },
+  staticData: { isAuth: true },
   head: () => ({ meta: [{ title: appTitle('Join') }] }),
   beforeLoad: async ({ params, search }) => {
     try {

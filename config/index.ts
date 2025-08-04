@@ -9,22 +9,22 @@ import { mergeDeep } from './utils';
 /**
  * All entities in this app
  */
-export type EntityType = (typeof _default.entityTypes)[number];
+export type EntityType = (typeof appConfig.entityTypes)[number];
 
 /**
  * Page entities (entities with memberships + users)
  */
-export type PageEntityType = (typeof config.pageEntityTypes)[number];
+export type PageEntityType = (typeof appConfig.pageEntityTypes)[number];
 
 /**
  * Context entities (entities with memberships only)
  */
-export type ContextEntityType = (typeof _default.contextEntityTypes)[number];
+export type ContextEntityType = (typeof appConfig.contextEntityTypes)[number];
 
 /**
  * Product entities aka (user-generated) content (no memberships assigned)
  */
-export type ProductEntityType = (typeof _default.productEntityTypes)[number];
+export type ProductEntityType = (typeof appConfig.productEntityTypes)[number];
 
 /**
  * Menu sections in the menu structure
@@ -37,26 +37,26 @@ export type MenuSection = {
 /**
  * OAuth providers enabled in this app
  */
-export type EnabledOauthProvider = (typeof _default.enabledOauthProviders)[number];
+export type EnabledOAuthProvider = (typeof appConfig.enabledOAuthProviders)[number];
 
 /**
  * Upload template IDs
  */
-export type UploadTemplateId = (typeof _default.uploadTemplateIds)[number];
+export type UploadTemplateId = (typeof appConfig.uploadTemplateIds)[number];
 
 /**
  * Language options
  */
-export type Language = (typeof _default.languages)[number];
+export type Language = (typeof appConfig.languages)[number];
 
 /**
  * Theme options
  */
-export type Theme = keyof typeof _default.theme.colors | 'none';
+export type Theme = keyof typeof appConfig.theme.colors | 'none';
 /**
  * Severity levels to be used in error handling
  */
-export type Severity = keyof typeof _default.severityLevels
+export type Severity = keyof typeof appConfig.severityLevels
 
 export const configModes = {
   development,
@@ -69,4 +69,4 @@ export const configModes = {
 export type ConfigMode = keyof typeof configModes;
 
 const mode = (process.env.NODE_ENV || 'development') as ConfigMode;
-export const config = mergeDeep(_default, configModes[mode]);
+export const appConfig = mergeDeep(_default, configModes[mode]);

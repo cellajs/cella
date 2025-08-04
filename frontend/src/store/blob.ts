@@ -1,4 +1,4 @@
-import { config } from 'config';
+import { appConfig } from 'config';
 import { enableMapSet } from 'immer';
 import { create } from 'zustand';
 import { createJSONStorage, devtools, persist } from 'zustand/middleware';
@@ -45,7 +45,7 @@ export const useBlobStore = create<BlobStoreState>()(
       })),
       {
         version: 1,
-        name: `${config.slug}-blobs`,
+        name: `${appConfig.slug}-blobs`,
         storage: createJSONStorage(() => sessionStorage),
         partialize: (state) => ({
           blobUrls: Array.from(state.blobUrls.entries()), // Store as serializable array

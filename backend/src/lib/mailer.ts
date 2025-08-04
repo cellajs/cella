@@ -1,5 +1,5 @@
 import brevo from '@getbrevo/brevo';
-import { config } from 'config';
+import { appConfig } from 'config';
 import { render } from 'jsx-email';
 import type { ReactElement } from 'react';
 import { env } from '#/env';
@@ -78,11 +78,11 @@ export const mailer: Mailer = {
 
     const sendSmtpEmail = new brevo.SendSmtpEmail();
 
-    sendSmtpEmail.subject = subject || `${config.name} message`;
+    sendSmtpEmail.subject = subject || `${appConfig.name} message`;
     sendSmtpEmail.htmlContent = html;
     sendSmtpEmail.to = [{ email: env.SEND_ALL_TO_EMAIL || to }];
-    sendSmtpEmail.replyTo = { email: replyTo || config.supportEmail };
-    sendSmtpEmail.sender = { email: config.notificationsEmail };
+    sendSmtpEmail.replyTo = { email: replyTo || appConfig.supportEmail };
+    sendSmtpEmail.sender = { email: appConfig.notificationsEmail };
 
     try {
       await apiInstance.sendTransacEmail(sendSmtpEmail);

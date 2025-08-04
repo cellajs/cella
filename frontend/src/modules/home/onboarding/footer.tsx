@@ -5,11 +5,10 @@ import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { useStepper } from '~/modules/common/stepper';
 import { onboardingSteps } from '~/modules/home/onboarding/onboarding-config';
 import { SkipOrganization } from '~/modules/home/onboarding/skip-organization';
-import type { Organization } from '~/modules/organizations/types';
 import { Button } from '~/modules/ui/button';
 import { useNavigationStore } from '~/store/navigation';
 
-const StepperFooter = ({ organization }: { organization?: Organization | null }) => {
+const StepperFooter = () => {
   const { nextStep, isOptionalStep, hasCompletedAllSteps, activeStep } = useStepper();
   const { t } = useTranslation();
   const { menu, setFinishedOnboarding } = useNavigationStore();
@@ -34,8 +33,11 @@ const StepperFooter = ({ organization }: { organization?: Organization | null })
   };
 
   useEffect(() => {
-    if ((activeStep === 2 && organization === null) || hasCompletedAllSteps) setFinishedOnboarding();
-  }, [organization, hasCompletedAllSteps]);
+    if (hasCompletedAllSteps) setFinishedOnboarding();
+    return () => {
+      setFinishedOnboarding();
+    };
+  }, [hasCompletedAllSteps]);
 
   return (
     <div className="w-full flex gap-2 max-sm:justify-stretch">

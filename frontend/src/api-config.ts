@@ -1,4 +1,4 @@
-import { config } from 'config';
+import { appConfig } from 'config';
 import type { CreateClientConfig } from '~/api.gen/client.gen';
 import { ApiError, clientConfig } from '~/lib/api';
 
@@ -10,7 +10,7 @@ import { ApiError, clientConfig } from '~/lib/api';
  */
 export const createClientConfig: CreateClientConfig = (baseConfig) => ({
   ...baseConfig,
-  baseUrl: config.backendUrl,
+  baseUrl: appConfig.backendUrl,
   responseStyle: 'data',
   throwOnError: true,
   fetch: async (input: RequestInfo | URL, init?: RequestInit) => {

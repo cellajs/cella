@@ -1,17 +1,18 @@
 import { useMutation } from '@tanstack/react-query';
 import { Link, useNavigate, useParams, useSearch } from '@tanstack/react-router';
-import { config } from 'config';
+import { appConfig } from 'config';
 import { Ban, Check } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { acceptEntityInvite } from '~/api.gen';
 import AuthErrorNotice from '~/modules/auth/auth-error-notice';
-import { useTokenCheck } from '~/modules/auth/use-token-check';
+import { useCheckToken } from '~/modules/auth/use-token-check';
 import Spinner from '~/modules/common/spinner';
 import { getAndSetMenu } from '~/modules/me/helpers';
 import { buttonVariants, SubmitButton } from '~/modules/ui/button';
 import { getEntityRoute } from '~/nav-config';
 import { AcceptEntityInviteRoute } from '~/routes/auth';
+import { useUserStore } from '~/store/user';
 import { cn } from '~/utils/cn';
 
 // Accept entity invitation when user is signed in
@@ -22,7 +23,9 @@ const AcceptEntityInvite = () => {
   const { token } = useParams({ from: AcceptEntityInviteRoute.id });
   const { tokenId } = useSearch({ from: AcceptEntityInviteRoute.id });
 
-  const { data, isLoading, error } = useTokenCheck('invitation', tokenId);
+  const { user: currentUser } = useUserStore();
+
+  const { data, isLoading, error } = useCheckToken('invitation', tokenId);
 
   const {
     mutate: _acceptEntityInvite,
@@ -45,7 +48,16 @@ const AcceptEntityInvite = () => {
 
   if (isLoading) return <Spinner className="h-10 w-10" />;
   if (error || acceptInviteError) return <AuthErrorNotice error={error || acceptInviteError} />;
-  if (!data) return null;
+
+  // Handle current user not being the one invited
+  if (!data?.userId || data.userId !== currentUser?.id)
+    return (
+      <AuthErrorNotice error={new Error(t('error:invitation_not_for_you'))}>
+        <Link to="/sign-out" reloadDocument className={buttonVariants({ size: 'lg' })}>
+          {t('common:sign_out_first')}
+        </Link>
+      </AuthErrorNotice>
+    );
 
   return (
     <>
@@ -58,7 +70,7 @@ const AcceptEntityInvite = () => {
             <Check size={16} strokeWidth={3} className="mr-2" />
             {t('common:accept')}
           </SubmitButton>
-          <Link to={config.defaultRedirectPath} preload={false} className={cn('w-full', buttonVariants({ variant: 'secondary' }))}>
+          <Link to={appConfig.defaultRedirectPath} preload={false} className={cn('w-full', buttonVariants({ variant: 'secondary' }))}>
             <Ban size={16} className="mr-2" />
             {t('common:decline')}
           </Link>

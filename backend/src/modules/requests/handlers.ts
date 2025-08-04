@@ -1,10 +1,9 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
 import { and, count, eq, getTableColumns, ilike, inArray, type SQL, sql } from 'drizzle-orm';
-
 import { db } from '#/db/db';
 import { type RequestModel, requestsTable } from '#/db/schema/requests';
 import type { Env } from '#/lib/context';
-import { ApiError } from '#/lib/errors';
+import { AppError } from '#/lib/errors';
 import { sendSlackMessage } from '#/lib/notifications';
 import requestRoutes from '#/modules/requests/routes';
 import { getUserBy } from '#/modules/users/helpers/get-user-by';
@@ -24,11 +23,11 @@ const requestRouteHandlers = app
   .openapi(requestRoutes.createRequest, async (ctx) => {
     const { email, type, message } = ctx.req.valid('json');
 
-    const loweredEmail = email.toLowerCase();
+    const normalizedEmail = email.toLowerCase().trim();
 
     if (type === 'waitlist') {
-      const existingUser = await getUserBy('email', loweredEmail);
-      if (existingUser) throw new ApiError({ status: 400, type: 'request_email_is_user' });
+      const existingUser = await getUserBy('email', normalizedEmail);
+      if (existingUser) throw new AppError({ status: 400, type: 'request_email_is_user' });
     }
 
     // Check if not duplicate for unique requests
@@ -36,20 +35,20 @@ const requestRouteHandlers = app
       const [existingRequest] = await db
         .select()
         .from(requestsTable)
-        .where(and(eq(requestsTable.email, loweredEmail), inArray(requestsTable.type, uniqueRequests)));
-      if (existingRequest?.type === type) throw new ApiError({ status: 409, type: 'request_exists' });
+        .where(and(eq(requestsTable.email, normalizedEmail), inArray(requestsTable.type, uniqueRequests)));
+      if (existingRequest?.type === type) throw new AppError({ status: 409, type: 'request_exists' });
     }
     const { tokenId, ...requestsSelect } = getTableColumns(requestsTable);
 
     const [createdRequest] = await db
       .insert(requestsTable)
-      .values({ email: loweredEmail, type, message })
+      .values({ email: normalizedEmail, type, message })
       .returning({ ...requestsSelect });
 
     // Slack notifications
-    if (type === 'waitlist') await sendSlackMessage('Join waitlist request', loweredEmail);
-    if (type === 'newsletter') await sendSlackMessage('Join newsletter request', loweredEmail);
-    if (type === 'contact') await sendSlackMessage(`Request for contact with message: ${message},`, loweredEmail);
+    if (type === 'waitlist') await sendSlackMessage('Join waitlist request', normalizedEmail);
+    if (type === 'newsletter') await sendSlackMessage('Join newsletter request', normalizedEmail);
+    if (type === 'contact') await sendSlackMessage(`Request for contact with message: ${message},`, normalizedEmail);
 
     const data = {
       ...createdRequest,
@@ -99,7 +98,7 @@ const requestRouteHandlers = app
 
     // Convert the ids to an array
     const toDeleteIds = Array.isArray(ids) ? ids : [ids];
-    if (!toDeleteIds.length) throw new ApiError({ status: 400, type: 'invalid_request', severity: 'error' });
+    if (!toDeleteIds.length) throw new AppError({ status: 400, type: 'invalid_request', severity: 'error' });
 
     // Delete the requests
     await db.delete(requestsTable).where(inArray(requestsTable.id, toDeleteIds));

@@ -1,5 +1,5 @@
 import { infiniteQueryOptions, queryOptions, useMutation } from '@tanstack/react-query';
-import { config } from 'config';
+import { appConfig } from 'config';
 import {
   type CreateOrganizationData,
   createOrganization,
@@ -56,7 +56,7 @@ export const organizationQueryOptions = (idOrSlug: string) =>
  * @param param.q - Search query for filtering organizations(default is an empty string).
  * @param param.sort - Field to sort by (default is 'createdAt').
  * @param param.order - Order of sorting (default is 'desc').
- * @param param.limit - Number of items per page (default: `config.requestLimits.organizations`).
+ * @param param.limit - Number of items per page (default: `appConfig.requestLimits.organizations`).
  * @returns Infinite query options.
  */
 export const organizationsQueryOptions = ({
@@ -67,7 +67,7 @@ export const organizationsQueryOptions = ({
 }: Omit<NonNullable<GetOrganizationsData['query']>, 'limit' | 'offset'> & { limit?: number }) => {
   const sort = _sort || 'createdAt';
   const order = _order || 'desc';
-  const limit = String(_limit || config.requestLimits.organizations);
+  const limit = String(_limit || appConfig.requestLimits.organizations);
 
   const queryKey = organizationsKeys.table.entries({ q, sort, order });
 

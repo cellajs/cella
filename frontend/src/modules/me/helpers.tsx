@@ -1,6 +1,6 @@
 import { decodeBase64, encodeBase64 } from '@oslojs/encoding';
 import { onlineManager } from '@tanstack/react-query';
-import { config } from 'config';
+import { appConfig } from 'config';
 import { t } from 'i18next';
 import { createPasskey, getMe, getMyAuth, getMyMenu, getPasskeyChallenge, signInWithPasskey } from '~/api.gen';
 import { toaster } from '~/modules/common/toaster';
@@ -32,20 +32,23 @@ export const passkeyRegistration = async () => {
     const userId = new Uint8Array(20);
     crypto.getRandomValues(userId);
 
-    const isDevelopment = config.mode === 'development';
+    const isDevelopment = appConfig.mode === 'development';
 
-    const nameOnDevice = isDevelopment ? `${user.email} for ${config.name}` : user.email;
+    const nameOnDevice = isDevelopment ? `${user.email} for ${appConfig.name}` : user.email;
+    const raw = decodeBase64(challengeBase64);
+    const challenge = new Uint8Array(raw); // ensures proper ArrayBuffer
+
     const credential = await navigator.credentials.create({
       publicKey: {
-        challenge: decodeBase64(challengeBase64),
+        challenge,
         user: {
           id: userId,
           name: nameOnDevice,
           displayName: user.name || user.email,
         },
         rp: {
-          id: isDevelopment ? 'localhost' : config.domain,
-          name: config.name,
+          id: isDevelopment ? 'localhost' : appConfig.domain,
+          name: appConfig.name,
         },
         pubKeyCredParams: [
           { type: 'public-key', alg: -7 }, // ES256
@@ -100,13 +103,10 @@ export const passkeyAuth = async (userEmail: string, callback?: () => void) => {
     // Random bytes generated on each attempt
     const { challengeBase64 } = await getPasskeyChallenge();
 
-    const credential = await navigator.credentials.get({
-      publicKey: {
-        challenge: decodeBase64(challengeBase64),
-        userVerification: 'required',
-      },
-    });
+    const raw = decodeBase64(challengeBase64);
+    const challenge = new Uint8Array(raw); // ensures proper ArrayBuffer
 
+    const credential = await navigator.credentials.get({ publicKey: { challenge, userVerification: 'required' } });
     if (!(credential instanceof PublicKeyCredential)) throw new Error('Failed to create public key');
 
     const { response } = credential;
@@ -119,6 +119,7 @@ export const passkeyAuth = async (userEmail: string, callback?: () => void) => {
       userEmail,
     };
 
+    // TODO can we use a mutation hook for this? if not, we should handle errors better, send to Sentry.
     const success = await signInWithPasskey({ body: credentialData });
     if (success) callback?.();
     else toaster(t('error:passkey_sign_in'), 'error');

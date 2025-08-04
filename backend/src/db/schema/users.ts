@@ -1,10 +1,10 @@
-import { config } from 'config';
+import { appConfig } from 'config';
 import { boolean, foreignKey, index, pgTable, timestamp, varchar } from 'drizzle-orm/pg-core';
 import { timestampColumns } from '#/db/utils/timestamp-columns';
 import { nanoid } from '#/utils/nanoid';
 
-const roleEnum = config.rolesByType.systemRoles;
-const languagesEnum = config.languages;
+const roleEnum = appConfig.rolesByType.systemRoles;
+const languagesEnum = appConfig.languages;
 
 /**
  * Users table contains all users. It is used to store user information such as name, email, password, etc.
@@ -15,6 +15,7 @@ const languagesEnum = config.languages;
 export const usersTable = pgTable(
   'users',
   {
+    createdAt: timestampColumns.createdAt,
     id: varchar().primaryKey().$defaultFn(nanoid),
     entityType: varchar({ enum: ['user'] })
       .notNull()
@@ -24,16 +25,14 @@ export const usersTable = pgTable(
     slug: varchar().unique().notNull(),
     thumbnailUrl: varchar(),
     bannerUrl: varchar(),
-
     email: varchar().notNull().unique(),
     hashedPassword: varchar(),
     unsubscribeToken: varchar().unique().$defaultFn(nanoid).notNull(),
     firstName: varchar(),
     lastName: varchar(),
-    language: varchar({ enum: languagesEnum }).notNull().default(config.defaultLanguage),
+    language: varchar({ enum: languagesEnum }).notNull().default(appConfig.defaultLanguage),
     newsletter: boolean().notNull().default(false),
     role: varchar({ enum: roleEnum }).notNull().default('user'),
-    createdAt: timestampColumns.createdAt,
     modifiedAt: timestampColumns.modifiedAt,
     lastSeenAt: timestamp({ mode: 'string' }), // last time a GET request has been made in last 5 minutes
     lastStartedAt: timestamp({ mode: 'string' }), // last time GET me
