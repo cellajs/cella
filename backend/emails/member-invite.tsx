@@ -14,15 +14,15 @@ import { Footer } from './components/footer';
 export interface MemberInviteEmailProps extends BasicTemplateType {
   memberInviteLink: string;
   senderName: string;
-  orgName: string;
+  entityName: string;
   role: (typeof appConfig.rolesByType.entityRoles)[number];
 }
 
 const appName = appConfig.name;
 
-export const MemberInviteEmail = ({ name, lng, senderName, role, orgName, memberInviteLink }: MemberInviteEmailProps) => {
+export const MemberInviteEmail = ({ name, lng, senderName, role, entityName, memberInviteLink }: MemberInviteEmailProps) => {
   return (
-    <EmailContainer previewText={i18n.t('backend:email.member_invite.preview', { lng, orgName, appName })}>
+    <EmailContainer previewText={i18n.t('backend:email.member_invite.preview', { lng, entityName, appName })}>
       {senderName && (
         <Row style={{ margin: '1.5rem 0 1rem' }}>
           <Column align="center">
@@ -36,7 +36,7 @@ export const MemberInviteEmail = ({ name, lng, senderName, role, orgName, member
           <div
             // biome-ignore lint/security/noDangerouslySetInnerHtml: trusted HTML content from a secure source
             dangerouslySetInnerHTML={{
-              __html: i18n.t('backend:email.member_invite.title', { lng, orgName }),
+              __html: i18n.t('backend:email.member_invite.title', { lng, entityName }),
             }}
           />
         }
@@ -47,7 +47,7 @@ export const MemberInviteEmail = ({ name, lng, senderName, role, orgName, member
           <span
             // biome-ignore lint/security/noDangerouslySetInnerHtml: trusted HTML content from a secure source
             dangerouslySetInnerHTML={{
-              __html: i18n.t('backend:email.member_invite.text', { lng, orgName, appName, senderName, role }),
+              __html: i18n.t('backend:email.member_invite.text', { lng, entityName, appName, senderName, role }),
             }}
           />
         </Text>

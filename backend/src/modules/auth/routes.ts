@@ -1,5 +1,3 @@
-import { z } from '@hono/zod-openapi';
-import { appConfig } from 'config';
 import { createCustomRoute } from '#/lib/custom-routes';
 import { hasSystemAccess, isAuthenticated, isPublicAccess } from '#/middlewares/guard';
 import { hasValidToken } from '#/middlewares/has-valid-token';
@@ -17,6 +15,8 @@ import { entityBaseSchema } from '#/modules/entities/schema';
 import { membershipSummarySchema } from '#/modules/memberships/schema';
 import { cookieSchema, idSchema, passwordSchema, tokenParamSchema } from '#/utils/schema/common';
 import { errorResponses, successWithoutDataSchema } from '#/utils/schema/responses';
+import { z } from '@hono/zod-openapi';
+import { appConfig } from 'config';
 
 const authRoutes = {
   startImpersonation: createCustomRoute({
@@ -171,37 +171,7 @@ const authRoutes = {
       ...errorResponses,
     },
   }),
-  resendInvitation: createCustomRoute({
-    operationId: 'resendInvitation',
-    method: 'post',
-    path: '/resend-invitation',
-    guard: isPublicAccess,
-    middleware: [spamLimiter],
-    tags: ['auth'],
-    summary: 'Resend invitation',
-    description: 'Resends an invitation email to a new or existing user using the provided email address and token ID.',
-    security: [],
-    request: {
-      body: {
-        content: {
-          'application/json': {
-            schema: z.object({ email: z.email(), tokenId: z.string().optional() }),
-          },
-        },
-      },
-    },
-    responses: {
-      200: {
-        description: 'Invitation email sent',
-        content: {
-          'application/json': {
-            schema: successWithoutDataSchema,
-          },
-        },
-      },
-      ...errorResponses,
-    },
-  }),
+
   verifyEmail: createCustomRoute({
     operationId: 'verifyEmail',
     method: 'get',

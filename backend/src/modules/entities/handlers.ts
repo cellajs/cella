@@ -1,6 +1,3 @@
-import { OpenAPIHono, type z } from '@hono/zod-openapi';
-import { appConfig } from 'config';
-import { and, eq, ilike, inArray, isNotNull } from 'drizzle-orm';
 import { db } from '#/db/db';
 import { membershipsTable } from '#/db/schema/memberships';
 import { usersTable } from '#/db/schema/users';
@@ -17,6 +14,9 @@ import { userSummarySelect } from '#/modules/users/helpers/select';
 import { defaultHook } from '#/utils/default-hook';
 import { getOrderColumn } from '#/utils/order-column';
 import { prepareStringForILikeFilter } from '#/utils/sql';
+import { OpenAPIHono, type z } from '@hono/zod-openapi';
+import { appConfig } from 'config';
+import { and, eq, ilike, inArray, isNotNull, isNull } from 'drizzle-orm';
 
 const app = new OpenAPIHono<Env>({ defaultHook });
 
@@ -98,6 +98,8 @@ const entityRouteHandlers = app
           eq(membershipsTable[entityIdField], table.id),
           eq(membershipsTable.userId, userId),
           eq(membershipsTable.contextType, type),
+          isNull(membershipsTable.tokenId),
+          isNotNull(membershipsTable.activatedAt),
           ...(roles?.length ? [inArray(membershipsTable.role, roles)] : []),
         ),
       )
