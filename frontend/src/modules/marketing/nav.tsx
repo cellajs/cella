@@ -18,10 +18,10 @@ export const MarketingNav = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
 
-  const [showSheet, setShowSheet] = useState<boolean>(false);
+  const [activeSheet, setActiveSheet] = useState<boolean>(false);
 
   const toggleSheet = (isOpen: boolean) => {
-    setShowSheet(isOpen);
+    setActiveSheet(isOpen);
   };
 
   const handleNavClick = (target: AboutSectionId, isOpen = false) => {
@@ -31,7 +31,7 @@ export const MarketingNav = () => {
       navigate({ hash: target, replace: true });
     }, 20);
 
-    setShowSheet(isOpen);
+    setActiveSheet(isOpen);
   };
 
   const { ref, inView } = useInView();
@@ -45,7 +45,7 @@ export const MarketingNav = () => {
         key={id}
         draggable="false"
         onClick={(e) => {
-          setShowSheet(false);
+          setActiveSheet(false);
           if (window.location.hash !== `#${hash}`) return;
           if (!hash) return;
           e.preventDefault();
@@ -62,9 +62,10 @@ export const MarketingNav = () => {
     window.open(url, '_blank', 'noreferrer');
   };
 
-  const hamburgerToggle = (open: boolean) => {
-    setShowSheet(open);
-    if (open) window.scrollTo({ top: 0, behavior: 'smooth' });
+  const hamburgerToggle = () => {
+    const isActive = !activeSheet;
+    setActiveSheet(isActive);
+    if (isActive) window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   return (
@@ -72,15 +73,15 @@ export const MarketingNav = () => {
       <header className="absolute top-2 sm:top-4 px-2 lg:top-8 lg:px-4 z-121 h-16 w-full">
         <div className="flex h-full items-center gap-2 max-w-[84rem] mx-auto justify-between transition-colors duration-300">
           <div className="flex h-full items-center gap-2 md:gap-6">
-            <div className="md:hidden">
-              <HamburgerButton isOpen={showSheet} toggle={hamburgerToggle} />
+            <div className="md:hidden pointer-events-auto!">
+              <HamburgerButton isOpen={activeSheet} toggle={hamburgerToggle} />
             </div>
 
             <Link
               to="/about"
               hash=""
               replace={location.pathname === '/about'}
-              className="md:ml-1 sm:mr-1 md:mr-2 md:pr-4 hover:opacity-90 active:scale-95 relative p-0.5 rounded-md focus-effect"
+              className="md:ml-1 sm:mr-1 md:mr-2 md:pr-4 hover:opacity-90 active:scale-95 relative p-0.5 rounded-md focus-effect pointer-events-auto!"
               aria-label="Go to about page"
             >
               <Logo height={36} />
@@ -103,7 +104,9 @@ export const MarketingNav = () => {
             {marketingNavConfig?.length && <nav className="hidden h-full items-center gap-4 md:flex">{renderNavItems()}</nav>}
           </div>
 
-          <div className={`gap-2 px-2 flex items-center transition-opacity duration-300 ease-in-out ${showSheet ? 'opacity-0' : 'max-sm:delay-700'}`}>
+          <div
+            className={`gap-2 px-2 flex items-center transition-opacity duration-300 ease-in-out ${activeSheet ? 'opacity-0' : 'max-sm:delay-700'}`}
+          >
             <UserLanguage />
 
             <UserTheme buttonClassName="max-xs:hidden mr-2" />
@@ -129,18 +132,18 @@ export const MarketingNav = () => {
         </div>
       </header>
 
-      <Sheet open={showSheet} onOpenChange={toggleSheet}>
+      <Sheet open={activeSheet} onOpenChange={toggleSheet}>
         <SheetContent
           aria-describedby={undefined}
           side="top"
           hideClose={true}
-          className={`fixed z-120 border-none pb-8 ${showSheet ? '' : 'delay-300'}`}
+          className={`fixed z-120 border-none pb-8 ${activeSheet ? '' : 'delay-300'}`}
         >
           <SheetHiddenTitle>Navigation</SheetHiddenTitle>
           <div
             ref={ref}
             className={`flex mt-2 flex-col pt-14 gap-2 md:hidden items-stretch transition-opacity duration-200 ease-in-out ${
-              inView && showSheet ? 'opacity-100 delay-300' : 'opacity-0'
+              inView && activeSheet ? 'opacity-100 delay-300' : 'opacity-0'
             }`}
           >
             <div className="flex justify-between mb-4">
@@ -152,7 +155,7 @@ export const MarketingNav = () => {
                 size="lg"
                 className="sm:hidden"
                 onClick={() => {
-                  setShowSheet(false);
+                  setActiveSheet(false);
                   openInNewTab(appConfig.company.githubUrl);
                 }}
               >

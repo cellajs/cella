@@ -452,5 +452,11 @@
   "still_not_accepted": "{{count}} of {{total}} haven't accepted the invitation yet.",
   "sign_out_first": "Sign out first",
   "resend": "Resend",
-  "success.resend_invitation": "A new invitation email has been sent!"
+  "entity": "Entity",
+  "action": "Action",
+  "success.resend_invitation": "A new invitation email has been sent!",
+  "dont_have_any_invites":"No invites yet. When someone invites you to join their entity, you'll see it here.",
+  "show_all_invites":"Show all invites",
+  "retry_resend_invitation.text": "Wait 1 minute before sending another invite.",
+  "resend_invitation.text": "Send a duplicate invitation with a new expiration date."
 }

@@ -1,10 +1,3 @@
-import { getRandomValues } from 'node:crypto';
-import { OpenAPIHono } from '@hono/zod-openapi';
-import { encodeBase64 } from '@oslojs/encoding';
-import { generateCodeVerifier, generateState, OAuth2RequestError } from 'arctic';
-import { appConfig, type EnabledOAuthProvider } from 'config';
-import { and, desc, eq, isNotNull, isNull } from 'drizzle-orm';
-import i18n from 'i18next';
 import { db } from '#/db/db';
 import { emailsTable } from '#/db/schema/emails';
 import { membershipsTable } from '#/db/schema/memberships';
@@ -33,13 +26,13 @@ import {
 } from '#/modules/auth/helpers/oauth/cookies';
 import { basicFlow, connectFlow, getOAuthAccount, inviteFlow, verifyFlow } from '#/modules/auth/helpers/oauth/index';
 import {
+  githubAuth,
   type GithubUserEmailProps,
   type GithubUserProps,
-  type GoogleUserProps,
-  githubAuth,
   googleAuth,
-  type MicrosoftUserProps,
+  type GoogleUserProps,
   microsoftAuth,
+  type MicrosoftUserProps,
 } from '#/modules/auth/helpers/oauth/oauth-providers';
 import { transformGithubUserData, transformSocialUserData } from '#/modules/auth/helpers/oauth/transform-user-data';
 import { verifyPassKeyPublic } from '#/modules/auth/helpers/passkey';
@@ -57,6 +50,13 @@ import { logEvent } from '#/utils/logger';
 import { nanoid } from '#/utils/nanoid';
 import { slugFromEmail } from '#/utils/slug-from-email';
 import { createDate, TimeSpan } from '#/utils/time-span';
+import { OpenAPIHono } from '@hono/zod-openapi';
+import { encodeBase64 } from '@oslojs/encoding';
+import { generateCodeVerifier, generateState, OAuth2RequestError } from 'arctic';
+import { appConfig, type EnabledOAuthProvider } from 'config';
+import { and, desc, eq, isNotNull, isNull } from 'drizzle-orm';
+import i18n from 'i18next';
+import { getRandomValues } from 'node:crypto';
 import { CreatePasswordEmail, type CreatePasswordEmailProps } from '../../../emails/create-password';
 
 const enabledStrategies: readonly string[] = appConfig.enabledAuthStrategies;
@@ -93,7 +93,16 @@ const authRouteHandlers = app
     const [inviteToken] = await db
       .select()
       .from(tokensTable)
-      .where(and(eq(tokensTable.email, normalizedEmail), eq(tokensTable.type, 'invitation'), isNull(tokensTable.userId)));
+      .where(
+        and(
+          eq(tokensTable.email, normalizedEmail),
+          eq(tokensTable.type, 'invitation'),
+          isNull(tokensTable.userId),
+          isNotNull(tokensTable.entityType),
+          isNotNull(tokensTable.role),
+        ),
+      )
+      .limit(1);
 
     if (inviteToken) throw new AppError({ status: 403, type: 'invite_takes_priority', severity: 'warn' });
 
@@ -162,34 +171,6 @@ const authRouteHandlers = app
     const user = await handleCreateUser({ newUser, membershipInviteTokenId, emailVerified: true });
 
     await setUserSession(ctx, user, 'password');
-
-    // Return
-    return ctx.json(true, 200);
-  })
-  /*
-   * Resend invitation email, also used to resend verification email.
-   */
-  .openapi(authRoutes.resendInvitation, async (ctx) => {
-    const { email, tokenId } = ctx.req.valid('json');
-
-    const normalizedEmail = email.toLowerCase().trim();
-
-    // Get user by email
-    const user = await getUserBy('email', normalizedEmail);
-    if (!user) throw new AppError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'user' });
-
-    // Find token by userId and if available also tokenId
-    const filters = [eq(tokensTable.type, 'invitation'), eq(tokensTable.userId, user.id)];
-    if (tokenId) filters.push(eq(tokensTable.id, tokenId));
-
-    // Get token
-    const [tokenRecord] = await db
-      .select()
-      .from(tokensTable)
-      .where(and(...filters));
-    if (!tokenRecord || !tokenRecord.userId) throw new AppError({ status: 404, type: 'not_found', severity: 'warn' });
-
-    // TODO add function that creates and sends invitation email with existing token and tokenId. However, if token is beyond 50% expired, it should remove the old token and create a new token and send it.
 
     // Return
     return ctx.json(true, 200);

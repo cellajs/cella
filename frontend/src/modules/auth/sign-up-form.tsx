@@ -7,7 +7,7 @@ import { lazy, type RefObject, Suspense, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import type { z } from 'zod';
-import { type SignUpData, type SignUpResponse, type SignUpWithTokenData, type SignUpWithTokenResponse, signUp, signUpWithToken } from '~/api.gen';
+import { signUp, type SignUpData, type SignUpResponse, signUpWithToken, type SignUpWithTokenData, type SignUpWithTokenResponse } from '~/api.gen';
 import { zSignUpData } from '~/api.gen/zod.gen';
 import type { ApiError } from '~/lib/api';
 import type { AuthStep, TokenData } from '~/modules/auth/types';
@@ -49,9 +49,7 @@ export const SignUpForm = ({ tokenData, email, setStep, resetSteps, emailEnabled
     onSuccess: () => navigate({ to: '/auth/email-verification/$reason', params: { reason: 'signup' }, replace: true }),
     onError: (error: ApiError) => {
       // If there is an unclaimed invitation token, redirect to error page
-      if (error.type === 'invite_takes_priority') {
-        return setStep('error', form.getValues('email'), error);
-      }
+      if (error.type === 'invite_takes_priority') return setStep('error', form.getValues('email'), error);
     },
   });
 

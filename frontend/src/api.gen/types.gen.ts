@@ -311,60 +311,6 @@ export type SignUpWithTokenResponses = {
 
 export type SignUpWithTokenResponse = SignUpWithTokenResponses[keyof SignUpWithTokenResponses];
 
-export type ResendInvitationData = {
-  body?: {
-    email: string;
-    tokenId?: string;
-  };
-  path?: never;
-  query?: never;
-  url: '/auth/resend-invitation';
-};
-
-export type ResendInvitationErrors = {
-  /**
-   * Bad request: problem processing request.
-   */
-  400: ApiError & {
-    status?: 400;
-  };
-  /**
-   * Unauthorized: authentication required.
-   */
-  401: ApiError & {
-    status?: 401;
-  };
-  /**
-   * Forbidden: insufficient permissions.
-   */
-  403: ApiError & {
-    status?: 403;
-  };
-  /**
-   * Not found: resource does not exist.
-   */
-  404: ApiError & {
-    status?: 404;
-  };
-  /**
-   * Rate limit: too many requests.
-   */
-  429: ApiError & {
-    status?: 429;
-  };
-};
-
-export type ResendInvitationError = ResendInvitationErrors[keyof ResendInvitationErrors];
-
-export type ResendInvitationResponses = {
-  /**
-   * Invitation email sent
-   */
-  200: boolean;
-};
-
-export type ResendInvitationResponse = ResendInvitationResponses[keyof ResendInvitationResponses];
-
 export type VerifyEmailData = {
   body?: never;
   path: {
@@ -1609,6 +1555,79 @@ export type GetMyMenuResponses = {
 };
 
 export type GetMyMenuResponse = GetMyMenuResponses[keyof GetMyMenuResponses];
+
+export type GetMyInvitesData = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: '/me/invites';
+};
+
+export type GetMyInvitesErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: ApiError & {
+    status?: 400;
+  };
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: ApiError & {
+    status?: 401;
+  };
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ApiError & {
+    status?: 403;
+  };
+  /**
+   * Not found: resource does not exist.
+   */
+  404: ApiError & {
+    status?: 404;
+  };
+  /**
+   * Rate limit: too many requests.
+   */
+  429: ApiError & {
+    status?: 429;
+  };
+};
+
+export type GetMyInvitesError = GetMyInvitesErrors[keyof GetMyInvitesErrors];
+
+export type GetMyInvitesResponses = {
+  /**
+   * Invites of user
+   */
+  200: Array<{
+    entity: {
+      id: string;
+      entityType: 'organization';
+      slug: string;
+      name: string;
+      thumbnailUrl?: string | null;
+      bannerUrl?: string | null;
+      organizationId?: string;
+    };
+    expiresAt: string;
+    invitedBy: {
+      id: string;
+      entityType: 'user';
+      slug: string;
+      name: string;
+      thumbnailUrl?: string | null;
+      bannerUrl?: string | null;
+      email: string;
+    } | null;
+    token: string;
+    tokenId: string;
+  }>;
+};
+
+export type GetMyInvitesResponse = GetMyInvitesResponses[keyof GetMyInvitesResponses];
 
 export type DeleteMySessionsData = {
   body?: {
@@ -4041,7 +4060,7 @@ export type MembershipInviteError = MembershipInviteErrors[keyof MembershipInvit
 
 export type MembershipInviteResponses = {
   /**
-   * Number of sended invitations
+   * Number of sent invitations
    */
   200: {
     success: boolean;
@@ -4290,6 +4309,60 @@ export type GetPendingInvitationsResponses = {
 };
 
 export type GetPendingInvitationsResponse = GetPendingInvitationsResponses[keyof GetPendingInvitationsResponses];
+
+export type ResendInvitationData = {
+  body?: {
+    email: string;
+    tokenId?: string;
+  };
+  path?: never;
+  query?: never;
+  url: '/{orgIdOrSlug}/memberships/resend-invitation';
+};
+
+export type ResendInvitationErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: ApiError & {
+    status?: 400;
+  };
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: ApiError & {
+    status?: 401;
+  };
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ApiError & {
+    status?: 403;
+  };
+  /**
+   * Not found: resource does not exist.
+   */
+  404: ApiError & {
+    status?: 404;
+  };
+  /**
+   * Rate limit: too many requests.
+   */
+  429: ApiError & {
+    status?: 429;
+  };
+};
+
+export type ResendInvitationError = ResendInvitationErrors[keyof ResendInvitationErrors];
+
+export type ResendInvitationResponses = {
+  /**
+   * Invitation email sent
+   */
+  200: boolean;
+};
+
+export type ResendInvitationResponse = ResendInvitationResponses[keyof ResendInvitationResponses];
 
 export type ClientOptions = {
   baseUrl: 'http://localhost:4000' | (string & {});

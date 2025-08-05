@@ -4,7 +4,7 @@ import { cn } from '~/utils/cn';
 
 interface HamburgerButtonProps {
   isOpen: boolean;
-  toggle: (isOpen: boolean) => void;
+  toggle: () => void;
   className?: string;
 }
 const HamburgerLine = ({ className, lineColor }: { className: string; lineColor: string }) => (
@@ -23,9 +23,9 @@ const HamburgerButton = ({ isOpen, toggle, className }: HamburgerButtonProps) =>
     <Button
       size="lg"
       variant="ghost"
-      className={cn('group flex h-10 w-10 flex-col items-center hover:opacity-50 justify-center', className)}
+      className={cn('group flex h-10 w-10 flex-col items-center hover:opacity-50 justify-center', className, isOpen && 'pointer-events-none')}
       type="button"
-      onClick={() => toggle(!isOpen)}
+      onClick={() => toggle()}
       aria-expanded={isOpen}
       aria-label="toggle menu"
     >

@@ -1,7 +1,6 @@
-import { z } from '@hono/zod-openapi';
-
 import { createCustomRoute } from '#/lib/custom-routes';
-import { hasOrgAccess, isAuthenticated } from '#/middlewares/guard';
+import { hasOrgAccess, isAuthenticated, isPublicAccess } from '#/middlewares/guard';
+import { spamLimiter } from '#/middlewares/rate-limiter/limiters';
 import {
   memberListQuerySchema,
   membershipCreateBodySchema,
@@ -12,7 +11,8 @@ import {
 } from '#/modules/memberships/schema';
 import { memberSchema } from '#/modules/users/schema';
 import { entityWithTypeQuerySchema, idInOrgParamSchema, idOrSlugSchema, idsBodySchema, inOrgParamSchema } from '#/utils/schema/common';
-import { errorResponses, paginationSchema, successWithRejectedItemsSchema } from '#/utils/schema/responses';
+import { errorResponses, paginationSchema, successWithoutDataSchema, successWithRejectedItemsSchema } from '#/utils/schema/responses';
+import { z } from '@hono/zod-openapi';
 
 const membershipRoutes = {
   createMemberships: createCustomRoute({
@@ -36,7 +36,7 @@ const membershipRoutes = {
     },
     responses: {
       200: {
-        description: 'Number of sended invitations',
+        description: 'Number of sent invitations',
         content: { 'application/json': { schema: successWithRejectedItemsSchema.extend({ invitesSentCount: z.number() }) } },
       },
       ...errorResponses,
@@ -139,6 +139,28 @@ const membershipRoutes = {
             schema: paginationSchema(pendingInvitationSchema),
           },
         },
+      },
+      ...errorResponses,
+    },
+  }),
+
+  resendInvitation: createCustomRoute({
+    operationId: 'resendInvitation',
+    method: 'post',
+    path: '/resend-invitation',
+    guard: isPublicAccess,
+    middleware: [spamLimiter],
+    tags: ['memberships'],
+    summary: 'Resend invitation',
+    description: 'Resends an invitation email to a new or existing user using the provided email address and token ID.',
+    security: [],
+    request: {
+      body: { content: { 'application/json': { schema: z.object({ email: z.email(), tokenId: z.string().optional() }) } } },
+    },
+    responses: {
+      200: {
+        description: 'Invitation email sent',
+        content: { 'application/json': { schema: successWithoutDataSchema } },
       },
       ...errorResponses,
     },

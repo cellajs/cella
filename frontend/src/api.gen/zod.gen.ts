@@ -209,22 +209,6 @@ export const zSignUpWithTokenData = z.object({
  */
 export const zSignUpWithTokenResponse = z.boolean();
 
-export const zResendInvitationData = z.object({
-  body: z.optional(
-    z.object({
-      email: z.email(),
-      tokenId: z.optional(z.string()),
-    }),
-  ),
-  path: z.optional(z.never()),
-  query: z.optional(z.never()),
-});
-
-/**
- * Invitation email sent
- */
-export const zResendInvitationResponse = z.boolean();
-
 export const zVerifyEmailData = z.object({
   body: z.optional(z.never()),
   path: z.object({
@@ -635,6 +619,44 @@ export const zGetMyMenuResponse = z.object({
     }),
   ),
 });
+
+export const zGetMyInvitesData = z.object({
+  body: z.optional(z.never()),
+  path: z.optional(z.never()),
+  query: z.optional(z.never()),
+});
+
+/**
+ * Invites of user
+ */
+export const zGetMyInvitesResponse = z.array(
+  z.object({
+    entity: z.object({
+      id: z.string(),
+      entityType: z.enum(['organization']),
+      slug: z.string(),
+      name: z.string(),
+      thumbnailUrl: z.optional(z.union([z.string(), z.null()])),
+      bannerUrl: z.optional(z.union([z.string(), z.null()])),
+      organizationId: z.optional(z.string()),
+    }),
+    expiresAt: z.iso.date(),
+    invitedBy: z.union([
+      z.object({
+        id: z.string(),
+        entityType: z.enum(['user']),
+        slug: z.string(),
+        name: z.string(),
+        thumbnailUrl: z.optional(z.union([z.string(), z.null()])),
+        bannerUrl: z.optional(z.union([z.string(), z.null()])),
+        email: z.email(),
+      }),
+      z.null(),
+    ]),
+    token: z.string(),
+    tokenId: z.string(),
+  }),
+);
 
 export const zDeleteMySessionsData = z.object({
   body: z.optional(
@@ -1652,7 +1674,7 @@ export const zMembershipInviteData = z.object({
 });
 
 /**
- * Number of sended invitations
+ * Number of sent invitations
  */
 export const zMembershipInviteResponse = z.object({
   success: z.boolean(),
@@ -1786,3 +1808,19 @@ export const zGetPendingInvitationsResponse = z.object({
   ),
   total: z.number(),
 });
+
+export const zResendInvitationData = z.object({
+  body: z.optional(
+    z.object({
+      email: z.email(),
+      tokenId: z.optional(z.string()),
+    }),
+  ),
+  path: z.optional(z.never()),
+  query: z.optional(z.never()),
+});
+
+/**
+ * Invitation email sent
+ */
+export const zResendInvitationResponse = z.boolean();

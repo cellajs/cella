@@ -18,8 +18,8 @@
     "paths": {
       "#/*": ["./src/*"],
       "#json/*": ["../json/*"],
-    }
+    },
   },
-  "include": ["src/**/*", "drizzle.config.ts", "emails", "scripts", "trigger.config.ts", "../config/*"],
+  "include": ["src/**/*", "drizzle.config.ts", "emails", "mocks",  "tests", "scripts", "trigger.config.ts", "../config/*"],
   "exclude": ["**/node_modules", "**/dist", "**/.*/"]
 }
