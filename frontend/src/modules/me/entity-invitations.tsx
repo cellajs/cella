@@ -1,11 +1,9 @@
 import { useMutation, useSuspenseQuery } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
-import { Origami } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-import { acceptEntityInvite, type AcceptEntityInviteResponse, type ApiError, type GetMyInvitesResponse } from '~/api.gen';
+import { type AcceptEntityInviteResponse, type ApiError, acceptEntityInvite, type GetMyInvitesResponse } from '~/api.gen';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
-import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { ExpandableList } from '~/modules/common/expandable-list';
 import { getAndSetMenu } from '~/modules/me/helpers';
 import { meInvitesQueryOptions, meKeys } from '~/modules/me/query';
@@ -44,8 +42,7 @@ export const EntityInvites = ({ cardClassName, placeholderClassName }: EntityInv
 
   const callback = () => queryClient.invalidateQueries({ queryKey: meKeys.invites() });
 
-  if (!invites?.length) return <ContentPlaceholder icon={Origami} title={t('common:dont_have_any_invites')} className={placeholderClassName} />;
-
+  if (!invites?.length) return;
   return (
     <Card className={cardClassName}>
       <CardHeader className="p-4 border-b">

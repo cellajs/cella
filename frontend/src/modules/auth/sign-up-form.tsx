@@ -7,7 +7,7 @@ import { lazy, type RefObject, Suspense, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import type { z } from 'zod';
-import { signUp, type SignUpData, type SignUpResponse, signUpWithToken, type SignUpWithTokenData, type SignUpWithTokenResponse } from '~/api.gen';
+import { type SignUpData, type SignUpResponse, type SignUpWithTokenData, type SignUpWithTokenResponse, signUp, signUpWithToken } from '~/api.gen';
 import { zSignUpData } from '~/api.gen/zod.gen';
 import type { ApiError } from '~/lib/api';
 import type { AuthStep, TokenData } from '~/modules/auth/types';
@@ -168,10 +168,10 @@ export const LegalNotice = ({ email = '', mode = 'signup' }: { email?: string; m
   };
 
   return (
-    <p className="font-light text-center space-x-0.5">
-      <span>{mode === 'signup' && t('common:legal_notice.text', { email })}</span>
-      <span>{mode === 'waitlist' && t('common:legal_notice_waitlist.text', { email })}</span>
-      <span>{mode === 'verify' && t('common:request_verification.legal_notice')}</span>
+    <p className="font-light text-center space-x-1">
+      {mode === 'signup' && <span>{t('common:legal_notice.text', { email })}</span>}
+      {mode === 'waitlist' && <span>{t('common:legal_notice_waitlist.text', { email })}</span>}
+      {mode === 'verify' && <span>{t('common:request_verification.legal_notice')}</span>}
       <Button ref={termsButtonRef} type="button" variant="link" className="p-0 text-base h-auto" onClick={openDialog('terms', termsButtonRef)}>
         {t('common:terms').toLocaleLowerCase()}
       </Button>
