@@ -155,7 +155,7 @@ const membershipRoutes = {
     description: 'Resends an invitation email to a new or existing user using the provided email address and token ID.',
     security: [],
     request: {
-      body: { content: { 'application/json': { schema: z.object({ email: z.email(), tokenId: z.string() }) } } },
+      body: { content: { 'application/json': { schema: z.object({ email: z.email(), tokenId: z.string().optional() }) } } },
     },
     responses: {
       200: {

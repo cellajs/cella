@@ -87,9 +87,7 @@ const AuthSteps = () => {
       )}
       {step === 'error' && (
         <AuthErrorNotice error={authError}>
-          {authError?.type === 'invite_takes_priority' && tokenId && (
-            <ResendMembershipInviteButton resendData={{ email, tokenId }} buttonProps={{ size: 'lg' }} />
-          )}
+          {authError?.type === 'invite_takes_priority' && <ResendMembershipInviteButton resendData={{ email }} buttonProps={{ size: 'lg' }} />}
         </AuthErrorNotice>
       )}
 

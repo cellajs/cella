@@ -93,7 +93,16 @@ const authRouteHandlers = app
     const [inviteToken] = await db
       .select()
       .from(tokensTable)
-      .where(and(eq(tokensTable.email, normalizedEmail), eq(tokensTable.type, 'invitation'), isNull(tokensTable.userId)));
+      .where(
+        and(
+          eq(tokensTable.email, normalizedEmail),
+          eq(tokensTable.type, 'invitation'),
+          isNull(tokensTable.userId),
+          isNotNull(tokensTable.entityType),
+          isNotNull(tokensTable.role),
+        ),
+      )
+      .limit(1);
 
     if (inviteToken) throw new AppError({ status: 403, type: 'invite_takes_priority', severity: 'warn' });
 

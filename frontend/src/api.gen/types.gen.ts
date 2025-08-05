@@ -4313,7 +4313,7 @@ export type GetPendingInvitationsResponse = GetPendingInvitationsResponses[keyof
 export type ResendInvitationData = {
   body?: {
     email: string;
-    tokenId: string;
+    tokenId?: string;
   };
   path?: never;
   query?: never;
