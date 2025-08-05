@@ -496,20 +496,19 @@ const membershipRouteHandlers = app
     const { email, tokenId } = ctx.req.valid('json');
     const normalizedEmail = email.toLowerCase().trim();
 
-    // Build token filters
-    const filters = [
-      eq(tokensTable.type, 'invitation'),
-      eq(tokensTable.email, normalizedEmail),
-      isNotNull(tokensTable.entityType),
-      isNotNull(tokensTable.role),
-    ];
-    if (tokenId) filters.push(eq(tokensTable.id, tokenId));
-
     // Retrieve token
     const [oldToken] = await db
       .select()
       .from(tokensTable)
-      .where(and(...filters));
+      .where(
+        and(
+          eq(tokensTable.type, 'invitation'),
+          eq(tokensTable.email, normalizedEmail),
+          eq(tokensTable.id, tokenId),
+          isNotNull(tokensTable.entityType),
+          isNotNull(tokensTable.role),
+        ),
+      );
 
     if (!oldToken) throw new AppError({ status: 404, type: 'not_found', severity: 'warn' });
 

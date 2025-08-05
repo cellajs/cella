@@ -1,11 +1,8 @@
-import { useMutation } from '@tanstack/react-query';
 import { useSearch } from '@tanstack/react-router';
 import { appConfig } from 'config';
-import { Lock, Mail } from 'lucide-react';
+import { Lock } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { toast } from 'sonner';
-import { type ResendInvitationResponse, resendInvitation } from '~/api.gen';
 import type { ApiError } from '~/lib/api';
 import AuthErrorNotice from '~/modules/auth/auth-error-notice';
 import { CheckEmailForm } from '~/modules/auth/check-email-form';
@@ -18,10 +15,9 @@ import type { AuthStep } from '~/modules/auth/types';
 import { useCheckToken } from '~/modules/auth/use-token-check';
 import { WaitlistForm } from '~/modules/auth/waitlist-form';
 import Spinner from '~/modules/common/spinner';
+import { ResendMembershipInviteButton } from '~/modules/memberships/resend-membership-invitation';
 import { AuthenticateRoute } from '~/routes/auth';
 import { useUserStore } from '~/store/user';
-import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
-import { Button } from '~/modules/ui/button';
 
 const enabledStrategies: readonly string[] = appConfig.enabledAuthStrategies;
 const emailEnabled = enabledStrategies.includes('password') || enabledStrategies.includes('passkey');
@@ -49,16 +45,6 @@ const AuthSteps = () => {
     setStep('checkEmail');
     setHasPasskey(false);
   };
-
-  // TODO make into a ResendInvitationButton component? Also keep state to prevent multiple sends, similar to disabledResetPassword
-  const { mutate: _resendInvitation, isPending } = useMutation<ResendInvitationResponse, ApiError, string>({
-    mutationFn: () => resendInvitation({ body: { email } }),
-    onSuccess: () => {
-      toast.success(t('common:success.resend_invitation'));
-      useDialoger.getState().remove();
-    },
-    onError: () => document.getElementById('reset-email-field')?.focus(),
-  });
 
   const { data: tokenData, isLoading, error } = useCheckToken('invitation', tokenId, !!(token && tokenId));
 
@@ -101,11 +87,8 @@ const AuthSteps = () => {
       )}
       {step === 'error' && (
         <AuthErrorNotice error={authError}>
-          {authError?.type === 'invite_takes_priority' && (
-            <Button size="lg" onClick={() => _resendInvitation(email)} loading={isPending}>
-              <Mail size={16} className="mr-2" />
-              {t('common:resend')}
-            </Button>
+          {authError?.type === 'invite_takes_priority' && tokenId && (
+            <ResendMembershipInviteButton resendData={{ email, tokenId }} buttonProps={{ size: 'lg' }} />
           )}
         </AuthErrorNotice>
       )}

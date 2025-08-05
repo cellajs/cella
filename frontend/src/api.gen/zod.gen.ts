@@ -654,6 +654,7 @@ export const zGetMyInvitesResponse = z.array(
       z.null(),
     ]),
     token: z.string(),
+    tokenId: z.string(),
   }),
 );
 
@@ -1812,7 +1813,7 @@ export const zResendInvitationData = z.object({
   body: z.optional(
     z.object({
       email: z.email(),
-      tokenId: z.optional(z.string()),
+      tokenId: z.string(),
     }),
   ),
   path: z.optional(z.never()),
