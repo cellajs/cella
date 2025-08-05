@@ -1,7 +1,7 @@
 import { useParams } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
+import { LegalNotice } from '~/modules/auth/sign-up-form';
 import { EmailVerificationRoute } from '~/routes/auth';
-import { LegalNotice } from './sign-up-form';
 
 const EmailVerification = () => {
   const { reason } = useParams({ from: EmailVerificationRoute.id });

@@ -20,8 +20,8 @@ import { WaitlistForm } from '~/modules/auth/waitlist-form';
 import Spinner from '~/modules/common/spinner';
 import { AuthenticateRoute } from '~/routes/auth';
 import { useUserStore } from '~/store/user';
-import { useDialoger } from '../common/dialoger/use-dialoger';
-import { Button } from '../ui/button';
+import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
+import { Button } from '~/modules/ui/button';
 
 const enabledStrategies: readonly string[] = appConfig.enabledAuthStrategies;
 const emailEnabled = enabledStrategies.includes('password') || enabledStrategies.includes('passkey');

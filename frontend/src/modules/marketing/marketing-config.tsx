@@ -1,8 +1,8 @@
 import { appConfig } from 'config';
 import { Building2, Cloud, Github, Users } from 'lucide-react';
+import type { Integration } from '~/modules/marketing/about/integrations';
+import type { PricingPlan } from '~/modules/marketing/about/pricing';
 import { nanoid } from '~/utils/nanoid';
-import type { Integration } from './about/integrations';
-import type { PricingPlan } from './about/pricing';
 
 /*************************************************************************************************
  * Nav
