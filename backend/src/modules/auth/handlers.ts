@@ -1,10 +1,3 @@
-import { getRandomValues } from 'node:crypto';
-import { OpenAPIHono } from '@hono/zod-openapi';
-import { encodeBase64 } from '@oslojs/encoding';
-import { generateCodeVerifier, generateState, OAuth2RequestError } from 'arctic';
-import { appConfig, type EnabledOAuthProvider } from 'config';
-import { and, desc, eq, isNotNull, isNull } from 'drizzle-orm';
-import i18n from 'i18next';
 import { db } from '#/db/db';
 import { emailsTable } from '#/db/schema/emails';
 import { membershipsTable } from '#/db/schema/memberships';
@@ -33,13 +26,13 @@ import {
 } from '#/modules/auth/helpers/oauth/cookies';
 import { basicFlow, connectFlow, getOAuthAccount, inviteFlow, verifyFlow } from '#/modules/auth/helpers/oauth/index';
 import {
+  githubAuth,
   type GithubUserEmailProps,
   type GithubUserProps,
-  type GoogleUserProps,
-  githubAuth,
   googleAuth,
-  type MicrosoftUserProps,
+  type GoogleUserProps,
   microsoftAuth,
+  type MicrosoftUserProps,
 } from '#/modules/auth/helpers/oauth/oauth-providers';
 import { transformGithubUserData, transformSocialUserData } from '#/modules/auth/helpers/oauth/transform-user-data';
 import { verifyPassKeyPublic } from '#/modules/auth/helpers/passkey';
@@ -57,8 +50,14 @@ import { logEvent } from '#/utils/logger';
 import { nanoid } from '#/utils/nanoid';
 import { slugFromEmail } from '#/utils/slug-from-email';
 import { createDate, TimeSpan } from '#/utils/time-span';
+import { OpenAPIHono } from '@hono/zod-openapi';
+import { encodeBase64 } from '@oslojs/encoding';
+import { generateCodeVerifier, generateState, OAuth2RequestError } from 'arctic';
+import { appConfig, type EnabledOAuthProvider } from 'config';
+import { and, desc, eq, isNotNull, isNull } from 'drizzle-orm';
+import i18n from 'i18next';
+import { getRandomValues } from 'node:crypto';
 import { CreatePasswordEmail, type CreatePasswordEmailProps } from '../../../emails/create-password';
-import { MemberInviteEmail, type MemberInviteEmailProps } from '../../../emails/member-invite';
 
 const enabledStrategies: readonly string[] = appConfig.enabledAuthStrategies;
 const enabledOAuthProviders: readonly string[] = appConfig.enabledOAuthProviders;
@@ -163,74 +162,6 @@ const authRouteHandlers = app
     const user = await handleCreateUser({ newUser, membershipInviteTokenId, emailVerified: true });
 
     await setUserSession(ctx, user, 'password');
-
-    // Return
-    return ctx.json(true, 200);
-  })
-  /*
-   * Resend invitation email for organization invites.
-   */
-  .openapi(authRoutes.resendInvitation, async (ctx) => {
-    const { email, tokenId } = ctx.req.valid('json');
-
-    const normalizedEmail = email.toLowerCase().trim();
-
-    // Get user by email
-    const user = await getUserBy('email', normalizedEmail);
-    if (!user) throw new AppError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'user' });
-
-    // Find token by userId and if available also tokenId
-    const filters = [eq(tokensTable.type, 'invitation'), eq(tokensTable.userId, user.id)];
-    if (tokenId) filters.push(eq(tokensTable.id, tokenId));
-
-    // Get token
-    const [tokenRecord] = await db
-      .select()
-      .from(tokensTable)
-      .where(and(...filters));
-    if (!tokenRecord) throw new AppError({ status: 404, type: 'not_found', severity: 'warn' });
-    if (!tokenRecord.userId || !tokenRecord.role || !tokenRecord.organizationId)
-      throw new AppError({ status: 401, type: 'invalid_request', severity: 'warn' });
-
-    // Generate new token
-    const newToken = {
-      ...tokenRecord,
-      id: nanoid(),
-      token: nanoid(40), // unique hashed token
-      createdBy: user.id,
-      expiresAt: createDate(new TimeSpan(7, 'd')),
-    };
-
-    // Get organization data
-    const [organization] = await db.select().from(organizationsTable).where(eq(organizationsTable.id, tokenRecord.organizationId));
-    if (!organization) throw new AppError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'organization' });
-
-    // Insert token first
-    const [insertedToken] = await db.insert(tokensTable).values(newToken).returning({ tokenId: tokensTable.id, token: tokensTable.token });
-
-    // Prepare and send invitation email
-    const recipient = {
-      email: user.email,
-      name: slugFromEmail(user.email),
-      memberInviteLink: `${appConfig.frontendUrl}/invitation/${insertedToken.token}?tokenId=${insertedToken.tokenId}`,
-    };
-
-    const emailProps = {
-      senderName: user.name,
-      senderThumbnailUrl: user.thumbnailUrl,
-      orgName: organization.name,
-      role: tokenRecord.role,
-      subject: i18n.t('backend:email.member_invite.subject', {
-        lng: organization.defaultLanguage,
-        appName: appConfig.name,
-        entityType: organization.name,
-      }),
-      lng: organization.defaultLanguage,
-    };
-
-    await mailer.prepareEmails<MemberInviteEmailProps, typeof recipient>(MemberInviteEmail, emailProps, [recipient], user.email);
-
-    logEvent({ msg: 'Invitation has been resent', meta: organization }); // Log invitation event
 
     // Return
     return ctx.json(true, 200);

@@ -11,9 +11,6 @@ import type {
   SignUpWithTokenData,
   SignUpWithTokenResponses,
   SignUpWithTokenErrors,
-  ResendInvitationData,
-  ResendInvitationResponses,
-  ResendInvitationErrors,
   VerifyEmailData,
   VerifyEmailErrors,
   RequestPasswordData,
@@ -195,6 +192,9 @@ import type {
   GetPendingInvitationsData,
   GetPendingInvitationsResponses,
   GetPendingInvitationsErrors,
+  ResendInvitationData,
+  ResendInvitationResponses,
+  ResendInvitationErrors,
 } from './types.gen';
 import { client as _heyApiClient } from './client.gen';
 
@@ -286,32 +286,6 @@ export const signUpWithToken = <ThrowOnError extends boolean = true>(options: Op
     headers: {
       'Content-Type': 'application/json',
       ...options.headers,
-    },
-  });
-};
-
-/**
- * Resend invitation
- * 🌐 Public access
- * ⏳ Spam (10/h)
- *
- * Resends an invitation email to a new or existing user using the provided email address and token ID.
- *
- * **POST /auth/resend-invitation** ·· [resendInvitation](http://localhost:4000/docs#tag/auth/post/auth/resend-invitation) ·· _auth_
- *
- * @param {resendInvitationData} options
- * @param {string=} options.body.email - `string` (optional)
- * @param {string=} options.body.tokenId - `string` (optional)
- * @returns Possible status codes: 200, 400, 401, 403, 404, 429
- */
-export const resendInvitation = <ThrowOnError extends boolean = true>(options?: Options<ResendInvitationData, ThrowOnError>) => {
-  return (options?.client ?? _heyApiClient).post<ResendInvitationResponses, ResendInvitationErrors, ThrowOnError, 'data'>({
-    responseStyle: 'data',
-    url: '/auth/resend-invitation',
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options?.headers,
     },
   });
 };
@@ -2145,5 +2119,31 @@ export const getPendingInvitations = <ThrowOnError extends boolean = true>(optio
     ],
     url: '/{orgIdOrSlug}/memberships/pending',
     ...options,
+  });
+};
+
+/**
+ * Resend invitation
+ * 🌐 Public access
+ * ⏳ Spam (10/h)
+ *
+ * Resends an invitation email to a new or existing user using the provided email address and token ID.
+ *
+ * **POST /{orgIdOrSlug}/memberships/resend-invitation** ·· [resendInvitation](http://localhost:4000/docs#tag/memberships/post/{orgIdOrSlug}/memberships/resend-invitation) ·· _memberships_
+ *
+ * @param {resendInvitationData} options
+ * @param {string=} options.body.email - `string` (optional)
+ * @param {string=} options.body.tokenId - `string` (optional)
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
+ */
+export const resendInvitation = <ThrowOnError extends boolean = true>(options?: Options<ResendInvitationData, ThrowOnError>) => {
+  return (options?.client ?? _heyApiClient).post<ResendInvitationResponses, ResendInvitationErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    url: '/{orgIdOrSlug}/memberships/resend-invitation',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options?.headers,
+    },
   });
 };

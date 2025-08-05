@@ -209,22 +209,6 @@ export const zSignUpWithTokenData = z.object({
  */
 export const zSignUpWithTokenResponse = z.boolean();
 
-export const zResendInvitationData = z.object({
-  body: z.optional(
-    z.object({
-      email: z.email(),
-      tokenId: z.optional(z.string()),
-    }),
-  ),
-  path: z.optional(z.never()),
-  query: z.optional(z.never()),
-});
-
-/**
- * Invitation email sent
- */
-export const zResendInvitationResponse = z.boolean();
-
 export const zVerifyEmailData = z.object({
   body: z.optional(z.never()),
   path: z.object({
@@ -376,7 +360,7 @@ export const zGithubSignInData = z.object({
   body: z.optional(z.never()),
   path: z.optional(z.never()),
   query: z.object({
-    type: z.enum(['auth', 'connect', 'invite']),
+    type: z.enum(['auth', 'connect', 'invite', 'verify']),
     redirect: z.optional(z.string()),
     connect: z.optional(z.string()),
     token: z.optional(z.string()),
@@ -387,7 +371,7 @@ export const zGoogleSignInData = z.object({
   body: z.optional(z.never()),
   path: z.optional(z.never()),
   query: z.object({
-    type: z.enum(['auth', 'connect', 'invite']),
+    type: z.enum(['auth', 'connect', 'invite', 'verify']),
     redirect: z.optional(z.string()),
     connect: z.optional(z.string()),
     token: z.optional(z.string()),
@@ -398,7 +382,7 @@ export const zMicrosoftSignInData = z.object({
   body: z.optional(z.never()),
   path: z.optional(z.never()),
   query: z.object({
-    type: z.enum(['auth', 'connect', 'invite']),
+    type: z.enum(['auth', 'connect', 'invite', 'verify']),
     redirect: z.optional(z.string()),
     connect: z.optional(z.string()),
     token: z.optional(z.string()),
@@ -1689,7 +1673,7 @@ export const zMembershipInviteData = z.object({
 });
 
 /**
- * Number of sended invitations
+ * Number of sent invitations
  */
 export const zMembershipInviteResponse = z.object({
   success: z.boolean(),
@@ -1823,3 +1807,19 @@ export const zGetPendingInvitationsResponse = z.object({
   ),
   total: z.number(),
 });
+
+export const zResendInvitationData = z.object({
+  body: z.optional(
+    z.object({
+      email: z.email(),
+      tokenId: z.optional(z.string()),
+    }),
+  ),
+  path: z.optional(z.never()),
+  query: z.optional(z.never()),
+});
+
+/**
+ * Invitation email sent
+ */
+export const zResendInvitationResponse = z.boolean();
