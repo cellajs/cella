@@ -16,11 +16,7 @@ import { queryClient } from '~/query/query-client';
 import { useUserStore } from '~/store/user';
 import { dateShort } from '~/utils/date-short';
 
-type EntityInvitesProps = {
-  cardClassName?: string;
-};
-
-export const EntityInvites = ({ cardClassName }: EntityInvitesProps) => {
+export const EntityInvites = () => {
   const { t } = useTranslation();
   const { user } = useUserStore();
 
@@ -44,7 +40,7 @@ export const EntityInvites = ({ cardClassName }: EntityInvitesProps) => {
   if (!invites?.length) return null;
 
   return (
-    <Card className={cardClassName}>
+    <Card className="mt-6">
       <CardHeader className="p-4 border-b">
         <CardTitle>{t('common:pending_invitations')}</CardTitle>
       </CardHeader>
