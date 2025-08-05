@@ -234,8 +234,11 @@ const membershipRouteHandlers = app
       senderThumbnailUrl: user.thumbnailUrl,
       entityName: entity.name,
       role,
-      subject: i18n.t('backend:email.member_invite.subject', { lng: entity.defaultLanguage, entityName: entity.name }),
-      lng: entity.defaultLanguage,
+      subject: i18n.t('backend:email.member_invite.subject', {
+        lng: 'defaultLanguage' in entity ? entity.defaultLanguage : 'en',
+        entityName: entity.name,
+      }),
+      lng: 'defaultLanguage' in entity ? entity.defaultLanguage : 'en',
     };
 
     await mailer.prepareEmails<MemberInviteEmailProps, (typeof recipients)[number]>(MemberInviteEmail, emailProps, recipients, user.email);
@@ -555,8 +558,11 @@ const membershipRouteHandlers = app
     const emailProps = {
       entityName: entity.name,
       role,
-      subject: i18n.t('backend:email.member_invite.subject', { lng: entity.defaultLanguage, entityName: entity.name }),
-      lng: entity.defaultLanguage,
+      subject: i18n.t('backend:email.member_invite.subject', {
+        lng: 'defaultLanguage' in entity ? entity.defaultLanguage : 'en',
+        entityName: entity.name,
+      }),
+      lng: 'defaultLanguage' in entity ? entity.defaultLanguage : 'en',
     };
 
     await mailer.prepareEmails<MemberInviteEmailProps, typeof recipient>(MemberInviteEmail, emailProps, [recipient], userEmail);

@@ -18,7 +18,12 @@ import { queryClient } from '~/query/query-client';
 import { useUserStore } from '~/store/user';
 import { dateShort } from '~/utils/date-short';
 
-export const EntityInvites = () => {
+type EntityInvitesProps = {
+  cardClassName?: string;
+  placeholderClassName?: string;
+};
+
+export const EntityInvites = ({ cardClassName, placeholderClassName }: EntityInvitesProps) => {
   const { t } = useTranslation();
   const { user } = useUserStore();
 
@@ -39,10 +44,10 @@ export const EntityInvites = () => {
 
   const callback = () => queryClient.invalidateQueries({ queryKey: meKeys.invites() });
 
-  if (!invites?.length) return <ContentPlaceholder icon={Origami} title={t('common:dont_have_any_invites')} className="mt-[20vh]" />;
+  if (!invites?.length) return <ContentPlaceholder icon={Origami} title={t('common:dont_have_any_invites')} className={placeholderClassName} />;
 
   return (
-    <Card className="mt-6">
+    <Card className={cardClassName}>
       <CardHeader className="p-4 border-b">
         <CardTitle>{t('common:pending_invitations')}</CardTitle>
       </CardHeader>
