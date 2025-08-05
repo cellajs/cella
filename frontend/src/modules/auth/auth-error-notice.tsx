@@ -25,13 +25,13 @@ const AuthErrorNotice = ({ error, children }: { error: ErrorNoticeError; childre
     <Card className="bg-transparent border-0 md:-mx-10 lg:-mx-32">
       <CardHeader className="text-center p-0">
         <CardTitle className="text-2xl mb-2 justify-center">{getErrorTitle(error, errorFromQuery)}</CardTitle>
-        <CardDescription className="text-foreground/80 text-lg">
-          <p className="mb-2">{getErrorText(error, errorFromQuery)}</p>
-          <span className="ml-1">{severity === 'warn' && t('error:contact_mistake')}</span>
-          <span className="ml-1">{severity === 'error' && t('error:try_again_later')}</span>
+        <CardDescription className="text-foreground/80 text-lg flex-col gap-2">
+          <div>{getErrorText(error, errorFromQuery)}</div>
+          <div>{severity === 'warn' && t('error:contact_mistake')}</div>
+          <div>{severity === 'error' && t('error:try_again_later')}</div>
         </CardDescription>
       </CardHeader>
-      <CardFooter className="flex flex-wrap gap-2 mt-8 justify-center">
+      <CardFooter className="flex gap-2 max-sm:flex-col max-sm:items-stretch flex-wrap mt-4 justify-center">
         {children}
         <Link to="/auth/authenticate" reloadDocument className={buttonVariants({ size: 'lg', variant: 'plain' })}>
           {t('common:sign_in')}

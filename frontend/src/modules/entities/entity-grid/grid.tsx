@@ -97,7 +97,7 @@ export const BaseEntityGrid = ({
         <div className="w-full mt-4 italic text-muted text-sm text-center">{t('common:offline.load_more')}</div>
       )}
       {/* Loading */}
-      {isFetching && totalCount && totalCount > entities.length && !error && (
+      {isFetching && !!totalCount && totalCount > entities.length && !error && (
         <div className="flex space-x-1 justify-center items-center relative top-4 h-0 w-full animate-pulse">
           <span className="sr-only">Loading...</span>
           <div className="h-1 w-3 bg-foreground rounded-full animate-bounce [animation-delay:-0.3s]" />

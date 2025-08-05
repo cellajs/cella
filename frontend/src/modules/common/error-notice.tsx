@@ -101,13 +101,13 @@ const ErrorNotice = ({ error, resetErrorBoundary, level }: ErrorNoticeProps) => 
       {level === 'root' && <Dialoger />}
       <div className="container flex flex-col min-h-[calc(100vh-10rem)] items-center">
         <div className="mt-auto mb-auto">
-          <Card className="max-w-[36rem] m-4">
+          <Card className="max-w-[80vw] sm:max-w-[36rem] m-4">
             <CardHeader className="text-center">
               <CardTitle className="text-2xl mb-2 justify-center">{getErrorTitle(error, errorFromQuery)}</CardTitle>
-              <CardDescription className="text-lg">
-                <span>{getErrorText(error, errorFromQuery)}</span>
-                <span className="ml-1">{severity === 'warn' && t('error:contact_mistake')}</span>
-                <span className="ml-1">{severity === 'error' && t('error:try_again_later')}</span>
+              <CardDescription className="text-foreground/80 text-lg flex-col gap-2">
+                <div>{getErrorText(error, errorFromQuery)}</div>
+                <div>{severity === 'warn' && t('error:contact_mistake')}</div>
+                <div>{severity === 'error' && t('error:try_again_later')}</div>
               </CardDescription>
             </CardHeader>
             {error && 'status' in error && (
@@ -158,7 +158,7 @@ const ErrorNotice = ({ error, resetErrorBoundary, level }: ErrorNoticeProps) => 
                 </AnimatePresence>
               </CardContent>
             )}
-            <CardFooter className="flex gap-2 mt-4 justify-center">
+            <CardFooter className="flex gap-2 max-sm:flex-col max-sm:items-stretch flex-wrap mt-4 justify-center">
               <Button onClick={handleGoToHome} variant="secondary">
                 <Home size={16} className="mr-2" />
                 {t('common:home')}

@@ -22,12 +22,12 @@ export const Sheeter = () => {
 
   // Subscribe to router to close sheets
   useEffect(() => {
-    router.subscribe('onBeforeRouteMount', ({ pathChanged }) => {
+    router.subscribe('onBeforeLoad', ({ hrefChanged }) => {
       const navState = useNavigationStore.getState();
       const sheetOpen = navState.navSheetOpen;
       const activeSheets = useSheeter.getState().sheets;
 
-      if (!pathChanged || !activeSheets.length) return;
+      if (!hrefChanged || !activeSheets.length) return;
 
       // Safe to remove all sheets
       if (sheetOpen && (sheetOpen !== 'menu' || !navState.keepMenuOpen)) {

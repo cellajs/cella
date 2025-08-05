@@ -9,11 +9,11 @@ import { dateShort } from '~/utils/date-short';
 import { numberToColorClass } from '~/utils/number-to-color-class';
 
 export const EntityTile = ({ entity }: { entity: EntityGridItem }) => {
-  const { to, params } = getEntityRoute(entity);
+  const { to, params, search } = getEntityRoute(entity);
   return (
     <Card className="overflow-hidden transition hover:shadow-sm [&:has(.tile-link:focus-visible)]:ring-2 [&:has(.tile-link:active)]:translate-y-[.05rem] ring-ring ring-offset-2 ring-offset-background">
       <CardContent className="p-4">
-        <Link to={to} params={params} className="w-full relative group tile-link focus-visible:outline-none focus-visible:ring-0">
+        <Link to={to} params={params} search={search} className="w-full relative group tile-link focus-visible:outline-none focus-visible:ring-0">
           {typeof window !== 'undefined' && (
             <div
               className={`relative flex flex-col -mx-4 -mt-6 bg-cover bg-center aspect-[3/1] bg-opacity-80 ${
