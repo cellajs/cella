@@ -18,10 +18,9 @@ import { dateShort } from '~/utils/date-short';
 
 type EntityInvitesProps = {
   cardClassName?: string;
-  placeholderClassName?: string;
 };
 
-export const EntityInvites = ({ cardClassName, placeholderClassName }: EntityInvitesProps) => {
+export const EntityInvites = ({ cardClassName }: EntityInvitesProps) => {
   const { t } = useTranslation();
   const { user } = useUserStore();
 
@@ -42,7 +41,8 @@ export const EntityInvites = ({ cardClassName, placeholderClassName }: EntityInv
 
   const callback = () => queryClient.invalidateQueries({ queryKey: meKeys.invites() });
 
-  if (!invites?.length) return;
+  if (!invites?.length) return null;
+
   return (
     <Card className={cardClassName}>
       <CardHeader className="p-4 border-b">

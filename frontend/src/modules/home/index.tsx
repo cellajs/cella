@@ -9,7 +9,7 @@ const Home = () => {
   return (
     <div className="px-3 md:px-6">
       <SimpleHeader heading={t('common:home')} text={t('common:home.text', { appName: appConfig.name })} className="container pt-4 md:pt-6" />
-      <EntityInvites cardClassName="mt-6" placeholderClassName="mt-[40vh]" />
+      <EntityInvites cardClassName="mt-6" />
     </div>
   );
 };
