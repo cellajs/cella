@@ -10,6 +10,7 @@ import docs from '#/lib/docs';
 (async () => {
   try {
     await docs(app, true);
+    process.exit(0);
   } catch (err) {
     console.error('❌ Failed to generate OpenAPI cache');
     console.error(err);
