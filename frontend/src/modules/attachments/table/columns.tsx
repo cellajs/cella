@@ -225,7 +225,7 @@ export const useColumns = (entity: EntityPage, isSheet: boolean, isCompact: bool
       key: 'filename',
       name: t('common:filename'),
       visible: !isMobile,
-      sortable: false,
+      sortable: true,
       minWidth: 140,
       renderHeaderCell: HeaderCell,
       renderCell: ({ row }) => (
@@ -235,7 +235,7 @@ export const useColumns = (entity: EntityPage, isSheet: boolean, isCompact: bool
     {
       key: 'size',
       name: t('common:size'),
-      sortable: false,
+      sortable: true,
       visible: !isMobile,
       minWidth: 100,
       renderHeaderCell: HeaderCell,

@@ -1486,7 +1486,7 @@ export const zGetAttachmentsData = z.object({
   query: z.optional(
     z.object({
       q: z.optional(z.string()),
-      sort: z.optional(z.enum(['id', 'filename', 'contentType', 'createdAt'])),
+      sort: z.optional(z.enum(['id', 'filename', 'size', 'createdAt'])),
       order: z.optional(z.enum(['asc', 'desc'])),
       offset: z.optional(z.string()).default('0'),
       limit: z.optional(z.string()).default('40'),

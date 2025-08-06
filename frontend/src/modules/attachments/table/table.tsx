@@ -1,3 +1,4 @@
+import { ilike, or, useLiveQuery } from '@tanstack/react-db';
 import { Paperclip } from 'lucide-react';
 import { forwardRef, memo, useEffect, useImperativeHandle } from 'react';
 import type { RowsChangeData, SortColumn } from 'react-data-grid';
@@ -12,6 +13,7 @@ import { DataTable } from '~/modules/common/data-table';
 import { tablePropsAreEqual } from '~/modules/common/data-table/table-props-are-equal';
 import type { BaseTableMethods, BaseTableProps } from '~/modules/common/data-table/types';
 import { useDataFromInfiniteQuery } from '~/query/hooks/use-data-from-query';
+import { getAttachmentsCollection } from './helpers';
 
 type BaseDataTableProps = AttachmentsTableProps & BaseTableProps<Attachment, AttachmentSearch>;
 
@@ -24,20 +26,21 @@ const BaseDataTable = memo(
     const { q, sort, order, limit } = searchVars;
     const orgIdOrSlug = entity.membership?.organizationId || entity.id;
 
-    // const { data, isLoading } = useLiveQuery(
-    //   (query) => {
-    //     let qBuilder = query
-    //       .from({ attachments: getAttachmentsCollection(orgIdOrSlug) })
-    //       .orderBy(({ attachments }) => (sort ? attachments[sort] : attachments.createdAt), order);
+    const { data } = useLiveQuery(
+      (query) => {
+        let qBuilder = query
+          .from({ attachments: getAttachmentsCollection(orgIdOrSlug) })
+          .orderBy(({ attachments }) => (sort && sort !== 'createdAt' ? attachments[sort] : attachments.created_at), order);
 
-    //     if (typeof q === 'string' && q.trim() !== '') {
-    //       qBuilder = qBuilder.where(({ attachments }) => or(ilike(attachments.name, `%${q}%`), ilike(attachments.filename, `%${q}%`)));
-    //     }
+        if (typeof q === 'string' && q.trim() !== '') {
+          qBuilder = qBuilder.where(({ attachments }) => or(ilike(attachments.name, `%${q}%`), ilike(attachments.filename, `%${q}%`)));
+        }
 
-    //     return qBuilder;
-    //   },
-    //   [q, sort, order],
-    // );
+        return qBuilder;
+      },
+      [q, sort, order],
+    );
+    console.log('🚀 ~ data:', data);
 
     // Query attachments
     const {

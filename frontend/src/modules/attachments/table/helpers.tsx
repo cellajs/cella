@@ -3,14 +3,13 @@ import { type Collection, createCollection } from '@tanstack/react-db';
 import { onlineManager } from '@tanstack/react-query';
 import { appConfig } from 'config';
 import { t } from 'i18next';
-import z from 'zod';
 import { clientConfig } from '~/lib/api';
 import { parseUploadedAttachments } from '~/modules/attachments/helpers/parse-uploaded';
 import { useAttachmentCreateMutation } from '~/modules/attachments/query-mutations';
+import type { LiveQueryAttachment } from '~/modules/attachments/types';
 import type { UploadedUppyFile } from '~/modules/common/uploader/types';
 import { useUploader } from '~/modules/common/uploader/use-uploader';
-import { baseBackoffOptions as backoffOptions, type CamelToSnakeObject } from '~/utils/electric-utils';
-import type { Attachment } from '../types';
+import { baseBackoffOptions as backoffOptions } from '~/utils/electric-utils';
 
 const maxNumberOfFiles = 20;
 const maxTotalFileSize = maxNumberOfFiles * appConfig.uppy.defaultRestrictions.maxFileSize; // for maxNumberOfFiles files at 10MB max each
@@ -71,7 +70,7 @@ export const formatBytes = (bytes: string): string => {
   return `${formattedSize} ${sizes[index]}`;
 };
 
-export const getAttachmentsCollection = (organizationId: string): Collection<CamelToSnakeObject<Attachment>> => {
+export const getAttachmentsCollection = (organizationId: string): Collection<LiveQueryAttachment> => {
   const params = {
     table: 'attachments',
     where: `organization_id = '${organizationId}'`,
@@ -87,25 +86,6 @@ export const getAttachmentsCollection = (organizationId: string): Collection<Cam
         fetchClient: clientConfig.fetch,
         // onError: (error) => handleSyncError(error, storePrefix, params),
       },
-      schema: z.object({
-        id: z.string(),
-        created_at: z.string(),
-        name: z.string(),
-        entity_type: z.enum(['attachment']),
-        group_id: z.union([z.string(), z.null()]),
-        filename: z.string(),
-        content_type: z.string(),
-        converted_content_type: z.union([z.string(), z.null()]),
-        size: z.string(),
-        created_by: z.union([z.string(), z.null()]),
-        modified_at: z.union([z.string(), z.null()]),
-        modified_by: z.union([z.string(), z.null()]),
-        organization_id: z.string(),
-        original_key: z.string(),
-        thumbnail_key: z.union([z.string(), z.null()]),
-        converted_key: z.union([z.string(), z.null()]),
-      }),
-
       getKey: (item) => item.id,
     }),
   );

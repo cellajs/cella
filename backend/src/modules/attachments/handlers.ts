@@ -137,7 +137,7 @@ const attachmentsRouteHandlers = app
       {
         id: attachmentsTable.id,
         filename: attachmentsTable.filename,
-        contentType: attachmentsTable.contentType,
+        size: attachmentsTable.size,
         createdAt: attachmentsTable.createdAt,
       },
       sort,
