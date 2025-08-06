@@ -19,8 +19,25 @@ const BaseDataTable = memo(
   forwardRef<BaseTableMethods, BaseDataTableProps>(({ entity, columns, searchVars, sortColumns, setSortColumns, setTotal, setSelected }, ref) => {
     const { t } = useTranslation();
 
+    // const [selectedRows, setSelectedRows] = useState(new Set<string>());
+
     const { q, sort, order, limit } = searchVars;
     const orgIdOrSlug = entity.membership?.organizationId || entity.id;
+
+    // const { data, isLoading } = useLiveQuery(
+    //   (query) => {
+    //     let qBuilder = query
+    //       .from({ attachments: getAttachmentsCollection(orgIdOrSlug) })
+    //       .orderBy(({ attachments }) => (sort ? attachments[sort] : attachments.createdAt), order);
+
+    //     if (typeof q === 'string' && q.trim() !== '') {
+    //       qBuilder = qBuilder.where(({ attachments }) => or(ilike(attachments.name, `%${q}%`), ilike(attachments.filename, `%${q}%`)));
+    //     }
+
+    //     return qBuilder;
+    //   },
+    //   [q, sort, order],
+    // );
 
     // Query attachments
     const {
@@ -74,6 +91,13 @@ const BaseDataTable = memo(
       onSelectedRowsChange(new Set<string>());
     };
 
+    // Effect to update total and selected rows when data changes
+    // useEffect(() => {
+    //   setTotal(data.length);
+    //   if (!selectedRows.size) return;
+    //   setSelectedRows(new Set<string>([...selectedRows].filter((id) => data.some((row) => row.id === id))));
+    // }, [data]);
+
     // Effect to update total when online totalCount changes
     useEffect(() => setTotal(totalCount), [totalCount]);
 
@@ -91,6 +115,7 @@ const BaseDataTable = memo(
           onRowsChange,
           rows,
           limit,
+          // totalCount: data.length,
           totalCount,
           rowKeyGetter: (row) => row.id,
           error,
