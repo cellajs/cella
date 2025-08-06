@@ -1,19 +1,19 @@
 /**
  * Configuration object for specifying a repository to be analyzed.
  *
- * - If `use` is `"local"`, you must provide a valid `filepath`.
+ * - If `use` is `"local"`, you must provide a valid `filePath`.
  * - If `use` is `"remote"`, you must specify both `owner` and `repo`.
  *
  * @property use - Determines whether the repository is local or remote.
  * @property branch - The branch name to analyze.
- * @property filepath - Absolute path to the local repository (required if use is 'local').
+ * @property filePath - Absolute path to the local repository (required if use is 'local').
  * @property owner - GitHub owner or organization name (required if use is 'remote').
  * @property repo - GitHub repository name (required if use is 'remote').
  */
 export type RepoConfig = {
   use: "local" | "remote";
   branch: string;
-  filepath: string;  // required if use === 'local'
+  filePath: string;  // required if use === 'local'
   owner: string;     // required if use === 'remote'
   repo: string;      // required if use === 'remote'
 };
@@ -25,12 +25,14 @@ export type RepoConfig = {
  * - `summaryOnly`: Logs only the summary (no per-file logs).
  * - `relevantOnly`: Logs only files that are not clearly in sync (e.g., non-upToDate, medium/high conflict).
  * - `conflictsOnly`: Logs only files with real or likely conflicts.
+ * - `none`: No logging output at all.
  */
 export type LogMode =
   | 'full'
   | 'summaryOnly'
   | 'relevantOnly'
-  | 'conflictsOnly';
+  | 'conflictsOnly'
+  | 'none';
 
 /**
  * Defines how log output should be controlled during analysis.
@@ -55,7 +57,7 @@ export const logConfig: LogConfig = {
 export const boilerplateConfig: RepoConfig = {
   use: 'local',
   branch: "development",
-  filepath: "/home/gino/Github/cella",
+  filePath: "/home/gino/Github/cella",
   owner: "cellajs",  // Only used if use === 'remote'
   repo: "cella",     // Only used if use === 'remote'
 };
@@ -67,7 +69,7 @@ export const boilerplateConfig: RepoConfig = {
 export const forkConfig: RepoConfig = {
   use: 'local',
   branch: "development",
-  filepath: "/home/gino/Github/raak",
+  filePath: "/home/gino/Github/raak",
   owner: "",  // Only used if use === 'remote'
   repo: "",   // Only used if use === 'remote'
 };

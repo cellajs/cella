@@ -2,10 +2,11 @@ import pc from "picocolors";
 import yoctoSpinner from 'yocto-spinner';
 import { boilerplateConfig, forkConfig } from "./config";
 import { getGitFileHashes } from "./get-git-file-hashes";
-import {  getFileSyncAnalyses } from './file-sync-analysis';
+import { getFileSyncAnalyses } from './file-sync-analysis';
 import { summarizeFileSyncAnalyses } from './file-sync-summary';
 import { formatAnalysisLogs } from "./analyse-formatter";
 import { shouldLogFile, shouldLogSummary } from "./should-log";
+import { canGitAutoMergeFile, GitMergeCheckResult } from "./can-git-auto-merge-file";
 
 async function main(): Promise<void> {
   console.log(pc.cyan("↻ Starting git-sync..."));
@@ -44,7 +45,7 @@ async function main(): Promise<void> {
 
     // Final summary
     console.log(pc.bold(`\n Summary:`));
-    console.log(`  ${ pc.green('✔')} Up to date:    ${pc.green(summary.upToDate)} Files`);
+    console.log(`  ${pc.green('✔')} Up to date:    ${pc.green(summary.upToDate)} Files`);
     console.log(`  ${pc.red('✗')} Missing:       ${pc.red(summary.missing)} Files`);
     console.log(`  ${pc.green('⇧')} Ahead:         ${pc.green(summary.ahead)} Files`);
     console.log(`  ${pc.yellow('⇩')} Behind:        ${pc.yellow(summary.behind)} Files`);

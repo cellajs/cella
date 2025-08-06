@@ -30,7 +30,7 @@ export type FileEntry = {
  * @param config - Configuration object for the target Git repository.
  * @param config.use - Must be set to `"local"` to allow local repository access.
  * @param config.branch - The Git branch to inspect (default is "HEAD").
- * @param config.filepath - Path to the local Git repository root.
+ * @param config.filePath - Path to the local Git repository root.
  *
  * @returns A promise resolving to an array of `FileEntry` objects containing Git metadata.
  *
@@ -39,7 +39,7 @@ export type FileEntry = {
 export async function getGitFileHashes(config: RepoConfig) {
   if (config.use === "local") {
     // Use local fetch
-    return getLocalGitFileHashes(config.branch, config.filepath);
+    return getLocalGitFileHashes(config.branch, config.filePath);
   } else {
     throw new Error("Only local repositories are supported for fetching files with hashes");
   }
