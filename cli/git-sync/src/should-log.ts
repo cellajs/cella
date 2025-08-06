@@ -25,6 +25,10 @@ export function shouldLogFile(file: FileSyncAnalysis): boolean {
     return file.conflictAnalysis.conflictLikelihood >= ConflictLikelihood.Medium && file.conflictAnalysis.autoResolvable === AutoResolvable.None;
   }
 
+  if (mode === 'none') {
+    return false; // No logging output at all
+  }
+
   return true;
 }
 
@@ -34,5 +38,6 @@ export function shouldLogFile(file: FileSyncAnalysis): boolean {
  * @returns {boolean} - True if summary should be logged, false otherwise.
  */
 export function shouldLogSummary(): boolean {
-  return true; // Always log summary for now
+  if (logConfig.mode === 'none') return false;
+  return true;
 }

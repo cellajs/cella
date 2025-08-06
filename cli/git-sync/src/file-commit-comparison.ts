@@ -93,8 +93,8 @@ export async function getFileCommitComparison(
   }
 
   const [boilerHistory, forkHistory] = await Promise.all([
-    getFileCommitHistory(boilerplateConfig.filepath, boilerplateConfig.branch, filePath),
-    getFileCommitHistory(forkConfig.filepath, forkConfig.branch, filePath),
+    getFileCommitHistory(boilerplateConfig.filePath, boilerplateConfig.branch, filePath),
+    getFileCommitHistory(forkConfig.filePath, forkConfig.branch, filePath),
   ]);
 
   const boilerShas = boilerHistory.map(e => e.sha);
