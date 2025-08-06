@@ -266,7 +266,7 @@ const authRouteHandlers = app
 
     mailer.prepareEmails<CreatePasswordEmailProps, Recipient>(CreatePasswordEmail, staticProps, recipients);
 
-    logEvent({ msg: 'Create password link sent', meta: { user: user.id } });
+    logEvent('info', 'Create password link sent', { user: user.id });
 
     return ctx.json(true, 200);
   })
@@ -475,7 +475,7 @@ const authRouteHandlers = app
 
     await setUserSession(ctx, user, 'password', adminUser);
 
-    logEvent({ msg: 'Started impersonation', meta: { admin: user.id, user: targetUserId } });
+    logEvent('info', 'Started impersonation', { admin: user.id, user: targetUserId });
 
     return ctx.json(true, 200);
   })
@@ -510,7 +510,7 @@ const authRouteHandlers = app
       await setAuthCookie(ctx, 'session', cookieContent, expireTimeSpan);
     }
 
-    logEvent({ msg: 'Stopped impersonation', meta: { admin: adminUserId || 'na', user: session.userId } });
+    logEvent('info', 'Stopped impersonation', { admin: adminUserId || 'na', user: session.userId });
 
     return ctx.json(true, 200);
   })
@@ -532,7 +532,7 @@ const authRouteHandlers = app
     // Delete session cookie
     deleteAuthCookie(ctx, 'session');
 
-    logEvent({ msg: 'User signed out', meta: { user: session?.userId || 'na' } });
+    logEvent('info', 'User signed out', { user: session?.userId || 'na' });
 
     return ctx.json(true, 200);
   })

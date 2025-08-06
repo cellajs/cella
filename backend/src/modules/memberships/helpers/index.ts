@@ -103,7 +103,7 @@ export const insertMembership = async <T extends BaseEntityModel>({
     })
     .returning(membershipSummarySelect);
 
-  logEvent({ msg: `User added to ${entity.entityType}`, meta: { user: userId, id: entity.id } }); // Log event
+  logEvent('info', `User added to ${entity.entityType}`, { user: userId, id: entity.id }); // Log event
 
   return result;
 };

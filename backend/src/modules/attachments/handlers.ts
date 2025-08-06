@@ -114,7 +114,7 @@ const attachmentsRouteHandlers = app
 
     const data = await processAttachmentUrlsBatch(createdAttachments);
 
-    logEvent({ msg: `${createdAttachments.length} attachments have been created` });
+    logEvent('info', `${createdAttachments.length} attachments have been created`);
 
     return ctx.json(data, 200);
   })
@@ -208,9 +208,9 @@ const attachmentsRouteHandlers = app
       .where(eq(attachmentsTable.id, id))
       .returning();
 
-    logEvent({ msg: 'Attachment updated', meta: { attachment: updatedAttachment.id } });
-
     const data = await processAttachmentUrls(updatedAttachment);
+
+    logEvent('info', 'Attachment updated', { attachment: updatedAttachment.id });
 
     return ctx.json(data, 200);
   })
@@ -233,7 +233,7 @@ const attachmentsRouteHandlers = app
     // Delete the attachments
     await db.delete(attachmentsTable).where(inArray(attachmentsTable.id, allowedIds));
 
-    logEvent({ msg: 'Attachments deleted', meta: { allowedIds } });
+    logEvent('info', 'Attachments deleted', { ids: allowedIds });
 
     return ctx.json({ success: true, rejectedItems }, 200);
   })

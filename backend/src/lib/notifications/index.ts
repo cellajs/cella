@@ -2,7 +2,7 @@ import { Novu } from '@novu/api';
 import { UpdateSubscriberChannelRequestDtoProviderId as ProviderEnum } from '@novu/api/models/components';
 import { appConfig } from 'config';
 import { novuConfig } from '#/lib/notifications/novu-config';
-import { logEvent } from '#/utils/logger';
+import { logError, logEvent } from '#/utils/logger';
 
 /**
  * Sends a Slack message via Novu to notify about new contact form submissions or waitlist requests.
@@ -11,7 +11,7 @@ export const sendSlackMessage = async (prefix: string, email: string) => {
   try {
     const { secretKey, serverURL, slackWebhookUrl, subscriberId, workflowId } = novuConfig;
 
-    if (!secretKey || !slackWebhookUrl) return logEvent({ msg: 'Missing required Novu appConfig values (API key or Slack webhook).' });
+    if (!secretKey || !slackWebhookUrl) return logEvent('info', 'Missing required Novu appConfig values (API key or Slack webhook).');
 
     const novu = new Novu({ secretKey, serverURL });
 
@@ -28,9 +28,8 @@ export const sendSlackMessage = async (prefix: string, email: string) => {
     // Trigger Slack notification workflow
     await novu.trigger({ workflowId, to: { subscriberId }, payload: { prefix, email } });
 
-    return logEvent({ msg: `Slack message sent successfully to subscriber: ${subscriberId}` });
-  } catch (err) {
-    console.error('Slack message error:', err);
-    return logEvent({ msg: `Failed to send Slack message: ${(err as Error).message}`, severity: 'error' });
+    return logEvent('info', `Slack message sent successfully to subscriber: ${subscriberId}`);
+  } catch (error) {
+    logError('Failed to send Slack message', error);
   }
 };

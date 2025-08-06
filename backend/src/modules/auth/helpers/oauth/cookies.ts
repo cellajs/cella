@@ -28,7 +28,7 @@ export const createOAuthSession = async (ctx: Context, provider: string, url: UR
 
   if (codeVerifier) await setAuthCookie(ctx, 'oauth-code-verifier', codeVerifier, oauthCookieExpires);
 
-  logEvent({ msg: 'User redirected', meta: { provider } });
+  logEvent('info', 'User redirected', { strategy: 'oauth', provider });
 
   return ctx.redirect(url.toString(), 302);
 };

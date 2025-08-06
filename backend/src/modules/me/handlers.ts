@@ -229,7 +229,7 @@ const meRouteHandlers = app
     // Invalidate sessions
     await invalidateAllUserSessions(user.id);
     deleteAuthCookie(ctx, 'session');
-    logEvent({ msg: 'User deleted itself', meta: { user: user.id } });
+    logEvent('info', 'User deleted itself', { user: user.id });
 
     return ctx.json(true, 200);
   })
@@ -249,7 +249,7 @@ const meRouteHandlers = app
     // Delete the memberships
     await db.delete(membershipsTable).where(and(eq(membershipsTable.userId, user.id), eq(membershipsTable[entityIdField], entity.id)));
 
-    logEvent({ msg: 'User left entity', meta: { user: user.id } });
+    logEvent('info', 'User left entity', { user: user.id });
 
     return ctx.json(true, 200);
   })
@@ -330,7 +330,7 @@ const meRouteHandlers = app
       ctx.header('Content-Encoding', '');
       streams.set(user.id, stream);
 
-      console.info('User connected to SSE', user.id);
+      logEvent('info', 'Connected to SSE', { user: user.id });
       await stream.writeSSE({
         event: 'connected',
         data: 'connected',
@@ -338,7 +338,7 @@ const meRouteHandlers = app
       });
 
       stream.onAbort(async () => {
-        console.info('User disconnected from SSE', user.id);
+        logEvent('warn', 'Disconnected from SSE', { user: user.id });
         streams.delete(user.id);
       });
 

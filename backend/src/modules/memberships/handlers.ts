@@ -78,21 +78,12 @@ const membershipRouteHandlers = app
 
     if (directlyInvitedEmails.size) {
       // Log existing direct entity invites
-      logEvent({
-        msg: `Skipped ${directlyInvitedEmails.size} emails due to existing invitations`,
-        meta: { id: entityId, emails: Array.from(directlyInvitedEmails) },
-      });
+      logEvent('info', 'Skipped emails due to existing invitations', { [entity.entityType]: entityId, emails: Array.from(directlyInvitedEmails) });
     }
 
     if (organizationInvitedEmails.size) {
       // Log re-associated entity invites
-      logEvent({
-        msg: `Re-associated ${organizationInvitedEmails.size} existing invites to target entity`,
-        meta: {
-          id: entityId,
-          emails: Array.from(organizationInvitedEmails),
-        },
-      });
+      logEvent('info', `Re-associated existing invites to ${entity.name}`, { [entity.entityType]: entityId, count: organizationInvitedEmails.size });
     }
 
     // Update organization-wide tokens to point to the current entity (if needed)
@@ -149,7 +140,7 @@ const membershipRouteHandlers = app
         // Check if the user is already a member of the target entity
         const targetMembership = memberships.find((m) => m.contextType === entityType && m[targetEntityIdField] === entityId);
         if (targetMembership) {
-          logEvent({ msg: `User already member of ${entityType}`, meta: { user: userId, id: entityId } });
+          logEvent('info', `User already member of ${entityType}`, { user: userId, [entityType]: entityId });
           return;
         }
 
@@ -264,7 +255,7 @@ const membershipRouteHandlers = app
       invitesCount: recipients.length,
     });
 
-    logEvent({ msg: `${insertedTokens.length} users invited to ${entity.entityType}`, meta: entity }); // Log invitation event
+    logEvent('info', `Users invited to ${entity.name}`, { count: insertedTokens.length, [entity.entityType]: entity.id });
 
     const rejectedItems = normalizedEmails.filter((email) => !recipients.some((recipient) => recipient.email === email));
     return ctx.json({ success: true, rejectedItems, invitesSentCount: recipients.length }, 200);
@@ -314,7 +305,7 @@ const membershipRouteHandlers = app
     const memberIds = targets.map((el) => el.userId);
     sendSSEToUsers(memberIds, 'remove_entity', { id: entity.id, entityType: entity.entityType });
 
-    logEvent({ msg: 'Deleted members', meta: { memberIds } });
+    logEvent('info', 'Deleted members', { ids: memberIds });
 
     return ctx.json({ success: true, rejectedItems }, 200);
   })
@@ -388,7 +379,7 @@ const membershipRouteHandlers = app
       });
     }
 
-    logEvent({ msg: 'Membership updated', meta: { user: updatedMembership.userId, membership: updatedMembership.id } });
+    logEvent('info', 'Membership updated', { user: updatedMembership.userId, membership: updatedMembership.id });
 
     return ctx.json(updatedMembership, 200);
   })
@@ -567,7 +558,7 @@ const membershipRouteHandlers = app
 
     await mailer.prepareEmails<MemberInviteEmailProps, typeof recipient>(MemberInviteEmail, emailProps, [recipient], userEmail);
 
-    logEvent({ msg: 'Invitation has been resent', meta: entity }); // Log invitation event
+    logEvent('info', 'Invitation has been resent', { [entity.entityType]: entity.id });
 
     return ctx.json(true, 200);
   });

@@ -5,10 +5,11 @@ import type { ErrorHandler } from 'hono';
 import i18n from 'i18next';
 import { type Env, getContextOrganization, getContextUser } from '#/lib/context';
 import type locales from '#/lib/i18n-locales';
-import { logToExternal } from '#/middlewares/logger/external-logger';
+import { eventLogger } from '#/pino-config';
 import { getIsoDate } from '#/utils/iso-date';
-import { getNodeLoggerLevel } from '#/utils/logger';
 import type { errorSchema } from '#/utils/schema/error';
+
+const isProduction = appConfig.mode === 'production';
 
 type ErrorSchemaType = z.infer<typeof errorSchema>;
 type ErrorMeta = { readonly [key: string]: number | string | boolean | null };
@@ -61,9 +62,12 @@ export class AppError extends Error {
   }
 }
 
+/**
+ * Handles errors thrown in the api.
+ */
 export const handleAppError: ErrorHandler<Env> = (err, ctx) => {
   // Normalize error to AppError if possible
-  const apiError =
+  const normalizedError =
     err instanceof AppError
       ? err
       : new AppError({
@@ -74,8 +78,8 @@ export const handleAppError: ErrorHandler<Env> = (err, ctx) => {
           originalError: err,
         });
 
-  // Get  non-enumerable 'stack', 'message', and 'cause'. These do NOT get included when using the spread operator (...)
-  const { isRedirect, originalError, message, cause, stack, ...error } = apiError;
+  // Get non-enumerable 'stack', 'message', and 'cause'. These do NOT get included when using the spread operator (...)
+  const { isRedirect, originalError, message, cause, stack, ...error } = normalizedError;
   const { severity, type, meta } = error;
 
   // Get the current user and organization from context
@@ -83,10 +87,10 @@ export const handleAppError: ErrorHandler<Env> = (err, ctx) => {
   const organization = getContextOrganization();
 
   const enrichedError = {
+    message,
     ...error,
     stack,
     cause,
-    message,
     logId: ctx.get('logId'),
     path: ctx.req.path,
     method: ctx.req.method,
@@ -101,14 +105,9 @@ export const handleAppError: ErrorHandler<Env> = (err, ctx) => {
     Sentry.captureException(enrichedError, { level });
   }
 
-  // External logger
-  logToExternal(severity, message, enrichedError);
-
-  // Console logging
-  const nodeSevernity = getNodeLoggerLevel(severity);
-  console[nodeSevernity](`[${severity.toUpperCase()}] ${message}`);
-  if (meta) console[nodeSevernity]('Meta:', meta);
-  if (stack) console.error(stack);
+  // Log the error
+  if (!isProduction) eventLogger[severity]({ msg: enrichedError.name, error: enrichedError });
+  else eventLogger[severity]({ ...(meta ?? {}), ...enrichedError });
 
   // Redirect to the frontend error page with query parameters for error details
   if (isRedirect) {
@@ -116,5 +115,6 @@ export const handleAppError: ErrorHandler<Env> = (err, ctx) => {
     return ctx.redirect(redirectUrl, 302);
   }
 
+  // TODO(PRIORITY) response still resolves with a 200 even if the statuscode is passed here?
   return ctx.json(enrichedError, enrichedError.status);
 };
