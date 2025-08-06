@@ -1,8 +1,3 @@
-import { OpenAPIHono } from '@hono/zod-openapi';
-import { appConfig } from 'config';
-import { and, count, eq, ilike, inArray, or, type SQL } from 'drizzle-orm';
-import { html, raw } from 'hono/html';
-import { stream } from 'hono/streaming';
 import { db } from '#/db/db';
 import { attachmentsTable } from '#/db/schema/attachments';
 import { organizationsTable } from '#/db/schema/organizations';
@@ -19,6 +14,11 @@ import { logEvent } from '#/utils/logger';
 import { nanoid } from '#/utils/nanoid';
 import { getOrderColumn } from '#/utils/order-column';
 import { prepareStringForILikeFilter } from '#/utils/sql';
+import { OpenAPIHono } from '@hono/zod-openapi';
+import { appConfig } from 'config';
+import { and, count, eq, ilike, inArray, or, type SQL } from 'drizzle-orm';
+import { html, raw } from 'hono/html';
+import { stream } from 'hono/streaming';
 
 const app = new OpenAPIHono<Env>({ defaultHook });
 
@@ -117,8 +117,7 @@ const attachmentsRouteHandlers = app
     logEvent({ msg: `${createdAttachments.length} attachments have been created` });
 
     return ctx.json(data, 200);
-  })
-  /*
+  }) /*
    * Get attachments
    */
   .openapi(attachmentRoutes.getAttachments, async (ctx) => {
@@ -174,6 +173,35 @@ const attachmentsRouteHandlers = app
     const items = await processAttachmentUrlsBatch(attachments);
 
     return ctx.json({ items, total }, 200);
+  })
+  /*
+   * Get grouped attachments
+   */
+  .openapi(attachmentRoutes.getAttachmentsGroup, async (ctx) => {
+    const { mainAttachmentId } = ctx.req.valid('query');
+
+    const organization = getContextOrganization();
+
+    // Retrieve target attachment
+    const [targetAttachment] = await db.select().from(attachmentsTable).where(eq(attachmentsTable.id, mainAttachmentId)).limit(1);
+    if (!targetAttachment) {
+      throw new AppError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'attachment', meta: { mainAttachmentId } });
+    }
+
+    const processedTargetAttachment = await processAttachmentUrlsBatch([targetAttachment]);
+    // return target attachment itself if no groupId
+    if (!targetAttachment.groupId) return ctx.json(processedTargetAttachment, 200);
+
+    // add filter attachments by groupId
+
+    const attachments = await db
+      .select()
+      .from(attachmentsTable)
+      .where(and(eq(attachmentsTable.groupId, targetAttachment.groupId), eq(attachmentsTable.organizationId, organization.id)));
+
+    const processedAttachments = await processAttachmentUrlsBatch(attachments);
+
+    return ctx.json(processedAttachments, 200);
   })
   /*
    * Get attachment by id

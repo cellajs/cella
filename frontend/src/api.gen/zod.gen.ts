@@ -137,6 +137,25 @@ export const zApiError = z.object({
   organizationId: z.optional(z.string()),
 });
 
+export const zAttachmentTableSchema = z.object({
+  createdAt: z.string(),
+  id: z.string(),
+  name: z.string(),
+  entityType: z.enum(['attachment']),
+  groupId: z.union([z.string(), z.null()]),
+  filename: z.string(),
+  contentType: z.string(),
+  convertedContentType: z.union([z.string(), z.null()]),
+  size: z.string(),
+  originalKey: z.string(),
+  convertedKey: z.union([z.string(), z.null()]),
+  thumbnailKey: z.union([z.string(), z.null()]),
+  createdBy: z.union([z.string(), z.null()]),
+  modifiedAt: z.union([z.string(), z.null()]),
+  modifiedBy: z.union([z.string(), z.null()]),
+  organizationId: z.string(),
+});
+
 export const zEntityListItemSchema = z.object({
   id: z.string(),
   entityType: z.enum(['user', 'organization']),
@@ -1531,6 +1550,40 @@ export const zCreateAttachmentData = z.object({
  * Attachment
  */
 export const zCreateAttachmentResponse = z.array(
+  z.object({
+    createdAt: z.string(),
+    id: z.string(),
+    name: z.string(),
+    entityType: z.enum(['attachment']),
+    groupId: z.union([z.string(), z.null()]),
+    filename: z.string(),
+    contentType: z.string(),
+    convertedContentType: z.union([z.string(), z.null()]),
+    size: z.string(),
+    createdBy: z.union([z.string(), z.null()]),
+    modifiedAt: z.union([z.string(), z.null()]),
+    modifiedBy: z.union([z.string(), z.null()]),
+    organizationId: z.string(),
+    url: z.string(),
+    thumbnailUrl: z.union([z.string(), z.null()]),
+    convertedUrl: z.union([z.string(), z.null()]),
+  }),
+);
+
+export const zGetAttachmentsGroupData = z.object({
+  body: z.optional(z.never()),
+  path: z.object({
+    orgIdOrSlug: z.string(),
+  }),
+  query: z.object({
+    mainAttachmentId: z.string(),
+  }),
+});
+
+/**
+ * Attachments
+ */
+export const zGetAttachmentsGroupResponse = z.array(
   z.object({
     createdAt: z.string(),
     id: z.string(),

@@ -165,6 +165,9 @@ import type {
   CreateAttachmentData,
   CreateAttachmentResponses,
   CreateAttachmentErrors,
+  GetAttachmentsGroupData,
+  GetAttachmentsGroupResponses,
+  GetAttachmentsGroupErrors,
   GetAttachmentData,
   GetAttachmentResponses,
   GetAttachmentErrors,
@@ -1829,6 +1832,34 @@ export const createAttachment = <ThrowOnError extends boolean = true>(options: O
       'Content-Type': 'application/json',
       ...options.headers,
     },
+  });
+};
+
+/**
+ * Get list of attachments
+ * 🛡️ Requires authentication (org access)
+ *
+ * Retrieves all of *attachments* that are in the same group as main attachment, associated with a specific organization.
+ *
+ * **GET /{orgIdOrSlug}/attachments/group** ·· [getAttachmentsGroup](http://localhost:4000/docs#tag/attachments/get/{orgIdOrSlug}/attachments/group) ·· _attachments_
+ *
+ * @param {getAttachmentsGroupData} options
+ * @param {string | string} options.path.orgidorslug - `string | string`
+ * @param {string} options.query.mainattachmentid - `string`
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
+ */
+export const getAttachmentsGroup = <ThrowOnError extends boolean = true>(options: Options<GetAttachmentsGroupData, ThrowOnError>) => {
+  return (options.client ?? _heyApiClient).get<GetAttachmentsGroupResponses, GetAttachmentsGroupErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [
+      {
+        in: 'cookie',
+        name: 'cella-session-v1',
+        type: 'apiKey',
+      },
+    ],
+    url: '/{orgIdOrSlug}/attachments/group',
+    ...options,
   });
 };
 

@@ -1,6 +1,6 @@
 import { infiniteQueryOptions, queryOptions } from '@tanstack/react-query';
 import { appConfig } from 'config';
-import { type GetAttachmentsData, getAttachments } from '~/api.gen';
+import { type GetAttachmentsData, type GetAttachmentsGroupData, getAttachments, getAttachmentsGroup } from '~/api.gen';
 
 type GetAttachmentsParams = GetAttachmentsData['path'] & Omit<NonNullable<GetAttachmentsData['query']>, 'limit' | 'offset'>;
 /**
@@ -28,20 +28,16 @@ export const attachmentsKeys = {
  * @param param.attachmentId - attachmentId, to fetch all attachments of same group.
  * @returns  Query options.
  */
-export const groupedAttachmentsQueryOptions = ({ orgIdOrSlug, attachmentId }: Pick<GetAttachmentsParams, 'attachmentId' | 'orgIdOrSlug'>) => {
-  const queryKey = attachmentsKeys.list.base();
-
-  return queryOptions({
-    queryKey,
-    queryFn: () =>
-      getAttachments({
-        query: { attachmentId, offset: String(0), limit: String(appConfig.requestLimits.attachments) },
-        path: { orgIdOrSlug },
-      }),
+export const groupedAttachmentsQueryOptions = ({
+  orgIdOrSlug,
+  mainAttachmentId,
+}: GetAttachmentsGroupData['path'] & GetAttachmentsGroupData['query']) =>
+  queryOptions({
+    queryKey: attachmentsKeys.list.base(),
+    queryFn: () => getAttachmentsGroup({ query: { mainAttachmentId }, path: { orgIdOrSlug } }),
     staleTime: 0,
     gcTime: 0,
   });
-};
 
 /**
  * Infinite Query Options for fetching a paginated list of attachments.

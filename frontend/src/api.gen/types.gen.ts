@@ -128,6 +128,25 @@ export type ApiError = {
   organizationId?: string;
 };
 
+export type AttachmentTableSchema = {
+  createdAt: string;
+  id: string;
+  name: string;
+  entityType: 'attachment';
+  groupId: string | null;
+  filename: string;
+  contentType: string;
+  convertedContentType: string | null;
+  size: string;
+  originalKey: string;
+  convertedKey: string | null;
+  thumbnailKey: string | null;
+  createdBy: string | null;
+  modifiedAt: string | null;
+  modifiedBy: string | null;
+  organizationId: string;
+};
+
 export type EntityListItemSchema = {
   id: string;
   entityType: 'user' | 'organization';
@@ -3699,6 +3718,78 @@ export type CreateAttachmentResponses = {
 };
 
 export type CreateAttachmentResponse = CreateAttachmentResponses[keyof CreateAttachmentResponses];
+
+export type GetAttachmentsGroupData = {
+  body?: never;
+  path: {
+    orgIdOrSlug: string;
+  };
+  query: {
+    mainAttachmentId: string;
+  };
+  url: '/{orgIdOrSlug}/attachments/group';
+};
+
+export type GetAttachmentsGroupErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: ApiError & {
+    status?: 400;
+  };
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: ApiError & {
+    status?: 401;
+  };
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ApiError & {
+    status?: 403;
+  };
+  /**
+   * Not found: resource does not exist.
+   */
+  404: ApiError & {
+    status?: 404;
+  };
+  /**
+   * Rate limit: too many requests.
+   */
+  429: ApiError & {
+    status?: 429;
+  };
+};
+
+export type GetAttachmentsGroupError = GetAttachmentsGroupErrors[keyof GetAttachmentsGroupErrors];
+
+export type GetAttachmentsGroupResponses = {
+  /**
+   * Attachments
+   */
+  200: Array<{
+    createdAt: string;
+    id: string;
+    name: string;
+    entityType: 'attachment';
+    groupId: string | null;
+    filename: string;
+    contentType: string;
+    convertedContentType: string | null;
+    size: string;
+    createdBy: string | null;
+    modifiedAt: string | null;
+    modifiedBy: string | null;
+    organizationId: string;
+    url: string;
+    thumbnailUrl: string | null;
+    convertedUrl: string | null;
+  }>;
+};
+
+export type GetAttachmentsGroupResponse = GetAttachmentsGroupResponses[keyof GetAttachmentsGroupResponses];
 
 export type GetAttachmentData = {
   body?: never;
