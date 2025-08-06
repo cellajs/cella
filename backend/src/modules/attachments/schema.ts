@@ -1,7 +1,7 @@
-import { attachmentsTable } from '#/db/schema/attachments';
-import { paginationQuerySchema } from '#/utils/schema/common';
 import { z } from '@hono/zod-openapi';
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
+import { attachmentsTable } from '#/db/schema/attachments';
+import { paginationQuerySchema } from '#/utils/schema/common';
 
 const attachmentInsertSchema = createInsertSchema(attachmentsTable);
 export const attachmentSelectSchema = createSelectSchema(attachmentsTable);
@@ -19,13 +19,6 @@ export const attachmentCreateManySchema = z
   )
   .min(1)
   .max(50);
-
-export const attachmentUpdateBodySchema = attachmentInsertSchema
-  .pick({
-    name: true,
-    originalKey: true,
-  })
-  .partial();
 
 export const attachmentSchema = attachmentSelectSchema.omit({ originalKey: true, convertedKey: true, thumbnailKey: true }).extend({
   url: z.string(),

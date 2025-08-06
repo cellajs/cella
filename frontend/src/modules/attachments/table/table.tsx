@@ -26,11 +26,13 @@ const BaseDataTable = memo(
     const { q, sort, order, limit } = searchVars;
     const orgIdOrSlug = entity.membership?.organizationId || entity.id;
 
+    const attachmentCollection = getAttachmentsCollection(orgIdOrSlug);
+
     const { data } = useLiveQuery(
       (query) => {
         let qBuilder = query
-          .from({ attachments: getAttachmentsCollection(orgIdOrSlug) })
-          .orderBy(({ attachments }) => (sort && sort !== 'createdAt' ? attachments[sort] : attachments.created_at), order);
+          .from({ attachments: attachmentCollection })
+          .orderBy(({ attachments }) => (sort && sort !== 'createdAt' ? attachments[sort] : attachments.created_at), order ?? 'asc');
 
         if (typeof q === 'string' && q.trim() !== '') {
           qBuilder = qBuilder.where(({ attachments }) => or(ilike(attachments.name, `%${q}%`), ilike(attachments.filename, `%${q}%`)));
@@ -77,6 +79,9 @@ const BaseDataTable = memo(
             id: attachment.id,
             orgIdOrSlug: entity.id,
             name: attachment.name,
+          });
+          attachmentCollection.update(attachment.id, (draft) => {
+            draft.name = attachment.name;
           });
         }
       }

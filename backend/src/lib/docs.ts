@@ -1,3 +1,8 @@
+import fs from 'node:fs/promises';
+import type { OpenAPIHono } from '@hono/zod-openapi';
+import { Scalar } from '@scalar/hono-api-reference';
+import chalk from 'chalk';
+import { appConfig } from 'config';
 import type { Env } from '#/lib/context';
 import { apiModulesList, registerAppSchema } from '#/lib/docs-config';
 import { attachmentSelectSchema } from '#/modules/attachments/schema';
@@ -5,11 +10,6 @@ import { entityBaseSchema, userSummarySchema } from '#/modules/entities/schema';
 import { menuSchema } from '#/modules/me/schema';
 import { membershipSummarySchema } from '#/modules/memberships/schema';
 import { errorSchema } from '#/utils/schema/error';
-import type { OpenAPIHono } from '@hono/zod-openapi';
-import { Scalar } from '@scalar/hono-api-reference';
-import chalk from 'chalk';
-import { appConfig } from 'config';
-import fs from 'node:fs/promises';
 
 // OpenAPI configuration
 const openApiConfig = {

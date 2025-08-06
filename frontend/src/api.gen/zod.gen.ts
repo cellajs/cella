@@ -1638,8 +1638,7 @@ export const zGetAttachmentResponse = z.object({
 export const zUpdateAttachmentData = z.object({
   body: z.optional(
     z.object({
-      name: z.optional(z.string()),
-      originalKey: z.optional(z.string()),
+      name: z.string(),
     }),
   ),
   path: z.object({

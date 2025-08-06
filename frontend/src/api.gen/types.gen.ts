@@ -3864,8 +3864,7 @@ export type GetAttachmentResponse = GetAttachmentResponses[keyof GetAttachmentRe
 
 export type UpdateAttachmentData = {
   body?: {
-    name?: string;
-    originalKey?: string;
+    name: string;
   };
   path: {
     id: string;
