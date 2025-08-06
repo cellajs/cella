@@ -126,5 +126,5 @@ export const sendVerificationEmail = async ({ userId, oauthAccountId, redirectPa
 
   mailer.prepareEmails<EmailVerificationEmailProps, Recipient>(EmailVerificationEmail, staticProps, recipients);
 
-  logEvent('info', 'Verification email sent', { user: user.id });
+  logEvent('info', 'Verification email sent', { userId: user.id });
 };

@@ -1,6 +1,3 @@
-import { appConfig } from 'config';
-import { eq } from 'drizzle-orm';
-import type { Context } from 'hono';
 import { db } from '#/db/db';
 import { tokensTable } from '#/db/schema/tokens';
 import { AppError } from '#/lib/errors';
@@ -10,6 +7,9 @@ import { isExpiredDate } from '#/utils/is-expired-date';
 import { isValidRedirectPath } from '#/utils/is-redirect-url';
 import { logEvent } from '#/utils/logger';
 import { TimeSpan } from '#/utils/time-span';
+import { appConfig } from 'config';
+import { eq } from 'drizzle-orm';
+import type { Context } from 'hono';
 
 export const oauthCookieExpires = new TimeSpan(5, 'm');
 
@@ -17,7 +17,7 @@ export const oauthCookieExpires = new TimeSpan(5, 'm');
  * Creates an OAuth session by setting the necessary cookies and ensuring session validity before redirecting to the OAuth provider.
  *
  * @param ctx - Request/response context.
- * @param strategy - OAuth provider (e.g., Google, GitHub, Microsoft).
+ * @param provider - OAuth provider (e.g., Google, GitHub, Microsoft).
  * @param url - URL of the OAuth provider's authorization endpoint.
  * @param state - OAuth state parameter to prevent CSRF attacks.
  * @param codeVerifier - Optional, code verifier for PKCE.

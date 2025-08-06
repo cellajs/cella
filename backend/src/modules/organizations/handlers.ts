@@ -1,6 +1,3 @@
-import { OpenAPIHono, type z } from '@hono/zod-openapi';
-import { appConfig } from 'config';
-import { and, count, eq, getTableColumns, ilike, inArray, isNotNull, type SQL, sql } from 'drizzle-orm';
 import { db } from '#/db/db';
 import { membershipsTable } from '#/db/schema/memberships';
 import { organizationsTable } from '#/db/schema/organizations';
@@ -22,6 +19,9 @@ import { logEvent } from '#/utils/logger';
 import { getOrderColumn } from '#/utils/order-column';
 import { prepareStringForILikeFilter } from '#/utils/sql';
 import { defaultWelcomeText } from '#json/text-blocks.json';
+import { OpenAPIHono, type z } from '@hono/zod-openapi';
+import { appConfig } from 'config';
+import { and, count, eq, getTableColumns, ilike, inArray, isNotNull, type SQL, sql } from 'drizzle-orm';
 
 const app = new OpenAPIHono<Env>({ defaultHook });
 
@@ -57,7 +57,7 @@ const organizationRouteHandlers = app
       })
       .returning();
 
-    logEvent('info', 'Organization created', { organization: createdOrganization.id });
+    logEvent('info', 'Organization created', { organizationId: createdOrganization.id });
 
     // Insert membership
     const createdMembership = await insertMembership({ userId: user.id, role: 'admin', entity: createdOrganization });
@@ -170,7 +170,7 @@ const organizationRouteHandlers = app
       sendSSEToUsers(userIds, 'remove_entity', { id, entityType: 'organization' });
     }
 
-    logEvent('info', 'Organizations deleted', { ids: allowedIds });
+    logEvent('info', 'Organizations deleted', allowedIds);
 
     return ctx.json({ success: true, rejectedItems }, 200);
   })
@@ -235,7 +235,7 @@ const organizationRouteHandlers = app
     // Send SSE events to organization members
     for (const member of organizationMemberships) sendSSEToUsers([member.userId], 'update_entity', { ...updatedOrganization, member });
 
-    logEvent('info', 'Organization updated', { organization: updatedOrganization.id });
+    logEvent('info', 'Organization updated', { organizationId: updatedOrganization.id });
 
     const memberCountsQuery = getMemberCountsQuery(organization.entityType);
     const [{ invitesCount }] = await db
