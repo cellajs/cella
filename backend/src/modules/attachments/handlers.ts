@@ -137,8 +137,8 @@ const attachmentsRouteHandlers = app
     const orderColumn = getOrderColumn(
       {
         id: attachmentsTable.id,
-        filename: attachmentsTable.filename,
-        contentType: attachmentsTable.contentType,
+        name: attachmentsTable.name,
+        size: attachmentsTable.size,
         createdAt: attachmentsTable.createdAt,
       },
       sort,
