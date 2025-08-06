@@ -72,7 +72,7 @@ export const attachmentsQueryOptions = ({
     queryKey,
     initialPageParam: { page: 0, offset: 0 },
     queryFn: async ({ pageParam: { page, offset: _offset }, signal }) => {
-      const offset = String(_offset || page * Number(limit));
+      const offset = String((_offset || page || 0) * Number(limit));
       return await getAttachments({ query: { q, sort, order, limit, offset }, path: { orgIdOrSlug }, signal });
     },
     getNextPageParam: (_lastPage, allPages) => {
