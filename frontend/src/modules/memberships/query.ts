@@ -57,7 +57,7 @@ export const membersQueryOptions = ({
     queryKey,
     initialPageParam: { page: 0, offset: 0 },
     queryFn: async ({ pageParam: { page, offset: _offset }, signal }) => {
-      const offset = String((_offset || page || 0) * Number(limit));
+      const offset = String(_offset || (page || 0) * Number(limit));
 
       return await getMembers({
         query: { q, sort, order, role, limit, idOrSlug, entityType, offset },
@@ -106,7 +106,8 @@ export const pendingInvitationsQueryOptions = ({
     queryKey,
     initialPageParam: { page: 0, offset: 0 },
     queryFn: async ({ pageParam: { page, offset: _offset }, signal }) => {
-      const offset = String((_offset || page || 0) * Number(limit));
+      const offset = String(_offset || (page || 0) * Number(limit));
+
       return await getPendingInvitations({
         query: { q, sort, order, limit, idOrSlug, entityType, offset },
         path: { orgIdOrSlug },
