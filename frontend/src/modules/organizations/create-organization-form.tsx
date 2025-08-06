@@ -3,7 +3,6 @@ import type React from 'react';
 import { useMemo } from 'react';
 import { type UseFormProps, useWatch } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
-import { toast } from 'sonner';
 import type { z } from 'zod';
 import { zCreateOrganizationData } from '~/api.gen/zod.gen';
 // Change this in the future on current schema
@@ -11,6 +10,7 @@ import { useFormWithDraft } from '~/hooks/use-draft-form';
 import InputFormField from '~/modules/common/form-fields/input';
 import { SlugFormField } from '~/modules/common/form-fields/slug';
 import { useStepper } from '~/modules/common/stepper';
+import { toaster } from '~/modules/common/toaster';
 import { useOrganizationCreateMutation } from '~/modules/organizations/query';
 import type { Organization } from '~/modules/organizations/types';
 import { Button, SubmitButton } from '~/modules/ui/button';
@@ -52,7 +52,7 @@ const CreateOrganizationForm = ({ labelDirection = 'top', children, callback }: 
     mutate(values, {
       onSuccess: (createdOrganization) => {
         form.reset();
-        toast.success(t('common:success.create_resource', { resource: t('common:organization') }));
+        toaster(t('common:success.create_resource', { resource: t('common:organization') }), 'success');
 
         callback?.(createdOrganization); // Trigger callback
 

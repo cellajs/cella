@@ -3,7 +3,6 @@ import { Link, useNavigate, useParams, useSearch } from '@tanstack/react-router'
 import { appConfig } from 'config';
 import { Ban, Check } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { toast } from 'sonner';
 import { acceptEntityInvite } from '~/api.gen';
 import AuthErrorNotice from '~/modules/auth/auth-error-notice';
 import { useCheckToken } from '~/modules/auth/use-token-check';
@@ -14,6 +13,7 @@ import { getEntityRoute } from '~/nav-config';
 import { AcceptEntityInviteRoute } from '~/routes/auth';
 import { useUserStore } from '~/store/user';
 import { cn } from '~/utils/cn';
+import { toaster } from '../common/toaster';
 
 // Accept entity invitation when user is signed in
 const AcceptEntityInvite = () => {
@@ -36,7 +36,7 @@ const AcceptEntityInvite = () => {
     onSuccess: async (entity) => {
       await getAndSetMenu();
 
-      toast.success(t('common:invitation_accepted'));
+      toaster(t('common:invitation_accepted', 'success'));
 
       const { to, params, search } = getEntityRoute(entity);
       navigate({ to, params, search });

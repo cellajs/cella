@@ -9,7 +9,7 @@ const LegalTexts = ({ textFor }: { textFor: LegalTypes }) => {
 
   if (textFor === 'terms')
     return (
-      <div className="prose dark:prose-invert text-foreground">
+      <div className="prose dark:prose-invert text-foreground max-w-none">
         <h2 className="mb-4 font-medium">Terms of use</h2>
         <p className="italic mb-2">Last updated: September 23, 2024</p>
         <p>Here you can read our terms of use. If you have questions or comments about them, feel free to contact us.</p>
@@ -343,7 +343,7 @@ const LegalTexts = ({ textFor }: { textFor: LegalTypes }) => {
       </div>
     );
   return (
-    <div className="prose dark:prose-invert text-foreground">
+    <div className="prose dark:prose-invert text-foreground max-w-none">
       <h2 className="mb-4 font-medium">Privacy policy</h2>
       <p className="italic mb-2">Last updated: September 23, 2024</p>
       <p>Here you can read our privacy policy. If you have questions or comments about them, feel free to contact us.</p>
