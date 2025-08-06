@@ -86,7 +86,7 @@ export const handleAppError: ErrorHandler<Env> = (err, ctx) => {
   const user = getContextUser();
   const organization = getContextOrganization();
 
-  const enrichedError = {
+  const detailedError = {
     message,
     ...error,
     cause,
@@ -99,15 +99,17 @@ export const handleAppError: ErrorHandler<Env> = (err, ctx) => {
     timestamp: getIsoDate(),
   };
 
+  const detailsRequired = ['warn', 'error', 'fatal'].includes(severity);
+
   // Send to Sentry
-  if (['warn', 'error', 'fatal'].includes(severity)) {
+  if (detailsRequired) {
     const level = severity === 'warn' ? 'warning' : 'error';
-    Sentry.captureException(enrichedError, { level });
+    Sentry.captureException(detailedError, { level });
   }
 
   // Log the error
-  if (!isProduction) eventLogger[severity]({ msg: enrichedError.name, error: enrichedError });
-  else eventLogger[severity]({ ...(meta ?? {}), ...enrichedError });
+  if (!isProduction) eventLogger[severity]({ msg: detailedError.name, ...(detailsRequired ? { error: detailedError } : {}) });
+  else eventLogger[severity]({ ...(meta ?? {}), ...(detailsRequired ? { ...detailedError } : {}) });
 
   // Redirect to the frontend error page with query parameters for error details
   if (isRedirect) {
@@ -115,5 +117,5 @@ export const handleAppError: ErrorHandler<Env> = (err, ctx) => {
     return ctx.redirect(redirectUrl, 302);
   }
 
-  return ctx.json(enrichedError, enrichedError.status);
+  return ctx.json(detailedError, detailedError.status);
 };
