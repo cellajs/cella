@@ -1,7 +1,7 @@
-import { appConfig } from 'config';
-import type { MiddlewareHandler } from 'hono';
 import { requestLogger } from '#/pino-config';
 import { nanoid } from '#/utils/nanoid';
+import { appConfig } from 'config';
+import type { MiddlewareHandler } from 'hono';
 
 const ANSI = {
   reset: '\x1b[0m',
@@ -16,8 +16,7 @@ const isProduction = appConfig.mode === 'production';
 
 export const loggerMiddleware: MiddlewareHandler = async (ctx, next) => {
   const start = Date.now();
-  const { req, res } = ctx;
-  const { url, method } = req;
+  const { url, method } = ctx.req;
 
   const cleanUrl = url.replace(appConfig.backendUrl, '');
 
@@ -39,11 +38,11 @@ export const loggerMiddleware: MiddlewareHandler = async (ctx, next) => {
   const user = ctx.get('user')?.id || 'na';
 
   // Log JSON
-  if (isProduction) return logTrace({ logId, user, method, url: cleanUrl, status: res.status, responseTime });
+  if (isProduction) return logTrace({ logId, user, method, url: cleanUrl, status: ctx.res.status, responseTime });
 
   // Log human-readable
-  const coloredStatus = formatStatus(res.status);
-  const errorText = getErrorText(res.status);
+  const coloredStatus = formatStatus(ctx.res.status);
+  const errorText = getErrorText(ctx.res.status);
   const outgoingLogLine = `${base} ${coloredStatus} ${cleanUrl} (${responseTime}ms) ${ANSI.grey}@${user}${ANSI.reset} ${errorText}`;
   logTrace(outgoingLogLine);
 };

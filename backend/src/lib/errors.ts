@@ -1,13 +1,13 @@
-import type { z } from '@hono/zod-openapi';
-import * as Sentry from '@sentry/node';
-import { appConfig } from 'config';
-import type { ErrorHandler } from 'hono';
-import i18n from 'i18next';
 import { type Env, getContextOrganization, getContextUser } from '#/lib/context';
 import type locales from '#/lib/i18n-locales';
 import { eventLogger } from '#/pino-config';
 import { getIsoDate } from '#/utils/iso-date';
 import type { errorSchema } from '#/utils/schema/error';
+import type { z } from '@hono/zod-openapi';
+import * as Sentry from '@sentry/node';
+import { appConfig } from 'config';
+import type { ErrorHandler } from 'hono';
+import i18n from 'i18next';
 
 const isProduction = appConfig.mode === 'production';
 
@@ -115,6 +115,5 @@ export const handleAppError: ErrorHandler<Env> = (err, ctx) => {
     return ctx.redirect(redirectUrl, 302);
   }
 
-  // TODO(PRIORITY) response still resolves with a 200 even if the statuscode is passed here?
   return ctx.json(enrichedError, enrichedError.status);
 };
