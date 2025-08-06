@@ -113,7 +113,7 @@
   "organization_missing": "Organization missing",
   "organization_missing.text": "Organization slug or id is required to perform this action.",
   "page_not_found": "Page not found",
-  "page_not_found.text": "This page didn't exist or has been deleted. If you believe this to be a mistake, please contact support.",
+  "page_not_found.text": "This page didn't exist or has been deleted.",
   "passkey_add_failed": "Registering passkey failed. Try again later.",
   "passkey_failed": "Passkey verification failed",
   "passkey_failed.text": "Passkey verification failed. Please try again or use another method.",

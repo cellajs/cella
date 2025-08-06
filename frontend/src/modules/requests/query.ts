@@ -13,8 +13,8 @@ import {
   systemInvite,
 } from '~/api.gen';
 import type { ApiError } from '~/lib/api';
+import { toaster } from '~/modules/common/toaster';
 import type { Request } from '~/modules/requests/types';
-import { toaster } from '../common/toaster';
 
 /**
  * Keys for request related queries. These keys help to uniquely identify different query. For managing query caching and invalidation.

@@ -40,9 +40,7 @@ export const CheckEmailForm = ({ setStep, emailEnabled }: CheckEmailProps) => {
       let nextStep: AuthStep = 'inviteOnly';
 
       // If there is an unclaimed invitation token, redirect to error page
-      if (error.type === 'invite_takes_priority') {
-        return setStep('error', form.getValues('email'), error);
-      }
+      if (error.type === 'invite_takes_priority') return setStep('error', form.getValues('email'), error);
 
       // If registration is enabled or user has a token, proceed to sign up
       if (appConfig.has.registrationEnabled) nextStep = 'signUp';

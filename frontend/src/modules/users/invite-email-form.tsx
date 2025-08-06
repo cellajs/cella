@@ -72,7 +72,10 @@ const InviteEmailForm = ({ entity, dialog: isDialog, children }: Props) => {
   };
 
   const { mutate: membershipInvite, isPending } = useInviteMemberMutation();
-  const { mutate: systemInvite } = useMutation({ mutationFn: (body: FormValues) => baseSystemInvite({ body }), onSuccess });
+  const { mutate: systemInvite, isPending: isSystemInvitePending } = useMutation({
+    mutationFn: (body: FormValues) => baseSystemInvite({ body }),
+    onSuccess,
+  });
 
   const onSubmit = (values: FormValues) => {
     entity ? membershipInvite({ ...values, entity } as InviteMember, { onSuccess }) : systemInvite(values);
@@ -110,7 +113,7 @@ const InviteEmailForm = ({ entity, dialog: isDialog, children }: Props) => {
         )}
 
         <div className="flex flex-col sm:flex-row gap-2">
-          <SubmitButton loading={isPending} className="relative">
+          <SubmitButton loading={isPending || isSystemInvitePending} className="relative">
             {!!form.getValues('emails')?.length && <Badge context="button">{form.getValues('emails')?.length}</Badge>}{' '}
             <Send size={16} className="mr-2" />
             {t('common:invite')}

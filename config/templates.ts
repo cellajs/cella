@@ -3,11 +3,13 @@ const avatar = {
     converted: {
       use: ':original',
       robot: '/image/resize',
+      background: 'none',
       format: 'webp',
     },
     thumbnail: {
       use: 'converted',
       robot: '/image/resize',
+      background: 'none',
       resize_strategy: 'fit',
       width: 200,
       height: 200,
@@ -21,11 +23,13 @@ const cover = {
     converted: {
       use: ':original',
       robot: '/image/resize',
+      background: 'none',
       format: 'webp',
     },
     cover: {
       use: 'converted',
       robot: '/image/resize',
+      background: 'none',
       resize_strategy: 'fit',
       width: 2000,
       height: 700,
@@ -67,6 +71,7 @@ const attachment = {
     converted_image: {
       use: 'filter_images',
       robot: '/image/resize',
+      background: 'none',
       resize_strategy: 'fit',
       width: 1800,
       height: 1800,
@@ -112,6 +117,7 @@ const attachment = {
     thumb_image: {
       use: 'filter_images',
       robot: '/image/resize',
+      background: 'none',
       count: 1,
       format: 'png',
       width: 100,

@@ -13,6 +13,7 @@ import { useOrganizationUpdateMutation } from '~/modules/organizations/query';
 import type { Organization } from '~/modules/organizations/types';
 import { Button, SubmitButton } from '~/modules/ui/button';
 import { Form } from '~/modules/ui/form';
+import { blocknoteFieldIsDirty } from '~/utils/blocknote-field-is-dirty';
 
 const BlockNoteContent = lazy(() => import('~/modules/common/form-fields/blocknote-content'));
 
@@ -21,8 +22,8 @@ const formSchema = zUpdateOrganizationData.shape.body.unwrap();
 type FormValues = z.infer<typeof formSchema>;
 interface Props {
   organization: Organization;
-  callback?: (organization: Organization) => void;
   sheet?: boolean;
+  callback?: (organization: Organization) => void;
 }
 
 const UpdateOrganizationDetailsForm = ({ organization, callback, sheet: isSheet }: Props) => {
@@ -56,6 +57,14 @@ const UpdateOrganizationDetailsForm = ({ organization, callback, sheet: isSheet 
     );
   };
 
+  const isDirty = () => {
+    if (!form.isDirty) return false;
+    const { welcomeText } = form.getValues();
+    return typeof welcomeText === 'string' && blocknoteFieldIsDirty(welcomeText);
+  };
+
+  if (form.loading) return null;
+
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
@@ -75,10 +84,10 @@ const UpdateOrganizationDetailsForm = ({ organization, callback, sheet: isSheet 
         </Suspense>
 
         <div className="flex flex-col sm:flex-row gap-2">
-          <SubmitButton disabled={!form.isDirty} loading={isPending}>
+          <SubmitButton disabled={!isDirty()} loading={isPending}>
             {t('common:save_changes')}
           </SubmitButton>
-          <Button type="reset" variant="secondary" onClick={() => form.reset()} className={form.isDirty ? '' : 'invisible'}>
+          <Button type="reset" variant="secondary" onClick={() => form.reset()} className={isDirty() ? '' : 'invisible'}>
             {t('common:cancel')}
           </Button>
         </div>

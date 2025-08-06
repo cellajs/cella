@@ -4,6 +4,7 @@ import { useUserStore } from '~/store/user';
 
 export const getDictionary = () => {
   const user = useUserStore.getState().user;
+  if (!user) return { ...en };
 
   const locale = user.language in blocknoteLocales ? blocknoteLocales[user.language] : en;
 

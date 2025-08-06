@@ -72,5 +72,6 @@ export const userInvitationsSchema = z.array(
     expiresAt: z.date(),
     invitedBy: userSummarySchema.nullable(),
     token: z.string(),
+    tokenId: z.string(),
   }),
 );

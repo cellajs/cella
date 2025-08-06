@@ -10,7 +10,7 @@ import { checkSlugAvailable } from '#/modules/entities/helpers/check-slug';
 import { insertMembership } from '#/modules/memberships/helpers';
 import { generateUnsubscribeToken } from '#/modules/users/helpers/unsubscribe-token';
 import { getIsoDate } from '#/utils/iso-date';
-import { logEvent } from '#/utils/logger';
+import { logError } from '#/utils/logger';
 import { nanoid } from '#/utils/nanoid';
 
 interface HandleCreateUserProps {
@@ -30,13 +30,13 @@ interface HandleCreateUserProps {
  * @returns Error response or Redirect response or Response
  */
 export const handleCreateUser = async ({ newUser, membershipInviteTokenId, emailVerified }: HandleCreateUserProps): Promise<UserModel> => {
-  // If signing up while having an unclaimed invitation token, abort and resend that invitation instead to prevent conflicts later
+  // If signing up without token while having an unclaimed invitation token, abort and resend that invitation instead to prevent conflicts later
   const [inviteToken] = await db
     .select()
     .from(tokensTable)
     .where(and(eq(tokensTable.email, newUser.email), eq(tokensTable.type, 'invitation'), isNull(tokensTable.userId)));
 
-  if (inviteToken) throw new AppError({ status: 403, type: 'invite_takes_priority', severity: 'warn' });
+  if (!membershipInviteTokenId && inviteToken) throw new AppError({ status: 403, type: 'invite_takes_priority', severity: 'warn' });
 
   // Check if slug is available
   const slugAvailable = await checkSlugAvailable(newUser.slug);
@@ -102,11 +102,7 @@ export const handleMembershipTokenUpdate = async (userId: string, tokenId: strin
     // Insert membership for user into entity, but not yet activated
     await insertMembership({ userId, role, entity, tokenId });
   } catch (error) {
-    if (error instanceof Error) {
-      const errorMessage = error.message;
-      logEvent({ msg: 'Error inserting membership from token data', meta: { userId, tokenId, errorMessage }, severity: 'error' });
-    }
-
+    logError('Error inserting membership from token data', error);
     throw error;
   }
 };

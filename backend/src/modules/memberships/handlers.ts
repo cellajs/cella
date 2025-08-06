@@ -1,7 +1,3 @@
-import { OpenAPIHono } from '@hono/zod-openapi';
-import { appConfig } from 'config';
-import { and, count, eq, gt, ilike, inArray, isNotNull, isNull, or } from 'drizzle-orm';
-import i18n from 'i18next';
 import { db } from '#/db/db';
 import { emailsTable } from '#/db/schema/emails';
 import { membershipsTable } from '#/db/schema/memberships';
@@ -26,6 +22,10 @@ import { getOrderColumn } from '#/utils/order-column';
 import { slugFromEmail } from '#/utils/slug-from-email';
 import { prepareStringForILikeFilter } from '#/utils/sql';
 import { createDate, TimeSpan } from '#/utils/time-span';
+import { OpenAPIHono } from '@hono/zod-openapi';
+import { appConfig } from 'config';
+import { and, count, desc, eq, gt, ilike, inArray, isNotNull, isNull, or } from 'drizzle-orm';
+import i18n from 'i18next';
 import { MemberInviteEmail, type MemberInviteEmailProps } from '../../../emails/member-invite';
 
 const app = new OpenAPIHono<Env>({ defaultHook });
@@ -78,20 +78,14 @@ const membershipRouteHandlers = app
 
     if (directlyInvitedEmails.size) {
       // Log existing direct entity invites
-      logEvent({
-        msg: `Skipped ${directlyInvitedEmails.size} emails due to existing invitations`,
-        meta: { id: entityId, emails: Array.from(directlyInvitedEmails) },
-      });
+      logEvent('info', 'Skipped emails due to existing invitations', { [targetEntityIdField]: entityId, emails: Array.from(directlyInvitedEmails) });
     }
 
     if (organizationInvitedEmails.size) {
       // Log re-associated entity invites
-      logEvent({
-        msg: `Re-associated ${organizationInvitedEmails.size} existing invites to target entity`,
-        meta: {
-          id: entityId,
-          emails: Array.from(organizationInvitedEmails),
-        },
+      logEvent('info', `Re-associated existing invites to ${entity.name}`, {
+        [targetEntityIdField]: entityId,
+        count: organizationInvitedEmails.size,
       });
     }
 
@@ -149,7 +143,7 @@ const membershipRouteHandlers = app
         // Check if the user is already a member of the target entity
         const targetMembership = memberships.find((m) => m.contextType === entityType && m[targetEntityIdField] === entityId);
         if (targetMembership) {
-          logEvent({ msg: `User already member of ${entityType}`, meta: { user: userId, id: entityId } });
+          logEvent('info', `User already member of ${entityType}`, { userId: userId, [targetEntityIdField]: entityId });
           return;
         }
 
@@ -232,14 +226,13 @@ const membershipRouteHandlers = app
     const emailProps = {
       senderName: user.name,
       senderThumbnailUrl: user.thumbnailUrl,
-      orgName: entity.name,
+      entityName: entity.name,
       role,
       subject: i18n.t('backend:email.member_invite.subject', {
-        lng: organization.defaultLanguage,
-        appName: appConfig.name,
-        entityType: organization.name,
+        lng: 'defaultLanguage' in entity ? entity.defaultLanguage : 'en',
+        entityName: entity.name,
       }),
-      lng: organization.defaultLanguage,
+      lng: 'defaultLanguage' in entity ? entity.defaultLanguage : 'en',
     };
 
     await mailer.prepareEmails<MemberInviteEmailProps, (typeof recipients)[number]>(MemberInviteEmail, emailProps, recipients, user.email);
@@ -265,7 +258,7 @@ const membershipRouteHandlers = app
       invitesCount: recipients.length,
     });
 
-    logEvent({ msg: `${insertedTokens.length} users invited to ${entity.entityType}`, meta: entity }); // Log invitation event
+    logEvent('info', `Users invited to ${entity.name}`, { count: insertedTokens.length, [targetEntityIdField]: entity.id });
 
     const rejectedItems = normalizedEmails.filter((email) => !recipients.some((recipient) => recipient.email === email));
     return ctx.json({ success: true, rejectedItems, invitesSentCount: recipients.length }, 200);
@@ -315,7 +308,7 @@ const membershipRouteHandlers = app
     const memberIds = targets.map((el) => el.userId);
     sendSSEToUsers(memberIds, 'remove_entity', { id: entity.id, entityType: entity.entityType });
 
-    logEvent({ msg: 'Deleted members', meta: { memberIds } });
+    logEvent('info', 'Deleted members', memberIds);
 
     return ctx.json({ success: true, rejectedItems }, 200);
   })
@@ -389,7 +382,7 @@ const membershipRouteHandlers = app
       });
     }
 
-    logEvent({ msg: 'Membership updated', meta: { user: updatedMembership.userId, membership: updatedMembership.id } });
+    logEvent('info', 'Membership updated', { userId: updatedMembership.userId, membershipId: updatedMembership.id });
 
     return ctx.json(updatedMembership, 200);
   })
@@ -492,6 +485,85 @@ const membershipRouteHandlers = app
     const items = await pendingInvitationsQuery.limit(Number(limit)).offset(Number(offset));
 
     return ctx.json({ items, total }, 200);
+  })
+  /*
+   * Resend invitation email for entity invites.
+   */
+  .openapi(membershipRoutes.resendInvitation, async (ctx) => {
+    const { email, tokenId } = ctx.req.valid('json');
+    const normalizedEmail = email.toLowerCase().trim();
+
+    const filters = [
+      eq(tokensTable.type, 'invitation'),
+      eq(tokensTable.email, normalizedEmail),
+      isNotNull(tokensTable.entityType),
+      isNotNull(tokensTable.role),
+    ];
+    if (tokenId) filters.push(eq(tokensTable.id, tokenId));
+
+    // Retrieve token
+    const [oldToken] = await db
+      .select()
+      .from(tokensTable)
+      .where(and(...filters))
+      .orderBy(desc(tokensTable.createdAt))
+      .limit(1);
+
+    if (!oldToken) throw new AppError({ status: 404, type: 'not_found', severity: 'warn' });
+
+    const { entityType, role, email: userEmail } = oldToken;
+
+    if (!entityType || !role) throw new AppError({ status: 401, type: 'invalid_request', severity: 'warn' });
+
+    const entityIdField = appConfig.entityIdFields[entityType];
+    const entityId = oldToken[entityIdField];
+    if (!entityId) throw new AppError({ status: 404, type: 'not_found', severity: 'warn' });
+
+    const entity = await resolveEntity(entityType, entityId);
+    if (!entity) throw new AppError({ status: 404, type: 'not_found', severity: 'warn', entityType });
+
+    // Insert token first
+    const [{ newTokenId, newToken }] = await db
+      .insert(tokensTable)
+      .values({
+        ...oldToken,
+        id: nanoid(),
+        token: nanoid(40), // unique hashed token
+        expiresAt: createDate(new TimeSpan(7, 'd')),
+      })
+      .returning({ newTokenId: tokensTable.id, newToken: tokensTable.token });
+
+    // Update membership record with new token
+    await db
+      .update(membershipsTable)
+      .set({ tokenId: newTokenId })
+      .where(and(eq(membershipsTable.tokenId, oldToken.id)));
+
+    // Delete old token (avoid triggering cascade prematurely)
+    await db.delete(tokensTable).where(eq(tokensTable.id, oldToken.id));
+
+    // Prepare and send invitation email
+    const recipient = {
+      email: userEmail,
+      name: slugFromEmail(userEmail),
+      memberInviteLink: `${appConfig.frontendUrl}/invitation/${newToken}?tokenId=${newTokenId}`,
+    };
+
+    const emailProps = {
+      entityName: entity.name,
+      role,
+      subject: i18n.t('backend:email.member_invite.subject', {
+        lng: 'defaultLanguage' in entity ? entity.defaultLanguage : 'en',
+        entityName: entity.name,
+      }),
+      lng: 'defaultLanguage' in entity ? entity.defaultLanguage : 'en',
+    };
+
+    await mailer.prepareEmails<MemberInviteEmailProps, typeof recipient>(MemberInviteEmail, emailProps, [recipient], userEmail);
+
+    logEvent('info', 'Invitation has been resent', { [entityIdField]: entity.id });
+
+    return ctx.json(true, 200);
   });
 
 export default membershipRouteHandlers;

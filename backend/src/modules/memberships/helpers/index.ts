@@ -1,11 +1,11 @@
-import { appConfig, type ContextEntityType } from 'config';
-import { and, eq, max } from 'drizzle-orm';
 import { db } from '#/db/db';
 import { type MembershipModel, membershipsTable } from '#/db/schema/memberships';
 import type { EntityModel } from '#/lib/entity';
 import { membershipSummarySelect } from '#/modules/memberships/helpers/select';
 import { getIsoDate } from '#/utils/iso-date';
 import { logEvent } from '#/utils/logger';
+import { appConfig, type ContextEntityType } from 'config';
+import { and, eq, max } from 'drizzle-orm';
 
 type BaseEntityModel = EntityModel<ContextEntityType> & {
   organizationId?: string;
@@ -103,7 +103,7 @@ export const insertMembership = async <T extends BaseEntityModel>({
     })
     .returning(membershipSummarySelect);
 
-  logEvent({ msg: `User added to ${entity.entityType}`, meta: { user: userId, id: entity.id } }); // Log event
+  logEvent('info', `User added to ${entity.entityType}`, { userId: userId, [entityIdField]: entity.id }); // Log event
 
   return result;
 };

@@ -88,9 +88,7 @@ const OrganizationSettings = ({ organization }: { organization: Organization }) 
         <AsideAnchor id="details" extraOffset>
           <Card id="update-organization-details">
             <CardHeader>
-              <CardTitle>
-                <UnsavedBadge title={t('common:details')} />
-              </CardTitle>
+              <CardTitle>{t('common:details')}</CardTitle>
             </CardHeader>
             <CardContent>
               <UpdateOrganizationDetailsForm

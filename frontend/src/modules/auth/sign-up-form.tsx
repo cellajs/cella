@@ -49,9 +49,7 @@ export const SignUpForm = ({ tokenData, email, setStep, resetSteps, emailEnabled
     onSuccess: () => navigate({ to: '/auth/email-verification/$reason', params: { reason: 'signup' }, replace: true }),
     onError: (error: ApiError) => {
       // If there is an unclaimed invitation token, redirect to error page
-      if (error.type === 'invite_takes_priority') {
-        return setStep('error', form.getValues('email'), error);
-      }
+      if (error.type === 'invite_takes_priority') return setStep('error', form.getValues('email'), error);
     },
   });
 
@@ -170,10 +168,10 @@ export const LegalNotice = ({ email = '', mode = 'signup' }: { email?: string; m
   };
 
   return (
-    <p className="font-light text-center space-x-0.5">
-      <span>{mode === 'signup' && t('common:legal_notice.text', { email })}</span>
-      <span>{mode === 'waitlist' && t('common:legal_notice_waitlist.text', { email })}</span>
-      <span>{mode === 'verify' && t('common:request_verification.legal_notice')}</span>
+    <p className="font-light text-center space-x-1">
+      {mode === 'signup' && <span>{t('common:legal_notice.text', { email })}</span>}
+      {mode === 'waitlist' && <span>{t('common:legal_notice_waitlist.text', { email })}</span>}
+      {mode === 'verify' && <span>{t('common:request_verification.legal_notice')}</span>}
       <Button ref={termsButtonRef} type="button" variant="link" className="p-0 text-base h-auto" onClick={openDialog('terms', termsButtonRef)}>
         {t('common:terms').toLocaleLowerCase()}
       </Button>

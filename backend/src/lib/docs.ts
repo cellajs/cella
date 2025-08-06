@@ -1,6 +1,7 @@
 import fs from 'node:fs/promises';
 import type { OpenAPIHono } from '@hono/zod-openapi';
 import { Scalar } from '@scalar/hono-api-reference';
+import chalk from 'chalk';
 import { appConfig } from 'config';
 import type { Env } from '#/lib/context';
 import { apiModulesList, registerAppSchema } from '#/lib/docs-config';
@@ -9,14 +10,29 @@ import { menuSchema } from '#/modules/me/schema';
 import { membershipSummarySchema } from '#/modules/memberships/schema';
 import { errorSchema } from '#/utils/schema/error';
 
+// OpenAPI configuration
+const openApiConfig = {
+  servers: [{ url: appConfig.backendUrl }],
+  info: {
+    title: `${appConfig.name} API`,
+    version: appConfig.apiVersion,
+    description: appConfig.apiDescription,
+  },
+  openapi: '3.1.0',
+  tags: apiModulesList,
+  security: [{ cookieAuth: [] }],
+};
+
 /**
  * Generate OpenAPI documentation using hono/zod-openapi and scalar/hono-api-reference
  *
+ * @param app - The OpenAPIHono application instance
+ * @param skipScalar - If true, skips the Scalar integration for API reference
+ *
  * @link https://github.com/scalar/scalar/blob/main/documentation/configuration.md
  */
-const docs = async (app: OpenAPIHono<Env>) => {
+const docs = async (app: OpenAPIHono<Env>, skipScalar = false) => {
   const registry = app.openAPIRegistry;
-  const tags = apiModulesList;
 
   // Set security schemes
   registry.registerComponent('securitySchemes', 'cookieAuth', {
@@ -36,24 +52,15 @@ const docs = async (app: OpenAPIHono<Env>) => {
 
   registerAppSchema(registry);
 
-  const openApiConfig = {
-    servers: [{ url: appConfig.backendUrl }],
-    info: {
-      title: `${appConfig.name} API`,
-      version: appConfig.apiVersion,
-      description: appConfig.apiDescription,
-    },
-    openapi: '3.1.0',
-    tags,
-    security: [{ cookieAuth: [] }],
-  };
-
   // Review all existing schemas
   app.doc31('/openapi.json', openApiConfig);
 
   // Get JSON doc and save to file
   const openApiDoc = app.getOpenAPI31Document(openApiConfig);
-  fs.writeFile('./openapi.cache.json', JSON.stringify(openApiDoc, null, 2));
+  await fs.writeFile('./openapi.cache.json', JSON.stringify(openApiDoc, null, 2));
+  console.info(`${chalk.greenBright.bold('✔')} OpenAPI document written to ./openapi.cache.json`);
+
+  if (skipScalar) return;
 
   app.get(
     '/docs',
