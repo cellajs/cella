@@ -89,9 +89,9 @@ export const handleAppError: ErrorHandler<Env> = (err, ctx) => {
   const enrichedError = {
     message,
     ...error,
-    stack,
     cause,
     logId: ctx.get('logId'),
+    ...(['error', 'fatal'].includes(severity) ? { stack } : {}),
     path: ctx.req.path,
     method: ctx.req.method,
     userId: user?.id,

@@ -22,7 +22,8 @@ export const logEvent = (severity: Severity, msg: string, meta?: object): void =
 export const logError = (msg: string, error: Error | unknown, meta?: object): void => {
   // If not an instance of Error, log as unknown
   if (!(error instanceof Error)) {
-    eventLogger.error({ ...(meta ?? {}), msg, error });
+    if (!isProduction) eventLogger.error(error);
+    else eventLogger.error({ ...(meta ?? {}), msg, error });
     return;
   }
 
