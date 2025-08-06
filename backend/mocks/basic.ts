@@ -7,7 +7,7 @@ import { pastIsoDate } from "./utils";
 import { generateUnsubscribeToken } from "#/modules/users/helpers/unsubscribe-token";
 import { appConfig } from "config";
 import { UniqueEnforcer } from "enforce-unique";
-import { nanoid } from "nanoid";
+import { nanoid } from "#/utils/nanoid";
 import slugify from "slugify";
 
 /**

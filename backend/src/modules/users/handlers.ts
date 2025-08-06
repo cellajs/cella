@@ -1,5 +1,3 @@
-import { OpenAPIHono } from '@hono/zod-openapi';
-import { and, count, eq, ilike, inArray, isNotNull, or, type SQL } from 'drizzle-orm';
 import { db } from '#/db/db';
 import { membershipsTable } from '#/db/schema/memberships';
 import { usersTable } from '#/db/schema/users';
@@ -14,6 +12,8 @@ import { getIsoDate } from '#/utils/iso-date';
 import { logEvent } from '#/utils/logger';
 import { getOrderColumn } from '#/utils/order-column';
 import { prepareStringForILikeFilter } from '#/utils/sql';
+import { OpenAPIHono } from '@hono/zod-openapi';
+import { and, count, eq, ilike, inArray, isNotNull, or, type SQL } from 'drizzle-orm';
 
 const app = new OpenAPIHono<Env>({ defaultHook });
 
@@ -111,7 +111,7 @@ const usersRouteHandlers = app
     // Delete allowed users
     await db.delete(usersTable).where(inArray(usersTable.id, allowedIds));
 
-    logEvent({ msg: 'Users deleted', meta: allowedIds });
+    logEvent('info', 'Users deleted', allowedIds);
 
     return ctx.json({ success: true, rejectedItems }, 200);
   })
@@ -192,7 +192,7 @@ const usersRouteHandlers = app
       .where(eq(usersTable.id, targetUser.id))
       .returning();
 
-    logEvent({ msg: 'User updated', meta: { user: updatedUser.id } });
+    logEvent('info', 'User updated', { userId: updatedUser.id });
 
     return ctx.json(updatedUser, 200);
   });

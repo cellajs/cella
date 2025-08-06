@@ -39,9 +39,10 @@ export const getErrorTitle = (error?: ErrorNoticeError, errorFromQuery?: string)
     if (entityType && type) return i18n.t(`error:resource_${type}`, { resource: i18n.t(entityType) });
 
     if (type) return i18n.t(`error:${type}`);
-
     if (name) return name;
   }
+
+  if (error.name) return error.name;
 
   // Fallback if none of the above matched
   return i18n.t('error:error');
@@ -105,9 +106,9 @@ const ErrorNotice = ({ error, resetErrorBoundary, level }: ErrorNoticeProps) => 
             <CardHeader className="text-center">
               <CardTitle className="text-2xl mb-2 justify-center">{getErrorTitle(error, errorFromQuery)}</CardTitle>
               <CardDescription className="text-foreground/80 text-lg flex-col gap-2">
-                <div>{getErrorText(error, errorFromQuery)}</div>
-                <div>{severity === 'warn' && t('error:contact_mistake')}</div>
-                <div>{severity === 'error' && t('error:try_again_later')}</div>
+                <span className="block">{getErrorText(error, errorFromQuery)}</span>
+                <span className="block">{severity === 'warn' && t('error:contact_mistake')}</span>
+                <span className="block">{severity === 'error' && t('error:try_again_later')}</span>
               </CardDescription>
             </CardHeader>
             {error && 'status' in error && (

@@ -10,7 +10,7 @@ import { checkSlugAvailable } from '#/modules/entities/helpers/check-slug';
 import { insertMembership } from '#/modules/memberships/helpers';
 import { generateUnsubscribeToken } from '#/modules/users/helpers/unsubscribe-token';
 import { getIsoDate } from '#/utils/iso-date';
-import { logEvent } from '#/utils/logger';
+import { logError } from '#/utils/logger';
 import { nanoid } from '#/utils/nanoid';
 
 interface HandleCreateUserProps {
@@ -102,11 +102,7 @@ export const handleMembershipTokenUpdate = async (userId: string, tokenId: strin
     // Insert membership for user into entity, but not yet activated
     await insertMembership({ userId, role, entity, tokenId });
   } catch (error) {
-    if (error instanceof Error) {
-      const errorMessage = error.message;
-      logEvent({ msg: 'Error inserting membership from token data', meta: { userId, tokenId, errorMessage }, severity: 'error' });
-    }
-
+    logError('Error inserting membership from token data', error);
     throw error;
   }
 };

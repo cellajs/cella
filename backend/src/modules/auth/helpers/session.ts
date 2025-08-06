@@ -1,6 +1,3 @@
-import type { z } from '@hono/zod-openapi';
-import { and, eq } from 'drizzle-orm';
-import type { Context } from 'hono';
 import { db } from '#/db/db';
 import { type AuthStrategy, type SessionModel, sessionsTable } from '#/db/schema/sessions';
 import { type UserModel, usersTable } from '#/db/schema/users';
@@ -17,6 +14,9 @@ import { nanoid } from '#/utils/nanoid';
 import { encodeLowerCased } from '#/utils/oslo';
 import { sessionCookieSchema } from '#/utils/schema/session-cookie';
 import { createDate, TimeSpan } from '#/utils/time-span';
+import type { z } from '@hono/zod-openapi';
+import { and, eq } from 'drizzle-orm';
+import type { Context } from 'hono';
 
 /**
  * Sets a user session and stores it in the database.
@@ -67,7 +67,7 @@ export const setUserSession = async (ctx: Context, user: UserModel, strategy: Au
   // Update last sign in date
   const lastSignInAt = getIsoDate();
   await db.update(usersTable).set({ lastSignInAt }).where(eq(usersTable.id, user.id));
-  logEvent({ msg: 'User signed in', meta: { user: user.id, strategy } });
+  logEvent('info', 'User signed in', { userId: user.id, strategy });
 };
 
 /**

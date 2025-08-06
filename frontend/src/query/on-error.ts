@@ -33,17 +33,17 @@ const getErrorMessage = ({ type, entityType, message, status }: ApiError) => {
 export const onError = (error: Error | ApiError) => {
   if (error instanceof ApiError) {
     const statusCode = Number(error.status);
-    const isSilentSessionAttempt = error.path && ['/me', '/me/menu'].includes(error.path);
+    const isCasualSessionAttempt = error.path && ['/me', '/me/menu'].includes(error.path);
 
     // Maintenance mode
     if ([503, 502].includes(statusCode)) useAlertStore.getState().setDownAlert('maintenance');
     // Authentication service is unavailable
-    else if (statusCode === 500 && isSilentSessionAttempt) return useAlertStore.getState().setDownAlert('auth_unavailable');
+    else if (statusCode === 500 && isCasualSessionAttempt) return useAlertStore.getState().setDownAlert('auth_unavailable');
     // Offline mode
     else if (statusCode === 504) return useAlertStore.getState().setDownAlert('offline');
 
     // Hide error if casually trying /me or /me/menu. It should fail silently if no valid session.
-    if (isSilentSessionAttempt && statusCode === 401) return;
+    if (isCasualSessionAttempt && statusCode === 401) return;
 
     // Translate, try most specific first
     const errorMessage = getErrorMessage(error);

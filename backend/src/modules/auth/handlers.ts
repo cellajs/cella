@@ -1,10 +1,3 @@
-import { getRandomValues } from 'node:crypto';
-import { OpenAPIHono } from '@hono/zod-openapi';
-import { encodeBase64 } from '@oslojs/encoding';
-import { generateCodeVerifier, generateState, OAuth2RequestError } from 'arctic';
-import { appConfig, type EnabledOAuthProvider } from 'config';
-import { and, desc, eq, isNotNull, isNull } from 'drizzle-orm';
-import i18n from 'i18next';
 import { db } from '#/db/db';
 import { emailsTable } from '#/db/schema/emails';
 import { membershipsTable } from '#/db/schema/memberships';
@@ -33,13 +26,13 @@ import {
 } from '#/modules/auth/helpers/oauth/cookies';
 import { basicFlow, connectFlow, getOAuthAccount, inviteFlow, verifyFlow } from '#/modules/auth/helpers/oauth/index';
 import {
+  githubAuth,
   type GithubUserEmailProps,
   type GithubUserProps,
-  type GoogleUserProps,
-  githubAuth,
   googleAuth,
-  type MicrosoftUserProps,
+  type GoogleUserProps,
   microsoftAuth,
+  type MicrosoftUserProps,
 } from '#/modules/auth/helpers/oauth/oauth-providers';
 import { transformGithubUserData, transformSocialUserData } from '#/modules/auth/helpers/oauth/transform-user-data';
 import { verifyPassKeyPublic } from '#/modules/auth/helpers/passkey';
@@ -57,6 +50,13 @@ import { logEvent } from '#/utils/logger';
 import { nanoid } from '#/utils/nanoid';
 import { slugFromEmail } from '#/utils/slug-from-email';
 import { createDate, TimeSpan } from '#/utils/time-span';
+import { OpenAPIHono } from '@hono/zod-openapi';
+import { encodeBase64 } from '@oslojs/encoding';
+import { generateCodeVerifier, generateState, OAuth2RequestError } from 'arctic';
+import { appConfig, type EnabledOAuthProvider } from 'config';
+import { and, desc, eq, isNotNull, isNull } from 'drizzle-orm';
+import i18n from 'i18next';
+import { getRandomValues } from 'node:crypto';
 import { CreatePasswordEmail, type CreatePasswordEmailProps } from '../../../emails/create-password';
 
 const enabledStrategies: readonly string[] = appConfig.enabledAuthStrategies;
@@ -266,7 +266,7 @@ const authRouteHandlers = app
 
     mailer.prepareEmails<CreatePasswordEmailProps, Recipient>(CreatePasswordEmail, staticProps, recipients);
 
-    logEvent({ msg: 'Create password link sent', meta: { user: user.id } });
+    logEvent('info', 'Create password link sent', { userId: user.id });
 
     return ctx.json(true, 200);
   })
@@ -461,9 +461,7 @@ const authRouteHandlers = app
       .from(usersTable)
       .where(eq(usersTable.id, targetUserId));
 
-    if (!user) {
-      throw new AppError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'user', meta: { userId: targetUserId } });
-    }
+    if (!user) throw new AppError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'user', meta: { targetUserId } });
 
     const adminUser = getContextUser();
     const sessionData = await getParsedSessionCookie(ctx);
@@ -475,7 +473,7 @@ const authRouteHandlers = app
 
     await setUserSession(ctx, user, 'password', adminUser);
 
-    logEvent({ msg: 'Started impersonation', meta: { admin: user.id, user: targetUserId } });
+    logEvent('info', 'Started impersonation', { adminId: adminUser.id, targetUserId });
 
     return ctx.json(true, 200);
   })
@@ -510,7 +508,7 @@ const authRouteHandlers = app
       await setAuthCookie(ctx, 'session', cookieContent, expireTimeSpan);
     }
 
-    logEvent({ msg: 'Stopped impersonation', meta: { admin: adminUserId || 'na', user: session.userId } });
+    logEvent('info', 'Stopped impersonation', { adminiD: adminUserId || 'na', targetUserId: session.userId });
 
     return ctx.json(true, 200);
   })
@@ -532,7 +530,7 @@ const authRouteHandlers = app
     // Delete session cookie
     deleteAuthCookie(ctx, 'session');
 
-    logEvent({ msg: 'User signed out', meta: { user: session?.userId || 'na' } });
+    logEvent('info', 'User signed out', { userId: session?.userId || 'na' });
 
     return ctx.json(true, 200);
   })

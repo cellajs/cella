@@ -1,46 +1,58 @@
-import type { MiddlewareHandler } from 'hono';
-import { logToExternal } from '#/middlewares/logger/external-logger';
-import { middlewareLogger } from '#/pino-config';
+import { requestLogger } from '#/pino-config';
 import { nanoid } from '#/utils/nanoid';
+import { appConfig } from 'config';
+import type { MiddlewareHandler } from 'hono';
 
 const ANSI = {
   reset: '\x1b[0m',
   red: '\x1b[31m',
   yellow: '\x1b[33m',
   green: '\x1b[32m',
+  grey: '\x1b[90m',
 };
+
+// In production, we directly return JSON
+const isProduction = appConfig.mode === 'production';
 
 export const loggerMiddleware: MiddlewareHandler = async (ctx, next) => {
   const start = Date.now();
-  const { req, res } = ctx;
-  const { url, method } = req;
-  const path = new URL(url).pathname;
+  const { url, method } = ctx.req;
 
-  // Generate logId and set it so we can use it to match error reports
-  const reqId = nanoid();
-  ctx.set('logId', reqId);
+  const cleanUrl = url.replace(appConfig.backendUrl, '');
 
-  const base = `${reqId} ${method}`;
-  const incomingLogLine = `${base} ${path}`;
+  // Generate logId/requestId for tracing
+  const logId = nanoid();
+  ctx.set('logId', logId);
 
-  // Log incoming
-  logTrace(incomingLogLine);
+  // Log incoming request (before next)
+  const base = `${ANSI.grey}${logId}${ANSI.reset} ${method}`;
+  if (isProduction) {
+    logTrace({ logId, method, url: cleanUrl });
+  } else {
+    const incomingLogLine = `${base} ${cleanUrl}`;
+    logTrace(incomingLogLine);
+  }
 
   await next();
 
-  const duration = Date.now() - start;
-  const coloredStatus = formatStatus(res.status);
-  const message = getStatusMessage(res.status);
+  const responseTime = Date.now() - start;
+  const userId = ctx.get('user')?.id || 'na';
 
-  const outgoingLogLine = `${base} ${coloredStatus} ${path} (${duration}ms) ${message}`;
+  // Log JSON
+  if (isProduction) return logTrace({ logId, userId, method, url: cleanUrl, status: ctx.res.status, responseTime });
 
-  // Log outgoing
+  // Log human-readable
+  const coloredStatus = formatStatus(ctx.res.status);
+  const errorText = getErrorText(ctx.res.status);
+  const outgoingLogLine = `${base} ${coloredStatus} ${cleanUrl} (${responseTime}ms) ${ANSI.grey}@${userId}${ANSI.reset} ${errorText}`;
   logTrace(outgoingLogLine);
 };
 
-const logTrace = (message: string) => {
-  middlewareLogger.trace(message);
-  logToExternal('info', message);
+const logTrace = (log: { [key: string]: string | number } | string) => {
+  if (typeof log === 'string') return requestLogger.info(log);
+  if (log.status && Number(log.status) >= 500) return requestLogger.error(log);
+  if (log.status && Number(log.status) >= 400) return requestLogger.warn(log);
+  return requestLogger.info(log);
 };
 
 // ANSI coloring for status codes
@@ -50,8 +62,8 @@ const formatStatus = (code: number): string => {
   return `${ANSI.red}${code}${ANSI.reset}`;
 };
 
-// Friendly message for status
-const getStatusMessage = (code: number): string => {
+// Friendly error text based on status
+const getErrorText = (code: number): string => {
   if (code >= 500) return ' - server error';
   if (code >= 400) return ' - request failed';
   return '';
