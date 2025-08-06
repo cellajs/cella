@@ -24,13 +24,14 @@ export const loggerMiddleware: MiddlewareHandler = async (ctx, next) => {
   const logId = nanoid();
   ctx.set('logId', logId);
 
-  // Log JSON
-  if (isProduction) return logTrace({ logId, method, url: cleanUrl });
-
-  // Log human-readable
+  // Log incoming request (before next)
   const base = `${ANSI.grey}${logId}${ANSI.reset} ${method}`;
-  const incomingLogLine = `${base} ${cleanUrl}`;
-  logTrace(incomingLogLine);
+  if (isProduction) {
+    logTrace({ logId, method, url: cleanUrl });
+  } else {
+    const incomingLogLine = `${base} ${cleanUrl}`;
+    logTrace(incomingLogLine);
+  }
 
   await next();
 
