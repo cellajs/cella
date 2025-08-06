@@ -35,8 +35,8 @@ export const rootRoute = createRootRouteWithContext()({
           type: 'page_not_found',
           severity: 'info',
           status: 404,
-          name: 'NotFoundError',
-          message: i18n.t('error:page_not_found'),
+          name: i18n.t('error:page_not_found'),
+          message: i18n.t('error:page_not_found.text'),
         }}
         level="root"
       />

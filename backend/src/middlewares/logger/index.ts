@@ -35,15 +35,15 @@ export const loggerMiddleware: MiddlewareHandler = async (ctx, next) => {
   await next();
 
   const responseTime = Date.now() - start;
-  const user = ctx.get('user')?.id || 'na';
+  const userId = ctx.get('user')?.id || 'na';
 
   // Log JSON
-  if (isProduction) return logTrace({ logId, user, method, url: cleanUrl, status: ctx.res.status, responseTime });
+  if (isProduction) return logTrace({ logId, userId, method, url: cleanUrl, status: ctx.res.status, responseTime });
 
   // Log human-readable
   const coloredStatus = formatStatus(ctx.res.status);
   const errorText = getErrorText(ctx.res.status);
-  const outgoingLogLine = `${base} ${coloredStatus} ${cleanUrl} (${responseTime}ms) ${ANSI.grey}@${user}${ANSI.reset} ${errorText}`;
+  const outgoingLogLine = `${base} ${coloredStatus} ${cleanUrl} (${responseTime}ms) ${ANSI.grey}@${userId}${ANSI.reset} ${errorText}`;
   logTrace(outgoingLogLine);
 };
 
