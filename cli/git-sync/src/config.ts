@@ -1,3 +1,15 @@
+/**
+ * Configuration object for specifying a repository to be analyzed.
+ *
+ * - If `use` is `"local"`, you must provide a valid `filepath`.
+ * - If `use` is `"remote"`, you must specify both `owner` and `repo`.
+ *
+ * @property use - Determines whether the repository is local or remote.
+ * @property branch - The branch name to analyze.
+ * @property filepath - Absolute path to the local repository (required if use is 'local').
+ * @property owner - GitHub owner or organization name (required if use is 'remote').
+ * @property repo - GitHub repository name (required if use is 'remote').
+ */
 export type RepoConfig = {
   use: "local" | "remote";
   branch: string;
@@ -6,70 +18,56 @@ export type RepoConfig = {
   repo: string;      // required if use === 'remote'
 };
 
+/**
+ * Determines the verbosity and filtering behavior of logging during file sync analysis.
+ *
+ * - `full`: Logs everything, including up-to-date files.
+ * - `summaryOnly`: Logs only the summary (no per-file logs).
+ * - `relevantOnly`: Logs only files that are not clearly in sync (e.g., non-upToDate, medium/high conflict).
+ * - `conflictsOnly`: Logs only files with real or likely conflicts.
+ */
+export type LogMode =
+  | 'full'
+  | 'summaryOnly'
+  | 'relevantOnly'
+  | 'conflictsOnly';
+
+/**
+ * Defines how log output should be controlled during analysis.
+ *
+ * @property mode - The logging verbosity/filtering mode.
+ */
+export type LogConfig = {
+  mode: LogMode;
+};
+
+/**
+ * Global configuration for logging behavior during sync analysis.
+ */
+export const logConfig: LogConfig = {
+  mode: 'relevantOnly',
+};
+
+/**
+ * Configuration for the boilerplate repository to compare against forks.
+ * This is a local repository on the file system.
+ */
 export const boilerplateConfig: RepoConfig = {
   use: 'local',
   branch: "development",
   filepath: "/home/gino/Github/cella",
-  owner: "cellajs",
-  repo: "cella",
+  owner: "cellajs",  // Only used if use === 'remote'
+  repo: "cella",     // Only used if use === 'remote'
 };
 
+/**
+ * Configuration for the forked repository being compared to the boilerplate.
+ * This is a local repository on the file system.
+ */
 export const forkConfig: RepoConfig = {
   use: 'local',
   branch: "development",
   filepath: "/home/gino/Github/raak",
-  owner: "",
-  repo: "",
+  owner: "",  // Only used if use === 'remote'
+  repo: "",   // Only used if use === 'remote'
 };
-
-export const ignoredFiles = [
-  'README.md',
-  'package.json',
-  'pnpm-lock.yaml',
-  'render.yaml',
-  'compose.yaml',
-  'cella.config.js',
-  'info/*',
-  'config/default.ts',
-  'config/staging.ts',
-  'config/development.ts',
-  'config/production.ts',
-  'config/tunnel.ts',
-  'cli/create-cella/*',
-  'frontend/public/favicon.ico',
-  'frontend/public/favicon.svg',
-  'frontend/public/static/icons/*',
-  'frontend/public/static/images/*',
-  'frontend/public/static/logo/*',
-  'frontend/public/static/screenshots/*',
-  'frontend/src/nav-config.tsx',
-  'frontend/src/menu-config.tsx',
-  'frontend/src/alert-config.tsx',
-  'frontend/src/offline-config.tsx',
-  'frontend/src/styling/gradients.css',
-  'frontend/src/routes/route-tree.tsx',
-  'frontend/src/routes/marketing.tsx',
-  'frontend/src/api.gen/*',
-  'frontend/src/modules/common/logo.tsx',
-  'frontend/src/modules/common/bg-animation/*',
-  'frontend/src/modules/common/blocknote/blocknote-config.ts',
-  'frontend/src/modules/common/blocknote/app-specific-custom/*',
-  'frontend/src/modules/home/onboarding/onboarding-config.ts',
-  'frontend/src/modules/marketing/marketing-config.tsx',
-  'frontend/src/modules/marketing/about/about-page.tsx',
-  'frontend/src/modules/users/profile-page-content.tsx',
-  'frontend/package.json',
-  'backend/package.json',
-  'backend/drizzle/*',
-  'backend/scripts/seeds/data/*',
-  'backend/src/custom-env.ts',
-  'backend/src/entity-config.ts',
-  'backend/src/attachment-config.ts',
-  'backend/src/routes.ts',
-  'backend/src/permissions/permissions-config.ts',
-  'backend/src/lib/docs-config.ts',
-  'backend/src/lib/notifications/novu-config.ts',
-  'json/text-blocks.json',
-  'locales/en/about.json',
-  'locales/en/app.json',
-]
