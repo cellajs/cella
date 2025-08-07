@@ -1,4 +1,3 @@
-import type { Collection } from '@tanstack/react-db';
 import { appConfig } from 'config';
 import { t } from 'i18next';
 import { nanoid } from 'nanoid';
@@ -7,18 +6,21 @@ import { createAttachment } from '~/api.gen';
 import { useOnlineManager } from '~/hooks/use-online-manager';
 import { LocalFileStorage } from '~/modules/attachments/helpers/local-file-storage';
 import { parseUploadedAttachments } from '~/modules/attachments/helpers/parse-uploaded';
+import { getAttachmentsCollection, getLocalAttachmentsCollection } from '~/modules/attachments/query';
 import type { AttachmentToInsert, LiveQueryAttachment } from '~/modules/attachments/types';
 import { useTransaction } from '~/modules/attachments/use-transaction';
 import { toaster } from '~/modules/common/toaster';
 import { createBaseTransloaditUppy } from '~/modules/common/uploader/helpers';
 import type { UploadedUppyFile } from '~/modules/common/uploader/types';
 
-export const useLocalSyncAttachments = (
-  organizationId: string,
-  attachmentCollection: Collection<LiveQueryAttachment>,
-  lcoalAttachmentCollection: Collection<LiveQueryAttachment>,
-) => {
+export const useLocalSyncAttachments = (organizationId: string) => {
   const { isOnline } = useOnlineManager();
+
+  const attachmentCollection = getAttachmentsCollection(organizationId);
+  attachmentCollection.startSyncImmediate();
+
+  const localAttachmentCollection = getLocalAttachmentsCollection(organizationId);
+  localAttachmentCollection.startSyncImmediate();
 
   const createAttachmens = useTransaction<LiveQueryAttachment>({
     mutationFn: async ({ transaction }) => {
@@ -66,7 +68,7 @@ export const useLocalSyncAttachments = (
     });
 
     // Clean up offline files from IndexedDB
-    lcoalAttachmentCollection.delete(storedIds);
+    localAttachmentCollection.delete(storedIds);
   };
 
   useEffect(() => {

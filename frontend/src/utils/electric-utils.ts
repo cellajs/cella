@@ -48,7 +48,40 @@ const parseRawData = <T>(rawData: CamelToSnakeObject<T>): T => {
 
 export const snakeToCamel = (str: string) => str.replace(/_([a-z])/g, (_, letter) => letter.toUpperCase());
 
-export const handleSyncError = (error: Error, storePrefix: string, params: ExternalParamsRecord<Row<never>> | undefined) => {
+export const handleSyncError = (error: Error, params: ExternalParamsRecord<Row<never>> | undefined) => {
+  if (error instanceof FetchError && error.json) {
+    const responseJson = error.json;
+
+    if ('errors' in responseJson) {
+      const syncErrors = responseJson.errors ?? {};
+      const syncErrorKeys = Object.keys(syncErrors);
+
+      // Check for internal stream sync errors (like offset or handle mismatches)
+      const hasStreamError = syncErrorKeys.some((key) => key === 'offset' || key === 'handle');
+
+      if (hasStreamError) return { params }; // Retry with original params
+
+      console.error('[Sync] Unexpected fetch sync error from server:', error);
+      return;
+    }
+
+    // Handle generic backend sync error response
+    const status = error.status as ClientErrorStatusCode | ServerErrorStatusCode;
+
+    const apiError = new ApiError({ name: error.name, status, message: error.message ?? 'Unknown error during sync', ...responseJson });
+
+    const toastMsg = typeof apiError.meta?.toastMessage === 'string' ? apiError.meta.toastMessage : `Sync failed: ${apiError.message}`;
+
+    toaster(toastMsg, 'warning');
+    return;
+  }
+
+  // Fallback for unknown or unexpected errors
+  console.error('[Sync] Unhandled error. Sync stopped.', error);
+  return;
+};
+
+export const handleStoreSyncError = (error: Error, storePrefix: string, params: ExternalParamsRecord<Row<never>> | undefined) => {
   if (error instanceof FetchError && error.json) {
     const responseJson = error.json;
 

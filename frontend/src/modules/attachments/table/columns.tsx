@@ -7,7 +7,9 @@ import { useTranslation } from 'react-i18next';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { useCopyToClipboard } from '~/hooks/use-copy-to-clipboard';
 import DeleteAttachments from '~/modules/attachments/delete-attachments';
+import { isFileLocal } from '~/modules/attachments/helpers/is-local-file';
 import { formatBytes } from '~/modules/attachments/table/helpers';
+import FilePlaceholder from '~/modules/attachments/table/preview/placeholder';
 import type { LiveQueryAttachment } from '~/modules/attachments/types';
 import CheckboxColumn from '~/modules/common/data-table/checkbox-column';
 import HeaderCell from '~/modules/common/data-table/header-cell';
@@ -25,8 +27,6 @@ import { findUserFromCache } from '~/modules/users/helpers';
 import UserCell from '~/modules/users/user-cell';
 import { useUserStore } from '~/store/user';
 import { dateShort } from '~/utils/date-short';
-import { isLocal } from '~/utils/is-cdn-url';
-import FilePlaceholder from './preview/placeholder';
 
 export const useColumns = (entity: EntityPage, isSheet: boolean, isCompact: boolean) => {
   const { t } = useTranslation();
@@ -91,14 +91,14 @@ export const useColumns = (entity: EntityPage, isSheet: boolean, isCompact: bool
       sortable: false,
       width: 32,
       renderCell: ({ row }) => {
-        const isInCloud = !isLocal(row.original_key);
+        const isLocal = isFileLocal(row.original_key);
         return (
           <div
             className="flex justify-center items-center h-full w-full"
             data-tooltip="true"
-            data-tooltip-content={isInCloud ? t('common:online') : t('common:local_only')}
+            data-tooltip-content={isLocal ? t('common:local_only') : t('common:online')}
           >
-            {isInCloud ? <Cloud className="text-success" size={16} /> : <CloudOff className="opacity-50" size={16} />}
+            {isLocal ? <CloudOff className="opacity-50" size={16} /> : <Cloud className="text-success" size={16} />}
           </div>
         );
       },
@@ -111,8 +111,7 @@ export const useColumns = (entity: EntityPage, isSheet: boolean, isCompact: bool
       width: 32,
       renderCell: ({ row, tabIndex }) => {
         const { copyToClipboard, copied } = useCopyToClipboard();
-        const isInCloud = !isLocal(row.original_key);
-        if (!isInCloud) return <div className="text-muted text-center w-full">-</div>;
+        if (isFileLocal(row.original_key)) return <div className="text-muted text-center w-full">-</div>;
 
         const shareLink = `${appConfig.backendUrl}/${row.organization_id}/attachments/${row.id}/link`;
         return (
@@ -166,8 +165,8 @@ export const useColumns = (entity: EntityPage, isSheet: boolean, isCompact: bool
       renderCell: ({ row, tabIndex }) => {
         const { copyToClipboard } = useCopyToClipboard();
 
-        const isInCloud = !isLocal(row.original_key);
-        if (!isInCloud) return <div className="text-muted text-center w-full">-</div>;
+        const isLocal = isFileLocal(row.original_key);
+        if (isLocal) return <div className="text-muted text-center w-full">-</div>;
         const ellipsisOptions: EllipsisOption<LiveQueryAttachment>[] = [
           {
             label: i18n.t('common:delete'),
@@ -181,13 +180,7 @@ export const useColumns = (entity: EntityPage, isSheet: boolean, isCompact: bool
               update({
                 content: (
                   <PopConfirm title={i18n.t('common:delete_confirm.text', { name: row.name })}>
-                    <DeleteAttachments
-                      entity={entity}
-                      attachments={[row]}
-                      callback={callback}
-                      attachmentCollection={undefined as any}
-                      localAttachmentCollection={undefined as any}
-                    />
+                    <DeleteAttachments entity={entity} attachments={[row]} callback={callback} />
                   </PopConfirm>
                 ),
               });
@@ -195,7 +188,7 @@ export const useColumns = (entity: EntityPage, isSheet: boolean, isCompact: bool
           },
         ];
 
-        if (isInCloud) {
+        if (isLocal) {
           const shareLink = `${appConfig.backendUrl}/${row.organization_id}/attachments/${row.id}/link`;
 
           ellipsisOptions.push({

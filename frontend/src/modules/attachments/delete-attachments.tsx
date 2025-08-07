@@ -1,6 +1,7 @@
-import type { Collection } from '@tanstack/react-db';
 import { t } from 'i18next';
 import { deleteAttachments } from '~/api.gen';
+import { isFileLocal } from '~/modules/attachments/helpers/is-local-file';
+import { getAttachmentsCollection, getLocalAttachmentsCollection } from '~/modules/attachments/query';
 import type { LiveQueryAttachment } from '~/modules/attachments/types';
 import { useTransaction } from '~/modules/attachments/use-transaction';
 import type { CallbackArgs } from '~/modules/common/data-table/types';
@@ -8,20 +9,24 @@ import { DeleteForm } from '~/modules/common/delete-form';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { toaster } from '~/modules/common/toaster';
 import type { EntityPage } from '~/modules/entities/types';
-import { isLocal } from '~/utils/is-cdn-url';
 
 interface Props {
   entity: EntityPage;
-  attachmentCollection: Collection<LiveQueryAttachment>;
-  localAttachmentCollection: Collection<LiveQueryAttachment>;
   attachments: LiveQueryAttachment[];
   dialog?: boolean;
   callback?: (args: CallbackArgs<LiveQueryAttachment[]>) => void;
 }
 
-const DeleteAttachments = ({ entity, attachments, attachmentCollection, localAttachmentCollection, callback, dialog: isDialog }: Props) => {
+const DeleteAttachments = ({ entity, attachments, callback, dialog: isDialog }: Props) => {
   const removeDialog = useDialoger((state) => state.remove);
+
   const orgIdOrSlug = entity.membership?.organizationId || entity.id;
+
+  const attachmentCollection = getAttachmentsCollection(orgIdOrSlug);
+  attachmentCollection.startSyncImmediate();
+
+  const localAttachmentCollection = getLocalAttachmentsCollection(orgIdOrSlug);
+  localAttachmentCollection.startSyncImmediate();
 
   const deleteAttachmens = useTransaction<LiveQueryAttachment[]>({
     mutationFn: async ({ transaction }) => {
@@ -43,8 +48,8 @@ const DeleteAttachments = ({ entity, attachments, attachmentCollection, localAtt
     const serverDeletionIds: string[] = [];
 
     for (const attachment of attachments) {
-      if (!isLocal(attachment.original_key)) serverDeletionIds.push(attachment.id);
-      else localDeletionIds.push(attachment.id);
+      if (isFileLocal(attachment.original_key)) localDeletionIds.push(attachment.id);
+      else serverDeletionIds.push(attachment.id);
     }
 
     if (serverDeletionIds.length) deleteAttachmens.mutate(() => attachmentCollection.delete(serverDeletionIds));

@@ -1,6 +1,16 @@
+import { electricCollectionOptions } from '@tanstack/electric-db-collection';
+import { queryCollectionOptions } from '@tanstack/query-db-collection';
+import { type Collection, createCollection } from '@tanstack/react-db';
 import { queryOptions } from '@tanstack/react-query';
+import { appConfig } from 'config';
 import { type GetAttachmentsGroupData, getAttachmentsGroup } from '~/api.gen';
-
+import { clientConfig } from '~/lib/api';
+import { LocalFileStorage } from '~/modules/attachments/helpers/local-file-storage';
+import type { LiveQueryAttachment } from '~/modules/attachments/types';
+import type { CustomUppyFile } from '~/modules/common/uploader/types';
+import { queryClient } from '~/query/query-client';
+import { baseBackoffOptions as backoffOptions, handleSyncError } from '~/utils/electric-utils';
+import { nanoid } from '~/utils/nanoid';
 /**
  * Keys for attachments related queries. These keys help to uniquely identify different query.
  * For managing query caching and invalidation.
@@ -30,3 +40,105 @@ export const groupedAttachmentsQueryOptions = ({
     staleTime: 0,
     gcTime: 0,
   });
+
+export const getAttachmentsCollection = (organizationId: string): Collection<LiveQueryAttachment> => {
+  const params = {
+    table: 'attachments',
+    where: `organization_id = '${organizationId}'`,
+  };
+
+  return createCollection(
+    electricCollectionOptions({
+      id: `sync-attachments-${organizationId}`,
+      shapeOptions: {
+        url: new URL(`/${organizationId}/attachments/shape-proxy`, appConfig.backendUrl).href,
+        params,
+        backoffOptions,
+        fetchClient: clientConfig.fetch,
+        onError: (error) => handleSyncError(error, params),
+      },
+      getKey: (item) => item.id,
+    }),
+  );
+};
+
+export const getLocalAttachmentsCollection = (organizationId: string): Collection<LiveQueryAttachment> => {
+  return createCollection(
+    queryCollectionOptions({
+      id: `sync-local-attachments-${organizationId}`,
+      getKey: (item) => item.id,
+      queryKey: attachmentsKeys.local(),
+      queryClient,
+      queryFn: async () => {
+        const storageData = await LocalFileStorage.getData(organizationId);
+        if (!storageData) return [] as LiveQueryAttachment[];
+
+        const files = Object.values(storageData.files ?? {});
+        if (!files.length) return [] as LiveQueryAttachment[];
+
+        const groupId = files.length > 1 ? nanoid() : null;
+
+        return files.map(({ size, preview, id, type, data, meta }) => {
+          return {
+            id,
+            filename: meta?.name || 'Unnamed file',
+            name: meta.name,
+            content_type: type,
+            size: size ? String(size) : String(data.size),
+            original_key: preview ?? '',
+            thumbnail_key: null,
+            converted_key: null,
+            converted_content_type: null,
+            entity_type: 'attachment' as const,
+            created_at: new Date().toISOString(),
+            created_by: null,
+            modified_at: null,
+            modified_by: null,
+            group_id: groupId,
+            organization_id: organizationId,
+          };
+        });
+      },
+      onInsert: async () => {
+        try {
+          console.info('Successfully added attachments locally.');
+          return { refetch: true };
+        } catch (error) {
+          console.error('Failed to add attachments locally:', error);
+        }
+      },
+
+      onUpdate: async ({ transaction }) => {
+        await Promise.all(
+          transaction.mutations.map(async ({ changes, original }) => {
+            try {
+              const originalAttachment = original as LiveQueryAttachment;
+
+              await LocalFileStorage.changeFile(originalAttachment.id, changes as Partial<CustomUppyFile>);
+              console.info('Successfully updated locally stored attachments.');
+
+              return { refetch: true };
+            } catch (err) {
+              console.error('Failed to update locally stored attachment:', err);
+            }
+          }),
+        );
+      },
+
+      onDelete: async ({ transaction }) => {
+        const storedIds: string[] = [];
+        for (const { changes } of transaction.mutations) {
+          if (changes && 'id' in changes && typeof changes.id === 'string') storedIds.push(changes.id);
+        }
+        try {
+          await LocalFileStorage.removeFiles(storedIds);
+          console.info('Successfully deleted locally stored attachments.');
+
+          return { refetch: true };
+        } catch (err) {
+          console.error('Failed to deleted locally stored attachments:', err);
+        }
+      },
+    }),
+  );
+};

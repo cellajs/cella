@@ -1,4 +1,3 @@
-import type { Collection } from '@tanstack/react-db';
 import { Trash, Upload, XSquare } from 'lucide-react';
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -20,15 +19,11 @@ type AttachmentsTableBarProps = AttachmentsTableProps &
   BaseTableMethods &
   BaseTableBarProps<LiveQueryAttachment, AttachmentSearch> & {
     isCompact: boolean;
-    attachmentCollection: Collection<LiveQueryAttachment>;
-    localAttachmentCollection: Collection<LiveQueryAttachment>;
     setIsCompact: (isCompact: boolean) => void;
   };
 
 export const AttachmentsTableBar = ({
   entity,
-  attachmentCollection,
-  localAttachmentCollection,
   total,
   selected,
   searchVars,
@@ -43,7 +38,7 @@ export const AttachmentsTableBar = ({
 }: AttachmentsTableBarProps) => {
   const { t } = useTranslation();
   const createDialog = useDialoger((state) => state.create);
-  const { open } = useAttachmentsUploadDialog(attachmentCollection, localAttachmentCollection);
+  const { open } = useAttachmentsUploadDialog();
   const deleteButtonRef = useRef(null);
 
   const { q } = searchVars;
@@ -63,26 +58,16 @@ export const AttachmentsTableBar = ({
   };
 
   const openDeleteDialog = () => {
-    createDialog(
-      <DeleteAttachments
-        entity={entity}
-        dialog
-        attachments={selected}
-        callback={clearSelection}
-        attachmentCollection={attachmentCollection}
-        localAttachmentCollection={localAttachmentCollection}
-      />,
-      {
-        id: 'delete-attachments',
-        triggerRef: deleteButtonRef,
-        className: 'max-w-xl',
-        title: t('common:remove_resource', { resource: t('common:attachments').toLowerCase() }),
-        description: t('common:confirm.delete_counted_resource', {
-          count: selected.length,
-          resource: selected.length > 1 ? t('common:attachments').toLowerCase() : t('common:LiveQueryAttachment').toLowerCase(),
-        }),
-      },
-    );
+    createDialog(<DeleteAttachments entity={entity} dialog attachments={selected} callback={clearSelection} />, {
+      id: 'delete-attachments',
+      triggerRef: deleteButtonRef,
+      className: 'max-w-xl',
+      title: t('common:remove_resource', { resource: t('common:attachments').toLowerCase() }),
+      description: t('common:confirm.delete_counted_resource', {
+        count: selected.length,
+        resource: selected.length > 1 ? t('common:attachments').toLowerCase() : t('common:attachment').toLowerCase(),
+      }),
+    });
   };
 
   return (
@@ -107,9 +92,7 @@ export const AttachmentsTableBar = ({
           ) : (
             showUpload && <TableBarButton icon={Upload} label={t('common:upload')} onClick={() => open(entity.id)} />
           )}
-          {selected.length === 0 && (
-            <TableCount count={total} label="common:LiveQueryAttachment" isFiltered={isFiltered} onResetFilters={onResetFilters} />
-          )}
+          {selected.length === 0 && <TableCount count={total} label="common:attachment" isFiltered={isFiltered} onResetFilters={onResetFilters} />}
         </FilterBarActions>
         <div className="sm:grow" />
         <FilterBarContent className="max-sm:animate-in max-sm:slide-in-from-left max-sm:fade-in max-sm:duration-300">

@@ -102,6 +102,7 @@ export const OrganizationAttachmentsRoute = createRoute({
     const queryData = useQuery(organizationQueryOptions(loaderData.slug));
     const organization = queryData.data ?? loaderData;
     if (!organization) return;
+
     return (
       <Suspense>
         <AttachmentsTable canUpload={true} key={organization.id} entity={organization} />

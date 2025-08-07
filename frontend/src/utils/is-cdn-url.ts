@@ -9,8 +9,3 @@ export const isCDNUrl = (url?: string) => {
   if (url.startsWith(appConfig.privateCDNUrl)) return true;
   return false;
 };
-
-export const isLocal = (url: string) => {
-  if (url.startsWith('blob:')) return true;
-  return false;
-};
