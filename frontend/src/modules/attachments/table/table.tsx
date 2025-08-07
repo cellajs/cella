@@ -4,6 +4,7 @@ import { forwardRef, memo, useEffect, useImperativeHandle, useMemo, useState } f
 import type { RowsChangeData, SortColumn } from 'react-data-grid';
 import { useTranslation } from 'react-i18next';
 import { updateAttachment } from '~/api.gen';
+import useOfflineTableSearch from '~/hooks/use-offline-table-search';
 import { getAttachmentsCollection, getLocalAttachmentsCollection } from '~/modules/attachments/query';
 import type { AttachmentSearch, AttachmentsTableProps } from '~/modules/attachments/table/table-wrapper';
 import type { LiveQueryAttachment } from '~/modules/attachments/types';
@@ -90,16 +91,15 @@ const BaseDataTable = memo(
       },
     });
 
-    //TODO (TanStackDB) enable it
-    // const rows = useOfflineTableSearch({
-    //   data: combined,
-    //   filterFn: ({ q }, item) => {
-    //     if (!q) return true;
-    //     const query = q.trim().toLowerCase(); // Normalize query
-    //     return item.name.toLowerCase().includes(query) || item.filename.toLowerCase().includes(query);
-    //   },
-    //   onFilterCallback: (filteredData) => setTotal(filteredData.length),
-    // });
+    const rows = useOfflineTableSearch({
+      data: combined,
+      filterFn: ({ q }, item) => {
+        if (!q) return true;
+        const query = q.trim().toLowerCase(); // Normalize query
+        return item.name.toLowerCase().includes(query) || item.filename.toLowerCase().includes(query);
+      },
+      onFilterCallback: (filteredData) => setTotal(filteredData.length),
+    });
 
     // Update rows
     const onRowsChange = (changedRows: LiveQueryAttachment[], { column }: RowsChangeData<LiveQueryAttachment>) => {
@@ -140,9 +140,9 @@ const BaseDataTable = memo(
           rowHeight: 52,
           enableVirtualization: false,
           onRowsChange,
-          rows: combined,
+          rows,
           limit,
-          totalCount: combined.length,
+          totalCount: rows.length,
           rowKeyGetter: (row) => row.id,
           // error,
           isLoading,
