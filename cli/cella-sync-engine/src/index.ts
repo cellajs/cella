@@ -1,7 +1,7 @@
 import pc from "picocolors";
 import yoctoSpinner from 'yocto-spinner';
 import { boilerplateConfig, forkConfig } from "./config";
-import { getGitFileHashes } from "./get-git-file-hashes";
+import { getGitFileHashes } from "./utils/git/files";
 import { getFileSyncAnalyses } from './file-sync-analysis';
 import { summarizeFileSyncAnalyses } from './file-sync-summary';
 import { formatAnalysisLogs } from "./analyse-formatter";
@@ -16,8 +16,8 @@ async function main(): Promise<void> {
   spinner.start();
 
   const [boilerplateFiles, forkFiles] = await Promise.all([
-    getGitFileHashes(boilerplateConfig),
-    getGitFileHashes(forkConfig),
+    getGitFileHashes(boilerplateConfig.repoPath, boilerplateConfig.branch),
+    getGitFileHashes(forkConfig.repoPath, forkConfig.branch),
   ]);
 
   spinner.stop();
@@ -62,7 +62,7 @@ async function main(): Promise<void> {
     console.log('\n')
   }
 
-  await runSync(boilerplateConfig, forkConfig, fileSyncAnalyses)
+  // await runSync(boilerplateConfig, forkConfig, fileSyncAnalyses)
 }
 
 main().catch((err) => {

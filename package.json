@@ -53,7 +53,7 @@
     "fork:pull": "tsx ./cli/sync-cella/index.ts pull-fork --config-file cella.config.js",
     "diverged": "tsx ./cli/sync-cella/index.ts diverged --config-file cella.config.js",
     "test": "pnpm -r --parallel test",
-    "git-sync": "tsx ./cli/git-sync/src/index.ts"
+    "cella-sync-engine": "tsx ./cli/cella-sync-engine/src/index.ts"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.2.5",

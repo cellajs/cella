@@ -13,7 +13,7 @@
 export type RepoConfig = {
   use: "local" | "remote";
   branch: string;
-  filePath: string;  // required if use === 'local'
+  repoPath: string;  // required if use === 'local'
   owner: string;     // required if use === 'remote'
   repo: string;      // required if use === 'remote'
 };
@@ -57,7 +57,7 @@ export const logConfig: LogConfig = {
 export const boilerplateConfig: RepoConfig = {
   use: 'local',
   branch: "development",
-  filePath: "/home/gino/Github/cella",
+  repoPath: "/home/gino/Github/cella",
   owner: "cellajs",  // Only used if use === 'remote'
   repo: "cella",     // Only used if use === 'remote'
 };
@@ -69,7 +69,7 @@ export const boilerplateConfig: RepoConfig = {
 export const forkConfig: RepoConfig = {
   use: 'local',
   branch: "sync-branch",
-  filePath: "/home/gino/Github/raak",
+  repoPath: "/home/gino/Github/raak",
   owner: "",  // Only used if use === 'remote'
   repo: "",   // Only used if use === 'remote'
 };
