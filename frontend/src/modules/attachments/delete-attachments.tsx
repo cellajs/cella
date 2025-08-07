@@ -14,12 +14,13 @@ import { isLocal } from '~/utils/is-cdn-url';
 interface Props {
   entity: EntityPage;
   attachmentCollection: Collection<LiveQueryAttachment>;
+  localAttachmentCollection: Collection<LiveQueryAttachment>;
   attachments: LiveQueryAttachment[];
   dialog?: boolean;
   callback?: (args: CallbackArgs<LiveQueryAttachment[]>) => void;
 }
 
-const DeleteAttachments = ({ entity, attachments, attachmentCollection, callback, dialog: isDialog }: Props) => {
+const DeleteAttachments = ({ entity, attachments, attachmentCollection, localAttachmentCollection, callback, dialog: isDialog }: Props) => {
   const removeDialog = useDialoger((state) => state.remove);
   const orgIdOrSlug = entity.membership?.organizationId || entity.id;
 
@@ -38,6 +39,21 @@ const DeleteAttachments = ({ entity, attachments, attachmentCollection, callback
     },
   });
 
+  const deleteLocalAttachmens = useTransaction<LiveQueryAttachment[]>({
+    mutationFn: async ({ transaction }) => {
+      const storedIds: string[] = [];
+      for (const { changes } of transaction.mutations) {
+        if (changes && 'id' in changes && typeof changes.id === 'string') storedIds.push(changes.id);
+      }
+      try {
+        await LocalFileStorage.removeFiles(storedIds);
+        console.log(localAttachmentCollection);
+      } catch (err) {
+        console.error('Sync files deletion error:', err);
+      }
+    },
+  });
+
   const onDelete = async () => {
     const localDeletionIds: string[] = [];
     const serverDeletionIds: string[] = [];
@@ -48,7 +64,7 @@ const DeleteAttachments = ({ entity, attachments, attachmentCollection, callback
     }
 
     if (serverDeletionIds.length) deleteAttachmens.mutate(() => attachmentCollection.delete(serverDeletionIds));
-    if (localDeletionIds.length) await LocalFileStorage.removeFiles(localDeletionIds);
+    if (localDeletionIds.length) deleteLocalAttachmens.mutate(() => localAttachmentCollection.delete(localDeletionIds));
 
     if (isDialog) removeDialog();
     callback?.({ data: attachments, status: 'success' });

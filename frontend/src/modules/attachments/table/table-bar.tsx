@@ -21,12 +21,14 @@ type AttachmentsTableBarProps = AttachmentsTableProps &
   BaseTableBarProps<LiveQueryAttachment, AttachmentSearch> & {
     isCompact: boolean;
     attachmentCollection: Collection<LiveQueryAttachment>;
+    localAttachmentCollection: Collection<LiveQueryAttachment>;
     setIsCompact: (isCompact: boolean) => void;
   };
 
 export const AttachmentsTableBar = ({
   entity,
   attachmentCollection,
+  localAttachmentCollection,
   total,
   selected,
   searchVars,
@@ -62,7 +64,14 @@ export const AttachmentsTableBar = ({
 
   const openDeleteDialog = () => {
     createDialog(
-      <DeleteAttachments entity={entity} dialog attachments={selected} callback={clearSelection} attachmentCollection={attachmentCollection} />,
+      <DeleteAttachments
+        entity={entity}
+        dialog
+        attachments={selected}
+        callback={clearSelection}
+        attachmentCollection={attachmentCollection}
+        localAttachmentCollection={localAttachmentCollection}
+      />,
       {
         id: 'delete-attachments',
         triggerRef: deleteButtonRef,

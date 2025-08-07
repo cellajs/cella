@@ -13,7 +13,11 @@ import { toaster } from '~/modules/common/toaster';
 import { createBaseTransloaditUppy } from '~/modules/common/uploader/helpers';
 import type { UploadedUppyFile } from '~/modules/common/uploader/types';
 
-export const useLocalSyncAttachments = (organizationId: string, attachmentCollection: Collection<LiveQueryAttachment>) => {
+export const useLocalSyncAttachments = (
+  organizationId: string,
+  attachmentCollection: Collection<LiveQueryAttachment>,
+  lcoalAttachmentCollection: Collection<LiveQueryAttachment>,
+) => {
   const { isOnline } = useOnlineManager();
 
   const createAttachmens = useTransaction<LiveQueryAttachment>({
@@ -26,6 +30,21 @@ export const useLocalSyncAttachments = (organizationId: string, attachmentCollec
       }
     },
   });
+
+  const deleteLocalAttachmens = useTransaction<LiveQueryAttachment[]>({
+    mutationFn: async ({ transaction }) => {
+      const storedIds: string[] = [];
+      for (const { changes } of transaction.mutations) {
+        if (changes && 'id' in changes && typeof changes.id === 'string') storedIds.push(changes.id);
+      }
+      try {
+        await LocalFileStorage.removeFiles(storedIds);
+      } catch (err) {
+        console.error('Sync files deletion error:', err);
+      }
+    },
+  });
+
   const { getData: fetchStoredFiles, setSyncStatus: updateStoredFilesSyncStatus } = LocalFileStorage;
 
   const isSyncingRef = useRef(false); // Prevent double trigger
@@ -61,7 +80,7 @@ export const useLocalSyncAttachments = (organizationId: string, attachmentCollec
     });
 
     // Clean up offline files from IndexedDB
-    await LocalFileStorage.removeFiles(storedIds);
+    deleteLocalAttachmens.mutate(() => lcoalAttachmentCollection.delete(storedIds));
   };
 
   useEffect(() => {

@@ -1,10 +1,9 @@
 import { type Collection, ilike, or, useLiveQuery } from '@tanstack/react-db';
 import { Paperclip } from 'lucide-react';
-import { forwardRef, memo, useEffect, useImperativeHandle, useState } from 'react';
+import { forwardRef, memo, useEffect, useImperativeHandle, useMemo, useState } from 'react';
 import type { RowsChangeData, SortColumn } from 'react-data-grid';
 import { useTranslation } from 'react-i18next';
 import { updateAttachment } from '~/api.gen';
-import useOfflineTableSearch from '~/hooks/use-offline-table-search';
 import type { AttachmentSearch, AttachmentsTableProps } from '~/modules/attachments/table/table-wrapper';
 import type { LiveQueryAttachment } from '~/modules/attachments/types';
 import { useTransaction } from '~/modules/attachments/use-transaction';
@@ -15,11 +14,14 @@ import type { BaseTableMethods, BaseTableProps } from '~/modules/common/data-tab
 import { toaster } from '~/modules/common/toaster';
 
 type BaseDataTableProps = AttachmentsTableProps &
-  BaseTableProps<LiveQueryAttachment, AttachmentSearch> & { attachmentCollection: Collection<LiveQueryAttachment> };
+  BaseTableProps<LiveQueryAttachment, AttachmentSearch> & {
+    attachmentCollection: Collection<LiveQueryAttachment>;
+    localAttachmentCollection: Collection<LiveQueryAttachment>;
+  };
 
 const BaseDataTable = memo(
   forwardRef<BaseTableMethods, BaseDataTableProps>(
-    ({ attachmentCollection, columns, searchVars, sortColumns, setSortColumns, setTotal, setSelected }, ref) => {
+    ({ attachmentCollection, localAttachmentCollection, columns, searchVars, sortColumns, setSortColumns, setTotal, setSelected }, ref) => {
       const { t } = useTranslation();
 
       const [selectedRows, setSelectedRows] = useState(new Set<string>());
@@ -28,10 +30,7 @@ const BaseDataTable = memo(
 
       const { data, isLoading } = useLiveQuery(
         (query) => {
-          let qBuilder = query
-            .from({ attachments: attachmentCollection })
-            .orderBy(({ attachments }) => (sort && sort !== 'createdAt' ? attachments[sort] : attachments.created_at), order ?? 'asc');
-
+          let qBuilder = query.from({ attachments: attachmentCollection });
           if (typeof q === 'string' && q.trim() !== '') {
             qBuilder = qBuilder.where(({ attachments }) => or(ilike(attachments.name, `%${q}%`), ilike(attachments.filename, `%${q}%`)));
           }
@@ -40,7 +39,39 @@ const BaseDataTable = memo(
         },
         [q, sort, order],
       );
-      console.log('🚀 ~ data:', data);
+
+      const { data: local } = useLiveQuery(
+        (query) => {
+          let qBuilder = query.from({ localAttachments: localAttachmentCollection });
+          if (typeof q === 'string' && q.trim() !== '') {
+            qBuilder = qBuilder.where(({ localAttachments }) =>
+              or(ilike(localAttachments.name, `%${q}%`), ilike(localAttachments.filename, `%${q}%`)),
+            );
+          }
+
+          return qBuilder;
+        },
+        [q, sort, order],
+      );
+      console.log('🚀 ~ local:', local);
+
+      const combined = useMemo(() => {
+        const all = [...(data ?? []), ...(local ?? [])];
+
+        return all.sort((a, b) => {
+          const key = sort && sort !== 'createdAt' ? sort : 'created_at';
+          const aValue = a[key];
+          const bValue = b[key];
+
+          if (aValue == null) return 1;
+          if (bValue == null) return -1;
+
+          // Handle date or string intelligently
+          if (aValue > bValue) return order === 'desc' ? -1 : 1;
+          if (aValue < bValue) return order === 'desc' ? 1 : -1;
+          return 0;
+        });
+      }, [data, local, sort, order]);
 
       const updateAttachmentName = useTransaction<LiveQueryAttachment>({
         mutationFn: async ({ transaction }) => {
@@ -62,15 +93,15 @@ const BaseDataTable = memo(
         },
       });
 
-      const rows = useOfflineTableSearch({
-        data,
-        filterFn: ({ q }, item) => {
-          if (!q) return true;
-          const query = q.trim().toLowerCase(); // Normalize query
-          return item.name.toLowerCase().includes(query) || item.filename.toLowerCase().includes(query);
-        },
-        onFilterCallback: (filteredData) => setTotal(filteredData.length),
-      });
+      // const rows = useOfflineTableSearch({
+      //   data: combined,
+      //   filterFn: ({ q }, item) => {
+      //     if (!q) return true;
+      //     const query = q.trim().toLowerCase(); // Normalize query
+      //     return item.name.toLowerCase().includes(query) || item.filename.toLowerCase().includes(query);
+      //   },
+      //   onFilterCallback: (filteredData) => setTotal(filteredData.length),
+      // });
 
       // Update rows
       const onRowsChange = (changedRows: LiveQueryAttachment[], { column }: RowsChangeData<LiveQueryAttachment>) => {
@@ -87,7 +118,8 @@ const BaseDataTable = memo(
 
       const onSelectedRowsChange = (value: Set<string>) => {
         setSelectedRows(value);
-        setSelected(rows.filter((row) => value.has(row.id)));
+        // setSelected(rows.filter((row) => value.has(row.id)));
+        setSelected(combined.filter((row) => value.has(row.id)));
       };
 
       const onSortColumnsChange = (sortColumns: SortColumn[]) => {
@@ -96,7 +128,7 @@ const BaseDataTable = memo(
       };
 
       // Effect to update total and selected rows when data changes
-      useEffect(() => setTotal(data.length), [data]);
+      useEffect(() => setTotal(combined.length), [combined]);
 
       // Expose methods via ref using useImperativeHandle
       useImperativeHandle(ref, () => ({
@@ -110,9 +142,9 @@ const BaseDataTable = memo(
             rowHeight: 52,
             enableVirtualization: false,
             onRowsChange,
-            rows,
+            rows: combined,
             limit,
-            totalCount: data.length,
+            totalCount: combined.length,
             rowKeyGetter: (row) => row.id,
             // error,
             isLoading,

@@ -6,12 +6,10 @@ import { useTranslation } from 'react-i18next';
 import type { z } from 'zod';
 import useSearchParams from '~/hooks/use-search-params';
 import { useColumns } from '~/modules/attachments/table/columns';
-import { getAttachmentsCollection } from '~/modules/attachments/table/helpers';
+import { getAttachmentsCollection, getLocalAttachmentsCollection } from '~/modules/attachments/table/helpers';
 import BaseDataTable from '~/modules/attachments/table/table';
 import { AttachmentsTableBar } from '~/modules/attachments/table/table-bar';
 import type { LiveQueryAttachment } from '~/modules/attachments/types';
-import { useLocalSyncAttachments } from '~/modules/attachments/use-local-sync-attachments';
-import { useMergeLocalAttachments } from '~/modules/attachments/use-merge-local-attachments';
 import { AlertWrap } from '~/modules/common/alert-wrap';
 import { useSortColumns } from '~/modules/common/data-table/sort-columns';
 import type { BaseTableMethods } from '~/modules/common/data-table/types';
@@ -35,13 +33,13 @@ const AttachmentsTable = ({ entity, canUpload = true, isSheet = false }: Attachm
 
   const orgIdOrSlug = entity.membership?.organizationId || entity.id;
   const attachmentCollection = getAttachmentsCollection(orgIdOrSlug);
+  const localAttachmentCollection = getLocalAttachmentsCollection(orgIdOrSlug);
 
   // Table state
   const { sort, order } = search;
   const limit = LIMIT;
 
-  useLocalSyncAttachments(entity.id, attachmentCollection);
-  useMergeLocalAttachments(entity.id, attachmentCollection);
+  // useLocalSyncAttachments(entity.id, attachmentCollection, localAttachmentCollection);
 
   const [total, setTotal] = useState<number | undefined>(undefined);
   const [selected, setSelected] = useState<LiveQueryAttachment[]>([]);
@@ -71,6 +69,7 @@ const AttachmentsTable = ({ entity, canUpload = true, isSheet = false }: Attachm
         isCompact={isCompact}
         setIsCompact={setIsCompact}
         attachmentCollection={attachmentCollection}
+        localAttachmentCollection={localAttachmentCollection}
       />
       <div className={(isCompact && 'isCompact') || ''}>
         {/* Explainer alert box */}
@@ -104,6 +103,7 @@ const AttachmentsTable = ({ entity, canUpload = true, isSheet = false }: Attachm
           setSortColumns={setSortColumns}
           setTotal={setTotal}
           attachmentCollection={attachmentCollection}
+          localAttachmentCollection={localAttachmentCollection}
           setSelected={setSelected}
         />
       </div>

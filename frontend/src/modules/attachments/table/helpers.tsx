@@ -1,4 +1,5 @@
 import { electricCollectionOptions } from '@tanstack/electric-db-collection';
+import { queryCollectionOptions } from '@tanstack/query-db-collection';
 import { type Collection, createCollection } from '@tanstack/react-db';
 import { appConfig } from 'config';
 import { t } from 'i18next';
@@ -10,8 +11,10 @@ import { useTransaction } from '~/modules/attachments/use-transaction';
 import { toaster } from '~/modules/common/toaster';
 import type { UploadedUppyFile } from '~/modules/common/uploader/types';
 import { useUploader } from '~/modules/common/uploader/use-uploader';
+import { queryClient } from '~/query/query-client';
 import { baseBackoffOptions as backoffOptions } from '~/utils/electric-utils';
 import { nanoid } from '~/utils/nanoid';
+import { LocalFileStorage } from '../helpers/local-file-storage';
 
 const maxNumberOfFiles = 20;
 const maxTotalFileSize = maxNumberOfFiles * appConfig.uppy.defaultRestrictions.maxFileSize; // for maxNumberOfFiles files at 10MB max each
@@ -123,6 +126,47 @@ export const getAttachmentsCollection = (organizationId: string): Collection<Liv
         // onError: (error) => handleSyncError(error, storePrefix, params),
       },
       getKey: (item) => item.id,
+    }),
+  );
+};
+
+export const getLocalAttachmentsCollection = (organizationId: string): Collection<LiveQueryAttachment> => {
+  return createCollection(
+    queryCollectionOptions({
+      id: `sync-local-attachments-${organizationId}`,
+      getKey: (item) => item.id,
+      queryKey: ['local', 'attachments'],
+      queryClient,
+      queryFn: async () => {
+        const storageData = await LocalFileStorage.getData(organizationId);
+        if (!storageData) return [] as LiveQueryAttachment[];
+
+        const files = Object.values(storageData.files ?? {});
+        if (!files.length) return [] as LiveQueryAttachment[];
+
+        const groupId = files.length > 1 ? nanoid() : null;
+
+        return files.map(({ size, preview, id, type, data, meta }) => {
+          return {
+            id,
+            filename: meta?.name || 'Unnamed file',
+            name: meta.name,
+            content_type: type,
+            size: size ? String(size) : String(data.size),
+            original_key: preview ?? '',
+            thumbnail_key: null,
+            converted_key: null,
+            converted_content_type: null,
+            entity_type: 'attachment' as const,
+            created_at: new Date().toISOString(),
+            created_by: null,
+            modified_at: null,
+            modified_by: null,
+            group_id: groupId,
+            organization_id: organizationId,
+          };
+        });
+      },
     }),
   );
 };
