@@ -1,16 +1,16 @@
-import { appConfig } from 'config';
+import type { Collection } from '@tanstack/react-db';
 import { useEffect, useRef } from 'react';
 import { LocalFileStorage } from '~/modules/attachments/helpers/local-file-storage';
-import { attachmentsQueryOptions } from '~/modules/attachments/query';
-import type { AttachmentSearch } from '~/modules/attachments/table/table-wrapper';
-import type { Attachment, AttachmentInfiniteQueryData, AttachmentQueryData } from '~/modules/attachments/types';
-import { formatUpdatedData, getQueryItems } from '~/query/helpers/mutate-query';
-import { queryClient } from '~/query/query-client';
+import type { Attachment, LiveQueryAttachment } from '~/modules/attachments/types';
+import { useTransaction } from '~/modules/attachments/use-transaction';
 import { nanoid } from '~/utils/nanoid';
 
-const limit = appConfig.requestLimits.attachments;
-export const useMergeLocalAttachments = (organizationId: string, { q, sort, order }: AttachmentSearch) => {
+export const useMergeLocalAttachments = (organizationId: string, attachmentCollection: Collection<LiveQueryAttachment>) => {
   const { getData: fetchStoredFiles } = LocalFileStorage;
+
+  const createAttachmens = useTransaction<LiveQueryAttachment>({
+    mutationFn: async () => console.log('Merge local attachments into table'),
+  });
 
   const enrichedRef = useRef(false); // Prevent multiple injections
 
@@ -45,22 +45,33 @@ export const useMergeLocalAttachments = (organizationId: string, { q, sort, orde
         organizationId,
       }));
 
-      const queryOptions = attachmentsQueryOptions({ orgIdOrSlug: organizationId, q, sort, order, limit });
+      const tableAttachmetns = localAttachments.map((a) => {
+        const optimisticId = a.id || nanoid();
+        const groupId = localAttachments.length > 1 ? nanoid() : null;
 
-      await queryClient.prefetchInfiniteQuery(queryOptions);
-
-      queryClient.setQueryData<AttachmentInfiniteQueryData | AttachmentQueryData>(queryOptions.queryKey, (existingData) => {
-        if (!existingData) return existingData;
-
-        const existingItems = getQueryItems(existingData);
-        const existingIds = new Set(existingItems.map((item) => item.id));
-
-        const filtered = localAttachments.filter((item) => !existingIds.has(item.id));
-        if (!filtered.length) return existingData;
-
-        const updatedItems = order === 'asc' ? [...existingItems, ...filtered] : [...filtered, ...existingItems];
-        return formatUpdatedData(existingData, updatedItems, limit, filtered.length);
+        return {
+          id: optimisticId,
+          filename: a.filename,
+          name: a.filename.split('.').slice(0, -1).join('.'),
+          content_type: a.contentType,
+          size: a.size,
+          original_key: a.url,
+          thumbnail_key: a.thumbnailUrl ?? null,
+          converted_key: a.convertedUrl ?? null,
+          converted_content_type: a.convertedContentType ?? null,
+          entity_type: 'attachment' as const,
+          created_at: new Date().toISOString(),
+          created_by: null,
+          modified_at: null,
+          modified_by: null,
+          group_id: groupId,
+          organization_id: organizationId,
+        };
       });
+
+      // TODO(tanstack DB) error You can no longer call .mutate() as the transaction is no longer pending
+      createAttachmens.mutate(() => attachmentCollection.insert(tableAttachmetns));
+
       enrichedRef.current = true;
     };
     mergeLocalAttachmentsIntoCache();

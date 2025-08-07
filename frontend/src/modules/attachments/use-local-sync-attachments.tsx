@@ -1,31 +1,78 @@
+import type { Collection } from '@tanstack/react-db';
 import { appConfig } from 'config';
+import { t } from 'i18next';
+import { nanoid } from 'nanoid';
 import { useEffect, useRef } from 'react';
+import { createAttachment } from '~/api.gen';
 import { useOnlineManager } from '~/hooks/use-online-manager';
 import { LocalFileStorage } from '~/modules/attachments/helpers/local-file-storage';
 import { parseUploadedAttachments } from '~/modules/attachments/helpers/parse-uploaded';
-import { useAttachmentCreateMutation, useAttachmentDeleteMutation } from '~/modules/attachments/query-mutations';
-import type { AttachmentToInsert } from '~/modules/attachments/types';
+import type { AttachmentToInsert, LiveQueryAttachment } from '~/modules/attachments/types';
 import { createBaseTransloaditUppy } from '~/modules/common/uploader/helpers';
 import type { UploadedUppyFile } from '~/modules/common/uploader/types';
+import { toaster } from '../common/toaster';
+import { useTransaction } from './use-transaction';
 
-export const useLocalSyncAttachments = (organizationId: string) => {
+export const useLocalSyncAttachments = (organizationId: string, attachmentCollection: Collection<LiveQueryAttachment>) => {
   const { isOnline } = useOnlineManager();
-  const { mutate: createAttachments } = useAttachmentCreateMutation();
-  const { mutate: deleteAttachments } = useAttachmentDeleteMutation();
+
+  const deleteAttachmens = useTransaction<LiveQueryAttachment[]>({
+    mutationFn: async ({ transaction }) => {
+      const ids: string[] = [];
+      for (const { changes } of transaction.mutations) {
+        if (changes && 'id' in changes && typeof changes.id === 'string') ids.push(changes.id);
+      }
+      await LocalFileStorage.removeFiles(ids);
+      console.info('Successfully removed uploaded files from IndexedDB.');
+    },
+  });
+
+  const createAttachmens = useTransaction<LiveQueryAttachment>({
+    mutationFn: async ({ transaction }) => {
+      const { orgIdOrSlug, attachments } = transaction.metadata as { orgIdOrSlug: string; attachments: (AttachmentToInsert & { id: string })[] };
+      try {
+        await createAttachment({ body: attachments, path: { orgIdOrSlug } });
+      } catch {
+        toaster(t('error:create_resource', { resource: t('common:attachment') }), 'error');
+      }
+    },
+  });
   const { getData: fetchStoredFiles, setSyncStatus: updateStoredFilesSyncStatus } = LocalFileStorage;
 
   const isSyncingRef = useRef(false); // Prevent double trigger
 
   const onComplete = (attachments: AttachmentToInsert[], storedIds: string[]) => {
-    createAttachments(
-      { localCreation: false, attachments, orgIdOrSlug: organizationId },
-      { onSuccess: () => console.info('Successfully synced attachments to server:', attachments) },
-    );
+    createAttachmens.mutate(() => {
+      const tableAttachmetns = attachments.map((a) => {
+        const optimisticId = a.id || nanoid();
+        const groupId = attachments.length > 1 ? nanoid() : null;
+
+        return {
+          id: optimisticId,
+          filename: a.filename,
+          name: a.filename.split('.').slice(0, -1).join('.'),
+          content_type: a.contentType,
+          size: a.size,
+          original_key: a.originalKey,
+          thumbnail_key: a.thumbnailKey ?? null,
+          converted_key: a.convertedKey ?? null,
+          converted_content_type: a.convertedContentType ?? null,
+          entity_type: 'attachment' as const,
+          created_at: new Date().toISOString(),
+          created_by: null,
+          modified_at: null,
+          modified_by: null,
+          group_id: groupId,
+          organization_id: organizationId,
+        };
+      });
+
+      createAttachmens.metadata = { orgIdOrSlug: organizationId, attachments };
+      attachmentCollection.insert(tableAttachmetns);
+    });
+    // TODO(tanstack DB) error CollectionOperationError: Collection.delete was called with key '78vw8i2yip89bsgc6xp7o' but there is no item in the collection with this key
     // Clean up offline files from IndexedDB
-    deleteAttachments(
-      { localDeletionIds: storedIds, serverDeletionIds: [], orgIdOrSlug: organizationId },
-      { onSuccess: () => console.info('Successfully removed uploaded files from IndexedDB.') },
-    );
+    deleteAttachmens.mutate(() => attachmentCollection.delete(storedIds));
   };
 
   useEffect(() => {

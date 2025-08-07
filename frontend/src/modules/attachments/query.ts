@@ -1,6 +1,5 @@
-import { infiniteQueryOptions, queryOptions } from '@tanstack/react-query';
-import { appConfig } from 'config';
-import { type GetAttachmentsData, type GetAttachmentsGroupData, getAttachments, getAttachmentsGroup } from '~/api.gen';
+import { queryOptions } from '@tanstack/react-query';
+import { type GetAttachmentsData, type GetAttachmentsGroupData, getAttachmentsGroup } from '~/api.gen';
 
 type GetAttachmentsParams = GetAttachmentsData['path'] & Omit<NonNullable<GetAttachmentsData['query']>, 'limit' | 'offset'>;
 /**
@@ -38,43 +37,3 @@ export const groupedAttachmentsQueryOptions = ({
     staleTime: 0,
     gcTime: 0,
   });
-
-/**
- * Infinite Query Options for fetching a paginated list of attachments.
- *
- * This function returns the configuration for querying attachments from target organization with pagination support.
- *
- * @param param.orgIdOrSlug - Organization ID or slug.
- * @param param.q - Optional search query for filtering attachments.
- * @param param.sort - Field to sort by (default: 'createdAt').
- * @param param.order - Order of sorting (default: 'desc').
- * @param param.limit - Number of items per page (default: `appConfig.requestLimits.attachments`).
- * @returns Infinite query options.
- */
-export const attachmentsQueryOptions = ({
-  orgIdOrSlug,
-  q = '',
-  sort: _sort,
-  order: _order,
-  limit: _limit,
-}: Omit<GetAttachmentsParams, 'groupId' | 'limit'> & { limit?: number }) => {
-  const sort = _sort || 'createdAt';
-  const order = _order || 'desc';
-  const limit = String(_limit || appConfig.requestLimits.attachments);
-
-  const queryKey = attachmentsKeys.list.table({ orgIdOrSlug, q, sort, order });
-
-  return infiniteQueryOptions({
-    queryKey,
-    initialPageParam: { page: 0, offset: 0 },
-    queryFn: async ({ pageParam: { page, offset: _offset }, signal }) => {
-      const offset = String(_offset || (page || 0) * Number(limit));
-      return await getAttachments({ query: { q, sort, order, limit, offset }, path: { orgIdOrSlug }, signal });
-    },
-    getNextPageParam: (_lastPage, allPages) => {
-      const page = allPages.length;
-      const offset = allPages.reduce((acc, page) => acc + page.items.length, 0);
-      return { page, offset };
-    },
-  });
-};

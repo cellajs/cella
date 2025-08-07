@@ -6,16 +6,17 @@ import { useTranslation } from 'react-i18next';
 import type { z } from 'zod';
 import useSearchParams from '~/hooks/use-search-params';
 import { useColumns } from '~/modules/attachments/table/columns';
+import { getAttachmentsCollection } from '~/modules/attachments/table/helpers';
 import BaseDataTable from '~/modules/attachments/table/table';
 import { AttachmentsTableBar } from '~/modules/attachments/table/table-bar';
 import type { LiveQueryAttachment } from '~/modules/attachments/types';
+import { useLocalSyncAttachments } from '~/modules/attachments/use-local-sync-attachments';
 import { useMergeLocalAttachments } from '~/modules/attachments/use-merge-local-attachments';
 import { AlertWrap } from '~/modules/common/alert-wrap';
 import { useSortColumns } from '~/modules/common/data-table/sort-columns';
 import type { BaseTableMethods } from '~/modules/common/data-table/types';
 import type { EntityPage } from '~/modules/entities/types';
 import type { attachmentsSearchSchema } from '~/routes/organizations';
-import { getAttachmentsCollection } from './helpers';
 
 const LIMIT = appConfig.requestLimits.attachments;
 
@@ -39,8 +40,8 @@ const AttachmentsTable = ({ entity, canUpload = true, isSheet = false }: Attachm
   const { sort, order } = search;
   const limit = LIMIT;
 
-  // useLocalSyncAttachments(entity.id);
-  useMergeLocalAttachments(entity.id, search);
+  useLocalSyncAttachments(entity.id, attachmentCollection);
+  useMergeLocalAttachments(entity.id, attachmentCollection);
 
   const [total, setTotal] = useState<number | undefined>(undefined);
   const [selected, setSelected] = useState<LiveQueryAttachment[]>([]);
