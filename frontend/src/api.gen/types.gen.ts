@@ -1090,7 +1090,9 @@ export type MicrosoftSignInCallbackError = MicrosoftSignInCallbackErrors[keyof M
 export type GetPasskeyChallengeData = {
   body?: never;
   path?: never;
-  query?: never;
+  query?: {
+    email?: string;
+  };
   url: '/auth/passkey-challenge';
 };
 
@@ -1135,6 +1137,7 @@ export type GetPasskeyChallengeResponses = {
    */
   200: {
     challengeBase64: string;
+    credentialIds: Array<string>;
   };
 };
 
@@ -1303,6 +1306,7 @@ export type GetMeResponses = {
     thumbnailUrl: string | null;
     bannerUrl: string | null;
     email: string;
+    twoFactorEnabled: boolean;
     firstName: string | null;
     lastName: string | null;
     language: 'en' | 'nl';
@@ -1382,6 +1386,7 @@ export type UpdateMeResponses = {
     thumbnailUrl: string | null;
     bannerUrl: string | null;
     email: string;
+    twoFactorEnabled: boolean;
     firstName: string | null;
     lastName: string | null;
     language: 'en' | 'nl';
@@ -1444,8 +1449,9 @@ export type GetMyAuthResponses = {
    * User sign-up info
    */
   200: {
-    oauth: Array<'github' | 'microsoft'>;
-    passkey: boolean;
+    enabledOAuth: Array<'github'>;
+    hasPasskey: boolean;
+    hasPassword: boolean;
     sessions: Array<{
       createdAt: string;
       id: string;
@@ -2080,6 +2086,7 @@ export type GetUsersResponses = {
       thumbnailUrl: string | null;
       bannerUrl: string | null;
       email: string;
+      twoFactorEnabled: boolean;
       firstName: string | null;
       lastName: string | null;
       language: 'en' | 'nl';
@@ -2155,6 +2162,7 @@ export type GetUserResponses = {
     thumbnailUrl: string | null;
     bannerUrl: string | null;
     email: string;
+    twoFactorEnabled: boolean;
     firstName: string | null;
     lastName: string | null;
     language: 'en' | 'nl';
@@ -2236,6 +2244,7 @@ export type UpdateUserResponses = {
     thumbnailUrl: string | null;
     bannerUrl: string | null;
     email: string;
+    twoFactorEnabled: boolean;
     firstName: string | null;
     lastName: string | null;
     language: 'en' | 'nl';
@@ -4211,6 +4220,7 @@ export type GetMembersResponses = {
       thumbnailUrl: string | null;
       bannerUrl: string | null;
       email: string;
+      twoFactorEnabled: boolean;
       firstName: string | null;
       lastName: string | null;
       language: 'en' | 'nl';

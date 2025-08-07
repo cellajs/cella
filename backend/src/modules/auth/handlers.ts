@@ -794,6 +794,19 @@ const authRouteHandlers = app
    * Passkey challenge
    */
   .openapi(authRoutes.getPasskeyChallenge, async (ctx) => {
+    const { email } = ctx.req.valid('query');
+
+    let credentialIds: string[] = [];
+    if (email) {
+      const normalizedEmail = email.toLowerCase().trim();
+
+      // Get passkey credentials for user
+      const [credentials] = await db.select().from(passkeysTable).where(eq(passkeysTable.userEmail, normalizedEmail));
+
+      // Set credential ID if found - currently only one credential per user is supported
+      if (credentials) credentialIds = [credentials.credentialId];
+    }
+
     // Generate a random challenge
     const challenge = getRandomValues(new Uint8Array(32));
 
@@ -802,7 +815,7 @@ const authRouteHandlers = app
 
     // Save challenge in cookie
     await setAuthCookie(ctx, 'passkey-challenge', challengeBase64, new TimeSpan(5, 'm'));
-    return ctx.json({ challengeBase64 }, 200);
+    return ctx.json({ challengeBase64, credentialIds }, 200);
   })
   /*
    * Verify passkey

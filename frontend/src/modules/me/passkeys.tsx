@@ -8,12 +8,13 @@ import { useDeletePasskeyMutation } from '~/modules/me/query';
 import type { MeAuthData } from '~/modules/me/types';
 import { Button } from '~/modules/ui/button';
 
-const Passkeys = ({ userAuthInfo }: { userAuthInfo: MeAuthData }) => {
+const Passkeys = ({ userAuthData }: { userAuthData: MeAuthData }) => {
   const { t } = useTranslation();
 
-  const [hasPasskey, setHasPasskey] = useState(userAuthInfo.passkey);
+  const [hasPasskey, setHasPasskey] = useState(userAuthData.hasPasskey);
 
   const { mutate: deletePasskey } = useDeletePasskeyMutation();
+
   const handlePasskeyRegistration = async () => {
     const success = await passkeyRegistration();
     if (success) setHasPasskey(true);

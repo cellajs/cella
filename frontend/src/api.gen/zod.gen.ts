@@ -422,7 +422,11 @@ export const zMicrosoftSignInCallbackData = z.object({
 export const zGetPasskeyChallengeData = z.object({
   body: z.optional(z.never()),
   path: z.optional(z.never()),
-  query: z.optional(z.never()),
+  query: z.optional(
+    z.object({
+      email: z.optional(z.email()),
+    }),
+  ),
 });
 
 /**
@@ -430,6 +434,7 @@ export const zGetPasskeyChallengeData = z.object({
  */
 export const zGetPasskeyChallengeResponse = z.object({
   challengeBase64: z.string(),
+  credentialIds: z.array(z.string()),
 });
 
 export const zSignInWithPasskeyData = z.object({
@@ -480,6 +485,7 @@ export const zGetMeResponse = z.object({
   thumbnailUrl: z.union([z.string(), z.null()]),
   bannerUrl: z.union([z.string(), z.null()]),
   email: z.email(),
+  twoFactorEnabled: z.boolean(),
   firstName: z.union([z.string(), z.null()]),
   lastName: z.union([z.string(), z.null()]),
   language: z.enum(['en', 'nl']),
@@ -521,6 +527,7 @@ export const zUpdateMeResponse = z.object({
   thumbnailUrl: z.union([z.string(), z.null()]),
   bannerUrl: z.union([z.string(), z.null()]),
   email: z.email(),
+  twoFactorEnabled: z.boolean(),
   firstName: z.union([z.string(), z.null()]),
   lastName: z.union([z.string(), z.null()]),
   language: z.enum(['en', 'nl']),
@@ -543,8 +550,9 @@ export const zGetMyAuthData = z.object({
  * User sign-up info
  */
 export const zGetMyAuthResponse = z.object({
-  oauth: z.array(z.enum(['github', 'microsoft'])),
-  passkey: z.boolean(),
+  enabledOAuth: z.array(z.enum(['github'])),
+  hasPasskey: z.boolean(),
+  hasPassword: z.boolean(),
   sessions: z.array(
     z.object({
       createdAt: z.string(),
@@ -797,6 +805,7 @@ export const zGetUsersResponse = z.object({
       thumbnailUrl: z.union([z.string(), z.null()]),
       bannerUrl: z.union([z.string(), z.null()]),
       email: z.email(),
+      twoFactorEnabled: z.boolean(),
       firstName: z.union([z.string(), z.null()]),
       lastName: z.union([z.string(), z.null()]),
       language: z.enum(['en', 'nl']),
@@ -833,6 +842,7 @@ export const zGetUserResponse = z.object({
   thumbnailUrl: z.union([z.string(), z.null()]),
   bannerUrl: z.union([z.string(), z.null()]),
   email: z.email(),
+  twoFactorEnabled: z.boolean(),
   firstName: z.union([z.string(), z.null()]),
   lastName: z.union([z.string(), z.null()]),
   language: z.enum(['en', 'nl']),
@@ -876,6 +886,7 @@ export const zUpdateUserResponse = z.object({
   thumbnailUrl: z.union([z.string(), z.null()]),
   bannerUrl: z.union([z.string(), z.null()]),
   email: z.email(),
+  twoFactorEnabled: z.boolean(),
   firstName: z.union([z.string(), z.null()]),
   lastName: z.union([z.string(), z.null()]),
   language: z.enum(['en', 'nl']),
@@ -1750,6 +1761,7 @@ export const zGetMembersResponse = z.object({
       thumbnailUrl: z.union([z.string(), z.null()]),
       bannerUrl: z.union([z.string(), z.null()]),
       email: z.email(),
+      twoFactorEnabled: z.boolean(),
       firstName: z.union([z.string(), z.null()]),
       lastName: z.union([z.string(), z.null()]),
       language: z.enum(['en', 'nl']),

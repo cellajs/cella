@@ -57,15 +57,20 @@ const meRouteHandlers = app
   .openapi(meRoutes.getMyAuth, async (ctx) => {
     const user = getContextUser();
 
+    // Check if user has password
+    const unsafeUser = await getUserBy('id', user.id, 'unsafe');
+    if (!unsafeUser) throw new AppError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'user' });
+    const hasPassword = !!unsafeUser.hashedPassword;
+
     const getPasskey = db.select().from(passkeysTable).where(eq(passkeysTable.userEmail, user.email));
     const getOAuth = db.select({ providerId: oauthAccountsTable.providerId }).from(oauthAccountsTable).where(eq(oauthAccountsTable.userId, user.id));
     const [passkeys, oauthAccounts, sessions] = await Promise.all([getPasskey, getOAuth, getUserSessions(ctx, user.id)]);
 
-    const validOAuthAccounts = oauthAccounts
+    const enabledOAuth = oauthAccounts
       .map((el) => el.providerId)
       .filter((provider): provider is EnabledOAuthProvider => appConfig.enabledOAuthProviders.includes(provider as EnabledOAuthProvider));
 
-    return ctx.json({ oauth: validOAuthAccounts, passkey: !!passkeys.length, sessions }, 200);
+    return ctx.json({ enabledOAuth, hasPasskey: !!passkeys.length, hasPassword, sessions }, 200);
   })
   /*
    * Get my user menu

@@ -10,6 +10,7 @@ import {
   oauthCallbackQuerySchema,
   oauthQuerySchema,
   passkeyChallengeQuerySchema,
+  passkeyChallengeSchema,
   passkeyVerificationBodySchema,
   tokenWithDataSchema,
 } from '#/modules/auth/schema';
@@ -422,16 +423,21 @@ const authRoutes = {
     method: 'get',
     path: '/passkey-challenge',
     guard: isPublicAccess,
+    // TODO look into rate limit customized for passkeys
+    middleware: [spamLimiter],
     tags: ['auth'],
     summary: 'Get passkey challenge',
     description: 'Initiates the passkey registration or authentication flow by generating a device bound challenge.',
     security: [],
+    request: {
+      query: passkeyChallengeQuerySchema,
+    },
     responses: {
       200: {
         description: 'Challenge created',
         content: {
           'application/json': {
-            schema: passkeyChallengeQuerySchema,
+            schema: passkeyChallengeSchema,
           },
         },
       },
