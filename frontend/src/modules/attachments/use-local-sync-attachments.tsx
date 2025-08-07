@@ -8,24 +8,13 @@ import { useOnlineManager } from '~/hooks/use-online-manager';
 import { LocalFileStorage } from '~/modules/attachments/helpers/local-file-storage';
 import { parseUploadedAttachments } from '~/modules/attachments/helpers/parse-uploaded';
 import type { AttachmentToInsert, LiveQueryAttachment } from '~/modules/attachments/types';
+import { useTransaction } from '~/modules/attachments/use-transaction';
+import { toaster } from '~/modules/common/toaster';
 import { createBaseTransloaditUppy } from '~/modules/common/uploader/helpers';
 import type { UploadedUppyFile } from '~/modules/common/uploader/types';
-import { toaster } from '../common/toaster';
-import { useTransaction } from './use-transaction';
 
 export const useLocalSyncAttachments = (organizationId: string, attachmentCollection: Collection<LiveQueryAttachment>) => {
   const { isOnline } = useOnlineManager();
-
-  const deleteAttachmens = useTransaction<LiveQueryAttachment[]>({
-    mutationFn: async ({ transaction }) => {
-      const ids: string[] = [];
-      for (const { changes } of transaction.mutations) {
-        if (changes && 'id' in changes && typeof changes.id === 'string') ids.push(changes.id);
-      }
-      await LocalFileStorage.removeFiles(ids);
-      console.info('Successfully removed uploaded files from IndexedDB.');
-    },
-  });
 
   const createAttachmens = useTransaction<LiveQueryAttachment>({
     mutationFn: async ({ transaction }) => {
@@ -41,7 +30,7 @@ export const useLocalSyncAttachments = (organizationId: string, attachmentCollec
 
   const isSyncingRef = useRef(false); // Prevent double trigger
 
-  const onComplete = (attachments: AttachmentToInsert[], storedIds: string[]) => {
+  const onComplete = async (attachments: AttachmentToInsert[], storedIds: string[]) => {
     createAttachmens.mutate(() => {
       const tableAttachmetns = attachments.map((a) => {
         const optimisticId = a.id || nanoid();
@@ -70,9 +59,9 @@ export const useLocalSyncAttachments = (organizationId: string, attachmentCollec
       createAttachmens.metadata = { orgIdOrSlug: organizationId, attachments };
       attachmentCollection.insert(tableAttachmetns);
     });
-    // TODO(tanstack DB) error CollectionOperationError: Collection.delete was called with key '78vw8i2yip89bsgc6xp7o' but there is no item in the collection with this key
+
     // Clean up offline files from IndexedDB
-    deleteAttachmens.mutate(() => attachmentCollection.delete(storedIds));
+    await LocalFileStorage.removeFiles(storedIds);
   };
 
   useEffect(() => {
