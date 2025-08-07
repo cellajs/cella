@@ -53,7 +53,6 @@ const BaseDataTable = memo(
         },
         [q, sort, order],
       );
-      console.log('🚀 ~ local:', local);
 
       const combined = useMemo(() => {
         const all = [...(data ?? []), ...(local ?? [])];

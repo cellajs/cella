@@ -1,7 +1,6 @@
 import type { Collection } from '@tanstack/react-db';
 import { t } from 'i18next';
 import { deleteAttachments } from '~/api.gen';
-import { LocalFileStorage } from '~/modules/attachments/helpers/local-file-storage';
 import type { LiveQueryAttachment } from '~/modules/attachments/types';
 import { useTransaction } from '~/modules/attachments/use-transaction';
 import type { CallbackArgs } from '~/modules/common/data-table/types';
@@ -39,20 +38,6 @@ const DeleteAttachments = ({ entity, attachments, attachmentCollection, localAtt
     },
   });
 
-  const deleteLocalAttachmens = useTransaction<LiveQueryAttachment[]>({
-    mutationFn: async ({ transaction }) => {
-      const storedIds: string[] = [];
-      for (const { changes } of transaction.mutations) {
-        if (changes && 'id' in changes && typeof changes.id === 'string') storedIds.push(changes.id);
-      }
-      try {
-        await LocalFileStorage.removeFiles(storedIds);
-      } catch (err) {
-        console.error('Sync files deletion error:', err);
-      }
-    },
-  });
-
   const onDelete = async () => {
     const localDeletionIds: string[] = [];
     const serverDeletionIds: string[] = [];
@@ -63,7 +48,7 @@ const DeleteAttachments = ({ entity, attachments, attachmentCollection, localAtt
     }
 
     if (serverDeletionIds.length) deleteAttachmens.mutate(() => attachmentCollection.delete(serverDeletionIds));
-    if (localDeletionIds.length) deleteLocalAttachmens.mutate(() => localAttachmentCollection.delete(localDeletionIds));
+    if (localDeletionIds.length) localAttachmentCollection.delete(localDeletionIds);
 
     if (isDialog) removeDialog();
     callback?.({ data: attachments, status: 'success' });

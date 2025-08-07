@@ -31,20 +31,6 @@ export const useLocalSyncAttachments = (
     },
   });
 
-  const deleteLocalAttachmens = useTransaction<LiveQueryAttachment[]>({
-    mutationFn: async ({ transaction }) => {
-      const storedIds: string[] = [];
-      for (const { changes } of transaction.mutations) {
-        if (changes && 'id' in changes && typeof changes.id === 'string') storedIds.push(changes.id);
-      }
-      try {
-        await LocalFileStorage.removeFiles(storedIds);
-      } catch (err) {
-        console.error('Sync files deletion error:', err);
-      }
-    },
-  });
-
   const { getData: fetchStoredFiles, setSyncStatus: updateStoredFilesSyncStatus } = LocalFileStorage;
 
   const isSyncingRef = useRef(false); // Prevent double trigger
@@ -80,7 +66,7 @@ export const useLocalSyncAttachments = (
     });
 
     // Clean up offline files from IndexedDB
-    deleteLocalAttachmens.mutate(() => lcoalAttachmentCollection.delete(storedIds));
+    lcoalAttachmentCollection.delete(storedIds);
   };
 
   useEffect(() => {

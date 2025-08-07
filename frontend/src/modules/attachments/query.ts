@@ -7,10 +7,8 @@ import { type GetAttachmentsGroupData, getAttachmentsGroup } from '~/api.gen';
  */
 export const attachmentsKeys = {
   all: ['attachments'] as const,
+  local: () => [...attachmentsKeys.all, 'local'] as const,
   list: () => [...attachmentsKeys.all, 'list'] as const,
-  create: () => [...attachmentsKeys.all, 'create'] as const,
-  update: () => [...attachmentsKeys.all, 'update'] as const,
-  delete: () => [...attachmentsKeys.all, 'delete'] as const,
 };
 
 /**

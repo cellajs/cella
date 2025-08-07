@@ -70,6 +70,21 @@ export const LocalFileStorage = {
     }
   },
 
+  async changeFile(fileId: string, newData: Partial<CustomUppyFile>): Promise<void> {
+    try {
+      const storageKeys = await keys();
+      if (!storageKeys.length) return undefined;
+      for (const groupKey of storageKeys) {
+        const group = await get<StoredOfflineData>(groupKey);
+        if (!group) return undefined;
+        group.files[fileId] = { ...group.files[fileId], ...newData };
+      }
+    } catch (error) {
+      Sentry.captureException(error);
+      console.error(`Failed to change file (${fileId}):`, error);
+    }
+  },
+
   async setSyncStatus(orgId: string, syncStatus: SyncStatus): Promise<void> {
     try {
       const data = await get<StoredOfflineData>(orgId);
