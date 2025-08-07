@@ -62,9 +62,8 @@ export const useAttachmentsUploadDialog = () => {
       if (onlineManager.isOnline()) {
         createAttachmens.metadata = { orgIdOrSlug: organizationId, attachments };
         createAttachmens.mutate(() => attachmentCollection.insert(tableAttachmetns));
-      } else {
-        localAttachmentCollection.insert(tableAttachmetns);
-      }
+      } else localAttachmentCollection.insert(tableAttachmetns);
+
       useUploader.getState().remove();
     };
 

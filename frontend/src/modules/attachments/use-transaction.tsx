@@ -1,6 +1,7 @@
 import type { TransactionConfig } from '@tanstack/react-db';
 import { createTransaction } from '@tanstack/react-db';
 
+//TODO (TanStackDB) make hook work offline
 export const useTransaction = <T extends object = Record<string, unknown>>(options: TransactionConfig<T>) => {
   const transaction = createTransaction<T>({
     ...options,

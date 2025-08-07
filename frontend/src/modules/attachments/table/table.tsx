@@ -27,6 +27,7 @@ const BaseDataTable = memo(
     const attachmentCollection = getAttachmentsCollection(orgIdOrSlug);
     const localAttachmentCollection = getLocalAttachmentsCollection(orgIdOrSlug);
 
+    //TODO (TanStackDB) reduse re-renders
     const { data, isLoading } = useLiveQuery(
       (query) => {
         let qBuilder = query.from({ attachments: attachmentCollection });
@@ -89,6 +90,7 @@ const BaseDataTable = memo(
       },
     });
 
+    //TODO (TanStackDB) enable it
     // const rows = useOfflineTableSearch({
     //   data: combined,
     //   filterFn: ({ q }, item) => {

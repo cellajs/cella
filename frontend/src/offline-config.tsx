@@ -25,7 +25,7 @@ export const queriesToMap = (item: UserMenuItem) => {
           orgIdOrSlug,
           entityType: item.entityType,
         }),
-        // TODO(tanstack DB)
+        //TODO (TanStackDB) Enable prefetch for offline
         // attachmentsQueryOptions({ orgIdOrSlug }),
       ];
 
