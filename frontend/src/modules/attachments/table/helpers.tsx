@@ -6,6 +6,7 @@ import { appConfig } from 'config';
 import { t } from 'i18next';
 import { createAttachment } from '~/api.gen';
 import { clientConfig } from '~/lib/api';
+import { LocalFileStorage } from '~/modules/attachments/helpers/local-file-storage';
 import { parseUploadedAttachments } from '~/modules/attachments/helpers/parse-uploaded';
 import type { AttachmentToInsert, LiveQueryAttachment } from '~/modules/attachments/types';
 import { useTransaction } from '~/modules/attachments/use-transaction';
@@ -15,7 +16,6 @@ import { useUploader } from '~/modules/common/uploader/use-uploader';
 import { queryClient } from '~/query/query-client';
 import { baseBackoffOptions as backoffOptions } from '~/utils/electric-utils';
 import { nanoid } from '~/utils/nanoid';
-import { LocalFileStorage } from '../helpers/local-file-storage';
 
 const maxNumberOfFiles = 20;
 const maxTotalFileSize = maxNumberOfFiles * appConfig.uppy.defaultRestrictions.maxFileSize; // for maxNumberOfFiles files at 10MB max each

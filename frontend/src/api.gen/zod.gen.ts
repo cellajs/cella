@@ -1478,50 +1478,6 @@ export const zDeleteAttachmentsResponse = z.object({
   rejectedItems: z.array(z.string()),
 });
 
-export const zGetAttachmentsData = z.object({
-  body: z.optional(z.never()),
-  path: z.object({
-    orgIdOrSlug: z.string(),
-  }),
-  query: z.optional(
-    z.object({
-      q: z.optional(z.string()),
-      sort: z.optional(z.enum(['id', 'name', 'size', 'createdAt'])),
-      order: z.optional(z.enum(['asc', 'desc'])),
-      offset: z.optional(z.string()).default('0'),
-      limit: z.optional(z.string()).default('40'),
-      attachmentId: z.optional(z.string()),
-    }),
-  ),
-});
-
-/**
- * Attachments
- */
-export const zGetAttachmentsResponse = z.object({
-  items: z.array(
-    z.object({
-      createdAt: z.string(),
-      id: z.string(),
-      name: z.string(),
-      entityType: z.enum(['attachment']),
-      groupId: z.union([z.string(), z.null()]),
-      filename: z.string(),
-      contentType: z.string(),
-      convertedContentType: z.union([z.string(), z.null()]),
-      size: z.string(),
-      createdBy: z.union([z.string(), z.null()]),
-      modifiedAt: z.union([z.string(), z.null()]),
-      modifiedBy: z.union([z.string(), z.null()]),
-      organizationId: z.string(),
-      url: z.string(),
-      thumbnailUrl: z.union([z.string(), z.null()]),
-      convertedUrl: z.union([z.string(), z.null()]),
-    }),
-  ),
-  total: z.number(),
-});
-
 export const zCreateAttachmentData = z.object({
   body: z
     .array(

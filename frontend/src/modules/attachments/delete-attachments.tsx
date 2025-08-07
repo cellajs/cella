@@ -47,7 +47,6 @@ const DeleteAttachments = ({ entity, attachments, attachmentCollection, localAtt
       }
       try {
         await LocalFileStorage.removeFiles(storedIds);
-        console.log(localAttachmentCollection);
       } catch (err) {
         console.error('Sync files deletion error:', err);
       }

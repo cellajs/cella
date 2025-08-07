@@ -1,9 +1,9 @@
-import { z } from '@hono/zod-openapi';
 import { createCustomRoute } from '#/lib/custom-routes';
 import { hasOrgAccess, isAuthenticated, isPublicAccess } from '#/middlewares/guard';
-import { attachmentCreateManySchema, attachmentListQuerySchema, attachmentSchema } from '#/modules/attachments/schema';
+import { attachmentCreateManySchema, attachmentSchema } from '#/modules/attachments/schema';
 import { idInOrgParamSchema, idSchema, idsBodySchema, inOrgParamSchema } from '#/utils/schema/common';
-import { errorResponses, paginationSchema, successWithRejectedItemsSchema } from '#/utils/schema/responses';
+import { errorResponses, successWithRejectedItemsSchema } from '#/utils/schema/responses';
+import { z } from '@hono/zod-openapi';
 
 const attachmentRoutes = {
   createAttachments: createCustomRoute({
@@ -29,30 +29,6 @@ const attachmentRoutes = {
       200: {
         description: 'Attachment',
         content: { 'application/json': { schema: z.array(attachmentSchema) } },
-      },
-      ...errorResponses,
-    },
-  }),
-  getAttachments: createCustomRoute({
-    operationId: 'getAttachments',
-    method: 'get',
-    path: '/',
-    guard: [isAuthenticated, hasOrgAccess],
-    tags: ['attachments'],
-    summary: 'Get list of attachments',
-    description: 'Retrieves all *attachments* associated with a specific entity, such as an organization.',
-    request: {
-      params: inOrgParamSchema,
-      query: attachmentListQuerySchema,
-    },
-    responses: {
-      200: {
-        description: 'Attachments',
-        content: {
-          'application/json': {
-            schema: paginationSchema(attachmentSchema),
-          },
-        },
       },
       ...errorResponses,
     },
