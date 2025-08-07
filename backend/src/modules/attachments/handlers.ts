@@ -1,8 +1,3 @@
-import { OpenAPIHono } from '@hono/zod-openapi';
-import { appConfig } from 'config';
-import { and, count, eq, ilike, inArray, or, type SQL } from 'drizzle-orm';
-import { html, raw } from 'hono/html';
-import { stream } from 'hono/streaming';
 import { db } from '#/db/db';
 import { attachmentsTable } from '#/db/schema/attachments';
 import { organizationsTable } from '#/db/schema/organizations';
@@ -19,6 +14,11 @@ import { logEvent } from '#/utils/logger';
 import { nanoid } from '#/utils/nanoid';
 import { getOrderColumn } from '#/utils/order-column';
 import { prepareStringForILikeFilter } from '#/utils/sql';
+import { OpenAPIHono } from '@hono/zod-openapi';
+import { appConfig } from 'config';
+import { and, count, eq, ilike, inArray, or, type SQL } from 'drizzle-orm';
+import { html, raw } from 'hono/html';
+import { stream } from 'hono/streaming';
 
 const app = new OpenAPIHono<Env>({ defaultHook });
 
@@ -114,7 +114,7 @@ const attachmentsRouteHandlers = app
 
     const data = await processAttachmentUrlsBatch(createdAttachments);
 
-    logEvent({ msg: `${createdAttachments.length} attachments have been created` });
+    logEvent('info', `${createdAttachments.length} attachments have been created`);
 
     return ctx.json(data, 200);
   }) /*
@@ -136,7 +136,7 @@ const attachmentsRouteHandlers = app
     const orderColumn = getOrderColumn(
       {
         id: attachmentsTable.id,
-        filename: attachmentsTable.filename,
+        name: attachmentsTable.name,
         size: attachmentsTable.size,
         createdAt: attachmentsTable.createdAt,
       },
@@ -236,9 +236,9 @@ const attachmentsRouteHandlers = app
       .where(eq(attachmentsTable.id, id))
       .returning();
 
-    logEvent({ msg: 'Attachment updated', meta: { attachment: updatedAttachment.id } });
-
     const data = await processAttachmentUrls(updatedAttachment);
+
+    logEvent('info', 'Attachment updated', { attachmentId: updatedAttachment.id });
 
     return ctx.json(data, 200);
   })
@@ -261,7 +261,7 @@ const attachmentsRouteHandlers = app
     // Delete the attachments
     await db.delete(attachmentsTable).where(inArray(attachmentsTable.id, allowedIds));
 
-    logEvent({ msg: 'Attachments deleted', meta: { allowedIds } });
+    logEvent('info', 'Attachments deleted', allowedIds);
 
     return ctx.json({ success: true, rejectedItems }, 200);
   })

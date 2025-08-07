@@ -28,5 +28,5 @@ export const attachmentSchema = attachmentSelectSchema.omit({ originalKey: true,
 
 export const attachmentListQuerySchema = paginationQuerySchema.extend({
   attachmentId: z.string().optional(),
-  sort: z.enum(['id', 'filename', 'size', 'createdAt']).default('createdAt').optional(),
+  sort: z.enum(['id', 'name', 'size', 'createdAt']).default('createdAt').optional(),
 });

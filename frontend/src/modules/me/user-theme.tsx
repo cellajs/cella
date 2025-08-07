@@ -29,7 +29,8 @@ const UserTheme = ({ size = 24, buttonClassName = '', contentClassName = '' }: U
     return <Icon size={16} />;
   }
 
-  if (!themes.length)
+  // if just one theme, use switch
+  if (!themes.length) {
     return (
       <Switch
         size="sm"
@@ -47,6 +48,9 @@ const UserTheme = ({ size = 24, buttonClassName = '', contentClassName = '' }: U
         }
       />
     );
+  }
+
+  // Else use a dropdown menu
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>

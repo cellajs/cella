@@ -1,7 +1,6 @@
 import { useMutation, useSuspenseQuery } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
-import { toast } from 'sonner';
 import { type AcceptEntityInviteResponse, type ApiError, acceptEntityInvite, type GetMyInvitesResponse } from '~/api.gen';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { ExpandableList } from '~/modules/common/expandable-list';
@@ -15,6 +14,7 @@ import { getEntityRoute } from '~/nav-config';
 import { queryClient } from '~/query/query-client';
 import { useUserStore } from '~/store/user';
 import { dateShort } from '~/utils/date-short';
+import { toaster } from '../common/toaster';
 
 export const EntityInvites = () => {
   const { t } = useTranslation();
@@ -31,7 +31,7 @@ export const EntityInvites = () => {
         if (!oldData) return oldData;
         return oldData.filter((invite) => invite.entity.id !== acceptedEntity.id);
       });
-      toast.success(t('common:invitation_accepted'));
+      toaster(t('common:invitation_accepted'), 'success');
     },
   });
 

@@ -229,7 +229,7 @@ const meRouteHandlers = app
     // Invalidate sessions
     await invalidateAllUserSessions(user.id);
     deleteAuthCookie(ctx, 'session');
-    logEvent({ msg: 'User deleted itself', meta: { user: user.id } });
+    logEvent('info', 'User deleted itself', { userId: user.id });
 
     return ctx.json(true, 200);
   })
@@ -249,7 +249,7 @@ const meRouteHandlers = app
     // Delete the memberships
     await db.delete(membershipsTable).where(and(eq(membershipsTable.userId, user.id), eq(membershipsTable[entityIdField], entity.id)));
 
-    logEvent({ msg: 'User left entity', meta: { user: user.id } });
+    logEvent('info', 'User left entity', { userId: user.id });
 
     return ctx.json(true, 200);
   })
@@ -325,12 +325,12 @@ const meRouteHandlers = app
    *  Get SSE stream
    */
   .get('/sse', isAuthenticated, async (ctx) => {
-    const user = getContextUser();
+    const { id: userId } = getContextUser();
     return streamSSE(ctx, async (stream) => {
       ctx.header('Content-Encoding', '');
-      streams.set(user.id, stream);
+      streams.set(userId, stream);
 
-      console.info('User connected to SSE', user.id);
+      logEvent('info', 'Connected to SSE', { userId });
       await stream.writeSSE({
         event: 'connected',
         data: 'connected',
@@ -338,8 +338,8 @@ const meRouteHandlers = app
       });
 
       stream.onAbort(async () => {
-        console.info('User disconnected from SSE', user.id);
-        streams.delete(user.id);
+        logEvent('warn', 'Disconnected from SSE', { userId });
+        streams.delete(userId);
       });
 
       // Keep connection alive

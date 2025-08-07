@@ -2,8 +2,8 @@ import { useNavigate } from '@tanstack/react-router';
 import { appConfig } from 'config';
 import { UserX } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { toast } from 'sonner';
 import { stopImpersonation as breakImpersonation } from '~/api.gen';
+import { toaster } from '~/modules/common/toaster';
 import { TooltipButton } from '~/modules/common/tooltip-button';
 import { getAndSetMe, getAndSetMenu } from '~/modules/me/helpers';
 import { Button } from '~/modules/ui/button';
@@ -20,7 +20,7 @@ const StopImpersonation = () => {
     setImpersonating(false);
     await Promise.all([getAndSetMe(), getAndSetMenu()]);
     navigate({ to: appConfig.defaultRedirectPath, replace: true });
-    toast.success(t('common:success.stopped_impersonation'));
+    toaster(t('common:success.stopped_impersonation'), 'success');
   };
 
   if (!impersonating) return null;

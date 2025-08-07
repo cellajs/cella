@@ -266,7 +266,7 @@ const authRouteHandlers = app
 
     mailer.prepareEmails<CreatePasswordEmailProps, Recipient>(CreatePasswordEmail, staticProps, recipients);
 
-    logEvent({ msg: 'Create password link sent', meta: { user: user.id } });
+    logEvent('info', 'Create password link sent', { userId: user.id });
 
     return ctx.json(true, 200);
   })
@@ -461,9 +461,7 @@ const authRouteHandlers = app
       .from(usersTable)
       .where(eq(usersTable.id, targetUserId));
 
-    if (!user) {
-      throw new AppError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'user', meta: { userId: targetUserId } });
-    }
+    if (!user) throw new AppError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'user', meta: { targetUserId } });
 
     const adminUser = getContextUser();
     const sessionData = await getParsedSessionCookie(ctx);
@@ -475,7 +473,7 @@ const authRouteHandlers = app
 
     await setUserSession(ctx, user, 'password', adminUser);
 
-    logEvent({ msg: 'Started impersonation', meta: { admin: user.id, user: targetUserId } });
+    logEvent('info', 'Started impersonation', { adminId: adminUser.id, targetUserId });
 
     return ctx.json(true, 200);
   })
@@ -510,7 +508,7 @@ const authRouteHandlers = app
       await setAuthCookie(ctx, 'session', cookieContent, expireTimeSpan);
     }
 
-    logEvent({ msg: 'Stopped impersonation', meta: { admin: adminUserId || 'na', user: session.userId } });
+    logEvent('info', 'Stopped impersonation', { adminiD: adminUserId || 'na', targetUserId: session.userId });
 
     return ctx.json(true, 200);
   })
@@ -532,7 +530,7 @@ const authRouteHandlers = app
     // Delete session cookie
     deleteAuthCookie(ctx, 'session');
 
-    logEvent({ msg: 'User signed out', meta: { user: session?.userId || 'na' } });
+    logEvent('info', 'User signed out', { userId: session?.userId || 'na' });
 
     return ctx.json(true, 200);
   })

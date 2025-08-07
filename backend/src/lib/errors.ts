@@ -5,10 +5,11 @@ import type { ErrorHandler } from 'hono';
 import i18n from 'i18next';
 import { type Env, getContextOrganization, getContextUser } from '#/lib/context';
 import type locales from '#/lib/i18n-locales';
-import { logToExternal } from '#/middlewares/logger/external-logger';
+import { eventLogger } from '#/pino-config';
 import { getIsoDate } from '#/utils/iso-date';
-import { getNodeLoggerLevel } from '#/utils/logger';
 import type { errorSchema } from '#/utils/schema/error';
+
+const isProduction = appConfig.mode === 'production';
 
 type ErrorSchemaType = z.infer<typeof errorSchema>;
 type ErrorMeta = { readonly [key: string]: number | string | boolean | null };
@@ -61,9 +62,12 @@ export class AppError extends Error {
   }
 }
 
+/**
+ * Handles errors thrown in the api.
+ */
 export const handleAppError: ErrorHandler<Env> = (err, ctx) => {
   // Normalize error to AppError if possible
-  const apiError =
+  const normalizedError =
     err instanceof AppError
       ? err
       : new AppError({
@@ -74,20 +78,20 @@ export const handleAppError: ErrorHandler<Env> = (err, ctx) => {
           originalError: err,
         });
 
-  // Get  non-enumerable 'stack', 'message', and 'cause'. These do NOT get included when using the spread operator (...)
-  const { isRedirect, originalError, message, cause, stack, ...error } = apiError;
+  // Get non-enumerable 'stack', 'message', and 'cause'. These do NOT get included when using the spread operator (...)
+  const { isRedirect, originalError, message, cause, stack, ...error } = normalizedError;
   const { severity, type, meta } = error;
 
   // Get the current user and organization from context
   const user = getContextUser();
   const organization = getContextOrganization();
 
-  const enrichedError = {
-    ...error,
-    stack,
-    cause,
+  const detailedError = {
     message,
+    ...error,
+    cause,
     logId: ctx.get('logId'),
+    ...(['error', 'fatal'].includes(severity) ? { stack } : {}),
     path: ctx.req.path,
     method: ctx.req.method,
     userId: user?.id,
@@ -95,20 +99,17 @@ export const handleAppError: ErrorHandler<Env> = (err, ctx) => {
     timestamp: getIsoDate(),
   };
 
+  const detailsRequired = ['warn', 'error', 'fatal'].includes(severity);
+
   // Send to Sentry
-  if (['warn', 'error', 'fatal'].includes(severity)) {
+  if (detailsRequired) {
     const level = severity === 'warn' ? 'warning' : 'error';
-    Sentry.captureException(enrichedError, { level });
+    Sentry.captureException(detailedError, { level });
   }
 
-  // External logger
-  logToExternal(severity, message, enrichedError);
-
-  // Console logging
-  const nodeSevernity = getNodeLoggerLevel(severity);
-  console[nodeSevernity](`[${severity.toUpperCase()}] ${message}`);
-  if (meta) console[nodeSevernity]('Meta:', meta);
-  if (stack) console.error(stack);
+  // Log the error
+  if (!isProduction) eventLogger[severity]({ msg: detailedError.name, ...(detailsRequired ? { error: detailedError } : {}) });
+  else eventLogger[severity]({ ...(meta ?? {}), ...(detailsRequired ? { ...detailedError } : {}) });
 
   // Redirect to the frontend error page with query parameters for error details
   if (isRedirect) {
@@ -116,5 +117,5 @@ export const handleAppError: ErrorHandler<Env> = (err, ctx) => {
     return ctx.redirect(redirectUrl, 302);
   }
 
-  return ctx.json(enrichedError, enrichedError.status);
+  return ctx.json(detailedError, detailedError.status);
 };

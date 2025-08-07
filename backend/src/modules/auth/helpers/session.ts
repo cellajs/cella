@@ -67,7 +67,7 @@ export const setUserSession = async (ctx: Context, user: UserModel, strategy: Au
   // Update last sign in date
   const lastSignInAt = getIsoDate();
   await db.update(usersTable).set({ lastSignInAt }).where(eq(usersTable.id, user.id));
-  logEvent({ msg: 'User signed in', meta: { user: user.id, strategy } });
+  logEvent('info', 'User signed in', { userId: user.id, strategy });
 };
 
 /**

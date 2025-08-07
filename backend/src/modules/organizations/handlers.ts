@@ -57,7 +57,7 @@ const organizationRouteHandlers = app
       })
       .returning();
 
-    logEvent({ msg: 'Organization created', meta: { organization: createdOrganization.id } });
+    logEvent('info', 'Organization created', { organizationId: createdOrganization.id });
 
     // Insert membership
     const createdMembership = await insertMembership({ userId: user.id, role: 'admin', entity: createdOrganization });
@@ -170,7 +170,7 @@ const organizationRouteHandlers = app
       sendSSEToUsers(userIds, 'remove_entity', { id, entityType: 'organization' });
     }
 
-    logEvent({ msg: 'Organizations deleted', meta: { allowedIds } });
+    logEvent('info', 'Organizations deleted', allowedIds);
 
     return ctx.json({ success: true, rejectedItems }, 200);
   })
@@ -235,7 +235,7 @@ const organizationRouteHandlers = app
     // Send SSE events to organization members
     for (const member of organizationMemberships) sendSSEToUsers([member.userId], 'update_entity', { ...updatedOrganization, member });
 
-    logEvent({ msg: 'Organization updated', meta: { organization: updatedOrganization.id } });
+    logEvent('info', 'Organization updated', { organizationId: updatedOrganization.id });
 
     const memberCountsQuery = getMemberCountsQuery(organization.entityType);
     const [{ invitesCount }] = await db

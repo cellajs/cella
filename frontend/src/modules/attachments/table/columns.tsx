@@ -89,7 +89,7 @@ export const useColumns = (entity: EntityPage, isSheet: boolean, isCompact: bool
       name: t('common:name'),
       editable: true,
       visible: true,
-      sortable: false,
+      sortable: true,
       minWidth: 180,
       renderHeaderCell: HeaderCell,
       renderCell: ({ row }) => <span className="font-medium">{row.name || '-'}</span>,

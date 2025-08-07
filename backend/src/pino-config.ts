@@ -2,25 +2,39 @@ import { appConfig } from 'config';
 import pino from 'pino';
 import { env } from './env';
 
-export const middlewareLogger = pino(
+const redactedFields = ['user.hashedPassword', 'user.unsubscribeToken', 'session.token', 'token.token'];
+
+// In production, we use the default pino logger
+const isProduction = appConfig.mode === 'production';
+
+/**
+ * Logger for all requests.
+ * This logger is used in logger middleware to log incoming and outgoing requests.
+ */
+export const requestLogger = pino(
   {
-    level: 'trace',
+    level: isProduction ? 'info' : 'debug',
     redact: {
-      paths: ['req.headers.authorization', 'req.headers.cookie', 'user.hashedPassword', 'user.unsubscribeToken'],
+      paths: [...redactedFields, 'req.headers.authorization', 'req.headers.cookie'],
       censor: '[REDACTED]',
     },
   },
-  pino.transport({
-    target: 'pino-pretty',
-    options: {
-      colorize: false,
-      singleLine: true,
-      ignore: 'pid,hostname,level',
-    },
-  }),
+  isProduction
+    ? undefined
+    : pino.transport({
+        target: 'pino-pretty',
+        options: {
+          colorize: false,
+          singleLine: true,
+          ignore: 'pid,hostname,level',
+        },
+      }),
 );
 
-export const pinoLogger = pino(
+/**
+ * Logger for manually logging events in the application.
+ */
+export const eventLogger = pino(
   {
     level: env.PINO_LOG_LEVEL,
     customLevels: appConfig.severityLevels,
@@ -29,17 +43,19 @@ export const pinoLogger = pino(
       level: (label) => ({ level: label.toUpperCase() }),
     },
     redact: {
-      paths: ['user.hashedPassword', 'user.unsubscribeToken'],
+      paths: redactedFields,
       censor: '[REDACTED]',
     },
   },
-  pino.transport({
-    target: 'pino-pretty',
-    options: {
-      colorize: true,
-      singleLine: true,
-      levelFirst: true,
-      ignore: 'pid,hostname,time',
-    },
-  }),
+  isProduction
+    ? undefined
+    : pino.transport({
+        target: 'pino-pretty',
+        options: {
+          colorize: true,
+          singleLine: true,
+          levelFirst: true,
+          ignore: 'pid,hostname,time',
+        },
+      }),
 );

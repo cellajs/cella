@@ -18,7 +18,7 @@ import { getSignedUrl } from '#/lib/signed-url';
 import systemRoutes from '#/modules/system/routes';
 import { getUsersByConditions } from '#/modules/users/helpers/get-user-by';
 import { defaultHook } from '#/utils/default-hook';
-import { logEvent } from '#/utils/logger';
+import { logError, logEvent } from '#/utils/logger';
 import { nanoid } from '#/utils/nanoid';
 import { slugFromEmail } from '#/utils/slug-from-email';
 import { createDate, TimeSpan } from '#/utils/time-span';
@@ -114,7 +114,7 @@ const systemRouteHandlers = app
     const staticProps = { senderName, senderThumbnailUrl, subject, lng };
     await mailer.prepareEmails<SystemInviteEmailProps, Recipient>(SystemInviteEmail, staticProps, recipients, user.email);
 
-    logEvent({ msg: 'Users invited on system level' });
+    logEvent('info', 'Users invited on system level', { count: recipients.length });
 
     return ctx.json({ success: true, rejectedItems, invitesSentCount: recipients.length }, 200);
   })
@@ -140,17 +140,14 @@ const systemRouteHandlers = app
         const eventData = paddle.webhooks.unmarshal(rawRequestBody, env.PADDLE_WEBHOOK_KEY || '', signature);
         switch ((await eventData)?.eventType) {
           case EventName.SubscriptionCreated:
-            logEvent({ msg: `Subscription ${(await eventData)?.data.id} was created`, meta: { eventData } });
+            logEvent('info', `Subscription ${(await eventData)?.data.id} was created`, { eventData });
             break;
           default:
-            logEvent({
-              msg: 'Unhandled paddle event',
-              meta: { eventData },
-            });
+            logEvent('warn', 'Unhandled paddle event', { eventData });
         }
       }
     } catch (error) {
-      if (error instanceof Error) logEvent({ msg: 'Error handling paddle webhook', meta: { errorMessage: error.message }, severity: 'error' });
+      logError('Error handling paddle webhook', error);
     }
 
     return ctx.json(true, 200);
@@ -220,7 +217,7 @@ const systemRouteHandlers = app
     const staticProps = { content, subject, testEmail: toSelf, lng: user.language };
     await mailer.prepareEmails<NewsletterEmailProps, Recipient>(NewsletterEmail, staticProps, recipients, user.email);
 
-    logEvent({ msg: 'Newsletter sent', meta: { amount: recipients.length } });
+    logEvent('info', 'Newsletter sent', { count: recipients.length });
 
     return ctx.json(true, 200);
   });

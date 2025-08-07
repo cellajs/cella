@@ -57,7 +57,7 @@ export const usersQueryOptions = ({
     queryKey,
     initialPageParam: { page: 0, offset: 0 },
     queryFn: async ({ pageParam: { page, offset: _offset }, signal }) => {
-      const offset = String(_offset || page * Number(limit));
+      const offset = String(_offset || (page || 0) * Number(limit));
       return await getUsers({ query: { q, sort, order, role, limit, offset }, signal });
     },
     getNextPageParam: (_lastPage, allPages) => {

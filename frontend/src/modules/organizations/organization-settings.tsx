@@ -3,11 +3,11 @@ import { appConfig } from 'config';
 import { Trash } from 'lucide-react';
 import { useRef } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
-import { toast } from 'sonner';
 import { AsideAnchor } from '~/modules/common/aside-anchor';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { PageAside } from '~/modules/common/page/aside';
 import StickyBox from '~/modules/common/sticky-box';
+import { toaster } from '~/modules/common/toaster';
 import UnsavedBadge from '~/modules/common/unsaved-badge';
 import DeleteOrganizations from '~/modules/organizations/delete-organizations';
 // import Subscription from '~/modules/organizations/subscription';
@@ -38,7 +38,7 @@ const OrganizationSettings = ({ organization }: { organization: Organization }) 
         dialog
         organizations={[organization]}
         callback={() => {
-          toast.success(t('common:success.delete_resource', { resource: t('common:organization') }));
+          toaster(t('common:success.delete_resource', { resource: t('common:organization') }), 'success');
           navigate({ to: appConfig.defaultRedirectPath, replace: true });
         }}
       />,

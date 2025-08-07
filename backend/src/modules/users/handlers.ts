@@ -111,7 +111,7 @@ const usersRouteHandlers = app
     // Delete allowed users
     await db.delete(usersTable).where(inArray(usersTable.id, allowedIds));
 
-    logEvent({ msg: 'Users deleted', meta: allowedIds });
+    logEvent('info', 'Users deleted', allowedIds);
 
     return ctx.json({ success: true, rejectedItems }, 200);
   })
@@ -192,7 +192,7 @@ const usersRouteHandlers = app
       .where(eq(usersTable.id, targetUser.id))
       .returning();
 
-    logEvent({ msg: 'User updated', meta: { user: updatedUser.id } });
+    logEvent('info', 'User updated', { userId: updatedUser.id });
 
     return ctx.json(updatedUser, 200);
   });

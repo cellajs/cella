@@ -3565,7 +3565,7 @@ export type GetAttachmentsData = {
   };
   query?: {
     q?: string;
-    sort?: 'id' | 'filename' | 'size' | 'createdAt';
+    sort?: 'id' | 'name' | 'size' | 'createdAt';
     order?: 'asc' | 'desc';
     offset?: string;
     limit?: string;

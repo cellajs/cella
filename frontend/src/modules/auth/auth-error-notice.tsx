@@ -26,9 +26,9 @@ const AuthErrorNotice = ({ error, children }: { error: ErrorNoticeError; childre
       <CardHeader className="text-center p-0">
         <CardTitle className="text-2xl mb-2 justify-center">{getErrorTitle(error, errorFromQuery)}</CardTitle>
         <CardDescription className="text-foreground/80 text-lg flex-col gap-2">
-          <div>{getErrorText(error, errorFromQuery)}</div>
-          <div>{severity === 'warn' && t('error:contact_mistake')}</div>
-          <div>{severity === 'error' && t('error:try_again_later')}</div>
+          <span className="block">{getErrorText(error, errorFromQuery)}</span>
+          <span className="block">{severity === 'warn' && t('error:contact_mistake')}</span>
+          <span className="block">{severity === 'error' && t('error:try_again_later')}</span>
         </CardDescription>
       </CardHeader>
       <CardFooter className="flex gap-2 max-sm:flex-col max-sm:items-stretch flex-wrap mt-4 justify-center">
