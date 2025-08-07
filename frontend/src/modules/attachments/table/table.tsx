@@ -1,34 +1,34 @@
 import { ilike, or, useLiveQuery } from '@tanstack/react-db';
 import { Paperclip } from 'lucide-react';
-import { forwardRef, memo, useEffect, useImperativeHandle } from 'react';
+import { forwardRef, memo, useEffect, useImperativeHandle, useState } from 'react';
 import type { RowsChangeData, SortColumn } from 'react-data-grid';
 import { useTranslation } from 'react-i18next';
+import { updateAttachment } from '~/api.gen';
 import useOfflineTableSearch from '~/hooks/use-offline-table-search';
-import { attachmentsQueryOptions } from '~/modules/attachments/query';
-import { useAttachmentUpdateMutation } from '~/modules/attachments/query-mutations';
 import type { AttachmentSearch, AttachmentsTableProps } from '~/modules/attachments/table/table-wrapper';
-import type { Attachment } from '~/modules/attachments/types';
+import type { LiveQueryAttachment } from '~/modules/attachments/types';
+import { useTransaction } from '~/modules/attachments/use-transaction';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { DataTable } from '~/modules/common/data-table';
 import { tablePropsAreEqual } from '~/modules/common/data-table/table-props-are-equal';
 import type { BaseTableMethods, BaseTableProps } from '~/modules/common/data-table/types';
-import { useDataFromInfiniteQuery } from '~/query/hooks/use-data-from-query';
+import { toaster } from '~/modules/common/toaster';
 import { getAttachmentsCollection } from './helpers';
 
-type BaseDataTableProps = AttachmentsTableProps & BaseTableProps<Attachment, AttachmentSearch>;
+type BaseDataTableProps = AttachmentsTableProps & BaseTableProps<LiveQueryAttachment, AttachmentSearch>;
 
 const BaseDataTable = memo(
   forwardRef<BaseTableMethods, BaseDataTableProps>(({ entity, columns, searchVars, sortColumns, setSortColumns, setTotal, setSelected }, ref) => {
     const { t } = useTranslation();
 
-    // const [selectedRows, setSelectedRows] = useState(new Set<string>());
+    const [selectedRows, setSelectedRows] = useState(new Set<string>());
 
     const { q, sort, order, limit } = searchVars;
     const orgIdOrSlug = entity.membership?.organizationId || entity.id;
 
     const attachmentCollection = getAttachmentsCollection(orgIdOrSlug);
 
-    const { data } = useLiveQuery(
+    const { data, isLoading } = useLiveQuery(
       (query) => {
         let qBuilder = query
           .from({ attachments: attachmentCollection })
@@ -42,25 +42,29 @@ const BaseDataTable = memo(
       },
       [q, sort, order],
     );
-    console.log('🚀 ~ data:', data);
 
-    // Query attachments
-    const {
-      rows: fetchedRows,
-      selectedRows,
-      setRows,
-      setSelectedRows,
-      totalCount,
-      isLoading,
-      isFetching,
-      error,
-      fetchNextPage,
-    } = useDataFromInfiniteQuery(attachmentsQueryOptions({ orgIdOrSlug, q, sort, order, limit }));
+    const updateAttachmentName = useTransaction<LiveQueryAttachment>({
+      mutationFn: async ({ transaction }) => {
+        await Promise.all(
+          transaction.mutations.map(async ({ changes, original }) => {
+            try {
+              if (!changes.name) return;
+              const originalAttachment = original as LiveQueryAttachment;
 
-    const attachmentUpdateMutation = useAttachmentUpdateMutation();
+              await updateAttachment({
+                body: { name: changes.name },
+                path: { id: originalAttachment.id, orgIdOrSlug: originalAttachment.organization_id },
+              });
+            } catch {
+              toaster(t('error:update_resource', { resource: t('common:attachment') }), 'error');
+            }
+          }),
+        );
+      },
+    });
 
     const rows = useOfflineTableSearch({
-      data: fetchedRows,
+      data,
       filterFn: ({ q }, item) => {
         if (!q) return true;
         const query = q.trim().toLowerCase(); // Normalize query
@@ -70,23 +74,16 @@ const BaseDataTable = memo(
     });
 
     // Update rows
-    const onRowsChange = (changedRows: Attachment[], { indexes, column }: RowsChangeData<Attachment>) => {
+    const onRowsChange = (changedRows: LiveQueryAttachment[], { column }: RowsChangeData<LiveQueryAttachment>) => {
       if (column.key === 'name') {
-        // If name is changed, update the attachment
-        for (const index of indexes) {
-          const attachment = changedRows[index];
-          attachmentUpdateMutation.mutate({
-            id: attachment.id,
-            orgIdOrSlug: entity.id,
-            name: attachment.name,
-          });
-          attachmentCollection.update(attachment.id, (draft) => {
-            draft.name = attachment.name;
-          });
-        }
+        updateAttachmentName.mutate(() => {
+          for (const changedRow of changedRows) {
+            attachmentCollection.update(changedRow.id, (draft) => {
+              draft.name = changedRow.name;
+            });
+          }
+        });
       }
-
-      setRows(changedRows);
     };
 
     const onSelectedRowsChange = (value: Set<string>) => {
@@ -100,14 +97,11 @@ const BaseDataTable = memo(
     };
 
     // Effect to update total and selected rows when data changes
-    // useEffect(() => {
-    //   setTotal(data.length);
-    //   if (!selectedRows.size) return;
-    //   setSelectedRows(new Set<string>([...selectedRows].filter((id) => data.some((row) => row.id === id))));
-    // }, [data]);
-
-    // Effect to update total when online totalCount changes
-    useEffect(() => setTotal(totalCount), [totalCount]);
+    useEffect(() => {
+      setTotal(data.length);
+      if (!selectedRows.size) return;
+      setSelectedRows(new Set<string>([...selectedRows].filter((id) => data.some((row) => row.id === id))));
+    }, [data]);
 
     // Expose methods via ref using useImperativeHandle
     useImperativeHandle(ref, () => ({
@@ -115,7 +109,7 @@ const BaseDataTable = memo(
     }));
 
     return (
-      <DataTable<Attachment>
+      <DataTable<LiveQueryAttachment>
         {...{
           columns: columns.filter((column) => column.visible),
           rowHeight: 52,
@@ -123,13 +117,12 @@ const BaseDataTable = memo(
           onRowsChange,
           rows,
           limit,
-          // totalCount: data.length,
-          totalCount,
+          totalCount: data.length,
           rowKeyGetter: (row) => row.id,
-          error,
+          // error,
           isLoading,
-          isFetching,
-          fetchMore: fetchNextPage,
+          // isFetching,
+          // fetchMore: fetchNextPage,
           isFiltered: !!q,
           selectedRows,
           onSelectedRowsChange,

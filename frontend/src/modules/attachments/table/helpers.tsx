@@ -3,7 +3,6 @@ import { type Collection, createCollection } from '@tanstack/react-db';
 import { onlineManager } from '@tanstack/react-query';
 import { appConfig } from 'config';
 import { t } from 'i18next';
-import { updateAttachment } from '~/api.gen';
 import { clientConfig } from '~/lib/api';
 import { parseUploadedAttachments } from '~/modules/attachments/helpers/parse-uploaded';
 import { useAttachmentCreateMutation } from '~/modules/attachments/query-mutations';
@@ -88,27 +87,6 @@ export const getAttachmentsCollection = (organizationId: string): Collection<Liv
         // onError: (error) => handleSyncError(error, storePrefix, params),
       },
       getKey: (item) => item.id,
-      onUpdate: async ({ transaction }) => {
-        const successfulIndexes: number[] = [];
-
-        await Promise.all(
-          transaction.mutations.map(async ({ changes, original }, index) => {
-            try {
-              if (!changes.name) return;
-              const originalAttachment = original as LiveQueryAttachment;
-
-              await updateAttachment({
-                body: { name: changes.name },
-                path: { id: originalAttachment.id, orgIdOrSlug: originalAttachment.organization_id },
-              });
-
-              successfulIndexes.push(index);
-            } catch {} // failed mutation won't be marked synced
-          }),
-        );
-
-        return { txid: successfulIndexes };
-      },
     }),
   );
 };

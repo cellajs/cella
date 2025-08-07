@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import DeleteAttachments from '~/modules/attachments/delete-attachments';
 import { useAttachmentsUploadDialog } from '~/modules/attachments/table/helpers';
 import type { AttachmentSearch, AttachmentsTableProps } from '~/modules/attachments/table/table-wrapper';
-import type { Attachment } from '~/modules/attachments/types';
+import type { LiveQueryAttachment } from '~/modules/attachments/types';
 import ColumnsView from '~/modules/common/data-table/columns-view';
 import { TableBarButton } from '~/modules/common/data-table/table-bar-button';
 import { TableBarContainer } from '~/modules/common/data-table/table-bar-container';
@@ -17,7 +17,7 @@ import { FocusView } from '~/modules/common/focus-view';
 
 type AttachmentsTableBarProps = AttachmentsTableProps &
   BaseTableMethods &
-  BaseTableBarProps<Attachment, AttachmentSearch> & {
+  BaseTableBarProps<LiveQueryAttachment, AttachmentSearch> & {
     isCompact: boolean;
     setIsCompact: (isCompact: boolean) => void;
   };
@@ -65,7 +65,7 @@ export const AttachmentsTableBar = ({
       title: t('common:remove_resource', { resource: t('common:attachments').toLowerCase() }),
       description: t('common:confirm.delete_counted_resource', {
         count: selected.length,
-        resource: selected.length > 1 ? t('common:attachments').toLowerCase() : t('common:attachment').toLowerCase(),
+        resource: selected.length > 1 ? t('common:attachments').toLowerCase() : t('common:LiveQueryAttachment').toLowerCase(),
       }),
     });
   };
@@ -92,7 +92,9 @@ export const AttachmentsTableBar = ({
           ) : (
             showUpload && <TableBarButton icon={Upload} label={t('common:upload')} onClick={() => open(entity.id)} />
           )}
-          {selected.length === 0 && <TableCount count={total} label="common:attachment" isFiltered={isFiltered} onResetFilters={onResetFilters} />}
+          {selected.length === 0 && (
+            <TableCount count={total} label="common:LiveQueryAttachment" isFiltered={isFiltered} onResetFilters={onResetFilters} />
+          )}
         </FilterBarActions>
         <div className="sm:grow" />
         <FilterBarContent className="max-sm:animate-in max-sm:slide-in-from-left max-sm:fade-in max-sm:duration-300">

@@ -8,7 +8,7 @@ import useSearchParams from '~/hooks/use-search-params';
 import { useColumns } from '~/modules/attachments/table/columns';
 import BaseDataTable from '~/modules/attachments/table/table';
 import { AttachmentsTableBar } from '~/modules/attachments/table/table-bar';
-import type { Attachment } from '~/modules/attachments/types';
+import type { LiveQueryAttachment } from '~/modules/attachments/types';
 import { useMergeLocalAttachments } from '~/modules/attachments/use-merge-local-attachments';
 import { AlertWrap } from '~/modules/common/alert-wrap';
 import { useSortColumns } from '~/modules/common/data-table/sort-columns';
@@ -35,12 +35,11 @@ const AttachmentsTable = ({ entity, canUpload = true, isSheet = false }: Attachm
   const { sort, order } = search;
   const limit = LIMIT;
 
-  // useElectricSyncAttachments(entity.id);
   // useLocalSyncAttachments(entity.id);
   useMergeLocalAttachments(entity.id, search);
 
   const [total, setTotal] = useState<number | undefined>(undefined);
-  const [selected, setSelected] = useState<Attachment[]>([]);
+  const [selected, setSelected] = useState<LiveQueryAttachment[]>([]);
   const [isCompact, setIsCompact] = useState(false);
 
   // Build columns
