@@ -1,7 +1,7 @@
 import { useMutation } from '@tanstack/react-query';
 import { appConfig } from 'config';
 import { t } from 'i18next';
-import { createAttachment, deleteAttachments, updateAttachment } from '~/api.gen';
+import { createAttachment, deleteAttachments } from '~/api.gen';
 import { LocalFileStorage } from '~/modules/attachments/helpers/local-file-storage';
 import { attachmentsKeys } from '~/modules/attachments/query';
 import type {
@@ -11,7 +11,6 @@ import type {
   AttachmentQueryData,
   CreateAttachmentParams,
   DeleteAttachmentsParams,
-  UpdateAttachmentParams,
 } from '~/modules/attachments/types';
 import { toaster } from '~/modules/common/toaster';
 import { getQueryKeySortOrder } from '~/query/helpers';
@@ -151,69 +150,6 @@ export const useAttachmentCreateMutation = () =>
       toaster(message, 'success');
     },
     onError: (_, __, context) => handleError('create', context),
-  });
-
-export const useAttachmentUpdateMutation = () =>
-  useMutation<Attachment, Error, UpdateAttachmentParams, AttachmentContextProp[]>({
-    mutationKey: attachmentsKeys.update(),
-    mutationFn: async ({ id, orgIdOrSlug, ...body }) => {
-      return await updateAttachment({ body, path: { id, orgIdOrSlug } });
-    },
-    onMutate: async (variables: UpdateAttachmentParams) => {
-      const { orgIdOrSlug } = variables;
-
-      const context: AttachmentContextProp[] = []; // previous query data for rollback if an error occurs
-      const optimisticIds: string[] = []; // IDs of optimistically updated items
-
-      // Get affected queries
-      const similarKey = attachmentsKeys.list.similarTable({ orgIdOrSlug });
-      //Cancel all affected queries
-      await queryClient.cancelQueries({ queryKey: similarKey });
-      const queries = getSimilarQueries<Attachment>(similarKey);
-
-      // Iterate over affected queries and optimistically update cache
-      for (const [queryKey, previousData] of queries) {
-        if (!previousData) continue;
-
-        queryClient.setQueryData<AttachmentInfiniteQueryData | AttachmentQueryData>(queryKey, (oldData) => {
-          if (!oldData) return oldData; // Handle missing data
-
-          const prevItems = getQueryItems(oldData);
-          const updatedItems = prevItems.map((item) => (item.id === variables.id ? { ...item, ...variables } : item));
-
-          return formatUpdatedData(oldData, updatedItems, limit);
-        });
-
-        optimisticIds.push(variables.id); // Track optimistically updated item IDs
-        context.push([queryKey, previousData, optimisticIds]); // Store previous data for rollback if needed
-      }
-
-      return context;
-    },
-    onSuccess: async (updatedAttachment, { orgIdOrSlug }, context) => {
-      // Get affected queries
-      const similarKey = attachmentsKeys.list.similarTable({ orgIdOrSlug });
-      const queries = getSimilarQueries<Attachment>(similarKey);
-
-      for (const query of queries) {
-        const [activeKey] = query;
-        queryClient.setQueryData<AttachmentInfiniteQueryData | AttachmentQueryData>(activeKey, (oldData) => {
-          if (!oldData) return oldData;
-
-          const prevItems = getQueryItems(oldData);
-
-          // Get optimisticIds
-          const [_, __, optimisticIds] = context.find(([key]) => compareQueryKeys(key, activeKey)) ?? [];
-          const ids = optimisticIds || [];
-
-          // Replace optimistic items with the updated attachment
-          const updatedAttachments = prevItems.map((item) => (ids.includes(item.id) ? { ...item, ...updatedAttachment } : item));
-
-          return formatUpdatedData(oldData, updatedAttachments);
-        });
-      }
-    },
-    onError: (_, __, context) => handleError('update', context),
   });
 
 export const useAttachmentDeleteMutation = () =>

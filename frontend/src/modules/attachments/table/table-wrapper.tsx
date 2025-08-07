@@ -32,6 +32,9 @@ const AttachmentsTable = ({ entity, canUpload = true, isSheet = false }: Attachm
   const { search, setSearch } = useSearchParams<AttachmentSearch>({ saveDataInSearch: !isSheet });
   const dataTableRef = useRef<BaseTableMethods | null>(null);
 
+  const orgIdOrSlug = entity.membership?.organizationId || entity.id;
+  const attachmentCollection = getAttachmentsCollection(orgIdOrSlug);
+
   // Table state
   const { sort, order } = search;
   const limit = LIMIT;
@@ -50,10 +53,6 @@ const AttachmentsTable = ({ entity, canUpload = true, isSheet = false }: Attachm
   const clearSelection = () => {
     if (dataTableRef.current) dataTableRef.current.clearSelection();
   };
-
-  const orgIdOrSlug = entity.membership?.organizationId || entity.id;
-
-  const attachmentCollection = getAttachmentsCollection(orgIdOrSlug);
 
   return (
     <div className="flex flex-col gap-4 h-full">
