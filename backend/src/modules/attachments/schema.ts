@@ -1,7 +1,7 @@
-import { z } from '@hono/zod-openapi';
-import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 import { attachmentsTable } from '#/db/schema/attachments';
 import { paginationQuerySchema } from '#/utils/schema/common';
+import { z } from '@hono/zod-openapi';
+import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 
 const attachmentInsertSchema = createInsertSchema(attachmentsTable);
 export const attachmentSelectSchema = createSelectSchema(attachmentsTable);

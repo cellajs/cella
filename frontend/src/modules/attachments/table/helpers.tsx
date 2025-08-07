@@ -1,26 +1,62 @@
 import { electricCollectionOptions } from '@tanstack/electric-db-collection';
 import { type Collection, createCollection } from '@tanstack/react-db';
-import { onlineManager } from '@tanstack/react-query';
 import { appConfig } from 'config';
 import { t } from 'i18next';
+import { createAttachment } from '~/api.gen';
 import { clientConfig } from '~/lib/api';
 import { parseUploadedAttachments } from '~/modules/attachments/helpers/parse-uploaded';
-import { useAttachmentCreateMutation } from '~/modules/attachments/query-mutations';
-import type { LiveQueryAttachment } from '~/modules/attachments/types';
+import type { AttachmentToInsert, LiveQueryAttachment } from '~/modules/attachments/types';
+import { useTransaction } from '~/modules/attachments/use-transaction';
+import { toaster } from '~/modules/common/toaster';
 import type { UploadedUppyFile } from '~/modules/common/uploader/types';
 import { useUploader } from '~/modules/common/uploader/use-uploader';
 import { baseBackoffOptions as backoffOptions } from '~/utils/electric-utils';
+import { nanoid } from '~/utils/nanoid';
 
 const maxNumberOfFiles = 20;
 const maxTotalFileSize = maxNumberOfFiles * appConfig.uppy.defaultRestrictions.maxFileSize; // for maxNumberOfFiles files at 10MB max each
 
-export const useAttachmentsUploadDialog = () => {
-  const { mutate: createAttachments } = useAttachmentCreateMutation();
+export const useAttachmentsUploadDialog = (attachmentCollection: Collection<LiveQueryAttachment>) => {
+  const createAttachmens = useTransaction<LiveQueryAttachment>({
+    mutationFn: async ({ transaction }) => {
+      const { orgIdOrSlug, attachments } = transaction.metadata as { orgIdOrSlug: string; attachments: (AttachmentToInsert & { id: string })[] };
+      try {
+        await createAttachment({ body: attachments, path: { orgIdOrSlug } });
+      } catch {
+        toaster(t('error:create_resource', { resource: t('common:attachment') }), 'error');
+      }
+    },
+  });
 
   const open = (organizationId: string) => {
     const onComplete = (result: UploadedUppyFile<'attachment'>) => {
       const attachments = parseUploadedAttachments(result, organizationId);
-      createAttachments({ localCreation: !onlineManager.isOnline(), attachments, orgIdOrSlug: organizationId });
+      const tableAttachmetns = attachments.map((a) => {
+        const optimisticId = a.id || nanoid();
+        const groupId = attachments.length > 1 ? nanoid() : null;
+
+        return {
+          id: optimisticId,
+          filename: a.filename,
+          name: a.filename.split('.').slice(0, -1).join('.'),
+          content_type: a.contentType,
+          size: a.size,
+          original_key: a.originalKey,
+          thumbnail_key: a.thumbnailKey ?? null,
+          converted_key: a.convertedKey ?? null,
+          converted_content_type: a.convertedContentType ?? null,
+          entity_type: 'attachment' as const,
+          created_at: new Date().toISOString(),
+          created_by: null,
+          modified_at: null,
+          modified_by: null,
+          group_id: groupId,
+          organization_id: organizationId,
+        };
+      });
+
+      createAttachmens.metadata = { orgIdOrSlug: organizationId, attachments };
+      createAttachmens.mutate(() => attachmentCollection.insert(tableAttachmetns));
       useUploader.getState().remove();
     };
 

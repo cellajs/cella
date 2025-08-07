@@ -23,19 +23,18 @@ const DeleteAttachments = ({ entity, attachments, attachmentCollection, callback
   const removeDialog = useDialoger((state) => state.remove);
   const orgIdOrSlug = entity.membership?.organizationId || entity.id;
 
-  const deleteAttachmens = useTransaction<string[]>({
+  const deleteAttachmens = useTransaction<LiveQueryAttachment[]>({
     mutationFn: async ({ transaction }) => {
-      await Promise.all(
-        transaction.mutations.map(async ({ changes }) => {
-          const ids = changes.filter((id) => typeof id === 'string') as string[];
-          try {
-            await deleteAttachments({ body: { ids }, path: { orgIdOrSlug } });
-          } catch {
-            if (changes.length > 1) toaster(t('error:delete_resources', { resources: t('common:attachments') }), 'error');
-            else toaster(t('error:delete_resource', { resource: t('common:attachment') }), 'error');
-          }
-        }),
-      );
+      const ids: string[] = [];
+      for (const { changes } of transaction.mutations) {
+        if (changes && 'id' in changes && typeof changes.id === 'string') ids.push(changes.id);
+      }
+      try {
+        await deleteAttachments({ body: { ids }, path: { orgIdOrSlug } });
+      } catch (err) {
+        if (ids.length > 1) toaster(t('error:delete_resources', { resources: t('common:attachments') }), 'error');
+        else toaster(t('error:delete_resource', { resource: t('common:attachment') }), 'error');
+      }
     },
   });
 

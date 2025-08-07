@@ -40,13 +40,14 @@ const BaseDataTable = memo(
         },
         [q, sort, order],
       );
+      console.log('🚀 ~ data:', data);
 
       const updateAttachmentName = useTransaction<LiveQueryAttachment>({
         mutationFn: async ({ transaction }) => {
           await Promise.all(
-            transaction.mutations.map(async ({ changes, original }) => {
+            transaction.mutations.map(async ({ type, changes, original }) => {
               try {
-                if (!changes.name) return;
+                if (!changes.name || type !== 'update') return;
                 const originalAttachment = original as LiveQueryAttachment;
 
                 await updateAttachment({

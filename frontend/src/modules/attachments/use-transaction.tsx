@@ -6,7 +6,8 @@ import { useEffect } from 'react';
 export const useTransaction = <T extends object = Record<string, unknown>>(options: TransactionConfig<T>) => {
   const transaction = createTransaction<T>({
     ...options,
-    autoCommit: false, // always false to support offline buffering
+    //TODO fix offline commit
+    autoCommit: true, // always false to support offline buffering
   });
 
   // Auto-commit when online and pending
