@@ -1,7 +1,8 @@
-import type { FileEntry } from './get-git-file-hashes';
 import { type RepoConfig } from './config';
-import { getFileCommitComparison, CommitComparisonSummary } from './file-commit-comparison';
+import { analyzeFileCommitHistory } from './modules/git/analyze-file-commit-history';
 import pLimit from 'p-limit';
+import { CommitHistorySummary, FileEntry } from './types';
+
 
 /**
  * Describes the synchronization status of a file’s commit history
@@ -37,6 +38,19 @@ export enum ResolutionStrategy {
   KeepBoilerplate = 'keepBoilerplate',
   KeepFork = 'keepFork',
   ManualMerge = 'manualMerge',
+  Unknown = 'unknown',
+}
+
+/**
+ * Enum representing the file content (blob) comparison status
+ * 
+ * `Identical`: The file content is exactly the same in both repositories.
+ * `Different`: The file content differs between the two repositories.
+ * `Unknown`: The comparison could not be determined, e.g., due to missing data or inaccessible files.
+ */
+export enum BlobStatus {
+  Identical = 'identical',
+  Different = 'different',
   Unknown = 'unknown',
 }
 
@@ -93,19 +107,6 @@ export enum ResolutionReason {
 }
 
 /**
- * Enum representing the file content (blob) comparison status
- * 
- * `Identical`: The file content is exactly the same in both repositories.
- * `Different`: The file content differs between the two repositories.
- * `Unknown`: The comparison could not be determined, e.g., due to missing data or inaccessible files.
- */
-export enum BlobComparisonStatus {
-  Identical = 'identical',
-  Different = 'different',
-  Unknown = 'unknown',
-}
-
-/**
  * Indicates who can auto-resolve the conflict, if anyone.
  * 
  * `None`: No automatic resolution possible
@@ -134,7 +135,7 @@ export type ConflictAnalysis = {
   autoResolvable: AutoResolvable;
   resolutionStrategy: ResolutionStrategy;
   resolutionReason?: ResolutionReason;
-  blobStatus: BlobComparisonStatus;
+  blobStatus: BlobStatus;
 };
 
 /**
@@ -151,7 +152,7 @@ export type FileSyncAnalysis = {
   filePath: string;
   boilerplateFile: FileEntry;
   forkedFile?: FileEntry;
-  commitComparison?: CommitComparisonSummary;
+  commitComparison?: CommitHistorySummary;
   conflictAnalysis: ConflictAnalysis;
 };
 
@@ -185,7 +186,7 @@ export async function getFileSyncAnalyses(
     limit(async () => {
       const filePath = boilerplateFile.path;
       const forkedFile = forkMap.get(filePath);
-      const commitComparison = await getFileCommitComparison(boilerplateConfig, forkConfig, filePath);
+      const commitComparison = await analyzeFileCommitHistory(boilerplateConfig, forkConfig, filePath);
       const conflictAnalysis: ConflictAnalysis = getConflictAnalysis(boilerplateFile, forkedFile, commitComparison);
 
       return {
@@ -213,12 +214,13 @@ export async function getFileSyncAnalyses(
 function getConflictAnalysis(
   boilerplateFile: FileEntry,
   forkedFile?: FileEntry,
-  commitComparison?: CommitComparisonSummary
+  commitComparison?: CommitHistorySummary
 ): ConflictAnalysis {
   const syncState = getSyncState(boilerplateFile, forkedFile, commitComparison);
   const blobStatus = getBlobStatus(boilerplateFile, forkedFile);
   const conflictLikelihood = getConflictLikelihood(syncState, blobStatus);
   const conflictReason = getConflictReason(syncState, blobStatus);
+  
   const autoResolvable = getAutoResolvable(syncState, blobStatus);
   const resolutionStrategy = getResolutionStrategy(syncState, conflictLikelihood, autoResolvable);
   const resolutionReason = getResolutionReason(syncState, blobStatus);
@@ -246,7 +248,7 @@ function getConflictAnalysis(
 function getSyncState(
   boilerplateFile: FileEntry,
   forkedFile?: FileEntry,
-  commitComparison?: CommitComparisonSummary
+  commitComparison?: CommitHistorySummary
 ): FileSyncState {
   if (!forkedFile) return FileSyncState.Missing;
 
@@ -278,20 +280,20 @@ function getSyncState(
  *
  * @param boilerplateFile - The file entry from the boilerplate repository.
  * @param forkedFile - The file entry from the forked repository, if present.
- * @returns A BlobComparisonStatus indicating whether the files' contents are identical, different, or unknown.
+ * @returns A BlobStatus indicating whether the files' contents are identical, different, or unknown.
  */
 function getBlobStatus(
   boilerplateFile: FileEntry,
   forkedFile?: FileEntry
-): BlobComparisonStatus {
-  if (!forkedFile) return BlobComparisonStatus.Unknown;
+): BlobStatus {
+  if (!forkedFile) return BlobStatus.Unknown;
 
   if (boilerplateFile.blobSha === forkedFile.blobSha) {
-    return BlobComparisonStatus.Identical;
+    return BlobStatus.Identical;
   }
 
   // Further checks can be added here for content comparison if needed
-  return BlobComparisonStatus.Different;
+  return BlobStatus.Different;
 }
 
 /**
@@ -304,7 +306,7 @@ function getBlobStatus(
  */
 function getConflictLikelihood(
   syncState: FileSyncState,
-  blobStatus: BlobComparisonStatus
+  blobStatus: BlobStatus
 ): ConflictLikelihood {
   // If file is missing in fork, very likely a conflict
   if (syncState === FileSyncState.Missing) {
@@ -312,12 +314,12 @@ function getConflictLikelihood(
   }
 
   // If files are identical in content and sync state is up-to-date, conflict is very unlikely
-  if (syncState === FileSyncState.UpToDate && blobStatus === BlobComparisonStatus.Identical) {
+  if (syncState === FileSyncState.UpToDate && blobStatus === BlobStatus.Identical) {
     return ConflictLikelihood.Low;
   }
 
   // Diverged histories + different blobs → high conflict likelihood
-  if (syncState === FileSyncState.Diverged && blobStatus === BlobComparisonStatus.Different) {
+  if (syncState === FileSyncState.Diverged && blobStatus === BlobStatus.Different) {
     return ConflictLikelihood.High;
   }
 
@@ -328,18 +330,18 @@ function getConflictLikelihood(
 
   // Ahead or Behind with different blobs → medium or high risk
   if ((syncState === FileSyncState.Ahead || syncState === FileSyncState.Behind)
-    && blobStatus === BlobComparisonStatus.Different) {
+    && blobStatus === BlobStatus.Different) {
     return ConflictLikelihood.Medium;
   }
 
   // Outdated sync state with differing blobs → medium risk
-  if (syncState === FileSyncState.Outdated && blobStatus === BlobComparisonStatus.Different) {
+  if (syncState === FileSyncState.Outdated && blobStatus === BlobStatus.Different) {
     return ConflictLikelihood.Medium;
   }
 
   // If blobs are identical but sync state shows outdated or behind, likely no conflict or low risk
   if ((syncState === FileSyncState.Outdated || syncState === FileSyncState.Behind)
-    && blobStatus === BlobComparisonStatus.Identical) {
+    && blobStatus === BlobStatus.Identical) {
     return ConflictLikelihood.Low;
   }
 
@@ -358,7 +360,7 @@ function getConflictLikelihood(
  */
 function getConflictReason(
   syncState: FileSyncState,
-  blobStatus: BlobComparisonStatus
+  blobStatus: BlobStatus
 ): ConflictReason {
   switch (syncState) {
     case FileSyncState.Diverged:
@@ -377,7 +379,7 @@ function getConflictReason(
     case FileSyncState.UpToDate:
     case FileSyncState.Ahead:
       // For these, check if blobs differ (e.g. content mismatch even if commits same)
-      if (blobStatus === BlobComparisonStatus.Different) {
+      if (blobStatus === BlobStatus.Different) {
         return ConflictReason.BlobMismatch;
       }
       return ConflictReason.None;
@@ -398,7 +400,7 @@ function getConflictReason(
  */
 function getAutoResolvable(
   syncState: FileSyncState,
-  blobStatus: BlobComparisonStatus
+  blobStatus: BlobStatus
 ): AutoResolvable {
   // If file is missing in fork → no git auto-resolve possible here
   if (syncState === FileSyncState.Missing) {
@@ -406,7 +408,7 @@ function getAutoResolvable(
   }
 
   // If files are identical, git sees no conflict → git auto-resolve trivially
-  if (blobStatus === BlobComparisonStatus.Identical) {
+  if (blobStatus === BlobStatus.Identical) {
     return AutoResolvable.Git;
   }
 
@@ -484,7 +486,7 @@ function getResolutionStrategy(
  */
 function getResolutionReason(
   syncState: FileSyncState,
-  blobStatus: BlobComparisonStatus,
+  blobStatus: BlobStatus,
 ): ResolutionReason {
   switch (syncState) {
     case FileSyncState.Ahead:
@@ -494,7 +496,7 @@ function getResolutionReason(
       return ResolutionReason.BoilerplateHasNewerCommits;
 
     case FileSyncState.UpToDate:
-      if (blobStatus === BlobComparisonStatus.Identical) {
+      if (blobStatus === BlobStatus.Identical) {
         return ResolutionReason.ShouldBeIdentical;
       }
       return ResolutionReason.ShouldBeAutoMerged;

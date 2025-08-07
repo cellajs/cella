@@ -1,5 +1,5 @@
 {
-  "name": "@cella/git-sync",
+  "name": "@cella/cella-sync-engine",
   "version": "0.0.1",
   "private": false,
   "license": "MIT",
@@ -7,7 +7,7 @@
   "repository": {
     "type": "git",
     "url": "https://github.com/cellajs/cella",
-    "directory": "cli/git-sync"
+    "directory": "cli/cella-sync-engine"
   },
   "homepage": "https://cellajs.com",
   "author": "CellaJS <info@cellajs.com>",

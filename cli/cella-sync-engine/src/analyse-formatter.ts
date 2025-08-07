@@ -1,6 +1,5 @@
 import pc from "picocolors";
-import { AutoResolvable, BlobComparisonStatus, ConflictLikelihood, ConflictReason, FileSyncState, ResolutionReason, type FileSyncAnalysis } from './file-sync-analysis';
-import { LogConfig } from "./config";
+import { AutoResolvable, ConflictLikelihood, ConflictReason, FileSyncState, ResolutionReason, type FileSyncAnalysis } from './file-sync-analysis';
 
 const glyphs: Record<string, string> = {
   upToDate: pc.green('✔'),        // check mark
@@ -236,7 +235,7 @@ function formatConflictResolutionReasonByGit(analysis: FileSyncAnalysis): string
   if (analysis.conflictAnalysis.resolutionReason === ResolutionReason.BoilerplateHasNewerCommits) {
     resolutionReasonText.push(': Add new commits from boilerplate');
   }
-  if (analysis.conflictAnalysis.blobStatus === BlobComparisonStatus.Identical) {
+  if (analysis.conflictAnalysis.blobStatus === 'identical') {
     resolutionReasonText.push(': File content is identical');
   }
 

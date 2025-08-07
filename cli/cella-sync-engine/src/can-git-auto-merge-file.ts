@@ -54,9 +54,9 @@ export async function canGitAutoMergeFile(
   try {
     // Write content from each commit to temporary files
     await Promise.all([
-      writeGitFileAtCommit(forkConfig.filePath, commitComparison.sharedAncestorSha, filePath, baseFile),
-      writeGitFileAtCommit(forkConfig.filePath, forkedFile.lastCommitSha, filePath, oursFile),
-      writeGitFileAtCommit(boilerplateConfig.filePath, analysis.boilerplateFile.lastCommitSha, filePath, theirsFile),
+      writeGitFileAtCommit(forkConfig.repoPath, commitComparison.sharedAncestorSha, filePath, baseFile),
+      writeGitFileAtCommit(forkConfig.repoPath, forkedFile.lastCommitSha, filePath, oursFile),
+      writeGitFileAtCommit(boilerplateConfig.repoPath, analysis.boilerplateFile.lastCommitSha, filePath, theirsFile),
     ]);
 
     await exec('git', ['merge-file', '--quiet', oursFile, baseFile, theirsFile]);
