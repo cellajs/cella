@@ -15,6 +15,7 @@ import { useSortColumns } from '~/modules/common/data-table/sort-columns';
 import type { BaseTableMethods } from '~/modules/common/data-table/types';
 import type { EntityPage } from '~/modules/entities/types';
 import type { attachmentsSearchSchema } from '~/routes/organizations';
+import { getAttachmentsCollection } from './helpers';
 
 const LIMIT = appConfig.requestLimits.attachments;
 
@@ -50,6 +51,10 @@ const AttachmentsTable = ({ entity, canUpload = true, isSheet = false }: Attachm
     if (dataTableRef.current) dataTableRef.current.clearSelection();
   };
 
+  const orgIdOrSlug = entity.membership?.organizationId || entity.id;
+
+  const attachmentCollection = getAttachmentsCollection(orgIdOrSlug);
+
   return (
     <div className="flex flex-col gap-4 h-full">
       <AttachmentsTableBar
@@ -65,6 +70,7 @@ const AttachmentsTable = ({ entity, canUpload = true, isSheet = false }: Attachm
         canUpload={canUpload}
         isCompact={isCompact}
         setIsCompact={setIsCompact}
+        attachmentCollection={attachmentCollection}
       />
       <div className={(isCompact && 'isCompact') || ''}>
         {/* Explainer alert box */}
@@ -97,6 +103,7 @@ const AttachmentsTable = ({ entity, canUpload = true, isSheet = false }: Attachm
           sortColumns={sortColumns}
           setSortColumns={setSortColumns}
           setTotal={setTotal}
+          attachmentCollection={attachmentCollection}
           setSelected={setSelected}
         />
       </div>

@@ -181,7 +181,7 @@ export const useColumns = (entity: EntityPage, isSheet: boolean, isCompact: bool
               update({
                 content: (
                   <PopConfirm title={i18n.t('common:delete_confirm.text', { name: row.name })}>
-                    <DeleteAttachments entity={entity} attachments={[row]} callback={callback} />
+                    <DeleteAttachments entity={entity} attachments={[row]} callback={callback} attachmentCollection={undefined as any} />
                   </PopConfirm>
                 ),
               });

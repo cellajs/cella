@@ -1,40 +1,43 @@
-import { useAttachmentDeleteMutation } from '~/modules/attachments/query-mutations';
+import type { Collection } from '@tanstack/react-db';
+import { t } from 'i18next';
+import { deleteAttachments } from '~/api.gen';
+import { LocalFileStorage } from '~/modules/attachments/helpers/local-file-storage';
 import type { LiveQueryAttachment } from '~/modules/attachments/types';
+import { useTransaction } from '~/modules/attachments/use-transaction';
 import type { CallbackArgs } from '~/modules/common/data-table/types';
 import { DeleteForm } from '~/modules/common/delete-form';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
+import { toaster } from '~/modules/common/toaster';
 import type { EntityPage } from '~/modules/entities/types';
 import { isLocal } from '~/utils/is-cdn-url';
-import { getAttachmentsCollection } from './table/helpers';
-import { useTransaction } from './use-transaction';
 
 interface Props {
   entity: EntityPage;
+  attachmentCollection: Collection<LiveQueryAttachment>;
   attachments: LiveQueryAttachment[];
   dialog?: boolean;
   callback?: (args: CallbackArgs<LiveQueryAttachment[]>) => void;
 }
 
-const DeleteAttachments = ({ attachments, entity, callback, dialog: isDialog }: Props) => {
+const DeleteAttachments = ({ entity, attachments, attachmentCollection, callback, dialog: isDialog }: Props) => {
   const removeDialog = useDialoger((state) => state.remove);
-  const { mutate: deleteAttachments, isPending } = useAttachmentDeleteMutation();
+  const orgIdOrSlug = entity.membership?.organizationId || entity.id;
 
   const deleteAttachmens = useTransaction<string[]>({
     mutationFn: async ({ transaction }) => {
       await Promise.all(
-        transaction.mutations.map(async (attachmentIds) => {
+        transaction.mutations.map(async ({ changes }) => {
+          const ids = changes.filter((id) => typeof id === 'string') as string[];
           try {
-            console.log('🚀 ~ DeleteAttachments ~ attachmentIds:', attachmentIds);
-            // await deleteAttachments({ body: { ids: attachmentIds }, path: { orgIdOrSlug } });
+            await deleteAttachments({ body: { ids }, path: { orgIdOrSlug } });
           } catch {
-            // toaster(t('error:delete_resources', { resources: t('common:attachments') }), 'error');
-            // else toaster(t(`error:${action}_resource`, { resource: t('common:attachment') }), 'error')
+            if (changes.length > 1) toaster(t('error:delete_resources', { resources: t('common:attachments') }), 'error');
+            else toaster(t('error:delete_resource', { resource: t('common:attachment') }), 'error');
           }
         }),
       );
     },
   });
-  const orgIdOrSlug = entity.membership?.organizationId || entity.id;
 
   const onDelete = async () => {
     const localDeletionIds: string[] = [];
@@ -45,16 +48,14 @@ const DeleteAttachments = ({ attachments, entity, callback, dialog: isDialog }: 
       else localDeletionIds.push(attachment.id);
     }
 
-    const attachmentCollection = getAttachmentsCollection(orgIdOrSlug);
-
-    deleteAttachmens.mutate(() => attachmentCollection.delete(serverDeletionIds));
-    // deleteAttachments({ localDeletionIds, serverDeletionIds, orgIdOrSlug });
+    if (serverDeletionIds.length) deleteAttachmens.mutate(() => attachmentCollection.delete(serverDeletionIds));
+    if (localDeletionIds.length) await LocalFileStorage.removeFiles(localDeletionIds);
 
     if (isDialog) removeDialog();
     callback?.({ data: attachments, status: 'success' });
   };
 
-  return <DeleteForm allowOfflineDelete={true} onDelete={onDelete} onCancel={() => removeDialog()} pending={isPending} />;
+  return <DeleteForm allowOfflineDelete={true} onDelete={onDelete} onCancel={() => removeDialog()} pending={false} />;
 };
 
 export default DeleteAttachments;

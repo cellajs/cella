@@ -1,3 +1,4 @@
+import type { Collection } from '@tanstack/react-db';
 import { Trash, Upload, XSquare } from 'lucide-react';
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -19,11 +20,13 @@ type AttachmentsTableBarProps = AttachmentsTableProps &
   BaseTableMethods &
   BaseTableBarProps<LiveQueryAttachment, AttachmentSearch> & {
     isCompact: boolean;
+    attachmentCollection: Collection<LiveQueryAttachment>;
     setIsCompact: (isCompact: boolean) => void;
   };
 
 export const AttachmentsTableBar = ({
   entity,
+  attachmentCollection,
   total,
   selected,
   searchVars,
@@ -58,16 +61,19 @@ export const AttachmentsTableBar = ({
   };
 
   const openDeleteDialog = () => {
-    createDialog(<DeleteAttachments entity={entity} dialog attachments={selected} callback={clearSelection} />, {
-      id: 'delete-attachments',
-      triggerRef: deleteButtonRef,
-      className: 'max-w-xl',
-      title: t('common:remove_resource', { resource: t('common:attachments').toLowerCase() }),
-      description: t('common:confirm.delete_counted_resource', {
-        count: selected.length,
-        resource: selected.length > 1 ? t('common:attachments').toLowerCase() : t('common:LiveQueryAttachment').toLowerCase(),
-      }),
-    });
+    createDialog(
+      <DeleteAttachments entity={entity} dialog attachments={selected} callback={clearSelection} attachmentCollection={attachmentCollection} />,
+      {
+        id: 'delete-attachments',
+        triggerRef: deleteButtonRef,
+        className: 'max-w-xl',
+        title: t('common:remove_resource', { resource: t('common:attachments').toLowerCase() }),
+        description: t('common:confirm.delete_counted_resource', {
+          count: selected.length,
+          resource: selected.length > 1 ? t('common:attachments').toLowerCase() : t('common:LiveQueryAttachment').toLowerCase(),
+        }),
+      },
+    );
   };
 
   return (
