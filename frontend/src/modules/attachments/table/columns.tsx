@@ -1,9 +1,11 @@
 import { useNavigate } from '@tanstack/react-router';
 import { appConfig } from 'config';
 import i18n from 'i18next';
-import { Cloud, CloudOff, CopyCheckIcon, CopyIcon, Trash } from 'lucide-react';
+import { Cloud, CloudOff, CopyCheckIcon, CopyIcon, Download, Trash } from 'lucide-react';
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
+import useDownloader from 'react-use-downloader';
+import { getPresignedUrl } from '~/api.gen';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { useCopyToClipboard } from '~/hooks/use-copy-to-clipboard';
 import DeleteAttachments from '~/modules/attachments/delete-attachments';
@@ -18,6 +20,7 @@ import type { CallbackArgs, ColumnOrColumnGroup } from '~/modules/common/data-ta
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { useDropdowner } from '~/modules/common/dropdowner/use-dropdowner';
 import { PopConfirm } from '~/modules/common/popconfirm';
+import Spinner from '~/modules/common/spinner';
 import { toaster } from '~/modules/common/toaster';
 import type { EntityPage } from '~/modules/entities/types';
 import { membersKeys } from '~/modules/memberships/query';
@@ -130,32 +133,35 @@ export const useColumns = (entity: EntityPage, isSheet: boolean, isCompact: bool
         );
       },
     },
-    // {
-    //   key: 'download',
-    //   name: '',
-    //   visible: !isMobile,
-    //   sortable: false,
-    //   width: 32,
-    //   renderCell: ({ row, tabIndex }) => {
-    //     const { download, isInProgress } = useDownloader();
-    //     if (!isCDNUrl(row.original_key)) return <div className="text-muted text-center w-full">-</div>;
-    //     return (
-    //       <Button
-    //         variant="cell"
-    //         size="icon"
-    //         tabIndex={tabIndex}
-    //         disabled={isInProgress}
-    //         className="h-full w-full"
-    //         aria-label="Download"
-    //         data-tooltip="true"
-    //         data-tooltip-content={t('common:download')}
-    //         onClick={() => download(row.url, row.filename)}
-    //       >
-    //         {isInProgress ? <Spinner className="w-4 h-4 text-foreground/80" noDelay /> : <Download size={16} />}
-    //       </Button>
-    //     );
-    //   },
-    // },
+    {
+      key: 'download',
+      name: '',
+      visible: !isMobile,
+      sortable: false,
+      width: 32,
+      renderCell: ({ row, tabIndex }) => {
+        const { download, isInProgress } = useDownloader();
+        if (isFileLocal(row.original_key)) return <div className="text-muted text-center w-full">-</div>;
+        return (
+          <Button
+            variant="cell"
+            size="icon"
+            tabIndex={tabIndex}
+            disabled={isInProgress}
+            className="h-full w-full"
+            aria-label="Download"
+            data-tooltip="true"
+            data-tooltip-content={t('common:download')}
+            onClick={async () => {
+              const url = await getPresignedUrl({ query: { key: row.original_key } });
+              download(url, row.filename);
+            }}
+          >
+            {isInProgress ? <Spinner className="w-4 h-4 text-foreground/80" noDelay /> : <Download size={16} />}
+          </Button>
+        );
+      },
+    },
     {
       key: 'ellipsis',
       name: '',
