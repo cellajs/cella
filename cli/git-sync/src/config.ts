@@ -68,7 +68,7 @@ export const boilerplateConfig: RepoConfig = {
  */
 export const forkConfig: RepoConfig = {
   use: 'local',
-  branch: "development",
+  branch: "sync-branch",
   filePath: "/home/gino/Github/raak",
   owner: "",  // Only used if use === 'remote'
   repo: "",   // Only used if use === 'remote'
