@@ -1,6 +1,7 @@
 import { electricCollectionOptions } from '@tanstack/electric-db-collection';
 import { queryCollectionOptions } from '@tanstack/query-db-collection';
 import { type Collection, createCollection } from '@tanstack/react-db';
+import { onlineManager } from '@tanstack/react-query';
 import { appConfig } from 'config';
 import { t } from 'i18next';
 import { createAttachment } from '~/api.gen';
@@ -19,12 +20,25 @@ import { LocalFileStorage } from '../helpers/local-file-storage';
 const maxNumberOfFiles = 20;
 const maxTotalFileSize = maxNumberOfFiles * appConfig.uppy.defaultRestrictions.maxFileSize; // for maxNumberOfFiles files at 10MB max each
 
-export const useAttachmentsUploadDialog = (attachmentCollection: Collection<LiveQueryAttachment>) => {
+export const useAttachmentsUploadDialog = (
+  attachmentCollection: Collection<LiveQueryAttachment>,
+  localAttachmentCollection: Collection<LiveQueryAttachment>,
+) => {
   const createAttachmens = useTransaction<LiveQueryAttachment>({
     mutationFn: async ({ transaction }) => {
       const { orgIdOrSlug, attachments } = transaction.metadata as { orgIdOrSlug: string; attachments: (AttachmentToInsert & { id: string })[] };
       try {
         await createAttachment({ body: attachments, path: { orgIdOrSlug } });
+      } catch {
+        toaster(t('error:create_resource', { resource: t('common:attachment') }), 'error');
+      }
+    },
+  });
+
+  const createLocalAttachmens = useTransaction<LiveQueryAttachment>({
+    mutationFn: async () => {
+      try {
+        console.info('Attachments were added locally');
       } catch {
         toaster(t('error:create_resource', { resource: t('common:attachment') }), 'error');
       }
@@ -58,8 +72,12 @@ export const useAttachmentsUploadDialog = (attachmentCollection: Collection<Live
         };
       });
 
-      createAttachmens.metadata = { orgIdOrSlug: organizationId, attachments };
-      createAttachmens.mutate(() => attachmentCollection.insert(tableAttachmetns));
+      if (onlineManager.isOnline()) {
+        createAttachmens.metadata = { orgIdOrSlug: organizationId, attachments };
+        createAttachmens.mutate(() => attachmentCollection.insert(tableAttachmetns));
+      } else {
+        createLocalAttachmens.mutate(() => localAttachmentCollection.insert(tableAttachmetns));
+      }
       useUploader.getState().remove();
     };
 

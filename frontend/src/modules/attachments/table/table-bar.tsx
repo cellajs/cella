@@ -43,7 +43,7 @@ export const AttachmentsTableBar = ({
 }: AttachmentsTableBarProps) => {
   const { t } = useTranslation();
   const createDialog = useDialoger((state) => state.create);
-  const { open } = useAttachmentsUploadDialog(attachmentCollection);
+  const { open } = useAttachmentsUploadDialog(attachmentCollection, localAttachmentCollection);
   const deleteButtonRef = useRef(null);
 
   const { q } = searchVars;
