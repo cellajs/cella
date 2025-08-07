@@ -7,6 +7,7 @@ import { summarizeFileSyncAnalyses } from './file-sync-summary';
 import { formatAnalysisLogs } from "./analyse-formatter";
 import { shouldLogFile, shouldLogSummary } from "./should-log";
 import { canGitAutoMergeFile, GitMergeCheckResult } from "./can-git-auto-merge-file";
+import { runSync } from "./run-sync";
 
 async function main(): Promise<void> {
   console.log(pc.cyan("↻ Starting git-sync..."));
@@ -60,6 +61,8 @@ async function main(): Promise<void> {
 
     console.log('\n')
   }
+
+  await runSync(boilerplateConfig, forkConfig, fileSyncAnalyses)
 }
 
 main().catch((err) => {
