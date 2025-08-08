@@ -111,6 +111,7 @@ export const getAttachmentsCollection = (organizationId: string): Collection<Liv
   );
 };
 
+//TODO (TanStackDB) make optimistic updates work offline
 export const getLocalAttachmentsCollection = (organizationId: string): Collection<LiveQueryAttachment> => {
   return createCollection(
     queryCollectionOptions({
