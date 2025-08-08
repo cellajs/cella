@@ -1719,6 +1719,13 @@ export const getPublicCounts = <ThrowOnError extends boolean = true>(options?: O
  *
  * @param {shapeProxyData} options
  * @param {string | string} options.path.orgidorslug - `string | string`
+ * @param {string} options.query.table - `string`
+ * @param {string} options.query.offset - `string`
+ * @param {string} options.query.handle - `string`
+ * @param {string=} options.query.cursor - `string` (optional)
+ * @param {string=} options.query.live - `string` (optional)
+ * @param {string=} options.query.where - `string` (optional)
+ * @param {string | boolean=} options.query.offlineprefetch - `string | boolean` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
 export const shapeProxy = <ThrowOnError extends boolean = true>(options: Options<ShapeProxyData, ThrowOnError>) => {

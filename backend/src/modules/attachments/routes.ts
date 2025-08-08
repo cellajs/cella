@@ -1,9 +1,9 @@
-import { z } from '@hono/zod-openapi';
 import { createCustomRoute } from '#/lib/custom-routes';
 import { hasOrgAccess, isAuthenticated, isPublicAccess } from '#/middlewares/guard';
 import { attachmentCreateManySchema, attachmentSchema } from '#/modules/attachments/schema';
-import { idInOrgParamSchema, idSchema, idsBodySchema, inOrgParamSchema } from '#/utils/schema/common';
+import { idInOrgParamSchema, idSchema, idsBodySchema, inOrgParamSchema, minimalElectrycSyncQuery } from '#/utils/schema/common';
 import { errorResponses, successWithRejectedItemsSchema } from '#/utils/schema/responses';
+import { z } from '@hono/zod-openapi';
 
 const attachmentRoutes = {
   createAttachments: createCustomRoute({
@@ -120,7 +120,22 @@ const attachmentRoutes = {
     description: `Proxies requests to ElectricSQL\'s shape endpoint for the \`attachments\` table.
       Used by clients to synchronize local data with server state via the shape log system.
       This endpoint ensures required query parameters are forwarded and response headers are adjusted for browser compatibility.`,
-    request: { params: inOrgParamSchema },
+    request: {
+      query: minimalElectrycSyncQuery.extend({
+        offlinePrefetch: z
+          .union([z.string(), z.boolean()])
+          .optional()
+          .transform((val) => {
+            if (typeof val === 'boolean') return val;
+            if (typeof val === 'string') {
+              return val === 'true' || val === '1';
+            }
+            return false;
+          })
+          .default(false),
+      }),
+      params: inOrgParamSchema,
+    },
     responses: {
       200: {
         description: 'Success',

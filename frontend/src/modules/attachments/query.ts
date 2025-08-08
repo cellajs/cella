@@ -47,6 +47,7 @@ export const groupedAttachmentsQueryOptions = ({
 //TODO (TanStackDB) make optimistic updates work offline
 export const getAttachmentsCollection = (
   organizationId: string,
+  offlinePrefetch = false,
 ): { collection: Collection<LiveQueryAttachment>; controller: AbortController | null } => {
   // Create a new AbortController to allow aborting fetch requests if needed
   const controller = new AbortController();
@@ -62,7 +63,7 @@ export const getAttachmentsCollection = (
 
   // Configuration for electric collection when using sync
   const shapeOptions = {
-    url: new URL(`/${organizationId}/attachments/shape-proxy`, appConfig.backendUrl).href,
+    url: new URL(`/${organizationId}/attachments/shape-proxy?offlinePrefetch=${offlinePrefetch}`, appConfig.backendUrl).href,
     params,
     backoffOptions,
     fetchClient: clientConfig.fetch,

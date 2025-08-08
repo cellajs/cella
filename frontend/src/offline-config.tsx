@@ -1,3 +1,4 @@
+import { getAttachmentsCollection } from '~/modules/attachments/query';
 import type { UserMenuItem } from '~/modules/me/types';
 import { membersQueryOptions } from '~/modules/memberships/query';
 import { organizationQueryOptions } from '~/modules/organizations/query';
@@ -13,7 +14,11 @@ export const queriesToMap = (item: UserMenuItem) => {
 
   // The entity type will decide which queries should be returned for prefetching.
   switch (item.entityType) {
-    case 'organization':
+    case 'organization': {
+      // Preload of a collection data
+      const { collection: attachmentCollection } = getAttachmentsCollection(orgIdOrSlug, true);
+      attachmentCollection.preload();
+
       // As example for 'organization' we return the following queries:
       // - queryOptions to fetch the organization itself
       // - queryOptions to fetch members of the organization
@@ -25,9 +30,8 @@ export const queriesToMap = (item: UserMenuItem) => {
           orgIdOrSlug,
           entityType: item.entityType,
         }),
-        //TODO (TanStackDB) Enable prefetch for offline
-        // attachmentsQueryOptions({ orgIdOrSlug }),
       ];
+    }
 
     // Extend switch case for app-specific entity types ...
 

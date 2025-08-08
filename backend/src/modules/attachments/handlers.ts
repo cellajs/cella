@@ -1,8 +1,3 @@
-import { OpenAPIHono } from '@hono/zod-openapi';
-import { appConfig } from 'config';
-import { and, count, eq, inArray } from 'drizzle-orm';
-import { html, raw } from 'hono/html';
-import { stream } from 'hono/streaming';
 import { db } from '#/db/db';
 import { attachmentsTable } from '#/db/schema/attachments';
 import { organizationsTable } from '#/db/schema/organizations';
@@ -17,6 +12,11 @@ import { defaultHook } from '#/utils/default-hook';
 import { getIsoDate } from '#/utils/iso-date';
 import { logEvent } from '#/utils/logger';
 import { nanoid } from '#/utils/nanoid';
+import { OpenAPIHono } from '@hono/zod-openapi';
+import { appConfig } from 'config';
+import { and, count, eq, inArray } from 'drizzle-orm';
+import { html, raw } from 'hono/html';
+import { stream } from 'hono/streaming';
 
 const app = new OpenAPIHono<Env>({ defaultHook });
 
@@ -26,11 +26,15 @@ const attachmentsRouteHandlers = app
    * Hono handlers are executed in registration order, so registered first to avoid route collisions.
    */
   .openapi(attachmentRoutes.shapeProxy, async (ctx) => {
-    const url = new URL(ctx.req.url);
+    const { live, handle, offset, cursor, where, table, offlinePrefetch } = ctx.req.valid('query');
+
     const organization = getContextOrganization();
 
+    if (table !== 'attachments') {
+      throw new AppError({ status: 403, type: 'forbidden', severity: 'warn', meta: { toastMessage: 'Denied: table name mismatch.' } });
+    }
     // Extract organization IDs from `where` clause
-    const whereParam = url.searchParams.get('where') ?? '';
+    const whereParam = where ?? '';
     const [requestedOrganizationId] = [...whereParam.matchAll(/organization_id = '([^']+)'/g)].map((m) => m[1]);
 
     if (requestedOrganizationId !== organization.id) {
@@ -42,11 +46,11 @@ const attachmentsRouteHandlers = app
 
     // Copy over the relevant query params that the Electric client adds
     // so that we return the right part of the Shape log.
-    url.searchParams.forEach((value, key) => {
-      if (['live', 'handle', 'offset', 'cursor', 'where'].includes(key)) {
-        originUrl.searchParams.set(key, value);
-      }
-    });
+    originUrl.searchParams.set('live', offlinePrefetch ? 'false' : (live ?? 'false'));
+    originUrl.searchParams.set('handle', handle);
+    originUrl.searchParams.set('offset', offset);
+    if (cursor) originUrl.searchParams.set('cursor', cursor);
+    if (where) originUrl.searchParams.set('where', where);
 
     try {
       const { body, headers, status, statusText } = await fetch(originUrl.toString());
