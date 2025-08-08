@@ -66,7 +66,7 @@
   "invalid_param.text": "If you copied a URL, please check if it is correct and complete.",
   "invalid_password": "Invalid password",
   "invalid_request": "Invalid request",
-  "invalid_request.text": "Request is invalid. Please contact support if the problem persists.",
+  "invalid_request.text": "Request could not be processed due to missing or wrong data.",
   "invalid_role": "Not allowed",
   "invalid_role.text": "Your permissions are insufficient or invalid.",
   "invalid_session": "Not authenticated",
