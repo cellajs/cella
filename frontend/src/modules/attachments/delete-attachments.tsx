@@ -18,7 +18,7 @@ const DeleteAttachments = ({ entity, attachments, callback, dialog: isDialog }: 
 
   const orgIdOrSlug = entity.membership?.organizationId || entity.id;
 
-  const attachmentCollection = getAttachmentsCollection(orgIdOrSlug);
+  const { collection: attachmentCollection } = getAttachmentsCollection(orgIdOrSlug);
   const localAttachmentCollection = getLocalAttachmentsCollection(orgIdOrSlug);
 
   const onDelete = async () => {

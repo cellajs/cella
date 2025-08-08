@@ -17,19 +17,22 @@ type BaseDataTableProps = AttachmentsTableProps & BaseTableProps<LiveQueryAttach
 const BaseDataTable = memo(
   forwardRef<BaseTableMethods, BaseDataTableProps>(({ entity, columns, searchVars, sortColumns, setSortColumns, setTotal, setSelected }, ref) => {
     const { t } = useTranslation();
-
+    // const { isOnline } = useOnlineManager();
     const [selectedRows, setSelectedRows] = useState(new Set<string>());
 
     const { q, sort, order, limit } = searchVars;
     const orgIdOrSlug = entity.membership?.organizationId || entity.id;
 
-    const attachmentCollection = getAttachmentsCollection(orgIdOrSlug);
+    // Get attachment collections (remote backend and local)
+    const { collection: attachmentCollection } = getAttachmentsCollection(orgIdOrSlug);
     const localAttachmentCollection = getLocalAttachmentsCollection(orgIdOrSlug);
 
-    //TODO (TanStackDB) Add drop of sync on component unmount
-    const { data, isLoading } = useLiveQuery(
+    // Query backend attachment collection
+    const { data: backendAttachments, isLoading: backendIsLoading } = useLiveQuery(
       (query) => {
         let qBuilder = query.from({ attachments: attachmentCollection });
+
+        // If a search query string is provided, filter by name or filename (case-insensitive, partial match)
         if (typeof q === 'string' && q.trim() !== '') {
           qBuilder = qBuilder.where(({ attachments }) => or(ilike(attachments.name, `%${q}%`), ilike(attachments.filename, `%${q}%`)));
         }
@@ -39,9 +42,11 @@ const BaseDataTable = memo(
       [q, sort, order],
     );
 
-    const { data: local } = useLiveQuery(
+    // Query local attachment collection
+    const { data: localAttachments, isLoading: localIsLoading } = useLiveQuery(
       (query) => {
         let qBuilder = query.from({ localAttachments: localAttachmentCollection });
+
         if (typeof q === 'string' && q.trim() !== '') {
           qBuilder = qBuilder.where(({ localAttachments }) => or(ilike(localAttachments.name, `%${q}%`), ilike(localAttachments.filename, `%${q}%`)));
         }
@@ -51,29 +56,33 @@ const BaseDataTable = memo(
       [q, sort, order],
     );
 
+    // Combine attachment arrays and sort them
     const combined = useMemo(() => {
-      const all = [...(data ?? []), ...(local ?? [])];
+      const all = [...(backendAttachments ?? []), ...(localAttachments ?? [])];
 
+      // Sort combined array by sort and order
       return all.sort((a, b) => {
         const key = sort && sort !== 'createdAt' ? sort : 'created_at';
         const aValue = a[key];
         const bValue = b[key];
 
-        if (aValue == null) return 1;
+        if (aValue == null) return 1; // Null values go last
         if (bValue == null) return -1;
 
-        // Handle date or string intelligently
+        // Compare string or date values appropriately
         if (aValue > bValue) return order === 'desc' ? -1 : 1;
         if (aValue < bValue) return order === 'desc' ? 1 : -1;
         return 0;
       });
-    }, [data, local, sort, order]);
+    }, [backendAttachments, localAttachments, sort, order]);
 
+    // Use a custom hook to filter combined rows offline based on search query,
     const rows = useOfflineTableSearch({
       data: combined,
       filterFn: ({ q }, item) => {
         if (!q) return true;
-        const query = q.trim().toLowerCase(); // Normalize query
+        // Normalize search query to lowercase and trim whitespace
+        const query = q.trim().toLowerCase();
         return item.name.toLowerCase().includes(query) || item.filename.toLowerCase().includes(query);
       },
       onFilterCallback: (filteredData) => setTotal(filteredData.length),
@@ -103,6 +112,18 @@ const BaseDataTable = memo(
     // Effect to update total and selected rows when data changes
     useEffect(() => setTotal(combined.length), [combined]);
 
+    //TODO (TanStackDB) make work with Strict mode
+    // useEffect(() => {
+    //   if (!controller) return;
+    //   const aborted = controller.signal.aborted;
+    //   const handleAbort = () => controller.abort();
+    //   if (!isOnline && !aborted) handleAbort();
+
+    //   return () => {
+    //     if (!aborted) handleAbort();
+    //   };
+    // }, [isOnline]);
+
     // Expose methods via ref using useImperativeHandle
     useImperativeHandle(ref, () => ({
       clearSelection: () => onSelectedRowsChange(new Set<string>()),
@@ -120,7 +141,7 @@ const BaseDataTable = memo(
           totalCount: rows.length,
           rowKeyGetter: (row) => row.id,
           // error,
-          isLoading,
+          isLoading: backendIsLoading && localIsLoading,
           // isFetching,
           // fetchMore: fetchNextPage,
           isFiltered: !!q,

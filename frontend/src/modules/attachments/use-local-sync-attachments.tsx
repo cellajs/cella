@@ -12,7 +12,7 @@ import type { UploadedUppyFile } from '~/modules/common/uploader/types';
 export const useLocalSyncAttachments = (organizationId: string) => {
   const { isOnline } = useOnlineManager();
 
-  const attachmentCollection = getAttachmentsCollection(organizationId);
+  const { collection: attachmentCollection } = getAttachmentsCollection(organizationId);
   const localAttachmentCollection = getLocalAttachmentsCollection(organizationId);
 
   const { getData: fetchStoredFiles, setSyncStatus: updateStoredFilesSyncStatus } = LocalFileStorage;

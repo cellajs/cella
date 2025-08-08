@@ -12,7 +12,7 @@ const maxTotalFileSize = maxNumberOfFiles * appConfig.uppy.defaultRestrictions.m
 
 export const useAttachmentsUploadDialog = () => {
   const open = (organizationId: string) => {
-    const attachmentCollection = getAttachmentsCollection(organizationId);
+    const { collection: attachmentCollection } = getAttachmentsCollection(organizationId);
     const localAttachmentCollection = getLocalAttachmentsCollection(organizationId);
 
     const onComplete = (result: UploadedUppyFile<'attachment'>) => {

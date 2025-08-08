@@ -1,11 +1,12 @@
-import { electricCollectionOptions } from '@tanstack/electric-db-collection';
-import { queryCollectionOptions } from '@tanstack/query-db-collection';
-import { type Collection, createCollection } from '@tanstack/react-db';
-import { queryOptions } from '@tanstack/react-query';
+import { type ElectricCollectionConfig, electricCollectionOptions } from '@tanstack/electric-db-collection';
+import { type QueryCollectionConfig, queryCollectionOptions } from '@tanstack/query-db-collection';
+import { type Collection, type CollectionConfig, createCollection } from '@tanstack/react-db';
+import { type QueryKey, queryOptions } from '@tanstack/react-query';
 import { appConfig } from 'config';
 import { t } from 'i18next';
 import { createAttachment, deleteAttachments, getAttachmentsGroup, type GetAttachmentsGroupData, updateAttachment } from '~/api.gen';
-import { clientConfig } from '~/lib/api';
+import { env } from '~/env';
+import { type ApiError, clientConfig } from '~/lib/api';
 import { LocalFileStorage } from '~/modules/attachments/helpers/local-file-storage';
 import type { AttachmentToInsert, LiveQueryAttachment } from '~/modules/attachments/types';
 import type { CustomUppyFile } from '~/modules/common/uploader/types';
@@ -44,71 +45,112 @@ export const groupedAttachmentsQueryOptions = ({
   });
 
 //TODO (TanStackDB) make optimistic updates work offline
-export const getAttachmentsCollection = (organizationId: string): Collection<LiveQueryAttachment> => {
+export const getAttachmentsCollection = (
+  organizationId: string,
+): { collection: Collection<LiveQueryAttachment>; controller: AbortController | null } => {
+  // Create a new AbortController to allow aborting fetch requests if needed
+  const controller = new AbortController();
+
+  // Determine if we are in "regular" mode (no sync, no upload, or quick mode)
+  const isRegularOptions = !appConfig.has.sync || !appConfig.has.uploadEnabled || env.VITE_QUICK;
+
+  // Query params for fetching attachments for a specific organization
   const params = {
     table: 'attachments',
     where: `organization_id = '${organizationId}'`,
   };
 
-  return createCollection(
-    electricCollectionOptions({
-      id: `sync-attachments-${organizationId}`,
-      shapeOptions: {
-        url: new URL(`/${organizationId}/attachments/shape-proxy`, appConfig.backendUrl).href,
-        params,
-        backoffOptions,
-        fetchClient: clientConfig.fetch,
-        onError: (error) => handleSyncError(error, params),
-      },
-      getKey: (item) => item.id,
-      onInsert: async ({ transaction }) => {
-        const { attachments } = transaction.mutations[0].metadata as {
-          attachments: (AttachmentToInsert & { id: string })[];
-        };
-        try {
-          await createAttachment({ body: attachments, path: { orgIdOrSlug: organizationId } });
-        } catch {
-          toaster(t('error:create_resource', { resource: t('common:attachment') }), 'error');
-        }
-        return { txid: Date.now() };
-      },
-      onUpdate: async ({ transaction }) => {
-        const results: number[] = [];
+  // Configuration for electric collection when using sync
+  const shapeOptions = {
+    url: new URL(`/${organizationId}/attachments/shape-proxy`, appConfig.backendUrl).href,
+    params,
+    backoffOptions,
+    fetchClient: clientConfig.fetch,
+    onError: (error: Error) => handleSyncError(error, params),
+    signal: controller.signal, // Pass AbortSignal for cancellation support
+  };
 
-        await Promise.all(
-          transaction.mutations.map(async ({ type, changes, original }) => {
-            try {
-              if (!changes.name || type !== 'update') return;
-              const originalAttachment = original as LiveQueryAttachment;
+  // Base options common to both regular and electric collections
+  const baseOptions: Pick<
+    QueryCollectionConfig<LiveQueryAttachment, ApiError, QueryKey> | ElectricCollectionConfig<LiveQueryAttachment>,
+    'id' | 'getKey' | 'onInsert' | 'onUpdate' | 'onDelete'
+  > = {
+    id: `attachments-${organizationId}`,
+    getKey: (item: { id: string }) => item.id,
+    onInsert: async ({ transaction }) => {
+      const { attachments } = transaction.mutations[0].metadata as {
+        attachments: (AttachmentToInsert & { id: string })[];
+      };
+      try {
+        await createAttachment({ body: attachments, path: { orgIdOrSlug: organizationId } });
+      } catch {
+        toaster(t('error:create_resource', { resource: t('common:attachment') }), 'error');
+      }
+      // Return transaction ID only for sync mode; empty object otherwise
+      return isRegularOptions ? {} : { txid: Date.now() };
+    },
+    onUpdate: async ({ transaction }) => {
+      const results: number[] = [];
 
-              await updateAttachment({
-                body: { name: changes.name },
-                path: { id: originalAttachment.id, orgIdOrSlug: originalAttachment.organization_id },
-              });
+      await Promise.all(
+        transaction.mutations.map(async ({ type, changes, original }) => {
+          try {
+            if (!changes.name || type !== 'update') return;
+            const originalAttachment = original as LiveQueryAttachment;
 
-              results.push(Date.now()); // Use timestamp as txid
-            } catch {
-              toaster(t('error:update_resource', { resource: t('common:attachment') }), 'error');
-            }
-          }),
-        );
-        return { txid: results };
-      },
-      onDelete: async ({ transaction }) => {
-        const ids: string[] = [];
-        for (const { changes } of transaction.mutations) {
-          if (changes && 'id' in changes && typeof changes.id === 'string') ids.push(changes.id);
-        }
-        try {
-          await deleteAttachments({ body: { ids }, path: { orgIdOrSlug: organizationId } });
-        } catch (err) {
-          if (ids.length > 1) toaster(t('error:delete_resources', { resources: t('common:attachments') }), 'error');
-          else toaster(t('error:delete_resource', { resource: t('common:attachment') }), 'error');
-        }
-        return { txid: Date.now() };
-      },
-    }),
-  );
+            await updateAttachment({
+              body: { name: changes.name },
+              path: { id: originalAttachment.id, orgIdOrSlug: originalAttachment.organization_id },
+            });
+
+            results.push(Date.now()); // Track timestamp txid per mutation
+          } catch {
+            toaster(t('error:update_resource', { resource: t('common:attachment') }), 'error');
+          }
+        }),
+      );
+      // Return transaction IDs only in sync mode
+      return isRegularOptions ? {} : { txid: results };
+    },
+    onDelete: async ({ transaction }) => {
+      const ids: string[] = [];
+      for (const { changes } of transaction.mutations) {
+        if (changes && 'id' in changes && typeof changes.id === 'string') ids.push(changes.id);
+      }
+      try {
+        await deleteAttachments({ body: { ids }, path: { orgIdOrSlug: organizationId } });
+      } catch (err) {
+        if (ids.length > 1) toaster(t('error:delete_resources', { resources: t('common:attachments') }), 'error');
+        else toaster(t('error:delete_resource', { resource: t('common:attachment') }), 'error');
+      }
+      // Return transaction ID only in sync mode
+      return isRegularOptions ? {} : { txid: Date.now() };
+    },
+  };
+
+  // Select collection config based on mode:
+  // - Regular: use queryCollectionOptions with a local query function returning empty array
+  // - Sync-enabled: use electricCollectionOptions with shapeOptions for live syncing
+  const queryOptions: CollectionConfig<LiveQueryAttachment> = isRegularOptions
+    ? queryCollectionOptions({
+        ...baseOptions,
+        queryKey: attachmentsKeys.local(),
+        queryClient,
+        //TODO (TanStackDB) add BE fetch
+        queryFn: async () => {
+          return [];
+        },
+      })
+    : electricCollectionOptions({
+        ...baseOptions,
+        shapeOptions,
+      });
+
+  // Create the collection instance using the selected config
+  return {
+    collection: createCollection(queryOptions),
+    controller: isRegularOptions ? null : controller,
+  };
 };
 
 //TODO (TanStackDB) make optimistic updates work offline
