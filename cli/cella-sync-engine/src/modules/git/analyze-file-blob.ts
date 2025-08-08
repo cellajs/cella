@@ -4,7 +4,7 @@ export function analyzeFileBlob(
   boilerplateFile: FileEntry,
   forkFile?: FileEntry
 ): FileAnalysis["blobStatus"] {
-  if (!forkFile) return 'unknown';
+  if (!forkFile) return 'missing';
 
   if (boilerplateFile.blobSha === forkFile.blobSha) {
     return 'identical';

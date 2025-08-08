@@ -25,7 +25,9 @@ export type FileAnalysis = {
   boilerplateFile: FileEntry;
   forkFile?: FileEntry;
   commitHistorySummary?: CommitHistorySummary;
-  blobStatus?: 'identical' | 'different' | 'unknown';
-  conflictLikelihood?: 'low' | 'medium' | 'high';
-  conflictReason?: 'none' | 'divergedHistories' | 'blobMismatch' | 'missingInFork' | 'unrelatedHistories' | 'outdatedInFork';
-};
+  blobStatus?: 'identical' | 'different' | 'missing';
+  mergeRiskLikelihood?: 'low' | 'medium' | 'high';
+  mergeRiskReason?: 'identical' | 'blobMismatch' | 'missingInFork' | 'divergedContent' | 'unrelatedHistories' | 'unknown';
+  mergeRiskSafeByGit?: boolean;
+  mergeRiskCheck?: 'none' | 'gitAutoMerge' | 'verifyAncestor' | 'addedOrRemoved' | 'threeWayMergeCheck';
+}
