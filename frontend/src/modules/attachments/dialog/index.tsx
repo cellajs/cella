@@ -20,11 +20,11 @@ const AttachmentDialog = ({ attachmentId, orgIdOrSlug, localAttachment }: Attach
   const { isOnline } = useOnlineManager();
 
   const { data, error, isLoading } = useQuery({
-    ...groupedAttachmentsQueryOptions({ attachmentId, orgIdOrSlug }),
+    ...groupedAttachmentsQueryOptions({ mainAttachmentId: attachmentId, orgIdOrSlug }),
     enabled: isOnline && !localAttachment,
   });
 
-  const attachments = useMemo(() => data?.items ?? [], [data?.items]);
+  const attachments = useMemo(() => data ?? [], [data]);
 
   const itemIndex = useMemo(() => {
     const index = attachments.findIndex(({ id }) => id === attachmentId);

@@ -137,6 +137,25 @@ export const zApiError = z.object({
   organizationId: z.optional(z.string()),
 });
 
+export const zAttachmentTableSchema = z.object({
+  createdAt: z.string(),
+  id: z.string(),
+  name: z.string(),
+  entityType: z.enum(['attachment']),
+  groupId: z.union([z.string(), z.null()]),
+  filename: z.string(),
+  contentType: z.string(),
+  convertedContentType: z.union([z.string(), z.null()]),
+  size: z.string(),
+  originalKey: z.string(),
+  convertedKey: z.union([z.string(), z.null()]),
+  thumbnailKey: z.union([z.string(), z.null()]),
+  createdBy: z.union([z.string(), z.null()]),
+  modifiedAt: z.union([z.string(), z.null()]),
+  modifiedBy: z.union([z.string(), z.null()]),
+  organizationId: z.string(),
+});
+
 export const zEntityListItemSchema = z.object({
   id: z.string(),
   entityType: z.enum(['user', 'organization']),
@@ -1436,7 +1455,15 @@ export const zShapeProxyData = z.object({
   path: z.object({
     orgIdOrSlug: z.string(),
   }),
-  query: z.optional(z.never()),
+  query: z.object({
+    table: z.string(),
+    offset: z.string(),
+    handle: z.optional(z.string()),
+    cursor: z.optional(z.string()),
+    live: z.optional(z.string()),
+    where: z.optional(z.string()),
+    offlinePrefetch: z.optional(z.union([z.string(), z.boolean()])),
+  }),
 });
 
 export const zDeleteAttachmentsData = z.object({
@@ -1457,50 +1484,6 @@ export const zDeleteAttachmentsData = z.object({
 export const zDeleteAttachmentsResponse = z.object({
   success: z.boolean(),
   rejectedItems: z.array(z.string()),
-});
-
-export const zGetAttachmentsData = z.object({
-  body: z.optional(z.never()),
-  path: z.object({
-    orgIdOrSlug: z.string(),
-  }),
-  query: z.optional(
-    z.object({
-      q: z.optional(z.string()),
-      sort: z.optional(z.enum(['id', 'name', 'size', 'createdAt'])),
-      order: z.optional(z.enum(['asc', 'desc'])),
-      offset: z.optional(z.string()).default('0'),
-      limit: z.optional(z.string()).default('40'),
-      attachmentId: z.optional(z.string()),
-    }),
-  ),
-});
-
-/**
- * Attachments
- */
-export const zGetAttachmentsResponse = z.object({
-  items: z.array(
-    z.object({
-      createdAt: z.string(),
-      id: z.string(),
-      name: z.string(),
-      entityType: z.enum(['attachment']),
-      groupId: z.union([z.string(), z.null()]),
-      filename: z.string(),
-      contentType: z.string(),
-      convertedContentType: z.union([z.string(), z.null()]),
-      size: z.string(),
-      createdBy: z.union([z.string(), z.null()]),
-      modifiedAt: z.union([z.string(), z.null()]),
-      modifiedBy: z.union([z.string(), z.null()]),
-      organizationId: z.string(),
-      url: z.string(),
-      thumbnailUrl: z.union([z.string(), z.null()]),
-      convertedUrl: z.union([z.string(), z.null()]),
-    }),
-  ),
-  total: z.number(),
 });
 
 export const zCreateAttachmentData = z.object({
@@ -1531,6 +1514,40 @@ export const zCreateAttachmentData = z.object({
  * Attachment
  */
 export const zCreateAttachmentResponse = z.array(
+  z.object({
+    createdAt: z.string(),
+    id: z.string(),
+    name: z.string(),
+    entityType: z.enum(['attachment']),
+    groupId: z.union([z.string(), z.null()]),
+    filename: z.string(),
+    contentType: z.string(),
+    convertedContentType: z.union([z.string(), z.null()]),
+    size: z.string(),
+    createdBy: z.union([z.string(), z.null()]),
+    modifiedAt: z.union([z.string(), z.null()]),
+    modifiedBy: z.union([z.string(), z.null()]),
+    organizationId: z.string(),
+    url: z.string(),
+    thumbnailUrl: z.union([z.string(), z.null()]),
+    convertedUrl: z.union([z.string(), z.null()]),
+  }),
+);
+
+export const zGetAttachmentsGroupData = z.object({
+  body: z.optional(z.never()),
+  path: z.object({
+    orgIdOrSlug: z.string(),
+  }),
+  query: z.object({
+    mainAttachmentId: z.string(),
+  }),
+});
+
+/**
+ * Attachments
+ */
+export const zGetAttachmentsGroupResponse = z.array(
   z.object({
     createdAt: z.string(),
     id: z.string(),
@@ -1585,8 +1602,7 @@ export const zGetAttachmentResponse = z.object({
 export const zUpdateAttachmentData = z.object({
   body: z.optional(
     z.object({
-      name: z.optional(z.string()),
-      originalKey: z.optional(z.string()),
+      name: z.string(),
     }),
   ),
   path: z.object({

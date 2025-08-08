@@ -2,7 +2,7 @@ import * as Sentry from '@sentry/react';
 import DOMPurify from 'dompurify';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { LocalFileStorage } from '~/modules/attachments/helpers/local-file-storage';
-import { useBlobStore } from '~/store/blob'; // Import Zustand store
+import { useBlobStore } from '~/store/blob';
 import { isCDNUrl } from '~/utils/is-cdn-url';
 
 /**

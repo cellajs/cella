@@ -1,31 +1,54 @@
 import { appConfig } from 'config';
+import { nanoid } from 'nanoid';
 import { useEffect, useRef } from 'react';
 import { useOnlineManager } from '~/hooks/use-online-manager';
 import { LocalFileStorage } from '~/modules/attachments/helpers/local-file-storage';
 import { parseUploadedAttachments } from '~/modules/attachments/helpers/parse-uploaded';
-import { useAttachmentCreateMutation, useAttachmentDeleteMutation } from '~/modules/attachments/query-mutations';
+import { getAttachmentsCollection, getLocalAttachmentsCollection } from '~/modules/attachments/query';
 import type { AttachmentToInsert } from '~/modules/attachments/types';
 import { createBaseTransloaditUppy } from '~/modules/common/uploader/helpers';
 import type { UploadedUppyFile } from '~/modules/common/uploader/types';
 
 export const useLocalSyncAttachments = (organizationId: string) => {
   const { isOnline } = useOnlineManager();
-  const { mutate: createAttachments } = useAttachmentCreateMutation();
-  const { mutate: deleteAttachments } = useAttachmentDeleteMutation();
+
+  const { collection: attachmentCollection } = getAttachmentsCollection(organizationId);
+  const localAttachmentCollection = getLocalAttachmentsCollection(organizationId);
+  localAttachmentCollection.startSyncImmediate();
+
   const { getData: fetchStoredFiles, setSyncStatus: updateStoredFilesSyncStatus } = LocalFileStorage;
 
   const isSyncingRef = useRef(false); // Prevent double trigger
 
-  const onComplete = (attachments: AttachmentToInsert[], storedIds: string[]) => {
-    createAttachments(
-      { localCreation: false, attachments, orgIdOrSlug: organizationId },
-      { onSuccess: () => console.info('Successfully synced attachments to server:', attachments) },
-    );
+  const onComplete = async (attachments: AttachmentToInsert[], storedIds: string[]) => {
+    const tableAttachmetns = attachments.map((a) => {
+      const optimisticId = a.id || nanoid();
+      const groupId = attachments.length > 1 ? nanoid() : null;
+
+      return {
+        id: optimisticId,
+        filename: a.filename,
+        name: a.filename.split('.').slice(0, -1).join('.'),
+        content_type: a.contentType,
+        size: a.size,
+        original_key: a.originalKey,
+        thumbnail_key: a.thumbnailKey ?? null,
+        converted_key: a.convertedKey ?? null,
+        converted_content_type: a.convertedContentType ?? null,
+        entity_type: 'attachment' as const,
+        created_at: new Date().toISOString(),
+        created_by: null,
+        modified_at: null,
+        modified_by: null,
+        group_id: groupId,
+        organization_id: organizationId,
+      };
+    });
+
+    attachmentCollection.insert(tableAttachmetns, { metadata: { attachments } });
+
     // Clean up offline files from IndexedDB
-    deleteAttachments(
-      { localDeletionIds: storedIds, serverDeletionIds: [], orgIdOrSlug: organizationId },
-      { onSuccess: () => console.info('Successfully removed uploaded files from IndexedDB.') },
-    );
+    localAttachmentCollection.delete(storedIds);
   };
 
   useEffect(() => {

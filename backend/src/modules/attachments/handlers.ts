@@ -1,8 +1,3 @@
-import { OpenAPIHono } from '@hono/zod-openapi';
-import { appConfig } from 'config';
-import { and, count, eq, ilike, inArray, or, type SQL } from 'drizzle-orm';
-import { html, raw } from 'hono/html';
-import { stream } from 'hono/streaming';
 import { db } from '#/db/db';
 import { attachmentsTable } from '#/db/schema/attachments';
 import { organizationsTable } from '#/db/schema/organizations';
@@ -17,8 +12,11 @@ import { defaultHook } from '#/utils/default-hook';
 import { getIsoDate } from '#/utils/iso-date';
 import { logEvent } from '#/utils/logger';
 import { nanoid } from '#/utils/nanoid';
-import { getOrderColumn } from '#/utils/order-column';
-import { prepareStringForILikeFilter } from '#/utils/sql';
+import { OpenAPIHono } from '@hono/zod-openapi';
+import { appConfig } from 'config';
+import { and, count, eq, inArray } from 'drizzle-orm';
+import { html, raw } from 'hono/html';
+import { stream } from 'hono/streaming';
 
 const app = new OpenAPIHono<Env>({ defaultHook });
 
@@ -28,11 +26,15 @@ const attachmentsRouteHandlers = app
    * Hono handlers are executed in registration order, so registered first to avoid route collisions.
    */
   .openapi(attachmentRoutes.shapeProxy, async (ctx) => {
-    const url = new URL(ctx.req.url);
+    const { live, handle, offset, cursor, where, table, offlinePrefetch } = ctx.req.valid('query');
+
     const organization = getContextOrganization();
 
+    if (table !== 'attachments') {
+      throw new AppError({ status: 403, type: 'forbidden', severity: 'warn', meta: { toastMessage: 'Denied: table name mismatch.' } });
+    }
     // Extract organization IDs from `where` clause
-    const whereParam = url.searchParams.get('where') ?? '';
+    const whereParam = where ?? '';
     const [requestedOrganizationId] = [...whereParam.matchAll(/organization_id = '([^']+)'/g)].map((m) => m[1]);
 
     if (requestedOrganizationId !== organization.id) {
@@ -44,11 +46,11 @@ const attachmentsRouteHandlers = app
 
     // Copy over the relevant query params that the Electric client adds
     // so that we return the right part of the Shape log.
-    url.searchParams.forEach((value, key) => {
-      if (['live', 'handle', 'offset', 'cursor', 'where'].includes(key)) {
-        originUrl.searchParams.set(key, value);
-      }
-    });
+    originUrl.searchParams.set('live', offlinePrefetch ? 'false' : (live ?? 'false'));
+    originUrl.searchParams.set('offset', offset);
+    if (handle) originUrl.searchParams.set('handle', handle);
+    if (cursor) originUrl.searchParams.set('cursor', cursor);
+    if (where) originUrl.searchParams.set('where', where);
 
     try {
       const { body, headers, status, statusText } = await fetch(originUrl.toString());
@@ -119,61 +121,33 @@ const attachmentsRouteHandlers = app
     return ctx.json(data, 200);
   })
   /*
-   * Get attachments
+   * Get grouped attachments
    */
-  .openapi(attachmentRoutes.getAttachments, async (ctx) => {
-    const { q, sort, order, offset, limit, attachmentId } = ctx.req.valid('query');
+  .openapi(attachmentRoutes.getAttachmentsGroup, async (ctx) => {
+    const { mainAttachmentId } = ctx.req.valid('query');
 
     const organization = getContextOrganization();
 
-    // Filter at least by valid organization
-    const filters = [eq(attachmentsTable.organizationId, organization.id)];
-
-    if (q) {
-      const query = prepareStringForILikeFilter(q);
-      filters.push(or(ilike(attachmentsTable.filename, query), ilike(attachmentsTable.name, query)) as SQL);
+    // Retrieve target attachment
+    const [targetAttachment] = await db.select().from(attachmentsTable).where(eq(attachmentsTable.id, mainAttachmentId)).limit(1);
+    if (!targetAttachment) {
+      throw new AppError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'attachment', meta: { mainAttachmentId } });
     }
 
-    const orderColumn = getOrderColumn(
-      {
-        id: attachmentsTable.id,
-        name: attachmentsTable.name,
-        size: attachmentsTable.size,
-        createdAt: attachmentsTable.createdAt,
-      },
-      sort,
-      attachmentsTable.id,
-      order,
-    );
+    const processedTargetAttachment = await processAttachmentUrlsBatch([targetAttachment]);
+    // return target attachment itself if no groupId
+    if (!targetAttachment.groupId) return ctx.json(processedTargetAttachment, 200);
 
-    if (attachmentId) {
-      // Retrieve target attachment
-      const [targetAttachment] = await db.select().from(attachmentsTable).where(eq(attachmentsTable.id, attachmentId)).limit(1);
-      if (!targetAttachment) {
-        throw new AppError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'attachment', meta: { attachmentId } });
-      }
+    // add filter attachments by groupId
 
-      const items = await processAttachmentUrlsBatch([targetAttachment]);
-      // return target attachment itself if no groupId
-      if (!targetAttachment.groupId) return ctx.json({ items, total: 1 }, 200);
-
-      // add filter attachments by groupId
-      filters.push(eq(attachmentsTable.groupId, targetAttachment.groupId));
-    }
-
-    const attachmentsQuery = db
+    const attachments = await db
       .select()
       .from(attachmentsTable)
-      .where(and(...filters))
-      .orderBy(orderColumn);
+      .where(and(eq(attachmentsTable.groupId, targetAttachment.groupId), eq(attachmentsTable.organizationId, organization.id)));
 
-    const attachments = await attachmentsQuery.offset(Number(offset)).limit(Number(limit));
+    const processedAttachments = await processAttachmentUrlsBatch(attachments);
 
-    const [{ total }] = await db.select({ total: count() }).from(attachmentsQuery.as('attachments'));
-
-    const items = await processAttachmentUrlsBatch(attachments);
-
-    return ctx.json({ items, total }, 200);
+    return ctx.json(processedAttachments, 200);
   })
   /*
    * Get attachment by id

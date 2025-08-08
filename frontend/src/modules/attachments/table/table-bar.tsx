@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import DeleteAttachments from '~/modules/attachments/delete-attachments';
 import { useAttachmentsUploadDialog } from '~/modules/attachments/table/helpers';
 import type { AttachmentSearch, AttachmentsTableProps } from '~/modules/attachments/table/table-wrapper';
-import type { Attachment } from '~/modules/attachments/types';
+import type { LiveQueryAttachment } from '~/modules/attachments/types';
 import ColumnsView from '~/modules/common/data-table/columns-view';
 import { TableBarButton } from '~/modules/common/data-table/table-bar-button';
 import { TableBarContainer } from '~/modules/common/data-table/table-bar-container';
@@ -17,7 +17,7 @@ import { FocusView } from '~/modules/common/focus-view';
 
 type AttachmentsTableBarProps = AttachmentsTableProps &
   BaseTableMethods &
-  BaseTableBarProps<Attachment, AttachmentSearch> & {
+  BaseTableBarProps<LiveQueryAttachment, AttachmentSearch> & {
     isCompact: boolean;
     setIsCompact: (isCompact: boolean) => void;
   };

@@ -5,6 +5,7 @@ import chalk from 'chalk';
 import { appConfig } from 'config';
 import type { Env } from '#/lib/context';
 import { apiModulesList, registerAppSchema } from '#/lib/docs-config';
+import { attachmentSelectSchema } from '#/modules/attachments/schema';
 import { entityBaseSchema, userSummarySchema } from '#/modules/entities/schema';
 import { menuSchema } from '#/modules/me/schema';
 import { membershipSummarySchema } from '#/modules/memberships/schema';
@@ -49,6 +50,7 @@ const docs = async (app: OpenAPIHono<Env>, skipScalar = false) => {
   registry.register('MembershipSummarySchema', membershipSummarySchema);
   registry.register('MenuSchema', menuSchema);
   registry.register('ApiError', errorSchema);
+  registry.register('AttachmentTableSchema', attachmentSelectSchema);
 
   registerAppSchema(registry);
 

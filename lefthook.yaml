@@ -1,6 +1,6 @@
 pre-commit:
   commands:
-    typescript: 
+    typescript:
       run: pnpm --filter backend generate-openapi && pnpm --filter frontend generate-client && pnpm ts
     biome:
       glob: "*.{js,ts,cjs,mjs,d.cts,d.mts,jsx,tsx,json,jsonc}"

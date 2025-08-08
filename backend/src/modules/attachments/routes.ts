@@ -1,9 +1,9 @@
-import { z } from '@hono/zod-openapi';
 import { createCustomRoute } from '#/lib/custom-routes';
 import { hasOrgAccess, isAuthenticated, isPublicAccess } from '#/middlewares/guard';
-import { attachmentCreateManySchema, attachmentListQuerySchema, attachmentSchema, attachmentUpdateBodySchema } from '#/modules/attachments/schema';
-import { idInOrgParamSchema, idSchema, idsBodySchema, inOrgParamSchema } from '#/utils/schema/common';
-import { errorResponses, paginationSchema, successWithRejectedItemsSchema } from '#/utils/schema/responses';
+import { attachmentCreateManySchema, attachmentSchema } from '#/modules/attachments/schema';
+import { idInOrgParamSchema, idSchema, idsBodySchema, inOrgParamSchema, minimalElectrycSyncQuery } from '#/utils/schema/common';
+import { errorResponses, successWithRejectedItemsSchema } from '#/utils/schema/responses';
+import { z } from '@hono/zod-openapi';
 
 const attachmentRoutes = {
   createAttachments: createCustomRoute({
@@ -28,35 +28,25 @@ const attachmentRoutes = {
     responses: {
       200: {
         description: 'Attachment',
-        content: {
-          'application/json': {
-            schema: z.array(attachmentSchema),
-          },
-        },
+        content: { 'application/json': { schema: z.array(attachmentSchema) } },
       },
       ...errorResponses,
     },
   }),
-  getAttachments: createCustomRoute({
-    operationId: 'getAttachments',
+
+  getAttachmentsGroup: createCustomRoute({
+    operationId: 'getAttachmentsGroup',
     method: 'get',
-    path: '/',
+    path: '/group',
     guard: [isAuthenticated, hasOrgAccess],
     tags: ['attachments'],
     summary: 'Get list of attachments',
-    description: 'Retrieves all *attachments* associated with a specific entity, such as an organization.',
-    request: {
-      params: inOrgParamSchema,
-      query: attachmentListQuerySchema,
-    },
+    description: 'Retrieves all of *attachments* that are in the same group as main attachment, associated with a specific organization.',
+    request: { params: inOrgParamSchema, query: z.object({ mainAttachmentId: z.string() }) },
     responses: {
       200: {
         description: 'Attachments',
-        content: {
-          'application/json': {
-            schema: paginationSchema(attachmentSchema),
-          },
-        },
+        content: { 'application/json': { schema: z.array(attachmentSchema) } },
       },
       ...errorResponses,
     },
@@ -75,11 +65,7 @@ const attachmentRoutes = {
     responses: {
       200: {
         description: 'Attachment',
-        content: {
-          'application/json': {
-            schema: attachmentSchema,
-          },
-        },
+        content: { 'application/json': { schema: attachmentSchema } },
       },
       ...errorResponses,
     },
@@ -94,22 +80,12 @@ const attachmentRoutes = {
     description: 'Updates metadata of an *attachment*, such as its name or associated entity.',
     request: {
       params: idInOrgParamSchema,
-      body: {
-        content: {
-          'application/json': {
-            schema: attachmentUpdateBodySchema,
-          },
-        },
-      },
+      body: { content: { 'application/json': { schema: attachmentSchema.pick({ name: true }) } } },
     },
     responses: {
       200: {
         description: 'Attachment was updated',
-        content: {
-          'application/json': {
-            schema: attachmentSchema,
-          },
-        },
+        content: { 'application/json': { schema: attachmentSchema } },
       },
       ...errorResponses,
     },
@@ -124,22 +100,12 @@ const attachmentRoutes = {
     description: 'Deletes one or more *attachment* records by ID. This does not delete the underlying file in storage.',
     request: {
       params: inOrgParamSchema,
-      body: {
-        content: {
-          'application/json': {
-            schema: idsBodySchema(),
-          },
-        },
-      },
+      body: { content: { 'application/json': { schema: idsBodySchema() } } },
     },
     responses: {
       200: {
         description: 'Success',
-        content: {
-          'application/json': {
-            schema: successWithRejectedItemsSchema,
-          },
-        },
+        content: { 'application/json': { schema: successWithRejectedItemsSchema } },
       },
       ...errorResponses,
     },
@@ -154,7 +120,22 @@ const attachmentRoutes = {
     description: `Proxies requests to ElectricSQL\'s shape endpoint for the \`attachments\` table.
       Used by clients to synchronize local data with server state via the shape log system.
       This endpoint ensures required query parameters are forwarded and response headers are adjusted for browser compatibility.`,
-    request: { params: inOrgParamSchema },
+    request: {
+      query: minimalElectrycSyncQuery.extend({
+        offlinePrefetch: z
+          .union([z.string(), z.boolean()])
+          .optional()
+          .transform((val) => {
+            if (typeof val === 'boolean') return val;
+            if (typeof val === 'string') {
+              return val === 'true' || val === '1';
+            }
+            return false;
+          })
+          .default(false),
+      }),
+      params: inOrgParamSchema,
+    },
     responses: {
       200: {
         description: 'Success',
