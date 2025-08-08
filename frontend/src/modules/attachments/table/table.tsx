@@ -26,7 +26,7 @@ const BaseDataTable = memo(
     const attachmentCollection = getAttachmentsCollection(orgIdOrSlug);
     const localAttachmentCollection = getLocalAttachmentsCollection(orgIdOrSlug);
 
-    //TODO (TanStackDB) reduse re-renders will fix (ERR_INSUFFICIENT_RESOURCES)
+    //TODO (TanStackDB) Add drop of sync on component unmount
     const { data, isLoading } = useLiveQuery(
       (query) => {
         let qBuilder = query.from({ attachments: attachmentCollection });
