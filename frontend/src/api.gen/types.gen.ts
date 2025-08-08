@@ -3457,7 +3457,7 @@ export type ShapeProxyData = {
   query: {
     table: string;
     offset: string;
-    handle: string;
+    handle?: string;
     cursor?: string;
     live?: string;
     where?: string;

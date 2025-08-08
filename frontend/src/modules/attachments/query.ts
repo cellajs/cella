@@ -171,14 +171,19 @@ export const getLocalAttachmentsCollection = (organizationId: string): Collectio
 
         const groupId = files.length > 1 ? nanoid() : null;
 
-        return files.map(({ size, preview, id, type, data, meta }) => {
+        return files.map((file) => {
+          const name = file.name || file.meta.name;
+          const filename = `${name}.${file.extension}`;
+
+          const size = file.size ? String(file.size) : String(file.data.size);
+
           return {
-            id,
-            filename: meta?.name || 'Unnamed file',
-            name: meta.name,
-            content_type: type,
-            size: size ? String(size) : String(data.size),
-            original_key: preview ?? '',
+            id: file.id,
+            filename,
+            name,
+            content_type: file.type,
+            size,
+            original_key: file.preview ?? '',
             thumbnail_key: null,
             converted_key: null,
             converted_content_type: null,

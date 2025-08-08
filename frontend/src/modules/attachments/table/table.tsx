@@ -91,8 +91,16 @@ const BaseDataTable = memo(
     // Update rows
     const onRowsChange = (changedRows: LiveQueryAttachment[], { column }: RowsChangeData<LiveQueryAttachment>) => {
       if (column.key !== 'name') return;
-      for (const changedRow of changedRows) {
+      const attachmentCollectionRows = changedRows.filter(({ id }) => attachmentCollection.has(id));
+      const localAttachmentCollectionRows = changedRows.filter(({ id }) => localAttachmentCollection.has(id));
+
+      for (const changedRow of attachmentCollectionRows) {
         attachmentCollection.update(changedRow.id, (draft) => {
+          draft.name = changedRow.name;
+        });
+      }
+      for (const changedRow of localAttachmentCollectionRows) {
+        localAttachmentCollection.update(changedRow.id, (draft) => {
           draft.name = changedRow.name;
         });
       }
@@ -100,8 +108,7 @@ const BaseDataTable = memo(
 
     const onSelectedRowsChange = (value: Set<string>) => {
       setSelectedRows(value);
-      // setSelected(rows.filter((row) => value.has(row.id)));
-      setSelected(combined.filter((row) => value.has(row.id)));
+      setSelected(rows.filter((row) => value.has(row.id)));
     };
 
     const onSortColumnsChange = (sortColumns: SortColumn[]) => {

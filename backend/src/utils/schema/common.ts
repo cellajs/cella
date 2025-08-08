@@ -163,7 +163,7 @@ export const validDomainsSchema = z
 export const minimalElectrycSyncQuery = z.object({
   table: z.string(),
   offset: z.string(),
-  handle: z.string(),
+  handle: z.string().optional(),
   cursor: z.string().optional(),
   live: z.string().optional(),
   where: z.string().optional(),

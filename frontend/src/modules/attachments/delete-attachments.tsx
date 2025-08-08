@@ -20,6 +20,7 @@ const DeleteAttachments = ({ entity, attachments, callback, dialog: isDialog }: 
 
   const { collection: attachmentCollection } = getAttachmentsCollection(orgIdOrSlug);
   const localAttachmentCollection = getLocalAttachmentsCollection(orgIdOrSlug);
+  localAttachmentCollection.startSyncImmediate();
 
   const onDelete = async () => {
     const localDeletionIds: string[] = [];

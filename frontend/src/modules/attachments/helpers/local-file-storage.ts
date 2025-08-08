@@ -73,11 +73,14 @@ export const LocalFileStorage = {
   async changeFile(fileId: string, newData: Partial<CustomUppyFile>): Promise<void> {
     try {
       const storageKeys = await keys();
-      if (!storageKeys.length) return undefined;
+      if (!storageKeys.length) return;
+
       for (const groupKey of storageKeys) {
         const group = await get<StoredOfflineData>(groupKey);
-        if (!group) return undefined;
+        if (!group || !group.files || !group.files[fileId]) continue;
+
         group.files[fileId] = { ...group.files[fileId], ...newData };
+        await set(groupKey, group);
       }
     } catch (error) {
       Sentry.captureException(error);

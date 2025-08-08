@@ -14,6 +14,7 @@ export const useLocalSyncAttachments = (organizationId: string) => {
 
   const { collection: attachmentCollection } = getAttachmentsCollection(organizationId);
   const localAttachmentCollection = getLocalAttachmentsCollection(organizationId);
+  localAttachmentCollection.startSyncImmediate();
 
   const { getData: fetchStoredFiles, setSyncStatus: updateStoredFilesSyncStatus } = LocalFileStorage;
 

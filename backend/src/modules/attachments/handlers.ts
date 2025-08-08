@@ -47,8 +47,8 @@ const attachmentsRouteHandlers = app
     // Copy over the relevant query params that the Electric client adds
     // so that we return the right part of the Shape log.
     originUrl.searchParams.set('live', offlinePrefetch ? 'false' : (live ?? 'false'));
-    originUrl.searchParams.set('handle', handle);
     originUrl.searchParams.set('offset', offset);
+    if (handle) originUrl.searchParams.set('handle', handle);
     if (cursor) originUrl.searchParams.set('cursor', cursor);
     if (where) originUrl.searchParams.set('where', where);
 

@@ -9,12 +9,12 @@ import { useColumns } from '~/modules/attachments/table/columns';
 import BaseDataTable from '~/modules/attachments/table/table';
 import { AttachmentsTableBar } from '~/modules/attachments/table/table-bar';
 import type { LiveQueryAttachment } from '~/modules/attachments/types';
+import { useLocalSyncAttachments } from '~/modules/attachments/use-local-sync-attachments';
 import { AlertWrap } from '~/modules/common/alert-wrap';
 import { useSortColumns } from '~/modules/common/data-table/sort-columns';
 import type { BaseTableMethods } from '~/modules/common/data-table/types';
 import type { EntityPage } from '~/modules/entities/types';
 import type { attachmentsSearchSchema } from '~/routes/organizations';
-import { useLocalSyncAttachments } from '../use-local-sync-attachments';
 
 const LIMIT = appConfig.requestLimits.attachments;
 

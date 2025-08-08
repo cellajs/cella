@@ -14,6 +14,7 @@ export const useAttachmentsUploadDialog = () => {
   const open = (organizationId: string) => {
     const { collection: attachmentCollection } = getAttachmentsCollection(organizationId);
     const localAttachmentCollection = getLocalAttachmentsCollection(organizationId);
+    localAttachmentCollection.startSyncImmediate();
 
     const onComplete = (result: UploadedUppyFile<'attachment'>) => {
       const attachments = parseUploadedAttachments(result, organizationId);

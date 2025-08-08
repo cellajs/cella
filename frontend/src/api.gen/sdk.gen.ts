@@ -1721,7 +1721,7 @@ export const getPublicCounts = <ThrowOnError extends boolean = true>(options?: O
  * @param {string | string} options.path.orgidorslug - `string | string`
  * @param {string} options.query.table - `string`
  * @param {string} options.query.offset - `string`
- * @param {string} options.query.handle - `string`
+ * @param {string=} options.query.handle - `string` (optional)
  * @param {string=} options.query.cursor - `string` (optional)
  * @param {string=} options.query.live - `string` (optional)
  * @param {string=} options.query.where - `string` (optional)
