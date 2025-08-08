@@ -11,23 +11,27 @@ export type CommitEntry = {
   date: string;
 };
 
-export type CommitHistorySummary = {
+export type CommitSummary = {
   status: 'upToDate' | 'ahead' | 'behind' | 'diverged' | 'unrelated';
   commitsAhead: number;
   commitsBehind: number;
   sharedAncestorSha?: string;
   lastSyncedAt?: string;
-  commitHistoryCoverage: 'complete' | 'partial' | 'unknown';
+  historyCoverage: 'complete' | 'partial' | 'unknown';
+};
+
+export type MergeRisk = {
+  likelihood: 'low' | 'medium' | 'high';
+  reason: 'identical' | 'blobMismatch' | 'missingInFork' | 'divergedContent' | 'unrelatedHistories' | 'unknown';
+  safeByGit: boolean;
+  check: 'none' | 'gitAutoMerge' | 'verifyAncestor' | 'addedOrRemoved' | 'threeWayMergeCheck';
 };
 
 export type FileAnalysis = {
   filePath: string;
   boilerplateFile: FileEntry;
   forkFile?: FileEntry;
-  commitHistorySummary?: CommitHistorySummary;
+  CommitSummary?: CommitSummary;
   blobStatus?: 'identical' | 'different' | 'missing';
-  mergeRiskLikelihood?: 'low' | 'medium' | 'high';
-  mergeRiskReason?: 'identical' | 'blobMismatch' | 'missingInFork' | 'divergedContent' | 'unrelatedHistories' | 'unknown';
-  mergeRiskSafeByGit?: boolean;
-  mergeRiskCheck?: 'none' | 'gitAutoMerge' | 'verifyAncestor' | 'addedOrRemoved' | 'threeWayMergeCheck';
+  mergeRisk?: MergeRisk
 }

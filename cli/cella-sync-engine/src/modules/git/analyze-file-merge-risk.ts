@@ -1,4 +1,4 @@
-import { CommitHistorySummary, FileAnalysis } from '../../types';
+import { CommitSummary, FileAnalysis, MergeRisk } from '../../types';
 
 /**
  * Quick analysis of file merge conflict risk based on commit and blob status.
@@ -11,14 +11,9 @@ import { CommitHistorySummary, FileAnalysis } from '../../types';
  * @returns Merge risk evaluation object.
  */
 export function analyzeFileMergeRisk(
-  commitStatus: CommitHistorySummary['status'],
+  commitStatus: CommitSummary['status'],
   blobStatus: FileAnalysis['blobStatus']
-): {
-  likelihood: FileAnalysis['mergeRiskLikelihood'];
-  reason: FileAnalysis['mergeRiskReason'];
-  safeByGit: FileAnalysis['mergeRiskSafeByGit'];
-  check: FileAnalysis['mergeRiskCheck'];
-} {
+): MergeRisk {
 
   const isBlobIdentical = blobStatus === 'identical';
   const isBlobDifferent = blobStatus === 'different';

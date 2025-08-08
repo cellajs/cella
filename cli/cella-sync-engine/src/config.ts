@@ -18,36 +18,25 @@ export type RepoConfig = {
   repo: string;      // required if use === 'remote'
 };
 
-/**
- * Determines the verbosity and filtering behavior of logging during file sync analysis.
- *
- * - `full`: Logs everything, including up-to-date files.
- * - `summaryOnly`: Logs only the summary (no per-file logs).
- * - `relevantOnly`: Logs only files that are not clearly in sync (e.g., non-upToDate, medium/high conflict).
- * - `conflictsOnly`: Logs only files with real or likely conflicts.
- * - `none`: No logging output at all.
- */
-export type LogMode =
-  | 'full'
-  | 'summaryOnly'
-  | 'relevantOnly'
-  | 'conflictsOnly'
-  | 'none';
+export type Log = {
+  analyzedFile: {
+    commitSummaryState?: string[];
+    mergeRiskSafeByGit?: boolean;
+  }
+}
 
-/**
- * Defines how log output should be controlled during analysis.
- *
- * @property mode - The logging verbosity/filtering mode.
- */
-export type LogConfig = {
-  mode: LogMode;
-};
-
-/**
- * Global configuration for logging behavior during sync analysis.
- */
-export const logConfig: LogConfig = {
-  mode: 'relevantOnly',
+export const logConfig: Log = {
+  analyzedFile: {
+    // commitSummaryState: [
+    //   "upToDate",
+    //   "ahead",
+    //   "behind",
+    //   "diverged",
+    //   "unrelated",
+    //   "unknown",
+    // ],
+    mergeRiskSafeByGit: false, // If true, will log files that are safe by Git
+  }
 };
 
 /**
