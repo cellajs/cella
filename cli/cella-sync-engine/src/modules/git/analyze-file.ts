@@ -2,7 +2,7 @@ import { RepoConfig } from '../../config';
 import { FileAnalysis, FileEntry } from '../../types';
 import { analyzeFileCommitHistory } from './analyze-file-commit-history';
 import { analyzeFileBlob } from './analyze-file-blob';
-import { analyzeFileConflict } from './analyze-file-conflict';
+import { analyzeFileMergeRisk } from './analyze-file-merge-risk';
 
 export async function analyzeFile(
   boilerplate: RepoConfig,
@@ -13,7 +13,7 @@ export async function analyzeFile(
   const filePath = boilerplateFile.path;
   const commitHistorySummary = await analyzeFileCommitHistory(boilerplate, fork, filePath);
   const blobStatus = analyzeFileBlob(boilerplateFile, forkFile);
-  const conflict = analyzeFileConflict(commitHistorySummary.status, blobStatus);
+  const mergeRisk = analyzeFileMergeRisk(commitHistorySummary.status, blobStatus);
 
   return {
     filePath,
@@ -21,7 +21,8 @@ export async function analyzeFile(
     forkFile,
     commitHistorySummary,
     blobStatus,
-    conflictLikelihood: conflict.likelihood,
-    conflictReason: conflict.reason,
+    mergeRiskLikelihood: mergeRisk.likelihood,
+    mergeRiskReason: mergeRisk.reason,
+    mergeRiskSafeByGit: mergeRisk.safeByGit,
   };
 }
