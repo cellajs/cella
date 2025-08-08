@@ -1,13 +1,9 @@
-import { t } from 'i18next';
-import { deleteAttachments } from '~/api.gen';
 import { isFileLocal } from '~/modules/attachments/helpers/is-local-file';
 import { getAttachmentsCollection, getLocalAttachmentsCollection } from '~/modules/attachments/query';
 import type { LiveQueryAttachment } from '~/modules/attachments/types';
-import { useTransaction } from '~/modules/attachments/use-transaction';
 import type { CallbackArgs } from '~/modules/common/data-table/types';
 import { DeleteForm } from '~/modules/common/delete-form';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
-import { toaster } from '~/modules/common/toaster';
 import type { EntityPage } from '~/modules/entities/types';
 
 interface Props {
@@ -23,25 +19,7 @@ const DeleteAttachments = ({ entity, attachments, callback, dialog: isDialog }: 
   const orgIdOrSlug = entity.membership?.organizationId || entity.id;
 
   const attachmentCollection = getAttachmentsCollection(orgIdOrSlug);
-  attachmentCollection.startSyncImmediate();
-
   const localAttachmentCollection = getLocalAttachmentsCollection(orgIdOrSlug);
-  localAttachmentCollection.startSyncImmediate();
-
-  const deleteAttachmens = useTransaction<LiveQueryAttachment[]>({
-    mutationFn: async ({ transaction }) => {
-      const ids: string[] = [];
-      for (const { changes } of transaction.mutations) {
-        if (changes && 'id' in changes && typeof changes.id === 'string') ids.push(changes.id);
-      }
-      try {
-        await deleteAttachments({ body: { ids }, path: { orgIdOrSlug } });
-      } catch (err) {
-        if (ids.length > 1) toaster(t('error:delete_resources', { resources: t('common:attachments') }), 'error');
-        else toaster(t('error:delete_resource', { resource: t('common:attachment') }), 'error');
-      }
-    },
-  });
 
   const onDelete = async () => {
     const localDeletionIds: string[] = [];
@@ -52,7 +30,7 @@ const DeleteAttachments = ({ entity, attachments, callback, dialog: isDialog }: 
       else serverDeletionIds.push(attachment.id);
     }
 
-    if (serverDeletionIds.length) deleteAttachmens.mutate(() => attachmentCollection.delete(serverDeletionIds));
+    if (serverDeletionIds.length) attachmentCollection.delete(serverDeletionIds);
     if (localDeletionIds.length) localAttachmentCollection.delete(localDeletionIds);
 
     if (isDialog) removeDialog();

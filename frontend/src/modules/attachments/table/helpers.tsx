@@ -1,12 +1,8 @@
 import { onlineManager } from '@tanstack/react-query';
 import { appConfig } from 'config';
 import { t } from 'i18next';
-import { createAttachment } from '~/api.gen';
 import { parseUploadedAttachments } from '~/modules/attachments/helpers/parse-uploaded';
 import { getAttachmentsCollection, getLocalAttachmentsCollection } from '~/modules/attachments/query';
-import type { AttachmentToInsert, LiveQueryAttachment } from '~/modules/attachments/types';
-import { useTransaction } from '~/modules/attachments/use-transaction';
-import { toaster } from '~/modules/common/toaster';
 import type { UploadedUppyFile } from '~/modules/common/uploader/types';
 import { useUploader } from '~/modules/common/uploader/use-uploader';
 import { nanoid } from '~/utils/nanoid';
@@ -15,23 +11,9 @@ const maxNumberOfFiles = 20;
 const maxTotalFileSize = maxNumberOfFiles * appConfig.uppy.defaultRestrictions.maxFileSize; // for maxNumberOfFiles files at 10MB max each
 
 export const useAttachmentsUploadDialog = () => {
-  const createAttachmens = useTransaction<LiveQueryAttachment>({
-    mutationFn: async ({ transaction }) => {
-      const { orgIdOrSlug, attachments } = transaction.metadata as { orgIdOrSlug: string; attachments: (AttachmentToInsert & { id: string })[] };
-      try {
-        await createAttachment({ body: attachments, path: { orgIdOrSlug } });
-      } catch {
-        toaster(t('error:create_resource', { resource: t('common:attachment') }), 'error');
-      }
-    },
-  });
-
   const open = (organizationId: string) => {
     const attachmentCollection = getAttachmentsCollection(organizationId);
-    attachmentCollection.startSyncImmediate();
-
     const localAttachmentCollection = getLocalAttachmentsCollection(organizationId);
-    localAttachmentCollection.startSyncImmediate();
 
     const onComplete = (result: UploadedUppyFile<'attachment'>) => {
       const attachments = parseUploadedAttachments(result, organizationId);
@@ -59,10 +41,8 @@ export const useAttachmentsUploadDialog = () => {
         };
       });
 
-      if (onlineManager.isOnline()) {
-        createAttachmens.metadata = { orgIdOrSlug: organizationId, attachments };
-        createAttachmens.mutate(() => attachmentCollection.insert(tableAttachmetns));
-      } else localAttachmentCollection.insert(tableAttachmetns);
+      if (onlineManager.isOnline()) attachmentCollection.insert(tableAttachmetns, { metadata: { attachments } });
+      else localAttachmentCollection.insert(tableAttachmetns);
 
       useUploader.getState().remove();
     };

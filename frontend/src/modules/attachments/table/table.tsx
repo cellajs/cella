@@ -3,17 +3,14 @@ import { Paperclip } from 'lucide-react';
 import { forwardRef, memo, useEffect, useImperativeHandle, useMemo, useState } from 'react';
 import type { RowsChangeData, SortColumn } from 'react-data-grid';
 import { useTranslation } from 'react-i18next';
-import { updateAttachment } from '~/api.gen';
 import useOfflineTableSearch from '~/hooks/use-offline-table-search';
 import { getAttachmentsCollection, getLocalAttachmentsCollection } from '~/modules/attachments/query';
 import type { AttachmentSearch, AttachmentsTableProps } from '~/modules/attachments/table/table-wrapper';
 import type { LiveQueryAttachment } from '~/modules/attachments/types';
-import { useTransaction } from '~/modules/attachments/use-transaction';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { DataTable } from '~/modules/common/data-table';
 import { tablePropsAreEqual } from '~/modules/common/data-table/table-props-are-equal';
 import type { BaseTableMethods, BaseTableProps } from '~/modules/common/data-table/types';
-import { toaster } from '~/modules/common/toaster';
 
 type BaseDataTableProps = AttachmentsTableProps & BaseTableProps<LiveQueryAttachment, AttachmentSearch>;
 
@@ -25,10 +22,11 @@ const BaseDataTable = memo(
 
     const { q, sort, order, limit } = searchVars;
     const orgIdOrSlug = entity.membership?.organizationId || entity.id;
+
     const attachmentCollection = getAttachmentsCollection(orgIdOrSlug);
     const localAttachmentCollection = getLocalAttachmentsCollection(orgIdOrSlug);
 
-    //TODO (TanStackDB) reduse re-renders
+    //TODO (TanStackDB) reduse re-renders will fix (ERR_INSUFFICIENT_RESOURCES)
     const { data, isLoading } = useLiveQuery(
       (query) => {
         let qBuilder = query.from({ attachments: attachmentCollection });
@@ -71,26 +69,6 @@ const BaseDataTable = memo(
       });
     }, [data, local, sort, order]);
 
-    const updateAttachmentName = useTransaction<LiveQueryAttachment>({
-      mutationFn: async ({ transaction }) => {
-        await Promise.all(
-          transaction.mutations.map(async ({ type, changes, original }) => {
-            try {
-              if (!changes.name || type !== 'update') return;
-              const originalAttachment = original as LiveQueryAttachment;
-
-              await updateAttachment({
-                body: { name: changes.name },
-                path: { id: originalAttachment.id, orgIdOrSlug: originalAttachment.organization_id },
-              });
-            } catch {
-              toaster(t('error:update_resource', { resource: t('common:attachment') }), 'error');
-            }
-          }),
-        );
-      },
-    });
-
     const rows = useOfflineTableSearch({
       data: combined,
       filterFn: ({ q }, item) => {
@@ -103,13 +81,10 @@ const BaseDataTable = memo(
 
     // Update rows
     const onRowsChange = (changedRows: LiveQueryAttachment[], { column }: RowsChangeData<LiveQueryAttachment>) => {
-      if (column.key === 'name') {
-        updateAttachmentName.mutate(() => {
-          for (const changedRow of changedRows) {
-            attachmentCollection.update(changedRow.id, (draft) => {
-              draft.name = changedRow.name;
-            });
-          }
+      if (column.key !== 'name') return;
+      for (const changedRow of changedRows) {
+        attachmentCollection.update(changedRow.id, (draft) => {
+          draft.name = changedRow.name;
         });
       }
     };

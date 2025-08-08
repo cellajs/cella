@@ -1,15 +1,11 @@
 import { appConfig } from 'config';
-import { t } from 'i18next';
 import { nanoid } from 'nanoid';
 import { useEffect, useRef } from 'react';
-import { createAttachment } from '~/api.gen';
 import { useOnlineManager } from '~/hooks/use-online-manager';
 import { LocalFileStorage } from '~/modules/attachments/helpers/local-file-storage';
 import { parseUploadedAttachments } from '~/modules/attachments/helpers/parse-uploaded';
 import { getAttachmentsCollection, getLocalAttachmentsCollection } from '~/modules/attachments/query';
-import type { AttachmentToInsert, LiveQueryAttachment } from '~/modules/attachments/types';
-import { useTransaction } from '~/modules/attachments/use-transaction';
-import { toaster } from '~/modules/common/toaster';
+import type { AttachmentToInsert } from '~/modules/attachments/types';
 import { createBaseTransloaditUppy } from '~/modules/common/uploader/helpers';
 import type { UploadedUppyFile } from '~/modules/common/uploader/types';
 
@@ -17,55 +13,38 @@ export const useLocalSyncAttachments = (organizationId: string) => {
   const { isOnline } = useOnlineManager();
 
   const attachmentCollection = getAttachmentsCollection(organizationId);
-  attachmentCollection.startSyncImmediate();
-
   const localAttachmentCollection = getLocalAttachmentsCollection(organizationId);
-  localAttachmentCollection.startSyncImmediate();
-
-  const createAttachmens = useTransaction<LiveQueryAttachment>({
-    mutationFn: async ({ transaction }) => {
-      const { orgIdOrSlug, attachments } = transaction.metadata as { orgIdOrSlug: string; attachments: (AttachmentToInsert & { id: string })[] };
-      try {
-        await createAttachment({ body: attachments, path: { orgIdOrSlug } });
-      } catch {
-        toaster(t('error:create_resource', { resource: t('common:attachment') }), 'error');
-      }
-    },
-  });
 
   const { getData: fetchStoredFiles, setSyncStatus: updateStoredFilesSyncStatus } = LocalFileStorage;
 
   const isSyncingRef = useRef(false); // Prevent double trigger
 
   const onComplete = async (attachments: AttachmentToInsert[], storedIds: string[]) => {
-    createAttachmens.mutate(() => {
-      const tableAttachmetns = attachments.map((a) => {
-        const optimisticId = a.id || nanoid();
-        const groupId = attachments.length > 1 ? nanoid() : null;
+    const tableAttachmetns = attachments.map((a) => {
+      const optimisticId = a.id || nanoid();
+      const groupId = attachments.length > 1 ? nanoid() : null;
 
-        return {
-          id: optimisticId,
-          filename: a.filename,
-          name: a.filename.split('.').slice(0, -1).join('.'),
-          content_type: a.contentType,
-          size: a.size,
-          original_key: a.originalKey,
-          thumbnail_key: a.thumbnailKey ?? null,
-          converted_key: a.convertedKey ?? null,
-          converted_content_type: a.convertedContentType ?? null,
-          entity_type: 'attachment' as const,
-          created_at: new Date().toISOString(),
-          created_by: null,
-          modified_at: null,
-          modified_by: null,
-          group_id: groupId,
-          organization_id: organizationId,
-        };
-      });
-
-      createAttachmens.metadata = { orgIdOrSlug: organizationId, attachments };
-      attachmentCollection.insert(tableAttachmetns);
+      return {
+        id: optimisticId,
+        filename: a.filename,
+        name: a.filename.split('.').slice(0, -1).join('.'),
+        content_type: a.contentType,
+        size: a.size,
+        original_key: a.originalKey,
+        thumbnail_key: a.thumbnailKey ?? null,
+        converted_key: a.convertedKey ?? null,
+        converted_content_type: a.convertedContentType ?? null,
+        entity_type: 'attachment' as const,
+        created_at: new Date().toISOString(),
+        created_by: null,
+        modified_at: null,
+        modified_by: null,
+        group_id: groupId,
+        organization_id: organizationId,
+      };
     });
+
+    attachmentCollection.insert(tableAttachmetns, { metadata: { attachments } });
 
     // Clean up offline files from IndexedDB
     localAttachmentCollection.delete(storedIds);

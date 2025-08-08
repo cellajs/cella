@@ -3,14 +3,16 @@ import { queryCollectionOptions } from '@tanstack/query-db-collection';
 import { type Collection, createCollection } from '@tanstack/react-db';
 import { queryOptions } from '@tanstack/react-query';
 import { appConfig } from 'config';
-import { type GetAttachmentsGroupData, getAttachmentsGroup } from '~/api.gen';
+import { t } from 'i18next';
+import { createAttachment, deleteAttachments, getAttachmentsGroup, type GetAttachmentsGroupData, updateAttachment } from '~/api.gen';
 import { clientConfig } from '~/lib/api';
 import { LocalFileStorage } from '~/modules/attachments/helpers/local-file-storage';
-import type { LiveQueryAttachment } from '~/modules/attachments/types';
+import type { AttachmentToInsert, LiveQueryAttachment } from '~/modules/attachments/types';
 import type { CustomUppyFile } from '~/modules/common/uploader/types';
 import { queryClient } from '~/query/query-client';
 import { baseBackoffOptions as backoffOptions, handleSyncError } from '~/utils/electric-utils';
 import { nanoid } from '~/utils/nanoid';
+import { toaster } from '../common/toaster';
 /**
  * Keys for attachments related queries. These keys help to uniquely identify different query.
  * For managing query caching and invalidation.
@@ -41,6 +43,7 @@ export const groupedAttachmentsQueryOptions = ({
     gcTime: 0,
   });
 
+//TODO (TanStackDB) make optimistic updates work offline
 export const getAttachmentsCollection = (organizationId: string): Collection<LiveQueryAttachment> => {
   const params = {
     table: 'attachments',
@@ -58,6 +61,52 @@ export const getAttachmentsCollection = (organizationId: string): Collection<Liv
         onError: (error) => handleSyncError(error, params),
       },
       getKey: (item) => item.id,
+      onInsert: async ({ transaction }) => {
+        const { attachments } = transaction.mutations[0].metadata as {
+          attachments: (AttachmentToInsert & { id: string })[];
+        };
+        try {
+          await createAttachment({ body: attachments, path: { orgIdOrSlug: organizationId } });
+        } catch {
+          toaster(t('error:create_resource', { resource: t('common:attachment') }), 'error');
+        }
+        return { txid: Date.now() };
+      },
+      onUpdate: async ({ transaction }) => {
+        const results: number[] = [];
+
+        await Promise.all(
+          transaction.mutations.map(async ({ type, changes, original }) => {
+            try {
+              if (!changes.name || type !== 'update') return;
+              const originalAttachment = original as LiveQueryAttachment;
+
+              await updateAttachment({
+                body: { name: changes.name },
+                path: { id: originalAttachment.id, orgIdOrSlug: originalAttachment.organization_id },
+              });
+
+              results.push(Date.now()); // Use timestamp as txid
+            } catch {
+              toaster(t('error:update_resource', { resource: t('common:attachment') }), 'error');
+            }
+          }),
+        );
+        return { txid: results };
+      },
+      onDelete: async ({ transaction }) => {
+        const ids: string[] = [];
+        for (const { changes } of transaction.mutations) {
+          if (changes && 'id' in changes && typeof changes.id === 'string') ids.push(changes.id);
+        }
+        try {
+          await deleteAttachments({ body: { ids }, path: { orgIdOrSlug: organizationId } });
+        } catch (err) {
+          if (ids.length > 1) toaster(t('error:delete_resources', { resources: t('common:attachments') }), 'error');
+          else toaster(t('error:delete_resource', { resource: t('common:attachment') }), 'error');
+        }
+        return { txid: Date.now() };
+      },
     }),
   );
 };
