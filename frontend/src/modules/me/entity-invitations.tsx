@@ -14,7 +14,7 @@ import { getEntityRoute } from '~/nav-config';
 import { queryClient } from '~/query/query-client';
 import { useUserStore } from '~/store/user';
 import { dateShort } from '~/utils/date-short';
-import { toaster } from '../common/toaster';
+import { toaster } from '~/modules/common/toaster';
 
 export const EntityInvites = () => {
   const { t } = useTranslation();

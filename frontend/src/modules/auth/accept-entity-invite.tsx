@@ -13,7 +13,7 @@ import { getEntityRoute } from '~/nav-config';
 import { AcceptEntityInviteRoute } from '~/routes/auth';
 import { useUserStore } from '~/store/user';
 import { cn } from '~/utils/cn';
-import { toaster } from '../common/toaster';
+import { toaster } from '~/modules/common/toaster';
 
 // Accept entity invitation when user is signed in
 const AcceptEntityInvite = () => {

@@ -7,7 +7,7 @@ import type { ApiError } from '~/lib/api';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { Button, SubmitButton } from '~/modules/ui/button';
 import { Input } from '~/modules/ui/input';
-import { toaster } from '../common/toaster';
+import { toaster } from '~/modules/common/toaster';
 
 export const RequestPasswordForm = ({ email = '' }: { email?: string }) => {
   const { t } = useTranslation();
