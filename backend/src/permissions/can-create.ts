@@ -1,7 +1,7 @@
-import { getContextMemberships, getContextOrganization } from '#/lib/context';
+import { getContextMemberships, getContextOrganization, getContextUser } from '#/lib/context';
 import type { EntityModel } from '#/lib/entity';
 import { AppError } from '#/lib/errors';
-import { checkPermission } from '#/permissions/check-if-allowed';
+import permissionManager from '#/permissions/permissions-config';
 import type { ContextEntityType, ProductEntityType } from 'config';
 
 /**
@@ -9,17 +9,21 @@ import type { ContextEntityType, ProductEntityType } from 'config';
  *
  * This is separate from read/update/delete checks, since the entity may not exist yet.
  *
- * @param entity - Entity the user wants to create.
- * @returns Error object or `null` if no error occurred.
+ * @param entity - Entity that user wants to create.
  */
 export const canCreateEntity = <K extends Exclude<ContextEntityType, 'organization'> | ProductEntityType>(entity: EntityModel<K>) => {
-  const { entityType } = entity;
-  const org = getContextOrganization();
+  const { role } = getContextUser();
   const memberships = getContextMemberships();
 
+  const { entityType } = entity;
+  const isSystemAdmin = role === 'admin';
+
   // Step 1: Permission check
-  const isAllowed = checkPermission(memberships, 'create', entity);
-  if (!isAllowed) throw new AppError({ status: 403, type: 'forbidden', severity: 'warn', entityType });
+  const isAllowed = permissionManager.isPermissionAllowed(memberships, 'create', entity);
+
+  if (!isAllowed && !isSystemAdmin) throw new AppError({ status: 403, type: 'forbidden', severity: 'warn', entityType });
+
+  const org = getContextOrganization();
 
   // Step 2: Organization ownership check
   if (org && 'organizationId' in entity && entity.organizationId !== org.id) {
