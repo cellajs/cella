@@ -4,7 +4,7 @@ import { t } from 'i18next';
 import { Loader2, TriangleAlert } from 'lucide-react';
 import * as React from 'react';
 import { useOnlineManager } from '~/hooks/use-online-manager';
-import { toaster } from '~/modules/common/toaster';
+import { toaster } from '~/modules/common/toaster/service';
 import { TooltipButton } from '~/modules/common/tooltip-button';
 import { cn } from '~/utils/cn';
 

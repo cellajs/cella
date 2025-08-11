@@ -8,7 +8,7 @@ import { useBeforeUnload } from '~/hooks/use-before-unload';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
 import Spinner from '~/modules/common/spinner';
-import { toaster } from '~/modules/common/toaster';
+import { toaster } from '~/modules/common/toaster/service';
 import { useOrganizationUpdateMutation } from '~/modules/organizations/query';
 import type { Organization } from '~/modules/organizations/types';
 import { Button, SubmitButton } from '~/modules/ui/button';

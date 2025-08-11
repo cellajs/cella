@@ -7,13 +7,13 @@ import { acceptEntityInvite } from '~/api.gen';
 import AuthErrorNotice from '~/modules/auth/auth-error-notice';
 import { useCheckToken } from '~/modules/auth/use-token-check';
 import Spinner from '~/modules/common/spinner';
+import { toaster } from '~/modules/common/toaster/service';
 import { getAndSetMenu } from '~/modules/me/helpers';
 import { buttonVariants, SubmitButton } from '~/modules/ui/button';
 import { getEntityRoute } from '~/nav-config';
 import { AcceptEntityInviteRoute } from '~/routes/auth';
 import { useUserStore } from '~/store/user';
 import { cn } from '~/utils/cn';
-import { toaster } from '~/modules/common/toaster';
 
 // Accept entity invitation when user is signed in
 const AcceptEntityInvite = () => {

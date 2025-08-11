@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { FocusViewContainer } from '~/modules/common/focus-view';
 import { PageHeader } from '~/modules/common/page/header';
 import { PageNav, type PageTab } from '~/modules/common/page/nav';
-import { toaster } from '~/modules/common/toaster';
+import { toaster } from '~/modules/common/toaster/service';
 import { organizationQueryOptions, useOrganizationUpdateMutation } from '~/modules/organizations/query';
 import { OrganizationRoute } from '~/routes/organizations';
 import { useUserStore } from '~/store/user';
