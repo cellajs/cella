@@ -1,5 +1,7 @@
-import { exec } from 'child_process';
+import { exec, execFile } from 'child_process';
 import { promisify } from 'util';
+
+const execFileAsync = promisify(execFile);
 
 const execAsync = promisify(exec);
 
@@ -46,4 +48,20 @@ export async function gitLogFileHistory(repoPath: string, branchName: string, fi
 export async function gitCommit(repoPath: string, message: string, options?: { noVerify?: boolean }): Promise<string> {
   const noVerifyFlag = options?.noVerify ? '--no-verify' : '';
   return runGitCommand(`commit ${noVerifyFlag} -m "${message}"`, repoPath);
+}
+
+export async function gitShowFileAtCommit(repoPath: string, commitSha: string, filePath: string): Promise<string> {
+  return runGitCommand(`show ${commitSha}:${filePath}`, repoPath);
+}
+
+/**
+ * Runs `git merge-file --quiet ours base theirs` to check if the file can be auto-merged.
+ *
+ * @param oursPath - Path to "ours" file
+ * @param basePath - Path to "base" file (common ancestor)
+ * @param theirsPath - Path to "theirs" file
+ */
+export async function gitMergeFile(oursPath: string, basePath: string, theirsPath: string): Promise<void> {
+  // Throws if merge conflicts occur (exit code 1)
+  await execFileAsync('git', ['merge-file', '--quiet', oursPath, basePath, theirsPath]);
 }

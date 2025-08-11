@@ -27,11 +27,18 @@ export type MergeRisk = {
   check: 'none' | 'gitAutoMerge' | 'verifyAncestor' | 'addedOrRemoved' | 'threeWayMergeCheck';
 };
 
+export type MergeCheck = {
+  couldRun: boolean;
+  reason: 'missingFork' | 'unrelatedHistory' | 'binaryFile' | 'none' | 'conflict' | 'unkown';
+  automergeable: boolean;
+}
+
 export type FileAnalysis = {
   filePath: string;
   boilerplateFile: FileEntry;
   forkFile?: FileEntry;
-  CommitSummary?: CommitSummary;
+  commitSummary?: CommitSummary;
   blobStatus?: 'identical' | 'different' | 'missing';
-  mergeRisk?: MergeRisk
+  mergeRisk?: MergeRisk;
+  mergeCheck?: MergeCheck;
 }
