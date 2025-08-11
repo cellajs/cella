@@ -1,9 +1,9 @@
-import { appConfig, type ContextEntityType, type ProductEntityType } from 'config';
 import { getContextMemberships, getContextOrganization, getContextUser } from '#/lib/context';
 import { type EntityModel, resolveEntity } from '#/lib/entity';
 import { AppError } from '#/lib/errors';
 import { checkPermission } from '#/permissions/check-if-allowed';
 import type { PermittedAction } from '#/permissions/permissions-config';
+import { appConfig, type ContextEntityType, type ProductEntityType } from 'config';
 
 /**
  * Checks if user has permission to perform an action on a product entity.
@@ -45,12 +45,12 @@ export const getValidProductEntity = async <K extends ProductEntityType>(
 
   const membership = memberships.find((m) => m.contextType === contextEntityType && m[entityIdField] === entityId) || null;
 
-  if (!membership && !isSystemAdmin) throw new AppError({ status: 400, type: 'invalid_request', severity: 'error', entityType });
+  if (!membership && !isSystemAdmin) throw new AppError({ status: 403, type: 'missing_membership', severity: 'error', entityType });
 
   // Step 4: Organization check
   const org = getContextOrganization();
   if (membership?.organizationId && org && membership.organizationId !== org.id) {
-    throw new AppError({ status: 400, type: 'invalid_request', severity: 'error', entityType });
+    throw new AppError({ status: 409, type: 'organization_mismatch', severity: 'error', entityType });
   }
   return entity;
 };

@@ -1,8 +1,8 @@
-import type { ContextEntityType, ProductEntityType } from 'config';
 import { getContextMemberships, getContextOrganization } from '#/lib/context';
 import type { EntityModel } from '#/lib/entity';
 import { AppError } from '#/lib/errors';
 import { checkPermission } from '#/permissions/check-if-allowed';
+import type { ContextEntityType, ProductEntityType } from 'config';
 
 /**
  * Checks if user has permission to create product or context entity.
@@ -23,6 +23,6 @@ export const canCreateEntity = <K extends Exclude<ContextEntityType, 'organizati
 
   // Step 2: Organization ownership check
   if (org && 'organizationId' in entity && entity.organizationId !== org.id) {
-    throw new AppError({ status: 400, type: 'invalid_request', severity: 'error', entityType });
+    throw new AppError({ status: 409, type: 'organization_mismatch', severity: 'error', entityType });
   }
 };

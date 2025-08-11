@@ -1,8 +1,8 @@
-import type { EntityType } from 'config';
 import { getContextUser } from '#/lib/context';
 import { resolveEntities } from '#/lib/entity';
 import type { MembershipSummary } from '#/modules/memberships/helpers/select';
 import permissionManager, { type PermittedAction } from '#/permissions/permissions-config';
+import type { EntityType } from 'config';
 
 /**
  * Splits entity IDs into allowed and disallowed based on the user's permissions.
@@ -17,7 +17,7 @@ import permissionManager, { type PermittedAction } from '#/permissions/permissio
  * @returns An object with `allowedIds` and `disallowedIds` arrays.
  */
 export const splitByAllowance = async (action: PermittedAction, entityType: EntityType, ids: string[], memberships: MembershipSummary[]) => {
-  const user = getContextUser();
+  const { role } = getContextUser();
 
   // Resolve entities
   const entities = await resolveEntities(entityType, ids);
@@ -29,11 +29,8 @@ export const splitByAllowance = async (action: PermittedAction, entityType: Enti
   for (const entity of entities) {
     const isAllowed = permissionManager.isPermissionAllowed(memberships, action, entity);
 
-    if (!isAllowed && user.role !== 'admin') {
-      disallowedIds.push(entity.id);
-    } else {
-      allowedIds.push(entity.id);
-    }
+    if (!isAllowed && role !== 'admin') disallowedIds.push(entity.id);
+    else allowedIds.push(entity.id);
   }
 
   return { allowedIds, disallowedIds };
