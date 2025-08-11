@@ -5,6 +5,7 @@ import { FileAnalysis, FileEntry } from '../../types';
 import { analyzeFileCommits } from './analyze-file-commits';
 import { analyzeFileBlob } from './analyze-file-blob';
 import { analyzeFileMergeRisk } from './analyze-file-merge-risk';
+import { checkFileAutomerge } from './check-file-merge';
 
 // Run 10 analyses at a time
 const limit = pLimit(10);
@@ -16,18 +17,39 @@ export async function analyzeFile(
   forkFile?: FileEntry
 ): Promise<FileAnalysis> {
   const filePath = boilerplateFile.path;
-  const CommitSummary = await analyzeFileCommits(boilerplate, fork, filePath);
+  const commitSummary = await analyzeFileCommits(boilerplate, fork, filePath);
   const blobStatus = analyzeFileBlob(boilerplateFile, forkFile);
-  const mergeRisk = analyzeFileMergeRisk(CommitSummary.status, blobStatus);
+  const mergeRisk = analyzeFileMergeRisk(commitSummary.status, blobStatus);
 
-  return {
+  // Before running checks, we also need to check if a file is "swizzled"
+  // Should we do this in analyze? or in check?
+
+  const analyzedFile = {
     filePath,
     boilerplateFile,
     forkFile,
-    CommitSummary,
+    commitSummary,
     blobStatus,
     mergeRisk
-  };
+  } as FileAnalysis;
+
+  await checkFile(boilerplate, fork, analyzedFile);
+
+  return analyzedFile;
+}
+
+export async function checkFile(
+  boilerplate: RepoConfig,
+  fork: RepoConfig,
+  analyzedFile: FileAnalysis
+): Promise<void> {
+  // Destructure necessary properties
+  const { filePath, mergeRisk } = analyzedFile;
+
+  // Check if automerge is possible
+  if (mergeRisk?.check === 'gitAutoMerge' && filePath === 'package.json') {
+    analyzedFile.mergeCheck = await checkFileAutomerge(boilerplate, fork, analyzedFile);
+  }
 }
 
 export async function analyzeManyFiles(

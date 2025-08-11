@@ -1,4 +1,6 @@
-import { gitLastCommitShaForFile, gitLogFileHistory, gitLsTreeRecursive } from './command';
+import { writeFile } from 'fs/promises';
+
+import { gitLastCommitShaForFile, gitLogFileHistory, gitLsTreeRecursive, gitShowFileAtCommit } from './command';
 import { FileEntry, CommitEntry } from '../../types';
 
 
@@ -41,4 +43,20 @@ export async function getFileCommitHistory(repoPath: string, branchName:string, 
       const [sha, date] = line.split('|');
       return { sha, date };
     });
+}
+
+/**
+ * Writes the content of a file at a specific commit to a given file path.
+ */
+export async function writeGitFileAtCommit(
+  repoPath: string,
+  commitSha: string,
+  filePath: string,
+  outputPath: string
+): Promise<void> {
+  // Use git show to get the file content at the specific commit
+  const output = await gitShowFileAtCommit(repoPath, commitSha, filePath);
+
+  // Write the content to the output file
+  await writeFile(outputPath, output, 'utf8');
 }

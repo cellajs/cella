@@ -31,7 +31,7 @@ export function logAnalyzedFileLine(analyzedFile: FileAnalysis, line: string): v
   const commitSummaryStateConfigured = 'commitSummaryState' in logConfig.analyzedFile;
 
   const mergeRiskSafeByGitEqual = logConfig.analyzedFile.mergeRiskSafeByGit === analyzedFile.mergeRisk?.safeByGit;
-  const commitSummaryStateEqual = logConfig.analyzedFile.commitSummaryState?.includes(analyzedFile.CommitSummary?.status || 'unknown');
+  const commitSummaryStateEqual = logConfig.analyzedFile.commitSummaryState?.includes(analyzedFile.commitSummary?.status || 'unknown');
 
   const shouldLog = [
     !mergeRiskSafeByGitConfigured || mergeRiskSafeByGitEqual,
