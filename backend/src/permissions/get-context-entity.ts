@@ -2,53 +2,67 @@ import { getContextMemberships, getContextOrganization, getContextUser } from '#
 import { type EntityModel, resolveEntity } from '#/lib/entity';
 import { AppError } from '#/lib/errors';
 import type { MembershipSummary } from '#/modules/memberships/helpers/select';
-import { checkPermission } from '#/permissions/check-if-allowed';
 import type { PermittedAction } from '#/permissions/permissions-config';
+import permissionManager from '#/permissions/permissions-config';
 import { appConfig, type ContextEntityType } from 'config';
 
 /**
- * Checks if user has permission to perform an action on a context entity.
+ * Checks if current user has permission to perform a given action on a context entity.
  *
- * Resolves context entity based on the given type and ID/slug, checks user permissions (including system admins),
- * and retrieves the user's membership for the entity.
+ * Resolves context entity based on provided type and ID/slug, verifies user permissions
+ * (including system admin), and retrieves user's membership for entity if applicable.
  *
- * It returns either object with the resolved entity + membership
+ * Returns resolved entity along with user's membership, which may be `null` if action is
+ * allowed because user is a system admin or an admin of a higher-level entity as defined in `permissions-config`.
+ * Throws an error if entity cannot be found or user lacks required permissions.
  *
- * @param entityType - The type of entity (e.g., organization, project).
- * @param action - Action to check `"create" | "read" | "update" | "delete"`.
- * @param idOrSlug - entity id or slug.
- * @returns An object with:
- *   - `entity`: Resolved context entity or `null` if not found.
- *   - `membership`: User's membership or `null` if not found.
+ * @param idOrSlug - Entity's unique ID or slug.
+ * @param entityType - Type of context entity (e.g., organization, project).
+ * @param action - Action to check (e.g., `"read" | "update" | "delete"`).
+ * @returns An object containing resolved entity and associated membership (or `null` if not required).
  */
 export const getValidContextEntity = async <T extends ContextEntityType>(
   idOrSlug: string,
   entityType: T,
   action: Exclude<PermittedAction, 'create'>,
 ): Promise<{ entity: EntityModel<T>; membership: MembershipSummary | null }> => {
-  const user = getContextUser();
+  // Get current user role and memberships from request context
+  const { role } = getContextUser();
   const memberships = getContextMemberships();
-  const isSystemAdmin = user.role === 'admin';
 
-  // Step 1: Resolve entity
-  const entity = (await resolveEntity(entityType, idOrSlug)) || null;
-  if (!entity) throw new AppError({ status: 404, type: 'not_found', severity: 'warn' });
+  const isSystemAdmin = role === 'admin';
 
-  // Step 2: Permission check
-  const isAllowed = checkPermission(memberships, action, entity);
-  if (!isAllowed) throw new AppError({ status: 403, type: 'forbidden', severity: 'warn' });
+  // Step 1: Resolve target entity by ID or slug
+  const entity = await resolveEntity(entityType, idOrSlug);
+  if (!entity) throw new AppError({ status: 404, type: 'not_found', severity: 'warn', entityType });
 
-  // Step 3: Membership check
+  // Step 2: Check permission for the requested action
+  const isAllowed = permissionManager.isPermissionAllowed(memberships, action, entity);
+
+  // If user is a system admin, skip membership/org checks entirely
+  if (!isAllowed && isSystemAdmin) return { entity, membership: null };
+
+  // Step 3: Search for user's membership for this entity
   const entityIdField = appConfig.entityIdFields[entity.entityType];
   const membership = memberships.find((m) => m[entityIdField] === entity.id && m.contextType === entityType) || null;
 
-  if (!membership && !isSystemAdmin) throw new AppError({ status: 403, type: 'missing_membership', severity: 'error' });
+  if (!isAllowed) {
+    if (!membership) throw new AppError({ status: 403, type: 'missing_membership', severity: 'error', entityType });
 
-  // Step 4: Organization check
-  const org = getContextOrganization();
-  if (membership?.organizationId && org) {
-    const organizationMatches = membership.organizationId === org.id;
-    if (!organizationMatches) throw new AppError({ status: 409, type: 'organization_mismatch', severity: 'error', entityType });
+    // Step 4: Validate organization alignment
+    const organization = getContextOrganization();
+    if (organization) {
+      const organizationMatches = 'organizationId' in entity ? entity.organizationId === organization.id : false;
+      const membershipOrgMatches = membership.organizationId === organization.id;
+
+      // Reject if entity belongs to a different organization or membership is from a different org
+      if (!organizationMatches || !membershipOrgMatches) {
+        throw new AppError({ status: 409, type: 'organization_mismatch', severity: 'error', entityType });
+      }
+    }
+
+    // Fallback: user is explicitly forbidden
+    throw new AppError({ status: 403, type: 'forbidden', severity: 'warn', entityType, meta: { action } });
   }
 
   return { entity, membership };
