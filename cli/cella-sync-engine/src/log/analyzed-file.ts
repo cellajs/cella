@@ -1,7 +1,6 @@
 import pc from "picocolors";
 import { FileAnalysis } from "../types";
 import { logConfig } from "../config";
-import { log } from "node:console";
 
 export function analyzedFileLine(analyzedFile: FileAnalysis): string {
   const status = '🗎';
@@ -10,6 +9,8 @@ export function analyzedFileLine(analyzedFile: FileAnalysis): string {
   const commitState = getCommitState(analyzedFile);
   const commitSha = getCommitSha(analyzedFile);
   const lastSyncedAt = getLastSyncedAt(analyzedFile);
+  const conflictTag = getConflictTag(analyzedFile);
+  const conflictResolution = getConfictResolution(analyzedFile);
 
   const parts: string[] = [
     status,
@@ -17,13 +18,15 @@ export function analyzedFileLine(analyzedFile: FileAnalysis): string {
     gitStatus,
     commitState,
     commitSha,
-    lastSyncedAt
+    lastSyncedAt,
+    conflictTag,
+    conflictResolution,
   ].filter(Boolean);
 
   return parts.join(' ').trim();
 }
 
-export function logAnalyzedFileLine (analyzedFile: FileAnalysis, line: string): void {
+export function logAnalyzedFileLine(analyzedFile: FileAnalysis, line: string): void {
   const mergeRiskSafeByGitConfigured = 'mergeRiskSafeByGit' in logConfig.analyzedFile;
   const commitSummaryStateConfigured = 'commitSummaryState' in logConfig.analyzedFile;
 
@@ -98,4 +101,28 @@ function getLastSyncedAt(analyzedFile: FileAnalysis): string {
   if (analyzedFile.CommitSummary?.status === 'upToDate') return pc.dim('✔');
   const date = new Date(lastSync);
   return pc.dim(`Last in sync: ${date.toLocaleDateString()}`);
+}
+
+function getConflictTag(analyzedFile: FileAnalysis): string {
+  const mergeRisk = analyzedFile.mergeRisk;
+
+  if (!mergeRisk) return '';
+  if (mergeRisk.safeByGit) return '';
+
+  if (mergeRisk?.likelihood === 'medium') {
+    return pc.bgYellow(pc.black(' Conflict '))
+  }
+
+  return pc.bgRed(pc.black(' Conflict '));
+}
+
+function getConfictResolution(analyzedFile: FileAnalysis): string {
+  const mergeRisk = analyzedFile.mergeRisk;
+
+  if (!mergeRisk) return '';
+  if (mergeRisk.likelihood === 'low') return '';
+  if (mergeRisk.safeByGit) return pc.green(`→ Safe by ${pc.bold('Git')} (${mergeRisk.reason})`);
+
+  if (mergeRisk.check) return pc.dim(`→ ${mergeRisk.check} (${mergeRisk.reason})`);
+  return '';
 }
