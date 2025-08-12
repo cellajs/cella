@@ -1436,7 +1436,14 @@ export const zShapeProxyData = z.object({
   path: z.object({
     orgIdOrSlug: z.string(),
   }),
-  query: z.optional(z.never()),
+  query: z.object({
+    table: z.string(),
+    offset: z.string(),
+    handle: z.optional(z.string()),
+    cursor: z.optional(z.string()),
+    live: z.optional(z.string()),
+    where: z.optional(z.string()),
+  }),
 });
 
 export const zDeleteAttachmentsData = z.object({
