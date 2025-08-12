@@ -14,7 +14,7 @@ import { SelectLanguage } from '~/modules/common/form-fields/select-language';
 import { SlugFormField } from '~/modules/common/form-fields/slug';
 import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
 import { useStepper } from '~/modules/common/stepper';
-import { toaster } from '~/modules/common/toaster';
+import { toaster } from '~/modules/common/toaster/service';
 import { useUpdateSelfMutation } from '~/modules/me/query';
 import { Button, SubmitButton } from '~/modules/ui/button';
 import { Checkbox } from '~/modules/ui/checkbox';

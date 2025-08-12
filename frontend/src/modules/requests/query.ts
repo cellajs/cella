@@ -4,16 +4,16 @@ import { t } from 'i18next';
 import {
   type CreateRequestData,
   type CreateRequestResponse,
-  createRequest,
-  deleteRequests,
   type GetRequestsData,
-  getRequests,
   type SystemInviteData,
   type SystemInviteResponse,
+  createRequest,
+  deleteRequests,
+  getRequests,
   systemInvite,
 } from '~/api.gen';
 import type { ApiError } from '~/lib/api';
-import { toaster } from '~/modules/common/toaster';
+import { toaster } from '~/modules/common/toaster/service';
 import type { Request } from '~/modules/requests/types';
 
 /**

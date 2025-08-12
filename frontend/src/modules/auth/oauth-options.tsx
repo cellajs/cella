@@ -3,7 +3,7 @@ import { appConfig, type EnabledOAuthProvider } from 'config';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { AuthStep } from '~/modules/auth/types';
-import { toaster } from '~/modules/common/toaster';
+import { toaster } from '~/modules/common/toaster/service';
 import { Button } from '~/modules/ui/button';
 import { AuthenticateRoute } from '~/routes/auth';
 import { useUIStore } from '~/store/ui';
