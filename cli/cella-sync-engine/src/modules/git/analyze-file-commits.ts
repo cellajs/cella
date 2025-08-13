@@ -75,12 +75,15 @@ function getAmountAheadBehind(
   forkLookup: CommitLookup,
   ancestorSha?: string
 ): { ahead: number; behind: number } {
-  const ahead = ancestorSha ? forkLookup.shas.findIndex(sha => sha === ancestorSha) : -1;
-  const behind = ancestorSha ? boilerplateLookup.shas.findIndex(sha => sha === ancestorSha) : -1;
-  return {
-    ahead: ahead === -1 ? 0 : ahead,
-    behind: behind === -1 ? 0 : behind,
-  };
+  if (!ancestorSha) return { ahead: 0, behind: 0 };
+
+  const forkIndex = forkLookup.shas.findIndex(sha => sha === ancestorSha);
+  const boilerplateIndex = boilerplateLookup.shas.findIndex(sha => sha === ancestorSha);
+
+  const ahead = forkIndex === -1 ? forkLookup.shas.length : forkLookup.shas.length - forkIndex - 1;
+  const behind = boilerplateIndex === -1 ? boilerplateLookup.shas.length : boilerplateLookup.shas.length - boilerplateIndex - 1;
+
+  return { ahead, behind };
 }
 
 /**

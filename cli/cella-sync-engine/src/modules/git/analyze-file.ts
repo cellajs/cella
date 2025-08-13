@@ -6,6 +6,7 @@ import { analyzeFileCommits } from './analyze-file-commits';
 import { analyzeFileBlob } from './analyze-file-blob';
 import { analyzeFileMergeRisk } from './analyze-file-merge-risk';
 import { checkFileAutomerge } from './check-file-merge';
+import { detectZwizzles } from '../zwizzle/detect';
 
 // Run 10 analyses at a time
 const limit = pLimit(10);
@@ -33,6 +34,9 @@ export async function analyzeFile(
     mergeRisk
   } as FileAnalysis;
 
+  // @TODO: enable zwizzle detection
+  // detectZwizzles(analyzedFile);
+
   await checkFile(boilerplate, fork, analyzedFile);
 
   return analyzedFile;
@@ -46,9 +50,11 @@ export async function checkFile(
   // Destructure necessary properties
   const { filePath, mergeRisk } = analyzedFile;
 
-  // Check if automerge is possible
-  if (mergeRisk?.check === 'gitAutoMerge' && filePath === 'package.json') {
-    analyzedFile.mergeCheck = await checkFileAutomerge(boilerplate, fork, analyzedFile);
+  if (mergeRisk?.check === 'gitAutoMerge') {
+    //@TODO: Only run check where necessary, POC for now is package.json
+    if (filePath === 'package.json') {
+      analyzedFile.mergeCheck = await checkFileAutomerge(boilerplate, fork, analyzedFile);
+    }
   }
 }
 

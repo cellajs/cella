@@ -17,10 +17,10 @@ import { gitMergeFile } from '../../utils/git/command';
 export async function checkFileAutomerge(
   boilerplate: RepoConfig,
   fork: RepoConfig,
-  FileAnalysis: FileAnalysis
+  fileAnalysis: FileAnalysis
 ): Promise<MergeCheck> {
   // Destructure necessary properties from the analysis object
-  const { filePath, forkFile, boilerplateFile, commitSummary } = FileAnalysis;
+  const { filePath, forkFile, boilerplateFile, commitSummary } = fileAnalysis;
 
   if (!forkFile) {
     return {

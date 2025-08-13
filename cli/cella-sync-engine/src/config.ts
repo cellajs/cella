@@ -20,6 +20,7 @@ export type RepoConfig = {
 
 export type Log = {
   analyzedFile: {
+    filePath?: string[];
     commitSummaryState?: string[];
     mergeRiskSafeByGit?: boolean;
   }
@@ -27,6 +28,9 @@ export type Log = {
 
 export const logConfig: Log = {
   analyzedFile: {
+    // filePath: [
+    //   'frontend/public/static/icons/icon-57x57.png'
+    // ],
     // commitSummaryState: [
     //   "upToDate",
     //   "ahead",
@@ -61,4 +65,12 @@ export const forkConfig: RepoConfig = {
   repoPath: "/home/gino/Github/raak",
   owner: "",  // Only used if use === 'remote'
   repo: "",   // Only used if use === 'remote'
+};
+
+export const zwizzleConfig = {
+  fileName: 'cella-swizzle.json', // default
+  rootDir: process.cwd(),         // can be overridden per run
+  get filePath() {
+    return `${this.rootDir}/${this.fileName}`;
+  }
 };
