@@ -3435,7 +3435,14 @@ export type ShapeProxyData = {
   path: {
     orgIdOrSlug: string;
   };
-  query?: never;
+  query: {
+    table: string;
+    offset: string;
+    handle?: string;
+    cursor?: string;
+    live?: string;
+    where?: string;
+  };
   url: '/{orgIdOrSlug}/attachments/shape-proxy';
 };
 
