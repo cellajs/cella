@@ -23,7 +23,9 @@ export const requestSearchSchema = zGetRequestsData.shape.query.unwrap().pick({ 
 export const SystemRoute = createRoute({
   path: '/system',
   staticData: { isAuth: true },
-  beforeLoad: ({ location }) => noDirectAccess(location.pathname, 'system', '/users'),
+  beforeLoad: () => {
+    noDirectAccess(SystemRoute.to, UsersTableRoute.to);
+  },
   getParentRoute: () => AppRoute,
   component: () => <SystemPage />,
   errorComponent: ({ error }) => <ErrorNotice level="app" error={error} />,

@@ -33,8 +33,8 @@ export const attachmentsSearchSchema = zGetAttachmentsData.shape.query.unwrap().
 export const OrganizationRoute = createRoute({
   path: '/organizations/$idOrSlug',
   staticData: { isAuth: true },
-  beforeLoad: async ({ location, params: { idOrSlug } }) => {
-    noDirectAccess(location.pathname, idOrSlug, '/members');
+  beforeLoad: async ({ params: { idOrSlug } }) => {
+    noDirectAccess(OrganizationRoute.to, OrganizationMembersRoute.to);
 
     const isOnline = onlineManager.isOnline();
 
