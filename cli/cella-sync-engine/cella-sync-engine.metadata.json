@@ -1,0 +1,90 @@
+{
+  "projectName": "Cella Sync Engine",
+  "description": "A CLI tool to handle git syncs between a boilerplate and fork instance, with automatic conflict analysis and resolution.",
+  "version": "0.1.0",
+  "language": "TypeScript",
+  "framework": "Hono",
+  "lastUpdated": "2025-08-13T14:30:00Z",
+  "cliName": "cella-sync-engine",
+  "syncProcess": [
+    "Create a new sync-branch in the fork",
+    "Add boilerplate as upstream in the fork/sync-branch",
+    "Merge commits from fork into fork/sync-branch",
+    "Merge commits from boilerplate into fork/sync-branch (attempt auto-resolve conflicts)",
+    "Squash commits from fork/sync-branch into fork for clean history",
+    "Rebase squash commit back into fork/sync-branch"
+  ],
+  "folderStructure": {
+    "root": ["package.json", "package-lock.json", "index.ts"],
+    "src": {
+      "config": ["*"],
+      "log": ["analyzed-file.ts", "analyzed-summary.ts"],
+      "modules": {
+        "git": [
+          "analyze-file.blob.ts",
+          "analyze-file-commits.ts",
+          "analyze-file-merge-risk.ts",
+          "analyze-file.ts",
+          "check-file-merge.ts"
+        ],
+        "zwizzle": ["init.ts", "detect.ts"]
+      },
+      "utils": {
+        "git": ["command.ts", "files.ts", "remotes.ts"],
+        "*": ["files.ts"]
+      },
+      "index.ts": "*",
+      "types": ["index.ts"]
+    },
+    "cli": {
+      "cella-sync-engine": ["*"]
+    }
+  },
+  "commands": {
+    "sync": "Run full sync process between boilerplate and fork",
+    "status": "Check sync status",
+    "init": "Initialize sync engine configuration"
+  },
+  "types": {
+    "FileEntry": {
+      "path": "string",
+      "blobSha": "string",
+      "shortBlobSha": "string",
+      "lastCommitSha": "string",
+      "shortCommitSha": "string"
+    },
+    "CommitEntry": {
+      "sha": "string",
+      "date": "string"
+    },
+    "CommitSummary": {
+      "status": "'upToDate' | 'ahead' | 'behind' | 'diverged' | 'unrelated'",
+      "commitsAhead": "number",
+      "commitsBehind": "number",
+      "sharedAncestorSha?": "string",
+      "lastSyncedAt?": "string",
+      "historyCoverage": "'complete' | 'partial' | 'unknown'"
+    },
+    "MergeRisk": {
+      "likelihood": "'low' | 'medium' | 'high'",
+      "reason": "'identical' | 'blobMismatch' | 'missingInFork' | 'divergedContent' | 'unrelatedHistories' | 'unknown'",
+      "safeByGit": "boolean",
+      "check": "'none' | 'gitAutoMerge' | 'verifyAncestor' | 'addedOrRemoved' | 'threeWayMergeCheck'"
+    },
+    "MergeCheck": {
+      "couldRun": "boolean",
+      "reason": "'missingFork' | 'unrelatedHistory' | 'binaryFile' | 'none' | 'conflict' | 'unkown'",
+      "automergeable": "boolean"
+    },
+    "FileAnalysis": {
+      "filePath": "string",
+      "boilerplateFile": "FileEntry",
+      "forkFile?": "FileEntry",
+      "commitSummary?": "CommitSummary",
+      "blobStatus?": "'identical' | 'different' | 'missing'",
+      "mergeRisk?": "MergeRisk",
+      "mergeCheck?": "MergeCheck"
+    }
+  },
+  "metadataVersion": "1.0.0"
+}

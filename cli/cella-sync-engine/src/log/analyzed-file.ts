@@ -29,13 +29,16 @@ export function analyzedFileLine(analyzedFile: FileAnalysis): string {
 export function logAnalyzedFileLine(analyzedFile: FileAnalysis, line: string): void {
   const mergeRiskSafeByGitConfigured = 'mergeRiskSafeByGit' in logConfig.analyzedFile;
   const commitSummaryStateConfigured = 'commitSummaryState' in logConfig.analyzedFile;
+  const filePathConfigured = 'filePath' in logConfig.analyzedFile;
 
   const mergeRiskSafeByGitEqual = logConfig.analyzedFile.mergeRiskSafeByGit === analyzedFile.mergeRisk?.safeByGit;
   const commitSummaryStateEqual = logConfig.analyzedFile.commitSummaryState?.includes(analyzedFile.commitSummary?.status || 'unknown');
+  const filePathEqual = logConfig.analyzedFile.filePath?.includes(analyzedFile.filePath);
 
   const shouldLog = [
     !mergeRiskSafeByGitConfigured || mergeRiskSafeByGitEqual,
     !commitSummaryStateConfigured || commitSummaryStateEqual,
+    !filePathConfigured || filePathEqual,
   ].every(Boolean);
 
   if (shouldLog) console.log(line);
@@ -47,7 +50,7 @@ function getFilePath(analyzedFile: FileAnalysis): string {
 }
 
 function getGitStatus(analyzedFile: FileAnalysis): string {
-  const gitStatus = analyzedFile.CommitSummary?.status || 'unknown';
+  const gitStatus = analyzedFile.commitSummary?.status || 'unknown';
 
   if (gitStatus === 'upToDate') {
     return `fork: ${pc.bold(pc.green('Up to date'))}`
@@ -68,8 +71,8 @@ function getGitStatus(analyzedFile: FileAnalysis): string {
 }
 
 function getCommitState(analyzedFile: FileAnalysis): string {
-  const commitsAhead = analyzedFile.CommitSummary?.commitsAhead || 0;
-  const commitsBehind = analyzedFile.CommitSummary?.commitsBehind || 0;
+  const commitsAhead = analyzedFile.commitSummary?.commitsAhead || 0;
+  const commitsBehind = analyzedFile.commitSummary?.commitsBehind || 0;
 
   if (commitsAhead > 0 && commitsBehind > 0) {
     return pc.bold(`(↑ ${pc.green(commitsAhead)} ↓ ${pc.yellow(commitsBehind)})`);
@@ -96,9 +99,9 @@ function getCommitSha(analyzedFile: FileAnalysis): string {
 }
 
 function getLastSyncedAt(analyzedFile: FileAnalysis): string {
-  const lastSync = analyzedFile.CommitSummary?.lastSyncedAt;
+  const lastSync = analyzedFile.commitSummary?.lastSyncedAt;
   if (!lastSync) return '';
-  if (analyzedFile.CommitSummary?.status === 'upToDate') return pc.dim('✔');
+  if (analyzedFile.commitSummary?.status === 'upToDate') return pc.dim('✔');
   const date = new Date(lastSync);
   return pc.dim(`Last in sync: ${date.toLocaleDateString()}`);
 }

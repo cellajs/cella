@@ -65,7 +65,7 @@ export function analyzeFileMergeRisk(
       return {
         likelihood: 'medium',
         reason: 'blobMismatch',
-        safeByGit: false,
+        safeByGit: commitStatus === 'ahead',
         check: 'verifyAncestor'
       };
     }
