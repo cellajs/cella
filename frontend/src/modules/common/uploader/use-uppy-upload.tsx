@@ -10,7 +10,7 @@ import Webcam, { type WebcamOptions } from '@uppy/webcam';
 import { appConfig, type UploadTemplateId } from 'config';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { toaster } from '~/modules/common/toaster';
+import { toaster } from '~/modules/common/toaster/service';
 import { createBaseTransloaditUppy } from '~/modules/common/uploader/helpers';
 import { getImageEditorOptions } from '~/modules/common/uploader/helpers/image-editor-options';
 import type { CustomUppy, CustomUppyOpt, UploadedUppyFile } from '~/modules/common/uploader/types';

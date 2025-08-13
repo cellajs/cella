@@ -3435,7 +3435,14 @@ export type ShapeProxyData = {
   path: {
     orgIdOrSlug: string;
   };
-  query?: never;
+  query: {
+    table: string;
+    offset: string;
+    handle?: string;
+    cursor?: string;
+    live?: string;
+    where?: string;
+  };
   url: '/{orgIdOrSlug}/attachments/shape-proxy';
 };
 
@@ -3546,7 +3553,7 @@ export type GetAttachmentsData = {
   };
   query?: {
     q?: string;
-    sort?: 'id' | 'filename' | 'contentType' | 'createdAt';
+    sort?: 'id' | 'name' | 'size' | 'createdAt';
     order?: 'asc' | 'desc';
     offset?: string;
     limit?: string;

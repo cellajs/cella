@@ -3,7 +3,7 @@ import { appConfig } from 'config';
 import { Upload } from 'lucide-react';
 import { memo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { toaster } from '~/modules/common/toaster';
+import { toaster } from '~/modules/common/toaster/service';
 import { useUploader } from '~/modules/common/uploader/use-uploader';
 import { Button } from '~/modules/ui/button';
 import { numberToColorClass } from '~/utils/number-to-color-class';

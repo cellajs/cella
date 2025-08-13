@@ -5,10 +5,10 @@ import { lazy, Suspense } from 'react';
 import { z } from 'zod';
 import { zGetAttachmentsData, zGetMembersData, zGetPendingInvitationsData } from '~/api.gen/zod.gen';
 import ErrorNotice from '~/modules/common/error-notice';
-import { toaster } from '~/modules/common/toaster';
 import { organizationQueryOptions } from '~/modules/organizations/query';
 import { queryClient } from '~/query/query-client';
 import { AppRoute } from '~/routes/base';
+import { useToastStore } from '~/store/toast';
 import appTitle from '~/utils/app-title';
 import { noDirectAccess } from '~/utils/no-direct-access';
 
@@ -33,16 +33,18 @@ export const attachmentsSearchSchema = zGetAttachmentsData.shape.query.unwrap().
 export const OrganizationRoute = createRoute({
   path: '/organizations/$idOrSlug',
   staticData: { isAuth: true },
-  beforeLoad: async ({ location, params: { idOrSlug } }) => {
-    noDirectAccess(location.pathname, idOrSlug, '/members');
+  beforeLoad: async ({ params: { idOrSlug } }) => {
+    noDirectAccess(OrganizationRoute.to, OrganizationMembersRoute.to);
+
+    const isOnline = onlineManager.isOnline();
 
     const queryOptions = organizationQueryOptions(idOrSlug);
-
     const options = { ...queryOptions, revalidateIfStale: true };
-    const isOnline = onlineManager.isOnline();
+
     const organization = isOnline ? await queryClient.ensureQueryData(options) : queryClient.getQueryData(queryOptions.queryKey);
+
     if (!organization) {
-      toaster(i18n.t('common:offline_cache_miss.text'), 'warning');
+      if (!isOnline) useToastStore.getState().showToast(i18n.t('common:offline_cache_miss.text'), 'warning');
       throw redirect({ to: '/home', replace: true });
     }
     return { organization };

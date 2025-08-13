@@ -2,7 +2,7 @@ import { onlineManager } from '@tanstack/react-query';
 import { Check, Fingerprint, RotateCw, Trash } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { toaster } from '~/modules/common/toaster';
+import { toaster } from '~/modules/common/toaster/service';
 import { passkeyRegistration } from '~/modules/me/helpers';
 import { useDeletePasskeyMutation } from '~/modules/me/query';
 import type { MeAuthData } from '~/modules/me/types';

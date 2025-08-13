@@ -7,7 +7,7 @@ import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { useOnlineManager } from '~/hooks/use-online-manager';
 import { AppFooter } from '~/modules/common/app-footer';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
-import { toaster } from '~/modules/common/toaster';
+import { toaster } from '~/modules/common/toaster/service';
 import { buttonVariants } from '~/modules/ui/button';
 import { ScrollArea } from '~/modules/ui/scroll-area';
 import { useUserStore } from '~/store/user';

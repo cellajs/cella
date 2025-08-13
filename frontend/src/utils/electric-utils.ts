@@ -1,7 +1,7 @@
 import { type BackoffOptions, type ChangeMessage, type ExternalParamsRecord, FetchError, type Row } from '@electric-sql/client';
 import type { ClientErrorStatusCode, ServerErrorStatusCode } from 'hono/utils/http-status';
 import { ApiError } from '~/lib/api';
-import { toaster } from '~/modules/common/toaster';
+import { toaster } from '~/modules/common/toaster/service';
 import { useSyncStore } from '~/store/sync';
 
 // Convert camelCase to snake_case

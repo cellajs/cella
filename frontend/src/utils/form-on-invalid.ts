@@ -2,7 +2,7 @@ import * as Sentry from '@sentry/react';
 import { t } from 'i18next';
 import { createElement } from 'react';
 import type { FieldError, FieldErrors, FieldValues, ValidateResult } from 'react-hook-form';
-import { toaster } from '~/modules/common/toaster';
+import { toaster } from '~/modules/common/toaster/service';
 
 /**
  * Handles invalid form submissions. Extracting and displaying error messages, and reporting them to Sentry.

@@ -3,11 +3,11 @@ import { Link, useNavigate, useParams, useSearch } from '@tanstack/react-router'
 import { appConfig } from 'config';
 import { Ban, Check } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { toast } from 'sonner';
 import { acceptEntityInvite } from '~/api.gen';
 import AuthErrorNotice from '~/modules/auth/auth-error-notice';
 import { useCheckToken } from '~/modules/auth/use-token-check';
 import Spinner from '~/modules/common/spinner';
+import { toaster } from '~/modules/common/toaster/service';
 import { getAndSetMenu } from '~/modules/me/helpers';
 import { buttonVariants, SubmitButton } from '~/modules/ui/button';
 import { getEntityRoute } from '~/nav-config';
@@ -36,7 +36,7 @@ const AcceptEntityInvite = () => {
     onSuccess: async (entity) => {
       await getAndSetMenu();
 
-      toast.success(t('common:invitation_accepted'));
+      toaster(t('common:invitation_accepted', 'success'));
 
       const { to, params, search } = getEntityRoute(entity);
       navigate({ to, params, search });

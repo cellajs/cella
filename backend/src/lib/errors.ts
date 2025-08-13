@@ -12,7 +12,7 @@ import i18n from 'i18next';
 const isProduction = appConfig.mode === 'production';
 
 type ErrorSchemaType = z.infer<typeof errorSchema>;
-type ErrorMeta = { readonly [key: string]: number | string | boolean | null };
+type ErrorMeta = { readonly [key: string]: number | string[] | string | boolean | null };
 
 type AllErrorKeys = keyof (typeof locales)['en']['error'];
 type ErrorKey = Exclude<AllErrorKeys, `${string}.text`>;

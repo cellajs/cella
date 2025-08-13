@@ -16,7 +16,7 @@ import InputFormField from '~/modules/common/form-fields/input';
 import SelectRoles from '~/modules/common/form-fields/select-roles';
 import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
 import Spinner from '~/modules/common/spinner';
-import { toaster } from '~/modules/common/toaster';
+import { toaster } from '~/modules/common/toaster/service';
 import { Button, SubmitButton } from '~/modules/ui/button';
 import { Checkbox } from '~/modules/ui/checkbox';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';

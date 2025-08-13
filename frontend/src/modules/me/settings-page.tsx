@@ -4,8 +4,7 @@ import { appConfig, type EnabledOAuthProvider } from 'config';
 import { Check, Send, Trash } from 'lucide-react';
 import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { toast } from 'sonner';
-import { type ApiError, type RequestPasswordData, type RequestPasswordResponse, requestPassword } from '~/api.gen';
+import { requestPassword, type ApiError, type RequestPasswordData, type RequestPasswordResponse } from '~/api.gen';
 import { mapOAuthProviders } from '~/modules/auth/oauth-options';
 import { AsideAnchor } from '~/modules/common/aside-anchor';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
@@ -13,7 +12,7 @@ import HelpText from '~/modules/common/help-text';
 import { PageAside } from '~/modules/common/page/aside';
 import { SimpleHeader } from '~/modules/common/simple-header';
 import StickyBox from '~/modules/common/sticky-box';
-import { toaster } from '~/modules/common/toaster';
+import { toaster } from '~/modules/common/toaster/service';
 import UnsavedBadge from '~/modules/common/unsaved-badge';
 import DeleteSelf from '~/modules/me/delete-self';
 import Passkeys from '~/modules/me/passkeys';
@@ -46,7 +45,7 @@ const UserSettingsPage = () => {
 
   const { mutate: requestPasswordChange } = useMutation<RequestPasswordResponse, ApiError | Error, NonNullable<RequestPasswordData['body']>>({
     mutationFn: async (body) => await requestPassword({ body }),
-    onSuccess: () => toast.success(t('common:success.reset_password_email', { email: user.email })),
+    onSuccess: () => toaster(t('common:success.reset_password_email', { email: user.email }), 'success'),
     onSettled: () => setTimeout(() => setDisabledResetPassword(false), 60000),
   });
 
@@ -64,7 +63,7 @@ const UserSettingsPage = () => {
       <DeleteSelf
         dialog
         callback={() => {
-          toast.success(t('common:success.delete_resource', { resource: t('common:account') }));
+          toaster(t('common:success.delete_resource', { resource: t('common:account') }), 'success');
         }}
       />,
       {

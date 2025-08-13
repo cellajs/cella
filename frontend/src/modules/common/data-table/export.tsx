@@ -4,7 +4,7 @@ import { useOnlineManager } from '~/hooks/use-online-manager';
 import { exportToCsv, exportToPdf } from '~/lib/export';
 import router from '~/lib/router';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
-import { toaster } from '~/modules/common/toaster';
+import { toaster } from '~/modules/common/toaster/service';
 import { TooltipButton } from '~/modules/common/tooltip-button';
 import { Button } from '~/modules/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '~/modules/ui/dropdown-menu';

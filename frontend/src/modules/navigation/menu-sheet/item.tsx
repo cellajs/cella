@@ -4,7 +4,7 @@ import type { LucideIcon } from 'lucide-react';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
-import { toaster } from '~/modules/common/toaster';
+import { toaster } from '~/modules/common/toaster/service';
 import type { UserMenuItem } from '~/modules/me/types';
 import { getEntityRoute } from '~/nav-config';
 import { useUIStore } from '~/store/ui';

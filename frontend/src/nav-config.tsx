@@ -4,7 +4,7 @@ import { Home, Menu, Search, User } from 'lucide-react';
 import type { RefObject } from 'react';
 import type { FooterLinkProps } from '~/modules/common/app-footer';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
-import { toaster } from '~/modules/common/toaster';
+import { toaster } from '~/modules/common/toaster/service';
 import type { UserMenuItem } from '~/modules/me/types';
 import { AccountSheet } from '~/modules/navigation/account-sheet';
 import { MenuSheet } from '~/modules/navigation/menu-sheet';

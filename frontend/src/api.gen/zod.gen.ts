@@ -1436,7 +1436,14 @@ export const zShapeProxyData = z.object({
   path: z.object({
     orgIdOrSlug: z.string(),
   }),
-  query: z.optional(z.never()),
+  query: z.object({
+    table: z.string(),
+    offset: z.string(),
+    handle: z.optional(z.string()),
+    cursor: z.optional(z.string()),
+    live: z.optional(z.string()),
+    where: z.optional(z.string()),
+  }),
 });
 
 export const zDeleteAttachmentsData = z.object({
@@ -1467,7 +1474,7 @@ export const zGetAttachmentsData = z.object({
   query: z.optional(
     z.object({
       q: z.optional(z.string()),
-      sort: z.optional(z.enum(['id', 'filename', 'contentType', 'createdAt'])),
+      sort: z.optional(z.enum(['id', 'name', 'size', 'createdAt'])),
       order: z.optional(z.enum(['asc', 'desc'])),
       offset: z.optional(z.string()).default('0'),
       limit: z.optional(z.string()).default('40'),

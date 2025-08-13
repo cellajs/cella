@@ -1,3 +1,6 @@
+import type { z } from '@hono/zod-openapi';
+import { and, eq } from 'drizzle-orm';
+import type { Context } from 'hono';
 import { db } from '#/db/db';
 import { type AuthStrategy, type SessionModel, sessionsTable } from '#/db/schema/sessions';
 import { type UserModel, usersTable } from '#/db/schema/users';
@@ -14,9 +17,6 @@ import { nanoid } from '#/utils/nanoid';
 import { encodeLowerCased } from '#/utils/oslo';
 import { sessionCookieSchema } from '#/utils/schema/session-cookie';
 import { createDate, TimeSpan } from '#/utils/time-span';
-import type { z } from '@hono/zod-openapi';
-import { and, eq } from 'drizzle-orm';
-import type { Context } from 'hono';
 
 /**
  * Sets a user session and stores it in the database.

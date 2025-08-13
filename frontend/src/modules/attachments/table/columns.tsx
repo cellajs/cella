@@ -19,7 +19,7 @@ import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { useDropdowner } from '~/modules/common/dropdowner/use-dropdowner';
 import { PopConfirm } from '~/modules/common/popconfirm';
 import Spinner from '~/modules/common/spinner';
-import { toaster } from '~/modules/common/toaster';
+import { toaster } from '~/modules/common/toaster/service';
 import type { EntityPage } from '~/modules/entities/types';
 import { membersKeys } from '~/modules/memberships/query';
 import { Button } from '~/modules/ui/button';
@@ -89,7 +89,7 @@ export const useColumns = (entity: EntityPage, isSheet: boolean, isCompact: bool
       name: t('common:name'),
       editable: true,
       visible: true,
-      sortable: false,
+      sortable: true,
       minWidth: 180,
       renderHeaderCell: HeaderCell,
       renderCell: ({ row }) => <span className="font-medium">{row.name || '-'}</span>,
@@ -235,7 +235,7 @@ export const useColumns = (entity: EntityPage, isSheet: boolean, isCompact: bool
     {
       key: 'size',
       name: t('common:size'),
-      sortable: false,
+      sortable: true,
       visible: !isMobile,
       minWidth: 100,
       renderHeaderCell: HeaderCell,

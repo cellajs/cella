@@ -1,20 +1,15 @@
 import { HeadContent, Outlet } from '@tanstack/react-router';
 import { appConfig } from 'config';
 import { Suspense } from 'react';
-import { useBreakpoints } from '~/hooks/use-breakpoints';
-
 import useLazyComponent from '~/hooks/use-lazy-component'; // Adjust the import path accordingly
 import { useOnlineManager } from '~/hooks/use-online-manager';
+import { ToastManager } from '~/modules/common//toaster';
 import { DownAlert } from '~/modules/common/down-alert';
 import ReloadPrompt from '~/modules/common/reload-prompt';
-import { Toaster } from '~/modules/ui/sonner';
 import { TooltipProvider } from '~/modules/ui/tooltip';
 
 function Root() {
   const { isOnline } = useOnlineManager();
-  const isMobile = useBreakpoints('max', 'sm');
-
-  const toastPosition = isMobile ? 'top-center' : 'bottom-right';
 
   // Lazy load
   const GleapSupport = useLazyComponent(
@@ -30,7 +25,7 @@ function Root() {
       <HeadContent />
       <Outlet />
       <ReloadPrompt />
-      <Toaster richColors toastOptions={{ className: 'max-sm:mb-16' }} position={toastPosition} />
+      <ToastManager />
       <DownAlert />
       <Suspense fallback={null}>{GleapSupport ? <GleapSupport /> : null}</Suspense>
     </TooltipProvider>

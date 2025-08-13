@@ -1,7 +1,6 @@
 import { useMutation } from '@tanstack/react-query';
 import { appConfig } from 'config';
 import { t } from 'i18next';
-import { toast } from 'sonner';
 import { createAttachment, deleteAttachments, updateAttachment } from '~/api.gen';
 import { LocalFileStorage } from '~/modules/attachments/helpers/local-file-storage';
 import { attachmentsKeys } from '~/modules/attachments/query';
@@ -14,7 +13,7 @@ import type {
   DeleteAttachmentsParams,
   UpdateAttachmentParams,
 } from '~/modules/attachments/types';
-import { toaster } from '~/modules/common/toaster';
+import { toaster } from '~/modules/common/toaster/service';
 import { getQueryKeySortOrder } from '~/query/helpers';
 import { compareQueryKeys } from '~/query/helpers/compare-query-keys';
 import { formatUpdatedData, getQueryItems, getSimilarQueries } from '~/query/helpers/mutate-query';
@@ -28,8 +27,8 @@ const handleError = (action: 'create' | 'update' | 'delete' | 'deleteMany', cont
     for (const [queryKey, previousData] of context) queryClient.setQueryData(queryKey, previousData);
   }
 
-  if (action === 'deleteMany') toast.error(t('error:delete_resources', { resources: t('common:attachments') }));
-  else toast.error(t(`error:${action}_resource`, { resource: t('common:attachment') }));
+  if (action === 'deleteMany') toaster(t('error:delete_resources', { resources: t('common:attachments') }), 'error');
+  else toaster(t(`error:${action}_resource`, { resource: t('common:attachment') }), 'error');
 };
 
 export const useAttachmentCreateMutation = () =>

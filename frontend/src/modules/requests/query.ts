@@ -4,16 +4,16 @@ import { t } from 'i18next';
 import {
   type CreateRequestData,
   type CreateRequestResponse,
-  createRequest,
-  deleteRequests,
   type GetRequestsData,
-  getRequests,
   type SystemInviteData,
   type SystemInviteResponse,
+  createRequest,
+  deleteRequests,
+  getRequests,
   systemInvite,
 } from '~/api.gen';
 import type { ApiError } from '~/lib/api';
-import { toaster } from '~/modules/common/toaster';
+import { toaster } from '~/modules/common/toaster/service';
 import type { Request } from '~/modules/requests/types';
 
 /**
@@ -57,7 +57,7 @@ export const requestsQueryOptions = ({
     queryKey,
     initialPageParam: { page: 0, offset: 0 },
     queryFn: async ({ pageParam: { page, offset: _offset }, signal }) => {
-      const offset = String(_offset || page * Number(limit));
+      const offset = String(_offset || (page || 0) * Number(limit));
       return await getRequests({ query: { q, sort, order, limit, offset }, signal });
     },
     getNextPageParam: (_lastPage, allPages) => {
