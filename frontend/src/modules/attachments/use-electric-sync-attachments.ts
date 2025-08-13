@@ -12,7 +12,7 @@ import { baseBackoffOptions as backoffOptions, type CamelToSnakeObject, handleSy
 
 // Configure ShapeStream options
 const attachmentShape = (organizationId: string, storePrefix: string): ShapeStreamOptions => {
-  const params = { where: `organization_id = '${organizationId}'` };
+  const params = { table: 'attachments', where: `organization_id = '${organizationId}'` };
 
   return {
     url: new URL(`/${organizationId}/attachments/shape-proxy`, appConfig.backendUrl).href,
