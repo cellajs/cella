@@ -79,7 +79,7 @@ export const useDeletePasskeyMutation = () => {
     mutationFn: () => deletePasskey(),
     onSuccess: () => {
       toaster(t('common:success.passkey_removed'), 'success');
-      useUserStore.getState().setMeAuthData({ passkey: false });
+      useUserStore.getState().setMeAuthData({ hasPasskey: false });
     },
     onError(error) {
       console.error('Error removing passkey:', error);

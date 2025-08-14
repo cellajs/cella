@@ -666,12 +666,14 @@ export const microsoftSignInCallback = <ThrowOnError extends boolean = true>(opt
 /**
  * Get passkey challenge
  * 🌐 Public access
+ * ⏳ Spam (10/h)
  *
  * Initiates the passkey registration or authentication flow by generating a device bound challenge.
  *
  * **GET /auth/passkey-challenge** ·· [getPasskeyChallenge](http://localhost:4000/docs#tag/auth/get/auth/passkey-challenge) ·· _auth_
  *
  * @param {getPasskeyChallengeData} options
+ * @param {string=} options.query.email - `string` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
 export const getPasskeyChallenge = <ThrowOnError extends boolean = true>(options?: Options<GetPasskeyChallengeData, ThrowOnError>) => {

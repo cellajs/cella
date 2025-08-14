@@ -24,13 +24,12 @@ const emailEnabled = enabledStrategies.includes('password') || enabledStrategies
 
 const AuthSteps = () => {
   const { t } = useTranslation();
-  const { lastUser, passkey } = useUserStore();
+  const { lastUser } = useUserStore();
 
   const { token, tokenId } = useSearch({ from: AuthenticateRoute.id });
   const [authError, setAuthError] = useState<ApiError | null>(null);
   const [step, setStep] = useState<AuthStep>(!token && lastUser?.email ? 'signIn' : 'checkEmail');
   const [email, setEmail] = useState((!token && lastUser?.email) || '');
-  const [hasPasskey, setHasPasskey] = useState(!token && !!passkey);
 
   // Update step and email to proceed after email is checked
   const handleSetStep = (step: AuthStep, email: string, error?: ApiError) => {
@@ -43,7 +42,6 @@ const AuthSteps = () => {
   // Even if all email authentication is disabled, we still show check email form
   const resetSteps = () => {
     setStep('checkEmail');
-    setHasPasskey(false);
   };
 
   const { data: tokenData, isLoading, error } = useCheckToken('invitation', tokenId, !!(token && tokenId));
@@ -94,12 +92,12 @@ const AuthSteps = () => {
       {/* Show passkey and oauth options conditionally */}
       {!['inviteOnly', 'waitlist', 'error'].includes(step) && (
         <>
-          {shouldShowDivider(hasPasskey, step) && (
+          {shouldShowDivider(step) && (
             <div className="relative flex justify-center text-xs uppercase">
               <span className="text-muted-foreground px-2">{t('common:or')}</span>
             </div>
           )}
-          {hasPasskey && enabledStrategies.includes('passkey') && <PasskeyOption email={email} actionType={step} />}
+          {enabledStrategies.includes('passkey') && <PasskeyOption email={email} actionType={step} />}
           {enabledStrategies.includes('oauth') && <OAuthOptions actionType={step} />}
         </>
       )}

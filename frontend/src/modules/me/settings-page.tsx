@@ -23,6 +23,7 @@ import UpdateUserForm from '~/modules/users/update-user-form';
 import { UserSettingsRoute } from '~/routes/users';
 import { useUIStore } from '~/store/ui';
 import { useUserStore } from '~/store/user';
+import { TwoFactorAuthentication } from './two-factor-auth';
 
 const tabs = [
   { id: 'general', label: 'common:general' },
@@ -36,7 +37,7 @@ const UserSettingsPage = () => {
   const { user } = useUserStore();
   const mode = useUIStore((state) => state.mode);
   // Get user auth info from route
-  const userAuthInfo = useLoaderData({ from: UserSettingsRoute.id });
+  const userAuthData = useLoaderData({ from: UserSettingsRoute.id });
 
   const deleteButtonRef = useRef(null);
 
@@ -121,7 +122,7 @@ const UserSettingsPage = () => {
               <CardDescription>{t('common:sessions.text')}</CardDescription>
             </CardHeader>
             <CardContent>
-              <SessionsList userAuthInfo={userAuthInfo} />
+              <SessionsList userAuthData={userAuthData} />
             </CardContent>
           </Card>
         </AsideAnchor>
@@ -136,18 +137,15 @@ const UserSettingsPage = () => {
               <HelpText content={t('common:passkey.text')}>
                 <p className="font-semibold">{t('common:passkey')}</p>
               </HelpText>
-
-              <Passkeys userAuthInfo={userAuthInfo} />
-
+              <Passkeys userAuthData={userAuthData} />
               <HelpText content={t('common:oauth.text')}>
                 <p className="font-semibold">{t('common:oauth')}</p>
               </HelpText>
-
               <div className="flex flex-col sm:items-start gap-3 mb-6">
                 {appConfig.enabledOAuthProviders.map((id) => {
                   const provider = mapOAuthProviders.find((provider) => provider.id === id);
                   if (!provider) return;
-                  if (userAuthInfo.oauth.includes(id))
+                  if (userAuthData.enabledOAuth.includes(id))
                     return (
                       <div key={provider.id} className="flex items-center justify-center px-3 py-2 gap-2">
                         <img
@@ -179,17 +177,18 @@ const UserSettingsPage = () => {
                   );
                 })}
               </div>
-
               <HelpText content={t('common:request_password.text')}>
                 <p className="font-semibold">{t('common:reset_password')}</p>{' '}
               </HelpText>
-              <div>
+              <div className="mb-6">
                 <Button className="w-full sm:w-auto" variant="outline" disabled={disabledResetPassword} onClick={requestResetPasswordClick}>
                   <Send size={16} className="mr-2" />
                   {t('common:send_reset_link')}
                 </Button>
                 {disabledResetPassword && <p className="text-sm text-gray-500 mt-2">{t('common:retry_reset_password.text')}</p>}
               </div>
+
+              <TwoFactorAuthentication userAuthData={userAuthData} />
             </CardContent>
           </Card>
         </AsideAnchor>
