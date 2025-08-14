@@ -133,7 +133,7 @@ export const RequestsTableBar = ({ total, selected, searchVars, setSearch, colum
         <div className="sm:grow" />
 
         <FilterBarContent>
-          <TableSearch value={q} setQuery={onSearch} />
+          <TableSearch name="requestSearch" value={q} setQuery={onSearch} />
         </FilterBarContent>
       </TableFilterBar>
 

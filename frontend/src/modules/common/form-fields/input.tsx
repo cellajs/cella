@@ -22,6 +22,7 @@ interface Props<TFieldValues extends FieldValues> {
   icon?: ReactNode;
   autoFocus?: boolean;
   inputClassName?: string;
+  autocomplete?: string;
 }
 
 const InputFormField = <TFieldValues extends FieldValues>({
@@ -40,6 +41,7 @@ const InputFormField = <TFieldValues extends FieldValues>({
   icon,
   autoFocus,
   inputClassName,
+  autocomplete = 'off',
 }: Props<TFieldValues>) => {
   const { setFocus } = useFormContext();
 
@@ -79,6 +81,7 @@ const InputFormField = <TFieldValues extends FieldValues>({
                 onFocus={onFocus}
                 readOnly={readOnly}
                 type={type}
+                autoComplete={autocomplete}
                 autoFocus={autoFocus}
                 defaultValue={defaultValue}
                 value={value || formFieldValue || ''}

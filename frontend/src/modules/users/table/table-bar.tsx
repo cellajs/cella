@@ -114,7 +114,7 @@ export const UsersTableBar = ({ total, selected, searchVars, setSearch, columns,
           <div className="sm:grow" />
 
           <FilterBarContent className="max-sm:animate-in max-sm:slide-in-from-left max-sm:fade-in max-sm:duration-300">
-            <TableSearch value={q} setQuery={onSearch} />
+            <TableSearch name="userSearch" value={q} setQuery={onSearch} />
             <SelectRole value={role === undefined ? 'all' : role} onChange={onRoleChange} className="h-10 sm:min-w-32" />
           </FilterBarContent>
         </TableFilterBar>

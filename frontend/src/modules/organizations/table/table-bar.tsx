@@ -159,7 +159,7 @@ export const OrganizationsTableBar = ({
         <div className="sm:grow" />
 
         <FilterBarContent>
-          <TableSearch value={q} setQuery={onSearch} />
+          <TableSearch name="organizationSearch" value={q} setQuery={onSearch} />
         </FilterBarContent>
       </TableFilterBar>
 
