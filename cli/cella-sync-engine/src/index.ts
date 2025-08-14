@@ -2,9 +2,10 @@ import pc from "picocolors";
 import yoctoSpinner from 'yocto-spinner';
 import { boilerplateConfig, forkConfig } from "./config";
 import { getGitFileHashes } from "./utils/git/files";
-import { analyzeManyFiles } from "./modules/git/analyze-file";
+import { analyzeManyFiles } from "./modules/analyze-file";
 import { analyzedFileLine, logAnalyzedFileLine } from "./log/analyzed-file";
-import { analyzedSummaryLines } from "./log/analyzed-summary";
+import { analyzedSummaryLines, logAnalyzedSummaryLines } from "./log/analyzed-summary";
+import { analyzedZwizzleLine, logAnalyzedZwizzleLine } from "./log/analyzed-zwizzle";
 
 async function main(): Promise<void> {
   console.log(pc.cyan("↻ Starting git-sync..."));
@@ -30,14 +31,25 @@ async function main(): Promise<void> {
 
   spinner.stop();
 
-  console.log(pc.bold("\n🗀 File Sync Status:\n"));
-
+  // Log the analyzed files
+  console.log(pc.bold("\nFile analysis:"));
   for (const file of analyzedFiles) {
-    logAnalyzedFileLine(file, analyzedFileLine(file));
+    const line = analyzedFileLine(file);
+    logAnalyzedFileLine(file, line);
   }
 
+  // Log the zwizzle analysis
+  console.log(pc.bold("\nZwizzle analysis:"));
+  for (const file of analyzedFiles) {
+    const line = analyzedZwizzleLine(file);
+    logAnalyzedZwizzleLine(file, line);
+  }
+
+  // Log the summary of analyzed files
+  console.log(pc.bold(`\nSummary:`));
   const summaryLines = analyzedSummaryLines(analyzedFiles);
-  console.log("\n" + summaryLines.join("\n"));
+  logAnalyzedSummaryLines(summaryLines);
+  
 
   // await runSync(boilerplateConfig, forkConfig, fileSyncAnalyses)
 }

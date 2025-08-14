@@ -1,15 +1,23 @@
 export interface ZwizzleEntry {
   filePath: string;
-  swizzled: boolean;
+  zwizzled: boolean;
   event: 'removed' | 'edited' | 'renamed' | 'binaryReplaced';
   sharedAncestorSha?: string; // commit SHA where both had it last
-  boilerplateBlobSha?: string; // blob at swizzle time
-  forkBlobSha?: string;        // blob at swizzle time
+  lastCommitSha?: string;        // commit at swizzle time
+  blobSha?: string;        // blob at swizzle time
   commitAfterSwizzle?: string; // fork commit immediately after swizzle
-  detectedAt: string;          // ISO timestamp
+  lastZwizzledAt: string;          // ISO timestamp
+  boilerplateLastCommitSha?: string; // commit at swizzle time
+  boilerplateBlobSha?: string; // blob at swizzle time
 }
 
-export interface ZwizzleFile {
+export interface ZwizzleMetadata {
   version: string; // schema version
-  entries: ZwizzleEntry[];
+  entries: Record<string, ZwizzleEntry>; // filePath -> ZwizzleEntry
+}
+
+export interface ZwizzleAnalysis {
+  existingMetadata?: ZwizzleEntry; // The entry from metadata (if any)
+  existingMetadataValid?: boolean;    // Still matches current file state?
+  newMetadata?: ZwizzleEntry;    // The newly detected entry (if triggered)
 }

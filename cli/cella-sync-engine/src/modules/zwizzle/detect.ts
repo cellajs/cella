@@ -1,9 +1,8 @@
-import { FileAnalysis } from '../../types';
-import { detectRemoved } from './detect-removed';
+import { FileAnalysis, ZwizzleEntry } from '../../types';
+import { detectRemovedZwizzle } from './detect-removed';
 
-export function detectZwizzles(analyzedFile: FileAnalysis) {
-  const zwizzled = detectRemoved(analyzedFile);
-  if (zwizzled) {
-    console.log('Zwizzles detected:', zwizzled);
-  }
+export function detectZwizzles(analyzedFile: FileAnalysis): ZwizzleEntry | null {
+  const zwizzled = detectRemovedZwizzle(analyzedFile);
+
+  return zwizzled || null;
 }

@@ -27,15 +27,18 @@ export function analyzedFileLine(analyzedFile: FileAnalysis): string {
 }
 
 export function logAnalyzedFileLine(analyzedFile: FileAnalysis, line: string): void {
+  const logModulesConfigured = 'modules' in logConfig;
   const mergeRiskSafeByGitConfigured = 'mergeRiskSafeByGit' in logConfig.analyzedFile;
   const commitSummaryStateConfigured = 'commitSummaryState' in logConfig.analyzedFile;
   const filePathConfigured = 'filePath' in logConfig.analyzedFile;
 
+  const includesModule = logConfig.modules?.includes('analyzedFile');
   const mergeRiskSafeByGitEqual = logConfig.analyzedFile.mergeRiskSafeByGit === analyzedFile.mergeRisk?.safeByGit;
   const commitSummaryStateEqual = logConfig.analyzedFile.commitSummaryState?.includes(analyzedFile.commitSummary?.status || 'unknown');
   const filePathEqual = logConfig.analyzedFile.filePath?.includes(analyzedFile.filePath);
 
   const shouldLog = [
+    !logModulesConfigured || includesModule,
     !mergeRiskSafeByGitConfigured || mergeRiskSafeByGitEqual,
     !commitSummaryStateConfigured || commitSummaryStateEqual,
     !filePathConfigured || filePathEqual,

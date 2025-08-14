@@ -1,22 +1,23 @@
-import { FileAnalysis } from '../../types/index';
-import { ZwizzleEntry } from '../../types/zwizzle';
+import { FileAnalysis, ZwizzleEntry } from '../../types/index';
 
-export function detectRemoved(file: FileAnalysis): ZwizzleEntry | null {
-  const { commitSummary, blobStatus, boilerplateFile } = file;
+export function detectRemovedZwizzle(analyzedFile: FileAnalysis): ZwizzleEntry | null {
+  const { filePath, commitSummary, blobStatus, boilerplateFile, forkFile } = analyzedFile;
 
-  const isAhead = commitSummary?.status === 'ahead';
+  const isRelated = commitSummary?.status && commitSummary.status !== 'unrelated'
   const isMissing = blobStatus === 'missing';
   const hasBoilerplate = !!boilerplateFile;
 
-  if (isAhead && isMissing && hasBoilerplate) {
+  if (isRelated && isMissing && hasBoilerplate) {
     return {
-      filePath: file.filePath,
+      filePath,
       event: 'removed',
-      swizzled: true,
+      zwizzled: true,
       sharedAncestorSha: commitSummary.sharedAncestorSha,
-      boilerplateBlobSha: boilerplateFile.blobSha,
+      lastCommitSha: forkFile?.lastCommitSha,
       commitAfterSwizzle: commitSummary.sharedAncestorSha, // Assuming this is the commit after the swizzle
-      detectedAt: new Date().toISOString(),
+      lastZwizzledAt: new Date().toISOString(),
+      boilerplateLastCommitSha: boilerplateFile.lastCommitSha,
+      boilerplateBlobSha: boilerplateFile.blobSha,
     };
   }
 
