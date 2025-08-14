@@ -1,6 +1,7 @@
 import { mkdtemp, rm } from 'fs/promises';
 import * as path from 'path';
 import * as os from 'os';
+import { existsSync, readFileSync, writeFileSync } from 'fs';
 
 /**
  * Checks if a file is binary based on its extension.
@@ -55,4 +56,42 @@ export async function createTempDir(prefix: string): Promise<string> {
  */
 export async function removeDir(dirPath: string): Promise<void> {
   await rm(dirPath, { recursive: true, force: true });
+}
+
+/**
+ * Reads a JSON file and returns its content as an object.
+ * Returns null if the file does not exist or cannot be parsed.
+ *
+ * @param filePath - The path to the JSON file
+ */
+export function readJsonFile<T>(filePath: string): T | null {
+  if (!existsSync(filePath)) return null;
+  try {
+    const raw = readFileSync(filePath, 'utf-8');
+    return JSON.parse(raw) as T;
+  } catch (err) {
+    console.warn(`Failed to read or parse JSON at ${filePath}:`, err);
+    return null;
+  }
+}
+
+/**
+ * Writes an object to a JSON file.
+ * If the file already exists, it will be overwritten.
+ *
+ * @param filePath - The path to the JSON file
+ * @param data - The data to write to the file
+ */
+export function writeJsonFile(filePath: string, data: any): void {
+  writeFileSync(filePath, JSON.stringify(data, null, 2), 'utf-8');
+}
+
+/**
+ * Resolves a file path to an absolute path.
+ *
+ * @param filePath - The file path to resolve
+ * @returns The absolute path
+ */
+export function resolvePath(filePath: string): string {
+  return path.resolve(filePath);
 }

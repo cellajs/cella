@@ -1,7 +1,6 @@
-import fs from 'fs';
-import path from 'path';
 import { ZwizzleEntry, ZwizzleMetadata } from '../../types';
 import { zwizzleConfig } from '../../config';
+import { readJsonFile, writeJsonFile, resolvePath } from '../../utils/files';
 
 let cachedMetadata: ZwizzleMetadata | null = null;
 
@@ -12,11 +11,9 @@ let cachedMetadata: ZwizzleMetadata | null = null;
 export function loadZwizzleMetadata(): ZwizzleMetadata | null {
   if (cachedMetadata) return cachedMetadata;
 
-  const resolvedPath = path.resolve(zwizzleConfig.filePath);
-  if (!fs.existsSync(resolvedPath)) return null;
+  const filePath = resolvePath(zwizzleConfig.filePath);
+  cachedMetadata = readJsonFile<ZwizzleMetadata>(filePath);
 
-  const raw = fs.readFileSync(resolvedPath, 'utf-8');
-  cachedMetadata = JSON.parse(raw) as ZwizzleMetadata;
   return cachedMetadata;
 }
 
@@ -27,9 +24,7 @@ export function loadZwizzleMetadata(): ZwizzleMetadata | null {
  */
 export function getZwizzleMetadata(filePath: string): ZwizzleEntry | null {
   const metadata = loadZwizzleMetadata();
-  if (!metadata) return null;
-
-  return metadata.entries[filePath] || null;
+  return metadata?.entries[filePath] || null;
 }
 
 /**
@@ -38,4 +33,25 @@ export function getZwizzleMetadata(filePath: string): ZwizzleEntry | null {
  */
 export function clearZwizzleMetadataCache(): void {
   cachedMetadata = null;
+}
+
+/**
+ * Write ZwizzleMetadata to a JSON file.
+ * Merges with existing metadata if file already exists.
+ */
+export function writeZwizzleMetadata(metadata: ZwizzleMetadata) {
+  const filePath = resolvePath(zwizzleConfig.filePath);
+  const existingMetadata = readJsonFile<ZwizzleMetadata>(filePath);
+
+  const mergedMetadata: ZwizzleMetadata = existingMetadata
+    ? {
+        version: metadata.version,
+        entries: {
+          ...existingMetadata.entries,
+          ...metadata.entries, // new entries overwrite existing ones
+        },
+      }
+    : metadata;
+
+  writeJsonFile(filePath, mergedMetadata);
 }
