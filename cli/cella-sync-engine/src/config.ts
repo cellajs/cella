@@ -19,14 +19,22 @@ export type RepoConfig = {
 };
 
 export type Log = {
+  modules?: string[];
   analyzedFile: {
+    // Filters to filter analyzed files
     filePath?: string[];
     commitSummaryState?: string[];
     mergeRiskSafeByGit?: boolean;
+  },
+  analyzedZwizzle: {
+    // Filters to filter zwizzle analysis
+    filePath?: string[];
+    zwizzled?: boolean;
   }
 }
 
 export const logConfig: Log = {
+  modules: ['analyzedFile', 'analyzedSummary'], // 'analyzedZwizzle'
   analyzedFile: {
     // filePath: [
     //   'frontend/public/static/icons/icon-57x57.png'
@@ -40,6 +48,9 @@ export const logConfig: Log = {
     //   "unknown",
     // ],
     mergeRiskSafeByGit: false, // If true, will log files that are safe by Git
+  },
+  analyzedZwizzle: {
+    zwizzled: true,
   }
 };
 
@@ -68,7 +79,7 @@ export const forkConfig: RepoConfig = {
 };
 
 export const zwizzleConfig = {
-  fileName: 'cella-swizzle.json', // default
+  fileName: 'cella-swizzle.metadata.json', // default
   rootDir: process.cwd(),         // can be overridden per run
   get filePath() {
     return `${this.rootDir}/${this.fileName}`;

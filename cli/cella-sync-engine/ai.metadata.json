@@ -10,7 +10,7 @@
     "Create a new sync-branch in the fork",
     "Add boilerplate as upstream in the fork/sync-branch",
     "Merge commits from fork into fork/sync-branch",
-    "Merge commits from boilerplate into fork/sync-branch (attempt auto-resolve conflicts)",
+    "Merge commits from boilerplate into fork/sync-branch (attempt auto-resolve conflicts git cannot auto-resolve)",
     "Squash commits from fork/sync-branch into fork for clean history",
     "Rebase squash commit back into fork/sync-branch"
   ],
@@ -18,23 +18,23 @@
     "root": ["package.json", "package-lock.json", "index.ts"],
     "src": {
       "config": ["*"],
-      "log": ["analyzed-file.ts", "analyzed-summary.ts"],
+      "log": ["analyzed-file.ts", "analyzed-summary.ts", "analyzed-zwizzle.ts"],
       "modules": {
         "git": [
           "analyze-file.blob.ts",
           "analyze-file-commits.ts",
           "analyze-file-merge-risk.ts",
-          "analyze-file.ts",
           "check-file-merge.ts"
         ],
-        "zwizzle": ["init.ts", "detect.ts"]
+        "zwizzle": ["analyze.ts", "detect.ts", "detect-removed.ts", "metadata.ts"],
+        "*": ["analyze-file.ts"]
       },
       "utils": {
         "git": ["command.ts", "files.ts", "remotes.ts"],
         "*": ["files.ts"]
       },
       "index.ts": "*",
-      "types": ["index.ts"]
+      "types": ["index.ts", "git.ts", "zwizzle.ts"]
     },
     "cli": {
       "cella-sync-engine": ["*"]
@@ -76,6 +76,27 @@
       "reason": "'missingFork' | 'unrelatedHistory' | 'binaryFile' | 'none' | 'conflict' | 'unkown'",
       "automergeable": "boolean"
     },
+    "ZwizzleEntry": {
+      "filePath": "string",
+      "zwizzled": "boolean",
+      "event": "'removed' | 'edited' | 'renamed' | 'binaryReplaced'",
+      "sharedAncestorSha?": "string",
+      "lastCommitSha?": "string",
+      "blobSha?": "string",
+      "commitAfterSwizzle?": "string",
+      "lastZwizzledAt": "string",
+      "boilerplateLastCommitSha?": "string",
+      "boilerplateBlobSha?": "string"
+    },
+    "ZwizzleMetadata": {
+      "version": "string",
+      "entries": "Record<string, ZwizzleEntry>"
+    },
+    "ZwizzleAnalysis": {
+      "existingMetadata?": "ZwizzleEntry",
+      "existingMetadataValid?": "boolean",
+      "newMetadata?": "ZwizzleEntry"
+    },
     "FileAnalysis": {
       "filePath": "string",
       "boilerplateFile": "FileEntry",
@@ -83,7 +104,8 @@
       "commitSummary?": "CommitSummary",
       "blobStatus?": "'identical' | 'different' | 'missing'",
       "mergeRisk?": "MergeRisk",
-      "mergeCheck?": "MergeCheck"
+      "mergeCheck?": "MergeCheck",
+      "zwizzle?": "ZwizzleAnalysis"
     }
   },
   "metadataVersion": "1.0.0"

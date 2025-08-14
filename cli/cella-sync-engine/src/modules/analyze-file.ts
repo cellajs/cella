@@ -1,12 +1,12 @@
 import pLimit from 'p-limit';
 
-import { RepoConfig } from '../../config';
-import { FileAnalysis, FileEntry } from '../../types';
-import { analyzeFileCommits } from './analyze-file-commits';
-import { analyzeFileBlob } from './analyze-file-blob';
-import { analyzeFileMergeRisk } from './analyze-file-merge-risk';
-import { checkFileAutomerge } from './check-file-merge';
-import { detectZwizzles } from '../zwizzle/detect';
+import { RepoConfig } from '../config';
+import { FileAnalysis, FileEntry } from '../types';
+import { analyzeFileCommits } from './git/analyze-file-commits';
+import { analyzeFileBlob } from './git/analyze-file-blob';
+import { analyzeFileMergeRisk } from './git/analyze-file-merge-risk';
+import { checkFileAutomerge } from './git/check-file-merge';
+import { analyzeZwizzle } from './zwizzle/analyze';
 
 // Run 10 analyses at a time
 const limit = pLimit(10);
@@ -22,9 +22,7 @@ export async function analyzeFile(
   const blobStatus = analyzeFileBlob(boilerplateFile, forkFile);
   const mergeRisk = analyzeFileMergeRisk(commitSummary.status, blobStatus);
 
-  // Before running checks, we also need to check if a file is "swizzled"
-  // Should we do this in analyze? or in check?
-
+  // Create the initial analysis object
   const analyzedFile = {
     filePath,
     boilerplateFile,
@@ -34,8 +32,8 @@ export async function analyzeFile(
     mergeRisk
   } as FileAnalysis;
 
-  // @TODO: enable zwizzle detection
-  // detectZwizzles(analyzedFile);
+  // Extend the analysis with zwizzle data
+  analyzedFile.zwizzle = analyzeZwizzle(analyzedFile);
 
   await checkFile(boilerplate, fork, analyzedFile);
 

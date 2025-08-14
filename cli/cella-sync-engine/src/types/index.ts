@@ -1,37 +1,8 @@
-export type FileEntry = {
-  path: string;
-  blobSha: string;
-  shortBlobSha: string;
-  lastCommitSha: string;
-  shortCommitSha: string;
-};
+import { CommitSummary, FileEntry, MergeCheck, MergeRisk } from './git';
+import { ZwizzleAnalysis } from './zwizzle';
 
-export type CommitEntry = {
-  sha: string;
-  date: string;
-};
-
-export type CommitSummary = {
-  status: 'upToDate' | 'ahead' | 'behind' | 'diverged' | 'unrelated';
-  commitsAhead: number;
-  commitsBehind: number;
-  sharedAncestorSha?: string;
-  lastSyncedAt?: string;
-  historyCoverage: 'complete' | 'partial' | 'unknown';
-};
-
-export type MergeRisk = {
-  likelihood: 'low' | 'medium' | 'high';
-  reason: 'identical' | 'blobMismatch' | 'missingInFork' | 'divergedContent' | 'unrelatedHistories' | 'unknown';
-  safeByGit: boolean;
-  check: 'none' | 'gitAutoMerge' | 'verifyAncestor' | 'addedOrRemoved' | 'threeWayMergeCheck';
-};
-
-export type MergeCheck = {
-  couldRun: boolean;
-  reason: 'missingFork' | 'unrelatedHistory' | 'binaryFile' | 'none' | 'conflict' | 'unkown';
-  automergeable: boolean;
-}
+export * from './git';
+export * from './zwizzle';
 
 export type FileAnalysis = {
   filePath: string;
@@ -41,4 +12,5 @@ export type FileAnalysis = {
   blobStatus?: 'identical' | 'different' | 'missing';
   mergeRisk?: MergeRisk;
   mergeCheck?: MergeCheck;
+  zwizzle?: ZwizzleAnalysis;
 }
