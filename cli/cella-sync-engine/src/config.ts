@@ -79,6 +79,7 @@ export const forkConfig: RepoConfig = {
 };
 
 export const zwizzleConfig = {
+  version: '1.0.0', // Version of the zwizzle metadata format
   fileName: 'cella-swizzle.metadata.json', // default
   rootDir: process.cwd(),         // can be overridden per run
   get filePath() {

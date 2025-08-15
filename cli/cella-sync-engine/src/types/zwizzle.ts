@@ -13,6 +13,7 @@ export interface ZwizzleEntry {
 
 export interface ZwizzleMetadata {
   version: string; // schema version
+  lastSyncedAt: string; // ISO timestamp of last sync
   entries: Record<string, ZwizzleEntry>; // filePath -> ZwizzleEntry
 }
 
