@@ -42,3 +42,15 @@ function isZwizzleMetadataValid(entry: ZwizzleEntry, analyzedFile: FileAnalysis)
 
   return false;
 }
+
+export function extractZwizzleEntries(analyzedFiles: FileAnalysis[]): ZwizzleEntry[] {
+  const entries: ZwizzleEntry[] = [];
+
+  for (const file of analyzedFiles) {
+    if (file.zwizzle?.newMetadata) {
+      entries.push(file.zwizzle.newMetadata);
+    }
+  }
+
+  return entries;
+}

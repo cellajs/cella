@@ -39,19 +39,18 @@ export function clearZwizzleMetadataCache(): void {
  * Write ZwizzleMetadata to a JSON file.
  * Merges with existing metadata if file already exists.
  */
-export function writeZwizzleMetadata(metadata: ZwizzleMetadata) {
+export function writeZwizzleMetadata(entries: ZwizzleEntry[]): void {
   const filePath = resolvePath(zwizzleConfig.filePath);
   const existingMetadata = readJsonFile<ZwizzleMetadata>(filePath);
 
-  const mergedMetadata: ZwizzleMetadata = existingMetadata
-    ? {
-        version: metadata.version,
-        entries: {
-          ...existingMetadata.entries,
-          ...metadata.entries, // new entries overwrite existing ones
-        },
-      }
-    : metadata;
+  const mergedMetadata: ZwizzleMetadata = {
+    version: zwizzleConfig.version,
+    lastSyncedAt: new Date().toISOString(),
+    entries: {
+      ...existingMetadata?.entries || {},
+      ...Object.fromEntries(entries.map(entry => [entry.filePath, entry]))
+    },
+  }
 
   writeJsonFile(filePath, mergedMetadata);
 }

@@ -6,6 +6,8 @@ import { analyzeManyFiles } from "./modules/analyze-file";
 import { analyzedFileLine, logAnalyzedFileLine } from "./log/analyzed-file";
 import { analyzedSummaryLines, logAnalyzedSummaryLines } from "./log/analyzed-summary";
 import { analyzedZwizzleLine, logAnalyzedZwizzleLine } from "./log/analyzed-zwizzle";
+import { extractZwizzleEntries } from "./modules/zwizzle/analyze";
+import { writeZwizzleMetadata } from "./modules/zwizzle/metadata";
 
 async function main(): Promise<void> {
   console.log(pc.cyan("↻ Starting git-sync..."));
@@ -28,6 +30,13 @@ async function main(): Promise<void> {
     boilerplateFiles,
     forkFiles
   );
+
+  spinner.stop();
+
+  spinner.start("Update zwizzle...");
+  
+  const zwizzleEntries = extractZwizzleEntries(analyzedFiles);
+  writeZwizzleMetadata(zwizzleEntries);
 
   spinner.stop();
 
