@@ -1209,7 +1209,7 @@ export const zGetEntitiesWithAdminsData = z.object({
   query: z.object({
     q: z.optional(z.string()),
     targetUserId: z.optional(z.string()),
-    roles: z.optional(z.union([z.array(z.enum(['member', 'admin'])), z.null()])),
+    role: z.optional(z.enum(['member', 'admin'])),
     type: z.enum(['organization']),
     sort: z.optional(z.enum(['name', 'createdAt'])),
   }),

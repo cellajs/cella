@@ -3,8 +3,7 @@ import { t } from 'i18next';
 import { Bird, Search } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useInView } from 'react-intersection-observer';
-import type z from 'zod';
-import type { zGetEntitiesWithAdminsData } from '~/api.gen/zod.gen';
+import type { GetEntitiesWithAdminsData } from '~/api.gen';
 import { useOnlineManager } from '~/hooks/use-online-manager';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { GridSkeleton } from '~/modules/entities/entity-grid/skeleton';
@@ -12,9 +11,7 @@ import { EntityTile } from '~/modules/entities/entity-grid/tile';
 import type { EntityGridWrapperProps } from '~/modules/entities/entity-grid/wrapper';
 import { contextEntitiesQueryOptions } from '~/modules/entities/query';
 
-// TODO (BLOCKING): Can we also include roles and userId in the searchVars?
-// @hey-api/openapi-ts incorrectly creates schema, imo due to z.preprocess combined with .optional(), `null | undefined` instead `undefined`
-export type EntitySearch = Pick<z.infer<typeof zGetEntitiesWithAdminsData>['query'], 'sort' | 'q'>;
+export type EntitySearch = Pick<GetEntitiesWithAdminsData['query'], 'sort' | 'q' | 'role'>;
 
 interface Props extends EntityGridWrapperProps {
   searchVars: EntitySearch;
@@ -27,7 +24,6 @@ export const BaseEntityGrid = ({
   tileComponent: TileComponent = EntityTile,
   entityType,
   label,
-  roles,
   userId,
   searchVars,
   setTotalCount,
@@ -45,7 +41,7 @@ export const BaseEntityGrid = ({
     isLoading,
     isFetching,
     error,
-  } = useQuery(contextEntitiesQueryOptions({ ...searchVars, roles, type: entityType, targetUserId: userId }));
+  } = useQuery(contextEntitiesQueryOptions({ ...searchVars, type: entityType, targetUserId: userId }));
 
   const isFiltered = !!searchVars.q;
 
