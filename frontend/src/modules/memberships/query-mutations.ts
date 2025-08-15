@@ -1,7 +1,7 @@
 import { useMutation } from '@tanstack/react-query';
 import { appConfig } from 'config';
 import { t } from 'i18next';
-import { deleteMemberships, membershipInvite, updateMembership, type MembershipInviteResponse } from '~/api.gen';
+import { deleteMemberships, type MembershipInviteResponse, membershipInvite, updateMembership } from '~/api.gen';
 import type { ApiError } from '~/lib/api';
 import { toaster } from '~/modules/common/toaster/service';
 import type { ContextEntityData, EntityPage } from '~/modules/entities/types';

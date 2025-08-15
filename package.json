@@ -54,7 +54,7 @@
     "test": "pnpm -r --parallel test"
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.1.4",
+    "@biomejs/biome": "^2.2.0",
     "@evilmartians/lefthook": "^1.12.3",
     "@typescript/native-preview": "7.0.0-dev.20250813.1",
     "cross-env": "^10.0.0",
@@ -70,8 +70,8 @@
   "pnpm": {
     "overrides": {
       "zod": "4.0.17",
-      "react": "^19.1.0",
-      "react-dom": "^19.1.0",
+      "react": "^19.1.1",
+      "react-dom": "^19.1.1",
       "@types/react": "^19.1.10",
       "@types/react-dom": "^19.1.7"
     }

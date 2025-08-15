@@ -4,7 +4,7 @@ import { useNavigate, useSearch } from '@tanstack/react-router';
 import { appConfig } from 'config';
 import { Fingerprint } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { type ApiError, getPasskeyChallenge, signInWithPasskey, type SignInWithPasskeyData, type SignInWithPasskeyResponse } from '~/api.gen';
+import { type ApiError, getPasskeyChallenge, type SignInWithPasskeyData, type SignInWithPasskeyResponse, signInWithPasskey } from '~/api.gen';
 import type { AuthStep } from '~/modules/auth/types';
 import { toaster } from '~/modules/common/toaster/service';
 import { Button } from '~/modules/ui/button';
