@@ -1,8 +1,3 @@
-import { OpenAPIHono } from '@hono/zod-openapi';
-import { EventName, Paddle } from '@paddle/paddle-node-sdk';
-import { appConfig } from 'config';
-import { and, eq, inArray, isNull, lt } from 'drizzle-orm';
-import i18n from 'i18next';
 import { db } from '#/db/db';
 import { emailsTable } from '#/db/schema/emails';
 import { membershipsTable } from '#/db/schema/memberships';
@@ -22,6 +17,11 @@ import { logError, logEvent } from '#/utils/logger';
 import { nanoid } from '#/utils/nanoid';
 import { slugFromEmail } from '#/utils/slug-from-email';
 import { createDate, TimeSpan } from '#/utils/time-span';
+import { OpenAPIHono } from '@hono/zod-openapi';
+import { EventName, Paddle } from '@paddle/paddle-node-sdk';
+import { appConfig } from 'config';
+import { and, eq, inArray, isNotNull, isNull, lt } from 'drizzle-orm';
+import i18n from 'i18next';
 import { NewsletterEmail, type NewsletterEmailProps } from '../../../emails/newsletter';
 import { SystemInviteEmail, type SystemInviteEmailProps } from '../../../emails/system-invite';
 
@@ -162,6 +162,7 @@ const systemRouteHandlers = app
     const user = getContextUser();
 
     // Get members from organizations
+    // TODO(REFACTOR) using emails table
     const recipientsRecords = await db
       .selectDistinct({
         email: usersTable.email,
@@ -171,22 +172,14 @@ const systemRouteHandlers = app
         orgName: organizationsTable.name,
       })
       .from(membershipsTable)
-      // TODO(CHORE) decide with filters
-      .innerJoin(
-        usersTable,
-        and(
-          eq(usersTable.id, membershipsTable.userId),
-          // eq(usersTable.emailVerified, true) // maybe add for only confirmed emails
-        ),
-      )
+      .innerJoin(usersTable, and(eq(usersTable.id, membershipsTable.userId)))
       .innerJoin(organizationsTable, eq(organizationsTable.id, membershipsTable.organizationId))
       .where(
         and(
           eq(membershipsTable.contextType, 'organization'),
           inArray(membershipsTable.organizationId, organizationIds),
           inArray(membershipsTable.role, roles),
-          // isNotNull(membershipsTable.activatedAt), send to invited users also??
-          // eq(membershipsTable.archived, false ), send to users who archived??
+          isNotNull(membershipsTable.activatedAt), // send only to current members( invited doesn't counts)
           eq(usersTable.newsletter, true),
         ),
       );
