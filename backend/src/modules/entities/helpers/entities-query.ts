@@ -6,9 +6,9 @@ import { db } from '#/db/db';
 import { membershipsTable } from '#/db/schema/memberships';
 import { usersTable } from '#/db/schema/users';
 import { entityTables } from '#/entity-config';
-import { entityBaseSchema, type pageEntitiesQuerySchema } from '#/modules/entities/schema';
+import { contextEntityBaseSchema, type pageEntitiesQuerySchema } from '#/modules/entities/schema';
 import { membershipSummarySelect } from '#/modules/memberships/helpers/select';
-import { membershipSummarySchema } from '#/modules/memberships/schema';
+import { membershipBaseSchema } from '#/modules/memberships/schema';
 import { contextEntityTypeSchema } from '#/utils/schema/common';
 import { prepareStringForILikeFilter } from '#/utils/sql';
 
@@ -21,9 +21,9 @@ type EntitiesQueryProps = Omit<z.infer<typeof pageEntitiesQuerySchema>, 'targetU
 type UserEntitiesQueryProps = Omit<EntitiesQueryProps, 'userId'>;
 type ContextEntitiesQueryProps = Omit<EntitiesQueryProps, 'userMembershipType' | 'selfId' | 'type'> & { type?: ContextEntityType };
 
-const expandedSchema = entityBaseSchema.extend({
+const expandedSchema = contextEntityBaseSchema.extend({
   entityType: contextEntityTypeSchema,
-  membership: membershipSummarySchema.nullable(),
+  membership: membershipBaseSchema.nullable(),
   total: z.number(),
 });
 

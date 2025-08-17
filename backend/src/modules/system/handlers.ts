@@ -153,7 +153,7 @@ const systemRouteHandlers = app
     return ctx.json(true, 200);
   })
   /*
-   * Send newsletter to one or more roles members of one or more organizations
+   * Send newsletter to members of one or more organizations matching one ore more roles.
    */
   .openapi(systemRoutes.sendNewsletter, async (ctx) => {
     const { organizationIds, subject, content, roles } = ctx.req.valid('json');
@@ -179,7 +179,7 @@ const systemRouteHandlers = app
           eq(membershipsTable.contextType, 'organization'),
           inArray(membershipsTable.organizationId, organizationIds),
           inArray(membershipsTable.role, roles),
-          isNotNull(membershipsTable.activatedAt), // send only to current members( invited doesn't counts)
+          isNotNull(membershipsTable.activatedAt),
           eq(usersTable.newsletter, true),
         ),
       );

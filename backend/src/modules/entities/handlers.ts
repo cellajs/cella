@@ -11,7 +11,7 @@ import { checkSlugAvailable } from '#/modules/entities/helpers/check-slug';
 import { getEntitiesQuery } from '#/modules/entities/helpers/entities-query';
 import { processEntitiesData } from '#/modules/entities/helpers/process-entities-data';
 import entityRoutes from '#/modules/entities/routes';
-import type { userSummarySchema } from '#/modules/entities/schema';
+import type { userBaseSchema } from '#/modules/entities/schema';
 import { membershipSummarySelect } from '#/modules/memberships/helpers/select';
 import { userSummarySelect } from '#/modules/users/helpers/select';
 import { defaultHook } from '#/utils/default-hook';
@@ -125,7 +125,7 @@ const entityRouteHandlers = app
       );
 
     // Group admins by entityId
-    const membersByEntityId = admins.reduce<Record<string, z.infer<typeof userSummarySchema>[]>>((acc, { entityId, userData }) => {
+    const membersByEntityId = admins.reduce<Record<string, z.infer<typeof userBaseSchema>[]>>((acc, { entityId, userData }) => {
       if (!entityId) return acc;
       if (!acc[entityId]) acc[entityId] = [];
       acc[entityId].push(userData);
