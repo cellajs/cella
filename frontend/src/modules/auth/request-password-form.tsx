@@ -5,9 +5,9 @@ import { type RequestPasswordResponse, requestPassword } from '~/api.gen';
 import { useMutation } from '~/hooks/use-mutations';
 import type { ApiError } from '~/lib/api';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
+import { toaster } from '~/modules/common/toaster/service';
 import { Button, SubmitButton } from '~/modules/ui/button';
 import { Input } from '~/modules/ui/input';
-import { toaster } from '../common/toaster';
 
 export const RequestPasswordForm = ({ email = '' }: { email?: string }) => {
   const { t } = useTranslation();

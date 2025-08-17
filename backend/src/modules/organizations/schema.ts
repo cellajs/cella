@@ -3,7 +3,7 @@ import { appConfig, type EntityType } from 'config';
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 import { organizationsTable } from '#/db/schema/organizations';
 import { authStrategiesEnum } from '#/db/schema/sessions';
-import { membershipSummarySchema } from '#/modules/memberships/schema';
+import { membershipBaseSchema } from '#/modules/memberships/schema';
 import {
   languageSchema,
   paginationQuerySchema,
@@ -42,11 +42,11 @@ export const organizationSchema = z.object({
   languages: z.array(languageSchema).min(1),
   emailDomains: z.array(z.string()),
   authStrategies: z.array(z.enum(authStrategiesEnum)),
-  membership: membershipSummarySchema.nullable(),
+  membership: membershipBaseSchema.nullable(),
   invitesCount: z.number(),
 });
 
-export const organizationWithMembershipSchema = organizationSchema.extend({ membership: membershipSummarySchema });
+export const organizationWithMembershipSchema = organizationSchema.extend({ membership: membershipBaseSchema });
 
 export const organizationCreateBodySchema = z.object({
   name: validNameSchema,

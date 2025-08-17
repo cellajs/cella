@@ -19,7 +19,7 @@ import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { useDropdowner } from '~/modules/common/dropdowner/use-dropdowner';
 import { PopConfirm } from '~/modules/common/popconfirm';
 import Spinner from '~/modules/common/spinner';
-import { toaster } from '~/modules/common/toaster';
+import { toaster } from '~/modules/common/toaster/service';
 import type { EntityPage } from '~/modules/entities/types';
 import { membersKeys } from '~/modules/memberships/query';
 import { Button } from '~/modules/ui/button';

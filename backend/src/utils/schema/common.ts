@@ -109,7 +109,10 @@ export const idsBodySchema = (maxItems = 50) =>
  ************************************************************************************************/
 
 /** Schema for a valid HTTPS URL */
-export const validUrlSchema = z.string().refine((url: string) => url.startsWith('https'), 'URL must start with https://');
+export const validUrlSchema = z
+  .string()
+  .refine((url: string) => url.startsWith('https'), 'URL must start with https://')
+  .transform((str) => str.toLowerCase().trim());
 
 /** Schema for a valid name: string between 2 and 100 characters, allowing specific characters */
 export const validNameSchema = z
@@ -125,7 +128,8 @@ export const validNameSchema = z
 export const validEmailSchema = z
   .string()
   .min(4, 'Email must be between 4 and 100 characters')
-  .max(100, 'Email must be between 4 and 100 characters');
+  .max(100, 'Email must be between 4 and 100 characters')
+  .transform((str) => str.toLowerCase().trim());
 
 /** Schema for a valid slug: string between 2 and 100 characters, allowing alphanumeric and hyphens */
 export const validSlugSchema = z
@@ -154,3 +158,17 @@ export const validDomainsSchema = z
       .transform((str) => str.toLowerCase().trim()),
   )
   .optional();
+
+/**
+ * Schema for Electric sync target query parameters.
+ * These are typically passed as query string parameters to define
+ * the shape of a synchronization query used by ElectricSQL.
+ */
+export const baseElectrycSyncQuery = z.object({
+  table: z.string(),
+  offset: z.string(),
+  handle: z.string().optional(),
+  cursor: z.string().optional(),
+  live: z.string().optional(),
+  where: z.string().optional(),
+});

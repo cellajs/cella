@@ -2,7 +2,7 @@ import { z } from '@hono/zod-openapi';
 import { createCustomRoute } from '#/lib/custom-routes';
 import { hasOrgAccess, isAuthenticated, isPublicAccess } from '#/middlewares/guard';
 import { attachmentCreateManySchema, attachmentListQuerySchema, attachmentSchema, attachmentUpdateBodySchema } from '#/modules/attachments/schema';
-import { idInOrgParamSchema, idSchema, idsBodySchema, inOrgParamSchema } from '#/utils/schema/common';
+import { baseElectrycSyncQuery, idInOrgParamSchema, idSchema, idsBodySchema, inOrgParamSchema } from '#/utils/schema/common';
 import { errorResponses, paginationSchema, successWithRejectedItemsSchema } from '#/utils/schema/responses';
 
 const attachmentRoutes = {
@@ -151,10 +151,10 @@ const attachmentRoutes = {
     guard: [isAuthenticated, hasOrgAccess],
     tags: ['attachments'],
     summary: 'Shape proxy',
-    description: `Proxies requests to ElectricSQL\'s shape endpoint for the \`attachments\` table.
+    description: `Proxies requests to ElectricSQL's shape endpoint for the \`attachments\` table.
       Used by clients to synchronize local data with server state via the shape log system.
       This endpoint ensures required query parameters are forwarded and response headers are adjusted for browser compatibility.`,
-    request: { params: inOrgParamSchema },
+    request: { query: baseElectrycSyncQuery, params: inOrgParamSchema },
     responses: {
       200: {
         description: 'Success',

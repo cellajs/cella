@@ -6,7 +6,7 @@ import { useTranslation } from 'react-i18next';
 import { DataTable } from '~/modules/common/data-table';
 import { tablePropsAreEqual } from '~/modules/common/data-table/table-props-are-equal';
 import type { BaseTableMethods, BaseTableProps } from '~/modules/common/data-table/types';
-import { toaster } from '~/modules/common/toaster';
+import { toaster } from '~/modules/common/toaster/service';
 import { usersQueryOptions, useUpdateUserMutation } from '~/modules/users/query';
 import type { UsersSearch } from '~/modules/users/table/table-wrapper';
 import type { User } from '~/modules/users/types';

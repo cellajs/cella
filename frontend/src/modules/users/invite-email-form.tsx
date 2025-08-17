@@ -12,7 +12,7 @@ import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { SelectEmails } from '~/modules/common/form-fields/select-emails';
 import SelectRoleRadio from '~/modules/common/form-fields/select-role-radio';
 import { useStepper } from '~/modules/common/stepper/use-stepper';
-import { toaster } from '~/modules/common/toaster';
+import { toaster } from '~/modules/common/toaster/service';
 import type { EntityPage } from '~/modules/entities/types';
 import { useInviteMemberMutation } from '~/modules/memberships/query-mutations';
 import type { InviteMember } from '~/modules/memberships/types';

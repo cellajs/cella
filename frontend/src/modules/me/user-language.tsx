@@ -4,7 +4,7 @@ import i18n from 'i18next';
 import { useTranslation } from 'react-i18next';
 import { updateMe } from '~/api.gen';
 import CountryFlag from '~/modules/common/country-flag';
-import { toaster } from '~/modules/common/toaster';
+import { toaster } from '~/modules/common/toaster/service';
 import { Button } from '~/modules/ui/button';
 import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuTrigger } from '~/modules/ui/dropdown-menu';
 import { useUserStore } from '~/store/user';

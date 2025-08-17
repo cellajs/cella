@@ -14,7 +14,7 @@ import type { BaseTableBarProps, BaseTableMethods } from '~/modules/common/data-
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { FocusView } from '~/modules/common/focus-view';
 import SelectRole from '~/modules/common/form-fields/select-role';
-import { toaster } from '~/modules/common/toaster';
+import { toaster } from '~/modules/common/toaster/service';
 import UnsavedBadge from '~/modules/common/unsaved-badge';
 import type { MemberSearch, MembersTableProps } from '~/modules/memberships/members-table/table-wrapper';
 import { MembershipInvitations } from '~/modules/memberships/pending-table/invites-count';
@@ -158,7 +158,7 @@ export const MembersTableBar = ({
           <div className="sm:grow" />
 
           <FilterBarContent className="max-sm:animate-in max-sm:slide-in-from-left max-sm:fade-in max-sm:duration-300">
-            <TableSearch value={q} setQuery={onSearch} />
+            <TableSearch name="memberSearch" value={q} setQuery={onSearch} />
             <SelectRole entity value={role === undefined ? 'all' : role} onChange={onRoleChange} className="h-10 sm:min-w-32" />
           </FilterBarContent>
         </TableFilterBar>

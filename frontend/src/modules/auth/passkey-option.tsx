@@ -6,7 +6,7 @@ import { Fingerprint } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { type ApiError, getPasskeyChallenge, type SignInWithPasskeyData, type SignInWithPasskeyResponse, signInWithPasskey } from '~/api.gen';
 import type { AuthStep } from '~/modules/auth/types';
-import { toaster } from '~/modules/common/toaster';
+import { toaster } from '~/modules/common/toaster/service';
 import { Button } from '~/modules/ui/button';
 import { AuthenticateRoute } from '~/routes/auth';
 import { useUIStore } from '~/store/ui';

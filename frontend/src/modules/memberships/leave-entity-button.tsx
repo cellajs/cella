@@ -4,7 +4,7 @@ import { appConfig } from 'config';
 import { UserRoundX } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { deleteMyMembership } from '~/api.gen';
-import { toaster } from '~/modules/common/toaster';
+import { toaster } from '~/modules/common/toaster/service';
 import type { EntitySummary } from '~/modules/entities/types';
 import { deleteMenuItem } from '~/modules/navigation/menu-sheet/helpers/menu-operations';
 import { Button, type ButtonProps } from '~/modules/ui/button';

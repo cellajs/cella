@@ -13,7 +13,7 @@ import {
   systemInvite,
 } from '~/api.gen';
 import type { ApiError } from '~/lib/api';
-import { toaster } from '~/modules/common/toaster';
+import { toaster } from '~/modules/common/toaster/service';
 import type { Request } from '~/modules/requests/types';
 
 /**

@@ -13,7 +13,7 @@ import TableSearch from '~/modules/common/data-table/table-search';
 import type { BaseTableBarProps, BaseTableMethods } from '~/modules/common/data-table/types';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { FocusView } from '~/modules/common/focus-view';
-import { toaster } from '~/modules/common/toaster';
+import { toaster } from '~/modules/common/toaster/service';
 import DeleteRequests from '~/modules/requests/delete-requests';
 import { requestsKeys, useSendApprovalInviteMutation } from '~/modules/requests/query';
 import type { RequestsSearch } from '~/modules/requests/table/table-wrapper';
@@ -133,7 +133,7 @@ export const RequestsTableBar = ({ total, selected, searchVars, setSearch, colum
         <div className="sm:grow" />
 
         <FilterBarContent>
-          <TableSearch value={q} setQuery={onSearch} />
+          <TableSearch name="requestSearch" value={q} setQuery={onSearch} />
         </FilterBarContent>
       </TableFilterBar>
 

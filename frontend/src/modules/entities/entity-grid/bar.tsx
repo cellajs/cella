@@ -35,7 +35,7 @@ export const EntityGridBar = ({ totalCount, label, searchVars, setSearch, focusV
         </FilterBarActions>
         <div className="sm:grow" />
         <FilterBarContent className="max-sm:animate-in max-sm:slide-in-from-left max-sm:fade-in max-sm:duration-300">
-          <TableSearch value={q} setQuery={onSearch} />
+          <TableSearch name="entitySearch" value={q} setQuery={onSearch} />
           <SelectSort value={sort === undefined ? 'name' : sort} onChange={onSortChange} className="h-10" />
         </FilterBarContent>
       </TableFilterBar>

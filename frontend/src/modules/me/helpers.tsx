@@ -3,7 +3,7 @@ import { onlineManager } from '@tanstack/react-query';
 import { appConfig } from 'config';
 import { t } from 'i18next';
 import { createPasskey, getMe, getMyAuth, getMyMenu, getPasskeyChallenge } from '~/api.gen';
-import { toaster } from '~/modules/common/toaster';
+import { toaster } from '~/modules/common/toaster/service';
 import { useNavigationStore } from '~/store/navigation';
 import { useUIStore } from '~/store/ui';
 import { useUserStore } from '~/store/user';

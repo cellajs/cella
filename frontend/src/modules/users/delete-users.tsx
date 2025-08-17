@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import type { CallbackArgs } from '~/modules/common/data-table/types';
 import { DeleteForm } from '~/modules/common/delete-form';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
-import { toaster } from '~/modules/common/toaster';
+import { toaster } from '~/modules/common/toaster/service';
 import { useUserDeleteMutation } from '~/modules/users/query';
 import type { User } from '~/modules/users/types';
 

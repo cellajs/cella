@@ -1,14 +1,20 @@
 import { redirect } from '@tanstack/react-router';
+import router from '~/lib/router';
 
 /**
- * Prevents direct access to a parent route by redirecting to a child route.
+ * Prevents direct access to a parent route by redirecting the user to a specified child route.
  *
- * @param pathname - Current URL pathname.
- * @param param - Parameter to check for in pathname.
- * @param redirectLocation - Child route to redirect to if direct access is attempted.
- * @throws Redirects to specified child route if the condition is met.
+ * @param currentTo - The parent route path or route reference to check against the current route.
+ * @param redirectTo - The child route path to redirect the user to if direct access is detected.
+ *
+ * @throws Throws a redirect to `redirectTo` preserving current query parameters and replacing the history entry.
+ *
+ * @example
+ * // Redirect users from `/organizations/$idOrSlug` to its `/members` child route if accessed directly
+ * noDirectAccess(OrganizationRoute.to, OrganizationMembersRoute.to);
  */
-export const noDirectAccess = (pathname: string, param: string, redirectLocation: string) => {
-  if (!pathname.endsWith(param)) return;
-  throw redirect({ to: pathname + redirectLocation, replace: true });
+export const noDirectAccess = (currentTo: string, redirectTo: string) => {
+  const match = router.matchRoute({ to: currentTo }, { pending: true });
+  if (match === false) return;
+  throw redirect({ to: redirectTo, params: true, search: true, replace: true });
 };

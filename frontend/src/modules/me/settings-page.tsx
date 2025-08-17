@@ -12,7 +12,7 @@ import HelpText from '~/modules/common/help-text';
 import { PageAside } from '~/modules/common/page/aside';
 import { SimpleHeader } from '~/modules/common/simple-header';
 import StickyBox from '~/modules/common/sticky-box';
-import { toaster } from '~/modules/common/toaster';
+import { toaster } from '~/modules/common/toaster/service';
 import UnsavedBadge from '~/modules/common/unsaved-badge';
 import DeleteSelf from '~/modules/me/delete-self';
 import Passkeys from '~/modules/me/passkeys';

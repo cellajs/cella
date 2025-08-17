@@ -15,7 +15,7 @@
   "homepage": "https://cellajs.com",
   "author": "CellaJS <info@cellajs.com>",
   "engines": {
-    "node": ">=24.1.0"
+    "node": ">=24.5.0"
   },
   "type": "module",
   "main": "./src/index.ts",
@@ -33,7 +33,7 @@
     "@inquirer/prompts": "^6.0.1",
     "axios": "^1.8.3",
     "commander": "^12.1.0",
-    "cross-spawn": "^7.0.3",
+    "cross-spawn": "^7.0.6",
     "giget": "^1.2.3",
     "picocolors": "^1.1.0",
     "validate-npm-package-name": "^5.0.1",

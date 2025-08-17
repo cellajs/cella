@@ -1,8 +1,8 @@
 import type { z } from 'zod';
-import type { zEntityBaseSchema, zGetEntitiesWithAdminsResponse } from '~/api.gen/zod.gen';
+import type { zContextEntityBaseSchema, zGetEntitiesWithAdminsResponse } from '~/api.gen/zod.gen';
 import type { MembershipSummary } from '~/modules/memberships/types';
 
-export type EntitySummary = z.infer<typeof zEntityBaseSchema>;
+export type EntitySummary = z.infer<typeof zContextEntityBaseSchema>;
 
 export type ContextEntityData = EntitySummary & { membership: MembershipSummary | null };
 

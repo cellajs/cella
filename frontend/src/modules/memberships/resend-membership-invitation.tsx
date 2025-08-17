@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { type ApiError, type ResendInvitationData, type ResendInvitationResponse, resendInvitation } from '~/api.gen';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
-import { toaster } from '~/modules/common/toaster';
+import { toaster } from '~/modules/common/toaster/service';
 import { TooltipButton } from '~/modules/common/tooltip-button';
 import { Button, type ButtonProps } from '~/modules/ui/button';
 

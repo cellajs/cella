@@ -15,7 +15,7 @@ import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { FocusView } from '~/modules/common/focus-view';
 import { SheetTabs } from '~/modules/common/sheet-tabs';
 import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
-import { toaster } from '~/modules/common/toaster';
+import { toaster } from '~/modules/common/toaster/service';
 import UnsavedBadge from '~/modules/common/unsaved-badge';
 import CreateOrganizationForm from '~/modules/organizations/create-organization-form';
 import DeleteOrganizations from '~/modules/organizations/delete-organizations';
@@ -159,7 +159,7 @@ export const OrganizationsTableBar = ({
         <div className="sm:grow" />
 
         <FilterBarContent>
-          <TableSearch value={q} setQuery={onSearch} />
+          <TableSearch name="organizationSearch" value={q} setQuery={onSearch} />
         </FilterBarContent>
       </TableFilterBar>
 

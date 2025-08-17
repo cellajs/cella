@@ -11,7 +11,7 @@ import type { BaseTableBarProps, BaseTableMethods, CallbackArgs } from '~/module
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { FocusView } from '~/modules/common/focus-view';
 import SelectRole from '~/modules/common/form-fields/select-role';
-import { toaster } from '~/modules/common/toaster';
+import { toaster } from '~/modules/common/toaster/service';
 import UnsavedBadge from '~/modules/common/unsaved-badge';
 import DeleteUsers from '~/modules/users/delete-users';
 import InviteUsers from '~/modules/users/invite-users';
@@ -114,7 +114,7 @@ export const UsersTableBar = ({ total, selected, searchVars, setSearch, columns,
           <div className="sm:grow" />
 
           <FilterBarContent className="max-sm:animate-in max-sm:slide-in-from-left max-sm:fade-in max-sm:duration-300">
-            <TableSearch value={q} setQuery={onSearch} />
+            <TableSearch name="userSearch" value={q} setQuery={onSearch} />
             <SelectRole value={role === undefined ? 'all' : role} onChange={onRoleChange} className="h-10 sm:min-w-32" />
           </FilterBarContent>
         </TableFilterBar>

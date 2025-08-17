@@ -381,7 +381,9 @@ export const useStickyBox = ({ offsetTop = 0, offsetBottom = 0, bottom = false, 
     handleScroll(); // Initial check
 
     return () => {
-      unsubs.forEach((fn) => fn());
+      unsubs.forEach((fn) => {
+        fn();
+      });
       window.removeEventListener('scroll', handleScroll);
     };
   }, [node, offsetBottom, offsetTop, bottom, enabled]);

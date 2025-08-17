@@ -1,7 +1,7 @@
 import { default as i18n, default as i18next } from 'i18next';
 import { ApiError } from '~/lib/api';
 import router from '~/lib/router';
-import { toaster } from '~/modules/common/toaster';
+import { toaster } from '~/modules/common/toaster/service';
 import { useAlertStore } from '~/store/alert';
 import { flushStores } from '~/utils/flush-stores';
 

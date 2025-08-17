@@ -1,5 +1,7 @@
 import { toast } from 'sonner';
 
+export type ToastSeverity = 'success' | 'error' | 'info' | 'warning' | 'default';
+
 /**
  * Show a toast message
  * @param text
@@ -8,7 +10,7 @@ import { toast } from 'sonner';
  */
 export const toaster = (
   text: string,
-  type: 'success' | 'error' | 'info' | 'warning' | 'default' = 'default',
+  type: ToastSeverity = 'default',
   options: { id?: number | string; description?: string | React.ReactNode } = {},
 ) => {
   // Get all active toasts and dismiss the ones with the same title

@@ -2,7 +2,7 @@
 
 import { z } from 'zod';
 
-export const zEntityBaseSchema = z.object({
+export const zContextEntityBaseSchema = z.object({
   id: z.string(),
   entityType: z.enum(['organization']),
   slug: z.string(),
@@ -11,7 +11,7 @@ export const zEntityBaseSchema = z.object({
   bannerUrl: z.optional(z.union([z.string(), z.null()])),
 });
 
-export const zUserSummarySchema = z.object({
+export const zUserBaseSchema = z.object({
   id: z.string(),
   entityType: z.enum(['user']),
   slug: z.string(),
@@ -21,7 +21,7 @@ export const zUserSummarySchema = z.object({
   email: z.email(),
 });
 
-export const zMembershipSummarySchema = z.object({
+export const zMembershipBaseSchema = z.object({
   id: z.string(),
   contextType: z.enum(['organization']),
   userId: z.string(),
@@ -1447,7 +1447,14 @@ export const zShapeProxyData = z.object({
   path: z.object({
     orgIdOrSlug: z.string(),
   }),
-  query: z.optional(z.never()),
+  query: z.object({
+    table: z.string(),
+    offset: z.string(),
+    handle: z.optional(z.string()),
+    cursor: z.optional(z.string()),
+    live: z.optional(z.string()),
+    where: z.optional(z.string()),
+  }),
 });
 
 export const zDeleteAttachmentsData = z.object({
