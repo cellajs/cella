@@ -1,0 +1,1 @@
+ALTER TABLE "users" ADD COLUMN "user_flags" jsonb DEFAULT '{"finishOnboarding":false}'::jsonb NOT NULL;
