@@ -2,7 +2,7 @@ import { z } from '@hono/zod-openapi';
 import { appConfig, type EnabledOAuthProvider } from 'config';
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 import { usersTable } from '#/db/schema/users';
-import { membershipSummarySchema } from '#/modules/memberships/schema';
+import { membershipBaseSchema } from '#/modules/memberships/schema';
 import { paginationQuerySchema, validImageKeySchema, validNameSchema, validSlugSchema } from '#/utils/schema/common';
 
 export const enabledOAuthProvidersEnum = z.enum(appConfig.enabledOAuthProviders as unknown as [EnabledOAuthProvider]);
@@ -18,7 +18,7 @@ export const userSchema = z.object({ ...userSelectSchema.shape });
 
 export const memberSchema = z.object({
   ...userSchema.shape,
-  membership: membershipSummarySchema,
+  membership: membershipBaseSchema,
 });
 
 export const userUpdateBodySchema = createInsertSchema(usersTable, {

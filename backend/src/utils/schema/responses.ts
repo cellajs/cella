@@ -1,6 +1,6 @@
 import type { createRoute } from '@hono/zod-openapi';
 import { z } from '@hono/zod-openapi';
-import { errorSchema } from '#/utils/schema/error';
+import { apiErrorSchema } from '#/utils/schema/error';
 
 /**
  * Type alias for the responses parameter of createRoute.
@@ -35,7 +35,7 @@ export const errorResponses = {
     description: 'Bad request: problem processing request.',
     content: {
       'application/json': {
-        schema: errorSchema.extend({ status: z.literal(400) }),
+        schema: apiErrorSchema.extend({ status: z.literal(400) }),
       },
     },
   },
@@ -43,7 +43,7 @@ export const errorResponses = {
     description: 'Unauthorized: authentication required.',
     content: {
       'application/json': {
-        schema: errorSchema.extend({ status: z.literal(401) }),
+        schema: apiErrorSchema.extend({ status: z.literal(401) }),
       },
     },
   },
@@ -51,7 +51,7 @@ export const errorResponses = {
     description: 'Forbidden: insufficient permissions.',
     content: {
       'application/json': {
-        schema: errorSchema.extend({ status: z.literal(403) }),
+        schema: apiErrorSchema.extend({ status: z.literal(403) }),
       },
     },
   },
@@ -59,7 +59,7 @@ export const errorResponses = {
     description: 'Not found: resource does not exist.',
     content: {
       'application/json': {
-        schema: errorSchema.extend({ status: z.literal(404) }),
+        schema: apiErrorSchema.extend({ status: z.literal(404) }),
       },
     },
   },
@@ -67,7 +67,7 @@ export const errorResponses = {
     description: 'Rate limit: too many requests.',
     content: {
       'application/json': {
-        schema: errorSchema.extend({ status: z.literal(429) }),
+        schema: apiErrorSchema.extend({ status: z.literal(429) }),
       },
     },
   },

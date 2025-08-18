@@ -13,8 +13,8 @@ import {
   passkeyVerificationBodySchema,
   tokenWithDataSchema,
 } from '#/modules/auth/schema';
-import { entityBaseSchema } from '#/modules/entities/schema';
-import { membershipSummarySchema } from '#/modules/memberships/schema';
+import { contextEntityBaseSchema } from '#/modules/entities/schema';
+import { membershipBaseSchema } from '#/modules/memberships/schema';
 import { cookieSchema, idSchema, passwordSchema, tokenParamSchema } from '#/utils/schema/common';
 import { errorResponses, successWithoutDataSchema } from '#/utils/schema/responses';
 
@@ -362,9 +362,9 @@ const authRoutes = {
         description: 'Invitation was accepted',
         content: {
           'application/json': {
-            schema: entityBaseSchema.extend({
+            schema: contextEntityBaseSchema.extend({
               createdAt: z.string(),
-              membership: membershipSummarySchema,
+              membership: membershipBaseSchema,
             }),
           },
         },
@@ -391,7 +391,6 @@ const authRoutes = {
       ...errorResponses,
     },
   }),
-  // TODO - we should rate limit repetitive calls to this endpoint with email as identifier instead of IP
   githubSignInCallback: createCustomRoute({
     operationId: 'githubSignInCallback',
     method: 'get',

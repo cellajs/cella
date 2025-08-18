@@ -1,6 +1,6 @@
 import { getTableColumns } from 'drizzle-orm';
 import { usersTable } from '#/db/schema/users';
-import { userSummarySchema } from '#/modules/entities/schema';
+import { userBaseSchema } from '#/modules/entities/schema';
 
 /**
  * Safe user select. Sensitive fields are omitted.
@@ -12,7 +12,7 @@ export const userSelect = (() => {
 
 // Infer types of user summary columns
 type TableColumns = (typeof usersTable)['_']['columns'];
-type UserSummaryKeys = keyof typeof userSummarySchema.shape;
+type UserSummaryKeys = keyof typeof userBaseSchema.shape;
 type UserSummarySelect = Pick<TableColumns, UserSummaryKeys>;
 
 /**
@@ -20,6 +20,6 @@ type UserSummarySelect = Pick<TableColumns, UserSummaryKeys>;
  */
 export const userSummarySelect: UserSummarySelect = (() => {
   const userColumns = getTableColumns(usersTable);
-  const entries = Object.entries(userSummarySchema.shape).map(([key]) => [key, userColumns[key as UserSummaryKeys]]);
+  const entries = Object.entries(userBaseSchema.shape).map(([key]) => [key, userColumns[key as UserSummaryKeys]]);
   return Object.fromEntries(entries) as UserSummarySelect;
 })();

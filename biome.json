@@ -28,8 +28,8 @@
       },
       "suspicious": {
         "noTemplateCurlyInString": "info",
-        "noEvolvingTypes": "off",
-        "noUnknownAtRules": "info"
+        "noUnknownAtRules": "info",
+        "noEvolvingTypes": "off"
       },
       "a11y": {
         "noStaticElementInteractions": "off",

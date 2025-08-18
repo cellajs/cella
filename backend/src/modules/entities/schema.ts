@@ -1,10 +1,10 @@
-import { z } from '@hono/zod-openapi';
-import { appConfig } from 'config';
-import { membershipSummarySchema } from '#/modules/memberships/schema';
+import { membershipBaseSchema } from '#/modules/memberships/schema';
 import { contextEntityTypeSchema, idSchema, imageUrlSchema, nameSchema, pageEntityTypeSchema, slugSchema } from '#/utils/schema/common';
 import { mapEntitiesToSchema } from '#/utils/schema/entities-to-schema';
+import { z } from '@hono/zod-openapi';
+import { appConfig } from 'config';
 
-export const entityBaseSchema = z.object({
+export const contextEntityBaseSchema = z.object({
   id: idSchema,
   entityType: contextEntityTypeSchema,
   slug: slugSchema,
@@ -19,15 +19,15 @@ const baseEntityQuerySchema = z.object({
 });
 
 // Declared here to avoid circular dependencies
-export const userSummarySchema = entityBaseSchema.extend({
+export const userBaseSchema = contextEntityBaseSchema.extend({
   email: z.email(),
   entityType: z.literal('user'),
 });
 
-export const entityListItemSchema = entityBaseSchema.extend({
+export const entityListItemSchema = contextEntityBaseSchema.extend({
   email: z.string().optional(),
   entityType: pageEntityTypeSchema,
-  membership: membershipSummarySchema.nullable(),
+  membership: membershipBaseSchema.nullable(),
 });
 
 export const pageEntitiesSchema = z.object({
@@ -43,10 +43,10 @@ export const pageEntitiesQuerySchema = baseEntityQuerySchema.extend({
 });
 
 export const contextEntitiesSchema = z.array(
-  entityBaseSchema.extend({
+  contextEntityBaseSchema.extend({
     createdAt: z.string(),
-    membership: membershipSummarySchema,
-    admins: z.array(userSummarySchema),
+    membership: membershipBaseSchema,
+    admins: z.array(userBaseSchema),
   }),
 );
 

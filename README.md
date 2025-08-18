@@ -48,7 +48,7 @@
 <br>
 
 ## Create your own app
-Want to try cella to build your new web app? Use our create CLI to get started:
+Want to try cella to build a new web app with sync engine? Use the create CLI to get started:
 
 ```bash
 pnpm create @cellajs/cella@latest

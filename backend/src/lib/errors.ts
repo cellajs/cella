@@ -7,11 +7,11 @@ import { type Env, getContextOrganization, getContextUser } from '#/lib/context'
 import type locales from '#/lib/i18n-locales';
 import { eventLogger } from '#/pino-config';
 import { getIsoDate } from '#/utils/iso-date';
-import type { errorSchema } from '#/utils/schema/error';
+import type { apiErrorSchema } from '#/utils/schema/error';
 
 const isProduction = appConfig.mode === 'production';
 
-type ErrorSchemaType = z.infer<typeof errorSchema>;
+type ErrorSchemaType = z.infer<typeof apiErrorSchema>;
 type ErrorMeta = { readonly [key: string]: number | string[] | string | boolean | null };
 
 type AllErrorKeys = keyof (typeof locales)['en']['error'];

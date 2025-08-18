@@ -100,7 +100,7 @@ Both frontend and backend have business logic split in modules. Most of them are
 
 Zooming in on some of the frontend modules:
 * `common`: a large set of reusable react components and services 
-* `ui`: Full with shadcn UI components. They have some small tweaks however and it is to be expected you will customize them yourself further.
+* `ui`: Full with shadcn UI components. They have some small tweaks, but not many.
 * `attachments`: product entity module that has support for **offline, optimistic updates and realtime sync**.
 
 ## API client
