@@ -1310,7 +1310,6 @@ export type GetMeResponses = {
     role: 'user' | 'admin';
     userFlags: {
       finishOnboarding: boolean;
-      havePasskey: boolean;
     };
     modifiedAt: string | null;
     lastSeenAt: string | null;
@@ -1333,7 +1332,6 @@ export type UpdateMeData = {
     slug?: string;
     userFlags?: {
       finishOnboarding?: boolean;
-      havePasskey?: boolean;
     };
   };
   path?: never;
@@ -1397,7 +1395,6 @@ export type UpdateMeResponses = {
     role: 'user' | 'admin';
     userFlags: {
       finishOnboarding: boolean;
-      havePasskey: boolean;
     };
     modifiedAt: string | null;
     lastSeenAt: string | null;
@@ -2099,7 +2096,6 @@ export type GetUsersResponses = {
       role: 'user' | 'admin';
       userFlags: {
         finishOnboarding: boolean;
-        havePasskey: boolean;
       };
       modifiedAt: string | null;
       lastSeenAt: string | null;
@@ -2178,7 +2174,6 @@ export type GetUserResponses = {
     role: 'user' | 'admin';
     userFlags: {
       finishOnboarding: boolean;
-      havePasskey: boolean;
     };
     modifiedAt: string | null;
     lastSeenAt: string | null;
@@ -2263,7 +2258,6 @@ export type UpdateUserResponses = {
     role: 'user' | 'admin';
     userFlags: {
       finishOnboarding: boolean;
-      havePasskey: boolean;
     };
     modifiedAt: string | null;
     lastSeenAt: string | null;
@@ -4249,7 +4243,6 @@ export type GetMembersResponses = {
       role: 'user' | 'admin';
       userFlags: {
         finishOnboarding: boolean;
-        havePasskey: boolean;
       };
       modifiedAt: string | null;
       lastSeenAt: string | null;

@@ -487,7 +487,6 @@ export const zGetMeResponse = z.object({
   role: z.enum(['user', 'admin']),
   userFlags: z.object({
     finishOnboarding: z.boolean(),
-    havePasskey: z.boolean(),
   }),
   modifiedAt: z.union([z.string(), z.null()]),
   lastSeenAt: z.union([z.string(), z.null()]),
@@ -509,7 +508,6 @@ export const zUpdateMeData = z.object({
       userFlags: z.optional(
         z.object({
           finishOnboarding: z.optional(z.boolean()),
-          havePasskey: z.optional(z.boolean()),
         }),
       ),
     }),
@@ -538,7 +536,6 @@ export const zUpdateMeResponse = z.object({
   role: z.enum(['user', 'admin']),
   userFlags: z.object({
     finishOnboarding: z.boolean(),
-    havePasskey: z.boolean(),
   }),
   modifiedAt: z.union([z.string(), z.null()]),
   lastSeenAt: z.union([z.string(), z.null()]),
@@ -818,7 +815,6 @@ export const zGetUsersResponse = z.object({
       role: z.enum(['user', 'admin']),
       userFlags: z.object({
         finishOnboarding: z.boolean(),
-        havePasskey: z.boolean(),
       }),
       modifiedAt: z.union([z.string(), z.null()]),
       lastSeenAt: z.union([z.string(), z.null()]),
@@ -858,7 +854,6 @@ export const zGetUserResponse = z.object({
   role: z.enum(['user', 'admin']),
   userFlags: z.object({
     finishOnboarding: z.boolean(),
-    havePasskey: z.boolean(),
   }),
   modifiedAt: z.union([z.string(), z.null()]),
   lastSeenAt: z.union([z.string(), z.null()]),
@@ -905,7 +900,6 @@ export const zUpdateUserResponse = z.object({
   role: z.enum(['user', 'admin']),
   userFlags: z.object({
     finishOnboarding: z.boolean(),
-    havePasskey: z.boolean(),
   }),
   modifiedAt: z.union([z.string(), z.null()]),
   lastSeenAt: z.union([z.string(), z.null()]),
@@ -1790,7 +1784,6 @@ export const zGetMembersResponse = z.object({
       role: z.enum(['user', 'admin']),
       userFlags: z.object({
         finishOnboarding: z.boolean(),
-        havePasskey: z.boolean(),
       }),
       modifiedAt: z.union([z.string(), z.null()]),
       lastSeenAt: z.union([z.string(), z.null()]),

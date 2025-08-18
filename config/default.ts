@@ -131,8 +131,7 @@ The documentation is generated from source code using \`zod\` schemas, converted
 
   // Default user flags
   defaultUserFlags: { 
-    finishOnboarding: false,
-    havePasskey: false
+    finishOnboarding: false
   },
 
   /**
