@@ -9,10 +9,10 @@ import { SessionTile } from '~/modules/me/session-tile';
 import type { MeAuthData } from '~/modules/me/types';
 import { Button } from '~/modules/ui/button';
 
-const SessionsList = ({ userAuthInfo }: { userAuthInfo: MeAuthData }) => {
+const SessionsList = ({ userAuthData }: { userAuthData: MeAuthData }) => {
   const { t } = useTranslation();
 
-  const [allSessions, setAllSessions] = useState(userAuthInfo.sessions);
+  const [allSessions, setAllSessions] = useState(userAuthData.sessions);
 
   const sessionsWithoutCurrent = useMemo(() => allSessions.filter((session) => !session.isCurrent), [allSessions]);
   const sessions = Array.from(allSessions).sort((a) => (a.isCurrent ? -1 : 1));

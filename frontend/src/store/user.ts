@@ -8,8 +8,8 @@ import type { User } from '~/modules/users/types';
 
 interface UserStoreState {
   user: MeUser; // Current user data
-  passkey: MeAuthData['passkey']; // Current user's passkey
-  oauth: MeAuthData['oauth']; // Current user's oauth options
+  hasPasskey: MeAuthData['hasPasskey']; // Current user's passkey
+  enabledOAuth: MeAuthData['enabledOAuth']; // Current user's oauth options
   lastUser: Partial<MeUser> | null; // Last signed-out user's data (email, name, passkey, id, slug)
   setUser: (user: MeUser, skipLastUser?: boolean) => void; // Sets current user and updates lastUser
   setMeAuthData: (data: Partial<MeAuthData>) => void; // Sets current user auth info
@@ -22,8 +22,8 @@ export const useUserStore = create<UserStoreState>()(
     persist(
       immer((set) => ({
         user: null as unknown as MeUser,
-        oauth: [] as MeAuthData['oauth'],
-        passkey: false,
+        enabledOAuth: [] as MeAuthData['enabledOAuth'],
+        hasPasskey: false,
         lastUser: null,
         updateUser: (user) => {
           set((state) => ({
@@ -59,16 +59,16 @@ export const useUserStore = create<UserStoreState>()(
         },
         setMeAuthData: (data) => {
           set((state) => {
-            state.passkey = data.passkey ?? state.passkey;
-            state.oauth = data.oauth ?? state.oauth;
+            state.hasPasskey = data.hasPasskey ?? state.hasPasskey;
+            state.enabledOAuth = data.enabledOAuth ?? state.enabledOAuth;
           });
         },
         clearUserStore: () => {
           set((state) => {
             state.user = null as unknown as MeUser;
             state.lastUser = null;
-            state.oauth = [];
-            state.passkey = false;
+            state.enabledOAuth = [];
+            state.hasPasskey = false;
           });
         },
       })),
@@ -77,8 +77,8 @@ export const useUserStore = create<UserStoreState>()(
         name: `${appConfig.slug}-user`,
         partialize: (state) => ({
           user: state.user,
-          oauth: state.oauth,
-          passkey: state.passkey,
+          oauth: state.enabledOAuth,
+          passkey: state.hasPasskey,
           lastUser: state.lastUser,
         }),
         storage: createJSONStorage(() => localStorage),

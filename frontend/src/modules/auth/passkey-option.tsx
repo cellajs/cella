@@ -27,14 +27,21 @@ const PasskeyOption = ({ email, actionType = 'signIn' }: PasskeyOptionProps) => 
   const { mutate: passkeyAuth } = useMutation<SignInWithPasskeyResponse, ApiError | Error, NonNullable<SignInWithPasskeyData['body']>['userEmail']>({
     mutationFn: async (userEmail) => {
       //  Fetch a challenge from BE
-      const { challengeBase64 } = await getPasskeyChallenge();
+      const { challengeBase64, credentialIds } = await getPasskeyChallenge({ query: { email: userEmail } });
 
       // Decode  challenge and wrap it in a Uint8Array (required format)
       const raw = decodeBase64(challengeBase64);
       const challenge = new Uint8Array(raw);
 
+      // Prepare allowCredentials for passkey request
+      const allowCredentials = credentialIds.map((id: string) => ({
+        id: new Uint8Array(decodeBase64(id)),
+        type: 'public-key' as const,
+        transports: ['internal'] as AuthenticatorTransport[],
+      }));
+
       // Prompt user to authenticate with a passkey
-      const credential = await navigator.credentials.get({ publicKey: { challenge, userVerification: 'required' } });
+      const credential = await navigator.credentials.get({ publicKey: { challenge, allowCredentials, userVerification: 'required' } });
 
       // Ensure response is a PublicKeyCredential
       if (!(credential instanceof PublicKeyCredential)) throw new Error('Failed to create public key');

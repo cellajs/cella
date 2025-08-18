@@ -77,7 +77,7 @@ export const passkeyRegistration = async () => {
 
     toaster(t('common:success.passkey_added'), 'success');
 
-    useUserStore.getState().setMeAuthData({ passkey: true });
+    useUserStore.getState().setMeAuthData({ hasPasskey: true });
     return result;
   } catch (error) {
     // On cancel throws error NotAllowedError

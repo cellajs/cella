@@ -37,7 +37,7 @@ const ToggleGroupItem = React.forwardRef<
           variant: context.variant || variant,
           size: context.size || size,
         }),
-
+        'active:translate-y-[0.05rem]',
         className,
       )}
       disabled={disabled}
