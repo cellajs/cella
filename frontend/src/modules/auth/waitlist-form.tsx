@@ -99,7 +99,9 @@ export const WaitlistForm = ({ email, buttonContent, emailField, dialog: isDialo
         <SubmitButton
           size={buttonContent ? 'default' : 'xl'}
           loading={isPending}
-          className={`w-full ${emailField && 'h-14 rounded-full ring-4 sm:max-w-40 ring-primary/10'}`}
+          className={cn('w-full px-6', {
+            'h-14 rounded-full ring-4 sm:max-w-40 ring-primary/10': emailField,
+          })}
         >
           {buttonContent ? (
             buttonContent
