@@ -1,6 +1,5 @@
 import i18n from 'i18next';
 import type { StepItem } from '~/modules/common/stepper/types';
-import { useNavigationStore } from '~/store/navigation';
 
 /**
  * Define the onboarding steps
@@ -12,7 +11,4 @@ export const onboardingSteps: StepItem[] = [
 ];
 
 // Add the options you want to execute when onboarding is finished
-export const onboardingFinishCallback = () => {
-  // Set the finished onboarding state to true
-  useNavigationStore.getState().setFinishedOnboarding();
-};
+export const onboardingFinishCallback = () => {};

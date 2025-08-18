@@ -1,6 +1,6 @@
 import { queryOptions, useMutation } from '@tanstack/react-query';
 import { t } from 'i18next';
-import { deletePasskey, getMyInvites, type UpdateUserData, updateMe } from '~/api.gen';
+import { deletePasskey, getMyInvites, updateMe, type UpdateMeData } from '~/api.gen';
 import type { ApiError } from '~/lib/api';
 import { toaster } from '~/modules/common/toaster/service';
 import { getAndSetMe, getAndSetMeAuthData, getAndSetMenu } from '~/modules/me/helpers';
@@ -18,7 +18,10 @@ export const meKeys = {
   menu: () => [...meKeys.all, 'menu'] as const,
   auth: () => [...meKeys.all, 'auth'] as const,
   invites: () => [...meKeys.all, 'invites'] as const,
-  update: () => [...meKeys.all, 'update'] as const,
+  update: {
+    info: () => [...meKeys.all, 'update', 'info'] as const,
+    flags: () => [...meKeys.all, 'update', 'flags'] as const,
+  } as const,
 };
 
 /**
@@ -50,20 +53,29 @@ export const menuQueryOptions = () => queryOptions({ queryKey: meKeys.menu(), qu
 export const meInvitesQueryOptions = () => queryOptions({ queryKey: meKeys.invites(), queryFn: () => getMyInvites() });
 
 /**
- * Mutation hook for updating current user (self)
+ * Mutation hook for updating current user (self) info
  *
- * @returns The mutation hook for updating the user.
+ * @returns The mutation hook for updating the user info.
  */
 export const useUpdateSelfMutation = () => {
-  return useMutation<User, ApiError, Omit<UpdateUserData['body'], 'role'>>({
-    mutationKey: meKeys.update(),
+  return useMutation<User, ApiError, Omit<UpdateMeData['body'], 'role' | 'userFlags'>>({
+    mutationKey: meKeys.update.info(),
     mutationFn: (body) => updateMe({ body }),
-    onSuccess: (updatedUser) => {
-      const updateUser = useUserStore.getState().updateUser;
+    onSuccess: (updatedUser) => updateOnSuccesses(updatedUser),
+    gcTime: 1000 * 10,
+  });
+};
 
-      queryClient.setQueryData(usersKeys.single.byIdOrSlug(updatedUser.slug), updatedUser);
-      updateUser(updatedUser);
-    },
+/**
+ * Mutation hook for updating current user (self) flags
+ *
+ * @returns The mutation hook for updating the user flasg.
+ */
+export const useUpdateSelfFlagsMutation = () => {
+  return useMutation<User, ApiError, Pick<NonNullable<UpdateMeData['body']>, 'userFlags'>>({
+    mutationKey: meKeys.update.flags(),
+    mutationFn: (body) => updateMe({ body }),
+    onSuccess: (updatedUser) => updateOnSuccesses(updatedUser),
     gcTime: 1000 * 10,
   });
 };
@@ -86,4 +98,11 @@ export const useDeletePasskeyMutation = () => {
       toaster(t('error:passkey_remove_failed'), 'error');
     },
   });
+};
+
+const updateOnSuccesses = (updatedUser: User) => {
+  const { updateUser } = useUserStore.getState();
+
+  queryClient.setQueryData(usersKeys.single.byIdOrSlug(updatedUser.slug), updatedUser);
+  updateUser(updatedUser);
 };

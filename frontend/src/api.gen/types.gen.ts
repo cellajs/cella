@@ -1308,6 +1308,10 @@ export type GetMeResponses = {
     language: 'en' | 'nl';
     newsletter: boolean;
     role: 'user' | 'admin';
+    userFlags: {
+      finishOnboarding: boolean;
+      havePasskey: boolean;
+    };
     modifiedAt: string | null;
     lastSeenAt: string | null;
     lastStartedAt: string | null;
@@ -1327,6 +1331,10 @@ export type UpdateMeData = {
     newsletter?: boolean;
     thumbnailUrl?: string | null;
     slug?: string;
+    userFlags?: {
+      finishOnboarding?: boolean;
+      havePasskey?: boolean;
+    };
   };
   path?: never;
   query?: never;
@@ -1387,6 +1395,10 @@ export type UpdateMeResponses = {
     language: 'en' | 'nl';
     newsletter: boolean;
     role: 'user' | 'admin';
+    userFlags: {
+      finishOnboarding: boolean;
+      havePasskey: boolean;
+    };
     modifiedAt: string | null;
     lastSeenAt: string | null;
     lastStartedAt: string | null;
@@ -2085,6 +2097,10 @@ export type GetUsersResponses = {
       language: 'en' | 'nl';
       newsletter: boolean;
       role: 'user' | 'admin';
+      userFlags: {
+        finishOnboarding: boolean;
+        havePasskey: boolean;
+      };
       modifiedAt: string | null;
       lastSeenAt: string | null;
       lastStartedAt: string | null;
@@ -2160,6 +2176,10 @@ export type GetUserResponses = {
     language: 'en' | 'nl';
     newsletter: boolean;
     role: 'user' | 'admin';
+    userFlags: {
+      finishOnboarding: boolean;
+      havePasskey: boolean;
+    };
     modifiedAt: string | null;
     lastSeenAt: string | null;
     lastStartedAt: string | null;
@@ -2241,6 +2261,10 @@ export type UpdateUserResponses = {
     language: 'en' | 'nl';
     newsletter: boolean;
     role: 'user' | 'admin';
+    userFlags: {
+      finishOnboarding: boolean;
+      havePasskey: boolean;
+    };
     modifiedAt: string | null;
     lastSeenAt: string | null;
     lastStartedAt: string | null;
@@ -4223,6 +4247,10 @@ export type GetMembersResponses = {
       language: 'en' | 'nl';
       newsletter: boolean;
       role: 'user' | 'admin';
+      userFlags: {
+        finishOnboarding: boolean;
+        havePasskey: boolean;
+      };
       modifiedAt: string | null;
       lastSeenAt: string | null;
       lastStartedAt: string | null;
