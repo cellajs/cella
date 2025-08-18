@@ -57,7 +57,7 @@ export const TableFilterBar = ({ onResetFilters, isFiltered, children }: TableFi
       <TableFilterBarContext.Provider value={{ isFilterActive, setFilterActive }}>{children}</TableFilterBarContext.Provider>
       <AnimatePresence>
         {!isFilterActive && (
-          <Button className="sm:hidden" variant="ghost" onClick={() => setFilterActive(true)} asChild>
+          <Button className="sm:hidden text-primary/80" variant="ghost" onClick={() => setFilterActive(true)} asChild>
             <motion.button key={key} layoutId={`table-filter-bar-button-${key}`}>
               <motion.span layoutId={`table-filter-bar-icon-${key}`}>
                 <Search width={16} height={16} />
