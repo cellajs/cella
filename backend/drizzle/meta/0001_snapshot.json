@@ -1,5 +1,5 @@
 {
-  "id": "b531d999-ba8b-4ae0-b835-e6707bfae9f4",
+  "id": "97546b98-2c9e-4494-bd18-66fc4bb43284",
   "prevId": "727b17a3-f074-4db2-92c1-bb650749e21c",
   "version": "7",
   "dialect": "postgresql",
@@ -1259,7 +1259,7 @@
           "type": "jsonb",
           "primaryKey": false,
           "notNull": true,
-          "default": "'{\"finishOnboarding\":false}'::jsonb"
+          "default": "'{}'::jsonb"
         },
         "modified_at": {
           "name": "modified_at",
