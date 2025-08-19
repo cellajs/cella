@@ -9,7 +9,7 @@ import { useStepper } from '~/modules/common/stepper/use-stepper';
 import { cn } from '~/utils/cn';
 
 const VARIABLE_SIZES = {
-  sm: '2.25rem',
+  sm: '2rem',
   md: '2.5rem',
   lg: '2.75rem',
 };
@@ -27,7 +27,7 @@ const Stepper = React.forwardRef<HTMLDivElement, StepperProps>((props, ref: Reac
     mobileBreakpoint,
     expandVerticalSteps = false,
     initialStep = 0,
-    size = 'md',
+    size = 'sm',
     steps,
     variant,
     styles,

@@ -12,10 +12,11 @@ const StepButtonContainer = ({
   isCompletedStep,
   children,
   isError,
+  index,
   isLoading: isLoadingProp,
   onClickStep,
 }: StepButtonContainerProps) => {
-  const { clickable, isLoading: isLoadingContext, variant, styles } = useStepper();
+  const { clickable, isLoading: isLoadingContext, variant, styles, setStep, onClickStep: onClickStepGeneral } = useStepper();
 
   const currentStepClickable = clickable || !!onClickStep;
 
@@ -47,6 +48,10 @@ const StepButtonContainer = ({
       data-active={isCompletedStep}
       data-clickable={currentStepClickable}
       data-loading={isLoading && (isCurrentStep || isCompletedStep)}
+      onClick={() => {
+        onClickStep?.(index || 0, setStep) || onClickStepGeneral?.(index || 0, setStep);
+      }}
+      onKeyDown={() => {}}
     >
       {children}
     </Button>

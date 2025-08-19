@@ -457,5 +457,7 @@
   "without_color": "Without color",
   "write": "Write",
   "year": "year",
-  "your_role": "Your role"
+  "your_role": "Your role",
+  "already_created_org.text": "You already created an organization. You can invite others to your organization.",
+  "need_org_to_invite.text": "You need to create an organization before inviting members."
 }

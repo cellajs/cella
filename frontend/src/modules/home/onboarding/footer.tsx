@@ -1,27 +1,28 @@
 import { Redo } from 'lucide-react';
-import { useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { useStepper } from '~/modules/common/stepper';
 import { onboardingSteps } from '~/modules/home/onboarding/onboarding-config';
 import { SkipOrganization } from '~/modules/home/onboarding/skip-organization';
 import { Button } from '~/modules/ui/button';
-import { useNavigationStore } from '~/store/navigation';
+import type { OnboardingStates } from './steps';
 
-const StepperFooter = () => {
-  const { nextStep, isOptionalStep, activeStep } = useStepper();
+const StepperFooter = ({ setOnboardingState }: { setOnboardingState: (newState: Exclude<OnboardingStates, 'start'>) => void }) => {
+  const { nextStep, isOptionalStep, activeStep, hasCompletedAllSteps } = useStepper();
   const { t } = useTranslation();
-  const { menu } = useNavigationStore();
 
   const skipButtonRef = useRef(null);
 
-  const hasOrganizations = menu.organization.length > 0;
+  useEffect(() => {
+    if (hasCompletedAllSteps) setOnboardingState('completed');
+  }, [hasCompletedAllSteps]);
 
   // Ask to confirm
   const skipStep = (e: { preventDefault: () => void }) => {
     e.preventDefault();
-    if (onboardingSteps[activeStep].id === 'organization' && !hasOrganizations) {
-      useDialoger.getState().create(<SkipOrganization />, {
+    if (onboardingSteps[activeStep].id === 'organization') {
+      useDialoger.getState().create(<SkipOrganization setOnboardingState={setOnboardingState} />, {
         id: 'skip-org-creation',
         triggerRef: skipButtonRef,
         className: 'md:max-w-xl',
