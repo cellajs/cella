@@ -1,8 +1,8 @@
 import _default from './default';
 import development from './development';
 import production from './production';
-import test from './test';
 import staging from './staging';
+import test from './test';
 import tunnel from './tunnel';
 import { mergeDeep } from './utils';
 
@@ -48,6 +48,11 @@ export type UploadTemplateId = (typeof appConfig.uploadTemplateIds)[number];
  * Language options
  */
 export type Language = (typeof appConfig.languages)[number];
+
+/**
+ * User flags 
+ */
+export type UserFlags = typeof appConfig.defaultUserFlags
 
 /**
  * Theme options

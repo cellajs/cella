@@ -5,16 +5,17 @@ import { OnboardingCompleted } from '~/modules/home/onboarding/completed';
 import type { OnboardingStates } from '~/modules/home/onboarding/steps';
 import Onboarding from '~/modules/home/onboarding/steps';
 import { Dialog, DialogContent, DialogHiddenTitle } from '~/modules/ui/dialog';
-import { useNavigationStore } from '~/store/navigation';
+import { useUserStore } from '~/store/user';
 import { isElementInteractive } from '~/utils/is-el-interactive';
 
 const WelcomePage = () => {
+  const { user } = useUserStore();
   const navigate = useNavigate();
-  const { finishedOnboarding } = useNavigationStore();
-  const [onboarding, setOnboarding] = useState<OnboardingStates>(finishedOnboarding ? 'completed' : 'start');
 
-  const onOpenChange = () => {
-    navigate({ to: appConfig.defaultRedirectPath, replace: true });
+  const [onboarding, setOnboarding] = useState<OnboardingStates>(user.userFlags.finishOnboarding ? 'completed' : 'start');
+
+  const onOpenChange = (openState: boolean) => {
+    if (!openState) setOnboarding('completed');
   };
 
   // Close onboarding on escape key if not focused on form
@@ -27,8 +28,9 @@ const WelcomePage = () => {
   };
 
   useEffect(() => {
-    if (finishedOnboarding) setOnboarding('completed');
-  }, [finishedOnboarding]);
+    if (!user.userFlags.finishOnboarding) return;
+    navigate({ to: appConfig.defaultRedirectPath, replace: true });
+  }, [user.userFlags.finishOnboarding]);
 
   return (
     <>
@@ -39,7 +41,7 @@ const WelcomePage = () => {
           className="min-w-full h-screen border-0 p-0 rounded-none flex flex-col mt-0 bg-background/75 overflow-y-auto"
         >
           <DialogHiddenTitle>Welcome</DialogHiddenTitle>
-          <Onboarding onboarding={onboarding} onboardingToStepper={() => setOnboarding('stepper')} />
+          <Onboarding onboarding={onboarding} onboardingStateChange={setOnboarding} />
         </DialogContent>
       </Dialog>
 
