@@ -1,5 +1,5 @@
 import { appConfig } from 'config';
-import { LockOpen, Trash, XSquare } from 'lucide-react';
+import { PartyPopper, Trash, XSquare } from 'lucide-react';
 import { useMemo, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { getRequests } from '~/api.gen';
@@ -111,7 +111,7 @@ export const RequestsTableBar = ({ total, selected, searchVars, setSearch, colum
                   variant="darkSuccess"
                   className="relative"
                   label={t('common:invite')}
-                  icon={LockOpen}
+                  icon={PartyPopper}
                   onClick={approveSelectedRequests}
                 />
               )}
