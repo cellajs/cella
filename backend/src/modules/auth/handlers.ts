@@ -578,8 +578,6 @@ const authRouteHandlers = app
     if (type === 'connect') await handleOAuthConnection(ctx);
     if (type === 'verify') await handleOAuthVerify(ctx);
 
-    console.log('Microsoft OAuth sign in initiated');
-
     // Generate a `state`, PKCE, and scoped URL.
     const state = generateState();
     const codeVerifier = generateCodeVerifier();
