@@ -1,9 +1,15 @@
-import { z } from '@hono/zod-openapi';
 import { createCustomRoute } from '#/lib/custom-routes';
 import { isAuthenticated } from '#/middlewares/guard';
-import { contextEntitiesQuerySchema, contextEntitiesSchema, pageEntitiesQuerySchema, pageEntitiesSchema } from '#/modules/entities/schema';
-import { entityTypeSchema, slugSchema } from '#/utils/schema/common';
+import {
+  contextEntitiesQuerySchema,
+  contextEntitiesSchema,
+  contextEntityBaseSchema,
+  pageEntitiesQuerySchema,
+  pageEntitiesSchema,
+} from '#/modules/entities/schema';
+import { entityTypeSchema, idOrSlugSchema, pageEntityTypeSchema, slugSchema } from '#/utils/schema/common';
 import { errorResponses, successWithoutDataSchema } from '#/utils/schema/responses';
+import { z } from '@hono/zod-openapi';
 
 const entityRoutes = {
   checkSlug: createCustomRoute({
@@ -73,6 +79,29 @@ const entityRoutes = {
       200: {
         description: 'Context entities',
         content: { 'application/json': { schema: contextEntitiesSchema } },
+      },
+      ...errorResponses,
+    },
+  }),
+  getEntity: createCustomRoute({
+    operationId: 'getEntity',
+    method: 'get',
+    path: '/{idOrSlug}',
+    guard: isAuthenticated,
+    tags: ['entities'],
+    summary: '',
+    description: '',
+    request: { query: z.object({ type: pageEntityTypeSchema }), params: z.object({ idOrSlug: idOrSlugSchema }) },
+    responses: {
+      200: {
+        description: 'Context entities',
+        content: {
+          'application/json': {
+            schema: contextEntityBaseSchema.extend({
+              entityType: pageEntityTypeSchema,
+            }),
+          },
+        },
       },
       ...errorResponses,
     },

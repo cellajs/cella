@@ -1,6 +1,3 @@
-import { OpenAPIHono, type z } from '@hono/zod-openapi';
-import { appConfig } from 'config';
-import { and, eq, ilike, inArray, isNotNull, isNull } from 'drizzle-orm';
 import { db } from '#/db/db';
 import { membershipsTable } from '#/db/schema/memberships';
 import { usersTable } from '#/db/schema/users';
@@ -14,13 +11,58 @@ import entityRoutes from '#/modules/entities/routes';
 import type { userBaseSchema } from '#/modules/entities/schema';
 import { membershipSummarySelect } from '#/modules/memberships/helpers/select';
 import { userSummarySelect } from '#/modules/users/helpers/select';
+import { getValidContextEntity } from '#/permissions/get-context-entity';
 import { defaultHook } from '#/utils/default-hook';
 import { getOrderColumn } from '#/utils/order-column';
 import { prepareStringForILikeFilter } from '#/utils/sql';
+import { OpenAPIHono, type z } from '@hono/zod-openapi';
+import { appConfig, type ContextEntityType } from 'config';
+import { and, eq, ilike, inArray, isNotNull, isNull, or } from 'drizzle-orm';
 
 const app = new OpenAPIHono<Env>({ defaultHook });
 
 const entityRouteHandlers = app
+  .openapi(entityRoutes.getEntity, async (ctx) => {
+    const { idOrSlug } = ctx.req.valid('param');
+    const { type: targetEntityType } = ctx.req.valid('query');
+
+    const contextTypes: readonly string[] = appConfig.contextEntityTypes;
+
+    if (contextTypes.includes(targetEntityType)) {
+      const { entity } = await getValidContextEntity(idOrSlug, targetEntityType as ContextEntityType, 'read');
+
+      return ctx.json(
+        {
+          id: entity.id,
+          slug: entity.slug,
+          name: entity.name,
+          entityType: entity.entityType,
+          thumbnailUrl: entity.thumbnailUrl,
+          bannerUrl: entity.bannerUrl,
+        },
+        200,
+      );
+    }
+    const table = entityTables[targetEntityType];
+    if (!table) throw new AppError({ status: 404, type: 'not_found', severity: 'warn', entityType: targetEntityType });
+
+    const [entity] = await db
+      .select({
+        id: table.id,
+        slug: table.slug,
+        name: table.name,
+        entityType: table.entityType,
+        thumbnailUrl: table.thumbnailUrl,
+        bannerUrl: table.bannerUrl,
+      })
+      .from(table)
+      .where(and(or(eq(table.id, idOrSlug), eq(table.slug, idOrSlug)), eq(table.entityType, targetEntityType)))
+      .limit(1);
+
+    if (!entity) throw new AppError({ status: 404, type: 'not_found', severity: 'warn', entityType: targetEntityType });
+
+    return ctx.json(entity, 200);
+  })
   /*
    * Get page entities with a limited schema
    TODO getPageEntities and getContextEntities should be merged into a single endpoint? Also why does EntityBaseSchema only include the organization entityType?

@@ -2699,6 +2699,68 @@ export type UpdateOrganizationResponses = {
 
 export type UpdateOrganizationResponse = UpdateOrganizationResponses[keyof UpdateOrganizationResponses];
 
+export type GetEntityData = {
+  body?: never;
+  path: {
+    idOrSlug: string;
+  };
+  query: {
+    type: 'user' | 'organization';
+  };
+  url: '/entities/{idOrSlug}';
+};
+
+export type GetEntityErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: ApiError & {
+    status?: 400;
+  };
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: ApiError & {
+    status?: 401;
+  };
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ApiError & {
+    status?: 403;
+  };
+  /**
+   * Not found: resource does not exist.
+   */
+  404: ApiError & {
+    status?: 404;
+  };
+  /**
+   * Rate limit: too many requests.
+   */
+  429: ApiError & {
+    status?: 429;
+  };
+};
+
+export type GetEntityError = GetEntityErrors[keyof GetEntityErrors];
+
+export type GetEntityResponses = {
+  /**
+   * Context entities
+   */
+  200: {
+    id: string;
+    entityType: 'user' | 'organization';
+    slug: string;
+    name: string;
+    thumbnailUrl?: string | null;
+    bannerUrl?: string | null;
+  };
+};
+
+export type GetEntityResponse = GetEntityResponses[keyof GetEntityResponses];
+
 export type GetPageEntitiesData = {
   body?: never;
   path?: never;

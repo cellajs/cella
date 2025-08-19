@@ -1153,6 +1153,28 @@ export const zUpdateOrganizationResponse = z.object({
   invitesCount: z.number(),
 });
 
+export const zGetEntityData = z.object({
+  body: z.optional(z.never()),
+  path: z.object({
+    idOrSlug: z.string(),
+  }),
+  query: z.object({
+    type: z.enum(['user', 'organization']),
+  }),
+});
+
+/**
+ * Context entities
+ */
+export const zGetEntityResponse = z.object({
+  id: z.string(),
+  entityType: z.enum(['user', 'organization']),
+  slug: z.string(),
+  name: z.string(),
+  thumbnailUrl: z.optional(z.union([z.string(), z.null()])),
+  bannerUrl: z.optional(z.union([z.string(), z.null()])),
+});
+
 export const zGetPageEntitiesData = z.object({
   body: z.optional(z.never()),
   path: z.optional(z.never()),
