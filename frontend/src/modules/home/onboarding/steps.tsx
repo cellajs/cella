@@ -17,10 +17,10 @@ export type OnboardingStates = 'start' | 'stepper' | 'completed';
 
 interface OnboardingProps {
   onboarding: OnboardingStates;
-  onboardingToStepper: () => void;
+  onboardingStateChange: (newState: Exclude<OnboardingStates, 'start'>) => void;
 }
 
-const Onboarding = ({ onboarding = 'start', onboardingToStepper }: OnboardingProps) => {
+const Onboarding = ({ onboarding = 'start', onboardingStateChange }: OnboardingProps) => {
   const { user } = useUserStore();
   const { hasStarted } = useMounted();
   const { menu } = useNavigationStore();
@@ -37,11 +37,18 @@ const Onboarding = ({ onboarding = 'start', onboardingToStepper }: OnboardingPro
   return (
     <div className="flex flex-col min-h-[90vh] sm:min-h-screen items-center">
       <div className="mt-auto mb-auto w-full">
-        {onboarding === 'start' && <WelcomeText onboardingToStepper={onboardingToStepper} />}
+        {onboarding === 'start' && <WelcomeText onboardingToStepper={() => onboardingStateChange('stepper')} />}
         {onboarding === 'stepper' && (
           <div className={cn('mx-auto mt-0 flex flex-col justify-center gap-4 px-4 py-8 sm:w-10/12 max-w-3xl', animateClass)}>
             {steps.length === 1 && <h2 className="text-lg font-semibold flex justify-center">{steps[0].label}</h2>}
-            <Stepper initialStep={0} steps={steps} orientation="vertical">
+            <Stepper
+              initialStep={0}
+              steps={steps}
+              onClickStep={(currentStep) => {
+                if (currentStep === steps.length - 1) onboardingStateChange('completed');
+              }}
+              orientation="vertical"
+            >
               {steps.map(({ description, label, id }) => (
                 <Step key={label} label={label}>
                   <Card>

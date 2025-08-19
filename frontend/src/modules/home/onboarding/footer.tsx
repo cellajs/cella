@@ -1,5 +1,5 @@
 import { Redo } from 'lucide-react';
-import { useEffect, useRef } from 'react';
+import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { useStepper } from '~/modules/common/stepper';
@@ -9,12 +9,13 @@ import { Button } from '~/modules/ui/button';
 import { useNavigationStore } from '~/store/navigation';
 
 const StepperFooter = () => {
-  const { nextStep, isOptionalStep, hasCompletedAllSteps, activeStep } = useStepper();
+  const { nextStep, isOptionalStep, activeStep } = useStepper();
   const { t } = useTranslation();
-  const { menu, setFinishedOnboarding } = useNavigationStore();
-  const hasOrganizations = menu.organization.length > 0;
+  const { menu } = useNavigationStore();
 
   const skipButtonRef = useRef(null);
+
+  const hasOrganizations = menu.organization.length > 0;
 
   // Ask to confirm
   const skipStep = (e: { preventDefault: () => void }) => {
@@ -31,13 +32,6 @@ const StepperFooter = () => {
     }
     nextStep();
   };
-
-  useEffect(() => {
-    if (hasCompletedAllSteps) setFinishedOnboarding();
-    return () => {
-      setFinishedOnboarding();
-    };
-  }, [hasCompletedAllSteps]);
 
   return (
     <div className="w-full flex gap-2 max-sm:justify-stretch">

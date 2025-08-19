@@ -1,4 +1,3 @@
-import { z } from '@hono/zod-openapi';
 import { createCustomRoute } from '#/lib/custom-routes';
 import { isAuthenticated, isPublicAccess } from '#/middlewares/guard';
 import { tokenLimiter } from '#/middlewares/rate-limiter/limiters';
@@ -10,9 +9,10 @@ import {
   uploadTokenSchema,
   userInvitationsSchema,
 } from '#/modules/me/schema';
-import { userSchema, userUpdateBodySchema } from '#/modules/users/schema';
+import { userFlagsSchema, userSchema, userUpdateBodySchema } from '#/modules/users/schema';
 import { entityWithTypeQuerySchema } from '#/utils/schema/common';
 import { errorResponses, successWithoutDataSchema, successWithRejectedItemsSchema } from '#/utils/schema/responses';
+import { z } from '@hono/zod-openapi';
 
 const meRoutes = {
   getMe: createCustomRoute({
@@ -95,7 +95,15 @@ const meRoutes = {
     summary: 'Update self',
     description: 'Updates the *current user*.',
     request: {
-      body: { content: { 'application/json': { schema: userUpdateBodySchema } } },
+      body: {
+        content: {
+          'application/json': {
+            schema: userUpdateBodySchema.extend({
+              userFlags: userFlagsSchema.partial().optional(),
+            }),
+          },
+        },
+      },
     },
     responses: {
       200: {

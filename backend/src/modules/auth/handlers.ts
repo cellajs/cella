@@ -1,10 +1,3 @@
-import { getRandomValues } from 'node:crypto';
-import { OpenAPIHono } from '@hono/zod-openapi';
-import { encodeBase64 } from '@oslojs/encoding';
-import { generateCodeVerifier, generateState, OAuth2RequestError } from 'arctic';
-import { appConfig, type EnabledOAuthProvider } from 'config';
-import { and, desc, eq, isNotNull, isNull } from 'drizzle-orm';
-import i18n from 'i18next';
 import { db } from '#/db/db';
 import { emailsTable } from '#/db/schema/emails';
 import { membershipsTable } from '#/db/schema/memberships';
@@ -33,13 +26,13 @@ import {
 } from '#/modules/auth/helpers/oauth/cookies';
 import { basicFlow, connectFlow, getOAuthAccount, inviteFlow, verifyFlow } from '#/modules/auth/helpers/oauth/index';
 import {
+  githubAuth,
   type GithubUserEmailProps,
   type GithubUserProps,
-  type GoogleUserProps,
-  githubAuth,
   googleAuth,
-  type MicrosoftUserProps,
+  type GoogleUserProps,
   microsoftAuth,
+  type MicrosoftUserProps,
 } from '#/modules/auth/helpers/oauth/oauth-providers';
 import { transformGithubUserData, transformSocialUserData } from '#/modules/auth/helpers/oauth/transform-user-data';
 import { verifyPassKeyPublic } from '#/modules/auth/helpers/passkey';
@@ -48,7 +41,6 @@ import { getParsedSessionCookie, invalidateSessionById, setUserSession, validate
 import { handleCreateUser, handleMembershipTokenUpdate } from '#/modules/auth/helpers/user';
 import authRoutes from '#/modules/auth/routes';
 import { getUserBy } from '#/modules/users/helpers/get-user-by';
-import { userSelect } from '#/modules/users/helpers/select';
 import { defaultHook } from '#/utils/default-hook';
 import { isExpiredDate } from '#/utils/is-expired-date';
 import { isValidRedirectPath } from '#/utils/is-redirect-url';
@@ -57,6 +49,13 @@ import { logEvent } from '#/utils/logger';
 import { nanoid } from '#/utils/nanoid';
 import { slugFromEmail } from '#/utils/slug-from-email';
 import { createDate, TimeSpan } from '#/utils/time-span';
+import { OpenAPIHono } from '@hono/zod-openapi';
+import { encodeBase64 } from '@oslojs/encoding';
+import { generateCodeVerifier, generateState, OAuth2RequestError } from 'arctic';
+import { appConfig, type EnabledOAuthProvider } from 'config';
+import { and, desc, eq, isNotNull, isNull } from 'drizzle-orm';
+import i18n from 'i18next';
+import { getRandomValues } from 'node:crypto';
 import { CreatePasswordEmail, type CreatePasswordEmailProps } from '../../../emails/create-password';
 
 const enabledStrategies: readonly string[] = appConfig.enabledAuthStrategies;
@@ -194,10 +193,7 @@ const authRouteHandlers = app
     }
 
     // Get user
-    const [user] = await db
-      .select({ ...userSelect })
-      .from(usersTable)
-      .where(eq(usersTable.id, token.userId));
+    const user = await getUserBy('id', token.userId);
 
     // User not found
     if (!user) {
@@ -456,10 +452,7 @@ const authRouteHandlers = app
   .openapi(authRoutes.startImpersonation, async (ctx) => {
     const { targetUserId } = ctx.req.valid('query');
 
-    const [user] = await db
-      .select({ ...userSelect })
-      .from(usersTable)
-      .where(eq(usersTable.id, targetUserId));
+    const user = await getUserBy('id', targetUserId);
 
     if (!user) throw new AppError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'user', meta: { targetUserId } });
 

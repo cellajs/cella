@@ -122,7 +122,7 @@ viteConfig.plugins?.push(
       name: appConfig.name,
       short_name: appConfig.name,
       description: appConfig.description,
-      theme_color: '#333333',
+      theme_color: '#222222',
       icons: [
         {
           src: '/static/icons/icon-192x192.png',
@@ -133,6 +133,12 @@ viteConfig.plugins?.push(
           src: '/static/icons/icon-512x512.png',
           sizes: '512x512',
           type: 'image/png',
+          purpose: 'any',
+        },
+          {
+          src: '/static/icons/icon-512x512.svg',
+          sizes: '512x512',
+          type: 'image/svg+xml',
           purpose: 'any',
         },
         {
