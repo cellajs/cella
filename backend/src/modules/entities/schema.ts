@@ -1,7 +1,8 @@
-import { z } from '@hono/zod-openapi';
 import { membershipBaseSchema } from '#/modules/memberships/schema';
 import { contextEntityTypeSchema, idSchema, imageUrlSchema, nameSchema, pageEntityTypeSchema, slugSchema } from '#/utils/schema/common';
 import { mapEntitiesToSchema } from '#/utils/schema/entities-to-schema';
+import { z } from '@hono/zod-openapi';
+import { appConfig } from 'config';
 
 export const contextEntityBaseSchema = z.object({
   id: idSchema,
@@ -50,11 +51,7 @@ export const contextEntitiesSchema = z.array(
 );
 
 export const contextEntitiesQuerySchema = baseEntityQuerySchema.extend({
-  roles: z.preprocess((val) => {
-    if (typeof val === 'string') return [val]; // wrap single string as array
-    if (Array.isArray(val)) return val;
-    return undefined;
-  }, z.array(membershipBaseSchema.shape.role).optional()),
+  role: z.enum(appConfig.rolesByType.entityRoles).optional(),
   type: contextEntityTypeSchema,
   sort: z.enum(['name', 'createdAt']).default('createdAt').optional(),
 });

@@ -2806,7 +2806,7 @@ export type GetEntitiesWithAdminsData = {
   query: {
     q?: string;
     targetUserId?: string;
-    roles?: Array<'member' | 'admin'> | null;
+    role?: 'member' | 'admin';
     type: 'organization';
     sort?: 'name' | 'createdAt';
   };

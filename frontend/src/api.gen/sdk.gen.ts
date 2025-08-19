@@ -1381,7 +1381,7 @@ export const getPageEntities = <ThrowOnError extends boolean = true>(options?: O
  * @param {getEntitiesWithAdminsData} options
  * @param {string=} options.query.q - `string` (optional)
  * @param {string=} options.query.targetuserid - `string` (optional)
- * @param {any[] | null=} options.query.roles - `any[] | null` (optional)
+ * @param {enum=} options.query.role - `enum` (optional)
  * @param {enum} options.query.type - `enum`
  * @param {enum=} options.query.sort - `enum` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
