@@ -12,7 +12,7 @@ const WelcomePage = () => {
   const { user } = useUserStore();
   const navigate = useNavigate();
 
-  const [onboarding, setOnboarding] = useState<OnboardingStates>(user.userFlags.finishOnboarding ? 'completed' : 'start');
+  const [onboarding, setOnboarding] = useState<OnboardingStates>(user.userFlags.finishedOnboarding ? 'completed' : 'start');
 
   const onOpenChange = (openState: boolean) => {
     if (!openState) setOnboarding('completed');
@@ -28,9 +28,9 @@ const WelcomePage = () => {
   };
 
   useEffect(() => {
-    if (!user.userFlags.finishOnboarding) return;
+    if (!user.userFlags.finishedOnboarding) return;
     navigate({ to: appConfig.defaultRedirectPath, replace: true });
-  }, [user.userFlags.finishOnboarding]);
+  }, [user.userFlags.finishedOnboarding]);
 
   return (
     <>

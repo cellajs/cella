@@ -28,7 +28,7 @@
       },
       "suspicious": {
         "noTemplateCurlyInString": "info",
-        "noUnknownAtRules": "info",
+        "noUnknownAtRules": "off",
         "noEvolvingTypes": "off"
       },
       "a11y": {
@@ -38,7 +38,7 @@
       },
       "complexity": {
         "noUselessFragments": "off",
-        "noImportantStyles": "info"
+        "noImportantStyles": "off"
       },
       "style": {
         "useEnumInitializers": "off",

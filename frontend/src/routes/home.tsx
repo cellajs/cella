@@ -26,7 +26,7 @@ export const HomeAliasRoute = createRoute({
   getParentRoute: () => AppRoute,
   beforeLoad: () => {
     const { user } = useUserStore.getState();
-    if (!user.userFlags.finishOnboarding) throw redirect({ to: '/welcome' });
+    if (!user.userFlags.finishedOnboarding) throw redirect({ to: '/welcome' });
   },
   component: () => (
     <Suspense>
@@ -42,7 +42,7 @@ export const WelcomeRoute = createRoute({
   getParentRoute: () => AppRoute,
   beforeLoad: () => {
     const { user } = useUserStore.getState();
-    if (user.userFlags.finishOnboarding) throw redirect({ to: '/home' });
+    if (user.userFlags.finishedOnboarding) throw redirect({ to: '/home' });
   },
   component: () => (
     <Suspense>

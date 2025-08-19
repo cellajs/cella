@@ -486,7 +486,7 @@ export const zGetMeResponse = z.object({
   newsletter: z.boolean(),
   role: z.enum(['user', 'admin']),
   userFlags: z.object({
-    finishOnboarding: z.boolean(),
+    finishedOnboarding: z.boolean(),
   }),
   modifiedAt: z.union([z.string(), z.null()]),
   lastSeenAt: z.union([z.string(), z.null()]),
@@ -507,7 +507,7 @@ export const zUpdateMeData = z.object({
       slug: z.optional(z.string().min(2).max(100)),
       userFlags: z.optional(
         z.object({
-          finishOnboarding: z.optional(z.boolean()),
+          finishedOnboarding: z.optional(z.boolean()),
         }),
       ),
     }),
@@ -535,7 +535,7 @@ export const zUpdateMeResponse = z.object({
   newsletter: z.boolean(),
   role: z.enum(['user', 'admin']),
   userFlags: z.object({
-    finishOnboarding: z.boolean(),
+    finishedOnboarding: z.boolean(),
   }),
   modifiedAt: z.union([z.string(), z.null()]),
   lastSeenAt: z.union([z.string(), z.null()]),
@@ -814,7 +814,7 @@ export const zGetUsersResponse = z.object({
       newsletter: z.boolean(),
       role: z.enum(['user', 'admin']),
       userFlags: z.object({
-        finishOnboarding: z.boolean(),
+        finishedOnboarding: z.boolean(),
       }),
       modifiedAt: z.union([z.string(), z.null()]),
       lastSeenAt: z.union([z.string(), z.null()]),
@@ -853,7 +853,7 @@ export const zGetUserResponse = z.object({
   newsletter: z.boolean(),
   role: z.enum(['user', 'admin']),
   userFlags: z.object({
-    finishOnboarding: z.boolean(),
+    finishedOnboarding: z.boolean(),
   }),
   modifiedAt: z.union([z.string(), z.null()]),
   lastSeenAt: z.union([z.string(), z.null()]),
@@ -899,7 +899,7 @@ export const zUpdateUserResponse = z.object({
   newsletter: z.boolean(),
   role: z.enum(['user', 'admin']),
   userFlags: z.object({
-    finishOnboarding: z.boolean(),
+    finishedOnboarding: z.boolean(),
   }),
   modifiedAt: z.union([z.string(), z.null()]),
   lastSeenAt: z.union([z.string(), z.null()]),
@@ -1783,7 +1783,7 @@ export const zGetMembersResponse = z.object({
       newsletter: z.boolean(),
       role: z.enum(['user', 'admin']),
       userFlags: z.object({
-        finishOnboarding: z.boolean(),
+        finishedOnboarding: z.boolean(),
       }),
       modifiedAt: z.union([z.string(), z.null()]),
       lastSeenAt: z.union([z.string(), z.null()]),

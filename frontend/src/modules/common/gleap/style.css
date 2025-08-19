@@ -2,11 +2,11 @@
   z-index: 20 !important;
 }
 
-.bb-feedback-button>.bb-feedback-button-icon {
+.bb-feedback-button > .bb-feedback-button-icon {
   background-color: hsl(var(--secondary));
 }
 
-.bb-feedback-button>.bb-feedback-button-icon>svg {
+.bb-feedback-button > .bb-feedback-button-icon > svg {
   fill: hsl(var(--primary));
   color: hsl(var(--primary));
 }
@@ -17,6 +17,6 @@
 
 @media (max-width: 639px) {
   .bb-feedback-button {
-    display: none;
+    display: none !important;
   }
 }

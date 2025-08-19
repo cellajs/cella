@@ -75,6 +75,7 @@ const BaseDataTable = memo(
     };
 
     // Effect to update total when online totalCount changes
+    // TODO this looks weird?
     useEffect(() => setTotal(totalCount), [totalCount]);
 
     // Expose methods via ref using useImperativeHandle

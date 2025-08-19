@@ -45,6 +45,7 @@ const Onboarding = ({ onboarding = 'start', onboardingStateChange }: OnboardingP
               initialStep={0}
               steps={steps}
               onClickStep={(currentStep) => {
+                console.log(`Navigating to step ${currentStep}`);
                 if (currentStep === steps.length - 1) onboardingStateChange('completed');
               }}
               orientation="vertical"

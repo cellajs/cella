@@ -19,6 +19,7 @@ const Counters = () => {
   );
   const [countValues, setCountValues] = useState(initialObject);
 
+  // TODO use react-query and add graceful failure handling
   useEffect(() => {
     getPublicCounts().then((resp) => setCountValues(resp));
   }, []);

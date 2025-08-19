@@ -1309,7 +1309,7 @@ export type GetMeResponses = {
     newsletter: boolean;
     role: 'user' | 'admin';
     userFlags: {
-      finishOnboarding: boolean;
+      finishedOnboarding: boolean;
     };
     modifiedAt: string | null;
     lastSeenAt: string | null;
@@ -1331,7 +1331,7 @@ export type UpdateMeData = {
     thumbnailUrl?: string | null;
     slug?: string;
     userFlags?: {
-      finishOnboarding?: boolean;
+      finishedOnboarding?: boolean;
     };
   };
   path?: never;
@@ -1394,7 +1394,7 @@ export type UpdateMeResponses = {
     newsletter: boolean;
     role: 'user' | 'admin';
     userFlags: {
-      finishOnboarding: boolean;
+      finishedOnboarding: boolean;
     };
     modifiedAt: string | null;
     lastSeenAt: string | null;
@@ -2095,7 +2095,7 @@ export type GetUsersResponses = {
       newsletter: boolean;
       role: 'user' | 'admin';
       userFlags: {
-        finishOnboarding: boolean;
+        finishedOnboarding: boolean;
       };
       modifiedAt: string | null;
       lastSeenAt: string | null;
@@ -2173,7 +2173,7 @@ export type GetUserResponses = {
     newsletter: boolean;
     role: 'user' | 'admin';
     userFlags: {
-      finishOnboarding: boolean;
+      finishedOnboarding: boolean;
     };
     modifiedAt: string | null;
     lastSeenAt: string | null;
@@ -2257,7 +2257,7 @@ export type UpdateUserResponses = {
     newsletter: boolean;
     role: 'user' | 'admin';
     userFlags: {
-      finishOnboarding: boolean;
+      finishedOnboarding: boolean;
     };
     modifiedAt: string | null;
     lastSeenAt: string | null;
@@ -4242,7 +4242,7 @@ export type GetMembersResponses = {
       newsletter: boolean;
       role: 'user' | 'admin';
       userFlags: {
-        finishOnboarding: boolean;
+        finishedOnboarding: boolean;
       };
       modifiedAt: string | null;
       lastSeenAt: string | null;

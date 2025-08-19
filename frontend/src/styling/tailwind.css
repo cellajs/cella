@@ -7,7 +7,6 @@
 @config '../../tailwind.config.ts';
 
 @layer base {
-
   *,
   ::after,
   ::before,
@@ -39,7 +38,6 @@
 }
 
 @layer base {
-
   .bn-container.bn-shadcn,
   :root {
     --background: 0 0% 100%;
@@ -160,7 +158,7 @@
 
   /* Hide devtools */
   .tsqd-open-btn-container,
-  .TanStackRouterDevtools>button {
+  .TanStackRouterDevtools > button {
     display: none !important;
   }
 
