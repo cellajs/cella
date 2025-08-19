@@ -2030,11 +2030,14 @@ export type GetUsersData = {
   path?: never;
   query?: {
     q?: string;
-    sort?: 'id' | 'name' | 'email' | 'role' | 'createdAt' | 'lastSeenAt' | 'membershipCount';
+    sort?: 'id' | 'name' | 'email' | 'role' | 'createdAt' | 'lastSeenAt';
     order?: 'asc' | 'desc';
     offset?: string;
     limit?: string;
     role?: 'user' | 'admin';
+    mode?: 'all' | 'shared';
+    targetEntityType?: 'organization';
+    targetEntityId?: string;
   };
   url: '/users';
 };
@@ -2102,6 +2105,16 @@ export type GetUsersResponses = {
       lastStartedAt: string | null;
       lastSignInAt: string | null;
       modifiedBy: string | null;
+      memberships: Array<{
+        id: string;
+        contextType: 'organization';
+        userId: string;
+        role: 'member' | 'admin';
+        archived: boolean;
+        muted: boolean;
+        order: number;
+        organizationId: string;
+      }>;
     }>;
     total: number;
   };

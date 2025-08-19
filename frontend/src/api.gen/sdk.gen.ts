@@ -1071,7 +1071,7 @@ export const deleteUsers = <ThrowOnError extends boolean = true>(options?: Optio
 
 /**
  * Get list of users
- * 🛡️ Requires authentication (system access)
+ * 🛡️ Requires authentication
  *
  * Returns a list of *users* at the system level.
  *
@@ -1084,6 +1084,9 @@ export const deleteUsers = <ThrowOnError extends boolean = true>(options?: Optio
  * @param {string=} options.query.offset - `string` (optional)
  * @param {string=} options.query.limit - `string` (optional)
  * @param {enum=} options.query.role - `enum` (optional)
+ * @param {enum=} options.query.mode - `enum` (optional)
+ * @param {enum=} options.query.targetentitytype - `enum` (optional)
+ * @param {string=} options.query.targetentityid - `string` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
 export const getUsers = <ThrowOnError extends boolean = true>(options?: Options<GetUsersData, ThrowOnError>) => {

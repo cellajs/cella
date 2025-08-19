@@ -3,25 +3,31 @@ import { hasSystemAccess, isAuthenticated } from '#/middlewares/guard';
 import { userListQuerySchema, userSchema, userUpdateBodySchema } from '#/modules/users/schema';
 import { entityParamSchema, idsBodySchema } from '#/utils/schema/common';
 import { errorResponses, paginationSchema, successWithRejectedItemsSchema } from '#/utils/schema/responses';
+import { membershipBaseSchema } from '../memberships/schema';
 
 const userRoutes = {
   getUsers: createCustomRoute({
     operationId: 'getUsers',
     method: 'get',
     path: '/',
-    guard: [isAuthenticated, hasSystemAccess],
+    guard: [
+      isAuthenticated,
+      async (ctx, next) => {
+        const mode = ctx.req.query('mode');
+        if (mode === 'all') await hasSystemAccess(ctx, next);
+        else await next();
+      },
+    ],
     tags: ['users'],
     summary: 'Get list of users',
     description: 'Returns a list of *users* at the system level.',
-    request: {
-      query: userListQuerySchema,
-    },
+    request: { query: userListQuerySchema },
     responses: {
       200: {
         description: 'Users',
         content: {
           'application/json': {
-            schema: paginationSchema(userSchema),
+            schema: paginationSchema(userSchema.extend({ memberships: membershipBaseSchema.array() })),
           },
         },
       },

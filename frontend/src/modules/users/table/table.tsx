@@ -40,7 +40,8 @@ const BaseDataTable = memo(
             onSuccess: () => toaster(t('common:success.update_item', { item: t('common:role') }), 'success'),
           });
         }
-      setRows(changedRows);
+      // TODO(DAVID) FIX
+      setRows(changedRows as any);
     };
 
     const onSelectedRowsChange = (value: Set<string>) => {

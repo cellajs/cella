@@ -784,11 +784,14 @@ export const zGetUsersData = z.object({
   query: z.optional(
     z.object({
       q: z.optional(z.string()),
-      sort: z.optional(z.enum(['id', 'name', 'email', 'role', 'createdAt', 'lastSeenAt', 'membershipCount'])),
+      sort: z.optional(z.enum(['id', 'name', 'email', 'role', 'createdAt', 'lastSeenAt'])),
       order: z.optional(z.enum(['asc', 'desc'])),
       offset: z.optional(z.string()).default('0'),
       limit: z.optional(z.string()).default('40'),
       role: z.optional(z.enum(['user', 'admin'])),
+      mode: z.optional(z.enum(['all', 'shared'])),
+      targetEntityType: z.optional(z.enum(['organization'])),
+      targetEntityId: z.optional(z.string()),
     }),
   ),
 });
@@ -821,6 +824,18 @@ export const zGetUsersResponse = z.object({
       lastStartedAt: z.union([z.string(), z.null()]),
       lastSignInAt: z.union([z.string(), z.null()]),
       modifiedBy: z.union([z.string(), z.null()]),
+      memberships: z.array(
+        z.object({
+          id: z.string(),
+          contextType: z.enum(['organization']),
+          userId: z.string(),
+          role: z.enum(['member', 'admin']),
+          archived: z.boolean(),
+          muted: z.boolean(),
+          order: z.number().gte(-140737488355328).lte(140737488355327),
+          organizationId: z.string(),
+        }),
+      ),
     }),
   ),
   total: z.number(),
