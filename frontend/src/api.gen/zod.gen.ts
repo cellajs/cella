@@ -144,7 +144,6 @@ export const zEntityListItemSchema = z.object({
   name: z.string(),
   thumbnailUrl: z.optional(z.union([z.string(), z.null()])),
   bannerUrl: z.optional(z.union([z.string(), z.null()])),
-  email: z.optional(z.string()),
   membership: z.union([
     z.object({
       id: z.string(),

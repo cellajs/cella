@@ -4,8 +4,7 @@ import { appConfig, type EntityType } from 'config';
 import { History, Search, User, X } from 'lucide-react';
 import { Fragment, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { z } from 'zod';
-import type { zGetPageEntitiesResponse } from '~/api.gen/zod.gen';
+import type { EntityListItemSchema } from '~/api.gen';
 import useFocusByRef from '~/hooks/use-focus-by-ref';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
@@ -18,8 +17,6 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { ScrollArea } from '~/modules/ui/scroll-area';
 import { getEntityRoute } from '~/nav-config';
 import { useNavigationStore } from '~/store/navigation';
-
-export type EntityListItem = z.infer<typeof zGetPageEntitiesResponse>['items'][number];
 
 export interface EntitySearchSection {
   id: string;
@@ -69,7 +66,7 @@ export const AppSearch = () => {
 
   const { data: items, isFetching } = useQuery(entitiesQueryOptions({ q: searchValue }));
 
-  const onSelectItem = (item: EntityListItem) => {
+  const onSelectItem = (item: EntityListItemSchema) => {
     // Update recent searches with the search value
     updateRecentSearches(searchValue);
 
@@ -175,7 +172,7 @@ export const AppSearch = () => {
                           defaultValue: entityType,
                         })}
                       </StickyBox>
-                      {filteredItems.map((item: EntityListItem) => {
+                      {filteredItems.map((item: EntityListItemSchema) => {
                         return (
                           <CommandItem
                             data-already-member={entityType !== 'user' && item.membership !== null}

@@ -1,5 +1,7 @@
 import type { OpenAPIRegistry } from '@asteasolutions/zod-to-openapi';
-import { entityListItemSchema } from '#/modules/entities/schema';
+import { contextEntityBaseSchema } from '#/modules/entities/schema';
+import { membershipBaseSchema } from '#/modules/memberships/schema';
+import { pageEntityTypeSchema } from '#/utils/schema/common';
 
 export const apiModulesList = [
   {
@@ -63,5 +65,11 @@ export const apiModulesList = [
  * and included in generated OpenAPI documentation.
  */
 export const registerAppSchema = (registry: OpenAPIRegistry) => {
-  registry.register('EntityListItemSchema', entityListItemSchema);
+  registry.register(
+    'EntityListItemSchema',
+    contextEntityBaseSchema.extend({
+      entityType: pageEntityTypeSchema,
+      membership: membershipBaseSchema.nullable(),
+    }),
+  );
 };
