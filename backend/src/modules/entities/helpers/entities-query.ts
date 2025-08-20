@@ -1,14 +1,12 @@
 import { z } from '@hono/zod-openapi';
 import { appConfig, type ContextEntityType } from 'config';
-import { and, eq, ilike, inArray, ne, or, type SQLWrapper, sql } from 'drizzle-orm';
-
+import { and, eq, ilike, inArray, isNotNull, isNull, ne, or, type SQLWrapper, sql } from 'drizzle-orm';
 import { db } from '#/db/db';
 import { membershipsTable } from '#/db/schema/memberships';
 import { usersTable } from '#/db/schema/users';
 import { entityTables } from '#/entity-config';
-import { contextEntityBaseSchema, type pageEntitiesQuerySchema } from '#/modules/entities/schema';
+import { contextEntityWithMembershipSchema, type pageEntitiesQuerySchema } from '#/modules/entities/schema';
 import { membershipSummarySelect } from '#/modules/memberships/helpers/select';
-import { membershipBaseSchema } from '#/modules/memberships/schema';
 import { contextEntityTypeSchema } from '#/utils/schema/common';
 import { prepareStringForILikeFilter } from '#/utils/sql';
 
@@ -21,9 +19,8 @@ type EntitiesQueryProps = Omit<z.infer<typeof pageEntitiesQuerySchema>, 'targetU
 type UserEntitiesQueryProps = Omit<EntitiesQueryProps, 'userId'>;
 type ContextEntitiesQueryProps = Omit<EntitiesQueryProps, 'userMembershipType' | 'selfId' | 'type'> & { type?: ContextEntityType };
 
-const expandedSchema = contextEntityBaseSchema.extend({
+const expandedSchema = contextEntityWithMembershipSchema.extend({
   entityType: contextEntityTypeSchema,
-  membership: membershipBaseSchema.nullable(),
   total: z.number(),
 });
 
@@ -41,7 +38,7 @@ export const getEntitiesQuery = ({ q, organizationIds, userId, selfId, type, use
  * Creates a queries with max 20 uniqe entities each. Query return entities that part of organizations where passed user have memberships
  * and match the provided search query. Default will return query for all context entities if type is not provided.
  */
-const getContextEntitiesQuery = ({ q, organizationIds, userId, type }: ContextEntitiesQueryProps) => {
+export const getContextEntitiesQuery = ({ q, organizationIds, userId, type }: ContextEntitiesQueryProps) => {
   const contextEntities = type ? [type] : appConfig.contextEntityTypes;
 
   const contextQueries = contextEntities
@@ -68,7 +65,13 @@ const getContextEntitiesQuery = ({ q, organizationIds, userId, type }: ContextEn
         .from(table)
         .leftJoin(
           membershipsTable,
-          and(eq(membershipsTable[entityIdField], table.id), eq(membershipsTable.userId, userId), eq(membershipsTable.contextType, entityType)),
+          and(
+            eq(membershipsTable[entityIdField], table.id),
+            eq(membershipsTable.userId, userId),
+            eq(membershipsTable.contextType, entityType),
+            isNotNull(membershipsTable.activatedAt),
+            isNull(membershipsTable.tokenId),
+          ),
         )
         .where(and(...filters))
         .limit(20);

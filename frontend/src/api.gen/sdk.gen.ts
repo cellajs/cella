@@ -63,9 +63,9 @@ import type {
   GetAttachmentsData,
   GetAttachmentsErrors,
   GetAttachmentsResponses,
-  GetEntitiesWithAdminsData,
-  GetEntitiesWithAdminsErrors,
-  GetEntitiesWithAdminsResponses,
+  GetContextEntitiesData,
+  GetContextEntitiesErrors,
+  GetContextEntitiesResponses,
   GetMeData,
   GetMeErrors,
   GetMembersData,
@@ -1377,20 +1377,20 @@ export const getPageEntities = <ThrowOnError extends boolean = true>(options?: O
  * 🛡️ Requires authentication
  *
  * Returns all *contextual entities* (e.g. *organizations*) the specified user is a member of.
- * Each result includes the user's membership data and a list of other users with administrator roles within the same entity.
+ * Each result includes the user's membership data
  *
- * **GET /entities/context** ·· [getEntitiesWithAdmins](http://localhost:4000/docs#tag/entities/get/entities/context) ·· _entities_
+ * **GET /entities/contextEntities** ·· [getContextEntities](http://localhost:4000/docs#tag/entities/get/entities/contextEntities) ·· _entities_
  *
- * @param {getEntitiesWithAdminsData} options
+ * @param {getContextEntitiesData} options
  * @param {string=} options.query.q - `string` (optional)
  * @param {string=} options.query.targetuserid - `string` (optional)
  * @param {enum=} options.query.role - `enum` (optional)
- * @param {enum} options.query.type - `enum`
  * @param {enum=} options.query.sort - `enum` (optional)
+ * @param {enum | any[]=} options.query.types - `enum | any[]` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
-export const getEntitiesWithAdmins = <ThrowOnError extends boolean = true>(options: Options<GetEntitiesWithAdminsData, ThrowOnError>) => {
-  return (options.client ?? _heyApiClient).get<GetEntitiesWithAdminsResponses, GetEntitiesWithAdminsErrors, ThrowOnError, 'data'>({
+export const getContextEntities = <ThrowOnError extends boolean = true>(options?: Options<GetContextEntitiesData, ThrowOnError>) => {
+  return (options?.client ?? _heyApiClient).get<GetContextEntitiesResponses, GetContextEntitiesErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     security: [
       {
@@ -1399,7 +1399,7 @@ export const getEntitiesWithAdmins = <ThrowOnError extends boolean = true>(optio
         type: 'apiKey',
       },
     ],
-    url: '/entities/context',
+    url: '/entities/contextEntities',
     ...options,
   });
 };

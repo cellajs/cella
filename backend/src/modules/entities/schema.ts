@@ -1,10 +1,10 @@
 import { z } from '@hono/zod-openapi';
-import { appConfig } from 'config';
+import { appConfig, type ContextEntityType } from 'config';
 import { membershipBaseSchema } from '#/modules/memberships/schema';
 import { contextEntityTypeSchema, idSchema, imageUrlSchema, nameSchema, pageEntityTypeSchema, slugSchema } from '#/utils/schema/common';
 import { mapEntitiesToSchema } from '#/utils/schema/entities-to-schema';
 
-export const contextEntityBaseSchema = z.object({
+const contextEntityBaseSchema = z.object({
   id: idSchema,
   entityType: contextEntityTypeSchema,
   slug: slugSchema,
@@ -13,9 +13,9 @@ export const contextEntityBaseSchema = z.object({
   bannerUrl: imageUrlSchema.nullable().optional(),
 });
 
-const baseEntityQuerySchema = z.object({
-  q: z.string().optional(),
-  targetUserId: idSchema.optional(),
+// Extend base schema
+export const contextEntityWithMembershipSchema = contextEntityBaseSchema.extend({
+  membership: membershipBaseSchema.nullable(),
 });
 
 // Declared here to avoid circular dependencies
@@ -36,22 +36,35 @@ export const pageEntitiesSchema = z.object({
   total: z.number(),
 });
 
-export const pageEntitiesQuerySchema = baseEntityQuerySchema.extend({
+export const pageEntitiesQuerySchema = z.object({
+  q: z.string().optional(),
+  targetUserId: idSchema.optional(),
   type: pageEntityTypeSchema.optional(),
   targetOrgId: idSchema.optional(),
   userMembershipType: contextEntityTypeSchema.optional(),
 });
 
-export const contextEntitiesSchema = z.array(
-  contextEntityBaseSchema.extend({
-    createdAt: z.string(),
-    membership: membershipBaseSchema,
-    admins: z.array(userBaseSchema),
-  }),
+export const contextEntitiesQuerySchema = z.object({
+  q: z.string().optional(),
+  targetUserId: idSchema.optional(),
+  role: z.enum(appConfig.rolesByType.entityRoles).optional(),
+  sort: z.enum(['name', 'createdAt']).default('createdAt').optional(),
+  types: z
+    .union([contextEntityTypeSchema, z.array(contextEntityTypeSchema)])
+    .optional()
+    .transform((val) => (val === undefined ? [] : Array.isArray(val) ? val : [val])),
+});
+
+const fullContextEntitySchema = contextEntityWithMembershipSchema.extend({ createdAt: z.string() });
+
+const contextEntitiesDataSchema = z.object(
+  appConfig.contextEntityTypes.reduce(
+    (acc, entityType) => {
+      acc[entityType] = z.array(fullContextEntitySchema);
+      return acc;
+    },
+    {} as Record<ContextEntityType, z.ZodArray<typeof fullContextEntitySchema>>,
+  ),
 );
 
-export const contextEntitiesQuerySchema = baseEntityQuerySchema.extend({
-  role: z.enum(appConfig.rolesByType.entityRoles).optional(),
-  type: contextEntityTypeSchema,
-  sort: z.enum(['name', 'createdAt']).default('createdAt').optional(),
-});
+export const contextEntitiesResponseSchema = z.object({ items: contextEntitiesDataSchema, total: z.number() });

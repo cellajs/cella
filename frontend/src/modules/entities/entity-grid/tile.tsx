@@ -40,9 +40,10 @@ export const EntityTile = ({ entity }: { entity: EntityGridItem }) => {
           <div className="grow" />
           <AvatarGroup limit={3}>
             <AvatarGroupList>
-              {entity.admins.map((user) => (
+              {/* TODO(DAVID) fix it  */}
+              {/* {entity.admins?.map((user) => (
                 <AvatarWrap type="user" key={user.id} id={user.id} name={user.name} url={user.thumbnailUrl} className="h-8 w-8 text-xs" />
-              ))}
+              ))} */}
             </AvatarGroupList>
             <AvatarOverflowIndicator className="h-8 w-8 text-xs" />
           </AvatarGroup>

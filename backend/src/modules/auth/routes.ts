@@ -13,7 +13,7 @@ import {
   passkeyVerificationBodySchema,
   tokenWithDataSchema,
 } from '#/modules/auth/schema';
-import { contextEntityBaseSchema } from '#/modules/entities/schema';
+import { contextEntityWithMembershipSchema } from '#/modules/entities/schema';
 import { membershipBaseSchema } from '#/modules/memberships/schema';
 import { cookieSchema, idSchema, passwordSchema, tokenParamSchema } from '#/utils/schema/common';
 import { errorResponses, successWithoutDataSchema } from '#/utils/schema/responses';
@@ -362,7 +362,7 @@ const authRoutes = {
         description: 'Invitation was accepted',
         content: {
           'application/json': {
-            schema: contextEntityBaseSchema.extend({
+            schema: contextEntityWithMembershipSchema.extend({
               createdAt: z.string(),
               membership: membershipBaseSchema,
             }),

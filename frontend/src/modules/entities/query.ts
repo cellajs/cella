@@ -1,5 +1,5 @@
 import { keepPreviousData, queryOptions } from '@tanstack/react-query';
-import { type GetEntitiesWithAdminsData, type GetPageEntitiesData, getEntitiesWithAdmins, getPageEntities } from '~/api.gen';
+import { type GetContextEntitiesData, type GetPageEntitiesData, getContextEntities, getPageEntities } from '~/api.gen';
 import { useUserStore } from '~/store/user';
 
 /**
@@ -11,7 +11,7 @@ export const entitiesKeys = {
   search: (searchQuery: string) => [...entitiesKeys.all, 'search', searchQuery] as const,
   grid: {
     base: () => [...entitiesKeys.all, 'greed'] as const,
-    context: (filters: GetEntitiesWithAdminsData['query']) => [...entitiesKeys.grid.base(), filters] as const,
+    context: (filters: GetContextEntitiesData['query']) => [...entitiesKeys.grid.base(), filters] as const,
   },
 };
 
@@ -34,19 +34,19 @@ export const entitiesQueryOptions = (query: NonNullable<GetPageEntitiesData['que
 };
 
 /**
- * Query options for fetching context entities with memberhsip and their members based on userId input query and sort.
+ * Query options for fetching page entities based on input query.
  *
- * @param query - ContextEntitiesQuery parameters to get entities.
+ * @param query - PageEntitiesQuery parameters to get entities.
  * @returns Query options
  */
-export const contextEntitiesQueryOptions = (query: GetEntitiesWithAdminsData['query']) => {
+export const contextEntitiesQueryOptions = (query: NonNullable<GetContextEntitiesData['query']>) => {
   const user = useUserStore.getState().user;
   const q = query.q ?? '';
   const sort = query.sort ?? 'name';
   const targetUserId = query.targetUserId ?? user.id;
   return queryOptions({
-    queryKey: entitiesKeys.grid.context({ q, sort, targetUserId, type: query.type, role: query.role }),
-    queryFn: () => getEntitiesWithAdmins({ query: { ...query, sort, targetUserId } }),
+    queryKey: entitiesKeys.grid.context({ q, sort, targetUserId, types: query.types, role: query.role }),
+    queryFn: () => getContextEntities({ query: { ...query, sort, targetUserId } }),
     staleTime: 0,
   });
 };

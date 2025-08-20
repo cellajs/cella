@@ -1,17 +1,16 @@
-import { useQuery } from '@tanstack/react-query';
+import { useSuspenseQuery } from '@tanstack/react-query';
 import { t } from 'i18next';
 import { Bird, Search } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useInView } from 'react-intersection-observer';
-import type { GetEntitiesWithAdminsData } from '~/api.gen';
+import type { GetContextEntitiesData } from '~/api.gen';
 import { useOnlineManager } from '~/hooks/use-online-manager';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
-import { GridSkeleton } from '~/modules/entities/entity-grid/skeleton';
 import { EntityTile } from '~/modules/entities/entity-grid/tile';
 import type { EntityGridWrapperProps } from '~/modules/entities/entity-grid/wrapper';
 import { contextEntitiesQueryOptions } from '~/modules/entities/query';
 
-export type EntitySearch = Pick<GetEntitiesWithAdminsData['query'], 'sort' | 'q' | 'role'>;
+export type EntitySearch = Pick<NonNullable<GetContextEntitiesData['query']>, 'sort' | 'q' | 'role'>;
 
 interface Props extends EntityGridWrapperProps {
   searchVars: EntitySearch;
@@ -32,23 +31,15 @@ export const BaseEntityGrid = ({
 }: Props) => {
   const { isOnline } = useOnlineManager();
 
-  const [initialDone, setInitialDone] = useState(false);
-
   const { ref: measureRef, inView } = useInView({ triggerOnce: false, threshold: 0 });
 
-  const {
-    data: entities = [],
-    isLoading,
-    isFetching,
-    error,
-  } = useQuery(contextEntitiesQueryOptions({ ...searchVars, type: entityType, targetUserId: userId }));
+  const { data, isFetching, error } = useSuspenseQuery(contextEntitiesQueryOptions({ ...searchVars, types: [entityType], targetUserId: userId }));
 
   const isFiltered = !!searchVars.q;
 
-  useEffect(() => {
-    if (isFetching) return;
-    setTotalCount(entities.length);
-  }, [entities.length, isFetching]);
+  const entities = useMemo(() => data.items[entityType], [data.items]);
+
+  useEffect(() => setTotalCount(data.total), [data.total]);
 
   // Fetch more entities using infinite loading
   useEffect(() => {
@@ -63,13 +54,6 @@ export const BaseEntityGrid = ({
 
     return () => clearTimeout(fetchMoreTimeout); // Clear timeout on cleanup
   }, [inView, error, entities.length, isFetching]);
-
-  useEffect(() => {
-    if (initialDone) return;
-    if (!isLoading) setInitialDone(true);
-  }, [isLoading]);
-
-  if (!initialDone) return <GridSkeleton />;
 
   if (!isFetching && !error && !isFiltered && !totalCount)
     return <ContentPlaceholder icon={Bird} title={t('common:no_resource_yet', { resource: t(label, { count: 0 }).toLowerCase() })} />;
