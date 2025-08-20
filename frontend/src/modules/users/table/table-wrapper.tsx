@@ -7,7 +7,7 @@ import type { BaseTableMethods } from '~/modules/common/data-table/types';
 import { useColumns } from '~/modules/users/table/columns';
 import BaseDataTable from '~/modules/users/table/table';
 import { UsersTableBar } from '~/modules/users/table/table-bar';
-import type { User } from '~/modules/users/types';
+import type { TableUser } from '~/modules/users/types';
 import { UsersTableRoute, type usersSearchSchema } from '~/routes/system';
 
 const LIMIT = appConfig.requestLimits.users;
@@ -24,7 +24,7 @@ const UsersTable = () => {
 
   // State for selected and total counts
   const [total, setTotal] = useState<number | undefined>(undefined);
-  const [selected, setSelected] = useState<User[]>([]);
+  const [selected, setSelected] = useState<TableUser[]>([]);
 
   // Build columns
   const [columns, setColumns] = useColumns();
