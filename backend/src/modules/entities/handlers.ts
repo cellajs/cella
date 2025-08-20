@@ -1,7 +1,3 @@
-import { OpenAPIHono, type z } from '@hono/zod-openapi';
-import { appConfig } from 'config';
-import { and, eq, ilike, isNotNull, isNull, type SQLWrapper } from 'drizzle-orm';
-import { alias } from 'drizzle-orm/pg-core';
 import { db } from '#/db/db';
 import { membershipsTable } from '#/db/schema/memberships';
 import { entityTables } from '#/entity-config';
@@ -13,6 +9,10 @@ import { membershipSummarySelect } from '#/modules/memberships/helpers/select';
 import { defaultHook } from '#/utils/default-hook';
 import { getOrderColumn } from '#/utils/order-column';
 import { prepareStringForILikeFilter } from '#/utils/sql';
+import { OpenAPIHono, type z } from '@hono/zod-openapi';
+import { appConfig } from 'config';
+import { and, eq, ilike, isNotNull, isNull, type SQLWrapper } from 'drizzle-orm';
+import { alias } from 'drizzle-orm/pg-core';
 
 const app = new OpenAPIHono<Env>({ defaultHook });
 
@@ -21,6 +21,7 @@ const entityRouteHandlers = app
    * Get all users' context entities with admins
    */
   .openapi(entityRoutes.getContextEntities, async (ctx) => {
+    // TODO(DAVID) add pagination
     const { q, sort, types, role, targetUserId, targetOrgId } = ctx.req.valid('query');
 
     const { id: selfId } = getContextUser();
