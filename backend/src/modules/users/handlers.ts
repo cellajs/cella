@@ -14,7 +14,8 @@ import { getOrderColumn } from '#/utils/order-column';
 import { prepareStringForILikeFilter } from '#/utils/sql';
 import { OpenAPIHono } from '@hono/zod-openapi';
 import { appConfig } from 'config';
-import { and, count, eq, ilike, inArray, isNotNull, or, type SQL } from 'drizzle-orm';
+import { and, count, eq, ilike, inArray, isNotNull, isNull, ne, or, type SQL } from 'drizzle-orm';
+import { alias } from 'drizzle-orm/pg-core';
 
 const app = new OpenAPIHono<Env>({ defaultHook });
 
@@ -23,7 +24,9 @@ const usersRouteHandlers = app
    * Get list of users
    */
   .openapi(userRoutes.getUsers, async (ctx) => {
-    const { q, sort, order, offset, limit, role, targetEntityId, targetEntityType } = ctx.req.valid('query');
+    const { q, sort, order, offset, mode, limit, role, targetEntityId, targetEntityType } = ctx.req.valid('query');
+
+    const user = getContextUser();
 
     //TODO add handle for mode search to add only user cross membership users
     const filters: SQL[] = [];
@@ -34,6 +37,7 @@ const usersRouteHandlers = app
       filters.push(or(ilike(usersTable.name, query), ilike(usersTable.email, query)) as SQL);
     }
     if (role) filters.push(eq(usersTable.role, role));
+    if (mode === 'shared') filters.push(ne(usersTable.id, user.id));
 
     // Base user query with ordering
     const orderColumn = getOrderColumn(
@@ -50,12 +54,25 @@ const usersRouteHandlers = app
       order,
     );
 
-    // Fetch users with pagination
-    const usersQuery = db
-      .select({ ...userSelect })
-      .from(usersTable)
-      .where(filters.length ? and(...filters) : undefined)
-      .orderBy(orderColumn);
+    const targetMembership = alias(membershipsTable, 'targetMembership'); // memberships of users being queried
+    const requesterMembership = alias(membershipsTable, 'requesterMembership'); // memberships of requesting user
+
+    const baseUsersQuery =
+      mode === 'shared'
+        ? db
+            .selectDistinct({ ...userSelect })
+            .from(usersTable)
+            .innerJoin(
+              targetMembership,
+              and(eq(usersTable.id, targetMembership.userId), isNotNull(targetMembership.activatedAt), isNull(targetMembership.tokenId)),
+            )
+            .innerJoin(
+              requesterMembership,
+              and(eq(requesterMembership.organizationId, targetMembership.organizationId), eq(requesterMembership.userId, user.id)),
+            )
+        : db.select({ ...userSelect }).from(usersTable);
+
+    const usersQuery = baseUsersQuery.where(filters.length ? and(...filters) : undefined).orderBy(orderColumn);
 
     // Total count
     const [{ total }] = await db.select({ total: count() }).from(usersQuery.as('users'));
@@ -94,7 +111,6 @@ const usersRouteHandlers = app
 
     return ctx.json({ items, total }, 200);
   })
-
   /*
    * Delete users
    */
