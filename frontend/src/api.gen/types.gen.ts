@@ -2725,10 +2725,13 @@ export type GetContextEntitiesData = {
   path?: never;
   query?: {
     q?: string;
+    sort?: 'name' | 'createdAt';
+    order?: 'asc' | 'desc';
+    offset?: string;
+    limit?: string;
     targetUserId?: string;
     targetOrgId?: string;
     role?: 'member' | 'admin';
-    sort?: 'name' | 'createdAt';
     types?: 'organization' | Array<'organization'>;
   };
   url: '/entities/contextEntities';

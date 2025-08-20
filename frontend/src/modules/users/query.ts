@@ -1,6 +1,6 @@
-import { infiniteQueryOptions, queryOptions, useMutation } from '@tanstack/react-query';
+import { infiniteQueryOptions, keepPreviousData, queryOptions, useMutation } from '@tanstack/react-query';
 import { appConfig } from 'config';
-import { deleteUsers, type GetUsersData, getUser, getUsers, type UpdateUserData, updateUser } from '~/api.gen';
+import { deleteUsers, getUser, getUsers, updateUser, type GetUsersData, type UpdateUserData } from '~/api.gen';
 import type { ApiError } from '~/lib/api';
 import type { User } from '~/modules/users/types';
 import { useMutateQueryData } from '~/query/hooks/use-mutate-query-data';
@@ -34,16 +34,19 @@ export const userQueryOptions = (idOrSlug: string) =>
 /**
  *
  */
-export const searchUsersQueryOptions = ({
-  limit: _limit,
-  ...queryParams
-}: Pick<NonNullable<GetUsersData['query']>, 'q' | 'targetEntityId' | 'targetEntityType'> & { limit?: number }) => {
-  const limit = String(_limit || 20);
-  const offset = '0';
+export const searchUsersQueryOptions = (query: Pick<NonNullable<GetUsersData['query']>, 'q' | 'targetEntityId' | 'targetEntityType'>) => {
+  const searchQuery = query.q ?? '';
 
-  const queryKey = [...usersKeys.all, 'search', queryParams];
+  const queryKey = [...usersKeys.all, 'search', searchQuery];
 
-  return queryOptions({ queryKey, queryFn: () => getUsers({ query: { ...queryParams, offset, limit } }) });
+  return queryOptions({
+    queryKey,
+    queryFn: () => getUsers({ query }),
+    staleTime: 0,
+    initialData: { items: [], total: 0 },
+    enabled: searchQuery.trim().length > 0, // to avoid issues with spaces
+    placeholderData: keepPreviousData,
+  });
 };
 
 /**

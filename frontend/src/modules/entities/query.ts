@@ -23,8 +23,11 @@ export const entitiesKeys = {
  * @param query - PageEntitiesQuery parameters to get entities.
  * @returns Query options
  */
-export const entitiesQueryOptions = (query: Omit<NonNullable<GetContextEntitiesData['query']>, 'role' | 'sort'>) => {
+export const searchContextEntitiesQueryOptions = (
+  query: Pick<NonNullable<GetContextEntitiesData['query']>, 'q' | 'types' | 'targetUserId' | 'targetOrgId'>,
+) => {
   const searchQuery = query.q ?? '';
+
   return queryOptions({
     queryKey: entitiesKeys.search(searchQuery),
     queryFn: () => getContextEntities({ query }),

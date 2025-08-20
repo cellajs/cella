@@ -82,6 +82,7 @@ const offsetRefine = (value: string | undefined) => Number(value) >= 0;
 const limitRefine = (value: string | undefined) => Number(value) > 0 && Number(value) <= 1000;
 
 /** Schema for pagination query parameters */
+// TODO convers limit offset directly
 export const paginationQuerySchema = z.object({
   q: z.string().optional(), // Optional search query
   sort: z.enum(['createdAt']).default('createdAt').optional(), // Sorting field

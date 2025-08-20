@@ -1,4 +1,4 @@
-import { keepPreviousData, useQuery } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { appConfig } from 'config';
 import { Check, ChevronsUpDown, Search, User, Users2, X } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
@@ -58,13 +58,7 @@ export const UserCombobox = ({ value, onChange, entity }: Props) => {
   };
 
   const queryOptions = searchUsersQueryOptions({ q: debouncedSearchQuery, targetEntityId: entity.id, targetEntityType: entity.entityType });
-  const { data, isFetching } = useQuery({
-    ...queryOptions,
-    initialData: { items: [], total: 0 },
-    staleTime: 0,
-    enabled: debouncedSearchQuery.trim().length > 0, // to avoid issues with spaces
-    placeholderData: keepPreviousData,
-  });
+  const { data, isFetching } = useQuery(queryOptions);
 
   useEffect(() => {
     onChange(selected);

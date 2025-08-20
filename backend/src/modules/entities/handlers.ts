@@ -21,8 +21,7 @@ const entityRouteHandlers = app
    * Get all users' context entities with admins
    */
   .openapi(entityRoutes.getContextEntities, async (ctx) => {
-    // TODO(DAVID) add pagination
-    const { q, sort, types, role, targetUserId, targetOrgId } = ctx.req.valid('query');
+    const { q, sort, types, role, offset, limit, targetUserId, targetOrgId } = ctx.req.valid('query');
 
     const { id: selfId } = getContextUser();
     const userId = targetUserId ?? selfId;
@@ -93,7 +92,11 @@ const entityRouteHandlers = app
               ),
             );
 
-      return query.where(q ? ilike(table.name, prepareStringForILikeFilter(q)) : undefined).orderBy(orderColumn);
+      return query
+        .where(q ? ilike(table.name, prepareStringForILikeFilter(q)) : undefined)
+        .orderBy(orderColumn)
+        .limit(Number(limit))
+        .offset(Number(offset));
     });
 
     const queriesData = await Promise.all(contextQueries.map((query) => (query ? query : Promise.resolve([]))));

@@ -1,4 +1,4 @@
-import { keepPreviousData, useQuery } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
 import { appConfig } from 'config';
 import { History, Search, X } from 'lucide-react';
@@ -8,7 +8,7 @@ import type { EntityListItemSchema } from '~/api.gen';
 import useFocusByRef from '~/hooks/use-focus-by-ref';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
-import { entitiesQueryOptions } from '~/modules/entities/query';
+import { searchContextEntitiesQueryOptions } from '~/modules/entities/query';
 import { SearchResultBlock } from '~/modules/navigation/search-result-block';
 import { Button } from '~/modules/ui/button';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '~/modules/ui/command';
@@ -57,14 +57,9 @@ export const AppSearch = () => {
     });
   };
 
-  const { data: contextEntities, isFetching: contextEntitiesFetching } = useQuery(entitiesQueryOptions({ q: searchValue }));
-  const { data: users, isFetching: usersFetching } = useQuery({
-    ...searchUsersQueryOptions({ q: searchValue }),
-    initialData: { items: [], total: 0 },
-    staleTime: 0,
-    enabled: searchValue.trim().length > 0, // to avoid issues with spaces
-    placeholderData: keepPreviousData,
-  });
+  // TODO add ability to click `show more` to load more results
+  const { data: contextEntities, isFetching: contextEntitiesFetching } = useQuery(searchContextEntitiesQueryOptions({ q: searchValue }));
+  const { data: users, isFetching: usersFetching } = useQuery(searchUsersQueryOptions({ q: searchValue }));
 
   const isFetching = useMemo(() => contextEntitiesFetching && usersFetching, [contextEntitiesFetching, usersFetching]);
   const notFound = useMemo(() => !contextEntities.total && !users.total, [contextEntities.total, users.total]);

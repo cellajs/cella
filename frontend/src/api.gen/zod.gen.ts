@@ -1186,10 +1186,13 @@ export const zGetContextEntitiesData = z.object({
   query: z.optional(
     z.object({
       q: z.optional(z.string()),
+      sort: z.optional(z.enum(['name', 'createdAt'])),
+      order: z.optional(z.enum(['asc', 'desc'])),
+      offset: z.optional(z.string()).default('0'),
+      limit: z.optional(z.string()).default('40'),
       targetUserId: z.optional(z.string()),
       targetOrgId: z.optional(z.string()),
       role: z.optional(z.enum(['member', 'admin'])),
-      sort: z.optional(z.enum(['name', 'createdAt'])),
       types: z.optional(z.union([z.enum(['organization']), z.array(z.enum(['organization']))])),
     }),
   ),
