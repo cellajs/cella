@@ -14,7 +14,7 @@ import { Badge } from '~/modules/ui/badge';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '~/modules/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '~/modules/ui/popover';
 import { ScrollArea } from '~/modules/ui/scroll-area';
-import { searchUsersQueryOptions } from './query';
+import { searchUsersQueryOptions } from '~/modules/users/query';
 
 interface Props {
   value: string[];

@@ -1,8 +1,8 @@
 import { keepPreviousData, queryOptions } from '@tanstack/react-query';
 import { appConfig } from 'config';
 import { type GetContextEntitiesData, getContextEntities } from '~/api.gen';
+import type { ContextEntityItems } from '~/modules/entities/types';
 import { useUserStore } from '~/store/user';
-import type { ContextEntityItems } from './types';
 
 /**
  * Keys for entities related queries. These keys help to uniquely identify different query.
@@ -23,7 +23,7 @@ export const entitiesKeys = {
  * @param query - PageEntitiesQuery parameters to get entities.
  * @returns Query options
  */
-export const entitiesQueryOptions = (query: Omit<NonNullable<GetContextEntitiesData['query']>, 'role' | 'types' | 'sort'>) => {
+export const entitiesQueryOptions = (query: Omit<NonNullable<GetContextEntitiesData['query']>, 'role' | 'sort'>) => {
   const searchQuery = query.q ?? '';
   return queryOptions({
     queryKey: entitiesKeys.search(searchQuery),

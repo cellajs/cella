@@ -1,9 +1,9 @@
 import { createCustomRoute } from '#/lib/custom-routes';
 import { hasSystemAccess, isAuthenticated } from '#/middlewares/guard';
+import { membershipBaseSchema } from '#/modules/memberships/schema';
 import { userListQuerySchema, userSchema, userUpdateBodySchema } from '#/modules/users/schema';
 import { entityParamSchema, idsBodySchema } from '#/utils/schema/common';
 import { errorResponses, paginationSchema, successWithRejectedItemsSchema } from '#/utils/schema/responses';
-import { membershipBaseSchema } from '../memberships/schema';
 
 const userRoutes = {
   getUsers: createCustomRoute({
