@@ -14,7 +14,7 @@ import { getOrderColumn } from '#/utils/order-column';
 import { prepareStringForILikeFilter } from '#/utils/sql';
 import { OpenAPIHono } from '@hono/zod-openapi';
 import { appConfig } from 'config';
-import { and, count, eq, ilike, inArray, isNotNull, isNull, ne, or, type SQL } from 'drizzle-orm';
+import { and, count, eq, ilike, inArray, isNotNull, isNull, ne, or } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
 
 const app = new OpenAPIHono<Env>({ defaultHook });
@@ -28,16 +28,16 @@ const usersRouteHandlers = app
 
     const user = getContextUser();
 
-    //TODO add handle for mode search to add only user cross membership users
-    const filters: SQL[] = [];
+    const filters = [
+      // Filter by role if provided
+      ...(role ? [eq(usersTable.role, role)] : []),
 
-    // User search filters
-    if (q) {
-      const query = prepareStringForILikeFilter(q);
-      filters.push(or(ilike(usersTable.name, query), ilike(usersTable.email, query)) as SQL);
-    }
-    if (role) filters.push(eq(usersTable.role, role));
-    if (mode === 'shared') filters.push(ne(usersTable.id, user.id));
+      // Exclude self when fetching shared memberships
+      ...(mode === 'shared' ? [ne(usersTable.id, user.id)] : []),
+
+      // Filter by search query if provided
+      ...(q ? [or(ilike(usersTable.name, prepareStringForILikeFilter(q)), ilike(usersTable.email, prepareStringForILikeFilter(q)))] : []),
+    ];
 
     // Base user query with ordering
     const orderColumn = getOrderColumn(
@@ -72,7 +72,7 @@ const usersRouteHandlers = app
             )
         : db.select({ ...userSelect }).from(usersTable);
 
-    const usersQuery = baseUsersQuery.where(filters.length ? and(...filters) : undefined).orderBy(orderColumn);
+    const usersQuery = baseUsersQuery.where(and(...filters)).orderBy(orderColumn);
 
     // Total count
     const [{ total }] = await db.select({ total: count() }).from(usersQuery.as('users'));
