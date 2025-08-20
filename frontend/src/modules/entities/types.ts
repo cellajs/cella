@@ -10,4 +10,5 @@ export type EntityPage = EntitySummary & {
   invitesCount?: number;
 };
 
-export type EntityGridItem = z.infer<typeof zGetContextEntitiesResponse>['items'][ContextEntityType][number];
+export type ContextEntityItems = z.infer<typeof zGetContextEntitiesResponse>['items'];
+export type EntityGridItem = ContextEntityItems[ContextEntityType][number];

@@ -90,9 +90,6 @@ import type {
   GetOrganizationsData,
   GetOrganizationsErrors,
   GetOrganizationsResponses,
-  GetPageEntitiesData,
-  GetPageEntitiesErrors,
-  GetPageEntitiesResponses,
   GetPasskeyChallengeData,
   GetPasskeyChallengeErrors,
   GetPasskeyChallengeResponses,
@@ -1339,51 +1336,20 @@ export const updateOrganization = <ThrowOnError extends boolean = true>(options:
 };
 
 /**
- * Get list of page entities
+ * Get all of list of a context user entities
  * 🛡️ Requires authentication
  *
- * Returns a paginated list of *entities* (e.g. *users*, *organizations*) the current user has access to.
+ * Returns a paginated list of *contextual entities* (e.g. *users*, *organizations*) the current user has access to.
  * Can optionally include the current user's enrollment information for each entity (when applicable).
  * You can also provide a specific user ID to retrieve the entities that *user* is enrolled in, useful for profile views or access audits.
  * The response includes only fields shared across all entity types, such as `id`, `slug`, and `name`.
- *
- * **GET /entities/page** ·· [getPageEntities](http://localhost:4000/docs#tag/entities/get/entities/page) ·· _entities_
- *
- * @param {getPageEntitiesData} options
- * @param {string=} options.query.q - `string` (optional)
- * @param {string=} options.query.targetuserid - `string` (optional)
- * @param {enum=} options.query.type - `enum` (optional)
- * @param {string=} options.query.targetorgid - `string` (optional)
- * @param {enum=} options.query.usermembershiptype - `enum` (optional)
- * @returns Possible status codes: 200, 400, 401, 403, 404, 429
- */
-export const getPageEntities = <ThrowOnError extends boolean = true>(options?: Options<GetPageEntitiesData, ThrowOnError>) => {
-  return (options?.client ?? _heyApiClient).get<GetPageEntitiesResponses, GetPageEntitiesErrors, ThrowOnError, 'data'>({
-    responseStyle: 'data',
-    security: [
-      {
-        in: 'cookie',
-        name: 'cella-session-v1',
-        type: 'apiKey',
-      },
-    ],
-    url: '/entities/page',
-    ...options,
-  });
-};
-
-/**
- * Get all of context user entities
- * 🛡️ Requires authentication
- *
- * Returns all *contextual entities* (e.g. *organizations*) the specified user is a member of.
- * Each result includes the user's membership data
  *
  * **GET /entities/contextEntities** ·· [getContextEntities](http://localhost:4000/docs#tag/entities/get/entities/contextEntities) ·· _entities_
  *
  * @param {getContextEntitiesData} options
  * @param {string=} options.query.q - `string` (optional)
  * @param {string=} options.query.targetuserid - `string` (optional)
+ * @param {string=} options.query.targetorgid - `string` (optional)
  * @param {enum=} options.query.role - `enum` (optional)
  * @param {enum=} options.query.sort - `enum` (optional)
  * @param {enum | any[]=} options.query.types - `enum | any[]` (optional)

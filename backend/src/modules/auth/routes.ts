@@ -14,7 +14,6 @@ import {
   tokenWithDataSchema,
 } from '#/modules/auth/schema';
 import { contextEntityWithMembershipSchema } from '#/modules/entities/schema';
-import { membershipBaseSchema } from '#/modules/memberships/schema';
 import { cookieSchema, idSchema, passwordSchema, tokenParamSchema } from '#/utils/schema/common';
 import { errorResponses, successWithoutDataSchema } from '#/utils/schema/responses';
 
@@ -364,7 +363,6 @@ const authRoutes = {
           'application/json': {
             schema: contextEntityWithMembershipSchema.extend({
               createdAt: z.string(),
-              membership: membershipBaseSchema,
             }),
           },
         },

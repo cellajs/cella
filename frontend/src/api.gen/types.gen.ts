@@ -2720,95 +2720,13 @@ export type UpdateOrganizationResponses = {
 
 export type UpdateOrganizationResponse = UpdateOrganizationResponses[keyof UpdateOrganizationResponses];
 
-export type GetPageEntitiesData = {
-  body?: never;
-  path?: never;
-  query?: {
-    q?: string;
-    targetUserId?: string;
-    type?: 'user' | 'organization';
-    targetOrgId?: string;
-    userMembershipType?: 'organization';
-  };
-  url: '/entities/page';
-};
-
-export type GetPageEntitiesErrors = {
-  /**
-   * Bad request: problem processing request.
-   */
-  400: ApiError & {
-    status?: 400;
-  };
-  /**
-   * Unauthorized: authentication required.
-   */
-  401: ApiError & {
-    status?: 401;
-  };
-  /**
-   * Forbidden: insufficient permissions.
-   */
-  403: ApiError & {
-    status?: 403;
-  };
-  /**
-   * Not found: resource does not exist.
-   */
-  404: ApiError & {
-    status?: 404;
-  };
-  /**
-   * Rate limit: too many requests.
-   */
-  429: ApiError & {
-    status?: 429;
-  };
-};
-
-export type GetPageEntitiesError = GetPageEntitiesErrors[keyof GetPageEntitiesErrors];
-
-export type GetPageEntitiesResponses = {
-  /**
-   * Page entities
-   */
-  200: {
-    items: Array<{
-      id: string;
-      entityType: 'user' | 'organization';
-      slug: string;
-      name: string;
-      thumbnailUrl?: string | null;
-      bannerUrl?: string | null;
-      email?: string;
-      membership: {
-        id: string;
-        contextType: 'organization';
-        userId: string;
-        role: 'member' | 'admin';
-        archived: boolean;
-        muted: boolean;
-        order: number;
-        organizationId: string;
-      } | null;
-    }>;
-    counts: {
-      user?: number;
-      organization?: number;
-      attachment?: number;
-    };
-    total: number;
-  };
-};
-
-export type GetPageEntitiesResponse = GetPageEntitiesResponses[keyof GetPageEntitiesResponses];
-
 export type GetContextEntitiesData = {
   body?: never;
   path?: never;
   query?: {
     q?: string;
     targetUserId?: string;
+    targetOrgId?: string;
     role?: 'member' | 'admin';
     sort?: 'name' | 'createdAt';
     types?: 'organization' | Array<'organization'>;
@@ -2864,6 +2782,7 @@ export type GetContextEntitiesResponses = {
         name: string;
         thumbnailUrl?: string | null;
         bannerUrl?: string | null;
+        createdAt: string;
         membership: {
           id: string;
           contextType: 'organization';
@@ -2874,7 +2793,6 @@ export type GetContextEntitiesResponses = {
           order: number;
           organizationId: string;
         } | null;
-        createdAt: string;
       }>;
     };
     total: number;

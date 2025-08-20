@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
 import { appConfig, type EntityType } from 'config';
 import { History, Search, User, X } from 'lucide-react';
-import { Fragment, useEffect, useRef, useState } from 'react';
+import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { EntityListItemSchema } from '~/api.gen';
 import useFocusByRef from '~/hooks/use-focus-by-ref';
@@ -64,7 +64,11 @@ export const AppSearch = () => {
     });
   };
 
-  const { data: items, isFetching } = useQuery(entitiesQueryOptions({ q: searchValue }));
+  // TODO(DAVID) add users fetch
+  const { data: contextEntities, isFetching: contextEntitiesFetching } = useQuery(entitiesQueryOptions({ q: searchValue }));
+
+  const isFetching = useMemo(() => contextEntitiesFetching, [contextEntitiesFetching]);
+  const notFound = useMemo(() => !contextEntities.total, [contextEntities.total]);
 
   const onSelectItem = (item: EntityListItemSchema) => {
     // Update recent searches with the search value
@@ -78,7 +82,7 @@ export const AppSearch = () => {
 
   useEffect(() => {
     if (scrollAreaRef.current) scrollAreaRef.current.scrollTop = 0;
-  }, [items]);
+  }, [contextEntities]);
 
   return (
     <Command className="rounded-lg shadow-2xl" shouldFilter={false}>
@@ -105,7 +109,7 @@ export const AppSearch = () => {
       <ScrollArea id={'item-search'} ref={scrollAreaRef} className="sm:h-[40vh] overflow-y-auto">
         {
           <CommandList className="h-full">
-            {items.total === 0 && (
+            {notFound && (
               <>
                 {!!searchValue.length && !isFetching && (
                   <CommandEmpty className="h-full sm:h-[36vh]">
@@ -156,51 +160,50 @@ export const AppSearch = () => {
                 )}
               </>
             )}
-            {items.total > 0 &&
-              appConfig.pageEntityTypes.map((entityType) => {
-                const filteredItems = items.items.filter((el) => el.entityType === entityType);
-                // Skip rendering if no items match the section type
-                if (filteredItems.length === 0) return null;
+            {appConfig.contextEntityTypes.map((entityType) => {
+              const filteredItems = contextEntities.items[entityType];
+              // Skip rendering if no items match the section type
+              if (filteredItems.length === 0) return null;
 
-                return (
-                  <Fragment key={entityType}>
-                    <CommandSeparator />
-                    <CommandGroup className="">
-                      <StickyBox className="z-10 px-2 py-1.5 text-xs font-medium text-muted-foreground bg-popover">
-                        {t(entityType, {
-                          ns: ['app', 'common'],
-                          defaultValue: entityType,
-                        })}
-                      </StickyBox>
-                      {filteredItems.map((item: EntityListItemSchema) => {
-                        return (
-                          <CommandItem
-                            data-already-member={entityType !== 'user' && item.membership !== null}
-                            key={item.id}
-                            disabled={entityType !== 'user' && item.membership === null}
-                            className="w-full justify-between group"
-                            onSelect={() => onSelectItem(item)}
-                          >
-                            <div className="flex space-x-2 items-center outline-0 ring-0 group">
-                              <AvatarWrap type={entityType} className="h-8 w-8" id={item.id} name={item.name} url={item.thumbnailUrl} />
-                              <span className="group-data-[already-member=true]:hover:underline underline-offset-4 truncate font-medium">
-                                {item.name}
-                              </span>
-                            </div>
-
-                            <div className="flex items-center">
-                              <Badge size="sm" variant="plain" className=" group-data-[already-member=true]:flex hidden gap-1">
-                                <User size={14} />
-                                <span className="max-sm:hidden font-light">{t('common:member')}</span>
-                              </Badge>
-                            </div>
-                          </CommandItem>
-                        );
+              return (
+                <Fragment key={entityType}>
+                  <CommandSeparator />
+                  <CommandGroup className="">
+                    <StickyBox className="z-10 px-2 py-1.5 text-xs font-medium text-muted-foreground bg-popover">
+                      {t(entityType, {
+                        ns: ['app', 'common'],
+                        defaultValue: entityType,
                       })}
-                    </CommandGroup>
-                  </Fragment>
-                );
-              })}
+                    </StickyBox>
+                    {filteredItems.map((item: EntityListItemSchema) => {
+                      return (
+                        <CommandItem
+                          data-already-member={item.membership !== null}
+                          key={item.id}
+                          disabled={item.membership === null}
+                          className="w-full justify-between group"
+                          onSelect={() => onSelectItem(item)}
+                        >
+                          <div className="flex space-x-2 items-center outline-0 ring-0 group">
+                            <AvatarWrap type={entityType} className="h-8 w-8" id={item.id} name={item.name} url={item.thumbnailUrl} />
+                            <span className="group-data-[already-member=true]:hover:underline underline-offset-4 truncate font-medium">
+                              {item.name}
+                            </span>
+                          </div>
+
+                          <div className="flex items-center">
+                            <Badge size="sm" variant="plain" className=" group-data-[already-member=true]:flex hidden gap-1">
+                              <User size={14} />
+                              <span className="max-sm:hidden font-light">{t('common:member')}</span>
+                            </Badge>
+                          </div>
+                        </CommandItem>
+                      );
+                    })}
+                  </CommandGroup>
+                </Fragment>
+              );
+            })}
           </CommandList>
         }
       </ScrollArea>

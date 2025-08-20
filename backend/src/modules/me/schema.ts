@@ -2,7 +2,7 @@ import { z } from '@hono/zod-openapi';
 import { appConfig, type ContextEntityType } from 'config';
 import { createSelectSchema } from 'drizzle-zod';
 import { sessionsTable } from '#/db/schema/sessions';
-import { contextEntityWithMembershipSchema, userBaseSchema } from '#/modules/entities/schema';
+import { contextEntityBaseSchema, contextEntityWithMembershipSchema, userBaseSchema } from '#/modules/entities/schema';
 import { membershipBaseSchema } from '#/modules/memberships/schema';
 import { enabledOAuthProvidersEnum } from '#/modules/users/schema';
 import { booleanQuerySchema } from '#/utils/schema/common';
@@ -18,7 +18,6 @@ export const meAuthDataSchema = z.object({
 export const menuItemSchema = contextEntityWithMembershipSchema.omit({ bannerUrl: true }).extend({
   createdAt: z.string(),
   modifiedAt: z.string().nullable(),
-  membership: membershipBaseSchema,
   organizationId: membershipBaseSchema.shape.organizationId.optional(),
 });
 
@@ -68,7 +67,7 @@ export const uploadTokenQuerySchema = z.object({
 
 export const userInvitationsSchema = z.array(
   z.object({
-    entity: contextEntityWithMembershipSchema.omit({ membership: true }).extend({ organizationId: z.string().optional() }),
+    entity: contextEntityBaseSchema.extend({ organizationId: z.string().optional() }),
     expiresAt: z.date(),
     invitedBy: userBaseSchema.nullable(),
     token: z.string(),

@@ -1,6 +1,8 @@
 import { keepPreviousData, queryOptions } from '@tanstack/react-query';
-import { type GetContextEntitiesData, type GetPageEntitiesData, getContextEntities, getPageEntities } from '~/api.gen';
+import { appConfig } from 'config';
+import { type GetContextEntitiesData, getContextEntities } from '~/api.gen';
 import { useUserStore } from '~/store/user';
+import type { ContextEntityItems } from './types';
 
 /**
  * Keys for entities related queries. These keys help to uniquely identify different query.
@@ -21,14 +23,17 @@ export const entitiesKeys = {
  * @param query - PageEntitiesQuery parameters to get entities.
  * @returns Query options
  */
-export const entitiesQueryOptions = (query: NonNullable<GetPageEntitiesData['query']>) => {
+export const entitiesQueryOptions = (query: Omit<NonNullable<GetContextEntitiesData['query']>, 'role' | 'types' | 'sort'>) => {
   const searchQuery = query.q ?? '';
   return queryOptions({
     queryKey: entitiesKeys.search(searchQuery),
-    queryFn: () => getPageEntities({ query }),
+    queryFn: () => getContextEntities({ query }),
     staleTime: 0,
     enabled: searchQuery.trim().length > 0, // to avoid issues with spaces
-    initialData: { items: [], total: 0, counts: {} },
+    initialData: {
+      items: Object.fromEntries(appConfig.contextEntityTypes.map((t) => [t, []])) as unknown as ContextEntityItems,
+      total: 0,
+    },
     placeholderData: keepPreviousData,
   });
 };
@@ -39,7 +44,7 @@ export const entitiesQueryOptions = (query: NonNullable<GetPageEntitiesData['que
  * @param query - PageEntitiesQuery parameters to get entities.
  * @returns Query options
  */
-export const contextEntitiesQueryOptions = (query: NonNullable<GetContextEntitiesData['query']>) => {
+export const contextEntitiesQueryOptions = (query: Omit<NonNullable<GetContextEntitiesData['query']>, 'targetOrgId'>) => {
   const user = useUserStore.getState().user;
   const q = query.q ?? '';
   const sort = query.sort ?? 'name';

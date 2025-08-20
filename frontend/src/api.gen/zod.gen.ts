@@ -1178,56 +1178,6 @@ export const zUpdateOrganizationResponse = z.object({
   invitesCount: z.number(),
 });
 
-export const zGetPageEntitiesData = z.object({
-  body: z.optional(z.never()),
-  path: z.optional(z.never()),
-  query: z.optional(
-    z.object({
-      q: z.optional(z.string()),
-      targetUserId: z.optional(z.string()),
-      type: z.optional(z.enum(['user', 'organization'])),
-      targetOrgId: z.optional(z.string()),
-      userMembershipType: z.optional(z.enum(['organization'])),
-    }),
-  ),
-});
-
-/**
- * Page entities
- */
-export const zGetPageEntitiesResponse = z.object({
-  items: z.array(
-    z.object({
-      id: z.string(),
-      entityType: z.enum(['user', 'organization']),
-      slug: z.string(),
-      name: z.string(),
-      thumbnailUrl: z.optional(z.union([z.string(), z.null()])),
-      bannerUrl: z.optional(z.union([z.string(), z.null()])),
-      email: z.optional(z.string()),
-      membership: z.union([
-        z.object({
-          id: z.string(),
-          contextType: z.enum(['organization']),
-          userId: z.string(),
-          role: z.enum(['member', 'admin']),
-          archived: z.boolean(),
-          muted: z.boolean(),
-          order: z.number().gte(-140737488355328).lte(140737488355327),
-          organizationId: z.string(),
-        }),
-        z.null(),
-      ]),
-    }),
-  ),
-  counts: z.object({
-    user: z.optional(z.number()),
-    organization: z.optional(z.number()),
-    attachment: z.optional(z.number()),
-  }),
-  total: z.number(),
-});
-
 export const zGetContextEntitiesData = z.object({
   body: z.optional(z.never()),
   path: z.optional(z.never()),
@@ -1235,6 +1185,7 @@ export const zGetContextEntitiesData = z.object({
     z.object({
       q: z.optional(z.string()),
       targetUserId: z.optional(z.string()),
+      targetOrgId: z.optional(z.string()),
       role: z.optional(z.enum(['member', 'admin'])),
       sort: z.optional(z.enum(['name', 'createdAt'])),
       types: z.optional(z.union([z.enum(['organization']), z.array(z.enum(['organization']))])),
@@ -1255,6 +1206,7 @@ export const zGetContextEntitiesResponse = z.object({
         name: z.string(),
         thumbnailUrl: z.optional(z.union([z.string(), z.null()])),
         bannerUrl: z.optional(z.union([z.string(), z.null()])),
+        createdAt: z.string(),
         membership: z.union([
           z.object({
             id: z.string(),
@@ -1268,7 +1220,6 @@ export const zGetContextEntitiesResponse = z.object({
           }),
           z.null(),
         ]),
-        createdAt: z.string(),
       }),
     ),
   }),

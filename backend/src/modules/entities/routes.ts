@@ -1,7 +1,7 @@
 import { z } from '@hono/zod-openapi';
 import { createCustomRoute } from '#/lib/custom-routes';
 import { isAuthenticated } from '#/middlewares/guard';
-import { contextEntitiesQuerySchema, contextEntitiesResponseSchema, pageEntitiesQuerySchema, pageEntitiesSchema } from '#/modules/entities/schema';
+import { contextEntitiesQuerySchema, contextEntitiesResponseSchema } from '#/modules/entities/schema';
 import { entityTypeSchema, slugSchema } from '#/utils/schema/common';
 import { errorResponses, successWithoutDataSchema } from '#/utils/schema/responses';
 
@@ -26,36 +26,17 @@ const entityRoutes = {
       ...errorResponses,
     },
   }),
-  getPageEntities: createCustomRoute({
-    operationId: 'getPageEntities',
-    method: 'get',
-    path: '/page',
-    guard: isAuthenticated,
-    tags: ['entities'],
-    summary: 'Get list of page entities',
-    description: `Returns a paginated list of *entities* (e.g. *users*, *organizations*) the current user has access to.
-      Can optionally include the current user's enrollment information for each entity (when applicable).
-      You can also provide a specific user ID to retrieve the entities that *user* is enrolled in, useful for profile views or access audits.
-      The response includes only fields shared across all entity types, such as \`id\`, \`slug\`, and \`name\`.`,
-    request: { query: pageEntitiesQuerySchema },
-    responses: {
-      200: {
-        description: 'Page entities',
-        content: { 'application/json': { schema: pageEntitiesSchema } },
-      },
-      ...errorResponses,
-    },
-  }),
-
   getContextEntities: createCustomRoute({
     operationId: 'getContextEntities',
     method: 'get',
     path: '/contextEntities',
     guard: isAuthenticated,
     tags: ['entities'],
-    summary: 'Get all of context user entities',
-    description: `Returns all *contextual entities* (e.g. *organizations*) the specified user is a member of.  
-      Each result includes the user's membership data`,
+    summary: 'Get all of list of a context user entities',
+    description: `Returns a paginated list of *contextual entities* (e.g. *users*, *organizations*) the current user has access to.
+      Can optionally include the current user's enrollment information for each entity (when applicable).
+      You can also provide a specific user ID to retrieve the entities that *user* is enrolled in, useful for profile views or access audits.
+      The response includes only fields shared across all entity types, such as \`id\`, \`slug\`, and \`name\`.`,
     request: { query: contextEntitiesQuerySchema },
     responses: {
       200: {
