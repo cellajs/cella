@@ -126,7 +126,7 @@ export type EntityListItemSchema = {
   name: string;
   thumbnailUrl?: string | null;
   bannerUrl?: string | null;
-  membership: {
+  membership?: {
     id: string;
     contextType: 'organization';
     userId: string;

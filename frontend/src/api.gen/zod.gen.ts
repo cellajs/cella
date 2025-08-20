@@ -135,19 +135,21 @@ export const zEntityListItemSchema = z.object({
   name: z.string(),
   thumbnailUrl: z.optional(z.union([z.string(), z.null()])),
   bannerUrl: z.optional(z.union([z.string(), z.null()])),
-  membership: z.union([
-    z.object({
-      id: z.string(),
-      contextType: z.enum(['organization']),
-      userId: z.string(),
-      role: z.enum(['member', 'admin']),
-      archived: z.boolean(),
-      muted: z.boolean(),
-      order: z.number().gte(-140737488355328).lte(140737488355327),
-      organizationId: z.string(),
-    }),
-    z.null(),
-  ]),
+  membership: z.optional(
+    z.union([
+      z.object({
+        id: z.string(),
+        contextType: z.enum(['organization']),
+        userId: z.string(),
+        role: z.enum(['member', 'admin']),
+        archived: z.boolean(),
+        muted: z.boolean(),
+        order: z.number().gte(-140737488355328).lte(140737488355327),
+        organizationId: z.string(),
+      }),
+      z.null(),
+    ]),
+  ),
 });
 
 export const zCheckEmailData = z.object({
