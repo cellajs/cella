@@ -1,3 +1,7 @@
+import { OpenAPIHono, type z } from '@hono/zod-openapi';
+import { appConfig } from 'config';
+import { and, eq, isNotNull, isNull, type SQLWrapper, sql } from 'drizzle-orm';
+import { alias } from 'drizzle-orm/pg-core';
 import { db } from '#/db/db';
 import { membershipsTable } from '#/db/schema/memberships';
 import { entityTables } from '#/entity-config';
@@ -9,10 +13,8 @@ import { membershipSummarySelect } from '#/modules/memberships/helpers/select';
 import { defaultHook } from '#/utils/default-hook';
 import { getOrderColumn } from '#/utils/order-column';
 import { prepareStringForILikeFilter } from '#/utils/sql';
-import { OpenAPIHono, type z } from '@hono/zod-openapi';
-import { appConfig } from 'config';
-import { and, eq, isNotNull, isNull, type SQLWrapper } from 'drizzle-orm';
-import { alias } from 'drizzle-orm/pg-core';
+import type { membershipCountSchema } from '../organizations/schema';
+import { getMemberCountsQuery } from './helpers/counts';
 
 const app = new OpenAPIHono<Env>({ defaultHook });
 
@@ -61,6 +63,9 @@ const entityRouteHandlers = app
       // Choose column to order by
       const orderColumn = getOrderColumn({ name: table.name, createdAt: table.createdAt }, sort, table.createdAt);
 
+      // Build a subquery that returns membership counts (by role/status) for entity type.
+      const membershipCountsQuery = getMemberCountsQuery(entityType);
+      // Alias  memberships table for later joins (to avoid naming conflicts)
       const orgMembershipsAlias = alias(membershipsTable, 'orgMembership');
 
       // Base query: select entity + membership summary
@@ -73,8 +78,12 @@ const entityRouteHandlers = app
           thumbnailUrl: table.thumbnailUrl,
           createdAt: table.createdAt,
           membership: membershipSummarySelect,
+          membershipCounts: sql<
+            z.infer<typeof membershipCountSchema>
+          >`json_build_object('admin', ${membershipCountsQuery.admin}, 'member', ${membershipCountsQuery.member}, 'pending', ${membershipCountsQuery.pending}, 'total', ${membershipCountsQuery.total})`,
         })
         .from(table)
+        .leftJoin(membershipCountsQuery, eq(table.id, membershipCountsQuery.id))
         .leftJoin(
           membershipsTable,
           and(...baseMembershipQueryFilters, eq(membershipsTable[entityIdField], table.id), eq(membershipsTable.contextType, entityType)),

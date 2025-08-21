@@ -93,7 +93,7 @@ export const AppSearch = () => {
         placeholder={t('common:placeholder.search')}
         onValueChange={(searchValue) => {
           const historyIndexes = recentSearches.map((_, index) => index);
-          if (historyIndexes.includes(Number.parseInt(searchValue))) {
+          if (historyIndexes.includes(Number.parseInt(searchValue, 10))) {
             setSearchValue(recentSearches[+searchValue]);
             return;
           }

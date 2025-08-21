@@ -35,7 +35,7 @@ export const UserCombobox = ({ value, onChange, entity }: Props) => {
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
 
   const handleUnselect = (item: string) => {
-    const index = selected.findIndex((i) => i === item);
+    const index = selected.indexOf(item);
     setSelected((prevSelected) => {
       const updatedSelected = [...prevSelected];
       updatedSelected.splice(index, 1); // Remove 1 element at index

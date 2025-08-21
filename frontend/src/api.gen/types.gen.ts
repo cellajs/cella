@@ -2797,6 +2797,12 @@ export type GetContextEntitiesResponses = {
           order: number;
           organizationId: string;
         } | null;
+        membershipCounts: {
+          admin: number;
+          member: number;
+          pending: number;
+          total: number;
+        };
       }>;
     };
     total: number;

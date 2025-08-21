@@ -1,7 +1,8 @@
-import { membershipBaseSchema } from '#/modules/memberships/schema';
-import { contextEntityTypeSchema, idSchema, imageUrlSchema, nameSchema, paginationQuerySchema, slugSchema } from '#/utils/schema/common';
 import { z } from '@hono/zod-openapi';
 import { appConfig, type ContextEntityType } from 'config';
+import { membershipBaseSchema } from '#/modules/memberships/schema';
+import { membershipCountSchema } from '#/modules/organizations/schema';
+import { contextEntityTypeSchema, idSchema, imageUrlSchema, nameSchema, paginationQuerySchema, slugSchema } from '#/utils/schema/common';
 
 export const contextEntityBaseSchema = z.object({
   id: idSchema,
@@ -36,7 +37,11 @@ export const contextEntitiesQuerySchema = paginationQuerySchema.extend({
     .transform((val) => (val === undefined ? undefined : Array.isArray(val) ? val : [val])),
 });
 
-const fullContextEntitySchema = contextEntityBaseSchema.extend({ createdAt: z.string(), membership: membershipBaseSchema.nullable() });
+const fullContextEntitySchema = contextEntityBaseSchema.extend({
+  createdAt: z.string(),
+  membership: membershipBaseSchema.nullable(),
+  membershipCounts: membershipCountSchema,
+});
 
 const contextEntitiesDataSchema = z.object(
   appConfig.contextEntityTypes.reduce(
