@@ -19,6 +19,7 @@ type Metrics = {
 function RequestsPerMinute() {
   const [metrics, setMetrics] = useState<Metrics[]>([]);
 
+  // TODO use react-query and add graceful failure handling
   useEffect(() => {
     getMetrics().then((data) => setMetrics(data));
   }, []);

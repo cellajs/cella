@@ -1,4 +1,6 @@
+import { X } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import useMounted from '~/hooks/use-mounted';
 import { Step, Stepper } from '~/modules/common/stepper';
 import StepperFooter from '~/modules/home/onboarding/footer';
@@ -17,13 +19,14 @@ export type OnboardingStates = 'start' | 'stepper' | 'completed';
 
 interface OnboardingProps {
   onboarding: OnboardingStates;
-  onboardingStateChange: (newState: Exclude<OnboardingStates, 'start'>) => void;
+  setOnboardingState: (newState: Exclude<OnboardingStates, 'start'>) => void;
 }
 
-const Onboarding = ({ onboarding = 'start', onboardingStateChange }: OnboardingProps) => {
+const Onboarding = ({ onboarding = 'start', setOnboardingState }: OnboardingProps) => {
   const { user } = useUserStore();
   const { hasStarted } = useMounted();
   const { menu } = useNavigationStore();
+  const { t } = useTranslation();
 
   const [steps, setSteps] = useState(onboardingSteps);
   const [organization, setOrganization] = useState<Organization | null>(null);
@@ -37,20 +40,20 @@ const Onboarding = ({ onboarding = 'start', onboardingStateChange }: OnboardingP
   return (
     <div className="flex flex-col min-h-[90vh] sm:min-h-screen items-center">
       <div className="mt-auto mb-auto w-full">
-        {onboarding === 'start' && <WelcomeText onboardingToStepper={() => onboardingStateChange('stepper')} />}
+        {onboarding === 'start' && <WelcomeText onboardingToStepper={() => setOnboardingState('stepper')} />}
         {onboarding === 'stepper' && (
           <div className={cn('mx-auto mt-0 flex flex-col justify-center gap-4 px-4 py-8 sm:w-10/12 max-w-3xl', animateClass)}>
             {steps.length === 1 && <h2 className="text-lg font-semibold flex justify-center">{steps[0].label}</h2>}
             <Stepper
               initialStep={0}
               steps={steps}
-              onClickStep={(currentStep) => {
-                if (currentStep === steps.length - 1) onboardingStateChange('completed');
+              onClickStep={(newStep, setStep) => {
+                setStep(newStep);
               }}
               orientation="vertical"
             >
               {steps.map(({ description, label, id }) => (
-                <Step key={label} label={label}>
+                <Step key={id} label={label} isKeepError={id !== 'profile'} checkIcon={id === 'organization' && !organization ? X : undefined}>
                   <Card>
                     {description && (
                       <CardHeader>
@@ -60,22 +63,31 @@ const Onboarding = ({ onboarding = 'start', onboardingStateChange }: OnboardingP
                     <CardContent>
                       {id === 'profile' && (
                         <UpdateUserForm user={user} hiddenFields={['email', 'newsletter', 'slug', 'language']}>
-                          <StepperFooter />
+                          <StepperFooter setOnboardingState={setOnboardingState} />
                         </UpdateUserForm>
                       )}
-                      {id === 'organization' && (
+                      {id === 'organization' && !organization && (
                         <CreateOrganizationForm
                           callback={(newOrganization: Organization) => {
                             setOrganization(newOrganization);
                           }}
                         >
-                          <StepperFooter />
+                          <StepperFooter setOnboardingState={setOnboardingState} />
                         </CreateOrganizationForm>
+                      )}
+                      {id === 'organization' && !!organization && (
+                        <p className="opacity-80 text-sm font-medium">{t('common:already_created_org.text')}</p>
                       )}
                       {id === 'invitation' && organization && (
                         <InviteUsers entity={organization} mode="email">
-                          <StepperFooter />
+                          <StepperFooter setOnboardingState={setOnboardingState} />
                         </InviteUsers>
+                      )}
+                      {id === 'invitation' && !organization && (
+                        <div>
+                          <p className="opacity-80 text-sm font-medium mb-4">{t('common:need_org_to_invite.text')}</p>
+                          <StepperFooter setOnboardingState={setOnboardingState} />
+                        </div>
                       )}
                     </CardContent>
                   </Card>

@@ -14,3 +14,9 @@
 .bb-feedback-button .bb-logo-logo--default path {
   fill: currentColor;
 }
+
+@media (max-width: 639px) {
+  .bb-feedback-button {
+    display: none !important;
+  }
+}
