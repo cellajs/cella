@@ -19,6 +19,7 @@ import { cn } from '~/utils/cn';
 import '~/modules/marketing/about/glow-button.css';
 import { AboutSection } from '~/modules/marketing/about/section';
 import { Input } from '~/modules/ui/input';
+import Counters from './counters';
 
 export type AboutSectionId = (typeof aboutSectionIds)[number];
 
@@ -107,9 +108,9 @@ const AboutPage = () => {
           </AboutSection>
 
           {/* Public counters */}
-          {/* <AboutSection key={'counters'} section="counters" title="about:title_5" text="about:text_5" alternate={true}>
+          <AboutSection key={'counters'} section="counters" title="about:title_5" text="about:text_5" alternate={true}>
             <Counters />
-          </AboutSection> */}
+          </AboutSection>
 
           {/* Pricing */}
           {/* <AboutSection key={'pricing'} section="pricing" title="about:title_6" text="about:text_6">

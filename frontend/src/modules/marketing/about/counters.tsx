@@ -1,5 +1,5 @@
-import { appConfig } from 'config';
-import { useEffect, useState } from 'react';
+import { keepPreviousData, queryOptions, useQuery } from '@tanstack/react-query';
+import { appConfig, type EntityType } from 'config';
 import { useTranslation } from 'react-i18next';
 import { useInView } from 'react-intersection-observer';
 import { CountUp } from 'use-count-up';
@@ -10,25 +10,28 @@ import { Card, CardContent, CardHeader, CardTitle } from '~/modules/ui/card';
 const Counters = () => {
   const { t } = useTranslation();
   const { ref, inView } = useInView({ triggerOnce: true, threshold: 0 });
-  const initialObject = appConfig.entityTypes.reduce(
-    (acc, key) => {
-      acc[key] = 0;
-      return acc;
-    },
-    {} as Record<string, number>,
-  );
-  const [countValues, setCountValues] = useState(initialObject);
 
-  // TODO use react-query and add graceful failure handling
-  useEffect(() => {
-    getPublicCounts().then((resp) => setCountValues(resp));
-  }, []);
+  const queryParams = queryOptions({
+    queryKey: ['counts'],
+    queryFn: () => getPublicCounts(),
+    staleTime: 0,
+    initialData: appConfig.entityTypes.reduce(
+      (acc, key) => {
+        acc[key] = 0;
+        return acc;
+      },
+      {} as Record<EntityType, number>,
+    ),
+    placeholderData: keepPreviousData,
+  });
+
+  const { data } = useQuery(queryParams);
 
   return (
     <div ref={ref} className="mx-auto grid gap-4 md:max-w-5xl grid-cols-2 lg:grid-cols-4">
       {inView &&
         counts.map(({ id, title, icon: Icon }) => {
-          const countValue = countValues[id];
+          const countValue = data[id];
 
           return (
             <Card key={id} className="bg-background">
