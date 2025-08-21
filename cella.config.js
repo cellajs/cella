@@ -77,5 +77,6 @@ export const config = {
     'json/text-blocks.json',
     'locales/en/about.json',
     'locales/en/app.json',
+    'locales/en/app-errors.json',
   ],
 };

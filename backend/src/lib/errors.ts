@@ -42,10 +42,10 @@ export class AppError extends Error {
   originalError?: Error;
 
   constructor(error: ConstructedError) {
-    const messageFallback = error.message ?? i18n.t(`error:${error.type}`, { defaultValue: error.name ?? 'Unknown error' });
-    const message = i18n.t(`error:${error.type}.text`, { defaultValue: messageFallback });
+    const messageFallback = error.message ?? i18n.t(`${error.type}`, { ns: ['appError', 'error'], defaultValue: error.name ?? 'Unknown error' });
+    const message = i18n.t(`${error.type}.text`, { ns: ['appError', 'error'], defaultValue: messageFallback });
     super(message);
-    this.name = error.name ?? i18n.t(`error:${error.type}`, { defaultValue: 'ApiError' });
+    this.name = error.name ?? i18n.t(`${error.type}`, { ns: ['appError', 'error'], defaultValue: 'ApiError' });
     this.status = error.status;
     this.type = error.type;
     this.entityType = error.entityType;
