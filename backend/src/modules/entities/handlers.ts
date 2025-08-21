@@ -11,7 +11,7 @@ import { getOrderColumn } from '#/utils/order-column';
 import { prepareStringForILikeFilter } from '#/utils/sql';
 import { OpenAPIHono, type z } from '@hono/zod-openapi';
 import { appConfig } from 'config';
-import { and, eq, ilike, isNotNull, isNull, type SQLWrapper } from 'drizzle-orm';
+import { and, eq, isNotNull, isNull, type SQLWrapper } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
 
 const app = new OpenAPIHono<Env>({ defaultHook });
@@ -21,7 +21,7 @@ const entityRouteHandlers = app
    * Get all users' context entities with admins
    */
   .openapi(entityRoutes.getContextEntities, async (ctx) => {
-    const { q, sort, types, role, offset, limit, targetUserId, targetOrgId } = ctx.req.valid('query');
+    const { q, sort, types, role, offset, limit, targetUserId, targetOrgId, excludeArchived } = ctx.req.valid('query');
 
     const { id: selfId } = getContextUser();
     const userId = targetUserId ?? selfId;
@@ -70,12 +70,7 @@ const entityRouteHandlers = app
         .from(table)
         .leftJoin(
           membershipsTable,
-          and(
-            ...baseMembershipQueryFilters,
-            eq(membershipsTable[entityIdField], table.id),
-            eq(membershipsTable.contextType, entityType),
-            ...(role ? [eq(membershipsTable.role, role)] : []),
-          ),
+          and(...baseMembershipQueryFilters, eq(membershipsTable[entityIdField], table.id), eq(membershipsTable.contextType, entityType)),
         );
 
       const query =
@@ -93,7 +88,13 @@ const entityRouteHandlers = app
             );
 
       return query
-        .where(q ? ilike(table.name, prepareStringForILikeFilter(q)) : undefined)
+        .where(
+          and(
+            ...(excludeArchived ? [eq(membershipsTable.archived, false)] : []),
+            ...(role ? [eq(membershipsTable.role, role)] : []),
+            ...(q ? [eq(table.name, prepareStringForILikeFilter(q))] : []),
+          ),
+        )
         .orderBy(orderColumn)
         .limit(limit)
         .offset(offset);

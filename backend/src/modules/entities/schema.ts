@@ -26,6 +26,10 @@ export const contextEntitiesQuerySchema = paginationQuerySchema.extend({
   targetOrgId: idSchema.optional(),
   role: z.enum(appConfig.rolesByType.entityRoles).optional(),
   sort: z.enum(['name', 'createdAt']).default('createdAt').optional(),
+  excludeArchived: z
+    .enum(['true', 'false'])
+    .optional()
+    .transform((val) => val === 'true'),
   types: z
     .union([contextEntityTypeSchema, z.array(contextEntityTypeSchema)])
     .optional()

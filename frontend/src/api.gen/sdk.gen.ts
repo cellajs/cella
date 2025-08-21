@@ -1355,6 +1355,7 @@ export const updateOrganization = <ThrowOnError extends boolean = true>(options:
  * @param {string=} options.query.targetuserid - `string` (optional)
  * @param {string=} options.query.targetorgid - `string` (optional)
  * @param {enum=} options.query.role - `enum` (optional)
+ * @param {enum=} options.query.excludearchived - `enum` (optional)
  * @param {enum | any[]=} options.query.types - `enum | any[]` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */

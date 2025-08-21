@@ -2732,6 +2732,7 @@ export type GetContextEntitiesData = {
     targetUserId?: string;
     targetOrgId?: string;
     role?: 'member' | 'admin';
+    excludeArchived?: 'true' | 'false';
     types?: 'organization' | Array<'organization'>;
   };
   url: '/entities/contextEntities';
