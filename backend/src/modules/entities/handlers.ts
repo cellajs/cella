@@ -95,8 +95,8 @@ const entityRouteHandlers = app
       return query
         .where(q ? ilike(table.name, prepareStringForILikeFilter(q)) : undefined)
         .orderBy(orderColumn)
-        .limit(Number(limit))
-        .offset(Number(offset));
+        .limit(limit)
+        .offset(offset);
     });
 
     const queriesData = await Promise.all(contextQueries.map((query) => (query ? query : Promise.resolve([]))));
