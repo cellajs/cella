@@ -1,7 +1,8 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
+import { appConfig } from 'config';
 import { count } from 'drizzle-orm';
-import { getTableConfig } from 'drizzle-orm/pg-core';
 import { register } from 'prom-client';
+import type { z } from 'zod';
 import { db } from '#/db/db';
 import { entityTables } from '#/entity-config';
 import type { Env } from '#/lib/context';
@@ -9,13 +10,15 @@ import { metricsConfig } from '#/middlewares/observability/config';
 import { calculateRequestsPerMinute } from '#/modules/metrics/helpers/calculate-requests-per-minute';
 import { parsePromMetrics } from '#/modules/metrics/helpers/parse-prom-metrics';
 import metricRoutes from '#/modules/metrics/routes';
+import type { publicCountsSchema } from '#/modules/metrics/schema';
 import { defaultHook } from '#/utils/default-hook';
 import { TimeSpan } from '#/utils/time-span';
 
 const app = new OpenAPIHono<Env>({ defaultHook });
 
+type CountsType = z.infer<typeof publicCountsSchema>;
 // Store public counts in memory with a 1-minute cache
-const publicCountsCache = new Map<string, { data: Record<string, number>; expiresAt: number }>();
+const publicCountsCache = new Map<string, { data: CountsType; expiresAt: number }>();
 
 const metricRouteHandlers = app
   /*
@@ -46,18 +49,23 @@ const metricRouteHandlers = app
       if (!isExpired) return ctx.json(cached.data, 200);
     }
 
-    // Fetch new counts from the database
+    // Query counts for all entity types
     const countEntries = await Promise.all(
-      Object.values(entityTables).map(async (table) => {
-        const { name } = getTableConfig(table);
-        const [result] = await db.select({ total: count() }).from(table);
-        return [name, result.total];
+      appConfig.entityTypes.map(async (entityType) => {
+        try {
+          const table = entityTables[entityType];
+          const [{ total }] = await db.select({ total: count() }).from(table);
+          return [entityType, total];
+        } catch (err) {
+          // Fallback: 0 (avoids breaking all counts)
+          return [entityType, 0];
+        }
       }),
     );
 
-    const data = Object.fromEntries(countEntries);
+    const data = Object.fromEntries(countEntries) as CountsType;
 
-    // Store in cache with a 1-minute expiration
+    // Cache result for 1 minute
     const expiresAt = Date.now() + new TimeSpan(1, 'm').milliseconds();
     publicCountsCache.set(cacheKey, { data, expiresAt });
 

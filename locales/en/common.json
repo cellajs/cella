@@ -299,6 +299,7 @@
   "request_verification.signup": "to complete your sign up",
   "request_verification.text": "We sent you an email {{reason}}. Please check your inbox and click on the link to verify your email address.",
   "requests": "Requests",
+  "requests.text": "Requests per minute",
   "resend": "Resend",
   "resend_invitation.text": "Send a duplicate invitation with a new expiration date.",
   "reset": "Reset",
