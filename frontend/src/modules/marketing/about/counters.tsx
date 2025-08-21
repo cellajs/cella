@@ -14,7 +14,6 @@ const Counters = () => {
   const queryParams = queryOptions({
     queryKey: ['counts'],
     queryFn: () => getPublicCounts(),
-    staleTime: 0,
     initialData: appConfig.entityTypes.reduce(
       (acc, key) => {
         acc[key] = 0;

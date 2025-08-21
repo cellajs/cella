@@ -1,18 +1,18 @@
+import { OpenAPIHono } from '@hono/zod-openapi';
+import { appConfig } from 'config';
+import { count } from 'drizzle-orm';
+import { register } from 'prom-client';
+import type { z } from 'zod';
 import { db } from '#/db/db';
 import { entityTables } from '#/entity-config';
 import type { Env } from '#/lib/context';
 import { metricsConfig } from '#/middlewares/observability/config';
 import { calculateRequestsPerMinute } from '#/modules/metrics/helpers/calculate-requests-per-minute';
 import { parsePromMetrics } from '#/modules/metrics/helpers/parse-prom-metrics';
-import { publicCountsSchema } from '#/modules/metrics/schema';
 import metricRoutes from '#/modules/metrics/routes';
+import type { publicCountsSchema } from '#/modules/metrics/schema';
 import { defaultHook } from '#/utils/default-hook';
 import { TimeSpan } from '#/utils/time-span';
-import { OpenAPIHono } from '@hono/zod-openapi';
-import { appConfig } from 'config';
-import { count } from 'drizzle-orm';
-import { z } from 'zod';
-import { register } from 'prom-client';
 
 const app = new OpenAPIHono<Env>({ defaultHook });
 
@@ -54,20 +54,16 @@ const metricRouteHandlers = app
       appConfig.entityTypes.map(async (entityType) => {
         try {
           const table = entityTables[entityType];
-          if (!table) return [entityType, 0] as const;
-
           const [{ total }] = await db.select({ total: count() }).from(table);
-
-          return [entityType, total] as const;
+          return [entityType, total];
         } catch (err) {
-          // Fallback: 0 if query fails (avoids breaking all counts)
-          console.error(`Failed to count ${entityType}`, err);
-          return [entityType, 0] as const;
+          // Fallback: 0 (avoids breaking all counts)
+          return [entityType, 0];
         }
       }),
     );
 
-    const data = Object.fromEntries(countEntries) as Record<(typeof appConfig.entityTypes)[number], number>;
+    const data = Object.fromEntries(countEntries) as CountsType;
 
     // Cache result for 1 minute
     const expiresAt = Date.now() + new TimeSpan(1, 'm').milliseconds();
