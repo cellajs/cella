@@ -109,9 +109,9 @@ export const MenuSheet = memo(() => {
       <div data-search={!!searchTerm} className="group/menu py-3 sm:px-3 max-sm:pt-0 min-h-[calc(100vh-0.5rem)] flex flex-col">
         {/* Only visible when floating nav is present. To return to home */}
         <div id="return-nav" className="[.floating-nav_&]:flex hidden gap-2 pt-3">
-          <Link to="/home" className={cn(buttonVariants({ variant: 'ghost' }), 'w-full justify-start')}>
+          <Link to="/home" className={cn(buttonVariants({ variant: 'ghost' }), 'w-full justify-start h-12')}>
             <ArrowLeft size={16} strokeWidth={1.5} />
-            <span className="ml-2 font-normal">Back to home</span>
+            <span className="ml-2 font-normal">Home</span>
           </Link>
           <Button
             ref={accountButtonRef}
@@ -133,9 +133,9 @@ export const MenuSheet = memo(() => {
                 },
               });
             }}
-            className="w-12 px-1.5"
+            className="w-12 px-1.5 h-12"
           >
-            <AvatarWrap className="h-8 w-8" type="user" id={user.id} name={user.name} url={user.thumbnailUrl} />
+            <AvatarWrap className="h-9 w-9" type="user" id={user.id} name={user.name} url={user.thumbnailUrl} />
           </Button>
         </div>
 

@@ -485,6 +485,9 @@ export const zGetMeResponse = z.object({
   language: z.enum(['en', 'nl']),
   newsletter: z.boolean(),
   role: z.enum(['user', 'admin']),
+  userFlags: z.object({
+    finishedOnboarding: z.boolean(),
+  }),
   modifiedAt: z.union([z.string(), z.null()]),
   lastSeenAt: z.union([z.string(), z.null()]),
   lastStartedAt: z.union([z.string(), z.null()]),
@@ -502,6 +505,11 @@ export const zUpdateMeData = z.object({
       newsletter: z.optional(z.boolean()),
       thumbnailUrl: z.optional(z.union([z.string(), z.null()])),
       slug: z.optional(z.string().min(2).max(100)),
+      userFlags: z.optional(
+        z.object({
+          finishedOnboarding: z.optional(z.boolean()),
+        }),
+      ),
     }),
   ),
   path: z.optional(z.never()),
@@ -526,6 +534,9 @@ export const zUpdateMeResponse = z.object({
   language: z.enum(['en', 'nl']),
   newsletter: z.boolean(),
   role: z.enum(['user', 'admin']),
+  userFlags: z.object({
+    finishedOnboarding: z.boolean(),
+  }),
   modifiedAt: z.union([z.string(), z.null()]),
   lastSeenAt: z.union([z.string(), z.null()]),
   lastStartedAt: z.union([z.string(), z.null()]),
@@ -802,6 +813,9 @@ export const zGetUsersResponse = z.object({
       language: z.enum(['en', 'nl']),
       newsletter: z.boolean(),
       role: z.enum(['user', 'admin']),
+      userFlags: z.object({
+        finishedOnboarding: z.boolean(),
+      }),
       modifiedAt: z.union([z.string(), z.null()]),
       lastSeenAt: z.union([z.string(), z.null()]),
       lastStartedAt: z.union([z.string(), z.null()]),
@@ -838,6 +852,9 @@ export const zGetUserResponse = z.object({
   language: z.enum(['en', 'nl']),
   newsletter: z.boolean(),
   role: z.enum(['user', 'admin']),
+  userFlags: z.object({
+    finishedOnboarding: z.boolean(),
+  }),
   modifiedAt: z.union([z.string(), z.null()]),
   lastSeenAt: z.union([z.string(), z.null()]),
   lastStartedAt: z.union([z.string(), z.null()]),
@@ -881,6 +898,9 @@ export const zUpdateUserResponse = z.object({
   language: z.enum(['en', 'nl']),
   newsletter: z.boolean(),
   role: z.enum(['user', 'admin']),
+  userFlags: z.object({
+    finishedOnboarding: z.boolean(),
+  }),
   modifiedAt: z.union([z.string(), z.null()]),
   lastSeenAt: z.union([z.string(), z.null()]),
   lastStartedAt: z.union([z.string(), z.null()]),
@@ -1231,7 +1251,7 @@ export const zGetEntitiesWithAdminsData = z.object({
   query: z.object({
     q: z.optional(z.string()),
     targetUserId: z.optional(z.string()),
-    roles: z.optional(z.union([z.array(z.enum(['member', 'admin'])), z.null()])),
+    role: z.optional(z.enum(['member', 'admin'])),
     type: z.enum(['organization']),
     sort: z.optional(z.enum(['name', 'createdAt'])),
   }),
@@ -1784,6 +1804,9 @@ export const zGetMembersResponse = z.object({
       language: z.enum(['en', 'nl']),
       newsletter: z.boolean(),
       role: z.enum(['user', 'admin']),
+      userFlags: z.object({
+        finishedOnboarding: z.boolean(),
+      }),
       modifiedAt: z.union([z.string(), z.null()]),
       lastSeenAt: z.union([z.string(), z.null()]),
       lastStartedAt: z.union([z.string(), z.null()]),

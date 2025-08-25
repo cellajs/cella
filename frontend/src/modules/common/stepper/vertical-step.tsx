@@ -44,6 +44,7 @@ const VerticalStep = React.forwardRef<HTMLDivElement, VerticalStepProps>((props,
     isCurrentStep,
     label,
     description,
+    isKeepError,
     icon,
     hasVisited,
     state,
@@ -58,14 +59,12 @@ const VerticalStep = React.forwardRef<HTMLDivElement, VerticalStepProps>((props,
     isError,
     isLoading,
     variant,
-    onClickStep: onClickStepGeneral,
     clickable,
     expandVerticalSteps,
     styles,
     scrollTracking,
     orientation,
     steps,
-    setStep,
     isLastStep: isLastStepCurrentStep,
     previousActiveStep,
   } = useStepper();
@@ -126,8 +125,6 @@ const VerticalStep = React.forwardRef<HTMLDivElement, VerticalStepProps>((props,
       data-active={active}
       data-clickable={clickable || !!onClickStep}
       data-invalid={localIsError}
-      onClick={() => onClickStep?.(index || 0, setStep) || onClickStepGeneral?.(index || 0, setStep)}
-      onKeyDown={() => {}}
     >
       {steps.length > 1 && (
         <div
@@ -146,6 +143,7 @@ const VerticalStep = React.forwardRef<HTMLDivElement, VerticalStepProps>((props,
                 index,
                 isError: localIsError,
                 isLoading: localIsLoading,
+                isKeepError,
                 isCurrentStep,
                 isCompletedStep,
               }}

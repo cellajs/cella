@@ -45,7 +45,7 @@ export const contextEntitiesQueryOptions = (query: GetEntitiesWithAdminsData['qu
   const sort = query.sort ?? 'name';
   const targetUserId = query.targetUserId ?? user.id;
   return queryOptions({
-    queryKey: entitiesKeys.grid.context({ q, sort, targetUserId, type: query.type, roles: query.roles }),
+    queryKey: entitiesKeys.grid.context({ q, sort, targetUserId, type: query.type, role: query.role }),
     queryFn: () => getEntitiesWithAdmins({ query: { ...query, sort, targetUserId } }),
     staleTime: 0,
   });

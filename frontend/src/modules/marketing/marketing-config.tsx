@@ -1,5 +1,5 @@
-import { appConfig } from 'config';
-import { Building2, Cloud, Github, Users } from 'lucide-react';
+import { appConfig, type EntityType } from 'config';
+import { Building2, Cloud, Github, type LucideIcon, Users } from 'lucide-react';
 import type { Integration } from '~/modules/marketing/about/integrations';
 import type { PricingPlan } from '~/modules/marketing/about/pricing';
 import { nanoid } from '~/utils/nanoid';
@@ -111,9 +111,9 @@ export const faqsData = [
  ************************************************************************************************/
 
 export const counts = [
-  { id: 'users', title: 'common:users', icon: Users },
-  { id: 'organizations', title: 'common:organizations', icon: Building2 },
-] as const;
+  { id: 'user', title: 'common:users', icon: Users },
+  { id: 'organization', title: 'common:organizations', icon: Building2 },
+] as const satisfies readonly { id: EntityType; title: string; icon: LucideIcon }[];
 
 /*************************************************************************************************
  * About - Why

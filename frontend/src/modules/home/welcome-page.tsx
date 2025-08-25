@@ -1,20 +1,18 @@
-import { useNavigate } from '@tanstack/react-router';
-import { appConfig } from 'config';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { OnboardingCompleted } from '~/modules/home/onboarding/completed';
 import type { OnboardingStates } from '~/modules/home/onboarding/steps';
 import Onboarding from '~/modules/home/onboarding/steps';
 import { Dialog, DialogContent, DialogHiddenTitle } from '~/modules/ui/dialog';
-import { useNavigationStore } from '~/store/navigation';
+import { useUserStore } from '~/store/user';
 import { isElementInteractive } from '~/utils/is-el-interactive';
 
 const WelcomePage = () => {
-  const navigate = useNavigate();
-  const { finishedOnboarding } = useNavigationStore();
-  const [onboarding, setOnboarding] = useState<OnboardingStates>(finishedOnboarding ? 'completed' : 'start');
+  const { user } = useUserStore();
 
-  const onOpenChange = () => {
-    navigate({ to: appConfig.defaultRedirectPath, replace: true });
+  const [onboarding, setOnboardingState] = useState<OnboardingStates>(user.userFlags.finishedOnboarding ? 'completed' : 'start');
+
+  const onOpenChange = (openState: boolean) => {
+    if (!openState) setOnboardingState('completed');
   };
 
   // Close onboarding on escape key if not focused on form
@@ -23,12 +21,8 @@ const WelcomePage = () => {
 
     const activeElement = document.activeElement;
     if (isElementInteractive(activeElement)) return;
-    setOnboarding('completed');
+    setOnboardingState('completed');
   };
-
-  useEffect(() => {
-    if (finishedOnboarding) setOnboarding('completed');
-  }, [finishedOnboarding]);
 
   return (
     <>
@@ -39,7 +33,7 @@ const WelcomePage = () => {
           className="min-w-full h-screen border-0 p-0 rounded-none flex flex-col mt-0 bg-background/75 overflow-y-auto"
         >
           <DialogHiddenTitle>Welcome</DialogHiddenTitle>
-          <Onboarding onboarding={onboarding} onboardingToStepper={() => setOnboarding('stepper')} />
+          <Onboarding onboarding={onboarding} setOnboardingState={setOnboardingState} />
         </DialogContent>
       </Dialog>
 

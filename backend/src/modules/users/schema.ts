@@ -1,5 +1,5 @@
 import { z } from '@hono/zod-openapi';
-import { appConfig, type EnabledOAuthProvider } from 'config';
+import { appConfig, type EnabledOAuthProvider, type UserFlags } from 'config';
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 import { usersTable } from '#/db/schema/users';
 import { membershipBaseSchema } from '#/modules/memberships/schema';
@@ -7,14 +7,23 @@ import { paginationQuerySchema, validImageKeySchema, validNameSchema, validSlugS
 
 export const enabledOAuthProvidersEnum = z.enum(appConfig.enabledOAuthProviders as unknown as [EnabledOAuthProvider]);
 
-const userSelectSchema = createSelectSchema(usersTable, {
+export const userFlagsSchema = z.object(
+  Object.keys(appConfig.defaultUserFlags).reduce(
+    (acc, key) => {
+      acc[key as keyof UserFlags] = z.boolean();
+      return acc;
+    },
+    {} as { [K in keyof UserFlags]: z.ZodBoolean },
+  ),
+);
+
+export const userSchema = createSelectSchema(usersTable, {
   email: z.email(),
+  userFlags: userFlagsSchema,
 }).omit({
   hashedPassword: true,
   unsubscribeToken: true,
 });
-
-export const userSchema = z.object({ ...userSelectSchema.shape });
 
 export const memberSchema = z.object({
   ...userSchema.shape,

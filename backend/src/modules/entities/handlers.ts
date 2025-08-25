@@ -111,7 +111,7 @@ const entityRouteHandlers = app
    * Get all users' context entities with admins
    */
   .openapi(entityRoutes.getEntitiesWithAdmins, async (ctx) => {
-    const { q, sort, type, roles, targetUserId } = ctx.req.valid('query');
+    const { q, sort, type, role, targetUserId } = ctx.req.valid('query');
 
     const { id: selfId } = getContextUser();
 
@@ -142,7 +142,7 @@ const entityRouteHandlers = app
           eq(membershipsTable.contextType, type),
           isNull(membershipsTable.tokenId),
           isNotNull(membershipsTable.activatedAt),
-          ...(roles?.length ? [inArray(membershipsTable.role, roles)] : []),
+          ...(role ? [eq(membershipsTable.role, role)] : []),
         ),
       )
       .where(q ? ilike(table.name, prepareStringForILikeFilter(q)) : undefined)

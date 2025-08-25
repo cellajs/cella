@@ -59,6 +59,7 @@ const AppNav = () => {
       side: sheetSide,
       hideClose: true,
       modal: isMobile,
+      closeSheetOnRouteChange: false,
       className:
         'fixed sm:z-105 p-0 sm:inset-0 xs:max-w-80 sm:left-16 xl:group-[.keep-menu-open]/body:group-[.keep-menu-open]/body:shadow-none xl:group-[.keep-menu-open]/body:group-[.keep-menu-open]/body:border-r dark:shadow-[0_0_2px_5px_rgba(255,255,255,0.05)]',
       onClose: () => setNavSheetOpen(null),
@@ -81,6 +82,7 @@ const AppNav = () => {
       if (navState.focusView) setFocusView(false);
 
       useDialoger.getState().remove();
+      useSheeter.getState().removeOnRouteChange();
 
       // Set nav bar loading state
       setNavLoading(true);

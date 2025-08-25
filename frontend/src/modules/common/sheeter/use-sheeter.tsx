@@ -15,6 +15,7 @@ export type SheetData = {
   scrollableOverlay?: boolean;
   closeSheetOnEsc?: boolean;
   modal?: boolean;
+  closeSheetOnRouteChange?: boolean;
   onClose?: (isCleanup?: boolean) => void;
 };
 
@@ -30,6 +31,7 @@ interface SheetStoreState {
   create(content: ReactNode, data: SheetData): string;
   update(id: string, updates: Partial<InternalSheet>): void;
   remove(id?: string, opts?: { isCleanup?: boolean }): void;
+  removeOnRouteChange: () => void;
   get(id: string): InternalSheet | undefined;
 
   triggerRefs: Record<string, TriggerRef | null>;
@@ -47,7 +49,7 @@ export const useSheeter = create<SheetStoreState>()((set, get) => ({
 
   create: (content, data) => {
     // Add defaults and a key for reactivity
-    const defaults = { drawerOnMobile: true, hideClose: false, open: true, modal: true, key: Date.now() };
+    const defaults = { drawerOnMobile: true, hideClose: false, open: true, modal: true, key: Date.now(), closeSheetOnRouteChange: true };
 
     set((state) => ({
       sheets: [...state.sheets.filter((s) => s.id !== data.id), { ...defaults, ...data, content }],
@@ -72,6 +74,20 @@ export const useSheeter = create<SheetStoreState>()((set, get) => ({
       if (!removeSheets.length) return { sheets: state.sheets };
 
       for (const sheet of removeSheets) sheet.onClose?.(opts?.isCleanup);
+
+      // Filter them out
+      const sheets = state.sheets.filter((sheet) => !removeSheets.some((s) => s.id === sheet.id));
+
+      return { sheets };
+    });
+  },
+
+  removeOnRouteChange: () => {
+    set((state) => {
+      const removeSheets = state.sheets.filter((sheet) => sheet.closeSheetOnRouteChange);
+      if (!removeSheets.length) return { sheets: state.sheets };
+
+      for (const sheet of removeSheets) sheet.onClose?.();
 
       // Filter them out
       const sheets = state.sheets.filter((sheet) => !removeSheets.some((s) => s.id === sheet.id));

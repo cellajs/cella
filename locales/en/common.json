@@ -1,4 +1,8 @@
 {
+  "onboarding_completed": "Great! Let's go.",
+  "onboarding_completed.text": "Have a look around to explore the features of {{appName}}.",
+  "onboarding_welcome": "Welcome to {{appName}}",
+  "onboarding_welcome.text": "A template to build web apps with sync engine. What will you build with it?",
   "about": "About",
   "accept": "Accept",
   "accept_invite": "Accept invitation",
@@ -299,6 +303,7 @@
   "request_verification.signup": "to complete your sign up",
   "request_verification.text": "We sent you an email {{reason}}. Please check your inbox and click on the link to verify your email address.",
   "requests": "Requests",
+  "requests.text": "Requests per minute",
   "resend": "Resend",
   "resend_invitation.text": "Send a duplicate invitation with a new expiration date.",
   "reset": "Reset",
@@ -457,5 +462,7 @@
   "without_color": "Without color",
   "write": "Write",
   "year": "year",
-  "your_role": "Your role"
+  "your_role": "Your role",
+  "already_created_org.text": "You already created an organization. You can invite others to your organization.",
+  "need_org_to_invite.text": "You need to create an organization before inviting members."
 }

@@ -788,6 +788,7 @@ export const getMe = <ThrowOnError extends boolean = true>(options?: Options<Get
  * @param {boolean=} options.body.newsletter - `boolean` (optional)
  * @param {string | null=} options.body.thumbnailUrl - `string | null` (optional)
  * @param {string=} options.body.slug - `string` (optional)
+ * @param {object=} options.body.userFlags - `object` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
 export const updateMe = <ThrowOnError extends boolean = true>(options?: Options<UpdateMeData, ThrowOnError>) => {
@@ -1408,7 +1409,7 @@ export const getPageEntities = <ThrowOnError extends boolean = true>(options?: O
  * @param {getEntitiesWithAdminsData} options
  * @param {string=} options.query.q - `string` (optional)
  * @param {string=} options.query.targetuserid - `string` (optional)
- * @param {any[] | null=} options.query.roles - `any[] | null` (optional)
+ * @param {enum=} options.query.role - `enum` (optional)
  * @param {enum} options.query.type - `enum`
  * @param {enum=} options.query.sort - `enum` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429

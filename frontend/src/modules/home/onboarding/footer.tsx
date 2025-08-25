@@ -6,21 +6,23 @@ import { useStepper } from '~/modules/common/stepper';
 import { onboardingSteps } from '~/modules/home/onboarding/onboarding-config';
 import { SkipOrganization } from '~/modules/home/onboarding/skip-organization';
 import { Button } from '~/modules/ui/button';
-import { useNavigationStore } from '~/store/navigation';
+import type { OnboardingStates } from './steps';
 
-const StepperFooter = () => {
-  const { nextStep, isOptionalStep, hasCompletedAllSteps, activeStep } = useStepper();
+const StepperFooter = ({ setOnboardingState }: { setOnboardingState: (newState: Exclude<OnboardingStates, 'start'>) => void }) => {
+  const { nextStep, isOptionalStep, activeStep, hasCompletedAllSteps } = useStepper();
   const { t } = useTranslation();
-  const { menu, setFinishedOnboarding } = useNavigationStore();
-  const hasOrganizations = menu.organization.length > 0;
 
   const skipButtonRef = useRef(null);
+
+  useEffect(() => {
+    if (hasCompletedAllSteps) setOnboardingState('completed');
+  }, [hasCompletedAllSteps]);
 
   // Ask to confirm
   const skipStep = (e: { preventDefault: () => void }) => {
     e.preventDefault();
-    if (onboardingSteps[activeStep].id === 'organization' && !hasOrganizations) {
-      useDialoger.getState().create(<SkipOrganization />, {
+    if (onboardingSteps[activeStep].id === 'organization') {
+      useDialoger.getState().create(<SkipOrganization setOnboardingState={setOnboardingState} />, {
         id: 'skip-org-creation',
         triggerRef: skipButtonRef,
         className: 'md:max-w-xl',
@@ -31,13 +33,6 @@ const StepperFooter = () => {
     }
     nextStep();
   };
-
-  useEffect(() => {
-    if (hasCompletedAllSteps) setFinishedOnboarding();
-    return () => {
-      setFinishedOnboarding();
-    };
-  }, [hasCompletedAllSteps]);
 
   return (
     <div className="w-full flex gap-2 max-sm:justify-stretch">

@@ -11,7 +11,7 @@ export type { ParseKeys } from 'i18next';
 const initOptions: InitOptions = {
   resources: locales,
   debug: appConfig.debug,
-  ns: ['backend', 'common', 'error'],
+  ns: ['backend', 'common', 'error', 'appError'],
   supportedLngs: appConfig.languages,
   load: 'languageOnly',
   fallbackLng: appConfig.defaultLanguage,
