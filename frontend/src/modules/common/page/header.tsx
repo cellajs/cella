@@ -15,7 +15,7 @@ import { baseEntityRoutes } from '~/nav-config';
 type PageHeaderProps = Omit<PageCoverProps, 'id' | 'url'> & {
   entity: EntityPage | UserSummary;
   panel?: React.ReactNode;
-  parent?: { id: string; entityType: PageEntityType };
+  parent?: { idOrSlug: string; entityType: PageEntityType };
   disableScroll?: boolean;
 };
 
