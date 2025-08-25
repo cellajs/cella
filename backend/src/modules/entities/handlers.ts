@@ -17,7 +17,7 @@ import { getOrderColumn } from '#/utils/order-column';
 import { prepareStringForILikeFilter } from '#/utils/sql';
 import { OpenAPIHono, type z } from '@hono/zod-openapi';
 import { appConfig, type ContextEntityType } from 'config';
-import { and, eq, ilike, inArray, isNotNull, isNull, or } from 'drizzle-orm';
+import { and, eq, ilike, inArray, isNotNull, isNull } from 'drizzle-orm';
 
 const app = new OpenAPIHono<Env>({ defaultHook });
 
@@ -26,42 +26,19 @@ const entityRouteHandlers = app
     const { idOrSlug } = ctx.req.valid('param');
     const { type: targetEntityType } = ctx.req.valid('query');
 
-    const contextTypes: readonly string[] = appConfig.contextEntityTypes;
+    const { entity } = await getValidContextEntity(idOrSlug, targetEntityType as ContextEntityType, 'read');
 
-    if (contextTypes.includes(targetEntityType)) {
-      const { entity } = await getValidContextEntity(idOrSlug, targetEntityType as ContextEntityType, 'read');
-
-      return ctx.json(
-        {
-          id: entity.id,
-          slug: entity.slug,
-          name: entity.name,
-          entityType: entity.entityType,
-          thumbnailUrl: entity.thumbnailUrl,
-          bannerUrl: entity.bannerUrl,
-        },
-        200,
-      );
-    }
-    const table = entityTables[targetEntityType];
-    if (!table) throw new AppError({ status: 404, type: 'not_found', severity: 'warn', entityType: targetEntityType });
-
-    const [entity] = await db
-      .select({
-        id: table.id,
-        slug: table.slug,
-        name: table.name,
-        entityType: table.entityType,
-        thumbnailUrl: table.thumbnailUrl,
-        bannerUrl: table.bannerUrl,
-      })
-      .from(table)
-      .where(and(or(eq(table.id, idOrSlug), eq(table.slug, idOrSlug)), eq(table.entityType, targetEntityType)))
-      .limit(1);
-
-    if (!entity) throw new AppError({ status: 404, type: 'not_found', severity: 'warn', entityType: targetEntityType });
-
-    return ctx.json(entity, 200);
+    return ctx.json(
+      {
+        id: entity.id,
+        slug: entity.slug,
+        name: entity.name,
+        entityType: entity.entityType,
+        thumbnailUrl: entity.thumbnailUrl,
+        bannerUrl: entity.bannerUrl,
+      },
+      200,
+    );
   })
   /*
    * Get page entities with a limited schema

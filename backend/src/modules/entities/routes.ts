@@ -97,9 +97,7 @@ const entityRoutes = {
         description: 'Context entities',
         content: {
           'application/json': {
-            schema: contextEntityBaseSchema.extend({
-              entityType: pageEntityTypeSchema,
-            }),
+            schema: contextEntityBaseSchema,
           },
         },
       },

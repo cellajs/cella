@@ -2769,7 +2769,7 @@ export type GetEntityResponses = {
    */
   200: {
     id: string;
-    entityType: 'user' | 'organization';
+    entityType: 'organization';
     slug: string;
     name: string;
     thumbnailUrl?: string | null;

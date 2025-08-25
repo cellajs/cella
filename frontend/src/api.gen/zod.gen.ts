@@ -1188,7 +1188,7 @@ export const zGetEntityData = z.object({
  */
 export const zGetEntityResponse = z.object({
   id: z.string(),
-  entityType: z.enum(['user', 'organization']),
+  entityType: z.enum(['organization']),
   slug: z.string(),
   name: z.string(),
   thumbnailUrl: z.optional(z.union([z.string(), z.null()])),
