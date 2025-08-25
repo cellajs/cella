@@ -1,16 +1,14 @@
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
+import { useEntitySummary } from '~/hooks/use-entity-summary';
 import HeaderCell from '~/modules/common/data-table/header-cell';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
-import type { EntityPage } from '~/modules/entities/types';
-import { membersKeys } from '~/modules/memberships/query';
 import type { PendingInvitation } from '~/modules/memberships/types';
-import { findUserFromCache } from '~/modules/users/helpers';
 import UserCell from '~/modules/users/user-cell';
 import { dateShort } from '~/utils/date-short';
 
-export const useColumns = (entity: EntityPage) => {
+export const useColumns = () => {
   const { t } = useTranslation();
   const isMobile = useBreakpoints('max', 'sm', false);
 
@@ -73,9 +71,7 @@ export const useColumns = (entity: EntityPage) => {
         renderCell: ({ row, tabIndex }) => {
           if (!row.createdBy) return <span className="text-muted">-</span>;
 
-          const queryKey = [...membersKeys.table.base(), { entityType: entity.entityType, orgIdOrSlug: entity.organizationId ?? entity.id }];
-          const user = findUserFromCache(queryKey, row.createdBy);
-
+          const user = useEntitySummary({ idOrSlug: row.createdBy, entityType: 'user' });
           if (!user) return <span>{row.createdBy}</span>;
 
           return <UserCell user={user} tabIndex={tabIndex} />;

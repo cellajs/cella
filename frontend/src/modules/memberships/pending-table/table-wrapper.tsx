@@ -37,7 +37,7 @@ export const MembershipInvitationsTable = ({ entity }: PendingInvitationsTablePr
   const [total, setTotal] = useState<number | undefined>(undefined);
 
   // Build columns
-  const [columns] = useColumns(entity);
+  const [columns] = useColumns();
   const { sortColumns, setSortColumns } = useSortColumns(sort, order, setSearch);
 
   return (

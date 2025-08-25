@@ -63,9 +63,12 @@ import type {
   GetAttachmentsData,
   GetAttachmentsErrors,
   GetAttachmentsResponses,
-  GetEntitiesWithAdminsData,
-  GetEntitiesWithAdminsErrors,
-  GetEntitiesWithAdminsResponses,
+  GetContextEntitiesData,
+  GetContextEntitiesErrors,
+  GetContextEntitiesResponses,
+  GetContextEntityData,
+  GetContextEntityErrors,
+  GetContextEntityResponses,
   GetMeData,
   GetMeErrors,
   GetMembersData,
@@ -90,9 +93,6 @@ import type {
   GetOrganizationsData,
   GetOrganizationsErrors,
   GetOrganizationsResponses,
-  GetPageEntitiesData,
-  GetPageEntitiesErrors,
-  GetPageEntitiesResponses,
   GetPasskeyChallengeData,
   GetPasskeyChallengeErrors,
   GetPasskeyChallengeResponses,
@@ -1347,7 +1347,7 @@ export const updateOrganization = <ThrowOnError extends boolean = true>(options:
  * You can also provide a specific user ID to retrieve the entities that *user* is enrolled in, useful for profile views or access audits.
  * The response includes only fields shared across all entity types, such as `id`, `slug`, and `name`.
  *
- * **GET /entities/contextEntities** ·· [getContextEntities](http://localhost:4000/docs#tag/entities/get/entities/contextEntities) ·· _entities_
+ * **GET /entities/context-entities** ·· [getContextEntities](http://localhost:4000/docs#tag/entities/get/entities/context-entities) ·· _entities_
  *
  * @param {getContextEntitiesData} options
  * @param {string=} options.query.q - `string` (optional)
@@ -1372,7 +1372,36 @@ export const getContextEntities = <ThrowOnError extends boolean = true>(options?
         type: 'apiKey',
       },
     ],
-    url: '/entities/contextEntities',
+    url: '/entities/context-entities',
+    ...options,
+  });
+};
+
+/**
+ * Get a context entity
+ * 🛡️ Requires authentication
+ *
+ * Retrieve detailed information about a single contextual entity by its ID or slug.
+ * Supports all context entity types configured in the system. Returns only table fields for the entity type.
+ *
+ * **GET /entities/context/{idOrSlug}** ·· [getContextEntity](http://localhost:4000/docs#tag/entities/get/entities/context/{idOrSlug}) ·· _entities_
+ *
+ * @param {getContextEntityData} options
+ * @param {string | string} options.path.idorslug - `string | string`
+ * @param {enum} options.query.entitytype - `enum`
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
+ */
+export const getContextEntity = <ThrowOnError extends boolean = true>(options: Options<GetContextEntityData, ThrowOnError>) => {
+  return (options.client ?? _heyApiClient).get<GetContextEntityResponses, GetContextEntityErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [
+      {
+        in: 'cookie',
+        name: 'cella-session-v1',
+        type: 'apiKey',
+      },
+    ],
+    url: '/entities/context/{idOrSlug}',
     ...options,
   });
 };

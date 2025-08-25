@@ -2735,7 +2735,7 @@ export type GetContextEntitiesData = {
     excludeArchived?: 'true' | 'false';
     types?: 'organization' | Array<'organization'>;
   };
-  url: '/entities/contextEntities';
+  url: '/entities/context-entities';
 };
 
 export type GetContextEntitiesErrors = {
@@ -2810,6 +2810,68 @@ export type GetContextEntitiesResponses = {
 };
 
 export type GetContextEntitiesResponse = GetContextEntitiesResponses[keyof GetContextEntitiesResponses];
+
+export type GetContextEntityData = {
+  body?: never;
+  path: {
+    idOrSlug: string;
+  };
+  query: {
+    entityType: 'organization';
+  };
+  url: '/entities/context/{idOrSlug}';
+};
+
+export type GetContextEntityErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: ApiError & {
+    status?: 400;
+  };
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: ApiError & {
+    status?: 401;
+  };
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ApiError & {
+    status?: 403;
+  };
+  /**
+   * Not found: resource does not exist.
+   */
+  404: ApiError & {
+    status?: 404;
+  };
+  /**
+   * Rate limit: too many requests.
+   */
+  429: ApiError & {
+    status?: 429;
+  };
+};
+
+export type GetContextEntityError = GetContextEntityErrors[keyof GetContextEntityErrors];
+
+export type GetContextEntityResponses = {
+  /**
+   * Context entities
+   */
+  200: {
+    id: string;
+    entityType: 'organization';
+    slug: string;
+    name: string;
+    thumbnailUrl?: string | null;
+    bannerUrl?: string | null;
+  };
+};
+
+export type GetContextEntityResponse = GetContextEntityResponses[keyof GetContextEntityResponses];
 
 export type CheckSlugData = {
   body?: {

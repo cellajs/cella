@@ -1238,6 +1238,28 @@ export const zGetContextEntitiesResponse = z.object({
   total: z.number(),
 });
 
+export const zGetContextEntityData = z.object({
+  body: z.optional(z.never()),
+  path: z.object({
+    idOrSlug: z.string(),
+  }),
+  query: z.object({
+    entityType: z.enum(['organization']),
+  }),
+});
+
+/**
+ * Context entities
+ */
+export const zGetContextEntityResponse = z.object({
+  id: z.string(),
+  entityType: z.enum(['organization']),
+  slug: z.string(),
+  name: z.string(),
+  thumbnailUrl: z.optional(z.union([z.string(), z.null()])),
+  bannerUrl: z.optional(z.union([z.string(), z.null()])),
+});
+
 export const zCheckSlugData = z.object({
   body: z.optional(
     z.object({

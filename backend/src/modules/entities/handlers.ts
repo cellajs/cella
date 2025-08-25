@@ -1,3 +1,7 @@
+import { OpenAPIHono, type z } from '@hono/zod-openapi';
+import { appConfig } from 'config';
+import { and, eq, isNotNull, isNull, type SQLWrapper, sql } from 'drizzle-orm';
+import { alias } from 'drizzle-orm/pg-core';
 import { db } from '#/db/db';
 import { membershipsTable } from '#/db/schema/memberships';
 import { entityTables } from '#/entity-config';
@@ -8,19 +12,16 @@ import entityRoutes from '#/modules/entities/routes';
 import type { contextEntitiesResponseSchema } from '#/modules/entities/schema';
 import { membershipSummarySelect } from '#/modules/memberships/helpers/select';
 import type { membershipCountSchema } from '#/modules/organizations/schema';
+import { getValidContextEntity } from '#/permissions/get-context-entity';
 import { defaultHook } from '#/utils/default-hook';
 import { getOrderColumn } from '#/utils/order-column';
 import { prepareStringForILikeFilter } from '#/utils/sql';
-import { OpenAPIHono, type z } from '@hono/zod-openapi';
-import { appConfig } from 'config';
-import { and, eq, isNotNull, isNull, sql, type SQLWrapper } from 'drizzle-orm';
-import { alias } from 'drizzle-orm/pg-core';
 
 const app = new OpenAPIHono<Env>({ defaultHook });
 
 const entityRouteHandlers = app
   /*
-   * Get all users' context entities with admins
+   * Get all users' context entities with members counts
    */
   .openapi(entityRoutes.getContextEntities, async (ctx) => {
     const { q, sort, types, role, offset, limit, targetUserId, targetOrgId, excludeArchived } = ctx.req.valid('query');
@@ -132,6 +133,17 @@ const entityRouteHandlers = app
     };
 
     return ctx.json(data, 200);
+  })
+  /*
+   * Get base entity info
+   */
+  .openapi(entityRoutes.getContextEntity, async (ctx) => {
+    const { idOrSlug } = ctx.req.valid('param');
+    const { entityType } = ctx.req.valid('query');
+
+    const { entity } = await getValidContextEntity(idOrSlug, entityType, 'read');
+
+    return ctx.json(entity, 200);
   })
   /*
    * Check if slug is available

@@ -1,23 +1,22 @@
 import { useQuery } from '@tanstack/react-query';
 import { FlameKindling, ServerCrash, WifiOff } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { useEntitySummary } from '~/hooks/use-entity-summary';
 import { useOnlineManager } from '~/hooks/use-online-manager';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import Spinner from '~/modules/common/spinner';
-import { membersKeys } from '~/modules/memberships/query';
-import { findUserFromCache } from '~/modules/users/helpers';
 import UserProfilePage from '~/modules/users/profile-page';
 import { userQueryOptions } from '~/modules/users/query';
 
+// TODO(REFACTOR): duplicate request in UserProfilePage
 const UserSheet = ({ idOrSlug, orgIdOrSlug }: { idOrSlug: string; orgIdOrSlug?: string }) => {
   const { t } = useTranslation();
   const { isOnline } = useOnlineManager();
 
   // Search for the user in cached queries
-  const memberKey = [...membersKeys.table.base(), { orgIdOrSlug }];
-  const cachedUser = findUserFromCache(memberKey, idOrSlug);
+  const cachedUser = useEntitySummary({ idOrSlug, entityType: 'user', cacheOnly: true });
 
-  const { data, isError, isLoading } = useQuery(userQueryOptions(idOrSlug));
+  const { data, isError, isLoading } = useQuery({ ...userQueryOptions(idOrSlug), enabled: !cachedUser });
 
   // Use the cached user if available, otherwise fallback to the server-fetched data
   const user = cachedUser || data;

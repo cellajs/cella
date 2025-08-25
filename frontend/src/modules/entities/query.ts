@@ -1,5 +1,5 @@
 import { keepPreviousData, queryOptions } from '@tanstack/react-query';
-import { appConfig } from 'config';
+import { appConfig, type PageEntityType } from 'config';
 import { type GetContextEntitiesData, getContextEntities } from '~/api.gen';
 import type { ContextEntityItems } from '~/modules/entities/types';
 import { useUserStore } from '~/store/user';
@@ -9,12 +9,15 @@ import { useUserStore } from '~/store/user';
  * For managing query caching and invalidation.
  */
 export const entitiesKeys = {
-  all: ['entities'] as const,
-  search: (searchQuery: string) => [...entitiesKeys.all, 'search', searchQuery] as const,
+  all: 'entities' as const,
+  product: 'product' as const,
+  context: 'context' as const,
+  search: (searchQuery: string) => [entitiesKeys.all, entitiesKeys.context, 'search', searchQuery] as const,
   grid: {
-    base: () => [...entitiesKeys.all, 'greed'] as const,
+    base: () => [entitiesKeys.all, 'greed'] as const,
     context: (filters: GetContextEntitiesData['query']) => [...entitiesKeys.grid.base(), filters] as const,
   },
+  single: (idOrSlug: string, entityType: PageEntityType) => [entitiesKeys.all, entitiesKeys.context, entityType, idOrSlug] as const,
 };
 
 /**
