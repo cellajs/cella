@@ -1,5 +1,6 @@
+import { useQuery } from '@tanstack/react-query';
 import type { PageEntityType } from 'config';
-import { useEffect, useState } from 'react';
+import { useMemo } from 'react';
 import { getEntity } from '~/api.gen';
 import type { EntitySummary } from '~/modules/entities/types';
 import { isInfiniteQueryData, isQueryData } from '~/query/helpers/mutate-query';
@@ -12,33 +13,23 @@ type PageEntitySummary = Omit<EntitySummary, 'entityType'> & { entityType: PageE
 
 export const useEntitySummary = (parent: { id: string; entityType: PageEntityType }) => {
   const { id: entityId, entityType } = parent;
-  const [entity, setEntity] = useState<PageEntitySummary | null>(null);
+  const menu = useNavigationStore((s) => s.menu);
 
-  const menu = useNavigationStore((s) => s.menu); // reactive subscription
-
-  useEffect(() => {
+  // Try to resolve entity from cache/menu before hitting API
+  const cachedEntity = useMemo(() => {
     const queriesToWorkOn = queryClient.getQueriesData({});
-    let cachedEntity: ItemData | null = null;
+    let found: ItemData | null = null;
 
     const findInArbitrary = (data: ArbitraryEntityQueryData): ItemData | null => {
       for (const [key, value] of Object.entries(data)) {
         if (entityType === key) {
-          if (Array.isArray(value)) {
-            const found = value.find((item) => item.id === entityId);
-            if (found) return found;
-          } else if (value?.id === entityId) {
-            return value;
-          }
+          if (Array.isArray(value)) return value.find((item) => item.id === entityId) || null;
+          if (value.id === entityId) return value;
         }
-        if (value && typeof value === 'object' && 'entityType' in value) {
-          if (value.entityType === entityType && value.id === entityId) {
-            return value as ItemData;
-          }
+        if (value && typeof value === 'object' && 'entityType' in value && value.entityType === entityType && value.id === entityId) {
+          return value;
         }
-        if (Array.isArray(value)) {
-          const found = value.find((el) => el.entityType === entityType && el.id === entityId);
-          if (found) return found;
-        }
+        if (Array.isArray(value)) return value.find((el) => el.entityType === entityType && el.id === entityId) || null;
       }
       return null;
     };
@@ -47,25 +38,31 @@ export const useEntitySummary = (parent: { id: string; entityType: PageEntityTyp
       if (!cachedData) continue;
 
       if (isQueryData<ItemData>(cachedData)) {
-        cachedEntity = cachedData.items.find((item) => item.id === entityId) ?? null;
+        found = cachedData.items.find((item) => item.id === entityId) ?? null;
       } else if (isInfiniteQueryData<ItemData>(cachedData)) {
-        cachedEntity = cachedData.pages.flatMap((p) => p.items).find((item) => item.id === entityId) ?? null;
+        found = cachedData.pages.flatMap((p) => p.items).find((item) => item.id === entityId) ?? null;
       } else if (isArbitraryQueryData(cachedData)) {
-        cachedEntity = findInArbitrary(cachedData);
+        found = findInArbitrary(cachedData);
       }
-      if (cachedEntity) break;
+      if (found) break;
     }
 
-    if (!cachedEntity) {
+    if (!found) {
       const menuItems = Object.values(menu).flat();
       const submenuItems = menuItems.flatMap(({ submenu }) => submenu ?? []);
-      cachedEntity = menuItems.find((el) => el.id === entityId) || submenuItems.find((el) => el.id === entityId) || null;
+      found = menuItems.find((el) => el.id === entityId) || submenuItems.find((el) => el.id === entityId) || null;
     }
 
-    if (cachedEntity) setEntity(cachedEntity as PageEntitySummary);
-    // Fallback: fetch entity
-    else getEntity({ path: { idOrSlug: entityId }, query: { type: entityType } }).then(setEntity);
-  }, []);
+    return found as PageEntitySummary | null;
+  }, [menu]);
 
-  return entity;
+  // If cachedEntity exists, skip fetching
+  const { data } = useQuery<PageEntitySummary | null>({
+    queryKey: ['entitySummary', entityType, entityId],
+    queryFn: () => getEntity({ path: { idOrSlug: entityId }, query: { type: entityType } }),
+    enabled: !cachedEntity, // don’t fetch if we already have it
+    initialData: cachedEntity, // hydrate from cache/menu
+  });
+
+  return data;
 };
