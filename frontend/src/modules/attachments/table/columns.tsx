@@ -7,6 +7,7 @@ import { useTranslation } from 'react-i18next';
 import useDownloader from 'react-use-downloader';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { useCopyToClipboard } from '~/hooks/use-copy-to-clipboard';
+import { useEntitySummary } from '~/hooks/use-entity-summary';
 import DeleteAttachments from '~/modules/attachments/delete-attachments';
 import { formatBytes } from '~/modules/attachments/table/helpers';
 import AttachmentPreview from '~/modules/attachments/table/preview';
@@ -21,10 +22,8 @@ import { PopConfirm } from '~/modules/common/popconfirm';
 import Spinner from '~/modules/common/spinner';
 import { toaster } from '~/modules/common/toaster/service';
 import type { EntityPage } from '~/modules/entities/types';
-import { membersKeys } from '~/modules/memberships/query';
 import { Button } from '~/modules/ui/button';
 import { Input } from '~/modules/ui/input';
-import { findUserFromCache } from '~/modules/users/helpers';
 import UserCell from '~/modules/users/user-cell';
 import { useUserStore } from '~/store/user';
 import { dateShort } from '~/utils/date-short';
@@ -263,9 +262,7 @@ export const useColumns = (entity: EntityPage, isSheet: boolean, isCompact: bool
       renderCell: ({ row, tabIndex }) => {
         if (!row.createdBy) return <span className="text-muted">-</span>;
 
-        const queryKey = [...membersKeys.table.base(), { entityType: entity.entityType, orgIdOrSlug: row.organizationId }];
-        const user = findUserFromCache(queryKey, row.createdBy);
-
+        const user = useEntitySummary({ idOrSlug: row.createdBy, entityType: 'user', cacheOnly: true });
         if (!user) return <span>{row.createdBy}</span>;
 
         return <UserCell user={user} tabIndex={tabIndex} />;
@@ -290,9 +287,7 @@ export const useColumns = (entity: EntityPage, isSheet: boolean, isCompact: bool
       renderCell: ({ row, tabIndex }) => {
         if (!row.modifiedBy) return <span className="text-muted">-</span>;
 
-        const queryKey = [...membersKeys.table.base(), { entityType: entity.entityType, orgIdOrSlug: row.organizationId }];
-        const user = findUserFromCache(queryKey, row.modifiedBy);
-
+        const user = useEntitySummary({ idOrSlug: row.modifiedBy, entityType: 'user', cacheOnly: true });
         if (!user) return <span>{row.modifiedBy}</span>;
 
         return <UserCell user={user} tabIndex={tabIndex} />;
