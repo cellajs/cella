@@ -9,12 +9,12 @@ import { useDebounce } from '~/hooks/use-debounce';
 import { useMeasure } from '~/hooks/use-measure';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
-import { entitiesQueryOptions } from '~/modules/entities/query';
 import type { EntityPage } from '~/modules/entities/types';
 import { Badge } from '~/modules/ui/badge';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '~/modules/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '~/modules/ui/popover';
 import { ScrollArea } from '~/modules/ui/scroll-area';
+import { searchUsersQueryOptions } from '~/modules/users/query';
 
 interface Props {
   value: string[];
@@ -35,7 +35,7 @@ export const UserCombobox = ({ value, onChange, entity }: Props) => {
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
 
   const handleUnselect = (item: string) => {
-    const index = selected.findIndex((i) => i === item);
+    const index = selected.indexOf(item);
     setSelected((prevSelected) => {
       const updatedSelected = [...prevSelected];
       updatedSelected.splice(index, 1); // Remove 1 element at index
@@ -57,7 +57,8 @@ export const UserCombobox = ({ value, onChange, entity }: Props) => {
     setOpen(false);
   };
 
-  const { data, isFetching } = useQuery(entitiesQueryOptions({ q: debouncedSearchQuery, type: 'user', userMembershipType: entity.entityType }));
+  const queryOptions = searchUsersQueryOptions({ q: debouncedSearchQuery, targetEntityId: entity.id, targetEntityType: entity.entityType });
+  const { data, isFetching } = useQuery(queryOptions);
 
   useEffect(() => {
     onChange(selected);
@@ -117,7 +118,7 @@ export const UserCombobox = ({ value, onChange, entity }: Props) => {
 
           <CommandList className="px-1 h-full">
             <AnimatePresence mode="wait">
-              {!isFetching && !data?.items.length ? (
+              {!isFetching && !data.items.length ? (
                 <motion.div key="empty-state" initial="hidden" animate="visible" exit="exit" variants={variants} className="h-full">
                   {debouncedSearchQuery.length ? (
                     <CommandEmpty>
@@ -130,7 +131,7 @@ export const UserCombobox = ({ value, onChange, entity }: Props) => {
                   )}
                 </motion.div>
               ) : (
-                data?.items.length > 0 && (
+                data.items.length > 0 && (
                   <motion.div
                     key="results"
                     initial="hidden"
@@ -141,13 +142,13 @@ export const UserCombobox = ({ value, onChange, entity }: Props) => {
                   >
                     <ScrollArea>
                       <CommandGroup>
-                        {data.items.map(({ id, name, email, membership, entityType, thumbnailUrl }) => {
-                          if (!email) return null;
-                          const disabled = !membership || membership[entityIdField] === entity.id;
+                        {data.items.map(({ id, name, email, memberships, entityType, thumbnailUrl }) => {
+                          const alreadyMember = !!memberships.find((m) => m[entityIdField] === entity.id);
+                          const disabled = !memberships || alreadyMember;
                           return (
                             <CommandItem
                               data-was-selected={selected.some((u) => u === email)}
-                              data-already-member={membership && membership[entityIdField] === entity.id}
+                              data-already-member={alreadyMember}
                               disabled={disabled}
                               key={id}
                               className="w-full justify-between group"

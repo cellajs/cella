@@ -1,5 +1,7 @@
 import { keepPreviousData, queryOptions } from '@tanstack/react-query';
-import { type GetEntitiesWithAdminsData, type GetPageEntitiesData, getEntitiesWithAdmins, getPageEntities } from '~/api.gen';
+import { appConfig } from 'config';
+import { type GetContextEntitiesData, getContextEntities } from '~/api.gen';
+import type { ContextEntityItems } from '~/modules/entities/types';
 import { useUserStore } from '~/store/user';
 
 /**
@@ -11,7 +13,7 @@ export const entitiesKeys = {
   search: (searchQuery: string) => [...entitiesKeys.all, 'search', searchQuery] as const,
   grid: {
     base: () => [...entitiesKeys.all, 'greed'] as const,
-    context: (filters: GetEntitiesWithAdminsData['query']) => [...entitiesKeys.grid.base(), filters] as const,
+    context: (filters: GetContextEntitiesData['query']) => [...entitiesKeys.grid.base(), filters] as const,
   },
 };
 
@@ -21,32 +23,38 @@ export const entitiesKeys = {
  * @param query - PageEntitiesQuery parameters to get entities.
  * @returns Query options
  */
-export const entitiesQueryOptions = (query: NonNullable<GetPageEntitiesData['query']>) => {
+export const searchContextEntitiesQueryOptions = (
+  query: Pick<NonNullable<GetContextEntitiesData['query']>, 'q' | 'types' | 'targetUserId' | 'targetOrgId'>,
+) => {
   const searchQuery = query.q ?? '';
+
   return queryOptions({
     queryKey: entitiesKeys.search(searchQuery),
-    queryFn: () => getPageEntities({ query }),
+    queryFn: () => getContextEntities({ query }),
     staleTime: 0,
     enabled: searchQuery.trim().length > 0, // to avoid issues with spaces
-    initialData: { items: [], total: 0, counts: {} },
+    initialData: {
+      items: Object.fromEntries(appConfig.contextEntityTypes.map((t) => [t, []])) as unknown as ContextEntityItems,
+      total: 0,
+    },
     placeholderData: keepPreviousData,
   });
 };
 
 /**
- * Query options for fetching context entities with memberhsip and their members based on userId input query and sort.
+ * Query options for fetching page entities based on input query.
  *
- * @param query - ContextEntitiesQuery parameters to get entities.
+ * @param query - PageEntitiesQuery parameters to get entities.
  * @returns Query options
  */
-export const contextEntitiesQueryOptions = (query: GetEntitiesWithAdminsData['query']) => {
+export const contextEntitiesQueryOptions = (query: Omit<NonNullable<GetContextEntitiesData['query']>, 'targetOrgId'>) => {
   const user = useUserStore.getState().user;
   const q = query.q ?? '';
   const sort = query.sort ?? 'name';
   const targetUserId = query.targetUserId ?? user.id;
   return queryOptions({
-    queryKey: entitiesKeys.grid.context({ q, sort, targetUserId, type: query.type, role: query.role }),
-    queryFn: () => getEntitiesWithAdmins({ query: { ...query, sort, targetUserId } }),
+    queryKey: entitiesKeys.grid.context({ q, sort, targetUserId, types: query.types, role: query.role }),
+    queryFn: () => getContextEntities({ query: { ...query, sort, targetUserId } }),
     staleTime: 0,
   });
 };

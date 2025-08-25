@@ -1,31 +1,21 @@
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
-import { appConfig, type EntityType } from 'config';
-import { History, Search, User, X } from 'lucide-react';
-import { Fragment, useEffect, useRef, useState } from 'react';
+import { appConfig } from 'config';
+import { History, Search, X } from 'lucide-react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { z } from 'zod';
-import type { zGetPageEntitiesResponse } from '~/api.gen/zod.gen';
+import type { EntityListItemSchema } from '~/api.gen';
 import useFocusByRef from '~/hooks/use-focus-by-ref';
-import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
-import StickyBox from '~/modules/common/sticky-box';
-import { entitiesQueryOptions } from '~/modules/entities/query';
-import { Badge } from '~/modules/ui/badge';
+import { searchContextEntitiesQueryOptions } from '~/modules/entities/query';
+import { SearchResultBlock } from '~/modules/navigation/search-result-block';
 import { Button } from '~/modules/ui/button';
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandSeparator } from '~/modules/ui/command';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '~/modules/ui/command';
 import { ScrollArea } from '~/modules/ui/scroll-area';
+import { searchUsersQueryOptions } from '~/modules/users/query';
 import { getEntityRoute } from '~/nav-config';
 import { useNavigationStore } from '~/store/navigation';
-
-export type EntityListItem = z.infer<typeof zGetPageEntitiesResponse>['items'][number];
-
-export interface EntitySearchSection {
-  id: string;
-  label: string;
-  type: EntityType;
-}
 
 export const AppSearch = () => {
   const { t } = useTranslation();
@@ -67,9 +57,14 @@ export const AppSearch = () => {
     });
   };
 
-  const { data: items, isFetching } = useQuery(entitiesQueryOptions({ q: searchValue }));
+  // TODO add ability to click `show more` to load more results
+  const { data: contextEntities, isFetching: contextEntitiesFetching } = useQuery(searchContextEntitiesQueryOptions({ q: searchValue }));
+  const { data: users, isFetching: usersFetching } = useQuery(searchUsersQueryOptions({ q: searchValue }));
 
-  const onSelectItem = (item: EntityListItem) => {
+  const isFetching = useMemo(() => contextEntitiesFetching && usersFetching, [contextEntitiesFetching, usersFetching]);
+  const notFound = useMemo(() => !contextEntities.total && !users.total, [contextEntities.total, users.total]);
+
+  const onSelectItem = (item: EntityListItemSchema) => {
     // Update recent searches with the search value
     updateRecentSearches(searchValue);
 
@@ -81,7 +76,7 @@ export const AppSearch = () => {
 
   useEffect(() => {
     if (scrollAreaRef.current) scrollAreaRef.current.scrollTop = 0;
-  }, [items]);
+  }, [contextEntities]);
 
   return (
     <Command className="rounded-lg shadow-2xl" shouldFilter={false}>
@@ -98,7 +93,7 @@ export const AppSearch = () => {
         placeholder={t('common:placeholder.search')}
         onValueChange={(searchValue) => {
           const historyIndexes = recentSearches.map((_, index) => index);
-          if (historyIndexes.includes(Number.parseInt(searchValue))) {
+          if (historyIndexes.includes(Number.parseInt(searchValue, 10))) {
             setSearchValue(recentSearches[+searchValue]);
             return;
           }
@@ -106,106 +101,63 @@ export const AppSearch = () => {
         }}
       />
       <ScrollArea id={'item-search'} ref={scrollAreaRef} className="sm:h-[40vh] overflow-y-auto">
-        {
-          <CommandList className="h-full">
-            {items.total === 0 && (
-              <>
-                {!!searchValue.length && !isFetching && (
-                  <CommandEmpty className="h-full sm:h-[36vh]">
-                    <ContentPlaceholder
-                      icon={Search}
-                      title={t('common:no_resource_found', {
-                        resource: t('common:results').toLowerCase(),
-                      })}
-                    />
-                  </CommandEmpty>
-                )}
-                {searchValue.length === 0 && (
-                  <CommandEmpty className="h-full sm:h-[36vh]">
-                    <ContentPlaceholder
-                      icon={Search}
-                      title={t('common:global_search.text', {
-                        appName: appConfig.name,
-                      })}
-                    />
-                  </CommandEmpty>
-                )}
-                {!!recentSearches.length && (
-                  <CommandGroup>
-                    <div className="px-2 py-1.5 text-xs font-medium text-muted-foreground bg-popover">{t('common:history')}</div>
-                    {recentSearches.map((search, index) => (
-                      <CommandItem key={search} onSelect={() => setSearchValue(search)} className="justify-between">
-                        <div className="flex gap-2 items-center outline-0 ring-0 group">
-                          <History className="h-5 w-5" />
-                          <span className="underline-offset-4 truncate font-medium">{search}</span>
-                        </div>
-                        <div className="flex items-center">
-                          <span className="max-sm:hidden text-xs opacity-50 mx-3">{index}</span>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="p-0 h-6 w-6"
-                            onClick={(event) => {
-                              event.stopPropagation();
-                              deleteItemFromList(search);
-                            }}
-                          >
-                            <X className="h-5 w-5 opacity-70 hover:opacity-100" />
-                          </Button>
-                        </div>
-                      </CommandItem>
-                    ))}
-                  </CommandGroup>
-                )}
-              </>
-            )}
-            {items.total > 0 &&
-              appConfig.pageEntityTypes.map((entityType) => {
-                const filteredItems = items.items.filter((el) => el.entityType === entityType);
-                // Skip rendering if no items match the section type
-                if (filteredItems.length === 0) return null;
-
-                return (
-                  <Fragment key={entityType}>
-                    <CommandSeparator />
-                    <CommandGroup className="">
-                      <StickyBox className="z-10 px-2 py-1.5 text-xs font-medium text-muted-foreground bg-popover">
-                        {t(entityType, {
-                          ns: ['app', 'common'],
-                          defaultValue: entityType,
-                        })}
-                      </StickyBox>
-                      {filteredItems.map((item: EntityListItem) => {
-                        return (
-                          <CommandItem
-                            data-already-member={entityType !== 'user' && item.membership !== null}
-                            key={item.id}
-                            disabled={entityType !== 'user' && item.membership === null}
-                            className="w-full justify-between group"
-                            onSelect={() => onSelectItem(item)}
-                          >
-                            <div className="flex space-x-2 items-center outline-0 ring-0 group">
-                              <AvatarWrap type={entityType} className="h-8 w-8" id={item.id} name={item.name} url={item.thumbnailUrl} />
-                              <span className="group-data-[already-member=true]:hover:underline underline-offset-4 truncate font-medium">
-                                {item.name}
-                              </span>
-                            </div>
-
-                            <div className="flex items-center">
-                              <Badge size="sm" variant="plain" className=" group-data-[already-member=true]:flex hidden gap-1">
-                                <User size={14} />
-                                <span className="max-sm:hidden font-light">{t('common:member')}</span>
-                              </Badge>
-                            </div>
-                          </CommandItem>
-                        );
-                      })}
-                    </CommandGroup>
-                  </Fragment>
-                );
-              })}
-          </CommandList>
-        }
+        <CommandList className="h-full">
+          {notFound && (
+            <>
+              {!!searchValue.length && !isFetching && (
+                <CommandEmpty className="h-full sm:h-[36vh]">
+                  <ContentPlaceholder
+                    icon={Search}
+                    title={t('common:no_resource_found', {
+                      resource: t('common:results').toLowerCase(),
+                    })}
+                  />
+                </CommandEmpty>
+              )}
+              {searchValue.length === 0 && (
+                <CommandEmpty className="h-full sm:h-[36vh]">
+                  <ContentPlaceholder
+                    icon={Search}
+                    title={t('common:global_search.text', {
+                      appName: appConfig.name,
+                    })}
+                  />
+                </CommandEmpty>
+              )}
+              {!!recentSearches.length && (
+                <CommandGroup>
+                  <div className="px-2 py-1.5 text-xs font-medium text-muted-foreground bg-popover">{t('common:history')}</div>
+                  {recentSearches.map((search, index) => (
+                    <CommandItem key={search} onSelect={() => setSearchValue(search)} className="justify-between">
+                      <div className="flex gap-2 items-center outline-0 ring-0 group">
+                        <History className="h-5 w-5" />
+                        <span className="underline-offset-4 truncate font-medium">{search}</span>
+                      </div>
+                      <div className="flex items-center">
+                        <span className="max-sm:hidden text-xs opacity-50 mx-3">{index}</span>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="p-0 h-6 w-6"
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            deleteItemFromList(search);
+                          }}
+                        >
+                          <X className="h-5 w-5 opacity-70 hover:opacity-100" />
+                        </Button>
+                      </div>
+                    </CommandItem>
+                  ))}
+                </CommandGroup>
+              )}
+            </>
+          )}
+          <SearchResultBlock results={users.items} entityType={'user'} onSelect={onSelectItem} />
+          {appConfig.contextEntityTypes.map((entityType) => (
+            <SearchResultBlock key={entityType} results={contextEntities.items[entityType]} entityType={entityType} onSelect={onSelectItem} />
+          ))}
+        </CommandList>
       </ScrollArea>
     </Command>
   );

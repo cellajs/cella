@@ -5,8 +5,8 @@ import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { useStepper } from '~/modules/common/stepper';
 import { onboardingSteps } from '~/modules/home/onboarding/onboarding-config';
 import { SkipOrganization } from '~/modules/home/onboarding/skip-organization';
+import type { OnboardingStates } from '~/modules/home/onboarding/steps';
 import { Button } from '~/modules/ui/button';
-import type { OnboardingStates } from './steps';
 
 const StepperFooter = ({ setOnboardingState }: { setOnboardingState: (newState: Exclude<OnboardingStates, 'start'>) => void }) => {
   const { nextStep, isOptionalStep, activeStep, hasCompletedAllSteps } = useStepper();

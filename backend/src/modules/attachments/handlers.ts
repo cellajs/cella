@@ -171,7 +171,7 @@ const attachmentsRouteHandlers = app
       .where(and(...filters))
       .orderBy(orderColumn);
 
-    const attachments = await attachmentsQuery.offset(Number(offset)).limit(Number(limit));
+    const attachments = await attachmentsQuery.offset(offset).limit(limit);
 
     const [{ total }] = await db.select({ total: count() }).from(attachmentsQuery.as('attachments'));
 

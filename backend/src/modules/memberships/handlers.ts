@@ -437,7 +437,7 @@ const membershipRouteHandlers = app
 
     const [{ total }] = await db.select({ total: count() }).from(membersQuery.as('memberships'));
 
-    const items = await membersQuery.orderBy(orderColumn).limit(Number(limit)).offset(Number(offset));
+    const items = await membersQuery.orderBy(orderColumn).limit(limit).offset(offset);
 
     return ctx.json({ items, total }, 200);
   })
@@ -482,7 +482,7 @@ const membershipRouteHandlers = app
 
     const [{ total }] = await db.select({ total: count() }).from(pendingInvitationsQuery.as('invites'));
 
-    const items = await pendingInvitationsQuery.limit(Number(limit)).offset(Number(offset));
+    const items = await pendingInvitationsQuery.limit(limit).offset(offset);
 
     return ctx.json({ items, total }, 200);
   })

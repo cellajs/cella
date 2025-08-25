@@ -1,8 +1,8 @@
 import { Link } from '@tanstack/react-router';
 import { t } from 'i18next';
+import { Mail, Shield, UserRound, UsersRound } from 'lucide-react';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import type { EntityGridItem } from '~/modules/entities/types';
-import { AvatarGroup, AvatarGroupList, AvatarOverflowIndicator } from '~/modules/ui/avatar';
 import { Card, CardContent } from '~/modules/ui/card';
 import { getEntityRoute } from '~/nav-config';
 import { dateShort } from '~/utils/date-short';
@@ -36,16 +36,23 @@ export const EntityTile = ({ entity }: { entity: EntityGridItem }) => {
           )}
         </Link>
 
-        <div className="flex items-center justify-stretch gap-3 pt-4">
-          <div className="grow" />
-          <AvatarGroup limit={3}>
-            <AvatarGroupList>
-              {entity.admins.map((user) => (
-                <AvatarWrap type="user" key={user.id} id={user.id} name={user.name} url={user.thumbnailUrl} className="h-8 w-8 text-xs" />
-              ))}
-            </AvatarGroupList>
-            <AvatarOverflowIndicator className="h-8 w-8 text-xs" />
-          </AvatarGroup>
+        <div className="flex items-center justify-end gap-3 pt-6 text-sm opacity-80">
+          <div className="flex items-center gap-1">
+            <Shield size={16} />
+            {entity.membershipCounts.admin}
+          </div>
+          <div className="flex items-center gap-1">
+            <UserRound size={16} />
+            {entity.membershipCounts.member}
+          </div>
+          <div className="flex items-center gap-1">
+            <Mail size={16} />
+            {entity.membershipCounts.pending}
+          </div>
+          <div className="flex items-center gap-1">
+            <UsersRound size={16} />
+            {entity.membershipCounts.total}
+          </div>
         </div>
       </CardContent>
     </Card>
