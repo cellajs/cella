@@ -9,10 +9,10 @@ import type { BaseTableMethods, BaseTableProps } from '~/modules/common/data-tab
 import { toaster } from '~/modules/common/toaster/service';
 import { usersQueryOptions, useUpdateUserMutation } from '~/modules/users/query';
 import type { UsersSearch } from '~/modules/users/table/table-wrapper';
-import type { User } from '~/modules/users/types';
+import type { TableUser } from '~/modules/users/types';
 import { useDataFromInfiniteQuery } from '~/query/hooks/use-data-from-query';
 
-type BaseDataTableProps = BaseTableProps<User, UsersSearch>;
+type BaseDataTableProps = BaseTableProps<TableUser, UsersSearch>;
 
 const BaseDataTable = memo(
   forwardRef<BaseTableMethods, BaseDataTableProps>(({ columns, searchVars, sortColumns, setSortColumns, setTotal, setSelected }, ref) => {
@@ -30,7 +30,7 @@ const BaseDataTable = memo(
     const { mutate: updateUserRole } = useUpdateUserMutation();
 
     // Update user role
-    const onRowsChange = (changedRows: User[], { indexes, column }: RowsChangeData<User>) => {
+    const onRowsChange = (changedRows: TableUser[], { indexes, column }: RowsChangeData<TableUser>) => {
       if (!onlineManager.isOnline()) return toaster(t('common:action.offline.text'), 'warning');
       for (const index of indexes)
         if (column.key === 'role') {
@@ -61,7 +61,7 @@ const BaseDataTable = memo(
     }));
 
     return (
-      <DataTable<User>
+      <DataTable<TableUser>
         {...{
           columns: columns.filter((column) => column.visible),
           rowHeight: 52,

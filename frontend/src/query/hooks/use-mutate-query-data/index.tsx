@@ -1,6 +1,6 @@
 import type { QueryKey } from '@tanstack/react-query';
 import type { ContextEntityType, EntityType, ProductEntityType } from 'config';
-import type { ContextEntityData } from '~/modules/entities/types';
+import type { EntitySummary } from '~/modules/entities/types';
 import { isInfiniteQueryData, isQueryData } from '~/query/helpers/mutate-query';
 import {
   changeArbitraryQueryData,
@@ -37,12 +37,7 @@ export function useMutateQueryData(
   useInvalidateOnActions?: QueryDataActions[],
 ): UseMutateQueryDataReturn {
   // mutation function
-  function dataMutation(
-    items: ItemData[] | EntityData[] | ContextEntityData[],
-    action: QueryDataActions,
-    entity?: EntityType,
-    keyToOperateIn?: string,
-  ) {
+  function dataMutation(items: ItemData[] | EntityData[] | EntitySummary[], action: QueryDataActions, entity?: EntityType, keyToOperateIn?: string) {
     const passedQueryData = queryClient.getQueryData(passedQueryKey);
     const passedQuery: [QueryKey, unknown] = [passedQueryKey, passedQueryData];
 
@@ -67,29 +62,29 @@ export function useMutateQueryData(
 
   // Overload functions for action
   function create(items: ItemData[]): void;
-  function create(items: ContextEntityData[], entityType: ContextEntityType, keyToOperateIn?: string): void;
+  function create(items: EntitySummary[], entityType: ContextEntityType, keyToOperateIn?: string): void;
   function create(items: EntityData[], entityType: ProductEntityType, keyToOperateIn: string): void;
-  function create(items: ItemData[] | EntityData[] | ContextEntityData[], entity?: ProductEntityType | ContextEntityType, keyToOperateIn?: string) {
+  function create(items: ItemData[] | EntityData[] | EntitySummary[], entity?: ProductEntityType | ContextEntityType, keyToOperateIn?: string) {
     dataMutation(items, 'create', entity, keyToOperateIn);
   }
 
   function update(items: ItemData[]): void;
-  function update(items: ContextEntityData[], entityType: ContextEntityType, keyToOperateIn?: string): void;
+  function update(items: EntitySummary[], entityType: ContextEntityType, keyToOperateIn?: string): void;
   function update(items: EntityData[], entityType: ProductEntityType, keyToOperateIn: string): void;
-  function update(items: ItemData[] | EntityData[] | ContextEntityData[], entity?: ProductEntityType | ContextEntityType, keyToOperateIn?: string) {
+  function update(items: ItemData[] | EntityData[] | EntitySummary[], entity?: ProductEntityType | ContextEntityType, keyToOperateIn?: string) {
     dataMutation(items, 'update', entity, keyToOperateIn);
   }
 
   function updateMembership(items: ItemData[]): void;
-  function updateMembership(items: ContextEntityData[], entityType: ContextEntityType, keyToOperateIn?: string): void;
-  function updateMembership(items: ItemData[] | ContextEntityData[], entity?: ProductEntityType | ContextEntityType, keyToOperateIn?: string) {
+  function updateMembership(items: EntitySummary[], entityType: ContextEntityType, keyToOperateIn?: string): void;
+  function updateMembership(items: ItemData[] | EntitySummary[], entity?: ProductEntityType | ContextEntityType, keyToOperateIn?: string) {
     dataMutation(items, 'updateMembership', entity, keyToOperateIn);
   }
 
   function remove(items: ItemData[]): void;
-  function remove(items: ContextEntityData[], entityType: ContextEntityType, keyToOperateIn?: string): void;
+  function remove(items: EntitySummary[], entityType: ContextEntityType, keyToOperateIn?: string): void;
   function remove(items: EntityData[], entityType: ProductEntityType, keyToOperateIn: string): void;
-  function remove(items: ItemData[] | EntityData[] | ContextEntityData[], entity?: ProductEntityType | ContextEntityType, keyToOperateIn?: string) {
+  function remove(items: ItemData[] | EntityData[] | EntitySummary[], entity?: ProductEntityType | ContextEntityType, keyToOperateIn?: string) {
     dataMutation(items, 'remove', entity, keyToOperateIn);
   }
 

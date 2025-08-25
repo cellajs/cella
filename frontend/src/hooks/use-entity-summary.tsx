@@ -1,7 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
 import { appConfig, type ContextEntityType, type PageEntityType } from 'config';
 import { useMemo } from 'react';
-import { getEntity, getUser } from '~/api.gen';
+import { getContextEntity, getUser } from '~/api.gen';
+import { entitiesKeys } from '~/modules/entities/query';
 import type { EntitySummary } from '~/modules/entities/types';
 import type { UserMenuItem } from '~/modules/me/types';
 import type { UserSummary } from '~/modules/users/types';
@@ -75,12 +76,16 @@ export const useEntitySummary = <T extends PageEntityType>({
 
   // Fetch entity if not already cached or if cached but partial
   const { data } = useQuery({
-    queryKey: [entityType, idOrSlug], // Set key with structure we already use for page entities
-    queryFn: async () =>
-      isContextEntity ? await getEntity({ path: { idOrSlug }, query: { type: entityType } }) : await getUser({ path: { idOrSlug } }),
+    queryKey: entitiesKeys.single(idOrSlug, entityType),
+    queryFn: async (): Promise<EntityReturnType<T>> => {
+      if (!isContextEntity) {
+        // cast to match conditional type
+        return (await getUser({ path: { idOrSlug } })) as unknown as EntityReturnType<T>;
+      }
+      return (await getContextEntity({ path: { idOrSlug }, query: { entityType: entityType as ContextEntityType } })) as EntityReturnType<T>;
+    },
     enabled: !cachedEntity,
-    // biome-ignore lint/suspicious/noExplicitAny: // TODO fix after merge new entities endpoint
-    initialData: cachedEntity as any,
+    initialData: cachedEntity,
   });
 
   return data;

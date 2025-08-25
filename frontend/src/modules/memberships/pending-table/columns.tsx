@@ -71,7 +71,7 @@ export const useColumns = () => {
         renderCell: ({ row, tabIndex }) => {
           if (!row.createdBy) return <span className="text-muted">-</span>;
 
-          const user = useEntitySummary({ idOrSlug: row.createdBy, entityType: 'user', cacheOnly: true });
+          const user = useEntitySummary({ idOrSlug: row.createdBy, entityType: 'user' });
           if (!user) return <span>{row.createdBy}</span>;
 
           return <UserCell user={user} tabIndex={tabIndex} />;

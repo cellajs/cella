@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
+import type { OnboardingStates } from '~/modules/home/onboarding/steps';
 import { Button } from '~/modules/ui/button';
-import type { OnboardingStates } from './steps';
 
 export const SkipOrganization = ({ setOnboardingState }: { setOnboardingState: (newState: Exclude<OnboardingStates, 'start'>) => void }) => {
   const { t } = useTranslation();

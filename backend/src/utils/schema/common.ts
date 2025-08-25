@@ -78,20 +78,26 @@ export const booleanQuerySchema = z
   .transform((v) => v === true || v === 'true')
   .pipe(z.boolean());
 
-const offsetRefine = (value: string | undefined) => Number(value) >= 0;
-const limitRefine = (value: string | undefined) => Number(value) > 0 && Number(value) <= 1000;
+const offsetRefine = (value: number) => value >= 0;
+const limitRefine = (value: number) => value > 0 && value <= 1000;
 
 /** Schema for pagination query parameters */
 export const paginationQuerySchema = z.object({
   q: z.string().optional(), // Optional search query
   sort: z.enum(['createdAt']).default('createdAt').optional(), // Sorting field
   order: z.enum(['asc', 'desc']).default('asc').optional(), // Sorting order
-  offset: z.string().default('0').optional().refine(offsetRefine, 'Must be number greater or equal to 0'), // Pagination offset
+  // Pagination offset
+  offset: z
+    .string()
+    .optional()
+    .transform((val) => (val ? Number.parseInt(val, 10) : 0)) // convert to number
+    .refine(offsetRefine, 'Must be number greater or equal to 0'),
+  // Pagination limit
   limit: z
     .string()
-    .default(`${appConfig.requestLimits.default}`)
     .optional()
-    .refine(limitRefine, 'Must be a number greater than 0 and less than or equal to 1000'), // Pagination limit
+    .transform((val) => (val ? Number.parseInt(val, 10) : appConfig.requestLimits.default)) // convert to number
+    .refine(limitRefine, 'Must be a number greater than 0 and less than or equal to 1000'),
 });
 
 /*************************************************************************************************

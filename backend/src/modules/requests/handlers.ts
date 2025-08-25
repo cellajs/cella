@@ -86,7 +86,7 @@ const requestRouteHandlers = app
       order,
     );
 
-    const items = await db.select().from(requestsQuery.as('requests')).orderBy(orderColumn).limit(Number(limit)).offset(Number(offset));
+    const items = await db.select().from(requestsQuery.as('requests')).orderBy(orderColumn).limit(limit).offset(offset);
 
     return ctx.json({ items, total }, 200);
   })

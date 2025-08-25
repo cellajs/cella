@@ -5,7 +5,7 @@ import chalk from 'chalk';
 import { appConfig } from 'config';
 import type { Env } from '#/lib/context';
 import { apiModulesList, registerAppSchema } from '#/lib/docs-config';
-import { contextEntityBaseSchema, userBaseSchema } from '#/modules/entities/schema';
+import { userBaseSchema } from '#/modules/entities/schema';
 import { menuSchema } from '#/modules/me/schema';
 import { membershipBaseSchema } from '#/modules/memberships/schema';
 import { apiErrorSchema } from '#/utils/schema/error';
@@ -44,7 +44,6 @@ const docs = async (app: OpenAPIHono<Env>, skipScalar = false) => {
   });
 
   // Register lower-level (base) schemas
-  registry.register('ContextEntityBaseSchema', contextEntityBaseSchema);
   registry.register('UserBaseSchema', userBaseSchema);
   registry.register('MembershipBaseSchema', membershipBaseSchema);
   registry.register('MenuSchema', menuSchema);
