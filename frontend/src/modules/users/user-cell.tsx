@@ -2,21 +2,21 @@ import { onlineManager } from '@tanstack/react-query';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useEntitySummary } from '~/hooks/use-entity-summary';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
 import { toaster } from '~/modules/common/toaster/service';
 import type { UserSummary } from '~/modules/users/types';
 
-interface Props {
-  user: UserSummary;
+type BaseProps = {
   orgIdOrSlug?: string;
   tabIndex: number;
-}
+};
 
 /**
  * Render a user cell with avatar and name, wrapped in a link to open user sheet.
  */
-const UserCell = ({ user, orgIdOrSlug, tabIndex }: Props) => {
+export const UserCell = ({ user, orgIdOrSlug, tabIndex }: BaseProps & { user: UserSummary }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const cellRef = useRef<HTMLAnchorElement | null>(null);
@@ -63,4 +63,13 @@ const UserCell = ({ user, orgIdOrSlug, tabIndex }: Props) => {
   );
 };
 
-export default UserCell;
+/**
+ * Wrapper around UserCell to get userCell by ID. Avoid trigger `Rendered more hooks than during the previous render.`
+ */
+export const UserCellById = ({ userId, cacheOnly, ...baseProps }: BaseProps & { userId: string | null; cacheOnly: boolean }) => {
+  if (!userId) return <span className="text-muted">-</span>;
+
+  const user = useEntitySummary({ idOrSlug: userId, entityType: 'user', cacheOnly });
+
+  return user ? <UserCell user={user} {...baseProps} /> : <span>{userId}</span>;
+};

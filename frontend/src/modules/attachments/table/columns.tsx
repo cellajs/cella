@@ -7,7 +7,6 @@ import { useTranslation } from 'react-i18next';
 import useDownloader from 'react-use-downloader';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { useCopyToClipboard } from '~/hooks/use-copy-to-clipboard';
-import { useEntitySummary } from '~/hooks/use-entity-summary';
 import DeleteAttachments from '~/modules/attachments/delete-attachments';
 import { formatBytes } from '~/modules/attachments/table/helpers';
 import AttachmentPreview from '~/modules/attachments/table/preview';
@@ -24,7 +23,7 @@ import { toaster } from '~/modules/common/toaster/service';
 import type { EntityPage } from '~/modules/entities/types';
 import { Button } from '~/modules/ui/button';
 import { Input } from '~/modules/ui/input';
-import UserCell from '~/modules/users/user-cell';
+import { UserCellById } from '~/modules/users/user-cell';
 import { useUserStore } from '~/store/user';
 import { dateShort } from '~/utils/date-short';
 import { isCDNUrl } from '~/utils/is-cdn-url';
@@ -259,14 +258,7 @@ export const useColumns = (entity: EntityPage, isSheet: boolean, isCompact: bool
       minWidth: isCompact ? null : 120,
       width: isCompact ? 50 : null,
       renderHeaderCell: HeaderCell,
-      renderCell: ({ row, tabIndex }) => {
-        if (!row.createdBy) return <span className="text-muted">-</span>;
-
-        const user = useEntitySummary({ idOrSlug: row.createdBy, entityType: 'user', cacheOnly: true });
-        if (!user) return <span>{row.createdBy}</span>;
-
-        return <UserCell user={user} tabIndex={tabIndex} />;
-      },
+      renderCell: ({ row, tabIndex }) => <UserCellById userId={row.createdBy} cacheOnly={true} tabIndex={tabIndex} />,
     },
     {
       key: 'modifiedAt',
@@ -284,14 +276,7 @@ export const useColumns = (entity: EntityPage, isSheet: boolean, isCompact: bool
       visible: false,
       width: isCompact ? 80 : 120,
       renderHeaderCell: HeaderCell,
-      renderCell: ({ row, tabIndex }) => {
-        if (!row.modifiedBy) return <span className="text-muted">-</span>;
-
-        const user = useEntitySummary({ idOrSlug: row.modifiedBy, entityType: 'user', cacheOnly: true });
-        if (!user) return <span>{row.modifiedBy}</span>;
-
-        return <UserCell user={user} tabIndex={tabIndex} />;
-      },
+      renderCell: ({ row, tabIndex }) => <UserCellById userId={row.modifiedBy} cacheOnly={true} tabIndex={tabIndex} />,
     },
   ];
 

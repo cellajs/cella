@@ -7,7 +7,7 @@ import HeaderCell from '~/modules/common/data-table/header-cell';
 import { renderSelect } from '~/modules/common/data-table/select-column';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 import type { Member } from '~/modules/memberships/types';
-import UserCell from '~/modules/users/user-cell';
+import { UserCell } from '~/modules/users/user-cell';
 import { dateShort } from '~/utils/date-short';
 
 export const useColumns = (isAdmin: boolean, isSheet: boolean) => {

@@ -13,7 +13,7 @@ import DeleteUsers from '~/modules/users/delete-users';
 import ImpersonateRow from '~/modules/users/table/impersonate-row';
 import UpdateRow, { openUpdateUserSheet } from '~/modules/users/table/update-row';
 import type { TableUser, User } from '~/modules/users/types';
-import UserCell from '~/modules/users/user-cell';
+import { UserCell } from '~/modules/users/user-cell';
 import { dateShort } from '~/utils/date-short';
 
 export const useColumns = () => {

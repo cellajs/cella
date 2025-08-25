@@ -1,11 +1,10 @@
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
-import { useEntitySummary } from '~/hooks/use-entity-summary';
 import HeaderCell from '~/modules/common/data-table/header-cell';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 import type { PendingInvitation } from '~/modules/memberships/types';
-import UserCell from '~/modules/users/user-cell';
+import { UserCellById } from '~/modules/users/user-cell';
 import { dateShort } from '~/utils/date-short';
 
 export const useColumns = () => {
@@ -68,14 +67,7 @@ export const useColumns = () => {
         visible: !isMobile,
         minWidth: 80,
         renderHeaderCell: HeaderCell,
-        renderCell: ({ row, tabIndex }) => {
-          if (!row.createdBy) return <span className="text-muted">-</span>;
-
-          const user = useEntitySummary({ idOrSlug: row.createdBy, entityType: 'user' });
-          if (!user) return <span>{row.createdBy}</span>;
-
-          return <UserCell user={user} tabIndex={tabIndex} />;
-        },
+        renderCell: ({ row, tabIndex }) => <UserCellById userId={row.createdBy} cacheOnly={false} tabIndex={tabIndex} />,
       },
     ];
 
