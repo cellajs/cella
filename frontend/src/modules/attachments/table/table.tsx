@@ -31,7 +31,6 @@ const BaseDataTable = memo(
       isFetching,
       error,
       hasNextPage,
-      isFetchingNextPage,
       fetchNextPage,
     } = useDataFromInfiniteQuery(queryOptions);
 
@@ -63,10 +62,11 @@ const BaseDataTable = memo(
       setRows(changedRows);
     };
 
+    // isFetching already includes next page fetch scenario
     const fetchMore = useCallback(async () => {
-      if (!hasNextPage || isLoading || isFetching || isFetchingNextPage) return;
+      if (!hasNextPage || isLoading || isFetching) return;
       await fetchNextPage();
-    }, [hasNextPage, isLoading, isFetching, isFetchingNextPage]);
+    }, [hasNextPage, isLoading, isFetching]);
 
     const onSelectedRowsChange = (value: Set<string>) => {
       setSelectedRows(value);

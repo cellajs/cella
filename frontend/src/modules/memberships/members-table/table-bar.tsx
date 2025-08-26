@@ -16,7 +16,7 @@ import { FocusView } from '~/modules/common/focus-view';
 import SelectRole from '~/modules/common/form-fields/select-role';
 import { toaster } from '~/modules/common/toaster/service';
 import UnsavedBadge from '~/modules/common/unsaved-badge';
-import type { MemberSearch, MembersTableWrapperProps } from '~/modules/memberships/members-table/table-wrapper';
+import type { MemberSearch, MembersTableWrapperProps } from '~/modules/memberships/members-table';
 import { MembershipInvitations } from '~/modules/memberships/pending-table/invites-count';
 import RemoveMembersForm from '~/modules/memberships/remove-member-form';
 import type { Member } from '~/modules/memberships/types';

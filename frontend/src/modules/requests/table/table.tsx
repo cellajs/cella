@@ -20,15 +20,16 @@ const BaseRequestsTable = memo(
     const { q, limit } = searchVars;
 
     // Query requests
-    const { rows, selectedRows, setRows, setSelectedRows, isLoading, isFetching, error, hasNextPage, isFetchingNextPage, fetchNextPage } =
+    const { rows, selectedRows, setRows, setSelectedRows, isLoading, isFetching, error, hasNextPage, fetchNextPage } =
       useDataFromInfiniteQuery(queryOptions);
 
     const onRowsChange = async (changedRows: Request[]) => setRows(changedRows);
 
+    // isFetching already includes next page fetch scenario
     const fetchMore = useCallback(async () => {
-      if (!hasNextPage || isLoading || isFetching || isFetchingNextPage) return;
+      if (!hasNextPage || isLoading || isFetching) return;
       await fetchNextPage();
-    }, [hasNextPage, isLoading, isFetching, isFetchingNextPage]);
+    }, [hasNextPage, isLoading, isFetching]);
 
     const onSelectedRowsChange = (value: Set<string>) => {
       setSelectedRows(value);

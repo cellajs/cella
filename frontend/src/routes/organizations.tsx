@@ -14,7 +14,7 @@ import { noDirectAccess } from '~/utils/no-direct-access';
 
 //Lazy-loaded components
 const OrganizationPage = lazy(() => import('~/modules/organizations/organization-page'));
-const MembersTable = lazy(() => import('~/modules/memberships/members-table/table-wrapper'));
+const MembersTable = lazy(() => import('~/modules/memberships/members-table'));
 const AttachmentsTable = lazy(() => import('~/modules/attachments/table/table-wrapper'));
 const OrganizationSettings = lazy(() => import('~/modules/organizations/organization-settings'));
 
