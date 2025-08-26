@@ -97,19 +97,20 @@ export const DataTable = <TData,>({
 
   const gridRef = useRef<HTMLDivElement | null>(null);
   useTableTooltip(gridRef, initialDone);
+  const [canFetchMore, setCanFetchMore] = useState(true);
 
   useEffect(() => {
-    if (!rows.length || error || !fetchMore || isFetching || !inView) return;
-
+    if (!rows.length || error || !fetchMore || !inView || !canFetchMore) return;
     if (typeof totalCount === 'number' && rows.length >= totalCount) return;
 
-    // Throttle fetchMore to avoid duplicate calls
-    const fetchMoreTimeout = setTimeout(() => {
-      fetchMore();
-    }, 20);
-
-    return () => clearTimeout(fetchMoreTimeout); // Clear timeout on cleanup
-  }, [inView, error, rows.length, isFetching]);
+    setCanFetchMore(false); // temporarily block fetch
+    fetchMore().finally(() => {
+      // Allow fetching again only after user scrolls further
+      setTimeout(() => {
+        setCanFetchMore(true);
+      }, 50); // small delay to prevent immediate retrigger
+    });
+  }, [inView, error, rows.length, fetchMore, totalCount, canFetchMore]);
 
   useEffect(() => {
     if (initialDone) return;
