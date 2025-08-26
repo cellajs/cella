@@ -1,10 +1,12 @@
-import { Trash, Upload, XSquare } from 'lucide-react';
+import { Info, Trash, Upload, XSquare } from 'lucide-react';
+import { AnimatePresence, motion } from 'motion/react';
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import DeleteAttachments from '~/modules/attachments/delete-attachments';
 import { useAttachmentsUploadDialog } from '~/modules/attachments/table/helpers';
 import type { AttachmentSearch, AttachmentsTableProps } from '~/modules/attachments/table/table-wrapper';
 import type { Attachment } from '~/modules/attachments/types';
+import { AlertWrap } from '~/modules/common/alert-wrap';
 import ColumnsView from '~/modules/common/data-table/columns-view';
 import { TableBarButton } from '~/modules/common/data-table/table-bar-button';
 import { TableBarContainer } from '~/modules/common/data-table/table-bar-container';
@@ -75,40 +77,65 @@ export const AttachmentsTableBar = ({
   };
 
   return (
-    <TableBarContainer>
-      {/* Filter bar */}
-      <TableFilterBar onResetFilters={onResetFilters} isFiltered={isFiltered}>
-        <FilterBarActions>
-          {selected.length > 0 ? (
-            <>
-              <TableBarButton
-                ref={deleteButtonRef}
-                variant="destructive"
-                onClick={openDeleteDialog}
-                className="relative"
-                badge={selected.length}
-                icon={Trash}
-                label={t('common:delete')}
-              />
+    <div className={'flex flex-col gap-4'}>
+      <TableBarContainer>
+        {/* Filter bar */}
+        <TableFilterBar onResetFilters={onResetFilters} isFiltered={isFiltered}>
+          <FilterBarActions>
+            {selected.length > 0 ? (
+              <>
+                <TableBarButton
+                  ref={deleteButtonRef}
+                  variant="destructive"
+                  onClick={openDeleteDialog}
+                  className="relative"
+                  badge={selected.length}
+                  icon={Trash}
+                  label={t('common:delete')}
+                />
 
-              <TableBarButton variant="ghost" onClick={clearSelection} icon={XSquare} label={t('common:clear')} />
-            </>
-          ) : (
-            showUpload && <TableBarButton icon={Upload} label={t('common:upload')} onClick={() => open(entity.id)} />
-          )}
-          {selected.length === 0 && <TableCount count={total} label="common:attachment" isFiltered={isFiltered} onResetFilters={onResetFilters} />}
-        </FilterBarActions>
-        <div className="sm:grow" />
-        <FilterBarContent className="max-sm:animate-in max-sm:slide-in-from-left max-sm:fade-in max-sm:duration-300">
-          <TableSearch name="attachmentSearch" value={q} setQuery={onSearch} allowOfflineSearch={true} />
-        </FilterBarContent>
-      </TableFilterBar>
+                <TableBarButton variant="ghost" onClick={clearSelection} icon={XSquare} label={t('common:clear')} />
+              </>
+            ) : (
+              showUpload && <TableBarButton icon={Upload} label={t('common:upload')} onClick={() => open(entity.id)} />
+            )}
+            {selected.length === 0 && <TableCount count={total} label="common:attachment" isFiltered={isFiltered} onResetFilters={onResetFilters} />}
+          </FilterBarActions>
+          <div className="sm:grow" />
+          <FilterBarContent className="max-sm:animate-in max-sm:slide-in-from-left max-sm:fade-in max-sm:duration-300">
+            <TableSearch name="attachmentSearch" value={q} setQuery={onSearch} allowOfflineSearch={true} />
+          </FilterBarContent>
+        </TableFilterBar>
 
-      {/* Columns view */}
-      <ColumnsView className="max-lg:hidden" columns={columns} setColumns={setColumns} isCompact={isCompact} setIsCompact={setIsCompact} />
+        {/* Columns view */}
+        <ColumnsView className="max-lg:hidden" columns={columns} setColumns={setColumns} isCompact={isCompact} setIsCompact={setIsCompact} />
 
-      {/* Focus view */}
-      {!isSheet && <FocusView iconOnly />}
-    </TableBarContainer>
+        {/* Focus view */}
+        {!isSheet && <FocusView iconOnly />}
+      </TableBarContainer>
+
+      {/* Explainer alert box */}
+      {!!total && (
+        <AnimatePresence initial={false}>
+          {
+            <motion.div
+              key="alert"
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{
+                height: { duration: 0.3 },
+                opacity: { delay: 0.6, duration: 0.2 },
+              }}
+              style={{ overflow: 'hidden' }}
+            >
+              <AlertWrap id="edit_attachment" variant="plain" icon={Info}>
+                {t('common:edit_attachment.text')}
+              </AlertWrap>
+            </motion.div>
+          }
+        </AnimatePresence>
+      )}
+    </div>
   );
 };

@@ -1,8 +1,5 @@
 import { appConfig } from 'config';
-import { Info } from 'lucide-react';
-import { AnimatePresence, motion } from 'motion/react';
 import { useRef, useState } from 'react';
-import { useTranslation } from 'react-i18next';
 import type { z } from 'zod';
 import useSearchParams from '~/hooks/use-search-params';
 import { attachmentsQueryOptions } from '~/modules/attachments/query';
@@ -13,7 +10,6 @@ import type { Attachment } from '~/modules/attachments/types';
 import { useElectricSyncAttachments } from '~/modules/attachments/use-electric-sync-attachments';
 import { useLocalSyncAttachments } from '~/modules/attachments/use-local-sync-attachments';
 import { useMergeLocalAttachments } from '~/modules/attachments/use-merge-local-attachments';
-import { AlertWrap } from '~/modules/common/alert-wrap';
 import { useSortColumns } from '~/modules/common/data-table/sort-columns';
 import type { BaseTableMethods } from '~/modules/common/data-table/types';
 import type { EntityPage } from '~/modules/entities/types';
@@ -29,8 +25,6 @@ export interface AttachmentsTableProps {
 }
 
 const AttachmentsTable = ({ entity, canUpload = true, isSheet = false }: AttachmentsTableProps) => {
-  const { t } = useTranslation();
-
   const { search, setSearch } = useSearchParams<AttachmentSearch>({ saveDataInSearch: !isSheet });
   const dataTableRef = useRef<BaseTableMethods | null>(null);
 
@@ -72,26 +66,6 @@ const AttachmentsTable = ({ entity, canUpload = true, isSheet = false }: Attachm
         setIsCompact={setIsCompact}
       />
       <div className={(isCompact && 'isCompact') || ''}>
-        {/* Explainer alert box */}
-        <AnimatePresence initial={false}>
-          {
-            <motion.div
-              key="alert"
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: 'auto', opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              transition={{
-                height: { duration: 0.3 },
-                opacity: { delay: 0.6, duration: 0.2 },
-              }}
-              style={{ overflow: 'hidden' }}
-            >
-              <AlertWrap id="edit_attachment" variant="plain" icon={Info}>
-                {t('common:edit_attachment.text')}
-              </AlertWrap>
-            </motion.div>
-          }
-        </AnimatePresence>
         <BaseDataTable
           entity={entity}
           ref={dataTableRef}
