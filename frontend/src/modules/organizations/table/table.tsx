@@ -1,6 +1,6 @@
 import { onlineManager } from '@tanstack/react-query';
 import { Bird } from 'lucide-react';
-import { forwardRef, memo, useEffect, useImperativeHandle } from 'react';
+import { forwardRef, memo, useCallback, useEffect, useImperativeHandle } from 'react';
 import type { RowsChangeData, SortColumn } from 'react-data-grid';
 import { useTranslation } from 'react-i18next';
 import { membershipInvite } from '~/api.gen';
@@ -28,9 +28,8 @@ const BaseDataTable = memo(
     const { q, sort, order, limit } = searchVars;
 
     // Query organizations
-    const { rows, selectedRows, setRows, setSelectedRows, totalCount, isLoading, isFetching, error, fetchNextPage } = useDataFromInfiniteQuery(
-      organizationsQueryOptions({ q, sort, order, limit }),
-    );
+    const { rows, selectedRows, setRows, setSelectedRows, totalCount, isLoading, isFetching, error, hasNextPage, isFetchingNextPage, fetchNextPage } =
+      useDataFromInfiniteQuery(organizationsQueryOptions({ q, sort, order, limit }));
 
     const onRowsChange = async (changedRows: OrganizationTable[], { column, indexes }: RowsChangeData<OrganizationTable>) => {
       if (!onlineManager.isOnline()) {
@@ -73,6 +72,11 @@ const BaseDataTable = memo(
       setRows(changedRows);
     };
 
+    const fetchMore = useCallback(async () => {
+      if (!hasNextPage || isLoading || isFetching || isFetchingNextPage) return;
+      await fetchNextPage();
+    }, [hasNextPage, isLoading, isFetching, isFetchingNextPage]);
+
     const onSelectedRowsChange = (value: Set<string>) => {
       setSelectedRows(value);
       setSelected(rows.filter((row) => value.has(row.id)));
@@ -95,7 +99,6 @@ const BaseDataTable = memo(
         {...{
           columns: columns.filter((column) => column.visible),
           rows,
-          totalCount,
           rowHeight: 52,
           rowKeyGetter: (row) => row.id,
           error,
@@ -106,7 +109,8 @@ const BaseDataTable = memo(
           limit,
           selectedRows,
           onRowsChange,
-          fetchMore: fetchNextPage,
+          hasNextPage,
+          fetchMore,
           onSelectedRowsChange,
           sortColumns,
           onSortColumnsChange,

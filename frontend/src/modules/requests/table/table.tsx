@@ -1,5 +1,5 @@
 import { Bird } from 'lucide-react';
-import { forwardRef, memo, useEffect, useImperativeHandle } from 'react';
+import { forwardRef, memo, useCallback, useEffect, useImperativeHandle } from 'react';
 import type { SortColumn } from 'react-data-grid';
 import { useTranslation } from 'react-i18next';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
@@ -20,11 +20,15 @@ const BaseRequestsTable = memo(
     const { q, sort, order, limit } = searchVars;
 
     // Query requests
-    const { rows, selectedRows, setRows, setSelectedRows, totalCount, isLoading, isFetching, error, fetchNextPage } = useDataFromInfiniteQuery(
-      requestsQueryOptions({ q, sort, order, limit }),
-    );
+    const { rows, selectedRows, setRows, setSelectedRows, totalCount, isLoading, isFetching, error, hasNextPage, isFetchingNextPage, fetchNextPage } =
+      useDataFromInfiniteQuery(requestsQueryOptions({ q, sort, order, limit }));
 
     const onRowsChange = async (changedRows: Request[]) => setRows(changedRows);
+
+    const fetchMore = useCallback(async () => {
+      if (!hasNextPage || isLoading || isFetching || isFetchingNextPage) return;
+      await fetchNextPage();
+    }, [hasNextPage, isLoading, isFetching, isFetchingNextPage]);
 
     const onSelectedRowsChange = (value: Set<string>) => {
       setSelectedRows(value);
@@ -48,7 +52,6 @@ const BaseRequestsTable = memo(
         {...{
           columns: columns.filter((column) => column.visible),
           rows,
-          totalCount,
           rowHeight: 52,
           rowKeyGetter: (row) => row.id,
           error,
@@ -58,7 +61,8 @@ const BaseRequestsTable = memo(
           isFiltered: !!q,
           limit,
           onRowsChange,
-          fetchMore: fetchNextPage,
+          hasNextPage,
+          fetchMore,
           sortColumns,
           selectedRows,
           onSelectedRowsChange,

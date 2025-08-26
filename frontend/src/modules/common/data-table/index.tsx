@@ -17,7 +17,7 @@ import { Checkbox } from '~/modules/ui/checkbox';
 interface DataTableProps<TData> {
   columns: ColumnOrColumnGroup<TData>[];
   rows: TData[];
-  totalCount?: number;
+  hasNextPage: boolean;
   rowKeyGetter: (row: TData) => string;
   error?: Error | null;
   isLoading?: boolean;
@@ -69,7 +69,7 @@ const ErrorMessage = ({ error }: { error: Error }) => {
 export const DataTable = <TData,>({
   columns,
   rows,
-  totalCount,
+  hasNextPage,
   rowKeyGetter,
   error,
   isLoading,
@@ -93,24 +93,17 @@ export const DataTable = <TData,>({
   const { isOnline } = useOnlineManager();
 
   const [initialDone, setInitialDone] = useState(false);
-  const { ref: measureRef, inView } = useInView({ triggerOnce: false, threshold: 0 });
+  const { ref: measureRef } = useInView({
+    triggerOnce: false,
+    delay: 50,
+    threshold: 0,
+    onChange: (inView) => {
+      if (inView && !error && fetchMore) fetchMore();
+    },
+  });
 
   const gridRef = useRef<HTMLDivElement | null>(null);
   useTableTooltip(gridRef, initialDone);
-  const [canFetchMore, setCanFetchMore] = useState(true);
-
-  useEffect(() => {
-    if (!rows.length || error || !fetchMore || !inView || !canFetchMore) return;
-    if (typeof totalCount === 'number' && rows.length >= totalCount) return;
-
-    setCanFetchMore(false); // temporarily block fetch
-    fetchMore().finally(() => {
-      // Allow fetching again only after user scrolls further
-      setTimeout(() => {
-        setCanFetchMore(true);
-      }, 50); // small delay to prevent immediate retrigger
-    });
-  }, [inView, error, rows.length, fetchMore, totalCount, canFetchMore]);
 
   useEffect(() => {
     if (initialDone) return;
@@ -177,11 +170,9 @@ export const DataTable = <TData,>({
                 }}
               />
               {/* Can load more, but offline */}
-              {!isOnline && !!totalCount && totalCount > rows.length && (
-                <div className="w-full mt-4 italic text-muted text-sm text-center">{t('common:offline.load_more')}</div>
-              )}
+              {!isOnline && hasNextPage && <div className="w-full mt-4 italic text-muted text-sm text-center">{t('common:offline.load_more')}</div>}
               {/* Loading */}
-              {isFetching && totalCount && totalCount > rows.length && !error && (
+              {isFetching && hasNextPage && !error && (
                 <div className="flex space-x-1 justify-center items-center relative top-4 h-0 w-full animate-pulse">
                   <span className="sr-only">Loading...</span>
                   <div className="h-1 w-3 bg-foreground rounded-full animate-bounce [animation-delay:-0.3s]" />
@@ -190,7 +181,7 @@ export const DataTable = <TData,>({
                 </div>
               )}
               {/* All is loaded */}
-              {!isFetching && !error && !!totalCount && totalCount <= rows.length && (
+              {!isFetching && !error && !hasNextPage && (
                 <div className="opacity-50 w-full text-xl mt-4 text-center">
                   <div>&#183;</div>
                   <div className="-mt-5">&#183;</div>

@@ -1,5 +1,5 @@
 import { Paperclip } from 'lucide-react';
-import { forwardRef, memo, useEffect, useImperativeHandle } from 'react';
+import { forwardRef, memo, useCallback, useEffect, useImperativeHandle } from 'react';
 import type { RowsChangeData, SortColumn } from 'react-data-grid';
 import { useTranslation } from 'react-i18next';
 import useOfflineTableSearch from '~/hooks/use-offline-table-search';
@@ -32,6 +32,8 @@ const BaseDataTable = memo(
       isLoading,
       isFetching,
       error,
+      hasNextPage,
+      isFetchingNextPage,
       fetchNextPage,
     } = useDataFromInfiniteQuery(attachmentsQueryOptions({ orgIdOrSlug, q, sort, order, limit }));
 
@@ -64,6 +66,11 @@ const BaseDataTable = memo(
       setRows(changedRows);
     };
 
+    const fetchMore = useCallback(async () => {
+      if (!hasNextPage || isLoading || isFetching || isFetchingNextPage) return;
+      await fetchNextPage();
+    }, [hasNextPage, isLoading, isFetching, isFetchingNextPage]);
+
     const onSelectedRowsChange = (value: Set<string>) => {
       setSelectedRows(value);
       setSelected(rows.filter((row) => value.has(row.id)));
@@ -92,12 +99,12 @@ const BaseDataTable = memo(
           onRowsChange,
           rows,
           limit,
-          totalCount,
           rowKeyGetter: (row) => row.id,
           error,
           isLoading,
           isFetching,
-          fetchMore: fetchNextPage,
+          hasNextPage,
+          fetchMore,
           isFiltered: !!q,
           selectedRows,
           onSelectedRowsChange,

@@ -1,5 +1,5 @@
 import { Users } from 'lucide-react';
-import { forwardRef, memo, useEffect, useImperativeHandle } from 'react';
+import { forwardRef, memo, useCallback, useEffect, useImperativeHandle } from 'react';
 import type { RowsChangeData, SortColumn } from 'react-data-grid';
 import { useTranslation } from 'react-i18next';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
@@ -25,18 +25,19 @@ const BaseDataTable = memo(
     const { q, role, sort, order, limit } = searchVars;
 
     // Query members
-    const { rows, selectedRows, setRows, setSelectedRows, totalCount, isLoading, isFetching, error, fetchNextPage } = useDataFromInfiniteQuery(
-      membersQueryOptions({
-        idOrSlug: entity.slug,
-        entityType,
-        orgIdOrSlug: organizationId,
-        q,
-        sort,
-        order,
-        role,
-        limit,
-      }),
-    );
+    const { rows, selectedRows, setRows, setSelectedRows, totalCount, isLoading, isFetching, error, isFetchingNextPage, fetchNextPage, hasNextPage } =
+      useDataFromInfiniteQuery(
+        membersQueryOptions({
+          idOrSlug: entity.slug,
+          entityType,
+          orgIdOrSlug: organizationId,
+          q,
+          sort,
+          order,
+          role,
+          limit,
+        }),
+      );
 
     const updateMemberMembership = useMemberUpdateMutation();
 
@@ -59,6 +60,11 @@ const BaseDataTable = memo(
       }
       setRows(changedRows);
     };
+
+    const fetchMore = useCallback(async () => {
+      if (!hasNextPage || isLoading || isFetching || isFetchingNextPage) return;
+      await fetchNextPage();
+    }, [hasNextPage, isLoading, isFetching, isFetchingNextPage]);
 
     const onSelectedRowsChange = (value: Set<string>) => {
       setSelectedRows(value);
@@ -86,12 +92,12 @@ const BaseDataTable = memo(
           onRowsChange,
           rows,
           limit,
-          totalCount,
           rowKeyGetter: (row) => row.id,
           error,
           isLoading,
           isFetching,
-          fetchMore: fetchNextPage,
+          hasNextPage,
+          fetchMore,
           isFiltered: role !== undefined || !!q,
           selectedRows,
           onSelectedRowsChange,

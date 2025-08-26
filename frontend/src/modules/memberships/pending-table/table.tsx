@@ -1,5 +1,5 @@
 import { Bird } from 'lucide-react';
-import { forwardRef, memo, useEffect, useImperativeHandle } from 'react';
+import { forwardRef, memo, useCallback, useEffect, useImperativeHandle } from 'react';
 import { useTranslation } from 'react-i18next';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { DataTable } from '~/modules/common/data-table';
@@ -22,7 +22,7 @@ const BaseDataTable = memo(
     const { sort, order, limit } = searchVars;
 
     // Query invited members
-    const { rows, totalCount, isLoading, isFetching, error, fetchNextPage } = useDataFromInfiniteQuery(
+    const { rows, totalCount, isLoading, isFetching, error, hasNextPage, isFetchingNextPage, fetchNextPage } = useDataFromInfiniteQuery(
       pendingInvitationsQueryOptions({
         idOrSlug: entity.slug,
         entityType,
@@ -32,6 +32,11 @@ const BaseDataTable = memo(
         limit,
       }),
     );
+
+    const fetchMore = useCallback(async () => {
+      if (!hasNextPage || isLoading || isFetching || isFetchingNextPage) return;
+      await fetchNextPage();
+    }, [hasNextPage, isLoading, isFetching, isFetchingNextPage]);
 
     useEffect(() => setTotal(totalCount), [totalCount]);
 
@@ -53,7 +58,8 @@ const BaseDataTable = memo(
           isFetching,
           enableVirtualization: false,
           limit,
-          fetchMore: fetchNextPage,
+          hasNextPage,
+          fetchMore,
           sortColumns,
           onSortColumnsChange: setSortColumns,
           NoRowsComponent: <ContentPlaceholder icon={Bird} title={t('common:no_resource_yet', { resource: t('common:invites').toLowerCase() })} />,

@@ -15,6 +15,7 @@ import {
 import type { ApiError } from '~/lib/api';
 import { toaster } from '~/modules/common/toaster/service';
 import type { Request } from '~/modules/requests/types';
+import { baseGetNextPageParam } from '~/query/helpers/get-next-page-params';
 
 /**
  * Keys for request related queries. These keys help to uniquely identify different query. For managing query caching and invalidation.
@@ -60,11 +61,7 @@ export const requestsQueryOptions = ({
       const offset = String(_offset || (page || 0) * Number(limit));
       return await getRequests({ query: { q, sort, order, limit, offset }, signal });
     },
-    getNextPageParam: (_lastPage, allPages) => {
-      const page = allPages.length;
-      const offset = allPages.reduce((acc, page) => acc + page.items.length, 0);
-      return { page, offset };
-    },
+    getNextPageParam: baseGetNextPageParam,
   });
 };
 

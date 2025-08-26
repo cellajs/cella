@@ -3,6 +3,7 @@ import { appConfig } from 'config';
 import { deleteUsers, type GetUsersData, getUser, getUsers, type UpdateUserData, updateUser } from '~/api.gen';
 import type { ApiError } from '~/lib/api';
 import type { User } from '~/modules/users/types';
+import { baseGetNextPageParam } from '~/query/helpers/get-next-page-params';
 import { useMutateQueryData } from '~/query/hooks/use-mutate-query-data';
 
 /**
@@ -78,11 +79,7 @@ export const usersQueryOptions = ({
       const offset = String(_offset || (page || 0) * Number(limit));
       return await getUsers({ query: { q, sort, order, role, limit, offset, mode: 'all' }, signal });
     },
-    getNextPageParam: (_lastPage, allPages) => {
-      const page = allPages.length;
-      const offset = allPages.reduce((acc, page) => acc + page.items.length, 0);
-      return { page, offset };
-    },
+    getNextPageParam: baseGetNextPageParam,
   });
 };
 

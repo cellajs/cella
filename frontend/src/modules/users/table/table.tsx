@@ -1,5 +1,5 @@
 import { onlineManager } from '@tanstack/react-query';
-import { forwardRef, memo, useEffect, useImperativeHandle } from 'react';
+import { forwardRef, memo, useCallback, useEffect, useImperativeHandle } from 'react';
 
 import type { RowsChangeData, SortColumn } from 'react-data-grid';
 import { useTranslation } from 'react-i18next';
@@ -22,9 +22,8 @@ const BaseDataTable = memo(
     const { q, role, sort, order, limit } = searchVars;
 
     // Query users
-    const { rows, selectedRows, setRows, setSelectedRows, totalCount, isLoading, isFetching, error, fetchNextPage } = useDataFromInfiniteQuery(
-      usersQueryOptions({ q, sort, order, role, limit }),
-    );
+    const { rows, selectedRows, setRows, setSelectedRows, totalCount, isLoading, isFetching, error, hasNextPage, isFetchingNextPage, fetchNextPage } =
+      useDataFromInfiniteQuery(usersQueryOptions({ q, sort, order, role, limit }));
 
     // Update user role
     const { mutate: updateUserRole } = useUpdateUserMutation();
@@ -42,6 +41,11 @@ const BaseDataTable = memo(
         }
       setRows(changedRows);
     };
+
+    const fetchMore = useCallback(async () => {
+      if (!hasNextPage || isLoading || isFetching || isFetchingNextPage) return;
+      await fetchNextPage();
+    }, [hasNextPage, isLoading, isFetching, isFetchingNextPage]);
 
     const onSelectedRowsChange = (value: Set<string>) => {
       setSelectedRows(value);
@@ -69,12 +73,12 @@ const BaseDataTable = memo(
           onRowsChange,
           rows,
           limit,
-          totalCount,
           rowKeyGetter: (row) => row.id,
           error,
           isLoading,
           isFetching,
-          fetchMore: fetchNextPage,
+          hasNextPage,
+          fetchMore,
           isFiltered: role !== undefined || !!q,
           selectedRows,
           onSelectedRowsChange,
