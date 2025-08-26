@@ -1,8 +1,9 @@
+import chalk from 'chalk';
+import dotenv from 'dotenv';
 import { spawn } from 'node:child_process';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import chalk from 'chalk';
-import dotenv from 'dotenv';
+import { STUDIO_PORT } from './port';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const parentDir = resolve(__dirname, '..');
@@ -14,7 +15,7 @@ dotenv.config({ path: resolve(parentDir, '.env') });
  * Start Drizzle Studio programmatically.
  */
 const startDrizzleStudio = () => {
-  const cmd = 'pnpm exec drizzle-kit studio --config drizzle.config.ts --port 4983';
+  const cmd = `pnpm exec drizzle-kit studio --config drizzle.config.ts --port ${STUDIO_PORT}`;
   const studioProcess = spawn(cmd, { cwd: parentDir, stdio: 'inherit', shell: true });
 
   console.info(' ');
