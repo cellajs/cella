@@ -3,8 +3,8 @@ import { AnimatePresence, motion } from 'motion/react';
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import DeleteAttachments from '~/modules/attachments/delete-attachments';
+import type { AttachmentSearch, AttachmentsTableProps } from '~/modules/attachments/table';
 import { useAttachmentsUploadDialog } from '~/modules/attachments/table/helpers';
-import type { AttachmentSearch, AttachmentsTableProps } from '~/modules/attachments/table/table-wrapper';
 import type { Attachment } from '~/modules/attachments/types';
 import { AlertWrap } from '~/modules/common/alert-wrap';
 import ColumnsView from '~/modules/common/data-table/columns-view';
@@ -13,13 +13,12 @@ import { TableBarContainer } from '~/modules/common/data-table/table-bar-contain
 import TableCount from '~/modules/common/data-table/table-count';
 import { FilterBarActions, FilterBarContent, TableFilterBar } from '~/modules/common/data-table/table-filter-bar';
 import TableSearch from '~/modules/common/data-table/table-search';
-import type { BaseTableBarProps, BaseTableMethods } from '~/modules/common/data-table/types';
+import type { BaseTableBarProps } from '~/modules/common/data-table/types';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { FocusView } from '~/modules/common/focus-view';
 import { useInfiniteQueryTotal } from '~/query/hooks/use-infinite-query-total';
 
 type AttachmentsTableBarProps = AttachmentsTableProps &
-  BaseTableMethods &
   BaseTableBarProps<Attachment, AttachmentSearch> & {
     isCompact: boolean;
     setIsCompact: (isCompact: boolean) => void;

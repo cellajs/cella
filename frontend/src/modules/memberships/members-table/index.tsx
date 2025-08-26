@@ -40,6 +40,11 @@ const MembersTable = ({ entity, isSheet = false, children }: MembersTableWrapper
   const { q, role, sort, order } = search;
   const limit = LIMIT;
 
+  // Build columns
+  const [selected, setSelected] = useState<Member[]>([]);
+  const [columns, setColumns] = useColumns(isAdmin, isSheet);
+  const { sortColumns, setSortColumns: onSortColumnsChange } = useSortColumns(sort, order, setSearch);
+
   const queryOptions = membersQueryOptions({
     idOrSlug: entity.slug,
     entityType,
@@ -47,11 +52,6 @@ const MembersTable = ({ entity, isSheet = false, children }: MembersTableWrapper
     ...search,
     limit,
   });
-
-  // Build columns
-  const [selected, setSelected] = useState<Member[]>([]);
-  const [columns, setColumns] = useColumns(isAdmin, isSheet);
-  const { sortColumns, setSortColumns } = useSortColumns(sort, order, setSearch);
 
   const {
     data: rows,
@@ -114,23 +114,23 @@ const MembersTable = ({ entity, isSheet = false, children }: MembersTableWrapper
       {children}
       <DataTable<Member>
         {...{
-          columns: columns.filter((column) => column.visible),
-          rowHeight: 52,
-          enableVirtualization: false,
-          onRowsChange,
           rows,
-          limit,
+          rowHeight: 52,
+          onRowsChange,
           rowKeyGetter: (row) => row.id,
+          columns: columns.filter((column) => column.visible),
+          enableVirtualization: false,
+          limit,
           error,
           isLoading,
           isFetching,
+          isFiltered: role !== undefined || !!q,
           hasNextPage,
           fetchMore,
-          isFiltered: role !== undefined || !!q,
           selectedRows: new Set(selected.map((s) => s.id)),
           onSelectedRowsChange,
           sortColumns,
-          onSortColumnsChange: (newColumnSort) => setSortColumns(newColumnSort),
+          onSortColumnsChange,
           NoRowsComponent: <ContentPlaceholder icon={Users} title={t('common:no_resource_yet', { resource: t('common:members').toLowerCase() })} />,
         }}
       />

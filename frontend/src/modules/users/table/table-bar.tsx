@@ -7,7 +7,7 @@ import { TableBarContainer } from '~/modules/common/data-table/table-bar-contain
 import TableCount from '~/modules/common/data-table/table-count';
 import { FilterBarActions, FilterBarContent, TableFilterBar } from '~/modules/common/data-table/table-filter-bar';
 import TableSearch from '~/modules/common/data-table/table-search';
-import type { BaseTableBarProps, BaseTableMethods, CallbackArgs } from '~/modules/common/data-table/types';
+import type { BaseTableBarProps, CallbackArgs } from '~/modules/common/data-table/types';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { FocusView } from '~/modules/common/focus-view';
 import SelectRole from '~/modules/common/form-fields/select-role';
@@ -15,11 +15,11 @@ import { toaster } from '~/modules/common/toaster/service';
 import UnsavedBadge from '~/modules/common/unsaved-badge';
 import DeleteUsers from '~/modules/users/delete-users';
 import InviteUsers from '~/modules/users/invite-users';
-import type { UsersSearch } from '~/modules/users/table/table-wrapper';
+import type { UsersSearch } from '~/modules/users/table';
 import type { TableUser, User } from '~/modules/users/types';
 import { useInfiniteQueryTotal } from '~/query/hooks/use-infinite-query-total';
 
-type UsersTableBarProps = BaseTableMethods & BaseTableBarProps<TableUser, UsersSearch>;
+type UsersTableBarProps = BaseTableBarProps<TableUser, UsersSearch>;
 
 export const UsersTableBar = ({ selected, queryKey, searchVars, setSearch, columns, setColumns, clearSelection }: UsersTableBarProps) => {
   const { t } = useTranslation();

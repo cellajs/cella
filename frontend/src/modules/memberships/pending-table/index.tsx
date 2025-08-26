@@ -38,6 +38,10 @@ export const MembershipInvitationsTable = ({ entity }: PendingInvitationsTablePr
   const { sort, order } = search;
   const limit = LIMIT;
 
+  // Build columns
+  const [columns] = useColumns();
+  const { sortColumns, setSortColumns: onSortColumnsChange } = useSortColumns(sort, order, setSearch);
+
   const queryOptions = pendingInvitationsQueryOptions({
     idOrSlug: entity.slug,
     entityType: entity.entityType,
@@ -45,10 +49,6 @@ export const MembershipInvitationsTable = ({ entity }: PendingInvitationsTablePr
     ...search,
     limit,
   });
-
-  // Build columns
-  const [columns] = useColumns();
-  const { sortColumns, setSortColumns } = useSortColumns(sort, order, setSearch);
 
   // Query invited members
   const {
@@ -74,19 +74,19 @@ export const MembershipInvitationsTable = ({ entity }: PendingInvitationsTablePr
       <PendingInvitationsTableBar queryKey={queryOptions.queryKey} />
       <DataTable<PendingInvitation>
         {...{
-          columns: columns.filter((column) => column.visible),
           rows,
           rowHeight: 52,
           rowKeyGetter: (row) => row.id,
+          columns: columns.filter((column) => column.visible),
+          enableVirtualization: false,
+          limit,
           error,
           isLoading,
           isFetching,
-          enableVirtualization: false,
-          limit,
           hasNextPage,
           fetchMore,
           sortColumns,
-          onSortColumnsChange: setSortColumns,
+          onSortColumnsChange,
           NoRowsComponent: <ContentPlaceholder icon={Bird} title={t('common:no_resource_yet', { resource: t('common:invites').toLowerCase() })} />,
         }}
       />
