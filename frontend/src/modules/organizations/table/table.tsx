@@ -1,6 +1,6 @@
 import { onlineManager } from '@tanstack/react-query';
 import { Bird } from 'lucide-react';
-import { forwardRef, memo, useCallback, useEffect, useImperativeHandle } from 'react';
+import { forwardRef, memo, useCallback, useImperativeHandle } from 'react';
 import type { RowsChangeData, SortColumn } from 'react-data-grid';
 import { useTranslation } from 'react-i18next';
 import { membershipInvite } from '~/api.gen';
@@ -11,25 +11,25 @@ import type { BaseTableMethods, BaseTableProps } from '~/modules/common/data-tab
 import { toaster } from '~/modules/common/toaster/service';
 import { getAndSetMenu } from '~/modules/me/helpers';
 import { useMemberUpdateMutation } from '~/modules/memberships/query-mutations';
-import { organizationsQueryOptions } from '~/modules/organizations/query';
+import type { organizationsQueryOptions } from '~/modules/organizations/query';
 import type { OrganizationsSearch, OrganizationTable } from '~/modules/organizations/table/table-wrapper';
 import { useDataFromInfiniteQuery } from '~/query/hooks/use-data-from-query';
 import { useUserStore } from '~/store/user';
 
-type BaseDataTableProps = BaseTableProps<OrganizationTable, OrganizationsSearch>;
+type BaseDataTableProps = BaseTableProps<OrganizationTable, OrganizationsSearch, ReturnType<typeof organizationsQueryOptions>>;
 
 const BaseDataTable = memo(
-  forwardRef<BaseTableMethods, BaseDataTableProps>(({ columns, searchVars, sortColumns, setSortColumns, setTotal, setSelected }, ref) => {
+  forwardRef<BaseTableMethods, BaseDataTableProps>(({ columns, queryOptions, searchVars, sortColumns, setSortColumns, setSelected }, ref) => {
     const { t } = useTranslation();
     const { user } = useUserStore();
     const updateMemberMembership = useMemberUpdateMutation();
 
-    // Extract query variables and set defaults
-    const { q, sort, order, limit } = searchVars;
+    // Extract query variables
+    const { q, limit } = searchVars;
 
     // Query organizations
-    const { rows, selectedRows, setRows, setSelectedRows, totalCount, isLoading, isFetching, error, hasNextPage, isFetchingNextPage, fetchNextPage } =
-      useDataFromInfiniteQuery(organizationsQueryOptions({ q, sort, order, limit }));
+    const { rows, selectedRows, setRows, setSelectedRows, isLoading, isFetching, error, hasNextPage, isFetchingNextPage, fetchNextPage } =
+      useDataFromInfiniteQuery(queryOptions);
 
     const onRowsChange = async (changedRows: OrganizationTable[], { column, indexes }: RowsChangeData<OrganizationTable>) => {
       if (!onlineManager.isOnline()) {
@@ -86,8 +86,6 @@ const BaseDataTable = memo(
       setSortColumns(sortColumns);
       onSelectedRowsChange(new Set<string>());
     };
-
-    useEffect(() => setTotal(totalCount), [totalCount]);
 
     // Expose methods via ref using useImperativeHandle
     useImperativeHandle(ref, () => ({

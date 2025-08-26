@@ -1,5 +1,5 @@
 import { appConfig } from 'config';
-import { useRef, useState } from 'react';
+import { useRef } from 'react';
 import type { z } from 'zod';
 import useSearchParams from '~/hooks/use-search-params';
 import { useSortColumns } from '~/modules/common/data-table/sort-columns';
@@ -8,6 +8,7 @@ import type { EntityPage } from '~/modules/entities/types';
 import { useColumns } from '~/modules/memberships/pending-table/columns';
 import BaseDataTable from '~/modules/memberships/pending-table/table';
 import { PendingInvitationsTableBar } from '~/modules/memberships/pending-table/table-bar';
+import { pendingInvitationsQueryOptions } from '~/modules/memberships/query';
 import type { pendingInvitationsSearchSchema } from '~/routes/organizations';
 
 const LIMIT = appConfig.requestLimits.pendingInvitations;
@@ -33,8 +34,13 @@ export const MembershipInvitationsTable = ({ entity }: PendingInvitationsTablePr
   const { sort, order } = search;
   const limit = LIMIT;
 
-  // State for selected and total counts
-  const [total, setTotal] = useState<number | undefined>(undefined);
+  const queryOptions = pendingInvitationsQueryOptions({
+    idOrSlug: entity.slug,
+    entityType: entity.entityType,
+    orgIdOrSlug: entity.organizationId || entity.id,
+    ...search,
+    limit,
+  });
 
   // Build columns
   const [columns] = useColumns();
@@ -42,15 +48,14 @@ export const MembershipInvitationsTable = ({ entity }: PendingInvitationsTablePr
 
   return (
     <div className="flex flex-col gap-4 h-full">
-      <PendingInvitationsTableBar total={total} />
+      <PendingInvitationsTableBar queryKey={queryOptions.queryKey} />
       <BaseDataTable
         ref={dataTableRef}
-        entity={entity}
         columns={columns}
-        searchVars={{ ...search, limit }}
+        queryOptions={queryOptions}
+        limit={limit}
         sortColumns={sortColumns}
         setSortColumns={setSortColumns}
-        setTotal={setTotal}
       />
     </div>
   );

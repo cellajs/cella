@@ -1,3 +1,4 @@
+import type { QueryKey } from '@tanstack/react-query';
 import type { Dispatch, SetStateAction } from 'react';
 import type { ColumnOrColumnGroup as GridColumnOrColumnGroup, SortColumn } from 'react-data-grid';
 
@@ -10,12 +11,12 @@ export type ColumnOrColumnGroup<TData> = GridColumnOrColumnGroup<TData> & {
   visible?: boolean;
 };
 
-export type BaseTableProps<T, K> = {
+export type BaseTableProps<T, K, S> = {
   searchVars: BaseTableSearchVariables<K>;
+  queryOptions: S;
   columns: ColumnOrColumnGroup<T>[];
   sortColumns: SortColumn[];
   setSortColumns: (sortColumns: SortColumn[]) => void;
-  setTotal: (total: number) => void;
   setSelected: (selected: T[]) => void;
 };
 
@@ -24,8 +25,8 @@ export type BaseTableMethods = {
 };
 
 export type BaseTableBarProps<T, K> = {
-  total: number | undefined;
   selected: T[];
+  queryKey: QueryKey;
   searchVars: BaseTableSearchVariables<K>;
   setSearch: (newValues: Partial<K>, saveSearch?: boolean) => void;
   columns: ColumnOrColumnGroup<T>[];

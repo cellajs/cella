@@ -4,6 +4,7 @@ import type { z } from 'zod';
 import useSearchParams from '~/hooks/use-search-params';
 import { useSortColumns } from '~/modules/common/data-table/sort-columns';
 import type { BaseTableMethods } from '~/modules/common/data-table/types';
+import { requestsQueryOptions } from '~/modules/requests/query';
 import { useColumns } from '~/modules/requests/table/columns';
 import BaseDataTable from '~/modules/requests/table/table';
 import { RequestsTableBar } from '~/modules/requests/table/table-bar';
@@ -22,8 +23,9 @@ const RequestsTable = () => {
   const { sort, order } = search;
   const limit = LIMIT;
 
-  // State for selected and total counts
-  const [total, setTotal] = useState<number | undefined>(undefined);
+  const queryOptions = requestsQueryOptions({ ...search, limit });
+
+  // State for selected
   const [selected, setSelected] = useState<Request[]>([]);
 
   // Build columns
@@ -37,7 +39,7 @@ const RequestsTable = () => {
   return (
     <div className="flex flex-col gap-4 h-full">
       <RequestsTableBar
-        total={total}
+        queryKey={queryOptions.queryKey}
         selected={selected}
         columns={columns}
         setColumns={setColumns}
@@ -48,10 +50,10 @@ const RequestsTable = () => {
       <BaseDataTable
         ref={dataTableRef}
         columns={columns}
+        queryOptions={queryOptions}
         searchVars={{ ...search, limit }}
         sortColumns={sortColumns}
         setSortColumns={setSortColumns}
-        setTotal={setTotal}
         setSelected={setSelected}
       />
     </div>

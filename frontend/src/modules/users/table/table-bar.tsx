@@ -17,12 +17,15 @@ import DeleteUsers from '~/modules/users/delete-users';
 import InviteUsers from '~/modules/users/invite-users';
 import type { UsersSearch } from '~/modules/users/table/table-wrapper';
 import type { TableUser, User } from '~/modules/users/types';
+import { useInfiniteQueryTotal } from '~/query/hooks/use-infinite-query-total';
 
 type UsersTableBarProps = BaseTableMethods & BaseTableBarProps<TableUser, UsersSearch>;
 
-export const UsersTableBar = ({ total, selected, searchVars, setSearch, columns, setColumns, clearSelection }: UsersTableBarProps) => {
+export const UsersTableBar = ({ selected, queryKey, searchVars, setSearch, columns, setColumns, clearSelection }: UsersTableBarProps) => {
   const { t } = useTranslation();
   const createDialog = useDialoger((state) => state.create);
+
+  const total = useInfiniteQueryTotal(queryKey);
 
   const inviteButtonRef = useRef(null);
   const deleteButtonRef = useRef(null);

@@ -14,6 +14,7 @@ import TableSearch from '~/modules/common/data-table/table-search';
 import type { BaseTableBarProps, BaseTableMethods } from '~/modules/common/data-table/types';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { FocusView } from '~/modules/common/focus-view';
+import { useInfiniteQueryTotal } from '~/query/hooks/use-infinite-query-total';
 
 type AttachmentsTableBarProps = AttachmentsTableProps &
   BaseTableMethods &
@@ -24,7 +25,7 @@ type AttachmentsTableBarProps = AttachmentsTableProps &
 
 export const AttachmentsTableBar = ({
   entity,
-  total,
+  queryKey,
   selected,
   searchVars,
   setSearch,
@@ -39,6 +40,9 @@ export const AttachmentsTableBar = ({
   const { t } = useTranslation();
   const createDialog = useDialoger((state) => state.create);
   const { open } = useAttachmentsUploadDialog();
+
+  const total = useInfiniteQueryTotal(queryKey);
+
   const deleteButtonRef = useRef(null);
 
   const { q } = searchVars;

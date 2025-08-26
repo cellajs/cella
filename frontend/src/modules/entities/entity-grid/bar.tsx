@@ -17,7 +17,7 @@ type Props = {
   label: string;
   searchVars: EntitySearch;
   setSearch: (search: EntitySearch) => void;
-  totalCount?: number;
+  totalCount: number | null;
   focusView?: boolean;
 };
 

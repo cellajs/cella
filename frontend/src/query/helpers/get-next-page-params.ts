@@ -1,10 +1,5 @@
 import type { GetNextPageParamFunction } from '@tanstack/react-query';
-import type { QueryData } from '~/query/types';
-
-type PageParams = {
-  page: number;
-  offset: number;
-};
+import type { PageParams, QueryData } from '~/query/types';
 
 /**
  * A generic `getNextPageParam` implementation for `useInfiniteQuery`.

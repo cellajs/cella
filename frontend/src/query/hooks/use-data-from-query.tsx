@@ -1,10 +1,6 @@
-import { type InfiniteData, type QueryKey, useInfiniteQuery } from '@tanstack/react-query';
+import { type QueryKey, useInfiniteQuery } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
-import type { QueryData } from '~/query/types';
-
-type Options<T, TQueryKey extends QueryKey = QueryKey> = Parameters<
-  typeof useInfiniteQuery<T, Error, InfiniteData<T, unknown>, TQueryKey, { page: number; offset: number }>
->[0];
+import type { InfiniteOptions, QueryData } from '~/query/types';
 
 /**
  * Custom hook to map query result data to rows for a infinite query.
@@ -19,15 +15,13 @@ type Options<T, TQueryKey extends QueryKey = QueryKey> = Parameters<
  *  - `setRows`: A function to manually set the rows.
  *  - `selectedRows`: A set of the selected row IDs.
  *  - `setSelectedRows`: A function to manually update the selected rows.
- *  - `totalCount`: The total count of items based on the query result.
  *  - `queryResult`: The result from the `useInfiniteQuery` hook, providing additional query states such as `isLoading`, `isError`, etc.
  */
 export const useDataFromInfiniteQuery = <T extends { id: string } = { id: string }, TQueryKey extends QueryKey = QueryKey>(
-  options: Options<QueryData<T>, TQueryKey>,
+  options: InfiniteOptions<QueryData<T>, TQueryKey>,
 ) => {
   const [rows, setRows] = useState<T[]>([]);
   const [selectedRows, setSelectedRows] = useState(new Set<string>());
-  const [totalCount, setTotalCount] = useState(0);
 
   const queryResult = useInfiniteQuery(options);
 
@@ -35,9 +29,6 @@ export const useDataFromInfiniteQuery = <T extends { id: string } = { id: string
     // Flatten the array of pages to get all items
     const data = queryResult.data?.pages?.flatMap((page) => page.items);
     if (!data) return;
-
-    // Update total count
-    setTotalCount(queryResult.data?.pages?.[queryResult.data.pages.length - 1]?.total ?? 0);
 
     // Update selected rows
     if (selectedRows.size > 0) {
@@ -53,6 +44,5 @@ export const useDataFromInfiniteQuery = <T extends { id: string } = { id: string
     setRows,
     selectedRows,
     setSelectedRows,
-    totalCount,
   };
 };

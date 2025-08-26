@@ -18,13 +18,16 @@ import DeleteRequests from '~/modules/requests/delete-requests';
 import { requestsKeys, useSendApprovalInviteMutation } from '~/modules/requests/query';
 import type { RequestsSearch } from '~/modules/requests/table/table-wrapper';
 import type { Request } from '~/modules/requests/types';
+import { useInfiniteQueryTotal } from '~/query/hooks/use-infinite-query-total';
 import { useMutateQueryData } from '~/query/hooks/use-mutate-query-data';
 
 type RequestsTableBarProps = BaseTableMethods & BaseTableBarProps<Request, RequestsSearch>;
 
-export const RequestsTableBar = ({ total, selected, searchVars, setSearch, columns, setColumns, clearSelection }: RequestsTableBarProps) => {
+export const RequestsTableBar = ({ selected, queryKey, searchVars, setSearch, columns, setColumns, clearSelection }: RequestsTableBarProps) => {
   const { t } = useTranslation();
   const createDialog = useDialoger((state) => state.create);
+
+  const total = useInfiniteQueryTotal(queryKey);
 
   const deleteButtonRef = useRef(null);
 

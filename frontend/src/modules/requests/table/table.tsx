@@ -1,27 +1,27 @@
 import { Bird } from 'lucide-react';
-import { forwardRef, memo, useCallback, useEffect, useImperativeHandle } from 'react';
+import { forwardRef, memo, useCallback, useImperativeHandle } from 'react';
 import type { SortColumn } from 'react-data-grid';
 import { useTranslation } from 'react-i18next';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { DataTable } from '~/modules/common/data-table';
 import type { BaseTableMethods, BaseTableProps } from '~/modules/common/data-table/types';
-import { requestsQueryOptions } from '~/modules/requests/query';
+import type { requestsQueryOptions } from '~/modules/requests/query';
 import type { RequestsSearch } from '~/modules/requests/table/table-wrapper';
 import type { Request } from '~/modules/requests/types';
 import { useDataFromInfiniteQuery } from '~/query/hooks/use-data-from-query';
 
-type BaseRequestsTableProps = BaseTableProps<Request, RequestsSearch>;
+type BaseRequestsTableProps = BaseTableProps<Request, RequestsSearch, ReturnType<typeof requestsQueryOptions>>;
 
 const BaseRequestsTable = memo(
-  forwardRef<BaseTableMethods, BaseRequestsTableProps>(({ columns, searchVars, sortColumns, setSortColumns, setTotal, setSelected }, ref) => {
+  forwardRef<BaseTableMethods, BaseRequestsTableProps>(({ columns, queryOptions, searchVars, sortColumns, setSortColumns, setSelected }, ref) => {
     const { t } = useTranslation();
 
-    // Extract query variables and set defaults
-    const { q, sort, order, limit } = searchVars;
+    // Extract query variables
+    const { q, limit } = searchVars;
 
     // Query requests
-    const { rows, selectedRows, setRows, setSelectedRows, totalCount, isLoading, isFetching, error, hasNextPage, isFetchingNextPage, fetchNextPage } =
-      useDataFromInfiniteQuery(requestsQueryOptions({ q, sort, order, limit }));
+    const { rows, selectedRows, setRows, setSelectedRows, isLoading, isFetching, error, hasNextPage, isFetchingNextPage, fetchNextPage } =
+      useDataFromInfiniteQuery(queryOptions);
 
     const onRowsChange = async (changedRows: Request[]) => setRows(changedRows);
 
@@ -39,8 +39,6 @@ const BaseRequestsTable = memo(
       setSortColumns(sortColumns);
       onSelectedRowsChange(new Set<string>());
     };
-
-    useEffect(() => setTotal(totalCount), [totalCount]);
 
     // Expose methods via ref using useImperativeHandle
     useImperativeHandle(ref, () => ({

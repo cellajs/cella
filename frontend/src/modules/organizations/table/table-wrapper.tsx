@@ -5,6 +5,7 @@ import type { zGetOrganizationsResponse } from '~/api.gen/zod.gen';
 import useSearchParams from '~/hooks/use-search-params';
 import { useSortColumns } from '~/modules/common/data-table/sort-columns';
 import type { BaseTableMethods } from '~/modules/common/data-table/types';
+import { organizationsQueryOptions } from '~/modules/organizations/query';
 import { useColumns } from '~/modules/organizations/table/columns';
 import BaseDataTable from '~/modules/organizations/table/table';
 import { OrganizationsTableBar } from '~/modules/organizations/table/table-bar';
@@ -23,8 +24,9 @@ const OrganizationsTable = () => {
   const { sort, order } = search;
   const limit = LIMIT;
 
-  // State for selected and total counts
-  const [total, setTotal] = useState<number | undefined>(undefined);
+  const queryOptions = organizationsQueryOptions({ ...search, limit });
+
+  // State for selected
   const [selected, setSelected] = useState<OrganizationTable[]>([]);
 
   // Build columns
@@ -38,7 +40,7 @@ const OrganizationsTable = () => {
   return (
     <div className="flex flex-col gap-4 h-full">
       <OrganizationsTableBar
-        total={total}
+        queryKey={queryOptions.queryKey}
         selected={selected}
         columns={columns}
         searchVars={{ ...search, limit }}
@@ -49,10 +51,10 @@ const OrganizationsTable = () => {
       <BaseDataTable
         ref={dataTableRef}
         columns={columns}
+        queryOptions={queryOptions}
         searchVars={{ ...search, limit }}
         sortColumns={sortColumns}
         setSortColumns={setSortColumns}
-        setTotal={setTotal}
         setSelected={setSelected}
       />
     </div>

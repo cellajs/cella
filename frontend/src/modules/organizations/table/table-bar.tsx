@@ -23,12 +23,13 @@ import type { OrganizationsSearch, OrganizationTable } from '~/modules/organizat
 import type { Organization } from '~/modules/organizations/types';
 import CreateNewsletterForm from '~/modules/system/create-newsletter-form';
 import NewsletterPreview from '~/modules/system/newsletter-preview';
+import { useInfiniteQueryTotal } from '~/query/hooks/use-infinite-query-total';
 
 type OrganizationsTableBarProps = BaseTableMethods & BaseTableBarProps<OrganizationTable, OrganizationsSearch>;
 
 export const OrganizationsTableBar = ({
-  total,
   selected,
+  queryKey,
   searchVars,
   setSearch,
   columns,
@@ -38,6 +39,8 @@ export const OrganizationsTableBar = ({
   const { t } = useTranslation();
   const removeDialog = useDialoger((state) => state.remove);
   const createDialog = useDialoger((state) => state.create);
+
+  const total = useInfiniteQueryTotal(queryKey);
 
   const createButtonRef = useRef(null);
   const deleteButtonRef = useRef(null);

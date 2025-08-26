@@ -1,5 +1,5 @@
 import { onlineManager } from '@tanstack/react-query';
-import { forwardRef, memo, useCallback, useEffect, useImperativeHandle } from 'react';
+import { forwardRef, memo, useCallback, useImperativeHandle } from 'react';
 
 import type { RowsChangeData, SortColumn } from 'react-data-grid';
 import { useTranslation } from 'react-i18next';
@@ -7,23 +7,23 @@ import { DataTable } from '~/modules/common/data-table';
 import { tablePropsAreEqual } from '~/modules/common/data-table/table-props-are-equal';
 import type { BaseTableMethods, BaseTableProps } from '~/modules/common/data-table/types';
 import { toaster } from '~/modules/common/toaster/service';
-import { usersQueryOptions, useUpdateUserMutation } from '~/modules/users/query';
+import { type usersQueryOptions, useUpdateUserMutation } from '~/modules/users/query';
 import type { UsersSearch } from '~/modules/users/table/table-wrapper';
 import type { TableUser } from '~/modules/users/types';
 import { useDataFromInfiniteQuery } from '~/query/hooks/use-data-from-query';
 
-type BaseDataTableProps = BaseTableProps<TableUser, UsersSearch>;
+type BaseDataTableProps = BaseTableProps<TableUser, UsersSearch, ReturnType<typeof usersQueryOptions>>;
 
 const BaseDataTable = memo(
-  forwardRef<BaseTableMethods, BaseDataTableProps>(({ columns, searchVars, sortColumns, setSortColumns, setTotal, setSelected }, ref) => {
+  forwardRef<BaseTableMethods, BaseDataTableProps>(({ columns, queryOptions, searchVars, sortColumns, setSortColumns, setSelected }, ref) => {
     const { t } = useTranslation();
 
-    // Extract query variables and set defaults
-    const { q, role, sort, order, limit } = searchVars;
+    // Extract query variables
+    const { q, role, limit } = searchVars;
 
     // Query users
-    const { rows, selectedRows, setRows, setSelectedRows, totalCount, isLoading, isFetching, error, hasNextPage, isFetchingNextPage, fetchNextPage } =
-      useDataFromInfiniteQuery(usersQueryOptions({ q, sort, order, role, limit }));
+    const { rows, selectedRows, setRows, setSelectedRows, isLoading, isFetching, error, hasNextPage, isFetchingNextPage, fetchNextPage } =
+      useDataFromInfiniteQuery(queryOptions);
 
     // Update user role
     const { mutate: updateUserRole } = useUpdateUserMutation();
@@ -56,8 +56,6 @@ const BaseDataTable = memo(
       setSortColumns(sortColumns);
       onSelectedRowsChange(new Set<string>());
     };
-
-    useEffect(() => setTotal(totalCount), [totalCount]);
 
     // Expose methods via ref using useImperativeHandle
     useImperativeHandle(ref, () => ({

@@ -4,6 +4,7 @@ import type { z } from 'zod';
 import useSearchParams from '~/hooks/use-search-params';
 import { useSortColumns } from '~/modules/common/data-table/sort-columns';
 import type { BaseTableMethods } from '~/modules/common/data-table/types';
+import { usersQueryOptions } from '~/modules/users/query';
 import { useColumns } from '~/modules/users/table/columns';
 import BaseDataTable from '~/modules/users/table/table';
 import { UsersTableBar } from '~/modules/users/table/table-bar';
@@ -22,8 +23,9 @@ const UsersTable = () => {
   const { sort, order } = search;
   const limit = LIMIT;
 
-  // State for selected and total counts
-  const [total, setTotal] = useState<number | undefined>(undefined);
+  const queryOptions = usersQueryOptions({ ...search, limit });
+
+  // State for selected
   const [selected, setSelected] = useState<TableUser[]>([]);
 
   // Build columns
@@ -37,7 +39,7 @@ const UsersTable = () => {
   return (
     <div className="flex flex-col gap-4 h-full">
       <UsersTableBar
-        total={total}
+        queryKey={queryOptions.queryKey}
         selected={selected}
         searchVars={{ ...search, limit }}
         setSearch={setSearch}
@@ -47,11 +49,11 @@ const UsersTable = () => {
       />
       <BaseDataTable
         ref={dataTableRef}
+        queryOptions={queryOptions}
         columns={columns}
         searchVars={{ ...search, limit }}
         sortColumns={sortColumns}
         setSortColumns={setSortColumns}
-        setTotal={setTotal}
         setSelected={setSelected}
       />
     </div>

@@ -5,6 +5,7 @@ import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { z } from 'zod';
 import useSearchParams from '~/hooks/use-search-params';
+import { attachmentsQueryOptions } from '~/modules/attachments/query';
 import { useColumns } from '~/modules/attachments/table/columns';
 import BaseDataTable from '~/modules/attachments/table/table';
 import { AttachmentsTableBar } from '~/modules/attachments/table/table-bar';
@@ -37,11 +38,12 @@ const AttachmentsTable = ({ entity, canUpload = true, isSheet = false }: Attachm
   const { sort, order } = search;
   const limit = LIMIT;
 
+  const queryOptions = attachmentsQueryOptions({ orgIdOrSlug: entity.membership?.organizationId || entity.id, ...search, limit });
+
   useElectricSyncAttachments(entity.id);
   useLocalSyncAttachments(entity.id);
   useMergeLocalAttachments(entity.id, search);
 
-  const [total, setTotal] = useState<number | undefined>(undefined);
   const [selected, setSelected] = useState<Attachment[]>([]);
   const [isCompact, setIsCompact] = useState(false);
 
@@ -57,7 +59,7 @@ const AttachmentsTable = ({ entity, canUpload = true, isSheet = false }: Attachm
     <div className="flex flex-col gap-4 h-full">
       <AttachmentsTableBar
         entity={entity}
-        total={total}
+        queryKey={queryOptions.queryKey}
         selected={selected}
         searchVars={{ ...search, limit }}
         setSearch={setSearch}
@@ -72,7 +74,7 @@ const AttachmentsTable = ({ entity, canUpload = true, isSheet = false }: Attachm
       <div className={(isCompact && 'isCompact') || ''}>
         {/* Explainer alert box */}
         <AnimatePresence initial={false}>
-          {!!total && (
+          {
             <motion.div
               key="alert"
               initial={{ height: 0, opacity: 0 }}
@@ -88,18 +90,18 @@ const AttachmentsTable = ({ entity, canUpload = true, isSheet = false }: Attachm
                 {t('common:edit_attachment.text')}
               </AlertWrap>
             </motion.div>
-          )}
+          }
         </AnimatePresence>
         <BaseDataTable
           entity={entity}
           ref={dataTableRef}
           columns={columns}
+          queryOptions={queryOptions}
           searchVars={{ ...search, limit }}
           isSheet={isSheet}
           canUpload={canUpload}
           sortColumns={sortColumns}
           setSortColumns={setSortColumns}
-          setTotal={setTotal}
           setSelected={setSelected}
         />
       </div>

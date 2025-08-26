@@ -1,9 +1,9 @@
 import { Paperclip } from 'lucide-react';
-import { forwardRef, memo, useCallback, useEffect, useImperativeHandle } from 'react';
+import { forwardRef, memo, useCallback, useImperativeHandle } from 'react';
 import type { RowsChangeData, SortColumn } from 'react-data-grid';
 import { useTranslation } from 'react-i18next';
 import useOfflineTableSearch from '~/hooks/use-offline-table-search';
-import { attachmentsQueryOptions } from '~/modules/attachments/query';
+import type { attachmentsQueryOptions } from '~/modules/attachments/query';
 import { useAttachmentUpdateMutation } from '~/modules/attachments/query-mutations';
 import type { AttachmentSearch, AttachmentsTableProps } from '~/modules/attachments/table/table-wrapper';
 import type { Attachment } from '~/modules/attachments/types';
@@ -13,14 +13,13 @@ import { tablePropsAreEqual } from '~/modules/common/data-table/table-props-are-
 import type { BaseTableMethods, BaseTableProps } from '~/modules/common/data-table/types';
 import { useDataFromInfiniteQuery } from '~/query/hooks/use-data-from-query';
 
-type BaseDataTableProps = AttachmentsTableProps & BaseTableProps<Attachment, AttachmentSearch>;
+type BaseDataTableProps = AttachmentsTableProps & BaseTableProps<Attachment, AttachmentSearch, ReturnType<typeof attachmentsQueryOptions>>;
 
 const BaseDataTable = memo(
-  forwardRef<BaseTableMethods, BaseDataTableProps>(({ entity, columns, searchVars, sortColumns, setSortColumns, setTotal, setSelected }, ref) => {
+  forwardRef<BaseTableMethods, BaseDataTableProps>(({ entity, queryOptions, columns, searchVars, sortColumns, setSortColumns, setSelected }, ref) => {
     const { t } = useTranslation();
 
-    const { q, sort, order, limit } = searchVars;
-    const orgIdOrSlug = entity.membership?.organizationId || entity.id;
+    const { q, limit } = searchVars;
 
     // Query attachments
     const {
@@ -28,14 +27,13 @@ const BaseDataTable = memo(
       selectedRows,
       setRows,
       setSelectedRows,
-      totalCount,
       isLoading,
       isFetching,
       error,
       hasNextPage,
       isFetchingNextPage,
       fetchNextPage,
-    } = useDataFromInfiniteQuery(attachmentsQueryOptions({ orgIdOrSlug, q, sort, order, limit }));
+    } = useDataFromInfiniteQuery(queryOptions);
 
     const attachmentUpdateMutation = useAttachmentUpdateMutation();
 
@@ -46,7 +44,6 @@ const BaseDataTable = memo(
         const query = q.trim().toLowerCase(); // Normalize query
         return item.name.toLowerCase().includes(query) || item.filename.toLowerCase().includes(query);
       },
-      onFilterCallback: (filteredData) => setTotal(filteredData.length),
     });
 
     // Update rows
@@ -80,10 +77,6 @@ const BaseDataTable = memo(
       setSortColumns(sortColumns);
       onSelectedRowsChange(new Set<string>());
     };
-
-    // Effect to update total when online totalCount changes
-    // TODO this looks weird?
-    useEffect(() => setTotal(totalCount), [totalCount]);
 
     // Expose methods via ref using useImperativeHandle
     useImperativeHandle(ref, () => ({
