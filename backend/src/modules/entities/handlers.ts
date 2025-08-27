@@ -1,7 +1,3 @@
-import { OpenAPIHono, type z } from '@hono/zod-openapi';
-import { appConfig } from 'config';
-import { and, eq, isNotNull, isNull, type SQLWrapper, sql } from 'drizzle-orm';
-import { alias } from 'drizzle-orm/pg-core';
 import { db } from '#/db/db';
 import { membershipsTable } from '#/db/schema/memberships';
 import { entityTables } from '#/entity-config';
@@ -16,6 +12,10 @@ import { getValidContextEntity } from '#/permissions/get-context-entity';
 import { defaultHook } from '#/utils/default-hook';
 import { getOrderColumn } from '#/utils/order-column';
 import { prepareStringForILikeFilter } from '#/utils/sql';
+import { OpenAPIHono, type z } from '@hono/zod-openapi';
+import { appConfig } from 'config';
+import { and, eq, ilike, isNotNull, isNull, sql, type SQLWrapper } from 'drizzle-orm';
+import { alias } from 'drizzle-orm/pg-core';
 
 const app = new OpenAPIHono<Env>({ defaultHook });
 
@@ -113,7 +113,7 @@ const entityRouteHandlers = app
           and(
             ...(excludeArchived ? [eq(membershipsTable.archived, false)] : []),
             ...(role ? [eq(membershipsTable.role, role)] : []),
-            ...(q ? [eq(table.name, prepareStringForILikeFilter(q))] : []),
+            ...(q ? [ilike(table.name, prepareStringForILikeFilter(q))] : []),
           ),
         )
         .orderBy(orderColumn)
