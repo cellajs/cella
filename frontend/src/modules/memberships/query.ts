@@ -1,6 +1,10 @@
 import { infiniteQueryOptions } from '@tanstack/react-query';
 import { appConfig } from 'config';
 import { type GetMembersData, type GetPendingInvitationsData, getMembers, getPendingInvitations } from '~/api.gen';
+import { formatUpdatedData } from '~/query/helpers/mutate-query';
+import { queryClient } from '~/query/query-client';
+import type { InfiniteQueryData } from '~/query/types';
+import type { Member } from './types';
 
 type GetMembershipInvitationsParams = Omit<GetPendingInvitationsData['query'], 'limit' | 'offset'> & GetPendingInvitationsData['path'];
 type GetMembersParams = Omit<GetMembersData['query'], 'limit' | 'offset'> & GetMembersData['path'];
@@ -69,6 +73,49 @@ export const membersQueryOptions = ({
       const page = allPages.length;
       const offset = allPages.reduce((acc, page) => acc + page.items.length, 0);
       return { page, offset };
+    },
+    enabled: () => {
+      const data = queryClient.getQueryData<InfiniteQueryData<Member>>(
+        membersKeys.table.members({ idOrSlug, entityType, orgIdOrSlug, q: '', sort: 'createdAt', order: 'desc', role: undefined }),
+      );
+      if (!data) return true;
+      const totalCount = data.pages[data.pages.length - 1].total;
+      const fetchedCount = data.pages.reduce((acc, page) => acc + page.items.length, 0);
+
+      return fetchedCount < totalCount;
+    },
+    initialData: () => {
+      const cache = queryClient.getQueryData<InfiniteQueryData<Member>>(
+        membersKeys.table.members({ idOrSlug, entityType, orgIdOrSlug, q: '', sort: 'createdAt', order: 'desc', role: undefined }),
+      );
+      if (!cache) return;
+      const cachedItems = cache.pages.flatMap((p) => p.items);
+      const validSearch = q.trim().toLowerCase();
+
+      const filteredItems = cachedItems
+        .filter((m) => {
+          const matchesSearch = !validSearch.length || m.name.toLowerCase().includes(validSearch) || m.email.toLowerCase().includes(validSearch);
+
+          const matchesRole = !role || m.membership.role === role;
+
+          return matchesSearch && matchesRole;
+        })
+        .sort((a, b) => {
+          const aVal = a[sort];
+          const bVal = b[sort];
+
+          if (aVal === null) return 1;
+          if (bVal === null) return -1;
+
+          if (aVal < bVal) return order === 'asc' ? -1 : 1;
+          if (aVal > bVal) return order === 'asc' ? 1 : -1;
+          return 0;
+        });
+
+      const totalChange = filteredItems.length - cachedItems.length;
+
+      // biome-ignore lint/suspicious/noExplicitAny: TODO fix it
+      return formatUpdatedData(cache, filteredItems, _limit, totalChange) as any;
     },
   });
 };
