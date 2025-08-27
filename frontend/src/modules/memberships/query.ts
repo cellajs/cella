@@ -92,6 +92,15 @@ export const membersQueryOptions = ({
       const cachedItems = cache.pages.flatMap((p) => p.items);
       const validSearch = q.trim().toLowerCase();
 
+      const sortOptions: Record<string, (m: Member) => string> = {
+        id: (m) => m.id,
+        name: (m) => m.name,
+        email: (m) => m.email,
+        createdAt: (m) => m.createdAt,
+        lastSeenAt: (m) => m.lastSeenAt || '',
+        role: (m) => m.membership.role,
+      };
+
       const filteredItems = cachedItems
         .filter((m) => {
           const matchesSearch = !validSearch.length || m.name.toLowerCase().includes(validSearch) || m.email.toLowerCase().includes(validSearch);
@@ -101,15 +110,26 @@ export const membersQueryOptions = ({
           return matchesSearch && matchesRole;
         })
         .sort((a, b) => {
-          const aVal = a[sort];
-          const bVal = b[sort];
+          const getVal = sort && sortOptions[sort] ? sortOptions[sort] : (m: Member) => m.id;
 
-          if (aVal === null) return 1;
-          if (bVal === null) return -1;
+          const aVal = getVal(a);
+          const bVal = getVal(b);
 
-          if (aVal < bVal) return order === 'asc' ? -1 : 1;
-          if (aVal > bVal) return order === 'asc' ? 1 : -1;
-          return 0;
+          // Null handling
+          if (aVal == null && bVal == null) return 0;
+          if (aVal == null) return 1;
+          if (bVal == null) return -1;
+
+          // Special case for role (priority order)
+          if (sort === 'role') {
+            const roleRank: Record<string, number> = { admin: 0, member: 1 };
+            const cmp = roleRank[aVal] - roleRank[bVal];
+            return order === 'asc' ? cmp : -cmp;
+          }
+
+          // Locale-aware string comparison
+          const cmp = aVal.localeCompare(bVal, undefined, { sensitivity: 'base' });
+          return order === 'asc' ? cmp : -cmp;
         });
 
       const totalChange = filteredItems.length - cachedItems.length;
