@@ -1,9 +1,9 @@
-import { infiniteQueryOptions } from '@tanstack/react-query';
+import { type InfiniteData, infiniteQueryOptions } from '@tanstack/react-query';
 import { appConfig } from 'config';
 import { type GetMembersData, type GetPendingInvitationsData, getMembers, getPendingInvitations } from '~/api.gen';
 import { formatUpdatedData } from '~/query/helpers/mutate-query';
 import { queryClient } from '~/query/query-client';
-import type { InfiniteQueryData } from '~/query/types';
+import type { InfiniteQueryData, QueryData } from '~/query/types';
 import type { Member } from './types';
 
 type GetMembershipInvitationsParams = Omit<GetPendingInvitationsData['query'], 'limit' | 'offset'> & GetPendingInvitationsData['path'];
@@ -60,6 +60,7 @@ export const membersQueryOptions = ({
   return infiniteQueryOptions({
     queryKey,
     initialPageParam: { page: 0, offset: 0 },
+    staleTime: 1000 * 60 * 2, // 2m
     queryFn: async ({ pageParam: { page, offset: _offset }, signal }) => {
       const offset = String(_offset || (page || 0) * Number(limit));
 
@@ -134,8 +135,11 @@ export const membersQueryOptions = ({
 
       const totalChange = filteredItems.length - cachedItems.length;
 
-      // biome-ignore lint/suspicious/noExplicitAny: TODO fix it
-      return formatUpdatedData(cache, filteredItems, _limit, totalChange) as any;
+      // FIX InfiniteQueryData to avoid this problem
+      return formatUpdatedData(cache, filteredItems, _limit, totalChange) as unknown as InfiniteData<
+        QueryData<Member>,
+        { page: number; offset: number }
+      >;
     },
   });
 };
