@@ -1,7 +1,11 @@
+import { zodResolver } from '@hookform/resolvers/zod';
 import { AtSign, ChevronRight, Info, Search } from 'lucide-react';
 import { AnimatePresence, MotionConfig, motion } from 'motion/react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import type z from 'zod';
+import { zMembershipInviteData } from '~/api.gen/zod.gen';
+import { useFormWithDraft } from '~/hooks/use-draft-form';
 import { AlertWrap } from '~/modules/common/alert-wrap';
 import { AnimatedArrow } from '~/modules/common/animated-arrow';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
@@ -10,6 +14,19 @@ import type { EntityPage } from '~/modules/entities/types';
 import { ToggleGroup, ToggleGroupItem } from '~/modules/ui/toggle-group';
 import InviteEmailForm from '~/modules/users/invite-email-form';
 import InviteSearchForm from '~/modules/users/invite-search-form';
+
+const InviteFormSchema = zMembershipInviteData.shape.body.unwrap();
+export type InviteFormValues = z.infer<typeof InviteFormSchema>;
+
+export const useInviteFormDraft = (entityId?: string) => {
+  return useFormWithDraft<InviteFormValues>(`invite-users${entityId ? `-${entityId}` : ''}`, {
+    formContainerId: 'invite-users',
+    formOptions: {
+      resolver: zodResolver(InviteFormSchema),
+      defaultValues: { emails: [], role: 'member' },
+    },
+  });
+};
 
 interface InviteUsersProps {
   entity?: EntityPage;
