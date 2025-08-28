@@ -1,11 +1,8 @@
 import { infiniteQueryOptions } from '@tanstack/react-query';
 import { appConfig } from 'config';
 import { type GetMembersData, type GetPendingInvitationsData, getMembers, getPendingInvitations } from '~/api.gen';
-import { queryClient } from '~/query/query-client';
-import type { InfiniteQueryData } from '~/query/types';
-import { baseInfiniteQueryOptions, filterVisibleData, infiniteQueryEnabled } from '~/query/utils/infinite-query-options';
-import { formatUpdatedCacheData } from '~/query/utils/mutate-query';
-import type { Member, PendingInvitation } from './types';
+import type { Member, PendingInvitation } from '~/modules/memberships/types';
+import { baseInfiniteQueryOptions, infiniteQueryUseCachedIfCompleteOptions } from '~/query/utils/infinite-query-options';
 
 type GetMembershipInvitationsParams = Omit<GetPendingInvitationsData['query'], 'limit' | 'offset'> & GetPendingInvitationsData['path'];
 type GetMembersParams = Omit<GetMembersData['query'], 'limit' | 'offset'> & GetMembersData['path'];
@@ -50,9 +47,9 @@ export const membersQueryOptions = ({
   sort = 'createdAt',
   order = 'desc',
   role,
-  limit: _limit,
+  limit: baseLimit = appConfig.requestLimits.members,
 }: GetMembersParams & { limit?: number }) => {
-  const limit = String(_limit || appConfig.requestLimits.members);
+  const limit = String(baseLimit);
 
   const baseQueryKey = membersKeys.table.members({ idOrSlug, entityType, orgIdOrSlug, q: '', sort: 'createdAt', order: 'desc', role: undefined });
   const queryKey = membersKeys.table.members({ idOrSlug, entityType, orgIdOrSlug, q, sort, order, role });
@@ -69,22 +66,15 @@ export const membersQueryOptions = ({
       });
     },
     ...baseInfiniteQueryOptions,
-    enabled: () => infiniteQueryEnabled(baseQueryKey),
-    initialData: () => {
-      const cache = queryClient.getQueryData<InfiniteQueryData<Member>>(baseQueryKey);
-      if (!cache) return;
-
-      const { filteredItems, totalChange } = filterVisibleData(cache, {
-        q,
-        sort,
-        order,
-        searchIn: ['name', 'email'],
-        additionalFilter: role ? (m) => m.membership.role === role : undefined,
-        sortOptions: { role: (m) => m.membership.role },
-      });
-
-      return formatUpdatedCacheData(cache, filteredItems, _limit, totalChange) as InfiniteQueryData<Member>;
-    },
+    ...infiniteQueryUseCachedIfCompleteOptions<Member>(baseQueryKey, {
+      q,
+      sort,
+      order,
+      searchIn: ['name', 'email'],
+      limit: baseLimit,
+      additionalFilter: role ? (m) => m.membership.role === role : undefined,
+      sortOptions: { role: (m) => m.membership.role },
+    }),
   });
 };
 
@@ -109,9 +99,9 @@ export const pendingInvitationsQueryOptions = ({
   q = '',
   sort = 'createdAt',
   order = 'desc',
-  limit: _limit,
+  limit: baseLimit = appConfig.requestLimits.pendingInvitations,
 }: GetMembershipInvitationsParams & { limit?: number }) => {
-  const limit = String(_limit || appConfig.requestLimits.pendingInvitations);
+  const limit = String(baseLimit);
 
   const baseQueryKey = membersKeys.table.pending({ idOrSlug, entityType, orgIdOrSlug, q: '', sort: 'createdAt', order: 'desc' });
   const queryKey = membersKeys.table.pending({ idOrSlug, entityType, orgIdOrSlug, q, sort, order });
@@ -128,14 +118,6 @@ export const pendingInvitationsQueryOptions = ({
       });
     },
     ...baseInfiniteQueryOptions,
-    enabled: () => infiniteQueryEnabled(baseQueryKey),
-    initialData: () => {
-      const cache = queryClient.getQueryData<InfiniteQueryData<PendingInvitation>>(baseQueryKey);
-      if (!cache) return;
-
-      const { filteredItems, totalChange } = filterVisibleData(cache, { q, sort, order, searchIn: ['name', 'email'] });
-
-      return formatUpdatedCacheData(cache, filteredItems, _limit, totalChange) as InfiniteQueryData<PendingInvitation>;
-    },
+    ...infiniteQueryUseCachedIfCompleteOptions<PendingInvitation>(baseQueryKey, { q, sort, order, searchIn: ['name', 'email'], limit: baseLimit }),
   });
 };

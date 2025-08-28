@@ -15,10 +15,7 @@ import {
 import type { ApiError } from '~/lib/api';
 import { toaster } from '~/modules/common/toaster/service';
 import type { Request } from '~/modules/requests/types';
-import { queryClient } from '~/query/query-client';
-import type { InfiniteQueryData } from '~/query/types';
-import { baseInfiniteQueryOptions, filterVisibleData, infiniteQueryEnabled } from '~/query/utils/infinite-query-options';
-import { formatUpdatedCacheData } from '~/query/utils/mutate-query';
+import { baseInfiniteQueryOptions, infiniteQueryUseCachedIfCompleteOptions } from '~/query/utils/infinite-query-options';
 
 /**
  * Keys for request related queries. These keys help to uniquely identify different query. For managing query caching and invalidation.
@@ -49,9 +46,10 @@ export const requestsQueryOptions = ({
   q = '',
   sort = 'createdAt',
   order = 'asc',
-  limit: _limit,
+
+  limit: baseLimit = appConfig.requestLimits.requests,
 }: Omit<NonNullable<GetRequestsData['query']>, 'limit' | 'offset'> & { limit?: number }) => {
-  const limit = String(_limit || appConfig.requestLimits.requests);
+  const limit = String(baseLimit);
 
   const baseQueryKey = requestsKeys.table.entries({ q: '', sort: 'createdAt', order: 'asc' });
   const queryKey = requestsKeys.table.entries({ q, sort, order });
@@ -63,15 +61,13 @@ export const requestsQueryOptions = ({
       return await getRequests({ query: { q, sort, order, limit, offset }, signal });
     },
     ...baseInfiniteQueryOptions,
-    enabled: () => infiniteQueryEnabled(baseQueryKey),
-    initialData: () => {
-      const cache = queryClient.getQueryData<InfiniteQueryData<Request>>(baseQueryKey);
-      if (!cache) return;
-
-      const { filteredItems, totalChange } = filterVisibleData(cache, { q, sort, order, searchIn: ['email'] });
-
-      return formatUpdatedCacheData(cache, filteredItems, _limit, totalChange) as InfiniteQueryData<Request>;
-    },
+    ...infiniteQueryUseCachedIfCompleteOptions<Request>(baseQueryKey, {
+      q,
+      sort,
+      order,
+      searchIn: ['email'],
+      limit: baseLimit,
+    }),
   });
 };
 

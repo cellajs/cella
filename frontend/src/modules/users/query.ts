@@ -4,10 +4,7 @@ import { deleteUsers, getUser, getUsers, updateUser, type GetUsersData, type Upd
 import type { ApiError } from '~/lib/api';
 import type { TableUser, User } from '~/modules/users/types';
 import { useMutateQueryData } from '~/query/hooks/use-mutate-query-data';
-import { queryClient } from '~/query/query-client';
-import type { InfiniteQueryData } from '~/query/types';
-import { baseInfiniteQueryOptions, filterVisibleData, infiniteQueryEnabled } from '~/query/utils/infinite-query-options';
-import { formatUpdatedCacheData } from '~/query/utils/mutate-query';
+import { baseInfiniteQueryOptions, infiniteQueryUseCachedIfCompleteOptions } from '~/query/utils/infinite-query-options';
 
 /**
  * Keys for user related queries. These keys help to uniquely identify different query. For managing query caching and invalidation.
@@ -67,9 +64,9 @@ export const usersQueryOptions = ({
   sort = 'createdAt',
   order = 'desc',
   role,
-  limit: _limit,
+  limit: baseLimit = appConfig.requestLimits.users,
 }: Omit<NonNullable<GetUsersData['query']>, 'limit' | 'offset' | 'mode'> & { limit?: number }) => {
-  const limit = String(_limit || appConfig.requestLimits.users);
+  const limit = String(baseLimit);
 
   const baseQueryKey = usersKeys.table.entries({ q: '', sort: 'createdAt', order: 'desc' });
   const queryKey = usersKeys.table.entries({ q, sort, order, role });
@@ -81,21 +78,14 @@ export const usersQueryOptions = ({
       return await getUsers({ query: { q, sort, order, role, limit, offset, mode: 'all' }, signal });
     },
     ...baseInfiniteQueryOptions,
-    enabled: () => infiniteQueryEnabled(baseQueryKey),
-    initialData: () => {
-      const cache = queryClient.getQueryData<InfiniteQueryData<TableUser>>(baseQueryKey);
-      if (!cache) return;
-
-      const { filteredItems, totalChange } = filterVisibleData(cache, {
-        q,
-        sort,
-        order,
-        searchIn: ['email', 'name'],
-        additionalFilter: role ? (u) => u.role === role : undefined,
-      });
-
-      return formatUpdatedCacheData(cache, filteredItems, _limit, totalChange) as InfiniteQueryData<TableUser>;
-    },
+    ...infiniteQueryUseCachedIfCompleteOptions<TableUser>(baseQueryKey, {
+      q,
+      sort,
+      order,
+      searchIn: ['email', 'name'],
+      limit: baseLimit,
+      additionalFilter: role ? (u) => u.role === role : undefined,
+    }),
   });
 };
 

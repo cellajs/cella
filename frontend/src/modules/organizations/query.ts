@@ -14,10 +14,7 @@ import type { ApiError } from '~/lib/api';
 import { addMenuItem, deleteMenuItem, updateMenuItem } from '~/modules/navigation/menu-sheet/helpers/menu-operations';
 import type { Organization, OrganizationWithMembership, TableOrganization } from '~/modules/organizations/types';
 import { useMutateQueryData } from '~/query/hooks/use-mutate-query-data';
-import { queryClient } from '~/query/query-client';
-import type { InfiniteQueryData } from '~/query/types';
-import { baseInfiniteQueryOptions, filterVisibleData, infiniteQueryEnabled } from '~/query/utils/infinite-query-options';
-import { formatUpdatedCacheData } from '~/query/utils/mutate-query';
+import { baseInfiniteQueryOptions, infiniteQueryUseCachedIfCompleteOptions } from '~/query/utils/infinite-query-options';
 
 /**
  * Keys for organizations related queries. These keys help to uniquely identify different query.
@@ -67,9 +64,9 @@ export const organizationsQueryOptions = ({
   q = '',
   sort = 'createdAt',
   order = 'desc',
-  limit: _limit,
+  limit: baseLimit = appConfig.requestLimits.organizations,
 }: Omit<NonNullable<GetOrganizationsData['query']>, 'limit' | 'offset'> & { limit?: number }) => {
-  const limit = String(_limit || appConfig.requestLimits.organizations);
+  const limit = String(baseLimit);
 
   const baseQueryKey = organizationsKeys.table.entries({ q: '', sort: 'createdAt', order: 'desc' });
   const queryKey = organizationsKeys.table.entries({ q, sort, order });
@@ -81,15 +78,13 @@ export const organizationsQueryOptions = ({
       return await getOrganizations({ query: { q, sort, order, limit, offset }, signal });
     },
     ...baseInfiniteQueryOptions,
-    enabled: () => infiniteQueryEnabled(baseQueryKey),
-    initialData: () => {
-      const cache = queryClient.getQueryData<InfiniteQueryData<TableOrganization>>(baseQueryKey);
-      if (!cache) return;
-
-      const { filteredItems, totalChange } = filterVisibleData(cache, { q, sort, order, searchIn: ['name'] });
-
-      return formatUpdatedCacheData(cache, filteredItems, _limit, totalChange) as InfiniteQueryData<TableOrganization>;
-    },
+    ...infiniteQueryUseCachedIfCompleteOptions<TableOrganization>(baseQueryKey, {
+      q,
+      sort,
+      order,
+      searchIn: ['name'],
+      limit: baseLimit,
+    }),
   });
 };
 
