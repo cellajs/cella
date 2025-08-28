@@ -3,26 +3,29 @@ import { queryClient } from '~/query/query-client';
 import type { InfiniteQueryData, PageParams, QueryData } from '~/query/types';
 
 /**
- * A generic `getNextPageParam` implementation for `useInfiniteQuery`.
- * It work with standart query return data shaped like: { items: T[]; total: number; }
+ * Base configuration object for `infiniteQueryOptions` in TanStack Query.
  *
- * Logic:
- * - It calculates how many items have been fetched across all loaded pages.
- * - If number of fetched items is greater than or equal to `total`
- *   reported by last page, it returns `undefined` (➡ no more pages).
- * - Otherwise, it returns next page parameters `{ page, offset }`.
+ * Includes:
+ * - `initialPageParam`: default page parameters `{ page: 0, offset: 0 }`.
+ * - `staleTime`: cache freshness duration (2 minutes).
+ * - `getNextPageParam`: generic pagination logic that works with
+ *    API responses shaped like `{ items: T[]; total: number }`.
+ *
+ * Pagination logic:
+ * - Counts how many items are fetched across all pages.
+ * - If fetched count >= `total` → returns `undefined` (no more pages).
+ * - Otherwise → returns next page params `{ page, offset }`.
  */
-export const baseGetNextPageParam: GetNextPageParamFunction<PageParams, QueryData<unknown>> = (lastPage, allPages) => {
-  // total is reported by the API in lastPage
-  const total = lastPage.total;
-  // count how many items we’ve fetched so far
-  const fetchedCount = allPages.reduce((acc, page) => acc + page.items.length, 0);
+export const baseInfiniteQueryOptions = {
+  initialPageParam: { page: 0, offset: 0 },
+  staleTime: 1000 * 60 * 2, // 2 minutes
+  getNextPageParam: ((lastPage, allPages) => {
+    const total = lastPage.total;
+    const fetchedCount = allPages.reduce((acc, page) => acc + page.items.length, 0);
 
-  // if we already have all items → no next page
-  if (fetchedCount >= total) return undefined;
-
-  // otherwise, return next page params
-  return { page: allPages.length, offset: fetchedCount };
+    if (fetchedCount >= total) return undefined;
+    return { page: allPages.length, offset: fetchedCount };
+  }) as GetNextPageParamFunction<PageParams, QueryData<unknown>>,
 };
 
 type SortFunction<T> = (item: T) => string | number | null | undefined;
@@ -109,7 +112,7 @@ export const filterVisibleData = <T>(cache: InfiniteQueryData<T>, options: Filte
  * @param staleTime - Time in milliseconds after which cached data is considered stale.
  * @returns Boolean
  */
-export const infiniteQueryEnabled = (queryKey: QueryKey, staleTime: number) => {
+export const infiniteQueryEnabled = (queryKey: QueryKey, staleTime = baseInfiniteQueryOptions.staleTime) => {
   const state = queryClient.getQueryState<InfiniteQueryData<unknown>>(queryKey);
 
   // If no cache, error, or stale

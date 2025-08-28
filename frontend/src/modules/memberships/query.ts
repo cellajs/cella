@@ -3,7 +3,7 @@ import { appConfig } from 'config';
 import { type GetMembersData, type GetPendingInvitationsData, getMembers, getPendingInvitations } from '~/api.gen';
 import { queryClient } from '~/query/query-client';
 import type { InfiniteQueryData } from '~/query/types';
-import { baseGetNextPageParam, filterVisibleData, infiniteQueryEnabled } from '~/query/utils/infinite-query-options';
+import { baseInfiniteQueryOptions, filterVisibleData, infiniteQueryEnabled } from '~/query/utils/infinite-query-options';
 import { formatUpdatedCacheData } from '~/query/utils/mutate-query';
 import type { Member, PendingInvitation } from './types';
 
@@ -53,15 +53,12 @@ export const membersQueryOptions = ({
   limit: _limit,
 }: GetMembersParams & { limit?: number }) => {
   const limit = String(_limit || appConfig.requestLimits.members);
-  const staleTime = 1000 * 60 * 2; // 2m
 
   const baseQueryKey = membersKeys.table.members({ idOrSlug, entityType, orgIdOrSlug, q: '', sort: 'createdAt', order: 'desc', role: undefined });
   const queryKey = membersKeys.table.members({ idOrSlug, entityType, orgIdOrSlug, q, sort, order, role });
 
   return infiniteQueryOptions({
     queryKey,
-    initialPageParam: { page: 0, offset: 0 },
-    staleTime,
     queryFn: async ({ pageParam: { page, offset: _offset }, signal }) => {
       const offset = String(_offset || (page || 0) * Number(limit));
 
@@ -71,8 +68,8 @@ export const membersQueryOptions = ({
         signal,
       });
     },
-    getNextPageParam: baseGetNextPageParam,
-    enabled: () => infiniteQueryEnabled(baseQueryKey, staleTime),
+    ...baseInfiniteQueryOptions,
+    enabled: () => infiniteQueryEnabled(baseQueryKey),
     initialData: () => {
       const cache = queryClient.getQueryData<InfiniteQueryData<Member>>(baseQueryKey);
       if (!cache) return;
@@ -115,15 +112,12 @@ export const pendingInvitationsQueryOptions = ({
   limit: _limit,
 }: GetMembershipInvitationsParams & { limit?: number }) => {
   const limit = String(_limit || appConfig.requestLimits.pendingInvitations);
-  const staleTime = 1000 * 60 * 2; // 2m
 
   const baseQueryKey = membersKeys.table.pending({ idOrSlug, entityType, orgIdOrSlug, q: '', sort: 'createdAt', order: 'desc' });
   const queryKey = membersKeys.table.pending({ idOrSlug, entityType, orgIdOrSlug, q, sort, order });
 
   return infiniteQueryOptions({
     queryKey,
-    initialPageParam: { page: 0, offset: 0 },
-    staleTime,
     queryFn: async ({ pageParam: { page, offset: _offset }, signal }) => {
       const offset = String(_offset || (page || 0) * Number(limit));
 
@@ -133,8 +127,8 @@ export const pendingInvitationsQueryOptions = ({
         signal,
       });
     },
-    getNextPageParam: baseGetNextPageParam,
-    enabled: () => infiniteQueryEnabled(baseQueryKey, staleTime),
+    ...baseInfiniteQueryOptions,
+    enabled: () => infiniteQueryEnabled(baseQueryKey),
     initialData: () => {
       const cache = queryClient.getQueryData<InfiniteQueryData<PendingInvitation>>(baseQueryKey);
       if (!cache) return;

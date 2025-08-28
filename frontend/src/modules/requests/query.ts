@@ -17,7 +17,7 @@ import { toaster } from '~/modules/common/toaster/service';
 import type { Request } from '~/modules/requests/types';
 import { queryClient } from '~/query/query-client';
 import type { InfiniteQueryData } from '~/query/types';
-import { baseGetNextPageParam, filterVisibleData, infiniteQueryEnabled } from '~/query/utils/infinite-query-options';
+import { baseInfiniteQueryOptions, filterVisibleData, infiniteQueryEnabled } from '~/query/utils/infinite-query-options';
 import { formatUpdatedCacheData } from '~/query/utils/mutate-query';
 
 /**
@@ -52,21 +52,18 @@ export const requestsQueryOptions = ({
   limit: _limit,
 }: Omit<NonNullable<GetRequestsData['query']>, 'limit' | 'offset'> & { limit?: number }) => {
   const limit = String(_limit || appConfig.requestLimits.requests);
-  const staleTime = 1000 * 60 * 2; // 2m
 
   const baseQueryKey = requestsKeys.table.entries({ q: '', sort: 'createdAt', order: 'asc' });
   const queryKey = requestsKeys.table.entries({ q, sort, order });
 
   return infiniteQueryOptions({
     queryKey,
-    initialPageParam: { page: 0, offset: 0 },
-    staleTime,
     queryFn: async ({ pageParam: { page, offset: _offset }, signal }) => {
       const offset = String(_offset || (page || 0) * Number(limit));
       return await getRequests({ query: { q, sort, order, limit, offset }, signal });
     },
-    getNextPageParam: baseGetNextPageParam,
-    enabled: () => infiniteQueryEnabled(baseQueryKey, staleTime),
+    ...baseInfiniteQueryOptions,
+    enabled: () => infiniteQueryEnabled(baseQueryKey),
     initialData: () => {
       const cache = queryClient.getQueryData<InfiniteQueryData<Request>>(baseQueryKey);
       if (!cache) return;

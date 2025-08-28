@@ -6,7 +6,7 @@ import type { TableUser, User } from '~/modules/users/types';
 import { useMutateQueryData } from '~/query/hooks/use-mutate-query-data';
 import { queryClient } from '~/query/query-client';
 import type { InfiniteQueryData } from '~/query/types';
-import { baseGetNextPageParam, filterVisibleData, infiniteQueryEnabled } from '~/query/utils/infinite-query-options';
+import { baseInfiniteQueryOptions, filterVisibleData, infiniteQueryEnabled } from '~/query/utils/infinite-query-options';
 import { formatUpdatedCacheData } from '~/query/utils/mutate-query';
 
 /**
@@ -70,21 +70,18 @@ export const usersQueryOptions = ({
   limit: _limit,
 }: Omit<NonNullable<GetUsersData['query']>, 'limit' | 'offset' | 'mode'> & { limit?: number }) => {
   const limit = String(_limit || appConfig.requestLimits.users);
-  const staleTime = 1000 * 60 * 2; // 2m
 
   const baseQueryKey = usersKeys.table.entries({ q: '', sort: 'createdAt', order: 'desc' });
   const queryKey = usersKeys.table.entries({ q, sort, order, role });
 
   return infiniteQueryOptions({
     queryKey,
-    initialPageParam: { page: 0, offset: 0 },
-    staleTime,
     queryFn: async ({ pageParam: { page, offset: _offset }, signal }) => {
       const offset = String(_offset || (page || 0) * Number(limit));
       return await getUsers({ query: { q, sort, order, role, limit, offset, mode: 'all' }, signal });
     },
-    getNextPageParam: baseGetNextPageParam,
-    enabled: () => infiniteQueryEnabled(baseQueryKey, staleTime),
+    ...baseInfiniteQueryOptions,
+    enabled: () => infiniteQueryEnabled(baseQueryKey),
     initialData: () => {
       const cache = queryClient.getQueryData<InfiniteQueryData<TableUser>>(baseQueryKey);
       if (!cache) return;

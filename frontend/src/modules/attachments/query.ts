@@ -3,7 +3,7 @@ import { appConfig } from 'config';
 import { type GetAttachmentsData, getAttachments } from '~/api.gen';
 import { queryClient } from '~/query/query-client';
 import type { InfiniteQueryData } from '~/query/types';
-import { baseGetNextPageParam, filterVisibleData, infiniteQueryEnabled } from '~/query/utils/infinite-query-options';
+import { baseInfiniteQueryOptions, filterVisibleData, infiniteQueryEnabled } from '~/query/utils/infinite-query-options';
 import { formatUpdatedCacheData } from '~/query/utils/mutate-query';
 import type { Attachment } from './types';
 
@@ -68,21 +68,18 @@ export const attachmentsQueryOptions = ({
   limit: _limit,
 }: Omit<GetAttachmentsParams, 'groupId' | 'limit'> & { limit?: number }) => {
   const limit = String(_limit || appConfig.requestLimits.attachments);
-  const staleTime = 1000 * 60 * 2; // 2m
 
   const baseQueryKey = attachmentsKeys.list.table({ orgIdOrSlug, q: '', sort: 'createdAt', order: 'desc' });
   const queryKey = attachmentsKeys.list.table({ orgIdOrSlug, q, sort, order });
 
   return infiniteQueryOptions({
     queryKey,
-    initialPageParam: { page: 0, offset: 0 },
-    staleTime,
     queryFn: async ({ pageParam: { page, offset: _offset }, signal }) => {
       const offset = String(_offset || (page || 0) * Number(limit));
       return await getAttachments({ query: { q, sort, order, limit, offset }, path: { orgIdOrSlug }, signal });
     },
-    getNextPageParam: baseGetNextPageParam,
-    enabled: () => infiniteQueryEnabled(baseQueryKey, staleTime),
+    ...baseInfiniteQueryOptions,
+    enabled: () => infiniteQueryEnabled(baseQueryKey),
     initialData: () => {
       const cache = queryClient.getQueryData<InfiniteQueryData<Attachment>>(baseQueryKey);
       if (!cache) return;
