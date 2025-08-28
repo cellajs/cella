@@ -6,8 +6,8 @@ import { cn } from '~/utils/cn';
 
 interface TableCountProps {
   label: string;
+  count: number | null;
   className?: string;
-  count?: number;
   isFiltered?: boolean;
   onResetFilters?: () => void;
   children?: ReactNode;

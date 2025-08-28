@@ -14,8 +14,8 @@ export type EntitySearch = Pick<NonNullable<GetContextEntitiesData['query']>, 's
 
 interface Props extends EntityGridWrapperProps {
   searchVars: EntitySearch;
-  setTotalCount: (newTotal?: number) => void;
-  totalCount?: number;
+  totalCount: number | null;
+  setTotalCount: (newTotal: number | null) => void;
   fetchMore?: () => void;
 }
 

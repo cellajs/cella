@@ -1,6 +1,7 @@
 import { infiniteQueryOptions } from '@tanstack/react-query';
 import { appConfig } from 'config';
 import { type GetMembersData, type GetPendingInvitationsData, getMembers, getPendingInvitations } from '~/api.gen';
+import { baseGetNextPageParam } from '~/query/helpers/get-next-page-params';
 
 type GetMembershipInvitationsParams = Omit<GetPendingInvitationsData['query'], 'limit' | 'offset'> & GetPendingInvitationsData['path'];
 type GetMembersParams = Omit<GetMembersData['query'], 'limit' | 'offset'> & GetMembersData['path'];
@@ -65,11 +66,7 @@ export const membersQueryOptions = ({
         signal,
       });
     },
-    getNextPageParam: (_lastPage, allPages) => {
-      const page = allPages.length;
-      const offset = allPages.reduce((acc, page) => acc + page.items.length, 0);
-      return { page, offset };
-    },
+    getNextPageParam: baseGetNextPageParam,
   });
 };
 
@@ -114,10 +111,6 @@ export const pendingInvitationsQueryOptions = ({
         signal,
       });
     },
-    getNextPageParam: (_lastPage, allPages) => {
-      const page = allPages.length;
-      const offset = allPages.reduce((acc, page) => acc + page.items.length, 0);
-      return { page, offset };
-    },
+    getNextPageParam: baseGetNextPageParam,
   });
 };

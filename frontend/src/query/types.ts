@@ -1,4 +1,4 @@
-import type { InfiniteData, QueryKey, UseInfiniteQueryOptions, UseQueryOptions } from '@tanstack/react-query';
+import type { InfiniteData, QueryKey, UseInfiniteQueryOptions, UseQueryOptions, useInfiniteQuery } from '@tanstack/react-query';
 
 export type QueryData<TItem> = {
   items: TItem[];
@@ -21,3 +21,7 @@ export type ContextQueryProp<TItem, TOptimisticId = undefined, TPageParam = Page
 export type ContextProp<T, K = undefined> = K extends undefined | null ? [QueryKey, T | undefined] : [QueryKey, T | undefined, K];
 
 export type InferType<T> = T extends UseQueryOptions<infer D> ? D : T extends UseInfiniteQueryOptions<infer D> ? D : never;
+
+export type InfiniteOptions<T, TQueryKey extends QueryKey = QueryKey> = Parameters<
+  typeof useInfiniteQuery<T, Error, InfiniteData<T, unknown>, TQueryKey, PageParams>
+>[0];
