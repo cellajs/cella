@@ -12,9 +12,12 @@ import {
 } from '~/api.gen';
 import type { ApiError } from '~/lib/api';
 import { addMenuItem, deleteMenuItem, updateMenuItem } from '~/modules/navigation/menu-sheet/helpers/menu-operations';
-import type { Organization, OrganizationWithMembership } from '~/modules/organizations/types';
+import type { Organization, OrganizationWithMembership, TableOrganization } from '~/modules/organizations/types';
 import { useMutateQueryData } from '~/query/hooks/use-mutate-query-data';
-import { baseGetNextPageParam } from '~/query/utils/infinite-query-options';
+import { queryClient } from '~/query/query-client';
+import type { InfiniteQueryData } from '~/query/types';
+import { baseGetNextPageParam, filterVisibleData, infiniteQueryEnabled } from '~/query/utils/infinite-query-options';
+import { formatUpdatedCacheData } from '~/query/utils/mutate-query';
 
 /**
  * Keys for organizations related queries. These keys help to uniquely identify different query.
@@ -62,24 +65,34 @@ export const organizationQueryOptions = (idOrSlug: string) =>
  */
 export const organizationsQueryOptions = ({
   q = '',
-  sort: _sort,
-  order: _order,
+  sort = 'createdAt',
+  order = 'desc',
   limit: _limit,
 }: Omit<NonNullable<GetOrganizationsData['query']>, 'limit' | 'offset'> & { limit?: number }) => {
-  const sort = _sort || 'createdAt';
-  const order = _order || 'desc';
   const limit = String(_limit || appConfig.requestLimits.organizations);
+  const staleTime = 1000 * 60 * 2; // 2m
 
+  const baseQueryKey = organizationsKeys.table.entries({ q: '', sort: 'createdAt', order: 'desc' });
   const queryKey = organizationsKeys.table.entries({ q, sort, order });
 
   return infiniteQueryOptions({
     queryKey,
     initialPageParam: { page: 0, offset: 0 },
+    staleTime,
     queryFn: async ({ pageParam: { page, offset: _offset }, signal }) => {
       const offset = String(_offset || (page || 0) * Number(limit));
       return await getOrganizations({ query: { q, sort, order, limit, offset }, signal });
     },
     getNextPageParam: baseGetNextPageParam,
+    enabled: () => infiniteQueryEnabled(baseQueryKey, staleTime),
+    initialData: () => {
+      const cache = queryClient.getQueryData<InfiniteQueryData<TableOrganization>>(baseQueryKey);
+      if (!cache) return;
+
+      const { filteredItems, totalChange } = filterVisibleData(cache, { q, sort, order, searchIn: ['name'] });
+
+      return formatUpdatedCacheData(cache, filteredItems, _limit, totalChange) as InfiniteQueryData<TableOrganization>;
+    },
   });
 };
 
