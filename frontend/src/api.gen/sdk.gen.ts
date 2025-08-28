@@ -837,7 +837,7 @@ export const getMyAuth = <ThrowOnError extends boolean = true>(options?: Options
  * Get menu
  * 🛡️ Requires authentication
  *
- * Returns a structured list of contextual entities the *current user* is a member of, grouped by the entity type and enriched with both `memebrship` and `entity` data.
+ * Returns a structured list of context entities the *current user* is a member of, grouped by the entity type and enriched with both `memebrship` and `entity` data.
  *
  * **GET /me/menu** ·· [getMyMenu](http://localhost:4000/docs#tag/me/get/me/menu) ·· _me_
  *
@@ -1342,7 +1342,7 @@ export const updateOrganization = <ThrowOnError extends boolean = true>(options:
  * Get all of list of a context user entities
  * 🛡️ Requires authentication
  *
- * Returns a paginated list of *contextual entities* (e.g. *users*, *organizations*) the current user has access to.
+ * Returns a paginated list of *context entities* (e.g. *users*, *organizations*) the current user has access to.
  * Can optionally include the current user's enrollment information for each entity (when applicable).
  * You can also provide a specific user ID to retrieve the entities that *user* is enrolled in, useful for profile views or access audits.
  * The response includes only fields shared across all entity types, such as `id`, `slug`, and `name`.
@@ -1381,7 +1381,7 @@ export const getContextEntities = <ThrowOnError extends boolean = true>(options?
  * Get a context entity
  * 🛡️ Requires authentication
  *
- * Retrieve detailed information about a single contextual entity by its ID or slug.
+ * Retrieve detailed information about a single context entity by its ID or slug.
  * Supports all context entity types configured in the system. Returns only table fields for the entity type.
  *
  * **GET /entities/context/{idOrSlug}** ·· [getContextEntity](http://localhost:4000/docs#tag/entities/get/entities/context/{idOrSlug}) ·· _entities_
@@ -1998,7 +1998,7 @@ export const deleteMemberships = <ThrowOnError extends boolean = true>(options: 
  * Create memberships
  * 🛡️ Requires authentication (org access)
  *
- * Creates one or more *memberships*, inviting users (existing or new) to a contextual entity such as an organization.
+ * Creates one or more *memberships*, inviting users (existing or new) to a context entity such as an organization.
  *
  * **POST /{orgIdOrSlug}/memberships** ·· [membershipInvite](http://localhost:4000/docs#tag/memberships/post/{orgIdOrSlug}/memberships) ·· _memberships_
  *
@@ -2069,7 +2069,7 @@ export const updateMembership = <ThrowOnError extends boolean = true>(options: O
  * Get list of members
  * 🛡️ Requires authentication (org access)
  *
- * Retrieves members (users) of a contextual entity by ID or slug, including their associated *membership* data.
+ * Retrieves members (users) of a context entity by ID or slug, including their associated *membership* data.
  *
  * **GET /{orgIdOrSlug}/memberships/members** ·· [getMembers](http://localhost:4000/docs#tag/memberships/get/{orgIdOrSlug}/memberships/members) ·· _memberships_
  *
@@ -2104,7 +2104,7 @@ export const getMembers = <ThrowOnError extends boolean = true>(options: Options
  * Get list of invitations
  * 🛡️ Requires authentication (org access)
  *
- * Returns pending *membership* invitations for a contextual entity, identified by ID or slug.
+ * Returns pending *membership* invitations for a context entity, identified by ID or slug.
  *
  * **GET /{orgIdOrSlug}/memberships/pending** ·· [getPendingInvitations](http://localhost:4000/docs#tag/memberships/get/{orgIdOrSlug}/memberships/pending) ·· _memberships_
  *

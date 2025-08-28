@@ -12,7 +12,7 @@ export const apiModulesList = [
   {
     name: 'users',
     description: `Endpoints for managing *users* at the system level.
-      Unlike contextual entities (such as \`organizations\`), a \`user\` is a "global" entity and not scoped to a specific context.
+      Unlike context entities (such as \`organizations\`), a \`user\` is a "global" entity and not scoped to a specific context.
       These endpoints are intended for administrative operations on any user in the system.`,
   },
   {
@@ -23,7 +23,7 @@ export const apiModulesList = [
   },
   {
     name: 'organizations',
-    description: `Endpoints for managing \`organizations\`, which are core contextual entities.  
+    description: `Endpoints for managing \`organizations\`, which are core context entities.  
       Organizations are the highest ancestor in the parent hierarchy.  
       They define access boundaries and are often the minimal primary scope for permission and resource management.`,
   },
