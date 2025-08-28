@@ -1676,7 +1676,7 @@ export const zDeleteMembershipsResponse = z.object({
 export const zMembershipInviteData = z.object({
   body: z.optional(
     z.object({
-      emails: z.array(z.string().min(4).max(100)).min(1).max(50),
+      emails: z.array(z.email().min(4).max(100)).min(1).max(50),
       role: z.enum(['member', 'admin']),
     }),
   ),
