@@ -1,7 +1,7 @@
 import { OpenAPIHono, type z } from '@hono/zod-openapi';
 import type { EnabledOAuthProvider, MenuSection } from 'config';
 import { appConfig } from 'config';
-import { and, eq, isNotNull } from 'drizzle-orm';
+import { and, eq, isNotNull, sql } from 'drizzle-orm';
 import { type SSEStreamingApi, streamSSE } from 'hono/streaming';
 import { db } from '#/db/db';
 import { membershipsTable } from '#/db/schema/memberships';
@@ -186,31 +186,26 @@ const meRouteHandlers = app
 
     if (!user) throw new AppError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'user', meta: { user: 'self' } });
 
-    const { bannerUrl, firstName, lastName, language, newsletter, thumbnailUrl, slug } = ctx.req.valid('json');
+    const { userFlags, ...passedUpdates } = ctx.req.valid('json');
 
-    const name = [firstName, lastName].filter(Boolean).join(' ') || slug;
+    const { slug, firstName, lastName } = passedUpdates;
 
     if (slug && slug !== user.slug) {
       const slugAvailable = await checkSlugAvailable(slug);
       if (!slugAvailable) throw new AppError({ status: 409, type: 'slug_exists', severity: 'warn', entityType: 'user', meta: { slug } });
     }
+    // if userFlags is provided, merge it
+    const updateData = {
+      ...passedUpdates,
+      ...(userFlags && {
+        userFlags: sql`${usersTable.userFlags} || ${JSON.stringify(userFlags)}::jsonb`,
+      }),
+      ...((firstName || lastName) && { name: [firstName, lastName].filter(Boolean).join(' ') }),
+      modifiedAt: getIsoDate(),
+      modifiedBy: user.id,
+    };
 
-    const [updatedUser] = await db
-      .update(usersTable)
-      .set({
-        bannerUrl,
-        firstName,
-        lastName,
-        language,
-        newsletter,
-        thumbnailUrl,
-        slug,
-        name,
-        modifiedAt: getIsoDate(),
-        modifiedBy: user.id,
-      })
-      .where(eq(usersTable.id, user.id))
-      .returning();
+    const [updatedUser] = await db.update(usersTable).set(updateData).where(eq(usersTable.id, user.id)).returning();
 
     return ctx.json(updatedUser, 200);
   })

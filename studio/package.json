@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "quick": "cross-env PGLITE=true pnpm dev",
-    "dev": "tsx ../backend/scripts/drizzle-studio.ts"
+    "dev": "tsx ../backend/scripts/drizzle-studio/start.ts",
+    "stop": "tsx ../backend/scripts/drizzle-studio/stop.ts"
   },
   "keywords": [
     "drizzle"
@@ -14,7 +15,7 @@
   "license": "UNLICENSED",
   "devDependencies": {
     "chalk": "^5.4.1",
-    "cross-env": "^7.0.3",
+    "cross-env": "^10.0.0",
     "drizzle-kit": "^0.30.3",
     "tsx": "^4.19.2",
     "typescript": "^5.7.3"

@@ -2,8 +2,8 @@ import { z } from '@hono/zod-openapi';
 import { appConfig, type ContextEntityType } from 'config';
 import { createSelectSchema } from 'drizzle-zod';
 import { sessionsTable } from '#/db/schema/sessions';
-import { entityBaseSchema, userSummarySchema } from '#/modules/entities/schema';
-import { membershipSummarySchema } from '#/modules/memberships/schema';
+import { contextEntityBaseSchema, contextEntityWithMembershipSchema, userBaseSchema } from '#/modules/entities/schema';
+import { membershipBaseSchema } from '#/modules/memberships/schema';
 import { enabledOAuthProvidersEnum } from '#/modules/users/schema';
 import { booleanQuerySchema } from '#/utils/schema/common';
 
@@ -15,11 +15,10 @@ export const meAuthDataSchema = z.object({
   sessions: z.array(sessionSchema.extend({ expiresAt: z.string() })),
 });
 
-export const menuItemSchema = entityBaseSchema.omit({ bannerUrl: true }).extend({
+export const menuItemSchema = contextEntityWithMembershipSchema.omit({ bannerUrl: true }).extend({
   createdAt: z.string(),
   modifiedAt: z.string().nullable(),
-  membership: membershipSummarySchema,
-  organizationId: membershipSummarySchema.shape.organizationId.optional(),
+  organizationId: membershipBaseSchema.shape.organizationId.optional(),
 });
 
 const menuItemListSchema = z.array(
@@ -68,9 +67,9 @@ export const uploadTokenQuerySchema = z.object({
 
 export const userInvitationsSchema = z.array(
   z.object({
-    entity: entityBaseSchema.extend({ organizationId: z.string().optional() }),
+    entity: contextEntityBaseSchema.extend({ organizationId: z.string().optional() }),
     expiresAt: z.date(),
-    invitedBy: userSummarySchema.nullable(),
+    invitedBy: userBaseSchema.nullable(),
     token: z.string(),
     tokenId: z.string(),
   }),

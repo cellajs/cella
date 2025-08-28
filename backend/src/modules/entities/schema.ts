@@ -1,9 +1,10 @@
 import { z } from '@hono/zod-openapi';
-import { membershipSummarySchema } from '#/modules/memberships/schema';
-import { contextEntityTypeSchema, idSchema, imageUrlSchema, nameSchema, pageEntityTypeSchema, slugSchema } from '#/utils/schema/common';
-import { mapEntitiesToSchema } from '#/utils/schema/entities-to-schema';
+import { appConfig, type ContextEntityType } from 'config';
+import { membershipBaseSchema } from '#/modules/memberships/schema';
+import { membershipCountSchema } from '#/modules/organizations/schema';
+import { contextEntityTypeSchema, idSchema, imageUrlSchema, nameSchema, paginationQuerySchema, slugSchema } from '#/utils/schema/common';
 
-export const entityBaseSchema = z.object({
+export const contextEntityBaseSchema = z.object({
   id: idSchema,
   entityType: contextEntityTypeSchema,
   slug: slugSchema,
@@ -12,49 +13,44 @@ export const entityBaseSchema = z.object({
   bannerUrl: imageUrlSchema.nullable().optional(),
 });
 
-const baseEntityQuerySchema = z.object({
-  q: z.string().optional(),
-  targetUserId: idSchema.optional(),
-});
+// Extend base schema
+export const contextEntityWithMembershipSchema = contextEntityBaseSchema.extend({ membership: membershipBaseSchema });
 
 // Declared here to avoid circular dependencies
-export const userSummarySchema = entityBaseSchema.extend({
+export const userBaseSchema = contextEntityBaseSchema.extend({
   email: z.email(),
   entityType: z.literal('user'),
 });
 
-export const entityListItemSchema = entityBaseSchema.extend({
-  email: z.string().optional(),
-  entityType: pageEntityTypeSchema,
-  membership: membershipSummarySchema.nullable(),
-});
-
-export const pageEntitiesSchema = z.object({
-  items: z.array(entityListItemSchema),
-  counts: mapEntitiesToSchema(() => z.number().optional()),
-  total: z.number(),
-});
-
-export const pageEntitiesQuerySchema = baseEntityQuerySchema.extend({
-  type: pageEntityTypeSchema.optional(),
+export const contextEntitiesQuerySchema = paginationQuerySchema.extend({
+  targetUserId: idSchema.optional(),
   targetOrgId: idSchema.optional(),
-  userMembershipType: contextEntityTypeSchema.optional(),
+  role: z.enum(appConfig.rolesByType.entityRoles).optional(),
+  sort: z.enum(['name', 'createdAt']).default('createdAt').optional(),
+  excludeArchived: z
+    .enum(['true', 'false'])
+    .optional()
+    .transform((val) => val === 'true'),
+  types: z
+    .union([contextEntityTypeSchema, z.array(contextEntityTypeSchema)])
+    .optional()
+    .transform((val) => (val === undefined ? undefined : Array.isArray(val) ? val : [val])),
 });
 
-export const contextEntitiesSchema = z.array(
-  entityBaseSchema.extend({
-    createdAt: z.string(),
-    membership: membershipSummarySchema,
-    admins: z.array(userSummarySchema),
-  }),
+const fullContextEntitySchema = contextEntityBaseSchema.extend({
+  createdAt: z.string(),
+  membership: membershipBaseSchema.nullable(),
+  membershipCounts: membershipCountSchema,
+});
+
+const contextEntitiesDataSchema = z.object(
+  appConfig.contextEntityTypes.reduce(
+    (acc, entityType) => {
+      acc[entityType] = z.array(fullContextEntitySchema);
+      return acc;
+    },
+    {} as Record<ContextEntityType, z.ZodArray<typeof fullContextEntitySchema>>,
+  ),
 );
 
-export const contextEntitiesQuerySchema = baseEntityQuerySchema.extend({
-  roles: z.preprocess((val) => {
-    if (typeof val === 'string') return [val]; // wrap single string as array
-    if (Array.isArray(val)) return val;
-    return undefined;
-  }, z.array(membershipSummarySchema.shape.role).optional()),
-  type: contextEntityTypeSchema,
-  sort: z.enum(['name', 'createdAt']).default('createdAt').optional(),
-});
+export const contextEntitiesResponseSchema = z.object({ items: contextEntitiesDataSchema, total: z.number() });

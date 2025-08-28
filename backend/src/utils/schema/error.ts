@@ -50,7 +50,7 @@ const ServerErrorStatusCodeEnum = z.union([
 /**
  * Schema for errors in a response.
  */
-export const errorSchema = z
+export const apiErrorSchema = z
   .object({
     name: z.string(), // Error name
     message: z.string(), // Error message

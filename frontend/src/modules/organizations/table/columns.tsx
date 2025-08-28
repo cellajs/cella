@@ -3,14 +3,13 @@ import { appConfig } from 'config';
 import { Shield, UserRound } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import CheckboxColumn from '~/modules/common/data-table/checkbox-column';
 import HeaderCell from '~/modules/common/data-table/header-cell';
 import { renderSelect } from '~/modules/common/data-table/select-column';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
-import type { OrganizationTable } from '~/modules/organizations/table/table-wrapper';
+import type { OrganizationTable } from '~/modules/organizations/table';
 import UpdateRow from '~/modules/organizations/table/update-row';
 import type { Organization } from '~/modules/organizations/types';
 import { dateShort } from '~/utils/date-short';

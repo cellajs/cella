@@ -1,12 +1,6 @@
-import { zodResolver } from '@hookform/resolvers/zod';
-import { appConfig } from 'config';
 import { Send } from 'lucide-react';
-import { useMemo } from 'react';
-import type { UseFormProps } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
-import { z } from 'zod';
 import { systemInvite as baseSystemInvite } from '~/api.gen';
-import { useFormWithDraft } from '~/hooks/use-draft-form';
 import { useMutation } from '~/hooks/use-mutations';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { SelectEmails } from '~/modules/common/form-fields/select-emails';
@@ -19,6 +13,7 @@ import type { InviteMember } from '~/modules/memberships/types';
 import { Badge } from '~/modules/ui/badge';
 import { Button, SubmitButton } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
+import { type InviteFormValues, useInviteFormDraft } from '~/modules/users/invite-users';
 
 interface Props {
   entity?: EntityPage;
@@ -33,25 +28,7 @@ const InviteEmailForm = ({ entity, dialog: isDialog, children }: Props) => {
   const { t } = useTranslation();
   const { nextStep } = useStepper();
 
-  const formSchema = z.object({
-    emails: z.array(z.email(t('common:invalid.email'))).min(1, { message: t('common:invalid.min_items', { items_count: 'one', item: 'email' }) }),
-    role: z.enum(appConfig.rolesByType.entityRoles).optional(),
-  });
-  type FormValues = z.infer<typeof formSchema>;
-
-  const formOptions: UseFormProps<FormValues> = useMemo(
-    () => ({
-      resolver: zodResolver(formSchema),
-      defaultValues: {
-        emails: [],
-        role: 'member',
-      },
-    }),
-    [],
-  );
-
-  const formContainerId = 'invite-users';
-  const form = useFormWithDraft<FormValues>(`invite-users${entity ? `-${entity?.id}` : ''}`, { formOptions, formContainerId });
+  const form = useInviteFormDraft(entity?.id);
 
   const onSuccess = (
     { invitesSentCount, rejectedItems }: { rejectedItems: string[]; invitesSentCount: number },
@@ -73,11 +50,11 @@ const InviteEmailForm = ({ entity, dialog: isDialog, children }: Props) => {
 
   const { mutate: membershipInvite, isPending } = useInviteMemberMutation();
   const { mutate: systemInvite, isPending: isSystemInvitePending } = useMutation({
-    mutationFn: (body: FormValues) => baseSystemInvite({ body }),
+    mutationFn: (body: InviteFormValues) => baseSystemInvite({ body }),
     onSuccess,
   });
 
-  const onSubmit = (values: FormValues) => {
+  const onSubmit = (values: InviteFormValues) => {
     entity ? membershipInvite({ ...values, entity } as InviteMember, { onSuccess }) : systemInvite(values);
   };
 

@@ -1,4 +1,8 @@
 {
+  "onboarding_completed": "Great! Let's go.",
+  "onboarding_completed.text": "Have a look around to explore the features of {{appName}}.",
+  "onboarding_welcome": "Welcome to {{appName}}",
+  "onboarding_welcome.text": "A template to build web apps with sync engine. What will you build with it?",
   "about": "About",
   "accept": "Accept",
   "accept_invite": "Accept invitation",
@@ -142,17 +146,6 @@
   "import": "Import",
   "in_waitlist": "{{appName}} will soon contact you for early access!",
   "introduction": "Introduction",
-  "invalid.color": "Color may only contain letters, numbers & starts with #",
-  "invalid.domain": "Domain must not contain @, no special chars and at least one dot (.) in between.",
-  "invalid.email": "Invalid email address.",
-  "invalid.image_url": "Search params not allowed",
-  "invalid.max_length": "{{prefix}} can't exceed {{length}} characters.",
-  "invalid.min_items": "Please add at least {{items_count}} {{item}} to the list.",
-  "invalid.min_length_greater": "Must be greater than {{length}}",
-  "invalid.min_length_greater_or_eq": "Must be greater or equal to {{length}}",
-  "invalid.name": "Name may only contain letters, numbers, spaces and these characters: ,.'-",
-  "invalid.required": "This field is required.",
-  "invalid.slug": "Slug may only contain alphanumeric characters or up to three hyphens, and cannot begin or end with a hyphen.",
   "invalid.url": "URL must start with https://",
   "invitation_accepted": "Invitation has been accepted!",
   "invite": "Invite",
@@ -299,6 +292,7 @@
   "request_verification.signup": "to complete your sign up",
   "request_verification.text": "We sent you an email {{reason}}. Please check your inbox and click on the link to verify your email address.",
   "requests": "Requests",
+  "requests.text": "Requests per minute",
   "resend": "Resend",
   "resend_invitation.text": "Send a duplicate invitation with a new expiration date.",
   "reset": "Reset",
@@ -457,5 +451,7 @@
   "without_color": "Without color",
   "write": "Write",
   "year": "year",
-  "your_role": "Your role"
+  "your_role": "Your role",
+  "already_created_org.text": "You already created an organization. You can invite others to your organization.",
+  "need_org_to_invite.text": "You need to create an organization before inviting members."
 }

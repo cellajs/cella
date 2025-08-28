@@ -1,8 +1,8 @@
+import type { ContextEntityType, ProductEntityType } from 'config';
 import { getContextMemberships, getContextOrganization, getContextUser } from '#/lib/context';
 import type { EntityModel } from '#/lib/entity';
 import { AppError } from '#/lib/errors';
 import permissionManager from '#/permissions/permissions-config';
-import type { ContextEntityType, ProductEntityType } from 'config';
 
 /**
  * Checks if user has permission to create product or context entity.

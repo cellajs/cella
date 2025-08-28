@@ -5,10 +5,10 @@ import chalk from 'chalk';
 import { appConfig } from 'config';
 import type { Env } from '#/lib/context';
 import { apiModulesList, registerAppSchema } from '#/lib/docs-config';
-import { entityBaseSchema, userSummarySchema } from '#/modules/entities/schema';
+import { userBaseSchema } from '#/modules/entities/schema';
 import { menuSchema } from '#/modules/me/schema';
-import { membershipSummarySchema } from '#/modules/memberships/schema';
-import { errorSchema } from '#/utils/schema/error';
+import { membershipBaseSchema } from '#/modules/memberships/schema';
+import { apiErrorSchema } from '#/utils/schema/error';
 
 // OpenAPI configuration
 const openApiConfig = {
@@ -43,12 +43,11 @@ const docs = async (app: OpenAPIHono<Env>, skipScalar = false) => {
       "Authentication cookie. Copy the cookie from your network tab and paste it here. If you don't have it, you need to sign in or sign up first.",
   });
 
-  // Register lower-level schemas
-  registry.register('EntityBaseSchema', entityBaseSchema);
-  registry.register('UserSummarySchema', userSummarySchema);
-  registry.register('MembershipSummarySchema', membershipSummarySchema);
+  // Register lower-level (base) schemas
+  registry.register('UserBaseSchema', userBaseSchema);
+  registry.register('MembershipBaseSchema', membershipBaseSchema);
   registry.register('MenuSchema', menuSchema);
-  registry.register('ApiError', errorSchema);
+  registry.register('ApiError', apiErrorSchema);
 
   registerAppSchema(registry);
 

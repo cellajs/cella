@@ -83,7 +83,6 @@ export const DesktopSheet = ({ sheet }: SheetProps) => {
     // Nav sheet in keep open mode shouldnt close
     if (sheet.id === 'nav-sheet') {
       const navState = useNavigationStore.getState();
-      navState.navSheetOpen;
       if (navState.keepMenuOpen && navState.navSheetOpen === 'menu') return event.preventDefault();
     }
 

@@ -7,12 +7,13 @@ import { TableFilterBarContext } from '~/modules/common/data-table/table-filter-
 import { Input } from '~/modules/ui/input';
 
 interface TableSearchProps {
+  name: string;
   value?: string;
   allowOfflineSearch?: boolean;
   setQuery: (value: string) => void;
 }
 
-const TableSearch = ({ value = '', allowOfflineSearch = false, setQuery }: TableSearchProps) => {
+const TableSearch = ({ name, value = '', allowOfflineSearch = false, setQuery }: TableSearchProps) => {
   const { t } = useTranslation();
   const { isOnline } = useOnlineManager();
   const { isFilterActive } = useContext(TableFilterBarContext);
@@ -45,6 +46,7 @@ const TableSearch = ({ value = '', allowOfflineSearch = false, setQuery }: Table
       <Input
         disabled={!isOnline && !allowOfflineSearch}
         placeholder={t('common:placeholder.search')}
+        name={name}
         value={inputValue}
         onChange={(e) => setInputValue(e.target.value)}
         ref={inputRef}

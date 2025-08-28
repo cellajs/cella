@@ -12,8 +12,8 @@ import { PopConfirm } from '~/modules/common/popconfirm';
 import DeleteUsers from '~/modules/users/delete-users';
 import ImpersonateRow from '~/modules/users/table/impersonate-row';
 import UpdateRow, { openUpdateUserSheet } from '~/modules/users/table/update-row';
-import type { User } from '~/modules/users/types';
-import UserCell from '~/modules/users/user-cell';
+import type { TableUser, User } from '~/modules/users/types';
+import { UserCell } from '~/modules/users/user-cell';
 import { dateShort } from '~/utils/date-short';
 
 export const useColumns = () => {
@@ -21,7 +21,7 @@ export const useColumns = () => {
   const isMobile = useBreakpoints('max', 'sm', false);
 
   const columns = useMemo(() => {
-    const cols: ColumnOrColumnGroup<User>[] = [
+    const cols: ColumnOrColumnGroup<TableUser>[] = [
       CheckboxColumn,
       {
         key: 'name',
@@ -133,5 +133,5 @@ export const useColumns = () => {
     return cols;
   }, []);
 
-  return useState<ColumnOrColumnGroup<User>[]>(columns);
+  return useState<ColumnOrColumnGroup<TableUser>[]>(columns);
 };

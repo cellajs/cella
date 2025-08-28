@@ -13,8 +13,8 @@ const labelVariants = cva('', {
   variants: {
     size: {
       sm: 'text-sm',
-      md: 'text-sm',
-      lg: 'text-base',
+      md: 'text-base',
+      lg: 'text-lg',
     },
   },
   defaultVariants: {
@@ -57,7 +57,14 @@ const StepLabel = ({ isCurrentStep, opacity, label, description }: StepLabelProp
     >
       {!!label && <span className={cn('stepper__step-label', labelVariants({ size }), styles?.['step-label'])}>{label}</span>}
       {!!description && (
-        <span className={cn('stepper__step-description', 'text-muted-foreground', descriptionVariants({ size }), styles?.['step-description'])}>
+        <span
+          className={cn(
+            'stepper__step-description',
+            'text-muted-foreground font-semibold',
+            descriptionVariants({ size }),
+            styles?.['step-description'],
+          )}
+        >
           {description}
         </span>
       )}

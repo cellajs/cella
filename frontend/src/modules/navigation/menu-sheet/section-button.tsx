@@ -52,14 +52,8 @@ export const MenuSectionButton = ({ data, options, isEditing, isSectionVisible, 
           </Button>
           <AnimatePresence mode="popLayout">
             {isSectionVisible && data.length && (
-              <TooltipButton toolTipContent={t('common:manage_content')} side="bottom" sideOffset={10}>
-                <Button
-                  className="w-12 px-2 max-sm:hidden"
-                  variant={isEditing ? 'plain' : 'secondary'}
-                  size="icon"
-                  onClick={() => toggleIsEditing()}
-                  asChild
-                >
+              <TooltipButton toolTipContent={t('common:manage_content')} side="bottom" sideOffset={10} className="max-sm:hidden">
+                <Button className="w-12 px-2" variant={isEditing ? 'plain' : 'secondary'} size="icon" onClick={() => toggleIsEditing()} asChild>
                   <motion.button
                     key={`sheet-menu-settings-${options.entityType}`}
                     transition={{ bounce: 0, duration: 0.2 }}

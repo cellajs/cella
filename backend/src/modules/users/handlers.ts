@@ -1,5 +1,7 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
-import { and, count, eq, ilike, inArray, isNotNull, or, type SQL } from 'drizzle-orm';
+import { appConfig } from 'config';
+import { and, count, eq, ilike, inArray, isNotNull, isNull, ne, or } from 'drizzle-orm';
+import { alias } from 'drizzle-orm/pg-core';
 import { db } from '#/db/db';
 import { membershipsTable } from '#/db/schema/memberships';
 import { usersTable } from '#/db/schema/users';
@@ -22,24 +24,22 @@ const usersRouteHandlers = app
    * Get list of users
    */
   .openapi(userRoutes.getUsers, async (ctx) => {
-    const { q, sort, order, offset, limit, role } = ctx.req.valid('query');
+    const { q, sort, order, offset, mode, limit, role, targetEntityId, targetEntityType } = ctx.req.valid('query');
 
-    const memberships = db
-      .select({
-        userId: membershipsTable.userId,
-      })
-      .from(membershipsTable)
-      .as('user_memberships');
+    const user = getContextUser();
 
-    const membershipCounts = db
-      .select({
-        userId: memberships.userId,
-        count: count().as('count'),
-      })
-      .from(memberships)
-      .groupBy(memberships.userId)
-      .as('membership_counts');
+    const filters = [
+      // Filter by role if provided
+      ...(role ? [eq(usersTable.role, role)] : []),
 
+      // Exclude self when fetching shared memberships
+      ...(mode === 'shared' ? [ne(usersTable.id, user.id)] : []),
+
+      // Filter by search query if provided
+      ...(q ? [or(ilike(usersTable.name, prepareStringForILikeFilter(q)), ilike(usersTable.email, prepareStringForILikeFilter(q)))] : []),
+    ];
+
+    // Base user query with ordering
     const orderColumn = getOrderColumn(
       {
         id: usersTable.id,
@@ -47,7 +47,6 @@ const usersRouteHandlers = app
         email: usersTable.email,
         createdAt: usersTable.createdAt,
         lastSeenAt: usersTable.lastSeenAt,
-        membershipCount: membershipCounts.count,
         role: usersTable.role,
       },
       sort,
@@ -55,23 +54,60 @@ const usersRouteHandlers = app
       order,
     );
 
-    const filters: SQL[] = [];
-    if (q) {
-      const query = prepareStringForILikeFilter(q);
-      filters.push(or(ilike(usersTable.name, query), ilike(usersTable.email, query)) as SQL);
-    }
-    if (role) filters.push(eq(usersTable.role, role));
+    const targetMembership = alias(membershipsTable, 'targetMembership'); // memberships of users being queried
+    const requesterMembership = alias(membershipsTable, 'requesterMembership'); // memberships of requesting user
 
-    const usersQuery = db
-      .select({ ...userSelect })
-      .from(usersTable)
-      .where(filters.length > 0 ? and(...filters) : undefined)
-      .orderBy(orderColumn)
-      .leftJoin(membershipCounts, eq(membershipCounts.userId, usersTable.id));
+    const baseUsersQuery =
+      mode === 'shared'
+        ? db
+            .selectDistinct({ ...userSelect })
+            .from(usersTable)
+            .innerJoin(
+              targetMembership,
+              and(eq(usersTable.id, targetMembership.userId), isNotNull(targetMembership.activatedAt), isNull(targetMembership.tokenId)),
+            )
+            .innerJoin(
+              requesterMembership,
+              and(eq(requesterMembership.organizationId, targetMembership.organizationId), eq(requesterMembership.userId, user.id)),
+            )
+        : db.select({ ...userSelect }).from(usersTable);
 
+    const usersQuery = baseUsersQuery.where(and(...filters)).orderBy(orderColumn);
+
+    // Total count
     const [{ total }] = await db.select({ total: count() }).from(usersQuery.as('users'));
 
-    const items = await usersQuery.limit(Number(limit)).offset(Number(offset));
+    const users = await usersQuery.limit(limit).offset(offset);
+
+    // If no users, return empty result early
+    if (!users.length) return ctx.json({ items: [], total }, 200);
+
+    const userIds = users.map((u) => u.id);
+
+    // Fetch memberships for all these users
+    const membershipFilters = [inArray(membershipsTable.userId, userIds)];
+    if (targetEntityId && targetEntityType) {
+      const entityFieldId = appConfig.entityIdFields[targetEntityType];
+      membershipFilters.push(eq(membershipsTable.contextType, targetEntityType), eq(membershipsTable[entityFieldId], targetEntityId));
+    }
+
+    const memberships = await db
+      .select()
+      .from(membershipsTable)
+      .where(and(...membershipFilters));
+
+    // Group memberships by userId in a type-safe way
+    const membershipsByUser = memberships.reduce<Record<string, typeof memberships>>((acc, m) => {
+      if (!acc[m.userId]) acc[m.userId] = [];
+      acc[m.userId].push(m);
+      return acc;
+    }, {});
+
+    // Attach memberships to users
+    const items = users.map((user) => ({
+      ...user,
+      memberships: membershipsByUser[user.id] ?? [],
+    }));
 
     return ctx.json({ items, total }, 200);
   })

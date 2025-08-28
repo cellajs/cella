@@ -116,7 +116,7 @@ const organizationRouteHandlers = app
         counts: {
           membership: sql<
             z.infer<typeof membershipCountSchema>
-          >`json_build_object('admin', ${membershipCountsQuery.admin}, 'member', ${membershipCountsQuery.member}, 'pending', ${membershipCountsQuery.pending}, 'total', ${membershipCountsQuery.member})`,
+          >`json_build_object('admin', ${membershipCountsQuery.admin}, 'member', ${membershipCountsQuery.member}, 'pending', ${membershipCountsQuery.pending}, 'total', ${membershipCountsQuery.total})`,
           related: sql<Record<ValidEntities<'organizationId'>, number>>`json_build_object(${sql.raw(relatedJsonPairs)})`,
         },
       })
@@ -125,8 +125,8 @@ const organizationRouteHandlers = app
       .leftJoin(membershipCountsQuery, eq(organizationsTable.id, membershipCountsQuery.id))
       .leftJoin(relatedCountsQuery, eq(organizationsTable.id, relatedCountsQuery.id))
       .orderBy(orderColumn)
-      .limit(Number(limit))
-      .offset(Number(offset));
+      .limit(limit)
+      .offset(offset);
 
     return ctx.json({ items: organizations, total }, 200);
   })

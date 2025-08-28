@@ -1,7 +1,7 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
 import { EventName, Paddle } from '@paddle/paddle-node-sdk';
 import { appConfig } from 'config';
-import { and, eq, inArray, isNull, lt } from 'drizzle-orm';
+import { and, eq, inArray, isNotNull, isNull, lt } from 'drizzle-orm';
 import i18n from 'i18next';
 import { db } from '#/db/db';
 import { emailsTable } from '#/db/schema/emails';
@@ -153,7 +153,7 @@ const systemRouteHandlers = app
     return ctx.json(true, 200);
   })
   /*
-   * Send newsletter to one or more roles members of one or more organizations
+   * Send newsletter to members of one or more organizations matching one ore more roles.
    */
   .openapi(systemRoutes.sendNewsletter, async (ctx) => {
     const { organizationIds, subject, content, roles } = ctx.req.valid('json');
@@ -162,6 +162,7 @@ const systemRouteHandlers = app
     const user = getContextUser();
 
     // Get members from organizations
+    // TODO(REFACTOR) using emails table
     const recipientsRecords = await db
       .selectDistinct({
         email: usersTable.email,
@@ -171,22 +172,14 @@ const systemRouteHandlers = app
         orgName: organizationsTable.name,
       })
       .from(membershipsTable)
-      // TODO(CHORE) decide with filters
-      .innerJoin(
-        usersTable,
-        and(
-          eq(usersTable.id, membershipsTable.userId),
-          // eq(usersTable.emailVerified, true) // maybe add for only confirmed emails
-        ),
-      )
+      .innerJoin(usersTable, and(eq(usersTable.id, membershipsTable.userId)))
       .innerJoin(organizationsTable, eq(organizationsTable.id, membershipsTable.organizationId))
       .where(
         and(
           eq(membershipsTable.contextType, 'organization'),
           inArray(membershipsTable.organizationId, organizationIds),
           inArray(membershipsTable.role, roles),
-          // isNotNull(membershipsTable.activatedAt), send to invited users also??
-          // eq(membershipsTable.archived, false ), send to users who archived??
+          isNotNull(membershipsTable.activatedAt),
           eq(usersTable.newsletter, true),
         ),
       );

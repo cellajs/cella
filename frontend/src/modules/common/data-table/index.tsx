@@ -1,13 +1,12 @@
 import { appConfig } from 'config';
-import { Search } from 'lucide-react';
-import { type Key, type ReactNode, useEffect, useRef, useState } from 'react';
+import { type Key, type ReactNode, useRef } from 'react';
 import { type CellMouseArgs, type CellMouseEvent, DataGrid, type RenderRowProps, type RowsChangeData, type SortColumn } from 'react-data-grid';
 import 'react-data-grid/lib/styles.css';
 import { useTranslation } from 'react-i18next';
 import { useInView } from 'react-intersection-observer';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { useOnlineManager } from '~/hooks/use-online-manager';
-import ContentPlaceholder from '~/modules/common/content-placeholder';
+import { NoRows } from '~/modules/common/data-table/no-rows';
 import '~/modules/common/data-table/style.css';
 import { DataTableSkeleton } from '~/modules/common/data-table/table-skeleton';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
@@ -16,8 +15,8 @@ import { Checkbox } from '~/modules/ui/checkbox';
 
 interface DataTableProps<TData> {
   columns: ColumnOrColumnGroup<TData>[];
-  rows: TData[];
-  totalCount?: number;
+  rows: TData[] | undefined;
+  hasNextPage: boolean;
   rowKeyGetter: (row: TData) => string;
   error?: Error | null;
   isLoading?: boolean;
@@ -38,38 +37,10 @@ interface DataTableProps<TData> {
   fetchMore?: () => Promise<unknown>;
 }
 
-interface NoRowsProps {
-  isFiltered?: boolean;
-  isFetching?: boolean;
-  customComponent?: React.ReactNode;
-}
-// When there are no rows, this component is displayed
-const NoRows = ({ isFiltered, isFetching, customComponent }: NoRowsProps) => {
-  const { t } = useTranslation();
-
-  return (
-    <div className="flex flex-col items-center justify-center w-full p-8">
-      {isFiltered && !isFetching && (
-        <ContentPlaceholder icon={Search} title={t('common:no_resource_found', { resource: t('common:results').toLowerCase() })} />
-      )}
-      {!isFiltered && !isFetching && (customComponent ?? t('common:no_resource_yet', { resource: t('common:results').toLowerCase() }))}
-    </div>
-  );
-};
-
-// When there is an error, this component is displayed
-const ErrorMessage = ({ error }: { error: Error }) => {
-  return (
-    <div className="flex flex-col items-center justify-center h-full w-full bg-background text-muted-foreground">
-      <div className="text-center my-8 text-sm text-red-600">{error.message}</div>
-    </div>
-  );
-};
-
 export const DataTable = <TData,>({
   columns,
   rows,
-  totalCount,
+  hasNextPage,
   rowKeyGetter,
   error,
   isLoading,
@@ -92,36 +63,29 @@ export const DataTable = <TData,>({
   const isMobile = useBreakpoints('max', 'sm', false);
   const { isOnline } = useOnlineManager();
 
-  const [initialDone, setInitialDone] = useState(false);
-  const { ref: measureRef, inView } = useInView({ triggerOnce: false, threshold: 0 });
+  const { ref: measureRef } = useInView({
+    triggerOnce: false,
+    delay: 50,
+    threshold: 0,
+    onChange: (inView) => {
+      if (inView && !error && fetchMore) fetchMore();
+    },
+  });
 
   const gridRef = useRef<HTMLDivElement | null>(null);
-  useTableTooltip(gridRef, initialDone);
-
-  useEffect(() => {
-    if (!rows.length || error || !fetchMore || isFetching || !inView) return;
-
-    if (typeof totalCount === 'number' && rows.length >= totalCount) return;
-
-    // Throttle fetchMore to avoid duplicate calls
-    const fetchMoreTimeout = setTimeout(() => {
-      fetchMore();
-    }, 20);
-
-    return () => clearTimeout(fetchMoreTimeout); // Clear timeout on cleanup
-  }, [inView, error, rows.length, isFetching]);
-
-  useEffect(() => {
-    if (initialDone) return;
-    if (!isLoading) setInitialDone(true);
-  }, [isLoading]);
+  useTableTooltip(gridRef, !isLoading);
 
   return (
     <div className="w-full h-full mb-4 md:mb-8 focus-view-scroll">
-      {initialDone ? ( // Render skeleton only on initial load
+      {isLoading || !rows ? (
+        // Render skeleton only on initial load
+        <DataTableSkeleton cellsWidths={['3rem', '10rem', '4rem']} cellHeight={Number(rowHeight)} columnCount={columns.length} />
+      ) : (
         <>
           {error && rows.length === 0 ? (
-            <ErrorMessage error={error} />
+            <div className="flex flex-col items-center justify-center h-full w-full bg-background text-muted-foreground">
+              <div className="text-center my-8 text-sm text-red-600">{error.message}</div>
+            </div>
           ) : !rows.length ? (
             <NoRows isFiltered={isFiltered} isFetching={isFetching} customComponent={NoRowsComponent} />
           ) : (
@@ -138,7 +102,7 @@ export const DataTable = <TData,>({
                 style={{ blockSize: '100%', marginRight: columns.length % 2 === 0 ? '0' : '.05rem' }}
                 selectedRows={selectedRows}
                 onSelectedRowsChange={onSelectedRowsChange}
-                sortColumns={sortColumns as SortColumn[]}
+                sortColumns={sortColumns}
                 onSortColumnsChange={onSortColumnsChange}
                 renderers={{
                   renderRow,
@@ -176,11 +140,9 @@ export const DataTable = <TData,>({
                 }}
               />
               {/* Can load more, but offline */}
-              {!isOnline && !!totalCount && totalCount > rows.length && (
-                <div className="w-full mt-4 italic text-muted text-sm text-center">{t('common:offline.load_more')}</div>
-              )}
+              {!isOnline && hasNextPage && <div className="w-full mt-4 italic text-muted text-sm text-center">{t('common:offline.load_more')}</div>}
               {/* Loading */}
-              {isFetching && totalCount && totalCount > rows.length && !error && (
+              {isFetching && hasNextPage && !error && (
                 <div className="flex space-x-1 justify-center items-center relative top-4 h-0 w-full animate-pulse">
                   <span className="sr-only">Loading...</span>
                   <div className="h-1 w-3 bg-foreground rounded-full animate-bounce [animation-delay:-0.3s]" />
@@ -189,7 +151,7 @@ export const DataTable = <TData,>({
                 </div>
               )}
               {/* All is loaded */}
-              {!isFetching && !error && !!totalCount && totalCount <= rows.length && (
+              {!isFetching && !error && !hasNextPage && (
                 <div className="opacity-50 w-full text-xl mt-4 text-center">
                   <div>&#183;</div>
                   <div className="-mt-5">&#183;</div>
@@ -202,8 +164,6 @@ export const DataTable = <TData,>({
             </div>
           )}
         </>
-      ) : (
-        <DataTableSkeleton cellsWidths={['3rem', '10rem', '4rem']} cellHeight={Number(rowHeight)} columnCount={columns.length} />
       )}
     </div>
   );

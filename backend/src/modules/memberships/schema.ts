@@ -12,7 +12,7 @@ export const membershipSchema = z.object({
   }).shape,
 });
 
-export const membershipSummarySchema = z.object(
+export const membershipBaseSchema = z.object(
   membershipSchema.omit({
     createdAt: true,
     createdBy: true,

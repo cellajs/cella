@@ -29,7 +29,7 @@ export const getMemberCountsQuery = (entityType: ContextEntityType) => {
       invites: count().as('invites'),
     })
     .from(tokensTable)
-    .where(and(eq(tokensTable.type, 'invitation'), isNotNull(tokensTable.userId), isNotNull(tokensTable.entityType)))
+    .where(and(eq(tokensTable.type, 'invitation'), isNotNull(tokensTable.entityType)))
     .groupBy(tokensTable[targetEntityIdField])
     .as('invites');
 

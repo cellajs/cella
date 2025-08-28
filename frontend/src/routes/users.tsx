@@ -1,4 +1,4 @@
-import { createRoute, useLoaderData, useParams } from '@tanstack/react-router';
+import { createRoute, useParams } from '@tanstack/react-router';
 import { lazy, Suspense } from 'react';
 import ErrorNotice from '~/modules/common/error-notice';
 import Spinner from '~/modules/common/spinner';
@@ -26,11 +26,10 @@ export const UserProfileRoute = createRoute({
   },
   errorComponent: ({ error }) => <ErrorNotice level="app" error={error} />,
   component: () => {
-    // Get user info from route
-    const user = useLoaderData({ from: UserProfileRoute.id });
+    const { idOrSlug } = useParams({ from: UserProfileRoute.id });
     return (
       <Suspense>
-        <UserProfilePage key={user.id} user={user} />
+        <UserProfilePage key={idOrSlug} idOrSlug={idOrSlug} />
       </Suspense>
     );
   },
@@ -51,11 +50,10 @@ export const UserInOrganizationProfileRoute = createRoute({
   },
   errorComponent: ({ error }) => <ErrorNotice level="app" error={error} />,
   component: () => {
-    const { orgIdOrSlug } = useParams({ from: UserInOrganizationProfileRoute.id });
-    const user = useLoaderData({ from: UserInOrganizationProfileRoute.id });
+    const { idOrSlug, orgIdOrSlug } = useParams({ from: UserInOrganizationProfileRoute.id });
     return (
       <Suspense>
-        <UserProfilePage key={user.id} user={user} orgIdOrSlug={orgIdOrSlug} />
+        <UserProfilePage key={idOrSlug} idOrSlug={idOrSlug} orgIdOrSlug={orgIdOrSlug} />
       </Suspense>
     );
   },

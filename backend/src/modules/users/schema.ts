@@ -1,24 +1,33 @@
 import { z } from '@hono/zod-openapi';
-import { appConfig, type EnabledOAuthProvider } from 'config';
+import { appConfig, type EnabledOAuthProvider, type UserFlags } from 'config';
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 import { usersTable } from '#/db/schema/users';
-import { membershipSummarySchema } from '#/modules/memberships/schema';
-import { paginationQuerySchema, validImageKeySchema, validNameSchema, validSlugSchema } from '#/utils/schema/common';
+import { membershipBaseSchema } from '#/modules/memberships/schema';
+import { contextEntityTypeSchema, paginationQuerySchema, validImageKeySchema, validNameSchema, validSlugSchema } from '#/utils/schema/common';
 
 export const enabledOAuthProvidersEnum = z.enum(appConfig.enabledOAuthProviders as unknown as [EnabledOAuthProvider]);
 
-const userSelectSchema = createSelectSchema(usersTable, {
+export const userFlagsSchema = z.object(
+  Object.keys(appConfig.defaultUserFlags).reduce(
+    (acc, key) => {
+      acc[key as keyof UserFlags] = z.boolean();
+      return acc;
+    },
+    {} as { [K in keyof UserFlags]: z.ZodBoolean },
+  ),
+);
+
+export const userSchema = createSelectSchema(usersTable, {
   email: z.email(),
+  userFlags: userFlagsSchema,
 }).omit({
   hashedPassword: true,
   unsubscribeToken: true,
 });
 
-export const userSchema = z.object({ ...userSelectSchema.shape });
-
 export const memberSchema = z.object({
   ...userSchema.shape,
-  membership: membershipSummarySchema,
+  membership: membershipBaseSchema,
 });
 
 export const userUpdateBodySchema = createInsertSchema(usersTable, {
@@ -39,7 +48,14 @@ export const userUpdateBodySchema = createInsertSchema(usersTable, {
   })
   .partial();
 
-export const userListQuerySchema = paginationQuerySchema.extend({
-  sort: z.enum(['id', 'name', 'email', 'role', 'createdAt', 'lastSeenAt', 'membershipCount']).default('createdAt').optional(),
-  role: z.enum(appConfig.rolesByType.systemRoles).optional(),
-});
+export const userListQuerySchema = paginationQuerySchema
+  .extend({
+    sort: z.enum(['id', 'name', 'email', 'role', 'createdAt', 'lastSeenAt']).default('createdAt').optional(),
+    role: z.enum(appConfig.rolesByType.systemRoles).optional(),
+    mode: z.enum(['all', 'shared']).default('shared'),
+    targetEntityType: contextEntityTypeSchema.optional(),
+    targetEntityId: z.string().optional(),
+  })
+  .refine((data) => (data.targetEntityType && data.targetEntityId) || (!data.targetEntityType && !data.targetEntityId), {
+    message: 'Both targetEntityType and targetEntityId must be provided together',
+  });

@@ -6,8 +6,8 @@ function generateNumber(id: string) {
 
   for (let i = id.length - 1; i >= 0; i--) {
     const char = id[i].toLowerCase();
-    if (Number.parseInt(char) >= 0 && Number.parseInt(char) <= 9) {
-      return Number.parseInt(char) % 10;
+    if (Number.parseInt(char, 10) >= 0 && Number.parseInt(char, 10) <= 9) {
+      return Number.parseInt(char, 10) % 10;
     }
     if (char >= 'a' && char <= 'z') {
       return (char.charCodeAt(0) - 'a'.charCodeAt(0)) % 10;

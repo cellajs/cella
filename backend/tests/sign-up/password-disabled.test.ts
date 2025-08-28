@@ -27,8 +27,8 @@ describe('sign-up when "password" strategy is disabled', async () => {
       { headers: defaultHeaders },
     );
     // Check the response
-    console.log(res)
-    console.log(await res.json())
+    console.debug(res)
+    console.debug(await res.json())
 
     expect(res.status).toBe(400);
   });

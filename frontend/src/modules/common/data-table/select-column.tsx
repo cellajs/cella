@@ -2,7 +2,7 @@ import { SelectTrigger } from '@radix-ui/react-select';
 import type { appConfig } from 'config';
 import { useTranslation } from 'react-i18next';
 import type { Member } from '~/modules/memberships/types';
-import type { OrganizationTable } from '~/modules/organizations/table/table-wrapper';
+import type { OrganizationTable } from '~/modules/organizations/table/';
 import { Select, SelectContent, SelectItem, SelectValue } from '~/modules/ui/select';
 import type { User } from '~/modules/users/types';
 

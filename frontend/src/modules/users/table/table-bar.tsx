@@ -7,7 +7,7 @@ import { TableBarContainer } from '~/modules/common/data-table/table-bar-contain
 import TableCount from '~/modules/common/data-table/table-count';
 import { FilterBarActions, FilterBarContent, TableFilterBar } from '~/modules/common/data-table/table-filter-bar';
 import TableSearch from '~/modules/common/data-table/table-search';
-import type { BaseTableBarProps, BaseTableMethods, CallbackArgs } from '~/modules/common/data-table/types';
+import type { BaseTableBarProps, CallbackArgs } from '~/modules/common/data-table/types';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { FocusView } from '~/modules/common/focus-view';
 import SelectRole from '~/modules/common/form-fields/select-role';
@@ -15,14 +15,17 @@ import { toaster } from '~/modules/common/toaster/service';
 import UnsavedBadge from '~/modules/common/unsaved-badge';
 import DeleteUsers from '~/modules/users/delete-users';
 import InviteUsers from '~/modules/users/invite-users';
-import type { UsersSearch } from '~/modules/users/table/table-wrapper';
-import type { User } from '~/modules/users/types';
+import type { UsersSearch } from '~/modules/users/table';
+import type { TableUser, User } from '~/modules/users/types';
+import { useInfiniteQueryTotal } from '~/query/hooks/use-infinite-query-total';
 
-type UsersTableBarProps = BaseTableMethods & BaseTableBarProps<User, UsersSearch>;
+type UsersTableBarProps = BaseTableBarProps<TableUser, UsersSearch>;
 
-export const UsersTableBar = ({ total, selected, searchVars, setSearch, columns, setColumns, clearSelection }: UsersTableBarProps) => {
+export const UsersTableBar = ({ selected, queryKey, searchVars, setSearch, columns, setColumns, clearSelection }: UsersTableBarProps) => {
   const { t } = useTranslation();
   const createDialog = useDialoger((state) => state.create);
+
+  const total = useInfiniteQueryTotal(queryKey);
 
   const inviteButtonRef = useRef(null);
   const deleteButtonRef = useRef(null);
@@ -114,7 +117,7 @@ export const UsersTableBar = ({ total, selected, searchVars, setSearch, columns,
           <div className="sm:grow" />
 
           <FilterBarContent className="max-sm:animate-in max-sm:slide-in-from-left max-sm:fade-in max-sm:duration-300">
-            <TableSearch value={q} setQuery={onSearch} />
+            <TableSearch name="userSearch" value={q} setQuery={onSearch} />
             <SelectRole value={role === undefined ? 'all' : role} onChange={onRoleChange} className="h-10 sm:min-w-32" />
           </FilterBarContent>
         </TableFilterBar>
