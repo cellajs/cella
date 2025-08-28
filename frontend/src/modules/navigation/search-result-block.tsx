@@ -1,6 +1,5 @@
-import type { PageEntityType } from 'config';
+import { appConfig, type PageEntityType } from 'config';
 import { User } from 'lucide-react';
-import { Fragment } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { EntityListItemSchema } from '~/api.gen';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
@@ -14,13 +13,15 @@ type SeachBlockProps = {
   onSelect: (item: EntityListItemSchema) => void;
 };
 
+const contextEntities: readonly string[] = appConfig.contextEntityTypes;
 export const SearchResultBlock = ({ results, entityType, onSelect }: SeachBlockProps) => {
   const { t } = useTranslation();
+  const isContext = contextEntities.includes(entityType);
 
   if (!results.length) return null;
 
   return (
-    <Fragment key={entityType}>
+    <div key={entityType} className="flex flex-col gap-1 w-full">
       <CommandSeparator />
       <CommandGroup className="">
         <StickyBox className="z-10 px-2 py-1.5 text-xs font-medium text-muted-foreground bg-popover">
@@ -32,9 +33,9 @@ export const SearchResultBlock = ({ results, entityType, onSelect }: SeachBlockP
         {results.map((item: EntityListItemSchema) => {
           return (
             <CommandItem
-              data-already-member={item.membership !== null}
+              data-already-member={isContext && item.membership !== null}
               key={item.id}
-              disabled={item.membership === null}
+              disabled={isContext && item.membership === null}
               className="w-full justify-between group"
               onSelect={() => onSelect(item)}
             >
@@ -53,6 +54,6 @@ export const SearchResultBlock = ({ results, entityType, onSelect }: SeachBlockP
           );
         })}
       </CommandGroup>
-    </Fragment>
+    </div>
   );
 };

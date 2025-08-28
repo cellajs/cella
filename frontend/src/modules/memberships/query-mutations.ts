@@ -20,7 +20,7 @@ import type {
   MutationUpdateMembership,
 } from '~/modules/memberships/types';
 import { updateMenuItemMembership } from '~/modules/navigation/menu-sheet/helpers/menu-operations';
-import { formatUpdatedData, getQueryItems, getSimilarQueries } from '~/query/helpers/mutate-query';
+import { formatUpdatedCacheData, getQueryItems, getSimilarQueries } from '~/query/helpers/mutate-query';
 import { useMutateQueryData } from '~/query/hooks/use-mutate-query-data';
 import { queryClient } from '~/query/query-client';
 
@@ -89,7 +89,7 @@ export const useMemberUpdateMutation = () =>
           const prevItems = getQueryItems(oldData);
           const updatedData = updateMembers(prevItems, membershipInfo);
 
-          return formatUpdatedData(oldData, updatedData, limit);
+          return formatUpdatedCacheData(oldData, updatedData, limit);
         });
 
         context.queryContext.push([queryKey, previousData, membershipInfo.id]); // Store previous data for rollback if needed
@@ -126,7 +126,7 @@ export const useMemberUpdateMutation = () =>
           const prevItems = getQueryItems(oldData);
           const updatedData = updateMembers(prevItems, updatedMembership);
 
-          return formatUpdatedData(oldData, updatedData, limit);
+          return formatUpdatedCacheData(oldData, updatedData, limit);
         });
       }
       toaster(toastMessage, 'success');
@@ -166,7 +166,7 @@ export const useMembersDeleteMutation = () =>
           const prevItems = getQueryItems(oldData);
           const updatedMemberships = deletedMembers(prevItems, ids);
 
-          return formatUpdatedData(oldData, updatedMemberships, limit, -ids.length);
+          return formatUpdatedCacheData(oldData, updatedMemberships, limit, -ids.length);
         });
 
         context.push([queryKey, previousData]); // Store previous data for rollback if needed

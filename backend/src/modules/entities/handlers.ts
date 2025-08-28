@@ -1,6 +1,6 @@
 import { OpenAPIHono, type z } from '@hono/zod-openapi';
 import { appConfig } from 'config';
-import { and, eq, isNotNull, isNull, type SQLWrapper, sql } from 'drizzle-orm';
+import { and, eq, ilike, isNotNull, isNull, type SQLWrapper, sql } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
 import { db } from '#/db/db';
 import { membershipsTable } from '#/db/schema/memberships';
@@ -113,7 +113,7 @@ const entityRouteHandlers = app
           and(
             ...(excludeArchived ? [eq(membershipsTable.archived, false)] : []),
             ...(role ? [eq(membershipsTable.role, role)] : []),
-            ...(q ? [eq(table.name, prepareStringForILikeFilter(q))] : []),
+            ...(q ? [ilike(table.name, prepareStringForILikeFilter(q))] : []),
           ),
         )
         .orderBy(orderColumn)

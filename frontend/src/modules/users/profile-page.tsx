@@ -1,20 +1,21 @@
 import { useQuery } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
-import { Settings } from 'lucide-react';
+import { FlameKindling, ServerCrash, Settings } from 'lucide-react';
 import { lazy, Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
+import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { FocusViewContainer } from '~/modules/common/focus-view';
 import { PageHeader } from '~/modules/common/page/header';
+import Spinner from '~/modules/common/spinner';
 import { toaster } from '~/modules/common/toaster/service';
 import { useUpdateSelfMutation } from '~/modules/me/query';
 import { userQueryOptions, useUpdateUserMutation } from '~/modules/users/query';
-import type { UserSummary } from '~/modules/users/types';
 import { useUserStore } from '~/store/user';
 
 const ProfilePageContent = lazy(() => import('~/modules/users/profile-page-content'));
 
 interface Props {
-  user: UserSummary;
+  idOrSlug: string;
   isSheet?: boolean;
   orgIdOrSlug?: string;
 }
@@ -22,19 +23,27 @@ interface Props {
 /**
  * Profile page for a user
  */
-const UserProfilePage = ({ user: baseUser, isSheet, orgIdOrSlug }: Props) => {
+const UserProfilePage = ({ idOrSlug, isSheet, orgIdOrSlug }: Props) => {
   const { t } = useTranslation();
-
-  // Use loader data but also fetch from cache to ensure it's up to date
-  const { data } = useQuery(userQueryOptions(baseUser.id));
-  const user = data || baseUser;
-
-  // Check if user is current user
   const { user: currentUser } = useUserStore();
-  const isSelf = currentUser.id === user.id;
 
-  const mutationFn = isSelf ? useUpdateSelfMutation : useUpdateUserMutation;
-  const { mutate } = mutationFn();
+  // Determine if this is current user's profile
+  const isSelf = !!currentUser && (currentUser.id === idOrSlug || currentUser.slug === idOrSlug);
+
+  // Fetch user data (skip if self, use store data instead)
+  const {
+    data: user,
+    isLoading,
+    isError,
+  } = useQuery({
+    ...userQueryOptions(idOrSlug),
+    enabled: !isSelf,
+    initialData: isSelf ? currentUser : undefined,
+  });
+
+  // Pick correct mutation hook
+  const useMutationHook = isSelf ? useUpdateSelfMutation : useUpdateUserMutation;
+  const { mutate } = useMutationHook();
 
   const coverUpdateCallback = (bannerUrl: string) => {
     mutate(
@@ -45,6 +54,16 @@ const UserProfilePage = ({ user: baseUser, isSheet, orgIdOrSlug }: Props) => {
       },
     );
   };
+
+  if (isLoading)
+    return (
+      <div className="block">
+        <Spinner className="mt-[45vh] h-10 w-10" />
+      </div>
+    );
+
+  if (isError) return <ContentPlaceholder icon={ServerCrash} title={t('error:request_failed')} />;
+  if (!user) return <ContentPlaceholder icon={FlameKindling} title={t('error:no_user_found')} />;
 
   return (
     <>
