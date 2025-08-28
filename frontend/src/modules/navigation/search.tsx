@@ -4,7 +4,7 @@ import { appConfig } from 'config';
 import { History, Search, X } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { EntityListItemSchema } from '~/api.gen';
+import type { ContextEntityBaseSchema, UserBaseSchema } from '~/api.gen';
 import useFocusByRef from '~/hooks/use-focus-by-ref';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
@@ -64,7 +64,7 @@ export const AppSearch = () => {
   const isFetching = useMemo(() => contextEntitiesFetching && usersFetching, [contextEntitiesFetching, usersFetching]);
   const notFound = useMemo(() => !contextEntities.total && !users.total, [contextEntities.total, users.total]);
 
-  const onSelectItem = (item: EntityListItemSchema) => {
+  const onSelectItem = (item: ContextEntityBaseSchema | UserBaseSchema) => {
     // Update recent searches with the search value
     updateRecentSearches(searchValue);
 

@@ -119,9 +119,9 @@ export type ApiError = {
   organizationId?: string;
 };
 
-export type EntityListItemSchema = {
+export type ContextEntityBaseSchema = {
   id: string;
-  entityType: 'user' | 'organization';
+  entityType: 'organization';
   slug: string;
   name: string;
   thumbnailUrl?: string | null;

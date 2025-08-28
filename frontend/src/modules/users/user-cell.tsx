@@ -2,7 +2,7 @@ import { onlineManager } from '@tanstack/react-query';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useEntitySummary } from '~/hooks/use-entity-summary';
+import { useGetEntityBaseData } from '~/hooks/use-entity-summary';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
 import { toaster } from '~/modules/common/toaster/service';
@@ -69,7 +69,7 @@ export const UserCell = ({ user, orgIdOrSlug, tabIndex }: BaseProps & { user: Us
 export const UserCellById = ({ userId, cacheOnly, ...baseProps }: BaseProps & { userId: string | null; cacheOnly: boolean }) => {
   if (!userId) return <span className="text-muted">-</span>;
 
-  const user = useEntitySummary({ idOrSlug: userId, entityType: 'user', cacheOnly });
+  const user = useGetEntityBaseData({ idOrSlug: userId, entityType: 'user', cacheOnly });
 
   return user ? <UserCell user={user} {...baseProps} /> : <span>{userId}</span>;
 };

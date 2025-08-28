@@ -1,10 +1,10 @@
 import { useMutation } from '@tanstack/react-query';
 import { appConfig } from 'config';
 import { t } from 'i18next';
-import { deleteMemberships, type MembershipInviteResponse, membershipInvite, updateMembership } from '~/api.gen';
+import { type ContextEntityBaseSchema, deleteMemberships, type MembershipInviteResponse, membershipInvite, updateMembership } from '~/api.gen';
 import type { ApiError } from '~/lib/api';
 import { toaster } from '~/modules/common/toaster/service';
-import type { EntityPage, EntitySummary } from '~/modules/entities/types';
+import type { EntityPage } from '~/modules/entities/types';
 import { getAndSetMenu } from '~/modules/me/helpers';
 import { resolveParentEntityType } from '~/modules/memberships/helpers';
 import { membersKeys } from '~/modules/memberships/query';
@@ -197,7 +197,7 @@ const deletedMembers = (members: Member[], ids: string[]) => {
     .filter(Boolean) as Member[];
 };
 
-export const handlePendingInvites = (targetEntity: EntitySummary, organization: EntitySummary, invitesCount: number) => {
+export const handlePendingInvites = (targetEntity: ContextEntityBaseSchema, organization: ContextEntityBaseSchema, invitesCount: number) => {
   const { id, slug, entityType } = targetEntity;
   // If the entity is not an organization but belongs to one, update its cache too
   if (entityType !== 'organization') {

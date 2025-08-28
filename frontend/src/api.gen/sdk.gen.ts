@@ -811,7 +811,7 @@ export const updateMe = <ThrowOnError extends boolean = true>(options?: Options<
  * Get authentication data
  * 🛡️ Requires authentication
  *
- * Returns the authentication related date of the *current user*, including sessions, OAuth accounts, and sign in options.
+ * Returns authentication related data of *current user*, including sessions, OAuth accounts, and sign in options.
  *
  * **GET /me/auth** ·· [getMyAuth](http://localhost:4000/docs#tag/me/get/me/auth) ·· _me_
  *
@@ -1339,7 +1339,7 @@ export const updateOrganization = <ThrowOnError extends boolean = true>(options:
 };
 
 /**
- * Get all of list of a context user entities
+ * Get list of context entities
  * 🛡️ Requires authentication
  *
  * Returns a paginated list of *context entities* (e.g. *users*, *organizations*) the current user has access to.
@@ -1407,7 +1407,7 @@ export const getContextEntity = <ThrowOnError extends boolean = true>(options: O
 };
 
 /**
- * Check if slug is available
+ * Check slug availability
  * 🛡️ Requires authentication
  *
  * Checks whether a given slug is available across all entity types (e.g. *organizations*, *users*).

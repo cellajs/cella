@@ -2,7 +2,7 @@ import { Link } from '@tanstack/react-router';
 import { appConfig, type PageEntityType } from 'config';
 import { ChevronRight, Home } from 'lucide-react';
 import { useRef } from 'react';
-import { useEntitySummary } from '~/hooks/use-entity-summary';
+import { useGetEntityBaseData } from '~/hooks/use-entity-summary';
 import useScrollTo from '~/hooks/use-scroll-to';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { PageCover, type PageCoverProps } from '~/modules/common/page/cover';
@@ -22,7 +22,7 @@ type PageHeaderProps = Omit<PageCoverProps, 'id' | 'url'> & {
 const PageHeader = ({ entity, panel, parent, disableScroll, ...coverProps }: PageHeaderProps) => {
   const scrollToRef = useRef<HTMLDivElement>(null);
 
-  const parentData = parent ? useEntitySummary(parent) : null;
+  const parentData = parent ? useGetEntityBaseData(parent) : null;
   // Scroll to page header on load
   if (!disableScroll) useScrollTo(scrollToRef);
 
