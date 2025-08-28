@@ -1,12 +1,11 @@
 import { infiniteQueryOptions } from '@tanstack/react-query';
 import { appConfig } from 'config';
 import { type GetMembersData, type GetPendingInvitationsData, getMembers, getPendingInvitations } from '~/api.gen';
-import { filterVisibleData } from '~/query/helpers/filter-visible-data';
-import { baseGetNextPageParam } from '~/query/helpers/get-next-page-params';
-import { formatUpdatedCacheData } from '~/query/helpers/mutate-query';
 import { queryClient } from '~/query/query-client';
 import type { InfiniteQueryData } from '~/query/types';
-import type { Member } from './types';
+import { baseGetNextPageParam, filterVisibleData, infiniteQueryEnabled } from '~/query/utils/infinite-query-options';
+import { formatUpdatedCacheData } from '~/query/utils/mutate-query';
+import type { Member, PendingInvitation } from './types';
 
 type GetMembershipInvitationsParams = Omit<GetPendingInvitationsData['query'], 'limit' | 'offset'> & GetPendingInvitationsData['path'];
 type GetMembersParams = Omit<GetMembersData['query'], 'limit' | 'offset'> & GetMembersData['path'];
@@ -54,6 +53,7 @@ export const membersQueryOptions = ({
   limit: _limit,
 }: GetMembersParams & { limit?: number }) => {
   const limit = String(_limit || appConfig.requestLimits.members);
+  const staleTime = 1000 * 60 * 2; // 2m
 
   const baseQueryKey = membersKeys.table.members({ idOrSlug, entityType, orgIdOrSlug, q: '', sort: 'createdAt', order: 'desc', role: undefined });
   const queryKey = membersKeys.table.members({ idOrSlug, entityType, orgIdOrSlug, q, sort, order, role });
@@ -61,7 +61,7 @@ export const membersQueryOptions = ({
   return infiniteQueryOptions({
     queryKey,
     initialPageParam: { page: 0, offset: 0 },
-    staleTime: 1000 * 60 * 2, // 2m
+    staleTime,
     queryFn: async ({ pageParam: { page, offset: _offset }, signal }) => {
       const offset = String(_offset || (page || 0) * Number(limit));
 
@@ -72,16 +72,7 @@ export const membersQueryOptions = ({
       });
     },
     getNextPageParam: baseGetNextPageParam,
-    enabled: () => {
-      const data = queryClient.getQueryData<InfiniteQueryData<Member>>(
-        membersKeys.table.members({ idOrSlug, entityType, orgIdOrSlug, q: '', sort: 'createdAt', order: 'desc', role: undefined }),
-      );
-      if (!data) return true;
-      const totalCount = data.pages[data.pages.length - 1].total;
-      const fetchedCount = data.pages.reduce((acc, page) => acc + page.items.length, 0);
-
-      return fetchedCount < totalCount;
-    },
+    enabled: () => infiniteQueryEnabled(baseQueryKey, staleTime),
     initialData: () => {
       const cache = queryClient.getQueryData<InfiniteQueryData<Member>>(baseQueryKey);
       if (!cache) return;
@@ -92,7 +83,7 @@ export const membersQueryOptions = ({
         order,
         searchIn: ['name', 'email'],
         additionalFilter: role ? (m) => m.membership.role === role : undefined,
-        sortOptions: { lastSeenAt: (m) => m.lastSeenAt || '', role: (m) => m.membership.role },
+        sortOptions: { role: (m) => m.membership.role },
       });
 
       return formatUpdatedCacheData(cache, filteredItems, _limit, totalChange) as InfiniteQueryData<Member>;
@@ -119,19 +110,20 @@ export const pendingInvitationsQueryOptions = ({
   orgIdOrSlug,
   entityType,
   q = '',
-  sort: _sort,
-  order: _order,
+  sort = 'createdAt',
+  order = 'desc',
   limit: _limit,
 }: GetMembershipInvitationsParams & { limit?: number }) => {
-  const sort = _sort || 'createdAt';
-  const order = _order || 'desc';
   const limit = String(_limit || appConfig.requestLimits.pendingInvitations);
+  const staleTime = 1000 * 60 * 2; // 2m
 
+  const baseQueryKey = membersKeys.table.pending({ idOrSlug, entityType, orgIdOrSlug, q: '', sort: 'createdAt', order: 'desc' });
   const queryKey = membersKeys.table.pending({ idOrSlug, entityType, orgIdOrSlug, q, sort, order });
 
   return infiniteQueryOptions({
     queryKey,
     initialPageParam: { page: 0, offset: 0 },
+    staleTime,
     queryFn: async ({ pageParam: { page, offset: _offset }, signal }) => {
       const offset = String(_offset || (page || 0) * Number(limit));
 
@@ -142,5 +134,14 @@ export const pendingInvitationsQueryOptions = ({
       });
     },
     getNextPageParam: baseGetNextPageParam,
+    enabled: () => infiniteQueryEnabled(baseQueryKey, staleTime),
+    initialData: () => {
+      const cache = queryClient.getQueryData<InfiniteQueryData<PendingInvitation>>(baseQueryKey);
+      if (!cache) return;
+
+      const { filteredItems, totalChange } = filterVisibleData(cache, { q, sort, order, searchIn: ['name', 'email'] });
+
+      return formatUpdatedCacheData(cache, filteredItems, _limit, totalChange) as InfiniteQueryData<PendingInvitation>;
+    },
   });
 };

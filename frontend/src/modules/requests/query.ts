@@ -4,18 +4,21 @@ import { t } from 'i18next';
 import {
   type CreateRequestData,
   type CreateRequestResponse,
-  createRequest,
-  deleteRequests,
   type GetRequestsData,
-  getRequests,
   type SystemInviteData,
   type SystemInviteResponse,
+  createRequest,
+  deleteRequests,
+  getRequests,
   systemInvite,
 } from '~/api.gen';
 import type { ApiError } from '~/lib/api';
 import { toaster } from '~/modules/common/toaster/service';
 import type { Request } from '~/modules/requests/types';
-import { baseGetNextPageParam } from '~/query/helpers/get-next-page-params';
+import { queryClient } from '~/query/query-client';
+import type { InfiniteQueryData } from '~/query/types';
+import { baseGetNextPageParam, filterVisibleData, infiniteQueryEnabled } from '~/query/utils/infinite-query-options';
+import { formatUpdatedCacheData } from '~/query/utils/mutate-query';
 
 /**
  * Keys for request related queries. These keys help to uniquely identify different query. For managing query caching and invalidation.
@@ -44,24 +47,34 @@ export const requestsKeys = {
  */
 export const requestsQueryOptions = ({
   q = '',
-  sort: _sort,
-  order: _order,
+  sort = 'createdAt',
+  order = 'asc',
   limit: _limit,
 }: Omit<NonNullable<GetRequestsData['query']>, 'limit' | 'offset'> & { limit?: number }) => {
-  const sort = _sort || 'createdAt';
-  const order = _order || 'asc';
   const limit = String(_limit || appConfig.requestLimits.requests);
+  const staleTime = 1000 * 60 * 2; // 2m
 
+  const baseQueryKey = requestsKeys.table.entries({ q: '', sort: 'createdAt', order: 'asc' });
   const queryKey = requestsKeys.table.entries({ q, sort, order });
 
   return infiniteQueryOptions({
     queryKey,
     initialPageParam: { page: 0, offset: 0 },
+    staleTime,
     queryFn: async ({ pageParam: { page, offset: _offset }, signal }) => {
       const offset = String(_offset || (page || 0) * Number(limit));
       return await getRequests({ query: { q, sort, order, limit, offset }, signal });
     },
     getNextPageParam: baseGetNextPageParam,
+    enabled: () => infiniteQueryEnabled(baseQueryKey, staleTime),
+    initialData: () => {
+      const cache = queryClient.getQueryData<InfiniteQueryData<Request>>(baseQueryKey);
+      if (!cache) return;
+
+      const { filteredItems, totalChange } = filterVisibleData(cache, { q, sort, order, searchIn: ['email'] });
+
+      return formatUpdatedCacheData(cache, filteredItems, _limit, totalChange) as InfiniteQueryData<Request>;
+    },
   });
 };
 

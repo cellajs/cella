@@ -1,10 +1,10 @@
 import { infiniteQueryOptions, keepPreviousData, queryOptions, useMutation } from '@tanstack/react-query';
 import { appConfig } from 'config';
-import { deleteUsers, type GetUsersData, getUser, getUsers, type UpdateUserData, updateUser } from '~/api.gen';
+import { deleteUsers, getUser, getUsers, updateUser, type GetUsersData, type UpdateUserData } from '~/api.gen';
 import type { ApiError } from '~/lib/api';
 import type { User } from '~/modules/users/types';
-import { baseGetNextPageParam } from '~/query/helpers/get-next-page-params';
 import { useMutateQueryData } from '~/query/hooks/use-mutate-query-data';
+import { baseGetNextPageParam } from '~/query/utils/infinite-query-options';
 
 /**
  * Keys for user related queries. These keys help to uniquely identify different query. For managing query caching and invalidation.

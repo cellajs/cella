@@ -1,7 +1,7 @@
 import { useMutation } from '@tanstack/react-query';
 import { appConfig } from 'config';
 import { t } from 'i18next';
-import { deleteMemberships, type MembershipInviteResponse, membershipInvite, updateMembership } from '~/api.gen';
+import { deleteMemberships, membershipInvite, updateMembership, type MembershipInviteResponse } from '~/api.gen';
 import type { ApiError } from '~/lib/api';
 import { toaster } from '~/modules/common/toaster/service';
 import type { EntityPage, EntitySummary } from '~/modules/entities/types';
@@ -20,9 +20,9 @@ import type {
   MutationUpdateMembership,
 } from '~/modules/memberships/types';
 import { updateMenuItemMembership } from '~/modules/navigation/menu-sheet/helpers/menu-operations';
-import { formatUpdatedCacheData, getQueryItems, getSimilarQueries } from '~/query/helpers/mutate-query';
 import { useMutateQueryData } from '~/query/hooks/use-mutate-query-data';
 import { queryClient } from '~/query/query-client';
+import { formatUpdatedCacheData, getQueryItems, getSimilarQueries } from '~/query/utils/mutate-query';
 
 const limit = appConfig.requestLimits.members;
 

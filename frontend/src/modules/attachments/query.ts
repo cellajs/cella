@@ -1,7 +1,11 @@
 import { infiniteQueryOptions, queryOptions } from '@tanstack/react-query';
 import { appConfig } from 'config';
 import { type GetAttachmentsData, getAttachments } from '~/api.gen';
-import { baseGetNextPageParam } from '~/query/helpers/get-next-page-params';
+import { queryClient } from '~/query/query-client';
+import type { InfiniteQueryData } from '~/query/types';
+import { baseGetNextPageParam, filterVisibleData, infiniteQueryEnabled } from '~/query/utils/infinite-query-options';
+import { formatUpdatedCacheData } from '~/query/utils/mutate-query';
+import type { Attachment } from './types';
 
 type GetAttachmentsParams = GetAttachmentsData['path'] & Omit<NonNullable<GetAttachmentsData['query']>, 'limit' | 'offset'>;
 /**
@@ -59,23 +63,33 @@ export const groupedAttachmentsQueryOptions = ({ orgIdOrSlug, attachmentId }: Pi
 export const attachmentsQueryOptions = ({
   orgIdOrSlug,
   q = '',
-  sort: _sort,
-  order: _order,
+  sort = 'createdAt',
+  order = 'desc',
   limit: _limit,
 }: Omit<GetAttachmentsParams, 'groupId' | 'limit'> & { limit?: number }) => {
-  const sort = _sort || 'createdAt';
-  const order = _order || 'desc';
   const limit = String(_limit || appConfig.requestLimits.attachments);
+  const staleTime = 1000 * 60 * 2; // 2m
 
+  const baseQueryKey = attachmentsKeys.list.table({ orgIdOrSlug, q: '', sort: 'createdAt', order: 'desc' });
   const queryKey = attachmentsKeys.list.table({ orgIdOrSlug, q, sort, order });
 
   return infiniteQueryOptions({
     queryKey,
     initialPageParam: { page: 0, offset: 0 },
+    staleTime,
     queryFn: async ({ pageParam: { page, offset: _offset }, signal }) => {
       const offset = String(_offset || (page || 0) * Number(limit));
       return await getAttachments({ query: { q, sort, order, limit, offset }, path: { orgIdOrSlug }, signal });
     },
     getNextPageParam: baseGetNextPageParam,
+    enabled: () => infiniteQueryEnabled(baseQueryKey, staleTime),
+    initialData: () => {
+      const cache = queryClient.getQueryData<InfiniteQueryData<Attachment>>(baseQueryKey);
+      if (!cache) return;
+
+      const { filteredItems, totalChange } = filterVisibleData(cache, { q, sort, order, searchIn: ['name', 'filename'] });
+
+      return formatUpdatedCacheData(cache, filteredItems, _limit, totalChange) as InfiniteQueryData<Attachment>;
+    },
   });
 };

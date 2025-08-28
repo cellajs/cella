@@ -2,19 +2,19 @@ import { infiniteQueryOptions, queryOptions, useMutation } from '@tanstack/react
 import { appConfig } from 'config';
 import {
   type CreateOrganizationData,
+  type GetOrganizationsData,
+  type UpdateOrganizationData,
   createOrganization,
   deleteOrganizations,
-  type GetOrganizationsData,
   getOrganization,
   getOrganizations,
-  type UpdateOrganizationData,
   updateOrganization,
 } from '~/api.gen';
 import type { ApiError } from '~/lib/api';
 import { addMenuItem, deleteMenuItem, updateMenuItem } from '~/modules/navigation/menu-sheet/helpers/menu-operations';
 import type { Organization, OrganizationWithMembership } from '~/modules/organizations/types';
-import { baseGetNextPageParam } from '~/query/helpers/get-next-page-params';
 import { useMutateQueryData } from '~/query/hooks/use-mutate-query-data';
+import { baseGetNextPageParam } from '~/query/utils/infinite-query-options';
 
 /**
  * Keys for organizations related queries. These keys help to uniquely identify different query.

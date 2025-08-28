@@ -6,8 +6,8 @@ import { entitiesKeys } from '~/modules/entities/query';
 import type { EntitySummary } from '~/modules/entities/types';
 import type { UserMenuItem } from '~/modules/me/types';
 import type { UserSummary } from '~/modules/users/types';
-import { isInfiniteQueryData, isQueryData } from '~/query/helpers/mutate-query';
 import { queryClient } from '~/query/query-client';
+import { isInfiniteQueryData, isQueryData } from '~/query/utils/mutate-query';
 import { useNavigationStore } from '~/store/navigation';
 
 type Props<T extends PageEntityType> = { idOrSlug: string; entityType: T; cacheOnly?: boolean };
