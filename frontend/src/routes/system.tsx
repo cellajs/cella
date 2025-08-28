@@ -9,9 +9,9 @@ import appTitle from '~/utils/app-title';
 import { noDirectAccess } from '~/utils/no-direct-access';
 
 // Lazy-loaded route components
-const OrganizationsTable = lazy(() => import('~/modules/organizations/table/table-wrapper'));
-const UsersTable = lazy(() => import('~/modules/users/table/table-wrapper'));
-const RequestsTable = lazy(() => import('~/modules/requests/table/table-wrapper'));
+const OrganizationsTable = lazy(() => import('~/modules/organizations/table'));
+const UsersTable = lazy(() => import('~/modules/users/table'));
+const RequestsTable = lazy(() => import('~/modules/requests/table'));
 const RequestsPerMinute = lazy(() => import('~/modules/metrics/requests-per-minute'));
 
 // Search query schemas

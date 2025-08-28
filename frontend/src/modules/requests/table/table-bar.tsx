@@ -10,21 +10,24 @@ import { TableBarContainer } from '~/modules/common/data-table/table-bar-contain
 import TableCount from '~/modules/common/data-table/table-count';
 import { FilterBarActions, FilterBarContent, TableFilterBar } from '~/modules/common/data-table/table-filter-bar';
 import TableSearch from '~/modules/common/data-table/table-search';
-import type { BaseTableBarProps, BaseTableMethods } from '~/modules/common/data-table/types';
+import type { BaseTableBarProps } from '~/modules/common/data-table/types';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { FocusView } from '~/modules/common/focus-view';
 import { toaster } from '~/modules/common/toaster/service';
 import DeleteRequests from '~/modules/requests/delete-requests';
 import { requestsKeys, useSendApprovalInviteMutation } from '~/modules/requests/query';
-import type { RequestsSearch } from '~/modules/requests/table/table-wrapper';
+import type { RequestsSearch } from '~/modules/requests/table';
 import type { Request } from '~/modules/requests/types';
+import { useInfiniteQueryTotal } from '~/query/hooks/use-infinite-query-total';
 import { useMutateQueryData } from '~/query/hooks/use-mutate-query-data';
 
-type RequestsTableBarProps = BaseTableMethods & BaseTableBarProps<Request, RequestsSearch>;
+type RequestsTableBarProps = BaseTableBarProps<Request, RequestsSearch>;
 
-export const RequestsTableBar = ({ total, selected, searchVars, setSearch, columns, setColumns, clearSelection }: RequestsTableBarProps) => {
+export const RequestsTableBar = ({ selected, queryKey, searchVars, setSearch, columns, setColumns, clearSelection }: RequestsTableBarProps) => {
   const { t } = useTranslation();
   const createDialog = useDialoger((state) => state.create);
+
+  const total = useInfiniteQueryTotal(queryKey);
 
   const deleteButtonRef = useRef(null);
 

@@ -1,9 +1,10 @@
-import { type InfiniteData, infiniteQueryOptions } from '@tanstack/react-query';
+import { infiniteQueryOptions } from '@tanstack/react-query';
 import { appConfig } from 'config';
 import { type GetMembersData, type GetPendingInvitationsData, getMembers, getPendingInvitations } from '~/api.gen';
-import { formatUpdatedData } from '~/query/helpers/mutate-query';
+import { baseGetNextPageParam } from '~/query/helpers/get-next-page-params';
+import { formatUpdatedCacheData } from '~/query/helpers/mutate-query';
 import { queryClient } from '~/query/query-client';
-import type { InfiniteQueryData, QueryData } from '~/query/types';
+import type { InfiniteQueryData } from '~/query/types';
 import type { Member } from './types';
 
 type GetMembershipInvitationsParams = Omit<GetPendingInvitationsData['query'], 'limit' | 'offset'> & GetPendingInvitationsData['path'];
@@ -70,11 +71,7 @@ export const membersQueryOptions = ({
         signal,
       });
     },
-    getNextPageParam: (_lastPage, allPages) => {
-      const page = allPages.length;
-      const offset = allPages.reduce((acc, page) => acc + page.items.length, 0);
-      return { page, offset };
-    },
+    getNextPageParam: baseGetNextPageParam,
     enabled: () => {
       const data = queryClient.getQueryData<InfiniteQueryData<Member>>(
         membersKeys.table.members({ idOrSlug, entityType, orgIdOrSlug, q: '', sort: 'createdAt', order: 'desc', role: undefined }),
@@ -135,11 +132,7 @@ export const membersQueryOptions = ({
 
       const totalChange = filteredItems.length - cachedItems.length;
 
-      // FIX InfiniteQueryData to avoid this problem
-      return formatUpdatedData(cache, filteredItems, _limit, totalChange) as unknown as InfiniteData<
-        QueryData<Member>,
-        { page: number; offset: number }
-      >;
+      return formatUpdatedCacheData(cache, filteredItems, _limit, totalChange) as InfiniteQueryData<Member>;
     },
   });
 };
@@ -185,10 +178,6 @@ export const pendingInvitationsQueryOptions = ({
         signal,
       });
     },
-    getNextPageParam: (_lastPage, allPages) => {
-      const page = allPages.length;
-      const offset = allPages.reduce((acc, page) => acc + page.items.length, 0);
-      return { page, offset };
-    },
+    getNextPageParam: baseGetNextPageParam,
   });
 };

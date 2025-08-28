@@ -1,5 +1,4 @@
 import { onlineManager, type UseInfiniteQueryOptions, type UseQueryOptions } from '@tanstack/react-query';
-
 import { queryClient } from '~/query/query-client';
 import type { InferType } from '~/query/types';
 
@@ -15,6 +14,7 @@ export async function prefetchQuery<T extends UseInfiniteQueryOptions<any, any, 
  * @param options - Query options for a regular or infinite query.
  * @returns Cached data if available, or fetched data if online; otherwise undefined.
  */
+//TODO for infinite queries set maxPage to fetch in config?
 export async function prefetchQuery(options: UseQueryOptions | UseInfiniteQueryOptions) {
   if (!onlineManager.isOnline()) return undefined;
 

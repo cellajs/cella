@@ -13,6 +13,7 @@ import {
 import type { ApiError } from '~/lib/api';
 import { addMenuItem, deleteMenuItem, updateMenuItem } from '~/modules/navigation/menu-sheet/helpers/menu-operations';
 import type { Organization, OrganizationWithMembership } from '~/modules/organizations/types';
+import { baseGetNextPageParam } from '~/query/helpers/get-next-page-params';
 import { useMutateQueryData } from '~/query/hooks/use-mutate-query-data';
 
 /**
@@ -78,11 +79,7 @@ export const organizationsQueryOptions = ({
       const offset = String(_offset || (page || 0) * Number(limit));
       return await getOrganizations({ query: { q, sort, order, limit, offset }, signal });
     },
-    getNextPageParam: (_lastPage, allPages) => {
-      const page = allPages.length;
-      const offset = allPages.reduce((acc, page) => acc + page.items.length, 0);
-      return { page, offset };
-    },
+    getNextPageParam: baseGetNextPageParam,
   });
 };
 

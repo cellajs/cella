@@ -17,7 +17,7 @@ export interface EntityGridWrapperProps {
 const EntityGridWrapper = ({ entityType, label, userId, focusView = true, saveDataInSearch = true, tileComponent }: EntityGridWrapperProps) => {
   const { search, setSearch } = useSearchParams<EntitySearch>({ saveDataInSearch });
 
-  const [totalCount, setTotalCount] = useState<number | undefined>(undefined);
+  const [totalCount, setTotalCount] = useState<number | null>(null);
 
   return (
     <div className="flex flex-col gap-4 h-full">

@@ -10,7 +10,7 @@ import { TableBarContainer } from '~/modules/common/data-table/table-bar-contain
 import TableCount from '~/modules/common/data-table/table-count';
 import { FilterBarActions, FilterBarContent, TableFilterBar } from '~/modules/common/data-table/table-filter-bar';
 import TableSearch from '~/modules/common/data-table/table-search';
-import type { BaseTableBarProps, BaseTableMethods } from '~/modules/common/data-table/types';
+import type { BaseTableBarProps } from '~/modules/common/data-table/types';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { FocusView } from '~/modules/common/focus-view';
 import { SheetTabs } from '~/modules/common/sheet-tabs';
@@ -19,16 +19,17 @@ import { toaster } from '~/modules/common/toaster/service';
 import UnsavedBadge from '~/modules/common/unsaved-badge';
 import CreateOrganizationForm from '~/modules/organizations/create-organization-form';
 import DeleteOrganizations from '~/modules/organizations/delete-organizations';
-import type { OrganizationsSearch, OrganizationTable } from '~/modules/organizations/table/table-wrapper';
+import type { OrganizationsSearch, OrganizationTable } from '~/modules/organizations/table';
 import type { Organization } from '~/modules/organizations/types';
 import CreateNewsletterForm from '~/modules/system/create-newsletter-form';
 import NewsletterPreview from '~/modules/system/newsletter-preview';
+import { useInfiniteQueryTotal } from '~/query/hooks/use-infinite-query-total';
 
-type OrganizationsTableBarProps = BaseTableMethods & BaseTableBarProps<OrganizationTable, OrganizationsSearch>;
+type OrganizationsTableBarProps = BaseTableBarProps<OrganizationTable, OrganizationsSearch>;
 
 export const OrganizationsTableBar = ({
-  total,
   selected,
+  queryKey,
   searchVars,
   setSearch,
   columns,
@@ -38,6 +39,8 @@ export const OrganizationsTableBar = ({
   const { t } = useTranslation();
   const removeDialog = useDialoger((state) => state.remove);
   const createDialog = useDialoger((state) => state.create);
+
+  const total = useInfiniteQueryTotal(queryKey);
 
   const createButtonRef = useRef(null);
   const deleteButtonRef = useRef(null);

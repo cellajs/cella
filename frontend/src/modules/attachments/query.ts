@@ -1,6 +1,7 @@
 import { infiniteQueryOptions, queryOptions } from '@tanstack/react-query';
 import { appConfig } from 'config';
 import { type GetAttachmentsData, getAttachments } from '~/api.gen';
+import { baseGetNextPageParam } from '~/query/helpers/get-next-page-params';
 
 type GetAttachmentsParams = GetAttachmentsData['path'] & Omit<NonNullable<GetAttachmentsData['query']>, 'limit' | 'offset'>;
 /**
@@ -75,10 +76,6 @@ export const attachmentsQueryOptions = ({
       const offset = String(_offset || (page || 0) * Number(limit));
       return await getAttachments({ query: { q, sort, order, limit, offset }, path: { orgIdOrSlug }, signal });
     },
-    getNextPageParam: (_lastPage, allPages) => {
-      const page = allPages.length;
-      const offset = allPages.reduce((acc, page) => acc + page.items.length, 0);
-      return { page, offset };
-    },
+    getNextPageParam: baseGetNextPageParam,
   });
 };
