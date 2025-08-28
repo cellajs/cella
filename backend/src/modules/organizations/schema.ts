@@ -88,5 +88,5 @@ export const organizationUpdateBodySchema = createInsertSchema(organizationsTabl
   .partial();
 
 export const organizationListQuerySchema = paginationQuerySchema.extend({
-  sort: z.enum(['id', 'name', 'userRole', 'createdAt']).default('createdAt').optional(),
+  sort: z.enum(['id', 'name', 'createdAt']).default('createdAt').optional(),
 });

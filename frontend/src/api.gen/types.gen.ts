@@ -2333,7 +2333,7 @@ export type GetOrganizationsData = {
   path?: never;
   query?: {
     q?: string;
-    sort?: 'id' | 'name' | 'userRole' | 'createdAt';
+    sort?: 'id' | 'name' | 'createdAt';
     order?: 'asc' | 'desc';
     offset?: string;
     limit?: string;

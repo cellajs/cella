@@ -1,8 +1,8 @@
 import { attachmentsKeys } from '~/modules/attachments/query';
 import type { Attachment, AttachmentInfiniteQueryData } from '~/modules/attachments/types';
-import { getQueryKeySortOrder } from '~/query/helpers';
-import { getSimilarQueries } from '~/query/helpers/mutate-query';
 import { queryClient } from '~/query/query-client';
+import { getQueryKeySortOrder } from '~/query/utils';
+import { getSimilarQueries } from '~/query/utils/mutate-query';
 
 // Handle new attachment insert
 export const handleInsert = (orgIdOrSlug: string, newAttachments: Attachment[]) => {

@@ -19,13 +19,13 @@ import { toaster } from '~/modules/common/toaster/service';
 import UnsavedBadge from '~/modules/common/unsaved-badge';
 import CreateOrganizationForm from '~/modules/organizations/create-organization-form';
 import DeleteOrganizations from '~/modules/organizations/delete-organizations';
-import type { OrganizationsSearch, OrganizationTable } from '~/modules/organizations/table';
-import type { Organization } from '~/modules/organizations/types';
+import type { OrganizationsSearch } from '~/modules/organizations/table';
+import type { Organization, TableOrganization } from '~/modules/organizations/types';
 import CreateNewsletterForm from '~/modules/system/create-newsletter-form';
 import NewsletterPreview from '~/modules/system/newsletter-preview';
 import { useInfiniteQueryTotal } from '~/query/hooks/use-infinite-query-total';
 
-type OrganizationsTableBarProps = BaseTableBarProps<OrganizationTable, OrganizationsSearch>;
+type OrganizationsTableBarProps = BaseTableBarProps<TableOrganization, OrganizationsSearch>;
 
 export const OrganizationsTableBar = ({
   selected,

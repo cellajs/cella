@@ -5,10 +5,10 @@ import { useEffect } from 'react';
 import { menuQueryOptions, meQueryOptions } from '~/modules/me/query';
 import type { UserMenu, UserMenuItem } from '~/modules/me/types';
 import { queriesToMap } from '~/offline-config';
-import { waitFor } from '~/query/helpers';
-import { prefetchQuery } from '~/query/helpers/prefetch-query';
 import { persister } from '~/query/persister';
 import { queryClient } from '~/query/query-client';
+import { waitFor } from '~/query/utils';
+import { prefetchQuery } from '~/query/utils/prefetch-query';
 import { useUIStore } from '~/store/ui';
 import { useUserStore } from '~/store/user';
 

@@ -1,7 +1,8 @@
 import { infiniteQueryOptions, queryOptions } from '@tanstack/react-query';
 import { appConfig } from 'config';
 import { type GetAttachmentsData, getAttachments } from '~/api.gen';
-import { baseGetNextPageParam } from '~/query/helpers/get-next-page-params';
+import { baseInfiniteQueryOptions, infiniteQueryUseCachedIfCompleteOptions } from '~/query/utils/infinite-query-options';
+import type { Attachment } from './types';
 
 type GetAttachmentsParams = GetAttachmentsData['path'] & Omit<NonNullable<GetAttachmentsData['query']>, 'limit' | 'offset'>;
 /**
@@ -59,23 +60,28 @@ export const groupedAttachmentsQueryOptions = ({ orgIdOrSlug, attachmentId }: Pi
 export const attachmentsQueryOptions = ({
   orgIdOrSlug,
   q = '',
-  sort: _sort,
-  order: _order,
-  limit: _limit,
+  sort = 'createdAt',
+  order = 'desc',
+  limit: baseLimit = appConfig.requestLimits.attachments,
 }: Omit<GetAttachmentsParams, 'groupId' | 'limit'> & { limit?: number }) => {
-  const sort = _sort || 'createdAt';
-  const order = _order || 'desc';
-  const limit = String(_limit || appConfig.requestLimits.attachments);
+  const limit = String(baseLimit);
 
+  const baseQueryKey = attachmentsKeys.list.table({ orgIdOrSlug, q: '', sort: 'createdAt', order: 'desc' });
   const queryKey = attachmentsKeys.list.table({ orgIdOrSlug, q, sort, order });
 
   return infiniteQueryOptions({
     queryKey,
-    initialPageParam: { page: 0, offset: 0 },
     queryFn: async ({ pageParam: { page, offset: _offset }, signal }) => {
       const offset = String(_offset || (page || 0) * Number(limit));
       return await getAttachments({ query: { q, sort, order, limit, offset }, path: { orgIdOrSlug }, signal });
     },
-    getNextPageParam: baseGetNextPageParam,
+    ...baseInfiniteQueryOptions,
+    ...infiniteQueryUseCachedIfCompleteOptions<Attachment>(baseQueryKey, {
+      q,
+      sort,
+      order,
+      searchIn: ['name', 'filename'],
+      limit: baseLimit,
+    }),
   });
 };

@@ -4,8 +4,8 @@ import { LocalFileStorage } from '~/modules/attachments/helpers/local-file-stora
 import { attachmentsQueryOptions } from '~/modules/attachments/query';
 import type { AttachmentSearch } from '~/modules/attachments/table';
 import type { Attachment, AttachmentInfiniteQueryData, AttachmentQueryData } from '~/modules/attachments/types';
-import { formatUpdatedCacheData, getQueryItems } from '~/query/helpers/mutate-query';
 import { queryClient } from '~/query/query-client';
+import { formatUpdatedCacheData, getQueryItems } from '~/query/utils/mutate-query';
 import { nanoid } from '~/utils/nanoid';
 
 const limit = appConfig.requestLimits.attachments;

@@ -1,7 +1,6 @@
 import type { QueryKey } from '@tanstack/react-query';
 import type { ContextEntityType, EntityType, ProductEntityType } from 'config';
 import type { ContextEntityBaseSchema } from '~/api.gen';
-import { isInfiniteQueryData, isQueryData } from '~/query/helpers/mutate-query';
 import {
   changeArbitraryQueryData,
   changeInfiniteQueryData,
@@ -10,6 +9,7 @@ import {
 } from '~/query/hooks/use-mutate-query-data/helpers';
 import type { EntityData, ItemData, QueryDataActions, UseMutateQueryDataReturn } from '~/query/hooks/use-mutate-query-data/types';
 import { queryClient } from '~/query/query-client';
+import { isInfiniteQueryData, isQueryData } from '~/query/utils/mutate-query';
 
 // Overload signatures
 export function useMutateQueryData(

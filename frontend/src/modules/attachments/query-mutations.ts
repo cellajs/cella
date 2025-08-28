@@ -14,10 +14,10 @@ import type {
   UpdateAttachmentParams,
 } from '~/modules/attachments/types';
 import { toaster } from '~/modules/common/toaster/service';
-import { getQueryKeySortOrder } from '~/query/helpers';
-import { compareQueryKeys } from '~/query/helpers/compare-query-keys';
-import { formatUpdatedCacheData, getQueryItems, getSimilarQueries } from '~/query/helpers/mutate-query';
 import { queryClient } from '~/query/query-client';
+import { getQueryKeySortOrder } from '~/query/utils';
+import { compareQueryKeys } from '~/query/utils/compare-query-keys';
+import { formatUpdatedCacheData, getQueryItems, getSimilarQueries } from '~/query/utils/mutate-query';
 import { nanoid } from '~/utils/nanoid';
 
 const limit = appConfig.requestLimits.attachments;
