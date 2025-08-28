@@ -1,58 +1,65 @@
 import type { QueryKey } from '@tanstack/react-query';
 import { queryClient } from '~/query/query-client';
-import type { InfiniteQueryData, QueryData } from '~/query/types';
+import type { BaseQueryItem, BaseQueryResponce, InfiniteQueryData, PageParams, QueryData } from '~/query/types';
 
 /**
  * Extracts the items from a query, handling both paginated (infinite) and non-paginated query data.
  * @param prevItems - The previous query data, which can be either QueryData or InfiniteQueryData.
  * @returns - An array of items from the query.
  */
-export const getQueryItems = <T>(prevItems: QueryData<T> | InfiniteQueryData<T>) => {
-  // Check if the data is of type QueryData or InfiniteQueryData and extract items accordingly
-  return isQueryData(prevItems) ? prevItems.items : prevItems.pages.flatMap((page) => page.items);
-};
+export const getQueryItems = <TItem>(prevItems: BaseQueryItem<TItem>) =>
+  isQueryData(prevItems) ? prevItems.items : prevItems.pages.flatMap(({ items }) => items);
 
 /**
  * Formats the updated data by preserving the structure of prev data and inserting new items in chunks.
  * Handles both regular query data and infinite query data formats.
+ *
+ * For infinite queries, it assumes **standard page parameters** of the shape:
+ * `{ page: number; offset: number }`, and will generate new pageParams accordingly
+ * if items are split into multiple pages.
+ *
  * @param prevData - Previous query data, which can be either QueryData or InfiniteQueryData.
  * @param updatedData - New items to replace the previous data.
  * @param limit - Optional limit for chunk size when splitting the updated data (only used for InfiniteQueryData).
  * @param addToTotal - Optional total count to add to prev total.
  * @returns - The updated query data formatted in the appropriate structure.
  */
-export function formatUpdatedData<T>(
-  prevData: InfiniteQueryData<T> | QueryData<T>,
-  updatedData: T[],
+export function formatUpdatedCacheData<TItem>(
+  prevData: BaseQueryItem<TItem>,
+  updatedData: TItem[],
   limit?: number,
   addToTotal = 0,
-): InfiniteQueryData<T> | QueryData<T> {
+): BaseQueryItem<TItem> {
+  // If the query is a standard (non-infinite) query, simply replace the items and update total
   if (isQueryData(prevData)) return { total: prevData.total + addToTotal, items: updatedData };
 
-  // return empty InfiniteQueryData for case of deleting all items
-  if (!updatedData.length) return { pageParams: [0], pages: [{ items: [], total: 0 }] };
+  // Handle case where all items are deleted: return empty InfiniteQueryData
+  if (!updatedData.length) return { pageParams: [{ page: 0, offset: 0 }], pages: [{ items: [], total: 0 }] };
 
-  // Determine the effective limit without modifying the function parameter
+  // Determine chunk size for pages or use the size of the first existing page (for consistency)
   const pageItemsLimit = limit ?? (prevData.pages.length > 1 ? prevData.pages[0].items.length : null);
 
-  // If no effective limit, return all updated data in a single page
+  // If no limit, put all updated data into a single page
   if (!pageItemsLimit) {
     return {
       ...prevData,
-      pages: [{ total: prevData.pages[0]?.total ?? 0 + addToTotal, items: updatedData }],
+      pages: [{ total: (prevData.pages[0]?.total ?? 0) + addToTotal, items: updatedData }],
     };
   }
-  // InfiniteQueryData, split the updatedData by the limit and update the pages
-  const chunks: T[][] = [];
+
+  // Split updatedData into chunks of size `pageItemsLimit`
+  const chunks: TItem[][] = [];
   for (let i = 0; i < updatedData.length; i += pageItemsLimit) {
     chunks.push(updatedData.slice(i, i + pageItemsLimit));
   }
 
   const oldTotal = prevData.pages[0]?.total ?? 0;
 
-  const totalPages = Math.ceil(updatedData.length / pageItemsLimit);
-  const newPages = Array.from({ length: totalPages }, (_, i) => i);
+  // Generate new pageParams for each page
+  const totalPages = chunks.length;
+  const newPages = Array.from({ length: totalPages }, (_, i) => ({ page: i, offset: chunks[i].length }));
 
+  // Return updated InfiniteQueryData
   return {
     ...prevData,
     pageParams: newPages,
@@ -63,50 +70,19 @@ export function formatUpdatedData<T>(
   };
 }
 
-export const isQueryData = <T>(data: unknown): data is QueryData<T> => {
+/**
+ * Type guard: checks if data is a standard QueryData
+ */
+export const isQueryData = <TItem>(data: unknown): data is QueryData<TItem> => {
   return typeof data === 'object' && data !== null && 'items' in data && 'total' in data;
 };
 
-export const isInfiniteQueryData = <T>(data: unknown): data is InfiniteQueryData<T> => {
+/**
+ * Type guard: checks if data is an InfiniteQueryData.
+ * Assumes **standard** `PageParams` in the format `{ page: number; offset: number }`.
+ */
+export const isInfiniteQueryData = <TItem>(data: unknown): data is InfiniteQueryData<TItem> => {
   return typeof data === 'object' && data !== null && 'pages' in data && 'pageParams' in data;
-};
-
-/**
- * Retrieves and cancels any ongoing refetch requests for the given query key(s) to prevent overwriting
- * optimistic updates while the mutation is being processed.
- * @param exactQueryKey - The exact query key to target.
- * @param similarQueryKey - An optional similar query key to also cancel associated refetch requests.
- * @returns - The queries that were canceled.
- */
-export const getCancelingRefetchQueries = async <T>(exactQueryKey: QueryKey, similarQueryKey?: QueryKey) => {
-  // Snapshot the previous value (queries to work on)
-  const queries = getQueries<T>(exactQueryKey, similarQueryKey);
-
-  // Loop through each query and cancel any ongoing refetch requests
-  for (const [queryKey] of queries) {
-    await queryClient.cancelQueries({ queryKey });
-  }
-
-  return queries;
-};
-
-/**
- * Retrieves queries based on the exact query key and optionally includes similar queries if provided.
- * @param exactQueryKey - The exact query key to target.
- * @param similarQueryKey - An optional similar query key to retrieve additional queries.
- * @returns - An array of queries.
- */
-export const getQueries = <T>(exactQueryKey: QueryKey, similarQueryKey?: QueryKey): [QueryKey, InfiniteQueryData<T> | QueryData<T> | undefined][] => {
-  // Get exact queries matching the passed query key
-  const exactQuery = getExact<T>(exactQueryKey);
-
-  // If a similar query key is provided, get similar queries and merge with the exact queries
-  if (similarQueryKey) {
-    const similarQueries = getSimilarQueries<T>(similarQueryKey);
-    return [...exactQuery, ...similarQueries];
-  }
-
-  return exactQuery;
 };
 
 /**
@@ -115,8 +91,8 @@ export const getQueries = <T>(exactQueryKey: QueryKey, similarQueryKey?: QueryKe
  * @param passedQueryKey - Query key to search for similar queries.
  * @returns An array with query key and its corresponding data.
  */
-const getExact = <T>(passedQueryKey: QueryKey): [QueryKey, InfiniteQueryData<T> | QueryData<T> | undefined][] => {
-  return [[passedQueryKey, queryClient.getQueryData<InfiniteQueryData<T> | QueryData<T>>(passedQueryKey)]];
+export const getExactQuery = <TItem, TPageParam = PageParams>(passedQueryKey: QueryKey): BaseQueryResponce<TItem, TPageParam> => {
+  return [passedQueryKey, queryClient.getQueryData<BaseQueryItem<TItem, TPageParam>>(passedQueryKey)];
 };
 
 /**
@@ -125,6 +101,6 @@ const getExact = <T>(passedQueryKey: QueryKey): [QueryKey, InfiniteQueryData<T> 
  * @param passedQueryKey - Query key to search for similar queries.
  * @returns An array of matching query keys and their corresponding data.
  */
-export const getSimilarQueries = <T>(passedQueryKey: QueryKey): [QueryKey, InfiniteQueryData<T> | QueryData<T> | undefined][] => {
-  return queryClient.getQueriesData<InfiniteQueryData<T> | QueryData<T>>({ queryKey: passedQueryKey });
+export const getSimilarQueries = <TItem, TPageParam = PageParams>(passedQueryKey: QueryKey): BaseQueryResponce<TItem, TPageParam>[] => {
+  return queryClient.getQueriesData<BaseQueryItem<TItem, TPageParam>>({ queryKey: passedQueryKey });
 };

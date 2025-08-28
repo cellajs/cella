@@ -1,9 +1,9 @@
 import { type InfiniteData, type QueryKey, useInfiniteQuery } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
-import type { QueryData } from '~/query/types';
+import type { PageParams, QueryData } from '~/query/types';
 
 type Options<T, TQueryKey extends QueryKey = QueryKey> = Parameters<
-  typeof useInfiniteQuery<T, Error, InfiniteData<T, unknown>, TQueryKey, { page: number; offset: number }>
+  typeof useInfiniteQuery<T, Error, InfiniteData<T, unknown>, TQueryKey, PageParams>
 >[0];
 
 /**

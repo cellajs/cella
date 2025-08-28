@@ -16,7 +16,7 @@ import type {
 import { toaster } from '~/modules/common/toaster/service';
 import { getQueryKeySortOrder } from '~/query/helpers';
 import { compareQueryKeys } from '~/query/helpers/compare-query-keys';
-import { formatUpdatedData, getQueryItems, getSimilarQueries } from '~/query/helpers/mutate-query';
+import { formatUpdatedCacheData, getQueryItems, getSimilarQueries } from '~/query/helpers/mutate-query';
 import { queryClient } from '~/query/query-client';
 import { nanoid } from '~/utils/nanoid';
 
@@ -95,7 +95,7 @@ export const useAttachmentCreateMutation = () =>
           const prevItems = getQueryItems(oldData);
           const updatedItems = insertOrder === 'asc' ? [...prevItems, ...newAttachments] : [...newAttachments, ...prevItems];
 
-          return formatUpdatedData(oldData, updatedItems, limit, newAttachments.length);
+          return formatUpdatedCacheData(oldData, updatedItems, limit, newAttachments.length);
         });
 
         context.push([queryKey, previousData, optimisticIds]); // Store previous data for rollback if needed
@@ -139,7 +139,7 @@ export const useAttachmentCreateMutation = () =>
             return createdItem ? { ...item, ...createdItem } : item;
           });
 
-          return formatUpdatedData(oldData, updatedItems, limit); // Already update total in mutate
+          return formatUpdatedCacheData(oldData, updatedItems, limit); // Already update total in mutate
         });
       }
 
@@ -181,7 +181,7 @@ export const useAttachmentUpdateMutation = () =>
           const prevItems = getQueryItems(oldData);
           const updatedItems = prevItems.map((item) => (item.id === variables.id ? { ...item, ...variables } : item));
 
-          return formatUpdatedData(oldData, updatedItems, limit);
+          return formatUpdatedCacheData(oldData, updatedItems, limit);
         });
 
         optimisticIds.push(variables.id); // Track optimistically updated item IDs
@@ -209,7 +209,7 @@ export const useAttachmentUpdateMutation = () =>
           // Replace optimistic items with the updated attachment
           const updatedAttachments = prevItems.map((item) => (ids.includes(item.id) ? { ...item, ...updatedAttachment } : item));
 
-          return formatUpdatedData(oldData, updatedAttachments);
+          return formatUpdatedCacheData(oldData, updatedAttachments);
         });
       }
     },
@@ -255,7 +255,7 @@ export const useAttachmentDeleteMutation = () =>
           const prevItems = getQueryItems(oldData);
           const updatedItems = prevItems.filter((item) => !ids.includes(item.id));
 
-          return formatUpdatedData(oldData, updatedItems, limit, -ids.length);
+          return formatUpdatedCacheData(oldData, updatedItems, limit, -ids.length);
         });
 
         context.push([queryKey, previousData]); // Store previous data for potential rollback
