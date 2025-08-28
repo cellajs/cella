@@ -86,6 +86,7 @@ const viteConfig = {
           author: appConfig.company.name,
           color: appConfig.themeColor,
           url: appConfig.frontendUrl,
+          apiUrl: appConfig.backendUrl,
         },
       },
     }),

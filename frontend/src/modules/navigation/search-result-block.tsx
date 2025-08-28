@@ -1,20 +1,22 @@
 import { appConfig, type PageEntityType } from 'config';
 import { User } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import type { EntityListItemSchema } from '~/api.gen';
+import type { ContextEntityBaseSchema, UserBaseSchema } from '~/api.gen';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import StickyBox from '~/modules/common/sticky-box';
 import { Badge } from '~/modules/ui/badge';
 import { CommandGroup, CommandItem, CommandSeparator } from '~/modules/ui/command';
 
-type SeachBlockProps = {
-  results: EntityListItemSchema[];
+type SearchBlockResult = ContextEntityBaseSchema | UserBaseSchema;
+
+type SearchBlockProps = {
+  results: SearchBlockResult[];
   entityType: PageEntityType;
-  onSelect: (item: EntityListItemSchema) => void;
+  onSelect: (item: SearchBlockResult) => void;
 };
 
 const contextEntities: readonly string[] = appConfig.contextEntityTypes;
-export const SearchResultBlock = ({ results, entityType, onSelect }: SeachBlockProps) => {
+export const SearchResultBlock = ({ results, entityType, onSelect }: SearchBlockProps) => {
   const { t } = useTranslation();
   const isContext = contextEntities.includes(entityType);
 
@@ -30,12 +32,12 @@ export const SearchResultBlock = ({ results, entityType, onSelect }: SeachBlockP
             defaultValue: entityType,
           })}
         </StickyBox>
-        {results.map((item: EntityListItemSchema) => {
+        {results.map((item: SearchBlockResult) => {
           return (
             <CommandItem
-              data-already-member={isContext && item.membership !== null}
+              data-already-member={isContext && 'membership' in item && item.membership !== null}
               key={item.id}
-              disabled={isContext && item.membership === null}
+              disabled={isContext && 'membership' in item && item.membership === null}
               className="w-full justify-between group"
               onSelect={() => onSelect(item)}
             >

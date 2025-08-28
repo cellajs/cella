@@ -128,9 +128,9 @@ export const zApiError = z.object({
   organizationId: z.optional(z.string()),
 });
 
-export const zEntityListItemSchema = z.object({
+export const zContextEntityBaseSchema = z.object({
   id: z.string(),
-  entityType: z.enum(['user', 'organization']),
+  entityType: z.enum(['organization']),
   slug: z.string(),
   name: z.string(),
   thumbnailUrl: z.optional(z.union([z.string(), z.null()])),

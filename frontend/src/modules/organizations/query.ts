@@ -2,12 +2,12 @@ import { infiniteQueryOptions, queryOptions, useMutation } from '@tanstack/react
 import { appConfig } from 'config';
 import {
   type CreateOrganizationData,
-  type GetOrganizationsData,
-  type UpdateOrganizationData,
   createOrganization,
   deleteOrganizations,
+  type GetOrganizationsData,
   getOrganization,
   getOrganizations,
+  type UpdateOrganizationData,
   updateOrganization,
 } from '~/api.gen';
 import type { ApiError } from '~/lib/api';

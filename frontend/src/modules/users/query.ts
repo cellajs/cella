@@ -1,6 +1,6 @@
 import { infiniteQueryOptions, keepPreviousData, queryOptions, useMutation } from '@tanstack/react-query';
 import { appConfig } from 'config';
-import { deleteUsers, getUser, getUsers, updateUser, type GetUsersData, type UpdateUserData } from '~/api.gen';
+import { deleteUsers, type GetUsersData, getUser, getUsers, type UpdateUserData, updateUser } from '~/api.gen';
 import type { ApiError } from '~/lib/api';
 import type { TableUser, User } from '~/modules/users/types';
 import { useMutateQueryData } from '~/query/hooks/use-mutate-query-data';
