@@ -1,6 +1,7 @@
 import { infiniteQueryOptions } from '@tanstack/react-query';
 import { appConfig } from 'config';
 import { type GetMembersData, type GetPendingInvitationsData, getMembers, getPendingInvitations } from '~/api.gen';
+import { filterVisibleData } from '~/query/helpers/filter-visible-data';
 import { baseGetNextPageParam } from '~/query/helpers/get-next-page-params';
 import { formatUpdatedCacheData } from '~/query/helpers/mutate-query';
 import { queryClient } from '~/query/query-client';
@@ -47,15 +48,14 @@ export const membersQueryOptions = ({
   orgIdOrSlug,
   entityType,
   q = '',
-  sort: _sort,
-  order: _order,
+  sort = 'createdAt',
+  order = 'desc',
   role,
   limit: _limit,
 }: GetMembersParams & { limit?: number }) => {
-  const sort = _sort || 'createdAt';
-  const order = _order || 'desc';
   const limit = String(_limit || appConfig.requestLimits.members);
 
+  const baseQueryKey = membersKeys.table.members({ idOrSlug, entityType, orgIdOrSlug, q: '', sort: 'createdAt', order: 'desc', role: undefined });
   const queryKey = membersKeys.table.members({ idOrSlug, entityType, orgIdOrSlug, q, sort, order, role });
 
   return infiniteQueryOptions({
@@ -83,54 +83,17 @@ export const membersQueryOptions = ({
       return fetchedCount < totalCount;
     },
     initialData: () => {
-      const cache = queryClient.getQueryData<InfiniteQueryData<Member>>(
-        membersKeys.table.members({ idOrSlug, entityType, orgIdOrSlug, q: '', sort: 'createdAt', order: 'desc', role: undefined }),
-      );
+      const cache = queryClient.getQueryData<InfiniteQueryData<Member>>(baseQueryKey);
       if (!cache) return;
-      const cachedItems = cache.pages.flatMap((p) => p.items);
-      const validSearch = q.trim().toLowerCase();
 
-      const sortOptions: Record<string, (m: Member) => string> = {
-        id: (m) => m.id,
-        name: (m) => m.name,
-        email: (m) => m.email,
-        createdAt: (m) => m.createdAt,
-        lastSeenAt: (m) => m.lastSeenAt || '',
-        role: (m) => m.membership.role,
-      };
-
-      const filteredItems = cachedItems
-        .filter((m) => {
-          const matchesSearch = !validSearch.length || m.name.toLowerCase().includes(validSearch) || m.email.toLowerCase().includes(validSearch);
-
-          const matchesRole = !role || m.membership.role === role;
-
-          return matchesSearch && matchesRole;
-        })
-        .sort((a, b) => {
-          const getVal = sort && sortOptions[sort] ? sortOptions[sort] : (m: Member) => m.id;
-
-          const aVal = getVal(a);
-          const bVal = getVal(b);
-
-          // Null handling
-          if (aVal == null && bVal == null) return 0;
-          if (aVal == null) return 1;
-          if (bVal == null) return -1;
-
-          // Special case for role (priority order)
-          if (sort === 'role') {
-            const roleRank: Record<string, number> = { admin: 0, member: 1 };
-            const cmp = roleRank[aVal] - roleRank[bVal];
-            return order === 'asc' ? cmp : -cmp;
-          }
-
-          // Locale-aware string comparison
-          const cmp = aVal.localeCompare(bVal, undefined, { sensitivity: 'base' });
-          return order === 'asc' ? cmp : -cmp;
-        });
-
-      const totalChange = filteredItems.length - cachedItems.length;
+      const { filteredItems, totalChange } = filterVisibleData(cache, {
+        q,
+        sort,
+        order,
+        searchIn: ['name', 'email'],
+        additionalFilter: role ? (m) => m.membership.role === role : undefined,
+        sortOptions: { lastSeenAt: (m) => m.lastSeenAt || '', role: (m) => m.membership.role },
+      });
 
       return formatUpdatedCacheData(cache, filteredItems, _limit, totalChange) as InfiniteQueryData<Member>;
     },

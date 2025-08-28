@@ -3,11 +3,7 @@ import type { PageParams, QueryData } from '~/query/types';
 
 /**
  * A generic `getNextPageParam` implementation for `useInfiniteQuery`.
- * It work with standart query return data shaped like:
- * {
- *   items: T[];
- *   total: number;
- * }
+ * It work with standart query return data shaped like: { items: T[]; total: number; }
  *
  * Logic:
  * - It calculates how many items have been fetched across all loaded pages.
