@@ -4,20 +4,24 @@ import { useEffect, useMemo } from 'react';
 import { useOnlineManager } from '~/hooks/use-online-manager';
 
 type OfflineTableSearchParams<T> = {
-  data: T[];
+  data?: T[];
   filterFn: (searchParams: UseSearchResult<RegisteredRouter, undefined, false, unknown>, item: T) => boolean;
   onFilterCallback?: (filteredData: T[]) => void;
 };
 
-function useOfflineTableSearch<T>({ data, filterFn, onFilterCallback }: OfflineTableSearchParams<T>): T[] {
+// TODO(refactor): after table lazy load logic change review data undefined case(Now DataTable skeleton shown by data undefined due to lazy load)
+function useOfflineTableSearch<T>({ data, filterFn, onFilterCallback }: OfflineTableSearchParams<T>): T[] | undefined {
   const searchParams = useSearch({ strict: false });
   const { isOnline } = useOnlineManager();
 
   // Memoized filtering logic
-  const filteredData = useMemo(() => (isOnline ? data : data.filter((item) => filterFn(searchParams, item))), [data, searchParams, isOnline]);
+  const filteredData = useMemo(() => {
+    if (!data) return undefined;
+    return isOnline ? data : data.filter((item) => filterFn(searchParams, item));
+  }, [data, searchParams, isOnline]);
 
   useEffect(() => {
-    if (isOnline || !onFilterCallback) return;
+    if (isOnline || !onFilterCallback || !filteredData) return;
     onFilterCallback(filteredData);
   }, [isOnline, filteredData]);
 

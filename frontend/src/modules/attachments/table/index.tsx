@@ -63,7 +63,7 @@ const AttachmentsTable = ({ entity, canUpload = true, isSheet = false }: Attachm
     select: ({ pages }) => pages.flatMap(({ items }) => items),
   });
   const rows = useOfflineTableSearch({
-    data: fetchedRows ?? [],
+    data: fetchedRows,
     filterFn: ({ q }, item) => {
       if (!q) return true;
       const query = q.trim().toLowerCase(); // Normalize query
@@ -93,7 +93,7 @@ const AttachmentsTable = ({ entity, canUpload = true, isSheet = false }: Attachm
   }, [hasNextPage, isLoading, isFetching]);
 
   const onSelectedRowsChange = (value: Set<string>) => {
-    setSelected(rows.filter((row) => value.has(row.id)));
+    if (rows) setSelected(rows.filter((row) => value.has(row.id)));
   };
 
   return (
