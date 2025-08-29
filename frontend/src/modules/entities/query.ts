@@ -50,14 +50,15 @@ export const searchContextEntitiesQueryOptions = (
  * @param query - PageEntitiesQuery parameters to get entities.
  * @returns Query options
  */
-export const contextEntitiesQueryOptions = (query: Omit<NonNullable<GetContextEntitiesData['query']>, 'targetOrgId'>) => {
+export const contextEntitiesQueryOptions = (query: Omit<NonNullable<GetContextEntitiesData['query']>, 'targetOrgId' | 'orgAffiliated'>) => {
   const user = useUserStore.getState().user;
   const q = query.q ?? '';
   const sort = query.sort ?? 'name';
   const targetUserId = query.targetUserId ?? user.id;
+  const orgAffiliated = 'false';
   return queryOptions({
     queryKey: entitiesKeys.grid.context({ q, sort, targetUserId, types: query.types, role: query.role }),
-    queryFn: () => getContextEntities({ query: { ...query, sort, targetUserId } }),
+    queryFn: () => getContextEntities({ query: { ...query, sort, targetUserId, orgAffiliated } }),
     staleTime: 0,
   });
 };

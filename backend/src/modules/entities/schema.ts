@@ -35,6 +35,10 @@ export const contextEntitiesQuerySchema = paginationQuerySchema.extend({
     .union([contextEntityTypeSchema, z.array(contextEntityTypeSchema)])
     .optional()
     .transform((val) => (val === undefined ? undefined : Array.isArray(val) ? val : [val])),
+  orgAffiliated: z
+    .enum(['true', 'false'])
+    .optional()
+    .transform((val) => val === 'true'),
 });
 
 const fullContextEntitySchema = contextEntityBaseSchema.extend({

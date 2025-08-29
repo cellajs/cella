@@ -1195,6 +1195,7 @@ export const zGetContextEntitiesData = z.object({
       role: z.optional(z.enum(['member', 'admin'])),
       excludeArchived: z.optional(z.enum(['true', 'false'])),
       types: z.optional(z.union([z.enum(['organization']), z.array(z.enum(['organization']))])),
+      orgAffiliated: z.optional(z.enum(['true', 'false'])),
     }),
   ),
 });

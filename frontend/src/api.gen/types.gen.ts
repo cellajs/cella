@@ -2734,6 +2734,7 @@ export type GetContextEntitiesData = {
     role?: 'member' | 'admin';
     excludeArchived?: 'true' | 'false';
     types?: 'organization' | Array<'organization'>;
+    orgAffiliated?: 'true' | 'false';
   };
   url: '/entities/context-entities';
 };

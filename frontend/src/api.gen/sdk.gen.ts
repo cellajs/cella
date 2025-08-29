@@ -1360,6 +1360,7 @@ export const updateOrganization = <ThrowOnError extends boolean = true>(options:
  * @param {enum=} options.query.role - `enum` (optional)
  * @param {enum=} options.query.excludearchived - `enum` (optional)
  * @param {enum | any[]=} options.query.types - `enum | any[]` (optional)
+ * @param {enum=} options.query.orgaffiliated - `enum` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
 export const getContextEntities = <ThrowOnError extends boolean = true>(options?: Options<GetContextEntitiesData, ThrowOnError>) => {

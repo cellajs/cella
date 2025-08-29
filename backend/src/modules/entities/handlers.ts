@@ -24,22 +24,23 @@ const entityRouteHandlers = app
    * Get all users' context entities with members counts
    */
   .openapi(entityRoutes.getContextEntities, async (ctx) => {
-    const { q, sort, types, role, offset, limit, targetUserId, targetOrgId, excludeArchived } = ctx.req.valid('query');
+    const { q, sort, types, role, offset, limit, targetUserId, targetOrgId, excludeArchived, orgAffiliated } = ctx.req.valid('query');
 
-    // Determine user to run context query for
+    // Get current user (or the target user if explicitly passed)
     const { id: selfId } = getContextUser();
     const userId = targetUserId ?? selfId;
 
+    // Determine which entity types to query for
     const selectedTypes = new Set(types ?? appConfig.contextEntityTypes);
 
-    // Base membership filters (only activated memberships)
+    // Shared filters for active memberships (used across entity types)
     const baseMembershipQueryFilters = [
       eq(membershipsTable.userId, userId),
       isNotNull(membershipsTable.activatedAt),
       isNull(membershipsTable.tokenId),
     ];
 
-    // Subquery to find all organizations user is a member of
+    // Subquery to get all organizations the user is a member of (optionally narrowed down if `targetOrgId` is passed)
     const orgMembershipsSubquery = db
       .select({ orgId: membershipsTable.organizationId })
       .from(membershipsTable)
@@ -52,24 +53,31 @@ const entityRouteHandlers = app
       )
       .as('userOrgs');
 
-    // Build a query for each context entity type
+    // Build a query per context entity type
     const contextQueries = appConfig.contextEntityTypes.map((entityType) => {
-      // Skip types that were not selected
+      // Skip if this type isn’t requested
       if (!selectedTypes.has(entityType)) return null;
 
       const table = entityTables[entityType];
       const entityIdField = appConfig.entityIdFields[entityType];
       if (!table) return null;
 
-      // Choose column to order by
+      // Choose ordering column (sort by name/createdAt/etc depending on query)
       const orderColumn = getOrderColumn({ name: table.name, createdAt: table.createdAt }, sort, table.createdAt);
 
-      // Build a subquery that returns membership counts (by role/status) for entity type.
+      // Subquery to compute membership counts (per role/status) for this entity type
       const membershipCountsQuery = getMemberCountsQuery(entityType);
-      // Alias  memberships table for later joins (to avoid naming conflicts)
+
+      // Alias memberships table for joins to avoid conflicts
       const orgMembershipsAlias = alias(membershipsTable, 'orgMembership');
 
-      // Base query: select entity + membership summary
+      const membershipFilters = and(
+        ...baseMembershipQueryFilters,
+        eq(membershipsTable[entityIdField], table.id),
+        eq(membershipsTable.contextType, entityType),
+      );
+
+      // Base query: entity + membership summary
       const baseQuery = db
         .select({
           id: table.id,
@@ -79,24 +87,28 @@ const entityRouteHandlers = app
           thumbnailUrl: table.thumbnailUrl,
           createdAt: table.createdAt,
           membership: membershipSummarySelect,
-          membershipCounts: sql<
-            z.infer<typeof membershipCountSchema>
-          >`json_build_object('admin', ${membershipCountsQuery.admin}, 'member', ${membershipCountsQuery.member}, 'pending', ${membershipCountsQuery.pending}, 'total', ${membershipCountsQuery.total})`,
+          membershipCounts: sql<z.infer<typeof membershipCountSchema>>`json_build_object(
+            'admin', ${membershipCountsQuery.admin},
+            'member', ${membershipCountsQuery.member},
+            'pending', ${membershipCountsQuery.pending},
+            'total', ${membershipCountsQuery.total}
+          )`,
         })
         .from(table)
-        .leftJoin(membershipCountsQuery, eq(table.id, membershipCountsQuery.id))
-        .leftJoin(
-          membershipsTable,
-          and(...baseMembershipQueryFilters, eq(membershipsTable[entityIdField], table.id), eq(membershipsTable.contextType, entityType)),
-        );
+        .leftJoin(membershipCountsQuery, eq(table.id, membershipCountsQuery.id));
 
-      // Add org membership join depending on entity type:
-      // - For non-organization entities, join with orgMembershipsSubquery (this respects targetOrgId if provided).
-      // - For organization entities themselves, join with orgMembershipsAlias(ignores targetOrgId to avoid filtering out org itself).
-      const query =
-        entityType !== 'organization' && 'organizationId' in table
-          ? baseQuery.innerJoin(orgMembershipsSubquery, eq(table.organizationId as SQLWrapper, orgMembershipsSubquery.orgId))
-          : baseQuery.innerJoin(
+      // Join user’s membership in this entity, for org-affiliated left join otherwise inner
+      const membershipQuery = orgAffiliated
+        ? baseQuery.leftJoin(membershipsTable, membershipFilters)
+        : baseQuery.innerJoin(membershipsTable, membershipFilters);
+
+      // Organization membership filtering
+      //   - For non-org entities: join with orgMembershipsSubquery (respects `targetOrgId`)
+      //   - For org entities: join with orgMembershipsAlias (avoids filtering out the org itself)
+      const query = orgAffiliated
+        ? entityType !== 'organization' && 'organizationId' in table
+          ? membershipQuery.innerJoin(orgMembershipsSubquery, eq(table.organizationId as SQLWrapper, orgMembershipsSubquery.orgId))
+          : membershipQuery.innerJoin(
               orgMembershipsAlias,
               and(
                 eq(orgMembershipsAlias.userId, userId),
@@ -105,9 +117,10 @@ const entityRouteHandlers = app
                 eq(table.id, orgMembershipsAlias.organizationId),
                 eq(orgMembershipsAlias.contextType, 'organization'),
               ),
-            );
+            )
+        : membershipQuery;
 
-      // Apply filters: exclude archived, filter by role, search query
+      // Apply query filters (search, role, excludeArchived)
       return query
         .where(
           and(
@@ -121,15 +134,15 @@ const entityRouteHandlers = app
         .offset(offset);
     });
 
-    // Execute all queries (replace skipped with empty arrays)
+    // Run all queries (replace skipped entity types with empty arrays)
     const queriesData = await Promise.all(contextQueries.map((query) => (query ? query : Promise.resolve([]))));
 
-    // Build response object: array of entities per entity type
+    // Build response payload
     const data = {
       items: Object.fromEntries(appConfig.contextEntityTypes.map((entityType, i) => [entityType, queriesData[i] ?? []])) as z.infer<
         typeof contextEntitiesResponseSchema
       >['items'],
-      total: queriesData.reduce((sum, rows) => sum + rows.length, 0), // total number of results
+      total: queriesData.reduce((sum, rows) => sum + rows.length, 0), // total across all entity types
     };
 
     return ctx.json(data, 200);
