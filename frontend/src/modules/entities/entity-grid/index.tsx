@@ -14,7 +14,7 @@ export interface EntityGridWrapperProps {
   tileComponent?: React.ElementType;
 }
 
-const EntityGridWrapper = ({ entityType, label, userId, focusView = true, saveDataInSearch = true, tileComponent }: EntityGridWrapperProps) => {
+const EntityGrid = ({ entityType, label, userId, focusView = true, saveDataInSearch = true, tileComponent }: EntityGridWrapperProps) => {
   const { search, setSearch } = useSearchParams<EntitySearch>({ saveDataInSearch });
 
   const [totalCount, setTotalCount] = useState<number | null>(null);
@@ -38,4 +38,4 @@ const EntityGridWrapper = ({ entityType, label, userId, focusView = true, saveDa
   );
 };
 
-export default EntityGridWrapper;
+export default EntityGrid;
