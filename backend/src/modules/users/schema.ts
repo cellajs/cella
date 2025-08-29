@@ -20,15 +20,19 @@ export const userFlagsSchema = z.object(
 export const userSchema = createSelectSchema(usersTable, {
   email: z.email(),
   userFlags: userFlagsSchema,
-}).omit({
-  hashedPassword: true,
-  unsubscribeToken: true,
-});
+})
+  .omit({
+    hashedPassword: true,
+    unsubscribeToken: true,
+  })
+  .openapi('User');
 
-export const memberSchema = z.object({
-  ...userSchema.shape,
-  membership: membershipBaseSchema,
-});
+export const memberSchema = z
+  .object({
+    ...userSchema.shape,
+    membership: membershipBaseSchema,
+  })
+  .omit({ userFlags: true, newsletter: true });
 
 export const userUpdateBodySchema = createInsertSchema(usersTable, {
   firstName: validNameSchema.nullable(),

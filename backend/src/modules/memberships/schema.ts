@@ -12,14 +12,14 @@ export const membershipSchema = z.object({
   }).shape,
 });
 
-export const membershipBaseSchema = z.object(
-  membershipSchema.omit({
+export const membershipBaseSchema = membershipSchema
+  .omit({
     createdAt: true,
     createdBy: true,
     modifiedAt: true,
     modifiedBy: true,
-  }).shape,
-);
+  })
+  .openapi('MembershipBaseSchema');
 
 export const membershipCreateBodySchema = z.object({
   emails: validEmailSchema.array().min(1).max(50),

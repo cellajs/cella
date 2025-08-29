@@ -37,6 +37,7 @@ export const searchContextEntitiesQueryOptions = (
     staleTime: 0,
     enabled: searchQuery.trim().length > 0, // to avoid issues with spaces
     initialData: {
+      // TODO fix typing
       items: Object.fromEntries(appConfig.contextEntityTypes.map((t) => [t, []])) as unknown as ContextEntityItems,
       total: 0,
     },

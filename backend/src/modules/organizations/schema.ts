@@ -37,14 +37,16 @@ export const membershipCountSchema = z.object({
 
 export const fullCountsSchema = z.object({ membership: membershipCountSchema, related: entityCountSchema });
 
-export const organizationSchema = z.object({
-  ...createSelectSchema(organizationsTable).omit({ restrictions: true }).shape,
-  languages: z.array(languageSchema).min(1),
-  emailDomains: z.array(z.string()),
-  authStrategies: z.array(z.enum(authStrategiesEnum)),
-  membership: membershipBaseSchema.nullable(),
-  invitesCount: z.number(),
-});
+export const organizationSchema = z
+  .object({
+    ...createSelectSchema(organizationsTable).omit({ restrictions: true }).shape,
+    languages: z.array(languageSchema).min(1),
+    emailDomains: z.array(z.string()),
+    authStrategies: z.array(z.enum(authStrategiesEnum)),
+    membership: membershipBaseSchema.nullable(),
+    invitesCount: z.number(),
+  })
+  .openapi('Organization');
 
 export const organizationWithMembershipSchema = organizationSchema.extend({ membership: membershipBaseSchema });
 

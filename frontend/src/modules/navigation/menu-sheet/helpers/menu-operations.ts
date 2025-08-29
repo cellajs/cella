@@ -1,6 +1,6 @@
 import { appConfig, type ContextEntityType } from 'config';
+import type { MembershipBaseSchema } from '~/api.gen';
 import type { UserMenu, UserMenuItem } from '~/modules/me/types';
-import type { MembershipSummary } from '~/modules/memberships/types';
 import { useNavigationStore } from '~/store/navigation';
 
 const useTransformOnMenuItems = (transform: (items: UserMenuItem[]) => UserMenuItem[]) => {
@@ -87,11 +87,11 @@ export const updateMenuItem = (updatedEntity: UserMenuItem) => {
 /**
  * Updates the membership information of an entity in the navigation menu.
  *
- * @param membershipInfo - Updated membership details.
+ * @param membershipData - Updated membership details.
  * @param entityIdOrSlug - ID or slug of entity.
  * @param entityType - Context entity type
  */
-export const updateMenuItemMembership = (membershipInfo: Partial<MembershipSummary>, entityIdOrSlug: string, entityType: ContextEntityType) => {
+export const updateMenuItemMembership = (membershipData: Partial<MembershipBaseSchema>, entityIdOrSlug: string, entityType: ContextEntityType) => {
   // Get the current menu state from the navigation store (without using hooks)
   const menu = useNavigationStore.getState().menu;
 
@@ -120,7 +120,7 @@ export const updateMenuItemMembership = (membershipInfo: Partial<MembershipSumma
 
   const updatedEntity: UserMenuItem = {
     ...currentEntity,
-    membership: { ...currentEntity.membership, ...membershipInfo },
+    membership: { ...currentEntity.membership, ...membershipData },
   };
 
   // Update menu item with new membership data

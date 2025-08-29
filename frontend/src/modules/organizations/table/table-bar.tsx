@@ -18,9 +18,9 @@ import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
 import { toaster } from '~/modules/common/toaster/service';
 import UnsavedBadge from '~/modules/common/unsaved-badge';
 import CreateOrganizationForm from '~/modules/organizations/create-organization-form';
-import DeleteOrganizations from '~/modules/organizations/delete-organizations';
+import DeleteOrganizations, { type OrganizationToDelete } from '~/modules/organizations/delete-organizations';
 import type { OrganizationsSearch } from '~/modules/organizations/table';
-import type { Organization, TableOrganization } from '~/modules/organizations/types';
+import type { TableOrganization } from '~/modules/organizations/types';
 import CreateNewsletterForm from '~/modules/system/create-newsletter-form';
 import NewsletterPreview from '~/modules/system/newsletter-preview';
 import { useInfiniteQueryTotal } from '~/query/hooks/use-infinite-query-total';
@@ -65,7 +65,7 @@ export const OrganizationsTableBar = ({
   };
 
   const openDeleteDialog = () => {
-    const callback = (organizations: Organization[]) => {
+    const callback = (organizations: OrganizationToDelete[]) => {
       const message =
         organizations.length === 1
           ? t('common:success.delete_resource', { resource: t('common:organization') })
@@ -74,7 +74,7 @@ export const OrganizationsTableBar = ({
       clearSelection();
     };
 
-    createDialog(<DeleteOrganizations organizations={selected as unknown as Organization[]} dialog callback={callback} />, {
+    createDialog(<DeleteOrganizations organizations={selected} dialog callback={callback} />, {
       id: 'delete-organizations',
       triggerRef: deleteButtonRef,
       className: 'max-w-xl',

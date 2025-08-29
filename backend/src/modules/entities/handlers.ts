@@ -10,7 +10,7 @@ import { checkSlugAvailable } from '#/modules/entities/helpers/check-slug';
 import { getMemberCountsQuery } from '#/modules/entities/helpers/counts';
 import entityRoutes from '#/modules/entities/routes';
 import type { contextEntitiesResponseSchema } from '#/modules/entities/schema';
-import { membershipSummarySelect } from '#/modules/memberships/helpers/select';
+import { membershipBaseSelect } from '#/modules/memberships/helpers/select';
 import type { membershipCountSchema } from '#/modules/organizations/schema';
 import { getValidContextEntity } from '#/permissions/get-context-entity';
 import { defaultHook } from '#/utils/default-hook';
@@ -86,7 +86,7 @@ const entityRouteHandlers = app
           entityType: table.entityType,
           thumbnailUrl: table.thumbnailUrl,
           createdAt: table.createdAt,
-          membership: membershipSummarySelect,
+          membership: membershipBaseSelect,
           membershipCounts: sql<z.infer<typeof membershipCountSchema>>`json_build_object(
             'admin', ${membershipCountsQuery.admin},
             'member', ${membershipCountsQuery.member},

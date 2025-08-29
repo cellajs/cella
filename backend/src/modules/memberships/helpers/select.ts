@@ -4,7 +4,7 @@ import { membershipsTable } from '#/db/schema/memberships';
 import type { ContextEntityTypeIdFields, GeneratedColumn } from '#/db/types';
 import type { membershipBaseSchema } from '#/modules/memberships/schema';
 
-export type MembershipSummary = z.infer<typeof membershipBaseSchema>;
+export type MembershipBaseModel = z.infer<typeof membershipBaseSchema>;
 
 /** Add additional entity ID fields based on the context entity types, excluding 'organization' */
 const additionalEntityIdFields = appConfig.contextEntityTypes
@@ -22,7 +22,7 @@ const additionalEntityIdFields = appConfig.contextEntityTypes
 /**
  * Select for membership summary to embed membership in an entity.
  */
-export const membershipSummarySelect = {
+export const membershipBaseSelect = {
   id: membershipsTable.id,
   role: membershipsTable.role,
   archived: membershipsTable.archived,

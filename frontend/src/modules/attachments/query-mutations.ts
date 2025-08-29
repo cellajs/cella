@@ -1,11 +1,11 @@
 import { useMutation } from '@tanstack/react-query';
 import { appConfig } from 'config';
 import { t } from 'i18next';
+import type { Attachment } from '~/api.gen';
 import { createAttachment, deleteAttachments, updateAttachment } from '~/api.gen';
 import { LocalFileStorage } from '~/modules/attachments/helpers/local-file-storage';
 import { attachmentsKeys } from '~/modules/attachments/query';
 import type {
-  Attachment,
   AttachmentContextProp,
   AttachmentInfiniteQueryData,
   AttachmentQueryData,

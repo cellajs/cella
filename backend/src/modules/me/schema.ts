@@ -21,22 +21,24 @@ export const menuItemSchema = contextEntityWithMembershipSchema.omit({ bannerUrl
   organizationId: membershipBaseSchema.shape.organizationId.optional(),
 });
 
-const menuItemListSchema = z.array(
+const menuSectionSchema = z.array(
   z.object({
     ...menuItemSchema.shape,
     submenu: z.array(menuItemSchema).optional(),
   }),
 );
 
-export const menuSchema = z.object(
-  appConfig.menuStructure.reduce(
-    (acc, { entityType }) => {
-      acc[entityType] = menuItemListSchema;
-      return acc;
-    },
-    {} as Record<ContextEntityType, typeof menuItemListSchema>,
-  ),
-);
+export const menuSchema = z
+  .object(
+    appConfig.menuStructure.reduce(
+      (acc, { entityType }) => {
+        acc[entityType] = menuSectionSchema;
+        return acc;
+      },
+      {} as Record<ContextEntityType, typeof menuSectionSchema>,
+    ),
+  )
+  .openapi('MenuSchema');
 
 export const passkeyRegistrationBodySchema = z.object({
   attestationObject: z.string(),

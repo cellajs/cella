@@ -10,7 +10,7 @@ import HeaderCell from '~/modules/common/data-table/header-cell';
 import { renderSelect } from '~/modules/common/data-table/select-column';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 import UpdateRow from '~/modules/organizations/table/update-row';
-import type { Organization, TableOrganization } from '~/modules/organizations/types';
+import type { TableOrganization } from '~/modules/organizations/types';
 import { dateShort } from '~/utils/date-short';
 
 export const useColumns = () => {
@@ -53,8 +53,7 @@ export const useColumns = () => {
         visible: true,
         width: 32,
         renderCell: ({ row, tabIndex }) => {
-          if (row.counts.membership.admin > 0 || row.counts.membership.member > 0)
-            return <UpdateRow organization={row as unknown as Organization} tabIndex={tabIndex} />;
+          if (row.counts.membership.admin > 0 || row.counts.membership.member > 0) return <UpdateRow organization={row} tabIndex={tabIndex} />;
         },
       },
       {

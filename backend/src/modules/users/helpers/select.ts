@@ -16,16 +16,24 @@ export const userSelect = (() => {
   };
 })();
 
-// Infer types of user summary columns
+/**
+ * Member select. unnecessary fields are omitted from user select.
+ */
+export const memberSelect = (() => {
+  const { newsletter, userFlags, ...memberSafe } = userSelect;
+  return memberSafe;
+})();
+
+// Infer types of user base columns
 type TableColumns = (typeof usersTable)['_']['columns'];
-type UserSummaryKeys = keyof typeof userBaseSchema.shape;
-type UserSummarySelect = Pick<TableColumns, UserSummaryKeys>;
+type UserBaseKeys = keyof typeof userBaseSchema.shape;
+type UserBaseSelect = Pick<TableColumns, UserBaseKeys>;
 
 /**
- * User select for summary only.
+ * User select for base data only.
  */
-export const userSummarySelect: UserSummarySelect = (() => {
+export const userBaseSelect: UserBaseSelect = (() => {
   const userColumns = getTableColumns(usersTable);
-  const entries = Object.entries(userBaseSchema.shape).map(([key]) => [key, userColumns[key as UserSummaryKeys]]);
-  return Object.fromEntries(entries) as UserSummarySelect;
+  const entries = Object.entries(userBaseSchema.shape).map(([key]) => [key, userColumns[key as UserBaseKeys]]);
+  return Object.fromEntries(entries) satisfies UserBaseSelect;
 })();

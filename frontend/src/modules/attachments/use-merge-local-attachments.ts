@@ -1,9 +1,10 @@
 import { appConfig } from 'config';
 import { useEffect, useRef } from 'react';
+import type { Attachment } from '~/api.gen';
 import { LocalFileStorage } from '~/modules/attachments/helpers/local-file-storage';
 import { attachmentsQueryOptions } from '~/modules/attachments/query';
 import type { AttachmentSearch } from '~/modules/attachments/table';
-import type { Attachment, AttachmentInfiniteQueryData, AttachmentQueryData } from '~/modules/attachments/types';
+import type { AttachmentInfiniteQueryData, AttachmentQueryData } from '~/modules/attachments/types';
 import { queryClient } from '~/query/query-client';
 import { formatUpdatedCacheData, getQueryItems } from '~/query/utils/mutate-query';
 import { nanoid } from '~/utils/nanoid';

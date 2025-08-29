@@ -4,23 +4,28 @@ import { membershipBaseSchema } from '#/modules/memberships/schema';
 import { membershipCountSchema } from '#/modules/organizations/schema';
 import { contextEntityTypeSchema, idSchema, imageUrlSchema, nameSchema, paginationQuerySchema, slugSchema } from '#/utils/schema/common';
 
-export const contextEntityBaseSchema = z.object({
-  id: idSchema,
-  entityType: contextEntityTypeSchema,
-  slug: slugSchema,
-  name: nameSchema,
-  thumbnailUrl: imageUrlSchema.nullable().optional(),
-  bannerUrl: imageUrlSchema.nullable().optional(),
-});
+export const contextEntityBaseSchema = z
+  .object({
+    id: idSchema,
+    entityType: contextEntityTypeSchema,
+    slug: slugSchema,
+    name: nameSchema,
+    thumbnailUrl: imageUrlSchema.nullable().optional(),
+    bannerUrl: imageUrlSchema.nullable().optional(),
+  })
+  .openapi('ContextEntityBaseSchema');
 
-// Extend base schema
+// Extend base entity schema with membership base data
 export const contextEntityWithMembershipSchema = contextEntityBaseSchema.extend({ membership: membershipBaseSchema });
 
 // Declared here to avoid circular dependencies
-export const userBaseSchema = contextEntityBaseSchema.extend({
-  email: z.email(),
-  entityType: z.literal('user'),
-});
+export const userBaseSchema = contextEntityBaseSchema
+  .omit({ entityType: true })
+  .extend({
+    email: z.email(),
+    entityType: z.literal('user'),
+  })
+  .openapi('UserBaseSchema');
 
 export const contextEntitiesQuerySchema = paginationQuerySchema.extend({
   targetUserId: idSchema.optional(),

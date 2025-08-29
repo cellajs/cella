@@ -11,7 +11,7 @@ import { checkSlugAvailable } from '#/modules/entities/helpers/check-slug';
 import { getMemberCountsQuery, getRelatedEntityCountsQuery } from '#/modules/entities/helpers/counts';
 import { getRelatedEntities, type ValidEntities } from '#/modules/entities/helpers/get-related-entities';
 import { insertMembership } from '#/modules/memberships/helpers';
-import { membershipSummarySelect } from '#/modules/memberships/helpers/select';
+import { membershipBaseSelect } from '#/modules/memberships/helpers/select';
 import organizationRoutes from '#/modules/organizations/routes';
 import type { membershipCountSchema } from '#/modules/organizations/schema';
 import { getValidContextEntity } from '#/permissions/get-context-entity';
@@ -112,7 +112,7 @@ const organizationRouteHandlers = app
     const organizations = await db
       .select({
         ...getTableColumns(organizationsTable),
-        membership: membershipSummarySelect,
+        membership: membershipBaseSelect,
         counts: {
           membership: sql<
             z.infer<typeof membershipCountSchema>
@@ -221,7 +221,7 @@ const organizationRouteHandlers = app
       .returning();
 
     const organizationMemberships = await db
-      .select(membershipSummarySelect)
+      .select(membershipBaseSelect)
       .from(membershipsTable)
       .where(
         and(

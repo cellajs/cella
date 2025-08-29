@@ -3,6 +3,7 @@ import { appConfig } from 'config';
 import type { UseFormProps } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import type { z } from 'zod';
+import type { Organization } from '~/api.gen';
 import { zUpdateOrganizationData } from '~/api.gen/zod.gen';
 import { useBeforeUnload } from '~/hooks/use-before-unload';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
@@ -18,7 +19,7 @@ import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
 import Spinner from '~/modules/common/spinner';
 import { toaster } from '~/modules/common/toaster/service';
 import { useOrganizationUpdateMutation } from '~/modules/organizations/query';
-import type { Organization } from '~/modules/organizations/types';
+import type { TableOrganization } from '~/modules/organizations/types';
 import { Button, SubmitButton } from '~/modules/ui/button';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
 
@@ -26,7 +27,7 @@ const formSchema = zUpdateOrganizationData.shape.body.unwrap();
 
 type FormValues = z.infer<typeof formSchema>;
 interface Props {
-  organization: Organization;
+  organization: Organization | TableOrganization;
   callback?: (organization: Organization) => void;
   sheet?: boolean;
 }

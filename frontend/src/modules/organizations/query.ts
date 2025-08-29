@@ -7,14 +7,16 @@ import {
   type GetOrganizationsData,
   getOrganization,
   getOrganizations,
+  type Organization,
   type UpdateOrganizationData,
   updateOrganization,
 } from '~/api.gen';
 import type { ApiError } from '~/lib/api';
 import { addMenuItem, deleteMenuItem, updateMenuItem } from '~/modules/navigation/menu-sheet/helpers/menu-operations';
-import type { Organization, OrganizationWithMembership, TableOrganization } from '~/modules/organizations/types';
+import type { OrganizationWithMembership, TableOrganization } from '~/modules/organizations/types';
 import { useMutateQueryData } from '~/query/hooks/use-mutate-query-data';
 import { baseInfiniteQueryOptions, infiniteQueryUseCachedIfCompleteOptions } from '~/query/utils/infinite-query-options';
+import type { OrganizationToDelete } from './delete-organizations';
 
 /**
  * Keys for organizations related queries. These keys help to uniquely identify different query.
@@ -136,7 +138,7 @@ export const useOrganizationUpdateMutation = () => {
  * @returns The mutation hook for deleting organizations.
  */
 export const useOrganizationDeleteMutation = () => {
-  return useMutation<void, ApiError, Organization[]>({
+  return useMutation<void, ApiError, OrganizationToDelete[]>({
     mutationKey: organizationsKeys.delete(),
     mutationFn: async (organizations) => {
       const ids = organizations.map(({ id }) => id);
