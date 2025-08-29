@@ -1,3 +1,7 @@
+import { OpenAPIHono, type z } from '@hono/zod-openapi';
+import { appConfig } from 'config';
+import { and, count, eq, ilike, isNotNull, isNull, type SQLWrapper, sql } from 'drizzle-orm';
+import { alias } from 'drizzle-orm/pg-core';
 import { db } from '#/db/db';
 import { membershipsTable } from '#/db/schema/memberships';
 import { entityTables } from '#/entity-config';
@@ -5,17 +9,13 @@ import { type Env, getContextUser } from '#/lib/context';
 import { checkSlugAvailable } from '#/modules/entities/helpers/check-slug';
 import { getMemberCountsQuery } from '#/modules/entities/helpers/counts';
 import entityRoutes from '#/modules/entities/routes';
-import type { contextEntitiesResponseSchema } from '#/modules/entities/schema';
 import { membershipSummarySelect } from '#/modules/memberships/helpers/select';
 import type { membershipCountSchema } from '#/modules/organizations/schema';
 import { getValidContextEntity } from '#/permissions/get-context-entity';
 import { defaultHook } from '#/utils/default-hook';
 import { getOrderColumn } from '#/utils/order-column';
 import { prepareStringForILikeFilter } from '#/utils/sql';
-import { OpenAPIHono, type z } from '@hono/zod-openapi';
-import { appConfig } from 'config';
-import { and, eq, ilike, isNotNull, isNull, sql, type SQLWrapper } from 'drizzle-orm';
-import { alias } from 'drizzle-orm/pg-core';
+import type { contextEntitiesResponseSchema } from './schema';
 
 const app = new OpenAPIHono<Env>({ defaultHook });
 
@@ -129,24 +129,34 @@ const entityRouteHandlers = app
             ...(q ? [ilike(table.name, prepareStringForILikeFilter(q))] : []),
           ),
         )
-        .orderBy(orderColumn)
-        .limit(limit)
-        .offset(offset);
+        .orderBy(orderColumn);
     });
 
-    // Run all queries (replace skipped entity types with empty arrays)
-    const queriesData = await Promise.all(contextQueries.map((query) => (query ? query : Promise.resolve([]))));
+    // Run queries in parallel to fetch items and totals per entity type
+    const queryResults = await Promise.all(
+      contextQueries.map(async (query) => {
+        if (!query) return { items: [], total: 0 };
 
-    //TODO(DAVID) FIX TOTAL
-    // Build response payload
-    const data = {
-      items: Object.fromEntries(appConfig.contextEntityTypes.map((entityType, i) => [entityType, queriesData[i] ?? []])) as z.infer<
-        typeof contextEntitiesResponseSchema
-      >['items'],
-      total: queriesData.reduce((sum, rows) => sum + rows.length, 0), // total across all entity types
-    };
+        // Fetch items and total count in parallel
+        const [items, [{ total }]] = await Promise.all([
+          query.limit(limit).offset(offset),
+          db.select({ total: count() }).from(query.as('entitiCount')),
+        ]);
 
-    return ctx.json(data, 200);
+        return { items, total };
+      }),
+    );
+
+    // Map items per entity type
+    const items = Object.fromEntries(appConfig.contextEntityTypes.map((entityType, i) => [entityType, queryResults[i].items])) as z.infer<
+      typeof contextEntitiesResponseSchema
+    >['items'];
+
+    // Compute grand total
+    const total = queryResults.reduce((sum, result) => sum + (result.total ?? 0), 0);
+
+    // Return response
+    return ctx.json({ items, total }, 200);
   })
   /*
    * Get base entity info

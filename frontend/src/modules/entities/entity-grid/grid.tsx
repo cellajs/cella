@@ -1,7 +1,7 @@
-import { useSuspenseQuery } from '@tanstack/react-query';
+import { useSuspenseInfiniteQuery } from '@tanstack/react-query';
 import { t } from 'i18next';
 import { Bird, Search } from 'lucide-react';
-import { useEffect, useMemo } from 'react';
+import { useCallback } from 'react';
 import type { GetContextEntitiesData } from '~/api.gen';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { InfiniteLoader } from '~/modules/common/data-table/infinine-loader';
@@ -16,34 +16,28 @@ interface Props extends EntityGridWrapperProps {
   setTotalCount: (newTotal: number | null) => void;
 }
 
-export const BaseEntityGrid = ({ tileComponent: TileComponent = EntityTile, entityType, label, userId, searchVars, setTotalCount }: Props) => {
-  // TODO change to infinite query
-  const { data, isFetching, error } = useSuspenseQuery(contextEntitiesQueryOptions({ ...searchVars, types: [entityType], targetUserId: userId }));
+export const BaseEntityGrid = ({ tileComponent: TileComponent = EntityTile, entityType, label, userId, searchVars }: Props) => {
+  const queryOptions = contextEntitiesQueryOptions({ ...searchVars, types: [entityType], targetUserId: userId });
+  const {
+    data: entities,
+    isFetching,
+    isLoading,
+    error,
+    hasNextPage,
+    fetchNextPage,
+  } = useSuspenseInfiniteQuery({
+    ...queryOptions,
+    select: (data) => data.pages.flatMap(({ items }) => items[entityType]),
+  });
 
-  // const queryOptions = contextEntitiesQueryOptions({ ...searchVars, types: [entityType], targetUserId: userId });
-  // const {
-  //   data: entities,
-  //   isFetching,
-  //   isLoading,
-  //   error,
-  //   hasNextPage,
-  //   fetchNextPage,
-  // } = useSuspenseInfiniteQuery({
-  //   ...queryOptions,
-  //   select: (data) => data.pages.flatMap(({ items }) => items[entityType]),
-  // });
-
+  //TODO(DAVID) figure out total
   const isFiltered = !!searchVars.q;
 
-  const entities = useMemo(() => data.items[entityType], [data.items]);
-
-  // // isFetching already includes next page fetch scenario
-  // const fetchMore = useCallback(async () => {
-  //   if (!hasNextPage || isLoading || isFetching) return;
-  //   await fetchNextPage();
-  // }, [hasNextPage, isLoading, isFetching]);
-
-  useEffect(() => setTotalCount(data.total), [data.total]);
+  // isFetching already includes next page fetch scenario
+  const fetchMore = useCallback(async () => {
+    if (!hasNextPage || isLoading || isFetching) return;
+    await fetchNextPage();
+  }, [hasNextPage, isLoading, isFetching]);
 
   if (!isFetching && !error && !isFiltered && !entities.length)
     return <ContentPlaceholder icon={Bird} title={t('common:no_resource_yet', { resource: t(label, { count: 0 }).toLowerCase() })} />;
@@ -59,9 +53,7 @@ export const BaseEntityGrid = ({ tileComponent: TileComponent = EntityTile, enti
         ))}
       </div>
 
-      {/* Remove on infiniteQuery swap */}
-      {/* <InfiniteLoader hasNextPage={hasNextPage} isFetching={isFetching} isFetchMoreError={!!error} fetchMore={fetchMore} /> */}
-      <InfiniteLoader hasNextPage={false} isFetching={isFetching} isFetchMoreError={!!error} />
+      <InfiniteLoader hasNextPage={hasNextPage} isFetching={isFetching} isFetchMoreError={!!error} fetchMore={fetchMore} />
     </div>
   );
 };
