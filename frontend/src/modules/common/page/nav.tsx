@@ -52,11 +52,6 @@ export const PageNav = ({ tabs, title, avatar, fallbackToFirst, className }: Pro
     tab?.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
   };
 
-  const handleTabClick = (id: string, el: HTMLAnchorElement | null) => {
-    scrollTabIntoView(id);
-    updateScrollPosition(el);
-  };
-
   // Scroll to tabs when scrolled past header
   const updateScrollPosition = (tabEl: HTMLAnchorElement | null) => {
     if (!tabEl) return;
@@ -97,10 +92,12 @@ export const PageNav = ({ tabs, title, avatar, fallbackToFirst, className }: Pro
               search={search}
               activeOptions={activeOptions}
               activeProps={{ 'data-active': true }}
-              onClick={(e) => handleTabClick(id, e.currentTarget)}
+              onClick={(e) => updateScrollPosition(e.currentTarget)}
             >
               {({ isActive }) => {
                 const showAsActive = isActive || (fallbackToFirst && index === 0);
+                if (showAsActive) scrollTabIntoView(id);
+
                 return (
                   <>
                     <span className="block group-active:translate-y-[.05rem]">{t(label)}</span>
