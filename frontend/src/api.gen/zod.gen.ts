@@ -27,20 +27,6 @@ export const zUser = z.object({
   modifiedBy: z.union([z.string(), z.null()]),
 });
 
-export const zMembershipBaseSchema = z.union([
-  z.object({
-    id: z.string(),
-    contextType: z.enum(['organization']),
-    userId: z.string(),
-    role: z.enum(['member', 'admin']),
-    archived: z.boolean(),
-    muted: z.boolean(),
-    order: z.number().gte(-140737488355328).lte(140737488355327),
-    organizationId: z.string(),
-  }),
-  z.null(),
-]);
-
 export const zOrganization = z.object({
   createdAt: z.string(),
   id: z.string(),
@@ -66,7 +52,19 @@ export const zOrganization = z.object({
   createdBy: z.union([z.string(), z.null()]),
   modifiedAt: z.union([z.string(), z.null()]),
   modifiedBy: z.union([z.string(), z.null()]),
-  membership: zMembershipBaseSchema,
+  membership: z.union([
+    z.object({
+      id: z.string(),
+      contextType: z.enum(['organization']),
+      userId: z.string(),
+      role: z.enum(['member', 'admin']),
+      archived: z.boolean(),
+      muted: z.boolean(),
+      order: z.number().gte(-140737488355328).lte(140737488355327),
+      organizationId: z.string(),
+    }),
+    z.null(),
+  ]),
   invitesCount: z.number(),
 });
 
@@ -99,6 +97,17 @@ export const zUserBaseSchema = z.object({
   entityType: z.enum(['user']),
 });
 
+export const zMembershipBaseSchema = z.object({
+  id: z.string(),
+  contextType: z.enum(['organization']),
+  userId: z.string(),
+  role: z.enum(['member', 'admin']),
+  archived: z.boolean(),
+  muted: z.boolean(),
+  order: z.number().gte(-140737488355328).lte(140737488355327),
+  organizationId: z.string(),
+});
+
 export const zContextEntityBaseSchema = z.object({
   id: z.string(),
   entityType: z.enum(['organization']),
@@ -116,7 +125,16 @@ export const zMenuSchema = z.object({
       slug: z.string(),
       name: z.string(),
       thumbnailUrl: z.optional(z.union([z.string(), z.null()])),
-      membership: zMembershipBaseSchema.and(z.record(z.string(), z.unknown())),
+      membership: z.object({
+        id: z.string(),
+        contextType: z.enum(['organization']),
+        userId: z.string(),
+        role: z.enum(['member', 'admin']),
+        archived: z.boolean(),
+        muted: z.boolean(),
+        order: z.number().gte(-140737488355328).lte(140737488355327),
+        organizationId: z.string(),
+      }),
       createdAt: z.string(),
       modifiedAt: z.union([z.string(), z.null()]),
       organizationId: z.optional(z.string()),
@@ -128,7 +146,16 @@ export const zMenuSchema = z.object({
             slug: z.string(),
             name: z.string(),
             thumbnailUrl: z.optional(z.union([z.string(), z.null()])),
-            membership: zMembershipBaseSchema.and(z.record(z.string(), z.unknown())),
+            membership: z.object({
+              id: z.string(),
+              contextType: z.enum(['organization']),
+              userId: z.string(),
+              role: z.enum(['member', 'admin']),
+              archived: z.boolean(),
+              muted: z.boolean(),
+              order: z.number().gte(-140737488355328).lte(140737488355327),
+              organizationId: z.string(),
+            }),
             createdAt: z.string(),
             modifiedAt: z.union([z.string(), z.null()]),
             organizationId: z.optional(z.string()),
@@ -338,7 +365,16 @@ export const zAcceptEntityInviteData = z.object({
  */
 export const zAcceptEntityInviteResponse = zContextEntityBaseSchema.and(
   z.object({
-    membership: zMembershipBaseSchema.and(z.record(z.string(), z.unknown())),
+    membership: z.object({
+      id: z.string(),
+      contextType: z.enum(['organization']),
+      userId: z.string(),
+      role: z.enum(['member', 'admin']),
+      archived: z.boolean(),
+      muted: z.boolean(),
+      order: z.number().gte(-140737488355328).lte(140737488355327),
+      organizationId: z.string(),
+    }),
     createdAt: z.string(),
   }),
 );
@@ -718,7 +754,18 @@ export const zGetUsersResponse = z.object({
     z.union([
       zUser,
       z.object({
-        memberships: z.array(z.union([zMembershipBaseSchema, z.record(z.string(), z.unknown())])),
+        memberships: z.array(
+          z.object({
+            id: z.string(),
+            contextType: z.enum(['organization']),
+            userId: z.string(),
+            role: z.enum(['member', 'admin']),
+            archived: z.boolean(),
+            muted: z.boolean(),
+            order: z.number().gte(-140737488355328).lte(140737488355327),
+            organizationId: z.string(),
+          }),
+        ),
       }),
     ]),
   ),
@@ -823,7 +870,19 @@ export const zGetOrganizationsResponse = z.object({
       createdBy: z.union([z.string(), z.null()]),
       modifiedAt: z.union([z.string(), z.null()]),
       modifiedBy: z.union([z.string(), z.null()]),
-      membership: zMembershipBaseSchema,
+      membership: z.union([
+        z.object({
+          id: z.string(),
+          contextType: z.enum(['organization']),
+          userId: z.string(),
+          role: z.enum(['member', 'admin']),
+          archived: z.boolean(),
+          muted: z.boolean(),
+          order: z.number().gte(-140737488355328).lte(140737488355327),
+          organizationId: z.string(),
+        }),
+        z.null(),
+      ]),
       counts: z.object({
         membership: z.object({
           admin: z.number(),
@@ -854,7 +913,18 @@ export const zCreateOrganizationData = z.object({
  */
 export const zCreateOrganizationResponse = zOrganization.and(
   z.object({
-    membership: z.optional(zMembershipBaseSchema.and(z.record(z.string(), z.unknown()))),
+    membership: z.optional(
+      z.object({
+        id: z.string(),
+        contextType: z.enum(['organization']),
+        userId: z.string(),
+        role: z.enum(['member', 'admin']),
+        archived: z.boolean(),
+        muted: z.boolean(),
+        order: z.number().gte(-140737488355328).lte(140737488355327),
+        organizationId: z.string(),
+      }),
+    ),
   }),
 );
 
@@ -934,7 +1004,19 @@ export const zGetContextEntitiesResponse = z.object({
         zContextEntityBaseSchema,
         z.object({
           createdAt: z.string(),
-          membership: zMembershipBaseSchema,
+          membership: z.union([
+            z.object({
+              id: z.string(),
+              contextType: z.enum(['organization']),
+              userId: z.string(),
+              role: z.enum(['member', 'admin']),
+              archived: z.boolean(),
+              muted: z.boolean(),
+              order: z.number().gte(-140737488355328).lte(140737488355327),
+              organizationId: z.string(),
+            }),
+            z.null(),
+          ]),
           membershipCounts: z.object({
             admin: z.number(),
             member: z.number(),
@@ -1406,7 +1488,16 @@ export const zGetMembersResponse = z.object({
       lastStartedAt: z.union([z.string(), z.null()]),
       lastSignInAt: z.union([z.string(), z.null()]),
       modifiedBy: z.union([z.string(), z.null()]),
-      membership: zMembershipBaseSchema.and(z.record(z.string(), z.unknown())),
+      membership: z.object({
+        id: z.string(),
+        contextType: z.enum(['organization']),
+        userId: z.string(),
+        role: z.enum(['member', 'admin']),
+        archived: z.boolean(),
+        muted: z.boolean(),
+        order: z.number().gte(-140737488355328).lte(140737488355327),
+        organizationId: z.string(),
+      }),
     }),
   ),
   total: z.number(),

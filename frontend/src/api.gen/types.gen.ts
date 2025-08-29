@@ -25,17 +25,6 @@ export type User = {
   modifiedBy: string | null;
 };
 
-export type MembershipBaseSchema = {
-  id: string;
-  contextType: 'organization';
-  userId: string;
-  role: 'member' | 'admin';
-  archived: boolean;
-  muted: boolean;
-  order: number;
-  organizationId: string;
-} | null;
-
 export type Organization = {
   createdAt: string;
   id: string;
@@ -61,7 +50,16 @@ export type Organization = {
   createdBy: string | null;
   modifiedAt: string | null;
   modifiedBy: string | null;
-  membership: MembershipBaseSchema;
+  membership: {
+    id: string;
+    contextType: 'organization';
+    userId: string;
+    role: 'member' | 'admin';
+    archived: boolean;
+    muted: boolean;
+    order: number;
+    organizationId: string;
+  } | null;
   invitesCount: number;
 };
 
@@ -94,6 +92,17 @@ export type UserBaseSchema = {
   entityType: 'user';
 };
 
+export type MembershipBaseSchema = {
+  id: string;
+  contextType: 'organization';
+  userId: string;
+  role: 'member' | 'admin';
+  archived: boolean;
+  muted: boolean;
+  order: number;
+  organizationId: string;
+};
+
 export type ContextEntityBaseSchema = {
   id: string;
   entityType: 'organization';
@@ -110,8 +119,15 @@ export type MenuSchema = {
     slug: string;
     name: string;
     thumbnailUrl?: string | null;
-    membership: MembershipBaseSchema & {
-      [key: string]: unknown;
+    membership: {
+      id: string;
+      contextType: 'organization';
+      userId: string;
+      role: 'member' | 'admin';
+      archived: boolean;
+      muted: boolean;
+      order: number;
+      organizationId: string;
     };
     createdAt: string;
     modifiedAt: string | null;
@@ -122,8 +138,15 @@ export type MenuSchema = {
       slug: string;
       name: string;
       thumbnailUrl?: string | null;
-      membership: MembershipBaseSchema & {
-        [key: string]: unknown;
+      membership: {
+        id: string;
+        contextType: 'organization';
+        userId: string;
+        role: 'member' | 'admin';
+        archived: boolean;
+        muted: boolean;
+        order: number;
+        organizationId: string;
       };
       createdAt: string;
       modifiedAt: string | null;
@@ -670,8 +693,15 @@ export type AcceptEntityInviteResponses = {
    * Invitation was accepted
    */
   200: ContextEntityBaseSchema & {
-    membership: MembershipBaseSchema & {
-      [key: string]: unknown;
+    membership: {
+      id: string;
+      contextType: 'organization';
+      userId: string;
+      role: 'member' | 'admin';
+      archived: boolean;
+      muted: boolean;
+      order: number;
+      organizationId: string;
     };
     createdAt: string;
   };
@@ -2012,11 +2042,16 @@ export type GetUsersResponses = {
   200: {
     items: Array<
       User & {
-        memberships: Array<
-          MembershipBaseSchema & {
-            [key: string]: unknown;
-          }
-        >;
+        memberships: Array<{
+          id: string;
+          contextType: 'organization';
+          userId: string;
+          role: 'member' | 'admin';
+          archived: boolean;
+          muted: boolean;
+          order: number;
+          organizationId: string;
+        }>;
       }
     >;
     total: number;
@@ -2273,7 +2308,16 @@ export type GetOrganizationsResponses = {
       createdBy: string | null;
       modifiedAt: string | null;
       modifiedBy: string | null;
-      membership: MembershipBaseSchema;
+      membership: {
+        id: string;
+        contextType: 'organization';
+        userId: string;
+        role: 'member' | 'admin';
+        archived: boolean;
+        muted: boolean;
+        order: number;
+        organizationId: string;
+      } | null;
       counts: {
         membership: {
           admin: number;
@@ -2342,8 +2386,15 @@ export type CreateOrganizationResponses = {
    * Organization was created
    */
   200: Organization & {
-    membership?: MembershipBaseSchema & {
-      [key: string]: unknown;
+    membership?: {
+      id: string;
+      contextType: 'organization';
+      userId: string;
+      role: 'member' | 'admin';
+      archived: boolean;
+      muted: boolean;
+      order: number;
+      organizationId: string;
     };
   };
 };
@@ -2537,7 +2588,16 @@ export type GetContextEntitiesResponses = {
       organization: Array<
         ContextEntityBaseSchema & {
           createdAt: string;
-          membership: MembershipBaseSchema;
+          membership: {
+            id: string;
+            contextType: 'organization';
+            userId: string;
+            role: 'member' | 'admin';
+            archived: boolean;
+            muted: boolean;
+            order: number;
+            organizationId: string;
+          } | null;
           membershipCounts: {
             admin: number;
             member: number;
@@ -3901,8 +3961,15 @@ export type GetMembersResponses = {
       lastStartedAt: string | null;
       lastSignInAt: string | null;
       modifiedBy: string | null;
-      membership: MembershipBaseSchema & {
-        [key: string]: unknown;
+      membership: {
+        id: string;
+        contextType: 'organization';
+        userId: string;
+        role: 'member' | 'admin';
+        archived: boolean;
+        muted: boolean;
+        order: number;
+        organizationId: string;
       };
     }>;
     total: number;

@@ -2,7 +2,7 @@ import type { ContextEntityType } from 'config';
 import type { ContextEntityBaseSchema, GetContextEntitiesResponse, MembershipBaseSchema } from '~/api.gen';
 
 export type EntityPage = ContextEntityBaseSchema & {
-  membership?: MembershipBaseSchema;
+  membership?: MembershipBaseSchema | null;
   organizationId?: string | null;
   invitesCount?: number;
 };

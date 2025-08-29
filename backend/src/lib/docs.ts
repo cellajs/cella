@@ -53,6 +53,8 @@ const docs = async (app: OpenAPIHono<Env>, skipScalar = false) => {
 
   // Register lower-level (base) schemas
   registry.register('UserBaseSchema', userBaseSchema);
+  // TODO: MembershipBaseSchema is currently not really referenced in openapi because the schema is not connected using .openapi('MembershipBaseSchema')
+  // This is because if we do, somehow MembershipBaseSchema becomes nullable for unknown reason.
   registry.register('MembershipBaseSchema', membershipBaseSchema);
   registry.register('ContextEntityBaseSchema', contextEntityBaseSchema);
 
