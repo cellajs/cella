@@ -54,7 +54,7 @@ const initStore: InitStore = {
   navSheetOpen: null,
   keepMenuOpen: window.innerWidth > 1280, // Auto-open menu on wider screens
   keepOpenPreference: false,
-  hideSubmenu: false,
+  hideSubmenu: true,
   navLoading: false,
   focusView: false,
   menu: initialMenuState,
