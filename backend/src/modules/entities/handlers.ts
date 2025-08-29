@@ -1,7 +1,3 @@
-import { OpenAPIHono, type z } from '@hono/zod-openapi';
-import { appConfig } from 'config';
-import { and, eq, ilike, isNotNull, isNull, type SQLWrapper, sql } from 'drizzle-orm';
-import { alias } from 'drizzle-orm/pg-core';
 import { db } from '#/db/db';
 import { membershipsTable } from '#/db/schema/memberships';
 import { entityTables } from '#/entity-config';
@@ -16,6 +12,10 @@ import { getValidContextEntity } from '#/permissions/get-context-entity';
 import { defaultHook } from '#/utils/default-hook';
 import { getOrderColumn } from '#/utils/order-column';
 import { prepareStringForILikeFilter } from '#/utils/sql';
+import { OpenAPIHono, type z } from '@hono/zod-openapi';
+import { appConfig } from 'config';
+import { and, eq, ilike, isNotNull, isNull, sql, type SQLWrapper } from 'drizzle-orm';
+import { alias } from 'drizzle-orm/pg-core';
 
 const app = new OpenAPIHono<Env>({ defaultHook });
 
@@ -137,6 +137,7 @@ const entityRouteHandlers = app
     // Run all queries (replace skipped entity types with empty arrays)
     const queriesData = await Promise.all(contextQueries.map((query) => (query ? query : Promise.resolve([]))));
 
+    //TODO(DAVID) FIX TOTAL
     // Build response payload
     const data = {
       items: Object.fromEntries(appConfig.contextEntityTypes.map((entityType, i) => [entityType, queriesData[i] ?? []])) as z.infer<

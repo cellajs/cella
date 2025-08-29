@@ -1,6 +1,6 @@
 import { keepPreviousData, queryOptions } from '@tanstack/react-query';
 import { appConfig, type PageEntityType } from 'config';
-import { type GetContextEntitiesData, getContextEntities } from '~/api.gen';
+import { getContextEntities, type GetContextEntitiesData } from '~/api.gen';
 import type { ContextEntityItems } from '~/modules/entities/types';
 import { useUserStore } from '~/store/user';
 
@@ -21,21 +21,27 @@ export const entitiesKeys = {
 };
 
 /**
- * Query options for fetching page entities based on input query.
+ * Query options for fetching context entities based on input query.
  *
- * @param query - PageEntitiesQuery parameters to get entities.
+ * @param query.q - Optional search term to filter entities.
+ * @param query.types - One or more `ContextEntityTypes`.
+ * @param query.targetUserId - ID of user to scope search to.
+ * @param query.targetOrgId - ID of organization to scope search to.
  * @returns Query options
  */
-export const searchContextEntitiesQueryOptions = (
-  query: Pick<NonNullable<GetContextEntitiesData['query']>, 'q' | 'types' | 'targetUserId' | 'targetOrgId'>,
-) => {
-  const searchQuery = query.q ?? '';
+export const searchContextEntitiesQueryOptions = ({
+  q = '',
+  types,
+  targetUserId,
+  targetOrgId,
+}: Pick<NonNullable<GetContextEntitiesData['query']>, 'q' | 'types' | 'targetUserId' | 'targetOrgId'>) => {
+  const orgAffiliated = 'true';
 
   return queryOptions({
-    queryKey: entitiesKeys.search(searchQuery),
-    queryFn: () => getContextEntities({ query }),
+    queryKey: entitiesKeys.search(q),
+    queryFn: () => getContextEntities({ query: { q, types, targetUserId, targetOrgId, orgAffiliated } }),
     staleTime: 0,
-    enabled: searchQuery.trim().length > 0, // to avoid issues with spaces
+    enabled: q.trim().length > 0, // to avoid issues with spaces
     initialData: {
       items: Object.fromEntries(appConfig.contextEntityTypes.map((t) => [t, []])) as unknown as ContextEntityItems,
       total: 0,
@@ -45,20 +51,54 @@ export const searchContextEntitiesQueryOptions = (
 };
 
 /**
- * Query options for fetching page entities based on input query.
+ * Infinite Query Options for fetching a paginated list of context entities.
  *
- * @param query - PageEntitiesQuery parameters to get entities.
- * @returns Query options
+ * @param query.q - Optional search term to filter entities.
+ * @param query.sort - Field to sort results by (default: 'name').
+ * @param query.types - One or more `ContextEntityTypes`.
+ * @param query.role - Optional role filter for entities.
+ * @param query.excludeArchived - Whether to exclude archived entities.
+ * @param query.limit - Maximum number of entities to fetch per page (default: appConfig.requestLimits.default).
+ * @param query.targetUserId - ID of user to scope search to (defaults to current user).
+ *
+ * @returns Infinite query options.
  */
-export const contextEntitiesQueryOptions = (query: Omit<NonNullable<GetContextEntitiesData['query']>, 'targetOrgId' | 'orgAffiliated'>) => {
-  const user = useUserStore.getState().user;
-  const q = query.q ?? '';
-  const sort = query.sort ?? 'name';
-  const targetUserId = query.targetUserId ?? user.id;
+export const contextEntitiesQueryOptions = ({
+  q = '',
+  sort = 'name',
+  types,
+  role,
+  excludeArchived,
+  limit: baseLimit = appConfig.requestLimits.default,
+  targetUserId = useUserStore.getState().user.id,
+}: Omit<NonNullable<GetContextEntitiesData['query']>, 'targetOrgId' | 'orgAffiliated' | 'order' | 'limit'> & { limit?: number }) => {
+  const limit = String(baseLimit);
   const orgAffiliated = 'false';
+  // const { initialPageParam } = baseInfiniteQueryOptions;
+
   return queryOptions({
-    queryKey: entitiesKeys.grid.context({ q, sort, targetUserId, types: query.types, role: query.role }),
-    queryFn: () => getContextEntities({ query: { ...query, sort, targetUserId, orgAffiliated } }),
+    queryKey: entitiesKeys.grid.context({ q, sort, targetUserId, types, role }),
+    queryFn: () => getContextEntities({ query: { q, sort, types, role, targetUserId, excludeArchived, orgAffiliated, limit } }),
     staleTime: 0,
   });
+  // return infiniteQueryOptions({
+  //   queryKey: entitiesKeys.grid.context({ q, sort, targetUserId, types, role }),
+  //   initialPageParam,
+  //   queryFn: async ({ pageParam: { page, offset: _offset }, signal }) => {
+  //     const offset = String(_offset || (page || 0) * Number(limit));
+  //     return await getContextEntities({ query: { q, sort, types, role, targetUserId, excludeArchived, orgAffiliated, offset, limit }, signal });
+  //   },
+  //   getNextPageParam: (lastPage, allPages) => {
+  //     const total = lastPage.total;
+
+  //     const fetchedCount = allPages.reduce((acc, page) => {
+  //       const pageCount = Object.values(page.items).reduce((sum, arr) => sum + arr.length, 0);
+  //       return acc + pageCount;
+  //     }, 0);
+
+  //     if (fetchedCount >= total) return undefined;
+  //     return { page: allPages.length, offset: fetchedCount };
+  //   },
+  //   staleTime: 0,
+  // });
 };

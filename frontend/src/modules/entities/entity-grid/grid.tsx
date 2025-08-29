@@ -13,21 +13,25 @@ export type EntitySearch = Pick<NonNullable<GetContextEntitiesData['query']>, 's
 
 interface Props extends EntityGridWrapperProps {
   searchVars: EntitySearch;
-  totalCount: number | null;
   setTotalCount: (newTotal: number | null) => void;
 }
 
-export const BaseEntityGrid = ({
-  tileComponent: TileComponent = EntityTile,
-  entityType,
-  label,
-  userId,
-  searchVars,
-  setTotalCount,
-  totalCount,
-}: Props) => {
+export const BaseEntityGrid = ({ tileComponent: TileComponent = EntityTile, entityType, label, userId, searchVars, setTotalCount }: Props) => {
   // TODO change to infinite query
   const { data, isFetching, error } = useSuspenseQuery(contextEntitiesQueryOptions({ ...searchVars, types: [entityType], targetUserId: userId }));
+
+  // const queryOptions = contextEntitiesQueryOptions({ ...searchVars, types: [entityType], targetUserId: userId });
+  // const {
+  //   data: entities,
+  //   isFetching,
+  //   isLoading,
+  //   error,
+  //   hasNextPage,
+  //   fetchNextPage,
+  // } = useSuspenseInfiniteQuery({
+  //   ...queryOptions,
+  //   select: (data) => data.pages.flatMap(({ items }) => items[entityType]),
+  // });
 
   const isFiltered = !!searchVars.q;
 
@@ -41,10 +45,10 @@ export const BaseEntityGrid = ({
 
   useEffect(() => setTotalCount(data.total), [data.total]);
 
-  if (!isFetching && !error && !isFiltered && !totalCount)
+  if (!isFetching && !error && !isFiltered && !entities.length)
     return <ContentPlaceholder icon={Bird} title={t('common:no_resource_yet', { resource: t(label, { count: 0 }).toLowerCase() })} />;
 
-  if (!isFetching && !error && !totalCount)
+  if (!isFetching && !error && !entities.length)
     return <ContentPlaceholder icon={Search} title={t('common:no_resource_found', { resource: t(label, { count: 0 }).toLowerCase() })} />;
 
   return (

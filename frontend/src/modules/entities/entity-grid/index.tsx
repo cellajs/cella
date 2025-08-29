@@ -29,7 +29,6 @@ const EntityGrid = ({ entityType, label, userId, focusView = true, saveDataInSea
           label={label}
           userId={userId}
           searchVars={search}
-          totalCount={totalCount}
           setTotalCount={setTotalCount}
           tileComponent={tileComponent}
         />
