@@ -1,10 +1,10 @@
 import type { ContextEntityType } from 'config';
-import type { ContextEntityBaseSchema, GetContextEntitiesResponse, MembershipBaseSchema } from '~/api.gen';
+import type { ContextEntityBaseSchema, GetContextEntitiesResponse, MembershipBaseSchema, Organization } from '~/api.gen';
 
 export type EntityPage = ContextEntityBaseSchema & {
   membership?: MembershipBaseSchema | null;
   organizationId?: string | null;
-  invitesCount?: number;
+  counts?: Organization['counts'];
 };
 
 export type ContextEntityItems = GetContextEntitiesResponse['items'];

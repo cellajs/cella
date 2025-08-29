@@ -2,7 +2,7 @@ import { appConfig } from 'config';
 import { Mailbox, Plus, Trash, XSquare } from 'lucide-react';
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { getOrganizations } from '~/api.gen';
+import { getOrganizations, type Organization } from '~/api.gen';
 import ColumnsView from '~/modules/common/data-table/columns-view';
 import Export from '~/modules/common/data-table/export';
 import { TableBarButton } from '~/modules/common/data-table/table-bar-button';
@@ -18,14 +18,13 @@ import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
 import { toaster } from '~/modules/common/toaster/service';
 import UnsavedBadge from '~/modules/common/unsaved-badge';
 import CreateOrganizationForm from '~/modules/organizations/create-organization-form';
-import DeleteOrganizations, { type OrganizationToDelete } from '~/modules/organizations/delete-organizations';
+import DeleteOrganizations from '~/modules/organizations/delete-organizations';
 import type { OrganizationsSearch } from '~/modules/organizations/table';
-import type { TableOrganization } from '~/modules/organizations/types';
 import CreateNewsletterForm from '~/modules/system/create-newsletter-form';
 import NewsletterPreview from '~/modules/system/newsletter-preview';
 import { useInfiniteQueryTotal } from '~/query/hooks/use-infinite-query-total';
 
-type OrganizationsTableBarProps = BaseTableBarProps<TableOrganization, OrganizationsSearch>;
+type OrganizationsTableBarProps = BaseTableBarProps<Organization, OrganizationsSearch>;
 
 export const OrganizationsTableBar = ({
   selected,
@@ -65,7 +64,7 @@ export const OrganizationsTableBar = ({
   };
 
   const openDeleteDialog = () => {
-    const callback = (organizations: OrganizationToDelete[]) => {
+    const callback = (organizations: Organization[]) => {
       const message =
         organizations.length === 1
           ? t('common:success.delete_resource', { resource: t('common:organization') })

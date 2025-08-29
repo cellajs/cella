@@ -35,7 +35,7 @@ export const membershipCountSchema = z.object({
   total: z.number(),
 });
 
-export const fullCountsSchema = z.object({ membership: membershipCountSchema, related: entityCountSchema });
+export const fullCountsSchema = z.object({ membership: membershipCountSchema, entities: entityCountSchema });
 
 export const organizationSchema = z
   .object({
@@ -44,7 +44,7 @@ export const organizationSchema = z
     emailDomains: z.array(z.string()),
     authStrategies: z.array(z.enum(authStrategiesEnum)),
     membership: membershipBaseSchema.nullable(),
-    invitesCount: z.number(),
+    counts: fullCountsSchema,
   })
   .openapi('Organization');
 

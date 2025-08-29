@@ -65,7 +65,17 @@ export const zOrganization = z.object({
     }),
     z.null(),
   ]),
-  invitesCount: z.number(),
+  counts: z.object({
+    membership: z.object({
+      admin: z.number(),
+      member: z.number(),
+      pending: z.number(),
+      total: z.number(),
+    }),
+    entities: z.object({
+      attachment: z.number(),
+    }),
+  }),
 });
 
 export const zAttachment = z.object({
@@ -844,58 +854,7 @@ export const zGetOrganizationsData = z.object({
  * Organizations
  */
 export const zGetOrganizationsResponse = z.object({
-  items: z.array(
-    z.object({
-      createdAt: z.string(),
-      id: z.string(),
-      entityType: z.enum(['organization']),
-      name: z.string(),
-      description: z.union([z.string(), z.null()]),
-      slug: z.string(),
-      thumbnailUrl: z.union([z.string(), z.null()]),
-      bannerUrl: z.union([z.string(), z.null()]),
-      shortName: z.union([z.string(), z.null()]),
-      country: z.union([z.string(), z.null()]),
-      timezone: z.union([z.string(), z.null()]),
-      defaultLanguage: z.enum(['en', 'nl']),
-      languages: z.array(z.enum(['en', 'nl'])).min(1),
-      notificationEmail: z.union([z.string(), z.null()]),
-      emailDomains: z.array(z.string()),
-      color: z.union([z.string(), z.null()]),
-      logoUrl: z.union([z.string(), z.null()]),
-      websiteUrl: z.union([z.string(), z.null()]),
-      welcomeText: z.union([z.string(), z.null()]),
-      authStrategies: z.array(z.enum(['github', 'google', 'microsoft', 'password', 'passkey', 'email'])),
-      chatSupport: z.boolean(),
-      createdBy: z.union([z.string(), z.null()]),
-      modifiedAt: z.union([z.string(), z.null()]),
-      modifiedBy: z.union([z.string(), z.null()]),
-      membership: z.union([
-        z.object({
-          id: z.string(),
-          contextType: z.enum(['organization']),
-          userId: z.string(),
-          role: z.enum(['member', 'admin']),
-          archived: z.boolean(),
-          muted: z.boolean(),
-          order: z.number().gte(-140737488355328).lte(140737488355327),
-          organizationId: z.string(),
-        }),
-        z.null(),
-      ]),
-      counts: z.object({
-        membership: z.object({
-          admin: z.number(),
-          member: z.number(),
-          pending: z.number(),
-          total: z.number(),
-        }),
-        related: z.object({
-          attachment: z.number(),
-        }),
-      }),
-    }),
-  ),
+  items: z.array(z.union([zOrganization, z.record(z.string(), z.unknown())])),
   total: z.number(),
 });
 

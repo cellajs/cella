@@ -60,7 +60,17 @@ export type Organization = {
     order: number;
     organizationId: string;
   } | null;
-  invitesCount: number;
+  counts: {
+    membership: {
+      admin: number;
+      member: number;
+      pending: number;
+      total: number;
+    };
+    entities: {
+      attachment: number;
+    };
+  };
 };
 
 export type Attachment = {
@@ -2283,53 +2293,11 @@ export type GetOrganizationsResponses = {
    * Organizations
    */
   200: {
-    items: Array<{
-      createdAt: string;
-      id: string;
-      entityType: 'organization';
-      name: string;
-      description: string | null;
-      slug: string;
-      thumbnailUrl: string | null;
-      bannerUrl: string | null;
-      shortName: string | null;
-      country: string | null;
-      timezone: string | null;
-      defaultLanguage: 'en' | 'nl';
-      languages: Array<'en' | 'nl'>;
-      notificationEmail: string | null;
-      emailDomains: Array<string>;
-      color: string | null;
-      logoUrl: string | null;
-      websiteUrl: string | null;
-      welcomeText: string | null;
-      authStrategies: Array<'github' | 'google' | 'microsoft' | 'password' | 'passkey' | 'email'>;
-      chatSupport: boolean;
-      createdBy: string | null;
-      modifiedAt: string | null;
-      modifiedBy: string | null;
-      membership: {
-        id: string;
-        contextType: 'organization';
-        userId: string;
-        role: 'member' | 'admin';
-        archived: boolean;
-        muted: boolean;
-        order: number;
-        organizationId: string;
-      } | null;
-      counts: {
-        membership: {
-          admin: number;
-          member: number;
-          pending: number;
-          total: number;
-        };
-        related: {
-          attachment: number;
-        };
-      };
-    }>;
+    items: Array<
+      Organization & {
+        [key: string]: unknown;
+      }
+    >;
     total: number;
   };
 };

@@ -5,7 +5,7 @@ import { useCallback, useState } from 'react';
 import type { RowsChangeData } from 'react-data-grid';
 import { useTranslation } from 'react-i18next';
 import type { z } from 'zod';
-import { membershipInvite } from '~/api.gen';
+import { membershipInvite, type Organization } from '~/api.gen';
 import useSearchParams from '~/hooks/use-search-params';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { DataTable } from '~/modules/common/data-table';
@@ -16,7 +16,6 @@ import { useMemberUpdateMutation } from '~/modules/memberships/query-mutations';
 import { organizationsQueryOptions } from '~/modules/organizations/query';
 import { useColumns } from '~/modules/organizations/table/columns';
 import { OrganizationsTableBar } from '~/modules/organizations/table/table-bar';
-import type { TableOrganization } from '~/modules/organizations/types';
 import { OrganizationsTableRoute, type organizationsSearchSchema } from '~/routes/system';
 import { useUserStore } from '~/store/user';
 
@@ -35,7 +34,7 @@ const OrganizationsTable = () => {
   const limit = LIMIT;
 
   // Build columns
-  const [selected, setSelected] = useState<TableOrganization[]>([]);
+  const [selected, setSelected] = useState<Organization[]>([]);
   const [columns, setColumns] = useColumns();
   const { sortColumns, setSortColumns: onSortColumnsChange } = useSortColumns(sort, order, setSearch);
 
@@ -52,7 +51,7 @@ const OrganizationsTable = () => {
     select: ({ pages }) => pages.flatMap(({ items }) => items),
   });
 
-  const onRowsChange = async (changedRows: TableOrganization[], { column, indexes }: RowsChangeData<TableOrganization>) => {
+  const onRowsChange = async (changedRows: Organization[], { column, indexes }: RowsChangeData<Organization>) => {
     if (column.key !== 'role') return;
     if (!onlineManager.isOnline()) {
       toaster(t('common:action.offline.text'), 'warning');
@@ -108,7 +107,7 @@ const OrganizationsTable = () => {
         setColumns={setColumns}
         clearSelection={() => setSelected([])}
       />
-      <DataTable<TableOrganization>
+      <DataTable<Organization>
         {...{
           rows,
           rowHeight: 52,

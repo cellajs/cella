@@ -2,13 +2,10 @@ import type { Organization } from '~/api.gen';
 import { DeleteForm } from '~/modules/common/delete-form';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { useOrganizationDeleteMutation } from '~/modules/organizations/query';
-import type { TableOrganization } from '~/modules/organizations/types';
-
-export type OrganizationToDelete = TableOrganization | Organization;
 
 interface Props {
-  organizations: OrganizationToDelete[];
-  callback?: (organizations: OrganizationToDelete[]) => void;
+  organizations: Organization[];
+  callback?: (organizations: Organization[]) => void;
   dialog?: boolean;
 }
 

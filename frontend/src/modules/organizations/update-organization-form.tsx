@@ -19,7 +19,6 @@ import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
 import Spinner from '~/modules/common/spinner';
 import { toaster } from '~/modules/common/toaster/service';
 import { useOrganizationUpdateMutation } from '~/modules/organizations/query';
-import type { TableOrganization } from '~/modules/organizations/types';
 import { Button, SubmitButton } from '~/modules/ui/button';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
 
@@ -27,7 +26,7 @@ const formSchema = zUpdateOrganizationData.shape.body.unwrap();
 
 type FormValues = z.infer<typeof formSchema>;
 interface Props {
-  organization: Organization | TableOrganization;
+  organization: Organization | Organization;
   callback?: (organization: Organization) => void;
   sheet?: boolean;
 }

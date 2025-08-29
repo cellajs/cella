@@ -4,17 +4,16 @@ import { type RefObject, useRef } from 'react';
 import type { Organization } from '~/api.gen';
 import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
 import UnsavedBadge from '~/modules/common/unsaved-badge';
-import type { TableOrganization } from '~/modules/organizations/types';
 import UpdateOrganizationForm from '~/modules/organizations/update-organization-form';
 import { Button } from '~/modules/ui/button';
 import { Card, CardContent } from '~/modules/ui/card';
 
 interface Props {
-  organization: Organization | TableOrganization;
+  organization: Organization | Organization;
   tabIndex: number;
 }
 
-const openUpdateSheet = (organization: Organization | TableOrganization, buttonRef: RefObject<HTMLButtonElement | null>) => {
+const openUpdateSheet = (organization: Organization | Organization, buttonRef: RefObject<HTMLButtonElement | null>) => {
   useSheeter.getState().create(
     <Card className="mb-20">
       <CardContent>
