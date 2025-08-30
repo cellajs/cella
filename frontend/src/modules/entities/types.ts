@@ -1,14 +1,11 @@
 import type { ContextEntityType } from 'config';
-import type z from 'zod';
-import type { EntityListItemSchema } from '~/api.gen';
-import type { zGetContextEntitiesResponse } from '~/api.gen/zod.gen';
+import type { ContextEntityBaseSchema, GetContextEntitiesResponse, MembershipBaseSchema, Organization } from '~/api.gen';
 
-export type EntitySummary = Omit<EntityListItemSchema, 'entityType'> & { entityType: ContextEntityType };
-
-export type EntityPage = EntitySummary & {
+export type EntityPage = ContextEntityBaseSchema & {
+  membership?: MembershipBaseSchema | null;
   organizationId?: string | null;
-  invitesCount?: number;
+  counts?: Organization['counts'];
 };
 
-export type ContextEntityItems = z.infer<typeof zGetContextEntitiesResponse>['items'];
+export type ContextEntityItems = GetContextEntitiesResponse['items'];
 export type EntityGridItem = ContextEntityItems[ContextEntityType][number];

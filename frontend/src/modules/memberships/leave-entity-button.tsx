@@ -3,15 +3,14 @@ import { useNavigate } from '@tanstack/react-router';
 import { appConfig } from 'config';
 import { UserRoundX } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { deleteMyMembership } from '~/api.gen';
+import { type ContextEntityBaseSchema, deleteMyMembership } from '~/api.gen';
 import { toaster } from '~/modules/common/toaster/service';
-import type { EntitySummary } from '~/modules/entities/types';
 import { deleteMenuItem } from '~/modules/navigation/menu-sheet/helpers/menu-operations';
 import { Button, type ButtonProps } from '~/modules/ui/button';
 import { queryClient } from '~/query/query-client';
 import { cn } from '~/utils/cn';
 
-export type LeaveEntityButtonProps = { entity: EntitySummary; redirectPath?: string; buttonProps?: ButtonProps; callback?: () => void };
+export type LeaveEntityButtonProps = { entity: ContextEntityBaseSchema; redirectPath?: string; buttonProps?: ButtonProps; callback?: () => void };
 
 export const LeaveEntityButton = ({ entity, buttonProps, redirectPath = appConfig.defaultRedirectPath, callback }: LeaveEntityButtonProps) => {
   const { t } = useTranslation();

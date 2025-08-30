@@ -5,8 +5,7 @@ import { useCallback, useState } from 'react';
 import type { RowsChangeData } from 'react-data-grid';
 import { useTranslation } from 'react-i18next';
 import type { z } from 'zod';
-import { membershipInvite } from '~/api.gen';
-import type { zGetOrganizationsResponse } from '~/api.gen/zod.gen';
+import { membershipInvite, type Organization } from '~/api.gen';
 import useSearchParams from '~/hooks/use-search-params';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { DataTable } from '~/modules/common/data-table';
@@ -23,7 +22,6 @@ import { useUserStore } from '~/store/user';
 const LIMIT = appConfig.requestLimits.organizations;
 
 export type OrganizationsSearch = z.infer<typeof organizationsSearchSchema>;
-export type OrganizationTable = z.infer<typeof zGetOrganizationsResponse>['items'][number];
 
 const OrganizationsTable = () => {
   const { t } = useTranslation();
@@ -36,7 +34,7 @@ const OrganizationsTable = () => {
   const limit = LIMIT;
 
   // Build columns
-  const [selected, setSelected] = useState<OrganizationTable[]>([]);
+  const [selected, setSelected] = useState<Organization[]>([]);
   const [columns, setColumns] = useColumns();
   const { sortColumns, setSortColumns: onSortColumnsChange } = useSortColumns(sort, order, setSearch);
 
@@ -53,7 +51,7 @@ const OrganizationsTable = () => {
     select: ({ pages }) => pages.flatMap(({ items }) => items),
   });
 
-  const onRowsChange = async (changedRows: OrganizationTable[], { column, indexes }: RowsChangeData<OrganizationTable>) => {
+  const onRowsChange = async (changedRows: Organization[], { column, indexes }: RowsChangeData<Organization>) => {
     if (column.key !== 'role') return;
     if (!onlineManager.isOnline()) {
       toaster(t('common:action.offline.text'), 'warning');
@@ -109,7 +107,7 @@ const OrganizationsTable = () => {
         setColumns={setColumns}
         clearSelection={() => setSelected([])}
       />
-      <DataTable<OrganizationTable>
+      <DataTable<Organization>
         {...{
           rows,
           rowHeight: 52,

@@ -1,10 +1,10 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQueries } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
 import { appConfig } from 'config';
 import { History, Search, X } from 'lucide-react';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { EntityListItemSchema } from '~/api.gen';
+import type { ContextEntityBaseSchema, UserBaseSchema } from '~/api.gen';
 import useFocusByRef from '~/hooks/use-focus-by-ref';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
@@ -57,14 +57,25 @@ export const AppSearch = () => {
     });
   };
 
-  // TODO add ability to click `show more` to load more results
-  const { data: contextEntities, isFetching: contextEntitiesFetching } = useQuery(searchContextEntitiesQueryOptions({ q: searchValue }));
-  const { data: users, isFetching: usersFetching } = useQuery(searchUsersQueryOptions({ q: searchValue }));
+  const { data, notFound, isFetching } = useQueries({
+    queries: [searchContextEntitiesQueryOptions({ q: searchValue }), searchUsersQueryOptions({ q: searchValue })],
+    combine: ([contextEntitiesResult, usersResult]) => {
+      const usersData = usersResult.data;
+      const entitiesData = contextEntitiesResult.data;
 
-  const isFetching = useMemo(() => contextEntitiesFetching && usersFetching, [contextEntitiesFetching, usersFetching]);
-  const notFound = useMemo(() => !contextEntities.total && !users.total, [contextEntities.total, users.total]);
+      const combinedTotal = (usersData.total || 0) + (entitiesData.total || 0);
+      return {
+        data: {
+          user: usersData.items,
+          ...entitiesData.items,
+        },
+        notFound: combinedTotal === 0, // true if there are no results
+        isFetching: usersResult.isFetching || contextEntitiesResult.isFetching,
+      };
+    },
+  });
 
-  const onSelectItem = (item: EntityListItemSchema) => {
+  const onSelectItem = (item: ContextEntityBaseSchema | UserBaseSchema) => {
     // Update recent searches with the search value
     updateRecentSearches(searchValue);
 
@@ -73,10 +84,6 @@ export const AppSearch = () => {
 
     useDialoger.getState().remove();
   };
-
-  useEffect(() => {
-    if (scrollAreaRef.current) scrollAreaRef.current.scrollTop = 0;
-  }, [contextEntities]);
 
   return (
     <Command className="rounded-lg shadow-2xl" shouldFilter={false}>
@@ -153,9 +160,8 @@ export const AppSearch = () => {
               )}
             </>
           )}
-          <SearchResultBlock results={users.items} entityType={'user'} onSelect={onSelectItem} />
-          {appConfig.contextEntityTypes.map((entityType) => (
-            <SearchResultBlock key={entityType} results={contextEntities.items[entityType]} entityType={entityType} onSelect={onSelectItem} />
+          {appConfig.pageEntityTypes.map((entityType) => (
+            <SearchResultBlock key={entityType} results={data[entityType]} entityType={entityType} onSelect={onSelectItem} />
           ))}
         </CommandList>
       </ScrollArea>

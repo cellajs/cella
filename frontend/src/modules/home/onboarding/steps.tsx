@@ -1,13 +1,13 @@
 import { X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import type { Organization } from '~/api.gen';
 import useMounted from '~/hooks/use-mounted';
 import { Step, Stepper } from '~/modules/common/stepper';
 import StepperFooter from '~/modules/home/onboarding/footer';
 import { onboardingSteps } from '~/modules/home/onboarding/onboarding-config';
 import { WelcomeText } from '~/modules/home/onboarding/welcome-text';
 import CreateOrganizationForm from '~/modules/organizations/create-organization-form';
-import type { Organization } from '~/modules/organizations/types';
 import { Card, CardContent, CardDescription, CardHeader } from '~/modules/ui/card';
 import InviteUsers from '~/modules/users/invite-users';
 import UpdateUserForm from '~/modules/users/update-user-form';

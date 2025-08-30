@@ -2,11 +2,11 @@ import { onlineManager } from '@tanstack/react-query';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useEntitySummary } from '~/hooks/use-entity-summary';
+import type { UserBaseSchema } from '~/api.gen';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
 import { toaster } from '~/modules/common/toaster/service';
-import type { UserSummary } from '~/modules/users/types';
+import { useGetEntityBaseData } from '~/modules/entities/use-get-entity-base-data';
 
 type BaseProps = {
   orgIdOrSlug?: string;
@@ -16,7 +16,7 @@ type BaseProps = {
 /**
  * Render a user cell with avatar and name, wrapped in a link to open user sheet.
  */
-export const UserCell = ({ user, orgIdOrSlug, tabIndex }: BaseProps & { user: UserSummary }) => {
+export const UserCell = ({ user, orgIdOrSlug, tabIndex }: BaseProps & { user: UserBaseSchema }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const cellRef = useRef<HTMLAnchorElement | null>(null);
@@ -69,7 +69,7 @@ export const UserCell = ({ user, orgIdOrSlug, tabIndex }: BaseProps & { user: Us
 export const UserCellById = ({ userId, cacheOnly, ...baseProps }: BaseProps & { userId: string | null; cacheOnly: boolean }) => {
   if (!userId) return <span className="text-muted">-</span>;
 
-  const user = useEntitySummary({ idOrSlug: userId, entityType: 'user', cacheOnly });
+  const user = useGetEntityBaseData({ idOrSlug: userId, entityType: 'user', cacheOnly });
 
   return user ? <UserCell user={user} {...baseProps} /> : <span>{userId}</span>;
 };

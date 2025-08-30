@@ -3,8 +3,8 @@ import { onlineManager } from '@tanstack/react-query';
 import { appConfig } from 'config';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import type { Organization } from '~/api.gen';
 import { toaster } from '~/modules/common/toaster/service';
-import type { Organization } from '~/modules/organizations/types';
 import { Button } from '~/modules/ui/button';
 
 const Subscription = ({ organization }: { organization: Organization }) => {

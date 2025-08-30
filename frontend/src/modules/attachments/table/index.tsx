@@ -5,13 +5,13 @@ import { useCallback, useState } from 'react';
 import type { RowsChangeData } from 'react-data-grid';
 import { useTranslation } from 'react-i18next';
 import type { z } from 'zod';
+import type { Attachment } from '~/api.gen';
 import useOfflineTableSearch from '~/hooks/use-offline-table-search';
 import useSearchParams from '~/hooks/use-search-params';
 import { attachmentsQueryOptions } from '~/modules/attachments/query';
 import { useAttachmentUpdateMutation } from '~/modules/attachments/query-mutations';
 import { useColumns } from '~/modules/attachments/table/columns';
 import { AttachmentsTableBar } from '~/modules/attachments/table/table-bar';
-import type { Attachment } from '~/modules/attachments/types';
 import { useElectricSyncAttachments } from '~/modules/attachments/use-electric-sync-attachments';
 import { useLocalSyncAttachments } from '~/modules/attachments/use-local-sync-attachments';
 import { useMergeLocalAttachments } from '~/modules/attachments/use-merge-local-attachments';
@@ -63,7 +63,7 @@ const AttachmentsTable = ({ entity, canUpload = true, isSheet = false }: Attachm
     select: ({ pages }) => pages.flatMap(({ items }) => items),
   });
   const rows = useOfflineTableSearch({
-    data: fetchedRows ?? [],
+    data: fetchedRows,
     filterFn: ({ q }, item) => {
       if (!q) return true;
       const query = q.trim().toLowerCase(); // Normalize query
@@ -93,7 +93,7 @@ const AttachmentsTable = ({ entity, canUpload = true, isSheet = false }: Attachm
   }, [hasNextPage, isLoading, isFetching]);
 
   const onSelectedRowsChange = (value: Set<string>) => {
-    setSelected(rows.filter((row) => value.has(row.id)));
+    if (rows) setSelected(rows.filter((row) => value.has(row.id)));
   };
 
   return (

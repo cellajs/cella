@@ -2,18 +2,18 @@ import { Link } from '@tanstack/react-router';
 import { appConfig, type PageEntityType } from 'config';
 import { ChevronRight, Home } from 'lucide-react';
 import { useRef } from 'react';
-import { useEntitySummary } from '~/hooks/use-entity-summary';
+import type { UserBaseSchema } from '~/api.gen';
 import useScrollTo from '~/hooks/use-scroll-to';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { PageCover, type PageCoverProps } from '~/modules/common/page/cover';
 import type { EntityPage } from '~/modules/entities/types';
+import { useGetEntityBaseData } from '~/modules/entities/use-get-entity-base-data';
 import { Badge } from '~/modules/ui/badge';
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbSeparator } from '~/modules/ui/breadcrumb';
-import type { UserSummary } from '~/modules/users/types';
 import { baseEntityRoutes } from '~/nav-config';
 
 type PageHeaderProps = Omit<PageCoverProps, 'id' | 'url'> & {
-  entity: EntityPage | UserSummary;
+  entity: EntityPage | UserBaseSchema;
   panel?: React.ReactNode;
   parent?: { idOrSlug: string; entityType: PageEntityType };
   disableScroll?: boolean;
@@ -22,7 +22,7 @@ type PageHeaderProps = Omit<PageCoverProps, 'id' | 'url'> & {
 const PageHeader = ({ entity, panel, parent, disableScroll, ...coverProps }: PageHeaderProps) => {
   const scrollToRef = useRef<HTMLDivElement>(null);
 
-  const parentData = parent ? useEntitySummary(parent) : null;
+  const parentData = parent ? useGetEntityBaseData(parent) : null;
   // Scroll to page header on load
   if (!disableScroll) useScrollTo(scrollToRef);
 

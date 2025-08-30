@@ -35,16 +35,18 @@ export const membershipCountSchema = z.object({
   total: z.number(),
 });
 
-export const fullCountsSchema = z.object({ membership: membershipCountSchema, related: entityCountSchema });
+export const fullCountsSchema = z.object({ membership: membershipCountSchema, entities: entityCountSchema });
 
-export const organizationSchema = z.object({
-  ...createSelectSchema(organizationsTable).omit({ restrictions: true }).shape,
-  languages: z.array(languageSchema).min(1),
-  emailDomains: z.array(z.string()),
-  authStrategies: z.array(z.enum(authStrategiesEnum)),
-  membership: membershipBaseSchema.nullable(),
-  invitesCount: z.number(),
-});
+export const organizationSchema = z
+  .object({
+    ...createSelectSchema(organizationsTable).omit({ restrictions: true }).shape,
+    languages: z.array(languageSchema).min(1),
+    emailDomains: z.array(z.string()),
+    authStrategies: z.array(z.enum(authStrategiesEnum)),
+    membership: membershipBaseSchema.nullable(),
+    counts: fullCountsSchema,
+  })
+  .openapi('Organization');
 
 export const organizationWithMembershipSchema = organizationSchema.extend({ membership: membershipBaseSchema });
 
@@ -88,5 +90,5 @@ export const organizationUpdateBodySchema = createInsertSchema(organizationsTabl
   .partial();
 
 export const organizationListQuerySchema = paginationQuerySchema.extend({
-  sort: z.enum(['id', 'name', 'userRole', 'createdAt']).default('createdAt').optional(),
+  sort: z.enum(['id', 'name', 'createdAt']).default('createdAt').optional(),
 });

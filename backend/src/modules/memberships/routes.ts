@@ -22,7 +22,7 @@ const membershipRoutes = {
     guard: [isAuthenticated, hasOrgAccess],
     tags: ['memberships'],
     summary: 'Create memberships',
-    description: 'Creates one or more *memberships*, inviting users (existing or new) to a contextual entity such as an organization.',
+    description: 'Creates one or more *memberships*, inviting users (existing or new) to a context entity such as an organization.',
     request: {
       params: inOrgParamSchema,
       query: entityWithTypeQuerySchema,
@@ -102,7 +102,7 @@ const membershipRoutes = {
     guard: [isAuthenticated, hasOrgAccess],
     tags: ['memberships'],
     summary: 'Get list of members',
-    description: 'Retrieves members (users) of a contextual entity by ID or slug, including their associated *membership* data.',
+    description: 'Retrieves members (users) of a context entity by ID or slug, including their associated *membership* data.',
     request: {
       params: z.object({ orgIdOrSlug: idOrSlugSchema.optional() }),
       query: memberListQuerySchema,
@@ -126,7 +126,7 @@ const membershipRoutes = {
     guard: [isAuthenticated, hasOrgAccess],
     tags: ['memberships'],
     summary: 'Get list of invitations',
-    description: 'Returns pending *membership* invitations for a contextual entity, identified by ID or slug.',
+    description: 'Returns pending *membership* invitations for a context entity, identified by ID or slug.',
     request: {
       params: inOrgParamSchema,
       query: pendingInvitationListQuerySchema,

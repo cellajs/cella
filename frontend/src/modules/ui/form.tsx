@@ -16,7 +16,6 @@ import {
 import { Button } from '~/modules/ui/button';
 import { Label } from '~/modules/ui/label';
 import { cn } from '~/utils/cn';
-import { getNestedValue } from '~/utils/get-nested-value';
 
 export type LabelDirectionType = 'top' | 'left';
 const LabelDirectionContext = React.createContext<LabelDirectionType | string>('top');
@@ -76,9 +75,12 @@ const useFormField = () => {
   const { name } = fieldContext;
 
   const { errors, touchedFields, dirtyFields } = useFormState({ control, name });
-  const error = getNestedValue(errors, name);
-  const isTouched = !!getNestedValue(touchedFields, name);
-  const isDirty = !!getNestedValue(dirtyFields, name);
+
+  // TODO test out nested forms
+  // const error = getNestedValue(errors, name);
+  const error = errors[name];
+  const isTouched = touchedFields[name];
+  const isDirty = dirtyFields[name];
   const invalid = !!error;
 
   const { id } = itemContext;
@@ -182,10 +184,10 @@ const FormDescription = React.forwardRef<HTMLParagraphElement, React.HTMLAttribu
 FormDescription.displayName = 'FormDescription';
 
 const FormMessage = React.forwardRef<HTMLParagraphElement, React.HTMLAttributes<HTMLParagraphElement>>(({ className, children, ...props }, ref) => {
-  const { error, formMessageId } = useFormField();
+  const { error, formMessageId, invalid } = useFormField();
   const body = error ? String(Array.isArray(error) ? error.find((err) => err?.message)?.message : error?.message) : children;
 
-  if (!body) {
+  if (!body || !invalid) {
     return null;
   }
 

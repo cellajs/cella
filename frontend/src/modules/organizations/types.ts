@@ -1,5 +1,3 @@
-import type { z } from 'zod';
-import type { zCreateOrganizationResponse, zGetOrganizationResponse } from '~/api.gen/zod.gen';
+import type { MembershipBaseSchema, Organization } from '~/api.gen';
 
-export type Organization = z.infer<typeof zGetOrganizationResponse>;
-export type OrganizationWithMembership = z.infer<typeof zCreateOrganizationResponse>;
+export type OrganizationWithMembership = Organization & { membership: MembershipBaseSchema };

@@ -1,12 +1,11 @@
 import { SelectTrigger } from '@radix-ui/react-select';
 import type { appConfig } from 'config';
 import { useTranslation } from 'react-i18next';
+import type { Organization, User } from '~/api.gen';
 import type { Member } from '~/modules/memberships/types';
-import type { OrganizationTable } from '~/modules/organizations/table/';
 import { Select, SelectContent, SelectItem, SelectValue } from '~/modules/ui/select';
-import type { User } from '~/modules/users/types';
 
-export const renderSelect = <TRow extends User | Member | OrganizationTable>({
+export const renderSelect = <TRow extends User | Member | Organization>({
   row,
   options,
   onRowChange,

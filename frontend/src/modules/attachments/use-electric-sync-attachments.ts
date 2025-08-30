@@ -2,11 +2,11 @@ import { isChangeMessage, type ShapeStreamOptions } from '@electric-sql/client';
 import { getShapeStream } from '@electric-sql/react';
 import { appConfig } from 'config';
 import { useEffect } from 'react';
+import type { Attachment } from '~/api.gen';
 import { env } from '~/env';
 import { useOnlineManager } from '~/hooks/use-online-manager';
 import { clientConfig } from '~/lib/api';
 import { handleDelete, handleInsert, handleUpdate } from '~/modules/attachments/helpers/sync-handlers';
-import type { Attachment } from '~/modules/attachments/types';
 import { useSyncStore } from '~/store/sync';
 import { baseBackoffOptions as backoffOptions, type CamelToSnakeObject, handleSyncError, processMessages } from '~/utils/electric-utils';
 

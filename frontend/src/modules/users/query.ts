@@ -1,10 +1,11 @@
 import { infiniteQueryOptions, keepPreviousData, queryOptions, useMutation } from '@tanstack/react-query';
 import { appConfig } from 'config';
+import type { User } from '~/api.gen';
 import { deleteUsers, type GetUsersData, getUser, getUsers, type UpdateUserData, updateUser } from '~/api.gen';
 import type { ApiError } from '~/lib/api';
-import type { User } from '~/modules/users/types';
-import { baseGetNextPageParam } from '~/query/helpers/get-next-page-params';
 import { useMutateQueryData } from '~/query/hooks/use-mutate-query-data';
+import { baseInfiniteQueryOptions, infiniteQueryUseCachedIfCompleteOptions } from '~/query/utils/infinite-query-options';
+import type { UserWithMemberships } from './types';
 
 /**
  * Keys for user related queries. These keys help to uniquely identify different query. For managing query caching and invalidation.
@@ -61,25 +62,31 @@ export const searchUsersQueryOptions = (query: Pick<NonNullable<GetUsersData['qu
  */
 export const usersQueryOptions = ({
   q = '',
-  sort: _sort,
-  order: _order,
+  sort = 'createdAt',
+  order = 'desc',
   role,
-  limit: _limit,
+  limit: baseLimit = appConfig.requestLimits.users,
 }: Omit<NonNullable<GetUsersData['query']>, 'limit' | 'offset' | 'mode'> & { limit?: number }) => {
-  const sort = _sort || 'createdAt';
-  const order = _order || 'desc';
-  const limit = String(_limit || appConfig.requestLimits.users);
+  const limit = String(baseLimit);
 
+  const baseQueryKey = usersKeys.table.entries({ q: '', sort: 'createdAt', order: 'desc' });
   const queryKey = usersKeys.table.entries({ q, sort, order, role });
 
   return infiniteQueryOptions({
     queryKey,
-    initialPageParam: { page: 0, offset: 0 },
     queryFn: async ({ pageParam: { page, offset: _offset }, signal }) => {
       const offset = String(_offset || (page || 0) * Number(limit));
       return await getUsers({ query: { q, sort, order, role, limit, offset, mode: 'all' }, signal });
     },
-    getNextPageParam: baseGetNextPageParam,
+    ...baseInfiniteQueryOptions,
+    ...infiniteQueryUseCachedIfCompleteOptions<UserWithMemberships>(baseQueryKey, {
+      q,
+      sort,
+      order,
+      searchIn: ['email', 'name'],
+      limit: baseLimit,
+      additionalFilter: role ? (u) => u.role === role : undefined,
+    }),
   });
 };
 

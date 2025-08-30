@@ -27,11 +27,14 @@ export const attachmentUpdateBodySchema = attachmentInsertSchema
   })
   .partial();
 
-export const attachmentSchema = attachmentSelectSchema.omit({ originalKey: true, convertedKey: true, thumbnailKey: true }).extend({
-  url: z.string(),
-  thumbnailUrl: z.string().nullable(),
-  convertedUrl: z.string().nullable(),
-});
+export const attachmentSchema = attachmentSelectSchema
+  .omit({ originalKey: true, convertedKey: true, thumbnailKey: true })
+  .extend({
+    url: z.string(),
+    thumbnailUrl: z.string().nullable(),
+    convertedUrl: z.string().nullable(),
+  })
+  .openapi('Attachment');
 
 export const attachmentListQuerySchema = paginationQuerySchema.extend({
   attachmentId: z.string().optional(),
