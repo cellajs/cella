@@ -57,7 +57,6 @@ export const DataTable = <TData,>({
   renderRow,
   onCellClick,
 }: DataTableProps<TData>) => {
-  console.log('🚀 ~ DataTable ~ error:', error);
   const isMobile = useBreakpoints('max', 'sm', false);
 
   const gridRef = useRef<HTMLDivElement | null>(null);
