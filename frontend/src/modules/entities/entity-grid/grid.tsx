@@ -7,17 +7,16 @@ import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { InfiniteLoader } from '~/modules/common/data-table/infinine-loader';
 import type { EntityGridWrapperProps } from '~/modules/entities/entity-grid';
 import { EntityTile } from '~/modules/entities/entity-grid/tile';
-import { contextEntitiesQueryOptions } from '~/modules/entities/query';
+import type { contextEntitiesQueryOptions } from '~/modules/entities/query';
 
 export type EntitySearch = Pick<NonNullable<GetContextEntitiesData['query']>, 'sort' | 'q' | 'role'>;
 
 interface Props extends EntityGridWrapperProps {
   searchVars: EntitySearch;
-  setTotalCount: (newTotal: number | null) => void;
+  queryOptions: ReturnType<typeof contextEntitiesQueryOptions>;
 }
 
-export const BaseEntityGrid = ({ tileComponent: TileComponent = EntityTile, entityType, label, userId, searchVars }: Props) => {
-  const queryOptions = contextEntitiesQueryOptions({ ...searchVars, types: [entityType], targetUserId: userId });
+export const BaseEntityGrid = ({ queryOptions, tileComponent: TileComponent = EntityTile, entityType, label, searchVars }: Props) => {
   const {
     data: entities,
     isFetching,
@@ -30,7 +29,6 @@ export const BaseEntityGrid = ({ tileComponent: TileComponent = EntityTile, enti
     select: (data) => data.pages.flatMap(({ items }) => items[entityType]),
   });
 
-  //TODO(DAVID) figure out total
   const isFiltered = !!searchVars.q;
 
   // isFetching already includes next page fetch scenario
@@ -39,11 +37,13 @@ export const BaseEntityGrid = ({ tileComponent: TileComponent = EntityTile, enti
     await fetchNextPage();
   }, [hasNextPage, isLoading, isFetching]);
 
-  if (!isFetching && !error && !isFiltered && !entities.length)
-    return <ContentPlaceholder icon={Bird} title={t('common:no_resource_yet', { resource: t(label, { count: 0 }).toLowerCase() })} />;
-
-  if (!isFetching && !error && !entities.length)
-    return <ContentPlaceholder icon={Search} title={t('common:no_resource_found', { resource: t(label, { count: 0 }).toLowerCase() })} />;
+  if (!isFetching && !error && !entities.length) {
+    return isFiltered ? (
+      <ContentPlaceholder icon={Search} title={t('common:no_resource_found', { resource: t(label, { count: 0 }).toLowerCase() })} />
+    ) : (
+      <ContentPlaceholder icon={Bird} title={t('common:no_resource_yet', { resource: t(label, { count: 0 }).toLowerCase() })} />
+    );
+  }
 
   return (
     <div className="mb-12">
