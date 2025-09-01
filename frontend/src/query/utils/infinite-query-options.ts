@@ -1,7 +1,7 @@
 import type { GetNextPageParamFunction, QueryKey } from '@tanstack/react-query';
 import { queryClient } from '~/query/query-client';
 import type { InfiniteQueryData, PageParams, QueryData } from '~/query/types';
-import { formatUpdatedCacheData } from './mutate-query';
+import { formatUpdatedCacheData } from '~/query/utils/mutate-query';
 
 /**
  *  A reusable base options for `infiniteQueryOptions`.
