@@ -1,5 +1,5 @@
 import type { ContextEntityType, EntityType, ProductEntityType } from 'config';
-import type { ContextEntityBaseSchema } from '~/api.gen/types.gen';
+import type { ContextEntityBaseSchema } from '~/api.gen';
 import type { InfiniteQueryData, QueryData } from '~/query/types';
 
 export interface ItemData {

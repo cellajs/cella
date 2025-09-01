@@ -11,7 +11,7 @@ import { toaster } from '~/modules/common/toaster/service';
 import { usersQueryOptions, useUpdateUserMutation } from '~/modules/users/query';
 import { UsersTableBar } from '~/modules/users/table/bar';
 import { useColumns } from '~/modules/users/table/columns';
-import type { TableUser } from '~/modules/users/types';
+import type { UserWithMemberships } from '~/modules/users/types';
 import { UsersTableRoute, type usersSearchSchema } from '~/routes/system';
 
 const LIMIT = appConfig.requestLimits.users;
@@ -30,7 +30,7 @@ const UsersTable = () => {
   const limit = LIMIT;
 
   // Build columns
-  const [selected, setSelected] = useState<TableUser[]>([]);
+  const [selected, setSelected] = useState<UserWithMemberships[]>([]);
   const [columns, setColumns] = useColumns();
   const { sortColumns, setSortColumns: onSortColumnsChange } = useSortColumns(sort, order, setSearch);
 
@@ -48,7 +48,7 @@ const UsersTable = () => {
   });
 
   // Update user role
-  const onRowsChange = (changedRows: TableUser[], { indexes, column }: RowsChangeData<TableUser>) => {
+  const onRowsChange = (changedRows: UserWithMemberships[], { indexes, column }: RowsChangeData<UserWithMemberships>) => {
     if (column.key !== 'role') return;
     if (!onlineManager.isOnline()) {
       toaster(t('common:action.offline.text'), 'warning');
@@ -85,7 +85,7 @@ const UsersTable = () => {
         setColumns={setColumns}
         clearSelection={() => setSelected([])}
       />
-      <DataTable<TableUser>
+      <DataTable<UserWithMemberships>
         {...{
           rows,
           rowHeight: 52,

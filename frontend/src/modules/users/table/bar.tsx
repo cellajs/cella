@@ -1,6 +1,7 @@
 import { Mail, Trash, XSquare } from 'lucide-react';
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
+import type { User } from '~/api.gen';
 import ColumnsView from '~/modules/common/data-table/columns-view';
 import { TableBarButton } from '~/modules/common/data-table/table-bar-button';
 import { TableBarContainer } from '~/modules/common/data-table/table-bar-container';
@@ -16,10 +17,10 @@ import UnsavedBadge from '~/modules/common/unsaved-badge';
 import DeleteUsers from '~/modules/users/delete-users';
 import InviteUsers from '~/modules/users/invite-users';
 import type { UsersSearch } from '~/modules/users/table';
-import type { TableUser, User } from '~/modules/users/types';
+import type { UserWithMemberships } from '~/modules/users/types';
 import { useInfiniteQueryTotal } from '~/query/hooks/use-infinite-query-total';
 
-type UsersTableBarProps = BaseTableBarProps<TableUser, UsersSearch>;
+type UsersTableBarProps = BaseTableBarProps<UserWithMemberships, UsersSearch>;
 
 export const UsersTableBar = ({ selected, queryKey, searchVars, setSearch, columns, setColumns, clearSelection }: UsersTableBarProps) => {
   const { t } = useTranslation();

@@ -9,13 +9,13 @@ import { type Env, getContextUser } from '#/lib/context';
 import { checkSlugAvailable } from '#/modules/entities/helpers/check-slug';
 import { getMemberCountsQuery } from '#/modules/entities/helpers/counts';
 import entityRoutes from '#/modules/entities/routes';
-import { membershipSummarySelect } from '#/modules/memberships/helpers/select';
+import type { contextEntitiesResponseSchema } from '#/modules/entities/schema';
+import { membershipBaseSelect } from '#/modules/memberships/helpers/select';
 import type { membershipCountSchema } from '#/modules/organizations/schema';
 import { getValidContextEntity } from '#/permissions/get-context-entity';
 import { defaultHook } from '#/utils/default-hook';
 import { getOrderColumn } from '#/utils/order-column';
 import { prepareStringForILikeFilter } from '#/utils/sql';
-import type { contextEntitiesResponseSchema } from './schema';
 
 const app = new OpenAPIHono<Env>({ defaultHook });
 
@@ -86,7 +86,7 @@ const entityRouteHandlers = app
           entityType: table.entityType,
           thumbnailUrl: table.thumbnailUrl,
           createdAt: table.createdAt,
-          membership: membershipSummarySelect,
+          membership: membershipBaseSelect,
           membershipCounts: sql<z.infer<typeof membershipCountSchema>>`json_build_object(
             'admin', ${membershipCountsQuery.admin},
             'member', ${membershipCountsQuery.member},

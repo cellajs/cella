@@ -25,7 +25,7 @@ import { getUserMenuEntities } from '#/modules/me/helpers/get-user-menu-entities
 import meRoutes from '#/modules/me/routes';
 import type { menuItemSchema, menuSchema } from '#/modules/me/schema';
 import { getUserBy } from '#/modules/users/helpers/get-user-by';
-import { userSummarySelect } from '#/modules/users/helpers/select';
+import { userBaseSelect } from '#/modules/users/helpers/select';
 import { verifyUnsubscribeToken } from '#/modules/users/helpers/unsubscribe-token';
 import permissionManager from '#/permissions/permissions-config';
 import { defaultHook } from '#/utils/default-hook';
@@ -128,7 +128,7 @@ const meRouteHandlers = app
         return db
           .select({
             entity: entitySelect,
-            invitedBy: userSummarySelect,
+            invitedBy: userBaseSelect,
             expiresAt: tokensTable.expiresAt,
             token: tokensTable.token,
             tokenId: tokensTable.id,

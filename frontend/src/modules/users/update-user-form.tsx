@@ -4,6 +4,7 @@ import { useMemo } from 'react';
 import type { UseFormProps } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import type { z } from 'zod';
+import type { User } from '~/api.gen';
 import { zUpdateUserData } from '~/api.gen/zod.gen';
 import { useBeforeUnload } from '~/hooks/use-before-unload';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
@@ -22,7 +23,6 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 import { Input } from '~/modules/ui/input';
 import { Label } from '~/modules/ui/label';
 import { useUpdateUserMutation } from '~/modules/users/query';
-import type { User } from '~/modules/users/types';
 import { useUserStore } from '~/store/user';
 
 const formSchema = zUpdateUserData.shape.body.unwrap();

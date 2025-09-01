@@ -54,7 +54,7 @@ const organizationRoutes = {
         description: 'Organizations',
         content: {
           'application/json': {
-            schema: paginationSchema(organizationSchema.omit({ invitesCount: true }).extend({ counts: fullCountsSchema })),
+            schema: paginationSchema(organizationSchema.extend({ counts: fullCountsSchema })),
           },
         },
       },

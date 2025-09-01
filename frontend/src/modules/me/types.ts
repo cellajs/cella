@@ -1,13 +1,10 @@
-import type { z } from 'zod';
-import type { GetUploadTokenData } from '~/api.gen';
-import type { zGetMyAuthResponse, zMenuSchema } from '~/api.gen/zod.gen';
-import type { User } from '~/modules/users/types';
+import type { GetMyAuthResponse, GetUploadTokenData, MenuSchema, User } from '~/api.gen';
 
-export type MeAuthData = z.infer<typeof zGetMyAuthResponse>;
+export type MeAuthData = GetMyAuthResponse;
 export type Session = MeAuthData['sessions'][number];
 
 export type MeUser = User;
-export type UserMenu = z.infer<typeof zMenuSchema>;
+export type UserMenu = MenuSchema;
 export type UserMenuItem = UserMenu[keyof UserMenu][number];
 
-export type UploadTockenQuery = GetUploadTokenData['query'] & { public: boolean };
+export type UploadTokenQuery = GetUploadTokenData['query'] & { public: boolean };

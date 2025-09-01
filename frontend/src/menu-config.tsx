@@ -1,12 +1,12 @@
 import type { ContextEntityType } from 'config';
 import i18n from 'i18next';
 import type { RefObject } from 'react';
+import type { Organization } from '~/api.gen';
 import router from '~/lib/router';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import UnsavedBadge from '~/modules/common/unsaved-badge';
 import type { MenuSectionOptions } from '~/modules/navigation/menu-sheet/section';
 import CreateOrganizationForm from '~/modules/organizations/create-organization-form';
-import type { Organization } from '~/modules/organizations/types';
 
 /**
  * Create new organization from the menu.

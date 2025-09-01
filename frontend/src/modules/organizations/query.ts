@@ -7,12 +7,13 @@ import {
   type GetOrganizationsData,
   getOrganization,
   getOrganizations,
+  type Organization,
   type UpdateOrganizationData,
   updateOrganization,
 } from '~/api.gen';
 import type { ApiError } from '~/lib/api';
 import { addMenuItem, deleteMenuItem, updateMenuItem } from '~/modules/navigation/menu-sheet/helpers/menu-operations';
-import type { Organization, OrganizationWithMembership, TableOrganization } from '~/modules/organizations/types';
+import type { OrganizationWithMembership } from '~/modules/organizations/types';
 import { useMutateQueryData } from '~/query/hooks/use-mutate-query-data';
 import { baseInfiniteQueryOptions, infiniteQueryUseCachedIfCompleteOptions } from '~/query/utils/infinite-query-options';
 
@@ -78,7 +79,7 @@ export const organizationsQueryOptions = ({
       return await getOrganizations({ query: { q, sort, order, limit, offset }, signal });
     },
     ...baseInfiniteQueryOptions,
-    ...infiniteQueryUseCachedIfCompleteOptions<TableOrganization>(baseQueryKey, {
+    ...infiniteQueryUseCachedIfCompleteOptions<Organization>(baseQueryKey, {
       q,
       sort,
       order,

@@ -30,11 +30,11 @@ export const MembershipInvitations = ({ entity }: PendingInvitationsTableProps) 
     });
   };
 
-  if (entity.invitesCount === undefined) return null;
+  if (!entity.counts?.membership.pending) return null;
 
   return (
-    <Button ref={buttonRef} disabled={entity.invitesCount < 1} variant="ghost" size="xs" className="font-light" onClick={openSheet}>
-      {new Intl.NumberFormat('de-DE').format(entity.invitesCount)} {t('common:pending').toLowerCase()}
+    <Button ref={buttonRef} disabled={entity.counts.membership.pending < 1} variant="ghost" size="xs" className="font-light" onClick={openSheet}>
+      {new Intl.NumberFormat('de-DE').format(entity.counts.membership.pending)} {t('common:pending').toLowerCase()}
     </Button>
   );
 };

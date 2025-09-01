@@ -2,11 +2,11 @@ import { onlineManager } from '@tanstack/react-query';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useGetEntityBaseData } from '~/hooks/use-entity-summary';
+import type { UserBaseSchema } from '~/api.gen';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
 import { toaster } from '~/modules/common/toaster/service';
-import type { UserSummary } from '~/modules/users/types';
+import { useGetEntityBaseData } from '~/modules/entities/use-get-entity-base-data';
 
 type BaseProps = {
   orgIdOrSlug?: string;
@@ -16,7 +16,7 @@ type BaseProps = {
 /**
  * Render a user cell with avatar and name, wrapped in a link to open user sheet.
  */
-export const UserCell = ({ user, orgIdOrSlug, tabIndex }: BaseProps & { user: UserSummary }) => {
+export const UserCell = ({ user, orgIdOrSlug, tabIndex }: BaseProps & { user: UserBaseSchema }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const cellRef = useRef<HTMLAnchorElement | null>(null);

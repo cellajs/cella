@@ -9,8 +9,8 @@ import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { DataTable } from '~/modules/common/data-table';
 import { useSortColumns } from '~/modules/common/data-table/sort-columns';
 import type { EntityPage } from '~/modules/entities/types';
-import { useColumns } from '~/modules/memberships/pending-table/columns';
 import { PendingInvitationsTableBar } from '~/modules/memberships/pending-table/bar';
+import { useColumns } from '~/modules/memberships/pending-table/columns';
 import { pendingInvitationsQueryOptions } from '~/modules/memberships/query';
 import type { PendingInvitation } from '~/modules/memberships/types';
 import type { pendingInvitationsSearchSchema } from '~/routes/organizations';
@@ -23,13 +23,6 @@ export interface PendingInvitationsTableProps {
   entity: EntityPage;
 }
 
-/**
- * Renders a button that opens a sheet with pending membership invitations.
- *
- * To make this component work properly in your app, make sure that:
- *  - Passed entity has `invitesCount` field, like it's done in organization.
- *  - Query key factory is set up for this entity type, similar to `organizationsKeys.single`.
- */
 export const MembershipInvitationsTable = ({ entity }: PendingInvitationsTableProps) => {
   const { t } = useTranslation();
   const { search, setSearch } = useSearchParams<PendingInvitationsSearch>({ saveDataInSearch: false });

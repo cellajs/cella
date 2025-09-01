@@ -5,9 +5,12 @@ import chalk from 'chalk';
 import { appConfig } from 'config';
 import type { Env } from '#/lib/context';
 import { apiModulesList, registerAppSchema } from '#/lib/docs-config';
-import { userBaseSchema } from '#/modules/entities/schema';
+import { attachmentSchema } from '#/modules/attachments/schema';
+import { contextEntityBaseSchema, userBaseSchema } from '#/modules/entities/schema';
 import { menuSchema } from '#/modules/me/schema';
 import { membershipBaseSchema } from '#/modules/memberships/schema';
+import { organizationSchema } from '#/modules/organizations/schema';
+import { userSchema } from '#/modules/users/schema';
 import { apiErrorSchema } from '#/utils/schema/error';
 
 // OpenAPI configuration
@@ -43,9 +46,18 @@ const docs = async (app: OpenAPIHono<Env>, skipScalar = false) => {
       "Authentication cookie. Copy the cookie from your network tab and paste it here. If you don't have it, you need to sign in or sign up first.",
   });
 
+  // Register entity schemas
+  registry.register('User', userSchema);
+  registry.register('Organization', organizationSchema);
+  registry.register('Attachment', attachmentSchema);
+
   // Register lower-level (base) schemas
   registry.register('UserBaseSchema', userBaseSchema);
+  // TODO: MembershipBaseSchema is currently not really referenced in openapi because the schema is not connected using .openapi('MembershipBaseSchema')
+  // This is because if we do, somehow MembershipBaseSchema becomes nullable for unknown reason.
   registry.register('MembershipBaseSchema', membershipBaseSchema);
+  registry.register('ContextEntityBaseSchema', contextEntityBaseSchema);
+
   registry.register('MenuSchema', menuSchema);
   registry.register('ApiError', apiErrorSchema);
 

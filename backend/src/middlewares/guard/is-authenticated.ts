@@ -10,7 +10,7 @@ import { AppError } from '#/lib/errors';
 import { registerMiddlewareDescription } from '#/lib/openapi-describer';
 import { deleteAuthCookie } from '#/modules/auth/helpers/cookie';
 import { getParsedSessionCookie, validateSession } from '#/modules/auth/helpers/session';
-import { membershipSummarySelect } from '#/modules/memberships/helpers/select';
+import { membershipBaseSelect } from '#/modules/memberships/helpers/select';
 import { TimeSpan } from '#/utils/time-span';
 
 /**
@@ -58,7 +58,7 @@ export const isAuthenticated: MiddlewareHandler<Env> = createMiddleware<Env>(asy
 
   // Fetch user's memberships from the database
   const memberships = await db
-    .select({ ...membershipSummarySelect, createdBy: membershipsTable.createdBy })
+    .select({ ...membershipBaseSelect, createdBy: membershipsTable.createdBy })
     .from(membershipsTable)
     .where(and(eq(membershipsTable.userId, user.id), isNotNull(membershipsTable.activatedAt)));
   ctx.set('memberships', memberships);

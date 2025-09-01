@@ -2,6 +2,7 @@ import i18n from 'i18next';
 import { Pencil, Trash } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import type { User } from '~/api.gen';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import CheckboxColumn from '~/modules/common/data-table/checkbox-column';
 import HeaderCell from '~/modules/common/data-table/header-cell';
@@ -12,7 +13,7 @@ import { PopConfirm } from '~/modules/common/popconfirm';
 import DeleteUsers from '~/modules/users/delete-users';
 import ImpersonateRow from '~/modules/users/table/impersonate-row';
 import UpdateRow, { openUpdateUserSheet } from '~/modules/users/table/update-row';
-import type { TableUser, User } from '~/modules/users/types';
+import type { UserWithMemberships } from '~/modules/users/types';
 import { UserCell } from '~/modules/users/user-cell';
 import { dateShort } from '~/utils/date-short';
 
@@ -21,7 +22,7 @@ export const useColumns = () => {
   const isMobile = useBreakpoints('max', 'sm', false);
 
   const columns = useMemo(() => {
-    const cols: ColumnOrColumnGroup<TableUser>[] = [
+    const cols: ColumnOrColumnGroup<UserWithMemberships>[] = [
       CheckboxColumn,
       {
         key: 'name',
@@ -133,5 +134,5 @@ export const useColumns = () => {
     return cols;
   }, []);
 
-  return useState<ColumnOrColumnGroup<TableUser>[]>(columns);
+  return useState<ColumnOrColumnGroup<UserWithMemberships>[]>(columns);
 };

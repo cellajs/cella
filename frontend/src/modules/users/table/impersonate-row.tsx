@@ -1,12 +1,12 @@
 import { appConfig } from 'config';
 import i18n from 'i18next';
 import { VenetianMask } from 'lucide-react';
+import type { User } from '~/api.gen';
 import { startImpersonation } from '~/api.gen';
 import router from '~/lib/router';
 import { toaster } from '~/modules/common/toaster/service';
 import { getAndSetMe, getAndSetMenu } from '~/modules/me/helpers';
 import { Button } from '~/modules/ui/button';
-import type { User } from '~/modules/users/types';
 import { useUIStore } from '~/store/ui';
 
 interface Props {

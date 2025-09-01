@@ -2,7 +2,7 @@ import { appConfig } from 'config';
 import { Mailbox, Plus, Trash, XSquare } from 'lucide-react';
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { getOrganizations } from '~/api.gen';
+import { getOrganizations, type Organization } from '~/api.gen';
 import ColumnsView from '~/modules/common/data-table/columns-view';
 import Export from '~/modules/common/data-table/export';
 import { TableBarButton } from '~/modules/common/data-table/table-bar-button';
@@ -20,12 +20,11 @@ import UnsavedBadge from '~/modules/common/unsaved-badge';
 import CreateOrganizationForm from '~/modules/organizations/create-organization-form';
 import DeleteOrganizations from '~/modules/organizations/delete-organizations';
 import type { OrganizationsSearch } from '~/modules/organizations/table';
-import type { Organization, TableOrganization } from '~/modules/organizations/types';
 import CreateNewsletterForm from '~/modules/system/create-newsletter-form';
 import NewsletterPreview from '~/modules/system/newsletter-preview';
 import { useInfiniteQueryTotal } from '~/query/hooks/use-infinite-query-total';
 
-type OrganizationsTableBarProps = BaseTableBarProps<TableOrganization, OrganizationsSearch>;
+type OrganizationsTableBarProps = BaseTableBarProps<Organization, OrganizationsSearch>;
 
 export const OrganizationsTableBar = ({
   selected,
@@ -74,7 +73,7 @@ export const OrganizationsTableBar = ({
       clearSelection();
     };
 
-    createDialog(<DeleteOrganizations organizations={selected as unknown as Organization[]} dialog callback={callback} />, {
+    createDialog(<DeleteOrganizations organizations={selected} dialog callback={callback} />, {
       id: 'delete-organizations',
       triggerRef: deleteButtonRef,
       className: 'max-w-xl',

@@ -1,11 +1,11 @@
 import i18n from 'i18next';
 import { Pencil } from 'lucide-react';
 import { type RefObject, useRef } from 'react';
+import type { User } from '~/api.gen';
 import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
 import UnsavedBadge from '~/modules/common/unsaved-badge';
 import { Button } from '~/modules/ui/button';
 import { Card, CardContent } from '~/modules/ui/card';
-import type { User } from '~/modules/users/types';
 import UpdateUserForm from '~/modules/users/update-user-form';
 
 interface Props {

@@ -216,7 +216,13 @@ export const handlePendingInvites = (targetEntity: ContextEntityBaseSchema, orga
 };
 const updateInvitesCount = (oldEntity: EntityPage | undefined, updateCount: number) => {
   if (!oldEntity) return oldEntity;
-  // Ensure invitesCount is a number, add emails.length
-  const currentCount = typeof oldEntity.invitesCount === 'number' ? oldEntity.invitesCount : 0;
-  return { ...oldEntity, invitesCount: currentCount + updateCount };
+
+  const currentCount = typeof oldEntity.counts?.membership.pending === 'number' ? oldEntity.counts.membership.pending : 0;
+  const newEntity = { ...oldEntity };
+
+  if (newEntity.counts?.membership) {
+    newEntity.counts.membership.pending = currentCount + updateCount;
+  }
+
+  return newEntity;
 };

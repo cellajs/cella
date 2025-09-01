@@ -3,7 +3,7 @@ import { and, asc, eq, isNotNull } from 'drizzle-orm';
 import { db } from '#/db/db';
 import { membershipsTable } from '#/db/schema/memberships';
 import { entityTables } from '#/entity-config';
-import { membershipSummarySelect } from '#/modules/memberships/helpers/select';
+import { membershipBaseSelect } from '#/modules/memberships/helpers/select';
 
 // Get user menu items with membership info for a given entity type
 export const getUserMenuEntities = async (entityType: ContextEntityType, userId: string) => {
@@ -17,8 +17,8 @@ export const getUserMenuEntities = async (entityType: ContextEntityType, userId:
       entityType: table.entityType,
       name: table.name,
       thumbnailUrl: table.thumbnailUrl,
-      organizationId: membershipSummarySelect.organizationId,
-      membership: membershipSummarySelect,
+      organizationId: membershipBaseSelect.organizationId,
+      membership: membershipBaseSelect,
       createdAt: table.createdAt,
       modifiedAt: table.modifiedAt,
     })

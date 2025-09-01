@@ -3,6 +3,7 @@ import { appConfig } from 'config';
 import { Shield, UserRound } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import type { Organization } from '~/api.gen';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import CheckboxColumn from '~/modules/common/data-table/checkbox-column';
@@ -10,7 +11,6 @@ import HeaderCell from '~/modules/common/data-table/header-cell';
 import { renderSelect } from '~/modules/common/data-table/select-column';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 import UpdateRow from '~/modules/organizations/table/update-row';
-import type { Organization, TableOrganization } from '~/modules/organizations/types';
 import { dateShort } from '~/utils/date-short';
 
 export const useColumns = () => {
@@ -18,7 +18,7 @@ export const useColumns = () => {
   const isMobile = useBreakpoints('max', 'sm', false);
 
   const columns = useMemo(() => {
-    const cols: ColumnOrColumnGroup<TableOrganization>[] = [
+    const cols: ColumnOrColumnGroup<Organization>[] = [
       CheckboxColumn,
       {
         key: 'name',
@@ -53,8 +53,7 @@ export const useColumns = () => {
         visible: true,
         width: 32,
         renderCell: ({ row, tabIndex }) => {
-          if (row.counts.membership.admin > 0 || row.counts.membership.member > 0)
-            return <UpdateRow organization={row as unknown as Organization} tabIndex={tabIndex} />;
+          if (row.counts.membership.admin > 0 || row.counts.membership.member > 0) return <UpdateRow organization={row} tabIndex={tabIndex} />;
         },
       },
       {
@@ -123,5 +122,5 @@ export const useColumns = () => {
     return cols;
   }, []);
 
-  return useState<ColumnOrColumnGroup<TableOrganization>[]>(columns);
+  return useState<ColumnOrColumnGroup<Organization>[]>(columns);
 };

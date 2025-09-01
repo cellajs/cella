@@ -1,5 +1,6 @@
+import type { Attachment } from '~/api.gen';
 import { attachmentsKeys } from '~/modules/attachments/query';
-import type { Attachment, AttachmentInfiniteQueryData } from '~/modules/attachments/types';
+import type { AttachmentInfiniteQueryData } from '~/modules/attachments/types';
 import { queryClient } from '~/query/query-client';
 import { getQueryKeySortOrder } from '~/query/utils';
 import { getSimilarQueries } from '~/query/utils/mutate-query';

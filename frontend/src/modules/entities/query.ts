@@ -1,6 +1,6 @@
 import { infiniteQueryOptions, keepPreviousData, queryOptions } from '@tanstack/react-query';
 import { appConfig, type PageEntityType } from 'config';
-import { getContextEntities, type GetContextEntitiesData } from '~/api.gen';
+import { type GetContextEntitiesData, getContextEntities } from '~/api.gen';
 import type { ContextEntityItems } from '~/modules/entities/types';
 import { baseInfiniteQueryOptions } from '~/query/utils/infinite-query-options';
 import { useUserStore } from '~/store/user';
@@ -44,6 +44,7 @@ export const searchContextEntitiesQueryOptions = ({
     staleTime: 0,
     enabled: q.trim().length > 0, // to avoid issues with spaces
     initialData: {
+      // TODO fix typing
       items: Object.fromEntries(appConfig.contextEntityTypes.map((t) => [t, []])) as unknown as ContextEntityItems,
       total: 0,
     },

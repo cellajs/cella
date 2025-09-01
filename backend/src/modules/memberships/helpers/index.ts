@@ -3,7 +3,7 @@ import { and, eq, max } from 'drizzle-orm';
 import { db } from '#/db/db';
 import { type MembershipModel, membershipsTable } from '#/db/schema/memberships';
 import type { EntityModel } from '#/lib/entity';
-import { membershipSummarySelect } from '#/modules/memberships/helpers/select';
+import { membershipBaseSelect } from '#/modules/memberships/helpers/select';
 import { getIsoDate } from '#/utils/iso-date';
 import { logEvent } from '#/utils/logger';
 
@@ -101,7 +101,7 @@ export const insertMembership = async <T extends BaseEntityModel>({
       ...(entity.entityType !== 'organization' && { [entityIdField]: entity.id }),
       ...(associatedEntity && { [associatedEntity.field]: associatedEntity.id }),
     })
-    .returning(membershipSummarySelect);
+    .returning(membershipBaseSelect);
 
   logEvent('info', `User added to ${entity.entityType}`, { userId: userId, [entityIdField]: entity.id }); // Log event
 
