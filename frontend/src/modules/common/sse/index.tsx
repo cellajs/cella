@@ -58,24 +58,10 @@ const SSE = () => {
       if (!organization) return;
 
       // Apply change in pending invites count
-      handlePendingInvites(entity, organization, -1);
+      handlePendingInvites(entity, -1, organization.slug);
     } catch (error) {
       Sentry.captureException(error);
       console.error('Error parsing accept invite event', error);
-    }
-  };
-
-  // Handle changes in member invites (e.g., receiving or revoking invites)
-  const handleMembersInvites = (e: MessageEvent<string>) => {
-    try {
-      const data = JSON.parse(e.data);
-      const { targetEntity, organization, invitesCount } = data;
-
-      // Apply change in pending invites count
-      handlePendingInvites(targetEntity, organization, invitesCount);
-    } catch (error) {
-      Sentry.captureException(error);
-      console.error('Error parsing members invite event', error);
     }
   };
 
@@ -83,7 +69,6 @@ const SSE = () => {
   useSSE('add_entity', (e) => addEntity(e));
   useSSE('update_entity', (e) => updateEntity(e));
   useSSE('remove_entity', (e) => removeEntity(e));
-  useSSE('invite_members', (e) => handleMembersInvites(e));
   useSSE('accept_invite', (e) => updateInvites(e));
 
   return null; // This component does not render any UI

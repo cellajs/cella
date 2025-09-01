@@ -1,7 +1,7 @@
 import { useMutation } from '@tanstack/react-query';
 import { appConfig } from 'config';
 import { t } from 'i18next';
-import { type ContextEntityBaseSchema, deleteMemberships, type MembershipInviteResponse, membershipInvite, updateMembership } from '~/api.gen';
+import { deleteMemberships, membershipInvite, updateMembership, type MembershipInviteResponse } from '~/api.gen';
 import type { ApiError } from '~/lib/api';
 import { toaster } from '~/modules/common/toaster/service';
 import type { EntityPage } from '~/modules/entities/types';
@@ -197,22 +197,23 @@ const deletedMembers = (members: Member[], ids: string[]) => {
     .filter(Boolean) as Member[];
 };
 
-export const handlePendingInvites = (targetEntity: ContextEntityBaseSchema, organization: ContextEntityBaseSchema, invitesCount: number) => {
+export const handlePendingInvites = (targetEntity: EntityPage, invitesCount: number, orgIdOrSlug?: string) => {
   const { id, slug, entityType } = targetEntity;
   // If the entity is not an organization but belongs to one, update its cache too
-  if (entityType !== 'organization') {
-    const { id: orgId, slug: orgSlug, entityType: orgEntityType } = organization;
-    queryClient.setQueryData<EntityPage>([orgEntityType, orgId], (data) => updateInvitesCount(data, invitesCount));
-    queryClient.setQueryData<EntityPage>([orgEntityType, orgSlug], (data) => updateInvitesCount(data, invitesCount));
+  if (entityType !== 'organization' && orgIdOrSlug) {
+    const orgEntityType = 'organization';
+    queryClient.setQueryData<EntityPage>([orgEntityType, orgIdOrSlug], (data) => updateInvitesCount(data, invitesCount));
 
-    queryClient.invalidateQueries({ queryKey: membersKeys.table.pending({ idOrSlug: orgSlug, entityType: orgEntityType, orgIdOrSlug: orgId }) });
+    queryClient.invalidateQueries({
+      queryKey: membersKeys.table.similarPending({ idOrSlug: orgIdOrSlug, entityType: orgEntityType }),
+    });
   }
 
   // Try cache update for both id and slug
   queryClient.setQueryData<EntityPage>([entityType, id], (data) => updateInvitesCount(data, invitesCount));
   queryClient.setQueryData<EntityPage>([entityType, slug], (data) => updateInvitesCount(data, invitesCount));
 
-  queryClient.invalidateQueries({ queryKey: membersKeys.table.pending({ idOrSlug: slug, entityType, orgIdOrSlug: organization.id }) });
+  queryClient.invalidateQueries({ queryKey: membersKeys.table.similarPending({ idOrSlug: slug, entityType }) });
 };
 const updateInvitesCount = (oldEntity: EntityPage | undefined, updateCount: number) => {
   if (!oldEntity) return oldEntity;

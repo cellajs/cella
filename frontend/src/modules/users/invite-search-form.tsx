@@ -1,10 +1,11 @@
+import { useParams } from '@tanstack/react-router';
 import { Send } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import SelectRoleRadio from '~/modules/common/form-fields/select-role-radio';
 import { toaster } from '~/modules/common/toaster/service';
 import type { EntityPage } from '~/modules/entities/types';
-import { useInviteMemberMutation } from '~/modules/memberships/query-mutations';
+import { handlePendingInvites, useInviteMemberMutation } from '~/modules/memberships/query-mutations';
 import { Badge } from '~/modules/ui/badge';
 import { Button, SubmitButton } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
@@ -21,6 +22,7 @@ interface Props {
  */
 const InviteSearchForm = ({ entity, dialog: isDialog }: Props) => {
   const { t } = useTranslation();
+  const { orgIdOrSlug } = useParams({ strict: false });
   if (!entity) return null;
 
   const form = useInviteFormDraft(entity?.id);
@@ -33,6 +35,7 @@ const InviteSearchForm = ({ entity, dialog: isDialog }: Props) => {
         onSuccess: ({ invitesSentCount, rejectedItems }, { emails }) => {
           form.reset(undefined, { keepDirtyValues: true });
           if (invitesSentCount > 0) {
+            handlePendingInvites(entity, invitesSentCount, orgIdOrSlug);
             const resource = t(`common:${invitesSentCount === 1 ? 'user' : 'users'}`).toLowerCase();
             toaster(t('common:success.resource_count_invited', { count: invitesSentCount, resource }), 'success');
           }
