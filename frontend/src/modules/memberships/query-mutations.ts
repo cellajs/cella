@@ -43,6 +43,7 @@ export const useInviteMemberMutation = () =>
       }),
     onSuccess: ({ invitesSentCount }, { entity }) => {
       const { id, slug, entityType, organizationId } = entity;
+      // TODO review increace and decreace on pending invites(now it's pev device only)
       if (invitesSentCount) {
         // If the entity is not an organization but belongs to one, update its cache too
         if (entityType !== 'organization' && organizationId) {
