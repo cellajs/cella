@@ -5,7 +5,7 @@ import { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { useOnlineManager } from '~/hooks/use-online-manager';
-import { AppFooter } from '~/modules/common/app-footer';
+import { AppFooter } from '~/modules/common/app/footer';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { toaster } from '~/modules/common/toaster/service';
 import { buttonVariants } from '~/modules/ui/button';

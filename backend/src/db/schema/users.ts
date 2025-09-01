@@ -1,5 +1,5 @@
-import { appConfig } from 'config';
-import { boolean, foreignKey, index, pgTable, timestamp, varchar } from 'drizzle-orm/pg-core';
+import { appConfig, type UserFlags } from 'config';
+import { boolean, foreignKey, index, jsonb, pgTable, timestamp, varchar } from 'drizzle-orm/pg-core';
 import { timestampColumns } from '#/db/utils/timestamp-columns';
 import { nanoid } from '#/utils/nanoid';
 
@@ -34,6 +34,10 @@ export const usersTable = pgTable(
     language: varchar({ enum: languagesEnum }).notNull().default(appConfig.defaultLanguage),
     newsletter: boolean().notNull().default(false),
     role: varchar({ enum: roleEnum }).notNull().default('user'),
+    userFlags: jsonb()
+      .$type<UserFlags>()
+      .notNull()
+      .default({} as UserFlags),
     modifiedAt: timestampColumns.modifiedAt,
     lastSeenAt: timestamp({ mode: 'string' }), // last time a GET request has been made in last 5 minutes
     lastStartedAt: timestamp({ mode: 'string' }), // last time GET me

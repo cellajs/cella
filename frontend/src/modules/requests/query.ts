@@ -15,6 +15,7 @@ import {
 import type { ApiError } from '~/lib/api';
 import { toaster } from '~/modules/common/toaster/service';
 import type { Request } from '~/modules/requests/types';
+import { baseInfiniteQueryOptions, infiniteQueryUseCachedIfCompleteOptions } from '~/query/utils/infinite-query-options';
 
 /**
  * Keys for request related queries. These keys help to uniquely identify different query. For managing query caching and invalidation.
@@ -43,28 +44,30 @@ export const requestsKeys = {
  */
 export const requestsQueryOptions = ({
   q = '',
-  sort: _sort,
-  order: _order,
-  limit: _limit,
-}: Omit<NonNullable<GetRequestsData['query']>, 'limit' | 'offset'> & { limit?: number }) => {
-  const sort = _sort || 'createdAt';
-  const order = _order || 'asc';
-  const limit = String(_limit || appConfig.requestLimits.requests);
+  sort = 'createdAt',
+  order = 'asc',
 
+  limit: baseLimit = appConfig.requestLimits.requests,
+}: Omit<NonNullable<GetRequestsData['query']>, 'limit' | 'offset'> & { limit?: number }) => {
+  const limit = String(baseLimit);
+
+  const baseQueryKey = requestsKeys.table.entries({ q: '', sort: 'createdAt', order: 'asc' });
   const queryKey = requestsKeys.table.entries({ q, sort, order });
 
   return infiniteQueryOptions({
     queryKey,
-    initialPageParam: { page: 0, offset: 0 },
     queryFn: async ({ pageParam: { page, offset: _offset }, signal }) => {
       const offset = String(_offset || (page || 0) * Number(limit));
       return await getRequests({ query: { q, sort, order, limit, offset }, signal });
     },
-    getNextPageParam: (_lastPage, allPages) => {
-      const page = allPages.length;
-      const offset = allPages.reduce((acc, page) => acc + page.items.length, 0);
-      return { page, offset };
-    },
+    ...baseInfiniteQueryOptions,
+    ...infiniteQueryUseCachedIfCompleteOptions<Request>(baseQueryKey, {
+      q,
+      sort,
+      order,
+      searchIn: ['email'],
+      limit: baseLimit,
+    }),
   });
 };
 

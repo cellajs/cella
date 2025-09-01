@@ -4,6 +4,7 @@ import { useMemo } from 'react';
 import { type UseFormProps, useWatch } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import type { z } from 'zod';
+import type { Organization } from '~/api.gen';
 import { zCreateOrganizationData } from '~/api.gen/zod.gen';
 // Change this in the future on current schema
 import { useFormWithDraft } from '~/hooks/use-draft-form';
@@ -12,7 +13,6 @@ import { SlugFormField } from '~/modules/common/form-fields/slug';
 import { useStepper } from '~/modules/common/stepper';
 import { toaster } from '~/modules/common/toaster/service';
 import { useOrganizationCreateMutation } from '~/modules/organizations/query';
-import type { Organization } from '~/modules/organizations/types';
 import { Button, SubmitButton } from '~/modules/ui/button';
 import { Form, type LabelDirectionType } from '~/modules/ui/form';
 

@@ -14,9 +14,9 @@ import { eventManager } from '#/lib/events';
 import { mailer } from '#/lib/mailer';
 import { sendSSEToUsers } from '#/lib/sse';
 import { getAssociatedEntityDetails, insertMembership } from '#/modules/memberships/helpers';
-import { membershipSummarySelect } from '#/modules/memberships/helpers/select';
+import { membershipBaseSelect } from '#/modules/memberships/helpers/select';
 import membershipRoutes from '#/modules/memberships/routes';
-import { userSelect } from '#/modules/users/helpers/select';
+import { memberSelect, userSelect } from '#/modules/users/helpers/select';
 import { getValidContextEntity } from '#/permissions/get-context-entity';
 import { defaultHook } from '#/utils/default-hook';
 import { getIsoDate } from '#/utils/iso-date';
@@ -428,8 +428,8 @@ const membershipRouteHandlers = app
 
     const membersQuery = db
       .select({
-        ...userSelect,
-        membership: membershipSummarySelect,
+        ...memberSelect,
+        membership: membershipBaseSelect,
       })
       .from(usersTable)
       .innerJoin(membershipsTable, eq(membershipsTable.userId, usersTable.id))
@@ -437,7 +437,7 @@ const membershipRouteHandlers = app
 
     const [{ total }] = await db.select({ total: count() }).from(membersQuery.as('memberships'));
 
-    const items = await membersQuery.orderBy(orderColumn).limit(Number(limit)).offset(Number(offset));
+    const items = await membersQuery.orderBy(orderColumn).limit(limit).offset(offset);
 
     return ctx.json({ items, total }, 200);
   })
@@ -482,7 +482,7 @@ const membershipRouteHandlers = app
 
     const [{ total }] = await db.select({ total: count() }).from(pendingInvitationsQuery.as('invites'));
 
-    const items = await pendingInvitationsQuery.limit(Number(limit)).offset(Number(offset));
+    const items = await pendingInvitationsQuery.limit(limit).offset(offset);
 
     return ctx.json({ items, total }, 200);
   })

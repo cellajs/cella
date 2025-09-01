@@ -1,5 +1,3 @@
-import type { z } from 'zod';
-import type { zGetUserResponse, zUserBaseSchema } from '~/api.gen/zod.gen';
+import type { MembershipBaseSchema, User } from '~/api.gen';
 
-export type User = z.infer<typeof zGetUserResponse>;
-export type UserSummary = z.infer<typeof zUserBaseSchema>;
+export type UserWithMemberships = User & { memberships: MembershipBaseSchema[] };

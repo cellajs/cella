@@ -50,4 +50,7 @@ app.use('*', (c, next) => {
   return next();
 });
 
+// Health check for render.com
+app.get('/ping', (c) => c.text('pong'));
+
 export default app;

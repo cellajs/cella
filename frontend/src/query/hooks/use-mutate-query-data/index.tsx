@@ -1,7 +1,6 @@
 import type { QueryKey } from '@tanstack/react-query';
 import type { ContextEntityType, EntityType, ProductEntityType } from 'config';
-import type { ContextEntityData } from '~/modules/entities/types';
-import { isInfiniteQueryData, isQueryData } from '~/query/helpers/mutate-query';
+import type { ContextEntityBaseSchema } from '~/api.gen';
 import {
   changeArbitraryQueryData,
   changeInfiniteQueryData,
@@ -10,6 +9,7 @@ import {
 } from '~/query/hooks/use-mutate-query-data/helpers';
 import type { EntityData, ItemData, QueryDataActions, UseMutateQueryDataReturn } from '~/query/hooks/use-mutate-query-data/types';
 import { queryClient } from '~/query/query-client';
+import { isInfiniteQueryData, isQueryData } from '~/query/utils/mutate-query';
 
 // Overload signatures
 export function useMutateQueryData(
@@ -38,7 +38,7 @@ export function useMutateQueryData(
 ): UseMutateQueryDataReturn {
   // mutation function
   function dataMutation(
-    items: ItemData[] | EntityData[] | ContextEntityData[],
+    items: ItemData[] | EntityData[] | ContextEntityBaseSchema[],
     action: QueryDataActions,
     entity?: EntityType,
     keyToOperateIn?: string,
@@ -67,29 +67,41 @@ export function useMutateQueryData(
 
   // Overload functions for action
   function create(items: ItemData[]): void;
-  function create(items: ContextEntityData[], entityType: ContextEntityType, keyToOperateIn?: string): void;
+  function create(items: ContextEntityBaseSchema[], entityType: ContextEntityType, keyToOperateIn?: string): void;
   function create(items: EntityData[], entityType: ProductEntityType, keyToOperateIn: string): void;
-  function create(items: ItemData[] | EntityData[] | ContextEntityData[], entity?: ProductEntityType | ContextEntityType, keyToOperateIn?: string) {
+  function create(
+    items: ItemData[] | EntityData[] | ContextEntityBaseSchema[],
+    entity?: ProductEntityType | ContextEntityType,
+    keyToOperateIn?: string,
+  ) {
     dataMutation(items, 'create', entity, keyToOperateIn);
   }
 
   function update(items: ItemData[]): void;
-  function update(items: ContextEntityData[], entityType: ContextEntityType, keyToOperateIn?: string): void;
+  function update(items: ContextEntityBaseSchema[], entityType: ContextEntityType, keyToOperateIn?: string): void;
   function update(items: EntityData[], entityType: ProductEntityType, keyToOperateIn: string): void;
-  function update(items: ItemData[] | EntityData[] | ContextEntityData[], entity?: ProductEntityType | ContextEntityType, keyToOperateIn?: string) {
+  function update(
+    items: ItemData[] | EntityData[] | ContextEntityBaseSchema[],
+    entity?: ProductEntityType | ContextEntityType,
+    keyToOperateIn?: string,
+  ) {
     dataMutation(items, 'update', entity, keyToOperateIn);
   }
 
   function updateMembership(items: ItemData[]): void;
-  function updateMembership(items: ContextEntityData[], entityType: ContextEntityType, keyToOperateIn?: string): void;
-  function updateMembership(items: ItemData[] | ContextEntityData[], entity?: ProductEntityType | ContextEntityType, keyToOperateIn?: string) {
+  function updateMembership(items: ContextEntityBaseSchema[], entityType: ContextEntityType, keyToOperateIn?: string): void;
+  function updateMembership(items: ItemData[] | ContextEntityBaseSchema[], entity?: ProductEntityType | ContextEntityType, keyToOperateIn?: string) {
     dataMutation(items, 'updateMembership', entity, keyToOperateIn);
   }
 
   function remove(items: ItemData[]): void;
-  function remove(items: ContextEntityData[], entityType: ContextEntityType, keyToOperateIn?: string): void;
+  function remove(items: ContextEntityBaseSchema[], entityType: ContextEntityType, keyToOperateIn?: string): void;
   function remove(items: EntityData[], entityType: ProductEntityType, keyToOperateIn: string): void;
-  function remove(items: ItemData[] | EntityData[] | ContextEntityData[], entity?: ProductEntityType | ContextEntityType, keyToOperateIn?: string) {
+  function remove(
+    items: ItemData[] | EntityData[] | ContextEntityBaseSchema[],
+    entity?: ProductEntityType | ContextEntityType,
+    keyToOperateIn?: string,
+  ) {
     dataMutation(items, 'remove', entity, keyToOperateIn);
   }
 

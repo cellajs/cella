@@ -117,12 +117,12 @@ import type {
   UpdateOrganizationData,
   UpdateOrganizationResponses,
   UpdateOrganizationErrors,
-  GetPageEntitiesData,
-  GetPageEntitiesResponses,
-  GetPageEntitiesErrors,
-  GetEntitiesWithAdminsData,
-  GetEntitiesWithAdminsResponses,
-  GetEntitiesWithAdminsErrors,
+  GetContextEntitiesData,
+  GetContextEntitiesResponses,
+  GetContextEntitiesErrors,
+  GetContextEntityData,
+  GetContextEntityResponses,
+  GetContextEntityErrors,
   CheckSlugData,
   CheckSlugResponses,
   CheckSlugErrors,
@@ -787,6 +787,7 @@ export const getMe = <ThrowOnError extends boolean = true>(options?: Options<Get
  * @param {boolean=} options.body.newsletter - `boolean` (optional)
  * @param {string | null=} options.body.thumbnailUrl - `string | null` (optional)
  * @param {string=} options.body.slug - `string` (optional)
+ * @param {object=} options.body.userFlags - `object` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
 export const updateMe = <ThrowOnError extends boolean = true>(options?: Options<UpdateMeData, ThrowOnError>) => {
@@ -812,7 +813,7 @@ export const updateMe = <ThrowOnError extends boolean = true>(options?: Options<
  * Get authentication data
  * 🛡️ Requires authentication
  *
- * Returns the authentication related date of the *current user*, including sessions, OAuth accounts, and sign in options.
+ * Returns authentication related data of *current user*, including sessions, OAuth accounts, and sign in options.
  *
  * **GET /me/auth** ·· [getMyAuth](http://localhost:4000/docs#tag/me/get/me/auth) ·· _me_
  *
@@ -838,7 +839,7 @@ export const getMyAuth = <ThrowOnError extends boolean = true>(options?: Options
  * Get menu
  * 🛡️ Requires authentication
  *
- * Returns a structured list of contextual entities the *current user* is a member of, grouped by the entity type and enriched with both `memebrship` and `entity` data.
+ * Returns a structured list of context entities the *current user* is a member of, grouped by the entity type and enriched with both `memebrship` and `entity` data.
  *
  * **GET /me/menu** ·· [getMyMenu](http://localhost:4000/docs#tag/me/get/me/menu) ·· _me_
  *
@@ -1072,7 +1073,7 @@ export const deleteUsers = <ThrowOnError extends boolean = true>(options?: Optio
 
 /**
  * Get list of users
- * 🛡️ Requires authentication (system access)
+ * 🛡️ Requires authentication
  *
  * Returns a list of *users* at the system level.
  *
@@ -1085,6 +1086,9 @@ export const deleteUsers = <ThrowOnError extends boolean = true>(options?: Optio
  * @param {string=} options.query.offset - `string` (optional)
  * @param {string=} options.query.limit - `string` (optional)
  * @param {enum=} options.query.role - `enum` (optional)
+ * @param {enum=} options.query.mode - `enum` (optional)
+ * @param {enum=} options.query.targetentitytype - `enum` (optional)
+ * @param {string=} options.query.targetentityid - `string` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
 export const getUsers = <ThrowOnError extends boolean = true>(options?: Options<GetUsersData, ThrowOnError>) => {
@@ -1337,26 +1341,32 @@ export const updateOrganization = <ThrowOnError extends boolean = true>(options:
 };
 
 /**
- * Get list of page entities
+ * Get list of context entities
  * 🛡️ Requires authentication
  *
- * Returns a paginated list of *entities* (e.g. *users*, *organizations*) the current user has access to.
+ * Returns a paginated list of *context entities* (e.g. *users*, *organizations*) the current user has access to.
  * Can optionally include the current user's enrollment information for each entity (when applicable).
  * You can also provide a specific user ID to retrieve the entities that *user* is enrolled in, useful for profile views or access audits.
  * The response includes only fields shared across all entity types, such as `id`, `slug`, and `name`.
  *
- * **GET /entities/page** ·· [getPageEntities](http://localhost:4000/docs#tag/entities/get/entities/page) ·· _entities_
+ * **GET /entities/context-entities** ·· [getContextEntities](http://localhost:4000/docs#tag/entities/get/entities/context-entities) ·· _entities_
  *
- * @param {getPageEntitiesData} options
+ * @param {getContextEntitiesData} options
  * @param {string=} options.query.q - `string` (optional)
+ * @param {enum=} options.query.sort - `enum` (optional)
+ * @param {enum=} options.query.order - `enum` (optional)
+ * @param {string=} options.query.offset - `string` (optional)
+ * @param {string=} options.query.limit - `string` (optional)
  * @param {string=} options.query.targetuserid - `string` (optional)
- * @param {enum=} options.query.type - `enum` (optional)
  * @param {string=} options.query.targetorgid - `string` (optional)
- * @param {enum=} options.query.usermembershiptype - `enum` (optional)
+ * @param {enum=} options.query.role - `enum` (optional)
+ * @param {enum=} options.query.excludearchived - `enum` (optional)
+ * @param {enum | any[]=} options.query.types - `enum | any[]` (optional)
+ * @param {enum=} options.query.orgaffiliated - `enum` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
-export const getPageEntities = <ThrowOnError extends boolean = true>(options?: Options<GetPageEntitiesData, ThrowOnError>) => {
-  return (options?.client ?? _heyApiClient).get<GetPageEntitiesResponses, GetPageEntitiesErrors, ThrowOnError, 'data'>({
+export const getContextEntities = <ThrowOnError extends boolean = true>(options?: Options<GetContextEntitiesData, ThrowOnError>) => {
+  return (options?.client ?? _heyApiClient).get<GetContextEntitiesResponses, GetContextEntitiesErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     security: [
       {
@@ -1365,30 +1375,27 @@ export const getPageEntities = <ThrowOnError extends boolean = true>(options?: O
         type: 'apiKey',
       },
     ],
-    url: '/entities/page',
+    url: '/entities/context-entities',
     ...options,
   });
 };
 
 /**
- * Get all of context user entities
+ * Get a context entity
  * 🛡️ Requires authentication
  *
- * Returns all *contextual entities* (e.g. *organizations*) the specified user is a member of.
- * Each result includes the user's membership data and a list of other users with administrator roles within the same entity.
+ * Retrieve detailed information about a single context entity by its ID or slug.
+ * Supports all context entity types configured in the system. Returns only table fields for the entity type.
  *
- * **GET /entities/context** ·· [getEntitiesWithAdmins](http://localhost:4000/docs#tag/entities/get/entities/context) ·· _entities_
+ * **GET /entities/context/{idOrSlug}** ·· [getContextEntity](http://localhost:4000/docs#tag/entities/get/entities/context/{idOrSlug}) ·· _entities_
  *
- * @param {getEntitiesWithAdminsData} options
- * @param {string=} options.query.q - `string` (optional)
- * @param {string=} options.query.targetuserid - `string` (optional)
- * @param {any[] | null=} options.query.roles - `any[] | null` (optional)
- * @param {enum} options.query.type - `enum`
- * @param {enum=} options.query.sort - `enum` (optional)
+ * @param {getContextEntityData} options
+ * @param {string | string} options.path.idorslug - `string | string`
+ * @param {enum} options.query.entitytype - `enum`
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
-export const getEntitiesWithAdmins = <ThrowOnError extends boolean = true>(options: Options<GetEntitiesWithAdminsData, ThrowOnError>) => {
-  return (options.client ?? _heyApiClient).get<GetEntitiesWithAdminsResponses, GetEntitiesWithAdminsErrors, ThrowOnError, 'data'>({
+export const getContextEntity = <ThrowOnError extends boolean = true>(options: Options<GetContextEntityData, ThrowOnError>) => {
+  return (options.client ?? _heyApiClient).get<GetContextEntityResponses, GetContextEntityErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     security: [
       {
@@ -1397,13 +1404,13 @@ export const getEntitiesWithAdmins = <ThrowOnError extends boolean = true>(optio
         type: 'apiKey',
       },
     ],
-    url: '/entities/context',
+    url: '/entities/context/{idOrSlug}',
     ...options,
   });
 };
 
 /**
- * Check if slug is available
+ * Check slug availability
  * 🛡️ Requires authentication
  *
  * Checks whether a given slug is available across all entity types (e.g. *organizations*, *users*).
@@ -1994,7 +2001,7 @@ export const deleteMemberships = <ThrowOnError extends boolean = true>(options: 
  * Create memberships
  * 🛡️ Requires authentication (org access)
  *
- * Creates one or more *memberships*, inviting users (existing or new) to a contextual entity such as an organization.
+ * Creates one or more *memberships*, inviting users (existing or new) to a context entity such as an organization.
  *
  * **POST /{orgIdOrSlug}/memberships** ·· [membershipInvite](http://localhost:4000/docs#tag/memberships/post/{orgIdOrSlug}/memberships) ·· _memberships_
  *
@@ -2065,7 +2072,7 @@ export const updateMembership = <ThrowOnError extends boolean = true>(options: O
  * Get list of members
  * 🛡️ Requires authentication (org access)
  *
- * Retrieves members (users) of a contextual entity by ID or slug, including their associated *membership* data.
+ * Retrieves members (users) of a context entity by ID or slug, including their associated *membership* data.
  *
  * **GET /{orgIdOrSlug}/memberships/members** ·· [getMembers](http://localhost:4000/docs#tag/memberships/get/{orgIdOrSlug}/memberships/members) ·· _memberships_
  *
@@ -2100,7 +2107,7 @@ export const getMembers = <ThrowOnError extends boolean = true>(options: Options
  * Get list of invitations
  * 🛡️ Requires authentication (org access)
  *
- * Returns pending *membership* invitations for a contextual entity, identified by ID or slug.
+ * Returns pending *membership* invitations for a context entity, identified by ID or slug.
  *
  * **GET /{orgIdOrSlug}/memberships/pending** ·· [getPendingInvitations](http://localhost:4000/docs#tag/memberships/get/{orgIdOrSlug}/memberships/pending) ·· _memberships_
  *

@@ -2,7 +2,7 @@ import { appConfig, type ContextEntityType } from 'config';
 import { getContextMemberships, getContextOrganization, getContextUser } from '#/lib/context';
 import { type EntityModel, resolveEntity } from '#/lib/entity';
 import { AppError } from '#/lib/errors';
-import type { MembershipSummary } from '#/modules/memberships/helpers/select';
+import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
 import type { PermittedAction } from '#/permissions/permissions-config';
 import permissionManager from '#/permissions/permissions-config';
 
@@ -25,7 +25,7 @@ export const getValidContextEntity = async <T extends ContextEntityType>(
   idOrSlug: string,
   entityType: T,
   action: Exclude<PermittedAction, 'create'>,
-): Promise<{ entity: EntityModel<T>; membership: MembershipSummary | null }> => {
+): Promise<{ entity: EntityModel<T>; membership: MembershipBaseModel | null }> => {
   // Get current user role and memberships from request context
   const { role } = getContextUser();
   const memberships = getContextMemberships();

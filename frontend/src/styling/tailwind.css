@@ -162,9 +162,13 @@
     display: none !important;
   }
 
-  .guest-mode .guest-restrict {
-    opacity: 0.5;
-    pointer-events: none;
-    cursor: not-allowed;
+  /* Read-only mode styles */
+  .read-only-mode .read-only-restrict-hide {
+    display: none !important;
+  }
+
+  .read-only-mode .read-only-restrict-disabled {
+    opacity: 0.6 !important;
+    pointer-events: none !important;
   }
 }

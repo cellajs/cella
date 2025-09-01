@@ -54,13 +54,13 @@
     "test": "pnpm -r --parallel test"
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.2.0",
+    "@biomejs/biome": "^2.2.2",
     "@evilmartians/lefthook": "^1.12.3",
-    "@typescript/native-preview": "7.0.0-dev.20250813.1",
+    "@typescript/native-preview": "7.0.0-dev.20250828.1",
     "cross-env": "^10.0.0",
-    "knip": "^5.62.0",
+    "knip": "^5.63.0",
     "rimraf": "^6.0.1",
-    "tsx": "^4.20.4",
+    "tsx": "^4.20.5",
     "typescript": "^5.9.2",
     "vitest": "^3.2.4"
   },
@@ -69,7 +69,7 @@
   },
   "pnpm": {
     "overrides": {
-      "zod": "4.0.17",
+      "zod": "4.1.4",
       "react": "^19.1.1",
       "react-dom": "^19.1.1",
       "@types/react": "^19.1.10",

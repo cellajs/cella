@@ -1,9 +1,11 @@
-import { infiniteQueryOptions, queryOptions, useMutation } from '@tanstack/react-query';
+import { infiniteQueryOptions, keepPreviousData, queryOptions, useMutation } from '@tanstack/react-query';
 import { appConfig } from 'config';
+import type { User } from '~/api.gen';
 import { deleteUsers, type GetUsersData, getUser, getUsers, type UpdateUserData, updateUser } from '~/api.gen';
 import type { ApiError } from '~/lib/api';
-import type { User } from '~/modules/users/types';
 import { useMutateQueryData } from '~/query/hooks/use-mutate-query-data';
+import { baseInfiniteQueryOptions, infiniteQueryUseCachedIfCompleteOptions } from '~/query/utils/infinite-query-options';
+import type { UserWithMemberships } from './types';
 
 /**
  * Keys for user related queries. These keys help to uniquely identify different query. For managing query caching and invalidation.
@@ -32,6 +34,24 @@ export const userQueryOptions = (idOrSlug: string) =>
   queryOptions({ queryKey: usersKeys.single.byIdOrSlug(idOrSlug), queryFn: () => getUser({ path: { idOrSlug } }) });
 
 /**
+ *
+ */
+export const searchUsersQueryOptions = (query: Pick<NonNullable<GetUsersData['query']>, 'q' | 'targetEntityId' | 'targetEntityType'>) => {
+  const searchQuery = query.q ?? '';
+
+  const queryKey = [...usersKeys.all, 'search', searchQuery];
+
+  return queryOptions({
+    queryKey,
+    queryFn: () => getUsers({ query }),
+    staleTime: 0,
+    initialData: { items: [], total: 0 },
+    enabled: searchQuery.trim().length > 0, // to avoid issues with spaces
+    placeholderData: keepPreviousData,
+  });
+};
+
+/**
  * Infinite query options to get a paginated list of users.
  *
  * @param param.q - Optional search query to filter users by (default is an empty string).
@@ -42,29 +62,31 @@ export const userQueryOptions = (idOrSlug: string) =>
  */
 export const usersQueryOptions = ({
   q = '',
-  sort: _sort,
-  order: _order,
+  sort = 'createdAt',
+  order = 'desc',
   role,
-  limit: _limit,
-}: Omit<NonNullable<GetUsersData['query']>, 'limit' | 'offset'> & { limit?: number }) => {
-  const sort = _sort || 'createdAt';
-  const order = _order || 'desc';
-  const limit = String(_limit || appConfig.requestLimits.users);
+  limit: baseLimit = appConfig.requestLimits.users,
+}: Omit<NonNullable<GetUsersData['query']>, 'limit' | 'offset' | 'mode'> & { limit?: number }) => {
+  const limit = String(baseLimit);
 
+  const baseQueryKey = usersKeys.table.entries({ q: '', sort: 'createdAt', order: 'desc' });
   const queryKey = usersKeys.table.entries({ q, sort, order, role });
 
   return infiniteQueryOptions({
     queryKey,
-    initialPageParam: { page: 0, offset: 0 },
     queryFn: async ({ pageParam: { page, offset: _offset }, signal }) => {
       const offset = String(_offset || (page || 0) * Number(limit));
-      return await getUsers({ query: { q, sort, order, role, limit, offset }, signal });
+      return await getUsers({ query: { q, sort, order, role, limit, offset, mode: 'all' }, signal });
     },
-    getNextPageParam: (_lastPage, allPages) => {
-      const page = allPages.length;
-      const offset = allPages.reduce((acc, page) => acc + page.items.length, 0);
-      return { page, offset };
-    },
+    ...baseInfiniteQueryOptions,
+    ...infiniteQueryUseCachedIfCompleteOptions<UserWithMemberships>(baseQueryKey, {
+      q,
+      sort,
+      order,
+      searchIn: ['email', 'name'],
+      limit: baseLimit,
+      additionalFilter: role ? (u) => u.role === role : undefined,
+    }),
   });
 };
 

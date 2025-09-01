@@ -1,21 +1,18 @@
-import { useNavigate } from '@tanstack/react-router';
-import { appConfig } from 'config';
 import { useTranslation } from 'react-i18next';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
+import type { OnboardingStates } from '~/modules/home/onboarding/steps';
 import { Button } from '~/modules/ui/button';
 
-export const SkipOrganization = () => {
+export const SkipOrganization = ({ setOnboardingState }: { setOnboardingState: (newState: Exclude<OnboardingStates, 'start'>) => void }) => {
   const { t } = useTranslation();
-  const navigate = useNavigate();
+
   const removeDialog = useDialoger((state) => state.remove);
 
   const onDelete = () => {
     removeDialog('skip-org-creation');
-    navigate({
-      to: appConfig.defaultRedirectPath,
-      replace: true,
-    });
+    setOnboardingState('completed');
   };
+
   const onCancel = () => {
     removeDialog('skip-org-creation');
   };

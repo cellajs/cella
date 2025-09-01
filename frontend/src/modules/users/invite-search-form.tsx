@@ -1,11 +1,5 @@
-import { zodResolver } from '@hookform/resolvers/zod';
-import { appConfig } from 'config';
 import { Send } from 'lucide-react';
-import { useMemo } from 'react';
-import type { UseFormProps } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
-import { z } from 'zod';
-import { useFormWithDraft } from '~/hooks/use-draft-form';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import SelectRoleRadio from '~/modules/common/form-fields/select-role-radio';
 import { toaster } from '~/modules/common/toaster/service';
@@ -14,6 +8,7 @@ import { useInviteMemberMutation } from '~/modules/memberships/query-mutations';
 import { Badge } from '~/modules/ui/badge';
 import { Button, SubmitButton } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
+import { type InviteFormValues, useInviteFormDraft } from '~/modules/users/invite-users';
 import { UserCombobox } from '~/modules/users/user-combobox';
 
 interface Props {
@@ -28,27 +23,10 @@ const InviteSearchForm = ({ entity, dialog: isDialog }: Props) => {
   const { t } = useTranslation();
   if (!entity) return null;
 
-  const formSchema = z.object({
-    emails: z.array(z.email(t('common:invalid.email'))).min(1, { message: t('common:invalid.min_items', { items_count: 'one', item: 'email' }) }),
-    role: z.enum(appConfig.rolesByType.entityRoles),
-  });
-
-  type FormValues = z.infer<typeof formSchema>;
-
-  const formOptions: UseFormProps<FormValues> = useMemo(
-    () => ({
-      resolver: zodResolver(formSchema),
-      defaultValues: { emails: [], role: 'member' },
-    }),
-    [],
-  );
-
-  const formContainerId = 'invite-users';
-  const form = useFormWithDraft<FormValues>(`invite-users${entity ? `-${entity?.id}` : ''}`, { formOptions, formContainerId });
-
+  const form = useInviteFormDraft(entity?.id);
   const { mutate: invite, isPending } = useInviteMemberMutation();
 
-  const onSubmit = (values: FormValues) => {
+  const onSubmit = (values: InviteFormValues) => {
     invite(
       { ...values, entity },
       {

@@ -5,12 +5,12 @@ import { Cloud, CloudOff, CopyCheckIcon, CopyIcon, Download, Trash } from 'lucid
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import useDownloader from 'react-use-downloader';
+import type { Attachment } from '~/api.gen';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { useCopyToClipboard } from '~/hooks/use-copy-to-clipboard';
 import DeleteAttachments from '~/modules/attachments/delete-attachments';
 import { formatBytes } from '~/modules/attachments/table/helpers';
 import AttachmentPreview from '~/modules/attachments/table/preview';
-import type { Attachment } from '~/modules/attachments/types';
 import CheckboxColumn from '~/modules/common/data-table/checkbox-column';
 import HeaderCell from '~/modules/common/data-table/header-cell';
 import TableEllipsis, { type EllipsisOption } from '~/modules/common/data-table/table-ellipsis';
@@ -21,11 +21,9 @@ import { PopConfirm } from '~/modules/common/popconfirm';
 import Spinner from '~/modules/common/spinner';
 import { toaster } from '~/modules/common/toaster/service';
 import type { EntityPage } from '~/modules/entities/types';
-import { membersKeys } from '~/modules/memberships/query';
 import { Button } from '~/modules/ui/button';
 import { Input } from '~/modules/ui/input';
-import { findUserFromCache } from '~/modules/users/helpers';
-import UserCell from '~/modules/users/user-cell';
+import { UserCellById } from '~/modules/users/user-cell';
 import { useUserStore } from '~/store/user';
 import { dateShort } from '~/utils/date-short';
 import { isCDNUrl } from '~/utils/is-cdn-url';
@@ -260,16 +258,7 @@ export const useColumns = (entity: EntityPage, isSheet: boolean, isCompact: bool
       minWidth: isCompact ? null : 120,
       width: isCompact ? 50 : null,
       renderHeaderCell: HeaderCell,
-      renderCell: ({ row, tabIndex }) => {
-        if (!row.createdBy) return <span className="text-muted">-</span>;
-
-        const queryKey = [...membersKeys.table.base(), { entityType: entity.entityType, orgIdOrSlug: row.organizationId }];
-        const user = findUserFromCache(queryKey, row.createdBy);
-
-        if (!user) return <span>{row.createdBy}</span>;
-
-        return <UserCell user={user} tabIndex={tabIndex} />;
-      },
+      renderCell: ({ row, tabIndex }) => <UserCellById userId={row.createdBy} cacheOnly={true} tabIndex={tabIndex} />,
     },
     {
       key: 'modifiedAt',
@@ -287,16 +276,7 @@ export const useColumns = (entity: EntityPage, isSheet: boolean, isCompact: bool
       visible: false,
       width: isCompact ? 80 : 120,
       renderHeaderCell: HeaderCell,
-      renderCell: ({ row, tabIndex }) => {
-        if (!row.modifiedBy) return <span className="text-muted">-</span>;
-
-        const queryKey = [...membersKeys.table.base(), { entityType: entity.entityType, orgIdOrSlug: row.organizationId }];
-        const user = findUserFromCache(queryKey, row.modifiedBy);
-
-        if (!user) return <span>{row.modifiedBy}</span>;
-
-        return <UserCell user={user} tabIndex={tabIndex} />;
-      },
+      renderCell: ({ row, tabIndex }) => <UserCellById userId={row.modifiedBy} cacheOnly={true} tabIndex={tabIndex} />,
     },
   ];
 

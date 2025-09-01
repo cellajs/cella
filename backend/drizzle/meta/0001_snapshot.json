@@ -1,5 +1,5 @@
 {
-  "id": "4b2e6303-8e0b-409b-9fe8-315b737c66f4",
+  "id": "97546b98-2c9e-4494-bd18-66fc4bb43284",
   "prevId": "727b17a3-f074-4db2-92c1-bb650749e21c",
   "version": "7",
   "dialect": "postgresql",
@@ -1221,13 +1221,6 @@
           "primaryKey": false,
           "notNull": true
         },
-        "two_factor_enabled": {
-          "name": "two_factor_enabled",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": true,
-          "default": false
-        },
         "first_name": {
           "name": "first_name",
           "type": "varchar",
@@ -1260,6 +1253,13 @@
           "primaryKey": false,
           "notNull": true,
           "default": "'user'"
+        },
+        "user_flags": {
+          "name": "user_flags",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'{}'::jsonb"
         },
         "modified_at": {
           "name": "modified_at",

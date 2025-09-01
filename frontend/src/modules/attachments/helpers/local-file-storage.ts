@@ -1,12 +1,12 @@
 import * as Sentry from '@sentry/react';
 import { del, get, keys, set } from 'idb-keyval';
 import type { CustomUppyFile } from '~/modules/common/uploader/types';
-import type { UploadTockenQuery } from '~/modules/me/types';
+import type { UploadTokenQuery } from '~/modules/me/types';
 import { nanoid } from '~/utils/nanoid';
 
 type StoredOfflineData = {
   files: Record<string, CustomUppyFile>;
-  tokenQuery: UploadTockenQuery;
+  tokenQuery: UploadTokenQuery;
   syncStatus: SyncStatus;
 };
 
@@ -18,7 +18,7 @@ type SyncStatus = 'idle' | 'processing';
  * @link https://github.com/jakearchibald/idb-keyval
  */
 export const LocalFileStorage = {
-  async addData(files: Record<string, CustomUppyFile>, tokenQuery: UploadTockenQuery): Promise<void> {
+  async addData(files: Record<string, CustomUppyFile>, tokenQuery: UploadTokenQuery): Promise<void> {
     if (!tokenQuery.organizationId) throw new Error('No organizationId provided');
     const { organizationId: key } = tokenQuery;
 

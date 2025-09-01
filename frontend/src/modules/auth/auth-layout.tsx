@@ -1,7 +1,7 @@
 import { Link, Outlet } from '@tanstack/react-router';
 import { lazy, Suspense } from 'react';
 import useMounted from '~/hooks/use-mounted';
-import { type FooterLinkProps, FooterLinks } from '~/modules/common/app-footer';
+import { type FooterLinkProps, FooterLinks } from '~/modules/common/app/footer';
 import Logo from '~/modules/common/logo';
 
 // Auth footer links
@@ -27,7 +27,7 @@ const AuthLayout = () => {
       </Suspense>
 
       <div className="mt-auto mb-auto">
-        <div className="mx-auto mb-40 mt-8 flex flex-col justify-center gap-4 xs:w-80 sm:w-116 transition-all will-change-transform duration-500 ease-out opacity-0 group-data-[started=false]:scale-95 translate-y-4 group-data-[started=true]:opacity-100">
+        <div className="mx-auto mb-40 mt-8 flex flex-col justify-center gap-4 w-[90vw] xs:w-80 sm:w-116 transition-all will-change-transform duration-500 ease-out opacity-0 group-data-[started=false]:scale-95 translate-y-4 group-data-[started=true]:opacity-100">
           <Outlet />
 
           <Link to="/about" className="hover:opacity-90 p-4 active:scale-95 mx-auto rounded-md focus-effect">

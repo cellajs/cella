@@ -1,5 +1,6 @@
 import { z } from '@hono/zod-openapi';
 import { appConfig } from 'config';
+import { t } from 'i18next';
 
 /*************************************************************************************************
  * Entity schemas
@@ -78,20 +79,27 @@ export const booleanQuerySchema = z
   .transform((v) => v === true || v === 'true')
   .pipe(z.boolean());
 
-const offsetRefine = (value: string | undefined) => Number(value) >= 0;
-const limitRefine = (value: string | undefined) => Number(value) > 0 && Number(value) <= 1000;
+const offsetRefine = (value: number) => value >= 0;
+const limitMax = 1000;
+const limitRefine = (value: number) => value > 0 && value <= limitMax;
 
 /** Schema for pagination query parameters */
 export const paginationQuerySchema = z.object({
   q: z.string().optional(), // Optional search query
   sort: z.enum(['createdAt']).default('createdAt').optional(), // Sorting field
   order: z.enum(['asc', 'desc']).default('asc').optional(), // Sorting order
-  offset: z.string().default('0').optional().refine(offsetRefine, 'Must be number greater or equal to 0'), // Pagination offset
+  // Pagination offset
+  offset: z
+    .string()
+    .optional()
+    .transform((val) => (val ? Number.parseInt(val, 10) : 0)) // convert to number
+    .refine(offsetRefine, t('error:invalid_offset')),
+  // Pagination limit
   limit: z
     .string()
-    .default(`${appConfig.requestLimits.default}`)
     .optional()
-    .refine(limitRefine, 'Must be a number greater than 0 and less than or equal to 1000'), // Pagination limit
+    .transform((val) => (val ? Number.parseInt(val, 10) : appConfig.requestLimits.default)) // convert to number
+    .refine(limitRefine, t('error:invalid_limit', { max: limitMax })),
 });
 
 /*************************************************************************************************
@@ -101,7 +109,10 @@ export const paginationQuerySchema = z.object({
 /** Schema for a request body containing an array of IDs */
 export const idsBodySchema = (maxItems = 50) =>
   z.object({
-    ids: z.array(z.string()).min(1, 'Add at least one item').max(maxItems, `The number of items cannot exceed ${maxItems}`),
+    ids: z
+      .array(z.string())
+      .min(1, t('invalid_min_items', { min: 'one', name: 'ID' }))
+      .max(maxItems, t('invalid_max_items', { max: maxItems, name: 'ID' })),
   });
 
 /*************************************************************************************************
@@ -111,35 +122,32 @@ export const idsBodySchema = (maxItems = 50) =>
 /** Schema for a valid HTTPS URL */
 export const validUrlSchema = z
   .string()
-  .refine((url: string) => url.startsWith('https'), 'URL must start with https://')
+  .refine((url: string) => url.startsWith('https'), t('error:invalid_url'))
   .transform((str) => str.toLowerCase().trim());
 
 /** Schema for a valid name: string between 2 and 100 characters, allowing specific characters */
 export const validNameSchema = z
   .string()
-  .min(2, 'Name must be between 2 and 100 characters')
-  .max(100, 'Name must be between 2 and 100 characters')
+  .min(2, t('error:invalid_between_num', { name: 'Name', min: 2, max: 100 }))
+  .max(100, t('error:invalid_between_num', { name: 'Name', min: 2, max: 100 }))
   .refine(
     (s) => /^[\p{L}\d\-., '&()]+$/u.test(s), // Allow only specified characters
-    "Name may only contain letters, numbers, spaces, and these characters: .,'-&()",
+    t('error:invalid_name'),
   );
 
 /** Schema for a valid email */
 export const validEmailSchema = z
-  .string()
-  .min(4, 'Email must be between 4 and 100 characters')
-  .max(100, 'Email must be between 4 and 100 characters')
+  .email({ message: t('error:invalid_email') })
+  .min(4, t('error:invalid_between_num', { name: 'Email', min: 4, max: 100 }))
+  .max(100, t('error:invalid_between_num', { name: 'Email', min: 4, max: 100 }))
   .transform((str) => str.toLowerCase().trim());
 
 /** Schema for a valid slug: string between 2 and 100 characters, allowing alphanumeric and hyphens */
 export const validSlugSchema = z
   .string()
-  .min(2, 'Slug must be between 2 and 100 characters')
-  .max(100, 'Slug must be between 2 and 100 characters')
-  .refine(
-    (s) => /^[a-z0-9]+(-{0,3}[a-z0-9]+)*$/i.test(s),
-    'Slug may only contain alphanumeric characters or up to three hyphens, and cannot begin or end with a hyphen.',
-  )
+  .min(2, t('error:invalid_between_num', { name: 'Slug', min: 2, max: 100 }))
+  .max(100, t('error:invalid_between_num', { name: 'Slug', min: 2, max: 100 }))
+  .refine((s) => /^[a-z0-9]+(-{0,3}[a-z0-9]+)*$/i.test(s), t('error:invalid_slug'))
   .transform((str) => str.toLowerCase().trim());
 
 export const validImageKeySchema = z.string();
@@ -149,12 +157,9 @@ export const validDomainsSchema = z
   .array(
     z
       .string()
-      .min(4, 'Domain must be between 4 and 100 characters')
-      .max(100, 'Domain must be between 4 and 100 characters')
-      .refine(
-        (s) => /^[a-z0-9].*[a-z0-9]$/i.test(s) && s.includes('.'),
-        'Domain must not contain @, no special chars and at least one dot (.) in between.',
-      )
+      .min(4, t('error:invalid_between_num', { name: 'Domain', min: 4, max: 100 }))
+      .max(100, t('error:invalid_between_num', { name: 'Domain', min: 4, max: 100 }))
+      .refine((s) => /^[a-z0-9].*[a-z0-9]$/i.test(s) && s.includes('.'), t('error:invalid_domain'))
       .transform((str) => str.toLowerCase().trim()),
   )
   .optional();

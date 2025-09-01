@@ -10,7 +10,7 @@ import {
   uploadTokenSchema,
   userInvitationsSchema,
 } from '#/modules/me/schema';
-import { userSchema, userUpdateBodySchema } from '#/modules/users/schema';
+import { userFlagsSchema, userSchema, userUpdateBodySchema } from '#/modules/users/schema';
 import { entityWithTypeQuerySchema } from '#/utils/schema/common';
 import { errorResponses, successWithoutDataSchema, successWithRejectedItemsSchema } from '#/utils/schema/responses';
 
@@ -39,7 +39,7 @@ const meRoutes = {
     guard: isAuthenticated,
     tags: ['me'],
     summary: 'Get authentication data',
-    description: 'Returns the authentication related date of the *current user*, including sessions, OAuth accounts, and sign in options.',
+    description: 'Returns authentication related data of *current user*, including sessions, OAuth accounts, and sign in options.',
     responses: {
       200: {
         description: 'User sign-up info',
@@ -57,7 +57,7 @@ const meRoutes = {
     tags: ['me'],
     summary: 'Get menu',
     description:
-      'Returns a structured list of contextual entities the *current user* is a member of, grouped by the entity type and enriched with both `memebrship` and `entity` data.',
+      'Returns a structured list of context entities the *current user* is a member of, grouped by the entity type and enriched with both `memebrship` and `entity` data.',
     responses: {
       200: {
         description: 'Menu of user',
@@ -95,7 +95,15 @@ const meRoutes = {
     summary: 'Update self',
     description: 'Updates the *current user*.',
     request: {
-      body: { content: { 'application/json': { schema: userUpdateBodySchema } } },
+      body: {
+        content: {
+          'application/json': {
+            schema: userUpdateBodySchema.extend({
+              userFlags: userFlagsSchema.partial().optional(),
+            }),
+          },
+        },
+      },
     },
     responses: {
       200: {

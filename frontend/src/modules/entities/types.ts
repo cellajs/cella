@@ -1,15 +1,11 @@
-import type { z } from 'zod';
-import type { zContextEntityBaseSchema, zGetEntitiesWithAdminsResponse } from '~/api.gen/zod.gen';
-import type { MembershipSummary } from '~/modules/memberships/types';
+import type { ContextEntityType } from 'config';
+import type { ContextEntityBaseSchema, GetContextEntitiesResponse, MembershipBaseSchema, Organization } from '~/api.gen';
 
-export type EntitySummary = z.infer<typeof zContextEntityBaseSchema>;
-
-export type ContextEntityData = EntitySummary & { membership: MembershipSummary | null };
-
-export type EntityPage = ContextEntityData & {
+export type EntityPage = ContextEntityBaseSchema & {
+  membership?: MembershipBaseSchema | null;
   organizationId?: string | null;
-  invitesCount?: number;
+  counts?: Organization['counts'];
 };
 
-// We have getContext and getPageEntities, make more clear which is which
-export type EntityGridItem = z.infer<typeof zGetEntitiesWithAdminsResponse>[number];
+export type ContextEntityItems = GetContextEntitiesResponse['items'];
+export type EntityGridItem = ContextEntityItems[ContextEntityType][number];

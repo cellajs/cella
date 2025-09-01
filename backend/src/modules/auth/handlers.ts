@@ -48,7 +48,6 @@ import { getParsedSessionCookie, invalidateSessionById, setUserSession, validate
 import { handleCreateUser, handleMembershipTokenUpdate } from '#/modules/auth/helpers/user';
 import authRoutes from '#/modules/auth/routes';
 import { getUserBy } from '#/modules/users/helpers/get-user-by';
-import { userSelect } from '#/modules/users/helpers/select';
 import { defaultHook } from '#/utils/default-hook';
 import { isExpiredDate } from '#/utils/is-expired-date';
 import { isValidRedirectPath } from '#/utils/is-redirect-url';
@@ -194,10 +193,7 @@ const authRouteHandlers = app
     }
 
     // Get user
-    const [user] = await db
-      .select({ ...userSelect })
-      .from(usersTable)
-      .where(eq(usersTable.id, token.userId));
+    const user = await getUserBy('id', token.userId);
 
     // User not found
     if (!user) {
@@ -456,10 +452,7 @@ const authRouteHandlers = app
   .openapi(authRoutes.startImpersonation, async (ctx) => {
     const { targetUserId } = ctx.req.valid('query');
 
-    const [user] = await db
-      .select({ ...userSelect })
-      .from(usersTable)
-      .where(eq(usersTable.id, targetUserId));
+    const user = await getUserBy('id', targetUserId);
 
     if (!user) throw new AppError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'user', meta: { targetUserId } });
 
@@ -584,8 +577,6 @@ const authRouteHandlers = app
     if (type === 'invite') await handleOAuthInvitation(ctx);
     if (type === 'connect') await handleOAuthConnection(ctx);
     if (type === 'verify') await handleOAuthVerify(ctx);
-
-    console.log('Microsoft OAuth sign in initiated');
 
     // Generate a `state`, PKCE, and scoped URL.
     const state = generateState();

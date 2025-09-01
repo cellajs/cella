@@ -7,13 +7,15 @@ import {
   type GetOrganizationsData,
   getOrganization,
   getOrganizations,
+  type Organization,
   type UpdateOrganizationData,
   updateOrganization,
 } from '~/api.gen';
 import type { ApiError } from '~/lib/api';
 import { addMenuItem, deleteMenuItem, updateMenuItem } from '~/modules/navigation/menu-sheet/helpers/menu-operations';
-import type { Organization, OrganizationWithMembership } from '~/modules/organizations/types';
+import type { OrganizationWithMembership } from '~/modules/organizations/types';
 import { useMutateQueryData } from '~/query/hooks/use-mutate-query-data';
+import { baseInfiniteQueryOptions, infiniteQueryUseCachedIfCompleteOptions } from '~/query/utils/infinite-query-options';
 
 /**
  * Keys for organizations related queries. These keys help to uniquely identify different query.
@@ -61,28 +63,29 @@ export const organizationQueryOptions = (idOrSlug: string) =>
  */
 export const organizationsQueryOptions = ({
   q = '',
-  sort: _sort,
-  order: _order,
-  limit: _limit,
+  sort = 'createdAt',
+  order = 'desc',
+  limit: baseLimit = appConfig.requestLimits.organizations,
 }: Omit<NonNullable<GetOrganizationsData['query']>, 'limit' | 'offset'> & { limit?: number }) => {
-  const sort = _sort || 'createdAt';
-  const order = _order || 'desc';
-  const limit = String(_limit || appConfig.requestLimits.organizations);
+  const limit = String(baseLimit);
 
+  const baseQueryKey = organizationsKeys.table.entries({ q: '', sort: 'createdAt', order: 'desc' });
   const queryKey = organizationsKeys.table.entries({ q, sort, order });
 
   return infiniteQueryOptions({
     queryKey,
-    initialPageParam: { page: 0, offset: 0 },
     queryFn: async ({ pageParam: { page, offset: _offset }, signal }) => {
       const offset = String(_offset || (page || 0) * Number(limit));
       return await getOrganizations({ query: { q, sort, order, limit, offset }, signal });
     },
-    getNextPageParam: (_lastPage, allPages) => {
-      const page = allPages.length;
-      const offset = allPages.reduce((acc, page) => acc + page.items.length, 0);
-      return { page, offset };
-    },
+    ...baseInfiniteQueryOptions,
+    ...infiniteQueryUseCachedIfCompleteOptions<Organization>(baseQueryKey, {
+      q,
+      sort,
+      order,
+      searchIn: ['name'],
+      limit: baseLimit,
+    }),
   });
 };
 

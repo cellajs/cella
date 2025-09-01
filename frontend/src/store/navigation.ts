@@ -33,9 +33,6 @@ interface NavigationStoreState {
   focusView: boolean; // Focused view mode state
   setFocusView: (status: boolean) => void; // Toggles focus view state
 
-  finishedOnboarding: boolean; // Tracks if the user has completed onboarding
-  setFinishedOnboarding: () => void; // Marks onboarding as complete
-
   clearNavigationStore: () => void; // Resets navigation store to initial state
 }
 
@@ -48,16 +45,7 @@ const initialMenuState: UserMenu = appConfig.menuStructure.reduce((acc, { entity
 interface InitStore
   extends Pick<
     NavigationStoreState,
-    | 'recentSearches'
-    | 'keepMenuOpen'
-    | 'hideSubmenu'
-    | 'navLoading'
-    | 'focusView'
-    | 'menu'
-    | 'activeSections'
-    | 'finishedOnboarding'
-    | 'navSheetOpen'
-    | 'keepOpenPreference'
+    'recentSearches' | 'keepMenuOpen' | 'hideSubmenu' | 'navLoading' | 'focusView' | 'menu' | 'activeSections' | 'navSheetOpen' | 'keepOpenPreference'
   > {}
 
 // Default state values
@@ -66,12 +54,11 @@ const initStore: InitStore = {
   navSheetOpen: null,
   keepMenuOpen: window.innerWidth > 1280, // Auto-open menu on wider screens
   keepOpenPreference: false,
-  hideSubmenu: false,
+  hideSubmenu: true,
   navLoading: false,
   focusView: false,
   menu: initialMenuState,
   activeSections: null,
-  finishedOnboarding: false,
 };
 
 /**
@@ -136,18 +123,13 @@ export const useNavigationStore = create<NavigationStoreState>()(
               state.activeSections = null;
             });
           },
-          setFinishedOnboarding: () => {
-            set((state) => {
-              state.finishedOnboarding = true;
-            });
-          },
           clearNavigationStore: () =>
             set((state) => {
               state.menu = initialMenuState;
             }),
         }),
         {
-          version: 6,
+          version: 7,
           name: `${appConfig.slug}-navigation`,
           partialize: (state) => ({
             menu: state.menu,
@@ -155,7 +137,6 @@ export const useNavigationStore = create<NavigationStoreState>()(
             hideSubmenu: state.hideSubmenu,
             activeSections: state.activeSections,
             recentSearches: state.recentSearches,
-            finishedOnboarding: state.finishedOnboarding,
           }),
           storage: createJSONStorage(() => localStorage),
         },

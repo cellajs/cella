@@ -2,7 +2,7 @@ import { z } from '@hono/zod-openapi';
 import { appConfig, type ContextEntityType } from 'config';
 import { createSelectSchema } from 'drizzle-zod';
 import { sessionsTable } from '#/db/schema/sessions';
-import { contextEntityBaseSchema, userBaseSchema } from '#/modules/entities/schema';
+import { contextEntityBaseSchema, contextEntityWithMembershipSchema, userBaseSchema } from '#/modules/entities/schema';
 import { membershipBaseSchema } from '#/modules/memberships/schema';
 import { enabledOAuthProvidersEnum } from '#/modules/users/schema';
 import { booleanQuerySchema } from '#/utils/schema/common';
@@ -16,29 +16,30 @@ export const meAuthDataSchema = z.object({
   sessions: z.array(sessionSchema.extend({ expiresAt: z.string() })),
 });
 
-export const menuItemSchema = contextEntityBaseSchema.omit({ bannerUrl: true }).extend({
+export const menuItemSchema = contextEntityWithMembershipSchema.omit({ bannerUrl: true }).extend({
   createdAt: z.string(),
   modifiedAt: z.string().nullable(),
-  membership: membershipBaseSchema,
   organizationId: membershipBaseSchema.shape.organizationId.optional(),
 });
 
-const menuItemListSchema = z.array(
+const menuSectionSchema = z.array(
   z.object({
     ...menuItemSchema.shape,
     submenu: z.array(menuItemSchema).optional(),
   }),
 );
 
-export const menuSchema = z.object(
-  appConfig.menuStructure.reduce(
-    (acc, { entityType }) => {
-      acc[entityType] = menuItemListSchema;
-      return acc;
-    },
-    {} as Record<ContextEntityType, typeof menuItemListSchema>,
-  ),
-);
+export const menuSchema = z
+  .object(
+    appConfig.menuStructure.reduce(
+      (acc, { entityType }) => {
+        acc[entityType] = menuSectionSchema;
+        return acc;
+      },
+      {} as Record<ContextEntityType, typeof menuSectionSchema>,
+    ),
+  )
+  .openapi('MenuSchema');
 
 export const passkeyRegistrationBodySchema = z.object({
   attestationObject: z.string(),

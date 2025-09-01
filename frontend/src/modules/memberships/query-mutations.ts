@@ -1,10 +1,10 @@
 import { useMutation } from '@tanstack/react-query';
 import { appConfig } from 'config';
 import { t } from 'i18next';
-import { deleteMemberships, type MembershipInviteResponse, membershipInvite, updateMembership } from '~/api.gen';
+import { type ContextEntityBaseSchema, deleteMemberships, type MembershipInviteResponse, membershipInvite, updateMembership } from '~/api.gen';
 import type { ApiError } from '~/lib/api';
 import { toaster } from '~/modules/common/toaster/service';
-import type { ContextEntityData, EntityPage } from '~/modules/entities/types';
+import type { EntityPage } from '~/modules/entities/types';
 import { getAndSetMenu } from '~/modules/me/helpers';
 import { resolveParentEntityType } from '~/modules/memberships/helpers';
 import { membersKeys } from '~/modules/memberships/query';
@@ -20,9 +20,9 @@ import type {
   MutationUpdateMembership,
 } from '~/modules/memberships/types';
 import { updateMenuItemMembership } from '~/modules/navigation/menu-sheet/helpers/menu-operations';
-import { formatUpdatedData, getQueryItems, getSimilarQueries } from '~/query/helpers/mutate-query';
 import { useMutateQueryData } from '~/query/hooks/use-mutate-query-data';
 import { queryClient } from '~/query/query-client';
+import { formatUpdatedCacheData, getQueryItems, getSimilarQueries } from '~/query/utils/mutate-query';
 
 const limit = appConfig.requestLimits.members;
 
@@ -89,7 +89,7 @@ export const useMemberUpdateMutation = () =>
           const prevItems = getQueryItems(oldData);
           const updatedData = updateMembers(prevItems, membershipInfo);
 
-          return formatUpdatedData(oldData, updatedData, limit);
+          return formatUpdatedCacheData(oldData, updatedData, limit);
         });
 
         context.queryContext.push([queryKey, previousData, membershipInfo.id]); // Store previous data for rollback if needed
@@ -126,7 +126,7 @@ export const useMemberUpdateMutation = () =>
           const prevItems = getQueryItems(oldData);
           const updatedData = updateMembers(prevItems, updatedMembership);
 
-          return formatUpdatedData(oldData, updatedData, limit);
+          return formatUpdatedCacheData(oldData, updatedData, limit);
         });
       }
       toaster(toastMessage, 'success');
@@ -166,7 +166,7 @@ export const useMembersDeleteMutation = () =>
           const prevItems = getQueryItems(oldData);
           const updatedMemberships = deletedMembers(prevItems, ids);
 
-          return formatUpdatedData(oldData, updatedMemberships, limit, -ids.length);
+          return formatUpdatedCacheData(oldData, updatedMemberships, limit, -ids.length);
         });
 
         context.push([queryKey, previousData]); // Store previous data for rollback if needed
@@ -197,7 +197,7 @@ const deletedMembers = (members: Member[], ids: string[]) => {
     .filter(Boolean) as Member[];
 };
 
-export const handlePendingInvites = (targetEntity: ContextEntityData, organization: ContextEntityData, invitesCount: number) => {
+export const handlePendingInvites = (targetEntity: ContextEntityBaseSchema, organization: ContextEntityBaseSchema, invitesCount: number) => {
   const { id, slug, entityType } = targetEntity;
   // If the entity is not an organization but belongs to one, update its cache too
   if (entityType !== 'organization') {
@@ -216,7 +216,13 @@ export const handlePendingInvites = (targetEntity: ContextEntityData, organizati
 };
 const updateInvitesCount = (oldEntity: EntityPage | undefined, updateCount: number) => {
   if (!oldEntity) return oldEntity;
-  // Ensure invitesCount is a number, add emails.length
-  const currentCount = typeof oldEntity.invitesCount === 'number' ? oldEntity.invitesCount : 0;
-  return { ...oldEntity, invitesCount: currentCount + updateCount };
+
+  const currentCount = typeof oldEntity.counts?.membership.pending === 'number' ? oldEntity.counts.membership.pending : 0;
+  const newEntity = { ...oldEntity };
+
+  if (newEntity.counts?.membership) {
+    newEntity.counts.membership.pending = currentCount + updateCount;
+  }
+
+  return newEntity;
 };

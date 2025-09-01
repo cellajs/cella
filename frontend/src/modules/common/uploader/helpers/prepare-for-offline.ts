@@ -2,7 +2,7 @@ import type { AssemblyResponse } from '@uppy/transloadit';
 import { uploadTemplates } from 'config/templates';
 import { LocalFileStorage } from '~/modules/attachments/helpers/local-file-storage';
 import type { CustomUppyFile } from '~/modules/common/uploader/types';
-import type { UploadTockenQuery } from '~/modules/me/types';
+import type { UploadTokenQuery } from '~/modules/me/types';
 
 /**
  * Prepares files for offline storage and returns successfully uploaded files.
@@ -10,7 +10,7 @@ import type { UploadTockenQuery } from '~/modules/me/types';
  * @param files - Fle object containing metadata and upload details.
  * @returns An array of files that were successfully prepared for offline storage.
  */
-export const prepareFilesForOffline = async (files: Record<string, CustomUppyFile>, tokenQuery: UploadTockenQuery) => {
+export const prepareFilesForOffline = async (files: Record<string, CustomUppyFile>, tokenQuery: UploadTokenQuery) => {
   console.warn('Files will be stored offline in indexedDB.');
 
   const template = uploadTemplates.attachment;

@@ -2,13 +2,15 @@ import { onlineManager } from '@tanstack/react-query';
 import i18n from 'i18next';
 import { Home, Menu, Search, User } from 'lucide-react';
 import type { RefObject } from 'react';
-import type { FooterLinkProps } from '~/modules/common/app-footer';
+import type { UserBaseSchema } from '~/api.gen';
+import type { FooterLinkProps } from '~/modules/common/app/footer';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { toaster } from '~/modules/common/toaster/service';
+import type { EntityPage } from '~/modules/entities/types';
 import type { UserMenuItem } from '~/modules/me/types';
 import { AccountSheet } from '~/modules/navigation/account-sheet';
 import { MenuSheet } from '~/modules/navigation/menu-sheet';
-import { AppSearch, type EntityListItem } from '~/modules/navigation/search';
+import { AppSearch } from '~/modules/navigation/search';
 import type { EntityRoute } from '~/modules/navigation/types';
 import { OrganizationRoute } from '~/routes/organizations';
 import { UserProfileRoute } from '~/routes/users';
@@ -61,7 +63,7 @@ export const defaultFooterLinks: FooterLinkProps[] = [
  * Since each app has its own entity structure or hierarchy, we need to resolve them dynamically in some cases.
  * For example to get/search entities and for items in the menu sheet.
  */
-export const getEntityRoute = (item: UserMenuItem | EntityListItem): EntityRoute => {
+export const getEntityRoute = (item: UserMenuItem | EntityPage | UserBaseSchema): EntityRoute => {
   const { entityType, id, slug } = item;
 
   const to = baseEntityRoutes[entityType].to;

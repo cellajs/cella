@@ -1,6 +1,6 @@
 import { createCustomRoute } from '#/lib/custom-routes';
 import { hasSystemAccess, isAuthenticated, isPublicAccess } from '#/middlewares/guard';
-import { metricListSchema, metricPublicSchema } from '#/modules/metrics/schema';
+import { metricListSchema, publicCountsSchema } from '#/modules/metrics/schema';
 import { errorResponses } from '#/utils/schema/responses';
 
 const metricRouteConfig = {
@@ -33,7 +33,7 @@ const metricRouteConfig = {
     responses: {
       200: {
         description: 'Public counts',
-        content: { 'application/json': { schema: metricPublicSchema } },
+        content: { 'application/json': { schema: publicCountsSchema } },
       },
       ...errorResponses,
     },

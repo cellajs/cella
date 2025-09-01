@@ -1,19 +1,18 @@
 import { OpenAPIHono, type z } from '@hono/zod-openapi';
 import { appConfig } from 'config';
-import { and, eq, ilike, inArray, isNotNull, isNull } from 'drizzle-orm';
+import { and, count, eq, ilike, isNotNull, isNull, type SQLWrapper, sql } from 'drizzle-orm';
+import { alias } from 'drizzle-orm/pg-core';
 import { db } from '#/db/db';
 import { membershipsTable } from '#/db/schema/memberships';
-import { usersTable } from '#/db/schema/users';
 import { entityTables } from '#/entity-config';
-import { type Env, getContextMemberships, getContextUser } from '#/lib/context';
-import { AppError } from '#/lib/errors';
+import { type Env, getContextUser } from '#/lib/context';
 import { checkSlugAvailable } from '#/modules/entities/helpers/check-slug';
-import { getEntitiesQuery } from '#/modules/entities/helpers/entities-query';
-import { processEntitiesData } from '#/modules/entities/helpers/process-entities-data';
+import { getMemberCountsQuery } from '#/modules/entities/helpers/counts';
 import entityRoutes from '#/modules/entities/routes';
-import type { userBaseSchema } from '#/modules/entities/schema';
-import { membershipSummarySelect } from '#/modules/memberships/helpers/select';
-import { userSummarySelect } from '#/modules/users/helpers/select';
+import type { contextEntitiesResponseSchema } from '#/modules/entities/schema';
+import { membershipBaseSelect } from '#/modules/memberships/helpers/select';
+import type { membershipCountSchema } from '#/modules/organizations/schema';
+import { getValidContextEntity } from '#/permissions/get-context-entity';
 import { defaultHook } from '#/utils/default-hook';
 import { getOrderColumn } from '#/utils/order-column';
 import { prepareStringForILikeFilter } from '#/utils/sql';
@@ -22,123 +21,153 @@ const app = new OpenAPIHono<Env>({ defaultHook });
 
 const entityRouteHandlers = app
   /*
-   * Get page entities with a limited schema
-   TODO getPageEntities and getContextEntities should be merged into a single endpoint? Also why does EntityBaseSchema only include the organization entityType?
+   * Get all users' context entities with members counts
    */
-  .openapi(entityRoutes.getPageEntities, async (ctx) => {
-    const { q, type, targetUserId, targetOrgId, userMembershipType } = ctx.req.valid('query');
+  .openapi(entityRoutes.getContextEntities, async (ctx) => {
+    const { q, sort, types, role, offset, limit, targetUserId, targetOrgId, excludeArchived, orgAffiliated } = ctx.req.valid('query');
 
+    // Get current user (or the target user if explicitly passed)
     const { id: selfId } = getContextUser();
-
     const userId = targetUserId ?? selfId;
 
-    // Determine organizationIds
-    let organizationIds: string[] = [];
+    // Determine which entity types to query for
+    const selectedTypes = new Set(types ?? appConfig.contextEntityTypes);
 
-    if (targetOrgId) {
-      organizationIds = [targetOrgId];
-    } else {
-      const orgMemberships = targetUserId
-        ? await db
-            .select()
-            .from(membershipsTable)
-            .where(
-              and(
-                eq(membershipsTable.contextType, 'organization'),
-                eq(membershipsTable.userId, targetUserId),
-                isNotNull(membershipsTable.activatedAt),
-              ),
-            )
-        : getContextMemberships().filter((m) => m.contextType === 'organization');
+    // Shared filters for active memberships (used across entity types)
+    const baseMembershipQueryFilters = [
+      eq(membershipsTable.userId, userId),
+      isNotNull(membershipsTable.activatedAt),
+      isNull(membershipsTable.tokenId),
+    ];
 
-      organizationIds = orgMemberships.map((m) => m.organizationId);
-    }
-
-    if (!organizationIds.length) return ctx.json({ items: [], total: 0, counts: { user: 0, organization: 0 } }, 200);
-
-    // Prepare query and execute in parallel
-    const queries = getEntitiesQuery({ q, organizationIds, userId, selfId, type, userMembershipType });
-    const queryData = await Promise.all(queries);
-
-    // Aggregate and process result data
-    const { counts, items, total } = processEntitiesData(queryData, type);
-
-    return ctx.json({ items, total, counts }, 200);
-  })
-  /*
-   * Get all users' context entities with admins
-   */
-  .openapi(entityRoutes.getEntitiesWithAdmins, async (ctx) => {
-    const { q, sort, type, roles, targetUserId } = ctx.req.valid('query');
-
-    const { id: selfId } = getContextUser();
-
-    const userId = targetUserId ?? selfId;
-
-    const table = entityTables[type];
-    const entityIdField = appConfig.entityIdFields[type];
-    if (!table) throw new AppError({ status: 404, type: 'not_found', severity: 'warn', entityType: type });
-
-    const orderColumn = getOrderColumn({ name: table.name, createdAt: table.createdAt }, sort, table.createdAt);
-
-    const entities = await db
-      .select({
-        id: table.id,
-        slug: table.slug,
-        name: table.name,
-        entityType: table.entityType,
-        thumbnailUrl: table.thumbnailUrl,
-        createdAt: table.createdAt,
-        membership: membershipSummarySelect,
-      })
-      .from(table)
-      .innerJoin(
-        membershipsTable,
-        and(
-          eq(membershipsTable[entityIdField], table.id),
-          eq(membershipsTable.userId, userId),
-          eq(membershipsTable.contextType, type),
-          isNull(membershipsTable.tokenId),
-          isNotNull(membershipsTable.activatedAt),
-          ...(roles?.length ? [inArray(membershipsTable.role, roles)] : []),
-        ),
-      )
-      .where(q ? ilike(table.name, prepareStringForILikeFilter(q)) : undefined)
-      .orderBy(orderColumn);
-
-    const entityIds = entities.map(({ id }) => id);
-
-    const admins = await db
-      .select({
-        userData: userSummarySelect,
-        entityId: membershipsTable[entityIdField],
-      })
+    // Subquery to get all organizations the user is a member of (optionally narrowed down if `targetOrgId` is passed)
+    const orgMembershipsSubquery = db
+      .select({ orgId: membershipsTable.organizationId })
       .from(membershipsTable)
-      .innerJoin(usersTable, eq(usersTable.id, membershipsTable.userId))
       .where(
         and(
-          inArray(membershipsTable[entityIdField], entityIds),
-          eq(membershipsTable.contextType, type),
-          eq(membershipsTable.role, 'admin'),
-          isNotNull(membershipsTable.activatedAt),
+          ...baseMembershipQueryFilters,
+          ...(targetOrgId ? [eq(membershipsTable.organizationId, targetOrgId)] : []),
+          eq(membershipsTable.contextType, 'organization'),
         ),
+      )
+      .as('userOrgs');
+
+    // Build a query per context entity type
+    const contextQueries = appConfig.contextEntityTypes.map((entityType) => {
+      // Skip if this type isn’t requested
+      if (!selectedTypes.has(entityType)) return null;
+
+      const table = entityTables[entityType];
+      const entityIdField = appConfig.entityIdFields[entityType];
+      if (!table) return null;
+
+      // Choose ordering column (sort by name/createdAt/etc depending on query)
+      const orderColumn = getOrderColumn({ name: table.name, createdAt: table.createdAt }, sort, table.createdAt);
+
+      // Subquery to compute membership counts (per role/status) for this entity type
+      const membershipCountsQuery = getMemberCountsQuery(entityType);
+
+      // Alias memberships table for joins to avoid conflicts
+      const orgMembershipsAlias = alias(membershipsTable, 'orgMembership');
+
+      const membershipFilters = and(
+        ...baseMembershipQueryFilters,
+        eq(membershipsTable[entityIdField], table.id),
+        eq(membershipsTable.contextType, entityType),
       );
 
-    // Group admins by entityId
-    const membersByEntityId = admins.reduce<Record<string, z.infer<typeof userBaseSchema>[]>>((acc, { entityId, userData }) => {
-      if (!entityId) return acc;
-      if (!acc[entityId]) acc[entityId] = [];
-      acc[entityId].push(userData);
+      // Base query: entity + membership summary
+      const baseQuery = db
+        .select({
+          id: table.id,
+          slug: table.slug,
+          name: table.name,
+          entityType: table.entityType,
+          thumbnailUrl: table.thumbnailUrl,
+          createdAt: table.createdAt,
+          membership: membershipBaseSelect,
+          membershipCounts: sql<z.infer<typeof membershipCountSchema>>`json_build_object(
+            'admin', ${membershipCountsQuery.admin},
+            'member', ${membershipCountsQuery.member},
+            'pending', ${membershipCountsQuery.pending},
+            'total', ${membershipCountsQuery.total}
+          )`,
+        })
+        .from(table)
+        .leftJoin(membershipCountsQuery, eq(table.id, membershipCountsQuery.id));
 
-      return acc;
-    }, {});
+      // Join user’s membership in this entity, for org-affiliated left join otherwise inner
+      const membershipQuery = orgAffiliated
+        ? baseQuery.leftJoin(membershipsTable, membershipFilters)
+        : baseQuery.innerJoin(membershipsTable, membershipFilters);
 
-    // Enrich entities with admins
-    const data = entities.map((entity) => ({
-      ...entity,
-      admins: membersByEntityId[entity.id] ?? [],
-    }));
-    return ctx.json(data, 200);
+      // Organization membership filtering
+      //   - For non-org entities: join with orgMembershipsSubquery (respects `targetOrgId`)
+      //   - For org entities: join with orgMembershipsAlias (avoids filtering out the org itself)
+      const query = orgAffiliated
+        ? entityType !== 'organization' && 'organizationId' in table
+          ? membershipQuery.innerJoin(orgMembershipsSubquery, eq(table.organizationId as SQLWrapper, orgMembershipsSubquery.orgId))
+          : membershipQuery.innerJoin(
+              orgMembershipsAlias,
+              and(
+                eq(orgMembershipsAlias.userId, userId),
+                isNotNull(orgMembershipsAlias.activatedAt),
+                isNull(orgMembershipsAlias.tokenId),
+                eq(table.id, orgMembershipsAlias.organizationId),
+                eq(orgMembershipsAlias.contextType, 'organization'),
+              ),
+            )
+        : membershipQuery;
+
+      // Apply query filters (search, role, excludeArchived)
+      return query
+        .where(
+          and(
+            ...(excludeArchived ? [eq(membershipsTable.archived, false)] : []),
+            ...(role ? [eq(membershipsTable.role, role)] : []),
+            ...(q ? [ilike(table.name, prepareStringForILikeFilter(q))] : []),
+          ),
+        )
+        .orderBy(orderColumn);
+    });
+
+    // Run queries in parallel to fetch items and totals per entity type
+    const queryResults = await Promise.all(
+      contextQueries.map(async (query) => {
+        if (!query) return { items: [], total: 0 };
+
+        // Fetch items and total count in parallel
+        const [items, [{ total }]] = await Promise.all([
+          query.limit(limit).offset(offset),
+          db.select({ total: count() }).from(query.as('entitiCount')),
+        ]);
+
+        return { items, total };
+      }),
+    );
+
+    // Map items per entity type
+    const items = Object.fromEntries(appConfig.contextEntityTypes.map((entityType, i) => [entityType, queryResults[i].items])) as z.infer<
+      typeof contextEntitiesResponseSchema
+    >['items'];
+
+    // Compute grand total
+    const total = queryResults.reduce((sum, result) => sum + (result.total ?? 0), 0);
+
+    // Return response
+    return ctx.json({ items, total }, 200);
+  })
+  /*
+   * Get base entity info
+   */
+  .openapi(entityRoutes.getContextEntity, async (ctx) => {
+    const { idOrSlug } = ctx.req.valid('param');
+    const { entityType } = ctx.req.valid('query');
+
+    const { entity } = await getValidContextEntity(idOrSlug, entityType, 'read');
+
+    return ctx.json(entity, 200);
   })
   /*
    * Check if slug is available

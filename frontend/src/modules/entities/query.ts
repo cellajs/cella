@@ -1,5 +1,8 @@
-import { keepPreviousData, queryOptions } from '@tanstack/react-query';
-import { type GetEntitiesWithAdminsData, type GetPageEntitiesData, getEntitiesWithAdmins, getPageEntities } from '~/api.gen';
+import { infiniteQueryOptions, keepPreviousData, queryOptions } from '@tanstack/react-query';
+import { appConfig, type PageEntityType } from 'config';
+import { type GetContextEntitiesData, getContextEntities } from '~/api.gen';
+import type { ContextEntityItems } from '~/modules/entities/types';
+import { baseInfiniteQueryOptions } from '~/query/utils/infinite-query-options';
 import { useUserStore } from '~/store/user';
 
 /**
@@ -7,46 +10,92 @@ import { useUserStore } from '~/store/user';
  * For managing query caching and invalidation.
  */
 export const entitiesKeys = {
-  all: ['entities'] as const,
-  search: (searchQuery: string) => [...entitiesKeys.all, 'search', searchQuery] as const,
+  all: 'entities' as const,
+  product: 'product' as const,
+  context: 'context' as const,
+  search: (searchQuery: string) => [entitiesKeys.all, entitiesKeys.context, 'search', searchQuery] as const,
   grid: {
-    base: () => [...entitiesKeys.all, 'greed'] as const,
-    context: (filters: GetEntitiesWithAdminsData['query']) => [...entitiesKeys.grid.base(), filters] as const,
+    base: () => [entitiesKeys.all, 'greed'] as const,
+    context: (filters: GetContextEntitiesData['query']) => [...entitiesKeys.grid.base(), filters] as const,
   },
+  single: (idOrSlug: string, entityType: PageEntityType) => [entitiesKeys.all, entitiesKeys.context, entityType, idOrSlug] as const,
 };
 
 /**
- * Query options for fetching page entities based on input query.
+ * Query options for fetching context entities based on input query.
  *
- * @param query - PageEntitiesQuery parameters to get entities.
+ * @param query.q - Optional search term to filter entities.
+ * @param query.types - One or more `ContextEntityTypes`.
+ * @param query.targetUserId - ID of user to scope search to.
+ * @param query.targetOrgId - ID of organization to scope search to.
  * @returns Query options
  */
-export const entitiesQueryOptions = (query: NonNullable<GetPageEntitiesData['query']>) => {
-  const searchQuery = query.q ?? '';
+export const searchContextEntitiesQueryOptions = ({
+  q = '',
+  types,
+  targetUserId,
+  targetOrgId,
+}: Pick<NonNullable<GetContextEntitiesData['query']>, 'q' | 'types' | 'targetUserId' | 'targetOrgId'>) => {
+  const orgAffiliated = 'true';
+
   return queryOptions({
-    queryKey: entitiesKeys.search(searchQuery),
-    queryFn: () => getPageEntities({ query }),
+    queryKey: entitiesKeys.search(q),
+    queryFn: () => getContextEntities({ query: { q, types, targetUserId, targetOrgId, orgAffiliated } }),
     staleTime: 0,
-    enabled: searchQuery.trim().length > 0, // to avoid issues with spaces
-    initialData: { items: [], total: 0, counts: {} },
+    enabled: q.trim().length > 0, // to avoid issues with spaces
+    initialData: {
+      // TODO fix typing
+      items: Object.fromEntries(appConfig.contextEntityTypes.map((t) => [t, []])) as unknown as ContextEntityItems,
+      total: 0,
+    },
     placeholderData: keepPreviousData,
   });
 };
 
 /**
- * Query options for fetching context entities with memberhsip and their members based on userId input query and sort.
+ * Infinite Query Options for fetching a paginated list of context entities.
  *
- * @param query - ContextEntitiesQuery parameters to get entities.
- * @returns Query options
+ * @param query.q - Optional search term to filter entities.
+ * @param query.sort - Field to sort results by (default: 'name').
+ * @param query.types - One or more `ContextEntityTypes`.
+ * @param query.role - Optional role filter for entities.
+ * @param query.excludeArchived - Whether to exclude archived entities.
+ * @param query.limit - Maximum number of entities to fetch per page (default: appConfig.requestLimits.default).
+ * @param query.targetUserId - ID of user to scope search to (defaults to current user).
+ *
+ * @returns Infinite query options.
  */
-export const contextEntitiesQueryOptions = (query: GetEntitiesWithAdminsData['query']) => {
-  const user = useUserStore.getState().user;
-  const q = query.q ?? '';
-  const sort = query.sort ?? 'name';
-  const targetUserId = query.targetUserId ?? user.id;
-  return queryOptions({
-    queryKey: entitiesKeys.grid.context({ q, sort, targetUserId, type: query.type, roles: query.roles }),
-    queryFn: () => getEntitiesWithAdmins({ query: { ...query, sort, targetUserId } }),
+export const contextEntitiesQueryOptions = ({
+  q = '',
+  sort = 'name',
+  types,
+  role,
+  excludeArchived,
+  limit: baseLimit = appConfig.requestLimits.default,
+  targetUserId = useUserStore.getState().user.id,
+}: Omit<NonNullable<GetContextEntitiesData['query']>, 'targetOrgId' | 'orgAffiliated' | 'order' | 'limit'> & { limit?: number }) => {
+  const limit = String(baseLimit);
+  const orgAffiliated = 'false';
+  const { initialPageParam } = baseInfiniteQueryOptions;
+
+  return infiniteQueryOptions({
+    queryKey: entitiesKeys.grid.context({ q, sort, targetUserId, types, role }),
+    initialPageParam,
+    queryFn: async ({ pageParam: { page, offset: _offset }, signal }) => {
+      const offset = String(_offset || (page || 0) * Number(limit));
+      return await getContextEntities({ query: { q, sort, types, role, targetUserId, excludeArchived, orgAffiliated, offset, limit }, signal });
+    },
+    getNextPageParam: (lastPage, allPages) => {
+      const total = lastPage.total;
+
+      const fetchedCount = allPages.reduce((acc, page) => {
+        const pageCount = Object.values(page.items).reduce((sum, arr) => sum + arr.length, 0);
+        return acc + pageCount;
+      }, 0);
+
+      if (fetchedCount >= total) return undefined;
+      return { page: allPages.length, offset: fetchedCount };
+    },
     staleTime: 0,
   });
 };

@@ -1,4 +1,3 @@
-import type { z } from 'zod';
-import type { zGetRequestsResponse } from '~/api.gen/zod.gen';
+import type { GetRequestsResponse } from '~/api.gen';
 
-export type Request = z.infer<typeof zGetRequestsResponse>['items'][number];
+export type Request = GetRequestsResponse['items'][number];

@@ -3,8 +3,8 @@ import i18n from 'i18next';
 import { create } from 'zustand';
 import { createJSONStorage, devtools, persist } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
+import type { User } from '~/api.gen';
 import type { MeAuthData, MeUser } from '~/modules/me/types';
-import type { User } from '~/modules/users/types';
 
 interface UserStoreState {
   user: MeUser; // Current user data
@@ -21,6 +21,7 @@ export const useUserStore = create<UserStoreState>()(
   devtools(
     persist(
       immer((set) => ({
+        // Hackish solution to avoid type issues for user being undefined. Router should prevent user ever being undefined in the app layout routes.
         user: null as unknown as MeUser,
         enabledOAuth: [] as MeAuthData['enabledOAuth'],
         hasPasskey: false,

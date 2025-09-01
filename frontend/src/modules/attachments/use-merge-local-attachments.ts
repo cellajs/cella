@@ -1,11 +1,12 @@
 import { appConfig } from 'config';
 import { useEffect, useRef } from 'react';
+import type { Attachment } from '~/api.gen';
 import { LocalFileStorage } from '~/modules/attachments/helpers/local-file-storage';
 import { attachmentsQueryOptions } from '~/modules/attachments/query';
-import type { AttachmentSearch } from '~/modules/attachments/table/table-wrapper';
-import type { Attachment, AttachmentInfiniteQueryData, AttachmentQueryData } from '~/modules/attachments/types';
-import { formatUpdatedData, getQueryItems } from '~/query/helpers/mutate-query';
+import type { AttachmentSearch } from '~/modules/attachments/table';
+import type { AttachmentInfiniteQueryData, AttachmentQueryData } from '~/modules/attachments/types';
 import { queryClient } from '~/query/query-client';
+import { formatUpdatedCacheData, getQueryItems } from '~/query/utils/mutate-query';
 import { nanoid } from '~/utils/nanoid';
 
 const limit = appConfig.requestLimits.attachments;
@@ -59,7 +60,7 @@ export const useMergeLocalAttachments = (organizationId: string, { q, sort, orde
         if (!filtered.length) return existingData;
 
         const updatedItems = order === 'asc' ? [...existingItems, ...filtered] : [...filtered, ...existingItems];
-        return formatUpdatedData(existingData, updatedItems, limit, filtered.length);
+        return formatUpdatedCacheData(existingData, updatedItems, limit, filtered.length);
       });
       enrichedRef.current = true;
     };
