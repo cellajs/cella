@@ -4,9 +4,8 @@ import { ChevronUp, Home, MessageCircleQuestion, RefreshCw } from 'lucide-react'
 import { AnimatePresence, motion } from 'motion/react';
 import { type RefObject, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-
 import { ApiError } from '~/lib/api';
-import { AppFooter } from '~/modules/common/app-footer';
+import { AppFooter } from '~/modules/common/app/footer';
 import { contactFormHandler } from '~/modules/common/contact-form/contact-form-handler';
 import { Dialoger } from '~/modules/common/dialoger/provider';
 import { Button } from '~/modules/ui/button';

@@ -3,7 +3,7 @@ import i18n from 'i18next';
 import { Home, Menu, Search, User } from 'lucide-react';
 import type { RefObject } from 'react';
 import type { UserBaseSchema } from '~/api.gen';
-import type { FooterLinkProps } from '~/modules/common/app-footer';
+import type { FooterLinkProps } from '~/modules/common/app/footer';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { toaster } from '~/modules/common/toaster/service';
 import type { UserMenuItem } from '~/modules/me/types';
