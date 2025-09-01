@@ -9,8 +9,8 @@ import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { DataTable } from '~/modules/common/data-table';
 import { useSortColumns } from '~/modules/common/data-table/sort-columns';
 import { requestsQueryOptions } from '~/modules/requests/query';
+import { RequestsTableBar } from '~/modules/requests/table/bar';
 import { useColumns } from '~/modules/requests/table/columns';
-import { RequestsTableBar } from '~/modules/requests/table/table-bar';
 import type { Request } from '~/modules/requests/types';
 import { RequestsTableRoute, type requestSearchSchema } from '~/routes/system';
 

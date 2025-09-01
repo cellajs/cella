@@ -9,8 +9,8 @@ import { DataTable } from '~/modules/common/data-table';
 import { useSortColumns } from '~/modules/common/data-table/sort-columns';
 import { toaster } from '~/modules/common/toaster/service';
 import { usersQueryOptions, useUpdateUserMutation } from '~/modules/users/query';
+import { UsersTableBar } from '~/modules/users/table/bar';
 import { useColumns } from '~/modules/users/table/columns';
-import { UsersTableBar } from '~/modules/users/table/table-bar';
 import type { TableUser } from '~/modules/users/types';
 import { UsersTableRoute, type usersSearchSchema } from '~/routes/system';
 

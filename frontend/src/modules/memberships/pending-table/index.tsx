@@ -10,7 +10,7 @@ import { DataTable } from '~/modules/common/data-table';
 import { useSortColumns } from '~/modules/common/data-table/sort-columns';
 import type { EntityPage } from '~/modules/entities/types';
 import { useColumns } from '~/modules/memberships/pending-table/columns';
-import { PendingInvitationsTableBar } from '~/modules/memberships/pending-table/table-bar';
+import { PendingInvitationsTableBar } from '~/modules/memberships/pending-table/bar';
 import { pendingInvitationsQueryOptions } from '~/modules/memberships/query';
 import type { PendingInvitation } from '~/modules/memberships/types';
 import type { pendingInvitationsSearchSchema } from '~/routes/organizations';
