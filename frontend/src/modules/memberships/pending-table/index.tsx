@@ -23,7 +23,7 @@ export interface PendingInvitationsTableProps {
   entity: EntityPage;
 }
 
-export const MembershipInvitationsTable = ({ entity }: PendingInvitationsTableProps) => {
+export const PendingInvitationsTable = ({ entity }: PendingInvitationsTableProps) => {
   const { t } = useTranslation();
   const { search, setSearch } = useSearchParams<PendingInvitationsSearch>({ saveDataInSearch: false });
 
@@ -87,4 +87,4 @@ export const MembershipInvitationsTable = ({ entity }: PendingInvitationsTablePr
   );
 };
 
-export default MembershipInvitationsTable;
+export default PendingInvitationsTable;
