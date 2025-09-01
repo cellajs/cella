@@ -63,14 +63,16 @@ export const setUserSession = async (ctx: Context, user: UserModel, strategy: Au
   // Insert session
   await db.insert(sessionsTable).values(session);
 
-  const adminUser = getContextUser();
-  const cookieContent = `${hashedSessionToken}.${type === 'impersonation' ? adminUser.id : ''}`;
+  if (type !== 'pending_2fa') {
+    const adminUser = getContextUser();
+    const cookieContent = `${hashedSessionToken}.${type === 'impersonation' ? adminUser.id : ''}`;
 
-  // Set session cookie with the unhashed version
-  await setAuthCookie(ctx, 'session', cookieContent, timeSpan);
+    // Set session cookie with the unhashed version
+    await setAuthCookie(ctx, 'session', cookieContent, timeSpan);
+  }
 
-  // If it's an impersonation session, we can stop here
-  if (type !== 'regular') return;
+  // If it's an impersonation or step of 2FA session, we can stop here
+  if (type !== 'regular' && type !== 'two_factor_authentication') return;
 
   // Update last sign in date
   const lastSignInAt = getIsoDate();

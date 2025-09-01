@@ -335,11 +335,17 @@ const authRouteHandlers = app
     if (!validPassword) throw new AppError({ status: 403, type: 'invalid_password', severity: 'warn' });
 
     // If email is not verified, send verification email
-    if (!emailData.verified) sendVerificationEmail({ userId: user.id });
-    // Sign in user
-    else await setUserSession(ctx, user, 'password');
+    if (!emailData.verified) {
+      sendVerificationEmail({ userId: user.id });
+      return ctx.json({ emailVerified: false }, 200);
+    }
 
-    return ctx.json(emailData.verified, 200);
+    // Determine session type
+    const type = user.twoFactorEnabled ? 'pending_2fa' : 'regular';
+    await setUserSession(ctx, user, 'password', type);
+
+    const responce = type === 'pending_2fa' ? { pending2FA: true } : { emailVerified: true };
+    return ctx.json(responce, 200);
   })
   /*
    * Check token (token validation)

@@ -1,5 +1,3 @@
-import { z } from '@hono/zod-openapi';
-import { appConfig } from 'config';
 import { createCustomRoute } from '#/lib/custom-routes';
 import { hasSystemAccess, isAuthenticated, isPublicAccess } from '#/middlewares/guard';
 import { hasValidToken } from '#/middlewares/has-valid-token';
@@ -17,6 +15,8 @@ import {
 import { contextEntityWithMembershipSchema } from '#/modules/entities/schema';
 import { cookieSchema, idSchema, passwordSchema, tokenParamSchema } from '#/utils/schema/common';
 import { errorResponses, successWithoutDataSchema } from '#/utils/schema/responses';
+import { z } from '@hono/zod-openapi';
+import { appConfig } from 'config';
 
 const authRoutes = {
   startImpersonation: createCustomRoute({
@@ -315,7 +315,11 @@ const authRoutes = {
         headers: z.object({
           'Set-Cookie': cookieSchema,
         }),
-        content: { 'application/json': { schema: successWithoutDataSchema } },
+        content: {
+          'application/json': {
+            schema: z.union([z.object({ emailVerified: z.boolean() }), z.object({ pending2FA: z.boolean() })]),
+          },
+        },
       },
       ...errorResponses,
     },

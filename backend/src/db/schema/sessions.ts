@@ -3,7 +3,12 @@ import { timestampColumns } from '#/db/utils/timestamp-columns';
 import { nanoid } from '#/utils/nanoid';
 import { pgTable, varchar } from 'drizzle-orm/pg-core';
 
-export const sessionTypeEnum = ['regular', 'impersonation', 'multi_factor'] as const;
+export const sessionTypeEnum = [
+  'regular',
+  'impersonation',
+  'pending_2fa', // User completed password step, waiting for 2FA
+  'two_factor_authentication', // User fully authenticated with 2FA
+] as const;
 export type SessionTypes = (typeof sessionTypeEnum)[number];
 
 export const authStrategiesEnum = ['github', 'google', 'microsoft', 'password', 'passkey', 'email'] as const;

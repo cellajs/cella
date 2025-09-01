@@ -588,7 +588,13 @@ export type SignInResponses = {
   /**
    * User signed in
    */
-  200: boolean;
+  200:
+    | {
+        emailVerified: boolean;
+      }
+    | {
+        pending2FA: boolean;
+      };
 };
 
 export type SignInResponse = SignInResponses[keyof SignInResponses];
@@ -1483,7 +1489,7 @@ export type GetMyAuthResponses = {
     sessions: Array<{
       createdAt: string;
       id: string;
-      type: 'regular' | 'impersonation' | 'multi_factor';
+      type: 'regular' | 'impersonation' | 'pending_2fa' | 'two_factor_authentication';
       userId: string;
       deviceName: string | null;
       deviceType: 'desktop' | 'mobile';

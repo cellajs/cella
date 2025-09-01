@@ -49,8 +49,12 @@ export const SignInForm = ({ email, resetSteps, emailEnabled }: Props) => {
   // Handle sign in
   const { mutate: _signIn, isPending } = useMutation<SignInResponse, ApiError, NonNullable<SignInData['body']>>({
     mutationFn: (body) => signIn({ body }),
-    onSuccess: (emailVerified) => {
-      if (!emailVerified) return navigate({ to: '/auth/email-verification/$reason', params: { reason: 'signin' }, replace: true });
+    onSuccess: (result) => {
+      if ('emailVerified' in result && !result.emailVerified) {
+        return navigate({ to: '/auth/email-verification/$reason', params: { reason: 'signin' }, replace: true });
+      }
+
+      if ('pending2FA' in result) return navigate({ to: '/about', replace: true });
 
       const redirectPath = token && tokenId ? '/invitation/$token' : redirect?.startsWith('/') ? redirect : appConfig.defaultRedirectPath;
 

@@ -339,7 +339,14 @@ export const zSignInData = z.object({
 /**
  * User signed in
  */
-export const zSignInResponse = z.boolean();
+export const zSignInResponse = z.union([
+  z.object({
+    emailVerified: z.boolean(),
+  }),
+  z.object({
+    pending2FA: z.boolean(),
+  }),
+]);
 
 export const zRefreshTokenData = z.object({
   body: z.optional(z.never()),
@@ -589,7 +596,7 @@ export const zGetMyAuthResponse = z.object({
     z.object({
       createdAt: z.string(),
       id: z.string(),
-      type: z.enum(['regular', 'impersonation', 'multi_factor']),
+      type: z.enum(['regular', 'impersonation', 'pending_2fa', 'two_factor_authentication']),
       userId: z.string(),
       deviceName: z.union([z.string(), z.null()]),
       deviceType: z.enum(['desktop', 'mobile']),
