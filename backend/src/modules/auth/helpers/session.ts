@@ -1,10 +1,8 @@
-import type { z } from '@hono/zod-openapi';
-import { and, eq } from 'drizzle-orm';
-import type { Context } from 'hono';
 import { db } from '#/db/db';
-import { type AuthStrategy, type SessionModel, sessionsTable } from '#/db/schema/sessions';
+import { type AuthStrategy, type SessionModel, type SessionTypes, sessionsTable } from '#/db/schema/sessions';
 import { type UserModel, usersTable } from '#/db/schema/users';
 import { env } from '#/env';
+import { getContextUser } from '#/lib/context';
 import { AppError } from '#/lib/errors';
 import { deleteAuthCookie, getAuthCookie, setAuthCookie } from '#/modules/auth/helpers/cookie';
 import { deviceInfo } from '#/modules/auth/helpers/device-info';
@@ -17,19 +15,23 @@ import { nanoid } from '#/utils/nanoid';
 import { encodeLowerCased } from '#/utils/oslo';
 import { sessionCookieSchema } from '#/utils/schema/session-cookie';
 import { createDate, TimeSpan } from '#/utils/time-span';
+import type { z } from '@hono/zod-openapi';
+import { and, eq } from 'drizzle-orm';
+import type { Context } from 'hono';
 
 /**
  * Sets a user session and stores it in the database.
  * Generates a session token, records device information, and optionally associates an admin user for impersonation.
  */
-export const setUserSession = async (ctx: Context, user: UserModel, strategy: AuthStrategy, adminUser?: UserModel) => {
-  if ((!adminUser && user.role === 'admin') || adminUser) {
+export const setUserSession = async (ctx: Context, user: UserModel, strategy: AuthStrategy, type: SessionTypes = 'regular'): Promise<void> => {
+  if (user.role === 'admin' || type === 'impersonation') {
     const ip = getIp(ctx);
     const allowList = (env.REMOTE_SYSTEM_ACCESS_IP ?? '').split(',');
     const allowAll = allowList.includes('*');
 
     if (!allowAll && (!ip || !allowList.includes(ip))) throw new AppError({ status: 403, type: 'system_access_forbidden', severity: 'warn' });
   }
+
   // Get device information
   const device = deviceInfo(ctx);
 
@@ -37,32 +39,38 @@ export const setUserSession = async (ctx: Context, user: UserModel, strategy: Au
   const sessionToken = nanoid(40);
   const hashedSessionToken = encodeLowerCased(sessionToken);
 
+  // Calculate expiration
+  const timeSpan =
+    type === 'impersonation'
+      ? new TimeSpan(1, 'h')
+      : type === 'regular'
+        ? new TimeSpan(1, 'w') // default regular
+        : new TimeSpan(10, 'm'); // first step of 2fa
+
   const session = {
     token: hashedSessionToken,
     userId: user.id,
-    type: adminUser ? ('impersonation' as const) : ('regular' as const),
+    type,
     deviceName: device.name,
     deviceType: device.type,
     deviceOs: device.os,
     browser: device.browser,
     authStrategy: strategy,
     createdAt: getIsoDate(),
-    expiresAt: createDate(new TimeSpan(1, 'w')), // 1 week from now
+    expiresAt: createDate(timeSpan),
   };
 
   // Insert session
   await db.insert(sessionsTable).values(session);
 
-  // Set expiration time span
-  const timeSpan = adminUser ? new TimeSpan(1, 'h') : new TimeSpan(1, 'w');
-
-  const cookieContent = `${hashedSessionToken}.${adminUser?.id ?? ''}`;
+  const adminUser = getContextUser();
+  const cookieContent = `${hashedSessionToken}.${type === 'impersonation' ? adminUser.id : ''}`;
 
   // Set session cookie with the unhashed version
   await setAuthCookie(ctx, 'session', cookieContent, timeSpan);
 
   // If it's an impersonation session, we can stop here
-  if (adminUser) return;
+  if (type !== 'regular') return;
 
   // Update last sign in date
   const lastSignInAt = getIsoDate();

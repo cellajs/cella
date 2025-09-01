@@ -1,1 +1,0 @@
-ALTER TABLE "sessions" ADD COLUMN "is_multi_factor" boolean DEFAULT false NOT NULL;

@@ -1485,7 +1485,6 @@ export type GetMyAuthResponses = {
       id: string;
       type: 'regular' | 'impersonation' | 'multi_factor';
       userId: string;
-      isMultiFactor: boolean;
       deviceName: string | null;
       deviceType: 'desktop' | 'mobile';
       deviceOs: string | null;
