@@ -1483,8 +1483,9 @@ export type GetMyAuthResponses = {
     sessions: Array<{
       createdAt: string;
       id: string;
-      type: 'regular' | 'impersonation';
+      type: 'regular' | 'impersonation' | 'multi_factor';
       userId: string;
+      isMultiFactor: boolean;
       deviceName: string | null;
       deviceType: 'desktop' | 'mobile';
       deviceOs: string | null;

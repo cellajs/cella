@@ -1,9 +1,9 @@
-import { pgTable, varchar } from 'drizzle-orm/pg-core';
 import { usersTable } from '#/db/schema/users';
 import { timestampColumns } from '#/db/utils/timestamp-columns';
 import { nanoid } from '#/utils/nanoid';
+import { boolean, pgTable, varchar } from 'drizzle-orm/pg-core';
 
-export const sessionTypeEnum = ['regular', 'impersonation'] as const;
+export const sessionTypeEnum = ['regular', 'impersonation', 'multi_factor'] as const;
 export const authStrategiesEnum = ['github', 'google', 'microsoft', 'password', 'passkey', 'email'] as const;
 export type AuthStrategy = (typeof authStrategiesEnum)[number];
 
@@ -19,6 +19,7 @@ export const sessionsTable = pgTable('sessions', {
   userId: varchar()
     .notNull()
     .references(() => usersTable.id, { onDelete: 'cascade' }),
+  isMultiFactor: boolean().default(false).notNull(),
   deviceName: varchar(),
   deviceType: varchar({ enum: ['desktop', 'mobile'] })
     .notNull()

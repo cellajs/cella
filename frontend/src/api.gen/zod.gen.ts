@@ -589,8 +589,9 @@ export const zGetMyAuthResponse = z.object({
     z.object({
       createdAt: z.string(),
       id: z.string(),
-      type: z.enum(['regular', 'impersonation']),
+      type: z.enum(['regular', 'impersonation', 'multi_factor']),
       userId: z.string(),
+      isMultiFactor: z.boolean(),
       deviceName: z.union([z.string(), z.null()]),
       deviceType: z.enum(['desktop', 'mobile']),
       deviceOs: z.union([z.string(), z.null()]),
