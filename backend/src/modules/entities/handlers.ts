@@ -1,6 +1,6 @@
 import { OpenAPIHono, type z } from '@hono/zod-openapi';
 import { appConfig } from 'config';
-import { and, eq, ilike, isNotNull, isNull, type SQLWrapper, sql } from 'drizzle-orm';
+import { and, count, eq, ilike, isNotNull, isNull, type SQLWrapper, sql } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
 import { db } from '#/db/db';
 import { membershipsTable } from '#/db/schema/memberships';
@@ -129,23 +129,34 @@ const entityRouteHandlers = app
             ...(q ? [ilike(table.name, prepareStringForILikeFilter(q))] : []),
           ),
         )
-        .orderBy(orderColumn)
-        .limit(limit)
-        .offset(offset);
+        .orderBy(orderColumn);
     });
 
-    // Run all queries (replace skipped entity types with empty arrays)
-    const queriesData = await Promise.all(contextQueries.map((query) => (query ? query : Promise.resolve([]))));
+    // Run queries in parallel to fetch items and totals per entity type
+    const queryResults = await Promise.all(
+      contextQueries.map(async (query) => {
+        if (!query) return { items: [], total: 0 };
 
-    // Build response payload
-    const data = {
-      items: Object.fromEntries(appConfig.contextEntityTypes.map((entityType, i) => [entityType, queriesData[i] ?? []])) as z.infer<
-        typeof contextEntitiesResponseSchema
-      >['items'],
-      total: queriesData.reduce((sum, rows) => sum + rows.length, 0), // total across all entity types
-    };
+        // Fetch items and total count in parallel
+        const [items, [{ total }]] = await Promise.all([
+          query.limit(limit).offset(offset),
+          db.select({ total: count() }).from(query.as('entitiCount')),
+        ]);
 
-    return ctx.json(data, 200);
+        return { items, total };
+      }),
+    );
+
+    // Map items per entity type
+    const items = Object.fromEntries(appConfig.contextEntityTypes.map((entityType, i) => [entityType, queryResults[i].items])) as z.infer<
+      typeof contextEntitiesResponseSchema
+    >['items'];
+
+    // Compute grand total
+    const total = queryResults.reduce((sum, result) => sum + (result.total ?? 0), 0);
+
+    // Return response
+    return ctx.json({ items, total }, 200);
   })
   /*
    * Get base entity info

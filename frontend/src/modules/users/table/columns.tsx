@@ -13,9 +13,9 @@ import { PopConfirm } from '~/modules/common/popconfirm';
 import DeleteUsers from '~/modules/users/delete-users';
 import ImpersonateRow from '~/modules/users/table/impersonate-row';
 import UpdateRow, { openUpdateUserSheet } from '~/modules/users/table/update-row';
+import type { UserWithMemberships } from '~/modules/users/types';
 import { UserCell } from '~/modules/users/user-cell';
 import { dateShort } from '~/utils/date-short';
-import type { UserWithMemberships } from '../types';
 
 export const useColumns = () => {
   const { t } = useTranslation();

@@ -17,8 +17,8 @@ import UnsavedBadge from '~/modules/common/unsaved-badge';
 import DeleteUsers from '~/modules/users/delete-users';
 import InviteUsers from '~/modules/users/invite-users';
 import type { UsersSearch } from '~/modules/users/table';
+import type { UserWithMemberships } from '~/modules/users/types';
 import { useInfiniteQueryTotal } from '~/query/hooks/use-infinite-query-total';
-import type { UserWithMemberships } from '../types';
 
 type UsersTableBarProps = BaseTableBarProps<UserWithMemberships, UsersSearch>;
 

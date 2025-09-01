@@ -108,40 +108,22 @@ export const createClient = (config: Config = {}): Client => {
     };
 
     if (response.ok) {
-      const parseAs =
-        (opts.parseAs === 'auto'
-          ? getParseAs(response.headers.get('Content-Type'))
-          : opts.parseAs) ?? 'json';
-
       if (
         response.status === 204 ||
         response.headers.get('Content-Length') === '0'
       ) {
-        let emptyData: any;
-        switch (parseAs) {
-          case 'arrayBuffer':
-          case 'blob':
-          case 'text':
-            emptyData = await response[parseAs]();
-            break;
-          case 'formData':
-            emptyData = new FormData();
-            break;
-          case 'stream':
-            emptyData = response.body;
-            break;
-          case 'json':
-          default:
-            emptyData = {};
-            break;
-        }
         return opts.responseStyle === 'data'
-          ? emptyData
+          ? {}
           : {
-              data: emptyData,
+              data: {},
               ...result,
             };
       }
+
+      const parseAs =
+        (opts.parseAs === 'auto'
+          ? getParseAs(response.headers.get('Content-Type'))
+          : opts.parseAs) ?? 'json';
 
       let data: any;
       switch (parseAs) {
@@ -224,15 +206,6 @@ export const createClient = (config: Config = {}): Client => {
         body: opts.body as BodyInit | null | undefined,
         headers: opts.headers as unknown as Record<string, string>,
         method,
-        onRequest: async (url, init) => {
-          let request = new Request(url, init);
-          for (const fn of interceptors.request._fns) {
-            if (fn) {
-              request = await fn(request, opts);
-            }
-          }
-          return request;
-        },
         url,
       });
     };
