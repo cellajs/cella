@@ -4,7 +4,7 @@ import { type GetMembersData, type GetPendingInvitationsData, getMembers, getPen
 import type { Member, PendingInvitation } from '~/modules/memberships/types';
 import { baseInfiniteQueryOptions, infiniteQueryUseCachedIfCompleteOptions } from '~/query/utils/infinite-query-options';
 
-type GetMembershipInvitationsParams = Omit<GetPendingInvitationsData['query'], 'limit' | 'offset'> & GetPendingInvitationsData['path'];
+type GetPendingInvitationsParams = Omit<GetPendingInvitationsData['query'], 'limit' | 'offset'> & GetPendingInvitationsData['path'];
 type GetMembersParams = Omit<GetMembersData['query'], 'limit' | 'offset'> & GetMembersData['path'];
 /**
  * Keys for members related queries. These keys help to uniquely identify different query.
@@ -16,8 +16,8 @@ export const membersKeys = {
     base: () => [...membersKeys.all, 'table'] as const,
     members: (filters: GetMembersParams) => [...membersKeys.table.base(), filters] as const,
     similarMembers: (filters: Pick<GetMembersParams, 'orgIdOrSlug' | 'idOrSlug' | 'entityType'>) => [...membersKeys.table.base(), filters] as const,
-    pending: (filters: GetMembershipInvitationsParams) => ['invites', ...membersKeys.table.base(), filters] as const,
-    similarPending: (filters: Pick<GetMembershipInvitationsParams, 'idOrSlug' | 'entityType'>) =>
+    pending: (filters: GetPendingInvitationsParams) => ['invites', ...membersKeys.table.base(), filters] as const,
+    similarPending: (filters: Pick<GetPendingInvitationsParams, 'idOrSlug' | 'entityType'>) =>
       ['invites', ...membersKeys.table.base(), filters] as const,
   },
   update: () => [...membersKeys.all, 'update'] as const,
@@ -100,7 +100,7 @@ export const pendingInvitationsQueryOptions = ({
   sort = 'createdAt',
   order = 'desc',
   limit: baseLimit = appConfig.requestLimits.pendingInvitations,
-}: GetMembershipInvitationsParams & { limit?: number }) => {
+}: GetPendingInvitationsParams & { limit?: number }) => {
   const limit = String(baseLimit);
 
   const baseQueryKey = membersKeys.table.pending({ idOrSlug, entityType, orgIdOrSlug, q: '', sort: 'createdAt', order: 'desc' });
