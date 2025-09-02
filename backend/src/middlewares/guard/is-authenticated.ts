@@ -26,10 +26,8 @@ export const isAuthenticated: MiddlewareHandler<Env> = createMiddleware<Env>(asy
   // Validate session
   try {
     // Get session id from cookie
-    const sessionData = await getParsedSessionCookie(ctx);
-    if (!sessionData) throw new AppError({ status: 401, type: 'no_session', severity: 'info' });
-
-    const { user } = await validateSession(sessionData.sessionToken);
+    const { sessionToken } = await getParsedSessionCookie(ctx);
+    const { user } = await validateSession(sessionToken);
 
     // Update user last seen date
     if (ctx.req.method === 'GET') {

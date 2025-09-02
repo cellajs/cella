@@ -1,10 +1,10 @@
-import type { z } from '@hono/zod-openapi';
-import { eq } from 'drizzle-orm';
-import type { Context } from 'hono';
 import { db } from '#/db/db';
 import { sessionsTable } from '#/db/schema/sessions';
 import { getParsedSessionCookie } from '#/modules/auth/helpers/session';
 import type { sessionSchema } from '#/modules/me/schema';
+import type { z } from '@hono/zod-openapi';
+import { eq } from 'drizzle-orm';
+import type { Context } from 'hono';
 
 /**
  * Retrieves all sessions for a specific user, and marks the current session.
@@ -15,8 +15,8 @@ import type { sessionSchema } from '#/modules/me/schema';
  */
 export const getUserSessions = async (ctx: Context, userId: string): Promise<z.infer<typeof sessionSchema>[]> => {
   const sessions = await db.select().from(sessionsTable).where(eq(sessionsTable.userId, userId));
-  const sessionData = await getParsedSessionCookie(ctx);
+  const { sessionToken } = await getParsedSessionCookie(ctx);
 
   // Destructure/remove token from response
-  return sessions.map(({ token, ...session }) => ({ ...session, isCurrent: sessionData?.sessionToken === token }));
+  return sessions.map(({ token, ...session }) => ({ ...session, isCurrent: sessionToken === token }));
 };

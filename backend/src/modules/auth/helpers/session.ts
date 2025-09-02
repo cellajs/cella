@@ -114,23 +114,32 @@ export const invalidateSessionById = async (id: string, userId: string) => {
   await db.delete(sessionsTable).where(and(eq(sessionsTable.id, id), eq(sessionsTable.userId, userId)));
 };
 
-export const getParsedSessionCookie = async (ctx: Context, deleteAfterAttempt = false): Promise<z.infer<typeof sessionCookieSchema> | null> => {
+type ParseSessionCookieOptions =
+  | {
+      redirectOnError?: boolean;
+      deleteOnError?: boolean;
+      deleteAfterAttempt?: boolean;
+    }
+  | undefined;
+export const getParsedSessionCookie = async (ctx: Context, options?: ParseSessionCookieOptions): Promise<z.infer<typeof sessionCookieSchema>> => {
+  const { redirectOnError = false, deleteOnError = false, deleteAfterAttempt = false } = options ?? {};
   try {
     // Retrieve session cookie data
     const sessionData = await getAuthCookie(ctx, 'session');
 
     // If no session data, return null
-    if (!sessionData) return null;
+    if (!sessionData) throw new Error();
 
     // Parse delimited string: "<hashedSessionToken>.<adminUserId>"
     const [sessionToken, adminUserIdRaw] = sessionData.split('.');
-    if (!sessionToken) return null;
+    if (!sessionToken) throw new Error();
 
     const adminUserId = adminUserIdRaw || undefined;
 
     return sessionCookieSchema.parse({ sessionToken, adminUserId });
   } catch (error) {
-    return null;
+    if (deleteOnError) deleteAuthCookie(ctx, 'session');
+    throw new AppError({ status: 401, type: 'unauthorized', severity: 'warn', isRedirect: redirectOnError });
   } finally {
     if (deleteAfterAttempt) deleteAuthCookie(ctx, 'session');
   }

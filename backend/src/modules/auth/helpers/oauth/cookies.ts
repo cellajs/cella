@@ -126,10 +126,8 @@ export const handleOAuthConnection = async (ctx: Context) => {
 
   if (!connectingUserId) throw new AppError({ status: 404, type: 'oauth_connection_not_found', severity: 'error', isRedirect: true });
 
-  const sessionData = await getParsedSessionCookie(ctx);
-  if (!sessionData) throw new AppError({ status: 401, type: 'no_session', severity: 'warn', isRedirect: true });
-
-  const { user } = await validateSession(sessionData.sessionToken);
+  const { sessionToken } = await getParsedSessionCookie(ctx, { redirectOnError: true });
+  const { user } = await validateSession(sessionToken);
   if (user.id !== connectingUserId) throw new AppError({ status: 403, type: 'user_mismatch', severity: 'warn', isRedirect: true });
 
   await setAuthCookie(ctx, 'oauth-connect-user-id', connectingUserId, oauthCookieExpires);

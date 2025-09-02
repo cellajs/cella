@@ -162,10 +162,8 @@ const meRouteHandlers = app
     const user = getContextUser();
 
     const sessionIds = Array.isArray(ids) ? ids : [ids];
-
-    const currentSessionData = await getParsedSessionCookie(ctx);
-
-    const { session } = currentSessionData ? await validateSession(currentSessionData.sessionToken) : {};
+    const { sessionToken } = await getParsedSessionCookie(ctx);
+    const { session } = await validateSession(sessionToken);
 
     const rejectedItems: string[] = [];
 

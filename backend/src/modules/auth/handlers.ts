@@ -463,12 +463,7 @@ const authRouteHandlers = app
     if (!user) throw new AppError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'user', meta: { targetUserId } });
 
     const adminUser = getContextUser();
-    const sessionData = await getParsedSessionCookie(ctx);
-
-    if (!sessionData) {
-      deleteAuthCookie(ctx, 'session');
-      throw new AppError({ status: 401, type: 'unauthorized', severity: 'warn' });
-    }
+    await getParsedSessionCookie(ctx, { deleteOnError: true });
 
     await setUserSession(ctx, user, 'password', 'impersonation');
 
@@ -480,10 +475,7 @@ const authRouteHandlers = app
    * Stop impersonation
    */
   .openapi(authRoutes.stopImpersonation, async (ctx) => {
-    const sessionData = await getParsedSessionCookie(ctx, true);
-    if (!sessionData) throw new AppError({ status: 401, type: 'unauthorized', severity: 'warn' });
-
-    const { sessionToken, adminUserId } = sessionData;
+    const { sessionToken, adminUserId } = await getParsedSessionCookie(ctx, { deleteAfterAttempt: true });
     const { session } = await validateSession(sessionToken);
 
     await invalidateSessionById(session.id, session.userId);
@@ -514,15 +506,9 @@ const authRouteHandlers = app
    * Sign out
    */
   .openapi(authRoutes.signOut, async (ctx) => {
-    const sessionData = await getParsedSessionCookie(ctx);
-
-    if (!sessionData) {
-      deleteAuthCookie(ctx, 'session');
-      throw new AppError({ status: 401, type: 'unauthorized', severity: 'warn' });
-    }
-
+    const { sessionToken } = await getParsedSessionCookie(ctx, { deleteOnError: true });
     // Find session & invalidate
-    const { session } = await validateSession(sessionData.sessionToken);
+    const { session } = await validateSession(sessionToken);
     await invalidateSessionById(session.id, session.userId);
 
     // Delete session cookie
