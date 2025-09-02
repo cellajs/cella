@@ -211,9 +211,10 @@ const BlockNote = ({
       ref={blockNoteRef}
       className={className}
       data-color-scheme={mode}
-      shadCNComponents={shadCNComponents}
+      // biome-ignore lint/suspicious/noExplicitAny: Blocknote doesn't like our types for shadcn components
+      shadCNComponents={shadCNComponents as any}
       sideMenu={false}
-      slashMenu={!slashMenu}
+      slashMenu={false}
       formattingToolbar={!formattingToolbar}
       emojiPicker={!emojiPicker}
       filePanel={false} // Because in CustomFilePanel renders default UI
