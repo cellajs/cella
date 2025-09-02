@@ -1,6 +1,3 @@
-import { appConfig, type EnabledOAuthProvider } from 'config';
-import { and, eq } from 'drizzle-orm';
-import type { Context } from 'hono';
 import { db } from '#/db/db';
 import { emailsTable } from '#/db/schema/emails';
 import { type OAuthAccountModel, oauthAccountsTable } from '#/db/schema/oauth-accounts';
@@ -16,6 +13,9 @@ import { handleCreateUser } from '#/modules/auth/helpers/user';
 import { getUsersByConditions } from '#/modules/users/helpers/get-user-by';
 import { isValidRedirectPath } from '#/utils/is-redirect-url';
 import { getIsoDate } from '#/utils/iso-date';
+import { appConfig, type EnabledOAuthProvider } from 'config';
+import { and, eq } from 'drizzle-orm';
+import type { Context } from 'hono';
 
 /**
  * Retrieves the OAuth redirect path from a cookie, or falls back to a default.
@@ -351,10 +351,13 @@ const getUserByOAuthAccount = async (oauthAccount: OAuthAccountModel): Promise<U
  * @returns A redirect response.
  */
 const handleVerifiedOAuthAccount = async (ctx: Context, user: UserModel, oauthAccount: OAuthAccountModel): Promise<Response> => {
-  const redirectPath = await getOAuthRedirectPath(ctx);
+  const type = user.twoFactorEnabled ? 'pending_2fa' : 'regular';
 
-  await setUserSession(ctx, user, oauthAccount.providerId);
+  const insertedToken = await setUserSession(ctx, user, oauthAccount.providerId);
+
+  const redirectPath = type === 'pending_2fa' ? `/auth/2fa-confirm/${insertedToken}` : await getOAuthRedirectPath(ctx);
   const redirectUrl = new URL(redirectPath, appConfig.frontendUrl);
+
   return ctx.redirect(redirectUrl, 302);
 };
 
