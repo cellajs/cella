@@ -280,7 +280,10 @@ export const zSignUpWithTokenData = z.object({
 /**
  * User signed up
  */
-export const zSignUpWithTokenResponse = z.boolean();
+export const zSignUpWithTokenResponse = z.object({
+  shouldRedirect: z.boolean(),
+  redirectPath: z.optional(z.string()),
+});
 
 export const zVerifyEmailData = z.object({
   body: z.optional(z.never()),
@@ -323,7 +326,10 @@ export const zCreatePasswordData = z.object({
 /**
  * Password created
  */
-export const zCreatePasswordResponse = z.boolean();
+export const zCreatePasswordResponse = z.object({
+  shouldRedirect: z.boolean(),
+  redirectPath: z.optional(z.string()),
+});
 
 export const zSignInData = z.object({
   body: z.optional(
@@ -339,7 +345,10 @@ export const zSignInData = z.object({
 /**
  * User signed in
  */
-export const zSignInResponse = z.union([z.string(), z.null()]);
+export const zSignInResponse = z.object({
+  shouldRedirect: z.boolean(),
+  redirectPath: z.optional(z.string()),
+});
 
 export const zValidateTokenData = z.object({
   body: z.optional(z.never()),

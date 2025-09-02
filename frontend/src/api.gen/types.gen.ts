@@ -379,7 +379,10 @@ export type SignUpWithTokenResponses = {
   /**
    * User signed up
    */
-  200: boolean;
+  200: {
+    shouldRedirect: boolean;
+    redirectPath?: string;
+  };
 };
 
 export type SignUpWithTokenResponse = SignUpWithTokenResponses[keyof SignUpWithTokenResponses];
@@ -534,7 +537,10 @@ export type CreatePasswordResponses = {
   /**
    * Password created
    */
-  200: boolean;
+  200: {
+    shouldRedirect: boolean;
+    redirectPath?: string;
+  };
 };
 
 export type CreatePasswordResponse = CreatePasswordResponses[keyof CreatePasswordResponses];
@@ -588,7 +594,10 @@ export type SignInResponses = {
   /**
    * User signed in
    */
-  200: string | null;
+  200: {
+    shouldRedirect: boolean;
+    redirectPath?: string;
+  };
 };
 
 export type SignInResponse = SignInResponses[keyof SignInResponses];

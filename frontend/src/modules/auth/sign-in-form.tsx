@@ -49,8 +49,8 @@ export const SignInForm = ({ email, resetSteps, emailEnabled }: Props) => {
   // Handle sign in
   const { mutate: _signIn, isPending } = useMutation<SignInResponse, ApiError, NonNullable<SignInData['body']>>({
     mutationFn: (body) => signIn({ body }),
-    onSuccess: (apiRedirectPath) => {
-      if (apiRedirectPath) {
+    onSuccess: ({ shouldRedirect, redirectPath: apiRedirectPath }) => {
+      if (shouldRedirect && apiRedirectPath) {
         navigate({ to: apiRedirectPath, replace: true });
         return;
       }

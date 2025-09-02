@@ -169,10 +169,11 @@ const authRouteHandlers = app
 
     const user = await handleCreateUser({ newUser, membershipInviteTokenId, emailVerified: true });
 
+    // Sign in user
     await setUserSession(ctx, user, 'password');
 
-    // Return
-    return ctx.json(true, 200);
+    const redirectPath = membershipInvite ? `/invitation/${validToken.token}?tokenId=${validToken.id}` : appConfig.defaultRedirectPath;
+    return ctx.json({ shouldRedirect: true, redirectPath }, 200);
   })
   /*
    * Verify email
@@ -181,7 +182,7 @@ const authRouteHandlers = app
     const { redirect } = ctx.req.valid('query');
 
     const decodedRedirect = decodeURIComponent(redirect || '');
-    const redirectPath = isValidRedirectPath(decodedRedirect) || appConfig.defaultRedirectPath;
+    const baseRedirectPath = isValidRedirectPath(decodedRedirect) || appConfig.defaultRedirectPath;
 
     // No token in context
     const token = getContextToken();
@@ -216,9 +217,12 @@ const authRouteHandlers = app
     // Delete token(s) to prevent reuse
     await db.delete(tokensTable).where(eq(tokensTable.id, token.id));
 
+    // Determine session type
+    const type = user.twoFactorEnabled ? 'pending_2fa' : 'regular';
     // Sign in user
-    await setUserSession(ctx, user, 'email');
+    const insertedToken = await setUserSession(ctx, user, 'email', type);
 
+    const redirectPath = type === 'pending_2fa' ? `/auth/2fa-confirm/${insertedToken}` : baseRedirectPath;
     const redirectUrl = new URL(redirectPath, appConfig.frontendUrl);
 
     return ctx.redirect(redirectUrl, 302);
@@ -301,10 +305,13 @@ const authRouteHandlers = app
       db.update(emailsTable).set({ verified: true, verifiedAt: getIsoDate() }).where(eq(emailsTable.email, user.email)),
     ]);
 
+    // Determine session type
+    const type = user.twoFactorEnabled ? 'pending_2fa' : 'regular';
     // Sign in user
-    await setUserSession(ctx, user, 'password');
+    const insertedToken = await setUserSession(ctx, user, 'password', type);
+    if (type === 'pending_2fa') return ctx.json({ shouldRedirect: true, redirectPath: `/auth/2fa-confirm/${insertedToken}` }, 200);
 
-    return ctx.json(true, 200);
+    return ctx.json({ shouldRedirect: false }, 200);
   })
   /*
    * Sign in with email and password
@@ -337,15 +344,15 @@ const authRouteHandlers = app
     // If email is not verified, send verification email
     if (!emailData.verified) {
       sendVerificationEmail({ userId: user.id });
-      return ctx.json('/auth/email-verification/signin', 200);
+      return ctx.json({ shouldRedirect: true, redirectPath: '/auth/email-verification/signin' }, 200);
     }
 
     // Determine session type
     const type = user.twoFactorEnabled ? 'pending_2fa' : 'regular';
     const insertedToken = await setUserSession(ctx, user, 'password', type);
-    if (type === 'pending_2fa') return ctx.json(`/auth/2fa-confirm/${insertedToken}`, 200);
+    if (type === 'pending_2fa') return ctx.json({ shouldRedirect: true, redirectPath: `/auth/2fa-confirm/${insertedToken}` }, 200);
 
-    return ctx.json(null, 200);
+    return ctx.json({ shouldRedirect: false }, 200);
   })
   /*
    * Check token (token validation)
@@ -498,7 +505,7 @@ const authRouteHandlers = app
       await setAuthCookie(ctx, 'session', cookieContent, expireTimeSpan);
     }
 
-    logEvent('info', 'Stopped impersonation', { adminiD: adminUserId || 'na', targetUserId: session.userId });
+    logEvent('info', 'Stopped impersonation', { adminId: adminUserId || 'na', targetUserId: session.userId });
 
     return ctx.json(true, 200);
   })

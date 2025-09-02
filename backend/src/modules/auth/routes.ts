@@ -13,8 +13,8 @@ import {
   tokenWithDataSchema,
 } from '#/modules/auth/schema';
 import { contextEntityWithMembershipSchema } from '#/modules/entities/schema';
-import { cookieSchema, idSchema, passwordSchema, tokenParamSchema } from '#/utils/schema/common';
-import { errorResponses, successWithoutDataSchema } from '#/utils/schema/responses';
+import { cookieSchema, idSchema, locationSchema, passwordSchema, tokenParamSchema } from '#/utils/schema/common';
+import { errorResponses, redirectResponseSchema, successWithoutDataSchema } from '#/utils/schema/responses';
 import { z } from '@hono/zod-openapi';
 import { appConfig } from 'config';
 
@@ -106,27 +106,17 @@ const authRoutes = {
     security: [],
     request: {
       body: {
-        content: {
-          'application/json': {
-            schema: emailPasswordBodySchema,
-          },
-        },
+        content: { 'application/json': { schema: emailPasswordBodySchema } },
       },
     },
     responses: {
       200: {
         description: 'User signed up',
-        headers: z.object({
-          'Set-Cookie': cookieSchema,
-        }),
-        content: {
-          'application/json': {
-            schema: successWithoutDataSchema,
-          },
-        },
+        headers: z.object({ 'Set-Cookie': cookieSchema }),
+        content: { 'application/json': { schema: successWithoutDataSchema } },
       },
       302: {
-        headers: z.object({ Location: z.string() }),
+        headers: locationSchema,
         description: 'Redirect to frontend',
       },
       ...errorResponses,
@@ -150,7 +140,7 @@ const authRoutes = {
       200: {
         description: 'User signed up',
         headers: z.object({ 'Set-Cookie': cookieSchema }),
-        content: { 'application/json': { schema: successWithoutDataSchema } },
+        content: { 'application/json': { schema: redirectResponseSchema } },
       },
       ...errorResponses,
     },
@@ -173,7 +163,7 @@ const authRoutes = {
     responses: {
       302: {
         description: 'Session created and redirected',
-        headers: z.object({ Location: z.string() }),
+        headers: locationSchema,
       },
       ...errorResponses,
     },
@@ -189,22 +179,12 @@ const authRoutes = {
     description: "Sends an email with a link to reset the user's password.",
     security: [],
     request: {
-      body: {
-        content: {
-          'application/json': {
-            schema: emailBodySchema,
-          },
-        },
-      },
+      body: { content: { 'application/json': { schema: emailBodySchema } } },
     },
     responses: {
       200: {
         description: 'Password reset email sent',
-        content: {
-          'application/json': {
-            schema: successWithoutDataSchema,
-          },
-        },
+        content: { 'application/json': { schema: successWithoutDataSchema } },
       },
       ...errorResponses,
     },
@@ -221,22 +201,12 @@ const authRoutes = {
     security: [],
     request: {
       params: z.object({ token: z.string() }),
-      body: {
-        content: {
-          'application/json': {
-            schema: z.object({ password: passwordSchema }),
-          },
-        },
-      },
+      body: { content: { 'application/json': { schema: z.object({ password: passwordSchema }) } } },
     },
     responses: {
       200: {
         description: 'Password created',
-        content: {
-          'application/json': {
-            schema: successWithoutDataSchema,
-          },
-        },
+        content: { 'application/json': { schema: redirectResponseSchema } },
       },
       ...errorResponses,
     },
@@ -279,7 +249,7 @@ const authRoutes = {
       200: {
         description: 'User signed in',
         headers: z.object({ 'Set-Cookie': cookieSchema.optional() }),
-        content: { 'application/json': { schema: z.string().nullable() } },
+        content: { 'application/json': { schema: redirectResponseSchema } },
       },
       ...errorResponses,
     },
@@ -322,9 +292,7 @@ const authRoutes = {
         description: 'Invitation was accepted',
         content: {
           'application/json': {
-            schema: contextEntityWithMembershipSchema.extend({
-              createdAt: z.string(),
-            }),
+            schema: contextEntityWithMembershipSchema.extend({ createdAt: z.string() }),
           },
         },
       },
@@ -345,7 +313,7 @@ const authRoutes = {
     responses: {
       302: {
         description: 'Redirect to GitHub',
-        headers: z.object({ Location: z.string() }),
+        headers: locationSchema,
       },
       ...errorResponses,
     },
@@ -370,7 +338,7 @@ const authRoutes = {
     responses: {
       302: {
         description: 'Redirect to frontend',
-        headers: z.object({ Location: z.string() }),
+        headers: locationSchema,
       },
       ...errorResponses,
     },
@@ -409,7 +377,7 @@ const authRoutes = {
     responses: {
       302: {
         description: 'Redirect to Google',
-        headers: z.object({ Location: z.string() }),
+        headers: locationSchema,
       },
       ...errorResponses,
     },
@@ -428,7 +396,7 @@ const authRoutes = {
     responses: {
       302: {
         description: 'Redirect to frontend',
-        headers: z.object({ Location: z.string() }),
+        headers: locationSchema,
       },
       ...errorResponses,
     },
@@ -447,7 +415,7 @@ const authRoutes = {
     responses: {
       302: {
         description: 'Redirect to Microsoft',
-        headers: z.object({ Location: z.string() }),
+        headers: locationSchema,
       },
       ...errorResponses,
     },
@@ -466,7 +434,7 @@ const authRoutes = {
     responses: {
       302: {
         description: 'Redirect to frontend',
-        headers: z.object({ Location: z.string() }),
+        headers: locationSchema,
       },
       ...errorResponses,
     },
@@ -482,11 +450,7 @@ const authRoutes = {
     responses: {
       200: {
         description: 'User signed out',
-        content: {
-          'application/json': {
-            schema: successWithoutDataSchema,
-          },
-        },
+        content: { 'application/json': { schema: successWithoutDataSchema } },
       },
       ...errorResponses,
     },
