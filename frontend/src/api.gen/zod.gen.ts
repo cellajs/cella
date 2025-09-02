@@ -562,6 +562,7 @@ export const zUpdateMeData = z.object({
           finishedOnboarding: z.optional(z.boolean()),
         }),
       ),
+      twoFactorEnabled: z.optional(z.boolean()),
     }),
   ),
   path: z.optional(z.never()),

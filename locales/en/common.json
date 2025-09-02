@@ -455,5 +455,8 @@
   "2fa": "Two-factor authentication",
   "2fa.text": "Enforce a second authentication method for optimal security of your account.",
   "recommended": "Recommended",
-  "enforce": "Enforce"
+  "enforce": "Enforce",
+  "2fa_disabled": "Two-Factor Authentication Disabled",
+  "2fa_disabled.text": "Two-factor authentication is disabled because your account must have a passkey set up first."
+
 }

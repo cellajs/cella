@@ -1381,6 +1381,7 @@ export type UpdateMeData = {
     userFlags?: {
       finishedOnboarding?: boolean;
     };
+    twoFactorEnabled?: boolean;
   };
   path?: never;
   query?: never;
