@@ -470,8 +470,6 @@ const authRouteHandlers = app
     if (!user) throw new AppError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'user', meta: { targetUserId } });
 
     const adminUser = getContextUser();
-    await getParsedSessionCookie(ctx, { deleteOnError: true });
-
     await setUserSession(ctx, user, 'password', 'impersonation');
 
     logEvent('info', 'Started impersonation', { adminId: adminUser.id, targetUserId });
