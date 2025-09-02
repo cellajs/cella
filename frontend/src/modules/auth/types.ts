@@ -1,5 +1,5 @@
-import type { RefreshTokenResponse } from '~/api.gen';
+import type { ValidateTokenResponse } from '~/api.gen';
 
-export type TokenData = RefreshTokenResponse;
+export type TokenData = ValidateTokenResponse;
 
 export type AuthStep = 'checkEmail' | 'signIn' | 'signUp' | 'inviteOnly' | 'waitlist' | 'error' | 'confirn2FA';

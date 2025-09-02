@@ -1,16 +1,9 @@
-import { getRandomValues } from 'node:crypto';
-import { OpenAPIHono } from '@hono/zod-openapi';
-import { encodeBase64 } from '@oslojs/encoding';
-import { generateCodeVerifier, generateState, OAuth2RequestError } from 'arctic';
-import { appConfig, type EnabledOAuthProvider } from 'config';
-import { and, desc, eq, isNotNull, isNull } from 'drizzle-orm';
-import i18n from 'i18next';
 import { db } from '#/db/db';
 import { emailsTable } from '#/db/schema/emails';
 import { membershipsTable } from '#/db/schema/memberships';
 import { organizationsTable } from '#/db/schema/organizations';
 import { passkeysTable } from '#/db/schema/passkeys';
-import { type SessionTypes, sessionsTable } from '#/db/schema/sessions';
+import { sessionsTable, type SessionTypes } from '#/db/schema/sessions';
 import { tokensTable } from '#/db/schema/tokens';
 import { type UserModel, usersTable } from '#/db/schema/users';
 import { env } from '#/env';
@@ -33,13 +26,13 @@ import {
 } from '#/modules/auth/helpers/oauth/cookies';
 import { basicFlow, connectFlow, getOAuthAccount, inviteFlow, verifyFlow } from '#/modules/auth/helpers/oauth/index';
 import {
+  githubAuth,
   type GithubUserEmailProps,
   type GithubUserProps,
-  type GoogleUserProps,
-  githubAuth,
   googleAuth,
-  type MicrosoftUserProps,
+  type GoogleUserProps,
   microsoftAuth,
+  type MicrosoftUserProps,
 } from '#/modules/auth/helpers/oauth/oauth-providers';
 import { transformGithubUserData, transformSocialUserData } from '#/modules/auth/helpers/oauth/transform-user-data';
 import { verifyPassKeyPublic } from '#/modules/auth/helpers/passkey';
@@ -56,6 +49,13 @@ import { logEvent } from '#/utils/logger';
 import { nanoid } from '#/utils/nanoid';
 import { slugFromEmail } from '#/utils/slug-from-email';
 import { createDate, TimeSpan } from '#/utils/time-span';
+import { OpenAPIHono } from '@hono/zod-openapi';
+import { encodeBase64 } from '@oslojs/encoding';
+import { generateCodeVerifier, generateState, OAuth2RequestError } from 'arctic';
+import { appConfig, type EnabledOAuthProvider } from 'config';
+import { and, desc, eq, isNotNull, isNull } from 'drizzle-orm';
+import i18n from 'i18next';
+import { getRandomValues } from 'node:crypto';
 import { CreatePasswordEmail, type CreatePasswordEmailProps } from '../../../emails/create-password';
 import { userSelect } from '../users/helpers/select';
 
@@ -802,27 +802,40 @@ const authRouteHandlers = app
    * Passkey challenge
    */
   .openapi(authRoutes.getPasskeyChallenge, async (ctx) => {
-    const { email } = ctx.req.valid('query');
+    const { email, token } = ctx.req.valid('query');
 
-    let credentialIds: string[] = [];
-    if (email) {
-      const normalizedEmail = email.toLowerCase().trim();
-
-      // Get passkey credentials for user
-      const [credentials] = await db.select().from(passkeysTable).where(eq(passkeysTable.userEmail, normalizedEmail));
-
-      // Set credential ID if found - currently only one credential per user is supported
-      if (credentials) credentialIds = [credentials.credentialId];
-    }
-
-    // Generate a random challenge
+    // Generate random challenge
     const challenge = getRandomValues(new Uint8Array(32));
-
-    // Convert to string
     const challengeBase64 = encodeBase64(challenge);
 
     // Save challenge in cookie
     await setAuthCookie(ctx, 'passkey-challenge', challengeBase64, new TimeSpan(5, 'm'));
+
+    // If neither email nor token, return challenge with empty credentialIds
+    if (!email && !token) return ctx.json({ challengeBase64, credentialIds: [] }, 200);
+
+    // Start base query
+    const baseQuery = db.select({ credentialId: passkeysTable.credentialId }).from(passkeysTable);
+
+    if (email) {
+      const normalizedEmail = email.toLowerCase().trim();
+      baseQuery.where(eq(passkeysTable.userEmail, normalizedEmail));
+    }
+
+    if (token) {
+      baseQuery
+        .innerJoin(usersTable, eq(usersTable.email, passkeysTable.userEmail))
+        .innerJoin(
+          sessionsTable,
+          and(eq(sessionsTable.userId, usersTable.id), eq(sessionsTable.token, token), eq(sessionsTable.type, 'pending_2fa')),
+        );
+    }
+
+    // Execute query
+    const credentials = await baseQuery;
+    const credentialIds = credentials.map((c) => c.credentialId);
+    console.log('🚀 ~ credentialIds:', credentialIds);
+
     return ctx.json({ challengeBase64, credentialIds }, 200);
   })
   /*

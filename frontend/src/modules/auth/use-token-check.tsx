@@ -1,6 +1,6 @@
 import { type UseQueryResult, useQuery } from '@tanstack/react-query';
 import type { appConfig } from 'config';
-import { refreshToken } from '~/api.gen';
+import { validateToken } from '~/api.gen';
 import type { ApiError } from '~/lib/api';
 import type { TokenData } from '~/modules/auth/types';
 
@@ -17,7 +17,7 @@ export const useCheckToken = (type: TokenType, id?: string, enabled = true): Use
     queryKey: [],
     queryFn: async () => {
       if (!id) throw new Error('Token ID is required');
-      return refreshToken({ path: { id }, query: { type } });
+      return validateToken({ path: { id }, query: { type } });
     },
     enabled,
     staleTime: 0, // Important to always get latest token status

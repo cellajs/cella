@@ -1,5 +1,3 @@
-import { z } from '@hono/zod-openapi';
-import { appConfig } from 'config';
 import { createCustomRoute } from '#/lib/custom-routes';
 import { hasSystemAccess, isAuthenticated, isPublicAccess } from '#/middlewares/guard';
 import { hasValidToken } from '#/middlewares/has-valid-token';
@@ -17,6 +15,8 @@ import {
 import { contextEntityWithMembershipSchema } from '#/modules/entities/schema';
 import { cookieSchema, idSchema, passwordSchema, tokenParamSchema } from '#/utils/schema/common';
 import { errorResponses, successWithoutDataSchema } from '#/utils/schema/responses';
+import { z } from '@hono/zod-openapi';
+import { appConfig } from 'config';
 
 const authRoutes = {
   startImpersonation: createCustomRoute({
@@ -285,7 +285,7 @@ const authRoutes = {
     },
   }),
   validateToken: createCustomRoute({
-    operationId: 'refreshToken',
+    operationId: 'validateToken',
     method: 'post',
     path: '/validate-token/{id}',
     guard: isPublicAccess,

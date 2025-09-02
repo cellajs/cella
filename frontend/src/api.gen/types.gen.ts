@@ -593,7 +593,7 @@ export type SignInResponses = {
 
 export type SignInResponse = SignInResponses[keyof SignInResponses];
 
-export type RefreshTokenData = {
+export type ValidateTokenData = {
   body?: never;
   path: {
     id: string;
@@ -604,7 +604,7 @@ export type RefreshTokenData = {
   url: '/auth/validate-token/{id}';
 };
 
-export type RefreshTokenErrors = {
+export type ValidateTokenErrors = {
   /**
    * Bad request: problem processing request.
    */
@@ -637,9 +637,9 @@ export type RefreshTokenErrors = {
   };
 };
 
-export type RefreshTokenError = RefreshTokenErrors[keyof RefreshTokenErrors];
+export type ValidateTokenError = ValidateTokenErrors[keyof ValidateTokenErrors];
 
-export type RefreshTokenResponses = {
+export type ValidateTokenResponses = {
   /**
    * Token is valid
    */
@@ -653,7 +653,7 @@ export type RefreshTokenResponses = {
   };
 };
 
-export type RefreshTokenResponse = RefreshTokenResponses[keyof RefreshTokenResponses];
+export type ValidateTokenResponse = ValidateTokenResponses[keyof ValidateTokenResponses];
 
 export type AcceptEntityInviteData = {
   body?: never;
@@ -1159,6 +1159,7 @@ export type GetPasskeyChallengeData = {
   path?: never;
   query?: {
     email?: string;
+    token?: string;
   };
   url: '/auth/passkey-challenge';
 };

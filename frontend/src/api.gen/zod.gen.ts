@@ -341,7 +341,7 @@ export const zSignInData = z.object({
  */
 export const zSignInResponse = z.union([z.string(), z.null()]);
 
-export const zRefreshTokenData = z.object({
+export const zValidateTokenData = z.object({
   body: z.optional(z.never()),
   path: z.object({
     id: z.string(),
@@ -354,7 +354,7 @@ export const zRefreshTokenData = z.object({
 /**
  * Token is valid
  */
-export const zRefreshTokenResponse = z.object({
+export const zValidateTokenResponse = z.object({
   email: z.email(),
   role: z.union([z.enum(['member', 'admin']), z.null()]),
   userId: z.optional(z.string()),
@@ -493,7 +493,8 @@ export const zGetPasskeyChallengeData = z.object({
   path: z.optional(z.never()),
   query: z.optional(
     z.object({
-      email: z.optional(z.email()),
+      email: z.optional(z.string()),
+      token: z.optional(z.string()),
     }),
   ),
 });

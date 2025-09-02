@@ -1,7 +1,7 @@
-import { z } from '@hono/zod-openapi';
 import { membershipSchema } from '#/modules/memberships/schema';
 import { userSchema } from '#/modules/users/schema';
 import { idSchema, passwordSchema } from '#/utils/schema/common';
+import { z } from '@hono/zod-openapi';
 
 export const emailBodySchema = z.object({
   email: userSchema.shape.email,
@@ -21,7 +21,12 @@ export const tokenWithDataSchema = z.object({
   organizationId: z.string().optional(),
 });
 
-export const passkeyChallengeQuerySchema = z.object({ email: z.email().optional() });
+export const passkeyChallengeQuerySchema = z
+  .object({
+    email: z.string().optional(),
+    token: z.string().optional(),
+  })
+  .refine((data) => (data.email ? !data.token : !!data.token), { message: 'You must provide either email or token, but not both' });
 
 export const passkeyChallengeSchema = z.object({ challengeBase64: z.string(), credentialIds: z.array(z.string()) });
 
