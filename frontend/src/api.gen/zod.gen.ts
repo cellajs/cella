@@ -600,6 +600,7 @@ export const zGetMyAuthResponse = z.object({
       browser: z.union([z.string(), z.null()]),
       authStrategy: z.enum(['github', 'google', 'microsoft', 'password', 'passkey', 'email']),
       expiresAt: z.string(),
+      consumedAt: z.union([z.iso.date(), z.null()]),
       isCurrent: z.boolean(),
     }),
   ),

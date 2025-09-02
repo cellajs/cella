@@ -1,8 +1,3 @@
-import { OpenAPIHono, type z } from '@hono/zod-openapi';
-import type { EnabledOAuthProvider, MenuSection } from 'config';
-import { appConfig } from 'config';
-import { and, eq, isNotNull, sql } from 'drizzle-orm';
-import { type SSEStreamingApi, streamSSE } from 'hono/streaming';
 import { db } from '#/db/db';
 import { membershipsTable } from '#/db/schema/memberships';
 import { oauthAccountsTable } from '#/db/schema/oauth-accounts';
@@ -18,7 +13,7 @@ import { getParams, getSignature } from '#/lib/transloadit';
 import { isAuthenticated } from '#/middlewares/guard';
 import { deleteAuthCookie, getAuthCookie } from '#/modules/auth/helpers/cookie';
 import { parseAndValidatePasskeyAttestation } from '#/modules/auth/helpers/passkey';
-import { getParsedSessionCookie, invalidateAllUserSessions, invalidateSessionById, validateSession } from '#/modules/auth/helpers/session';
+import { getParsedSessionCookie, invalidateSessionById, validateSession } from '#/modules/auth/helpers/session';
 import { checkSlugAvailable } from '#/modules/entities/helpers/check-slug';
 import { getUserSessions } from '#/modules/me/helpers/get-sessions';
 import { getUserMenuEntities } from '#/modules/me/helpers/get-user-menu-entities';
@@ -31,6 +26,11 @@ import permissionManager from '#/permissions/permissions-config';
 import { defaultHook } from '#/utils/default-hook';
 import { getIsoDate } from '#/utils/iso-date';
 import { logEvent } from '#/utils/logger';
+import { OpenAPIHono, type z } from '@hono/zod-openapi';
+import type { EnabledOAuthProvider, MenuSection } from 'config';
+import { appConfig } from 'config';
+import { and, eq, isNotNull, sql } from 'drizzle-orm';
+import { type SSEStreamingApi, streamSSE } from 'hono/streaming';
 
 type UserMenu = z.infer<typeof menuSchema>;
 type MenuItem = z.infer<typeof menuItemSchema>;
@@ -226,8 +226,6 @@ const meRouteHandlers = app
     // Delete user
     await db.delete(usersTable).where(eq(usersTable.id, user.id));
 
-    // Invalidate sessions
-    await invalidateAllUserSessions(user.id);
     deleteAuthCookie(ctx, 'session');
     logEvent('info', 'User deleted itself', { userId: user.id });
 

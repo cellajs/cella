@@ -1,6 +1,3 @@
-import { appConfig } from 'config';
-import { eq } from 'drizzle-orm';
-import type { Context } from 'hono';
 import { db } from '#/db/db';
 import { tokensTable } from '#/db/schema/tokens';
 import { AppError } from '#/lib/errors';
@@ -10,6 +7,9 @@ import { isExpiredDate } from '#/utils/is-expired-date';
 import { isValidRedirectPath } from '#/utils/is-redirect-url';
 import { logEvent } from '#/utils/logger';
 import { TimeSpan } from '#/utils/time-span';
+import { appConfig } from 'config';
+import { eq } from 'drizzle-orm';
+import type { Context } from 'hono';
 
 export const oauthCookieExpires = new TimeSpan(5, 'm');
 
@@ -130,7 +130,7 @@ export const handleOAuthConnection = async (ctx: Context) => {
   if (!sessionData) throw new AppError({ status: 401, type: 'no_session', severity: 'warn', isRedirect: true });
 
   const { user } = await validateSession(sessionData.sessionToken);
-  if (user?.id !== connectingUserId) throw new AppError({ status: 403, type: 'user_mismatch', severity: 'warn', isRedirect: true });
+  if (user.id !== connectingUserId) throw new AppError({ status: 403, type: 'user_mismatch', severity: 'warn', isRedirect: true });
 
   await setAuthCookie(ctx, 'oauth-connect-user-id', connectingUserId, oauthCookieExpires);
 };

@@ -38,7 +38,6 @@ export const isAuthenticated: MiddlewareHandler<Env> = createMiddleware<Env>(asy
   // If session validation fails or user not found, remove cookie
   if (!session || !user) {
     deleteAuthCookie(ctx, 'session');
-    throw new AppError({ status: 401, type: 'no_session', severity: 'info' });
   }
 
   // Update user last seen date

@@ -57,7 +57,6 @@ import { and, desc, eq, isNotNull, isNull } from 'drizzle-orm';
 import i18n from 'i18next';
 import { getRandomValues } from 'node:crypto';
 import { CreatePasswordEmail, type CreatePasswordEmailProps } from '../../../emails/create-password';
-import { userSelect } from '../users/helpers/select';
 
 const enabledStrategies: readonly string[] = appConfig.enabledAuthStrategies;
 const enabledOAuthProviders: readonly string[] = appConfig.enabledOAuthProviders;
@@ -343,18 +342,8 @@ const authRouteHandlers = app
 
     // Determine session type
     const type = user.twoFactorEnabled ? 'pending_2fa' : 'regular';
-    await setUserSession(ctx, user, 'password', type);
-
-    // TODO(2fa) improve it
-    if (type === 'pending_2fa') {
-      const [session] = await db
-        .select()
-        .from(sessionsTable)
-        .where(and(eq(sessionsTable.type, type), eq(sessionsTable.userId, user.id)))
-        .limit(1);
-
-      return ctx.json(`/auth/2fa-confirm/${session.token}`, 200);
-    }
+    const insertedToken = await setUserSession(ctx, user, 'password', type);
+    if (type === 'pending_2fa') return ctx.json(`/auth/2fa-confirm/${insertedToken}`, 200);
 
     return ctx.json(null, 200);
   })
@@ -496,7 +485,6 @@ const authRouteHandlers = app
 
     const { sessionToken, adminUserId } = sessionData;
     const { session } = await validateSession(sessionToken);
-    if (!session) throw new AppError({ status: 401, type: 'unauthorized', severity: 'warn' });
 
     await invalidateSessionById(session.id, session.userId);
     if (adminUserId) {
@@ -535,7 +523,7 @@ const authRouteHandlers = app
 
     // Find session & invalidate
     const { session } = await validateSession(sessionData.sessionToken);
-    if (session) await invalidateSessionById(session.id, session.userId);
+    await invalidateSessionById(session.id, session.userId);
 
     // Delete session cookie
     deleteAuthCookie(ctx, 'session');
@@ -814,27 +802,15 @@ const authRouteHandlers = app
     // If neither email nor token, return challenge with empty credentialIds
     if (!email && !token) return ctx.json({ challengeBase64, credentialIds: [] }, 200);
 
-    // Start base query
-    const baseQuery = db.select({ credentialId: passkeysTable.credentialId }).from(passkeysTable);
+    // biome-ignore lint/style/noNonNullAssertion: Existense on either email or token handles in schcema
+    const userEmail = token ? (await validateSession(token)).user.email : email!.toLowerCase().trim();
 
-    if (email) {
-      const normalizedEmail = email.toLowerCase().trim();
-      baseQuery.where(eq(passkeysTable.userEmail, normalizedEmail));
-    }
+    const credentials = await db
+      .select({ credentialId: passkeysTable.credentialId })
+      .from(passkeysTable)
+      .where(eq(passkeysTable.userEmail, userEmail));
 
-    if (token) {
-      baseQuery
-        .innerJoin(usersTable, eq(usersTable.email, passkeysTable.userEmail))
-        .innerJoin(
-          sessionsTable,
-          and(eq(sessionsTable.userId, usersTable.id), eq(sessionsTable.token, token), eq(sessionsTable.type, 'pending_2fa')),
-        );
-    }
-
-    // Execute query
-    const credentials = await baseQuery;
     const credentialIds = credentials.map((c) => c.credentialId);
-    console.log('🚀 ~ credentialIds:', credentialIds);
 
     return ctx.json({ challengeBase64, credentialIds }, 200);
   })
@@ -851,25 +827,15 @@ const authRouteHandlers = app
     // Find user by email
     if (email) {
       user = await getUserBy('email', email.toLowerCase());
-    } else if (token) {
+    }
+    if (token) {
       sessionType = 'two_factor_authentication';
 
       // Find user by pending 2FA session
-      const [userFromSession] = await db
-        .select({ ...userSelect, sessionExpiresAt: sessionsTable.expiresAt })
-        .from(usersTable)
-        .innerJoin(sessionsTable, and(eq(sessionsTable.token, token), eq(sessionsTable.type, 'pending_2fa')))
-        .where(and(eq(usersTable.id, sessionsTable.userId)))
-        .limit(1);
+      const { user: userFromSession } = await validateSession(token);
 
-      if (!userFromSession) {
-        throw new AppError({ status: 404, type: 'not_found', severity: 'warn', meta: { strategy, sessionType } });
-      }
       if (!userFromSession.twoFactorEnabled) {
         throw new AppError({ status: 403, type: '2fa_not_enabled', severity: 'warn' });
-      }
-      if (isExpiredDate(userFromSession.sessionExpiresAt)) {
-        throw new AppError({ status: 401, type: '2fa_expired', severity: 'warn' });
       }
       user = userFromSession;
     }

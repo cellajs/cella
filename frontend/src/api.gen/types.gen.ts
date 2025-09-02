@@ -1494,6 +1494,7 @@ export type GetMyAuthResponses = {
       browser: string | null;
       authStrategy: 'github' | 'google' | 'microsoft' | 'password' | 'passkey' | 'email';
       expiresAt: string;
+      consumedAt: string | null;
       isCurrent: boolean;
     }>;
   };
