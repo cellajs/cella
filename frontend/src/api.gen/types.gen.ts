@@ -601,7 +601,7 @@ export type RefreshTokenData = {
   query: {
     type: 'email_verification' | 'password_reset' | 'invitation';
   };
-  url: '/auth/refresh-token/{id}';
+  url: '/auth/validate-token/{id}';
 };
 
 export type RefreshTokenErrors = {

@@ -284,10 +284,10 @@ const authRoutes = {
       ...errorResponses,
     },
   }),
-  refreshToken: createCustomRoute({
+  validateToken: createCustomRoute({
     operationId: 'refreshToken',
     method: 'post',
-    path: '/refresh-token/{id}',
+    path: '/validate-token/{id}',
     guard: isPublicAccess,
     tags: ['auth'],
     summary: 'Token validation and nonce retrieval',
@@ -300,11 +300,7 @@ const authRoutes = {
     responses: {
       200: {
         description: 'Token is valid',
-        content: {
-          'application/json': {
-            schema: tokenWithDataSchema,
-          },
-        },
+        content: { 'application/json': { schema: tokenWithDataSchema } },
       },
       ...errorResponses,
     },
