@@ -1,7 +1,3 @@
-import * as Sentry from '@sentry/node';
-import { and, eq, isNotNull } from 'drizzle-orm';
-import type { MiddlewareHandler } from 'hono';
-import { createMiddleware } from 'hono/factory';
 import { db } from '#/db/db';
 import { membershipsTable } from '#/db/schema/memberships';
 import { usersTable } from '#/db/schema/users';
@@ -12,6 +8,10 @@ import { deleteAuthCookie } from '#/modules/auth/helpers/cookie';
 import { getParsedSessionCookie, validateSession } from '#/modules/auth/helpers/session';
 import { membershipBaseSelect } from '#/modules/memberships/helpers/select';
 import { TimeSpan } from '#/utils/time-span';
+import * as Sentry from '@sentry/node';
+import { and, eq, isNotNull } from 'drizzle-orm';
+import type { MiddlewareHandler } from 'hono';
+import { createMiddleware } from 'hono/factory';
 
 /**
  * Middleware to ensure that the user is authenticated by checking the session cookie.
@@ -23,44 +23,40 @@ import { TimeSpan } from '#/utils/time-span';
  * @returns Error response or undefined if the user is allowed to proceed.
  */
 export const isAuthenticated: MiddlewareHandler<Env> = createMiddleware<Env>(async (ctx, next) => {
-  // Get session id from cookie
-  const sessionData = await getParsedSessionCookie(ctx);
-
-  // If no session id is found (or its corrupted/deprecated), remove session cookie
-  if (!sessionData) {
-    deleteAuthCookie(ctx, 'session');
-    throw new AppError({ status: 401, type: 'no_session', severity: 'info' });
-  }
-
   // Validate session
-  const { session, user } = await validateSession(sessionData.sessionToken);
+  try {
+    // Get session id from cookie
+    const sessionData = await getParsedSessionCookie(ctx);
+    if (!sessionData) throw new AppError({ status: 401, type: 'no_session', severity: 'info' });
 
-  // If session validation fails or user not found, remove cookie
-  if (!session || !user) {
-    deleteAuthCookie(ctx, 'session');
+    const { user } = await validateSession(sessionData.sessionToken);
+
+    // Update user last seen date
+    if (ctx.req.method === 'GET') {
+      const newLastSeenAt = new Date();
+      const shouldUpdate = !user.lastSeenAt || new Date(user.lastSeenAt).getTime() < newLastSeenAt.getTime() - new TimeSpan(5, 'm').milliseconds();
+      if (shouldUpdate) await db.update(usersTable).set({ lastSeenAt: newLastSeenAt.toISOString() }).where(eq(usersTable.id, user.id)).returning();
+    }
+
+    // Set user in context and add to monitoring
+    ctx.set('user', user);
+    Sentry.setUser({
+      id: user.id,
+      email: user.email,
+      username: user.slug,
+    });
+
+    // Fetch user's memberships from the database
+    const memberships = await db
+      .select({ ...membershipBaseSelect, createdBy: membershipsTable.createdBy })
+      .from(membershipsTable)
+      .where(and(eq(membershipsTable.userId, user.id), isNotNull(membershipsTable.activatedAt)));
+    ctx.set('memberships', memberships);
+  } catch (err) {
+    // If session validation fails, remove cookie
+    if (err instanceof AppError) deleteAuthCookie(ctx, 'session');
+    throw err;
   }
-
-  // Update user last seen date
-  if (ctx.req.method === 'GET') {
-    const newLastSeenAt = new Date();
-    const shouldUpdate = !user.lastSeenAt || new Date(user.lastSeenAt).getTime() < newLastSeenAt.getTime() - new TimeSpan(5, 'm').milliseconds();
-    if (shouldUpdate) await db.update(usersTable).set({ lastSeenAt: newLastSeenAt.toISOString() }).where(eq(usersTable.id, user.id)).returning();
-  }
-
-  // Set user in context and add to monitoring
-  ctx.set('user', user);
-  Sentry.setUser({
-    id: user.id,
-    email: user.email,
-    username: user.slug,
-  });
-
-  // Fetch user's memberships from the database
-  const memberships = await db
-    .select({ ...membershipBaseSelect, createdBy: membershipsTable.createdBy })
-    .from(membershipsTable)
-    .where(and(eq(membershipsTable.userId, user.id), isNotNull(membershipsTable.activatedAt)));
-  ctx.set('memberships', memberships);
 
   await next();
 });

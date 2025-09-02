@@ -95,14 +95,14 @@ export const validateSession = async (hashedSessionToken: string): Promise<{ ses
     .innerJoin(usersTable, eq(sessionsTable.userId, usersTable.id));
 
   // If no result is found throw no session
-  if (!result) throw new AppError({ status: 401, type: 'no_session', severity: 'info' });
+  if (!result) throw new AppError({ status: 401, type: 'no_session', severity: 'warn' });
 
   const { session } = result;
 
   // Check if the session has expired and invalidate it if so
   if (isExpiredDate(session.expiresAt)) {
     await invalidateSessionById(session.id, session.userId);
-    throw new AppError({ status: 401, type: 'session_expired', severity: 'warn', isRedirect: true });
+    throw new AppError({ status: 401, type: 'session_expired', severity: 'warn' });
   }
 
   await db.update(sessionsTable).set({ consumedAt: new Date() });
