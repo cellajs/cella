@@ -3,9 +3,9 @@ import { emailsTable } from '#/db/schema/emails';
 import { membershipsTable } from '#/db/schema/memberships';
 import { organizationsTable } from '#/db/schema/organizations';
 import { passkeysTable } from '#/db/schema/passkeys';
-import { sessionsTable } from '#/db/schema/sessions';
+import { sessionsTable, type SessionTypes } from '#/db/schema/sessions';
 import { tokensTable } from '#/db/schema/tokens';
-import { usersTable } from '#/db/schema/users';
+import { type UserModel, usersTable } from '#/db/schema/users';
 import { env } from '#/env';
 import { type Env, getContextToken, getContextUser } from '#/lib/context';
 import { resolveEntity } from '#/lib/entity';
@@ -57,6 +57,7 @@ import { and, desc, eq, isNotNull, isNull } from 'drizzle-orm';
 import i18n from 'i18next';
 import { getRandomValues } from 'node:crypto';
 import { CreatePasswordEmail, type CreatePasswordEmailProps } from '../../../emails/create-password';
+import { userSelect } from '../users/helpers/select';
 
 const enabledStrategies: readonly string[] = appConfig.enabledAuthStrategies;
 const enabledOAuthProviders: readonly string[] = appConfig.enabledOAuthProviders;
@@ -337,15 +338,25 @@ const authRouteHandlers = app
     // If email is not verified, send verification email
     if (!emailData.verified) {
       sendVerificationEmail({ userId: user.id });
-      return ctx.json({ emailVerified: false }, 200);
+      return ctx.json('/auth/email-verification/signin', 200);
     }
 
     // Determine session type
     const type = user.twoFactorEnabled ? 'pending_2fa' : 'regular';
     await setUserSession(ctx, user, 'password', type);
 
-    const responce = type === 'pending_2fa' ? { pending2FA: true } : { emailVerified: true };
-    return ctx.json(responce, 200);
+    // TODO(2fa) improve it
+    if (type === 'pending_2fa') {
+      const [session] = await db
+        .select()
+        .from(sessionsTable)
+        .where(and(eq(sessionsTable.type, type), eq(sessionsTable.userId, user.id)))
+        .limit(1);
+
+      return ctx.json(`/auth/2fa-confirm/${session.token}`, 200);
+    }
+
+    return ctx.json(null, 200);
   })
   /*
    * Check token (token validation)
@@ -818,31 +829,62 @@ const authRouteHandlers = app
    * Verify passkey
    */
   .openapi(authRoutes.verifyPasskey, async (ctx) => {
-    const { clientDataJSON, authenticatorData, signature, userEmail } = ctx.req.valid('json');
+    const { clientDataJSON, authenticatorData, signature, email, token } = ctx.req.valid('json');
     const strategy = 'passkey';
 
-    // Retrieve user and challenge record
-    const user = await getUserBy('email', userEmail.toLowerCase());
-    if (!user) throw new AppError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'user', meta: { strategy } });
+    let user: UserModel | null = null;
+    let sessionType: Extract<SessionTypes, 'regular' | 'two_factor_authentication'> = 'regular';
+
+    // Find user by email
+    if (email) {
+      user = await getUserBy('email', email.toLowerCase());
+    } else if (token) {
+      sessionType = 'two_factor_authentication';
+
+      // Find user by pending 2FA session
+      const [userFromSession] = await db
+        .select({ ...userSelect, sessionExpiresAt: sessionsTable.expiresAt })
+        .from(usersTable)
+        .innerJoin(sessionsTable, and(eq(sessionsTable.token, token), eq(sessionsTable.type, 'pending_2fa')))
+        .where(and(eq(usersTable.id, sessionsTable.userId)))
+        .limit(1);
+
+      if (!userFromSession) {
+        throw new AppError({ status: 404, type: 'not_found', severity: 'warn', meta: { strategy, sessionType } });
+      }
+      if (!userFromSession.twoFactorEnabled) {
+        throw new AppError({ status: 403, type: '2fa_not_enabled', severity: 'warn' });
+      }
+      if (isExpiredDate(userFromSession.sessionExpiresAt)) {
+        throw new AppError({ status: 401, type: '2fa_expired', severity: 'warn' });
+      }
+      user = userFromSession;
+    }
+
+    const meta = { strategy, sessionType };
+
+    if (!user) {
+      throw new AppError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'user', meta });
+    }
 
     // Check if passkey challenge exists
     const challengeFromCookie = await getAuthCookie(ctx, 'passkey-challenge');
-    if (!challengeFromCookie) throw new AppError({ status: 401, type: 'invalid_credentials', severity: 'warn', meta: { strategy } });
+    if (!challengeFromCookie) throw new AppError({ status: 401, type: 'invalid_credentials', severity: 'warn', meta });
 
     // Get passkey credentials
-    const [credentials] = await db.select().from(passkeysTable).where(eq(passkeysTable.userEmail, userEmail));
-    if (!credentials) throw new AppError({ status: 404, type: 'not_found', severity: 'warn', meta: { strategy } });
+    const [credentials] = await db.select().from(passkeysTable).where(eq(passkeysTable.userEmail, user.email));
+    if (!credentials) throw new AppError({ status: 404, type: 'not_found', severity: 'warn', meta });
 
     try {
       const isValid = await verifyPassKeyPublic(signature, authenticatorData, clientDataJSON, credentials.publicKey, challengeFromCookie);
-      if (!isValid) throw new AppError({ status: 401, type: 'invalid_token', severity: 'warn', meta: { strategy } });
+      if (!isValid) throw new AppError({ status: 401, type: 'invalid_token', severity: 'warn', meta });
     } catch (error) {
       if (error instanceof Error) {
-        throw new AppError({ status: 500, type: 'passkey_failed', severity: 'error', meta: { strategy }, originalError: error });
+        throw new AppError({ status: 500, type: 'passkey_failed', severity: 'error', meta, originalError: error });
       }
     }
 
-    await setUserSession(ctx, user, 'passkey');
+    await setUserSession(ctx, user, 'passkey', sessionType);
     return ctx.json(true, 200);
   });
 

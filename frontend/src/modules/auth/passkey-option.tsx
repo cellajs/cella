@@ -8,26 +8,27 @@ import { type ApiError, getPasskeyChallenge, type SignInWithPasskeyData, type Si
 import type { AuthStep } from '~/modules/auth/types';
 import { toaster } from '~/modules/common/toaster/service';
 import { Button } from '~/modules/ui/button';
-import { AuthenticateRoute } from '~/routes/auth';
 import { useUIStore } from '~/store/ui';
 
-interface PasskeyOptionProps {
-  actionType: AuthStep;
-  email: string;
+interface PasskeyOptionBase {
+  actionType?: AuthStep;
 }
 
-const PasskeyOption = ({ email, actionType = 'signIn' }: PasskeyOptionProps) => {
+// Either email OR token is required
+type PasskeyOptionProps = (PasskeyOptionBase & { email: string; token?: never }) | (PasskeyOptionBase & { token: string; email?: never });
+
+const PasskeyOption = ({ email, token, actionType = 'signIn' }: PasskeyOptionProps) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const mode = useUIStore((state) => state.mode);
 
-  const { redirect } = useSearch({ from: AuthenticateRoute.id });
+  const { redirect } = useSearch({ strict: false });
   const redirectPath = redirect?.startsWith('/') ? redirect : appConfig.defaultRedirectPath;
 
-  const { mutate: passkeyAuth } = useMutation<SignInWithPasskeyResponse, ApiError | Error, NonNullable<SignInWithPasskeyData['body']>['userEmail']>({
-    mutationFn: async (userEmail) => {
+  const { mutate: passkeyAuth } = useMutation<SignInWithPasskeyResponse, ApiError | Error, NonNullable<SignInWithPasskeyData['body']>['email']>({
+    mutationFn: async (email) => {
       //  Fetch a challenge from BE
-      const { challengeBase64, credentialIds } = await getPasskeyChallenge({ query: { email: userEmail } });
+      const { challengeBase64, credentialIds } = await getPasskeyChallenge({ query: { email } });
 
       // Decode  challenge and wrap it in a Uint8Array (required format)
       const raw = decodeBase64(challengeBase64);
@@ -56,7 +57,8 @@ const PasskeyOption = ({ email, actionType = 'signIn' }: PasskeyOptionProps) => 
         clientDataJSON: encodeBase64(new Uint8Array(response.clientDataJSON)),
         authenticatorData: encodeBase64(new Uint8Array(response.authenticatorData)),
         signature: encodeBase64(new Uint8Array(response.signature)),
-        userEmail,
+        email,
+        token,
       };
 
       // Send signed response to BE to complete authentication
@@ -74,7 +76,8 @@ const PasskeyOption = ({ email, actionType = 'signIn' }: PasskeyOptionProps) => 
       <Button type="button" onClick={() => passkeyAuth(email)} variant="plain" className="w-full gap-1.5">
         <Fingerprint size={16} />
         <span>
-          {actionType === 'signIn' ? t('common:sign_in') : t('common:sign_up')} {t('common:with').toLowerCase()} {t('common:passkey').toLowerCase()}
+          {actionType === 'signIn' || actionType === 'confirn2FA' ? t('common:sign_in') : t('common:sign_up')} {t('common:with').toLowerCase()}{' '}
+          {t('common:passkey').toLowerCase()}
         </span>
       </Button>
     </div>

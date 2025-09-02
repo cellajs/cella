@@ -97,6 +97,7 @@ const AuthSteps = () => {
               <span className="text-muted-foreground px-2">{t('common:or')}</span>
             </div>
           )}
+          {/* TODO(2fa) hide if 2fa enabled for user  */}
           {enabledStrategies.includes('passkey') && <PasskeyOption email={email} actionType={step} />}
           {enabledStrategies.includes('oauth') && <OAuthOptions actionType={step} />}
         </>

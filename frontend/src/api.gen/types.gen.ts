@@ -588,13 +588,7 @@ export type SignInResponses = {
   /**
    * User signed in
    */
-  200:
-    | {
-        emailVerified: boolean;
-      }
-    | {
-        pending2FA: boolean;
-      };
+  200: string | null;
 };
 
 export type SignInResponse = SignInResponses[keyof SignInResponses];
@@ -1221,7 +1215,8 @@ export type SignInWithPasskeyData = {
     clientDataJSON: string;
     authenticatorData: string;
     signature: string;
-    userEmail: string;
+    email?: string;
+    token?: string;
   };
   path?: never;
   query?: never;

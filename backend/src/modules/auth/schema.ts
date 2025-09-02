@@ -25,12 +25,15 @@ export const passkeyChallengeQuerySchema = z.object({ email: z.email().optional(
 
 export const passkeyChallengeSchema = z.object({ challengeBase64: z.string(), credentialIds: z.array(z.string()) });
 
-export const passkeyVerificationBodySchema = z.object({
-  clientDataJSON: z.string(),
-  authenticatorData: z.string(),
-  signature: z.string(),
-  userEmail: z.string(),
-});
+export const passkeyVerificationBodySchema = z
+  .object({
+    clientDataJSON: z.string(),
+    authenticatorData: z.string(),
+    signature: z.string(),
+    email: z.string().optional(),
+    token: z.string().optional(),
+  })
+  .refine((data) => !!data.email || !!data.token, { message: 'Either email or token must be provided' });
 
 export const oauthQuerySchema = z
   .object({

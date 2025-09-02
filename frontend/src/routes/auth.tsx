@@ -1,6 +1,7 @@
 import { createRoute, redirect } from '@tanstack/react-router';
 import { appConfig } from 'config';
 import { z } from 'zod';
+import { Confirm2FA } from '~/modules/auth/2fa-confirm';
 import AcceptEntityInvite from '~/modules/auth/accept-entity-invite';
 import AuthPage from '~/modules/auth/auth-layout';
 import CreatePasswordForm from '~/modules/auth/create-password-form';
@@ -43,6 +44,14 @@ export const AuthenticateRoute = createRoute({
     throw redirect({ to: appConfig.defaultRedirectPath, replace: true });
   },
   component: () => <AuthSteps />,
+});
+
+export const Confirn2FARoute = createRoute({
+  path: '/auth/2fa-confirm/$token',
+  staticData: { isAuth: false },
+  head: () => ({ meta: [{ title: appTitle('2FA confirm') }] }),
+  getParentRoute: () => AuthLayoutRoute,
+  component: () => <Confirm2FA />,
 });
 
 export const RequestPasswordRoute = createRoute({

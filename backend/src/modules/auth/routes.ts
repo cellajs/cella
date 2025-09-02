@@ -1,3 +1,5 @@
+import { z } from '@hono/zod-openapi';
+import { appConfig } from 'config';
 import { createCustomRoute } from '#/lib/custom-routes';
 import { hasSystemAccess, isAuthenticated, isPublicAccess } from '#/middlewares/guard';
 import { hasValidToken } from '#/middlewares/has-valid-token';
@@ -15,8 +17,6 @@ import {
 import { contextEntityWithMembershipSchema } from '#/modules/entities/schema';
 import { cookieSchema, idSchema, passwordSchema, tokenParamSchema } from '#/utils/schema/common';
 import { errorResponses, successWithoutDataSchema } from '#/utils/schema/responses';
-import { z } from '@hono/zod-openapi';
-import { appConfig } from 'config';
 
 const authRoutes = {
   startImpersonation: createCustomRoute({
@@ -144,29 +144,13 @@ const authRoutes = {
     security: [],
     request: {
       params: tokenParamSchema,
-      body: {
-        content: {
-          'application/json': {
-            schema: emailPasswordBodySchema,
-          },
-        },
-      },
+      body: { content: { 'application/json': { schema: emailPasswordBodySchema } } },
     },
     responses: {
       200: {
         description: 'User signed up',
-        headers: z.object({
-          'Set-Cookie': cookieSchema,
-        }),
-        content: {
-          'application/json': {
-            schema: successWithoutDataSchema,
-          },
-        },
-      },
-      302: {
-        headers: z.object({ Location: z.string() }),
-        description: 'Redirect to frontend',
+        headers: z.object({ 'Set-Cookie': cookieSchema }),
+        content: { 'application/json': { schema: successWithoutDataSchema } },
       },
       ...errorResponses,
     },
@@ -267,25 +251,13 @@ const authRoutes = {
     summary: 'Verify passkey',
     description: 'Validates the signed challenge and completes passkey based authentication.',
     request: {
-      body: {
-        content: {
-          'application/json': {
-            schema: passkeyVerificationBodySchema,
-          },
-        },
-      },
+      body: { content: { 'application/json': { schema: passkeyVerificationBodySchema } } },
     },
     responses: {
       200: {
         description: 'Passkey verified',
-        headers: z.object({
-          'Set-Cookie': cookieSchema,
-        }),
-        content: {
-          'application/json': {
-            schema: successWithoutDataSchema,
-          },
-        },
+        headers: z.object({ 'Set-Cookie': cookieSchema }),
+        content: { 'application/json': { schema: successWithoutDataSchema } },
       },
       ...errorResponses,
     },
@@ -301,25 +273,13 @@ const authRoutes = {
     description: 'Authenticates an existing user using their email and password.',
     security: [],
     request: {
-      body: {
-        content: {
-          'application/json': {
-            schema: emailPasswordBodySchema,
-          },
-        },
-      },
+      body: { content: { 'application/json': { schema: emailPasswordBodySchema } } },
     },
     responses: {
       200: {
         description: 'User signed in',
-        headers: z.object({
-          'Set-Cookie': cookieSchema,
-        }),
-        content: {
-          'application/json': {
-            schema: z.union([z.object({ emailVerified: z.boolean() }), z.object({ pending2FA: z.boolean() })]),
-          },
-        },
+        headers: z.object({ 'Set-Cookie': cookieSchema.optional() }),
+        content: { 'application/json': { schema: z.string().nullable() } },
       },
       ...errorResponses,
     },
@@ -430,17 +390,11 @@ const authRoutes = {
     summary: 'Get passkey challenge',
     description: 'Initiates the passkey registration or authentication flow by generating a device bound challenge.',
     security: [],
-    request: {
-      query: passkeyChallengeQuerySchema,
-    },
+    request: { query: passkeyChallengeQuerySchema },
     responses: {
       200: {
         description: 'Challenge created',
-        content: {
-          'application/json': {
-            schema: passkeyChallengeSchema,
-          },
-        },
+        content: { 'application/json': { schema: passkeyChallengeSchema } },
       },
       ...errorResponses,
     },

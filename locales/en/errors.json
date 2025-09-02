@@ -173,5 +173,9 @@
   "invite_takes_priority": "Invitation pending",
   "invite_takes_priority.text": "You should already have an invitation in your email inbox. Please use the link in the email to proceed. Can't find it? Click 'Resend' to receive a new invitation link.",
   "missing_membership":"You don`t have access yet. Ask an admin to invite you so you can get started.",
-  "organization_mismatch":"This item is linked to a different organization than the one you're currently using. Please switch to the appropriate organization or ask your administrator for access."
+  "organization_mismatch":"This item is linked to a different organization than the one you're currently using. Please switch to the appropriate organization or ask your administrator for access.",
+  "2fa_expired": "Session Expired",
+  "2fa_expired.text": "Your two-factor authentication session has expired. Please log in again to continue.",
+  "2fa_not_enabled" : "2FA Not Enabled",
+  "2fa_not_enabled.text" : "Two-factor authentication is not enabled for this account."
 }

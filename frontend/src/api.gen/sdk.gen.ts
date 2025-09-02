@@ -276,7 +276,7 @@ export const signUp = <ThrowOnError extends boolean = true>(options?: Options<Si
  * @param {string} options.path.token - `string`
  * @param {string=} options.body.email - `string` (optional)
  * @param {string=} options.body.password - `string` (optional)
- * @returns Possible status codes: 200, 302, 400, 401, 403, 404, 429
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
 export const signUpWithToken = <ThrowOnError extends boolean = true>(options: Options<SignUpWithTokenData, ThrowOnError>) => {
   return (options.client ?? _heyApiClient).post<SignUpWithTokenResponses, SignUpWithTokenErrors, ThrowOnError, 'data'>({
@@ -697,7 +697,8 @@ export const getPasskeyChallenge = <ThrowOnError extends boolean = true>(options
  * @param {string=} options.body.clientDataJSON - `string` (optional)
  * @param {string=} options.body.authenticatorData - `string` (optional)
  * @param {string=} options.body.signature - `string` (optional)
- * @param {string=} options.body.userEmail - `string` (optional)
+ * @param {string=} options.body.email - `string` (optional)
+ * @param {string=} options.body.token - `string` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
 export const signInWithPasskey = <ThrowOnError extends boolean = true>(options?: Options<SignInWithPasskeyData, ThrowOnError>) => {

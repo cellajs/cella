@@ -339,14 +339,7 @@ export const zSignInData = z.object({
 /**
  * User signed in
  */
-export const zSignInResponse = z.union([
-  z.object({
-    emailVerified: z.boolean(),
-  }),
-  z.object({
-    pending2FA: z.boolean(),
-  }),
-]);
+export const zSignInResponse = z.union([z.string(), z.null()]);
 
 export const zRefreshTokenData = z.object({
   body: z.optional(z.never()),
@@ -519,7 +512,8 @@ export const zSignInWithPasskeyData = z.object({
       clientDataJSON: z.string(),
       authenticatorData: z.string(),
       signature: z.string(),
-      userEmail: z.string(),
+      email: z.optional(z.string()),
+      token: z.optional(z.string()),
     }),
   ),
   path: z.optional(z.never()),

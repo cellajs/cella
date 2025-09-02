@@ -4,7 +4,7 @@ import { appConfig, type EnabledOAuthProvider } from 'config';
 import { Check, Send, Trash } from 'lucide-react';
 import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { type ApiError, type RequestPasswordData, type RequestPasswordResponse, requestPassword } from '~/api.gen';
+import { requestPassword, type ApiError, type RequestPasswordData, type RequestPasswordResponse } from '~/api.gen';
 import { mapOAuthProviders } from '~/modules/auth/oauth-options';
 import { AsideAnchor } from '~/modules/common/aside-anchor';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
@@ -144,7 +144,7 @@ const UserSettingsPage = () => {
               <div className="flex flex-col sm:items-start gap-3 mb-6">
                 {appConfig.enabledOAuthProviders.map((id) => {
                   const provider = mapOAuthProviders.find((provider) => provider.id === id);
-                  if (!provider) return;
+                  if (!provider) return null;
                   if (userAuthData.enabledOAuth.includes(id))
                     return (
                       <div key={provider.id} className="flex items-center justify-center px-3 py-2 gap-2">
