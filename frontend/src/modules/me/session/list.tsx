@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { deleteMySessions } from '~/api.gen';
 import { ExpandableList } from '~/modules/common/expandable-list';
 import { toaster } from '~/modules/common/toaster/service';
-import { SessionTile } from '~/modules/me/session-tile';
+import { SessionTile } from '~/modules/me/session/tile';
 import type { MeAuthData } from '~/modules/me/types';
 import { Button } from '~/modules/ui/button';
 

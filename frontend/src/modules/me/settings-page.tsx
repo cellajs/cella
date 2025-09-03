@@ -16,7 +16,7 @@ import { toaster } from '~/modules/common/toaster/service';
 import UnsavedBadge from '~/modules/common/unsaved-badge';
 import DeleteSelf from '~/modules/me/delete-self';
 import Passkeys from '~/modules/me/passkeys';
-import SessionsList from '~/modules/me/sessions-list';
+import SessionsList from '~/modules/me/session/list';
 import { Button } from '~/modules/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/modules/ui/card';
 import UpdateUserForm from '~/modules/users/update-user-form';
