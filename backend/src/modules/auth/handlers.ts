@@ -3,7 +3,7 @@ import { emailsTable } from '#/db/schema/emails';
 import { membershipsTable } from '#/db/schema/memberships';
 import { organizationsTable } from '#/db/schema/organizations';
 import { passkeysTable } from '#/db/schema/passkeys';
-import { sessionsTable, type SessionTypes } from '#/db/schema/sessions';
+import { sessionsTable } from '#/db/schema/sessions';
 import { tokensTable } from '#/db/schema/tokens';
 import { type UserModel, usersTable } from '#/db/schema/users';
 import { env } from '#/env';
@@ -13,6 +13,7 @@ import { AppError } from '#/lib/errors';
 import { eventManager } from '#/lib/events';
 import { mailer } from '#/lib/mailer';
 import { sendSSEToUsers } from '#/lib/sse';
+import { initiateTwoFactorAuth, validatePending2FAToken } from '#/modules/auth/helpers/2fa';
 import { hashPassword, verifyPasswordHash } from '#/modules/auth/helpers/argon2id';
 import { deleteAuthCookie, getAuthCookie, setAuthCookie } from '#/modules/auth/helpers/cookie';
 import {
@@ -181,9 +182,6 @@ const authRouteHandlers = app
   .openapi(authRoutes.verifyEmail, async (ctx) => {
     const { redirect } = ctx.req.valid('query');
 
-    const decodedRedirect = decodeURIComponent(redirect || '');
-    const baseRedirectPath = isValidRedirectPath(decodedRedirect) || appConfig.defaultRedirectPath;
-
     // No token in context
     const token = getContextToken();
     if (!token || !token.userId) throw new AppError({ status: 400, type: 'invalid_request', severity: 'error' });
@@ -217,13 +215,17 @@ const authRouteHandlers = app
     // Delete token(s) to prevent reuse
     await db.delete(tokensTable).where(eq(tokensTable.id, token.id));
 
-    // Determine session type
-    const type = user.twoFactorEnabled ? 'pending_2fa' : 'regular';
-    // Sign in user
-    const insertedToken = await setUserSession(ctx, user, 'email', type);
+    // Start 2FA challenge if the user has 2FA enabled
+    const twoFactorRedirectPath = await initiateTwoFactorAuth(ctx, user);
 
-    const redirectPath = type === 'pending_2fa' ? `/auth/2fa-confirm/${insertedToken}` : baseRedirectPath;
+    // Determine redirect url
+    const decodedRedirect = decodeURIComponent(redirect || '');
+    const baseRedirectPath = isValidRedirectPath(decodedRedirect) || appConfig.defaultRedirectPath;
+    const redirectPath = twoFactorRedirectPath || baseRedirectPath;
     const redirectUrl = new URL(redirectPath, appConfig.frontendUrl);
+
+    // If 2FA is not required, set  user session immediately
+    if (!twoFactorRedirectPath) await setUserSession(ctx, user, 'email');
 
     return ctx.redirect(redirectUrl, 302);
   })
@@ -305,12 +307,10 @@ const authRouteHandlers = app
       db.update(emailsTable).set({ verified: true, verifiedAt: getIsoDate() }).where(eq(emailsTable.email, user.email)),
     ]);
 
-    // Determine session type
-    const type = user.twoFactorEnabled ? 'pending_2fa' : 'regular';
-    // Sign in user
-    const insertedToken = await setUserSession(ctx, user, 'password', type);
-    if (type === 'pending_2fa') return ctx.json({ shouldRedirect: true, redirectPath: `/auth/2fa-confirm/${insertedToken}` }, 200);
+    const redirectPath = await initiateTwoFactorAuth(ctx, user);
+    if (redirectPath) return ctx.json({ shouldRedirect: true, redirectPath }, 200);
 
+    await setUserSession(ctx, user, 'password');
     return ctx.json({ shouldRedirect: false }, 200);
   })
   /*
@@ -347,11 +347,10 @@ const authRouteHandlers = app
       return ctx.json({ shouldRedirect: true, redirectPath: '/auth/email-verification/signin' }, 200);
     }
 
-    // Determine session type
-    const type = user.twoFactorEnabled ? 'pending_2fa' : 'regular';
-    const insertedToken = await setUserSession(ctx, user, 'password', type);
-    if (type === 'pending_2fa') return ctx.json({ shouldRedirect: true, redirectPath: `/auth/2fa-confirm/${insertedToken}` }, 200);
+    const redirectPath = await initiateTwoFactorAuth(ctx, user);
+    if (redirectPath) return ctx.json({ shouldRedirect: true, redirectPath }, 200);
 
+    await setUserSession(ctx, user, 'password');
     return ctx.json({ shouldRedirect: false }, 200);
   })
   /*
@@ -777,21 +776,32 @@ const authRouteHandlers = app
    * Passkey challenge
    */
   .openapi(authRoutes.getPasskeyChallenge, async (ctx) => {
-    const { email, token } = ctx.req.valid('query');
+    const { email, type } = ctx.req.valid('query');
 
-    // Generate random challenge
+    let userEmail: string | null = null;
+
+    // Generate a 32-byte random challenge and encode it as Base64
     const challenge = getRandomValues(new Uint8Array(32));
     const challengeBase64 = encodeBase64(challenge);
 
-    // Save challenge in cookie
+    // Save the challenge in a short-lived cookie (5 minutes)
     await setAuthCookie(ctx, 'passkey-challenge', challengeBase64, new TimeSpan(5, 'm'));
 
-    // If neither email nor token, return challenge with empty credentialIds
-    if (!email && !token) return ctx.json({ challengeBase64, credentialIds: [] }, 200);
+    // Normalize email if provided
+    if (email) {
+      userEmail = email.toLowerCase().trim();
+    }
 
-    // biome-ignore lint/style/noNonNullAssertion: Existense on either email or token handles in schcema
-    const userEmail = token ? (await validateSession(token)).user.email : email!.toLowerCase().trim();
+    // If this is a two_factor request, retrieve user from pending 2FA token
+    if (type === 'two_factor') {
+      const { user } = await validatePending2FAToken(ctx);
+      userEmail = user.email;
+    }
 
+    // If we still have no email, return challenge with empty credential list
+    if (!userEmail) return ctx.json({ challengeBase64, credentialIds: [] }, 200);
+
+    // Fetch all passkey credentials for this user
     const credentials = await db
       .select({ credentialId: passkeysTable.credentialId })
       .from(passkeysTable)
@@ -805,40 +815,38 @@ const authRouteHandlers = app
    * Verify passkey
    */
   .openapi(authRoutes.verifyPasskey, async (ctx) => {
-    const { clientDataJSON, authenticatorData, signature, email, token } = ctx.req.valid('json');
+    const { clientDataJSON, authenticatorData, signature, email, type } = ctx.req.valid('json');
     const strategy = 'passkey';
+    // Determine session type: regular login or 2FA flow
+    const sessionType = type === 'two_factor' ? 'two_factor_authentication' : 'regular';
 
     let user: UserModel | null = null;
-    let sessionType: Extract<SessionTypes, 'regular' | 'two_factor_authentication'> = 'regular';
 
-    // Find user by email
+    // Find user by email if provided
     if (email) {
       user = await getUserBy('email', email.toLowerCase());
     }
-    if (token) {
-      sessionType = 'two_factor_authentication';
 
-      // Find user by pending 2FA session
-      const { user: userFromSession } = await validateSession(token);
-
-      if (!userFromSession.twoFactorEnabled) {
-        throw new AppError({ status: 403, type: '2fa_not_enabled', severity: 'warn' });
-      }
-      user = userFromSession;
+    // Override user if this is a two_factor authentication
+    if (type === 'two_factor') {
+      const { user: userFromToken, tokenId } = await validatePending2FAToken(ctx);
+      await db.delete(tokensTable).where(eq(tokensTable.id, tokenId));
+      user = userFromToken;
     }
 
     const meta = { strategy, sessionType };
 
+    // Fail early if user not found
     if (!user) {
       throw new AppError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'user', meta });
     }
 
-    // Check if passkey challenge exists
+    // Retrieve the passkey challenge from cookie
     const challengeFromCookie = await getAuthCookie(ctx, 'passkey-challenge');
     if (!challengeFromCookie) throw new AppError({ status: 401, type: 'invalid_credentials', severity: 'warn', meta });
 
     // Get passkey credentials
-    const [credentials] = await db.select().from(passkeysTable).where(eq(passkeysTable.userEmail, user.email));
+    const [credentials] = await db.select().from(passkeysTable).where(eq(passkeysTable.userEmail, user.email)).limit(1);
     if (!credentials) throw new AppError({ status: 404, type: 'not_found', severity: 'warn', meta });
 
     try {
@@ -850,7 +858,9 @@ const authRouteHandlers = app
       }
     }
 
+    // Set user session after successful verification
     await setUserSession(ctx, user, 'passkey', sessionType);
+
     return ctx.json(true, 200);
   });
 

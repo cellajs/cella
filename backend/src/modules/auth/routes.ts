@@ -9,7 +9,7 @@ import {
   emailPasswordBodySchema,
   oauthCallbackQuerySchema,
   oauthQuerySchema,
-  passkeyChallengeQuerySchema,
+  passkeyBaseInfoSchema,
   passkeyChallengeSchema,
   passkeyVerificationBodySchema,
   tokenWithDataSchema,
@@ -354,7 +354,7 @@ const authRoutes = {
     summary: 'Get passkey challenge',
     description: 'Initiates the passkey registration or authentication flow by generating a device bound challenge.',
     security: [],
-    request: { query: passkeyChallengeQuerySchema },
+    request: { query: passkeyBaseInfoSchema },
     responses: {
       200: {
         description: 'Challenge created',

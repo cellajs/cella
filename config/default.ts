@@ -118,7 +118,7 @@ The documentation is generated from source code using \`zod\` schemas, converted
   enabledOAuthProviders: ['github'] as const,
 
   // Token types
-  tokenTypes: ['email_verification', 'password_reset', 'invitation'] as const,
+  tokenTypes: ['email_verification', 'password_reset', 'invitation', 'pending_2fa'] as const,
 
   // Optional settings
   has: {

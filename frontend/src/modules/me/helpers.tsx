@@ -25,8 +25,8 @@ export const passkeyRegistration = async () => {
   const user = useUserStore.getState().user;
 
   try {
-    // Random bytes generated on each attempt.
-    const { challengeBase64 } = await getPasskeyChallenge();
+    //  Fetch a challenge from BE
+    const { challengeBase64 } = await getPasskeyChallenge({ query: { type: 'registrate' } });
 
     // random ID for the authenticator
     const userId = new Uint8Array(20);

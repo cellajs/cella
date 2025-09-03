@@ -1,6 +1,3 @@
-import type { z } from '@hono/zod-openapi';
-import { eq } from 'drizzle-orm';
-import type { Context } from 'hono';
 import { db } from '#/db/db';
 import { type AuthStrategy, type SessionModel, type SessionTypes, sessionsTable } from '#/db/schema/sessions';
 import { type UserModel, usersTable } from '#/db/schema/users';
@@ -18,12 +15,15 @@ import { nanoid } from '#/utils/nanoid';
 import { encodeLowerCased } from '#/utils/oslo';
 import { sessionCookieSchema } from '#/utils/schema/session-cookie';
 import { createDate, TimeSpan } from '#/utils/time-span';
+import type { z } from '@hono/zod-openapi';
+import { eq } from 'drizzle-orm';
+import type { Context } from 'hono';
 
 /**
  * Sets a user session and stores it in the database.
  * Generates a session token, records device information, and optionally associates an admin user for impersonation.
  */
-export const setUserSession = async (ctx: Context, user: UserModel, strategy: AuthStrategy, type: SessionTypes = 'regular'): Promise<string> => {
+export const setUserSession = async (ctx: Context, user: UserModel, strategy: AuthStrategy, type: SessionTypes = 'regular'): Promise<void> => {
   if (user.role === 'admin' || type === 'impersonation') {
     const ip = getIp(ctx);
     const allowList = (env.REMOTE_SYSTEM_ACCESS_IP ?? '').split(',');
@@ -40,12 +40,7 @@ export const setUserSession = async (ctx: Context, user: UserModel, strategy: Au
   const hashedSessionToken = encodeLowerCased(sessionToken);
 
   // Calculate expiration
-  const timeSpan =
-    type === 'impersonation'
-      ? new TimeSpan(1, 'h')
-      : type === 'regular'
-        ? new TimeSpan(1, 'w') // default regular
-        : new TimeSpan(10, 'm'); // first step of 2fa
+  const timeSpan = type === 'impersonation' ? new TimeSpan(1, 'h') : new TimeSpan(1, 'w');
 
   const session = {
     token: hashedSessionToken,
@@ -61,24 +56,21 @@ export const setUserSession = async (ctx: Context, user: UserModel, strategy: Au
   };
 
   // Insert session
-  const [{ token: insertedToken }] = await db.insert(sessionsTable).values(session).returning({ token: sessionsTable.token });
+  await db.insert(sessionsTable).values(session);
 
-  if (type !== 'pending_2fa') {
-    const adminUser = getContextUser();
-    const cookieContent = `${hashedSessionToken}.${type === 'impersonation' ? adminUser.id : ''}`;
+  const adminUser = getContextUser();
+  const cookieContent = `${hashedSessionToken}.${type === 'impersonation' ? adminUser.id : ''}`;
 
-    // Set session cookie with the unhashed version
-    await setAuthCookie(ctx, 'session', cookieContent, timeSpan);
-  }
+  // Set session cookie with the unhashed version
+  await setAuthCookie(ctx, 'session', cookieContent, timeSpan);
 
-  // Update last sign in date
-  if (type === 'regular' || type === 'two_factor_authentication') {
-    const lastSignInAt = getIsoDate();
-    await db.update(usersTable).set({ lastSignInAt }).where(eq(usersTable.id, user.id));
-    logEvent('info', 'User signed in', { userId: user.id, strategy });
-  }
+  // Exit early if it's impersonation
+  if (type === 'impersonation') return;
 
-  return insertedToken;
+  // Update user last signIn
+  const lastSignInAt = getIsoDate();
+  await db.update(usersTable).set({ lastSignInAt }).where(eq(usersTable.id, user.id));
+  logEvent('info', 'User signed in', { userId: user.id, strategy });
 };
 
 /**

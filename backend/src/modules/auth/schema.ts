@@ -1,7 +1,7 @@
-import { z } from '@hono/zod-openapi';
 import { membershipSchema } from '#/modules/memberships/schema';
 import { userSchema } from '#/modules/users/schema';
 import { idSchema, passwordSchema } from '#/utils/schema/common';
+import { z } from '@hono/zod-openapi';
 
 export const emailBodySchema = z.object({
   email: userSchema.shape.email,
@@ -21,32 +21,37 @@ export const tokenWithDataSchema = z.object({
   organizationId: z.string().optional(),
 });
 
-export const passkeyChallengeQuerySchema = z
+const passkeyTypeSchema = z.union([
+  z.literal('registrate'), // User registrating a new passkey
+  z.literal('login'), // Normal passkey authentication
+  z.literal('two_factor'), // Passkey used as 2nd factor in 2FA
+]);
+
+export const passkeyBaseInfoSchema = z
   .object({
+    type: passkeyTypeSchema,
     email: z.string().optional(),
-    token: z.string().optional(),
   })
   .refine(
     (data) => {
-      const provided = [data.email, data.token].filter(Boolean).length;
-      return provided <= 1; // allow none or one
+      // For login, email must exist
+      if (data.type === 'login') return !!data.email;
+
+      return true;
     },
     {
-      message: 'You must provide either email or token, but not both',
+      message: 'Email is required for login/registration and must be absent for 2FA',
     },
   );
 
 export const passkeyChallengeSchema = z.object({ challengeBase64: z.string(), credentialIds: z.array(z.string()) });
 
-export const passkeyVerificationBodySchema = z
-  .object({
-    clientDataJSON: z.string(),
-    authenticatorData: z.string(),
-    signature: z.string(),
-    email: z.string().optional(),
-    token: z.string().optional(),
-  })
-  .refine((data) => !!data.email || !!data.token, { message: 'Either email or token must be provided' });
+export const passkeyVerificationBodySchema = z.object({
+  clientDataJSON: z.string(),
+  authenticatorData: z.string(),
+  signature: z.string(),
+  ...passkeyBaseInfoSchema.shape,
+});
 
 export const oauthQuerySchema = z
   .object({

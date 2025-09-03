@@ -4,20 +4,26 @@ import { useNavigate, useSearch } from '@tanstack/react-router';
 import { appConfig } from 'config';
 import { Fingerprint } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { type ApiError, getPasskeyChallenge, type SignInWithPasskeyData, type SignInWithPasskeyResponse, signInWithPasskey } from '~/api.gen';
+import {
+  type ApiError,
+  type GetPasskeyChallengeData,
+  type SignInWithPasskeyData,
+  type SignInWithPasskeyResponse,
+  getPasskeyChallenge,
+  signInWithPasskey,
+} from '~/api.gen';
 import type { AuthStep } from '~/modules/auth/types';
 import { toaster } from '~/modules/common/toaster/service';
 import { Button } from '~/modules/ui/button';
 import { useUIStore } from '~/store/ui';
 
-interface PasskeyOptionBase {
-  actionType?: AuthStep;
+interface PasskeyOptionProps {
+  email?: string;
+  actionType: Exclude<GetPasskeyChallengeData['query']['type'], 'registrate'>;
+  authStep: AuthStep;
 }
 
-// Either email OR token is required
-type PasskeyOptionProps = (PasskeyOptionBase & { email: string; token?: never }) | (PasskeyOptionBase & { token: string; email?: never });
-
-const PasskeyOption = ({ email, token, actionType = 'signIn' }: PasskeyOptionProps) => {
+const PasskeyOption = ({ email, actionType, authStep }: PasskeyOptionProps) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const mode = useUIStore((state) => state.mode);
@@ -28,7 +34,7 @@ const PasskeyOption = ({ email, token, actionType = 'signIn' }: PasskeyOptionPro
   const { mutate: passkeyAuth } = useMutation<SignInWithPasskeyResponse, ApiError | Error, NonNullable<SignInWithPasskeyData['body']>['email']>({
     mutationFn: async (email) => {
       //  Fetch a challenge from BE
-      const { challengeBase64, credentialIds } = await getPasskeyChallenge({ query: { email, token } });
+      const { challengeBase64, credentialIds } = await getPasskeyChallenge({ query: { email, type: actionType } });
 
       // Decode  challenge and wrap it in a Uint8Array (required format)
       const raw = decodeBase64(challengeBase64);
@@ -58,7 +64,7 @@ const PasskeyOption = ({ email, token, actionType = 'signIn' }: PasskeyOptionPro
         authenticatorData: encodeBase64(new Uint8Array(response.authenticatorData)),
         signature: encodeBase64(new Uint8Array(response.signature)),
         email,
-        token,
+        type: actionType,
       };
 
       // Send signed response to BE to complete authentication
@@ -76,8 +82,7 @@ const PasskeyOption = ({ email, token, actionType = 'signIn' }: PasskeyOptionPro
       <Button type="button" onClick={() => passkeyAuth(email)} variant="plain" className="w-full gap-1.5">
         <Fingerprint size={16} />
         <span>
-          {actionType === 'signIn' || actionType === 'confirn2FA' ? t('common:sign_in') : t('common:sign_up')} {t('common:with').toLowerCase()}{' '}
-          {t('common:passkey').toLowerCase()}
+          {authStep === 'signIn' ? t('common:sign_in') : t('common:sign_up')} {t('common:with').toLowerCase()} {t('common:passkey').toLowerCase()}
         </span>
       </Button>
     </div>

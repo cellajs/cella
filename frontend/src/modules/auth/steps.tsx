@@ -98,7 +98,7 @@ const AuthSteps = () => {
             </div>
           )}
           {/* TODO(2fa) hide if 2fa enabled for user  */}
-          {enabledStrategies.includes('passkey') && <PasskeyOption email={email} actionType={step} />}
+          {enabledStrategies.includes('passkey') && <PasskeyOption email={email} actionType="login" authStep={step} />}
           {enabledStrategies.includes('oauth') && <OAuthOptions actionType={step} />}
         </>
       )}

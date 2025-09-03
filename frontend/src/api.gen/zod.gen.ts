@@ -356,7 +356,7 @@ export const zValidateTokenData = z.object({
     id: z.string(),
   }),
   query: z.object({
-    type: z.enum(['email_verification', 'password_reset', 'invitation']),
+    type: z.enum(['email_verification', 'password_reset', 'invitation', 'pending_2fa']),
   }),
 });
 
@@ -500,12 +500,10 @@ export const zMicrosoftSignInCallbackData = z.object({
 export const zGetPasskeyChallengeData = z.object({
   body: z.optional(z.never()),
   path: z.optional(z.never()),
-  query: z.optional(
-    z.object({
-      email: z.optional(z.string()),
-      token: z.optional(z.string()),
-    }),
-  ),
+  query: z.object({
+    type: z.union([z.enum(['registrate']), z.enum(['login']), z.enum(['two_factor'])]),
+    email: z.optional(z.string()),
+  }),
 });
 
 /**
@@ -522,8 +520,8 @@ export const zSignInWithPasskeyData = z.object({
       clientDataJSON: z.string(),
       authenticatorData: z.string(),
       signature: z.string(),
+      type: z.union([z.enum(['registrate']), z.enum(['login']), z.enum(['two_factor'])]),
       email: z.optional(z.string()),
-      token: z.optional(z.string()),
     }),
   ),
   path: z.optional(z.never()),
@@ -601,7 +599,7 @@ export const zGetMyAuthResponse = z.object({
     z.object({
       createdAt: z.string(),
       id: z.string(),
-      type: z.enum(['regular', 'impersonation', 'pending_2fa', 'two_factor_authentication']),
+      type: z.enum(['regular', 'impersonation', 'two_factor_authentication']),
       userId: z.string(),
       deviceName: z.union([z.string(), z.null()]),
       deviceType: z.enum(['desktop', 'mobile']),

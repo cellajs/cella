@@ -176,8 +176,10 @@
   "organization_mismatch":"This item is linked to a different organization than the one you're currently using. Please switch to the appropriate organization or ask your administrator for access.",
   "session_expired": "Session Expired",
   "session_expired.text": "Your authentication session has expired. Please log in again to continue.",
-  "2fa_expired": "Session Expired",
-  "2fa_expired.text": "Your two-factor authentication session has expired. Please log in again to continue.",
-  "2fa_not_enabled" : "2FA Not Enabled",
-  "2fa_not_enabled.text" : "Two-factor authentication is not enabled for this account."
+  "2fa_not_enabled": "2FA Not Enabled",
+  "2fa_not_enabled.text": "Two-factor authentication is not enabled for this account.",
+   "pending_2fa_not_found": "Verification token not found",
+  "pending_2fa_not_found.text": "We couldn't find your verification token. Please sign in again to continue.",
+  "pending_2fa_expired": "Verification step expired",
+  "pending_2fa_n_expired.text": "Your verification token has expired or is invalid. Please sign in again to continue."
 }

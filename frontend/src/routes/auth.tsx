@@ -47,7 +47,7 @@ export const AuthenticateRoute = createRoute({
 });
 
 export const Confirn2FARoute = createRoute({
-  path: '/auth/2fa-confirm/$token',
+  path: '/auth/2fa-confirm',
   staticData: { isAuth: false },
   head: () => ({ meta: [{ title: appTitle('2FA confirm') }] }),
   getParentRoute: () => AuthLayoutRoute,

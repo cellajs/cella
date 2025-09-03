@@ -673,12 +673,12 @@ export const microsoftSignInCallback = <ThrowOnError extends boolean = true>(opt
  * **GET /auth/passkey-challenge** ·· [getPasskeyChallenge](http://localhost:4000/docs#tag/auth/get/auth/passkey-challenge) ·· _auth_
  *
  * @param {getPasskeyChallengeData} options
+ * @param {enum | enum | enum} options.query.type - `enum | enum | enum`
  * @param {string=} options.query.email - `string` (optional)
- * @param {string=} options.query.token - `string` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
-export const getPasskeyChallenge = <ThrowOnError extends boolean = true>(options?: Options<GetPasskeyChallengeData, ThrowOnError>) => {
-  return (options?.client ?? _heyApiClient).get<GetPasskeyChallengeResponses, GetPasskeyChallengeErrors, ThrowOnError, 'data'>({
+export const getPasskeyChallenge = <ThrowOnError extends boolean = true>(options: Options<GetPasskeyChallengeData, ThrowOnError>) => {
+  return (options.client ?? _heyApiClient).get<GetPasskeyChallengeResponses, GetPasskeyChallengeErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     url: '/auth/passkey-challenge',
     ...options,
@@ -698,8 +698,8 @@ export const getPasskeyChallenge = <ThrowOnError extends boolean = true>(options
  * @param {string=} options.body.clientDataJSON - `string` (optional)
  * @param {string=} options.body.authenticatorData - `string` (optional)
  * @param {string=} options.body.signature - `string` (optional)
+ * @param {enum | enum | enum=} options.body.type - `enum | enum | enum` (optional)
  * @param {string=} options.body.email - `string` (optional)
- * @param {string=} options.body.token - `string` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
 export const signInWithPasskey = <ThrowOnError extends boolean = true>(options?: Options<SignInWithPasskeyData, ThrowOnError>) => {

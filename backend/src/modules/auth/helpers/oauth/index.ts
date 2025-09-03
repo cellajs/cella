@@ -1,12 +1,10 @@
-import { appConfig, type EnabledOAuthProvider } from 'config';
-import { and, eq } from 'drizzle-orm';
-import type { Context } from 'hono';
 import { db } from '#/db/db';
 import { emailsTable } from '#/db/schema/emails';
 import { type OAuthAccountModel, oauthAccountsTable } from '#/db/schema/oauth-accounts';
 import { type TokenModel, tokensTable } from '#/db/schema/tokens';
 import { type UserModel, usersTable } from '#/db/schema/users';
 import { AppError } from '#/lib/errors';
+import { initiateTwoFactorAuth } from '#/modules/auth/helpers/2fa';
 import { getAuthCookie } from '#/modules/auth/helpers/cookie';
 import type { Provider } from '#/modules/auth/helpers/oauth/oauth-providers';
 import type { TransformedUser } from '#/modules/auth/helpers/oauth/transform-user-data';
@@ -16,6 +14,9 @@ import { handleCreateUser } from '#/modules/auth/helpers/user';
 import { getUsersByConditions } from '#/modules/users/helpers/get-user-by';
 import { isValidRedirectPath } from '#/utils/is-redirect-url';
 import { getIsoDate } from '#/utils/iso-date';
+import { appConfig, type EnabledOAuthProvider } from 'config';
+import { and, eq } from 'drizzle-orm';
+import type { Context } from 'hono';
 
 /**
  * Retrieves the OAuth redirect path from a cookie, or falls back to a default.
@@ -351,12 +352,15 @@ const getUserByOAuthAccount = async (oauthAccount: OAuthAccountModel): Promise<U
  * @returns A redirect response.
  */
 const handleVerifiedOAuthAccount = async (ctx: Context, user: UserModel, oauthAccount: OAuthAccountModel): Promise<Response> => {
-  const type = user.twoFactorEnabled ? 'pending_2fa' : 'regular';
+  // Start 2FA challenge if the user has 2FA enabled
+  const twoFactorRedirectPath = await initiateTwoFactorAuth(ctx, user);
 
-  const insertedToken = await setUserSession(ctx, user, oauthAccount.providerId);
-
-  const redirectPath = type === 'pending_2fa' ? `/auth/2fa-confirm/${insertedToken}` : await getOAuthRedirectPath(ctx);
+  // Determine final redirect path
+  const redirectPath = twoFactorRedirectPath || (await getOAuthRedirectPath(ctx));
   const redirectUrl = new URL(redirectPath, appConfig.frontendUrl);
+
+  // If 2FA is not required, set  user session immediately
+  if (!twoFactorRedirectPath) await setUserSession(ctx, user, oauthAccount.providerId);
 
   return ctx.redirect(redirectUrl, 302);
 };

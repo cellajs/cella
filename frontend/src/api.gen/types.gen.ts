@@ -608,7 +608,7 @@ export type ValidateTokenData = {
     id: string;
   };
   query: {
-    type: 'email_verification' | 'password_reset' | 'invitation';
+    type: 'email_verification' | 'password_reset' | 'invitation' | 'pending_2fa';
   };
   url: '/auth/validate-token/{id}';
 };
@@ -1166,9 +1166,9 @@ export type MicrosoftSignInCallbackError = MicrosoftSignInCallbackErrors[keyof M
 export type GetPasskeyChallengeData = {
   body?: never;
   path?: never;
-  query?: {
+  query: {
+    type: 'registrate' | 'login' | 'two_factor';
     email?: string;
-    token?: string;
   };
   url: '/auth/passkey-challenge';
 };
@@ -1225,8 +1225,8 @@ export type SignInWithPasskeyData = {
     clientDataJSON: string;
     authenticatorData: string;
     signature: string;
+    type: 'registrate' | 'login' | 'two_factor';
     email?: string;
-    token?: string;
   };
   path?: never;
   query?: never;
@@ -1495,7 +1495,7 @@ export type GetMyAuthResponses = {
     sessions: Array<{
       createdAt: string;
       id: string;
-      type: 'regular' | 'impersonation' | 'pending_2fa' | 'two_factor_authentication';
+      type: 'regular' | 'impersonation' | 'two_factor_authentication';
       userId: string;
       deviceName: string | null;
       deviceType: 'desktop' | 'mobile';
