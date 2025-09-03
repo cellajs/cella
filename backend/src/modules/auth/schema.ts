@@ -26,7 +26,15 @@ export const passkeyChallengeQuerySchema = z
     email: z.string().optional(),
     token: z.string().optional(),
   })
-  .refine((data) => (data.email ? !data.token : !!data.token), { message: 'You must provide either email or token, but not both' });
+  .refine(
+    (data) => {
+      const provided = [data.email, data.token].filter(Boolean).length;
+      return provided <= 1; // allow none or one
+    },
+    {
+      message: 'You must provide either email or token, but not both',
+    },
+  );
 
 export const passkeyChallengeSchema = z.object({ challengeBase64: z.string(), credentialIds: z.array(z.string()) });
 

@@ -1,29 +1,27 @@
 import { onlineManager } from '@tanstack/react-query';
 import { Check, Fingerprint, RotateCw, Trash } from 'lucide-react';
-import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toaster } from '~/modules/common/toaster/service';
 import { passkeyRegistration } from '~/modules/me/helpers';
 import { useDeletePasskeyMutation } from '~/modules/me/query';
-import type { MeAuthData } from '~/modules/me/types';
 import { Button } from '~/modules/ui/button';
+import { useUserStore } from '~/store/user';
 
-const Passkeys = ({ userAuthData }: { userAuthData: MeAuthData }) => {
+const Passkeys = () => {
   const { t } = useTranslation();
-
-  const [hasPasskey, setHasPasskey] = useState(userAuthData.hasPasskey);
+  const { hasPasskey, setMeAuthData } = useUserStore.getState();
 
   const { mutate: deletePasskey } = useDeletePasskeyMutation();
 
   const handlePasskeyRegistration = async () => {
     const success = await passkeyRegistration();
-    if (success) setHasPasskey(true);
+    if (success) setMeAuthData({ hasPasskey: true });
   };
 
   const handleDeletePasskey = () => {
     if (!onlineManager.isOnline()) return toaster(t('common:action.offline.text'), 'warning');
 
-    deletePasskey(void 0, { onSuccess: () => setHasPasskey(false) });
+    deletePasskey();
   };
 
   return (

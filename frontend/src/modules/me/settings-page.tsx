@@ -1,10 +1,9 @@
 import { onlineManager, useMutation } from '@tanstack/react-query';
-import { useLoaderData } from '@tanstack/react-router';
 import { appConfig, type EnabledOAuthProvider } from 'config';
 import { Check, Send, Trash } from 'lucide-react';
 import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { type ApiError, type RequestPasswordData, type RequestPasswordResponse, requestPassword } from '~/api.gen';
+import { requestPassword, type ApiError, type RequestPasswordData, type RequestPasswordResponse } from '~/api.gen';
 import { mapOAuthProviders } from '~/modules/auth/oauth-options';
 import { AsideAnchor } from '~/modules/common/aside-anchor';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
@@ -20,7 +19,6 @@ import SessionsList from '~/modules/me/session/list';
 import { Button } from '~/modules/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/modules/ui/card';
 import UpdateUserForm from '~/modules/users/update-user-form';
-import { UserSettingsRoute } from '~/routes/users';
 import { useUIStore } from '~/store/ui';
 import { useUserStore } from '~/store/user';
 import { TwoFactorAuthentication } from './two-factor-auth';
@@ -36,8 +34,7 @@ const UserSettingsPage = () => {
   const { t } = useTranslation();
   const { user } = useUserStore();
   const mode = useUIStore((state) => state.mode);
-  // Get user auth info from route
-  const userAuthData = useLoaderData({ from: UserSettingsRoute.id });
+  const { enabledOAuth } = useUserStore.getState();
 
   const deleteButtonRef = useRef(null);
 
@@ -122,7 +119,7 @@ const UserSettingsPage = () => {
               <CardDescription>{t('common:sessions.text')}</CardDescription>
             </CardHeader>
             <CardContent>
-              <SessionsList userAuthData={userAuthData} />
+              <SessionsList />
             </CardContent>
           </Card>
         </AsideAnchor>
@@ -137,7 +134,7 @@ const UserSettingsPage = () => {
               <HelpText content={t('common:passkey.text')}>
                 <p className="font-semibold">{t('common:passkey')}</p>
               </HelpText>
-              <Passkeys userAuthData={userAuthData} />
+              <Passkeys />
               <HelpText content={t('common:oauth.text')}>
                 <p className="font-semibold">{t('common:oauth')}</p>
               </HelpText>
@@ -145,7 +142,7 @@ const UserSettingsPage = () => {
                 {appConfig.enabledOAuthProviders.map((id) => {
                   const provider = mapOAuthProviders.find((provider) => provider.id === id);
                   if (!provider) return null;
-                  if (userAuthData.enabledOAuth.includes(id))
+                  if (enabledOAuth.includes(id)) {
                     return (
                       <div key={provider.id} className="flex items-center justify-center px-3 py-2 gap-2">
                         <img
@@ -158,6 +155,7 @@ const UserSettingsPage = () => {
                         {`${t('common:already_connected_to')} ${provider.name}`}
                       </div>
                     );
+                  }
                   return (
                     // Assert is necessary because apps might not have all providers enabled
                     <Button
@@ -188,7 +186,7 @@ const UserSettingsPage = () => {
                 {disabledResetPassword && <p className="text-sm text-gray-500 mt-2">{t('common:retry_reset_password.text')}</p>}
               </div>
 
-              <TwoFactorAuthentication userAuthData={userAuthData} />
+              <TwoFactorAuthentication />
             </CardContent>
           </Card>
         </AsideAnchor>
