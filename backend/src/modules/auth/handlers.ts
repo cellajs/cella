@@ -51,7 +51,8 @@ import { nanoid } from '#/utils/nanoid';
 import { slugFromEmail } from '#/utils/slug-from-email';
 import { createDate, TimeSpan } from '#/utils/time-span';
 import { OpenAPIHono } from '@hono/zod-openapi';
-import { encodeBase64 } from '@oslojs/encoding';
+import { encodeBase32, encodeBase64 } from '@oslojs/encoding';
+import { createTOTPKeyURI } from '@oslojs/otp';
 import { generateCodeVerifier, generateState, OAuth2RequestError } from 'arctic';
 import { appConfig, type EnabledOAuthProvider } from 'config';
 import { and, desc, eq, isNotNull, isNull } from 'drizzle-orm';
@@ -862,6 +863,24 @@ const authRouteHandlers = app
     await setUserSession(ctx, user, 'passkey', sessionType);
 
     return ctx.json(true, 200);
+  })
+  /*
+   * TOTP uri
+   */
+  .openapi(authRoutes.getTOTPUri, async (ctx) => {
+    // Generate a 20-byte random secret and encode it as Base32
+    const secret = crypto.getRandomValues(new Uint8Array(20));
+    const manualKey = encodeBase32(secret);
+
+    const { user } = await validatePending2FAToken(ctx);
+
+    // Save the secret in a short-lived cookie (5 minutes)
+    await setAuthCookie(ctx, 'totp-key', manualKey, new TimeSpan(5, 'm'));
+
+    // otpauth:// URI for QR scanner apps
+    const totpUri = createTOTPKeyURI(appConfig.name, user.email, secret, 30, 6);
+
+    return ctx.json({ totpUri, manualKey }, 200);
   });
 
 export default authRouteHandlers;

@@ -1277,6 +1277,60 @@ export type SignInWithPasskeyResponses = {
 
 export type SignInWithPasskeyResponse = SignInWithPasskeyResponses[keyof SignInWithPasskeyResponses];
 
+export type GetToptUriData = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: '/auth/totp-uri';
+};
+
+export type GetToptUriErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: ApiError & {
+    status?: 400;
+  };
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: ApiError & {
+    status?: 401;
+  };
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ApiError & {
+    status?: 403;
+  };
+  /**
+   * Not found: resource does not exist.
+   */
+  404: ApiError & {
+    status?: 404;
+  };
+  /**
+   * Rate limit: too many requests.
+   */
+  429: ApiError & {
+    status?: 429;
+  };
+};
+
+export type GetToptUriError = GetToptUriErrors[keyof GetToptUriErrors];
+
+export type GetToptUriResponses = {
+  /**
+   * TOTP URI and manual key
+   */
+  200: {
+    totpUri: string;
+    manualKey: string;
+  };
+};
+
+export type GetToptUriResponse = GetToptUriResponses[keyof GetToptUriResponses];
+
 export type DeleteMeData = {
   body?: never;
   path?: never;

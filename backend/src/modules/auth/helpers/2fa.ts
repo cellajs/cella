@@ -52,7 +52,7 @@ export const initiateTwoFactorAuth = async (ctx: Context, user: UserModel) => {
 export const validatePending2FAToken = async (ctx: Context) => {
   // Read token from cookie
   const tokenIdFromCookie = await getAuthCookie(ctx, 'pending-2fa');
-  if (!tokenIdFromCookie) throw new AppError({ status: 401, type: 'invalid_credentials', severity: 'error', isRedirect: true });
+  if (!tokenIdFromCookie) throw new AppError({ status: 401, type: 'invalid_credentials', severity: 'error' });
 
   // Look up token in the database
   const [tokenRecord] = await db
@@ -61,11 +61,11 @@ export const validatePending2FAToken = async (ctx: Context) => {
     .innerJoin(usersTable, eq(usersTable.id, tokensTable.userId))
     .where(eq(tokensTable.id, tokenIdFromCookie))
     .limit(1);
-  if (!tokenRecord) throw new AppError({ status: 404, type: 'pending_2fa_not_found', severity: 'warn', isRedirect: true });
+  if (!tokenRecord) throw new AppError({ status: 404, type: 'pending_2fa_not_found', severity: 'warn' });
 
   const { user, tokenId, tokenExpiredAt } = tokenRecord;
   // If token is expired, return an error
-  if (isExpiredDate(tokenExpiredAt)) throw new AppError({ status: 401, type: 'pending_2fa_expired', severity: 'warn', isRedirect: true });
+  if (isExpiredDate(tokenExpiredAt)) throw new AppError({ status: 401, type: 'pending_2fa_expired', severity: 'warn' });
 
   return { user, tokenId };
 };

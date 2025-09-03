@@ -533,6 +533,20 @@ export const zSignInWithPasskeyData = z.object({
  */
 export const zSignInWithPasskeyResponse = z.boolean();
 
+export const zGetToptUriData = z.object({
+  body: z.optional(z.never()),
+  path: z.optional(z.never()),
+  query: z.optional(z.never()),
+});
+
+/**
+ * TOTP URI and manual key
+ */
+export const zGetToptUriResponse = z.object({
+  totpUri: z.string(),
+  manualKey: z.string(),
+});
+
 export const zDeleteMeData = z.object({
   body: z.optional(z.never()),
   path: z.optional(z.never()),

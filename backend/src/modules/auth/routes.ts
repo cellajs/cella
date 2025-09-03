@@ -1,5 +1,3 @@
-import { z } from '@hono/zod-openapi';
-import { appConfig } from 'config';
 import { createCustomRoute } from '#/lib/custom-routes';
 import { hasSystemAccess, isAuthenticated, isPublicAccess } from '#/middlewares/guard';
 import { hasValidToken } from '#/middlewares/has-valid-token';
@@ -17,6 +15,8 @@ import {
 import { contextEntityWithMembershipSchema } from '#/modules/entities/schema';
 import { cookieSchema, idSchema, locationSchema, passwordSchema, tokenParamSchema } from '#/utils/schema/common';
 import { errorResponses, redirectResponseSchema, successWithoutDataSchema } from '#/utils/schema/responses';
+import { z } from '@hono/zod-openapi';
+import { appConfig } from 'config';
 
 const authRoutes = {
   startImpersonation: createCustomRoute({
@@ -43,6 +43,7 @@ const authRoutes = {
       ...errorResponses,
     },
   }),
+
   stopImpersonation: createCustomRoute({
     operationId: 'stopImpersonation',
     method: 'get',
@@ -63,6 +64,7 @@ const authRoutes = {
       ...errorResponses,
     },
   }),
+
   checkEmail: createCustomRoute({
     operationId: 'checkEmail',
     method: 'post',
@@ -94,6 +96,7 @@ const authRoutes = {
       ...errorResponses,
     },
   }),
+
   signUp: createCustomRoute({
     operationId: 'signUp',
     method: 'post',
@@ -122,6 +125,7 @@ const authRoutes = {
       ...errorResponses,
     },
   }),
+
   signUpWithToken: createCustomRoute({
     operationId: 'signUpWithToken',
     method: 'post',
@@ -168,6 +172,7 @@ const authRoutes = {
       ...errorResponses,
     },
   }),
+
   requestPassword: createCustomRoute({
     operationId: 'requestPassword',
     method: 'post',
@@ -189,6 +194,7 @@ const authRoutes = {
       ...errorResponses,
     },
   }),
+
   createPasswordWithToken: createCustomRoute({
     operationId: 'createPassword',
     method: 'post',
@@ -211,6 +217,48 @@ const authRoutes = {
       ...errorResponses,
     },
   }),
+
+  getTOTPUri: createCustomRoute({
+    operationId: 'getTOPTUri',
+    method: 'get',
+    path: '/totp-uri',
+    guard: isPublicAccess,
+    // TODO look into rate limit customized for totp
+    middleware: [spamLimiter],
+    tags: ['auth'],
+    summary: 'Get TOTP setup URI and manual key',
+    description: 'Generates a new TOTP secret for the current user and returns both the QR URI and Base32 manual key',
+    security: [],
+    responses: {
+      200: {
+        description: 'TOTP URI and manual key',
+        content: { 'application/json': { schema: z.object({ totpUri: z.string(), manualKey: z.string() }) } },
+      },
+      ...errorResponses,
+    },
+  }),
+
+  getPasskeyChallenge: createCustomRoute({
+    operationId: 'getPasskeyChallenge',
+    method: 'get',
+    path: '/passkey-challenge',
+    guard: isPublicAccess,
+    // TODO look into rate limit customized for passkeys
+    middleware: [spamLimiter],
+    tags: ['auth'],
+    summary: 'Get passkey challenge',
+    description: 'Initiates the passkey registration or authentication flow by generating a device bound challenge.',
+    security: [],
+    request: { query: passkeyBaseInfoSchema },
+    responses: {
+      200: {
+        description: 'Challenge created',
+        content: { 'application/json': { schema: passkeyChallengeSchema } },
+      },
+      ...errorResponses,
+    },
+  }),
+
   verifyPasskey: createCustomRoute({
     operationId: 'signInWithPasskey',
     method: 'post',
@@ -232,6 +280,7 @@ const authRoutes = {
       ...errorResponses,
     },
   }),
+
   signIn: createCustomRoute({
     operationId: 'signIn',
     method: 'post',
@@ -254,6 +303,7 @@ const authRoutes = {
       ...errorResponses,
     },
   }),
+
   validateToken: createCustomRoute({
     operationId: 'validateToken',
     method: 'post',
@@ -275,6 +325,7 @@ const authRoutes = {
       ...errorResponses,
     },
   }),
+
   acceptEntityInvite: createCustomRoute({
     operationId: 'acceptEntityInvite',
     method: 'post',
@@ -299,6 +350,7 @@ const authRoutes = {
       ...errorResponses,
     },
   }),
+
   githubSignIn: createCustomRoute({
     operationId: 'githubSignIn',
     method: 'get',
@@ -318,6 +370,7 @@ const authRoutes = {
       ...errorResponses,
     },
   }),
+
   githubSignInCallback: createCustomRoute({
     operationId: 'githubSignInCallback',
     method: 'get',
@@ -343,26 +396,7 @@ const authRoutes = {
       ...errorResponses,
     },
   }),
-  getPasskeyChallenge: createCustomRoute({
-    operationId: 'getPasskeyChallenge',
-    method: 'get',
-    path: '/passkey-challenge',
-    guard: isPublicAccess,
-    // TODO look into rate limit customized for passkeys
-    middleware: [spamLimiter],
-    tags: ['auth'],
-    summary: 'Get passkey challenge',
-    description: 'Initiates the passkey registration or authentication flow by generating a device bound challenge.',
-    security: [],
-    request: { query: passkeyBaseInfoSchema },
-    responses: {
-      200: {
-        description: 'Challenge created',
-        content: { 'application/json': { schema: passkeyChallengeSchema } },
-      },
-      ...errorResponses,
-    },
-  }),
+
   googleSignIn: createCustomRoute({
     operationId: 'googleSignIn',
     method: 'get',
@@ -382,6 +416,7 @@ const authRoutes = {
       ...errorResponses,
     },
   }),
+
   googleSignInCallback: createCustomRoute({
     operationId: 'googleSignInCallback',
     method: 'get',
@@ -401,6 +436,7 @@ const authRoutes = {
       ...errorResponses,
     },
   }),
+
   microsoftSignIn: createCustomRoute({
     operationId: 'microsoftSignIn',
     method: 'get',
@@ -420,6 +456,7 @@ const authRoutes = {
       ...errorResponses,
     },
   }),
+
   microsoftSignInCallback: createCustomRoute({
     operationId: 'microsoftSignInCallback',
     method: 'get',
@@ -439,6 +476,7 @@ const authRoutes = {
       ...errorResponses,
     },
   }),
+
   signOut: createCustomRoute({
     operationId: 'signOut',
     method: 'get',
