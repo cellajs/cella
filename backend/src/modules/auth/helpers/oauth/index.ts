@@ -1,3 +1,6 @@
+import { appConfig, type EnabledOAuthProvider } from 'config';
+import { and, eq } from 'drizzle-orm';
+import type { Context } from 'hono';
 import { db } from '#/db/db';
 import { emailsTable } from '#/db/schema/emails';
 import { type OAuthAccountModel, oauthAccountsTable } from '#/db/schema/oauth-accounts';
@@ -13,9 +16,6 @@ import { handleCreateUser } from '#/modules/auth/helpers/user';
 import { getUsersByConditions } from '#/modules/users/helpers/get-user-by';
 import { isValidRedirectPath } from '#/utils/is-redirect-url';
 import { getIsoDate } from '#/utils/iso-date';
-import { appConfig, type EnabledOAuthProvider } from 'config';
-import { and, eq } from 'drizzle-orm';
-import type { Context } from 'hono';
 
 /**
  * Retrieves the OAuth redirect path from a cookie, or falls back to a default.

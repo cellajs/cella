@@ -1,3 +1,7 @@
+import * as Sentry from '@sentry/node';
+import { and, eq, isNotNull } from 'drizzle-orm';
+import type { MiddlewareHandler } from 'hono';
+import { createMiddleware } from 'hono/factory';
 import { db } from '#/db/db';
 import { membershipsTable } from '#/db/schema/memberships';
 import { usersTable } from '#/db/schema/users';
@@ -8,10 +12,6 @@ import { deleteAuthCookie } from '#/modules/auth/helpers/cookie';
 import { getParsedSessionCookie, validateSession } from '#/modules/auth/helpers/session';
 import { membershipBaseSelect } from '#/modules/memberships/helpers/select';
 import { TimeSpan } from '#/utils/time-span';
-import * as Sentry from '@sentry/node';
-import { and, eq, isNotNull } from 'drizzle-orm';
-import type { MiddlewareHandler } from 'hono';
-import { createMiddleware } from 'hono/factory';
 
 /**
  * Middleware to ensure that the user is authenticated by checking the session cookie.

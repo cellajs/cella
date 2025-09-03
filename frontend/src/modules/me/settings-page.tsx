@@ -3,7 +3,7 @@ import { appConfig, type EnabledOAuthProvider } from 'config';
 import { Check, Send, Trash } from 'lucide-react';
 import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { requestPassword, type ApiError, type RequestPasswordData, type RequestPasswordResponse } from '~/api.gen';
+import { type ApiError, type RequestPasswordData, type RequestPasswordResponse, requestPassword } from '~/api.gen';
 import { mapOAuthProviders } from '~/modules/auth/oauth-options';
 import { AsideAnchor } from '~/modules/common/aside-anchor';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';

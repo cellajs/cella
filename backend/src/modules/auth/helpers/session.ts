@@ -1,3 +1,6 @@
+import type { z } from '@hono/zod-openapi';
+import { eq } from 'drizzle-orm';
+import type { Context } from 'hono';
 import { db } from '#/db/db';
 import { type AuthStrategy, type SessionModel, type SessionTypes, sessionsTable } from '#/db/schema/sessions';
 import { type UserModel, usersTable } from '#/db/schema/users';
@@ -15,9 +18,6 @@ import { nanoid } from '#/utils/nanoid';
 import { encodeLowerCased } from '#/utils/oslo';
 import { sessionCookieSchema } from '#/utils/schema/session-cookie';
 import { createDate, TimeSpan } from '#/utils/time-span';
-import type { z } from '@hono/zod-openapi';
-import { and, eq } from 'drizzle-orm';
-import type { Context } from 'hono';
 
 /**
  * Sets a user session and stores it in the database.
@@ -100,27 +100,18 @@ export const validateSession = async (hashedSessionToken: string): Promise<{ ses
   const { session } = result;
 
   // Check if the session has expired and invalidate it if so
-  if (isExpiredDate(session.expiresAt)) {
-    await invalidateSessionById(session.id, session.userId);
-    throw new AppError({ status: 401, type: 'session_expired', severity: 'warn' });
-  }
+  if (isExpiredDate(session.expiresAt)) throw new AppError({ status: 401, type: 'session_expired', severity: 'warn' });
 
   await db.update(sessionsTable).set({ consumedAt: new Date() });
   return result;
 };
 
-// Invalidate single session with session id
-export const invalidateSessionById = async (id: string, userId: string) => {
-  await db.delete(sessionsTable).where(and(eq(sessionsTable.id, id), eq(sessionsTable.userId, userId)));
+type ParseSessionCookieOptions = {
+  redirectOnError?: boolean;
+  deleteOnError?: boolean;
+  deleteAfterAttempt?: boolean;
 };
 
-type ParseSessionCookieOptions =
-  | {
-      redirectOnError?: boolean;
-      deleteOnError?: boolean;
-      deleteAfterAttempt?: boolean;
-    }
-  | undefined;
 export const getParsedSessionCookie = async (ctx: Context, options?: ParseSessionCookieOptions): Promise<z.infer<typeof sessionCookieSchema>> => {
   const { redirectOnError = false, deleteOnError = false, deleteAfterAttempt = false } = options ?? {};
   try {

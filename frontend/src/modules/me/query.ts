@@ -1,7 +1,7 @@
 import { queryOptions, useMutation } from '@tanstack/react-query';
 import { t } from 'i18next';
 import type { User } from '~/api.gen';
-import { deletePasskey, getMyInvites, updateMe, type UpdateMeData } from '~/api.gen';
+import { deletePasskey, getMyInvites, type UpdateMeData, updateMe } from '~/api.gen';
 import type { ApiError } from '~/lib/api';
 import { toaster } from '~/modules/common/toaster/service';
 import { getAndSetMe, getAndSetMeAuthData, getAndSetMenu } from '~/modules/me/helpers';

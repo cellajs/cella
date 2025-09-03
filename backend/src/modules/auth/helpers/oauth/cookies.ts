@@ -1,3 +1,6 @@
+import { appConfig } from 'config';
+import { eq } from 'drizzle-orm';
+import type { Context } from 'hono';
 import { db } from '#/db/db';
 import { tokensTable } from '#/db/schema/tokens';
 import { AppError } from '#/lib/errors';
@@ -7,9 +10,6 @@ import { isExpiredDate } from '#/utils/is-expired-date';
 import { isValidRedirectPath } from '#/utils/is-redirect-url';
 import { logEvent } from '#/utils/logger';
 import { TimeSpan } from '#/utils/time-span';
-import { appConfig } from 'config';
-import { eq } from 'drizzle-orm';
-import type { Context } from 'hono';
 
 export const oauthCookieExpires = new TimeSpan(5, 'm');
 

@@ -1,7 +1,13 @@
+import { OpenAPIHono, type z } from '@hono/zod-openapi';
+import type { EnabledOAuthProvider, MenuSection } from 'config';
+import { appConfig } from 'config';
+import { and, eq, inArray, isNotNull, sql } from 'drizzle-orm';
+import { type SSEStreamingApi, streamSSE } from 'hono/streaming';
 import { db } from '#/db/db';
 import { membershipsTable } from '#/db/schema/memberships';
 import { oauthAccountsTable } from '#/db/schema/oauth-accounts';
 import { passkeysTable } from '#/db/schema/passkeys';
+import { sessionsTable } from '#/db/schema/sessions';
 import { tokensTable } from '#/db/schema/tokens';
 import { usersTable } from '#/db/schema/users';
 import { entityTables } from '#/entity-config';
@@ -13,7 +19,7 @@ import { getParams, getSignature } from '#/lib/transloadit';
 import { isAuthenticated } from '#/middlewares/guard';
 import { deleteAuthCookie, getAuthCookie } from '#/modules/auth/helpers/cookie';
 import { parseAndValidatePasskeyAttestation } from '#/modules/auth/helpers/passkey';
-import { getParsedSessionCookie, invalidateSessionById, validateSession } from '#/modules/auth/helpers/session';
+import { getParsedSessionCookie, validateSession } from '#/modules/auth/helpers/session';
 import { checkSlugAvailable } from '#/modules/entities/helpers/check-slug';
 import { getUserSessions } from '#/modules/me/helpers/get-sessions';
 import { getUserMenuEntities } from '#/modules/me/helpers/get-user-menu-entities';
@@ -26,11 +32,6 @@ import permissionManager from '#/permissions/permissions-config';
 import { defaultHook } from '#/utils/default-hook';
 import { getIsoDate } from '#/utils/iso-date';
 import { logEvent } from '#/utils/logger';
-import { OpenAPIHono, type z } from '@hono/zod-openapi';
-import type { EnabledOAuthProvider, MenuSection } from 'config';
-import { appConfig } from 'config';
-import { and, eq, isNotNull, sql } from 'drizzle-orm';
-import { type SSEStreamingApi, streamSSE } from 'hono/streaming';
 
 type UserMenu = z.infer<typeof menuSchema>;
 type MenuItem = z.infer<typeof menuItemSchema>;
@@ -163,23 +164,24 @@ const meRouteHandlers = app
 
     const sessionIds = Array.isArray(ids) ? ids : [ids];
     const { sessionToken } = await getParsedSessionCookie(ctx);
-    const { session } = await validateSession(sessionToken);
+    const { session: currentSession } = await validateSession(sessionToken);
 
-    const rejectedItems: string[] = [];
+    try {
+      // Clear auth cookie if user deletes their current session
+      if (currentSession && sessionIds.includes(currentSession.id)) deleteAuthCookie(ctx, 'session');
 
-    await Promise.all(
-      sessionIds.map(async (id) => {
-        try {
-          if (session && id === session.id) deleteAuthCookie(ctx, 'session');
-          await invalidateSessionById(id, user.id);
-        } catch (error) {
-          // Could be not found, not owned by user, etc.
-          rejectedItems.push(id);
-        }
-      }),
-    );
+      const deleted = await db
+        .delete(sessionsTable)
+        .where(and(inArray(sessionsTable.id, sessionIds), eq(sessionsTable.userId, user.id)))
+        .returning({ id: sessionsTable.id });
 
-    return ctx.json({ success: true, rejectedItems }, 200);
+      const deletedIds = deleted.map((s) => s.id);
+      const rejectedItems = sessionIds.filter((id) => !deletedIds.includes(id));
+
+      return ctx.json({ success: true, rejectedItems }, 200);
+    } catch {
+      return ctx.json({ success: false, rejectedItems: sessionIds }, 200);
+    }
   })
   /*
    * Update current user (me)

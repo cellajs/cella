@@ -1,6 +1,6 @@
-import { apiErrorSchema } from '#/utils/schema/error';
 import type { createRoute } from '@hono/zod-openapi';
 import { z } from '@hono/zod-openapi';
+import { apiErrorSchema } from '#/utils/schema/error';
 
 /**
  * Type alias for the responses parameter of createRoute.

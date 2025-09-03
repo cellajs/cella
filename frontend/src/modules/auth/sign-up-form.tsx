@@ -7,7 +7,7 @@ import { lazy, type RefObject, Suspense, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import type { z } from 'zod';
-import { signUp, type SignUpData, type SignUpResponse, signUpWithToken, type SignUpWithTokenData, type SignUpWithTokenResponse } from '~/api.gen';
+import { type SignUpData, type SignUpResponse, type SignUpWithTokenData, type SignUpWithTokenResponse, signUp, signUpWithToken } from '~/api.gen';
 import { zSignUpData } from '~/api.gen/zod.gen';
 import type { ApiError } from '~/lib/api';
 import type { AuthStep, TokenData } from '~/modules/auth/types';

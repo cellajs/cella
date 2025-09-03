@@ -1,9 +1,16 @@
+import { getRandomValues } from 'node:crypto';
+import { OpenAPIHono } from '@hono/zod-openapi';
+import { encodeBase64 } from '@oslojs/encoding';
+import { generateCodeVerifier, generateState, OAuth2RequestError } from 'arctic';
+import { appConfig, type EnabledOAuthProvider } from 'config';
+import { and, desc, eq, isNotNull, isNull } from 'drizzle-orm';
+import i18n from 'i18next';
 import { db } from '#/db/db';
 import { emailsTable } from '#/db/schema/emails';
 import { membershipsTable } from '#/db/schema/memberships';
 import { organizationsTable } from '#/db/schema/organizations';
 import { passkeysTable } from '#/db/schema/passkeys';
-import { sessionsTable, type SessionTypes } from '#/db/schema/sessions';
+import { type SessionTypes, sessionsTable } from '#/db/schema/sessions';
 import { tokensTable } from '#/db/schema/tokens';
 import { type UserModel, usersTable } from '#/db/schema/users';
 import { env } from '#/env';
@@ -26,18 +33,18 @@ import {
 } from '#/modules/auth/helpers/oauth/cookies';
 import { basicFlow, connectFlow, getOAuthAccount, inviteFlow, verifyFlow } from '#/modules/auth/helpers/oauth/index';
 import {
-  githubAuth,
   type GithubUserEmailProps,
   type GithubUserProps,
-  googleAuth,
   type GoogleUserProps,
-  microsoftAuth,
+  githubAuth,
+  googleAuth,
   type MicrosoftUserProps,
+  microsoftAuth,
 } from '#/modules/auth/helpers/oauth/oauth-providers';
 import { transformGithubUserData, transformSocialUserData } from '#/modules/auth/helpers/oauth/transform-user-data';
 import { verifyPassKeyPublic } from '#/modules/auth/helpers/passkey';
 import { sendVerificationEmail } from '#/modules/auth/helpers/send-verification-email';
-import { getParsedSessionCookie, invalidateSessionById, setUserSession, validateSession } from '#/modules/auth/helpers/session';
+import { getParsedSessionCookie, setUserSession, validateSession } from '#/modules/auth/helpers/session';
 import { handleCreateUser, handleMembershipTokenUpdate } from '#/modules/auth/helpers/user';
 import authRoutes from '#/modules/auth/routes';
 import { getUserBy } from '#/modules/users/helpers/get-user-by';
@@ -49,13 +56,6 @@ import { logEvent } from '#/utils/logger';
 import { nanoid } from '#/utils/nanoid';
 import { slugFromEmail } from '#/utils/slug-from-email';
 import { createDate, TimeSpan } from '#/utils/time-span';
-import { OpenAPIHono } from '@hono/zod-openapi';
-import { encodeBase64 } from '@oslojs/encoding';
-import { generateCodeVerifier, generateState, OAuth2RequestError } from 'arctic';
-import { appConfig, type EnabledOAuthProvider } from 'config';
-import { and, desc, eq, isNotNull, isNull } from 'drizzle-orm';
-import i18n from 'i18next';
-import { getRandomValues } from 'node:crypto';
 import { CreatePasswordEmail, type CreatePasswordEmailProps } from '../../../emails/create-password';
 
 const enabledStrategies: readonly string[] = appConfig.enabledAuthStrategies;
@@ -483,7 +483,6 @@ const authRouteHandlers = app
     const { sessionToken, adminUserId } = await getParsedSessionCookie(ctx, { deleteAfterAttempt: true });
     const { session } = await validateSession(sessionToken);
 
-    await invalidateSessionById(session.id, session.userId);
     if (adminUserId) {
       const [adminsLastSession] = await db
         .select()
@@ -492,10 +491,7 @@ const authRouteHandlers = app
         .orderBy(desc(sessionsTable.expiresAt))
         .limit(1);
 
-      if (isExpiredDate(adminsLastSession.expiresAt)) {
-        await invalidateSessionById(adminsLastSession.id, adminUserId);
-        throw new AppError({ status: 401, type: 'unauthorized', severity: 'warn' });
-      }
+      if (isExpiredDate(adminsLastSession.expiresAt)) throw new AppError({ status: 401, type: 'unauthorized', severity: 'warn' });
 
       const expireTimeSpan = new TimeSpan(adminsLastSession.expiresAt.getTime() - Date.now(), 'ms');
       const cookieContent = `${adminsLastSession.token}.${adminsLastSession.userId ?? ''}`;
@@ -513,13 +509,13 @@ const authRouteHandlers = app
   .openapi(authRoutes.signOut, async (ctx) => {
     const { sessionToken } = await getParsedSessionCookie(ctx, { deleteOnError: true });
     // Find session & invalidate
-    const { session } = await validateSession(sessionToken);
-    await invalidateSessionById(session.id, session.userId);
+    const { session: currentSession } = await validateSession(sessionToken);
 
+    await db.delete(sessionsTable).where(and(eq(sessionsTable.id, currentSession.id), eq(sessionsTable.userId, currentSession.userId)));
     // Delete session cookie
     deleteAuthCookie(ctx, 'session');
 
-    logEvent('info', 'User signed out', { userId: session?.userId || 'na' });
+    logEvent('info', 'User signed out', { userId: currentSession?.userId || 'na' });
 
     return ctx.json(true, 200);
   })
