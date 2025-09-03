@@ -5,13 +5,13 @@ import { appConfig } from 'config';
 import { Fingerprint } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import {
-  type ApiError,
   type GetPasskeyChallengeData,
   type SignInWithPasskeyData,
   type SignInWithPasskeyResponse,
   getPasskeyChallenge,
   signInWithPasskey,
 } from '~/api.gen';
+import { ApiError } from '~/lib/api';
 import type { AuthStep } from '~/modules/auth/types';
 import { toaster } from '~/modules/common/toaster/service';
 import { Button } from '~/modules/ui/button';
@@ -74,7 +74,12 @@ const PasskeyOption = ({ email, actionType, authStep }: PasskeyOptionProps) => {
       if (success) navigate({ to: redirectPath, replace: true });
       else toaster(t('error:passkey_sign_in'), 'error');
     },
-    onError: () => toaster(t('error:passkey_sign_in'), 'error'),
+    onError: (error) => {
+      if (actionType === 'two_factor' && error instanceof ApiError) {
+        navigate({ to: '/error', search: { error: error.type, severity: error.severity } });
+      }
+      if (actionType === 'login') toaster(t('error:passkey_sign_in'), 'error');
+    },
   });
 
   return (
