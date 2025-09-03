@@ -78,10 +78,10 @@ importers:
         version: 2.5.0
       '@hono/node-server':
         specifier: ^1.19.0
-        version: 1.19.1(hono@4.9.5)
+        version: 1.19.1(hono@4.9.6)
       '@hono/zod-openapi':
         specifier: 1.1.0
-        version: 1.1.0(hono@4.9.5)(zod@4.1.4)
+        version: 1.1.0(hono@4.9.6)(zod@4.1.4)
       '@logtail/node':
         specifier: ^0.5.5
         version: 0.5.6
@@ -126,7 +126,7 @@ importers:
         version: 3.2.1
       '@scalar/hono-api-reference':
         specifier: ^0.9.16
-        version: 0.9.16(hono@4.9.5)
+        version: 0.9.16(hono@4.9.6)
       '@sendgrid/mail':
         specifier: ^8.1.5
         version: 8.1.5
@@ -161,8 +161,8 @@ importers:
         specifier: ^1.3.0
         version: 1.3.0
       hono:
-        specifier: 4.9.5
-        version: 4.9.5
+        specifier: 4.9.6
+        version: 4.9.6
       i18next:
         specifier: ^25.4.2
         version: 25.4.2(typescript@5.9.2)
@@ -779,8 +779,8 @@ importers:
         specifier: ^10.0.0
         version: 10.0.0
       hono:
-        specifier: 4.9.5
-        version: 4.9.5
+        specifier: 4.9.6
+        version: 4.9.6
       playwright:
         specifier: ^1.55.0
         version: 1.55.0
@@ -8444,8 +8444,8 @@ packages:
   hoist-non-react-statics@3.3.2:
     resolution: {integrity: sha512-/gGivxi8JPKWNm/W0jSmzcMPpfpPLc3dY/6GxhX2hQ9iGj3aDfklV4ET7NjKpSinLpJ5vafa9iiGIEZg10SfBw==}
 
-  hono@4.9.5:
-    resolution: {integrity: sha512-aLAVl5/67ifNnoFVxnhR89dpmSLsgwBprw/PT671ASwUpJqmd7Ne8KPTQo37DbRZfgpHaHeZ4bPVUvbOkeedMw==}
+  hono@4.9.6:
+    resolution: {integrity: sha512-doVjXhSFvYZ7y0dNokjwwSahcrAfdz+/BCLvAMa/vHLzjj8+CFyV5xteThGUsKdkaasgN+gF2mUxao+SGLpUeA==}
     engines: {node: '>=16.9.0'}
 
   html-encoding-sniffer@4.0.0:
@@ -14951,21 +14951,21 @@ snapshots:
     dependencies:
       '@hey-api/openapi-ts': 0.82.3(magicast@0.3.5)(typescript@5.9.2)
 
-  '@hono/node-server@1.19.1(hono@4.9.5)':
+  '@hono/node-server@1.19.1(hono@4.9.6)':
     dependencies:
-      hono: 4.9.5
+      hono: 4.9.6
 
-  '@hono/zod-openapi@1.1.0(hono@4.9.5)(zod@4.1.4)':
+  '@hono/zod-openapi@1.1.0(hono@4.9.6)(zod@4.1.4)':
     dependencies:
       '@asteasolutions/zod-to-openapi': 8.1.0(zod@4.1.4)
-      '@hono/zod-validator': 0.7.2(hono@4.9.5)(zod@4.1.4)
-      hono: 4.9.5
+      '@hono/zod-validator': 0.7.2(hono@4.9.6)(zod@4.1.4)
+      hono: 4.9.6
       openapi3-ts: 4.5.0
       zod: 4.1.4
 
-  '@hono/zod-validator@0.7.2(hono@4.9.5)(zod@4.1.4)':
+  '@hono/zod-validator@0.7.2(hono@4.9.6)(zod@4.1.4)':
     dependencies:
-      hono: 4.9.5
+      hono: 4.9.6
       zod: 4.1.4
 
   '@hookform/resolvers@3.10.0(react-hook-form@7.62.0(react@19.1.1))':
@@ -17179,10 +17179,10 @@ snapshots:
     dependencies:
       '@scalar/types': 0.2.13
 
-  '@scalar/hono-api-reference@0.9.16(hono@4.9.5)':
+  '@scalar/hono-api-reference@0.9.16(hono@4.9.6)':
     dependencies:
       '@scalar/core': 0.3.14
-      hono: 4.9.5
+      hono: 4.9.6
 
   '@scalar/openapi-types@0.3.7':
     dependencies:
@@ -21578,7 +21578,7 @@ snapshots:
     dependencies:
       react-is: 16.13.1
 
-  hono@4.9.5: {}
+  hono@4.9.6: {}
 
   html-encoding-sniffer@4.0.0:
     dependencies:

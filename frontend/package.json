@@ -170,7 +170,7 @@
     "@vitest/coverage-v8": "^3.2.4",
     "babel-plugin-react-compiler": "19.1.0-rc.3",
     "cross-env": "^10.0.0",
-    "hono": "4.9.5",
+    "hono": "4.9.6",
     "playwright": "^1.55.0",
     "postgres": "^3.4.7",
     "react-scan": "^0.4.3",
