@@ -9,10 +9,10 @@ export const TwoFactorAuthentication = ({ userAuthData }: { userAuthData: MeAuth
   const { t } = useTranslation();
   const user = useUserStore((state) => state.user);
 
-  const { mutateAsync: toogle2fa } = useUpdateSelfMutation();
+  // TODO add success toast for disabling and enabling 2FA
+  const { mutateAsync: toggle2fa } = useUpdateSelfMutation();
 
-  const { hasPasskey, enabledOAuth } = userAuthData;
-  const disabled = !hasPasskey && enabledOAuth.length === 0;
+  const { hasPasskey } = userAuthData;
 
   return (
     <>
@@ -20,8 +20,8 @@ export const TwoFactorAuthentication = ({ userAuthData }: { userAuthData: MeAuth
         <p className="font-semibold">{t('common:2fa')}</p>
       </HelpText>
       <div className="mb-6">
-        <Switch checked={user.twoFactorEnabled} onCheckedChange={(twoFactorEnabled) => toogle2fa({ twoFactorEnabled })} />
-        {disabled && <p className="text-sm text-gray-500 mt-2">{t('common:2fa_disabled.text')}</p>}
+        <Switch disabled={!hasPasskey} checked={user.twoFactorEnabled} onCheckedChange={(twoFactorEnabled) => toggle2fa({ twoFactorEnabled })} />
+        {!hasPasskey && <p className="text-sm text-gray-500 mt-2">{t('common:2fa_disabled.text')}</p>}
       </div>
     </>
   );
