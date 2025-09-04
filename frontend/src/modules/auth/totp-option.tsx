@@ -1,10 +1,11 @@
 import { useQuery } from '@tanstack/react-query';
+import { useNavigate } from '@tanstack/react-router';
 import { QrCode, X } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { getToptUri } from '~/api.gen';
-import AuthErrorNotice from '~/modules/auth/auth-error-notice';
+import { ApiError } from '~/lib/api';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import Spinner from '~/modules/common/spinner';
 import { Button } from '~/modules/ui/button';
@@ -13,10 +14,12 @@ import { useUIStore } from '~/store/ui';
 
 export const TOPTOption = () => {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const mode = useUIStore((state) => state.mode);
-  const triggerRef = useRef<HTMLButtonElement | null>(null);
 
   const [showCard, setShowCard] = useState(false);
+
+  const triggerRef = useRef<HTMLButtonElement | null>(null);
 
   const { data, error } = useQuery({
     queryKey: ['totp', 'uri'],
@@ -45,7 +48,9 @@ export const TOPTOption = () => {
     );
   };
 
-  if (error) return <AuthErrorNotice error={error} />;
+  useEffect(() => {
+    if (error instanceof ApiError) throw navigate({ to: '/error', search: { error: error.type, severity: error.severity } });
+  }, [error]);
 
   return (
     <div data-mode={mode} className="group flex flex-col space-y-2">
