@@ -73,7 +73,7 @@ export const passkeyRegistration = async () => {
     };
 
     const result = await createPasskey({ body: credentialData });
-    if (!result) toaster(t('error:passkey_add_failed'), 'error');
+    if (!result) toaster(t('error:passkey_registration_failed'), 'error');
 
     toaster(t('common:success.passkey_added'), 'success');
 
@@ -82,7 +82,7 @@ export const passkeyRegistration = async () => {
   } catch (error) {
     // On cancel throws error NotAllowedError
     console.error('Error during passkey registration:', error);
-    toaster(t('error:passkey_add_failed'), 'error');
+    toaster(t('error:passkey_registration_failed'), 'error');
     return false;
   }
 };

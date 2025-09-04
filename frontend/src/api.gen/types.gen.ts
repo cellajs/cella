@@ -1946,6 +1946,110 @@ export type CreatePasskeyResponses = {
 
 export type CreatePasskeyResponse = CreatePasskeyResponses[keyof CreatePasskeyResponses];
 
+export type UnlinkTotpData = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: '/me/totp';
+};
+
+export type UnlinkTotpErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: ApiError & {
+    status?: 400;
+  };
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: ApiError & {
+    status?: 401;
+  };
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ApiError & {
+    status?: 403;
+  };
+  /**
+   * Not found: resource does not exist.
+   */
+  404: ApiError & {
+    status?: 404;
+  };
+  /**
+   * Rate limit: too many requests.
+   */
+  429: ApiError & {
+    status?: 429;
+  };
+};
+
+export type UnlinkTotpError = UnlinkTotpErrors[keyof UnlinkTotpErrors];
+
+export type UnlinkTotpResponses = {
+  /**
+   * TOTP removed
+   */
+  200: boolean;
+};
+
+export type UnlinkTotpResponse = UnlinkTotpResponses[keyof UnlinkTotpResponses];
+
+export type SetupTotpData = {
+  body: {
+    code: string;
+  };
+  path?: never;
+  query?: never;
+  url: '/me/totp';
+};
+
+export type SetupTotpErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: ApiError & {
+    status?: 400;
+  };
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: ApiError & {
+    status?: 401;
+  };
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ApiError & {
+    status?: 403;
+  };
+  /**
+   * Not found: resource does not exist.
+   */
+  404: ApiError & {
+    status?: 404;
+  };
+  /**
+   * Rate limit: too many requests.
+   */
+  429: ApiError & {
+    status?: 429;
+  };
+};
+
+export type SetupTotpError = SetupTotpErrors[keyof SetupTotpErrors];
+
+export type SetupTotpResponses = {
+  /**
+   * TOTP successfully registered
+   */
+  200: boolean;
+};
+
+export type SetupTotpResponse = SetupTotpResponses[keyof SetupTotpResponses];
+
 export type GetUploadTokenData = {
   body?: never;
   path?: never;

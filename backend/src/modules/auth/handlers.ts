@@ -871,13 +871,13 @@ const authRouteHandlers = app
     const secret = crypto.getRandomValues(new Uint8Array(20));
     const manualKey = encodeBase32(secret);
 
-    const user = await validatePending2FAToken(ctx);
+    const user = getContextUser();
 
     // Save the secret in a short-lived cookie (5 minutes)
     await setAuthCookie(ctx, 'totp-key', manualKey, new TimeSpan(5, 'm'));
 
     // otpauth:// URI for QR scanner apps
-    const totpUri = createTOTPKeyURI(appConfig.name, user.email, secret, appConfig.totpConfig.intervalInSeconds, appConfig.totpConfig.digits);
+    const totpUri = createTOTPKeyURI(appConfig.name, user.name, secret, appConfig.totpConfig.intervalInSeconds, appConfig.totpConfig.digits);
 
     return ctx.json({ totpUri, manualKey }, 200);
   })
@@ -907,7 +907,7 @@ const authRouteHandlers = app
       if (!isValid) throw new AppError({ status: 401, type: 'invalid_token', severity: 'warn', meta });
     } catch (error) {
       if (error instanceof Error) {
-        throw new AppError({ status: 500, type: 'totp_failed', severity: 'error', originalError: error, meta });
+        throw new AppError({ status: 500, type: 'totp_verification_failed', severity: 'error', originalError: error, meta });
       }
     }
 

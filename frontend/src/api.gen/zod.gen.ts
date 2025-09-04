@@ -733,6 +733,30 @@ export const zCreatePasskeyData = z.object({
  */
 export const zCreatePasskeyResponse = z.boolean();
 
+export const zUnlinkTotpData = z.object({
+  body: z.optional(z.never()),
+  path: z.optional(z.never()),
+  query: z.optional(z.never()),
+});
+
+/**
+ * TOTP removed
+ */
+export const zUnlinkTotpResponse = z.boolean();
+
+export const zSetupTotpData = z.object({
+  body: z.object({
+    code: z.string(),
+  }),
+  path: z.optional(z.never()),
+  query: z.optional(z.never()),
+});
+
+/**
+ * TOTP successfully registered
+ */
+export const zSetupTotpResponse = z.boolean();
+
 export const zGetUploadTokenData = z.object({
   body: z.optional(z.never()),
   path: z.optional(z.never()),

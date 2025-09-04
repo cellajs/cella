@@ -1,4 +1,3 @@
-import { z } from '@hono/zod-openapi';
 import { createCustomRoute } from '#/lib/custom-routes';
 import { isAuthenticated, isPublicAccess } from '#/middlewares/guard';
 import { tokenLimiter } from '#/middlewares/rate-limiter/limiters';
@@ -13,6 +12,7 @@ import {
 import { userFlagsSchema, userSchema, userUpdateBodySchema } from '#/modules/users/schema';
 import { entityWithTypeQuerySchema, locationSchema } from '#/utils/schema/common';
 import { errorResponses, successWithoutDataSchema, successWithRejectedItemsSchema } from '#/utils/schema/responses';
+import { z } from '@hono/zod-openapi';
 
 const meRoutes = {
   getMe: createCustomRoute({
@@ -254,6 +254,48 @@ const meRoutes = {
     responses: {
       200: {
         description: 'Passkey removed',
+        content: { 'application/json': { schema: successWithoutDataSchema } },
+      },
+      ...errorResponses,
+    },
+  }),
+
+  setupTOTP: createCustomRoute({
+    operationId: 'setupTOTP',
+    method: 'post',
+    path: '/totp',
+    guard: isAuthenticated,
+    tags: ['me'],
+    summary: 'Set up TOTP for the authenticated user',
+    description: 'Registers a new TOTP (Time-based One-Time Password) for 2FA and links it to the current user account.',
+    security: [],
+    request: {
+      body: {
+        required: true,
+        content: { 'application/json': { schema: z.object({ code: z.string() }) } },
+      },
+    },
+    responses: {
+      200: {
+        description: 'TOTP successfully registered',
+        content: { 'application/json': { schema: successWithoutDataSchema } },
+      },
+      ...errorResponses,
+    },
+  }),
+
+  unlinkTOTP: createCustomRoute({
+    operationId: 'unlinkTOTP',
+    method: 'delete',
+    path: '/totp',
+    guard: isAuthenticated,
+    tags: ['me'],
+    summary: 'Delete TOTP',
+    description: "Removes the *current user's* registered totp credential.",
+    security: [],
+    responses: {
+      200: {
+        description: 'TOTP removed',
         content: { 'application/json': { schema: successWithoutDataSchema } },
       },
       ...errorResponses,

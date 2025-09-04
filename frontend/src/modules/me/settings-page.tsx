@@ -3,7 +3,7 @@ import { appConfig, type EnabledOAuthProvider } from 'config';
 import { Check, Send, Trash } from 'lucide-react';
 import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { type ApiError, type RequestPasswordData, type RequestPasswordResponse, requestPassword } from '~/api.gen';
+import { requestPassword, type ApiError, type RequestPasswordData, type RequestPasswordResponse } from '~/api.gen';
 import { mapOAuthProviders } from '~/modules/auth/oauth-options';
 import { AsideAnchor } from '~/modules/common/aside-anchor';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
@@ -16,12 +16,13 @@ import UnsavedBadge from '~/modules/common/unsaved-badge';
 import DeleteSelf from '~/modules/me/delete-self';
 import Passkeys from '~/modules/me/passkeys';
 import SessionsList from '~/modules/me/session/list';
+import TOTPs from '~/modules/me/totp';
+import { TwoFactorAuthentication } from '~/modules/me/two-factor-auth';
 import { Button } from '~/modules/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/modules/ui/card';
 import UpdateUserForm from '~/modules/users/update-user-form';
 import { useUIStore } from '~/store/ui';
 import { useUserStore } from '~/store/user';
-import { TwoFactorAuthentication } from './two-factor-auth';
 
 const tabs = [
   { id: 'general', label: 'common:general' },
@@ -135,6 +136,10 @@ const UserSettingsPage = () => {
                 <p className="font-semibold">{t('common:passkey')}</p>
               </HelpText>
               <Passkeys />
+              <HelpText content={t('common:totp.text')}>
+                <p className="font-semibold">{t('common:totp')}</p>
+              </HelpText>
+              <TOTPs />
               <HelpText content={t('common:oauth.text')}>
                 <p className="font-semibold">{t('common:oauth')}</p>
               </HelpText>

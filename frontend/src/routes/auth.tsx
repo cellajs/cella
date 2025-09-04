@@ -10,7 +10,6 @@ import PasskeyOption from '~/modules/auth/passkey-option';
 import { RequestPasswordForm } from '~/modules/auth/request-password-form';
 import { SignOut } from '~/modules/auth/sign-out';
 import AuthSteps from '~/modules/auth/steps';
-import { TOTP } from '~/modules/auth/totp';
 import Unsubscribed from '~/modules/auth/unsubscribed';
 import { meQueryOptions } from '~/modules/me/query';
 import { queryClient } from '~/query/query-client';
@@ -67,7 +66,6 @@ export const Confirn2FARoute = createRoute({
         </div>
 
         {/* Option 2: TOTP */}
-        <TOTP />
       </>
     );
   },

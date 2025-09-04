@@ -91,6 +91,12 @@ import type {
   CreatePasskeyData,
   CreatePasskeyResponses,
   CreatePasskeyErrors,
+  UnlinkTotpData,
+  UnlinkTotpResponses,
+  UnlinkTotpErrors,
+  SetupTotpData,
+  SetupTotpResponses,
+  SetupTotpErrors,
   GetUploadTokenData,
   GetUploadTokenResponses,
   GetUploadTokenErrors,
@@ -729,7 +735,7 @@ export const signInWithPasskey = <ThrowOnError extends boolean = true>(options?:
 
 /**
  * Get TOTP setup URI and manual key
- * 🌐 Public access
+ * 🛡️ Requires authentication
  * ⏳ Spam (10/h)
  *
  * Generates a new TOTP secret for the current user and returns both the QR URI and Base32 manual key
@@ -1029,6 +1035,49 @@ export const createPasskey = <ThrowOnError extends boolean = true>(options: Opti
   return (options.client ?? _heyApiClient).post<CreatePasskeyResponses, CreatePasskeyErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     url: '/me/passkey',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+  });
+};
+
+/**
+ * Delete TOTP
+ * 🛡️ Requires authentication
+ *
+ * Removes the *current user's* registered totp credential.
+ *
+ * **DELETE /me/totp** ·· [unlinkTotp](http://localhost:4000/docs#tag/me/delete/me/totp) ·· _me_
+ *
+ * @param {unlinkTotpData} options
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
+ */
+export const unlinkTotp = <ThrowOnError extends boolean = true>(options?: Options<UnlinkTotpData, ThrowOnError>) => {
+  return (options?.client ?? _heyApiClient).delete<UnlinkTotpResponses, UnlinkTotpErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    url: '/me/totp',
+    ...options,
+  });
+};
+
+/**
+ * Set up TOTP for the authenticated user
+ * 🛡️ Requires authentication
+ *
+ * Registers a new TOTP (Time-based One-Time Password) for 2FA and links it to the current user account.
+ *
+ * **POST /me/totp** ·· [setupTotp](http://localhost:4000/docs#tag/me/post/me/totp) ·· _me_
+ *
+ * @param {setupTotpData} options
+ * @param {string=} options.body.code - `string` (optional)
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
+ */
+export const setupTotp = <ThrowOnError extends boolean = true>(options: Options<SetupTotpData, ThrowOnError>) => {
+  return (options.client ?? _heyApiClient).post<SetupTotpResponses, SetupTotpErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    url: '/me/totp',
     ...options,
     headers: {
       'Content-Type': 'application/json',

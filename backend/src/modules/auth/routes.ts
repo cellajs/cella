@@ -223,7 +223,7 @@ const authRoutes = {
     operationId: 'getTOPTUri',
     method: 'get',
     path: '/totp-uri',
-    guard: isPublicAccess,
+    guard: isAuthenticated,
     // TODO look into rate limit customized for totp
     middleware: [spamLimiter],
     tags: ['auth'],

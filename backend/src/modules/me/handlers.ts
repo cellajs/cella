@@ -1,14 +1,10 @@
-import { OpenAPIHono, type z } from '@hono/zod-openapi';
-import type { EnabledOAuthProvider, MenuSection } from 'config';
-import { appConfig } from 'config';
-import { and, eq, inArray, isNotNull, sql } from 'drizzle-orm';
-import { type SSEStreamingApi, streamSSE } from 'hono/streaming';
 import { db } from '#/db/db';
 import { membershipsTable } from '#/db/schema/memberships';
 import { oauthAccountsTable } from '#/db/schema/oauth-accounts';
 import { passkeysTable } from '#/db/schema/passkeys';
 import { sessionsTable } from '#/db/schema/sessions';
 import { tokensTable } from '#/db/schema/tokens';
+import { totpsTable } from '#/db/schema/totps';
 import { usersTable } from '#/db/schema/users';
 import { entityTables } from '#/entity-config';
 import { env } from '#/env';
@@ -32,6 +28,12 @@ import permissionManager from '#/permissions/permissions-config';
 import { defaultHook } from '#/utils/default-hook';
 import { getIsoDate } from '#/utils/iso-date';
 import { logEvent } from '#/utils/logger';
+import { OpenAPIHono, type z } from '@hono/zod-openapi';
+import type { EnabledOAuthProvider, MenuSection } from 'config';
+import { appConfig } from 'config';
+import { and, eq, inArray, isNotNull, sql } from 'drizzle-orm';
+import { type SSEStreamingApi, streamSSE } from 'hono/streaming';
+import { verifyTOTPCode } from '../auth/helpers/totps';
 
 type UserMenu = z.infer<typeof menuSchema>;
 type MenuItem = z.infer<typeof menuItemSchema>;
@@ -275,6 +277,40 @@ const meRouteHandlers = app
     const user = getContextUser();
 
     await db.delete(passkeysTable).where(eq(passkeysTable.userEmail, user.email));
+
+    return ctx.json(true, 200);
+  })
+  /*
+   * Setup TOTP
+   */
+  .openapi(meRoutes.setupTOTP, async (ctx) => {
+    const { code } = ctx.req.valid('json');
+    const user = getContextUser();
+
+    // Retrieve the encoded totp secret from cookie
+    const encoderSecretKey = await getAuthCookie(ctx, 'totp-key');
+    if (!encoderSecretKey) throw new AppError({ status: 401, type: 'invalid_credentials', severity: 'warn' });
+
+    try {
+      const isValid = verifyTOTPCode(code, encoderSecretKey);
+      if (!isValid) throw new AppError({ status: 401, type: 'invalid_token', severity: 'warn' });
+    } catch (error) {
+      if (error instanceof Error) {
+        throw new AppError({ status: 500, type: 'totp_verification_failed', severity: 'error', originalError: error });
+      }
+    }
+    // Save 32encoded secret key in database
+    await db.insert(totpsTable).values({ userId: user.id, encoderSecretKey });
+
+    return ctx.json(true, 200);
+  })
+  /*
+   * Unlink TOTP
+   */
+  .openapi(meRoutes.unlinkTOTP, async (ctx) => {
+    const user = getContextUser();
+
+    await db.delete(totpsTable).where(eq(totpsTable.userId, user.id));
 
     return ctx.json(true, 200);
   })
