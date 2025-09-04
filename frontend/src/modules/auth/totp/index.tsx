@@ -6,13 +6,15 @@ import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { getToptUri } from '~/api.gen';
 import { ApiError } from '~/lib/api';
+import { TOPTManualKey } from '~/modules/auth/totp/manual-key-card';
+import { TOPTVerificationForm } from '~/modules/auth/totp/verification-form';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import Spinner from '~/modules/common/spinner';
 import { Button } from '~/modules/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '~/modules/ui/card';
 import { useUIStore } from '~/store/ui';
 
-export const TOPTOption = () => {
+export const TOTP = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const mode = useUIStore((state) => state.mode);
@@ -29,25 +31,16 @@ export const TOPTOption = () => {
   });
 
   const openSetUpKey = () => {
-    useDialoger.getState().create(
-      <div className="p-4">
-        <h3 className="font-semibold text-lg mb-2">Manual Setup</h3>
-        <p className="text-sm text-gray-600 mb-4">If you can’t scan the QR code, enter this key into your authenticator app:</p>
-        <div className="flex items-center justify-between bg-gray-100 dark:bg-gray-800 rounded px-3 py-2 mb-2 font-mono text-lg">
-          <span>{data?.manualKey}</span>
-        </div>
-        <p className="text-xs text-gray-500">Keep this key private — anyone with it can generate codes for your account.</p>
-      </div>,
-      {
-        id: '2fa-key',
-        triggerRef,
-        className: 'sm:max-w-md',
-        drawerOnMobile: false,
-        hideClose: false,
-      },
-    );
+    useDialoger.getState().create(<TOPTManualKey manualKey={data?.manualKey} />, {
+      id: '2fa-key',
+      triggerRef,
+      className: 'sm:max-w-md',
+      drawerOnMobile: false,
+      hideClose: false,
+    });
   };
 
+  // TODO find better way to handle error redirect
   useEffect(() => {
     if (error instanceof ApiError) throw navigate({ to: '/error', search: { error: error.type, severity: error.severity } });
   }, [error]);
@@ -56,12 +49,12 @@ export const TOPTOption = () => {
     <div data-mode={mode} className="group flex flex-col space-y-2">
       {showCard ? (
         <Card className="bg-background relative">
-          <CardHeader className="flex items-start p-4">
-            <CardTitle>{t('common:totp.scan_qr')}</CardTitle>
-            <CardDescription>{t('common:totp.scan_qr.text')}</CardDescription>
+          <CardHeader className="flex items-start p-6">
+            <CardTitle>{t('common:totp_qr.title')}</CardTitle>
+            <CardDescription>{t('common:totp_qr.description')}</CardDescription>
           </CardHeader>
           <CardContent>
-            {data ? <QRCodeSVG className="mx-auto my-5" value={data.totpUri} size={200} /> : <Spinner />}
+            {data ? <QRCodeSVG className="mx-auto my-3" value={data.totpUri} size={200} /> : <Spinner />}
 
             <Button
               size="xs"
@@ -72,14 +65,17 @@ export const TOPTOption = () => {
               <X size={16} strokeWidth={1.25} />
             </Button>
           </CardContent>
-          <CardFooter className="flex flex-col items-start">
-            <h3>{t('common:totp.manually')}</h3>
-            <div>
-              <span>{t('common:totp.manually.text')}</span>
-              <Button ref={triggerRef} variant="none" className="underline cursor-pointer" onClick={openSetUpKey}>
-                Show Setup Key
+          <CardFooter className="flex flex-col items-start p-6">
+            <h3>{t('common:totp_manual.footer_title')}</h3>
+
+            <span className="text-sm">
+              {t('common:totp_manual.footer_description')}
+
+              <Button ref={triggerRef} variant="none" className="p-0 h-auto underline cursor-pointer" onClick={openSetUpKey}>
+                {t('common:totp_manual.button_text')}
               </Button>
-            </div>
+            </span>
+            <TOPTVerificationForm />
           </CardFooter>
         </Card>
       ) : (

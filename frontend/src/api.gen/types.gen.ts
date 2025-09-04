@@ -46,7 +46,7 @@ export type Organization = {
   logoUrl: string | null;
   websiteUrl: string | null;
   welcomeText: string | null;
-  authStrategies: Array<'github' | 'google' | 'microsoft' | 'password' | 'passkey' | 'email'>;
+  authStrategies: Array<'github' | 'google' | 'microsoft' | 'password' | 'passkey' | 'totp' | 'email'>;
   chatSupport: boolean;
   createdBy: string | null;
   modifiedAt: string | null;
@@ -1331,6 +1331,59 @@ export type GetToptUriResponses = {
 
 export type GetToptUriResponse = GetToptUriResponses[keyof GetToptUriResponses];
 
+export type SignInWithTotpData = {
+  body?: {
+    code: string;
+  };
+  path?: never;
+  query?: never;
+  url: '/auth/totp-verification';
+};
+
+export type SignInWithTotpErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: ApiError & {
+    status?: 400;
+  };
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: ApiError & {
+    status?: 401;
+  };
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ApiError & {
+    status?: 403;
+  };
+  /**
+   * Not found: resource does not exist.
+   */
+  404: ApiError & {
+    status?: 404;
+  };
+  /**
+   * Rate limit: too many requests.
+   */
+  429: ApiError & {
+    status?: 429;
+  };
+};
+
+export type SignInWithTotpError = SignInWithTotpErrors[keyof SignInWithTotpErrors];
+
+export type SignInWithTotpResponses = {
+  /**
+   * Passkey verified
+   */
+  200: boolean;
+};
+
+export type SignInWithTotpResponse = SignInWithTotpResponses[keyof SignInWithTotpResponses];
+
 export type DeleteMeData = {
   body?: never;
   path?: never;
@@ -1555,7 +1608,7 @@ export type GetMyAuthResponses = {
       deviceType: 'desktop' | 'mobile';
       deviceOs: string | null;
       browser: string | null;
-      authStrategy: 'github' | 'google' | 'microsoft' | 'password' | 'passkey' | 'email';
+      authStrategy: 'github' | 'google' | 'microsoft' | 'password' | 'passkey' | 'totp' | 'email';
       expiresAt: string;
       consumedAt: string | null;
       isCurrent: boolean;
@@ -2511,7 +2564,7 @@ export type UpdateOrganizationData = {
     bannerUrl?: string | null;
     websiteUrl?: string | null;
     welcomeText?: string | null;
-    authStrategies?: Array<'github' | 'google' | 'microsoft' | 'password' | 'passkey' | 'email'>;
+    authStrategies?: Array<'github' | 'google' | 'microsoft' | 'password' | 'passkey' | 'totp' | 'email'>;
     chatSupport?: boolean;
   };
   path: {

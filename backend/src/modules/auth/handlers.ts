@@ -51,8 +51,8 @@ import { nanoid } from '#/utils/nanoid';
 import { slugFromEmail } from '#/utils/slug-from-email';
 import { createDate, TimeSpan } from '#/utils/time-span';
 import { OpenAPIHono } from '@hono/zod-openapi';
-import { encodeBase32, encodeBase64 } from '@oslojs/encoding';
-import { createTOTPKeyURI } from '@oslojs/otp';
+import { decodeBase32, encodeBase32, encodeBase64 } from '@oslojs/encoding';
+import { createTOTPKeyURI, verifyTOTP } from '@oslojs/otp';
 import { generateCodeVerifier, generateState, OAuth2RequestError } from 'arctic';
 import { appConfig, type EnabledOAuthProvider } from 'config';
 import { and, desc, eq, isNotNull, isNull } from 'drizzle-orm';
@@ -795,8 +795,8 @@ const authRouteHandlers = app
 
     // If this is a two_factor request, retrieve user from pending 2FA token
     if (type === 'two_factor') {
-      const { user } = await validatePending2FAToken(ctx);
-      userEmail = user.email;
+      const { email: tokenEmail } = await validatePending2FAToken(ctx);
+      userEmail = tokenEmail;
     }
 
     // If we still have no email, return challenge with empty credential list
@@ -830,8 +830,7 @@ const authRouteHandlers = app
 
     // Override user if this is a two_factor authentication
     if (type === 'two_factor') {
-      const { user: userFromToken, tokenId } = await validatePending2FAToken(ctx);
-      await db.delete(tokensTable).where(eq(tokensTable.id, tokenId));
+      const userFromToken = await validatePending2FAToken(ctx, true);
       user = userFromToken;
     }
 
@@ -872,15 +871,49 @@ const authRouteHandlers = app
     const secret = crypto.getRandomValues(new Uint8Array(20));
     const manualKey = encodeBase32(secret);
 
-    const { user } = await validatePending2FAToken(ctx);
+    const user = await validatePending2FAToken(ctx);
 
     // Save the secret in a short-lived cookie (5 minutes)
     await setAuthCookie(ctx, 'totp-key', manualKey, new TimeSpan(5, 'm'));
 
     // otpauth:// URI for QR scanner apps
-    const totpUri = createTOTPKeyURI(appConfig.name, user.email, secret, 30, 6);
+    const totpUri = createTOTPKeyURI(appConfig.name, user.email, secret, appConfig.totpConfig.intervalInSeconds, appConfig.totpConfig.digits);
 
     return ctx.json({ totpUri, manualKey }, 200);
-  });
+  })
+  /*
+   * Verify TOTP code
+   */
+  .openapi(authRoutes.verifyTOTPCode, async (ctx) => {
+    const { code } = ctx.req.valid('json');
+    const strategy = 'totp';
+    const sessionType = 'two_factor_authentication';
 
+    const meta = { strategy, sessionType };
+
+    const user = await validatePending2FAToken(ctx, true);
+
+    // Fail early if user not found
+    if (!user) throw new AppError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'user', meta });
+
+    // Retrieve the encoded totp secret from cookie
+    const encodedSecret = await getAuthCookie(ctx, 'totp-key');
+    if (!encodedSecret) throw new AppError({ status: 401, type: 'invalid_credentials', severity: 'warn', meta });
+
+    const decodedSecretKey = decodeBase32(encodedSecret);
+
+    try {
+      const isValid = verifyTOTP(decodedSecretKey, appConfig.totpConfig.intervalInSeconds, appConfig.totpConfig.digits, code);
+      if (!isValid) throw new AppError({ status: 401, type: 'invalid_token', severity: 'warn', meta });
+    } catch (error) {
+      if (error instanceof Error) {
+        throw new AppError({ status: 500, type: 'totp_failed', severity: 'error', originalError: error, meta });
+      }
+    }
+
+    // Set user session after successful verification
+    await setUserSession(ctx, user, 'totp', sessionType);
+
+    return ctx.json(true, 200);
+  });
 export default authRouteHandlers;

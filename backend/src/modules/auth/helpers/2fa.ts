@@ -2,7 +2,7 @@ import { db } from '#/db/db';
 import { tokensTable } from '#/db/schema/tokens';
 import { type UserModel, usersTable } from '#/db/schema/users';
 import { AppError } from '#/lib/errors';
-import { getAuthCookie, setAuthCookie } from '#/modules/auth/helpers/cookie';
+import { deleteAuthCookie, getAuthCookie, setAuthCookie } from '#/modules/auth/helpers/cookie';
 import { userSelect } from '#/modules/users/helpers/select';
 import { isExpiredDate } from '#/utils/is-expired-date';
 import { nanoid } from '#/utils/nanoid';
@@ -44,17 +44,19 @@ export const initiateTwoFactorAuth = async (ctx: Context, user: UserModel) => {
 };
 
 /**
- * Checks if the pending 2FA token exists and is still valid.
+ * Validates a pending 2FA token from cookie and optionally deletes it.
  *
  * @param ctx - Hono context
- * @returns UserModel if token record if valid, otherwise null
+ * @param deleteAfter - If true, deletes token from DB and cookie after validation
+ * @returns UserModel
+ * @throws AppError if token is missing, not found, or expired
  */
-export const validatePending2FAToken = async (ctx: Context) => {
-  // Read token from cookie
+export const validatePending2FAToken = async (ctx: Context, deleteAfter = false): Promise<UserModel> => {
+  // Get token ID from cookie
   const tokenIdFromCookie = await getAuthCookie(ctx, 'pending-2fa');
   if (!tokenIdFromCookie) throw new AppError({ status: 401, type: 'invalid_credentials', severity: 'error' });
 
-  // Look up token in the database
+  // Fetch token record and associated user
   const [tokenRecord] = await db
     .select({ user: userSelect, tokenId: tokensTable.id, tokenExpiredAt: tokensTable.expiresAt })
     .from(tokensTable)
@@ -64,8 +66,15 @@ export const validatePending2FAToken = async (ctx: Context) => {
   if (!tokenRecord) throw new AppError({ status: 404, type: 'pending_2fa_not_found', severity: 'warn' });
 
   const { user, tokenId, tokenExpiredAt } = tokenRecord;
-  // If token is expired, return an error
+
+  // Check if the token has expired
   if (isExpiredDate(tokenExpiredAt)) throw new AppError({ status: 401, type: 'pending_2fa_expired', severity: 'warn' });
 
-  return { user, tokenId };
+  // Delete token and cookie if requested
+  if (deleteAfter) {
+    await db.delete(tokensTable).where(eq(tokensTable.id, tokenId));
+    deleteAuthCookie(ctx, 'session');
+  }
+
+  return user;
 };

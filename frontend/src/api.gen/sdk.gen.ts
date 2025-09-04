@@ -58,6 +58,9 @@ import type {
   GetToptUriData,
   GetToptUriResponses,
   GetToptUriErrors,
+  SignInWithTotpData,
+  SignInWithTotpResponses,
+  SignInWithTotpErrors,
   DeleteMeData,
   DeleteMeResponses,
   DeleteMeErrors,
@@ -741,6 +744,31 @@ export const getToptUri = <ThrowOnError extends boolean = true>(options?: Option
     responseStyle: 'data',
     url: '/auth/totp-uri',
     ...options,
+  });
+};
+
+/**
+ * Verify topt code
+ * 🌐 Public access
+ * ⏳ Spam (10/h)
+ *
+ * Validates the totp code and completes totp based authentication.
+ *
+ * **POST /auth/totp-verification** ·· [signInWithTotp](http://localhost:4000/docs#tag/auth/post/auth/totp-verification) ·· _auth_
+ *
+ * @param {signInWithTotpData} options
+ * @param {string=} options.body.code - `string` (optional)
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
+ */
+export const signInWithTotp = <ThrowOnError extends boolean = true>(options?: Options<SignInWithTotpData, ThrowOnError>) => {
+  return (options?.client ?? _heyApiClient).post<SignInWithTotpResponses, SignInWithTotpErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    url: '/auth/totp-verification',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options?.headers,
+    },
   });
 };
 

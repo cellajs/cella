@@ -1,14 +1,16 @@
 import { createRoute, redirect } from '@tanstack/react-router';
 import { appConfig } from 'config';
+import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
-import { Confirm2FA } from '~/modules/auth/2fa-confirm';
 import AcceptEntityInvite from '~/modules/auth/accept-entity-invite';
 import AuthPage from '~/modules/auth/auth-layout';
 import CreatePasswordForm from '~/modules/auth/create-password-form';
 import EmailVerification from '~/modules/auth/email-verification';
+import PasskeyOption from '~/modules/auth/passkey-option';
 import { RequestPasswordForm } from '~/modules/auth/request-password-form';
 import { SignOut } from '~/modules/auth/sign-out';
 import AuthSteps from '~/modules/auth/steps';
+import { TOTP } from '~/modules/auth/totp';
 import Unsubscribed from '~/modules/auth/unsubscribed';
 import { meQueryOptions } from '~/modules/me/query';
 import { queryClient } from '~/query/query-client';
@@ -51,7 +53,24 @@ export const Confirn2FARoute = createRoute({
   staticData: { isAuth: false },
   head: () => ({ meta: [{ title: appTitle('2FA confirm') }] }),
   getParentRoute: () => AuthLayoutRoute,
-  component: () => <Confirm2FA />,
+  component: () => {
+    const { t } = useTranslation();
+    return (
+      <>
+        <h2 className="font-semibold leading-none min-h-6">{t('common:totp.title')}</h2>
+
+        {/* Option 1: Passkey */}
+        <PasskeyOption actionType="two_factor" authStep="signIn" />
+
+        <div className="relative flex justify-center text-xs uppercase">
+          <span className="text-muted-foreground px-2">{t('common:or')}</span>
+        </div>
+
+        {/* Option 2: TOTP */}
+        <TOTP />
+      </>
+    );
+  },
 });
 
 export const RequestPasswordRoute = createRoute({

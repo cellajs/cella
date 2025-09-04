@@ -11,6 +11,7 @@ import {
   passkeyChallengeSchema,
   passkeyVerificationBodySchema,
   tokenWithDataSchema,
+  TOTPVerificationBodySchema,
 } from '#/modules/auth/schema';
 import { contextEntityWithMembershipSchema } from '#/modules/entities/schema';
 import { cookieSchema, idSchema, locationSchema, passwordSchema, tokenParamSchema } from '#/utils/schema/common';
@@ -233,6 +234,30 @@ const authRoutes = {
       200: {
         description: 'TOTP URI and manual key',
         content: { 'application/json': { schema: z.object({ totpUri: z.string(), manualKey: z.string() }) } },
+      },
+      ...errorResponses,
+    },
+  }),
+
+  verifyTOTPCode: createCustomRoute({
+    operationId: 'signInWithTOTP',
+    method: 'post',
+    path: '/totp-verification',
+    guard: isPublicAccess,
+    // TODO look into rate limit customized for totp
+    middleware: [spamLimiter],
+    tags: ['auth'],
+    summary: 'Verify topt code',
+    description: 'Validates the totp code and completes totp based authentication.',
+    security: [],
+    request: {
+      body: { content: { 'application/json': { schema: TOTPVerificationBodySchema } } },
+    },
+    responses: {
+      200: {
+        description: 'Passkey verified',
+        headers: z.object({ 'Set-Cookie': cookieSchema }),
+        content: { 'application/json': { schema: successWithoutDataSchema } },
       },
       ...errorResponses,
     },

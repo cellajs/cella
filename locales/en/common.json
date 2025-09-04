@@ -462,5 +462,16 @@
   "session_type.two_factor_authentication": "2FA Confirmed",
   "session_type.pending_2fa": "2FA Pending",
   "session_type.regular": "Regular",
-  "session_type.impersonation": "Impersonation"
+  "totp": "TOPT",
+  "totp.title": "Two-Factor Verification",
+  "totp_qr.title": "Scan the QR Code",
+  "totp_qr.description": "Use an authenticator app or browser extention to scan.",
+  "totp_manual.title": "Manual Setup",
+  "totp_manual.description": "If you can`t scan the QR code, enter this key into your authenticator app:",
+  "totp_manual.secure_text": "Keep this key private - anyone with it can generate codes for your account.",
+  "totp_manual.footer_title": "Unable to scan?",
+  "totp_manual.footer_description": "You can manually configure your authenticator app with",
+  "totp_manual.button_text": "setup key",
+  "totp_verify": "Verify the code from the app",
+  "confirm": "Confirm"
 }

@@ -48,7 +48,7 @@ export const zOrganization = z.object({
   logoUrl: z.union([z.string(), z.null()]),
   websiteUrl: z.union([z.string(), z.null()]),
   welcomeText: z.union([z.string(), z.null()]),
-  authStrategies: z.array(z.enum(['github', 'google', 'microsoft', 'password', 'passkey', 'email'])),
+  authStrategies: z.array(z.enum(['github', 'google', 'microsoft', 'password', 'passkey', 'totp', 'email'])),
   chatSupport: z.boolean(),
   createdBy: z.union([z.string(), z.null()]),
   modifiedAt: z.union([z.string(), z.null()]),
@@ -547,6 +547,21 @@ export const zGetToptUriResponse = z.object({
   manualKey: z.string(),
 });
 
+export const zSignInWithTotpData = z.object({
+  body: z.optional(
+    z.object({
+      code: z.string().regex(/^\d{6}$/),
+    }),
+  ),
+  path: z.optional(z.never()),
+  query: z.optional(z.never()),
+});
+
+/**
+ * Passkey verified
+ */
+export const zSignInWithTotpResponse = z.boolean();
+
 export const zDeleteMeData = z.object({
   body: z.optional(z.never()),
   path: z.optional(z.never()),
@@ -619,7 +634,7 @@ export const zGetMyAuthResponse = z.object({
       deviceType: z.enum(['desktop', 'mobile']),
       deviceOs: z.union([z.string(), z.null()]),
       browser: z.union([z.string(), z.null()]),
-      authStrategy: z.enum(['github', 'google', 'microsoft', 'password', 'passkey', 'email']),
+      authStrategy: z.enum(['github', 'google', 'microsoft', 'password', 'passkey', 'totp', 'email']),
       expiresAt: z.string(),
       consumedAt: z.union([z.iso.date(), z.null()]),
       isCurrent: z.boolean(),
@@ -950,7 +965,7 @@ export const zUpdateOrganizationData = z.object({
       bannerUrl: z.optional(z.union([z.string(), z.null()])),
       websiteUrl: z.optional(z.union([z.string(), z.null()])),
       welcomeText: z.optional(z.union([z.string(), z.null()])),
-      authStrategies: z.optional(z.array(z.enum(['github', 'google', 'microsoft', 'password', 'passkey', 'email']))),
+      authStrategies: z.optional(z.array(z.enum(['github', 'google', 'microsoft', 'password', 'passkey', 'totp', 'email']))),
       chatSupport: z.optional(z.boolean()),
     }),
   ),

@@ -129,6 +129,13 @@ The documentation is generated from source code using \`zod\` schemas, converted
     uploadEnabled: true, // s3 fully configured, if false, files will be stored in local browser (indexedDB)
   },
 
+
+  // TOTP configuration
+  totpConfig: { 
+    intervalInSeconds: 60,
+    digits: 6
+  },
+
   // Default user flags
   defaultUserFlags: { 
     finishedOnboarding: false

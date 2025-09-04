@@ -2,6 +2,7 @@ import { membershipSchema } from '#/modules/memberships/schema';
 import { userSchema } from '#/modules/users/schema';
 import { idSchema, passwordSchema } from '#/utils/schema/common';
 import { z } from '@hono/zod-openapi';
+import { appConfig } from 'config';
 
 export const emailBodySchema = z.object({
   email: userSchema.shape.email,
@@ -51,6 +52,10 @@ export const passkeyVerificationBodySchema = z.object({
   authenticatorData: z.string(),
   signature: z.string(),
   ...passkeyBaseInfoSchema.shape,
+});
+
+export const TOTPVerificationBodySchema = z.object({
+  code: z.string().regex(new RegExp(`^\\d{${appConfig.totpConfig.digits}}$`), `Code must be exactly ${appConfig.totpConfig.digits} digits`),
 });
 
 export const oauthQuerySchema = z
