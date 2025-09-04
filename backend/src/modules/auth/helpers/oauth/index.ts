@@ -1,6 +1,3 @@
-import { appConfig, type EnabledOAuthProvider } from 'config';
-import { and, eq } from 'drizzle-orm';
-import type { Context } from 'hono';
 import { db } from '#/db/db';
 import { emailsTable } from '#/db/schema/emails';
 import { type OAuthAccountModel, oauthAccountsTable } from '#/db/schema/oauth-accounts';
@@ -17,6 +14,9 @@ import { handleCreateUser } from '#/modules/auth/helpers/user';
 import { getUsersByConditions } from '#/modules/users/helpers/get-user-by';
 import { isValidRedirectPath } from '#/utils/is-redirect-url';
 import { getIsoDate } from '#/utils/iso-date';
+import { appConfig, type EnabledOAuthProvider } from 'config';
+import { and, eq } from 'drizzle-orm';
+import type { Context } from 'hono';
 
 /**
  * Retrieves the OAuth redirect path from a cookie, or falls back to a default.
@@ -150,7 +150,8 @@ export const inviteFlow = async (
   oauthAccount: OAuthAccountModel | null = null,
 ): Promise<Response> => {
   // Token not found → invalid invitation
-  const invitationToken = await getInvitationToken(inviteTokenId);
+
+  const [invitationToken] = await db.select().from(tokensTable).where(eq(tokensTable.id, inviteTokenId));
 
   if (!invitationToken) {
     throw new AppError({ status: 403, type: 'oauth_token_missing', severity: 'warn', isRedirect: true });
@@ -190,7 +191,7 @@ export const verifyFlow = async (
   oauthAccount: OAuthAccountModel | null = null,
 ): Promise<Response> => {
   // Token not found → invalid verification
-  const verifyToken = await getVerifyToken(verifyTokenId);
+  const [verifyToken] = await db.select().from(tokensTable).where(eq(tokensTable.id, verifyTokenId));
 
   if (!verifyToken) {
     throw new AppError({ status: 403, type: 'oauth_token_missing', severity: 'warn', isRedirect: true });
@@ -304,30 +305,6 @@ const createOAuthAccount = async (
     .returning();
 
   return oauthAccount;
-};
-
-/**
- * Fetches an invitation token by its ID.
- *
- * @param inviteTokenId - The token ID to search for.
- * @returns The token if found, or null otherwise.
- */
-const getInvitationToken = async (inviteTokenId: TokenModel['id']): Promise<TokenModel | null> => {
-  const [token] = await db.select().from(tokensTable).where(eq(tokensTable.id, inviteTokenId));
-
-  return token ?? null;
-};
-
-/**
- * Fetches a verification token by its ID.
- *
- * @param verifyTokenId - The token ID to search for.
- * @returns The token if found, or null otherwise.
- */
-const getVerifyToken = async (verifyTokenId: TokenModel['id']): Promise<TokenModel | null> => {
-  const [token] = await db.select().from(tokensTable).where(eq(tokensTable.id, verifyTokenId));
-
-  return token ?? null;
 };
 
 /**

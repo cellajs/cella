@@ -1,5 +1,3 @@
-import { appConfig } from 'config';
-import { and, eq, isNull } from 'drizzle-orm';
 import { db } from '#/db/db';
 import { emailsTable } from '#/db/schema/emails';
 import { tokensTable } from '#/db/schema/tokens';
@@ -12,6 +10,8 @@ import { generateUnsubscribeToken } from '#/modules/users/helpers/unsubscribe-to
 import { getIsoDate } from '#/utils/iso-date';
 import { logError } from '#/utils/logger';
 import { nanoid } from '#/utils/nanoid';
+import { appConfig } from 'config';
+import { and, eq, isNull } from 'drizzle-orm';
 
 interface HandleCreateUserProps {
   newUser: Omit<InsertUserModel, 'unsubscribeToken'>;
@@ -34,7 +34,7 @@ export const handleCreateUser = async ({ newUser, membershipInviteTokenId, email
   const [inviteToken] = await db
     .select()
     .from(tokensTable)
-    .where(and(eq(tokensTable.email, newUser.email), eq(tokensTable.type, 'invitation'), isNull(tokensTable.userId)));
+    .where(and(eq(tokensTable.email, newUser.email), eq(tokensTable.type, 'invitation'), isNull(tokensTable.userId), isNull(tokensTable.consumedAt)));
 
   if (!membershipInviteTokenId && inviteToken) throw new AppError({ status: 403, type: 'invite_takes_priority', severity: 'warn' });
 

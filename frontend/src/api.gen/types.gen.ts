@@ -1613,7 +1613,6 @@ export type GetMyAuthResponses = {
       browser: string | null;
       authStrategy: 'github' | 'google' | 'microsoft' | 'password' | 'passkey' | 'totp' | 'email';
       expiresAt: string;
-      consumedAt: string | null;
       isCurrent: boolean;
     }>;
   };

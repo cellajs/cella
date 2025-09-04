@@ -1,7 +1,3 @@
-import { OpenAPIHono } from '@hono/zod-openapi';
-import { appConfig } from 'config';
-import { and, count, desc, eq, gt, ilike, inArray, isNotNull, isNull, or } from 'drizzle-orm';
-import i18n from 'i18next';
 import { db } from '#/db/db';
 import { emailsTable } from '#/db/schema/emails';
 import { membershipsTable } from '#/db/schema/memberships';
@@ -26,6 +22,10 @@ import { getOrderColumn } from '#/utils/order-column';
 import { slugFromEmail } from '#/utils/slug-from-email';
 import { prepareStringForILikeFilter } from '#/utils/sql';
 import { createDate, TimeSpan } from '#/utils/time-span';
+import { OpenAPIHono } from '@hono/zod-openapi';
+import { appConfig } from 'config';
+import { and, count, desc, eq, gt, ilike, inArray, isNotNull, isNull, or } from 'drizzle-orm';
+import i18n from 'i18next';
 import { MemberInviteEmail, type MemberInviteEmailProps } from '../../../emails/member-invite';
 
 const app = new OpenAPIHono<Env>({ defaultHook });
@@ -66,6 +66,7 @@ const membershipRouteHandlers = app
           inArray(tokensTable.email, normalizedEmails),
           isNotNull(tokensTable.entityType),
           gt(tokensTable.expiresAt, new Date()),
+          isNull(tokensTable.consumedAt),
         ),
       );
 
@@ -476,6 +477,7 @@ const membershipRouteHandlers = app
           eq(tokensTable[entityIdField], entity.id),
           eq(tokensTable.organizationId, organization.id),
           isNotNull(tokensTable.role),
+          isNull(tokensTable.consumedAt),
         ),
       )
       .orderBy(orderColumn);
@@ -498,6 +500,7 @@ const membershipRouteHandlers = app
       eq(tokensTable.email, normalizedEmail),
       isNotNull(tokensTable.entityType),
       isNotNull(tokensTable.role),
+      isNull(tokensTable.consumedAt),
     ];
     if (tokenId) filters.push(eq(tokensTable.id, tokenId));
 

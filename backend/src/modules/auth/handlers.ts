@@ -103,6 +103,7 @@ const authRouteHandlers = app
           isNull(tokensTable.userId),
           isNotNull(tokensTable.entityType),
           isNotNull(tokensTable.role),
+          isNull(tokensTable.consumedAt),
         ),
       )
       .limit(1);
@@ -160,9 +161,6 @@ const authRouteHandlers = app
       throw new AppError({ status: 400, type: 'forbidden_strategy', severity: 'error', meta: { strategy } });
     }
 
-    // Delete token to not needed anymore (if no membership invitation)
-    if (!membershipInvite) await db.delete(tokensTable).where(eq(tokensTable.id, validToken.id));
-
     // add token if it's membership invitation
     const membershipInviteTokenId = membershipInvite ? validToken.id : undefined;
     const hashedPassword = await hashPassword(password);
@@ -214,9 +212,6 @@ const authRouteHandlers = app
           eq(emailsTable.verified, false),
         ),
       );
-
-    // Delete token(s) to prevent reuse
-    await db.delete(tokensTable).where(eq(tokensTable.id, token.id));
 
     // Start 2FA challenge if the user has 2FA enabled
     const twoFactorRedirectPath = await initiateTwoFactorAuth(ctx, user);
@@ -291,9 +286,6 @@ const authRouteHandlers = app
     // If the token is not found or expired
     if (!token || !token.userId) throw new AppError({ status: 401, type: 'invalid_token', severity: 'warn' });
 
-    // Delete token to prevent reuse
-    await db.delete(tokensTable).where(and(eq(tokensTable.id, token.id), eq(tokensTable.type, 'password_reset')));
-
     const user = await getUserBy('id', token.userId);
 
     // If the user is not found
@@ -365,7 +357,11 @@ const authRouteHandlers = app
     const { type } = ctx.req.valid('query');
 
     // Check if token exists
-    const [tokenRecord] = await db.select().from(tokensTable).where(eq(tokensTable.id, id));
+    const [tokenRecord] = await db
+      .select()
+      .from(tokensTable)
+      .where(and(eq(tokensTable.id, id), isNull(tokensTable.consumedAt)));
+
     if (!tokenRecord) throw new AppError({ status: 404, type: `${type}_not_found`, severity: 'warn' });
 
     // If token is expired, return an error
@@ -427,9 +423,6 @@ const authRouteHandlers = app
       .returning();
 
     const [targetMembership] = activatedMemberships.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-
-    // Delete token after all activation, since tokenId is cascaded in membershipTable
-    await db.delete(tokensTable).where(eq(tokensTable.id, token.id));
 
     const entityIdField = appConfig.entityIdFields[token.entityType];
     if (!targetMembership[entityIdField]) throw new AppError({ status: 404, type: 'not_found', severity: 'warn', entityType: token.entityType });

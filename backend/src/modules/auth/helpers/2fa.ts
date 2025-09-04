@@ -1,14 +1,13 @@
-import { eq } from 'drizzle-orm';
-import type { Context } from 'hono';
 import { db } from '#/db/db';
 import { tokensTable } from '#/db/schema/tokens';
-import { type UserModel, usersTable } from '#/db/schema/users';
+import type { UserModel } from '#/db/schema/users';
 import { AppError } from '#/lib/errors';
 import { deleteAuthCookie, getAuthCookie, setAuthCookie } from '#/modules/auth/helpers/cookie';
-import { userSelect } from '#/modules/users/helpers/select';
-import { isExpiredDate } from '#/utils/is-expired-date';
+import { getUserBy } from '#/modules/users/helpers/get-user-by';
 import { nanoid } from '#/utils/nanoid';
 import { createDate, TimeSpan } from '#/utils/time-span';
+import { getValidToken } from '#/utils/validate-token';
+import type { Context } from 'hono';
 
 /**
  * Starts a two-factor authentication challenge for a user.
@@ -47,34 +46,24 @@ export const initiateTwoFactorAuth = async (ctx: Context, user: UserModel) => {
  * Validates a pending 2FA token from cookie and optionally deletes it.
  *
  * @param ctx - Hono context
- * @param deleteAfter - If true, deletes token from DB and cookie after validation
+ * @param deleteCoockieAfter - If true, deletes token from DB and cookie after validation
  * @returns UserModel
  * @throws AppError if token is missing, not found, or expired
  */
-export const validatePending2FAToken = async (ctx: Context, deleteAfter = false): Promise<UserModel> => {
+export const validatePending2FAToken = async (ctx: Context, deleteCoockieAfter = false): Promise<UserModel> => {
   // Get token ID from cookie
   const tokenIdFromCookie = await getAuthCookie(ctx, 'pending-2fa');
   if (!tokenIdFromCookie) throw new AppError({ status: 401, type: 'invalid_credentials', severity: 'error' });
 
   // Fetch token record and associated user
-  const [tokenRecord] = await db
-    .select({ user: userSelect, tokenId: tokensTable.id, tokenExpiredAt: tokensTable.expiresAt })
-    .from(tokensTable)
-    .innerJoin(usersTable, eq(usersTable.id, tokensTable.userId))
-    .where(eq(tokensTable.id, tokenIdFromCookie))
-    .limit(1);
-  if (!tokenRecord) throw new AppError({ status: 404, type: 'pending_2fa_not_found', severity: 'warn' });
+  const tokenRecord = await getValidToken({ requiredType: 'pending_2fa', tokenId: tokenIdFromCookie });
+  if (!tokenRecord.userId) throw new AppError({ status: 404, type: 'pending_2fa_not_found', severity: 'warn' });
 
-  const { user, tokenId, tokenExpiredAt } = tokenRecord;
+  const user = await getUserBy('id', tokenRecord.userId);
+  if (!user) throw new AppError({ status: 404, type: 'pending_2fa_not_found', severity: 'warn' });
 
-  // Check if the token has expired
-  if (isExpiredDate(tokenExpiredAt)) throw new AppError({ status: 401, type: 'pending_2fa_expired', severity: 'warn' });
-
-  // Delete token and cookie if requested
-  if (deleteAfter) {
-    await db.delete(tokensTable).where(eq(tokensTable.id, tokenId));
-    deleteAuthCookie(ctx, 'session');
-  }
+  // Delete cookie if requested
+  if (deleteCoockieAfter) deleteAuthCookie(ctx, 'pending-2fa');
 
   return user;
 };

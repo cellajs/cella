@@ -1,1 +1,1 @@
-ALTER TABLE "sessions" ADD COLUMN "consumed_at" timestamp with time zone;
+ALTER TABLE "tokens" ADD COLUMN "consumed_at" timestamp with time zone;

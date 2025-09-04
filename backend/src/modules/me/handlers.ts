@@ -31,7 +31,7 @@ import { logEvent } from '#/utils/logger';
 import { OpenAPIHono, type z } from '@hono/zod-openapi';
 import type { EnabledOAuthProvider, MenuSection } from 'config';
 import { appConfig } from 'config';
-import { and, eq, inArray, isNotNull, sql } from 'drizzle-orm';
+import { and, eq, inArray, isNotNull, isNull, sql } from 'drizzle-orm';
 import { type SSEStreamingApi, streamSSE } from 'hono/streaming';
 import { verifyTotpCode } from '../auth/helpers/totps';
 
@@ -151,6 +151,7 @@ const meRouteHandlers = app
               eq(tokensTable.entityType, entityType),
               eq(tokensTable.userId, user.id),
               isNotNull(tokensTable.role),
+              isNull(tokensTable.consumedAt),
             ),
           );
       }),

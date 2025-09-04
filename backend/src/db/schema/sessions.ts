@@ -1,7 +1,7 @@
-import { pgTable, timestamp, varchar } from 'drizzle-orm/pg-core';
 import { usersTable } from '#/db/schema/users';
 import { timestampColumns } from '#/db/utils/timestamp-columns';
 import { nanoid } from '#/utils/nanoid';
+import { pgTable, varchar } from 'drizzle-orm/pg-core';
 
 export const sessionTypeEnum = [
   'regular',
@@ -35,7 +35,6 @@ export const sessionsTable = pgTable('sessions', {
     enum: authStrategiesEnum,
   }).notNull(),
   expiresAt: timestampColumns.expiresAt,
-  consumedAt: timestamp({ withTimezone: true, mode: 'date' }),
 });
 
 export type SessionModel = typeof sessionsTable.$inferSelect;

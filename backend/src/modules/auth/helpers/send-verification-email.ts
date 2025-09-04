@@ -1,22 +1,20 @@
-import { appConfig } from 'config';
-import { and, eq } from 'drizzle-orm';
-import i18n from 'i18next';
 import { db } from '#/db/db';
 import { type EmailModel, emailsTable } from '#/db/schema/emails';
 import { oauthAccountsTable } from '#/db/schema/oauth-accounts';
 import { tokensTable } from '#/db/schema/tokens';
-import type { UserModel } from '#/db/schema/users';
 import { AppError } from '#/lib/errors';
 import { mailer } from '#/lib/mailer';
 import { getUserBy } from '#/modules/users/helpers/get-user-by';
 import { logEvent } from '#/utils/logger';
 import { nanoid } from '#/utils/nanoid';
 import { createDate, TimeSpan } from '#/utils/time-span';
+import { appConfig } from 'config';
+import { and, eq } from 'drizzle-orm';
+import i18n from 'i18next';
 import { EmailVerificationEmail, type EmailVerificationEmailProps } from '../../../../emails/email-verification';
 
 interface Props {
-  userId?: string;
-  tokenId?: string;
+  userId: string;
   oauthAccountId?: string;
   redirectPath?: string;
 }
@@ -24,16 +22,8 @@ interface Props {
 /**
  * Send a verification email to user.
  */
-export const sendVerificationEmail = async ({ userId, oauthAccountId, redirectPath, tokenId }: Props) => {
-  let user: UserModel | null = null;
-
-  // Get user
-  if (userId) user = await getUserBy('id', userId);
-  else if (tokenId) {
-    const [tokenRecord] = await db.select().from(tokensTable).where(eq(tokensTable.id, tokenId));
-    if (!tokenRecord || !tokenRecord.userId) throw new AppError({ status: 404, type: 'not_found', severity: 'warn' });
-    user = await getUserBy('id', tokenRecord.userId);
-  }
+export const sendVerificationEmail = async ({ userId, oauthAccountId, redirectPath }: Props) => {
+  const user = await getUserBy('id', userId);
 
   // User not found
   if (!user) throw new AppError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'user' });
