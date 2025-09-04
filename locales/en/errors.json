@@ -182,5 +182,6 @@
   "totp_verification_failed": "TOTP verification failed",
   "totp_verification_failed.text": "TOTP verification failed. Please try again or use another method.",
   "totp_setup_failed": "TOTP setup failed. Try again later.",
-  "totp_remove_failed": "TOTP unlink failed. Try again later."
+  "totp_remove_failed": "TOTP unlink failed. Try again later.",
+  "2fa_schema_requirement": "Email is required for login and must be omitted for 2FA"
 }

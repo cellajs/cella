@@ -12,18 +12,17 @@ import {
   signInWithPasskey,
 } from '~/api.gen';
 import { ApiError } from '~/lib/api';
-import type { AuthStep } from '~/modules/auth/types';
+import type { BaseOptionsProps } from '~/modules/auth/steps';
 import { toaster } from '~/modules/common/toaster/service';
 import { Button } from '~/modules/ui/button';
 import { useUIStore } from '~/store/ui';
 
-interface PasskeyOptionProps {
+interface PasskeyOptionProps extends BaseOptionsProps {
   email?: string;
-  actionType: Exclude<GetPasskeyChallengeData['query']['type'], 'registrate'>;
-  authStep: AuthStep;
+  type: Exclude<GetPasskeyChallengeData['query']['type'], 'registrate'>;
 }
 
-const PasskeyOption = ({ email, actionType, authStep }: PasskeyOptionProps) => {
+const PasskeyOption = ({ email, type, authStep = 'signIn' }: PasskeyOptionProps) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const mode = useUIStore((state) => state.mode);
@@ -34,7 +33,7 @@ const PasskeyOption = ({ email, actionType, authStep }: PasskeyOptionProps) => {
   const { mutate: passkeyAuth } = useMutation<SignInWithPasskeyResponse, ApiError | Error, NonNullable<SignInWithPasskeyData['body']>['email']>({
     mutationFn: async (email) => {
       //  Fetch a challenge from BE
-      const { challengeBase64, credentialIds } = await getPasskeyChallenge({ query: { email, type: actionType } });
+      const { challengeBase64, credentialIds } = await getPasskeyChallenge({ query: { email, type } });
 
       // Decode  challenge and wrap it in a Uint8Array (required format)
       const raw = decodeBase64(challengeBase64);
@@ -64,7 +63,7 @@ const PasskeyOption = ({ email, actionType, authStep }: PasskeyOptionProps) => {
         authenticatorData: encodeBase64(new Uint8Array(response.authenticatorData)),
         signature: encodeBase64(new Uint8Array(response.signature)),
         email,
-        type: actionType,
+        type: type,
       };
 
       // Send signed response to BE to complete authentication
@@ -75,10 +74,10 @@ const PasskeyOption = ({ email, actionType, authStep }: PasskeyOptionProps) => {
       else toaster(t('error:passkey_verification_failed'), 'error');
     },
     onError: (error) => {
-      if (actionType === 'two_factor' && error instanceof ApiError) {
+      if (type === 'two_factor' && error instanceof ApiError) {
         navigate({ to: '/error', search: { error: error.type, severity: error.severity } });
       }
-      if (actionType === 'login') toaster(t('error:passkey_verification_failed'), 'error');
+      if (type === 'login') toaster(t('error:passkey_verification_failed'), 'error');
     },
   });
 

@@ -2,7 +2,7 @@ import { useSearch } from '@tanstack/react-router';
 import { appConfig, type EnabledOAuthProvider } from 'config';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { AuthStep } from '~/modules/auth/types';
+import type { BaseOptionsProps } from '~/modules/auth/steps';
 import { toaster } from '~/modules/common/toaster/service';
 import { Button } from '~/modules/ui/button';
 import { AuthenticateRoute } from '~/routes/auth';
@@ -16,16 +16,12 @@ export const mapOAuthProviders = [
 
 type OAuthProviders = (typeof mapOAuthProviders)[number];
 
-interface OAuthOptionsProps {
-  actionType: AuthStep;
-}
-
 /**
  * Display OAuth options to sign in, sign up, accept invitation
  *
- * @param actionType The action type to perform
+ * @param authStep The action type to perform
  */
-const OAuthOptions = ({ actionType = 'signIn' }: OAuthOptionsProps) => {
+const OAuthOptions = ({ authStep = 'signIn' }: BaseOptionsProps) => {
   const { t } = useTranslation();
   const mode = useUIStore((state) => state.mode);
   const { token, redirect } = useSearch({ from: AuthenticateRoute.id });
@@ -33,7 +29,7 @@ const OAuthOptions = ({ actionType = 'signIn' }: OAuthOptionsProps) => {
   const [loadingProvider, setLoadingProvider] = useState<EnabledOAuthProvider | null>(null);
 
   const redirectPath = redirect?.startsWith('/') ? redirect : appConfig.defaultRedirectPath;
-  const actionText = actionType === 'signIn' ? t('common:sign_in') : actionType === 'signUp' ? t('common:sign_up') : t('common:continue');
+  const actionText = authStep === 'signIn' ? t('common:sign_in') : authStep === 'signUp' ? t('common:sign_up') : t('common:continue');
 
   const authenticateWithProvider = async (provider: EnabledOAuthProvider) => {
     try {

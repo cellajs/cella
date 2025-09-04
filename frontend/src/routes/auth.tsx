@@ -60,14 +60,14 @@ export const Confirn2FARoute = createRoute({
         <h2 className="font-semibold leading-none min-h-6">{t('common:totp.title')}</h2>
 
         {/* Option 1: Passkey */}
-        <PasskeyOption actionType="two_factor" authStep="signIn" />
+        <PasskeyOption type="two_factor" />
 
         <div className="relative flex justify-center text-xs uppercase">
           <span className="text-muted-foreground px-2">{t('common:or')}</span>
         </div>
 
         {/* Option 2: TOTP */}
-        <TOTPOption />
+        <TOTPOption type="two_factor" />
       </>
     );
   },

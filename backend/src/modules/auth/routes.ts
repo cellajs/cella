@@ -7,11 +7,11 @@ import {
   emailPasswordBodySchema,
   oauthCallbackQuerySchema,
   oauthQuerySchema,
-  passkeyBaseInfoSchema,
+  passkeyChallengeQuerySchema,
   passkeyChallengeSchema,
   passkeyVerificationBodySchema,
   tokenWithDataSchema,
-  TOTPVerificationBodySchema,
+  TotpVerificationBodySchema,
 } from '#/modules/auth/schema';
 import { contextEntityWithMembershipSchema } from '#/modules/entities/schema';
 import { cookieSchema, idSchema, locationSchema, passwordSchema, tokenParamSchema } from '#/utils/schema/common';
@@ -219,8 +219,8 @@ const authRoutes = {
     },
   }),
 
-  getTOTPUri: createCustomRoute({
-    operationId: 'getTOPTUri',
+  getTotpUri: createCustomRoute({
+    operationId: 'getTotpUri',
     method: 'get',
     path: '/totp-uri',
     guard: isAuthenticated,
@@ -239,8 +239,8 @@ const authRoutes = {
     },
   }),
 
-  verifyTOTPCode: createCustomRoute({
-    operationId: 'signInWithTOTP',
+  verifyTotpCode: createCustomRoute({
+    operationId: 'signInWithTotp',
     method: 'post',
     path: '/totp-verification',
     guard: isPublicAccess,
@@ -251,7 +251,7 @@ const authRoutes = {
     description: 'Validates the totp code and completes totp based authentication.',
     security: [],
     request: {
-      body: { content: { 'application/json': { schema: TOTPVerificationBodySchema } } },
+      body: { content: { 'application/json': { schema: TotpVerificationBodySchema } } },
     },
     responses: {
       200: {
@@ -274,7 +274,7 @@ const authRoutes = {
     summary: 'Get passkey challenge',
     description: 'Initiates the passkey registration or authentication flow by generating a device bound challenge.',
     security: [],
-    request: { query: passkeyBaseInfoSchema },
+    request: { query: passkeyChallengeQuerySchema },
     responses: {
       200: {
         description: 'Challenge created',

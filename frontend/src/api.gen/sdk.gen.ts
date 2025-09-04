@@ -55,9 +55,9 @@ import type {
   SignInWithPasskeyData,
   SignInWithPasskeyResponses,
   SignInWithPasskeyErrors,
-  GetToptUriData,
-  GetToptUriResponses,
-  GetToptUriErrors,
+  GetTotpUriData,
+  GetTotpUriResponses,
+  GetTotpUriErrors,
   SignInWithTotpData,
   SignInWithTotpResponses,
   SignInWithTotpErrors,
@@ -710,7 +710,7 @@ export const getPasskeyChallenge = <ThrowOnError extends boolean = true>(options
  * @param {string=} options.body.clientDataJSON - `string` (optional)
  * @param {string=} options.body.authenticatorData - `string` (optional)
  * @param {string=} options.body.signature - `string` (optional)
- * @param {enum | enum | enum=} options.body.type - `enum | enum | enum` (optional)
+ * @param {enum | enum=} options.body.type - `enum | enum` (optional)
  * @param {string=} options.body.email - `string` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
@@ -740,13 +740,13 @@ export const signInWithPasskey = <ThrowOnError extends boolean = true>(options?:
  *
  * Generates a new TOTP secret for the current user and returns both the QR URI and Base32 manual key
  *
- * **GET /auth/totp-uri** ·· [getToptUri](http://localhost:4000/docs#tag/auth/get/auth/totp-uri) ·· _auth_
+ * **GET /auth/totp-uri** ·· [getTotpUri](http://localhost:4000/docs#tag/auth/get/auth/totp-uri) ·· _auth_
  *
- * @param {getToptUriData} options
+ * @param {getTotpUriData} options
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
-export const getToptUri = <ThrowOnError extends boolean = true>(options?: Options<GetToptUriData, ThrowOnError>) => {
-  return (options?.client ?? _heyApiClient).get<GetToptUriResponses, GetToptUriErrors, ThrowOnError, 'data'>({
+export const getTotpUri = <ThrowOnError extends boolean = true>(options?: Options<GetTotpUriData, ThrowOnError>) => {
+  return (options?.client ?? _heyApiClient).get<GetTotpUriResponses, GetTotpUriErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     url: '/auth/totp-uri',
     ...options,
@@ -764,6 +764,8 @@ export const getToptUri = <ThrowOnError extends boolean = true>(options?: Option
  *
  * @param {signInWithTotpData} options
  * @param {string=} options.body.code - `string` (optional)
+ * @param {enum | enum=} options.body.type - `enum | enum` (optional)
+ * @param {string=} options.body.email - `string` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
 export const signInWithTotp = <ThrowOnError extends boolean = true>(options?: Options<SignInWithTotpData, ThrowOnError>) => {

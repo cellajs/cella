@@ -1167,7 +1167,7 @@ export type GetPasskeyChallengeData = {
   body?: never;
   path?: never;
   query: {
-    type: 'registrate' | 'login' | 'two_factor';
+    type: 'login' | 'two_factor' | 'registrate';
     email?: string;
   };
   url: '/auth/passkey-challenge';
@@ -1225,7 +1225,7 @@ export type SignInWithPasskeyData = {
     clientDataJSON: string;
     authenticatorData: string;
     signature: string;
-    type: 'registrate' | 'login' | 'two_factor';
+    type: 'login' | 'two_factor';
     email?: string;
   };
   path?: never;
@@ -1277,14 +1277,14 @@ export type SignInWithPasskeyResponses = {
 
 export type SignInWithPasskeyResponse = SignInWithPasskeyResponses[keyof SignInWithPasskeyResponses];
 
-export type GetToptUriData = {
+export type GetTotpUriData = {
   body?: never;
   path?: never;
   query?: never;
   url: '/auth/totp-uri';
 };
 
-export type GetToptUriErrors = {
+export type GetTotpUriErrors = {
   /**
    * Bad request: problem processing request.
    */
@@ -1317,9 +1317,9 @@ export type GetToptUriErrors = {
   };
 };
 
-export type GetToptUriError = GetToptUriErrors[keyof GetToptUriErrors];
+export type GetTotpUriError = GetTotpUriErrors[keyof GetTotpUriErrors];
 
-export type GetToptUriResponses = {
+export type GetTotpUriResponses = {
   /**
    * TOTP URI and manual key
    */
@@ -1329,11 +1329,13 @@ export type GetToptUriResponses = {
   };
 };
 
-export type GetToptUriResponse = GetToptUriResponses[keyof GetToptUriResponses];
+export type GetTotpUriResponse = GetTotpUriResponses[keyof GetTotpUriResponses];
 
 export type SignInWithTotpData = {
   body?: {
     code: string;
+    type: 'login' | 'two_factor';
+    email?: string;
   };
   path?: never;
   query?: never;

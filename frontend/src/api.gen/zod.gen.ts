@@ -501,7 +501,7 @@ export const zGetPasskeyChallengeData = z.object({
   body: z.optional(z.never()),
   path: z.optional(z.never()),
   query: z.object({
-    type: z.union([z.enum(['registrate']), z.enum(['login']), z.enum(['two_factor'])]),
+    type: z.union([z.enum(['login']), z.enum(['two_factor']), z.enum(['registrate'])]),
     email: z.optional(z.string()),
   }),
 });
@@ -520,7 +520,7 @@ export const zSignInWithPasskeyData = z.object({
       clientDataJSON: z.string(),
       authenticatorData: z.string(),
       signature: z.string(),
-      type: z.union([z.enum(['registrate']), z.enum(['login']), z.enum(['two_factor'])]),
+      type: z.union([z.enum(['login']), z.enum(['two_factor'])]),
       email: z.optional(z.string()),
     }),
   ),
@@ -533,7 +533,7 @@ export const zSignInWithPasskeyData = z.object({
  */
 export const zSignInWithPasskeyResponse = z.boolean();
 
-export const zGetToptUriData = z.object({
+export const zGetTotpUriData = z.object({
   body: z.optional(z.never()),
   path: z.optional(z.never()),
   query: z.optional(z.never()),
@@ -542,7 +542,7 @@ export const zGetToptUriData = z.object({
 /**
  * TOTP URI and manual key
  */
-export const zGetToptUriResponse = z.object({
+export const zGetTotpUriResponse = z.object({
   totpUri: z.string(),
   manualKey: z.string(),
 });
@@ -551,6 +551,8 @@ export const zSignInWithTotpData = z.object({
   body: z.optional(
     z.object({
       code: z.string().regex(/^\d{6}$/),
+      type: z.union([z.enum(['login']), z.enum(['two_factor'])]),
+      email: z.optional(z.string()),
     }),
   ),
   path: z.optional(z.never()),

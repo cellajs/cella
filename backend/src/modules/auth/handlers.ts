@@ -60,7 +60,7 @@ import { and, desc, eq, isNotNull, isNull } from 'drizzle-orm';
 import i18n from 'i18next';
 import { getRandomValues } from 'node:crypto';
 import { CreatePasswordEmail, type CreatePasswordEmailProps } from '../../../emails/create-password';
-import { verifyTOTPCode } from './helpers/totps';
+import { verifyTotpCode } from './helpers/totps';
 
 const enabledStrategies: readonly string[] = appConfig.enabledAuthStrategies;
 const enabledOAuthProviders: readonly string[] = appConfig.enabledOAuthProviders;
@@ -839,9 +839,7 @@ const authRouteHandlers = app
     const meta = { strategy, sessionType };
 
     // Fail early if user not found
-    if (!user) {
-      throw new AppError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'user', meta });
-    }
+    if (!user) throw new AppError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'user', meta });
 
     // Retrieve the passkey challenge from cookie
     const challengeFromCookie = await getAuthCookie(ctx, 'passkey-challenge');
@@ -861,14 +859,14 @@ const authRouteHandlers = app
     }
 
     // Set user session after successful verification
-    await setUserSession(ctx, user, 'passkey', sessionType);
+    await setUserSession(ctx, user, strategy, sessionType);
 
     return ctx.json(true, 200);
   })
   /*
    * TOTP uri
    */
-  .openapi(authRoutes.getTOTPUri, async (ctx) => {
+  .openapi(authRoutes.getTotpUri, async (ctx) => {
     // Generate a 20-byte random secret and encode it as Base32
     const secret = crypto.getRandomValues(new Uint8Array(20));
     const manualKey = encodeBase32(secret);
@@ -886,21 +884,35 @@ const authRouteHandlers = app
   /*
    * Verify TOTP code
    */
-  // TODO make able to auth by totp
-  .openapi(authRoutes.verifyTOTPCode, async (ctx) => {
-    const { code } = ctx.req.valid('json');
+  .openapi(authRoutes.verifyTotpCode, async (ctx) => {
+    const { code, type, email } = ctx.req.valid('json');
     const strategy = 'totp';
-    const sessionType = 'two_factor_authentication';
+    // Determine session type: regular login or 2FA flow
+    const sessionType = type === 'two_factor' ? 'two_factor_authentication' : 'regular';
 
     const meta = { strategy, sessionType };
-    const user = await validatePending2FAToken(ctx, true);
+    let user: UserModel | null = null;
+
+    // Find user by email if provided
+    if (email) {
+      user = await getUserBy('email', email.toLowerCase());
+    }
+
+    // Override user if this is a two_factor authentication
+    if (type === 'two_factor') {
+      const userFromToken = await validatePending2FAToken(ctx, true);
+      user = userFromToken;
+    }
+
+    // Fail early if user not found
+    if (!user) throw new AppError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'user', meta });
 
     // Get passkey credentials
     const [credentials] = await db.select().from(totpsTable).where(eq(totpsTable.userId, user.id)).limit(1);
     if (!credentials) throw new AppError({ status: 404, type: 'not_found', severity: 'warn', meta });
 
     try {
-      const isValid = verifyTOTPCode(code, credentials.encoderSecretKey);
+      const isValid = verifyTotpCode(code, credentials.encoderSecretKey);
       if (!isValid) throw new AppError({ status: 401, type: 'invalid_token', severity: 'warn', meta });
     } catch (error) {
       if (error instanceof Error) {
@@ -909,7 +921,7 @@ const authRouteHandlers = app
     }
 
     // Set user session after successful verification
-    await setUserSession(ctx, user, 'totp', sessionType);
+    await setUserSession(ctx, user, strategy, sessionType);
 
     return ctx.json(true, 200);
   });

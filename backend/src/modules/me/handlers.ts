@@ -33,7 +33,7 @@ import type { EnabledOAuthProvider, MenuSection } from 'config';
 import { appConfig } from 'config';
 import { and, eq, inArray, isNotNull, sql } from 'drizzle-orm';
 import { type SSEStreamingApi, streamSSE } from 'hono/streaming';
-import { verifyTOTPCode } from '../auth/helpers/totps';
+import { verifyTotpCode } from '../auth/helpers/totps';
 
 type UserMenu = z.infer<typeof menuSchema>;
 type MenuItem = z.infer<typeof menuItemSchema>;
@@ -293,7 +293,7 @@ const meRouteHandlers = app
     if (!encoderSecretKey) throw new AppError({ status: 401, type: 'invalid_credentials', severity: 'warn' });
 
     try {
-      const isValid = verifyTOTPCode(code, encoderSecretKey);
+      const isValid = verifyTotpCode(code, encoderSecretKey);
       if (!isValid) throw new AppError({ status: 401, type: 'invalid_token', severity: 'warn' });
     } catch (error) {
       if (error instanceof Error) {

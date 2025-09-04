@@ -1,3 +1,5 @@
+import { eq } from 'drizzle-orm';
+import type { Context } from 'hono';
 import { db } from '#/db/db';
 import { tokensTable } from '#/db/schema/tokens';
 import { type UserModel, usersTable } from '#/db/schema/users';
@@ -7,8 +9,6 @@ import { userSelect } from '#/modules/users/helpers/select';
 import { isExpiredDate } from '#/utils/is-expired-date';
 import { nanoid } from '#/utils/nanoid';
 import { createDate, TimeSpan } from '#/utils/time-span';
-import { eq } from 'drizzle-orm';
-import type { Context } from 'hono';
 
 /**
  * Starts a two-factor authentication challenge for a user.

@@ -23,6 +23,10 @@ import { useUserStore } from '~/store/user';
 const enabledStrategies: readonly string[] = appConfig.enabledAuthStrategies;
 const emailEnabled = enabledStrategies.includes('password') || enabledStrategies.includes('passkey');
 
+export interface BaseOptionsProps {
+  authStep?: AuthStep;
+}
+
 const AuthSteps = () => {
   const { t } = useTranslation();
   const { lastUser } = useUserStore();
@@ -98,9 +102,9 @@ const AuthSteps = () => {
               <span className="text-muted-foreground px-2">{t('common:or')}</span>
             </div>
           )}
-          {enabledStrategies.includes('totp') && <TOTPOption />}
-          {enabledStrategies.includes('passkey') && <PasskeyOption email={email} actionType="login" authStep={step} />}
-          {enabledStrategies.includes('oauth') && <OAuthOptions actionType={step} />}
+          {enabledStrategies.includes('totp') && <TOTPOption email={email} type="login" authStep={step} />}
+          {enabledStrategies.includes('passkey') && <PasskeyOption email={email} type="login" authStep={step} />}
+          {enabledStrategies.includes('oauth') && <OAuthOptions authStep={step} />}
         </>
       )}
     </>

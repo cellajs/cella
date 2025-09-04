@@ -1,7 +1,7 @@
 import { createCustomRoute } from '#/lib/custom-routes';
 import { isAuthenticated, isPublicAccess } from '#/middlewares/guard';
 import { tokenLimiter } from '#/middlewares/rate-limiter/limiters';
-import { TOTPVerificationBodySchema } from '#/modules/auth/schema';
+import { TotpVerificationBodySchema } from '#/modules/auth/schema';
 import {
   meAuthDataSchema,
   menuSchema,
@@ -273,7 +273,7 @@ const meRoutes = {
     request: {
       body: {
         required: true,
-        content: { 'application/json': { schema: TOTPVerificationBodySchema } },
+        content: { 'application/json': { schema: TotpVerificationBodySchema.pick({ code: true }) } },
       },
     },
 
