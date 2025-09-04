@@ -93,11 +93,6 @@ export const sendVerificationEmail = async ({ userId, oauthAccountId, redirectPa
   const verifyPath = !oauthAccount ? `/auth/verify-email/${token}` : `/auth/${oauthAccount.providerId}`;
   const verificationLink = new URL(verifyPath, appConfig.backendAuthUrl);
 
-  // Add query parameters
-  if (!oauthAccount) {
-    verificationLink.searchParams.set('tokenId', tokenRecord.id);
-  }
-
   if (oauthAccount) {
     verificationLink.searchParams.set('token', token);
     verificationLink.searchParams.set('type', 'verify');

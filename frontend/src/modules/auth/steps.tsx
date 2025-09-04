@@ -102,8 +102,9 @@ const AuthSteps = () => {
               <span className="text-muted-foreground px-2">{t('common:or')}</span>
             </div>
           )}
-          {enabledStrategies.includes('totp') && <TOTPOption email={email} type="login" authStep={step} />}
-          {enabledStrategies.includes('passkey') && <PasskeyOption email={email} type="login" authStep={step} />}
+          {/* TODO(IMPROVEMENT) be able to signUp with totp or passeky */}
+          {enabledStrategies.includes('totp') && step === 'signIn' && <TOTPOption email={email} type="login" authStep={step} />}
+          {enabledStrategies.includes('passkey') && step === 'signIn' && <PasskeyOption email={email} type="login" authStep={step} />}
           {enabledStrategies.includes('oauth') && <OAuthOptions authStep={step} />}
         </>
       )}

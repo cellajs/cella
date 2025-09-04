@@ -30,7 +30,6 @@ export const AuthenticateRoute = createRoute({
   validateSearch: z.object({
     redirect: z.string().optional(),
     token: z.string().optional(),
-    tokenId: z.string().optional(),
     fromRoot: z.boolean().optional(),
   }),
   staticData: { isAuth: false },
@@ -82,7 +81,6 @@ export const RequestPasswordRoute = createRoute({
 });
 
 export const CreatePasswordWithTokenRoute = createRoute({
-  validateSearch: z.object({ tokenId: z.string() }),
   path: '/auth/create-password/$token',
   staticData: { isAuth: false },
   head: () => ({ meta: [{ title: appTitle('Create password') }] }),
@@ -99,18 +97,17 @@ export const EmailVerificationRoute = createRoute({
 });
 
 export const AcceptEntityInviteRoute = createRoute({
-  validateSearch: z.object({ tokenId: z.string() }),
   path: '/invitation/$token',
   staticData: { isAuth: true },
   head: () => ({ meta: [{ title: appTitle('Join') }] }),
-  beforeLoad: async ({ params, search }) => {
+  beforeLoad: async ({ params }) => {
     try {
       const queryOptions = meQueryOptions();
       const options = { ...queryOptions, revalidateIfStale: true };
       await queryClient.ensureQueryData(options);
     } catch {
       console.info('Not authenticated (silent check) -> redirect to sign in');
-      throw redirect({ to: '/auth/authenticate', search: { token: params.token, tokenId: search.tokenId } });
+      throw redirect({ to: '/auth/authenticate', search: { token: params.token } });
     }
   },
   getParentRoute: () => AuthLayoutRoute,

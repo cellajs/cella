@@ -33,7 +33,7 @@ const CreatePasswordForm = () => {
 
   const { token } = useParams({ from: CreatePasswordWithTokenRoute.id });
 
-  const { data, isLoading, error } = useCheckToken('email_verification', token);
+  const { data, isLoading, error } = useCheckToken('password_reset', token);
   const isMobile = window.innerWidth < 640;
 
   // Reset password & sign in

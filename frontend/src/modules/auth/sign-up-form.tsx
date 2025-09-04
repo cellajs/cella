@@ -7,7 +7,7 @@ import { lazy, type RefObject, Suspense, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import type { z } from 'zod';
-import { type SignUpData, type SignUpResponse, type SignUpWithTokenData, type SignUpWithTokenResponse, signUp, signUpWithToken } from '~/api.gen';
+import { signUp, type SignUpData, type SignUpResponse, signUpWithToken, type SignUpWithTokenData, type SignUpWithTokenResponse } from '~/api.gen';
 import { zSignUpData } from '~/api.gen/zod.gen';
 import type { ApiError } from '~/lib/api';
 import type { AuthStep, TokenData } from '~/modules/auth/types';
@@ -39,7 +39,7 @@ export const SignUpForm = ({ tokenData, email, setStep, resetSteps, emailEnabled
   const { t } = useTranslation();
   const navigate = useNavigate();
 
-  const { token, tokenId } = useSearch({ from: AuthenticateRoute.id });
+  const { token } = useSearch({ from: AuthenticateRoute.id });
 
   const isMobile = window.innerWidth < 640;
 
@@ -74,7 +74,7 @@ export const SignUpForm = ({ tokenData, email, setStep, resetSteps, emailEnabled
 
   // Handle submit action
   const onSubmit = (formValues: FormValues) => {
-    if (token && tokenId) return _signUpWithToken({ ...formValues, token });
+    if (token) return _signUpWithToken({ ...formValues, token });
     _signUp({ ...formValues });
   };
 

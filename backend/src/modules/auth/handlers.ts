@@ -241,12 +241,10 @@ const authRouteHandlers = app
     // Delete old token if exists
     await db.delete(tokensTable).where(and(eq(tokensTable.userId, user.id), eq(tokensTable.type, 'password_reset')));
 
-    const token = nanoid(40);
-
     const [tokenRecord] = await db
       .insert(tokensTable)
       .values({
-        token,
+        token: nanoid(40),
         type: 'password_reset',
         userId: user.id,
         email,
@@ -257,7 +255,7 @@ const authRouteHandlers = app
 
     // Send email
     const lng = user.language;
-    const createPasswordLink = `${appConfig.frontendUrl}/auth/create-password/${token}?tokenId=${tokenRecord.id}`;
+    const createPasswordLink = `${appConfig.frontendUrl}/auth/create-password/${tokenRecord.token}`;
     const subject = i18n.t('backend:email.create_password.subject', { lng, appName: appConfig.name });
     const staticProps = { createPasswordLink, subject, lng };
     const recipients = [{ email: user.email }];
