@@ -12,6 +12,7 @@ export const sessionSchema = createSelectSchema(sessionsTable).omit({ token: tru
 export const meAuthDataSchema = z.object({
   enabledOAuth: z.array(enabledOAuthProvidersEnum),
   hasPasskey: z.boolean(),
+  hasTotp: z.boolean(),
   hasPassword: z.boolean(),
   sessions: z.array(sessionSchema.extend({ expiresAt: z.string() })),
 });

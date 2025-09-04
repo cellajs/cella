@@ -77,7 +77,7 @@ const CreatePasswordForm = () => {
   return (
     <Form {...form}>
       <h1 className="text-2xl text-center">
-        {t('common:reset_password')} <br />{' '}
+        {t('common:reset_resource', { resource: t('common:password').toLowerCase() })} <br />{' '}
         {data.email && (
           <Button variant="ghost" disabled className="font-light mt-2 text-xl">
             {data.email}

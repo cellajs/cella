@@ -13,6 +13,7 @@ import { toaster } from '~/modules/common/toaster/service';
 import { SubmitButton } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
 import { Input } from '~/modules/ui/input';
+import { useUserStore } from '~/store/user';
 import { defaultOnInvalid } from '~/utils/form-on-invalid';
 
 const formSchema = zSignInWithTotpData.shape.body.unwrap();
@@ -38,9 +39,12 @@ export const TOPTVerificationForm = ({ mode }: { mode: 'setup' | 'auth' }) => {
         return;
       }
 
-      if (isSetup) throw navigate({ to: appConfig.defaultRedirectPath, replace: true });
+      if (!isSetup) {
+        navigate({ to: appConfig.defaultRedirectPath, replace: true });
+        return;
+      }
 
-      // TODO update userstore
+      useUserStore.getState().setMeAuthData({ hasTotp: true });
     },
     onError: () => toaster(t(`error:${isSetup ? 'totp_setup_failed' : 'totp_verification_failed'}`), 'error'),
   });
@@ -51,7 +55,7 @@ export const TOPTVerificationForm = ({ mode }: { mode: 'setup' | 'auth' }) => {
   };
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit, defaultOnInvalid)} className="flex flex-row gap-2 items-end mt-4">
+      <form onSubmit={form.handleSubmit(onSubmit, defaultOnInvalid)} className={`flex flex-row gap-2 items-end mt-4 ${!isSetup && 'justify-center'}`}>
         <FormField
           control={form.control}
           name="code"

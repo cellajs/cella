@@ -8,7 +8,7 @@ import { useUserStore } from '~/store/user';
 export const TwoFactorAuthentication = () => {
   const { t } = useTranslation();
   const user = useUserStore((state) => state.user);
-  const { hasPasskey } = useUserStore.getState();
+  const { hasPasskey, hasTotp } = useUserStore.getState();
 
   const { mutateAsync: updateSelf } = useUpdateSelfMutation();
 
@@ -29,8 +29,8 @@ export const TwoFactorAuthentication = () => {
         <p className="font-semibold">{t('common:2fa')}</p>
       </HelpText>
       <div className="mb-6">
-        <Switch disabled={!hasPasskey} checked={user.twoFactorEnabled} onCheckedChange={toogle2fa} />
-        {!hasPasskey && <p className="text-sm text-gray-500 mt-2">{t('common:2fa_disabled.text')}</p>}
+        <Switch disabled={!hasPasskey && !hasTotp} checked={user.twoFactorEnabled} onCheckedChange={toogle2fa} />
+        {!hasPasskey && !hasTotp && <p className="text-sm text-gray-500 mt-2">{t('common:2fa_disabled.text')}</p>}
       </div>
     </>
   );

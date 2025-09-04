@@ -181,7 +181,7 @@ const UserSettingsPage = () => {
                 })}
               </div>
               <HelpText content={t('common:request_password.text')}>
-                <p className="font-semibold">{t('common:reset_password')}</p>{' '}
+                <p className="font-semibold">{t('common:reset_resource', { resource: t('common:password').toLowerCase() })}</p>{' '}
               </HelpText>
               <div className="mb-6">
                 <Button className="w-full sm:w-auto" variant="outline" disabled={disabledResetPassword} onClick={requestResetPasswordClick}>

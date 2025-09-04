@@ -124,9 +124,9 @@
   "page_not_found": "Page not found",
   "page_not_found.text": "This page didn't exist or has been deleted.",
   "passkey_registration_failed": "Registering passkey failed. Try again later.",
-  "passkey_failed": "Passkey verification failed",
-  "passkey_failed.text": "Passkey verification failed. Please try again or use another method.",
-  "passkey_remove_failed": "Removing passkey failed. Try again later.",
+  "passkey_verification_failed": "Passkey verification failed",
+  "passkey_verification_failed.text": "Passkey verification failed. Please try again or use another method.",
+  "passkey_remove_failed": "Unlinking passkey failed. Try again later.",
   "password_reset_expired": "Password reset token has expired",
   "password_reset_expired.text": "The token you provided has expired. Use forgot password to request a new one.",
   "password_reset_not_found": "Can't reset password",
@@ -180,5 +180,7 @@
   "pending_2fa_expired": "Verification step expired",
   "pending_2fa_expired.text": "Your verification token has expired or is invalid. Please sign in again to continue.",
   "totp_verification_failed": "TOTP verification failed",
-  "totp_setup_failed": "TOTP setup failed. Try again later."
+  "totp_verification_failed.text": "TOTP verification failed. Please try again or use another method.",
+  "totp_setup_failed": "TOTP setup failed. Try again later.",
+  "totp_remove_failed": "TOTP unlink failed. Try again later."
 }

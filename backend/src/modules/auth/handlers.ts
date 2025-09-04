@@ -5,6 +5,7 @@ import { organizationsTable } from '#/db/schema/organizations';
 import { passkeysTable } from '#/db/schema/passkeys';
 import { sessionsTable } from '#/db/schema/sessions';
 import { tokensTable } from '#/db/schema/tokens';
+import { totpsTable } from '#/db/schema/totps';
 import { type UserModel, usersTable } from '#/db/schema/users';
 import { env } from '#/env';
 import { type Env, getContextToken, getContextUser } from '#/lib/context';
@@ -51,14 +52,15 @@ import { nanoid } from '#/utils/nanoid';
 import { slugFromEmail } from '#/utils/slug-from-email';
 import { createDate, TimeSpan } from '#/utils/time-span';
 import { OpenAPIHono } from '@hono/zod-openapi';
-import { decodeBase32, encodeBase32, encodeBase64 } from '@oslojs/encoding';
-import { createTOTPKeyURI, verifyTOTP } from '@oslojs/otp';
+import { encodeBase32, encodeBase64 } from '@oslojs/encoding';
+import { createTOTPKeyURI } from '@oslojs/otp';
 import { generateCodeVerifier, generateState, OAuth2RequestError } from 'arctic';
 import { appConfig, type EnabledOAuthProvider } from 'config';
 import { and, desc, eq, isNotNull, isNull } from 'drizzle-orm';
 import i18n from 'i18next';
 import { getRandomValues } from 'node:crypto';
 import { CreatePasswordEmail, type CreatePasswordEmailProps } from '../../../emails/create-password';
+import { verifyTOTPCode } from './helpers/totps';
 
 const enabledStrategies: readonly string[] = appConfig.enabledAuthStrategies;
 const enabledOAuthProviders: readonly string[] = appConfig.enabledOAuthProviders;
@@ -854,7 +856,7 @@ const authRouteHandlers = app
       if (!isValid) throw new AppError({ status: 401, type: 'invalid_token', severity: 'warn', meta });
     } catch (error) {
       if (error instanceof Error) {
-        throw new AppError({ status: 500, type: 'passkey_failed', severity: 'error', meta, originalError: error });
+        throw new AppError({ status: 500, type: 'passkey_verification_failed', severity: 'error', meta, originalError: error });
       }
     }
 
@@ -884,30 +886,25 @@ const authRouteHandlers = app
   /*
    * Verify TOTP code
    */
+  // TODO make able to auth by totp
   .openapi(authRoutes.verifyTOTPCode, async (ctx) => {
     const { code } = ctx.req.valid('json');
     const strategy = 'totp';
     const sessionType = 'two_factor_authentication';
 
     const meta = { strategy, sessionType };
-
     const user = await validatePending2FAToken(ctx, true);
 
-    // Fail early if user not found
-    if (!user) throw new AppError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'user', meta });
-
-    // Retrieve the encoded totp secret from cookie
-    const encodedSecret = await getAuthCookie(ctx, 'totp-key');
-    if (!encodedSecret) throw new AppError({ status: 401, type: 'invalid_credentials', severity: 'warn', meta });
-
-    const decodedSecretKey = decodeBase32(encodedSecret);
+    // Get passkey credentials
+    const [credentials] = await db.select().from(totpsTable).where(eq(totpsTable.userId, user.id)).limit(1);
+    if (!credentials) throw new AppError({ status: 404, type: 'not_found', severity: 'warn', meta });
 
     try {
-      const isValid = verifyTOTP(decodedSecretKey, appConfig.totpConfig.intervalInSeconds, appConfig.totpConfig.digits, code);
+      const isValid = verifyTOTPCode(code, credentials.encoderSecretKey);
       if (!isValid) throw new AppError({ status: 401, type: 'invalid_token', severity: 'warn', meta });
     } catch (error) {
       if (error instanceof Error) {
-        throw new AppError({ status: 500, type: 'totp_verification_failed', severity: 'error', originalError: error, meta });
+        throw new AppError({ status: 500, type: 'totp_verification_failed', severity: 'error', meta, originalError: error });
       }
     }
 

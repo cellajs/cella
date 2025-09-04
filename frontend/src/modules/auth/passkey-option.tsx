@@ -72,13 +72,13 @@ const PasskeyOption = ({ email, actionType, authStep }: PasskeyOptionProps) => {
     },
     onSuccess: (success) => {
       if (success) navigate({ to: redirectPath, replace: true });
-      else toaster(t('error:passkey_failed'), 'error');
+      else toaster(t('error:passkey_verification_failed'), 'error');
     },
     onError: (error) => {
       if (actionType === 'two_factor' && error instanceof ApiError) {
         navigate({ to: '/error', search: { error: error.type, severity: error.severity } });
       }
-      if (actionType === 'login') toaster(t('error:passkey_failed'), 'error');
+      if (actionType === 'login') toaster(t('error:passkey_verification_failed'), 'error');
     },
   });
 

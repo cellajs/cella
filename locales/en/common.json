@@ -296,8 +296,7 @@
   "resend": "Resend",
   "resend_invitation.text": "Send a duplicate invitation with a new expiration date.",
   "reset": "Reset",
-  "reset_passkey": "Reset passkey",
-  "reset_password": "Reset password",
+  "reset_resource": "Reset {{resource}}",
   "reset_password.text": "Enter your email to receive a link to renew your password.",
   "resource_handle": "{{resource}} handle",
   "resource_handle.text": "A unique handle for {{resource}} URL",
@@ -463,6 +462,7 @@
   "session_type.pending_2fa": "2FA Pending",
   "session_type.regular": "Regular",
   "totp": "TOTP",
+  "totp.text": "Sign in using the TOTP (Time-based One-Time Password) from your authenticator app",
   "totp.title": "Two-Factor Verification",
   "totp_qr.title": "Scan the QR Code",
   "totp_qr.description": "Use an authenticator app or browser extention to scan.",
@@ -473,5 +473,9 @@
   "totp_manual.footer_description": "You can manually configure your authenticator app with",
   "totp_manual.button_text": "setup key",
   "totp_verify": "Verify the code from the app",
-  "confirm": "Confirm"
+  "confirm": "Confirm",
+  "success.totp_removed": "TOTP removed.",
+  "success.totp_added": "TOTP created and added successfully.",
+  "totp_registered": "TOTP successfully registered",
+  "unlink": "Unlink"
 }

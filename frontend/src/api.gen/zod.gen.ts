@@ -623,6 +623,7 @@ export const zGetMyAuthData = z.object({
 export const zGetMyAuthResponse = z.object({
   enabledOAuth: z.array(z.enum(['github'])),
   hasPasskey: z.boolean(),
+  hasTotp: z.boolean(),
   hasPassword: z.boolean(),
   sessions: z.array(
     z.object({
@@ -708,7 +709,7 @@ export const zDeleteMyMembershipData = z.object({
  */
 export const zDeleteMyMembershipResponse = z.boolean();
 
-export const zDeletePasskeyData = z.object({
+export const zUnlinkPasskeyData = z.object({
   body: z.optional(z.never()),
   path: z.optional(z.never()),
   query: z.optional(z.never()),
@@ -717,9 +718,9 @@ export const zDeletePasskeyData = z.object({
 /**
  * Passkey removed
  */
-export const zDeletePasskeyResponse = z.boolean();
+export const zUnlinkPasskeyResponse = z.boolean();
 
-export const zCreatePasskeyData = z.object({
+export const zRegistratePasskeyData = z.object({
   body: z.object({
     attestationObject: z.string(),
     clientDataJSON: z.string(),
@@ -731,7 +732,7 @@ export const zCreatePasskeyData = z.object({
 /**
  * Passkey created
  */
-export const zCreatePasskeyResponse = z.boolean();
+export const zRegistratePasskeyResponse = z.boolean();
 
 export const zUnlinkTotpData = z.object({
   body: z.optional(z.never()),
@@ -746,7 +747,7 @@ export const zUnlinkTotpResponse = z.boolean();
 
 export const zSetupTotpData = z.object({
   body: z.object({
-    code: z.string(),
+    code: z.string().regex(/^\d{6}$/),
   }),
   path: z.optional(z.never()),
   query: z.optional(z.never()),

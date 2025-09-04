@@ -1,6 +1,7 @@
 import { createCustomRoute } from '#/lib/custom-routes';
 import { isAuthenticated, isPublicAccess } from '#/middlewares/guard';
 import { tokenLimiter } from '#/middlewares/rate-limiter/limiters';
+import { TOTPVerificationBodySchema } from '#/modules/auth/schema';
 import {
   meAuthDataSchema,
   menuSchema,
@@ -218,8 +219,8 @@ const meRoutes = {
     },
   }),
 
-  createPasskey: createCustomRoute({
-    operationId: 'createPasskey',
+  registratePasskey: createCustomRoute({
+    operationId: 'registratePasskey',
     method: 'post',
     path: '/passkey',
     guard: isAuthenticated,
@@ -242,8 +243,8 @@ const meRoutes = {
     },
   }),
 
-  deletePasskey: createCustomRoute({
-    operationId: 'deletePasskey',
+  unlinkPasskey: createCustomRoute({
+    operationId: 'unlinkPasskey',
     method: 'delete',
     path: '/passkey',
     guard: isAuthenticated,
@@ -272,9 +273,10 @@ const meRoutes = {
     request: {
       body: {
         required: true,
-        content: { 'application/json': { schema: z.object({ code: z.string() }) } },
+        content: { 'application/json': { schema: TOTPVerificationBodySchema } },
       },
     },
+
     responses: {
       200: {
         description: 'TOTP successfully registered',

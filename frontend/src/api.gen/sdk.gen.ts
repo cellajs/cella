@@ -85,12 +85,12 @@ import type {
   DeleteMyMembershipData,
   DeleteMyMembershipResponses,
   DeleteMyMembershipErrors,
-  DeletePasskeyData,
-  DeletePasskeyResponses,
-  DeletePasskeyErrors,
-  CreatePasskeyData,
-  CreatePasskeyResponses,
-  CreatePasskeyErrors,
+  UnlinkPasskeyData,
+  UnlinkPasskeyResponses,
+  UnlinkPasskeyErrors,
+  RegistratePasskeyData,
+  RegistratePasskeyResponses,
+  RegistratePasskeyErrors,
   UnlinkTotpData,
   UnlinkTotpResponses,
   UnlinkTotpErrors,
@@ -1005,13 +1005,13 @@ export const deleteMyMembership = <ThrowOnError extends boolean = true>(options:
  *
  * Removes the *current user's* registered passkey credential.
  *
- * **DELETE /me/passkey** ·· [deletePasskey](http://localhost:4000/docs#tag/me/delete/me/passkey) ·· _me_
+ * **DELETE /me/passkey** ·· [unlinkPasskey](http://localhost:4000/docs#tag/me/delete/me/passkey) ·· _me_
  *
- * @param {deletePasskeyData} options
+ * @param {unlinkPasskeyData} options
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
-export const deletePasskey = <ThrowOnError extends boolean = true>(options?: Options<DeletePasskeyData, ThrowOnError>) => {
-  return (options?.client ?? _heyApiClient).delete<DeletePasskeyResponses, DeletePasskeyErrors, ThrowOnError, 'data'>({
+export const unlinkPasskey = <ThrowOnError extends boolean = true>(options?: Options<UnlinkPasskeyData, ThrowOnError>) => {
+  return (options?.client ?? _heyApiClient).delete<UnlinkPasskeyResponses, UnlinkPasskeyErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     url: '/me/passkey',
     ...options,
@@ -1024,15 +1024,15 @@ export const deletePasskey = <ThrowOnError extends boolean = true>(options?: Opt
  *
  * Registers a passkey for passwordless authentication by verifying a signed challenge and linking it to the *current user*.
  *
- * **POST /me/passkey** ·· [createPasskey](http://localhost:4000/docs#tag/me/post/me/passkey) ·· _me_
+ * **POST /me/passkey** ·· [registratePasskey](http://localhost:4000/docs#tag/me/post/me/passkey) ·· _me_
  *
- * @param {createPasskeyData} options
+ * @param {registratePasskeyData} options
  * @param {string=} options.body.attestationObject - `string` (optional)
  * @param {string=} options.body.clientDataJSON - `string` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
-export const createPasskey = <ThrowOnError extends boolean = true>(options: Options<CreatePasskeyData, ThrowOnError>) => {
-  return (options.client ?? _heyApiClient).post<CreatePasskeyResponses, CreatePasskeyErrors, ThrowOnError, 'data'>({
+export const registratePasskey = <ThrowOnError extends boolean = true>(options: Options<RegistratePasskeyData, ThrowOnError>) => {
+  return (options.client ?? _heyApiClient).post<RegistratePasskeyResponses, RegistratePasskeyErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     url: '/me/passkey',
     ...options,

@@ -1598,6 +1598,7 @@ export type GetMyAuthResponses = {
   200: {
     enabledOAuth: Array<'github'>;
     hasPasskey: boolean;
+    hasTotp: boolean;
     hasPassword: boolean;
     sessions: Array<{
       createdAt: string;
@@ -1841,14 +1842,14 @@ export type DeleteMyMembershipResponses = {
 
 export type DeleteMyMembershipResponse = DeleteMyMembershipResponses[keyof DeleteMyMembershipResponses];
 
-export type DeletePasskeyData = {
+export type UnlinkPasskeyData = {
   body?: never;
   path?: never;
   query?: never;
   url: '/me/passkey';
 };
 
-export type DeletePasskeyErrors = {
+export type UnlinkPasskeyErrors = {
   /**
    * Bad request: problem processing request.
    */
@@ -1881,18 +1882,18 @@ export type DeletePasskeyErrors = {
   };
 };
 
-export type DeletePasskeyError = DeletePasskeyErrors[keyof DeletePasskeyErrors];
+export type UnlinkPasskeyError = UnlinkPasskeyErrors[keyof UnlinkPasskeyErrors];
 
-export type DeletePasskeyResponses = {
+export type UnlinkPasskeyResponses = {
   /**
    * Passkey removed
    */
   200: boolean;
 };
 
-export type DeletePasskeyResponse = DeletePasskeyResponses[keyof DeletePasskeyResponses];
+export type UnlinkPasskeyResponse = UnlinkPasskeyResponses[keyof UnlinkPasskeyResponses];
 
-export type CreatePasskeyData = {
+export type RegistratePasskeyData = {
   body: {
     attestationObject: string;
     clientDataJSON: string;
@@ -1902,7 +1903,7 @@ export type CreatePasskeyData = {
   url: '/me/passkey';
 };
 
-export type CreatePasskeyErrors = {
+export type RegistratePasskeyErrors = {
   /**
    * Bad request: problem processing request.
    */
@@ -1935,16 +1936,16 @@ export type CreatePasskeyErrors = {
   };
 };
 
-export type CreatePasskeyError = CreatePasskeyErrors[keyof CreatePasskeyErrors];
+export type RegistratePasskeyError = RegistratePasskeyErrors[keyof RegistratePasskeyErrors];
 
-export type CreatePasskeyResponses = {
+export type RegistratePasskeyResponses = {
   /**
    * Passkey created
    */
   200: boolean;
 };
 
-export type CreatePasskeyResponse = CreatePasskeyResponses[keyof CreatePasskeyResponses];
+export type RegistratePasskeyResponse = RegistratePasskeyResponses[keyof RegistratePasskeyResponses];
 
 export type UnlinkTotpData = {
   body?: never;

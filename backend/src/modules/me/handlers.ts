@@ -66,14 +66,15 @@ const meRouteHandlers = app
     const hasPassword = !!unsafeUser.hashedPassword;
 
     const getPasskey = db.select().from(passkeysTable).where(eq(passkeysTable.userEmail, user.email));
+    const getTOTP = db.select().from(totpsTable).where(eq(totpsTable.userId, user.id));
     const getOAuth = db.select({ providerId: oauthAccountsTable.providerId }).from(oauthAccountsTable).where(eq(oauthAccountsTable.userId, user.id));
-    const [passkeys, oauthAccounts, sessions] = await Promise.all([getPasskey, getOAuth, getUserSessions(ctx, user.id)]);
+    const [passkeys, totps, oauthAccounts, sessions] = await Promise.all([getPasskey, getTOTP, getOAuth, getUserSessions(ctx, user.id)]);
 
     const enabledOAuth = oauthAccounts
       .map((el) => el.providerId)
       .filter((provider): provider is EnabledOAuthProvider => appConfig.enabledOAuthProviders.includes(provider as EnabledOAuthProvider));
 
-    return ctx.json({ enabledOAuth, hasPasskey: !!passkeys.length, hasPassword, sessions }, 200);
+    return ctx.json({ enabledOAuth, hasPasskey: !!passkeys.length, hasTotp: !!totps.length, hasPassword, sessions }, 200);
   })
   /*
    * Get my user menu
@@ -254,9 +255,9 @@ const meRouteHandlers = app
     return ctx.json(true, 200);
   })
   /*
-   * Create passkey
+   * Registrate passkey
    */
-  .openapi(meRoutes.createPasskey, async (ctx) => {
+  .openapi(meRoutes.registratePasskey, async (ctx) => {
     const { attestationObject, clientDataJSON } = ctx.req.valid('json');
     const user = getContextUser();
 
@@ -271,9 +272,9 @@ const meRouteHandlers = app
     return ctx.json(true, 200);
   })
   /*
-   * Delete passkey
+   * Unlink passkey
    */
-  .openapi(meRoutes.deletePasskey, async (ctx) => {
+  .openapi(meRoutes.unlinkPasskey, async (ctx) => {
     const user = getContextUser();
 
     await db.delete(passkeysTable).where(eq(passkeysTable.userEmail, user.email));
