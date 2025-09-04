@@ -20,13 +20,12 @@ import { deleteAuthCookie, getAuthCookie, setAuthCookie } from '#/modules/auth/h
 import {
   clearOAuthSession,
   createOAuthSession,
-  getOAuthCookies,
   handleOAuthConnection,
   handleOAuthInvitation,
   handleOAuthVerify,
   setOAuthRedirect,
 } from '#/modules/auth/helpers/oauth/cookies';
-import { basicFlow, connectFlow, getOAuthAccount, inviteFlow, verifyFlow } from '#/modules/auth/helpers/oauth/index';
+import { getOAuthAccount, handleOAuthFlow } from '#/modules/auth/helpers/oauth/index';
 import {
   githubAuth,
   type GithubUserEmailProps,
@@ -51,6 +50,7 @@ import { logEvent } from '#/utils/logger';
 import { nanoid } from '#/utils/nanoid';
 import { slugFromEmail } from '#/utils/slug-from-email';
 import { createDate, TimeSpan } from '#/utils/time-span';
+import { getValidToken } from '#/utils/validate-token';
 import { OpenAPIHono } from '@hono/zod-openapi';
 import { encodeBase32, encodeBase64 } from '@oslojs/encoding';
 import { createTOTPKeyURI } from '@oslojs/otp';
@@ -353,19 +353,11 @@ const authRouteHandlers = app
    */
   .openapi(authRoutes.validateToken, async (ctx) => {
     // Find token in request
-    const { id } = ctx.req.valid('param');
-    const { type } = ctx.req.valid('query');
+    const { id: tokenId } = ctx.req.valid('param');
+    const { type: requiredType } = ctx.req.valid('query');
 
     // Check if token exists
-    const [tokenRecord] = await db
-      .select()
-      .from(tokensTable)
-      .where(and(eq(tokensTable.id, id), isNull(tokensTable.consumedAt)));
-
-    if (!tokenRecord) throw new AppError({ status: 404, type: `${type}_not_found`, severity: 'warn' });
-
-    // If token is expired, return an error
-    if (isExpiredDate(tokenRecord.expiresAt)) throw new AppError({ status: 401, type: `${type}_expired`, severity: 'warn' });
+    const tokenRecord = await getValidToken({ requiredType, tokenId, consumed: false });
 
     const baseData = {
       email: tokenRecord.email,
@@ -626,14 +618,8 @@ const authRouteHandlers = app
 
       // Restore Context: linked oauthAccount, invitation or account linking
       const oauthAccount = await getOAuthAccount(providerUser.id, strategy, providerUser.email);
-      const { connectUserId, inviteToken, verifyTokenId } = await getOAuthCookies(ctx);
 
-      // Handle different OAuth flows based on context
-      if (connectUserId) return await connectFlow(ctx, providerUser, strategy, connectUserId, oauthAccount);
-      if (inviteToken) return await inviteFlow(ctx, providerUser, strategy, inviteToken.id, oauthAccount);
-      if (verifyTokenId) return await verifyFlow(ctx, providerUser, strategy, verifyTokenId, oauthAccount);
-
-      return await basicFlow(ctx, providerUser, strategy, oauthAccount);
+      return await handleOAuthFlow(ctx, providerUser, strategy, oauthAccount);
     } catch (error) {
       if (error instanceof AppError) throw error;
 
@@ -684,14 +670,8 @@ const authRouteHandlers = app
 
       // Restore Context: linked oauthAccount, invitation or account linking
       const oauthAccount = await getOAuthAccount(providerUser.id, strategy, providerUser.email);
-      const { connectUserId, inviteToken, verifyTokenId } = await getOAuthCookies(ctx);
 
-      // Handle different OAuth flows based on context
-      if (connectUserId) return await connectFlow(ctx, providerUser, strategy, connectUserId, oauthAccount);
-      if (inviteToken) return await inviteFlow(ctx, providerUser, strategy, inviteToken.id, oauthAccount);
-      if (verifyTokenId) return await verifyFlow(ctx, providerUser, strategy, verifyTokenId, oauthAccount);
-
-      return await basicFlow(ctx, providerUser, strategy, oauthAccount);
+      return await handleOAuthFlow(ctx, providerUser, strategy, oauthAccount);
     } catch (error) {
       if (error instanceof AppError) throw error;
 
@@ -742,14 +722,8 @@ const authRouteHandlers = app
 
       // Restore Context: linked oauthAccount, invitation or account linking
       const oauthAccount = await getOAuthAccount(providerUser.id, strategy, providerUser.email);
-      const { connectUserId, inviteToken, verifyTokenId } = await getOAuthCookies(ctx);
 
-      // Handle different OAuth flows based on context
-      if (connectUserId) return await connectFlow(ctx, providerUser, strategy, connectUserId, oauthAccount);
-      if (inviteToken) return await inviteFlow(ctx, providerUser, strategy, inviteToken.id, oauthAccount);
-      if (verifyTokenId) return await verifyFlow(ctx, providerUser, strategy, verifyTokenId, oauthAccount);
-
-      return await basicFlow(ctx, providerUser, strategy, oauthAccount);
+      return await handleOAuthFlow(ctx, providerUser, strategy, oauthAccount);
     } catch (error) {
       if (error instanceof AppError) throw error;
 

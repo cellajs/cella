@@ -1,15 +1,12 @@
-import { appConfig } from 'config';
-import { eq } from 'drizzle-orm';
-import type { Context } from 'hono';
-import { db } from '#/db/db';
-import { tokensTable } from '#/db/schema/tokens';
 import { AppError } from '#/lib/errors';
 import { type CookieName, deleteAuthCookie, getAuthCookie, setAuthCookie } from '#/modules/auth/helpers/cookie';
 import { getParsedSessionCookie, validateSession } from '#/modules/auth/helpers/session';
-import { isExpiredDate } from '#/utils/is-expired-date';
 import { isValidRedirectPath } from '#/utils/is-redirect-url';
 import { logEvent } from '#/utils/logger';
 import { TimeSpan } from '#/utils/time-span';
+import { getValidToken } from '#/utils/validate-token';
+import { appConfig } from 'config';
+import type { Context } from 'hono';
 
 export const oauthCookieExpires = new TimeSpan(5, 'm');
 
@@ -96,10 +93,7 @@ export const handleOAuthInvitation = async (ctx: Context) => {
   if (!token) throw new AppError({ status: 404, type: 'invitation_not_found', severity: 'warn', isRedirect: true });
 
   // Fetch token record
-  const [tokenRecord] = await db.select().from(tokensTable).where(eq(tokensTable.token, token));
-  if (!tokenRecord) throw new AppError({ status: 404, type: 'invitation_not_found', severity: 'warn', isRedirect: true });
-  if (isExpiredDate(tokenRecord.expiresAt)) throw new AppError({ status: 403, type: 'expired_token', severity: 'warn', isRedirect: true });
-  if (tokenRecord.type !== 'invitation') throw new AppError({ status: 400, type: 'invalid_token', severity: 'error', isRedirect: true });
+  const tokenRecord = await getValidToken({ requiredType: 'invitation', token, consumed: false });
 
   // Determine redirection based on entity presence
   const isMembershipInvite = !!tokenRecord.entityType;
@@ -146,29 +140,7 @@ export const handleOAuthVerify = async (ctx: Context) => {
   if (!token) throw new AppError({ status: 400, type: 'invalid_request', severity: 'error', isRedirect: true });
 
   // Check if token exists
-  const [tokenRecord] = await db.select().from(tokensTable).where(eq(tokensTable.token, token));
-
-  if (!tokenRecord) {
-    throw new AppError({
-      status: 404,
-      type: 'email_verification_not_found',
-      severity: 'warn',
-      meta: { requiredType: 'email_verification_not_found' },
-    });
-  }
-  // If token is expired, return an error
-  if (isExpiredDate(tokenRecord.expiresAt)) {
-    throw new AppError({
-      status: 401,
-      type: 'email_verification_not_found',
-      severity: 'warn',
-      meta: { requiredType: 'email_verification_not_found' },
-    });
-  }
-  // Check if token type matches the required type (if specified)
-  if (tokenRecord.type !== 'email_verification') {
-    throw new AppError({ status: 401, type: 'invalid_token', severity: 'warn', meta: { requiredType: 'email_verification_not_found' } });
-  }
+  const tokenRecord = await getValidToken({ requiredType: 'email_verification', token, consumed: false });
 
   // Determine redirection based on entity presence
   const isMembershipInvite = !!tokenRecord.entityType;
