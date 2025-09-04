@@ -14,7 +14,7 @@ import {
   TotpVerificationBodySchema,
 } from '#/modules/auth/schema';
 import { contextEntityWithMembershipSchema } from '#/modules/entities/schema';
-import { cookieSchema, idSchema, locationSchema, passwordSchema, tokenParamSchema } from '#/utils/schema/common';
+import { cookieSchema, locationSchema, passwordSchema, tokenParamSchema } from '#/utils/schema/common';
 import { errorResponses, redirectResponseSchema, successWithoutDataSchema } from '#/utils/schema/responses';
 import { z } from '@hono/zod-openapi';
 import { appConfig } from 'config';
@@ -332,14 +332,14 @@ const authRoutes = {
   validateToken: createCustomRoute({
     operationId: 'validateToken',
     method: 'post',
-    path: '/validate-token/{id}',
+    path: '/validate-token/{token}',
     guard: isPublicAccess,
     tags: ['auth'],
     summary: 'Token validation and nonce retrieval',
     description:
       'Checks if a token (e.g. for password reset, email verification, or invite) is still valid and returns basic data and a nonce for further actions.',
     request: {
-      params: z.object({ id: idSchema }),
+      params: z.object({ token: z.string() }),
       query: z.object({ type: z.enum(appConfig.tokenTypes) }),
     },
     responses: {

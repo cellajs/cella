@@ -605,12 +605,12 @@ export type SignInResponse = SignInResponses[keyof SignInResponses];
 export type ValidateTokenData = {
   body?: never;
   path: {
-    id: string;
+    token: string;
   };
   query: {
     type: 'email_verification' | 'password_reset' | 'invitation' | 'pending_2fa';
   };
-  url: '/auth/validate-token/{id}';
+  url: '/auth/validate-token/{token}';
 };
 
 export type ValidateTokenErrors = {

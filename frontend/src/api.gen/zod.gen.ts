@@ -353,7 +353,7 @@ export const zSignInResponse = z.object({
 export const zValidateTokenData = z.object({
   body: z.optional(z.never()),
   path: z.object({
-    id: z.string(),
+    token: z.string(),
   }),
   query: z.object({
     type: z.enum(['email_verification', 'password_reset', 'invitation', 'pending_2fa']),

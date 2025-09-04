@@ -1,6 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation } from '@tanstack/react-query';
-import { useNavigate, useParams, useSearch } from '@tanstack/react-router';
+import { useNavigate, useParams } from '@tanstack/react-router';
 import { appConfig } from 'config';
 import { ArrowRight } from 'lucide-react';
 import { lazy, Suspense, useRef } from 'react';
@@ -32,9 +32,8 @@ const CreatePasswordForm = () => {
   const requestButtonRef = useRef(null);
 
   const { token } = useParams({ from: CreatePasswordWithTokenRoute.id });
-  const { tokenId } = useSearch({ from: CreatePasswordWithTokenRoute.id });
 
-  const { data, isLoading, error } = useCheckToken('email_verification', tokenId);
+  const { data, isLoading, error } = useCheckToken('email_verification', token);
   const isMobile = window.innerWidth < 640;
 
   // Reset password & sign in

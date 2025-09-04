@@ -31,7 +31,7 @@ const AuthSteps = () => {
   const { t } = useTranslation();
   const { lastUser } = useUserStore();
 
-  const { token, tokenId } = useSearch({ from: AuthenticateRoute.id });
+  const { token } = useSearch({ from: AuthenticateRoute.id });
   const [authError, setAuthError] = useState<ApiError | null>(null);
   const [step, setStep] = useState<AuthStep>(!token && lastUser?.email ? 'signIn' : 'checkEmail');
   const [email, setEmail] = useState((!token && lastUser?.email) || '');
@@ -49,7 +49,7 @@ const AuthSteps = () => {
     setStep('checkEmail');
   };
 
-  const { data: tokenData, isLoading, error } = useCheckToken('invitation', tokenId, !!(token && tokenId));
+  const { data: tokenData, isLoading, error } = useCheckToken('invitation', token, !!token);
 
   // If token is provided, directly set email and step based on token data
   useEffect(() => {

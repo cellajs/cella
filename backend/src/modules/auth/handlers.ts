@@ -353,11 +353,11 @@ const authRouteHandlers = app
    */
   .openapi(authRoutes.validateToken, async (ctx) => {
     // Find token in request
-    const { id: tokenId } = ctx.req.valid('param');
+    const { token } = ctx.req.valid('param');
     const { type: requiredType } = ctx.req.valid('query');
 
     // Check if token exists
-    const tokenRecord = await getValidToken({ requiredType, tokenId, consumed: false });
+    const tokenRecord = await getValidToken({ requiredType, token, consumed: false });
 
     const baseData = {
       email: tokenRecord.email,

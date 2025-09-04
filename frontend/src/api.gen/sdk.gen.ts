@@ -408,10 +408,10 @@ export const signIn = <ThrowOnError extends boolean = true>(options?: Options<Si
  *
  * Checks if a token (e.g. for password reset, email verification, or invite) is still valid and returns basic data and a nonce for further actions.
  *
- * **POST /auth/validate-token/{id}** ·· [validateToken](http://localhost:4000/docs#tag/auth/post/auth/validate-token/{id}) ·· _auth_
+ * **POST /auth/validate-token/{token}** ·· [validateToken](http://localhost:4000/docs#tag/auth/post/auth/validate-token/{token}) ·· _auth_
  *
  * @param {validateTokenData} options
- * @param {string} options.path.id - `string`
+ * @param {string} options.path.token - `string`
  * @param {enum} options.query.type - `enum`
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
@@ -425,7 +425,7 @@ export const validateToken = <ThrowOnError extends boolean = true>(options: Opti
         type: 'apiKey',
       },
     ],
-    url: '/auth/validate-token/{id}',
+    url: '/auth/validate-token/{token}',
     ...options,
   });
 };

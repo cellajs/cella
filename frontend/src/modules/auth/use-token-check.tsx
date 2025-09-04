@@ -12,12 +12,12 @@ type TokenType = (typeof appConfig.tokenTypes)[number];
  * @param id Token ID to check
  * @param enabled (Default true) Enable the query
  */
-export const useCheckToken = (type: TokenType, id?: string, enabled = true): UseQueryResult<TokenData | undefined, ApiError> => {
+export const useCheckToken = (type: TokenType, token?: string, enabled = true): UseQueryResult<TokenData | undefined, ApiError> => {
   return useQuery({
     queryKey: [],
     queryFn: async () => {
-      if (!id) throw new Error('Token ID is required');
-      return validateToken({ path: { id }, query: { type } });
+      if (!token) throw new Error('Token is required');
+      return validateToken({ path: { token }, query: { type } });
     },
     enabled,
     staleTime: 0, // Important to always get latest token status
