@@ -16,6 +16,7 @@ import { isAuthenticated } from '#/middlewares/guard';
 import { deleteAuthCookie, getAuthCookie } from '#/modules/auth/helpers/cookie';
 import { parseAndValidatePasskeyAttestation } from '#/modules/auth/helpers/passkey';
 import { getParsedSessionCookie, validateSession } from '#/modules/auth/helpers/session';
+import { verifyTotpCode } from '#/modules/auth/helpers/totps';
 import { checkSlugAvailable } from '#/modules/entities/helpers/check-slug';
 import { getUserSessions } from '#/modules/me/helpers/get-sessions';
 import { getUserMenuEntities } from '#/modules/me/helpers/get-user-menu-entities';
@@ -33,7 +34,6 @@ import type { EnabledOAuthProvider, MenuSection } from 'config';
 import { appConfig } from 'config';
 import { and, eq, inArray, isNotNull, isNull, sql } from 'drizzle-orm';
 import { type SSEStreamingApi, streamSSE } from 'hono/streaming';
-import { verifyTotpCode } from '../auth/helpers/totps';
 
 type UserMenu = z.infer<typeof menuSchema>;
 type MenuItem = z.infer<typeof menuItemSchema>;

@@ -39,6 +39,7 @@ import { transformGithubUserData, transformSocialUserData } from '#/modules/auth
 import { verifyPassKeyPublic } from '#/modules/auth/helpers/passkey';
 import { sendVerificationEmail } from '#/modules/auth/helpers/send-verification-email';
 import { getParsedSessionCookie, setUserSession, validateSession } from '#/modules/auth/helpers/session';
+import { verifyTotpCode } from '#/modules/auth/helpers/totps';
 import { handleCreateUser, handleMembershipTokenUpdate } from '#/modules/auth/helpers/user';
 import authRoutes from '#/modules/auth/routes';
 import { getUserBy } from '#/modules/users/helpers/get-user-by';
@@ -60,7 +61,6 @@ import { and, desc, eq, isNotNull, isNull } from 'drizzle-orm';
 import i18n from 'i18next';
 import { getRandomValues } from 'node:crypto';
 import { CreatePasswordEmail, type CreatePasswordEmailProps } from '../../../emails/create-password';
-import { verifyTotpCode } from './helpers/totps';
 
 const enabledStrategies: readonly string[] = appConfig.enabledAuthStrategies;
 const enabledOAuthProviders: readonly string[] = appConfig.enabledOAuthProviders;
