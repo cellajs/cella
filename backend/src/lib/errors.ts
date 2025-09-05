@@ -1,13 +1,13 @@
-import type { z } from '@hono/zod-openapi';
-import * as Sentry from '@sentry/node';
-import { appConfig } from 'config';
-import type { ErrorHandler } from 'hono';
-import i18n from 'i18next';
 import { type Env, getContextOrganization, getContextUser } from '#/lib/context';
 import type locales from '#/lib/i18n-locales';
 import { eventLogger } from '#/pino-config';
 import { getIsoDate } from '#/utils/iso-date';
 import type { apiErrorSchema } from '#/utils/schema/error';
+import type { z } from '@hono/zod-openapi';
+import * as Sentry from '@sentry/node';
+import { appConfig } from 'config';
+import type { ErrorHandler } from 'hono';
+import i18n from 'i18next';
 
 const isProduction = appConfig.mode === 'production';
 
@@ -18,7 +18,7 @@ type CellaErrorKeys = Exclude<keyof (typeof locales)['en']['error'], `${string}.
 type AppSpecificErrorKeys = Exclude<keyof (typeof locales)['en']['appError'], `${string}.text`>;
 type ErrorKey = CellaErrorKeys | AppSpecificErrorKeys;
 
-type ConstructedError = {
+export type ConstructedError = {
   type: ErrorKey;
   status: ErrorSchemaType['status'];
   name?: ErrorSchemaType['name'];

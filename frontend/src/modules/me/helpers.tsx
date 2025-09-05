@@ -2,7 +2,7 @@ import { decodeBase64, encodeBase64 } from '@oslojs/encoding';
 import { onlineManager } from '@tanstack/react-query';
 import { appConfig } from 'config';
 import { t } from 'i18next';
-import { createPasskey, getMe, getMyAuth, getMyMenu, getPasskeyChallenge } from '~/api.gen';
+import { getMe, getMyAuth, getMyMenu, getPasskeyChallenge, registratePasskey } from '~/api.gen';
 import { toaster } from '~/modules/common/toaster/service';
 import { useNavigationStore } from '~/store/navigation';
 import { useUIStore } from '~/store/ui';
@@ -25,8 +25,8 @@ export const passkeyRegistration = async () => {
   const user = useUserStore.getState().user;
 
   try {
-    // Random bytes generated on each attempt.
-    const { challengeBase64 } = await getPasskeyChallenge();
+    //  Fetch a challenge from BE
+    const { challengeBase64 } = await getPasskeyChallenge({ query: { type: 'registrate' } });
 
     // random ID for the authenticator
     const userId = new Uint8Array(20);
@@ -72,17 +72,17 @@ export const passkeyRegistration = async () => {
       clientDataJSON: encodeBase64(new Uint8Array(response.clientDataJSON)),
     };
 
-    const result = await createPasskey({ body: credentialData });
-    if (!result) toaster(t('error:passkey_add_failed'), 'error');
+    const result = await registratePasskey({ body: credentialData });
+    if (!result) toaster(t('error:passkey_registration_failed'), 'error');
 
     toaster(t('common:success.passkey_added'), 'success');
 
-    useUserStore.getState().setMeAuthData({ passkey: true });
+    useUserStore.getState().setMeAuthData({ hasPasskey: true });
     return result;
   } catch (error) {
     // On cancel throws error NotAllowedError
     console.error('Error during passkey registration:', error);
-    toaster(t('error:passkey_add_failed'), 'error');
+    toaster(t('error:passkey_registration_failed'), 'error');
     return false;
   }
 };

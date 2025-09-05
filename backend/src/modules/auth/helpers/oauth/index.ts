@@ -1,13 +1,12 @@
-import { appConfig, type EnabledOAuthProvider } from 'config';
-import { and, eq } from 'drizzle-orm';
-import type { Context } from 'hono';
 import { db } from '#/db/db';
 import { emailsTable } from '#/db/schema/emails';
 import { type OAuthAccountModel, oauthAccountsTable } from '#/db/schema/oauth-accounts';
-import { type TokenModel, tokensTable } from '#/db/schema/tokens';
+import type { TokenModel } from '#/db/schema/tokens';
 import { type UserModel, usersTable } from '#/db/schema/users';
 import { AppError } from '#/lib/errors';
+import { initiateTwoFactorAuth } from '#/modules/auth/helpers/2fa';
 import { getAuthCookie } from '#/modules/auth/helpers/cookie';
+import { getOAuthCookies } from '#/modules/auth/helpers/oauth/cookies';
 import type { Provider } from '#/modules/auth/helpers/oauth/oauth-providers';
 import type { TransformedUser } from '#/modules/auth/helpers/oauth/transform-user-data';
 import { sendVerificationEmail } from '#/modules/auth/helpers/send-verification-email';
@@ -16,6 +15,10 @@ import { handleCreateUser } from '#/modules/auth/helpers/user';
 import { getUsersByConditions } from '#/modules/users/helpers/get-user-by';
 import { isValidRedirectPath } from '#/utils/is-redirect-url';
 import { getIsoDate } from '#/utils/iso-date';
+import { getValidToken } from '#/utils/validate-token';
+import { appConfig, type EnabledOAuthProvider } from 'config';
+import { and, eq } from 'drizzle-orm';
+import type { Context } from 'hono';
 
 /**
  * Retrieves the OAuth redirect path from a cookie, or falls back to a default.
@@ -39,12 +42,19 @@ export const getOAuthRedirectPath = async (ctx: Context): Promise<string> => {
  * @param oauthAccount - The linked OAuth account, if one exists.
  * @returns A redirect response.
  */
-export const basicFlow = async (
+export const handleOAuthFlow = async (
   ctx: Context,
   providerUser: TransformedUser,
   provider: EnabledOAuthProvider,
   oauthAccount: OAuthAccountModel | null = null,
 ): Promise<Response> => {
+  const { connectUserId, inviteToken, verifyTokenId } = await getOAuthCookies(ctx);
+
+  // Handle different OAuth flows based on context
+  if (connectUserId) return await connectFlow(ctx, providerUser, provider, connectUserId, oauthAccount);
+  if (inviteToken) return await inviteFlow(ctx, providerUser, provider, inviteToken.id, oauthAccount);
+  if (verifyTokenId) return await verifyFlow(ctx, providerUser, provider, verifyTokenId, oauthAccount);
+
   // User already has a verified OAuth account → log them in
   if (oauthAccount?.verified) {
     const user = await getUserByOAuthAccount(oauthAccount);
@@ -96,7 +106,7 @@ export const basicFlow = async (
  * @param oauthAccount - The existing OAuth account, if one exists.
  * @returns A redirect response.
  */
-export const connectFlow = async (
+const connectFlow = async (
   ctx: Context,
   providerUser: TransformedUser,
   provider: EnabledOAuthProvider,
@@ -141,7 +151,7 @@ export const connectFlow = async (
  * @param oauthAccount - The linked OAuth account, if one exists.
  * @returns A redirect response.
  */
-export const inviteFlow = async (
+const inviteFlow = async (
   ctx: Context,
   providerUser: TransformedUser,
   provider: EnabledOAuthProvider,
@@ -149,11 +159,12 @@ export const inviteFlow = async (
   oauthAccount: OAuthAccountModel | null = null,
 ): Promise<Response> => {
   // Token not found → invalid invitation
-  const invitationToken = await getInvitationToken(inviteTokenId);
 
-  if (!invitationToken) {
-    throw new AppError({ status: 403, type: 'oauth_token_missing', severity: 'warn', isRedirect: true });
-  }
+  const invitationToken = await getValidToken({
+    requiredType: 'invitation',
+    token: inviteTokenId,
+    missedTokenError: { status: 403, type: 'oauth_token_missing', severity: 'warn', isRedirect: true },
+  });
 
   // Email in token doesn't match provider email
   if (invitationToken.email !== providerUser.email) {
@@ -181,7 +192,7 @@ export const inviteFlow = async (
   return await handleUnverifiedOAuthAccount(ctx, newOAuthAccount, 'invite');
 };
 
-export const verifyFlow = async (
+const verifyFlow = async (
   ctx: Context,
   providerUser: TransformedUser,
   provider: EnabledOAuthProvider,
@@ -189,16 +200,14 @@ export const verifyFlow = async (
   oauthAccount: OAuthAccountModel | null = null,
 ): Promise<Response> => {
   // Token not found → invalid verification
-  const verifyToken = await getVerifyToken(verifyTokenId);
-
-  if (!verifyToken) {
-    throw new AppError({ status: 403, type: 'oauth_token_missing', severity: 'warn', isRedirect: true });
-  }
+  const verifyToken = await getValidToken({
+    requiredType: 'email_verification',
+    token: verifyTokenId,
+    missedTokenError: { status: 403, type: 'oauth_token_missing', severity: 'warn', isRedirect: true },
+  });
 
   // No OauthAccount → invalid verification
-  if (!oauthAccount) {
-    throw new AppError({ status: 409, type: 'oauth_mismatch', severity: 'warn', isRedirect: true });
-  }
+  if (!oauthAccount) throw new AppError({ status: 409, type: 'oauth_mismatch', severity: 'warn', isRedirect: true });
 
   // Invalid token settings → invalid verification
   if (
@@ -306,30 +315,6 @@ const createOAuthAccount = async (
 };
 
 /**
- * Fetches an invitation token by its ID.
- *
- * @param inviteTokenId - The token ID to search for.
- * @returns The token if found, or null otherwise.
- */
-const getInvitationToken = async (inviteTokenId: TokenModel['id']): Promise<TokenModel | null> => {
-  const [token] = await db.select().from(tokensTable).where(eq(tokensTable.id, inviteTokenId));
-
-  return token ?? null;
-};
-
-/**
- * Fetches a verification token by its ID.
- *
- * @param verifyTokenId - The token ID to search for.
- * @returns The token if found, or null otherwise.
- */
-const getVerifyToken = async (verifyTokenId: TokenModel['id']): Promise<TokenModel | null> => {
-  const [token] = await db.select().from(tokensTable).where(eq(tokensTable.id, verifyTokenId));
-
-  return token ?? null;
-};
-
-/**
  * Retrieves a user using their OAuth account's internal user ID.
  *
  * @param oauthAccount - The OAuth account to look up the user for.
@@ -351,10 +336,16 @@ const getUserByOAuthAccount = async (oauthAccount: OAuthAccountModel): Promise<U
  * @returns A redirect response.
  */
 const handleVerifiedOAuthAccount = async (ctx: Context, user: UserModel, oauthAccount: OAuthAccountModel): Promise<Response> => {
-  const redirectPath = await getOAuthRedirectPath(ctx);
+  // Start 2FA challenge if the user has 2FA enabled
+  const twoFactorRedirectPath = await initiateTwoFactorAuth(ctx, user);
 
-  await setUserSession(ctx, user, oauthAccount.providerId);
+  // Determine final redirect path
+  const redirectPath = twoFactorRedirectPath || (await getOAuthRedirectPath(ctx));
   const redirectUrl = new URL(redirectPath, appConfig.frontendUrl);
+
+  // If 2FA is not required, set  user session immediately
+  if (!twoFactorRedirectPath) await setUserSession(ctx, user, oauthAccount.providerId);
+
   return ctx.redirect(redirectUrl, 302);
 };
 

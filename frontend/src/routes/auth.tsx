@@ -1,13 +1,16 @@
 import { createRoute, redirect } from '@tanstack/react-router';
 import { appConfig } from 'config';
+import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
 import AcceptEntityInvite from '~/modules/auth/accept-entity-invite';
 import AuthPage from '~/modules/auth/auth-layout';
 import CreatePasswordForm from '~/modules/auth/create-password-form';
 import EmailVerification from '~/modules/auth/email-verification';
+import PasskeyOption from '~/modules/auth/passkey-option';
 import { RequestPasswordForm } from '~/modules/auth/request-password-form';
 import { SignOut } from '~/modules/auth/sign-out';
 import AuthSteps from '~/modules/auth/steps';
+import { TOTPOption } from '~/modules/auth/totp-option';
 import Unsubscribed from '~/modules/auth/unsubscribed';
 import { meQueryOptions } from '~/modules/me/query';
 import { queryClient } from '~/query/query-client';
@@ -27,7 +30,6 @@ export const AuthenticateRoute = createRoute({
   validateSearch: z.object({
     redirect: z.string().optional(),
     token: z.string().optional(),
-    tokenId: z.string().optional(),
     fromRoot: z.boolean().optional(),
   }),
   staticData: { isAuth: false },
@@ -45,6 +47,31 @@ export const AuthenticateRoute = createRoute({
   component: () => <AuthSteps />,
 });
 
+export const Confirn2FARoute = createRoute({
+  path: '/auth/2fa-confirm',
+  staticData: { isAuth: false },
+  head: () => ({ meta: [{ title: appTitle('2FA confirm') }] }),
+  getParentRoute: () => AuthLayoutRoute,
+  component: () => {
+    const { t } = useTranslation();
+    return (
+      <>
+        <h2 className="font-semibold leading-none min-h-6">{t('common:totp.title')}</h2>
+
+        {/* Option 1: Passkey */}
+        <PasskeyOption type="two_factor" />
+
+        <div className="relative flex justify-center text-xs uppercase">
+          <span className="text-muted-foreground px-2">{t('common:or')}</span>
+        </div>
+
+        {/* Option 2: TOTP */}
+        <TOTPOption type="two_factor" />
+      </>
+    );
+  },
+});
+
 export const RequestPasswordRoute = createRoute({
   path: '/auth/request-password',
   staticData: { isAuth: false },
@@ -54,7 +81,6 @@ export const RequestPasswordRoute = createRoute({
 });
 
 export const CreatePasswordWithTokenRoute = createRoute({
-  validateSearch: z.object({ tokenId: z.string() }),
   path: '/auth/create-password/$token',
   staticData: { isAuth: false },
   head: () => ({ meta: [{ title: appTitle('Create password') }] }),
@@ -71,18 +97,17 @@ export const EmailVerificationRoute = createRoute({
 });
 
 export const AcceptEntityInviteRoute = createRoute({
-  validateSearch: z.object({ tokenId: z.string() }),
   path: '/invitation/$token',
   staticData: { isAuth: true },
   head: () => ({ meta: [{ title: appTitle('Join') }] }),
-  beforeLoad: async ({ params, search }) => {
+  beforeLoad: async ({ params }) => {
     try {
       const queryOptions = meQueryOptions();
       const options = { ...queryOptions, revalidateIfStale: true };
       await queryClient.ensureQueryData(options);
     } catch {
       console.info('Not authenticated (silent check) -> redirect to sign in');
-      throw redirect({ to: '/auth/authenticate', search: { token: params.token, tokenId: search.tokenId } });
+      throw redirect({ to: '/auth/authenticate', search: { token: params.token } });
     }
   },
   getParentRoute: () => AuthLayoutRoute,

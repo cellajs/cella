@@ -1,13 +1,10 @@
-import { OpenAPIHono, type z } from '@hono/zod-openapi';
-import type { EnabledOAuthProvider, MenuSection } from 'config';
-import { appConfig } from 'config';
-import { and, eq, isNotNull, sql } from 'drizzle-orm';
-import { type SSEStreamingApi, streamSSE } from 'hono/streaming';
 import { db } from '#/db/db';
 import { membershipsTable } from '#/db/schema/memberships';
 import { oauthAccountsTable } from '#/db/schema/oauth-accounts';
 import { passkeysTable } from '#/db/schema/passkeys';
+import { sessionsTable } from '#/db/schema/sessions';
 import { tokensTable } from '#/db/schema/tokens';
+import { totpsTable } from '#/db/schema/totps';
 import { usersTable } from '#/db/schema/users';
 import { entityTables } from '#/entity-config';
 import { env } from '#/env';
@@ -18,7 +15,8 @@ import { getParams, getSignature } from '#/lib/transloadit';
 import { isAuthenticated } from '#/middlewares/guard';
 import { deleteAuthCookie, getAuthCookie } from '#/modules/auth/helpers/cookie';
 import { parseAndValidatePasskeyAttestation } from '#/modules/auth/helpers/passkey';
-import { getParsedSessionCookie, invalidateAllUserSessions, invalidateSessionById, validateSession } from '#/modules/auth/helpers/session';
+import { getParsedSessionCookie, validateSession } from '#/modules/auth/helpers/session';
+import { verifyTotpCode } from '#/modules/auth/helpers/totps';
 import { checkSlugAvailable } from '#/modules/entities/helpers/check-slug';
 import { getUserSessions } from '#/modules/me/helpers/get-sessions';
 import { getUserMenuEntities } from '#/modules/me/helpers/get-user-menu-entities';
@@ -31,6 +29,11 @@ import permissionManager from '#/permissions/permissions-config';
 import { defaultHook } from '#/utils/default-hook';
 import { getIsoDate } from '#/utils/iso-date';
 import { logEvent } from '#/utils/logger';
+import { OpenAPIHono, type z } from '@hono/zod-openapi';
+import type { EnabledOAuthProvider, MenuSection } from 'config';
+import { appConfig } from 'config';
+import { and, eq, inArray, isNotNull, isNull, sql } from 'drizzle-orm';
+import { type SSEStreamingApi, streamSSE } from 'hono/streaming';
 
 type UserMenu = z.infer<typeof menuSchema>;
 type MenuItem = z.infer<typeof menuItemSchema>;
@@ -57,15 +60,21 @@ const meRouteHandlers = app
   .openapi(meRoutes.getMyAuth, async (ctx) => {
     const user = getContextUser();
 
-    const getPasskey = db.select().from(passkeysTable).where(eq(passkeysTable.userEmail, user.email));
-    const getOAuth = db.select({ providerId: oauthAccountsTable.providerId }).from(oauthAccountsTable).where(eq(oauthAccountsTable.userId, user.id));
-    const [passkeys, oauthAccounts, sessions] = await Promise.all([getPasskey, getOAuth, getUserSessions(ctx, user.id)]);
+    // Check if user has password
+    const unsafeUser = await getUserBy('id', user.id, 'unsafe');
+    if (!unsafeUser) throw new AppError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'user' });
+    const hasPassword = !!unsafeUser.hashedPassword;
 
-    const validOAuthAccounts = oauthAccounts
+    const getPasskey = db.select().from(passkeysTable).where(eq(passkeysTable.userEmail, user.email));
+    const getTOTP = db.select().from(totpsTable).where(eq(totpsTable.userId, user.id));
+    const getOAuth = db.select({ providerId: oauthAccountsTable.providerId }).from(oauthAccountsTable).where(eq(oauthAccountsTable.userId, user.id));
+    const [passkeys, totps, oauthAccounts, sessions] = await Promise.all([getPasskey, getTOTP, getOAuth, getUserSessions(ctx, user.id)]);
+
+    const enabledOAuth = oauthAccounts
       .map((el) => el.providerId)
       .filter((provider): provider is EnabledOAuthProvider => appConfig.enabledOAuthProviders.includes(provider as EnabledOAuthProvider));
 
-    return ctx.json({ oauth: validOAuthAccounts, passkey: !!passkeys.length, sessions }, 200);
+    return ctx.json({ enabledOAuth, hasPasskey: !!passkeys.length, hasTotp: !!totps.length, hasPassword, sessions }, 200);
   })
   /*
    * Get my user menu
@@ -142,6 +151,7 @@ const meRouteHandlers = app
               eq(tokensTable.entityType, entityType),
               eq(tokensTable.userId, user.id),
               isNotNull(tokensTable.role),
+              isNull(tokensTable.consumedAt),
             ),
           );
       }),
@@ -157,26 +167,25 @@ const meRouteHandlers = app
     const user = getContextUser();
 
     const sessionIds = Array.isArray(ids) ? ids : [ids];
+    const { sessionToken } = await getParsedSessionCookie(ctx);
+    const { session: currentSession } = await validateSession(sessionToken);
 
-    const currentSessionData = await getParsedSessionCookie(ctx);
+    try {
+      // Clear auth cookie if user deletes their current session
+      if (currentSession && sessionIds.includes(currentSession.id)) deleteAuthCookie(ctx, 'session');
 
-    const { session } = currentSessionData ? await validateSession(currentSessionData.sessionToken) : {};
+      const deleted = await db
+        .delete(sessionsTable)
+        .where(and(inArray(sessionsTable.id, sessionIds), eq(sessionsTable.userId, user.id)))
+        .returning({ id: sessionsTable.id });
 
-    const rejectedItems: string[] = [];
+      const deletedIds = deleted.map((s) => s.id);
+      const rejectedItems = sessionIds.filter((id) => !deletedIds.includes(id));
 
-    await Promise.all(
-      sessionIds.map(async (id) => {
-        try {
-          if (session && id === session.id) deleteAuthCookie(ctx, 'session');
-          await invalidateSessionById(id, user.id);
-        } catch (error) {
-          // Could be not found, not owned by user, etc.
-          rejectedItems.push(id);
-        }
-      }),
-    );
-
-    return ctx.json({ success: true, rejectedItems }, 200);
+      return ctx.json({ success: true, rejectedItems }, 200);
+    } catch {
+      return ctx.json({ success: false, rejectedItems: sessionIds }, 200);
+    }
   })
   /*
    * Update current user (me)
@@ -221,8 +230,6 @@ const meRouteHandlers = app
     // Delete user
     await db.delete(usersTable).where(eq(usersTable.id, user.id));
 
-    // Invalidate sessions
-    await invalidateAllUserSessions(user.id);
     deleteAuthCookie(ctx, 'session');
     logEvent('info', 'User deleted itself', { userId: user.id });
 
@@ -249,9 +256,9 @@ const meRouteHandlers = app
     return ctx.json(true, 200);
   })
   /*
-   * Create passkey
+   * Registrate passkey
    */
-  .openapi(meRoutes.createPasskey, async (ctx) => {
+  .openapi(meRoutes.registratePasskey, async (ctx) => {
     const { attestationObject, clientDataJSON } = ctx.req.valid('json');
     const user = getContextUser();
 
@@ -266,12 +273,60 @@ const meRouteHandlers = app
     return ctx.json(true, 200);
   })
   /*
-   * Delete passkey
+   * Unlink passkey
    */
-  .openapi(meRoutes.deletePasskey, async (ctx) => {
+  .openapi(meRoutes.unlinkPasskey, async (ctx) => {
     const user = getContextUser();
 
+    // Remove all passkeys linked to this user's email
     await db.delete(passkeysTable).where(eq(passkeysTable.userEmail, user.email));
+
+    // Check if the user still has any TOTP entries registered
+    const userTotps = await db.select().from(totpsTable).where(eq(totpsTable.userId, user.id));
+
+    // If no TOTP exists, disable 2FA completely
+    if (!userTotps.length) await db.update(usersTable).set({ twoFactorEnabled: false }).where(eq(usersTable.id, user.id));
+
+    return ctx.json(true, 200);
+  })
+  /*
+   * Setup TOTP
+   */
+  .openapi(meRoutes.setupTOTP, async (ctx) => {
+    const { code } = ctx.req.valid('json');
+    const user = getContextUser();
+
+    // Retrieve the encoded totp secret from cookie
+    const encoderSecretKey = await getAuthCookie(ctx, 'totp-key');
+    if (!encoderSecretKey) throw new AppError({ status: 401, type: 'invalid_credentials', severity: 'warn' });
+
+    try {
+      const isValid = verifyTotpCode(code, encoderSecretKey);
+      if (!isValid) throw new AppError({ status: 401, type: 'invalid_token', severity: 'warn' });
+    } catch (error) {
+      if (error instanceof Error) {
+        throw new AppError({ status: 500, type: 'totp_verification_failed', severity: 'error', originalError: error });
+      }
+    }
+    // Save 32encoded secret key in database
+    await db.insert(totpsTable).values({ userId: user.id, encoderSecretKey });
+
+    return ctx.json(true, 200);
+  })
+  /*
+   * Unlink TOTP
+   */
+  .openapi(meRoutes.unlinkTOTP, async (ctx) => {
+    const user = getContextUser();
+
+    // Remove all totps linked to this user's email
+    await db.delete(totpsTable).where(eq(totpsTable.userId, user.id));
+
+    // Check if the user still has any passkeys entries registered
+    const userPasskeys = await db.select().from(passkeysTable).where(eq(passkeysTable.userEmail, user.email));
+
+    // If no passkeys exists, disable 2FA completely
+    if (!userPasskeys.length) await db.update(usersTable).set({ twoFactorEnabled: false }).where(eq(usersTable.id, user.id));
 
     return ctx.json(true, 200);
   })

@@ -28,6 +28,7 @@ export const usersTable = pgTable(
     email: varchar().notNull().unique(),
     hashedPassword: varchar(),
     unsubscribeToken: varchar().unique().$defaultFn(nanoid).notNull(),
+    twoFactorEnabled: boolean().notNull().default(false),
     firstName: varchar(),
     lastName: varchar(),
     language: varchar({ enum: languagesEnum }).notNull().default(appConfig.defaultLanguage),

@@ -1,10 +1,16 @@
-import { pgTable, varchar } from 'drizzle-orm/pg-core';
 import { usersTable } from '#/db/schema/users';
 import { timestampColumns } from '#/db/utils/timestamp-columns';
 import { nanoid } from '#/utils/nanoid';
+import { pgTable, varchar } from 'drizzle-orm/pg-core';
 
-export const sessionTypeEnum = ['regular', 'impersonation'] as const;
-export const authStrategiesEnum = ['github', 'google', 'microsoft', 'password', 'passkey', 'email'] as const;
+export const sessionTypeEnum = [
+  'regular',
+  'impersonation',
+  'two_factor_authentication', // User fully authenticated with 2FA
+] as const;
+export type SessionTypes = (typeof sessionTypeEnum)[number];
+
+export const authStrategiesEnum = ['github', 'google', 'microsoft', 'password', 'passkey', 'totp', 'email'] as const;
 export type AuthStrategy = (typeof authStrategiesEnum)[number];
 
 export const sessionsTable = pgTable('sessions', {

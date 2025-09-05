@@ -11,6 +11,7 @@ import OAuthOptions from '~/modules/auth/oauth-options';
 import PasskeyOption from '~/modules/auth/passkey-option';
 import { SignInForm } from '~/modules/auth/sign-in-form';
 import { SignUpForm } from '~/modules/auth/sign-up-form';
+import { TOTPOption } from '~/modules/auth/totp-option';
 import type { AuthStep } from '~/modules/auth/types';
 import { useCheckToken } from '~/modules/auth/use-token-check';
 import { WaitlistForm } from '~/modules/auth/waitlist-form';
@@ -22,15 +23,18 @@ import { useUserStore } from '~/store/user';
 const enabledStrategies: readonly string[] = appConfig.enabledAuthStrategies;
 const emailEnabled = enabledStrategies.includes('password') || enabledStrategies.includes('passkey');
 
+export interface BaseOptionsProps {
+  authStep?: AuthStep;
+}
+
 const AuthSteps = () => {
   const { t } = useTranslation();
-  const { lastUser, passkey } = useUserStore();
+  const { lastUser } = useUserStore();
 
-  const { token, tokenId } = useSearch({ from: AuthenticateRoute.id });
+  const { token } = useSearch({ from: AuthenticateRoute.id });
   const [authError, setAuthError] = useState<ApiError | null>(null);
   const [step, setStep] = useState<AuthStep>(!token && lastUser?.email ? 'signIn' : 'checkEmail');
   const [email, setEmail] = useState((!token && lastUser?.email) || '');
-  const [hasPasskey, setHasPasskey] = useState(!token && !!passkey);
 
   // Update step and email to proceed after email is checked
   const handleSetStep = (step: AuthStep, email: string, error?: ApiError) => {
@@ -43,10 +47,9 @@ const AuthSteps = () => {
   // Even if all email authentication is disabled, we still show check email form
   const resetSteps = () => {
     setStep('checkEmail');
-    setHasPasskey(false);
   };
 
-  const { data: tokenData, isLoading, error } = useCheckToken('invitation', tokenId, !!(token && tokenId));
+  const { data: tokenData, isLoading, error } = useCheckToken('invitation', token, !!token);
 
   // If token is provided, directly set email and step based on token data
   useEffect(() => {
@@ -94,13 +97,15 @@ const AuthSteps = () => {
       {/* Show passkey and oauth options conditionally */}
       {!['inviteOnly', 'waitlist', 'error'].includes(step) && (
         <>
-          {shouldShowDivider(hasPasskey, step) && (
+          {shouldShowDivider(step) && (
             <div className="relative flex justify-center text-xs uppercase">
               <span className="text-muted-foreground px-2">{t('common:or')}</span>
             </div>
           )}
-          {hasPasskey && enabledStrategies.includes('passkey') && <PasskeyOption email={email} actionType={step} />}
-          {enabledStrategies.includes('oauth') && <OAuthOptions actionType={step} />}
+          {/* TODO(IMPROVEMENT) be able to signUp with totp or passeky */}
+          {enabledStrategies.includes('totp') && step === 'signIn' && <TOTPOption email={email} type="login" authStep={step} />}
+          {enabledStrategies.includes('passkey') && step === 'signIn' && <PasskeyOption email={email} type="login" authStep={step} />}
+          {enabledStrategies.includes('oauth') && <OAuthOptions authStep={step} />}
         </>
       )}
     </>

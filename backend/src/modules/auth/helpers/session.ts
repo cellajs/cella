@@ -1,10 +1,8 @@
-import type { z } from '@hono/zod-openapi';
-import { and, eq } from 'drizzle-orm';
-import type { Context } from 'hono';
 import { db } from '#/db/db';
-import { type AuthStrategy, type SessionModel, sessionsTable } from '#/db/schema/sessions';
+import { type AuthStrategy, type SessionModel, type SessionTypes, sessionsTable } from '#/db/schema/sessions';
 import { type UserModel, usersTable } from '#/db/schema/users';
 import { env } from '#/env';
+import { getContextUser } from '#/lib/context';
 import { AppError } from '#/lib/errors';
 import { deleteAuthCookie, getAuthCookie, setAuthCookie } from '#/modules/auth/helpers/cookie';
 import { deviceInfo } from '#/modules/auth/helpers/device-info';
@@ -17,19 +15,23 @@ import { nanoid } from '#/utils/nanoid';
 import { encodeLowerCased } from '#/utils/oslo';
 import { sessionCookieSchema } from '#/utils/schema/session-cookie';
 import { createDate, TimeSpan } from '#/utils/time-span';
+import type { z } from '@hono/zod-openapi';
+import { eq } from 'drizzle-orm';
+import type { Context } from 'hono';
 
 /**
  * Sets a user session and stores it in the database.
  * Generates a session token, records device information, and optionally associates an admin user for impersonation.
  */
-export const setUserSession = async (ctx: Context, user: UserModel, strategy: AuthStrategy, adminUser?: UserModel) => {
-  if ((!adminUser && user.role === 'admin') || adminUser) {
+export const setUserSession = async (ctx: Context, user: UserModel, strategy: AuthStrategy, type: SessionTypes = 'regular'): Promise<void> => {
+  if (user.role === 'admin' || type === 'impersonation') {
     const ip = getIp(ctx);
     const allowList = (env.REMOTE_SYSTEM_ACCESS_IP ?? '').split(',');
     const allowAll = allowList.includes('*');
 
     if (!allowAll && (!ip || !allowList.includes(ip))) throw new AppError({ status: 403, type: 'system_access_forbidden', severity: 'warn' });
   }
+
   // Get device information
   const device = deviceInfo(ctx);
 
@@ -37,34 +39,35 @@ export const setUserSession = async (ctx: Context, user: UserModel, strategy: Au
   const sessionToken = nanoid(40);
   const hashedSessionToken = encodeLowerCased(sessionToken);
 
+  // Calculate expiration
+  const timeSpan = type === 'impersonation' ? new TimeSpan(1, 'h') : new TimeSpan(1, 'w');
+
   const session = {
     token: hashedSessionToken,
     userId: user.id,
-    type: adminUser ? ('impersonation' as const) : ('regular' as const),
+    type,
     deviceName: device.name,
     deviceType: device.type,
     deviceOs: device.os,
     browser: device.browser,
     authStrategy: strategy,
     createdAt: getIsoDate(),
-    expiresAt: createDate(new TimeSpan(1, 'w')), // 1 week from now
+    expiresAt: createDate(timeSpan),
   };
 
   // Insert session
   await db.insert(sessionsTable).values(session);
 
-  // Set expiration time span
-  const timeSpan = adminUser ? new TimeSpan(1, 'h') : new TimeSpan(1, 'w');
-
-  const cookieContent = `${hashedSessionToken}.${adminUser?.id ?? ''}`;
+  const adminUser = getContextUser();
+  const cookieContent = `${hashedSessionToken}.${type === 'impersonation' ? adminUser.id : ''}`;
 
   // Set session cookie with the unhashed version
   await setAuthCookie(ctx, 'session', cookieContent, timeSpan);
 
-  // If it's an impersonation session, we can stop here
-  if (adminUser) return;
+  // Exit early if it's impersonation
+  if (type === 'impersonation') return;
 
-  // Update last sign in date
+  // Update user last signIn
   const lastSignInAt = getIsoDate();
   await db.update(usersTable).set({ lastSignInAt }).where(eq(usersTable.id, user.id));
   logEvent('info', 'User signed in', { userId: user.id, strategy });
@@ -76,54 +79,49 @@ export const setUserSession = async (ctx: Context, user: UserModel, strategy: Au
  * @param sessionToken - Hashed session token to validate.
  * @returns The session and user data if valid, otherwise null.
  */
-export const validateSession = async (hashedSessionToken: string) => {
+export const validateSession = async (hashedSessionToken: string): Promise<{ session: SessionModel; user: UserModel }> => {
   const [result] = await db
     .select({ session: sessionsTable, user: userSelect })
     .from(sessionsTable)
     .where(eq(sessionsTable.token, hashedSessionToken))
     .innerJoin(usersTable, eq(sessionsTable.userId, usersTable.id));
 
-  // If no result is found, return null session and user
-  if (!result) return { session: null, user: null };
+  // If no result is found throw no session
+  if (!result) throw new AppError({ status: 401, type: 'no_session', severity: 'warn' });
 
   const { session } = result;
 
   // Check if the session has expired and invalidate it if so
-  if (isExpiredDate(session.expiresAt)) {
-    await invalidateSessionById(session.id, session.userId);
-    return { session: null, user: null };
-  }
+  if (isExpiredDate(session.expiresAt)) throw new AppError({ status: 401, type: 'session_expired', severity: 'warn' });
 
-  return result satisfies { session: SessionModel; user: UserModel };
+  return result;
 };
 
-// Invalidate all sessions based on user id
-export const invalidateAllUserSessions = async (userId: UserModel['id']) => {
-  await db.delete(sessionsTable).where(eq(sessionsTable.userId, userId));
+type ParseSessionCookieOptions = {
+  redirectOnError?: boolean;
+  deleteOnError?: boolean;
+  deleteAfterAttempt?: boolean;
 };
 
-// Invalidate single session with session id
-export const invalidateSessionById = async (id: string, userId: string) => {
-  await db.delete(sessionsTable).where(and(eq(sessionsTable.id, id), eq(sessionsTable.userId, userId)));
-};
-
-export const getParsedSessionCookie = async (ctx: Context, deleteAfterAttempt = false): Promise<z.infer<typeof sessionCookieSchema> | null> => {
+export const getParsedSessionCookie = async (ctx: Context, options?: ParseSessionCookieOptions): Promise<z.infer<typeof sessionCookieSchema>> => {
+  const { redirectOnError = false, deleteOnError = false, deleteAfterAttempt = false } = options ?? {};
   try {
     // Retrieve session cookie data
     const sessionData = await getAuthCookie(ctx, 'session');
 
     // If no session data, return null
-    if (!sessionData) return null;
+    if (!sessionData) throw new Error();
 
     // Parse delimited string: "<hashedSessionToken>.<adminUserId>"
     const [sessionToken, adminUserIdRaw] = sessionData.split('.');
-    if (!sessionToken) return null;
+    if (!sessionToken) throw new Error();
 
     const adminUserId = adminUserIdRaw || undefined;
 
     return sessionCookieSchema.parse({ sessionToken, adminUserId });
   } catch (error) {
-    return null;
+    if (deleteOnError) deleteAuthCookie(ctx, 'session');
+    throw new AppError({ status: 401, type: 'unauthorized', severity: 'warn', isRedirect: redirectOnError });
   } finally {
     if (deleteAfterAttempt) deleteAuthCookie(ctx, 'session');
   }

@@ -10,6 +10,7 @@ export type User = {
   thumbnailUrl: string | null;
   bannerUrl: string | null;
   email: string;
+  twoFactorEnabled: boolean;
   firstName: string | null;
   lastName: string | null;
   language: 'en' | 'nl';
@@ -45,7 +46,7 @@ export type Organization = {
   logoUrl: string | null;
   websiteUrl: string | null;
   welcomeText: string | null;
-  authStrategies: Array<'github' | 'google' | 'microsoft' | 'password' | 'passkey' | 'email'>;
+  authStrategies: Array<'github' | 'google' | 'microsoft' | 'password' | 'passkey' | 'totp' | 'email'>;
   chatSupport: boolean;
   createdBy: string | null;
   modifiedAt: string | null;
@@ -378,7 +379,10 @@ export type SignUpWithTokenResponses = {
   /**
    * User signed up
    */
-  200: boolean;
+  200: {
+    shouldRedirect: boolean;
+    redirectPath?: string;
+  };
 };
 
 export type SignUpWithTokenResponse = SignUpWithTokenResponses[keyof SignUpWithTokenResponses];
@@ -533,7 +537,10 @@ export type CreatePasswordResponses = {
   /**
    * Password created
    */
-  200: boolean;
+  200: {
+    shouldRedirect: boolean;
+    redirectPath?: string;
+  };
 };
 
 export type CreatePasswordResponse = CreatePasswordResponses[keyof CreatePasswordResponses];
@@ -587,23 +594,26 @@ export type SignInResponses = {
   /**
    * User signed in
    */
-  200: boolean;
+  200: {
+    shouldRedirect: boolean;
+    redirectPath?: string;
+  };
 };
 
 export type SignInResponse = SignInResponses[keyof SignInResponses];
 
-export type RefreshTokenData = {
+export type ValidateTokenData = {
   body?: never;
   path: {
-    id: string;
+    token: string;
   };
   query: {
-    type: 'email_verification' | 'password_reset' | 'invitation';
+    type: 'email_verification' | 'password_reset' | 'invitation' | 'pending_2fa';
   };
-  url: '/auth/refresh-token/{id}';
+  url: '/auth/validate-token/{token}';
 };
 
-export type RefreshTokenErrors = {
+export type ValidateTokenErrors = {
   /**
    * Bad request: problem processing request.
    */
@@ -636,9 +646,9 @@ export type RefreshTokenErrors = {
   };
 };
 
-export type RefreshTokenError = RefreshTokenErrors[keyof RefreshTokenErrors];
+export type ValidateTokenError = ValidateTokenErrors[keyof ValidateTokenErrors];
 
-export type RefreshTokenResponses = {
+export type ValidateTokenResponses = {
   /**
    * Token is valid
    */
@@ -652,7 +662,7 @@ export type RefreshTokenResponses = {
   };
 };
 
-export type RefreshTokenResponse = RefreshTokenResponses[keyof RefreshTokenResponses];
+export type ValidateTokenResponse = ValidateTokenResponses[keyof ValidateTokenResponses];
 
 export type AcceptEntityInviteData = {
   body?: never;
@@ -1156,7 +1166,10 @@ export type MicrosoftSignInCallbackError = MicrosoftSignInCallbackErrors[keyof M
 export type GetPasskeyChallengeData = {
   body?: never;
   path?: never;
-  query?: never;
+  query: {
+    type: 'login' | 'two_factor' | 'registrate';
+    email?: string;
+  };
   url: '/auth/passkey-challenge';
 };
 
@@ -1201,6 +1214,7 @@ export type GetPasskeyChallengeResponses = {
    */
   200: {
     challengeBase64: string;
+    credentialIds: Array<string>;
   };
 };
 
@@ -1211,7 +1225,8 @@ export type SignInWithPasskeyData = {
     clientDataJSON: string;
     authenticatorData: string;
     signature: string;
-    userEmail: string;
+    type: 'login' | 'two_factor';
+    email?: string;
   };
   path?: never;
   query?: never;
@@ -1261,6 +1276,115 @@ export type SignInWithPasskeyResponses = {
 };
 
 export type SignInWithPasskeyResponse = SignInWithPasskeyResponses[keyof SignInWithPasskeyResponses];
+
+export type GetTotpUriData = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: '/auth/totp-uri';
+};
+
+export type GetTotpUriErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: ApiError & {
+    status?: 400;
+  };
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: ApiError & {
+    status?: 401;
+  };
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ApiError & {
+    status?: 403;
+  };
+  /**
+   * Not found: resource does not exist.
+   */
+  404: ApiError & {
+    status?: 404;
+  };
+  /**
+   * Rate limit: too many requests.
+   */
+  429: ApiError & {
+    status?: 429;
+  };
+};
+
+export type GetTotpUriError = GetTotpUriErrors[keyof GetTotpUriErrors];
+
+export type GetTotpUriResponses = {
+  /**
+   * TOTP URI and manual key
+   */
+  200: {
+    totpUri: string;
+    manualKey: string;
+  };
+};
+
+export type GetTotpUriResponse = GetTotpUriResponses[keyof GetTotpUriResponses];
+
+export type SignInWithTotpData = {
+  body?: {
+    code: string;
+    type: 'login' | 'two_factor';
+    email?: string;
+  };
+  path?: never;
+  query?: never;
+  url: '/auth/totp-verification';
+};
+
+export type SignInWithTotpErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: ApiError & {
+    status?: 400;
+  };
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: ApiError & {
+    status?: 401;
+  };
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ApiError & {
+    status?: 403;
+  };
+  /**
+   * Not found: resource does not exist.
+   */
+  404: ApiError & {
+    status?: 404;
+  };
+  /**
+   * Rate limit: too many requests.
+   */
+  429: ApiError & {
+    status?: 429;
+  };
+};
+
+export type SignInWithTotpError = SignInWithTotpErrors[keyof SignInWithTotpErrors];
+
+export type SignInWithTotpResponses = {
+  /**
+   * Passkey verified
+   */
+  200: boolean;
+};
+
+export type SignInWithTotpResponse = SignInWithTotpResponses[keyof SignInWithTotpResponses];
 
 export type DeleteMeData = {
   body?: never;
@@ -1376,6 +1500,7 @@ export type UpdateMeData = {
     userFlags?: {
       finishedOnboarding?: boolean;
     };
+    twoFactorEnabled?: boolean;
   };
   path?: never;
   query?: never;
@@ -1473,18 +1598,20 @@ export type GetMyAuthResponses = {
    * User sign-up info
    */
   200: {
-    oauth: Array<'github' | 'microsoft'>;
-    passkey: boolean;
+    enabledOAuth: Array<'github'>;
+    hasPasskey: boolean;
+    hasTotp: boolean;
+    hasPassword: boolean;
     sessions: Array<{
       createdAt: string;
       id: string;
-      type: 'regular' | 'impersonation';
+      type: 'regular' | 'impersonation' | 'two_factor_authentication';
       userId: string;
       deviceName: string | null;
       deviceType: 'desktop' | 'mobile';
       deviceOs: string | null;
       browser: string | null;
-      authStrategy: 'github' | 'google' | 'microsoft' | 'password' | 'passkey' | 'email';
+      authStrategy: 'github' | 'google' | 'microsoft' | 'password' | 'passkey' | 'totp' | 'email';
       expiresAt: string;
       isCurrent: boolean;
     }>;
@@ -1716,14 +1843,14 @@ export type DeleteMyMembershipResponses = {
 
 export type DeleteMyMembershipResponse = DeleteMyMembershipResponses[keyof DeleteMyMembershipResponses];
 
-export type DeletePasskeyData = {
+export type UnlinkPasskeyData = {
   body?: never;
   path?: never;
   query?: never;
   url: '/me/passkey';
 };
 
-export type DeletePasskeyErrors = {
+export type UnlinkPasskeyErrors = {
   /**
    * Bad request: problem processing request.
    */
@@ -1756,18 +1883,18 @@ export type DeletePasskeyErrors = {
   };
 };
 
-export type DeletePasskeyError = DeletePasskeyErrors[keyof DeletePasskeyErrors];
+export type UnlinkPasskeyError = UnlinkPasskeyErrors[keyof UnlinkPasskeyErrors];
 
-export type DeletePasskeyResponses = {
+export type UnlinkPasskeyResponses = {
   /**
    * Passkey removed
    */
   200: boolean;
 };
 
-export type DeletePasskeyResponse = DeletePasskeyResponses[keyof DeletePasskeyResponses];
+export type UnlinkPasskeyResponse = UnlinkPasskeyResponses[keyof UnlinkPasskeyResponses];
 
-export type CreatePasskeyData = {
+export type RegistratePasskeyData = {
   body: {
     attestationObject: string;
     clientDataJSON: string;
@@ -1777,7 +1904,7 @@ export type CreatePasskeyData = {
   url: '/me/passkey';
 };
 
-export type CreatePasskeyErrors = {
+export type RegistratePasskeyErrors = {
   /**
    * Bad request: problem processing request.
    */
@@ -1810,16 +1937,120 @@ export type CreatePasskeyErrors = {
   };
 };
 
-export type CreatePasskeyError = CreatePasskeyErrors[keyof CreatePasskeyErrors];
+export type RegistratePasskeyError = RegistratePasskeyErrors[keyof RegistratePasskeyErrors];
 
-export type CreatePasskeyResponses = {
+export type RegistratePasskeyResponses = {
   /**
    * Passkey created
    */
   200: boolean;
 };
 
-export type CreatePasskeyResponse = CreatePasskeyResponses[keyof CreatePasskeyResponses];
+export type RegistratePasskeyResponse = RegistratePasskeyResponses[keyof RegistratePasskeyResponses];
+
+export type UnlinkTotpData = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: '/me/totp';
+};
+
+export type UnlinkTotpErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: ApiError & {
+    status?: 400;
+  };
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: ApiError & {
+    status?: 401;
+  };
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ApiError & {
+    status?: 403;
+  };
+  /**
+   * Not found: resource does not exist.
+   */
+  404: ApiError & {
+    status?: 404;
+  };
+  /**
+   * Rate limit: too many requests.
+   */
+  429: ApiError & {
+    status?: 429;
+  };
+};
+
+export type UnlinkTotpError = UnlinkTotpErrors[keyof UnlinkTotpErrors];
+
+export type UnlinkTotpResponses = {
+  /**
+   * TOTP removed
+   */
+  200: boolean;
+};
+
+export type UnlinkTotpResponse = UnlinkTotpResponses[keyof UnlinkTotpResponses];
+
+export type SetupTotpData = {
+  body: {
+    code: string;
+  };
+  path?: never;
+  query?: never;
+  url: '/me/totp';
+};
+
+export type SetupTotpErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: ApiError & {
+    status?: 400;
+  };
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: ApiError & {
+    status?: 401;
+  };
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ApiError & {
+    status?: 403;
+  };
+  /**
+   * Not found: resource does not exist.
+   */
+  404: ApiError & {
+    status?: 404;
+  };
+  /**
+   * Rate limit: too many requests.
+   */
+  429: ApiError & {
+    status?: 429;
+  };
+};
+
+export type SetupTotpError = SetupTotpErrors[keyof SetupTotpErrors];
+
+export type SetupTotpResponses = {
+  /**
+   * TOTP successfully registered
+   */
+  200: boolean;
+};
+
+export type SetupTotpResponse = SetupTotpResponses[keyof SetupTotpResponses];
 
 export type GetUploadTokenData = {
   body?: never;
@@ -2439,7 +2670,7 @@ export type UpdateOrganizationData = {
     bannerUrl?: string | null;
     websiteUrl?: string | null;
     welcomeText?: string | null;
-    authStrategies?: Array<'github' | 'google' | 'microsoft' | 'password' | 'passkey' | 'email'>;
+    authStrategies?: Array<'github' | 'google' | 'microsoft' | 'password' | 'passkey' | 'totp' | 'email'>;
     chatSupport?: boolean;
   };
   path: {
@@ -3920,6 +4151,7 @@ export type GetMembersResponses = {
       thumbnailUrl: string | null;
       bannerUrl: string | null;
       email: string;
+      twoFactorEnabled: boolean;
       firstName: string | null;
       lastName: string | null;
       language: 'en' | 'nl';

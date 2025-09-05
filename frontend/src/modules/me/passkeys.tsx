@@ -1,28 +1,27 @@
 import { onlineManager } from '@tanstack/react-query';
 import { Check, Fingerprint, RotateCw, Trash } from 'lucide-react';
-import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toaster } from '~/modules/common/toaster/service';
 import { passkeyRegistration } from '~/modules/me/helpers';
-import { useDeletePasskeyMutation } from '~/modules/me/query';
-import type { MeAuthData } from '~/modules/me/types';
+import { useUnlinkPasskeyMutation } from '~/modules/me/query';
 import { Button } from '~/modules/ui/button';
+import { useUserStore } from '~/store/user';
 
-const Passkeys = ({ userAuthInfo }: { userAuthInfo: MeAuthData }) => {
+const Passkeys = () => {
   const { t } = useTranslation();
+  const { hasPasskey, setMeAuthData } = useUserStore.getState();
 
-  const [hasPasskey, setHasPasskey] = useState(userAuthInfo.passkey);
+  const { mutate: unlinkPasskey } = useUnlinkPasskeyMutation();
 
-  const { mutate: deletePasskey } = useDeletePasskeyMutation();
   const handlePasskeyRegistration = async () => {
     const success = await passkeyRegistration();
-    if (success) setHasPasskey(true);
+    if (success) setMeAuthData({ hasPasskey: true });
   };
 
-  const handleDeletePasskey = () => {
+  const handleUnlinkPasskey = () => {
     if (!onlineManager.isOnline()) return toaster(t('common:action.offline.text'), 'warning');
 
-    deletePasskey(void 0, { onSuccess: () => setHasPasskey(false) });
+    unlinkPasskey();
   };
 
   return (
@@ -35,14 +34,16 @@ const Passkeys = ({ userAuthInfo }: { userAuthInfo: MeAuthData }) => {
         </div>
       )}
       <div className="flex max-sm:flex-col gap-2 mb-6">
-        <Button key="createPasskey" type="button" variant="plain" onClick={handlePasskeyRegistration}>
+        <Button key="registratePasskey" type="button" variant="plain" onClick={handlePasskeyRegistration}>
           {hasPasskey ? <RotateCw className="w-4 h-4 mr-2" /> : <Fingerprint className="w-4 h-4 mr-2" />}
-          {hasPasskey ? t('common:reset_passkey') : t('common:create_resource', { resource: t('common:passkey').toLowerCase() })}
+          {hasPasskey
+            ? t('common:reset_resource', { resource: t('common:passkey').toLowerCase() })
+            : t('common:create_resource', { resource: t('common:passkey').toLowerCase() })}
         </Button>
         {hasPasskey && (
-          <Button key="deletePasskey" type="button" variant="ghost" onClick={handleDeletePasskey}>
+          <Button key="unlinkPasskey" type="button" variant="ghost" onClick={handleUnlinkPasskey}>
             <Trash className="w-4 h-4 mr-2" />
-            <span>{t('common:remove')}</span>
+            <span>{t('common:unlink')}</span>
           </Button>
         )}
       </div>

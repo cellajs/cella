@@ -1,7 +1,7 @@
 import { queryOptions, useMutation } from '@tanstack/react-query';
 import { t } from 'i18next';
 import type { User } from '~/api.gen';
-import { deletePasskey, getMyInvites, type UpdateMeData, updateMe } from '~/api.gen';
+import { getMyInvites, type UpdateMeData, unlinkPasskey, unlinkTotp, updateMe } from '~/api.gen';
 import type { ApiError } from '~/lib/api';
 import { toaster } from '~/modules/common/toaster/service';
 import { getAndSetMe, getAndSetMeAuthData, getAndSetMenu } from '~/modules/me/helpers';
@@ -21,6 +21,10 @@ export const meKeys = {
   update: {
     info: () => [...meKeys.all, 'update', 'info'] as const,
     flags: () => [...meKeys.all, 'update', 'flags'] as const,
+  } as const,
+  delete: {
+    passkey: () => [...meKeys.all, 'delete', 'passkey'] as const,
+    totp: () => [...meKeys.all, 'delete', 'totp'] as const,
   } as const,
 };
 
@@ -81,21 +85,41 @@ export const useUpdateSelfFlagsMutation = () => {
 };
 
 /**
- * Mutation hook for deleting current user (self) passkey
+ * Mutation hook for unlink current user (self) passkey
  *
- * @returns The mutation hook for deleting passkey.
+ * @returns The mutation hook for unlink passkey.
  */
-export const useDeletePasskeyMutation = () => {
+export const useUnlinkPasskeyMutation = () => {
   return useMutation<boolean, ApiError, void>({
-    mutationKey: [...meKeys.all, 'delete', 'passkey'],
-    mutationFn: () => deletePasskey(),
+    mutationKey: meKeys.delete.passkey(),
+    mutationFn: () => unlinkPasskey(),
     onSuccess: () => {
       toaster(t('common:success.passkey_removed'), 'success');
-      useUserStore.getState().setMeAuthData({ passkey: false });
+      useUserStore.getState().setMeAuthData({ hasPasskey: false });
     },
     onError(error) {
       console.error('Error removing passkey:', error);
       toaster(t('error:passkey_remove_failed'), 'error');
+    },
+  });
+};
+
+/**
+ * Mutation hook for unlink current user (self) totp
+ *
+ * @returns The mutation hook for unlink totp.
+ */
+export const useUnlinkTotpMutation = () => {
+  return useMutation<boolean, ApiError, void>({
+    mutationKey: meKeys.delete.totp(),
+    mutationFn: () => unlinkTotp(),
+    onSuccess: () => {
+      toaster(t('common:success.totp_removed'), 'success');
+      useUserStore.getState().setMeAuthData({ hasTotp: false });
+    },
+    onError(error) {
+      console.error('Error removing totp:', error);
+      toaster(t('error:totp_remove_failed'), 'error');
     },
   });
 };

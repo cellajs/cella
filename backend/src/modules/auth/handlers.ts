@@ -5,25 +5,26 @@ import { organizationsTable } from '#/db/schema/organizations';
 import { passkeysTable } from '#/db/schema/passkeys';
 import { sessionsTable } from '#/db/schema/sessions';
 import { tokensTable } from '#/db/schema/tokens';
-import { usersTable } from '#/db/schema/users';
+import { totpsTable } from '#/db/schema/totps';
+import { type UserModel, usersTable } from '#/db/schema/users';
 import { env } from '#/env';
 import { type Env, getContextToken, getContextUser } from '#/lib/context';
 import { resolveEntity } from '#/lib/entity';
 import { AppError } from '#/lib/errors';
 import { eventManager } from '#/lib/events';
 import { mailer } from '#/lib/mailer';
+import { initiateTwoFactorAuth, validatePending2FAToken } from '#/modules/auth/helpers/2fa';
 import { hashPassword, verifyPasswordHash } from '#/modules/auth/helpers/argon2id';
 import { deleteAuthCookie, getAuthCookie, setAuthCookie } from '#/modules/auth/helpers/cookie';
 import {
   clearOAuthSession,
   createOAuthSession,
-  getOAuthCookies,
   handleOAuthConnection,
   handleOAuthInvitation,
   handleOAuthVerify,
   setOAuthRedirect,
 } from '#/modules/auth/helpers/oauth/cookies';
-import { basicFlow, connectFlow, getOAuthAccount, inviteFlow, verifyFlow } from '#/modules/auth/helpers/oauth/index';
+import { getOAuthAccount, handleOAuthFlow } from '#/modules/auth/helpers/oauth/index';
 import {
   githubAuth,
   type GithubUserEmailProps,
@@ -36,7 +37,8 @@ import {
 import { transformGithubUserData, transformSocialUserData } from '#/modules/auth/helpers/oauth/transform-user-data';
 import { verifyPassKeyPublic } from '#/modules/auth/helpers/passkey';
 import { sendVerificationEmail } from '#/modules/auth/helpers/send-verification-email';
-import { getParsedSessionCookie, invalidateSessionById, setUserSession, validateSession } from '#/modules/auth/helpers/session';
+import { getParsedSessionCookie, setUserSession, validateSession } from '#/modules/auth/helpers/session';
+import { verifyTotpCode } from '#/modules/auth/helpers/totps';
 import { handleCreateUser, handleMembershipTokenUpdate } from '#/modules/auth/helpers/user';
 import authRoutes from '#/modules/auth/routes';
 import { getUserBy } from '#/modules/users/helpers/get-user-by';
@@ -48,8 +50,10 @@ import { logEvent } from '#/utils/logger';
 import { nanoid } from '#/utils/nanoid';
 import { slugFromEmail } from '#/utils/slug-from-email';
 import { createDate, TimeSpan } from '#/utils/time-span';
+import { getValidToken } from '#/utils/validate-token';
 import { OpenAPIHono } from '@hono/zod-openapi';
-import { encodeBase64 } from '@oslojs/encoding';
+import { encodeBase32, encodeBase64 } from '@oslojs/encoding';
+import { createTOTPKeyURI } from '@oslojs/otp';
 import { generateCodeVerifier, generateState, OAuth2RequestError } from 'arctic';
 import { appConfig, type EnabledOAuthProvider } from 'config';
 import { and, desc, eq, isNotNull, isNull } from 'drizzle-orm';
@@ -98,6 +102,7 @@ const authRouteHandlers = app
           isNull(tokensTable.userId),
           isNotNull(tokensTable.entityType),
           isNotNull(tokensTable.role),
+          isNull(tokensTable.consumedAt),
         ),
       )
       .limit(1);
@@ -155,9 +160,6 @@ const authRouteHandlers = app
       throw new AppError({ status: 400, type: 'forbidden_strategy', severity: 'error', meta: { strategy } });
     }
 
-    // Delete token to not needed anymore (if no membership invitation)
-    if (!membershipInvite) await db.delete(tokensTable).where(eq(tokensTable.id, validToken.id));
-
     // add token if it's membership invitation
     const membershipInviteTokenId = membershipInvite ? validToken.id : undefined;
     const hashedPassword = await hashPassword(password);
@@ -168,19 +170,17 @@ const authRouteHandlers = app
 
     const user = await handleCreateUser({ newUser, membershipInviteTokenId, emailVerified: true });
 
+    // Sign in user
     await setUserSession(ctx, user, 'password');
 
-    // Return
-    return ctx.json(true, 200);
+    const redirectPath = membershipInvite ? `/invitation/${validToken.token}?tokenId=${validToken.id}` : appConfig.defaultRedirectPath;
+    return ctx.json({ shouldRedirect: true, redirectPath }, 200);
   })
   /*
    * Verify email
    */
   .openapi(authRoutes.verifyEmail, async (ctx) => {
     const { redirect } = ctx.req.valid('query');
-
-    const decodedRedirect = decodeURIComponent(redirect || '');
-    const redirectPath = isValidRedirectPath(decodedRedirect) || appConfig.defaultRedirectPath;
 
     // No token in context
     const token = getContextToken();
@@ -212,13 +212,17 @@ const authRouteHandlers = app
         ),
       );
 
-    // Delete token(s) to prevent reuse
-    await db.delete(tokensTable).where(eq(tokensTable.id, token.id));
+    // Start 2FA challenge if the user has 2FA enabled
+    const twoFactorRedirectPath = await initiateTwoFactorAuth(ctx, user);
 
-    // Sign in user
-    await setUserSession(ctx, user, 'email');
-
+    // Determine redirect url
+    const decodedRedirect = decodeURIComponent(redirect || '');
+    const baseRedirectPath = isValidRedirectPath(decodedRedirect) || appConfig.defaultRedirectPath;
+    const redirectPath = twoFactorRedirectPath || baseRedirectPath;
     const redirectUrl = new URL(redirectPath, appConfig.frontendUrl);
+
+    // If 2FA is not required, set  user session immediately
+    if (!twoFactorRedirectPath) await setUserSession(ctx, user, 'email');
 
     return ctx.redirect(redirectUrl, 302);
   })
@@ -236,12 +240,10 @@ const authRouteHandlers = app
     // Delete old token if exists
     await db.delete(tokensTable).where(and(eq(tokensTable.userId, user.id), eq(tokensTable.type, 'password_reset')));
 
-    const token = nanoid(40);
-
     const [tokenRecord] = await db
       .insert(tokensTable)
       .values({
-        token,
+        token: nanoid(40),
         type: 'password_reset',
         userId: user.id,
         email,
@@ -252,7 +254,7 @@ const authRouteHandlers = app
 
     // Send email
     const lng = user.language;
-    const createPasswordLink = `${appConfig.frontendUrl}/auth/create-password/${token}?tokenId=${tokenRecord.id}`;
+    const createPasswordLink = `${appConfig.frontendUrl}/auth/create-password/${tokenRecord.token}`;
     const subject = i18n.t('backend:email.create_password.subject', { lng, appName: appConfig.name });
     const staticProps = { createPasswordLink, subject, lng };
     const recipients = [{ email: user.email }];
@@ -281,9 +283,6 @@ const authRouteHandlers = app
     // If the token is not found or expired
     if (!token || !token.userId) throw new AppError({ status: 401, type: 'invalid_token', severity: 'warn' });
 
-    // Delete token to prevent reuse
-    await db.delete(tokensTable).where(and(eq(tokensTable.id, token.id), eq(tokensTable.type, 'password_reset')));
-
     const user = await getUserBy('id', token.userId);
 
     // If the user is not found
@@ -300,10 +299,11 @@ const authRouteHandlers = app
       db.update(emailsTable).set({ verified: true, verifiedAt: getIsoDate() }).where(eq(emailsTable.email, user.email)),
     ]);
 
-    // Sign in user
-    await setUserSession(ctx, user, 'password');
+    const redirectPath = await initiateTwoFactorAuth(ctx, user);
+    if (redirectPath) return ctx.json({ shouldRedirect: true, redirectPath }, 200);
 
-    return ctx.json(true, 200);
+    await setUserSession(ctx, user, 'password');
+    return ctx.json({ shouldRedirect: false }, 200);
   })
   /*
    * Sign in with email and password
@@ -334,26 +334,27 @@ const authRouteHandlers = app
     if (!validPassword) throw new AppError({ status: 403, type: 'invalid_password', severity: 'warn' });
 
     // If email is not verified, send verification email
-    if (!emailData.verified) sendVerificationEmail({ userId: user.id });
-    // Sign in user
-    else await setUserSession(ctx, user, 'password');
+    if (!emailData.verified) {
+      sendVerificationEmail({ userId: user.id });
+      return ctx.json({ shouldRedirect: true, redirectPath: '/auth/email-verification/signin' }, 200);
+    }
 
-    return ctx.json(emailData.verified, 200);
+    const redirectPath = await initiateTwoFactorAuth(ctx, user);
+    if (redirectPath) return ctx.json({ shouldRedirect: true, redirectPath }, 200);
+
+    await setUserSession(ctx, user, 'password');
+    return ctx.json({ shouldRedirect: false }, 200);
   })
   /*
    * Check token (token validation)
    */
-  .openapi(authRoutes.refreshToken, async (ctx) => {
+  .openapi(authRoutes.validateToken, async (ctx) => {
     // Find token in request
-    const { id } = ctx.req.valid('param');
-    const { type } = ctx.req.valid('query');
+    const { token } = ctx.req.valid('param');
+    const { type: requiredType } = ctx.req.valid('query');
 
     // Check if token exists
-    const [tokenRecord] = await db.select().from(tokensTable).where(eq(tokensTable.id, id));
-    if (!tokenRecord) throw new AppError({ status: 404, type: `${type}_not_found`, severity: 'warn' });
-
-    // If token is expired, return an error
-    if (isExpiredDate(tokenRecord.expiresAt)) throw new AppError({ status: 401, type: `${type}_expired`, severity: 'warn' });
+    const tokenRecord = await getValidToken({ requiredType, token, consumed: false });
 
     const baseData = {
       email: tokenRecord.email,
@@ -412,9 +413,6 @@ const authRouteHandlers = app
 
     const [targetMembership] = activatedMemberships.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
-    // Delete token after all activation, since tokenId is cascaded in membershipTable
-    await db.delete(tokensTable).where(eq(tokensTable.id, token.id));
-
     const entityIdField = appConfig.entityIdFields[token.entityType];
     if (!targetMembership[entityIdField]) throw new AppError({ status: 404, type: 'not_found', severity: 'warn', entityType: token.entityType });
 
@@ -436,14 +434,7 @@ const authRouteHandlers = app
     if (!user) throw new AppError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'user', meta: { targetUserId } });
 
     const adminUser = getContextUser();
-    const sessionData = await getParsedSessionCookie(ctx);
-
-    if (!sessionData) {
-      deleteAuthCookie(ctx, 'session');
-      throw new AppError({ status: 401, type: 'unauthorized', severity: 'warn' });
-    }
-
-    await setUserSession(ctx, user, 'password', adminUser);
+    await setUserSession(ctx, user, 'password', 'impersonation');
 
     logEvent('info', 'Started impersonation', { adminId: adminUser.id, targetUserId });
 
@@ -453,14 +444,9 @@ const authRouteHandlers = app
    * Stop impersonation
    */
   .openapi(authRoutes.stopImpersonation, async (ctx) => {
-    const sessionData = await getParsedSessionCookie(ctx, true);
-    if (!sessionData) throw new AppError({ status: 401, type: 'unauthorized', severity: 'warn' });
-
-    const { sessionToken, adminUserId } = sessionData;
+    const { sessionToken, adminUserId } = await getParsedSessionCookie(ctx, { deleteAfterAttempt: true });
     const { session } = await validateSession(sessionToken);
-    if (!session) throw new AppError({ status: 401, type: 'unauthorized', severity: 'warn' });
 
-    await invalidateSessionById(session.id, session.userId);
     if (adminUserId) {
       const [adminsLastSession] = await db
         .select()
@@ -469,10 +455,7 @@ const authRouteHandlers = app
         .orderBy(desc(sessionsTable.expiresAt))
         .limit(1);
 
-      if (isExpiredDate(adminsLastSession.expiresAt)) {
-        await invalidateSessionById(adminsLastSession.id, adminUserId);
-        throw new AppError({ status: 401, type: 'unauthorized', severity: 'warn' });
-      }
+      if (isExpiredDate(adminsLastSession.expiresAt)) throw new AppError({ status: 401, type: 'unauthorized', severity: 'warn' });
 
       const expireTimeSpan = new TimeSpan(adminsLastSession.expiresAt.getTime() - Date.now(), 'ms');
       const cookieContent = `${adminsLastSession.token}.${adminsLastSession.userId ?? ''}`;
@@ -480,7 +463,7 @@ const authRouteHandlers = app
       await setAuthCookie(ctx, 'session', cookieContent, expireTimeSpan);
     }
 
-    logEvent('info', 'Stopped impersonation', { adminiD: adminUserId || 'na', targetUserId: session.userId });
+    logEvent('info', 'Stopped impersonation', { adminId: adminUserId || 'na', targetUserId: session.userId });
 
     return ctx.json(true, 200);
   })
@@ -488,21 +471,15 @@ const authRouteHandlers = app
    * Sign out
    */
   .openapi(authRoutes.signOut, async (ctx) => {
-    const sessionData = await getParsedSessionCookie(ctx);
-
-    if (!sessionData) {
-      deleteAuthCookie(ctx, 'session');
-      throw new AppError({ status: 401, type: 'unauthorized', severity: 'warn' });
-    }
-
+    const { sessionToken } = await getParsedSessionCookie(ctx, { deleteOnError: true });
     // Find session & invalidate
-    const { session } = await validateSession(sessionData.sessionToken);
-    if (session) await invalidateSessionById(session.id, session.userId);
+    const { session: currentSession } = await validateSession(sessionToken);
 
+    await db.delete(sessionsTable).where(and(eq(sessionsTable.id, currentSession.id), eq(sessionsTable.userId, currentSession.userId)));
     // Delete session cookie
     deleteAuthCookie(ctx, 'session');
 
-    logEvent('info', 'User signed out', { userId: session?.userId || 'na' });
+    logEvent('info', 'User signed out', { userId: currentSession.userId });
 
     return ctx.json(true, 200);
   })
@@ -618,14 +595,8 @@ const authRouteHandlers = app
 
       // Restore Context: linked oauthAccount, invitation or account linking
       const oauthAccount = await getOAuthAccount(providerUser.id, strategy, providerUser.email);
-      const { connectUserId, inviteToken, verifyTokenId } = await getOAuthCookies(ctx);
 
-      // Handle different OAuth flows based on context
-      if (connectUserId) return await connectFlow(ctx, providerUser, strategy, connectUserId, oauthAccount);
-      if (inviteToken) return await inviteFlow(ctx, providerUser, strategy, inviteToken.id, oauthAccount);
-      if (verifyTokenId) return await verifyFlow(ctx, providerUser, strategy, verifyTokenId, oauthAccount);
-
-      return await basicFlow(ctx, providerUser, strategy, oauthAccount);
+      return await handleOAuthFlow(ctx, providerUser, strategy, oauthAccount);
     } catch (error) {
       if (error instanceof AppError) throw error;
 
@@ -676,14 +647,8 @@ const authRouteHandlers = app
 
       // Restore Context: linked oauthAccount, invitation or account linking
       const oauthAccount = await getOAuthAccount(providerUser.id, strategy, providerUser.email);
-      const { connectUserId, inviteToken, verifyTokenId } = await getOAuthCookies(ctx);
 
-      // Handle different OAuth flows based on context
-      if (connectUserId) return await connectFlow(ctx, providerUser, strategy, connectUserId, oauthAccount);
-      if (inviteToken) return await inviteFlow(ctx, providerUser, strategy, inviteToken.id, oauthAccount);
-      if (verifyTokenId) return await verifyFlow(ctx, providerUser, strategy, verifyTokenId, oauthAccount);
-
-      return await basicFlow(ctx, providerUser, strategy, oauthAccount);
+      return await handleOAuthFlow(ctx, providerUser, strategy, oauthAccount);
     } catch (error) {
       if (error instanceof AppError) throw error;
 
@@ -734,14 +699,8 @@ const authRouteHandlers = app
 
       // Restore Context: linked oauthAccount, invitation or account linking
       const oauthAccount = await getOAuthAccount(providerUser.id, strategy, providerUser.email);
-      const { connectUserId, inviteToken, verifyTokenId } = await getOAuthCookies(ctx);
 
-      // Handle different OAuth flows based on context
-      if (connectUserId) return await connectFlow(ctx, providerUser, strategy, connectUserId, oauthAccount);
-      if (inviteToken) return await inviteFlow(ctx, providerUser, strategy, inviteToken.id, oauthAccount);
-      if (verifyTokenId) return await verifyFlow(ctx, providerUser, strategy, verifyTokenId, oauthAccount);
-
-      return await basicFlow(ctx, providerUser, strategy, oauthAccount);
+      return await handleOAuthFlow(ctx, providerUser, strategy, oauthAccount);
     } catch (error) {
       if (error instanceof AppError) throw error;
 
@@ -764,46 +723,150 @@ const authRouteHandlers = app
    * Passkey challenge
    */
   .openapi(authRoutes.getPasskeyChallenge, async (ctx) => {
-    // Generate a random challenge
-    const challenge = getRandomValues(new Uint8Array(32));
+    const { email, type } = ctx.req.valid('query');
 
-    // Convert to string
+    let userEmail: string | null = null;
+
+    // Generate a 32-byte random challenge and encode it as Base64
+    const challenge = getRandomValues(new Uint8Array(32));
     const challengeBase64 = encodeBase64(challenge);
 
-    // Save challenge in cookie
+    // Save the challenge in a short-lived cookie (5 minutes)
     await setAuthCookie(ctx, 'passkey-challenge', challengeBase64, new TimeSpan(5, 'm'));
-    return ctx.json({ challengeBase64 }, 200);
+
+    // Normalize email if provided
+    if (email) {
+      userEmail = email.toLowerCase().trim();
+    }
+
+    // If this is a two_factor request, retrieve user from pending 2FA token
+    if (type === 'two_factor') {
+      const { email: tokenEmail } = await validatePending2FAToken(ctx);
+      userEmail = tokenEmail;
+    }
+
+    // If we still have no email, return challenge with empty credential list
+    if (!userEmail) return ctx.json({ challengeBase64, credentialIds: [] }, 200);
+
+    // Fetch all passkey credentials for this user
+    const credentials = await db
+      .select({ credentialId: passkeysTable.credentialId })
+      .from(passkeysTable)
+      .where(eq(passkeysTable.userEmail, userEmail));
+
+    const credentialIds = credentials.map((c) => c.credentialId);
+
+    return ctx.json({ challengeBase64, credentialIds }, 200);
   })
   /*
    * Verify passkey
    */
   .openapi(authRoutes.verifyPasskey, async (ctx) => {
-    const { clientDataJSON, authenticatorData, signature, userEmail } = ctx.req.valid('json');
+    const { clientDataJSON, authenticatorData, signature, email, type } = ctx.req.valid('json');
     const strategy = 'passkey';
+    // Determine session type: regular login or 2FA flow
+    const sessionType = type === 'two_factor' ? 'two_factor_authentication' : 'regular';
 
-    // Retrieve user and challenge record
-    const user = await getUserBy('email', userEmail.toLowerCase());
-    if (!user) throw new AppError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'user', meta: { strategy } });
+    let user: UserModel | null = null;
 
-    // Check if passkey challenge exists
+    // Find user by email if provided
+    if (email) {
+      user = await getUserBy('email', email.toLowerCase());
+    }
+
+    // Override user if this is a two_factor authentication
+    if (type === 'two_factor') {
+      const userFromToken = await validatePending2FAToken(ctx, true);
+      user = userFromToken;
+    }
+
+    const meta = { strategy, sessionType };
+
+    // Fail early if user not found
+    if (!user) throw new AppError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'user', meta });
+
+    // Retrieve the passkey challenge from cookie
     const challengeFromCookie = await getAuthCookie(ctx, 'passkey-challenge');
-    if (!challengeFromCookie) throw new AppError({ status: 401, type: 'invalid_credentials', severity: 'warn', meta: { strategy } });
+    if (!challengeFromCookie) throw new AppError({ status: 401, type: 'invalid_credentials', severity: 'warn', meta });
 
     // Get passkey credentials
-    const [credentials] = await db.select().from(passkeysTable).where(eq(passkeysTable.userEmail, userEmail));
-    if (!credentials) throw new AppError({ status: 404, type: 'not_found', severity: 'warn', meta: { strategy } });
+    const [credentials] = await db.select().from(passkeysTable).where(eq(passkeysTable.userEmail, user.email)).limit(1);
+    if (!credentials) throw new AppError({ status: 404, type: 'not_found', severity: 'warn', meta });
 
     try {
       const isValid = await verifyPassKeyPublic(signature, authenticatorData, clientDataJSON, credentials.publicKey, challengeFromCookie);
-      if (!isValid) throw new AppError({ status: 401, type: 'invalid_token', severity: 'warn', meta: { strategy } });
+      if (!isValid) throw new AppError({ status: 401, type: 'invalid_token', severity: 'warn', meta });
     } catch (error) {
       if (error instanceof Error) {
-        throw new AppError({ status: 500, type: 'passkey_failed', severity: 'error', meta: { strategy }, originalError: error });
+        throw new AppError({ status: 500, type: 'passkey_verification_failed', severity: 'error', meta, originalError: error });
       }
     }
 
-    await setUserSession(ctx, user, 'passkey');
+    // Set user session after successful verification
+    await setUserSession(ctx, user, strategy, sessionType);
+
+    return ctx.json(true, 200);
+  })
+  /*
+   * TOTP uri
+   */
+  .openapi(authRoutes.getTotpUri, async (ctx) => {
+    // Generate a 20-byte random secret and encode it as Base32
+    const secret = crypto.getRandomValues(new Uint8Array(20));
+    const manualKey = encodeBase32(secret);
+
+    const user = getContextUser();
+
+    // Save the secret in a short-lived cookie (5 minutes)
+    await setAuthCookie(ctx, 'totp-key', manualKey, new TimeSpan(5, 'm'));
+
+    // otpauth:// URI for QR scanner apps
+    const totpUri = createTOTPKeyURI(appConfig.name, user.name, secret, appConfig.totpConfig.intervalInSeconds, appConfig.totpConfig.digits);
+
+    return ctx.json({ totpUri, manualKey }, 200);
+  })
+  /*
+   * Verify TOTP code
+   */
+  .openapi(authRoutes.verifyTotpCode, async (ctx) => {
+    const { code, type, email } = ctx.req.valid('json');
+    const strategy = 'totp';
+    // Determine session type: regular login or 2FA flow
+    const sessionType = type === 'two_factor' ? 'two_factor_authentication' : 'regular';
+
+    const meta = { strategy, sessionType };
+    let user: UserModel | null = null;
+
+    // Find user by email if provided
+    if (email) {
+      user = await getUserBy('email', email.toLowerCase());
+    }
+
+    // Override user if this is a two_factor authentication
+    if (type === 'two_factor') {
+      const userFromToken = await validatePending2FAToken(ctx, true);
+      user = userFromToken;
+    }
+
+    // Fail early if user not found
+    if (!user) throw new AppError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'user', meta });
+
+    // Get passkey credentials
+    const [credentials] = await db.select().from(totpsTable).where(eq(totpsTable.userId, user.id)).limit(1);
+    if (!credentials) throw new AppError({ status: 404, type: 'not_found', severity: 'warn', meta });
+
+    try {
+      const isValid = verifyTotpCode(code, credentials.encoderSecretKey);
+      if (!isValid) throw new AppError({ status: 401, type: 'invalid_token', severity: 'warn', meta });
+    } catch (error) {
+      if (error instanceof Error) {
+        throw new AppError({ status: 500, type: 'totp_verification_failed', severity: 'error', meta, originalError: error });
+      }
+    }
+
+    // Set user session after successful verification
+    await setUserSession(ctx, user, strategy, sessionType);
+
     return ctx.json(true, 200);
   });
-
 export default authRouteHandlers;

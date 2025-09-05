@@ -10,8 +10,10 @@ import { booleanQuerySchema } from '#/utils/schema/common';
 export const sessionSchema = createSelectSchema(sessionsTable).omit({ token: true }).extend({ isCurrent: z.boolean() });
 
 export const meAuthDataSchema = z.object({
-  oauth: z.array(enabledOAuthProvidersEnum),
-  passkey: z.boolean(),
+  enabledOAuth: z.array(enabledOAuthProvidersEnum),
+  hasPasskey: z.boolean(),
+  hasTotp: z.boolean(),
+  hasPassword: z.boolean(),
   sessions: z.array(sessionSchema.extend({ expiresAt: z.string() })),
 });
 

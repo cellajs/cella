@@ -1,11 +1,11 @@
-import { appConfig } from 'config';
-import { varchar } from 'drizzle-orm/pg-core';
 import { oauthAccountsTable } from '#/db/schema/oauth-accounts';
 import { usersTable } from '#/db/schema/users';
 import { generateContextEntityTypeFields } from '#/db/utils/generate-context-entity-fields';
 import { generateTable } from '#/db/utils/generate-table';
 import { timestampColumns } from '#/db/utils/timestamp-columns';
 import { nanoid } from '#/utils/nanoid';
+import { appConfig } from 'config';
+import { timestamp, varchar } from 'drizzle-orm/pg-core';
 
 const tokenTypeEnum = appConfig.tokenTypes;
 const roleEnum = appConfig.rolesByType.entityRoles;
@@ -23,6 +23,7 @@ const baseColumns = {
   oauthAccountId: varchar().references(() => oauthAccountsTable.id, { onDelete: 'set null' }),
   createdBy: varchar().references(() => usersTable.id, { onDelete: 'set null' }),
   expiresAt: timestampColumns.expiresAt,
+  consumedAt: timestamp({ withTimezone: true, mode: 'date' }),
 };
 
 // Generate entity id columns based on entity-config

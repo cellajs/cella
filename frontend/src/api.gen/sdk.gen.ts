@@ -22,9 +22,9 @@ import type {
   SignInData,
   SignInResponses,
   SignInErrors,
-  RefreshTokenData,
-  RefreshTokenResponses,
-  RefreshTokenErrors,
+  ValidateTokenData,
+  ValidateTokenResponses,
+  ValidateTokenErrors,
   AcceptEntityInviteData,
   AcceptEntityInviteResponses,
   AcceptEntityInviteErrors,
@@ -55,6 +55,12 @@ import type {
   SignInWithPasskeyData,
   SignInWithPasskeyResponses,
   SignInWithPasskeyErrors,
+  GetTotpUriData,
+  GetTotpUriResponses,
+  GetTotpUriErrors,
+  SignInWithTotpData,
+  SignInWithTotpResponses,
+  SignInWithTotpErrors,
   DeleteMeData,
   DeleteMeResponses,
   DeleteMeErrors,
@@ -79,12 +85,18 @@ import type {
   DeleteMyMembershipData,
   DeleteMyMembershipResponses,
   DeleteMyMembershipErrors,
-  DeletePasskeyData,
-  DeletePasskeyResponses,
-  DeletePasskeyErrors,
-  CreatePasskeyData,
-  CreatePasskeyResponses,
-  CreatePasskeyErrors,
+  UnlinkPasskeyData,
+  UnlinkPasskeyResponses,
+  UnlinkPasskeyErrors,
+  RegistratePasskeyData,
+  RegistratePasskeyResponses,
+  RegistratePasskeyErrors,
+  UnlinkTotpData,
+  UnlinkTotpResponses,
+  UnlinkTotpErrors,
+  SetupTotpData,
+  SetupTotpResponses,
+  SetupTotpErrors,
   GetUploadTokenData,
   GetUploadTokenResponses,
   GetUploadTokenErrors,
@@ -276,7 +288,7 @@ export const signUp = <ThrowOnError extends boolean = true>(options?: Options<Si
  * @param {string} options.path.token - `string`
  * @param {string=} options.body.email - `string` (optional)
  * @param {string=} options.body.password - `string` (optional)
- * @returns Possible status codes: 200, 302, 400, 401, 403, 404, 429
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
 export const signUpWithToken = <ThrowOnError extends boolean = true>(options: Options<SignUpWithTokenData, ThrowOnError>) => {
   return (options.client ?? _heyApiClient).post<SignUpWithTokenResponses, SignUpWithTokenErrors, ThrowOnError, 'data'>({
@@ -396,15 +408,15 @@ export const signIn = <ThrowOnError extends boolean = true>(options?: Options<Si
  *
  * Checks if a token (e.g. for password reset, email verification, or invite) is still valid and returns basic data and a nonce for further actions.
  *
- * **POST /auth/refresh-token/{id}** ·· [refreshToken](http://localhost:4000/docs#tag/auth/post/auth/refresh-token/{id}) ·· _auth_
+ * **POST /auth/validate-token/{token}** ·· [validateToken](http://localhost:4000/docs#tag/auth/post/auth/validate-token/{token}) ·· _auth_
  *
- * @param {refreshTokenData} options
- * @param {string} options.path.id - `string`
+ * @param {validateTokenData} options
+ * @param {string} options.path.token - `string`
  * @param {enum} options.query.type - `enum`
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
-export const refreshToken = <ThrowOnError extends boolean = true>(options: Options<RefreshTokenData, ThrowOnError>) => {
-  return (options.client ?? _heyApiClient).post<RefreshTokenResponses, RefreshTokenErrors, ThrowOnError, 'data'>({
+export const validateToken = <ThrowOnError extends boolean = true>(options: Options<ValidateTokenData, ThrowOnError>) => {
+  return (options.client ?? _heyApiClient).post<ValidateTokenResponses, ValidateTokenErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     security: [
       {
@@ -413,7 +425,7 @@ export const refreshToken = <ThrowOnError extends boolean = true>(options: Optio
         type: 'apiKey',
       },
     ],
-    url: '/auth/refresh-token/{id}',
+    url: '/auth/validate-token/{token}',
     ...options,
   });
 };
@@ -666,16 +678,19 @@ export const microsoftSignInCallback = <ThrowOnError extends boolean = true>(opt
 /**
  * Get passkey challenge
  * 🌐 Public access
+ * ⏳ Spam (10/h)
  *
  * Initiates the passkey registration or authentication flow by generating a device bound challenge.
  *
  * **GET /auth/passkey-challenge** ·· [getPasskeyChallenge](http://localhost:4000/docs#tag/auth/get/auth/passkey-challenge) ·· _auth_
  *
  * @param {getPasskeyChallengeData} options
+ * @param {enum | enum | enum} options.query.type - `enum | enum | enum`
+ * @param {string=} options.query.email - `string` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
-export const getPasskeyChallenge = <ThrowOnError extends boolean = true>(options?: Options<GetPasskeyChallengeData, ThrowOnError>) => {
-  return (options?.client ?? _heyApiClient).get<GetPasskeyChallengeResponses, GetPasskeyChallengeErrors, ThrowOnError, 'data'>({
+export const getPasskeyChallenge = <ThrowOnError extends boolean = true>(options: Options<GetPasskeyChallengeData, ThrowOnError>) => {
+  return (options.client ?? _heyApiClient).get<GetPasskeyChallengeResponses, GetPasskeyChallengeErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     url: '/auth/passkey-challenge',
     ...options,
@@ -695,7 +710,8 @@ export const getPasskeyChallenge = <ThrowOnError extends boolean = true>(options
  * @param {string=} options.body.clientDataJSON - `string` (optional)
  * @param {string=} options.body.authenticatorData - `string` (optional)
  * @param {string=} options.body.signature - `string` (optional)
- * @param {string=} options.body.userEmail - `string` (optional)
+ * @param {enum | enum=} options.body.type - `enum | enum` (optional)
+ * @param {string=} options.body.email - `string` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
 export const signInWithPasskey = <ThrowOnError extends boolean = true>(options?: Options<SignInWithPasskeyData, ThrowOnError>) => {
@@ -709,6 +725,53 @@ export const signInWithPasskey = <ThrowOnError extends boolean = true>(options?:
       },
     ],
     url: '/auth/passkey-verification',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options?.headers,
+    },
+  });
+};
+
+/**
+ * Get TOTP setup URI and manual key
+ * 🛡️ Requires authentication
+ * ⏳ Spam (10/h)
+ *
+ * Generates a new TOTP secret for the current user and returns both the QR URI and Base32 manual key
+ *
+ * **GET /auth/totp-uri** ·· [getTotpUri](http://localhost:4000/docs#tag/auth/get/auth/totp-uri) ·· _auth_
+ *
+ * @param {getTotpUriData} options
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
+ */
+export const getTotpUri = <ThrowOnError extends boolean = true>(options?: Options<GetTotpUriData, ThrowOnError>) => {
+  return (options?.client ?? _heyApiClient).get<GetTotpUriResponses, GetTotpUriErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    url: '/auth/totp-uri',
+    ...options,
+  });
+};
+
+/**
+ * Verify topt code
+ * 🌐 Public access
+ * ⏳ Spam (10/h)
+ *
+ * Validates the totp code and completes totp based authentication.
+ *
+ * **POST /auth/totp-verification** ·· [signInWithTotp](http://localhost:4000/docs#tag/auth/post/auth/totp-verification) ·· _auth_
+ *
+ * @param {signInWithTotpData} options
+ * @param {string=} options.body.code - `string` (optional)
+ * @param {enum | enum=} options.body.type - `enum | enum` (optional)
+ * @param {string=} options.body.email - `string` (optional)
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
+ */
+export const signInWithTotp = <ThrowOnError extends boolean = true>(options?: Options<SignInWithTotpData, ThrowOnError>) => {
+  return (options?.client ?? _heyApiClient).post<SignInWithTotpResponses, SignInWithTotpErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    url: '/auth/totp-verification',
     ...options,
     headers: {
       'Content-Type': 'application/json',
@@ -786,6 +849,7 @@ export const getMe = <ThrowOnError extends boolean = true>(options?: Options<Get
  * @param {string | null=} options.body.thumbnailUrl - `string | null` (optional)
  * @param {string=} options.body.slug - `string` (optional)
  * @param {object=} options.body.userFlags - `object` (optional)
+ * @param {boolean=} options.body.twoFactorEnabled - `boolean` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
 export const updateMe = <ThrowOnError extends boolean = true>(options?: Options<UpdateMeData, ThrowOnError>) => {
@@ -943,13 +1007,13 @@ export const deleteMyMembership = <ThrowOnError extends boolean = true>(options:
  *
  * Removes the *current user's* registered passkey credential.
  *
- * **DELETE /me/passkey** ·· [deletePasskey](http://localhost:4000/docs#tag/me/delete/me/passkey) ·· _me_
+ * **DELETE /me/passkey** ·· [unlinkPasskey](http://localhost:4000/docs#tag/me/delete/me/passkey) ·· _me_
  *
- * @param {deletePasskeyData} options
+ * @param {unlinkPasskeyData} options
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
-export const deletePasskey = <ThrowOnError extends boolean = true>(options?: Options<DeletePasskeyData, ThrowOnError>) => {
-  return (options?.client ?? _heyApiClient).delete<DeletePasskeyResponses, DeletePasskeyErrors, ThrowOnError, 'data'>({
+export const unlinkPasskey = <ThrowOnError extends boolean = true>(options?: Options<UnlinkPasskeyData, ThrowOnError>) => {
+  return (options?.client ?? _heyApiClient).delete<UnlinkPasskeyResponses, UnlinkPasskeyErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     url: '/me/passkey',
     ...options,
@@ -962,17 +1026,60 @@ export const deletePasskey = <ThrowOnError extends boolean = true>(options?: Opt
  *
  * Registers a passkey for passwordless authentication by verifying a signed challenge and linking it to the *current user*.
  *
- * **POST /me/passkey** ·· [createPasskey](http://localhost:4000/docs#tag/me/post/me/passkey) ·· _me_
+ * **POST /me/passkey** ·· [registratePasskey](http://localhost:4000/docs#tag/me/post/me/passkey) ·· _me_
  *
- * @param {createPasskeyData} options
+ * @param {registratePasskeyData} options
  * @param {string=} options.body.attestationObject - `string` (optional)
  * @param {string=} options.body.clientDataJSON - `string` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
-export const createPasskey = <ThrowOnError extends boolean = true>(options: Options<CreatePasskeyData, ThrowOnError>) => {
-  return (options.client ?? _heyApiClient).post<CreatePasskeyResponses, CreatePasskeyErrors, ThrowOnError, 'data'>({
+export const registratePasskey = <ThrowOnError extends boolean = true>(options: Options<RegistratePasskeyData, ThrowOnError>) => {
+  return (options.client ?? _heyApiClient).post<RegistratePasskeyResponses, RegistratePasskeyErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     url: '/me/passkey',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+  });
+};
+
+/**
+ * Delete TOTP
+ * 🛡️ Requires authentication
+ *
+ * Removes the *current user's* registered totp credential.
+ *
+ * **DELETE /me/totp** ·· [unlinkTotp](http://localhost:4000/docs#tag/me/delete/me/totp) ·· _me_
+ *
+ * @param {unlinkTotpData} options
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
+ */
+export const unlinkTotp = <ThrowOnError extends boolean = true>(options?: Options<UnlinkTotpData, ThrowOnError>) => {
+  return (options?.client ?? _heyApiClient).delete<UnlinkTotpResponses, UnlinkTotpErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    url: '/me/totp',
+    ...options,
+  });
+};
+
+/**
+ * Set up TOTP for the authenticated user
+ * 🛡️ Requires authentication
+ *
+ * Registers a new TOTP (Time-based One-Time Password) for 2FA and links it to the current user account.
+ *
+ * **POST /me/totp** ·· [setupTotp](http://localhost:4000/docs#tag/me/post/me/totp) ·· _me_
+ *
+ * @param {setupTotpData} options
+ * @param {string=} options.body.code - `string` (optional)
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
+ */
+export const setupTotp = <ThrowOnError extends boolean = true>(options: Options<SetupTotpData, ThrowOnError>) => {
+  return (options.client ?? _heyApiClient).post<SetupTotpResponses, SetupTotpErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    url: '/me/totp',
     ...options,
     headers: {
       'Content-Type': 'application/json',

@@ -35,7 +35,7 @@ export const SignInForm = ({ email, resetSteps, emailEnabled }: Props) => {
   const passwordRef = useRef<HTMLInputElement>(null);
 
   const { lastUser, clearUserStore } = useUserStore();
-  const { redirect: encodedRedirect, token, tokenId } = useSearch({ from: AuthenticateRoute.id });
+  const { redirect: encodedRedirect, token } = useSearch({ from: AuthenticateRoute.id });
 
   const redirect = decodeURIComponent(encodedRedirect || '');
   const isMobile = window.innerWidth < 640;
@@ -49,15 +49,18 @@ export const SignInForm = ({ email, resetSteps, emailEnabled }: Props) => {
   // Handle sign in
   const { mutate: _signIn, isPending } = useMutation<SignInResponse, ApiError, NonNullable<SignInData['body']>>({
     mutationFn: (body) => signIn({ body }),
-    onSuccess: (emailVerified) => {
-      if (!emailVerified) return navigate({ to: '/auth/email-verification/$reason', params: { reason: 'signin' }, replace: true });
+    onSuccess: ({ redirectPath: apiRedirectPath }) => {
+      if (apiRedirectPath) {
+        navigate({ to: apiRedirectPath, replace: true });
+        return;
+      }
 
-      const redirectPath = token && tokenId ? '/invitation/$token' : redirect?.startsWith('/') ? redirect : appConfig.defaultRedirectPath;
+      const redirectPath = token ? '/invitation/$token' : redirect?.startsWith('/') ? redirect : appConfig.defaultRedirectPath;
 
       navigate({
         to: redirectPath,
         replace: true,
-        ...(token && tokenId && { params: { token }, search: { tokenId } }),
+        ...(token && { params: { token } }),
       });
     },
     onError: (error: ApiError) => {

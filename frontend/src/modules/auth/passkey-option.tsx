@@ -4,37 +4,50 @@ import { useNavigate, useSearch } from '@tanstack/react-router';
 import { appConfig } from 'config';
 import { Fingerprint } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { type ApiError, getPasskeyChallenge, type SignInWithPasskeyData, type SignInWithPasskeyResponse, signInWithPasskey } from '~/api.gen';
-import type { AuthStep } from '~/modules/auth/types';
+import {
+  type GetPasskeyChallengeData,
+  type SignInWithPasskeyData,
+  type SignInWithPasskeyResponse,
+  getPasskeyChallenge,
+  signInWithPasskey,
+} from '~/api.gen';
+import { ApiError } from '~/lib/api';
+import type { BaseOptionsProps } from '~/modules/auth/steps';
 import { toaster } from '~/modules/common/toaster/service';
 import { Button } from '~/modules/ui/button';
-import { AuthenticateRoute } from '~/routes/auth';
 import { useUIStore } from '~/store/ui';
 
-interface PasskeyOptionProps {
-  actionType: AuthStep;
-  email: string;
+interface PasskeyOptionProps extends BaseOptionsProps {
+  email?: string;
+  type: Exclude<GetPasskeyChallengeData['query']['type'], 'registrate'>;
 }
 
-const PasskeyOption = ({ email, actionType = 'signIn' }: PasskeyOptionProps) => {
+const PasskeyOption = ({ email, type, authStep = 'signIn' }: PasskeyOptionProps) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const mode = useUIStore((state) => state.mode);
 
-  const { redirect } = useSearch({ from: AuthenticateRoute.id });
+  const { redirect } = useSearch({ strict: false });
   const redirectPath = redirect?.startsWith('/') ? redirect : appConfig.defaultRedirectPath;
 
-  const { mutate: passkeyAuth } = useMutation<SignInWithPasskeyResponse, ApiError | Error, NonNullable<SignInWithPasskeyData['body']>['userEmail']>({
-    mutationFn: async (userEmail) => {
+  const { mutate: passkeyAuth } = useMutation<SignInWithPasskeyResponse, ApiError | Error, NonNullable<SignInWithPasskeyData['body']>['email']>({
+    mutationFn: async (email) => {
       //  Fetch a challenge from BE
-      const { challengeBase64 } = await getPasskeyChallenge();
+      const { challengeBase64, credentialIds } = await getPasskeyChallenge({ query: { email, type } });
 
       // Decode  challenge and wrap it in a Uint8Array (required format)
       const raw = decodeBase64(challengeBase64);
       const challenge = new Uint8Array(raw);
 
+      // Prepare allowCredentials for passkey request
+      const allowCredentials = credentialIds.map((id: string) => ({
+        id: new Uint8Array(decodeBase64(id)),
+        type: 'public-key' as const,
+        transports: ['internal'] as AuthenticatorTransport[],
+      }));
+
       // Prompt user to authenticate with a passkey
-      const credential = await navigator.credentials.get({ publicKey: { challenge, userVerification: 'required' } });
+      const credential = await navigator.credentials.get({ publicKey: { challenge, allowCredentials, userVerification: 'required' } });
 
       // Ensure response is a PublicKeyCredential
       if (!(credential instanceof PublicKeyCredential)) throw new Error('Failed to create public key');
@@ -49,7 +62,8 @@ const PasskeyOption = ({ email, actionType = 'signIn' }: PasskeyOptionProps) => 
         clientDataJSON: encodeBase64(new Uint8Array(response.clientDataJSON)),
         authenticatorData: encodeBase64(new Uint8Array(response.authenticatorData)),
         signature: encodeBase64(new Uint8Array(response.signature)),
-        userEmail,
+        email,
+        type: type,
       };
 
       // Send signed response to BE to complete authentication
@@ -57,9 +71,14 @@ const PasskeyOption = ({ email, actionType = 'signIn' }: PasskeyOptionProps) => 
     },
     onSuccess: (success) => {
       if (success) navigate({ to: redirectPath, replace: true });
-      else toaster(t('error:passkey_sign_in'), 'error');
+      else toaster(t('error:passkey_verification_failed'), 'error');
     },
-    onError: () => toaster(t('error:passkey_sign_in'), 'error'),
+    onError: (error) => {
+      if (type === 'two_factor' && error instanceof ApiError) {
+        navigate({ to: '/error', search: { error: error.type, severity: error.severity } });
+      }
+      if (type === 'login') toaster(t('error:passkey_verification_failed'), 'error');
+    },
   });
 
   return (
@@ -67,7 +86,7 @@ const PasskeyOption = ({ email, actionType = 'signIn' }: PasskeyOptionProps) => 
       <Button type="button" onClick={() => passkeyAuth(email)} variant="plain" className="w-full gap-1.5">
         <Fingerprint size={16} />
         <span>
-          {actionType === 'signIn' ? t('common:sign_in') : t('common:sign_up')} {t('common:with').toLowerCase()} {t('common:passkey').toLowerCase()}
+          {authStep === 'signIn' ? t('common:sign_in') : t('common:sign_up')} {t('common:with').toLowerCase()} {t('common:passkey').toLowerCase()}
         </span>
       </Button>
     </div>

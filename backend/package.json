@@ -62,6 +62,7 @@
     "@opentelemetry/semantic-conventions": "^1.36.0",
     "@oslojs/crypto": "^1.0.1",
     "@oslojs/encoding": "^1.1.0",
+    "@oslojs/otp": "^1.1.0",
     "@oslojs/webauthn": "^1.0.0",
     "@paddle/paddle-node-sdk": "^3.2.1",
     "@scalar/hono-api-reference": "^0.9.16",

@@ -1,7 +1,9 @@
-import { z } from '@hono/zod-openapi';
 import { membershipSchema } from '#/modules/memberships/schema';
 import { userSchema } from '#/modules/users/schema';
 import { idSchema, passwordSchema } from '#/utils/schema/common';
+import { z } from '@hono/zod-openapi';
+import { appConfig } from 'config';
+import { t } from 'i18next';
 
 export const emailBodySchema = z.object({
   email: userSchema.shape.email,
@@ -21,13 +23,41 @@ export const tokenWithDataSchema = z.object({
   organizationId: z.string().optional(),
 });
 
-export const passkeyChallengeQuerySchema = z.object({ challengeBase64: z.string() });
+const twoFactorTypeSchema = z.union([
+  z.literal('login'), // Normal passkey authentication
+  z.literal('two_factor'), // Passkey used as 2nd factor in 2FA
+]);
+
+const twoFactorBaseSchema = z
+  .object({
+    type: twoFactorTypeSchema,
+    email: z.string().optional(),
+  })
+  // For login, email must exist
+  .refine((data) => (data.type === 'login' ? !!data.email : true), { message: t('2fa_schema_requirement') });
+
+export const passkeyChallengeQuerySchema = z
+  .object({
+    type: z.union([
+      ...twoFactorTypeSchema.def.options,
+      z.literal('registrate'), // New literal added
+    ]),
+    email: z.string().optional(),
+  })
+  .refine((data) => (data.type === 'login' ? !!data.email : true), { message: t('2fa_schema_requirement') });
+
+export const passkeyChallengeSchema = z.object({ challengeBase64: z.string(), credentialIds: z.array(z.string()) });
 
 export const passkeyVerificationBodySchema = z.object({
   clientDataJSON: z.string(),
   authenticatorData: z.string(),
   signature: z.string(),
-  userEmail: z.string(),
+  ...twoFactorBaseSchema.shape,
+});
+
+export const TotpVerificationBodySchema = z.object({
+  code: z.string().regex(new RegExp(`^\\d{${appConfig.totpConfig.digits}}$`), `Code must be exactly ${appConfig.totpConfig.digits} digits`),
+  ...twoFactorBaseSchema.shape,
 });
 
 export const oauthQuerySchema = z
