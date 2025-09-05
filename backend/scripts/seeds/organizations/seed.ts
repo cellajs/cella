@@ -6,16 +6,17 @@ import { db } from '#/db/db';
 import { emailsTable } from '#/db/schema/emails';
 import { InsertMembershipModel, membershipsTable } from '#/db/schema/memberships';
 import { OrganizationModel, organizationsTable } from '#/db/schema/organizations';
+import { passwordsTable } from '#/db/schema/passwords';
 import { UserModel, usersTable } from '#/db/schema/users';
+import { hashPassword } from '#/modules/auth/helpers/argon2id';
+import { getMembershipOrderOffset, mockEmail, mockMany, mockOrganization, mockOrganizationMembership, mockPassword, mockUser } from '../../../mocks/basic';
 import { defaultAdminUser } from '../fixtures';
 import { isOrganizationSeeded as isAlreadySeeded } from '../utils';
-import { mockMany, mockOrganization, mockUser, mockEmail, mockOrganizationMembership, getMembershipOrderOffset } from '../../../mocks/basic';
-import { hashPassword } from '#/modules/auth/helpers/argon2id';
 
 const ORGANIZATIONS_COUNT = 100;
 const MEMBERS_COUNT = 100;
 const SYSTEM_ADMIN_MEMBERSHIP_COUNT = 10;
-const PLAIN_USER_PASSWORD = '12345678';
+export const PLAIN_USER_PASSWORD = '12345678';
 
 // Seed organizations with data
 export const organizationsSeed = async () => {
@@ -46,12 +47,17 @@ export const organizationsSeed = async () => {
 
   for (const organization of organizations) {
     // Make many users → Insert into the database
-    const userRecords = mockMany(() => mockUser(hashed), MEMBERS_COUNT);
+    const userRecords = mockMany(() => mockUser(), MEMBERS_COUNT);
     const users = await db
       .insert(usersTable)
       .values(userRecords)
       .returning()
       .onConflictDoNothing();
+      
+   // Make password record for each user → Insert into the database
+    const passwordRecords = users.map((user) =>mockPassword(user, hashed));
+    await db.insert(passwordsTable).values(passwordRecords).onConflictDoNothing();
+
 
     // Make email record for each user → Insert into the database
     const emailRecords = users.map(mockEmail);

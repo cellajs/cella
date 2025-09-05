@@ -1,7 +1,13 @@
+import { OpenAPIHono, type z } from '@hono/zod-openapi';
+import type { EnabledOAuthProvider, MenuSection } from 'config';
+import { appConfig } from 'config';
+import { and, eq, getTableColumns, inArray, isNotNull, isNull, sql } from 'drizzle-orm';
+import { type SSEStreamingApi, streamSSE } from 'hono/streaming';
 import { db } from '#/db/db';
 import { membershipsTable } from '#/db/schema/memberships';
 import { oauthAccountsTable } from '#/db/schema/oauth-accounts';
 import { passkeysTable } from '#/db/schema/passkeys';
+import { passwordsTable } from '#/db/schema/passwords';
 import { sessionsTable } from '#/db/schema/sessions';
 import { tokensTable } from '#/db/schema/tokens';
 import { totpsTable } from '#/db/schema/totps';
@@ -30,11 +36,6 @@ import permissionManager from '#/permissions/permissions-config';
 import { defaultHook } from '#/utils/default-hook';
 import { getIsoDate } from '#/utils/iso-date';
 import { logEvent } from '#/utils/logger';
-import { OpenAPIHono, type z } from '@hono/zod-openapi';
-import type { EnabledOAuthProvider, MenuSection } from 'config';
-import { appConfig } from 'config';
-import { and, eq, getTableColumns, inArray, isNotNull, isNull, sql } from 'drizzle-orm';
-import { type SSEStreamingApi, streamSSE } from 'hono/streaming';
 
 type UserMenu = z.infer<typeof menuSchema>;
 type MenuItem = z.infer<typeof menuItemSchema>;
@@ -64,19 +65,26 @@ const meRouteHandlers = app
     // Check if user has password
     const unsafeUser = await getUserBy('id', user.id, 'unsafe');
     if (!unsafeUser) throw new AppError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'user' });
-    const hasPassword = !!unsafeUser.hashedPassword;
 
     const { credentialId, publicKey, ...passkeySelect } = getTableColumns(passkeysTable);
     const getPasskeys = db.select(passkeySelect).from(passkeysTable).where(eq(passkeysTable.userEmail, user.email));
+    const getPassword = db.select().from(passwordsTable).where(eq(passwordsTable.userId, user.id)).limit(1);
     const getTOTP = db.select().from(totpsTable).where(eq(totpsTable.userId, user.id));
     const getOAuth = db.select({ providerId: oauthAccountsTable.providerId }).from(oauthAccountsTable).where(eq(oauthAccountsTable.userId, user.id));
-    const [passkeys, totps, oauthAccounts, sessions] = await Promise.all([getPasskeys, getTOTP, getOAuth, getUserSessions(ctx, user.id)]);
+
+    const [passkeys, password, totps, oauthAccounts, sessions] = await Promise.all([
+      getPasskeys,
+      getPassword,
+      getTOTP,
+      getOAuth,
+      getUserSessions(ctx, user.id),
+    ]);
 
     const enabledOAuth = oauthAccounts
       .map((el) => el.providerId)
       .filter((provider): provider is EnabledOAuthProvider => appConfig.enabledOAuthProviders.includes(provider as EnabledOAuthProvider));
 
-    return ctx.json({ enabledOAuth, hasTotp: !!totps.length, hasPassword, sessions, passkeys }, 200);
+    return ctx.json({ enabledOAuth, hasTotp: !!totps.length, hasPassword: !!password.length, sessions, passkeys }, 200);
   })
   /*
    * Get my user menu

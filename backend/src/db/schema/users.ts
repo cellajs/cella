@@ -26,7 +26,6 @@ export const usersTable = pgTable(
     thumbnailUrl: varchar(),
     bannerUrl: varchar(),
     email: varchar().notNull().unique(),
-    hashedPassword: varchar(),
     unsubscribeToken: varchar().unique().$defaultFn(nanoid).notNull(),
     twoFactorEnabled: boolean().notNull().default(false),
     firstName: varchar(),
@@ -58,4 +57,4 @@ export const usersTable = pgTable(
 
 export type UnsafeUserModel = typeof usersTable.$inferSelect;
 export type InsertUserModel = typeof usersTable.$inferInsert;
-export type UserModel = Omit<UnsafeUserModel, 'hashedPassword' | 'unsubscribeToken'>;
+export type UserModel = Omit<UnsafeUserModel, 'unsubscribeToken'>;

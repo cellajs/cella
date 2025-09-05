@@ -3,14 +3,14 @@ import { queryOptions, useMutation } from '@tanstack/react-query';
 import { appConfig } from 'config';
 import { t } from 'i18next';
 import type { User } from '~/api.gen';
-import { getMyInvites, getPasskeyChallenge, registratePasskey, unlinkPasskey, unlinkTotp, updateMe, type UpdateMeData } from '~/api.gen';
+import { getMyInvites, getPasskeyChallenge, registratePasskey, type UpdateMeData, unlinkPasskey, unlinkTotp, updateMe } from '~/api.gen';
 import type { ApiError } from '~/lib/api';
 import { toaster } from '~/modules/common/toaster/service';
 import { generatePasskeyName, getAndSetMe, getAndSetMeAuthData, getAndSetMenu } from '~/modules/me/helpers';
+import type { MeAuthData, Passkey } from '~/modules/me/types';
 import { usersKeys } from '~/modules/users/query';
 import { queryClient } from '~/query/query-client';
 import { useUserStore } from '~/store/user';
-import type { MeAuthData, Passkey } from '~/modules/me/types';
 
 /**
  * Keys for current authenticated user(self) related queries. These keys help to uniquely identify different query.

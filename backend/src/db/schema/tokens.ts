@@ -38,4 +38,3 @@ const additionalColumns = generateContextEntityTypeFields();
 export const tokensTable = generateTable('tokens', baseColumns, additionalColumns);
 
 export type TokenModel = typeof tokensTable.$inferSelect;
-export type InsertTokenModel = typeof tokensTable.$inferInsert;

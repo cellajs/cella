@@ -22,7 +22,6 @@ export const userSchema = createSelectSchema(usersTable, {
   userFlags: userFlagsSchema,
 })
   .omit({
-    hashedPassword: true,
     unsubscribeToken: true,
   })
   .openapi('User');

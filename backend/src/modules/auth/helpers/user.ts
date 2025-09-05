@@ -54,7 +54,6 @@ export const handleCreateUser = async ({ newUser, membershipInviteTokenId, email
         name: newUser.name,
         unsubscribeToken: generateUnsubscribeToken(normalizedEmail),
         language: appConfig.defaultLanguage,
-        hashedPassword: newUser.hashedPassword,
       })
       .returning();
 

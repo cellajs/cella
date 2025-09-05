@@ -1,8 +1,17 @@
+import { getRandomValues } from 'node:crypto';
+import { OpenAPIHono } from '@hono/zod-openapi';
+import { encodeBase32, encodeBase64 } from '@oslojs/encoding';
+import { createTOTPKeyURI } from '@oslojs/otp';
+import { generateCodeVerifier, generateState, OAuth2RequestError } from 'arctic';
+import { appConfig, type EnabledOAuthProvider } from 'config';
+import { and, desc, eq, isNotNull, isNull } from 'drizzle-orm';
+import i18n from 'i18next';
 import { db } from '#/db/db';
 import { emailsTable } from '#/db/schema/emails';
 import { membershipsTable } from '#/db/schema/memberships';
 import { organizationsTable } from '#/db/schema/organizations';
 import { passkeysTable } from '#/db/schema/passkeys';
+import { passwordsTable } from '#/db/schema/passwords';
 import { sessionsTable } from '#/db/schema/sessions';
 import { tokensTable } from '#/db/schema/tokens';
 import { totpsTable } from '#/db/schema/totps';
@@ -26,13 +35,13 @@ import {
 } from '#/modules/auth/helpers/oauth/cookies';
 import { getOAuthAccount, handleOAuthFlow } from '#/modules/auth/helpers/oauth/index';
 import {
-  githubAuth,
   type GithubUserEmailProps,
   type GithubUserProps,
-  googleAuth,
   type GoogleUserProps,
-  microsoftAuth,
+  githubAuth,
+  googleAuth,
   type MicrosoftUserProps,
+  microsoftAuth,
 } from '#/modules/auth/helpers/oauth/oauth-providers';
 import { transformGithubUserData, transformSocialUserData } from '#/modules/auth/helpers/oauth/transform-user-data';
 import { verifyPassKeyPublic } from '#/modules/auth/helpers/passkey';
@@ -51,14 +60,6 @@ import { nanoid } from '#/utils/nanoid';
 import { slugFromEmail } from '#/utils/slug-from-email';
 import { createDate, TimeSpan } from '#/utils/time-span';
 import { getValidToken } from '#/utils/validate-token';
-import { OpenAPIHono } from '@hono/zod-openapi';
-import { encodeBase32, encodeBase64 } from '@oslojs/encoding';
-import { createTOTPKeyURI } from '@oslojs/otp';
-import { generateCodeVerifier, generateState, OAuth2RequestError } from 'arctic';
-import { appConfig, type EnabledOAuthProvider } from 'config';
-import { and, desc, eq, isNotNull, isNull } from 'drizzle-orm';
-import i18n from 'i18next';
-import { getRandomValues } from 'node:crypto';
 import { CreatePasswordEmail, type CreatePasswordEmailProps } from '../../../emails/create-password';
 
 const enabledStrategies: readonly string[] = appConfig.enabledAuthStrategies;
@@ -131,13 +132,16 @@ const authRouteHandlers = app
 
     // Stop if sign up is disabled and no invitation
     if (!appConfig.has.registrationEnabled) throw new AppError({ status: 403, type: 'sign_up_restricted' });
-    const hashedPassword = await hashPassword(password);
     const slug = slugFromEmail(email);
 
     // Create user & send verification email
-    const newUser = { slug, name: slug, email, hashedPassword };
+    const newUser = { slug, name: slug, email };
 
     const user = await handleCreateUser({ newUser });
+
+    // Separatly insert password
+    const hashedPassword = await hashPassword(password);
+    await db.insert(passwordsTable).values({ userId: user.id, hashedPassword: hashedPassword });
 
     sendVerificationEmail({ userId: user.id });
 
@@ -162,13 +166,16 @@ const authRouteHandlers = app
 
     // add token if it's membership invitation
     const membershipInviteTokenId = membershipInvite ? validToken.id : undefined;
-    const hashedPassword = await hashPassword(password);
     const slug = slugFromEmail(validToken.email);
 
     // Create user & send verification email
-    const newUser = { slug, name: slug, email: validToken.email, hashedPassword };
+    const newUser = { slug, name: slug, email: validToken.email };
 
     const user = await handleCreateUser({ newUser, membershipInviteTokenId, emailVerified: true });
+
+    // Separatly insert password
+    const hashedPassword = await hashPassword(password);
+    await db.insert(passwordsTable).values({ userId: user.id, hashedPassword: hashedPassword });
 
     // Sign in user
     await setUserSession(ctx, user, 'password');
@@ -295,7 +302,7 @@ const authRouteHandlers = app
 
     // update user password and set email verified
     await Promise.all([
-      db.update(usersTable).set({ hashedPassword }).where(eq(usersTable.id, user.id)),
+      db.update(passwordsTable).set({ hashedPassword }).where(eq(passwordsTable.userId, user.id)),
       db.update(emailsTable).set({ verified: true, verifiedAt: getIsoDate() }).where(eq(emailsTable.email, user.email)),
     ]);
 
@@ -321,20 +328,26 @@ const authRouteHandlers = app
 
     const normalizedEmail = email.toLowerCase().trim();
 
-    const [user, [emailData]] = await Promise.all([
-      getUserBy('email', normalizedEmail, 'unsafe'),
-      db.select().from(emailsTable).where(eq(emailsTable.email, normalizedEmail)),
-    ]);
+    const [info] = await db
+      .select({ user: usersTable, hashedPassword: passwordsTable.hashedPassword, emailVerified: emailsTable.verified })
+      .from(usersTable)
+      .innerJoin(emailsTable, eq(usersTable.id, emailsTable.userId))
+      .leftJoin(passwordsTable, eq(usersTable.id, passwordsTable.id))
+      .where(eq(emailsTable.email, normalizedEmail))
+      .limit(1);
 
     // If user is not found or doesn't have password
-    if (!user) throw new AppError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'user' });
-    if (!user.hashedPassword) throw new AppError({ status: 403, type: 'no_password_found', severity: 'warn' });
+    if (!info) throw new AppError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'user' });
+
+    const { user, hashedPassword, emailVerified } = info;
+
+    if (!hashedPassword) throw new AppError({ status: 403, type: 'no_password_found', severity: 'warn' });
     // Verify password
-    const validPassword = await verifyPasswordHash(user.hashedPassword, password);
+    const validPassword = await verifyPasswordHash(hashedPassword, password);
     if (!validPassword) throw new AppError({ status: 403, type: 'invalid_password', severity: 'warn' });
 
     // If email is not verified, send verification email
-    if (!emailData.verified) {
+    if (!emailVerified) {
       sendVerificationEmail({ userId: user.id });
       return ctx.json({ shouldRedirect: true, redirectPath: '/auth/email-verification/signin' }, 200);
     }

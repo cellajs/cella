@@ -20,6 +20,3 @@ export const passkeysTable = pgTable('passkeys', {
   createdAt: timestampColumns.createdAt,
   lastSignInAt: timestamp({ mode: 'string' }), // last time user use it
 });
-
-export type PasskeyModel = typeof passkeysTable.$inferSelect;
-export type InsertPasskeyModel = typeof passkeysTable.$inferInsert;

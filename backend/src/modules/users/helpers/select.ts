@@ -7,7 +7,7 @@ import { userBaseSchema } from '#/modules/entities/schema';
  * Safe user select. Sensitive fields are omitted.
  */
 export const userSelect = (() => {
-  const { hashedPassword, unsubscribeToken, userFlags: _uf, ...safeUserSelect } = getTableColumns(usersTable);
+  const { unsubscribeToken, userFlags: _uf, ...safeUserSelect } = getTableColumns(usersTable);
 
   return {
     ...safeUserSelect,

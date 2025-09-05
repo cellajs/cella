@@ -1,12 +1,13 @@
-import chalk from 'chalk';
-import { appConfig } from 'config';
 import { db } from '#/db/db';
 import { emailsTable } from '#/db/schema/emails';
+import { passwordsTable } from '#/db/schema/passwords';
 import { usersTable } from '#/db/schema/users';
+import { hashPassword } from '#/modules/auth/helpers/argon2id';
+import chalk from 'chalk';
+import { appConfig } from 'config';
+import { mockAdmin, mockEmail, mockPassword } from '../../../mocks/basic';
 import { defaultAdminUser } from '../fixtures';
 import { isUserSeeded as isAlreadySeeded } from '../utils';
-import { hashPassword } from '#/modules/auth/helpers/argon2id';
-import { mockAdmin, mockEmail } from '../../../mocks/basic';
 
 /**
  * Seed an admin user to access app first time
@@ -22,13 +23,17 @@ export const userSeed = async () => {
   const hashed = await hashPassword(defaultAdminUser.password);
 
   // Make admin user → Insert into the database  
-  const adminRecord = mockAdmin(defaultAdminUser.id, defaultAdminUser.email, hashed);
+  const adminRecord = mockAdmin(defaultAdminUser.id, defaultAdminUser.email);
 
   const [adminUser] = await db
     .insert(usersTable)
     .values(adminRecord)
     .returning()
     .onConflictDoNothing();
+
+  // Make password record for each user → Insert into the database
+  const passwordRecord = mockPassword(adminUser, hashed);
+  await db.insert(passwordsTable).values(passwordRecord).onConflictDoNothing();
 
   // Make email record → Insert into the database
   const emailRecord = mockEmail(adminUser);
