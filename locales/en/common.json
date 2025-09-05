@@ -457,7 +457,7 @@
   "enforce": "Enforce",
   "2fa_enabled": "Two-Factor Authentication enabled",
   "2fa_disabled": "Two-Factor Authentication disabled",
-  "2fa_disabled.text": "Two-factor authentication is disabled because your account must have a passkey set up first.",
+  "2fa_disabled.text": "Two-factor authentication is disabled because your account must have a passkey or TOTP set up first.",
   "session_type.two_factor_authentication": "2FA Confirmed",
   "session_type.pending_2fa": "2FA Pending",
   "session_type.regular": "Regular",
