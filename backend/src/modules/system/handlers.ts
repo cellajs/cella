@@ -57,6 +57,7 @@ const systemRouteHandlers = app
           // Make sure its a system invitation
           isNull(tokensTable.entityType),
           lt(tokensTable.expiresAt, new Date()),
+          isNull(tokensTable.consumedAt),
         ),
       );
 
@@ -105,7 +106,7 @@ const systemRouteHandlers = app
       email: tokenRecord.email,
       lng: lng,
       name: slugFromEmail(tokenRecord.email),
-      systemInviteLink: `${appConfig.frontendUrl}/auth/authenticate?token=${tokenRecord.token}&tokenId=${tokenRecord.id}`,
+      systemInviteLink: `${appConfig.frontendUrl}/auth/authenticate?token=${tokenRecord.token}`,
     }));
 
     type Recipient = (typeof recipients)[number];

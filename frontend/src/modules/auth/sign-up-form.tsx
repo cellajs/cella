@@ -39,7 +39,7 @@ export const SignUpForm = ({ tokenData, email, setStep, resetSteps, emailEnabled
   const { t } = useTranslation();
   const navigate = useNavigate();
 
-  const { token, tokenId } = useSearch({ from: AuthenticateRoute.id });
+  const { token } = useSearch({ from: AuthenticateRoute.id });
 
   const isMobile = window.innerWidth < 640;
 
@@ -60,11 +60,9 @@ export const SignUpForm = ({ tokenData, email, setStep, resetSteps, emailEnabled
     NonNullable<SignUpWithTokenData['body']> & SignUpWithTokenData['path']
   >({
     mutationFn: ({ token, ...body }) => signUpWithToken({ body, path: { token } }),
-    onSuccess: () => {
-      // Redirect to organization invitation page if there is a membership invitation
-      const isMemberInvitation = tokenData?.organizationSlug && token && tokenId;
-      const redirectPath = isMemberInvitation ? '/invitation/$token' : appConfig.defaultRedirectPath;
-      return navigate({ to: redirectPath, replace: true, ...(token && tokenId && { params: { token }, search: { tokenId } }) });
+    onSuccess: ({ redirectPath }) => {
+      const to = redirectPath ?? appConfig.defaultRedirectPath;
+      return navigate({ to, replace: true });
     },
   });
 
@@ -76,7 +74,7 @@ export const SignUpForm = ({ tokenData, email, setStep, resetSteps, emailEnabled
 
   // Handle submit action
   const onSubmit = (formValues: FormValues) => {
-    if (token && tokenId) return _signUpWithToken({ ...formValues, token });
+    if (token) return _signUpWithToken({ ...formValues, token });
     _signUp({ ...formValues });
   };
 

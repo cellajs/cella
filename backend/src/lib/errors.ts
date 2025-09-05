@@ -18,7 +18,7 @@ type CellaErrorKeys = Exclude<keyof (typeof locales)['en']['error'], `${string}.
 type AppSpecificErrorKeys = Exclude<keyof (typeof locales)['en']['appError'], `${string}.text`>;
 type ErrorKey = CellaErrorKeys | AppSpecificErrorKeys;
 
-type ConstructedError = {
+export type ConstructedError = {
   type: ErrorKey;
   status: ErrorSchemaType['status'];
   name?: ErrorSchemaType['name'];

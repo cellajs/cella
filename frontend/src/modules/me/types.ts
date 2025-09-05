@@ -2,6 +2,7 @@ import type { GetMyAuthResponse, GetUploadTokenData, MenuSchema, User } from '~/
 
 export type MeAuthData = GetMyAuthResponse;
 export type Session = MeAuthData['sessions'][number];
+export type Passkey = MeAuthData['passkeys'][number];
 
 export type MeUser = User;
 export type UserMenu = MenuSchema;

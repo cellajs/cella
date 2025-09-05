@@ -1,7 +1,7 @@
 import { appConfig } from 'config';
 import type { AuthStep } from '~/modules/auth/types';
 
-export const shouldShowDivider = (hasPasskey: boolean, step: AuthStep): boolean => {
+export const shouldShowDivider = (step: AuthStep): boolean => {
   const enabledStrategies: readonly string[] = appConfig.enabledAuthStrategies;
 
   // Get enabled authentication strategies
@@ -11,7 +11,7 @@ export const shouldShowDivider = (hasPasskey: boolean, step: AuthStep): boolean 
 
   return (
     // Case 1: Password is enabled with either (passkey + user hasPasskey) or OAuth
-    (isPasswordEnabled && ((isPasskeyEnabled && hasPasskey) || isOAuthEnabled)) ||
+    (isPasswordEnabled && (isPasskeyEnabled || isOAuthEnabled)) ||
     // Case 2: OAuth are enabled, and the current step is 'check'
     (isOAuthEnabled && step === 'checkEmail')
   );

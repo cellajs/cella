@@ -3,9 +3,9 @@ import { appConfig } from 'config';
 import type { User } from '~/api.gen';
 import { deleteUsers, type GetUsersData, getUser, getUsers, type UpdateUserData, updateUser } from '~/api.gen';
 import type { ApiError } from '~/lib/api';
+import type { UserWithMemberships } from '~/modules/users/types';
 import { useMutateQueryData } from '~/query/hooks/use-mutate-query-data';
 import { baseInfiniteQueryOptions, infiniteQueryUseCachedIfCompleteOptions } from '~/query/utils/infinite-query-options';
-import type { UserWithMemberships } from './types';
 
 /**
  * Keys for user related queries. These keys help to uniquely identify different query. For managing query caching and invalidation.

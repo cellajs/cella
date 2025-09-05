@@ -1,5 +1,4 @@
 import { onlineManager, useMutation } from '@tanstack/react-query';
-import { useLoaderData } from '@tanstack/react-router';
 import { appConfig, type EnabledOAuthProvider } from 'config';
 import { Check, Send, Trash } from 'lucide-react';
 import { useRef, useState } from 'react';
@@ -15,12 +14,13 @@ import StickyBox from '~/modules/common/sticky-box';
 import { toaster } from '~/modules/common/toaster/service';
 import UnsavedBadge from '~/modules/common/unsaved-badge';
 import DeleteSelf from '~/modules/me/delete-self';
-import Passkeys from '~/modules/me/passkeys';
-import SessionsList from '~/modules/me/sessions-list';
+import PasskeysList from '~/modules/me/passkeys';
+import SessionsList from '~/modules/me/sessions';
+import TOTPs from '~/modules/me/totp';
+import { TwoFactorAuthentication } from '~/modules/me/two-factor-auth';
 import { Button } from '~/modules/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/modules/ui/card';
 import UpdateUserForm from '~/modules/users/update-user-form';
-import { UserSettingsRoute } from '~/routes/users';
 import { useUIStore } from '~/store/ui';
 import { useUserStore } from '~/store/user';
 
@@ -35,8 +35,7 @@ const UserSettingsPage = () => {
   const { t } = useTranslation();
   const { user } = useUserStore();
   const mode = useUIStore((state) => state.mode);
-  // Get user auth info from route
-  const userAuthInfo = useLoaderData({ from: UserSettingsRoute.id });
+  const { enabledOAuth } = useUserStore.getState();
 
   const deleteButtonRef = useRef(null);
 
@@ -121,7 +120,7 @@ const UserSettingsPage = () => {
               <CardDescription>{t('common:sessions.text')}</CardDescription>
             </CardHeader>
             <CardContent>
-              <SessionsList userAuthInfo={userAuthInfo} />
+              <SessionsList />
             </CardContent>
           </Card>
         </AsideAnchor>
@@ -133,21 +132,30 @@ const UserSettingsPage = () => {
               <CardDescription>{t('common:authentication.text')}</CardDescription>
             </CardHeader>
             <CardContent className="text-sm">
-              <HelpText content={t('common:passkey.text')}>
-                <p className="font-semibold">{t('common:passkey')}</p>
-              </HelpText>
-
-              <Passkeys userAuthInfo={userAuthInfo} />
-
+              {appConfig.enabledAuthStrategies.includes('passkey') && (
+                <>
+                  <HelpText content={t('common:passkey.text')}>
+                    <p className="font-semibold">{t('common:passkey')}</p>
+                  </HelpText>
+                  <PasskeysList />
+                </>
+              )}
+              {appConfig.enabledAuthStrategies.includes('totp') && (
+                <>
+                  <HelpText content={t('common:totp.text')}>
+                    <p className="font-semibold">{t('common:totp')}</p>
+                  </HelpText>
+                  <TOTPs />
+                </>
+              )}
               <HelpText content={t('common:oauth.text')}>
                 <p className="font-semibold">{t('common:oauth')}</p>
               </HelpText>
-
               <div className="flex flex-col sm:items-start gap-3 mb-6">
                 {appConfig.enabledOAuthProviders.map((id) => {
                   const provider = mapOAuthProviders.find((provider) => provider.id === id);
                   if (!provider) return null;
-                  if (userAuthInfo.oauth.includes(id))
+                  if (enabledOAuth.includes(id)) {
                     return (
                       <div key={provider.id} className="flex items-center justify-center px-3 py-2 gap-2">
                         <img
@@ -160,6 +168,7 @@ const UserSettingsPage = () => {
                         {`${t('common:already_connected_to')} ${provider.name}`}
                       </div>
                     );
+                  }
                   return (
                     // Assert is necessary because apps might not have all providers enabled
                     <Button
@@ -179,21 +188,23 @@ const UserSettingsPage = () => {
                   );
                 })}
               </div>
-
               <HelpText content={t('common:request_password.text')}>
-                <p className="font-semibold">{t('common:reset_password')}</p>{' '}
+                <p className="font-semibold">{t('common:reset_resource', { resource: t('common:password').toLowerCase() })}</p>{' '}
               </HelpText>
-              <div>
+              <div className="mb-6">
                 <Button className="w-full sm:w-auto" variant="outline" disabled={disabledResetPassword} onClick={requestResetPasswordClick}>
                   <Send size={16} className="mr-2" />
                   {t('common:send_reset_link')}
                 </Button>
                 {disabledResetPassword && <p className="text-sm text-gray-500 mt-2">{t('common:retry_reset_password.text')}</p>}
               </div>
+
+              {(appConfig.enabledAuthStrategies.includes('totp') || appConfig.enabledAuthStrategies.includes('passkey')) && (
+                <TwoFactorAuthentication />
+              )}
             </CardContent>
           </Card>
         </AsideAnchor>
-
         <AsideAnchor id="delete-account">
           <Card className="mx-auto sm:w-full">
             <CardHeader>

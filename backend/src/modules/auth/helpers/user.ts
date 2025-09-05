@@ -34,7 +34,7 @@ export const handleCreateUser = async ({ newUser, membershipInviteTokenId, email
   const [inviteToken] = await db
     .select()
     .from(tokensTable)
-    .where(and(eq(tokensTable.email, newUser.email), eq(tokensTable.type, 'invitation'), isNull(tokensTable.userId)));
+    .where(and(eq(tokensTable.email, newUser.email), eq(tokensTable.type, 'invitation'), isNull(tokensTable.userId), isNull(tokensTable.consumedAt)));
 
   if (!membershipInviteTokenId && inviteToken) throw new AppError({ status: 403, type: 'invite_takes_priority', severity: 'warn' });
 

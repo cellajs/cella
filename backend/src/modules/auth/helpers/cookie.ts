@@ -9,13 +9,15 @@ const isProduction = appConfig.mode === 'production';
 
 export type CookieName =
   | 'session'
+  | 'pending-2fa'
+  | 'totp-key'
+  | 'passkey-challenge'
   | 'oauth-state'
   | 'oauth-code-verifier'
   | 'oauth-redirect'
   | 'oauth-connect-user-id'
   | 'oauth-invite-token-id'
   | 'oauth-invite-token-type'
-  | 'passkey-challenge'
   | 'oauth-verify-token-id';
 
 /**

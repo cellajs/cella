@@ -18,7 +18,7 @@ export const RequestPasswordDialog = forwardRef<HTMLButtonElement, RequestPasswo
       id: 'request-password',
       triggerRef: ref as RefObject<HTMLButtonElement>,
       className: 'md:max-w-xl',
-      title: t('common:reset_password'),
+      title: t('common:reset_resource', { resource: t('common:password').toLowerCase() }),
       description: t('common:reset_password.text'),
     });
   };

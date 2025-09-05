@@ -93,13 +93,13 @@ export const paginationQuerySchema = z.object({
     .string()
     .optional()
     .transform((val) => (val ? Number.parseInt(val, 10) : 0)) // convert to number
-    .refine(offsetRefine, t('error:invalid_offset')),
+    .refine(offsetRefine, t('invalid_offset')),
   // Pagination limit
   limit: z
     .string()
     .optional()
     .transform((val) => (val ? Number.parseInt(val, 10) : appConfig.requestLimits.default)) // convert to number
-    .refine(limitRefine, t('error:invalid_limit', { max: limitMax })),
+    .refine(limitRefine, t('invalid_limit', { max: limitMax })),
 });
 
 /*************************************************************************************************
@@ -116,38 +116,45 @@ export const idsBodySchema = (maxItems = 50) =>
   });
 
 /*************************************************************************************************
+ * Common headers schemas
+ ************************************************************************************************/
+
+/** Schema for a redirect header */
+export const locationSchema = z.object({ Location: z.string() });
+
+/*************************************************************************************************
  * Validation schemas (for create and update)
  ************************************************************************************************/
 
 /** Schema for a valid HTTPS URL */
 export const validUrlSchema = z
   .string()
-  .refine((url: string) => url.startsWith('https'), t('error:invalid_url'))
+  .refine((url: string) => url.startsWith('https'), t('invalid_url'))
   .transform((str) => str.toLowerCase().trim());
 
 /** Schema for a valid name: string between 2 and 100 characters, allowing specific characters */
 export const validNameSchema = z
   .string()
-  .min(2, t('error:invalid_between_num', { name: 'Name', min: 2, max: 100 }))
-  .max(100, t('error:invalid_between_num', { name: 'Name', min: 2, max: 100 }))
+  .min(2, t('invalid_between_num', { name: 'Name', min: 2, max: 100 }))
+  .max(100, t('invalid_between_num', { name: 'Name', min: 2, max: 100 }))
   .refine(
     (s) => /^[\p{L}\d\-., '&()]+$/u.test(s), // Allow only specified characters
-    t('error:invalid_name'),
+    t('invalid_name'),
   );
 
 /** Schema for a valid email */
 export const validEmailSchema = z
-  .email({ message: t('error:invalid_email') })
-  .min(4, t('error:invalid_between_num', { name: 'Email', min: 4, max: 100 }))
-  .max(100, t('error:invalid_between_num', { name: 'Email', min: 4, max: 100 }))
+  .email({ message: t('invalid_email') })
+  .min(4, t('invalid_between_num', { name: 'Email', min: 4, max: 100 }))
+  .max(100, t('invalid_between_num', { name: 'Email', min: 4, max: 100 }))
   .transform((str) => str.toLowerCase().trim());
 
 /** Schema for a valid slug: string between 2 and 100 characters, allowing alphanumeric and hyphens */
 export const validSlugSchema = z
   .string()
-  .min(2, t('error:invalid_between_num', { name: 'Slug', min: 2, max: 100 }))
-  .max(100, t('error:invalid_between_num', { name: 'Slug', min: 2, max: 100 }))
-  .refine((s) => /^[a-z0-9]+(-{0,3}[a-z0-9]+)*$/i.test(s), t('error:invalid_slug'))
+  .min(2, t('invalid_between_num', { name: 'Slug', min: 2, max: 100 }))
+  .max(100, t('invalid_between_num', { name: 'Slug', min: 2, max: 100 }))
+  .refine((s) => /^[a-z0-9]+(-{0,3}[a-z0-9]+)*$/i.test(s), t('invalid_slug'))
   .transform((str) => str.toLowerCase().trim());
 
 export const validImageKeySchema = z.string();
@@ -157,9 +164,9 @@ export const validDomainsSchema = z
   .array(
     z
       .string()
-      .min(4, t('error:invalid_between_num', { name: 'Domain', min: 4, max: 100 }))
-      .max(100, t('error:invalid_between_num', { name: 'Domain', min: 4, max: 100 }))
-      .refine((s) => /^[a-z0-9].*[a-z0-9]$/i.test(s) && s.includes('.'), t('error:invalid_domain'))
+      .min(4, t('invalid_between_num', { name: 'Domain', min: 4, max: 100 }))
+      .max(100, t('invalid_between_num', { name: 'Domain', min: 4, max: 100 }))
+      .refine((s) => /^[a-z0-9].*[a-z0-9]$/i.test(s) && s.includes('.'), t('invalid_domain'))
       .transform((str) => str.toLowerCase().trim()),
   )
   .optional();

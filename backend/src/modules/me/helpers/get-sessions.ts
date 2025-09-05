@@ -15,8 +15,8 @@ import type { sessionSchema } from '#/modules/me/schema';
  */
 export const getUserSessions = async (ctx: Context, userId: string): Promise<z.infer<typeof sessionSchema>[]> => {
   const sessions = await db.select().from(sessionsTable).where(eq(sessionsTable.userId, userId));
-  const sessionData = await getParsedSessionCookie(ctx);
+  const { sessionToken } = await getParsedSessionCookie(ctx);
 
   // Destructure/remove token from response
-  return sessions.map(({ token, ...session }) => ({ ...session, isCurrent: sessionData?.sessionToken === token }));
+  return sessions.map(({ token, ...session }) => ({ ...session, isCurrent: sessionToken === token }));
 };

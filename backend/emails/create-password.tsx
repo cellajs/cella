@@ -32,7 +32,7 @@ export const CreatePasswordEmail = ({ name, lng, createPasswordLink }: CreatePas
             }}
           />
         </Text>
-        <EmailButton ButtonText={i18n.t('common:reset_password', { lng })} href={createPasswordLink} />
+        <EmailButton ButtonText={i18n.t('common:reset_resource', { resource: i18n.t('common:password').toLowerCase(), lng })} href={createPasswordLink} />
 
         <Text style={{ fontSize: '0.85rem', textAlign: 'center' }}>
           {i18n.t('backend:email.create_password.expire', { lng })} <Link href={createPasswordUrl}>{createPasswordUrl}</Link>
