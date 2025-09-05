@@ -278,7 +278,14 @@ const meRouteHandlers = app
   .openapi(meRoutes.unlinkPasskey, async (ctx) => {
     const user = getContextUser();
 
+    // Remove all passkeys linked to this user's email
     await db.delete(passkeysTable).where(eq(passkeysTable.userEmail, user.email));
+
+    // Check if the user still has any TOTP entries registered
+    const userTotps = await db.select().from(totpsTable).where(eq(totpsTable.userId, user.id));
+
+    // If no TOTP exists, disable 2FA completely
+    if (!userTotps.length) await db.update(usersTable).set({ twoFactorEnabled: false }).where(eq(usersTable.id, user.id));
 
     return ctx.json(true, 200);
   })
@@ -312,7 +319,14 @@ const meRouteHandlers = app
   .openapi(meRoutes.unlinkTOTP, async (ctx) => {
     const user = getContextUser();
 
+    // Remove all totps linked to this user's email
     await db.delete(totpsTable).where(eq(totpsTable.userId, user.id));
+
+    // Check if the user still has any passkeys entries registered
+    const userPasskeys = await db.select().from(passkeysTable).where(eq(passkeysTable.userEmail, user.email));
+
+    // If no passkeys exists, disable 2FA completely
+    if (!userPasskeys.length) await db.update(usersTable).set({ twoFactorEnabled: false }).where(eq(usersTable.id, user.id));
 
     return ctx.json(true, 200);
   })
