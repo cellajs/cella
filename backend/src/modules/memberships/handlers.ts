@@ -236,27 +236,6 @@ const membershipRouteHandlers = app
 
     await mailer.prepareEmails<MemberInviteEmailProps, (typeof recipients)[number]>(MemberInviteEmail, emailProps, recipients, user.email);
 
-    // Fetch all existing memberships by organizationId
-    const adminMemberships = await db
-      .selectDistinctOn([membershipsTable.userId], { userId: membershipsTable.userId })
-      .from(membershipsTable)
-      .where(
-        and(
-          eq(membershipsTable.organizationId, organization.id),
-          eq(membershipsTable.role, 'admin'),
-          eq(membershipsTable.archived, false),
-          isNotNull(membershipsTable.activatedAt),
-        ),
-      );
-
-    const adminMembersIds = adminMemberships.map(({ userId }) => userId);
-
-    sendSSEToUsers(adminMembersIds, 'invite_members', {
-      targetEntity: entity,
-      organization,
-      invitesCount: recipients.length,
-    });
-
     logEvent('info', `Users invited to ${entity.name}`, { count: insertedTokens.length, [targetEntityIdField]: entity.id });
 
     const rejectedItems = normalizedEmails.filter((email) => !recipients.some((recipient) => recipient.email === email));

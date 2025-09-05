@@ -1,5 +1,5 @@
-import { appConfig, type ContextEntityType, type ProductEntityType } from 'config';
 import { entityTables } from '#/entity-config';
+import { appConfig, type ContextEntityType, type ProductEntityType } from 'config';
 
 // Define a mapped type to check if field name passed as 'T' exists in each table and filter out 'never' types
 export type ValidEntities<T extends (typeof appConfig.entityIdFields)[ContextEntityType]> = Extract<

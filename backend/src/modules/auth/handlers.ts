@@ -13,7 +13,6 @@ import { resolveEntity } from '#/lib/entity';
 import { AppError } from '#/lib/errors';
 import { eventManager } from '#/lib/events';
 import { mailer } from '#/lib/mailer';
-import { sendSSEToUsers } from '#/lib/sse';
 import { initiateTwoFactorAuth, validatePending2FAToken } from '#/modules/auth/helpers/2fa';
 import { hashPassword, verifyPasswordHash } from '#/modules/auth/helpers/argon2id';
 import { deleteAuthCookie, getAuthCookie, setAuthCookie } from '#/modules/auth/helpers/cookie';
@@ -421,26 +420,6 @@ const authRouteHandlers = app
     if (!entity) throw new AppError({ status: 404, type: 'not_found', severity: 'warn', entityType: token.entityType });
 
     eventManager.emit('acceptedMembership', targetMembership);
-
-    // Add event only for admins, which entity not archived, since only they can see pending invites
-    const adminMembers = await db
-      .select()
-      .from(membershipsTable)
-      .where(
-        and(
-          eq(membershipsTable.contextType, entity.entityType),
-          eq(membershipsTable.role, 'admin'),
-          eq(membershipsTable[entityIdField], entity.id),
-          eq(membershipsTable.archived, false),
-          isNotNull(membershipsTable.activatedAt),
-        ),
-      );
-
-    sendSSEToUsers(
-      adminMembers.map(({ id }) => id),
-      'accept_invite',
-      entity,
-    );
 
     return ctx.json({ ...entity, membership: targetMembership }, 200);
   })
