@@ -6,12 +6,13 @@ import {
   meAuthDataSchema,
   menuSchema,
   passkeyRegistrationBodySchema,
+  passkeySchema,
   uploadTokenQuerySchema,
   uploadTokenSchema,
   userInvitationsSchema,
 } from '#/modules/me/schema';
 import { userFlagsSchema, userSchema, userUpdateBodySchema } from '#/modules/users/schema';
-import { entityWithTypeQuerySchema, locationSchema } from '#/utils/schema/common';
+import { entityWithTypeQuerySchema, idSchema, locationSchema } from '#/utils/schema/common';
 import { errorResponses, successWithoutDataSchema, successWithRejectedItemsSchema } from '#/utils/schema/responses';
 import { z } from '@hono/zod-openapi';
 
@@ -237,7 +238,7 @@ const meRoutes = {
     responses: {
       200: {
         description: 'Passkey created',
-        content: { 'application/json': { schema: successWithoutDataSchema } },
+        content: { 'application/json': { schema: passkeySchema } },
       },
       ...errorResponses,
     },
@@ -246,15 +247,18 @@ const meRoutes = {
   unlinkPasskey: createCustomRoute({
     operationId: 'unlinkPasskey',
     method: 'delete',
-    path: '/passkey',
+    path: '/passkey/{id}',
     guard: isAuthenticated,
     tags: ['me'],
     summary: 'Delete passkey',
     description: "Removes the *current user's* registered passkey credential.",
     security: [],
+    request: {
+      params: z.object({ id: idSchema }),
+    },
     responses: {
       200: {
-        description: 'Passkey removed',
+        description: 'Still has passkey',
         content: { 'application/json': { schema: successWithoutDataSchema } },
       },
       ...errorResponses,

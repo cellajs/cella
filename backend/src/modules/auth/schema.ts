@@ -1,9 +1,9 @@
-import { membershipSchema } from '#/modules/memberships/schema';
-import { userSchema } from '#/modules/users/schema';
-import { idSchema, passwordSchema } from '#/utils/schema/common';
 import { z } from '@hono/zod-openapi';
 import { appConfig } from 'config';
 import { t } from 'i18next';
+import { membershipSchema } from '#/modules/memberships/schema';
+import { userSchema } from '#/modules/users/schema';
+import { idSchema, passwordSchema } from '#/utils/schema/common';
 
 export const emailBodySchema = z.object({
   email: userSchema.shape.email,
@@ -49,6 +49,7 @@ export const passkeyChallengeQuerySchema = z
 export const passkeyChallengeSchema = z.object({ challengeBase64: z.string(), credentialIds: z.array(z.string()) });
 
 export const passkeyVerificationBodySchema = z.object({
+  credentialId: z.string(),
   clientDataJSON: z.string(),
   authenticatorData: z.string(),
   signature: z.string(),

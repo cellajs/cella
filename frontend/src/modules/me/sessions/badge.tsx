@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import type { Session } from '~/modules/me/types';
 import { Badge } from '~/modules/ui/badge';
 
-const buttonVariants = cva('uppercase text-[10px] py-0 flex items-center gap-1', {
+const badgeVariants = cva('uppercase text-[10px] py-0 flex items-center gap-1', {
   variants: {
     variant: {
       regular: 'text-green-600 border-green-600',
@@ -26,7 +26,7 @@ export const SessionBadge = ({ sessionType }: { sessionType: Session['type'] }) 
   };
 
   return (
-    <Badge size="sm" variant="outline" className={buttonVariants({ variant: sessionType })}>
+    <Badge size="sm" variant="outline" className={badgeVariants({ variant: sessionType })}>
       {badgeIcons[sessionType]}
       {t(`common:session_type.${sessionType}`)}
     </Badge>

@@ -517,6 +517,7 @@ export const zGetPasskeyChallengeResponse = z.object({
 export const zSignInWithPasskeyData = z.object({
   body: z.optional(
     z.object({
+      credentialId: z.string(),
       clientDataJSON: z.string(),
       authenticatorData: z.string(),
       signature: z.string(),
@@ -624,7 +625,6 @@ export const zGetMyAuthData = z.object({
  */
 export const zGetMyAuthResponse = z.object({
   enabledOAuth: z.array(z.enum(['github'])),
-  hasPasskey: z.boolean(),
   hasTotp: z.boolean(),
   hasPassword: z.boolean(),
   sessions: z.array(
@@ -640,6 +640,19 @@ export const zGetMyAuthResponse = z.object({
       authStrategy: z.enum(['github', 'google', 'microsoft', 'password', 'passkey', 'totp', 'email']),
       expiresAt: z.string(),
       isCurrent: z.boolean(),
+    }),
+  ),
+  passkeys: z.array(
+    z.object({
+      id: z.string(),
+      userEmail: z.string(),
+      deviceName: z.union([z.string(), z.null()]),
+      deviceType: z.enum(['desktop', 'mobile']),
+      deviceOs: z.union([z.string(), z.null()]),
+      browser: z.union([z.string(), z.null()]),
+      nameOnDevice: z.string(),
+      createdAt: z.string(),
+      lastSignInAt: z.union([z.string(), z.null()]),
     }),
   ),
 });
@@ -710,21 +723,11 @@ export const zDeleteMyMembershipData = z.object({
  */
 export const zDeleteMyMembershipResponse = z.boolean();
 
-export const zUnlinkPasskeyData = z.object({
-  body: z.optional(z.never()),
-  path: z.optional(z.never()),
-  query: z.optional(z.never()),
-});
-
-/**
- * Passkey removed
- */
-export const zUnlinkPasskeyResponse = z.boolean();
-
 export const zRegistratePasskeyData = z.object({
   body: z.object({
     attestationObject: z.string(),
     clientDataJSON: z.string(),
+    nameOnDevice: z.string(),
   }),
   path: z.optional(z.never()),
   query: z.optional(z.never()),
@@ -733,7 +736,30 @@ export const zRegistratePasskeyData = z.object({
 /**
  * Passkey created
  */
-export const zRegistratePasskeyResponse = z.boolean();
+export const zRegistratePasskeyResponse = z.object({
+  id: z.string(),
+  userEmail: z.string(),
+  deviceName: z.union([z.string(), z.null()]),
+  deviceType: z.enum(['desktop', 'mobile']),
+  deviceOs: z.union([z.string(), z.null()]),
+  browser: z.union([z.string(), z.null()]),
+  nameOnDevice: z.string(),
+  createdAt: z.string(),
+  lastSignInAt: z.union([z.string(), z.null()]),
+});
+
+export const zUnlinkPasskeyData = z.object({
+  body: z.optional(z.never()),
+  path: z.object({
+    id: z.string(),
+  }),
+  query: z.optional(z.never()),
+});
+
+/**
+ * Still has passkey
+ */
+export const zUnlinkPasskeyResponse = z.boolean();
 
 export const zUnlinkTotpData = z.object({
   body: z.optional(z.never()),

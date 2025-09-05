@@ -242,7 +242,7 @@
   "overview_view": "Overview",
   "page_view": "Page view",
   "passkey": "Passkey",
-  "passkey_registered": "Passkey successfully registered",
+  "registered_passkeys": "List of registrated passkeys",
   "passkey_sign_in": "Sign in with passkey",
   "passkey.text": "Sign in with your passkey (e.g., fingerprint, Face ID) instead of a password.",
   "password": "Password",
@@ -374,7 +374,7 @@
   "success.mute_resource": "{{resource}} has been muted.",
   "success.newsletter_sign_up": "Thanks for requesting info about {{appName}}!",
   "success.passkey_added": "Passkey created and added successfully.",
-  "success.passkey_removed": "Passkey removed.",
+  "success.passkey_unlinked": "Passkey unlinked.",
   "success.password_reset": "Your password has been reset.",
   "success.profile_updated": "Your profile has been updated.",
   "success.request_feedback": "Response email has been sent.",
@@ -477,5 +477,6 @@
   "success.totp_removed": "TOTP removed.",
   "success.totp_added": "TOTP created and added successfully.",
   "totp_registered": "TOTP successfully registered",
-  "unlink": "Unlink"
+  "unlink": "Unlink",
+  "last_used_at": "Last used"
 }

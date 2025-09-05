@@ -6,9 +6,9 @@ import { Fingerprint } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import {
   type GetPasskeyChallengeData,
+  getPasskeyChallenge,
   type SignInWithPasskeyData,
   type SignInWithPasskeyResponse,
-  getPasskeyChallenge,
   signInWithPasskey,
 } from '~/api.gen';
 import { ApiError } from '~/lib/api';
@@ -52,13 +52,14 @@ const PasskeyOption = ({ email, type, authStep = 'signIn' }: PasskeyOptionProps)
       // Ensure response is a PublicKeyCredential
       if (!(credential instanceof PublicKeyCredential)) throw new Error('Failed to create public key');
 
-      const { response } = credential;
+      const { response, rawId } = credential;
 
       // Ensure authenticator response is valid
       if (!(response instanceof AuthenticatorAssertionResponse)) throw new Error('Unexpected response type');
 
       // Encode all binary responses into Base64 and prepare body for BE
       const body = {
+        credentialId: encodeBase64(new Uint8Array(rawId)),
         clientDataJSON: encodeBase64(new Uint8Array(response.clientDataJSON)),
         authenticatorData: encodeBase64(new Uint8Array(response.authenticatorData)),
         signature: encodeBase64(new Uint8Array(response.signature)),

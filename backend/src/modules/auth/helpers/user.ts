@@ -1,3 +1,5 @@
+import { appConfig } from 'config';
+import { and, eq, isNull } from 'drizzle-orm';
 import { db } from '#/db/db';
 import { emailsTable } from '#/db/schema/emails';
 import { tokensTable } from '#/db/schema/tokens';
@@ -10,8 +12,6 @@ import { generateUnsubscribeToken } from '#/modules/users/helpers/unsubscribe-to
 import { getIsoDate } from '#/utils/iso-date';
 import { logError } from '#/utils/logger';
 import { nanoid } from '#/utils/nanoid';
-import { appConfig } from 'config';
-import { and, eq, isNull } from 'drizzle-orm';
 
 interface HandleCreateUserProps {
   newUser: Omit<InsertUserModel, 'unsubscribeToken'>;

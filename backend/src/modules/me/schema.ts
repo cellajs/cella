@@ -1,6 +1,7 @@
 import { z } from '@hono/zod-openapi';
 import { appConfig, type ContextEntityType } from 'config';
 import { createSelectSchema } from 'drizzle-zod';
+import { passkeysTable } from '#/db/schema/passkeys';
 import { sessionsTable } from '#/db/schema/sessions';
 import { contextEntityBaseSchema, contextEntityWithMembershipSchema, userBaseSchema } from '#/modules/entities/schema';
 import { membershipBaseSchema } from '#/modules/memberships/schema';
@@ -8,13 +9,14 @@ import { enabledOAuthProvidersEnum } from '#/modules/users/schema';
 import { booleanQuerySchema } from '#/utils/schema/common';
 
 export const sessionSchema = createSelectSchema(sessionsTable).omit({ token: true }).extend({ isCurrent: z.boolean() });
+export const passkeySchema = createSelectSchema(passkeysTable).omit({ credentialId: true, publicKey: true });
 
 export const meAuthDataSchema = z.object({
   enabledOAuth: z.array(enabledOAuthProvidersEnum),
-  hasPasskey: z.boolean(),
   hasTotp: z.boolean(),
   hasPassword: z.boolean(),
   sessions: z.array(sessionSchema.extend({ expiresAt: z.string() })),
+  passkeys: z.array(passkeySchema),
 });
 
 export const menuItemSchema = contextEntityWithMembershipSchema.omit({ bannerUrl: true }).extend({
@@ -45,6 +47,7 @@ export const menuSchema = z
 export const passkeyRegistrationBodySchema = z.object({
   attestationObject: z.string(),
   clientDataJSON: z.string(),
+  nameOnDevice: z.string(),
 });
 
 export const uploadTokenSchema = z.object({

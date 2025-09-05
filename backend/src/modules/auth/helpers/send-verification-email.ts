@@ -1,3 +1,6 @@
+import { appConfig } from 'config';
+import { and, eq } from 'drizzle-orm';
+import i18n from 'i18next';
 import { db } from '#/db/db';
 import { type EmailModel, emailsTable } from '#/db/schema/emails';
 import { oauthAccountsTable } from '#/db/schema/oauth-accounts';
@@ -8,9 +11,6 @@ import { getUserBy } from '#/modules/users/helpers/get-user-by';
 import { logEvent } from '#/utils/logger';
 import { nanoid } from '#/utils/nanoid';
 import { createDate, TimeSpan } from '#/utils/time-span';
-import { appConfig } from 'config';
-import { and, eq } from 'drizzle-orm';
-import i18n from 'i18next';
 import { EmailVerificationEmail, type EmailVerificationEmailProps } from '../../../../emails/email-verification';
 
 interface Props {

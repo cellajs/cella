@@ -1,3 +1,4 @@
+import type { Context } from 'hono';
 import { db } from '#/db/db';
 import { tokensTable } from '#/db/schema/tokens';
 import type { UserModel } from '#/db/schema/users';
@@ -7,7 +8,6 @@ import { getUserBy } from '#/modules/users/helpers/get-user-by';
 import { nanoid } from '#/utils/nanoid';
 import { createDate, TimeSpan } from '#/utils/time-span';
 import { getValidToken } from '#/utils/validate-token';
-import type { Context } from 'hono';
 
 /**
  * Starts a two-factor authentication challenge for a user.

@@ -1,6 +1,6 @@
 import { Monitor, Smartphone, ZapOff } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { SessionBadge } from '~/modules/me/session/badge';
+import { SessionBadge } from '~/modules/me/sessions/badge';
 import type { Session } from '~/modules/me/types';
 import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';

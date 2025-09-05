@@ -1,11 +1,11 @@
+import { appConfig } from 'config';
+import { timestamp, varchar } from 'drizzle-orm/pg-core';
 import { oauthAccountsTable } from '#/db/schema/oauth-accounts';
 import { usersTable } from '#/db/schema/users';
 import { generateContextEntityTypeFields } from '#/db/utils/generate-context-entity-fields';
 import { generateTable } from '#/db/utils/generate-table';
 import { timestampColumns } from '#/db/utils/timestamp-columns';
 import { nanoid } from '#/utils/nanoid';
-import { appConfig } from 'config';
-import { timestamp, varchar } from 'drizzle-orm/pg-core';
 
 const tokenTypeEnum = appConfig.tokenTypes;
 const roleEnum = appConfig.rolesByType.entityRoles;

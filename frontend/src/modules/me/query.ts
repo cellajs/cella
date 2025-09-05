@@ -1,13 +1,16 @@
+import { decodeBase64, encodeBase64 } from '@oslojs/encoding';
 import { queryOptions, useMutation } from '@tanstack/react-query';
+import { appConfig } from 'config';
 import { t } from 'i18next';
 import type { User } from '~/api.gen';
-import { getMyInvites, type UpdateMeData, unlinkPasskey, unlinkTotp, updateMe } from '~/api.gen';
+import { getMyInvites, getPasskeyChallenge, registratePasskey, unlinkPasskey, unlinkTotp, updateMe, type UpdateMeData } from '~/api.gen';
 import type { ApiError } from '~/lib/api';
 import { toaster } from '~/modules/common/toaster/service';
-import { getAndSetMe, getAndSetMeAuthData, getAndSetMenu } from '~/modules/me/helpers';
+import { generatePasskeyName, getAndSetMe, getAndSetMeAuthData, getAndSetMenu } from '~/modules/me/helpers';
 import { usersKeys } from '~/modules/users/query';
 import { queryClient } from '~/query/query-client';
 import { useUserStore } from '~/store/user';
+import type { MeAuthData, Passkey } from '~/modules/me/types';
 
 /**
  * Keys for current authenticated user(self) related queries. These keys help to uniquely identify different query.
@@ -85,21 +88,107 @@ export const useUpdateSelfFlagsMutation = () => {
 };
 
 /**
+ * Mutation hook for registrate current user (self) passkey
+ *
+ * @returns The mutation hook for registrate passkey.
+ */
+export const useRegistratePasskeyMutation = () => {
+  return useMutation<Passkey, ApiError, void>({
+    mutationKey: meKeys.delete.passkey(),
+    mutationFn: async () => {
+      // Fetch a challenge from BE
+      const { challengeBase64 } = await getPasskeyChallenge({ query: { type: 'registrate' } });
+
+      // Generate a unique user ID for this credential
+      const userId = new Uint8Array(20);
+      crypto.getRandomValues(userId);
+
+      const isDevelopment = appConfig.mode === 'development';
+
+      const generatedName = generatePasskeyName(useUserStore.getState().user.email);
+      const nameOnDevice = isDevelopment ? `${generatedName} for ${appConfig.name}` : generatedName;
+      const raw = decodeBase64(challengeBase64);
+      const challenge = new Uint8Array(raw); // proper ArrayBuffer
+
+      const credential = await navigator.credentials.create({
+        publicKey: {
+          challenge,
+          user: {
+            id: userId,
+            name: nameOnDevice,
+            displayName: nameOnDevice,
+          },
+          rp: {
+            id: isDevelopment ? 'localhost' : appConfig.domain,
+            name: appConfig.name,
+          },
+          pubKeyCredParams: [
+            { type: 'public-key', alg: -7 }, // ES256
+            { type: 'public-key', alg: -257 }, // RS256
+          ],
+          attestation: 'none',
+          authenticatorSelection: {
+            authenticatorAttachment: 'platform',
+            residentKey: 'required',
+            userVerification: 'required',
+          },
+        },
+      });
+
+      if (!(credential instanceof PublicKeyCredential)) throw new Error('Failed to create public key');
+      const response = credential.response;
+      if (!(response instanceof AuthenticatorAttestationResponse)) throw new Error('Unexpected response type');
+
+      const credentialData = {
+        attestationObject: encodeBase64(new Uint8Array(response.attestationObject)),
+        clientDataJSON: encodeBase64(new Uint8Array(response.clientDataJSON)),
+        nameOnDevice,
+      };
+
+      return await registratePasskey({ body: credentialData });
+    },
+    onSuccess: (newPasskey) => {
+      queryClient.setQueryData<MeAuthData>(meKeys.auth(), (oldData) => {
+        if (!oldData) return oldData;
+        return {
+          ...oldData,
+          passkeys: [newPasskey, ...oldData.passkeys],
+        };
+      });
+      useUserStore.getState().setMeAuthData({ hasPasskey: true });
+      toaster(t('common:success.passkey_added'), 'success');
+    },
+    onError(error) {
+      // On cancel throws error NotAllowedError
+      console.error('Error during passkey registration:', error);
+      toaster(t('error:passkey_registration_failed'), 'error');
+    },
+  });
+};
+
+/**
  * Mutation hook for unlink current user (self) passkey
  *
  * @returns The mutation hook for unlink passkey.
  */
 export const useUnlinkPasskeyMutation = () => {
-  return useMutation<boolean, ApiError, void>({
+  return useMutation<boolean, ApiError, string>({
     mutationKey: meKeys.delete.passkey(),
-    mutationFn: () => unlinkPasskey(),
-    onSuccess: () => {
-      toaster(t('common:success.passkey_removed'), 'success');
-      useUserStore.getState().setMeAuthData({ hasPasskey: false });
+    mutationFn: (id: string) => unlinkPasskey({ path: { id } }),
+    onSuccess: (stillHasPasskey, id) => {
+      queryClient.setQueryData<MeAuthData>(meKeys.auth(), (oldData) => {
+        if (!oldData) return oldData;
+        return {
+          ...oldData,
+          passkeys: oldData.passkeys.filter((passkey) => id !== passkey.id),
+        };
+      });
+      toaster(t('common:success.passkey_unlinked'), 'success');
+      useUserStore.getState().setMeAuthData({ hasPasskey: stillHasPasskey });
     },
     onError(error) {
       console.error('Error removing passkey:', error);
-      toaster(t('error:passkey_remove_failed'), 'error');
+      toaster(t('error:passkey_unlink_failed'), 'error');
     },
   });
 };

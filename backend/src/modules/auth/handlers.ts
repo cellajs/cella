@@ -762,7 +762,7 @@ const authRouteHandlers = app
    * Verify passkey
    */
   .openapi(authRoutes.verifyPasskey, async (ctx) => {
-    const { clientDataJSON, authenticatorData, signature, email, type } = ctx.req.valid('json');
+    const { clientDataJSON, authenticatorData, signature, credentialId, email, type } = ctx.req.valid('json');
     const strategy = 'passkey';
     // Determine session type: regular login or 2FA flow
     const sessionType = type === 'two_factor' ? 'two_factor_authentication' : 'regular';
@@ -790,11 +790,16 @@ const authRouteHandlers = app
     if (!challengeFromCookie) throw new AppError({ status: 401, type: 'invalid_credentials', severity: 'warn', meta });
 
     // Get passkey credentials
-    const [credentials] = await db.select().from(passkeysTable).where(eq(passkeysTable.userEmail, user.email)).limit(1);
-    if (!credentials) throw new AppError({ status: 404, type: 'not_found', severity: 'warn', meta });
+    const [passkeyRecord] = await db
+      .select()
+      .from(passkeysTable)
+      .where(and(eq(passkeysTable.userEmail, user.email), eq(passkeysTable.credentialId, credentialId)))
+      .limit(1);
+
+    if (!passkeyRecord) throw new AppError({ status: 404, type: 'passkey_not_found', severity: 'warn', meta });
 
     try {
-      const isValid = await verifyPassKeyPublic(signature, authenticatorData, clientDataJSON, credentials.publicKey, challengeFromCookie);
+      const isValid = await verifyPassKeyPublic(signature, authenticatorData, clientDataJSON, passkeyRecord.publicKey, challengeFromCookie);
       if (!isValid) throw new AppError({ status: 401, type: 'invalid_token', severity: 'warn', meta });
     } catch (error) {
       if (error instanceof Error) {
@@ -802,6 +807,7 @@ const authRouteHandlers = app
       }
     }
 
+    await db.update(passkeysTable).set({ lastSignInAt: getIsoDate() }).where(eq(passkeysTable.id, passkeyRecord.id));
     // Set user session after successful verification
     await setUserSession(ctx, user, strategy, sessionType);
 

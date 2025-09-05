@@ -6,7 +6,7 @@ import { deleteMySessions } from '~/api.gen';
 import { ExpandableList } from '~/modules/common/expandable-list';
 import { toaster } from '~/modules/common/toaster/service';
 import { meAuthQueryOptions } from '~/modules/me/query';
-import { SessionTile } from '~/modules/me/session/tile';
+import { SessionTile } from '~/modules/me/sessions/tile';
 import type { MeAuthData } from '~/modules/me/types';
 import { Button } from '~/modules/ui/button';
 import { queryClient } from '~/query/query-client';

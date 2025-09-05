@@ -1222,6 +1222,7 @@ export type GetPasskeyChallengeResponse = GetPasskeyChallengeResponses[keyof Get
 
 export type SignInWithPasskeyData = {
   body?: {
+    credentialId: string;
     clientDataJSON: string;
     authenticatorData: string;
     signature: string;
@@ -1599,7 +1600,6 @@ export type GetMyAuthResponses = {
    */
   200: {
     enabledOAuth: Array<'github'>;
-    hasPasskey: boolean;
     hasTotp: boolean;
     hasPassword: boolean;
     sessions: Array<{
@@ -1614,6 +1614,17 @@ export type GetMyAuthResponses = {
       authStrategy: 'github' | 'google' | 'microsoft' | 'password' | 'passkey' | 'totp' | 'email';
       expiresAt: string;
       isCurrent: boolean;
+    }>;
+    passkeys: Array<{
+      id: string;
+      userEmail: string;
+      deviceName: string | null;
+      deviceType: 'desktop' | 'mobile';
+      deviceOs: string | null;
+      browser: string | null;
+      nameOnDevice: string;
+      createdAt: string;
+      lastSignInAt: string | null;
     }>;
   };
 };
@@ -1843,61 +1854,11 @@ export type DeleteMyMembershipResponses = {
 
 export type DeleteMyMembershipResponse = DeleteMyMembershipResponses[keyof DeleteMyMembershipResponses];
 
-export type UnlinkPasskeyData = {
-  body?: never;
-  path?: never;
-  query?: never;
-  url: '/me/passkey';
-};
-
-export type UnlinkPasskeyErrors = {
-  /**
-   * Bad request: problem processing request.
-   */
-  400: ApiError & {
-    status?: 400;
-  };
-  /**
-   * Unauthorized: authentication required.
-   */
-  401: ApiError & {
-    status?: 401;
-  };
-  /**
-   * Forbidden: insufficient permissions.
-   */
-  403: ApiError & {
-    status?: 403;
-  };
-  /**
-   * Not found: resource does not exist.
-   */
-  404: ApiError & {
-    status?: 404;
-  };
-  /**
-   * Rate limit: too many requests.
-   */
-  429: ApiError & {
-    status?: 429;
-  };
-};
-
-export type UnlinkPasskeyError = UnlinkPasskeyErrors[keyof UnlinkPasskeyErrors];
-
-export type UnlinkPasskeyResponses = {
-  /**
-   * Passkey removed
-   */
-  200: boolean;
-};
-
-export type UnlinkPasskeyResponse = UnlinkPasskeyResponses[keyof UnlinkPasskeyResponses];
-
 export type RegistratePasskeyData = {
   body: {
     attestationObject: string;
     clientDataJSON: string;
+    nameOnDevice: string;
   };
   path?: never;
   query?: never;
@@ -1943,10 +1904,73 @@ export type RegistratePasskeyResponses = {
   /**
    * Passkey created
    */
-  200: boolean;
+  200: {
+    id: string;
+    userEmail: string;
+    deviceName: string | null;
+    deviceType: 'desktop' | 'mobile';
+    deviceOs: string | null;
+    browser: string | null;
+    nameOnDevice: string;
+    createdAt: string;
+    lastSignInAt: string | null;
+  };
 };
 
 export type RegistratePasskeyResponse = RegistratePasskeyResponses[keyof RegistratePasskeyResponses];
+
+export type UnlinkPasskeyData = {
+  body?: never;
+  path: {
+    id: string;
+  };
+  query?: never;
+  url: '/me/passkey/{id}';
+};
+
+export type UnlinkPasskeyErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: ApiError & {
+    status?: 400;
+  };
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: ApiError & {
+    status?: 401;
+  };
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ApiError & {
+    status?: 403;
+  };
+  /**
+   * Not found: resource does not exist.
+   */
+  404: ApiError & {
+    status?: 404;
+  };
+  /**
+   * Rate limit: too many requests.
+   */
+  429: ApiError & {
+    status?: 429;
+  };
+};
+
+export type UnlinkPasskeyError = UnlinkPasskeyErrors[keyof UnlinkPasskeyErrors];
+
+export type UnlinkPasskeyResponses = {
+  /**
+   * Still has passkey
+   */
+  200: boolean;
+};
+
+export type UnlinkPasskeyResponse = UnlinkPasskeyResponses[keyof UnlinkPasskeyResponses];
 
 export type UnlinkTotpData = {
   body?: never;

@@ -1,9 +1,9 @@
+import type { MiddlewareHandler } from 'hono';
+import { createMiddleware } from 'hono/factory';
 import type { TokenModel } from '#/db/schema/tokens';
 import type { Env } from '#/lib/context';
 import { AppError } from '#/lib/errors';
 import { getValidToken } from '#/utils/validate-token';
-import type { MiddlewareHandler } from 'hono';
-import { createMiddleware } from 'hono/factory';
 
 /**
  * Middleware to get and check the validity of a token, and set token data in context.

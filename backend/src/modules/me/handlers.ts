@@ -14,6 +14,7 @@ import { AppError } from '#/lib/errors';
 import { getParams, getSignature } from '#/lib/transloadit';
 import { isAuthenticated } from '#/middlewares/guard';
 import { deleteAuthCookie, getAuthCookie } from '#/modules/auth/helpers/cookie';
+import { deviceInfo } from '#/modules/auth/helpers/device-info';
 import { parseAndValidatePasskeyAttestation } from '#/modules/auth/helpers/passkey';
 import { getParsedSessionCookie, validateSession } from '#/modules/auth/helpers/session';
 import { verifyTotpCode } from '#/modules/auth/helpers/totps';
@@ -32,7 +33,7 @@ import { logEvent } from '#/utils/logger';
 import { OpenAPIHono, type z } from '@hono/zod-openapi';
 import type { EnabledOAuthProvider, MenuSection } from 'config';
 import { appConfig } from 'config';
-import { and, eq, inArray, isNotNull, isNull, sql } from 'drizzle-orm';
+import { and, eq, getTableColumns, inArray, isNotNull, isNull, sql } from 'drizzle-orm';
 import { type SSEStreamingApi, streamSSE } from 'hono/streaming';
 
 type UserMenu = z.infer<typeof menuSchema>;
@@ -65,16 +66,17 @@ const meRouteHandlers = app
     if (!unsafeUser) throw new AppError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'user' });
     const hasPassword = !!unsafeUser.hashedPassword;
 
-    const getPasskey = db.select().from(passkeysTable).where(eq(passkeysTable.userEmail, user.email));
+    const { credentialId, publicKey, ...passkeySelect } = getTableColumns(passkeysTable);
+    const getPasskeys = db.select(passkeySelect).from(passkeysTable).where(eq(passkeysTable.userEmail, user.email));
     const getTOTP = db.select().from(totpsTable).where(eq(totpsTable.userId, user.id));
     const getOAuth = db.select({ providerId: oauthAccountsTable.providerId }).from(oauthAccountsTable).where(eq(oauthAccountsTable.userId, user.id));
-    const [passkeys, totps, oauthAccounts, sessions] = await Promise.all([getPasskey, getTOTP, getOAuth, getUserSessions(ctx, user.id)]);
+    const [passkeys, totps, oauthAccounts, sessions] = await Promise.all([getPasskeys, getTOTP, getOAuth, getUserSessions(ctx, user.id)]);
 
     const enabledOAuth = oauthAccounts
       .map((el) => el.providerId)
       .filter((provider): provider is EnabledOAuthProvider => appConfig.enabledOAuthProviders.includes(provider as EnabledOAuthProvider));
 
-    return ctx.json({ enabledOAuth, hasPasskey: !!passkeys.length, hasTotp: !!totps.length, hasPassword, sessions }, 200);
+    return ctx.json({ enabledOAuth, hasTotp: !!totps.length, hasPassword, sessions, passkeys }, 200);
   })
   /*
    * Get my user menu
@@ -259,7 +261,7 @@ const meRouteHandlers = app
    * Registrate passkey
    */
   .openapi(meRoutes.registratePasskey, async (ctx) => {
-    const { attestationObject, clientDataJSON } = ctx.req.valid('json');
+    const { attestationObject, clientDataJSON, nameOnDevice } = ctx.req.valid('json');
     const user = getContextUser();
 
     const challengeFromCookie = await getAuthCookie(ctx, 'passkey-challenge');
@@ -267,27 +269,45 @@ const meRouteHandlers = app
 
     const { credentialId, publicKey } = parseAndValidatePasskeyAttestation(clientDataJSON, attestationObject, challengeFromCookie);
 
-    // Save public key in the database
-    await db.insert(passkeysTable).values({ userEmail: user.email, credentialId, publicKey });
+    const device = deviceInfo(ctx);
+    const passkeyValue = {
+      userEmail: user.email,
+      credentialId,
+      publicKey,
+      nameOnDevice,
+      deviceName: device.name,
+      deviceType: device.type,
+      deviceOs: device.os,
+      browser: device.browser,
+    };
 
-    return ctx.json(true, 200);
+    const { credentialId: _, publicKey: __, ...passkeySelect } = getTableColumns(passkeysTable);
+
+    // Save public key in the database
+    const [newPasskey] = await db.insert(passkeysTable).values(passkeyValue).returning(passkeySelect);
+
+    return ctx.json(newPasskey, 200);
   })
   /*
    * Unlink passkey
    */
   .openapi(meRoutes.unlinkPasskey, async (ctx) => {
+    const { id } = ctx.req.valid('param');
     const user = getContextUser();
 
     // Remove all passkeys linked to this user's email
-    await db.delete(passkeysTable).where(eq(passkeysTable.userEmail, user.email));
+    await db.delete(passkeysTable).where(and(eq(passkeysTable.userEmail, user.email), eq(passkeysTable.id, id)));
 
-    // Check if the user still has any TOTP entries registered
-    const userTotps = await db.select().from(totpsTable).where(eq(totpsTable.userId, user.id));
+    // Check if the user still has any passkeys or TOTP entries registered
+    const [userPasskeys, userTotps] = await Promise.all([
+      db.select().from(passkeysTable).where(eq(passkeysTable.userEmail, user.email)),
+      db.select().from(totpsTable).where(eq(totpsTable.userId, user.id)),
+    ]);
 
     // If no TOTP exists, disable 2FA completely
-    if (!userTotps.length) await db.update(usersTable).set({ twoFactorEnabled: false }).where(eq(usersTable.id, user.id));
+    if (!userPasskeys.length && !userTotps.length) await db.update(usersTable).set({ twoFactorEnabled: false }).where(eq(usersTable.id, user.id));
 
-    return ctx.json(true, 200);
+    return ctx.json(!!userPasskeys.length, 200);
   })
   /*
    * Setup TOTP

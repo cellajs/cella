@@ -8,12 +8,12 @@ import type { MeAuthData, MeUser } from '~/modules/me/types';
 
 interface UserStoreState {
   user: MeUser; // Current user data
-  hasPasskey: MeAuthData['hasPasskey']; // Current user's passkey
+  hasPasskey: boolean; // Current user's passkey
   hasTotp: MeAuthData['hasTotp']; // Current user's passkey
   enabledOAuth: MeAuthData['enabledOAuth']; // Current user's oauth options
   lastUser: Partial<MeUser> | null; // Last signed-out user's data (email, name, passkey, id, slug)
   setUser: (user: MeUser, skipLastUser?: boolean) => void; // Sets current user and updates lastUser
-  setMeAuthData: (data: Partial<Pick<MeAuthData, 'hasPasskey' | 'hasTotp' | 'enabledOAuth'>>) => void; // Sets current user auth info
+  setMeAuthData: (data: Partial<Pick<MeAuthData, 'hasTotp' | 'enabledOAuth'> & { hasPasskey: boolean }>) => void; // Sets current user auth info
   updateUser: (user: User) => void; // Updates current user and adjusts lastUser
   clearUserStore: () => void; // Resets the store.
 }

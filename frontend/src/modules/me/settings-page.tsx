@@ -3,7 +3,7 @@ import { appConfig, type EnabledOAuthProvider } from 'config';
 import { Check, Send, Trash } from 'lucide-react';
 import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { requestPassword, type ApiError, type RequestPasswordData, type RequestPasswordResponse } from '~/api.gen';
+import { type ApiError, type RequestPasswordData, type RequestPasswordResponse, requestPassword } from '~/api.gen';
 import { mapOAuthProviders } from '~/modules/auth/oauth-options';
 import { AsideAnchor } from '~/modules/common/aside-anchor';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
@@ -14,8 +14,8 @@ import StickyBox from '~/modules/common/sticky-box';
 import { toaster } from '~/modules/common/toaster/service';
 import UnsavedBadge from '~/modules/common/unsaved-badge';
 import DeleteSelf from '~/modules/me/delete-self';
-import Passkeys from '~/modules/me/passkeys';
-import SessionsList from '~/modules/me/session/list';
+import PasskeysList from '~/modules/me/passkeys';
+import SessionsList from '~/modules/me/sessions';
 import TOTPs from '~/modules/me/totp';
 import { TwoFactorAuthentication } from '~/modules/me/two-factor-auth';
 import { Button } from '~/modules/ui/button';
@@ -137,7 +137,7 @@ const UserSettingsPage = () => {
                   <HelpText content={t('common:passkey.text')}>
                     <p className="font-semibold">{t('common:passkey')}</p>
                   </HelpText>
-                  <Passkeys />
+                  <PasskeysList />
                 </>
               )}
               {appConfig.enabledAuthStrategies.includes('totp') && (
@@ -205,7 +205,6 @@ const UserSettingsPage = () => {
             </CardContent>
           </Card>
         </AsideAnchor>
-
         <AsideAnchor id="delete-account">
           <Card className="mx-auto sm:w-full">
             <CardHeader>
