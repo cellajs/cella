@@ -1,8 +1,8 @@
-import { and, eq, getTableColumns, type SQL } from 'drizzle-orm';
 import { db } from '#/db/db';
 import { emailsTable } from '#/db/schema/emails';
 import { type UnsafeUserModel, type UserModel, usersTable } from '#/db/schema/users';
 import { userSelect } from '#/modules/users/helpers/select';
+import { and, eq, getTableColumns, type SQL } from 'drizzle-orm';
 
 type SafeField = keyof typeof userSelect;
 
@@ -69,3 +69,17 @@ export async function getUsersByConditions(whereArray: (SQL<unknown> | undefined
     .where(and(...whereArray.filter(Boolean))) // filter out undefined conditions
     .execute();
 }
+
+/**
+ * Base query for selecting users.
+ *
+ * - Always selects from `usersTable` using the predefined `userSelect` shape.
+ * - Left joins `emailsTable` so that user records are returned
+ *   even if they don’t yet have an associated email.
+ *
+ * This query is meant to be extended (e.g., with additional joins or filters)
+ * wherever user data needs to be fetched consistently.
+ */
+export const getBaseSelectUserQuery = () => {
+  return db.select(userSelect).from(usersTable).leftJoin(emailsTable, eq(usersTable.id, emailsTable.userId));
+};

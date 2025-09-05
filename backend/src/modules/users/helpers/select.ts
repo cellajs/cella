@@ -1,10 +1,10 @@
-import { appConfig, type UserFlags } from 'config';
-import { getTableColumns, sql } from 'drizzle-orm';
 import { usersTable } from '#/db/schema/users';
 import { userBaseSchema } from '#/modules/entities/schema';
+import { appConfig, type UserFlags } from 'config';
+import { getTableColumns, sql } from 'drizzle-orm';
 
 /**
- * Safe user select. Sensitive fields are omitted.
+ * User select that merges userFlags with default ones
  */
 export const userSelect = (() => {
   const { unsubscribeToken, userFlags: _uf, ...safeUserSelect } = getTableColumns(usersTable);

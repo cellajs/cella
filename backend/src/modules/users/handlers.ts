@@ -1,14 +1,10 @@
-import { OpenAPIHono } from '@hono/zod-openapi';
-import { appConfig } from 'config';
-import { and, count, eq, ilike, inArray, isNotNull, isNull, ne, or } from 'drizzle-orm';
-import { alias } from 'drizzle-orm/pg-core';
 import { db } from '#/db/db';
 import { membershipsTable } from '#/db/schema/memberships';
 import { usersTable } from '#/db/schema/users';
 import { type Env, getContextMemberships, getContextUser } from '#/lib/context';
 import { AppError } from '#/lib/errors';
 import { checkSlugAvailable } from '#/modules/entities/helpers/check-slug';
-import { getUsersByConditions } from '#/modules/users/helpers/get-user-by';
+import { getBaseSelectUserQuery } from '#/modules/users/helpers/get-user-by';
 import { userSelect } from '#/modules/users/helpers/select';
 import userRoutes from '#/modules/users/routes';
 import { defaultHook } from '#/utils/default-hook';
@@ -16,6 +12,10 @@ import { getIsoDate } from '#/utils/iso-date';
 import { logEvent } from '#/utils/logger';
 import { getOrderColumn } from '#/utils/order-column';
 import { prepareStringForILikeFilter } from '#/utils/sql';
+import { OpenAPIHono } from '@hono/zod-openapi';
+import { appConfig } from 'config';
+import { and, count, eq, ilike, inArray, isNotNull, isNull, ne, or } from 'drizzle-orm';
+import { alias } from 'drizzle-orm/pg-core';
 
 const app = new OpenAPIHono<Env>({ defaultHook });
 
@@ -123,7 +123,8 @@ const usersRouteHandlers = app
     if (!toDeleteIds.length) throw new AppError({ status: 400, type: 'invalid_request', severity: 'error', entityType: 'user' });
 
     // Fetch users by IDs
-    const targets = await getUsersByConditions([inArray(usersTable.id, toDeleteIds)]);
+    const baseUsersQuery = getBaseSelectUserQuery();
+    const targets = await baseUsersQuery.where(inArray(usersTable.id, toDeleteIds));
 
     const foundIds = new Set(targets.map(({ id }) => id));
     const allowedIds: string[] = [];
@@ -161,7 +162,8 @@ const usersRouteHandlers = app
 
     if (idOrSlug === requestingUser.id || idOrSlug === requestingUser.slug) return ctx.json(requestingUser, 200);
 
-    const [targetUser] = await getUsersByConditions([or(eq(usersTable.id, idOrSlug), eq(usersTable.slug, idOrSlug))]);
+    const baseUsersQuery = getBaseSelectUserQuery();
+    const [targetUser] = await baseUsersQuery.where(or(eq(usersTable.id, idOrSlug), eq(usersTable.slug, idOrSlug))).limit(1);
 
     if (!targetUser) throw new AppError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'user', meta: { user: idOrSlug } });
 
@@ -200,7 +202,9 @@ const usersRouteHandlers = app
 
     const user = getContextUser();
 
-    const [targetUser] = await getUsersByConditions([or(eq(usersTable.id, idOrSlug), eq(usersTable.slug, idOrSlug))]);
+    const baseUsersQuery = getBaseSelectUserQuery();
+    const [targetUser] = await baseUsersQuery.where(or(eq(usersTable.id, idOrSlug), eq(usersTable.slug, idOrSlug))).limit(1);
+
     if (!targetUser) throw new AppError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'user', meta: { user: idOrSlug } });
 
     const { bannerUrl, firstName, lastName, language, newsletter, thumbnailUrl, slug } = ctx.req.valid('json');
