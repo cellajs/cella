@@ -5,9 +5,9 @@ import type { EntityPage } from '~/modules/entities/types';
 import type { PendingInvitationsTableProps } from '~/modules/memberships/pending-table';
 import { Button } from '~/modules/ui/button';
 
-const MembershipInvitationsTable = lazy(() => import('~/modules/memberships/pending-table'));
+const PendingTable = lazy(() => import('~/modules/memberships/pending-table'));
 
-export const MembershipInvitations = ({ entity }: PendingInvitationsTableProps) => {
+export const PendingInvitations = ({ entity }: PendingInvitationsTableProps) => {
   const { t } = useTranslation();
   const buttonRef = useRef(null);
   const createSheet = useSheeter((state) => state.create);
@@ -15,7 +15,7 @@ export const MembershipInvitations = ({ entity }: PendingInvitationsTableProps) 
   const openSheet = () => {
     const SheetComponent = ({ entity }: { entity: EntityPage }) => (
       <Suspense>
-        <MembershipInvitationsTable entity={entity} />
+        <PendingTable entity={entity} />
       </Suspense>
     );
 
@@ -30,7 +30,7 @@ export const MembershipInvitations = ({ entity }: PendingInvitationsTableProps) 
     });
   };
 
-  if (!entity.counts?.membership.pending) return null;
+  if (!entity.counts) return null;
 
   return (
     <Button ref={buttonRef} disabled={entity.counts.membership.pending < 1} variant="ghost" size="xs" className="font-light" onClick={openSheet}>

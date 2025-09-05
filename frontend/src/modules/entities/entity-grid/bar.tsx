@@ -1,3 +1,4 @@
+import type { QueryKey } from '@tanstack/react-query';
 import { ArrowDownAZ, Calendar } from 'lucide-react';
 import { TableBarContainer } from '~/modules/common/data-table/table-bar-container';
 import TableCount from '~/modules/common/data-table/table-count';
@@ -7,6 +8,7 @@ import { FocusView } from '~/modules/common/focus-view';
 import SelectRole from '~/modules/common/form-fields/select-role';
 import SelectSort from '~/modules/common/form-fields/select-sort';
 import type { EntitySearch } from '~/modules/entities/entity-grid/grid';
+import { useInfiniteQueryTotal } from '~/query/hooks/use-infinite-query-total';
 
 const entityGridSortOptions = [
   { name: 'common:alphabetical', icon: ArrowDownAZ, value: 'name' },
@@ -14,15 +16,17 @@ const entityGridSortOptions = [
 ] as const;
 
 type Props = {
+  queryKey: QueryKey;
   label: string;
   searchVars: EntitySearch;
   setSearch: (search: EntitySearch) => void;
-  totalCount: number | null;
   focusView?: boolean;
 };
 
-export const EntityGridBar = ({ totalCount, label, searchVars, setSearch, focusView }: Props) => {
+export const EntityGridBar = ({ queryKey, label, searchVars, setSearch, focusView }: Props) => {
   const { q, sort, role } = searchVars;
+
+  const total = useInfiniteQueryTotal(queryKey);
 
   const isFiltered = !!q;
 
@@ -37,7 +41,7 @@ export const EntityGridBar = ({ totalCount, label, searchVars, setSearch, focusV
       {/* Filter Bar */}
       <TableFilterBar onResetFilters={onResetFilters} isFiltered={isFiltered}>
         <FilterBarActions>
-          <TableCount count={totalCount} label={label} isFiltered={isFiltered} onResetFilters={onResetFilters} />
+          <TableCount count={total} label={label} isFiltered={isFiltered} onResetFilters={onResetFilters} />
         </FilterBarActions>
         <div className="sm:grow" />
         <FilterBarContent className="max-sm:animate-in max-sm:slide-in-from-left max-sm:fade-in max-sm:duration-300">

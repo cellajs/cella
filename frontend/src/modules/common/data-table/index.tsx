@@ -2,10 +2,8 @@ import { appConfig } from 'config';
 import { type Key, type ReactNode, useRef } from 'react';
 import { type CellMouseArgs, type CellMouseEvent, DataGrid, type RenderRowProps, type RowsChangeData, type SortColumn } from 'react-data-grid';
 import 'react-data-grid/lib/styles.css';
-import { useTranslation } from 'react-i18next';
-import { useInView } from 'react-intersection-observer';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
-import { useOnlineManager } from '~/hooks/use-online-manager';
+import { InfiniteLoader } from '~/modules/common/data-table/infinine-loader';
 import { NoRows } from '~/modules/common/data-table/no-rows';
 import '~/modules/common/data-table/style.css';
 import { DataTableSkeleton } from '~/modules/common/data-table/table-skeleton';
@@ -59,18 +57,7 @@ export const DataTable = <TData,>({
   renderRow,
   onCellClick,
 }: DataTableProps<TData>) => {
-  const { t } = useTranslation();
   const isMobile = useBreakpoints('max', 'sm', false);
-  const { isOnline } = useOnlineManager();
-
-  const { ref: measureRef } = useInView({
-    triggerOnce: false,
-    delay: 50,
-    threshold: 0,
-    onChange: (inView) => {
-      if (inView && !error && fetchMore) fetchMore();
-    },
-  });
 
   const gridRef = useRef<HTMLDivElement | null>(null);
   useTableTooltip(gridRef, !isLoading);
@@ -129,38 +116,16 @@ export const DataTable = <TData,>({
                   },
                 }}
               />
-              {/* Infinite loading measure ref, which increases until 50 rows */}
-              <div
-                key={rows.length}
-                ref={measureRef}
-                className="h-4 w-0 bg-red-700 absolute bottom-0 z-200"
-                style={{
+              <InfiniteLoader
+                hasNextPage={hasNextPage}
+                isFetching={isFetching}
+                isFetchMoreError={!!error}
+                measureStyle={{
                   height: `${Math.min(rows.length, 200) * 0.25 * rowHeight}px`,
                   maxHeight: `${rowHeight * limit}px`,
                 }}
+                fetchMore={fetchMore}
               />
-              {/* Can load more, but offline */}
-              {!isOnline && hasNextPage && <div className="w-full mt-4 italic text-muted text-sm text-center">{t('common:offline.load_more')}</div>}
-              {/* Loading */}
-              {isFetching && hasNextPage && !error && (
-                <div className="flex space-x-1 justify-center items-center relative top-4 h-0 w-full animate-pulse">
-                  <span className="sr-only">Loading...</span>
-                  <div className="h-1 w-3 bg-foreground rounded-full animate-bounce [animation-delay:-0.3s]" />
-                  <div className="h-1 w-3 bg-foreground rounded-full animate-bounce [animation-delay:-0.15s]" />
-                  <div className="h-1 w-3 bg-foreground rounded-full animate-bounce" />
-                </div>
-              )}
-              {/* All is loaded */}
-              {!isFetching && !error && !hasNextPage && (
-                <div className="opacity-50 w-full text-xl mt-4 text-center">
-                  <div>&#183;</div>
-                  <div className="-mt-5">&#183;</div>
-                  <div className="-mt-5">&#183;</div>
-                  <div className="-mt-3">&#176;</div>
-                </div>
-              )}
-              {/* Error */}
-              {error && <div className="text-center my-8 text-sm text-red-600">{t('error:load_more_failed')}</div>}
             </div>
           )}
         </>

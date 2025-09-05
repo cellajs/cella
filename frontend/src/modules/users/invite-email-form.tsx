@@ -26,6 +26,7 @@ interface Props {
  */
 const InviteEmailForm = ({ entity, dialog: isDialog, children }: Props) => {
   const { t } = useTranslation();
+
   const { nextStep } = useStepper();
 
   const form = useInviteFormDraft(entity?.id);
