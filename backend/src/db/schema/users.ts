@@ -26,7 +26,6 @@ export const usersTable = pgTable(
     thumbnailUrl: varchar(),
     bannerUrl: varchar(),
     email: varchar().notNull().unique(),
-    unsubscribeToken: varchar().unique().$defaultFn(nanoid).notNull(),
     twoFactorEnabled: boolean().notNull().default(false),
     firstName: varchar(),
     lastName: varchar(),
@@ -45,7 +44,6 @@ export const usersTable = pgTable(
   },
   (table) => [
     index('users_name_index').on(table.name.desc()),
-    index('users_token_index').on(table.unsubscribeToken),
     index('users_email_index').on(table.email.desc()),
     index('users_created_at_index').on(table.createdAt.desc()),
     foreignKey({
@@ -55,6 +53,5 @@ export const usersTable = pgTable(
   ],
 );
 
-export type UnsafeUserModel = typeof usersTable.$inferSelect;
+export type UserModel = typeof usersTable.$inferSelect;
 export type InsertUserModel = typeof usersTable.$inferInsert;
-export type UserModel = Omit<UnsafeUserModel, 'unsubscribeToken'>;

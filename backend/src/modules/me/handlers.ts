@@ -1,3 +1,8 @@
+import { OpenAPIHono, type z } from '@hono/zod-openapi';
+import type { EnabledOAuthProvider, MenuSection } from 'config';
+import { appConfig } from 'config';
+import { and, eq, getTableColumns, inArray, isNotNull, isNull, sql } from 'drizzle-orm';
+import { type SSEStreamingApi, streamSSE } from 'hono/streaming';
 import { db } from '#/db/db';
 import { membershipsTable } from '#/db/schema/memberships';
 import { oauthAccountsTable } from '#/db/schema/oauth-accounts';
@@ -6,6 +11,7 @@ import { passwordsTable } from '#/db/schema/passwords';
 import { sessionsTable } from '#/db/schema/sessions';
 import { tokensTable } from '#/db/schema/tokens';
 import { totpsTable } from '#/db/schema/totps';
+import { unsubscribeTokensTable } from '#/db/schema/unsubscribe-tokens';
 import { usersTable } from '#/db/schema/users';
 import { entityTables } from '#/entity-config';
 import { env } from '#/env';
@@ -24,16 +30,12 @@ import { getUserSessions } from '#/modules/me/helpers/get-sessions';
 import { getUserMenuEntities } from '#/modules/me/helpers/get-user-menu-entities';
 import meRoutes from '#/modules/me/routes';
 import type { menuItemSchema, menuSchema } from '#/modules/me/schema';
-import { userBaseSelect } from '#/modules/users/helpers/select';
+import { userBaseSelect, usersBaseQuery } from '#/modules/users/helpers/select';
 import permissionManager from '#/permissions/permissions-config';
 import { defaultHook } from '#/utils/default-hook';
 import { getIsoDate } from '#/utils/iso-date';
 import { logEvent } from '#/utils/logger';
-import { OpenAPIHono, type z } from '@hono/zod-openapi';
-import type { EnabledOAuthProvider, MenuSection } from 'config';
-import { appConfig } from 'config';
-import { and, eq, getTableColumns, inArray, isNotNull, isNull, sql } from 'drizzle-orm';
-import { type SSEStreamingApi, streamSSE } from 'hono/streaming';
+import { verifyUnsubscribeToken } from '#/utils/unsubscribe-token';
 
 type UserMenu = z.infer<typeof menuSchema>;
 type MenuItem = z.infer<typeof menuItemSchema>;
@@ -396,19 +398,21 @@ const meRouteHandlers = app
    */
   .openapi(meRoutes.unsubscribeMe, async (ctx) => {
     const { token } = ctx.req.valid('query');
-    console.log('🚀 ~ token:', token);
 
     // Check if token exists
-    // TODO fix fater split tables
-    // const user = await getUserBy('unsubscribeToken', token, 'unsafe');
-    // if (!user) throw new AppError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'user' });
+    const [user] = await usersBaseQuery
+      .innerJoin(unsubscribeTokensTable, eq(usersTable.id, unsubscribeTokensTable.userId))
+      .where(eq(unsubscribeTokensTable.token, token))
+      .limit(1);
+
+    if (!user) throw new AppError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'user' });
 
     // Verify token
-    // const isValid = verifyUnsubscribeToken(user.email, token);
-    // if (!isValid) throw new AppError({ status: 401, type: 'unsubscribe_failed', severity: 'warn', entityType: 'user' });
+    const isValid = verifyUnsubscribeToken(user.email, token);
+    if (!isValid) throw new AppError({ status: 401, type: 'unsubscribe_failed', severity: 'warn', entityType: 'user' });
 
     // Update user
-    // await db.update(usersTable).set({ newsletter: false }).where(eq(usersTable.id, user.id));
+    await db.update(usersTable).set({ newsletter: false }).where(eq(usersTable.id, user.id));
 
     const redirectUrl = new URL('/auth/unsubscribed', appConfig.frontendUrl);
     return ctx.redirect(redirectUrl, 302);

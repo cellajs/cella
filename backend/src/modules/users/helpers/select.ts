@@ -1,14 +1,14 @@
+import { appConfig, type UserFlags } from 'config';
+import { getTableColumns, sql } from 'drizzle-orm';
 import { db } from '#/db/db';
 import { usersTable } from '#/db/schema/users';
 import { userBaseSchema } from '#/modules/entities/schema';
-import { appConfig, type UserFlags } from 'config';
-import { getTableColumns, sql } from 'drizzle-orm';
 
 /**
  * User select that merges userFlags with default ones
  */
 export const userSelect = (() => {
-  const { unsubscribeToken, userFlags: _uf, ...safeUserSelect } = getTableColumns(usersTable);
+  const { userFlags: _uf, ...safeUserSelect } = getTableColumns(usersTable);
 
   return {
     ...safeUserSelect,

@@ -1,9 +1,15 @@
+import { OpenAPIHono } from '@hono/zod-openapi';
+import { EventName, Paddle } from '@paddle/paddle-node-sdk';
+import { appConfig } from 'config';
+import { and, eq, inArray, isNotNull, isNull, lt } from 'drizzle-orm';
+import i18n from 'i18next';
 import { db } from '#/db/db';
 import { emailsTable } from '#/db/schema/emails';
 import { membershipsTable } from '#/db/schema/memberships';
 import { organizationsTable } from '#/db/schema/organizations';
 import { requestsTable } from '#/db/schema/requests';
 import { tokensTable } from '#/db/schema/tokens';
+import { unsubscribeTokensTable } from '#/db/schema/unsubscribe-tokens';
 import { usersTable } from '#/db/schema/users';
 import { env } from '#/env';
 import { type Env, getContextUser } from '#/lib/context';
@@ -17,11 +23,6 @@ import { logError, logEvent } from '#/utils/logger';
 import { nanoid } from '#/utils/nanoid';
 import { slugFromEmail } from '#/utils/slug-from-email';
 import { createDate, TimeSpan } from '#/utils/time-span';
-import { OpenAPIHono } from '@hono/zod-openapi';
-import { EventName, Paddle } from '@paddle/paddle-node-sdk';
-import { appConfig } from 'config';
-import { and, eq, inArray, isNotNull, isNull, lt } from 'drizzle-orm';
-import i18n from 'i18next';
 import { NewsletterEmail, type NewsletterEmailProps } from '../../../emails/newsletter';
 import { SystemInviteEmail, type SystemInviteEmailProps } from '../../../emails/system-invite';
 
@@ -167,12 +168,13 @@ const systemRouteHandlers = app
       .selectDistinct({
         email: usersTable.email,
         name: usersTable.name,
-        unsubscribeToken: usersTable.unsubscribeToken,
+        unsubscribeToken: unsubscribeTokensTable.token,
         newsletter: usersTable.newsletter,
         orgName: organizationsTable.name,
       })
       .from(membershipsTable)
       .innerJoin(usersTable, and(eq(usersTable.id, membershipsTable.userId)))
+      .innerJoin(unsubscribeTokensTable, and(eq(usersTable.id, unsubscribeTokensTable.userId)))
       .innerJoin(organizationsTable, eq(organizationsTable.id, membershipsTable.organizationId))
       .where(
         and(

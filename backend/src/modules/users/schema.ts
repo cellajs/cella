@@ -20,11 +20,7 @@ export const userFlagsSchema = z.object(
 export const userSchema = createSelectSchema(usersTable, {
   email: z.email(),
   userFlags: userFlagsSchema,
-})
-  .omit({
-    unsubscribeToken: true,
-  })
-  .openapi('User');
+}).openapi('User');
 
 export const memberSchema = z
   .object({

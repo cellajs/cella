@@ -1,6 +1,9 @@
+import { appConfig } from 'config';
+import { and, eq, isNull } from 'drizzle-orm';
 import { db } from '#/db/db';
 import { emailsTable } from '#/db/schema/emails';
 import { tokensTable } from '#/db/schema/tokens';
+import { unsubscribeTokensTable } from '#/db/schema/unsubscribe-tokens';
 import { type InsertUserModel, type UserModel, usersTable } from '#/db/schema/users';
 import { resolveEntity } from '#/lib/entity';
 import { AppError } from '#/lib/errors';
@@ -10,11 +13,9 @@ import { getIsoDate } from '#/utils/iso-date';
 import { logError } from '#/utils/logger';
 import { nanoid } from '#/utils/nanoid';
 import { generateUnsubscribeToken } from '#/utils/unsubscribe-token';
-import { appConfig } from 'config';
-import { and, eq, isNull } from 'drizzle-orm';
 
 interface HandleCreateUserProps {
-  newUser: Omit<InsertUserModel, 'unsubscribeToken'>;
+  newUser: InsertUserModel;
   membershipInviteTokenId?: string | null;
   emailVerified?: boolean;
 }
@@ -52,10 +53,11 @@ export const handleCreateUser = async ({ newUser, membershipInviteTokenId, email
         firstName: newUser.firstName,
         email: normalizedEmail,
         name: newUser.name,
-        unsubscribeToken: generateUnsubscribeToken(normalizedEmail),
         language: appConfig.defaultLanguage,
       })
       .returning();
+
+    await db.insert(unsubscribeTokensTable).values({ token: generateUnsubscribeToken(normalizedEmail), userId: user.id });
 
     // If signing up with token, update it with new user id and insert membership if applicable
     if (membershipInviteTokenId) await handleMembershipTokenUpdate(user.id, membershipInviteTokenId);

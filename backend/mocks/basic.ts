@@ -2,6 +2,7 @@ import { InsertEmailModel } from "#/db/schema/emails";
 import { InsertMembershipModel } from "#/db/schema/memberships";
 import { InsertOrganizationModel, OrganizationModel } from "#/db/schema/organizations";
 import { InsertPasswordModel } from "#/db/schema/passwords";
+import { InsertUnsubscribeTokenModel } from "#/db/schema/unsubscribe-tokens";
 import { InsertUserModel, UserModel } from "#/db/schema/users";
 import { nanoid } from "#/utils/nanoid";
 import { generateUnsubscribeToken } from "#/utils/unsubscribe-token";
@@ -84,7 +85,6 @@ export const mockUser = (overrides: MockUserOptionalOverrides = {}): InsertUserM
     language: appConfig.defaultLanguage,
     name: faker.person.fullName(firstAndLastName),
     email,
-    unsubscribeToken: generateUnsubscribeToken(email),
     slug,
     newsletter: faker.datatype.boolean(),
     createdAt: pastIsoDate(),
@@ -109,7 +109,6 @@ export const mockAdmin = (id: string, email: string): InsertUserModel => {
     slug: 'admin-user',
     role: 'admin',
     email,
-    unsubscribeToken: generateUnsubscribeToken(email),
     language: appConfig.defaultLanguage,
     thumbnailUrl: null,
     newsletter: false,
@@ -126,6 +125,20 @@ export const mockAdmin = (id: string, email: string): InsertUserModel => {
 export const mockPassword = (user: UserModel, hashedPassword: string): InsertPasswordModel => {
   return {
     hashedPassword,
+    userId: user.id,
+    createdAt: pastIsoDate(),
+  }
+}
+
+/**
+ * Generates an unsubscribeToken record for a given user.
+ *
+ * @param user - The user for whom the email record is created.
+ * @returns A valid InsertUnsubscribeTokenModel.
+ */
+export const mockUnsubscribeToken = (user: UserModel): InsertUnsubscribeTokenModel => {
+  return {
+    token: generateUnsubscribeToken(user.email),
     userId: user.id,
     createdAt: pastIsoDate(),
   }

@@ -4,7 +4,7 @@ import { env } from './env';
 
 const redactedFields = [
   'passwords.hashedPassword',
-  'user.unsubscribeToken',
+  'unsubscribeTokensTable.token',
   'session.token',
   'token.token',
   'totps.encoderSecretKey',
