@@ -1,6 +1,3 @@
-import { appConfig, type EnabledOAuthProvider } from 'config';
-import { and, eq } from 'drizzle-orm';
-import type { Context } from 'hono';
 import { db } from '#/db/db';
 import { emailsTable } from '#/db/schema/emails';
 import { type OAuthAccountModel, oauthAccountsTable } from '#/db/schema/oauth-accounts';
@@ -19,6 +16,9 @@ import { usersBaseQuery } from '#/modules/users/helpers/select';
 import { isValidRedirectPath } from '#/utils/is-redirect-url';
 import { getIsoDate } from '#/utils/iso-date';
 import { getValidToken } from '#/utils/validate-token';
+import { appConfig, type EnabledOAuthProvider } from 'config';
+import { and, eq } from 'drizzle-orm';
+import type { Context } from 'hono';
 
 /**
  * Retrieves the OAuth redirect path from a cookie, or falls back to a default.
@@ -57,7 +57,7 @@ export const handleOAuthFlow = async (
 
   // User already has a verified OAuth account → log them in
   if (oauthAccount?.verified) {
-    const user = await getUserByOAuthAccount(oauthAccount);
+    const [user] = await usersBaseQuery.where(eq(usersTable.id, oauthAccount.userId));
     return await handleVerifiedOAuthAccount(ctx, user, oauthAccount);
   }
 
@@ -217,7 +217,7 @@ const verifyFlow = async (
     throw new AppError({ status: 409, type: 'oauth_mismatch', severity: 'warn', isRedirect: true });
   }
 
-  const user = await getUserByOAuthAccount(oauthAccount);
+  const [user] = await usersBaseQuery.where(eq(usersTable.id, oauthAccount.userId));
 
   // Somehow already linked + verified → log in the user
   if (oauthAccount.verified) {
@@ -310,18 +310,6 @@ const createOAuthAccount = async (
     .returning();
 
   return oauthAccount;
-};
-
-/**
- * Retrieves a user using their OAuth account's internal user ID.
- *
- * @param oauthAccount - The OAuth account to look up the user for.
- * @returns The matched user.
- */
-const getUserByOAuthAccount = async (oauthAccount: OAuthAccountModel): Promise<UserModel> => {
-  const [user] = await db.select().from(usersTable).where(eq(usersTable.id, oauthAccount.userId));
-
-  return user;
 };
 
 /**

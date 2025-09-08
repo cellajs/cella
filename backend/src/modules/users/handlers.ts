@@ -1,7 +1,3 @@
-import { OpenAPIHono } from '@hono/zod-openapi';
-import { appConfig } from 'config';
-import { and, count, eq, ilike, inArray, isNotNull, isNull, ne, or } from 'drizzle-orm';
-import { alias } from 'drizzle-orm/pg-core';
 import { db } from '#/db/db';
 import { membershipsTable } from '#/db/schema/memberships';
 import { usersTable } from '#/db/schema/users';
@@ -15,6 +11,10 @@ import { getIsoDate } from '#/utils/iso-date';
 import { logEvent } from '#/utils/logger';
 import { getOrderColumn } from '#/utils/order-column';
 import { prepareStringForILikeFilter } from '#/utils/sql';
+import { OpenAPIHono } from '@hono/zod-openapi';
+import { appConfig } from 'config';
+import { and, count, eq, ilike, inArray, isNotNull, isNull, ne, or } from 'drizzle-orm';
+import { alias } from 'drizzle-orm/pg-core';
 
 const app = new OpenAPIHono<Env>({ defaultHook });
 
@@ -69,7 +69,7 @@ const usersRouteHandlers = app
               requesterMembership,
               and(eq(requesterMembership.organizationId, targetMembership.organizationId), eq(requesterMembership.userId, user.id)),
             )
-        : db.select({ ...userSelect }).from(usersTable);
+        : usersBaseQuery;
 
     const usersQuery = baseUsersQuery.where(and(...filters)).orderBy(orderColumn);
 
