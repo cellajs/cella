@@ -31,7 +31,7 @@ export const TwoFactorAuthentication = () => {
       <div className="mb-6">
         {/* TODO make open dialog with TOPT or Passkey creation if none available */}
         <Switch disabled={!hasPasskey || !hasTotp} checked={user.twoFactorEnabled} onCheckedChange={toogle2fa} />
-        {!hasPasskey || (!hasTotp && <p className="text-sm text-gray-500 mt-2">{t('common:2fa_disabled.text')}</p>)}
+        {(!hasPasskey || !hasTotp) && <p className="text-sm text-gray-500 mt-2">{t('common:2fa_disabled.text')}</p>}
       </div>
     </>
   );
