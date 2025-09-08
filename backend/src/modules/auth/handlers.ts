@@ -339,7 +339,7 @@ const authRouteHandlers = app
       .select({ user: usersTable, hashedPassword: passwordsTable.hashedPassword, emailVerified: emailsTable.verified })
       .from(usersTable)
       .innerJoin(emailsTable, eq(usersTable.id, emailsTable.userId))
-      .leftJoin(passwordsTable, eq(usersTable.id, passwordsTable.id))
+      .leftJoin(passwordsTable, eq(usersTable.id, passwordsTable.userId))
       .where(eq(emailsTable.email, normalizedEmail))
       .limit(1);
 
