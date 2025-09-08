@@ -55,6 +55,7 @@ export const useUserStore = create<UserStoreState>()(
               name: user.name,
               id: user.id,
               slug: user.slug,
+              twoFactorEnabled: user.twoFactorEnabled,
             };
           });
 

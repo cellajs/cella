@@ -761,8 +761,9 @@ const authRouteHandlers = app
 
     // If this is a two_factor request, retrieve user from pending 2FA token
     if (type === 'two_factor') {
-      const { email: tokenEmail } = await validatePending2FAToken(ctx);
-      userEmail = tokenEmail;
+      // TODO get caller email ?
+      // const { email: tokenEmail } = await validatePending2FAToken(ctx);
+      // userEmail = tokenEmail;
     }
 
     // If we still have no email, return challenge with empty credential list

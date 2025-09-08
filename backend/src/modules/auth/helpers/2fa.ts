@@ -1,5 +1,3 @@
-import { eq } from 'drizzle-orm';
-import type { Context } from 'hono';
 import { db } from '#/db/db';
 import { tokensTable } from '#/db/schema/tokens';
 import { type UserModel, usersTable } from '#/db/schema/users';
@@ -9,6 +7,8 @@ import { usersBaseQuery } from '#/modules/users/helpers/select';
 import { nanoid } from '#/utils/nanoid';
 import { createDate, TimeSpan } from '#/utils/time-span';
 import { getValidToken } from '#/utils/validate-token';
+import { eq } from 'drizzle-orm';
+import type { Context } from 'hono';
 
 /**
  * Starts a two-factor authentication challenge for a user.
@@ -58,6 +58,7 @@ export const validatePending2FAToken = async (ctx: Context, deleteCoockieAfter =
 
   // Fetch token record and associated user
   const tokenRecord = await getValidToken({ requiredType: 'pending_2fa', tokenId: tokenIdFromCookie });
+
   if (!tokenRecord.userId) throw new AppError({ status: 404, type: 'pending_2fa_not_found', severity: 'warn' });
 
   const [user] = await usersBaseQuery.where(eq(usersTable.id, tokenRecord.userId)).limit(1);
