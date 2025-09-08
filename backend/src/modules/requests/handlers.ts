@@ -1,3 +1,5 @@
+import { OpenAPIHono } from '@hono/zod-openapi';
+import { and, count, eq, getTableColumns, ilike, inArray, type SQL, sql } from 'drizzle-orm';
 import { db } from '#/db/db';
 import { emailsTable } from '#/db/schema/emails';
 import { type RequestModel, requestsTable } from '#/db/schema/requests';
@@ -10,8 +12,6 @@ import { usersBaseQuery } from '#/modules/users/helpers/select';
 import { defaultHook } from '#/utils/default-hook';
 import { getOrderColumn } from '#/utils/order-column';
 import { prepareStringForILikeFilter } from '#/utils/sql';
-import { OpenAPIHono } from '@hono/zod-openapi';
-import { and, count, eq, getTableColumns, ilike, inArray, type SQL, sql } from 'drizzle-orm';
 
 // These requests are only allowed to be created if user has none yet
 const uniqueRequests: RequestModel['type'][] = ['waitlist', 'newsletter'];

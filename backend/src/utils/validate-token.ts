@@ -1,8 +1,8 @@
+import { and, eq, isNull } from 'drizzle-orm';
 import { db } from '#/db/db';
 import { type TokenModel, tokensTable } from '#/db/schema/tokens';
 import { AppError, type ConstructedError } from '#/lib/errors';
 import { isExpiredDate } from '#/utils/is-expired-date';
-import { and, eq, isNull } from 'drizzle-orm';
 
 type BaseProps = {
   requiredType: TokenModel['type'];

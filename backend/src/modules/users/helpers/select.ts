@@ -1,8 +1,8 @@
+import { appConfig, type UserFlags } from 'config';
+import { getTableColumns, sql } from 'drizzle-orm';
 import { db } from '#/db/db';
 import { usersTable } from '#/db/schema/users';
 import { userBaseSchema } from '#/modules/entities/schema';
-import { appConfig, type UserFlags } from 'config';
-import { getTableColumns, sql } from 'drizzle-orm';
 
 /**
  * User select that merges userFlags with default ones

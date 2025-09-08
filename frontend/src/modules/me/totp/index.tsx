@@ -50,7 +50,7 @@ const TOTPs = () => {
       <div className="flex max-sm:flex-col gap-2 mb-6">
         <Button key="setUpPasskey" type="button" variant="plain" onClick={setUpTOTP}>
           {hasTotp ? <RotateCw className="w-4 h-4 mr-2" /> : <QrCode className="w-4 h-4 mr-2" />}
-          {hasTotp ? t('common:reset_resource', { resource: t('common:totp') }) : t('common:create_resource', { resource: t('common:totp') })}
+          {hasTotp ? t('common:remove_resource', { resource: t('common:totp').toLowerCase() }) : t('common:totp_setup')}
         </Button>
         {hasTotp && (
           <Button key="unlinkPasskey" type="button" variant="ghost" onClick={handleUnlinkTOTP}>

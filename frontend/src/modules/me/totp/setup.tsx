@@ -12,6 +12,7 @@ import { zSetupTotpData } from '~/api.gen/zod.gen';
 import { useCopyToClipboard } from '~/hooks/use-copy-to-clipboard';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { toaster } from '~/modules/common/toaster/service';
+import { Alert, AlertDescription, AlertTitle } from '~/modules/ui/alert';
 import { Button, SubmitButton } from '~/modules/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '~/modules/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
@@ -75,17 +76,18 @@ export const TOTPSetup = () => {
         </CardHeader>
         <CardContent>
           <QRCodeSVG className="mx-auto my-3" value={data.totpUri} size={200} />
+
+          <Alert variant="secondary" className="my-6">
+            <AlertTitle>{t('common:totp_manual.footer_title')}</AlertTitle>
+            <AlertDescription className="text-sm font-light">
+              <span>{t('common:totp_manual.footer_description')}</span>{' '}
+              <Button ref={triggerRef} variant="none" className="p-0 h-auto underline cursor-pointer" onClick={openSetUpKey}>
+                {t('common:totp_manual.button_text')}
+              </Button>
+            </AlertDescription>
+          </Alert>
         </CardContent>
-        <CardFooter className="flex flex-col items-start p-6">
-          <h3>{t('common:totp_manual.footer_title')}</h3>
-
-          <span className="text-sm">
-            {t('common:totp_manual.footer_description')}
-
-            <Button ref={triggerRef} variant="none" className="p-0 h-auto underline cursor-pointer" onClick={openSetUpKey}>
-              {t('common:totp_manual.button_text')}
-            </Button>
-          </span>
+        <CardFooter className="flex flex-col items-start">
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit, defaultOnInvalid)} className="flex flex-row gap-2 items-end mt-4">
               <FormField

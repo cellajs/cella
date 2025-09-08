@@ -2,7 +2,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
 import { appConfig } from 'config';
-import { QrCode } from 'lucide-react';
+import { Smartphone } from 'lucide-react';
 import { useRef } from 'react';
 import { useForm, useFormState } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
@@ -42,9 +42,10 @@ export const TOTPOption = ({ authStep = 'signIn' }: BaseOptionsProps) => {
   return (
     <div data-mode={mode} className="group flex flex-col space-y-2">
       <Button ref={triggerRef} type="button" onClick={openTOTPVerify} variant="plain" className="w-full gap-1.5">
-        <QrCode size={16} />
+        <Smartphone size={16} />
         <span>
-          {authStep === 'signIn' ? t('common:sign_in') : t('common:sign_up')} {t('common:with').toLowerCase()} {t('common:totp').toLowerCase()}
+          {authStep === 'signIn' ? t('common:sign_in') : t('common:sign_up')} {t('common:with').toLowerCase()}{' '}
+          {t('common:authenticator_app').toLowerCase()}
         </span>
       </Button>
     </div>

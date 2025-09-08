@@ -88,9 +88,9 @@ export const SignUpForm = ({ tokenData, email, setStep, resetSteps, emailEnabled
             : `${t('common:create_resource', { resource: t('common:account').toLowerCase() })}?`}{' '}
         <br />
         {!tokenData && (
-          <Button variant="ghost" onClick={resetSteps} className="font-light mt-2 text-xl">
-            {email}
-            <ChevronDown size={16} className="ml-2" />
+          <Button variant="ghost" onClick={resetSteps} className="mx-auto flex max-w-full truncate font-light mt-2 sm:text-xl bg-foreground/10">
+            <span className="truncate">{email}</span>
+            <ChevronDown size={16} className="ml-1" />
           </Button>
         )}
       </h1>

@@ -28,13 +28,7 @@ const PasskeysList = () => {
 
   return (
     <div className="mb-6">
-      <div className="flex flex-row max-sm:flex-col items-center justify-between">
-        {hasPasskey && (
-          <div className="flex items-center gap-1 p-2.5">
-            <Fingerprint className="w-4 h-4 mr-2" />
-            <span>{t('common:registered_passkeys')}</span>
-          </div>
-        )}
+      <div className="flex flex-row max-sm:flex-col">
         <Button key="registratePasskey" type="button" variant="plain" onClick={() => registratePasskey()}>
           {hasPasskey ? <Plus className="w-4 h-4 mr-2" /> : <Fingerprint className="w-4 h-4 mr-2" />}
           {hasPasskey

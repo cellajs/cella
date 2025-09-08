@@ -1,3 +1,5 @@
+import { z } from '@hono/zod-openapi';
+import { appConfig } from 'config';
 import { createCustomRoute } from '#/lib/custom-routes';
 import { hasSystemAccess, isAuthenticated, isPublicAccess } from '#/middlewares/guard';
 import { hasValidToken } from '#/middlewares/has-valid-token';
@@ -10,14 +12,12 @@ import {
   passkeyChallengeQuerySchema,
   passkeyChallengeSchema,
   passkeyVerificationBodySchema,
-  tokenWithDataSchema,
   TotpVerificationBodySchema,
+  tokenWithDataSchema,
 } from '#/modules/auth/schema';
 import { contextEntityWithMembershipSchema } from '#/modules/entities/schema';
 import { cookieSchema, locationSchema, passwordSchema, tokenParamSchema } from '#/utils/schema/common';
 import { errorResponses, redirectResponseSchema, successWithoutDataSchema } from '#/utils/schema/responses';
-import { z } from '@hono/zod-openapi';
-import { appConfig } from 'config';
 
 const authRoutes = {
   startImpersonation: createCustomRoute({

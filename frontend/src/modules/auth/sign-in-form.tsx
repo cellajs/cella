@@ -83,9 +83,14 @@ export const SignInForm = ({ email, resetSteps, emailEnabled }: Props) => {
     <Form {...form}>
       <h1 className="text-2xl text-center">
         {token ? t('common:invite_sign_in') : lastUser ? t('common:welcome_back') : t('common:sign_in_as')} <br />
-        <Button variant="ghost" onClick={resetAuth} disabled={!!token} className="mx-auto block max-w-full truncate font-light mt-2 text-xl">
-          {email}
-          {!token && <ChevronDown size={16} className="ml-2" />}
+        <Button
+          variant="ghost"
+          onClick={resetAuth}
+          disabled={!!token}
+          className="mx-auto flex max-w-full truncate font-light mt-2 sm:text-xl bg-foreground/10"
+        >
+          <span className="truncate">{email}</span>
+          {!token && <ChevronDown size={16} className="ml-1" />}
         </Button>
       </h1>
       {emailEnabled && (
