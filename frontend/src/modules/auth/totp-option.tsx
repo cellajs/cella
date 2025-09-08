@@ -22,14 +22,14 @@ import { defaultOnInvalid } from '~/utils/form-on-invalid';
 const formSchema = zSignInWithTotpData.shape.body.unwrap();
 type FormValues = z.infer<typeof formSchema>;
 
-export const TOTPOption = ({ type, email, authStep = 'signIn' }: Omit<FormValues, 'code'> & BaseOptionsProps) => {
+export const TOTPOption = ({ authStep = 'signIn' }: BaseOptionsProps) => {
   const { t } = useTranslation();
   const mode = useUIStore((state) => state.mode);
 
   const triggerRef = useRef<HTMLButtonElement | null>(null);
 
   const openTOTPVerify = () => {
-    useDialoger.getState().create(<DialogConfirmationForm type={type} email={email} />, {
+    useDialoger.getState().create(<DialogConfirmationForm />, {
       id: '2fa-confirmation',
       triggerRef,
       className: 'sm:max-w-md p-6',
@@ -51,13 +51,13 @@ export const TOTPOption = ({ type, email, authStep = 'signIn' }: Omit<FormValues
   );
 };
 
-const DialogConfirmationForm = ({ type, email }: Omit<FormValues, 'code'>) => {
+const DialogConfirmationForm = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
-    defaultValues: { type, email, code: '' },
+    defaultValues: { code: '' },
   });
 
   const { isValid, isDirty } = useFormState({ control: form.control });

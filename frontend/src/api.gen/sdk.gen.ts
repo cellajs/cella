@@ -765,8 +765,6 @@ export const getTotpUri = <ThrowOnError extends boolean = true>(options?: Option
  *
  * @param {signInWithTotpData} options
  * @param {string=} options.body.code - `string` (optional)
- * @param {enum | enum=} options.body.type - `enum | enum` (optional)
- * @param {string=} options.body.email - `string` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
 export const signInWithTotp = <ThrowOnError extends boolean = true>(options?: Options<SignInWithTotpData, ThrowOnError>) => {

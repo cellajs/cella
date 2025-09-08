@@ -113,9 +113,10 @@ The documentation is generated from source code using \`zod\` schemas, converted
 
 /**
  * Enabled authentication strategies.
- * Currently available: 'password', 'passkey', 'totp' and 'oauth'.
+ * Currently available: 'password', 'passkey' and 'oauth'.
+ * In progress: 'totp'
  */
-enabledAuthStrategies: ['password', 'passkey', 'totp', 'oauth'] as const,
+enabledAuthStrategies: ['password', 'passkey', 'oauth'] as const,
 
 /**
  * Enabled OAuth providers.

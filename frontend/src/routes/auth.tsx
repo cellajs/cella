@@ -56,7 +56,7 @@ export const Confirn2FARoute = createRoute({
     const { t } = useTranslation();
     return (
       <>
-        <h2 className="font-semibold leading-none min-h-6">{t('common:totp.title')}</h2>
+        <h2 className="font-semibold leading-none min-h-6">{t('common:2fa.title')}</h2>
 
         {/* Option 1: Passkey */}
         <PasskeyOption type="two_factor" />
@@ -66,7 +66,7 @@ export const Confirn2FARoute = createRoute({
         </div>
 
         {/* Option 2: TOTP */}
-        <TOTPOption type="two_factor" />
+        <TOTPOption />
       </>
     );
   },

@@ -11,7 +11,6 @@ import OAuthOptions from '~/modules/auth/oauth-options';
 import PasskeyOption from '~/modules/auth/passkey-option';
 import { SignInForm } from '~/modules/auth/sign-in-form';
 import { SignUpForm } from '~/modules/auth/sign-up-form';
-import { TOTPOption } from '~/modules/auth/totp-option';
 import type { AuthStep } from '~/modules/auth/types';
 import { useCheckToken } from '~/modules/auth/use-token-check';
 import { WaitlistForm } from '~/modules/auth/waitlist-form';
@@ -102,9 +101,10 @@ const AuthSteps = () => {
               <span className="text-muted-foreground px-2">{t('common:or')}</span>
             </div>
           )}
-          {/* TODO(IMPROVEMENT) be able to signUp with totp or passeky */}
-          {enabledStrategies.includes('totp') && step === 'signIn' && <TOTPOption email={email} type="login" authStep={step} />}
-          {enabledStrategies.includes('passkey') && step === 'signIn' && <PasskeyOption email={email} type="login" authStep={step} />}
+          {/* TODO(IMPROVEMENT) be able to signUp with passeky */}
+          {enabledStrategies.includes('passkey') && lastUser?.email === email && !lastUser.twoFactorEnabled && step === 'signIn' && (
+            <PasskeyOption email={email} type="login" authStep={step} />
+          )}
           {enabledStrategies.includes('oauth') && <OAuthOptions authStep={step} />}
         </>
       )}

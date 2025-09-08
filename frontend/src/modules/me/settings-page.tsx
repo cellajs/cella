@@ -3,7 +3,7 @@ import { appConfig, type EnabledOAuthProvider } from 'config';
 import { Check, Send, Trash } from 'lucide-react';
 import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { type ApiError, type RequestPasswordData, type RequestPasswordResponse, requestPassword } from '~/api.gen';
+import { requestPassword, type ApiError, type RequestPasswordData, type RequestPasswordResponse } from '~/api.gen';
 import { mapOAuthProviders } from '~/modules/auth/oauth-options';
 import { AsideAnchor } from '~/modules/common/aside-anchor';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
@@ -132,25 +132,20 @@ const UserSettingsPage = () => {
               <CardDescription>{t('common:authentication.text')}</CardDescription>
             </CardHeader>
             <CardContent className="text-sm">
-              {appConfig.enabledAuthStrategies.includes('passkey') && (
-                <>
-                  <HelpText content={t('common:passkey.text')}>
-                    <p className="font-semibold">{t('common:passkey')}</p>
-                  </HelpText>
-                  <PasskeysList />
-                </>
-              )}
-              {appConfig.enabledAuthStrategies.includes('totp') && (
-                <>
-                  <HelpText content={t('common:totp.text')}>
-                    <p className="font-semibold">{t('common:totp')}</p>
-                  </HelpText>
-                  <TOTPs />
-                </>
-              )}
+              <HelpText content={t('common:passkey.text')}>
+                <p className="font-semibold">{t('common:passkey')}</p>
+              </HelpText>
+              <PasskeysList />
+
+              <HelpText content={t('common:totp.text')}>
+                <p className="font-semibold">{t('common:totp')}</p>
+              </HelpText>
+              <TOTPs />
+
               <HelpText content={t('common:oauth.text')}>
                 <p className="font-semibold">{t('common:oauth')}</p>
               </HelpText>
+
               <div className="flex flex-col sm:items-start gap-3 mb-6">
                 {appConfig.enabledOAuthProviders.map((id) => {
                   const provider = mapOAuthProviders.find((provider) => provider.id === id);
@@ -199,9 +194,7 @@ const UserSettingsPage = () => {
                 {disabledResetPassword && <p className="text-sm text-gray-500 mt-2">{t('common:retry_reset_password.text')}</p>}
               </div>
 
-              {(appConfig.enabledAuthStrategies.includes('totp') || appConfig.enabledAuthStrategies.includes('passkey')) && (
-                <TwoFactorAuthentication />
-              )}
+              <TwoFactorAuthentication />
             </CardContent>
           </Card>
         </AsideAnchor>

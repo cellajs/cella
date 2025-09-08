@@ -1335,8 +1335,6 @@ export type GetTotpUriResponse = GetTotpUriResponses[keyof GetTotpUriResponses];
 export type SignInWithTotpData = {
   body?: {
     code: string;
-    type: 'login' | 'two_factor';
-    email?: string;
   };
   path?: never;
   query?: never;

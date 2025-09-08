@@ -552,8 +552,6 @@ export const zSignInWithTotpData = z.object({
   body: z.optional(
     z.object({
       code: z.string().regex(/^\d{6}$/),
-      type: z.union([z.enum(['login']), z.enum(['two_factor'])]),
-      email: z.optional(z.string()),
     }),
   ),
   path: z.optional(z.never()),

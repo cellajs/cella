@@ -784,6 +784,10 @@ const authRouteHandlers = app
   .openapi(authRoutes.verifyPasskey, async (ctx) => {
     const { clientDataJSON, authenticatorData, signature, credentialId, email, type } = ctx.req.valid('json');
     const strategy = 'passkey';
+
+    if (type === 'login' && !enabledStrategies.includes(strategy)) {
+      throw new AppError({ status: 400, type: 'forbidden_strategy', severity: 'error', meta: { strategy } });
+    }
     // Determine session type: regular login or 2FA flow
     const sessionType = type === 'two_factor' ? 'two_factor_authentication' : 'regular';
 
@@ -862,34 +866,13 @@ const authRouteHandlers = app
    * Verify TOTP code
    */
   .openapi(authRoutes.verifyTotpCode, async (ctx) => {
-    const { code, type, email } = ctx.req.valid('json');
+    const { code } = ctx.req.valid('json');
+
     const strategy = 'totp';
-    // Determine session type: regular login or 2FA flow
-    const sessionType = type === 'two_factor' ? 'two_factor_authentication' : 'regular';
+    const sessionType = 'two_factor_authentication';
 
     const meta = { strategy, sessionType };
-    let user: UserModel | null = null;
-
-    // Find user by email if provided
-    if (email) {
-      const normalizedEmail = email.toLowerCase().trim();
-
-      const [tableUser] = await usersBaseQuery
-        .leftJoin(emailsTable, eq(usersTable.id, emailsTable.userId))
-        .where(eq(emailsTable.email, normalizedEmail))
-        .limit(1);
-
-      user = tableUser;
-    }
-
-    // Override user if this is a two_factor authentication
-    if (type === 'two_factor') {
-      const userFromToken = await validatePending2FAToken(ctx, true);
-      user = userFromToken;
-    }
-
-    // Fail early if user not found
-    if (!user) throw new AppError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'user', meta });
+    const user = await validatePending2FAToken(ctx, true);
 
     // Get passkey credentials
     const [credentials] = await db.select().from(totpsTable).where(eq(totpsTable.userId, user.id)).limit(1);
