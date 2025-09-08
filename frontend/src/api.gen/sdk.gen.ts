@@ -314,7 +314,6 @@ export const signUpWithToken = <ThrowOnError extends boolean = true>(options: Op
  * @param {verifyEmailData} options
  * @param {string} options.path.token - `string`
  * @param {string=} options.query.redirect - `string` (optional)
- * @param {string} options.query.tokenid - `string`
  * @returns Possible status codes: 302, 400, 401, 403, 404, 429
  */
 export const verifyEmail = <ThrowOnError extends boolean = true>(options: Options<VerifyEmailData, ThrowOnError>) => {

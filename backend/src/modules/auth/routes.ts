@@ -1,5 +1,3 @@
-import { z } from '@hono/zod-openapi';
-import { appConfig } from 'config';
 import { createCustomRoute } from '#/lib/custom-routes';
 import { hasSystemAccess, isAuthenticated, isPublicAccess } from '#/middlewares/guard';
 import { hasValidToken } from '#/middlewares/has-valid-token';
@@ -12,12 +10,14 @@ import {
   passkeyChallengeQuerySchema,
   passkeyChallengeSchema,
   passkeyVerificationBodySchema,
-  TotpVerificationBodySchema,
   tokenWithDataSchema,
+  TotpVerificationBodySchema,
 } from '#/modules/auth/schema';
 import { contextEntityWithMembershipSchema } from '#/modules/entities/schema';
 import { cookieSchema, locationSchema, passwordSchema, tokenParamSchema } from '#/utils/schema/common';
 import { errorResponses, redirectResponseSchema, successWithoutDataSchema } from '#/utils/schema/responses';
+import { z } from '@hono/zod-openapi';
+import { appConfig } from 'config';
 
 const authRoutes = {
   startImpersonation: createCustomRoute({
@@ -163,7 +163,7 @@ const authRoutes = {
     security: [],
     request: {
       params: tokenParamSchema,
-      query: z.object({ redirect: z.string().optional(), tokenId: z.string() }),
+      query: z.object({ redirect: z.string().optional() }),
     },
     responses: {
       302: {
@@ -207,7 +207,7 @@ const authRoutes = {
     description: 'Sets a new password using a token and grants a session immediately upon success.',
     security: [],
     request: {
-      params: z.object({ token: z.string() }),
+      params: tokenParamSchema,
       body: { content: { 'application/json': { schema: z.object({ password: passwordSchema }) } } },
     },
     responses: {
@@ -339,7 +339,7 @@ const authRoutes = {
     description:
       'Checks if a token (e.g. for password reset, email verification, or invite) is still valid and returns basic data and a nonce for further actions.',
     request: {
-      params: z.object({ token: z.string() }),
+      params: tokenParamSchema,
       query: z.object({ type: z.enum(appConfig.tokenTypes) }),
     },
     responses: {
@@ -360,9 +360,7 @@ const authRoutes = {
     tags: ['auth'],
     summary: 'Accept invitation',
     description: 'Accepts an invitation token and activates the associated membership or system access.',
-    request: {
-      params: tokenParamSchema,
-    },
+    request: { params: tokenParamSchema },
     responses: {
       200: {
         description: 'Invitation was accepted',

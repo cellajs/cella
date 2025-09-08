@@ -57,7 +57,7 @@ export const handleOAuthFlow = async (
 
   // User already has a verified OAuth account → log them in
   if (oauthAccount?.verified) {
-    const [user] = await usersBaseQuery.where(eq(usersTable.id, oauthAccount.userId));
+    const [user] = await usersBaseQuery().where(eq(usersTable.id, oauthAccount.userId));
     return await handleVerifiedOAuthAccount(ctx, user, oauthAccount);
   }
 
@@ -67,7 +67,7 @@ export const handleOAuthFlow = async (
   }
 
   // No linked OAuth account and more than one user with same email
-  const users = await usersBaseQuery.leftJoin(emailsTable, eq(usersTable.id, emailsTable.userId)).where(eq(emailsTable.email, providerUser.email));
+  const users = await usersBaseQuery().leftJoin(emailsTable, eq(usersTable.id, emailsTable.userId)).where(eq(emailsTable.email, providerUser.email));
   if (users.length > 1) throw new AppError({ status: 409, type: 'oauth_mismatch', severity: 'warn', isRedirect: true });
 
   // One user match → link to new OAuth account and prompt email verification
@@ -128,7 +128,7 @@ const connectFlow = async (
   }
 
   // New OAuth account connection → validate email isn't used by another user
-  const users = await usersBaseQuery.leftJoin(emailsTable, eq(usersTable.id, emailsTable.userId)).where(eq(emailsTable.email, providerUser.email));
+  const users = await usersBaseQuery().leftJoin(emailsTable, eq(usersTable.id, emailsTable.userId)).where(eq(emailsTable.email, providerUser.email));
   if (users.some((u) => u.id !== connectUserId)) {
     throw new AppError({ status: 409, type: 'oauth_mismatch', severity: 'warn', isRedirect: true });
   }
@@ -173,7 +173,7 @@ const inviteFlow = async (
   if (oauthAccount) throw new AppError({ status: 409, type: 'oauth_mismatch', severity: 'warn', isRedirect: true });
 
   // No linked OAuth account and email already in use by an existing user
-  const users = await usersBaseQuery.leftJoin(emailsTable, eq(usersTable.id, emailsTable.userId)).where(eq(emailsTable.email, providerUser.email));
+  const users = await usersBaseQuery().leftJoin(emailsTable, eq(usersTable.id, emailsTable.userId)).where(eq(emailsTable.email, providerUser.email));
   if (users.length) throw new AppError({ status: 409, type: 'oauth_mismatch', severity: 'warn', isRedirect: true });
 
   // User already signed up meanwhile
@@ -217,7 +217,7 @@ const verifyFlow = async (
     throw new AppError({ status: 409, type: 'oauth_mismatch', severity: 'warn', isRedirect: true });
   }
 
-  const [user] = await usersBaseQuery.where(eq(usersTable.id, oauthAccount.userId));
+  const [user] = await usersBaseQuery().where(eq(usersTable.id, oauthAccount.userId));
 
   // Somehow already linked + verified → log in the user
   if (oauthAccount.verified) {

@@ -111,7 +111,7 @@ const authRouteHandlers = app
     if (inviteToken) throw new AppError({ status: 403, type: 'invite_takes_priority', severity: 'warn' });
 
     // User not found, go to sign up if registration is enabled
-    const [user] = await usersBaseQuery
+    const [user] = await usersBaseQuery()
       .leftJoin(emailsTable, eq(usersTable.id, emailsTable.userId))
       .where(eq(emailsTable.email, normalizedEmail))
       .limit(1);
@@ -203,7 +203,7 @@ const authRouteHandlers = app
     }
 
     // Get user
-    const [user] = await usersBaseQuery.where(eq(usersTable.id, token.userId)).limit(1);
+    const [user] = await usersBaseQuery().where(eq(usersTable.id, token.userId)).limit(1);
 
     // User not found
     if (!user) {
@@ -245,7 +245,7 @@ const authRouteHandlers = app
 
     const normalizedEmail = email.toLowerCase().trim();
 
-    const [user] = await usersBaseQuery
+    const [user] = await usersBaseQuery()
       .leftJoin(emailsTable, eq(usersTable.id, emailsTable.userId))
       .where(eq(emailsTable.email, normalizedEmail))
       .limit(1);
@@ -297,7 +297,7 @@ const authRouteHandlers = app
     // If the token is not found or expired
     if (!token || !token.userId) throw new AppError({ status: 401, type: 'invalid_token', severity: 'warn' });
 
-    const [user] = await usersBaseQuery.where(eq(usersTable.id, token.userId)).limit(1);
+    const [user] = await usersBaseQuery().where(eq(usersTable.id, token.userId)).limit(1);
 
     // If the user is not found
     if (!user) {
@@ -386,7 +386,7 @@ const authRouteHandlers = app
     if (!tokenRecord.organizationId) return ctx.json(baseData, 200);
 
     // If it is a membership invitation, check if a new user has been created since invitation was sent (without verifying email)
-    const [existingUser] = await usersBaseQuery.where(eq(usersTable.email, tokenRecord.email));
+    const [existingUser] = await usersBaseQuery().where(eq(usersTable.email, tokenRecord.email));
     if (!tokenRecord.userId && existingUser) {
       await db.update(tokensTable).set({ userId: existingUser.id }).where(eq(tokensTable.id, tokenRecord.id));
       baseData.userId = existingUser.id;
@@ -449,7 +449,7 @@ const authRouteHandlers = app
   .openapi(authRoutes.startImpersonation, async (ctx) => {
     const { targetUserId } = ctx.req.valid('query');
 
-    const [user] = await usersBaseQuery.where(eq(usersTable.id, targetUserId)).limit(1);
+    const [user] = await usersBaseQuery().where(eq(usersTable.id, targetUserId)).limit(1);
 
     if (!user) throw new AppError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'user', meta: { targetUserId } });
 
@@ -797,7 +797,7 @@ const authRouteHandlers = app
     if (email) {
       const normalizedEmail = email.toLowerCase().trim();
 
-      const [tableUser] = await usersBaseQuery
+      const [tableUser] = await usersBaseQuery()
         .leftJoin(emailsTable, eq(usersTable.id, emailsTable.userId))
         .where(eq(emailsTable.email, normalizedEmail))
         .limit(1);

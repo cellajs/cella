@@ -290,10 +290,11 @@ export const zVerifyEmailData = z.object({
   path: z.object({
     token: z.string(),
   }),
-  query: z.object({
-    redirect: z.optional(z.string()),
-    tokenId: z.string(),
-  }),
+  query: z.optional(
+    z.object({
+      redirect: z.optional(z.string()),
+    }),
+  ),
 });
 
 export const zRequestPasswordData = z.object({

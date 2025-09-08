@@ -1,6 +1,3 @@
-import { appConfig } from 'config';
-import { and, eq } from 'drizzle-orm';
-import i18n from 'i18next';
 import { db } from '#/db/db';
 import { type EmailModel, emailsTable } from '#/db/schema/emails';
 import { oauthAccountsTable } from '#/db/schema/oauth-accounts';
@@ -12,6 +9,9 @@ import { usersBaseQuery } from '#/modules/users/helpers/select';
 import { logEvent } from '#/utils/logger';
 import { nanoid } from '#/utils/nanoid';
 import { createDate, TimeSpan } from '#/utils/time-span';
+import { appConfig } from 'config';
+import { and, eq } from 'drizzle-orm';
+import i18n from 'i18next';
 import { EmailVerificationEmail, type EmailVerificationEmailProps } from '../../../../emails/email-verification';
 
 interface Props {
@@ -24,7 +24,7 @@ interface Props {
  * Send a verification email to user.
  */
 export const sendVerificationEmail = async ({ userId, oauthAccountId, redirectPath }: Props) => {
-  const [user] = await usersBaseQuery.where(eq(usersTable.id, userId)).limit(1);
+  const [user] = await usersBaseQuery().where(eq(usersTable.id, userId)).limit(1);
 
   // User not found
   if (!user) throw new AppError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'user' });
@@ -98,10 +98,7 @@ export const sendVerificationEmail = async ({ userId, oauthAccountId, redirectPa
     verificationLink.searchParams.set('token', token);
     verificationLink.searchParams.set('type', 'verify');
   }
-
-  if (redirectPath) {
-    verificationLink.searchParams.set('redirect', encodeURIComponent(redirectPath));
-  }
+  if (redirectPath) verificationLink.searchParams.set('redirect', encodeURIComponent(redirectPath));
 
   // Prepare & send email
   const subject = i18n.t('backend:email.email_verification.subject', { lng, appName: appConfig.name });

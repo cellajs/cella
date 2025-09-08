@@ -392,9 +392,8 @@ export type VerifyEmailData = {
   path: {
     token: string;
   };
-  query: {
+  query?: {
     redirect?: string;
-    tokenId: string;
   };
   url: '/auth/verify-email/{token}';
 };

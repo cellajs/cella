@@ -61,7 +61,7 @@ export const validatePending2FAToken = async (ctx: Context, consumeToken = true)
 
   if (!tokenRecord.userId) throw new AppError({ status: 404, type: 'pending_2fa_not_found', severity: 'warn' });
 
-  const [user] = await usersBaseQuery.where(eq(usersTable.id, tokenRecord.userId)).limit(1);
+  const [user] = await usersBaseQuery().where(eq(usersTable.id, tokenRecord.userId)).limit(1);
 
   if (!user) throw new AppError({ status: 404, type: 'pending_2fa_not_found', severity: 'warn' });
 

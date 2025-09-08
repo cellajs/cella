@@ -69,7 +69,7 @@ const usersRouteHandlers = app
               requesterMembership,
               and(eq(requesterMembership.organizationId, targetMembership.organizationId), eq(requesterMembership.userId, user.id)),
             )
-        : usersBaseQuery;
+        : usersBaseQuery();
 
     const usersQuery = baseUsersQuery.where(and(...filters)).orderBy(orderColumn);
 
@@ -123,7 +123,7 @@ const usersRouteHandlers = app
 
     // Fetch users by IDs
 
-    const targets = await usersBaseQuery.where(inArray(usersTable.id, toDeleteIds));
+    const targets = await usersBaseQuery().where(inArray(usersTable.id, toDeleteIds));
 
     const foundIds = new Set(targets.map(({ id }) => id));
     const allowedIds: string[] = [];
@@ -161,7 +161,9 @@ const usersRouteHandlers = app
 
     if (idOrSlug === requestingUser.id || idOrSlug === requestingUser.slug) return ctx.json(requestingUser, 200);
 
-    const [targetUser] = await usersBaseQuery.where(or(eq(usersTable.id, idOrSlug), eq(usersTable.slug, idOrSlug))).limit(1);
+    const [targetUser] = await usersBaseQuery()
+      .where(or(eq(usersTable.id, idOrSlug), eq(usersTable.slug, idOrSlug)))
+      .limit(1);
 
     if (!targetUser) throw new AppError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'user', meta: { user: idOrSlug } });
 
@@ -200,7 +202,9 @@ const usersRouteHandlers = app
 
     const user = getContextUser();
 
-    const [targetUser] = await usersBaseQuery.where(or(eq(usersTable.id, idOrSlug), eq(usersTable.slug, idOrSlug))).limit(1);
+    const [targetUser] = await usersBaseQuery()
+      .where(or(eq(usersTable.id, idOrSlug), eq(usersTable.slug, idOrSlug)))
+      .limit(1);
 
     if (!targetUser) throw new AppError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'user', meta: { user: idOrSlug } });
 
