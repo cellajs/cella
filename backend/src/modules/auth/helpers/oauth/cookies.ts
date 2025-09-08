@@ -93,7 +93,7 @@ export const handleOAuthInvitation = async (ctx: Context) => {
   if (!token) throw new AppError({ status: 404, type: 'invitation_not_found', severity: 'warn', isRedirect: true });
 
   // Fetch token record
-  const tokenRecord = await getValidToken({ requiredType: 'invitation', token, consumed: false });
+  const tokenRecord = await getValidToken({ requiredType: 'invitation', token, consumeToken: false });
 
   // Determine redirection based on entity presence
   const isMembershipInvite = !!tokenRecord.entityType;
@@ -140,7 +140,7 @@ export const handleOAuthVerify = async (ctx: Context) => {
   if (!token) throw new AppError({ status: 400, type: 'invalid_request', severity: 'error', isRedirect: true });
 
   // Check if token exists
-  const tokenRecord = await getValidToken({ requiredType: 'email_verification', token, consumed: false });
+  const tokenRecord = await getValidToken({ requiredType: 'email_verification', token, consumeToken: false });
 
   // Determine redirection based on entity presence
   const isMembershipInvite = !!tokenRecord.entityType;

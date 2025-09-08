@@ -6,7 +6,7 @@ import { and, eq, isNull } from 'drizzle-orm';
 
 type BaseProps = {
   requiredType: TokenModel['type'];
-  consumed?: boolean;
+  consumeToken?: boolean;
   missedTokenError?: ConstructedError;
 };
 type FokenInedtifierProps = { token: string; tokenId?: never } | { tokenId: string; token?: never };
@@ -15,7 +15,7 @@ export const getValidToken = async ({
   token,
   tokenId,
   requiredType,
-  consumed = true,
+  consumeToken = true,
   missedTokenError,
 }: BaseProps & FokenInedtifierProps): Promise<TokenModel> => {
   const condition = [
@@ -39,6 +39,6 @@ export const getValidToken = async ({
 
   if (tokenRecord.type !== requiredType) throw new AppError({ status: 401, type: 'invalid_token', severity: 'warn', meta });
 
-  if (consumed) await db.update(tokensTable).set({ consumedAt: new Date() }).where(eq(tokensTable.id, tokenRecord.id));
+  if (consumeToken) await db.update(tokensTable).set({ consumedAt: new Date() }).where(eq(tokensTable.id, tokenRecord.id));
   return tokenRecord;
 };

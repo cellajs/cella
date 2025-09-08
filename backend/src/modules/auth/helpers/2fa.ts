@@ -47,17 +47,17 @@ export const initiateTwoFactorAuth = async (ctx: Context, user: UserModel) => {
  * Validates a pending 2FA token from cookie and optionally deletes it.
  *
  * @param ctx - Hono context
- * @param deleteCoockieAfter - If true, deletes token from DB and cookie after validation
+ * @param consumeToken - If true, deletes token from DB and cookie after validation
  * @returns UserModel
  * @throws AppError if token is missing, not found, or expired
  */
-export const validatePending2FAToken = async (ctx: Context, deleteCoockieAfter = false): Promise<UserModel> => {
+export const validatePending2FAToken = async (ctx: Context, consumeToken = true): Promise<UserModel> => {
   // Get token ID from cookie
   const tokenIdFromCookie = await getAuthCookie(ctx, 'pending-2fa');
   if (!tokenIdFromCookie) throw new AppError({ status: 401, type: 'invalid_credentials', severity: 'error' });
 
   // Fetch token record and associated user
-  const tokenRecord = await getValidToken({ requiredType: 'pending_2fa', tokenId: tokenIdFromCookie });
+  const tokenRecord = await getValidToken({ requiredType: 'pending_2fa', consumeToken, tokenId: tokenIdFromCookie });
 
   if (!tokenRecord.userId) throw new AppError({ status: 404, type: 'pending_2fa_not_found', severity: 'warn' });
 
@@ -66,7 +66,7 @@ export const validatePending2FAToken = async (ctx: Context, deleteCoockieAfter =
   if (!user) throw new AppError({ status: 404, type: 'pending_2fa_not_found', severity: 'warn' });
 
   // Delete cookie if requested
-  if (deleteCoockieAfter) deleteAuthCookie(ctx, 'pending-2fa');
+  if (consumeToken) deleteAuthCookie(ctx, 'pending-2fa');
 
   return user;
 };

@@ -374,7 +374,7 @@ const authRouteHandlers = app
     const { type: requiredType } = ctx.req.valid('query');
 
     // Check if token exists
-    const tokenRecord = await getValidToken({ requiredType, token, consumed: false });
+    const tokenRecord = await getValidToken({ requiredType, token, consumeToken: false });
 
     const baseData = {
       email: tokenRecord.email,
@@ -761,9 +761,8 @@ const authRouteHandlers = app
 
     // If this is a two_factor request, retrieve user from pending 2FA token
     if (type === 'two_factor') {
-      // TODO get caller email ?
-      // const { email: tokenEmail } = await validatePending2FAToken(ctx);
-      // userEmail = tokenEmail;
+      const { email: tokenEmail } = await validatePending2FAToken(ctx, false);
+      userEmail = tokenEmail;
     }
 
     // If we still have no email, return challenge with empty credential list
@@ -808,7 +807,7 @@ const authRouteHandlers = app
 
     // Override user if this is a two_factor authentication
     if (type === 'two_factor') {
-      const userFromToken = await validatePending2FAToken(ctx, true);
+      const userFromToken = await validatePending2FAToken(ctx);
       user = userFromToken;
     }
 
@@ -873,7 +872,7 @@ const authRouteHandlers = app
     const sessionType = 'two_factor_authentication';
 
     const meta = { strategy, sessionType };
-    const user = await validatePending2FAToken(ctx, true);
+    const user = await validatePending2FAToken(ctx);
 
     // Get passkey credentials
     const [credentials] = await db.select().from(totpsTable).where(eq(totpsTable.userId, user.id)).limit(1);
