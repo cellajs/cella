@@ -1,8 +1,3 @@
-import { OpenAPIHono, type z } from '@hono/zod-openapi';
-import type { EnabledOAuthProvider, MenuSection } from 'config';
-import { appConfig } from 'config';
-import { and, eq, getTableColumns, inArray, isNotNull, isNull, sql } from 'drizzle-orm';
-import { type SSEStreamingApi, streamSSE } from 'hono/streaming';
 import { db } from '#/db/db';
 import { membershipsTable } from '#/db/schema/memberships';
 import { oauthAccountsTable } from '#/db/schema/oauth-accounts';
@@ -29,13 +24,16 @@ import { getUserSessions } from '#/modules/me/helpers/get-sessions';
 import { getUserMenuEntities } from '#/modules/me/helpers/get-user-menu-entities';
 import meRoutes from '#/modules/me/routes';
 import type { menuItemSchema, menuSchema } from '#/modules/me/schema';
-import { getUserBy } from '#/modules/users/helpers/get-user-by';
 import { userBaseSelect } from '#/modules/users/helpers/select';
-import { verifyUnsubscribeToken } from '#/modules/users/helpers/unsubscribe-token';
 import permissionManager from '#/permissions/permissions-config';
 import { defaultHook } from '#/utils/default-hook';
 import { getIsoDate } from '#/utils/iso-date';
 import { logEvent } from '#/utils/logger';
+import { OpenAPIHono, type z } from '@hono/zod-openapi';
+import type { EnabledOAuthProvider, MenuSection } from 'config';
+import { appConfig } from 'config';
+import { and, eq, getTableColumns, inArray, isNotNull, isNull, sql } from 'drizzle-orm';
+import { type SSEStreamingApi, streamSSE } from 'hono/streaming';
 
 type UserMenu = z.infer<typeof menuSchema>;
 type MenuItem = z.infer<typeof menuItemSchema>;
@@ -62,16 +60,18 @@ const meRouteHandlers = app
   .openapi(meRoutes.getMyAuth, async (ctx) => {
     const user = getContextUser();
 
-    // Check if user has password
-    const unsafeUser = await getUserBy('id', user.id, 'unsafe');
-    if (!unsafeUser) throw new AppError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'user' });
-
+    // Queries for user authentication factors
+    // Select passkey fields except for sensitive credential data
     const { credentialId, publicKey, ...passkeySelect } = getTableColumns(passkeysTable);
     const getPasskeys = db.select(passkeySelect).from(passkeysTable).where(eq(passkeysTable.userEmail, user.email));
+
     const getPassword = db.select().from(passwordsTable).where(eq(passwordsTable.userId, user.id)).limit(1);
+
     const getTOTP = db.select().from(totpsTable).where(eq(totpsTable.userId, user.id));
+
     const getOAuth = db.select({ providerId: oauthAccountsTable.providerId }).from(oauthAccountsTable).where(eq(oauthAccountsTable.userId, user.id));
 
+    // Run all queries + fetch user sessions in parallel
     const [passkeys, password, totps, oauthAccounts, sessions] = await Promise.all([
       getPasskeys,
       getPassword,
@@ -80,11 +80,22 @@ const meRouteHandlers = app
       getUserSessions(ctx, user.id),
     ]);
 
+    // Filter only providers that are enabled in appConfig
     const enabledOAuth = oauthAccounts
       .map((el) => el.providerId)
       .filter((provider): provider is EnabledOAuthProvider => appConfig.enabledOAuthProviders.includes(provider as EnabledOAuthProvider));
 
-    return ctx.json({ enabledOAuth, hasTotp: !!totps.length, hasPassword: !!password.length, sessions, passkeys }, 200);
+    // Return a consolidated JSON response with all relevant auth info
+    return ctx.json(
+      {
+        enabledOAuth,
+        hasTotp: !!totps.length,
+        hasPassword: !!password.length,
+        sessions,
+        passkeys,
+      },
+      200,
+    );
   })
   /*
    * Get my user menu
@@ -385,17 +396,20 @@ const meRouteHandlers = app
    */
   .openapi(meRoutes.unsubscribeMe, async (ctx) => {
     const { token } = ctx.req.valid('query');
+    console.log('🚀 ~ token:', token);
 
     // Check if token exists
-    const user = await getUserBy('unsubscribeToken', token, 'unsafe');
-    if (!user) throw new AppError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'user' });
+    // TODO fix fater split tables
+    // const user = await getUserBy('unsubscribeToken', token, 'unsafe');
+    // if (!user) throw new AppError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'user' });
 
     // Verify token
-    const isValid = verifyUnsubscribeToken(user.email, token);
-    if (!isValid) throw new AppError({ status: 401, type: 'unsubscribe_failed', severity: 'warn', entityType: 'user' });
+    // const isValid = verifyUnsubscribeToken(user.email, token);
+    // if (!isValid) throw new AppError({ status: 401, type: 'unsubscribe_failed', severity: 'warn', entityType: 'user' });
 
     // Update user
-    await db.update(usersTable).set({ newsletter: false }).where(eq(usersTable.id, user.id));
+    // await db.update(usersTable).set({ newsletter: false }).where(eq(usersTable.id, user.id));
+
     const redirectUrl = new URL('/auth/unsubscribed', appConfig.frontendUrl);
     return ctx.redirect(redirectUrl, 302);
   })

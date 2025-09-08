@@ -4,8 +4,7 @@ import { usersTable } from '#/db/schema/users';
 import { type Env, getContextMemberships, getContextUser } from '#/lib/context';
 import { AppError } from '#/lib/errors';
 import { checkSlugAvailable } from '#/modules/entities/helpers/check-slug';
-import { getBaseSelectUserQuery } from '#/modules/users/helpers/get-user-by';
-import { userSelect } from '#/modules/users/helpers/select';
+import { userSelect, usersBaseQuery } from '#/modules/users/helpers/select';
 import userRoutes from '#/modules/users/routes';
 import { defaultHook } from '#/utils/default-hook';
 import { getIsoDate } from '#/utils/iso-date';
@@ -123,8 +122,8 @@ const usersRouteHandlers = app
     if (!toDeleteIds.length) throw new AppError({ status: 400, type: 'invalid_request', severity: 'error', entityType: 'user' });
 
     // Fetch users by IDs
-    const baseUsersQuery = getBaseSelectUserQuery();
-    const targets = await baseUsersQuery.where(inArray(usersTable.id, toDeleteIds));
+
+    const targets = await usersBaseQuery.where(inArray(usersTable.id, toDeleteIds));
 
     const foundIds = new Set(targets.map(({ id }) => id));
     const allowedIds: string[] = [];
@@ -162,8 +161,7 @@ const usersRouteHandlers = app
 
     if (idOrSlug === requestingUser.id || idOrSlug === requestingUser.slug) return ctx.json(requestingUser, 200);
 
-    const baseUsersQuery = getBaseSelectUserQuery();
-    const [targetUser] = await baseUsersQuery.where(or(eq(usersTable.id, idOrSlug), eq(usersTable.slug, idOrSlug))).limit(1);
+    const [targetUser] = await usersBaseQuery.where(or(eq(usersTable.id, idOrSlug), eq(usersTable.slug, idOrSlug))).limit(1);
 
     if (!targetUser) throw new AppError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'user', meta: { user: idOrSlug } });
 
@@ -202,8 +200,7 @@ const usersRouteHandlers = app
 
     const user = getContextUser();
 
-    const baseUsersQuery = getBaseSelectUserQuery();
-    const [targetUser] = await baseUsersQuery.where(or(eq(usersTable.id, idOrSlug), eq(usersTable.slug, idOrSlug))).limit(1);
+    const [targetUser] = await usersBaseQuery.where(or(eq(usersTable.id, idOrSlug), eq(usersTable.slug, idOrSlug))).limit(1);
 
     if (!targetUser) throw new AppError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'user', meta: { user: idOrSlug } });
 

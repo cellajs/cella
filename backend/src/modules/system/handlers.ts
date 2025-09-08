@@ -11,7 +11,7 @@ import { AppError } from '#/lib/errors';
 import { mailer } from '#/lib/mailer';
 import { getSignedUrl } from '#/lib/signed-url';
 import systemRoutes from '#/modules/system/routes';
-import { getBaseSelectUserQuery } from '#/modules/users/helpers/get-user-by';
+import { usersBaseQuery } from '#/modules/users/helpers/select';
 import { defaultHook } from '#/utils/default-hook';
 import { logError, logEvent } from '#/utils/logger';
 import { nanoid } from '#/utils/nanoid';
@@ -61,8 +61,7 @@ const systemRouteHandlers = app
         ),
       );
 
-    const baseUsersQuery = getBaseSelectUserQuery();
-    const existingUsersQuery = await baseUsersQuery.where(inArray(emailsTable.email, normalizedEmails));
+    const existingUsersQuery = await usersBaseQuery.where(inArray(emailsTable.email, normalizedEmails));
 
     const [existingUsers, existingInvites] = await Promise.all([existingUsersQuery, existingInvitesQuery]);
 

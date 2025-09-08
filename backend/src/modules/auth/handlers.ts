@@ -1,11 +1,3 @@
-import { getRandomValues } from 'node:crypto';
-import { OpenAPIHono } from '@hono/zod-openapi';
-import { encodeBase32, encodeBase64 } from '@oslojs/encoding';
-import { createTOTPKeyURI } from '@oslojs/otp';
-import { generateCodeVerifier, generateState, OAuth2RequestError } from 'arctic';
-import { appConfig, type EnabledOAuthProvider } from 'config';
-import { and, desc, eq, isNotNull, isNull } from 'drizzle-orm';
-import i18n from 'i18next';
 import { db } from '#/db/db';
 import { emailsTable } from '#/db/schema/emails';
 import { membershipsTable } from '#/db/schema/memberships';
@@ -35,13 +27,13 @@ import {
 } from '#/modules/auth/helpers/oauth/cookies';
 import { getOAuthAccount, handleOAuthFlow } from '#/modules/auth/helpers/oauth/index';
 import {
+  githubAuth,
   type GithubUserEmailProps,
   type GithubUserProps,
-  type GoogleUserProps,
-  githubAuth,
   googleAuth,
-  type MicrosoftUserProps,
+  type GoogleUserProps,
   microsoftAuth,
+  type MicrosoftUserProps,
 } from '#/modules/auth/helpers/oauth/oauth-providers';
 import { transformGithubUserData, transformSocialUserData } from '#/modules/auth/helpers/oauth/transform-user-data';
 import { verifyPassKeyPublic } from '#/modules/auth/helpers/passkey';
@@ -50,7 +42,7 @@ import { getParsedSessionCookie, setUserSession, validateSession } from '#/modul
 import { verifyTotpCode } from '#/modules/auth/helpers/totps';
 import { handleCreateUser, handleMembershipTokenUpdate } from '#/modules/auth/helpers/user';
 import authRoutes from '#/modules/auth/routes';
-import { getUserBy } from '#/modules/users/helpers/get-user-by';
+import { usersBaseQuery } from '#/modules/users/helpers/select';
 import { defaultHook } from '#/utils/default-hook';
 import { isExpiredDate } from '#/utils/is-expired-date';
 import { isValidRedirectPath } from '#/utils/is-redirect-url';
@@ -60,6 +52,14 @@ import { nanoid } from '#/utils/nanoid';
 import { slugFromEmail } from '#/utils/slug-from-email';
 import { createDate, TimeSpan } from '#/utils/time-span';
 import { getValidToken } from '#/utils/validate-token';
+import { OpenAPIHono } from '@hono/zod-openapi';
+import { encodeBase32, encodeBase64 } from '@oslojs/encoding';
+import { createTOTPKeyURI } from '@oslojs/otp';
+import { generateCodeVerifier, generateState, OAuth2RequestError } from 'arctic';
+import { appConfig, type EnabledOAuthProvider } from 'config';
+import { and, desc, eq, isNotNull, isNull } from 'drizzle-orm';
+import i18n from 'i18next';
+import { getRandomValues } from 'node:crypto';
 import { CreatePasswordEmail, type CreatePasswordEmailProps } from '../../../emails/create-password';
 
 const enabledStrategies: readonly string[] = appConfig.enabledAuthStrategies;
@@ -111,7 +111,11 @@ const authRouteHandlers = app
     if (inviteToken) throw new AppError({ status: 403, type: 'invite_takes_priority', severity: 'warn' });
 
     // User not found, go to sign up if registration is enabled
-    const user = await getUserBy('email', normalizedEmail);
+    const [user] = await usersBaseQuery
+      .leftJoin(emailsTable, eq(usersTable.id, emailsTable.userId))
+      .where(eq(emailsTable.email, normalizedEmail))
+      .limit(1);
+
     if (!user) throw new AppError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'user' });
 
     return ctx.json(true, 200);
@@ -199,7 +203,7 @@ const authRouteHandlers = app
     }
 
     // Get user
-    const user = await getUserBy('id', token.userId);
+    const [user] = await usersBaseQuery.where(eq(usersTable.id, token.userId)).limit(1);
 
     // User not found
     if (!user) {
@@ -241,7 +245,10 @@ const authRouteHandlers = app
 
     const normalizedEmail = email.toLowerCase().trim();
 
-    const user = await getUserBy('email', normalizedEmail);
+    const [user] = await usersBaseQuery
+      .leftJoin(emailsTable, eq(usersTable.id, emailsTable.userId))
+      .where(eq(emailsTable.email, normalizedEmail))
+      .limit(1);
     if (!user) throw new AppError({ status: 404, type: 'invalid_email', severity: 'warn', entityType: 'user' });
 
     // Delete old token if exists
@@ -290,7 +297,7 @@ const authRouteHandlers = app
     // If the token is not found or expired
     if (!token || !token.userId) throw new AppError({ status: 401, type: 'invalid_token', severity: 'warn' });
 
-    const user = await getUserBy('id', token.userId);
+    const [user] = await usersBaseQuery.where(eq(usersTable.id, token.userId)).limit(1);
 
     // If the user is not found
     if (!user) {
@@ -442,7 +449,7 @@ const authRouteHandlers = app
   .openapi(authRoutes.startImpersonation, async (ctx) => {
     const { targetUserId } = ctx.req.valid('query');
 
-    const user = await getUserBy('id', targetUserId);
+    const [user] = await usersBaseQuery.where(eq(usersTable.id, targetUserId)).limit(1);
 
     if (!user) throw new AppError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'user', meta: { targetUserId } });
 
@@ -784,7 +791,14 @@ const authRouteHandlers = app
 
     // Find user by email if provided
     if (email) {
-      user = await getUserBy('email', email.toLowerCase());
+      const normalizedEmail = email.toLowerCase().trim();
+
+      const [tableUser] = await usersBaseQuery
+        .leftJoin(emailsTable, eq(usersTable.id, emailsTable.userId))
+        .where(eq(emailsTable.email, normalizedEmail))
+        .limit(1);
+
+      user = tableUser;
     }
 
     // Override user if this is a two_factor authentication
@@ -858,7 +872,14 @@ const authRouteHandlers = app
 
     // Find user by email if provided
     if (email) {
-      user = await getUserBy('email', email.toLowerCase());
+      const normalizedEmail = email.toLowerCase().trim();
+
+      const [tableUser] = await usersBaseQuery
+        .leftJoin(emailsTable, eq(usersTable.id, emailsTable.userId))
+        .where(eq(emailsTable.email, normalizedEmail))
+        .limit(1);
+
+      user = tableUser;
     }
 
     // Override user if this is a two_factor authentication

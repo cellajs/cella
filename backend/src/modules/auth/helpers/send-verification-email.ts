@@ -1,16 +1,17 @@
-import { appConfig } from 'config';
-import { and, eq } from 'drizzle-orm';
-import i18n from 'i18next';
 import { db } from '#/db/db';
 import { type EmailModel, emailsTable } from '#/db/schema/emails';
 import { oauthAccountsTable } from '#/db/schema/oauth-accounts';
 import { tokensTable } from '#/db/schema/tokens';
+import { usersTable } from '#/db/schema/users';
 import { AppError } from '#/lib/errors';
 import { mailer } from '#/lib/mailer';
-import { getUserBy } from '#/modules/users/helpers/get-user-by';
+import { usersBaseQuery } from '#/modules/users/helpers/select';
 import { logEvent } from '#/utils/logger';
 import { nanoid } from '#/utils/nanoid';
 import { createDate, TimeSpan } from '#/utils/time-span';
+import { appConfig } from 'config';
+import { and, eq } from 'drizzle-orm';
+import i18n from 'i18next';
 import { EmailVerificationEmail, type EmailVerificationEmailProps } from '../../../../emails/email-verification';
 
 interface Props {
@@ -23,7 +24,7 @@ interface Props {
  * Send a verification email to user.
  */
 export const sendVerificationEmail = async ({ userId, oauthAccountId, redirectPath }: Props) => {
-  const user = await getUserBy('id', userId);
+  const [user] = await usersBaseQuery.where(eq(usersTable.id, userId)).limit(1);
 
   // User not found
   if (!user) throw new AppError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'user' });

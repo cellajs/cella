@@ -1,13 +1,14 @@
-import type { Context } from 'hono';
 import { db } from '#/db/db';
 import { tokensTable } from '#/db/schema/tokens';
-import type { UserModel } from '#/db/schema/users';
+import { type UserModel, usersTable } from '#/db/schema/users';
 import { AppError } from '#/lib/errors';
 import { deleteAuthCookie, getAuthCookie, setAuthCookie } from '#/modules/auth/helpers/cookie';
-import { getUserBy } from '#/modules/users/helpers/get-user-by';
+import { usersBaseQuery } from '#/modules/users/helpers/select';
 import { nanoid } from '#/utils/nanoid';
 import { createDate, TimeSpan } from '#/utils/time-span';
 import { getValidToken } from '#/utils/validate-token';
+import { eq } from 'drizzle-orm';
+import type { Context } from 'hono';
 
 /**
  * Starts a two-factor authentication challenge for a user.
@@ -59,7 +60,8 @@ export const validatePending2FAToken = async (ctx: Context, deleteCoockieAfter =
   const tokenRecord = await getValidToken({ requiredType: 'pending_2fa', tokenId: tokenIdFromCookie });
   if (!tokenRecord.userId) throw new AppError({ status: 404, type: 'pending_2fa_not_found', severity: 'warn' });
 
-  const user = await getUserBy('id', tokenRecord.userId);
+  const [user] = await usersBaseQuery.where(eq(usersTable.id, tokenRecord.userId)).limit(1);
+
   if (!user) throw new AppError({ status: 404, type: 'pending_2fa_not_found', severity: 'warn' });
 
   // Delete cookie if requested
