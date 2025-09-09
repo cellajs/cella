@@ -1,12 +1,11 @@
-import { decodeBase64, encodeBase64 } from '@oslojs/encoding';
 import { queryOptions, useMutation } from '@tanstack/react-query';
-import { appConfig } from 'config';
 import { t } from 'i18next';
-import type { User } from '~/api.gen';
-import { getMyInvites, getPasskeyChallenge, registratePasskey, type UpdateMeData, unlinkPasskey, unlinkTotp, updateMe } from '~/api.gen';
+import type { ToggleMfaData, User } from '~/api.gen';
+import { getMyInvites, registratePasskey, toggleMfa, unlinkPasskey, unlinkTotp, updateMe, type UpdateMeData } from '~/api.gen';
 import type { ApiError } from '~/lib/api';
+import { getPasskeyRegistrationCredential } from '~/modules/auth/passkey-credentials';
 import { toaster } from '~/modules/common/toaster/service';
-import { generatePasskeyName, getAndSetMe, getAndSetMeAuthData, getAndSetMenu } from '~/modules/me/helpers';
+import { getAndSetMe, getAndSetMeAuthData, getAndSetMenu } from '~/modules/me/helpers';
 import type { MeAuthData, Passkey } from '~/modules/me/types';
 import { usersKeys } from '~/modules/users/query';
 import { queryClient } from '~/query/query-client';
@@ -74,6 +73,23 @@ export const useUpdateSelfMutation = () => {
 };
 
 /**
+ * Mutation hook for updating current user (self) MFA requirment state
+ *
+ * @returns The mutation hook for updating the user MFA requirment state.
+ */
+export const useToogleMFAMutation = () => {
+  return useMutation<User, ApiError, ToggleMfaData['body']>({
+    mutationKey: meKeys.update.info(),
+    mutationFn: (body) => toggleMfa({ body }),
+    onSuccess: (updatedUser) => {
+      updateOnSuccesses(updatedUser);
+      toaster(t(`mfa_${updatedUser.multiFactorRequired ? 'enabled' : 'disabled'}`), 'info');
+    },
+    gcTime: 1000 * 10,
+  });
+};
+
+/**
  * Mutation hook for updating current user (self) flags
  *
  * @returns The mutation hook for updating the user flasg.
@@ -96,55 +112,7 @@ export const useRegistratePasskeyMutation = () => {
   return useMutation<Passkey, ApiError, void>({
     mutationKey: meKeys.delete.passkey(),
     mutationFn: async () => {
-      // Fetch a challenge from BE
-      const { challengeBase64 } = await getPasskeyChallenge({ query: { type: 'registration' } });
-
-      // Generate a unique user ID for this credential
-      const userId = new Uint8Array(20);
-      crypto.getRandomValues(userId);
-
-      const isDevelopment = appConfig.mode === 'development';
-
-      const generatedName = generatePasskeyName(useUserStore.getState().user.email);
-      const nameOnDevice = isDevelopment ? `${generatedName} for ${appConfig.name}` : generatedName;
-      const raw = decodeBase64(challengeBase64);
-      const challenge = new Uint8Array(raw); // proper ArrayBuffer
-
-      const credential = await navigator.credentials.create({
-        publicKey: {
-          challenge,
-          user: {
-            id: userId,
-            name: nameOnDevice,
-            displayName: nameOnDevice,
-          },
-          rp: {
-            id: isDevelopment ? 'localhost' : appConfig.domain,
-            name: appConfig.name,
-          },
-          pubKeyCredParams: [
-            { type: 'public-key', alg: -7 }, // ES256
-            { type: 'public-key', alg: -257 }, // RS256
-          ],
-          attestation: 'none',
-          authenticatorSelection: {
-            authenticatorAttachment: 'platform',
-            residentKey: 'required',
-            userVerification: 'required',
-          },
-        },
-      });
-
-      if (!(credential instanceof PublicKeyCredential)) throw new Error('Failed to create public key');
-      const response = credential.response;
-      if (!(response instanceof AuthenticatorAttestationResponse)) throw new Error('Unexpected response type');
-
-      const credentialData = {
-        attestationObject: encodeBase64(new Uint8Array(response.attestationObject)),
-        clientDataJSON: encodeBase64(new Uint8Array(response.clientDataJSON)),
-        nameOnDevice,
-      };
-
+      const credentialData = await getPasskeyRegistrationCredential();
       return await registratePasskey({ body: credentialData });
     },
     onSuccess: (newPasskey) => {

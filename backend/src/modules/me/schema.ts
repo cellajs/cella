@@ -1,12 +1,13 @@
-import { z } from '@hono/zod-openapi';
-import { appConfig, type ContextEntityType } from 'config';
-import { createSelectSchema } from 'drizzle-zod';
 import { passkeysTable } from '#/db/schema/passkeys';
 import { sessionsTable } from '#/db/schema/sessions';
 import { contextEntityBaseSchema, contextEntityWithMembershipSchema, userBaseSchema } from '#/modules/entities/schema';
 import { membershipBaseSchema } from '#/modules/memberships/schema';
 import { enabledOAuthProvidersEnum } from '#/modules/users/schema';
 import { booleanQuerySchema } from '#/utils/schema/common';
+import { z } from '@hono/zod-openapi';
+import { appConfig, type ContextEntityType } from 'config';
+import { createSelectSchema } from 'drizzle-zod';
+import { basePasskeyVerificationBodySchema, TotpVerificationBodySchema } from '../auth/schema';
 
 export const sessionSchema = createSelectSchema(sessionsTable).omit({ token: true }).extend({ isCurrent: z.boolean() });
 export const passkeySchema = createSelectSchema(passkeysTable).omit({ credentialId: true, publicKey: true });
@@ -70,6 +71,12 @@ export const uploadTokenQuerySchema = z.object({
   public: booleanQuerySchema,
   organizationId: z.string().optional(),
   templateId: z.enum(appConfig.uploadTemplateIds),
+});
+
+export const toggleMfaStateBody = z.object({
+  passkeyData: basePasskeyVerificationBodySchema.optional(),
+  totpCode: TotpVerificationBodySchema.shape.code.optional(),
+  multiFactorRequired: z.boolean(),
 });
 
 export const userInvitationsSchema = z.array(

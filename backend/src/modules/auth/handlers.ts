@@ -893,7 +893,7 @@ const authRouteHandlers = app
     const meta = { strategy, sessionType };
     const user = await validateConfirmMFAToken(ctx);
 
-    // Get passkey credentials
+    // Get totp credentials
     const [credentials] = await db.select().from(totpsTable).where(eq(totpsTable.userId, user.id)).limit(1);
     if (!credentials) throw new AppError({ status: 404, type: 'not_found', severity: 'warn', meta });
 

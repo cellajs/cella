@@ -1,22 +1,21 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useSuspenseQuery } from '@tanstack/react-query';
-import { appConfig } from 'config';
 import { CopyCheckIcon, CopyIcon } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { useRef } from 'react';
 import { useForm, useFormState } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import type z from 'zod';
-import { type ApiError, getTotpUri, type SetupTotpData, type SetupTotpResponse, setupTotp } from '~/api.gen';
+import { type ApiError, getTotpUri, setupTotp, type SetupTotpData, type SetupTotpResponse } from '~/api.gen';
 import { zSetupTotpData } from '~/api.gen/zod.gen';
 import { useCopyToClipboard } from '~/hooks/use-copy-to-clipboard';
+import { TotpCodeForm } from '~/modules/auth/totp-strategy';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { toaster } from '~/modules/common/toaster/service';
 import { Alert, AlertDescription, AlertTitle } from '~/modules/ui/alert';
 import { Button, SubmitButton } from '~/modules/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '~/modules/ui/card';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
-import { Input } from '~/modules/ui/input';
+import { Form } from '~/modules/ui/form';
 import { useUIStore } from '~/store/ui';
 import { useUserStore } from '~/store/user';
 import { defaultOnInvalid } from '~/utils/form-on-invalid';
@@ -90,28 +89,7 @@ export const TOTPSetup = () => {
         <CardFooter className="flex flex-col items-start">
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit, defaultOnInvalid)} className="flex flex-row gap-2 items-end mt-4">
-              <FormField
-                control={form.control}
-                name="code"
-                render={({ field: { value, ...rest } }) => (
-                  <FormItem name="code">
-                    <FormLabel className="mb-1">{t('common:totp_verify')}</FormLabel>
-                    <FormControl>
-                      <Input
-                        className="text-center"
-                        autoComplete="off"
-                        maxLength={appConfig.totpConfig.digits}
-                        type="text"
-                        pattern="\d*"
-                        inputMode="numeric"
-                        value={value || ''}
-                        {...rest}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              <TotpCodeForm control={form.control} name="code" label={t('common:totp_verify')} />
 
               <SubmitButton variant="darkSuccess" disabled={!isValid} loading={false}>
                 {t('common:confirm')}

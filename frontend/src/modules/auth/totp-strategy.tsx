@@ -4,7 +4,7 @@ import { useNavigate } from '@tanstack/react-router';
 import { appConfig } from 'config';
 import { Smartphone } from 'lucide-react';
 import { useRef } from 'react';
-import { useForm, useFormState } from 'react-hook-form';
+import { type Control, type FieldValues, type Path, useForm, useFormState } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import type z from 'zod';
 import { type SignInWithTotpData, type SignInWithTotpResponse, signInWithTotp } from '~/api.gen';
@@ -13,7 +13,7 @@ import type { ApiError } from '~/lib/api';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { toaster } from '~/modules/common/toaster/service';
 import { Button, SubmitButton } from '~/modules/ui/button';
-import { Form, FormControl, FormField, FormItem, FormMessage } from '~/modules/ui/form';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
 import { Input } from '~/modules/ui/input';
 import { useUIStore } from '~/store/ui';
 import { defaultOnInvalid } from '~/utils/form-on-invalid';
@@ -78,27 +78,7 @@ const DialogConfirmationForm = () => {
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit, defaultOnInvalid)} className="flex flex-col gap-4 items-center">
-        <FormField
-          control={form.control}
-          name="code"
-          render={({ field: { value, ...rest } }) => (
-            <FormItem name="code">
-              <FormControl>
-                <Input
-                  className="text-center"
-                  autoComplete="off"
-                  maxLength={appConfig.totpConfig.digits}
-                  type="text"
-                  pattern="\d*"
-                  inputMode="numeric"
-                  value={value || ''}
-                  {...rest}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+        <TotpCodeForm control={form.control} name="code" />
 
         <div className="flex flex-row gap-2">
           <SubmitButton size="sm" variant="darkSuccess" disabled={!isValid} loading={false}>
@@ -111,5 +91,40 @@ const DialogConfirmationForm = () => {
         </div>
       </form>
     </Form>
+  );
+};
+
+export const TotpCodeForm = <TFieldValues extends FieldValues>({
+  control,
+  name,
+  label,
+}: {
+  control: Control<TFieldValues>;
+  name: Path<TFieldValues>;
+  label?: string;
+}) => {
+  return (
+    <FormField
+      control={control}
+      name={name}
+      render={({ field: { value, ...rest } }) => (
+        <FormItem name={name}>
+          {label && <FormLabel className="mb-1">{label}</FormLabel>}
+          <FormControl>
+            <Input
+              className="text-center"
+              autoComplete="off"
+              maxLength={appConfig.totpConfig.digits}
+              type="text"
+              pattern="\d*"
+              inputMode="numeric"
+              value={value || ''}
+              {...rest}
+            />
+          </FormControl>
+          <FormMessage />
+        </FormItem>
+      )}
+    />
   );
 };

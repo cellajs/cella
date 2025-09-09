@@ -1,27 +1,22 @@
-import { decodeBase64, encodeBase64 } from '@oslojs/encoding';
 import { useMutation } from '@tanstack/react-query';
 import { useNavigate, useSearch } from '@tanstack/react-router';
 import { appConfig } from 'config';
 import { Fingerprint } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import {
-  type GetPasskeyChallengeData,
-  getPasskeyChallenge,
-  type SignInWithPasskeyData,
-  type SignInWithPasskeyResponse,
-  signInWithPasskey,
-} from '~/api.gen';
+import { type SignInWithPasskeyData, type SignInWithPasskeyResponse, signInWithPasskey } from '~/api.gen';
 import { ApiError } from '~/lib/api';
+import { getPasskeyVerifyCredential } from '~/modules/auth/passkey-credentials';
+import type { PasskeyCredentialProps } from '~/modules/auth/types';
 import { toaster } from '~/modules/common/toaster/service';
 import { Button } from '~/modules/ui/button';
 import { useUIStore } from '~/store/ui';
 
-interface PasskeyStrategyProps {
-  email?: string;
-  type: Exclude<GetPasskeyChallengeData['query']['type'], 'registration'>;
-}
-
-const PasskeyStrategy = ({ email, type }: PasskeyStrategyProps) => {
+const PasskeyStrategy = ({
+  email,
+  type,
+}: Omit<PasskeyCredentialProps, 'type'> & {
+  type: Exclude<PasskeyCredentialProps['type'], 'registration'>;
+}) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const mode = useUIStore((state) => state.mode);
@@ -31,41 +26,7 @@ const PasskeyStrategy = ({ email, type }: PasskeyStrategyProps) => {
 
   const { mutate: passkeyAuth } = useMutation<SignInWithPasskeyResponse, ApiError | Error, NonNullable<SignInWithPasskeyData['body']>['email']>({
     mutationFn: async (email) => {
-      //  Fetch a challenge from BE
-      const { challengeBase64, credentialIds } = await getPasskeyChallenge({ query: { email, type } });
-
-      // Decode  challenge and wrap it in a Uint8Array (required format)
-      const raw = decodeBase64(challengeBase64);
-      const challenge = new Uint8Array(raw);
-
-      // Prepare allowCredentials for passkey request
-      const allowCredentials = credentialIds.map((id: string) => ({
-        id: new Uint8Array(decodeBase64(id)),
-        type: 'public-key' as const,
-        transports: ['internal'] as AuthenticatorTransport[],
-      }));
-
-      // Prompt user to authenticate with a passkey
-      const credential = await navigator.credentials.get({ publicKey: { challenge, allowCredentials, userVerification: 'required' } });
-
-      // Ensure response is a PublicKeyCredential
-      if (!(credential instanceof PublicKeyCredential)) throw new Error('Failed to create public key');
-
-      const { response, rawId } = credential;
-
-      // Ensure authenticator response is valid
-      if (!(response instanceof AuthenticatorAssertionResponse)) throw new Error('Unexpected response type');
-
-      // Encode all binary responses into Base64 and prepare body for BE
-      const body = {
-        credentialId: encodeBase64(new Uint8Array(rawId)),
-        clientDataJSON: encodeBase64(new Uint8Array(response.clientDataJSON)),
-        authenticatorData: encodeBase64(new Uint8Array(response.authenticatorData)),
-        signature: encodeBase64(new Uint8Array(response.signature)),
-        email,
-        type: type,
-      };
-
+      const body = await getPasskeyVerifyCredential({ email, type });
       // Send signed response to BE to complete authentication
       return await signInWithPasskey({ body });
     },

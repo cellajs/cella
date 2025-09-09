@@ -17,7 +17,7 @@ export const MFA = () => {
   const handleCancelMFA = async () => {
     try {
       await signOut();
-      toaster(t('common:success.signed_out'), 'success');
+      toaster(t('common:success.cancel_mfa'), 'success');
     } catch (error) {
     } finally {
       setStep('signIn', email);

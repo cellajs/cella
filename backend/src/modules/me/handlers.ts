@@ -1,8 +1,3 @@
-import { OpenAPIHono, type z } from '@hono/zod-openapi';
-import type { EnabledOAuthProvider, MenuSection } from 'config';
-import { appConfig } from 'config';
-import { and, eq, getTableColumns, inArray, isNotNull, isNull, sql } from 'drizzle-orm';
-import { type SSEStreamingApi, streamSSE } from 'hono/streaming';
 import { db } from '#/db/db';
 import { membershipsTable } from '#/db/schema/memberships';
 import { oauthAccountsTable } from '#/db/schema/oauth-accounts';
@@ -22,7 +17,7 @@ import { getParams, getSignature } from '#/lib/transloadit';
 import { isAuthenticated } from '#/middlewares/guard';
 import { deleteAuthCookie, getAuthCookie } from '#/modules/auth/helpers/cookie';
 import { deviceInfo } from '#/modules/auth/helpers/device-info';
-import { parseAndValidatePasskeyAttestation } from '#/modules/auth/helpers/passkey';
+import { parseAndValidatePasskeyAttestation, verifyPassKeyPublic } from '#/modules/auth/helpers/passkey';
 import { getParsedSessionCookie, validateSession } from '#/modules/auth/helpers/session';
 import { verifyTotpCode } from '#/modules/auth/helpers/totps';
 import { checkSlugAvailable } from '#/modules/entities/helpers/check-slug';
@@ -36,6 +31,11 @@ import { defaultHook } from '#/utils/default-hook';
 import { getIsoDate } from '#/utils/iso-date';
 import { logEvent } from '#/utils/logger';
 import { verifyUnsubscribeToken } from '#/utils/unsubscribe-token';
+import { OpenAPIHono, type z } from '@hono/zod-openapi';
+import type { EnabledOAuthProvider, MenuSection } from 'config';
+import { appConfig } from 'config';
+import { and, eq, getTableColumns, inArray, isNotNull, isNull, sql } from 'drizzle-orm';
+import { type SSEStreamingApi, streamSSE } from 'hono/streaming';
 
 type UserMenu = z.infer<typeof menuSchema>;
 type MenuItem = z.infer<typeof menuItemSchema>;
@@ -55,6 +55,62 @@ const meRouteHandlers = app
     await db.update(usersTable).set({ lastStartedAt: getIsoDate() }).where(eq(usersTable.id, user.id));
 
     return ctx.json(user, 200);
+  })
+  /*
+   *
+   */
+  .openapi(meRoutes.toggleMFAState, async (ctx) => {
+    const user = getContextUser();
+    const { sessionToken } = await getParsedSessionCookie(ctx);
+    const { session } = await validateSession(sessionToken);
+
+    const { multiFactorRequired, passkeyData, totpCode } = ctx.req.valid('json');
+
+    const createdAt = new Date(session.createdAt).getTime();
+    const now = Date.now();
+    const oneHour = 60 * 60 * 1000; // 1 hour in milliseconds
+
+    if (!multiFactorRequired && now - createdAt > oneHour && !passkeyData && !totpCode) {
+      throw new AppError({ status: 403, type: 'forbidden', severity: 'warn' });
+    }
+
+    try {
+      if (passkeyData) {
+        const { credentialId, signature, authenticatorData, clientDataJSON } = passkeyData;
+        // Retrieve the passkey challenge from cookie
+        const challengeFromCookie = await getAuthCookie(ctx, 'passkey-challenge');
+        if (!challengeFromCookie) throw new AppError({ status: 401, type: 'invalid_credentials', severity: 'warn' });
+
+        // Get passkey credentials
+        const [passkeyRecord] = await db
+          .select()
+          .from(passkeysTable)
+          .where(and(eq(passkeysTable.userEmail, user.email), eq(passkeysTable.credentialId, credentialId)))
+          .limit(1);
+
+        if (!passkeyRecord) throw new AppError({ status: 404, type: 'passkey_not_found', severity: 'warn' });
+
+        const isValid = await verifyPassKeyPublic(signature, authenticatorData, clientDataJSON, passkeyRecord.publicKey, challengeFromCookie);
+        if (!isValid) throw new AppError({ status: 401, type: 'invalid_token', severity: 'warn' });
+      }
+      if (totpCode) {
+        // Get passkey credentials
+        const [credentials] = await db.select().from(totpsTable).where(eq(totpsTable.userId, user.id)).limit(1);
+        if (!credentials) throw new AppError({ status: 404, type: 'not_found', severity: 'warn' });
+
+        const isValid = verifyTotpCode(totpCode, credentials.encoderSecretKey);
+        if (!isValid) throw new AppError({ status: 401, type: 'invalid_token', severity: 'warn' });
+      }
+    } catch (error) {
+      if (error instanceof Error) {
+        throw new AppError({ status: 500, type: 'passkey_verification_failed', severity: 'error', originalError: error });
+      }
+      throw error;
+    }
+
+    const [updatedUser] = await db.update(usersTable).set({ multiFactorRequired }).where(eq(usersTable.id, user.id)).returning();
+
+    return ctx.json(updatedUser, 200);
   })
   /*
    * Get my auth data

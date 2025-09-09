@@ -1498,7 +1498,6 @@ export type UpdateMeData = {
     userFlags?: {
       finishedOnboarding?: boolean;
     };
-    multiFactorRequired?: boolean;
   };
   path?: never;
   query?: never;
@@ -1548,6 +1547,66 @@ export type UpdateMeResponses = {
 };
 
 export type UpdateMeResponse = UpdateMeResponses[keyof UpdateMeResponses];
+
+export type ToggleMfaData = {
+  body?: {
+    passkeyData?: {
+      credentialId: string;
+      clientDataJSON: string;
+      authenticatorData: string;
+      signature: string;
+    };
+    totpCode?: string;
+    multiFactorRequired: boolean;
+  };
+  path?: never;
+  query?: never;
+  url: '/me/mfa';
+};
+
+export type ToggleMfaErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: ApiError & {
+    status?: 400;
+  };
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: ApiError & {
+    status?: 401;
+  };
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ApiError & {
+    status?: 403;
+  };
+  /**
+   * Not found: resource does not exist.
+   */
+  404: ApiError & {
+    status?: 404;
+  };
+  /**
+   * Rate limit: too many requests.
+   */
+  429: ApiError & {
+    status?: 429;
+  };
+};
+
+export type ToggleMfaError = ToggleMfaErrors[keyof ToggleMfaErrors];
+
+export type ToggleMfaResponses = {
+  /**
+   * User
+   */
+  200: User;
+};
+
+export type ToggleMfaResponse = ToggleMfaResponses[keyof ToggleMfaResponses];
 
 export type GetMyAuthData = {
   body?: never;

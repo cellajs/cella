@@ -70,6 +70,9 @@ import type {
   UpdateMeData,
   UpdateMeResponses,
   UpdateMeErrors,
+  ToggleMfaData,
+  ToggleMfaResponses,
+  ToggleMfaErrors,
   GetMyAuthData,
   GetMyAuthResponses,
   GetMyAuthErrors,
@@ -847,7 +850,6 @@ export const getMe = <ThrowOnError extends boolean = true>(options?: Options<Get
  * @param {string | null=} options.body.thumbnailUrl - `string | null` (optional)
  * @param {string=} options.body.slug - `string` (optional)
  * @param {object=} options.body.userFlags - `object` (optional)
- * @param {boolean=} options.body.multiFactorRequired - `boolean` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
 export const updateMe = <ThrowOnError extends boolean = true>(options?: Options<UpdateMeData, ThrowOnError>) => {
@@ -861,6 +863,39 @@ export const updateMe = <ThrowOnError extends boolean = true>(options?: Options<
       },
     ],
     url: '/me',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options?.headers,
+    },
+  });
+};
+
+/**
+ * Toggle MFA requirement
+ * 🛡️ Requires authentication
+ *
+ * Enables or disables multi-factor authentication for the *current user*. Requires valid passkey or TOTP verification if session is older than 1 hour.
+ *
+ * **PUT /me/mfa** ·· [toggleMfa](http://localhost:4000/docs#tag/me/put/me/mfa) ·· _me_
+ *
+ * @param {toggleMfaData} options
+ * @param {object} options.body.passkeyData - `object`
+ * @param {string=} options.body.totpCode - `string` (optional)
+ * @param {boolean=} options.body.multiFactorRequired - `boolean` (optional)
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
+ */
+export const toggleMfa = <ThrowOnError extends boolean = true>(options?: Options<ToggleMfaData, ThrowOnError>) => {
+  return (options?.client ?? _heyApiClient).put<ToggleMfaResponses, ToggleMfaErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [
+      {
+        in: 'cookie',
+        name: 'cella-session-v1',
+        type: 'apiKey',
+      },
+    ],
+    url: '/me/mfa',
     ...options,
     headers: {
       'Content-Type': 'application/json',

@@ -601,7 +601,6 @@ export const zUpdateMeData = z.object({
           finishedOnboarding: z.optional(z.boolean()),
         }),
       ),
-      multiFactorRequired: z.optional(z.boolean()),
     }),
   ),
   path: z.optional(z.never()),
@@ -612,6 +611,30 @@ export const zUpdateMeData = z.object({
  * User
  */
 export const zUpdateMeResponse = zUser;
+
+export const zToggleMfaData = z.object({
+  body: z.optional(
+    z.object({
+      passkeyData: z.optional(
+        z.object({
+          credentialId: z.string(),
+          clientDataJSON: z.string(),
+          authenticatorData: z.string(),
+          signature: z.string(),
+        }),
+      ),
+      totpCode: z.optional(z.string().regex(/^\d{6}$/)),
+      multiFactorRequired: z.boolean(),
+    }),
+  ),
+  path: z.optional(z.never()),
+  query: z.optional(z.never()),
+});
+
+/**
+ * User
+ */
+export const zToggleMfaResponse = zUser;
 
 export const zGetMyAuthData = z.object({
   body: z.optional(z.never()),
