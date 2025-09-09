@@ -458,7 +458,7 @@
   "enforce": "Enforce",
   "mfa_enabled": "Multifactor authentication enabled",
   "mfa_disabled": "Multifactor authentication disabled",
-  "mfa_disabled.text": "Multifactor authentication is disabled because your account must have a passkey and TOTP set up first.",
+  "mfa_disabled.text": "Enabling multifactor authentication is only possible once you have finished creating at least one passkey and a time-based password with an authenticator app.",
   "session_type.mfa": "MFA",
   "session_type.confirm_mfa": "MFA pending",
   "session_type.regular": "Regular",

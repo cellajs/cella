@@ -123,7 +123,7 @@
   "organization_missing.text": "Organization slug or id is required to perform this action.",
   "page_not_found": "Page not found",
   "page_not_found.text": "This page didn't exist or has been deleted.",
-  "passkey_registration_failed": "Registering passkey failed. Try again later.",
+  "passkey_registration_failed": "Passkey registration failed. Try again later.",
   "passkey_not_found": "Passkey not recognized",
   "passkey_not_found.text": "We couldn`t verify this passkey. It may not belong to your account or has been removed.",
   "passkey_verification_failed": "Passkey verification failed",
