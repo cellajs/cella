@@ -8,6 +8,7 @@ import AuthPage from '~/modules/auth/layout';
 import { RequestPasswordForm } from '~/modules/auth/request-password-form';
 import { SignOut } from '~/modules/auth/sign-out';
 import AuthSteps from '~/modules/auth/steps';
+import { MFA } from '~/modules/auth/steps/mfa';
 import { AuthStepsProvider } from '~/modules/auth/steps/provider';
 import Unsubscribed from '~/modules/auth/unsubscribed';
 import { meQueryOptions } from '~/modules/me/query';
@@ -15,6 +16,12 @@ import { queryClient } from '~/query/query-client';
 import { PublicRoute } from '~/routes/base';
 import { useUserStore } from '~/store/user';
 import appTitle from '~/utils/app-title';
+
+const authenticateRouteSearch = z.object({
+  redirect: z.string().optional(),
+  token: z.string().optional(),
+  fromRoot: z.boolean().optional(),
+});
 
 export const AuthLayoutRoute = createRoute({
   id: 'auth-layout',
@@ -25,12 +32,7 @@ export const AuthLayoutRoute = createRoute({
 
 export const AuthenticateRoute = createRoute({
   path: '/auth/authenticate',
-  validateSearch: z.object({
-    redirect: z.string().optional(),
-    token: z.string().optional(),
-    mfa: z.boolean().optional(),
-    fromRoot: z.boolean().optional(),
-  }),
+  validateSearch: authenticateRouteSearch,
   staticData: { isAuth: false },
   head: () => ({ meta: [{ title: appTitle('Authenticate') }] }),
   getParentRoute: () => AuthLayoutRoute,
@@ -48,6 +50,16 @@ export const AuthenticateRoute = createRoute({
       <AuthSteps />
     </AuthStepsProvider>
   ),
+});
+
+export const MFARoute = createRoute({
+  path: '/mfa-confirmation',
+  validateSearch: authenticateRouteSearch,
+  staticData: { isAuth: false },
+  head: () => ({ meta: [{ title: appTitle('Authenticate') }] }),
+  getParentRoute: () => AuthenticateRoute,
+  beforeLoad: async () => {},
+  component: () => <MFA />,
 });
 
 export const RequestPasswordRoute = createRoute({

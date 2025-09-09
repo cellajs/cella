@@ -1,9 +1,9 @@
-import { useSearch } from '@tanstack/react-router';
+import { useMatchRoute, useSearch } from '@tanstack/react-router';
 import { createContext, type ReactNode, useContext, useEffect, useState } from 'react';
 import type { ApiError } from '~/lib/api';
 import type { AuthStep, TokenData } from '~/modules/auth/types';
 import { useCheckToken } from '~/modules/auth/use-token-check';
-import { AuthenticateRoute } from '~/routes/auth';
+import { AuthenticateRoute, MFARoute } from '~/routes/auth';
 import { useUserStore } from '~/store/user';
 
 interface AuthContextProps {
@@ -18,12 +18,15 @@ interface AuthContextProps {
 const AuthContext = createContext<AuthContextProps | undefined>(undefined);
 
 export const AuthStepsProvider = ({ children }: { children: ReactNode }) => {
+  const matchRoute = useMatchRoute();
   const { lastUser } = useUserStore();
-  const { token, mfa } = useSearch({ from: AuthenticateRoute.id });
+  const { token } = useSearch({ from: AuthenticateRoute.id });
+
+  const isMFARoute = !!matchRoute({ to: MFARoute.to });
 
   // Initialize email and step
   const initEmail = (!token && lastUser?.email) || '';
-  const initStep: AuthStep = mfa ? 'mfa' : !token && lastUser?.email ? 'signIn' : 'checkEmail';
+  const initStep: AuthStep = !token && lastUser?.email ? 'signIn' : 'checkEmail';
 
   const [email, setEmail] = useState(initEmail);
   const [step, setStepState] = useState<AuthStep>(initStep);
@@ -44,8 +47,8 @@ export const AuthStepsProvider = ({ children }: { children: ReactNode }) => {
 
   // Handle MFA from query params
   useEffect(() => {
-    if (mfa) setStepState('mfa');
-  }, [mfa]);
+    if (isMFARoute) setStepState('mfa');
+  }, [isMFARoute]);
 
   // If token is provided, directly set email and step based on token data
   useEffect(() => {

@@ -5,6 +5,7 @@ import {
   AuthLayoutRoute,
   CreatePasswordWithTokenRoute,
   EmailVerificationRoute,
+  MFARoute,
   RequestPasswordRoute,
   SignOutRoute,
   UnsubscribedRoute,
@@ -31,7 +32,13 @@ export const routeTree = rootRoute.addChildren([
     ErrorNoticeRoute,
     SignOutRoute,
     AcceptEntityInviteRoute,
-    AuthLayoutRoute.addChildren([AuthenticateRoute, RequestPasswordRoute, CreatePasswordWithTokenRoute, EmailVerificationRoute, UnsubscribedRoute]),
+    AuthLayoutRoute.addChildren([
+      AuthenticateRoute.addChildren([MFARoute]),
+      RequestPasswordRoute,
+      CreatePasswordWithTokenRoute,
+      EmailVerificationRoute,
+      UnsubscribedRoute,
+    ]),
   ]),
   AppRoute.addChildren([
     HomeRoute,

@@ -1,3 +1,4 @@
+import { Outlet } from '@tanstack/react-router';
 import { appConfig } from 'config';
 import { useTranslation } from 'react-i18next';
 import OAuthProviders from '~/modules/auth/oauth-providers';
@@ -11,7 +12,6 @@ import { WaitlistStep } from '~/modules/auth/steps/waitlist';
 import type { AuthStep } from '~/modules/auth/types';
 import { useUserStore } from '~/store/user';
 import { CheckEmailStep } from './check-email';
-import { MFA } from './mfa';
 
 const enabledStrategies: readonly string[] = appConfig.enabledAuthStrategies;
 
@@ -47,14 +47,14 @@ const AuthSteps = () => {
       {step === 'signIn' && <SignInStep />}
       {step === 'signUp' && <SignUpStep />}
 
-      {step === 'mfa' && <MFA />}
+      {step === 'mfa' && <Outlet />}
 
       {step === 'waitlist' && <WaitlistStep />}
       {step === 'inviteOnly' && <InviteOnlyStep />}
       {step === 'error' && <AuthErrorStep />}
 
       {/* Show passkey and oauth options conditionally */}
-      {!['inviteOnly', 'waitlist', 'error'].includes(step) && (
+      {['checkEmail', 'signIn', 'signUp'].includes(step) && (
         <>
           {shouldShowDivider(step) && (
             <div className="relative flex justify-center text-xs uppercase">

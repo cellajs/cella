@@ -1,3 +1,4 @@
+import { useNavigate } from '@tanstack/react-router';
 import { ChevronDown } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { signOut } from '~/api.gen';
@@ -6,10 +7,11 @@ import { useAuthStepsContext } from '~/modules/auth/steps/provider';
 import { TOTPStrategy } from '~/modules/auth/totp-strategy';
 import { toaster } from '~/modules/common/toaster/service';
 import { Button } from '~/modules/ui/button';
+import { AuthenticateRoute } from '~/routes/auth';
 
 export const MFA = () => {
   const { t } = useTranslation();
-
+  const navigate = useNavigate();
   const { email, setStep } = useAuthStepsContext();
 
   const handleCancelMFA = async () => {
@@ -19,6 +21,7 @@ export const MFA = () => {
     } catch (error) {
     } finally {
       setStep('signIn', email);
+      navigate({ to: AuthenticateRoute.to, replace: true });
     }
   };
 
