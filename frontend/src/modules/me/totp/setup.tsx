@@ -75,7 +75,7 @@ export const TOTPSetup = () => {
           <CardDescription>{t('common:totp_qr.description')}</CardDescription>
         </CardHeader>
         <CardContent>
-          <QRCodeSVG className="mx-auto my-3" value={data.totpUri} size={200} />
+          <QRCodeSVG className="mx-auto border-8 border-white my-3" value={data.totpUri} size={200} />
 
           <Alert variant="secondary" className="my-6">
             <AlertTitle>{t('common:totp_manual.footer_title')}</AlertTitle>
