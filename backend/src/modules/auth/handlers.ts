@@ -856,10 +856,12 @@ const authRouteHandlers = app
     // Save the secret in a short-lived cookie (5 minutes)
     await setAuthCookie(ctx, 'totp-key', manualKey, new TimeSpan(5, 'm'));
 
+    const normalizedAppName = encodeURIComponent(appConfig.name);
+    const normalizedUserName = encodeURIComponent(user.name.trim());
     // otpauth:// URI for QR scanner apps
     const totpUri = createTOTPKeyURI(
-      encodeURIComponent(appConfig.name),
-      encodeURIComponent(user.name),
+      normalizedAppName,
+      normalizedUserName,
       secret,
       appConfig.totpConfig.intervalInSeconds,
       appConfig.totpConfig.digits,
