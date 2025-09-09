@@ -23,28 +23,28 @@ export const tokenWithDataSchema = z.object({
   organizationId: z.string().optional(),
 });
 
-const twoFactorTypeSchema = z.union([
-  z.literal('login'), // Normal passkey authentication
-  z.literal('two_factor'), // Passkey used as 2nd factor in 2FA
+const multiFactorTypeSchema = z.union([
+  z.literal('authentication'), // Normal passkey authentication
+  z.literal('mfa'), // Passkey used as 2nd factor in MFA
 ]);
 
-const twoFactorBaseSchema = z
+const multiFactorBaseSchema = z
   .object({
-    type: twoFactorTypeSchema,
+    type: multiFactorTypeSchema,
     email: z.string().optional(),
   })
-  // For login, email must exist
-  .refine((data) => (data.type === 'login' ? !!data.email : true), { message: t('2fa_schema_requirement') });
+  // For authentication, email must exist
+  .refine((data) => (data.type === 'authentication' ? !!data.email : true), { message: t('mfa_schema_requirement') });
 
 export const passkeyChallengeQuerySchema = z
   .object({
     type: z.union([
-      ...twoFactorTypeSchema.def.options,
-      z.literal('registrate'), // New literal added
+      ...multiFactorTypeSchema.def.options,
+      z.literal('registration'), // New literal added
     ]),
     email: z.string().optional(),
   })
-  .refine((data) => (data.type === 'login' ? !!data.email : true), { message: t('2fa_schema_requirement') });
+  .refine((data) => (data.type === 'authentication' ? !!data.email : true), { message: t('mfa_schema_requirement') });
 
 export const passkeyChallengeSchema = z.object({ challengeBase64: z.string(), credentialIds: z.array(z.string()) });
 
@@ -53,7 +53,7 @@ export const passkeyVerificationBodySchema = z.object({
   clientDataJSON: z.string(),
   authenticatorData: z.string(),
   signature: z.string(),
-  ...twoFactorBaseSchema.shape,
+  ...multiFactorBaseSchema.shape,
 });
 
 export const TotpVerificationBodySchema = z.object({

@@ -3,7 +3,7 @@ import { Fingerprint, Plus } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { ExpandableList } from '~/modules/common/expandable-list';
 import { toaster } from '~/modules/common/toaster/service';
-import { PasskeyTile } from '~/modules/me/passkeys/title';
+import { PasskeyTile } from '~/modules/me/passkeys/tile';
 import { meAuthQueryOptions, useRegistratePasskeyMutation, useUnlinkPasskeyMutation } from '~/modules/me/query';
 import { Button } from '~/modules/ui/button';
 import { useUserStore } from '~/store/user';

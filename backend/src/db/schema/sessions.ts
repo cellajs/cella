@@ -6,7 +6,7 @@ import { nanoid } from '#/utils/nanoid';
 export const sessionTypeEnum = [
   'regular',
   'impersonation',
-  'two_factor_authentication', // User fully authenticated with 2FA
+  'mfa', // User fully authenticated with MFA
 ] as const;
 export type SessionTypes = (typeof sessionTypeEnum)[number];
 

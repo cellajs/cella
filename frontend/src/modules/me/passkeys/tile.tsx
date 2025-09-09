@@ -30,13 +30,8 @@ export const PasskeyTile = ({ passkey, handleUnlinkPasskey, isPending }: Passkey
 
           <div className="flex flex-wrap items-start gap-x-2 md:gap-x-5 gap-y-1 font-light text-sm opacity-50">
             <p className="truncate" aria-describedby={t('common:created_at')}>
-              {t('common:created_at')} - {dateShort(passkey.createdAt)}
+              {dateShort(passkey.createdAt)}
             </p>
-            {passkey.lastSignInAt && (
-              <p className="truncate" aria-describedby={t('common:last_used_at')}>
-                {t('common:last_used_at')} - {dateShort(passkey.lastSignInAt)}
-              </p>
-            )}
             <p className="truncate max-lg:hidden" aria-describedby={t('common:os')}>
               {passkey.deviceOs}
             </p>

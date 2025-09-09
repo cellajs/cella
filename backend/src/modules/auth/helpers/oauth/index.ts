@@ -7,8 +7,8 @@ import { type OAuthAccountModel, oauthAccountsTable } from '#/db/schema/oauth-ac
 import type { TokenModel } from '#/db/schema/tokens';
 import { type UserModel, usersTable } from '#/db/schema/users';
 import { AppError } from '#/lib/errors';
-import { initiateTwoFactorAuth } from '#/modules/auth/helpers/2fa';
 import { getAuthCookie } from '#/modules/auth/helpers/cookie';
+import { initiateMultiFactorAuth } from '#/modules/auth/helpers/mfa';
 import { getOAuthCookies } from '#/modules/auth/helpers/oauth/cookies';
 import type { Provider } from '#/modules/auth/helpers/oauth/oauth-providers';
 import type { TransformedUser } from '#/modules/auth/helpers/oauth/transform-user-data';
@@ -33,7 +33,7 @@ export const getOAuthRedirectPath = async (ctx: Context): Promise<string> => {
 };
 
 /**
- * Handles the default OAuth login/signup flow.
+ * Handles the default OAuth authentication/signup flow.
  * Determines if the user has an existing verified/unverified account or needs to register.
  *
  * @param ctx - The request context.
@@ -322,15 +322,15 @@ const createOAuthAccount = async (
  * @returns A redirect response.
  */
 const handleVerifiedOAuthAccount = async (ctx: Context, user: UserModel, oauthAccount: OAuthAccountModel): Promise<Response> => {
-  // Start 2FA challenge if the user has 2FA enabled
-  const twoFactorRedirectPath = await initiateTwoFactorAuth(ctx, user);
+  // Start MFA challenge if the user has MFA enabled
+  const multiFactorRedirectPath = await initiateMultiFactorAuth(ctx, user);
 
   // Determine final redirect path
-  const redirectPath = twoFactorRedirectPath || (await getOAuthRedirectPath(ctx));
+  const redirectPath = multiFactorRedirectPath || (await getOAuthRedirectPath(ctx));
   const redirectUrl = new URL(redirectPath, appConfig.frontendUrl);
 
-  // If 2FA is not required, set  user session immediately
-  if (!twoFactorRedirectPath) await setUserSession(ctx, user, oauthAccount.providerId);
+  // If MFA is not required, set  user session immediately
+  if (!multiFactorRedirectPath) await setUserSession(ctx, user, oauthAccount.providerId);
 
   return ctx.redirect(redirectUrl, 302);
 };

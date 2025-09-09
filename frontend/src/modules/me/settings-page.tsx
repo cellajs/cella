@@ -4,7 +4,7 @@ import { Check, Send, Trash } from 'lucide-react';
 import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { type ApiError, type RequestPasswordData, type RequestPasswordResponse, requestPassword } from '~/api.gen';
-import { mapOAuthProviders } from '~/modules/auth/oauth-options';
+import { mapOAuthProviders } from '~/modules/auth/oauth-providers';
 import { AsideAnchor } from '~/modules/common/aside-anchor';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import HelpText from '~/modules/common/help-text';
@@ -14,10 +14,10 @@ import StickyBox from '~/modules/common/sticky-box';
 import { toaster } from '~/modules/common/toaster/service';
 import UnsavedBadge from '~/modules/common/unsaved-badge';
 import DeleteSelf from '~/modules/me/delete-self';
+import { MultiFactorAuthentication } from '~/modules/me/multi-factor-auth';
 import PasskeysList from '~/modules/me/passkeys';
 import SessionsList from '~/modules/me/sessions';
 import TOTPs from '~/modules/me/totp';
-import { TwoFactorAuthentication } from '~/modules/me/two-factor-auth';
 import { Button } from '~/modules/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/modules/ui/card';
 import UpdateUserForm from '~/modules/users/update-user-form';
@@ -194,7 +194,7 @@ const UserSettingsPage = () => {
                 {disabledResetPassword && <p className="text-sm text-gray-500 mt-2">{t('common:retry_reset_password.text')}</p>}
               </div>
 
-              <TwoFactorAuthentication />
+              <MultiFactorAuthentication />
             </CardContent>
           </Card>
         </AsideAnchor>

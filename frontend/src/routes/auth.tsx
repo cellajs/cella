@@ -46,9 +46,9 @@ export const AuthenticateRoute = createRoute({
 });
 
 export const MFARoute = createRoute({
-  path: '/auth/2fa-confirm',
+  path: '/auth/mfa',
   staticData: { isAuth: false },
-  head: () => ({ meta: [{ title: appTitle('2FA confirm') }] }),
+  head: () => ({ meta: [{ title: appTitle('MFA confirm') }] }),
   getParentRoute: () => AuthLayoutRoute,
   component: () => <MFA />,
 });

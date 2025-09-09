@@ -5,6 +5,7 @@ import type { ApiError } from '~/lib/api';
 import type { TokenData } from '~/modules/auth/types';
 
 type TokenType = (typeof appConfig.tokenTypes)[number];
+
 /**
  *  Get token data by ID and get a nonce.
  *

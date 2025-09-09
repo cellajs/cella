@@ -12,7 +12,7 @@ export const zUser = z.object({
   thumbnailUrl: z.union([z.string(), z.null()]),
   bannerUrl: z.union([z.string(), z.null()]),
   email: z.email(),
-  twoFactorRequired: z.boolean(),
+  multiFactorRequired: z.boolean(),
   firstName: z.union([z.string(), z.null()]),
   lastName: z.union([z.string(), z.null()]),
   language: z.enum(['en', 'nl']),
@@ -357,7 +357,7 @@ export const zValidateTokenData = z.object({
     token: z.string(),
   }),
   query: z.object({
-    type: z.enum(['email_verification', 'password_reset', 'invitation', 'pending_2fa']),
+    type: z.enum(['email_verification', 'password_reset', 'invitation', 'confirm_mfa']),
   }),
 });
 
@@ -502,7 +502,7 @@ export const zGetPasskeyChallengeData = z.object({
   body: z.optional(z.never()),
   path: z.optional(z.never()),
   query: z.object({
-    type: z.union([z.enum(['login']), z.enum(['two_factor']), z.enum(['registrate'])]),
+    type: z.union([z.enum(['authentication']), z.enum(['mfa']), z.enum(['registration'])]),
     email: z.optional(z.string()),
   }),
 });
@@ -522,7 +522,7 @@ export const zSignInWithPasskeyData = z.object({
       clientDataJSON: z.string(),
       authenticatorData: z.string(),
       signature: z.string(),
-      type: z.union([z.enum(['login']), z.enum(['two_factor'])]),
+      type: z.union([z.enum(['authentication']), z.enum(['mfa'])]),
       email: z.optional(z.string()),
     }),
   ),
@@ -601,7 +601,7 @@ export const zUpdateMeData = z.object({
           finishedOnboarding: z.optional(z.boolean()),
         }),
       ),
-      twoFactorRequired: z.optional(z.boolean()),
+      multiFactorRequired: z.optional(z.boolean()),
     }),
   ),
   path: z.optional(z.never()),
@@ -630,7 +630,7 @@ export const zGetMyAuthResponse = z.object({
     z.object({
       createdAt: z.string(),
       id: z.string(),
-      type: z.enum(['regular', 'impersonation', 'two_factor_authentication']),
+      type: z.enum(['regular', 'impersonation', 'mfa']),
       userId: z.string(),
       deviceName: z.union([z.string(), z.null()]),
       deviceType: z.enum(['desktop', 'mobile']),
@@ -651,7 +651,6 @@ export const zGetMyAuthResponse = z.object({
       browser: z.union([z.string(), z.null()]),
       nameOnDevice: z.string(),
       createdAt: z.string(),
-      lastSignInAt: z.union([z.string(), z.null()]),
     }),
   ),
 });
@@ -744,7 +743,6 @@ export const zRegistratePasskeyResponse = z.object({
   browser: z.union([z.string(), z.null()]),
   nameOnDevice: z.string(),
   createdAt: z.string(),
-  lastSignInAt: z.union([z.string(), z.null()]),
 });
 
 export const zUnlinkPasskeyData = z.object({
@@ -1536,7 +1534,7 @@ export const zGetMembersResponse = z.object({
       thumbnailUrl: z.union([z.string(), z.null()]),
       bannerUrl: z.union([z.string(), z.null()]),
       email: z.email(),
-      twoFactorRequired: z.boolean(),
+      multiFactorRequired: z.boolean(),
       firstName: z.union([z.string(), z.null()]),
       lastName: z.union([z.string(), z.null()]),
       language: z.enum(['en', 'nl']),

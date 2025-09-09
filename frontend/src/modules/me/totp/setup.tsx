@@ -44,8 +44,8 @@ export const TOTPSetup = () => {
   });
 
   const onSubmit = (body: FormValues) => {
-    useDialoger.getState().remove('2fa-uri');
-    useDialoger.getState().remove('2fa-key');
+    useDialoger.getState().remove('mfa-uri');
+    useDialoger.getState().remove('mfa-key');
     validateTotp(body);
   };
 
@@ -59,7 +59,7 @@ export const TOTPSetup = () => {
 
   const openSetUpKey = () => {
     useDialoger.getState().create(<TotpManualKey manualKey={data.manualKey} />, {
-      id: '2fa-key',
+      id: 'mfa-key',
       triggerRef,
       className: 'sm:max-w-md',
       drawerOnMobile: false,

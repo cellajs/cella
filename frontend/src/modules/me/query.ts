@@ -97,7 +97,7 @@ export const useRegistratePasskeyMutation = () => {
     mutationKey: meKeys.delete.passkey(),
     mutationFn: async () => {
       // Fetch a challenge from BE
-      const { challengeBase64 } = await getPasskeyChallenge({ query: { type: 'registrate' } });
+      const { challengeBase64 } = await getPasskeyChallenge({ query: { type: 'registration' } });
 
       // Generate a unique user ID for this credential
       const userId = new Uint8Array(20);

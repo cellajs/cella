@@ -10,7 +10,7 @@ export type User = {
   thumbnailUrl: string | null;
   bannerUrl: string | null;
   email: string;
-  twoFactorRequired: boolean;
+  multiFactorRequired: boolean;
   firstName: string | null;
   lastName: string | null;
   language: 'en' | 'nl';
@@ -607,7 +607,7 @@ export type ValidateTokenData = {
     token: string;
   };
   query: {
-    type: 'email_verification' | 'password_reset' | 'invitation' | 'pending_2fa';
+    type: 'email_verification' | 'password_reset' | 'invitation' | 'confirm_mfa';
   };
   url: '/auth/validate-token/{token}';
 };
@@ -1166,7 +1166,7 @@ export type GetPasskeyChallengeData = {
   body?: never;
   path?: never;
   query: {
-    type: 'login' | 'two_factor' | 'registrate';
+    type: 'authentication' | 'mfa' | 'registration';
     email?: string;
   };
   url: '/auth/passkey-challenge';
@@ -1225,7 +1225,7 @@ export type SignInWithPasskeyData = {
     clientDataJSON: string;
     authenticatorData: string;
     signature: string;
-    type: 'login' | 'two_factor';
+    type: 'authentication' | 'mfa';
     email?: string;
   };
   path?: never;
@@ -1498,7 +1498,7 @@ export type UpdateMeData = {
     userFlags?: {
       finishedOnboarding?: boolean;
     };
-    twoFactorRequired?: boolean;
+    multiFactorRequired?: boolean;
   };
   path?: never;
   query?: never;
@@ -1602,7 +1602,7 @@ export type GetMyAuthResponses = {
     sessions: Array<{
       createdAt: string;
       id: string;
-      type: 'regular' | 'impersonation' | 'two_factor_authentication';
+      type: 'regular' | 'impersonation' | 'mfa';
       userId: string;
       deviceName: string | null;
       deviceType: 'desktop' | 'mobile';
@@ -1621,7 +1621,6 @@ export type GetMyAuthResponses = {
       browser: string | null;
       nameOnDevice: string;
       createdAt: string;
-      lastSignInAt: string | null;
     }>;
   };
 };
@@ -1910,7 +1909,6 @@ export type RegistratePasskeyResponses = {
     browser: string | null;
     nameOnDevice: string;
     createdAt: string;
-    lastSignInAt: string | null;
   };
 };
 
@@ -4172,7 +4170,7 @@ export type GetMembersResponses = {
       thumbnailUrl: string | null;
       bannerUrl: string | null;
       email: string;
-      twoFactorRequired: boolean;
+      multiFactorRequired: boolean;
       firstName: string | null;
       lastName: string | null;
       language: 'en' | 'nl';

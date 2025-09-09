@@ -5,19 +5,20 @@ import { useUpdateSelfMutation } from '~/modules/me/query';
 import { Switch } from '~/modules/ui/switch';
 import { useUserStore } from '~/store/user';
 
-export const TwoFactorAuthentication = () => {
+export const MultiFactorAuthentication = () => {
   const { t } = useTranslation();
   const user = useUserStore((state) => state.user);
+
   const { hasPasskey, hasTotp } = useUserStore.getState();
 
   const { mutateAsync: updateSelf } = useUpdateSelfMutation();
 
-  const toogle2fa = (twoFactorRequired: boolean) => {
+  const toggleMFA = (multiFactorRequired: boolean) => {
     updateSelf(
-      { twoFactorRequired },
+      { multiFactorRequired },
       {
         onSuccess: () => {
-          const message = t(`2fa_${twoFactorRequired ? 'enabled' : 'disabled'}`);
+          const message = t(`mfa_${multiFactorRequired ? 'enabled' : 'disabled'}`);
           toaster(message, 'info');
         },
       },
@@ -25,13 +26,13 @@ export const TwoFactorAuthentication = () => {
   };
   return (
     <>
-      <HelpText content={t('common:2fa.text')}>
-        <p className="font-semibold">{t('common:2fa')}</p>
+      <HelpText content={t('common:mfa.text')}>
+        <p className="font-semibold">{t('common:mfa')}</p>
       </HelpText>
       <div className="mb-6">
         {/* TODO make open dialog with TOPT or Passkey creation if none available */}
-        <Switch disabled={!hasPasskey || !hasTotp} checked={user.twoFactorRequired} onCheckedChange={toogle2fa} />
-        {(!hasPasskey || !hasTotp) && <p className="text-sm text-gray-500 mt-2">{t('common:2fa_disabled.text')}</p>}
+        <Switch disabled={!hasPasskey || !hasTotp} checked={user.multiFactorRequired} onCheckedChange={toggleMFA} />
+        {(!hasPasskey || !hasTotp) && <p className="text-sm text-gray-500 mt-2">{t('common:mfa_disabled.text')}</p>}
       </div>
     </>
   );

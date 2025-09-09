@@ -114,7 +114,7 @@ The documentation is generated from source code using \`zod\` schemas, converted
 /**
  * Enabled authentication strategies.
  * Currently available: 'password', 'passkey' and 'oauth'.
- * In progress: 'totp'
+ * TODO: In progress: 'totp'
  */
 enabledAuthStrategies: ['password', 'passkey', 'oauth'] as const,
 
@@ -126,7 +126,7 @@ enabledAuthStrategies: ['password', 'passkey', 'oauth'] as const,
 enabledOAuthProviders: ['github'] as const,
 
   // Token types
-  tokenTypes: ['email_verification', 'password_reset', 'invitation', 'pending_2fa'] as const,
+  tokenTypes: ['email_verification', 'password_reset', 'invitation', 'confirm_mfa'] as const,
 
   // Optional settings
   has: {

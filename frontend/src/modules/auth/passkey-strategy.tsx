@@ -12,17 +12,17 @@ import {
   signInWithPasskey,
 } from '~/api.gen';
 import { ApiError } from '~/lib/api';
-import type { BaseOptionsProps } from '~/modules/auth/steps';
+import type { BaseAuthStrategyProps } from '~/modules/auth/steps';
 import { toaster } from '~/modules/common/toaster/service';
 import { Button } from '~/modules/ui/button';
 import { useUIStore } from '~/store/ui';
 
-interface PasskeyOptionProps extends BaseOptionsProps {
+interface PasskeyStrategyProps extends BaseAuthStrategyProps {
   email?: string;
-  type: Exclude<GetPasskeyChallengeData['query']['type'], 'registrate'>;
+  type: Exclude<GetPasskeyChallengeData['query']['type'], 'registration'>;
 }
 
-const PasskeyOption = ({ email, type, authStep = 'signIn' }: PasskeyOptionProps) => {
+const PasskeyStrategy = ({ email, type, authStep = 'signIn' }: PasskeyStrategyProps) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const mode = useUIStore((state) => state.mode);
@@ -75,18 +75,18 @@ const PasskeyOption = ({ email, type, authStep = 'signIn' }: PasskeyOptionProps)
       else toaster(t('error:passkey_verification_failed'), 'error');
     },
     onError: (error) => {
-      if (type === 'two_factor' && error instanceof ApiError) {
+      if (type === 'mfa' && error instanceof ApiError) {
         navigate({ to: '/error', search: { error: error.type, severity: error.severity } });
       }
-      if (type === 'login') toaster(t('error:passkey_verification_failed'), 'error');
+      if (type === 'authentication') toaster(t('error:passkey_verification_failed'), 'error');
     },
   });
 
   return (
     <div data-mode={mode} className="group flex flex-col space-y-2">
-      <Button type="button" onClick={() => passkeyAuth(email)} variant="plain" className="w-full gap-1.5">
+      <Button type="button" onClick={() => passkeyAuth(email)} variant="plain" className="w-full gap-1.5 truncate">
         <Fingerprint size={16} />
-        <span>
+        <span className="truncate">
           {authStep === 'signIn' ? t('common:sign_in') : t('common:sign_up')} {t('common:with').toLowerCase()} {t('common:passkey').toLowerCase()}
         </span>
       </Button>
@@ -94,4 +94,4 @@ const PasskeyOption = ({ email, type, authStep = 'signIn' }: PasskeyOptionProps)
   );
 };
 
-export default PasskeyOption;
+export default PasskeyStrategy;

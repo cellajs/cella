@@ -57,7 +57,7 @@
   "image_upload_failed": "Image upload failed. Try again later",
   "impersonation_failed": "Impersonation failed",
   "invalid_credentials": "Invalid credentials",
-  "invalid_credentials.text": "The credentials used during the authentication are invalid.",
+  "invalid_credentials.text": "The credentials used for authentication are invalid.",
   "invalid_email": "Invalid email address",
   "invalid_email_or_password": "Invalid email or password",
   "invalid_invitation": "Invitation could not be processed",
@@ -177,13 +177,13 @@
   "organization_mismatch":"This item is linked to a different organization than the one you're currently using. Please switch to the appropriate organization or ask your administrator for access.",
   "session_expired": "Session Expired",
   "session_expired.text": "Your authentication session has expired. Please log in again to continue.",
-  "pending_2fa_not_found": "Verification token not found",
-  "pending_2fa_not_found.text": "We couldn't find your verification token. Please sign in again to continue.",
-  "pending_2fa_expired": "Verification step expired",
-  "pending_2fa_expired.text": "Your verification token has expired or is invalid. Please sign in again to continue.",
+  "confirm_mfa_not_found": "Verification token not found",
+  "confirm_mfa_not_found.text": "We couldn't find your verification token. Please sign in again to continue.",
+  "confirm_mfa_expired": "Verification step expired",
+  "confirm_mfa_expired.text": "Your verification token has expired or is invalid. Please sign in again to continue.",
   "totp_verification_failed": "TOTP verification failed",
   "totp_verification_failed.text": "TOTP verification failed. Please try again or use another method.",
   "totp_setup_failed": "TOTP setup failed. Try again later.",
   "totp_remove_failed": "TOTP unlink failed. Try again later.",
-  "2fa_schema_requirement": "Email is required for login and must be omitted for 2FA"
+  "mfa_schema_requirement": "Email is required for login and must be omitted for MFA"
 }

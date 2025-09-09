@@ -18,6 +18,7 @@ import { cn } from '~/utils/cn';
 import { defaultOnInvalid } from '~/utils/form-on-invalid';
 
 const formSchema = zCreateRequestData.shape.body.unwrap();
+
 type FormValues = z.infer<typeof formSchema>;
 
 interface WaitlistFormProps {
@@ -30,6 +31,9 @@ interface WaitlistFormProps {
   className?: string;
 }
 
+/**
+ * Waitlist form to request access to application. Can be used in dialog or embedded in an (auth) page layout.
+ */
 export const WaitlistForm = ({ email, buttonContent, emailField, dialog: isDialog, changeEmail, callback, className }: WaitlistFormProps) => {
   const { t } = useTranslation();
   const navigate = useNavigate();

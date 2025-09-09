@@ -1,3 +1,4 @@
+import { z } from '@hono/zod-openapi';
 import { createCustomRoute } from '#/lib/custom-routes';
 import { isAuthenticated, isPublicAccess } from '#/middlewares/guard';
 import { tokenLimiter } from '#/middlewares/rate-limiter/limiters';
@@ -14,7 +15,6 @@ import {
 import { userFlagsSchema, userSchema, userUpdateBodySchema } from '#/modules/users/schema';
 import { entityWithTypeQuerySchema, idSchema, locationSchema } from '#/utils/schema/common';
 import { errorResponses, successWithoutDataSchema, successWithRejectedItemsSchema } from '#/utils/schema/responses';
-import { z } from '@hono/zod-openapi';
 
 const meRoutes = {
   getMe: createCustomRoute({
@@ -102,7 +102,7 @@ const meRoutes = {
           'application/json': {
             schema: userUpdateBodySchema.extend({
               userFlags: userFlagsSchema.partial().optional(),
-              twoFactorRequired: z.boolean().optional(),
+              multiFactorRequired: z.boolean().optional(),
             }),
           },
         },
@@ -272,7 +272,7 @@ const meRoutes = {
     guard: isAuthenticated,
     tags: ['me'],
     summary: 'Set up TOTP for the authenticated user',
-    description: 'Registers a new TOTP (Time-based One-Time Password) for 2FA and links it to the current user account.',
+    description: 'Registers a new TOTP (Time-based One-Time Password) for MFA and links it to the current user account.',
     security: [],
     request: {
       body: {

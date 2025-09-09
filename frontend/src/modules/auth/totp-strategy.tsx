@@ -10,7 +10,7 @@ import type z from 'zod';
 import { type SignInWithTotpData, type SignInWithTotpResponse, signInWithTotp } from '~/api.gen';
 import { zSignInWithTotpData } from '~/api.gen/zod.gen';
 import type { ApiError } from '~/lib/api';
-import type { BaseOptionsProps } from '~/modules/auth/steps';
+import type { BaseAuthStrategyProps } from '~/modules/auth/steps';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { toaster } from '~/modules/common/toaster/service';
 import { Button, SubmitButton } from '~/modules/ui/button';
@@ -22,7 +22,7 @@ import { defaultOnInvalid } from '~/utils/form-on-invalid';
 const formSchema = zSignInWithTotpData.shape.body.unwrap();
 type FormValues = z.infer<typeof formSchema>;
 
-export const TOTPOption = ({ authStep = 'signIn' }: BaseOptionsProps) => {
+export const TOTPStrategy = ({ authStep = 'signIn' }: BaseAuthStrategyProps) => {
   const { t } = useTranslation();
   const mode = useUIStore((state) => state.mode);
 
@@ -30,7 +30,7 @@ export const TOTPOption = ({ authStep = 'signIn' }: BaseOptionsProps) => {
 
   const openTOTPVerify = () => {
     useDialoger.getState().create(<DialogConfirmationForm />, {
-      id: '2fa-confirmation',
+      id: 'mfa-confirmation',
       triggerRef,
       className: 'sm:max-w-md p-6',
       title: t('common:totp_verify'),
@@ -41,9 +41,9 @@ export const TOTPOption = ({ authStep = 'signIn' }: BaseOptionsProps) => {
 
   return (
     <div data-mode={mode} className="group flex flex-col space-y-2">
-      <Button ref={triggerRef} type="button" onClick={openTOTPVerify} variant="plain" className="w-full gap-1.5">
+      <Button ref={triggerRef} type="button" onClick={openTOTPVerify} variant="plain" className="w-full gap-1.5 truncate">
         <Smartphone size={16} />
-        <span>
+        <span className="truncate">
           {authStep === 'signIn' ? t('common:sign_in') : t('common:sign_up')} {t('common:with').toLowerCase()}{' '}
           {t('common:authenticator_app').toLowerCase()}
         </span>
@@ -73,7 +73,7 @@ const DialogConfirmationForm = () => {
   });
 
   const onSubmit = (body: FormValues) => {
-    useDialoger.getState().remove('2fa-confirmation');
+    useDialoger.getState().remove('mfa-confirmation');
     totpSignIn(body);
   };
 

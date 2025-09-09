@@ -9,7 +9,7 @@ const isProduction = appConfig.mode === 'production';
 
 export type CookieName =
   | 'session'
-  | 'pending-2fa'
+  | 'confirm-mfa'
   | 'totp-key'
   | 'passkey-challenge'
   | 'oauth-state'

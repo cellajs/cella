@@ -2,7 +2,7 @@ import { useSearch } from '@tanstack/react-router';
 import { appConfig, type EnabledOAuthProvider } from 'config';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { BaseOptionsProps } from '~/modules/auth/steps';
+import type { BaseAuthStrategyProps } from '~/modules/auth/steps';
 import { toaster } from '~/modules/common/toaster/service';
 import { Button } from '~/modules/ui/button';
 import { AuthenticateRoute } from '~/routes/auth';
@@ -14,14 +14,14 @@ export const mapOAuthProviders = [
   { id: 'microsoft', name: 'Microsoft' },
 ] as const;
 
-type OAuthProviders = (typeof mapOAuthProviders)[number];
+type OAuthProvider = (typeof mapOAuthProviders)[number];
 
 /**
- * Display OAuth options to sign in, sign up, accept invitation
+ * Display OAuth providers to sign in, sign up, accept invitation
  *
  * @param authStep The action type to perform
  */
-const OAuthOptions = ({ authStep = 'signIn' }: BaseOptionsProps) => {
+const OAuthProviders = ({ authStep = 'signIn' }: BaseAuthStrategyProps) => {
   const { t } = useTranslation();
   const mode = useUIStore((state) => state.mode);
   const { token, redirect } = useSearch({ from: AuthenticateRoute.id });
@@ -58,7 +58,7 @@ const OAuthOptions = ({ authStep = 'signIn' }: BaseOptionsProps) => {
     <div data-mode={mode} className="group flex flex-col space-y-2">
       {appConfig.enabledOAuthProviders.map((provider) => {
         // Map provider data
-        const providerData = mapOAuthProviders.find((p): p is OAuthProviders & { id: typeof provider } => p.id === provider);
+        const providerData = mapOAuthProviders.find((p): p is OAuthProvider & { id: typeof provider } => p.id === provider);
 
         if (!providerData) return null;
 
@@ -88,4 +88,4 @@ const OAuthOptions = ({ authStep = 'signIn' }: BaseOptionsProps) => {
   );
 };
 
-export default OAuthOptions;
+export default OAuthProviders;

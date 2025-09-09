@@ -7,8 +7,8 @@ import type { ApiError } from '~/lib/api';
 import AuthErrorNotice from '~/modules/auth/auth-error-notice';
 import { CheckEmailForm } from '~/modules/auth/check-email-form';
 import { shouldShowDivider } from '~/modules/auth/helpers';
-import OAuthOptions from '~/modules/auth/oauth-options';
-import PasskeyOption from '~/modules/auth/passkey-option';
+import OAuthProviders from '~/modules/auth/oauth-providers';
+import PasskeyStrategy from '~/modules/auth/passkey-strategy';
 import { SignInForm } from '~/modules/auth/sign-in-form';
 import { SignUpForm } from '~/modules/auth/sign-up-form';
 import type { AuthStep } from '~/modules/auth/types';
@@ -22,7 +22,7 @@ import { useUserStore } from '~/store/user';
 const enabledStrategies: readonly string[] = appConfig.enabledAuthStrategies;
 const emailEnabled = enabledStrategies.includes('password') || enabledStrategies.includes('passkey');
 
-export interface BaseOptionsProps {
+export interface BaseAuthStrategyProps {
   authStep?: AuthStep;
 }
 
@@ -101,11 +101,10 @@ const AuthSteps = () => {
               <span className="text-muted-foreground px-2">{t('common:or')}</span>
             </div>
           )}
-          {/* TODO(IMPROVEMENT) be able to signUp with passeky */}
-          {enabledStrategies.includes('passkey') && lastUser?.email === email && !lastUser.twoFactorRequired && step === 'signIn' && (
-            <PasskeyOption email={email} type="login" authStep={step} />
+          {enabledStrategies.includes('passkey') && lastUser?.email === email && !lastUser.multiFactorRequired && step === 'signIn' && (
+            <PasskeyStrategy email={email} type="authentication" authStep={step} />
           )}
-          {enabledStrategies.includes('oauth') && <OAuthOptions authStep={step} />}
+          {enabledStrategies.includes('oauth') && <OAuthProviders authStep={step} />}
         </>
       )}
     </>

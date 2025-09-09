@@ -1,7 +1,7 @@
-import { timestampColumns } from '#/db/utils/timestamp-columns';
-import { nanoid } from '#/utils/nanoid';
 import { appConfig, type UserFlags } from 'config';
 import { boolean, foreignKey, index, jsonb, pgTable, timestamp, varchar } from 'drizzle-orm/pg-core';
+import { timestampColumns } from '#/db/utils/timestamp-columns';
+import { nanoid } from '#/utils/nanoid';
 
 const roleEnum = appConfig.rolesByType.systemRoles;
 const languagesEnum = appConfig.languages;
@@ -26,7 +26,7 @@ export const usersTable = pgTable(
     thumbnailUrl: varchar(),
     bannerUrl: varchar(),
     email: varchar().notNull().unique(),
-    twoFactorRequired: boolean().notNull().default(false),
+    multiFactorRequired: boolean().notNull().default(false),
     firstName: varchar(),
     lastName: varchar(),
     language: varchar({ enum: languagesEnum }).notNull().default(appConfig.defaultLanguage),

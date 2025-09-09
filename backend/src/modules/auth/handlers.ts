@@ -22,9 +22,9 @@ import { resolveEntity } from '#/lib/entity';
 import { AppError } from '#/lib/errors';
 import { eventManager } from '#/lib/events';
 import { mailer } from '#/lib/mailer';
-import { initiateTwoFactorAuth, validatePending2FAToken } from '#/modules/auth/helpers/2fa';
 import { hashPassword, verifyPasswordHash } from '#/modules/auth/helpers/argon2id';
 import { deleteAuthCookie, getAuthCookie, setAuthCookie } from '#/modules/auth/helpers/cookie';
+import { initiateMultiFactorAuth, validateConfirmMFAToken } from '#/modules/auth/helpers/mfa';
 import {
   clearOAuthSession,
   createOAuthSession,
@@ -223,17 +223,17 @@ const authRouteHandlers = app
         ),
       );
 
-    // Start 2FA challenge if the user has 2FA enabled
-    const twoFactorRedirectPath = await initiateTwoFactorAuth(ctx, user);
+    // Start MFA challenge if the user has MFA enabled
+    const multiFactorRedirectPath = await initiateMultiFactorAuth(ctx, user);
 
     // Determine redirect url
     const decodedRedirect = decodeURIComponent(redirect || '');
     const baseRedirectPath = isValidRedirectPath(decodedRedirect) || appConfig.defaultRedirectPath;
-    const redirectPath = twoFactorRedirectPath || baseRedirectPath;
+    const redirectPath = multiFactorRedirectPath || baseRedirectPath;
     const redirectUrl = new URL(redirectPath, appConfig.frontendUrl);
 
-    // If 2FA is not required, set  user session immediately
-    if (!twoFactorRedirectPath) await setUserSession(ctx, user, 'email');
+    // If MFA is not required, set  user session immediately
+    if (!multiFactorRedirectPath) await setUserSession(ctx, user, 'email');
 
     return ctx.redirect(redirectUrl, 302);
   })
@@ -313,7 +313,7 @@ const authRouteHandlers = app
       db.update(emailsTable).set({ verified: true, verifiedAt: getIsoDate() }).where(eq(emailsTable.email, user.email)),
     ]);
 
-    const redirectPath = await initiateTwoFactorAuth(ctx, user);
+    const redirectPath = await initiateMultiFactorAuth(ctx, user);
     if (redirectPath) return ctx.json({ shouldRedirect: true, redirectPath }, 200);
 
     await setUserSession(ctx, user, 'password');
@@ -359,7 +359,7 @@ const authRouteHandlers = app
       return ctx.json({ shouldRedirect: true, redirectPath: '/auth/email-verification/signin' }, 200);
     }
 
-    const redirectPath = await initiateTwoFactorAuth(ctx, user);
+    const redirectPath = await initiateMultiFactorAuth(ctx, user);
     if (redirectPath) return ctx.json({ shouldRedirect: true, redirectPath }, 200);
 
     await setUserSession(ctx, user, 'password');
@@ -759,9 +759,9 @@ const authRouteHandlers = app
       userEmail = email.toLowerCase().trim();
     }
 
-    // If this is a two_factor request, retrieve user from pending 2FA token
-    if (type === 'two_factor') {
-      const { email: tokenEmail } = await validatePending2FAToken(ctx, false);
+    // If this is a multifactor request, retrieve user from pending MFA token
+    if (type === 'mfa') {
+      const { email: tokenEmail } = await validateConfirmMFAToken(ctx, false);
       userEmail = tokenEmail;
     }
 
@@ -785,11 +785,11 @@ const authRouteHandlers = app
     const { clientDataJSON, authenticatorData, signature, credentialId, email, type } = ctx.req.valid('json');
     const strategy = 'passkey';
 
-    if (type === 'login' && !enabledStrategies.includes(strategy)) {
+    if (type === 'authentication' && !enabledStrategies.includes(strategy)) {
       throw new AppError({ status: 400, type: 'forbidden_strategy', severity: 'error', meta: { strategy } });
     }
-    // Determine session type: regular login or 2FA flow
-    const sessionType = type === 'two_factor' ? 'two_factor_authentication' : 'regular';
+    // Determine session type: regular authentication or MFA
+    const sessionType = type === 'mfa' ? 'mfa' : 'regular';
 
     let user: UserModel | null = null;
 
@@ -805,9 +805,9 @@ const authRouteHandlers = app
       user = tableUser;
     }
 
-    // Override user if this is a two_factor authentication
-    if (type === 'two_factor') {
-      const userFromToken = await validatePending2FAToken(ctx);
+    // Override user if this is a multifactor authentication
+    if (type === 'mfa') {
+      const userFromToken = await validateConfirmMFAToken(ctx);
       user = userFromToken;
     }
 
@@ -838,7 +838,6 @@ const authRouteHandlers = app
       }
     }
 
-    await db.update(passkeysTable).set({ lastSignInAt: getIsoDate() }).where(eq(passkeysTable.id, passkeyRecord.id));
     // Set user session after successful verification
     await setUserSession(ctx, user, strategy, sessionType);
 
@@ -869,10 +868,10 @@ const authRouteHandlers = app
     const { code } = ctx.req.valid('json');
 
     const strategy = 'totp';
-    const sessionType = 'two_factor_authentication';
+    const sessionType = 'mfa';
 
     const meta = { strategy, sessionType };
-    const user = await validatePending2FAToken(ctx);
+    const user = await validateConfirmMFAToken(ctx);
 
     // Get passkey credentials
     const [credentials] = await db.select().from(totpsTable).where(eq(totpsTable.userId, user.id)).limit(1);

@@ -23,7 +23,7 @@ const TOTPs = () => {
         <TOTPSetup />
       </Suspense>,
       {
-        id: '2fa-uri',
+        id: 'mfa-uri',
         triggerRef,
         className: 'sm:max-w-md',
         drawerOnMobile: false,
