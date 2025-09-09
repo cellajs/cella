@@ -58,7 +58,6 @@ export const MFARoute = createRoute({
   staticData: { isAuth: false },
   head: () => ({ meta: [{ title: appTitle('Authenticate') }] }),
   getParentRoute: () => AuthenticateRoute,
-  beforeLoad: async () => {},
   component: () => <MFA />,
 });
 
