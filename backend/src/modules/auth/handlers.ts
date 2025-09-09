@@ -182,7 +182,7 @@ const authRouteHandlers = app
     await db.insert(passwordsTable).values({ userId: user.id, hashedPassword: hashedPassword });
 
     // Sign in user
-    await setUserSession(ctx, user, 'password');
+    await setUserSession(ctx, user, strategy);
 
     const redirectPath = membershipInvite ? `/invitation/${validToken.token}?tokenId=${validToken.id}` : appConfig.defaultRedirectPath;
     return ctx.json({ shouldRedirect: true, redirectPath }, 200);
@@ -229,7 +229,10 @@ const authRouteHandlers = app
     // Determine redirect url
     const decodedRedirect = decodeURIComponent(redirect || '');
     const baseRedirectPath = isValidRedirectPath(decodedRedirect) || appConfig.defaultRedirectPath;
-    const redirectPath = multiFactorRedirectPath || baseRedirectPath;
+
+    // TODO FIX IT
+    // const redirectPath = multiFactorRedirectPath || baseRedirectPath;
+    const redirectPath = baseRedirectPath;
     const redirectUrl = new URL(redirectPath, appConfig.frontendUrl);
 
     // If MFA is not required, set  user session immediately
@@ -316,7 +319,7 @@ const authRouteHandlers = app
     const redirectPath = await initiateMultiFactorAuth(ctx, user);
     if (redirectPath) return ctx.json({ shouldRedirect: true, redirectPath }, 200);
 
-    await setUserSession(ctx, user, 'password');
+    await setUserSession(ctx, user, strategy);
     return ctx.json({ shouldRedirect: false }, 200);
   })
   /*

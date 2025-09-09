@@ -7,10 +7,10 @@ import { lazy, type RefObject, Suspense, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import type { z } from 'zod';
-import { type SignUpData, type SignUpResponse, type SignUpWithTokenData, type SignUpWithTokenResponse, signUp, signUpWithToken } from '~/api.gen';
+import { signUp, type SignUpData, type SignUpResponse, signUpWithToken, type SignUpWithTokenData, type SignUpWithTokenResponse } from '~/api.gen';
 import { zSignUpData } from '~/api.gen/zod.gen';
 import type { ApiError } from '~/lib/api';
-import type { AuthStep, TokenData } from '~/modules/auth/types';
+import { useAuthStepsContext } from '~/modules/auth/steps/provider';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import Spinner from '~/modules/common/spinner';
 import { Button, SubmitButton } from '~/modules/ui/button';
@@ -23,21 +23,16 @@ const PasswordStrength = lazy(() => import('~/modules/auth/password-strength'));
 const LegalText = lazy(() => import('~/modules/marketing/legal-texts'));
 
 const enabledStrategies: readonly string[] = appConfig.enabledAuthStrategies;
+const emailEnabled = enabledStrategies.includes('password') || enabledStrategies.includes('passkey');
 
 const formSchema = zSignUpData.shape.body.unwrap();
 type FormValues = z.infer<typeof formSchema>;
 
-interface Props {
-  tokenData: TokenData | undefined;
-  email: string;
-  setStep: (step: AuthStep, email: string, error?: ApiError) => void;
-  resetSteps: () => void;
-  emailEnabled: boolean;
-}
-
-export const SignUpForm = ({ tokenData, email, setStep, resetSteps, emailEnabled }: Props) => {
+export const SignUpStep = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
+
+  const { email, tokenData, setStep, resetSteps } = useAuthStepsContext();
 
   const { token } = useSearch({ from: AuthenticateRoute.id });
 

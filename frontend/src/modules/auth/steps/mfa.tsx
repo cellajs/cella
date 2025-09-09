@@ -1,17 +1,16 @@
-import { useNavigate, useParams } from '@tanstack/react-router';
 import { ChevronDown } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { signOut } from '~/api.gen';
-import { MFARoute } from '~/routes/auth';
-import { toaster } from '../common/toaster/service';
-import { Button } from '../ui/button';
-import PasskeyStrategy from './passkey-strategy';
-import { TOTPStrategy } from './totp-strategy';
+import PasskeyStrategy from '~/modules/auth/passkey-strategy';
+import { useAuthStepsContext } from '~/modules/auth/steps/provider';
+import { TOTPStrategy } from '~/modules/auth/totp-strategy';
+import { toaster } from '~/modules/common/toaster/service';
+import { Button } from '~/modules/ui/button';
 
 export const MFA = () => {
   const { t } = useTranslation();
-  const navigate = useNavigate();
-  const { email } = useParams({ from: MFARoute.id });
+
+  const { email, setStep } = useAuthStepsContext();
 
   const handleCancelMFA = async () => {
     try {
@@ -19,7 +18,7 @@ export const MFA = () => {
       toaster(t('common:success.signed_out'), 'success');
     } catch (error) {
     } finally {
-      navigate({ to: '/about', replace: true });
+      setStep('signIn', email);
     }
   };
 

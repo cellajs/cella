@@ -11,6 +11,7 @@ import { type SignInData, type SignInResponse, signIn } from '~/api.gen';
 import { zSignUpData } from '~/api.gen/zod.gen';
 import type { ApiError } from '~/lib/api';
 import { RequestPasswordDialog } from '~/modules/auth/request-password-dialog';
+import { useAuthStepsContext } from '~/modules/auth/steps/provider';
 import { Button, SubmitButton } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '~/modules/ui/form';
 import { Input } from '~/modules/ui/input';
@@ -19,19 +20,17 @@ import { useUserStore } from '~/store/user';
 import { defaultOnInvalid } from '~/utils/form-on-invalid';
 
 const enabledStrategies: readonly string[] = appConfig.enabledAuthStrategies;
+const emailEnabled = enabledStrategies.includes('password') || enabledStrategies.includes('passkey');
 
 const formSchema = zSignUpData.shape.body.unwrap();
 type FormValues = z.infer<typeof formSchema>;
-interface Props {
-  email: string;
-  resetSteps: () => void;
-  emailEnabled: boolean;
-}
 
 // Either simply sign in with password or sign in with token to also accept organization invitation
-export const SignInForm = ({ email, resetSteps, emailEnabled }: Props) => {
+export const SignInStep = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const { step, email, resetSteps } = useAuthStepsContext();
+
   const passwordRef = useRef<HTMLInputElement>(null);
 
   const { lastUser, clearUserStore } = useUserStore();
@@ -78,6 +77,8 @@ export const SignInForm = ({ email, resetSteps, emailEnabled }: Props) => {
     clearUserStore();
     resetSteps();
   };
+
+  if (step !== 'signIn') return null;
 
   return (
     <Form {...form}>

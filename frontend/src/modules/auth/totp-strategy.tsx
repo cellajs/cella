@@ -10,7 +10,6 @@ import type z from 'zod';
 import { type SignInWithTotpData, type SignInWithTotpResponse, signInWithTotp } from '~/api.gen';
 import { zSignInWithTotpData } from '~/api.gen/zod.gen';
 import type { ApiError } from '~/lib/api';
-import type { BaseAuthStrategyProps } from '~/modules/auth/steps';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { toaster } from '~/modules/common/toaster/service';
 import { Button, SubmitButton } from '~/modules/ui/button';
@@ -22,7 +21,7 @@ import { defaultOnInvalid } from '~/utils/form-on-invalid';
 const formSchema = zSignInWithTotpData.shape.body.unwrap();
 type FormValues = z.infer<typeof formSchema>;
 
-export const TOTPStrategy = ({ authStep = 'signIn' }: BaseAuthStrategyProps) => {
+export const TOTPStrategy = () => {
   const { t } = useTranslation();
   const mode = useUIStore((state) => state.mode);
 
@@ -44,8 +43,7 @@ export const TOTPStrategy = ({ authStep = 'signIn' }: BaseAuthStrategyProps) => 
       <Button ref={triggerRef} type="button" onClick={openTOTPVerify} variant="plain" className="w-full gap-1.5 truncate">
         <Smartphone size={16} />
         <span className="truncate">
-          {authStep === 'signIn' ? t('common:sign_in') : t('common:sign_up')} {t('common:with').toLowerCase()}{' '}
-          {t('common:authenticator_app').toLowerCase()}
+          {t('common:sign_in')} {t('common:with').toLowerCase()} {t('common:authenticator_app').toLowerCase()}
         </span>
       </Button>
     </div>

@@ -2,7 +2,7 @@ import { useSearch } from '@tanstack/react-router';
 import { appConfig, type EnabledOAuthProvider } from 'config';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { BaseAuthStrategyProps } from '~/modules/auth/steps';
+import type { AuthStep } from '~/modules/auth/types';
 import { toaster } from '~/modules/common/toaster/service';
 import { Button } from '~/modules/ui/button';
 import { AuthenticateRoute } from '~/routes/auth';
@@ -21,7 +21,7 @@ type OAuthProvider = (typeof mapOAuthProviders)[number];
  *
  * @param authStep The action type to perform
  */
-const OAuthProviders = ({ authStep = 'signIn' }: BaseAuthStrategyProps) => {
+const OAuthProviders = ({ authStep = 'signIn' }: { authStep: AuthStep }) => {
   const { t } = useTranslation();
   const mode = useUIStore((state) => state.mode);
   const { token, redirect } = useSearch({ from: AuthenticateRoute.id });

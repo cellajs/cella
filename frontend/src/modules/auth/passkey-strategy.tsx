@@ -6,23 +6,22 @@ import { Fingerprint } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import {
   type GetPasskeyChallengeData,
-  getPasskeyChallenge,
   type SignInWithPasskeyData,
   type SignInWithPasskeyResponse,
+  getPasskeyChallenge,
   signInWithPasskey,
 } from '~/api.gen';
 import { ApiError } from '~/lib/api';
-import type { BaseAuthStrategyProps } from '~/modules/auth/steps';
 import { toaster } from '~/modules/common/toaster/service';
 import { Button } from '~/modules/ui/button';
 import { useUIStore } from '~/store/ui';
 
-interface PasskeyStrategyProps extends BaseAuthStrategyProps {
+interface PasskeyStrategyProps {
   email?: string;
   type: Exclude<GetPasskeyChallengeData['query']['type'], 'registration'>;
 }
 
-const PasskeyStrategy = ({ email, type, authStep = 'signIn' }: PasskeyStrategyProps) => {
+const PasskeyStrategy = ({ email, type }: PasskeyStrategyProps) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const mode = useUIStore((state) => state.mode);
@@ -87,7 +86,7 @@ const PasskeyStrategy = ({ email, type, authStep = 'signIn' }: PasskeyStrategyPr
       <Button type="button" onClick={() => passkeyAuth(email)} variant="plain" className="w-full gap-1.5 truncate">
         <Fingerprint size={16} />
         <span className="truncate">
-          {authStep === 'signIn' ? t('common:sign_in') : t('common:sign_up')} {t('common:with').toLowerCase()} {t('common:passkey').toLowerCase()}
+          {t('common:sign_in')} {t('common:with').toLowerCase()} {t('common:passkey').toLowerCase()}
         </span>
       </Button>
     </div>

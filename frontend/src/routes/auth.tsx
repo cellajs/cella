@@ -2,13 +2,13 @@ import { createRoute, redirect } from '@tanstack/react-router';
 import { appConfig } from 'config';
 import { z } from 'zod';
 import AcceptEntityInvite from '~/modules/auth/accept-entity-invite';
-import AuthPage from '~/modules/auth/auth-layout';
 import CreatePasswordForm from '~/modules/auth/create-password-form';
 import EmailVerification from '~/modules/auth/email-verification';
-import { MFA } from '~/modules/auth/mfa';
+import AuthPage from '~/modules/auth/layout';
 import { RequestPasswordForm } from '~/modules/auth/request-password-form';
 import { SignOut } from '~/modules/auth/sign-out';
 import AuthSteps from '~/modules/auth/steps';
+import { AuthStepsProvider } from '~/modules/auth/steps/provider';
 import Unsubscribed from '~/modules/auth/unsubscribed';
 import { meQueryOptions } from '~/modules/me/query';
 import { queryClient } from '~/query/query-client';
@@ -28,6 +28,7 @@ export const AuthenticateRoute = createRoute({
   validateSearch: z.object({
     redirect: z.string().optional(),
     token: z.string().optional(),
+    mfa: z.boolean().optional(),
     fromRoot: z.boolean().optional(),
   }),
   staticData: { isAuth: false },
@@ -42,15 +43,11 @@ export const AuthenticateRoute = createRoute({
     if (!storedUser) return;
     throw redirect({ to: appConfig.defaultRedirectPath, replace: true });
   },
-  component: () => <AuthSteps />,
-});
-
-export const MFARoute = createRoute({
-  path: '/auth/mfa/$email',
-  staticData: { isAuth: false },
-  head: () => ({ meta: [{ title: appTitle('MFA confirm') }] }),
-  getParentRoute: () => AuthLayoutRoute,
-  component: () => <MFA />,
+  component: () => (
+    <AuthStepsProvider>
+      <AuthSteps />
+    </AuthStepsProvider>
+  ),
 });
 
 export const RequestPasswordRoute = createRoute({

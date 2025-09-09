@@ -9,7 +9,7 @@ import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
 import { type CreatePasswordData, type CreatePasswordResponse, createPassword } from '~/api.gen';
 import type { ApiError } from '~/lib/api';
-import AuthErrorNotice from '~/modules/auth/auth-error-notice';
+import AuthErrorNotice from '~/modules/auth/error-notice';
 import { RequestPasswordDialog } from '~/modules/auth/request-password-dialog';
 import { useCheckToken } from '~/modules/auth/use-token-check';
 import Spinner from '~/modules/common/spinner';

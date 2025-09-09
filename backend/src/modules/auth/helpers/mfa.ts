@@ -40,7 +40,7 @@ export const initiateMultiFactorAuth = async (ctx: Context, user: UserModel) => 
   await setAuthCookie(ctx, 'confirm-mfa', generatedTokenId, new TimeSpan(10, 'm'));
 
   // Return the path to redirect the user to MFA confirmation page
-  return `/auth/mfa/${user.email}`;
+  return `/auth/authenticate?mfa=${true}`;
 };
 
 /**

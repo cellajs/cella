@@ -4,7 +4,7 @@ import { appConfig } from 'config';
 import { Ban, Check } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { acceptEntityInvite } from '~/api.gen';
-import AuthErrorNotice from '~/modules/auth/auth-error-notice';
+import AuthErrorNotice from '~/modules/auth/error-notice';
 import { useCheckToken } from '~/modules/auth/use-token-check';
 import Spinner from '~/modules/common/spinner';
 import { toaster } from '~/modules/common/toaster/service';
