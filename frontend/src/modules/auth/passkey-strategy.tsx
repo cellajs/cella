@@ -6,9 +6,9 @@ import { Fingerprint } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import {
   type GetPasskeyChallengeData,
+  getPasskeyChallenge,
   type SignInWithPasskeyData,
   type SignInWithPasskeyResponse,
-  getPasskeyChallenge,
   signInWithPasskey,
 } from '~/api.gen';
 import { ApiError } from '~/lib/api';

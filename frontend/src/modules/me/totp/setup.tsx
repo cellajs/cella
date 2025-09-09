@@ -7,7 +7,7 @@ import { useRef } from 'react';
 import { useForm, useFormState } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import type z from 'zod';
-import { type ApiError, getTotpUri, setupTotp, type SetupTotpData, type SetupTotpResponse } from '~/api.gen';
+import { type ApiError, getTotpUri, type SetupTotpData, type SetupTotpResponse, setupTotp } from '~/api.gen';
 import { zSetupTotpData } from '~/api.gen/zod.gen';
 import { useCopyToClipboard } from '~/hooks/use-copy-to-clipboard';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
