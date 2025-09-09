@@ -39,7 +39,7 @@ const TOTPs = () => {
   };
 
   return (
-    <div className="flex max-sm:flex-col items-center gap-2 mb-6">
+    <div className="flex max-sm:flex-col gap-2 mb-6">
       {hasTotp && (
         <div className="flex items-center gap-2 px-3">
           <QrCode className="w-4 h-4 mr-2" />

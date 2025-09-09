@@ -36,7 +36,7 @@ const PasskeysList = () => {
             : t('common:create_resource', { resource: t('common:passkey').toLowerCase() })}
         </Button>
       </div>
-      <div className="flex flex-col mt-4 gap-2">
+      <div className="flex flex-col gap-2">
         <ExpandableList
           items={passkeys}
           renderItem={(passkey) => <PasskeyTile passkey={passkey} key={passkey.id} handleUnlinkPasskey={handleUnlinkPasskey} isPending={isPending} />}
