@@ -10,7 +10,7 @@ export type User = {
   thumbnailUrl: string | null;
   bannerUrl: string | null;
   email: string;
-  twoFactorEnabled: boolean;
+  twoFactorRequired: boolean;
   firstName: string | null;
   lastName: string | null;
   language: 'en' | 'nl';
@@ -1498,7 +1498,7 @@ export type UpdateMeData = {
     userFlags?: {
       finishedOnboarding?: boolean;
     };
-    twoFactorEnabled?: boolean;
+    twoFactorRequired?: boolean;
   };
   path?: never;
   query?: never;
@@ -4172,7 +4172,7 @@ export type GetMembersResponses = {
       thumbnailUrl: string | null;
       bannerUrl: string | null;
       email: string;
-      twoFactorEnabled: boolean;
+      twoFactorRequired: boolean;
       firstName: string | null;
       lastName: string | null;
       language: 'en' | 'nl';

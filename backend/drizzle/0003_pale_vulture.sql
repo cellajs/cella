@@ -16,6 +16,7 @@ CREATE TABLE "unsubscribe_tokens" (
 	CONSTRAINT "unsubscribe_tokens_token_unique" UNIQUE("token")
 );
 --> statement-breakpoint
+ALTER TABLE "users" RENAME COLUMN "two_factor_enabled" TO "two_factor_required";--> statement-breakpoint
 ALTER TABLE "users" DROP CONSTRAINT "users_unsubscribeToken_unique";--> statement-breakpoint
 DROP INDEX "users_token_index";--> statement-breakpoint
 ALTER TABLE "passwords" ADD CONSTRAINT "passwords_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint

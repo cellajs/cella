@@ -12,12 +12,12 @@ export const TwoFactorAuthentication = () => {
 
   const { mutateAsync: updateSelf } = useUpdateSelfMutation();
 
-  const toogle2fa = (twoFactorEnabled: boolean) => {
+  const toogle2fa = (twoFactorRequired: boolean) => {
     updateSelf(
-      { twoFactorEnabled },
+      { twoFactorRequired },
       {
         onSuccess: () => {
-          const message = t(`2fa_${twoFactorEnabled ? 'enabled' : 'disabled'}`);
+          const message = t(`2fa_${twoFactorRequired ? 'enabled' : 'disabled'}`);
           toaster(message, 'info');
         },
       },
@@ -30,7 +30,7 @@ export const TwoFactorAuthentication = () => {
       </HelpText>
       <div className="mb-6">
         {/* TODO make open dialog with TOPT or Passkey creation if none available */}
-        <Switch disabled={!hasPasskey || !hasTotp} checked={user.twoFactorEnabled} onCheckedChange={toogle2fa} />
+        <Switch disabled={!hasPasskey || !hasTotp} checked={user.twoFactorRequired} onCheckedChange={toogle2fa} />
         {(!hasPasskey || !hasTotp) && <p className="text-sm text-gray-500 mt-2">{t('common:2fa_disabled.text')}</p>}
       </div>
     </>

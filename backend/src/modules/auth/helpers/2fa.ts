@@ -1,5 +1,3 @@
-import { eq } from 'drizzle-orm';
-import type { Context } from 'hono';
 import { db } from '#/db/db';
 import { tokensTable } from '#/db/schema/tokens';
 import { type UserModel, usersTable } from '#/db/schema/users';
@@ -9,6 +7,8 @@ import { usersBaseQuery } from '#/modules/users/helpers/select';
 import { nanoid } from '#/utils/nanoid';
 import { createDate, TimeSpan } from '#/utils/time-span';
 import { getValidToken } from '#/utils/validate-token';
+import { eq } from 'drizzle-orm';
+import type { Context } from 'hono';
 
 /**
  * Starts a two-factor authentication challenge for a user.
@@ -21,7 +21,7 @@ import { getValidToken } from '#/utils/validate-token';
  */
 export const initiateTwoFactorAuth = async (ctx: Context, user: UserModel) => {
   // If the user does not have 2FA enabled, do nothing
-  if (!user.twoFactorEnabled) return null;
+  if (!user.twoFactorRequired) return null;
 
   // Generate a new random token and insert it
   const [{ token: generatedTokenId }] = await db

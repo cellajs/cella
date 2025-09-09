@@ -1,8 +1,3 @@
-import { OpenAPIHono, type z } from '@hono/zod-openapi';
-import type { EnabledOAuthProvider, MenuSection } from 'config';
-import { appConfig } from 'config';
-import { and, eq, getTableColumns, inArray, isNotNull, isNull, sql } from 'drizzle-orm';
-import { type SSEStreamingApi, streamSSE } from 'hono/streaming';
 import { db } from '#/db/db';
 import { membershipsTable } from '#/db/schema/memberships';
 import { oauthAccountsTable } from '#/db/schema/oauth-accounts';
@@ -36,6 +31,11 @@ import { defaultHook } from '#/utils/default-hook';
 import { getIsoDate } from '#/utils/iso-date';
 import { logEvent } from '#/utils/logger';
 import { verifyUnsubscribeToken } from '#/utils/unsubscribe-token';
+import { OpenAPIHono, type z } from '@hono/zod-openapi';
+import type { EnabledOAuthProvider, MenuSection } from 'config';
+import { appConfig } from 'config';
+import { and, eq, getTableColumns, inArray, isNotNull, isNull, sql } from 'drizzle-orm';
+import { type SSEStreamingApi, streamSSE } from 'hono/streaming';
 
 type UserMenu = z.infer<typeof menuSchema>;
 type MenuItem = z.infer<typeof menuItemSchema>;
@@ -326,7 +326,7 @@ const meRouteHandlers = app
     ]);
 
     // If no TOTP exists, disable 2FA completely
-    if (!userPasskeys.length && !userTotps.length) await db.update(usersTable).set({ twoFactorEnabled: false }).where(eq(usersTable.id, user.id));
+    if (!userPasskeys.length && !userTotps.length) await db.update(usersTable).set({ twoFactorRequired: false }).where(eq(usersTable.id, user.id));
 
     return ctx.json(!!userPasskeys.length, 200);
   })
@@ -367,7 +367,7 @@ const meRouteHandlers = app
     const userPasskeys = await db.select().from(passkeysTable).where(eq(passkeysTable.userEmail, user.email));
 
     // If no passkeys exists, disable 2FA completely
-    if (!userPasskeys.length) await db.update(usersTable).set({ twoFactorEnabled: false }).where(eq(usersTable.id, user.id));
+    if (!userPasskeys.length) await db.update(usersTable).set({ twoFactorRequired: false }).where(eq(usersTable.id, user.id));
 
     return ctx.json(true, 200);
   })

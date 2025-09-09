@@ -55,7 +55,7 @@ export const useUserStore = create<UserStoreState>()(
               name: user.name,
               id: user.id,
               slug: user.slug,
-              twoFactorEnabled: user.twoFactorEnabled,
+              twoFactorRequired: user.twoFactorRequired,
             };
           });
 
@@ -78,7 +78,7 @@ export const useUserStore = create<UserStoreState>()(
         },
       })),
       {
-        version: 3,
+        version: 4,
         name: `${appConfig.slug}-user`,
         partialize: (state) => ({
           user: state.user,

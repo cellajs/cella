@@ -102,7 +102,7 @@ const AuthSteps = () => {
             </div>
           )}
           {/* TODO(IMPROVEMENT) be able to signUp with passeky */}
-          {enabledStrategies.includes('passkey') && lastUser?.email === email && !lastUser.twoFactorEnabled && step === 'signIn' && (
+          {enabledStrategies.includes('passkey') && lastUser?.email === email && !lastUser.twoFactorRequired && step === 'signIn' && (
             <PasskeyOption email={email} type="login" authStep={step} />
           )}
           {enabledStrategies.includes('oauth') && <OAuthOptions authStep={step} />}

@@ -1,5 +1,5 @@
 {
-  "id": "5f20d2e3-8b3b-4fd7-a9b7-5513c11862f6",
+  "id": "041bbfd5-dbbc-4aa9-b993-a00433051788",
   "prevId": "0c8accb0-2a35-4edb-ae62-a34220ae0726",
   "version": "7",
   "dialect": "postgresql",
@@ -1453,8 +1453,8 @@
           "primaryKey": false,
           "notNull": true
         },
-        "two_factor_enabled": {
-          "name": "two_factor_enabled",
+        "two_factor_required": {
+          "name": "two_factor_required",
           "type": "boolean",
           "primaryKey": false,
           "notNull": true,
