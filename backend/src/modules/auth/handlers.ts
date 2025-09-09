@@ -491,13 +491,22 @@ const authRouteHandlers = app
    * Sign out
    */
   .openapi(authRoutes.signOut, async (ctx) => {
-    const { sessionToken } = await getParsedSessionCookie(ctx, { deleteOnError: true });
+    const pendingMFA = await getAuthCookie(ctx, 'confirm-mfa');
+
+    if (pendingMFA) {
+      // Delete mfa cookie
+      deleteAuthCookie(ctx, 'confirm-mfa');
+
+      logEvent('info', 'User mfa canceled');
+
+      return ctx.json(true, 200);
+    }
+
     // Find session & invalidate
+    const { sessionToken } = await getParsedSessionCookie(ctx, { deleteOnError: true, deleteAfterAttempt: true });
     const { session: currentSession } = await validateSession(sessionToken);
 
     await db.delete(sessionsTable).where(and(eq(sessionsTable.id, currentSession.id), eq(sessionsTable.userId, currentSession.userId)));
-    // Delete session cookie
-    deleteAuthCookie(ctx, 'session');
 
     logEvent('info', 'User signed out', { userId: currentSession.userId });
 

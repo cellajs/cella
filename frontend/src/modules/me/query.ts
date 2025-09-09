@@ -3,7 +3,7 @@ import { queryOptions, useMutation } from '@tanstack/react-query';
 import { appConfig } from 'config';
 import { t } from 'i18next';
 import type { User } from '~/api.gen';
-import { getMyInvites, getPasskeyChallenge, registratePasskey, type UpdateMeData, unlinkPasskey, unlinkTotp, updateMe } from '~/api.gen';
+import { getMyInvites, getPasskeyChallenge, registratePasskey, unlinkPasskey, unlinkTotp, updateMe, type UpdateMeData } from '~/api.gen';
 import type { ApiError } from '~/lib/api';
 import { toaster } from '~/modules/common/toaster/service';
 import { generatePasskeyName, getAndSetMe, getAndSetMeAuthData, getAndSetMenu } from '~/modules/me/helpers';

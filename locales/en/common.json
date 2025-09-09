@@ -480,5 +480,6 @@
   "totp_registered": "TOTP successfully registered",
   "unlink": "Unlink",
   "passkeys": "Passkeys",
-  "authenticator_app": "Authenticator app"
+  "authenticator_app": "Authenticator app",
+  "success.cancel_mfa": "Multi-factor authentication has been canceled"
 }

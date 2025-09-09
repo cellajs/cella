@@ -7,7 +7,7 @@ import { useRef } from 'react';
 import { useForm, useFormState } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import type z from 'zod';
-import { type ApiError, getTotpUri, type SetupTotpData, type SetupTotpResponse, setupTotp } from '~/api.gen';
+import { type ApiError, getTotpUri, setupTotp, type SetupTotpData, type SetupTotpResponse } from '~/api.gen';
 import { zSetupTotpData } from '~/api.gen/zod.gen';
 import { useCopyToClipboard } from '~/hooks/use-copy-to-clipboard';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
@@ -75,12 +75,12 @@ export const TOTPSetup = () => {
           <CardDescription>{t('common:totp_qr.description')}</CardDescription>
         </CardHeader>
         <CardContent>
-          <QRCodeSVG className="mx-auto border-8 border-white my-3" value={data.totpUri} size={200} />
+          <QRCodeSVG className="mx-auto border-8 border-white my-3" value={data.totpUri} size={275} />
 
           <Alert variant="secondary" className="my-6">
             <AlertTitle>{t('common:totp_manual.footer_title')}</AlertTitle>
             <AlertDescription className="text-sm font-light">
-              <span>{t('common:totp_manual.footer_description')}</span>{' '}
+              <span>{t('common:totp_manual.footer_description')}</span>
               <Button ref={triggerRef} variant="none" className="p-0 h-auto underline cursor-pointer" onClick={openSetUpKey}>
                 {t('common:totp_manual.button_text')}
               </Button>
