@@ -9,7 +9,8 @@
       "!frontend/src/api.gen/client/*",
       "!frontend/src/api.gen/core/*",
       "!frontend/src/api.gen/client.gen.ts",
-      "!frontend/src/api.gen/index.ts"
+      "!frontend/src/api.gen/index.ts",
+      "!frontend/src/api.gen/sdk.gen.ts"
     ]
   },
   "linter": {
