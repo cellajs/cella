@@ -1,6 +1,3 @@
-import { appConfig } from 'config';
-import { and, eq } from 'drizzle-orm';
-import i18n from 'i18next';
 import { db } from '#/db/db';
 import { type EmailModel, emailsTable } from '#/db/schema/emails';
 import { oauthAccountsTable } from '#/db/schema/oauth-accounts';
@@ -12,6 +9,9 @@ import { usersBaseQuery } from '#/modules/users/helpers/select';
 import { logEvent } from '#/utils/logger';
 import { nanoid } from '#/utils/nanoid';
 import { createDate, TimeSpan } from '#/utils/time-span';
+import { appConfig } from 'config';
+import { and, eq } from 'drizzle-orm';
+import i18n from 'i18next';
 import { EmailVerificationEmail, type EmailVerificationEmailProps } from '../../../../emails/email-verification';
 
 interface Props {
@@ -91,18 +91,18 @@ export const sendVerificationEmail = async ({ userId, oauthAccountId, redirectPa
   const lng = user.language;
 
   // Create verification link
-  const verifyPath = !oauthAccount ? `/auth/verify-email/${token}` : `/auth/${oauthAccount.providerId}`;
-  const verificationLink = new URL(verifyPath, appConfig.backendAuthUrl);
+  const verifyPath = !oauthAccount ? `/auth/verify-email/${tokenRecord.token}` : `/auth/${oauthAccount.providerId}`;
+  const verificationURL = new URL(verifyPath, appConfig.backendAuthUrl);
 
   if (oauthAccount) {
-    verificationLink.searchParams.set('token', token);
-    verificationLink.searchParams.set('type', 'verify');
+    verificationURL.searchParams.set('token', tokenRecord.token);
+    verificationURL.searchParams.set('type', 'verify');
   }
-  if (redirectPath) verificationLink.searchParams.set('redirect', encodeURIComponent(redirectPath));
+  if (redirectPath) verificationURL.searchParams.set('redirect', encodeURIComponent(redirectPath));
 
   // Prepare & send email
   const subject = i18n.t('backend:email.email_verification.subject', { lng, appName: appConfig.name });
-  const staticProps = { verificationLink, subject, lng };
+  const staticProps = { verificationLink: verificationURL.toString(), subject, lng };
   const recipients = [{ email }];
 
   type Recipient = { email: string };

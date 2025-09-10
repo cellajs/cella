@@ -12,7 +12,7 @@ import { Footer } from './components/footer';
 const appName = appConfig.name;
 
 export interface EmailVerificationEmailProps extends BasicTemplateType {
-  verificationLink: URL;
+  verificationLink: string;
   email: string;
 }
 

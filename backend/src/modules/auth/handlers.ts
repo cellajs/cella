@@ -195,7 +195,7 @@ const authRouteHandlers = app
 
     // No token in context
     const token = getContextToken();
-    if (!token || !token.userId) throw new AppError({ status: 400, type: 'invalid_request', severity: 'error' });
+    if (!token.userId) throw new AppError({ status: 400, type: 'invalid_request', severity: 'error' });
 
     // Only allow verify emails for "password" strategy (Oauth verification is handled by Oauth callback handlers)
     if (token.oauthAccountId) {
