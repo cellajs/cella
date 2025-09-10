@@ -1,15 +1,21 @@
 name: CI
 
+# Controls which events and branches will trigger the workflow
 on:
   push:
     branches: [ git-actions ]
   pull_request:
     branches: [ git-actions ]
 
-jobs:
-  build:
-    runs-on: ubuntu-latest
+# Cancel older runs of the same PR when a new push arrives
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
+jobs:
+  # Install deps once and reuse for other jobs (optional optimization)
+  install:
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout repo
         uses: actions/checkout@v5
@@ -25,14 +31,113 @@ jobs:
           node-version: 24
           cache: 'pnpm'
 
-      - name: Create backend .env file
-        run: cp ./backend/.env.example ./backend/.env
-
-      - name: Create frontend .env file
-        run: cp ./frontend/.env.example ./frontend/.env
+      - name: Create .env files
+        run: |
+          cp ./backend/.env.example ./backend/.env
+          cp ./frontend/.env.example ./frontend/.env
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Run tests
-        run: pnpm test
+      # Save node_modules so other jobs can reuse
+      - name: Cache node_modules
+        uses: actions/cache@v3
+        with:
+          path: |
+            **/node_modules
+          key: ${{ runner.os }}-modules-${{ hashFiles('pnpm-lock.yaml') }}
+
+  # Runs linting and type checks
+  lint:
+    runs-on: ubuntu-latest
+    needs: install
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v5
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: 'pnpm'
+
+      - name: Restore node_modules
+        uses: actions/cache@v3
+        with:
+          path: |
+            **/node_modules
+          key: ${{ runner.os }}-modules-${{ hashFiles('pnpm-lock.yaml') }}
+
+      - name: Run Biome
+        run: pnpm biome check .
+
+      - name: Run TypeScript type check
+        run: pnpm tsc --noEmit
+
+  # Runs all tests
+  test:
+    runs-on: ubuntu-latest
+    needs: install
+    steps:
+      runs-on: ubuntu-latest
+      needs: install
+      steps:
+        - name: Checkout repo
+          uses: actions/checkout@v5
+
+        - name: Setup pnpm
+          uses: pnpm/action-setup@v4
+          with:
+            version: 9
+
+        - name: Setup Node.js
+          uses: actions/setup-node@v5
+          with:
+            node-version: 24
+            cache: 'pnpm'
+
+        - name: Create .env files
+          run: |
+            cp ./backend/.env.example ./backend/.env
+            cp ./frontend/.env.example ./frontend/.env
+
+        - name: Restore node_modules
+          uses: actions/cache@v3
+          with:
+            path: |
+              **/node_modules
+            key: ${{ runner.os }}-modules-${{ hashFiles('pnpm-lock.yaml') }}
+        - run: pnpm test
+
+  # Will run a quick startup check to ensure the app starts without issues
+    quick:
+      runs-on: ubuntu-latest
+      needs: [lint, test]
+      steps:
+        - name: Checkout repo
+          uses: actions/checkout@v5
+
+        - name: Setup pnpm
+          uses: pnpm/action-setup@v4
+          with:
+            version: 9
+
+        - name: Setup Node.js
+          uses: actions/setup-node@v5
+          with:
+            node-version: 24
+
+        - name: Cache node_modules
+          uses: actions/cache@v3
+          with:
+            path: |
+              **/node_modules
+            key: ${{ runner.os }}-modules-${{ hashFiles('pnpm-lock.yaml') }}
+
+        - name: Run quick startup check
+          run: pnpm quick
