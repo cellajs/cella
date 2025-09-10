@@ -20,16 +20,13 @@
       "correctness": {
         "useExhaustiveDependencies": "off",
         "noUnusedVariables": "off",
-        "useHookAtTopLevel": "off",
-        "useUniqueElementIds": "off",
-        "noNestedComponentDefinitions": "off"
+        "useHookAtTopLevel": "off"
       },
       "performance": {
         "noDynamicNamespaceImportAccess": "off"
       },
       "suspicious": {
         "noTemplateCurlyInString": "info",
-        "noUnknownAtRules": "off",
         "noEvolvingTypes": "off"
       },
       "a11y": {
@@ -38,8 +35,7 @@
         "useAriaPropsSupportedByRole": "info"
       },
       "complexity": {
-        "noUselessFragments": "off",
-        "noImportantStyles": "off"
+        "noUselessFragments": "off"
       },
       "style": {
         "useEnumInitializers": "off",
