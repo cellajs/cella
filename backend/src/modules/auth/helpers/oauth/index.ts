@@ -160,7 +160,7 @@ const inviteFlow = async (
 
   const invitationToken = await getValidToken({
     requiredType: 'invitation',
-    token: inviteTokenId,
+    tokenId: inviteTokenId,
     missedTokenError: { status: 403, type: 'oauth_token_missing', severity: 'warn', isRedirect: true },
   });
 
@@ -200,7 +200,7 @@ const verifyFlow = async (
   // Token not found → invalid verification
   const verifyToken = await getValidToken({
     requiredType: 'email_verification',
-    token: verifyTokenId,
+    tokenId: verifyTokenId,
     missedTokenError: { status: 403, type: 'oauth_token_missing', severity: 'warn', isRedirect: true },
   });
 
