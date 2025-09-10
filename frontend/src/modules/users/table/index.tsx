@@ -3,7 +3,6 @@ import { appConfig } from 'config';
 import { useCallback, useState } from 'react';
 import type { RowsChangeData } from 'react-data-grid';
 import { useTranslation } from 'react-i18next';
-import type { z } from 'zod';
 import useSearchParams from '~/hooks/use-search-params';
 import { DataTable } from '~/modules/common/data-table';
 import { useSortColumns } from '~/modules/common/data-table/sort-columns';
@@ -11,16 +10,13 @@ import { toaster } from '~/modules/common/toaster/service';
 import { usersQueryOptions, useUpdateUserMutation } from '~/modules/users/query';
 import { UsersTableBar } from '~/modules/users/table/bar';
 import { useColumns } from '~/modules/users/table/columns';
-import type { UserWithMemberships } from '~/modules/users/types';
-import type { usersSearchSchema } from '~/routes/system';
+import type { UsersRouteSearchParams, UserWithMemberships } from '~/modules/users/types';
 
 const LIMIT = appConfig.requestLimits.users;
 
-export type UsersSearch = z.infer<typeof usersSearchSchema>;
-
 const UsersTable = () => {
   const { t } = useTranslation();
-  const { search, setSearch } = useSearchParams<UsersSearch>({ from: '/app-layout/system/users' });
+  const { search, setSearch } = useSearchParams<UsersRouteSearchParams>({ from: '/applayout/system/users' });
 
   // Update user role
   const { mutate: updateUserRole } = useUpdateUserMutation();

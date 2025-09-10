@@ -2,8 +2,6 @@ import { onlineManager, useQuery } from '@tanstack/react-query';
 import { createRoute, redirect, useLoaderData, useParams } from '@tanstack/react-router';
 import i18n from 'i18next';
 import { lazy, Suspense } from 'react';
-import { z } from 'zod';
-import { zGetAttachmentsData, zGetMembersData, zGetPendingInvitationsData } from '~/api.gen/zod.gen';
 import ErrorNotice from '~/modules/common/error-notice';
 import { organizationQueryOptions } from '~/modules/organizations/query';
 import { queryClient } from '~/query/query-client';
@@ -11,24 +9,13 @@ import { AppRoute } from '~/routes/base';
 import { useToastStore } from '~/store/toast';
 import appTitle from '~/utils/app-title';
 import { noDirectAccess } from '~/utils/no-direct-access';
+import { attachmentsRouteSearchParamsSchema, membersRouteSearchParamsSchema } from './search-params-schemas';
 
 //Lazy-loaded components
 const OrganizationPage = lazy(() => import('~/modules/organizations/organization-page'));
 const MembersTable = lazy(() => import('~/modules/memberships/members-table'));
 const AttachmentsTable = lazy(() => import('~/modules/attachments/table'));
 const OrganizationSettings = lazy(() => import('~/modules/organizations/organization-settings'));
-
-// Search query schema
-export const membersSearchSchema = zGetMembersData.shape.query
-  .pick({ q: true, sort: true, order: true, role: true })
-  .extend({ userSheetId: z.string().optional() });
-
-export const pendingInvitationsSearchSchema = zGetPendingInvitationsData.shape.query.pick({ sort: true, order: true });
-
-export const attachmentsSearchSchema = zGetAttachmentsData.shape.query.unwrap().pick({ q: true, sort: true, order: true }).extend({
-  attachmentDialogId: z.string().optional(),
-  groupId: z.string().optional(),
-});
 
 export const OrganizationRoute = createRoute({
   path: '/organizations/$idOrSlug',
@@ -69,7 +56,7 @@ export const OrganizationRoute = createRoute({
 
 export const OrganizationMembersRoute = createRoute({
   path: '/members',
-  validateSearch: membersSearchSchema,
+  validateSearch: membersRouteSearchParamsSchema,
   staticData: { isAuth: true },
   getParentRoute: () => OrganizationRoute,
   loaderDeps: ({ search: { q, sort, order, role } }) => ({ q, sort, order, role }),
@@ -90,7 +77,7 @@ export const OrganizationMembersRoute = createRoute({
 
 export const OrganizationAttachmentsRoute = createRoute({
   path: '/attachments',
-  validateSearch: attachmentsSearchSchema,
+  validateSearch: attachmentsRouteSearchParamsSchema,
   staticData: { isAuth: true },
   getParentRoute: () => OrganizationRoute,
   loaderDeps: ({ search: { q, sort, order } }) => ({ q, sort, order }),

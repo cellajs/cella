@@ -5,7 +5,7 @@ import { LegalNotice } from '~/modules/auth/steps/legal-notice';
 const EmailVerification = () => {
   const { t } = useTranslation();
 
-  const { reason } = useParams({ from: '/public-layout/auth-layout/auth/email-verification/$reason' });
+  const { reason } = useParams({ from: '/publiclayout/authlayout/auth/email-verification/$reason' });
 
   return (
     <div className="text-center">

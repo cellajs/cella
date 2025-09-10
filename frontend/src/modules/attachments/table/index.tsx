@@ -4,7 +4,6 @@ import { Paperclip } from 'lucide-react';
 import { useCallback, useState } from 'react';
 import type { RowsChangeData } from 'react-data-grid';
 import { useTranslation } from 'react-i18next';
-import type { z } from 'zod';
 import type { Attachment } from '~/api.gen';
 import useOfflineTableSearch from '~/hooks/use-offline-table-search';
 import useSearchParams from '~/hooks/use-search-params';
@@ -19,11 +18,10 @@ import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { DataTable } from '~/modules/common/data-table';
 import { useSortColumns } from '~/modules/common/data-table/sort-columns';
 import type { EntityPage } from '~/modules/entities/types';
-import type { attachmentsSearchSchema } from '~/routes/organizations';
+import type { AttachmentsRouteSearchParams } from '../types';
 
 const LIMIT = appConfig.requestLimits.attachments;
 
-export type AttachmentSearch = z.infer<typeof attachmentsSearchSchema>;
 export interface AttachmentsTableProps {
   entity: EntityPage;
   isSheet?: boolean;
@@ -33,7 +31,7 @@ export interface AttachmentsTableProps {
 const AttachmentsTable = ({ entity, canUpload = true, isSheet = false }: AttachmentsTableProps) => {
   const { t } = useTranslation();
   const attachmentUpdateMutation = useAttachmentUpdateMutation();
-  const { search, setSearch } = useSearchParams<AttachmentSearch>({ saveDataInSearch: !isSheet });
+  const { search, setSearch } = useSearchParams<AttachmentsRouteSearchParams>({ saveDataInSearch: !isSheet });
 
   useElectricSyncAttachments(entity.id);
   useLocalSyncAttachments(entity.id);

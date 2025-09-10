@@ -4,7 +4,6 @@ import { Users } from 'lucide-react';
 import { useCallback, useState } from 'react';
 import type { RowsChangeData } from 'react-data-grid';
 import { useTranslation } from 'react-i18next';
-import type { z } from 'zod';
 import useSearchParams from '~/hooks/use-search-params';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { DataTable } from '~/modules/common/data-table';
@@ -14,12 +13,10 @@ import { MembersTableBar } from '~/modules/memberships/members-table/bar';
 import { useColumns } from '~/modules/memberships/members-table/columns';
 import { membersQueryOptions } from '~/modules/memberships/query';
 import { useMemberUpdateMutation } from '~/modules/memberships/query-mutations';
-import type { Member } from '~/modules/memberships/types';
-import type { membersSearchSchema } from '~/routes/organizations';
+import type { Member, MembersRouteSearchParams } from '~/modules/memberships/types';
 
 const LIMIT = appConfig.requestLimits.members;
 
-export type MemberSearch = z.infer<typeof membersSearchSchema>;
 export interface MembersTableWrapperProps {
   entity: EntityPage;
   isSheet?: boolean;
@@ -28,7 +25,7 @@ export interface MembersTableWrapperProps {
 
 const MembersTable = ({ entity, isSheet = false, children }: MembersTableWrapperProps) => {
   const { t } = useTranslation();
-  const { search, setSearch } = useSearchParams<MemberSearch>({ saveDataInSearch: !isSheet });
+  const { search, setSearch } = useSearchParams<MembersRouteSearchParams>({ saveDataInSearch: !isSheet });
 
   const updateMemberMembership = useMemberUpdateMutation();
 

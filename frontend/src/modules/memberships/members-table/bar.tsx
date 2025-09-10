@@ -16,14 +16,14 @@ import { FocusView } from '~/modules/common/focus-view';
 import SelectRole from '~/modules/common/form-fields/select-role';
 import { toaster } from '~/modules/common/toaster/service';
 import UnsavedBadge from '~/modules/common/unsaved-badge';
-import type { MemberSearch, MembersTableWrapperProps } from '~/modules/memberships/members-table';
+import type { MembersTableWrapperProps } from '~/modules/memberships/members-table';
 import { PendingInvitations } from '~/modules/memberships/pending-table/pending-invitations';
 import RemoveMembersForm from '~/modules/memberships/remove-member-form';
-import type { Member } from '~/modules/memberships/types';
+import type { Member, MembersRouteSearchParams } from '~/modules/memberships/types';
 import InviteUsers from '~/modules/users/invite-users';
 import { useInfiniteQueryTotal } from '~/query/hooks/use-infinite-query-total';
 
-type MembersTableBarProps = MembersTableWrapperProps & BaseTableBarProps<Member, MemberSearch>;
+type MembersTableBarProps = MembersTableWrapperProps & BaseTableBarProps<Member, MembersRouteSearchParams>;
 
 export const MembersTableBar = ({
   entity,
@@ -59,7 +59,7 @@ export const MembersTableBar = ({
   // Clear selected rows on role change
   const onRoleChange = (role?: string) => {
     clearSelection();
-    setSearch({ role: role === 'all' ? undefined : (role as MemberSearch['role']) });
+    setSearch({ role: role === 'all' ? undefined : (role as MembersRouteSearchParams['role']) });
   };
 
   const onResetFilters = () => {

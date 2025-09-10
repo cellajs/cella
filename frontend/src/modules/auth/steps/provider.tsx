@@ -9,7 +9,7 @@ import { AuthContext } from './provider-context';
 export const AuthStepsProvider = ({ children }: { children: ReactNode }) => {
   const matchRoute = useMatchRoute();
   const { lastUser } = useUserStore();
-  const { token } = useSearch({ from: '/public-layout/auth-layout/auth/authenticate' });
+  const { token } = useSearch({ from: '/publiclayout/authlayout/auth/authenticate' });
 
   const isMfaRoute = !!matchRoute({ to: '/auth/authenticate/mfa-confirmation' });
 

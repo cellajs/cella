@@ -35,7 +35,7 @@ export const SignInStep = () => {
   const passwordRef = useRef<HTMLInputElement>(null);
 
   const { lastUser, clearUserStore } = useUserStore();
-  const { redirect: encodedRedirect, token } = useSearch({ from: '/public-layout/auth-layout/auth/authenticate' });
+  const { redirect: encodedRedirect, token } = useSearch({ from: '/publiclayout/authlayout/auth/authenticate' });
 
   const redirect = decodeURIComponent(encodedRedirect || '');
   const isMobile = window.innerWidth < 640;

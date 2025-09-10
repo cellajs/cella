@@ -4,6 +4,7 @@ import { Bird } from 'lucide-react';
 import { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { z } from 'zod';
+import { zGetPendingInvitationsData } from '~/api.gen/zod.gen';
 import useSearchParams from '~/hooks/use-search-params';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { DataTable } from '~/modules/common/data-table';
@@ -13,9 +14,10 @@ import { PendingInvitationsTableBar } from '~/modules/memberships/pending-table/
 import { useColumns } from '~/modules/memberships/pending-table/columns';
 import { pendingInvitationsQueryOptions } from '~/modules/memberships/query';
 import type { PendingInvitation } from '~/modules/memberships/types';
-import type { pendingInvitationsSearchSchema } from '~/routes/organizations';
 
 const LIMIT = appConfig.requestLimits.pendingInvitations;
+
+const pendingInvitationsSearchSchema = zGetPendingInvitationsData.shape.query.pick({ sort: true, order: true });
 
 type PendingInvitationsSearch = z.infer<typeof pendingInvitationsSearchSchema>;
 

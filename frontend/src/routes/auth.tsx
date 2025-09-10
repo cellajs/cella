@@ -24,7 +24,7 @@ const authenticateRouteSearch = z.object({
 });
 
 export const AuthLayoutRoute = createRoute({
-  id: 'auth-layout',
+  id: 'authlayout',
   staticData: { isAuth: false },
   getParentRoute: () => PublicRoute,
   component: () => <AuthPage />,

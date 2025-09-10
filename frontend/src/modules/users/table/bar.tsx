@@ -16,11 +16,10 @@ import { toaster } from '~/modules/common/toaster/service';
 import UnsavedBadge from '~/modules/common/unsaved-badge';
 import DeleteUsers from '~/modules/users/delete-users';
 import InviteUsers from '~/modules/users/invite-users';
-import type { UsersSearch } from '~/modules/users/table';
-import type { UserWithMemberships } from '~/modules/users/types';
+import type { UsersRouteSearchParams, UserWithMemberships } from '~/modules/users/types';
 import { useInfiniteQueryTotal } from '~/query/hooks/use-infinite-query-total';
 
-type UsersTableBarProps = BaseTableBarProps<UserWithMemberships, UsersSearch>;
+type UsersTableBarProps = BaseTableBarProps<UserWithMemberships, UsersRouteSearchParams>;
 
 export const UsersTableBar = ({ selected, queryKey, searchVars, setSearch, columns, setColumns, clearSelection }: UsersTableBarProps) => {
   const { t } = useTranslation();
@@ -43,7 +42,7 @@ export const UsersTableBar = ({ selected, queryKey, searchVars, setSearch, colum
   // Drop selected Rows on role change
   const onRoleChange = (role?: string) => {
     clearSelection();
-    setSearch({ role: role === 'all' ? undefined : (role as UsersSearch['role']) });
+    setSearch({ role: role === 'all' ? undefined : (role as UsersRouteSearchParams['role']) });
   };
 
   const onResetFilters = () => {

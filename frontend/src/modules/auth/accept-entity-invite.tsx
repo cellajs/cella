@@ -19,7 +19,7 @@ const AcceptEntityInvite = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
 
-  const { token } = useParams({ from: '/public-layout/auth-layout/invitation/$token' });
+  const { token } = useParams({ from: '/publiclayout/authlayout/invitation/$token' });
 
   const { user: currentUser } = useUserStore();
 

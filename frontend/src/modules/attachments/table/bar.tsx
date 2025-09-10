@@ -4,7 +4,7 @@ import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Attachment } from '~/api.gen';
 import DeleteAttachments from '~/modules/attachments/delete-attachments';
-import type { AttachmentSearch, AttachmentsTableProps } from '~/modules/attachments/table';
+import type { AttachmentsTableProps } from '~/modules/attachments/table';
 import { useAttachmentsUploadDialog } from '~/modules/attachments/table/helpers';
 import { AlertWrap } from '~/modules/common/alert-wrap';
 import ColumnsView from '~/modules/common/data-table/columns-view';
@@ -17,9 +17,10 @@ import type { BaseTableBarProps } from '~/modules/common/data-table/types';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { FocusView } from '~/modules/common/focus-view';
 import { useInfiniteQueryTotal } from '~/query/hooks/use-infinite-query-total';
+import type { AttachmentsRouteSearchParams } from '../types';
 
 type AttachmentsTableBarProps = AttachmentsTableProps &
-  BaseTableBarProps<Attachment, AttachmentSearch> & {
+  BaseTableBarProps<Attachment, AttachmentsRouteSearchParams> & {
     isCompact: boolean;
     setIsCompact: (isCompact: boolean) => void;
   };

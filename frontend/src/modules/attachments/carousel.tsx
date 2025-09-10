@@ -3,7 +3,7 @@ import Autoplay from 'embla-carousel-autoplay';
 import { Download, ExternalLink, X } from 'lucide-react';
 import { useMemo, useRef, useState } from 'react';
 import useDownloader from 'react-use-downloader';
-import { clearAttachmentDialogSearchParams } from '~/modules/attachments/dialog/handler';
+import { clearAttachmentDialogSearchParams } from '~/modules/attachments/dialog/clear-search-params';
 import { openAttachmentDialog } from '~/modules/attachments/helpers/open-dialog';
 import { AttachmentRender } from '~/modules/attachments/render';
 import FilePlaceholder from '~/modules/attachments/table/preview/placeholder';

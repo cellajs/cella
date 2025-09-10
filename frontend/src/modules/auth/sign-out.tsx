@@ -12,7 +12,7 @@ export const SignOut = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
 
-  const { force } = useSearch({ from: '/public-layout/sign-out' });
+  const { force } = useSearch({ from: '/publiclayout/sign-out' });
 
   const signOutTriggeredRef = useRef(false);
 
