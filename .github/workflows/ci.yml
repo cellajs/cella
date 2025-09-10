@@ -112,6 +112,7 @@ jobs:
   quick:
     runs-on: ubuntu-latest
     needs: [lint, test]
+    timeout-minutes: 5
     steps:
       - name: Checkout repo
         uses: actions/checkout@v5
@@ -138,10 +139,15 @@ jobs:
             **/node_modules
           key: ${{ runner.os }}-modules-${{ hashFiles('pnpm-lock.yaml') }}
 
-      - name: Run quick startup check
-        run: pnpm quick &
-
-      - name: Wait for server to be ready
+      - name: Start quick and wait for Vite ready
         run: |
-          npx wait-on http://localhost:3000
-          echo "Server is up!"
+          # Start quick in the background and capture PID
+          pnpm quick | while IFS= read -r line; do
+            echo "$line"
+            # Match "VITE <version> ready in <ms>"
+            if echo "$line" | grep -E "VITE .* ready in .* ms"; then
+              echo "Vite server is ready!"
+              pkill -P $$ pnpm   # stop the server
+              break
+            fi
+          done
