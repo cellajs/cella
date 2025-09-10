@@ -25,6 +25,12 @@ jobs:
           node-version: 24
           cache: 'pnpm'
 
+      - name: Create backend .env file
+        run: cp ./backend/.env.example ./backend/.env
+
+      - name: Create frontend .env file
+        run: cp ./frontend/.env.example ./frontend/.env
+
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
