@@ -1,10 +1,3 @@
-import { OpenAPIHono, type z } from '@hono/zod-openapi';
-import { encodeBase32 } from '@oslojs/encoding';
-import { createTOTPKeyURI } from '@oslojs/otp';
-import type { EnabledOAuthProvider, MenuSection } from 'config';
-import { appConfig } from 'config';
-import { and, eq, getTableColumns, inArray, isNotNull, isNull, sql } from 'drizzle-orm';
-import { type SSEStreamingApi, streamSSE } from 'hono/streaming';
 import { db } from '#/db/db';
 import { membershipsTable } from '#/db/schema/memberships';
 import { oauthAccountsTable } from '#/db/schema/oauth-accounts';
@@ -39,6 +32,13 @@ import { getIsoDate } from '#/utils/iso-date';
 import { logEvent } from '#/utils/logger';
 import { TimeSpan } from '#/utils/time-span';
 import { verifyUnsubscribeToken } from '#/utils/unsubscribe-token';
+import { OpenAPIHono, type z } from '@hono/zod-openapi';
+import { encodeBase32 } from '@oslojs/encoding';
+import { createTOTPKeyURI } from '@oslojs/otp';
+import type { EnabledOAuthProvider, MenuSection } from 'config';
+import { appConfig } from 'config';
+import { and, eq, getTableColumns, inArray, isNotNull, isNull, sql } from 'drizzle-orm';
+import { type SSEStreamingApi, streamSSE } from 'hono/streaming';
 
 type UserMenu = z.infer<typeof menuSchema>;
 type MenuItem = z.infer<typeof menuItemSchema>;
@@ -384,8 +384,10 @@ const meRouteHandlers = app
       db.select().from(totpsTable).where(eq(totpsTable.userId, user.id)),
     ]);
 
-    // If no TOTP exists, disable MFA completely
-    if (!userPasskeys.length && !userTotps.length) await db.update(usersTable).set({ mfaRequired: false }).where(eq(usersTable.id, user.id));
+    // If no TOTP and Passkeys exists, disable MFA completely
+    if (!userPasskeys.length || !userTotps.length) {
+      await db.update(usersTable).set({ mfaRequired: false }).where(eq(usersTable.id, user.id));
+    }
 
     // TODO this is weird, the delete is sucessful so we should return true, not whether passkeys remain, thats up for frontend itself?
     return ctx.json(!!userPasskeys.length, 200);
@@ -452,11 +454,16 @@ const meRouteHandlers = app
     // Remove all totps linked to this user's email
     await db.delete(totpsTable).where(eq(totpsTable.userId, user.id));
 
-    // Check if the user still has any passkeys entries registered
-    const userPasskeys = await db.select().from(passkeysTable).where(eq(passkeysTable.userEmail, user.email));
+    // Check if the user still has any passkeys or TOTP entries registered
+    const [userPasskeys, userTotps] = await Promise.all([
+      db.select().from(passkeysTable).where(eq(passkeysTable.userEmail, user.email)),
+      db.select().from(totpsTable).where(eq(totpsTable.userId, user.id)),
+    ]);
 
-    // If no passkeys exists, disable MFA completely
-    if (!userPasskeys.length) await db.update(usersTable).set({ mfaRequired: false }).where(eq(usersTable.id, user.id));
+    // If no TOTP and Passkeys exists, disable MFA completely
+    if (!userPasskeys.length || !userTotps.length) {
+      await db.update(usersTable).set({ mfaRequired: false }).where(eq(usersTable.id, user.id));
+    }
 
     return ctx.json(true, 200);
   })

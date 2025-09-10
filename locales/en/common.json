@@ -484,5 +484,6 @@
   "success.cancel_mfa": "Multi-factor authentication has been canceled",
   "mfa_disable_confirmation.title": "Disable multifactor authentication",
   "mfa_disable_confirmation.text": "Are you sure you want to disable multifactor authentication? Your account will be less secure.",
-  "disable": "Disable"
+  "disable": "Disable",
+  "unlink_mfa_last": "You can't unlink {{method}} while MFA is active."
 }

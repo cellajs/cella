@@ -11,21 +11,22 @@ import { useUserStore } from '~/store/user';
 const PasskeysList = () => {
   const { t } = useTranslation();
 
-  const { hasPasskey } = useUserStore.getState();
+  const { user, hasPasskey } = useUserStore.getState();
 
   const { mutate: createPasskey } = useCreatePasskeyMutation();
   const { mutate: deletePasskey, isPending } = useDeletePasskeyMutation();
 
-  const handleUnlinkPasskey = (id: string) => {
-    if (!onlineManager.isOnline()) return toaster(t('common:action.offline.text'), 'warning');
-
-    deletePasskey(id);
-  };
   const queryOptions = meAuthQueryOptions();
   const {
     data: { passkeys },
   } = useSuspenseQuery(queryOptions);
 
+  const handleUnlinkPasskey = (id: string) => {
+    if (!onlineManager.isOnline()) return toaster(t('common:action.offline.text'), 'warning');
+    if (user.mfaRequired && passkeys.length <= 1) return toaster(t('common:unlink_mfa_last', { method: 'the last passkey' }), 'info');
+
+    deletePasskey(id);
+  };
   return (
     <div className="mb-6">
       <div className="flex flex-row max-sm:flex-col">

@@ -12,7 +12,7 @@ import { useUserStore } from '~/store/user';
 
 const Totp = () => {
   const { t } = useTranslation();
-  const { hasTotp } = useUserStore.getState();
+  const { hasTotp, user } = useUserStore.getState();
   const { mutate: deleteTotp } = useDeleteTotpMutation();
 
   const triggerRef = useRef<HTMLButtonElement | null>(null);
@@ -34,6 +34,7 @@ const Totp = () => {
 
   const handleDeleteTOTP = () => {
     if (!onlineManager.isOnline()) return toaster(t('common:action.offline.text'), 'warning');
+    if (user.mfaRequired) return toaster(t('common:unlink_mfa_last', { method: 'TOTP' }), 'info');
 
     deleteTotp();
   };
