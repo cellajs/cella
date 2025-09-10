@@ -200,33 +200,11 @@ jobs:
         with:
           node-version: 24
 
-      - name: Install changelog CLI and preset
+      - name: Install changelog deps
         run: pnpm add -Dw conventional-changelog-cli conventional-changelog-conventionalcommits
 
-      - name: Create temporary changelog config
-        run: |
-          cat <<EOF > changelog.config.js
-          const preset = require('conventional-changelog-conventionalcommits');
-          module.exports = {
-            ...preset,
-            types: [
-              { type: "feat", section: "Features" },
-              { type: "fix", section: "Bug Fixes" },
-              { type: "bug", section: "Bug Fixes" },
-              { type: "hot fix", section: "Bug Fixes" },
-              { type: "improve", section: "Features" },
-              { type: "improvement", section: "Features" },
-              { type: "add", section: "Features" },
-              { type: "refactor", section: "Refactoring" },
-              { type: "perf", section: "Performance" },
-              { type: "chore", section: "Chores" },
-              { type: "revert", section: "Reverts" }
-            ]
-          };
-          EOF
-
-      - name: Generate release notes
-        run: npx conventional-changelog -p ./changelog.config.js -r 0 -o RELEASE_NOTES.md
+      - name: Generate draft release notes
+        run: npx conventional-changelog -p conventionalcommits -r 0 -o RELEASE_NOTES.md
 
       - name: Upload draft release notes
         uses: actions/upload-artifact@v4
