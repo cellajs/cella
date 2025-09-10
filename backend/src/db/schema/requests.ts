@@ -19,4 +19,3 @@ export const requestsTable = pgTable(
 );
 
 export type RequestModel = typeof requestsTable.$inferSelect;
-export type InsertRequestModel = typeof requestsTable.$inferInsert;

@@ -1,11 +1,10 @@
 import { onlineManager, useMutation } from '@tanstack/react-query';
-import { useLoaderData } from '@tanstack/react-router';
 import { appConfig, type EnabledOAuthProvider } from 'config';
 import { Check, Send, Trash } from 'lucide-react';
 import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { type ApiError, type RequestPasswordData, type RequestPasswordResponse, requestPassword } from '~/api.gen';
-import { mapOAuthProviders } from '~/modules/auth/oauth-options';
+import { mapOAuthProviders } from '~/modules/auth/oauth-providers';
 import { AsideAnchor } from '~/modules/common/aside-anchor';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import HelpText from '~/modules/common/help-text';
@@ -15,12 +14,13 @@ import StickyBox from '~/modules/common/sticky-box';
 import { toaster } from '~/modules/common/toaster/service';
 import UnsavedBadge from '~/modules/common/unsaved-badge';
 import DeleteSelf from '~/modules/me/delete-self';
-import Passkeys from '~/modules/me/passkeys';
-import SessionsList from '~/modules/me/sessions-list';
+import { MultiFactorAuthentication } from '~/modules/me/mfa/switch';
+import PasskeysList from '~/modules/me/passkeys';
+import SessionsList from '~/modules/me/sessions';
+import Totp from '~/modules/me/totp';
 import { Button } from '~/modules/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/modules/ui/card';
 import UpdateUserForm from '~/modules/users/update-user-form';
-import { UserSettingsRoute } from '~/routes/users';
 import { useUIStore } from '~/store/ui';
 import { useUserStore } from '~/store/user';
 
@@ -35,8 +35,7 @@ const UserSettingsPage = () => {
   const { t } = useTranslation();
   const { user } = useUserStore();
   const mode = useUIStore((state) => state.mode);
-  // Get user auth info from route
-  const userAuthInfo = useLoaderData({ from: UserSettingsRoute.id });
+  const { enabledOAuth } = useUserStore.getState();
 
   const deleteButtonRef = useRef(null);
 
@@ -71,7 +70,7 @@ const UserSettingsPage = () => {
         triggerRef: deleteButtonRef,
         className: 'md:max-w-xl',
         title: t('common:delete_account'),
-        description: t('common:confirm.delete_account', { email: user.email }),
+        description: t('common:confirm.delete_account', { email: user.email, appName: appConfig.name }),
       },
     );
   };
@@ -121,7 +120,7 @@ const UserSettingsPage = () => {
               <CardDescription>{t('common:sessions.text')}</CardDescription>
             </CardHeader>
             <CardContent>
-              <SessionsList userAuthInfo={userAuthInfo} />
+              <SessionsList />
             </CardContent>
           </Card>
         </AsideAnchor>
@@ -134,10 +133,14 @@ const UserSettingsPage = () => {
             </CardHeader>
             <CardContent className="text-sm">
               <HelpText content={t('common:passkey.text')}>
-                <p className="font-semibold">{t('common:passkey')}</p>
+                <p className="font-semibold">{t('common:passkeys')}</p>
               </HelpText>
+              <PasskeysList />
 
-              <Passkeys userAuthInfo={userAuthInfo} />
+              <HelpText content={t('common:totp.text')}>
+                <p className="font-semibold">{t('common:totp')}</p>
+              </HelpText>
+              <Totp />
 
               <HelpText content={t('common:oauth.text')}>
                 <p className="font-semibold">{t('common:oauth')}</p>
@@ -147,7 +150,7 @@ const UserSettingsPage = () => {
                 {appConfig.enabledOAuthProviders.map((id) => {
                   const provider = mapOAuthProviders.find((provider) => provider.id === id);
                   if (!provider) return null;
-                  if (userAuthInfo.oauth.includes(id))
+                  if (enabledOAuth.includes(id)) {
                     return (
                       <div key={provider.id} className="flex items-center justify-center px-3 py-2 gap-2">
                         <img
@@ -160,6 +163,7 @@ const UserSettingsPage = () => {
                         {`${t('common:already_connected_to')} ${provider.name}`}
                       </div>
                     );
+                  }
                   return (
                     // Assert is necessary because apps might not have all providers enabled
                     <Button
@@ -179,21 +183,21 @@ const UserSettingsPage = () => {
                   );
                 })}
               </div>
-
               <HelpText content={t('common:request_password.text')}>
-                <p className="font-semibold">{t('common:reset_password')}</p>{' '}
+                <p className="font-semibold">{t('common:reset_resource', { resource: t('common:password').toLowerCase() })}</p>{' '}
               </HelpText>
-              <div>
+              <div className="mb-6">
                 <Button className="w-full sm:w-auto" variant="outline" disabled={disabledResetPassword} onClick={requestResetPasswordClick}>
                   <Send size={16} className="mr-2" />
                   {t('common:send_reset_link')}
                 </Button>
                 {disabledResetPassword && <p className="text-sm text-gray-500 mt-2">{t('common:retry_reset_password.text')}</p>}
               </div>
+
+              <MultiFactorAuthentication />
             </CardContent>
           </Card>
         </AsideAnchor>
-
         <AsideAnchor id="delete-account">
           <Card className="mx-auto sm:w-full">
             <CardHeader>

@@ -1,11 +1,9 @@
-import { eq } from 'drizzle-orm';
 import type { MiddlewareHandler } from 'hono';
 import { createMiddleware } from 'hono/factory';
-import { db } from '#/db/db';
-import { type TokenModel, tokensTable } from '#/db/schema/tokens';
+import type { TokenModel } from '#/db/schema/tokens';
 import type { Env } from '#/lib/context';
 import { AppError } from '#/lib/errors';
-import { isExpiredDate } from '#/utils/is-expired-date';
+import { getValidToken } from '#/utils/validate-token';
 
 /**
  * Middleware to get and check the validity of a token, and set token data in context.
@@ -25,19 +23,8 @@ export const hasValidToken = (requiredType: TokenModel['type']): MiddlewareHandl
     if (!token) throw new AppError({ status: 400, type: 'invalid_request', severity: 'error', isRedirect });
 
     // Check if token exists
-    const [tokenRecord] = await db.select().from(tokensTable).where(eq(tokensTable.token, token));
+    const tokenRecord = await getValidToken({ requiredType, token });
 
-    if (!tokenRecord) {
-      throw new AppError({ status: 404, type: `${requiredType}_not_found`, severity: 'warn', meta: { requiredType }, isRedirect });
-    }
-    // If token is expired, return an error
-    if (isExpiredDate(tokenRecord.expiresAt)) {
-      throw new AppError({ status: 401, type: `${requiredType}_expired`, severity: 'warn', meta: { requiredType }, isRedirect });
-    }
-    // Check if token type matches the required type (if specified)
-    if (tokenRecord.type !== requiredType) {
-      throw new AppError({ status: 401, type: 'invalid_token', severity: 'warn', meta: { requiredType } });
-    }
     // Set token in context
     ctx.set('token', tokenRecord);
 

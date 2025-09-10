@@ -1,13 +1,14 @@
 import { appConfig, type UserFlags } from 'config';
 import { getTableColumns, sql } from 'drizzle-orm';
+import { db } from '#/db/db';
 import { usersTable } from '#/db/schema/users';
 import { userBaseSchema } from '#/modules/entities/schema';
 
 /**
- * Safe user select. Sensitive fields are omitted.
+ * User select that merges userFlags with default ones
  */
 export const userSelect = (() => {
-  const { hashedPassword, unsubscribeToken, userFlags: _uf, ...safeUserSelect } = getTableColumns(usersTable);
+  const { userFlags: _uf, ...safeUserSelect } = getTableColumns(usersTable);
 
   return {
     ...safeUserSelect,
@@ -15,7 +16,6 @@ export const userSelect = (() => {
     userFlags: sql<UserFlags>` ${JSON.stringify(appConfig.defaultUserFlags)}::jsonb  || ${usersTable.userFlags}`,
   };
 })();
-
 /**
  * Member select. unnecessary fields are omitted from user select.
  */
@@ -37,3 +37,13 @@ export const userBaseSelect: UserBaseSelect = (() => {
   const entries = Object.entries(userBaseSchema.shape).map(([key]) => [key, userColumns[key as UserBaseKeys]]);
   return Object.fromEntries(entries) satisfies UserBaseSelect;
 })();
+
+/**
+ * Base query for selecting users.
+ *
+ * - Always selects from `usersTable` using the predefined `userSelect` shape.
+ *
+ * This query is meant to be extended (e.g., with additional joins or filters)
+ * wherever user data needs to be fetched consistently.
+ */
+export const usersBaseQuery = () => db.select(userSelect).from(usersTable);

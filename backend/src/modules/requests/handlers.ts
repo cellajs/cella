@@ -1,12 +1,14 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
 import { and, count, eq, getTableColumns, ilike, inArray, type SQL, sql } from 'drizzle-orm';
 import { db } from '#/db/db';
+import { emailsTable } from '#/db/schema/emails';
 import { type RequestModel, requestsTable } from '#/db/schema/requests';
+import { usersTable } from '#/db/schema/users';
 import type { Env } from '#/lib/context';
 import { AppError } from '#/lib/errors';
 import { sendSlackMessage } from '#/lib/notifications';
 import requestRoutes from '#/modules/requests/routes';
-import { getUserBy } from '#/modules/users/helpers/get-user-by';
+import { usersBaseQuery } from '#/modules/users/helpers/select';
 import { defaultHook } from '#/utils/default-hook';
 import { getOrderColumn } from '#/utils/order-column';
 import { prepareStringForILikeFilter } from '#/utils/sql';
@@ -26,7 +28,11 @@ const requestRouteHandlers = app
     const normalizedEmail = email.toLowerCase().trim();
 
     if (type === 'waitlist') {
-      const existingUser = await getUserBy('email', normalizedEmail);
+      const [existingUser] = await usersBaseQuery()
+        .leftJoin(emailsTable, eq(usersTable.id, emailsTable.userId))
+        .where(eq(emailsTable.email, normalizedEmail))
+        .limit(1);
+
       if (existingUser) throw new AppError({ status: 400, type: 'request_email_is_user' });
     }
 

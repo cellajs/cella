@@ -22,9 +22,9 @@ import type {
   SignInData,
   SignInResponses,
   SignInErrors,
-  RefreshTokenData,
-  RefreshTokenResponses,
-  RefreshTokenErrors,
+  ValidateTokenData,
+  ValidateTokenResponses,
+  ValidateTokenErrors,
   AcceptEntityInviteData,
   AcceptEntityInviteResponses,
   AcceptEntityInviteErrors,
@@ -37,24 +37,27 @@ import type {
   SignOutData,
   SignOutResponses,
   SignOutErrors,
-  GithubSignInData,
-  GithubSignInErrors,
-  GoogleSignInData,
-  GoogleSignInErrors,
-  MicrosoftSignInData,
-  MicrosoftSignInErrors,
-  GithubSignInCallbackData,
-  GithubSignInCallbackErrors,
-  GoogleSignInCallbackData,
-  GoogleSignInCallbackErrors,
-  MicrosoftSignInCallbackData,
-  MicrosoftSignInCallbackErrors,
+  GithubData,
+  GithubErrors,
+  GoogleData,
+  GoogleErrors,
+  MicrosoftData,
+  MicrosoftErrors,
+  GithubCallbackData,
+  GithubCallbackErrors,
+  GoogleCallbackData,
+  GoogleCallbackErrors,
+  MicrosoftCallbackData,
+  MicrosoftCallbackErrors,
   GetPasskeyChallengeData,
   GetPasskeyChallengeResponses,
   GetPasskeyChallengeErrors,
   SignInWithPasskeyData,
   SignInWithPasskeyResponses,
   SignInWithPasskeyErrors,
+  SignInWithTotpData,
+  SignInWithTotpResponses,
+  SignInWithTotpErrors,
   DeleteMeData,
   DeleteMeResponses,
   DeleteMeErrors,
@@ -64,27 +67,39 @@ import type {
   UpdateMeData,
   UpdateMeResponses,
   UpdateMeErrors,
+  ToggleMfaData,
+  ToggleMfaResponses,
+  ToggleMfaErrors,
   GetMyAuthData,
   GetMyAuthResponses,
   GetMyAuthErrors,
   GetMyMenuData,
   GetMyMenuResponses,
   GetMyMenuErrors,
-  GetMyInvitesData,
-  GetMyInvitesResponses,
-  GetMyInvitesErrors,
+  GetMyInvitationsData,
+  GetMyInvitationsResponses,
+  GetMyInvitationsErrors,
   DeleteMySessionsData,
   DeleteMySessionsResponses,
   DeleteMySessionsErrors,
   DeleteMyMembershipData,
   DeleteMyMembershipResponses,
   DeleteMyMembershipErrors,
-  DeletePasskeyData,
-  DeletePasskeyResponses,
-  DeletePasskeyErrors,
   CreatePasskeyData,
   CreatePasskeyResponses,
   CreatePasskeyErrors,
+  DeletePasskeyData,
+  DeletePasskeyResponses,
+  DeletePasskeyErrors,
+  RegisterTotpData,
+  RegisterTotpResponses,
+  RegisterTotpErrors,
+  ActivateTotpData,
+  ActivateTotpResponses,
+  ActivateTotpErrors,
+  DeleteTotpData,
+  DeleteTotpResponses,
+  DeleteTotpErrors,
   GetUploadTokenData,
   GetUploadTokenResponses,
   GetUploadTokenErrors,
@@ -276,7 +291,7 @@ export const signUp = <ThrowOnError extends boolean = true>(options?: Options<Si
  * @param {string} options.path.token - `string`
  * @param {string=} options.body.email - `string` (optional)
  * @param {string=} options.body.password - `string` (optional)
- * @returns Possible status codes: 200, 302, 400, 401, 403, 404, 429
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
 export const signUpWithToken = <ThrowOnError extends boolean = true>(options: Options<SignUpWithTokenData, ThrowOnError>) => {
   return (options.client ?? _heyApiClient).post<SignUpWithTokenResponses, SignUpWithTokenErrors, ThrowOnError, 'data'>({
@@ -302,7 +317,6 @@ export const signUpWithToken = <ThrowOnError extends boolean = true>(options: Op
  * @param {verifyEmailData} options
  * @param {string} options.path.token - `string`
  * @param {string=} options.query.redirect - `string` (optional)
- * @param {string} options.query.tokenid - `string`
  * @returns Possible status codes: 302, 400, 401, 403, 404, 429
  */
 export const verifyEmail = <ThrowOnError extends boolean = true>(options: Options<VerifyEmailData, ThrowOnError>) => {
@@ -391,29 +405,29 @@ export const signIn = <ThrowOnError extends boolean = true>(options?: Options<Si
 };
 
 /**
- * Token validation and nonce retrieval
+ * Validate token
  * 🌐 Public access
  *
- * Checks if a token (e.g. for password reset, email verification, or invite) is still valid and returns basic data and a nonce for further actions.
+ * Checks if a token (e.g. for password reset, email verification, or invite) is still valid and returns basic data if valid.
  *
- * **POST /auth/refresh-token/{id}** ·· [refreshToken](http://localhost:4000/docs#tag/auth/post/auth/refresh-token/{id}) ·· _auth_
+ * **POST /auth/validate-token/{token}** ·· [validateToken](http://localhost:4000/docs#tag/auth/post/auth/validate-token/{token}) ·· _auth_
  *
- * @param {refreshTokenData} options
- * @param {string} options.path.id - `string`
+ * @param {validateTokenData} options
+ * @param {string} options.path.token - `string`
  * @param {enum} options.query.type - `enum`
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
-export const refreshToken = <ThrowOnError extends boolean = true>(options: Options<RefreshTokenData, ThrowOnError>) => {
-  return (options.client ?? _heyApiClient).post<RefreshTokenResponses, RefreshTokenErrors, ThrowOnError, 'data'>({
+export const validateToken = <ThrowOnError extends boolean = true>(options: Options<ValidateTokenData, ThrowOnError>) => {
+  return (options.client ?? _heyApiClient).post<ValidateTokenResponses, ValidateTokenErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     security: [
       {
         in: 'cookie',
-        name: 'cella-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
-    url: '/auth/refresh-token/{id}',
+    url: '/auth/validate-token/{token}',
     ...options,
   });
 };
@@ -437,7 +451,7 @@ export const acceptEntityInvite = <ThrowOnError extends boolean = true>(options:
     security: [
       {
         in: 'cookie',
-        name: 'cella-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -464,7 +478,7 @@ export const startImpersonation = <ThrowOnError extends boolean = true>(options:
     security: [
       {
         in: 'cookie',
-        name: 'cella-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -490,7 +504,7 @@ export const stopImpersonation = <ThrowOnError extends boolean = true>(options?:
     security: [
       {
         in: 'cookie',
-        name: 'cella-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -516,7 +530,7 @@ export const signOut = <ThrowOnError extends boolean = true>(options?: Options<S
     security: [
       {
         in: 'cookie',
-        name: 'cella-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -531,17 +545,17 @@ export const signOut = <ThrowOnError extends boolean = true>(options?: Options<S
  *
  * Starts OAuth authentication with GitHub. Supports account connection (`connect`), redirect (`redirect`), or invite token (`token`).
  *
- * **GET /auth/github** ·· [githubSignIn](http://localhost:4000/docs#tag/auth/get/auth/github) ·· _auth_
+ * **GET /auth/github** ·· [github](http://localhost:4000/docs#tag/auth/get/auth/github) ·· _auth_
  *
- * @param {githubSignInData} options
+ * @param {githubData} options
  * @param {enum} options.query.type - `enum`
  * @param {string=} options.query.redirect - `string` (optional)
  * @param {string=} options.query.connect - `string` (optional)
  * @param {string=} options.query.token - `string` (optional)
  * @returns Possible status codes: 302, 400, 401, 403, 404, 429
  */
-export const githubSignIn = <ThrowOnError extends boolean = true>(options: Options<GithubSignInData, ThrowOnError>) => {
-  return (options.client ?? _heyApiClient).get<unknown, GithubSignInErrors, ThrowOnError, 'data'>({
+export const github = <ThrowOnError extends boolean = true>(options: Options<GithubData, ThrowOnError>) => {
+  return (options.client ?? _heyApiClient).get<unknown, GithubErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     url: '/auth/github',
     ...options,
@@ -554,17 +568,17 @@ export const githubSignIn = <ThrowOnError extends boolean = true>(options: Optio
  *
  * Starts OAuth authentication with Google. Supports account connection (`connect`), redirect (`redirect`), or invite token (`token`).
  *
- * **GET /auth/google** ·· [googleSignIn](http://localhost:4000/docs#tag/auth/get/auth/google) ·· _auth_
+ * **GET /auth/google** ·· [google](http://localhost:4000/docs#tag/auth/get/auth/google) ·· _auth_
  *
- * @param {googleSignInData} options
+ * @param {googleData} options
  * @param {enum} options.query.type - `enum`
  * @param {string=} options.query.redirect - `string` (optional)
  * @param {string=} options.query.connect - `string` (optional)
  * @param {string=} options.query.token - `string` (optional)
  * @returns Possible status codes: 302, 400, 401, 403, 404, 429
  */
-export const googleSignIn = <ThrowOnError extends boolean = true>(options: Options<GoogleSignInData, ThrowOnError>) => {
-  return (options.client ?? _heyApiClient).get<unknown, GoogleSignInErrors, ThrowOnError, 'data'>({
+export const google = <ThrowOnError extends boolean = true>(options: Options<GoogleData, ThrowOnError>) => {
+  return (options.client ?? _heyApiClient).get<unknown, GoogleErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     url: '/auth/google',
     ...options,
@@ -577,17 +591,17 @@ export const googleSignIn = <ThrowOnError extends boolean = true>(options: Optio
  *
  * Starts OAuth authentication with Microsoft. Supports account connection (`connect`), redirect (`redirect`), or invite token (`token`).
  *
- * **GET /auth/microsoft** ·· [microsoftSignIn](http://localhost:4000/docs#tag/auth/get/auth/microsoft) ·· _auth_
+ * **GET /auth/microsoft** ·· [microsoft](http://localhost:4000/docs#tag/auth/get/auth/microsoft) ·· _auth_
  *
- * @param {microsoftSignInData} options
+ * @param {microsoftData} options
  * @param {enum} options.query.type - `enum`
  * @param {string=} options.query.redirect - `string` (optional)
  * @param {string=} options.query.connect - `string` (optional)
  * @param {string=} options.query.token - `string` (optional)
  * @returns Possible status codes: 302, 400, 401, 403, 404, 429
  */
-export const microsoftSignIn = <ThrowOnError extends boolean = true>(options: Options<MicrosoftSignInData, ThrowOnError>) => {
-  return (options.client ?? _heyApiClient).get<unknown, MicrosoftSignInErrors, ThrowOnError, 'data'>({
+export const microsoft = <ThrowOnError extends boolean = true>(options: Options<MicrosoftData, ThrowOnError>) => {
+  return (options.client ?? _heyApiClient).get<unknown, MicrosoftErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     url: '/auth/microsoft',
     ...options,
@@ -601,9 +615,9 @@ export const microsoftSignIn = <ThrowOnError extends boolean = true>(options: Op
  *
  * Handles GitHub OAuth callback, retrieves user identity, and establishes a session or links account.
  *
- * **GET /auth/github/callback** ·· [githubSignInCallback](http://localhost:4000/docs#tag/auth/get/auth/github/callback) ·· _auth_
+ * **GET /auth/github/callback** ·· [githubCallback](http://localhost:4000/docs#tag/auth/get/auth/github/callback) ·· _auth_
  *
- * @param {githubSignInCallbackData} options
+ * @param {githubCallbackData} options
  * @param {string} options.query.code - `string`
  * @param {string} options.query.state - `string`
  * @param {string=} options.query.error - `string` (optional)
@@ -611,8 +625,8 @@ export const microsoftSignIn = <ThrowOnError extends boolean = true>(options: Op
  * @param {string=} options.query.error_uri - `string` (optional)
  * @returns Possible status codes: 302, 400, 401, 403, 404, 429
  */
-export const githubSignInCallback = <ThrowOnError extends boolean = true>(options: Options<GithubSignInCallbackData, ThrowOnError>) => {
-  return (options.client ?? _heyApiClient).get<unknown, GithubSignInCallbackErrors, ThrowOnError, 'data'>({
+export const githubCallback = <ThrowOnError extends boolean = true>(options: Options<GithubCallbackData, ThrowOnError>) => {
+  return (options.client ?? _heyApiClient).get<unknown, GithubCallbackErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     url: '/auth/github/callback',
     ...options,
@@ -626,15 +640,15 @@ export const githubSignInCallback = <ThrowOnError extends boolean = true>(option
  *
  * Handles Google OAuth callback, retrieves user identity, and establishes a session or links account.
  *
- * **GET /auth/google/callback** ·· [googleSignInCallback](http://localhost:4000/docs#tag/auth/get/auth/google/callback) ·· _auth_
+ * **GET /auth/google/callback** ·· [googleCallback](http://localhost:4000/docs#tag/auth/get/auth/google/callback) ·· _auth_
  *
- * @param {googleSignInCallbackData} options
+ * @param {googleCallbackData} options
  * @param {string} options.query.code - `string`
  * @param {string} options.query.state - `string`
  * @returns Possible status codes: 302, 400, 401, 403, 404, 429
  */
-export const googleSignInCallback = <ThrowOnError extends boolean = true>(options: Options<GoogleSignInCallbackData, ThrowOnError>) => {
-  return (options.client ?? _heyApiClient).get<unknown, GoogleSignInCallbackErrors, ThrowOnError, 'data'>({
+export const googleCallback = <ThrowOnError extends boolean = true>(options: Options<GoogleCallbackData, ThrowOnError>) => {
+  return (options.client ?? _heyApiClient).get<unknown, GoogleCallbackErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     url: '/auth/google/callback',
     ...options,
@@ -648,15 +662,15 @@ export const googleSignInCallback = <ThrowOnError extends boolean = true>(option
  *
  * Handles Microsoft OAuth callback, retrieves user identity, and establishes a session or links account.
  *
- * **GET /auth/microsoft/callback** ·· [microsoftSignInCallback](http://localhost:4000/docs#tag/auth/get/auth/microsoft/callback) ·· _auth_
+ * **GET /auth/microsoft/callback** ·· [microsoftCallback](http://localhost:4000/docs#tag/auth/get/auth/microsoft/callback) ·· _auth_
  *
- * @param {microsoftSignInCallbackData} options
+ * @param {microsoftCallbackData} options
  * @param {string} options.query.code - `string`
  * @param {string} options.query.state - `string`
  * @returns Possible status codes: 302, 400, 401, 403, 404, 429
  */
-export const microsoftSignInCallback = <ThrowOnError extends boolean = true>(options: Options<MicrosoftSignInCallbackData, ThrowOnError>) => {
-  return (options.client ?? _heyApiClient).get<unknown, MicrosoftSignInCallbackErrors, ThrowOnError, 'data'>({
+export const microsoftCallback = <ThrowOnError extends boolean = true>(options: Options<MicrosoftCallbackData, ThrowOnError>) => {
+  return (options.client ?? _heyApiClient).get<unknown, MicrosoftCallbackErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     url: '/auth/microsoft/callback',
     ...options,
@@ -666,16 +680,19 @@ export const microsoftSignInCallback = <ThrowOnError extends boolean = true>(opt
 /**
  * Get passkey challenge
  * 🌐 Public access
+ * ⏳ Spam (10/h)
  *
  * Initiates the passkey registration or authentication flow by generating a device bound challenge.
  *
  * **GET /auth/passkey-challenge** ·· [getPasskeyChallenge](http://localhost:4000/docs#tag/auth/get/auth/passkey-challenge) ·· _auth_
  *
  * @param {getPasskeyChallengeData} options
+ * @param {enum | enum | enum} options.query.type - `enum | enum | enum`
+ * @param {string=} options.query.email - `string` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
-export const getPasskeyChallenge = <ThrowOnError extends boolean = true>(options?: Options<GetPasskeyChallengeData, ThrowOnError>) => {
-  return (options?.client ?? _heyApiClient).get<GetPasskeyChallengeResponses, GetPasskeyChallengeErrors, ThrowOnError, 'data'>({
+export const getPasskeyChallenge = <ThrowOnError extends boolean = true>(options: Options<GetPasskeyChallengeData, ThrowOnError>) => {
+  return (options.client ?? _heyApiClient).get<GetPasskeyChallengeResponses, GetPasskeyChallengeErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     url: '/auth/passkey-challenge',
     ...options,
@@ -692,10 +709,12 @@ export const getPasskeyChallenge = <ThrowOnError extends boolean = true>(options
  * **POST /auth/passkey-verification** ·· [signInWithPasskey](http://localhost:4000/docs#tag/auth/post/auth/passkey-verification) ·· _auth_
  *
  * @param {signInWithPasskeyData} options
+ * @param {string=} options.body.credentialId - `string` (optional)
  * @param {string=} options.body.clientDataJSON - `string` (optional)
  * @param {string=} options.body.authenticatorData - `string` (optional)
  * @param {string=} options.body.signature - `string` (optional)
- * @param {string=} options.body.userEmail - `string` (optional)
+ * @param {enum | enum=} options.body.type - `enum | enum` (optional)
+ * @param {string=} options.body.email - `string` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
 export const signInWithPasskey = <ThrowOnError extends boolean = true>(options?: Options<SignInWithPasskeyData, ThrowOnError>) => {
@@ -704,11 +723,36 @@ export const signInWithPasskey = <ThrowOnError extends boolean = true>(options?:
     security: [
       {
         in: 'cookie',
-        name: 'cella-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
     url: '/auth/passkey-verification',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options?.headers,
+    },
+  });
+};
+
+/**
+ * Verify TOTP
+ * 🌐 Public access
+ * ⏳ Spam (10/h)
+ *
+ * Validates the TOTP code and completes TOTP based authentication.
+ *
+ * **POST /auth/totp-verification** ·· [signInWithTotp](http://localhost:4000/docs#tag/auth/post/auth/totp-verification) ·· _auth_
+ *
+ * @param {signInWithTotpData} options
+ * @param {string=} options.body.code - `string` (optional)
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
+ */
+export const signInWithTotp = <ThrowOnError extends boolean = true>(options?: Options<SignInWithTotpData, ThrowOnError>) => {
+  return (options?.client ?? _heyApiClient).post<SignInWithTotpResponses, SignInWithTotpErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    url: '/auth/totp-verification',
     ...options,
     headers: {
       'Content-Type': 'application/json',
@@ -734,7 +778,7 @@ export const deleteMe = <ThrowOnError extends boolean = true>(options?: Options<
     security: [
       {
         in: 'cookie',
-        name: 'cella-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -760,7 +804,7 @@ export const getMe = <ThrowOnError extends boolean = true>(options?: Options<Get
     security: [
       {
         in: 'cookie',
-        name: 'cella-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -794,7 +838,7 @@ export const updateMe = <ThrowOnError extends boolean = true>(options?: Options<
     security: [
       {
         in: 'cookie',
-        name: 'cella-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -808,7 +852,40 @@ export const updateMe = <ThrowOnError extends boolean = true>(options?: Options<
 };
 
 /**
- * Get authentication data
+ * Toggle MFA
+ * 🛡️ Requires authentication
+ *
+ * Enable or disable multifactor authentication for the *current user*. Requires passkey or TOTP reauthentication if session is older than 1 hour.
+ *
+ * **PUT /me/mfa** ·· [toggleMfa](http://localhost:4000/docs#tag/me/put/me/mfa) ·· _me_
+ *
+ * @param {toggleMfaData} options
+ * @param {object} options.body.passkeyData - `object`
+ * @param {string=} options.body.totpCode - `string` (optional)
+ * @param {boolean=} options.body.mfaRequired - `boolean` (optional)
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
+ */
+export const toggleMfa = <ThrowOnError extends boolean = true>(options?: Options<ToggleMfaData, ThrowOnError>) => {
+  return (options?.client ?? _heyApiClient).put<ToggleMfaResponses, ToggleMfaErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    security: [
+      {
+        in: 'cookie',
+        name: 'cella-development-session-v1',
+        type: 'apiKey',
+      },
+    ],
+    url: '/me/mfa',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options?.headers,
+    },
+  });
+};
+
+/**
+ * Get auth data
  * 🛡️ Requires authentication
  *
  * Returns authentication related data of *current user*, including sessions, OAuth accounts, and sign in options.
@@ -824,7 +901,7 @@ export const getMyAuth = <ThrowOnError extends boolean = true>(options?: Options
     security: [
       {
         in: 'cookie',
-        name: 'cella-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -850,7 +927,7 @@ export const getMyMenu = <ThrowOnError extends boolean = true>(options?: Options
     security: [
       {
         in: 'cookie',
-        name: 'cella-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -860,27 +937,27 @@ export const getMyMenu = <ThrowOnError extends boolean = true>(options?: Options
 };
 
 /**
- * Get invites
+ * Get invitations
  * 🛡️ Requires authentication
  *
- * Returns a list of entity invites associated with the *current user*.
+ * Returns a list of pending entity invitations which *current user* received.
  *
- * **GET /me/invites** ·· [getMyInvites](http://localhost:4000/docs#tag/me/get/me/invites) ·· _me_
+ * **GET /me/invitations** ·· [getMyInvitations](http://localhost:4000/docs#tag/me/get/me/invitations) ·· _me_
  *
- * @param {getMyInvitesData} options
+ * @param {getMyInvitationsData} options
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
-export const getMyInvites = <ThrowOnError extends boolean = true>(options?: Options<GetMyInvitesData, ThrowOnError>) => {
-  return (options?.client ?? _heyApiClient).get<GetMyInvitesResponses, GetMyInvitesErrors, ThrowOnError, 'data'>({
+export const getMyInvitations = <ThrowOnError extends boolean = true>(options?: Options<GetMyInvitationsData, ThrowOnError>) => {
+  return (options?.client ?? _heyApiClient).get<GetMyInvitationsResponses, GetMyInvitationsErrors, ThrowOnError, 'data'>({
     responseStyle: 'data',
     security: [
       {
         in: 'cookie',
-        name: 'cella-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
-    url: '/me/invites',
+    url: '/me/invitations',
     ...options,
   });
 };
@@ -903,7 +980,7 @@ export const deleteMySessions = <ThrowOnError extends boolean = true>(options?: 
     security: [
       {
         in: 'cookie',
-        name: 'cella-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -938,35 +1015,17 @@ export const deleteMyMembership = <ThrowOnError extends boolean = true>(options:
 };
 
 /**
- * Delete passkey
- * 🛡️ Requires authentication
- *
- * Removes the *current user's* registered passkey credential.
- *
- * **DELETE /me/passkey** ·· [deletePasskey](http://localhost:4000/docs#tag/me/delete/me/passkey) ·· _me_
- *
- * @param {deletePasskeyData} options
- * @returns Possible status codes: 200, 400, 401, 403, 404, 429
- */
-export const deletePasskey = <ThrowOnError extends boolean = true>(options?: Options<DeletePasskeyData, ThrowOnError>) => {
-  return (options?.client ?? _heyApiClient).delete<DeletePasskeyResponses, DeletePasskeyErrors, ThrowOnError, 'data'>({
-    responseStyle: 'data',
-    url: '/me/passkey',
-    ...options,
-  });
-};
-
-/**
  * Create passkey
  * 🛡️ Requires authentication
  *
- * Registers a passkey for passwordless authentication by verifying a signed challenge and linking it to the *current user*.
+ * Register a passkey for passwordless authentication by verifying a signed challenge and linking it to the *current user*. Multiple passkeys can be created for different devices/browsers.
  *
  * **POST /me/passkey** ·· [createPasskey](http://localhost:4000/docs#tag/me/post/me/passkey) ·· _me_
  *
  * @param {createPasskeyData} options
  * @param {string=} options.body.attestationObject - `string` (optional)
  * @param {string=} options.body.clientDataJSON - `string` (optional)
+ * @param {string=} options.body.nameOnDevice - `string` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 404, 429
  */
 export const createPasskey = <ThrowOnError extends boolean = true>(options: Options<CreatePasskeyData, ThrowOnError>) => {
@@ -978,6 +1037,89 @@ export const createPasskey = <ThrowOnError extends boolean = true>(options: Opti
       'Content-Type': 'application/json',
       ...options.headers,
     },
+  });
+};
+
+/**
+ * Delete passkey
+ * 🛡️ Requires authentication
+ *
+ * Delete a passkey by id from the *current user*.
+ *
+ * **DELETE /me/passkey/{id}** ·· [deletePasskey](http://localhost:4000/docs#tag/me/delete/me/passkey/{id}) ·· _me_
+ *
+ * @param {deletePasskeyData} options
+ * @param {string} options.path.id - `string`
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
+ */
+export const deletePasskey = <ThrowOnError extends boolean = true>(options: Options<DeletePasskeyData, ThrowOnError>) => {
+  return (options.client ?? _heyApiClient).delete<DeletePasskeyResponses, DeletePasskeyErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    url: '/me/passkey/{id}',
+    ...options,
+  });
+};
+
+/**
+ * Register TOTP
+ * 🛡️ Requires authentication
+ * ⏳ Spam (10/h)
+ *
+ * Generates a new TOTP secret for the current user and returns a provisioning URI and Base32 manual key.
+ *
+ * **POST /me/totp/register** ·· [registerTotp](http://localhost:4000/docs#tag/me/post/me/totp/register) ·· _me_
+ *
+ * @param {registerTotpData} options
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
+ */
+export const registerTotp = <ThrowOnError extends boolean = true>(options?: Options<RegisterTotpData, ThrowOnError>) => {
+  return (options?.client ?? _heyApiClient).post<RegisterTotpResponses, RegisterTotpErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    url: '/me/totp/register',
+    ...options,
+  });
+};
+
+/**
+ * Activate TOTP
+ * 🛡️ Requires authentication
+ *
+ * Confirms TOTP setup by verifying a code from the authenticator app. On success, TOTP is enabled for the account.
+ *
+ * **POST /me/totp/activate** ·· [activateTotp](http://localhost:4000/docs#tag/me/post/me/totp/activate) ·· _me_
+ *
+ * @param {activateTotpData} options
+ * @param {string=} options.body.code - `string` (optional)
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
+ */
+export const activateTotp = <ThrowOnError extends boolean = true>(options: Options<ActivateTotpData, ThrowOnError>) => {
+  return (options.client ?? _heyApiClient).post<ActivateTotpResponses, ActivateTotpErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    url: '/me/totp/activate',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+  });
+};
+
+/**
+ * Delete TOTP
+ * 🛡️ Requires authentication
+ *
+ * Delete TOTP credential for current user.
+ *
+ * **DELETE /me/totp** ·· [deleteTotp](http://localhost:4000/docs#tag/me/delete/me/totp) ·· _me_
+ *
+ * @param {deleteTotpData} options
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 429
+ */
+export const deleteTotp = <ThrowOnError extends boolean = true>(options?: Options<DeleteTotpData, ThrowOnError>) => {
+  return (options?.client ?? _heyApiClient).delete<DeleteTotpResponses, DeleteTotpErrors, ThrowOnError, 'data'>({
+    responseStyle: 'data',
+    url: '/me/totp',
+    ...options,
   });
 };
 
@@ -1001,7 +1143,7 @@ export const getUploadToken = <ThrowOnError extends boolean = true>(options: Opt
     security: [
       {
         in: 'cookie',
-        name: 'cella-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -1029,7 +1171,7 @@ export const unsubscribeMe = <ThrowOnError extends boolean = true>(options: Opti
     security: [
       {
         in: 'cookie',
-        name: 'cella-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -1056,7 +1198,7 @@ export const deleteUsers = <ThrowOnError extends boolean = true>(options?: Optio
     security: [
       {
         in: 'cookie',
-        name: 'cella-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -1095,7 +1237,7 @@ export const getUsers = <ThrowOnError extends boolean = true>(options?: Options<
     security: [
       {
         in: 'cookie',
-        name: 'cella-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -1122,7 +1264,7 @@ export const getUser = <ThrowOnError extends boolean = true>(options: Options<Ge
     security: [
       {
         in: 'cookie',
-        name: 'cella-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -1156,7 +1298,7 @@ export const updateUser = <ThrowOnError extends boolean = true>(options: Options
     security: [
       {
         in: 'cookie',
-        name: 'cella-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -1187,7 +1329,7 @@ export const deleteOrganizations = <ThrowOnError extends boolean = true>(options
     security: [
       {
         in: 'cookie',
-        name: 'cella-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -1222,7 +1364,7 @@ export const getOrganizations = <ThrowOnError extends boolean = true>(options?: 
     security: [
       {
         in: 'cookie',
-        name: 'cella-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -1250,7 +1392,7 @@ export const createOrganization = <ThrowOnError extends boolean = true>(options:
     security: [
       {
         in: 'cookie',
-        name: 'cella-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -1281,7 +1423,7 @@ export const getOrganization = <ThrowOnError extends boolean = true>(options: Op
     security: [
       {
         in: 'cookie',
-        name: 'cella-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -1325,7 +1467,7 @@ export const updateOrganization = <ThrowOnError extends boolean = true>(options:
     security: [
       {
         in: 'cookie',
-        name: 'cella-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -1369,7 +1511,7 @@ export const getContextEntities = <ThrowOnError extends boolean = true>(options?
     security: [
       {
         in: 'cookie',
-        name: 'cella-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -1398,7 +1540,7 @@ export const getContextEntity = <ThrowOnError extends boolean = true>(options: O
     security: [
       {
         in: 'cookie',
-        name: 'cella-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -1427,7 +1569,7 @@ export const checkSlug = <ThrowOnError extends boolean = true>(options?: Options
     security: [
       {
         in: 'cookie',
-        name: 'cella-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -1458,7 +1600,7 @@ export const systemInvite = <ThrowOnError extends boolean = true>(options?: Opti
     security: [
       {
         in: 'cookie',
-        name: 'cella-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -1489,7 +1631,7 @@ export const getPresignedUrl = <ThrowOnError extends boolean = true>(options: Op
     security: [
       {
         in: 'cookie',
-        name: 'cella-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -1516,7 +1658,7 @@ export const paddleWebhook = <ThrowOnError extends boolean = true>(options?: Opt
     security: [
       {
         in: 'cookie',
-        name: 'cella-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -1551,7 +1693,7 @@ export const sendNewsletter = <ThrowOnError extends boolean = true>(options: Opt
     security: [
       {
         in: 'cookie',
-        name: 'cella-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -1582,7 +1724,7 @@ export const deleteRequests = <ThrowOnError extends boolean = true>(options?: Op
     security: [
       {
         in: 'cookie',
-        name: 'cella-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -1617,7 +1759,7 @@ export const getRequests = <ThrowOnError extends boolean = true>(options?: Optio
     security: [
       {
         in: 'cookie',
-        name: 'cella-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -1647,7 +1789,7 @@ export const createRequest = <ThrowOnError extends boolean = true>(options?: Opt
     security: [
       {
         in: 'cookie',
-        name: 'cella-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -1678,7 +1820,7 @@ export const getMetrics = <ThrowOnError extends boolean = true>(options?: Option
     security: [
       {
         in: 'cookie',
-        name: 'cella-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -1705,7 +1847,7 @@ export const getPublicCounts = <ThrowOnError extends boolean = true>(options?: O
     security: [
       {
         in: 'cookie',
-        name: 'cella-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -1740,7 +1882,7 @@ export const shapeProxy = <ThrowOnError extends boolean = true>(options: Options
     security: [
       {
         in: 'cookie',
-        name: 'cella-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -1768,7 +1910,7 @@ export const deleteAttachments = <ThrowOnError extends boolean = true>(options: 
     security: [
       {
         in: 'cookie',
-        name: 'cella-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -1805,7 +1947,7 @@ export const getAttachments = <ThrowOnError extends boolean = true>(options: Opt
     security: [
       {
         in: 'cookie',
-        name: 'cella-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -1832,7 +1974,7 @@ export const createAttachment = <ThrowOnError extends boolean = true>(options: O
     security: [
       {
         in: 'cookie',
-        name: 'cella-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -1864,7 +2006,7 @@ export const getAttachment = <ThrowOnError extends boolean = true>(options: Opti
     security: [
       {
         in: 'cookie',
-        name: 'cella-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -1894,7 +2036,7 @@ export const updateAttachment = <ThrowOnError extends boolean = true>(options: O
     security: [
       {
         in: 'cookie',
-        name: 'cella-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -1925,7 +2067,7 @@ export const getAttachmentCover = <ThrowOnError extends boolean = true>(options:
     security: [
       {
         in: 'cookie',
-        name: 'cella-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -1952,7 +2094,7 @@ export const redirectToAttachment = <ThrowOnError extends boolean = true>(option
     security: [
       {
         in: 'cookie',
-        name: 'cella-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -1982,7 +2124,7 @@ export const deleteMemberships = <ThrowOnError extends boolean = true>(options: 
     security: [
       {
         in: 'cookie',
-        name: 'cella-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -2017,7 +2159,7 @@ export const membershipInvite = <ThrowOnError extends boolean = true>(options: O
     security: [
       {
         in: 'cookie',
-        name: 'cella-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -2053,7 +2195,7 @@ export const updateMembership = <ThrowOnError extends boolean = true>(options: O
     security: [
       {
         in: 'cookie',
-        name: 'cella-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -2092,7 +2234,7 @@ export const getMembers = <ThrowOnError extends boolean = true>(options: Options
     security: [
       {
         in: 'cookie',
-        name: 'cella-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],
@@ -2126,7 +2268,7 @@ export const getPendingInvitations = <ThrowOnError extends boolean = true>(optio
     security: [
       {
         in: 'cookie',
-        name: 'cella-session-v1',
+        name: 'cella-development-session-v1',
         type: 'apiKey',
       },
     ],

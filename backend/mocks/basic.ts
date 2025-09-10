@@ -1,14 +1,16 @@
 import { InsertEmailModel } from "#/db/schema/emails";
 import { InsertMembershipModel } from "#/db/schema/memberships";
 import { InsertOrganizationModel, OrganizationModel } from "#/db/schema/organizations";
+import { InsertPasswordModel } from "#/db/schema/passwords";
+import { InsertUnsubscribeTokenModel } from "#/db/schema/unsubscribe-tokens";
 import { InsertUserModel, UserModel } from "#/db/schema/users";
+import { nanoid } from "#/utils/nanoid";
+import { generateUnsubscribeToken } from "#/utils/unsubscribe-token";
 import { faker } from "@faker-js/faker";
-import { pastIsoDate } from "./utils";
-import { generateUnsubscribeToken } from "#/modules/users/helpers/unsubscribe-token";
 import { appConfig } from "config";
 import { UniqueEnforcer } from "enforce-unique";
-import { nanoid } from "#/utils/nanoid";
 import slugify from "slugify";
+import { pastIsoDate } from "./utils";
 
 /**
  * Type: Optional overrides for mock user generation.
@@ -70,7 +72,7 @@ export const mockOrganization = (): InsertOrganizationModel => {
  * @param hashedPassword - Pre-generated hashed password to assign to the user.
  * @returns A valid InsertUserModel object.
  */
-export const mockUser = (hashedPassword: string, overrides: MockUserOptionalOverrides = {}): InsertUserModel => {
+export const mockUser = (overrides: MockUserOptionalOverrides = {}): InsertUserModel => {
   const firstAndLastName = { firstName: faker.person.firstName(), lastName: faker.person.lastName() };
   const email = overrides.email ?? userEmail.enforce(() => faker.internet.email(firstAndLastName).toLowerCase());
   const slug = userSlug.enforce(() => slugify(faker.internet.username(firstAndLastName), { lower: true, strict: true }), { maxTime: 500, maxRetries: 500 })
@@ -83,8 +85,6 @@ export const mockUser = (hashedPassword: string, overrides: MockUserOptionalOver
     language: appConfig.defaultLanguage,
     name: faker.person.fullName(firstAndLastName),
     email,
-    unsubscribeToken: generateUnsubscribeToken(email),
-    hashedPassword: hashedPassword,
     slug,
     newsletter: faker.datatype.boolean(),
     createdAt: pastIsoDate(),
@@ -100,7 +100,7 @@ export const mockUser = (hashedPassword: string, overrides: MockUserOptionalOver
  * @param hashedPassword - Hashed password for the admin.
  * @returns A valid InsertUserModel for the admin user.
  */
-export const mockAdmin = (id: string, email: string, hashedPassword: string): InsertUserModel => {
+export const mockAdmin = (id: string, email: string): InsertUserModel => {
   return {
     id,
     firstName: 'Admin',
@@ -109,11 +109,37 @@ export const mockAdmin = (id: string, email: string, hashedPassword: string): In
     slug: 'admin-user',
     role: 'admin',
     email,
-    unsubscribeToken: generateUnsubscribeToken(email),
-    hashedPassword,
     language: appConfig.defaultLanguage,
     thumbnailUrl: null,
     newsletter: false,
+    createdAt: pastIsoDate(),
+  }
+}
+
+/**
+ * Generates a password record for a given user.
+ *
+ * @param user - The user for whom the email record is created.
+ * @returns A valid InsertPasswordModel.
+ */
+export const mockPassword = (user: UserModel, hashedPassword: string): InsertPasswordModel => {
+  return {
+    hashedPassword,
+    userId: user.id,
+    createdAt: pastIsoDate(),
+  }
+}
+
+/**
+ * Generates an unsubscribeToken record for a given user.
+ *
+ * @param user - The user for whom the email record is created.
+ * @returns A valid InsertUnsubscribeTokenModel.
+ */
+export const mockUnsubscribeToken = (user: UserModel): InsertUnsubscribeTokenModel => {
+  return {
+    token: generateUnsubscribeToken(user.email),
+    userId: user.id,
     createdAt: pastIsoDate(),
   }
 }

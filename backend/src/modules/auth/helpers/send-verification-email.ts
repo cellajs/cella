@@ -5,18 +5,17 @@ import { db } from '#/db/db';
 import { type EmailModel, emailsTable } from '#/db/schema/emails';
 import { oauthAccountsTable } from '#/db/schema/oauth-accounts';
 import { tokensTable } from '#/db/schema/tokens';
-import type { UserModel } from '#/db/schema/users';
+import { usersTable } from '#/db/schema/users';
 import { AppError } from '#/lib/errors';
 import { mailer } from '#/lib/mailer';
-import { getUserBy } from '#/modules/users/helpers/get-user-by';
+import { usersBaseQuery } from '#/modules/users/helpers/select';
 import { logEvent } from '#/utils/logger';
 import { nanoid } from '#/utils/nanoid';
 import { createDate, TimeSpan } from '#/utils/time-span';
 import { EmailVerificationEmail, type EmailVerificationEmailProps } from '../../../../emails/email-verification';
 
 interface Props {
-  userId?: string;
-  tokenId?: string;
+  userId: string;
   oauthAccountId?: string;
   redirectPath?: string;
 }
@@ -24,16 +23,8 @@ interface Props {
 /**
  * Send a verification email to user.
  */
-export const sendVerificationEmail = async ({ userId, oauthAccountId, redirectPath, tokenId }: Props) => {
-  let user: UserModel | null = null;
-
-  // Get user
-  if (userId) user = await getUserBy('id', userId);
-  else if (tokenId) {
-    const [tokenRecord] = await db.select().from(tokensTable).where(eq(tokensTable.id, tokenId));
-    if (!tokenRecord || !tokenRecord.userId) throw new AppError({ status: 404, type: 'not_found', severity: 'warn' });
-    user = await getUserBy('id', tokenRecord.userId);
-  }
+export const sendVerificationEmail = async ({ userId, oauthAccountId, redirectPath }: Props) => {
+  const [user] = await usersBaseQuery().where(eq(usersTable.id, userId)).limit(1);
 
   // User not found
   if (!user) throw new AppError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'user' });
@@ -100,26 +91,18 @@ export const sendVerificationEmail = async ({ userId, oauthAccountId, redirectPa
   const lng = user.language;
 
   // Create verification link
-  const verifyPath = !oauthAccount ? `/auth/verify-email/${token}` : `/auth/${oauthAccount.providerId}`;
-  const verificationLink = new URL(verifyPath, appConfig.backendAuthUrl);
-
-  // Add query parameters
-  if (!oauthAccount) {
-    verificationLink.searchParams.set('tokenId', tokenRecord.id);
-  }
+  const verifyPath = !oauthAccount ? `/auth/verify-email/${tokenRecord.token}` : `/auth/${oauthAccount.providerId}`;
+  const verificationURL = new URL(verifyPath, appConfig.backendAuthUrl);
 
   if (oauthAccount) {
-    verificationLink.searchParams.set('token', token);
-    verificationLink.searchParams.set('type', 'verify');
+    verificationURL.searchParams.set('token', tokenRecord.token);
+    verificationURL.searchParams.set('type', 'verify');
   }
-
-  if (redirectPath) {
-    verificationLink.searchParams.set('redirect', encodeURIComponent(redirectPath));
-  }
+  if (redirectPath) verificationURL.searchParams.set('redirect', encodeURIComponent(redirectPath));
 
   // Prepare & send email
   const subject = i18n.t('backend:email.email_verification.subject', { lng, appName: appConfig.name });
-  const staticProps = { verificationLink, subject, lng };
+  const staticProps = { verificationLink: verificationURL.toString(), subject, lng };
   const recipients = [{ email }];
 
   type Recipient = { email: string };

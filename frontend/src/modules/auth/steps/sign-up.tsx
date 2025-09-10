@@ -3,16 +3,15 @@ import { useMutation } from '@tanstack/react-query';
 import { useNavigate, useSearch } from '@tanstack/react-router';
 import { appConfig } from 'config';
 import { ArrowRight, ChevronDown } from 'lucide-react';
-import { lazy, type RefObject, Suspense, useRef } from 'react';
+import { lazy, Suspense } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import type { z } from 'zod';
 import { type SignUpData, type SignUpResponse, type SignUpWithTokenData, type SignUpWithTokenResponse, signUp, signUpWithToken } from '~/api.gen';
 import { zSignUpData } from '~/api.gen/zod.gen';
 import type { ApiError } from '~/lib/api';
-import type { AuthStep, TokenData } from '~/modules/auth/types';
-import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
-import Spinner from '~/modules/common/spinner';
+import { LegalNotice } from '~/modules/auth/steps/legal-notice';
+import { useAuthStepsContext } from '~/modules/auth/steps/provider';
 import { Button, SubmitButton } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '~/modules/ui/form';
 import { Input } from '~/modules/ui/input';
@@ -20,26 +19,23 @@ import { AuthenticateRoute } from '~/routes/auth';
 import { defaultOnInvalid } from '~/utils/form-on-invalid';
 
 const PasswordStrength = lazy(() => import('~/modules/auth/password-strength'));
-const LegalText = lazy(() => import('~/modules/marketing/legal-texts'));
 
 const enabledStrategies: readonly string[] = appConfig.enabledAuthStrategies;
+const emailEnabled = enabledStrategies.includes('password') || enabledStrategies.includes('passkey');
 
 const formSchema = zSignUpData.shape.body.unwrap();
 type FormValues = z.infer<typeof formSchema>;
 
-interface Props {
-  tokenData: TokenData | undefined;
-  email: string;
-  setStep: (step: AuthStep, email: string, error?: ApiError) => void;
-  resetSteps: () => void;
-  emailEnabled: boolean;
-}
-
-export const SignUpForm = ({ tokenData, email, setStep, resetSteps, emailEnabled }: Props) => {
+/**
+ * Handles user sign-up, including standard registration and invitation token flow.
+ */
+export const SignUpStep = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
 
-  const { token, tokenId } = useSearch({ from: AuthenticateRoute.id });
+  const { email, tokenData, setStep, resetSteps } = useAuthStepsContext();
+
+  const { token } = useSearch({ from: AuthenticateRoute.id });
 
   const isMobile = window.innerWidth < 640;
 
@@ -60,11 +56,9 @@ export const SignUpForm = ({ tokenData, email, setStep, resetSteps, emailEnabled
     NonNullable<SignUpWithTokenData['body']> & SignUpWithTokenData['path']
   >({
     mutationFn: ({ token, ...body }) => signUpWithToken({ body, path: { token } }),
-    onSuccess: () => {
-      // Redirect to organization invitation page if there is a membership invitation
-      const isMemberInvitation = tokenData?.organizationSlug && token && tokenId;
-      const redirectPath = isMemberInvitation ? '/invitation/$token' : appConfig.defaultRedirectPath;
-      return navigate({ to: redirectPath, replace: true, ...(token && tokenId && { params: { token }, search: { tokenId } }) });
+    onSuccess: ({ redirectPath }) => {
+      const to = redirectPath ?? appConfig.defaultRedirectPath;
+      return navigate({ to, replace: true });
     },
   });
 
@@ -76,7 +70,7 @@ export const SignUpForm = ({ tokenData, email, setStep, resetSteps, emailEnabled
 
   // Handle submit action
   const onSubmit = (formValues: FormValues) => {
-    if (token && tokenId) return _signUpWithToken({ ...formValues, token });
+    if (token) return _signUpWithToken({ ...formValues, token });
     _signUp({ ...formValues });
   };
 
@@ -90,9 +84,9 @@ export const SignUpForm = ({ tokenData, email, setStep, resetSteps, emailEnabled
             : `${t('common:create_resource', { resource: t('common:account').toLowerCase() })}?`}{' '}
         <br />
         {!tokenData && (
-          <Button variant="ghost" onClick={resetSteps} className="font-light mt-2 text-xl">
-            {email}
-            <ChevronDown size={16} className="ml-2" />
+          <Button variant="ghost" onClick={resetSteps} className="mx-auto flex max-w-full truncate font-light mt-2 sm:text-xl bg-foreground/10">
+            <span className="truncate">{email}</span>
+            <ChevronDown size={16} className="ml-1" />
           </Button>
         )}
       </h1>
@@ -142,44 +136,5 @@ export const SignUpForm = ({ tokenData, email, setStep, resetSteps, emailEnabled
         </form>
       )}
     </Form>
-  );
-};
-
-export const LegalNotice = ({ email = '', mode = 'signup' }: { email?: string; mode?: 'waitlist' | 'signup' | 'verify' }) => {
-  const { t } = useTranslation();
-  const createDialog = useDialoger((state) => state.create);
-
-  const termsButtonRef = useRef(null);
-  const privacyButtonRef = useRef(null);
-
-  const openDialog = (legalSubject: 'terms' | 'privacy', triggerRef: RefObject<HTMLButtonElement | null>) => () => {
-    const dialogComponent = (
-      <Suspense fallback={<Spinner className="mt-[45vh] h-10 w-10" />}>
-        <LegalText textFor={legalSubject} />
-      </Suspense>
-    );
-
-    createDialog(dialogComponent, {
-      id: 'legal',
-      triggerRef,
-      className: 'md:max-w-3xl mb-10 px-6',
-      drawerOnMobile: false,
-    });
-  };
-
-  return (
-    <p className="font-light text-center space-x-1">
-      {mode === 'signup' && <span>{t('common:legal_notice.text', { email })}</span>}
-      {mode === 'waitlist' && <span>{t('common:legal_notice_waitlist.text', { email })}</span>}
-      {mode === 'verify' && <span>{t('common:request_verification.legal_notice')}</span>}
-      <Button ref={termsButtonRef} type="button" variant="link" className="p-0 text-base h-auto" onClick={openDialog('terms', termsButtonRef)}>
-        {t('common:terms').toLocaleLowerCase()}
-      </Button>
-      <span>&</span>
-      <Button ref={privacyButtonRef} type="button" variant="link" className="p-0 text-base h-auto" onClick={openDialog('privacy', privacyButtonRef)}>
-        {t('common:privacy_policy').toLocaleLowerCase()}
-      </Button>
-      <span>of {appConfig.company.name}.</span>
-    </p>
   );
 };

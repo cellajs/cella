@@ -1,6 +1,6 @@
 import { Button, Section } from 'jsx-email';
 
-export const EmailButton = ({ ButtonText, href }: { ButtonText: string; href: string | URL }) => (
+export const EmailButton = ({ ButtonText, href }: { ButtonText: string; href: string  }) => (
   <Section style={{ textAlign: 'center', marginBottom: '2rem', marginTop: '2rem' }}>
     <Button
       align="center"
@@ -16,7 +16,7 @@ export const EmailButton = ({ ButtonText, href }: { ButtonText: string; href: st
         fontWeight: 'font-semibold',
         borderRadius: '0.25rem',
       }}
-      href={href instanceof URL ? href.toString() : href}
+      href={href}
     >
       {ButtonText}
     </Button>

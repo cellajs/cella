@@ -2,7 +2,14 @@ import { appConfig } from 'config';
 import pino from 'pino';
 import { env } from './env';
 
-const redactedFields = ['user.hashedPassword', 'user.unsubscribeToken', 'session.token', 'token.token'];
+const redactedFields = [
+  'passwords.hashedPassword',
+  'unsubscribeTokensTable.token',
+  'session.token',
+  'token.token',
+  'totps.encoderSecretKey',
+  'passkeys.credentialId',
+];
 
 // In production, we use the default pino logger
 const isProduction = appConfig.mode === 'production';

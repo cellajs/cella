@@ -1,7 +1,7 @@
 import { useMutation, useSuspenseQuery } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
-import { type AcceptEntityInviteResponse, type ApiError, acceptEntityInvite, type GetMyInvitesResponse } from '~/api.gen';
+import { type AcceptEntityInviteResponse, type ApiError, acceptEntityInvite, type GetMyInvitationsResponse } from '~/api.gen';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { ExpandableList } from '~/modules/common/expandable-list';
 import { toaster } from '~/modules/common/toaster/service';
@@ -27,7 +27,7 @@ export const EntityInvites = () => {
     mutationFn: (token) => acceptEntityInvite({ path: { token } }),
     onSuccess: async (acceptedEntity) => {
       await getAndSetMenu();
-      queryClient.setQueryData<GetMyInvitesResponse>(meKeys.invites(), (oldData) => {
+      queryClient.setQueryData<GetMyInvitationsResponse>(meKeys.invites(), (oldData) => {
         if (!oldData) return oldData;
         return oldData.filter((invite) => invite.entity.id !== acceptedEntity.id);
       });

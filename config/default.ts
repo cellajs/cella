@@ -111,14 +111,22 @@ The documentation is generated from source code using \`zod\` schemas, converted
   fileUploadLimit: 20 * 1024 * 1024, // 20mb
   defaultBodyLimit: 1 * 1024 * 1024, // 1mb
 
-  // Enabled auth strategies providers
-  enabledAuthStrategies: ['password', 'passkey', 'oauth'] as const,
+/**
+ * Enabled authentication strategies.
+ * Currently available: 'password', 'passkey' and 'oauth'.
+ * TODO: In progress: 'totp'
+ */
+enabledAuthStrategies: ['password', 'passkey', 'oauth'] as const,
 
-  // OAuth providers
-  enabledOAuthProviders: ['github', 'microsoft'] as const,
+/**
+ * Enabled OAuth providers.
+ * Currently supported: 'github', 'google', 'microsoft'.
+ * Only these providers can be selected in enabledAuthStrategies when 'oauth' is enabled.
+ */
+enabledOAuthProviders: ['github'] as const,
 
   // Token types
-  tokenTypes: ['email_verification', 'password_reset', 'invitation'] as const,
+  tokenTypes: ['email_verification', 'password_reset', 'invitation', 'confirm_mfa'] as const,
 
   // Optional settings
   has: {
@@ -127,6 +135,13 @@ The documentation is generated from source code using \`zod\` schemas, converted
     registrationEnabled: true, // Allow users to sign up. If false, the app is by invitation only
     waitlist: true, // Suggest a waitlist for unknown emails when sign up is disabled,
     uploadEnabled: true, // s3 fully configured, if false, files will be stored in local browser (indexedDB)
+  },
+
+
+  // TOTP configuration
+  totpConfig: { 
+    intervalInSeconds: 60,
+    digits: 6
   },
 
   // Default user flags

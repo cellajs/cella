@@ -8,6 +8,18 @@ import { apiErrorSchema } from '#/utils/schema/error';
 type Responses = Parameters<typeof createRoute>[0]['responses'];
 
 /**
+ * Schema for responses that may include a redirect.
+ */
+export const redirectResponseSchema = z
+  .object({
+    shouldRedirect: z.boolean(),
+    redirectPath: z.string().optional(),
+  })
+  .refine((data) => !data.shouldRedirect || !!data.redirectPath, {
+    message: 'redirectPath is required when shouldRedirect is true',
+  });
+
+/**
  * Schema for a response without data.
  */
 export const successWithoutDataSchema = z.boolean();

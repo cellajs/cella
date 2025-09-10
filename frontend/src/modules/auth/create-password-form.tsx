@@ -1,6 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation } from '@tanstack/react-query';
-import { useNavigate, useParams, useSearch } from '@tanstack/react-router';
+import { useNavigate, useParams } from '@tanstack/react-router';
 import { appConfig } from 'config';
 import { ArrowRight } from 'lucide-react';
 import { lazy, Suspense, useRef } from 'react';
@@ -9,7 +9,7 @@ import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
 import { type CreatePasswordData, type CreatePasswordResponse, createPassword } from '~/api.gen';
 import type { ApiError } from '~/lib/api';
-import AuthErrorNotice from '~/modules/auth/auth-error-notice';
+import AuthErrorNotice from '~/modules/auth/error-notice';
 import { RequestPasswordDialog } from '~/modules/auth/request-password-dialog';
 import { useCheckToken } from '~/modules/auth/use-token-check';
 import Spinner from '~/modules/common/spinner';
@@ -32,9 +32,8 @@ const CreatePasswordForm = () => {
   const requestButtonRef = useRef(null);
 
   const { token } = useParams({ from: CreatePasswordWithTokenRoute.id });
-  const { tokenId } = useSearch({ from: CreatePasswordWithTokenRoute.id });
 
-  const { data, isLoading, error } = useCheckToken('email_verification', tokenId);
+  const { data, isLoading, error } = useCheckToken('password_reset', token);
   const isMobile = window.innerWidth < 640;
 
   // Reset password & sign in
@@ -77,7 +76,7 @@ const CreatePasswordForm = () => {
   return (
     <Form {...form}>
       <h1 className="text-2xl text-center">
-        {t('common:reset_password')} <br />{' '}
+        {t('common:reset_resource', { resource: t('common:password').toLowerCase() })} <br />{' '}
         {data.email && (
           <Button variant="ghost" disabled className="font-light mt-2 text-xl">
             {data.email}

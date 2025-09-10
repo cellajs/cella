@@ -8,22 +8,27 @@ import type { z } from 'zod';
 import { type CheckEmailData, type CheckEmailResponse, checkEmail } from '~/api.gen';
 import { zCheckEmailData } from '~/api.gen/zod.gen';
 import type { ApiError } from '~/lib/api';
+import { useAuthStepsContext } from '~/modules/auth/steps/provider';
 import type { AuthStep } from '~/modules/auth/types';
 import { SubmitButton } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '~/modules/ui/form';
 import { Input } from '~/modules/ui/input';
 import { defaultOnInvalid } from '~/utils/form-on-invalid';
 
+const enabledStrategies: readonly string[] = appConfig.enabledAuthStrategies;
+const emailEnabled = enabledStrategies.includes('password') || enabledStrategies.includes('passkey');
+
 const formSchema = zCheckEmailData.shape.body.unwrap();
-
 type FormValues = z.infer<typeof formSchema>;
-interface CheckEmailProps {
-  setStep: (step: AuthStep, email: string, error?: ApiError) => void;
-  emailEnabled: boolean;
-}
 
-export const CheckEmailForm = ({ setStep, emailEnabled }: CheckEmailProps) => {
+/**
+ * Handles entering and validating the user's email,
+ * then routes to the appropriate next step (sign-in, sign-up, waitlist, or invite-only)
+ * based on API response and configuration.
+ */
+export const CheckEmailStep = () => {
   const { t } = useTranslation();
+  const { setStep } = useAuthStepsContext();
 
   const isMobile = window.innerWidth < 640;
   const title = appConfig.has.registrationEnabled ? t('common:sign_in_or_up') : t('common:sign_in');

@@ -1,18 +1,23 @@
-import { onlineManager, useMutation } from '@tanstack/react-query';
+import { onlineManager, useMutation, useSuspenseQuery } from '@tanstack/react-query';
 import { ZapOff } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { deleteMySessions } from '~/api.gen';
 import { ExpandableList } from '~/modules/common/expandable-list';
 import { toaster } from '~/modules/common/toaster/service';
-import { SessionTile } from '~/modules/me/session-tile';
+import { meAuthQueryOptions } from '~/modules/me/query';
+import { SessionTile } from '~/modules/me/sessions/tile';
 import type { MeAuthData } from '~/modules/me/types';
 import { Button } from '~/modules/ui/button';
+import { queryClient } from '~/query/query-client';
 
-const SessionsList = ({ userAuthInfo }: { userAuthInfo: MeAuthData }) => {
+const SessionsList = () => {
   const { t } = useTranslation();
 
-  const [allSessions, setAllSessions] = useState(userAuthInfo.sessions);
+  const queryOptions = meAuthQueryOptions();
+  const {
+    data: { sessions: allSessions },
+  } = useSuspenseQuery(queryOptions);
 
   const sessionsWithoutCurrent = useMemo(() => allSessions.filter((session) => !session.isCurrent), [allSessions]);
   const sessions = Array.from(allSessions).sort((a) => (a.isCurrent ? -1 : 1));
@@ -23,9 +28,16 @@ const SessionsList = ({ userAuthInfo }: { userAuthInfo: MeAuthData }) => {
       await deleteMySessions({ body: { ids } });
       return ids;
     },
-    onSuccess(ids) {
+    onSuccess: (ids) => {
       if (!allSessions.length) return;
-      setAllSessions(allSessions.filter((session) => !ids.includes(session.id)));
+
+      queryClient.setQueryData<MeAuthData>(queryOptions.queryKey, (oldData) => {
+        if (!oldData) return oldData;
+        return {
+          ...oldData,
+          sessions: oldData.sessions.filter(({ id }) => !ids.includes(id)),
+        };
+      });
 
       toaster(ids.length === 1 ? t('common:success.session_terminated', { id: ids[0] }) : t('common:success.sessions_terminated'), 'success');
     },
