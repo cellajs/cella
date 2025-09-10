@@ -206,7 +206,9 @@ jobs:
       - name: Create temporary changelog config
         run: |
           cat <<EOF > changelog.config.js
+          const preset = require('conventional-changelog-conventionalcommits');
           module.exports = {
+            ...preset,
             types: [
               { type: "feat", section: "Features" },
               { type: "fix", section: "Bug Fixes" },
