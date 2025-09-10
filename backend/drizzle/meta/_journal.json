@@ -15,6 +15,13 @@
       "when": 1755512487230,
       "tag": "0001_illegal_odin",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1757491284628,
+      "tag": "0002_stormy_juggernaut",
+      "breakpoints": true
     }
   ]
 }

@@ -10,28 +10,21 @@ import { emailsTable } from '#/db/schema/emails';
 import { membershipsTable } from '#/db/schema/memberships';
 import { organizationsTable } from '#/db/schema/organizations';
 import { passkeysTable } from '#/db/schema/passkeys';
+import { passwordsTable } from '#/db/schema/passwords';
 import { sessionsTable } from '#/db/schema/sessions';
 import { tokensTable } from '#/db/schema/tokens';
-import { usersTable } from '#/db/schema/users';
+import { totpsTable } from '#/db/schema/totps';
+import { type UserModel, usersTable } from '#/db/schema/users';
 import { env } from '#/env';
 import { type Env, getContextToken, getContextUser } from '#/lib/context';
 import { resolveEntity } from '#/lib/entity';
 import { AppError } from '#/lib/errors';
 import { eventManager } from '#/lib/events';
 import { mailer } from '#/lib/mailer';
-import { sendSSEToUsers } from '#/lib/sse';
 import { hashPassword, verifyPasswordHash } from '#/modules/auth/helpers/argon2id';
 import { deleteAuthCookie, getAuthCookie, setAuthCookie } from '#/modules/auth/helpers/cookie';
-import {
-  clearOAuthSession,
-  createOAuthSession,
-  getOAuthCookies,
-  handleOAuthConnection,
-  handleOAuthInvitation,
-  handleOAuthVerify,
-  setOAuthRedirect,
-} from '#/modules/auth/helpers/oauth/cookies';
-import { basicFlow, connectFlow, getOAuthAccount, inviteFlow, verifyFlow } from '#/modules/auth/helpers/oauth/index';
+import { initiateMfa, validateConfirmMfaToken } from '#/modules/auth/helpers/mfa';
+import { handleOAuthFlow } from '#/modules/auth/helpers/oauth/callback-flow';
 import {
   type GithubUserEmailProps,
   type GithubUserProps,
@@ -40,14 +33,16 @@ import {
   googleAuth,
   type MicrosoftUserProps,
   microsoftAuth,
-} from '#/modules/auth/helpers/oauth/oauth-providers';
+} from '#/modules/auth/helpers/oauth/providers';
+import { type OAuthCookiePayload, storeOAuthContext } from '#/modules/auth/helpers/oauth/session';
 import { transformGithubUserData, transformSocialUserData } from '#/modules/auth/helpers/oauth/transform-user-data';
 import { verifyPassKeyPublic } from '#/modules/auth/helpers/passkey';
 import { sendVerificationEmail } from '#/modules/auth/helpers/send-verification-email';
-import { getParsedSessionCookie, invalidateSessionById, setUserSession, validateSession } from '#/modules/auth/helpers/session';
+import { getParsedSessionCookie, setUserSession, validateSession } from '#/modules/auth/helpers/session';
+import { verifyTotp } from '#/modules/auth/helpers/totps';
 import { handleCreateUser, handleMembershipTokenUpdate } from '#/modules/auth/helpers/user';
 import authRoutes from '#/modules/auth/routes';
-import { getUserBy } from '#/modules/users/helpers/get-user-by';
+import { usersBaseQuery } from '#/modules/users/helpers/select';
 import { defaultHook } from '#/utils/default-hook';
 import { isExpiredDate } from '#/utils/is-expired-date';
 import { isValidRedirectPath } from '#/utils/is-redirect-url';
@@ -56,6 +51,7 @@ import { logEvent } from '#/utils/logger';
 import { nanoid } from '#/utils/nanoid';
 import { slugFromEmail } from '#/utils/slug-from-email';
 import { createDate, TimeSpan } from '#/utils/time-span';
+import { getValidToken } from '#/utils/validate-token';
 import { CreatePasswordEmail, type CreatePasswordEmailProps } from '../../../emails/create-password';
 
 const enabledStrategies: readonly string[] = appConfig.enabledAuthStrategies;
@@ -99,6 +95,7 @@ const authRouteHandlers = app
           isNull(tokensTable.userId),
           isNotNull(tokensTable.entityType),
           isNotNull(tokensTable.role),
+          isNull(tokensTable.consumedAt),
         ),
       )
       .limit(1);
@@ -106,7 +103,11 @@ const authRouteHandlers = app
     if (inviteToken) throw new AppError({ status: 403, type: 'invite_takes_priority', severity: 'warn' });
 
     // User not found, go to sign up if registration is enabled
-    const user = await getUserBy('email', normalizedEmail);
+    const [user] = await usersBaseQuery()
+      .leftJoin(emailsTable, eq(usersTable.id, emailsTable.userId))
+      .where(eq(emailsTable.email, normalizedEmail))
+      .limit(1);
+
     if (!user) throw new AppError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'user' });
 
     return ctx.json(true, 200);
@@ -127,13 +128,16 @@ const authRouteHandlers = app
 
     // Stop if sign up is disabled and no invitation
     if (!appConfig.has.registrationEnabled) throw new AppError({ status: 403, type: 'sign_up_restricted' });
-    const hashedPassword = await hashPassword(password);
     const slug = slugFromEmail(email);
 
     // Create user & send verification email
-    const newUser = { slug, name: slug, email, hashedPassword };
+    const newUser = { slug, name: slug, email };
 
     const user = await handleCreateUser({ newUser });
+
+    // Separatly insert password
+    const hashedPassword = await hashPassword(password);
+    await db.insert(passwordsTable).values({ userId: user.id, hashedPassword: hashedPassword });
 
     sendVerificationEmail({ userId: user.id });
 
@@ -141,7 +145,7 @@ const authRouteHandlers = app
   })
   /*
    * Sign up with email & password to accept (system or membership) invitations.
-   * Only for membership invitations, user will proceed to accept after signing up.
+   * Only for organization membership invitations, user will proceed to accept after signing up.
    */
   .openapi(authRoutes.signUpWithToken, async (ctx) => {
     const { password } = ctx.req.valid('json');
@@ -156,23 +160,24 @@ const authRouteHandlers = app
       throw new AppError({ status: 400, type: 'forbidden_strategy', severity: 'error', meta: { strategy } });
     }
 
-    // Delete token to not needed anymore (if no membership invitation)
-    if (!membershipInvite) await db.delete(tokensTable).where(eq(tokensTable.id, validToken.id));
-
     // add token if it's membership invitation
     const membershipInviteTokenId = membershipInvite ? validToken.id : undefined;
-    const hashedPassword = await hashPassword(password);
     const slug = slugFromEmail(validToken.email);
 
     // Create user & send verification email
-    const newUser = { slug, name: slug, email: validToken.email, hashedPassword };
+    const newUser = { slug, name: slug, email: validToken.email };
 
     const user = await handleCreateUser({ newUser, membershipInviteTokenId, emailVerified: true });
 
-    await setUserSession(ctx, user, 'password');
+    // Separately insert password
+    const hashedPassword = await hashPassword(password);
+    await db.insert(passwordsTable).values({ userId: user.id, hashedPassword: hashedPassword });
 
-    // Return
-    return ctx.json(true, 200);
+    // Sign in user
+    await setUserSession(ctx, user, strategy);
+
+    const redirectPath = membershipInvite ? `/invitation/${validToken.token}` : appConfig.defaultRedirectPath;
+    return ctx.json({ shouldRedirect: true, redirectPath }, 200);
   })
   /*
    * Verify email
@@ -180,12 +185,9 @@ const authRouteHandlers = app
   .openapi(authRoutes.verifyEmail, async (ctx) => {
     const { redirect } = ctx.req.valid('query');
 
-    const decodedRedirect = decodeURIComponent(redirect || '');
-    const redirectPath = isValidRedirectPath(decodedRedirect) || appConfig.defaultRedirectPath;
-
     // No token in context
     const token = getContextToken();
-    if (!token || !token.userId) throw new AppError({ status: 400, type: 'invalid_request', severity: 'error' });
+    if (!token.userId) throw new AppError({ status: 400, type: 'invalid_request', severity: 'error' });
 
     // Only allow verify emails for "password" strategy (Oauth verification is handled by Oauth callback handlers)
     if (token.oauthAccountId) {
@@ -193,7 +195,7 @@ const authRouteHandlers = app
     }
 
     // Get user
-    const user = await getUserBy('id', token.userId);
+    const [user] = await usersBaseQuery().where(eq(usersTable.id, token.userId)).limit(1);
 
     // User not found
     if (!user) {
@@ -213,13 +215,18 @@ const authRouteHandlers = app
         ),
       );
 
-    // Delete token(s) to prevent reuse
-    await db.delete(tokensTable).where(eq(tokensTable.id, token.id));
+    // Start MFA challenge if the user has MFA enabled
+    const mfaRedirectPath = await initiateMfa(ctx, user);
 
-    // Sign in user
-    await setUserSession(ctx, user, 'email');
+    // Determine redirect url
+    const decodedRedirect = decodeURIComponent(redirect || '');
+    const baseRedirectPath = isValidRedirectPath(decodedRedirect) || appConfig.defaultRedirectPath;
 
+    const redirectPath = mfaRedirectPath || baseRedirectPath;
     const redirectUrl = new URL(redirectPath, appConfig.frontendUrl);
+
+    // If MFA is not required, set  user session immediately
+    if (!mfaRedirectPath) await setUserSession(ctx, user, 'email');
 
     return ctx.redirect(redirectUrl, 302);
   })
@@ -231,18 +238,19 @@ const authRouteHandlers = app
 
     const normalizedEmail = email.toLowerCase().trim();
 
-    const user = await getUserBy('email', normalizedEmail);
+    const [user] = await usersBaseQuery()
+      .leftJoin(emailsTable, eq(usersTable.id, emailsTable.userId))
+      .where(eq(emailsTable.email, normalizedEmail))
+      .limit(1);
     if (!user) throw new AppError({ status: 404, type: 'invalid_email', severity: 'warn', entityType: 'user' });
 
     // Delete old token if exists
     await db.delete(tokensTable).where(and(eq(tokensTable.userId, user.id), eq(tokensTable.type, 'password_reset')));
 
-    const token = nanoid(40);
-
     const [tokenRecord] = await db
       .insert(tokensTable)
       .values({
-        token,
+        token: nanoid(40),
         type: 'password_reset',
         userId: user.id,
         email,
@@ -253,7 +261,7 @@ const authRouteHandlers = app
 
     // Send email
     const lng = user.language;
-    const createPasswordLink = `${appConfig.frontendUrl}/auth/create-password/${token}?tokenId=${tokenRecord.id}`;
+    const createPasswordLink = `${appConfig.frontendUrl}/auth/create-password/${tokenRecord.token}`;
     const subject = i18n.t('backend:email.create_password.subject', { lng, appName: appConfig.name });
     const staticProps = { createPasswordLink, subject, lng };
     const recipients = [{ email: user.email }];
@@ -282,10 +290,7 @@ const authRouteHandlers = app
     // If the token is not found or expired
     if (!token || !token.userId) throw new AppError({ status: 401, type: 'invalid_token', severity: 'warn' });
 
-    // Delete token to prevent reuse
-    await db.delete(tokensTable).where(and(eq(tokensTable.id, token.id), eq(tokensTable.type, 'password_reset')));
-
-    const user = await getUserBy('id', token.userId);
+    const [user] = await usersBaseQuery().where(eq(usersTable.id, token.userId)).limit(1);
 
     // If the user is not found
     if (!user) {
@@ -297,14 +302,15 @@ const authRouteHandlers = app
 
     // update user password and set email verified
     await Promise.all([
-      db.update(usersTable).set({ hashedPassword }).where(eq(usersTable.id, user.id)),
+      db.update(passwordsTable).set({ hashedPassword }).where(eq(passwordsTable.userId, user.id)),
       db.update(emailsTable).set({ verified: true, verifiedAt: getIsoDate() }).where(eq(emailsTable.email, user.email)),
     ]);
 
-    // Sign in user
-    await setUserSession(ctx, user, 'password');
+    const redirectPath = await initiateMfa(ctx, user);
+    if (redirectPath) return ctx.json({ shouldRedirect: true, redirectPath }, 200);
 
-    return ctx.json(true, 200);
+    await setUserSession(ctx, user, strategy);
+    return ctx.json({ shouldRedirect: false }, 200);
   })
   /*
    * Sign in with email and password
@@ -322,39 +328,46 @@ const authRouteHandlers = app
 
     const normalizedEmail = email.toLowerCase().trim();
 
-    const [user, [emailData]] = await Promise.all([
-      getUserBy('email', normalizedEmail, 'unsafe'),
-      db.select().from(emailsTable).where(eq(emailsTable.email, normalizedEmail)),
-    ]);
+    const [info] = await db
+      .select({ user: usersTable, hashedPassword: passwordsTable.hashedPassword, emailVerified: emailsTable.verified })
+      .from(usersTable)
+      .innerJoin(emailsTable, eq(usersTable.id, emailsTable.userId))
+      .leftJoin(passwordsTable, eq(usersTable.id, passwordsTable.userId))
+      .where(eq(emailsTable.email, normalizedEmail))
+      .limit(1);
 
     // If user is not found or doesn't have password
-    if (!user) throw new AppError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'user' });
-    if (!user.hashedPassword) throw new AppError({ status: 403, type: 'no_password_found', severity: 'warn' });
+    if (!info) throw new AppError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'user' });
+
+    const { user, hashedPassword, emailVerified } = info;
+
+    if (!hashedPassword) throw new AppError({ status: 403, type: 'no_password_found', severity: 'warn' });
     // Verify password
-    const validPassword = await verifyPasswordHash(user.hashedPassword, password);
+    const validPassword = await verifyPasswordHash(hashedPassword, password);
     if (!validPassword) throw new AppError({ status: 403, type: 'invalid_password', severity: 'warn' });
 
     // If email is not verified, send verification email
-    if (!emailData.verified) sendVerificationEmail({ userId: user.id });
-    // Sign in user
-    else await setUserSession(ctx, user, 'password');
+    if (!emailVerified) {
+      sendVerificationEmail({ userId: user.id });
+      return ctx.json({ shouldRedirect: true, redirectPath: '/auth/email-verification/signin' }, 200);
+    }
 
-    return ctx.json(emailData.verified, 200);
+    const redirectPath = await initiateMfa(ctx, user);
+    if (redirectPath) return ctx.json({ shouldRedirect: true, redirectPath }, 200);
+
+    await setUserSession(ctx, user, 'password');
+    return ctx.json({ shouldRedirect: false }, 200);
   })
   /*
    * Check token (token validation)
    */
-  .openapi(authRoutes.refreshToken, async (ctx) => {
+  .openapi(authRoutes.validateToken, async (ctx) => {
     // Find token in request
-    const { id } = ctx.req.valid('param');
-    const { type } = ctx.req.valid('query');
+    const { token } = ctx.req.valid('param');
+    const { type: requiredType } = ctx.req.valid('query');
 
     // Check if token exists
-    const [tokenRecord] = await db.select().from(tokensTable).where(eq(tokensTable.id, id));
-    if (!tokenRecord) throw new AppError({ status: 404, type: `${type}_not_found`, severity: 'warn' });
-
-    // If token is expired, return an error
-    if (isExpiredDate(tokenRecord.expiresAt)) throw new AppError({ status: 401, type: `${type}_expired`, severity: 'warn' });
+    const tokenRecord = await getValidToken({ requiredType, token, consumeToken: false });
 
     const baseData = {
       email: tokenRecord.email,
@@ -366,7 +379,7 @@ const authRouteHandlers = app
     if (!tokenRecord.organizationId) return ctx.json(baseData, 200);
 
     // If it is a membership invitation, check if a new user has been created since invitation was sent (without verifying email)
-    const [existingUser] = await db.select().from(usersTable).where(eq(usersTable.email, tokenRecord.email));
+    const [existingUser] = await usersBaseQuery().where(eq(usersTable.email, tokenRecord.email));
     if (!tokenRecord.userId && existingUser) {
       await db.update(tokensTable).set({ userId: existingUser.id }).where(eq(tokensTable.id, tokenRecord.id));
       baseData.userId = existingUser.id;
@@ -413,9 +426,6 @@ const authRouteHandlers = app
 
     const [targetMembership] = activatedMemberships.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
-    // Delete token after all activation, since tokenId is cascaded in membershipTable
-    await db.delete(tokensTable).where(eq(tokensTable.id, token.id));
-
     const entityIdField = appConfig.entityIdFields[token.entityType];
     if (!targetMembership[entityIdField]) throw new AppError({ status: 404, type: 'not_found', severity: 'warn', entityType: token.entityType });
 
@@ -423,26 +433,6 @@ const authRouteHandlers = app
     if (!entity) throw new AppError({ status: 404, type: 'not_found', severity: 'warn', entityType: token.entityType });
 
     eventManager.emit('acceptedMembership', targetMembership);
-
-    // Add event only for admins, which entity not archived, since only they can see pending invites
-    const adminMembers = await db
-      .select()
-      .from(membershipsTable)
-      .where(
-        and(
-          eq(membershipsTable.contextType, entity.entityType),
-          eq(membershipsTable.role, 'admin'),
-          eq(membershipsTable[entityIdField], entity.id),
-          eq(membershipsTable.archived, false),
-          isNotNull(membershipsTable.activatedAt),
-        ),
-      );
-
-    sendSSEToUsers(
-      adminMembers.map(({ id }) => id),
-      'accept_invite',
-      entity,
-    );
 
     return ctx.json({ ...entity, membership: targetMembership }, 200);
   })
@@ -452,19 +442,12 @@ const authRouteHandlers = app
   .openapi(authRoutes.startImpersonation, async (ctx) => {
     const { targetUserId } = ctx.req.valid('query');
 
-    const user = await getUserBy('id', targetUserId);
+    const [user] = await usersBaseQuery().where(eq(usersTable.id, targetUserId)).limit(1);
 
     if (!user) throw new AppError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'user', meta: { targetUserId } });
 
     const adminUser = getContextUser();
-    const sessionData = await getParsedSessionCookie(ctx);
-
-    if (!sessionData) {
-      deleteAuthCookie(ctx, 'session');
-      throw new AppError({ status: 401, type: 'unauthorized', severity: 'warn' });
-    }
-
-    await setUserSession(ctx, user, 'password', adminUser);
+    await setUserSession(ctx, user, 'password', 'impersonation');
 
     logEvent('info', 'Started impersonation', { adminId: adminUser.id, targetUserId });
 
@@ -474,14 +457,9 @@ const authRouteHandlers = app
    * Stop impersonation
    */
   .openapi(authRoutes.stopImpersonation, async (ctx) => {
-    const sessionData = await getParsedSessionCookie(ctx, true);
-    if (!sessionData) throw new AppError({ status: 401, type: 'unauthorized', severity: 'warn' });
-
-    const { sessionToken, adminUserId } = sessionData;
+    const { sessionToken, adminUserId } = await getParsedSessionCookie(ctx, { deleteAfterAttempt: true });
     const { session } = await validateSession(sessionToken);
-    if (!session) throw new AppError({ status: 401, type: 'unauthorized', severity: 'warn' });
 
-    await invalidateSessionById(session.id, session.userId);
     if (adminUserId) {
       const [adminsLastSession] = await db
         .select()
@@ -490,10 +468,7 @@ const authRouteHandlers = app
         .orderBy(desc(sessionsTable.expiresAt))
         .limit(1);
 
-      if (isExpiredDate(adminsLastSession.expiresAt)) {
-        await invalidateSessionById(adminsLastSession.id, adminUserId);
-        throw new AppError({ status: 401, type: 'unauthorized', severity: 'warn' });
-      }
+      if (isExpiredDate(adminsLastSession.expiresAt)) throw new AppError({ status: 401, type: 'unauthorized', severity: 'warn' });
 
       const expireTimeSpan = new TimeSpan(adminsLastSession.expiresAt.getTime() - Date.now(), 'ms');
       const cookieContent = `${adminsLastSession.token}.${adminsLastSession.userId ?? ''}`;
@@ -501,7 +476,7 @@ const authRouteHandlers = app
       await setAuthCookie(ctx, 'session', cookieContent, expireTimeSpan);
     }
 
-    logEvent('info', 'Stopped impersonation', { adminiD: adminUserId || 'na', targetUserId: session.userId });
+    logEvent('info', 'Stopped impersonation', { adminId: adminUserId || 'na', targetUserId: session.userId });
 
     return ctx.json(true, 200);
   })
@@ -509,88 +484,67 @@ const authRouteHandlers = app
    * Sign out
    */
   .openapi(authRoutes.signOut, async (ctx) => {
-    const sessionData = await getParsedSessionCookie(ctx);
+    const confirmMfa = await getAuthCookie(ctx, 'confirm-mfa');
 
-    if (!sessionData) {
-      deleteAuthCookie(ctx, 'session');
-      throw new AppError({ status: 401, type: 'unauthorized', severity: 'warn' });
+    if (confirmMfa) {
+      // Delete mfa cookie
+      deleteAuthCookie(ctx, 'confirm-mfa');
+
+      logEvent('info', 'User mfa canceled');
+
+      return ctx.json(true, 200);
     }
 
     // Find session & invalidate
-    const { session } = await validateSession(sessionData.sessionToken);
-    if (session) await invalidateSessionById(session.id, session.userId);
+    const { sessionToken } = await getParsedSessionCookie(ctx, { deleteOnError: true, deleteAfterAttempt: true });
+    const { session: currentSession } = await validateSession(sessionToken);
 
-    // Delete session cookie
-    deleteAuthCookie(ctx, 'session');
+    await db.delete(sessionsTable).where(and(eq(sessionsTable.id, currentSession.id), eq(sessionsTable.userId, currentSession.userId)));
 
-    logEvent('info', 'User signed out', { userId: session?.userId || 'na' });
+    logEvent('info', 'User signed out', { userId: currentSession.userId });
 
     return ctx.json(true, 200);
   })
   /*
    * Initiates GitHub OAuth authentication flow
    */
-  .openapi(authRoutes.githubSignIn, async (ctx) => {
-    const { type, redirect } = ctx.req.valid('query');
-
-    // Store OAuth context, to start OAuth flow in callback handler
-    if (redirect) await setOAuthRedirect(ctx, redirect);
-    if (type === 'invite') await handleOAuthInvitation(ctx);
-    if (type === 'connect') await handleOAuthConnection(ctx);
-    if (type === 'verify') await handleOAuthVerify(ctx);
-
+  .openapi(authRoutes.github, async (ctx) => {
     // Generate a `state` to prevent CSRF, and build URL with scope.
     const state = generateState();
     const url = githubAuth.createAuthorizationURL(state, githubScopes);
 
     // Start the OAuth session & flow (Persist `state`)
-    return await createOAuthSession(ctx, 'github', url, state);
+    return await storeOAuthContext(ctx, 'github', url, state);
   })
   /*
    * Initiates Google OAuth authentication flow
    */
-  .openapi(authRoutes.googleSignIn, async (ctx) => {
-    const { type, redirect } = ctx.req.valid('query');
-
-    // Store OAuth context, will resume in OAuth callback
-    if (redirect) await setOAuthRedirect(ctx, redirect);
-    if (type === 'invite') await handleOAuthInvitation(ctx);
-    if (type === 'connect') await handleOAuthConnection(ctx);
-    if (type === 'verify') await handleOAuthVerify(ctx);
-
+  .openapi(authRoutes.google, async (ctx) => {
     // Generate a `state`, PKCE, and scoped URL.
     const state = generateState();
     const codeVerifier = generateCodeVerifier();
     const url = googleAuth.createAuthorizationURL(state, codeVerifier, googleScopes);
 
     // Start the OAuth session & flow (Persist `state` and `codeVerifier`)
-    return await createOAuthSession(ctx, 'google', url, state, codeVerifier);
+    return await storeOAuthContext(ctx, 'google', url, state, codeVerifier);
   })
   /*
    * Initiates Microsoft OAuth authentication flow
    */
-  .openapi(authRoutes.microsoftSignIn, async (ctx) => {
-    const { type, redirect } = ctx.req.valid('query');
-
-    // Store OAuth context, will resume in OAuth callback
-    if (redirect) await setOAuthRedirect(ctx, redirect);
-    if (type === 'invite') await handleOAuthInvitation(ctx);
-    if (type === 'connect') await handleOAuthConnection(ctx);
-    if (type === 'verify') await handleOAuthVerify(ctx);
-
+  .openapi(authRoutes.microsoft, async (ctx) => {
     // Generate a `state`, PKCE, and scoped URL.
     const state = generateState();
     const codeVerifier = generateCodeVerifier();
     const url = microsoftAuth.createAuthorizationURL(state, codeVerifier, microsoftScopes);
 
     // Start the OAuth session & flow (Persist `state` and `codeVerifier`)
-    return await createOAuthSession(ctx, 'microsoft', url, state, codeVerifier);
+    return await storeOAuthContext(ctx, 'microsoft', url, state, codeVerifier);
   })
 
   /*
    * GitHub authentication callback handler
    */
-  .openapi(authRoutes.githubSignInCallback, async (ctx) => {
+  .openapi(authRoutes.githubCallback, async (ctx) => {
     const { code, state, error } = ctx.req.valid('query');
 
     /*
@@ -612,13 +566,16 @@ const authRouteHandlers = app
 
     // Check if Github OAuth is enabled
     const strategy = 'github' as EnabledOAuthProvider;
+
     if (!isOAuthEnabled(strategy)) {
       throw new AppError({ status: 400, type: 'unsupported_oauth', severity: 'error', meta: { strategy }, isRedirect: true });
     }
 
-    // Verify `state` (CSRF protection)
-    const stateCookie = await getAuthCookie(ctx, 'oauth-state');
-    if (!state || !stateCookie || stateCookie !== state) {
+    // Verify cookie by `state` (CSRF protection)
+    const oauthCookie = await getAuthCookie(ctx, `oauth-${state}`);
+    const cookiePayload: OAuthCookiePayload | null = oauthCookie ? JSON.parse(oauthCookie) : null;
+
+    if (!state || !cookiePayload) {
       throw new AppError({ status: 401, type: 'invalid_state', severity: 'warn', meta: { strategy }, isRedirect: true });
     }
 
@@ -637,16 +594,7 @@ const authRouteHandlers = app
       const githubUserEmails = (await githubUserEmailsResponse.json()) as GithubUserEmailProps[];
       const providerUser = transformGithubUserData(githubUser, githubUserEmails);
 
-      // Restore Context: linked oauthAccount, invitation or account linking
-      const oauthAccount = await getOAuthAccount(providerUser.id, strategy, providerUser.email);
-      const { connectUserId, inviteToken, verifyTokenId } = await getOAuthCookies(ctx);
-
-      // Handle different OAuth flows based on context
-      if (connectUserId) return await connectFlow(ctx, providerUser, strategy, connectUserId, oauthAccount);
-      if (inviteToken) return await inviteFlow(ctx, providerUser, strategy, inviteToken.id, oauthAccount);
-      if (verifyTokenId) return await verifyFlow(ctx, providerUser, strategy, verifyTokenId, oauthAccount);
-
-      return await basicFlow(ctx, providerUser, strategy, oauthAccount);
+      return await handleOAuthFlow(ctx, providerUser, strategy, cookiePayload);
     } catch (error) {
       if (error instanceof AppError) throw error;
 
@@ -660,16 +608,13 @@ const authRouteHandlers = app
         isRedirect: true,
         ...(error instanceof Error ? { originalError: error } : {}),
       });
-    } finally {
-      // Clean up OAuth state session regardless of outcome
-      clearOAuthSession(ctx);
     }
   })
 
   /*
    * Google authentication callback handler
    */
-  .openapi(authRoutes.googleSignInCallback, async (ctx) => {
+  .openapi(authRoutes.googleCallback, async (ctx) => {
     const { state, code } = ctx.req.valid('query');
 
     // Check if Google OAuth is enabled
@@ -678,16 +623,17 @@ const authRouteHandlers = app
       throw new AppError({ status: 400, type: 'unsupported_oauth', severity: 'error', meta: { strategy }, isRedirect: true });
     }
 
-    // Verify `state` (CSRF protection) & PKCE validation
-    const storedState = await getAuthCookie(ctx, 'oauth-state');
-    const storedCodeVerifier = await getAuthCookie(ctx, 'oauth-code-verifier');
-    if (!code || !storedState || !storedCodeVerifier || state !== storedState) {
+    // Verify cookie by `state` (CSRF protection) & PKCE validation
+    const oauthCookie = await getAuthCookie(ctx, `oauth-${state}`);
+    const cookiePayload: OAuthCookiePayload | null = oauthCookie ? JSON.parse(oauthCookie) : null;
+
+    if (!code || !cookiePayload || !cookiePayload.codeVerifier) {
       throw new AppError({ status: 401, type: 'invalid_state', severity: 'warn', meta: { strategy }, isRedirect: true });
     }
 
     try {
       // Exchange authorization code for access token and fetch Google user info
-      const googleValidation = await googleAuth.validateAuthorizationCode(code, storedCodeVerifier);
+      const googleValidation = await googleAuth.validateAuthorizationCode(code, cookiePayload.codeVerifier);
       const accessToken = googleValidation.accessToken();
 
       const headers = { Authorization: `Bearer ${accessToken}` };
@@ -695,16 +641,7 @@ const authRouteHandlers = app
       const googleUser = (await response.json()) as GoogleUserProps;
       const providerUser = transformSocialUserData(googleUser);
 
-      // Restore Context: linked oauthAccount, invitation or account linking
-      const oauthAccount = await getOAuthAccount(providerUser.id, strategy, providerUser.email);
-      const { connectUserId, inviteToken, verifyTokenId } = await getOAuthCookies(ctx);
-
-      // Handle different OAuth flows based on context
-      if (connectUserId) return await connectFlow(ctx, providerUser, strategy, connectUserId, oauthAccount);
-      if (inviteToken) return await inviteFlow(ctx, providerUser, strategy, inviteToken.id, oauthAccount);
-      if (verifyTokenId) return await verifyFlow(ctx, providerUser, strategy, verifyTokenId, oauthAccount);
-
-      return await basicFlow(ctx, providerUser, strategy, oauthAccount);
+      return await handleOAuthFlow(ctx, providerUser, strategy, cookiePayload);
     } catch (error) {
       if (error instanceof AppError) throw error;
 
@@ -718,16 +655,13 @@ const authRouteHandlers = app
         isRedirect: true,
         ...(error instanceof Error ? { originalError: error } : {}),
       });
-    } finally {
-      // Clean up OAuth state session regardless of outcome
-      clearOAuthSession(ctx);
     }
   })
 
   /*
    * Microsoft authentication callback handler
    */
-  .openapi(authRoutes.microsoftSignInCallback, async (ctx) => {
+  .openapi(authRoutes.microsoftCallback, async (ctx) => {
     const { state, code } = ctx.req.valid('query');
 
     // Check if Microsoft OAuth is enabled
@@ -736,16 +670,17 @@ const authRouteHandlers = app
       throw new AppError({ status: 400, type: 'unsupported_oauth', severity: 'error', meta: { strategy }, isRedirect: true });
     }
 
-    // Verify `state` (CSRF protection) & PKCE validation
-    const storedState = await getAuthCookie(ctx, 'oauth-state');
-    const storedCodeVerifier = await getAuthCookie(ctx, 'oauth-code-verifier');
-    if (!code || !storedState || !storedCodeVerifier || state !== storedState) {
+    // Verify cookie by `state` (CSRF protection) & PKCE validation
+    const oauthCookie = await getAuthCookie(ctx, `oauth-${state}`);
+    const cookiePayload: OAuthCookiePayload | null = oauthCookie ? JSON.parse(oauthCookie) : null;
+
+    if (!code || !cookiePayload || !cookiePayload.codeVerifier) {
       throw new AppError({ status: 401, type: 'invalid_state', severity: 'warn', meta: { strategy }, isRedirect: true });
     }
 
     try {
       // Exchange authorization code for access token and fetch Microsoft user info
-      const microsoftValidation = await microsoftAuth.validateAuthorizationCode(code, storedCodeVerifier);
+      const microsoftValidation = await microsoftAuth.validateAuthorizationCode(code, cookiePayload.codeVerifier);
       const accessToken = microsoftValidation.accessToken();
 
       const headers = { Authorization: `Bearer ${accessToken}` };
@@ -753,16 +688,7 @@ const authRouteHandlers = app
       const microsoftUser = (await response.json()) as MicrosoftUserProps;
       const providerUser = transformSocialUserData(microsoftUser);
 
-      // Restore Context: linked oauthAccount, invitation or account linking
-      const oauthAccount = await getOAuthAccount(providerUser.id, strategy, providerUser.email);
-      const { connectUserId, inviteToken, verifyTokenId } = await getOAuthCookies(ctx);
-
-      // Handle different OAuth flows based on context
-      if (connectUserId) return await connectFlow(ctx, providerUser, strategy, connectUserId, oauthAccount);
-      if (inviteToken) return await inviteFlow(ctx, providerUser, strategy, inviteToken.id, oauthAccount);
-      if (verifyTokenId) return await verifyFlow(ctx, providerUser, strategy, verifyTokenId, oauthAccount);
-
-      return await basicFlow(ctx, providerUser, strategy, oauthAccount);
+      return await handleOAuthFlow(ctx, providerUser, strategy, cookiePayload);
     } catch (error) {
       if (error instanceof AppError) throw error;
 
@@ -776,55 +702,140 @@ const authRouteHandlers = app
         isRedirect: true,
         ...(error instanceof Error ? { originalError: error } : {}),
       });
-    } finally {
-      // Clean up OAuth state session regardless of outcome
-      clearOAuthSession(ctx);
     }
   })
   /*
    * Passkey challenge
    */
   .openapi(authRoutes.getPasskeyChallenge, async (ctx) => {
-    // Generate a random challenge
-    const challenge = getRandomValues(new Uint8Array(32));
+    const { email, type } = ctx.req.valid('query');
 
-    // Convert to string
+    let userEmail: string | null = null;
+
+    // Generate a 32-byte random challenge and encode it as Base64
+    const challenge = getRandomValues(new Uint8Array(32));
     const challengeBase64 = encodeBase64(challenge);
 
-    // Save challenge in cookie
+    // Save the challenge in a short-lived cookie (5 minutes)
     await setAuthCookie(ctx, 'passkey-challenge', challengeBase64, new TimeSpan(5, 'm'));
-    return ctx.json({ challengeBase64 }, 200);
+
+    // Normalize email if provided
+    if (email) {
+      userEmail = email.toLowerCase().trim();
+    }
+
+    // If this is a multifactor request, retrieve user from pending MFA token
+    if (type === 'mfa') {
+      const { email: tokenEmail } = await validateConfirmMfaToken(ctx, false);
+      userEmail = tokenEmail;
+    }
+
+    // If we still have no email, return challenge with empty credential list
+    if (!userEmail) return ctx.json({ challengeBase64, credentialIds: [] }, 200);
+
+    // Fetch all passkey credentials for this user
+    const credentials = await db
+      .select({ credentialId: passkeysTable.credentialId })
+      .from(passkeysTable)
+      .where(eq(passkeysTable.userEmail, userEmail));
+
+    const credentialIds = credentials.map((c) => c.credentialId);
+
+    return ctx.json({ challengeBase64, credentialIds }, 200);
   })
   /*
    * Verify passkey
    */
-  .openapi(authRoutes.verifyPasskey, async (ctx) => {
-    const { clientDataJSON, authenticatorData, signature, userEmail } = ctx.req.valid('json');
+  .openapi(authRoutes.signInWithPasskey, async (ctx) => {
+    const { clientDataJSON, authenticatorData, signature, credentialId, email, type } = ctx.req.valid('json');
     const strategy = 'passkey';
 
-    // Retrieve user and challenge record
-    const user = await getUserBy('email', userEmail.toLowerCase());
-    if (!user) throw new AppError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'user', meta: { strategy } });
+    if (type === 'authentication' && !enabledStrategies.includes(strategy)) {
+      throw new AppError({ status: 400, type: 'forbidden_strategy', severity: 'error', meta: { strategy } });
+    }
+    // Determine session type: regular authentication or MFA
+    const sessionType = type === 'mfa' ? 'mfa' : 'regular';
 
-    // Check if passkey challenge exists
+    let user: UserModel | null = null;
+
+    // Find user by email if provided
+    if (email) {
+      const normalizedEmail = email.toLowerCase().trim();
+
+      const [tableUser] = await usersBaseQuery()
+        .leftJoin(emailsTable, eq(usersTable.id, emailsTable.userId))
+        .where(eq(emailsTable.email, normalizedEmail))
+        .limit(1);
+
+      user = tableUser;
+    }
+
+    // Override user if this is a multifactor authentication
+    if (type === 'mfa') {
+      const userFromToken = await validateConfirmMfaToken(ctx);
+      user = userFromToken;
+    }
+
+    const meta = { strategy, sessionType };
+
+    // Fail early if user not found
+    if (!user) throw new AppError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'user', meta });
+
+    // Retrieve the passkey challenge from cookie
     const challengeFromCookie = await getAuthCookie(ctx, 'passkey-challenge');
-    if (!challengeFromCookie) throw new AppError({ status: 401, type: 'invalid_credentials', severity: 'warn', meta: { strategy } });
+    if (!challengeFromCookie) throw new AppError({ status: 401, type: 'invalid_credentials', severity: 'warn', meta });
 
     // Get passkey credentials
-    const [credentials] = await db.select().from(passkeysTable).where(eq(passkeysTable.userEmail, userEmail));
-    if (!credentials) throw new AppError({ status: 404, type: 'not_found', severity: 'warn', meta: { strategy } });
+    const [passkeyRecord] = await db
+      .select()
+      .from(passkeysTable)
+      .where(and(eq(passkeysTable.userEmail, user.email), eq(passkeysTable.credentialId, credentialId)))
+      .limit(1);
+
+    if (!passkeyRecord) throw new AppError({ status: 404, type: 'passkey_not_found', severity: 'warn', meta });
 
     try {
-      const isValid = await verifyPassKeyPublic(signature, authenticatorData, clientDataJSON, credentials.publicKey, challengeFromCookie);
-      if (!isValid) throw new AppError({ status: 401, type: 'invalid_token', severity: 'warn', meta: { strategy } });
+      const isValid = await verifyPassKeyPublic(signature, authenticatorData, clientDataJSON, passkeyRecord.publicKey, challengeFromCookie);
+      if (!isValid) throw new AppError({ status: 401, type: 'invalid_token', severity: 'warn', meta });
     } catch (error) {
       if (error instanceof Error) {
-        throw new AppError({ status: 500, type: 'passkey_failed', severity: 'error', meta: { strategy }, originalError: error });
+        throw new AppError({ status: 500, type: 'passkey_verification_failed', severity: 'error', meta, originalError: error });
       }
     }
 
-    await setUserSession(ctx, user, 'passkey');
+    // Set user session after successful verification
+    await setUserSession(ctx, user, strategy, sessionType);
+
+    return ctx.json(true, 200);
+  })
+  /*
+   * Verify TOTP
+   */
+  .openapi(authRoutes.verifyTotp, async (ctx) => {
+    const { code } = ctx.req.valid('json');
+
+    const strategy = 'totp';
+    const sessionType = 'mfa';
+
+    const meta = { strategy, sessionType };
+    const user = await validateConfirmMfaToken(ctx);
+
+    // Get totp credentials
+    const [credentials] = await db.select().from(totpsTable).where(eq(totpsTable.userId, user.id)).limit(1);
+    if (!credentials) throw new AppError({ status: 404, type: 'not_found', severity: 'warn', meta });
+
+    try {
+      const isValid = verifyTotp(code, credentials.encoderSecretKey);
+      if (!isValid) throw new AppError({ status: 401, type: 'invalid_token', severity: 'warn', meta });
+    } catch (error) {
+      if (error instanceof Error) {
+        throw new AppError({ status: 500, type: 'totp_verification_failed', severity: 'error', meta, originalError: error });
+      }
+    }
+
+    // Set user session after successful verification
+    await setUserSession(ctx, user, strategy, sessionType);
+
     return ctx.json(true, 200);
   });
-
 export default authRouteHandlers;

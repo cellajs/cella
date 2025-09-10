@@ -54,18 +54,18 @@
     "test": "pnpm -r --parallel test"
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.2.2",
-    "@evilmartians/lefthook": "^1.12.3",
-    "@typescript/native-preview": "7.0.0-dev.20250828.1",
+    "@biomejs/biome": "^2.2.4",
+    "@evilmartians/lefthook": "^1.12.4",
+    "@typescript/native-preview": "7.0.0-dev.20250910.1",
     "cross-env": "^10.0.0",
-    "knip": "^5.63.0",
+    "knip": "^5.63.1",
     "rimraf": "^6.0.1",
     "tsx": "^4.20.5",
     "typescript": "^5.9.2",
     "vitest": "^3.2.4"
   },
   "dependencies": {
-    "dotenv": "^17.2.1"
+    "dotenv": "^17.2.2"
   },
   "pnpm": {
     "overrides": {

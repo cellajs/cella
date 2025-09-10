@@ -10,7 +10,7 @@ import type { EntityPage } from '~/modules/entities/types';
 import { useGetEntityBaseData } from '~/modules/entities/use-get-entity-base-data';
 import { Badge } from '~/modules/ui/badge';
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbSeparator } from '~/modules/ui/breadcrumb';
-import { baseEntityRoutes } from '~/nav-config';
+import { baseEntityRoutes } from '~/routes-config';
 
 type PageHeaderProps = Omit<PageCoverProps, 'id' | 'url'> & {
   entity: EntityPage | UserBaseSchema;
@@ -37,7 +37,9 @@ const PageHeader = ({ entity, panel, parent, disableScroll, ...coverProps }: Pag
           type={entity.entityType}
           url={entity.thumbnailUrl}
           className={
-            entity.entityType === 'user' ? 'h-26 w-26 -mt-12 text-4xl ml-2 mr-3 border-bg border-opacity-50 border-2 rounded-full' : 'm-2 h-12 w-12'
+            entity.entityType === 'user'
+              ? 'h-26 w-26 -mt-12 text-4xl ml-2 mr-3 border-bg border-opacity-50 border-2 rounded-full'
+              : 'm-2 text-xl h-12 w-12'
           }
         />
 

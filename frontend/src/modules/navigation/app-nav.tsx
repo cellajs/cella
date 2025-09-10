@@ -74,6 +74,7 @@ const AppNav = () => {
     ['Shift + M', () => triggerNavItem('menu')],
   ]);
 
+  // TODO fix it can't use navigation out of sheet handlers components like UserSheetHandler because this useEffect re-triggers close and on close and there is navigation to remove sheet id from search and navigation doesn't happens
   useEffect(() => {
     router.subscribe('onBeforeLoad', ({ pathChanged }) => {
       if (!pathChanged) return;

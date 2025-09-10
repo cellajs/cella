@@ -1,5 +1,9 @@
+import type z from 'zod';
 import type { Attachment, CreateAttachmentData, DeleteAttachmentsData, UpdateAttachmentData } from '~/api.gen';
 import type { ContextQueryProp, InfiniteQueryData, QueryData } from '~/query/types';
+import type { attachmentsRouteSearchParamsSchema } from '~/routes/search-params-schemas';
+
+export type AttachmentsRouteSearchParams = z.infer<typeof attachmentsRouteSearchParamsSchema>;
 
 export type AttachmentToInsert = CreateAttachmentData['body'][number] & { type: string };
 

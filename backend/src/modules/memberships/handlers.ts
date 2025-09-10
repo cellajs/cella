@@ -66,6 +66,7 @@ const membershipRouteHandlers = app
           inArray(tokensTable.email, normalizedEmails),
           isNotNull(tokensTable.entityType),
           gt(tokensTable.expiresAt, new Date()),
+          isNull(tokensTable.consumedAt),
         ),
       );
 
@@ -207,20 +208,18 @@ const membershipRouteHandlers = app
     const insertedTokens = await db
       .insert(tokensTable)
       .values(tokens)
-      .returning({ tokenId: tokensTable.id, userId: tokensTable.userId, email: tokensTable.email, token: tokensTable.token });
+      .returning({ userId: tokensTable.userId, email: tokensTable.email, token: tokensTable.token });
 
     // Generate inactive memberships after tokens are inserted
     await Promise.all(
-      insertedTokens
-        .filter(({ userId }) => userId !== null)
-        .map(({ tokenId, userId }) => insertMembership({ userId: userId as string, role, entity, tokenId })),
+      insertedTokens.filter(({ userId }) => userId !== null).map(({ userId }) => insertMembership({ userId: userId as string, role, entity })),
     );
 
     // Prepare and send invitation emails
-    const recipients = insertedTokens.map(({ email, tokenId, token }) => ({
+    const recipients = insertedTokens.map(({ email, token }) => ({
       email,
       name: slugFromEmail(email),
-      memberInviteLink: `${appConfig.frontendUrl}/invitation/${token}?tokenId=${tokenId}`,
+      memberInviteLink: `${appConfig.frontendUrl}/invitation/${token}`,
     }));
 
     const emailProps = {
@@ -236,27 +235,6 @@ const membershipRouteHandlers = app
     };
 
     await mailer.prepareEmails<MemberInviteEmailProps, (typeof recipients)[number]>(MemberInviteEmail, emailProps, recipients, user.email);
-
-    // Fetch all existing memberships by organizationId
-    const adminMemberships = await db
-      .selectDistinctOn([membershipsTable.userId], { userId: membershipsTable.userId })
-      .from(membershipsTable)
-      .where(
-        and(
-          eq(membershipsTable.organizationId, organization.id),
-          eq(membershipsTable.role, 'admin'),
-          eq(membershipsTable.archived, false),
-          isNotNull(membershipsTable.activatedAt),
-        ),
-      );
-
-    const adminMembersIds = adminMemberships.map(({ userId }) => userId);
-
-    sendSSEToUsers(adminMembersIds, 'invite_members', {
-      targetEntity: entity,
-      organization,
-      invitesCount: recipients.length,
-    });
 
     logEvent('info', `Users invited to ${entity.name}`, { count: insertedTokens.length, [targetEntityIdField]: entity.id });
 
@@ -476,6 +454,7 @@ const membershipRouteHandlers = app
           eq(tokensTable[entityIdField], entity.id),
           eq(tokensTable.organizationId, organization.id),
           isNotNull(tokensTable.role),
+          isNull(tokensTable.consumedAt),
         ),
       )
       .orderBy(orderColumn);
@@ -498,6 +477,7 @@ const membershipRouteHandlers = app
       eq(tokensTable.email, normalizedEmail),
       isNotNull(tokensTable.entityType),
       isNotNull(tokensTable.role),
+      isNull(tokensTable.consumedAt),
     ];
     if (tokenId) filters.push(eq(tokensTable.id, tokenId));
 
@@ -546,7 +526,7 @@ const membershipRouteHandlers = app
     const recipient = {
       email: userEmail,
       name: slugFromEmail(userEmail),
-      memberInviteLink: `${appConfig.frontendUrl}/invitation/${newToken}?tokenId=${newTokenId}`,
+      memberInviteLink: `${appConfig.frontendUrl}/invitation/${newToken}`,
     };
 
     const emailProps = {

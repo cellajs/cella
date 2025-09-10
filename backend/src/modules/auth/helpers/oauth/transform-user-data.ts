@@ -1,5 +1,5 @@
 import slugify from 'slugify';
-import type { GithubUserEmailProps, GithubUserProps, GoogleUserProps, MicrosoftUserProps } from '#/modules/auth/helpers/oauth/oauth-providers';
+import type { GithubUserEmailProps, GithubUserProps, GoogleUserProps, MicrosoftUserProps } from '#/modules/auth/helpers/oauth/providers';
 import { slugFromEmail } from '#/utils/slug-from-email';
 
 export type TransformedUser = {

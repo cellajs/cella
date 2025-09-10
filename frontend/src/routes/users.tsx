@@ -26,7 +26,7 @@ export const UserProfileRoute = createRoute({
   },
   errorComponent: ({ error }) => <ErrorNotice level="app" error={error} />,
   component: () => {
-    const { idOrSlug } = useParams({ from: UserProfileRoute.id });
+    const { idOrSlug } = useParams({ from: '/appLayout/users/$idOrSlug' });
     return (
       <Suspense>
         <UserProfilePage key={idOrSlug} idOrSlug={idOrSlug} />
@@ -50,7 +50,7 @@ export const UserInOrganizationProfileRoute = createRoute({
   },
   errorComponent: ({ error }) => <ErrorNotice level="app" error={error} />,
   component: () => {
-    const { idOrSlug, orgIdOrSlug } = useParams({ from: UserInOrganizationProfileRoute.id });
+    const { idOrSlug, orgIdOrSlug } = useParams({ from: '/appLayout/$orgIdOrSlug/users/$idOrSlug' });
     return (
       <Suspense>
         <UserProfilePage key={idOrSlug} idOrSlug={idOrSlug} orgIdOrSlug={orgIdOrSlug} />

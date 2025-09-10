@@ -1,5 +1,6 @@
-import { useContext, useEffect } from 'react';
-import { SSEContext } from '~/modules/common/sse/provider';
+import { createContext, useContext, useEffect } from 'react';
+
+export const SSEContext = createContext<EventSource | null>(null);
 
 export const useSSE = (eventName: string, listener: (this: EventSource, event: MessageEvent) => unknown) => {
   const source = useContext(SSEContext);

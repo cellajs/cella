@@ -4,7 +4,7 @@ import { Mail, Shield, UserRound, UsersRound } from 'lucide-react';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import type { EntityGridItem } from '~/modules/entities/types';
 import { Card, CardContent } from '~/modules/ui/card';
-import { getEntityRoute } from '~/nav-config';
+import { getEntityRoute } from '~/routes-resolver';
 import { dateShort } from '~/utils/date-short';
 import { numberToColorClass } from '~/utils/number-to-color-class';
 

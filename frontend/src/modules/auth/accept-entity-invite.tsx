@@ -1,17 +1,16 @@
 import { useMutation } from '@tanstack/react-query';
-import { Link, useNavigate, useParams, useSearch } from '@tanstack/react-router';
+import { Link, useNavigate, useParams } from '@tanstack/react-router';
 import { appConfig } from 'config';
 import { Ban, Check } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { acceptEntityInvite } from '~/api.gen';
-import AuthErrorNotice from '~/modules/auth/auth-error-notice';
+import AuthErrorNotice from '~/modules/auth/error-notice';
 import { useCheckToken } from '~/modules/auth/use-token-check';
 import Spinner from '~/modules/common/spinner';
 import { toaster } from '~/modules/common/toaster/service';
 import { getAndSetMenu } from '~/modules/me/helpers';
 import { buttonVariants, SubmitButton } from '~/modules/ui/button';
-import { getEntityRoute } from '~/nav-config';
-import { AcceptEntityInviteRoute } from '~/routes/auth';
+import { getEntityRoute } from '~/routes-resolver';
 import { useUserStore } from '~/store/user';
 import { cn } from '~/utils/cn';
 
@@ -20,12 +19,11 @@ const AcceptEntityInvite = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
 
-  const { token } = useParams({ from: AcceptEntityInviteRoute.id });
-  const { tokenId } = useSearch({ from: AcceptEntityInviteRoute.id });
+  const { token } = useParams({ from: '/publicLayout/authLayout/invitation/$token' });
 
   const { user: currentUser } = useUserStore();
 
-  const { data, isLoading, error } = useCheckToken('invitation', tokenId);
+  const { data, isLoading, error } = useCheckToken('invitation', token);
 
   const {
     mutate: _acceptEntityInvite,

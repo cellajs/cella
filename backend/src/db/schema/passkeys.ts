@@ -10,8 +10,12 @@ export const passkeysTable = pgTable('passkeys', {
     .references(() => usersTable.email, { onDelete: 'cascade' }),
   credentialId: varchar().notNull(),
   publicKey: varchar().notNull(),
+  deviceName: varchar(),
+  deviceType: varchar({ enum: ['desktop', 'mobile'] })
+    .notNull()
+    .default('desktop'),
+  deviceOs: varchar(),
+  browser: varchar(),
+  nameOnDevice: varchar().notNull(),
   createdAt: timestampColumns.createdAt,
 });
-
-export type PasskeyModel = typeof passkeysTable.$inferSelect;
-export type InsertPasskeyModel = typeof passkeysTable.$inferInsert;

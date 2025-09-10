@@ -24,7 +24,7 @@ export const openApiConfig: UserConfig = {
     {
       name: '@hey-api/client-fetch',
       throwOnError: true,
-      runtimeConfigPath: './src/api-config.ts',
+      runtimeConfigPath: '../api-config',
     },
   ],
 };

@@ -1,7 +1,7 @@
 import type { GetNextPageParamFunction, QueryKey } from '@tanstack/react-query';
 import { queryClient } from '~/query/query-client';
 import type { InfiniteQueryData, PageParams, QueryData } from '~/query/types';
-import { formatUpdatedCacheData } from './mutate-query';
+import { formatUpdatedCacheData } from '~/query/utils/mutate-query';
 
 /**
  *  A reusable base options for `infiniteQueryOptions`.
@@ -46,19 +46,13 @@ interface FilterOptions<T> {
  *  A reusable options preset for `useInfiniteQuery` that:
  *  - Uses cached data if all items are already fetched.
  *  - Skips unnecessary refetches unless data is stale or incomplete.
- *  - Provides initial filtered/sorted data for instant UI display.
+ *  - Provides initial filtered/sorted data for instant UI display (only when query is disabled).
  *
- *  Use this when you want, no redundant network calls for filtering/sorting/search if the full dataset is already cached.
+ *  Use this when you want no redundant network calls for filtering/sorting/search if the full dataset is already cached.
  */
-export const infiniteQueryUseCachedIfCompleteOptions = <T>(baseQueryKey: QueryKey, filterOptions: FilterOptions<T>) => ({
-  /**
-   * Controls whether the query should be executed.
-   * It fetches only if:
-   * - There is no cached data
-   * - Cached data is stale
-   * - The cache contains only partial items
-   */
-  enabled: () => {
+// TODO make it work not on baseQueryKey, but on any sort that have full load
+export const infiniteQueryUseCachedIfCompleteOptions = <T>(baseQueryKey: QueryKey, filterOptions: FilterOptions<T>) => {
+  const isEnabled = () => {
     const state = queryClient.getQueryState<InfiniteQueryData<unknown>>(baseQueryKey);
     const queryStaleTime = filterOptions.staleTime ?? baseInfiniteQueryOptions.staleTime;
 
@@ -73,56 +67,70 @@ export const infiniteQueryUseCachedIfCompleteOptions = <T>(baseQueryKey: QueryKe
 
     // If not all items fetched
     return fetchedCount < totalCount;
-  },
-  /**
-   * Provides initial data instantly from the cache.
-   * Data is filtered and sorted locally according to `filterOptions`.
-   * Avoids showing stale/unfiltered data during refetch.
-   */
-  initialData: () => {
-    const cache = queryClient.getQueryData<InfiniteQueryData<T>>(baseQueryKey);
-    if (!cache) return;
+  };
 
-    const { q, sort, order, limit, sortOptions, searchIn, additionalFilter } = filterOptions;
+  return {
+    /**
+     * Controls whether the query should be executed.
+     * It fetches only if:
+     * - There is no cached data
+     * - Cached data is stale
+     * - The cache contains only partial items
+     */
+    enabled: isEnabled,
+    /**
+     * Provides initial data instantly from the cache.
+     * Data is filtered and sorted locally according to `filterOptions`.
+     * Avoids showing stale/unfiltered data during refetch.
+     */
+    initialData: () => {
+      // Only hydrate if query is disabled
+      if (isEnabled()) return;
 
-    const cachedItems = cache.pages.flatMap((p) => p.items);
-    const normalizedSearch = q.trim().toLowerCase();
+      const cache = queryClient.getQueryData<InfiniteQueryData<T>>(baseQueryKey);
+      if (!cache) return;
 
-    // Filter items
-    const filteredItems = cachedItems
-      .filter((item) => {
-        const matchesSearch =
-          !normalizedSearch ||
-          searchIn.some((key) => {
-            const value = item[key];
-            if (value == null) return false;
-            return String(value).toLowerCase().includes(normalizedSearch);
-          });
+      const { q, sort, order, limit, sortOptions, searchIn, additionalFilter } = filterOptions;
 
-        const additionalMatch = additionalFilter ? additionalFilter(item) : true;
+      const cachedItems = cache.pages.flatMap((p) => p.items);
+      const normalizedSearch = q.trim().toLowerCase();
 
-        return matchesSearch && additionalMatch;
-      })
-      // Sort items
-      .sort((a, b) => {
-        const aVal = sortOptions?.[sort] ? sortOptions[sort](a) : a[sort] || '';
-        const bVal = sortOptions?.[sort] ? sortOptions[sort](b) : b[sort] || '';
+      // Filter items
+      const filteredItems = cachedItems
+        .filter((item) => {
+          const matchesSearch =
+            !normalizedSearch ||
+            searchIn.some((key) => {
+              const value = item[key];
+              if (value == null) return false;
+              return String(value).toLowerCase().includes(normalizedSearch);
+            });
 
-        if (aVal == null && bVal == null) return 0;
-        if (aVal == null) return 1;
-        if (bVal == null) return -1;
+          const additionalMatch = additionalFilter ? additionalFilter(item) : true;
 
-        if (typeof aVal === 'number' && typeof bVal === 'number') {
-          return order === 'asc' ? aVal - bVal : bVal - aVal;
-        }
+          return matchesSearch && additionalMatch;
+        })
+        // Sort items
+        .sort((a, b) => {
+          const aVal = sortOptions?.[sort] ? sortOptions[sort](a) : a[sort] || '';
+          const bVal = sortOptions?.[sort] ? sortOptions[sort](b) : b[sort] || '';
 
-        return order === 'asc'
-          ? String(aVal).localeCompare(String(bVal), undefined, { sensitivity: 'base' })
-          : String(bVal).localeCompare(String(aVal), undefined, { sensitivity: 'base' });
-      });
+          if (aVal == null && bVal == null) return 0;
+          if (aVal == null) return 1;
+          if (bVal == null) return -1;
 
-    const totalChange = filteredItems.length - cachedItems.length;
+          if (typeof aVal === 'number' && typeof bVal === 'number') {
+            return order === 'asc' ? aVal - bVal : bVal - aVal;
+          }
 
-    return formatUpdatedCacheData(cache, filteredItems, limit, totalChange) as InfiniteQueryData<T>;
-  },
-});
+          return order === 'asc'
+            ? String(aVal).localeCompare(String(bVal), undefined, { sensitivity: 'base' })
+            : String(bVal).localeCompare(String(aVal), undefined, { sensitivity: 'base' });
+        });
+
+      const totalChange = filteredItems.length - cachedItems.length;
+
+      return formatUpdatedCacheData(cache, filteredItems, limit, totalChange) as InfiniteQueryData<T>;
+    },
+  };
+};

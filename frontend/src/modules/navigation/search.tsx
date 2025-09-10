@@ -14,7 +14,7 @@ import { Button } from '~/modules/ui/button';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '~/modules/ui/command';
 import { ScrollArea } from '~/modules/ui/scroll-area';
 import { searchUsersQueryOptions } from '~/modules/users/query';
-import { getEntityRoute } from '~/nav-config';
+import { getEntityRoute } from '~/routes-resolver';
 import { useNavigationStore } from '~/store/navigation';
 
 export const AppSearch = () => {

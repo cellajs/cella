@@ -7,7 +7,6 @@ import { PageHeader } from '~/modules/common/page/header';
 import { PageNav, type PageTab } from '~/modules/common/page/nav';
 import { toaster } from '~/modules/common/toaster/service';
 import { organizationQueryOptions, useOrganizationUpdateMutation } from '~/modules/organizations/query';
-import { OrganizationRoute } from '~/routes/organizations';
 import { useUserStore } from '~/store/user';
 
 const LeaveOrgButton = lazy(() => import('~/modules/organizations/leave-organization'));
@@ -20,7 +19,7 @@ const organizationTabs: PageTab[] = [
 
 const OrganizationPage = () => {
   const { t } = useTranslation();
-  const { idOrSlug } = useParams({ from: OrganizationRoute.id });
+  const { idOrSlug } = useParams({ from: '/appLayout/organizations/$idOrSlug' });
   const user = useUserStore((state) => state.user);
 
   const orgQueryOptions = organizationQueryOptions(idOrSlug);

@@ -4,7 +4,6 @@ import { Bird } from 'lucide-react';
 import { useCallback, useState } from 'react';
 import type { RowsChangeData } from 'react-data-grid';
 import { useTranslation } from 'react-i18next';
-import type { z } from 'zod';
 import { membershipInvite, type Organization } from '~/api.gen';
 import useSearchParams from '~/hooks/use-search-params';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
@@ -14,20 +13,18 @@ import { toaster } from '~/modules/common/toaster/service';
 import { getAndSetMenu } from '~/modules/me/helpers';
 import { useMemberUpdateMutation } from '~/modules/memberships/query-mutations';
 import { organizationsQueryOptions } from '~/modules/organizations/query';
+import { OrganizationsTableBar } from '~/modules/organizations/table/bar';
 import { useColumns } from '~/modules/organizations/table/columns';
-import { OrganizationsTableBar } from '~/modules/organizations/table/table-bar';
-import { OrganizationsTableRoute, type organizationsSearchSchema } from '~/routes/system';
 import { useUserStore } from '~/store/user';
+import type { OrganizationsRouteSearchParams } from '../types';
 
 const LIMIT = appConfig.requestLimits.organizations;
-
-export type OrganizationsSearch = z.infer<typeof organizationsSearchSchema>;
 
 const OrganizationsTable = () => {
   const { t } = useTranslation();
   const { user } = useUserStore();
   const updateMemberMembership = useMemberUpdateMutation();
-  const { search, setSearch } = useSearchParams<OrganizationsSearch>({ from: OrganizationsTableRoute.id });
+  const { search, setSearch } = useSearchParams<OrganizationsRouteSearchParams>({ from: '/appLayout/system/organizations' });
 
   // Table state
   const { q, sort, order } = search;

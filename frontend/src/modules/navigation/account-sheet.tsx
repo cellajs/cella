@@ -5,7 +5,7 @@ import { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { useOnlineManager } from '~/hooks/use-online-manager';
-import { AppFooter } from '~/modules/common/app-footer';
+import { AppFooter } from '~/modules/common/app/footer';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { toaster } from '~/modules/common/toaster/service';
 import { buttonVariants } from '~/modules/ui/button';
@@ -81,7 +81,6 @@ export const AccountSheet = () => {
             />
           </div>
         </Link>
-
         <div className="flex flex-col gap-1 max-sm:mt-4">
           <AccountButton
             offlineAccess={false}
@@ -104,9 +103,7 @@ export const AccountSheet = () => {
           )}
           <AccountButton offlineAccess={false} isOnline={isOnline} icon={LogOut} id="btn-signout" label={t('common:sign_out')} action="/sign-out" />
         </div>
-
         <div className="grow border-b border-dashed" />
-
         <AppFooter className="items-center" />
       </div>
     </ScrollArea>

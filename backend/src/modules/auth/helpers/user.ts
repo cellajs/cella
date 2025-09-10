@@ -3,18 +3,19 @@ import { and, eq, isNull } from 'drizzle-orm';
 import { db } from '#/db/db';
 import { emailsTable } from '#/db/schema/emails';
 import { tokensTable } from '#/db/schema/tokens';
+import { unsubscribeTokensTable } from '#/db/schema/unsubscribe-tokens';
 import { type InsertUserModel, type UserModel, usersTable } from '#/db/schema/users';
 import { resolveEntity } from '#/lib/entity';
 import { AppError } from '#/lib/errors';
 import { checkSlugAvailable } from '#/modules/entities/helpers/check-slug';
 import { insertMembership } from '#/modules/memberships/helpers';
-import { generateUnsubscribeToken } from '#/modules/users/helpers/unsubscribe-token';
 import { getIsoDate } from '#/utils/iso-date';
 import { logError } from '#/utils/logger';
 import { nanoid } from '#/utils/nanoid';
+import { generateUnsubscribeToken } from '#/utils/unsubscribe-token';
 
 interface HandleCreateUserProps {
-  newUser: Omit<InsertUserModel, 'unsubscribeToken'>;
+  newUser: InsertUserModel;
   membershipInviteTokenId?: string | null;
   emailVerified?: boolean;
 }
@@ -34,7 +35,7 @@ export const handleCreateUser = async ({ newUser, membershipInviteTokenId, email
   const [inviteToken] = await db
     .select()
     .from(tokensTable)
-    .where(and(eq(tokensTable.email, newUser.email), eq(tokensTable.type, 'invitation'), isNull(tokensTable.userId)));
+    .where(and(eq(tokensTable.email, newUser.email), eq(tokensTable.type, 'invitation'), isNull(tokensTable.userId), isNull(tokensTable.consumedAt)));
 
   if (!membershipInviteTokenId && inviteToken) throw new AppError({ status: 403, type: 'invite_takes_priority', severity: 'warn' });
 
@@ -52,11 +53,11 @@ export const handleCreateUser = async ({ newUser, membershipInviteTokenId, email
         firstName: newUser.firstName,
         email: normalizedEmail,
         name: newUser.name,
-        unsubscribeToken: generateUnsubscribeToken(normalizedEmail),
         language: appConfig.defaultLanguage,
-        hashedPassword: newUser.hashedPassword,
       })
       .returning();
+
+    await db.insert(unsubscribeTokensTable).values({ token: generateUnsubscribeToken(normalizedEmail), userId: user.id });
 
     // If signing up with token, update it with new user id and insert membership if applicable
     if (membershipInviteTokenId) await handleMembershipTokenUpdate(user.id, membershipInviteTokenId);

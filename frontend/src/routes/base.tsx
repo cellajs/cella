@@ -17,7 +17,7 @@ import { useUserStore } from '~/store/user';
 import appTitle from '~/utils/app-title';
 
 // Lazy load main App component, which is behind authentication
-const AppLayout = lazy(() => import('~/modules/common/app-layout'));
+const AppLayout = lazy(() => import('~/modules/common/app/layout'));
 
 const errorSearchSchema = z.object({
   error: z.string().optional(),
@@ -45,7 +45,7 @@ export const rootRoute = createRootRouteWithContext()({
 });
 
 export const PublicRoute = createRoute({
-  id: 'public-layout',
+  id: 'publicLayout',
   staticData: { isAuth: false },
   getParentRoute: () => rootRoute,
   component: () => <PublicLayout />,
@@ -67,7 +67,7 @@ export const PublicRoute = createRoute({
 });
 
 export const AppRoute = createRoute({
-  id: 'app-layout',
+  id: 'appLayout',
   staticData: { isAuth: false },
   getParentRoute: () => rootRoute,
   component: () => (

@@ -1,24 +1,17 @@
 import { createRoute } from '@tanstack/react-router';
 import { lazy, Suspense } from 'react';
-import { z } from 'zod';
-import { zGetOrganizationsData, zGetRequestsData, zGetUsersData } from '~/api.gen/zod.gen';
 import ErrorNotice from '~/modules/common/error-notice';
 import SystemPage from '~/modules/system/system-page';
 import { AppRoute } from '~/routes/base';
 import appTitle from '~/utils/app-title';
 import { noDirectAccess } from '~/utils/no-direct-access';
+import { organizationsRouteSearchParamsSchema, requestsRouteSearchParamsSchema, usersRouteSearchParamsSchema } from './search-params-schemas';
 
 // Lazy-loaded route components
 const OrganizationsTable = lazy(() => import('~/modules/organizations/table'));
 const UsersTable = lazy(() => import('~/modules/users/table'));
 const RequestsTable = lazy(() => import('~/modules/requests/table'));
 const RequestsPerMinute = lazy(() => import('~/modules/metrics/requests-per-minute'));
-
-// Search query schemas
-export const organizationsSearchSchema = zGetOrganizationsData.shape.query.unwrap().pick({ q: true, sort: true, order: true });
-const baseUsersSearchSchema = zGetUsersData.shape.query.unwrap().pick({ q: true, sort: true, order: true, role: true });
-export const usersSearchSchema = z.object({ ...baseUsersSearchSchema.shape, userSheetId: z.string().optional() });
-export const requestSearchSchema = zGetRequestsData.shape.query.unwrap().pick({ q: true, sort: true, order: true });
 
 export const SystemRoute = createRoute({
   path: '/system',
@@ -33,7 +26,7 @@ export const SystemRoute = createRoute({
 
 export const UsersTableRoute = createRoute({
   path: '/users',
-  validateSearch: usersSearchSchema,
+  validateSearch: usersRouteSearchParamsSchema,
   staticData: { isAuth: true },
   head: () => ({ meta: [{ title: appTitle('Users') }] }),
   getParentRoute: () => SystemRoute,
@@ -47,7 +40,7 @@ export const UsersTableRoute = createRoute({
 
 export const OrganizationsTableRoute = createRoute({
   path: '/organizations',
-  validateSearch: organizationsSearchSchema,
+  validateSearch: organizationsRouteSearchParamsSchema,
   staticData: { isAuth: true },
   head: () => ({ meta: [{ title: appTitle('Organizations') }] }),
   getParentRoute: () => SystemRoute,
@@ -61,7 +54,7 @@ export const OrganizationsTableRoute = createRoute({
 
 export const RequestsTableRoute = createRoute({
   path: '/requests',
-  validateSearch: requestSearchSchema,
+  validateSearch: requestsRouteSearchParamsSchema,
   staticData: { isAuth: true },
   head: () => ({ meta: [{ title: appTitle('Requests') }] }),
   getParentRoute: () => SystemRoute,
@@ -75,7 +68,7 @@ export const RequestsTableRoute = createRoute({
 
 export const MetricsRoute = createRoute({
   path: '/metrics',
-  validateSearch: requestSearchSchema,
+  validateSearch: requestsRouteSearchParamsSchema,
   staticData: { isAuth: true },
   head: () => ({ meta: [{ title: appTitle('Metrics') }] }),
   getParentRoute: () => SystemRoute,

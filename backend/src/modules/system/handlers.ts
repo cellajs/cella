@@ -9,6 +9,7 @@ import { membershipsTable } from '#/db/schema/memberships';
 import { organizationsTable } from '#/db/schema/organizations';
 import { requestsTable } from '#/db/schema/requests';
 import { tokensTable } from '#/db/schema/tokens';
+import { unsubscribeTokensTable } from '#/db/schema/unsubscribe-tokens';
 import { usersTable } from '#/db/schema/users';
 import { env } from '#/env';
 import { type Env, getContextUser } from '#/lib/context';
@@ -16,7 +17,7 @@ import { AppError } from '#/lib/errors';
 import { mailer } from '#/lib/mailer';
 import { getSignedUrl } from '#/lib/signed-url';
 import systemRoutes from '#/modules/system/routes';
-import { getUsersByConditions } from '#/modules/users/helpers/get-user-by';
+import { usersBaseQuery } from '#/modules/users/helpers/select';
 import { defaultHook } from '#/utils/default-hook';
 import { logError, logEvent } from '#/utils/logger';
 import { nanoid } from '#/utils/nanoid';
@@ -57,13 +58,13 @@ const systemRouteHandlers = app
           // Make sure its a system invitation
           isNull(tokensTable.entityType),
           lt(tokensTable.expiresAt, new Date()),
+          isNull(tokensTable.consumedAt),
         ),
       );
 
-    const [existingUsers, existingInvites] = await Promise.all([
-      getUsersByConditions([inArray(emailsTable.email, normalizedEmails)]),
-      existingInvitesQuery,
-    ]);
+    const existingUsersQuery = await usersBaseQuery().where(inArray(emailsTable.email, normalizedEmails));
+
+    const [existingUsers, existingInvites] = await Promise.all([existingUsersQuery, existingInvitesQuery]);
 
     // Create a set of emails from both existing users and invitations
     const existingEmails = new Set([...existingUsers.map((user) => user.email), ...existingInvites.map((invite) => invite.email)]);
@@ -105,7 +106,7 @@ const systemRouteHandlers = app
       email: tokenRecord.email,
       lng: lng,
       name: slugFromEmail(tokenRecord.email),
-      systemInviteLink: `${appConfig.frontendUrl}/auth/authenticate?token=${tokenRecord.token}&tokenId=${tokenRecord.id}`,
+      systemInviteLink: `${appConfig.frontendUrl}/auth/authenticate?token=${tokenRecord.token}`,
     }));
 
     type Recipient = (typeof recipients)[number];
@@ -167,12 +168,13 @@ const systemRouteHandlers = app
       .selectDistinct({
         email: usersTable.email,
         name: usersTable.name,
-        unsubscribeToken: usersTable.unsubscribeToken,
+        unsubscribeToken: unsubscribeTokensTable.token,
         newsletter: usersTable.newsletter,
         orgName: organizationsTable.name,
       })
       .from(membershipsTable)
       .innerJoin(usersTable, and(eq(usersTable.id, membershipsTable.userId)))
+      .innerJoin(unsubscribeTokensTable, and(eq(usersTable.id, unsubscribeTokensTable.userId)))
       .innerJoin(organizationsTable, eq(organizationsTable.id, membershipsTable.organizationId))
       .where(
         and(
