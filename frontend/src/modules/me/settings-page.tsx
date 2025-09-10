@@ -14,8 +14,8 @@ import StickyBox from '~/modules/common/sticky-box';
 import { toaster } from '~/modules/common/toaster/service';
 import UnsavedBadge from '~/modules/common/unsaved-badge';
 import DeleteSelf from '~/modules/me/delete-self';
-import { MultiFactorAuthentication } from '~/modules/me/mfa/switch';
-import PasskeysList from '~/modules/me/passkeys';
+import { MfaSwitch } from '~/modules/me/mfa/switch';
+import PasskeysList from '~/modules/me/passkeys/list';
 import SessionsList from '~/modules/me/sessions';
 import Totp from '~/modules/me/totp';
 import { Button } from '~/modules/ui/button';
@@ -132,16 +132,25 @@ const UserSettingsPage = () => {
               <CardDescription>{t('common:authentication.text')}</CardDescription>
             </CardHeader>
             <CardContent className="text-sm">
+              {/* MFA */}
+              <HelpText content={t('common:mfa.text')}>
+                <p className="font-semibold">{t('common:mfa')}</p>
+              </HelpText>
+              <MfaSwitch />
+
+              {/* Passkeys */}
               <HelpText content={t('common:passkey.text')}>
                 <p className="font-semibold">{t('common:passkeys')}</p>
               </HelpText>
               <PasskeysList />
 
+              {/* TOTP */}
               <HelpText content={t('common:totp.text')}>
                 <p className="font-semibold">{t('common:totp')}</p>
               </HelpText>
               <Totp />
 
+              {/* OAuth */}
               <HelpText content={t('common:oauth.text')}>
                 <p className="font-semibold">{t('common:oauth')}</p>
               </HelpText>
@@ -183,6 +192,8 @@ const UserSettingsPage = () => {
                   );
                 })}
               </div>
+
+              {/* Password reset */}
               <HelpText content={t('common:request_password.text')}>
                 <p className="font-semibold">{t('common:reset_resource', { resource: t('common:password').toLowerCase() })}</p>{' '}
               </HelpText>
@@ -193,11 +204,10 @@ const UserSettingsPage = () => {
                 </Button>
                 {disabledResetPassword && <p className="text-sm text-gray-500 mt-2">{t('common:retry_reset_password.text')}</p>}
               </div>
-
-              <MultiFactorAuthentication />
             </CardContent>
           </Card>
         </AsideAnchor>
+
         <AsideAnchor id="delete-account">
           <Card className="mx-auto sm:w-full">
             <CardHeader>

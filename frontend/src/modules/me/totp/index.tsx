@@ -1,5 +1,5 @@
 import { onlineManager } from '@tanstack/react-query';
-import { Check, QrCode, Trash } from 'lucide-react';
+import { Check, QrCode, Unlink } from 'lucide-react';
 import { Suspense, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
@@ -50,7 +50,7 @@ const Totp = () => {
       )}
       {hasTotp ? (
         <Button key="deleteTotp" type="button" variant="ghost" onClick={handleDeleteTOTP}>
-          <Trash className="w-4 h-4 mr-2" />
+          <Unlink className="w-4 h-4 mr-2" />
           <span>{t('common:unlink')}</span>
         </Button>
       ) : (
