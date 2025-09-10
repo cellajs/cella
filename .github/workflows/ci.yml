@@ -201,7 +201,7 @@ jobs:
           node-version: 24
 
       - name: Generate draft release notes
-        run: npx conventional-changelog -p angular -r 0 -o RELEASE_NOTES.md
+        run: npx conventional-changelog -p conventionalcommits -r 0 -o RELEASE_NOTES.md
 
       - name: Upload draft release notes
         uses: actions/upload-artifact@v4
