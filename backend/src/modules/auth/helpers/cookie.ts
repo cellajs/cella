@@ -7,17 +7,7 @@ import { env } from '../../../env';
 
 const isProduction = appConfig.mode === 'production';
 
-export const oauthCookies = [
-  'oauth-state',
-  'oauth-code-verifier',
-  'oauth-redirect',
-  'oauth-connect-user-id',
-  'oauth-invite-token-id',
-  'oauth-invite-token-type',
-  'oauth-verify-token-id',
-] as const;
-
-export type CookieName = 'session' | 'confirm-mfa' | 'totp-key' | 'passkey-challenge' | (typeof oauthCookies)[number];
+type CookieName = 'session' | 'confirm-mfa' | 'totp-key' | 'passkey-challenge' | `oauth-${string}`;
 
 /**
  * Sets an authentication cookie.

@@ -6,8 +6,8 @@ import { type UserModel, usersTable } from '#/db/schema/users';
 import { AppError } from '#/lib/errors';
 import { getAuthCookie } from '#/modules/auth/helpers/cookie';
 import { initiateMultiFactorAuth } from '#/modules/auth/helpers/mfa';
-import { getOAuthCookies } from '#/modules/auth/helpers/oauth/cookies';
-import type { Provider } from '#/modules/auth/helpers/oauth/oauth-providers';
+import type { Provider } from '#/modules/auth/helpers/oauth/providers';
+import type { OAuthCookiePayload } from '#/modules/auth/helpers/oauth/session';
 import type { TransformedUser } from '#/modules/auth/helpers/oauth/transform-user-data';
 import { sendVerificationEmail } from '#/modules/auth/helpers/send-verification-email';
 import { setUserSession } from '#/modules/auth/helpers/session';
@@ -21,18 +21,6 @@ import { and, eq } from 'drizzle-orm';
 import type { Context } from 'hono';
 
 /**
- * Retrieves the OAuth redirect path from a cookie, or falls back to a default.
- *
- * @param ctx - The request context.
- * @returns A validated redirect path string.
- */
-export const getOAuthRedirectPath = async (ctx: Context): Promise<string> => {
-  const redirect = await getAuthCookie(ctx, 'oauth-redirect');
-
-  return isValidRedirectPath(redirect) || appConfig.defaultRedirectPath;
-};
-
-/**
  * Handles the default OAuth authentication/signup flow.
  * Determines if the user has an existing verified/unverified account or needs to register.
  *
@@ -40,17 +28,23 @@ export const getOAuthRedirectPath = async (ctx: Context): Promise<string> => {
  * @param providerUser - The transformed user data from the OAuth provider.
  * @param provider - The OAuth provider (e.g., 'google', 'github').
  * @param oauthAccount - The linked OAuth account, if one exists.
+ *
  * @returns A redirect response.
  */
-export const handleOAuthFlow = async (ctx: Context, providerUser: TransformedUser, provider: EnabledOAuthProvider): Promise<Response> => {
+export const handleOAuthFlow = async (
+  ctx: Context,
+  providerUser: TransformedUser,
+  provider: EnabledOAuthProvider,
+  cookiePayload: OAuthCookiePayload,
+): Promise<Response> => {
   // Restore Context: linked oauthAccount, invitation or account linking
   const oauthAccount = await getOAuthAccount(providerUser.id, provider, providerUser.email);
 
-  const { connectUserId, inviteToken, verifyTokenId } = await getOAuthCookies(ctx);
+  const { connectUserId, inviteTokenId, verifyTokenId } = cookiePayload;
 
   // Handle different OAuth flows based on context
   if (connectUserId) return await connectFlow(ctx, providerUser, provider, connectUserId, oauthAccount);
-  if (inviteToken) return await inviteFlow(ctx, providerUser, provider, inviteToken.id, oauthAccount);
+  if (inviteTokenId) return await inviteFlow(ctx, providerUser, provider, inviteTokenId, oauthAccount);
   if (verifyTokenId) return await verifyFlow(ctx, providerUser, provider, verifyTokenId, oauthAccount);
 
   // User already has a verified OAuth account → log them in
@@ -352,4 +346,16 @@ const handleUnverifiedOAuthAccount = async (
   const redirectUrl = new URL(`/auth/email-verification/${reason}`, appConfig.frontendUrl);
 
   return ctx.redirect(redirectUrl, 302);
+};
+
+/**
+ * Retrieves the OAuth redirect path from a cookie, or falls back to a default.
+ *
+ * @param ctx - The request context.
+ * @returns A validated redirect path string.
+ */
+const getOAuthRedirectPath = async (ctx: Context): Promise<string> => {
+  const redirect = await getAuthCookie(ctx, 'oauth-redirect');
+
+  return isValidRedirectPath(redirect) || appConfig.defaultRedirectPath;
 };

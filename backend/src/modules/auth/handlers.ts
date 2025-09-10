@@ -17,15 +17,7 @@ import { mailer } from '#/lib/mailer';
 import { hashPassword, verifyPasswordHash } from '#/modules/auth/helpers/argon2id';
 import { deleteAuthCookie, getAuthCookie, setAuthCookie } from '#/modules/auth/helpers/cookie';
 import { initiateMultiFactorAuth, validateConfirmMFAToken } from '#/modules/auth/helpers/mfa';
-import {
-  clearOAuthSession,
-  createOAuthSession,
-  handleOAuthConnection,
-  handleOAuthInvitation,
-  handleOAuthVerify,
-  setOAuthRedirect,
-} from '#/modules/auth/helpers/oauth/cookies';
-import { handleOAuthFlow } from '#/modules/auth/helpers/oauth/index';
+import { handleOAuthFlow } from '#/modules/auth/helpers/oauth/callback-flow';
 import {
   githubAuth,
   type GithubUserEmailProps,
@@ -34,7 +26,8 @@ import {
   type GoogleUserProps,
   microsoftAuth,
   type MicrosoftUserProps,
-} from '#/modules/auth/helpers/oauth/oauth-providers';
+} from '#/modules/auth/helpers/oauth/providers';
+import { type OAuthCookiePayload, storeOAuthContext } from '#/modules/auth/helpers/oauth/session';
 import { transformGithubUserData, transformSocialUserData } from '#/modules/auth/helpers/oauth/transform-user-data';
 import { verifyPassKeyPublic } from '#/modules/auth/helpers/passkey';
 import { sendVerificationEmail } from '#/modules/auth/helpers/send-verification-email';
@@ -517,60 +510,36 @@ const authRouteHandlers = app
    * Initiates GitHub OAuth authentication flow
    */
   .openapi(authRoutes.githubSignIn, async (ctx) => {
-    const { type, redirect } = ctx.req.valid('query');
-
-    // Store OAuth context, to start OAuth flow in callback handler
-    if (redirect) await setOAuthRedirect(ctx, redirect);
-    if (type === 'invite') await handleOAuthInvitation(ctx);
-    if (type === 'connect') await handleOAuthConnection(ctx);
-    if (type === 'verify') await handleOAuthVerify(ctx);
-
     // Generate a `state` to prevent CSRF, and build URL with scope.
     const state = generateState();
     const url = githubAuth.createAuthorizationURL(state, githubScopes);
 
     // Start the OAuth session & flow (Persist `state`)
-    return await createOAuthSession(ctx, 'github', url, state);
+    return await storeOAuthContext(ctx, 'github', url, state);
   })
   /*
    * Initiates Google OAuth authentication flow
    */
   .openapi(authRoutes.googleSignIn, async (ctx) => {
-    const { type, redirect } = ctx.req.valid('query');
-
-    // Store OAuth context, will resume in OAuth callback
-    if (redirect) await setOAuthRedirect(ctx, redirect);
-    if (type === 'invite') await handleOAuthInvitation(ctx);
-    if (type === 'connect') await handleOAuthConnection(ctx);
-    if (type === 'verify') await handleOAuthVerify(ctx);
-
     // Generate a `state`, PKCE, and scoped URL.
     const state = generateState();
     const codeVerifier = generateCodeVerifier();
     const url = googleAuth.createAuthorizationURL(state, codeVerifier, googleScopes);
 
     // Start the OAuth session & flow (Persist `state` and `codeVerifier`)
-    return await createOAuthSession(ctx, 'google', url, state, codeVerifier);
+    return await storeOAuthContext(ctx, 'google', url, state, codeVerifier);
   })
   /*
    * Initiates Microsoft OAuth authentication flow
    */
   .openapi(authRoutes.microsoftSignIn, async (ctx) => {
-    const { type, redirect } = ctx.req.valid('query');
-
-    // Store OAuth context, will resume in OAuth callback
-    if (redirect) await setOAuthRedirect(ctx, redirect);
-    if (type === 'invite') await handleOAuthInvitation(ctx);
-    if (type === 'connect') await handleOAuthConnection(ctx);
-    if (type === 'verify') await handleOAuthVerify(ctx);
-
     // Generate a `state`, PKCE, and scoped URL.
     const state = generateState();
     const codeVerifier = generateCodeVerifier();
     const url = microsoftAuth.createAuthorizationURL(state, codeVerifier, microsoftScopes);
 
     // Start the OAuth session & flow (Persist `state` and `codeVerifier`)
-    return await createOAuthSession(ctx, 'microsoft', url, state, codeVerifier);
+    return await storeOAuthContext(ctx, 'microsoft', url, state, codeVerifier);
   })
 
   /*
@@ -598,13 +567,16 @@ const authRouteHandlers = app
 
     // Check if Github OAuth is enabled
     const strategy = 'github' as EnabledOAuthProvider;
+
     if (!isOAuthEnabled(strategy)) {
       throw new AppError({ status: 400, type: 'unsupported_oauth', severity: 'error', meta: { strategy }, isRedirect: true });
     }
 
-    // Verify `state` (CSRF protection)
-    const stateCookie = await getAuthCookie(ctx, 'oauth-state');
-    if (!state || !stateCookie || stateCookie !== state) {
+    // Verify cookie by `state` (CSRF protection)
+    const oauthCookie = await getAuthCookie(ctx, `oauth-${state}`);
+    const cookiePayload: OAuthCookiePayload | null = oauthCookie ? JSON.parse(oauthCookie) : null;
+
+    if (!state || !cookiePayload) {
       throw new AppError({ status: 401, type: 'invalid_state', severity: 'warn', meta: { strategy }, isRedirect: true });
     }
 
@@ -623,7 +595,7 @@ const authRouteHandlers = app
       const githubUserEmails = (await githubUserEmailsResponse.json()) as GithubUserEmailProps[];
       const providerUser = transformGithubUserData(githubUser, githubUserEmails);
 
-      return await handleOAuthFlow(ctx, providerUser, strategy);
+      return await handleOAuthFlow(ctx, providerUser, strategy, cookiePayload);
     } catch (error) {
       if (error instanceof AppError) throw error;
 
@@ -637,9 +609,6 @@ const authRouteHandlers = app
         isRedirect: true,
         ...(error instanceof Error ? { originalError: error } : {}),
       });
-    } finally {
-      // Clean up OAuth state session regardless of outcome
-      clearOAuthSession(ctx);
     }
   })
 
@@ -655,16 +624,17 @@ const authRouteHandlers = app
       throw new AppError({ status: 400, type: 'unsupported_oauth', severity: 'error', meta: { strategy }, isRedirect: true });
     }
 
-    // Verify `state` (CSRF protection) & PKCE validation
-    const storedState = await getAuthCookie(ctx, 'oauth-state');
-    const storedCodeVerifier = await getAuthCookie(ctx, 'oauth-code-verifier');
-    if (!code || !storedState || !storedCodeVerifier || state !== storedState) {
+    // Verify cookie by `state` (CSRF protection) & PKCE validation
+    const oauthCookie = await getAuthCookie(ctx, `oauth-${state}`);
+    const cookiePayload: OAuthCookiePayload | null = oauthCookie ? JSON.parse(oauthCookie) : null;
+
+    if (!code || !cookiePayload || !cookiePayload.codeVerifier) {
       throw new AppError({ status: 401, type: 'invalid_state', severity: 'warn', meta: { strategy }, isRedirect: true });
     }
 
     try {
       // Exchange authorization code for access token and fetch Google user info
-      const googleValidation = await googleAuth.validateAuthorizationCode(code, storedCodeVerifier);
+      const googleValidation = await googleAuth.validateAuthorizationCode(code, cookiePayload.codeVerifier);
       const accessToken = googleValidation.accessToken();
 
       const headers = { Authorization: `Bearer ${accessToken}` };
@@ -672,7 +642,7 @@ const authRouteHandlers = app
       const googleUser = (await response.json()) as GoogleUserProps;
       const providerUser = transformSocialUserData(googleUser);
 
-      return await handleOAuthFlow(ctx, providerUser, strategy);
+      return await handleOAuthFlow(ctx, providerUser, strategy, cookiePayload);
     } catch (error) {
       if (error instanceof AppError) throw error;
 
@@ -686,9 +656,6 @@ const authRouteHandlers = app
         isRedirect: true,
         ...(error instanceof Error ? { originalError: error } : {}),
       });
-    } finally {
-      // Clean up OAuth state session regardless of outcome
-      clearOAuthSession(ctx);
     }
   })
 
@@ -704,16 +671,17 @@ const authRouteHandlers = app
       throw new AppError({ status: 400, type: 'unsupported_oauth', severity: 'error', meta: { strategy }, isRedirect: true });
     }
 
-    // Verify `state` (CSRF protection) & PKCE validation
-    const storedState = await getAuthCookie(ctx, 'oauth-state');
-    const storedCodeVerifier = await getAuthCookie(ctx, 'oauth-code-verifier');
-    if (!code || !storedState || !storedCodeVerifier || state !== storedState) {
+    // Verify cookie by `state` (CSRF protection) & PKCE validation
+    const oauthCookie = await getAuthCookie(ctx, `oauth-${state}`);
+    const cookiePayload: OAuthCookiePayload | null = oauthCookie ? JSON.parse(oauthCookie) : null;
+
+    if (!code || !cookiePayload || !cookiePayload.codeVerifier) {
       throw new AppError({ status: 401, type: 'invalid_state', severity: 'warn', meta: { strategy }, isRedirect: true });
     }
 
     try {
       // Exchange authorization code for access token and fetch Microsoft user info
-      const microsoftValidation = await microsoftAuth.validateAuthorizationCode(code, storedCodeVerifier);
+      const microsoftValidation = await microsoftAuth.validateAuthorizationCode(code, cookiePayload.codeVerifier);
       const accessToken = microsoftValidation.accessToken();
 
       const headers = { Authorization: `Bearer ${accessToken}` };
@@ -721,7 +689,7 @@ const authRouteHandlers = app
       const microsoftUser = (await response.json()) as MicrosoftUserProps;
       const providerUser = transformSocialUserData(microsoftUser);
 
-      return await handleOAuthFlow(ctx, providerUser, strategy);
+      return await handleOAuthFlow(ctx, providerUser, strategy, cookiePayload);
     } catch (error) {
       if (error instanceof AppError) throw error;
 
@@ -735,9 +703,6 @@ const authRouteHandlers = app
         isRedirect: true,
         ...(error instanceof Error ? { originalError: error } : {}),
       });
-    } finally {
-      // Clean up OAuth state session regardless of outcome
-      clearOAuthSession(ctx);
     }
   })
   /*
