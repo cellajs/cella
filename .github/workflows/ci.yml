@@ -200,11 +200,8 @@ jobs:
         with:
           node-version: 24
 
-      - name: Install conventional-changelog
-        run: pnpm add -D conventional-changelog-cli
-
       - name: Generate draft release notes
-        run: pnpm exec conventional-changelog -p angular -r 0 -o RELEASE_NOTES.md
+        run: npx conventional-changelog -p angular -r 0 -o RELEASE_NOTES.md
 
       - name: Upload draft release notes
         uses: actions/upload-artifact@v4
