@@ -144,10 +144,10 @@ jobs:
           # Start quick in the background and capture PID
           pnpm quick | while IFS= read -r line; do
             echo "$line"
-            # Match "VITE <version> ready in <ms>"
-            if echo "$line" | grep -E "VITE .* ready in .* ms"; then
+            # Match any line that contains "VITE <version> ready in <ms>"
+            if echo "$line" | grep -E "VITE [^ ]+ ready in [0-9]+ ms"; then
               echo "Vite server is ready!"
-              pkill -P $$ pnpm   # stop the server
+              pkill -P $$ pnpm
               break
             fi
           done
