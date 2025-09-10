@@ -139,4 +139,9 @@ jobs:
           key: ${{ runner.os }}-modules-${{ hashFiles('pnpm-lock.yaml') }}
 
       - name: Run quick startup check
-        run: pnpm quick
+        run: pnpm quick &
+
+      - name: Wait for server to be ready
+        run: |
+          npx wait-on http://localhost:3000
+          echo "Server is up!"
