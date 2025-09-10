@@ -31,7 +31,7 @@ type FormValues = z.infer<typeof formSchema>;
 export const SignInStep = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { step, email, resetSteps } = useAuthStepsContext();
+  const { email, resetSteps } = useAuthStepsContext();
 
   const passwordRef = useRef<HTMLInputElement>(null);
 
@@ -79,8 +79,6 @@ export const SignInStep = () => {
     clearUserStore();
     resetSteps();
   };
-
-  if (step !== 'signIn') return null;
 
   return (
     <Form {...form}>
