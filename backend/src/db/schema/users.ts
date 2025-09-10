@@ -26,7 +26,7 @@ export const usersTable = pgTable(
     thumbnailUrl: varchar(),
     bannerUrl: varchar(),
     email: varchar().notNull().unique(),
-    multiFactorRequired: boolean().notNull().default(false),
+    mfaRequired: boolean().notNull().default(false),
     firstName: varchar(),
     lastName: varchar(),
     language: varchar({ enum: languagesEnum }).notNull().default(appConfig.defaultLanguage),

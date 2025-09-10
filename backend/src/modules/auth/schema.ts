@@ -23,32 +23,19 @@ export const tokenWithDataSchema = z.object({
   organizationId: z.string().optional(),
 });
 
-const multiFactorTypeSchema = z.union([
-  z.literal('authentication'), // Normal passkey authentication
-  z.literal('mfa'), // Passkey used as 2nd factor in MFA
-]);
-
-const multiFactorBaseSchema = z
-  .object({
-    type: multiFactorTypeSchema,
-    email: z.string().optional(),
-  })
-  // For authentication, email must exist
-  .refine((data) => (data.type === 'authentication' ? !!data.email : true), { message: t('mfa_schema_requirement') });
+const passkeyTypeSchema = z.union([z.literal('authentication'), z.literal('mfa')]);
+const challengeTypeSchema = z.union([...passkeyTypeSchema.options, z.literal('registration')]);
 
 export const passkeyChallengeQuerySchema = z
   .object({
-    type: z.union([
-      ...multiFactorTypeSchema.def.options,
-      z.literal('registration'), // New literal added
-    ]),
+    type: challengeTypeSchema,
     email: z.string().optional(),
   })
   .refine((data) => (data.type === 'authentication' ? !!data.email : true), { message: t('mfa_schema_requirement') });
 
 export const passkeyChallengeSchema = z.object({ challengeBase64: z.string(), credentialIds: z.array(z.string()) });
 
-export const basePasskeyVerificationBodySchema = z.object({
+export const webAuthnAssertionSchema = z.object({
   credentialId: z.string(),
   clientDataJSON: z.string(),
   authenticatorData: z.string(),
@@ -56,11 +43,12 @@ export const basePasskeyVerificationBodySchema = z.object({
 });
 
 export const passkeyVerificationBodySchema = z.object({
-  ...basePasskeyVerificationBodySchema.shape,
-  ...multiFactorBaseSchema.shape,
+  ...webAuthnAssertionSchema.shape,
+  type: passkeyTypeSchema,
+  email: z.string().optional(),
 });
 
-export const TotpVerificationBodySchema = z.object({
+export const totpVerificationBodySchema = z.object({
   code: z.string().regex(new RegExp(`^\\d{${appConfig.totpConfig.digits}}$`), `Code must be exactly ${appConfig.totpConfig.digits} digits`),
 });
 

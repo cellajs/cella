@@ -55,7 +55,7 @@ export const useUserStore = create<UserStoreState>()(
               name: user.name,
               id: user.id,
               slug: user.slug,
-              multiFactorRequired: user.multiFactorRequired,
+              mfaRequired: user.mfaRequired,
             };
           });
 

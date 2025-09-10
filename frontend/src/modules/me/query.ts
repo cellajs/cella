@@ -1,7 +1,7 @@
 import { queryOptions, useMutation } from '@tanstack/react-query';
 import { t } from 'i18next';
 import type { ToggleMfaData, User } from '~/api.gen';
-import { getMyInvites, registratePasskey, toggleMfa, type UpdateMeData, unlinkPasskey, unlinkTotp, updateMe } from '~/api.gen';
+import { createPasskey, deletePasskey, deleteTotp, getMyInvitations, toggleMfa, type UpdateMeData, updateMe } from '~/api.gen';
 import type { ApiError } from '~/lib/api';
 import { getPasskeyRegistrationCredential } from '~/modules/auth/passkey-credentials';
 import { toaster } from '~/modules/common/toaster/service';
@@ -56,7 +56,7 @@ export const menuQueryOptions = () => queryOptions({ queryKey: meKeys.menu(), qu
  *
  * @returns Query options.
  */
-export const meInvitesQueryOptions = () => queryOptions({ queryKey: meKeys.invites(), queryFn: () => getMyInvites() });
+export const meInvitesQueryOptions = () => queryOptions({ queryKey: meKeys.invites(), queryFn: () => getMyInvitations() });
 
 /**
  * Mutation hook for updating current user (self) info
@@ -77,13 +77,13 @@ export const useUpdateSelfMutation = () => {
  *
  * @returns The mutation hook for updating the user MFA requirment state.
  */
-export const useToogleMFAMutation = () => {
+export const useToggleMfaMutation = () => {
   return useMutation<User, ApiError, ToggleMfaData['body']>({
     mutationKey: meKeys.update.info(),
     mutationFn: (body) => toggleMfa({ body }),
     onSuccess: (updatedUser) => {
       updateOnSuccesses(updatedUser);
-      toaster(t(`mfa_${updatedUser.multiFactorRequired ? 'enabled' : 'disabled'}`), 'info');
+      toaster(t(`mfa_${updatedUser.mfaRequired ? 'enabled' : 'disabled'}`), 'info');
     },
     gcTime: 1000 * 10,
   });
@@ -92,7 +92,7 @@ export const useToogleMFAMutation = () => {
 /**
  * Mutation hook for updating current user (self) flags
  *
- * @returns The mutation hook for updating the user flasg.
+ * @returns The mutation hook for updating the user flags.
  */
 export const useUpdateSelfFlagsMutation = () => {
   return useMutation<User, ApiError, Pick<NonNullable<UpdateMeData['body']>, 'userFlags'>>({
@@ -104,16 +104,16 @@ export const useUpdateSelfFlagsMutation = () => {
 };
 
 /**
- * Mutation hook for registrate current user (self) passkey
+ * Mutation hook to register a new passkey for current user (self)
  *
- * @returns The mutation hook for registrate passkey.
+ * @returns The mutation hook for registering passkey.
  */
-export const useRegistratePasskeyMutation = () => {
+export const useCreatePasskeyMutation = () => {
   return useMutation<Passkey, ApiError, void>({
     mutationKey: meKeys.delete.passkey(),
     mutationFn: async () => {
       const credentialData = await getPasskeyRegistrationCredential();
-      return await registratePasskey({ body: credentialData });
+      return await createPasskey({ body: credentialData });
     },
     onSuccess: (newPasskey) => {
       queryClient.setQueryData<MeAuthData>(meKeys.auth(), (oldData) => {
@@ -135,14 +135,14 @@ export const useRegistratePasskeyMutation = () => {
 };
 
 /**
- * Mutation hook for unlink current user (self) passkey
+ * Mutation hook to delete a passkey by ID for current user (self)
  *
- * @returns The mutation hook for unlink passkey.
+ * @returns The mutation hook for deleting passkey.
  */
-export const useUnlinkPasskeyMutation = () => {
+export const useDeletePasskeyMutation = () => {
   return useMutation<boolean, ApiError, string>({
     mutationKey: meKeys.delete.passkey(),
-    mutationFn: (id: string) => unlinkPasskey({ path: { id } }),
+    mutationFn: (id: string) => deletePasskey({ path: { id } }),
     onSuccess: (stillHasPasskey, id) => {
       queryClient.setQueryData<MeAuthData>(meKeys.auth(), (oldData) => {
         if (!oldData) return oldData;
@@ -166,10 +166,10 @@ export const useUnlinkPasskeyMutation = () => {
  *
  * @returns The mutation hook for unlink totp.
  */
-export const useUnlinkTotpMutation = () => {
+export const useDeleteTotpMutation = () => {
   return useMutation<boolean, ApiError, void>({
     mutationKey: meKeys.delete.totp(),
-    mutationFn: () => unlinkTotp(),
+    mutationFn: () => deleteTotp(),
     onSuccess: () => {
       toaster(t('common:success.totp_removed'), 'success');
       useUserStore.getState().setMeAuthData({ hasTotp: false });

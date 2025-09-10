@@ -4,15 +4,15 @@ import { ShieldMinus } from 'lucide-react';
 import { useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
-import { ConfirmDisableMFAOptions } from '~/modules/me/multi-factor-auth/disable-confirmation-options';
-import { meAuthQueryOptions, useToogleMFAMutation } from '~/modules/me/query';
+import { ConfirmDisableMfaOptions } from '~/modules/me/mfa/disable-confirmation-options';
+import { meAuthQueryOptions, useToggleMfaMutation } from '~/modules/me/query';
 import { Button, SubmitButton } from '~/modules/ui/button';
 
-export const ConfirmDisableMFA = () => {
+export const ConfirmDisableMfa = () => {
   const { t } = useTranslation();
   const { create: createDialog, remove: removeDialog } = useDialoger();
 
-  const { mutateAsync: toggleMFA, isPending } = useToogleMFAMutation();
+  const { mutateAsync: toggleMfa, isPending } = useToggleMfaMutation();
 
   const confirmationTriggerRef = useRef<HTMLButtonElement | null>(null);
 
@@ -27,7 +27,7 @@ export const ConfirmDisableMFA = () => {
 
     // If no current session OR session too old -> require confirmation
     if (!currentSession || dayjs.utc(currentSession.createdAt).local().isBefore(oneHourAgo)) {
-      createDialog(<ConfirmDisableMFAOptions />, {
+      createDialog(<ConfirmDisableMfaOptions />, {
         id: 'confirmation-disable-mfa',
         className: 'max-w-xl',
         title: t('common:mfa_disable_confirmation.title'),
@@ -38,7 +38,7 @@ export const ConfirmDisableMFA = () => {
     }
 
     // Else -> disable MFA immediately
-    toggleMFA({ multiFactorRequired: false });
+    toggleMfa({ mfaRequired: false });
   }, [currentSession]);
 
   return (

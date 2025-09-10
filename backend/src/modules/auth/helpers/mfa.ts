@@ -19,9 +19,9 @@ import { getValidToken } from '#/utils/validate-token';
  * @param user - User to start MFA for
  * @returns Redirect path to MFA confirmation page, or null if MFA is not enabled
  */
-export const initiateMultiFactorAuth = async (ctx: Context, user: UserModel) => {
+export const initiateMfa = async (ctx: Context, user: UserModel) => {
   // If the user does not have MFA enabled, do nothing
-  if (!user.multiFactorRequired) return null;
+  if (!user.mfaRequired) return null;
 
   // Generate a new random token and insert it
   const [{ token: generatedTokenId }] = await db
@@ -51,7 +51,7 @@ export const initiateMultiFactorAuth = async (ctx: Context, user: UserModel) => 
  * @returns UserModel
  * @throws AppError if token is missing, not found, or expired
  */
-export const validateConfirmMFAToken = async (ctx: Context, consumeToken = true): Promise<UserModel> => {
+export const validateConfirmMfaToken = async (ctx: Context, consumeToken = true): Promise<UserModel> => {
   // Get token ID from cookie
   const tokenIdFromCookie = await getAuthCookie(ctx, 'confirm-mfa');
   if (!tokenIdFromCookie) throw new AppError({ status: 401, type: 'invalid_credentials', severity: 'error' });

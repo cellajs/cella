@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { ExpandableList } from '~/modules/common/expandable-list';
 import { toaster } from '~/modules/common/toaster/service';
 import { PasskeyTile } from '~/modules/me/passkeys/tile';
-import { meAuthQueryOptions, useRegistratePasskeyMutation, useUnlinkPasskeyMutation } from '~/modules/me/query';
+import { meAuthQueryOptions, useCreatePasskeyMutation, useDeletePasskeyMutation } from '~/modules/me/query';
 import { Button } from '~/modules/ui/button';
 import { useUserStore } from '~/store/user';
 
@@ -13,13 +13,13 @@ const PasskeysList = () => {
 
   const { hasPasskey } = useUserStore.getState();
 
-  const { mutate: registratePasskey } = useRegistratePasskeyMutation();
-  const { mutate: unlinkPasskey, isPending } = useUnlinkPasskeyMutation();
+  const { mutate: createPasskey } = useCreatePasskeyMutation();
+  const { mutate: deletePasskey, isPending } = useDeletePasskeyMutation();
 
   const handleUnlinkPasskey = (id: string) => {
     if (!onlineManager.isOnline()) return toaster(t('common:action.offline.text'), 'warning');
 
-    unlinkPasskey(id);
+    deletePasskey(id);
   };
   const queryOptions = meAuthQueryOptions();
   const {
@@ -29,7 +29,7 @@ const PasskeysList = () => {
   return (
     <div className="mb-6">
       <div className="flex flex-row max-sm:flex-col">
-        <Button key="registratePasskey" type="button" variant="plain" onClick={() => registratePasskey()}>
+        <Button key="createPasskey" type="button" variant="plain" onClick={() => createPasskey()}>
           {hasPasskey ? <Plus className="w-4 h-4 mr-2" /> : <Fingerprint className="w-4 h-4 mr-2" />}
           {hasPasskey
             ? t('common:add_resource', { resource: t('common:passkey').toLowerCase() })

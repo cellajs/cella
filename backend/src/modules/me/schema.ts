@@ -3,7 +3,7 @@ import { appConfig, type ContextEntityType } from 'config';
 import { createSelectSchema } from 'drizzle-zod';
 import { passkeysTable } from '#/db/schema/passkeys';
 import { sessionsTable } from '#/db/schema/sessions';
-import { basePasskeyVerificationBodySchema, TotpVerificationBodySchema } from '#/modules/auth/schema';
+import { totpVerificationBodySchema, webAuthnAssertionSchema } from '#/modules/auth/schema';
 import { contextEntityBaseSchema, contextEntityWithMembershipSchema, userBaseSchema } from '#/modules/entities/schema';
 import { membershipBaseSchema } from '#/modules/memberships/schema';
 import { enabledOAuthProvidersEnum } from '#/modules/users/schema';
@@ -74,12 +74,12 @@ export const uploadTokenQuerySchema = z.object({
 });
 
 export const toggleMfaStateBody = z.object({
-  passkeyData: basePasskeyVerificationBodySchema.optional(),
-  totpCode: TotpVerificationBodySchema.shape.code.optional(),
-  multiFactorRequired: z.boolean(),
+  passkeyData: webAuthnAssertionSchema.optional(),
+  totpCode: totpVerificationBodySchema.shape.code.optional(),
+  mfaRequired: z.boolean(),
 });
 
-export const userInvitationsSchema = z.array(
+export const meInvitationsSchema = z.array(
   z.object({
     entity: contextEntityBaseSchema.extend({ organizationId: z.string().optional() }),
     expiresAt: z.date(),

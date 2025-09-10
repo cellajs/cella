@@ -1,3 +1,10 @@
+import { getRandomValues } from 'node:crypto';
+import { OpenAPIHono } from '@hono/zod-openapi';
+import { encodeBase64 } from '@oslojs/encoding';
+import { generateCodeVerifier, generateState, OAuth2RequestError } from 'arctic';
+import { appConfig, type EnabledOAuthProvider } from 'config';
+import { and, desc, eq, isNotNull, isNull } from 'drizzle-orm';
+import i18n from 'i18next';
 import { db } from '#/db/db';
 import { emailsTable } from '#/db/schema/emails';
 import { membershipsTable } from '#/db/schema/memberships';
@@ -16,23 +23,23 @@ import { eventManager } from '#/lib/events';
 import { mailer } from '#/lib/mailer';
 import { hashPassword, verifyPasswordHash } from '#/modules/auth/helpers/argon2id';
 import { deleteAuthCookie, getAuthCookie, setAuthCookie } from '#/modules/auth/helpers/cookie';
-import { initiateMultiFactorAuth, validateConfirmMFAToken } from '#/modules/auth/helpers/mfa';
+import { initiateMfa, validateConfirmMfaToken } from '#/modules/auth/helpers/mfa';
 import { handleOAuthFlow } from '#/modules/auth/helpers/oauth/callback-flow';
 import {
-  githubAuth,
   type GithubUserEmailProps,
   type GithubUserProps,
-  googleAuth,
   type GoogleUserProps,
-  microsoftAuth,
+  githubAuth,
+  googleAuth,
   type MicrosoftUserProps,
+  microsoftAuth,
 } from '#/modules/auth/helpers/oauth/providers';
 import { type OAuthCookiePayload, storeOAuthContext } from '#/modules/auth/helpers/oauth/session';
 import { transformGithubUserData, transformSocialUserData } from '#/modules/auth/helpers/oauth/transform-user-data';
 import { verifyPassKeyPublic } from '#/modules/auth/helpers/passkey';
 import { sendVerificationEmail } from '#/modules/auth/helpers/send-verification-email';
 import { getParsedSessionCookie, setUserSession, validateSession } from '#/modules/auth/helpers/session';
-import { verifyTotpCode } from '#/modules/auth/helpers/totps';
+import { verifyTotp } from '#/modules/auth/helpers/totps';
 import { handleCreateUser, handleMembershipTokenUpdate } from '#/modules/auth/helpers/user';
 import authRoutes from '#/modules/auth/routes';
 import { usersBaseQuery } from '#/modules/users/helpers/select';
@@ -45,14 +52,6 @@ import { nanoid } from '#/utils/nanoid';
 import { slugFromEmail } from '#/utils/slug-from-email';
 import { createDate, TimeSpan } from '#/utils/time-span';
 import { getValidToken } from '#/utils/validate-token';
-import { OpenAPIHono } from '@hono/zod-openapi';
-import { encodeBase32, encodeBase64 } from '@oslojs/encoding';
-import { createTOTPKeyURI } from '@oslojs/otp';
-import { generateCodeVerifier, generateState, OAuth2RequestError } from 'arctic';
-import { appConfig, type EnabledOAuthProvider } from 'config';
-import { and, desc, eq, isNotNull, isNull } from 'drizzle-orm';
-import i18n from 'i18next';
-import { getRandomValues } from 'node:crypto';
 import { CreatePasswordEmail, type CreatePasswordEmailProps } from '../../../emails/create-password';
 
 const enabledStrategies: readonly string[] = appConfig.enabledAuthStrategies;
@@ -146,7 +145,7 @@ const authRouteHandlers = app
   })
   /*
    * Sign up with email & password to accept (system or membership) invitations.
-   * Only for membership invitations, user will proceed to accept after signing up.
+   * Only for organization membership invitations, user will proceed to accept after signing up.
    */
   .openapi(authRoutes.signUpWithToken, async (ctx) => {
     const { password } = ctx.req.valid('json');
@@ -170,7 +169,7 @@ const authRouteHandlers = app
 
     const user = await handleCreateUser({ newUser, membershipInviteTokenId, emailVerified: true });
 
-    // Separatly insert password
+    // Separately insert password
     const hashedPassword = await hashPassword(password);
     await db.insert(passwordsTable).values({ userId: user.id, hashedPassword: hashedPassword });
 
@@ -217,17 +216,17 @@ const authRouteHandlers = app
       );
 
     // Start MFA challenge if the user has MFA enabled
-    const multiFactorRedirectPath = await initiateMultiFactorAuth(ctx, user);
+    const mfaRedirectPath = await initiateMfa(ctx, user);
 
     // Determine redirect url
     const decodedRedirect = decodeURIComponent(redirect || '');
     const baseRedirectPath = isValidRedirectPath(decodedRedirect) || appConfig.defaultRedirectPath;
 
-    const redirectPath = multiFactorRedirectPath || baseRedirectPath;
+    const redirectPath = mfaRedirectPath || baseRedirectPath;
     const redirectUrl = new URL(redirectPath, appConfig.frontendUrl);
 
     // If MFA is not required, set  user session immediately
-    if (!multiFactorRedirectPath) await setUserSession(ctx, user, 'email');
+    if (!mfaRedirectPath) await setUserSession(ctx, user, 'email');
 
     return ctx.redirect(redirectUrl, 302);
   })
@@ -307,7 +306,7 @@ const authRouteHandlers = app
       db.update(emailsTable).set({ verified: true, verifiedAt: getIsoDate() }).where(eq(emailsTable.email, user.email)),
     ]);
 
-    const redirectPath = await initiateMultiFactorAuth(ctx, user);
+    const redirectPath = await initiateMfa(ctx, user);
     if (redirectPath) return ctx.json({ shouldRedirect: true, redirectPath }, 200);
 
     await setUserSession(ctx, user, strategy);
@@ -353,7 +352,7 @@ const authRouteHandlers = app
       return ctx.json({ shouldRedirect: true, redirectPath: '/auth/email-verification/signin' }, 200);
     }
 
-    const redirectPath = await initiateMultiFactorAuth(ctx, user);
+    const redirectPath = await initiateMfa(ctx, user);
     if (redirectPath) return ctx.json({ shouldRedirect: true, redirectPath }, 200);
 
     await setUserSession(ctx, user, 'password');
@@ -485,9 +484,9 @@ const authRouteHandlers = app
    * Sign out
    */
   .openapi(authRoutes.signOut, async (ctx) => {
-    const pendingMFA = await getAuthCookie(ctx, 'confirm-mfa');
+    const confirmMfa = await getAuthCookie(ctx, 'confirm-mfa');
 
-    if (pendingMFA) {
+    if (confirmMfa) {
       // Delete mfa cookie
       deleteAuthCookie(ctx, 'confirm-mfa');
 
@@ -509,7 +508,7 @@ const authRouteHandlers = app
   /*
    * Initiates GitHub OAuth authentication flow
    */
-  .openapi(authRoutes.githubSignIn, async (ctx) => {
+  .openapi(authRoutes.github, async (ctx) => {
     // Generate a `state` to prevent CSRF, and build URL with scope.
     const state = generateState();
     const url = githubAuth.createAuthorizationURL(state, githubScopes);
@@ -520,7 +519,7 @@ const authRouteHandlers = app
   /*
    * Initiates Google OAuth authentication flow
    */
-  .openapi(authRoutes.googleSignIn, async (ctx) => {
+  .openapi(authRoutes.google, async (ctx) => {
     // Generate a `state`, PKCE, and scoped URL.
     const state = generateState();
     const codeVerifier = generateCodeVerifier();
@@ -532,7 +531,7 @@ const authRouteHandlers = app
   /*
    * Initiates Microsoft OAuth authentication flow
    */
-  .openapi(authRoutes.microsoftSignIn, async (ctx) => {
+  .openapi(authRoutes.microsoft, async (ctx) => {
     // Generate a `state`, PKCE, and scoped URL.
     const state = generateState();
     const codeVerifier = generateCodeVerifier();
@@ -545,7 +544,7 @@ const authRouteHandlers = app
   /*
    * GitHub authentication callback handler
    */
-  .openapi(authRoutes.githubSignInCallback, async (ctx) => {
+  .openapi(authRoutes.githubCallback, async (ctx) => {
     const { code, state, error } = ctx.req.valid('query');
 
     /*
@@ -615,7 +614,7 @@ const authRouteHandlers = app
   /*
    * Google authentication callback handler
    */
-  .openapi(authRoutes.googleSignInCallback, async (ctx) => {
+  .openapi(authRoutes.googleCallback, async (ctx) => {
     const { state, code } = ctx.req.valid('query');
 
     // Check if Google OAuth is enabled
@@ -662,7 +661,7 @@ const authRouteHandlers = app
   /*
    * Microsoft authentication callback handler
    */
-  .openapi(authRoutes.microsoftSignInCallback, async (ctx) => {
+  .openapi(authRoutes.microsoftCallback, async (ctx) => {
     const { state, code } = ctx.req.valid('query');
 
     // Check if Microsoft OAuth is enabled
@@ -727,7 +726,7 @@ const authRouteHandlers = app
 
     // If this is a multifactor request, retrieve user from pending MFA token
     if (type === 'mfa') {
-      const { email: tokenEmail } = await validateConfirmMFAToken(ctx, false);
+      const { email: tokenEmail } = await validateConfirmMfaToken(ctx, false);
       userEmail = tokenEmail;
     }
 
@@ -747,7 +746,7 @@ const authRouteHandlers = app
   /*
    * Verify passkey
    */
-  .openapi(authRoutes.verifyPasskey, async (ctx) => {
+  .openapi(authRoutes.signInWithPasskey, async (ctx) => {
     const { clientDataJSON, authenticatorData, signature, credentialId, email, type } = ctx.req.valid('json');
     const strategy = 'passkey';
 
@@ -773,7 +772,7 @@ const authRouteHandlers = app
 
     // Override user if this is a multifactor authentication
     if (type === 'mfa') {
-      const userFromToken = await validateConfirmMFAToken(ctx);
+      const userFromToken = await validateConfirmMfaToken(ctx);
       user = userFromToken;
     }
 
@@ -810,49 +809,23 @@ const authRouteHandlers = app
     return ctx.json(true, 200);
   })
   /*
-   * TOTP uri
+   * Verify TOTP
    */
-  .openapi(authRoutes.getTotpUri, async (ctx) => {
-    // Generate a 20-byte random secret and encode it as Base32
-    const secret = crypto.getRandomValues(new Uint8Array(20));
-    const manualKey = encodeBase32(secret);
-
-    const user = getContextUser();
-
-    // Save the secret in a short-lived cookie (5 minutes)
-    await setAuthCookie(ctx, 'totp-key', manualKey, new TimeSpan(5, 'm'));
-
-    const normalizedAppName = encodeURIComponent(appConfig.name);
-    const normalizedUserName = encodeURIComponent(user.name.trim());
-    // otpauth:// URI for QR scanner apps
-    const totpUri = createTOTPKeyURI(
-      normalizedAppName,
-      normalizedUserName,
-      secret,
-      appConfig.totpConfig.intervalInSeconds,
-      appConfig.totpConfig.digits,
-    );
-
-    return ctx.json({ totpUri, manualKey }, 200);
-  })
-  /*
-   * Verify TOTP code
-   */
-  .openapi(authRoutes.verifyTotpCode, async (ctx) => {
+  .openapi(authRoutes.verifyTotp, async (ctx) => {
     const { code } = ctx.req.valid('json');
 
     const strategy = 'totp';
     const sessionType = 'mfa';
 
     const meta = { strategy, sessionType };
-    const user = await validateConfirmMFAToken(ctx);
+    const user = await validateConfirmMfaToken(ctx);
 
     // Get totp credentials
     const [credentials] = await db.select().from(totpsTable).where(eq(totpsTable.userId, user.id)).limit(1);
     if (!credentials) throw new AppError({ status: 404, type: 'not_found', severity: 'warn', meta });
 
     try {
-      const isValid = verifyTotpCode(code, credentials.encoderSecretKey);
+      const isValid = verifyTotp(code, credentials.encoderSecretKey);
       if (!isValid) throw new AppError({ status: 401, type: 'invalid_token', severity: 'warn', meta });
     } catch (error) {
       if (error instanceof Error) {

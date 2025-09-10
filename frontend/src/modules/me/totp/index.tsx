@@ -5,25 +5,25 @@ import { useTranslation } from 'react-i18next';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import Spinner from '~/modules/common/spinner';
 import { toaster } from '~/modules/common/toaster/service';
-import { useUnlinkTotpMutation } from '~/modules/me/query';
-import { TOTPSetup } from '~/modules/me/totp/setup';
+import { useDeleteTotpMutation } from '~/modules/me/query';
+import { SetupTotp } from '~/modules/me/totp/setup';
 import { Button } from '~/modules/ui/button';
 import { useUserStore } from '~/store/user';
 
-const TOTPs = () => {
+const Totp = () => {
   const { t } = useTranslation();
   const { hasTotp } = useUserStore.getState();
-  const { mutate: unlinkTotp } = useUnlinkTotpMutation();
+  const { mutate: deleteTotp } = useDeleteTotpMutation();
 
   const triggerRef = useRef<HTMLButtonElement | null>(null);
 
-  const setUpTOTP = () => {
+  const openSetupTotp = () => {
     useDialoger.getState().create(
       <Suspense fallback={<Spinner />}>
-        <TOTPSetup />
+        <SetupTotp />
       </Suspense>,
       {
-        id: 'mfa-uri',
+        id: 'setup-totp',
         triggerRef,
         className: 'sm:max-w-md',
         drawerOnMobile: false,
@@ -32,10 +32,10 @@ const TOTPs = () => {
     );
   };
 
-  const handleUnlinkTOTP = () => {
+  const handleDeleteTOTP = () => {
     if (!onlineManager.isOnline()) return toaster(t('common:action.offline.text'), 'warning');
 
-    unlinkTotp();
+    deleteTotp();
   };
 
   return (
@@ -48,12 +48,12 @@ const TOTPs = () => {
         </div>
       )}
       {hasTotp ? (
-        <Button key="unlinkPasskey" type="button" variant="ghost" onClick={handleUnlinkTOTP}>
+        <Button key="deleteTotp" type="button" variant="ghost" onClick={handleDeleteTOTP}>
           <Trash className="w-4 h-4 mr-2" />
           <span>{t('common:unlink')}</span>
         </Button>
       ) : (
-        <Button key="setUpPasskey" type="button" variant="plain" onClick={setUpTOTP}>
+        <Button key="createTotp" type="button" variant="plain" onClick={openSetupTotp}>
           <QrCode className="w-4 h-4 mr-2" />
           <span>{t('common:totp_setup')}</span>
         </Button>
@@ -62,4 +62,4 @@ const TOTPs = () => {
   );
 };
 
-export default TOTPs;
+export default Totp;

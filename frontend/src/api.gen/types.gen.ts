@@ -10,7 +10,7 @@ export type User = {
   thumbnailUrl: string | null;
   bannerUrl: string | null;
   email: string;
-  multiFactorRequired: boolean;
+  mfaRequired: boolean;
   firstName: string | null;
   lastName: string | null;
   language: 'en' | 'nl';
@@ -883,7 +883,7 @@ export type SignOutResponses = {
 
 export type SignOutResponse = SignOutResponses[keyof SignOutResponses];
 
-export type GithubSignInData = {
+export type GithubData = {
   body?: never;
   path?: never;
   query: {
@@ -895,7 +895,7 @@ export type GithubSignInData = {
   url: '/auth/github';
 };
 
-export type GithubSignInErrors = {
+export type GithubErrors = {
   /**
    * Bad request: problem processing request.
    */
@@ -928,9 +928,9 @@ export type GithubSignInErrors = {
   };
 };
 
-export type GithubSignInError = GithubSignInErrors[keyof GithubSignInErrors];
+export type GithubError = GithubErrors[keyof GithubErrors];
 
-export type GoogleSignInData = {
+export type GoogleData = {
   body?: never;
   path?: never;
   query: {
@@ -942,7 +942,7 @@ export type GoogleSignInData = {
   url: '/auth/google';
 };
 
-export type GoogleSignInErrors = {
+export type GoogleErrors = {
   /**
    * Bad request: problem processing request.
    */
@@ -975,9 +975,9 @@ export type GoogleSignInErrors = {
   };
 };
 
-export type GoogleSignInError = GoogleSignInErrors[keyof GoogleSignInErrors];
+export type GoogleError = GoogleErrors[keyof GoogleErrors];
 
-export type MicrosoftSignInData = {
+export type MicrosoftData = {
   body?: never;
   path?: never;
   query: {
@@ -989,7 +989,7 @@ export type MicrosoftSignInData = {
   url: '/auth/microsoft';
 };
 
-export type MicrosoftSignInErrors = {
+export type MicrosoftErrors = {
   /**
    * Bad request: problem processing request.
    */
@@ -1022,9 +1022,9 @@ export type MicrosoftSignInErrors = {
   };
 };
 
-export type MicrosoftSignInError = MicrosoftSignInErrors[keyof MicrosoftSignInErrors];
+export type MicrosoftError = MicrosoftErrors[keyof MicrosoftErrors];
 
-export type GithubSignInCallbackData = {
+export type GithubCallbackData = {
   body?: never;
   path?: never;
   query: {
@@ -1037,7 +1037,7 @@ export type GithubSignInCallbackData = {
   url: '/auth/github/callback';
 };
 
-export type GithubSignInCallbackErrors = {
+export type GithubCallbackErrors = {
   /**
    * Bad request: problem processing request.
    */
@@ -1070,9 +1070,9 @@ export type GithubSignInCallbackErrors = {
   };
 };
 
-export type GithubSignInCallbackError = GithubSignInCallbackErrors[keyof GithubSignInCallbackErrors];
+export type GithubCallbackError = GithubCallbackErrors[keyof GithubCallbackErrors];
 
-export type GoogleSignInCallbackData = {
+export type GoogleCallbackData = {
   body?: never;
   path?: never;
   query: {
@@ -1082,7 +1082,7 @@ export type GoogleSignInCallbackData = {
   url: '/auth/google/callback';
 };
 
-export type GoogleSignInCallbackErrors = {
+export type GoogleCallbackErrors = {
   /**
    * Bad request: problem processing request.
    */
@@ -1115,9 +1115,9 @@ export type GoogleSignInCallbackErrors = {
   };
 };
 
-export type GoogleSignInCallbackError = GoogleSignInCallbackErrors[keyof GoogleSignInCallbackErrors];
+export type GoogleCallbackError = GoogleCallbackErrors[keyof GoogleCallbackErrors];
 
-export type MicrosoftSignInCallbackData = {
+export type MicrosoftCallbackData = {
   body?: never;
   path?: never;
   query: {
@@ -1127,7 +1127,7 @@ export type MicrosoftSignInCallbackData = {
   url: '/auth/microsoft/callback';
 };
 
-export type MicrosoftSignInCallbackErrors = {
+export type MicrosoftCallbackErrors = {
   /**
    * Bad request: problem processing request.
    */
@@ -1160,7 +1160,7 @@ export type MicrosoftSignInCallbackErrors = {
   };
 };
 
-export type MicrosoftSignInCallbackError = MicrosoftSignInCallbackErrors[keyof MicrosoftSignInCallbackErrors];
+export type MicrosoftCallbackError = MicrosoftCallbackErrors[keyof MicrosoftCallbackErrors];
 
 export type GetPasskeyChallengeData = {
   body?: never;
@@ -1277,60 +1277,6 @@ export type SignInWithPasskeyResponses = {
 
 export type SignInWithPasskeyResponse = SignInWithPasskeyResponses[keyof SignInWithPasskeyResponses];
 
-export type GetTotpUriData = {
-  body?: never;
-  path?: never;
-  query?: never;
-  url: '/auth/totp-uri';
-};
-
-export type GetTotpUriErrors = {
-  /**
-   * Bad request: problem processing request.
-   */
-  400: ApiError & {
-    status?: 400;
-  };
-  /**
-   * Unauthorized: authentication required.
-   */
-  401: ApiError & {
-    status?: 401;
-  };
-  /**
-   * Forbidden: insufficient permissions.
-   */
-  403: ApiError & {
-    status?: 403;
-  };
-  /**
-   * Not found: resource does not exist.
-   */
-  404: ApiError & {
-    status?: 404;
-  };
-  /**
-   * Rate limit: too many requests.
-   */
-  429: ApiError & {
-    status?: 429;
-  };
-};
-
-export type GetTotpUriError = GetTotpUriErrors[keyof GetTotpUriErrors];
-
-export type GetTotpUriResponses = {
-  /**
-   * TOTP URI and manual key
-   */
-  200: {
-    totpUri: string;
-    manualKey: string;
-  };
-};
-
-export type GetTotpUriResponse = GetTotpUriResponses[keyof GetTotpUriResponses];
-
 export type SignInWithTotpData = {
   body?: {
     code: string;
@@ -1377,7 +1323,7 @@ export type SignInWithTotpError = SignInWithTotpErrors[keyof SignInWithTotpError
 
 export type SignInWithTotpResponses = {
   /**
-   * Passkey verified
+   * TOTP verified
    */
   200: boolean;
 };
@@ -1557,7 +1503,7 @@ export type ToggleMfaData = {
       signature: string;
     };
     totpCode?: string;
-    multiFactorRequired: boolean;
+    mfaRequired: boolean;
   };
   path?: never;
   query?: never;
@@ -1737,14 +1683,14 @@ export type GetMyMenuResponses = {
 
 export type GetMyMenuResponse = GetMyMenuResponses[keyof GetMyMenuResponses];
 
-export type GetMyInvitesData = {
+export type GetMyInvitationsData = {
   body?: never;
   path?: never;
   query?: never;
-  url: '/me/invites';
+  url: '/me/invitations';
 };
 
-export type GetMyInvitesErrors = {
+export type GetMyInvitationsErrors = {
   /**
    * Bad request: problem processing request.
    */
@@ -1777,11 +1723,11 @@ export type GetMyInvitesErrors = {
   };
 };
 
-export type GetMyInvitesError = GetMyInvitesErrors[keyof GetMyInvitesErrors];
+export type GetMyInvitationsError = GetMyInvitationsErrors[keyof GetMyInvitationsErrors];
 
-export type GetMyInvitesResponses = {
+export type GetMyInvitationsResponses = {
   /**
-   * Invites of user
+   * Invitations pending
    */
   200: Array<{
     entity: ContextEntityBaseSchema & {
@@ -1797,7 +1743,7 @@ export type GetMyInvitesResponses = {
   }>;
 };
 
-export type GetMyInvitesResponse = GetMyInvitesResponses[keyof GetMyInvitesResponses];
+export type GetMyInvitationsResponse = GetMyInvitationsResponses[keyof GetMyInvitationsResponses];
 
 export type DeleteMySessionsData = {
   body?: {
@@ -1909,7 +1855,7 @@ export type DeleteMyMembershipResponses = {
 
 export type DeleteMyMembershipResponse = DeleteMyMembershipResponses[keyof DeleteMyMembershipResponses];
 
-export type RegistratePasskeyData = {
+export type CreatePasskeyData = {
   body: {
     attestationObject: string;
     clientDataJSON: string;
@@ -1920,7 +1866,7 @@ export type RegistratePasskeyData = {
   url: '/me/passkey';
 };
 
-export type RegistratePasskeyErrors = {
+export type CreatePasskeyErrors = {
   /**
    * Bad request: problem processing request.
    */
@@ -1953,9 +1899,9 @@ export type RegistratePasskeyErrors = {
   };
 };
 
-export type RegistratePasskeyError = RegistratePasskeyErrors[keyof RegistratePasskeyErrors];
+export type CreatePasskeyError = CreatePasskeyErrors[keyof CreatePasskeyErrors];
 
-export type RegistratePasskeyResponses = {
+export type CreatePasskeyResponses = {
   /**
    * Passkey created
    */
@@ -1971,9 +1917,9 @@ export type RegistratePasskeyResponses = {
   };
 };
 
-export type RegistratePasskeyResponse = RegistratePasskeyResponses[keyof RegistratePasskeyResponses];
+export type CreatePasskeyResponse = CreatePasskeyResponses[keyof CreatePasskeyResponses];
 
-export type UnlinkPasskeyData = {
+export type DeletePasskeyData = {
   body?: never;
   path: {
     id: string;
@@ -1982,7 +1928,7 @@ export type UnlinkPasskeyData = {
   url: '/me/passkey/{id}';
 };
 
-export type UnlinkPasskeyErrors = {
+export type DeletePasskeyErrors = {
   /**
    * Bad request: problem processing request.
    */
@@ -2015,25 +1961,132 @@ export type UnlinkPasskeyErrors = {
   };
 };
 
-export type UnlinkPasskeyError = UnlinkPasskeyErrors[keyof UnlinkPasskeyErrors];
+export type DeletePasskeyError = DeletePasskeyErrors[keyof DeletePasskeyErrors];
 
-export type UnlinkPasskeyResponses = {
+export type DeletePasskeyResponses = {
   /**
-   * Still has passkey
+   * Passkey deleted
    */
   200: boolean;
 };
 
-export type UnlinkPasskeyResponse = UnlinkPasskeyResponses[keyof UnlinkPasskeyResponses];
+export type DeletePasskeyResponse = DeletePasskeyResponses[keyof DeletePasskeyResponses];
 
-export type UnlinkTotpData = {
+export type RegisterTotpData = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: '/me/totp/register';
+};
+
+export type RegisterTotpErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: ApiError & {
+    status?: 400;
+  };
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: ApiError & {
+    status?: 401;
+  };
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ApiError & {
+    status?: 403;
+  };
+  /**
+   * Not found: resource does not exist.
+   */
+  404: ApiError & {
+    status?: 404;
+  };
+  /**
+   * Rate limit: too many requests.
+   */
+  429: ApiError & {
+    status?: 429;
+  };
+};
+
+export type RegisterTotpError = RegisterTotpErrors[keyof RegisterTotpErrors];
+
+export type RegisterTotpResponses = {
+  /**
+   * totpUri & manualKey
+   */
+  200: {
+    totpUri: string;
+    manualKey: string;
+  };
+};
+
+export type RegisterTotpResponse = RegisterTotpResponses[keyof RegisterTotpResponses];
+
+export type ActivateTotpData = {
+  body: {
+    code: string;
+  };
+  path?: never;
+  query?: never;
+  url: '/me/totp/activate';
+};
+
+export type ActivateTotpErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: ApiError & {
+    status?: 400;
+  };
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: ApiError & {
+    status?: 401;
+  };
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ApiError & {
+    status?: 403;
+  };
+  /**
+   * Not found: resource does not exist.
+   */
+  404: ApiError & {
+    status?: 404;
+  };
+  /**
+   * Rate limit: too many requests.
+   */
+  429: ApiError & {
+    status?: 429;
+  };
+};
+
+export type ActivateTotpError = ActivateTotpErrors[keyof ActivateTotpErrors];
+
+export type ActivateTotpResponses = {
+  /**
+   * TOTP activated
+   */
+  200: boolean;
+};
+
+export type ActivateTotpResponse = ActivateTotpResponses[keyof ActivateTotpResponses];
+
+export type DeleteTotpData = {
   body?: never;
   path?: never;
   query?: never;
   url: '/me/totp';
 };
 
-export type UnlinkTotpErrors = {
+export type DeleteTotpErrors = {
   /**
    * Bad request: problem processing request.
    */
@@ -2066,69 +2119,16 @@ export type UnlinkTotpErrors = {
   };
 };
 
-export type UnlinkTotpError = UnlinkTotpErrors[keyof UnlinkTotpErrors];
+export type DeleteTotpError = DeleteTotpErrors[keyof DeleteTotpErrors];
 
-export type UnlinkTotpResponses = {
+export type DeleteTotpResponses = {
   /**
-   * TOTP removed
+   * TOTP deleted
    */
   200: boolean;
 };
 
-export type UnlinkTotpResponse = UnlinkTotpResponses[keyof UnlinkTotpResponses];
-
-export type SetupTotpData = {
-  body: {
-    code: string;
-  };
-  path?: never;
-  query?: never;
-  url: '/me/totp';
-};
-
-export type SetupTotpErrors = {
-  /**
-   * Bad request: problem processing request.
-   */
-  400: ApiError & {
-    status?: 400;
-  };
-  /**
-   * Unauthorized: authentication required.
-   */
-  401: ApiError & {
-    status?: 401;
-  };
-  /**
-   * Forbidden: insufficient permissions.
-   */
-  403: ApiError & {
-    status?: 403;
-  };
-  /**
-   * Not found: resource does not exist.
-   */
-  404: ApiError & {
-    status?: 404;
-  };
-  /**
-   * Rate limit: too many requests.
-   */
-  429: ApiError & {
-    status?: 429;
-  };
-};
-
-export type SetupTotpError = SetupTotpErrors[keyof SetupTotpErrors];
-
-export type SetupTotpResponses = {
-  /**
-   * TOTP successfully registered
-   */
-  200: boolean;
-};
-
-export type SetupTotpResponse = SetupTotpResponses[keyof SetupTotpResponses];
+export type DeleteTotpResponse = DeleteTotpResponses[keyof DeleteTotpResponses];
 
 export type GetUploadTokenData = {
   body?: never;
@@ -4229,7 +4229,7 @@ export type GetMembersResponses = {
       thumbnailUrl: string | null;
       bannerUrl: string | null;
       email: string;
-      multiFactorRequired: boolean;
+      mfaRequired: boolean;
       firstName: string | null;
       lastName: string | null;
       language: 'en' | 'nl';

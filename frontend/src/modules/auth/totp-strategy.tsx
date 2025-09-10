@@ -11,7 +11,7 @@ import { toaster } from '~/modules/common/toaster/service';
 import { Button } from '~/modules/ui/button';
 import { useUIStore } from '~/store/ui';
 
-export const TOTPStrategy = () => {
+export const TotpStrategy = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
 
@@ -28,7 +28,7 @@ export const TOTPStrategy = () => {
     onError: () => toaster(t('error:totp_verification_failed'), 'error'),
   });
 
-  const openTOTPVerify = () => {
+  const openTotpVerify = () => {
     useDialoger.getState().create(<TotpConfirmationForm onSubmit={totpSignIn} />, {
       id: 'mfa-confirmation',
       triggerRef,
@@ -41,7 +41,7 @@ export const TOTPStrategy = () => {
 
   return (
     <div data-mode={mode} className="group flex flex-col space-y-2">
-      <Button ref={triggerRef} type="button" onClick={openTOTPVerify} variant="plain" className="w-full gap-1.5 truncate">
+      <Button ref={triggerRef} type="button" onClick={openTotpVerify} variant="plain" className="w-full gap-1.5 truncate">
         <Smartphone size={16} />
         <span className="truncate">
           {t('common:sign_in')} {t('common:with').toLowerCase()} {t('common:authenticator_app').toLowerCase()}

@@ -482,7 +482,7 @@
   "passkeys": "Passkeys",
   "authenticator_app": "Authenticator app",
   "success.cancel_mfa": "Multi-factor authentication has been canceled",
-  "mfa_disable_confirmation.title": "Disable Multi-Factor Authentication",
-  "mfa_disable_confirmation.text": "Are you sure you want to disable multi-factor authentication? Your account will be less secure.",
+  "mfa_disable_confirmation.title": "Disable multifactor authentication",
+  "mfa_disable_confirmation.text": "Are you sure you want to disable multifactor authentication? Your account will be less secure.",
   "disable": "Disable"
 }

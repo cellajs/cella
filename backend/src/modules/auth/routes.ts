@@ -12,8 +12,8 @@ import {
   passkeyChallengeQuerySchema,
   passkeyChallengeSchema,
   passkeyVerificationBodySchema,
-  TotpVerificationBodySchema,
   tokenWithDataSchema,
+  totpVerificationBodySchema,
 } from '#/modules/auth/schema';
 import { contextEntityWithMembershipSchema } from '#/modules/entities/schema';
 import { cookieSchema, locationSchema, passwordSchema, tokenParamSchema } from '#/utils/schema/common';
@@ -219,27 +219,7 @@ const authRoutes = {
     },
   }),
 
-  getTotpUri: createCustomRoute({
-    operationId: 'getTotpUri',
-    method: 'get',
-    path: '/totp-uri',
-    guard: isAuthenticated,
-    // TODO look into rate limit customized for totp
-    middleware: [spamLimiter],
-    tags: ['auth'],
-    summary: 'Get TOTP setup URI and manual key',
-    description: 'Generates a new TOTP secret for the current user and returns both the QR URI and Base32 manual key',
-    security: [],
-    responses: {
-      200: {
-        description: 'TOTP URI and manual key',
-        content: { 'application/json': { schema: z.object({ totpUri: z.string(), manualKey: z.string() }) } },
-      },
-      ...errorResponses,
-    },
-  }),
-
-  verifyTotpCode: createCustomRoute({
+  verifyTotp: createCustomRoute({
     operationId: 'signInWithTotp',
     method: 'post',
     path: '/totp-verification',
@@ -247,15 +227,15 @@ const authRoutes = {
     // TODO look into rate limit customized for totp
     middleware: [spamLimiter],
     tags: ['auth'],
-    summary: 'Verify topt code',
-    description: 'Validates the totp code and completes totp based authentication.',
+    summary: 'Verify TOTP',
+    description: 'Validates the TOTP code and completes TOTP based authentication.',
     security: [],
     request: {
-      body: { content: { 'application/json': { schema: TotpVerificationBodySchema } } },
+      body: { content: { 'application/json': { schema: totpVerificationBodySchema } } },
     },
     responses: {
       200: {
-        description: 'Passkey verified',
+        description: 'TOTP verified',
         headers: z.object({ 'Set-Cookie': cookieSchema }),
         content: { 'application/json': { schema: successWithoutDataSchema } },
       },
@@ -284,7 +264,7 @@ const authRoutes = {
     },
   }),
 
-  verifyPasskey: createCustomRoute({
+  signInWithPasskey: createCustomRoute({
     operationId: 'signInWithPasskey',
     method: 'post',
     path: '/passkey-verification',
@@ -335,9 +315,8 @@ const authRoutes = {
     path: '/validate-token/{token}',
     guard: isPublicAccess,
     tags: ['auth'],
-    summary: 'Token validation and nonce retrieval',
-    description:
-      'Checks if a token (e.g. for password reset, email verification, or invite) is still valid and returns basic data and a nonce for further actions.',
+    summary: 'Validate token',
+    description: 'Checks if a token (e.g. for password reset, email verification, or invite) is still valid and returns basic data if valid.',
     request: {
       params: tokenParamSchema,
       query: z.object({ type: z.enum(appConfig.tokenTypes) }),
@@ -374,8 +353,8 @@ const authRoutes = {
     },
   }),
 
-  githubSignIn: createCustomRoute({
-    operationId: 'githubSignIn',
+  github: createCustomRoute({
+    operationId: 'github',
     method: 'get',
     path: '/github',
     guard: isPublicAccess,
@@ -394,8 +373,8 @@ const authRoutes = {
     },
   }),
 
-  githubSignInCallback: createCustomRoute({
-    operationId: 'githubSignInCallback',
+  githubCallback: createCustomRoute({
+    operationId: 'githubCallback',
     method: 'get',
     path: '/github/callback',
     guard: isPublicAccess,
@@ -420,8 +399,8 @@ const authRoutes = {
     },
   }),
 
-  googleSignIn: createCustomRoute({
-    operationId: 'googleSignIn',
+  google: createCustomRoute({
+    operationId: 'google',
     method: 'get',
     path: '/google',
     guard: isPublicAccess,
@@ -440,8 +419,8 @@ const authRoutes = {
     },
   }),
 
-  googleSignInCallback: createCustomRoute({
-    operationId: 'googleSignInCallback',
+  googleCallback: createCustomRoute({
+    operationId: 'googleCallback',
     method: 'get',
     path: '/google/callback',
     guard: isPublicAccess,
@@ -460,8 +439,8 @@ const authRoutes = {
     },
   }),
 
-  microsoftSignIn: createCustomRoute({
-    operationId: 'microsoftSignIn',
+  microsoft: createCustomRoute({
+    operationId: 'microsoft',
     method: 'get',
     path: '/microsoft',
     guard: isPublicAccess,
@@ -480,8 +459,8 @@ const authRoutes = {
     },
   }),
 
-  microsoftSignInCallback: createCustomRoute({
-    operationId: 'microsoftSignInCallback',
+  microsoftCallback: createCustomRoute({
+    operationId: 'microsoftCallback',
     method: 'get',
     path: '/microsoft/callback',
     guard: isPublicAccess,

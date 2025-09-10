@@ -3,6 +3,7 @@ import type { Config } from './default';
 export default {
   mode: 'development',
   name: 'Cella DEVELOPMENT',
+  slug: 'cella-development',
   debug: false,
 
   domain: '',

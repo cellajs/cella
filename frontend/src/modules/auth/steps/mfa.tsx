@@ -4,21 +4,20 @@ import { useTranslation } from 'react-i18next';
 import { signOut } from '~/api.gen';
 import PasskeyStrategy from '~/modules/auth/passkey-strategy';
 import { useAuthStepsContext } from '~/modules/auth/steps/provider';
-import { TOTPStrategy } from '~/modules/auth/totp-strategy';
+import { TotpStrategy } from '~/modules/auth/totp-strategy';
 import { toaster } from '~/modules/common/toaster/service';
 import { Button } from '~/modules/ui/button';
 import { AuthenticateRoute } from '~/routes/auth';
 
 /**
- * Handles multi-factor authentication setup and cancellation,
- * displaying the user's email and available strategies (Passkey, TOTP).
+ * Handles multifactor authentication step in the authentication process.
  */
-export const MFA = () => {
+export const MfaStep = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { email, resetSteps } = useAuthStepsContext();
 
-  const handleCancelMFA = async () => {
+  const handleCancelMfa = async () => {
     try {
       await signOut();
       toaster(t('common:success.cancel_mfa'), 'success');
@@ -33,7 +32,7 @@ export const MFA = () => {
     <>
       <h1 className="text-2xl text-center">{t('common:mfa_header')}</h1>
 
-      <Button variant="ghost" onClick={handleCancelMFA} className="mx-auto flex max-w-full truncate font-light sm:text-xl bg-foreground/10">
+      <Button variant="ghost" onClick={handleCancelMfa} className="mx-auto flex max-w-full truncate font-light sm:text-xl bg-foreground/10">
         <span className="truncate">{email}</span>
         <ChevronDown size={16} className="ml-1" />
       </Button>
@@ -41,7 +40,7 @@ export const MFA = () => {
       <p className="font-light text-center space-x-1">{t('common:mfa_subheader.text')}</p>
 
       <PasskeyStrategy type="mfa" />
-      <TOTPStrategy />
+      <TotpStrategy />
     </>
   );
 };

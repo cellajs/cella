@@ -31,7 +31,7 @@ ALTER TABLE "passkeys" ADD COLUMN "device_os" varchar;--> statement-breakpoint
 ALTER TABLE "passkeys" ADD COLUMN "browser" varchar;--> statement-breakpoint
 ALTER TABLE "passkeys" ADD COLUMN "name_on_device" varchar NOT NULL;--> statement-breakpoint
 ALTER TABLE "tokens" ADD COLUMN "consumed_at" timestamp with time zone;--> statement-breakpoint
-ALTER TABLE "users" ADD COLUMN "multi_factor_required" boolean DEFAULT false NOT NULL;--> statement-breakpoint
+ALTER TABLE "users" ADD COLUMN "mfa_required" boolean DEFAULT false NOT NULL;--> statement-breakpoint
 ALTER TABLE "passwords" ADD CONSTRAINT "passwords_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "totps" ADD CONSTRAINT "totps_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "unsubscribe_tokens" ADD CONSTRAINT "unsubscribe_tokens_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint

@@ -1447,8 +1447,8 @@
           "primaryKey": false,
           "notNull": true
         },
-        "multi_factor_required": {
-          "name": "multi_factor_required",
+        "mfa_required": {
+          "name": "mfa_required",
           "type": "boolean",
           "primaryKey": false,
           "notNull": true,

@@ -3,6 +3,7 @@ import type { Config } from './default';
 export default {
   mode: 'staging',
   name: 'Cella STAGING',
+  slug: 'cella-staging',
   debug: false,
 
   domain: 'cella.dev',

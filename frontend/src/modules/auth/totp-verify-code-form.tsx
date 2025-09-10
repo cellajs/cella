@@ -3,7 +3,7 @@ import { appConfig } from 'config';
 import { useForm, useFormState } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import type z from 'zod';
-import { zSetupTotpData } from '~/api.gen/zod.gen';
+import { zActivateTotpData } from '~/api.gen/zod.gen';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { Button, SubmitButton } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
@@ -11,18 +11,16 @@ import { Input } from '~/modules/ui/input';
 import { cn } from '~/utils/cn';
 import { defaultOnInvalid } from '~/utils/form-on-invalid';
 
-const formSchema = zSetupTotpData.shape.body;
+const formSchema = zActivateTotpData.shape.body;
 type FormValues = z.infer<typeof formSchema>;
 
-export const TotpConfirmationForm = ({
-  formClassName,
-  label,
-  onSubmit,
-}: {
+interface Props {
   formClassName?: string;
   label?: string;
   onSubmit: (data: FormValues) => void;
-}) => {
+}
+
+export const TotpConfirmationForm = ({ formClassName, label, onSubmit }: Props) => {
   const { t } = useTranslation();
 
   const form = useForm<FormValues>({

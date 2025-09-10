@@ -4,31 +4,31 @@ import { useTranslation } from 'react-i18next';
 import { getPasskeyVerifyCredential } from '~/modules/auth/passkey-credentials';
 import { TotpConfirmationForm } from '~/modules/auth/totp-verify-code-form';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
-import { useToogleMFAMutation } from '~/modules/me/query';
+import { useToggleMfaMutation } from '~/modules/me/query';
 import { Button } from '~/modules/ui/button';
 import { useUserStore } from '~/store/user';
 
-export const ConfirmDisableMFAOptions = () => {
+export const ConfirmDisableMfaOptions = () => {
   const { t } = useTranslation();
   const user = useUserStore((state) => state.user);
   const { remove: removeDialog } = useDialoger();
 
-  const { mutateAsync: toggleMFA } = useToogleMFAMutation();
+  const { mutateAsync: toggleMfa } = useToggleMfaMutation();
 
   const totpTriggerRef = useRef<HTMLButtonElement | null>(null);
 
   const onPasskyConfirm = async () => {
     const passkeyData = await getPasskeyVerifyCredential({ email: user.email, type: 'authentication' });
-    toggleMFA({ multiFactorRequired: false, passkeyData });
+    toggleMfa({ mfaRequired: false, passkeyData });
     removeDialog();
   };
 
   const onTotpConfirm = async ({ code: totpCode }: { code: string }) => {
-    await toggleMFA({ multiFactorRequired: false, totpCode });
+    await toggleMfa({ mfaRequired: false, totpCode });
     removeDialog();
   };
 
-  const openTOTPVerify = () => {
+  const openTotpVerify = () => {
     useDialoger.getState().create(<TotpConfirmationForm onSubmit={onTotpConfirm} />, {
       id: 'mfa-verification',
       className: 'sm:max-w-md p-6',
@@ -47,7 +47,7 @@ export const ConfirmDisableMFAOptions = () => {
           {t('common:confirm')} {t('common:with').toLowerCase()} {t('common:passkey').toLowerCase()}
         </span>
       </Button>
-      <Button ref={totpTriggerRef} type="button" onClick={openTOTPVerify} variant="plain" className="w-full gap-1.5 truncate">
+      <Button ref={totpTriggerRef} type="button" onClick={openTotpVerify} variant="plain" className="w-full gap-1.5 truncate">
         <Smartphone size={16} />
         <span className="truncate">
           {t('common:confirm')} {t('common:with').toLowerCase()} {t('common:authenticator_app').toLowerCase()}

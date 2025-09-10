@@ -1,3 +1,6 @@
+import { appConfig, type EnabledOAuthProvider } from 'config';
+import { and, eq } from 'drizzle-orm';
+import type { Context } from 'hono';
 import { db } from '#/db/db';
 import { emailsTable } from '#/db/schema/emails';
 import { type OAuthAccountModel, oauthAccountsTable } from '#/db/schema/oauth-accounts';
@@ -5,7 +8,7 @@ import type { TokenModel } from '#/db/schema/tokens';
 import { type UserModel, usersTable } from '#/db/schema/users';
 import { AppError } from '#/lib/errors';
 import { getAuthCookie } from '#/modules/auth/helpers/cookie';
-import { initiateMultiFactorAuth } from '#/modules/auth/helpers/mfa';
+import { initiateMfa } from '#/modules/auth/helpers/mfa';
 import type { Provider } from '#/modules/auth/helpers/oauth/providers';
 import type { OAuthCookiePayload } from '#/modules/auth/helpers/oauth/session';
 import type { TransformedUser } from '#/modules/auth/helpers/oauth/transform-user-data';
@@ -16,9 +19,6 @@ import { usersBaseQuery } from '#/modules/users/helpers/select';
 import { isValidRedirectPath } from '#/utils/is-redirect-url';
 import { getIsoDate } from '#/utils/iso-date';
 import { getValidToken } from '#/utils/validate-token';
-import { appConfig, type EnabledOAuthProvider } from 'config';
-import { and, eq } from 'drizzle-orm';
-import type { Context } from 'hono';
 
 /**
  * Handles the default OAuth authentication/signup flow.
@@ -315,14 +315,14 @@ const createOAuthAccount = async (
  */
 const handleVerifiedOAuthAccount = async (ctx: Context, user: UserModel, oauthAccount: OAuthAccountModel): Promise<Response> => {
   // Start MFA challenge if the user has MFA enabled
-  const multiFactorRedirectPath = await initiateMultiFactorAuth(ctx, user);
+  const mfaRedirectPath = await initiateMfa(ctx, user);
 
   // Determine final redirect path
-  const redirectPath = multiFactorRedirectPath || (await getOAuthRedirectPath(ctx));
+  const redirectPath = mfaRedirectPath || (await getOAuthRedirectPath(ctx));
   const redirectUrl = new URL(redirectPath, appConfig.frontendUrl);
 
   // If MFA is not required, set  user session immediately
-  if (!multiFactorRedirectPath) await setUserSession(ctx, user, oauthAccount.providerId);
+  if (!mfaRedirectPath) await setUserSession(ctx, user, oauthAccount.providerId);
 
   return ctx.redirect(redirectUrl, 302);
 };

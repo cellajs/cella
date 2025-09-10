@@ -3,7 +3,7 @@ import { createContext, type ReactNode, useContext, useEffect, useState } from '
 import type { ApiError } from '~/lib/api';
 import type { AuthStep, TokenData } from '~/modules/auth/types';
 import { useCheckToken } from '~/modules/auth/use-token-check';
-import { AuthenticateRoute, MFARoute } from '~/routes/auth';
+import { AuthenticateRoute, MfaRoute } from '~/routes/auth';
 import { useUserStore } from '~/store/user';
 
 interface AuthContextProps {
@@ -22,7 +22,7 @@ export const AuthStepsProvider = ({ children }: { children: ReactNode }) => {
   const { lastUser } = useUserStore();
   const { token } = useSearch({ from: AuthenticateRoute.id });
 
-  const isMFARoute = !!matchRoute({ to: MFARoute.to });
+  const isMfaRoute = !!matchRoute({ to: MfaRoute.to });
 
   // Initialize email and step
   const initEmail = (!token && lastUser?.email) || '';
@@ -47,8 +47,8 @@ export const AuthStepsProvider = ({ children }: { children: ReactNode }) => {
 
   // Handle MFA from query params
   useEffect(() => {
-    if (isMFARoute) setStepState('mfa');
-  }, [isMFARoute]);
+    if (isMfaRoute) setStepState('mfa');
+  }, [isMfaRoute]);
 
   // If token is provided, directly set email and step based on token data
   useEffect(() => {

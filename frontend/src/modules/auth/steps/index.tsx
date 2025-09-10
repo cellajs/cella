@@ -61,7 +61,7 @@ const AuthSteps = () => {
               <span className="text-muted-foreground px-2">{t('common:or')}</span>
             </div>
           )}
-          {enabledStrategies.includes('passkey') && lastUser?.email === email && !lastUser.multiFactorRequired && step === 'signIn' && (
+          {enabledStrategies.includes('passkey') && lastUser?.email === email && !lastUser.mfaRequired && step === 'signIn' && (
             <PasskeyStrategy email={email} type="authentication" />
           )}
           {enabledStrategies.includes('oauth') && <OAuthProviders authStep={step} />}
