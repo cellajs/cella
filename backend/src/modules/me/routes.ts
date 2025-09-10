@@ -1,3 +1,4 @@
+import { z } from '@hono/zod-openapi';
 import { createCustomRoute } from '#/lib/custom-routes';
 import { isAuthenticated, isPublicAccess } from '#/middlewares/guard';
 import { tokenLimiter } from '#/middlewares/rate-limiter/limiters';
@@ -15,7 +16,6 @@ import {
 import { userFlagsSchema, userSchema, userUpdateBodySchema } from '#/modules/users/schema';
 import { entityWithTypeQuerySchema, idSchema, locationSchema } from '#/utils/schema/common';
 import { errorResponses, successWithoutDataSchema, successWithRejectedItemsSchema } from '#/utils/schema/responses';
-import { z } from '@hono/zod-openapi';
 
 const meRoutes = {
   getMe: createCustomRoute({
@@ -91,8 +91,6 @@ const meRoutes = {
     operationId: 'updateMe',
     method: 'put',
     path: '/',
-    'x-wbut': 'dsfsd',
-    extensions: { 'x-wbut': 'dsfsd' },
     guard: isAuthenticated,
     tags: ['me'],
     summary: 'Update self',

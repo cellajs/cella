@@ -1,37 +1,22 @@
-import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useSuspenseQuery } from '@tanstack/react-query';
 import { CopyCheckIcon, CopyIcon } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { useRef } from 'react';
-import { useForm, useFormState } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
-import type z from 'zod';
 import { type ApiError, getTotpUri, setupTotp, type SetupTotpData, type SetupTotpResponse } from '~/api.gen';
-import { zSetupTotpData } from '~/api.gen/zod.gen';
 import { useCopyToClipboard } from '~/hooks/use-copy-to-clipboard';
-import { TotpCodeForm } from '~/modules/auth/totp-strategy';
+import { TotpConfirmationForm } from '~/modules/auth/totp-verify-code-form';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { toaster } from '~/modules/common/toaster/service';
 import { Alert, AlertDescription, AlertTitle } from '~/modules/ui/alert';
-import { Button, SubmitButton } from '~/modules/ui/button';
+import { Button } from '~/modules/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '~/modules/ui/card';
-import { Form } from '~/modules/ui/form';
 import { useUIStore } from '~/store/ui';
 import { useUserStore } from '~/store/user';
-import { defaultOnInvalid } from '~/utils/form-on-invalid';
-
-const formSchema = zSetupTotpData.shape.body;
-type FormValues = z.infer<typeof formSchema>;
 
 export const TOTPSetup = () => {
   const { t } = useTranslation();
   const mode = useUIStore((state) => state.mode);
-
-  const form = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
-    defaultValues: { code: '' },
-  });
-  const { isValid } = useFormState({ control: form.control });
 
   const { mutate: validateTotp } = useMutation<SetupTotpResponse, ApiError | Error, NonNullable<SetupTotpData['body']>>({
     mutationFn: async (body) => await setupTotp({ body }),
@@ -42,7 +27,7 @@ export const TOTPSetup = () => {
     onError: () => toaster(t('error:totp_setup_failed'), 'error'),
   });
 
-  const onSubmit = (body: FormValues) => {
+  const onSubmit = (body: { code: string }) => {
     useDialoger.getState().remove('mfa-uri');
     useDialoger.getState().remove('mfa-key');
     validateTotp(body);
@@ -87,15 +72,7 @@ export const TOTPSetup = () => {
           </Alert>
         </CardContent>
         <CardFooter className="flex flex-col items-start">
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit, defaultOnInvalid)} className="flex flex-row gap-2 items-end mt-4">
-              <TotpCodeForm control={form.control} name="code" label={t('common:totp_verify')} />
-
-              <SubmitButton variant="darkSuccess" disabled={!isValid} loading={false}>
-                {t('common:confirm')}
-              </SubmitButton>
-            </form>
-          </Form>
+          <TotpConfirmationForm label={t('common:totp_verify')} formClassName="flex-row gap-2 items-end mt-4" onSubmit={onSubmit} />
         </CardFooter>
       </Card>
     </div>

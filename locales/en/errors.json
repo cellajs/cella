@@ -185,5 +185,6 @@
   "totp_verification_failed.text": "TOTP verification failed. Please try again or use another method.",
   "totp_setup_failed": "TOTP setup failed. Try again later.",
   "totp_remove_failed": "TOTP unlink failed. Try again later.",
-  "mfa_schema_requirement": "Email is required for login and must be omitted for MFA"
+  "mfa_schema_requirement": "Email is required for login and must be omitted for MFA",
+  "mfa_disable_verification":  "To disable MFA, you need either an active MFA session less than 1 hour old, or verification through a passkey or authenticator app."
 }

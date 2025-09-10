@@ -1,9 +1,9 @@
-import { membershipSchema } from '#/modules/memberships/schema';
-import { userSchema } from '#/modules/users/schema';
-import { idSchema, passwordSchema } from '#/utils/schema/common';
 import { z } from '@hono/zod-openapi';
 import { appConfig } from 'config';
 import { t } from 'i18next';
+import { membershipSchema } from '#/modules/memberships/schema';
+import { userSchema } from '#/modules/users/schema';
+import { idSchema, passwordSchema } from '#/utils/schema/common';
 
 export const emailBodySchema = z.object({
   email: userSchema.shape.email,

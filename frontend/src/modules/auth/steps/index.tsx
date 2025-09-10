@@ -3,6 +3,7 @@ import { appConfig } from 'config';
 import { useTranslation } from 'react-i18next';
 import OAuthProviders from '~/modules/auth/oauth-providers';
 import PasskeyStrategy from '~/modules/auth/passkey-strategy';
+import { CheckEmailStep } from '~/modules/auth/steps/check-email';
 import { AuthErrorStep } from '~/modules/auth/steps/error-notice';
 import { InviteOnlyStep } from '~/modules/auth/steps/invite-only';
 import { useAuthStepsContext } from '~/modules/auth/steps/provider';
@@ -11,7 +12,6 @@ import { SignUpStep } from '~/modules/auth/steps/sign-up';
 import { WaitlistStep } from '~/modules/auth/steps/waitlist';
 import type { AuthStep } from '~/modules/auth/types';
 import { useUserStore } from '~/store/user';
-import { CheckEmailStep } from './check-email';
 
 const enabledStrategies: readonly string[] = appConfig.enabledAuthStrategies;
 

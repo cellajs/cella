@@ -1,7 +1,7 @@
 import { queryOptions, useMutation } from '@tanstack/react-query';
 import { t } from 'i18next';
 import type { ToggleMfaData, User } from '~/api.gen';
-import { getMyInvites, registratePasskey, toggleMfa, unlinkPasskey, unlinkTotp, updateMe, type UpdateMeData } from '~/api.gen';
+import { getMyInvites, registratePasskey, toggleMfa, type UpdateMeData, unlinkPasskey, unlinkTotp, updateMe } from '~/api.gen';
 import type { ApiError } from '~/lib/api';
 import { getPasskeyRegistrationCredential } from '~/modules/auth/passkey-credentials';
 import { toaster } from '~/modules/common/toaster/service';

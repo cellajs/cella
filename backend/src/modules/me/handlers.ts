@@ -57,7 +57,7 @@ const meRouteHandlers = app
     return ctx.json(user, 200);
   })
   /*
-   *
+   * Toggle MFA require for me auth
    */
   .openapi(meRoutes.toggleMFAState, async (ctx) => {
     const user = getContextUser();
@@ -71,7 +71,7 @@ const meRouteHandlers = app
     const oneHour = 60 * 60 * 1000; // 1 hour in milliseconds
 
     if (!multiFactorRequired && now - createdAt > oneHour && !passkeyData && !totpCode) {
-      throw new AppError({ status: 403, type: 'forbidden', severity: 'warn' });
+      throw new AppError({ status: 403, type: 'mfa_disable_verification', severity: 'warn' });
     }
 
     try {
@@ -103,7 +103,7 @@ const meRouteHandlers = app
       }
     } catch (error) {
       if (error instanceof Error) {
-        throw new AppError({ status: 500, type: 'passkey_verification_failed', severity: 'error', originalError: error });
+        throw new AppError({ status: 500, type: 'invalid_credentials', severity: 'error', originalError: error });
       }
       throw error;
     }

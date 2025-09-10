@@ -14,7 +14,7 @@ import StickyBox from '~/modules/common/sticky-box';
 import { toaster } from '~/modules/common/toaster/service';
 import UnsavedBadge from '~/modules/common/unsaved-badge';
 import DeleteSelf from '~/modules/me/delete-self';
-import { MultiFactorAuthentication } from '~/modules/me/multi-factor-auth';
+import { MultiFactorAuthentication } from '~/modules/me/multi-factor-auth/switch';
 import PasskeysList from '~/modules/me/passkeys';
 import SessionsList from '~/modules/me/sessions';
 import TOTPs from '~/modules/me/totp';

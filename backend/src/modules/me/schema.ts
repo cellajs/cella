@@ -1,5 +1,6 @@
 import { passkeysTable } from '#/db/schema/passkeys';
 import { sessionsTable } from '#/db/schema/sessions';
+import { basePasskeyVerificationBodySchema, TotpVerificationBodySchema } from '#/modules/auth/schema';
 import { contextEntityBaseSchema, contextEntityWithMembershipSchema, userBaseSchema } from '#/modules/entities/schema';
 import { membershipBaseSchema } from '#/modules/memberships/schema';
 import { enabledOAuthProvidersEnum } from '#/modules/users/schema';
@@ -7,7 +8,6 @@ import { booleanQuerySchema } from '#/utils/schema/common';
 import { z } from '@hono/zod-openapi';
 import { appConfig, type ContextEntityType } from 'config';
 import { createSelectSchema } from 'drizzle-zod';
-import { basePasskeyVerificationBodySchema, TotpVerificationBodySchema } from '../auth/schema';
 
 export const sessionSchema = createSelectSchema(sessionsTable).omit({ token: true }).extend({ isCurrent: z.boolean() });
 export const passkeySchema = createSelectSchema(passkeysTable).omit({ credentialId: true, publicKey: true });
