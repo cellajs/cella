@@ -9,10 +9,14 @@ import { toaster } from '~/modules/common/toaster/service';
 import { Button } from '~/modules/ui/button';
 import { AuthenticateRoute } from '~/routes/auth';
 
+/**
+ * Handles multi-factor authentication setup and cancellation,
+ * displaying the user's email and available strategies (Passkey, TOTP).
+ */
 export const MFA = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { email, setStep } = useAuthStepsContext();
+  const { email, resetSteps } = useAuthStepsContext();
 
   const handleCancelMFA = async () => {
     try {
@@ -20,7 +24,7 @@ export const MFA = () => {
       toaster(t('common:success.cancel_mfa'), 'success');
     } catch (error) {
     } finally {
-      setStep('signIn', email);
+      resetSteps();
       navigate({ to: AuthenticateRoute.to, replace: true });
     }
   };

@@ -1,6 +1,6 @@
 import { useParams } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
-import { LegalNotice } from '~/modules/auth/steps/sign-up';
+import { LegalNotice } from '~/modules/auth/steps/legal-notice';
 import { EmailVerificationRoute } from '~/routes/auth';
 
 const EmailVerification = () => {

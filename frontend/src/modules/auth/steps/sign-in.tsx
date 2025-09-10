@@ -25,7 +25,9 @@ const emailEnabled = enabledStrategies.includes('password') || enabledStrategies
 const formSchema = zSignUpData.shape.body.unwrap();
 type FormValues = z.infer<typeof formSchema>;
 
-// Either simply sign in with password or sign in with token to also accept organization invitation
+/**
+ * Handles user sign-in, including standard password login and token-based invitation flow.
+ */
 export const SignInStep = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();

@@ -21,6 +21,11 @@ const emailEnabled = enabledStrategies.includes('password') || enabledStrategies
 const formSchema = zCheckEmailData.shape.body.unwrap();
 type FormValues = z.infer<typeof formSchema>;
 
+/**
+ * Handles entering and validating the user's email,
+ * then routes to the appropriate next step (sign-in, sign-up, waitlist, or invite-only)
+ * based on API response and configuration.
+ */
 export const CheckEmailStep = () => {
   const { t } = useTranslation();
   const { setStep } = useAuthStepsContext();

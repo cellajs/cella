@@ -2,7 +2,8 @@ import { appConfig } from 'config';
 import { useTranslation } from 'react-i18next';
 
 /**
- *
+ * Displays a greeting and a message indicating that the app is invite-only.
+ * Uses the app name from configuration for localization.
  */
 export const InviteOnlyStep = () => {
   const { t } = useTranslation();
