@@ -112,7 +112,6 @@ jobs:
   quick:
     runs-on: ubuntu-latest
     needs: [lint, test]
-    timeout-minutes: 5
     steps:
       - name: Checkout repo
         uses: actions/checkout@v5
@@ -141,8 +140,8 @@ jobs:
 
       - name: Start quick and wait for Vite ready
         run: |
-          # Start quick and process output line by line
-          pnpm quick | while IFS= read -r line; do
+          timeout 120s stdbuf -oL pnpm quick | while IFS= read -r line; do
+            # Show all output for debugging
             echo "$line"
             # Remove ANSI escape codes
             clean_line=$(echo "$line" | sed -r "s/\x1B\[[0-9;]*[mK]//g")
@@ -153,4 +152,3 @@ jobs:
               break
             fi
           done
-          
