@@ -34,7 +34,7 @@ export const SignUpStep = () => {
 
   const { email, tokenData, setStep, resetSteps } = useAuthStepsContext();
 
-  const { token } = useSearch({ from: '/publiclayout/authlayout/auth/authenticate' });
+  const { token } = useSearch({ from: '/publicLayout/authLayout/auth/authenticate' });
 
   const isMobile = window.innerWidth < 640;
 

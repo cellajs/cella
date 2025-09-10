@@ -19,7 +19,7 @@ const organizationTabs: PageTab[] = [
 
 const OrganizationPage = () => {
   const { t } = useTranslation();
-  const { idOrSlug } = useParams({ from: '/applayout/organizations/$idOrSlug' });
+  const { idOrSlug } = useParams({ from: '/appLayout/organizations/$idOrSlug' });
   const user = useUserStore((state) => state.user);
 
   const orgQueryOptions = organizationQueryOptions(idOrSlug);

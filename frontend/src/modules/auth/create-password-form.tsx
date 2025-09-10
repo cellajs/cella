@@ -30,7 +30,7 @@ const CreatePasswordForm = () => {
 
   const requestButtonRef = useRef(null);
 
-  const { token } = useParams({ from: '/publiclayout/authlayout/auth/create-password/$token' });
+  const { token } = useParams({ from: '/publicLayout/authLayout/auth/create-password/$token' });
 
   const { data, isLoading, error } = useCheckToken('password_reset', token);
   const isMobile = window.innerWidth < 640;

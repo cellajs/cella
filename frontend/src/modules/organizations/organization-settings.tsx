@@ -27,7 +27,7 @@ const tabs = [
 const OrganizationSettings = ({ organization }: { organization: Organization }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { idOrSlug } = useParams({ from: '/applayout/organizations/$idOrSlug/settings' });
+  const { idOrSlug } = useParams({ from: '/appLayout/organizations/$idOrSlug/settings' });
 
   const deleteButtonRef = useRef(null);
 

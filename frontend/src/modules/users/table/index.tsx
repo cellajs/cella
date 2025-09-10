@@ -16,7 +16,7 @@ const LIMIT = appConfig.requestLimits.users;
 
 const UsersTable = () => {
   const { t } = useTranslation();
-  const { search, setSearch } = useSearchParams<UsersRouteSearchParams>({ from: '/applayout/system/users' });
+  const { search, setSearch } = useSearchParams<UsersRouteSearchParams>({ from: '/appLayout/system/users' });
 
   // Update user role
   const { mutate: updateUserRole } = useUpdateUserMutation();

@@ -45,7 +45,7 @@ export const rootRoute = createRootRouteWithContext()({
 });
 
 export const PublicRoute = createRoute({
-  id: 'publiclayout',
+  id: 'publicLayout',
   staticData: { isAuth: false },
   getParentRoute: () => rootRoute,
   component: () => <PublicLayout />,
@@ -67,7 +67,7 @@ export const PublicRoute = createRoute({
 });
 
 export const AppRoute = createRoute({
-  id: 'applayout',
+  id: 'appLayout',
   staticData: { isAuth: false },
   getParentRoute: () => rootRoute,
   component: () => (

@@ -15,7 +15,6 @@ import { useMemberUpdateMutation } from '~/modules/memberships/query-mutations';
 import { organizationsQueryOptions } from '~/modules/organizations/query';
 import { OrganizationsTableBar } from '~/modules/organizations/table/bar';
 import { useColumns } from '~/modules/organizations/table/columns';
-import { OrganizationsTableRoute } from '~/routes/system';
 import { useUserStore } from '~/store/user';
 import type { OrganizationsRouteSearchParams } from '../types';
 
@@ -25,7 +24,7 @@ const OrganizationsTable = () => {
   const { t } = useTranslation();
   const { user } = useUserStore();
   const updateMemberMembership = useMemberUpdateMutation();
-  const { search, setSearch } = useSearchParams<OrganizationsRouteSearchParams>({ from: OrganizationsTableRoute.id });
+  const { search, setSearch } = useSearchParams<OrganizationsRouteSearchParams>({ from: '/appLayout/system/organizations' });
 
   // Table state
   const { q, sort, order } = search;

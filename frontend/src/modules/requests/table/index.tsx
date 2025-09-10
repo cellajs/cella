@@ -16,7 +16,7 @@ const LIMIT = appConfig.requestLimits.requests;
 
 const RequestsTable = () => {
   const { t } = useTranslation();
-  const { search, setSearch } = useSearchParams<RequestsRouteSearchParams>({ from: '/applayout/system/requests' });
+  const { search, setSearch } = useSearchParams<RequestsRouteSearchParams>({ from: '/appLayout/system/requests' });
 
   // Table state
   const { q, sort, order } = search;
