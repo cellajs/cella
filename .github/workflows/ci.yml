@@ -141,11 +141,13 @@ jobs:
 
       - name: Start quick and wait for Vite ready
         run: |
-          # Start quick in the background and capture PID
+          # Start quick and process output line by line
           pnpm quick | while IFS= read -r line; do
             echo "$line"
-            # Match any line that contains "VITE <version> ready in <ms>"
-            if echo "$line" | grep -E "VITE [^ ]+ ready in [0-9]+ ms"; then
+            # Remove ANSI escape codes
+            clean_line=$(echo "$line" | sed -r "s/\x1B\[[0-9;]*[mK]//g")
+            # Match "VITE <version> ready in <ms>" anywhere in the line
+            if echo "$clean_line" | grep -E "VITE [^ ]+ ready in [0-9]+ ms"; then
               echo "Vite server is ready!"
               pkill -P $$ pnpm
               break
