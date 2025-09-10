@@ -19,22 +19,8 @@
     {
       "idx": 2,
       "version": "7",
-      "when": 1757073599866,
-      "tag": "0002_pink_epoch",
-      "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "7",
-      "when": 1757399704104,
-      "tag": "0003_pale_vulture",
-      "breakpoints": true
-    },
-    {
-      "idx": 4,
-      "version": "7",
-      "when": 1757401165034,
-      "tag": "0004_slimy_jimmy_woo",
+      "when": 1757491284628,
+      "tag": "0002_stormy_juggernaut",
       "breakpoints": true
     }
   ]
