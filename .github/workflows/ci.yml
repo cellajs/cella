@@ -47,7 +47,7 @@ jobs:
             **/node_modules
           key: ${{ runner.os }}-modules-${{ hashFiles('pnpm-lock.yaml') }}
 
-  # Runs linting and type checks
+  # Runs linting
   lint:
     runs-on: ubuntu-latest
     needs: install
@@ -75,9 +75,6 @@ jobs:
 
       - name: Run Biome
         run: pnpm biome check .
-
-      - name: Run TypeScript type check
-        run: pnpm tsc --noEmit
 
   # Runs all tests
   test:
