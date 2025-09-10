@@ -3,7 +3,7 @@ import { CopyCheckIcon, CopyIcon } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { type ApiError, getTotpUri, setupTotp, type SetupTotpData, type SetupTotpResponse } from '~/api.gen';
+import { type ApiError, getTotpUri, type SetupTotpData, type SetupTotpResponse, setupTotp } from '~/api.gen';
 import { useCopyToClipboard } from '~/hooks/use-copy-to-clipboard';
 import { TotpConfirmationForm } from '~/modules/auth/totp-verify-code-form';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';

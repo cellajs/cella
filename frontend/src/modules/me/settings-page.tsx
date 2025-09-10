@@ -70,7 +70,7 @@ const UserSettingsPage = () => {
         triggerRef: deleteButtonRef,
         className: 'md:max-w-xl',
         title: t('common:delete_account'),
-        description: t('common:confirm.delete_account', { email: user.email }),
+        description: t('common:confirm.delete_account', { email: user.email, appName: appConfig.name }),
       },
     );
   };
