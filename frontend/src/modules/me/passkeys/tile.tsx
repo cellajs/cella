@@ -16,7 +16,7 @@ export const PasskeyTile = ({ passkey, handleUnlinkPasskey, isPending }: Passkey
   const { t } = useTranslation();
 
   return (
-    <Card className="w-full">
+    <Card className="w-full first:mt-4">
       <CardContent className="flex !p-3 items-center gap-3">
         {passkey.deviceType === 'desktop' ? <Monitor size={32} strokeWidth={1.25} /> : <Smartphone size={32} strokeWidth={1.25} />}
 
