@@ -2,7 +2,7 @@ import { Link, useRouterState } from '@tanstack/react-router';
 import { MessageCircleQuestion } from 'lucide-react';
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { type ErrorNoticeError, getErrorText, getErrorTitle, handleAskForHelp } from '~/modules/common/error-notice';
+import { type ErrorNoticeError, getErrorInfo, handleAskForHelp } from '~/modules/common/error-notice';
 import { Button, buttonVariants } from '~/modules/ui/button';
 import { Card, CardDescription, CardFooter, CardHeader, CardTitle } from '~/modules/ui/card';
 
@@ -21,12 +21,14 @@ const AuthErrorNotice = ({ error, children }: { error: ErrorNoticeError; childre
 
   const severity = error && 'status' in error ? error.severity : severityFromQuery;
 
+  const { title, message } = getErrorInfo(error, errorFromQuery);
+
   return (
     <Card className="bg-transparent border-0 md:-mx-10 lg:-mx-32">
       <CardHeader className="text-center p-0">
-        <CardTitle className="text-2xl mb-2 justify-center">{getErrorTitle(error, errorFromQuery)}</CardTitle>
+        <CardTitle className="text-2xl mb-2 justify-center">{title}</CardTitle>
         <CardDescription className="text-foreground/80 text-lg flex-col gap-2">
-          <span className="block">{getErrorText(error, errorFromQuery)}</span>
+          <span className="block">{message}</span>
           <span className="block">{severity === 'warn' && t('error:contact_mistake')}</span>
           <span className="block">{severity === 'error' && t('error:try_again_later')}</span>
         </CardDescription>

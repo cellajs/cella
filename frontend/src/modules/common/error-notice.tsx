@@ -26,44 +26,44 @@ export const handleAskForHelp = (ref: RefObject<HTMLButtonElement | null>) => {
   window.Gleap.openConversations();
 };
 
-export const getErrorTitle = (error?: ErrorNoticeError, errorFromQuery?: string): string => {
-  if (errorFromQuery) return i18n.t(`error:${errorFromQuery}`);
+/**
+ * Returns a locale key string based on the error type or query.
+ */
+const getErrorLocaleKey = (error?: ErrorNoticeError, errorFromQuery?: string): string => {
+  if (errorFromQuery) return errorFromQuery;
+  if (!error) return 'error';
 
-  if (!error) return i18n.t('error:error');
+  if (error instanceof SearchParamError) return 'invalid_param';
 
-  if (error instanceof SearchParamError) return i18n.t('error:invalid_param');
+  if (error instanceof ApiError) return error.entityType && error.type ? `resource_${error.type}` : error.type || error.name;
 
-  if (error instanceof ApiError) {
-    const { type, entityType, name } = error;
-    if (entityType && type) return i18n.t(`error:resource_${type}`, { resource: i18n.t(entityType) });
-
-    if (type) return i18n.t(`error:${type}`);
-    if (name) return name;
-  }
-
-  if (error.name) return error.name;
-
-  // Fallback if none of the above matched
-  return i18n.t('error:error');
+  return error.name;
 };
 
-export const getErrorText = (error?: ErrorNoticeError, errorFromQuery?: string) => {
-  if (errorFromQuery) return i18n.t(`error:${errorFromQuery}.text`);
-  if (!error) return i18n.t('error:reported_try_or_contact');
+/**
+ * Returns localized error info (title and message) for a given error.
+ */
+export const getErrorInfo = (error?: ErrorNoticeError, errorFromQuery?: string) => {
+  const localeKey = getErrorLocaleKey(error, errorFromQuery);
 
-  if (error instanceof SearchParamError) return i18n.t('error:invalid_param.text');
+  const translationOptions = {
+    ns: ['appError', 'error'],
+    ...(error instanceof ApiError && error.entityType ? { resource: i18n.t(error.entityType) } : {}),
+  };
 
-  if (error instanceof ApiError) {
-    const { severity, type, entityType, message } = error;
-    // Check if the error has an entityType
-    if (entityType && type) return i18n.t(`error:resource_${type}.text`, { resource: entityType });
-    // If no entityType, check if error has a type
-    if (type) return i18n.t(`error:${type}.text`);
+  const defaultTitle = error?.name || i18n.t('error:error');
+  const defaultMessage = error?.message || i18n.t('error:reported_try_or_contact');
 
-    if (severity === 'info') return message;
-  }
-  if (error.message) return error.message;
-  return i18n.t('error:reported_try_or_contact');
+  // Title translation
+  const title = i18n.t(`error.${localeKey}`, { ...translationOptions, defaultValue: defaultTitle });
+
+  // Message translation with severity check (type-safe)
+  const message =
+    error && 'severity' in error && error.severity === 'info'
+      ? error.message
+      : i18n.t(`error.${localeKey}`, { ...translationOptions, defaultValue: defaultMessage });
+
+  return { title, message };
 };
 
 /**
@@ -76,15 +76,15 @@ export const getErrorText = (error?: ErrorNoticeError, errorFromQuery?: string) 
 const ErrorNotice = ({ error, resetErrorBoundary, level }: ErrorNoticeProps) => {
   const { t } = useTranslation();
   const { location } = useRouterState();
-
-  const contactButtonRef = useRef(null);
-
+  const contactButtonRef = useRef<HTMLButtonElement>(null);
   const { error: errorFromQuery, severity: severityFromQuery } = location.search;
 
-  const dateNow = new Date().toUTCString();
+  const [showError, setShowError] = useState(false);
   const severity = error && 'severity' in error ? error.severity : severityFromQuery;
 
-  const [showError, setShowError] = useState(false);
+  const { title, message } = getErrorInfo(error, errorFromQuery);
+
+  const dateNow = new Date().toUTCString();
 
   const handleReload = () => {
     resetErrorBoundary?.();
@@ -103,9 +103,9 @@ const ErrorNotice = ({ error, resetErrorBoundary, level }: ErrorNoticeProps) => 
         <div className="mt-auto mb-auto">
           <Card className="max-w-[80vw] sm:max-w-[36rem] m-4">
             <CardHeader className="text-center">
-              <CardTitle className="text-2xl mb-2 justify-center">{getErrorTitle(error, errorFromQuery)}</CardTitle>
+              <CardTitle className="text-2xl mb-2 justify-center">{title}</CardTitle>
               <CardDescription className="text-foreground/80 text-lg flex-col gap-2">
-                <span className="block">{getErrorText(error, errorFromQuery)}</span>
+                <span className="block">{message}</span>
                 <span className="block">{severity === 'warn' && t('error:contact_mistake')}</span>
                 <span className="block">{severity === 'error' && t('error:try_again_later')}</span>
               </CardDescription>
