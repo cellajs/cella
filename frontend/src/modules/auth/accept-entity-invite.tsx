@@ -10,7 +10,7 @@ import Spinner from '~/modules/common/spinner';
 import { toaster } from '~/modules/common/toaster/service';
 import { getAndSetMenu } from '~/modules/me/helpers';
 import { buttonVariants, SubmitButton } from '~/modules/ui/button';
-import { getEntityRoute } from '~/nav-config';
+import { getEntityRoute } from '~/routes-resolver';
 import { useUserStore } from '~/store/user';
 import { cn } from '~/utils/cn';
 

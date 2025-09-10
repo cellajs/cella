@@ -11,8 +11,8 @@ import { ResendMembershipInviteButton } from '~/modules/memberships/resend-membe
 import { Button } from '~/modules/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '~/modules/ui/card';
 import { UserCell } from '~/modules/users/user-cell';
-import { getEntityRoute } from '~/nav-config';
 import { queryClient } from '~/query/query-client';
+import { getEntityRoute } from '~/routes-resolver';
 import { useUserStore } from '~/store/user';
 import { dateShort } from '~/utils/date-short';
 

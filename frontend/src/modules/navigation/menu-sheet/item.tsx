@@ -6,7 +6,7 @@ import { useTranslation } from 'react-i18next';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { toaster } from '~/modules/common/toaster/service';
 import type { UserMenuItem } from '~/modules/me/types';
-import { getEntityRoute } from '~/nav-config';
+import { getEntityRoute } from '~/routes-resolver';
 import { useUIStore } from '~/store/ui';
 import { cn } from '~/utils/cn';
 
