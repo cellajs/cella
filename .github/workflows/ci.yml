@@ -207,7 +207,7 @@ jobs:
         run: pnpm exec conventional-changelog -p angular -r 0 -o RELEASE_NOTES.md
 
       - name: Upload draft release notes
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: draft-release-notes
           path: RELEASE_NOTES.md
