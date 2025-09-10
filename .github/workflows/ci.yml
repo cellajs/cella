@@ -140,7 +140,7 @@ jobs:
 
       - name: Start quick and wait for Vite ready
         run: |
-          timeout 120s stdbuf -oL pnpm quick | while IFS= read -r line; do
+          timeout 120s stdbuf -oL pnpm quick 2>&1 | while IFS= read -r line; do
             # Show all output for debugging 
             echo "$line"
             # Remove ANSI escape codes
@@ -148,7 +148,7 @@ jobs:
             # Match "VITE <version> ready in <ms>" anywhere in the line
             if echo "$clean_line" | grep -E ".*VITE [^ ]+ +ready in [0-9]+ ms"; then
               echo ">>> Vite server is ready! <<<"
-              pkill -P $$ pnpm
+              pkill -P $$ pnpm || true
               break
             fi
-          done
+          done || true
