@@ -1,5 +1,3 @@
-import { appConfig } from 'config';
-import type { Context } from 'hono';
 import { AppError } from '#/lib/errors';
 import { type CookieName, deleteAuthCookie, getAuthCookie, setAuthCookie } from '#/modules/auth/helpers/cookie';
 import { getParsedSessionCookie, validateSession } from '#/modules/auth/helpers/session';
@@ -7,6 +5,8 @@ import { isValidRedirectPath } from '#/utils/is-redirect-url';
 import { logEvent } from '#/utils/logger';
 import { TimeSpan } from '#/utils/time-span';
 import { getValidToken } from '#/utils/validate-token';
+import { appConfig } from 'config';
+import type { Context } from 'hono';
 
 export const oauthCookieExpires = new TimeSpan(5, 'm');
 
@@ -97,7 +97,7 @@ export const handleOAuthInvitation = async (ctx: Context) => {
 
   // Determine redirection based on entity presence
   const isMembershipInvite = !!tokenRecord.entityType;
-  const redirectPath = isMembershipInvite ? `/invitation/${tokenRecord.token}?tokenId=${tokenRecord.id}` : appConfig.defaultRedirectPath;
+  const redirectPath = isMembershipInvite ? `/invitation/${tokenRecord.token}` : appConfig.defaultRedirectPath;
 
   // Set authentication cookies
   await Promise.all([
@@ -144,7 +144,7 @@ export const handleOAuthVerify = async (ctx: Context) => {
 
   // Determine redirection based on entity presence
   const isMembershipInvite = !!tokenRecord.entityType;
-  const redirectPath = isMembershipInvite ? `/invitation/${tokenRecord.token}?tokenId=${tokenRecord.id}` : appConfig.defaultRedirectPath;
+  const redirectPath = isMembershipInvite ? `/invitation/${tokenRecord.token}` : appConfig.defaultRedirectPath;
 
   // Set authentication cookies
   await Promise.all([setAuthCookie(ctx, 'oauth-verify-token-id', tokenRecord.id, oauthCookieExpires), setOAuthRedirect(ctx, redirectPath)]);

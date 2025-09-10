@@ -1,6 +1,3 @@
-import { appConfig, type EnabledOAuthProvider } from 'config';
-import { and, eq } from 'drizzle-orm';
-import type { Context } from 'hono';
 import { db } from '#/db/db';
 import { emailsTable } from '#/db/schema/emails';
 import { type OAuthAccountModel, oauthAccountsTable } from '#/db/schema/oauth-accounts';
@@ -19,6 +16,9 @@ import { usersBaseQuery } from '#/modules/users/helpers/select';
 import { isValidRedirectPath } from '#/utils/is-redirect-url';
 import { getIsoDate } from '#/utils/iso-date';
 import { getValidToken } from '#/utils/validate-token';
+import { appConfig, type EnabledOAuthProvider } from 'config';
+import { and, eq } from 'drizzle-orm';
+import type { Context } from 'hono';
 
 /**
  * Retrieves the OAuth redirect path from a cookie, or falls back to a default.
@@ -49,6 +49,9 @@ export const handleOAuthFlow = async (
   oauthAccount: OAuthAccountModel | null = null,
 ): Promise<Response> => {
   const { connectUserId, inviteToken, verifyTokenId } = await getOAuthCookies(ctx);
+  console.log('🚀 ~ handleOAuthFlow ~ verifyTokenId:', verifyTokenId);
+  console.log('🚀 ~ handleOAuthFlow ~ inviteToken:', inviteToken);
+  console.log('🚀 ~ handleOAuthFlow ~ connectUserId:', connectUserId);
 
   // Handle different OAuth flows based on context
   if (connectUserId) return await connectFlow(ctx, providerUser, provider, connectUserId, oauthAccount);
