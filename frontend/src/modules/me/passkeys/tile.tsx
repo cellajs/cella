@@ -4,6 +4,7 @@ import type { Passkey } from '~/modules/me/types';
 import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
 import { Card, CardContent } from '~/modules/ui/card';
+import { useUserStore } from '~/store/user';
 import { dateShort } from '~/utils/date-short';
 
 interface PasskeyTileProps {
@@ -14,6 +15,8 @@ interface PasskeyTileProps {
 
 export const PasskeyTile = ({ passkey, handleUnlinkPasskey, isPending }: PasskeyTileProps) => {
   const { t } = useTranslation();
+
+  const user = useUserStore((state) => state.user);
 
   return (
     <Card className="w-full first:mt-4">
@@ -32,7 +35,7 @@ export const PasskeyTile = ({ passkey, handleUnlinkPasskey, isPending }: Passkey
             <p className="truncate" aria-describedby={t('common:created_at')}>
               {dateShort(passkey.createdAt)}
             </p>
-            <p className="truncate max-lg:hidden" aria-describedby={t('common:os')}>
+            <p className="truncate max-lg:hidden" aria-describedby="OS">
               {passkey.deviceOs}
             </p>
             <p className="truncate max-md:hidden" aria-describedby={t('common:browser')}>
@@ -41,7 +44,14 @@ export const PasskeyTile = ({ passkey, handleUnlinkPasskey, isPending }: Passkey
           </div>
         </div>
 
-        <Button variant="plain" size="sm" className="text-sm ml-auto" disabled={isPending} onClick={() => handleUnlinkPasskey(passkey.id)}>
+        <Button
+          variant="plain"
+          size="sm"
+          className="text-sm ml-auto"
+          loading={isPending}
+          disabled={user.mfaRequired}
+          onClick={() => handleUnlinkPasskey(passkey.id)}
+        >
           <Unlink size={16} />
           <span className="ml-1 max-md:hidden">{t('common:unlink')}</span>
         </Button>

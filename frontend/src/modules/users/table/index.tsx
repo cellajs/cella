@@ -12,7 +12,7 @@ import { usersQueryOptions, useUpdateUserMutation } from '~/modules/users/query'
 import { UsersTableBar } from '~/modules/users/table/bar';
 import { useColumns } from '~/modules/users/table/columns';
 import type { UserWithMemberships } from '~/modules/users/types';
-import { UsersTableRoute, type usersSearchSchema } from '~/routes/system';
+import type { usersSearchSchema } from '~/routes/system';
 
 const LIMIT = appConfig.requestLimits.users;
 
@@ -20,7 +20,7 @@ export type UsersSearch = z.infer<typeof usersSearchSchema>;
 
 const UsersTable = () => {
   const { t } = useTranslation();
-  const { search, setSearch } = useSearchParams<UsersSearch>({ from: UsersTableRoute.id });
+  const { search, setSearch } = useSearchParams<UsersSearch>({ from: '/app-layout/system/users' });
 
   // Update user role
   const { mutate: updateUserRole } = useUpdateUserMutation();

@@ -1,7 +1,7 @@
 import { ChevronDown, Lock } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { LegalNotice } from '~/modules/auth/steps/legal-notice';
-import { useAuthStepsContext } from '~/modules/auth/steps/provider';
+import { useAuthStepsContext } from '~/modules/auth/steps/provider-context';
 import { WaitlistForm } from '~/modules/requests/waitlist-form';
 import { Button } from '~/modules/ui/button';
 

@@ -6,7 +6,7 @@ import PasskeyStrategy from '~/modules/auth/passkey-strategy';
 import { CheckEmailStep } from '~/modules/auth/steps/check-email';
 import { AuthErrorStep } from '~/modules/auth/steps/error-notice';
 import { InviteOnlyStep } from '~/modules/auth/steps/invite-only';
-import { useAuthStepsContext } from '~/modules/auth/steps/provider';
+import { useAuthStepsContext } from '~/modules/auth/steps/provider-context';
 import { SignInStep } from '~/modules/auth/steps/sign-in';
 import { SignUpStep } from '~/modules/auth/steps/sign-up';
 import { WaitlistStep } from '~/modules/auth/steps/waitlist';

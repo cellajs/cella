@@ -12,8 +12,9 @@ import { useUserStore } from '~/store/user';
 
 const Totp = () => {
   const { t } = useTranslation();
+
   const { hasTotp, user } = useUserStore.getState();
-  const { mutate: deleteTotp } = useDeleteTotpMutation();
+  const { mutate: deleteTotp, isPending } = useDeleteTotpMutation();
 
   const triggerRef = useRef<HTMLButtonElement | null>(null);
 
@@ -49,7 +50,7 @@ const Totp = () => {
         </div>
       )}
       {hasTotp ? (
-        <Button key="deleteTotp" type="button" variant="ghost" onClick={handleDeleteTOTP}>
+        <Button key="deleteTotp" type="button" variant="plain" loading={isPending} disabled={user.mfaRequired} onClick={handleDeleteTOTP}>
           <Unlink className="w-4 h-4 mr-2" />
           <span>{t('common:unlink')}</span>
         </Button>

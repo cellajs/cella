@@ -11,11 +11,10 @@ import { type SignInData, type SignInResponse, signIn } from '~/api.gen';
 import { zSignUpData } from '~/api.gen/zod.gen';
 import type { ApiError } from '~/lib/api';
 import { RequestPasswordDialog } from '~/modules/auth/request-password-dialog';
-import { useAuthStepsContext } from '~/modules/auth/steps/provider';
+import { useAuthStepsContext } from '~/modules/auth/steps/provider-context';
 import { Button, SubmitButton } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '~/modules/ui/form';
 import { Input } from '~/modules/ui/input';
-import { AuthenticateRoute } from '~/routes/auth';
 import { useUserStore } from '~/store/user';
 import { defaultOnInvalid } from '~/utils/form-on-invalid';
 
@@ -36,7 +35,7 @@ export const SignInStep = () => {
   const passwordRef = useRef<HTMLInputElement>(null);
 
   const { lastUser, clearUserStore } = useUserStore();
-  const { redirect: encodedRedirect, token } = useSearch({ from: AuthenticateRoute.id });
+  const { redirect: encodedRedirect, token } = useSearch({ from: '/public-layout/auth-layout/auth/authenticate' });
 
   const redirect = decodeURIComponent(encodedRedirect || '');
   const isMobile = window.innerWidth < 640;

@@ -12,16 +12,7 @@ import { AccountSheet } from '~/modules/navigation/account-sheet';
 import { MenuSheet } from '~/modules/navigation/menu-sheet';
 import { AppSearch } from '~/modules/navigation/search';
 import type { EntityRoute } from '~/modules/navigation/types';
-import { OrganizationRoute } from '~/routes/organizations';
-import { UserProfileRoute } from '~/routes/users';
-
-/**
- * Set entity paths so we can dynamically use them in the app
- */
-export const baseEntityRoutes = {
-  user: UserProfileRoute,
-  organization: OrganizationRoute,
-} as const;
+import { baseEntityRoutes } from './routes-config';
 
 /**
  * Declare search nav button action

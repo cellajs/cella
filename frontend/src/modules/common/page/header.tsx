@@ -10,7 +10,7 @@ import type { EntityPage } from '~/modules/entities/types';
 import { useGetEntityBaseData } from '~/modules/entities/use-get-entity-base-data';
 import { Badge } from '~/modules/ui/badge';
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbSeparator } from '~/modules/ui/breadcrumb';
-import { baseEntityRoutes } from '~/nav-config';
+import { baseEntityRoutes } from '~/routes-config';
 
 type PageHeaderProps = Omit<PageCoverProps, 'id' | 'url'> & {
   entity: EntityPage | UserBaseSchema;

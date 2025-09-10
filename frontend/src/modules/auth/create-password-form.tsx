@@ -17,7 +17,6 @@ import { toaster } from '~/modules/common/toaster/service';
 import { Button, SubmitButton } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '~/modules/ui/form';
 import { Input } from '~/modules/ui/input';
-import { CreatePasswordWithTokenRoute } from '~/routes/auth';
 import { defaultOnInvalid } from '~/utils/form-on-invalid';
 
 const PasswordStrength = lazy(() => import('~/modules/auth/password-strength'));
@@ -31,7 +30,7 @@ const CreatePasswordForm = () => {
 
   const requestButtonRef = useRef(null);
 
-  const { token } = useParams({ from: CreatePasswordWithTokenRoute.id });
+  const { token } = useParams({ from: '/public-layout/auth-layout/auth/create-password/$token' });
 
   const { data, isLoading, error } = useCheckToken('password_reset', token);
   const isMobile = window.innerWidth < 640;

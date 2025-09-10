@@ -12,7 +12,7 @@ import { requestsQueryOptions } from '~/modules/requests/query';
 import { RequestsTableBar } from '~/modules/requests/table/bar';
 import { useColumns } from '~/modules/requests/table/columns';
 import type { Request } from '~/modules/requests/types';
-import { RequestsTableRoute, type requestSearchSchema } from '~/routes/system';
+import type { requestSearchSchema } from '~/routes/system';
 
 const LIMIT = appConfig.requestLimits.requests;
 
@@ -20,7 +20,7 @@ export type RequestsSearch = z.infer<typeof requestSearchSchema>;
 
 const RequestsTable = () => {
   const { t } = useTranslation();
-  const { search, setSearch } = useSearchParams<RequestsSearch>({ from: RequestsTableRoute.id });
+  const { search, setSearch } = useSearchParams<RequestsSearch>({ from: '/app-layout/system/requests' });
 
   // Table state
   const { q, sort, order } = search;

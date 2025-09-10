@@ -8,7 +8,7 @@ import type { z } from 'zod';
 import { type CheckEmailData, type CheckEmailResponse, checkEmail } from '~/api.gen';
 import { zCheckEmailData } from '~/api.gen/zod.gen';
 import type { ApiError } from '~/lib/api';
-import { useAuthStepsContext } from '~/modules/auth/steps/provider';
+import { useAuthStepsContext } from '~/modules/auth/steps/provider-context';
 import type { AuthStep } from '~/modules/auth/types';
 import { SubmitButton } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '~/modules/ui/form';

@@ -5,7 +5,6 @@ import { useTranslation } from 'react-i18next';
 import { signOut } from '~/api.gen';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { toaster } from '~/modules/common/toaster/service';
-import { SignOutRoute } from '~/routes/auth';
 import { flushStores } from '~/utils/flush-stores';
 
 // Sign out user and clear all stores and query cache
@@ -13,7 +12,7 @@ export const SignOut = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
 
-  const { force } = useSearch({ from: SignOutRoute.id });
+  const { force } = useSearch({ from: '/public-layout/sign-out' });
 
   const signOutTriggeredRef = useRef(false);
 

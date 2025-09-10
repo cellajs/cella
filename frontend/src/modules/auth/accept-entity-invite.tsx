@@ -11,7 +11,6 @@ import { toaster } from '~/modules/common/toaster/service';
 import { getAndSetMenu } from '~/modules/me/helpers';
 import { buttonVariants, SubmitButton } from '~/modules/ui/button';
 import { getEntityRoute } from '~/nav-config';
-import { AcceptEntityInviteRoute } from '~/routes/auth';
 import { useUserStore } from '~/store/user';
 import { cn } from '~/utils/cn';
 
@@ -20,7 +19,7 @@ const AcceptEntityInvite = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
 
-  const { token } = useParams({ from: AcceptEntityInviteRoute.id });
+  const { token } = useParams({ from: '/public-layout/auth-layout/invitation/$token' });
 
   const { user: currentUser } = useUserStore();
 

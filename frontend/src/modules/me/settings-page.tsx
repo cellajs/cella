@@ -18,6 +18,7 @@ import { MfaSwitch } from '~/modules/me/mfa/switch';
 import PasskeysList from '~/modules/me/passkeys/list';
 import SessionsList from '~/modules/me/sessions';
 import Totp from '~/modules/me/totp';
+import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/modules/ui/card';
 import UpdateUserForm from '~/modules/users/update-user-form';
@@ -134,7 +135,12 @@ const UserSettingsPage = () => {
             <CardContent className="text-sm">
               {/* MFA */}
               <HelpText content={t('common:mfa.text')}>
-                <p className="font-semibold">{t('common:mfa')}</p>
+                <div className="flex">
+                  <p className="font-semibold">{t('common:mfa')}</p>
+                  <Badge size="sm" variant="outline" className="ml-2 uppercase text-[10px] py-0 font-normal text-green-600 border-green-600">
+                    {t('common:recommended')}
+                  </Badge>
+                </div>
               </HelpText>
               <MfaSwitch />
 

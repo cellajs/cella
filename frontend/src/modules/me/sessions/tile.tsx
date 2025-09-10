@@ -1,6 +1,5 @@
-import { Monitor, Smartphone, ZapOff } from 'lucide-react';
+import { Monitor, ShieldCheck, Smartphone, ZapOff } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { SessionBadge } from '~/modules/me/sessions/badge';
 import type { Session } from '~/modules/me/types';
 import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
@@ -30,7 +29,12 @@ export const SessionTile = ({ session, handleDeleteSessions, isPending }: Sessio
                 {t('common:current')}
               </Badge>
             )}
-            <SessionBadge sessionType={session.type} />
+            {session.type === 'mfa' && (
+              <Badge size="sm" variant="outline" className="py-0 flex items-center gap-1 text-green-600 border-green-600">
+                <ShieldCheck size={12} />
+                {t('common:mfa_short')}
+              </Badge>
+            )}
           </div>
 
           <div className="flex flex-wrap items-start gap-x-2 md:gap-x-5 gap-y-1 font-light text-sm opacity-50">

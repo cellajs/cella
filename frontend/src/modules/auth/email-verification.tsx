@@ -1,12 +1,12 @@
 import { useParams } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { LegalNotice } from '~/modules/auth/steps/legal-notice';
-import { EmailVerificationRoute } from '~/routes/auth';
 
 const EmailVerification = () => {
-  const { reason } = useParams({ from: EmailVerificationRoute.id });
-
   const { t } = useTranslation();
+
+  const { reason } = useParams({ from: '/public-layout/auth-layout/auth/email-verification/$reason' });
+
   return (
     <div className="text-center">
       <h1 className="text-2xl">{t('common:almost_there')}</h1>

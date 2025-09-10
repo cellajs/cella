@@ -5,7 +5,6 @@ import { useTranslation } from 'react-i18next';
 import type { AuthStep } from '~/modules/auth/types';
 import { toaster } from '~/modules/common/toaster/service';
 import { Button } from '~/modules/ui/button';
-import { AuthenticateRoute } from '~/routes/auth';
 import { useUIStore } from '~/store/ui';
 
 export const mapOAuthProviders = [
@@ -24,7 +23,7 @@ type OAuthProvider = (typeof mapOAuthProviders)[number];
 const OAuthProviders = ({ authStep = 'signIn' }: { authStep: AuthStep }) => {
   const { t } = useTranslation();
   const mode = useUIStore((state) => state.mode);
-  const { token, redirect } = useSearch({ from: AuthenticateRoute.id });
+  const { token, redirect } = useSearch({ from: '/public-layout/auth-layout/auth/authenticate' });
 
   const [loadingProvider, setLoadingProvider] = useState<EnabledOAuthProvider | null>(null);
 

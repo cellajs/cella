@@ -3,11 +3,10 @@ import { ChevronDown } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { signOut } from '~/api.gen';
 import PasskeyStrategy from '~/modules/auth/passkey-strategy';
-import { useAuthStepsContext } from '~/modules/auth/steps/provider';
+import { useAuthStepsContext } from '~/modules/auth/steps/provider-context';
 import { TotpStrategy } from '~/modules/auth/totp-strategy';
 import { toaster } from '~/modules/common/toaster/service';
 import { Button } from '~/modules/ui/button';
-import { AuthenticateRoute } from '~/routes/auth';
 
 /**
  * Handles multifactor authentication step in the authentication process.
@@ -24,7 +23,7 @@ export const MfaStep = () => {
     } catch (error) {
     } finally {
       resetSteps();
-      navigate({ to: AuthenticateRoute.to, replace: true });
+      navigate({ to: '/auth/authenticate', replace: true });
     }
   };
 

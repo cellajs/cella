@@ -1,28 +1,17 @@
 import { useMatchRoute, useSearch } from '@tanstack/react-router';
-import { createContext, type ReactNode, useContext, useEffect, useState } from 'react';
+import { type ReactNode, useEffect, useState } from 'react';
 import type { ApiError } from '~/lib/api';
-import type { AuthStep, TokenData } from '~/modules/auth/types';
+import type { AuthStep } from '~/modules/auth/types';
 import { useCheckToken } from '~/modules/auth/use-token-check';
-import { AuthenticateRoute, MfaRoute } from '~/routes/auth';
 import { useUserStore } from '~/store/user';
-
-interface AuthContextProps {
-  step: AuthStep;
-  email: string;
-  authError: ApiError | null;
-  tokenData?: TokenData;
-  setStep: (step: AuthStep, email: string, error?: ApiError) => void;
-  resetSteps: () => void;
-}
-
-const AuthContext = createContext<AuthContextProps | undefined>(undefined);
+import { AuthContext } from './provider-context';
 
 export const AuthStepsProvider = ({ children }: { children: ReactNode }) => {
   const matchRoute = useMatchRoute();
   const { lastUser } = useUserStore();
-  const { token } = useSearch({ from: AuthenticateRoute.id });
+  const { token } = useSearch({ from: '/public-layout/auth-layout/auth/authenticate' });
 
-  const isMfaRoute = !!matchRoute({ to: MfaRoute.to });
+  const isMfaRoute = !!matchRoute({ to: '/auth/authenticate/mfa-confirmation' });
 
   // Initialize email and step
   const initEmail = (!token && lastUser?.email) || '';
@@ -59,10 +48,4 @@ export const AuthStepsProvider = ({ children }: { children: ReactNode }) => {
   }, [tokenData]);
 
   return <AuthContext.Provider value={{ step, email, authError, tokenData, setStep, resetSteps }}>{children}</AuthContext.Provider>;
-};
-
-export const useAuthStepsContext = () => {
-  const context = useContext(AuthContext);
-  if (!context) throw new Error('useAuthStepsContext must be used within an AuthProvider');
-  return context;
 };

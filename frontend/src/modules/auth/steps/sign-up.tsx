@@ -11,11 +11,10 @@ import { type SignUpData, type SignUpResponse, type SignUpWithTokenData, type Si
 import { zSignUpData } from '~/api.gen/zod.gen';
 import type { ApiError } from '~/lib/api';
 import { LegalNotice } from '~/modules/auth/steps/legal-notice';
-import { useAuthStepsContext } from '~/modules/auth/steps/provider';
+import { useAuthStepsContext } from '~/modules/auth/steps/provider-context';
 import { Button, SubmitButton } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '~/modules/ui/form';
 import { Input } from '~/modules/ui/input';
-import { AuthenticateRoute } from '~/routes/auth';
 import { defaultOnInvalid } from '~/utils/form-on-invalid';
 
 const PasswordStrength = lazy(() => import('~/modules/auth/password-strength'));
@@ -35,7 +34,7 @@ export const SignUpStep = () => {
 
   const { email, tokenData, setStep, resetSteps } = useAuthStepsContext();
 
-  const { token } = useSearch({ from: AuthenticateRoute.id });
+  const { token } = useSearch({ from: '/public-layout/auth-layout/auth/authenticate' });
 
   const isMobile = window.innerWidth < 640;
 
