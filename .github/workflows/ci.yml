@@ -180,3 +180,34 @@ jobs:
               break
             fi
           done || true
+
+  # Generates draft release notes (for testing only)
+  draft-release-notes:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0 # needed so changelog sees full commit history
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: 24
+
+      - name: Install conventional-changelog
+        run: pnpm add -D conventional-changelog-cli
+
+      - name: Generate draft release notes
+        run: pnpm exec conventional-changelog -p angular -r 0 -o RELEASE_NOTES.md
+
+      - name: Upload draft release notes
+        uses: actions/upload-artifact@v3
+        with:
+          name: draft-release-notes
+          path: RELEASE_NOTES.md
