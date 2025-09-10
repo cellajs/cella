@@ -42,16 +42,11 @@ export const getOAuthRedirectPath = async (ctx: Context): Promise<string> => {
  * @param oauthAccount - The linked OAuth account, if one exists.
  * @returns A redirect response.
  */
-export const handleOAuthFlow = async (
-  ctx: Context,
-  providerUser: TransformedUser,
-  provider: EnabledOAuthProvider,
-  oauthAccount: OAuthAccountModel | null = null,
-): Promise<Response> => {
+export const handleOAuthFlow = async (ctx: Context, providerUser: TransformedUser, provider: EnabledOAuthProvider): Promise<Response> => {
+  // Restore Context: linked oauthAccount, invitation or account linking
+  const oauthAccount = await getOAuthAccount(providerUser.id, provider, providerUser.email);
+
   const { connectUserId, inviteToken, verifyTokenId } = await getOAuthCookies(ctx);
-  console.log('🚀 ~ handleOAuthFlow ~ verifyTokenId:', verifyTokenId);
-  console.log('🚀 ~ handleOAuthFlow ~ inviteToken:', inviteToken);
-  console.log('🚀 ~ handleOAuthFlow ~ connectUserId:', connectUserId);
 
   // Handle different OAuth flows based on context
   if (connectUserId) return await connectFlow(ctx, providerUser, provider, connectUserId, oauthAccount);
@@ -267,7 +262,7 @@ const verifyFlow = async (
  * @param providerUserEmail - Email address associated with the OAuth account.
  * @returns The matched OAuth account or null if not found.
  */
-export const getOAuthAccount = async (
+const getOAuthAccount = async (
   providerUserId: Provider['userId'],
   providerId: Provider['id'],
   providerUserEmail: UserModel['email'],

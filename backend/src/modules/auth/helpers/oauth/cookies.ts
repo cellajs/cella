@@ -1,5 +1,5 @@
 import { AppError } from '#/lib/errors';
-import { type CookieName, deleteAuthCookie, getAuthCookie, setAuthCookie } from '#/modules/auth/helpers/cookie';
+import { deleteAuthCookie, getAuthCookie, oauthCookies, setAuthCookie } from '#/modules/auth/helpers/cookie';
 import { getParsedSessionCookie, validateSession } from '#/modules/auth/helpers/session';
 import { isValidRedirectPath } from '#/utils/is-redirect-url';
 import { logEvent } from '#/utils/logger';
@@ -32,17 +32,7 @@ export const createOAuthSession = async (ctx: Context, provider: string, url: UR
 
 // Clear oauth session
 export const clearOAuthSession = (ctx: Context) => {
-  const cookies: CookieName[] = [
-    'oauth-state',
-    'oauth-code-verifier',
-    'oauth-redirect',
-    'oauth-connect-user-id',
-    'oauth-invite-token-id',
-    'oauth-invite-token-type',
-  ];
-  for (const cookie of cookies) {
-    deleteAuthCookie(ctx, cookie);
-  }
+  for (const cookie of oauthCookies) deleteAuthCookie(ctx, cookie);
 };
 
 /**

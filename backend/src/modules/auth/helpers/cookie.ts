@@ -1,24 +1,23 @@
+import type { TimeSpan } from '#/utils/time-span';
 import { appConfig } from 'config';
 import type { Context } from 'hono';
 import { deleteCookie, getCookie, getSignedCookie, setCookie, setSignedCookie } from 'hono/cookie';
 import type { CookieOptions } from 'hono/utils/cookie';
-import type { TimeSpan } from '#/utils/time-span';
 import { env } from '../../../env';
 
 const isProduction = appConfig.mode === 'production';
 
-export type CookieName =
-  | 'session'
-  | 'confirm-mfa'
-  | 'totp-key'
-  | 'passkey-challenge'
-  | 'oauth-state'
-  | 'oauth-code-verifier'
-  | 'oauth-redirect'
-  | 'oauth-connect-user-id'
-  | 'oauth-invite-token-id'
-  | 'oauth-invite-token-type'
-  | 'oauth-verify-token-id';
+export const oauthCookies = [
+  'oauth-state',
+  'oauth-code-verifier',
+  'oauth-redirect',
+  'oauth-connect-user-id',
+  'oauth-invite-token-id',
+  'oauth-invite-token-type',
+  'oauth-verify-token-id',
+] as const;
+
+export type CookieName = 'session' | 'confirm-mfa' | 'totp-key' | 'passkey-challenge' | (typeof oauthCookies)[number];
 
 /**
  * Sets an authentication cookie.

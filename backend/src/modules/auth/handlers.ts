@@ -25,7 +25,7 @@ import {
   handleOAuthVerify,
   setOAuthRedirect,
 } from '#/modules/auth/helpers/oauth/cookies';
-import { getOAuthAccount, handleOAuthFlow } from '#/modules/auth/helpers/oauth/index';
+import { handleOAuthFlow } from '#/modules/auth/helpers/oauth/index';
 import {
   githubAuth,
   type GithubUserEmailProps,
@@ -623,10 +623,7 @@ const authRouteHandlers = app
       const githubUserEmails = (await githubUserEmailsResponse.json()) as GithubUserEmailProps[];
       const providerUser = transformGithubUserData(githubUser, githubUserEmails);
 
-      // Restore Context: linked oauthAccount, invitation or account linking
-      const oauthAccount = await getOAuthAccount(providerUser.id, strategy, providerUser.email);
-
-      return await handleOAuthFlow(ctx, providerUser, strategy, oauthAccount);
+      return await handleOAuthFlow(ctx, providerUser, strategy);
     } catch (error) {
       if (error instanceof AppError) throw error;
 
@@ -675,10 +672,7 @@ const authRouteHandlers = app
       const googleUser = (await response.json()) as GoogleUserProps;
       const providerUser = transformSocialUserData(googleUser);
 
-      // Restore Context: linked oauthAccount, invitation or account linking
-      const oauthAccount = await getOAuthAccount(providerUser.id, strategy, providerUser.email);
-
-      return await handleOAuthFlow(ctx, providerUser, strategy, oauthAccount);
+      return await handleOAuthFlow(ctx, providerUser, strategy);
     } catch (error) {
       if (error instanceof AppError) throw error;
 
@@ -727,10 +721,7 @@ const authRouteHandlers = app
       const microsoftUser = (await response.json()) as MicrosoftUserProps;
       const providerUser = transformSocialUserData(microsoftUser);
 
-      // Restore Context: linked oauthAccount, invitation or account linking
-      const oauthAccount = await getOAuthAccount(providerUser.id, strategy, providerUser.email);
-
-      return await handleOAuthFlow(ctx, providerUser, strategy, oauthAccount);
+      return await handleOAuthFlow(ctx, providerUser, strategy);
     } catch (error) {
       if (error instanceof AppError) throw error;
 
