@@ -73,7 +73,7 @@ const UpdateOrganizationDetailsForm = ({ organization, callback, sheet: isSheet 
             control={form.control}
             name="welcomeText"
             label={t('common:introduction')}
-            BaseBlockNoteProps={{
+            baseBlockNoteProps={{
               id: 'blocknote-welcome',
               trailingBlock: false,
               className:

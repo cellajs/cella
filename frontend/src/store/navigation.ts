@@ -20,8 +20,8 @@ interface NavigationStoreState {
   keepOpenPreference: boolean; // User Preference for keeping the menu open
   toggleKeepOpenPreference: (status: boolean) => void; // Toggles keep-open preference
 
-  hideSubmenu: boolean; // Hides submenu state(for Menu sheet)
-  toggleHideSubmenu: (status: boolean) => void; // Toggles submenu visibility
+  detailedMenu: boolean; // Hides submenu state(for Menu sheet)
+  toggleDetailedMenu: (status: boolean) => void; // Toggles submenu visibility
 
   activeSections: Record<string, boolean> | null; // Tracks expanded/collapsed entities sections and their archived sections
   toggleSection: (section: string) => void; // Toggle a section expanded/collapsed state
@@ -45,7 +45,15 @@ const initialMenuState: UserMenu = appConfig.menuStructure.reduce((acc, { entity
 interface InitStore
   extends Pick<
     NavigationStoreState,
-    'recentSearches' | 'keepMenuOpen' | 'hideSubmenu' | 'navLoading' | 'focusView' | 'menu' | 'activeSections' | 'navSheetOpen' | 'keepOpenPreference'
+    | 'recentSearches'
+    | 'keepMenuOpen'
+    | 'detailedMenu'
+    | 'navLoading'
+    | 'focusView'
+    | 'menu'
+    | 'activeSections'
+    | 'navSheetOpen'
+    | 'keepOpenPreference'
   > {}
 
 // Default state values
@@ -54,7 +62,7 @@ const initStore: InitStore = {
   navSheetOpen: null,
   keepMenuOpen: window.innerWidth > 1280, // Auto-open menu on wider screens
   keepOpenPreference: false,
-  hideSubmenu: true,
+  detailedMenu: false,
   navLoading: false,
   focusView: false,
   menu: initialMenuState,
@@ -90,9 +98,9 @@ export const useNavigationStore = create<NavigationStoreState>()(
               state.keepOpenPreference = status;
             });
           },
-          toggleHideSubmenu: (status) => {
+          toggleDetailedMenu: (status) => {
             set((state) => {
-              state.hideSubmenu = status;
+              state.detailedMenu = status;
             });
           },
           setNavLoading: (status) => {
@@ -129,12 +137,12 @@ export const useNavigationStore = create<NavigationStoreState>()(
             }),
         }),
         {
-          version: 7,
+          version: 8,
           name: `${appConfig.slug}-navigation`,
           partialize: (state) => ({
             menu: state.menu,
             keepOpenPreference: state.keepOpenPreference,
-            hideSubmenu: state.hideSubmenu,
+            detailedMenu: state.detailedMenu,
             activeSections: state.activeSections,
             recentSearches: state.recentSearches,
           }),

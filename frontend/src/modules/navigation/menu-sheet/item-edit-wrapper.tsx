@@ -1,6 +1,6 @@
+import { attachClosestEdge, type Edge, extractClosestEdge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge';
 import { combine } from '@atlaskit/pragmatic-drag-and-drop/combine';
 import { draggable, dropTargetForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
-import { attachClosestEdge, type Edge, extractClosestEdge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge';
 import type { EntityType } from 'config';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { DropIndicator } from '~/modules/common/drop-indicator';
@@ -18,7 +18,7 @@ interface MenuItemEditWrapperProps {
   item: UserMenuItem;
   unarchiveItems: UserMenuItem[];
   isArchived: boolean;
-  hideSubmenu: boolean;
+  detailedMenu: boolean;
   options?: MenuSectionOptions;
   isSubmenuArchivedVisible?: boolean;
   toggleSubmenuVisibility: (id: string) => void;
@@ -30,7 +30,7 @@ export const MenuItemEditWrapper = ({
   isArchived,
   options,
   isSubmenuArchivedVisible = false,
-  hideSubmenu,
+  detailedMenu,
   toggleSubmenuVisibility,
 }: MenuItemEditWrapperProps) => {
   const dragRef = useRef(null);
@@ -81,7 +81,7 @@ export const MenuItemEditWrapper = ({
     <li data-submenu={!!item.submenu} className="group/menuOptions relative my-1">
       <div ref={dragRef}>
         <MenuItemEdit item={item} icon={options?.icon} />
-        {!item.membership.archived && !!item.submenu?.length && !hideSubmenu && (
+        {!item.membership.archived && !!item.submenu?.length && detailedMenu && (
           <div
             data-has-archived={!!item.submenu.filter((i) => i.membership.archived).length}
             data-submenu={true}
