@@ -3,7 +3,7 @@ name: CI
 # Controls which events and branches will trigger the workflow
 on:
   push:
-    branches: [ main, git-actions ]
+    branches: [ main ]
   pull_request:
     branches: [ main, development ]
 
