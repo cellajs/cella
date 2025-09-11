@@ -96,7 +96,7 @@ Check it out at [localhost:3000](http://localhost:3000)! Generated API docs can 
 
 We use GitHub Actions to automatically create releases when version tags are pushed.
 
-1. Make sure your changes are merged into the `main` branch.  
+1. Make sure your changes are merged.
 2. Bump the version with pnpm (this also creates a Git tag):  
 
 ```sh
@@ -104,7 +104,7 @@ We use GitHub Actions to automatically create releases when version tags are pus
 ```
 3. Push the commit and the tag:
 ```sh
-  git push origin main --follow-tags
+  git push origin --follow-tags
 ```
 Thats it, the workflow will generate RELEASE_NOTES.md from commit messages and publish a GitHub Release automatically.
 
