@@ -7,7 +7,7 @@ import { useNavigationStore } from '~/store/navigation';
 
 export const MenuSheetItemsEdit = ({ data, isArchived, options }: { data: UserMenuItem[]; options?: MenuSectionOptions; isArchived: boolean }) => {
   const { t } = useTranslation();
-  const { hideSubmenu } = useNavigationStore();
+  const { detailedMenu } = useNavigationStore();
   const [submenuVisibility, setSubmenuVisibility] = useState<Record<string, boolean>>({});
   const entityType = data[0].entityType;
 
@@ -33,7 +33,7 @@ export const MenuSheetItemsEdit = ({ data, isArchived, options }: { data: UserMe
       item={item}
       options={options}
       isArchived={isArchived}
-      hideSubmenu={hideSubmenu}
+      detailedMenu={detailedMenu}
       isSubmenuArchivedVisible={submenuVisibility[item.id]}
       toggleSubmenuVisibility={toggleSubmenuVisibility}
     />
