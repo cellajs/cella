@@ -1,8 +1,8 @@
 import { exec, execFile } from 'child_process';
 import { promisify } from 'util';
+import { existsSync } from 'fs';
 
 const execFileAsync = promisify(execFile);
-
 const execAsync = promisify(exec);
 
 export async function runGitCommand(command: string, repoPath: string): Promise<string> {
@@ -18,12 +18,22 @@ export async function gitFetch(repoPath: string, remoteName: string): Promise<st
   return runGitCommand(`fetch ${remoteName}`, repoPath);
 }
 
-export async function gitMerge(repoPath: string, branchName: string): Promise<string> {
-  return runGitCommand(`merge ${branchName}`, repoPath);
+export async function gitMerge(repoPath: string, branchName: string, options: { noCommit?: boolean, noEdit?: boolean } = {}): Promise<string> {
+  const noCommitFlag = options.noCommit ? '--no-commit' : '';
+  const noEditFlag = options.noEdit ? '--no-edit' : '';
+  return runGitCommand(`merge ${branchName} ${noEditFlag} ${noCommitFlag}`, repoPath);
 }
 
 export async function gitAdd(repoPath: string, filePath: string): Promise<string> {
   return runGitCommand(`add "${filePath}"`, repoPath);
+}
+
+/**
+ * Get a list of files currently in conflict (unmerged) in the given repo.
+ * Returns raw stdout from git (one file per line)
+ */
+export async function gitDiffUnmerged(repoPath: string): Promise<string> {
+  return runGitCommand('diff --name-only --diff-filter=U', repoPath);
 }
 
 /**
@@ -64,4 +74,8 @@ export async function gitShowFileAtCommit(repoPath: string, commitSha: string, f
 export async function gitMergeFile(oursPath: string, basePath: string, theirsPath: string): Promise<void> {
   // Throws if merge conflicts occur (exit code 1)
   await execFileAsync('git', ['merge-file', '--quiet', oursPath, basePath, theirsPath]);
+}
+
+export function isMergeInProgress(repoPath: string): boolean {
+  return existsSync(`${repoPath}/.git/MERGE_HEAD`);
 }

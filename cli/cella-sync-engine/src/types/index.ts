@@ -14,3 +14,9 @@ export type FileAnalysis = {
   mergeCheck?: MergeCheck;
   zwizzle?: ZwizzleAnalysis;
 }
+
+export interface MergeResult {
+  status: 'success' | 'conflict' | 'error';
+  error?: Error;
+  isMerging?: boolean; // Indicates whether a merge is still in progress (e.g., conflicts unresolved)
+}
