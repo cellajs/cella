@@ -4,23 +4,21 @@ import { useForm, useFormState } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import type z from 'zod';
 import { zActivateTotpData } from '~/api.gen/zod.gen';
-import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { Button, SubmitButton } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
-import { Input } from '~/modules/ui/input';
-import { cn } from '~/utils/cn';
 import { defaultOnInvalid } from '~/utils/form-on-invalid';
+import { InputOTP, InputOTPGroup, InputOTPSlot } from '../ui/totp';
 
 const formSchema = zActivateTotpData.shape.body;
 type FormValues = z.infer<typeof formSchema>;
 
 interface Props {
-  formClassName?: string;
-  label?: string;
   onSubmit: (data: FormValues) => void;
+  onCancel: () => void;
+  label?: string;
 }
 
-export const TotpConfirmationForm = ({ formClassName, label, onSubmit }: Props) => {
+export const TotpConfirmationForm = ({ onSubmit, onCancel, label }: Props) => {
   const { t } = useTranslation();
 
   const form = useForm<FormValues>({
@@ -31,43 +29,54 @@ export const TotpConfirmationForm = ({ formClassName, label, onSubmit }: Props) 
   const { isValid, isDirty } = useFormState({ control: form.control });
 
   const handleSubmit = (data: FormValues) => {
-    useDialoger.getState().remove('mfa-confirmation');
     onSubmit(data);
+    onCancel();
+  };
+
+  const clearOrCancel = () => {
+    if (isDirty) form.reset();
+    else onCancel();
   };
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(handleSubmit, defaultOnInvalid)} className={cn('flex flex-col gap-4 items-center', formClassName)}>
+      <form onSubmit={form.handleSubmit(handleSubmit, defaultOnInvalid)}>
         <FormField
           control={form.control}
           name="code"
           render={({ field: { value, ...rest } }) => (
-            <FormItem name="code">
-              {label && <FormLabel className="mb-1">{label}</FormLabel>}
+            <FormItem name="code" className="mb-6">
+              {label && <FormLabel className="mb-1 text-center">{label}</FormLabel>}
               <FormControl>
-                <Input
-                  className="text-center"
-                  autoComplete="off"
-                  maxLength={appConfig.totpConfig.digits}
-                  type="text"
-                  pattern="\d*"
-                  inputMode="numeric"
+                <InputOTP
                   value={value || ''}
                   {...rest}
-                />
+                  pattern="\d*"
+                  autoFocus
+                  inputMode="numeric"
+                  containerClassName="justify-center"
+                  maxLength={appConfig.totpConfig.digits}
+                >
+                  <InputOTPGroup>
+                    {Array.from({ length: appConfig.totpConfig.digits }).map((_, index) => (
+                      // biome-ignore lint/suspicious/noArrayIndexKey: static list
+                      <InputOTPSlot key={index} inputMode="numeric" index={index} className="sm:h-12 sm:w-10 text-lg" />
+                    ))}
+                  </InputOTPGroup>
+                </InputOTP>
               </FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
 
-        <div className="flex flex-row gap-2">
-          <SubmitButton size="sm" variant="darkSuccess" disabled={!isValid} loading={false}>
+        <div className="w-full flex flex-col items-stretch gap-2">
+          <SubmitButton disabled={!isValid} loading={false}>
             {t('common:confirm')}
           </SubmitButton>
 
-          <Button size="sm" type="reset" variant="secondary" disabled={!isDirty} onClick={() => form.reset()}>
-            {t('common:clear')}
+          <Button type="reset" variant="secondary" onClick={clearOrCancel}>
+            {isDirty ? t('common:clear') : t('common:cancel')}
           </Button>
         </div>
       </form>

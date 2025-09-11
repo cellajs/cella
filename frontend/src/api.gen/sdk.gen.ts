@@ -186,9 +186,6 @@ import type {
   UpdateAttachmentData,
   UpdateAttachmentResponses,
   UpdateAttachmentErrors,
-  GetAttachmentCoverData,
-  GetAttachmentCoverResponses,
-  GetAttachmentCoverErrors,
   RedirectToAttachmentData,
   RedirectToAttachmentResponses,
   RedirectToAttachmentErrors,
@@ -2046,33 +2043,6 @@ export const updateAttachment = <ThrowOnError extends boolean = true>(options: O
       'Content-Type': 'application/json',
       ...options.headers,
     },
-  });
-};
-
-/**
- * Get attachment cover
- * 🌐 Public access
- *
- * Returns a preview or cover image for a file, when available (e.g. first page of a PDF or image thumbnail).
- *
- * **GET /{orgIdOrSlug}/attachments/{id}/cover** ·· [getAttachmentCover](http://localhost:4000/docs#tag/attachments/get/{orgIdOrSlug}/attachments/{id}/cover) ·· _attachments_
- *
- * @param {getAttachmentCoverData} options
- * @param {string} options.path.id - `string`
- * @returns Possible status codes: 200, 400, 401, 403, 404, 429
- */
-export const getAttachmentCover = <ThrowOnError extends boolean = true>(options: Options<GetAttachmentCoverData, ThrowOnError>) => {
-  return (options.client ?? client).get<GetAttachmentCoverResponses, GetAttachmentCoverErrors, ThrowOnError, 'data'>({
-    responseStyle: 'data',
-    security: [
-      {
-        in: 'cookie',
-        name: 'cella-development-session-v1',
-        type: 'apiKey',
-      },
-    ],
-    url: '/{orgIdOrSlug}/attachments/{id}/cover',
-    ...options,
   });
 };
 

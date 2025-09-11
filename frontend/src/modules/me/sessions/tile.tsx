@@ -37,7 +37,7 @@ export const SessionTile = ({ session, handleDeleteSessions, isPending }: Sessio
             )}
           </div>
 
-          <div className="flex flex-wrap items-start gap-x-2 md:gap-x-5 gap-y-1 font-light text-sm opacity-50">
+          <div className="flex flex-wrap items-start gap-x-2 md:gap-x-5 gap-y-1 font-light text-sm text-muted-foreground">
             <p className="truncate" aria-describedby={t('common:period')}>
               {dateShort(session.createdAt)} - {dateShort(session.expiresAt)}
             </p>

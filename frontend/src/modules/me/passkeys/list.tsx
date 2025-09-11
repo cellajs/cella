@@ -24,7 +24,6 @@ const PasskeysList = () => {
   const handleUnlinkPasskey = (id: string) => {
     if (!onlineManager.isOnline()) return toaster(t('common:action.offline.text'), 'warning');
     if (user.mfaRequired && passkeys.length <= 1) return toaster(t('common:unlink_mfa_last', { method: 'the last passkey' }), 'info');
-
     deletePasskey(id);
   };
   return (
@@ -37,10 +36,18 @@ const PasskeysList = () => {
             : t('common:create_resource', { resource: t('common:passkey').toLowerCase() })}
         </Button>
       </div>
-      <div className="flex flex-col gap-2">
+      <div className="flex flex-col gap-2 has-first:mt-4">
         <ExpandableList
           items={passkeys}
-          renderItem={(passkey) => <PasskeyTile passkey={passkey} key={passkey.id} handleUnlinkPasskey={handleUnlinkPasskey} isPending={isPending} />}
+          renderItem={(passkey) => (
+            <PasskeyTile
+              passkey={passkey}
+              key={passkey.id}
+              handleUnlinkPasskey={handleUnlinkPasskey}
+              isPending={isPending}
+              onlyPasskeyLeft={passkeys.length === 1}
+            />
+          )}
           initialDisplayCount={3}
           expandText="common:more"
         />

@@ -83,7 +83,7 @@ export const useToggleMfaMutation = () => {
     mutationFn: (body) => toggleMfa({ body }),
     onSuccess: (updatedUser) => {
       updateOnSuccesses(updatedUser);
-      toaster(t(`mfa_${updatedUser.mfaRequired ? 'enabled' : 'disabled'}`), 'info');
+      toaster(t(`mfa_${updatedUser.mfaRequired ? 'enabled' : 'disabled'}`), 'success');
     },
     gcTime: 1000 * 10,
   });

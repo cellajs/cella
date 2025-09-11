@@ -1,5 +1,5 @@
 import { Fingerprint, Smartphone } from 'lucide-react';
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { getPasskeyVerifyCredential } from '~/modules/auth/passkey-credentials';
 import { TotpConfirmationForm } from '~/modules/auth/totp-verify-code-form';
@@ -17,6 +17,8 @@ export const ConfirmDisableMfaOptions = () => {
 
   const totpTriggerRef = useRef<HTMLButtonElement | null>(null);
 
+  const [isOpen, setIsOpen] = useState(false);
+
   const onPasskyConfirm = async () => {
     const passkeyData = await getPasskeyVerifyCredential({ email: user.email, type: 'authentication' });
     toggleMfa({ mfaRequired: false, passkeyData });
@@ -28,31 +30,32 @@ export const ConfirmDisableMfaOptions = () => {
     removeDialog();
   };
 
-  const openTotpVerify = () => {
-    useDialoger.getState().create(<TotpConfirmationForm onSubmit={onTotpConfirm} />, {
-      id: 'mfa-verification',
-      className: 'sm:max-w-md p-6',
-      title: t('common:totp_verify'),
-      drawerOnMobile: false,
-      hideClose: false,
-      triggerRef: totpTriggerRef,
-    });
-  };
-
   return (
-    <div className="flex flex-col gap-2">
-      <Button type="button" onClick={() => onPasskyConfirm()} variant="plain" className="w-full gap-1.5 truncate">
-        <Fingerprint size={16} />
-        <span className="truncate">
-          {t('common:confirm')} {t('common:with').toLowerCase()} {t('common:passkey').toLowerCase()}
-        </span>
-      </Button>
-      <Button ref={totpTriggerRef} type="button" onClick={openTotpVerify} variant="plain" className="w-full gap-1.5 truncate">
-        <Smartphone size={16} />
-        <span className="truncate">
-          {t('common:confirm')} {t('common:with').toLowerCase()} {t('common:authenticator_app').toLowerCase()}
-        </span>
-      </Button>
-    </div>
+    <>
+      {!isOpen && (
+        <div className="flex flex-col gap-2">
+          <Button type="button" onClick={() => onPasskyConfirm()} variant="plain" className="w-full gap-1.5 truncate">
+            <Fingerprint size={16} />
+            <span className="truncate">
+              {t('common:confirm')} {t('common:with').toLowerCase()} {t('common:passkey').toLowerCase()}
+            </span>
+          </Button>
+          <Button ref={totpTriggerRef} type="button" onClick={() => setIsOpen(true)} variant="plain" className="w-full gap-1.5 truncate">
+            <Smartphone size={16} />
+            <span className="truncate">
+              {t('common:confirm')} {t('common:with').toLowerCase()} {t('common:authenticator_app').toLowerCase()}
+            </span>
+          </Button>
+        </div>
+      )}
+
+      {isOpen && (
+        <TotpConfirmationForm
+          onSubmit={onTotpConfirm}
+          onCancel={() => useDialoger.getState().remove('mfa-confirmation')}
+          label={t('common:totp_verify')}
+        />
+      )}
+    </>
   );
 };

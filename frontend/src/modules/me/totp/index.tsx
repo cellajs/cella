@@ -25,6 +25,8 @@ const Totp = () => {
       </Suspense>,
       {
         id: 'setup-totp',
+        title: t('common:totp_qr.title'),
+        description: t('common:totp_qr.description'),
         triggerRef,
         className: 'sm:max-w-md',
         drawerOnMobile: false,
@@ -46,7 +48,7 @@ const Totp = () => {
         <div className="flex items-center gap-2 px-3">
           <QrCode className="w-4 h-4 mr-2" />
           <Check size={18} strokeWidth={3} className="text-success" />
-          <span>{t('common:totp_registered')}</span>
+          <span>{t('common:totp_activated')}</span>
         </div>
       )}
       {hasTotp ? (
