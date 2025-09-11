@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react';
 import { type FieldValues, type Path, useFormContext, useWatch } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import slugify from 'slugify';
-import { checkSlug as checkSlugAvailable, type CheckSlugData } from '~/api.gen';
+import { type CheckSlugData, checkSlug as checkSlugAvailable } from '~/api.gen';
 import { useMeasure } from '~/hooks/use-measure';
 import { useOnlineManager } from '~/hooks/use-online-manager';
 import type { ApiError } from '~/lib/api';

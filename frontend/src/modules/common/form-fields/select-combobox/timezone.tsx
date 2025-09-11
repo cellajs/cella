@@ -1,6 +1,6 @@
-import timezones from '#json/timezones.json';
 import type { FieldValues } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
+import timezones from '#json/timezones.json';
 import type { BaseFormFieldProps } from '~/modules/common/form-fields/type';
 import Combobox from '~/modules/ui/combobox';
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';

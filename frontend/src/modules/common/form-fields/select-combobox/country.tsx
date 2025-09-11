@@ -1,6 +1,6 @@
-import countries from '#json/countries.json';
 import type { FieldValues } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
+import countries from '#json/countries.json';
 import CountryFlag from '~/modules/common/country-flag';
 import type { BaseFormFieldProps } from '~/modules/common/form-fields/type';
 import Combobox, { type ComboboxProps } from '~/modules/ui/combobox';
