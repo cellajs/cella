@@ -1,6 +1,5 @@
 import { Check, ChevronDown, Search } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { useFormContext } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { Virtualizer } from 'virtua';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
@@ -13,45 +12,55 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { Popover, PopoverContent, PopoverTrigger } from '~/modules/ui/popover';
 import { ScrollArea, ScrollBar } from '~/modules/ui/scroll-area';
 
-export interface ComboBoxOption {
+interface ComboBoxOption {
   value: string;
   label: string;
   url?: string | null;
 }
 
-interface ComboboxProps {
+export interface ComboboxProps {
   options: ComboBoxOption[];
-  name: string;
+  value: string;
   onChange: (newValue: string) => void;
-  placeholder?: string;
-  searchPlaceholder?: string;
   renderOption?: (option: ComboBoxOption) => React.ReactNode;
+  renderAvatar?: boolean;
   contentWidthMatchInput?: boolean;
   disabled?: boolean;
+  placeholders?: {
+    trigger?: string;
+    search?: string;
+    notFound?: string;
+  };
 }
 
 const Combobox = ({
   options,
-  name,
+  value,
   onChange,
-  placeholder,
-  searchPlaceholder,
-  renderOption,
-  contentWidthMatchInput = false,
-  disabled,
+  renderOption = ({ label }) => <span className="truncate">{label}</span>,
+  renderAvatar = false,
+  contentWidthMatchInput = true,
+  disabled = false,
+  placeholders: passedPlaseholders = {},
 }: ComboboxProps) => {
   const { t } = useTranslation();
-  const formValue = useFormContext()?.getValues(name);
   const isMobile = useBreakpoints('max', 'sm');
-  const scrollViewportRef = useRef<HTMLDivElement | null>(null);
 
-  const { ref, bounds } = useMeasure<HTMLButtonElement>();
   const [open, setOpen] = useState(false);
   const [searchValue, setSearchValue] = useState('');
-  const [selectedOption, setSelectedOption] = useState<ComboBoxOption | null>(options.find((o) => o.value === formValue) || null);
+  const [selectedOption, setSelectedOption] = useState<ComboBoxOption | null>(options.find((o) => o.value === value) || null);
 
-  const excludeAvatarWrapFields = ['timezone', 'country'];
+  const { ref, bounds } = useMeasure<HTMLButtonElement>();
+  const scrollViewportRef = useRef<HTMLDivElement | null>(null);
+
   const debouncedSearchQuery = useDebounce(searchValue, 300);
+
+  const placeholders = {
+    trigger: t('common:select'),
+    search: t('common:placeholder.search'),
+    notFound: t('common:no_resource_found', { resource: t('common:item').toLowerCase() }),
+    ...passedPlaseholders,
+  };
 
   const filteredOptions = useMemo(
     () => options.filter(({ label }) => label.toLowerCase().includes(debouncedSearchQuery.toLowerCase())),
@@ -69,9 +78,9 @@ const Combobox = ({
 
   // Whenever the form value changes (also on reset), update the internal state
   useEffect(() => {
-    const selected = options.find((o) => o.value === formValue);
+    const selected = options.find((o) => o.value === value);
     setSelectedOption(selected || null);
-  }, [formValue]);
+  }, [value]);
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -86,13 +95,13 @@ const Combobox = ({
         >
           {selectedOption ? (
             <div className="flex items-center truncate gap-2">
-              {!excludeAvatarWrapFields.includes(name) && (
+              {renderAvatar && (
                 <AvatarWrap className="h-6 w-6 text-xs shrink-0" id={selectedOption.value} name={selectedOption.label} url={selectedOption.url} />
               )}
-              {renderOption?.(selectedOption) ?? <span className="truncate">{selectedOption.label}</span>}
+              {renderOption(selectedOption)}
             </div>
           ) : (
-            <span className="truncate">{placeholder || t('common:select')}</span>
+            <span className="truncate">{placeholders.trigger}</span>
           )}
           <ChevronDown className={`ml-2 h-4 w-4 shrink-0 opacity-50 transition-transform ${open ? '-rotate-90' : 'rotate-0'}`} />
         </Button>
@@ -101,17 +110,12 @@ const Combobox = ({
       <PopoverContent align="start" style={{ width: contentWidthMatchInput ? `${bounds.width + bounds.x * 2}px` : '100%' }} className="p-0">
         <Command shouldFilter={false}>
           {!isMobile && (
-            <CommandInput
-              value={searchValue}
-              onValueChange={setSearchValue}
-              clearValue={setSearchValue}
-              placeholder={searchPlaceholder || t('common:search')}
-            />
+            <CommandInput value={searchValue} onValueChange={setSearchValue} clearValue={setSearchValue} placeholder={placeholders.search} />
           )}
 
           <CommandList className="h-[30vh]">
             <CommandEmpty>
-              <ContentPlaceholder icon={Search} title={t('common:no_resource_found', { resource: t(`common:${name}`).toLowerCase() })} />
+              <ContentPlaceholder icon={Search} title={placeholders.notFound} />
             </CommandEmpty>
 
             <CommandGroup>
@@ -130,10 +134,10 @@ const Combobox = ({
                     >
                       <div className="flex items-center gap-2">
                         {/* Not show awatar if name of component in exclude list */}
-                        {!excludeAvatarWrapFields.includes(name) && <AvatarWrap id={option.value} name={option.label} url={option.url} />}
-                        {renderOption?.(option) ?? option.label}
+                        {renderAvatar && <AvatarWrap id={option.value} name={option.label} url={option.url} />}
+                        {renderOption(option)}
                       </div>
-                      <Check size={16} strokeWidth={3} className={`text-success ${formValue !== option.value && 'invisible'}`} />
+                      <Check size={16} strokeWidth={3} className={`text-success ${value !== option.value && 'invisible'}`} />
                     </CommandItem>
                   ))}
                 </Virtualizer>

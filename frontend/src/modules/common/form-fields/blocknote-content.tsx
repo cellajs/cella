@@ -1,35 +1,22 @@
-import type { Control } from 'react-hook-form';
+import type { FieldValues } from 'react-hook-form';
 import BlockNote from '~/modules/common/blocknote';
 import type { BaseUppyFilePanelProps, CommonBlockNoteProps } from '~/modules/common/blocknote/types';
+import type { BaseFormFieldProps } from '~/modules/common/form-fields/type';
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
 
-type Props = {
-  // biome-ignore lint/suspicious/noExplicitAny: unable to infer type due to dynamic data structure
-  control: Control<any>;
-  name: string;
-  disabled?: boolean;
-  BaseBlockNoteProps: Omit<CommonBlockNoteProps, 'defaultValue' | 'updateData' | 'filePanel' | 'baseFilePanelProps'> & {
-    baseFilePanelProps: BaseUppyFilePanelProps;
-  };
-} & (
-  | {
-      label: string;
-      required?: boolean;
-    }
-  | {
-      label?: never;
-      required?: never;
-    }
-);
+type BaseBlockNoteProps = Omit<CommonBlockNoteProps, 'defaultValue' | 'updateData' | 'filePanel' | 'baseFilePanelProps'> & {
+  baseFilePanelProps: BaseUppyFilePanelProps;
+};
+type BlocknoteFieldProps<TFieldValues extends FieldValues> = BaseFormFieldProps<TFieldValues> & { baseBlockNoteProps: BaseBlockNoteProps };
 
-const BlockNoteContent = ({
+const BlockNoteContent = <TFieldValues extends FieldValues>({
   control,
   label,
   name,
   required,
   disabled,
-  BaseBlockNoteProps: { excludeBlockTypes = ['bulletListItem', 'checkListItem', 'table', 'notify'], ...restBlockNoteProps },
-}: Props) => {
+  baseBlockNoteProps: { excludeBlockTypes = ['bulletListItem', 'checkListItem', 'table', 'notify'], ...restBlockNoteProps },
+}: BlocknoteFieldProps<TFieldValues>) => {
   return (
     <FormField
       control={control}

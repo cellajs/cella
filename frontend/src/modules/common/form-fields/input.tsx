@@ -1,29 +1,26 @@
 import type { ReactNode } from 'react';
-import { type Control, type FieldValues, type Path, useFormContext } from 'react-hook-form';
+import { type FieldValues, useFormContext } from 'react-hook-form';
+import type { BaseFormFieldProps } from '~/modules/common/form-fields/type';
 import { FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
 import { Input } from '~/modules/ui/input';
 import { Textarea } from '~/modules/ui/textarea';
 import { cn } from '~/utils/cn';
 
-interface Props<TFieldValues extends FieldValues> {
-  control: Control<TFieldValues>;
-  name: Path<TFieldValues>;
-  label: string;
+type InputFieldProps<TFieldValues extends FieldValues> = BaseFormFieldProps<TFieldValues> & {
+  description?: string;
   value?: string;
   defaultValue?: string;
   type?: Parameters<typeof Input>[0]['type'] | 'textarea';
-  description?: string;
   placeholder?: string;
   onFocus?: () => void;
   minimal?: boolean;
-  required?: boolean;
   readOnly?: boolean;
   disabled?: boolean;
   icon?: ReactNode;
   autoFocus?: boolean;
   inputClassName?: string;
   autocomplete?: string;
-}
+};
 
 const InputFormField = <TFieldValues extends FieldValues>({
   control,
@@ -42,7 +39,7 @@ const InputFormField = <TFieldValues extends FieldValues>({
   autoFocus,
   inputClassName,
   autocomplete = 'off',
-}: Props<TFieldValues>) => {
+}: InputFieldProps<TFieldValues>) => {
   const { setFocus } = useFormContext();
 
   const InputComponent = type === 'textarea' ? Textarea : Input;
