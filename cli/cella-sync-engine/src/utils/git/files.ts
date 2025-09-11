@@ -1,8 +1,7 @@
 import { writeFile } from 'fs/promises';
 
-import { gitLastCommitShaForFile, gitLogFileHistory, gitLsTreeRecursive, gitShowFileAtCommit } from './command';
+import { gitDiffUnmerged, gitLastCommitShaForFile, gitLogFileHistory, gitLsTreeRecursive, gitShowFileAtCommit } from './command';
 import { FileEntry, CommitEntry } from '../../types';
-
 
 /**
  * Uses `git ls-tree` and `git log` to fetch blob and commit SHAs for each file.
@@ -59,4 +58,12 @@ export async function writeGitFileAtCommit(
 
   // Write the content to the output file
   await writeFile(outputPath, output, 'utf8');
+}
+
+/**
+ * Returns an array of filenames currently in conflict (unmerged) in the repo.
+ */
+export async function getUnmergedFiles(repoPath: string): Promise<string[]> {
+  const output = await gitDiffUnmerged(repoPath);
+  return output ? output.split('\n').filter(Boolean) : [];
 }

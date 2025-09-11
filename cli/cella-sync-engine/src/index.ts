@@ -9,6 +9,8 @@ import { analyzedZwizzleLine, logAnalyzedZwizzleLine } from "./log/analyzed-zwiz
 import { extractZwizzleEntries } from "./modules/zwizzle/analyze";
 import { writeZwizzleMetadata } from "./modules/zwizzle/metadata";
 
+import { runSync } from "./run-sync";
+
 async function main(): Promise<void> {
   console.log(pc.cyan("↻ Starting git-sync..."));
 
@@ -58,9 +60,8 @@ async function main(): Promise<void> {
   console.log(pc.bold(`\nSummary:`));
   const summaryLines = analyzedSummaryLines(analyzedFiles);
   logAnalyzedSummaryLines(summaryLines);
-  
 
-  // await runSync(boilerplateConfig, forkConfig, fileSyncAnalyses)
+  await runSync(analyzedFiles);
 }
 
 main().catch((err) => {

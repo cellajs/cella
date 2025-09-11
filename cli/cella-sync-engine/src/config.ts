@@ -13,6 +13,7 @@
 export type RepoConfig = {
   use: "local" | "remote";
   branch: string;
+  addAsRemoteName: string; // optional name to add the remote as
   repoPath: string;  // required if use === 'local'
   owner: string;     // required if use === 'remote'
   repo: string;      // required if use === 'remote'
@@ -62,6 +63,7 @@ export const boilerplateConfig: RepoConfig = {
   use: 'local',
   branch: "development",
   repoPath: "/home/gino/Github/cella",
+  addAsRemoteName: 'cella-remote',
   owner: "cellajs",  // Only used if use === 'remote'
   repo: "cella",     // Only used if use === 'remote'
 };
@@ -74,6 +76,7 @@ export const forkConfig: RepoConfig = {
   use: 'local',
   branch: "sync-branch",
   repoPath: "/home/gino/Github/raak",
+  addAsRemoteName: 'raak-remote',
   owner: "",  // Only used if use === 'remote'
   repo: "",   // Only used if use === 'remote'
 };
