@@ -63,7 +63,8 @@ export const useColumns = () => {
         visible: !isMobile,
         width: 120,
         renderHeaderCell: HeaderCell,
-        renderCell: ({ row }) => (row.membership?.role ? t(`common:${row.membership.role}`) : <span className="text-muted">-</span>),
+        renderCell: ({ row }) =>
+          row.membership?.role ? t(`${row.membership.role}`, { ns: ['app', 'common'] }) : <span className="text-muted">-</span>,
         renderEditCell: ({ row, onRowChange }) =>
           renderSelect({
             row,
