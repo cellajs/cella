@@ -1,5 +1,6 @@
 import { useNavigate } from '@tanstack/react-router';
 import { ChevronDown } from 'lucide-react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { signOut } from '~/api.gen';
 import PasskeyStrategy from '~/modules/auth/passkey-strategy';
@@ -15,6 +16,8 @@ export const MfaStep = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { email, resetSteps } = useAuthStepsContext();
+
+  const [isActive, setIsActive] = useState(false);
 
   const handleCancelMfa = async () => {
     try {
@@ -38,8 +41,8 @@ export const MfaStep = () => {
 
       <p className="font-light text-center space-x-1">{t('common:mfa_subheader.text')}</p>
 
-      <PasskeyStrategy type="mfa" />
-      <TotpStrategy />
+      {!isActive && <PasskeyStrategy type="mfa" />}
+      <TotpStrategy isActive={isActive} setIsActive={setIsActive} />
     </>
   );
 };

@@ -111,6 +111,7 @@ const viteConfig = {
   },
 } satisfies UserConfig;
 
+// Setup PWA
 viteConfig.plugins?.push(
   VitePWA({
     disable: !appConfig.has.pwa,
@@ -159,7 +160,11 @@ viteConfig.plugins?.push(
     },
   }),
 );
+
+// Enable HTTPS in development if the frontend URL uses it
 if (appConfig.frontendUrl.includes('https')) viteConfig.plugins?.push([basicSsl()]);
+
+// Enable additional plugins only in development mode
 if (appConfig.mode === 'development' && !isStorybook)
   viteConfig.plugins?.push([
     watchBackendOpenApi(),

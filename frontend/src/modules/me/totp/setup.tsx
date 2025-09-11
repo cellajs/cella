@@ -74,7 +74,7 @@ export const SetupTotp = () => {
           </Alert>
         </CardContent>
         <CardFooter className="flex flex-col items-start">
-          <TotpConfirmationForm label={t('common:totp_verify')} formClassName="flex-row gap-2 items-end mt-4" onSubmit={onSubmit} />
+          <TotpConfirmationForm label={t('common:totp_verify')} onSubmit={onSubmit} onCancel={() => useDialoger.getState().remove('setup-totp')} />
         </CardFooter>
       </Card>
     </div>

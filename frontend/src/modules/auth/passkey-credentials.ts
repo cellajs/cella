@@ -14,8 +14,9 @@ export const getPasskeyRegistrationCredential = async () => {
 
   const isDevelopment = appConfig.mode === 'development';
 
-  const generatedName = generatePasskeyName(useUserStore.getState().user.email);
-  const nameOnDevice = isDevelopment ? `${generatedName} for ${appConfig.name}` : generatedName;
+  const email = useUserStore.getState().user.email;
+  const generatedName = generatePasskeyName();
+  const nameOnDevice = isDevelopment ? `${email} (${generatedName}) for ${appConfig.name}` : `${email} (${generatedName})`;
 
   const credential = await navigator.credentials.create({
     publicKey: {
@@ -48,7 +49,7 @@ export const getPasskeyRegistrationCredential = async () => {
   return {
     attestationObject: encodeBase64(new Uint8Array(response.attestationObject)),
     clientDataJSON: encodeBase64(new Uint8Array(response.clientDataJSON)),
-    nameOnDevice,
+    nameOnDevice: generatedName,
   };
 };
 
