@@ -2,7 +2,6 @@ import { OpenAPIHono } from '@hono/zod-openapi';
 import { appConfig } from 'config';
 import { and, count, eq, ilike, inArray, or, type SQL } from 'drizzle-orm';
 import { html, raw } from 'hono/html';
-import { stream } from 'hono/streaming';
 import { db } from '#/db/db';
 import { attachmentsTable } from '#/db/schema/attachments';
 import { organizationsTable } from '#/db/schema/organizations';
@@ -40,6 +39,7 @@ const attachmentsRouteHandlers = app
     const [requestedOrganizationId] = [...where.matchAll(/organization_id = '([^']+)'/g)].map((m) => m[1]);
     const organization = getContextOrganization();
 
+    // Only allow validated organization ID
     if (requestedOrganizationId !== organization.id)
       throw new AppError({ status: 403, type: 'forbidden', severity: 'warn', meta: { toastMessage: 'Denied: organization mismatch.' } });
 
@@ -240,35 +240,6 @@ const attachmentsRouteHandlers = app
     logEvent('info', 'Attachments deleted', allowedIds);
 
     return ctx.json({ success: true, rejectedItems }, 200);
-  })
-  /*
-   * Get attachment cover
-   */
-  .openapi(attachmentRoutes.getAttachmentCover, async (ctx) => {
-    const { id } = ctx.req.valid('param');
-
-    const [attachment] = await db.select().from(attachmentsTable).where(eq(attachmentsTable.id, id));
-
-    if (!attachment) throw new AppError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'attachment' });
-
-    // let createdByUser: UserModel | undefined;
-
-    // if (task.createdBy) {
-    //   createdByUser = await getUserBy('id', task.createdBy);
-    // }
-
-    // const coverStream = await generateCover({
-    //   title: task.summary,
-    //   avatarUrl: createdByUser?.thumbnailUrl || '',
-    //   name: createdByUser?.name || '',
-    //   position: createdByUser?.role || '',
-    // });
-
-    return stream(ctx, async (stream) => {
-      // const coverStreamWeb = nodeStreamToWebStream(coverStream);
-      // biome-ignore lint/suspicious/noExplicitAny: unable to infer type due to dynamic data structure
-      await stream.pipe({} as any);
-    });
   })
   /*
    * Redirect to attachment

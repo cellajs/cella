@@ -180,23 +180,5 @@ const attachmentRoutes = {
       ...errorResponses,
     },
   }),
-  getAttachmentCover: createCustomRoute({
-    operationId: 'getAttachmentCover',
-    method: 'get',
-    path: '/{id}/cover',
-    guard: isPublicAccess,
-    tags: ['attachments'],
-    summary: 'Get attachment cover',
-    description: 'Returns a preview or cover image for a file, when available (e.g. first page of a PDF or image thumbnail).',
-    request: {
-      params: z.object({ id: idSchema }),
-    },
-    responses: {
-      200: {
-        description: 'Success',
-      },
-      ...errorResponses,
-    },
-  }),
 };
 export default attachmentRoutes;

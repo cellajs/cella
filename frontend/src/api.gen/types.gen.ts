@@ -3863,57 +3863,6 @@ export type UpdateAttachmentResponses = {
 
 export type UpdateAttachmentResponse = UpdateAttachmentResponses[keyof UpdateAttachmentResponses];
 
-export type GetAttachmentCoverData = {
-  body?: never;
-  path: {
-    id: string;
-  };
-  query?: never;
-  url: '/{orgIdOrSlug}/attachments/{id}/cover';
-};
-
-export type GetAttachmentCoverErrors = {
-  /**
-   * Bad request: problem processing request.
-   */
-  400: ApiError & {
-    status?: 400;
-  };
-  /**
-   * Unauthorized: authentication required.
-   */
-  401: ApiError & {
-    status?: 401;
-  };
-  /**
-   * Forbidden: insufficient permissions.
-   */
-  403: ApiError & {
-    status?: 403;
-  };
-  /**
-   * Not found: resource does not exist.
-   */
-  404: ApiError & {
-    status?: 404;
-  };
-  /**
-   * Rate limit: too many requests.
-   */
-  429: ApiError & {
-    status?: 429;
-  };
-};
-
-export type GetAttachmentCoverError = GetAttachmentCoverErrors[keyof GetAttachmentCoverErrors];
-
-export type GetAttachmentCoverResponses = {
-  /**
-   * Success
-   */
-  200: unknown;
-};
-
 export type RedirectToAttachmentData = {
   body?: never;
   path: {

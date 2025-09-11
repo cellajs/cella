@@ -1425,14 +1425,6 @@ export const zUpdateAttachmentData = z.object({
  */
 export const zUpdateAttachmentResponse = zAttachment;
 
-export const zGetAttachmentCoverData = z.object({
-  body: z.optional(z.never()),
-  path: z.object({
-    id: z.string(),
-  }),
-  query: z.optional(z.never()),
-});
-
 export const zRedirectToAttachmentData = z.object({
   body: z.optional(z.never()),
   path: z.object({
