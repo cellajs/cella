@@ -45,7 +45,7 @@ export const TotpConfirmationForm = ({ onSubmit, onCancel, label }: Props) => {
           control={form.control}
           name="code"
           render={({ field: { value, ...rest } }) => (
-            <FormItem name="code" className="mb-4">
+            <FormItem name="code" className="mb-6">
               {label && <FormLabel className="mb-1 text-center">{label}</FormLabel>}
               <FormControl>
                 <InputOTP

@@ -138,7 +138,11 @@ const UserSettingsPage = () => {
                 <div className="flex">
                   <p className="font-semibold">{t('common:mfa')}</p>
                   {!user.mfaRequired && (
-                    <Badge size="sm" variant="outline" className="ml-2 uppercase text-[10px] py-0 font-normal text-green-600 border-green-600">
+                    <Badge
+                      size="sm"
+                      variant="outline"
+                      className="max-sm:hidden ml-2 uppercase text-[10px] py-0 font-normal text-green-600 border-green-600"
+                    >
                       {t('common:recommended')}
                     </Badge>
                   )}

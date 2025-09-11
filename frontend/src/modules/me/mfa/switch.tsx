@@ -32,17 +32,17 @@ export const MfaSwitch = () => {
   };
   return (
     <div className="mb-6">
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-4 max-sm:flex-col max-sm:items-start">
         <Switch id="mfaRequired" ref={triggerRef} disabled={!hasPasskey || !hasTotp} checked={user.mfaRequired} onCheckedChange={handleToggleMfa} />
         {user.mfaRequired && (
           <p className="flex gap-2 items-center">
-            <CircleAlert size={12} className="text-amber-500" />
+            <CircleAlert size={14} className="shrink-0 text-amber-500" />
             <span className="text-sm text-muted-foreground font-light">{t('common:mfa_enabled.text')}</span>
           </p>
         )}
         {(!hasPasskey || !hasTotp) && (
           <p className="flex gap-2 items-center">
-            <CircleAlert size={12} className="text-amber-500" />
+            <CircleAlert size={14} className="shrink-0 text-amber-500" />
             <span className="text-sm text-muted-foreground font-light">{t('common:mfa_disabled.text')}</span>
           </p>
         )}
