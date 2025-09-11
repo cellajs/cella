@@ -3,9 +3,9 @@ name: CI
 # Controls which events and branches will trigger the workflow
 on:
   push:
-    branches: [ git-actions ]
+    branches: [ main ]
   pull_request:
-    branches: [ git-actions ]
+    branches: [ main, development ]
 
 # Cancel older runs of the same PR when a new push arrives
 concurrency:
