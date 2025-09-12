@@ -833,7 +833,7 @@ const authRouteHandlers = app
 
     try {
       // Verify TOTP code using stored secret
-      const isValid = verifyTotp(code, credentials.secret);
+      const isValid = await verifyTotp(code, credentials.encoderSecretKey);
       if (!isValid) throw new AppError({ status: 401, type: 'invalid_token', severity: 'warn', meta });
     } catch (error) {
       if (error instanceof AppError) throw error;
