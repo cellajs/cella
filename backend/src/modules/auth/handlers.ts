@@ -808,6 +808,9 @@ const authRouteHandlers = app
       });
     }
 
+    // Set user session after successful verification
+    await setUserSession(ctx, user, strategy, sessionType);
+
     return ctx.json(true, 200);
   })
   /*
