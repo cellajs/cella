@@ -653,7 +653,7 @@ export const zGetMyAuthResponse = z.object({
   passkeys: z.array(
     z.object({
       id: z.string(),
-      userEmail: z.string(),
+      userId: z.string(),
       deviceName: z.union([z.string(), z.null()]),
       deviceType: z.enum(['desktop', 'mobile']),
       deviceOs: z.union([z.string(), z.null()]),
@@ -745,7 +745,7 @@ export const zCreatePasskeyData = z.object({
  */
 export const zCreatePasskeyResponse = z.object({
   id: z.string(),
-  userEmail: z.string(),
+  userId: z.string(),
   deviceName: z.union([z.string(), z.null()]),
   deviceType: z.enum(['desktop', 'mobile']),
   deviceOs: z.union([z.string(), z.null()]),

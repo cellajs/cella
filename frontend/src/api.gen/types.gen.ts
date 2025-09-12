@@ -1619,7 +1619,7 @@ export type GetMyAuthResponses = {
     }>;
     passkeys: Array<{
       id: string;
-      userEmail: string;
+      userId: string;
       deviceName: string | null;
       deviceType: 'desktop' | 'mobile';
       deviceOs: string | null;
@@ -1907,7 +1907,7 @@ export type CreatePasskeyResponses = {
    */
   200: {
     id: string;
-    userEmail: string;
+    userId: string;
     deviceName: string | null;
     deviceType: 'desktop' | 'mobile';
     deviceOs: string | null;

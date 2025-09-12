@@ -709,8 +709,6 @@ const authRouteHandlers = app
   .openapi(authRoutes.getPasskeyChallenge, async (ctx) => {
     const { email, type } = ctx.req.valid('query');
 
-    let userEmail: string | null = null;
-
     // Generate a 32-byte random challenge and encode it as Base64
     const challenge = getRandomValues(new Uint8Array(32));
     const challengeBase64 = encodeBase64(challenge);
@@ -718,25 +716,30 @@ const authRouteHandlers = app
     // Save the challenge in a short-lived cookie (5 minutes)
     await setAuthCookie(ctx, 'passkey-challenge', challengeBase64, new TimeSpan(5, 'm'));
 
-    // Normalize email if provided
-    if (email) {
-      userEmail = email.toLowerCase().trim();
-    }
+    let user: UserModel | null = null;
 
+    // Find user by email if provided
+    if (email && type === 'authentication') {
+      const normalizedEmail = email.toLowerCase().trim();
+
+      const [tableUser] = await usersBaseQuery()
+        .leftJoin(emailsTable, eq(usersTable.id, emailsTable.userId))
+        .where(eq(emailsTable.email, normalizedEmail))
+        .limit(1);
+
+      user = tableUser;
+    }
     // If this is a multifactor request, retrieve user from pending MFA token
     if (type === 'mfa') {
-      const { email: tokenEmail } = await validateConfirmMfaToken(ctx, false);
-      userEmail = tokenEmail;
+      const userFromToken = await validateConfirmMfaToken(ctx, false);
+      user = userFromToken;
     }
 
     // If we still have no email, return challenge with empty credential list
-    if (!userEmail) return ctx.json({ challengeBase64, credentialIds: [] }, 200);
+    if (!user) return ctx.json({ challengeBase64, credentialIds: [] }, 200);
 
     // Fetch all passkey credentials for this user
-    const credentials = await db
-      .select({ credentialId: passkeysTable.credentialId })
-      .from(passkeysTable)
-      .where(eq(passkeysTable.userEmail, userEmail));
+    const credentials = await db.select({ credentialId: passkeysTable.credentialId }).from(passkeysTable).where(eq(passkeysTable.userId, user.id));
 
     const credentialIds = credentials.map((c) => c.credentialId);
 
@@ -788,7 +791,7 @@ const authRouteHandlers = app
     const [passkeyRecord] = await db
       .select()
       .from(passkeysTable)
-      .where(and(eq(passkeysTable.userEmail, user.email), eq(passkeysTable.credentialId, credentialId)))
+      .where(and(eq(passkeysTable.userId, user.id), eq(passkeysTable.credentialId, credentialId)))
       .limit(1);
 
     if (!passkeyRecord) throw new AppError({ status: 404, type: 'passkey_not_found', severity: 'warn', meta });
@@ -807,6 +810,9 @@ const authRouteHandlers = app
         ...(error instanceof Error ? { originalError: error } : {}),
       });
     }
+
+    // Set user session after successful verification
+    await setUserSession(ctx, user, strategy, sessionType);
 
     return ctx.json(true, 200);
   })
