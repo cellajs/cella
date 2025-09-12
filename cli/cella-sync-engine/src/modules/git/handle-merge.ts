@@ -32,6 +32,12 @@ export async function handleMerge(
 async function resolveMergeConflicts(forkConfig: RepoConfig, analyzedFiles: FileAnalysis[]) {
   let conflicts = await getUnmergedFiles(forkConfig.repoPath);
 
+  console.log('conflicts: ', conflicts)
+
+  if (conflicts.length === 0) {
+    return;
+  }
+
   // Map analyses by file path for quick access
   const analysisMap = new Map(
     analyzedFiles.map((a) => [a.filePath, a])
@@ -39,6 +45,10 @@ async function resolveMergeConflicts(forkConfig: RepoConfig, analyzedFiles: File
 
   for (const filePath of conflicts) {
     const file = analysisMap.get(filePath);
-    console.log(file)
+    console.log('=====================')
+    console.log(file?.filePath)
+    console.log(file?.commitSummary)
+    console.log(file?.zwizzle)
+    console.log(file?.mergeRisk)
   }
 }

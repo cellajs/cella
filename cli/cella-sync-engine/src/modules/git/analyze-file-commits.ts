@@ -80,8 +80,9 @@ function getAmountAheadBehind(
   const forkIndex = forkLookup.shas.findIndex(sha => sha === ancestorSha);
   const boilerplateIndex = boilerplateLookup.shas.findIndex(sha => sha === ancestorSha);
 
-  const ahead = forkIndex === -1 ? forkLookup.shas.length : forkLookup.shas.length - forkIndex - 1;
-  const behind = boilerplateIndex === -1 ? boilerplateLookup.shas.length : boilerplateLookup.shas.length - boilerplateIndex - 1;
+  // Commits that appear *before* the ancestor are the "ahead/behind" counts
+  const ahead = forkIndex === -1 ? forkLookup.shas.length : forkIndex;
+  const behind = boilerplateIndex === -1 ? boilerplateLookup.shas.length : boilerplateIndex;
 
   return { ahead, behind };
 }

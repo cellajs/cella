@@ -44,6 +44,13 @@ export async function gitLsTreeRecursive(repoPath: string, branchName: string): 
 }
 
 /**
+ * Get the output of `git ls-tree -r <commit>` for a given commit in the repo
+ */
+export async function gitLsTreeRecursiveAtCommit(repoPath: string, commitSha: string): Promise<string> {
+  return runGitCommand(`ls-tree -r ${commitSha}`, repoPath);
+}
+
+/**
  * Get the full commit SHA of the last commit that modified a specific file on a given branch.
  */
 export async function gitLastCommitShaForFile(repoPath: string, branchName: string, filePath: string): Promise<string> {
