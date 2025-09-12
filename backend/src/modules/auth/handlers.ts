@@ -16,7 +16,7 @@ import { eventManager } from '#/lib/events';
 import { mailer } from '#/lib/mailer';
 import { hashPassword, verifyPasswordHash } from '#/modules/auth/helpers/argon2id';
 import { deleteAuthCookie, getAuthCookie, setAuthCookie } from '#/modules/auth/helpers/cookie';
-import { initiateMfa, validateConfirmMfaToken } from '#/modules/auth/helpers/mfa';
+import { consumemMfaToken, initiateMfa, validateConfirmMfaToken } from '#/modules/auth/helpers/mfa';
 import { handleOAuthFlow } from '#/modules/auth/helpers/oauth/callback-flow';
 import {
   githubAuth,
@@ -731,7 +731,7 @@ const authRouteHandlers = app
     }
     // If this is a multifactor request, retrieve user from pending MFA token
     if (type === 'mfa') {
-      const userFromToken = await validateConfirmMfaToken(ctx, false);
+      const userFromToken = await validateConfirmMfaToken(ctx);
       user = userFromToken;
     }
 
@@ -750,13 +750,12 @@ const authRouteHandlers = app
    */
   .openapi(authRoutes.signInWithPasskey, async (ctx) => {
     const { clientDataJSON, authenticatorData, signature, credentialId, email, type } = ctx.req.valid('json');
-    const strategy = 'passkey';
+    // Define strategy and session type for metadata/logging purposes
+    const meta = { strategy: 'passkey', sessionType: type === 'mfa' ? 'mfa' : 'regular' } as const;
 
-    if (type === 'authentication' && !enabledStrategies.includes(strategy)) {
-      throw new AppError({ status: 400, type: 'forbidden_strategy', severity: 'error', meta: { strategy } });
+    if (type === 'authentication' && !enabledStrategies.includes(meta.strategy)) {
+      throw new AppError({ status: 400, type: 'forbidden_strategy', severity: 'error', meta });
     }
-    // Determine session type: regular authentication or MFA
-    const sessionType = type === 'mfa' ? 'mfa' : 'regular';
 
     let user: UserModel | null = null;
 
@@ -777,8 +776,6 @@ const authRouteHandlers = app
       const userFromToken = await validateConfirmMfaToken(ctx);
       user = userFromToken;
     }
-
-    const meta = { strategy, sessionType };
 
     // Fail early if user not found
     if (!user) throw new AppError({ status: 404, type: 'not_found', severity: 'warn', entityType: 'user', meta });
@@ -811,8 +808,10 @@ const authRouteHandlers = app
       });
     }
 
+    // Consume the MFA token now that TOTP verification succeeded
+    await consumemMfaToken(ctx);
     // Set user session after successful verification
-    await setUserSession(ctx, user, strategy, sessionType);
+    await setUserSession(ctx, user, meta.strategy, meta.sessionType);
 
     return ctx.json(true, 200);
   })
@@ -822,10 +821,10 @@ const authRouteHandlers = app
   .openapi(authRoutes.verifyTotp, async (ctx) => {
     const { code } = ctx.req.valid('json');
 
-    const strategy = 'totp';
-    const sessionType = 'mfa';
+    // Define strategy and session type for metadata/logging purposes
+    const meta = { strategy: 'totp', sessionType: 'mfa' } as const;
 
-    const meta = { strategy, sessionType };
+    // Validate MFA token and retrieve user
     const user = await validateConfirmMfaToken(ctx);
 
     // Get totp credentials
@@ -833,6 +832,7 @@ const authRouteHandlers = app
     if (!credentials) throw new AppError({ status: 404, type: 'not_found', severity: 'warn', meta });
 
     try {
+      // Verify TOTP code using stored secret
       const isValid = verifyTotp(code, credentials.secret);
       if (!isValid) throw new AppError({ status: 401, type: 'invalid_token', severity: 'warn', meta });
     } catch (error) {
@@ -847,8 +847,11 @@ const authRouteHandlers = app
       });
     }
 
+    // Consume the MFA token now that TOTP verification succeeded
+    await consumemMfaToken(ctx);
+
     // Set user session after successful verification
-    await setUserSession(ctx, user, strategy, sessionType);
+    await setUserSession(ctx, user, meta.strategy, meta.sessionType);
 
     return ctx.json(true, 200);
   });

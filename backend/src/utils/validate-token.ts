@@ -1,8 +1,8 @@
-import { and, eq, isNull } from 'drizzle-orm';
 import { db } from '#/db/db';
 import { type TokenModel, tokensTable } from '#/db/schema/tokens';
 import { AppError, type ConstructedError } from '#/lib/errors';
 import { isExpiredDate } from '#/utils/is-expired-date';
+import { and, eq, gt, isNull } from 'drizzle-orm';
 
 type BaseProps = {
   requiredType: TokenModel['type'];
@@ -19,8 +19,9 @@ export const getValidToken = async ({
   missedTokenError,
 }: BaseProps & FokenInedtifierProps): Promise<TokenModel> => {
   const condition = [
-    isNull(tokensTable.consumedAt),
-    eq(tokensTable.type, requiredType),
+    isNull(tokensTable.consumedAt), // Token not yet consumed
+    gt(tokensTable.expiresAt, new Date()), // Token not expired
+    eq(tokensTable.type, requiredType), // Correct token type
     ...(token ? [eq(tokensTable.token, token)] : []),
     ...(tokenId ? [eq(tokensTable.id, tokenId)] : []),
   ];
