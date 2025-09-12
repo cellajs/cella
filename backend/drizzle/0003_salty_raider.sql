@@ -1,0 +1,1 @@
+ALTER TABLE "totps" RENAME COLUMN "encoder_secret_key" TO "secret";

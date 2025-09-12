@@ -1060,7 +1060,6 @@ export const deletePasskey = <ThrowOnError extends boolean = true>(options: Opti
 /**
  * Register TOTP
  * 🛡️ Requires authentication
- * ⏳ Spam (10/h)
  *
  * Generates a new TOTP secret for the current user and returns a provisioning URI and Base32 manual key.
  *
@@ -1081,7 +1080,7 @@ export const registerTotp = <ThrowOnError extends boolean = true>(options?: Opti
  * Activate TOTP
  * 🛡️ Requires authentication
  *
- * Confirms TOTP setup by verifying a code from the authenticator app. On success, TOTP is enabled for the account.
+ * Confirms TOTP setup by verifying a code from the authenticator app for the first time. On success, TOTP is activated for the account.
  *
  * **POST /me/totp/activate** ·· [activateTotp](http://localhost:4000/docs#tag/me/post/me/totp/activate) ·· _me_
  *

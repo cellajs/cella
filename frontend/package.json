@@ -113,7 +113,6 @@
     "input-otp": "^1.4.2",
     "jspdf": "^3.0.2",
     "jspdf-autotable": "^5.0.2",
-    "locales": "workspace:*",
     "lucide-react": "^0.542.0",
     "motion": "^12.23.12",
     "nanoid": "^5.1.5",

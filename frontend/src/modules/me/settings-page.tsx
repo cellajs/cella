@@ -139,9 +139,9 @@ const UserSettingsPage = () => {
                   <p className="font-semibold">{t('common:mfa')}</p>
                   {!user.mfaRequired && (
                     <Badge
-                      size="sm"
+                      size="xs"
                       variant="outline"
-                      className="max-sm:hidden ml-2 uppercase text-[10px] py-0 font-normal text-green-600 border-green-600"
+                      className="max-sm:hidden ml-2 uppercase text-[10px] font-normal text-green-600 border-green-600"
                     >
                       {t('common:recommended')}
                     </Badge>

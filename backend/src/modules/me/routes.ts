@@ -1,7 +1,7 @@
 import { z } from '@hono/zod-openapi';
 import { createCustomRoute } from '#/lib/custom-routes';
 import { isAuthenticated, isPublicAccess } from '#/middlewares/guard';
-import { spamLimiter, tokenLimiter } from '#/middlewares/rate-limiter/limiters';
+import { tokenLimiter } from '#/middlewares/rate-limiter/limiters';
 import { totpVerificationBodySchema } from '#/modules/auth/schema';
 import {
   meAuthDataSchema,
@@ -287,7 +287,6 @@ const meRoutes = {
     path: '/totp/register',
     guard: isAuthenticated,
     // TODO look into rate limit customized for totp
-    middleware: [spamLimiter],
     tags: ['me'],
     summary: 'Register TOTP',
     description: 'Generates a new TOTP secret for the current user and returns a provisioning URI and Base32 manual key.',
@@ -308,7 +307,8 @@ const meRoutes = {
     guard: isAuthenticated,
     tags: ['me'],
     summary: 'Activate TOTP',
-    description: 'Confirms TOTP setup by verifying a code from the authenticator app. On success, TOTP is enabled for the account.',
+    description:
+      'Confirms TOTP setup by verifying a code from the authenticator app for the first time. On success, TOTP is activated for the account.',
     security: [],
     request: {
       body: {
