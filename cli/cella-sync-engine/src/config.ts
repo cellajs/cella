@@ -26,6 +26,8 @@ export type Log = {
     filePath?: string[];
     commitSummaryState?: string[];
     mergeRiskSafeByGit?: boolean;
+    mergeRiskCheck?: string[];
+    mergeCheckAutomergeable?: boolean;
   },
   analyzedZwizzle: {
     // Filters to filter zwizzle analysis
@@ -48,7 +50,11 @@ export const logConfig: Log = {
     //   "unrelated",
     //   "unknown",
     // ],
-    mergeRiskSafeByGit: false, // If true, will log files that are safe by Git
+    mergeRiskCheck: [
+      'gitAutoMerge'
+    ],
+    // mergeCheckAutomergeable: false,
+    // mergeRiskSafeByGit: false, // If true, will log files that are safe by Git
   },
   analyzedZwizzle: {
     zwizzled: true,

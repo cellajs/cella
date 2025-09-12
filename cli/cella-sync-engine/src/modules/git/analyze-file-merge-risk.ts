@@ -6,6 +6,8 @@ import { CommitSummary, FileAnalysis, MergeRisk } from '../../types';
  * - Filters out files that are safe (low likelihood & git can auto-resolve)
  * - Flags files that need deeper sync-engine analysis.
  * 
+ * @todo: The check needs to be an indicator of how we can predict a merge resolution.
+ * 
  * @param commitStatus - Sync state of commits between boilerplate and fork.
  * @param blobStatus - Blob (file content) comparison result.
  * @returns Merge risk evaluation object.
@@ -20,6 +22,7 @@ export function analyzeFileMergeRisk(
   const isBlobMissing = blobStatus === 'missing';
 
   if (commitStatus === 'upToDate') {
+    // Common case, blobs should be identical if up to date (when conflict, just keep fork)
     if (isBlobIdentical) {
       return {
         likelihood: 'low',
@@ -29,17 +32,17 @@ export function analyzeFileMergeRisk(
       };
     }
 
-    // edge case, normally blob is identical if up to date (corrupted?)
+    // Less common case, commits are upToDate but blobs differ, e.g. earlier conflict resolved? (when conflict, just keep fork)
     if (isBlobDifferent) {
       return {
         likelihood: 'medium',
         reason: 'blobMismatch',
         safeByGit: false,
-        check: 'gitAutoMerge',
+        check: 'verifyHead',
       };
     }
 
-    // edge case, normally blob is identical if up to date (corrupted?)
+    // Less common case, commits are upToDate but blobs differ, e.g. earlier conflict resolved? (when conflict, just keep fork)
     if (isBlobMissing) {
       return {
         likelihood: 'high',
@@ -51,6 +54,7 @@ export function analyzeFileMergeRisk(
   } 
   
   if (commitStatus === 'ahead' || commitStatus === 'behind') {
+    // When ahead/behind, identical blobs are safe (Just keep fork)
     if (isBlobIdentical) {
       return {
         likelihood: 'low',

@@ -5,7 +5,7 @@ import { FileAnalysis, FileEntry } from '../types';
 import { analyzeFileCommits } from './git/analyze-file-commits';
 import { analyzeFileBlob } from './git/analyze-file-blob';
 import { analyzeFileMergeRisk } from './git/analyze-file-merge-risk';
-import { checkFileAutomerge } from './git/check-file-merge';
+import { checkFileAncestor, checkFileAutomerge, checkFileHead } from './git/check-file-merge';
 import { analyzeZwizzle } from './zwizzle/analyze';
 
 // Run 10 analyses at a time
@@ -35,24 +35,48 @@ export async function analyzeFile(
   // Extend the analysis with zwizzle data
   analyzedFile.zwizzle = analyzeZwizzle(analyzedFile);
 
+  // Check the file and predict mergeability
   await checkFile(boilerplate, fork, analyzedFile);
 
   return analyzedFile;
 }
 
+/**
+ * Checks the file for potential merge conflicts and predicts merge resolution
+ * @param boilerplate - The boilerplate repository configuration.
+ * @param fork - The fork repository configuration.
+ * @param analyzedFile - The analyzed file information.
+ */
 export async function checkFile(
   boilerplate: RepoConfig,
   fork: RepoConfig,
   analyzedFile: FileAnalysis
 ): Promise<void> {
   // Destructure necessary properties
-  const { filePath, mergeRisk } = analyzedFile;
+  const { mergeRisk } = analyzedFile;
 
   if (mergeRisk?.check === 'gitAutoMerge') {
-    //@TODO: Only run check where necessary, POC for now is package.json
-    if (filePath === 'package.json') {
-      analyzedFile.mergeCheck = await checkFileAutomerge(boilerplate, fork, analyzedFile);
-    }
+    analyzedFile.mergeCheck = await checkFileAutomerge(boilerplate, fork, analyzedFile);
+  }
+
+
+
+
+
+  if (mergeRisk?.check === 'verifyAncestor') { 
+    analyzedFile.mergeCheck = await checkFileAncestor(boilerplate, fork, analyzedFile);
+  }
+
+  if (mergeRisk?.check === 'verifyHead') {
+    analyzedFile.mergeCheck = await checkFileHead(boilerplate, fork, analyzedFile);
+  }
+
+  if (mergeRisk?.check === 'addedOrRemoved') {
+    // Placeholder for future checks
+  }
+
+  if (mergeRisk?.check === 'threeWayMergeCheck') {
+    // Placeholder for future checks
   }
 }
 

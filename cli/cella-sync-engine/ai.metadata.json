@@ -73,7 +73,7 @@
     },
     "MergeCheck": {
       "couldRun": "boolean",
-      "reason": "'missingFork' | 'unrelatedHistory' | 'binaryFile' | 'none' | 'conflict' | 'unkown'",
+      "reason": "'missingFork' | 'unrelatedHistory' | 'binaryFile' | 'none' | 'conflict' | 'unknown'",
       "automergeable": "boolean"
     },
     "ZwizzleEntry": {

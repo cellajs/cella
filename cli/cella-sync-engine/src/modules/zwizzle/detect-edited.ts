@@ -1,13 +1,21 @@
 import { FileAnalysis, ZwizzleEntry } from '../../types/index';
 
+/**
+ * Detects if a file has been edited in the fork compared to the boilerplate,
+ * indicating a potential "edited" zwizzle event.
+ * @param analyzedFile - The analyzed file information.
+ * @returns A ZwizzleEntry if the file is detected as edited, otherwise null.
+ */
 export function detectEditedZwizzle(analyzedFile: FileAnalysis): ZwizzleEntry | null {
   const { filePath, commitSummary, blobStatus, boilerplateFile, forkFile } = analyzedFile;
 
-  const isEdited = commitSummary?.status && (commitSummary.status === 'ahead' || commitSummary.status === 'diverged');
-  const isMissing = blobStatus === 'missing';
-  const hasBoilerplate = !!boilerplateFile;
+  if (blobStatus !== 'different') {
+    return null;
+  }
 
-  if (isEdited && !isMissing && hasBoilerplate) {
+  const isEdited = commitSummary?.status === 'ahead' || commitSummary?.status === 'diverged' || commitSummary?.status === 'upToDate';
+
+  if (isEdited) {
     return {
       filePath,
       event: 'edited',

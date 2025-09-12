@@ -1,5 +1,12 @@
 import { FileAnalysis, ZwizzleEntry } from '../../types/index';
 
+/**
+ * Detects if a file has been removed in the fork but exists in the boilerplate,
+ * indicating a potential "removed" zwizzle event.
+ * 
+ * @param analyzedFile - The analyzed file information.
+ * @returns A ZwizzleEntry if the file is detected as removed, otherwise null.
+ */
 export function detectRemovedZwizzle(analyzedFile: FileAnalysis): ZwizzleEntry | null {
   const { filePath, commitSummary, blobStatus, boilerplateFile, forkFile } = analyzedFile;
 

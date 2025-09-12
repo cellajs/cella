@@ -24,11 +24,11 @@ export type MergeRisk = {
   likelihood: 'low' | 'medium' | 'high';
   reason: 'identical' | 'blobMismatch' | 'missingInFork' | 'divergedContent' | 'unrelatedHistories' | 'unknown';
   safeByGit: boolean;
-  check: 'none' | 'gitAutoMerge' | 'verifyAncestor' | 'addedOrRemoved' | 'threeWayMergeCheck';
+  check: 'none' | 'gitAutoMerge' | 'verifyAncestor' | 'addedOrRemoved' | 'threeWayMergeCheck' | 'verifyHead';
 };
 
 export type MergeCheck = {
   couldRun: boolean;
-  reason: 'missingFork' | 'unrelatedHistory' | 'binaryFile' | 'none' | 'conflict' | 'unkown';
+  reason: 'missingFork' | 'unrelatedHistory' | 'binaryFile' | 'none' | 'conflict' | 'unknown';
   automergeable: boolean;
 }

@@ -1,6 +1,6 @@
 import { writeFile } from 'fs/promises';
 
-import { gitDiffUnmerged, gitLastCommitShaForFile, gitLogFileHistory, gitLsTreeRecursive, gitShowFileAtCommit } from './command';
+import { gitDiffUnmerged, gitLastCommitShaForFile, gitLogFileHistory, gitLsTreeRecursive, gitLsTreeRecursiveAtCommit, gitShowFileAtCommit } from './command';
 import { FileEntry, CommitEntry } from '../../types';
 
 /**
@@ -66,4 +66,32 @@ export async function writeGitFileAtCommit(
 export async function getUnmergedFiles(repoPath: string): Promise<string[]> {
   const output = await gitDiffUnmerged(repoPath);
   return output ? output.split('\n').filter(Boolean) : [];
+}
+
+/**
+ * Get the blob SHA of a specific file at a given commit.
+ *
+ * @param repoPath - Path to the repo
+ * @param commitSha - Commit SHA to inspect
+ * @param filePath - File path to look up
+ * @returns The blob SHA of the file at that commit
+ */
+export async function getFileBlobShaAtCommit(
+  repoPath: string,
+  commitSha: string,
+  filePath: string
+): Promise<string | null> {
+  const output = await gitLsTreeRecursiveAtCommit(repoPath, commitSha);
+  const lines = output.split('\n').filter(Boolean);
+
+  for (const line of lines) {
+    // format: <mode> <type> <sha>\t<path>
+    const [meta, path] = line.split('\t');
+    if (path === filePath) {
+      const sha = meta.split(' ')[2];
+      return sha;
+    }
+  }
+
+  return null; // file does not exist in this commit
 }
