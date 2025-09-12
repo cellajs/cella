@@ -833,7 +833,7 @@ const authRouteHandlers = app
     if (!credentials) throw new AppError({ status: 404, type: 'not_found', severity: 'warn', meta });
 
     try {
-      const isValid = verifyTotp(code, credentials.encoderSecretKey);
+      const isValid = await verifyTotp(code, credentials.encoderSecretKey);
       if (!isValid) throw new AppError({ status: 401, type: 'invalid_token', severity: 'warn', meta });
     } catch (error) {
       if (error instanceof AppError) throw error;
