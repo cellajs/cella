@@ -1,7 +1,7 @@
 import { queryOptions, useMutation } from '@tanstack/react-query';
 import { t } from 'i18next';
 import type { ToggleMfaData, User } from '~/api.gen';
-import { createPasskey, deletePasskey, deleteTotp, getMyInvitations, toggleMfa, type UpdateMeData, updateMe } from '~/api.gen';
+import { createPasskey, deletePasskey, deleteTotp, getMyInvitations, toggleMfa, updateMe, type UpdateMeData } from '~/api.gen';
 import type { ApiError } from '~/lib/api';
 import { getPasskeyRegistrationCredential } from '~/modules/auth/passkey-credentials';
 import { toaster } from '~/modules/common/toaster/service';
@@ -20,6 +20,9 @@ export const meKeys = {
   menu: () => [...meKeys.all, 'menu'] as const,
   auth: () => [...meKeys.all, 'auth'] as const,
   invites: () => [...meKeys.all, 'invites'] as const,
+  registrate: {
+    passkey: () => [...meKeys.all, 'registrate', 'passkey'] as const,
+  } as const,
   update: {
     info: () => [...meKeys.all, 'update', 'info'] as const,
     flags: () => [...meKeys.all, 'update', 'flags'] as const,
@@ -110,7 +113,7 @@ export const useUpdateSelfFlagsMutation = () => {
  */
 export const useCreatePasskeyMutation = () => {
   return useMutation<Passkey, ApiError, void>({
-    mutationKey: meKeys.delete.passkey(),
+    mutationKey: meKeys.registrate.passkey(),
     mutationFn: async () => {
       const credentialData = await getPasskeyRegistrationCredential();
       return await createPasskey({ body: credentialData });

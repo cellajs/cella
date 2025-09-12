@@ -657,7 +657,6 @@ const authRouteHandlers = app
       });
     }
   })
-
   /*
    * Microsoft authentication callback handler
    */
@@ -744,7 +743,7 @@ const authRouteHandlers = app
     return ctx.json({ challengeBase64, credentialIds }, 200);
   })
   /*
-   * Verify passkey
+   * Signin using passkey
    */
   .openapi(authRoutes.signInWithPasskey, async (ctx) => {
     const { clientDataJSON, authenticatorData, signature, credentialId, email, type } = ctx.req.valid('json');
