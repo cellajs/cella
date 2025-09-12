@@ -1,3 +1,10 @@
+import { OpenAPIHono, type z } from '@hono/zod-openapi';
+import { encodeBase32 } from '@oslojs/encoding';
+import { createTOTPKeyURI } from '@oslojs/otp';
+import type { EnabledOAuthProvider, MenuSection } from 'config';
+import { appConfig } from 'config';
+import { and, eq, getTableColumns, inArray, isNotNull, isNull, sql } from 'drizzle-orm';
+import { type SSEStreamingApi, streamSSE } from 'hono/streaming';
 import { db } from '#/db/db';
 import { membershipsTable } from '#/db/schema/memberships';
 import { oauthAccountsTable } from '#/db/schema/oauth-accounts';
@@ -32,13 +39,6 @@ import { getIsoDate } from '#/utils/iso-date';
 import { logEvent } from '#/utils/logger';
 import { TimeSpan } from '#/utils/time-span';
 import { verifyUnsubscribeToken } from '#/utils/unsubscribe-token';
-import { OpenAPIHono, type z } from '@hono/zod-openapi';
-import { encodeBase32 } from '@oslojs/encoding';
-import { createTOTPKeyURI } from '@oslojs/otp';
-import type { EnabledOAuthProvider, MenuSection } from 'config';
-import { appConfig } from 'config';
-import { and, eq, getTableColumns, inArray, isNotNull, isNull, sql } from 'drizzle-orm';
-import { type SSEStreamingApi, streamSSE } from 'hono/streaming';
 
 type UserMenu = z.infer<typeof menuSchema>;
 type MenuItem = z.infer<typeof menuItemSchema>;
@@ -88,7 +88,7 @@ const meRouteHandlers = app
         const [passkeyRecord] = await db
           .select()
           .from(passkeysTable)
-          .where(and(eq(passkeysTable.userEmail, user.email), eq(passkeysTable.credentialId, credentialId)))
+          .where(and(eq(passkeysTable.userId, user.id), eq(passkeysTable.credentialId, credentialId)))
           .limit(1);
 
         if (!passkeyRecord) throw new AppError({ status: 404, type: 'passkey_not_found', severity: 'warn' });
@@ -128,7 +128,7 @@ const meRouteHandlers = app
     // Queries for user authentication factors
     // Select passkey fields except for sensitive credential data
     const { credentialId, publicKey, ...passkeySelect } = getTableColumns(passkeysTable);
-    const getPasskeys = db.select(passkeySelect).from(passkeysTable).where(eq(passkeysTable.userEmail, user.email));
+    const getPasskeys = db.select(passkeySelect).from(passkeysTable).where(eq(passkeysTable.userId, user.id));
 
     const getPassword = db.select().from(passwordsTable).where(eq(passwordsTable.userId, user.id)).limit(1);
 
@@ -355,7 +355,7 @@ const meRouteHandlers = app
 
     const device = deviceInfo(ctx);
     const passkeyValue = {
-      userEmail: user.email,
+      userId: user.id,
       credentialId,
       publicKey,
       nameOnDevice,
@@ -380,11 +380,11 @@ const meRouteHandlers = app
     const user = getContextUser();
 
     // Remove all passkeys linked to this user's email
-    await db.delete(passkeysTable).where(and(eq(passkeysTable.userEmail, user.email), eq(passkeysTable.id, id)));
+    await db.delete(passkeysTable).where(and(eq(passkeysTable.userId, user.id), eq(passkeysTable.id, id)));
 
     // Check if the user still has any passkeys or TOTP entries registered
     const [userPasskeys, userTotps] = await Promise.all([
-      db.select().from(passkeysTable).where(eq(passkeysTable.userEmail, user.email)),
+      db.select().from(passkeysTable).where(eq(passkeysTable.userId, user.id)),
       db.select().from(totpsTable).where(eq(totpsTable.userId, user.id)),
     ]);
 
@@ -464,7 +464,7 @@ const meRouteHandlers = app
 
     // Check if the user still has any passkeys or TOTP entries registered
     const [userPasskeys, userTotps] = await Promise.all([
-      db.select().from(passkeysTable).where(eq(passkeysTable.userEmail, user.email)),
+      db.select().from(passkeysTable).where(eq(passkeysTable.userId, user.id)),
       db.select().from(totpsTable).where(eq(totpsTable.userId, user.id)),
     ]);
 

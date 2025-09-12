@@ -49,7 +49,7 @@ export const getPasskeyRegistrationCredential = async () => {
   return {
     attestationObject: encodeBase64(new Uint8Array(response.attestationObject)),
     clientDataJSON: encodeBase64(new Uint8Array(response.clientDataJSON)),
-    nameOnDevice: generatedName,
+    nameOnDevice,
   };
 };
 

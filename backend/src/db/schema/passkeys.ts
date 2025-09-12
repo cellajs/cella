@@ -5,9 +5,9 @@ import { nanoid } from '#/utils/nanoid';
 
 export const passkeysTable = pgTable('passkeys', {
   id: varchar().primaryKey().$defaultFn(nanoid),
-  userEmail: varchar()
+  userId: varchar()
     .notNull()
-    .references(() => usersTable.email, { onDelete: 'cascade' }),
+    .references(() => usersTable.id, { onDelete: 'cascade' }),
   credentialId: varchar().notNull(),
   publicKey: varchar().notNull(),
   deviceName: varchar(),

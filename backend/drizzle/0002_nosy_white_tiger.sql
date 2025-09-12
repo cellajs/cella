@@ -24,7 +24,10 @@ CREATE TABLE "unsubscribe_tokens" (
 );
 --> statement-breakpoint
 ALTER TABLE "users" DROP CONSTRAINT "users_unsubscribeToken_unique";--> statement-breakpoint
+ALTER TABLE "passkeys" DROP CONSTRAINT "passkeys_user_email_users_email_fk";
+--> statement-breakpoint
 DROP INDEX "users_token_index";--> statement-breakpoint
+ALTER TABLE "passkeys" ADD COLUMN "user_id" varchar NOT NULL;--> statement-breakpoint
 ALTER TABLE "passkeys" ADD COLUMN "device_name" varchar;--> statement-breakpoint
 ALTER TABLE "passkeys" ADD COLUMN "device_type" varchar DEFAULT 'desktop' NOT NULL;--> statement-breakpoint
 ALTER TABLE "passkeys" ADD COLUMN "device_os" varchar;--> statement-breakpoint
@@ -36,5 +39,7 @@ ALTER TABLE "passwords" ADD CONSTRAINT "passwords_user_id_users_id_fk" FOREIGN K
 ALTER TABLE "totps" ADD CONSTRAINT "totps_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "unsubscribe_tokens" ADD CONSTRAINT "unsubscribe_tokens_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 CREATE INDEX "users_token_index" ON "unsubscribe_tokens" USING btree ("token");--> statement-breakpoint
+ALTER TABLE "passkeys" ADD CONSTRAINT "passkeys_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "passkeys" DROP COLUMN "user_email";--> statement-breakpoint
 ALTER TABLE "users" DROP COLUMN "hashed_password";--> statement-breakpoint
 ALTER TABLE "users" DROP COLUMN "unsubscribe_token";
