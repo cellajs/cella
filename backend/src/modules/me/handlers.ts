@@ -73,6 +73,7 @@ const meRouteHandlers = app
     const now = Date.now();
     const oneHour = 60 * 60 * 1000; // 1 hour in milliseconds
 
+    // If disabling mfaRequired, ensure user has recently authenticated (within the last hour)
     if (!mfaRequired && now - createdAt > oneHour && !passkeyData && !totpCode) {
       throw new AppError({ status: 403, type: 'mfa_disable_verification', severity: 'warn' });
     }
@@ -406,7 +407,6 @@ const meRouteHandlers = app
     const manualKey = encodeBase32UpperCase(secretBytes);
 
     console.log('Server manualKey:', manualKey);
-
     console.log('Server secretBytes:', secretBytes);
     const user = getContextUser();
 
