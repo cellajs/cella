@@ -1,10 +1,3 @@
-import { OpenAPIHono, type z } from '@hono/zod-openapi';
-import { encodeBase32 } from '@oslojs/encoding';
-import { createTOTPKeyURI } from '@oslojs/otp';
-import type { EnabledOAuthProvider, MenuSection } from 'config';
-import { appConfig } from 'config';
-import { and, eq, getTableColumns, inArray, isNotNull, isNull, sql } from 'drizzle-orm';
-import { type SSEStreamingApi, streamSSE } from 'hono/streaming';
 import { db } from '#/db/db';
 import { membershipsTable } from '#/db/schema/memberships';
 import { oauthAccountsTable } from '#/db/schema/oauth-accounts';
@@ -39,6 +32,13 @@ import { getIsoDate } from '#/utils/iso-date';
 import { logEvent } from '#/utils/logger';
 import { TimeSpan } from '#/utils/time-span';
 import { verifyUnsubscribeToken } from '#/utils/unsubscribe-token';
+import { OpenAPIHono, type z } from '@hono/zod-openapi';
+import { encodeBase32 } from '@oslojs/encoding';
+import { createTOTPKeyURI } from '@oslojs/otp';
+import type { EnabledOAuthProvider, MenuSection } from 'config';
+import { appConfig } from 'config';
+import { and, eq, getTableColumns, inArray, isNotNull, isNull, sql } from 'drizzle-orm';
+import { type SSEStreamingApi, streamSSE } from 'hono/streaming';
 
 type UserMenu = z.infer<typeof menuSchema>;
 type MenuItem = z.infer<typeof menuItemSchema>;
@@ -101,14 +101,18 @@ const meRouteHandlers = app
         const [credentials] = await db.select().from(totpsTable).where(eq(totpsTable.userId, user.id)).limit(1);
         if (!credentials) throw new AppError({ status: 404, type: 'not_found', severity: 'warn' });
 
-        const isValid = verifyTotp(totpCode, credentials.encoderSecretKey);
+        const isValid = await verifyTotp(totpCode, credentials.encoderSecretKey);
         if (!isValid) throw new AppError({ status: 401, type: 'invalid_token', severity: 'warn' });
       }
     } catch (error) {
-      if (error instanceof Error) {
-        throw new AppError({ status: 500, type: 'invalid_credentials', severity: 'error', originalError: error });
-      }
-      throw error;
+      if (error instanceof AppError) throw error;
+
+      throw new AppError({
+        status: 500,
+        type: 'invalid_credentials',
+        severity: 'error',
+        ...(error instanceof Error ? { originalError: error } : {}),
+      });
     }
 
     const [updatedUser] = await db.update(usersTable).set({ mfaRequired }).where(eq(usersTable.id, user.id)).returning();
@@ -430,14 +434,18 @@ const meRouteHandlers = app
     if (!encoderSecretKey) throw new AppError({ status: 401, type: 'invalid_credentials', severity: 'warn' });
 
     // Verify TOTP code
-    // TODO how to prevent throwing two errors here? IF invalid_token is thrown, the try catch below will throw another 500 error?
     try {
-      const isValid = verifyTotp(code, encoderSecretKey);
+      const isValid = await verifyTotp(code, encoderSecretKey);
       if (!isValid) throw new AppError({ status: 401, type: 'invalid_token', severity: 'warn' });
     } catch (error) {
-      if (error instanceof Error) {
-        throw new AppError({ status: 500, type: 'totp_verification_failed', severity: 'error', originalError: error });
-      }
+      if (error instanceof AppError) throw error;
+
+      throw new AppError({
+        status: 500,
+        type: 'invalid_credentials',
+        severity: 'error',
+        ...(error instanceof Error ? { originalError: error } : {}),
+      });
     }
 
     // Save 32encoded secret key in database
@@ -486,7 +494,14 @@ const meRouteHandlers = app
 
       return ctx.json(token, 200);
     } catch (error) {
-      throw new AppError({ status: 500, type: 'missing_auth_key', severity: 'error' });
+      if (error instanceof AppError) throw error;
+
+      throw new AppError({
+        status: 500,
+        type: 'missing_auth_key',
+        severity: 'error',
+        ...(error instanceof Error ? { originalError: error } : {}),
+      });
     }
   })
   /*

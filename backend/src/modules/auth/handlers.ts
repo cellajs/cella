@@ -1,10 +1,3 @@
-import { getRandomValues } from 'node:crypto';
-import { OpenAPIHono } from '@hono/zod-openapi';
-import { encodeBase64 } from '@oslojs/encoding';
-import { generateCodeVerifier, generateState, OAuth2RequestError } from 'arctic';
-import { appConfig, type EnabledOAuthProvider } from 'config';
-import { and, desc, eq, isNotNull, isNull } from 'drizzle-orm';
-import i18n from 'i18next';
 import { db } from '#/db/db';
 import { emailsTable } from '#/db/schema/emails';
 import { membershipsTable } from '#/db/schema/memberships';
@@ -26,13 +19,13 @@ import { deleteAuthCookie, getAuthCookie, setAuthCookie } from '#/modules/auth/h
 import { initiateMfa, validateConfirmMfaToken } from '#/modules/auth/helpers/mfa';
 import { handleOAuthFlow } from '#/modules/auth/helpers/oauth/callback-flow';
 import {
+  githubAuth,
   type GithubUserEmailProps,
   type GithubUserProps,
-  type GoogleUserProps,
-  githubAuth,
   googleAuth,
-  type MicrosoftUserProps,
+  type GoogleUserProps,
   microsoftAuth,
+  type MicrosoftUserProps,
 } from '#/modules/auth/helpers/oauth/providers';
 import { type OAuthCookiePayload, storeOAuthContext } from '#/modules/auth/helpers/oauth/session';
 import { transformGithubUserData, transformSocialUserData } from '#/modules/auth/helpers/oauth/transform-user-data';
@@ -52,6 +45,13 @@ import { nanoid } from '#/utils/nanoid';
 import { slugFromEmail } from '#/utils/slug-from-email';
 import { createDate, TimeSpan } from '#/utils/time-span';
 import { getValidToken } from '#/utils/validate-token';
+import { OpenAPIHono } from '@hono/zod-openapi';
+import { encodeBase64 } from '@oslojs/encoding';
+import { generateCodeVerifier, generateState, OAuth2RequestError } from 'arctic';
+import { appConfig, type EnabledOAuthProvider } from 'config';
+import { and, desc, eq, isNotNull, isNull } from 'drizzle-orm';
+import i18n from 'i18next';
+import { getRandomValues } from 'node:crypto';
 import { CreatePasswordEmail, type CreatePasswordEmailProps } from '../../../emails/create-password';
 
 const enabledStrategies: readonly string[] = appConfig.enabledAuthStrategies;
@@ -798,13 +798,16 @@ const authRouteHandlers = app
       const isValid = await verifyPassKeyPublic(signature, authenticatorData, clientDataJSON, passkeyRecord.publicKey, challengeFromCookie);
       if (!isValid) throw new AppError({ status: 401, type: 'invalid_token', severity: 'warn', meta });
     } catch (error) {
-      if (error instanceof Error) {
-        throw new AppError({ status: 500, type: 'passkey_verification_failed', severity: 'error', meta, originalError: error });
-      }
-    }
+      if (error instanceof AppError) throw error;
 
-    // Set user session after successful verification
-    await setUserSession(ctx, user, strategy, sessionType);
+      throw new AppError({
+        status: 500,
+        type: 'passkey_verification_failed',
+        severity: 'error',
+        meta,
+        ...(error instanceof Error ? { originalError: error } : {}),
+      });
+    }
 
     return ctx.json(true, 200);
   })
@@ -828,9 +831,15 @@ const authRouteHandlers = app
       const isValid = verifyTotp(code, credentials.encoderSecretKey);
       if (!isValid) throw new AppError({ status: 401, type: 'invalid_token', severity: 'warn', meta });
     } catch (error) {
-      if (error instanceof Error) {
-        throw new AppError({ status: 500, type: 'totp_verification_failed', severity: 'error', meta, originalError: error });
-      }
+      if (error instanceof AppError) throw error;
+
+      throw new AppError({
+        status: 500,
+        type: 'totp_verification_failed',
+        severity: 'error',
+        meta,
+        ...(error instanceof Error ? { originalError: error } : {}),
+      });
     }
 
     // Set user session after successful verification
