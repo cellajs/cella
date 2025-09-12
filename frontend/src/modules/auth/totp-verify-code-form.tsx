@@ -15,10 +15,11 @@ type FormValues = z.infer<typeof formSchema>;
 interface Props {
   onSubmit: (data: FormValues) => void;
   onCancel: () => void;
+  isPending?: boolean;
   label?: string;
 }
 
-export const TotpConfirmationForm = ({ onSubmit, onCancel, label }: Props) => {
+export const TotpConfirmationForm = ({ onSubmit, onCancel, label, isPending }: Props) => {
   const { t } = useTranslation();
 
   const form = useForm<FormValues>({
@@ -30,7 +31,6 @@ export const TotpConfirmationForm = ({ onSubmit, onCancel, label }: Props) => {
 
   const handleSubmit = (data: FormValues) => {
     onSubmit(data);
-    onCancel();
   };
 
   const clearOrCancel = () => {
@@ -51,8 +51,8 @@ export const TotpConfirmationForm = ({ onSubmit, onCancel, label }: Props) => {
                 <InputOTP
                   value={value || ''}
                   {...rest}
-                  pattern="\d*"
                   autoFocus
+                  disabled={isPending}
                   inputMode="numeric"
                   containerClassName="justify-center"
                   maxLength={appConfig.totpConfig.digits}
@@ -71,7 +71,7 @@ export const TotpConfirmationForm = ({ onSubmit, onCancel, label }: Props) => {
         />
 
         <div className="w-full flex flex-col items-stretch gap-2">
-          <SubmitButton disabled={!isValid} loading={false}>
+          <SubmitButton disabled={!isValid} loading={isPending}>
             {t('common:confirm')}
           </SubmitButton>
 

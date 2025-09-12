@@ -1,9 +1,11 @@
-import { decodeBase32 } from '@oslojs/encoding';
-import { verifyTOTP } from '@oslojs/otp';
+import { verifyTOTPWithGracePeriod } from '@oslojs/otp';
 import { appConfig } from 'config';
 
-export const verifyTotp = async (code: string, encodedSecret: string) => {
-  const decodedSecretKey = decodeBase32(encodedSecret);
+const { intervalInSeconds, digits, gracePeriodInSeconds } = appConfig.totpConfig;
 
-  return verifyTOTP(decodedSecretKey, appConfig.totpConfig.intervalInSeconds, appConfig.totpConfig.digits, code);
+/**
+ * Verifies a TOTP code.
+ */
+export const verifyTotp = async (otp: string, secretBytes: Uint8Array) => {
+  return verifyTOTPWithGracePeriod(secretBytes, intervalInSeconds, digits, otp, gracePeriodInSeconds);
 };

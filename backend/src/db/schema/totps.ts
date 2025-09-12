@@ -8,6 +8,6 @@ export const totpsTable = pgTable('totps', {
   userId: varchar()
     .notNull()
     .references(() => usersTable.id, { onDelete: 'cascade' }),
-  encoderSecretKey: varchar().notNull(),
+  secret: varchar().notNull(),
   createdAt: timestampColumns.createdAt,
 });

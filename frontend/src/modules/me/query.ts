@@ -146,8 +146,10 @@ export const useDeletePasskeyMutation = () => {
   return useMutation<boolean, ApiError, string>({
     mutationKey: meKeys.delete.passkey(),
     mutationFn: (id: string) => deletePasskey({ path: { id } }),
-    onSuccess: (stillHasPasskey, id) => {
+    onSuccess: (_data, id) => {
+      console.log('Passkey removed successfully', id);
       queryClient.setQueryData<MeAuthData>(meKeys.auth(), (oldData) => {
+        console.log('Old data before passkey removal:', oldData);
         if (!oldData) return oldData;
         return {
           ...oldData,
@@ -155,7 +157,6 @@ export const useDeletePasskeyMutation = () => {
         };
       });
       toaster(t('common:success.passkey_unlinked'), 'success');
-      useUserStore.getState().setMeAuthData({ hasPasskey: stillHasPasskey });
     },
     onError(error) {
       console.error('Error removing passkey:', error);

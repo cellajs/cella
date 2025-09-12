@@ -1,6 +1,6 @@
 import { OpenAPIHono, type z } from '@hono/zod-openapi';
-import { encodeBase32 } from '@oslojs/encoding';
-import { createTOTPKeyURI } from '@oslojs/otp';
+import { decodeBase64url, encodeBase32UpperCase, encodeBase64url } from '@oslojs/encoding';
+import { createTOTPKeyURI, generateTOTP } from '@oslojs/otp';
 import type { EnabledOAuthProvider, MenuSection } from 'config';
 import { appConfig } from 'config';
 import { and, eq, getTableColumns, inArray, isNotNull, isNull, sql } from 'drizzle-orm';
@@ -101,7 +101,7 @@ const meRouteHandlers = app
         const [credentials] = await db.select().from(totpsTable).where(eq(totpsTable.userId, user.id)).limit(1);
         if (!credentials) throw new AppError({ status: 404, type: 'not_found', severity: 'warn' });
 
-        const isValid = await verifyTotp(totpCode, credentials.encoderSecretKey);
+        const isValid = await verifyTotp(totpCode, decodeBase64url(credentials.secret));
         if (!isValid) throw new AppError({ status: 401, type: 'invalid_token', severity: 'warn' });
       }
     } catch (error) {
@@ -393,29 +393,35 @@ const meRouteHandlers = app
       await db.update(usersTable).set({ mfaRequired: false }).where(eq(usersTable.id, user.id));
     }
 
-    // TODO this is weird, the delete is sucessful so we should return true, not whether passkeys remain, thats up for frontend itself?
-    return ctx.json(!!userPasskeys.length, 200);
+    return ctx.json(true, 200);
   })
   /*
    * Register TOTP
    */
   .openapi(meRoutes.registerTotp, async (ctx) => {
     // Generate a 20-byte random secret and encode it as Base32
-    const secret = crypto.getRandomValues(new Uint8Array(20));
-    const manualKey = encodeBase32(secret);
+    const secretBytes = crypto.getRandomValues(new Uint8Array(20));
 
+    // Base32 → for authenticator app (manual entry or QR code)
+    const manualKey = encodeBase32UpperCase(secretBytes);
+
+    console.log('Server manualKey:', manualKey);
+
+    console.log('Server secretBytes:', secretBytes);
     const user = getContextUser();
 
     // Save the secret in a short-lived cookie (5 minutes)
-    await setAuthCookie(ctx, 'totp-key', manualKey, new TimeSpan(5, 'm'));
+    await setAuthCookie(ctx, 'totp-key', encodeBase64url(secretBytes), new TimeSpan(5, 'm'));
+    console.log('Server base secretBytes:', encodeBase64url(secretBytes));
 
     const normalizedAppName = appConfig.slug;
     const normalizedUserName = user.email;
+
     // otpauth:// URI for QR scanner apps
     const totpUri = createTOTPKeyURI(
       normalizedAppName,
       normalizedUserName,
-      secret,
+      secretBytes,
       appConfig.totpConfig.intervalInSeconds,
       appConfig.totpConfig.digits,
     );
@@ -430,13 +436,22 @@ const meRouteHandlers = app
     const user = getContextUser();
 
     // Retrieve the encoded totp secret from cookie
-    const encoderSecretKey = await getAuthCookie(ctx, 'totp-key');
-    if (!encoderSecretKey) throw new AppError({ status: 401, type: 'invalid_credentials', severity: 'warn' });
+    const encodedSecret = await getAuthCookie(ctx, 'totp-key');
+    if (!encodedSecret) throw new AppError({ status: 400, type: 'invalid_credentials', severity: 'warn' });
+
+    console.log('Server secretBytes:', encodedSecret);
+
+    const secretBytes = decodeBase64url(encodedSecret);
+    const manualKey = encodeBase32UpperCase(secretBytes);
+    console.log('Server manualKey:', manualKey);
+
+    console.log('Server TOTP now:', generateTOTP(secretBytes, appConfig.totpConfig.intervalInSeconds, appConfig.totpConfig.digits));
 
     // Verify TOTP code
     try {
-      const isValid = await verifyTotp(code, encoderSecretKey);
-      if (!isValid) throw new AppError({ status: 401, type: 'invalid_token', severity: 'warn' });
+      console.log('secretBytes', secretBytes, encodedSecret, code, typeof code);
+      const isValid = await verifyTotp(code, secretBytes);
+      if (!isValid) throw new AppError({ status: 403, type: 'invalid_token', severity: 'warn' });
     } catch (error) {
       if (error instanceof AppError) throw error;
 
@@ -448,8 +463,8 @@ const meRouteHandlers = app
       });
     }
 
-    // Save 32encoded secret key in database
-    await db.insert(totpsTable).values({ userId: user.id, encoderSecretKey });
+    // Save encoded secret key in database
+    await db.insert(totpsTable).values({ userId: user.id, secret: encodedSecret });
 
     return ctx.json(true, 200);
   })

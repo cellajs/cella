@@ -46,7 +46,7 @@ import { slugFromEmail } from '#/utils/slug-from-email';
 import { createDate, TimeSpan } from '#/utils/time-span';
 import { getValidToken } from '#/utils/validate-token';
 import { OpenAPIHono } from '@hono/zod-openapi';
-import { encodeBase64 } from '@oslojs/encoding';
+import { encodeBase64, decodeBase64url } from '@oslojs/encoding';
 import { generateCodeVerifier, generateState, OAuth2RequestError } from 'arctic';
 import { appConfig, type EnabledOAuthProvider } from 'config';
 import { and, desc, eq, isNotNull, isNull } from 'drizzle-orm';
@@ -833,7 +833,7 @@ const authRouteHandlers = app
     if (!credentials) throw new AppError({ status: 404, type: 'not_found', severity: 'warn', meta });
 
     try {
-      const isValid = verifyTotp(code, credentials.encoderSecretKey);
+      const isValid = verifyTotp(code, decodeBase64url(credentials.secret));
       if (!isValid) throw new AppError({ status: 401, type: 'invalid_token', severity: 'warn', meta });
     } catch (error) {
       if (error instanceof AppError) throw error;
