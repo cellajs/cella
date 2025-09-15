@@ -615,9 +615,6 @@ importers:
       jspdf-autotable:
         specifier: ^5.0.2
         version: 5.0.2(jspdf@3.0.2)
-      locales:
-        specifier: workspace:*
-        version: link:../locales
       lucide-react:
         specifier: ^0.542.0
         version: 0.542.0(react@19.1.1)
