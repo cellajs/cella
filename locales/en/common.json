@@ -482,5 +482,7 @@
   "write": "Write",
   "year": "year",
   "your_role": "Your role",
-  "mfa_enabled.text": "While MFA is enabled, unlinking TOTP is disabled and a passkey is required."
+  "mfa_enabled.text": "While MFA is enabled, unlinking TOTP is disabled and a passkey is required.",
+  "require_mfa": "Secure Account with MFA",
+  "require_mfa.text": "Your account does not have MFA enabled. Enabling MFA helps secure your account."
 }
