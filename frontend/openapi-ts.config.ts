@@ -9,8 +9,8 @@ export const openApiConfig: UserConfig = {
   },
   output: {
     path: './src/api.gen',
-    lint: 'biome',
-    format: 'biome',
+    lint: false,
+    format: false,
   },
   parser: {
     transforms: {
