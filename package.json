@@ -55,7 +55,7 @@
   },
   "devDependencies": {
     "@biomejs/biome": "^2.2.4",
-    "@evilmartians/lefthook": "^1.12.4",
+    "@evilmartians/lefthook": "^1.13.0",
     "@typescript/native-preview": "7.0.0-dev.20250910.1",
     "cross-env": "^10.0.0",
     "knip": "^5.63.1",
@@ -66,14 +66,5 @@
   },
   "dependencies": {
     "dotenv": "^17.2.2"
-  },
-  "pnpm": {
-    "overrides": {
-      "zod": "4.1.4",
-      "react": "^19.1.1",
-      "react-dom": "^19.1.1",
-      "@types/react": "^19.1.10",
-      "@types/react-dom": "^19.1.7"
-    }
   }
 }

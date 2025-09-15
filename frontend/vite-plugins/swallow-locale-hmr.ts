@@ -11,7 +11,7 @@ function isLocaleAsset(file: string): boolean {
 }
 
 /**
- * A Vite plugin that swallows HMR updates for locale files to prevent full page reloads.
+ * A Vite plugin that swallows HMR updates for text changes in translation/locale files to prevent full page reloads.
  */
 export function swallowLocaleHMR(): Plugin {
   return {
